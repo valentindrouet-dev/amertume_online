@@ -1,25 +1,21 @@
-# Amertume Online
+# Amertume Online — v0.2
 
-Première interface de table virtuelle pour les Héros du Cataclysme.
+https://valentindrouet-dev.github.io/amertume_online/
 
-## Voir l’interface
+## Publication
+Settings → Pages → Deploy from a branch → main → / (root).
 
-Adresse prévue : https://valentindrouet-dev.github.io/amertume_online/
+## Utilisation
+- Vue MJ : contrôle tous les combattants, ajuste les PV et états, importe la carte et avance les tours.
+- Vue joueur : choisir un héros de démonstration et contrôler celui-ci. Les PV adverses sont masqués.
+- Clic pour sélectionner ; Commande-clic sur Mac ou Ctrl-clic sur Windows pour cibler un adversaire. Le sélecteur Cible fonctionne aussi au clavier et sur mobile.
+- Configurer la réserve puis Attaquer : dégâts appliqués aux PV, Action consommée et coma à 0 PV.
+- Les lancers libres ne modifient pas les PV.
 
-Dans **Settings → Pages → Build and deployment → Source**, sélectionner **GitHub Actions**. Le workflow `Publish Amertume Online` publie ensuite chaque modification de `main`. Si la première exécution a échoué avant l’activation de Pages, la relancer depuis Actions.
+## Conventions provisoires
+Seuls les dés passant strictement la DEF contribuent. Rouges/noirs ignorent la DEF et permettent le bonus de dégâts. Échec initial sur deux 1 hors noirs, prioritaire sur critique. Deux 6 initiaux déclenchent un dé supplémentaire de la couleur choisie ; ses 6 explosent. Les dés supplémentaires comptent pour les doubles, sans nouvel échec. Légers retirés avant les doubles mystiques. Phase et mystiques utilisent leur valeur naturelle contre la DEF. Affaibli annule le bonus, Au sol retire la DEF et interdit l'attaque, Blindage absorbe une attaque réussie. Les verts ne sont pas acceptés dans une attaque.
 
-## Version 0.1
+Portée, dégâts-choc, réactions et autres talents non automatisés. États uniques dans cette version. Données fictives. Vues locales de démonstration, pas des autorisations sécurisées : pas de comptes, de synchronisation multijoueur ni de sauvegarde. Recharger réinitialise la partie.
 
-- Carte schématique et import local d’une image PNG/JPEG/WebP.
-- Tokens déplaçables à la souris, au toucher et au clavier.
-- Quatre combattants fictifs, PV ajustables et suivi manuel d’un état.
-- Suivi manuel des dépenses d’activation par combattant.
-- Réserve de sept catégories de dés ; affichage des résultats bruts.
-- Tests de compétences : 4+ donne une réussite ; 6 donne une réussite et une relance.
-- Journal de session.
-
-Les caractéristiques et la scène sont des exemples, pas des données validées du jeu. Les jets d’attaque ne résolvent pas encore la DEF, les doubles, les critiques, les échecs ni les effets des couleurs. Les états ne modifient pas les caractéristiques. Pas de synchronisation multijoueur, de compte, ni de sauvegarde : recharger la page réinitialise la session. La carte importée reste sur l’appareil.
-
-## Développement
-
-Application statique autonome dans `index.html`, sans dépendance ni étape de compilation. Ouvrir ce fichier dans un navigateur moderne ou utiliser un serveur HTTP statique. GitHub Actions publie uniquement ce fichier, pas les documents du dépôt.
+## Vérification
+Syntaxe JavaScript vérifiée et dix cas déterministes du moteur de combat testés (DEF, double 1, noirs, rouges, légers/mystiques, phase, critique, refus des soins). Pas de test visuel navigateur effectué.
