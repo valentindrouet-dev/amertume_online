@@ -1,4 +1,4 @@
-# Amertume Online — v0.09
+# Amertume Online — v0.10
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -48,3 +48,7 @@ Lire **FIREBASE-SETUP.md** pour la configuration unique de Firebase. La connexio
 ## v0.09 — Portée, ligne de vue et habillage
 
 Rayon de contact affiché autour du combattant sélectionné et exigé pour les attaques de contact ; ligne de vue exigée pour les attaques à distance. Ciblage passé de Commande/Ctrl à **Maj**, avec flèche de visée dorée suivant le pointeur. Dés redessinés en faces arrondies avec bandeau de résultat et pastille « + N dégâts ». Barres de PV pleines affichant « X / Y PV » à l’intérieur, vertes pour les héros et ambrées pour les adversaires, dans la liste des combattants comme dans la fiche.
+
+## v0.10 — Aura solidaire du token
+
+Le rayon de contact suit le token pendant le glisser, dans le même rafraîchissement : il n’est plus repositionné seulement au relâchement. Le glisser d’un autre combattant ne déplace pas l’aura du combattant sélectionné. Écart mesuré à 0 pixel pendant tout le déplacement, contre 259 pixels au maximum en v0.09.
