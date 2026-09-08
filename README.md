@@ -1,4 +1,4 @@
-# Amertume Online — v0.10
+# Amertume Online — v0.11
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -30,7 +30,7 @@ IndexedDB local conserve scène, combattants, catalogue modifié et images valid
 Clic pour sélectionner ; **Maj + clic** pour cibler (ou sélecteur Cible). Maintenir Maj affiche une flèche dorée reliant le combattant actif au pointeur. Attaquer applique les dégâts, consomme l’Action et place dans le coma à 0 PV. Lancer libre ne modifie pas les PV.
 
 ## Portée et ligne de vue
-Le combattant sélectionné affiche son **rayon de contact** : un disque translucide de trois tailles de token en diamètre. Une attaque de portée « contact » exige que le centre de la cible soit dans ce disque. Une attaque de portée « distance » exige une **ligne de vue** : le segment entre les deux tokens ne doit traverser aucun autre combattant vivant. Le bouton Attaquer est désactivé et le motif est affiché sous la cible.
+Le combattant sélectionné affiche son **rayon de contact** : un disque translucide de trois tailles de token en diamètre. Une attaque de portée « contact » exige que le socle de la cible touche ce disque : le chevauchement visible suffit, le centre n’a pas besoin d’y tomber. Une attaque de portée « distance » exige une **ligne de vue** : le segment entre les deux tokens ne doit traverser aucun autre combattant vivant. Le bouton Attaquer est désactivé et le motif est affiché sous la cible.
 
 La portée est mesurée en pixels de la carte affichée, à partir des positions des tokens. Les murs du plan schématique et des cartes importées ne sont pas encore des obstacles : seuls les corps bloquent la vue. La taille du socle (moyen, grand, énorme) reste descriptive et ne modifie pas encore le rayon.
 
@@ -52,3 +52,7 @@ Rayon de contact affiché autour du combattant sélectionné et exigé pour les 
 ## v0.10 — Aura solidaire du token
 
 Le rayon de contact suit le token pendant le glisser, dans le même rafraîchissement : il n’est plus repositionné seulement au relâchement. Le glisser d’un autre combattant ne déplace pas l’aura du combattant sélectionné. Écart mesuré à 0 pixel pendant tout le déplacement, contre 259 pixels au maximum en v0.09.
+
+## v0.11 — Contact au socle
+
+Le contact était refusé tant que le centre de la cible n’entrait pas dans le disque, alors qu’un socle largement chevauchant se lit comme un contact. La cible est désormais à portée dès que son socle touche le disque, ce qui correspond au rendu à l’écran et à la règle « petit rayon autour du socle » du corpus.

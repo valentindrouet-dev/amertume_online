@@ -17,7 +17,8 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll}){
 function mapPoint(a,size){return [a.x/100*size.width,a.y/100*size.height]}
 function contactRadius(token){return token*3/2}
 function tokenDistance(a,b,size){const [ax,ay]=mapPoint(a,size),[bx,by]=mapPoint(b,size);return Math.hypot(bx-ax,by-ay)}
-function inContact(a,b,size,token){return tokenDistance(a,b,size)<=contactRadius(token)}
+// Le socle de la cible doit toucher le disque, pas seulement son centre y tomber.
+function inContact(a,b,size,token){return tokenDistance(a,b,size)<=contactRadius(token)+token/2}
 // Ligne de vue : segment entre les deux tokens ; un combattant traversé la bloque.
 function sightBlockers(a,b,others,size,token){const [ax,ay]=mapPoint(a,size),[bx,by]=mapPoint(b,size);const dx=bx-ax,dy=by-ay,len2=dx*dx+dy*dy,r=token/2;
  return others.filter(o=>{const [ox,oy]=mapPoint(o,size);const t=len2?Math.max(0,Math.min(1,((ox-ax)*dx+(oy-ay)*dy)/len2)):0;return Math.hypot(ox-(ax+t*dx),oy-(ay+t*dy))<r})}
