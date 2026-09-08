@@ -1,4 +1,4 @@
-# Amertume Online — v0.07
+# Amertume Online — v0.08
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -33,3 +33,9 @@ Conventions provisoires : dés passant strictement la DEF, rouges/noirs sans DEF
 
 ## Vérification
 `node checks.cjs` : contrôles des dimensions PNG/JPEG/WebP, du catalogue source, des dégâts et de la lecture des champs de fiche. Syntaxe JavaScript et références des ressources vérifiées. Pas de vérification visuelle ni de test de compression/sauvegarde dans un navigateur pour cette livraison.
+
+## v0.08 — Contenu partagé (activation Firebase requise)
+
+Connexion MJ Google, publication du contenu local et republication automatique des modifications enregistrées après une première publication réussie. Lecture publique des catalogues et chargement de la scène avec le lien habituel. Images incluses ; publication complète limitée à 16 Mo. Les parties jouées restent locales.
+
+Lire **FIREBASE-SETUP.md** pour la configuration unique de Firebase. La connexion GitHub ne permet pas d'activer le fournisseur Google ni de publier les règles Firestore. Le code est prêt, le partage n’est pas déclaré opérationnel avant cette configuration et un test à deux appareils.

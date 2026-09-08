@@ -1,0 +1,35 @@
+// À fusionner dans le bloc match /databases/{database}/documents des règles
+// du projet amertume-rpg. Ce fichier NE remplace PAS les règles de l'autre app.
+// Aucun allow write global ne doit couvrir ces collections : les allow s'additionnent.
+function isOnlineMJ() {
+  return request.auth != null
+    && exists(/databases/$(database)/documents/amertume_online_admins/$(request.auth.uid))
+    && get(/databases/$(database)/documents/amertume_online_admins/$(request.auth.uid)).data.active == true;
+}
+match /amertume_online_admins/{uid} {
+  allow get: if request.auth != null && request.auth.uid == uid;
+  allow list, write: if false; // Administrateurs ajoutés depuis la console uniquement.
+}
+match /amertume_online_public/main {
+  allow get: if true;
+  allow list, delete: if false;
+  allow create, update: if isOnlineMJ()
+    && request.resource.data.keys().hasOnly(['revision','parts','bytes','updatedAt','author'])
+    && request.resource.data.revision is string
+    && request.resource.data.revision.matches('^[A-Za-z0-9_-]{1,100}$')
+    && request.resource.data.parts is int
+    && request.resource.data.parts > 0 && request.resource.data.parts <= 86
+    && request.resource.data.bytes is int
+    && request.resource.data.bytes > 0 && request.resource.data.bytes <= 16777216
+    && request.resource.data.author == request.auth.uid;
+}
+match /amertume_online_versions/{revision}/parts/{part} {
+  allow get: if true;
+  allow list: if false;
+  allow create: if isOnlineMJ()
+    && request.resource.data.keys().hasOnly(['data'])
+    && request.resource.data.data is string
+    && request.resource.data.data.size() <= 262144;
+  allow update: if false; // Versions immuables, publication via le manifeste ci-dessus.
+  allow delete: if isOnlineMJ();
+}
