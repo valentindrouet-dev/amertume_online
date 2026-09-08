@@ -23,6 +23,14 @@ function inContact(a,b,size,token){return tokenDistance(a,b,size)<=contactRadius
 function sightBlockers(a,b,others,size,token){const [ax,ay]=mapPoint(a,size),[bx,by]=mapPoint(b,size);const dx=bx-ax,dy=by-ay,len2=dx*dx+dy*dy,r=token/2;
  return others.filter(o=>{const [ox,oy]=mapPoint(o,size);const t=len2?Math.max(0,Math.min(1,((ox-ax)*dx+(oy-ay)*dy)/len2)):0;return Math.hypot(ox-(ax+t*dx),oy-(ay+t*dy))<r})}
 function hasLineOfSight(a,b,others,size,token){return sightBlockers(a,b,others,size,token).length===0}
-const api={resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight};
+// Croisement de deux segments par orientation. Invariant par mise à l'échelle des axes :
+// murs et combattants sont comparés en pourcentages de carte, sans passer par les pixels.
+function crosses(p,q,r,s){const side=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+ const d1=side(p,q,r),d2=side(p,q,s),d3=side(r,s,p),d4=side(r,s,q);
+ return d1!==0&&d2!==0&&d3!==0&&d4!==0&&(d1>0)!==(d2>0)&&(d3>0)!==(d4>0)}
+// walls : polygones fermés en pourcentages de carte. Un côté traversé coupe la vue.
+function wallsBetween(a,b,walls){const p=[a.x,a.y],q=[b.x,b.y];
+ return (walls||[]).some(poly=>poly.some((pt,i)=>crosses(p,q,pt,poly[(i+1)%poly.length])))}
+const api={resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);
