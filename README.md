@@ -1,4 +1,4 @@
-# Amertume Online — v0.08
+# Amertume Online — v0.09
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -24,18 +24,27 @@ Cartes et tokens : PNG, JPEG, WebP. Aperçu original/optimisé avec dimensions e
 Garde-fous avant décodage : fichier de 25 Mo maximum, 64 millions de pixels maximum, 20 000 pixels maximum sur un côté. Ce sont des limites d’import, pas une garantie de mémoire disponible sur tous les appareils. Une image corrompue ou un échec de traitement affiche une erreur sans remplacer la carte/token courant.
 
 ## Sauvegarde
-IndexedDB local conserve scène, combattants, catalogue modifié et images validées. Un message signale l’échec si le stockage est indisponible ou plein. L’effacement des données du site supprime cette sauvegarde. Pas de sauvegarde distante, de compte ni de multijoueur. Les vues MJ/joueur sont des interfaces locales et ne constituent pas une sécurité d’accès.
+IndexedDB local conserve scène, combattants, catalogue modifié et images validées. Un message signale l’échec si le stockage est indisponible ou plein. L’effacement des données du site supprime cette sauvegarde. La publication Firebase (v0.08) partage le contenu du MJ, mais la partie jouée reste locale : ni synchronisation des dés, des déplacements ou des PV, ni compte joueur. Les vues MJ/joueur sont des interfaces locales et ne constituent pas une sécurité d’accès.
 
 ## Combat
-Clic pour sélectionner ; Commande-clic sur Mac ou Ctrl-clic sur Windows pour cibler (ou sélecteur Cible). Attaquer applique les dégâts, consomme l’Action et place dans le coma à 0 PV. Lancer libre ne modifie pas les PV.
+Clic pour sélectionner ; **Maj + clic** pour cibler (ou sélecteur Cible). Maintenir Maj affiche une flèche dorée reliant le combattant actif au pointeur. Attaquer applique les dégâts, consomme l’Action et place dans le coma à 0 PV. Lancer libre ne modifie pas les PV.
+
+## Portée et ligne de vue
+Le combattant sélectionné affiche son **rayon de contact** : un disque translucide de trois tailles de token en diamètre. Une attaque de portée « contact » exige que le centre de la cible soit dans ce disque. Une attaque de portée « distance » exige une **ligne de vue** : le segment entre les deux tokens ne doit traverser aucun autre combattant vivant. Le bouton Attaquer est désactivé et le motif est affiché sous la cible.
+
+La portée est mesurée en pixels de la carte affichée, à partir des positions des tokens. Les murs du plan schématique et des cartes importées ne sont pas encore des obstacles : seuls les corps bloquent la vue. La taille du socle (moyen, grand, énorme) reste descriptive et ne modifie pas encore le rayon.
 
 Conventions provisoires : dés passant strictement la DEF, rouges/noirs sans DEF ; double 1 hors noirs prioritaire sur critique ; double 6 initial avec relance de la couleur choisie ; légers retirés avant doubles mystiques ; phases et mystiques comparés à la DEF sur valeur naturelle. Affaibli annule le bonus, Au sol retire la DEF et interdit l’attaque, Blindage absorbe une attaque réussie. Dés verts exclus des attaques. Portée, réactions, effets des talents et dégâts-choc manuels.
 
 ## Vérification
-`node checks.cjs` : contrôles des dimensions PNG/JPEG/WebP, du catalogue source, des dégâts et de la lecture des champs de fiche. Syntaxe JavaScript et références des ressources vérifiées. Pas de vérification visuelle ni de test de compression/sauvegarde dans un navigateur pour cette livraison.
+`node checks.cjs` : contrôles des dimensions PNG/JPEG/WebP, du catalogue source, des dégâts, de la lecture des champs de fiche, du rayon de contact et de la ligne de vue. Syntaxe JavaScript et références des ressources vérifiées. La v0.09 a été contrôlée dans Chromium : rayon de contact, ligne de visée, refus des attaques hors de portée ou sans ligne de vue, dés, barres de PV, rendu mobile et persistance après rechargement. La compression d’images et la publication Firebase n’ont pas été rejouées dans un navigateur pour cette livraison.
 
 ## v0.08 — Contenu partagé (activation Firebase requise)
 
 Connexion MJ Google, publication du contenu local et republication automatique des modifications enregistrées après une première publication réussie. Lecture publique des catalogues et chargement de la scène avec le lien habituel. Images incluses ; publication complète limitée à 16 Mo. Les parties jouées restent locales.
 
 Lire **FIREBASE-SETUP.md** pour la configuration unique de Firebase. La connexion GitHub ne permet pas d'activer le fournisseur Google ni de publier les règles Firestore. Le code est prêt, le partage n’est pas déclaré opérationnel avant cette configuration et un test à deux appareils.
+
+## v0.09 — Portée, ligne de vue et habillage
+
+Rayon de contact affiché autour du combattant sélectionné et exigé pour les attaques de contact ; ligne de vue exigée pour les attaques à distance. Ciblage passé de Commande/Ctrl à **Maj**, avec flèche de visée dorée suivant le pointeur. Dés redessinés en faces arrondies avec bandeau de résultat et pastille « + N dégâts ». Barres de PV pleines affichant « X / Y PV » à l’intérieur, vertes pour les héros et ambrées pour les adversaires, dans la liste des combattants comme dans la fiche.
