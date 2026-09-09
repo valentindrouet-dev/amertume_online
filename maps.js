@@ -88,6 +88,23 @@ function partySees(a){const m=currentMap();
 function seenAt(x,y){if(!fogSeen||!fogDim)return false;const d=fogDim;
  const i=Math.min(d.w-1,Math.max(0,Math.floor(x/100*d.w))),j=Math.min(d.h-1,Math.max(0,Math.floor(y/100*d.h)));
  return fogSeen[j*d.w+i]===1}
+/* Une porte close est un obstacle : le regard s'arrête sur sa face, si bien que les
+   cases de son rectangle ne sont jamais « vues » et qu'elle resterait invisible aux
+   joueurs plantés devant. On interroge donc sa face, et la mémoire tout autour. */
+function doorProbes(d,marge){const xs=[d.x-marge,d.x+d.w/2,d.x+d.w+marge];
+ const ys=[d.y-marge,d.y+d.h/2,d.y+d.h+marge],out=[];
+ for(const x of xs)for(const y of ys)out.push([x,y]);
+ return out}
+function doorSeen(d){const m=currentMap();
+ if(view==='mj'||!m||m.fogOff||!fogVis)return true;
+ const size=mapSize();
+ if(size.width){
+  // Vue à l'instant : le polygone de vision épouse la face de la porte.
+  const r=Math.max(3,tokenPx()*.12);
+  const faces=doorProbes(d,0).map(([x,y])=>[x/100*size.width,y/100*size.height]);
+  if(visionInPixels().some(p=>faces.some(c=>polyTouchesDisc(p,c,r))))return true}
+ // Déjà explorée : la mémoire juste autour du rectangle suffit.
+ return doorProbes(d,.9).some(([x,y])=>seenAt(x,y))}
 // La mémoire est peinte une fois par changement, puis réutilisée telle quelle.
 function memoryCanvas(d){if(!fogSeen)return null;
  if(!fogMem||fogMem.width!==d.w||fogMem.height!==d.h){
@@ -158,9 +175,7 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
  // Les portes se dessinent au-dessus du brouillard : une fois découverte, une porte
  // reste lisible dans la pénombre. Tant qu'elle est inexplorée, elle n'existe pas.
  (m.doors||[]).forEach((d,i)=>{
-  const vue=view==='mj'||m.fogOff||seenAt(d.x+d.w/2,d.y+d.h/2)
-   ||[[d.x,d.y],[d.x+d.w,d.y],[d.x,d.y+d.h],[d.x+d.w,d.y+d.h]].some(p=>seenAt(p[0],p[1]));
-  if(!vue)return;
+  if(!doorSeen(d))return;
   const el=svgRect(d,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':''));
   el.style.pointerEvents='all';
   el.onclick=()=>{

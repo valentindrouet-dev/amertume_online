@@ -1,4 +1,4 @@
-# Amertume Online — v0.28
+# Amertume Online — v0.29
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.29 — La porte devant laquelle on se tient
+
+Une porte close est un obstacle : le regard s’arrête **sur sa face**, donc les cases de son rectangle ne sont jamais marquées comme vues. Or la v0.26 décidait de l’afficher aux joueurs en interrogeant la mémoire d’exploration **à son centre et à ses quatre coins** — c’est-à-dire précisément là où, par construction, la mémoire reste vierge. Résultat : deux héros plantés devant une porte ne la voyaient pas, alors que le MJ la voyait très bien.
+
+La question posée est maintenant la bonne, en deux temps : le polygone de vision **touche-t-il la face de la porte** — ce qu’il fait dès qu’on la regarde, puisqu’il s’y arrête ; sinon, la mémoire d’exploration est-elle marquée **tout autour** de son rectangle, à une case de distance. La première réponse couvre le joueur qui s’en approche, la seconde celle qu’il a déjà découverte et laissée derrière lui.
+
+Le filtre continue de filtrer : vérifié en navigateur, une porte enfermée dans une pièce close reste invisible aux joueurs tant qu’aucun héros n’y est entré, et apparaît dès qu’il y entre.
 
 ## v0.28 — L’outil Découper garde ses angles droits
 
