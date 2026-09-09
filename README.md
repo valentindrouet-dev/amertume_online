@@ -1,4 +1,4 @@
-# Amertume Online — v0.13
+# Amertume Online — v0.14
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -72,3 +72,11 @@ L’arme équipée confère ses dés de dégâts, qui ne sont plus choisis : la 
 Les murs bloquent aussi les déplacements : le socle s’arrête au contact et glisse le long du mur, sans pouvoir le franchir même d’un geste rapide.
 
 La scène de démonstration part équipée — Éla à l’épée et en mailles, Kaël à l’arc — afin que ces règles soient visibles dès l’ouverture. Toute partie enregistrée conserve son propre équipement.
+
+## v0.14 — Fiches, partage et réserve
+
+La réserve de dés n’est plus affichée : l’arme la détermine, et une ligne sous le titre rappelle son origine et sa portée.
+
+Le contenu partagé quitte la page pour une fenêtre, ouverte par le bouton **Partager** de l’en-tête. Un point ambre sur ce bouton signale qu’une version partagée est disponible.
+
+Les fiches de héros et d’adversaires reprennent la maquette fournie : bandeau de classe teinté par combattant, chips d’identité (sexe, peuple, niveau, portée), tuiles de caractéristiques colorées — Vie, Endurance, PV, DEF en écu, Dégâts pour les héros ; PV, DEF, Dégâts, XP pour les adversaires — et compétences en pastilles teintées avec leur bonus. La fiche MJ gagne les champs Sexe, Peuple et Vie maximale.
