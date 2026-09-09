@@ -112,4 +112,21 @@ assert.ok(dedans([50,22],perce));                              // Au-dessus du d
 const loin=[{x:0,y:0,w:5,h:5}];
 assert.deepEqual(carveWithPolygon(loin,cercle(50,50,10)),loin);
 assert.deepEqual(carveWithPolygon(BLOC,[[1,1]]),BLOC);         // Tracé dégénéré : sans effet.
-console.log('86 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// Une porte perce le mur qu'elle recouvre, sans qu'on ait à modifier les données.
+const {wallsPierced,uncontain}=require('./combat.js');
+const AVEC_PORTE={walls:[{x:10,y:40,w:80,h:10}],doors:[{x:48,y:38,w:6,h:14,open:false}]};
+assert.equal(wallsPierced(AVEC_PORTE).length,2);                       // Le mur est coupé en deux.
+assert.ok(wallsBetween({x:51,y:20},{x:51,y:70},obstaclesFrom(AVEC_PORTE)));   // Porte close : vue coupée.
+AVEC_PORTE.doors[0].open=true;
+assert.ok(!wallsBetween({x:51,y:20},{x:51,y:70},obstaclesFrom(AVEC_PORTE)));  // Porte ouverte : vue libre.
+assert.ok(wallsBetween({x:30,y:20},{x:30,y:70},obstaclesFrom(AVEC_PORTE)));   // À côté, le mur tient.
+AVEC_PORTE.doors[0].open=false;
+// Recalage : une zone enregistrée sous l'ancien cadre 16/9 retrouve sa place sur l'image.
+const cadre=16/9,image=1232/751,ech=image/cadre,marge=(1-ech)/2*100;
+const stocke=[{x:marge+10*ech,y:20,w:5*ech,h:8}];
+const remis=uncontain(stocke,cadre,image);
+assert.ok(Math.abs(remis[0].x-10)<1e-6);assert.ok(Math.abs(remis[0].w-5)<1e-6);
+assert.ok(Math.abs(remis[0].y-20)<1e-6);                               // L'axe non comprimé ne bouge pas.
+assert.ok(Math.abs(uncontain([{x:50,y:50}],cadre,image)[0].x-50)<1e-6); // Le centre est invariant.
+assert.ok(Math.abs(uncontain([{x:0,y:0}],cadre,image)[0].x+marge/ech)<1e-6);
+console.log('94 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

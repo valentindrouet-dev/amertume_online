@@ -115,11 +115,21 @@ function carveWithPolygon(rects,poly,pas=.6){
    const i0=Math.max(0,Math.ceil((xs[t]-box.x)/cw-.5)),i1=Math.min(cols-1,Math.floor((xs[t+1]-box.x)/cw-.5));
    for(let i=i0;i<=i1;i++)g[j*cols+i]=0}}
  return [...intacts,...gridToRects(g,cols,rows,box,cw,ch)]}
-function obstacleRectsFrom(map){if(!map)return [];
- const solide=r=>r&&r.w>0&&r.h>0;
+/* Une porte perce toujours la zone de blocage qu'elle recouvre, à l'affichage comme
+   au calcul : fermée elle bloque à sa place, ouverte elle laisse le trou béant. */
+function wallsPierced(map){const solide=r=>r&&r.w>0&&r.h>0;
  const murs=(map.walls||[]).filter(solide),trous=(map.visions||[]).filter(solide);
- const portes=(map.doors||[]).filter(d=>d&&!d.open).filter(solide);
- return [...subtractRects(murs,trous),...portes]}
+ return subtractRects(subtractRects(murs,trous),(map.doors||[]).filter(solide))}
+function obstacleRectsFrom(map){if(!map)return [];
+ return [...wallsPierced(map),...(map.doors||[]).filter(d=>d&&!d.open&&d.w>0&&d.h>0)]}
+/* Recalage des cartes tracées quand l'éditeur réduisait l'image dans son cadre :
+   les positions enregistrées étaient comprimées vers le centre. On inverse. */
+function uncontain(shapes,frameRatio,imageRatio){
+ let sx=1,sy=1;
+ if(imageRatio<frameRatio)sx=imageRatio/frameRatio;else sy=frameRatio/imageRatio;
+ const ox=(1-sx)/2*100,oy=(1-sy)/2*100;
+ return (shapes||[]).map(r=>{const o={...r};o.x=(r.x-ox)/sx;o.y=(r.y-oy)/sy;
+  if(typeof r.w==='number')o.w=r.w/sx;if(typeof r.h==='number')o.h=r.h/sy;return o})}
 function obstaclesFrom(map){return obstacleRectsFrom(map).map(rectPolygon)}
 // Répartit n combattants en grille dans la zone de départ, sans sortir de ses bords.
 function spreadInZone(n,zone){if(!zone||n<1)return [];
@@ -151,7 +161,7 @@ function visibleCells(heroes,rects,cols,rows){const vis=new Uint8Array(cols*rows
     if(vu){vis[j*cols+i]=1;break}}}}
  return vis}
 const api={visibleCells,segmentHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
- rectPolygon,obstaclesFrom,obstacleRectsFrom,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
+ rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

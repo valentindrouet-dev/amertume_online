@@ -31,7 +31,7 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 #map-canvas{position:relative;transform-origin:0 0;will-change:transform;background:#162024 0 0/100% 100% no-repeat;border:1px solid #3c4b50;border-radius:10px;overflow:hidden;touch-action:none;user-select:none;box-shadow:0 10px 30px #0006}
 #map-canvas.no-image{background-image:linear-gradient(#84958a1f 1px,transparent 1px),linear-gradient(90deg,#84958a1f 1px,transparent 1px);background-size:5% 8.333%;background-position:0 0;background-repeat:repeat}
 .shape{position:absolute;box-sizing:border-box}
-.shape.wall{background:#0b1114d9;border:1px solid #6c7d85}.shape.cut{background:#7faddc38;border:2px dashed #7faddc;pointer-events:none}.shape.locked{cursor:not-allowed}.shape.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.foe.locked::after{right:-4px;top:-8px}
+.shape.wall{background:none}/* La zone n'est peinte que par ses morceaux : une porte y laisse un trou net. */.shape.wall>.fill{position:absolute;box-sizing:border-box;background:#0b1114d9;border:1px solid #6c7d85}.shape.cut{background:#7faddc38;border:2px dashed #7faddc;pointer-events:none}.shape.locked{cursor:not-allowed}.shape.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.foe.locked::after{right:-4px;top:-8px}
 .shape.door{background:#c98a4bd9;border:1px solid #e8b878}.shape.door.keyed{background:repeating-linear-gradient(45deg,#c98a4bd9 0 6px,#8d5f31d9 6px 12px);border-color:#f3d7a6}.shape.door.keyed::before{content:'🔑';position:absolute;left:1px;top:0;font-size:10px}
 .shape.door.open{background:#c98a4b2e;border-style:dashed}
 .shape.start{background:#8bbd9c26;border:2px dashed #8bbd9c}

@@ -61,9 +61,9 @@ function renderMapLayer(){const svg=$('map-shapes'),m=currentMap();svg.replaceCh
  // .hidden n'existe pas sur un élément SVG : le masquage passe par une classe.
  $('map').classList.toggle('has-map',!!m);if(!m)return;
  if(m.start&&view==='mj')svg.append(svgRect(m.start,'startzone'));
- // Les zones sont déjà découpées dans les données : ce que l'on voit est ce qui bloque.
+ // Une porte perce la zone qu'elle recouvre : on peint exactement ce qui bloque.
  const g=document.createElementNS(nsSVG,'g');g.setAttribute('class','wall-group');
- (m.walls||[]).filter(r=>r.w>0&&r.h>0).forEach(r=>g.append(svgRect(r)));svg.append(g);
+ wallsPierced(m).forEach(r=>g.append(svgRect(r)));svg.append(g);
  (m.doors||[]).forEach((d,i)=>{const el=svgRect(d,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':''));
   el.style.pointerEvents='auto';
   el.onclick=()=>{if(d.keyLocked&&view!=='mj'){log('Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
@@ -126,7 +126,10 @@ mapsPage.innerHTML=
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
  +'<li><i class="sw-door"></i>Porte — close au début du combat, ouverte d’un clic en jeu</li>'+'<li><i class="sw-key"></i>Porte verrouillée — le MJ seul peut l’ouvrir</li>'
  +'<li><i class="sw-start"></i>Zone de départ des héros</li>'
- +'<li><i class="sw-foe"></i>Adversaire pré-placé</li></ul><p class="muted" id="map-count"></p></aside>';
+ +'<li><i class="sw-foe"></i>Adversaire pré-placé</li></ul><p class="muted" id="map-count"></p>'
+ +'<div id="recal-box" hidden><div class="divider"></div><h2>Réparation</h2>'
+  +'<p class="muted">Tes zones semblent décalées vers le centre de l’image ? Cette carte a été tracée quand l’éditeur logeait l’image dans un cadre 16/9. Le recalage leur rend leur place ; ⌘Z l’annule.</p>'
+  +'<button id="map-recal">Recaler les zones sur l’image</button></div></aside>';
 document.querySelector('main.layout').after(mapsPage);
 
 /* ---------- Historique ---------- */
@@ -152,7 +155,7 @@ document.addEventListener('keydown',e=>{if(!document.body.classList.contains('pa
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()});
 
 /* ---------- Cartes ---------- */
-function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,walls:[],doors:[],start:null,foes:[]};
+function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,walls:[],doors:[],start:null,foes:[]};
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
 function ensure(m){m.walls??=[];m.doors??=[];m.foes??=[];m.ratio??=16/9;
  // Migration : les anciennes zones de vision sont appliquées une fois pour toutes aux murs.
@@ -191,7 +194,7 @@ const HINTS={select:'Clique une forme pour la sélectionner, glisse pour la dép
  wall:'Trace un rectangle : il coupe la vue et le passage. Un clic simple sur une forme existante la sélectionne. Suppr efface la sélection.',
  cut:'Trace un rectangle à l’intérieur d’une zone de blocage : la découpe y creuse une ouverture définitive, vue et passage rétablis.',
  lasso:'Contourne la forme à creuser : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
- door:'Trace une porte : elle perce d’elle-même la zone de blocage qu’elle recouvre. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
+ door:'Trace une porte : elle perce d’elle-même la zone de blocage qu’elle recouvre, et le mur se referme si tu la déplaces. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
  start:'Trace la zone où les héros seront regroupés à l’ouverture de la carte. Une seule par carte.',
  foe:'Clique pour poser l’adversaire choisi à droite de la barre. Il pourra être invisible à l’ouverture.'};
 // Le plan de travail adopte le rapport de la carte et occupe la place disponible.
@@ -225,14 +228,22 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  $('shape-label').textContent=mapSel?KINDS[mapSel.kind]+(adv?' · '+adv.tpl.name:'')+(cible&&cible.locked?' · verrouillée':''):'Aucune sélection.';
  $('map-count').textContent=m.walls.length+' zone(s) de blocage, '+m.doors.length+' porte(s), '
   +m.foes.length+' adversaire(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
+ $('recal-box').hidden=!recalNeeded();
  refreshHistory()}
 function shapeEl(kind,i,r){const el=document.createElement('div');
  el.className='shape '+kind+(r.locked?' locked':'')+(kind==='door'&&r.keyLocked?' keyed':'')
   +(mapSel&&mapSel.kind===kind&&mapSel.i===i?' selected':'');
  el.style.left=r.x+'%';el.style.top=r.y+'%';el.style.width=r.w+'%';el.style.height=r.h+'%';
  el.dataset.kind=kind;el.dataset.i=i;
+ // Une zone de blocage n'est peinte que là où elle bloque : les portes y creusent leur trou.
+ if(kind==='wall'&&r.w>0&&r.h>0)wallPieces(r).forEach(p=>{const f=document.createElement('span');f.className='fill';
+  f.style.left=(p.x-r.x)/r.w*100+'%';f.style.top=(p.y-r.y)/r.h*100+'%';
+  f.style.width=p.w/r.w*100+'%';f.style.height=p.h/r.h*100+'%';el.append(f)});
  ['nw','ne','sw','se'].forEach(g=>{const h=document.createElement('span');h.className='grip '+g;h.dataset.grip=g;el.append(h)});
  return el}
+// Ce qu'il reste d'une zone une fois les portes retirées : le trou suit la porte.
+function wallPieces(r){const trous=(mapDraft&&mapDraft.doors||[]).filter(d=>d&&d.w>0&&d.h>0);
+ return trous.length?subtractRects([r],trous):[r]}
 function foeEl(i,f){const el=document.createElement('div');
  el.className='shape foe'+(f.hidden?' hidden-foe':'')+(f.locked?' locked':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
  // Même taille relative qu'en partie : une fraction de la largeur de la carte.
@@ -252,6 +263,18 @@ function shapeAt(d){const m=mapDraft;if(!m)return null;if(d.kind==='cut')return 
 function removeShape(d){const m=mapDraft;
  if(d.kind==='start')m.start=null;
  else (d.kind==='wall'?m.walls:d.kind==='door'?m.doors:m.foes).splice(d.i,1)}
+
+/* ---------- Recalage des cartes tracées avant la v0.23 ---------- */
+// L'éditeur d'alors logeait l'image dans un cadre 16/9 : tout le tracé s'en trouvait
+// comprimé vers le centre. On rend aux formes leurs coordonnées d'image.
+function recalNeeded(){const m=mapDraft;
+ return !!(m&&m.image&&!m.fitted&&Math.abs((m.ratio||16/9)-16/9)>.01
+  &&(m.walls.length||m.doors.length||m.foes.length||m.start))}
+$('map-recal').onclick=()=>{const m=mapDraft;if(!recalNeeded())return;
+ pushUndo();const remis=s=>uncontain(s,16/9,m.ratio);
+ m.walls=remis(m.walls);m.doors=remis(m.doors);m.foes=remis(m.foes);
+ if(m.start)m.start=remis([m.start])[0];
+ m.fitted=true;renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
 
 /* ---------- Verrouillage ---------- */
 $('shape-lock').onclick=()=>{const cible=mapSel&&shapeAt(mapSel);if(!cible)return;
@@ -310,8 +333,6 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
  if(cible&&(cible.w<1.2||cible.h<1.2)){removeShape(d);
   // Clic manqué : si une forme était dessous, on la sélectionne et on repasse en Sélection.
   if(d.dessous){mapSel=d.dessous;mapTool='select'}else{mapSel=null;undoStack.pop()}}
- // Une porte perce la zone de blocage qu'elle recouvre : l'ouverture est nette.
- if(d.kind==='door'){const porte=shapeAt(d);if(porte&&porte.w>=1.2&&porte.h>=1.2)carveWalls(r=>subtractRects(r,[porte]))}
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()});
 $('shape-delete').onclick=()=>{const cible=mapSel&&shapeAt(mapSel);if(!cible||cible.locked)return;
  pushUndo();removeShape(mapSel);mapSel=null;renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};

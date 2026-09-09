@@ -1,4 +1,4 @@
-# Amertume Online — v0.22
+# Amertume Online — v0.23
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.23 — Les portes percent les murs, recalage des cartes anciennes
+
+**Une porte creuse la zone de blocage qu’elle recouvre, en permanence.** Jusqu’ici le trou était découpé une fois pour toutes dans les données au moment du tracé : les cartes dessinées avant cette règle gardaient leur mur intact sous la porte, et déplacer une porte laissait un trou orphelin derrière elle. Le percement est désormais **calculé à chaque affichage** — `wallsPierced()` retire les portes des zones avant de peindre et avant de calculer la vue. Conséquences immédiates : les cartes déjà tracées sont réparées sans rien toucher à leurs données, et une porte déplacée referme le mur derrière elle.
+
+L’éditeur peint la même chose que la table. Une zone de blocage n’est plus un rectangle plein : c’est un cadre transparent qui contient ses **morceaux visibles**, ce qu’il reste d’elle une fois les portes retirées. On voit donc le trou en dessinant, exactement là où il bloquera. La zone reste sélectionnable, déplaçable et redimensionnable d’un seul tenant.
+
+**Recaler les zones sur l’image.** Le cadrage a été corrigé en v0.22, mais les cartes tracées avant gardent des coordonnées enregistrées dans l’ancien cadre 16/9, où l’image était réduite et centrée : tout le tracé s’y trouve comprimé vers le centre. Pour une image 1232 × 751, l’échelle valait 0,9228 et la marge 3,86 % — une zone posée sur l’image à 10 % a été enregistrée à 13,09 %, d’où le décalage qui persistait à l’écran. Le panneau de droite propose désormais **Recaler les zones sur l’image** quand la carte est concernée : zones, portes, zone de départ et adversaires retrouvent leurs coordonnées d’image (`uncontain()`). L’opération est annulable par ⌘Z, et le bouton disparaît une fois la carte recalée. Les cartes créées à partir de cette version sont marquées comme déjà cadrées et ne le proposent jamais.
+
+Vérifié en navigateur : un mur de 10 % à 90 % traversé par une porte à 48 %–54 % se peint en deux morceaux (0–47,5 % et 55–100 % de sa largeur), la ligne de vue passe porte ouverte et se ferme porte close, et un tracé enregistré à 13,09 % revient à 10 % après recalage — puis à 13,09 % si l’on annule.
 
 ## v0.22 — Cadrage identique des deux côtés, portes verrouillées
 
