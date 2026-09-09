@@ -1,4 +1,4 @@
-# Amertume Online — v0.35
+# Amertume Online — v0.36
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.36 — La flèche dit si le coup peut partir
+
+Trois couleurs, lisibles sans lire :
+
+- **bleu plein** — le coup part : cible à portée, ligne de vue dégagée, Action disponible. C’est le bleu du bouton d’attaque, les deux se répondent ;
+- **rouge pointillé** — la géométrie l’interdit : hors du rayon de contact, ou vue coupée par un mur, une porte close ou un combattant ;
+- **gris pointillé, effacé** — l’Action est passée. La flèche ne rappelle plus que la cible choisie.
+
+L’ordre compte : l’Action passée l’emporte, parce qu’alors le coup ne partira pas ce tour-ci où que soit la cible. La ligne sous le bouton, elle, continue de donner la raison en toutes lettres. La tête de la flèche change de couleur avec elle — trois marqueurs distincts plutôt qu’un `context-stroke` que les navigateurs ne servent pas tous.
 
 ## v0.35 — Flèche droite, bouton court
 
