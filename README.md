@@ -1,4 +1,4 @@
-# Amertume Online — v0.26
+# Amertume Online — v0.27
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.27 — Le lissage rendu à sa place
+
+La v0.26 lissait au jugé : elle repérait les « petites arêtes » et les assouplissait, en pariant que seule la rastérisation d’une découpe libre en produit. Le pari était faux. **Un mur mince a lui aussi des arêtes courtes** — ses deux bouts — et un donjon en compte des dizaines : leurs angles se sont mis à fuir, les lignes droites à onduler, et la ligne de vue avec elles, puisque c’est ce contour qui arrête le regard.
+
+Le lissage ne devine plus rien. **Chaque tracé de la Découpe libre est enregistré sur la carte** (`m.carves`), et seuls les sommets qui tombent dessus, à moins de deux tiers de case, sont assouplis. Tout le reste — murs, angles, découpes rectangulaires, portes — traverse la chaîne sans qu’un sommet bouge. C’est vérifié comme tel : sur un donjon aux murs de 1,2 % d’épaisseur avec ses découpes rectangulaires, le contour lissé est **identique au contour brut**, comparé point par point, y compris quand la carte contient par ailleurs un tracé à main levée. Aucune arête oblique n’apparaît là où il n’y en avait pas.
+
+Les tracés à main levée, eux, restent des courbes : sur une salle ovale, l’escalier brut passe de 300 sommets à 84 et son plus grand pli de 90° à 12°, l’aire à 0,5 % près de l’ellipse voulue.
+
+**Aucune carte n’est à refaire.** Les rectangles n’ont jamais été modifiés — seul l’affichage les déformait — donc les cartes retrouvent leurs lignes droites d’elles-mêmes. En revanche, une découpe libre tracée avant cette version n’a pas laissé de trace enregistrée : elle reste anguleuse tant qu’on ne la retrace pas.
 
 ## v0.26 — Découpes en courbes, portes au contact, table gelée
 

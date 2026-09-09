@@ -21,7 +21,8 @@ function measureRatio(m,apres){if(!m||!m.image)return;const img=new Image();
    mur peint et le mur qui arrête sont exactement le même. */
 let shapeCache={cle:'',formes:[],murs:null};
 function geometryKey(m){return m.id+'|'+(m.walls||[]).map(r=>r.x+','+r.y+','+r.w+','+r.h+(r.locked?'v':'')).join(';')
- +'|'+(m.doors||[]).map(d=>d.x+','+d.y+','+d.w+','+d.h+(d.open?'o':'f')).join(';')}
+ +'|'+(m.doors||[]).map(d=>d.x+','+d.y+','+d.w+','+d.h+(d.open?'o':'f')).join(';')
+ +'|'+(m.carves||[]).length}
 // L'éditeur redessine à chaque geste : son contour est gardé de la même façon.
 let skinCache={cle:'',contours:[]};
 function draftSkin(m){const cle=geometryKey(m);
@@ -256,7 +257,7 @@ document.addEventListener('keydown',e=>{if(!document.body.classList.contains('pa
 /* ---------- Cartes ---------- */
 function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,walls:[],doors:[],start:null,foes:[]};
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
-function ensure(m){m.walls??=[];m.doors??=[];m.foes??=[];m.ratio??=16/9;
+function ensure(m){m.walls??=[];m.doors??=[];m.foes??=[];m.carves??=[];m.ratio??=16/9;
  // Migration : les anciennes zones de vision sont appliquées une fois pour toutes aux murs.
  if(m.visions&&m.visions.length){const libres=m.walls.filter(w=>!w.locked),verrous=m.walls.filter(w=>w.locked);
   m.walls=[...verrous,...subtractRects(libres,m.visions.filter(r=>r&&r.w>0&&r.h>0))]}
@@ -351,7 +352,9 @@ function carveWalls(fn){const libres=mapDraft.walls.filter(w=>!w.locked),verrous
  mapDraft.walls=[...verrous,...fn(libres)]}
 function applyLasso(){const pts=lasso&&lasso.pts;lasso=null;
  if(!pts||pts.length<3){renderCanvas();return}
- pushUndo();carveWalls(r=>carveWithPolygon(r,pts));
+ pushUndo();carveWalls(r=>carveWithPolygon(r,pts,CARVE_STEP));
+ // Le tracé est gardé : c'est la seule chose que le lissage a le droit d'adoucir.
+ (mapDraft.carves||(mapDraft.carves=[])).push(pts.map(p=>[p[0],p[1]]));
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()}
 function shapeAt(d){const m=mapDraft;if(!m)return null;if(d.kind==='cut')return cutRect;
  return d.kind==='start'?m.start:(d.kind==='wall'?m.walls:d.kind==='door'?m.doors:m.foes)[d.i]}

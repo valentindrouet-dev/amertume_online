@@ -109,14 +109,14 @@ for(const o of [{x:22.7,y:74.3},{x:50.5,y:47.3}]){const vision=visionPolygon(o,F
   assert.equal(pointInPolygon(p,vision),!wallsBetween(o,{x:p[0],y:p[1]},CONTOURS));compares++}
  assert.ok(compares>800)}
 /* Contour de l'union : exact, sans couture interne, avec les creux comme contours. */
-const {smoothContours,simplifyClosed,relaxContour,carveWithPolygon:creuse,CARVE_STEP,wallShape,polyTouchesDisc,rectInReach}=require('./combat.js');
+const {smoothContours,simplifyClosed,relaxContour,carveMask,carveWithPolygon:creuse,CARVE_STEP,wallShape,wallsPierced:perce,polyTouchesDisc,rectInReach}=require('./combat.js');
 assert.equal(unionContours([{x:0,y:0,w:10,h:10},{x:10,y:0,w:10,h:10}]).length,1);      // Deux zones jointives fusionnent.
 assert.equal(unionContours([{x:0,y:0,w:10,h:10},{x:10,y:0,w:10,h:10}])[0].length,4);   // Sans couture au milieu.
 assert.equal(unionContours(subtractRects([{x:0,y:0,w:40,h:40}],[{x:15,y:15,w:10,h:10}])).length,2); // Creux : deux contours.
 /* Découpe libre : la marche d'escalier devient une courbe fidèle, l'angle droit reste droit. */
 const ELLIPSE=Array.from({length:64},(_,i)=>{const a=i/64*2*Math.PI;return [50+18*Math.cos(a),50+12*Math.sin(a)]});
 const CREUSE=creuse([{x:20,y:30,w:60,h:40}],ELLIPSE,CARVE_STEP);
-const LISSE=wallShape({walls:CREUSE,doors:[]}).contours;
+const LISSE=wallShape({walls:CREUSE,doors:[],carves:[ELLIPSE]}).contours;
 assert.equal(LISSE.length,2);
 assert.ok(Math.abs(aireDe(LISSE[1])-Math.PI*18*12)/(Math.PI*18*12)<.02); // Aire du trou à 2 % de l'ellipse voulue.
 // Aucun pli visible : le plus grand changement de cap reste doux tout au long de la courbe.
@@ -127,13 +127,23 @@ const cassure=c=>{let pire=0;
  return pire*180/Math.PI};
 assert.ok(cassure(LISSE[1])<15);                                   // Contre 90° pour l'escalier brut.
 assert.ok(cassure(unionContours(CREUSE)[1])>85);
+// Sans tracé à main levée enregistré, rien n'est lissé : la géométrie ressort à l'identique.
+assert.deepEqual(wallShape({walls:CREUSE,doors:[]}).contours,unionContours(CREUSE));
 const DROIT=wallShape({walls:[{x:10,y:40,w:80,h:6}],doors:[]}).contours;
 assert.equal(DROIT[0].length,4);                                   // Un mur droit n'est pas arrondi…
 assert.equal(aireDe(DROIT[0]),480);                                // … et garde son aire exacte.
 // Une découpe rectangulaire reste un rectangle : le lissage ne touche pas l'architecture.
-const ENCOCHE=wallShape({walls:creuse([{x:10,y:40,w:80,h:20}],[[40,38],[60,38],[60,62],[40,62]],CARVE_STEP),doors:[]}).contours;
+const RECT=[[40,38],[60,38],[60,62],[40,62]];
+const ENCOCHE=wallShape({walls:creuse([{x:10,y:40,w:80,h:20}],RECT,CARVE_STEP),doors:[],carves:[RECT]}).contours;
 assert.deepEqual(ENCOCHE.map(c=>c.length),[4,4]);
 assert.equal(aireDe(ENCOCHE[0])+aireDe(ENCOCHE[1]),1200);
+/* Le donjon aux murs minces : découpes rectangulaires comprises, pas un sommet ne bouge. */
+const MINCES=subtractRects(
+ [{x:10,y:10,w:60,h:1.2},{x:10,y:10,w:1.2,h:50},{x:68.8,y:10,w:1.2,h:50},{x:10,y:58.8,w:60,h:1.2},
+  {x:30,y:20,w:1.2,h:20},{x:30,y:20,w:18,h:1.2},{x:20,y:40,w:25,h:1.2},{x:44,y:30,w:1.2,h:12}],
+ [{x:33,y:20,w:6,h:1.4},{x:30,y:26,w:1.4,h:5},{x:25,y:40,w:5,h:1.4}]);
+const DONJON={walls:MINCES,doors:[{x:50,y:9.6,w:4,h:2,open:false}],carves:[ELLIPSE]};
+assert.deepEqual(wallShape(DONJON).contours,unionContours(perce(DONJON)));
 /* Un socle est vu dès qu'il mord sur la zone éclairée. */
 const CHAMP=[[0,0],[50,0],[50,100],[0,100]];
 assert.ok(polyTouchesDisc(CHAMP,[25,50],3));    // Bien dedans.
@@ -183,4 +193,4 @@ assert.ok(Math.abs(remis[0].x-10)<1e-6);assert.ok(Math.abs(remis[0].w-5)<1e-6);
 assert.ok(Math.abs(remis[0].y-20)<1e-6);                               // L'axe non comprimé ne bouge pas.
 assert.ok(Math.abs(uncontain([{x:50,y:50}],cadre,image)[0].x-50)<1e-6); // Le centre est invariant.
 assert.ok(Math.abs(uncontain([{x:0,y:0}],cadre,image)[0].x+marge/ech)<1e-6);
-console.log('122 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('124 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

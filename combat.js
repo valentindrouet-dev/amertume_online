@@ -206,29 +206,67 @@ function simplifyClosed(pts,tol){
   if(best>=0){garde[best]=1;pile.push([i,best],[best,j])}}
  const out=pts.filter((_,i)=>garde[i]);
  return out.length>=3?out:pts}
-/* Lissage par moyenne des voisins, appliqué seulement là où la géométrie est à
-   l'échelle de la trame : la marche d'escalier a des arêtes minuscules et fond, l'angle
-   d'un mur a des arêtes longues et ne bouge pas d'un cheveu. Le filtre (1,2,1)/4 annule
-   exactement l'ondulation d'une case sur deux, celle que laisse la rastérisation. */
-function relaxContour(pts,seuil,passes){let cur=pts;
- for(let p=0;p<passes;p++){const n=cur.length,out=new Array(n);
-  for(let i=0;i<n;i++){const a=cur[(i+n-1)%n],b=cur[i],c=cur[(i+1)%n];
-   const l1=Math.hypot(b[0]-a[0],b[1]-a[1]),l2=Math.hypot(c[0]-b[0],c[1]-b[1]);
-   out[i]=Math.min(l1,l2)<=seuil?[(a[0]+2*b[0]+c[0])/4,(a[1]+2*b[1]+c[1])/4]:b}
+/* On ne lisse QUE le tracé de la découpe à main levée, et rien d'autre. Chaque contour
+   à main levée est enregistré sur la carte : seuls les sommets qui tombent sur ce tracé
+   sont assouplis. Un mur, un angle, une découpe rectangulaire ne sont jamais marqués,
+   donc jamais déplacés d'un iota — la géométrie sort bit à bit identique. */
+function carveMask(pts,carves,rayon){const n=pts.length,marque=new Uint8Array(n);
+ for(const poly of carves||[]){if(!poly||poly.length<3)continue;
+  const b=boundsOf(poly),x0=b.x-rayon,x1=b.x+b.w+rayon,y0=b.y-rayon,y1=b.y+b.h+rayon;
+  for(let i=0;i<n;i++){if(marque[i])continue;
+   const p=pts[i];if(p[0]<x0||p[0]>x1||p[1]<y0||p[1]>y1)continue;
+   for(let k=0,j=poly.length-1;k<poly.length;j=k++){
+    const c=closestOnSegment(p,poly[j],poly[k]);
+    if(Math.hypot(p[0]-c[0],p[1]-c[1])<=rayon){marque[i]=1;break}}}}
+ return marque}
+/* Moyenne des voisins sur les seuls sommets marqués — le filtre (1,2,1)/4 annule
+   exactement l'ondulation d'une case sur deux que laisse la rastérisation — et jamais
+   à plus de deux cases de la position d'origine, garde-fou contre toute dérive. */
+function relaxContour(pts,pas,passes,marque){
+ const n=pts.length,cap=pas*2;let cur=pts;
+ for(let p=0;p<passes;p++){const out=new Array(n);
+  for(let i=0;i<n;i++){if(!marque[i]){out[i]=cur[i];continue}
+   const a=cur[(i+n-1)%n],b=cur[i],c=cur[(i+1)%n];
+   let x=(a[0]+2*b[0]+c[0])/4,y=(a[1]+2*b[1]+c[1])/4;
+   const dx=x-pts[i][0],dy=y-pts[i][1],d=Math.hypot(dx,dy);
+   if(d>cap){x=pts[i][0]+dx/d*cap;y=pts[i][1]+dy/d*cap}
+   out[i]=[x,y]}
   cur=out}
  return cur}
-/* Un contour qui tient en quelques sommets est de l'architecture, pas une découpe :
-   on le laisse net. Sinon on arrondit d'abord — la coupe vaut le quart d'une marche
-   d'escalier, mais reste plafonnée sur un mur droit, dont l'angle survit — puis on
-   allège : la courbe est lisse, ses points intermédiaires ne servent plus à rien. */
-function smoothContours(contours,tol,seuil){return (contours||[]).map(c=>{
- if(c.length<=12)return c;
- return simplifyClosed(relaxContour(c,seuil,6),tol)}).filter(c=>c.length>=3)}
+// Allègement réservé aux mêmes suites : un sommet non marqué est conservé tel quel.
+function simplifyRuns(pts,marque,tol){const n=pts.length,garde=new Uint8Array(n);
+ // Contour entièrement issu du tracé : c'est une boucle, pas une suite entre deux ancres.
+ if(marque.every(v=>v))return simplifyClosed(pts,tol);
+ for(let i=0;i<n;i++)if(!marque[i])garde[i]=1;
+ for(let i=0;i<n;i++){if(garde[i])continue;
+  let fin=i;while(fin<n&&marque[fin])fin++;
+  const chemin=[pts[(i+n-1)%n]];for(let k=i;k<fin;k++)chemin.push(pts[k]);chemin.push(pts[fin%n]);
+  const tenus=dpOpen(chemin,tol);
+  for(let k=1;k<chemin.length-1;k++)if(tenus[k])garde[i+k-1]=1;
+  i=fin}
+ const out=pts.filter((_,i)=>garde[i]);
+ return out.length>=3?out:pts}
+function dpOpen(pts,tol){const n=pts.length,garde=new Uint8Array(n);
+ garde[0]=1;garde[n-1]=1;const pile=[[0,n-1]];
+ while(pile.length){const [i,j]=pile.pop();
+  let best=-1,bd=tol;
+  for(let k=i+1;k<j;k++){const c=closestOnSegment(pts[k],pts[i],pts[j]);
+   const d=Math.hypot(pts[k][0]-c[0],pts[k][1]-c[1]);
+   if(d>bd){bd=d;best=k}}
+  if(best>=0){garde[best]=1;pile.push([i,best],[best,j])}}
+ return garde}
+function smoothContours(contours,carves,tol,pas){
+ if(!carves||!carves.length)return (contours||[]).filter(c=>c.length>=3);
+ return (contours||[]).map(c=>{
+  if(c.length<=12)return c;
+  const marque=carveMask(c,carves,pas*1.6);
+  if(!marque.some(v=>v))return c;
+  return simplifyRuns(relaxContour(c,pas,6,marque),marque,tol)}).filter(c=>c.length>=3)}
 /* Géométrie effectivement opposée au regard et aux tirs : le contour lissé des zones
    percées par les portes, puis chaque porte close. Dessin et calcul y puisent
    ensemble, donc l'ombre commence exactement là où le mur est peint. */
 const CARVE_STEP=.4;
-function wallShape(map){return {contours:smoothContours(unionContours(wallsPierced(map)),CARVE_STEP*.05,CARVE_STEP*3)}}
+function wallShape(map){return {contours:smoothContours(unionContours(wallsPierced(map)),map&&map.carves,CARVE_STEP*.05,CARVE_STEP)}}
 function obstaclesFrom(map){if(!map)return [];
  return [wallShape(map),...(map.doors||[]).filter(d=>d&&!d.open&&d.w>0&&d.h>0).map(d=>({contours:[rectPolygon(d)]}))]}
 // Une porte se manœuvre au contact : son rectangle doit entrer dans le rayon du token.
@@ -330,7 +368,7 @@ function regridMask(seen,fromW,fromH,toW,toH){const out=new Uint8Array(toW*toH);
   for(let i=0;i<toW;i++){const si=Math.min(fromW-1,Math.floor((i+.5)/toW*fromW));
    if(seen[sj*fromW+si]==='1')out[j*toW+i]=1}}
  return out}
-const api={visionPolygon,relaxContour,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={visionPolygon,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
