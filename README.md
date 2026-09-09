@@ -1,4 +1,4 @@
-# Amertume Online — v0.29
+# Amertume Online — v0.30
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,17 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.30 — Armurerie et Bestiaire en pleine page, portes au contour
+
+**Une porte n’est plus un bloc.** Close, elle se dessine comme un **contour orange gras** ; ouverte, le même contour en **pointillé**. Verrouillée, le trait passe en or pâle et s’épaissit. Plus rien ne masque le décor de la carte sous une porte, et l’état se lit d’un coup d’œil. L’éditeur suit la même règle, avec juste un voile de couleur à l’intérieur pour rester saisissable à la souris.
+
+**L’Armurerie et le Bestiaire deviennent des onglets**, au même titre que Table de jeu et Cartes, à la place des deux fenêtres modales qui les logeaient. Ils reprennent la disposition d’Amertume RPG :
+
+- **Armurerie** — quatre colonnes (Armes de mêlée, Armes à distance, Armures, Objets), chaque objet en pastille de parchemin. À droite de la pastille, la réserve de dés est figurée par une pastille colorée par dé, une armure par son écusson de DEF, un objet par son effet. Recherche par nom, filtre par catégorie, **+ Ajouter**, et **Catalogue officiel** qui réinstalle les objets d’origine sans toucher à ceux que tu as créés.
+- **Bestiaire** — trois colonnes, Sbires, Solitaires et Boss, chacune avec son compte et sa couleur. Recherche, filtre par famille, tri par danger ou par nom. Chaque ligne s’ouvre d’un clic sur ses PV, DEF, dégâts, XP et famille, avec le bouton **Ajouter à la carte** ; à droite, modifier, dupliquer, supprimer.
+
+Les deux onglets sont réservés au MJ, comme l’éditeur de cartes : la vue joueur les masque et ramène à la table.
 
 ## v0.29 — La porte devant laquelle on se tient
 

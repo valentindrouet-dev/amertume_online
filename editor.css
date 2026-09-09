@@ -32,8 +32,8 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 #map-canvas.no-image{background-image:linear-gradient(#84958a1f 1px,transparent 1px),linear-gradient(90deg,#84958a1f 1px,transparent 1px);background-size:5% 8.333%;background-position:0 0;background-repeat:repeat}
 .shape{position:absolute;box-sizing:border-box}
 .shape.wall{background:none}/* La matière est peinte par le contour lissé commun à l'éditeur et à la table ; la zone elle-même ne sert plus qu'à la saisie. */.wall-skin{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}.wall-skin path{fill:#0b1114d9;stroke:#6c7d85;stroke-width:1.4;vector-effect:non-scaling-stroke}.shape.wall.selected{outline-style:dashed}.shape.cut{background:#7faddc38;border:2px dashed #7faddc;pointer-events:none}.shape.locked{cursor:not-allowed}.shape.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.foe.locked::after{right:-4px;top:-8px}
-.shape.door{background:#c98a4bd9;border:1px solid #e8b878}.shape.door.keyed{background:repeating-linear-gradient(45deg,#c98a4bd9 0 6px,#8d5f31d9 6px 12px);border-color:#f3d7a6}.shape.door.keyed::before{content:'🔑';position:absolute;left:1px;top:0;font-size:10px}
-.shape.door.open{background:#c98a4b2e;border-style:dashed}
+.shape.door{background:#c98a4b26;border:3px solid #c98a4b}.shape.door.keyed{background:#c98a4b1f;border-color:#f3d7a6;border-width:4px}.shape.door.keyed::before{content:'🔑';position:absolute;left:1px;top:0;font-size:10px}
+.shape.door.open{background:#c98a4b14;border-style:dashed}
 .shape.start{background:#8bbd9c26;border:2px dashed #8bbd9c}
 .shape.foe{width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#6d443c;border:2px solid #d29180;display:grid;place-items:center;font:bold 14px Georgia;color:#f6e2dc;box-shadow:0 3px 8px #0007}
 .shape.foe.hidden-foe{opacity:.55;border-style:dashed}
@@ -61,3 +61,47 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .sw-start{background:#8bbd9c26;border:1px dashed #8bbd9c}
 .sw-cut{background:#7faddc38;border:1px dashed #7faddc}.sw-key{background:repeating-linear-gradient(45deg,#c98a4b 0 4px,#8d5f31 4px 8px);border:1px solid #f3d7a6}.sw-foe{background:#6d443c;border:2px solid #d29180;border-radius:50%;width:15px;height:15px}
 @media(max-width:1150px){body.page-maps #maps-page{grid-template-columns:1fr;padding:14px}.maps-side,.maps-props{position:static}}
+
+/* ---------- Pages Armurerie et Bestiaire ---------- */
+#armory-page,#bestiary-page{display:none;padding:16px 28px 26px}
+body.page-armory #armory-page,body.page-bestiary #bestiary-page{display:block}
+body.page-armory .intro,body.page-armory .mj-tools,body.page-armory main.layout,body.page-armory #save-status,body.page-armory footer,
+body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.layout,body.page-bestiary #save-status,body.page-bestiary footer{display:none!important}
+.cat-panel{padding:20px 22px 24px}
+.cat-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.cat-head h2{margin:0;flex:1}
+.cat-actions{display:flex;gap:8px}
+.cat-filters{display:flex;gap:10px;margin:12px 0 18px;flex-wrap:wrap}
+.cat-filters input{flex:1 1 240px;margin:0}
+.cat-filters select{width:auto;min-width:190px;margin:0}
+.cat-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;align-items:start}
+.cat-col h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font:600 12px system-ui;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:7px}
+.cat-col h3 .compte{margin-left:auto;font-size:11px;letter-spacing:0;background:#222e33;border-radius:9px;padding:1px 8px;color:var(--muted)}
+.cat-col h3{border-radius:6px 6px 0 0;padding:6px 8px 7px}.cat-col.c-solitaire h3{color:#e0a06a;background:#241d16}.cat-col.c-boss h3{color:#c79ad8;background:#241a2c}
+.cat-entry{margin-bottom:7px}
+.cat-row{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+/* La pastille reprend le parchemin des fiches : fond clair, texte sombre. */
+.cat-pill{flex:1;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #00000026;border-radius:9px;padding:8px 11px;font:600 14px Georgia,serif;color:#2a2118;box-shadow:0 1px 0 #ffffff5c inset,0 2px 5px #0000004d}
+.cat-pill .nom{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-pill:hover{filter:brightness(1.06)}
+.cat-pill.k-melee{background:#e3d2b2}
+.cat-pill.k-ranged{background:#eee0c4}
+.cat-pill.k-armor{background:#cfe0ea}
+.cat-pill.k-object{background:#e6d9bd}
+.cat-pill.k-object.consommable{background:#d9e7cd}
+.cat-pill.k-standard{background:#dcd8cf}
+.cat-pill.k-solitaire{background:#efdcc2}
+.cat-pill.k-boss{background:#e2d0e8}
+.cat-pill .tag{font:600 12px system-ui;color:#4a3f31;opacity:.85;white-space:nowrap}
+.cat-pill .chev{font-size:15px;opacity:.5;transition:transform .15s}
+.cat-pill.ouvert .chev{transform:rotate(180deg)}
+.pips{display:flex;gap:3px}
+.pip{width:13px;height:13px;border-radius:4px;border:1px solid #0000004d;box-shadow:0 1px 0 #ffffff73 inset}
+.shield{display:grid;place-items:center;width:22px;height:24px;background:#3d556a;color:#eef4f8;font:700 12px system-ui;clip-path:polygon(50% 0,100% 16%,100% 62%,50% 100%,0 62%,0 16%)}
+.cat-tools{display:flex;gap:2px}
+.ico{border:0;background:transparent;color:var(--muted);padding:4px 6px;font-size:14px;line-height:1;border-radius:6px}
+.ico:hover{background:#222e33;color:var(--ink)}
+.ico.danger:hover{background:#5c2b26;color:#ffd9d2}
+.cat-detail{display:flex;flex-direction:column;gap:6px;align-items:flex-start;font-size:13px;color:var(--ink);background:#131d21;border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin:-3px 0 9px}
+.cat-detail button{width:auto;margin:2px 0 0}
+@media (max-width:900px){#armory-page,#bestiary-page{padding:14px}.cat-cols{grid-template-columns:1fr}}

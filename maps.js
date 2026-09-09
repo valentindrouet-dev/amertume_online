@@ -206,14 +206,18 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
 
 /* ---------- Onglets de page, réservés au MJ ---------- */
 const tabs=document.createElement('nav');tabs.className='tabs';
-tabs.innerHTML='<button data-page="table" class="on">Table de jeu</button><button data-page="maps">Cartes</button>';
+tabs.innerHTML='<button data-page="table" class="on">Table de jeu</button><button data-page="maps">Cartes</button>'
+ +'<button data-page="armory">Armurerie</button><button data-page="bestiary">Bestiaire</button>';
 document.querySelector('.view-controls').before(tabs);
-const tabMaps=tabs.querySelector('[data-page="maps"]');
-function showPage(p){if(p==='maps'&&view!=='mj')return;
- document.body.classList.toggle('page-maps',p==='maps');
+const PAGES=['table','maps','armory','bestiary'];
+const tabsMJ=[...tabs.querySelectorAll('button')].filter(b=>b.dataset.page!=='table');
+function showPage(p){if(p!=='table'&&view!=='mj')return;
+ PAGES.forEach(x=>document.body.classList.toggle('page-'+x,x===p&&x!=='table'));
  tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.page===p));
  if(p==='maps'){if(!maps.length)newMap();if(!mapDraft)mapDraft=maps.find(m=>m.id===currentMapId)||maps[0];
   measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas()}
+ else if(p==='armory')renderArmory();
+ else if(p==='bestiary')renderBestiary();
  // De retour sur la table, la carte est remesurée : elle était masquée, donc sans largeur.
  else{applyMapRatio();applyMapZoom()}}
 tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
@@ -514,7 +518,9 @@ function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new E
 
 // L'onglet Cartes n'existe que pour le MJ ; passer en vue joueur ramène à la table.
 const renderBeforeMaps=render;render=function(){computeFog();renderBeforeMaps();renderMapLayer();
- tabMaps.hidden=view!=='mj';if(view!=='mj'&&document.body.classList.contains('page-maps'))showPage('table')};
+ tabsMJ.forEach(b=>b.hidden=view!=='mj');
+ if(view!=='mj'&&PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x)))showPage('table')};
 window.addEventListener('resize',()=>{if(document.body.classList.contains('page-maps'))renderCanvas();
  else{applyMapRatio();applyMapZoom();render()}});
-maps.forEach(ensure);refreshMapPick();renderMapLayer();refreshHistory();tabMaps.hidden=view!=='mj';
+maps.forEach(ensure);refreshMapPick();renderMapLayer();refreshHistory();renderCatalogPages();
+tabsMJ.forEach(b=>b.hidden=view!=='mj');

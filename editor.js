@@ -14,7 +14,7 @@ actors.forEach(normalizeActor);
  .forEach(([nom,armes,armure,bouclier])=>{const a=actors.find(x=>x.name===nom);if(!a||a.weapons.length)return;
   a.weapons=armes.map(parNom).filter(Boolean);a.armorId=parNom(armure);a.shieldId=parNom(bouclier);
   const d=equippedDef(a,catalog.items);if(d!==null)a.def=d;a.pool=poolOf(a)})})();
-const toolsBar=document.createElement('div');toolsBar.className='mj-tools';toolsBar.innerHTML='<button id="edit-actor">Modifier la fiche</button><button id="new-hero">+ Personnage</button><button id="new-monster">+ Monstre</button><button id="open-bestiary">Bestiaire</button><button id="open-armory">Armurerie</button><button id="edit-scene">Modifier la scène</button><button id="reset-map">Retirer la carte</button>';
+const toolsBar=document.createElement('div');toolsBar.className='mj-tools';toolsBar.innerHTML='<button id="edit-actor">Modifier la fiche</button><button id="new-hero">+ Personnage</button><button id="new-monster">+ Monstre</button><button id="edit-scene">Modifier la scène</button><button id="reset-map">Retirer la carte</button>';
 document.querySelector('.intro').after(toolsBar);const saveLabel=document.createElement('p');saveLabel.id='save-status';toolsBar.after(saveLabel);
 const note=document.createElement('p');note.id='actor-notes';note.className='muted';$('class').after(note);
 const attackSelect=document.createElement('select');attackSelect.id='attack-preset';attackSelect.setAttribute('aria-label','Attaque du combattant');$('pool-source').before(attackSelect);
@@ -22,13 +22,130 @@ attackSelect.onchange=()=>{const a=actors[selected];a.activeAttack=Number(attack
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
 const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-form"><div id="actor-fields"></div><p class="form-error" id="actor-error" role="alert"></p><div class="form-actions"><button type="button" id="delete-actor">Retirer de la scène</button><button type="button" id="save-template">Enregistrer au bestiaire</button><button type="submit" class="primary">Enregistrer la fiche</button></div></form>');
-const catalogDialog=dialog('catalog-editor','Catalogue','<div class="toolbar"><button id="new-item">+ Objet</button><button id="new-template">+ Monstre</button></div><p class="muted">Données embarquées de amertume_rpg. Les couleurs des dés d’armes sont à valider ; les talents et effets descriptifs restent manuels.</p><div id="catalog-list"></div>');
+/* ---------- Pages Armurerie et Bestiaire ---------- */
+const armoryPage=document.createElement('main');armoryPage.id='armory-page';
+armoryPage.innerHTML='<section class="cat-panel panel">'
+ +'<header class="cat-head"><h2>Armurerie</h2><div class="cat-actions">'
+ +'<button id="armory-official">Catalogue officiel</button><button id="armory-add" class="primary">+ Ajouter</button></div></header>'
+ +'<p class="muted">Catalogue d’armes, d’armures et d’objets. Chaque combattant y choisit son équipement depuis sa fiche.</p>'
+ +'<div class="cat-filters"><input id="armory-search" placeholder="Rechercher…" aria-label="Rechercher un objet">'
+ +'<select id="armory-cat" aria-label="Catégorie"><option value="">Toutes catégories</option>'
+ +'<option value="melee">Armes de mêlée</option><option value="ranged">Armes à distance</option>'
+ +'<option value="armor">Armures</option><option value="object">Objets</option></select></div>'
+ +'<div class="cat-cols" id="armory-cols"></div></section>';
+const bestiaryPage=document.createElement('main');bestiaryPage.id='bestiary-page';
+bestiaryPage.innerHTML='<section class="cat-panel panel">'
+ +'<header class="cat-head"><h2>Bestiaire</h2><div class="cat-actions">'
+ +'<button id="bestiary-add" class="primary">+ Nouveau monstre</button></div></header>'
+ +'<p class="muted">Modèles d’adversaires. Un modèle se pose sur la carte de combat ou se pré-place depuis l’éditeur de cartes.</p>'
+ +'<div class="cat-filters"><input id="bestiary-search" placeholder="Rechercher…" aria-label="Rechercher un monstre">'
+ +'<select id="bestiary-family" aria-label="Famille"></select>'
+ +'<select id="bestiary-sort" aria-label="Tri"><option value="danger">Tri : danger ↓</option>'
+ +'<option value="danger-">Tri : danger ↑</option><option value="nom">Tri : nom</option></select></div>'
+ +'<div class="cat-cols" id="bestiary-cols"></div></section>';
+document.querySelector('main.layout').after(armoryPage,bestiaryPage);
+// Une pastille de dé par dé de la réserve, à la couleur de son type.
+function dicePips(dice){const out=document.createElement('span');out.className='pips';
+ keys.forEach((k,c)=>{for(let n=0;n<(dice&&dice[k]||0);n++){
+  const d=document.createElement('i');d.className='pip';d.style.background=colors[c];d.title=types[c];out.append(d)}});
+ return out}
+function itemColumn(a){return a.category==='armor'?'armor'
+ :a.category==='weapon'?(a.ranged?'ranged':'melee'):'object'}
+const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets']];
+function armoryRow(a,i){const rang=document.createElement('div');rang.className='cat-row';
+ const col=itemColumn(a);
+ const pill=document.createElement('button');
+ pill.className='cat-pill k-'+col+(a.consumable?' consommable':'');
+ pill.title='Modifier '+a.name;
+ const nom=document.createElement('span');nom.className='nom';nom.textContent=a.name;pill.append(nom);
+ if(col==='armor'){const b=document.createElement('span');b.className='shield';b.textContent=a.def||0;pill.append(b)}
+ else if(col==='object'){const t=document.createElement('span');t.className='tag';
+  t.textContent=(a.effects||a.notes||'—').slice(0,22);pill.append(t)}
+ else pill.append(dicePips(a.dice));
+ pill.onclick=()=>openItem(i);
+ const crayon=document.createElement('button');crayon.className='ico';crayon.textContent='✎';
+ crayon.title='Modifier';crayon.setAttribute('aria-label','Modifier '+a.name);crayon.onclick=()=>openItem(i);
+ rang.append(pill,crayon);return rang}
+function renderArmory(){const cols=$('armory-cols');if(!cols)return;cols.replaceChildren();
+ const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value;
+ for(const [key,titre] of ARMORY_COLS){
+  if(choisie&&choisie!==key)continue;
+  const liste=catalog.items.map((a,i)=>[a,i]).filter(([a])=>itemColumn(a)===key
+   &&(!q||a.name.toLowerCase().includes(q)));
+  const bloc=document.createElement('div');bloc.className='cat-col';
+  const h=document.createElement('h3');h.textContent=titre;
+  const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
+  h.append(compte);bloc.append(h);
+  liste.forEach(([a,i])=>bloc.append(armoryRow(a,i)));
+  if(!liste.length){const vide=document.createElement('p');vide.className='muted';vide.textContent='Rien ici.';bloc.append(vide)}
+  cols.append(bloc)}}
+const BEST_COLS=[['standard','Sbires'],['solitaire','Solitaires'],['boss','Boss']];
+function danger(m){return (Number(m.xp)||0)*100+(Number(m.pv)||0)}
+function bestiaryRow(m,i){const rang=document.createElement('div');rang.className='cat-row';
+ const pill=document.createElement('button');pill.className='cat-pill k-'+(m.type||'standard');
+ const nom=document.createElement('span');nom.className='nom';nom.textContent=m.name;
+ const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';
+ pill.append(nom,chev);
+ const detail=document.createElement('div');detail.className='cat-detail';detail.hidden=true;
+ detail.innerHTML='<span>'+(m.pv||0)+' PV · DEF '+(m.def||0)+' · Dégâts '+(m.damage||0)+' · '+(m.xp||0)+' XP</span>'
+  +'<span class="muted">'+esc(m.family||'Sans famille')+(m.rapide?' · Rapide':'')+(m.esquive?' · Esquive':'')+'</span>';
+ const poser=document.createElement('button');poser.dataset.catAdd=i;poser.textContent='Ajouter à la carte';
+ detail.append(poser);
+ poser.onclick=()=>{saveChecks();savePool();const a=fromMonster(catalog.monsters[i]);
+  a.x=30+Math.random()*40;a.y=20+Math.random()*30;normalizeActor(a);actors.push(a);selected=actors.length-1;
+  showPage('table');render();log(a.name+' ajouté à la carte.')};
+ pill.onclick=()=>{detail.hidden=!detail.hidden;pill.classList.toggle('ouvert',!detail.hidden)};
+ const outils=document.createElement('span');outils.className='cat-tools';
+ const ico=(glyphe,titre,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=glyphe;
+  b.title=titre;b.setAttribute('aria-label',titre+' '+m.name);b.onclick=fn;return b};
+ const suppr=ico('✕','Supprimer',()=>{
+  if(!confirm('Supprimer « '+m.name+' » du bestiaire ? Les copies déjà sur la carte sont conservées.'))return;
+  catalog.monsters.splice(i,1);renderCatalogPages();scheduleSave()});
+ suppr.dataset.catDelete=i;suppr.classList.add('danger');
+ outils.append(ico('✎','Modifier',()=>openActor(null,false,i)),
+  ico('⧉','Dupliquer',()=>{const copie=structuredClone(m);copie.id=crypto.randomUUID();
+   copie.name=m.name+' (copie)';catalog.monsters.splice(i+1,0,copie);renderCatalogPages();scheduleSave()}),
+  suppr);
+ const bloc=document.createElement('div');bloc.className='cat-entry';
+ rang.append(pill,outils);bloc.append(rang,detail);return bloc}
+function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.replaceChildren();
+ const q=($('bestiary-search').value||'').trim().toLowerCase();
+ const familles=[...new Set(catalog.monsters.map(m=>m.family).filter(Boolean))].sort();
+ const sel=$('bestiary-family'),avant=sel.value;
+ sel.replaceChildren(new Option('Toutes familles',''));
+ familles.forEach(f=>sel.add(new Option(f,f)));
+ sel.value=familles.includes(avant)?avant:'';
+ const tri=$('bestiary-sort').value;
+ for(const [key,titre] of BEST_COLS){
+  let liste=catalog.monsters.map((m,i)=>[m,i]).filter(([m])=>(m.type||'standard')===key
+   &&(!q||m.name.toLowerCase().includes(q))&&(!sel.value||m.family===sel.value));
+  liste.sort((a,b)=>tri==='nom'?a[0].name.localeCompare(b[0].name)
+   :tri==='danger-'?danger(a[0])-danger(b[0]):danger(b[0])-danger(a[0]));
+  const bloc=document.createElement('div');bloc.className='cat-col c-'+key;
+  const h=document.createElement('h3');h.textContent=titre;
+  const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
+  h.append(compte);bloc.append(h);
+  liste.forEach(([m,i])=>bloc.append(bestiaryRow(m,i)));
+  if(!liste.length){const vide=document.createElement('p');vide.className='muted';vide.textContent='Rien ici.';bloc.append(vide)}
+  cols.append(bloc)}}
+function renderCatalogPages(){renderArmory();renderBestiary()}
+$('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;
+$('armory-add').onclick=()=>openItem(null);
+$('armory-official').onclick=()=>{
+ if(!confirm('Réinstaller le catalogue officiel d’amertume_rpg ? Les objets que tu as ajoutés sont conservés, les objets officiels reprennent leurs valeurs d’origine.'))return;
+ const officiels=AMERTUME_CATALOG.items.filter(o=>o.official);
+ const gardes=catalog.items.filter(a=>!officiels.some(o=>o.name===a.name));
+ catalog.items=[...structuredClone(officiels),...gardes];
+ renderArmory();scheduleSave();log('Catalogue officiel réinstallé.')};
+$('bestiary-search').oninput=renderBestiary;$('bestiary-family').onchange=renderBestiary;
+$('bestiary-sort').onchange=renderBestiary;
+$('bestiary-add').onclick=()=>openActor(null,false);
 const itemDialog=dialog('item-editor','Objet','<form id="item-form"><div id="item-fields"></div><div class="form-actions"><button type="button" id="delete-item">Supprimer du catalogue</button><button class="primary">Enregistrer</button></div></form>');
 const imgDialog=dialog('image-editor','Optimiser l’image','<div class="edit-grid"><label>Taille maximale<select id="image-size"></select></label><label>Qualité WebP<input id="image-quality" type="range" min="70" max="100" value="90"><span id="quality-label">90 %</span></label><div><button id="image-recalc">Actualiser l’aperçu</button></div></div><div class="image-comparison"><div><p>Original</p><img id="image-before" alt="Image originale"><p class="muted" id="before-info"></p></div><div><p>Copie optimisée</p><img id="image-after" alt="Image optimisée"><p class="muted" id="after-info"></p></div></div><p class="form-error" id="image-error" role="alert"></p><p class="muted">Proportions et transparence conservées. L’original n’est pas modifié. PNG de secours si WebP indisponible.</p><div class="form-actions"><button id="image-cancel">Annuler</button><button class="primary" id="image-accept" disabled>Utiliser cette image</button></div>');
 function field(label,key,value,type='text',extra=''){return '<label>'+label+'<input name="'+key+'" type="'+type+'" value="'+esc(value)+'" '+extra+'></label>'}
 function sel(label,key,value,opts){return '<label>'+label+'<select name="'+key+'">'+opts.map(([v,t])=>'<option value="'+v+'" '+(String(value)===String(v)?'selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label>'}
 function poolFields(p,prefix){return '<div class="mini-pool">'+types.map((t,i)=>field(t,prefix+i,p[i]||0,'number','min="0" max="12"')).join('')+'</div>'}
-let editing=null,draft=null,attackDraft=[],templateIndex=null,itemIndex=null,category='monsters';
+let editing=null,draft=null,attackDraft=[],templateIndex=null,itemIndex=null;
 function baseActor(hero){return normalizeActor({name:hero?'Nouveau héros':'Nouveau monstre',hero,role:hero?'Aventurier':'Adversaire',hp:12,max:12,def:2,dmg:2,x:50,y:60,pool:[2,0,0,0,0,0,0],checks:[false,false,false],target:null,skills:Array(8).fill(0)})}
 function fromMonster(m){const a=baseActor(false);Object.assign(a,{name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,notes:m.notes||'',attacks:structuredClone(m.attacks||[]),image:m.image||null});a.pool=poolFrom(a.attacks[0]?.dice);return a}
 function openActor(index=null,hero=true,template=null){if(view!=='mj')return;saveChecks();savePool();editing=index;templateIndex=template;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero;renderActorForm();actorDialog.showModal()}
@@ -51,16 +168,14 @@ function readActor(){const f=$('actor-form').elements;readAttacks();const a=stru
  const dEquip=equippedDef(a,catalog.items);if(dEquip!==null)a.def=dEquip;
  a.pool=equippedPool(a,catalog.items)||poolFrom(attackDraft[0]?.dice);return a}
 function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,notes:a.notes,attacks:structuredClone(a.attacks),image:a.image||null}}
-$('actor-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;const a=readActor();if(templateIndex!==null){catalog.monsters[templateIndex]={...toMonster(a),id:catalog.monsters[templateIndex].id};renderCatalog()}else if(editing===null){actors.push(a);selected=actors.length-1}else actors[editing]=a;actorDialog.close();render();log('Fiche enregistrée : '+a.name);scheduleSave()};
+$('actor-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;const a=readActor();if(templateIndex!==null){catalog.monsters[templateIndex]={...toMonster(a),id:catalog.monsters[templateIndex].id};renderCatalogPages()}else if(editing===null){actors.push(a);selected=actors.length-1}else actors[editing]=a;actorDialog.close();render();log('Fiche enregistrée : '+a.name);scheduleSave()};
 $('save-template').onclick=()=>{if(!$('actor-form').reportValidity()||view!=='mj')return;catalog.monsters.push(toMonster(readActor()));$('actor-error').textContent='Copie ajoutée au bestiaire.';scheduleSave()};
 $('delete-actor').onclick=()=>{if(view!=='mj'||editing===null)return;if(actors.length===1||(actors[editing].hero&&actors.filter(a=>a.hero).length===1)){$('actor-error').textContent='Conserve au moins un héros dans la scène.';return}if(!confirm('Retirer '+actors[editing].name+' de la scène ?'))return;actors.splice(editing,1);actors.forEach(a=>{if(a.target===editing)a.target=null;else if(a.target>editing)a.target--});if(owner>=editing)owner=Math.max(0,owner-1);if(!actors[owner]?.hero)owner=actors.findIndex(a=>a.hero);selected=owner;actorDialog.close();render();scheduleSave()};
-function openCatalog(which){if(view!=='mj')return;category=which;renderCatalog();catalogDialog.showModal()}
-function renderCatalog(){catalogDialog.querySelector('h2').textContent=category==='items'?'Armurerie':'Bestiaire';$('new-item').hidden=category!=='items';$('new-template').hidden=category!=='monsters';$('catalog-list').innerHTML=catalog[category].map((a,i)=>'<div class="catalog-row"><div><strong>'+esc(a.name)+'</strong><p>'+esc(category==='monsters'?a.pv+' PV · DEF '+a.def+' · '+a.xp+' XP':a.category==='weapon'?keys.map((k,c)=>a.dice?.[k]?a.dice[k]+' '+types[c]:'').filter(Boolean).join(' · '):a.category==='armor'?'DEF '+a.def:a.notes||'Objet')+'</p></div><div class="toolbar"><button data-cat-edit="'+i+'">Modifier</button>'+(category==='monsters'?'<button data-cat-add="'+i+'">Ajouter à la carte</button><button data-cat-delete="'+i+'" aria-label="Supprimer '+esc(a.name)+'">×</button>':'')+'</div></div>').join('');document.querySelectorAll('[data-cat-edit]').forEach(b=>b.onclick=()=>category==='items'?openItem(Number(b.dataset.catEdit)):openActor(null,false,Number(b.dataset.catEdit)));document.querySelectorAll('[data-cat-add]').forEach(b=>b.onclick=()=>{saveChecks();savePool();const a=fromMonster(catalog.monsters[Number(b.dataset.catAdd)]);a.x=30+Math.random()*40;a.y=20+Math.random()*30;actors.push(a);selected=actors.length-1;catalogDialog.close();render();log(a.name+' ajouté à la carte.')});document.querySelectorAll('[data-cat-delete]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.catDelete);if(confirm('Supprimer ce modèle du bestiaire ? Les copies sur la carte seront conservées.')){catalog.monsters.splice(i,1);renderCatalog();scheduleSave()}})}
 function openItem(i=null){itemIndex=i;const a=i===null?{name:'Nouvel objet',category:'weapon',hands:1,qty:1,price:0,def:0,slot:'body',dice:{},traits:[]}:catalog.items[i];$('item-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+sel('Catégorie','category',a.category,[['weapon','Arme'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['misc','Divers']])+field('Quantité','qty',a.qty||1,'number','min="1" max="9999"')+field('Prix','price',a.price||0,'number','min="0" max="999999"')+sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']])+field('DEF (armure)','def',a.def||0,'number','min="0" max="99"')+sel('Emplacement armure','slot',a.slot||'body',[['body','Corps'],['shield','Bouclier']])+'</div>'+poolFields(poolFrom(a.dice),'itemdie')+['ranged','usesAmmo','consumable'].map((k,i)=>'<label class="field-check"><input name="'+k+'" type="checkbox" '+(a[k]?'checked':'')+'>'+['Distance','Munitions nécessaires','Consommable'][i]+'</label>').join('')+field('Traits (séparés par une virgule)','traits',(a.traits||[]).join(', '))+field('Effets (manuel)','effects',a.effects||'')+'<label>Notes<textarea name="notes">'+esc(a.notes||'')+'</textarea></label>';$('delete-item').hidden=i===null;itemDialog.showModal()}
-$('item-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;const f=$('item-form').elements,a=itemIndex===null?{id:crypto.randomUUID()}:structuredClone(catalog.items[itemIndex]);for(const k of ['name','category','slot','effects','notes'])a[k]=f[k].value.trim();for(const k of ['qty','price','hands','def'])a[k]=num(f[k].value,0,999999);a.traits=f.traits.value.split(',').map(s=>s.trim()).filter(Boolean);for(const k of ['ranged','usesAmmo','consumable'])a[k]=f[k].checked;a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));if(itemIndex===null)catalog.items.push(a);else catalog.items[itemIndex]=a;itemDialog.close();renderCatalog();scheduleSave()};
-$('delete-item').onclick=()=>{if(view!=='mj'||itemIndex===null||!confirm('Supprimer cet objet du catalogue ? Les attaques déjà appliquées restent inchangées.'))return;const id=catalog.items[itemIndex].id;actors.forEach(a=>{a.weapons=a.weapons.filter(w=>w!==id);if(a.armorId===id)a.armorId='';if(a.shieldId===id)a.shieldId=''});catalog.items.splice(itemIndex,1);itemDialog.close();renderCatalog();scheduleSave()};
-$('new-item').onclick=()=>openItem();$('new-template').onclick=()=>{openActor(null,false);$('actor-error').textContent='Utilise « Enregistrer au bestiaire » pour créer un modèle ; « Enregistrer la fiche » l’ajoute à la scène.'};
-$('edit-actor').onclick=()=>openActor(selected);$('new-hero').onclick=()=>openActor(null,true);$('new-monster').onclick=()=>openActor(null,false);$('open-bestiary').onclick=()=>openCatalog('monsters');$('open-armory').onclick=()=>openCatalog('items');
+$('item-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;const f=$('item-form').elements,a=itemIndex===null?{id:crypto.randomUUID()}:structuredClone(catalog.items[itemIndex]);for(const k of ['name','category','slot','effects','notes'])a[k]=f[k].value.trim();for(const k of ['qty','price','hands','def'])a[k]=num(f[k].value,0,999999);a.traits=f.traits.value.split(',').map(s=>s.trim()).filter(Boolean);for(const k of ['ranged','usesAmmo','consumable'])a[k]=f[k].checked;a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));if(itemIndex===null)catalog.items.push(a);else catalog.items[itemIndex]=a;itemDialog.close();renderCatalogPages();scheduleSave()};
+$('delete-item').onclick=()=>{if(view!=='mj'||itemIndex===null||!confirm('Supprimer cet objet du catalogue ? Les attaques déjà appliquées restent inchangées.'))return;const id=catalog.items[itemIndex].id;actors.forEach(a=>{a.weapons=a.weapons.filter(w=>w!==id);if(a.armorId===id)a.armorId='';if(a.shieldId===id)a.shieldId=''});catalog.items.splice(itemIndex,1);itemDialog.close();renderCatalogPages();scheduleSave()};
+
+$('edit-actor').onclick=()=>openActor(selected);$('new-hero').onclick=()=>openActor(null,true);$('new-monster').onclick=()=>openActor(null,false);
 const sceneDialog=dialog('scene-editor','Scène','<form id="scene-form"><label>Titre<input name="title" maxlength="120" required></label><label>Tour de combat<input name="round" type="number" min="1" max="999" required></label><div class="form-actions"><button class="primary">Enregistrer</button></div></form>');
 $('edit-scene').onclick=()=>{if(view!=='mj')return;$('scene-form').elements.title.value=document.querySelector('.intro h1').textContent;$('scene-form').elements.round.value=round;sceneDialog.showModal()};$('scene-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;round=num($('scene-form').elements.round.value,1,999);document.querySelector('.intro h1').textContent=$('scene-form').elements.title.value;$('round').textContent=String(round).padStart(2,'0');sceneDialog.close();scheduleSave()};
 $('reset-map').onclick=()=>{if(view!=='mj')return;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom');scheduleSave()};
