@@ -5,6 +5,7 @@
 let mapDraft=null,mapTool='select',mapSel=null,mapDrag=null,cutRect=null;
 let undoStack=[],redoStack=[],zoomC=1,panCX=0,panCY=0;
 const nsSVG='http://www.w3.org/2000/svg';
+const FOG_W=104,FOG_H=58,FOG_N=FOG_W*FOG_H;let fogVis=null;
 const KINDS={wall:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire'};
 function currentMap(){return maps.find(m=>m.id===currentMapId)||null}
 // Obstacles du moteur : la carte ouverte fait foi, sinon le plan schématique de départ.
@@ -12,6 +13,32 @@ function activeObstacles(){const m=currentMap();return m?obstaclesFrom(m):$('map
 // Nomme l'obstacle qui coupe la vue, pour que le MJ sache s'il peut l'ouvrir.
 function obstacleLabel(a,b){const m=currentMap();
  return m&&wallsBetween(a,b,(m.doors||[]).filter(d=>!d.open).map(rectPolygon))?'une porte fermée':'un mur'}
+
+/* ---------- Brouillard de guerre ---------- */
+// Seuls les héros vivants éclairent. La mémoire de l'exploration vit sur la carte.
+function computeFog(){const m=currentMap();
+ if(!m){fogVis=null;return}
+ fogVis=visibleCells(actors.filter(a=>a.hero&&alive(a)),activeObstacles(),FOG_W,FOG_H);
+ if(typeof m.seen!=='string'||m.seen.length!==FOG_N)m.seen='0'.repeat(FOG_N);
+ let out='',change=false;
+ for(let k=0;k<FOG_N;k++){const deja=m.seen[k]==='1',v=fogVis[k]===1||deja;out+=v?'1':'0';if(v!==deja)change=true}
+ if(change)m.seen=out}
+// Un adversaire dans le noir n'existe pas pour les joueurs.
+function partySees(a){if(!fogVis)return true;
+ const i=Math.min(FOG_W-1,Math.max(0,Math.floor(a.x/100*FOG_W))),j=Math.min(FOG_H-1,Math.max(0,Math.floor(a.y/100*FOG_H)));
+ return fogVis[j*FOG_W+i]===1}
+function renderFog(){const cv=$('fog'),m=currentMap();
+ if(!m||!fogVis){cv.style.display='none';return}
+ cv.style.display='';if(cv.width!==FOG_W){cv.width=FOG_W;cv.height=FOG_H}
+ const ctx=cv.getContext('2d'),img=ctx.createImageData(FOG_W,FOG_H);
+ // Le MJ garde une vue lisible ; le joueur ne voit rien de l'inexploré.
+ const inconnu=view==='mj'?110:255,memoire=view==='mj'?40:150;
+ for(let k=0;k<FOG_N;k++){const p=k*4;img.data[p]=6;img.data[p+1]=9;img.data[p+2]=11;
+  img.data[p+3]=fogVis[k]?0:(m.seen[k]==='1'?memoire:inconnu)}
+ ctx.putImageData(img,0,0)}
+function resetFog(tout){const m=currentMap();if(!m)return;
+ m.seen=(tout?'1':'0').repeat(FOG_N);render();scheduleSave();
+ log(tout?'Brouillard levé sur toute la carte.':'Brouillard réinitialisé.')}
 
 /* ---------- Rendu sur la table de jeu ---------- */
 function svgRect(r,cls){const el=document.createElementNS(nsSVG,'rect');
@@ -22,7 +49,7 @@ function applyMapRatio(){const m=currentMap(),el=$('map');
  const dispo=el.parentElement.clientWidth||el.clientWidth||600,hMax=Math.max(260,Math.round(innerHeight*.72));
  let w=dispo,h=w/m.ratio;if(h>hMax){h=hMax;w=h*m.ratio}
  el.style.width=Math.round(w)+'px';el.style.height=Math.round(h)+'px'}
-function renderMapLayer(){const svg=$('map-shapes'),m=currentMap();svg.replaceChildren();applyMapRatio();
+function renderMapLayer(){const svg=$('map-shapes'),m=currentMap();svg.replaceChildren();applyMapRatio();renderFog();
  // .hidden n'existe pas sur un élément SVG : le masquage passe par une classe.
  $('map').classList.toggle('has-map',!!m);if(!m)return;
  if(m.start&&view==='mj')svg.append(svgRect(m.start,'startzone'));
@@ -43,6 +70,8 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  const heros=actors.filter(a=>a.hero);
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y));
  actors.splice(0,actors.length,...heros);
+ // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
+ (m.doors||[]).forEach(d=>{d.open=false});m.seen='0'.repeat(FOG_N);
  (m.foes||[]).forEach(f=>{const a=fromMonster(f.tpl);a.hidden=!!f.hidden;a.x=f.x;a.y=f.y;normalizeActor(a);actors.push(a)});
  actors.forEach(a=>{a.target=null});
  owner=actors.findIndex(a=>a.hero);selected=Math.max(0,owner);
@@ -79,13 +108,11 @@ mapsPage.innerHTML=
  +'<div class="canvas-wrap"><div id="map-canvas"></div></div><p class="muted" id="map-hint"></p></section>'
  +'<aside class="maps-props panel"><h2>Forme sélectionnée</h2><p class="muted" id="shape-label">Aucune sélection.</p>'
  +'<button id="shape-lock" hidden>🔒 Verrouiller</button>'
- +'<label id="door-open-label" hidden><input type="checkbox" id="door-open"> Porte ouverte</label>'
- +'<label id="foe-hidden-label" hidden><input type="checkbox" id="foe-hidden"> Invisible à l’ouverture</label>'
+  +'<label id="foe-hidden-label" hidden><input type="checkbox" id="foe-hidden"> Invisible à l’ouverture</label>'
  +'<button id="shape-delete" hidden>Supprimer la forme</button><div class="divider"></div><h2>Légende</h2>'
  +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'
  +'<li><i class="sw-cut"></i>Découper — creuse une ouverture dans les zones de blocage</li>'
- +'<li><i class="sw-door"></i>Porte fermée — un clic du MJ l’ouvre en jeu</li>'
- +'<li><i class="sw-door-open"></i>Porte ouverte — laisse tout passer</li>'
+ +'<li><i class="sw-door"></i>Porte — close au début du combat, un clic du MJ l’ouvre en jeu</li>'
  +'<li><i class="sw-start"></i>Zone de départ des héros</li>'
  +'<li><i class="sw-foe"></i>Adversaire pré-placé</li></ul><p class="muted" id="map-count"></p></aside>';
 document.querySelector('main.layout').after(mapsPage);
@@ -148,7 +175,7 @@ function renderMapList(){$('map-list').replaceChildren(...maps.map(m=>{const b=d
 const HINTS={select:'Clique une forme pour la sélectionner, glisse pour la déplacer, tire un coin pour la redimensionner. ⌘Z annule.',
  wall:'Trace un rectangle : il coupe la vue et le passage. Un clic simple sur une forme existante la sélectionne. Suppr efface la sélection.',
  cut:'Trace un rectangle à l’intérieur d’une zone de blocage : la découpe y creuse une ouverture définitive, vue et passage rétablis.',
- door:'Trace une porte. Fermée elle bloque, ouverte elle laisse passer tokens et vision. En jeu, un clic du MJ l’ouvre ou la ferme.',
+ door:'Trace une porte. Elle démarre close à chaque ouverture de la carte ; c’est en partie que le MJ l’ouvre ou la ferme d’un clic.',
  start:'Trace la zone où les héros seront regroupés à l’ouverture de la carte. Une seule par carte.',
  foe:'Clique pour poser l’adversaire choisi à droite de la barre. Il pourra être invisible à l’ouverture.'};
 // Le plan de travail adopte le rapport de la carte et occupe la place disponible.
@@ -166,18 +193,17 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  if(m.start)c.append(shapeEl('start',0,m.start));
  m.foes.forEach((f,i)=>c.append(foeEl(i,f)));
  const cible=mapSel?shapeAt(mapSel):null;
- const porte=mapSel&&mapSel.kind==='door'?cible:null,adv=mapSel&&mapSel.kind==='foe'?cible:null;
- $('door-open-label').hidden=!porte;$('foe-hidden-label').hidden=!adv;
+ const adv=mapSel&&mapSel.kind==='foe'?cible:null;
+ $('foe-hidden-label').hidden=!adv;
  $('shape-delete').hidden=!mapSel||!!(cible&&cible.locked);$('shape-lock').hidden=!mapSel;
  if(cible)$('shape-lock').textContent=cible.locked?'🔓 Déverrouiller':'🔒 Verrouiller';
- if(porte)$('door-open').checked=!!porte.open;
  if(adv)$('foe-hidden').checked=!!adv.hidden;
  $('shape-label').textContent=mapSel?KINDS[mapSel.kind]+(adv?' · '+adv.tpl.name:'')+(cible&&cible.locked?' · verrouillée':''):'Aucune sélection.';
  $('map-count').textContent=m.walls.length+' zone(s) de blocage, '+m.doors.length+' porte(s), '
   +m.foes.length+' adversaire(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
  refreshHistory()}
 function shapeEl(kind,i,r){const el=document.createElement('div');
- el.className='shape '+kind+(kind==='door'&&r.open?' open':'')+(r.locked?' locked':'')
+ el.className='shape '+kind+(r.locked?' locked':'')
   +(mapSel&&mapSel.kind===kind&&mapSel.i===i?' selected':'');
  el.style.left=r.x+'%';el.style.top=r.y+'%';el.style.width=r.w+'%';el.style.height=r.h+'%';
  el.dataset.kind=kind;el.dataset.i=i;
@@ -185,6 +211,9 @@ function shapeEl(kind,i,r){const el=document.createElement('div');
  return el}
 function foeEl(i,f){const el=document.createElement('div');
  el.className='shape foe'+(f.hidden?' hidden-foe':'')+(f.locked?' locked':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
+ // Même taille relative qu'en partie : une fraction de la largeur de la carte.
+ const t=Math.max(10,$('map-canvas').clientWidth*TOKEN_FRACTION);
+ el.style.width=el.style.height=t+'px';el.style.margin=(-t/2)+'px 0 0 '+(-t/2)+'px';el.style.fontSize=(t*.47)+'px';
  el.style.left=f.x+'%';el.style.top=f.y+'%';el.dataset.kind='foe';el.dataset.i=i;
  el.textContent=(f.tpl.name||'?')[0];el.title=f.tpl.name+(f.hidden?' (invisible à l’ouverture)':'');return el}
 function shapeAt(d){const m=mapDraft;if(!m)return null;if(d.kind==='cut')return cutRect;
@@ -243,8 +272,6 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()});
 $('shape-delete').onclick=()=>{const cible=mapSel&&shapeAt(mapSel);if(!cible||cible.locked)return;
  pushUndo();removeShape(mapSel);mapSel=null;renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};
-$('door-open').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
- pushUndo();d.open=$('door-open').checked;renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('foe-hidden').onchange=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;
  pushUndo();f.hidden=$('foe-hidden').checked;renderCanvas();saveMaps()};
 
@@ -276,12 +303,17 @@ mapPick.style.width='auto';mapPick.style.margin='0';
 const mapOpen=document.createElement('button');mapOpen.id='map-open';mapOpen.textContent='Ouvrir la carte';
 document.querySelector('.mj-tools').append(mapPick,mapOpen);
 function refreshMapPick(){mapPick.replaceChildren();maps.forEach(m=>mapPick.add(new Option(m.name,m.id)));
- mapPick.hidden=mapOpen.hidden=!maps.length;if(currentMapId)mapPick.value=currentMapId}
+ mapPick.hidden=mapOpen.hidden=!maps.length;$('fog-reset').hidden=$('fog-all').hidden=!currentMap();
+ if(currentMapId)mapPick.value=currentMapId}
 mapOpen.onclick=()=>{if(mapPick.value)openBattleMap(mapPick.value)};
+const fogReset=document.createElement('button');fogReset.id='fog-reset';fogReset.textContent='Réinitialiser le brouillard';
+const fogAll=document.createElement('button');fogAll.id='fog-all';fogAll.textContent='Tout révéler';
+document.querySelector('.mj-tools').append(fogReset,fogAll);
+fogReset.onclick=()=>resetFog(false);fogAll.onclick=()=>resetFog(true);
 function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 
 // L'onglet Cartes n'existe que pour le MJ ; passer en vue joueur ramène à la table.
-const renderBeforeMaps=render;render=function(){renderBeforeMaps();renderMapLayer();
+const renderBeforeMaps=render;render=function(){computeFog();renderBeforeMaps();renderMapLayer();
  tabMaps.hidden=view!=='mj';if(view!=='mj'&&document.body.classList.contains('page-maps'))showPage('table')};
 window.addEventListener('resize',()=>{if(document.body.classList.contains('page-maps'))renderCanvas();
  else{applyMapRatio();applyMapZoom();render()}});

@@ -88,7 +88,14 @@ function spreadInZone(n,zone){if(!zone||n<1)return [];
  for(let i=0;i<n;i++){const c=i%cols,r=Math.floor(i/cols);
   out.push({x:zone.x+zone.w*(c+.5)/cols,y:zone.y+zone.h*(r+.5)/rows})}
  return out}
-const api={resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+/* Brouillard de guerre : une grille de cellules, visible depuis un héros si le
+   segment qui les relie ne traverse aucun obstacle. Les portes fermées comptent. */
+function visibleCells(heroes,polys,cols,rows){const vis=new Uint8Array(cols*rows);
+ for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+  const c=[(i+.5)/cols*100,(j+.5)/rows*100];
+  for(const h of heroes||[]){if(!segmentHitsPolys([h.x,h.y],c,polys)){vis[j*cols+i]=1;break}}}
+ return vis}
+const api={visibleCells,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,spreadInZone,diffRect,subtractRects,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);

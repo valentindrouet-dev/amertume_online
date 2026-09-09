@@ -1,4 +1,4 @@
-# Amertume Online — v0.18
+# Amertume Online — v0.19
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -126,3 +126,17 @@ Désormais la carte **adopte le rapport de son image**, dans l’éditeur comme 
 **Touche Suppr ou Retour arrière** pour effacer la forme sélectionnée, sauf si elle est verrouillée.
 
 **Dézoom** possible jusqu’à 40 % sur la carte comme dans l’éditeur ; sous 100 %, la vue est centrée.
+
+## v0.19 — Brouillard de guerre
+
+Sur une carte de combat, ce que le groupe n’a pas vu est noir. Seuls les **héros vivants** éclairent : la visibilité est calculée par ligne de vue depuis chaque héros, coupée par les zones de blocage et par les **portes closes**. Ouvrir une porte ouvre le champ de vision au travers, ce qui donne le cône caractéristique dans l’embrasure.
+
+Trois états : noir pour l’inexploré, voilé pour ce que le groupe a déjà vu mais ne voit plus, dégagé pour ce qu’il voit à l’instant. La mémoire d’exploration appartient à la carte et se remet à zéro à chaque ouverture en combat. Le MJ voit la même chose en beaucoup plus clair, afin de garder une carte lisible tout en sachant ce que voient ses joueurs. Deux boutons MJ permettent de réinitialiser le brouillard ou de tout révéler.
+
+**Un adversaire dans le noir n’existe pas pour les joueurs** : il disparaît de la vue joueur et de la liste des cibles, et s’affiche au MJ en pointillés estompés, comme les adversaires marqués invisibles.
+
+Le calcul se fait sur une grille de 104 × 58 cellules, soit moins d’une milliseconde sur une carte simple, et la grille est adoucie à l’affichage.
+
+**Portes** : elles n’ont plus d’état dans l’éditeur, seulement en partie. Une carte s’ouvre toujours portes closes, et c’est le MJ qui les ouvre d’un clic pendant le combat.
+
+**Taille des tokens** : elle est désormais une fraction de la largeur de la carte, et non plus un nombre de pixels fixe. Un adversaire a donc la même taille relative dans l’éditeur et en partie, à toute largeur de fenêtre et à tout niveau de zoom — écart mesuré à 0,2 %, soit l’arrondi du pixel. Le rayon de contact suit la même échelle.

@@ -82,4 +82,17 @@ assert.ok(wallsBetween({x:10,y:40},{x:90,y:40},troues));   // De part en part : 
 assert.ok(wallsBetween({x:50,y:10},{x:50,y:90},troues));   // Verticalement aussi.
 // Une porte fermée n'est jamais creusée par une zone de vision.
 assert.equal(obstaclesFrom({walls:[],visions:[{x:0,y:0,w:100,h:100}],doors:[{x:40,y:40,w:5,h:5,open:false}]}).length,1);
-console.log('73 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// Brouillard : un mur plein coupe la carte en deux, un héros ne voit que son côté.
+const {visibleCells,rectPolygon}=require('./combat.js');
+const MUR_PLEIN=[{x:0,y:48,w:100,h:4}];
+const vu=visibleCells([{x:50,y:20}],MUR_PLEIN.map(rectPolygon),20,20);
+const cellule=(v,i,j)=>v[j*20+i];
+assert.equal(cellule(vu,10,4),1);   // Même côté que le héros : vu.
+assert.equal(cellule(vu,10,15),0);  // De l'autre côté du mur : caché.
+assert.equal(cellule(vu,2,2),1);    // Le champ n'est pas limité en distance.
+// Deux héros de part et d'autre voient chacun leur moitié.
+const deux=visibleCells([{x:50,y:20},{x:50,y:80}],MUR_PLEIN.map(rectPolygon),20,20);
+assert.equal(cellule(deux,10,15),1);
+assert.equal(visibleCells([],MUR_PLEIN.map(rectPolygon),20,20).some(v=>v),false); // Sans héros, rien n'est vu.
+assert.equal(visibleCells([{x:50,y:50}],[],8,8).every(v=>v),true);                // Sans obstacle, tout est vu.
+console.log('79 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
