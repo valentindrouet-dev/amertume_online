@@ -1,4 +1,4 @@
-# Amertume Online — v0.21
+# Amertume Online — v0.22
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,3 +152,11 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.22 — Cadrage identique des deux côtés, portes verrouillées
+
+**Le décalage résiduel des zones est corrigé.** La table étirait l’image pour remplir la carte, mais l’éditeur l’affichait encore en `contain` : rentrée dans le cadre, donc réduite et centrée dès que le rapport du cadre ne collait pas exactement à celui de l’image. Une zone posée sur un détail se retrouvait alors décalée vers le centre en jeu. L’éditeur étire désormais l’image de la même façon que la table.
+
+Pour les cartes importées avant l’enregistrement du rapport, celui-ci est **relu sur l’image** à l’ouverture de la carte, dans l’éditeur comme en combat : le cadre reprend le bon rapport sans réimport. Mesuré : une zone posée à 30,05 % / 20,11 % dans l’éditeur s’affiche à 30 % / 20 % en jeu.
+
+**Portes verrouillées.** Une case dans les propriétés de la porte réserve son ouverture au MJ. Les autres portes s’ouvrent d’un clic par n’importe qui pendant la partie — un joueur peut donc ouvrir une porte ordinaire, mais une porte verrouillée lui est refusée avec un message au journal. Elles se repèrent à leur hachure et à leur clé dans l’éditeur.

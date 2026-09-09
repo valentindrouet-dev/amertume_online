@@ -28,11 +28,11 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 #map-tools [data-tool=start].on{background:#8bbd9c;border-color:#8bbd9c}
 #map-tools [data-tool=foe].on{background:#d29180;border-color:#d29180}
 .canvas-wrap{flex:1;display:grid;place-items:center;min-height:0;overflow:hidden;border-radius:10px}
-#map-canvas{position:relative;transform-origin:0 0;will-change:transform;background:#162024 center/contain no-repeat;border:1px solid #3c4b50;border-radius:10px;overflow:hidden;touch-action:none;user-select:none;box-shadow:0 10px 30px #0006}
+#map-canvas{position:relative;transform-origin:0 0;will-change:transform;background:#162024 0 0/100% 100% no-repeat;border:1px solid #3c4b50;border-radius:10px;overflow:hidden;touch-action:none;user-select:none;box-shadow:0 10px 30px #0006}
 #map-canvas.no-image{background-image:linear-gradient(#84958a1f 1px,transparent 1px),linear-gradient(90deg,#84958a1f 1px,transparent 1px);background-size:5% 8.333%;background-position:0 0;background-repeat:repeat}
 .shape{position:absolute;box-sizing:border-box}
 .shape.wall{background:#0b1114d9;border:1px solid #6c7d85}.shape.cut{background:#7faddc38;border:2px dashed #7faddc;pointer-events:none}.shape.locked{cursor:not-allowed}.shape.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.foe.locked::after{right:-4px;top:-8px}
-.shape.door{background:#c98a4bd9;border:1px solid #e8b878}
+.shape.door{background:#c98a4bd9;border:1px solid #e8b878}.shape.door.keyed{background:repeating-linear-gradient(45deg,#c98a4bd9 0 6px,#8d5f31d9 6px 12px);border-color:#f3d7a6}.shape.door.keyed::before{content:'🔑';position:absolute;left:1px;top:0;font-size:10px}
 .shape.door.open{background:#c98a4b2e;border-style:dashed}
 .shape.start{background:#8bbd9c26;border:2px dashed #8bbd9c}
 .shape.foe{width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#6d443c;border:2px solid #d29180;display:grid;place-items:center;font:bold 14px Georgia;color:#f6e2dc;box-shadow:0 3px 8px #0007}
@@ -59,5 +59,5 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .sw-door{background:#c98a4b;border:1px solid #e8b878}
 .sw-door-open{background:#c98a4b2e;border:1px dashed #e8b878}
 .sw-start{background:#8bbd9c26;border:1px dashed #8bbd9c}
-.sw-cut{background:#7faddc38;border:1px dashed #7faddc}.sw-foe{background:#6d443c;border:2px solid #d29180;border-radius:50%;width:15px;height:15px}
+.sw-cut{background:#7faddc38;border:1px dashed #7faddc}.sw-key{background:repeating-linear-gradient(45deg,#c98a4b 0 4px,#8d5f31 4px 8px);border:1px solid #f3d7a6}.sw-foe{background:#6d443c;border:2px solid #d29180;border-radius:50%;width:15px;height:15px}
 @media(max-width:1150px){body.page-maps #maps-page{grid-template-columns:1fr;padding:14px}.maps-side,.maps-props{position:static}}
