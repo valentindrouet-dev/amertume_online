@@ -17,7 +17,7 @@ actors.forEach(normalizeActor);
 const toolsBar=document.createElement('div');toolsBar.className='mj-tools';toolsBar.innerHTML='<button id="edit-actor">Modifier la fiche</button><button id="new-hero">+ Personnage</button><button id="new-monster">+ Monstre</button><button id="edit-scene">Modifier la scène</button><button id="reset-map">Retirer la carte</button>';
 document.querySelector('.intro').after(toolsBar);const saveLabel=document.createElement('p');saveLabel.id='save-status';toolsBar.after(saveLabel);
 const note=document.createElement('p');note.id='actor-notes';note.className='muted';$('class').after(note);
-const attackSelect=document.createElement('select');attackSelect.id='attack-preset';attackSelect.setAttribute('aria-label','Attaque du combattant');$('pool-source').before(attackSelect);
+const attackSelect=document.createElement('select');attackSelect.id='attack-preset';attackSelect.setAttribute('aria-label','Attaque du combattant');$('attack-pool').before(attackSelect);
 attackSelect.onchange=()=>{const a=actors[selected];a.activeAttack=Number(attackSelect.value);a.pool=poolOf(a);render()};
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
@@ -53,7 +53,8 @@ document.querySelector('main.layout').after(armoryPage,bestiaryPage);
    sortait écrasé, sa pastille avec. Là, quel que soit le zoom, tous sont identiques. */
 const DIE_ORDER=[5,2,3,4,6,0,1],DIE_PALE=[5],DIE_LIGHT_PIP=[2,3,5];
 const dieCache=new Map();
-function dieFace(c){if(dieCache.has(c))return dieCache.get(c);
+// Le dé muet porte sa pastille ; le dé qui affiche une valeur s'en passe.
+function dieFace(c,muet=true){const cle=c+(muet?'p':'v');if(dieCache.has(cle))return dieCache.get(cle);
  const liseré=DIE_PALE.includes(c)?'rgba(255,255,255,.32)':'rgba(0,0,0,.55)';
  const point=DIE_LIGHT_PIP.includes(c)?'rgba(255,255,255,.6)':'rgba(0,0,0,.45)';
  const svg="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'>"
@@ -65,9 +66,16 @@ function dieFace(c){if(dieCache.has(c))return dieCache.get(c);
   +"<rect width='22' height='22' rx='5' fill='"+colors[c]+"'/>"
   +"<rect width='22' height='22' rx='5' fill='url(#r)'/>"
   +"<rect x='.75' y='.75' width='20.5' height='20.5' rx='4.25' fill='none' stroke='"+liseré+"' stroke-width='1.5'/>"
-  +"<circle cx='11' cy='11' r='3' fill='"+point+"'/></svg>";
+  +(muet?"<circle cx='11' cy='11' r='3' fill='"+point+"'/>":"")+"</svg>";
  const url="url(\"data:image/svg+xml,"+encodeURIComponent(svg).replace(/'/g,'%27')+"\")";
- dieCache.set(c,url);return url}
+ dieCache.set(cle,url);return url}
+/* La réserve d'une arme, faces muettes : la carte d'attaque montre ce qui va être lancé,
+   pas le résultat — celui-ci roule sur le plateau. */
+function poolBadges(pool){const out=document.createElement('span');out.className='pips';
+ DIE_ORDER.forEach(c=>{for(let n=0;n<(pool&&pool[c]||0);n++){
+  const d=document.createElement('i');d.className='die-sq valeur'+(DIE_LIGHT_PIP.includes(c)?' clair':'');
+  d.style.setProperty('--face',dieFace(c,false));d.textContent='?';d.title=types[c];out.append(d)}});
+ return out}
 function dicePips(dice){const out=document.createElement('span');out.className='pips';
  DIE_ORDER.forEach(c=>{for(let n=0;n<(dice&&dice[keys[c]]||0);n++){
   const d=document.createElement('i');d.className='die-sq';

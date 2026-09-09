@@ -1,4 +1,4 @@
-# Amertume Online — v0.33
+# Amertume Online — v0.34
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.34 — Flèche de ciblage, carte d’attaque
+
+**La cible se voit sur la carte.** Tant qu’un combattant a une cible désignée, un **arc rouge** part de son socle et vient mourir au bord de celui de la cible, tête effilée. Il est **plein quand le coup peut partir**, en **pointillé quand il ne peut pas** — hors du rayon de contact, ou ligne de vue coupée : l’information que donnait l’ancienne ligne verte et rouge, mais lisible d’un coup d’œil et pour le contact comme pour le tir. Le trait garde toujours une hampe visible, même quand les deux socles se touchent presque. La flèche dorée du Maj + clic ne change pas : elle sert à désigner, celle-ci à se souvenir.
+
+**La grosse boîte « Lancer de dés » disparaît** au profit d’une carte compacte : les **dés de l’arme équipée**, faces muettes, le **bonus de dégâts**, et un bouton qui porte le **nom de l’arme**. Sous le bouton, deux lignes seulement — la cible avec sa portée, et la raison quand le coup ne part pas.
+
+Ce qui vivait dans l’ancienne boîte n’est pas perdu pour autant : le choix du dé de critique et le lancer libre tiennent sur une ligne au bas de la carte, le résultat du jet et son résumé s’affichent puis s’effacent, et les conventions de combat restent repliées. Seul le menu déroulant de cible est retiré : on cible au **Maj + clic**, et la flèche dit laquelle.
 
 ## v0.33 — Des dés qui ne s’écrasent plus
 
