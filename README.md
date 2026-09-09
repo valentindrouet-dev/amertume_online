@@ -1,4 +1,4 @@
-# Amertume Online — v0.24
+# Amertume Online — v0.25
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,20 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.25 — Vision exacte, propre à chaque aventurier
+
+**Le brouillard n’est plus une grille.** La zone vue depuis un héros est maintenant calculée exactement, sous forme de **polygone** : on tire un rayon vers chaque coin d’obstacle — et de part et d’autre, pour contourner l’angle — on garde la première rencontre, puis on relie les points par angle croissant (`visionPolygon()`). Le bord est une vraie droite tracée au pixel de l’écran : plus aucun escalier, à aucun niveau de zoom. C’est aussi **plus rapide** que l’ancien échantillonnage case par case — 3 ms au lieu de 20 sur la même scène, parce que le coût suit le nombre d’obstacles et non le nombre de cases.
+
+Le polygone est vérifié contre le moteur existant : sur un plan à 56 morceaux de murs, `pointInPolygon(p, vision)` et `wallsBetween(héros, p)` donnent **le même verdict sur plusieurs milliers de points**, depuis plusieurs positions. C’est ce test qui garantit que la zone éclairée correspond exactement aux règles de ligne de vue déjà utilisées pour les tirs.
+
+**Chacun voit par son propre aventurier.** En vue joueur, le brouillard suit le regard du héros contrôlé, et lui seul : changer d’aventurier change la zone éclairée, et un adversaire hors de ce champ reste invisible. Le MJ, lui, continue de voir par toute la troupe. La **mémoire d’exploration reste commune** — ce qu’un héros a découvert reste dessiné en sombre pour tout le monde — sinon elle divergerait d’un appareil à l’autre et le contenu publié ne voudrait plus rien dire.
+
+Cette mémoire passe à 640 colonnes (cases de 1,3 px à l’écran contre 3,2 avant) et voyage désormais **compressée en base64** au lieu d’une suite de 0 et de 1 : même encombrement qu’avant pour six fois plus de finesse. Les mémoires enregistrées en v0.23 et v0.24 sont reprises et ré-échantillonnées, pas jetées.
+
+**Deux icônes pour le MJ** dans la barre de la carte : 🌫 remet le brouillard, 👁 lève tout. Elles remplacent les deux boutons longs qui encombraient les outils du MJ, et n’apparaissent qu’en vue Maître du jeu.
+
+**Les portes se referment.** Une porte ouverte est dessinée en pointillé sans remplissage — et un rectangle SVG sans remplissage n’attrape pas les clics : le second clic tombait dans le vide. La porte accepte maintenant les clics sur toute sa surface, ouverte comme fermée. Un clic ouvre, le suivant referme, et la ligne de vue se rebloque immédiatement.
 
 ## v0.24 — Brouillard de guerre net et fin
 

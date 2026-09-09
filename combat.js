@@ -137,37 +137,71 @@ function spreadInZone(n,zone){if(!zone||n<1)return [];
  for(let i=0;i<n;i++){const c=i%cols,r=Math.floor(i/cols);
   out.push({x:zone.x+zone.w*(c+.5)/cols,y:zone.y+zone.h*(r+.5)/rows})}
  return out}
-/* Brouillard de guerre : une grille de cellules, visible depuis un héros si le
-   segment qui les relie ne traverse aucun obstacle. Les portes fermées comptent.
-   Le test travaille sur les rectangles eux-mêmes : rejet par boîte englobante
-   puis découpe par tranches, bien moins coûteux qu'arête par arête. */
-function segmentHitsRect(px,py,qx,qy,r){
- const rx2=r.x+r.w,ry2=r.y+r.h;
- if((px<r.x&&qx<r.x)||(px>rx2&&qx>rx2)||(py<r.y&&qy<r.y)||(py>ry2&&qy>ry2))return false;
- let t0=0,t1=1;const dx=qx-px,dy=qy-py;
- if(dx>-1e-12&&dx<1e-12){if(px<r.x||px>rx2)return false}
- else{let a=(r.x-px)/dx,b=(rx2-px)/dx;if(a>b){const t=a;a=b;b=t}
-  if(a>t0)t0=a;if(b<t1)t1=b;if(t0>t1)return false}
- if(dy>-1e-12&&dy<1e-12){if(py<r.y||py>ry2)return false}
- else{let a=(r.y-py)/dy,b=(ry2-py)/dy;if(a>b){const t=a;a=b;b=t}
-  if(a>t0)t0=a;if(b<t1)t1=b;if(t0>t1)return false}
- return true}
+/* Brouillard de guerre : la zone vue depuis un héros est calculée exactement,
+   sous forme de polygone. On tire un rayon vers chaque coin d'obstacle — et de
+   part et d'autre, pour contourner l'angle — on garde la première rencontre, puis
+   on relie les points par angle croissant. Le bord obtenu est une vraie droite :
+   aucune grille, donc aucun escalier de pixels. */
+// Distance à laquelle un rayon entre dans un rectangle, l'infini s'il le manque.
+function rayHitsRect(ox,oy,dx,dy,r){let t0=0,t1=Infinity;
+ if(dx>-1e-12&&dx<1e-12){if(ox<=r.x||ox>=r.x+r.w)return Infinity}
+ else{let a=(r.x-ox)/dx,b=(r.x+r.w-ox)/dx;if(a>b){const t=a;a=b;b=t}
+  if(a>t0)t0=a;if(b<t1)t1=b}
+ if(dy>-1e-12&&dy<1e-12){if(oy<=r.y||oy>=r.y+r.h)return Infinity}
+ else{let a=(r.y-oy)/dy,b=(r.y+r.h-oy)/dy;if(a>b){const t=a;a=b;b=t}
+  if(a>t0)t0=a;if(b<t1)t1=b}
+ return t1>=t0&&t1>=0?Math.max(t0,0):Infinity}
+// Distance à laquelle un rayon quitte le cadre de la carte.
+function rayLeavesBox(ox,oy,dx,dy,B){let t=Infinity;
+ if(dx>1e-12)t=Math.min(t,(B.x+B.w-ox)/dx);else if(dx<-1e-12)t=Math.min(t,(B.x-ox)/dx);
+ if(dy>1e-12)t=Math.min(t,(B.y+B.h-oy)/dy);else if(dy<-1e-12)t=Math.min(t,(B.y-oy)/dy);
+ return t===Infinity?0:Math.max(0,t)}
+function visionPolygon(o,rects,box){
+ const B=box||{x:0,y:0,w:100,h:100};
+ // Un héros poussé dans un mur verrait le noir : l'obstacle qui le contient est ignoré.
+ const rs=(rects||[]).filter(r=>r&&r.w>0&&r.h>0&&!(o.x>r.x&&o.x<r.x+r.w&&o.y>r.y&&o.y<r.y+r.h));
+ const coins=[[B.x,B.y],[B.x+B.w,B.y],[B.x+B.w,B.y+B.h],[B.x,B.y+B.h]];
+ for(const r of rs)coins.push([r.x,r.y],[r.x+r.w,r.y],[r.x+r.w,r.y+r.h],[r.x,r.y+r.h]);
+ const E=2e-5,pts=[];
+ for(const c of coins){const base=Math.atan2(c[1]-o.y,c[0]-o.x);
+  for(const a of [base-E,base,base+E]){const dx=Math.cos(a),dy=Math.sin(a);
+   let t=rayLeavesBox(o.x,o.y,dx,dy,B);
+   for(let k=0;k<rs.length;k++){const u=rayHitsRect(o.x,o.y,dx,dy,rs[k]);if(u<t)t=u}
+   pts.push([a,o.x+t*dx,o.y+t*dy])}}
+ pts.sort((p,q)=>p[0]-q[0]);
+ return pts.map(p=>[p[1],p[2]])}
+// Aire d'un polygone : sert à comparer une vision à celle d'une carte dégagée.
+function polygonArea(poly){let a=0;
+ for(let i=0,j=poly.length-1;i<poly.length;j=i++)a+=(poly[j][0]+poly[i][0])*(poly[j][1]-poly[i][1]);
+ return Math.abs(a/2)}
+/* Mémoire d'exploration : une grille de bits, remplie par balayage du polygone vu.
+   Elle survit à la partie, donc elle voyage compressée en base64. */
+// Renvoie le nombre de cellules nouvellement marquées : de quoi savoir si la mémoire a bougé.
+function fillPolygonGrid(grid,cols,rows,poly){let neuf=0;
+ if(!poly||poly.length<3)return neuf;
+ for(let j=0;j<rows;j++){const y=(j+.5)/rows*100,xs=[];
+  for(let i=0,k=poly.length-1;i<poly.length;k=i++){const a=poly[k],b=poly[i];
+   if((a[1]>y)!==(b[1]>y))xs.push(a[0]+(y-a[1])*(b[0]-a[0])/(b[1]-a[1]))}
+  xs.sort((u,v)=>u-v);
+  for(let t=0;t+1<xs.length;t+=2){
+   const i0=Math.max(0,Math.ceil(xs[t]/100*cols-.5)),i1=Math.min(cols-1,Math.floor(xs[t+1]/100*cols-.5));
+   for(let i=i0;i<=i1;i++){const k=j*cols+i;if(!grid[k]){grid[k]=1;neuf++}}}}
+ return neuf}
+function maskChars(n){return Math.ceil(Math.ceil(n/8)/3)*4}
+function packMask(grid,n){let s='';
+ for(let i=0;i<n;i+=8){let b=0;for(let k=0;k<8&&i+k<n;k++)if(grid[i+k])b|=1<<k;s+=String.fromCharCode(b)}
+ return btoa(s)}
+function unpackMask(str,n){const out=new Uint8Array(n),s=atob(str);
+ for(let i=0;i<n;i++)if(s.charCodeAt(i>>3)&(1<<(i&7)))out[i]=1;
+ return out}
 /* La mémoire d'exploration est une grille : quand la finesse du brouillard change,
    on la ré-échantillonne au lieu de la jeter — les joueurs gardent ce qu'ils ont vu. */
-function regridMask(seen,fromW,fromH,toW,toH){const out=new Array(toW*toH);
+function regridMask(seen,fromW,fromH,toW,toH){const out=new Uint8Array(toW*toH);
  for(let j=0;j<toH;j++){const sj=Math.min(fromH-1,Math.floor((j+.5)/toH*fromH));
   for(let i=0;i<toW;i++){const si=Math.min(fromW-1,Math.floor((i+.5)/toW*fromW));
-   out[j*toW+i]=seen[sj*fromW+si]==='1'?'1':'0'}}
- return out.join('')}
-function visibleCells(heroes,rects,cols,rows){const vis=new Uint8Array(cols*rows);
- const rs=rects||[],hs=heroes||[];
- for(let j=0;j<rows;j++){const cy=(j+.5)/rows*100;
-  for(let i=0;i<cols;i++){const cx=(i+.5)/cols*100;
-   for(const h of hs){let vu=true;
-    for(let k=0;k<rs.length;k++)if(segmentHitsRect(h.x,h.y,cx,cy,rs[k])){vu=false;break}
-    if(vu){vis[j*cols+i]=1;break}}}}
- return vis}
-const api={visibleCells,regridMask,segmentHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+   if(seen[sj*fromW+si]==='1')out[j*toW+i]=1}}
+ return out}
+const api={visionPolygon,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);

@@ -9,7 +9,7 @@ const status=t=>$('shared-status').textContent=t;
 const flagShare=on=>shareButton.classList.toggle('has-news',!!on);
 const publicationRef=()=>cloud.doc('amertume_online_public/main');
 // Seule la carte ouverte transporte sa mémoire d'exploration : les autres alourdiraient la publication.
-function publicMaps(){return structuredClone(maps).map(m=>{if(m.id!==currentMapId)delete m.seen;return m})}
+function publicMaps(){return structuredClone(maps).map(m=>{if(m.id!==currentMapId){delete m.fog;delete m.seen}return m})}
 function publicContent(){saveChecks();savePool();return {schema:1,title:document.querySelector('.intro h1').textContent,round,mapImage,maps:publicMaps(),currentMapId,catalog:structuredClone(catalog),actors:actors.map(a=>({...structuredClone(a),target:null,checks:[false,false,false]}))}}
 function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(Error('Connexion Firebase indisponible.'));document.head.append(s)})}
 function errorText(e){const code=e.code||'';if(code.includes('permission-denied'))return 'Accès Firebase non configuré. Les règles de partage doivent être activées par le MJ.';if(code.includes('unauthorized-domain'))return 'Ajoute valentindrouet-dev.github.io aux domaines autorisés de Firebase Authentication.';if(code.includes('operation-not-allowed'))return 'Active la connexion Google dans Firebase Authentication.';if(code.includes('popup-blocked'))return 'Autorise la fenêtre de connexion Google puis réessaie.';if(code.includes('popup-closed'))return 'Connexion annulée.';return e.message||'Connexion impossible. Les modifications locales sont conservées.'}

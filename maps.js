@@ -6,7 +6,7 @@ let mapDraft=null,mapTool='select',mapSel=null,mapDrag=null,cutRect=null,lasso=n
 let undoStack=[],redoStack=[],zoomC=1,panCX=0,panCY=0;
 const nsSVG='http://www.w3.org/2000/svg';
 // Grille du brouillard : des cellules carrées et fines, pour un bord net qui suit les murs.
-const FOG_COLS=256,FOG_LEGACY={w:104,h:58};let fogVis=null,fogKey='',fogDim=null;
+const FOG_COLS=640;let fogVis=null,fogSeen=null,fogSeenSrc=null,fogKey='',fogDim=null,fogMem=null,fogDirty=true;
 function fogDims(m){const r=(m&&m.ratio)||16/9,w=FOG_COLS,h=Math.max(32,Math.round(w/r));return{w,h,n:w*h}}
 const KINDS={wall:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire'};
 function currentMap(){return maps.find(m=>m.id===currentMapId)||null}
@@ -25,39 +25,73 @@ function obstacleLabel(a,b){const m=currentMap();
  return m&&wallsBetween(a,b,(m.doors||[]).filter(d=>!d.open).map(rectPolygon))?'une porte fermée':'un mur'}
 
 /* ---------- Brouillard de guerre ---------- */
-// Seuls les héros vivants éclairent. La mémoire de l'exploration vit sur la carte.
+/* Ce que l'on voit à l'instant est un polygone exact, tracé au pixel près.
+   Ce que la troupe a exploré est une grille fine, gardée sur la carte en base64. */
+// Le MJ voit par toute la troupe ; le joueur ne voit que par son aventurier.
+function fogParty(){return actors.filter(a=>a.hero&&alive(a))}
+function fogSeers(){const troupe=fogParty();if(view==='mj')return troupe;
+ const a=actors[owner];return a&&a.hero&&alive(a)?[a]:troupe}
+// Mémoire d'exploration : format compact, avec reprise des grilles d'avant la v0.25.
+function readSeen(m,d){
+ if(typeof m.fog==='string'&&m.fog.length===maskChars(d.n))return unpackMask(m.fog,d.n);
+ if(typeof m.seen==='string'&&/^[01]+$/.test(m.seen))
+  for(const c of [256,104]){const r=m.seen.length/c;
+   if(Number.isInteger(r)&&r>10&&r<c)return regridMask(m.seen,c,r,d.w,d.h)}
+ return new Uint8Array(d.n)}
 function computeFog(){const m=currentMap();
- if(!m){fogVis=null;fogKey='';fogDim=null;return}
+ if(!m){fogVis=null;fogSeen=null;fogKey='';fogDim=null;return}
  const d=fogDim=fogDims(m);
- // Grille d'avant la v0.24 : on remonte la mémoire d'exploration à la nouvelle finesse.
- if(typeof m.seen!=='string')m.seen='0'.repeat(d.n);
- else if(m.seen.length===FOG_LEGACY.w*FOG_LEGACY.h&&d.n!==FOG_LEGACY.w*FOG_LEGACY.h)
-  m.seen=regridMask(m.seen,FOG_LEGACY.w,FOG_LEGACY.h,d.w,d.h);
- else if(m.seen.length!==d.n)m.seen='0'.repeat(d.n);
- // À cette finesse le calcul n'est plus gratuit : il ne reprend que si la scène a bougé.
- const heros=actors.filter(a=>a.hero&&alive(a)),rects=activeObstacleRects();
- const cle=m.id+'|'+d.n+'|'+heros.map(a=>a.x.toFixed(2)+','+a.y.toFixed(2)).join(';')
+ if(!fogSeen||fogSeen.length!==d.n||m.fog!==fogSeenSrc){fogSeen=readSeen(m,d);fogSeenSrc=m.fog;fogDirty=true}
+ const rects=activeObstacleRects(),troupe=fogParty();
+ // Le calcul ne reprend que si la scène a bougé : héros, portes, zones ou point de vue.
+ const cle=m.id+'|'+d.n+'|'+view+'|'+owner+'|'+troupe.map(a=>a.x.toFixed(2)+','+a.y.toFixed(2)).join(';')
   +'|'+rects.map(r=>r.x+','+r.y+','+r.w+','+r.h).join(';');
  if(cle===fogKey&&fogVis)return;
- fogKey=cle;fogVis=visibleCells(heros,rects,d.w,d.h);
- const seen=m.seen.split('');let change=false;
- for(let k=0;k<d.n;k++)if(fogVis[k]===1&&seen[k]==='0'){seen[k]='1';change=true}
- if(change)m.seen=seen.join('')}
-// Un adversaire dans le noir n'existe pas pour les joueurs.
-function partySees(a){if(!fogVis||!fogDim)return true;const d=fogDim;
- const i=Math.min(d.w-1,Math.max(0,Math.floor(a.x/100*d.w))),j=Math.min(d.h-1,Math.max(0,Math.floor(a.y/100*d.h)));
- return fogVis[j*d.w+i]===1}
+ fogKey=cle;
+ const vues=new Map(),vu=a=>{const k=a.x+','+a.y;
+  if(!vues.has(k))vues.set(k,visionPolygon(a,rects));return vues.get(k)};
+ // La mémoire retient ce que la troupe entière a vu, où que soit le lecteur.
+ let neuf=0;for(const a of troupe)neuf+=fillPolygonGrid(fogSeen,d.w,d.h,vu(a));
+ fogVis=fogSeers().map(vu);
+ if(neuf){m.fog=fogSeenSrc=packMask(fogSeen,d.n);delete m.seen;fogDirty=true;scheduleSave()}}
+// Un adversaire hors du champ de vision n'existe pas pour celui qui regarde.
+function partySees(a){if(!fogVis)return true;
+ return fogVis.some(p=>pointInPolygon([a.x,a.y],p))}
+// La mémoire est peinte une fois par changement, puis réutilisée telle quelle.
+function memoryCanvas(d){if(!fogSeen)return null;
+ if(!fogMem||fogMem.width!==d.w||fogMem.height!==d.h){
+  fogMem=document.createElement('canvas');fogMem.width=d.w;fogMem.height=d.h;fogDirty=true}
+ if(fogDirty){const c=fogMem.getContext('2d'),img=c.createImageData(d.w,d.h);
+  for(let k=0;k<d.n;k++)if(fogSeen[k]){const p=k*4;img.data[p]=img.data[p+1]=img.data[p+2]=img.data[p+3]=255}
+  c.putImageData(img,0,0);fogDirty=false}
+ return fogMem}
 function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  if(!m||!fogVis||!d){cv.style.display='none';return}
- cv.style.display='';if(cv.width!==d.w||cv.height!==d.h){cv.width=d.w;cv.height=d.h}
- const ctx=cv.getContext('2d'),img=ctx.createImageData(d.w,d.h);
+ cv.style.display='';
+ const large=cv.clientWidth,haut=cv.clientHeight;if(!large||!haut)return;
+ // Toile à la résolution de l'écran : le bord du polygone est tracé au pixel près.
+ const ech=Math.min(2,window.devicePixelRatio||1);
+ const W=Math.max(1,Math.min(2400,Math.round(large*ech))),H=Math.max(1,Math.round(W*haut/large));
+ if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+ const ctx=cv.getContext('2d');
  // Le MJ garde une vue lisible ; le joueur ne voit rien de l'inexploré.
  const inconnu=view==='mj'?110:255,memoire=view==='mj'?40:150;
- for(let k=0;k<d.n;k++){const p=k*4;img.data[p]=6;img.data[p+1]=9;img.data[p+2]=11;
-  img.data[p+3]=fogVis[k]?0:(m.seen[k]==='1'?memoire:inconnu)}
- ctx.putImageData(img,0,0)}
+ ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
+ ctx.clearRect(0,0,W,H);
+ ctx.fillStyle='rgba(6,9,11,'+(inconnu/255).toFixed(3)+')';ctx.fillRect(0,0,W,H);
+ ctx.globalCompositeOperation='destination-out';
+ const mem=memoryCanvas(d);
+ if(mem){ctx.globalAlpha=1-memoire/inconnu;ctx.imageSmoothingEnabled=false;ctx.drawImage(mem,0,0,W,H)}
+ ctx.globalAlpha=1;ctx.fillStyle='#000';
+ for(const poly of fogVis){if(!poly||poly.length<3)continue;
+  ctx.beginPath();ctx.moveTo(poly[0][0]/100*W,poly[0][1]/100*H);
+  for(let i=1;i<poly.length;i++)ctx.lineTo(poly[i][0]/100*W,poly[i][1]/100*H);
+  ctx.closePath();ctx.fill()}
+ ctx.globalCompositeOperation='source-over'}
 function resetFog(tout){const m=currentMap();if(!m)return;
- m.seen=(tout?'1':'0').repeat(fogDims(m).n);fogKey='';render();scheduleSave();
+ const d=fogDims(m),g=new Uint8Array(d.n);if(tout)g.fill(1);
+ m.fog=packMask(g,d.n);delete m.seen;fogSeen=g;fogSeenSrc=m.fog;fogDirty=true;fogKey='';
+ render();scheduleSave();
  log(tout?'Brouillard levé sur toute la carte.':'Brouillard réinitialisé.')}
 
 /* ---------- Rendu sur la table de jeu ---------- */
@@ -71,13 +105,13 @@ function applyMapRatio(){const m=currentMap(),el=$('map');
  el.style.width=Math.round(w)+'px';el.style.height=Math.round(h)+'px'}
 function renderMapLayer(){const svg=$('map-shapes'),m=currentMap();svg.replaceChildren();applyMapRatio();renderFog();
  // .hidden n'existe pas sur un élément SVG : le masquage passe par une classe.
- $('map').classList.toggle('has-map',!!m);if(!m)return;
+ $('map').classList.toggle('has-map',!!m);$('fog-bar').hidden=view!=='mj'||!m;if(!m)return;
  if(m.start&&view==='mj')svg.append(svgRect(m.start,'startzone'));
  // Une porte perce la zone qu'elle recouvre : on peint exactement ce qui bloque.
  const g=document.createElementNS(nsSVG,'g');g.setAttribute('class','wall-group');
  wallsPierced(m).forEach(r=>g.append(svgRect(r)));svg.append(g);
  (m.doors||[]).forEach((d,i)=>{const el=svgRect(d,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':''));
-  el.style.pointerEvents='auto';
+  el.style.pointerEvents='all';
   el.onclick=()=>{if(d.keyLocked&&view!=='mj'){log('Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
    d.open=!d.open;log('Porte '+(i+1)+' '+(d.open?'ouverte':'fermée')+'.');render();scheduleSave()};
   svg.append(el)});
@@ -92,7 +126,8 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y));
  actors.splice(0,actors.length,...heros);
  // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
- (m.doors||[]).forEach(d=>{d.open=false});m.seen='0'.repeat(fogDims(m).n);fogKey='';
+ (m.doors||[]).forEach(d=>{d.open=false});const grille=fogDims(m);
+ m.fog=packMask(new Uint8Array(grille.n),grille.n);delete m.seen;fogSeen=null;fogSeenSrc=null;fogKey='';
  (m.foes||[]).forEach(f=>{const a=fromMonster(f.tpl);a.hidden=!!f.hidden;a.x=f.x;a.y=f.y;normalizeActor(a);actors.push(a)});
  render();actors.forEach(settleActor);   // Personne ne démarre dans un mur.
 
@@ -381,12 +416,16 @@ mapPick.style.width='auto';mapPick.style.margin='0';
 const mapOpen=document.createElement('button');mapOpen.id='map-open';mapOpen.textContent='Ouvrir la carte';
 document.querySelector('.mj-tools').append(mapPick,mapOpen);
 function refreshMapPick(){mapPick.replaceChildren();maps.forEach(m=>mapPick.add(new Option(m.name,m.id)));
- mapPick.hidden=mapOpen.hidden=!maps.length;$('fog-reset').hidden=$('fog-all').hidden=!currentMap();
+ mapPick.hidden=mapOpen.hidden=!maps.length;$('fog-bar').hidden=view!=='mj'||!currentMap();
  if(currentMapId)mapPick.value=currentMapId}
 mapOpen.onclick=()=>{if(mapPick.value)openBattleMap(mapPick.value)};
-const fogReset=document.createElement('button');fogReset.id='fog-reset';fogReset.textContent='Réinitialiser le brouillard';
-const fogAll=document.createElement('button');fogAll.id='fog-all';fogAll.textContent='Tout révéler';
-document.querySelector('.mj-tools').append(fogReset,fogAll);
+// Deux icônes dans la barre de la carte, côté MJ : le brouillard se remet ou se lève d'un clic.
+const fogBar=document.createElement('div');fogBar.className='zoom-bar';fogBar.id='fog-bar';fogBar.hidden=true;
+const icone=(id,glyphe,titre)=>{const b=document.createElement('button');b.id=id;b.className='icon-btn';
+ b.textContent=glyphe;b.title=titre;b.setAttribute('aria-label',titre);return b};
+const fogReset=icone('fog-reset','🌫','Remettre le brouillard');
+const fogAll=icone('fog-all','👁','Tout révéler');
+fogBar.append(fogReset,fogAll);document.querySelector('.mapbar .zoom-bar').after(fogBar);
 fogReset.onclick=()=>resetFog(false);fogAll.onclick=()=>resetFog(true);
 function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 

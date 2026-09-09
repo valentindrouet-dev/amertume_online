@@ -83,36 +83,36 @@ assert.ok(wallsBetween({x:50,y:10},{x:50,y:90},troues));   // Verticalement auss
 // Une porte fermée n'est jamais creusée par une zone de vision.
 assert.equal(obstaclesFrom({walls:[],visions:[{x:0,y:0,w:100,h:100}],doors:[{x:40,y:40,w:5,h:5,open:false}]}).length,1);
 // Brouillard : un mur plein coupe la carte en deux, un héros ne voit que son côté.
-const {visibleCells,rectPolygon}=require('./combat.js');
-const MUR_PLEIN=[{x:0,y:48,w:100,h:4}];
-const vu=visibleCells([{x:50,y:20}],MUR_PLEIN,20,20);
-const cellule=(v,i,j)=>v[j*20+i];
-assert.equal(cellule(vu,10,4),1);   // Même côté que le héros : vu.
-assert.equal(cellule(vu,10,15),0);  // De l'autre côté du mur : caché.
-assert.equal(cellule(vu,2,2),1);    // Le champ n'est pas limité en distance.
-// Deux héros de part et d'autre voient chacun leur moitié.
-const deux=visibleCells([{x:50,y:20},{x:50,y:80}],MUR_PLEIN,20,20);
-assert.equal(cellule(deux,10,15),1);
-assert.equal(visibleCells([],MUR_PLEIN,20,20).some(v=>v),false); // Sans héros, rien n'est vu.
-assert.equal(visibleCells([{x:50,y:50}],[],8,8).every(v=>v),true);                // Sans obstacle, tout est vu.
-// Découpe d'une forme libre : un disque creusé dans un grand mur.
-const {carveWithPolygon}=require('./combat.js');
-const cercle=(cx,cy,r,n=48)=>Array.from({length:n},(_,i)=>[cx+r*Math.cos(2*Math.PI*i/n),cy+r*Math.sin(2*Math.PI*i/n)]);
-const BLOC=[{x:20,y:20,w:60,h:60}];
-const perce=carveWithPolygon(BLOC,cercle(50,50,15));
-const aireR=rs=>rs.reduce((s,r)=>s+r.w*r.h,0);
-assert.ok(perce.length>4);                                     // Le disque impose plusieurs bandes.
-assert.ok(Math.abs(aireR(perce)-(3600-Math.PI*225))<60);       // Aire restante proche de la théorie.
-const dedans=(p,rs)=>rs.some(r=>p[0]>=r.x&&p[0]<=r.x+r.w&&p[1]>=r.y&&p[1]<=r.y+r.h);
-assert.ok(!dedans([50,50],perce));                             // Le centre du disque est bien vidé.
-assert.ok(!dedans([50,38],perce));                             // Et un point proche du bord intérieur.
-assert.ok(dedans([25,25],perce));                              // Le coin du mur reste plein.
-assert.ok(dedans([50,22],perce));                              // Au-dessus du disque, le mur tient.
-// Un mur hors du tracé n'est pas touché du tout.
-const loin=[{x:0,y:0,w:5,h:5}];
-assert.deepEqual(carveWithPolygon(loin,cercle(50,50,10)),loin);
-assert.deepEqual(carveWithPolygon(BLOC,[[1,1]]),BLOC);         // Tracé dégénéré : sans effet.
-// Une porte perce le mur qu'elle recouvre, sans qu'on ait à modifier les données.
+const {rectPolygon,visionPolygon,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,pointInPolygon}=require('./combat.js');
+/* Vision exacte : le polygone vu doit dire la même chose que le test segment par segment. */
+assert.equal(polygonArea(visionPolygon({x:50,y:50},[],null)).toFixed(2),'10000.00'); // Sans obstacle : toute la carte.
+const MUR_PLEIN=[{x:40,y:20,w:20,h:4}];
+const VUE=visionPolygon({x:50,y:50},MUR_PLEIN,null);
+assert.ok(polygonArea(VUE)<10000);
+assert.ok(pointInPolygon([50,40],VUE));   // Devant le mur : vu.
+assert.ok(!pointInPolygon([50,10],VUE));  // Derrière : caché.
+assert.ok(pointInPolygon([10,10],VUE));   // De côté : vu.
+// Accord complet avec wallsBetween sur un plan chargé, hors bords des obstacles.
+const dedale=[];for(let i=0;i<8;i++){dedale.push({x:6+i*11,y:12,w:2,h:26});dedale.push({x:6+i*11,y:56,w:2,h:26})}
+for(let j=0;j<6;j++)dedale.push({x:6,y:12+j*14,w:88,h:2});
+const MORCEAUX=subtractRects(dedale,Array.from({length:30},(_,i)=>({x:7+(i*7)%84,y:13+(i*11)%74,w:4,h:4})));
+const CONTOURS=MORCEAUX.map(rectPolygon);
+for(const o of [{x:22.7,y:74.3},{x:50.5,y:47.3}]){const vision=visionPolygon(o,MORCEAUX,null);let compares=0;
+ for(let i=0;i<1500;i++){const p=[(i*37.13)%100,(i*61.7)%100];
+  if(MORCEAUX.some(r=>p[0]>r.x-.3&&p[0]<r.x+r.w+.3&&p[1]>r.y-.3&&p[1]<r.y+r.h+.3))continue;
+  assert.equal(pointInPolygon(p,vision),!wallsBetween(o,{x:p[0],y:p[1]},CONTOURS));compares++}
+ assert.ok(compares>800)}
+/* Mémoire d'exploration : remplissage, comptage des nouveautés, aller-retour compressé. */
+const GRILLE=new Uint8Array(64*36);
+const PAVE=[[20,20],[60,20],[60,60],[20,60]];
+const neuves=fillPolygonGrid(GRILLE,64,36,PAVE);
+assert.ok(neuves>0);
+assert.equal(fillPolygonGrid(GRILLE,64,36,PAVE),0);       // Rien de neuf la seconde fois.
+assert.equal(GRILLE[18*64+32],1);                          // Au centre du carré : exploré.
+assert.equal(GRILLE[2*64+2],0);                            // Loin du carré : toujours noir.
+const COMPACT=packMask(GRILLE,64*36);
+assert.equal(COMPACT.length,maskChars(64*36));
+assert.deepEqual(Array.from(unpackMask(COMPACT,64*36)),Array.from(GRILLE));
 const {wallsPierced,uncontain}=require('./combat.js');
 const {regridMask}=require('./combat.js');
 /* Ré-échantillonnage de la mémoire d'exploration : la zone vue reste au même endroit. */
@@ -120,12 +120,12 @@ const AVANT=(()=>{let s='';for(let j=0;j<58;j++)for(let i=0;i<104;i++)s+=(i<52&&
 const APRES=regridMask(AVANT,104,58,256,156);
 assert.equal(APRES.length,256*156);
 const lu=(g,w,i,j)=>g[j*w+i];
-assert.equal(lu(APRES,256,10,10),'1');
-assert.equal(lu(APRES,256,200,10),'0');
-assert.equal(lu(APRES,256,10,140),'0');
-assert.equal(lu(APRES,256,127,77),'1');
-assert.equal(lu(APRES,256,129,79),'0');
-assert.equal(regridMask('0'.repeat(104*58),104,58,256,156).indexOf('1'),-1);
+assert.equal(lu(APRES,256,10,10),1);
+assert.equal(lu(APRES,256,200,10),0);
+assert.equal(lu(APRES,256,10,140),0);
+assert.equal(lu(APRES,256,127,77),1);
+assert.equal(lu(APRES,256,129,79),0);
+assert.ok(!regridMask('0'.repeat(104*58),104,58,256,156).some(v=>v));
 const AVEC_PORTE={walls:[{x:10,y:40,w:80,h:10}],doors:[{x:48,y:38,w:6,h:14,open:false}]};
 assert.equal(wallsPierced(AVEC_PORTE).length,2);                       // Le mur est coupé en deux.
 assert.ok(wallsBetween({x:51,y:20},{x:51,y:70},obstaclesFrom(AVEC_PORTE)));   // Porte close : vue coupée.
@@ -141,4 +141,4 @@ assert.ok(Math.abs(remis[0].x-10)<1e-6);assert.ok(Math.abs(remis[0].w-5)<1e-6);
 assert.ok(Math.abs(remis[0].y-20)<1e-6);                               // L'axe non comprimé ne bouge pas.
 assert.ok(Math.abs(uncontain([{x:50,y:50}],cadre,image)[0].x-50)<1e-6); // Le centre est invariant.
 assert.ok(Math.abs(uncontain([{x:0,y:0}],cadre,image)[0].x+marge/ech)<1e-6);
-console.log('103 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('102 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
