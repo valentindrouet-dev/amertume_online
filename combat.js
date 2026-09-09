@@ -63,9 +63,25 @@ function slideOutOfWalls(p,polys,r){let x=p[0],y=p[1];
 /* Cartes de combat : les zones de blocage sont des rectangles en pourcentages.
    Une porte ouverte ne bloque plus rien, ni la vue ni le passage. */
 function rectPolygon(r){return [[r.x,r.y],[r.x+r.w,r.y],[r.x+r.w,r.y+r.h],[r.x,r.y+r.h]]}
+// Différence de deux rectangles : jusqu'à quatre bandes, exactement l'aire restante.
+function diffRect(a,b){const ax2=a.x+a.w,ay2=a.y+a.h,bx2=b.x+b.w,by2=b.y+b.h;
+ if(b.x>=ax2||bx2<=a.x||b.y>=ay2||by2<=a.y)return [a];
+ const haut=Math.max(a.y,b.y),bas=Math.min(ay2,by2),out=[];
+ if(b.y>a.y)out.push({x:a.x,y:a.y,w:a.w,h:b.y-a.y});
+ if(by2<ay2)out.push({x:a.x,y:by2,w:a.w,h:ay2-by2});
+ if(b.x>a.x)out.push({x:a.x,y:haut,w:b.x-a.x,h:bas-haut});
+ if(bx2<ax2)out.push({x:bx2,y:haut,w:ax2-bx2,h:bas-haut});
+ return out.filter(r=>r.w>1e-9&&r.h>1e-9)}
+// Zones de blocage moins zones de vision : on creuse, comme dans un fromage.
+// Garde-fou : au-delà de 600 morceaux on arrête de creuser plutôt que d'exploser.
+function subtractRects(rects,holes){let cur=rects.slice();
+ for(const h of holes||[]){if(cur.length>600)break;cur=cur.flatMap(r=>diffRect(r,h))}
+ return cur}
 function obstaclesFrom(map){if(!map)return [];
- return [...(map.walls||[]),...(map.doors||[]).filter(d=>d&&!d.open)]
-  .filter(r=>r&&r.w>0&&r.h>0).map(rectPolygon)}
+ const solide=r=>r&&r.w>0&&r.h>0;
+ const murs=(map.walls||[]).filter(solide),trous=(map.visions||[]).filter(solide);
+ const portes=(map.doors||[]).filter(d=>d&&!d.open).filter(solide);
+ return [...subtractRects(murs,trous),...portes].map(rectPolygon)}
 // Répartit n combattants en grille dans la zone de départ, sans sortir de ses bords.
 function spreadInZone(n,zone){if(!zone||n<1)return [];
  const cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols),out=[];
@@ -73,7 +89,7 @@ function spreadInZone(n,zone){if(!zone||n<1)return [];
   out.push({x:zone.x+zone.w*(c+.5)/cols,y:zone.y+zone.h*(r+.5)/rows})}
  return out}
 const api={resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
- rectPolygon,obstaclesFrom,spreadInZone,
+ rectPolygon,obstaclesFrom,spreadInZone,diffRect,subtractRects,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

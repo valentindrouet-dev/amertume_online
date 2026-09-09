@@ -1,4 +1,4 @@
-# Amertume Online — v0.16
+# Amertume Online — v0.17
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -104,3 +104,13 @@ L’éditeur quittait une fenêtre trop étroite pour travailler. Le site a dés
 La page occupe toute la largeur : liste des cartes à gauche, plan de travail au centre, propriétés de la forme sélectionnée et légende à droite. Le plan de travail conserve le rapport d’écran de la carte de jeu et occupe la hauteur disponible.
 
 Les contrôles ne se chevauchent plus, et chaque outil porte la couleur de la forme qu’il trace : ardoise pour les zones de blocage, ambre pour les portes, vert pour la zone de départ, rouge pour les adversaires. L’outil actif est rempli de sa couleur.
+
+## v0.17 — Zoom, zones de vision, annulation et verrouillage
+
+**Zoom** sur la carte de jeu comme dans l’éditeur : le pincement du trackpad (que le système envoie en molette + ctrl), les boutons − / + et **Ajuster**, jusqu’à ×8. Une fois zoomé, le défilement à deux doigts déplace la vue, et on peut aussi la faire glisser à la souris depuis une zone vide. Seul l’affichage est transformé : les positions restent en pourcentages, donc portées, lignes de vue et collisions sont inchangées.
+
+**Zones de vision** : tracées à l’intérieur d’une zone de blocage, elles y **creusent une ouverture** — vue et passage rétablis, comme si l’on grattait le fromage. La découpe est exacte : chaque rectangle de blocage moins les zones de vision donne un pavage de rectangles, utilisé tel quel pour le dessin et pour les règles. Ce qui s’affiche est donc exactement ce qui bloque. Une porte fermée n’est jamais creusée : elle reste une porte, avec son état propre.
+
+**Annulation** par ⌘Z ou Ctrl+Z, rétablissement par ⇧⌘Z, plus deux boutons dans la barre. L’historique couvre tracés, déplacements, redimensionnements, suppressions, verrouillages, portes et images ; il porte sur la carte en cours d’édition.
+
+**Sélection et verrouillage** : un clic simple sur une forme existante la sélectionne même quand un outil de dessin est actif, et repasse l’éditeur en Sélection — tracer reste possible en glissant. Chaque forme peut être verrouillée par le cadenas du panneau de droite : elle reste sélectionnable, mais ne peut plus être déplacée, redimensionnée ni supprimée tant qu’on ne la déverrouille pas.

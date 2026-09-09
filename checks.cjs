@@ -64,4 +64,22 @@ assert.equal(places.length,5);
 assert.ok(places.every(p=>p.x>=5&&p.x<=25&&p.y>=70&&p.y<=90));   // Tous dans la zone.
 assert.equal(new Set(places.map(p=>p.x+':'+p.y)).size,5);        // Aucun doublon de position.
 assert.deepEqual(spreadInZone(3,null),[]);
-console.log('62 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// Zones de vision : elles creusent les zones de blocage.
+const {diffRect,subtractRects}=require('./combat.js');
+const aire=rs=>rs.reduce((s,r)=>s+r.w*r.h,0);
+assert.deepEqual(diffRect({x:0,y:0,w:10,h:10},{x:20,y:20,w:5,h:5}),[{x:0,y:0,w:10,h:10}]); // Sans recouvrement : intact.
+assert.equal(diffRect({x:0,y:0,w:10,h:10},{x:0,y:0,w:10,h:10}).length,0);                  // Entièrement creusé.
+const troue=diffRect({x:0,y:0,w:10,h:10},{x:4,y:4,w:2,h:2});
+assert.equal(troue.length,4);assert.equal(aire(troue),100-4);                              // Trou central : quatre bandes.
+const bord=diffRect({x:0,y:0,w:10,h:10},{x:-5,y:-5,w:10,h:20});
+assert.equal(aire(bord),50);                                                               // Creusé par la gauche.
+assert.equal(aire(subtractRects([{x:0,y:0,w:10,h:10}],[{x:2,y:2,w:2,h:2},{x:6,y:6,w:2,h:2}])),100-8);
+// Une pièce creusée dans un gros bloc : la vue passe dedans, pas au travers du plein.
+const FROMAGE={walls:[{x:20,y:20,w:60,h:40}],visions:[{x:30,y:30,w:40,h:20}],doors:[]};
+const troues=obstaclesFrom(FROMAGE);assert.equal(troues.length,4);
+assert.ok(!wallsBetween({x:35,y:40},{x:65,y:40},troues));  // À l'intérieur de la pièce : dégagé.
+assert.ok(wallsBetween({x:10,y:40},{x:90,y:40},troues));   // De part en part : le plein bloque.
+assert.ok(wallsBetween({x:50,y:10},{x:50,y:90},troues));   // Verticalement aussi.
+// Une porte fermée n'est jamais creusée par une zone de vision.
+assert.equal(obstaclesFrom({walls:[],visions:[{x:0,y:0,w:100,h:100}],doors:[{x:40,y:40,w:5,h:5,open:false}]}).length,1);
+console.log('73 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
