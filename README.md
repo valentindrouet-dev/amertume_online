@@ -1,4 +1,4 @@
-# Amertume Online — v0.31
+# Amertume Online — v0.32
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.32 — Portes plus fines, dés à la recette officielle
+
+**Les portes.** Le contour orange s’affine — 2,5 px close, 3,5 px verrouillée. Une porte **ouverte** passe au **pointillé gris** : elle ne réclame plus l’œil comme un obstacle. Et une porte que le lecteur peut effectivement manœuvrer **s’allume au survol** — trait doré, halo, curseur de main. Le critère est le même que pour l’ouverture : le MJ partout, un joueur seulement si son token la touche et qu’elle n’est pas verrouillée. Une porte hors de portée reste éteinte et garde son curseur ordinaire : on voit d’un coup d’œil ce qu’on peut faire.
+
+**Les dés reprennent la recette d’Amertume RPG**, en CSS pur comme dans le jeu — aucun fichier graphique ajouté. Carré de 22 px, rayon 5, liseré de 1,5 px, pastille centrale de 6 px, relief par deux ombres internes et une ombre portée. Les couleurs passent aux valeurs officielles : Simple `#ece7db`, Léger `#dcb87f`, Lourd `#c0392b`, Mystique `#3f7bc0`, Soin `#5fa45f`, Mortel `#2b2b2b`, Phase `#d8c13a`. Le Mortel porte le liseré clair ; Lourd, Mystique et Mortel la pastille claire, leur face étant trop sombre pour l’inverse — et pour la même raison, leur chiffre passe en clair sur les dés du plateau et dans les résultats.
+
+Les réserves s’affichent désormais dans l’**ordre officiel** : noir, rouge, bleu, vert, jaune, blanc, os.
+
+Le huitième dé, **Faille (rose `#b84ec0`)**, n’est pas repris : la réserve est un tableau de sept entrées, validé comme tel jusque dans le contenu publié. L’ajouter est une modification du modèle de données, pas d’affichage — à faire sur demande.
 
 ## v0.31 — Le décor se voit sous les portes
 

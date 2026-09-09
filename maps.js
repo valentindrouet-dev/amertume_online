@@ -185,7 +185,9 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
  // reste lisible dans la pénombre. Tant qu'elle est inexplorée, elle n'existe pas.
  (m.doors||[]).forEach((d,i)=>{
   if(!doorSeen(d))return;
-  const el=svgRect(d,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':''));
+  // Une porte que ce lecteur peut manœuvrer s'annonce au survol.
+  const ouvrable=view==='mj'||(!d.keyLocked&&doorInReach(d));
+  const el=svgRect(d,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':'')+(ouvrable?' can-open':''));
   el.style.pointerEvents='all';
   el.onclick=()=>{
    if(d.keyLocked&&view!=='mj'){log('Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}

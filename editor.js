@@ -44,10 +44,15 @@ bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<option value="danger-">Tri : danger ↑</option><option value="nom">Tri : nom</option></select></div>'
  +'<div class="cat-cols" id="bestiary-cols"></div></section>';
 document.querySelector('main.layout').after(armoryPage,bestiaryPage);
-// Une pastille de dé par dé de la réserve, à la couleur de son type.
+/* Une pastille par dé de la réserve, dans l’ordre officiel d’affichage : noir, rouge,
+   bleu, vert, jaune, blanc, os. Le Mortel porte un liseré clair, et Lourd, Mystique et
+   Mortel une pastille centrale claire — leur face est trop sombre pour l’inverse. */
+const DIE_ORDER=[5,2,3,4,6,0,1],DIE_PALE=[5],DIE_LIGHT_PIP=[2,3,5];
 function dicePips(dice){const out=document.createElement('span');out.className='pips';
- keys.forEach((k,c)=>{for(let n=0;n<(dice&&dice[k]||0);n++){
-  const d=document.createElement('i');d.className='pip';d.style.background=colors[c];d.title=types[c];out.append(d)}});
+ DIE_ORDER.forEach(c=>{for(let n=0;n<(dice&&dice[keys[c]]||0);n++){
+  const d=document.createElement('i');
+  d.className='die-sq'+(DIE_PALE.includes(c)?' pale':'')+(DIE_LIGHT_PIP.includes(c)?' clair':'');
+  d.style.setProperty('--face',colors[c]);d.title=types[c];out.append(d)}});
  return out}
 function itemColumn(a){return a.category==='armor'?'armor'
  :a.category==='weapon'?(a.ranged?'ranged':'melee'):'object'}
