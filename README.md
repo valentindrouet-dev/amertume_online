@@ -1,4 +1,4 @@
-# Amertume Online — v0.41
+# Amertume Online — v0.42
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.42 — Onglet Aventuriers
+
+**La troupe a sa page.** Un quatrième onglet, **Aventuriers**, à côté de Cartes, Armurerie et Bestiaire, réservé au MJ comme les autres. Une carte par héros : portrait, nom, classe, ses chiffres (PV, DEF, dégâts, Vie, Endurance, niveau, XP) et son équipement en une ligne. Trois icônes par carte — **✎** ouvre la fiche, **⧉** la duplique, **✕** retire le héros de la scène. Un champ de recherche filtre par nom.
+
+Le bouton **Modifier la fiche** disparaît de la table de jeu : c’est ici qu’on modifie un aventurier, plus dans la barre d’outils. Le retrait passe par le même garde-fou qu’auparavant — la troupe garde toujours au moins un héros, et les cibles des adversaires sont recalées après une suppression.
+
+**Tour de combat.** L’intitulé et le numéro tiennent désormais sur une seule ligne, alignés sur la même base : le panneau de gauche gagne une ligne de hauteur.
 
 ## v0.41 — Sauvegarde des cartes, socles à la bonne taille
 

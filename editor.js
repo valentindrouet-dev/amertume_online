@@ -14,7 +14,7 @@ actors.forEach(normalizeActor);
  .forEach(([nom,armes,armure,bouclier])=>{const a=actors.find(x=>x.name===nom);if(!a||a.weapons.length)return;
   a.weapons=armes.map(parNom).filter(Boolean);a.armorId=parNom(armure);a.shieldId=parNom(bouclier);
   const d=equippedDef(a,catalog.items);if(d!==null)a.def=d;a.pool=poolOf(a)})})();
-const toolsBar=document.createElement('div');toolsBar.className='mj-tools';toolsBar.innerHTML='<button id="edit-actor">Modifier la fiche</button><button id="new-hero">+ Personnage</button><button id="new-monster">+ Monstre</button><button id="edit-scene">Modifier la scène</button><button id="reset-map">Retirer la carte</button>';
+const toolsBar=document.createElement('div');toolsBar.className='mj-tools';toolsBar.innerHTML='<button id="new-hero">+ Personnage</button><button id="new-monster">+ Monstre</button><button id="edit-scene">Modifier la scène</button><button id="reset-map">Retirer la carte</button>';
 document.querySelector('.intro').after(toolsBar);const saveLabel=document.createElement('p');saveLabel.id='save-status';toolsBar.after(saveLabel);
 const note=document.createElement('p');note.id='actor-notes';note.className='muted';$('class').after(note);
 const attackSelect=document.createElement('select');attackSelect.id='attack-preset';attackSelect.setAttribute('aria-label','Attaque du combattant');$('attack-pool').before(attackSelect);
@@ -33,6 +33,13 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
  +'<option value="melee">Armes de mêlée</option><option value="ranged">Armes à distance</option>'
  +'<option value="armor">Armures</option><option value="object">Objets</option></select></div>'
  +'<div class="cat-cols" id="armory-cols"></div></section>';
+const heroesPage=document.createElement('main');heroesPage.id='heroes-page';
+heroesPage.innerHTML='<section class="cat-panel panel">'
+ +'<header class="cat-head"><h2>Aventuriers</h2><div class="cat-actions">'
+ +'<button id="hero-add" class="primary">+ Nouvel aventurier</button></div></header>'
+ +'<p class="muted">Les fiches des héros de la troupe. C’est ici qu’on les crée, qu’on les modifie et qu’on les retire.</p>'
+ +'<div class="cat-filters"><input id="hero-search" placeholder="Rechercher…" aria-label="Rechercher un aventurier"></div>'
+ +'<div class="hero-grid" id="hero-grid"></div></section>';
 const bestiaryPage=document.createElement('main');bestiaryPage.id='bestiary-page';
 bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Bestiaire</h2><div class="cat-actions">'
@@ -43,7 +50,46 @@ bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<select id="bestiary-sort" aria-label="Tri"><option value="danger">Tri : danger ↓</option>'
  +'<option value="danger-">Tri : danger ↑</option><option value="nom">Tri : nom</option></select></div>'
  +'<div class="cat-cols" id="bestiary-cols"></div></section>';
-document.querySelector('main.layout').after(armoryPage,bestiaryPage);
+document.querySelector('main.layout').after(heroesPage,armoryPage,bestiaryPage);
+/* Une carte par aventurier : de quoi le reconnaître, lire ses chiffres et agir dessus. */
+function heroCard(a,i){const c=document.createElement('article');c.className='hero-card';
+ const tete=document.createElement('div');tete.className='hero-head';
+ const jeton=document.createElement('span');jeton.className='avatar';
+ if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';jeton.append(im)}
+ else jeton.textContent=(a.name||'?')[0];
+ const titre=document.createElement('div');titre.className='hero-id';
+ const nom=document.createElement('strong');nom.textContent=a.name;
+ const role=document.createElement('small');role.textContent=a.role||'Aventurier';
+ titre.append(nom,role);
+ const outils=document.createElement('span');outils.className='cat-tools';
+ const ico=(g,t,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=g;
+  b.title=t;b.setAttribute('aria-label',t+' '+a.name);b.onclick=fn;return b};
+ const suppr=ico('✕','Retirer',()=>{const souci=removeActor(actors.indexOf(a));
+  if(souci)alert(souci);else renderHeroes()});
+ suppr.classList.add('danger');
+ outils.append(ico('✎','Modifier',()=>openActor(actors.indexOf(a))),
+  ico('⧉','Dupliquer',()=>{const copie=normalizeActor(structuredClone(a));
+   copie.name=a.name+' (copie)';copie.target=null;copie.checks=[false,false,false];
+   actors.push(copie);renderHeroes();render();scheduleSave()}),suppr);
+ tete.append(jeton,titre,outils);
+ const chiffres=document.createElement('div');chiffres.className='hero-stats';
+ [['PV',a.hp+' / '+a.max],['DEF',defOf(a)],['Dég.','+'+a.dmg],['Vie',a.vie+' / '+(a.vieMax??a.vie)],
+  ['Endu',a.endu],['Niv.',a.level],['XP',a.xp]].forEach(([l,v])=>{
+  const t=document.createElement('span');t.innerHTML='<b></b>';t.firstChild.textContent=v;
+  t.prepend(document.createTextNode(l+' '));chiffres.append(t)});
+ const kit=document.createElement('p');kit.className='muted hero-kit';
+ const armes=(a.weapons||[]).map(gear).filter(Boolean).map(w=>w.name);
+ const prot=[a.armorId,a.shieldId].map(gear).filter(Boolean).map(w=>w.name);
+ kit.textContent=(armes.length?armes.join(' + '):'Aucune arme')+' · '+(prot.length?prot.join(' + '):'Sans armure');
+ c.append(tete,chiffres,kit);return c}
+function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
+ const q=($('hero-search').value||'').trim().toLowerCase();
+ const heros=actors.filter(a=>a.hero&&(!q||a.name.toLowerCase().includes(q)));
+ heros.forEach((a,i)=>grille.append(heroCard(a,i)));
+ if(!heros.length){const v=document.createElement('p');v.className='muted';
+  v.textContent=q?'Aucun aventurier de ce nom.':'Aucun aventurier dans la troupe.';grille.append(v)}}
+$('hero-search').oninput=renderHeroes;
+$('hero-add').onclick=()=>openActor(null,true);
 /* Une pastille par dé de la réserve, dans l’ordre officiel d’affichage : noir, rouge,
    bleu, vert, jaune, blanc, os. Le Mortel porte un liseré clair, et Lourd, Mystique et
    Mortel une pastille centrale claire — leur face est trop sombre pour l’inverse.
@@ -160,7 +206,7 @@ function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.rep
   liste.forEach(([m,i])=>bloc.append(bestiaryRow(m,i)));
   if(!liste.length){const vide=document.createElement('p');vide.className='muted';vide.textContent='Rien ici.';bloc.append(vide)}
   cols.append(bloc)}}
-function renderCatalogPages(){renderArmory();renderBestiary()}
+function renderCatalogPages(){renderHeroes();renderArmory();renderBestiary()}
 $('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;
 $('armory-add').onclick=()=>openItem(null);
 $('armory-official').onclick=()=>{
@@ -202,16 +248,31 @@ function readActor(){const f=$('actor-form').elements;readAttacks();const a=stru
 function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,notes:a.notes,attacks:structuredClone(a.attacks),image:a.image||null}}
 $('actor-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;const a=readActor();if(templateIndex!==null){catalog.monsters[templateIndex]={...toMonster(a),id:catalog.monsters[templateIndex].id};renderCatalogPages()}else if(editing===null){actors.push(a);selected=actors.length-1}else actors[editing]=a;actorDialog.close();render();log('Fiche enregistrée : '+a.name);scheduleSave()};
 $('save-template').onclick=()=>{if(!$('actor-form').reportValidity()||view!=='mj')return;catalog.monsters.push(toMonster(readActor()));$('actor-error').textContent='Copie ajoutée au bestiaire.';scheduleSave()};
-$('delete-actor').onclick=()=>{if(view!=='mj'||editing===null)return;if(actors.length===1||(actors[editing].hero&&actors.filter(a=>a.hero).length===1)){$('actor-error').textContent='Conserve au moins un héros dans la scène.';return}if(!confirm('Retirer '+actors[editing].name+' de la scène ?'))return;actors.splice(editing,1);actors.forEach(a=>{if(a.target===editing)a.target=null;else if(a.target>editing)a.target--});if(owner>=editing)owner=Math.max(0,owner-1);if(!actors[owner]?.hero)owner=actors.findIndex(a=>a.hero);selected=owner;actorDialog.close();render();scheduleSave()};
+/* Retirer un combattant : les cibles qui le visaient et les indices qui le suivaient
+   sont recalés, et la scène garde toujours au moins un héros. */
+function removeActor(i){
+ if(view!=='mj'||!actors[i])return 'Retrait impossible.';
+ if(actors.length===1||(actors[i].hero&&actors.filter(a=>a.hero).length===1))return 'Conserve au moins un héros dans la scène.';
+ if(!confirm('Retirer '+actors[i].name+' de la scène ?'))return null;
+ actors.splice(i,1);
+ actors.forEach(a=>{if(a.target===i)a.target=null;else if(a.target>i)a.target--});
+ if(owner>=i)owner=Math.max(0,owner-1);
+ if(!actors[owner]?.hero)owner=actors.findIndex(a=>a.hero);
+ if(selected!==null&&selected>=i)selected=selected>i?selected-1:null;
+ render();scheduleSave();return null}
+$('delete-actor').onclick=()=>{if(editing===null)return;
+ const souci=removeActor(editing);
+ if(souci){$('actor-error').textContent=souci;return}
+ selected=owner;actorDialog.close();render()};
 function openItem(i=null){itemIndex=i;const a=i===null?{name:'Nouvel objet',category:'weapon',hands:1,qty:1,price:0,def:0,slot:'body',dice:{},traits:[]}:catalog.items[i];$('item-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+sel('Catégorie','category',a.category,[['weapon','Arme'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['misc','Divers']])+field('Quantité','qty',a.qty||1,'number','min="1" max="9999"')+field('Prix','price',a.price||0,'number','min="0" max="999999"')+sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']])+field('DEF (armure)','def',a.def||0,'number','min="0" max="99"')+sel('Emplacement armure','slot',a.slot||'body',[['body','Corps'],['shield','Bouclier']])+'</div>'+poolFields(poolFrom(a.dice),'itemdie')+['ranged','usesAmmo','consumable'].map((k,i)=>'<label class="field-check"><input name="'+k+'" type="checkbox" '+(a[k]?'checked':'')+'>'+['Distance','Munitions nécessaires','Consommable'][i]+'</label>').join('')+field('Traits (séparés par une virgule)','traits',(a.traits||[]).join(', '))+field('Effets (manuel)','effects',a.effects||'')+'<label>Notes<textarea name="notes">'+esc(a.notes||'')+'</textarea></label>';$('delete-item').hidden=i===null;itemDialog.showModal()}
 $('item-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;const f=$('item-form').elements,a=itemIndex===null?{id:crypto.randomUUID()}:structuredClone(catalog.items[itemIndex]);for(const k of ['name','category','slot','effects','notes'])a[k]=f[k].value.trim();for(const k of ['qty','price','hands','def'])a[k]=num(f[k].value,0,999999);a.traits=f.traits.value.split(',').map(s=>s.trim()).filter(Boolean);for(const k of ['ranged','usesAmmo','consumable'])a[k]=f[k].checked;a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));if(itemIndex===null)catalog.items.push(a);else catalog.items[itemIndex]=a;itemDialog.close();renderCatalogPages();scheduleSave()};
 $('delete-item').onclick=()=>{if(view!=='mj'||itemIndex===null||!confirm('Supprimer cet objet du catalogue ? Les attaques déjà appliquées restent inchangées.'))return;const id=catalog.items[itemIndex].id;actors.forEach(a=>{a.weapons=a.weapons.filter(w=>w!==id);if(a.armorId===id)a.armorId='';if(a.shieldId===id)a.shieldId=''});catalog.items.splice(itemIndex,1);itemDialog.close();renderCatalogPages();scheduleSave()};
 
-$('edit-actor').onclick=()=>{if(actors[selected])openActor(selected)};$('new-hero').onclick=()=>openActor(null,true);$('new-monster').onclick=()=>openActor(null,false);
+$('new-hero').onclick=()=>openActor(null,true);$('new-monster').onclick=()=>openActor(null,false);
 const sceneDialog=dialog('scene-editor','Scène','<form id="scene-form"><label>Titre<input name="title" maxlength="120" required></label><label>Tour de combat<input name="round" type="number" min="1" max="999" required></label><div class="form-actions"><button class="primary">Enregistrer</button></div></form>');
 $('edit-scene').onclick=()=>{if(view!=='mj')return;$('scene-form').elements.title.value=document.querySelector('.intro h1').textContent;$('scene-form').elements.round.value=round;sceneDialog.showModal()};$('scene-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;round=num($('scene-form').elements.round.value,1,999);document.querySelector('.intro h1').textContent=$('scene-form').elements.title.value;$('round').textContent=String(round).padStart(2,'0');sceneDialog.close();scheduleSave()};
 $('reset-map').onclick=()=>{if(view!=='mj')return;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom');scheduleSave()};
-const originalRender=render;render=function(){originalRender();toolsBar.hidden=view!=='mj';$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero)$('owner').add(new Option(a.name,String(i)))});$('owner').value=String(owner);const a=actors[selected];$('edit-actor').disabled=!a;$('actor-notes').textContent=a&&a.notes||'';attackSelect.replaceChildren();
+const originalRender=render;render=function(){originalRender();toolsBar.hidden=view!=='mj';$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero)$('owner').add(new Option(a.name,String(i)))});$('owner').value=String(owner);const a=actors[selected];$('actor-notes').textContent=a&&a.notes||'';attackSelect.replaceChildren();
  if(a)a.attacks.forEach((at,i)=>attackSelect.add(new Option(at.name,String(i))));
  if(a)attackSelect.value=String(a.activeAttack||0);
  attackSelect.hidden=!a||!a.attacks.length||!!equippedPool(a,catalog.items);document.querySelectorAll('.token').forEach((t,i)=>{if(actors[i].image){t.replaceChildren();const im=document.createElement('img');im.src=actors[i].image;im.alt='';t.append(im)}});scheduleSave()};
