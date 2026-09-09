@@ -1,4 +1,4 @@
-# Amertume Online — v0.34
+# Amertume Online — v0.35
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,12 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.35 — Flèche droite, bouton court
+
+**La flèche ne fait plus le tour.** Elle va droit d’un socle à l’autre, et surtout elle **part du bord du token** et non de son centre : deux pixels au-delà du rayon, de quoi loger le bout arrondi du trait, et la pointe vient tomber pile sur le bord du socle visé — la tête dépassant de trois pixels le bout du tracé, c’est compté. Mesuré : départ à 25,2 px pour un socle de 23,2 px de rayon, pointe à 23,2 px du centre de la cible. Quand les deux socles se touchent presque, la flèche garde une hampe minimale plutôt que de se réduire à sa pointe ; s’ils se chevauchent, elle s’efface.
+
+**Le bouton d’attaque** rétrécit au quart de sa largeur, prend une **taille fixe** — 126 px, quelle que soit l’arme — et porte simplement **Attaque**, en **bleu Mystique** (`#3f7bc0`). Le nom de l’arme passe en infobulle : il se lit déjà dans les dés juste au-dessus, qui grossissent à 30 px, et le bonus de dégâts avec.
 
 ## v0.34 — Flèche de ciblage, carte d’attaque
 
