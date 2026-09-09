@@ -52,4 +52,16 @@ assert.deepEqual(slideOutOfWalls([20,20],[],5),[20,20]);    // Sans mur, rien ne
 const {segmentHitsPolys}=require('./combat.js');
 assert.ok(segmentHitsPolys([5,20],[35,20],CARRE));   // Bond au travers : détecté.
 assert.ok(!segmentHitsPolys([5,5],[35,5],CARRE));    // Bond au-dessus : libre.
-console.log('54 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// Cartes de combat : obstacles et zone de départ.
+const {obstaclesFrom,spreadInZone}=require('./combat.js');
+const CARTE={walls:[{x:10,y:10,w:20,h:5}],doors:[{x:40,y:10,w:5,h:10,open:false},{x:60,y:10,w:5,h:10,open:true}],start:{x:5,y:70,w:20,h:20}};
+assert.equal(obstaclesFrom(CARTE).length,2);                  // Le mur et la porte fermée ; l'ouverte ne bloque pas.
+assert.deepEqual(obstaclesFrom(CARTE)[0],[[10,10],[30,10],[30,15],[10,15]]);
+assert.equal(obstaclesFrom(null).length,0);
+assert.equal(obstaclesFrom({walls:[{x:1,y:1,w:0,h:5}]}).length,0); // Rectangle plat : ignoré.
+const places=spreadInZone(5,CARTE.start);
+assert.equal(places.length,5);
+assert.ok(places.every(p=>p.x>=5&&p.x<=25&&p.y>=70&&p.y<=90));   // Tous dans la zone.
+assert.equal(new Set(places.map(p=>p.x+':'+p.y)).size,5);        // Aucun doublon de position.
+assert.deepEqual(spreadInZone(3,null),[]);
+console.log('62 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

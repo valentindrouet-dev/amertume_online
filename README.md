@@ -1,4 +1,4 @@
-# Amertume Online — v0.14
+# Amertume Online — v0.15
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -80,3 +80,19 @@ La réserve de dés n’est plus affichée : l’arme la détermine, et une lign
 Le contenu partagé quitte la page pour une fenêtre, ouverte par le bouton **Partager** de l’en-tête. Un point ambre sur ce bouton signale qu’une version partagée est disponible.
 
 Les fiches de héros et d’adversaires reprennent la maquette fournie : bandeau de classe teinté par combattant, chips d’identité (sexe, peuple, niveau, portée), tuiles de caractéristiques colorées — Vie, Endurance, PV, DEF en écu, Dégâts pour les héros ; PV, DEF, Dégâts, XP pour les adversaires — et compétences en pastilles teintées avec leur bonus. La fiche MJ gagne les champs Sexe, Peuple et Vie maximale.
+
+## v0.15 — Éditeur de cartes de combat
+
+Un éditeur dédié (bouton **Éditeur de cartes**) crée autant de cartes que voulu, chacune avec son image de fond optimisée comme les autres imports.
+
+**Zones de blocage** : des rectangles tracés à la souris, déplaçables et redimensionnables par leurs quatre coins. Elles coupent la vue et le passage. À l’écran de jeu, les rectangles qui se chevauchent se fondent en une seule zone semi-transparente ; dans l’éditeur ils restent distincts pour rester modifiables. La fusion est visuelle : chaque rectangle est testé individuellement, le résultat est le même.
+
+**Portes** : mêmes tracé et redimensionnement, avec un état ouvert ou fermé. Fermée, une porte bloque la vue et le passage comme un mur, et l’interface la nomme (« ligne de vue bloquée par une porte fermée »). Ouverte, elle laisse tout passer. En jeu, le MJ ouvre ou ferme une porte d’un clic dessus.
+
+**Zone de départ** : une par carte. À l’ouverture de la carte, les héros y sont regroupés en grille, sans jamais sortir de ses bords.
+
+**Adversaires pré-placés** : choisis dans le bestiaire et posés sur la carte, chacun avec un statut **visible ou invisible à l’ouverture**. Un adversaire invisible n’apparaît pas du tout en vue joueur, ne peut pas être ciblé depuis cette vue, et s’affiche au MJ en pointillés estompés. Chaque adversaire est une copie indépendante du modèle : modifier le bestiaire ensuite ne change pas les cartes.
+
+**En combat**, un sélecteur choisit la carte et le bouton **Ouvrir la carte** l’applique après confirmation : l’image devient le fond, les obstacles de la carte remplacent le plan schématique, les héros rejoignent la zone de départ et les adversaires de la scène sont remplacés par ceux de la carte.
+
+Les cartes sont enregistrées avec la partie (format interne passé en version 8, les sauvegardes en version 7 sont reprises sans perte) et publiées avec le contenu partagé.

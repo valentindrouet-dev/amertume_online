@@ -60,7 +60,20 @@ function slideOutOfWalls(p,polys,r){let x=p[0],y=p[1];
    x=best[0]+nx*r;y=best[1]+ny*r;touched=true}
   if(!touched)break}
  return [x,y]}
+/* Cartes de combat : les zones de blocage sont des rectangles en pourcentages.
+   Une porte ouverte ne bloque plus rien, ni la vue ni le passage. */
+function rectPolygon(r){return [[r.x,r.y],[r.x+r.w,r.y],[r.x+r.w,r.y+r.h],[r.x,r.y+r.h]]}
+function obstaclesFrom(map){if(!map)return [];
+ return [...(map.walls||[]),...(map.doors||[]).filter(d=>d&&!d.open)]
+  .filter(r=>r&&r.w>0&&r.h>0).map(rectPolygon)}
+// Répartit n combattants en grille dans la zone de départ, sans sortir de ses bords.
+function spreadInZone(n,zone){if(!zone||n<1)return [];
+ const cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols),out=[];
+ for(let i=0;i<n;i++){const c=i%cols,r=Math.floor(i/cols);
+  out.push({x:zone.x+zone.w*(c+.5)/cols,y:zone.y+zone.h*(r+.5)/rows})}
+ return out}
 const api={resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+ rectPolygon,obstaclesFrom,spreadInZone,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);
