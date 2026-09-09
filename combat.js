@@ -29,7 +29,15 @@ function crosses(p,q,r,s){const side=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1]
  const d1=side(p,q,r),d2=side(p,q,s),d3=side(r,s,p),d4=side(r,s,q);
  return d1!==0&&d2!==0&&d3!==0&&d4!==0&&(d1>0)!==(d2>0)&&(d3>0)!==(d4>0)}
 // Un segment franchit-il un côté de polygone ? Sert à la vue comme au déplacement.
-function segmentHitsPolys(p,q,polys){return (polys||[]).some(poly=>poly.some((pt,i)=>crosses(p,q,pt,poly[(i+1)%poly.length])))}
+/* Un obstacle est une forme : une liste de contours, la matière étant définie par la
+   règle pair-impair. Un creux est donc un contour comme un autre. Un polygone simple
+   reste accepté tel quel, ce qui laisse tout le code d'avant valable. */
+function contoursOf(s){return Array.isArray(s)?[s]:(s&&s.contours)||[]}
+function shapeContains(s,p){let dedans=false;
+ for(const c of contoursOf(s))if(pointInPolygon(p,c))dedans=!dedans;
+ return dedans}
+function segmentHitsPolys(p,q,shapes){return (shapes||[]).some(s=>contoursOf(s).some(poly=>
+ poly.some((pt,i)=>crosses(p,q,pt,poly[(i+1)%poly.length]))))}
 // walls : polygones fermés en pourcentages de carte. Un côté traversé coupe la vue.
 function wallsBetween(a,b,walls){return segmentHitsPolys([a.x,a.y],[b.x,b.y],walls)}
 /* Équipement : l'arme confère les dés, l'armure la DEF. Renvoient null quand rien
@@ -48,12 +56,16 @@ function closestOnSegment(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],len2=dx*dx+dy*d
 function pointInPolygon(p,poly){let inside=false;
  for(let i=0,j=poly.length-1;i<poly.length;j=i++){const [xi,yi]=poly[i],[xj,yj]=poly[j];
   if((yi>p[1])!==(yj>p[1])&&p[0]<(xj-xi)*(p[1]-yi)/(yj-yi)+xi)inside=!inside}return inside}
-function slideOutOfWalls(p,polys,r){let x=p[0],y=p[1];
+function slideOutOfWalls(p,shapes,r){let x=p[0],y=p[1];
  for(let pass=0;pass<4;pass++){let touched=false;
-  for(const poly of polys||[]){if(!poly||poly.length<3)continue;
+  for(const s of shapes||[]){const contours=contoursOf(s).filter(c=>c&&c.length>=3);
+   if(!contours.length)continue;
+   // Le point de bord le plus proche, tous contours confondus : un creux compte comme un bord.
    let best=null,bd=Infinity;
-   for(let i=0;i<poly.length;i++){const c=closestOnSegment([x,y],poly[i],poly[(i+1)%poly.length]);const d=Math.hypot(x-c[0],y-c[1]);if(d<bd){bd=d;best=c}}
-   const inside=pointInPolygon([x,y],poly);
+   for(const poly of contours)for(let i=0;i<poly.length;i++){
+    const c=closestOnSegment([x,y],poly[i],poly[(i+1)%poly.length]);const d=Math.hypot(x-c[0],y-c[1]);
+    if(d<bd){bd=d;best=c}}
+   const inside=shapeContains(s,[x,y]);
    if(!inside&&bd>=r)continue;
    let nx=0,ny=-1;
    if(bd>1e-6){nx=(x-best[0])/bd;ny=(y-best[1])/bd;if(inside){nx=-nx;ny=-ny}}
@@ -130,7 +142,100 @@ function uncontain(shapes,frameRatio,imageRatio){
  const ox=(1-sx)/2*100,oy=(1-sy)/2*100;
  return (shapes||[]).map(r=>{const o={...r};o.x=(r.x-ox)/sx;o.y=(r.y-oy)/sy;
   if(typeof r.w==='number')o.w=r.w/sx;if(typeof r.h==='number')o.h=r.h/sy;return o})}
-function obstaclesFrom(map){return obstacleRectsFrom(map).map(rectPolygon)}
+/* Contour exact de l'union de rectangles. Les seules lignes utiles sont les bords des
+   rectangles : on comprime les coordonnées sur ces lignes, chaque case est alors
+   entièrement pleine ou vide, et on chaîne les arêtes de bord en boucles fermées.
+   Aucune quantification, donc aucun escalier qui ne soit déjà dans les données. */
+function unionContours(rects){
+ const rs=(rects||[]).filter(r=>r&&r.w>1e-9&&r.h>1e-9);
+ if(!rs.length)return [];
+ // Deux bords calculés autrement tombent au même endroit à 1e-15 près : on les fond,
+ // sinon la grille se remplit de lamelles fantômes et le contour part en morceaux.
+ const lignes=v=>{const t=[...v].sort((a,b)=>a-b),out=[];
+  for(const x of t)if(!out.length||x-out[out.length-1]>1e-7)out.push(x);
+  return out};
+ const xs=lignes(rs.flatMap(r=>[r.x,r.x+r.w])),ys=lignes(rs.flatMap(r=>[r.y,r.y+r.h]));
+ const C=xs.length-1,R=ys.length-1,g=new Uint8Array(C*R);
+ // Chaque rectangle marque directement sa plage de cases : la case suit ses bords.
+ const rang=(t,v)=>{let a=0,b=t.length-1;while(a<b){const m=(a+b)>>1;if(t[m]<v-1e-7)a=m+1;else b=m}return a};
+ for(const r of rs){const i0=rang(xs,r.x),i1=rang(xs,r.x+r.w),j0=rang(ys,r.y),j1=rang(ys,r.y+r.h);
+  for(let j=j0;j<j1;j++)for(let i=i0;i<i1;i++)g[j*C+i]=1}
+ // Arêtes orientées matière à gauche, indexées par leur point de départ.
+ const sorties=new Map(),cle=(x,y)=>x+'|'+y;
+ const arete=(ax,ay,bx,by)=>{const k=cle(ax,ay);
+  if(!sorties.has(k))sorties.set(k,[]);sorties.get(k).push([bx,by])};
+ const plein=(i,j)=>i>=0&&j>=0&&i<C&&j<R&&g[j*C+i]===1;
+ for(let j=0;j<R;j++)for(let i=0;i<C;i++){if(!plein(i,j))continue;
+  if(!plein(i,j-1))arete(xs[i+1],ys[j],xs[i],ys[j]);
+  if(!plein(i,j+1))arete(xs[i],ys[j+1],xs[i+1],ys[j+1]);
+  if(!plein(i-1,j))arete(xs[i],ys[j],xs[i],ys[j+1]);
+  if(!plein(i+1,j))arete(xs[i+1],ys[j+1],xs[i+1],ys[j]);}
+ const contours=[];
+ for(const [depart,liste] of sorties){
+  while(liste.length){
+   const boucle=[depart.split('|').map(Number)];let pt=liste.pop();
+   for(let garde=0;garde<200000;garde++){
+    boucle.push(pt);const suite=sorties.get(cle(pt[0],pt[1]));
+    if(!suite||!suite.length)break;
+    pt=suite.pop();
+    if(pt[0]===boucle[0][0]&&pt[1]===boucle[0][1])break}
+   if(boucle.length>=4)contours.push(fuseAligned(boucle))}}
+ return contours}
+// Trois points alignés : celui du milieu ne dit rien, on l'enlève.
+function fuseAligned(pts){const out=[];
+ for(let i=0;i<pts.length;i++){const a=pts[(i+pts.length-1)%pts.length],b=pts[i],c=pts[(i+1)%pts.length];
+  const d=(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+  if(Math.abs(d)>1e-12)out.push(b)}
+ return out.length>=3?out:pts}
+/* Marche d'escalier → courbe. On simplifie d'abord (Douglas-Peucker : les marches
+   cèdent la place à leur corde, l'angle droit franc a un écart trop grand pour céder),
+   puis deux passes de Chaikin arrondissent, avec une coupe plafonnée pour qu'un mur
+   droit reste droit et qu'un angle d'architecture reste un angle. */
+function simplifyClosed(pts,tol){
+ if(!pts||pts.length<4||!(tol>0))return pts;
+ let loin=0,dmax=-1;
+ for(let i=1;i<pts.length;i++){const d=Math.hypot(pts[i][0]-pts[0][0],pts[i][1]-pts[0][1]);
+  if(d>dmax){dmax=d;loin=i}}
+ const garde=new Uint8Array(pts.length);garde[0]=1;garde[loin]=1;
+ const pile=[[0,loin],[loin,pts.length]];
+ while(pile.length){const [i,j]=pile.pop();const fin=j===pts.length?0:j;
+  let best=-1,bd=tol;
+  for(let k=i+1;k<j;k++){const c=closestOnSegment(pts[k],pts[i],pts[fin]);
+   const d=Math.hypot(pts[k][0]-c[0],pts[k][1]-c[1]);
+   if(d>bd){bd=d;best=k}}
+  if(best>=0){garde[best]=1;pile.push([i,best],[best,j])}}
+ const out=pts.filter((_,i)=>garde[i]);
+ return out.length>=3?out:pts}
+/* Lissage par moyenne des voisins, appliqué seulement là où la géométrie est à
+   l'échelle de la trame : la marche d'escalier a des arêtes minuscules et fond, l'angle
+   d'un mur a des arêtes longues et ne bouge pas d'un cheveu. Le filtre (1,2,1)/4 annule
+   exactement l'ondulation d'une case sur deux, celle que laisse la rastérisation. */
+function relaxContour(pts,seuil,passes){let cur=pts;
+ for(let p=0;p<passes;p++){const n=cur.length,out=new Array(n);
+  for(let i=0;i<n;i++){const a=cur[(i+n-1)%n],b=cur[i],c=cur[(i+1)%n];
+   const l1=Math.hypot(b[0]-a[0],b[1]-a[1]),l2=Math.hypot(c[0]-b[0],c[1]-b[1]);
+   out[i]=Math.min(l1,l2)<=seuil?[(a[0]+2*b[0]+c[0])/4,(a[1]+2*b[1]+c[1])/4]:b}
+  cur=out}
+ return cur}
+/* Un contour qui tient en quelques sommets est de l'architecture, pas une découpe :
+   on le laisse net. Sinon on arrondit d'abord — la coupe vaut le quart d'une marche
+   d'escalier, mais reste plafonnée sur un mur droit, dont l'angle survit — puis on
+   allège : la courbe est lisse, ses points intermédiaires ne servent plus à rien. */
+function smoothContours(contours,tol,seuil){return (contours||[]).map(c=>{
+ if(c.length<=12)return c;
+ return simplifyClosed(relaxContour(c,seuil,6),tol)}).filter(c=>c.length>=3)}
+/* Géométrie effectivement opposée au regard et aux tirs : le contour lissé des zones
+   percées par les portes, puis chaque porte close. Dessin et calcul y puisent
+   ensemble, donc l'ombre commence exactement là où le mur est peint. */
+const CARVE_STEP=.4;
+function wallShape(map){return {contours:smoothContours(unionContours(wallsPierced(map)),CARVE_STEP*.05,CARVE_STEP*3)}}
+function obstaclesFrom(map){if(!map)return [];
+ return [wallShape(map),...(map.doors||[]).filter(d=>d&&!d.open&&d.w>0&&d.h>0).map(d=>({contours:[rectPolygon(d)]}))]}
+// Une porte se manœuvre au contact : son rectangle doit entrer dans le rayon du token.
+function rectInReach(actor,rect,size,token){
+ const cx=Math.max(rect.x,Math.min(actor.x,rect.x+rect.w));
+ const cy=Math.max(rect.y,Math.min(actor.y,rect.y+rect.h));
+ return tokenDistance(actor,{x:cx,y:cy},size)<=contactRadius(token)}
 // Répartit n combattants en grille dans la zone de départ, sans sortir de ses bords.
 function spreadInZone(n,zone){if(!zone||n<1)return [];
  const cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols),out=[];
@@ -156,20 +261,44 @@ function rayLeavesBox(ox,oy,dx,dy,B){let t=Infinity;
  if(dx>1e-12)t=Math.min(t,(B.x+B.w-ox)/dx);else if(dx<-1e-12)t=Math.min(t,(B.x-ox)/dx);
  if(dy>1e-12)t=Math.min(t,(B.y+B.h-oy)/dy);else if(dy<-1e-12)t=Math.min(t,(B.y-oy)/dy);
  return t===Infinity?0:Math.max(0,t)}
-function visionPolygon(o,rects,box){
+// Distance à laquelle un rayon coupe un segment, l'infini s'il le manque.
+function rayHitsSegment(ox,oy,dx,dy,a,b){
+ const ex=b[0]-a[0],ey=b[1]-a[1],den=dx*ey-dy*ex;
+ if(den>-1e-12&&den<1e-12)return Infinity;
+ const t=((a[0]-ox)*ey-(a[1]-oy)*ex)/den;
+ if(t<=0)return Infinity;
+ const u=((a[0]-ox)*dy-(a[1]-oy)*dx)/den;
+ return u>=0&&u<=1?t:Infinity}
+function contourBox(c){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+ for(const p of c){if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<y0)y0=p[1];if(p[1]>y1)y1=p[1]}
+ return {x:x0,y:y0,w:x1-x0,h:y1-y0}}
+function visionPolygon(o,shapes,box){
  const B=box||{x:0,y:0,w:100,h:100};
- // Un héros poussé dans un mur verrait le noir : l'obstacle qui le contient est ignoré.
- const rs=(rects||[]).filter(r=>r&&r.w>0&&r.h>0&&!(o.x>r.x&&o.x<r.x+r.w&&o.y>r.y&&o.y<r.y+r.h));
+ // Un héros poussé dans la matière verrait le noir : la forme qui le contient est ignorée.
+ const murs=[];
+ for(const s of shapes||[]){if(shapeContains(s,[o.x,o.y]))continue;
+  for(const c of contoursOf(s))if(c&&c.length>=3)murs.push({pts:c,box:contourBox(c)})}
  const coins=[[B.x,B.y],[B.x+B.w,B.y],[B.x+B.w,B.y+B.h],[B.x,B.y+B.h]];
- for(const r of rs)coins.push([r.x,r.y],[r.x+r.w,r.y],[r.x+r.w,r.y+r.h],[r.x,r.y+r.h]);
+ for(const m of murs)for(const p of m.pts)coins.push(p);
  const E=2e-5,pts=[];
  for(const c of coins){const base=Math.atan2(c[1]-o.y,c[0]-o.x);
   for(const a of [base-E,base,base+E]){const dx=Math.cos(a),dy=Math.sin(a);
    let t=rayLeavesBox(o.x,o.y,dx,dy,B);
-   for(let k=0;k<rs.length;k++){const u=rayHitsRect(o.x,o.y,dx,dy,rs[k]);if(u<t)t=u}
+   for(const m of murs){
+    // Rejet par boîte englobante : la plupart des contours ne sont pas sur le trajet.
+    if(rayHitsRect(o.x,o.y,dx,dy,m.box)>=t)continue;
+    const q=m.pts;
+    for(let i=0,j=q.length-1;i<q.length;j=i++){const u=rayHitsSegment(o.x,o.y,dx,dy,q[j],q[i]);if(u<t)t=u}}
    pts.push([a,o.x+t*dx,o.y+t*dy])}}
  pts.sort((p,q)=>p[0]-q[0]);
  return pts.map(p=>[p[1],p[2]])}
+// Un socle est vu dès qu'il mord sur la zone éclairée, pas seulement par son centre.
+function polyTouchesDisc(poly,c,r){if(!poly||poly.length<3)return false;
+ if(pointInPolygon(c,poly))return true;
+ for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+  const p=closestOnSegment(c,poly[j],poly[i]);
+  if(Math.hypot(c[0]-p[0],c[1]-p[1])<=r)return true}
+ return false}
 // Aire d'un polygone : sert à comparer une vision à celle d'une carte dégagée.
 function polygonArea(poly){let a=0;
  for(let i=0,j=poly.length-1;i<poly.length;j=i++)a+=(poly[j][0]+poly[i][0])*(poly[j][1]-poly[i][1]);
@@ -201,7 +330,7 @@ function regridMask(seen,fromW,fromH,toW,toH){const out=new Uint8Array(toW*toH);
   for(let i=0;i<toW;i++){const si=Math.min(fromW-1,Math.floor((i+.5)/toW*fromW));
    if(seen[sj*fromW+si]==='1')out[j*toW+i]=1}}
  return out}
-const api={visionPolygon,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={visionPolygon,relaxContour,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);

@@ -16,13 +16,29 @@ function measureRatio(m,apres){if(!m||!m.image)return;const img=new Image();
  img.onload=()=>{if(!img.naturalHeight)return;const r=img.naturalWidth/img.naturalHeight;
   if(Math.abs(r-(m.ratio||0))>1e-3){m.ratio=r;scheduleSave();if(apres)apres()}};
  img.onerror=()=>{};img.src=m.image}
+/* Le contour lissé des zones coûte quelques millisecondes : on le garde tant que la
+   géométrie ne bouge pas. Dessin, vue, tirs et déplacements y puisent tous, donc le
+   mur peint et le mur qui arrête sont exactement le même. */
+let shapeCache={cle:'',formes:[],murs:null};
+function geometryKey(m){return m.id+'|'+(m.walls||[]).map(r=>r.x+','+r.y+','+r.w+','+r.h+(r.locked?'v':'')).join(';')
+ +'|'+(m.doors||[]).map(d=>d.x+','+d.y+','+d.w+','+d.h+(d.open?'o':'f')).join(';')}
+// L'éditeur redessine à chaque geste : son contour est gardé de la même façon.
+let skinCache={cle:'',contours:[]};
+function draftSkin(m){const cle=geometryKey(m);
+ if(skinCache.cle!==cle)skinCache={cle,contours:wallShape(m).contours};
+ return skinCache.contours}
+function mapShapes(m){const cle=geometryKey(m);
+ if(shapeCache.cle!==cle){const murs=wallShape(m);
+  shapeCache={cle,murs,formes:[murs,...(m.doors||[]).filter(d=>d&&!d.open&&d.w>0&&d.h>0).map(d=>({contours:[rectPolygon(d)]}))]}}
+ return shapeCache}
 // Obstacles du moteur : la carte ouverte fait foi, sinon le plan schématique de départ.
-function activeObstacles(){const m=currentMap();return m?obstaclesFrom(m):$('map').classList.contains('custom')?[]:WALLS}
-// Le brouillard travaille sur des rectangles : nettement moins coûteux à traverser.
-function activeObstacleRects(){const m=currentMap();return m?obstacleRectsFrom(m):[]}
+function activeObstacles(){const m=currentMap();
+ return m?mapShapes(m).formes:$('map').classList.contains('custom')?[]:WALLS.map(p=>({contours:[p]}))}
 // Nomme l'obstacle qui coupe la vue, pour que le MJ sache s'il peut l'ouvrir.
 function obstacleLabel(a,b){const m=currentMap();
  return m&&wallsBetween(a,b,(m.doors||[]).filter(d=>!d.open).map(rectPolygon))?'une porte fermée':'un mur'}
+// Un socle est vu dès qu'il mord sur la zone éclairée, fût-ce d'un pour cent.
+function tokenRadiusPct(){const size=mapSize();return size.width?tokenPx()/2/size.width*100:1.5}
 
 /* ---------- Brouillard de guerre ---------- */
 /* Ce que l'on voit à l'instant est un polygone exact, tracé au pixel près.
@@ -42,21 +58,35 @@ function computeFog(){const m=currentMap();
  if(!m){fogVis=null;fogSeen=null;fogKey='';fogDim=null;return}
  const d=fogDim=fogDims(m);
  if(!fogSeen||fogSeen.length!==d.n||m.fog!==fogSeenSrc){fogSeen=readSeen(m,d);fogSeenSrc=m.fog;fogDirty=true}
- const rects=activeObstacleRects(),troupe=fogParty();
+ const formes=activeObstacles(),troupe=fogParty();
  // Le calcul ne reprend que si la scène a bougé : héros, portes, zones ou point de vue.
  const cle=m.id+'|'+d.n+'|'+view+'|'+owner+'|'+troupe.map(a=>a.x.toFixed(2)+','+a.y.toFixed(2)).join(';')
-  +'|'+rects.map(r=>r.x+','+r.y+','+r.w+','+r.h).join(';');
+  +'|'+geometryKey(m);
  if(cle===fogKey&&fogVis)return;
  fogKey=cle;
  const vues=new Map(),vu=a=>{const k=a.x+','+a.y;
-  if(!vues.has(k))vues.set(k,visionPolygon(a,rects));return vues.get(k)};
+  if(!vues.has(k))vues.set(k,visionPolygon(a,formes));return vues.get(k)};
  // La mémoire retient ce que la troupe entière a vu, où que soit le lecteur.
  let neuf=0;for(const a of troupe)neuf+=fillPolygonGrid(fogSeen,d.w,d.h,vu(a));
  fogVis=fogSeers().map(vu);
  if(neuf){m.fog=fogSeenSrc=packMask(fogSeen,d.n);delete m.seen;fogDirty=true;scheduleSave()}}
-// Un adversaire hors du champ de vision n'existe pas pour celui qui regarde.
-function partySees(a){if(!fogVis)return true;
- return fogVis.some(p=>pointInPolygon([a.x,a.y],p))}
+// Le champ de vision en pixels : le socle est un disque, pas un point.
+let fogPx=null,fogPxKey='';
+function visionInPixels(){const size=mapSize(),k=fogKey+'|'+Math.round(size.width);
+ if(fogPxKey!==k){fogPxKey=k;
+  fogPx=(fogVis||[]).map(p=>p.map(([x,y])=>[x/100*size.width,y/100*size.height]))}
+ return fogPx}
+// Un adversaire hors du champ n'existe pas pour celui qui regarde. Mais il suffit
+// qu'un bout de son socle morde sur la zone éclairée pour qu'il se montre.
+function partySees(a){const m=currentMap();
+ if(!fogVis||!m||m.fogOff)return true;
+ const size=mapSize();if(!size.width)return true;
+ const c=[a.x/100*size.width,a.y/100*size.height],r=tokenPx()/2;
+ return visionInPixels().some(p=>polyTouchesDisc(p,c,r))}
+// La mémoire d'exploration, lue en un point : sert à garder les portes visibles.
+function seenAt(x,y){if(!fogSeen||!fogDim)return false;const d=fogDim;
+ const i=Math.min(d.w-1,Math.max(0,Math.floor(x/100*d.w))),j=Math.min(d.h-1,Math.max(0,Math.floor(y/100*d.h)));
+ return fogSeen[j*d.w+i]===1}
 // La mémoire est peinte une fois par changement, puis réutilisée telle quelle.
 function memoryCanvas(d){if(!fogSeen)return null;
  if(!fogMem||fogMem.width!==d.w||fogMem.height!==d.h){
@@ -66,7 +96,8 @@ function memoryCanvas(d){if(!fogSeen)return null;
   c.putImageData(img,0,0);fogDirty=false}
  return fogMem}
 function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
- if(!m||!fogVis||!d){cv.style.display='none';return}
+ // Voile levé par le MJ : plus rien ne masque la carte, pour personne.
+ if(!m||!fogVis||!d||m.fogOff){cv.style.display='none';return}
  cv.style.display='';
  const large=cv.clientWidth,haut=cv.clientHeight;if(!large||!haut)return;
  // Toile à la résolution de l'écran : le bord du polygone est tracé au pixel près.
@@ -90,7 +121,7 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  ctx.globalCompositeOperation='source-over'}
 function resetFog(tout){const m=currentMap();if(!m)return;
  const d=fogDims(m),g=new Uint8Array(d.n);if(tout)g.fill(1);
- m.fog=packMask(g,d.n);delete m.seen;fogSeen=g;fogSeenSrc=m.fog;fogDirty=true;fogKey='';
+ m.fog=packMask(g,d.n);delete m.seen;m.fogOff=false;fogSeen=g;fogSeenSrc=m.fog;fogDirty=true;fogKey='';
  render();scheduleSave();
  log(tout?'Brouillard levé sur toute la carte.':'Brouillard réinitialisé.')}
 
@@ -103,18 +134,39 @@ function applyMapRatio(){const m=currentMap(),el=$('map');
  const dispo=el.parentElement.clientWidth||el.clientWidth||600,hMax=Math.max(260,Math.round(innerHeight*.72));
  let w=dispo,h=w/m.ratio;if(h>hMax){h=hMax;w=h*m.ratio}
  el.style.width=Math.round(w)+'px';el.style.height=Math.round(h)+'px'}
-function renderMapLayer(){const svg=$('map-shapes'),m=currentMap();svg.replaceChildren();applyMapRatio();renderFog();
+/* Le contour lissé devient un tracé SVG dans un repère de 0 à 100 : c'est très
+   exactement la matière qui arrête le regard, dessinée sans un pixel d'écart. */
+function svgPath(contours,cls,wrap){const svg=document.createElementNS(nsSVG,'svg');
+ svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
+ if(wrap)svg.setAttribute('class',wrap);
+ const el=document.createElementNS(nsSVG,'path');
+ el.setAttribute('d',contours.map(c=>'M'+c.map(p=>p[0].toFixed(3)+' '+p[1].toFixed(3)).join('L')+'Z').join(''));
+ el.setAttribute('fill-rule','evenodd');if(cls)el.setAttribute('class',cls);
+ svg.append(el);return svg}
+// Le joueur ne manœuvre une porte qu'au contact : elle doit mordre son rayon.
+function doorInReach(d){if(view==='mj')return true;
+ const a=actors[owner],size=mapSize();
+ return !!(a&&a.hero&&alive(a)&&size.width&&rectInReach(a,d,size,tokenPx()))}
+function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=currentMap();
+ svg.replaceChildren();portes.replaceChildren();applyMapRatio();renderFog();refreshGmBar();
  // .hidden n'existe pas sur un élément SVG : le masquage passe par une classe.
- $('map').classList.toggle('has-map',!!m);$('fog-bar').hidden=view!=='mj'||!m;if(!m)return;
+ $('map').classList.toggle('has-map',!!m);if(!m)return;
  if(m.start&&view==='mj')svg.append(svgRect(m.start,'startzone'));
- // Une porte perce la zone qu'elle recouvre : on peint exactement ce qui bloque.
- const g=document.createElementNS(nsSVG,'g');g.setAttribute('class','wall-group');
- wallsPierced(m).forEach(r=>g.append(svgRect(r)));svg.append(g);
- (m.doors||[]).forEach((d,i)=>{const el=svgRect(d,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':''));
+ const formes=mapShapes(m);
+ if(formes.murs.contours.length)svg.append(svgPath(formes.murs.contours,'wall-group'));
+ // Les portes se dessinent au-dessus du brouillard : une fois découverte, une porte
+ // reste lisible dans la pénombre. Tant qu'elle est inexplorée, elle n'existe pas.
+ (m.doors||[]).forEach((d,i)=>{
+  const vue=view==='mj'||m.fogOff||seenAt(d.x+d.w/2,d.y+d.h/2)
+   ||[[d.x,d.y],[d.x+d.w,d.y],[d.x,d.y+d.h],[d.x+d.w,d.y+d.h]].some(p=>seenAt(p[0],p[1]));
+  if(!vue)return;
+  const el=svgRect(d,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':''));
   el.style.pointerEvents='all';
-  el.onclick=()=>{if(d.keyLocked&&view!=='mj'){log('Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
+  el.onclick=()=>{
+   if(d.keyLocked&&view!=='mj'){log('Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
+   if(!doorInReach(d)){log('Trop loin de la porte : approche ton aventurier pour la manœuvrer.');return}
    d.open=!d.open;log('Porte '+(i+1)+' '+(d.open?'ouverte':'fermée')+'.');render();scheduleSave()};
-  svg.append(el)});
+  portes.append(el)});
 }
 
 /* ---------- Ouverture d'une carte en combat ---------- */
@@ -127,7 +179,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  actors.splice(0,actors.length,...heros);
  // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
  (m.doors||[]).forEach(d=>{d.open=false});const grille=fogDims(m);
- m.fog=packMask(new Uint8Array(grille.n),grille.n);delete m.seen;fogSeen=null;fogSeenSrc=null;fogKey='';
+ m.fog=packMask(new Uint8Array(grille.n),grille.n);delete m.seen;m.fogOff=false;fogSeen=null;fogSeenSrc=null;fogKey='';
  (m.foes||[]).forEach(f=>{const a=fromMonster(f.tpl);a.hidden=!!f.hidden;a.x=f.x;a.y=f.y;normalizeActor(a);actors.push(a)});
  render();actors.forEach(settleActor);   // Personne ne démarre dans un mur.
 
@@ -252,6 +304,9 @@ function sizeCanvas(){const c=$('map-canvas'),w=document.querySelector('.canvas-
 function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textContent=HINTS[mapTool]||'';
  document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===mapTool));
  c.replaceChildren();sizeCanvas();applyCanvasZoom();if(!m)return;ensure(m);
+ // La matière est peinte d'un seul tenant, lissée : l'éditeur montre le mur du jeu.
+ const contours=draftSkin(m);
+ if(contours.length)c.append(svgPath(contours,null,'wall-skin'));
  c.style.backgroundImage=m.image?'url("'+m.image+'")':'';c.classList.toggle('no-image',!m.image);
  m.walls.forEach((r,i)=>c.append(shapeEl('wall',i,r)));
  m.doors.forEach((r,i)=>c.append(shapeEl('door',i,r)));
@@ -282,15 +337,8 @@ function shapeEl(kind,i,r){const el=document.createElement('div');
   +(mapSel&&mapSel.kind===kind&&mapSel.i===i?' selected':'');
  el.style.left=r.x+'%';el.style.top=r.y+'%';el.style.width=r.w+'%';el.style.height=r.h+'%';
  el.dataset.kind=kind;el.dataset.i=i;
- // Une zone de blocage n'est peinte que là où elle bloque : les portes y creusent leur trou.
- if(kind==='wall'&&r.w>0&&r.h>0)wallPieces(r).forEach(p=>{const f=document.createElement('span');f.className='fill';
-  f.style.left=(p.x-r.x)/r.w*100+'%';f.style.top=(p.y-r.y)/r.h*100+'%';
-  f.style.width=p.w/r.w*100+'%';f.style.height=p.h/r.h*100+'%';el.append(f)});
  ['nw','ne','sw','se'].forEach(g=>{const h=document.createElement('span');h.className='grip '+g;h.dataset.grip=g;el.append(h)});
  return el}
-// Ce qu'il reste d'une zone une fois les portes retirées : le trou suit la porte.
-function wallPieces(r){const trous=(mapDraft&&mapDraft.doors||[]).filter(d=>d&&d.w>0&&d.h>0);
- return trous.length?subtractRects([r],trous):[r]}
 function foeEl(i,f){const el=document.createElement('div');
  el.className='shape foe'+(f.hidden?' hidden-foe':'')+(f.locked?' locked':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
  // Même taille relative qu'en partie : une fraction de la largeur de la carte.
@@ -416,17 +464,32 @@ mapPick.style.width='auto';mapPick.style.margin='0';
 const mapOpen=document.createElement('button');mapOpen.id='map-open';mapOpen.textContent='Ouvrir la carte';
 document.querySelector('.mj-tools').append(mapPick,mapOpen);
 function refreshMapPick(){mapPick.replaceChildren();maps.forEach(m=>mapPick.add(new Option(m.name,m.id)));
- mapPick.hidden=mapOpen.hidden=!maps.length;$('fog-bar').hidden=view!=='mj'||!currentMap();
+ mapPick.hidden=mapOpen.hidden=!maps.length;refreshGmBar();
  if(currentMapId)mapPick.value=currentMapId}
 mapOpen.onclick=()=>{if(mapPick.value)openBattleMap(mapPick.value)};
-// Deux icônes dans la barre de la carte, côté MJ : le brouillard se remet ou se lève d'un clic.
+/* Trois icônes réservées au MJ dans la barre de la carte : remettre le brouillard,
+   lever le voile, et geler les déplacements le temps de décrire une scène. */
 const fogBar=document.createElement('div');fogBar.className='zoom-bar';fogBar.id='fog-bar';fogBar.hidden=true;
 const icone=(id,glyphe,titre)=>{const b=document.createElement('button');b.id=id;b.className='icon-btn';
  b.textContent=glyphe;b.title=titre;b.setAttribute('aria-label',titre);return b};
 const fogReset=icone('fog-reset','🌫','Remettre le brouillard');
 const fogAll=icone('fog-all','👁','Tout révéler');
-fogBar.append(fogReset,fogAll);document.querySelector('.mapbar .zoom-bar').after(fogBar);
-fogReset.onclick=()=>resetFog(false);fogAll.onclick=()=>resetFog(true);
+const lockBtn=icone('token-lock','🔓','Figer les déplacements des joueurs');
+fogBar.append(fogReset,fogAll,lockBtn);document.querySelector('.mapbar .zoom-bar').after(fogBar);
+fogReset.onclick=()=>resetFog(false);
+fogAll.onclick=()=>{const m=currentMap();if(!m)return;
+ m.fogOff=!m.fogOff;fogKey='';render();scheduleSave();
+ log(m.fogOff?'Voile levé : toute la carte est visible.':'Brouillard rétabli.')};
+lockBtn.onclick=()=>{tokensLocked=!tokensLocked;refreshGmBar();render();scheduleSave();
+ document.dispatchEvent(new Event('amertume-content-changed'));
+ log(tokensLocked?'Déplacements figés : les joueurs ne peuvent plus bouger leurs tokens.':'Déplacements rendus aux joueurs.')};
+// L'état des icônes se lit d'un coup d'œil : voile levé, déplacements gelés.
+function refreshGmBar(){const m=currentMap(),mj=view==='mj';
+ fogBar.hidden=!mj;fogReset.hidden=fogAll.hidden=!m;
+ fogAll.classList.toggle('on',!!(m&&m.fogOff));
+ fogAll.title=m&&m.fogOff?'Rétablir le brouillard':'Tout révéler';
+ lockBtn.textContent=tokensLocked?'🔒':'🔓';lockBtn.classList.toggle('on',tokensLocked);
+ lockBtn.title=tokensLocked?'Rendre les déplacements aux joueurs':'Figer les déplacements des joueurs'}
 function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 
 // L'onglet Cartes n'existe que pour le MJ ; passer en vue joueur ramène à la table.

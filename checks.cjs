@@ -53,12 +53,13 @@ const {segmentHitsPolys}=require('./combat.js');
 assert.ok(segmentHitsPolys([5,20],[35,20],CARRE));   // Bond au travers : détecté.
 assert.ok(!segmentHitsPolys([5,5],[35,5],CARRE));    // Bond au-dessus : libre.
 // Cartes de combat : obstacles et zone de départ.
-const {obstaclesFrom,spreadInZone}=require('./combat.js');
+const {obstaclesFrom,spreadInZone,contoursOf,shapeContains,unionContours,polygonArea:aireDe}=require('./combat.js');
 const CARTE={walls:[{x:10,y:10,w:20,h:5}],doors:[{x:40,y:10,w:5,h:10,open:false},{x:60,y:10,w:5,h:10,open:true}],start:{x:5,y:70,w:20,h:20}};
 assert.equal(obstaclesFrom(CARTE).length,2);                  // Le mur et la porte fermée ; l'ouverte ne bloque pas.
-assert.deepEqual(obstaclesFrom(CARTE)[0],[[10,10],[30,10],[30,15],[10,15]]);
+assert.equal(contoursOf(obstaclesFrom(CARTE)[0]).length,1);
+assert.equal(aireDe(contoursOf(obstaclesFrom(CARTE)[0])[0]),20*5);   // Le contour épouse la zone.
 assert.equal(obstaclesFrom(null).length,0);
-assert.equal(obstaclesFrom({walls:[{x:1,y:1,w:0,h:5}]}).length,0); // Rectangle plat : ignoré.
+assert.equal(contoursOf(obstaclesFrom({walls:[{x:1,y:1,w:0,h:5}]})[0]).length,0); // Rectangle plat : ignoré.
 const places=spreadInZone(5,CARTE.start);
 assert.equal(places.length,5);
 assert.ok(places.every(p=>p.x>=5&&p.x<=25&&p.y>=70&&p.y<=90));   // Tous dans la zone.
@@ -76,17 +77,21 @@ assert.equal(aire(bord),50);                                                    
 assert.equal(aire(subtractRects([{x:0,y:0,w:10,h:10}],[{x:2,y:2,w:2,h:2},{x:6,y:6,w:2,h:2}])),100-8);
 // Une pièce creusée dans un gros bloc : la vue passe dedans, pas au travers du plein.
 const FROMAGE={walls:[{x:20,y:20,w:60,h:40}],visions:[{x:30,y:30,w:40,h:20}],doors:[]};
-const troues=obstaclesFrom(FROMAGE);assert.equal(troues.length,4);
+const troues=obstaclesFrom(FROMAGE);
+// Un contour extérieur et un contour de creux : la matière est un anneau.
+assert.equal(contoursOf(troues[0]).length,2);
+assert.ok(shapeContains(troues[0],[22,40]));   // Dans l'épaisseur : c'est du plein.
+assert.ok(!shapeContains(troues[0],[50,40]));  // Dans la pièce creusée : c'est du vide.
 assert.ok(!wallsBetween({x:35,y:40},{x:65,y:40},troues));  // À l'intérieur de la pièce : dégagé.
 assert.ok(wallsBetween({x:10,y:40},{x:90,y:40},troues));   // De part en part : le plein bloque.
 assert.ok(wallsBetween({x:50,y:10},{x:50,y:90},troues));   // Verticalement aussi.
 // Une porte fermée n'est jamais creusée par une zone de vision.
-assert.equal(obstaclesFrom({walls:[],visions:[{x:0,y:0,w:100,h:100}],doors:[{x:40,y:40,w:5,h:5,open:false}]}).length,1);
+assert.equal(obstaclesFrom({walls:[],visions:[{x:0,y:0,w:100,h:100}],doors:[{x:40,y:40,w:5,h:5,open:false}]}).length,2);
 // Brouillard : un mur plein coupe la carte en deux, un héros ne voit que son côté.
 const {rectPolygon,visionPolygon,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,pointInPolygon}=require('./combat.js');
 /* Vision exacte : le polygone vu doit dire la même chose que le test segment par segment. */
 assert.equal(polygonArea(visionPolygon({x:50,y:50},[],null)).toFixed(2),'10000.00'); // Sans obstacle : toute la carte.
-const MUR_PLEIN=[{x:40,y:20,w:20,h:4}];
+const MUR_PLEIN=[{contours:[rectPolygon({x:40,y:20,w:20,h:4})]}];
 const VUE=visionPolygon({x:50,y:50},MUR_PLEIN,null);
 assert.ok(polygonArea(VUE)<10000);
 assert.ok(pointInPolygon([50,40],VUE));   // Devant le mur : vu.
@@ -97,11 +102,48 @@ const dedale=[];for(let i=0;i<8;i++){dedale.push({x:6+i*11,y:12,w:2,h:26});dedal
 for(let j=0;j<6;j++)dedale.push({x:6,y:12+j*14,w:88,h:2});
 const MORCEAUX=subtractRects(dedale,Array.from({length:30},(_,i)=>({x:7+(i*7)%84,y:13+(i*11)%74,w:4,h:4})));
 const CONTOURS=MORCEAUX.map(rectPolygon);
-for(const o of [{x:22.7,y:74.3},{x:50.5,y:47.3}]){const vision=visionPolygon(o,MORCEAUX,null);let compares=0;
+const FORMES=[{contours:CONTOURS}];
+for(const o of [{x:22.7,y:74.3},{x:50.5,y:47.3}]){const vision=visionPolygon(o,FORMES,null);let compares=0;
  for(let i=0;i<1500;i++){const p=[(i*37.13)%100,(i*61.7)%100];
   if(MORCEAUX.some(r=>p[0]>r.x-.3&&p[0]<r.x+r.w+.3&&p[1]>r.y-.3&&p[1]<r.y+r.h+.3))continue;
   assert.equal(pointInPolygon(p,vision),!wallsBetween(o,{x:p[0],y:p[1]},CONTOURS));compares++}
  assert.ok(compares>800)}
+/* Contour de l'union : exact, sans couture interne, avec les creux comme contours. */
+const {smoothContours,simplifyClosed,relaxContour,carveWithPolygon:creuse,CARVE_STEP,wallShape,polyTouchesDisc,rectInReach}=require('./combat.js');
+assert.equal(unionContours([{x:0,y:0,w:10,h:10},{x:10,y:0,w:10,h:10}]).length,1);      // Deux zones jointives fusionnent.
+assert.equal(unionContours([{x:0,y:0,w:10,h:10},{x:10,y:0,w:10,h:10}])[0].length,4);   // Sans couture au milieu.
+assert.equal(unionContours(subtractRects([{x:0,y:0,w:40,h:40}],[{x:15,y:15,w:10,h:10}])).length,2); // Creux : deux contours.
+/* Découpe libre : la marche d'escalier devient une courbe fidèle, l'angle droit reste droit. */
+const ELLIPSE=Array.from({length:64},(_,i)=>{const a=i/64*2*Math.PI;return [50+18*Math.cos(a),50+12*Math.sin(a)]});
+const CREUSE=creuse([{x:20,y:30,w:60,h:40}],ELLIPSE,CARVE_STEP);
+const LISSE=wallShape({walls:CREUSE,doors:[]}).contours;
+assert.equal(LISSE.length,2);
+assert.ok(Math.abs(aireDe(LISSE[1])-Math.PI*18*12)/(Math.PI*18*12)<.02); // Aire du trou à 2 % de l'ellipse voulue.
+// Aucun pli visible : le plus grand changement de cap reste doux tout au long de la courbe.
+const cassure=c=>{let pire=0;
+ for(let i=0;i<c.length;i++){const a=c[(i+c.length-1)%c.length],b=c[i],d=c[(i+1)%c.length];
+  let t=Math.abs(Math.atan2(d[1]-b[1],d[0]-b[0])-Math.atan2(b[1]-a[1],b[0]-a[0]));
+  if(t>Math.PI)t=2*Math.PI-t;pire=Math.max(pire,t)}
+ return pire*180/Math.PI};
+assert.ok(cassure(LISSE[1])<15);                                   // Contre 90° pour l'escalier brut.
+assert.ok(cassure(unionContours(CREUSE)[1])>85);
+const DROIT=wallShape({walls:[{x:10,y:40,w:80,h:6}],doors:[]}).contours;
+assert.equal(DROIT[0].length,4);                                   // Un mur droit n'est pas arrondi…
+assert.equal(aireDe(DROIT[0]),480);                                // … et garde son aire exacte.
+// Une découpe rectangulaire reste un rectangle : le lissage ne touche pas l'architecture.
+const ENCOCHE=wallShape({walls:creuse([{x:10,y:40,w:80,h:20}],[[40,38],[60,38],[60,62],[40,62]],CARVE_STEP),doors:[]}).contours;
+assert.deepEqual(ENCOCHE.map(c=>c.length),[4,4]);
+assert.equal(aireDe(ENCOCHE[0])+aireDe(ENCOCHE[1]),1200);
+/* Un socle est vu dès qu'il mord sur la zone éclairée. */
+const CHAMP=[[0,0],[50,0],[50,100],[0,100]];
+assert.ok(polyTouchesDisc(CHAMP,[25,50],3));    // Bien dedans.
+assert.ok(polyTouchesDisc(CHAMP,[52,50],3));    // Dehors, mais le socle mord.
+assert.ok(!polyTouchesDisc(CHAMP,[56,50],3));   // Trop loin : invisible.
+/* Une porte ne se manœuvre qu'au contact du token. */
+const ECRAN={width:800,height:400},SOCLE=46;
+assert.ok(rectInReach({x:50,y:50},{x:52,y:48,w:2,h:6},ECRAN,SOCLE));    // Le rectangle entre dans le rayon.
+assert.ok(!rectInReach({x:50,y:50},{x:80,y:48,w:2,h:6},ECRAN,SOCLE));   // À l'autre bout : hors de portée.
+assert.ok(rectInReach({x:50,y:50},{x:30,y:48,w:22,h:6},ECRAN,SOCLE));   // Une porte longue suffit d'un bout.
 /* Mémoire d'exploration : remplissage, comptage des nouveautés, aller-retour compressé. */
 const GRILLE=new Uint8Array(64*36);
 const PAVE=[[20,20],[60,20],[60,60],[20,60]];
@@ -141,4 +183,4 @@ assert.ok(Math.abs(remis[0].x-10)<1e-6);assert.ok(Math.abs(remis[0].w-5)<1e-6);
 assert.ok(Math.abs(remis[0].y-20)<1e-6);                               // L'axe non comprimé ne bouge pas.
 assert.ok(Math.abs(uncontain([{x:50,y:50}],cadre,image)[0].x-50)<1e-6); // Le centre est invariant.
 assert.ok(Math.abs(uncontain([{x:0,y:0}],cadre,image)[0].x+marge/ech)<1e-6);
-console.log('102 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('122 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

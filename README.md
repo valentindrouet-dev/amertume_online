@@ -1,4 +1,4 @@
-# Amertume Online — v0.25
+# Amertume Online — v0.26
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,24 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.26 — Découpes en courbes, portes au contact, table gelée
+
+**La découpe à main levée ne fait plus d’escalier.** Une zone découpée était stockée — et surtout *dessinée* — comme des centaines de petits rectangles issus de la rastérisation : d’où les marches. Les rectangles restent la matière première de l’édition, mais ce n’est plus ce qu’on affiche. À chaque changement de géométrie, le moteur en tire le **contour exact de leur union** (`unionContours()`, par compression de coordonnées : les seules lignes utiles sont les bords des rectangles, donc le contour est exact et sans couture entre zones jointives), puis le lisse et l’allège.
+
+Le lissage ne peut pas se contenter d’arrondir : il doit effacer la marche d’escalier *sans* toucher à l’angle d’un mur droit. Il applique donc une moyenne des voisins (filtre 1-2-1, qui annule exactement l’ondulation d’une case sur deux laissée par la trame) **uniquement là où les arêtes sont à l’échelle de la trame** — une marche mesure 0,4 % de la carte, un mur en mesure quarante. Puis une simplification retire les points devenus inutiles. Mesuré : l’escalier brut d’une salle ovale passe de 300 sommets à 89, son plus grand pli de 90° à 9,6°, son aire à 0,6 % de l’ellipse voulue — et une zone rectangulaire, elle, sort avec ses 4 sommets et son aire au millième près. Une encoche rectangulaire reste une encoche rectangulaire.
+
+Ce contour lissé est **la même géométrie pour tout le monde** : il est peint dans l’éditeur, peint sur la table, et c’est lui qui arrête le regard, les tirs et les pas. L’ombre commence donc exactement où le mur est peint. Les obstacles sont devenus des *formes* — une liste de contours avec règle pair-impair — si bien qu’une salle creusée dans un bloc plein est un creux véritable : un héros y tient, et le moteur l’y repousse au lieu de l’en éjecter.
+
+**Tout révéler lève vraiment le voile.** Le bouton remplissait la mémoire d’exploration, ce qui laissait le dessous des zones de blocage en gris sombre — noir, à l’œil d’un joueur. C’est maintenant un interrupteur : 👁 retire le brouillard de la carte pour tout le monde, adversaires compris, et un second clic le rétablit. L’icône s’allume tant que le voile est levé.
+
+**Les portes se manœuvrent au contact.** Un joueur ne peut ouvrir ou fermer une porte que si son token la touche : le rectangle de la porte doit mordre son rayon de contact, ne serait-ce que par un bout. Sinon le journal le lui dit. Le MJ, lui, manœuvre tout, de partout.
+
+**Les portes restent lisibles dans la pénombre.** Elles se dessinent désormais au-dessus du brouillard, dès lors que la troupe a exploré leur emplacement. Une porte jamais approchée reste invisible.
+
+**🔒 fige la table.** Une icône réservée au MJ bloque le déplacement des tokens joueurs — le temps de décrire une scène sans que personne n’avance. Le MJ continue de tout déplacer ; l’état voyage avec le contenu publié.
+
+Enfin, le journal ne raconte plus les déplacements : il ne garde que ce qui se décide.
 
 ## v0.25 — Vision exacte, propre à chaque aventurier
 
