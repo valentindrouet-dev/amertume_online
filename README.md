@@ -1,4 +1,4 @@
-# Amertume Online — v0.42
+# Amertume Online — v0.43
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.43 — Enregistrer une fiche depuis la page Aventuriers
+
+Corrigé le jour même : sur la page Aventuriers, enregistrer une fiche ne changeait rien à l’écran, et le crayon de cette carte ne rouvrait plus rien.
+
+Enregistrer **remplace** l’objet dans la liste des combattants au lieu de le modifier. La carte, elle, avait été dessinée avec l’ancien : elle gardait un objet devenu orphelin. Deux conséquences — la page ne se redessinait pas, donc les modifications n’apparaissaient qu’après un rechargement ; et le crayon cherchait le rang d’un objet qui n’était plus dans la liste, obtenait `-1`, et ouvrait une fiche vide qui plantait la page.
+
+Trois corrections : la grille se redessine après chaque enregistrement et chaque retrait ; le rang se relit au moment du clic, et une carte périmée redessine la page au lieu d’agir sur un mauvais rang ; enfin `openActor` refuse un rang qui ne désigne personne plutôt que de lever une erreur. Vérifié : renommer puis rouvrir aussitôt, modifier deux fois de suite, dupliquer, retirer depuis la fiche, créer — la page et la table de jeu suivent, sans rechargement.
 
 ## v0.42 — Onglet Aventuriers
 
