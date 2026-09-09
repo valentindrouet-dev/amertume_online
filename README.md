@@ -1,4 +1,4 @@
-# Amertume Online — v0.39
+# Amertume Online — v0.40
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.40 — Une interface claire
+
+L’application passe au **parchemin** : fond clair, texte sombre, dans la teinte de tes cartes. Le thème sombre ne disparaît pas — un bouton ☾/☀ dans l’en-tête bascule de l’un à l’autre, et le choix reste dans le navigateur, propre à chaque appareil. Il ne voyage pas avec la partie : le MJ et ses joueurs lisent chacun comme ils veulent.
+
+Le travail n’a pas consisté à repeindre, mais à **faire passer tout le décor par des jetons de couleur** — fond, panneaux, surfaces creuses, champs, survols, lignes, encre, accent, et jusqu’aux teintes des outils de l’éditeur. Basculer d’un thème à l’autre ne touche désormais **aucune règle de mise en page** : deux listes de valeurs, et rien d’autre.
+
+Les **couleurs de jeu** n’en font pas partie et ne changent jamais : les sept dés, les murs, les socles, le brouillard, les portes disent une règle, pas une ambiance. En revanche les teintes qui servaient à colorer des **textes** — noms du journal, tuiles de caractéristiques, pastilles de compétences, mots-clés — étaient des pastels pensés pour le noir, illisibles sur parchemin. Elles passent à des tons moyens, lisibles sur les deux fonds.
+
+Vérifié page par page dans les deux thèmes — table, cartes, armurerie, bestiaire, fiche — sans une erreur, et par un relevé de contraste : hors textes posés sur l’accent, aucun texte ne descend sous 3,2 contre son fond.
 
 ## v0.39 — Déplacer n’est pas reposer
 
