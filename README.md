@@ -1,4 +1,4 @@
-# Amertume Online — v0.17
+# Amertume Online — v0.18
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -109,8 +109,20 @@ Les contrôles ne se chevauchent plus, et chaque outil porte la couleur de la fo
 
 **Zoom** sur la carte de jeu comme dans l’éditeur : le pincement du trackpad (que le système envoie en molette + ctrl), les boutons − / + et **Ajuster**, jusqu’à ×8. Une fois zoomé, le défilement à deux doigts déplace la vue, et on peut aussi la faire glisser à la souris depuis une zone vide. Seul l’affichage est transformé : les positions restent en pourcentages, donc portées, lignes de vue et collisions sont inchangées.
 
-**Zones de vision** : tracées à l’intérieur d’une zone de blocage, elles y **creusent une ouverture** — vue et passage rétablis, comme si l’on grattait le fromage. La découpe est exacte : chaque rectangle de blocage moins les zones de vision donne un pavage de rectangles, utilisé tel quel pour le dessin et pour les règles. Ce qui s’affiche est donc exactement ce qui bloque. Une porte fermée n’est jamais creusée : elle reste une porte, avec son état propre.
+**Zones de vision** (remplacées en v0.18 par l’outil Découper) : tracées à l’intérieur d’une zone de blocage, elles y **creusaient une ouverture** — vue et passage rétablis, comme si l’on grattait le fromage. La découpe est exacte : chaque rectangle de blocage moins les zones de vision donne un pavage de rectangles, utilisé tel quel pour le dessin et pour les règles. Ce qui s’affiche est donc exactement ce qui bloque. Une porte fermée n’est jamais creusée : elle reste une porte, avec son état propre.
 
 **Annulation** par ⌘Z ou Ctrl+Z, rétablissement par ⇧⌘Z, plus deux boutons dans la barre. L’historique couvre tracés, déplacements, redimensionnements, suppressions, verrouillages, portes et images ; il porte sur la carte en cours d’édition.
 
 **Sélection et verrouillage** : un clic simple sur une forme existante la sélectionne même quand un outil de dessin est actif, et repasse l’éditeur en Sélection — tracer reste possible en glissant. Chaque forme peut être verrouillée par le cadenas du panneau de droite : elle reste sélectionnable, mais ne peut plus être déplacée, redimensionnée ni supprimée tant qu’on ne la déverrouille pas.
+
+## v0.18 — La carte prend le cadrage de son image
+
+**Correction de fond.** Les coordonnées sont des pourcentages de la zone d’affichage, mais l’image était affichée en `cover` sur la table — rognée et recadrée selon la largeur de la fenêtre — et en `contain` dans l’éditeur. Le même pourcentage ne désignait donc pas le même point de l’image d’un écran à l’autre : la carte apparaissait tronquée et les zones tombaient à côté.
+
+Désormais la carte **adopte le rapport de son image**, dans l’éditeur comme sur la table, et l’image la remplit exactement. Un pourcentage vise toujours le même point du plan. Vérifié à 1500, 1024 et 810 pixels de large : une zone tracée à 30 % / 23 % reste à 30 % / 23 %, et la carte entière est visible. La hauteur est plafonnée à 72 % de la fenêtre pour les plans très hauts, la carte restant alors centrée.
+
+**Outil Découper** à la place des zones de vision. Le tracé creuse directement une ouverture définitive dans les zones de blocage : ce que montre l’éditeur est exactement ce qui bloque, sans couche intermédiaire. Une zone verrouillée résiste à la découpe. Les cartes contenant d’anciennes zones de vision sont converties au chargement, sans perte.
+
+**Touche Suppr ou Retour arrière** pour effacer la forme sélectionnée, sauf si elle est verrouillée.
+
+**Dézoom** possible jusqu’à 40 % sur la carte comme dans l’éditeur ; sous 100 %, la vue est centrée.
