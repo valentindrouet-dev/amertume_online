@@ -1,4 +1,4 @@
-# Amertume Online — v0.40
+# Amertume Online — v0.41
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.41 — Sauvegarde des cartes, socles à la bonne taille
+
+**Exporter, importer.** Deux boutons au bas du panneau des cartes. **⇩ Exporter** écrit un fichier qui contient **toutes** tes cartes — zones de blocage, portes avec leurs verrous, découpes rectangulaires, tracés à main levée, zone de départ, adversaires pré-placés et image de fond — daté, à garder de côté. **⇧ Importer** les relit et les ajoute comme **cartes neuves** : rien n’est jamais remplacé, tu supprimes toi-même ce qui ne sert plus.
+
+Le fichier est nettoyé dans les deux sens par le même code : nombres bornés à la carte, textes coupés, portes remises closes, et surtout **image vérifiée**. Un fichier trafiqué ne peut ni glisser une URL exécutable à la place d’une image de fond, ni faire dérailler des coordonnées — c’est vérifié par les tests, un `javascript:` déposé là ressort à `null`. La mémoire d’exploration, elle, ne fait pas partie des couches : elle appartient à la partie, pas à la carte.
+
+**Les socles ne rapetissent plus.** En passant sur l’onglet Cartes, la table est masquée, donc large de zéro ; la taille d’un socle se calculant sur cette largeur, elle retombait au plancher de 16 px et les tokens revenaient minuscules. Deux corrections : la mesure garde la dernière largeur connue au lieu de s’effondrer, et le retour sur la table redessine au lieu de se contenter de recadrer. Vérifié sur les trois onglets : 46 px au départ, 46 px au retour.
 
 ## v0.40 — Une interface claire
 

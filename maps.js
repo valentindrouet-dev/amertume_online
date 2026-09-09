@@ -229,15 +229,20 @@ function showPage(p){if(p!=='table'&&view!=='mj')return;
   measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas()}
  else if(p==='armory')renderArmory();
  else if(p==='bestiary')renderBestiary();
- // De retour sur la table, la carte est remesurée : elle était masquée, donc sans largeur.
- else{applyMapRatio();applyMapZoom()}}
+ // De retour sur la table, tout est remesuré : la carte était masquée, donc sans largeur,
+ // et les socles comme le brouillard se calculent sur cette largeur.
+ else{applyMapRatio();applyMapZoom();render()}}
 tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
 
 /* ---------- Page de l'éditeur ---------- */
 const mapsPage=document.createElement('main');mapsPage.id='maps-page';
 mapsPage.innerHTML=
  '<aside class="maps-side panel"><h2>Cartes</h2><div id="map-list"></div>'
- +'<div class="side-actions"><button id="map-new" class="primary">+ Nouvelle carte</button><button id="map-copy">Dupliquer</button><button id="map-del">Supprimer</button></div></aside>'
+ +'<div class="side-actions"><button id="map-new" class="primary">+ Nouvelle carte</button><button id="map-copy">Dupliquer</button><button id="map-del">Supprimer</button></div>'
+ +'<div class="divider"></div><h2>Sauvegarde</h2>'
+ +'<p class="muted">Un fichier qui contient toutes tes cartes : zones, portes, découpes, zone de départ, adversaires et image de fond. À garder de côté, et à réimporter si la partie saute.</p>'
+ +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
+ +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
  +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label>'
  +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
@@ -300,6 +305,25 @@ $('map-del').onclick=()=>{if(!mapDraft||!confirm('Supprimer « '+mapDraft.name+'
  mapDraft=maps[Math.max(0,i-1)]||null;mapSel=null;undoStack=[];redoStack=[];if(!maps.length)newMap();
  renderMapList();renderCanvas();saveMaps();render()};
 $('map-name').oninput=()=>{if(mapDraft){mapDraft.name=$('map-name').value;renderMapList();saveMaps()}};
+/* Sauvegarde des couches : le fichier se suffit à lui-même, image comprise, et il
+   revient toujours en cartes neuves — on ne remplace jamais ce qui est là. */
+$('map-export').onclick=()=>{
+ const blob=new Blob([JSON.stringify(packMaps(maps))],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='amertume-cartes-'+new Date().toISOString().slice(0,10)+'.json';
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+ log(maps.length+' carte(s) exportée(s) dans un fichier.')};
+$('map-import').onclick=()=>$('map-json').click();
+$('map-json').onchange=()=>{const f=$('map-json').files[0];$('map-json').value='';if(!f)return;
+ const lecteur=new FileReader();
+ lecteur.onerror=()=>alert('Lecture du fichier impossible.');
+ lecteur.onload=()=>{let entrantes;
+  try{entrantes=readMapsFile(String(lecteur.result))}catch(e){alert(e.message);return}
+  entrantes.forEach(m=>{m.id=crypto.randomUUID();m.name+=' (importée)';maps.push(m)});
+  mapDraft=maps[maps.length-1];mapSel=null;undoStack=[];redoStack=[];
+  measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas();saveMaps();
+  log(entrantes.length+' carte(s) importée(s).')};
+ lecteur.readAsText(f)};
 $('map-image').onclick=()=>$('map-file').click();
 $('map-file').onchange=()=>{const f=$('map-file').files[0];$('map-file').value='';
  // Le rapport de l'image devient celui de la carte : le tracé et le jeu voient le même cadrage.

@@ -157,6 +157,32 @@ assert.equal(carveMask(MORCEAU,[TRACE_TEST],CARVE_STEP*1.6,CARVE_STEP,[])[1],1);
 assert.equal(carveMask(MORCEAU,[TRACE_TEST],CARVE_STEP*1.6,CARVE_STEP,[{x:50,y:30,w:2,h:6}])[1],0);
 assert.equal(distToRectEdge([50,36],{x:50,y:30,w:2,h:6}),0);
 assert.ok(distToRectEdge([53,36],{x:50,y:30,w:2,h:6})>.9);
+/* Export et import des couches : aller-retour fidèle, et rien de ce qui entre n'est cru. */
+const {packMaps,readMapsFile}=require('./combat.js');
+const PLAN_EXPORT={name:'Manoir',ratio:1.64,image:'data:image/png;base64,AAAA',
+ walls:[{x:10,y:10,w:20,h:2},{x:0,y:0,w:0,h:5}],doors:[{x:30,y:9,w:2,h:4,open:true,keyLocked:true}],
+ start:{x:5,y:70,w:10,h:10},cuts:[{x:12,y:10,w:3,h:2}],carves:[[[1,1],[2,2],[3,1]]],
+ foes:[{x:50,y:50,hidden:true,tpl:{name:'Rôdeur',pv:6,def:3,type:'boss',attacks:[{name:'Griffes',dice:{white:2}}]}}],
+ fog:'mémoire de partie'};
+const PAQUET=packMaps([PLAN_EXPORT]);
+assert.equal(PAQUET.format,'amertume-cartes');
+assert.deepEqual(readMapsFile(JSON.stringify(PAQUET)),PAQUET.maps);   // Aller-retour fidèle.
+const SORTIE=PAQUET.maps[0];
+assert.equal(SORTIE.walls.length,1);            // Le rectangle plat ne sort pas.
+assert.equal(SORTIE.doors[0].open,false);       // Une porte revient toujours close…
+assert.equal(SORTIE.doors[0].keyLocked,true);   // … mais garde son verrou.
+assert.ok(!('fog' in SORTIE));                  // La mémoire d'exploration n'est pas une couche.
+assert.equal(SORTIE.foes[0].tpl.type,'boss');
+for(const mauvais of ['pas du json','{}','{"format":"autre","maps":[]}','{"format":"amertume-cartes","maps":[]}'])
+ assert.throws(()=>readMapsFile(mauvais));
+/* Un fichier trafiqué ne peut ni injecter une URL, ni déborder, ni faire dérailler les coordonnées. */
+const SALE=readMapsFile(JSON.stringify({format:'amertume-cartes',maps:[{name:'x'.repeat(500),
+ image:'javascript:alert(1)',walls:[{x:'NaN',y:1e9,w:5,h:5}],foes:[{x:0,y:0,tpl:{name:'<script>',pv:-4,dice:{white:99}}}]}]}));
+assert.equal(SALE[0].image,null);
+assert.equal(SALE[0].name.length,80);
+assert.equal(SALE[0].walls[0].x,0);
+assert.equal(SALE[0].walls[0].y,101);
+assert.equal(SALE[0].foes[0].tpl.pv,1);
 /* Le donjon aux murs minces : découpes rectangulaires comprises, pas un sommet ne bouge. */
 const MINCES=subtractRects(
  [{x:10,y:10,w:60,h:1.2},{x:10,y:10,w:1.2,h:50},{x:68.8,y:10,w:1.2,h:50},{x:10,y:58.8,w:60,h:1.2},
@@ -213,4 +239,4 @@ assert.ok(Math.abs(remis[0].x-10)<1e-6);assert.ok(Math.abs(remis[0].w-5)<1e-6);
 assert.ok(Math.abs(remis[0].y-20)<1e-6);                               // L'axe non comprimé ne bouge pas.
 assert.ok(Math.abs(uncontain([{x:50,y:50}],cadre,image)[0].x-50)<1e-6); // Le centre est invariant.
 assert.ok(Math.abs(uncontain([{x:0,y:0}],cadre,image)[0].x+marge/ech)<1e-6);
-console.log('131 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('144 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

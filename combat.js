@@ -277,6 +277,50 @@ function smoothContours(contours,carves,tol,pas,protege){
   const marque=carveMask(c,carves,pas*1.6,pas,protege);
   if(!marque.some(v=>v))return c;
   return simplifyRuns(relaxContour(c,pas,6,marque),marque,tol)}).filter(c=>c.length>=3)}
+/* Export et import des couches d'une carte : zones de blocage, portes, zone de départ,
+   adversaires pré-placés, tracés à main levée et découpes. Le même nettoyage sert dans les
+   deux sens — ce qui sort est déjà propre, ce qui entre le devient. Rien de ce qui vient
+   d'un fichier n'est cru sur parole : nombres bornés, textes coupés, image vérifiée. */
+const MAP_FORMAT='amertume-cartes';
+const IMAGE_RE=/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
+function borne(v,min=-1,max=101){const n=Number(v);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):0}
+function cleanRect(r,porte){if(!r)return null;
+ const o={x:borne(r.x),y:borne(r.y),w:borne(r.w,0,102),h:borne(r.h,0,102)};
+ if(!(o.w>0&&o.h>0))return null;
+ if(r.locked)o.locked=true;
+ if(porte){o.open=false;if(r.keyLocked)o.keyLocked=true}
+ return o}
+function cleanRects(list,porte){return (Array.isArray(list)?list:[]).map(r=>cleanRect(r,porte)).filter(Boolean).slice(0,2000)}
+function texte(v,n=200){return String(v==null?'':v).slice(0,n)}
+function cleanMonster(t){const dés={};
+ for(const k of DICE_KEYS)dés[k]=Math.max(0,Math.min(12,Math.round(borne(t&&t.dice&&t.dice[k],0,12))));
+ const attaques=(Array.isArray(t&&t.attacks)?t.attacks:[]).slice(0,6).map(a=>{const d={};
+  for(const k of DICE_KEYS)d[k]=Math.max(0,Math.min(12,Math.round(borne(a&&a.dice&&a.dice[k],0,12))));
+  return {name:texte(a&&a.name,100)||'Attaque',dice:d,range:a&&a.range==='distance'?'distance':'contact',
+   targets:a&&a.targets==='all'?'all':'one',useOwnDamage:!(a&&a.useOwnDamage===false)}});
+ return {name:texte(t&&t.name,120)||'Adversaire',type:['standard','solitaire','boss'].includes(t&&t.type)?t.type:'standard',
+  socle:texte(t&&t.socle,20)||'medium',family:texte(t&&t.family,60),
+  pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,99)),
+  damage:Math.round(borne(t&&t.damage,0,999)),xp:Math.round(borne(t&&t.xp,0,9999)),
+  menace:texte(t&&t.menace,30)||'closest',esquive:!!(t&&t.esquive),rapide:!!(t&&t.rapide),
+  notes:texte(t&&t.notes,2000),attacks:attaques.length?attaques:[{name:'Attaque',dice:dés,range:'contact',targets:'one',useOwnDamage:true}]}}
+function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.image)?m.image:null;
+ return {name:texte(m&&m.name,80)||'Carte',ratio:Math.max(.2,Math.min(6,Number(m&&m.ratio)||16/9)),
+  fitted:!(m&&m.fitted===false),image:img,
+  walls:cleanRects(m&&m.walls),doors:cleanRects(m&&m.doors,true),
+  start:cleanRect(m&&m.start),
+  foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
+   hidden:!!(f&&f.hidden),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
+  carves:(Array.isArray(m&&m.carves)?m.carves:[]).slice(0,400)
+   .map(c=>(Array.isArray(c)?c:[]).slice(0,3000).map(p=>[borne(p&&p[0]),borne(p&&p[1])])).filter(c=>c.length>=3),
+  cuts:cleanRects(m&&m.cuts)}}
+function packMaps(maps){return {format:MAP_FORMAT,version:1,exporte:new Date().toISOString(),
+ maps:(Array.isArray(maps)?maps:[]).map(cleanMap)}}
+function readMapsFile(texteBrut){let data;
+ try{data=JSON.parse(texteBrut)}catch(e){throw Error('Fichier illisible : ce n’est pas du JSON.')}
+ if(!data||data.format!==MAP_FORMAT)throw Error('Ce fichier ne vient pas de l’éditeur de cartes d’Amertume.');
+ if(!Array.isArray(data.maps)||!data.maps.length)throw Error('Aucune carte dans ce fichier.');
+ return data.maps.slice(0,60).map(cleanMap)}
 /* Géométrie effectivement opposée au regard et aux tirs : le contour lissé des zones
    percées par les portes, puis chaque porte close. Dessin et calcul y puisent
    ensemble, donc l'ombre commence exactement là où le mur est peint. */
@@ -384,7 +428,7 @@ function regridMask(seen,fromW,fromH,toW,toH){const out=new Uint8Array(toW*toH);
   for(let i=0;i<toW;i++){const si=Math.min(fromW-1,Math.floor((i+.5)/toW*fromW));
    if(seen[sj*fromW+si]==='1')out[j*toW+i]=1}}
  return out}
-const api={visionPolygon,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
