@@ -1,4 +1,4 @@
-# Amertume Online — v0.32
+# Amertume Online — v0.33
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.33 — Des dés qui ne s’écrasent plus
+
+En v0.32 le dé était un **empilement de boîtes CSS** : une bordure de 1,5 px, deux ombres internes pour le relief, et une pastille centrée par `margin:auto`. Sur le papier c’est la recette exacte ; à l’écran, chacune de ces couches s’arrondit indépendamment au pixel de l’appareil. Dès que la page ne tombe pas sur un pixel entier — n’importe quel zoom autre que 100 %, un écran à échelle fractionnaire, un iPad — la bordure passait de 1 à 2 px d’un côté seulement et la pastille se recentrait dans une boîte d’un pixel plus courte : **un dé sortait aplati, son point avec**, et son voisin identique restait carré.
+
+Le dé est maintenant **dessiné d’un seul tenant**, dans un repère de 22 × 22 : liseré, relief et pastille sont mis à l’échelle ensemble, donc les proportions sont justes quelle que soit la position. Toujours zéro fichier ajouté — le dessin est fabriqué à la volée et mis en cache, un par type. L’ombre portée reste en CSS, où elle ne coûte rien.
+
+Vérifié à quatre densités d’écran et quatre niveaux de zoom, dont des combinaisons volontairement bancales (150 % d’échelle à 125 % de zoom) : la boîte fait 22 × 22 partout, et à la loupe les dés d’une même colonne sont indiscernables. Il subsiste, comme pour n’importe quel élément d’une page posé entre deux pixels, un pixel de flou de bord variable : c’est l’ombre portée, pas la forme.
 
 ## v0.32 — Portes plus fines, dés à la recette officielle
 

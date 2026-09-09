@@ -95,12 +95,13 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .cat-pill .tag{font:600 12px system-ui;color:#4a3f31;opacity:.85;white-space:nowrap}
 .cat-pill .chev{font-size:15px;opacity:.5;transition:transform .15s}
 .cat-pill.ouvert .chev{transform:rotate(180deg)}
-/* Dés d’Amertume : la recette du jeu, en CSS pur — 22 px, rayon 5, pastille centrale de 6. */
-.pips{display:flex;gap:5px;flex-wrap:wrap}
-.die-sq{position:relative;width:22px;height:22px;flex:none;border-radius:5px;background:var(--face);border:1.5px solid rgba(0,0,0,.55);box-shadow:inset 0 -2px 4px rgba(0,0,0,.28),inset 0 2px 3px rgba(255,255,255,.18),0 1px 2px rgba(0,0,0,.35)}
-.die-sq::after{content:'';position:absolute;inset:0;margin:auto;width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,.45)}
-.die-sq.pale{border-color:rgba(255,255,255,.32)}
-.die-sq.clair::after{background:rgba(255,255,255,.6)}
+/* Dés d’Amertume : la recette du jeu, en CSS pur — 22 px, rayon 5, pastille centrale de 6.
+   Le liseré de 1,5 px est peint en ombre interne et non posé en bordure : une bordure
+   fractionnaire s'arrondit différemment d'un dé à l'autre selon la densité de l'écran, et
+   l'un se retrouve écrasé d'un pixel, sa pastille avec. Ici la boîte fait 22 × 22, point.
+   La pastille est calée au demi-pixel près par une marge entière, jamais par « auto ». */
+.pips{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.die-sq{box-sizing:border-box;flex:0 0 22px;width:22px;height:22px;aspect-ratio:1;border:0;background:var(--face) center/100% 100% no-repeat;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
 .shield{display:grid;place-items:center;width:22px;height:24px;background:#3d556a;color:#eef4f8;font:700 12px system-ui;clip-path:polygon(50% 0,100% 16%,100% 62%,50% 100%,0 62%,0 16%)}
 .cat-tools{display:flex;gap:2px}
 .ico{border:0;background:transparent;color:var(--muted);padding:4px 6px;font-size:14px;line-height:1;border-radius:6px}

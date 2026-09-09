@@ -46,13 +46,32 @@ bestiaryPage.innerHTML='<section class="cat-panel panel">'
 document.querySelector('main.layout').after(armoryPage,bestiaryPage);
 /* Une pastille par dé de la réserve, dans l’ordre officiel d’affichage : noir, rouge,
    bleu, vert, jaune, blanc, os. Le Mortel porte un liseré clair, et Lourd, Mystique et
-   Mortel une pastille centrale claire — leur face est trop sombre pour l’inverse. */
+   Mortel une pastille centrale claire — leur face est trop sombre pour l’inverse.
+   Le dé est dessiné d'un seul tenant, dans un repère de 22 × 22 : liseré, relief et
+   pastille sont mis à l'échelle ensemble. Empilés en boîtes CSS, ils tombaient chacun
+   sur une fraction de pixel différente dès que la page n'était pas à 100 %, et l'un
+   sortait écrasé, sa pastille avec. Là, quel que soit le zoom, tous sont identiques. */
 const DIE_ORDER=[5,2,3,4,6,0,1],DIE_PALE=[5],DIE_LIGHT_PIP=[2,3,5];
+const dieCache=new Map();
+function dieFace(c){if(dieCache.has(c))return dieCache.get(c);
+ const liseré=DIE_PALE.includes(c)?'rgba(255,255,255,.32)':'rgba(0,0,0,.55)';
+ const point=DIE_LIGHT_PIP.includes(c)?'rgba(255,255,255,.6)':'rgba(0,0,0,.45)';
+ const svg="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'>"
+  +"<defs><linearGradient id='r' x1='0' y1='0' x2='0' y2='1'>"
+  +"<stop offset='0' stop-color='#fff' stop-opacity='.18'/>"
+  +"<stop offset='.4' stop-color='#fff' stop-opacity='0'/>"
+  +"<stop offset='.66' stop-color='#000' stop-opacity='0'/>"
+  +"<stop offset='1' stop-color='#000' stop-opacity='.28'/></linearGradient></defs>"
+  +"<rect width='22' height='22' rx='5' fill='"+colors[c]+"'/>"
+  +"<rect width='22' height='22' rx='5' fill='url(#r)'/>"
+  +"<rect x='.75' y='.75' width='20.5' height='20.5' rx='4.25' fill='none' stroke='"+liseré+"' stroke-width='1.5'/>"
+  +"<circle cx='11' cy='11' r='3' fill='"+point+"'/></svg>";
+ const url="url(\"data:image/svg+xml,"+encodeURIComponent(svg).replace(/'/g,'%27')+"\")";
+ dieCache.set(c,url);return url}
 function dicePips(dice){const out=document.createElement('span');out.className='pips';
  DIE_ORDER.forEach(c=>{for(let n=0;n<(dice&&dice[keys[c]]||0);n++){
-  const d=document.createElement('i');
-  d.className='die-sq'+(DIE_PALE.includes(c)?' pale':'')+(DIE_LIGHT_PIP.includes(c)?' clair':'');
-  d.style.setProperty('--face',colors[c]);d.title=types[c];out.append(d)}});
+  const d=document.createElement('i');d.className='die-sq';
+  d.style.setProperty('--face',dieFace(c));d.title=types[c];out.append(d)}});
  return out}
 function itemColumn(a){return a.category==='armor'?'armor'
  :a.category==='weapon'?(a.ranged?'ranged':'melee'):'object'}
