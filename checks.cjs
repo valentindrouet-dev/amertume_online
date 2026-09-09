@@ -114,6 +114,18 @@ assert.deepEqual(carveWithPolygon(loin,cercle(50,50,10)),loin);
 assert.deepEqual(carveWithPolygon(BLOC,[[1,1]]),BLOC);         // Tracé dégénéré : sans effet.
 // Une porte perce le mur qu'elle recouvre, sans qu'on ait à modifier les données.
 const {wallsPierced,uncontain}=require('./combat.js');
+const {regridMask}=require('./combat.js');
+/* Ré-échantillonnage de la mémoire d'exploration : la zone vue reste au même endroit. */
+const AVANT=(()=>{let s='';for(let j=0;j<58;j++)for(let i=0;i<104;i++)s+=(i<52&&j<29)?'1':'0';return s})();
+const APRES=regridMask(AVANT,104,58,256,156);
+assert.equal(APRES.length,256*156);
+const lu=(g,w,i,j)=>g[j*w+i];
+assert.equal(lu(APRES,256,10,10),'1');
+assert.equal(lu(APRES,256,200,10),'0');
+assert.equal(lu(APRES,256,10,140),'0');
+assert.equal(lu(APRES,256,127,77),'1');
+assert.equal(lu(APRES,256,129,79),'0');
+assert.equal(regridMask('0'.repeat(104*58),104,58,256,156).indexOf('1'),-1);
 const AVEC_PORTE={walls:[{x:10,y:40,w:80,h:10}],doors:[{x:48,y:38,w:6,h:14,open:false}]};
 assert.equal(wallsPierced(AVEC_PORTE).length,2);                       // Le mur est coupé en deux.
 assert.ok(wallsBetween({x:51,y:20},{x:51,y:70},obstaclesFrom(AVEC_PORTE)));   // Porte close : vue coupée.
@@ -129,4 +141,4 @@ assert.ok(Math.abs(remis[0].x-10)<1e-6);assert.ok(Math.abs(remis[0].w-5)<1e-6);
 assert.ok(Math.abs(remis[0].y-20)<1e-6);                               // L'axe non comprimé ne bouge pas.
 assert.ok(Math.abs(uncontain([{x:50,y:50}],cadre,image)[0].x-50)<1e-6); // Le centre est invariant.
 assert.ok(Math.abs(uncontain([{x:0,y:0}],cadre,image)[0].x+marge/ech)<1e-6);
-console.log('94 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('103 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

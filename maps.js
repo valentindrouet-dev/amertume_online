@@ -5,7 +5,9 @@
 let mapDraft=null,mapTool='select',mapSel=null,mapDrag=null,cutRect=null,lasso=null;
 let undoStack=[],redoStack=[],zoomC=1,panCX=0,panCY=0;
 const nsSVG='http://www.w3.org/2000/svg';
-const FOG_W=104,FOG_H=58,FOG_N=FOG_W*FOG_H;let fogVis=null;
+// Grille du brouillard : des cellules carrées et fines, pour un bord net qui suit les murs.
+const FOG_COLS=256,FOG_LEGACY={w:104,h:58};let fogVis=null,fogKey='',fogDim=null;
+function fogDims(m){const r=(m&&m.ratio)||16/9,w=FOG_COLS,h=Math.max(32,Math.round(w/r));return{w,h,n:w*h}}
 const KINDS={wall:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire'};
 function currentMap(){return maps.find(m=>m.id===currentMapId)||null}
 // L'éditeur et la table étirent l'image de la même façon ; encore faut-il que le cadre
@@ -25,27 +27,37 @@ function obstacleLabel(a,b){const m=currentMap();
 /* ---------- Brouillard de guerre ---------- */
 // Seuls les héros vivants éclairent. La mémoire de l'exploration vit sur la carte.
 function computeFog(){const m=currentMap();
- if(!m){fogVis=null;return}
- fogVis=visibleCells(actors.filter(a=>a.hero&&alive(a)),activeObstacleRects(),FOG_W,FOG_H);
- if(typeof m.seen!=='string'||m.seen.length!==FOG_N)m.seen='0'.repeat(FOG_N);
- let out='',change=false;
- for(let k=0;k<FOG_N;k++){const deja=m.seen[k]==='1',v=fogVis[k]===1||deja;out+=v?'1':'0';if(v!==deja)change=true}
- if(change)m.seen=out}
+ if(!m){fogVis=null;fogKey='';fogDim=null;return}
+ const d=fogDim=fogDims(m);
+ // Grille d'avant la v0.24 : on remonte la mémoire d'exploration à la nouvelle finesse.
+ if(typeof m.seen!=='string')m.seen='0'.repeat(d.n);
+ else if(m.seen.length===FOG_LEGACY.w*FOG_LEGACY.h&&d.n!==FOG_LEGACY.w*FOG_LEGACY.h)
+  m.seen=regridMask(m.seen,FOG_LEGACY.w,FOG_LEGACY.h,d.w,d.h);
+ else if(m.seen.length!==d.n)m.seen='0'.repeat(d.n);
+ // À cette finesse le calcul n'est plus gratuit : il ne reprend que si la scène a bougé.
+ const heros=actors.filter(a=>a.hero&&alive(a)),rects=activeObstacleRects();
+ const cle=m.id+'|'+d.n+'|'+heros.map(a=>a.x.toFixed(2)+','+a.y.toFixed(2)).join(';')
+  +'|'+rects.map(r=>r.x+','+r.y+','+r.w+','+r.h).join(';');
+ if(cle===fogKey&&fogVis)return;
+ fogKey=cle;fogVis=visibleCells(heros,rects,d.w,d.h);
+ const seen=m.seen.split('');let change=false;
+ for(let k=0;k<d.n;k++)if(fogVis[k]===1&&seen[k]==='0'){seen[k]='1';change=true}
+ if(change)m.seen=seen.join('')}
 // Un adversaire dans le noir n'existe pas pour les joueurs.
-function partySees(a){if(!fogVis)return true;
- const i=Math.min(FOG_W-1,Math.max(0,Math.floor(a.x/100*FOG_W))),j=Math.min(FOG_H-1,Math.max(0,Math.floor(a.y/100*FOG_H)));
- return fogVis[j*FOG_W+i]===1}
-function renderFog(){const cv=$('fog'),m=currentMap();
- if(!m||!fogVis){cv.style.display='none';return}
- cv.style.display='';if(cv.width!==FOG_W){cv.width=FOG_W;cv.height=FOG_H}
- const ctx=cv.getContext('2d'),img=ctx.createImageData(FOG_W,FOG_H);
+function partySees(a){if(!fogVis||!fogDim)return true;const d=fogDim;
+ const i=Math.min(d.w-1,Math.max(0,Math.floor(a.x/100*d.w))),j=Math.min(d.h-1,Math.max(0,Math.floor(a.y/100*d.h)));
+ return fogVis[j*d.w+i]===1}
+function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
+ if(!m||!fogVis||!d){cv.style.display='none';return}
+ cv.style.display='';if(cv.width!==d.w||cv.height!==d.h){cv.width=d.w;cv.height=d.h}
+ const ctx=cv.getContext('2d'),img=ctx.createImageData(d.w,d.h);
  // Le MJ garde une vue lisible ; le joueur ne voit rien de l'inexploré.
  const inconnu=view==='mj'?110:255,memoire=view==='mj'?40:150;
- for(let k=0;k<FOG_N;k++){const p=k*4;img.data[p]=6;img.data[p+1]=9;img.data[p+2]=11;
+ for(let k=0;k<d.n;k++){const p=k*4;img.data[p]=6;img.data[p+1]=9;img.data[p+2]=11;
   img.data[p+3]=fogVis[k]?0:(m.seen[k]==='1'?memoire:inconnu)}
  ctx.putImageData(img,0,0)}
 function resetFog(tout){const m=currentMap();if(!m)return;
- m.seen=(tout?'1':'0').repeat(FOG_N);render();scheduleSave();
+ m.seen=(tout?'1':'0').repeat(fogDims(m).n);fogKey='';render();scheduleSave();
  log(tout?'Brouillard levé sur toute la carte.':'Brouillard réinitialisé.')}
 
 /* ---------- Rendu sur la table de jeu ---------- */
@@ -80,7 +92,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y));
  actors.splice(0,actors.length,...heros);
  // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
- (m.doors||[]).forEach(d=>{d.open=false});m.seen='0'.repeat(FOG_N);
+ (m.doors||[]).forEach(d=>{d.open=false});m.seen='0'.repeat(fogDims(m).n);fogKey='';
  (m.foes||[]).forEach(f=>{const a=fromMonster(f.tpl);a.hidden=!!f.hidden;a.x=f.x;a.y=f.y;normalizeActor(a);actors.push(a)});
  render();actors.forEach(settleActor);   // Personne ne démarre dans un mur.
 

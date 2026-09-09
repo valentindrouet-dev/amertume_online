@@ -152,6 +152,13 @@ function segmentHitsRect(px,py,qx,qy,r){
  else{let a=(r.y-py)/dy,b=(ry2-py)/dy;if(a>b){const t=a;a=b;b=t}
   if(a>t0)t0=a;if(b<t1)t1=b;if(t0>t1)return false}
  return true}
+/* La mémoire d'exploration est une grille : quand la finesse du brouillard change,
+   on la ré-échantillonne au lieu de la jeter — les joueurs gardent ce qu'ils ont vu. */
+function regridMask(seen,fromW,fromH,toW,toH){const out=new Array(toW*toH);
+ for(let j=0;j<toH;j++){const sj=Math.min(fromH-1,Math.floor((j+.5)/toH*fromH));
+  for(let i=0;i<toW;i++){const si=Math.min(fromW-1,Math.floor((i+.5)/toW*fromW));
+   out[j*toW+i]=seen[sj*fromW+si]==='1'?'1':'0'}}
+ return out.join('')}
 function visibleCells(heroes,rects,cols,rows){const vis=new Uint8Array(cols*rows);
  const rs=rects||[],hs=heroes||[];
  for(let j=0;j<rows;j++){const cy=(j+.5)/rows*100;
@@ -160,7 +167,7 @@ function visibleCells(heroes,rects,cols,rows){const vis=new Uint8Array(cols*rows
     for(let k=0;k<rs.length;k++)if(segmentHitsRect(h.x,h.y,cx,cy,rs[k])){vu=false;break}
     if(vu){vis[j*cols+i]=1;break}}}}
  return vis}
-const api={visibleCells,segmentHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={visibleCells,regridMask,segmentHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);

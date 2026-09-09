@@ -1,4 +1,4 @@
-# Amertume Online — v0.23
+# Amertume Online — v0.24
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.24 — Brouillard de guerre net et fin
+
+Le brouillard était calculé sur une grille de 104 × 58 cases étirée sur toute la carte, et le navigateur lissait cet agrandissement : d’où des taches molles d’une dizaine de pixels. Trois changements :
+
+- **La grille passe à 256 colonnes**, et le nombre de lignes est déduit du rapport de la carte pour que les cases soient **carrées** — sur une image en 1232 × 751 elles étaient auparavant nettement plus hautes que larges, ce qui accentuait l’effet d’escalier vertical. Mesuré sur une carte affichée en 816 × 497 : cases de 3,19 × 3,19 px, contre 7,8 × 8,6 px avant.
+- **Le rendu devient net** (`image-rendering: pixelated`) : plus d’interpolation, les rayons d’ombre projetés par les angles de murs sont des droites franches au lieu de dégradés flous. Le zoom conserve cette netteté.
+- **Le calcul est mémorisé.** À cette finesse il coûte 8 à 20 ms ; il ne reprend donc que si la scène a bougé — position d’un héros vivant, état d’une porte, géométrie des zones. Les autres rendus (sélection, journal, changement de vue) le réutilisent tel quel.
+
+La mémoire d’exploration des cartes déjà jouées n’est pas perdue : une grille de 104 × 58 est **ré-échantillonnée** vers la nouvelle finesse (`regridMask()`), ce que les tests vérifient case par case. En publication, seule la carte ouverte emporte sa mémoire d’exploration : les autres n’alourdissent plus le contenu partagé.
 
 ## v0.23 — Les portes percent les murs, recalage des cartes anciennes
 
