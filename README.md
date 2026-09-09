@@ -1,4 +1,4 @@
-# Amertume Online — v0.36
+# Amertume Online — v0.37
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,21 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.37 — Quatre lignes, et rien d’autre
+
+**Le trait doré du Maj disparaît.** Appuyer sur Maj change encore le curseur en croix — le geste s’annonce — mais plus rien ne traverse la carte : la flèche de ciblage, elle, reste et suffit. Le Maj + clic cible exactement comme avant.
+
+**La carte d’attaque se réduit à ce qu’elle montre** : le titre, les dés de l’arme et le bonus de dégâts, le bouton, et **« Cible : <nom> »**. Rien de plus — ni PV, ni DEF, ni mention de portée, ni ligne de refus, ni menu de critique, ni lancer libre, ni conventions dépliables.
+
+Ce qui disparaît de l’écran ne disparaît pas du jeu :
+
+- la **raison** d’un coup impossible passe en infobulle du bouton, et la couleur de la flèche la dit déjà d’un coup d’œil ;
+- le **dé de critique** se choisit tout seul — la première couleur présente dans la réserve, les verts exclus puisqu’ils soignent : exactement ce que proposait le menu ;
+- les **résultats de jet** roulent sur le plateau et se racontent au journal, qui les gardait déjà ;
+- un **test de compétence** lancé depuis la fiche roule pareillement sur le plateau.
+
+Seul le **lancer libre** est retiré pour de bon : la réserve d’une arme se lance en attaquant, les compétences depuis la fiche.
 
 ## v0.36 — La flèche dit si le coup peut partir
 
