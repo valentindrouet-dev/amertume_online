@@ -1,4 +1,4 @@
-# Amertume Online — v0.43
+# Amertume Online — v0.44
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,20 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.44 — Talents, et l’équipement en pastilles
+
+**L’équipement se lit comme à l’armurerie.** Sur la carte d’un aventurier et sur sa fiche à droite de la table de jeu, armes, armure et bouclier sont désormais des pastilles : la même couleur par catégorie qu’à l’armurerie, les dés de l’arme à droite, l’écu et sa DEF pour une armure, l’effet pour un objet. La pastille est posée, pas cliquable — sur une fiche on lit son équipement, on ne modifie pas le catalogue d’un clic de travers. L’infobulle donne les traits et les effets.
+
+Au passage, une pastille dont le nom était long débordait de sa colonne et décalait ses icônes : il manquait un `min-width:0` sur un élément flex. Corrigé pour l’armurerie et le bestiaire aussi.
+
+**Onglet Talents.** Un rayon de talents, rangé en colonnes par classe, les Génériques en tête. Chaque talent porte un nom, une classe, une **nature** — Action, Réaction, Passif, Critique, Maîtrise, Amélioration, chacune sa couleur et son abrégé — un niveau, un effet et des notes. Recherche, filtre par classe et tri par niveau ou par nom. Cliquer un talent déplie son effet et **qui l’a appris**. Les trois icônes habituelles : modifier, dupliquer, supprimer.
+
+**Attribuer un talent.** Dans la fiche d’un aventurier, une rubrique Talents : une case à cocher par talent, groupées par classe, avec la classe de l’aventurier et les Génériques en tête — un arbre entier se parcourt mal quand ce qu’on cherche est au milieu. Un champ filtre la liste sans rien perdre de ce qui est déjà coché. La rubrique n’apparaît pas pour les monstres, qui n’apprennent pas de talents.
+
+Les talents appris s’affichent en pastilles sur la carte de l’aventurier et sur sa fiche en jeu, sous l’équipement. Supprimer un talent du rayon prévient s’il est appris, et le retire alors de ceux qui l’avaient ; une fiche ne garde jamais un talent qui n’existe plus au catalogue — c’est vérifié par les tests.
+
+Le rayon part **vide** : je n’ai pas les talents d’Amertume sous la main, seulement l’image de ton autre application. Donne-moi les données et je les importe comme le catalogue d’objets.
 
 ## v0.43 — Enregistrer une fiche depuis la page Aventuriers
 

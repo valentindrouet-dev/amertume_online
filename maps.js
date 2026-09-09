@@ -218,10 +218,10 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
 /* ---------- Onglets de page, réservés au MJ ---------- */
 const tabs=document.createElement('nav');tabs.className='tabs';
 tabs.innerHTML='<button data-page="table" class="on">Table de jeu</button><button data-page="maps">Cartes</button>'
- +'<button data-page="heroes">Aventuriers</button>'
+ +'<button data-page="heroes">Aventuriers</button><button data-page="talents">Talents</button>'
  +'<button data-page="armory">Armurerie</button><button data-page="bestiary">Bestiaire</button>';
 document.querySelector('.view-controls').before(tabs);
-const PAGES=['table','maps','heroes','armory','bestiary'];
+const PAGES=['table','maps','heroes','talents','armory','bestiary'];
 const tabsMJ=[...tabs.querySelectorAll('button')].filter(b=>b.dataset.page!=='table');
 function showPage(p){if(p!=='table'&&view!=='mj')return;
  PAGES.forEach(x=>document.body.classList.toggle('page-'+x,x===p&&x!=='table'));
@@ -229,6 +229,7 @@ function showPage(p){if(p!=='table'&&view!=='mj')return;
  if(p==='maps'){if(!maps.length)newMap();if(!mapDraft)mapDraft=maps.find(m=>m.id===currentMapId)||maps[0];
   measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas()}
  else if(p==='heroes')renderHeroes();
+ else if(p==='talents')renderTalents();
  else if(p==='armory')renderArmory();
  else if(p==='bestiary')renderBestiary();
  // De retour sur la table, tout est remesuré : la carte était masquée, donc sans largeur,

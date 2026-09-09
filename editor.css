@@ -62,9 +62,10 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .sw-cut{background:#7faddc38;border:1px dashed #7faddc}.sw-key{background:repeating-linear-gradient(45deg,#c98a4b 0 4px,#8d5f31 4px 8px);border:1px solid #f3d7a6}.sw-foe{background:#6d443c;border:2px solid #d29180;border-radius:50%;width:15px;height:15px}
 @media(max-width:1150px){body.page-maps #maps-page{grid-template-columns:1fr;padding:14px}.maps-side,.maps-props{position:static}}
 
-/* ---------- Pages Aventuriers, Armurerie et Bestiaire ---------- */
-#heroes-page,#armory-page,#bestiary-page{display:none;padding:16px 28px 26px}
-body.page-heroes #heroes-page,body.page-armory #armory-page,body.page-bestiary #bestiary-page{display:block}
+/* ---------- Pages Aventuriers, Talents, Armurerie et Bestiaire ---------- */
+#heroes-page,#talents-page,#armory-page,#bestiary-page{display:none;padding:16px 28px 26px}
+body.page-heroes #heroes-page,body.page-talents #talents-page,body.page-armory #armory-page,body.page-bestiary #bestiary-page{display:block}
+body.page-talents .intro,body.page-talents .mj-tools,body.page-talents main.layout,body.page-talents #save-status,body.page-talents footer,
 body.page-heroes .intro,body.page-heroes .mj-tools,body.page-heroes main.layout,body.page-heroes #save-status,body.page-heroes footer,
 body.page-armory .intro,body.page-armory .mj-tools,body.page-armory main.layout,body.page-armory #save-status,body.page-armory footer,
 body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.layout,body.page-bestiary #save-status,body.page-bestiary footer{display:none!important}
@@ -78,12 +79,12 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .cat-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;align-items:start}
 .cat-col h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font:600 12px system-ui;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:7px}
 .cat-col h3 .compte{margin-left:auto;font-size:11px;letter-spacing:0;background:var(--hover);border-radius:9px;padding:1px 8px;color:var(--muted)}
-.cat-col h3{border-radius:6px 6px 0 0;padding:6px 8px 7px}.cat-col.c-solitaire h3{color:#e0a06a;background:var(--panel-2)}.cat-col.c-boss h3{color:#c79ad8;background:#241a2c}
+.cat-col h3{border-radius:6px 6px 0 0;padding:6px 8px 7px}.cat-col.c-solitaire h3{color:#e0a06a;background:var(--panel-2)}.cat-col.c-boss h3{color:#c79ad8;background:#241a2c}.cat-col.c-generique h3{color:#a884c8;background:var(--panel-2)}
 .cat-entry{margin-bottom:7px}
 .cat-row{display:flex;align-items:center;gap:6px;margin-bottom:7px}
 /* La pastille reprend le parchemin des fiches : fond clair, texte sombre. */
-.cat-pill{flex:1;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #00000026;border-radius:9px;padding:8px 11px;font:600 14px Georgia,serif;color:#2a2118;box-shadow:0 1px 0 #ffffff5c inset,0 2px 5px #0000004d}
-.cat-pill .nom{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-pill{flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #00000026;border-radius:9px;padding:8px 11px;font:600 14px Georgia,serif;color:#2a2118;box-shadow:0 1px 0 #ffffff5c inset,0 2px 5px #0000004d}
+.cat-pill .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cat-pill:hover{filter:brightness(1.06)}
 .cat-pill.k-melee{background:#e3d2b2}
 .cat-pill.k-ranged{background:#eee0c4}
@@ -122,4 +123,38 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .hero-stats span{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 7px;font:600 10px system-ui;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hero-stats b{display:block;margin-top:3px;font:700 15px system-ui;letter-spacing:0;text-transform:none;color:var(--ink)}
 .hero-kit{margin:0;font-size:13px}
-@media (max-width:900px){#heroes-page,#armory-page,#bestiary-page{padding:14px}.cat-cols,.hero-grid{grid-template-columns:1fr}}
+/* Pastilles posées : sur une fiche on lit son équipement et ses talents, on ne clique pas.
+   Même dessin qu'à l'armurerie, sans le survol ni le curseur d'un bouton. */
+.gear-pills{display:flex;flex-direction:column;gap:6px;margin:2px 0 4px}
+.gear-pills .cat-pill{flex:none;cursor:default}
+.gear-pills .cat-pill:hover{filter:none}
+.gear-pills .muted{font-size:13px}
+.hero-sous{margin:12px 0 6px;font:600 10px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+/* Talents : une couleur par nature, portée par le liseré gauche et par l'abrégé. */
+.cat-pill.t-act{background:#cfdcea;border-left:4px solid #4f7fb5}
+.cat-pill.t-reac{background:#ddd3ea;border-left:4px solid #8b6bb5}
+.cat-pill.t-pass{background:#dcd8cf;border-left:4px solid #8a8474}
+.cat-pill.t-crit{background:#eccfd0;border-left:4px solid #b5525a}
+.cat-pill.t-mait{background:#f0e0bd;border-left:4px solid #c99a3c}
+.cat-pill.t-ame{background:#d3e5cd;border-left:4px solid #5e9a5b}
+.t-badge{flex:none;font:700 10px system-ui;letter-spacing:.6px;background:#0000001f;border-radius:5px;padding:2px 6px;color:#3a3128}
+.cat-pill.cliquable{cursor:pointer}
+/* Attribuer des talents dans la fiche : des cases, groupées par classe, dans un cadre
+   qui défile — un arbre complet ne doit pas repousser le reste du formulaire. */
+#talent-filter{margin-bottom:10px}
+#talent-picker{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--panel-2)}
+.pick-famille+.pick-famille{margin-top:14px}
+.pick-famille h3{display:flex;align-items:center;gap:8px;margin:0 0 7px;font:600 11px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:5px}
+.pick-famille h3 .compte{margin-left:auto;font-size:11px;letter-spacing:0;background:var(--hover);border-radius:9px;padding:1px 8px}
+.pick-talent{display:flex;align-items:center;gap:8px;margin-bottom:5px;padding:6px 10px;border-radius:8px;border:1px solid #00000026;border-left-width:4px;font:600 13px Georgia,serif;color:#2a2118;cursor:pointer}
+.pick-talent input{flex:none;width:auto;margin:0;accent-color:#3d3227}
+.pick-talent .nom{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-talent .tag{font:600 11px system-ui;color:#4a3f31;opacity:.85}
+.pick-talent:hover{filter:brightness(1.05)}
+.pick-talent.t-act{background:#cfdcea;border-left-color:#4f7fb5}
+.pick-talent.t-reac{background:#ddd3ea;border-left-color:#8b6bb5}
+.pick-talent.t-pass{background:#dcd8cf;border-left-color:#8a8474}
+.pick-talent.t-crit{background:#eccfd0;border-left-color:#b5525a}
+.pick-talent.t-mait{background:#f0e0bd;border-left-color:#c99a3c}
+.pick-talent.t-ame{background:#d3e5cd;border-left-color:#5e9a5b}
+@media (max-width:900px){#heroes-page,#talents-page,#armory-page,#bestiary-page{padding:14px}.cat-cols,.hero-grid{grid-template-columns:1fr}}

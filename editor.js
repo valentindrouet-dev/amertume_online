@@ -6,8 +6,10 @@ const num=(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0));
 const poolFrom=d=>keys.map(k=>num(d?.[k],0,12));
 const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
 const STATES=['Aucun','Affaibli','Au sol','Feu','Blindage','Onde','Coma'];
-function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks??=[{name:'Attaque de base',dice:diceFrom(a.pool),range:'contact',targets:'one',useOwnDamage:true,effects:{}}];a.notes??='';a.state??='Aucun';a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;return a}
-actors.forEach(normalizeActor);
+function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks??=[{name:'Attaque de base',dice:diceFrom(a.pool),range:'contact',targets:'one',useOwnDamage:true,effects:{}}];a.notes??='';a.state??='Aucun';a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];return a}
+/* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
+function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];return c}
+actors.forEach(normalizeActor);normalizeCatalog(catalog);
 // Équipement de départ de la scène de démonstration. Toute partie enregistrée le remplace.
 (function(){const parNom=n=>catalog.items.find(w=>w.name===n)?.id||'';
  [['Éla',['Épée'],'Armure de mailles','Bouclier'],['Kaël',['Arc'],'Armure de cuir',''],['Sentinelle',['Lance'],'Armure de mailles','Bouclier'],['Rôdeur des ruines',['Hache'],'Armure de plates','Bouclier']]
@@ -40,6 +42,16 @@ heroesPage.innerHTML='<section class="cat-panel panel">'
  +'<p class="muted">Les fiches des héros de la troupe. C’est ici qu’on les crée, qu’on les modifie et qu’on les retire.</p>'
  +'<div class="cat-filters"><input id="hero-search" placeholder="Rechercher…" aria-label="Rechercher un aventurier"></div>'
  +'<div class="hero-grid" id="hero-grid"></div></section>';
+const talentsPage=document.createElement('main');talentsPage.id='talents-page';
+talentsPage.innerHTML='<section class="cat-panel panel">'
+ +'<header class="cat-head"><h2>Talents</h2><div class="cat-actions">'
+ +'<button id="talent-add" class="primary">+ Nouveau talent</button></div></header>'
+ +'<p class="muted">Les talents que les aventuriers peuvent apprendre, rangés par classe. Les Génériques sont ouverts à tous. On les attribue depuis la fiche d’un aventurier, onglet Aventuriers.</p>'
+ +'<div class="cat-filters"><input id="talent-search" placeholder="Rechercher…" aria-label="Rechercher un talent">'
+ +'<select id="talent-family" aria-label="Classe"></select>'
+ +'<select id="talent-sort" aria-label="Tri"><option value="niveau">Tri : niveau ↑</option>'
+ +'<option value="niveau-">Tri : niveau ↓</option><option value="nom">Tri : nom</option></select></div>'
+ +'<div class="cat-cols" id="talent-cols"></div></section>';
 const bestiaryPage=document.createElement('main');bestiaryPage.id='bestiary-page';
 bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Bestiaire</h2><div class="cat-actions">'
@@ -50,7 +62,7 @@ bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<select id="bestiary-sort" aria-label="Tri"><option value="danger">Tri : danger ↓</option>'
  +'<option value="danger-">Tri : danger ↑</option><option value="nom">Tri : nom</option></select></div>'
  +'<div class="cat-cols" id="bestiary-cols"></div></section>';
-document.querySelector('main.layout').after(heroesPage,armoryPage,bestiaryPage);
+document.querySelector('main.layout').after(heroesPage,talentsPage,armoryPage,bestiaryPage);
 /* Une carte par aventurier : de quoi le reconnaître, lire ses chiffres et agir dessus. */
 /* Enregistrer une fiche remplace l'objet dans « actors » : une carte dessinée avant
    garde l'ancien, devenu orphelin. Le rang se relit donc au clic, et une carte périmée
@@ -82,11 +94,9 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   ['Endu',a.endu],['Niv.',a.level],['XP',a.xp]].forEach(([l,v])=>{
   const t=document.createElement('span');t.innerHTML='<b></b>';t.firstChild.textContent=v;
   t.prepend(document.createTextNode(l+' '));chiffres.append(t)});
- const kit=document.createElement('p');kit.className='muted hero-kit';
- const armes=(a.weapons||[]).map(gear).filter(Boolean).map(w=>w.name);
- const prot=[a.armorId,a.shieldId].map(gear).filter(Boolean).map(w=>w.name);
- kit.textContent=(armes.length?armes.join(' + '):'Aucune arme')+' · '+(prot.length?prot.join(' + '):'Sans armure');
- c.append(tete,chiffres,kit);return c}
+ const titreKit=document.createElement('h4');titreKit.className='hero-sous';titreKit.textContent='Équipement';
+ const titreTal=document.createElement('h4');titreTal.className='hero-sous';titreTal.textContent='Talents';
+ c.append(tete,chiffres,titreKit,gearPills(a),titreTal,talentPills(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
  const heros=actors.filter(a=>a.hero&&(!q||a.name.toLowerCase().includes(q)));
@@ -134,6 +144,45 @@ function dicePips(dice){const out=document.createElement('span');out.className='
  return out}
 function itemColumn(a){return a.category==='armor'?'armor'
  :a.category==='weapon'?(a.ranged?'ranged':'melee'):'object'}
+/* La même pastille qu'à l'armurerie, mais posée : sur une fiche on lit son équipement,
+   on ne le modifie pas d'un clic. Les dés de l'arme, la DEF de l'armure, l'effet d'un objet. */
+function gearPill(o){const col=itemColumn(o);
+ const p=document.createElement('span');p.className='cat-pill k-'+col+(o.consumable?' consommable':'');
+ const nom=document.createElement('span');nom.className='nom';nom.textContent=o.name;p.append(nom);
+ if(col==='armor'){const b=document.createElement('span');b.className='shield';b.textContent=o.def||0;
+  b.title='DEF '+(o.def||0);p.append(b)}
+ else if(col==='object'){const t=document.createElement('span');t.className='tag';
+  t.textContent=(o.effects||o.notes||'—').slice(0,22);p.append(t)}
+ else p.append(dicePips(o.dice));
+ const info=[o.effects,(o.traits||[]).join(', '),o.notes].filter(Boolean).join(' · ');
+ p.title=info?o.name+' — '+info:o.name;
+ return p}
+function gearPills(a){const out=document.createElement('div');out.className='gear-pills';
+ const porte=[...(a.weapons||[]),a.armorId,a.shieldId].map(gear).filter(Boolean);
+ if(!porte.length){const v=document.createElement('span');v.className='muted';v.textContent='Sans équipement';out.append(v)}
+ else porte.forEach(o=>out.append(gearPill(o)));
+ return out}
+/* Talents : six natures, chacune sa couleur et son abrégé, comme dans le jeu de table. */
+const TALENT_TYPES=[['act','ACT','Action'],['reac','REAC','Réaction'],['pass','PASS','Passif'],
+ ['crit','CRIT','Critique'],['mait','MAIT','Maîtrise'],['ame','AME','Amélioration']];
+const talentType=t=>TALENT_TYPES.find(x=>x[0]===(t&&t.type))||TALENT_TYPES[0];
+const GENERIQUES='Génériques';
+const talentFamily=t=>(t&&t.famille||'').trim()||GENERIQUES;
+function talent(id){return (catalog.talents||[]).find(t=>t&&t.id===id)}
+function talentPill(t){const [cle,court,nom]=talentType(t);
+ const p=document.createElement('span');p.className='cat-pill t-'+cle;
+ const n=document.createElement('span');n.className='nom';n.textContent=t.name;
+ const b=document.createElement('span');b.className='t-badge';b.textContent=court;b.title=nom;
+ const niv=document.createElement('span');niv.className='tag';niv.textContent='Niv. '+(t.level||1);
+ p.append(n,b,niv);
+ const info=[talentFamily(t),nom,t.effects,t.notes].filter(Boolean).join(' · ');
+ p.title=t.name+' — '+info;
+ return p}
+function talentPills(a){const out=document.createElement('div');out.className='gear-pills';
+ const liste=(a.talents||[]).map(talent).filter(Boolean);
+ if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v)}
+ else liste.forEach(t=>out.append(talentPill(t)));
+ return out}
 const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets']];
 function armoryRow(a,i){const rang=document.createElement('div');rang.className='cat-row';
  const col=itemColumn(a);
@@ -211,7 +260,99 @@ function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.rep
   liste.forEach(([m,i])=>bloc.append(bestiaryRow(m,i)));
   if(!liste.length){const vide=document.createElement('p');vide.className='muted';vide.textContent='Rien ici.';bloc.append(vide)}
   cols.append(bloc)}}
-function renderCatalogPages(){renderHeroes();renderArmory();renderBestiary()}
+/* Une colonne par classe, les Génériques en tête : c'est ainsi qu'on lit un arbre de
+   talents, la souche commune d'abord et les branches ensuite. */
+function talentFamilies(){const autres=[...new Set((catalog.talents||[]).map(talentFamily))]
+ .filter(f=>f!==GENERIQUES).sort((a,b)=>a.localeCompare(b,'fr'));
+ return [GENERIQUES,...autres]}
+function talentRow(t,i){const rang=document.createElement('div');rang.className='cat-row';
+ const pill=talentPill(t);pill.classList.add('cliquable');
+ const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev);
+ const detail=document.createElement('div');detail.className='cat-detail';detail.hidden=true;
+ const ligne=document.createElement('span');
+ ligne.textContent=talentFamily(t)+' · '+talentType(t)[2]+' · niveau '+(t.level||1);
+ const effet=document.createElement('span');effet.className='muted';
+ effet.textContent=t.effects||'Effet à préciser.';
+ detail.append(ligne,effet);
+ if(t.notes){const n=document.createElement('span');n.className='muted';n.textContent=t.notes;detail.append(n)}
+ const porteurs=actors.filter(a=>a.hero&&(a.talents||[]).includes(t.id)).map(a=>a.name);
+ const qui=document.createElement('span');qui.className='muted';
+ qui.textContent=porteurs.length?'Appris par : '+porteurs.join(', '):'Appris par personne.';
+ detail.append(qui);
+ pill.onclick=()=>{detail.hidden=!detail.hidden;pill.classList.toggle('ouvert',!detail.hidden)};
+ const outils=document.createElement('span');outils.className='cat-tools';
+ const ico=(glyphe,titre,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=glyphe;
+  b.title=titre;b.setAttribute('aria-label',titre+' '+t.name);b.onclick=fn;return b};
+ const suppr=ico('✕','Supprimer',()=>{
+  const pris=actors.filter(a=>(a.talents||[]).includes(t.id)).length;
+  if(!confirm('Supprimer « '+t.name+' » ?'+(pris?' Il est appris par '+pris+' aventurier(s), qui le perdront.':'')))return;
+  actors.forEach(a=>{if(a.talents)a.talents=a.talents.filter(x=>x!==t.id)});
+  catalog.talents.splice(i,1);renderCatalogPages();render();scheduleSave()});
+ suppr.classList.add('danger');
+ outils.append(ico('✎','Modifier',()=>openTalent(i)),
+  ico('⧉','Dupliquer',()=>{const copie=structuredClone(t);copie.id=crypto.randomUUID();
+   copie.name=t.name+' (copie)';catalog.talents.splice(i+1,0,copie);renderCatalogPages();scheduleSave()}),
+  suppr);
+ const bloc=document.createElement('div');bloc.className='cat-entry';
+ rang.append(pill,outils);bloc.append(rang,detail);return bloc}
+function renderTalents(){const cols=$('talent-cols');if(!cols)return;cols.replaceChildren();
+ const q=($('talent-search').value||'').trim().toLowerCase();
+ const familles=talentFamilies(),sel=$('talent-family'),avant=sel.value;
+ sel.replaceChildren(new Option('Toutes classes',''));
+ familles.forEach(f=>sel.add(new Option(f,f)));
+ sel.value=familles.includes(avant)?avant:'';
+ const tri=$('talent-sort').value;
+ const visibles=sel.value?[sel.value]:familles;
+ for(const famille of visibles){
+  const liste=(catalog.talents||[]).map((t,i)=>[t,i]).filter(([t])=>talentFamily(t)===famille
+   &&(!q||t.name.toLowerCase().includes(q)||(t.effects||'').toLowerCase().includes(q)));
+  liste.sort((a,b)=>tri==='nom'?a[0].name.localeCompare(b[0].name,'fr')
+   :tri==='niveau-'?(b[0].level||1)-(a[0].level||1)||a[0].name.localeCompare(b[0].name,'fr')
+   :(a[0].level||1)-(b[0].level||1)||a[0].name.localeCompare(b[0].name,'fr'));
+  const bloc=document.createElement('div');bloc.className='cat-col'+(famille===GENERIQUES?' c-generique':'');
+  const h=document.createElement('h3');h.textContent=famille;
+  const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
+  h.append(compte);bloc.append(h);
+  liste.forEach(([t,i])=>bloc.append(talentRow(t,i)));
+  if(!liste.length){const vide=document.createElement('p');vide.className='muted';
+   vide.textContent='Rien ici.';bloc.append(vide)}
+  cols.append(bloc)}
+ if(!(catalog.talents||[]).length){const vide=document.createElement('p');vide.className='muted';
+  vide.textContent='Aucun talent pour l’instant. « + Nouveau talent » ouvre une fiche vierge : un nom, une classe, une nature et un niveau.';
+  cols.replaceChildren(vide)}}
+$('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalents;
+$('talent-sort').onchange=renderTalents;
+$('talent-add').onclick=()=>openTalent(null);
+const talentDialog=dialog('talent-editor','Talent','<form id="talent-form"><div id="talent-fields"></div><div class="form-actions"><button type="button" id="delete-talent">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
+let talentIndex=null;
+function openTalent(i=null){if(view!=='mj')return;talentIndex=i;
+ const t=i===null?{name:'Nouveau talent',famille:GENERIQUES,type:'act',level:1,effects:'',notes:''}:catalog.talents[i];
+ if(i!==null&&!t)return;
+ const familles=[...new Set([GENERIQUES,...talentFamilies(),...actors.filter(a=>a.hero).map(a=>(a.role||'').split('·')[0].trim()).filter(Boolean)])];
+ $('talent-fields').innerHTML='<div class="edit-grid">'
+  +field('Nom','name',t.name,'text','required maxlength="120"')
+  +'<label>Classe<input name="famille" list="talent-familles" maxlength="60" value="'+esc(talentFamily(t))+'"></label>'
+  +sel('Nature','type',t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]))
+  +field('Niveau','level',t.level||1,'number','min="1" max="20"')+'</div>'
+  +'<datalist id="talent-familles">'+familles.map(f=>'<option value="'+esc(f)+'">').join('')+'</datalist>'
+  +'<label>Effet<textarea name="effects" rows="3" maxlength="600">'+esc(t.effects||'')+'</textarea></label>'
+  +'<label>Notes<textarea name="notes" rows="2" maxlength="600">'+esc(t.notes||'')+'</textarea></label>';
+ $('delete-talent').hidden=i===null;talentDialog.showModal()}
+$('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
+ const f=$('talent-form').elements;
+ const t=talentIndex===null?{id:crypto.randomUUID()}:structuredClone(catalog.talents[talentIndex]);
+ t.name=f.name.value.trim()||'Talent';t.famille=f.famille.value.trim()||GENERIQUES;
+ t.type=f.type.value;t.level=num(f.level.value,1,20);
+ t.effects=f.effects.value.trim();t.notes=f.notes.value.trim();
+ if(talentIndex===null)catalog.talents.push(t);else catalog.talents[talentIndex]=t;
+ talentDialog.close();renderCatalogPages();render();scheduleSave()};
+$('delete-talent').onclick=()=>{if(talentIndex===null)return;
+ const t=catalog.talents[talentIndex];
+ const pris=actors.filter(a=>(a.talents||[]).includes(t.id)).length;
+ if(!confirm('Supprimer « '+t.name+' » ?'+(pris?' Il est appris par '+pris+' aventurier(s), qui le perdront.':'')))return;
+ actors.forEach(a=>{if(a.talents)a.talents=a.talents.filter(x=>x!==t.id)});
+ catalog.talents.splice(talentIndex,1);talentDialog.close();renderCatalogPages();render();scheduleSave()};
+function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();renderBestiary()}
 $('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;
 $('armory-add').onclick=()=>openItem(null);
 $('armory-official').onclick=()=>{
@@ -234,9 +375,9 @@ function fromMonster(m){const a=baseActor(false);Object.assign(a,{name:m.name,ro
 function openActor(index=null,hero=true,template=null){if(view!=='mj')return;
  if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero;renderActorForm();actorDialog.showModal()}
 function renderActorForm(){const a=draft;const weaponOptions=[['','Aucune'],...catalog.items.filter(w=>w.category==='weapon').map(w=>[w.id,w.name])];const armorOptions=slot=>[['','Aucune'],...catalog.items.filter(w=>w.category==='armor'&&w.slot===slot).map(w=>[w.id,w.name])];
-$('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role)+field('PV actuels','hp',a.hp,'number','min="0" max="99999"')+field('PV maximum (modifiable)','max',a.max,'number','min="1" max="99999" required')+field('DEF','def',a.def,'number','min="0" max="99"')+field('Dégâts','dmg',a.dmg,'number','min="0" max="999"')+field('XP','xp',a.xp,'number','min="0" max="999999"')+sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+field('Peuple','race',a.race,'text','maxlength="40"')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any"')+field('Endurance','endu',a.endu,'number','min="1" max="999"')+field('Bonus PV','pvBonus',a.pvBonus,'number','min="-9999" max="9999"')+field('Niveau','level',a.level,'number','min="1" max="7"'):'')+sel('État','state',a.state,STATES.map(s=>[s,s]))+sel('Taille du socle','socle',a.socle,[['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Alpha'],['boss','Boss']])+sel('Menace','menace',a.menace,[['closest','Plus proche'],['pvLow','PV bas'],['pvHigh','PV haut'],['defLow','DEF basse']]):'')+'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label></div>'+(a.hero?'<button type="button" id="calculate-pv" style="margin-top:12px">Recalculer PV max : Vie × Endu + bonus</button>':'')+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden><div class="divider"></div><h2>Compétences</h2><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div><div class="divider"></div><h2>Équipement</h2><div class="edit-grid">'+sel('Arme 1','weapon1',a.weapons[0]||'',weaponOptions)+sel('Arme 2','weapon2',a.weapons[1]||'',weaponOptions)+sel('Armure','armor',a.armorId,armorOptions('body'))+sel('Bouclier','shield',a.shieldId,armorOptions('shield'))+'</div><p class="muted" id="equip-summary"></p><p class="muted">Les dés de l’attaque et la DEF découlent de l’équipement. Mains, munitions et effets restent à vérifier à la main.</p><div class="divider"></div><h2>Attaques</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p><div class="divider"></div><label>Talents, inventaire et notes<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
+$('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role)+field('PV actuels','hp',a.hp,'number','min="0" max="99999"')+field('PV maximum (modifiable)','max',a.max,'number','min="1" max="99999" required')+field('DEF','def',a.def,'number','min="0" max="99"')+field('Dégâts','dmg',a.dmg,'number','min="0" max="999"')+field('XP','xp',a.xp,'number','min="0" max="999999"')+sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+field('Peuple','race',a.race,'text','maxlength="40"')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any"')+field('Endurance','endu',a.endu,'number','min="1" max="999"')+field('Bonus PV','pvBonus',a.pvBonus,'number','min="-9999" max="9999"')+field('Niveau','level',a.level,'number','min="1" max="7"'):'')+sel('État','state',a.state,STATES.map(s=>[s,s]))+sel('Taille du socle','socle',a.socle,[['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Alpha'],['boss','Boss']])+sel('Menace','menace',a.menace,[['closest','Plus proche'],['pvLow','PV bas'],['pvHigh','PV haut'],['defLow','DEF basse']]):'')+'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label></div>'+(a.hero?'<button type="button" id="calculate-pv" style="margin-top:12px">Recalculer PV max : Vie × Endu + bonus</button>':'')+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+(a.hero?'<div class="divider"></div><h2>Talents</h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Ceux de la classe de l’aventurier et les Génériques viennent en tête.</p>':'')+'<div class="divider"></div><h2>Compétences</h2><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div><div class="divider"></div><h2>Équipement</h2><div class="edit-grid">'+sel('Arme 1','weapon1',a.weapons[0]||'',weaponOptions)+sel('Arme 2','weapon2',a.weapons[1]||'',weaponOptions)+sel('Armure','armor',a.armorId,armorOptions('body'))+sel('Bouclier','shield',a.shieldId,armorOptions('shield'))+'</div><p class="muted" id="equip-summary"></p><p class="muted">Les dés de l’attaque et la DEF découlent de l’équipement. Mains, munitions et effets restent à vérifier à la main.</p><div class="divider"></div><h2>Attaques</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p><div class="divider"></div><label>Talents, inventaire et notes<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
 if(a.hero)$('calculate-pv').onclick=()=>{const f=$('actor-form').elements;f.max.value=Math.max(1,num(f.vie.value,1,999)*num(f.endu.value,1,999)+num(f.pvBonus.value,-9999,9999))};
-$('token-upload').onclick=()=>$('token-file').click();$('token-file').onchange=()=>{const f=$('token-file').files[0];if(f)openImage(f,'token',url=>{draft.image=url;$('draft-image').src=url;$('draft-image').hidden=false})};$('token-remove').onclick=()=>{draft.image=null;$('draft-image').hidden=true};$('add-attack').onclick=()=>{readAttacks();attackDraft.push({name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',useOwnDamage:true,effects:{}});renderAttacks()};['weapon1','weapon2','armor','shield'].forEach(k=>{$('actor-form').elements[k].onchange=refreshEquip});refreshEquip();renderAttacks()}
+$('token-upload').onclick=()=>$('token-file').click();$('token-file').onchange=()=>{const f=$('token-file').files[0];if(f)openImage(f,'token',url=>{draft.image=url;$('draft-image').src=url;$('draft-image').hidden=false})};$('token-remove').onclick=()=>{draft.image=null;$('draft-image').hidden=true};$('add-attack').onclick=()=>{readAttacks();attackDraft.push({name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',useOwnDamage:true,effects:{}});renderAttacks()};if(a.hero){$('talent-filter').oninput=renderTalentPicker;renderTalentPicker()}['weapon1','weapon2','armor','shield'].forEach(k=>{$('actor-form').elements[k].onchange=refreshEquip});refreshEquip();renderAttacks()}
 // Aperçu vivant de l'équipement : dés cumulés, portée et DEF verrouillée par l'armure.
 function refreshEquip(){const f=$('actor-form').elements,ids=[f.weapon1.value,f.weapon2.value].filter(Boolean);
  const armes=ids.map(id=>catalog.items.find(w=>w.id===id)).filter(Boolean);
@@ -247,8 +388,45 @@ function refreshEquip(){const f=$('actor-form').elements,ids=[f.weapon1.value,f.
   +' '+(d!==null?'DEF de l’équipement : '+d+', champ verrouillé.':'DEF saisie à la main.')}
 function renderAttacks(){$('attack-edit-list').innerHTML=attackDraft.map((a,i)=>'<div class="attack-card" data-attack="'+i+'"><div class="edit-grid">'+field('Nom','an'+i,a.name,'text','required maxlength="100"')+sel('Portée','ar'+i,a.range,[['contact','Contact'],['distance','Distance']])+sel('Cibles','at'+i,a.targets,[['one','Unique'],['all','Multiples (manuel)']])+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('');document.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
 function readAttacks(){const f=$('actor-form').elements;attackDraft=attackDraft.map((a,i)=>({...a,name:f['an'+i].value.trim()||'Attaque',range:f['ar'+i].value,targets:f['at'+i].value,useOwnDamage:f['ab'+i].checked,effectText:f['ae'+i].value,dice:diceFrom(keys.map((_,c)=>num(f['ad'+i+'_'+c].value,0,12)))}))}
+/* Attribuer un talent : une case par talent, groupées par classe. La classe de
+   l'aventurier et les Génériques passent devant, le reste suit — un arbre entier
+   se parcourt mal quand ce qu'on cherche est au milieu. Les cases cochées vivent
+   sur le brouillon, pas dans le DOM : filtrer la liste ne perd donc rien. */
+function draftFamilies(){const sienne=(draft.role||'').split('·')[0].trim();
+ const toutes=talentFamilies();
+ const tete=[GENERIQUES,...(sienne&&toutes.includes(sienne)?[sienne]:[])];
+ return [...tete,...toutes.filter(f=>!tete.includes(f))]}
+function renderTalentPicker(){const boite=$('talent-picker');if(!boite)return;boite.replaceChildren();
+ const q=($('talent-filter')?.value||'').trim().toLowerCase();
+ draft.talents??=[];
+ let montres=0;
+ for(const famille of draftFamilies()){
+  const liste=(catalog.talents||[]).filter(t=>talentFamily(t)===famille
+   &&(!q||t.name.toLowerCase().includes(q)||(t.effects||'').toLowerCase().includes(q)))
+   .sort((a,b)=>(a.level||1)-(b.level||1)||a.name.localeCompare(b.name,'fr'));
+  if(!liste.length)continue;
+  montres+=liste.length;
+  const bloc=document.createElement('div');bloc.className='pick-famille';
+  const h=document.createElement('h3');h.textContent=famille;
+  const compte=document.createElement('span');compte.className='compte';
+  compte.textContent=liste.filter(t=>draft.talents.includes(t.id)).length+' / '+liste.length;
+  h.append(compte);bloc.append(h);
+  liste.forEach(t=>{const [cle,court]=talentType(t);
+   const l=document.createElement('label');l.className='pick-talent t-'+cle;
+   const c=document.createElement('input');c.type='checkbox';c.checked=draft.talents.includes(t.id);
+   c.onchange=()=>{draft.talents=c.checked?[...new Set([...draft.talents,t.id])]
+    :draft.talents.filter(x=>x!==t.id);renderTalentPicker()};
+   const n=document.createElement('span');n.className='nom';n.textContent=t.name;
+   const b=document.createElement('span');b.className='t-badge';b.textContent=court;
+   const niv=document.createElement('span');niv.className='tag';niv.textContent='Niv. '+(t.level||1);
+   l.append(c,n,b,niv);l.title=t.effects||t.name;bloc.append(l)});
+  boite.append(bloc)}
+ if(!montres){const v=document.createElement('p');v.className='muted';
+  v.textContent=(catalog.talents||[]).length?'Aucun talent ne correspond à ce filtre.'
+   :'Aucun talent au catalogue. Va dans l’onglet Talents pour en créer.';
+  boite.append(v)}}
 function readActor(){const f=$('actor-form').elements;readAttacks();const a=structuredClone(draft);for(const k of ['name','role','notes','state','socle'])a[k]=f[k].value.trim();for(const k of ['sexe','race'])if(f[k])a[k]=f[k].value.trim();
- for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k])a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?999999:99999);a.max=Math.max(1,a.max);a.hp=Math.min(a.hp,a.max);if(!a.hp)a.state='Coma';else if(a.state==='Coma')a.hp=0;if(!a.hero){a.type=f.type.value;a.menace=f.menace.value}a.rapide=f.rapide.checked;a.esquive=f.esquive.checked;a.skills=skillNames.map((_,i)=>num(f['skill'+i].value,0,30));a.weapons=[f.weapon1.value,f.weapon2.value].filter(Boolean);a.armorId=f.armor.value;a.shieldId=f.shield.value;a.attacks=attackDraft;a.activeAttack=0;
+ for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k])a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?999999:99999);a.max=Math.max(1,a.max);a.hp=Math.min(a.hp,a.max);if(!a.hp)a.state='Coma';else if(a.state==='Coma')a.hp=0;if(!a.hero){a.type=f.type.value;a.menace=f.menace.value}a.rapide=f.rapide.checked;a.esquive=f.esquive.checked;a.skills=skillNames.map((_,i)=>num(f['skill'+i].value,0,30));a.weapons=[f.weapon1.value,f.weapon2.value].filter(Boolean);a.armorId=f.armor.value;a.shieldId=f.shield.value;a.attacks=attackDraft;a.activeAttack=0;a.talents=[...new Set(draft.talents||[])].filter(id=>(catalog.talents||[]).some(t=>t.id===id));
  const dEquip=equippedDef(a,catalog.items);if(dEquip!==null)a.def=dEquip;
  a.pool=equippedPool(a,catalog.items)||poolFrom(attackDraft[0]?.dice);return a}
 function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,notes:a.notes,attacks:structuredClone(a.attacks),image:a.image||null}}
@@ -288,7 +466,7 @@ function scheduleSave(){if(loading)return;clearTimeout(saveTimer);saveTimer=setT
 function snapshot(){return {version:8,actors,catalog,round,owner,selected,mapImage,maps,currentMapId,title:document.querySelector('.intro h1').textContent}}
 function saveNow(){if(!db){$('save-status').textContent='Sauvegarde locale indisponible : cette session ne sera pas conservée.';return}try{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(snapshot(),'session');tx.oncomplete=()=>$('save-status').textContent='Enregistré sur cet appareil · pas de synchronisation multijoueur';tx.onerror=()=>$('save-status').textContent='Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.'}catch(e){$('save-status').textContent='Impossible d’enregistrer : '+e.message}}
 document.addEventListener('change',scheduleSave);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!loading)saveNow()});
-function loadSession(){try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onerror=finish;req.onblocked=finish;req.onsuccess=()=>{db=req.result;const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;get.onsuccess=()=>{const s=get.result;if(s&&(s.version===7||s.version===8)&&Array.isArray(s.actors)&&s.actors.length&&s.actors.some(a=>a.hero)){actors.splice(0,actors.length,...s.actors.map(normalizeActor));catalog=s.catalog;round=s.round;owner=s.owner;selected=s.selected;mapImage=s.mapImage;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;document.querySelector('.intro h1').textContent=s.title;if(mapImage){$('map-view').style.backgroundImage='url("'+mapImage+'")';$('map').classList.add('custom')}$('round').textContent=String(round).padStart(2,'0')}finish()}}}catch(e){finish()}}
+function loadSession(){try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onerror=finish;req.onblocked=finish;req.onsuccess=()=>{db=req.result;const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;get.onsuccess=()=>{const s=get.result;if(s&&(s.version===7||s.version===8)&&Array.isArray(s.actors)&&s.actors.length&&s.actors.some(a=>a.hero)){actors.splice(0,actors.length,...s.actors.map(normalizeActor));catalog=normalizeCatalog(s.catalog);round=s.round;owner=s.owner;selected=s.selected;mapImage=s.mapImage;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;document.querySelector('.intro h1').textContent=s.title;if(mapImage){$('map-view').style.backgroundImage='url("'+mapImage+'")';$('map').classList.add('custom')}$('round').textContent=String(round).padStart(2,'0')}finish()}}}catch(e){finish()}}
 function finish(){if(!loading)return;loading=false;cover.hidden=true;render();if(!db)$('save-status').textContent='Sauvegarde locale indisponible dans ce navigateur.'}
 // Lit les dimensions avant décodage pour refuser les images disproportionnées.
 function imageDimensions(bytes){const v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),str=(a,n)=>String.fromCharCode(...bytes.slice(a,a+n));
