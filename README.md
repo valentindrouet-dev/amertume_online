@@ -1,4 +1,4 @@
-# Amertume Online — v0.12
+# Amertume Online — v0.13
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -16,7 +16,7 @@ Ajout de personnages/monstres et suppression de combattants (au moins un héros 
 Source : `valentindrouet-dev/amertume_rpg`, branche `claude/elegant-planck-jp7ygb`, `js/store.js`, blob `5314d6439be28b47597a7c21b3df310b1501c8d1`.
 14 armes, 5 armures/bouclier, 1 potion, 4 monstres d’exemple. Il s’agit des données embarquées, pas du contenu enregistré dans le navigateur du propriétaire ni d’une publication Firebase. Les couleurs des dés des armes étaient déjà marquées comme interprétations à valider dans le dépôt source.
 
-L’armurerie permet création/édition/suppression. Appliquer l’équipement dans une fiche cumule les dés des armes dans une attaque et calcule la DEF armure + bouclier ; les champs restent ensuite modifiables. Le choix de l’attaque charge sa réserve et respecte son option d’ajout des dégâts du combattant. Les effets spéciaux, munitions, portée et contraintes de mains ne sont pas automatisés.
+L’armurerie permet création/édition/suppression. **L’équipement fait foi** : les dés d’attaque sont ceux des armes équipées, cumulés pour deux armes, et la DEF est celle de l’armure plus le bouclier. La réserve de dés n’est plus saisie à la main et le champ DEF se verrouille dès qu’une armure est portée. Un combattant sans arme équipée — les monstres du bestiaire — garde les dés de ses attaques de fiche et sa DEF propre. Les effets spéciaux, munitions et contraintes de mains ne sont pas automatisés.
 
 ## Images
 Cartes et tokens : PNG, JPEG, WebP. Aperçu original/optimisé avec dimensions et poids, qualité 70–100 %, choix 2048/4096 pixels pour les cartes ou 256/512 pour les tokens. Proportions et transparence conservées, sans agrandissement. Compression WebP avec secours PNG ; original conservé s’il est plus léger et ne nécessite aucun redimensionnement. Seule la copie est utilisée. L’aperçu doit être actualisé après un réglage. Images animées non garanties : la compression produit une image fixe.
@@ -30,9 +30,9 @@ IndexedDB local conserve scène, combattants, catalogue modifié et images valid
 Clic pour sélectionner ; **Maj + clic** pour cibler (ou sélecteur Cible). Maintenir Maj affiche une flèche dorée reliant le combattant actif au pointeur. Attaquer applique les dégâts, consomme l’Action et place dans le coma à 0 PV. Lancer libre ne modifie pas les PV.
 
 ## Portée et ligne de vue
-Le combattant sélectionné affiche son **rayon de contact** : un disque translucide de trois tailles de token en diamètre. Une attaque de portée « contact » exige que le socle de la cible touche ce disque : le chevauchement visible suffit, le centre n’a pas besoin d’y tomber. Une attaque de portée « distance » exige une **ligne de vue** : le segment entre les deux tokens ne doit traverser ni un mur du plan, ni un autre combattant vivant. Le bouton Attaquer est désactivé et le motif est affiché sous la cible.
+La portée découle de l’arme : une arme à distance permet le tir sous condition de ligne de vue, toute autre arme impose le contact. Le combattant sélectionné affiche son **rayon de contact** : un disque translucide de trois tailles de token en diamètre. Une attaque de portée « contact » exige que le socle de la cible touche ce disque : le chevauchement visible suffit, le centre n’a pas besoin d’y tomber. Une attaque de portée « distance » exige une **ligne de vue** : le segment entre les deux tokens ne doit traverser ni un mur du plan, ni un autre combattant vivant. Le bouton Attaquer est désactivé et le motif est affiché sous la cible.
 
-Les murs du plan schématique sont décrits une seule fois, en polygones, et servent à la fois à dessiner la carte et à couper la vue : le dessin et la règle ne peuvent pas diverger. Une **carte importée n’a pas encore d’obstacles** — le plan est alors masqué et seuls les corps bloquent la vue ; un outil de tracé de murs reste à faire. La taille du socle (moyen, grand, énorme) reste descriptive et ne modifie pas encore le rayon.
+Les murs du plan schématique sont décrits une seule fois, en polygones, et servent à dessiner la carte, à couper la vue et à bloquer les déplacements : le dessin et les règles ne peuvent pas diverger. Un token poussé contre un mur s’arrête au contact et **glisse le long de l’obstacle** ; le déplacement avance par petits pas, de sorte qu’un geste rapide ne traverse pas un mur d’un bond. Une **carte importée n’a pas encore d’obstacles** — le plan est alors masqué et seuls les corps bloquent la vue ; un outil de tracé de murs reste à faire. La taille du socle (moyen, grand, énorme) reste descriptive et ne modifie pas encore le rayon.
 
 Conventions provisoires : dés passant strictement la DEF, rouges/noirs sans DEF ; double 1 hors noirs prioritaire sur critique ; double 6 initial avec relance de la couleur choisie ; légers retirés avant doubles mystiques ; phases et mystiques comparés à la DEF sur valeur naturelle. Affaibli annule le bonus, Au sol retire la DEF et interdit l’attaque, Blindage absorbe une attaque réussie. Dés verts exclus des attaques. Portée, réactions, effets des talents et dégâts-choc manuels.
 
@@ -64,3 +64,11 @@ Les murs du plan coupent la ligne de vue des attaques à distance, et l’interf
 Les jets d’attaque et les lancers libres font rouler les dés sur la carte : ils partent de l’attaquant, culbutent en changeant de face, puis se posent à côté des combattants sans les masquer. L’animation est supprimée si le système demande un mouvement réduit.
 
 Le journal devient un journal de combat chronologique : séparateurs de tour, noms colorés par combattant, dégâts et états mis en valeur, et un dé marquant les entrées issues d’un jet. L’heure de chaque entrée reste en infobulle.
+
+## v0.13 — L’équipement décide
+
+L’arme équipée confère ses dés de dégâts, qui ne sont plus choisis : la réserve affichée est en lecture seule et indique son origine. Deux armes cumulent leurs dés. Une arme à distance donne le tir avec ligne de vue et masque le rayon de contact, au profit d’une ligne de tir permanente vers la cible, verte si le tir passe et rouge s’il est coupé. L’armure et le bouclier donnent la DEF, et le champ correspondant se verrouille dans la fiche.
+
+Les murs bloquent aussi les déplacements : le socle s’arrête au contact et glisse le long du mur, sans pouvoir le franchir même d’un geste rapide.
+
+La scène de démonstration part équipée — Éla à l’épée et en mailles, Kaël à l’arc — afin que ces règles soient visibles dès l’ouverture. Toute partie enregistrée conserve son propre équipement.

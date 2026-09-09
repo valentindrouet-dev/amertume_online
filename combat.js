@@ -28,9 +28,39 @@ function hasLineOfSight(a,b,others,size,token){return sightBlockers(a,b,others,s
 function crosses(p,q,r,s){const side=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
  const d1=side(p,q,r),d2=side(p,q,s),d3=side(r,s,p),d4=side(r,s,q);
  return d1!==0&&d2!==0&&d3!==0&&d4!==0&&(d1>0)!==(d2>0)&&(d3>0)!==(d4>0)}
+// Un segment franchit-il un côté de polygone ? Sert à la vue comme au déplacement.
+function segmentHitsPolys(p,q,polys){return (polys||[]).some(poly=>poly.some((pt,i)=>crosses(p,q,pt,poly[(i+1)%poly.length])))}
 // walls : polygones fermés en pourcentages de carte. Un côté traversé coupe la vue.
-function wallsBetween(a,b,walls){const p=[a.x,a.y],q=[b.x,b.y];
- return (walls||[]).some(poly=>poly.some((pt,i)=>crosses(p,q,pt,poly[(i+1)%poly.length])))}
-const api={resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween};
+function wallsBetween(a,b,walls){return segmentHitsPolys([a.x,a.y],[b.x,b.y],walls)}
+/* Équipement : l'arme confère les dés, l'armure la DEF. Renvoient null quand rien
+   n'est équipé, pour laisser les valeurs propres du combattant (monstres). */
+const DICE_KEYS=['white','bone','red','blue','green','black','yellow'];
+function gearOf(ids,items){return (ids||[]).filter(Boolean).map(id=>(items||[]).find(w=>w&&w.id===id)).filter(Boolean)}
+function equippedPool(actor,items){const worn=gearOf(actor&&actor.weapons,items);if(!worn.length)return null;
+ return DICE_KEYS.map(k=>Math.min(12,worn.reduce((sum,w)=>sum+(Number(w.dice&&w.dice[k])||0),0)))}
+function equippedRanged(actor,items){const worn=gearOf(actor&&actor.weapons,items);return worn.length?worn.some(w=>w.ranged===true):null}
+function equippedDef(actor,items){const worn=gearOf(actor&&[actor.armorId,actor.shieldId],items);
+ return worn.length?worn.reduce((sum,w)=>sum+(Number(w.def)||0),0):null}
+/* Déplacement : le socle est un disque repoussé hors des murs. Le mouvement restant
+   subsiste le long de l'obstacle, ce qui produit le glissement. */
+function closestOnSegment(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],len2=dx*dx+dy*dy;
+ const t=len2?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/len2)):0;return [a[0]+t*dx,a[1]+t*dy]}
+function pointInPolygon(p,poly){let inside=false;
+ for(let i=0,j=poly.length-1;i<poly.length;j=i++){const [xi,yi]=poly[i],[xj,yj]=poly[j];
+  if((yi>p[1])!==(yj>p[1])&&p[0]<(xj-xi)*(p[1]-yi)/(yj-yi)+xi)inside=!inside}return inside}
+function slideOutOfWalls(p,polys,r){let x=p[0],y=p[1];
+ for(let pass=0;pass<4;pass++){let touched=false;
+  for(const poly of polys||[]){if(!poly||poly.length<3)continue;
+   let best=null,bd=Infinity;
+   for(let i=0;i<poly.length;i++){const c=closestOnSegment([x,y],poly[i],poly[(i+1)%poly.length]);const d=Math.hypot(x-c[0],y-c[1]);if(d<bd){bd=d;best=c}}
+   const inside=pointInPolygon([x,y],poly);
+   if(!inside&&bd>=r)continue;
+   let nx=0,ny=-1;
+   if(bd>1e-6){nx=(x-best[0])/bd;ny=(y-best[1])/bd;if(inside){nx=-nx;ny=-ny}}
+   x=best[0]+nx*r;y=best[1]+ny*r;touched=true}
+  if(!touched)break}
+ return [x,y]}
+const api={resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

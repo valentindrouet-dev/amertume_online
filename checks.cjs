@@ -7,7 +7,12 @@ const {resolveAttack:r}=require('./combat.js');assert.equal(r({dice:[[5,0]],def:
 // Test de lecture des champs du formulaire sans navigateur.
 const read=editor.slice(editor.indexOf('function readActor()'),editor.indexOf('function toMonster'));
 const values={name:'<Éla>',role:'Gardienne',notes:'texte',state:'Aucun',socle:'medium',hp:'99',max:'20',def:'7',dmg:'8',xp:'50',vie:'5',endu:'4',pvBonus:'0',level:'3',weapon1:'w',weapon2:'',armor:'a',shield:''};const elements=Object.fromEntries(Object.entries(values).map(([k,value])=>[k,{value}]));elements.rapide={checked:true};elements.esquive={checked:false};for(let i=0;i<8;i++)elements['skill'+i]={value:'4'};
-const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],skillNames:Array(8).fill(''),draft:{hero:true},attackDraft:[{dice:{white:2}}],readAttacks(){},$:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),poolFrom:d=>[d.white||0,0,0,0,0,0,0]};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);assert.equal(t.result.hp,20);assert.equal(t.result.def,7);assert.equal(t.result.dmg,8);assert.equal(t.result.skills[0],4);assert.equal(t.result.pool[0],2);assert.equal(t.result.name,'<Éla>');
+const gearApi=require('./combat.js');
+const lire=inventaire=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],skillNames:Array(8).fill(''),draft:{hero:true},attackDraft:[{dice:{white:2}}],readAttacks(){},$:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,catalog:{items:inventaire}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result};
+const nu=lire([]);assert.equal(nu.hp,20);assert.equal(nu.def,7);assert.equal(nu.dmg,8);assert.equal(nu.skills[0],4);assert.equal(nu.pool[0],2);assert.equal(nu.name,'<Éla>');
+// Équipé : les dés viennent de l'arme et la DEF de l'armure, pas des champs saisis.
+const equipe=lire([{id:'w',category:'weapon',dice:{white:3}},{id:'a',category:'armor',slot:'body',def:5}]);
+assert.equal(equipe.pool[0],3);assert.equal(equipe.def,5);
 // Portée de contact et ligne de vue, en pixels de carte affichée.
 const {contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight}=require('./combat.js');const size={width:800,height:400},TOKEN=46;
 assert.equal(contactRadius(TOKEN),69);assert.equal(tokenDistance({x:10,y:50},{x:20,y:50},size),80);
@@ -25,4 +30,26 @@ assert.ok(!wallsBetween({x:5,y:5},{x:25,y:5},MUR));    // Passe au-dessus.
 assert.ok(!wallsBetween({x:5,y:15},{x:9,y:15},MUR));   // S'arrête avant le mur.
 assert.ok(!wallsBetween({x:12,y:12},{x:18,y:18},MUR)); // Entièrement à l'intérieur.
 assert.ok(!wallsBetween({x:5,y:15},{x:25,y:15},[]));   // Aucun mur défini.
-console.log('33 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// Équipement : dés de l'arme, portée et DEF de l'armure.
+const {equippedPool,equippedRanged,equippedDef,slideOutOfWalls}=require('./combat.js');
+const OBJETS=[{id:'ep',category:'weapon',dice:{white:2}},{id:'dg',category:'weapon',dice:{white:1,bone:1}},{id:'arc',category:'weapon',ranged:true,dice:{white:1,red:1}},{id:'ma',category:'armor',slot:'body',def:3},{id:'bo',category:'armor',slot:'shield',def:1}];
+assert.deepEqual(equippedPool({weapons:['ep']},OBJETS),[2,0,0,0,0,0,0]);
+assert.deepEqual(equippedPool({weapons:['ep','dg']},OBJETS),[3,1,0,0,0,0,0]); // Deux armes cumulent.
+assert.equal(equippedPool({weapons:[]},OBJETS),null);                        // Rien d'équipé : dés propres.
+assert.equal(equippedRanged({weapons:['ep']},OBJETS),false);
+assert.equal(equippedRanged({weapons:['ep','arc']},OBJETS),true);            // Une arme à distance suffit.
+assert.equal(equippedRanged({weapons:[]},OBJETS),null);
+assert.equal(equippedDef({armorId:'ma',shieldId:'bo'},OBJETS),4);
+assert.equal(equippedDef({armorId:'ma'},OBJETS),3);
+assert.equal(equippedDef({},OBJETS),null);
+// Collision : carré de 10 à 30, socle de rayon 5.
+const CARRE=[[[10,10],[30,10],[30,30],[10,30]]];
+assert.deepEqual(slideOutOfWalls([2,20],CARRE,5),[2,20]);   // Assez loin : inchangé.
+assert.deepEqual(slideOutOfWalls([7,20],CARRE,5),[5,20]);   // Trop près : repoussé au contact.
+assert.deepEqual(slideOutOfWalls([12,20],CARRE,5),[5,20]);  // Entré dans le mur : ressorti.
+assert.deepEqual(slideOutOfWalls([12,25],CARRE,5),[5,25]);  // Glissement : l'axe libre est conservé.
+assert.deepEqual(slideOutOfWalls([20,20],[],5),[20,20]);    // Sans mur, rien ne bouge.
+const {segmentHitsPolys}=require('./combat.js');
+assert.ok(segmentHitsPolys([5,20],[35,20],CARRE));   // Bond au travers : détecté.
+assert.ok(!segmentHitsPolys([5,5],[35,5],CARRE));    // Bond au-dessus : libre.
+console.log('51 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
