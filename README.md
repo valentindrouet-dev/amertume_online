@@ -1,4 +1,4 @@
-# Amertume Online — v0.15
+# Amertume Online — v0.16
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -83,7 +83,7 @@ Les fiches de héros et d’adversaires reprennent la maquette fournie : bandeau
 
 ## v0.15 — Éditeur de cartes de combat
 
-Un éditeur dédié (bouton **Éditeur de cartes**) crée autant de cartes que voulu, chacune avec son image de fond optimisée comme les autres imports.
+Un éditeur dédié crée autant de cartes que voulu, chacune avec son image de fond optimisée comme les autres imports.
 
 **Zones de blocage** : des rectangles tracés à la souris, déplaçables et redimensionnables par leurs quatre coins. Elles coupent la vue et le passage. À l’écran de jeu, les rectangles qui se chevauchent se fondent en une seule zone semi-transparente ; dans l’éditeur ils restent distincts pour rester modifiables. La fusion est visuelle : chaque rectangle est testé individuellement, le résultat est le même.
 
@@ -96,3 +96,11 @@ Un éditeur dédié (bouton **Éditeur de cartes**) crée autant de cartes que v
 **En combat**, un sélecteur choisit la carte et le bouton **Ouvrir la carte** l’applique après confirmation : l’image devient le fond, les obstacles de la carte remplacent le plan schématique, les héros rejoignent la zone de départ et les adversaires de la scène sont remplacés par ceux de la carte.
 
 Les cartes sont enregistrées avec la partie (format interne passé en version 8, les sauvegardes en version 7 sont reprises sans perte) et publiées avec le contenu partagé.
+
+## v0.16 — L’éditeur passe en onglet pleine page
+
+L’éditeur quittait une fenêtre trop étroite pour travailler. Le site a désormais deux onglets dans l’en-tête, **Table de jeu** et **Cartes** ; le second n’apparaît qu’en vue MJ et bascule automatiquement vers la table si l’on passe en vue joueur.
+
+La page occupe toute la largeur : liste des cartes à gauche, plan de travail au centre, propriétés de la forme sélectionnée et légende à droite. Le plan de travail conserve le rapport d’écran de la carte de jeu et occupe la hauteur disponible.
+
+Les contrôles ne se chevauchent plus, et chaque outil porte la couleur de la forme qu’il trace : ardoise pour les zones de blocage, ambre pour les portes, vert pour la zone de départ, rouge pour les adversaires. L’outil actif est rempli de sa couleur.
