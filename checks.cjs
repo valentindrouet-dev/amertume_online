@@ -109,7 +109,7 @@ for(const o of [{x:22.7,y:74.3},{x:50.5,y:47.3}]){const vision=visionPolygon(o,F
   assert.equal(pointInPolygon(p,vision),!wallsBetween(o,{x:p[0],y:p[1]},CONTOURS));compares++}
  assert.ok(compares>800)}
 /* Contour de l'union : exact, sans couture interne, avec les creux comme contours. */
-const {smoothContours,simplifyClosed,relaxContour,carveMask,carveWithPolygon:creuse,CARVE_STEP,wallShape,wallsPierced:perce,polyTouchesDisc,rectInReach}=require('./combat.js');
+const {smoothContours,simplifyClosed,relaxContour,carveMask,distToRectEdge,carveWithPolygon:creuse,CARVE_STEP,wallShape,wallsPierced:perce,polyTouchesDisc,rectInReach}=require('./combat.js');
 assert.equal(unionContours([{x:0,y:0,w:10,h:10},{x:10,y:0,w:10,h:10}]).length,1);      // Deux zones jointives fusionnent.
 assert.equal(unionContours([{x:0,y:0,w:10,h:10},{x:10,y:0,w:10,h:10}])[0].length,4);   // Sans couture au milieu.
 assert.equal(unionContours(subtractRects([{x:0,y:0,w:40,h:40}],[{x:15,y:15,w:10,h:10}])).length,2); // Creux : deux contours.
@@ -137,6 +137,26 @@ const RECT=[[40,38],[60,38],[60,62],[40,62]];
 const ENCOCHE=wallShape({walls:creuse([{x:10,y:40,w:80,h:20}],RECT,CARVE_STEP),doors:[],carves:[RECT]}).contours;
 assert.deepEqual(ENCOCHE.map(c=>c.length),[4,4]);
 assert.equal(aireDe(ENCOCHE[0])+aireDe(ENCOCHE[1]),1200);
+/* Un angle taillé à l'outil Découper reste droit, même au beau milieu d'un tracé libre. */
+const OVALE=Array.from({length:48},(_,i)=>{const a=i/48*2*Math.PI;return [50+18*Math.cos(a),50+14*Math.sin(a)]});
+const BLOC=creuse([{x:10,y:10,w:80,h:60}],OVALE,CARVE_STEP);
+const TAILLE=wallShape({walls:subtractRects(BLOC,[{x:64,y:60,w:26,h:10}]),doors:[],carves:[OVALE]}).contours;
+const obliques=c=>c.filter((p,i)=>{const q=c[(i+1)%c.length];
+ return Math.abs(p[0]-q[0])>1e-9&&Math.abs(p[1]-q[1])>1e-9}).length;
+const CONTOUR_BLOC=TAILLE.find(c=>c.length<=12);
+assert.equal(obliques(CONTOUR_BLOC),0);            // Pas une seule arête de biais.
+for(const coin of [[64,60],[64,70],[90,60]])       // Les coins de la découpe, au sommet près.
+ assert.ok(TAILLE.some(c=>c.some(p=>Math.abs(p[0]-coin[0])<1e-9&&Math.abs(p[1]-coin[1])<1e-9)));
+const TROU=TAILLE.find(c=>obliques(c)>10);
+assert.ok(TROU&&TROU.length>40);                   // Le tracé libre, lui, reste une courbe.
+// Un sommet posé en plein sur un tracé libre est assoupli…
+const TRACE_TEST=[[45,36],[55,36],[55,40],[45,40]];
+const MORCEAU=[[49.6,36],[50,36],[50,36.4],[49.6,36.4]];
+assert.equal(carveMask(MORCEAU,[TRACE_TEST],CARVE_STEP*1.6,CARVE_STEP,[])[1],1);
+// … sauf s'il appartient au bord d'une découpe rectangulaire ou d'une porte : là, jamais.
+assert.equal(carveMask(MORCEAU,[TRACE_TEST],CARVE_STEP*1.6,CARVE_STEP,[{x:50,y:30,w:2,h:6}])[1],0);
+assert.equal(distToRectEdge([50,36],{x:50,y:30,w:2,h:6}),0);
+assert.ok(distToRectEdge([53,36],{x:50,y:30,w:2,h:6})>.9);
 /* Le donjon aux murs minces : découpes rectangulaires comprises, pas un sommet ne bouge. */
 const MINCES=subtractRects(
  [{x:10,y:10,w:60,h:1.2},{x:10,y:10,w:1.2,h:50},{x:68.8,y:10,w:1.2,h:50},{x:10,y:58.8,w:60,h:1.2},
@@ -193,4 +213,4 @@ assert.ok(Math.abs(remis[0].x-10)<1e-6);assert.ok(Math.abs(remis[0].w-5)<1e-6);
 assert.ok(Math.abs(remis[0].y-20)<1e-6);                               // L'axe non comprimé ne bouge pas.
 assert.ok(Math.abs(uncontain([{x:50,y:50}],cadre,image)[0].x-50)<1e-6); // Le centre est invariant.
 assert.ok(Math.abs(uncontain([{x:0,y:0}],cadre,image)[0].x+marge/ech)<1e-6);
-console.log('124 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('131 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

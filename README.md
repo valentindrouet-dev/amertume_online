@@ -1,4 +1,4 @@
-# Amertume Online — v0.27
+# Amertume Online — v0.28
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,20 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.28 — L’outil Découper garde ses angles droits
+
+La v0.27 lissait les sommets qui **tombent sur un tracé à main levée**. Un angle taillé ensuite à l’outil **Découper**, juste à côté d’un de ces tracés, était donc adouci lui aussi : le coin ressortait biseauté au lieu d’être droit. Le critère de proximité, à lui seul, ne distingue pas ce qui vient du lasso de ce qui vient d’un autre outil au même endroit.
+
+Il en faut désormais **trois d’un coup** pour qu’un sommet soit assoupli :
+
+1. il tombe sur un tracé à main levée enregistré ;
+2. il porte une arête à l’échelle de la trame — un angle voulu a des arêtes longues ;
+3. il n’appartient au bord **ni d’une découpe rectangulaire ni d’une porte**.
+
+Les découpes de l’outil Découper sont donc **enregistrées elles aussi** (`m.cuts`), au même titre que les tracés libres, mais pour la raison inverse : les unes disent où arrondir, les autres où ne surtout pas toucher. Vérifié en navigateur et dans les tests : un angle taillé au ras d’un tracé libre ressort sans une seule arête de biais, ses sommets au millième près, pendant que la courbe voisine reste une courbe.
+
+Le second critère protège aussi les découpes rectangulaires faites **avant** cette version, qui n’ont pas été enregistrées : dès qu’un angle a une arête d’un pour cent de carte ou plus — c’est-à-dire à peu près toutes —, il reste droit.
 
 ## v0.27 — Le lissage rendu à sa place
 

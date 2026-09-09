@@ -22,7 +22,7 @@ function measureRatio(m,apres){if(!m||!m.image)return;const img=new Image();
 let shapeCache={cle:'',formes:[],murs:null};
 function geometryKey(m){return m.id+'|'+(m.walls||[]).map(r=>r.x+','+r.y+','+r.w+','+r.h+(r.locked?'v':'')).join(';')
  +'|'+(m.doors||[]).map(d=>d.x+','+d.y+','+d.w+','+d.h+(d.open?'o':'f')).join(';')
- +'|'+(m.carves||[]).length}
+ +'|'+(m.carves||[]).length+'/'+(m.cuts||[]).length}
 // L'éditeur redessine à chaque geste : son contour est gardé de la même façon.
 let skinCache={cle:'',contours:[]};
 function draftSkin(m){const cle=geometryKey(m);
@@ -257,7 +257,7 @@ document.addEventListener('keydown',e=>{if(!document.body.classList.contains('pa
 /* ---------- Cartes ---------- */
 function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,walls:[],doors:[],start:null,foes:[]};
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
-function ensure(m){m.walls??=[];m.doors??=[];m.foes??=[];m.carves??=[];m.ratio??=16/9;
+function ensure(m){m.walls??=[];m.doors??=[];m.foes??=[];m.carves??=[];m.cuts??=[];m.ratio??=16/9;
  // Migration : les anciennes zones de vision sont appliquées une fois pour toutes aux murs.
  if(m.visions&&m.visions.length){const libres=m.walls.filter(w=>!w.locked),verrous=m.walls.filter(w=>w.locked);
   m.walls=[...verrous,...subtractRects(libres,m.visions.filter(r=>r&&r.w>0&&r.h>0))]}
@@ -424,7 +424,9 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
  if(d.mode==='cut'){const r=cutRect;cutRect=null;
   if(r&&r.w>=1.2&&r.h>=1.2){pushUndo();
    // On ne découpe que les zones libres : une zone verrouillée résiste au grattage.
-   carveWalls(w=>subtractRects(w,[r]))}
+   carveWalls(w=>subtractRects(w,[r]));
+   // La découpe est gardée : ses angles sont voulus droits, le lissage n'y touchera pas.
+   (mapDraft.cuts||(mapDraft.cuts=[])).push({x:r.x,y:r.y,w:r.w,h:r.h})}
   else if(d.dessous){mapSel=d.dessous;mapTool='select'}
   renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render();return}
  const cible=d.kind==='foe'?null:shapeAt(d);
