@@ -1,4 +1,4 @@
-# Amertume Online — v0.37
+# Amertume Online — v0.38
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,18 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.38 — Aura, languettes, désélection, retour au tour 1
+
+**L’aura de contact double d’opacité** — le disque passe de 8 % à 16 % au centre et de 19 % à 38 % au bord, son liseré de 44 % à 88 %. Elle se voit enfin sur une carte claire.
+
+**Recliquer sur le combattant actif le repose.** La fiche se referme, la carte d’attaque, l’aura et la flèche s’éteignent, les cases d’activation se grisent. C’est un état à part entière : plus personne n’est actif, et tout ce qui parlait de « l’actif » se tait au lieu de s’accrocher au dernier sélectionné. Un clic sur n’importe quelle languette rouvre une fiche.
+
+**↺ ramène au tour 1**, à côté de Tour suivant et réservé au MJ : activations et cibles de tous les combattants remises à zéro, sur confirmation. Les PV, eux, ne bougent pas — c’est un tour qu’on recommence, pas un combat qu’on efface.
+
+**Les vignettes de combattants deviennent des languettes** : 53 px de haut au lieu de 85, jeton de 26 px, barre de PV de 15 px. La liste tient à l’écran.
+
+**La fiche perd l’état et les compétences.** L’état reste modifiable dans « Modifier la fiche », où il a toujours vécu. Les compétences, elles, ne sont plus cliquables nulle part : leur jet existe encore dans le code, mais plus aucun bouton ne l’appelle.
 
 ## v0.37 — Quatre lignes, et rien d’autre
 
