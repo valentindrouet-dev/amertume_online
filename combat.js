@@ -77,11 +77,50 @@ function diffRect(a,b){const ax2=a.x+a.w,ay2=a.y+a.h,bx2=b.x+b.w,by2=b.y+b.h;
 function subtractRects(rects,holes){let cur=rects.slice();
  for(const h of holes||[]){if(cur.length>600)break;cur=cur.flatMap(r=>diffRect(r,h))}
  return cur}
-function obstaclesFrom(map){if(!map)return [];
+/* Découpe d'une forme quelconque dans des rectangles : on rastérise la zone
+   concernée, on efface l'intérieur du tracé, puis on recompose en rectangles.
+   Tout le moteur continue donc de travailler sur des rectangles. */
+function boundsOf(pts){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+ for(const p of pts){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1])}
+ return {x:x0,y:y0,w:x1-x0,h:y1-y0}}
+function rectsOverlap(a,b){return a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h}
+// Recompose une grille booléenne en rectangles, par bandes fusionnées.
+function gridToRects(g,cols,rows,box,cw,ch){const out=[],fait=new Uint8Array(cols*rows);
+ for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const k=j*cols+i;
+  if(!g[k]||fait[k])continue;
+  let w=1;while(i+w<cols&&g[k+w]&&!fait[k+w])w++;
+  let h=1;
+  for(;j+h<rows;h++){let plein=true;
+   for(let a=0;a<w;a++){const q=(j+h)*cols+i+a;if(!g[q]||fait[q]){plein=false;break}}
+   if(!plein)break}
+  for(let b=0;b<h;b++)for(let a=0;a<w;a++)fait[(j+b)*cols+i+a]=1;
+  out.push({x:box.x+i*cw,y:box.y+j*ch,w:w*cw,h:h*ch})}
+ return out}
+function carveWithPolygon(rects,poly,pas=.6){
+ if(!poly||poly.length<3)return rects;
+ const bb=boundsOf(poly),touches=[],intacts=[];
+ (rects||[]).forEach(r=>(rectsOverlap(r,bb)?touches:intacts).push(r));
+ if(!touches.length)return rects;
+ const box=boundsOf(touches.flatMap(r=>[[r.x,r.y],[r.x+r.w,r.y+r.h]]));
+ const cols=Math.max(4,Math.min(320,Math.ceil(box.w/pas))),rows=Math.max(4,Math.min(320,Math.ceil(box.h/pas)));
+ const cw=box.w/cols,ch=box.h/rows,g=new Uint8Array(cols*rows);
+ for(const r of touches){const i0=Math.max(0,Math.ceil((r.x-box.x)/cw-.5)),i1=Math.min(cols-1,Math.floor((r.x+r.w-box.x)/cw-.5));
+  const j0=Math.max(0,Math.ceil((r.y-box.y)/ch-.5)),j1=Math.min(rows-1,Math.floor((r.y+r.h-box.y)/ch-.5));
+  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++)g[j*cols+i]=1}
+ for(let j=0;j<rows;j++){const y=box.y+(j+.5)*ch,xs=[];
+  for(let k=0;k<poly.length;k++){const a=poly[k],b=poly[(k+1)%poly.length];
+   if((a[1]>y)!==(b[1]>y))xs.push(a[0]+(y-a[1])*(b[0]-a[0])/(b[1]-a[1]))}
+  xs.sort((u,v)=>u-v);
+  for(let t=0;t+1<xs.length;t+=2){
+   const i0=Math.max(0,Math.ceil((xs[t]-box.x)/cw-.5)),i1=Math.min(cols-1,Math.floor((xs[t+1]-box.x)/cw-.5));
+   for(let i=i0;i<=i1;i++)g[j*cols+i]=0}}
+ return [...intacts,...gridToRects(g,cols,rows,box,cw,ch)]}
+function obstacleRectsFrom(map){if(!map)return [];
  const solide=r=>r&&r.w>0&&r.h>0;
  const murs=(map.walls||[]).filter(solide),trous=(map.visions||[]).filter(solide);
  const portes=(map.doors||[]).filter(d=>d&&!d.open).filter(solide);
- return [...subtractRects(murs,trous),...portes].map(rectPolygon)}
+ return [...subtractRects(murs,trous),...portes]}
+function obstaclesFrom(map){return obstacleRectsFrom(map).map(rectPolygon)}
 // Répartit n combattants en grille dans la zone de départ, sans sortir de ses bords.
 function spreadInZone(n,zone){if(!zone||n<1)return [];
  const cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols),out=[];
@@ -89,14 +128,30 @@ function spreadInZone(n,zone){if(!zone||n<1)return [];
   out.push({x:zone.x+zone.w*(c+.5)/cols,y:zone.y+zone.h*(r+.5)/rows})}
  return out}
 /* Brouillard de guerre : une grille de cellules, visible depuis un héros si le
-   segment qui les relie ne traverse aucun obstacle. Les portes fermées comptent. */
-function visibleCells(heroes,polys,cols,rows){const vis=new Uint8Array(cols*rows);
- for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
-  const c=[(i+.5)/cols*100,(j+.5)/rows*100];
-  for(const h of heroes||[]){if(!segmentHitsPolys([h.x,h.y],c,polys)){vis[j*cols+i]=1;break}}}
+   segment qui les relie ne traverse aucun obstacle. Les portes fermées comptent.
+   Le test travaille sur les rectangles eux-mêmes : rejet par boîte englobante
+   puis découpe par tranches, bien moins coûteux qu'arête par arête. */
+function segmentHitsRect(px,py,qx,qy,r){
+ const rx2=r.x+r.w,ry2=r.y+r.h;
+ if((px<r.x&&qx<r.x)||(px>rx2&&qx>rx2)||(py<r.y&&qy<r.y)||(py>ry2&&qy>ry2))return false;
+ let t0=0,t1=1;const dx=qx-px,dy=qy-py;
+ if(dx>-1e-12&&dx<1e-12){if(px<r.x||px>rx2)return false}
+ else{let a=(r.x-px)/dx,b=(rx2-px)/dx;if(a>b){const t=a;a=b;b=t}
+  if(a>t0)t0=a;if(b<t1)t1=b;if(t0>t1)return false}
+ if(dy>-1e-12&&dy<1e-12){if(py<r.y||py>ry2)return false}
+ else{let a=(r.y-py)/dy,b=(ry2-py)/dy;if(a>b){const t=a;a=b;b=t}
+  if(a>t0)t0=a;if(b<t1)t1=b;if(t0>t1)return false}
+ return true}
+function visibleCells(heroes,rects,cols,rows){const vis=new Uint8Array(cols*rows);
+ const rs=rects||[],hs=heroes||[];
+ for(let j=0;j<rows;j++){const cy=(j+.5)/rows*100;
+  for(let i=0;i<cols;i++){const cx=(i+.5)/cols*100;
+   for(const h of hs){let vu=true;
+    for(let k=0;k<rs.length;k++)if(segmentHitsRect(h.x,h.y,cx,cy,rs[k])){vu=false;break}
+    if(vu){vis[j*cols+i]=1;break}}}}
  return vis}
-const api={visibleCells,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
- rectPolygon,obstaclesFrom,spreadInZone,diffRect,subtractRects,
+const api={visibleCells,segmentHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+ rectPolygon,obstaclesFrom,obstacleRectsFrom,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

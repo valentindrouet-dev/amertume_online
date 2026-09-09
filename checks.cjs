@@ -85,14 +85,31 @@ assert.equal(obstaclesFrom({walls:[],visions:[{x:0,y:0,w:100,h:100}],doors:[{x:4
 // Brouillard : un mur plein coupe la carte en deux, un héros ne voit que son côté.
 const {visibleCells,rectPolygon}=require('./combat.js');
 const MUR_PLEIN=[{x:0,y:48,w:100,h:4}];
-const vu=visibleCells([{x:50,y:20}],MUR_PLEIN.map(rectPolygon),20,20);
+const vu=visibleCells([{x:50,y:20}],MUR_PLEIN,20,20);
 const cellule=(v,i,j)=>v[j*20+i];
 assert.equal(cellule(vu,10,4),1);   // Même côté que le héros : vu.
 assert.equal(cellule(vu,10,15),0);  // De l'autre côté du mur : caché.
 assert.equal(cellule(vu,2,2),1);    // Le champ n'est pas limité en distance.
 // Deux héros de part et d'autre voient chacun leur moitié.
-const deux=visibleCells([{x:50,y:20},{x:50,y:80}],MUR_PLEIN.map(rectPolygon),20,20);
+const deux=visibleCells([{x:50,y:20},{x:50,y:80}],MUR_PLEIN,20,20);
 assert.equal(cellule(deux,10,15),1);
-assert.equal(visibleCells([],MUR_PLEIN.map(rectPolygon),20,20).some(v=>v),false); // Sans héros, rien n'est vu.
+assert.equal(visibleCells([],MUR_PLEIN,20,20).some(v=>v),false); // Sans héros, rien n'est vu.
 assert.equal(visibleCells([{x:50,y:50}],[],8,8).every(v=>v),true);                // Sans obstacle, tout est vu.
-console.log('79 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// Découpe d'une forme libre : un disque creusé dans un grand mur.
+const {carveWithPolygon}=require('./combat.js');
+const cercle=(cx,cy,r,n=48)=>Array.from({length:n},(_,i)=>[cx+r*Math.cos(2*Math.PI*i/n),cy+r*Math.sin(2*Math.PI*i/n)]);
+const BLOC=[{x:20,y:20,w:60,h:60}];
+const perce=carveWithPolygon(BLOC,cercle(50,50,15));
+const aireR=rs=>rs.reduce((s,r)=>s+r.w*r.h,0);
+assert.ok(perce.length>4);                                     // Le disque impose plusieurs bandes.
+assert.ok(Math.abs(aireR(perce)-(3600-Math.PI*225))<60);       // Aire restante proche de la théorie.
+const dedans=(p,rs)=>rs.some(r=>p[0]>=r.x&&p[0]<=r.x+r.w&&p[1]>=r.y&&p[1]<=r.y+r.h);
+assert.ok(!dedans([50,50],perce));                             // Le centre du disque est bien vidé.
+assert.ok(!dedans([50,38],perce));                             // Et un point proche du bord intérieur.
+assert.ok(dedans([25,25],perce));                              // Le coin du mur reste plein.
+assert.ok(dedans([50,22],perce));                              // Au-dessus du disque, le mur tient.
+// Un mur hors du tracé n'est pas touché du tout.
+const loin=[{x:0,y:0,w:5,h:5}];
+assert.deepEqual(carveWithPolygon(loin,cercle(50,50,10)),loin);
+assert.deepEqual(carveWithPolygon(BLOC,[[1,1]]),BLOC);         // Tracé dégénéré : sans effet.
+console.log('86 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

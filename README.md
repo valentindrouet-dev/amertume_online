@@ -1,4 +1,4 @@
-# Amertume Online — v0.19
+# Amertume Online — v0.21
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -140,3 +140,15 @@ Le calcul se fait sur une grille de 104 × 58 cellules, soit moins d’une milli
 **Portes** : elles n’ont plus d’état dans l’éditeur, seulement en partie. Une carte s’ouvre toujours portes closes, et c’est le MJ qui les ouvre d’un clic pendant le combat.
 
 **Taille des tokens** : elle est désormais une fraction de la largeur de la carte, et non plus un nombre de pixels fixe. Un adversaire a donc la même taille relative dans l’éditeur et en partie, à toute largeur de fenêtre et à tout niveau de zoom — écart mesuré à 0,2 %, soit l’arrondi du pixel. Le rayon de contact suit la même échelle.
+
+## v0.21 — Découpe libre, portes perçantes, tokens repoussés
+
+**Les portes percent le mur qu’elles recouvrent.** Poser une porte sur une zone de blocage y creuse son empreinte, si bien que l’ouverture est nette : porte close, la vue est coupée ; porte ouverte, elle passe, et seulement là. Le percement se refait si la porte est déplacée ou redimensionnée ; l’ancienne ouverture reste, à reboucher avec une zone de blocage si besoin.
+
+**Découpe libre** pour les formes rondes ou irrégulières. Un glisser trace le contour à main levée ; une suite de clics le construit point par point. Entrée ou un clic sur le premier point ferme le tracé et creuse, Échap l’abandonne.
+
+Le tracé est converti en rectangles : la zone concernée est rastérisée, l’intérieur du contour effacé, puis recomposée en bandes fusionnées. Tout le moteur — vue, collisions, brouillard — continue donc de travailler sur des rectangles, sans cas particulier. Le pas de découpe est de 0,6 % de la carte : un disque creusé garde son aire à moins de 2 % près.
+
+Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
+
+**Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
