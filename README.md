@@ -1,4 +1,4 @@
-# Amertume Online — v0.30
+# Amertume Online — v0.31
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.31 — Le décor se voit sous les portes
+
+Une porte close arrête le regard : le polygone de vision s’arrête **sur sa face**, donc les cases de son rectangle ne sont jamais éclairées. Tant qu’elle était peinte en plein, cela ne se voyait pas ; depuis qu’elle n’est plus qu’un contour, son intérieur restait un rectangle de brouillard au milieu d’un couloir éclairé.
+
+Le brouillard rend maintenant au rectangle d’une porte **la clarté de ses abords** : pleine si un aventurier la voit à l’instant, celle de la mémoire s’il l’a seulement découverte, et rien du tout tant qu’elle est inconnue. Le décor de la carte se lit donc au travers, sans que la porte cesse une seconde de bloquer la vue — le calcul d’obstacle, lui, n’a pas changé d’un iota.
+
+Mesuré en navigateur, deux héros devant une porte close : opacité du brouillard nulle sous la porte, nulle dans le couloir, pleine derrière la porte.
 
 ## v0.30 — Armurerie et Bestiaire en pleine page, portes au contour
 

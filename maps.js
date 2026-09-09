@@ -95,16 +95,17 @@ function doorProbes(d,marge){const xs=[d.x-marge,d.x+d.w/2,d.x+d.w+marge];
  const ys=[d.y-marge,d.y+d.h/2,d.y+d.h+marge],out=[];
  for(const x of xs)for(const y of ys)out.push([x,y]);
  return out}
+// Vue à l'instant : le polygone de vision épouse la face de la porte.
+function doorInSight(d){const size=mapSize();
+ if(!size.width||!fogVis)return false;
+ const r=Math.max(3,tokenPx()*.12);
+ const faces=doorProbes(d,0).map(([x,y])=>[x/100*size.width,y/100*size.height]);
+ return visionInPixels().some(p=>faces.some(c=>polyTouchesDisc(p,c,r)))}
+// Déjà explorée : la mémoire juste autour du rectangle suffit.
+function doorRemembered(d){return doorProbes(d,.9).some(([x,y])=>seenAt(x,y))}
 function doorSeen(d){const m=currentMap();
  if(view==='mj'||!m||m.fogOff||!fogVis)return true;
- const size=mapSize();
- if(size.width){
-  // Vue à l'instant : le polygone de vision épouse la face de la porte.
-  const r=Math.max(3,tokenPx()*.12);
-  const faces=doorProbes(d,0).map(([x,y])=>[x/100*size.width,y/100*size.height]);
-  if(visionInPixels().some(p=>faces.some(c=>polyTouchesDisc(p,c,r))))return true}
- // Déjà explorée : la mémoire juste autour du rectangle suffit.
- return doorProbes(d,.9).some(([x,y])=>seenAt(x,y))}
+ return doorInSight(d)||doorRemembered(d)}
 // La mémoire est peinte une fois par changement, puis réutilisée telle quelle.
 function memoryCanvas(d){if(!fogSeen)return null;
  if(!fogMem||fogMem.width!==d.w||fogMem.height!==d.h){
@@ -136,6 +137,14 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
   ctx.beginPath();ctx.moveTo(poly[0][0]/100*W,poly[0][1]/100*H);
   for(let i=1;i<poly.length;i++)ctx.lineTo(poly[i][0]/100*W,poly[i][1]/100*H);
   ctx.closePath();ctx.fill()}
+ /* Une porte n'est qu'un contour : le regard s'arrête dessus, donc son rectangle n'est
+    jamais éclairé et le décor y resterait noir. On lui rend la clarté de ses abords —
+    pleine si on la voit, celle de la mémoire si on l'a seulement découverte. */
+ const rect=p=>ctx.fillRect(p.x/100*W,p.y/100*H,p.w/100*W,p.h/100*H);
+ const portes=(m.doors||[]).filter(p=>p&&p.w>0&&p.h>0);
+ const retenues=portes.filter(p=>!doorInSight(p)&&doorRemembered(p));
+ if(retenues.length){ctx.globalAlpha=1-memoire/inconnu;retenues.forEach(rect);ctx.globalAlpha=1}
+ portes.filter(doorInSight).forEach(rect);
  ctx.globalCompositeOperation='source-over'}
 function resetFog(tout){const m=currentMap();if(!m)return;
  const d=fogDims(m),g=new Uint8Array(d.n);if(tout)g.fill(1);
