@@ -1,4 +1,4 @@
-# Amertume Online — v0.38
+# Amertume Online — v0.39
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,12 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.39 — Déplacer n’est pas reposer
+
+La désélection au reclic de la v0.38 avait un effet de bord : un token relâché après un déplacement passait par le même chemin qu’un clic, donc **bouger un combattant déjà actif le désélectionnait** — la fiche se refermait sous les doigts.
+
+Un déplacement et un clic ne disent plus la même chose. Le clic bascule, le déplacement sélectionne et rien d’autre : on vient de prendre le token en main, ce serait absurde de le lâcher au relâchement. Vérifié à la souris, sur les quatre cas : déplacer un token actif le laisse actif, un clic simple le repose, déplacer un token au repos l’active, un clic le repose à nouveau.
 
 ## v0.38 — Aura, languettes, désélection, retour au tour 1
 
