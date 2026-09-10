@@ -36,8 +36,11 @@ function mapShapes(m){const cle=geometryKey(m);
 function activeObstacles(){const m=currentMap();
  return m?mapShapes(m).formes:$('map').classList.contains('custom')?[]:WALLS.map(p=>({contours:[p]}))}
 // Nomme l'obstacle qui coupe la vue, pour que le MJ sache s'il peut l'ouvrir.
-function obstacleLabel(a,b){const m=currentMap();
- return m&&wallsBetween(a,b,(m.doors||[]).filter(d=>!d.open).map(rectPolygon))?'une porte fermée':'un mur'}
+function obstacleLabel(a,b){const m=currentMap(),mj=view==='mj';
+ // Un passage secret clos se nomme « un mur » pour la troupe : le message ne doit pas
+ // trahir ce que le socle ne montre pas.
+ const portes=(m&&m.doors||[]).filter(d=>!d.open&&!doorHiddenFrom(d,mj));
+ return m&&wallsBetween(a,b,portes.map(rectPolygon))?'une porte fermée':'un mur'}
 // Un socle est vu dès qu'il mord sur la zone éclairée, fût-ce d'un pour cent.
 function tokenRadiusPct(){const size=mapSize();return size.width?tokenPx()/2/size.width*100:1.5}
 
@@ -184,15 +187,22 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
  // Les portes se dessinent au-dessus du brouillard : une fois découverte, une porte
  // reste lisible dans la pénombre. Tant qu'elle est inexplorée, elle n'existe pas.
  (m.doors||[]).forEach((d,i)=>{
-  if(!doorSeen(d))return;
+  const mj=view==='mj';
+  // Un passage secret clos n'existe pas pour la troupe : elle ne voit qu'un mur.
+  if(doorHiddenFrom(d,mj)||!doorSeen(d))return;
   // Une porte que ce lecteur peut manœuvrer s'annonce au survol.
-  const ouvrable=view==='mj'||(!d.keyLocked&&doorInReach(d));
-  const el=svgRect(d,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':'')+(ouvrable?' can-open':''));
+  const ouvrable=mj||(!doorLockedFor(d,mj)&&doorInReach(d));
+  const el=svgRect(d,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':'')
+   +(d.secret?' secret':'')+(ouvrable?' can-open':''));
   el.style.pointerEvents='all';
   el.onclick=()=>{
-   if(d.keyLocked&&view!=='mj'){log('Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
+   if(doorLockedFor(d,mj)){log(d.secret&&!d.open
+    ?'Rien ici qu’un mur : ce passage n’existe pas pour la troupe.'
+    :'Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
    if(!doorInReach(d)){log('Trop loin de la porte : approche ton aventurier pour la manœuvrer.');return}
-   d.open=!d.open;log('Porte '+(i+1)+' '+(d.open?'ouverte':'fermée')+'.');render();scheduleSave()};
+   d.open=!d.open;
+   log((d.secret?'Passage secret ':'Porte ')+(i+1)+' '+(d.open?'ouvert'+(d.secret?'':'e'):'referm'+(d.secret?'é':'ée'))+'.');
+   render();scheduleSave()};
   portes.append(el)});
 }
 
@@ -271,7 +281,8 @@ mapsPage.innerHTML=
  +'<div class="canvas-wrap"><div id="map-canvas"></div></div><p class="muted" id="map-hint"></p></section>'
  +'<aside class="maps-props panel"><h2>Forme sélectionnée</h2><p class="muted" id="shape-label">Aucune sélection.</p>'
  +'<button id="shape-lock" hidden>🔒 Verrouiller</button>'
-  +'<label id="door-key-label" hidden><input type="checkbox" id="door-key"> Verrouillée — le MJ seul l’ouvre</label>'+'<label id="foe-hidden-label" hidden><input type="checkbox" id="foe-hidden"> Invisible à l’ouverture</label>'
+  +'<label id="door-key-label" hidden><input type="checkbox" id="door-key"> Verrouillée — le MJ seul l’ouvre</label>'
+  +'<label id="door-secret-label" hidden><input type="checkbox" id="door-secret"> Passage secret — un mur pour la troupe tant qu’il est clos</label>'+'<label id="foe-hidden-label" hidden><input type="checkbox" id="foe-hidden"> Invisible à l’ouverture</label>'
  +'<button id="shape-delete" hidden>Supprimer la forme</button><div class="divider"></div><h2>Légende</h2>'
  +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
@@ -393,8 +404,8 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  m.foes.forEach((f,i)=>c.append(foeEl(i,f)));
  const cible=mapSel?shapeAt(mapSel):null;
  const adv=mapSel&&mapSel.kind==='foe'?cible:null,porte=mapSel&&mapSel.kind==='door'?cible:null;
- $('foe-hidden-label').hidden=!adv;$('door-key-label').hidden=!porte;
- if(porte)$('door-key').checked=!!porte.keyLocked;
+ $('foe-hidden-label').hidden=!adv;$('door-key-label').hidden=$('door-secret-label').hidden=!porte;
+ if(porte){$('door-key').checked=!!porte.keyLocked;$('door-secret').checked=!!porte.secret}
  $('shape-delete').hidden=!mapSel||!!(cible&&cible.locked);$('shape-lock').hidden=!mapSel;
  if(cible)$('shape-lock').textContent=cible.locked?'🔓 Déverrouiller':'🔒 Verrouiller';
  if(adv)$('foe-hidden').checked=!!adv.hidden;
@@ -404,7 +415,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  $('recal-box').hidden=!recalNeeded();
  refreshHistory()}
 function shapeEl(kind,i,r){const el=document.createElement('div');
- el.className='shape '+kind+(r.locked?' locked':'')+(kind==='door'&&r.keyLocked?' keyed':'')
+ el.className='shape '+kind+(r.locked?' locked':'')+(kind==='door'&&r.keyLocked?' keyed':'')+(kind==='door'&&r.secret?' secret':'')
   +(mapSel&&mapSel.kind===kind&&mapSel.i===i?' selected':'');
  el.style.left=r.x+'%';el.style.top=r.y+'%';el.style.width=r.w+'%';el.style.height=r.h+'%';
  el.dataset.kind=kind;el.dataset.i=i;
@@ -508,6 +519,8 @@ $('shape-delete').onclick=()=>{const cible=mapSel&&shapeAt(mapSel);if(!cible||ci
  pushUndo();removeShape(mapSel);mapSel=null;renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('door-key').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
  pushUndo();d.keyLocked=$('door-key').checked;renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
+$('door-secret').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
+ pushUndo();d.secret=$('door-secret').checked;renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('foe-hidden').onchange=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;
  pushUndo();f.hidden=$('foe-hidden').checked;renderCanvas();saveMaps()};
 

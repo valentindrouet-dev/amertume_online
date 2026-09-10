@@ -43,7 +43,9 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 #map-canvas.no-image{background-image:linear-gradient(#84958a1f 1px,transparent 1px),linear-gradient(90deg,#84958a1f 1px,transparent 1px);background-size:5% 8.333%;background-position:0 0;background-repeat:repeat}
 .shape{position:absolute;box-sizing:border-box}
 .shape.wall{background:none}/* La matière est peinte par le contour lissé commun à l'éditeur et à la table ; la zone elle-même ne sert plus qu'à la saisie. */.wall-skin{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}.wall-skin path{fill:#0b1114d9;stroke:#6c7d85;stroke-width:1.4;vector-effect:non-scaling-stroke}.shape.wall.selected{outline-style:dashed}.shape.cut{background:#7faddc38;border:2px dashed #7faddc;pointer-events:none}.shape.locked{cursor:not-allowed}.shape.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.foe.locked::after{right:-4px;top:-8px}
-.shape.door{background:#c98a4b26;border:2px solid #c98a4b}.shape.door.keyed{background:#c98a4b1f;border-color:#f3d7a6;border-width:3px}.shape.door.keyed::before{content:'🔑';position:absolute;left:1px;top:0;font-size:10px}
+.shape.door{background:#c98a4b26;border:2px solid #c98a4b}.shape.door.keyed{background:#c98a4b1f;border-color:#f3d7a6;border-width:3px}
+/* Un passage secret : violet et pointillé, dans l'éditeur comme sur la table. */
+.shape.door.secret{background:#b06fd01f;border-color:#b06fd0;border-style:dashed;border-width:3px}.shape.door.keyed::before{content:'🔑';position:absolute;left:1px;top:0;font-size:10px}
 .shape.door.open{background:#c98a4b14;border-style:dashed}
 .shape.start{background:#8bbd9c26;border:2px dashed #8bbd9c}
 .shape.foe{width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#6d443c;border:2px solid #d29180;display:grid;place-items:center;font:bold 14px Georgia;color:#f6e2dc;box-shadow:0 3px 8px #0007}

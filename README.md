@@ -1,4 +1,4 @@
-# Amertume Online — v0.74
+# Amertume Online — v0.75
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.75 — Les passages secrets
+
+Un troisième type de porte dans l’éditeur de cartes : le **passage secret**, coché sur n’importe quelle porte. Tant qu’il est clos, il n’existe pas pour la troupe — il ne se dessine pas, rien ne se clique à son emplacement, et il bloque le passage et la vue comme le mur dont il a l’air. **Le MJ seul l’ouvre.** Le message qui nomme l’obstacle coupant une ligne de vue dit d’ailleurs « un mur » aux joueurs là où il dit « une porte fermée » au MJ : il ne trahit pas ce que le socle ne montre pas.
+
+**Une fois ouvert, ce n’est plus qu’une porte** : visible de tous, refermable par qui l’atteint, exactement comme les autres. Le MJ le distingue à son trait violet en pointillé serré, sur la carte comme dans l’éditeur ; ouvert, il reprend le gris des portes ouvertes.
+
+Une réserve, la même que pour tout le reste : les vues MJ et joueur sont des interfaces locales, pas une barrière. Un passage secret est caché de l’**écran**, pas des données publiées — un joueur curieux qui inspecte le contenu partagé le trouverait. C’est la géométrie de la carte qui l’exige : le retirer de la publication ouvrirait un trou dans le mur chez les joueurs.
 
 ## v0.74 — Une arme à deux mains vaut son attaque
 
