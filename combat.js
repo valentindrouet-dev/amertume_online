@@ -186,11 +186,32 @@ function carveWithPolygon(rects,poly,pas=.6){
    lui, ne la perce qu'une fois ouvert : tant qu'il est clos, la matière reste pleine et
    rien — ni le mur peint, ni la vue, ni le passage — ne trahit son emplacement. */
 function doorPierces(d){return !!d&&(!d.secret||!!d.open)}
+/* Une porte tracée à la main couvre rarement le mur pile d'un bord à l'autre. Il restait
+   alors dans l'embrasure un fil de matière large d'un cheveu — invisible à l'écran, et
+   parfaitement opaque : la porte semblait ouverte et personne ne voyait au travers.
+   Chaque porte perce donc le mur qu'elle recoupe sur toute son épaisseur, c'est-à-dire
+   par son petit côté. Un gros bloc n'est pas percé de part en part pour autant : on ne
+   prolonge que si l'épaisseur reste de l'ordre de la porte. */
+function rectsOverlap(a,b){return a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h}
+function doorCut(d,mur){
+ if(mur.w<=mur.h){if(mur.w>d.h*2)return null;
+  const x=Math.min(d.x,mur.x),x2=Math.max(d.x+d.w,mur.x+mur.w);return {x,y:d.y,w:x2-x,h:d.h}}
+ if(mur.h>d.w*2)return null;
+ const y=Math.min(d.y,mur.y),y2=Math.max(d.y+d.h,mur.y+mur.h);return {x:d.x,y,w:d.w,h:y2-y}}
+// Ce qu'une porte retire au mur — et, close, ce qu'elle y rebouche : les deux sont un.
+function doorCuts(d,murs){const out=[d];
+ for(const w of murs||[])if(rectsOverlap(d,w)){const c=doorCut(d,w);if(c)out.push(c)}
+ return out}
+function mapWalls(map){return (map&&map.walls||[]).filter(r=>r&&r.w>0&&r.h>0)}
 function wallsPierced(map){const solide=r=>r&&r.w>0&&r.h>0;
- const murs=(map.walls||[]).filter(solide),trous=(map.visions||[]).filter(solide);
- return subtractRects(subtractRects(murs,trous),(map.doors||[]).filter(d=>solide(d)&&doorPierces(d)))}
+ const murs=mapWalls(map),trous=(map.visions||[]).filter(solide);
+ const coupes=(map.doors||[]).filter(d=>solide(d)&&doorPierces(d)).flatMap(d=>doorCuts(d,murs));
+ return subtractRects(subtractRects(murs,trous),coupes)}
+// Une porte close rebouche exactement le trou qu'elle avait percé, épaisseur comprise.
+function doorBlocks(map){const murs=mapWalls(map);
+ return (map&&map.doors||[]).filter(d=>d&&!d.open&&d.w>0&&d.h>0).flatMap(d=>doorCuts(d,murs))}
 function obstacleRectsFrom(map){if(!map)return [];
- return [...wallsPierced(map),...(map.doors||[]).filter(d=>d&&!d.open&&d.w>0&&d.h>0)]}
+ return [...wallsPierced(map),...doorBlocks(map)]}
 /* Recalage des cartes tracées quand l'éditeur réduisait l'image dans son cadre :
    les positions enregistrées étaient comprimées vers le centre. On inverse. */
 function uncontain(shapes,frameRatio,imageRatio){
@@ -383,9 +404,9 @@ function readMapsFile(texteBrut){let data;
    ensemble, donc l'ombre commence exactement là où le mur est peint. */
 const CARVE_STEP=.4;
 function wallShape(map){return {contours:smoothContours(unionContours(wallsPierced(map)),map&&map.carves,CARVE_STEP*.05,CARVE_STEP,
- [...(map&&map.cuts||[]),...(map&&map.doors||[])])}}
+ [...(map&&map.cuts||[]),...(map&&map.doors||[]).flatMap(d=>doorCuts(d,mapWalls(map)))])}}
 function obstaclesFrom(map){if(!map)return [];
- return [wallShape(map),...(map.doors||[]).filter(d=>d&&!d.open&&d.w>0&&d.h>0).map(d=>({contours:[rectPolygon(d)]}))]}
+ return [wallShape(map),...doorBlocks(map).map(d=>({contours:[rectPolygon(d)]}))]}
 // Une porte se manœuvre au contact : son rectangle doit entrer dans le rayon du token.
 function rectInReach(actor,rect,size,token){
  const cx=Math.max(rect.x,Math.min(actor.x,rect.x+rect.w));
@@ -547,6 +568,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

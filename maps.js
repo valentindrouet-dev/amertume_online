@@ -30,7 +30,7 @@ function draftSkin(m){const cle=geometryKey(m);
  return skinCache.contours}
 function mapShapes(m){const cle=geometryKey(m);
  if(shapeCache.cle!==cle){const murs=wallShape(m);
-  shapeCache={cle,murs,formes:[murs,...(m.doors||[]).filter(d=>d&&!d.open&&d.w>0&&d.h>0).map(d=>({contours:[rectPolygon(d)]}))]}}
+  shapeCache={cle,murs,formes:[murs,...doorBlocks(m).map(d=>({contours:[rectPolygon(d)]}))]}}
  return shapeCache}
 // Obstacles du moteur : la carte ouverte fait foi, sinon le plan schématique de départ.
 function activeObstacles(){const m=currentMap();
@@ -586,7 +586,7 @@ function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  // La barre annonce la carte qu'on joue, pas le mot « carte tactique » : c'est la seule
  // trace du nom de la carte depuis que le bandeau de scène a disparu.
  const titre=$('carte-titre');
- if(titre)titre.textContent=(m&&m.name?m.name:'Carte tactique').toUpperCase();
+ if(titre)titre.textContent=m&&m.name?m.name:'Carte tactique';
  fogBar.hidden=!mj;fogReset.hidden=fogAll.hidden=!m;
  fogAll.classList.toggle('on',!!(m&&m.fogOff));
  fogAll.title=m&&m.fogOff?'Rétablir le brouillard':'Tout révéler';

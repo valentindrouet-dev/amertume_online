@@ -1,4 +1,4 @@
-# Amertume Online — v0.82
+# Amertume Online — v0.83
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.83 — Le fil de matière dans l’embrasure
+
+**Une porte ouverte pouvait ne rien ouvrir du tout.** Une porte perce la zone de blocage qu’elle recouvre — mais seulement son propre rectangle. Or on ne trace jamais une porte pile d’un bord à l’autre du mur : il en restait dans l’embrasure **un fil de matière large d’un cheveu**, invisible à l’écran et parfaitement opaque. La porte s’ouvrait, se dessinait ouverte, et personne ne voyait au travers : l’adversaire planté juste derrière restait « hors de vue de la troupe », sans qu’aucune règle visible l’explique. Un reste de deux dixièmes de pour cent suffisait.
+
+Désormais **une porte perce le mur qu’elle recoupe sur toute son épaisseur**, c’est-à-dire par son petit côté, quelle que soit la façon dont elle a été tracée — trop étroite, décalée, à cheval. Close, elle rebouche exactement ce qu’elle avait percé : le trou et le bouchon sont la même géométrie. Un gros bloc n’est pas percé de part en part pour autant : on ne prolonge que si l’épaisseur reste de l’ordre de la porte. Six tracés bâclés qui aveuglaient tous la troupe passent maintenant, et les portes closes bloquent toujours.
+
+**Le nom de la carte** s’écrit en Killam, tel qu’il a été saisi, sans passer en capitales.
+
+**La languette d’un combattant invisible ne dit plus rien sous son nom** : le liseré bleu du socle suffit.
 
 ## v0.82 — Invisible est un état, et lâcher est un geste
 
