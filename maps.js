@@ -198,7 +198,7 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
 
 /* ---------- Ouverture d'une carte en combat ---------- */
 function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
- if(!confirm('Ouvrir « '+m.name+' » ? Les héros sont regroupés dans la zone de départ et les adversaires de la scène sont remplacés par ceux de la carte.'))return;
+ if(!confirm('Ouvrir « '+m.name+' » ? Les aventuriers sont regroupés dans la zone de départ et les adversaires de la scène sont remplacés par ceux de la carte.'))return;
  currentMapId=id;mapImage=m.image||null;measureRatio(m,render);
  $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);
  const heros=actors.filter(a=>a.hero);
@@ -213,7 +213,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  actors.forEach(a=>{a.target=null});
  owner=actors.findIndex(a=>a.hero);selected=Math.max(0,owner);
  resetMapZoom();showPage('table');render();
- log('Carte « '+m.name+' » ouverte : '+heros.length+' héros placés, '+(m.foes||[]).length+' adversaire(s) en place.');scheduleSave()}
+ log('Carte « '+m.name+' » ouverte : '+heros.length+' aventurier(s) placé(s), '+(m.foes||[]).length+' adversaire(s) en place.');scheduleSave()}
 
 /* ---------- Onglets de page, réservés au MJ ---------- */
 const tabs=document.createElement('nav');tabs.className='tabs';
@@ -267,7 +267,7 @@ mapsPage.innerHTML=
  +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
  +'<li><i class="sw-door"></i>Porte — close au début du combat, ouverte d’un clic en jeu</li>'+'<li><i class="sw-key"></i>Porte verrouillée — le MJ seul peut l’ouvrir</li>'
- +'<li><i class="sw-start"></i>Zone de départ des héros</li>'
+ +'<li><i class="sw-start"></i>Zone de départ des aventuriers</li>'
  +'<li><i class="sw-foe"></i>Adversaire pré-placé</li></ul><p class="muted" id="map-count"></p>'
  +'<div id="recal-box" hidden><div class="divider"></div><h2>Réparation</h2>'
   +'<p class="muted">Tes zones semblent décalées vers le centre de l’image ? Cette carte a été tracée quand l’éditeur logeait l’image dans un cadre 16/9. Le recalage leur rend leur place ; ⌘Z l’annule.</p>'
@@ -356,7 +356,7 @@ const HINTS={select:'Clique une forme pour la sélectionner, glisse pour la dép
  cut:'Trace un rectangle à l’intérieur d’une zone de blocage : la découpe y creuse une ouverture définitive, vue et passage rétablis.',
  lasso:'Contourne la forme à creuser : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  door:'Trace une porte : elle perce d’elle-même la zone de blocage qu’elle recouvre, et le mur se referme si tu la déplaces. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
- start:'Trace la zone où les héros seront regroupés à l’ouverture de la carte. Une seule par carte.',
+ start:'Trace la zone où les aventuriers seront regroupés à l’ouverture de la carte. Une seule par carte.',
  foe:'Clique pour poser l’adversaire choisi à droite de la barre. Il pourra être invisible à l’ouverture.'};
 // Le plan de travail adopte le rapport de la carte et occupe la place disponible.
 function sizeCanvas(){const c=$('map-canvas'),w=document.querySelector('.canvas-wrap');
@@ -552,6 +552,10 @@ lockBtn.onclick=()=>{tokensLocked=!tokensLocked;refreshGmBar();render();schedule
  log(tokensLocked?'Déplacements figés : les joueurs ne peuvent plus bouger leurs tokens.':'Déplacements rendus aux joueurs.')};
 // L'état des icônes se lit d'un coup d'œil : voile levé, déplacements gelés.
 function refreshGmBar(){const m=currentMap(),mj=view==='mj';
+ // La barre annonce la carte qu'on joue, pas le mot « carte tactique » : c'est la seule
+ // trace du nom de la carte depuis que le bandeau de scène a disparu.
+ const titre=$('carte-titre');
+ if(titre)titre.textContent=(m&&m.name?m.name:'Carte tactique').toUpperCase();
  fogBar.hidden=!mj;fogReset.hidden=fogAll.hidden=!m;
  fogAll.classList.toggle('on',!!(m&&m.fogOff));
  fogAll.title=m&&m.fogOff?'Rétablir le brouillard':'Tout révéler';

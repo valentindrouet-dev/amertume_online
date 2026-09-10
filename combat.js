@@ -55,6 +55,12 @@ function equippedPool(actor,items){const worn=gearOf(actor&&actor.weapons,items)
 function equippedRanged(actor,items){const worn=gearOf(actor&&actor.weapons,items);return worn.length?worn.some(w=>w.ranged===true):null}
 function equippedDef(actor,items){const worn=gearOf(actor&&[actor.armorId,actor.shieldId],items);
  return worn.length?worn.reduce((sum,w)=>sum+(Number(w.def)||0),0):null}
+/* La DEF d'un aventurier est la somme de son armure et de son bouclier, sans exception :
+   sans rien porté elle vaut zéro, et elle ne se saisit jamais à la main. Un adversaire,
+   lui, garde la DEF de sa fiche tant qu'aucune armure ne la commande. */
+function defenseOf(actor,items){const d=equippedDef(actor,items);
+ if(actor&&actor.hero)return d||0;
+ return d===null?(Number(actor&&actor.def)||0):d}
 /* Déplacement : le socle est un disque repoussé hors des murs. Le mouvement restant
    subsiste le long de l'obstacle, ce qui produit le glissement. */
 function closestOnSegment(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],len2=dx*dx+dy*dy;
@@ -496,6 +502,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

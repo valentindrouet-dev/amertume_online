@@ -47,8 +47,9 @@ const heroesPage=document.createElement('main');heroesPage.id='heroes-page';
 heroesPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Aventuriers</h2><div class="cat-actions">'
  +'<button id="hero-add" class="primary">+ Nouvel aventurier</button></div></header>'
- +'<p class="muted">Les fiches des héros de la troupe. C’est ici qu’on les crée, qu’on les modifie et qu’on les retire. <b>Clique une valeur pour la corriger sur place</b> — niveau, XP, Vie, PV, DEF, dégâts et bonus de compétence. Entrée valide, Échap annule. La DEF suit l’armure équipée : elle se change dans l’équipement.</p>'
- +'<div class="cat-filters"><input id="hero-search" placeholder="Rechercher…" aria-label="Rechercher un aventurier"></div>'
+ // Le mode d'emploi n'a plus à occuper le haut de la page : les infobulles le disent
+ // au survol de chaque valeur, et le champ de recherche ne sert qu'à une grande troupe.
+ +'<div class="cat-filters" id="hero-filtres" hidden><input id="hero-search" placeholder="Rechercher…" aria-label="Rechercher un aventurier"></div>'
  +'<div class="hero-grid" id="hero-grid"></div></section>';
 const settingsPage=document.createElement('main');settingsPage.id='settings-page';
 settingsPage.innerHTML='<section class="cat-panel panel">'
@@ -201,9 +202,12 @@ function tuilesVives(a,tuiles,cles,carte){
  tuiles.forEach((tuile,i)=>{const [cle,plafond]=cles[i]||[];if(!cle)return;
   const gros=tuile.querySelector('strong'),ecu=tuile.querySelector('.ecu'),
    petit=tuile.querySelector('small');
-  if(cle==='def'&&equippedDef(a,catalog.items)!==null){
+  // La DEF d'un aventurier est la somme de son armure et de son bouclier : jamais saisie.
+  if(cle==='def'&&a.hero){
    if(ecu){ecu.classList.add('verrou');
-    ecu.title='DEF de l’armure et du bouclier équipés : elle se change dans l’équipement.'}}
+    ecu.title=equippedDef(a,catalog.items)===null
+     ?'DEF nulle : rien n’est porté. Équipe-lui une armure ou un bouclier.'
+     :'DEF de l’armure et du bouclier équipés : elle se change dans l’équipement.'}}
   else if(ecu)champVif(ecu,()=>a.def,v=>poserCarac(a,'def',v,carte),'Modifier la DEF de '+a.name);
   else if(gros)champVif(gros,()=>a[cle],v=>poserCarac(a,cle,v,carte),'Modifier '+cle.toUpperCase()+' de '+a.name);
   if(petit&&plafond)champVif(petit,()=>a[plafond],v=>poserCarac(a,plafond,v,carte),
@@ -225,7 +229,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // Même pastille de classe que sur la fiche en jeu, teintée par le nom.
  const teinte=typeof actorTint==='function'?actorTint(a):'#8a7a63';
  const classe=document.createElement('span');classe.className='sheet-class';
- classe.textContent=(a.role||'Héros').split('·')[0].trim().toUpperCase();
+ classe.textContent=(a.role||'Aventurier').split('·')[0].trim().toUpperCase();
  classe.style.color=classe.style.borderColor=teinte;
  const outils=document.createElement('span');outils.className='cat-tools';
  const ico=(g,t,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=g;
@@ -277,7 +281,10 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  c.append(tete,puces,chiffres,titreComp,comps,titreKit,gearPills(a),titreTal,talentPills(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
- const heros=actors.filter(a=>a.hero&&(!q||a.name.toLowerCase().includes(q)));
+ const troupe=actors.filter(a=>a.hero);
+ // Chercher dans quatre fiches n'a pas de sens : le champ ne paraît qu'à partir de neuf.
+ $('hero-filtres').hidden=troupe.length<9&&!q;
+ const heros=troupe.filter(a=>!q||a.name.toLowerCase().includes(q));
  heros.forEach((a,i)=>grille.append(heroCard(a,i)));
  if(!heros.length){const v=document.createElement('p');v.className='muted';
   v.textContent=q?'Aucun aventurier de ce nom.':'Aucun aventurier dans la troupe.';grille.append(v)}}
@@ -335,9 +342,15 @@ function gearPill(o){const col=itemColumn(o);
  p.title=info?o.name+' — '+info:o.name;
  return p}
 function gearPills(a){const out=document.createElement('div');out.className='gear-pills';
- const porte=[...(a.weapons||[]),a.armorId,a.shieldId].map(gear).filter(Boolean);
- if(!porte.length){const v=document.createElement('span');v.className='muted';v.textContent='Sans équipement';out.append(v)}
- else porte.forEach(o=>out.append(gearPill(o)));
+ // Deux exemplaires de la même arme font une pastille marquée « ×2 », pas deux jumelles.
+ const comptes=new Map();
+ [...(a.weapons||[]),a.armorId,a.shieldId].map(gear).filter(Boolean)
+  .forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
+ if(!comptes.size){const v=document.createElement('span');v.className='muted';v.textContent='Sans équipement';out.append(v)}
+ else comptes.forEach((n,o)=>{const p=gearPill(o);
+  if(n>1){const x=document.createElement('span');x.className='tag exemplaires';x.textContent='×'+n;
+   p.querySelector('.nom').after(x)}
+  out.append(p)});
  return out}
 /* Talents : six natures, chacune sa couleur et son abrégé, comme dans le jeu de table. */
 const TALENT_TYPES=[['act','ACT','Action'],['reac','REAC','Réaction'],['pass','PASS','Passif'],
@@ -699,12 +712,22 @@ $('delete-talent').onclick=()=>{if(talentIndex===null)return;
    la met en main ou la retire. Deux armes au plus, une armure, un bouclier : quand les
    emplacements sont pris, on le dit au lieu de remplacer en silence. La DEF et la réserve
    de dés découlent de l'équipement, elles sont donc recalculées à chaque changement. */
-function syncEquipped(a){const d=equippedDef(a,catalog.items);if(d!==null)a.def=d;
+function syncEquipped(a){
+ // La DEF enregistrée suit la règle : dérivée pour un aventurier, propre à l'adversaire.
+ if(a.hero)a.def=defenseOf(a,catalog.items);
+ else{const d=equippedDef(a,catalog.items);if(d!==null)a.def=d}
  a.pool=equippedPool(a,catalog.items)||poolFrom(a.attacks&&a.attacks[0]&&a.attacks[0].dice)||a.pool}
+/* Combien d'exemplaires d'un objet un aventurier porte. La plupart des armes se
+   tiennent à deux mains, et rien n'interdit d'en avoir deux du même modèle : leurs
+   dés s'additionnent comme ceux de deux armes différentes. */
+function gearCount(a,id){return (a&&a.weapons||[]).filter(x=>x===id).length}
+/* Un clic fait le tour : rien, un exemplaire, deux, puis rien de nouveau. Les deux
+   mains restent la limite — le second exemplaire prend la place d'une autre arme. */
 function toggleGear(a,o){
- if(o.category==='weapon'){const dedans=(a.weapons||[]).includes(o.id);
-  if(dedans)a.weapons=a.weapons.filter(x=>x!==o.id);
-  else if((a.weapons||[]).length>=2)return 'Deux armes déjà en main : retire-en une d’abord.';
+ if(o.category==='weapon'){const n=gearCount(a,o.id),total=(a.weapons||[]).length;
+  if(n>=2)a.weapons=(a.weapons||[]).filter(x=>x!==o.id);
+  else if(total>=2)return n?'Deux armes déjà en main : retire l’autre pour un second '+o.name+'.'
+   :'Deux armes déjà en main : retires-en une d’abord.';
   else a.weapons=[...(a.weapons||[]),o.id]}
  else if(o.category==='armor'){const cle=o.slot==='shield'?'shieldId':'armorId';
   a[cle]=a[cle]===o.id?'':o.id}
@@ -717,7 +740,7 @@ let pickerActeur=null,pickerMode='gear';
 function openPicker(a,mode){if(view!=='mj')return;pickerActeur=a;pickerMode=mode;
  pickerDialog.querySelector('h2').textContent=(mode==='gear'?'Équiper ':'Talents de ')+a.name;
  $('picker-note').textContent=mode==='gear'
-  ?'Clique un objet pour le mettre en main ou le retirer. Deux armes au plus, une armure, un bouclier.'
+  ?'Clique une arme pour la prendre, une deuxième fois pour en porter deux exemplaires — leurs dés s’additionnent — une troisième pour tout reposer. Deux armes en main au plus, une armure, un bouclier.'
   :'Clique un talent pour l’apprendre ou l’oublier.';
  $('picker-search').value='';$('picker-search').oninput=renderPicker;
  renderPicker();pickerDialog.showModal()}
@@ -732,11 +755,13 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   liste.forEach(o=>{const rang=document.createElement('button');rang.className='pick-ligne'+(porte(o)?' porte':'');
    rang.append(pastille(o));
    const etat=document.createElement('span');etat.className='pick-etat';
-   etat.textContent=porte(o)?'✓':'+';rang.append(etat);
+   // Une arme portée en double le dit : « ×2 » plutôt qu'un coché muet.
+   const n=pickerMode==='gear'&&o.category==='weapon'?gearCount(a,o.id):0;
+   etat.textContent=n>1?'×'+n:porte(o)?'✓':'+';rang.append(etat);
    rang.onclick=()=>clic(o);bloc.append(rang)});
   corps.append(bloc)};
  if(pickerMode==='gear'){
-  const porte=o=>(a.weapons||[]).includes(o.id)||a.armorId===o.id||a.shieldId===o.id;
+  const porte=o=>o.category==='weapon'?gearCount(a,o.id)>0:(a.armorId===o.id||a.shieldId===o.id);
   const clic=o=>{const souci=toggleGear(a,o);
    if(souci){$('picker-note').textContent=souci;return}
    renderPicker();renderHeroes();render();scheduleSave()};
@@ -814,12 +839,12 @@ $('bestiary-sort').onchange=renderBestiary;
 $('bestiary-add').onclick=()=>openActor(null,false);
 const itemDialog=dialog('item-editor','Objet','<form id="item-form"><div id="item-fields"></div><div class="form-actions"><button type="button" id="delete-item">Supprimer du catalogue</button><button class="primary">Enregistrer</button></div></form>');
 itemDialog.addEventListener('close',()=>{itemApres=null});
-const imgDialog=dialog('image-editor','Optimiser l’image','<div class="edit-grid"><label>Taille maximale<select id="image-size"></select></label><label>Qualité WebP<input id="image-quality" type="range" min="70" max="100" value="90"><span id="quality-label">90 %</span></label><div><button id="image-recalc">Actualiser l’aperçu</button></div></div><div id="token-frame" hidden><p>Cadrage du socle</p><div class="cadre-rond"><canvas id="token-canvas" width="220" height="220" aria-label="Aperçu du socle"></canvas></div><div class="cadre-reglages"><label>Zoom<input id="token-zoom" type="range" min="40" max="320" value="100"></label><span id="token-zoom-label">100 %</span><button type="button" id="token-center">Recentrer</button></div><p class="muted">Glisse l’image dans le rond pour la déplacer ; la molette zoome.</p></div><div class="image-comparison"><div><p>Original</p><img id="image-before" alt="Image originale"><p class="muted" id="before-info"></p></div><div><p>Copie optimisée</p><img id="image-after" alt="Image optimisée"><p class="muted" id="after-info"></p></div></div><p class="form-error" id="image-error" role="alert"></p><p class="muted">Proportions et transparence conservées. L’original n’est pas modifié. PNG de secours si WebP indisponible.</p><div class="form-actions"><button id="image-cancel">Annuler</button><button class="primary" id="image-accept" disabled>Utiliser cette image</button></div>');
+const imgDialog=dialog('image-editor','Optimiser l’image','<div class="edit-grid"><label>Taille maximale<select id="image-size"></select></label><label>Qualité WebP<input id="image-quality" type="range" min="70" max="100" value="90"><span id="quality-label">90 %</span></label><div><button id="image-recalc">Refaire l’aperçu</button></div></div><div id="token-frame" hidden><p>Cadrage du socle</p><div class="cadre-rond"><canvas id="token-canvas" width="220" height="220" aria-label="Aperçu du socle"></canvas></div><div class="cadre-reglages"><label>Zoom<input id="token-zoom" type="range" min="40" max="320" value="100"></label><span id="token-zoom-label">100 %</span><button type="button" id="token-center">Recentrer</button></div><p class="muted">Glisse l’image dans le rond pour la déplacer ; la molette zoome. La copie optimisée se refait toute seule après chaque réglage.</p></div><div class="image-comparison"><div><p>Original</p><img id="image-before" alt="Image originale"><p class="muted" id="before-info"></p></div><div><p>Copie optimisée</p><img id="image-after" alt="Image optimisée"><p class="muted" id="after-info"></p></div></div><p class="form-error" id="image-error" role="alert"></p><p class="muted">Proportions et transparence conservées. L’original n’est pas modifié. PNG de secours si WebP indisponible.</p><div class="form-actions"><button id="image-cancel">Annuler</button><button class="primary" id="image-accept" disabled>Utiliser cette image</button></div>');
 function field(label,key,value,type='text',extra=''){return '<label>'+label+'<input name="'+key+'" type="'+type+'" value="'+esc(value)+'" '+extra+'></label>'}
 function sel(label,key,value,opts){return '<label>'+label+'<select name="'+key+'">'+opts.map(([v,t])=>'<option value="'+v+'" '+(String(value)===String(v)?'selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label>'}
 function poolFields(p,prefix){return '<div class="mini-pool">'+types.map((t,i)=>field(t,prefix+i,p[i]||0,'number','min="0" max="12"')).join('')+'</div>'}
 let editing=null,draft=null,attackDraft=[],templateIndex=null,itemIndex=null,itemApres=null;
-function baseActor(hero){return normalizeActor({name:hero?'Nouveau héros':'Nouveau monstre',hero,role:hero?'Aventurier':'Adversaire',hp:12,max:12,def:2,dmg:2,x:50,y:60,pool:[2,0,0,0,0,0,0],checks:[false,false,false],target:null,skills:Array(8).fill(0)})}
+function baseActor(hero){return normalizeActor({name:hero?'Nouvel aventurier':'Nouveau monstre',hero,role:hero?'Aventurier':'Adversaire',hp:12,max:12,def:2,dmg:2,x:50,y:60,pool:[2,0,0,0,0,0,0],checks:[false,false,false],target:null,skills:Array(8).fill(0)})}
 function fromMonster(m){const a=baseActor(false);Object.assign(a,{template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,notes:m.notes||'',attacks:structuredClone(m.attacks||[]),image:m.image||null});a.pool=poolFrom(a.attacks[0]?.dice);return a}
 function openActor(index=null,hero=true,template=null){if(view!=='mj')return;
  if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero;renderActorForm();actorDialog.showModal()}
@@ -836,11 +861,18 @@ $('add-gear').onclick=()=>openItem(null,o=>refreshGearOptions(o));['weapon1','we
 // Aperçu vivant de l'équipement : dés cumulés, portée et DEF verrouillée par l'armure.
 function refreshEquip(){const f=$('actor-form').elements,ids=[f.weapon1.value,f.weapon2.value].filter(Boolean);
  const armes=ids.map(id=>catalog.items.find(w=>w.id===id)).filter(Boolean);
- const p=equippedPool({weapons:ids},catalog.items),d=equippedDef({armorId:f.armor.value,shieldId:f.shield.value},catalog.items);
- f.def.readOnly=d!==null;if(d!==null)f.def.value=d;
+ const p=equippedPool({weapons:ids},catalog.items);
+ // Un aventurier ne saisit jamais sa DEF : elle est la somme de son armure et de son
+ // bouclier, zéro compris. Un adversaire garde la sienne tant que rien ne la commande.
+ const d=defenseOf({hero:draft&&draft.hero,def:f.def.value,armorId:f.armor.value,shieldId:f.shield.value},catalog.items);
+ const commandee=draft&&draft.hero||equippedDef({armorId:f.armor.value,shieldId:f.shield.value},catalog.items)!==null;
+ f.def.readOnly=commandee;if(commandee)f.def.value=d;
  const des=p?p.map((n,i)=>n?n+' '+types[i]:'').filter(Boolean).join(' · ')||'aucun dé':'';
- $('equip-summary').textContent=(armes.length?'Dés de '+armes.map(w=>w.name).join(' + ')+' : '+des+(armes.some(w=>w.ranged)?' · tir à distance.':' · contact.'):'Aucune arme équipée : les dés viennent des attaques ci-dessous.')
-  +' '+(d!==null?'DEF de l’équipement : '+d+', champ verrouillé.':'DEF saisie à la main.')}
+ // Deux exemplaires de la même arme se lisent « ×2 » plutôt que deux fois le même nom.
+ const noms=[...new Set(ids)].map(id=>{const w=armes.find(x=>x.id===id),n=ids.filter(x=>x===id).length;
+  return w?w.name+(n>1?' ×'+n:''):''}).filter(Boolean);
+ $('equip-summary').textContent=(armes.length?'Dés de '+noms.join(' + ')+' : '+des+(armes.some(w=>w.ranged)?' · tir à distance.':' · contact.'):'Aucune arme équipée : les dés viennent des attaques ci-dessous.')
+  +' '+(commandee?'DEF de l’équipement : '+d+', champ verrouillé.':'DEF saisie à la main.')}
 function renderAttacks(){$('attack-edit-list').innerHTML=attackDraft.map((a,i)=>'<div class="attack-card" data-attack="'+i+'"><div class="edit-grid">'+field('Nom','an'+i,a.name,'text','required maxlength="100"')+sel('Portée','ar'+i,a.range,[['contact','Contact'],['distance','Distance']])+sel('Cibles','at'+i,a.targets,[['one','Unique'],['all','Multiples (manuel)']])+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('');document.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
 function readAttacks(){const f=$('actor-form').elements;attackDraft=attackDraft.map((a,i)=>({...a,name:f['an'+i].value.trim()||'Attaque',range:f['ar'+i].value,targets:f['at'+i].value,useOwnDamage:f['ab'+i].checked,effectText:f['ae'+i].value,dice:diceFrom(keys.map((_,c)=>num(f['ad'+i+'_'+c].value,0,12)))}))}
 /* Les états de la fiche : la même grille de jetons que le clic droit sur le socle, pour
@@ -912,6 +944,8 @@ function refreshGearOptions(neuf){const f=$('actor-form').elements;if(!f||!f.wea
 function readActor(){const f=$('actor-form').elements;readAttacks();const a=structuredClone(draft);for(const k of ['name','role','notes','socle'])a[k]=f[k].value.trim();a.states=[...statesOf(draft)];for(const k of ['sexe','race'])if(f[k])a[k]=f[k].value.trim();
  for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k])a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?999999:99999);a.max=Math.max(1,a.max);if(templateIndex!==null)a.hp=a.max;a.hp=Math.min(a.hp,a.max);setState(a,'Coma',!a.hp);if(!a.hero){a.type=f.type.value;a.menace=f.menace.value}a.rapide=f.rapide.checked;a.esquive=f.esquive.checked;a.skills=skillNames.map((_,i)=>num(f['skill'+i].value,0,30));a.weapons=[f.weapon1.value,f.weapon2.value].filter(Boolean);a.armorId=f.armor.value;a.shieldId=f.shield.value;a.attacks=attackDraft;a.activeAttack=0;a.talents=[...new Set(draft.talents||[])].filter(id=>(catalog.talents||[]).some(t=>t.id===id));
  const dEquip=equippedDef(a,catalog.items);if(dEquip!==null)a.def=dEquip;
+ // Un aventurier ne saisit jamais sa DEF : elle vaut son armure plus son bouclier, zéro compris.
+ if(a.hero)a.def=defenseOf(a,catalog.items);
  a.pool=equippedPool(a,catalog.items)||poolFrom(attackDraft[0]?.dice);return a}
 function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,notes:a.notes,attacks:structuredClone(a.attacks),image:a.image||null}}
 /* Une créature posée sur la table garde le lien vers son modèle : corriger les PV maximum
@@ -931,20 +965,20 @@ $('actor-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;const a=re
  renderCatalogPages()}else if(editing===null){actors.push(a);selected=actors.length-1}else actors[editing]=a;actorDialog.close();renderHeroes();render();log('Fiche enregistrée : '+a.name);scheduleSave()};
 $('save-template').onclick=()=>{if(!$('actor-form').reportValidity()||view!=='mj')return;catalog.monsters.push(toMonster(readActor()));$('actor-error').textContent='Copie ajoutée au bestiaire.';scheduleSave()};
 /* Retirer un combattant : les cibles qui le visaient et les indices qui le suivaient
-   sont recalés, et la scène garde toujours au moins un héros. */
+   sont recalés, et la scène garde toujours au moins un aventurier. */
 function removeActor(i){return removeActors([i],true)}
 /* Retirer un ou plusieurs combattants d'un coup. Les indices sont défaits du plus grand
    au plus petit, sinon chaque coupe décalerait les suivants. Cibles, joueur maître et
-   sélection sont recalés ensuite. La troupe garde toujours un héros.
+   sélection sont recalés ensuite. La troupe garde toujours un aventurier.
    « demande » vaut pour la fiche, où l'on confirme quoi qu'il arrive ; au clavier, seuls
-   les héros font surgir l'alerte — perdre un monstre se répare d'un clic, pas une fiche. */
+   les aventuriers font surgir l'alerte — perdre un monstre se répare d'un clic, pas une fiche. */
 function removeActors(liste,demande){
  if(view!=='mj')return 'Retrait impossible.';
  const rangs=[...new Set(liste)].filter(i=>actors[i]).sort((x,y)=>y-x);
  if(!rangs.length)return 'Retrait impossible.';
  const heros=rangs.filter(i=>actors[i].hero).length;
  if(rangs.length>=actors.length||heros>=actors.filter(a=>a.hero).length)
-  return 'Conserve au moins un héros dans la scène.';
+  return 'Conserve au moins un aventurier dans la scène.';
  const noms=rangs.map(i=>actors[i].name).reverse();
  if(demande||heros){const quoi=noms.length===1?'Retirer '+noms[0]+' de la scène ?'
   :'Retirer '+noms.length+' combattants de la scène ?\n\n'+noms.join(', ');
@@ -1041,7 +1075,14 @@ function drawTokenPreview(){const job=imageJob,cv=$('token-canvas');
  const f=squareFrame(job.bitmap.width,job.bitmap.height,side,job.zoom,job.dx,job.dy);
  ctx.drawImage(job.bitmap,f.ox,f.oy,f.dw,f.dh);
  $('token-zoom-label').textContent=Math.round(job.zoom*100)+' %'}
-function retouche(){if(imageJob)imageJob.dirty=true;$('image-accept').disabled=true}
+/* Un réglage — cadrage, taille ou qualité — périme la copie optimisée. La laisser
+   périmée à l'écran avec un bouton éteint et rien pour le dire ne s'explique pas :
+   la copie se refait donc toute seule, dès qu'on s'arrête de régler. */
+let retoucheTimer=null;
+function retouche(){if(imageJob)imageJob.dirty=true;
+ $('image-accept').disabled=true;
+ clearTimeout(retoucheTimer);
+ retoucheTimer=setTimeout(()=>{if(imageJob&&imageJob.dirty)optimizeImage()},260)}
 $('token-zoom').oninput=()=>{if(!imageJob)return;imageJob.zoom=Number($('token-zoom').value)/100;
  drawTokenPreview();retouche()};
 $('token-center').onclick=()=>{if(!imageJob)return;imageJob.zoom=1;imageJob.dx=imageJob.dy=0;
@@ -1056,8 +1097,8 @@ $('token-center').onclick=()=>{if(!imageJob)return;imageJob.zoom=1;imageJob.dx=i
  cv.onwheel=e=>{if(!imageJob)return;e.preventDefault();
   imageJob.zoom=Math.max(.4,Math.min(3.2,imageJob.zoom*(e.deltaY<0?1.08:1/1.08)));
   $('token-zoom').value=String(Math.round(imageJob.zoom*100));drawTokenPreview();retouche()}})();
-function cleanupImage(){imageGeneration++;if(imageJob){URL.revokeObjectURL(imageJob.original);if(imageJob.url)URL.revokeObjectURL(imageJob.url);imageJob.bitmap?.close()}imageJob=null;$('image-before').removeAttribute('src');$('image-after').removeAttribute('src')}
-$('image-quality').oninput=()=>{$('quality-label').textContent=$('image-quality').value+' %';$('image-accept').disabled=true};$('image-size').onchange=()=>{$('image-accept').disabled=true};$('image-recalc').onclick=optimizeImage;$('image-cancel').onclick=()=>imgDialog.close();imgDialog.addEventListener('close',cleanupImage);
+function cleanupImage(){imageGeneration++;clearTimeout(retoucheTimer);if(imageJob){URL.revokeObjectURL(imageJob.original);if(imageJob.url)URL.revokeObjectURL(imageJob.url);imageJob.bitmap?.close()}imageJob=null;$('image-before').removeAttribute('src');$('image-after').removeAttribute('src')}
+$('image-quality').oninput=()=>{$('quality-label').textContent=$('image-quality').value+' %';retouche()};$('image-size').onchange=retouche;$('image-recalc').onclick=optimizeImage;$('image-cancel').onclick=()=>imgDialog.close();imgDialog.addEventListener('close',cleanupImage);
 $('image-accept').onclick=()=>{const job=imageJob;if(!job?.output||view!=='mj')return;$('image-accept').disabled=true;const reader=new FileReader();reader.onerror=()=>{$('image-error').textContent='Impossible de lire la copie optimisée.'};reader.onload=()=>{if(job!==imageJob)return;job.accept(reader.result);imgDialog.close();scheduleSave()};reader.readAsDataURL(job.output)};
 $('mapfile').onchange=()=>{const file=$('mapfile').files[0];$('mapfile').value='';if(file)openImage(file,'map',url=>{mapImage=url;$('map-view').style.backgroundImage='url("'+url+'")';$('map').classList.add('custom');log('Carte optimisée et importée.');document.dispatchEvent(new Event('amertume-content-changed'))})};
 loadSession();

@@ -1,4 +1,4 @@
-# Amertume Online — v0.68
+# Amertume Online — v0.69
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -37,7 +37,7 @@ Les murs du plan schématique sont décrits une seule fois, en polygones, et ser
 Conventions provisoires : dés passant strictement la DEF, rouges/noirs sans DEF ; double 1 hors noirs prioritaire sur critique ; double 6 initial avec relance de la couleur choisie ; légers retirés avant doubles mystiques ; phases et mystiques comparés à la DEF sur valeur naturelle. Affaibli annule le bonus, Au sol retire la DEF et interdit l’attaque, Blindage absorbe une attaque réussie. Dés verts exclus des attaques. Portée, réactions, effets des talents et dégâts-choc manuels.
 
 ## Vérification
-`node checks.cjs` : contrôles des dimensions PNG/JPEG/WebP, du catalogue source, des dégâts, de la lecture des champs de fiche, du rayon de contact et de la ligne de vue. Syntaxe JavaScript et références des ressources vérifiées. La v0.09 a été contrôlée dans Chromium : rayon de contact, ligne de visée, refus des attaques hors de portée ou sans ligne de vue, dés, barres de PV, rendu mobile et persistance après rechargement. La compression d’images et la publication Firebase n’ont pas été rejouées dans un navigateur pour cette livraison.
+`node checks.cjs` : contrôles des dimensions PNG/JPEG/WebP, du catalogue source, des dégâts, de la lecture des champs de fiche, du rayon de contact et de la ligne de vue. `node shared-checks.cjs` contrôle le format de publication ; `node id-checks.cjs` refuse deux éléments portant le même identifiant. Syntaxe JavaScript et références des ressources vérifiées. La v0.09 a été contrôlée dans Chromium : rayon de contact, ligne de visée, refus des attaques hors de portée ou sans ligne de vue, dés, barres de PV, rendu mobile et persistance après rechargement. La compression d’images et la publication Firebase n’ont pas été rejouées dans un navigateur pour cette livraison.
 
 ## v0.08 — Contenu partagé (activation Firebase requise)
 
@@ -152,6 +152,22 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.69 — La carte dit son nom, les camps se séparent, une arme se porte en double
+
+**Le bouton « Utiliser cette image » ne s’éteint plus sans raison.** Depuis la v0.66, régler le cadrage d’un socle périmait la copie optimisée : le bouton se désactivait, la copie affichée restait celle d’avant, et rien ne disait qu’il fallait cliquer « Actualiser l’aperçu ». La copie se refait maintenant **d’elle-même**, un tiers de seconde après le dernier réglage — cadrage, taille ou qualité — et le bouton se rallume seul. Ce qui est montré est donc toujours ce qui sera enregistré.
+
+**La barre annonce la carte qu’on joue.** À la place du mot « CARTE TACTIQUE », le nom de la carte de combat ouverte. C’était la dernière trace du nom de la scène depuis que le bandeau a disparu en v0.68. Sans carte ouverte, l’intitulé d’origine revient.
+
+**La liste des combattants sépare les deux camps** : « Aventuriers » d’abord, un filet, puis « Adversaires ». Les groupes tiennent quel que soit l’ordre du tableau interne, et un groupe vide n’écrit pas son intitulé. Au passage, « héros » cède la place à « aventurier » partout où le mot paraissait à l’écran — bouton d’ajout, sélecteur de vue, messages de jeu, éditeur de cartes.
+
+**Une arme se porte en double.** La plupart se tiennent à deux mains, et rien n’interdit d’en avoir deux du même modèle : leurs dés s’additionnent comme ceux de deux armes différentes. Dans l’équipement, un clic fait le tour — rien, un exemplaire, deux, puis tout reposé — et la ligne affiche « ✓ » ou « ×2 ». Les pastilles de la fiche regroupent les doublons sous un « ×2 » plutôt que de répéter la même. Les deux mains restent la limite.
+
+**La DEF d’un aventurier ne se saisit plus.** Elle est la somme de son armure et de son bouclier, **zéro compris** : jusqu’ici, un aventurier sans rien porté gardait un chiffre écrit à la main, et le champ ne se verrouillait qu’une fois une armure équipée. La règle est désormais tenue par `defenseOf`, en un seul endroit, pour la fiche, la tuile, le formulaire et la résolution des coups. Un adversaire, lui, garde la DEF de sa fiche tant qu’aucune armure ne la commande.
+
+**La page Aventuriers s’ouvre sur ses fiches.** Le paragraphe d’explication a disparu — les infobulles disent la même chose au survol de chaque valeur — et le champ de recherche ne paraît qu’à partir de neuf aventuriers, faute d’avoir à chercher dans quatre fiches.
+
+`checks.cjs` passe à 265 vérifications, dont la règle de DEF et le cumul des dés de deux exemplaires. Un contrôle d’identifiants en double s’ajoute à la routine : il a d’ailleurs attrapé une collision sur `map-name` avant qu’elle n’atteigne l’écran.
 
 ## v0.68 — Le bandeau s’efface, les Alpha reviennent, le voile se lève
 
@@ -374,7 +390,7 @@ Le sous-ensemble WOFF2 contenait déjà le Ü et les accents français : rien à
 
 ## v0.47 — Équiper depuis la carte, et la police Killam
 
-**Un « + » à côté d’ÉQUIPEMENT et de TALENTS**, sur la carte de l’aventurier elle-même. Il ouvre le catalogue en pastilles : cliquer une entrée la met en main ou la retire, l’état de chacune est marqué. Deux armes au plus, une armure, un bouclier — quand les emplacements sont pris, c’est dit, jamais remplacé en silence ; une armure, elle, remplace bien l’ancienne. La DEF et la réserve de dés découlant de l’équipement, elles sont recalculées à chaque changement, et la carte comme la table de jeu suivent aussitôt. Le même bouton sur Talents ouvre le rayon rangé par classe, celle de l’aventurier et les Génériques en tête.
+**Un « + » à côté d’ÉQUIPEMENT et de TALENTS**, sur la carte de l’aventurier elle-même. Il ouvre le catalogue en pastilles : cliquer une arme la prend, une deuxième fois en met deux exemplaires (v0.69), une troisième les repose ; l’état de chacune est marqué « ✓ » ou « ×2 ». Deux armes au plus, une armure, un bouclier — quand les emplacements sont pris, c’est dit, jamais remplacé en silence ; une armure, elle, remplace bien l’ancienne. La DEF et la réserve de dés découlant de l’équipement, elles sont recalculées à chaque changement, et la carte comme la table de jeu suivent aussitôt. Le même bouton sur Talents ouvre le rayon rangé par classe, celle de l’aventurier et les Génériques en tête.
 
 *(Les « + » de la v0.45, dans les titres de la fiche d’édition, servaient à **créer** un objet ou un talent. Ceux-ci servent à **équiper** avec ce qui existe déjà. Les deux restent.)*
 
