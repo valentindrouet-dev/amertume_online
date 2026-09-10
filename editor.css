@@ -167,6 +167,11 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .ico.danger:hover{background:#5c2b26;color:#ffd9d2}
 .cat-detail{display:flex;flex-direction:column;gap:6px;align-items:flex-start;font-size:13px;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin:-3px 0 9px}
 .cat-detail button{width:auto;margin:2px 0 0}
+/* Poser une meute : le chiffre d'abord, le bouton ensuite. */
+.pose-nombre{display:flex;align-items:center;gap:7px;margin-top:2px}
+.pose-nombre input{width:58px;margin:0;text-align:center;font:700 14px system-ui;
+ background:var(--field);border:1px solid var(--line);border-radius:6px;padding:7px 4px;color:var(--ink)}
+.pose-nombre button{margin:0}
 /* Une fiche d'aventurier par carte : portrait, chiffres et équipement d'un coup d'œil. */
 #hero-search{flex:0 1 340px}
 .hero-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;align-items:start}

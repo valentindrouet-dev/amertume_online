@@ -628,11 +628,19 @@ function bestiaryRow(m,i){const rang=document.createElement('div');rang.classNam
  detail.hidden=!bestiaireOuverts.has(cleModele(m));
  pill.classList.toggle('ouvert',!detail.hidden);
  if(!detail.hidden)detail.append(monsterSheet(m));
+ /* Une meute se pose d'un coup : le chiffre dit combien de créatures partent sur la carte. */
+ const pose=document.createElement('div');pose.className='pose-nombre';
+ const combien=document.createElement('input');combien.type='number';combien.min='1';combien.max='20';
+ combien.value='1';combien.setAttribute('aria-label','Nombre de '+m.name+' à poser');
  const poser=document.createElement('button');poser.dataset.catAdd=i;poser.textContent='Ajouter à la carte';
- detail.append(poser);
- poser.onclick=()=>{saveChecks();savePool();const a=fromMonster(catalog.monsters[i]);
-  a.x=30+Math.random()*40;a.y=20+Math.random()*30;normalizeActor(a);actors.push(a);selected=actors.length-1;
-  showPage('table');render();log(a.name+' ajouté à la carte.')};
+ pose.append(combien,poser);detail.append(pose);
+ poser.onclick=()=>{saveChecks();savePool();
+  const n=Math.max(1,Math.min(20,Math.trunc(Number(combien.value))||1));
+  for(let k=0;k<n;k++){const a=fromMonster(catalog.monsters[i]);
+   a.x=30+Math.random()*40;a.y=20+Math.random()*30;normalizeActor(a);actors.push(a);
+   settleActor(a);selected=actors.length-1}
+  markOnly(selected);showPage('table');render();scheduleSave();
+  log(n>1?n+' × '+m.name+' ajoutés à la carte.':m.name+' ajouté à la carte.')};
  pill.onclick=()=>{const ouvrir=detail.hidden;
   if(ouvrir)bestiaireOuverts.add(cleModele(m));else bestiaireOuverts.delete(cleModele(m));
   detail.hidden=!ouvrir;pill.classList.toggle('ouvert',ouvrir);
@@ -1141,7 +1149,7 @@ const sceneDialog=dialog('scene-editor','Scène','<form id="scene-form"><label>T
 $('edit-scene').onclick=()=>{if(view!=='mj')return;$('scene-form').elements.title.value=sceneTitle();$('scene-form').elements.round.value=round;sceneDialog.showModal()};$('scene-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;round=num($('scene-form').elements.round.value,1,999);sceneTitle($('scene-form').elements.title.value);renderSettings();$('round').textContent=String(round).padStart(2,'0');sceneDialog.close();scheduleSave()};
 $('reset-map').onclick=()=>{if(view!=='mj')return;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom');scheduleSave()};
 const originalRender=render;render=function(){originalRender();
- const mj=view==='mj';['combattants-outils','reset-map','heal-foes'].forEach(id=>{const el=$(id);if(el)el.hidden=!mj});$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero)$('owner').add(new Option(a.name,String(i)))});$('owner').value=String(owner);const a=actors[selected];$('actor-notes').textContent=a&&a.notes||'';
+ const mj=view==='mj';['reset-map','heal-foes'].forEach(id=>{const el=$(id);if(el)el.hidden=!mj});$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero)$('owner').add(new Option(a.name,String(i)))});$('owner').value=String(owner);const a=actors[selected];$('actor-notes').textContent=a&&a.notes||'';
 
  // Le menu des attaques ne paraît que s'il y a vraiment à choisir : la barre sous
  // « Attaque » appartient désormais aux cibles à portée.

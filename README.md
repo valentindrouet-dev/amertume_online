@@ -1,4 +1,4 @@
-# Amertume Online — v0.75
+# Amertume Online — v0.76
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.76 — Un cadre prend ce qu’il enferme
+
+**Le cadre de sélection.** Glisser sur la carte, hors de tout socle, trace un cadre qui prend tous les combattants qu’il enferme — la sélection multiple sans tenir Cmd et cliquer un par un. Le combattant actif devient le premier du lot que l’on contrôle. Un cadre tracé sur le vide **lève la sélection** : c’est la façon de tout reposer. Un clic sans glissement reste un clic. En vue joueur, les adversaires cachés ou hors de vue ne se laissent pas prendre.
+
+Le glissement simple revenant au cadre, **le panoramique passe au bouton droit** — la molette et le pincement continuent de faire le leur comme avant, et ce sont eux qu’on utilise le plus.
+
+**Le bestiaire pose une meute d’un coup.** Un chiffre à côté d’« Ajouter à la carte » dit combien de créatures partent — jusqu’à vingt. Chacune reçoit sa place, hors des murs, et les homonymes se numérotent d’eux-mêmes comme depuis la v0.61.
+
+**Les deux « + » ont rejoint leur camp.** « + Aventurier » et « + Adversaire » quittent le titre du panneau pour s’asseoir au bout des intitulés **Aventuriers** et **Adversaires** de la liste des combattants, réduits à un « + ». L’intitulé d’un camp vide paraît quand même pour le MJ, faute de quoi son bouton serait introuvable.
 
 ## v0.75 — Les passages secrets
 
