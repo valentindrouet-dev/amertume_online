@@ -7,7 +7,7 @@
  if(s.maps!==undefined){if(!Array.isArray(s.maps)||s.maps.length>60)throw Error('Cartes publiées invalides.');
   for(const m of s.maps){if(!m||typeof m.name!=='string'||!Array.isArray(m.walls||[])||!Array.isArray(m.doors||[])||!Array.isArray(m.foes||[]))throw Error('Carte publiée invalide.');
    for(const r of [...(m.walls||[]),...(m.visions||[]),...(m.doors||[]),...(m.start?[m.start]:[])])if(!r||!['x','y','w','h'].every(k=>Number.isFinite(r[k])&&r[k]>=-1&&r[k]<=101))throw Error('Zone de carte invalide.')}}
- for(const a of s.actors){if(typeof a.name!=='string'||typeof a.hero!=='boolean'||!Array.isArray(a.pool)||a.pool.length!==7||!a.pool.every(v=>Number.isInteger(v)&&v>=0&&v<=12)||!Array.isArray(a.skills)||a.skills.length!==8||!a.skills.every(v=>Number.isFinite(v)&&v>=0&&v<=30))throw Error('Fiche publiée invalide.');for(const k of ['hp','max','def','dmg','x','y'])if(!Number.isFinite(a[k])||a[k]<0)throw Error('Caractéristique invalide.');if(a.max<1||a.hp>a.max)throw Error('PV invalides.')}
+ for(const a of s.actors){if(typeof a.name!=='string'||typeof a.hero!=='boolean'||!Array.isArray(a.pool)||a.pool.length!==7||!a.pool.every(v=>Number.isInteger(v)&&v>=0&&v<=12)||!Array.isArray(a.skills)||a.skills.length!==8||!a.skills.every(v=>Number.isFinite(v)&&v>=0&&v<=30)||(a.states!==undefined&&(!Array.isArray(a.states)||a.states.length>40||!a.states.every(e=>typeof e==='string'&&e.length<=40))))throw Error('Fiche publiée invalide.');for(const k of ['hp','max','def','dmg','x','y'])if(!Number.isFinite(a[k])||a[k]<0)throw Error('Caractéristique invalide.');if(a.max<1||a.hp>a.max)throw Error('PV invalides.')}
  return s;
  }
  const api={pack,unpack,validate,MAX};if(typeof module!=='undefined')module.exports=api;else root.SharedData=api;

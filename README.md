@@ -1,4 +1,4 @@
-# Amertume Online — v0.51
+# Amertume Online — v0.52
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,18 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.52 — Plusieurs états à la fois
+
+**Un combattant en porte désormais autant qu’il en subit.** `a.state`, le champ unique, devient `a.states`, une liste tenue dans l’ordre où les états sont posés ; les fiches enregistrées migrent d’elles-mêmes au chargement. Les jetons sont **deux fois plus petits** et **s’empilent vers la gauche** depuis le coin bas-droit du socle, le dernier venu en tête.
+
+Le menu du clic droit **bascule** au lieu d’imposer, et reste ouvert : on en empile souvent trois d’affilée. « Aucun » les lève tous d’un coup.
+
+Les règles de combat suivent, car plusieurs d’entre elles lisaient cet état : *Au sol* interdit l’Action et annule la DEF de qui le subit, *Affaibli* supprime le bonus de dégâts, *Blindage* absorbe le coup **et se consume seul** — les autres états du même combattant restent en place, ce qu’un champ unique ne savait pas faire —, *Coma* met hors de combat. Les trois fonctions (`statesOf`, `hasState`, `setState`) ont quitté l’interface pour `combat.js`, avec treize assertions : l’ordre de pose, l’absence de doublon, le retrait ciblé, le retrait d’un état absent, un champ mal formé.
+
+Le menu « État » de la fiche du personnage disparaît — il ne savait choisir qu’un état, et il était masqué depuis la v0.38. La fiche d’édition reçoit à la place la même grille de jetons que le clic droit, pour qu’on reconnaisse le geste. Au passage, un vestige : `shared.js` écoutait encore ce menu pour déclencher une publication, ce qui levait une erreur à chaque chargement une fois l’élément retiré ; c’est l’événement de contenu qui s’en charge maintenant.
+
+**La barre de PV passe au-dessus du socle** et gagne trois pixels de haut. Elle n’a plus à partager le bas avec les jetons d’état.
 
 ## v0.51 — Poser un état au clic droit, lire les PV sous le socle
 

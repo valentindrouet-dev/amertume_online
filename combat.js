@@ -435,8 +435,15 @@ function regridMask(seen,fromW,fromH,toW,toH){const out=new Uint8Array(toW*toH);
 function skillRoll(bonus,roll,plafond=1000){const des=[];let reussites=0,reste=1+Math.max(0,Math.trunc(bonus)||0);
  while(reste>0&&des.length<plafond){reste--;const v=roll();des.push(v);if(v>=4)reussites++;if(v===6)reste++}
  return {des,reussites,reste}}
+/* Les états d'un combattant. Il en porte plusieurs à la fois, dans l'ordre où on les
+   pose : le dernier venu se range à gauche des précédents sur le socle. Poser un état
+   déjà porté ne le double pas, et le lever quand il est absent ne fait rien. */
+function statesOf(a){return Array.isArray(a&&a.states)?a.states:[]}
+function hasState(a,etat){return statesOf(a).includes(etat)}
+function setState(a,etat,pose){const reste=statesOf(a).filter(x=>x!==etat);
+ a.states=pose?[...reste,etat]:reste;return a.states}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

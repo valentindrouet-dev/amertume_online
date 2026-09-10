@@ -148,6 +148,13 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .cat-pill.cliquable{cursor:pointer}
 /* Attribuer des talents dans la fiche : des cases, groupées par classe, dans un cadre
    qui défile — un arbre complet ne doit pas repousser le reste du formulaire. */
+/* La grille d'états de la fiche reprend le dessin du menu au clic droit. */
+#state-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:5px}
+#state-picker button{display:grid;justify-items:center;gap:3px;padding:7px 2px 6px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);font:600 10px system-ui;color:var(--muted);line-height:1.1}
+#state-picker button:hover{background:var(--hover);color:var(--ink)}
+#state-picker button.on{border-color:var(--green);background:var(--sel);color:var(--ink)}
+#state-picker img,#state-picker .vide{width:28px;height:28px}
+#state-picker .vide{display:grid;place-items:center;font-size:16px;color:var(--muted)}
 #talent-filter{margin-bottom:10px}
 #talent-picker{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--panel-2)}
 .pick-famille+.pick-famille{margin-top:14px}

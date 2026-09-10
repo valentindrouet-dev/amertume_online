@@ -8,7 +8,7 @@ const {resolveAttack:r}=require('./combat.js');assert.equal(r({dice:[[5,0]],def:
 const read=editor.slice(editor.indexOf('function readActor()'),editor.indexOf('function toMonster'));
 const values={name:'<Éla>',role:'Gardienne',notes:'texte',state:'Aucun',socle:'medium',sexe:'Femme',race:'Humaine',hp:'99',max:'20',def:'7',dmg:'8',xp:'50',vie:'5',vieMax:'6',endu:'4',pvBonus:'0',level:'3',weapon1:'w',weapon2:'',armor:'a',shield:''};const elements=Object.fromEntries(Object.entries(values).map(([k,value])=>[k,{value}]));elements.rapide={checked:true};elements.esquive={checked:false};for(let i=0;i<8;i++)elements['skill'+i]={value:'4'};
 const gearApi=require('./combat.js');
-const lire=inventaire=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],skillNames:Array(8).fill(''),draft:{hero:true},attackDraft:[{dice:{white:2}}],readAttacks(){},$:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,catalog:{items:inventaire}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result};
+const lire=inventaire=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],skillNames:Array(8).fill(''),draft:{hero:true},attackDraft:[{dice:{white:2}}],readAttacks(){},$:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,statesOf:gearApi.statesOf,setState:gearApi.setState,catalog:{items:inventaire}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result};
 const nu=lire([]);assert.equal(nu.sexe,'Femme');assert.equal(nu.race,'Humaine');assert.equal(nu.vieMax,6);assert.equal(nu.hp,20);assert.equal(nu.def,7);assert.equal(nu.dmg,8);assert.equal(nu.skills[0],4);assert.equal(nu.pool[0],2);assert.equal(nu.name,'<Éla>');
 // Équipé : les dés viennent de l'arme et la DEF de l'armure, pas des champs saisis.
 const equipe=lire([{id:'w',category:'weapon',dice:{white:3}},{id:'a',category:'armor',slot:'body',def:5}]);
@@ -243,7 +243,7 @@ assert.ok(Math.abs(uncontain([{x:0,y:0}],cadre,image)[0].x+marge/ech)<1e-6);
 const avecTalents=(brouillon,rayon)=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],
  skillNames:Array(8).fill(''),draft:{hero:true,talents:brouillon},attackDraft:[{dice:{white:2}}],readAttacks(){},
  $:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),
- poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,
+ poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,statesOf:gearApi.statesOf,setState:gearApi.setState,
  catalog:{items:[],talents:rayon}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result.talents.join(',')};
 const rayon=[{id:'t1'},{id:'t2'}];
 assert.equal(avecTalents(['t1','t2'],rayon),'t1,t2');       // Les deux existent : les deux restent.
@@ -266,4 +266,20 @@ assert.equal(skillRoll(0,suite([6,6,1])).reussites,2);
 assert.equal(skillRoll(-4,fixe(1)).des.length,1);       // Un bonus négatif ne retire pas le dé de base.
 const emballe=skillRoll(0,fixe(6),50);                  // Une série infinie est arrêtée net.
 assert.equal(emballe.des.length,50);assert.ok(emballe.reste>0);
-console.log('161 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// États multiples : on empile, on lève, sans doublon ni trou.
+const {statesOf,hasState,setState}=require('./combat.js');
+const sujet={};
+assert.equal(statesOf(sujet).length,0);assert.equal(statesOf(null).length,0);
+assert.equal(statesOf({states:'Feu'}).length,0);           // Un champ mal formé ne casse rien.
+setState(sujet,'Feu',true);setState(sujet,'Poison',true);
+assert.equal(sujet.states.join(','),'Feu,Poison');         // L'ordre de pose est conservé.
+setState(sujet,'Feu',true);
+assert.equal(sujet.states.join(','),'Poison,Feu');         // Reposer un état le remet en dernier, sans doublon.
+assert.ok(hasState(sujet,'Poison')&&hasState(sujet,'Feu'));
+setState(sujet,'Poison',false);
+assert.equal(sujet.states.join(','),'Feu');                // Lever n'enlève que celui-là.
+setState(sujet,'Gel',false);
+assert.equal(sujet.states.join(','),'Feu');                // Lever un état absent ne fait rien.
+setState(sujet,'Feu',false);assert.equal(sujet.states.length,0);
+assert.equal(hasState({},'Coma'),false);
+console.log('174 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
