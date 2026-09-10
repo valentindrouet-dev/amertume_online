@@ -55,19 +55,36 @@ function equippedPool(actor,items){const worn=gearOf(actor&&actor.weapons,items)
 function equippedRanged(actor,items){const worn=gearOf(actor&&actor.weapons,items);return worn.length?worn.some(w=>w.ranged===true):null}
 function equippedDef(actor,items){const worn=gearOf(actor&&[actor.armorId,actor.shieldId],items);
  return worn.length?worn.reduce((sum,w)=>sum+(Number(w.def)||0),0):null}
-/* L'équipement est l'affaire des aventuriers. Eux seuls tirent leurs dés, leur portée
-   et leur DEF de ce qu'ils portent ; un adversaire n'a pas d'armurerie, et son profil
-   est sa carte d'attaque et sa DEF propre — les seules choses qu'un modèle de bestiaire
-   sache décrire. Sans cette règle, une arme posée sur une créature rendait muets les dés
-   saisis sur sa fiche : on les corrigeait sans rien voir changer. */
-function equipRules(actor){return !!(actor&&actor.hero)}
-function poolFromGear(actor,items){return equipRules(actor)?equippedPool(actor,items):null}
-function rangedFromGear(actor,items){return equipRules(actor)?equippedRanged(actor,items):null}
-/* La DEF d'un aventurier est la somme de son armure et de son bouclier, sans exception :
-   sans rien porté elle vaut zéro, et elle ne se saisit jamais à la main. Celle d'un
-   adversaire est celle de sa fiche, tout simplement. */
-function defenseOf(actor,items){if(!equipRules(actor))return Number(actor&&actor.def)||0;
- return equippedDef(actor,items)||0}
+/* Porter une arme, c'est savoir s'en servir — adversaires compris. L'équipement ne
+   fait donc plus taire la fiche : il ajoute une attaque de plus, à côté des crocs, des
+   griffes et des souffles, et c'est le joueur qui choisit laquelle part. Les armes
+   portées se cumulent en une seule attaque, comme depuis la v0.30, la même arme en
+   double comptant deux fois (v0.69).
+   L'attaque d'équipement vient en tête : une fiche enregistrée avant ce choix a
+   « activeAttack » à zéro, et retrouve ainsi l'arme qui décidait pour elle. */
+function gearAttack(actor,items){
+ // Seule une arme frappe : un objet rangé là par erreur ne crée pas une attaque sans dés.
+ const armes=gearOf(actor&&actor.weapons,items).filter(w=>w.category==='weapon');
+ if(!armes.length)return null;
+ const compte=new Map();armes.forEach(w=>compte.set(w,(compte.get(w)||0)+1));
+ const dice={};DICE_KEYS.forEach(k=>dice[k]=Math.min(12,
+  armes.reduce((somme,w)=>somme+(Number(w.dice&&w.dice[k])||0),0)));
+ return {name:[...compte].map(([w,n])=>w.name+(n>1?' ×'+n:'')).join(' + '),dice,
+  range:armes.some(w=>w.ranged===true)?'distance':'contact',
+  targets:'one',useOwnDamage:true,effects:{},gear:true}}
+function attackChoices(actor,items){const arme=gearAttack(actor,items);
+ return (arme?[arme]:[]).concat(actor&&actor.attacks||[])}
+/* L'attaque retenue, quoi qu'il arrive : un choix devenu caduc — l'arme retirée, une
+   attaque effacée — retombe sur la première offerte plutôt que sur rien du tout. */
+function chosenAttack(actor,items){const liste=attackChoices(actor,items);
+ if(!liste.length)return {range:'contact',useOwnDamage:true,dice:null};
+ const i=Math.trunc(actor&&actor.activeAttack)||0;
+ return liste[i>=0&&i<liste.length?i:0]}
+/* La DEF d'un aventurier est ce que porte son armure et son bouclier, zéro compris :
+   elle ne se saisit jamais à la main. Celle d'un adversaire lui est propre — écailles,
+   cuir épais — et son équipement s'y ajoute s'il en porte. */
+function defenseOf(actor,items){const porte=equippedDef(actor,items)||0;
+ return actor&&actor.hero?porte:(Number(actor&&actor.def)||0)+porte}
 /* Déplacement : le socle est un disque repoussé hors des murs. Le mouvement restant
    subsiste le long de l'obstacle, ce qui produit le glissement. */
 function closestOnSegment(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],len2=dx*dx+dy*dy;
@@ -509,6 +526,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,equipRules,poolFromGear,rangedFromGear,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,gearAttack,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

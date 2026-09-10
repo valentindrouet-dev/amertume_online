@@ -1,4 +1,4 @@
-# Amertume Online — v0.72
+# Amertume Online — v0.73
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -16,7 +16,7 @@ Ajout de personnages/monstres et suppression de combattants (au moins un héros 
 Source : `valentindrouet-dev/amertume_rpg`, branche `claude/elegant-planck-jp7ygb`, `js/store.js`, blob `5314d6439be28b47597a7c21b3df310b1501c8d1`.
 14 armes, 5 armures/bouclier, 1 potion, 4 monstres d’exemple. Il s’agit des données embarquées, pas du contenu enregistré dans le navigateur du propriétaire ni d’une publication Firebase. Les couleurs des dés des armes étaient déjà marquées comme interprétations à valider dans le dépôt source.
 
-L’armurerie permet création/édition/suppression. **L’équipement fait foi, pour les aventuriers** (v0.71) : leurs dés d’attaque sont ceux des armes équipées — cumulés pour deux armes, la même arme comptant deux fois si elle est portée en double (v0.69) — et leur DEF est celle de l’armure plus le bouclier, zéro compris. La réserve de dés n’est pas saisie à la main et le champ DEF est verrouillé. **Un adversaire n’a pas d’armurerie** : ses dés sont ceux de sa carte d’attaque et sa DEF celle de sa fiche, les seules choses qu’un modèle de bestiaire sache décrire ; la rubrique Équipement ne paraît pas sur sa fiche. Les effets spéciaux, munitions et contraintes de mains ne sont pas automatisés.
+L’armurerie permet création/édition/suppression, **pour les aventuriers comme pour les adversaires** (v0.73). Ce qui est porté donne **une attaque de plus**, à côté de celles de la fiche : ses dés sont ceux des armes équipées, cumulés pour deux armes, la même arme comptant deux fois si elle est portée en double (v0.69). La DEF d’un aventurier est celle de l’armure plus le bouclier, zéro compris, champ verrouillé ; celle d’un adversaire lui est propre et son équipement s’y ajoute. Les effets spéciaux, munitions et contraintes de mains ne sont pas automatisés.
 
 ## Images
 Cartes et tokens : PNG, JPEG, WebP. Aperçu original/optimisé avec dimensions et poids, qualité 70–100 %, choix 2048/4096 pixels pour les cartes ou 256/512 pour les tokens. Proportions et transparence conservées, sans agrandissement. Compression WebP avec secours PNG ; original conservé s’il est plus léger et ne nécessite aucun redimensionnement. Seule la copie est utilisée. L’aperçu doit être actualisé après un réglage. Images animées non garanties : la compression produit une image fixe.
@@ -152,6 +152,20 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.73 — Les adversaires s’équipent, et chaque attaque a son bouton
+
+**Porter une arme, c’est savoir s’en servir.** La v0.71 avait tranché trop court : l’équipement y devenait l’affaire des seuls aventuriers, faute de quoi une arme posée sur une créature rendait muets les dés de sa fiche. La vraie règle est plus simple et vaut pour tout le monde — **l’équipement ne fait pas taire la fiche, il ajoute une attaque de plus**. Un adversaire a donc son bloc Attaques (crocs, griffes, souffles) *et* son bloc Équipement, garni de la même façon qu’un aventurier.
+
+**Chaque attaque a son bouton.** Le menu déroulant disparaît : la carte d’attaque montre un bouton bleu nommé par attaque — celles de la fiche et celle que donne l’équipement — et l’on clique celle qui part. Le bouton retenu est plein, les autres dessinés ; l’infobulle dit d’où vient l’attaque, sa portée et si elle touche toutes les cibles. Même seule, une attaque se montre : on lit ce qui va être lancé avant de frapper.
+
+Les armes portées se cumulent en **une seule** attaque d’équipement, comme depuis la v0.30, la même arme en double comptant deux fois (v0.69). Cette attaque vient **en tête** de la liste : une fiche enregistrée avant ce choix a son `activeAttack` à zéro et retrouve donc exactement l’arme qui décidait pour elle — rien ne change sous les pieds d’une partie en cours. Un choix devenu caduc — l’arme retirée, une attaque effacée — retombe sur la première offerte plutôt que sur rien.
+
+**La DEF suit la même logique.** Celle d’un aventurier reste ce que porte son armure et son bouclier, zéro compris, champ verrouillé. Celle d’un adversaire lui est propre — écailles, cuir épais — et **ce qu’il porte s’y ajoute** : son champ reste à lui, et le résumé du formulaire annonce le détail (« 4 à lui, plus 1 d’équipement, soit 5 »).
+
+**Le bestiaire transporte enfin l’équipement.** Un modèle a sa rubrique Équipement avec son « + », ce qu’il porte voyage avec lui, et les créatures déjà posées le reçoivent comme le reste de leur profil (v0.71).
+
+`checks.cjs` passe à 285 vérifications : l’attaque d’équipement, l’ordre de la liste, le repli d’un choix caduc, et les deux règles de DEF.
 
 ## v0.72 — Le compteur d’activation est mis de côté
 

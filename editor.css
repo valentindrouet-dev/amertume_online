@@ -230,6 +230,15 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .pick-ligne.porte{border-color:var(--green);background:var(--sel)}
 .pick-etat{flex:none;width:24px;font:700 15px system-ui;color:var(--muted)}
 .pick-ligne.porte .pick-etat{color:var(--green)}
+/* ---------- Les attaques offertes ---------- */
+/* Un bouton nommé par attaque — celles de la fiche et celle de l'équipement. Celui qui
+   part est plein, les autres sont dessinés : on voit d'un coup ce qui va être lancé.
+   La règle vit ici, après « .btn-action », faute de quoi le bleu plein l'emporterait. */
+button.choix-attaque{padding:5px 12px;font:700 13px system-ui;letter-spacing:0;border-radius:7px;
+ background:transparent;color:#3f7bc0;border:1px solid #7ea8d4;box-shadow:none}
+button.choix-attaque:hover{background:#3f7bc022;border-color:#3f7bc0}
+button.choix-attaque.on{background:#3f7bc0;border-color:#3f7bc0;color:#f2f7fc;box-shadow:0 1px 3px #0000003d}
+body.sombre button.choix-attaque{color:#8fb6e0;border-color:#3f6a92}
 /* ---------- Corriger une valeur là où elle est lue ---------- */
 /* Ce qui se modifie se voit : un soulignement discret au survol, le champ prend
    exactement la place du chiffre qu'il remplace. */
