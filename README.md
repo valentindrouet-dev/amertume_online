@@ -1,4 +1,4 @@
-# Amertume Online — v0.47
+# Amertume Online — v0.48
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.48 — Killam partout où il y a un nom, et un en-tête resserré
+
+**L’en-tête tient sur une ligne** : « AMERTÜME » et sa version à côté. « Online · Table virtuelle » disparaît, la version quitte son bloc sous le titre. Le titre d’onglet du navigateur suit : « Amertüme · Table de jeu ».
+
+**Killam Bold s’étend** aux noms — celui de la fiche à droite, ceux des languettes de combattants, la lettre portée par les tokens et les avatars, le nom d’une carte d’aventurier — et aux **pastilles** : équipement, talents, armurerie, bestiaire. Avec les chiffres des caractéristiques déjà passés en v0.47, tout ce qui nomme ou chiffre un combattant est désormais dans la même main.
+
+Le sous-ensemble WOFF2 contenait déjà le Ü et les accents français : rien à recompiler.
 
 ## v0.47 — Équiper depuis la carte, et la police Killam
 

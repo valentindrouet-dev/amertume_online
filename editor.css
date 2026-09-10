@@ -83,7 +83,7 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .cat-entry{margin-bottom:7px}
 .cat-row{display:flex;align-items:center;gap:6px;margin-bottom:7px}
 /* La pastille reprend le parchemin des fiches : fond clair, texte sombre. */
-.cat-pill{flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #00000026;border-radius:9px;padding:8px 11px;font:600 14px Georgia,serif;color:#2a2118;box-shadow:0 1px 0 #ffffff5c inset,0 2px 5px #0000004d}
+.cat-pill{flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #00000026;border-radius:9px;padding:8px 11px;font:700 15px 'Killam',Georgia,serif;letter-spacing:.3px;color:#2a2118;box-shadow:0 1px 0 #ffffff5c inset,0 2px 5px #0000004d}
 .cat-pill .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cat-pill:hover{filter:brightness(1.06)}
 .cat-pill.k-melee{background:#eee0c4}
@@ -121,7 +121,7 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .hero-card{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:14px 15px 13px}
 .hero-head{display:flex;align-items:center;gap:11px}
 .hero-id{flex:1;min-width:0}
-.hero-id strong{display:block;font:600 16px Georgia,serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero-id strong{display:block;font:700 18px 'Killam',Georgia,serif;letter-spacing:.4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hero-card .chips{margin:10px 0 2px}
 .hero-card .stat-row{margin:10px 0 4px}
 /* Les compétences sont ici affichées, pas jouées : pas de curseur ni de survol de bouton. */
@@ -153,7 +153,7 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .pick-famille+.pick-famille{margin-top:14px}
 .pick-famille h3{display:flex;align-items:center;gap:8px;margin:0 0 7px;font:600 11px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:5px}
 .pick-famille h3 .compte{margin-left:auto;font-size:11px;letter-spacing:0;background:var(--hover);border-radius:9px;padding:1px 8px}
-.pick-talent{display:flex;align-items:center;gap:8px;margin-bottom:5px;padding:6px 10px;border-radius:8px;border:1px solid #00000026;border-left-width:4px;font:600 13px Georgia,serif;color:#2a2118;cursor:pointer}
+.pick-talent{display:flex;align-items:center;gap:8px;margin-bottom:5px;padding:6px 10px;border-radius:8px;border:1px solid #00000026;border-left-width:4px;font:700 14px 'Killam',Georgia,serif;letter-spacing:.3px;color:#2a2118;cursor:pointer}
 .pick-talent input{flex:none;width:auto;margin:0;accent-color:#3d3227}
 .pick-talent .nom{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pick-talent .tag{font:600 11px system-ui;color:#4a3f31;opacity:.85}
