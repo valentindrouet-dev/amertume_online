@@ -12,7 +12,11 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{m.weapons||=[];m.armorId??='';m.shieldId??=''});
  return c}
-actors.forEach(normalizeActor);normalizeCatalog(catalog);
+function idsUniques(liste){const vus=new Set();
+ (liste||[]).forEach(a=>{if(!a)return;
+  if(!a.id||vus.has(a.id))a.id=crypto.randomUUID();
+  vus.add(a.id)})}
+actors.forEach(normalizeActor);idsUniques(actors);normalizeCatalog(catalog);
 // Équipement de départ de la scène de démonstration. Toute partie enregistrée le remplace.
 (function(){const parNom=n=>catalog.items.find(w=>w.name===n)?.id||'';
  [['Éla',['Épée'],'Armure de mailles','Bouclier'],['Kaël',['Arc'],'Armure de cuir',''],['Sentinelle',['Lance'],'Armure de mailles','Bouclier'],['Rôdeur des ruines',['Hache'],'Armure de plates','Bouclier']]
@@ -300,7 +304,9 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  suppr.classList.add('danger');
  outils.append(ico('✎','Modifier',()=>{const r=heroRank(a);if(r>=0)openActor(r)}),
   ico('⧉','Dupliquer',()=>{if(heroRank(a)<0)return;
-   const copie=normalizeActor(structuredClone(a));
+   // Une copie est un autre combattant : elle ne peut pas garder l'identifiant de l'original,
+   // sous peine d'être prise, marquée et comptée avec lui.
+   const copie=structuredClone(a);delete copie.id;normalizeActor(copie);
    copie.name=a.name+' (copie)';copie.target=null;copie.checks=[false,false,false];
    actors.push(copie);renderHeroes();render();scheduleSave()}),suppr);
  tete.append(jeton,titre,classe,outils);
@@ -1207,7 +1213,7 @@ function noterSauvegarde(texte,souci){saveLabel.textContent=texte;
  if(!souci)dernierSouci=''}
 function saveNow(){if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}try{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(snapshot(),'session');tx.oncomplete=()=>noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur');tx.onerror=()=>noterSauvegarde('Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.',true)}catch(e){noterSauvegarde('Impossible d’enregistrer : '+e.message,true)}}
 document.addEventListener('change',scheduleSave);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!loading)saveNow()});
-function loadSession(){try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onerror=finish;req.onblocked=finish;req.onsuccess=()=>{db=req.result;const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;get.onsuccess=()=>{const s=get.result;if(s&&(s.version===7||s.version===8)&&Array.isArray(s.actors)&&s.actors.length&&s.actors.some(a=>a.hero)){actors.splice(0,actors.length,...s.actors.map(normalizeActor));catalog=normalizeCatalog(s.catalog);round=s.round;owner=s.owner;selected=s.selected;mapImage=s.mapImage;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;sceneTitle(s.title);if(mapImage){$('map-view').style.backgroundImage='url("'+mapImage+'")';$('map').classList.add('custom')}$('round').textContent=String(round).padStart(2,'0')}finish()}}}catch(e){finish()}}
+function loadSession(){try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onerror=finish;req.onblocked=finish;req.onsuccess=()=>{db=req.result;const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;get.onsuccess=()=>{const s=get.result;if(s&&(s.version===7||s.version===8)&&Array.isArray(s.actors)&&s.actors.length&&s.actors.some(a=>a.hero)){actors.splice(0,actors.length,...s.actors.map(normalizeActor));idsUniques(actors);catalog=normalizeCatalog(s.catalog);round=s.round;owner=s.owner;selected=s.selected;mapImage=s.mapImage;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;sceneTitle(s.title);if(mapImage){$('map-view').style.backgroundImage='url("'+mapImage+'")';$('map').classList.add('custom')}$('round').textContent=String(round).padStart(2,'0')}finish()}}}catch(e){finish()}}
 function finish(){if(!loading)return;loading=false;cover.hidden=true;render();
  if(!db)noterSauvegarde('Sauvegarde locale indisponible dans ce navigateur.',true);
  // La partie est là : les onglets peuvent rouvrir la page où l'on travaillait.

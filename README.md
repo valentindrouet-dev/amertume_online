@@ -1,4 +1,4 @@
-# Amertume Online — v0.84
+# Amertume Online — v0.85
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.85 — Deux combattants ne partagent plus un identifiant
+
+En cherchant pourquoi une Analyse semblait toucher toute une espèce, j’ai trouvé autre chose : **le bouton ⧉ Dupliquer laissait à la copie l’identifiant de l’original**. Or la sélection, le marquage et le comptage des homonymes travaillent sur les identifiants, jamais sur les rangs — c’est ce qui permet de retirer un combattant sans que tout se décale. Deux combattants du même identifiant étaient donc **pris ensemble** : marquer l’un marquait l’autre, et les déplacer aussi depuis la v0.80.
+
+La copie reçoit maintenant le sien, et **une session ouverte se répare d’elle-même** : à l’ouverture comme au chargement de la sauvegarde, tout identifiant manquant ou déjà vu est remplacé. Mesuré sur une session fautive : marquer un combattant en prenait trois, il n’en prend plus qu’un.
+
+L’Analyse, elle, reste individuelle — vérifié sur six chemins : le geste sur le socle, le bouton Analyser, la sauvegarde et son rechargement, la vue joueur, la propagation d’un modèle du bestiaire, et jusque sur des combattants qui partageaient un identifiant. Un seul adversaire est analysé à la fois.
 
 ## v0.84 — La frontière de l’exploré ne monte plus en escalier
 
