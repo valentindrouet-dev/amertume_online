@@ -528,7 +528,8 @@ wrap.addEventListener('gesturechange',e=>{e.preventDefault();const r=$('map-canv
 const mapPick=document.createElement('select');mapPick.id='map-pick';mapPick.setAttribute('aria-label','Carte de combat');
 mapPick.style.width='auto';mapPick.style.margin='0';
 const mapOpen=document.createElement('button');mapOpen.id='map-open';mapOpen.textContent='Ouvrir la carte';
-document.querySelector('.mj-tools').append(mapPick,mapOpen);
+// La carte se choisit et s'ouvre depuis la barre de la carte, à côté de l'import.
+document.querySelector('.mapbar .file').before(mapPick,mapOpen);
 function refreshMapPick(){mapPick.replaceChildren();maps.forEach(m=>mapPick.add(new Option(m.name,m.id)));
  mapPick.hidden=mapOpen.hidden=!maps.length;refreshGmBar();
  if(currentMapId)mapPick.value=currentMapId}

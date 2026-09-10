@@ -91,7 +91,13 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .cat-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;align-items:start}
 .cat-col h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font:600 12px system-ui;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:7px}
 .cat-col h3 .compte{margin-left:auto;font-size:11px;letter-spacing:0;background:var(--hover);border-radius:9px;padding:1px 8px;color:var(--muted)}
-.cat-col h3{border-radius:6px 6px 0 0;padding:6px 8px 7px}.cat-col.c-solitaire h3{color:#e0a06a;background:var(--panel-2)}.cat-col.c-boss h3{color:#c79ad8;background:#241a2c}.cat-col.c-generique h3{color:#a884c8;background:var(--panel-2)}
+.cat-col h3{border-radius:6px 6px 0 0;padding:6px 8px 7px}
+/* Un bandeau de colonne se distingue par sa couleur d'encre, pas par son fond :
+   les quatre types d'adversaires reposent sur le même clair que les Sbires. */
+.cat-col.c-alpha h3{color:#c9806f}
+.cat-col.c-solitaire h3{color:#c9853f}
+.cat-col.c-boss h3{color:#9b6fb5}
+.cat-col.c-generique h3{color:#a884c8;background:var(--panel-2)}
 .cat-entry{margin-bottom:7px}
 .cat-row{display:flex;align-items:center;gap:6px;margin-bottom:7px}
 /* La pastille reprend le parchemin des fiches : fond clair, texte sombre. */
@@ -104,6 +110,7 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .cat-pill.k-object{background:#e6d9bd}
 .cat-pill.k-object.consommable{background:#d9e7cd}
 .cat-pill.k-standard{background:#dcd8cf}
+.cat-pill.k-alpha{background:#e8d3cb}
 .cat-pill.k-solitaire{background:#efdcc2}
 .cat-pill.k-boss{background:#e2d0e8}
 .cat-pill .tag{font:600 12px system-ui;color:#4a3f31;opacity:.85;white-space:nowrap}

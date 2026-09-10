@@ -1,4 +1,4 @@
-# Amertume Online — v0.67
+# Amertume Online — v0.68
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,18 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.68 — Le bandeau s’efface, les Alpha reviennent, le voile se lève
+
+**Le bandeau de scène a quitté la table.** Titre, sous-titre, barre d’outils et ligne de sauvegarde ont disparu de l’écran de jeu. Aucune de leurs commandes n’est perdue : chacune a rejoint l’endroit qui la concerne. Ajouter un héros ou un adversaire se fait au-dessus de la liste des combattants ; retirer la carte de fond et choisir la carte de combat tiennent dans la barre de la carte ; remettre le camp adverse à 100 % rejoint le bloc des points de vie ; le titre de la scène, le tour de combat et l’état de la sauvegarde sont aux Paramètres. Le titre continue de voyager avec la scène publiée — un seul accesseur sait désormais où il est rangé, au lieu de quatre lectures dispersées. Un échec de sauvegarde ne se cache plus dans un onglet : il passe aussi par le journal, une fois.
+
+**Corriger une valeur ne dérobe plus le clic suivant.** C’était le vrai défaut derrière « les PV ou la Vie ne se modifient pas » : chaque validation redessinait toute la page, si bien que le chiffre visé ensuite était détaché entre l’appui et le relâchement, et que le clic tombait dans le vide. Une valeur isolée passait ; deux d’affilée, jamais. Désormais une saisie validée **réécrit les chiffres sur place** — aucun nœud n’est remplacé, le clic suivant arrive à bon port. Le classement des languettes du bestiaire, lui, attend qu’on ait fini de taper avant de se réordonner. Et un champ rouvert montre la valeur du moment, non celle qu’il avait à sa construction.
+
+`checks.cjs` passe à 255 vérifications : onze de plus garantissent que chaque type d’adversaire a sa colonne, sa teinte de languette et un bandeau sans fond — la vérification échoue bien si l’on retire de nouveau les Alpha.
+
+**Les quatre types d’adversaires ont chacun leur colonne.** Le bestiaire n’en rangeait que trois : les **Alpha** n’apparaissaient nulle part, et leurs modèles restaient invisibles quel que soit le filtre. La colonne existe, avec la teinte de languette qui lui manquait aussi. Les bandeaux des quatre colonnes reposent maintenant sur le même fond clair que les Sbires — seule l’encre les distingue ; le fond presque noir des Boss est parti.
+
+**Un adversaire pâli dit enfin pourquoi.** Deux raisons le voilent, et rien ne les distinguait : ou bien la troupe ne le voit pas, ou bien le MJ l’a caché — ce que fait la case « Invisible à l’ouverture » d’un adversaire pré-placé dans l’éditeur de cartes, **sans qu’aucune commande ne permette ensuite de le montrer**. La liste des combattants écrit désormais la raison sous le nom (« 👁 hors de vue de la troupe » ou « 🚫 caché par toi »), les deux voiles ont deux dessins distincts, et le clic droit sur un socle porte une ligne « Visible des joueurs / Caché aux joueurs » qui lève ou repose le voile à volonté.
 
 ## v0.67 — Corriger un chiffre là où il est lu
 
@@ -386,7 +398,7 @@ Le calcul est sorti de l’interface et vit maintenant dans `combat.js` sous le 
 
 **Créer sans quitter la fiche.** Un « + » dans les titres **Équipement** et **Talents** de la fiche d’un aventurier. L’objet créé se pose aussitôt dans le premier emplacement libre qui l’accepte (arme, armure ou bouclier selon sa catégorie) et le récapitulatif des dés se met à jour ; le talent créé est aussitôt coché. Les quatre listes d’équipement se rechargent **en place** : reconstruire le formulaire aurait perdu ce qui y était saisi et pas encore enregistré. Fermer le dialogue sans enregistrer n’arme aucun rappel — sinon une création faite plus tard depuis l’armurerie serait allée se cocher dans une fiche déjà refermée.
 
-**Adversaires à 100 %.** Un bouton dans la barre du MJ remet tous les adversaires blessés à leurs PV maximum et les sort du coma. La troupe garde ses blessures : c’est le combat qu’on recommence, pas la partie. Le bouton annonce combien d’adversaires sont concernés avant d’agir, et ne fait rien s’ils sont tous au complet.
+**Adversaires à 100 %.** Un bouton du bloc des points de vie, réservé au MJ (barre du MJ jusqu’à la v0.67), remet tous les adversaires blessés à leurs PV maximum et les sort du coma. La troupe garde ses blessures : c’est le combat qu’on recommence, pas la partie. Le bouton annonce combien d’adversaires sont concernés avant d’agir, et ne fait rien s’ils sont tous au complet.
 
 **Les corps se poussent.** Le MJ peut déplacer le token d’un combattant mort, à la souris comme aux flèches. Les joueurs, eux, restent bloqués sur les leurs.
 

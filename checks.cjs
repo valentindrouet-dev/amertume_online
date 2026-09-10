@@ -386,4 +386,19 @@ writeStat(fiche,'vieMax','5');assert.equal(fiche.vie,5);                  // La 
 const modele={pv:8,def:2,damage:3,xp:7};
 assert.equal(writeStat(modele,'pv','42'),42);
 assert.ok(!('hp'in modele)&&!('max'in modele)&&!('states'in modele));     // Un modèle n'a ni PV du moment ni états.
-console.log('244 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// Les quatre types d'adversaires ont chacun leur colonne au bestiaire : un type sans
+// colonne rendrait ses modèles introuvables, ce qui est arrivé aux Alpha.
+const page=fs.readFileSync('index.html','utf8');
+const typesAdv=Object.keys(JSON.parse(page.slice(page.indexOf('const TYPE_NOMS=')+16,page.indexOf(';',page.indexOf('const TYPE_NOMS=')))
+ .replace(/(\w+):/g,'"$1":').replace(/'/g,'"')));
+const colonnes=[...src.slice(src.indexOf('const BEST_COLS='),src.indexOf(';',src.indexOf('const BEST_COLS=')))
+ .matchAll(/\['(\w+)'/g)].map(m=>m[1]);
+assert.equal(typesAdv.length,4);
+assert.deepEqual([...colonnes].sort(),[...typesAdv].sort());
+// Les langue­ttes ont la teinte de leur type, sinon elles sortent blanches.
+const feuille=fs.readFileSync('editor.css','utf8');
+typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette sans teinte : '+t));
+// Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
+typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
+ assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
+console.log('255 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

@@ -16,8 +16,16 @@ actors.forEach(normalizeActor);normalizeCatalog(catalog);
  .forEach(([nom,armes,armure,bouclier])=>{const a=actors.find(x=>x.name===nom);if(!a||a.weapons.length)return;
   a.weapons=armes.map(parNom).filter(Boolean);a.armorId=parNom(armure);a.shieldId=parNom(bouclier);
   const d=equippedDef(a,catalog.items);if(d!==null)a.def=d;a.pool=poolOf(a)})})();
-const toolsBar=document.createElement('div');toolsBar.className='mj-tools';toolsBar.innerHTML='<button id="new-hero">+ Personnage</button><button id="new-monster">+ Monstre</button><button id="edit-scene">Modifier la scène</button><button id="heal-foes">Adversaires à 100 %</button><button id="reset-map">Retirer la carte</button>';
-document.querySelector('.intro').after(toolsBar);const saveLabel=document.createElement('p');saveLabel.id='save-status';toolsBar.after(saveLabel);
+/* Le bandeau de scène a quitté la table : chaque action qu'il portait a rejoint
+   l'endroit qui la concerne — ajouter un combattant, la liste des combattants ;
+   retirer la carte, la barre de la carte ; soigner le camp adverse, le bloc des
+   points de vie ; le titre de la scène et l'état de la sauvegarde, les Paramètres. */
+const saveLabel=document.createElement('p');saveLabel.id='save-status';saveLabel.className='muted';
+/* Le titre de la scène vit dans un bandeau masqué : la sauvegarde, le chargement,
+   la publication et la réception le lisent tous. Un seul endroit sait où il est. */
+function sceneTitle(neuf){const h=document.querySelector('.intro h1');
+ if(neuf!==undefined&&h)h.textContent=neuf;
+ return h?h.textContent:'Amertume'}
 const note=document.createElement('p');note.id='actor-notes';note.className='muted';$('class').after(note);
 const attackSelect=document.createElement('select');attackSelect.id='attack-preset';attackSelect.setAttribute('aria-label','Attaque du combattant');$('targets').before(attackSelect);
 attackSelect.onchange=()=>{const a=actors[selected];if(!a)return;a.activeAttack=Number(attackSelect.value);a.pool=poolOf(a);render()};
@@ -55,6 +63,12 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<p class="form-error" id="raccourcis-erreur" role="status" aria-live="polite"></p>'
  +'<p class="muted">Chaque changement est enregistré aussitôt, sur cet appareil seulement.</p>'
  +'<div class="side-actions"><button id="raccourcis-reset">Rétablir les touches d’origine</button></div>'
+ +'<div id="bloc-scene" hidden><div class="divider"></div><h3 class="reglage-titre">Scène en cours</h3>'
+ +'<p class="muted">Le titre de la partie et le tour de combat. Ils voyagent avec la scène publiée.</p>'
+ +'<div class="reglage"><div><strong id="scene-titre"></strong><p class="muted" id="scene-tour"></p></div>'
+ +'<button id="edit-scene">Modifier la scène</button></div></div>'
+ +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde</h3>'
+ +'<div id="bloc-sauvegarde"></div>'
  +'</section>';
 const talentsPage=document.createElement('main');talentsPage.id='talents-page';
 talentsPage.innerHTML='<section class="cat-panel panel">'
@@ -83,6 +97,7 @@ function sousTitre(texte,titre,fn){const h=document.createElement('h4');h.classN
  const b=document.createElement('button');b.className='ico plus';b.textContent='+';
  b.title=titre;b.setAttribute('aria-label',titre);b.onclick=fn;h.append(b);return h}
 /* ---------- Corriger une valeur là où elle est lue ---------- */
+let champsOuverts=0;
 /* Le MJ clique le chiffre sur la fiche, le retape, et valide par Entrée ou en
    sortant du champ ; Échap laisse tout en place. Le nœud d'origine est remis avant
    que la valeur soit posée : la page se redessine derrière, sans reste de champ.
@@ -97,11 +112,13 @@ function champVif(noeud,valeur,poser,titre,classe){
  const ouvrir=()=>{const parent=noeud.parentNode;if(!parent)return;
   const champ=document.createElement(zone?'textarea':'input');
   champ.className='champ-vif'+(classe?' '+classe:'');
-  champ.value=String(valeur??'');champ.setAttribute('aria-label',noeud.title);
+  // La valeur se relit maintenant : celle d'il y a trois corrections n'a plus cours.
+  const v=typeof valeur==='function'?valeur():valeur;
+  champ.value=String(v??'');champ.setAttribute('aria-label',noeud.title);
   if(zone)champ.rows=4;
-  parent.replaceChild(champ,noeud);champ.focus();champ.select();
+  parent.replaceChild(champ,noeud);champ.focus();champ.select();champsOuverts++;
   let clos=false;
-  const fermer=garder=>{if(clos)return;clos=true;
+  const fermer=garder=>{if(clos)return;clos=true;champsOuverts--;
    if(champ.parentNode)champ.parentNode.replaceChild(noeud,champ);
    if(garder)poser(champ.value)};
   champ.onkeydown=e=>{e.stopPropagation();
@@ -120,10 +137,11 @@ function choixVif(noeud,valeur,options,poser,titre){
  const ouvrir=()=>{const parent=noeud.parentNode;if(!parent)return;
   const menu=document.createElement('select');menu.className='champ-vif choix';
   menu.setAttribute('aria-label',noeud.title);
-  options.forEach(([v,t])=>menu.add(new Option(t,v)));menu.value=String(valeur??'');
-  parent.replaceChild(menu,noeud);menu.focus();
+  options.forEach(([v,t])=>menu.add(new Option(t,v)));
+  menu.value=String((typeof valeur==='function'?valeur():valeur)??'');
+  parent.replaceChild(menu,noeud);menu.focus();champsOuverts++;
   let clos=false;
-  const fermer=garder=>{if(clos)return;clos=true;
+  const fermer=garder=>{if(clos)return;clos=true;champsOuverts--;
    if(menu.parentNode)menu.parentNode.replaceChild(noeud,menu);
    if(garder)poser(menu.value)};
   menu.onchange=()=>fermer(true);menu.onblur=()=>fermer(false);
@@ -145,26 +163,50 @@ function jetonRond(image,nom,taille){const j=document.createElement('span');
  if(image){const im=document.createElement('img');im.src=image;im.alt='';im.draggable=false;j.append(im)}
  else j.textContent=(String(nom||'?').trim()[0]||'?').toUpperCase();
  return j}
-/* Poser une caractéristique d'aventurier : la fiche est corrigée, puis la page,
-   la table et la sauvegarde suivent. */
-function poserCarac(a,cle,brut){const avant=a[cle];writeStat(a,cle,brut);
+/* Poser une caractéristique d'aventurier. Le piège : redessiner toute la page à la
+   validation détache le chiffre que le MJ vient de viser, si bien que son clic suivant
+   tombe dans le vide et que la valeur « ne se modifie pas ». On réécrit donc les
+   chiffres sur place — aucun nœud n'est détaché, le clic suivant arrive à bon port. */
+function poserCarac(a,cle,brut,carte){const avant=a[cle];writeStat(a,cle,brut);
  if(a[cle]===avant)return;
- renderHeroes();render();scheduleSave();
+ majFiche(carte,a);render();scheduleSave();
  // Une fiche corrigée est du contenu : une publication en cours la reprend.
  document.dispatchEvent(new Event('amertume-content-changed'))}
+/* L'écu de DEF redessiné sans être remplacé : même élément, autre image. */
+function majEcu(ecu,valeur){if(!ecu)return;
+ const n=Number(valeur),peint=Number.isInteger(n)&&n>=0&&n<=6;
+ const im=ecu.querySelector('img');if(im)im.src=imgUrl('DEF '+(peint?n:'VIDE')+'.png');
+ ecu.setAttribute('aria-label','DEF '+valeur);
+ let b=ecu.querySelector('b');
+ if(peint){if(b)b.remove()}
+ else{if(!b){b=document.createElement('b');ecu.append(b)}b.textContent=valeur}}
+/* Réécrire les chiffres d'une carte d'aventurier là où ils sont, sans rien remplacer.
+   Un chiffre en cours de saisie n'est pas dans la page : le sélecteur ne le trouve
+   pas, et il n'est donc pas écrasé sous les doigts. */
+function majFiche(carte,a){if(!carte)return;
+ const ecrire=(sel,texte)=>{const n=carte.querySelector(sel);if(n)n.textContent=texte};
+ ecrire('.stat-tile.t-vie strong',a.vie);ecrire('.stat-tile.t-vie small','MAX '+(a.vieMax??a.vie));
+ ecrire('.stat-tile.t-endu strong',a.endu);
+ ecrire('.stat-tile.t-pv strong',a.hp);ecrire('.stat-tile.t-pv small','MAX '+a.max);
+ ecrire('.stat-tile.t-dmg strong','+'+a.dmg);
+ ecrire('.chip-niveau','Niveau '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
+ majEcu(carte.querySelector('.stat-tile.t-def .ecu'),defOf(a));
+ carte.querySelectorAll('.skill-chip').forEach((puce,k)=>{
+  const b=puce.querySelector('b');if(b)b.textContent='+'+a.skills[k];
+  puce.classList.toggle('zero',!a.skills[k])})}
 /* Rendre modifiables les tuiles d'une rangée : la grosse valeur, et le plafond
    écrit en petit dessous quand il y en a un. La DEF fait exception dès qu'une
    armure la commande — elle se change alors dans l'équipement, pas ici. */
-function tuilesVives(a,tuiles,cles){
+function tuilesVives(a,tuiles,cles,carte){
  tuiles.forEach((tuile,i)=>{const [cle,plafond]=cles[i]||[];if(!cle)return;
   const gros=tuile.querySelector('strong'),ecu=tuile.querySelector('.ecu'),
    petit=tuile.querySelector('small');
   if(cle==='def'&&equippedDef(a,catalog.items)!==null){
    if(ecu){ecu.classList.add('verrou');
     ecu.title='DEF de l’armure et du bouclier équipés : elle se change dans l’équipement.'}}
-  else if(ecu)champVif(ecu,a.def,v=>poserCarac(a,'def',v),'Modifier la DEF de '+a.name);
-  else if(gros)champVif(gros,a[cle],v=>poserCarac(a,cle,v),'Modifier '+cle.toUpperCase()+' de '+a.name);
-  if(petit&&plafond)champVif(petit,a[plafond],v=>poserCarac(a,plafond,v),
+  else if(ecu)champVif(ecu,()=>a.def,v=>poserCarac(a,'def',v,carte),'Modifier la DEF de '+a.name);
+  else if(gros)champVif(gros,()=>a[cle],v=>poserCarac(a,cle,v,carte),'Modifier '+cle.toUpperCase()+' de '+a.name);
+  if(petit&&plafond)champVif(petit,()=>a[plafond],v=>poserCarac(a,plafond,v,carte),
    'Modifier le maximum de '+a.name,'petit')})}
 /* Une carte par aventurier : de quoi le reconnaître, lire ses chiffres et agir dessus. */
 /* Enregistrer une fiche remplace l'objet dans « actors » : une carte dessinée avant
@@ -201,10 +243,11 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const marques=[];if(a.sexe)marques.push([(a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe]);
  if(a.race)marques.push([a.race]);
  // Le niveau et l'expérience sont des chiffres de fiche : ils se corrigent d'un clic.
- marques.push(['Niveau '+a.level,'level',a.level,'Modifier le niveau de '+a.name],
-  [(a.xp||0)+' XP','xp',a.xp||0,'Modifier l’XP de '+a.name]);
- marques.forEach(([t,cle,val,titre])=>{const p=document.createElement('span');p.className='chip';p.textContent=t;
-  if(cle)champVif(p,val,v=>poserCarac(a,cle,v),titre,'petit');
+ marques.push(['Niveau '+a.level,'level','chip-niveau','Modifier le niveau de '+a.name],
+  [(a.xp||0)+' XP','xp','chip-xp','Modifier l’XP de '+a.name]);
+ marques.forEach(([t,cle,marque,titre])=>{const p=document.createElement('span');
+  p.className='chip'+(marque?' '+marque:'');p.textContent=t;
+  if(cle)champVif(p,()=>a[cle]||0,v=>poserCarac(a,cle,v,c),titre,'petit');
   puces.append(p)});
  // Les caractéristiques reprennent les tuiles de la fiche en jeu : libellé au-dessus,
  // valeur en gros, une teinte par caractéristique, l'écu pour la DEF.
@@ -213,7 +256,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   ['pv','PV',a.hp,false,a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+'+a.dmg]]
   .map(t=>statTile(...t));
  // Le MJ corrige un chiffre là où il le lit ; la fiche complète reste pour le reste.
- tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],['hp','max'],['def'],['dmg']]);
+ tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],['hp','max'],['def'],['dmg']],c);
  chiffres.append(...tuiles);
  const titreComp=document.createElement('h4');titreComp.className='hero-sous';titreComp.textContent='Compétences';
  const comps=document.createElement('div');comps.className='skills';
@@ -223,9 +266,9 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   puce.style.setProperty('--tint',SKILL_TINTS[k]);
   const l=document.createElement('span');l.textContent=n;
   const v=document.createElement('b');v.textContent='+'+a.skills[k];
-  champVif(v,a.skills[k],brut=>{const avant=a.skills[k];
+  champVif(v,()=>a.skills[k],brut=>{const avant=a.skills[k];
    a.skills[k]=readStat('skill',brut,avant);
-   if(a.skills[k]!==avant){renderHeroes();render();scheduleSave();
+   if(a.skills[k]!==avant){majFiche(c,a);render();scheduleSave();
     document.dispatchEvent(new Event('amertume-content-changed'))}},'Modifier '+n+' de '+a.name,'petit');
   puce.append(l,v);comps.append(puce)});
 
@@ -345,7 +388,9 @@ function renderArmory(){const cols=$('armory-cols');if(!cols)return;cols.replace
   liste.forEach(([a,i])=>bloc.append(armoryRow(a,i)));
   if(!liste.length){const vide=document.createElement('p');vide.className='muted';vide.textContent='Rien ici.';bloc.append(vide)}
   cols.append(bloc)}}
-const BEST_COLS=[['standard','Sbires'],['solitaire','Solitaires'],['boss','Boss']];
+// Quatre types d'adversaires, quatre colonnes : les Alpha manquaient, et leurs
+// modèles ne paraissaient donc nulle part.
+const BEST_COLS=[['standard','Sbires'],['alpha','Alpha'],['solitaire','Solitaires'],['boss','Boss']];
 function danger(m){return (Number(m.xp)||0)*100+(Number(m.pv)||0)}
 /* Quelles languettes du bestiaire sont dépliées. Un modèle importé peut n'avoir
    pas d'identifiant : son nom sert alors de clé, faute de mieux. */
@@ -353,12 +398,33 @@ const bestiaireOuverts=new Set();
 function cleModele(m){return m&&(m.id||'nom:'+m.name)}
 const MENACE_NOMS={closest:'Plus proche',pvLow:'PV bas',pvHigh:'PV haut',defLow:'DEF basse'};
 const SOCLE_NOMS={medium:'Socle moyen',large:'Grand socle',huge:'Socle énorme'};
-/* Enregistrer un modèle corrigé : le bestiaire se redessine, les créatures déjà
-   posées suivent leur plafond de PV, et la partie est sauvegardée. */
-function poserModele(m){const suivis=syncFromTemplate(m);
+/* Le classement des languettes attend qu'on ait fini de taper : reclasser une liste
+   au milieu d'une saisie déplacerait sous les doigts la valeur qu'on visait ensuite. */
+let reclassement=null;
+function reclasserPlusTard(){clearTimeout(reclassement);
+ reclassement=setTimeout(function encore(){
+  if(champsOuverts){reclassement=setTimeout(encore,220);return}
+  renderCatalogPages()},320)}
+/* Enregistrer un modèle corrigé. « refaire » distingue les deux façons de le changer :
+   un clic (un dé retiré, un choix pris) peut refaire la fiche, puisque le clic a déjà
+   été délivré ; une saisie validée, elle, doit se contenter de réécrire les chiffres
+   sur place, sans quoi le clic suivant tomberait dans le vide. */
+function poserModele(m,f,refaire){const suivis=syncFromTemplate(m);
  if(suivis)log(suivis+' créature(s) « '+m.name+' » sur la table passée(s) à '+m.pv+' PV maximum.');
- renderCatalogPages();render();scheduleSave();
+ if(refaire&&f)f.replaceChildren(...monsterSheet(m).childNodes);
+ else majModele(f,m);
+ reclasserPlusTard();render();scheduleSave();
  document.dispatchEvent(new Event('amertume-content-changed'))}
+/* Les chiffres d'un modèle réécrits là où ils sont, la languette comprise. */
+function majModele(f,m){if(!f)return;
+ const ecrire=(sel,texte)=>{const n=f.querySelector(sel);if(n)n.textContent=texte};
+ ecrire('.best-ident h4',m.name);
+ ecrire('.stat-tile.t-pv strong',m.pv||0);
+ ecrire('.stat-tile.t-dmg strong','+'+(m.damage||0));
+ ecrire('.stat-tile.t-xp strong',m.xp||0);
+ majEcu(f.querySelector('.stat-tile.t-def .ecu'),m.def||0);
+ const entree=f.closest('.cat-entry'),languette=entree&&entree.querySelector('.cat-pill .nom');
+ if(languette)languette.textContent=m.name}
 /* Les dés d'une attaque, réglés au doigt : cliquer un dé le retire, le « + » en
    propose un de chaque couleur. Douze par couleur au plus, comme au formulaire. */
 function desVifs(at,poser){const out=document.createElement('span');out.className='pips';
@@ -388,11 +454,11 @@ function desVifs(at,poser){const out=document.createElement('span');out.classNam
  out.append(plus);return out}
 /* Une attaque du modèle : son nom, ses dés, sa portée et ses cibles. Tout se
    corrige sur place ; ce qui reste manuel en jeu est écrit sous la ligne. */
-function attaqueVive(m,at,poser){const l=document.createElement('div');l.className='best-attaque';
+function attaqueVive(m,at,poser,poserTexte){const l=document.createElement('div');l.className='best-attaque';
  const tete=document.createElement('div');tete.className='best-att-tete';
  const nom=document.createElement('b');nom.textContent=at.name||'Attaque';
- champVif(nom,at.name||'',v=>{const t=String(v).trim().slice(0,100);
-  if(t&&t!==at.name){at.name=t;poser()}},'Renommer cette attaque','texte');
+ champVif(nom,()=>at.name||'',v=>{const t=String(v).trim().slice(0,100);
+  if(t&&t!==at.name){at.name=t;nom.textContent=t;poserTexte()}},'Renommer cette attaque','texte');
  tete.append(nom,desVifs(at,poser));
  const bas=document.createElement('div');bas.className='best-att-bas';
  const puce=(texte,valeur,options,titre,ecrire)=>{const p=document.createElement('span');
@@ -405,10 +471,11 @@ function attaqueVive(m,at,poser){const l=document.createElement('div');l.classNa
   puce(at.useOwnDamage===false?'SANS BONUS':'AVEC BONUS DE DÉGÂTS',at.useOwnDamage===false?'non':'oui',
    [['oui','Ajoute les dégâts du monstre'],['non','Dés seuls']],'Bonus de dégâts',
    v=>at.useOwnDamage=v==='oui'));
- const eff=at.effectText||Object.entries(at.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', ');
+ const effetDe=()=>at.effectText||Object.entries(at.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', ');
  const note=document.createElement('span');note.className='tag-mini effet';
- note.textContent=eff?eff.toUpperCase():'+ EFFET';
- champVif(note,eff,v=>{at.effectText=String(v).trim().slice(0,160);poser()},
+ note.textContent=effetDe()?effetDe().toUpperCase():'+ EFFET';
+ champVif(note,effetDe,v=>{at.effectText=String(v).trim().slice(0,160);
+  note.textContent=at.effectText?at.effectText.toUpperCase():'+ EFFET';poserTexte()},
   'Effets à appliquer à la main','texte');
  bas.append(note);
  const retirer=document.createElement('button');retirer.className='ico danger';retirer.textContent='✕';
@@ -422,17 +489,17 @@ function attaqueVive(m,at,poser){const l=document.createElement('div');l.classNa
    chiffres, les attaques. Le MJ corrige chaque valeur là où il la lit ; les copies
    déjà posées sur la table suivent le plafond de PV, comme depuis la v0.54. */
 function monsterSheet(m){const f=document.createElement('div');f.className='best-fiche';
- const poser=()=>poserModele(m);
+ const poser=()=>poserModele(m,f,true),poserTexte=()=>poserModele(m,f,false);
  const tete=document.createElement('div');tete.className='best-tete';
  tete.append(jetonRond(m.image,m.name,'grand'));
  const ident=document.createElement('div');ident.className='best-ident';
  const nom=document.createElement('h4');nom.textContent=m.name;
- champVif(nom,m.name,v=>{const t=String(v).trim().slice(0,120);
-  if(t&&t!==m.name){m.name=t;poser()}},'Renommer ce modèle','texte');
+ champVif(nom,()=>m.name,v=>{const t=String(v).trim().slice(0,120);
+  if(t&&t!==m.name){m.name=t;poserTexte()}},'Renommer ce modèle','texte');
  const famille=document.createElement('span');famille.className='chip';
  famille.textContent=m.family||'Sans famille';
- champVif(famille,m.family||'',v=>{m.family=String(v).trim().slice(0,60);poser()},
-  'Modifier la famille','texte');
+ champVif(famille,()=>m.family||'',v=>{m.family=String(v).trim().slice(0,60);
+  famille.textContent=m.family||'Sans famille';poserTexte()},'Modifier la famille','texte');
  const rangee=document.createElement('div');rangee.className='chips';
  rangee.append(famille,
   choixVif(Object.assign(document.createElement('span'),
@@ -457,8 +524,8 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
   ['dmg','Dég.','+'+(m.damage||0)],['xp','XP',m.xp||0]].map(t=>statTile(...t));
  [['pv'],['def'],['damage'],['xp']].forEach(([cle],k)=>{
   const cible=tuiles[k].querySelector('.ecu')||tuiles[k].querySelector('strong');
-  if(cible)champVif(cible,m[cle]||0,v=>{const avant=m[cle];writeStat(m,cle,v);
-   if(m[cle]!==avant)poser()},'Modifier '+cle.toUpperCase()+' de '+m.name)});
+  if(cible)champVif(cible,()=>m[cle]||0,v=>{const avant=m[cle];writeStat(m,cle,v);
+   if(m[cle]!==avant)poserTexte()},'Modifier '+cle.toUpperCase()+' de '+m.name)});
  chiffres.append(...tuiles);
  const titreAtt=document.createElement('h5');titreAtt.textContent='Attaques';
  if(view==='mj'){const ajout=document.createElement('button');ajout.className='ico plus';
@@ -469,13 +536,14 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
     useOwnDamage:true,effects:{}}];poser()};
   titreAtt.append(ajout)}
  const listeAtt=document.createElement('div');listeAtt.className='best-attaques';
- (m.attacks||[]).forEach(at=>listeAtt.append(attaqueVive(m,at,poser)));
+ (m.attacks||[]).forEach(at=>listeAtt.append(attaqueVive(m,at,poser,poserTexte)));
  if(!(m.attacks||[]).length){const vide=document.createElement('p');vide.className='muted';
   vide.textContent='Aucune attaque : ce modèle ne frappe pas.';listeAtt.append(vide)}
  const titreNotes=document.createElement('h5');titreNotes.textContent='Notes';
  const notes=document.createElement('p');notes.className='best-notes'+(m.notes?'':' muted');
  notes.textContent=m.notes||'Aucune note.';
- champVif(notes,m.notes||'',v=>{m.notes=String(v).slice(0,600);poser()},
+ champVif(notes,()=>m.notes||'',v=>{m.notes=String(v).slice(0,600);
+  notes.textContent=m.notes||'Aucune note.';notes.classList.toggle('muted',!m.notes);poserTexte()},
   'Talents, inventaire et notes · Entrée saute une ligne, sortir du champ enregistre','zone');
  f.append(tete,chiffres,titreAtt,listeAtt,titreNotes,notes);
  return f}
@@ -698,6 +766,11 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
    dans la partie — c'est le navigateur qui s'en souvient, pour ce poste seulement. */
 function renderSettings(){const boite=$('raccourcis');if(!boite)return;
  $('theme-switch').textContent=document.body.classList.contains('sombre')?'☀ Repasser au thème clair':'☾ Passer au mode nuit';
+ // La scène n'a plus de bandeau au-dessus de la table : son titre se lit et se change ici.
+ $('bloc-scene').hidden=view!=='mj';
+ $('scene-titre').textContent=sceneTitle();
+ $('scene-tour').textContent='Tour de combat '+String(round).padStart(2,'0');
+ if(saveLabel.parentNode!==$('bloc-sauvegarde'))$('bloc-sauvegarde').append(saveLabel);
  boite.replaceChildren(...GESTES.map(([cle,nom,aide])=>{
   const ligne=document.createElement('div');ligne.className='reglage';
   const gauche=document.createElement('div');
@@ -900,9 +973,10 @@ $('delete-item').onclick=()=>{if(view!=='mj'||itemIndex===null||!confirm('Suppri
 
 $('new-hero').onclick=()=>openActor(null,true);$('new-monster').onclick=()=>openActor(null,false);
 const sceneDialog=dialog('scene-editor','Scène','<form id="scene-form"><label>Titre<input name="title" maxlength="120" required></label><label>Tour de combat<input name="round" type="number" min="1" max="999" required></label><div class="form-actions"><button class="primary">Enregistrer</button></div></form>');
-$('edit-scene').onclick=()=>{if(view!=='mj')return;$('scene-form').elements.title.value=document.querySelector('.intro h1').textContent;$('scene-form').elements.round.value=round;sceneDialog.showModal()};$('scene-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;round=num($('scene-form').elements.round.value,1,999);document.querySelector('.intro h1').textContent=$('scene-form').elements.title.value;$('round').textContent=String(round).padStart(2,'0');sceneDialog.close();scheduleSave()};
+$('edit-scene').onclick=()=>{if(view!=='mj')return;$('scene-form').elements.title.value=sceneTitle();$('scene-form').elements.round.value=round;sceneDialog.showModal()};$('scene-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;round=num($('scene-form').elements.round.value,1,999);sceneTitle($('scene-form').elements.title.value);renderSettings();$('round').textContent=String(round).padStart(2,'0');sceneDialog.close();scheduleSave()};
 $('reset-map').onclick=()=>{if(view!=='mj')return;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom');scheduleSave()};
-const originalRender=render;render=function(){originalRender();toolsBar.hidden=view!=='mj';$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero)$('owner').add(new Option(a.name,String(i)))});$('owner').value=String(owner);const a=actors[selected];$('actor-notes').textContent=a&&a.notes||'';attackSelect.replaceChildren();
+const originalRender=render;render=function(){originalRender();
+ const mj=view==='mj';['combattants-outils','reset-map','heal-foes'].forEach(id=>{const el=$(id);if(el)el.hidden=!mj});$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero)$('owner').add(new Option(a.name,String(i)))});$('owner').value=String(owner);const a=actors[selected];$('actor-notes').textContent=a&&a.notes||'';attackSelect.replaceChildren();
  if(a)a.attacks.forEach((at,i)=>attackSelect.add(new Option(at.name,String(i))));
  if(a)attackSelect.value=String(a.activeAttack||0);
  // Le menu des attaques ne paraît que s'il y a vraiment à choisir : la barre sous
@@ -911,11 +985,18 @@ const originalRender=render;render=function(){originalRender();toolsBar.hidden=v
 // Les entrées éditées restent du texte, y compris dans les boutons de sélection.
 const rawLog=log;log=function(...args){rawLog(...args);scheduleSave()};
 function scheduleSave(){if(loading)return;clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,200)}
-function snapshot(){return {version:8,actors,catalog,round,owner,selected,mapImage,maps,currentMapId,title:document.querySelector('.intro h1').textContent}}
-function saveNow(){if(!db){$('save-status').textContent='Sauvegarde locale indisponible : cette session ne sera pas conservée.';return}try{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(snapshot(),'session');tx.oncomplete=()=>$('save-status').textContent='Enregistré sur cet appareil · pas de synchronisation multijoueur';tx.onerror=()=>$('save-status').textContent='Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.'}catch(e){$('save-status').textContent='Impossible d’enregistrer : '+e.message}}
+function snapshot(){return {version:8,actors,catalog,round,owner,selected,mapImage,maps,currentMapId,title:sceneTitle()}}
+/* L'état de la sauvegarde a quitté la table pour les Paramètres. Un échec, lui, ne
+   doit pas attendre qu'on aille l'y chercher : il passe une fois par le journal. */
+let dernierSouci='';
+function noterSauvegarde(texte,souci){saveLabel.textContent=texte;
+ saveLabel.classList.toggle('form-error',!!souci);
+ if(souci&&texte!==dernierSouci){dernierSouci=texte;log(texte)}
+ if(!souci)dernierSouci=''}
+function saveNow(){if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}try{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(snapshot(),'session');tx.oncomplete=()=>noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur');tx.onerror=()=>noterSauvegarde('Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.',true)}catch(e){noterSauvegarde('Impossible d’enregistrer : '+e.message,true)}}
 document.addEventListener('change',scheduleSave);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!loading)saveNow()});
-function loadSession(){try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onerror=finish;req.onblocked=finish;req.onsuccess=()=>{db=req.result;const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;get.onsuccess=()=>{const s=get.result;if(s&&(s.version===7||s.version===8)&&Array.isArray(s.actors)&&s.actors.length&&s.actors.some(a=>a.hero)){actors.splice(0,actors.length,...s.actors.map(normalizeActor));catalog=normalizeCatalog(s.catalog);round=s.round;owner=s.owner;selected=s.selected;mapImage=s.mapImage;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;document.querySelector('.intro h1').textContent=s.title;if(mapImage){$('map-view').style.backgroundImage='url("'+mapImage+'")';$('map').classList.add('custom')}$('round').textContent=String(round).padStart(2,'0')}finish()}}}catch(e){finish()}}
-function finish(){if(!loading)return;loading=false;cover.hidden=true;render();if(!db)$('save-status').textContent='Sauvegarde locale indisponible dans ce navigateur.'}
+function loadSession(){try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onerror=finish;req.onblocked=finish;req.onsuccess=()=>{db=req.result;const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;get.onsuccess=()=>{const s=get.result;if(s&&(s.version===7||s.version===8)&&Array.isArray(s.actors)&&s.actors.length&&s.actors.some(a=>a.hero)){actors.splice(0,actors.length,...s.actors.map(normalizeActor));catalog=normalizeCatalog(s.catalog);round=s.round;owner=s.owner;selected=s.selected;mapImage=s.mapImage;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;sceneTitle(s.title);if(mapImage){$('map-view').style.backgroundImage='url("'+mapImage+'")';$('map').classList.add('custom')}$('round').textContent=String(round).padStart(2,'0')}finish()}}}catch(e){finish()}}
+function finish(){if(!loading)return;loading=false;cover.hidden=true;render();if(!db)noterSauvegarde('Sauvegarde locale indisponible dans ce navigateur.',true)}
 // Lit les dimensions avant décodage pour refuser les images disproportionnées.
 function imageDimensions(bytes){const v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),str=(a,n)=>String.fromCharCode(...bytes.slice(a,a+n));
  if(bytes.length>=24&&v.getUint32(0)===0x89504e47&&v.getUint32(4)===0x0d0a1a0a)return [v.getUint32(16),v.getUint32(20)];
