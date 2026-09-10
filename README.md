@@ -1,4 +1,4 @@
-# Amertume Online — v0.48
+# Amertume Online — v0.49
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.49 — La DEF portée par un écu
+
+**La DEF n’est plus un chiffre, c’est un écu.** La forme des jetons d’Amertüme, dessinée en SVG : contour épais, intérieur clair, chiffre au centre. Il remplace l’ancien écu taillé au `clip-path`, et sert partout où une DEF s’affiche — la tuile de caractéristique, les pastilles d’armure de l’armurerie, celles de l’équipement d’un aventurier.
+
+Les chiffres de tes images sont du **Killam Bold** — je les ai comparés glyphe par glyphe. L’écu est donc dessiné, pas photographié : **le 5 et le 6 sont déjà là**, et le 7, le 8, le 9 aussi. Rien à fournir, rien à renommer quand la DEF montera.
+
+*(Les cinq images du message ne me sont pas parvenues comme fichiers — seule la police l’avait été, via un chemin. Si tu tiens à tes PNG exacts plutôt qu’au tracé, dépose-les dans `img/` et je les branche ; mais il faudra alors un fichier par valeur.)*
+
+**Deux réglages de tuile.** « MAX x » descend d’un cran sous la valeur et repasse en police standard : en Killam à 9 px, il se confondait avec le chiffre du dessus. Et le « + » des dégâts respire, écarté du chiffre par de l’interlettrage — le retrait de gauche compense la poussée que l’interlettrage applique aussi après le dernier caractère, la tuile reste donc centrée.
 
 ## v0.48 — Killam partout où il y a un nom, et un en-tête resserré
 
