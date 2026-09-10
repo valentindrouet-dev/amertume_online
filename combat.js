@@ -181,11 +181,14 @@ function carveWithPolygon(rects,poly,pas=.6){
    const i0=Math.max(0,Math.ceil((xs[t]-box.x)/cw-.5)),i1=Math.min(cols-1,Math.floor((xs[t+1]-box.x)/cw-.5));
    for(let i=i0;i<=i1;i++)g[j*cols+i]=0}}
  return [...intacts,...gridToRects(g,cols,rows,box,cw,ch)]}
-/* Une porte perce toujours la zone de blocage qu'elle recouvre, à l'affichage comme
-   au calcul : fermée elle bloque à sa place, ouverte elle laisse le trou béant. */
+/* Une porte perce la zone de blocage qu'elle recouvre, à l'affichage comme au calcul :
+   fermée elle bloque à sa place, ouverte elle laisse le trou béant. Un passage secret,
+   lui, ne la perce qu'une fois ouvert : tant qu'il est clos, la matière reste pleine et
+   rien — ni le mur peint, ni la vue, ni le passage — ne trahit son emplacement. */
+function doorPierces(d){return !!d&&(!d.secret||!!d.open)}
 function wallsPierced(map){const solide=r=>r&&r.w>0&&r.h>0;
  const murs=(map.walls||[]).filter(solide),trous=(map.visions||[]).filter(solide);
- return subtractRects(subtractRects(murs,trous),(map.doors||[]).filter(solide))}
+ return subtractRects(subtractRects(murs,trous),(map.doors||[]).filter(d=>solide(d)&&doorPierces(d)))}
 function obstacleRectsFrom(map){if(!map)return [];
  return [...wallsPierced(map),...(map.doors||[]).filter(d=>d&&!d.open&&d.w>0&&d.h>0)]}
 /* Recalage des cartes tracées quand l'éditeur réduisait l'image dans son cadre :
@@ -544,6 +547,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

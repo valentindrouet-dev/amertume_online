@@ -1,4 +1,4 @@
-# Amertume Online — v0.77
+# Amertume Online — v0.78
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,18 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.78 — Un passage secret qui se tait
+
+**Le passage secret se trahissait, et de trois façons.** Une porte perce la zone de blocage qu’elle recouvre — c’est ce qui en fait un passage. Un passage secret la perçait donc lui aussi : il fallait d’abord tracer une porte, qui trouait le mur, avant de la déclarer secrète. Le trou restait, bien visible. Pire, le brouillard rendait à chaque rectangle de porte la clarté de ses abords — pour qu’une porte découverte reste lisible dans la pénombre — et dessinait ainsi une plaque grise en plein mur noir, à l’endroit exact du passage.
+
+Désormais **un passage secret ne perce la matière qu’une fois ouvert**. Tant qu’il est clos, le mur est plein : pour le tracé comme pour le dessin, pour la troupe comme pour le MJ. Le brouillard, lui, ne lui rend plus la clarté des portes tant qu’il est caché : c’est du mur, le mur reste dans l’ombre. Le MJ le devine au seul trait violet posé sur la matière pleine. Ouvert, il redevient une porte comme une autre, trou compris.
+
+**Un outil dédié.** « Passage secret » prend sa place dans la barre de l’éditeur, entre Porte et Zone de départ : on le trace à même le mur, il naît secret et clos. La case à cocher reste dans le panneau de droite pour convertir une porte déjà tracée dans un sens ou dans l’autre.
+
+**Glisser un modèle jusqu’à sa place.** Dans « Ajouter un adversaire » — et dans « Placer un aventurier » —, on peut désormais **glisser une languette jusqu’à la carte** et lâcher le modèle exactement où on le veut. La fenêtre se referme dès que le geste part, sinon elle masque justement l’endroit visé ; un jeton fantôme suit le doigt et pâlit hors de la carte. Un simple clic continue de poser au centre.
+
+**La carte des Actions, suite.** Les cibles à portée passent directement sous l’intitulé : la réserve de dés affichée seule faisait doublon avec les dés que chaque bouton porte déjà. Et le bonus de dégâts se lit maintenant contre l’intitulé, non plus repoussé à l’autre bout de la carte.
 
 ## v0.77 — Les Actions frappent
 

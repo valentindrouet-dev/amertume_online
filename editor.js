@@ -1113,8 +1113,8 @@ let scenePickerMode='foe';
 function openScenePicker(mode){if(view!=='mj')return;scenePickerMode=mode;
  sceneDialog2.querySelector('h2').textContent=mode==='foe'?'Ajouter un adversaire':'Placer un aventurier';
  $('scene-picker-note').textContent=mode==='foe'
-  ?'Clique un modèle du bestiaire : une créature est posée sur la carte.'
-  :'Toute la troupe est déjà en scène. Clique un aventurier pour le reposer au centre de la carte et le désigner.';
+  ?'Glisse un modèle du bestiaire jusqu’à l’endroit voulu sur la carte. Un simple clic le pose au centre.'
+  :'Toute la troupe est déjà en scène. Glisse un aventurier là où tu le veux sur la carte ; un simple clic le repose au centre.';
  $('scene-picker-new').textContent=mode==='foe'?'+ Créer un monstre au bestiaire':'+ Créer un aventurier';
  $('scene-picker-search').value='';$('scene-picker-search').oninput=renderScenePicker;
  renderScenePicker();sceneDialog2.showModal()}
@@ -1125,28 +1125,58 @@ function renderScenePicker(){const corps=$('scene-picker-body');if(!corps)return
   const liste=catalog.monsters.map((m,i)=>[m,i]).filter(([m])=>!q||m.name.toLowerCase().includes(q));
   liste.forEach(([m,i])=>corps.append(ligneScene(m.name,m.image,
    (m.pv||0)+' PV · DEF '+(m.def||0)+' · '+(m.family||'sans famille'),
-   ()=>{saveChecks();savePool();const a=fromMonster(catalog.monsters[i]);
-    Object.assign(a,libre());normalizeActor(a);actors.push(a);selected=actors.length-1;markOnly(selected);
-    sceneDialog2.close();showPage('table');render();scheduleSave();
-    log(a.name+' ajouté à la carte.')})));
+   ()=>poserAdversaire(i,libre(),false),(x,y)=>poserAdversaire(i,{x,y},true))));
   if(!liste.length)corps.append(videScene(q?'Aucun modèle de ce nom.':'Le bestiaire est vide.'))}
  else{
   const liste=actors.map((a,i)=>[a,i]).filter(([a])=>a.hero&&(!q||a.name.toLowerCase().includes(q)));
   liste.forEach(([a,i])=>corps.append(ligneScene(a.name,a.image,
    a.hp+' / '+a.max+' PV · '+(a.role||'Aventurier'),
-   ()=>{saveChecks();savePool();Object.assign(actors[i],libre());
-    selected=i;markOnly(i);settleActor(actors[i]);
-    sceneDialog2.close();showPage('table');render();scheduleSave();
-    log(actors[i].name+' replacé au centre de la carte.')})));
+   ()=>placerAventurier(i,libre(),false),(x,y)=>placerAventurier(i,{x,y},true))));
   if(!liste.length)corps.append(videScene(q?'Aucun aventurier de ce nom.':'La troupe est vide.'))}}
-function ligneScene(nom,image,detail,clic){const b=document.createElement('button');b.className='pick-ligne';
+/* Poser un modèle : au hasard du centre pour un clic, au point exact pour un glissement.
+   Dans les deux cas la créature est repoussée hors des murs avant d'apparaître. */
+function poserAdversaire(i,ou,glisse){saveChecks();savePool();
+ const a=fromMonster(catalog.monsters[i]);Object.assign(a,ou);normalizeActor(a);
+ actors.push(a);selected=actors.length-1;markOnly(selected);
+ sceneDialog2.close();showPage('table');settleActor(a);render();scheduleSave();
+ log(a.name+(glisse?' posé à l’endroit choisi.':' ajouté à la carte.'))}
+function placerAventurier(i,ou,glisse){saveChecks();savePool();Object.assign(actors[i],ou);
+ selected=i;markOnly(i);sceneDialog2.close();showPage('table');settleActor(actors[i]);render();scheduleSave();
+ log(actors[i].name+(glisse?' placé à l’endroit choisi.':' replacé au centre de la carte.'))}
+// Le point lâché est-il sur la carte ? On vise le cadre visible, pas le calque zoomé.
+function surLaCarte(e){const r=$('map').getBoundingClientRect();
+ return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom}
+/* Glisser une languette jusqu'à la carte. La fenêtre se referme dès que le geste part,
+   sinon elle masque justement l'endroit que l'on vise ; un jeton fantôme suit le doigt
+   et pâlit hors de la carte, pour qu'on sache où l'on pose avant de lâcher. */
+function glisserVersCarte(el,nom,image,poser){
+ el.addEventListener('pointerdown',e=>{if(e.button!==0)return;
+  const depart={x:e.clientX,y:e.clientY};let fantome=null,parti=false;
+  const bouge=ev=>{
+   if(!parti){if(Math.hypot(ev.clientX-depart.x,ev.clientY-depart.y)<7)return;
+    parti=true;sceneDialog2.close();showPage('table');
+    fantome=jetonRond(image,nom,'mini');fantome.classList.add('fantome-pose');document.body.append(fantome)}
+   fantome.style.left=ev.clientX+'px';fantome.style.top=ev.clientY+'px';
+   fantome.classList.toggle('hors',!surLaCarte(ev))};
+  const fin=ev=>{document.removeEventListener('pointermove',bouge);document.removeEventListener('pointerup',fin);
+   if(!parti)return;
+   if(fantome)fantome.remove();
+   // Un glissement n'est pas un clic : le bouton ne doit pas poser un second exemplaire.
+   el.dataset.glisse='1';
+   if(surLaCarte(ev)){const p=mapPct(ev);poser(p.x,p.y)}
+   else log('Rien de posé : lâche le modèle sur la carte.')};
+  document.addEventListener('pointermove',bouge);document.addEventListener('pointerup',fin)})}
+function ligneScene(nom,image,detail,clic,poser){const b=document.createElement('button');b.className='pick-ligne';
  b.append(jetonRond(image,nom,'mini'));
  const bloc=document.createElement('span');bloc.className='pick-texte';
  const t=document.createElement('strong');t.textContent=nom;
  const d=document.createElement('small');d.textContent=detail;
  bloc.append(t,d);b.append(bloc);
  const fleche=document.createElement('span');fleche.className='pick-etat';fleche.textContent='+';
- b.append(fleche);b.onclick=clic;return b}
+ b.append(fleche);
+ b.onclick=()=>{if(b.dataset.glisse){delete b.dataset.glisse;return}clic()};
+ if(poser)glisserVersCarte(b,nom,image,poser);
+ return b}
 function videScene(texte){const v=document.createElement('p');v.className='muted';v.textContent=texte;return v}
 $('scene-picker-new').onclick=()=>{sceneDialog2.close();
  if(scenePickerMode==='foe')openActor(null,false);else openActor(null,true)};
