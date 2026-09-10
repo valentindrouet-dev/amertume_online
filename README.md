@@ -1,4 +1,4 @@
-# Amertume Online — v0.78
+# Amertume Online — v0.79
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,12 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.79 — L’actif se voit toujours
+
+**L’aura n’était pas une sélection, c’était une portée.** Le disque vert autour du combattant actif est le **rayon de contact** : il ne paraît que si l’attaque retenue est au contact, et disparaît dès qu’on retient une attaque à distance — un arc, un sort — puisqu’il n’y a alors plus de rayon à montrer. Comme rien d’autre ne marquait l’actif sur la carte, sélectionner un archer donnait l’impression que le clic n’avait pas pris.
+
+Le socle actif porte donc maintenant **son propre halo**, un liseré clair et une lueur à sa couleur de camp, quelle que soit l’attaque retenue. Le grand disque, lui, garde son sens : il dit une portée de contact, pas une sélection.
 
 ## v0.78 — Un passage secret qui se tait
 
