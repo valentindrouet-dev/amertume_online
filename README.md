@@ -1,4 +1,4 @@
-# Amertume Online — v0.49
+# Amertume Online — v0.50
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,18 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.50 — Les écus peints et les jetons d’état
+
+Valentin a déposé ses images dans `img/`. Le tracé SVG de la v0.49 disparaît : la DEF porte désormais **ses écus**, `DEF 0` à `DEF 6`. Au-delà du 6, `DEF VIDE` reçoit le chiffre en Killam — la DEF peut monter sans qu’il faille dessiner une image de plus.
+
+**Douze états, chacun son jeton.** La liste passe de six à quinze entrées : Au sol, Aveugle, Blindage, Ciblage, Faille, Feu, Foudre, Gel, Onde, Poison, Saignée, Vie — plus « Aucun », « Coma », que la barre de vie dit déjà, et « Affaibli », hérité des versions d’avant les jetons et gardé pour ne perdre aucune fiche enregistrée.
+
+**Le jeton s’affiche sur le socle**, en bas à droite, à la moitié de sa largeur, avec une ombre portée pour se détacher d’une carte claire. Il suit le token dans ses déplacements et son zoom, puisqu’il en est un enfant.
+
+La liste des états n’est plus écrite en double : elle vit dans `index.html` avec la table des jetons, et le menu déroulant de la fiche comme celui du panneau se remplissent depuis elle. Ajouter un état, c’est une ligne et une image.
+
+*(`DEGATS.webp` reste inutilisé : « Dégâts » est une caractéristique, pas un état. `VIE.png` a été pris comme état, faute de mieux — si les deux sont en fait les icônes des tuiles Vie et Dégâts, c’est un mot et je les déplace.)*
 
 ## v0.49 — La DEF portée par un écu
 

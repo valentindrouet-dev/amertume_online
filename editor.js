@@ -5,7 +5,7 @@ let catalog=structuredClone(AMERTUME_CATALOG),mapImage=null,db=null,loading=true
 const num=(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0));
 const poolFrom=d=>keys.map(k=>num(d?.[k],0,12));
 const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
-const STATES=['Aucun','Affaibli','Au sol','Feu','Blindage','Onde','Coma'];
+// STATES et les jetons d'état vivent dans index.html, chargé avant ce fichier.
 function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks??=[{name:'Attaque de base',dice:diceFrom(a.pool),range:'contact',targets:'one',useOwnDamage:true,effects:{}}];a.notes??='';a.state??='Aucun';a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];return a}
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];return c}
@@ -174,7 +174,7 @@ function itemColumn(a){return a.category==='armor'?'armor'
 function gearPill(o){const col=itemColumn(o);
  const p=document.createElement('span');p.className='cat-pill k-'+col+(o.consumable?' consommable':'');
  const nom=document.createElement('span');nom.className='nom';nom.textContent=o.name;p.append(nom);
- if(col==='armor'){const b=shieldSvg(o.def||0);b.setAttribute('aria-label','DEF '+(o.def||0));p.append(b)}
+ if(col==='armor')p.append(shieldBadge(o.def||0));
  else if(col==='object'){const t=document.createElement('span');t.className='tag';
   t.textContent=(o.effects||o.notes||'—').slice(0,22);p.append(t)}
  else p.append(dicePips(o.dice));
@@ -214,7 +214,7 @@ function armoryRow(a,i){const rang=document.createElement('div');rang.className=
  pill.className='cat-pill k-'+col+(a.consumable?' consommable':'');
  pill.title='Modifier '+a.name;
  const nom=document.createElement('span');nom.className='nom';nom.textContent=a.name;pill.append(nom);
- if(col==='armor')pill.append(shieldSvg(a.def||0));
+ if(col==='armor')pill.append(shieldBadge(a.def||0));
  else if(col==='object'){const t=document.createElement('span');t.className='tag';
   t.textContent=(a.effects||a.notes||'—').slice(0,22);pill.append(t)}
  else pill.append(dicePips(a.dice));
