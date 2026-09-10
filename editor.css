@@ -63,8 +63,9 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 @media(max-width:1150px){body.page-maps #maps-page{grid-template-columns:1fr;padding:14px}.maps-side,.maps-props{position:static}}
 
 /* ---------- Pages Aventuriers, Talents, Armurerie et Bestiaire ---------- */
-#heroes-page,#talents-page,#armory-page,#bestiary-page{display:none;padding:16px 28px 26px}
-body.page-heroes #heroes-page,body.page-talents #talents-page,body.page-armory #armory-page,body.page-bestiary #bestiary-page{display:block}
+#heroes-page,#talents-page,#armory-page,#bestiary-page,#settings-page{display:none;padding:16px 28px 26px}
+body.page-heroes #heroes-page,body.page-talents #talents-page,body.page-armory #armory-page,body.page-bestiary #bestiary-page,body.page-settings #settings-page{display:block}
+body.page-settings .intro,body.page-settings .mj-tools,body.page-settings main.layout,body.page-settings #save-status,body.page-settings footer,
 body.page-talents .intro,body.page-talents .mj-tools,body.page-talents main.layout,body.page-talents #save-status,body.page-talents footer,
 body.page-heroes .intro,body.page-heroes .mj-tools,body.page-heroes main.layout,body.page-heroes #save-status,body.page-heroes footer,
 body.page-armory .intro,body.page-armory .mj-tools,body.page-armory main.layout,body.page-armory #save-status,body.page-armory footer,
@@ -159,6 +160,17 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 /* Attribuer des talents dans la fiche : des cases, groupées par classe, dans un cadre
    qui défile — un arbre complet ne doit pas repousser le reste du formulaire. */
 /* La grille d'états de la fiche reprend le dessin du menu au clic droit. */
+/* Une ligne de réglage : ce qu'on règle à gauche, de quoi le régler à droite. */
+#settings-page .cat-panel{max-width:760px}
+.reglage-titre{margin:0 0 6px;font:600 12px system-ui;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted)}
+.reglage{display:flex;align-items:center;gap:18px;padding:11px 0;border-bottom:1px solid var(--line)}
+.reglage:last-child{border-bottom:0}
+.reglage>div{flex:1;min-width:0}
+.reglage strong{display:block;font-size:15px}
+.reglage p{margin:2px 0 0;font-size:13px}
+.reglage select{width:auto;min-width:170px;margin:0}
+.reglage button{width:auto;white-space:nowrap}
+#raccourcis-erreur:empty{display:none}
 #state-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:5px}
 #state-picker button{display:grid;justify-items:center;gap:3px;padding:7px 2px 6px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);font:600 10px system-ui;color:var(--muted);line-height:1.1}
 #state-picker button:hover{background:var(--hover);color:var(--ink)}

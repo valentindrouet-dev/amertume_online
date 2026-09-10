@@ -42,6 +42,19 @@ heroesPage.innerHTML='<section class="cat-panel panel">'
  +'<p class="muted">Les fiches des héros de la troupe. C’est ici qu’on les crée, qu’on les modifie et qu’on les retire.</p>'
  +'<div class="cat-filters"><input id="hero-search" placeholder="Rechercher…" aria-label="Rechercher un aventurier"></div>'
  +'<div class="hero-grid" id="hero-grid"></div></section>';
+const settingsPage=document.createElement('main');settingsPage.id='settings-page';
+settingsPage.innerHTML='<section class="cat-panel panel">'
+ +'<header class="cat-head"><h2>Paramètres</h2></header>'
+ +'<p class="muted">Réglages de cet appareil. Ils ne quittent pas ce navigateur et ne touchent pas la partie.</p>'
+ +'<div class="divider"></div><h3 class="reglage-titre">Apparence</h3>'
+ +'<div class="reglage"><div><strong>Mode nuit</strong><p class="muted">Fond sombre, mêmes couleurs de jeu.</p></div>'
+ +'<button id="theme-switch" class="primary"></button></div>'
+ +'<div class="divider"></div><h3 class="reglage-titre">Raccourcis de la carte</h3>'
+ +'<p class="muted">La touche à maintenir en cliquant sur un combattant. Deux gestes ne peuvent pas partager la même touche.</p>'
+ +'<div id="raccourcis"></div>'
+ +'<p class="form-error" id="raccourcis-erreur" role="alert"></p>'
+ +'<div class="side-actions"><button id="raccourcis-reset">Rétablir les touches d’origine</button></div>'
+ +'</section>';
 const talentsPage=document.createElement('main');talentsPage.id='talents-page';
 talentsPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Talents</h2><div class="cat-actions">'
@@ -62,7 +75,7 @@ bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<select id="bestiary-sort" aria-label="Tri"><option value="danger">Tri : danger ↓</option>'
  +'<option value="danger-">Tri : danger ↑</option><option value="nom">Tri : nom</option></select></div>'
  +'<div class="cat-cols" id="bestiary-cols"></div></section>';
-document.querySelector('main.layout').after(heroesPage,talentsPage,armoryPage,bestiaryPage);
+document.querySelector('main.layout').after(heroesPage,talentsPage,armoryPage,bestiaryPage,settingsPage);
 /* Un sous-titre de carte, avec son « + » : équiper ou attribuer sans ouvrir la fiche. */
 function sousTitre(texte,titre,fn){const h=document.createElement('h4');h.className='hero-sous';
  h.append(texte);
@@ -447,6 +460,29 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   if(!corps.childElementCount){const v=document.createElement('p');v.className='muted';
    v.textContent=q?'Aucun talent de ce nom.':'Aucun talent au catalogue : crée-en un dans l’onglet Talents.';
    corps.append(v)}}}
+/* Les réglages de l'appareil : le thème et les touches de la carte. Rien n'est enregistré
+   dans la partie — c'est le navigateur qui s'en souvient, pour ce poste seulement. */
+function renderSettings(){const boite=$('raccourcis');if(!boite)return;
+ $('theme-switch').textContent=document.body.classList.contains('sombre')?'☀ Repasser au thème clair':'☾ Passer au mode nuit';
+ boite.replaceChildren(...GESTES.map(([cle,nom,aide])=>{
+  const ligne=document.createElement('div');ligne.className='reglage';
+  const gauche=document.createElement('div');
+  const t=document.createElement('strong');t.textContent=nom;
+  const p=document.createElement('p');p.className='muted';p.textContent=aide;
+  gauche.append(t,p);
+  const sel=document.createElement('select');sel.id='rac-'+cle;
+  sel.setAttribute('aria-label','Touche pour « '+nom+' »');
+  // Sans touche, la sélection se fait au clic nu ; tout autre geste devient inatteignable.
+  TOUCHES.forEach(([v,l])=>sel.add(new Option(v===''&&cle!=='select'?'Aucune (désactivé)':l,v)));
+  sel.value=raccourcis[cle];
+  sel.onchange=()=>{const pris=GESTES.find(([k])=>k!==cle&&raccourcis[k]===sel.value&&sel.value);
+   if(pris){$('raccourcis-erreur').textContent='« '+pris[1]+' » utilise déjà cette touche.';
+    sel.value=raccourcis[cle];return}
+   $('raccourcis-erreur').textContent='';raccourcis[cle]=sel.value;saveShortcuts();renderSettings()};
+  ligne.append(gauche,sel);return ligne}))}
+$('theme-switch').onclick=toggleTheme;
+$('raccourcis-reset').onclick=()=>{raccourcis={...RACCOURCIS_DEFAUT};saveShortcuts();
+ $('raccourcis-erreur').textContent='';renderSettings()};
 function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();renderBestiary()}
 $('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;
 $('armory-add').onclick=()=>openItem(null);
@@ -608,7 +644,6 @@ function removeActors(liste,demande){
 $('heal-foes').onclick=()=>{if(view!=='mj')return;
  const blesses=actors.filter(a=>!a.hero&&(a.hp<a.max||hasState(a,'Coma')));
  if(!blesses.length){log('Aucun adversaire à soigner : ils sont tous au complet.');return}
- if(!confirm('Remettre les '+blesses.length+' adversaire(s) blessé(s) à 100 % de leurs PV ?'))return;
  blesses.forEach(a=>{a.hp=a.max;setState(a,'Coma',false)});
  render();log(blesses.length+' adversaire(s) remis à 100 % de leurs PV.');scheduleSave()};
 $('delete-actor').onclick=()=>{if(editing===null)return;

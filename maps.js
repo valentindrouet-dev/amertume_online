@@ -219,11 +219,14 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
 const tabs=document.createElement('nav');tabs.className='tabs';
 tabs.innerHTML='<button data-page="table" class="on">Table de jeu</button><button data-page="maps">Cartes</button>'
  +'<button data-page="heroes">Aventuriers</button><button data-page="talents">Talents</button>'
- +'<button data-page="armory">Armurerie</button><button data-page="bestiary">Bestiaire</button>';
+ +'<button data-page="armory">Armurerie</button><button data-page="bestiary">Bestiaire</button>'
+ +'<button data-page="settings">Paramètres</button>';
 document.querySelector('.view-controls').before(tabs);
-const PAGES=['table','maps','heroes','talents','armory','bestiary'];
-const tabsMJ=[...tabs.querySelectorAll('button')].filter(b=>b.dataset.page!=='table');
-function showPage(p){if(p!=='table'&&view!=='mj')return;
+const PAGES=['table','maps','heroes','talents','armory','bestiary','settings'];
+// Les Paramètres sont un réglage d'appareil, pas du contenu de partie : ils restent ouverts aux joueurs.
+const PAGES_LIBRES=['table','settings'];
+const tabsMJ=[...tabs.querySelectorAll('button')].filter(b=>!PAGES_LIBRES.includes(b.dataset.page));
+function showPage(p){if(!PAGES_LIBRES.includes(p)&&view!=='mj')return;
  PAGES.forEach(x=>document.body.classList.toggle('page-'+x,x===p&&x!=='table'));
  tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.page===p));
  if(p==='maps'){if(!maps.length)newMap();if(!mapDraft)mapDraft=maps.find(m=>m.id===currentMapId)||maps[0];
@@ -232,6 +235,7 @@ function showPage(p){if(p!=='table'&&view!=='mj')return;
  else if(p==='talents')renderTalents();
  else if(p==='armory')renderArmory();
  else if(p==='bestiary')renderBestiary();
+ else if(p==='settings')renderSettings();
  // De retour sur la table, tout est remesuré : la carte était masquée, donc sans largeur,
  // et les socles comme le brouillard se calculent sur cette largeur.
  else{applyMapRatio();applyMapZoom();render()}}

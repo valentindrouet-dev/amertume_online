@@ -1,4 +1,4 @@
-# Amertume Online — v0.58
+# Amertume Online — v0.59
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,20 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.59 — Paramètres, chiffres qui montent, dés au bas de la table
+
+**Un onglet Paramètres**, ouvert aux joueurs comme au MJ — ce sont des réglages d’appareil, pas du contenu de partie ; ils vivent dans le navigateur et ne touchent à rien d’enregistré. Le **mode nuit** y déménage : le petit bouton lune quitte l’en-tête, et avec lui un vestige, un bouton caché que la page cliquait pour elle-même.
+
+**Cinq gestes de la carte, chacun sa touche réglable** : Sélection, Ciblage, Sélection multiple, Attaque auto, Analyse auto. Deux gestes ne peuvent pas partager la même touche — le réglage refuse le doublon en le nommant, plutôt que de trancher en douce. « Aucune » veut dire le clic nu pour la Sélection, et « désactivé » pour les autres. L’aide sous la carte annonce les touches en vigueur, pas celles d’origine, et un bouton rétablit celles-ci.
+
+Deux gestes sont neufs : **Attaque auto** désigne la cible et frappe dans le même clic ; **Analyse auto** dépense Mvt / Analyse et lit au journal ce qu’on a le droit de savoir de la créature — PV si on y a droit, DEF, dégâts, portée, états.
+
+**Un chiffre monte au-dessus du socle** à chaque changement de PV : rouge pour une perte, vert pour un gain, et « Blindage » ou « Échec » quand le coup n’a rien coûté. Il vit dans sa propre couche, sinon le redessin des tokens l’emporterait au premier point de vie perdu.
+
+**Les dés se posent au bas de la table** au lieu de voler depuis l’attaquant, et le plateau à dés sort du calque zoomé : ils tombent toujours au même endroit, quel que soit le zoom ou le recadrage.
+
+**Plus d’alerte** avant de remettre les adversaires à 100 %.
 
 ## v0.58 — Suppr ne parle qu’à l’onglet où l’on se trouve
 
