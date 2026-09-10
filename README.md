@@ -1,4 +1,4 @@
-# Amertume Online — v0.70
+# Amertume Online — v0.71
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -16,7 +16,7 @@ Ajout de personnages/monstres et suppression de combattants (au moins un héros 
 Source : `valentindrouet-dev/amertume_rpg`, branche `claude/elegant-planck-jp7ygb`, `js/store.js`, blob `5314d6439be28b47597a7c21b3df310b1501c8d1`.
 14 armes, 5 armures/bouclier, 1 potion, 4 monstres d’exemple. Il s’agit des données embarquées, pas du contenu enregistré dans le navigateur du propriétaire ni d’une publication Firebase. Les couleurs des dés des armes étaient déjà marquées comme interprétations à valider dans le dépôt source.
 
-L’armurerie permet création/édition/suppression. **L’équipement fait foi** : les dés d’attaque sont ceux des armes équipées, cumulés pour deux armes, et la DEF est celle de l’armure plus le bouclier. La réserve de dés n’est plus saisie à la main et le champ DEF se verrouille dès qu’une armure est portée. Un combattant sans arme équipée — les monstres du bestiaire — garde les dés de ses attaques de fiche et sa DEF propre. Les effets spéciaux, munitions et contraintes de mains ne sont pas automatisés.
+L’armurerie permet création/édition/suppression. **L’équipement fait foi, pour les aventuriers** (v0.71) : leurs dés d’attaque sont ceux des armes équipées — cumulés pour deux armes, la même arme comptant deux fois si elle est portée en double (v0.69) — et leur DEF est celle de l’armure plus le bouclier, zéro compris. La réserve de dés n’est pas saisie à la main et le champ DEF est verrouillé. **Un adversaire n’a pas d’armurerie** : ses dés sont ceux de sa carte d’attaque et sa DEF celle de sa fiche, les seules choses qu’un modèle de bestiaire sache décrire ; la rubrique Équipement ne paraît pas sur sa fiche. Les effets spéciaux, munitions et contraintes de mains ne sont pas automatisés.
 
 ## Images
 Cartes et tokens : PNG, JPEG, WebP. Aperçu original/optimisé avec dimensions et poids, qualité 70–100 %, choix 2048/4096 pixels pour les cartes ou 256/512 pour les tokens. Proportions et transparence conservées, sans agrandissement. Compression WebP avec secours PNG ; original conservé s’il est plus léger et ne nécessite aucun redimensionnement. Seule la copie est utilisée. L’aperçu doit être actualisé après un réglage. Images animées non garanties : la compression produit une image fixe.
@@ -152,6 +152,18 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.71 — Les chiffres se corrigent en jeu, et un modèle corrigé corrige ses créatures
+
+Trois causes distinctes se cachaient derrière « ça ne prend pas mes modifications ».
+
+**La fiche de la table de jeu était figée.** Corriger une valeur au clic n’existait que sur la page Aventuriers et au bestiaire ; sur la fiche de droite — celle qu’on a sous les yeux en plein combat — les chiffres ne répondaient pas. Ils se corrigent désormais comme ailleurs : PV et leur maximum, Vie, Endurance, dégâts, et pour un adversaire sa DEF et son XP. Entrée valide, Échap annule, la barre de PV et le socle suivent. Comme sur les cartes d’aventurier, le redessin de la table **attend qu’on ait fini de taper** : sans cela il détacherait le chiffre visé ensuite et volerait le clic suivant — c’était le défaut de fond derrière « une valeur passe, deux d’affilée jamais ».
+
+**Corriger un modèle du bestiaire ne changeait que le plafond de PV.** Dégâts, DEF, XP, attaques, dés, portrait, nom : rien de tout cela n’atteignait les créatures déjà posées sur la table. On modifiait des dés d’attaque sans jamais voir le coup changer en jeu. **Tout le profil suit maintenant**, tandis que ce qui appartient au combat en cours reste intact : place sur la carte, blessure, états, activations et cible visée. La créature est modifiée sur place et non remplacée, si bien qu’aucune sélection ni aucun renvoi ne devient orphelin. Un modèle inchangé, lui, ne touche toujours rien.
+
+**Une arme posée sur une créature rendait muets les dés de sa carte d’attaque.** L’équipement fait foi — c’était la règle depuis la v0.30 — mais elle s’appliquait aussi aux adversaires, dont deux étaient armés par la scène de démonstration. On corrigeait leurs dés d’attaque sans effet visible, et leur DEF venait de leur armure. **L’équipement devient l’affaire des aventuriers** : eux seuls tirent leurs dés, leur portée et leur DEF de ce qu’ils portent. Un adversaire n’a pas d’armurerie — son profil est sa carte d’attaque et sa DEF propre, les seules choses qu’un modèle de bestiaire sache décrire. La rubrique Équipement disparaît en conséquence de la fiche et du formulaire d’un adversaire, et la scène de démonstration n’arme plus ses deux créatures.
+
+`checks.cjs` passe à 272 vérifications : la nouvelle règle d’équipement, et la propagation complète d’un modèle avec ce qu’elle doit préserver.
 
 ## v0.70 — L’onglet ouvert survit au rechargement
 

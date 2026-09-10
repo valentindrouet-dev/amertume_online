@@ -3,7 +3,7 @@
 <style>
 /* Killam Bold, fournie par Valentin, pour les chiffres des caractéristiques. Sous-ensemble
    latin en WOFF2 : 48 Ko au lieu des 188 Ko du TTF d'origine, qui reste dans fonts/. */
-@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.70') format('woff2');
+@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.71') format('woff2');
  font-weight:700;font-style:normal;font-display:swap}
 
 /* Deux palettes, un seul jeu de règles : tout le décor passe par ces jetons, si bien
@@ -91,16 +91,16 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 #floaters{position:absolute;inset:0;z-index:4;pointer-events:none}
 .floater{position:absolute;transform:translate(-50%,-50%);font:800 22px 'Killam',Georgia,serif;white-space:nowrap;text-shadow:0 2px 4px #000000b3,0 0 2px #0009}
 .floater.perte{color:#f0705a}.floater.gain{color:#8fd77e}.floater.nul{color:#e7d9b8}.board-die{position:absolute;display:grid;place-items:center;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:11px;font:800 20px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -3px 5px #00000026,0 7px 16px #000000a6;will-change:transform}.board-die.dark{color:#f4f6f2}.journal-title{font:600 13px system-ui;letter-spacing:3px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px}.journal{max-height:330px;display:flex;flex-direction:column;gap:9px;padding-right:4px}.journal li{border:0;padding:0}.j-entry{font-size:14px;line-height:1.45;color:var(--ink)}.j-turn{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:5px 0 1px}.j-turn::before,.j-turn::after{content:"";flex:1;height:1px;background:var(--line)}.j-name{font-weight:700}.j-key{font-weight:700}.j-num{font-weight:800;color:#b4553a}.j-dice{opacity:.7}.j-badge{display:inline-block;background:#8d3b32;color:#ffe6df;border-radius:5px;padding:1px 7px;font-weight:700;font-size:12px}
-</style><link rel="stylesheet" href="./editor.css?v=0.70"></head><body>
-<header><div class="brand">AMERTÜME<span class="ver">v0.70</span></div><div class="view-controls"><label for="view">Vue</label><select id="view"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select><span class="badge">Prototype · partie locale</span></div></header>
+</style><link rel="stylesheet" href="./editor.css?v=0.71"></head><body>
+<header><div class="brand">AMERTÜME<span class="ver">v0.71</span></div><div class="view-controls"><label for="view">Vue</label><select id="view"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select><span class="badge">Prototype · partie locale</span></div></header>
 <div class="intro" hidden><h1>Les ruines du passage</h1></div>
 <main class="layout"><aside class="stack left"><section class="panel"><h2 class="titre-outils">COMBATTANTS<span class="ajout-combattant" id="combattants-outils" hidden><button type="button" id="new-hero" title="Ajouter un aventurier à la scène">+ Aventurier</button><button type="button" id="new-monster" title="Ajouter un adversaire à la scène">+ Adversaire</button></span></h2><div id="actors"></div></section><section class="panel"><div class="turn-head"><div class="eyebrow">Tour de combat</div><div class="turn" id="round">01</div></div><h2>Activation</h2><div class="checks"><label><input type="checkbox" id="action"> Action</label><label><input type="checkbox" id="move"> Mvt / Analyse</label><label><input type="checkbox" id="item"> Objet</label></div><div class="divider"></div><div class="turn-actions"><button class="full" id="next">Tour suivant →</button><button id="reset-round" title="Revenir au tour 1 : activations et cibles remises à zéro" aria-label="Réinitialiser le tour de combat">↺</button></div><div class="side-actions"><button id="heal-foes" hidden>Adversaires à 100 %</button></div></section><section class="panel pv-panel" id="pv-panel" hidden><div class="eyebrow">Points de vie</div><p class="muted" id="pv-cible"></p><div class="hp-buttons" id="hp-buttons"></div></section></aside>
 <div class="stack"><section class="panel map-panel"><div class="mapbar"><strong id="carte-titre">CARTE TACTIQUE</strong><div class="zoom-bar"><button id="zoom-out" aria-label="Dézoomer">−</button><span id="zoom-label">100 %</span><button id="zoom-in" aria-label="Zoomer">+</button><button id="zoom-reset">Ajuster</button></div><label class="file"><button id="upload">Importer une carte</button><input class="sr" type="file" id="mapfile" accept="image/png,image/jpeg,image/webp"></label><button class="icon-btn" id="reset-map" title="Retirer la carte de fond" aria-label="Retirer la carte de fond">🗑</button></div><div class="map" id="map" aria-label="Carte tactique. Déplacez les tokens par glissement ou avec les flèches du clavier."><div id="map-view"><svg class="plan" viewBox="0 0 800 480" preserveAspectRatio="none" aria-hidden="true"><g class="walls" fill="#172326" stroke="#57635c" stroke-width="3"></g><g fill="#9da797" font-family="system-ui" font-size="12" letter-spacing="4"><text x="305" y="130">COUR INTÉRIEURE</text><text x="318" y="462">ENTRÉE SUD</text></g></svg><svg id="map-shapes" aria-hidden="true"></svg><canvas id="fog" aria-hidden="true"></canvas><svg id="map-doors" aria-hidden="true"></svg><div id="contact-ring" hidden></div><svg id="aim" aria-hidden="true"><defs><marker id="shot-ok" markerUnits="userSpaceOnUse" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#3f7bc0"/></marker><marker id="shot-no" markerUnits="userSpaceOnUse" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#e0483c"/></marker><marker id="shot-done" markerUnits="userSpaceOnUse" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#8b969b"/></marker></defs><path id="aim-arrow"/></svg><div id="floaters" aria-hidden="true"></div></div><div id="dice-tray" aria-hidden="true"></div></div></section>
 <section class="panel attack-card"><div class="eyebrow">⟍ Attaque</div><div class="targets" id="targets"></div><div class="attack-pool" id="attack-pool"><span id="attack-dice"></span><span class="attack-dmg" id="attack-dmg"></span></div><div class="attack-row"><button class="primary btn-action" id="attack">Attaque</button><button class="btn-action btn-analyse" id="reveal" hidden>🔍 Analyser</button><div class="etat-actions" id="etat-actions"></div></div><p class="attack-info" id="target-info" aria-live="polite"></p></section></div>
-<aside class="stack right"><section class="panel sheet" id="sheet"><div class="sheet-head"><h1 id="name"></h1><span class="sheet-class" id="kind"></span></div><p class="muted" id="class"></p><div class="chips" id="sheet-chips"></div><div class="stat-row" id="stats"></div><div class="lifebar big" id="hpbar"><span class="lifebar-fill" id="hpfill"></span><span class="lifebar-text" id="hp"></span></div><div class="divider"></div><h2>Équipement</h2><div id="gear"></div><h2 class="sheet-sous" id="talents-title">Talents</h2><div id="sheet-talents"></div><div class="divider" hidden></div><h2 hidden>Compétences</h2><div class="skills" id="skills" hidden></div><p class="muted" hidden>Clique pour un test : 4+ = réussite, 6 = réussite et relance.</p></section><section class="panel"><h2 class="journal-title"><span aria-hidden="true">📜</span> Journal de combat</h2><ol class="journal" id="journal" aria-live="polite"></ol></section></aside></main>
+<aside class="stack right"><section class="panel sheet" id="sheet"><div class="sheet-head"><h1 id="name"></h1><span class="sheet-class" id="kind"></span></div><p class="muted" id="class"></p><div class="chips" id="sheet-chips"></div><div class="stat-row" id="stats"></div><div class="lifebar big" id="hpbar"><span class="lifebar-fill" id="hpfill"></span><span class="lifebar-text" id="hp"></span></div><div class="divider" id="gear-sep"></div><h2 id="gear-title">Équipement</h2><div id="gear"></div><h2 class="sheet-sous" id="talents-title">Talents</h2><div id="sheet-talents"></div><div class="divider" hidden></div><h2 hidden>Compétences</h2><div class="skills" id="skills" hidden></div><p class="muted" hidden>Clique pour un test : 4+ = réussite, 6 = réussite et relance.</p></section><section class="panel"><h2 class="journal-title"><span aria-hidden="true">📜</span> Journal de combat</h2><ol class="journal" id="journal" aria-live="polite"></ol></section></aside></main>
 <div id="state-menu" role="menu" aria-label="États" hidden></div>
-<footer>Version 0.70 · L’onglet ouvert survit au rechargement, et le portrait d’un modèle se change d’un clic. Données locales conservées. Partage Firebase après activation et publication par le MJ ; les combats restent locaux. Catalogue importé de amertume_rpg ; effets et conventions de combat à valider.</footer>
-<script src="./combat.js?v=0.70"></script>
+<footer>Version 0.71 · Les chiffres se corrigent sur la fiche en jeu, et un modèle corrigé corrige ses créatures. Données locales conservées. Partage Firebase après activation et publication par le MJ ; les combats restent locaux. Catalogue importé de amertume_rpg ; effets et conventions de combat à valider.</footer>
+<script src="./combat.js?v=0.71"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -177,8 +177,8 @@ function items(){return typeof catalog!=='undefined'&&catalog?catalog.items||[]:
 function gear(id){return items().find(w=>w.id===id)}
 function diceToPool(dice){return dice?DICE_KEYS.map(k=>Math.max(0,Math.min(12,Number(dice[k])||0))):null}
 // L'équipement fait foi ; à défaut, les valeurs propres du combattant (monstres).
-function poolOf(a){return equippedPool(a,items())||diceToPool(activeAttack(a).dice)||a.pool||[0,0,0,0,0,0,0]}
-function rangeOf(a){const tir=equippedRanged(a,items());return tir===null?activeAttack(a).range||'contact':tir?'distance':'contact'}
+function poolOf(a){return poolFromGear(a,items())||diceToPool(activeAttack(a).dice)||a.pool||[0,0,0,0,0,0,0]}
+function rangeOf(a){const tir=rangedFromGear(a,items());return tir===null?activeAttack(a).range||'contact':tir?'distance':'contact'}
 function defOf(a){return defenseOf(a,items())}
 // Contact : la cible doit être dans le disque affiché. Distance : ligne de vue non traversée.
 /* La portée, pour n'importe quelle cible et pas seulement celle qui est désignée : c'est
@@ -501,7 +501,7 @@ function saveChecks(){const a=actors[selected];if(a)a.checks=['action','move','i
 const SKILL_TINTS=['47,138,99','168,105,31','122,92,184','157,123,30','176,88,54','101,120,111','53,119,184','44,140,133'];
 const STAT_TINTS={vie:'122,92,184',endu:'44,140,133',pv:'47,122,91',def:'96,110,118',dmg:'180,72,58',xp:'157,123,30'};
 const TYPE_NOMS={standard:'Standard',solitaire:'Solitaire',alpha:'Alpha',boss:'Boss'};
-const IMG_V='0.70';
+const IMG_V='0.71';
 function imgUrl(nom){return './img/'+encodeURIComponent(nom)+'?v='+IMG_V}
 /* Les états et leur jeton, tels qu'ils sont peints sur la table. « Aucun » n'en a pas —
    c'est l'absence d'état — ni « Coma », que la barre de vie dit déjà, ni « Affaibli »,
@@ -621,13 +621,23 @@ function renderSheet(){const a=actors[selected];$('sheet').hidden=!a;if(!a)retur
  const chips=[];if(a.sexe)chips.push((a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe);if(a.race)chips.push(a.race);
  if(a.hero)chips.push('Niveau '+a.level);chips.push(rangeOf(a)==='distance'?'À distance':'Au contact');
  $('sheet-chips').replaceChildren(...chips.map(t=>{const s=document.createElement('span');s.className='chip';s.textContent=t;return s}));
- const tuiles=a.hero?[['vie','Vie',a.vie,false,a.vieMax??a.vie],['endu','Endu',a.endu],['pv','PV',a.hp,false,a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+'+a.dmg]]
+ const modele=a.hero?[['vie','Vie',a.vie,false,a.vieMax??a.vie],['endu','Endu',a.endu],['pv','PV',a.hp,false,a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+'+a.dmg]]
   :[['pv','PV',a.hp,false,a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+'+a.dmg],['xp','XP',a.xp]];
- $('stats').replaceChildren(...tuiles.map(t=>statTile(...t)));
+ const tuiles=modele.map(t=>statTile(...t));
+ /* Les chiffres de la fiche en jeu se corrigent là où le MJ les lit, comme sur la page
+    Aventuriers : c'est en plein combat qu'on rattrape des points de vie à la main.
+    Les fonctions d'édition vivent dans editor.js, chargé après : accès défensif. */
+ if(typeof tuilesVives==='function')
+  tuilesVives(a,tuiles,a.hero?[['vie','vieMax'],['endu'],['hp','max'],['def'],['dmg']]
+   :[['hp','max'],['def'],['dmg'],['xp']],$('sheet'));
+ $('stats').replaceChildren(...tuiles);
  const pct=ratio(a);$('hp').textContent=a.hp+' / '+a.max+' PV';$('hpfill').style.width=pct+'%';$('hpbar').classList.toggle('foe',!a.hero);$('hpbar').classList.toggle('low',pct<35);
  ['action','move','item'].forEach((id,i)=>$(id).checked=a.checks?.[i]||false);
  // Les pastilles vivent dans editor.js, chargé après ce script : accès défensif.
- $('gear').replaceChildren(typeof gearPills==='function'?gearPills(a):document.createTextNode(''));
+ /* Un adversaire n'a pas d'armurerie : ses dés sont ceux de sa carte d'attaque et sa DEF
+    celle de sa fiche. La rubrique ne paraît donc que pour la troupe. */
+ $('gear-sep').hidden=$('gear-title').hidden=$('gear').hidden=!a.hero;
+ $('gear').replaceChildren(a.hero&&typeof gearPills==='function'?gearPills(a):document.createTextNode(''));
  // Un monstre n'apprend pas de talents : la rubrique ne s'affiche que pour la troupe.
  $('talents-title').hidden=$('sheet-talents').hidden=!a.hero;
  $('sheet-talents').replaceChildren(a.hero&&typeof talentPills==='function'?talentPills(a):document.createTextNode(''));
@@ -787,4 +797,4 @@ $('zoom-reset').onclick=resetMapZoom;
 $('map').addEventListener('pointerleave',hideAim);
 window.addEventListener('resize',()=>{updateRing();showAim();renderCombat()});
 render();log('Bienvenue dans Amertume. Sélectionne un aventurier ou lance tes premiers dés.');
-</script><script src="./catalog.js?v=0.70"></script><script src="./editor.js?v=0.70"></script><script src="./maps.js?v=0.70"></script><script src="./firebase-config.js?v=0.70"></script><script src="./shared-data.js?v=0.70"></script><script src="./shared.js?v=0.70"></script></body></html>
+</script><script src="./catalog.js?v=0.71"></script><script src="./editor.js?v=0.71"></script><script src="./maps.js?v=0.71"></script><script src="./firebase-config.js?v=0.71"></script><script src="./shared-data.js?v=0.71"></script><script src="./shared.js?v=0.71"></script></body></html>

@@ -55,12 +55,19 @@ function equippedPool(actor,items){const worn=gearOf(actor&&actor.weapons,items)
 function equippedRanged(actor,items){const worn=gearOf(actor&&actor.weapons,items);return worn.length?worn.some(w=>w.ranged===true):null}
 function equippedDef(actor,items){const worn=gearOf(actor&&[actor.armorId,actor.shieldId],items);
  return worn.length?worn.reduce((sum,w)=>sum+(Number(w.def)||0),0):null}
+/* L'équipement est l'affaire des aventuriers. Eux seuls tirent leurs dés, leur portée
+   et leur DEF de ce qu'ils portent ; un adversaire n'a pas d'armurerie, et son profil
+   est sa carte d'attaque et sa DEF propre — les seules choses qu'un modèle de bestiaire
+   sache décrire. Sans cette règle, une arme posée sur une créature rendait muets les dés
+   saisis sur sa fiche : on les corrigeait sans rien voir changer. */
+function equipRules(actor){return !!(actor&&actor.hero)}
+function poolFromGear(actor,items){return equipRules(actor)?equippedPool(actor,items):null}
+function rangedFromGear(actor,items){return equipRules(actor)?equippedRanged(actor,items):null}
 /* La DEF d'un aventurier est la somme de son armure et de son bouclier, sans exception :
-   sans rien porté elle vaut zéro, et elle ne se saisit jamais à la main. Un adversaire,
-   lui, garde la DEF de sa fiche tant qu'aucune armure ne la commande. */
-function defenseOf(actor,items){const d=equippedDef(actor,items);
- if(actor&&actor.hero)return d||0;
- return d===null?(Number(actor&&actor.def)||0):d}
+   sans rien porté elle vaut zéro, et elle ne se saisit jamais à la main. Celle d'un
+   adversaire est celle de sa fiche, tout simplement. */
+function defenseOf(actor,items){if(!equipRules(actor))return Number(actor&&actor.def)||0;
+ return equippedDef(actor,items)||0}
 /* Déplacement : le socle est un disque repoussé hors des murs. Le mouvement restant
    subsiste le long de l'obstacle, ce qui produit le glissement. */
 function closestOnSegment(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],len2=dx*dx+dy*dy;
@@ -502,6 +509,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,equipRules,poolFromGear,rangedFromGear,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

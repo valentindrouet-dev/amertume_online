@@ -14,7 +14,14 @@ const nu=lire([]);assert.equal(nu.sexe,'Femme');assert.equal(nu.race,'Humaine');
 assert.equal(gearApi.defenseOf({hero:true,def:9},[]),0);
 assert.equal(gearApi.defenseOf({hero:true,def:9,armorId:'a',shieldId:'b'},[{id:'a',def:2},{id:'b',def:1}]),3);
 assert.equal(gearApi.defenseOf({hero:false,def:5},[]),5);
-assert.equal(gearApi.defenseOf({hero:false,def:5,armorId:'a'},[{id:'a',def:2}]),2);
+assert.equal(gearApi.defenseOf({hero:false,def:5,armorId:'a'},[{id:'a',def:2}]),5); // Une armure sur un adversaire ne commande rien.
+// L'équipement est l'affaire des aventuriers : une arme posée sur une créature ne
+// rend pas muets les dés de sa carte d'attaque.
+assert.equal(gearApi.poolFromGear({hero:false,weapons:['e']},[{id:'e',dice:{white:2}}]),null);
+assert.deepEqual(gearApi.poolFromGear({hero:true,weapons:['e']},[{id:'e',dice:{white:2}}]).slice(0,2),[2,0]);
+assert.equal(gearApi.rangedFromGear({hero:false,weapons:['a']},[{id:'a',ranged:true}]),null);
+assert.equal(gearApi.rangedFromGear({hero:true,weapons:['a']},[{id:'a',ranged:true}]),true);
+assert.equal(gearApi.equipRules({hero:true}),true);assert.equal(gearApi.equipRules({hero:false}),false);
 // Deux exemplaires de la même arme : les dés s'additionnent comme deux armes distinctes.
 const epee={id:'e',dice:{white:2,red:1}};
 assert.deepEqual(gearApi.equippedPool({weapons:['e']},[epee]).slice(0,4),[2,0,1,0]);
@@ -295,7 +302,7 @@ setState(sujet,'Feu',false);assert.equal(sujet.states.length,0);
 assert.equal(hasState({},'Coma'),false);
 // Corriger un modèle du bestiaire corrige les créatures déjà sur la table.
 const src=fs.readFileSync('editor.js','utf8');
-const bloc=src.slice(src.indexOf('function syncFromTemplate'),src.indexOf("$('actor-form').onsubmit"));
+const bloc=src.slice(src.indexOf('const EN_JEU='),src.indexOf("$('actor-form').onsubmit"));
 const table=[{hero:true,name:'Éla',hp:9,max:24},                        // La troupe n'est jamais touchée.
  {hero:false,name:'Sbire',template:'t1',hp:12,max:12},                  // Intact : reste plein.
  {hero:false,name:'Sbire',template:'t1',hp:4,max:12},                   // Blessé : garde sa blessure.
@@ -303,7 +310,12 @@ const table=[{hero:true,name:'Éla',hp:9,max:24},                        // La t
  {hero:false,name:'Sbire',hp:12,max:12},                                // Sans lien : rattrapé par le nom.
  {hero:false,name:'Autre',template:'t2',hp:12,max:12}];                 // Autre modèle : intouché.
 const ctxT={actors:table,num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),
- setState:gearApi.setState};vm.createContext(ctxT);
+ setState:gearApi.setState,structuredClone,normalizeActor:a=>a,poolFrom:()=>null,
+ activeAttack:a=>(a.attacks&&a.attacks[0])||{},
+ fromMonster:m=>({hero:false,template:m.id,name:m.name,role:m.family||'Adversaire',
+  hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,
+  notes:m.notes||'',attacks:structuredClone(m.attacks||[]),image:m.image||null})};
+vm.createContext(ctxT);
 vm.runInContext(bloc+';result=syncFromTemplate({id:"t1",name:"Sbire",pv:20})',ctxT);
 assert.equal(ctxT.result,4);                                    // Quatre créatures suivies.
 assert.equal(table[0].max,24);                                  // Le héros n'a pas bougé.
@@ -412,4 +424,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('265 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('272 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
