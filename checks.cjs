@@ -19,16 +19,30 @@ assert.equal(gearApi.defenseOf({hero:false,def:5,armorId:'a'},[{id:'a',def:2}]),
 // rend pas muets les dés de sa carte d'attaque.
 // Porter une arme ajoute une attaque, chez l'aventurier comme chez l'adversaire :
 // elle vient en tête, si bien qu'une fiche d'avant ce choix retrouve son arme.
-const ARSENAL=[{id:'e',name:'Épée',category:'weapon',dice:{white:2,red:1}},{id:'d',name:'Dague',category:'weapon',dice:{bone:1}},{id:'ar',name:'Armure',category:'armor',def:3}];
+const ARSENAL=[{id:'e',name:'Épée',category:'weapon',hands:1,dice:{white:2,red:1}},{id:'d',name:'Dague',category:'weapon',hands:1,dice:{bone:1}},{id:'ar',name:'Armure',category:'armor',def:3}];
 const bete={hero:false,def:4,weapons:['e','e'],armorId:'ar',attacks:[{name:'Griffes',dice:{white:1}},{name:'Souffle',dice:{red:2}}]};
 assert.deepEqual(gearApi.attackChoices(bete,ARSENAL).map(x=>x.name),['Épée ×2','Griffes','Souffle']);
+// Une arme à deux mains s'emploie seule : elle vaut son propre bouton, et une arme à
+// distance l'est toujours — rapière au contact et arc au loin sont deux attaques.
+const PANOPLIE=[{id:'rap',name:'Rapière',category:'weapon',hands:1,dice:{white:2}},
+ {id:'arc',name:'Arc court',category:'weapon',ranged:true,dice:{red:2}},
+ {id:'dag',name:'Dague',category:'weapon',hands:1,dice:{bone:1}},
+ {id:'hache',name:'Hache lourde',category:'weapon',hands:2,dice:{black:3}}];
+assert.deepEqual(gearApi.attackChoices({weapons:['rap','arc'],attacks:[]},PANOPLIE)
+ .map(x=>x.name+'/'+x.range),['Rapière/contact','Arc court/distance']);
+assert.deepEqual(gearApi.attackChoices({weapons:['rap','dag'],attacks:[]},PANOPLIE)
+ .map(x=>x.name),['Rapière + Dague']);                       // Deux mains libres : une seule attaque.
+assert.equal(gearApi.gearAttacks({weapons:['hache','hache']},PANOPLIE)[0].dice.black,6); // Deux exemplaires cumulent.
+assert.equal(gearApi.weaponHands({ranged:true,hands:1}),2);  // Une arme à distance tient toujours à deux mains.
+assert.equal(gearApi.weaponHands({hands:1}),1);
+assert.equal(gearApi.weaponHands({}),2);                     // Sans précision, deux mains : c'est le cas courant.
 assert.equal(gearApi.chosenAttack(bete,ARSENAL).name,'Épée ×2');          // Sans choix, l'arme décide.
 assert.equal(gearApi.chosenAttack(bete,ARSENAL).dice.white,4);            // Deux exemplaires cumulent.
 assert.equal(gearApi.chosenAttack({...bete,activeAttack:2},ARSENAL).name,'Souffle');
 assert.equal(gearApi.chosenAttack({...bete,activeAttack:9},ARSENAL).name,'Épée ×2'); // Choix caduc : la première.
-assert.equal(gearApi.gearAttack({weapons:['e','d']},ARSENAL).name,'Épée + Dague');
-assert.equal(gearApi.gearAttack({weapons:['ar']},ARSENAL),null);          // Une armure n'est pas une attaque.
-assert.equal(gearApi.gearAttack({weapons:[]},ARSENAL),null);
+assert.equal(gearApi.gearAttacks({weapons:['e','d']},ARSENAL)[0].name,'Épée + Dague');
+assert.deepEqual(gearApi.gearAttacks({weapons:['ar']},ARSENAL),[]);       // Une armure n'est pas une attaque.
+assert.deepEqual(gearApi.gearAttacks({weapons:[]},ARSENAL),[]);
 assert.deepEqual(gearApi.attackChoices({attacks:[{name:'Griffes'}]},ARSENAL).map(x=>x.name),['Griffes']);
 assert.deepEqual(gearApi.attackChoices({},ARSENAL),[]);                   // Ni fiche ni arme : rien à choisir.
 assert.equal(gearApi.chosenAttack({},ARSENAL).dice,null);
@@ -438,4 +452,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('285 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('294 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

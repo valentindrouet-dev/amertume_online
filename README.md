@@ -1,4 +1,4 @@
-# Amertume Online — v0.73
+# Amertume Online — v0.74
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -16,7 +16,7 @@ Ajout de personnages/monstres et suppression de combattants (au moins un héros 
 Source : `valentindrouet-dev/amertume_rpg`, branche `claude/elegant-planck-jp7ygb`, `js/store.js`, blob `5314d6439be28b47597a7c21b3df310b1501c8d1`.
 14 armes, 5 armures/bouclier, 1 potion, 4 monstres d’exemple. Il s’agit des données embarquées, pas du contenu enregistré dans le navigateur du propriétaire ni d’une publication Firebase. Les couleurs des dés des armes étaient déjà marquées comme interprétations à valider dans le dépôt source.
 
-L’armurerie permet création/édition/suppression, **pour les aventuriers comme pour les adversaires** (v0.73). Ce qui est porté donne **une attaque de plus**, à côté de celles de la fiche : ses dés sont ceux des armes équipées, cumulés pour deux armes, la même arme comptant deux fois si elle est portée en double (v0.69). La DEF d’un aventurier est celle de l’armure plus le bouclier, zéro compris, champ verrouillé ; celle d’un adversaire lui est propre et son équipement s’y ajoute. Les effets spéciaux, munitions et contraintes de mains ne sont pas automatisés.
+L’armurerie permet création/édition/suppression, **pour les aventuriers comme pour les adversaires** (v0.73). Ce qui est porté donne **des attaques de plus**, à côté de celles de la fiche (v0.74) : une arme à deux mains — toute arme à distance l’est — vaut une attaque à elle seule, avec sa portée ; les armes à une main se tiennent ensemble et n’en font qu’une, dés cumulés, la même arme comptant deux fois si elle est portée en double (v0.69). La DEF d’un aventurier est celle de l’armure plus le bouclier, zéro compris, champ verrouillé ; celle d’un adversaire lui est propre et son équipement s’y ajoute. Les effets spéciaux, munitions et contraintes de mains ne sont pas automatisés.
 
 ## Images
 Cartes et tokens : PNG, JPEG, WebP. Aperçu original/optimisé avec dimensions et poids, qualité 70–100 %, choix 2048/4096 pixels pour les cartes ou 256/512 pour les tokens. Proportions et transparence conservées, sans agrandissement. Compression WebP avec secours PNG ; original conservé s’il est plus léger et ne nécessite aucun redimensionnement. Seule la copie est utilisée. L’aperçu doit être actualisé après un réglage. Images animées non garanties : la compression produit une image fixe.
@@ -152,6 +152,22 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.74 — Une arme à deux mains vaut son attaque
+
+**Rapière et arc court sont deux boutons, pas un.** Une arme à deux mains s’emploie seule : elle vaut donc une attaque à elle, avec sa portée. Les armes à une main se tiennent ensemble et n’en font qu’une, dés cumulés — et deux exemplaires du même modèle cumulent aussi les leurs, comme depuis la v0.69. **Une arme à distance est toujours à deux mains**, quoi que dise sa fiche : l’une frappe au contact, l’autre tire au loin, et l’on choisit. Le champ « Mains » existait déjà à l’armurerie et le catalogue était juste — il n’était simplement jamais lu.
+
+**Les dés partent avec le nom.** Chaque bouton d’attaque porte sa réserve de dés, et une flèche ⤳ marque celles qui tirent au loin : on choisit son attaque en voyant ce qu’elle lance.
+
+**Changer de combattant renouvelle les boutons.** Cliquer un socle sans tout redessiner — ce qui garde la capture du pointeur pendant un glissement — laissait à l’écran les attaques du combattant précédent. On voyait « Griffes » et « Morsure » en tenant un aventurier. Corrigé.
+
+**Les cibles se lisent à leur couleur** avant même leur nom : vert pour un allié, rouge pour un adversaire, et un liseré plus épais sur celle qui est visée.
+
+**Tous les boutons d’Action ont la même hauteur.** L’émoji de l’Analyse donnait à sa ligne une hauteur plus grande et le faisait dépasser de la rangée ; une hauteur fixe aligne Attaque, Analyser, Dégel et Se relever.
+
+**Ajouter un combattant, c’est prendre dans ce qu’on a déjà.** Les boutons « + Aventurier » et « + Adversaire » n’ouvrent plus une fiche vierge : ils offrent le bestiaire ou la troupe, avec portrait, chiffres et recherche. Un modèle cliqué pose une créature sur la carte ; un aventurier cliqué est reposé au centre et désigné — toute la troupe est en scène par construction, il n’y a donc pas de double créé. Le dernier bouton du choix mène quand même au formulaire de création.
+
+`checks.cjs` passe à 294 vérifications, dont la règle des mains et le découpage des attaques d’équipement.
 
 ## v0.73 — Les adversaires s’équipent, et chaque attaque a son bouton
 

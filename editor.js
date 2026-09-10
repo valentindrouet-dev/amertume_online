@@ -41,10 +41,15 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  const retenu=Math.trunc(a.activeAttack)||0;
  liste.forEach((at,i)=>{const b=document.createElement('button');
   b.className='btn-action choix-attaque'+(i===(retenu<liste.length?retenu:0)?' on':'');
-  b.textContent=at.name||'Attaque';
+  const nom=document.createElement('span');nom.className='nom';nom.textContent=at.name||'Attaque';
+  // Les dés partent avec le nom : on choisit son attaque en voyant ce qu'elle lance.
+  b.append(nom,dicePips(at.dice));
+  if(at.range==='distance'){const loin=document.createElement('span');loin.className='loin';
+   loin.textContent='⤳';loin.setAttribute('aria-hidden','true');b.append(loin)}
   b.title=(at.gear?'Attaque avec l’équipement':'Attaque de fiche')
    +' · '+(at.range==='distance'?'à distance':'au contact')
    +(at.targets==='all'?' · toutes cibles':'');
+  b.setAttribute('aria-label',(at.name||'Attaque')+' — '+b.title);
   b.onclick=()=>{a.activeAttack=i;a.pool=poolOf(a);render();scheduleSave()};
   boite.append(b)})}
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
@@ -1082,7 +1087,56 @@ function openItem(i=null,apres=null){itemIndex=i;itemApres=apres;const a=i===nul
 $('item-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;const f=$('item-form').elements,a=itemIndex===null?{id:crypto.randomUUID()}:structuredClone(catalog.items[itemIndex]);for(const k of ['name','category','slot','effects','notes'])a[k]=f[k].value.trim();for(const k of ['qty','price','hands','def'])a[k]=num(f[k].value,0,999999);a.traits=f.traits.value.split(',').map(s=>s.trim()).filter(Boolean);for(const k of ['ranged','usesAmmo','consumable'])a[k]=f[k].checked;a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));if(itemIndex===null)catalog.items.push(a);else catalog.items[itemIndex]=a;itemDialog.close();renderCatalogPages();scheduleSave();const rappel=itemApres;itemApres=null;if(rappel)rappel(a)};
 $('delete-item').onclick=()=>{if(view!=='mj'||itemIndex===null||!confirm('Supprimer cet objet du catalogue ? Les attaques déjà appliquées restent inchangées.'))return;const id=catalog.items[itemIndex].id;actors.forEach(a=>{a.weapons=a.weapons.filter(w=>w!==id);if(a.armorId===id)a.armorId='';if(a.shieldId===id)a.shieldId=''});catalog.items.splice(itemIndex,1);itemDialog.close();renderCatalogPages();scheduleSave()};
 
-$('new-hero').onclick=()=>openActor(null,true);$('new-monster').onclick=()=>openActor(null,false);
+/* Ajouter un combattant à la scène, c'est prendre dans ce qu'on a déjà — le bestiaire
+   pour les adversaires, la troupe pour les aventuriers — et non remplir une fiche vierge.
+   Créer reste possible : le dernier bouton du choix mène au formulaire.
+   Toute la troupe est en scène par construction : choisir un aventurier le repose donc
+   au centre de la carte et le désigne, plutôt que d'en faire un double. */
+const sceneDialog2=dialog('scene-picker','Ajouter à la scène',
+ '<p class="muted" id="scene-picker-note"></p><input id="scene-picker-search" placeholder="Rechercher…" aria-label="Rechercher">'
+ +'<div id="scene-picker-body"></div><div class="form-actions"><button type="button" id="scene-picker-new"></button></div>');
+let scenePickerMode='foe';
+function openScenePicker(mode){if(view!=='mj')return;scenePickerMode=mode;
+ sceneDialog2.querySelector('h2').textContent=mode==='foe'?'Ajouter un adversaire':'Placer un aventurier';
+ $('scene-picker-note').textContent=mode==='foe'
+  ?'Clique un modèle du bestiaire : une créature est posée sur la carte.'
+  :'Toute la troupe est déjà en scène. Clique un aventurier pour le reposer au centre de la carte et le désigner.';
+ $('scene-picker-new').textContent=mode==='foe'?'+ Créer un monstre au bestiaire':'+ Créer un aventurier';
+ $('scene-picker-search').value='';$('scene-picker-search').oninput=renderScenePicker;
+ renderScenePicker();sceneDialog2.showModal()}
+function renderScenePicker(){const corps=$('scene-picker-body');if(!corps)return;corps.replaceChildren();
+ const q=($('scene-picker-search').value||'').trim().toLowerCase();
+ const libre=()=>({x:34+Math.random()*32,y:30+Math.random()*26});
+ if(scenePickerMode==='foe'){
+  const liste=catalog.monsters.map((m,i)=>[m,i]).filter(([m])=>!q||m.name.toLowerCase().includes(q));
+  liste.forEach(([m,i])=>corps.append(ligneScene(m.name,m.image,
+   (m.pv||0)+' PV · DEF '+(m.def||0)+' · '+(m.family||'sans famille'),
+   ()=>{saveChecks();savePool();const a=fromMonster(catalog.monsters[i]);
+    Object.assign(a,libre());normalizeActor(a);actors.push(a);selected=actors.length-1;markOnly(selected);
+    sceneDialog2.close();showPage('table');render();scheduleSave();
+    log(a.name+' ajouté à la carte.')})));
+  if(!liste.length)corps.append(videScene(q?'Aucun modèle de ce nom.':'Le bestiaire est vide.'))}
+ else{
+  const liste=actors.map((a,i)=>[a,i]).filter(([a])=>a.hero&&(!q||a.name.toLowerCase().includes(q)));
+  liste.forEach(([a,i])=>corps.append(ligneScene(a.name,a.image,
+   a.hp+' / '+a.max+' PV · '+(a.role||'Aventurier'),
+   ()=>{saveChecks();savePool();Object.assign(actors[i],libre());
+    selected=i;markOnly(i);settleActor(actors[i]);
+    sceneDialog2.close();showPage('table');render();scheduleSave();
+    log(actors[i].name+' replacé au centre de la carte.')})));
+  if(!liste.length)corps.append(videScene(q?'Aucun aventurier de ce nom.':'La troupe est vide.'))}}
+function ligneScene(nom,image,detail,clic){const b=document.createElement('button');b.className='pick-ligne';
+ b.append(jetonRond(image,nom,'mini'));
+ const bloc=document.createElement('span');bloc.className='pick-texte';
+ const t=document.createElement('strong');t.textContent=nom;
+ const d=document.createElement('small');d.textContent=detail;
+ bloc.append(t,d);b.append(bloc);
+ const fleche=document.createElement('span');fleche.className='pick-etat';fleche.textContent='+';
+ b.append(fleche);b.onclick=clic;return b}
+function videScene(texte){const v=document.createElement('p');v.className='muted';v.textContent=texte;return v}
+$('scene-picker-new').onclick=()=>{sceneDialog2.close();
+ if(scenePickerMode==='foe')openActor(null,false);else openActor(null,true)};
+$('new-hero').onclick=()=>openScenePicker('hero');$('new-monster').onclick=()=>openScenePicker('foe');
 const sceneDialog=dialog('scene-editor','Scène','<form id="scene-form"><label>Titre<input name="title" maxlength="120" required></label><label>Tour de combat<input name="round" type="number" min="1" max="999" required></label><div class="form-actions"><button class="primary">Enregistrer</button></div></form>');
 $('edit-scene').onclick=()=>{if(view!=='mj')return;$('scene-form').elements.title.value=sceneTitle();$('scene-form').elements.round.value=round;sceneDialog.showModal()};$('scene-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;round=num($('scene-form').elements.round.value,1,999);sceneTitle($('scene-form').elements.title.value);renderSettings();$('round').textContent=String(round).padStart(2,'0');sceneDialog.close();scheduleSave()};
 $('reset-map').onclick=()=>{if(view!=='mj')return;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom');scheduleSave()};

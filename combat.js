@@ -62,18 +62,31 @@ function equippedDef(actor,items){const worn=gearOf(actor&&[actor.armorId,actor.
    double comptant deux fois (v0.69).
    L'attaque d'équipement vient en tête : une fiche enregistrée avant ce choix a
    « activeAttack » à zéro, et retrouve ainsi l'arme qui décidait pour elle. */
-function gearAttack(actor,items){
+/* Une arme à deux mains s'emploie seule : elle vaut donc une attaque à elle. Les armes
+   à une main se tiennent ensemble et n'en font qu'une, dés cumulés — et deux exemplaires
+   du même modèle cumulent aussi les leurs (v0.69). Une arme à distance se tient toujours
+   à deux mains : rapière et arc court sont deux boutons, l'un au contact, l'autre au loin. */
+function weaponHands(w){return w&&w.ranged===true?2:(Number(w&&w.hands)===1?1:2)}
+function poolOfWeapons(armes){const dice={};
+ DICE_KEYS.forEach(k=>dice[k]=Math.min(12,armes.reduce((somme,w)=>somme+(Number(w.dice&&w.dice[k])||0),0)));
+ return dice}
+function gearAttacks(actor,items){
  // Seule une arme frappe : un objet rangé là par erreur ne crée pas une attaque sans dés.
  const armes=gearOf(actor&&actor.weapons,items).filter(w=>w.category==='weapon');
- if(!armes.length)return null;
- const compte=new Map();armes.forEach(w=>compte.set(w,(compte.get(w)||0)+1));
- const dice={};DICE_KEYS.forEach(k=>dice[k]=Math.min(12,
-  armes.reduce((somme,w)=>somme+(Number(w.dice&&w.dice[k])||0),0)));
- return {name:[...compte].map(([w,n])=>w.name+(n>1?' ×'+n:'')).join(' + '),dice,
-  range:armes.some(w=>w.ranged===true)?'distance':'contact',
-  targets:'one',useOwnDamage:true,effects:{},gear:true}}
-function attackChoices(actor,items){const arme=gearAttack(actor,items);
- return (arme?[arme]:[]).concat(actor&&actor.attacks||[])}
+ if(!armes.length)return [];
+ const groupes=new Map();armes.forEach(w=>groupes.set(w,(groupes.get(w)||0)+1));
+ const nommer=(w,n)=>w.name+(n>1?' ×'+n:'');
+ const sorties=[],uneMain=[];
+ groupes.forEach((n,w)=>{const copies=Array(n).fill(w);
+  if(weaponHands(w)===2)sorties.push({name:nommer(w,n),dice:poolOfWeapons(copies),
+   range:w.ranged===true?'distance':'contact',targets:'one',useOwnDamage:true,effects:{},gear:true});
+  else uneMain.push(...copies)});
+ if(uneMain.length){const groupesM=new Map();uneMain.forEach(w=>groupesM.set(w,(groupesM.get(w)||0)+1));
+  sorties.unshift({name:[...groupesM].map(([w,n])=>nommer(w,n)).join(' + '),dice:poolOfWeapons(uneMain),
+   range:'contact',targets:'one',useOwnDamage:true,effects:{},gear:true})}
+ return sorties}
+function attackChoices(actor,items){
+ return gearAttacks(actor,items).concat(actor&&actor.attacks||[])}
 /* L'attaque retenue, quoi qu'il arrive : un choix devenu caduc — l'arme retirée, une
    attaque effacée — retombe sur la première offerte plutôt que sur rien du tout. */
 function chosenAttack(actor,items){const liste=attackChoices(actor,items);
@@ -526,6 +539,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,gearAttack,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);
