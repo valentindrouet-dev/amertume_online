@@ -39,7 +39,7 @@ const heroesPage=document.createElement('main');heroesPage.id='heroes-page';
 heroesPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Aventuriers</h2><div class="cat-actions">'
  +'<button id="hero-add" class="primary">+ Nouvel aventurier</button></div></header>'
- +'<p class="muted">Les fiches des héros de la troupe. C’est ici qu’on les crée, qu’on les modifie et qu’on les retire.</p>'
+ +'<p class="muted">Les fiches des héros de la troupe. C’est ici qu’on les crée, qu’on les modifie et qu’on les retire. <b>Clique une valeur pour la corriger sur place</b> — niveau, XP, Vie, PV, DEF, dégâts et bonus de compétence. Entrée valide, Échap annule. La DEF suit l’armure équipée : elle se change dans l’équipement.</p>'
  +'<div class="cat-filters"><input id="hero-search" placeholder="Rechercher…" aria-label="Rechercher un aventurier"></div>'
  +'<div class="hero-grid" id="hero-grid"></div></section>';
 const settingsPage=document.createElement('main');settingsPage.id='settings-page';
@@ -70,7 +70,7 @@ const bestiaryPage=document.createElement('main');bestiaryPage.id='bestiary-page
 bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Bestiaire</h2><div class="cat-actions">'
  +'<button id="bestiary-add" class="primary">+ Nouveau monstre</button></div></header>'
- +'<p class="muted">Modèles d’adversaires. Un modèle se pose sur la carte de combat ou se pré-place depuis l’éditeur de cartes.</p>'
+ +'<p class="muted">Modèles d’adversaires. Un modèle se pose sur la carte de combat ou se pré-place depuis l’éditeur de cartes. Ouvre une languette pour voir sa fiche entière : <b>tout s’y corrige d’un clic</b>. Changer les PV maximum met à jour les créatures déjà posées.</p>'
  +'<div class="cat-filters"><input id="bestiary-search" placeholder="Rechercher…" aria-label="Rechercher un monstre">'
  +'<select id="bestiary-family" aria-label="Famille"></select>'
  +'<select id="bestiary-sort" aria-label="Tri"><option value="danger">Tri : danger ↓</option>'
@@ -82,6 +82,90 @@ function sousTitre(texte,titre,fn){const h=document.createElement('h4');h.classN
  h.append(texte);
  const b=document.createElement('button');b.className='ico plus';b.textContent='+';
  b.title=titre;b.setAttribute('aria-label',titre);b.onclick=fn;h.append(b);return h}
+/* ---------- Corriger une valeur là où elle est lue ---------- */
+/* Le MJ clique le chiffre sur la fiche, le retape, et valide par Entrée ou en
+   sortant du champ ; Échap laisse tout en place. Le nœud d'origine est remis avant
+   que la valeur soit posée : la page se redessine derrière, sans reste de champ.
+   Les joueurs n'ont pas ce droit — chez eux une fiche se lit, elle ne s'écrit pas. */
+function champVif(noeud,valeur,poser,titre,classe){
+ if(view!=='mj')return noeud;
+ noeud.classList.add('modifiable');noeud.tabIndex=0;
+ noeud.title=titre||'Cliquer pour modifier';
+ // Une note tient sur plusieurs lignes : elle s'écrit dans une zone, où Entrée
+ // saute une ligne et où c'est la sortie du champ qui valide.
+ const zone=classe==='zone';
+ const ouvrir=()=>{const parent=noeud.parentNode;if(!parent)return;
+  const champ=document.createElement(zone?'textarea':'input');
+  champ.className='champ-vif'+(classe?' '+classe:'');
+  champ.value=String(valeur??'');champ.setAttribute('aria-label',noeud.title);
+  if(zone)champ.rows=4;
+  parent.replaceChild(champ,noeud);champ.focus();champ.select();
+  let clos=false;
+  const fermer=garder=>{if(clos)return;clos=true;
+   if(champ.parentNode)champ.parentNode.replaceChild(noeud,champ);
+   if(garder)poser(champ.value)};
+  champ.onkeydown=e=>{e.stopPropagation();
+   if(e.key==='Enter'&&(!zone||e.metaKey||e.ctrlKey)){e.preventDefault();fermer(true)}
+   else if(e.key==='Escape'){e.preventDefault();fermer(false)}};
+  champ.onblur=()=>fermer(true);
+  champ.onclick=e=>e.stopPropagation()};
+ noeud.onclick=e=>{e.preventDefault();e.stopPropagation();ouvrir()};
+ noeud.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ouvrir()}};
+ return noeud}
+/* Un choix ne se tape pas : la pastille s'échange contre un menu, qui se referme
+   sur la sélection. Sortir sans choisir ne change rien. */
+function choixVif(noeud,valeur,options,poser,titre){
+ if(view!=='mj')return noeud;
+ noeud.classList.add('modifiable');noeud.tabIndex=0;noeud.title=titre||'Cliquer pour changer';
+ const ouvrir=()=>{const parent=noeud.parentNode;if(!parent)return;
+  const menu=document.createElement('select');menu.className='champ-vif choix';
+  menu.setAttribute('aria-label',noeud.title);
+  options.forEach(([v,t])=>menu.add(new Option(t,v)));menu.value=String(valeur??'');
+  parent.replaceChild(menu,noeud);menu.focus();
+  let clos=false;
+  const fermer=garder=>{if(clos)return;clos=true;
+   if(menu.parentNode)menu.parentNode.replaceChild(noeud,menu);
+   if(garder)poser(menu.value)};
+  menu.onchange=()=>fermer(true);menu.onblur=()=>fermer(false);
+  menu.onkeydown=e=>{e.stopPropagation();if(e.key==='Escape'){e.preventDefault();fermer(false)}}};
+ noeud.onclick=e=>{e.preventDefault();e.stopPropagation();ouvrir()};
+ noeud.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ouvrir()}};
+ return noeud}
+/* Une case à cocher déguisée en pastille : un clic la retourne. */
+function basculeVive(noeud,poser,titre){
+ if(view!=='mj')return noeud;
+ noeud.classList.add('modifiable');noeud.tabIndex=0;noeud.title=titre;
+ noeud.onclick=e=>{e.preventDefault();e.stopPropagation();poser()};
+ noeud.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();poser()}};
+ return noeud}
+/* Le portrait d'un combattant, rond comme sur la carte : petit sur une languette
+   pour le reconnaître d'un coup d'œil, grand dans la fiche dépliée. */
+function jetonRond(image,nom,taille){const j=document.createElement('span');
+ j.className='jeton-rond'+(taille?' '+taille:'');
+ if(image){const im=document.createElement('img');im.src=image;im.alt='';im.draggable=false;j.append(im)}
+ else j.textContent=(String(nom||'?').trim()[0]||'?').toUpperCase();
+ return j}
+/* Poser une caractéristique d'aventurier : la fiche est corrigée, puis la page,
+   la table et la sauvegarde suivent. */
+function poserCarac(a,cle,brut){const avant=a[cle];writeStat(a,cle,brut);
+ if(a[cle]===avant)return;
+ renderHeroes();render();scheduleSave();
+ // Une fiche corrigée est du contenu : une publication en cours la reprend.
+ document.dispatchEvent(new Event('amertume-content-changed'))}
+/* Rendre modifiables les tuiles d'une rangée : la grosse valeur, et le plafond
+   écrit en petit dessous quand il y en a un. La DEF fait exception dès qu'une
+   armure la commande — elle se change alors dans l'équipement, pas ici. */
+function tuilesVives(a,tuiles,cles){
+ tuiles.forEach((tuile,i)=>{const [cle,plafond]=cles[i]||[];if(!cle)return;
+  const gros=tuile.querySelector('strong'),ecu=tuile.querySelector('.ecu'),
+   petit=tuile.querySelector('small');
+  if(cle==='def'&&equippedDef(a,catalog.items)!==null){
+   if(ecu){ecu.classList.add('verrou');
+    ecu.title='DEF de l’armure et du bouclier équipés : elle se change dans l’équipement.'}}
+  else if(ecu)champVif(ecu,a.def,v=>poserCarac(a,'def',v),'Modifier la DEF de '+a.name);
+  else if(gros)champVif(gros,a[cle],v=>poserCarac(a,cle,v),'Modifier '+cle.toUpperCase()+' de '+a.name);
+  if(petit&&plafond)champVif(petit,a[plafond],v=>poserCarac(a,plafond,v),
+   'Modifier le maximum de '+a.name,'petit')})}
 /* Une carte par aventurier : de quoi le reconnaître, lire ses chiffres et agir dessus. */
 /* Enregistrer une fiche remplace l'objet dans « actors » : une carte dessinée avant
    garde l'ancien, devenu orphelin. Le rang se relit donc au clic, et une carte périmée
@@ -114,15 +198,23 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
    actors.push(copie);renderHeroes();render();scheduleSave()}),suppr);
  tete.append(jeton,titre,classe,outils);
  const puces=document.createElement('div');puces.className='chips';
- const marques=[];if(a.sexe)marques.push((a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe);
- if(a.race)marques.push(a.race);marques.push('Niveau '+a.level,(a.xp||0)+' XP');
- marques.forEach(t=>{const p=document.createElement('span');p.className='chip';p.textContent=t;puces.append(p)});
+ const marques=[];if(a.sexe)marques.push([(a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe]);
+ if(a.race)marques.push([a.race]);
+ // Le niveau et l'expérience sont des chiffres de fiche : ils se corrigent d'un clic.
+ marques.push(['Niveau '+a.level,'level',a.level,'Modifier le niveau de '+a.name],
+  [(a.xp||0)+' XP','xp',a.xp||0,'Modifier l’XP de '+a.name]);
+ marques.forEach(([t,cle,val,titre])=>{const p=document.createElement('span');p.className='chip';p.textContent=t;
+  if(cle)champVif(p,val,v=>poserCarac(a,cle,v),titre,'petit');
+  puces.append(p)});
  // Les caractéristiques reprennent les tuiles de la fiche en jeu : libellé au-dessus,
  // valeur en gros, une teinte par caractéristique, l'écu pour la DEF.
  const chiffres=document.createElement('div');chiffres.className='stat-row';
- chiffres.append(...[['vie','Vie',a.vie,false,a.vieMax??a.vie],['endu','Endu',a.endu],
+ const tuiles=[['vie','Vie',a.vie,false,a.vieMax??a.vie],['endu','Endu',a.endu],
   ['pv','PV',a.hp,false,a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+'+a.dmg]]
-  .map(t=>statTile(...t)));
+  .map(t=>statTile(...t));
+ // Le MJ corrige un chiffre là où il le lit ; la fiche complète reste pour le reste.
+ tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],['hp','max'],['def'],['dmg']]);
+ chiffres.append(...tuiles);
  const titreComp=document.createElement('h4');titreComp.className='hero-sous';titreComp.textContent='Compétences';
  const comps=document.createElement('div');comps.className='skills';
  // Un bonus de 0 reste une compétence qu'on teste — le dé de base est toujours lancé.
@@ -131,6 +223,10 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   puce.style.setProperty('--tint',SKILL_TINTS[k]);
   const l=document.createElement('span');l.textContent=n;
   const v=document.createElement('b');v.textContent='+'+a.skills[k];
+  champVif(v,a.skills[k],brut=>{const avant=a.skills[k];
+   a.skills[k]=readStat('skill',brut,avant);
+   if(a.skills[k]!==avant){renderHeroes();render();scheduleSave();
+    document.dispatchEvent(new Event('amertume-content-changed'))}},'Modifier '+n+' de '+a.name,'petit');
   puce.append(l,v);comps.append(puce)});
 
  const titreKit=sousTitre('Équipement','Équiper '+a.name,()=>openPicker(a,'gear'));
@@ -251,20 +347,157 @@ function renderArmory(){const cols=$('armory-cols');if(!cols)return;cols.replace
   cols.append(bloc)}}
 const BEST_COLS=[['standard','Sbires'],['solitaire','Solitaires'],['boss','Boss']];
 function danger(m){return (Number(m.xp)||0)*100+(Number(m.pv)||0)}
+/* Quelles languettes du bestiaire sont dépliées. Un modèle importé peut n'avoir
+   pas d'identifiant : son nom sert alors de clé, faute de mieux. */
+const bestiaireOuverts=new Set();
+function cleModele(m){return m&&(m.id||'nom:'+m.name)}
+const MENACE_NOMS={closest:'Plus proche',pvLow:'PV bas',pvHigh:'PV haut',defLow:'DEF basse'};
+const SOCLE_NOMS={medium:'Socle moyen',large:'Grand socle',huge:'Socle énorme'};
+/* Enregistrer un modèle corrigé : le bestiaire se redessine, les créatures déjà
+   posées suivent leur plafond de PV, et la partie est sauvegardée. */
+function poserModele(m){const suivis=syncFromTemplate(m);
+ if(suivis)log(suivis+' créature(s) « '+m.name+' » sur la table passée(s) à '+m.pv+' PV maximum.');
+ renderCatalogPages();render();scheduleSave();
+ document.dispatchEvent(new Event('amertume-content-changed'))}
+/* Les dés d'une attaque, réglés au doigt : cliquer un dé le retire, le « + » en
+   propose un de chaque couleur. Douze par couleur au plus, comme au formulaire. */
+function desVifs(at,poser){const out=document.createElement('span');out.className='pips';
+ DIE_ORDER.forEach(c=>{for(let n=0;n<(at.dice&&at.dice[keys[c]]||0);n++){
+  const d=document.createElement('button');d.className='die-sq';
+  d.style.setProperty('--face',dieFace(c));
+  d.title=types[c]+' · cliquer pour retirer ce dé';d.setAttribute('aria-label',d.title);
+  if(view==='mj')d.onclick=e=>{e.stopPropagation();
+   at.dice[keys[c]]=Math.max(0,(at.dice[keys[c]]||0)-1);poser()};
+  else d.disabled=true;
+  out.append(d)}});
+ if(view!=='mj')return out;
+ const plus=document.createElement('button');plus.className='die-ajout';plus.textContent='+';
+ plus.title='Ajouter un dé';plus.setAttribute('aria-label','Ajouter un dé');
+ plus.onclick=e=>{e.stopPropagation();
+  const menu=document.createElement('select');menu.className='champ-vif choix';
+  menu.setAttribute('aria-label','Couleur du dé à ajouter');
+  menu.add(new Option('Ajouter…',''));DIE_ORDER.forEach(c=>menu.add(new Option(types[c],String(c))));
+  plus.replaceWith(menu);menu.focus();
+  let clos=false;
+  const fermer=garder=>{if(clos)return;clos=true;
+   if(menu.parentNode)menu.replaceWith(plus);
+   if(garder&&menu.value!==''){const c=Number(menu.value);
+    at.dice[keys[c]]=Math.min(12,(at.dice[keys[c]]||0)+1);poser()}};
+  menu.onchange=()=>fermer(true);menu.onblur=()=>fermer(false);
+  menu.onkeydown=e=>{e.stopPropagation();if(e.key==='Escape'){e.preventDefault();fermer(false)}}};
+ out.append(plus);return out}
+/* Une attaque du modèle : son nom, ses dés, sa portée et ses cibles. Tout se
+   corrige sur place ; ce qui reste manuel en jeu est écrit sous la ligne. */
+function attaqueVive(m,at,poser){const l=document.createElement('div');l.className='best-attaque';
+ const tete=document.createElement('div');tete.className='best-att-tete';
+ const nom=document.createElement('b');nom.textContent=at.name||'Attaque';
+ champVif(nom,at.name||'',v=>{const t=String(v).trim().slice(0,100);
+  if(t&&t!==at.name){at.name=t;poser()}},'Renommer cette attaque','texte');
+ tete.append(nom,desVifs(at,poser));
+ const bas=document.createElement('div');bas.className='best-att-bas';
+ const puce=(texte,valeur,options,titre,ecrire)=>{const p=document.createElement('span');
+  p.className='tag-mini';p.textContent=texte;
+  return choixVif(p,valeur,options,v=>{ecrire(v);poser()},titre)};
+ bas.append(puce(at.range==='distance'?'DISTANCE':'CONTACT',at.range||'contact',
+   [['contact','Contact'],['distance','Distance']],'Portée de l’attaque',v=>at.range=v),
+  puce(at.targets==='all'?'TOUTES CIBLES':'CIBLE UNIQUE',at.targets||'one',
+   [['one','Cible unique'],['all','Toutes cibles (manuel)']],'Cibles de l’attaque',v=>at.targets=v),
+  puce(at.useOwnDamage===false?'SANS BONUS':'AVEC BONUS DE DÉGÂTS',at.useOwnDamage===false?'non':'oui',
+   [['oui','Ajoute les dégâts du monstre'],['non','Dés seuls']],'Bonus de dégâts',
+   v=>at.useOwnDamage=v==='oui'));
+ const eff=at.effectText||Object.entries(at.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', ');
+ const note=document.createElement('span');note.className='tag-mini effet';
+ note.textContent=eff?eff.toUpperCase():'+ EFFET';
+ champVif(note,eff,v=>{at.effectText=String(v).trim().slice(0,160);poser()},
+  'Effets à appliquer à la main','texte');
+ bas.append(note);
+ const retirer=document.createElement('button');retirer.className='ico danger';retirer.textContent='✕';
+ retirer.title='Retirer cette attaque';retirer.setAttribute('aria-label','Retirer l’attaque '+(at.name||''));
+ retirer.onclick=e=>{e.stopPropagation();
+  if((m.attacks||[]).length<2){alert('Un adversaire garde au moins une attaque.');return}
+  m.attacks.splice(m.attacks.indexOf(at),1);poser()};
+ if(view==='mj')tete.append(retirer);
+ l.append(tete,bas);return l}
+/* La fiche d'un modèle, dépliée sous sa languette : le portrait en grand, tous les
+   chiffres, les attaques. Le MJ corrige chaque valeur là où il la lit ; les copies
+   déjà posées sur la table suivent le plafond de PV, comme depuis la v0.54. */
+function monsterSheet(m){const f=document.createElement('div');f.className='best-fiche';
+ const poser=()=>poserModele(m);
+ const tete=document.createElement('div');tete.className='best-tete';
+ tete.append(jetonRond(m.image,m.name,'grand'));
+ const ident=document.createElement('div');ident.className='best-ident';
+ const nom=document.createElement('h4');nom.textContent=m.name;
+ champVif(nom,m.name,v=>{const t=String(v).trim().slice(0,120);
+  if(t&&t!==m.name){m.name=t;poser()}},'Renommer ce modèle','texte');
+ const famille=document.createElement('span');famille.className='chip';
+ famille.textContent=m.family||'Sans famille';
+ champVif(famille,m.family||'',v=>{m.family=String(v).trim().slice(0,60);poser()},
+  'Modifier la famille','texte');
+ const rangee=document.createElement('div');rangee.className='chips';
+ rangee.append(famille,
+  choixVif(Object.assign(document.createElement('span'),
+   {className:'chip',textContent:TYPE_NOMS[m.type]||'Standard'}),m.type||'standard',
+   Object.entries(TYPE_NOMS),v=>{m.type=v;poser()},'Type d’adversaire'),
+  choixVif(Object.assign(document.createElement('span'),
+   {className:'chip',textContent:'🎯 '+(MENACE_NOMS[m.menace]||'Plus proche')}),m.menace||'closest',
+   Object.entries(MENACE_NOMS),v=>{m.menace=v;poser()},'Cible visée en priorité'),
+  choixVif(Object.assign(document.createElement('span'),
+   {className:'chip',textContent:SOCLE_NOMS[m.socle]||'Socle moyen'}),m.socle||'medium',
+   Object.entries(SOCLE_NOMS),v=>{m.socle=v;poser()},'Taille du socle'),
+  basculeVive(Object.assign(document.createElement('span'),
+   {className:'chip'+(m.rapide?' actif':''),textContent:'⚡ Rapide '+(m.rapide?'✓':'✕')}),
+   ()=>{m.rapide=!m.rapide;poser()},'Rapide (appliqué à la main en jeu)'),
+  basculeVive(Object.assign(document.createElement('span'),
+   {className:'chip'+(m.esquive?' actif':''),textContent:'🍃 Esquive '+(m.esquive?'✓':'✕')}),
+   ()=>{m.esquive=!m.esquive;poser()},'Esquive 6+ (appliquée à la main en jeu)'));
+ ident.append(nom,rangee);tete.append(ident);
+ // Les mêmes tuiles qu'en jeu : un modèle se lit comme la créature qu'il deviendra.
+ const chiffres=document.createElement('div');chiffres.className='stat-row';
+ const tuiles=[['pv','PV',m.pv||0],['def','DEF',m.def||0,true],
+  ['dmg','Dég.','+'+(m.damage||0)],['xp','XP',m.xp||0]].map(t=>statTile(...t));
+ [['pv'],['def'],['damage'],['xp']].forEach(([cle],k)=>{
+  const cible=tuiles[k].querySelector('.ecu')||tuiles[k].querySelector('strong');
+  if(cible)champVif(cible,m[cle]||0,v=>{const avant=m[cle];writeStat(m,cle,v);
+   if(m[cle]!==avant)poser()},'Modifier '+cle.toUpperCase()+' de '+m.name)});
+ chiffres.append(...tuiles);
+ const titreAtt=document.createElement('h5');titreAtt.textContent='Attaques';
+ if(view==='mj'){const ajout=document.createElement('button');ajout.className='ico plus';
+  ajout.textContent='+';ajout.title='Ajouter une attaque';
+  ajout.setAttribute('aria-label','Ajouter une attaque à '+m.name);
+  ajout.onclick=e=>{e.stopPropagation();m.attacks=[...(m.attacks||[]),
+   {name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',
+    useOwnDamage:true,effects:{}}];poser()};
+  titreAtt.append(ajout)}
+ const listeAtt=document.createElement('div');listeAtt.className='best-attaques';
+ (m.attacks||[]).forEach(at=>listeAtt.append(attaqueVive(m,at,poser)));
+ if(!(m.attacks||[]).length){const vide=document.createElement('p');vide.className='muted';
+  vide.textContent='Aucune attaque : ce modèle ne frappe pas.';listeAtt.append(vide)}
+ const titreNotes=document.createElement('h5');titreNotes.textContent='Notes';
+ const notes=document.createElement('p');notes.className='best-notes'+(m.notes?'':' muted');
+ notes.textContent=m.notes||'Aucune note.';
+ champVif(notes,m.notes||'',v=>{m.notes=String(v).slice(0,600);poser()},
+  'Talents, inventaire et notes · Entrée saute une ligne, sortir du champ enregistre','zone');
+ f.append(tete,chiffres,titreAtt,listeAtt,titreNotes,notes);
+ return f}
 function bestiaryRow(m,i){const rang=document.createElement('div');rang.className='cat-row';
  const pill=document.createElement('button');pill.className='cat-pill k-'+(m.type||'standard');
  const nom=document.createElement('span');nom.className='nom';nom.textContent=m.name;
  const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';
- pill.append(nom,chev);
- const detail=document.createElement('div');detail.className='cat-detail';detail.hidden=true;
- detail.innerHTML='<span>'+(m.pv||0)+' PV · DEF '+(m.def||0)+' · Dégâts '+(m.damage||0)+' · '+(m.xp||0)+' XP</span>'
-  +'<span class="muted">'+esc(m.family||'Sans famille')+(m.rapide?' · Rapide':'')+(m.esquive?' · Esquive':'')+'</span>';
+ pill.append(jetonRond(m.image,m.name,'mini'),nom,chev);
+ // Corriger une valeur redessine la page : la languette ouverte doit le rester.
+ const detail=document.createElement('div');detail.className='cat-detail';
+ detail.hidden=!bestiaireOuverts.has(cleModele(m));
+ pill.classList.toggle('ouvert',!detail.hidden);
+ if(!detail.hidden)detail.append(monsterSheet(m));
  const poser=document.createElement('button');poser.dataset.catAdd=i;poser.textContent='Ajouter à la carte';
  detail.append(poser);
  poser.onclick=()=>{saveChecks();savePool();const a=fromMonster(catalog.monsters[i]);
   a.x=30+Math.random()*40;a.y=20+Math.random()*30;normalizeActor(a);actors.push(a);selected=actors.length-1;
   showPage('table');render();log(a.name+' ajouté à la carte.')};
- pill.onclick=()=>{detail.hidden=!detail.hidden;pill.classList.toggle('ouvert',!detail.hidden)};
+ pill.onclick=()=>{const ouvrir=detail.hidden;
+  if(ouvrir)bestiaireOuverts.add(cleModele(m));else bestiaireOuverts.delete(cleModele(m));
+  detail.hidden=!ouvrir;pill.classList.toggle('ouvert',ouvrir);
+  if(ouvrir&&!detail.querySelector('.best-fiche'))detail.prepend(monsterSheet(m))};
  const outils=document.createElement('span');outils.className='cat-tools';
  const ico=(glyphe,titre,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=glyphe;
   b.title=titre;b.setAttribute('aria-label',titre+' '+m.name);b.onclick=fn;return b};

@@ -366,4 +366,24 @@ assert.equal(recadre(200,200,100,.5,9,0).ox,50);                // Poussée à d
 assert.equal(recadre(200,200,100,.5,-9,0).ox,0);
 const nul=recadre(0,0,100,1,0,0);                             // Une image dégénérée ne divise pas par zéro.
 assert.ok(Object.values(nul).every(Number.isFinite));
-console.log('226 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// Caractéristiques corrigées à la main : bornes, saisies illisibles et cohérence de la fiche.
+const {readStat,writeStat}=require('./combat.js');
+assert.equal(readStat('def','5',2),5);
+assert.equal(readStat('def','',2),2);                          // Champ vidé : la valeur d'avant tient.
+assert.equal(readStat('def','abc',2),2);                       // Illisible : rien ne bouge.
+assert.equal(readStat('def','900',2),99);                      // Au-delà de la borne : on s'y arrête.
+assert.equal(readStat('def','-4',2),0);
+assert.equal(readStat('vie','7,5',1),7.5);                     // La virgule vaut le point.
+assert.equal(readStat('endu','3.9',1),3);                      // Une endurance ne se coupe pas en quatre.
+assert.equal(readStat('level','9',1),7);
+assert.equal(readStat('inconnue','5',2),2);                    // Une clé qui n'existe pas ne s'invente pas.
+const fiche={hp:20,max:24,vie:8,vieMax:8,dmg:2,states:[]};
+assert.equal(writeStat(fiche,'max','10'),10);assert.equal(fiche.hp,10);   // Le plafond baissé ramène les PV.
+assert.equal(writeStat(fiche,'hp','99'),10);assert.equal(fiche.hp,10);    // Les PV ne dépassent pas leur plafond : c'est la valeur retenue qui revient.
+writeStat(fiche,'hp','0');assert.ok(hasState(fiche,'Coma'));              // Tomber à zéro, c'est le coma.
+writeStat(fiche,'hp','4');assert.ok(!hasState(fiche,'Coma'));
+writeStat(fiche,'vieMax','5');assert.equal(fiche.vie,5);                  // La Vie suit son maximum.
+const modele={pv:8,def:2,damage:3,xp:7};
+assert.equal(writeStat(modele,'pv','42'),42);
+assert.ok(!('hp'in modele)&&!('max'in modele)&&!('states'in modele));     // Un modèle n'a ni PV du moment ni états.
+console.log('244 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

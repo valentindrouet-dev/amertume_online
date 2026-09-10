@@ -223,4 +223,53 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .pick-ligne.porte{border-color:var(--green);background:var(--sel)}
 .pick-etat{flex:none;width:24px;font:700 15px system-ui;color:var(--muted)}
 .pick-ligne.porte .pick-etat{color:var(--green)}
+/* ---------- Corriger une valeur là où elle est lue ---------- */
+/* Ce qui se modifie se voit : un soulignement discret au survol, le champ prend
+   exactement la place du chiffre qu'il remplace. */
+.modifiable{cursor:text;border-radius:6px;transition:background .12s}
+.modifiable:hover{background:var(--hover);box-shadow:inset 0 -1px 0 var(--accent)}
+.modifiable:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.ecu.modifiable{cursor:text}
+.ecu.verrou{opacity:.85;cursor:help}
+.champ-vif{box-sizing:border-box;font:inherit;max-width:100%;padding:2px 5px;text-align:center;
+ border:1px solid var(--accent);border-radius:6px;background:var(--field);color:var(--ink)}
+.champ-vif.petit{font:600 12px/1.3 system-ui}
+.champ-vif.texte{text-align:left;width:100%;font:inherit}
+.champ-vif.zone{text-align:left;width:100%;font:inherit;resize:vertical;line-height:1.45}
+.champ-vif.choix{font:600 12px system-ui;text-align:left;padding:2px 4px}
+.stat-tile .champ-vif{display:block;width:100%;margin-top:5px;font:700 20px/1.2 'Killam',system-ui}
+.stat-tile .champ-vif.petit{margin-top:6px;font:600 11px/1.3 system-ui}
+.skill-chip .champ-vif{width:46px;padding:0 3px}
+.chip .champ-vif,span.chip.modifiable{white-space:nowrap}
+.chip.actif{border-color:var(--green);color:var(--green)}
+/* ---------- Le portrait, rond comme sur la carte ---------- */
+.jeton-rond{flex:none;display:grid;place-items:center;overflow:hidden;border-radius:50%;
+ background:#284a40;border:1px solid #9fc8b1;color:#cfe3d6;font-family:'Killam',Georgia,serif}
+.jeton-rond img{width:100%;height:100%;object-fit:cover;display:block}
+.jeton-rond.mini{width:26px;height:26px;font-size:14px}
+.jeton-rond.grand{width:92px;height:92px;font-size:44px}
+/* ---------- La fiche d'un modèle, sous sa languette ---------- */
+.best-fiche{width:100%;display:flex;flex-direction:column;gap:10px}
+.best-tete{display:flex;gap:12px;align-items:flex-start}
+.best-ident{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.best-ident h4{margin:0;font:700 18px 'Killam',Georgia,serif;letter-spacing:.4px}
+.best-fiche .chips{margin:0}
+.best-fiche .stat-row{margin:0}
+.best-fiche h5{margin:4px 0 0;font:600 10px system-ui;letter-spacing:2px;text-transform:uppercase;
+ color:var(--muted);display:flex;align-items:center;gap:7px}
+.best-attaques{display:flex;flex-direction:column;gap:7px}
+.best-attaque{border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:7px 9px;
+ background:var(--panel);display:flex;flex-direction:column;gap:6px}
+.best-att-tete{display:flex;align-items:center;gap:9px}
+.best-att-tete b{font:700 15px 'Killam',Georgia,serif;letter-spacing:.3px}
+.best-att-tete .pips{margin-left:auto;display:flex;gap:5px;align-items:center}
+.best-att-bas{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.tag-mini{border:1px solid var(--line);border-radius:20px;padding:2px 9px;
+ font:600 10px system-ui;letter-spacing:1px;color:var(--muted);white-space:nowrap}
+.tag-mini.effet{border-style:dashed;color:var(--accent)}
+.die-ajout{flex:0 0 22px;width:22px;height:22px;padding:0;border:1px dashed var(--line);
+ border-radius:5px;background:transparent;color:var(--muted);font:700 14px/1 system-ui}
+.die-ajout:hover{border-color:var(--accent);color:var(--accent)}
+.best-attaque .die-sq{cursor:pointer;padding:0}
+.best-notes{margin:0;font-size:13px;white-space:pre-wrap}
 @media (max-width:900px){#heroes-page,#talents-page,#armory-page,#bestiary-page{padding:14px}.cat-cols,.hero-grid{grid-template-columns:1fr}}

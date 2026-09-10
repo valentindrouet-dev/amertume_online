@@ -465,8 +465,37 @@ function applyDamage(a,montant){const perdu=Math.min(a.hp,Math.max(0,Math.trunc(
  a.hp=Math.max(0,a.hp-perdu);if(a.hp===0)setState(a,'Coma',true);return perdu}
 function applyHeal(a,montant){const gagne=Math.min(Math.max(0,a.max-a.hp),Math.max(0,Math.trunc(montant)||0));
  a.hp+=gagne;if(a.hp>0)setState(a,'Coma',false);return gagne}
+/* ---------- Caractéristiques corrigées à la main ---------- */
+/* Chaque caractéristique a ses bornes, les mêmes que dans le formulaire de fiche.
+   Une saisie vide, illisible ou d'un autre monde ne détruit rien : elle revient à
+   la valeur d'avant, ou s'arrête à la borne. La virgule vaut le point : on tape
+   comme on écrit. */
+const STAT_LIMITS={hp:[0,99999],max:[1,99999],def:[0,99],dmg:[0,999],xp:[0,999999],
+ level:[1,7],endu:[1,999],pvBonus:[-9999,9999],skill:[0,30],
+ vie:[0,999,true],vieMax:[1,999,true],
+ pv:[1,99999],damage:[0,999]};   // pv et damage : les noms du bestiaire.
+function readStat(cle,texte,avant){const bornes=STAT_LIMITS[cle];
+ if(!bornes)return avant;
+ const brut=String(texte??'').replace(',','.').trim();
+ if(!brut)return avant;
+ const n=bornes[2]?parseFloat(brut):parseInt(brut,10);
+ if(!Number.isFinite(n))return avant;
+ return Math.max(bornes[0],Math.min(bornes[1],bornes[2]?Math.round(n*100)/100:Math.trunc(n)))}
+/* Écrire une caractéristique en gardant la fiche cohérente : des PV ne dépassent
+   jamais leur plafond, baisser le plafond y ramène les PV, et toucher le fond
+   met dans le coma comme n'importe quel coup. */
+function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
+ const v=readStat(cle,texte,a[cle]);a[cle]=v;
+ // Un modèle du bestiaire n'a ni PV du moment ni états : sa cohérence s'arrête à ses bornes.
+ const combattant=Number.isFinite(a.hp)&&Number.isFinite(a.max);
+ if(combattant){if(cle==='max')a.hp=Math.min(a.hp,a.max);
+  else if(cle==='hp')a.hp=Math.min(a.hp,a.max);
+  if(cle==='hp'||cle==='max')setState(a,'Coma',!a.hp)}
+ if(cle==='vieMax'&&Number.isFinite(a.vie))a.vie=Math.min(a.vie,a.vieMax);
+ else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
+ return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

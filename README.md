@@ -1,4 +1,4 @@
-# Amertume Online — v0.66
+# Amertume Online — v0.67
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.67 — Corriger un chiffre là où il est lu
+
+**Les caractéristiques se modifient d’un clic.** Sur la page Aventuriers, le MJ clique une valeur — niveau, XP, Vie et son maximum, Endurance, PV et leur maximum, dégâts, bonus de compétence — la retape, et valide par Entrée ou en sortant du champ. Échap laisse tout en place, et une saisie vide ou illisible garde la valeur d’avant plutôt que d’écrire n’importe quoi. Chaque chiffre s’arrête aux mêmes bornes que dans le formulaire de fiche, et la fiche reste cohérente : baisser le plafond de PV y ramène les PV du moment, tomber à zéro met dans le coma, la Vie ne dépasse pas son maximum. **La DEF fait exception dès qu’une armure la commande** — elle vient alors de l’équipement, l’écu le dit et refuse la saisie.
+
+**Le bestiaire montre enfin ses fiches.** Une languette dépliée ne donne plus une ligne de résumé mais la fiche entière du modèle : le portrait en grand, le nom, la famille, le type, la menace, la taille du socle, Rapide et Esquive, les quatre tuiles de chiffres — les mêmes qu’en jeu — puis les attaques avec leurs dés, leur portée, leurs cibles et leurs effets, et enfin les notes. **Tout s’y corrige d’un clic**, y compris les dés : cliquer un dé le retire, le « + » en propose un de chaque couleur. Une attaque s’ajoute et se retire depuis la fiche, à condition d’en garder une. Corriger les PV maximum d’un modèle met à jour les créatures déjà posées sur la table, comme depuis la v0.54 — et la languette ouverte le reste pendant qu’on la modifie.
+
+**Le portrait suit partout.** Le token apparaît en petit sur chaque languette du bestiaire, pour reconnaître une créature sans la déplier, et en grand dans la fiche dépliée.
+
+Rien de tout cela n’est offert aux joueurs : chez eux une fiche se lit, elle ne s’écrit pas. `checks.cjs` passe à 244 vérifications, dont dix-huit pour les bornes de saisie et la cohérence d’une fiche corrigée à la main.
 
 ## v0.66 — Cadrer un socle, sauver un raccourci, analyser en aventurier
 
