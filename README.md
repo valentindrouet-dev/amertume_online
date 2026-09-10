@@ -1,4 +1,4 @@
-# Amertume Online — v0.60
+# Amertume Online — v0.61
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.61 — Numéroter les homonymes, régler les PV par paliers
+
+**Deux créatures du même nom se ressemblent trop.** Elles sont désormais numérotées dans l’ordre où elles sont entrées en scène : un chiffre à droite du nom dans la liste, un autre au coin haut gauche du socle. Un nom porté par un seul combattant n’en reçoit pas — c’est le doublon qu’il s’agit de départager. Les numéros se resserrent quand on en retire un du milieu, et l’infobulle les reprend.
+
+**Les points de vie se règlent par paliers** : −10, −5, −1, +1, +5, +10 et **Plein**. Le point à point était intenable sur une créature de 33 PV. Les bornes tiennent — on ne descend pas sous zéro ni au-dessus du plafond —, le coma tombe et se lève avec les PV, et le chiffre monte au-dessus du socle à chaque palier.
+
+Deux régressions attrapées en chemin, toutes deux de ma règle CSS : le nom d’un combattant se tronquait au lieu de passer à la ligne, et `overflow:hidden` **rognait l’accent du « É » d’Éla** par le haut.
 
 ## v0.60 — La barre d’activation rassemblée, la table dégagée
 
