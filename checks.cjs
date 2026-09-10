@@ -309,4 +309,39 @@ assert.equal(table[1].max,1);
 // Un modèle inchangé ne touche rien et ne se signale pas.
 vm.runInContext('result=syncFromTemplate({id:"t1",name:"Sbire",pv:1})',ctxT);
 assert.equal(ctxT.result,0);
-console.log('186 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// Faille : le dé rose ne blesse pas, et efface du compte tous les dés de sa valeur.
+const rose=v=>{let k=0;return()=>[v][k++]??v};
+const sansFaille=r({dice:[[4,0],[4,0],[5,0]],def:0,dmg:0,roll:()=>2});
+assert.equal(sansFaille.damage,13);assert.equal(sansFaille.failleFace,null);
+const avecFaille=r({dice:[[4,0],[4,0],[5,0]],def:0,dmg:0,faille:true,roll:rose(4)});
+assert.equal(avecFaille.failleFace,4);
+assert.equal(avecFaille.damage,5);                      // Les deux 4 sortent, le 5 reste.
+const failleVide=r({dice:[[4,0],[4,0]],def:0,dmg:3,faille:true,roll:rose(4)});
+assert.equal(failleVide.damage,0);                      // Plus rien ne passe : pas même le bonus.
+assert.equal(r({dice:[[5,0]],def:0,dmg:0,faille:true,roll:rose(2)}).damage,5); // Valeur absente : rien ne change.
+// Saignée : elle s'ajoute à tout coup qui passe, jamais à un coup qui rate.
+assert.equal(r({dice:[[5,0]],def:0,dmg:2,bleed:3,roll:()=>2}).damage,10);
+assert.equal(r({dice:[[5,0]],def:0,dmg:2,bleed:3,roll:()=>2}).bleed,3);
+assert.equal(r({dice:[[1,0],[1,0]],def:0,dmg:2,bleed:3,roll:()=>2}).damage,0);
+assert.equal(r({dice:[[2,0]],def:5,dmg:2,bleed:3,roll:()=>2}).damage,0); // Aucun dé ne passe la DEF.
+assert.equal(r({dice:[[5,0]],def:0,dmg:0,bleed:-4,roll:()=>2}).damage,5); // Une saignée négative ne soigne pas.
+// Cumul de saignée, purge par l'Onde, dégâts et soins d'effet.
+const {bleedOf,addBleed,ondeCures,applyDamage,applyHeal,frozenSolid,blinded}=require('./combat.js');
+const bl={};assert.equal(bleedOf(bl),0);
+assert.equal(addBleed(bl,1),1);assert.equal(bleedOf(bl),1);
+assert.equal(addBleed(bl,1),2);assert.equal(addBleed(bl,-1),1);
+assert.equal(addBleed(bl,-1),0);assert.equal(bl.states.length,0);   // À zéro l'état s'en va.
+assert.equal(addBleed(bl,-1),0);                                     // On ne descend pas sous zéro.
+assert.equal(ondeCures({states:['Feu','Blindage','Poison']}),'Poison'); // La plus fraîche affection.
+assert.equal(ondeCures({states:['Blindage','Vie','Onde','Coma']}),null); // Rien à purger.
+assert.equal(ondeCures({}),null);
+const bl2={hp:5,max:12,states:[]};
+assert.equal(applyDamage(bl2,3),3);assert.equal(bl2.hp,2);
+assert.equal(applyDamage(bl2,9),2);assert.equal(bl2.hp,0);           // On ne perd pas plus qu'on n'a.
+assert.ok(bl2.states.includes('Coma'));
+assert.equal(applyHeal(bl2,4),4);assert.equal(bl2.hp,4);
+assert.equal(bl2.states.includes('Coma'),false);                     // Rendre des PV lève le coma.
+assert.equal(applyHeal(bl2,99),8);assert.equal(bl2.hp,12);           // On ne dépasse pas le plafond.
+assert.ok(frozenSolid({states:['Gel']})&&frozenSolid({states:['Au sol']})&&!frozenSolid({states:['Feu']}));
+assert.ok(blinded({states:['Aveugle']})&&!blinded({states:[]}));
+console.log('213 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

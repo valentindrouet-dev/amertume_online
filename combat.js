@@ -1,16 +1,22 @@
 /* Conventions provisoires de résolution, détaillées dans l'interface. */
 (function(root){
-function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll}){
+/* Résolution d'une attaque.
+   « faille » ajoute un dé rose : il ne blesse jamais, mais tous les dés qui tombent sur
+   sa valeur sortent du compte des dégâts. « bleed » est la saignée de la cible, qui
+   s'ajoute à tout coup qui passe. */
+function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0}){
  const all=dice.map(d=>[...d]);
  if(!all.length||all.some(([v,c])=>!Number.isInteger(v)||v<1||v>6||![0,1,2,3,5,6].includes(c)))throw Error('Réserve offensive invalide');
- if(all.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,damage:0,failed:true,critical:false};
+ if(all.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false};
  const critical=all.filter(([v])=>v===6).length>=2;
  if(critical){if(!all.some(([,c])=>c===criticalColor))throw Error('Couleur critique absente');let v;let count=0;do{v=roll();all.push([v,criticalColor]);if(++count>=100&&v===6)throw Error('Limite de relances atteinte, attaque non appliquée');}while(v===6)}
+ const failleFace=faille?roll():null;
  const counts={};all.forEach(([v])=>counts[v]=(counts[v]||0)+1);
- const kept=all.filter(([v,c])=>!(c===1&&counts[v]>1));const remaining={};kept.forEach(([v])=>remaining[v]=(remaining[v]||0)+1);
+ const kept=all.filter(([v,c])=>!(c===1&&counts[v]>1)&&v!==failleFace);const remaining={};kept.forEach(([v])=>remaining[v]=(remaining[v]||0)+1);
  let damage=0,hit=false;
  kept.forEach(([v,c])=>{if(c===2||c===5||v>def){hit=true;damage+=v*(c===3&&remaining[v]>1?2:c===6?Math.min(3,Math.max(1,round)):1)}});
- return {dice:all,damage:damage+(hit?dmg:0),failed:false,critical,hit};
+ const saignee=hit?Math.max(0,Math.trunc(bleed)||0):0;
+ return {dice:all,failleFace,bleed:saignee,damage:damage+(hit?dmg:0)+saignee,failed:false,critical,hit};
 }
 /* Portée : le rayon de contact vaut 3 tailles de token en diamètre. Les positions
    sont en pourcentage de la carte, converties en pixels avec sa taille affichée. */
@@ -442,8 +448,25 @@ function statesOf(a){return Array.isArray(a&&a.states)?a.states:[]}
 function hasState(a,etat){return statesOf(a).includes(etat)}
 function setState(a,etat,pose){const reste=statesOf(a).filter(x=>x!==etat);
  a.states=pose?[...reste,etat]:reste;return a.states}
+/* Les états et ce qu'ils empêchent ou déclenchent. Tout ce qui se calcule vit ici ;
+   l'interface ne fait que déclencher au bon moment et raconter. */
+const ONDE_EXCLUS=['Blindage','Onde','Vie','Coma'];
+function frozenSolid(a){return hasState(a,'Gel')||hasState(a,'Au sol')}
+function blinded(a){return hasState(a,'Aveugle')}
+/* La saignée se cumule : chaque aggravation vaut un point, et à zéro l'état s'en va. */
+function bleedOf(a){return hasState(a,'Saignée')?Math.max(1,Math.trunc(a&&a.bleed)||1):0}
+function addBleed(a,n){const v=Math.max(0,Math.min(99,bleedOf(a)+Math.trunc(n)));
+ a.bleed=v;setState(a,'Saignée',v>0);return v}
+/* L'Onde purge l'affection la plus fraîche — celle qui vient de tomber — et se consume.
+   Les états bénéfiques et le coma ne s'en vont jamais ainsi. */
+function ondeCures(a){const l=statesOf(a).filter(e=>!ONDE_EXCLUS.includes(e));return l.length?l[l.length-1]:null}
+/* Les dégâts d'un effet ne se défendent pas : ni DEF, ni blindage, ni saignée. */
+function applyDamage(a,montant){const perdu=Math.min(a.hp,Math.max(0,Math.trunc(montant)||0));
+ a.hp=Math.max(0,a.hp-perdu);if(a.hp===0)setState(a,'Coma',true);return perdu}
+function applyHeal(a,montant){const gagne=Math.min(Math.max(0,a.max-a.hp),Math.max(0,Math.trunc(montant)||0));
+ a.hp+=gagne;if(a.hp>0)setState(a,'Coma',false);return gagne}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

@@ -1,4 +1,4 @@
-# Amertume Online — v0.56
+# Amertume Online — v0.57
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,29 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.57 — Les états agissent
+
+Dix des douze états ne sont plus des jetons décoratifs. Ce qui se calcule vit dans `combat.js`, testé à part ; l’interface ne fait que déclencher au bon moment et raconter au journal.
+
+- **Feu** — au clic sur *Tour suivant*, chaque porteur perd un dé noir de PV, avant que les activations ne se remettent à zéro.
+- **Gel** — plus de déplacement, et un bouton **❄ Dégel** paraît sous les activations : il coûte l’Action et rend le Mouvement.
+- **Au sol** — ni déplacement ni Action, et un bouton **⤴ Se relever** qui coûte le Mouvement et laisse l’Action disponible ensuite.
+- **Aveugle** — ni arme à distance ni sort ; le bouton d’attaque le dit au lieu de rester muet.
+- **Blindage** — inchangé depuis la v0.52 : absorbe le coup et se consume seul.
+- **Faille** — un dé rose s’ajoute au jet ; il ne blesse jamais, et **tous les dés tombés sur sa valeur sortent du compte des dégâts**. Il roule sur le plateau avec les autres.
+- **Foudre** — en cochant le Mouvement, un dé bleu frappe tout ce qui est dans l’aura de contact, le porteur compris.
+- **Onde** — posée sur un blessé, elle dissipe l’affection la plus fraîche et se consume ; posée sur quelqu’un d’indemne, elle attend et **absorbe le prochain état reçu**. Les états bénéfiques et le coma lui échappent.
+- **Poison** — en cochant l’Action, un dé noir de PV en moins.
+- **Vie** — en cochant l’Action, un dé vert de PV rendus. Le mouvement seul ne déclenche rien.
+- **Saignée** — se cumule : chaque clic dans le menu l’aggrave d’un point, **Maj + clic** la fait redescendre, et le compte se lit sur le jeton. Sa valeur s’ajoute à tout coup qui passe.
+- **Ciblage** — laissé de côté, comme demandé.
+
+Les dégâts d’effet ne se défendent pas : ni DEF, ni blindage, ni saignée. Chacun montre son dé sur la carte et se raconte au journal.
+
+Vingt-sept assertions couvrent le dé de faille (valeur présente, absente, jet vidé de tous ses dés), la saignée (ajoutée à un coup qui passe, jamais à un échec ni à un coup arrêté par la DEF, négative ignorée), le cumul et son plancher, la purge de l’Onde, les dégâts et soins qui n’excèdent ni zéro ni le plafond, et le coma qui tombe et se lève avec les PV.
+
+Deux choix d’arbitrage, à corriger d’un mot : **le MJ traverse Gel et Au sol** comme il traverse le verrou des déplacements — c’est lui qui arbitre, et il replace souvent un socle ; et **la Foudre suit la case Mouvement** plutôt que chaque glissement, pour ne pas frapper pendant qu’on installe la scène.
 
 ## v0.56 — Les cibles à portée, sous la main
 
