@@ -34,6 +34,8 @@ const note=document.createElement('p');note.id='actor-notes';note.className='mut
    celle que lui donne son équipement : on lit d'un coup ce qu'il sait faire et on
    clique celle qui part. Le bouton retenu est plein, les autres sont dessinés. */
 function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
+ // Plusieurs combattants pris : la carte des Actions ne propose rien.
+ if(marked.size>1){boite.replaceChildren();boite.hidden=true;return}
  const a=actors[selected],liste=a?attackChoices(a,catalog.items):[];
  // Même seule, une attaque se montre : on lit ce qui part avant de frapper.
  boite.replaceChildren();boite.hidden=!liste.length;

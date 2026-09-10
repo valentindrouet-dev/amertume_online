@@ -1,4 +1,4 @@
-# Amertume Online — v0.79
+# Amertume Online — v0.80
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.80 — Les portées de toute la troupe, et les lots
+
+**Toute la troupe montre son rayon de contact, en permanence.** Le disque ne suivait que le combattant actif, et disparaissait dès que son attaque retenue était à distance. Il fallait donc sélectionner chacun pour lire ce qu’il menace. Désormais **chaque aventurier vivant porte le sien, tout le temps**, quelle que soit l’attaque retenue : les contacts et les attaques d’opportunité se lisent d’un coup d’œil. Un adversaire, lui, ne montre le sien que lorsqu’il est l’actif et qu’il attaque au contact — sinon la carte se couvrirait de disques. L’actif garde le disque le plus franc, les autres sont en retrait.
+
+**Un bouton Portées** dans la barre de la carte les éteint et les rallume d’un clic, quand le décor prime sur les règles. Il est allumé par défaut et son état est gardé sur l’appareil, comme le thème.
+
+**Un lot se déplace d’un bloc.** Plusieurs combattants pris — au raccourci ou au cadre de sélection — **portent tous le halo de sélection**, et non plus le seul actif : sur la carte, tous les pris se ressemblent. Prendre l’un d’eux les déplace **tous**, du même écart ; ceux qui restent hors du lot ne bougent pas, et le lot reste pris au relâchement. Le cerceau pointillé qui marquait le groupe a disparu des socles, faisant double emploi avec le halo ; il reste dans la liste des combattants.
+
+**La carte des Actions se tait sur un lot.** Deux combattants ou plus sélectionnés : elle n’affiche plus que « Plusieurs combattants sélectionnés ». Ni cibles, ni boutons d’attaque, ni Analyse — une attaque part d’un combattant, pas d’un groupe.
 
 ## v0.79 — L’actif se voit toujours
 
