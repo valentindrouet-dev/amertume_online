@@ -1,4 +1,4 @@
-# Amertume Online — v0.61
+# Amertume Online — v0.62
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.62 — Le bleu de l’Action, le jeton du numéro
+
+**Attaquer et se dégeler dépensent la même activation** : les deux boutons portent désormais le même bleu, la même graisse, la même taille de police. Se relever coûte le Mouvement, pas l’Action — il garde le bouton neutre, pour qu’on lise le coût sur la forme du bouton plutôt que dans l’infobulle.
+
+Le style a quitté `#attack` pour une classe `button.btn-action`, partagée. Il a fallu la qualifier par l’élément : `button.primary`, que porte le bouton d’attaque, l’emportait sinon sur une simple classe et rendait au bouton son brun d’origine.
+
+**Le numéro d’un homonyme reprend le jeton de la liste** — même fond, même liseré, même chiffre — et se pose **à l’intérieur** du socle, au coin haut gauche. Débordant au-dessus, il mordait sur la barre de PV.
 
 ## v0.61 — Numéroter les homonymes, régler les PV par paliers
 
