@@ -134,7 +134,15 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  ctx.fillStyle='rgba(6,9,11,'+(inconnu/255).toFixed(3)+')';ctx.fillRect(0,0,W,H);
  ctx.globalCompositeOperation='destination-out';
  const mem=memoryCanvas(d);
- if(mem){ctx.globalAlpha=1-memoire/inconnu;ctx.imageSmoothingEnabled=false;ctx.drawImage(mem,0,0,W,H)}
+ /* La mémoire est une grille de bits ; agrandie telle quelle jusqu'à l'écran, sa
+    frontière montait en escalier — d'autant plus visible que la carte est zoomée. On
+    l'interpole donc, et on la fond sur un peu moins d'une case : le bord de l'exploré
+    devient un dégradé, ce qu'il est en vérité. Le champ vu, lui, reste un polygone
+    tracé au trait, et ne doit rien à ce lissage. */
+ if(mem){ctx.globalAlpha=1-memoire/inconnu;
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  const flou=Math.max(1,W/d.w*.7);ctx.filter='blur('+flou.toFixed(2)+'px)';
+  ctx.drawImage(mem,0,0,W,H);ctx.filter='none'}
  ctx.globalAlpha=1;ctx.fillStyle='#000';
  for(const poly of fogVis){if(!poly||poly.length<3)continue;
   ctx.beginPath();ctx.moveTo(poly[0][0]/100*W,poly[0][1]/100*H);

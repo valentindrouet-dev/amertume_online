@@ -1,4 +1,4 @@
-# Amertume Online — v0.83
+# Amertume Online — v0.84
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,12 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.84 — La frontière de l’exploré ne monte plus en escalier
+
+**Le crénelage restant venait de la mémoire, pas de la vue.** Le champ vu est un polygone tracé au trait depuis la v0.25 : ses bords sont nets à tout niveau de zoom. Mais **ce que la troupe a exploré** est une grille de bits — 640 colonnes — et cette grille était agrandie jusqu’à l’écran *sans interpolation*, avec en prime un `image-rendering: pixelated` sur la toile du brouillard. D’où l’escalier sur le noir des zones non repérées, d’autant plus gros que la carte est zoomée : à 2,6 ×, des marches de dix pixels.
+
+La mémoire est désormais **interpolée et fondue sur un peu moins d’une case** : la frontière de l’exploré devient un dégradé, ce qu’elle est en vérité — on ne se souvient pas d’une salle au bit près. Le champ vu, lui, ne doit rien à ce lissage et garde ses arêtes franches. Vérifié sur une frontière oblique tracée à la main dans la grille : escalier de dix pixels avant, droite propre après, à 1 × comme à 2,6 ×.
 
 ## v0.83 — Le fil de matière dans l’embrasure
 
