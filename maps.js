@@ -226,7 +226,16 @@ const PAGES=['table','maps','heroes','talents','armory','bestiary','settings'];
 // Les Paramètres sont un réglage d'appareil, pas du contenu de partie : ils restent ouverts aux joueurs.
 const PAGES_LIBRES=['table','settings'];
 const tabsMJ=[...tabs.querySelectorAll('button')].filter(b=>!PAGES_LIBRES.includes(b.dataset.page));
-function showPage(p){if(!PAGES_LIBRES.includes(p)&&view!=='mj')return;
+/* L'onglet ouvert est un réglage d'appareil, comme le thème : recharger en plein
+   travail au bestiaire doit y ramener, pas rejeter sur la table de jeu. Il ne voyage
+   donc ni dans la sauvegarde de partie, ni dans la publication. */
+function rememberPage(p){try{localStorage.setItem('amertume-page',p)}catch(e){}}
+function lastPage(){try{const p=localStorage.getItem('amertume-page');
+ return PAGES.includes(p)?p:'table'}catch(e){return 'table'}}
+/* « retenir » distingue le choix d'un onglet du repli imposé : passer en vue joueur
+   ramène à la table, mais cela ne doit pas effacer l'onglet où le MJ travaillait. */
+function showPage(p,retenir=true){if(!PAGES_LIBRES.includes(p)&&view!=='mj')return;
+ if(retenir)rememberPage(p);
  PAGES.forEach(x=>document.body.classList.toggle('page-'+x,x===p&&x!=='table'));
  tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.page===p));
  if(p==='maps'){if(!maps.length)newMap();if(!mapDraft)mapDraft=maps.find(m=>m.id===currentMapId)||maps[0];
@@ -566,8 +575,10 @@ function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new E
 // L'onglet Cartes n'existe que pour le MJ ; passer en vue joueur ramène à la table.
 const renderBeforeMaps=render;render=function(){computeFog();renderBeforeMaps();renderMapLayer();
  tabsMJ.forEach(b=>b.hidden=view!=='mj');
- if(view!=='mj'&&PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x)))showPage('table')};
+ if(view!=='mj'&&PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x)))showPage('table',false)};
 window.addEventListener('resize',()=>{if(document.body.classList.contains('page-maps'))renderCanvas();
  else{applyMapRatio();applyMapZoom();render()}});
 maps.forEach(ensure);refreshMapPick();renderMapLayer();refreshHistory();renderCatalogPages();
 tabsMJ.forEach(b=>b.hidden=view!=='mj');
+// La page d'avant se rouvre une fois la partie chargée : avant, elle n'a rien à montrer.
+document.addEventListener('amertume-partie-chargee',()=>{const p=lastPage();if(p!=='table')showPage(p)});

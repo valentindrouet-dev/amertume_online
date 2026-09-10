@@ -254,13 +254,25 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
  background:#284a40;border:1px solid #9fc8b1;color:#cfe3d6;font-family:'Killam',Georgia,serif}
 .jeton-rond img{width:100%;height:100%;object-fit:cover;display:block}
 .jeton-rond.mini{width:26px;height:26px;font-size:14px}
-.jeton-rond.grand{width:92px;height:92px;font-size:44px}
+.jeton-rond.grand{width:74px;height:74px;font-size:36px}
+/* Le portrait du bestiaire se change d'un clic : le rond s'allume au survol,
+   une légende dit ce qui arrivera, et la croix retire l'illustration posée. */
+.jeton-boite{position:relative;flex:none;display:flex;flex-direction:column;align-items:center;gap:4px}
+.jeton-rond.modifiable{cursor:pointer}
+.jeton-rond.modifiable:hover{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,0,0,.06)}
+.jeton-rond.modifiable:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.jeton-legende{font:600 10px system-ui;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.jeton-boite:hover .jeton-legende{color:var(--accent)}
+.jeton-oter{position:absolute;top:-4px;right:-4px;width:22px;height:22px;padding:0;
+ border-radius:50%;background:var(--panel);line-height:1;font-size:12px}
 /* ---------- La fiche d'un modèle, sous sa languette ---------- */
 .best-fiche{width:100%;display:flex;flex-direction:column;gap:10px}
 .best-tete{display:flex;gap:12px;align-items:flex-start}
 .best-ident{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
 .best-ident h4{margin:0;font:700 18px 'Killam',Georgia,serif;letter-spacing:.4px}
-.best-fiche .chips{margin:0}
+/* Quatre colonnes au bestiaire : la fiche dépliée est étroite, ses pastilles serrent le pas. */
+.best-fiche .chips{margin:0;gap:5px}
+.best-fiche .chips .chip{padding:3px 8px;font-size:11.5px}
 .best-fiche .stat-row{margin:0}
 .best-fiche h5{margin:4px 0 0;font:600 10px system-ui;letter-spacing:2px;text-transform:uppercase;
  color:var(--muted);display:flex;align-items:center;gap:7px}

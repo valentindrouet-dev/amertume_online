@@ -1,4 +1,4 @@
-# Amertume Online — v0.69
+# Amertume Online — v0.70
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.70 — L’onglet ouvert survit au rechargement
+
+**Recharger ne renvoie plus à la table de jeu.** L’onglet ouvert — Cartes, Aventuriers, Talents, Armurerie, Bestiaire, Paramètres — est retenu et rouvert au chargement suivant. C’est un réglage d’appareil, comme le mode nuit : il vit dans le navigateur, ne voyage ni dans la sauvegarde de partie ni dans la publication, et il n’est rendu qu’une fois la partie chargée, faute de quoi la page s’ouvrirait sur du vide. Un joueur dont le dernier onglet était réservé au MJ retombe sur la table, et cet atterrissage n’écrase pas l’onglet mémorisé du MJ.
+
+**Le portrait d’un modèle se change là où on le regarde.** Cliquer le grand rond d’une fiche dépliée ouvre l’import d’image — avec son cadrage de socle — et le portrait s’applique aussitôt, sur la languette comme sur la fiche. Une légende sous le rond dit ce qui arrivera (« Ajouter » ou « Changer ») et une croix retire l’illustration posée. Plus besoin d’ouvrir la fiche complète pour cela.
+
+**Rapide et Esquive quittent les adversaires.** Ces deux marques n’étaient appliquées à la main nulle part et encombraient la fiche : ni pastille au bestiaire, ni case au formulaire d’un adversaire. **Les valeurs enregistrées sont conservées telles quelles** — elles reviendront quand une vraie règle les prendra en charge. Les aventuriers gardent leurs cases.
+
+La fiche dépliée serre le pas au passage : depuis que les Alpha ont leur colonne, le bestiaire en compte quatre et chacune est plus étroite. Portrait un peu plus petit, pastilles resserrées — deux tiennent de nouveau par ligne.
 
 ## v0.69 — La carte dit son nom, les camps se séparent, une arme se porte en double
 
