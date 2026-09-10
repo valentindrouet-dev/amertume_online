@@ -1,4 +1,4 @@
-# Amertume Online — v0.59
+# Amertume Online — v0.60
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.60 — La barre d’activation rassemblée, la table dégagée
+
+**Dégeler et Se relever rejoignent Attaque** dans la barre du bas : ce sont des activations comme elle, elles n’avaient rien à faire sous les cases à cocher. Chaque bouton disparaît dès que son état est levé.
+
+**Trois textes d’aide quittent la table de jeu** : « Ordre et fuite gérés manuellement dans cet aperçu », « Sélectionne un combattant pour ouvrir sa fiche » et la ligne des raccourcis sous la carte. Les touches se lisent désormais dans l’onglet Paramètres, où elles se règlent.
+
+**Pourquoi un adversaire paraît transparent.** Un combattant pâli sur la carte n’est ni mort ni épuisé : c’est le **brouillard de guerre** — la troupe ne le voit pas, et le MJ le garde à l’œil en transparent, cerclé de tirets. Un combattant à 0 PV est pâli lui aussi, et rien ne les distinguait au premier coup d’œil. L’infobulle le dit maintenant : « hors de vue de la troupe », « caché par le MJ, invisible aux joueurs » ou « hors de combat », sur le socle comme dans la liste.
 
 ## v0.59 — Paramètres, chiffres qui montent, dés au bas de la table
 
