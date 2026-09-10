@@ -1,4 +1,4 @@
-# Amertume Online — v0.63
+# Amertume Online — v0.64
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.64 — Un vrai rond, un chiffre centré, un bouton violet
+
+**Le numéro d’un homonyme est enfin rond.** Il était ovale sur le socle et plat dans la liste parce que sa largeur venait d’un minimum plus du remplissage, quand sa hauteur venait de l’interlignage : deux mesures indépendantes ne font pas un cercle. La boîte est désormais **carrée**, le rayon à 50 %, le chiffre centré par la grille — 14 × 14 sur un socle, 18 × 18 dans la liste, à 0,16 px près. La barre des cibles le reçoit aussi : deux cibles du même nom s’y départagent comme ailleurs.
+
+**Le chiffre des PV se centre pour de bon.** La bordure de la barre mangeait deux pixels de la boîte de contenu, si bien qu’une hauteur de ligne réglée sur la hauteur totale poussait le texte vers le bas. Le centrage passe par la boîte — écart mesuré : 0,00 px dans la liste.
+
+**La barre d’un adversaire non analysé ne porte plus rien** : ni chiffre, ni point d’interrogation.
+
+**Le bouton Analyser rejoint la barre d’attaque**, à côté d’Attaque : même dessin, même police, même hauteur, même remplissage — et **violet**, parce que ce n’est pas une activation du tour mais un geste du MJ. Il était perdu au bas des paliers de PV.
 
 ## v0.63 — Mort, Analyser, et l’écu au bout de la barre
 
