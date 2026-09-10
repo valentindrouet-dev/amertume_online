@@ -1,4 +1,4 @@
-# Amertume Online — v0.65
+# Amertume Online — v0.66
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.66 — Cadrer un socle, sauver un raccourci, analyser en aventurier
+
+**Le cadrage du socle.** L’import d’un token ouvre désormais un rond de 220 pixels où l’image se règle avant d’être découpée : la molette ou le curseur zooment de 40 à 320 %, le glissement déplace l’image, « Recentrer » revient au cadrage d’origine. Le rond ne laisse jamais paraître de vide — dès que l’image couvre le carré, le glissement est borné à ses bords ; quand le zoom la fait plus petite que le carré, elle reste au contraire enfermée dedans. Le fichier enregistré est carré, découpé exactement comme l’aperçu le montrait. La même fonction `squareFrame` sert à l’aperçu et à la découpe finale : ce qui est vu est ce qui est gardé.
+
+**Les raccourcis s’enregistrent — et le disent.** Ils l’avaient toujours fait ; ce qui manquait était la preuve. Un choix déjà pris par un autre geste était refusé en silence, ce qui donnait l’impression que rien n’était retenu. Les deux gestes **échangent** maintenant leur touche, et chaque changement affiche une confirmation verte : « ✓ Enregistré sur cet appareil. », ou « ✓ Enregistré · « Attaque auto » prend Maj en échange. » Le réglage reste propre à l’appareil, comme le mode nuit.
+
+**L’Analyse est une action d’aventurier.** Le bouton ne paraît plus que sur la fiche d’un héros, et il dit pourquoi il est éteint quand il l’est : pas de cible, cible alliée, cible déjà analysée, ou Mouvement / Analyse déjà dépensé ce tour. Il est aussi passé à un violet plus clair. Enfin, **la remise à zéro du combat efface les analyses** : les adversaires redeviennent inconnus des joueurs, au même titre que les activations et les cibles.
 
 ## v0.65 — Les points de vie ont leur bloc
 

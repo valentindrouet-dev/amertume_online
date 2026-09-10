@@ -344,4 +344,26 @@ assert.equal(bl2.states.includes('Coma'),false);                     // Rendre d
 assert.equal(applyHeal(bl2,99),8);assert.equal(bl2.hp,12);           // On ne dépasse pas le plafond.
 assert.ok(frozenSolid({states:['Gel']})&&frozenSolid({states:['Au sol']})&&!frozenSolid({states:['Feu']}));
 assert.ok(blinded({states:['Aveugle']})&&!blinded({states:[]}));
-console.log('213 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// Cadrage d'un socle : le carré se remplit, et le glissement reste borné.
+const recadre=new Function('bw','bh','side','zoom','dx','dy',
+ src.slice(src.indexOf('function squareFrame'),src.indexOf('function drawTokenPreview'))
+ +';return squareFrame(bw,bh,side,zoom,dx,dy)');
+const large=recadre(400,200,100,1,0,0);      // Paysage : la hauteur touche les bords.
+assert.equal(large.dh,100);assert.equal(large.dw,200);
+assert.equal(large.oy,0);assert.equal(large.ox,-50);          // Centré, débordant à gauche et à droite.
+const haut=recadre(200,400,100,1,0,0);       // Portrait : c'est la largeur qui touche.
+assert.equal(haut.dw,100);assert.equal(haut.oy,-50);
+const zoome=recadre(400,200,100,2,0,0);      // Zoom deux : tout double.
+assert.equal(zoome.dh,200);assert.equal(zoome.dw,400);
+// Le glissement ne découvre jamais de vide quand l'image couvre le carré.
+assert.equal(recadre(400,200,100,1,9,0).ox,0);        // Poussé à droite : bloqué au bord.
+assert.equal(recadre(400,200,100,1,-9,0).ox,-100);    // Poussé à gauche : bloqué à l'autre.
+assert.equal(recadre(400,200,100,1,0,9).oy,0);        // La hauteur, elle, colle déjà.
+// Sous zoom 1 l'image ne couvre plus : elle reste alors dans le carré.
+const petit=recadre(200,200,100,.5,0,0);
+assert.equal(petit.dw,50);assert.equal(petit.ox,25);          // Centrée dans le carré.
+assert.equal(recadre(200,200,100,.5,9,0).ox,50);                // Poussée à droite, elle s'arrête au bord.
+assert.equal(recadre(200,200,100,.5,-9,0).ox,0);
+const nul=recadre(0,0,100,1,0,0);                             // Une image dégénérée ne divise pas par zéro.
+assert.ok(Object.values(nul).every(Number.isFinite));
+console.log('226 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

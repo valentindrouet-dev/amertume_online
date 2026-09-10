@@ -52,7 +52,8 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="divider"></div><h3 class="reglage-titre">Raccourcis de la carte</h3>'
  +'<p class="muted">La touche à maintenir en cliquant sur un combattant. Deux gestes ne peuvent pas partager la même touche.</p>'
  +'<div id="raccourcis"></div>'
- +'<p class="form-error" id="raccourcis-erreur" role="alert"></p>'
+ +'<p class="form-error" id="raccourcis-erreur" role="status" aria-live="polite"></p>'
+ +'<p class="muted">Chaque changement est enregistré aussitôt, sur cet appareil seulement.</p>'
  +'<div class="side-actions"><button id="raccourcis-reset">Rétablir les touches d’origine</button></div>'
  +'</section>';
 const talentsPage=document.createElement('main');talentsPage.id='talents-page';
@@ -475,14 +476,24 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
   // Sans touche, la sélection se fait au clic nu ; tout autre geste devient inatteignable.
   TOUCHES.forEach(([v,l])=>sel.add(new Option(v===''&&cle!=='select'?'Aucune (désactivé)':l,v)));
   sel.value=raccourcis[cle];
-  sel.onchange=()=>{const pris=GESTES.find(([k])=>k!==cle&&raccourcis[k]===sel.value&&sel.value);
-   if(pris){$('raccourcis-erreur').textContent='« '+pris[1]+' » utilise déjà cette touche.';
-    sel.value=raccourcis[cle];return}
-   $('raccourcis-erreur').textContent='';raccourcis[cle]=sel.value;saveShortcuts();renderSettings()};
+  // Une touche déjà prise n'est pas refusée : les deux gestes l'échangent. Refuser en
+  // silence donnait l'impression que rien ne s'enregistrait — c'était le contraire.
+  sel.onchange=()=>{const avant=raccourcis[cle],pris=GESTES.find(([k])=>k!==cle&&raccourcis[k]===sel.value&&sel.value);
+   raccourcis[cle]=sel.value;
+   if(pris)raccourcis[pris[0]]=avant;
+   saveShortcuts();renderSettings();
+   noterReglage(pris?'Enregistré · « '+pris[1]+' » prend '+(TOUCHES.find(([v])=>v===avant)[1])+' en échange.'
+    :'Enregistré sur cet appareil.')};
   ligne.append(gauche,sel);return ligne}))}
 $('theme-switch').onclick=toggleTheme;
-$('raccourcis-reset').onclick=()=>{raccourcis={...RACCOURCIS_DEFAUT};saveShortcuts();
- $('raccourcis-erreur').textContent='';renderSettings()};
+$('raccourcis-reset').onclick=()=>{raccourcis={...RACCOURCIS_DEFAUT};saveShortcuts();renderSettings();
+ noterReglage('Touches d’origine rétablies et enregistrées.')};
+/* Les réglages s'enregistrent à l'instant même : on le dit, faute de quoi rien ne
+   distingue un réglage pris en compte d'un réglage perdu. */
+let reglageTimer;
+function noterReglage(texte){const n=$('raccourcis-erreur');if(!n)return;
+ n.textContent='✓ '+texte;n.classList.add('ok');clearTimeout(reglageTimer);
+ reglageTimer=setTimeout(()=>{n.textContent='';n.classList.remove('ok')},3200)}
 function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();renderBestiary()}
 $('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;
 $('armory-add').onclick=()=>openItem(null);
@@ -497,7 +508,7 @@ $('bestiary-sort').onchange=renderBestiary;
 $('bestiary-add').onclick=()=>openActor(null,false);
 const itemDialog=dialog('item-editor','Objet','<form id="item-form"><div id="item-fields"></div><div class="form-actions"><button type="button" id="delete-item">Supprimer du catalogue</button><button class="primary">Enregistrer</button></div></form>');
 itemDialog.addEventListener('close',()=>{itemApres=null});
-const imgDialog=dialog('image-editor','Optimiser l’image','<div class="edit-grid"><label>Taille maximale<select id="image-size"></select></label><label>Qualité WebP<input id="image-quality" type="range" min="70" max="100" value="90"><span id="quality-label">90 %</span></label><div><button id="image-recalc">Actualiser l’aperçu</button></div></div><div class="image-comparison"><div><p>Original</p><img id="image-before" alt="Image originale"><p class="muted" id="before-info"></p></div><div><p>Copie optimisée</p><img id="image-after" alt="Image optimisée"><p class="muted" id="after-info"></p></div></div><p class="form-error" id="image-error" role="alert"></p><p class="muted">Proportions et transparence conservées. L’original n’est pas modifié. PNG de secours si WebP indisponible.</p><div class="form-actions"><button id="image-cancel">Annuler</button><button class="primary" id="image-accept" disabled>Utiliser cette image</button></div>');
+const imgDialog=dialog('image-editor','Optimiser l’image','<div class="edit-grid"><label>Taille maximale<select id="image-size"></select></label><label>Qualité WebP<input id="image-quality" type="range" min="70" max="100" value="90"><span id="quality-label">90 %</span></label><div><button id="image-recalc">Actualiser l’aperçu</button></div></div><div id="token-frame" hidden><p>Cadrage du socle</p><div class="cadre-rond"><canvas id="token-canvas" width="220" height="220" aria-label="Aperçu du socle"></canvas></div><div class="cadre-reglages"><label>Zoom<input id="token-zoom" type="range" min="40" max="320" value="100"></label><span id="token-zoom-label">100 %</span><button type="button" id="token-center">Recentrer</button></div><p class="muted">Glisse l’image dans le rond pour la déplacer ; la molette zoome.</p></div><div class="image-comparison"><div><p>Original</p><img id="image-before" alt="Image originale"><p class="muted" id="before-info"></p></div><div><p>Copie optimisée</p><img id="image-after" alt="Image optimisée"><p class="muted" id="after-info"></p></div></div><p class="form-error" id="image-error" role="alert"></p><p class="muted">Proportions et transparence conservées. L’original n’est pas modifié. PNG de secours si WebP indisponible.</p><div class="form-actions"><button id="image-cancel">Annuler</button><button class="primary" id="image-accept" disabled>Utiliser cette image</button></div>');
 function field(label,key,value,type='text',extra=''){return '<label>'+label+'<input name="'+key+'" type="'+type+'" value="'+esc(value)+'" '+extra+'></label>'}
 function sel(label,key,value,opts){return '<label>'+label+'<select name="'+key+'">'+opts.map(([v,t])=>'<option value="'+v+'" '+(String(value)===String(v)?'selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label>'}
 function poolFields(p,prefix){return '<div class="mini-pool">'+types.map((t,i)=>field(t,prefix+i,p[i]||0,'number','min="0" max="12"')).join('')+'</div>'}
@@ -682,13 +693,56 @@ function imageDimensions(bytes){const v=new DataView(bytes.buffer,bytes.byteOffs
 let imageJob=null,imageGeneration=0;
 const pretty=n=>n<1024*1024?Math.round(n/1024)+' Ko':(n/(1024*1024)).toFixed(2)+' Mo';
 async function openImage(file,kind,accept){if(view!=='mj')return;try{if(file.size>25*1024*1024)throw Error('Fichier trop lourd : maximum 25 Mo. Réduis-le avant de l’importer.');const bytes=new Uint8Array(await file.arrayBuffer());const [w,h]=imageDimensions(bytes);if(!w||!h||w*h>64000000||Math.max(w,h)>20000)throw Error('Image trop grande : maximum 64 millions de pixels et 20 000 pixels par côté.');
- cleanupImage();const original=URL.createObjectURL(file);imageJob={file,kind,accept,original,w,h,output:null,url:null};$('image-before').src=original;$('before-info').textContent=w+' × '+h+' · '+pretty(file.size);$('image-size').replaceChildren(...(kind==='map'?[2048,4096]:[256,512]).map(n=>new Option(n+' pixels',String(n))));$('image-size').value=kind==='map'?'4096':'512';$('image-quality').value='90';$('quality-label').textContent='90 %';$('image-error').textContent='';$('image-accept').disabled=true;imgDialog.showModal();await optimizeImage();
+ cleanupImage();const original=URL.createObjectURL(file);imageJob={file,kind,accept,original,w,h,output:null,url:null,bitmap:null,zoom:1,dx:0,dy:0};$('image-before').src=original;$('before-info').textContent=w+' × '+h+' · '+pretty(file.size);$('image-size').replaceChildren(...(kind==='map'?[2048,4096]:[256,512]).map(n=>new Option(n+' pixels',String(n))));$('image-size').value=kind==='map'?'4096':'512';$('image-quality').value='90';$('quality-label').textContent='90 %';$('image-error').textContent='';$('image-accept').disabled=true;
+ // Le socle se cadre : on garde l'image décodée sous la main pour l'aperçu rond.
+ $('token-frame').hidden=kind!=='token';$('token-zoom').value='100';
+ imgDialog.showModal();
+ if(kind==='token'){const job=imageJob;const bmp=await createImageBitmap(file);
+  if(job!==imageJob){bmp.close();return}job.bitmap=bmp;drawTokenPreview()}
+ await optimizeImage();
 }catch(e){if(imgDialog.open)$('image-error').textContent=e.message;else log(e.message)}}
-async function optimizeImage(){const job=imageJob;if(!job)return;const generation=++imageGeneration;$('image-accept').disabled=true;$('image-recalc').disabled=true;$('image-size').disabled=$('image-quality').disabled=true;$('image-error').textContent='Optimisation en cours…';let bitmap;try{bitmap=await createImageBitmap(job.file);if(job!==imageJob||generation!==imageGeneration)return;const factor=Math.min(1,Number($('image-size').value)/Math.max(bitmap.width,bitmap.height));const w=Math.max(1,Math.round(bitmap.width*factor)),h=Math.max(1,Math.round(bitmap.height*factor));const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');if(!ctx)throw Error('Le navigateur ne peut pas traiter cette image.');ctx.imageSmoothingQuality='high';ctx.drawImage(bitmap,0,0,w,h);let output=await new Promise(r=>canvas.toBlob(r,'image/webp',Number($('image-quality').value)/100));canvas.width=canvas.height=1;if(!output)throw Error('Compression impossible. Essaie une image plus petite.');if(job!==imageJob||generation!==imageGeneration)return;
+async function optimizeImage(){const job=imageJob;if(!job)return;const generation=++imageGeneration;$('image-accept').disabled=true;$('image-recalc').disabled=true;$('image-size').disabled=$('image-quality').disabled=true;$('image-error').textContent='Optimisation en cours…';let bitmap;try{bitmap=job.bitmap||await createImageBitmap(job.file);if(job!==imageJob||generation!==imageGeneration)return;const carre=job.kind==='token';
+ const factor=Math.min(1,Number($('image-size').value)/Math.max(bitmap.width,bitmap.height));
+ const cote=Math.max(1,Math.round(Number($('image-size').value)));
+ const w=carre?cote:Math.max(1,Math.round(bitmap.width*factor)),h=carre?cote:Math.max(1,Math.round(bitmap.height*factor));
+ const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');if(!ctx)throw Error('Le navigateur ne peut pas traiter cette image.');ctx.imageSmoothingQuality='high';
+ // Un socle sort carré, cadré comme dans l'aperçu ; le reste garde ses proportions.
+ if(carre){const f=squareFrame(bitmap.width,bitmap.height,cote,job.zoom,job.dx,job.dy);
+  ctx.drawImage(bitmap,f.ox,f.oy,f.dw,f.dh)}
+ else ctx.drawImage(bitmap,0,0,w,h);let output=await new Promise(r=>canvas.toBlob(r,'image/webp',Number($('image-quality').value)/100));canvas.width=canvas.height=1;if(!output)throw Error('Compression impossible. Essaie une image plus petite.');if(job!==imageJob||generation!==imageGeneration)return;
  // Ne remplace pas un fichier déjà plus léger lorsqu'aucune réduction de dimensions n'est nécessaire.
- if(factor===1&&job.file.size<output.size)output=job.file;if(job.url)URL.revokeObjectURL(job.url);job.output=output;job.url=URL.createObjectURL(output);$('image-after').src=job.url;const gain=Math.round((1-output.size/job.file.size)*100);$('after-info').textContent=w+' × '+h+' · '+pretty(output.size)+' · '+(gain>=0?gain+' % de réduction':Math.abs(gain)+' % plus lourd')+' · '+(output.type||'image');$('image-error').textContent=output===job.file?'L’original est déjà plus léger : il sera conservé.':'';$('image-accept').disabled=false;
-}catch(e){if(job===imageJob)$('image-error').textContent='Import impossible : '+e.message}finally{bitmap?.close();if(generation===imageGeneration){$('image-recalc').disabled=false;$('image-size').disabled=$('image-quality').disabled=false}}}
-function cleanupImage(){imageGeneration++;if(imageJob){URL.revokeObjectURL(imageJob.original);if(imageJob.url)URL.revokeObjectURL(imageJob.url)}imageJob=null;$('image-before').removeAttribute('src');$('image-after').removeAttribute('src')}
+ if(!carre&&factor===1&&job.file.size<output.size)output=job.file;if(job.url)URL.revokeObjectURL(job.url);job.output=output;job.url=URL.createObjectURL(output);$('image-after').src=job.url;const gain=Math.round((1-output.size/job.file.size)*100);$('after-info').textContent=w+' × '+h+' · '+pretty(output.size)+' · '+(gain>=0?gain+' % de réduction':Math.abs(gain)+' % plus lourd')+' · '+(output.type||'image');$('image-error').textContent=output===job.file?'L’original est déjà plus léger : il sera conservé.':'';$('image-accept').disabled=false;
+}catch(e){if(job===imageJob)$('image-error').textContent='Import impossible : '+e.message}finally{if(bitmap&&bitmap!==job.bitmap)bitmap.close();if(job)job.dirty=false;if(generation===imageGeneration){$('image-recalc').disabled=false;$('image-size').disabled=$('image-quality').disabled=false}}}
+/* Le cadrage d'un socle : l'image remplit le carré, agrandie ou réduite par le zoom et
+   glissée à la main. À zoom 1 le petit côté touche exactement les bords ; en deçà, des
+   bords transparents apparaissent, et le glissement reste borné au carré dans les deux cas. */
+function squareFrame(bw,bh,side,zoom,dx,dy){
+ const k=side/Math.max(1,Math.min(bw,bh))*zoom,dw=bw*k,dh=bh*k;
+ const borne=(v,d)=>d>=side?Math.min(0,Math.max(side-d,v)):Math.max(0,Math.min(side-d,v));
+ return {dw,dh,ox:borne((side-dw)/2+dx*side,dw),oy:borne((side-dh)/2+dy*side,dh)}}
+function drawTokenPreview(){const job=imageJob,cv=$('token-canvas');
+ if(!job||!job.bitmap||!cv)return;
+ const side=cv.width,ctx=cv.getContext('2d');if(!ctx)return;
+ ctx.clearRect(0,0,side,side);ctx.imageSmoothingQuality='high';
+ const f=squareFrame(job.bitmap.width,job.bitmap.height,side,job.zoom,job.dx,job.dy);
+ ctx.drawImage(job.bitmap,f.ox,f.oy,f.dw,f.dh);
+ $('token-zoom-label').textContent=Math.round(job.zoom*100)+' %'}
+function retouche(){if(imageJob)imageJob.dirty=true;$('image-accept').disabled=true}
+$('token-zoom').oninput=()=>{if(!imageJob)return;imageJob.zoom=Number($('token-zoom').value)/100;
+ drawTokenPreview();retouche()};
+$('token-center').onclick=()=>{if(!imageJob)return;imageJob.zoom=1;imageJob.dx=imageJob.dy=0;
+ $('token-zoom').value='100';drawTokenPreview();retouche()};
+(function(){const cv=$('token-canvas');let prise=null;
+ cv.onpointerdown=e=>{if(!imageJob)return;prise={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId)};
+ cv.onpointermove=e=>{if(!prise||!imageJob)return;
+  imageJob.dx+=(e.clientX-prise.x)/cv.width;imageJob.dy+=(e.clientY-prise.y)/cv.width;
+  prise={x:e.clientX,y:e.clientY};drawTokenPreview();retouche()};
+ cv.onpointerup=e=>{if(prise){prise=null;cv.releasePointerCapture(e.pointerId)}};
+ cv.onpointercancel=()=>{prise=null};
+ cv.onwheel=e=>{if(!imageJob)return;e.preventDefault();
+  imageJob.zoom=Math.max(.4,Math.min(3.2,imageJob.zoom*(e.deltaY<0?1.08:1/1.08)));
+  $('token-zoom').value=String(Math.round(imageJob.zoom*100));drawTokenPreview();retouche()}})();
+function cleanupImage(){imageGeneration++;if(imageJob){URL.revokeObjectURL(imageJob.original);if(imageJob.url)URL.revokeObjectURL(imageJob.url);imageJob.bitmap?.close()}imageJob=null;$('image-before').removeAttribute('src');$('image-after').removeAttribute('src')}
 $('image-quality').oninput=()=>{$('quality-label').textContent=$('image-quality').value+' %';$('image-accept').disabled=true};$('image-size').onchange=()=>{$('image-accept').disabled=true};$('image-recalc').onclick=optimizeImage;$('image-cancel').onclick=()=>imgDialog.close();imgDialog.addEventListener('close',cleanupImage);
 $('image-accept').onclick=()=>{const job=imageJob;if(!job?.output||view!=='mj')return;$('image-accept').disabled=true;const reader=new FileReader();reader.onerror=()=>{$('image-error').textContent='Impossible de lire la copie optimisée.'};reader.onload=()=>{if(job!==imageJob)return;job.accept(reader.result);imgDialog.close();scheduleSave()};reader.readAsDataURL(job.output)};
 $('mapfile').onchange=()=>{const file=$('mapfile').files[0];$('mapfile').value='';if(file)openImage(file,'map',url=>{mapImage=url;$('map-view').style.backgroundImage='url("'+url+'")';$('map').classList.add('custom');log('Carte optimisée et importée.');document.dispatchEvent(new Event('amertume-content-changed'))})};
