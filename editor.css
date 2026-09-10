@@ -135,7 +135,8 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .gear-pills .cat-pill{flex:none;cursor:default}
 .gear-pills .cat-pill:hover{filter:none}
 .gear-pills .muted{font-size:13px}
-.hero-sous{margin:12px 0 6px;font:600 10px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.hero-sous{display:flex;align-items:center;gap:8px;margin:12px 0 6px;font:600 10px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.hero-sous .ico.plus{font:700 14px system-ui;letter-spacing:0;padding:0 7px 2px}
 /* Talents : une couleur par nature, portée par le liseré gauche et par l'abrégé. */
 .cat-pill.t-act{background:#cfdcea;border-left:4px solid #4f7fb5}
 .cat-pill.t-reac{background:#ddd3ea;border-left:4px solid #8b6bb5}
@@ -163,4 +164,13 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .pick-talent.t-crit{background:#eccfd0;border-left-color:#b5525a}
 .pick-talent.t-mait{background:#f0e0bd;border-left-color:#c99a3c}
 .pick-talent.t-ame{background:#d3e5cd;border-left-color:#5e9a5b}
+/* Choisir dans le catalogue : une ligne par entrée, sa pastille et son état. */
+#picker-search{margin-bottom:12px}
+#picker-body{max-height:min(56vh,420px);overflow:auto;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--panel-2)}
+#picker{width:min(560px,94vw)}
+.pick-ligne{display:flex;align-items:center;gap:9px;width:100%;margin-bottom:6px;padding:4px;border:1px solid transparent;border-radius:10px;background:transparent}
+.pick-ligne:hover{background:var(--hover)}
+.pick-ligne.porte{border-color:var(--green);background:var(--sel)}
+.pick-etat{flex:none;width:24px;font:700 15px system-ui;color:var(--muted)}
+.pick-ligne.porte .pick-etat{color:var(--green)}
 @media (max-width:900px){#heroes-page,#talents-page,#armory-page,#bestiary-page{padding:14px}.cat-cols,.hero-grid{grid-template-columns:1fr}}

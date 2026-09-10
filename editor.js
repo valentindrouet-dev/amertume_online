@@ -63,6 +63,11 @@ bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<option value="danger-">Tri : danger ↑</option><option value="nom">Tri : nom</option></select></div>'
  +'<div class="cat-cols" id="bestiary-cols"></div></section>';
 document.querySelector('main.layout').after(heroesPage,talentsPage,armoryPage,bestiaryPage);
+/* Un sous-titre de carte, avec son « + » : équiper ou attribuer sans ouvrir la fiche. */
+function sousTitre(texte,titre,fn){const h=document.createElement('h4');h.className='hero-sous';
+ h.append(texte);
+ const b=document.createElement('button');b.className='ico plus';b.textContent='+';
+ b.title=titre;b.setAttribute('aria-label',titre);b.onclick=fn;h.append(b);return h}
 /* Une carte par aventurier : de quoi le reconnaître, lire ses chiffres et agir dessus. */
 /* Enregistrer une fiche remplace l'objet dans « actors » : une carte dessinée avant
    garde l'ancien, devenu orphelin. Le rang se relit donc au clic, et une carte périmée
@@ -114,8 +119,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   const v=document.createElement('b');v.textContent='+'+a.skills[k];
   puce.append(l,v);comps.append(puce)});
 
- const titreKit=document.createElement('h4');titreKit.className='hero-sous';titreKit.textContent='Équipement';
- const titreTal=document.createElement('h4');titreTal.className='hero-sous';titreTal.textContent='Talents';
+ const titreKit=sousTitre('Équipement','Équiper '+a.name,()=>openPicker(a,'gear'));
+ const titreTal=sousTitre('Talents','Ajouter un talent à '+a.name,()=>openPicker(a,'talents'));
  c.append(tete,puces,chiffres,titreComp,comps,titreKit,gearPills(a),titreTal,talentPills(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
@@ -376,6 +381,73 @@ $('delete-talent').onclick=()=>{if(talentIndex===null)return;
  if(!confirm('Supprimer « '+t.name+' » ?'+(pris?' Il est appris par '+pris+' aventurier(s), qui le perdront.':'')))return;
  actors.forEach(a=>{if(a.talents)a.talents=a.talents.filter(x=>x!==t.id)});
  catalog.talents.splice(talentIndex,1);talentDialog.close();renderCatalogPages();render();scheduleSave()};
+/* Équiper depuis la carte. Le catalogue s'ouvre en pastilles ; cliquer l'une d'elles
+   la met en main ou la retire. Deux armes au plus, une armure, un bouclier : quand les
+   emplacements sont pris, on le dit au lieu de remplacer en silence. La DEF et la réserve
+   de dés découlent de l'équipement, elles sont donc recalculées à chaque changement. */
+function syncEquipped(a){const d=equippedDef(a,catalog.items);if(d!==null)a.def=d;
+ a.pool=equippedPool(a,catalog.items)||poolFrom(a.attacks&&a.attacks[0]&&a.attacks[0].dice)||a.pool}
+function toggleGear(a,o){
+ if(o.category==='weapon'){const dedans=(a.weapons||[]).includes(o.id);
+  if(dedans)a.weapons=a.weapons.filter(x=>x!==o.id);
+  else if((a.weapons||[]).length>=2)return 'Deux armes déjà en main : retire-en une d’abord.';
+  else a.weapons=[...(a.weapons||[]),o.id]}
+ else if(o.category==='armor'){const cle=o.slot==='shield'?'shieldId':'armorId';
+  a[cle]=a[cle]===o.id?'':o.id}
+ else return 'Cet objet n’a pas d’emplacement : il se note dans l’inventaire de la fiche.';
+ syncEquipped(a);return null}
+const pickerDialog=dialog('picker','Équiper','<p class="muted" id="picker-note"></p>'
+ +'<input id="picker-search" placeholder="Rechercher…" aria-label="Rechercher">'
+ +'<div id="picker-body"></div>');
+let pickerActeur=null,pickerMode='gear';
+function openPicker(a,mode){if(view!=='mj')return;pickerActeur=a;pickerMode=mode;
+ pickerDialog.querySelector('h2').textContent=(mode==='gear'?'Équiper ':'Talents de ')+a.name;
+ $('picker-note').textContent=mode==='gear'
+  ?'Clique un objet pour le mettre en main ou le retirer. Deux armes au plus, une armure, un bouclier.'
+  :'Clique un talent pour l’apprendre ou l’oublier.';
+ $('picker-search').value='';$('picker-search').oninput=renderPicker;
+ renderPicker();pickerDialog.showModal()}
+function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)return;corps.replaceChildren();
+ const a=pickerActeur,q=($('picker-search').value||'').trim().toLowerCase();
+ const groupe=(titre,liste,porte,pastille,clic)=>{if(!liste.length)return;
+  const bloc=document.createElement('div');bloc.className='pick-famille';
+  const h=document.createElement('h3');h.textContent=titre;
+  const compte=document.createElement('span');compte.className='compte';
+  compte.textContent=liste.filter(porte).length+' / '+liste.length;
+  h.append(compte);bloc.append(h);
+  liste.forEach(o=>{const rang=document.createElement('button');rang.className='pick-ligne'+(porte(o)?' porte':'');
+   rang.append(pastille(o));
+   const etat=document.createElement('span');etat.className='pick-etat';
+   etat.textContent=porte(o)?'✓':'+';rang.append(etat);
+   rang.onclick=()=>clic(o);bloc.append(rang)});
+  corps.append(bloc)};
+ if(pickerMode==='gear'){
+  const porte=o=>(a.weapons||[]).includes(o.id)||a.armorId===o.id||a.shieldId===o.id;
+  const clic=o=>{const souci=toggleGear(a,o);
+   if(souci){$('picker-note').textContent=souci;return}
+   renderPicker();renderHeroes();render();scheduleSave()};
+  const filtre=p=>catalog.items.filter(o=>p(o)&&(!q||o.name.toLowerCase().includes(q)));
+  groupe('Armes de mêlée',filtre(o=>o.category==='weapon'&&!o.ranged),porte,gearPill,clic);
+  groupe('Armes à distance',filtre(o=>o.category==='weapon'&&o.ranged),porte,gearPill,clic);
+  groupe('Armures',filtre(o=>o.category==='armor'&&o.slot!=='shield'),porte,gearPill,clic);
+  groupe('Boucliers',filtre(o=>o.category==='armor'&&o.slot==='shield'),porte,gearPill,clic);
+  if(!corps.childElementCount){const v=document.createElement('p');v.className='muted';
+   v.textContent=q?'Aucun objet de ce nom.':'L’armurerie est vide : crée un objet dans l’onglet Armurerie.';
+   corps.append(v)}}
+ else{
+  a.talents??=[];
+  const porte=t=>a.talents.includes(t.id);
+  const clic=t=>{a.talents=porte(t)?a.talents.filter(x=>x!==t.id):[...a.talents,t.id];
+   renderPicker();renderHeroes();render();scheduleSave()};
+  const sienne=(a.role||'').split('·')[0].trim(),toutes=talentFamilies();
+  const tete=[GENERIQUES,...(sienne&&toutes.includes(sienne)?[sienne]:[])];
+  for(const famille of [...tete,...toutes.filter(f=>!tete.includes(f))])
+   groupe(famille,(catalog.talents||[]).filter(t=>talentFamily(t)===famille
+    &&(!q||t.name.toLowerCase().includes(q)||(t.effects||'').toLowerCase().includes(q)))
+    .sort((x,y)=>(x.level||1)-(y.level||1)||x.name.localeCompare(y.name,'fr')),porte,talentPill,clic);
+  if(!corps.childElementCount){const v=document.createElement('p');v.className='muted';
+   v.textContent=q?'Aucun talent de ce nom.':'Aucun talent au catalogue : crée-en un dans l’onglet Talents.';
+   corps.append(v)}}}
 function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();renderBestiary()}
 $('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;
 $('armory-add').onclick=()=>openItem(null);

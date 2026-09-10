@@ -1,4 +1,4 @@
-# Amertume Online — v0.46
+# Amertume Online — v0.47
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.47 — Équiper depuis la carte, et la police Killam
+
+**Un « + » à côté d’ÉQUIPEMENT et de TALENTS**, sur la carte de l’aventurier elle-même. Il ouvre le catalogue en pastilles : cliquer une entrée la met en main ou la retire, l’état de chacune est marqué. Deux armes au plus, une armure, un bouclier — quand les emplacements sont pris, c’est dit, jamais remplacé en silence ; une armure, elle, remplace bien l’ancienne. La DEF et la réserve de dés découlant de l’équipement, elles sont recalculées à chaque changement, et la carte comme la table de jeu suivent aussitôt. Le même bouton sur Talents ouvre le rayon rangé par classe, celle de l’aventurier et les Génériques en tête.
+
+*(Les « + » de la v0.45, dans les titres de la fiche d’édition, servaient à **créer** un objet ou un talent. Ceux-ci servent à **équiper** avec ce qui existe déjà. Les deux restent.)*
+
+**« MAX x »** remplace le « / x » sous les PV et la Vie.
+
+**La police Killam Bold** (fournie par Valentin) porte les chiffres des caractéristiques et la ligne MAX. Elle est rangée dans `fonts/` : `killam-bold.woff2` est ce que la page charge — un sous-ensemble latin de **48 Ko** au lieu des 188 Ko du TTF, dont l’essentiel du poids était une table de crénage et des bitmaps embarqués inutiles au web. Le `KillamBold.ttf` d’origine reste à côté, intact, pour tout autre usage.
 
 ## v0.46 — L’aura sous les doigts, et le test de compétence corrigé
 
