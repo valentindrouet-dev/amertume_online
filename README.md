@@ -1,4 +1,4 @@
-# Amertume Online — v0.54
+# Amertume Online — v0.55
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.55 — Choisir plusieurs combattants, les retirer au clavier
+
+**Commande + clic** (Contrôle sous Windows) ajoute un combattant à la sélection ou l’en retire, sur le socle comme dans la liste. Un clic simple revient à un seul, et le cerceau **ne réapparaît que lorsqu’ils sont plusieurs** : seul, un combattant reste net, comme demandé en v0.53.
+
+La sélection est un ensemble d’**identifiants**, pas d’indices : retirer un combattant décale les indices de tous les suivants, jamais leurs identifiants. Le groupe survit donc à une coupe au milieu. « L’actif » — celui dont la fiche s’ouvre et dont l’attaque part — reste unique et suit le groupe : s’il en sort, un autre prend sa place. Glisser un membre du groupe ne le disperse pas.
+
+**Suppr ou Retour arrière** retire ce qui est sélectionné. Un adversaire part sans un mot ; **un héros fait surgir une alerte**, et un groupe qui en contient un aussi — perdre un monstre se répare d’un clic, pas une fiche. Rien ne part tant qu’un champ de saisie ou un dialogue a la main, ni en vue joueur, ni si l’opération devait laisser la troupe sans héros.
+
+`removeActor` devient `removeActors` : les indices sont défaits du plus grand au plus petit, sinon chaque coupe décalerait les suivants, et cibles, joueur maître et sélection sont recalés ensuite.
 
 ## v0.54 — Le bestiaire commande la table
 

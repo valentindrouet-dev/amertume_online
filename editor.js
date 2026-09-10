@@ -579,16 +579,30 @@ $('actor-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;const a=re
 $('save-template').onclick=()=>{if(!$('actor-form').reportValidity()||view!=='mj')return;catalog.monsters.push(toMonster(readActor()));$('actor-error').textContent='Copie ajoutée au bestiaire.';scheduleSave()};
 /* Retirer un combattant : les cibles qui le visaient et les indices qui le suivaient
    sont recalés, et la scène garde toujours au moins un héros. */
-function removeActor(i){
- if(view!=='mj'||!actors[i])return 'Retrait impossible.';
- if(actors.length===1||(actors[i].hero&&actors.filter(a=>a.hero).length===1))return 'Conserve au moins un héros dans la scène.';
- if(!confirm('Retirer '+actors[i].name+' de la scène ?'))return null;
- actors.splice(i,1);
- actors.forEach(a=>{if(a.target===i)a.target=null;else if(a.target>i)a.target--});
- if(owner>=i)owner=Math.max(0,owner-1);
+function removeActor(i){return removeActors([i],true)}
+/* Retirer un ou plusieurs combattants d'un coup. Les indices sont défaits du plus grand
+   au plus petit, sinon chaque coupe décalerait les suivants. Cibles, joueur maître et
+   sélection sont recalés ensuite. La troupe garde toujours un héros.
+   « demande » vaut pour la fiche, où l'on confirme quoi qu'il arrive ; au clavier, seuls
+   les héros font surgir l'alerte — perdre un monstre se répare d'un clic, pas une fiche. */
+function removeActors(liste,demande){
+ if(view!=='mj')return 'Retrait impossible.';
+ const rangs=[...new Set(liste)].filter(i=>actors[i]).sort((x,y)=>y-x);
+ if(!rangs.length)return 'Retrait impossible.';
+ const heros=rangs.filter(i=>actors[i].hero).length;
+ if(rangs.length>=actors.length||heros>=actors.filter(a=>a.hero).length)
+  return 'Conserve au moins un héros dans la scène.';
+ const noms=rangs.map(i=>actors[i].name).reverse();
+ if(demande||heros){const quoi=noms.length===1?'Retirer '+noms[0]+' de la scène ?'
+  :'Retirer '+noms.length+' combattants de la scène ?\n\n'+noms.join(', ');
+  if(!confirm(quoi))return null}
+ rangs.forEach(i=>{actors.splice(i,1);
+  actors.forEach(a=>{if(a.target===i)a.target=null;else if(a.target>i)a.target--});
+  if(owner>=i)owner=Math.max(0,owner-1);
+  if(selected!==null&&selected>=i)selected=selected>i?selected-1:null});
  if(!actors[owner]?.hero)owner=actors.findIndex(a=>a.hero);
- if(selected!==null&&selected>=i)selected=selected>i?selected-1:null;
- render();scheduleSave();return null}
+ marked.clear();
+ render();scheduleSave();log(noms.join(', ')+(noms.length>1?' retirés':' retiré')+' de la scène.');return null}
 /* Rejouer la même rencontre : les adversaires repartent intacts, la troupe garde ses
    blessures — c'est le combat qu'on recommence, pas la partie. */
 $('heal-foes').onclick=()=>{if(view!=='mj')return;
