@@ -1,4 +1,4 @@
-# Amertume Online — v0.80
+# Amertume Online — v0.81
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -153,9 +153,13 @@ Le brouillard a été optimisé au passage pour absorber ces découpes : test di
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
 
-## v0.80 — Les portées de toute la troupe, et les lots
+## v0.81 — Les portées suivent la sélection
 
-**Toute la troupe montre son rayon de contact, en permanence.** Le disque ne suivait que le combattant actif, et disparaissait dès que son attaque retenue était à distance. Il fallait donc sélectionner chacun pour lire ce qu’il menace. Désormais **chaque aventurier vivant porte le sien, tout le temps**, quelle que soit l’attaque retenue : les contacts et les attaques d’opportunité se lisent d’un coup d’œil. Un adversaire, lui, ne montre le sien que lorsqu’il est l’actif et qu’il attaque au contact — sinon la carte se couvrirait de disques. L’actif garde le disque le plus franc, les autres sont en retrait.
+**Le disque de contact appartient aux combattants pris, et à eux seuls.** La v0.80 l’avait donné à toute la troupe en permanence : trop de disques, la carte devenait illisible. Il revient donc au ou aux socles sélectionnés — mais **toujours**, quelle que soit l’attaque retenue, un archer comme un porteur de rapière : c’est ce qu’il faut lire pour les contacts et les attaques d’opportunité. Tout un lot montre le sien, tous à égalité. Le bouton Portées les éteint toujours d’un coup.
+
+## v0.80 — Portées permanentes, et les lots
+
+**Le rayon de contact ne dépend plus de l’attaque retenue.** Il s’effaçait dès qu’on retenait une attaque à distance. Cette version l’avait rendu permanent pour toute la troupe : c’était trop, la carte se couvrait de disques (corrigé en v0.81).
 
 **Un bouton Portées** dans la barre de la carte les éteint et les rallume d’un clic, quand le décor prime sur les règles. Il est allumé par défaut et son état est gardé sur l’appareil, comme le thème.
 
