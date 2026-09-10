@@ -1,4 +1,4 @@
-# Amertume Online — v0.62
+# Amertume Online — v0.63
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.63 — Mort, Analyser, et l’écu au bout de la barre
+
+**Un bouton Mort** rejoint les paliers de PV : il fait tomber à zéro et sombrer dans le coma d’un seul geste, là où il fallait descendre à la main. Il ne fait rien sur un combattant déjà à terre.
+
+**Un bouton 👁 Analyser** ouvre les chiffres d’une créature à toute la table : ses PV et sa DEF cessent d’être « ? » pour les joueurs. Il se referme d’un second clic, ne paraît que pour les adversaires — un héros n’a rien à révéler — et **l’Analyse au clavier révèle aussi** : c’est le prix d’une Analyse réussie, et elle profite à tous, pas seulement à celui qui l’a menée.
+
+Ce que chacun a le droit de lire tient désormais dans une seule fonction, `hpKnown` : le MJ voit tout, la troupe voit les siens, une créature analysée se livre. Les quatre endroits qui décidaient chacun de leur côté s’y rangent — liste, socle, barre des cibles, infobulles.
+
+**La barre de la liste ne porte plus que les PV du moment** ; le maximum se lit dans la fiche. **L’écu de DEF se pose au bout de la barre**, sur la même ligne et à la même hauteur — celui des aventuriers toujours, celui d’un adversaire une fois analysé, comme ses PV.
 
 ## v0.62 — Le bleu de l’Action, le jeton du numéro
 
