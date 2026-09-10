@@ -1,4 +1,4 @@
-# Amertume Online — v0.52
+# Amertume Online — v0.53
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,20 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.53 — Portraits, barres redessinées, PV réservés au MJ
+
+**Un aventurier à portrait n’affichait ni ses PV ni ses états.** Le socle était bien construit avec sa jauge et ses jetons, puis un second passage, hérité de l’époque où le socle ne portait qu’une lettre, le vidait pour y coller l’illustration. L’illustration se pose désormais **dans** la construction du socle, à la place de la lettre, et le second passage disparaît. Au passage la règle CSS `.token img` visait aussi les jetons d’état ; elle ne vise plus que le portrait.
+
+**L’illustration paraît aussi dans la liste des combattants**, à gauche de la carte, dans la pastille qui ne montrait que l’initiale.
+
+**Les barres de vie changent de dessin** — liste, fiche et socle : pilule entièrement arrondie, fond sombre, remplissage en dégradé horizontal, vert pour la troupe, rouge vers l’ambre pour les adversaires, et le texte en clair par-dessus. Elles ne sont plus bombées mais plates, et se lisent mieux sur une carte pâle.
+
+**Les PV des adversaires sont réservés au MJ.** Jusqu’ici un joueur ne lisait que ceux de son propre héros ; il lit maintenant ceux de toute la troupe, et les adversaires lui restent en « En combat », barre pleine, sur la carte comme dans la liste.
+
+**Le clic droit sur une ligne de la liste** ouvre le même menu d’états que sur le socle — utile quand un combattant est hors du champ ou caché par le brouillard.
+
+**Le cerceau orange** autour du combattant sélectionné disparaît. La liste, la fiche et l’aura de portée le disent déjà.
 
 ## v0.52 — Plusieurs états à la fois
 

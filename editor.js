@@ -598,7 +598,7 @@ $('reset-map').onclick=()=>{if(view!=='mj')return;mapImage=null;$('map-view').st
 const originalRender=render;render=function(){originalRender();toolsBar.hidden=view!=='mj';$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero)$('owner').add(new Option(a.name,String(i)))});$('owner').value=String(owner);const a=actors[selected];$('actor-notes').textContent=a&&a.notes||'';attackSelect.replaceChildren();
  if(a)a.attacks.forEach((at,i)=>attackSelect.add(new Option(at.name,String(i))));
  if(a)attackSelect.value=String(a.activeAttack||0);
- attackSelect.hidden=!a||!a.attacks.length||!!equippedPool(a,catalog.items);document.querySelectorAll('.token').forEach((t,i)=>{if(actors[i].image){t.replaceChildren();const im=document.createElement('img');im.src=actors[i].image;im.alt='';t.append(im)}});scheduleSave()};
+ attackSelect.hidden=!a||!a.attacks.length||!!equippedPool(a,catalog.items);scheduleSave()};
 // Les entrées éditées restent du texte, y compris dans les boutons de sélection.
 const rawLog=log;log=function(...args){rawLog(...args);scheduleSave()};
 function scheduleSave(){if(loading)return;clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,200)}
