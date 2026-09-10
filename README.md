@@ -1,4 +1,4 @@
-# Amertume Online — v0.50
+# Amertume Online — v0.51
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.51 — Poser un état au clic droit, lire les PV sous le socle
+
+**Clic droit sur un socle** : le menu des états s’ouvre là où le pointeur se trouve, quinze cases en grille, chacune son jeton, l’état courant encadré. Un clic pose, « Aucun » lève. C’est réservé au MJ, comme le menu « État » de la fiche — le suivi des états lui appartient. Le menu se ferme sur Échap, sur un clic ailleurs et au redimensionnement, et il se recale dans la fenêtre : un socle contre le bord droit ne le pousse pas dehors. Il vit hors de la carte, sinon le débordement de celle-ci le rognerait.
+
+Choisir « Coma » met les PV à zéro, en sortir en rend un : l’état et la barre de vie ne peuvent pas se contredire.
+
+**Une barre de PV sous chaque socle.** Elle suit le token, verte pour la troupe, ambrée pour les adversaires, avec les chiffres en infobulle. Elle respecte ce que la liste des combattants dit déjà : un joueur lit la barre de son héros, celle des autres reste pleine et annonce « En combat ». Le jeton d’état passe au-dessus si les deux se croisent.
+
+**Tuiles.** L’écu de DEF perd quatre pixels (30 × 36) et les chiffres des autres caractéristiques en gagnent trois (22 px) : l’écu ne domine plus la rangée.
 
 ## v0.50 — Les écus peints et les jetons d’état
 
