@@ -1,4 +1,4 @@
-# Amertume Online — v0.64
+# Amertume Online — v0.65
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,12 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.65 — Les points de vie ont leur bloc
+
+Les paliers quittent la fiche du personnage pour **un bloc à eux**, sous le tour de combat, dans la colonne de gauche : c’est un outil du MJ, pas une lecture de fiche. Il ne paraît qu’en vue Maître du jeu et seulement quand un combattant est choisi, et il annonce sur qui il agit.
+
+Huit boutons, deux rangées : **Mort** ouvre en haut à gauche, **Soin** — l’ancien « Plein » — ferme en bas à droite ; les retraits en rouge sur la première ligne, les ajouts en vert sur la seconde. Mort et Soin sont pleins pour se trouver du premier coup d’œil ; les deux calculent leur écart au lieu de le connaître d’avance.
 
 ## v0.64 — Un vrai rond, un chiffre centré, un bouton violet
 
