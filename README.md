@@ -1,4 +1,4 @@
-# Amertume Online — v0.76
+# Amertume Online — v0.77
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,18 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.77 — Les Actions frappent
+
+**La carte des Actions.** L’intitulé « Attaque » devient **ACTIONS**, en Killam gras dans le bleu des Actions, et le bonus de dégâts se lit à sa droite. La carte se lit désormais de haut en bas dans l’ordre où l’on s’en sert : l’intitulé et le bonus, la réserve de dés, les cibles à portée, puis les Actions elles-mêmes.
+
+**Un bouton par attaque, et ce bouton frappe.** Les boutons d’armes et d’attaques ne servaient qu’à désigner ce qui partirait ; ils portent maintenant le coup. On clique sur « Rapière » et la rapière frappe. Le bouton « Attaque » séparé disparaît : il ne servait plus à rien. Tous les boutons portent le bleu plein des Actions et leur hauteur de 36 pixels, celle de l’Analyse. Celui qui vient de partir garde un liseré clair, car c’est sa réserve que la carte affiche.
+
+Ce qui empêche de frapper grise le bouton concerné et en dit la raison au survol — et **chaque attaque répond pour elle-même** : l’arc reste offert sur une cible que la rapière ne peut pas atteindre, et se grise à son tour si la ligne de vue est coupée. Coma, Au sol, aveuglement, cible alliée, contact hors de portée : les règles sont les mêmes qu’avant, elles se lisent seulement là où l’on clique.
+
+**Un passage secret ne se trahit plus.** Une porte perce la zone de blocage qu’elle recouvre — c’est ce qui fait le passage. Un passage secret clos perçait donc, lui aussi, un trou bien visible dans le mur peint : la troupe lisait l’emplacement du passage sans avoir rien découvert. Pour la troupe, ce trou est désormais rebouché et le mur se lit plein. Le MJ garde le trou et le trait violet qui le nomme. Ce qui arrête le regard n’a pas changé : ouvert ou clos, secret ou non, le passage bloque exactement comme avant.
+
+Au passage, une cible ayant quitté la scène entre deux rendus — les adversaires remplacés à l’ouverture d’une carte, par exemple — ne fait plus tomber la table de jeu.
 
 ## v0.76 — Un cadre prend ce qu’il enferme
 

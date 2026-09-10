@@ -46,11 +46,17 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   b.append(nom,dicePips(at.dice));
   if(at.range==='distance'){const loin=document.createElement('span');loin.className='loin';
    loin.textContent='⤳';loin.setAttribute('aria-hidden','true');b.append(loin)}
-  b.title=(at.gear?'Attaque avec l’équipement':'Attaque de fiche')
+  const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
+  b.disabled=!!refus;
+  b.title=refus||('Frapper : '+(at.gear?'attaque avec l’équipement':'attaque de fiche')
    +' · '+(at.range==='distance'?'à distance':'au contact')
-   +(at.targets==='all'?' · toutes cibles':'');
+   +(at.targets==='all'?' · toutes cibles':''));
   b.setAttribute('aria-label',(at.name||'Attaque')+' — '+b.title);
-  b.onclick=()=>{a.activeAttack=i;a.pool=poolOf(a);render();scheduleSave()};
+  /* Le bouton n'arme plus l'attaque : il la porte. On retient laquelle est partie —
+     la réserve affichée la suit — puis le coup part aussitôt. */
+  b.onclick=()=>{a.activeAttack=i;
+   boite.querySelectorAll('.choix-attaque').forEach((x,k)=>x.classList.toggle('on',k===i));
+   attack();scheduleSave()};
   boite.append(b)})}
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}

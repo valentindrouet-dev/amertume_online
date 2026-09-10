@@ -183,7 +183,13 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
  $('map').classList.toggle('has-map',!!m);if(!m)return;
  if(m.start&&view==='mj')svg.append(svgRect(m.start,'startzone'));
  const formes=mapShapes(m);
- if(formes.murs.contours.length)svg.append(svgPath(formes.murs.contours,'wall-group'));
+ /* Un passage secret clos se trahissait par le trou qu'il perce dans la zone de blocage :
+    pour la troupe, on rebouche ce trou et le mur se lit plein. Le MJ garde le trou et le
+    trait violet qui le nomme. Ce qui arrête le regard, lui, n'a pas changé : porte close
+    ou mur, le passage bloque de la même façon. */
+ const murs=formes.murs.contours.concat((m.doors||[])
+  .filter(d=>d&&d.w>0&&d.h>0&&doorHiddenFrom(d,view==='mj')).map(d=>rectPolygon(d)));
+ if(murs.length)svg.append(svgPath(murs,'wall-group'));
  // Les portes se dessinent au-dessus du brouillard : une fois découverte, une porte
  // reste lisible dans la pénombre. Tant qu'elle est inexplorée, elle n'existe pas.
  (m.doors||[]).forEach((d,i)=>{
