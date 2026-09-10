@@ -1,4 +1,4 @@
-# Amertume Online — v0.53
+# Amertume Online — v0.54
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.54 — Le bestiaire commande la table
+
+**« PV actuels » disparaît de la fiche d’un modèle du bestiaire.** Un modèle n’a pas de blessure : son maximum fait foi, et les PV du moment le suivent. Le champ reste là où il sert — un héros, une créature déjà sur la table, une créature qu’on crée pour la scène.
+
+**Corriger un modèle corrige les créatures déjà en jeu.** Une créature posée depuis le bestiaire garde le lien vers son modèle ; en changer les PV maximum met à jour toutes ses copies sur la table, à l’instant, liste et socles compris. **Une créature intacte reste intacte** au nouveau plafond, **une créature blessée garde sa blessure**, et rendre des PV à une créature dans le coma l’en sort. Baisser le plafond écrête sans jamais descendre sous 1 PV.
+
+Les créatures posées avant que ce lien existe n’en ont pas : elles sont rattrapées **par leur nom**, faute de mieux, et seulement quand aucun lien n’est enregistré. Douze assertions couvrent le tout : la troupe jamais touchée, les deux cas de blessure, le coma levé, le rattrapage par le nom, l’autre modèle laissé de côté, l’écrêtage, le plancher à 1, et le modèle inchangé qui ne signale rien.
 
 ## v0.53 — Portraits, barres redessinées, PV réservés au MJ
 

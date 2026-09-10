@@ -8,7 +8,7 @@ const {resolveAttack:r}=require('./combat.js');assert.equal(r({dice:[[5,0]],def:
 const read=editor.slice(editor.indexOf('function readActor()'),editor.indexOf('function toMonster'));
 const values={name:'<Éla>',role:'Gardienne',notes:'texte',state:'Aucun',socle:'medium',sexe:'Femme',race:'Humaine',hp:'99',max:'20',def:'7',dmg:'8',xp:'50',vie:'5',vieMax:'6',endu:'4',pvBonus:'0',level:'3',weapon1:'w',weapon2:'',armor:'a',shield:''};const elements=Object.fromEntries(Object.entries(values).map(([k,value])=>[k,{value}]));elements.rapide={checked:true};elements.esquive={checked:false};for(let i=0;i<8;i++)elements['skill'+i]={value:'4'};
 const gearApi=require('./combat.js');
-const lire=inventaire=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],skillNames:Array(8).fill(''),draft:{hero:true},attackDraft:[{dice:{white:2}}],readAttacks(){},$:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,statesOf:gearApi.statesOf,setState:gearApi.setState,catalog:{items:inventaire}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result};
+const lire=inventaire=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],skillNames:Array(8).fill(''),templateIndex:null,draft:{hero:true},attackDraft:[{dice:{white:2}}],readAttacks(){},$:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,statesOf:gearApi.statesOf,setState:gearApi.setState,catalog:{items:inventaire}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result};
 const nu=lire([]);assert.equal(nu.sexe,'Femme');assert.equal(nu.race,'Humaine');assert.equal(nu.vieMax,6);assert.equal(nu.hp,20);assert.equal(nu.def,7);assert.equal(nu.dmg,8);assert.equal(nu.skills[0],4);assert.equal(nu.pool[0],2);assert.equal(nu.name,'<Éla>');
 // Équipé : les dés viennent de l'arme et la DEF de l'armure, pas des champs saisis.
 const equipe=lire([{id:'w',category:'weapon',dice:{white:3}},{id:'a',category:'armor',slot:'body',def:5}]);
@@ -241,7 +241,7 @@ assert.ok(Math.abs(uncontain([{x:50,y:50}],cadre,image)[0].x-50)<1e-6); // Le ce
 assert.ok(Math.abs(uncontain([{x:0,y:0}],cadre,image)[0].x+marge/ech)<1e-6);
 // Talents : la fiche ne garde que ceux qui existent encore au catalogue, sans doublon.
 const avecTalents=(brouillon,rayon)=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],
- skillNames:Array(8).fill(''),draft:{hero:true,talents:brouillon},attackDraft:[{dice:{white:2}}],readAttacks(){},
+ skillNames:Array(8).fill(''),templateIndex:null,draft:{hero:true,talents:brouillon},attackDraft:[{dice:{white:2}}],readAttacks(){},
  $:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),
  poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,statesOf:gearApi.statesOf,setState:gearApi.setState,
  catalog:{items:[],talents:rayon}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result.talents.join(',')};
@@ -282,4 +282,31 @@ setState(sujet,'Gel',false);
 assert.equal(sujet.states.join(','),'Feu');                // Lever un état absent ne fait rien.
 setState(sujet,'Feu',false);assert.equal(sujet.states.length,0);
 assert.equal(hasState({},'Coma'),false);
-console.log('174 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// Corriger un modèle du bestiaire corrige les créatures déjà sur la table.
+const src=fs.readFileSync('editor.js','utf8');
+const bloc=src.slice(src.indexOf('function syncFromTemplate'),src.indexOf("$('actor-form').onsubmit"));
+const table=[{hero:true,name:'Éla',hp:9,max:24},                        // La troupe n'est jamais touchée.
+ {hero:false,name:'Sbire',template:'t1',hp:12,max:12},                  // Intact : reste plein.
+ {hero:false,name:'Sbire',template:'t1',hp:4,max:12},                   // Blessé : garde sa blessure.
+ {hero:false,name:'Sbire',template:'t1',hp:12,max:12,states:['Coma']},  // Un cas incohérent hérité.
+ {hero:false,name:'Sbire',hp:12,max:12},                                // Sans lien : rattrapé par le nom.
+ {hero:false,name:'Autre',template:'t2',hp:12,max:12}];                 // Autre modèle : intouché.
+const ctxT={actors:table,num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),
+ setState:gearApi.setState};vm.createContext(ctxT);
+vm.runInContext(bloc+';result=syncFromTemplate({id:"t1",name:"Sbire",pv:20})',ctxT);
+assert.equal(ctxT.result,4);                                    // Quatre créatures suivies.
+assert.equal(table[0].max,24);                                  // Le héros n'a pas bougé.
+assert.equal(table[1].hp+'/'+table[1].max,'20/20');             // Intact, plein au nouveau plafond.
+assert.equal(table[2].hp+'/'+table[2].max,'4/20');              // Blessé, la blessure tient.
+assert.equal(table[3].states.length,0);                         // PV rendus, le Coma tombe.
+assert.equal(table[4].hp+'/'+table[4].max,'20/20');             // Le rattrapage par le nom a joué.
+assert.equal(table[5].max,12);                                  // L'autre modèle est resté à part.
+// Baisser le plafond écrête, sans jamais passer sous 1.
+vm.runInContext('result=syncFromTemplate({id:"t1",name:"Sbire",pv:3})',ctxT);
+assert.equal(table[2].hp+'/'+table[2].max,'3/3');
+vm.runInContext('result=syncFromTemplate({id:"t1",name:"Sbire",pv:0})',ctxT);
+assert.equal(table[1].max,1);
+// Un modèle inchangé ne touche rien et ne se signale pas.
+vm.runInContext('result=syncFromTemplate({id:"t1",name:"Sbire",pv:1})',ctxT);
+assert.equal(ctxT.result,0);
+console.log('186 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
