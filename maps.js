@@ -222,7 +222,10 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
  (m.doors||[]).forEach(d=>{d.open=false});const grille=fogDims(m);
  m.fog=packMask(new Uint8Array(grille.n),grille.n);delete m.seen;m.fogOff=false;fogSeen=null;fogSeenSrc=null;fogKey='';
- (m.foes||[]).forEach(f=>{const a=fromMonster(f.tpl);a.hidden=!!f.hidden;a.x=f.x;a.y=f.y;normalizeActor(a);actors.push(a)});
+ /* L'invisibilité ne se pose plus sur la carte : c'est un état, donné en jeu. Une carte
+    tracée avant la v0.82 garde ses invisibles, mais sous forme d'état. */
+ (m.foes||[]).forEach(f=>{const a=fromMonster(f.tpl);a.x=f.x;a.y=f.y;normalizeActor(a);
+  if(f.hidden)setState(a,'Invisible',true);actors.push(a)});
  render();actors.forEach(settleActor);   // Personne ne démarre dans un mur.
 
  actors.forEach(a=>{a.target=null});
@@ -287,7 +290,7 @@ mapsPage.innerHTML=
  +'<aside class="maps-props panel"><h2>Forme sélectionnée</h2><p class="muted" id="shape-label">Aucune sélection.</p>'
  +'<button id="shape-lock" hidden>🔒 Verrouiller</button>'
   +'<label id="door-key-label" hidden><input type="checkbox" id="door-key"> Verrouillée — le MJ seul l’ouvre</label>'
-  +'<label id="door-secret-label" hidden><input type="checkbox" id="door-secret"> Passage secret — un mur pour la troupe tant qu’il est clos</label>'+'<label id="foe-hidden-label" hidden><input type="checkbox" id="foe-hidden"> Invisible à l’ouverture</label>'
+  +'<label id="door-secret-label" hidden><input type="checkbox" id="door-secret"> Passage secret — un mur pour la troupe tant qu’il est clos</label>'
  +'<button id="shape-delete" hidden>Supprimer la forme</button><div class="divider"></div><h2>Légende</h2>'
  +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
@@ -383,7 +386,7 @@ const HINTS={select:'Clique une forme pour la sélectionner, glisse pour la dép
  door:'Trace une porte : elle perce d’elle-même la zone de blocage qu’elle recouvre, et le mur se referme si tu la déplaces. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
  secret:'Trace un passage secret à même le mur : tant qu’il est clos, il ne perce rien et la troupe ne voit qu’un mur — toi seul le devines à son trait violet, et toi seul l’ouvres. Ouvert, il devient une porte comme une autre.',
  start:'Trace la zone où les aventuriers seront regroupés à l’ouverture de la carte. Une seule par carte.',
- foe:'Clique pour poser l’adversaire choisi à droite de la barre. Il pourra être invisible à l’ouverture.'};
+ foe:'Clique pour poser l’adversaire choisi à droite de la barre. Pour le rendre invisible, donne-lui l’état Invisible en jeu.'};
 // Le plan de travail adopte le rapport de la carte et occupe la place disponible.
 function sizeCanvas(){const c=$('map-canvas'),w=document.querySelector('.canvas-wrap');
  const ratio=(mapDraft&&mapDraft.ratio)||16/9,dispoW=w.clientWidth||600,dispoH=w.clientHeight||400;
@@ -410,11 +413,10 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  m.foes.forEach((f,i)=>c.append(foeEl(i,f)));
  const cible=mapSel?shapeAt(mapSel):null;
  const adv=mapSel&&mapSel.kind==='foe'?cible:null,porte=mapSel&&mapSel.kind==='door'?cible:null;
- $('foe-hidden-label').hidden=!adv;$('door-key-label').hidden=$('door-secret-label').hidden=!porte;
+ $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
  if(porte){$('door-key').checked=!!porte.keyLocked;$('door-secret').checked=!!porte.secret}
  $('shape-delete').hidden=!mapSel||!!(cible&&cible.locked);$('shape-lock').hidden=!mapSel;
  if(cible)$('shape-lock').textContent=cible.locked?'🔓 Déverrouiller':'🔒 Verrouiller';
- if(adv)$('foe-hidden').checked=!!adv.hidden;
  $('shape-label').textContent=mapSel?(porte&&porte.secret?'Passage secret':KINDS[mapSel.kind])+(adv?' · '+adv.tpl.name:'')+(cible&&cible.locked?' · verrouillée':''):'Aucune sélection.';
  $('map-count').textContent=m.walls.length+' zone(s) de blocage, '+m.doors.length+' porte(s), '
   +m.foes.length+' adversaire(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
@@ -428,12 +430,12 @@ function shapeEl(kind,i,r){const el=document.createElement('div');
  ['nw','ne','sw','se'].forEach(g=>{const h=document.createElement('span');h.className='grip '+g;h.dataset.grip=g;el.append(h)});
  return el}
 function foeEl(i,f){const el=document.createElement('div');
- el.className='shape foe'+(f.hidden?' hidden-foe':'')+(f.locked?' locked':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
+ el.className='shape foe'+(f.locked?' locked':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
  // Même taille relative qu'en partie : une fraction de la largeur de la carte.
  const t=Math.max(10,$('map-canvas').clientWidth*TOKEN_FRACTION);
  el.style.width=el.style.height=t+'px';el.style.margin=(-t/2)+'px 0 0 '+(-t/2)+'px';el.style.fontSize=(t*.47)+'px';
  el.style.left=f.x+'%';el.style.top=f.y+'%';el.dataset.kind='foe';el.dataset.i=i;
- el.textContent=(f.tpl.name||'?')[0];el.title=f.tpl.name+(f.hidden?' (invisible à l’ouverture)':'');return el}
+ el.textContent=(f.tpl.name||'?')[0];el.title=f.tpl.name;return el}
 // Ne creuse que les zones libres : une zone verrouillée résiste au grattage.
 function carveWalls(fn){const libres=mapDraft.walls.filter(w=>!w.locked),verrous=mapDraft.walls.filter(w=>w.locked);
  mapDraft.walls=[...verrous,...fn(libres)]}
@@ -477,7 +479,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
    $('map-canvas').setPointerCapture(e.pointerId)}
   renderCanvas();e.preventDefault();return}
  if(mapTool==='foe'){const t=catalog.monsters[Number($('map-foe-tpl').value)];if(!t)return;
-  pushUndo();mapDraft.foes.push({tpl:structuredClone(t),x:p.x,y:p.y,hidden:false,locked:false});
+  pushUndo();mapDraft.foes.push({tpl:structuredClone(t),x:p.x,y:p.y,locked:false});
   mapSel={kind:'foe',i:mapDraft.foes.length-1};renderCanvas();saveMaps();return}
  if(mapTool==='select'){mapSel=null;renderCanvas();return}
  if(mapTool==='lasso'){if(!lasso)lasso={pts:[]};
@@ -530,8 +532,6 @@ $('door-key').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel
  pushUndo();d.keyLocked=$('door-key').checked;renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('door-secret').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
  pushUndo();d.secret=$('door-secret').checked;renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
-$('foe-hidden').onchange=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;
- pushUndo();f.hidden=$('foe-hidden').checked;renderCanvas();saveMaps()};
 
 /* ---------- Zoom du plan de travail ---------- */
 function applyCanvasZoom(){const c=$('map-canvas');

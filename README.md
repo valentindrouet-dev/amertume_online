@@ -1,4 +1,4 @@
-# Amertume Online — v0.81
+# Amertume Online — v0.82
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.82 — Invisible est un état, et lâcher est un geste
+
+**Reposer la sélection.** Un clic sur le décor de la carte, hors de tout socle, repose ce qui était pris — le geste qu’on fait sans y penser. **Échap** fait la même chose, à condition d’être sur la table de jeu, aucune fenêtre ouverte et aucun champ en cours de saisie ; ailleurs il continue d’appartenir à la page ouverte (le lasso de l’éditeur de cartes, la fermeture d’un menu). Le cadre vide, qui levait déjà la sélection, passe par la même règle, et n’écrit plus rien au journal : celui-ci n’a pas à tenir le compte des clics.
+
+**Invisible devient un état.** Il rejoint le menu des états, entre Gel et Onde. Un combattant invisible n’apparaît que sur deux écrans : celui du MJ et celui du joueur qui le tient. Les autres n’en voient rien — ni socle, ni languette, ni cible désignable. Le MJ, lui, le voit pâli d’un liseré bleu pointillé, distinct de ses deux autres voiles (l’orange « hors de vue de la troupe », le violet « caché par toi »), avec la mention *invisible aux autres écrans* sous son nom. Une Onde ne l’absorbe ni ne le purge : l’invisibilité n’est pas une affection.
+
+**L’éditeur de cartes ne pose plus d’adversaires invisibles.** La case « Invisible à l’ouverture » disparaît : l’invisibilité se donne en jeu, comme les autres états. Une carte tracée avant cette version garde ses invisibles — ils reçoivent l’état à l’ouverture de la carte.
 
 ## v0.81 — Les portées suivent la sélection
 

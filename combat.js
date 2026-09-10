@@ -501,7 +501,7 @@ function setState(a,etat,pose){const reste=statesOf(a).filter(x=>x!==etat);
  a.states=pose?[...reste,etat]:reste;return a.states}
 /* Les états et ce qu'ils empêchent ou déclenchent. Tout ce qui se calcule vit ici ;
    l'interface ne fait que déclencher au bon moment et raconter. */
-const ONDE_EXCLUS=['Blindage','Onde','Vie','Coma'];
+const ONDE_EXCLUS=['Blindage','Invisible','Onde','Vie','Coma'];
 function frozenSolid(a){return hasState(a,'Gel')||hasState(a,'Au sol')}
 function blinded(a){return hasState(a,'Aveugle')}
 /* La saignée se cumule : chaque aggravation vaut un point, et à zéro l'état s'en va. */
