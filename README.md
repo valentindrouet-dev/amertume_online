@@ -1,4 +1,4 @@
-# Amertume Online — v0.44
+# Amertume Online — v0.45
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,18 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.45 — Cartes d’aventurier en tuiles, création depuis la fiche
+
+**Les caractéristiques prennent la mise en page de la fiche en jeu.** Sur la carte d’un aventurier : le nom, la pastille de classe teintée, les puces (sexe, peuple, niveau), puis les caractéristiques en **tuiles** — libellé au-dessus, valeur en gros, une teinte par caractéristique, l’écu pour la DEF — et les compétences chiffrées en puces à deux colonnes. La ligne « Classe · niveau » sous le nom disparaît : la pastille porte la classe et une puce porte le niveau, une troisième copie ne servait à rien.
+
+**Créer sans quitter la fiche.** Un « + » dans les titres **Équipement** et **Talents** de la fiche d’un aventurier. L’objet créé se pose aussitôt dans le premier emplacement libre qui l’accepte (arme, armure ou bouclier selon sa catégorie) et le récapitulatif des dés se met à jour ; le talent créé est aussitôt coché. Les quatre listes d’équipement se rechargent **en place** : reconstruire le formulaire aurait perdu ce qui y était saisi et pas encore enregistré. Fermer le dialogue sans enregistrer n’arme aucun rappel — sinon une création faite plus tard depuis l’armurerie serait allée se cocher dans une fiche déjà refermée.
+
+**Adversaires à 100 %.** Un bouton dans la barre du MJ remet tous les adversaires blessés à leurs PV maximum et les sort du coma. La troupe garde ses blessures : c’est le combat qu’on recommence, pas la partie. Le bouton annonce combien d’adversaires sont concernés avant d’agir, et ne fait rien s’ils sont tous au complet.
+
+**Les corps se poussent.** Le MJ peut déplacer le token d’un combattant mort, à la souris comme aux flèches. Les joueurs, eux, restent bloqués sur les leurs.
+
+**Deux détails de couleur.** L’aura de contact voit son opacité doublée une seconde fois. Et toutes les armes portent désormais la même teinte, celle de l’arc : mêlée et distance ne se distinguaient que par une nuance de parchemin qui ressemblait à un défaut.
 
 ## v0.44 — Talents, et l’équipement en pastilles
 
