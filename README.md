@@ -1,4 +1,4 @@
-# Amertume Online — v0.71
+# Amertume Online — v0.72
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -27,7 +27,7 @@ Garde-fous avant décodage : fichier de 25 Mo maximum, 64 millions de pixels max
 IndexedDB local conserve scène, combattants, catalogue modifié et images validées. Un message signale l’échec si le stockage est indisponible ou plein. L’effacement des données du site supprime cette sauvegarde. La publication Firebase (v0.08) partage le contenu du MJ, mais la partie jouée reste locale : ni synchronisation des dés, des déplacements ou des PV, ni compte joueur. Les vues MJ/joueur sont des interfaces locales et ne constituent pas une sécurité d’accès.
 
 ## Combat
-Clic pour sélectionner ; **Maj + clic** pour cibler (ou sélecteur Cible). Maintenir Maj affiche une flèche dorée reliant le combattant actif au pointeur. Attaquer applique les dégâts, consomme l’Action et place dans le coma à 0 PV. Lancer libre ne modifie pas les PV.
+Clic pour sélectionner ; **Maj + clic** pour cibler (ou sélecteur Cible). Maintenir Maj affiche une flèche dorée reliant le combattant actif au pointeur. Attaquer applique les dégâts et place dans le coma à 0 PV. Depuis la v0.72 aucune limite d’activation n’est imposée : le MJ les fixe lui-même, et le compteur Action / Mvt-Analyse / Objet est masqué. Lancer libre ne modifie pas les PV.
 
 ## Portée et ligne de vue
 La portée découle de l’arme : une arme à distance permet le tir sous condition de ligne de vue, toute autre arme impose le contact. Le combattant sélectionné affiche son **rayon de contact** : un disque translucide de trois tailles de token en diamètre. Une attaque de portée « contact » exige que le socle de la cible touche ce disque : le chevauchement visible suffit, le centre n’a pas besoin d’y tomber. Une attaque de portée « distance » exige une **ligne de vue** : le segment entre les deux tokens ne doit traverser ni un mur du plan, ni un autre combattant vivant. Le bouton Attaquer est désactivé et le motif est affiché sous la cible.
@@ -152,6 +152,18 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.72 — Le compteur d’activation est mis de côté
+
+**Plus aucune limite d’activation : c’est le MJ qui les fixe.** Le bloc Action / Mvt-Analyse / Objet quitte l’écran, et surtout il n’interdit plus rien — on attaque autant de fois qu’on veut, on analyse plusieurs cibles dans le tour, le Dégel et le Se relever ne coûtent plus rien. Les compteurs continuent d’être tenus en coulisse, si bien que la règle pourra revenir telle quelle le jour venu, sans qu’aucune partie enregistrée n’ait rien perdu.
+
+Ce bloc portait aussi un levier discret : cocher Action faisait jouer le **Poison** et la **Vie**, cocher Mouvement la **Foudre**, pour une activation dépensée sans attaquer ni bouger. Attaquer et se déplacer les déclenchent toujours d’eux-mêmes ; le déclenchement à la main a rejoint le **menu du clic droit**, où vivent les états, et n’y paraît que pour un combattant qui porte l’un des trois.
+
+**Une deuxième attaque d’adversaire était inatteignable.** Le sélecteur d’attaque se cachait dès qu’une arme était portée — reste de la règle d’équipement, corrigée pour la réserve de dés en v0.71 mais oubliée ici. Les créatures armées par la scène de démonstration d’avant la v0.71 étaient donc muettes : on leur ajoutait une attaque, on la réglait, et rien ne paraissait sur la table. Le sélecteur suit désormais la même règle que les dés, et les trois autres endroits qui interrogeaient encore l’équipement sans distinguer aventurier et adversaire ont été alignés.
+
+Ajouter ou modifier une attaque au bestiaire se voit maintenant **aussitôt** sur la table : les dés, le bonus de dégâts et le choix entre plusieurs attaques suivent sans qu’il faille resélectionner la créature.
+
+**Le numéro d’un homonyme** est légèrement décalé vers la gauche sur son socle, à hauteur inchangée.
 
 ## v0.71 — Les chiffres se corrigent en jeu, et un modèle corrigé corrige ses créatures
 

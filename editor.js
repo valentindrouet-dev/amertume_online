@@ -15,7 +15,7 @@ actors.forEach(normalizeActor);normalizeCatalog(catalog);
  [['Éla',['Épée'],'Armure de mailles','Bouclier'],['Kaël',['Arc'],'Armure de cuir',''],['Sentinelle',['Lance'],'Armure de mailles','Bouclier'],['Rôdeur des ruines',['Hache'],'Armure de plates','Bouclier']]
  .forEach(([nom,armes,armure,bouclier])=>{const a=actors.find(x=>x.name===nom);if(!a||a.weapons.length)return;
   a.weapons=armes.map(parNom).filter(Boolean);a.armorId=parNom(armure);a.shieldId=parNom(bouclier);
-  const d=equippedDef(a,catalog.items);if(d!==null)a.def=d;a.pool=poolOf(a)})})();
+  a.def=defenseOf(a,catalog.items);a.pool=poolOf(a)})})();
 /* Le bandeau de scène a quitté la table : chaque action qu'il portait a rejoint
    l'endroit qui la concerne — ajouter un combattant, la liste des combattants ;
    retirer la carte, la barre de la carte ; soigner le camp adverse, le bloc des
@@ -742,7 +742,7 @@ function syncEquipped(a){
  // La DEF enregistrée suit la règle : dérivée pour un aventurier, propre à l'adversaire.
  if(a.hero)a.def=defenseOf(a,catalog.items);
  else{const d=equippedDef(a,catalog.items);if(d!==null)a.def=d}
- a.pool=equippedPool(a,catalog.items)||poolFrom(a.attacks&&a.attacks[0]&&a.attacks[0].dice)||a.pool}
+ a.pool=poolFromGear(a,catalog.items)||poolFrom(a.attacks&&a.attacks[0]&&a.attacks[0].dice)||a.pool}
 /* Combien d'exemplaires d'un objet un aventurier porte. La plupart des armes se
    tiennent à deux mains, et rien n'interdit d'en avoir deux du même modèle : leurs
    dés s'additionnent comme ceux de deux armes différentes. */
@@ -972,10 +972,10 @@ function readActor(){const f=$('actor-form').elements;readAttacks();const a=stru
  for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k])a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?999999:99999);a.max=Math.max(1,a.max);if(templateIndex!==null)a.hp=a.max;a.hp=Math.min(a.hp,a.max);setState(a,'Coma',!a.hp);if(!a.hero){a.type=f.type.value;a.menace=f.menace.value}// Sans cases à l'écran (adversaires), les valeurs enregistrées sont conservées telles quelles.
  if(f.rapide)a.rapide=f.rapide.checked;if(f.esquive)a.esquive=f.esquive.checked;a.skills=skillNames.map((_,i)=>num(f['skill'+i].value,0,30));// Un adversaire n'a pas de rayon d'armurerie dans son formulaire : ce qu'il porte reste tel quel.
  if(f.weapon1){a.weapons=[f.weapon1.value,f.weapon2.value].filter(Boolean);a.armorId=f.armor.value;a.shieldId=f.shield.value}a.attacks=attackDraft;a.activeAttack=0;a.talents=[...new Set(draft.talents||[])].filter(id=>(catalog.talents||[]).some(t=>t.id===id));
- const dEquip=equippedDef(a,catalog.items);if(dEquip!==null)a.def=dEquip;
+ if(!a.hero){const dEquip=equippedDef(a,catalog.items);if(dEquip!==null&&equipRules(a))a.def=dEquip}
  // Un aventurier ne saisit jamais sa DEF : elle vaut son armure plus son bouclier, zéro compris.
  if(a.hero)a.def=defenseOf(a,catalog.items);
- a.pool=equippedPool(a,catalog.items)||poolFrom(attackDraft[0]?.dice);return a}
+ a.pool=poolFromGear(a,catalog.items)||poolFrom(attackDraft[0]?.dice);return a}
 function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,notes:a.notes,attacks:structuredClone(a.attacks),image:a.image||null}}
 /* Une créature posée sur la table garde le lien vers son modèle : corriger les PV maximum
    au bestiaire corrige ceux qui combattent déjà. Une créature blessée garde sa blessure,
@@ -1060,7 +1060,9 @@ const originalRender=render;render=function(){originalRender();
  if(a)attackSelect.value=String(a.activeAttack||0);
  // Le menu des attaques ne paraît que s'il y a vraiment à choisir : la barre sous
  // « Attaque » appartient désormais aux cibles à portée.
- attackSelect.hidden=!a||a.attacks.length<2||!!equippedPool(a,catalog.items);scheduleSave()};
+ // Une arme portée ne commande la réserve que d'un aventurier : chez un adversaire,
+ // c'est sa carte d'attaque, et le choix entre plusieurs doit rester offert.
+ attackSelect.hidden=!a||a.attacks.length<2||!!poolFromGear(a,catalog.items);scheduleSave()};
 // Les entrées éditées restent du texte, y compris dans les boutons de sélection.
 const rawLog=log;log=function(...args){rawLog(...args);scheduleSave()};
 function scheduleSave(){if(loading)return;clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,200)}
