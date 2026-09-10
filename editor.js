@@ -19,7 +19,7 @@ actors.forEach(normalizeActor);normalizeCatalog(catalog);
 const toolsBar=document.createElement('div');toolsBar.className='mj-tools';toolsBar.innerHTML='<button id="new-hero">+ Personnage</button><button id="new-monster">+ Monstre</button><button id="edit-scene">Modifier la scène</button><button id="heal-foes">Adversaires à 100 %</button><button id="reset-map">Retirer la carte</button>';
 document.querySelector('.intro').after(toolsBar);const saveLabel=document.createElement('p');saveLabel.id='save-status';toolsBar.after(saveLabel);
 const note=document.createElement('p');note.id='actor-notes';note.className='muted';$('class').after(note);
-const attackSelect=document.createElement('select');attackSelect.id='attack-preset';attackSelect.setAttribute('aria-label','Attaque du combattant');$('attack-pool').before(attackSelect);
+const attackSelect=document.createElement('select');attackSelect.id='attack-preset';attackSelect.setAttribute('aria-label','Attaque du combattant');$('targets').before(attackSelect);
 attackSelect.onchange=()=>{const a=actors[selected];if(!a)return;a.activeAttack=Number(attackSelect.value);a.pool=poolOf(a);render()};
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
@@ -626,7 +626,9 @@ $('reset-map').onclick=()=>{if(view!=='mj')return;mapImage=null;$('map-view').st
 const originalRender=render;render=function(){originalRender();toolsBar.hidden=view!=='mj';$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero)$('owner').add(new Option(a.name,String(i)))});$('owner').value=String(owner);const a=actors[selected];$('actor-notes').textContent=a&&a.notes||'';attackSelect.replaceChildren();
  if(a)a.attacks.forEach((at,i)=>attackSelect.add(new Option(at.name,String(i))));
  if(a)attackSelect.value=String(a.activeAttack||0);
- attackSelect.hidden=!a||!a.attacks.length||!!equippedPool(a,catalog.items);scheduleSave()};
+ // Le menu des attaques ne paraît que s'il y a vraiment à choisir : la barre sous
+ // « Attaque » appartient désormais aux cibles à portée.
+ attackSelect.hidden=!a||a.attacks.length<2||!!equippedPool(a,catalog.items);scheduleSave()};
 // Les entrées éditées restent du texte, y compris dans les boutons de sélection.
 const rawLog=log;log=function(...args){rawLog(...args);scheduleSave()};
 function scheduleSave(){if(loading)return;clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,200)}

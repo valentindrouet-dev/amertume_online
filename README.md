@@ -1,4 +1,4 @@
-# Amertume Online — v0.55
+# Amertume Online — v0.56
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,18 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.56 — Les cibles à portée, sous la main
+
+**La barre sous « Attaque » liste ce qui est atteignable** — alliés et adversaires — et un clic y désigne la cible. Plus besoin de viser sur la carte pour en changer. Chaque cible porte son portrait, son nom, et son infobulle dit ses PV quand on a le droit de les lire. La cible courante est encadrée ; la recliquer la lève.
+
+« À portée » veut dire ce que le combat entend par là : le rayon de contact pour qui frappe au corps à corps, une **ligne de vue dégagée** pour qui tire — murs et combattants interposés comptent. C’est la même règle que celle qui autorise le coup, sortie de la fonction qui ne savait juger que la cible déjà désignée. Les adversaires qu’un joueur ne voit pas ne paraissent pas dans sa barre.
+
+**Un allié peut être désigné** — on vise aussi pour soigner ou pour montrer — mais le coup ne part pas sur lui : le bouton d’attaque le dit en toutes lettres au lieu de rester muet.
+
+**Le menu déroulant des attaques** ne s’affiche plus que lorsqu’il y a vraiment à choisir, c’est-à-dire à partir de deux attaques. Avec une seule, il annonçait « Attaque de base » et occupait la barre pour rien.
+
+**Les bonus de dégâts passent en rouge mat**, sur la carte d’attaque comme sur la tuile de caractéristique, avec un jeton de couleur qui s’éclaircit en thème sombre.
 
 ## v0.55 — Choisir plusieurs combattants, les retirer au clavier
 
