@@ -251,4 +251,19 @@ assert.equal(avecTalents(['t1','t1'],rayon),'t1');            // Coché deux foi
 assert.equal(avecTalents(['t1','fantome'],rayon),'t1');       // Un talent supprimé du catalogue tombe.
 assert.equal(avecTalents(undefined,rayon),'');                  // Une fiche d'avant les talents en sort vide.
 assert.equal(avecTalents(['t1'],undefined),'');                 // Un catalogue sans rayon ne garde rien.
-console.log('149 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+// Test de compétence : 1 dé plus le bonus, 4+ réussit, 6 relance en chaîne.
+const {skillRoll}=require('./combat.js');
+const fixe=v=>()=>v,suite=xs=>{let k=0;return()=>xs[Math.min(k++,xs.length-1)]};
+assert.equal(skillRoll(0,fixe(1)).des.length,1);        // Bonus nul : un dé quand même.
+assert.equal(skillRoll(3,fixe(1)).des.length,4);        // 1 + le bonus.
+assert.equal(skillRoll(0,fixe(3)).reussites,0);         // 3 échoue.
+assert.equal(skillRoll(0,fixe(4)).reussites,1);         // 4 réussit.
+assert.equal(skillRoll(2,fixe(5)).reussites,3);         // Tous les dés comptent.
+assert.equal(skillRoll(0,suite([6,5])).des.length,2);   // Un 6 relance.
+assert.equal(skillRoll(0,suite([6,5])).reussites,2);    // Le 6 et sa relance comptent.
+assert.equal(skillRoll(0,suite([6,6,1])).des.length,3); // La relance relance à son tour.
+assert.equal(skillRoll(0,suite([6,6,1])).reussites,2);
+assert.equal(skillRoll(-4,fixe(1)).des.length,1);       // Un bonus négatif ne retire pas le dé de base.
+const emballe=skillRoll(0,fixe(6),50);                  // Une série infinie est arrêtée net.
+assert.equal(emballe.des.length,50);assert.ok(emballe.reste>0);
+console.log('161 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

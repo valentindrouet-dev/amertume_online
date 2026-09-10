@@ -428,8 +428,15 @@ function regridMask(seen,fromW,fromH,toW,toH){const out=new Uint8Array(toW*toH);
   for(let i=0;i<toW;i++){const si=Math.min(fromW-1,Math.floor((i+.5)/toW*fromW));
    if(seen[sj*fromW+si]==='1')out[j*toW+i]=1}}
  return out}
+/* Test de compétence. Le chiffre d'une compétence est un bonus, pas un nombre de dés :
+   on lance 1 dé plus ce bonus. Chaque 4+ est une réussite ; chaque 6 relance un dé de
+   plus, qui compte à son tour et peut relancer lui aussi. Le plafond arrête une série
+   qui s'emballe — elle est finie avec probabilité 1, mais pas bornée. */
+function skillRoll(bonus,roll,plafond=1000){const des=[];let reussites=0,reste=1+Math.max(0,Math.trunc(bonus)||0);
+ while(reste>0&&des.length<plafond){reste--;const v=roll();des.push(v);if(v>=4)reussites++;if(v===6)reste++}
+ return {des,reussites,reste}}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

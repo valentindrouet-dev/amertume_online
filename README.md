@@ -1,4 +1,4 @@
-# Amertume Online — v0.45
+# Amertume Online — v0.46
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.46 — L’aura sous les doigts, et le test de compétence corrigé
+
+**L’aura de portée apparaît à la prise en main.** Jusqu’ici, saisir un token non sélectionné ne l’activait qu’au relâchement : on déplaçait à l’aveugle, sans voir son rayon de contact. Il se sélectionne désormais dès que le pointeur s’enfonce. La difficulté était qu’un `render()` complet reconstruit les tokens et **couperait la capture du pointeur** au premier pixel de glissement : la sélection en cours de prise ne refait donc pas les tokens, elle bascule les classes de ceux qui sont déjà là et redessine ce qui en dépend — aura, ligne de vue, flèche, fiche, panneau de combat. Le clic qui suit ne repose pas le token qu’on vient de prendre, et les deux acquis précédents tiennent : recliquer sur un token déjà choisi le dépose, glisser un token choisi ne le dépose pas.
+
+**Le test de compétence lançait un dé de moins.** Le chiffre d’une compétence est un **bonus**, pas un nombre de dés : la règle est *1 dé + le bonus*, chaque 4+ vaut une réussite, chaque 6 relance un dé de plus qui compte à son tour et peut relancer lui aussi. Le code lançait exactement `bonus` dés — donc **aucun** dé pour un bonus de 0, un échec garanti là où la règle donne une chance sur deux, et un dé manquant à tous les autres niveaux.
+
+Le calcul est sorti de l’interface et vit maintenant dans `combat.js` sous le nom `skillRoll(bonus, dé)`, avec douze assertions : le dé de base à bonus nul, le compte 1 + bonus, le seuil de réussite à 4, la relance sur 6, la relance de la relance, un bonus négatif qui ne retire jamais le dé de base, et le plafond qui arrête une série emballée. Les huit compétences s’affichent désormais toutes sur la carte d’un aventurier, y compris à `+0` : un bonus nul reste une compétence qu’on teste. Et la fiche rappelle la règle sous le titre.
+
+**XP et points de vie.** L’XP quitte les tuiles de caractéristiques pour une pastille à côté du niveau — ce n’en est pas une. Les tuiles **PV** et **Vie** montrent la valeur du moment en gros et le plafond en petit dessous, au lieu d’un « 18 / 24 » serré sur une ligne.
 
 ## v0.45 — Cartes d’aventurier en tuiles, création depuis la fiche
 
