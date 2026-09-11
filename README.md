@@ -1,4 +1,4 @@
-# Amertume Online — v0.86
+# Amertume Online — v0.87
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.87 — Le tour appelle la suite
+
+**Le socle descend sous ses pastilles.** Elles le touchaient ; il passe quatre pixels plus bas, elles ne bougent pas d’un cheveu — cinq pixels d’air entre les deux, la ligne inchangée.
+
+**Le bloc du tour de combat se tient droit.** L’intitulé et le numéro partagent le même corps, la même graisse et la même police, sur une seule ligne, le numéro au bout. Les trois boutons ont la même hauteur de 40 pixels, la même graisse, et dix pixels les séparent — horizontalement comme verticalement. « Adversaires à 100 % » ne colle plus à « Tour suivant ».
+
+**Tour suivant appelle quand le tour est épuisé.** Dès que plus un seul combattant debout ne garde son Action — c’est-à-dire dès qu’aucune pastille bleue ne reste allumée dans la liste —, le bouton se met à battre doucement dans l’ambre du bloc. Un combattant dans le coma ne retient pas le tour. Le battement s’éteint au tour suivant, quand les activations repartent. Si l’appareil demande des animations sobres, le bouton s’entoure d’un halo fixe plutôt que de clignoter.
 
 ## v0.86 — Deux pastilles, un lot, et le temps de lire les dégâts
 
