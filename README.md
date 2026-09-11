@@ -1,4 +1,4 @@
-# Amertume Online — v0.97
+# Amertume Online — v0.98
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,12 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.98 — L’aura s’arrête au mur
+
+Le rayon de contact restait un disque parfait, même à travers une cloison. Il est désormais **coupé par la matière**, comme la ligne de vue : on tire soixante-douze rayons depuis le socle, chacun arrêté au premier obstacle ou à la portée, la plus courte des deux. Dans une petite salle, l’aura épouse les trois murs et garde sa rondeur du côté ouvert ; sans obstacle, elle redevient un disque — mesuré, 69 à 70 pixels sur une portée de 70.
+
+Les directions sont comptées en pour cent de carte pour un pas d’un pixel d’écran : l’aura reste ronde même sur une carte qui n’est pas carrée.
 
 ## v0.97 — Des parures à la bonne mesure
 

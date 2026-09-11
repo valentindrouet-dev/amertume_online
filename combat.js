@@ -477,6 +477,25 @@ function visionPolygon(o,shapes,box){
    pts.push([a,o.x+t*dx,o.y+t*dy])}}
  pts.sort((p,q)=>p[0]-q[0]);
  return pts.map(p=>[p[1],p[2]])}
+/* Le rayon de contact tel qu'on le voit : un disque, mais coupé par la matière — un mur
+   arrête le bras comme il arrête le regard. On tire des rayons depuis le socle, chacun
+   arrêté au premier obstacle ou à la portée, la plus courte des deux.
+   Les directions sont données en pour cent de carte pour un pas d'un pixel d'écran, si
+   bien que « t » se compte en pixels : le disque reste rond à l'écran, même sur une carte
+   qui n'est pas carrée. */
+function reachPolygon(o,shapes,rayon,largeur,hauteur,pas){
+ const n=Math.max(24,Math.min(360,pas||72)),pts=[],murs=[];
+ if(!(rayon>0)||!(largeur>0)||!(hauteur>0))return pts;
+ for(const s of shapes||[]){if(shapeContains(s,[o.x,o.y]))continue;
+  for(const c of contoursOf(s))if(c&&c.length>=3)murs.push({pts:c,box:contourBox(c)})}
+ for(let i=0;i<n;i++){const a=i/n*Math.PI*2;
+  const dx=Math.cos(a)*100/largeur,dy=Math.sin(a)*100/hauteur;
+  let t=rayon;
+  for(const m of murs){if(rayHitsRect(o.x,o.y,dx,dy,m.box)>=t)continue;
+   const q=m.pts;
+   for(let k=0,j=q.length-1;k<q.length;j=k++){const u=rayHitsSegment(o.x,o.y,dx,dy,q[j],q[k]);if(u<t)t=u}}
+  pts.push([o.x+t*dx,o.y+t*dy])}
+ return pts}
 // Un socle est vu dès qu'il mord sur la zone éclairée, pas seulement par son centre.
 function polyTouchesDisc(poly,c,r){if(!poly||poly.length<3)return false;
  if(pointInPolygon(c,poly))return true;
@@ -575,7 +594,7 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  if(cle==='vieMax'&&Number.isFinite(a.vie))a.vie=Math.min(a.vie,a.vieMax);
  else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
  return a[cle]}
-const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
