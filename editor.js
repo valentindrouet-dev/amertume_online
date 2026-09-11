@@ -1152,13 +1152,15 @@ function renderScenePicker(){const corps=$('scene-picker-body');if(!corps)return
   const liste=catalog.monsters.map((m,i)=>[m,i]).filter(([m])=>!q||m.name.toLowerCase().includes(q));
   liste.forEach(([m,i])=>corps.append(ligneScene(m.name,m.image,
    (m.pv||0)+' PV · DEF '+(m.def||0)+' · '+(m.family||'sans famille'),
-   ()=>poserAdversaire(i,libre(),false),(x,y)=>poserAdversaire(i,{x,y},true))));
+   ()=>poserAdversaire(i,libre(),false),(x,y)=>poserAdversaire(i,{x,y},true),
+   {hero:false,pv:m.pv||0,def:m.def||0})));
   if(!liste.length)corps.append(videScene(q?'Aucun modèle de ce nom.':'Le bestiaire est vide.'))}
  else{
   const liste=actors.map((a,i)=>[a,i]).filter(([a])=>a.hero&&(!q||a.name.toLowerCase().includes(q)));
   liste.forEach(([a,i])=>corps.append(ligneScene(a.name,a.image,
    a.hp+' / '+a.max+' PV · '+(a.role||'Aventurier'),
-   ()=>placerAventurier(i,libre(),false),(x,y)=>placerAventurier(i,{x,y},true))));
+   ()=>placerAventurier(i,libre(),false),(x,y)=>placerAventurier(i,{x,y},true),
+   {hero:true,pv:a.hp,part:ratio(a),def:defOf(a)})));
   if(!liste.length)corps.append(videScene(q?'Aucun aventurier de ce nom.':'La troupe est vide.'))}}
 /* Poser un modèle : au hasard du centre pour un clic, au point exact pour un glissement.
    Dans les deux cas la créature est repoussée hors des murs avant d'apparaître. */
@@ -1193,14 +1195,27 @@ function glisserVersCarte(el,nom,image,poser){
    if(surLaCarte(ev)){const p=mapPct(ev);poser(p.x,p.y)}
    else log('Rien de posé : lâche le modèle sur la carte.')};
   document.addEventListener('pointermove',bouge);document.addEventListener('pointerup',fin)})}
-function ligneScene(nom,image,detail,clic,poser){const b=document.createElement('button');b.className='pick-ligne';
- b.append(jetonRond(image,nom,'mini'));
- const bloc=document.createElement('span');bloc.className='pick-texte';
- const t=document.createElement('strong');t.textContent=nom;
- const d=document.createElement('small');d.textContent=detail;
- bloc.append(t,d);b.append(bloc);
+/* La fenêtre de choix montre exactement ce que montre la liste des combattants : le même
+   socle rond, le même nom, la même barre de vie et le même écu de DEF. Ce qu'on va poser
+   se lit comme ce qui est déjà en jeu. Pas de pastilles d'activation : un modèle qui n'est
+   pas encore sur la carte n'a ni Action ni Mouvement à dépenser. */
+function ligneScene(nom,image,detail,clic,poser,fiche){const f=fiche||{};
+ const b=document.createElement('button');b.className='actor pick-ligne'+(f.hero?'':' enemy');
+ const vignette=document.createElement('span');vignette.className='vignette';
+ const socle=document.createElement('span');socle.className='avatar';
+ if(image){const im=document.createElement('img');im.src=image;im.alt='';im.draggable=false;socle.append(im)}
+ else socle.textContent=(String(nom||'?').trim()[0]||'?').toUpperCase();
+ vignette.append(socle);
+ const corps=document.createElement('span');corps.className='actor-body';
+ const ligneNom=document.createElement('span');ligneNom.className='actor-nom';
+ const t=document.createElement('strong');t.textContent=nom;ligneNom.append(t);
+ const vie=document.createElement('span');vie.className='vie-ligne';
+ vie.innerHTML=lifebar(Number.isFinite(f.part)?f.part:100,f.pv!=null?String(f.pv):'',!!f.hero);
+ if(f.def!=null)vie.append(shieldBadge(f.def));
+ corps.append(ligneNom,vie);b.append(vignette,corps);
  const fleche=document.createElement('span');fleche.className='pick-etat';fleche.textContent='+';
  b.append(fleche);
+ b.title=nom+(detail?' · '+detail:'');
  b.onclick=()=>{if(b.dataset.glisse){delete b.dataset.glisse;return}clic()};
  if(poser)glisserVersCarte(b,nom,image,poser);
  return b}

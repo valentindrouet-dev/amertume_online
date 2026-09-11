@@ -1,4 +1,4 @@
-# Amertume Online — v0.89
+# Amertume Online — v0.90
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.90 — La fenêtre de choix ressemble à la liste
+
+**Ce qu’on va poser se lit comme ce qui est déjà en jeu.** Les languettes de « Ajouter un adversaire » — et de « Placer un aventurier » — portent désormais le même dessin que la liste des combattants : le socle rond, le nom, la barre de vie avec les PV, l’écu de DEF. La famille et le détail passent en infobulle. On glisse toujours une languette jusqu’à la carte pour poser le modèle à l’endroit voulu, et un simple clic le pose au centre — les deux vérifiés.
+
+Pas de pastilles d’activation sur ces languettes : un modèle qui n’est pas encore sur la carte n’a ni Action ni Mouvement à dépenser.
+
+**Un combattant à terre n’a plus ni Action ni Mouvement.** Ses deux pastilles s’éteignent dès qu’il tombe dans le coma, et reviennent s’il est relevé.
 
 ## v0.89 — La barre de la carte sur deux rangées
 
