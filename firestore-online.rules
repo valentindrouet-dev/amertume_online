@@ -33,3 +33,29 @@ match /amertume_online_versions/{revision}/parts/{part} {
   allow update: if false; // Versions immuables, publication via le manifeste ci-dessus.
   allow delete: if isOnlineMJ();
 }
+
+// ---- Table en ligne (v0.91) : la partie jouée à plusieurs ----
+// Le code de la table tient lieu de clef : il faut connaître son identifiant pour la
+// lire. Le MJ seul l'ouvre et la ferme ; tout joueur connecté — même anonymement —
+// pousse l'état vivant des combattants et des portes, jamais le tour ni le verrou.
+match /amertume_online_live/{table} {
+  allow get: if true;
+  allow list: if false; // Les tables ne s'énumèrent pas.
+  allow create: if isOnlineMJ() && request.resource.data.mj == request.auth.uid;
+  allow delete: if isOnlineMJ() && resource.data.mj == request.auth.uid;
+  allow update: if request.auth != null
+    && resource.data.mj is string
+    && request.resource.data.mj == resource.data.mj
+    && request.resource.data.keys().hasOnly(['actors','doors','round','locked','title','mapId','mj','at'])
+    && (isOnlineMJ()
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actors','doors','at']));
+
+  match /seats/{uid} {
+    allow get, list: if true;
+    allow create, update: if request.auth != null && request.auth.uid == uid
+      && request.resource.data.keys().hasOnly(['actorId','nom','at'])
+      && request.resource.data.actorId is string
+      && request.resource.data.actorId.size() <= 100;
+    allow delete: if request.auth != null && (request.auth.uid == uid || isOnlineMJ());
+  }
+}

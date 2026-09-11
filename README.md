@@ -1,4 +1,4 @@
-# Amertume Online — v0.90
+# Amertume Online — v0.91
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,24 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.91 — La table en ligne
+
+**Jouer à plusieurs, chacun chez soi.** Le MJ ouvre une table, partage un lien, et ses joueurs n’ont rien à installer ni à créer : ils ouvrent l’adresse, choisissent l’aventurier qu’ils incarnent, et jouent. Socles déplacés, dégâts, états, portes ouvertes et tour de combat se suivent en direct sur tous les écrans.
+
+**Deux étages, pour que rien ne rame.** Le *contenu* — catalogue, cartes, illustrations — continue de se publier rarement et lourdement : c’est lui qui donne aux joueurs les fiches et les images, une fois pour toutes. L’*état vivant* — qui est où, à combien de PV, quel état, quelle porte ouverte — tient dans un seul petit document que tout le monde écoute et écrit : quelques kilo-octets, donc un aller-retour court.
+
+**L’écriture se fait par différence.** Après chaque rendu, l’état vivant est comparé à ce qui a été poussé la dernière fois, et seuls les champs qui ont bougé partent, par chemin — `actors.<id>.hp`. Firestore fusionne ces chemins un à un : deux joueurs qui bougent deux socles différents ne se marchent jamais dessus. Mesuré : un déplacement n’envoie que `x` et `y`, des dégâts que `hp`. Un adversaire posé en pleine partie part entier et **se reconstruit chez les joueurs depuis le bestiaire publié**, sans republier les images ; un adversaire retiré s’efface. Ce qui arrive du réseau est appliqué puis retenu comme référence, de sorte qu’il ne repart pas en écho — vérifié, la différence est vide juste après.
+
+**Le socle qu’on tient sous le doigt garde sa place** : le réseau ne le reprend pas en main tant qu’on ne l’a pas lâché, mais ses points de vie, eux, arrivent bien.
+
+**Qui incarne qui.** Chaque joueur prend un siège — un aventurier — et la table le montre à tous : libre, pris par un autre, ou le tien. Un siège se libère d’un clic. Le tour de combat, le verrou des déplacements, la carte ouverte et le titre appartiennent au MJ ; les joueurs poussent les combattants et les portes.
+
+**Ce qu’il reste à faire côté Firebase**, en deux gestes dans la console du projet :
+1. **Authentication → Sign-in method → Anonyme : activer.** C’est ce qui permet à un joueur d’avoir une identité le temps de la partie sans créer de compte.
+2. **Firestore → Rules : fusionner le nouveau bloc `amertume_online_live`** de `firestore-online.rules` dans les règles existantes. Ce fichier reste un fragment à ajouter : il ne remplace pas les règles de l’autre application.
+
+Hors ligne, rien ne change : sans table rejointe, la partie reste entièrement sur l’appareil, et si Firebase est injoignable l’application fonctionne comme avant.
 
 ## v0.90 — La fenêtre de choix ressemble à la liste
 
