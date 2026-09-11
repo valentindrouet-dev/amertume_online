@@ -101,7 +101,25 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .trait-aimant{fill:none;stroke:var(--green);stroke-width:2;vector-effect:non-scaling-stroke}
 /* L'annonce du combat : courte, franche, une seule phrase avant d'y aller. */
 #combat-start{width:min(420px,92vw)}
-.annonce-combat{font:400 17px/1.5 Georgia,serif;margin:4px 0 2px}
+/* L'annonce ne barre plus la route : un bandeau paraît au-dessus de la table, se tient
+   le temps qu'on le lise et s'efface seul. Rien à cliquer, rien à viser — il ne reçoit
+   même pas la souris, pour ne jamais voler un clic à la carte qu'il survole. */
+.annonce-flottante{position:fixed;left:50%;top:17%;z-index:80;pointer-events:none;
+ padding:13px 30px;border-radius:14px;white-space:nowrap;
+ background:#1b1410f2;color:#f6e9d8;border:1px solid #d2918059;
+ font:700 clamp(21px,3.2vw,34px)/1.1 'Killam',Georgia,serif;letter-spacing:1.4px;
+ box-shadow:0 14px 36px #00000073;animation:annonce-passe 2.6s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes annonce-passe{
+ 0%{opacity:0;transform:translate(-50%,-50%) scale(.84)}
+ 11%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+ 72%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+ 100%{opacity:0;transform:translate(-50%,-62%) scale(1.03)}}
+/* Sans mouvement : le même temps de lecture, en fondu seul. */
+@media(prefers-reduced-motion:reduce){
+ .annonce-flottante{animation-name:annonce-fondu}
+ @keyframes annonce-fondu{0%{opacity:0;transform:translate(-50%,-50%)}
+  10%{opacity:1;transform:translate(-50%,-50%)}78%{opacity:1;transform:translate(-50%,-50%)}
+  100%{opacity:0;transform:translate(-50%,-50%)}}}
 /* Le socle témoin de l'éditeur : rond comme un vrai socle, mais dessiné en pointillé
    pour qu'on ne le confonde jamais avec un combattant. Il ne quitte pas cette page. */
 .echelle-token{position:absolute;z-index:6;border-radius:50%;cursor:grab;

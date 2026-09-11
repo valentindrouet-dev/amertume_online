@@ -66,10 +66,6 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   boite.append(b)})}
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
-const combatDialog=dialog('combat-start','⚔ Début du combat !',
- '<p class="annonce-combat">Les armes sortent. Le tour repart à un, chacun retrouve son Action et son Mouvement.</p>'
- +'<div class="form-actions"><button type="button" class="primary" id="combat-go">À vos armes</button></div>');
-$('combat-go').onclick=()=>combatDialog.close();
 const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-form"><div id="actor-fields"></div><p class="form-error" id="actor-error" role="alert"></p><div class="form-actions"><button type="button" id="delete-actor">Retirer de la scène</button><button type="button" id="save-template">Enregistrer au bestiaire</button><button type="submit" class="primary">Enregistrer la fiche</button></div></form>');
 /* ---------- Pages Armurerie et Bestiaire ---------- */
 const armoryPage=document.createElement('main');armoryPage.id='armory-page';
