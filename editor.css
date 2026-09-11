@@ -81,6 +81,9 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .sw-wall{background:#0b1114;border:1px solid #6c7d85}
 .sw-door{background:#c98a4b;border:1px solid #e8b878}
 .sw-door-open{background:#c98a4b2e;border:1px dashed #e8b878}.sw-ligne{background:#0b1114;height:4px;align-self:center}
+/* L'annonce du combat : courte, franche, une seule phrase avant d'y aller. */
+#combat-start{width:min(420px,92vw)}
+.annonce-combat{font:400 17px/1.5 Georgia,serif;margin:4px 0 2px}
 /* Le socle témoin de l'éditeur : rond comme un vrai socle, mais dessiné en pointillé
    pour qu'on ne le confonde jamais avec un combattant. Il ne quitte pas cette page. */
 .echelle-token{position:absolute;z-index:6;border-radius:50%;cursor:grab;

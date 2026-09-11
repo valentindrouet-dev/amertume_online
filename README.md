@@ -1,4 +1,4 @@
-# Amertume Online — v0.98
+# Amertume Online — v0.99
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.99 — Exploration et combat
+
+La partie a deux temps. En **exploration**, la troupe avance, ouvre, fouille : ni tour, ni activations, ni pastilles — rien de ce qui compte les coups. Le bloc du tour n’annonce plus qu’EXPLORATION et un bouton, **⚔ Début du combat**.
+
+Un clic, et une fenêtre l’annonce — *« Les armes sortent. Le tour repart à un, chacun retrouve son Action et son Mouvement »* — puis la table bascule en combat : le tour à un, les activations rendues, les cibles effacées, et tout ce qu’on connaît revient. Un bouton discret, **Fin du combat**, referme la parenthèse et rend la scène au calme.
+
+Les deux bascules appartiennent au MJ ; les joueurs suivent, sur leur écran comme à la table en ligne. Le temps de jeu est gardé dans la partie, publié avec la scène et synchronisé en direct. Une partie déjà commencée s’ouvre en combat, comme avant ; une partie neuve s’ouvre en exploration.
 
 ## v0.98 — L’aura s’arrête au mur
 

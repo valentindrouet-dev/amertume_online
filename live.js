@@ -21,7 +21,7 @@
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armorId','shieldId','states','bleed','checks','target','activeAttack',
  'revealed','hidden'];
-const CHAMPS_MJ=['round','mapId','locked','title'];
+const CHAMPS_MJ=['round','mapId','locked','title','mode'];
 const TABLE_CLE='amertume-table';
 let tableId=null,salleRef=null,siegesRef=null,enLigne=false,appliquantDistant=false;
 let dernierPousse=null,poussePret=false,pousseTimer=null,pousseEnCours=false;
@@ -47,7 +47,7 @@ function etatVivant(){const out={actors:{}};
  actors.forEach(a=>{if(!a||!a.id)return;const e={};
   CHAMPS_VIVANTS.forEach(k=>{if(a[k]!==undefined)e[k]=a[k]});
   out.actors[a.id]=e});
- out.round=round;out.locked=!!tokensLocked;
+ out.round=round;out.locked=!!tokensLocked;out.mode=mode;
  out.mapId=(typeof currentMapId!=='undefined'&&currentMapId)||null;
  out.title=typeof sceneTitle==='function'?sceneTitle():'';
  const m=typeof currentMap==='function'?currentMap():null;
@@ -91,6 +91,7 @@ function appliquerSalle(d){if(!d)return;
  try{
   if(!estMJ()){
    if(Number.isFinite(d.round))round=d.round;
+   if(d.mode==='combat'||d.mode==='exploration')mode=d.mode;
    if(typeof d.locked==='boolean')tokensLocked=d.locked;
    if(typeof d.title==='string'&&typeof sceneTitle==='function')sceneTitle(d.title);
    if(d.mapId&&d.mapId!==currentMapId&&maps.some(m=>m.id===d.mapId)){

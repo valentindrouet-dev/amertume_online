@@ -66,6 +66,10 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   boite.append(b)})}
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
+const combatDialog=dialog('combat-start','⚔ Début du combat !',
+ '<p class="annonce-combat">Les armes sortent. Le tour repart à un, chacun retrouve son Action et son Mouvement.</p>'
+ +'<div class="form-actions"><button type="button" class="primary" id="combat-go">À vos armes</button></div>');
+$('combat-go').onclick=()=>combatDialog.close();
 const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-form"><div id="actor-fields"></div><p class="form-error" id="actor-error" role="alert"></p><div class="form-actions"><button type="button" id="delete-actor">Retirer de la scène</button><button type="button" id="save-template">Enregistrer au bestiaire</button><button type="submit" class="primary">Enregistrer la fiche</button></div></form>');
 /* ---------- Pages Armurerie et Bestiaire ---------- */
 const armoryPage=document.createElement('main');armoryPage.id='armory-page';
@@ -1237,7 +1241,7 @@ const originalRender=render;render=function(){originalRender();
 // Les entrées éditées restent du texte, y compris dans les boutons de sélection.
 const rawLog=log;log=function(...args){rawLog(...args);scheduleSave()};
 function scheduleSave(){if(loading)return;clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,200)}
-function snapshot(){return {version:8,actors,catalog,round,owner,selected,mapImage,maps,currentMapId,title:sceneTitle()}}
+function snapshot(){return {version:8,actors,catalog,round,mode,owner,selected,mapImage,maps,currentMapId,title:sceneTitle()}}
 /* L'état de la sauvegarde a quitté la table pour les Paramètres. Un échec, lui, ne
    doit pas attendre qu'on aille l'y chercher : il passe une fois par le journal. */
 let dernierSouci='';
@@ -1247,7 +1251,7 @@ function noterSauvegarde(texte,souci){saveLabel.textContent=texte;
  if(!souci)dernierSouci=''}
 function saveNow(){if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}try{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(snapshot(),'session');tx.oncomplete=()=>noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur');tx.onerror=()=>noterSauvegarde('Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.',true)}catch(e){noterSauvegarde('Impossible d’enregistrer : '+e.message,true)}}
 document.addEventListener('change',scheduleSave);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!loading)saveNow()});
-function loadSession(){try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onerror=finish;req.onblocked=finish;req.onsuccess=()=>{db=req.result;const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;get.onsuccess=()=>{const s=get.result;if(s&&(s.version===7||s.version===8)&&Array.isArray(s.actors)&&s.actors.length&&s.actors.some(a=>a.hero)){actors.splice(0,actors.length,...s.actors.map(normalizeActor));idsUniques(actors);catalog=normalizeCatalog(s.catalog);round=s.round;owner=s.owner;selected=s.selected;mapImage=s.mapImage;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;sceneTitle(s.title);if(mapImage){$('map-view').style.backgroundImage='url("'+mapImage+'")';$('map').classList.add('custom')}$('round').textContent=String(round).padStart(2,'0')}finish()}}}catch(e){finish()}}
+function loadSession(){try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onerror=finish;req.onblocked=finish;req.onsuccess=()=>{db=req.result;const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;get.onsuccess=()=>{const s=get.result;if(s&&(s.version===7||s.version===8)&&Array.isArray(s.actors)&&s.actors.length&&s.actors.some(a=>a.hero)){actors.splice(0,actors.length,...s.actors.map(normalizeActor));idsUniques(actors);catalog=normalizeCatalog(s.catalog);round=s.round;mode=s.mode==='exploration'?'exploration':'combat';owner=s.owner;selected=s.selected;mapImage=s.mapImage;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;sceneTitle(s.title);if(mapImage){$('map-view').style.backgroundImage='url("'+mapImage+'")';$('map').classList.add('custom')}$('round').textContent=String(round).padStart(2,'0')}finish()}}}catch(e){finish()}}
 function finish(){if(!loading)return;loading=false;cover.hidden=true;render();
  if(!db)noterSauvegarde('Sauvegarde locale indisponible dans ce navigateur.',true);
  // La partie est là : les onglets peuvent rouvrir la page où l'on travaillait.
