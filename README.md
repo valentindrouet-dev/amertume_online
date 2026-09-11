@@ -1,4 +1,4 @@
-# Amertume Online — v0.91
+# Amertume Online — v0.92
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,17 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.92 — La table dit ce qu’elle attend
+
+La fenêtre de la table cachait ses boutons tant que le MJ n’était pas reconnu : elle ne montrait qu’une ligne d’état et un intitulé vide, sans rien à faire ni rien à comprendre. Elle les **montre** désormais, grisés quand il manque quelque chose, **et dit lequel** — quatre situations, quatre messages :
+
+- Firebase injoignable : « vérifie la connexion, ou un bloqueur qui empêcherait gstatic.com » ;
+- personne de connecté : un bouton **Connexion MJ** est là, dans la fenêtre même ;
+- connecté mais pas encore autorisé : où ajouter l’identifiant, et où il est écrit ;
+- MJ reconnu : « Ouvre une table, puis envoie son lien à tes joueurs ».
+
+L’état de connexion se rafraîchit tout seul dès que le compte change, sans rouvrir la fenêtre.
 
 ## v0.91 — La table en ligne
 

@@ -185,32 +185,52 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
   renderSieges();majTable()},()=>{});
  majTable()}
-function majTable(){const ouvert=!!tableId;
+/* La fenêtre ne cache plus ses boutons : elle les montre, grisés quand il manque quelque
+   chose, et dit lequel. Masquer « Ouvrir une table » tant que le MJ n'était pas reconnu ne
+   laissait qu'une fenêtre vide, sans rien à faire ni rien à comprendre. */
+function majTable(){const ouvert=!!tableId,pret=!!cloud&&typeof firebase!=='undefined';
+ const connecte=!!(auth&&auth.currentUser),mj=estMJ();
  const ligne=$('live-lien');if(ligne){ligne.hidden=!ouvert;if(ouvert)ligne.value=lienTable(tableId)}
- ['live-open','live-close','live-copy','live-sieges','live-quit'].forEach(id=>{const e=$(id);if(!e)return;
-  if(id==='live-open')e.hidden=ouvert||!estMJ();
-  else if(id==='live-close')e.hidden=!ouvert||!estMJ();
-  else if(id==='live-quit')e.hidden=!ouvert||estMJ();
-  else e.hidden=!ouvert});
+ const montre=(id,vu,off,pourquoi)=>{const e=$(id);if(!e)return;
+  e.hidden=!vu;e.disabled=!!off;e.title=off?pourquoi:''};
+ montre('live-open',!ouvert,!pret||!mj,
+  !pret?'La bibliothèque Firebase n’est pas chargée.'
+  :!connecte?'Connecte-toi d’abord avec ton compte MJ.'
+  :'Ce compte n’est pas encore autorisé comme MJ.');
+ montre('live-login',!ouvert&&!mj,!pret,'La bibliothèque Firebase n’est pas chargée.');
+ montre('live-close',ouvert&&mj,false,'');
+ montre('live-quit',ouvert&&!mj,false,'');
+ montre('live-copy',ouvert,false,'');
+ ['live-sieges','live-titre-sieges'].forEach(id=>{const e=$(id);if(e)e.hidden=!ouvert});
  const b=$('open-live');if(b){b.classList.toggle('has-news',ouvert);
   b.textContent=ouvert?'Table · '+tableId:'Table en ligne'}
  const c=$('live-compte');if(c)c.textContent=ouvert
-  ?Object.keys(sieges).length+' joueur(s) assis · table '+tableId:'';}
+  ?Object.keys(sieges).length+' joueur(s) assis · table '+tableId:'';
+ if(ouvert)return;
+ liveStatus(!pret?'Firebase ne répond pas : vérifie la connexion, ou un bloqueur qui empêcherait gstatic.com. La partie reste jouable sur cet appareil.'
+  :!connecte?'Connecte-toi avec ton compte MJ pour ouvrir une table. Tes joueurs, eux, n’auront rien à créer : le lien suffira.'
+  :!mj?'Compte connecté, mais pas encore autorisé comme MJ. Ajoute son identifiant aux administrateurs Firebase — il est écrit dans la fenêtre Partager.'
+  :'Prêt. Ouvre une table, puis envoie son lien à tes joueurs.')}
 
 /* ---------- La fenêtre ---------- */
 const liveDialog=dialog('live-panel','Table en ligne',
  '<p id="live-status" class="muted" role="status">Table hors ligne : la partie reste sur cet appareil.</p>'
  +'<div class="toolbar"><button id="live-open" hidden>Ouvrir une table</button>'
+ +'<button id="live-login" hidden>Connexion MJ</button>'
  +'<button id="live-close" hidden>Fermer la table</button>'
  +'<button id="live-quit" hidden>Quitter la table</button>'
  +'<button id="live-copy" hidden>Copier le lien</button></div>'
  +'<input id="live-lien" readonly hidden aria-label="Lien de la table">'
  +'<p class="muted" id="live-compte"></p>'
- +'<h2 class="sous-titre">Qui incarne qui</h2><div id="live-sieges" hidden></div>');
+ +'<h2 class="sous-titre" id="live-titre-sieges" hidden>Qui incarne qui</h2><div id="live-sieges" hidden></div>');
 const liveButton=document.createElement('button');liveButton.id='open-live';
 liveButton.textContent='Table en ligne';liveButton.onclick=()=>{renderSieges();majTable();liveDialog.showModal()};
 document.querySelector('.view-controls').append(liveButton);
 $('live-open').onclick=ouvrirTable;
+$('live-login').onclick=()=>{const b=$('shared-login');if(b)b.click();
+ liveStatus('Fenêtre de connexion Google ouverte…')};
+document.addEventListener('amertume-mj-change',majTable);
+document.addEventListener('amertume-firebase-prete',majTable);
 $('live-close').onclick=fermerTable;
 $('live-quit').onclick=()=>{libererSiege();debrancherTable();
  const u=new URL(location.href);u.searchParams.delete('table');history.replaceState(null,'',u);
