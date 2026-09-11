@@ -165,7 +165,7 @@ for(const o of [{x:22.7,y:74.3},{x:50.5,y:47.3}]){const vision=visionPolygon(o,F
   assert.equal(pointInPolygon(p,vision),!wallsBetween(o,{x:p[0],y:p[1]},CONTOURS));compares++}
  assert.ok(compares>800)}
 /* Contour de l'union : exact, sans couture interne, avec les creux comme contours. */
-const {smoothContours,simplifyClosed,relaxContour,carveMask,distToRectEdge,carveWithPolygon:creuse,CARVE_STEP,wallShape,wallsPierced:perce,polyTouchesDisc,rectInReach}=require('./combat.js');
+const {smoothContours,simplifyClosed,relaxContour,carveMask,distToRectEdge,carveWithPolygon:creuse,CARVE_STEP,closestOnSegment,wallShape,wallsPierced:perce,polyTouchesDisc,rectInReach}=require('./combat.js');
 assert.equal(unionContours([{x:0,y:0,w:10,h:10},{x:10,y:0,w:10,h:10}]).length,1);      // Deux zones jointives fusionnent.
 assert.equal(unionContours([{x:0,y:0,w:10,h:10},{x:10,y:0,w:10,h:10}])[0].length,4);   // Sans couture au milieu.
 assert.equal(unionContours(subtractRects([{x:0,y:0,w:40,h:40}],[{x:15,y:15,w:10,h:10}])).length,2); // Creux : deux contours.
@@ -193,6 +193,19 @@ const RECT=[[40,38],[60,38],[60,62],[40,62]];
 const ENCOCHE=wallShape({walls:creuse([{x:10,y:40,w:80,h:20}],RECT,CARVE_STEP),doors:[],carves:[RECT]}).contours;
 assert.deepEqual(ENCOCHE.map(c=>c.length),[4,4]);
 assert.equal(aireDe(ENCOCHE[0])+aireDe(ENCOCHE[1]),1200);
+/* Une découpe libre suit la forme dessinée, et non la trame qui a servi à la creuser :
+   une coupe bien droite ressort bien droite, aux sommets voulus. */
+for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
+ ['en pente douce',[[10,45],[90,25],[90,20],[10,40]]],
+ ['presque plate',[[10,40],[90,32],[90,28],[10,36]]]]){
+ const reste=creuse([{x:20,y:30,w:60,h:8}],bande,CARVE_STEP);
+ for(const c of wallShape({walls:reste,doors:[],carves:[bande]}).contours){
+  assert.ok(c.length<=6,nom+' : '+c.length+' sommets');       // Plus la moindre marche.
+  for(const p of c){let d=Infinity;                           // Et chacun là où la main l'a mis.
+   for(let k=0,j=bande.length-1;k<bande.length;j=k++){const q=closestOnSegment(p,bande[j],bande[k]);
+    d=Math.min(d,Math.hypot(p[0]-q[0],p[1]-q[1]))}
+   const bord=Math.min(Math.abs(p[0]-20),Math.abs(p[0]-80),Math.abs(p[1]-30),Math.abs(p[1]-38));
+   assert.ok(Math.min(d,bord)<1e-9,nom+' : sommet à '+d.toFixed(3)+' du tracé')}}}
 /* Un angle taillé à l'outil Découper reste droit, même au beau milieu d'un tracé libre. */
 const OVALE=Array.from({length:48},(_,i)=>{const a=i/48*2*Math.PI;return [50+18*Math.cos(a),50+14*Math.sin(a)]});
 const BLOC=creuse([{x:10,y:10,w:80,h:60}],OVALE,CARVE_STEP);
@@ -462,4 +475,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('303 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('305 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

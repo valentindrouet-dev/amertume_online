@@ -541,6 +541,12 @@ function majEchelle(){const b=$('echelle-info'),t=$('echelle-titre');if(!b||!map
   +Math.round(large*pc/100)+' px ici'
   +(jeu?' · '+Math.round(jeu*pc/100)+' px sur la table':'')
   +(Math.abs(pc-SOCLE_DEFAUT)<.01?' · mesure d’origine':'')}
+/* Les seuils de tracé sont en pourcentage de carte ; à l'écran, le zoom les grossit
+   d'autant. Zoomé huit fois, un rectangle bien visible ne pèse qu'un huitième de ce
+   qu'il paraît : sans ce correctif, l'outil jetait le geste en croyant à un clic. */
+function auZoom(v){return v/Math.max(1,zoomC)}
+// Un geste compte dès qu'il court dans un sens : une fente reste une fente.
+function gesteTrace(r){return !!r&&Math.max(r.w,r.h)>=auZoom(1.2)&&Math.min(r.w,r.h)>=auZoom(.1)}
 function carveWalls(fn){const libres=mapDraft.walls.filter(w=>!w.locked),verrous=mapDraft.walls.filter(w=>w.locked);
  mapDraft.walls=[...verrous,...fn(libres)]}
 // Les traits sont de la même matière : ce qui creuse les zones les creuse aussi.
@@ -605,7 +611,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
    traitDepart={x:d.x,y:d.y};traitVise={x:d.x,y:d.y};renderCanvas();e.preventDefault();return}
   const fin=viseTrait(p,e.metaKey||e.ctrlKey,mapDraft.ratio);
   const r=Math.max(.05,Number(mapDraft.ratio)||16/9);
-  const pose=Math.hypot((fin.x-traitDepart.x)*r,fin.y-traitDepart.y)>=.5;
+  const pose=Math.hypot((fin.x-traitDepart.x)*r,fin.y-traitDepart.y)>=auZoom(.5);
   // On ne choisit pas ce qu'on vient de tracer : la main est encore à l'ouvrage.
   if(pose){pushUndo();
    mapDraft.traits.push({x1:traitDepart.x,y1:traitDepart.y,x2:fin.x,y2:fin.y,e:TRAIT_EPAISSEUR})}
@@ -617,7 +623,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(mapTool==='select'){mapSel=null;renderCanvas();return}
  if(mapTool==='lasso'){if(!lasso)lasso={pts:[]};
   // Un clic près du premier point ferme le contour, comme dans un outil de détourage.
-  if(lasso.pts.length>2&&Math.hypot(p.x-lasso.pts[0][0],p.y-lasso.pts[0][1])<1.6){applyLasso();return}
+  if(lasso.pts.length>2&&Math.hypot(p.x-lasso.pts[0][0],p.y-lasso.pts[0][1])<auZoom(1.6)){applyLasso();return}
   lasso.pts.push([p.x,p.y]);mapSel=null;
   mapDrag={mode:'lasso',from:p,bouge:false};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  if(mapTool==='cut'){cutRect={x:p.x,y:p.y,w:0,h:0};mapSel=null;
@@ -644,7 +650,7 @@ $('map-canvas').addEventListener('pointermove',e=>{
   j.t=Math.max(.6,Math.min(40,2*Math.hypot(dx,dy)/Math.max(1,r.width)*100));
   renderCanvas();return}
  if(d.mode==='lasso'){const der=lasso.pts[lasso.pts.length-1];
-  if(Math.hypot(p.x-der[0],p.y-der[1])>=.6){lasso.pts.push([p.x,p.y]);d.bouge=true;renderCanvas()}
+  if(Math.hypot(p.x-der[0],p.y-der[1])>=auZoom(.6)){lasso.pts.push([p.x,p.y]);d.bouge=true;renderCanvas()}
   return}
  const cible=shapeAt(d);if(!cible)return;
  if(d.kind==='foe'){cible.x=p.x;cible.y=p.y}
@@ -661,7 +667,7 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
  // Un glisser ferme le contour à main levée ; une suite de clics attend Entrée.
  if(d.mode==='lasso'){if(d.bouge&&lasso&&lasso.pts.length>=3)applyLasso();else renderCanvas();return}
  if(d.mode==='cut'){const r=cutRect;cutRect=null;
-  if(r&&r.w>=1.2&&r.h>=1.2){pushUndo();
+  if(gesteTrace(r)){pushUndo();
    // On ne découpe que les zones libres : une zone verrouillée résiste au grattage.
    carveWalls(w=>subtractRects(w,[r]));
    carveLesTraits((x,y)=>x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h);
@@ -670,7 +676,7 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
   else if(d.dessous){mapSel=d.dessous;mapTool='select'}
   renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render();return}
  const cible=d.kind==='foe'?null:shapeAt(d);
- if(cible&&(cible.w<1.2||cible.h<1.2)){removeShape(d);
+ if(cible&&!gesteTrace(cible)){removeShape(d);
   // Clic manqué : si une forme était dessous, on la sélectionne et on repasse en Sélection.
   if(d.dessous){mapSel=d.dessous;mapTool='select'}else{mapSel=null;undoStack.pop()}}
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()});

@@ -350,6 +350,49 @@ function carveMask(pts,carves,rayon,pas,protege){const n=pts.length,marque=new U
     const c=closestOnSegment(p,poly[j],poly[k]);
     if(Math.hypot(p[0]-c[0],p[1]-c[1])<=rayon){marque[i]=1;break}}}}
  return marque}
+/* Adoucir par moyennes rapprochait la ligne sans jamais l'atteindre, et sur une languette
+   étroite la tirait même vers l'intérieur : une découpe bien droite ressortait en escalier.
+   On s'y prend autrement. Le tracé à main levée est gardé tel qu'il a été fait : il suffit
+   donc de rendre chaque sommet de la trame à sa place exacte sur le bord dessiné. La
+   matière épouse alors la forme voulue, et non plus la trame qui a servi à la creuser.
+   Les sommets qui ne trouvent aucun bord à portée sont signalés : eux seuls restent à
+   adoucir à l'ancienne. */
+function projeteSurTrace(p,carves,rayon){let best=null;
+ for(let n=0;n<(carves||[]).length;n++){const poly=carves[n];if(!poly||poly.length<3)continue;
+  for(let k=0,j=poly.length-1;k<poly.length;j=k++){
+   const c=closestOnSegment(p,poly[j],poly[k]),d=Math.hypot(p[0]-c[0],p[1]-c[1]);
+   if(!best||d<best.d)best={d,p:[c[0],c[1]],poly:n,arete:j}}}
+ return best&&best.d<=rayon?best:null}
+/* Chaque sommet marqué est rendu à sa place sur le bord dessiné ; et l'on repose au
+   passage les sommets du tracé que la trame avait sautés — sur une courbe serrée, une
+   marche unique en enjambe plusieurs, et la corde coupait l'angle. On ne relie ainsi
+   deux projections que si le chemin le long du tracé reste aussi court que la corde :
+   ailleurs, le contour longe le mur et non la découpe, et l'on n'y touche pas. */
+function snapToCarves(pts,carves,marque,rayon,pas){const n=pts.length;
+ const proj=pts.map((p,i)=>marque[i]?projeteSurTrace(p,carves,rayon):null);
+ const sorte=[],mq=[],rs=[];
+ const pose=(p,m,r)=>{const q=sorte[sorte.length-1];
+  // Deux marches voisines visent parfois la même place : une arête de longueur nulle
+  // n'a pas de direction, et tout ce qui s'appuie sur le contour s'en trouve faussé.
+  if(q&&Math.hypot(p[0]-q[0],p[1]-q[1])<1e-7)return;
+  sorte.push([p[0],p[1]]);mq.push(m);rs.push(r)};
+ for(let i=0;i<n;i++){const a=proj[i],b=proj[(i+1)%n];
+  pose(a?a.p:pts[i],marque[i],a?0:marque[i]);
+  if(!a||!b||a.poly!==b.poly)continue;
+  const poly=carves[a.poly],m=poly.length;
+  const avant=(b.arete-a.arete+m)%m,arriere=(a.arete-b.arete+m)%m;
+  if(Math.min(avant,arriere)<1||Math.min(avant,arriere)>8)continue;
+  const chemin=avant<=arriere
+   ? Array.from({length:avant},(_,k)=>poly[(a.arete+1+k)%m])
+   : Array.from({length:arriere},(_,k)=>poly[(a.arete-k+m)%m]);
+  let long=0,cur=a.p;
+  for(const q of chemin){long+=Math.hypot(q[0]-cur[0],q[1]-cur[1]);cur=q}
+  long+=Math.hypot(b.p[0]-cur[0],b.p[1]-cur[1]);
+  if(long>Math.hypot(b.p[0]-a.p[0],b.p[1]-a.p[1])+pas*3)continue;
+  for(const q of chemin)pose(q,1,0)}
+ while(sorte.length>3&&Math.hypot(sorte[0][0]-sorte[sorte.length-1][0],sorte[0][1]-sorte[sorte.length-1][1])<1e-7){
+  sorte.pop();mq.pop();rs.pop()}
+ return {pts:sorte,marque:Uint8Array.from(mq),reste:Uint8Array.from(rs)}}
 /* Moyenne des voisins sur les seuls sommets marqués — le filtre (1,2,1)/4 annule
    exactement l'ondulation d'une case sur deux que laisse la rastérisation — et jamais
    à plus de deux cases de la position d'origine, garde-fou contre toute dérive. */
@@ -389,10 +432,12 @@ function dpOpen(pts,tol){const n=pts.length,garde=new Uint8Array(n);
 function smoothContours(contours,carves,tol,pas,protege){
  if(!carves||!carves.length)return (contours||[]).filter(c=>c.length>=3);
  return (contours||[]).map(c=>{
-  if(c.length<=12)return c;
+  // Un quadrilatère est déjà la forme voulue : on ne touche qu'aux contours en escalier.
+  if(c.length<=6)return c;
   const marque=carveMask(c,carves,pas*1.6,pas,protege);
   if(!marque.some(v=>v))return c;
-  return simplifyRuns(relaxContour(c,pas,6,marque),marque,tol)}).filter(c=>c.length>=3)}
+  const rendu=snapToCarves(c,carves,marque,pas*1.6,pas);
+  return simplifyRuns(relaxContour(rendu.pts,pas,3,rendu.reste),rendu.marque,tol)}).filter(c=>c.length>=3)}
 /* Export et import des couches d'une carte : zones de blocage, portes, zone de départ,
    adversaires pré-placés, tracés à main levée et découpes. Le même nettoyage sert dans les
    deux sens — ce qui sort est déjà propre, ce qui entre le devient. Rien de ce qui vient
