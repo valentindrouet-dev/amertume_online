@@ -397,7 +397,10 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
    hidden:!!(f&&f.hidden),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
   carves:(Array.isArray(m&&m.carves)?m.carves:[]).slice(0,400)
    .map(c=>(Array.isArray(c)?c:[]).slice(0,3000).map(p=>[borne(p&&p[0]),borne(p&&p[1])])).filter(c=>c.length>=3),
-  cuts:cleanRects(m&&m.cuts)}}
+  cuts:cleanRects(m&&m.cuts),
+  // Le socle témoin voyage avec la carte : c'est lui qui dit à quelle échelle elle est tracée.
+  echelle:{x:borne(m&&m.echelle&&m.echelle.x),y:borne(m&&m.echelle&&m.echelle.y),
+   t:Math.max(.6,Math.min(40,Number(m&&m.echelle&&m.echelle.t)||100*46/810))}}}
 function packMaps(maps){return {format:MAP_FORMAT,version:1,exporte:new Date().toISOString(),
  maps:(Array.isArray(maps)?maps:[]).map(cleanMap)}}
 function readMapsFile(texteBrut){let data;

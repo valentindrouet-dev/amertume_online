@@ -1,4 +1,4 @@
-# Amertume Online — v0.94
+# Amertume Online — v0.95
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.95 — Le socle témoin
+
+Toutes les cartes ne sont pas au même pas : un couloir de donjon et un plan de manoir ne se mesurent pas pareil, et un socle qui vaut la bonne taille sur l’un flotte ou déborde sur l’autre. Chaque carte porte donc désormais **son échelle** — la largeur d’un socle moyen, en pour cent de sa largeur.
+
+Elle se règle à la main, dans l’éditeur, avec un **socle témoin** : un rond bleu en pointillé, marqué SOCLE, qu’on **promène partout sur la carte** pour le comparer à une porte, un lit, une table, un couloir, et qu’on **tire par son coin** jusqu’à ce qu’un combattant y tienne. Le panneau de droite annonce la mesure obtenue et rappelle celle d’origine, qu’un bouton rétablit.
+
+Ce qu’il règle vaut pour tout ce qui mesure : la taille des socles en partie, celle des adversaires pré-placés dans l’éditeur, les disques de contact, le glissement le long des murs. Les petits, grands et énormes socles de la v0.94 gardent leur rapport — la moitié, une fois et demie, le double — appliqué à cette mesure-là.
+
+**Le socle témoin ne franchit jamais la table de jeu** : il n’est dessiné que dans l’éditeur de cartes, qui appartient au MJ. Vérifié : visible sur la page Cartes, absent de la table même pour le MJ, et invisible côté joueur. L’échelle, elle, voyage avec la carte publiée — les socles de tes joueurs prennent la bonne taille sans qu’ils aient rien à faire.
 
 ## v0.94 — Petits socles et cloisons minces
 

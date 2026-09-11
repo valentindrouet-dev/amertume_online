@@ -301,7 +301,7 @@ mapsPage.innerHTML=
  +'<button id="shape-lock" hidden>🔒 Verrouiller</button>'
   +'<label id="door-key-label" hidden><input type="checkbox" id="door-key"> Verrouillée — le MJ seul l’ouvre</label>'
   +'<label id="door-secret-label" hidden><input type="checkbox" id="door-secret"> Passage secret — un mur pour la troupe tant qu’il est clos</label>'
- +'<button id="shape-delete" hidden>Supprimer la forme</button><div class="divider"></div><h2>Légende</h2>'
+ +'<button id="shape-delete" hidden>Supprimer la forme</button>'+'<div class="divider"></div><h2>Échelle de la carte</h2>'+'<p class="muted" id="echelle-info"></p>'+'<p class="muted">Le socle témoin se promène sur la carte : pose-le contre une porte, un lit, un couloir, et tire son coin jusqu’à ce qu’un combattant y tienne. Il ne paraît jamais en partie.</p>'+'<button id="echelle-reset">Rétablir la mesure d’origine</button>'+'<div class="divider"></div><h2>Légende</h2>'
  +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'+'<li><i class="sw-ligne"></i>Ligne de blocage — la même chose, d’un seul trait fin</li>'
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
  +'<li><i class="sw-door"></i>Porte — close au début du combat, ouverte d’un clic en jeu</li>'+'<li><i class="sw-key"></i>Porte verrouillée — le MJ seul peut l’ouvrir</li>'+'<li><i class="sw-secret"></i>Passage secret — un mur pour la troupe tant qu’il est clos</li>'
@@ -335,9 +335,10 @@ document.addEventListener('keydown',e=>{if(!document.body.classList.contains('pa
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()});
 
 /* ---------- Cartes ---------- */
-function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,walls:[],doors:[],start:null,foes:[]};
+function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,walls:[],doors:[],start:null,foes:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
 function ensure(m){m.walls??=[];m.doors??=[];m.foes??=[];m.carves??=[];m.cuts??=[];m.ratio??=16/9;
+ m.echelle??={x:8,y:8,t:SOCLE_DEFAUT};
  // Migration : les anciennes zones de vision sont appliquées une fois pour toutes aux murs.
  if(m.visions&&m.visions.length){const libres=m.walls.filter(w=>!w.locked),verrous=m.walls.filter(w=>w.locked);
   m.walls=[...verrous,...subtractRects(libres,m.visions.filter(r=>r&&r.w>0&&r.h>0))]}
@@ -406,7 +407,7 @@ function sizeCanvas(){const c=$('map-canvas'),w=document.querySelector('.canvas-
  c.style.width=Math.round(lw)+'px';c.style.height=Math.round(lh)+'px'}
 function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textContent=HINTS[mapTool]||'';
  document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===mapTool));
- c.replaceChildren();sizeCanvas();applyCanvasZoom();if(!m)return;ensure(m);
+ c.replaceChildren();sizeCanvas();applyCanvasZoom();majEchelle();if(!m)return;ensure(m);
  // La matière est peinte d'un seul tenant, lissée : l'éditeur montre le mur du jeu.
  const contours=draftSkin(m);
  if(contours.length)c.append(svgPath(contours,null,'wall-skin'));
@@ -423,6 +424,8 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
   c.append(svg)}
  if(m.start)c.append(shapeEl('start',0,m.start));
  m.foes.forEach((f,i)=>c.append(foeEl(i,f)));
+ // Le socle témoin par-dessus tout le reste : c'est lui qu'on vient comparer.
+ const jauge=echelleEl();if(jauge)c.append(jauge);
  const cible=mapSel?shapeAt(mapSel):null;
  const adv=mapSel&&mapSel.kind==='foe'?cible:null,porte=mapSel&&mapSel.kind==='door'?cible:null;
  $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
@@ -444,11 +447,27 @@ function shapeEl(kind,i,r){const el=document.createElement('div');
 function foeEl(i,f){const el=document.createElement('div');
  el.className='shape foe'+(f.locked?' locked':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
  // Même taille relative qu'en partie : une fraction de la largeur de la carte.
- const t=Math.max(10,$('map-canvas').clientWidth*TOKEN_FRACTION);
+ const t=Math.max(10,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100);
  el.style.width=el.style.height=t+'px';el.style.margin=(-t/2)+'px 0 0 '+(-t/2)+'px';el.style.fontSize=(t*.47)+'px';
  el.style.left=f.x+'%';el.style.top=f.y+'%';el.dataset.kind='foe';el.dataset.i=i;
  el.textContent=(f.tpl.name||'?')[0];el.title=f.tpl.name;return el}
 // Ne creuse que les zones libres : une zone verrouillée résiste au grattage.
+function echelleEl(){const m=mapDraft;if(!m)return null;ensure(m);
+ const large=$('map-canvas').clientWidth||600,t=Math.max(8,large*echelleSocle(m)/100);
+ const el=document.createElement('div');el.className='echelle-token';
+ el.style.width=el.style.height=t+'px';el.style.margin=(-t/2)+'px 0 0 '+(-t/2)+'px';
+ el.style.left=m.echelle.x+'%';el.style.top=m.echelle.y+'%';
+ const nom=document.createElement('span');nom.className='echelle-nom';nom.textContent='SOCLE';
+ const poignee=document.createElement('span');poignee.className='echelle-grip';
+ poignee.dataset.echelleGrip='1';poignee.title='Tirer pour régler l’échelle';
+ el.append(nom,poignee);
+ el.title='Socle témoin : promène-le sur la carte pour comparer, tire son coin pour régler la taille des socles. Invisible en partie.';
+ return el}
+function majEchelle(){const b=$('echelle-info');if(!b||!mapDraft)return;
+ const pc=echelleSocle(mapDraft),large=$('map-canvas').clientWidth||600;
+ b.textContent='Socle moyen : '+pc.toFixed(2).replace('.',',')+' % de la largeur · '
+  +Math.round(large*pc/100)+' px dans l’éditeur'
+  +(Math.abs(pc-SOCLE_DEFAUT)<.01?' · mesure d’origine':'')}
 function carveWalls(fn){const libres=mapDraft.walls.filter(w=>!w.locked),verrous=mapDraft.walls.filter(w=>w.locked);
  mapDraft.walls=[...verrous,...fn(libres)]}
 function applyLasso(){const pts=lasso&&lasso.pts;lasso=null;
@@ -469,6 +488,8 @@ function removeShape(d){const m=mapDraft;
 function recalNeeded(){const m=mapDraft;
  return !!(m&&m.image&&!m.fitted&&Math.abs((m.ratio||16/9)-16/9)>.01
   &&(m.walls.length||m.doors.length||m.foes.length||m.start))}
+$('echelle-reset').onclick=()=>{const m=mapDraft;if(!m)return;ensure(m);pushUndo();
+ m.echelle.t=SOCLE_DEFAUT;renderCanvas();saveMaps();if(m.id===currentMapId)render()};
 $('map-recal').onclick=()=>{const m=mapDraft;if(!recalNeeded())return;
  pushUndo();const remis=s=>uncontain(s,16/9,m.ratio);
  m.walls=remis(m.walls);m.doors=remis(m.doors);m.foes=remis(m.foes);
@@ -484,6 +505,11 @@ const pct=e=>{const r=$('map-canvas').getBoundingClientRect();
  return {x:Math.max(0,Math.min(100,100*(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(100,100*(e.clientY-r.top)/r.height))}};
 $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(mapDraft);
  const grip=e.target.dataset.grip,p=pct(e),sous=e.target.closest('.shape');
+ /* Le socle témoin se manie à part : il n'appartient à aucune liste de formes, il ne dit
+    que l'échelle. Glissé, il se promène ; tiré par son coin, il grossit. */
+ if(e.target.closest('.echelle-token')&&e.button===0){pushUndo();
+  mapDrag={mode:e.target.dataset.echelleGrip?'echelle-taille':'echelle',from:p,orig:{...mapDraft.echelle}};
+  $('map-canvas').setPointerCapture(e.pointerId);e.preventDefault();return}
  const dessous=sous?{kind:sous.dataset.kind,i:Number(sous.dataset.i)}:null;
  // Avec l'outil Sélection, ou sur une poignée, on manipule la forme visée.
  if(dessous&&(mapTool==='select'||grip)){mapSel=dessous;const cible=shapeAt(dessous);
@@ -511,6 +537,14 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  else if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
  mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous,ligne:mapTool==='ligne'};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
 $('map-canvas').addEventListener('pointermove',e=>{if(!mapDrag)return;const p=pct(e),d=mapDrag;
+ if(d.mode==='echelle'){const j=mapDraft.echelle;
+  j.x=Math.max(0,Math.min(100,d.orig.x+p.x-d.from.x));
+  j.y=Math.max(0,Math.min(100,d.orig.y+p.y-d.from.y));renderCanvas();return}
+ if(d.mode==='echelle-taille'){const j=mapDraft.echelle,r=$('map-canvas').getBoundingClientRect();
+  // Le rayon suit le doigt : la largeur du socle vaut deux fois l'écart à son centre.
+  const dx=(p.x-j.x)/100*r.width,dy=(p.y-j.y)/100*r.height;
+  j.t=Math.max(.6,Math.min(40,2*Math.hypot(dx,dy)/Math.max(1,r.width)*100));
+  renderCanvas();return}
  if(d.mode==='lasso'){const der=lasso.pts[lasso.pts.length-1];
   if(Math.hypot(p.x-der[0],p.y-der[1])>=.6){lasso.pts.push([p.x,p.y]);d.bouge=true;renderCanvas()}
   return}
@@ -527,6 +561,8 @@ $('map-canvas').addEventListener('pointermove',e=>{if(!mapDrag)return;const p=pc
   cible.x=Math.min(x1,x2);cible.w=Math.abs(x2-x1);cible.y=Math.min(y1,y2);cible.h=Math.abs(y2-y1)}
  renderCanvas()});
 $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=mapDrag;mapDrag=null;
+ if(d.mode==='echelle'||d.mode==='echelle-taille'){renderCanvas();saveMaps();
+  if(mapDraft.id===currentMapId)render();return}
  // Un glisser ferme le contour à main levée ; une suite de clics attend Entrée.
  if(d.mode==='lasso'){if(d.bouge&&lasso&&lasso.pts.length>=3)applyLasso();else renderCanvas();return}
  if(d.mode==='cut'){const r=cutRect;cutRect=null;
