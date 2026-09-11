@@ -80,7 +80,7 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .legend i{flex:none;width:20px;height:14px;border-radius:3px}
 .sw-wall{background:#0b1114;border:1px solid #6c7d85}
 .sw-door{background:#c98a4b;border:1px solid #e8b878}
-.sw-door-open{background:#c98a4b2e;border:1px dashed #e8b878}.sw-secret{background:#b06fd033;border:2px dashed #b06fd0}
+.sw-door-open{background:#c98a4b2e;border:1px dashed #e8b878}.sw-ligne{background:#0b1114;height:4px;align-self:center}.sw-secret{background:#b06fd033;border:2px dashed #b06fd0}
 .sw-start{background:#8bbd9c26;border:1px dashed #8bbd9c}
 .sw-cut{background:#7faddc38;border:1px dashed #7faddc}.sw-key{background:repeating-linear-gradient(45deg,#c98a4b 0 4px,#8d5f31 4px 8px);border:1px solid #f3d7a6}.sw-foe{background:#6d443c;border:2px solid #d29180;border-radius:50%;width:15px;height:15px}
 @media(max-width:1150px){body.page-maps #maps-page{grid-template-columns:1fr;padding:14px}.maps-side,.maps-props{position:static}}

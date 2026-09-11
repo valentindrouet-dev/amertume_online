@@ -85,7 +85,7 @@ function visionInPixels(){const size=mapSize(),k=fogKey+'|'+Math.round(size.widt
 function partySees(a){const m=currentMap();
  if(!fogVis||!m||m.fogOff)return true;
  const size=mapSize();if(!size.width)return true;
- const c=[a.x/100*size.width,a.y/100*size.height],r=tokenPx()/2;
+ const c=[a.x/100*size.width,a.y/100*size.height],r=tokenOf(a)/2;
  return visionInPixels().some(p=>polyTouchesDisc(p,c,r))}
 // La mémoire d'exploration, lue en un point : sert à garder les portes visibles.
 function seenAt(x,y){if(!fogSeen||!fogDim)return false;const d=fogDim;
@@ -291,7 +291,7 @@ mapsPage.innerHTML=
  +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
- +'<button data-tool="cut">Découper</button><button data-tool="lasso">Découpe libre</button><button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
+ +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="cut">Découper</button><button data-tool="lasso">Découpe libre</button><button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<span class="bar-sep"></span><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
@@ -302,7 +302,7 @@ mapsPage.innerHTML=
   +'<label id="door-key-label" hidden><input type="checkbox" id="door-key"> Verrouillée — le MJ seul l’ouvre</label>'
   +'<label id="door-secret-label" hidden><input type="checkbox" id="door-secret"> Passage secret — un mur pour la troupe tant qu’il est clos</label>'
  +'<button id="shape-delete" hidden>Supprimer la forme</button><div class="divider"></div><h2>Légende</h2>'
- +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'
+ +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'+'<li><i class="sw-ligne"></i>Ligne de blocage — la même chose, d’un seul trait fin</li>'
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
  +'<li><i class="sw-door"></i>Porte — close au début du combat, ouverte d’un clic en jeu</li>'+'<li><i class="sw-key"></i>Porte verrouillée — le MJ seul peut l’ouvrir</li>'+'<li><i class="sw-secret"></i>Passage secret — un mur pour la troupe tant qu’il est clos</li>'
  +'<li><i class="sw-start"></i>Zone de départ des aventuriers</li>'
@@ -389,8 +389,10 @@ function renderMapList(){$('map-list').replaceChildren(...maps.map(m=>{const b=d
  if(mapDraft)$('map-name').value=mapDraft.name;
  $('map-foe-tpl').replaceChildren();catalog.monsters.forEach((m,i)=>$('map-foe-tpl').add(new Option(m.name,String(i))))}
 
+const EPAISSEUR_LIGNE=.7;
 const HINTS={select:'Clique une forme pour la sélectionner, glisse pour la déplacer, tire un coin pour la redimensionner. ⌘Z annule.',
  wall:'Trace un rectangle : il coupe la vue et le passage. Un clic simple sur une forme existante la sélectionne. Suppr efface la sélection.',
+ ligne:'Trace un trait : une zone de blocage d’épaisseur fixe, pour les cloisons minces, les rambardes et les parois d’un seul trait. Le sens du geste décide s’il est horizontal ou vertical ; une fois posé, c’est une zone comme une autre, qui se déplace et se redimensionne.',
  cut:'Trace un rectangle à l’intérieur d’une zone de blocage : la découpe y creuse une ouverture définitive, vue et passage rétablis.',
  lasso:'Contourne la forme à creuser : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  door:'Trace une porte : elle perce d’elle-même la zone de blocage qu’elle recouvre, et le mur se referme si tu la déplaces. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
@@ -501,20 +503,24 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapDrag={mode:'cut',kind:'cut',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  // Outil de dessin : on trace. Un clic sans glisser sélectionne la forme sous le curseur.
  pushUndo();const rect={x:p.x,y:p.y,w:0,h:0,locked:false};
- if(mapTool==='wall'){mapDraft.walls.push(rect);mapSel={kind:'wall',i:mapDraft.walls.length-1}}
+ if(mapTool==='wall'||mapTool==='ligne'){mapDraft.walls.push(rect);mapSel={kind:'wall',i:mapDraft.walls.length-1}}
  else if(mapTool==='door'||mapTool==='secret'){rect.open=false;
   // Un passage secret est une porte, née secrète : plus besoin de percer d'abord un trou.
   if(mapTool==='secret')rect.secret=true;
   mapDraft.doors.push(rect);mapSel={kind:'door',i:mapDraft.doors.length-1}}
  else if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
- mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
+ mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous,ligne:mapTool==='ligne'};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
 $('map-canvas').addEventListener('pointermove',e=>{if(!mapDrag)return;const p=pct(e),d=mapDrag;
  if(d.mode==='lasso'){const der=lasso.pts[lasso.pts.length-1];
   if(Math.hypot(p.x-der[0],p.y-der[1])>=.6){lasso.pts.push([p.x,p.y]);d.bouge=true;renderCanvas()}
   return}
  const cible=shapeAt(d);if(!cible)return;
  if(d.kind==='foe'){cible.x=p.x;cible.y=p.y}
- else if(d.mode==='create'||d.mode==='cut'){cible.x=Math.min(d.from.x,p.x);cible.y=Math.min(d.from.y,p.y);cible.w=Math.abs(p.x-d.from.x);cible.h=Math.abs(p.y-d.from.y)}
+ else if(d.mode==='create'||d.mode==='cut'){cible.x=Math.min(d.from.x,p.x);cible.y=Math.min(d.from.y,p.y);cible.w=Math.abs(p.x-d.from.x);cible.h=Math.abs(p.y-d.from.y);
+  /* Un trait n'a qu'une dimension : le geste dit laquelle. L'autre garde l'épaisseur
+     d'une cloison et reste centrée sur le point de départ. */
+  if(d.ligne){if(cible.w>=cible.h){cible.h=EPAISSEUR_LIGNE;cible.y=d.from.y-EPAISSEUR_LIGNE/2}
+   else{cible.w=EPAISSEUR_LIGNE;cible.x=d.from.x-EPAISSEUR_LIGNE/2}}}
  else if(d.mode==='move'){cible.x=Math.max(0,Math.min(100-d.orig.w,d.orig.x+p.x-d.from.x));cible.y=Math.max(0,Math.min(100-d.orig.h,d.orig.y+p.y-d.from.y))}
  else{const o=d.orig,est=d.grip.includes('e'),sud=d.grip.includes('s');
   const x1=est?o.x:p.x,x2=est?p.x:o.x+o.w,y1=sud?o.y:p.y,y2=sud?p.y:o.y+o.h;
@@ -532,7 +538,9 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
   else if(d.dessous){mapSel=d.dessous;mapTool='select'}
   renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render();return}
  const cible=d.kind==='foe'?null:shapeAt(d);
- if(cible&&(cible.w<1.2||cible.h<1.2)){removeShape(d);
+ // Un trait est mince par nature : on ne juge que sa longueur.
+ const assez=!cible||(d.ligne?Math.max(cible.w,cible.h)>=1.2:cible.w>=1.2&&cible.h>=1.2);
+ if(cible&&!assez){removeShape(d);
   // Clic manqué : si une forme était dessous, on la sélectionne et on repasse en Sélection.
   if(d.dessous){mapSel=d.dessous;mapTool='select'}else{mapSel=null;undoStack.pop()}}
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()});

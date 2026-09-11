@@ -1,4 +1,4 @@
-# Amertume Online — v0.93
+# Amertume Online — v0.94
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.94 — Petits socles et cloisons minces
+
+**Un socle Petit**, exactement la moitié d’un moyen : 23 pixels contre 46, mesuré. Et du même coup, **les tailles de socle comptent enfin** : Grand et Énorme figuraient dans les fiches depuis longtemps sans rien changer au dessin, ils valent désormais une fois et demie et deux fois un moyen. Les adversaires déjà réglés sur Grand ou Énorme vont donc grossir sur tes cartes — c’est ce qu’ils annonçaient.
+
+Ce n’est pas qu’une affaire d’image : **tout ce qui mesure une portée prend le socle de celui qu’il mesure.** Le disque de contact d’un petit fait la moitié de celui d’un moyen et le double pour un énorme (70, 139 et 278 pixels) ; le contact se juge d’un socle à l’autre, celui qui tend le bras et celui qu’il cherche à toucher ; un petit se faufile là où un énorme est repoussé, et se montre au champ de vision selon sa propre taille.
+
+**Un outil Ligne de blocage** rejoint la barre de l’éditeur, entre Zone de blocage et Découper. On trace un trait : le sens du geste décide s’il est horizontal ou vertical, l’épaisseur est fixe — celle d’une cloison mince — et le trait reste centré sur le point de départ. Une fois posé c’est une zone de blocage comme une autre, qui se déplace, se redimensionne et **arrête vraiment le regard** : vérifié, un trait de 0,7 % coupe la ligne de vue. Un simple clic ne laisse rien : pour un trait, seule la longueur compte.
 
 ## v0.93 — Les refus de Firebase deviennent des gestes
 
