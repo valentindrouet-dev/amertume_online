@@ -51,7 +51,12 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .canvas-wrap{flex:1;display:grid;place-items:center;min-height:0;overflow:hidden;border-radius:10px}
 #map-canvas{position:relative;transform-origin:0 0;will-change:transform;background:var(--map-bg) 0 0/100% 100% no-repeat;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;touch-action:none;user-select:none;box-shadow:0 10px 30px #0006}
 #map-canvas.no-image{background-image:linear-gradient(#84958a1f 1px,transparent 1px),linear-gradient(90deg,#84958a1f 1px,transparent 1px);background-size:5% 8.333%;background-position:0 0;background-repeat:repeat}
-.shape{position:absolute;box-sizing:border-box}
+/* Le plan de travail est agrandi par une mise à l'échelle : sans contrepartie, un repère
+   de douze pixels en fait trente-six à trois fois. Bordures, contours de sélection et
+   poignées se divisent donc par le zoom — ils gardent leur taille à l'œil, quel que soit
+   le grossissement, et le tracé reste précis. */
+#map-canvas{--z:1}
+.shape{position:absolute;box-sizing:border-box;border-width:calc(2px / var(--z))}
 .shape.wall{background:none}/* La matière est peinte par le contour lissé commun à l'éditeur et à la table ; la zone elle-même ne sert plus qu'à la saisie. */.wall-skin{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}.wall-skin path{fill:#0b1114d9;stroke:#6c7d85;stroke-width:1.4;vector-effect:non-scaling-stroke}.shape.wall.selected{outline-style:dashed}.shape.cut{background:#7faddc38;border:2px dashed #7faddc;pointer-events:none}.shape.locked{cursor:not-allowed}.shape.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.foe.locked::after{right:-4px;top:-8px}
 .shape.door{background:#c98a4b26;border:2px solid #c98a4b}.shape.door.keyed{background:#c98a4b1f;border-color:#f3d7a6;border-width:3px}
 /* Un passage secret : violet et pointillé, dans l'éditeur comme sur la table. */
@@ -60,11 +65,12 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .shape.start{background:#8bbd9c26;border:2px dashed #8bbd9c}
 .shape.foe{width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#6d443c;border:2px solid #d29180;display:grid;place-items:center;font:bold 14px Georgia;color:#f6e2dc;box-shadow:0 3px 8px #0007}
 .shape.foe.hidden-foe{opacity:.55;border-style:dashed}
-.shape.selected{outline:2px solid var(--accent);outline-offset:2px;z-index:2}
-.grip{position:absolute;width:12px;height:12px;background:var(--accent);border:1px solid var(--on-accent);border-radius:3px;display:none}
+/* Le contour de sélection épouse la forme : décalé, il doublait chaque trait à l'écran. */
+.shape.selected{outline:calc(2px / var(--z)) solid var(--accent);outline-offset:0;z-index:2}
+.grip{position:absolute;width:calc(9px / var(--z));height:calc(9px / var(--z));background:var(--accent);border:calc(1px / var(--z)) solid var(--on-accent);border-radius:calc(2px / var(--z));display:none}
 .shape.selected:not(.locked) .grip{display:block}.shape.foe .grip{display:none!important}
-.grip.nw{left:-7px;top:-7px;cursor:nwse-resize}.grip.ne{right:-7px;top:-7px;cursor:nesw-resize}
-.grip.sw{left:-7px;bottom:-7px;cursor:nesw-resize}.grip.se{right:-7px;bottom:-7px;cursor:nwse-resize}
+.grip.nw{left:calc(-5px / var(--z));top:calc(-5px / var(--z));cursor:nwse-resize}.grip.ne{right:calc(-5px / var(--z));top:calc(-5px / var(--z));cursor:nesw-resize}
+.grip.sw{left:calc(-5px / var(--z));bottom:calc(-5px / var(--z));cursor:nesw-resize}.grip.se{right:calc(-5px / var(--z));bottom:calc(-5px / var(--z));cursor:nwse-resize}
 #map-list{max-height:min(46vh,420px);overflow:auto;margin-bottom:12px}
 .map-row{display:block;width:100%;text-align:left;margin:6px 0;padding:9px 11px;border-radius:8px}
 .map-row strong{display:block;font-size:14px}
@@ -81,6 +87,13 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .sw-wall{background:#0b1114;border:1px solid #6c7d85}
 .sw-door{background:#c98a4b;border:1px solid #e8b878}
 .sw-door-open{background:#c98a4b2e;border:1px dashed #e8b878}.sw-ligne{background:#0b1114;height:4px;align-self:center}
+/* Les traits de blocage : la même encre que les zones, en polygones puisqu'ils penchent. */
+.calque-traits{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.calque-traits .trait{fill:#0b1114c4;pointer-events:all;cursor:pointer}
+.calque-traits .trait:hover{fill:#0b1114}
+.calque-traits .trait.selected{fill:var(--accent)}
+.trait-apercu{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:3 2;
+ vector-effect:non-scaling-stroke;opacity:.9;fill:none}
 /* L'annonce du combat : courte, franche, une seule phrase avant d'y aller. */
 #combat-start{width:min(420px,92vw)}
 .annonce-combat{font:400 17px/1.5 Georgia,serif;margin:4px 0 2px}

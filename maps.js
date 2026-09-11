@@ -8,7 +8,7 @@ const nsSVG='http://www.w3.org/2000/svg';
 // Grille du brouillard : des cellules carrées et fines, pour un bord net qui suit les murs.
 const FOG_COLS=640;let fogVis=null,fogSeen=null,fogSeenSrc=null,fogKey='',fogDim=null,fogMem=null,fogDirty=true;
 function fogDims(m){const r=(m&&m.ratio)||16/9,w=FOG_COLS,h=Math.max(32,Math.round(w/r));return{w,h,n:w*h}}
-const KINDS={wall:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire'};
+const KINDS={wall:'Zone de blocage',trait:'Ligne de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire'};
 function currentMap(){return maps.find(m=>m.id===currentMapId)||null}
 // L'éditeur et la table étirent l'image de la même façon ; encore faut-il que le cadre
 // ait le bon rapport. On le relit sur l'image pour les cartes d'avant son enregistrement.
@@ -22,7 +22,8 @@ function measureRatio(m,apres){if(!m||!m.image)return;const img=new Image();
 let shapeCache={cle:'',formes:[],murs:null};
 function geometryKey(m){return m.id+'|'+(m.walls||[]).map(r=>r.x+','+r.y+','+r.w+','+r.h+(r.locked?'v':'')).join(';')
  +'|'+(m.doors||[]).map(d=>d.x+','+d.y+','+d.w+','+d.h+(d.open?'o':'f')+(d.secret?'s':'')).join(';')
- +'|'+(m.carves||[]).length+'/'+(m.cuts||[]).length}
+ +'|'+(m.carves||[]).length+'/'+(m.cuts||[]).length
+ +'|'+(m.traits||[]).map(t=>t.x1.toFixed(2)+','+t.y1.toFixed(2)+','+t.x2.toFixed(2)+','+t.y2.toFixed(2)+','+(t.e||'')).join(';')}
 // L'éditeur redessine à chaque geste : son contour est gardé de la même façon.
 let skinCache={cle:'',contours:[]};
 function draftSkin(m){const cle=geometryKey(m);
@@ -30,7 +31,9 @@ function draftSkin(m){const cle=geometryKey(m);
  return skinCache.contours}
 function mapShapes(m){const cle=geometryKey(m);
  if(shapeCache.cle!==cle){const murs=wallShape(m);
-  shapeCache={cle,murs,formes:[murs,...doorBlocks(m).map(d=>({contours:[rectPolygon(d)]}))]}}
+  const traits=traitContours(m);
+  shapeCache={cle,murs,traits,formes:[murs,...doorBlocks(m).map(d=>({contours:[rectPolygon(d)]})),
+   ...traits.map(c=>({contours:[c]}))]}}
  return shapeCache}
 // Obstacles du moteur : la carte ouverte fait foi, sinon le plan schématique de départ.
 function activeObstacles(){const m=currentMap();
@@ -197,6 +200,8 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
  // Un passage secret clos ne perce plus la matière : le mur se peint plein pour tout le
  // monde, MJ compris, et c'est le trait violet — lui seul — qui le lui signale.
  if(formes.murs.contours.length)svg.append(svgPath(formes.murs.contours,'wall-group'));
+ // Les traits obliques ne sont pas des rectangles : ils se peignent à part, de la même encre.
+ if(formes.traits.length)svg.append(svgPath(formes.traits,'wall-group trait-group'));
  // Les portes se dessinent au-dessus du brouillard : une fois découverte, une porte
  // reste lisible dans la pénombre. Tant qu'elle est inexplorée, elle n'existe pas.
  (m.doors||[]).forEach((d,i)=>{
@@ -327,7 +332,7 @@ document.addEventListener('keydown',e=>{if(!document.body.classList.contains('pa
  e.preventDefault();e.shiftKey?redo():undo()});
 document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps')||!lasso)return;
  if(e.key==='Enter'){e.preventDefault();applyLasso()}
- else if(e.key==='Escape'){e.preventDefault();lasso=null;renderCanvas()}});
+ else if(e.key==='Escape'){e.preventDefault();if(!annulerTrait()){lasso=null;renderCanvas()}}});
 document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps'))return;
  if(e.key!=='Delete'&&e.key!=='Backspace')return;
  if(e.target.closest('input,textarea,select'))return;
@@ -336,9 +341,9 @@ document.addEventListener('keydown',e=>{if(!document.body.classList.contains('pa
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()});
 
 /* ---------- Cartes ---------- */
-function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,walls:[],doors:[],start:null,foes:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
+function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,walls:[],doors:[],start:null,foes:[],traits:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
-function ensure(m){m.walls??=[];m.doors??=[];m.foes??=[];m.carves??=[];m.cuts??=[];m.ratio??=16/9;
+function ensure(m){m.walls??=[];m.doors??=[];m.foes??=[];m.carves??=[];m.cuts??=[];m.traits??=[];m.ratio??=16/9;
  m.echelle??={x:8,y:8,t:SOCLE_DEFAUT};
  // Migration : les anciennes zones de vision sont appliquées une fois pour toutes aux murs.
  if(m.visions&&m.visions.length){const libres=m.walls.filter(w=>!w.locked),verrous=m.walls.filter(w=>w.locked);
@@ -380,7 +385,10 @@ $('map-file').onchange=()=>{const f=$('map-file').files[0];$('map-file').value='
   img.onerror=()=>{renderCanvas();saveMaps()};img.src=url})};
 $('map-image-clear').onclick=()=>{if(mapDraft){pushUndo();mapDraft.image=null;renderCanvas();saveMaps()}};
 $('map-play').onclick=()=>{if(mapDraft)openBattleMap(mapDraft.id)};
-document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(mapTool!=='lasso')lasso=null;renderCanvas()});
+document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(mapTool!=='lasso')lasso=null;
+ // Changer d'outil abandonne le tracé en cours : on ne finit pas un trait à la truelle.
+ if(mapTool!=='ligne')traitDepart=traitVise=null;
+ renderCanvas()});
 
 function renderMapList(){$('map-list').replaceChildren(...maps.map(m=>{const b=document.createElement('button');
  b.className='map-row'+(m===mapDraft?' current':'')+(m.id===currentMapId?' live':'');
@@ -391,10 +399,19 @@ function renderMapList(){$('map-list').replaceChildren(...maps.map(m=>{const b=d
  if(mapDraft)$('map-name').value=mapDraft.name;
  $('map-foe-tpl').replaceChildren();catalog.monsters.forEach((m,i)=>$('map-foe-tpl').add(new Option(m.name,String(i))))}
 
-const EPAISSEUR_LIGNE=.7;
+/* Le tracé se fait en deux clics : le premier pose l'origine, le second arrête le trait.
+   Maj le contraint aux huit directions, comme dans n'importe quel outil de dessin. */
+let traitDepart=null,traitVise=null;
+function traitContraint(a,b,droit,ratio){if(!droit||!a)return b;
+ const r=Math.max(.05,Number(ratio)||16/9);
+ const dx=(b.x-a.x)*r,dy=b.y-a.y,L=Math.hypot(dx,dy);
+ if(!L)return b;
+ const pas=Math.PI/4,ang=Math.round(Math.atan2(dy,dx)/pas)*pas;
+ return {x:a.x+Math.cos(ang)*L/r,y:a.y+Math.sin(ang)*L}}
+function annulerTrait(){if(!traitDepart)return false;traitDepart=traitVise=null;renderCanvas();return true}
 const HINTS={select:'Clique une forme pour la sélectionner, glisse pour la déplacer, tire un coin pour la redimensionner. ⌘Z annule.',
  wall:'Trace un rectangle : il coupe la vue et le passage. Un clic simple sur une forme existante la sélectionne. Suppr efface la sélection.',
- ligne:'Trace un trait : une zone de blocage d’épaisseur fixe, pour les cloisons minces, les rambardes et les parois d’un seul trait. Le sens du geste décide s’il est horizontal ou vertical ; une fois posé, c’est une zone comme une autre, qui se déplace et se redimensionne.',
+ ligne:'Un clic pose l’origine du trait, un second l’arrête. Maintiens Maj pour le contraindre à l’horizontale, à la verticale ou à quarante-cinq degrés ; Échap abandonne le tracé en cours. Fin et mince, il bloque la vue et le passage comme une zone.',
  cut:'Trace un rectangle à l’intérieur d’une zone de blocage : la découpe y creuse une ouverture définitive, vue et passage rétablis.',
  lasso:'Contourne la forme à creuser : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  door:'Trace une porte : elle perce d’elle-même la zone de blocage qu’elle recouvre, et le mur se referme si tu la déplaces. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
@@ -427,6 +444,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  m.foes.forEach((f,i)=>c.append(foeEl(i,f)));
  // Le socle témoin par-dessus tout le reste : c'est lui qu'on vient comparer.
  const jauge=echelleEl();if(jauge)c.append(jauge);
+ dessineTraits();
  const cible=mapSel?shapeAt(mapSel):null;
  const adv=mapSel&&mapSel.kind==='foe'?cible:null,porte=mapSel&&mapSel.kind==='door'?cible:null;
  $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
@@ -453,6 +471,22 @@ function foeEl(i,f){const el=document.createElement('div');
  el.style.left=f.x+'%';el.style.top=f.y+'%';el.dataset.kind='foe';el.dataset.i=i;
  el.textContent=(f.tpl.name||'?')[0];el.title=f.tpl.name;return el}
 // Ne creuse que les zones libres : une zone verrouillée résiste au grattage.
+/* Les traits vivent dans un calque à part : ce sont des polygones, pas des boîtes. Le
+   tracé en cours s'y montre aussi, en pointillé, tant que le second clic n'est pas venu. */
+function dessineTraits(){const c=$('map-canvas'),m=mapDraft;if(!c||!m)return;
+ let svg=c.querySelector('.calque-traits');
+ if(!svg){svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','calque-traits');
+  svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');c.append(svg)}
+ svg.replaceChildren();
+ (m.traits||[]).forEach((t,i)=>{const pts=traitPolygon(t,m.ratio);if(!pts)return;
+  const el=document.createElementNS(nsSVG,'polygon');
+  el.setAttribute('points',pts.map(p=>p[0].toFixed(3)+','+p[1].toFixed(3)).join(' '));
+  el.setAttribute('class','shape trait'+(mapSel&&mapSel.kind==='trait'&&mapSel.i===i?' selected':''));
+  el.dataset.kind='trait';el.dataset.i=i;svg.append(el)});
+ if(traitDepart&&traitVise){const l=document.createElementNS(nsSVG,'line');
+  l.setAttribute('x1',traitDepart.x);l.setAttribute('y1',traitDepart.y);
+  l.setAttribute('x2',traitVise.x);l.setAttribute('y2',traitVise.y);
+  l.setAttribute('class','trait-apercu');svg.append(l)}}
 function echelleEl(){const m=mapDraft;if(!m)return null;ensure(m);
  const large=$('map-canvas').clientWidth||600,t=Math.max(8,large*echelleSocle(m)/100);
  const el=document.createElement('div');el.className='echelle-token';
@@ -483,8 +517,10 @@ function applyLasso(){const pts=lasso&&lasso.pts;lasso=null;
  (mapDraft.carves||(mapDraft.carves=[])).push(pts.map(p=>[p[0],p[1]]));
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()}
 function shapeAt(d){const m=mapDraft;if(!m)return null;if(d.kind==='cut')return cutRect;
+ if(d.kind==='trait')return (m.traits||[])[d.i];
  return d.kind==='start'?m.start:(d.kind==='wall'?m.walls:d.kind==='door'?m.doors:m.foes)[d.i]}
 function removeShape(d){const m=mapDraft;
+ if(d.kind==='trait'){(m.traits||[]).splice(d.i,1);return}
  if(d.kind==='start')m.start=null;
  else (d.kind==='wall'?m.walls:d.kind==='door'?m.doors:m.foes).splice(d.i,1)}
 
@@ -518,6 +554,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   $('map-canvas').setPointerCapture(e.pointerId);e.preventDefault();return}
  const dessous=sous?{kind:sous.dataset.kind,i:Number(sous.dataset.i)}:null;
  // Avec l'outil Sélection, ou sur une poignée, on manipule la forme visée.
+ if(dessous&&dessous.kind==='trait'){mapSel=dessous;renderCanvas();e.preventDefault();return}
  if(dessous&&(mapTool==='select'||grip)){mapSel=dessous;const cible=shapeAt(dessous);
   if(cible&&!cible.locked){pushUndo();mapDrag={mode:grip?'resize':'move',...dessous,grip,orig:structuredClone(cible),from:p,touche:false};
    $('map-canvas').setPointerCapture(e.pointerId)}
@@ -525,6 +562,17 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(mapTool==='foe'){const t=catalog.monsters[Number($('map-foe-tpl').value)];if(!t)return;
   pushUndo();mapDraft.foes.push({tpl:structuredClone(t),x:p.x,y:p.y,locked:false});
   mapSel={kind:'foe',i:mapDraft.foes.length-1};renderCanvas();saveMaps();return}
+ /* Le tracé : premier clic, origine ; second clic, arrivée. Entre les deux, l'aperçu suit
+    le curseur — et Maj le redresse. */
+ if(mapTool==='ligne'){
+  if(!traitDepart){traitDepart={x:p.x,y:p.y};traitVise={x:p.x,y:p.y};renderCanvas();e.preventDefault();return}
+  const fin=traitContraint(traitDepart,p,e.shiftKey,mapDraft.ratio);
+  const r=Math.max(.05,Number(mapDraft.ratio)||16/9);
+  if(Math.hypot((fin.x-traitDepart.x)*r,fin.y-traitDepart.y)>=.5){pushUndo();
+   mapDraft.traits.push({x1:traitDepart.x,y1:traitDepart.y,x2:fin.x,y2:fin.y,e:TRAIT_EPAISSEUR});
+   mapSel={kind:'trait',i:mapDraft.traits.length-1}}
+  traitDepart=traitVise=null;
+  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render();e.preventDefault();return}
  if(mapTool==='select'){mapSel=null;renderCanvas();return}
  if(mapTool==='lasso'){if(!lasso)lasso={pts:[]};
   // Un clic près du premier point ferme le contour, comme dans un outil de détourage.
@@ -535,14 +583,17 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapDrag={mode:'cut',kind:'cut',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  // Outil de dessin : on trace. Un clic sans glisser sélectionne la forme sous le curseur.
  pushUndo();const rect={x:p.x,y:p.y,w:0,h:0,locked:false};
- if(mapTool==='wall'||mapTool==='ligne'){mapDraft.walls.push(rect);mapSel={kind:'wall',i:mapDraft.walls.length-1}}
+ if(mapTool==='wall'){mapDraft.walls.push(rect);mapSel={kind:'wall',i:mapDraft.walls.length-1}}
  else if(mapTool==='door'||mapTool==='secret'){rect.open=false;
   // Un passage secret est une porte, née secrète : plus besoin de percer d'abord un trou.
   if(mapTool==='secret')rect.secret=true;
   mapDraft.doors.push(rect);mapSel={kind:'door',i:mapDraft.doors.length-1}}
  else if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
- mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous,ligne:mapTool==='ligne'};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
-$('map-canvas').addEventListener('pointermove',e=>{if(!mapDrag)return;const p=pct(e),d=mapDrag;
+ mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
+$('map-canvas').addEventListener('pointermove',e=>{
+ if(traitDepart&&!mapDrag){traitVise=traitContraint(traitDepart,pct(e),e.shiftKey,mapDraft&&mapDraft.ratio);
+  dessineTraits();return}
+ if(!mapDrag)return;const p=pct(e),d=mapDrag;
  if(d.mode==='echelle'){const j=mapDraft.echelle;
   j.x=Math.max(0,Math.min(100,d.orig.x+p.x-d.from.x));
   j.y=Math.max(0,Math.min(100,d.orig.y+p.y-d.from.y));renderCanvas();return}
@@ -557,10 +608,7 @@ $('map-canvas').addEventListener('pointermove',e=>{if(!mapDrag)return;const p=pc
  const cible=shapeAt(d);if(!cible)return;
  if(d.kind==='foe'){cible.x=p.x;cible.y=p.y}
  else if(d.mode==='create'||d.mode==='cut'){cible.x=Math.min(d.from.x,p.x);cible.y=Math.min(d.from.y,p.y);cible.w=Math.abs(p.x-d.from.x);cible.h=Math.abs(p.y-d.from.y);
-  /* Un trait n'a qu'une dimension : le geste dit laquelle. L'autre garde l'épaisseur
-     d'une cloison et reste centrée sur le point de départ. */
-  if(d.ligne){if(cible.w>=cible.h){cible.h=EPAISSEUR_LIGNE;cible.y=d.from.y-EPAISSEUR_LIGNE/2}
-   else{cible.w=EPAISSEUR_LIGNE;cible.x=d.from.x-EPAISSEUR_LIGNE/2}}}
+}
  else if(d.mode==='move'){cible.x=Math.max(0,Math.min(100-d.orig.w,d.orig.x+p.x-d.from.x));cible.y=Math.max(0,Math.min(100-d.orig.h,d.orig.y+p.y-d.from.y))}
  else{const o=d.orig,est=d.grip.includes('e'),sud=d.grip.includes('s');
   const x1=est?o.x:p.x,x2=est?p.x:o.x+o.w,y1=sud?o.y:p.y,y2=sud?p.y:o.y+o.h;
@@ -580,9 +628,7 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
   else if(d.dessous){mapSel=d.dessous;mapTool='select'}
   renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render();return}
  const cible=d.kind==='foe'?null:shapeAt(d);
- // Un trait est mince par nature : on ne juge que sa longueur.
- const assez=!cible||(d.ligne?Math.max(cible.w,cible.h)>=1.2:cible.w>=1.2&&cible.h>=1.2);
- if(cible&&!assez){removeShape(d);
+ if(cible&&(cible.w<1.2||cible.h<1.2)){removeShape(d);
   // Clic manqué : si une forme était dessous, on la sélectionne et on repasse en Sélection.
   if(d.dessous){mapSel=d.dessous;mapTool='select'}else{mapSel=null;undoStack.pop()}}
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()});
@@ -599,6 +645,7 @@ function applyCanvasZoom(){const c=$('map-canvas');
  if(zoomC<=1){panCX=(1-zoomC)*w/2;panCY=(1-zoomC)*h/2}
  else{panCX=Math.min(0,Math.max(-(zoomC-1)*w,panCX));panCY=Math.min(0,Math.max(-(zoomC-1)*h,panCY))}
  c.style.transform='translate('+panCX+'px,'+panCY+'px) scale('+zoomC+')';
+ c.style.setProperty('--z',zoomC);
  $('czoom-label').textContent=Math.round(zoomC*100)+' %'}
 function zoomCanvasAt(facteur,cx,cy){const z=Math.min(8,Math.max(.4,zoomC*facteur));
  panCX=cx-(cx-panCX)*z/zoomC;panCY=cy-(cy-panCY)*z/zoomC;zoomC=z;applyCanvasZoom()}

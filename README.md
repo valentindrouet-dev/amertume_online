@@ -1,4 +1,4 @@
-# Amertume Online — v0.100
+# Amertume Online — v0.101
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.101 — Le trait, et la précision de l’éditeur
+
+**La ligne de blocage devient un vrai tracé.** Un clic pose son origine, un second l’arrête, et entre les deux un aperçu suit le curseur ; **Maj** le contraint à l’horizontale, à la verticale ou à quarante-cinq degrés ; Échap abandonne, comme changer d’outil. Elle est deux fois plus fine qu’avant — trois dixièmes de pour cent de la largeur.
+
+Surtout, **elle penche**. Une cloison en biais n’est pas un rectangle aligné sur les axes : les traits vivent donc à part, comme des formes à quatre sommets, avec une épaisseur constante à l’écran quel que soit le rapport de la carte. Ils arrêtent la vue, les tirs et les pas exactement comme une zone — vérifié, un trait oblique coupe la ligne de vue qui le traverse et laisse passer celle qui l’évite. Un trait se choisit d’un clic et s’efface comme une forme ; il ne se traîne pas par ses coins, il n’en a pas.
+
+**Une seule ligne à l’écran.** Le contour de sélection était décalé de deux pixels vers l’extérieur : il doublait le bord de chaque forme d’un second trait qui ne correspondait à rien. Il épouse maintenant la forme exactement.
+
+**Les repères ne grossissent plus avec le zoom.** Le plan de travail est agrandi par une mise à l’échelle : une poignée de douze pixels en faisait trente-six à trois fois, et le tracé devenait grossier. Poignées, bordures et contours se divisent désormais par le zoom — mesuré, neuf pixels à l’œil à 1× comme à 3× — et les poignées sont plus fines.
 
 ## v0.100 — Le bras ne traverse pas le mur
 

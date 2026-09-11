@@ -135,6 +135,21 @@ function slideOutOfWalls(p,shapes,r){let x=p[0],y=p[1];
 /* Cartes de combat : les zones de blocage sont des rectangles en pourcentages.
    Une porte ouverte ne bloque plus rien, ni la vue ni le passage. */
 function rectPolygon(r){return [[r.x,r.y],[r.x+r.w,r.y],[r.x+r.w,r.y+r.h],[r.x,r.y+r.h]]}
+/* Un trait de blocage : deux points et une épaisseur. Ce n'est pas un rectangle aligné
+   sur les axes — une cloison en biais n'en est pas un —, il vit donc à part, comme une
+   forme à quatre sommets. L'épaisseur se compte en pour cent de la largeur de la carte et
+   reste constante à l'écran quel que soit le rapport de celle-ci : la normale est prise
+   dans le repère de l'écran, puis ramenée en pour cent. */
+const TRAIT_EPAISSEUR=.3;
+function traitPolygon(t,ratio){if(!t)return null;
+ const r=Math.max(.05,Number(ratio)||16/9);
+ const sx=(t.x2-t.x1)*r,sy=t.y2-t.y1,L=Math.hypot(sx,sy);
+ if(!(L>1e-6))return null;
+ const e=Math.max(.05,Number(t.e)||TRAIT_EPAISSEUR)/2;
+ const hx=-sy/L*e,hy=sx/L*e*r;
+ return [[t.x1+hx,t.y1+hy],[t.x2+hx,t.y2+hy],[t.x2-hx,t.y2-hy],[t.x1-hx,t.y1-hy]]}
+function traitContours(map){const r=map&&map.ratio;
+ return (map&&map.traits||[]).map(t=>traitPolygon(t,r)).filter(Boolean)}
 // Différence de deux rectangles : jusqu'à quatre bandes, exactement l'aire restante.
 function diffRect(a,b){const ax2=a.x+a.w,ay2=a.y+a.h,bx2=b.x+b.w,by2=b.y+b.h;
  if(b.x>=ax2||bx2<=a.x||b.y>=ay2||by2<=a.y)return [a];
@@ -398,6 +413,8 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
   carves:(Array.isArray(m&&m.carves)?m.carves:[]).slice(0,400)
    .map(c=>(Array.isArray(c)?c:[]).slice(0,3000).map(p=>[borne(p&&p[0]),borne(p&&p[1])])).filter(c=>c.length>=3),
   cuts:cleanRects(m&&m.cuts),
+  traits:(Array.isArray(m&&m.traits)?m.traits:[]).slice(0,600).map(t=>({x1:borne(t&&t.x1),y1:borne(t&&t.y1),
+   x2:borne(t&&t.x2),y2:borne(t&&t.y2),e:Math.max(.05,Math.min(5,Number(t&&t.e)||TRAIT_EPAISSEUR))})),
   // Le socle témoin voyage avec la carte : c'est lui qui dit à quelle échelle elle est tracée.
   echelle:{x:borne(m&&m.echelle&&m.echelle.x),y:borne(m&&m.echelle&&m.echelle.y),
    t:Math.max(.6,Math.min(40,Number(m&&m.echelle&&m.echelle.t)||100*46/810))}}}
@@ -415,7 +432,8 @@ const CARVE_STEP=.4;
 function wallShape(map){return {contours:smoothContours(unionContours(wallsPierced(map)),map&&map.carves,CARVE_STEP*.05,CARVE_STEP,
  [...(map&&map.cuts||[]),...(map&&map.doors||[]).flatMap(d=>doorCuts(d,mapWalls(map)))])}}
 function obstaclesFrom(map){if(!map)return [];
- return [wallShape(map),...doorBlocks(map).map(d=>({contours:[rectPolygon(d)]}))]}
+ return [wallShape(map),...doorBlocks(map).map(d=>({contours:[rectPolygon(d)]})),
+  ...traitContours(map).map(c=>({contours:[c]}))]}
 // Une porte se manœuvre au contact : son rectangle doit entrer dans le rayon du token.
 function rectInReach(actor,rect,size,token){
  const cx=Math.max(rect.x,Math.min(actor.x,rect.x+rect.w));
@@ -595,7 +613,7 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
- rectPolygon,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
+ rectPolygon,traitPolygon,traitContours,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);
