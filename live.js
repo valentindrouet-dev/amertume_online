@@ -30,6 +30,17 @@ let monUid=null,monSiege=null,sieges={},quitteSalle=null,quitteSieges=null,derni
 window.socleEnMain=null;
 const estMJ=()=>typeof admin!=='undefined'&&admin===true;
 const liveStatus=t=>{const e=$('live-status');if(e)e.textContent=t};
+/* « Missing or insufficient permissions » ne dit pas quoi faire. Pour la table, la cause
+   est presque toujours la même : le bloc de règles amertume_online_live n'est pas encore
+   déployé dans le projet Firebase. Autant l'écrire. */
+function liveErreur(e){const code=(e&&(e.code||''))+' '+(e&&e.message||'');
+ if(/permission|insufficient/i.test(code))
+  return 'Règles Firestore incomplètes pour la table. Dans la console Firebase → Firestore → Règles, ajoute le bloc « amertume_online_live » du fichier firestore-online.rules, publie, puis réessaie.';
+ if(/unauthenticated/i.test(code))return 'Personne n’est connecté : reconnecte-toi avant d’ouvrir la table.';
+ if(/operation-not-allowed|admin-restricted/i.test(code))
+  return 'Connexion anonyme désactivée. Console Firebase → Authentication → Sign-in method → Anonyme : activer.';
+ if(/unavailable|network/i.test(code))return 'Réseau indisponible : la table réessaiera toute seule.';
+ return (e&&e.message)||(e&&e.code)||'Erreur inconnue'}
 
 /* ---------- Lecture et écriture de l'état vivant ---------- */
 function etatVivant(){const out={actors:{}};
@@ -63,7 +74,7 @@ async function pousserEtat(){if(!enLigne||!salleRef||pousseEnCours)return;
  if(!Object.keys(maj).length)return;
  pousseEnCours=true;const avant=dernierPousse;dernierPousse=ap;
  try{maj.at=firebase.firestore.FieldValue.serverTimestamp();await salleRef.update(maj)}
- catch(e){dernierPousse=avant;liveStatus('Envoi impossible : '+(e.message||e.code||'réseau'))}
+ catch(e){dernierPousse=avant;liveStatus('Envoi impossible. '+liveErreur(e))}
  finally{pousseEnCours=false}}
 
 /* Un combattant que l'on ne connaît pas encore : on le rebâtit depuis le bestiaire publié,
@@ -144,10 +155,10 @@ async function prendreSiege(a){if(!siegesRef||!monUid)return;
   if(i>=0){owner=i;selected=i;markOnly(i);$('owner').value=String(i)}
   if(!estMJ()){view='player';$('view').value='player'}
   render();renderSieges();liveStatus('Tu incarnes '+a.name+'.')}
- catch(e){liveStatus('Impossible de prendre ce siège : '+(e.message||e.code))}}
+ catch(e){liveStatus('Siège refusé. '+liveErreur(e))}}
 async function libererSiege(){if(!siegesRef||!monUid)return;
  try{await siegesRef.doc(monUid).delete();monSiege=null;localStorage.removeItem(TABLE_CLE+'-siege');
-  renderSieges();liveStatus('Siège libéré.')}catch(e){liveStatus(e.message||'Échec')}}
+  renderSieges();liveStatus('Siège libéré.')}catch(e){liveStatus(liveErreur(e))}}
 
 /* ---------- Ouvrir, rejoindre ---------- */
 function lienTable(code){const u=new URL(location.href);u.searchParams.set('table',code);
@@ -164,7 +175,7 @@ async function ouvrirTable(){if(!cloud||!auth||!auth.currentUser){liveStatus('Co
    mj:auth.currentUser.uid,at:firebase.firestore.FieldValue.serverTimestamp()});
   localStorage.setItem(TABLE_CLE,code);brancherTable(code);
   liveStatus('Table ouverte. Partage le lien à tes joueurs.')}
- catch(e){liveStatus('Ouverture impossible : '+(e.message||e.code))}}
+ catch(e){liveStatus('Ouverture impossible. '+liveErreur(e))}}
 async function fermerTable(){if(!estMJ()||!tableId)return;
  if(!confirm('Fermer la table ? Les joueurs connectés ne verront plus la partie.'))return;
  try{await salleRef.delete()}catch(e){}
@@ -179,7 +190,7 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
  quitteSalle=salleRef.onSnapshot(doc=>{
   if(!doc.exists){liveStatus('Cette table n’existe plus.');debrancherTable();return}
   dernierDoc=doc.data();appliquerSalle(dernierDoc);majTable()},
-  e=>liveStatus('Écoute interrompue : '+(e.message||e.code)));
+  e=>liveStatus('Écoute interrompue. '+liveErreur(e)));
  quitteSieges=siegesRef.onSnapshot(s=>{sieges={};s.forEach(d=>sieges[d.id]=d.data());
   const mien=monUid&&sieges[monUid];monSiege=mien?mien.actorId:null;
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
@@ -245,7 +256,7 @@ document.addEventListener('amertume-firebase-prete',async()=>{
  const code=new URL(location.href).searchParams.get('table')||localStorage.getItem(TABLE_CLE);
  if(!code)return;
  try{if(!auth.currentUser)await auth.signInAnonymously()}catch(e){
-  liveStatus('Connexion anonyme refusée : le MJ doit l’activer dans Firebase. '+(e.code||''));return}
+  liveStatus(liveErreur(e));return}
  monUid=auth.currentUser?auth.currentUser.uid:null;
  auth.onAuthStateChanged(u=>{monUid=u?u.uid:null;majTable()});
  brancherTable(code);

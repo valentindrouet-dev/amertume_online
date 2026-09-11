@@ -1,4 +1,4 @@
-# Amertume Online — v0.92
+# Amertume Online — v0.93
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.93 — Les refus de Firebase deviennent des gestes
+
+« Missing or insufficient permissions » ne dit pas quoi faire. Chaque refus de la table est désormais traduit en une phrase qui nomme l’étape manquante :
+
+- droits refusés → le bloc de règles `amertume_online_live` n’est pas encore publié, et où le coller ;
+- connexion anonyme refusée → où l’activer dans Authentication ;
+- personne de connecté, réseau absent : chacun son message.
+
+Et surtout, **une procédure complète** : [`TABLE-EN-LIGNE.md`](TABLE-EN-LIGNE.md) reprend l’activation point par point dans la console Firebase — connexion anonyme, domaine autorisé, règles à fusionner, compte MJ, publication du contenu, ouverture de la table — avec un tableau des messages d’erreur et de l’étape qui leur correspond.
 
 ## v0.92 — La table dit ce qu’elle attend
 
