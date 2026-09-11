@@ -22,10 +22,12 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,b
    sont en pourcentage de la carte, converties en pixels avec sa taille affichée. */
 function mapPoint(a,size){return [a.x/100*size.width,a.y/100*size.height]}
 function contactRadius(token){return token*3/2}
-/* La taille d'un socle. Un petit tient dans la moitié d'un moyen ; grand et énorme
-   existaient dans les fiches sans jamais rien changer au dessin — ils comptent enfin.
-   Tout ce qui mesure une portée prend donc le socle de celui qu'il mesure. */
-const SOCLE_TAILLES={small:.5,medium:1,large:1.5,huge:2};
+/* La taille d'un socle. Le petit valait la moitié du moyen : c'était un quart de sa
+   surface, et l'illustration n'y survivait pas. Aux sept dixièmes il reste franchement
+   plus petit — on ne s'y trompe pas côte à côte — mais on voit encore qui il est. Grand
+   et énorme existaient dans les fiches sans jamais rien changer au dessin ; ils comptent
+   enfin. Tout ce qui mesure une portée prend le socle de celui qu'il mesure. */
+const SOCLE_TAILLES={small:.7,medium:1,large:1.5,huge:2};
 function socleFacteur(a){return SOCLE_TAILLES[a&&a.socle]||1}
 function tokenDistance(a,b,size){const [ax,ay]=mapPoint(a,size),[bx,by]=mapPoint(b,size);return Math.hypot(bx-ax,by-ay)}
 // Le socle de la cible doit toucher le disque, pas seulement son centre y tomber.
