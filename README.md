@@ -1,4 +1,4 @@
-# Amertume Online — v0.96
+# Amertume Online — v0.97
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.97 — Des parures à la bonne mesure
+
+La v0.96 accrochait bien les parures au socle, mais gardait les proportions d’avant, qui étaient trop lourdes : le cerceau rouge de la cible, la flèche de ciblage et la jauge de vie mangeaient le socle. Tout cela s’affine — cerceau et flèche à 3 et 4 % du socle au lieu de 6,5 et 7,4, jauge à 10 % au lieu de 17 — tandis que **le liseré du socle et l’anneau clair de la sélection reprennent la mesure de référence**, un peu moins de quatre pour cent.
+
+Sous un plancher d’un pixel : à très petite échelle, une parure sous-pixel disparaîtrait tout à fait.
+
+**L’échelle appartient à une carte, et le panneau le dit** : il annonce désormais « Échelle de « Manoir du Sang » », et donne la taille obtenue ici comme sur la table de jeu. Revenir à la table la redessine, de sorte qu’une échelle retouchée s’y voit aussitôt.
+
+Pour mémoire, la mesure est bien propre à chaque carte : deux cartes réglées à 2,5 % et 11 % donnent des socles de 20 et 90 pixels, d’un aller-retour à l’autre et après rechargement.
 
 ## v0.96 — Les parures suivent le socle
 

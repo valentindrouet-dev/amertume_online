@@ -268,6 +268,7 @@ function showPage(p,retenir=true){if(!PAGES_LIBRES.includes(p)&&view!=='mj')retu
  tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.page===p));
  if(p==='maps'){if(!maps.length)newMap();if(!mapDraft)mapDraft=maps.find(m=>m.id===currentMapId)||maps[0];
   measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas()}
+ else if(p==='table')render();
  else if(p==='heroes')renderHeroes();
  else if(p==='talents')renderTalents();
  else if(p==='armory')renderArmory();
@@ -301,7 +302,7 @@ mapsPage.innerHTML=
  +'<button id="shape-lock" hidden>🔒 Verrouiller</button>'
   +'<label id="door-key-label" hidden><input type="checkbox" id="door-key"> Verrouillée — le MJ seul l’ouvre</label>'
   +'<label id="door-secret-label" hidden><input type="checkbox" id="door-secret"> Passage secret — un mur pour la troupe tant qu’il est clos</label>'
- +'<button id="shape-delete" hidden>Supprimer la forme</button>'+'<div class="divider"></div><h2>Échelle de la carte</h2>'+'<p class="muted" id="echelle-info"></p>'+'<p class="muted">Le socle témoin se promène sur la carte : pose-le contre une porte, un lit, un couloir, et tire son coin jusqu’à ce qu’un combattant y tienne. Il ne paraît jamais en partie.</p>'+'<button id="echelle-reset">Rétablir la mesure d’origine</button>'+'<div class="divider"></div><h2>Légende</h2>'
+ +'<button id="shape-delete" hidden>Supprimer la forme</button>'+'<div class="divider"></div><h2 id="echelle-titre">Échelle de la carte</h2>'+'<p class="muted" id="echelle-info"></p>'+'<p class="muted">Le socle témoin se promène sur la carte : pose-le contre une porte, un lit, un couloir, et tire son coin jusqu’à ce qu’un combattant y tienne. Il ne paraît jamais en partie.</p>'+'<button id="echelle-reset">Rétablir la mesure d’origine</button>'+'<div class="divider"></div><h2>Légende</h2>'
  +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'+'<li><i class="sw-ligne"></i>Ligne de blocage — la même chose, d’un seul trait fin</li>'
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
  +'<li><i class="sw-door"></i>Porte — close au début du combat, ouverte d’un clic en jeu</li>'+'<li><i class="sw-key"></i>Porte verrouillée — le MJ seul peut l’ouvrir</li>'+'<li><i class="sw-secret"></i>Passage secret — un mur pour la troupe tant qu’il est clos</li>'
@@ -463,10 +464,15 @@ function echelleEl(){const m=mapDraft;if(!m)return null;ensure(m);
  el.append(nom,poignee);
  el.title='Socle témoin : promène-le sur la carte pour comparer, tire son coin pour régler la taille des socles. Invisible en partie.';
  return el}
-function majEchelle(){const b=$('echelle-info');if(!b||!mapDraft)return;
+/* L'échelle appartient à la carte ouverte dans l'éditeur, et à elle seule : le panneau
+   la nomme, pour qu'on ne croie jamais régler toutes les cartes d'un coup. */
+function majEchelle(){const b=$('echelle-info'),t=$('echelle-titre');if(!b||!mapDraft)return;
+ if(t)t.textContent='Échelle de « '+(mapDraft.name||'cette carte')+' »';
  const pc=echelleSocle(mapDraft),large=$('map-canvas').clientWidth||600;
- b.textContent='Socle moyen : '+pc.toFixed(2).replace('.',',')+' % de la largeur · '
-  +Math.round(large*pc/100)+' px dans l’éditeur'
+ const jeu=$('map').clientWidth||0;
+ b.textContent='Socle moyen : '+pc.toFixed(2).replace('.',',')+' % de la largeur de cette carte · '
+  +Math.round(large*pc/100)+' px ici'
+  +(jeu?' · '+Math.round(jeu*pc/100)+' px sur la table':'')
   +(Math.abs(pc-SOCLE_DEFAUT)<.01?' · mesure d’origine':'')}
 function carveWalls(fn){const libres=mapDraft.walls.filter(w=>!w.locked),verrous=mapDraft.walls.filter(w=>w.locked);
  mapDraft.walls=[...verrous,...fn(libres)]}
