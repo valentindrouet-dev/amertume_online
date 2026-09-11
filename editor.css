@@ -89,9 +89,9 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .sw-door-open{background:#c98a4b2e;border:1px dashed #e8b878}.sw-ligne{background:#0b1114;height:4px;align-self:center}
 /* Les traits de blocage : la même encre que les zones, en polygones puisqu'ils penchent. */
 .calque-traits{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-.calque-traits .trait{fill:#0b1114c4;pointer-events:all;cursor:pointer}
-.calque-traits .trait:hover{fill:#0b1114}
-.calque-traits .trait.selected{fill:var(--accent)}
+.calque-traits .trait{fill:transparent;pointer-events:all;cursor:pointer}
+.calque-traits .trait:hover{fill:#c9884040}
+.calque-traits .trait.on{fill:var(--accent);stroke:var(--accent);stroke-width:3;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .trait-apercu{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:3 2;
  vector-effect:non-scaling-stroke;opacity:.9;fill:none}
 /* L'annonce du combat : courte, franche, une seule phrase avant d'y aller. */

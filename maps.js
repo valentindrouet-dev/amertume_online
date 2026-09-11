@@ -180,6 +180,17 @@ function applyMapRatio(){const m=currentMap(),el=$('map');
  el.style.width=Math.round(w)+'px';el.style.height=Math.round(h)+'px'}
 /* Le contour lissé devient un tracé SVG dans un repère de 0 à 100 : c'est très
    exactement la matière qui arrête le regard, dessinée sans un pixel d'écart. */
+/* Plusieurs tracés dans une même toile : les zones d'un côté, les traits de l'autre, mais
+   la même encre et le même liseré — c'est la même matière, elle doit se peindre pareil.
+   Deux tracés plutôt qu'un seul : réunis, la règle pair-impair ferait un trou là où un
+   trait croise une zone. */
+function svgMatiere(groupes,cls,wrap){const svg=document.createElementNS(nsSVG,'svg');
+ svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
+ if(wrap)svg.setAttribute('class',wrap);
+ (groupes||[]).filter(g=>g&&g.length).forEach(g=>{const el=document.createElementNS(nsSVG,'path');
+  el.setAttribute('d',g.map(c=>'M'+c.map(p=>p[0].toFixed(3)+' '+p[1].toFixed(3)).join('L')+'Z').join(''));
+  el.setAttribute('fill-rule','evenodd');if(cls)el.setAttribute('class',cls);svg.append(el)});
+ return svg}
 function svgPath(contours,cls,wrap){const svg=document.createElementNS(nsSVG,'svg');
  svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
  if(wrap)svg.setAttribute('class',wrap);
@@ -199,9 +210,9 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
  const formes=mapShapes(m);
  // Un passage secret clos ne perce plus la matière : le mur se peint plein pour tout le
  // monde, MJ compris, et c'est le trait violet — lui seul — qui le lui signale.
- if(formes.murs.contours.length)svg.append(svgPath(formes.murs.contours,'wall-group'));
- // Les traits obliques ne sont pas des rectangles : ils se peignent à part, de la même encre.
- if(formes.traits.length)svg.append(svgPath(formes.traits,'wall-group trait-group'));
+ // Zones et traits, même encre, même voile : une seule toile, deux tracés.
+ if(formes.murs.contours.length||formes.traits.length)
+  svg.append(svgMatiere([formes.murs.contours,formes.traits],null,'wall-group'));
  // Les portes se dessinent au-dessus du brouillard : une fois découverte, une porte
  // reste lisible dans la pénombre. Tant qu'elle est inexplorée, elle n'existe pas.
  (m.doors||[]).forEach((d,i)=>{
@@ -411,7 +422,7 @@ function traitContraint(a,b,droit,ratio){if(!droit||!a)return b;
 function annulerTrait(){if(!traitDepart)return false;traitDepart=traitVise=null;renderCanvas();return true}
 const HINTS={select:'Clique une forme pour la sélectionner, glisse pour la déplacer, tire un coin pour la redimensionner. ⌘Z annule.',
  wall:'Trace un rectangle : il coupe la vue et le passage. Un clic simple sur une forme existante la sélectionne. Suppr efface la sélection.',
- ligne:'Un clic pose l’origine du trait, un second l’arrête. Maintiens Maj pour le contraindre à l’horizontale, à la verticale ou à quarante-cinq degrés ; Échap abandonne le tracé en cours. Fin et mince, il bloque la vue et le passage comme une zone.',
+ ligne:'Un clic pose l’origine du trait, un second l’arrête. ⌘ (ou Ctrl) le redresse à l’horizontale, à la verticale ou à quarante-cinq degrés. Maj au second clic pose un point d’appui : le trait s’arrête là et le suivant en repart, de quoi longer une salle entière sans relever la main. Échap abandonne le tracé en cours.',
  cut:'Trace un rectangle à l’intérieur d’une zone de blocage : la découpe y creuse une ouverture définitive, vue et passage rétablis.',
  lasso:'Contourne la forme à creuser : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  door:'Trace une porte : elle perce d’elle-même la zone de blocage qu’elle recouvre, et le mur se referme si tu la déplaces. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
@@ -428,7 +439,8 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  c.replaceChildren();sizeCanvas();applyCanvasZoom();majEchelle();if(!m)return;ensure(m);
  // La matière est peinte d'un seul tenant, lissée : l'éditeur montre le mur du jeu.
  const contours=draftSkin(m);
- if(contours.length)c.append(svgPath(contours,null,'wall-skin'));
+ const traits=traitContours(m);
+ if(contours.length||traits.length)c.append(svgMatiere([contours,traits],null,'wall-skin'));
  c.style.backgroundImage=m.image?'url("'+m.image+'")':'';c.classList.toggle('no-image',!m.image);
  m.walls.forEach((r,i)=>c.append(shapeEl('wall',i,r)));
  m.doors.forEach((r,i)=>c.append(shapeEl('door',i,r)));
@@ -481,7 +493,10 @@ function dessineTraits(){const c=$('map-canvas'),m=mapDraft;if(!c||!m)return;
  (m.traits||[]).forEach((t,i)=>{const pts=traitPolygon(t,m.ratio);if(!pts)return;
   const el=document.createElementNS(nsSVG,'polygon');
   el.setAttribute('points',pts.map(p=>p[0].toFixed(3)+','+p[1].toFixed(3)).join(' '));
-  el.setAttribute('class','shape trait'+(mapSel&&mapSel.kind==='trait'&&mapSel.i===i?' selected':''));
+  /* Surtout pas la classe « shape » : sur un élément SVG, le contour de sélection des
+     boîtes se dessine autour de la boîte englobante — d'où un énorme rectangle autour
+     d'un trait en biais. Le trait choisi se marque dans sa propre encre. */
+  el.setAttribute('class','trait'+(mapSel&&mapSel.kind==='trait'&&mapSel.i===i?' on':''));
   el.dataset.kind='trait';el.dataset.i=i;svg.append(el)});
  if(traitDepart&&traitVise){const l=document.createElementNS(nsSVG,'line');
   l.setAttribute('x1',traitDepart.x);l.setAttribute('y1',traitDepart.y);
@@ -510,9 +525,12 @@ function majEchelle(){const b=$('echelle-info'),t=$('echelle-titre');if(!b||!map
   +(Math.abs(pc-SOCLE_DEFAUT)<.01?' · mesure d’origine':'')}
 function carveWalls(fn){const libres=mapDraft.walls.filter(w=>!w.locked),verrous=mapDraft.walls.filter(w=>w.locked);
  mapDraft.walls=[...verrous,...fn(libres)]}
+// Les traits sont de la même matière : ce qui creuse les zones les creuse aussi.
+function carveLesTraits(dedans){mapDraft.traits=carveTraits(mapDraft.traits,dedans,.15)}
 function applyLasso(){const pts=lasso&&lasso.pts;lasso=null;
  if(!pts||pts.length<3){renderCanvas();return}
  pushUndo();carveWalls(r=>carveWithPolygon(r,pts,CARVE_STEP));
+ carveLesTraits((x,y)=>pointInPolygon([x,y],pts));
  // Le tracé est gardé : c'est la seule chose que le lissage a le droit d'adoucir.
  (mapDraft.carves||(mapDraft.carves=[])).push(pts.map(p=>[p[0],p[1]]));
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()}
@@ -546,7 +564,7 @@ $('shape-lock').onclick=()=>{const cible=mapSel&&shapeAt(mapSel);if(!cible)retur
 const pct=e=>{const r=$('map-canvas').getBoundingClientRect();
  return {x:Math.max(0,Math.min(100,100*(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(100,100*(e.clientY-r.top)/r.height))}};
 $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(mapDraft);
- const grip=e.target.dataset.grip,p=pct(e),sous=e.target.closest('.shape');
+ const grip=e.target.dataset.grip,p=pct(e),sous=e.target.closest('.shape,.trait');
  /* Le socle témoin se manie à part : il n'appartient à aucune liste de formes, il ne dit
     que l'échelle. Glissé, il se promène ; tiré par son coin, il grossit. */
  if(e.target.closest('.echelle-token')&&e.button===0){pushUndo();
@@ -566,12 +584,16 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
     le curseur — et Maj le redresse. */
  if(mapTool==='ligne'){
   if(!traitDepart){traitDepart={x:p.x,y:p.y};traitVise={x:p.x,y:p.y};renderCanvas();e.preventDefault();return}
-  const fin=traitContraint(traitDepart,p,e.shiftKey,mapDraft.ratio);
+  const fin=traitContraint(traitDepart,p,e.metaKey||e.ctrlKey,mapDraft.ratio);
   const r=Math.max(.05,Number(mapDraft.ratio)||16/9);
-  if(Math.hypot((fin.x-traitDepart.x)*r,fin.y-traitDepart.y)>=.5){pushUndo();
+  const pose=Math.hypot((fin.x-traitDepart.x)*r,fin.y-traitDepart.y)>=.5;
+  if(pose){pushUndo();
    mapDraft.traits.push({x1:traitDepart.x,y1:traitDepart.y,x2:fin.x,y2:fin.y,e:TRAIT_EPAISSEUR});
    mapSel={kind:'trait',i:mapDraft.traits.length-1}}
-  traitDepart=traitVise=null;
+  /* Maj pose un point d'appui : le trait s'arrête là et le suivant en repart. C'est ainsi
+     qu'on longe une salle entière sans relever la main. */
+  if(pose&&e.shiftKey){traitDepart={x:fin.x,y:fin.y};traitVise={x:fin.x,y:fin.y}}
+  else traitDepart=traitVise=null;
   renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render();e.preventDefault();return}
  if(mapTool==='select'){mapSel=null;renderCanvas();return}
  if(mapTool==='lasso'){if(!lasso)lasso={pts:[]};
@@ -591,7 +613,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  else if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
  mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
 $('map-canvas').addEventListener('pointermove',e=>{
- if(traitDepart&&!mapDrag){traitVise=traitContraint(traitDepart,pct(e),e.shiftKey,mapDraft&&mapDraft.ratio);
+ if(traitDepart&&!mapDrag){traitVise=traitContraint(traitDepart,pct(e),e.metaKey||e.ctrlKey,mapDraft&&mapDraft.ratio);
   dessineTraits();return}
  if(!mapDrag)return;const p=pct(e),d=mapDrag;
  if(d.mode==='echelle'){const j=mapDraft.echelle;
@@ -623,6 +645,7 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
   if(r&&r.w>=1.2&&r.h>=1.2){pushUndo();
    // On ne découpe que les zones libres : une zone verrouillée résiste au grattage.
    carveWalls(w=>subtractRects(w,[r]));
+   carveLesTraits((x,y)=>x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h);
    // La découpe est gardée : ses angles sont voulus droits, le lissage n'y touchera pas.
    (mapDraft.cuts||(mapDraft.cuts=[])).push({x:r.x,y:r.y,w:r.w,h:r.h})}
   else if(d.dessous){mapSel=d.dessous;mapTool='select'}

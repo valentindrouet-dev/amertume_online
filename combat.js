@@ -148,6 +148,23 @@ function traitPolygon(t,ratio){if(!t)return null;
  const e=Math.max(.05,Number(t.e)||TRAIT_EPAISSEUR)/2;
  const hx=-sy/L*e,hy=sx/L*e*r;
  return [[t.x1+hx,t.y1+hy],[t.x2+hx,t.y2+hy],[t.x2-hx,t.y2-hy],[t.x1-hx,t.y1-hy]]}
+/* Une découpe mord les traits comme elle mord les zones. On parcourt le trait, on jette
+   ce qui tombe dans la découpe, et l'on recoud ce qui reste en morceaux : la même règle
+   sert au rectangle de l'outil Découper et au tracé libre du lasso. */
+function carveTrait(t,dedans,pas){
+ const L=Math.hypot(t.x2-t.x1,t.y2-t.y1);if(!(L>0))return [];
+ const n=Math.max(8,Math.min(2000,Math.ceil(L/(pas||.2))));
+ const au=u=>[t.x1+(t.x2-t.x1)*u,t.y1+(t.y2-t.y1)*u];
+ const out=[];let debut=null;
+ for(let i=0;i<=n;i++){const u=i/n,[x,y]=au(u),pris=dedans(x,y);
+  if(!pris&&debut===null)debut=u;
+  if((pris||i===n)&&debut!==null){
+   const fin=pris?(i-1)/n:u;
+   if((fin-debut)*L>=.3){const [ax,ay]=au(debut),[bx,by]=au(fin);
+    out.push({...t,x1:ax,y1:ay,x2:bx,y2:by})}
+   debut=null}}
+ return out}
+function carveTraits(traits,dedans,pas){return (traits||[]).flatMap(t=>carveTrait(t,dedans,pas))}
 function traitContours(map){const r=map&&map.ratio;
  return (map&&map.traits||[]).map(t=>traitPolygon(t,r)).filter(Boolean)}
 // Différence de deux rectangles : jusqu'à quatre bandes, exactement l'aire restante.
@@ -613,7 +630,7 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
- rectPolygon,traitPolygon,traitContours,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
+ rectPolygon,traitPolygon,traitContours,carveTrait,carveTraits,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

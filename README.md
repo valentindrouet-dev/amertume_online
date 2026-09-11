@@ -1,4 +1,4 @@
-# Amertume Online — v0.101
+# Amertume Online — v0.103
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.103 — Le trait est de la même matière
+
+**Plus d’énorme rectangle autour d’un trait choisi.** Je lui avais donné la classe des boîtes, et sur un élément SVG le contour de sélection se dessine autour de la **boîte englobante** : d’où ce grand cadre brun autour d’un trait en biais. Le trait choisi se marque désormais dans sa propre encre, le long du trait.
+
+**⌘ redresse, Maj enchaîne.** Le raccourci était à l’envers : c’est **⌘** (ou Ctrl) qui contraint le trait à l’horizontale, à la verticale ou à quarante-cinq degrés. **Maj au second clic pose un point d’appui** : le trait s’arrête là et le suivant en repart, de quoi longer une salle entière sans relever la main — vérifié, trois segments enchaînés qui se tiennent bout à bout, tous redressés.
+
+**La découpe mord les traits.** Ils sont la même matière que les zones : l’outil Découper et le lasso les entament de la même façon. On parcourt le trait, on jette ce qui tombe dans la découpe, et l’on recoud ce qui reste — un trait horizontal coupé en deux par un rectangle, un trait oblique coupé en deux par un tracé libre, et la vue passe par le trou.
+
+**Et ils se peignent comme les zones** : même encre, même liseré gris, dans la même toile — c’est le petit contour qui leur manquait. Deux tracés plutôt qu’un seul, cela dit : réunis, la règle pair-impair ferait un trou là où un trait croise une zone.
 
 ## v0.101 — Le trait, et la précision de l’éditeur
 
