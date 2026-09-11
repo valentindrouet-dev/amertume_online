@@ -1,4 +1,4 @@
-# Amertume Online — v0.99
+# Amertume Online — v0.100
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.100 — Le bras ne traverse pas le mur
+
+L’aura s’arrêtait au mur depuis la v0.98, mais la règle, elle, laissait encore frapper au travers : la flèche de ciblage restait bleue sur un ennemi que l’aura ne touchait pas. **Le contact tient compte de la matière**, désormais, exactement comme l’aura le montre : à bonne distance mais séparés par une cloison, le coup ne part pas.
+
+Mesuré de part et d’autre d’un mur mince : la distance est bonne, le mur s’interpose, le contact est refusé, la cible n’est même plus proposée, et forcer l’attaque ne retire pas un point de vie. La cloison retirée, le même coup porte. La Foudre, qui saute de socle en socle au contact, respecte la même limite.
+
+Le refus se lit en toutes lettres sur le bouton d’Action — *« Un mur s’interpose : le coup ne peut pas porter »* — au lieu du « hors du rayon de contact » qui aurait menti.
 
 ## v0.99 — Exploration et combat
 
