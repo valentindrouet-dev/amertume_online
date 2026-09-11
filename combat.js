@@ -307,7 +307,16 @@ function fuseAligned(pts){const out=[];
    cèdent la place à leur corde, l'angle droit franc a un écart trop grand pour céder),
    puis deux passes de Chaikin arrondissent, avec une coupe plafonnée pour qu'un mur
    droit reste droit et qu'un angle d'architecture reste un angle. */
-function simplifyClosed(pts,tol){
+/* Douglas-Peucker à seuil fixe ne distingue pas un tremblement d'une courbe : pour
+   redresser un trait tracé à la main il faut un seuil plus large que le tremblement, et
+   ce même seuil rabote alors les courbes voulues. Or les deux ne se ressemblent que de
+   près : le tremblement de la main garde toujours la même amplitude, quelle que soit la
+   longueur du geste, tandis que le ventre d'une courbe grandit avec elle. On juge donc
+   l'écart *relativement à la corde qui le porte* — un demi-pourcent de travers sur un
+   long trait est un tremblement, le même écart sur une corde courte est une courbe. Le
+   seuil reste borné des deux côtés : jamais plus fin que le quart du seuil demandé,
+   jamais plus large que son double. Sans proportion donnée, le seuil fixe d'origine. */
+function simplifyClosed(pts,tol,relatif){
  if(!pts||pts.length<4||!(tol>0))return pts;
  let loin=0,dmax=-1;
  for(let i=1;i<pts.length;i++){const d=Math.hypot(pts[i][0]-pts[0][0],pts[i][1]-pts[0][1]);
@@ -315,7 +324,9 @@ function simplifyClosed(pts,tol){
  const garde=new Uint8Array(pts.length);garde[0]=1;garde[loin]=1;
  const pile=[[0,loin],[loin,pts.length]];
  while(pile.length){const [i,j]=pile.pop();const fin=j===pts.length?0:j;
-  let best=-1,bd=tol;
+  const corde=Math.hypot(pts[fin][0]-pts[i][0],pts[fin][1]-pts[i][1]);
+  const seuil=relatif>0?Math.min(tol*2,Math.max(tol*.18,relatif*corde)):tol;
+  let best=-1,bd=seuil;
   for(let k=i+1;k<j;k++){const c=closestOnSegment(pts[k],pts[i],pts[fin]);
    const d=Math.hypot(pts[k][0]-c[0],pts[k][1]-c[1]);
    if(d>bd){bd=d;best=k}}
@@ -491,7 +502,16 @@ function readMapsFile(texteBrut){let data;
    percées par les portes, puis chaque porte close. Dessin et calcul y puisent
    ensemble, donc l'ombre commence exactement là où le mur est peint. */
 const CARVE_STEP=.4;
-function wallShape(map){return {contours:smoothContours(unionContours(wallsPierced(map)),map&&map.carves,CARVE_STEP*.05,CARVE_STEP,
+/* La main tremble. Un glissement que l'on croit bien droit arrive en quarante points qui
+   serpentent d'un tiers de pourcent, et comme la matière suit maintenant le tracé au
+   sommet près, ce tremblement ressortait en crénelures. On redresse donc l'encre avant
+   de s'en servir. Le seuil vaut une case de trame : en deçà, la découpe n'a de toute
+   façon pas cette finesse — on n'efface que du détail qui n'a jamais existé. Les angles
+   voulus, eux, dépassent largement le seuil et tiennent bon. */
+const ENCRE_TOL=CARVE_STEP*1.1,ENCRE_PART=.012;
+function encreDroite(carves,tol){return (carves||[]).map(p=>{
+ const d=simplifyClosed(p,tol>0?tol:ENCRE_TOL,ENCRE_PART);return d&&d.length>=3?d:p})}
+function wallShape(map){return {contours:smoothContours(unionContours(wallsPierced(map)),encreDroite(map&&map.carves),CARVE_STEP*.05,CARVE_STEP,
  [...(map&&map.cuts||[]),...(map&&map.doors||[]).flatMap(d=>doorCuts(d,mapWalls(map)))])}}
 function obstaclesFrom(map){if(!map)return [];
  return [wallShape(map),...doorBlocks(map).map(d=>({contours:[rectPolygon(d)]})),
@@ -674,7 +694,7 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  if(cle==='vieMax'&&Number.isFinite(a.vie))a.vie=Math.min(a.vie,a.vieMax);
  else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
  return a[cle]}
-const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,encreDroite,snapToCarves,ENCRE_TOL,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,traitContours,carveTrait,carveTraits,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);

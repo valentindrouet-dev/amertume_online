@@ -489,11 +489,16 @@ function shapeEl(kind,i,r){const el=document.createElement('div');
  return el}
 function foeEl(i,f){const el=document.createElement('div');
  el.className='shape foe'+(f.locked?' locked':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
- // Même taille relative qu'en partie : une fraction de la largeur de la carte.
- const t=Math.max(10,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100);
+ // Même taille relative qu'en partie, socle compris : un petit reste petit, un énorme énorme.
+ const t=Math.max(10,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100*socleFacteur(f.tpl));
  el.style.width=el.style.height=t+'px';el.style.margin=(-t/2)+'px 0 0 '+(-t/2)+'px';el.style.fontSize=(t*.47)+'px';
  el.style.left=f.x+'%';el.style.top=f.y+'%';el.dataset.kind='foe';el.dataset.i=i;
- el.textContent=(f.tpl.name||'?')[0];el.title=f.tpl.name;return el}
+ /* Le socle porte l'illustration du bestiaire, comme à la table : on reconnaît d'un coup
+    d'œil ce qu'on a posé, au lieu d'une initiale commune à toute une famille. */
+ if(f.tpl&&f.tpl.image){const im=document.createElement('img');im.className='portrait';
+  im.src=f.tpl.image;im.alt='';im.draggable=false;el.append(im)}
+ else el.textContent=(f.tpl.name||'?')[0];
+ el.title=f.tpl.name;return el}
 // Ne creuse que les zones libres : une zone verrouillée résiste au grattage.
 /* Les traits vivent dans un calque à part : ce sont des polygones, pas des boîtes. Le
    tracé en cours s'y montre aussi, en pointillé, tant que le second clic n'est pas venu. */
@@ -551,8 +556,11 @@ function carveWalls(fn){const libres=mapDraft.walls.filter(w=>!w.locked),verrous
  mapDraft.walls=[...verrous,...fn(libres)]}
 // Les traits sont de la même matière : ce qui creuse les zones les creuse aussi.
 function carveLesTraits(dedans){mapDraft.traits=carveTraits(mapDraft.traits,dedans,.15)}
-function applyLasso(){const pts=lasso&&lasso.pts;lasso=null;
- if(!pts||pts.length<3){renderCanvas();return}
+function applyLasso(){const brut=lasso&&lasso.pts;lasso=null;
+ if(!brut||brut.length<3){renderCanvas();return}
+ // On creuse avec l'encre redressée, celle-là même qui dessinera le bord : les deux
+ // géométries ne doivent jamais diverger, sans quoi le mur peint mentirait sur la vue.
+ const pts=encreDroite([brut])[0];
  pushUndo();carveWalls(r=>carveWithPolygon(r,pts,CARVE_STEP));
  carveLesTraits((x,y)=>pointInPolygon([x,y],pts));
  // Le tracé est gardé : c'est la seule chose que le lissage a le droit d'adoucir.

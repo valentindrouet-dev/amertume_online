@@ -65,6 +65,8 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .shape.start{background:#8bbd9c26;border:2px dashed #8bbd9c}
 .shape.foe{width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#6d443c;border:2px solid #d29180;display:grid;place-items:center;font:bold 14px Georgia;color:#f6e2dc;box-shadow:0 3px 8px #0007}
 .shape.foe.hidden-foe{opacity:.55;border-style:dashed}
+/* L'illustration du bestiaire tient tout le socle, comme sur la table de jeu. */
+.shape.foe>.portrait{width:100%;height:100%;object-fit:contain;border-radius:50%;pointer-events:none;display:block}
 /* Le contour de sélection épouse la forme : décalé, il doublait chaque trait à l'écran. */
 .shape.selected{outline:calc(2px / var(--z)) solid var(--accent);outline-offset:0;z-index:2}
 .grip{position:absolute;width:calc(9px / var(--z));height:calc(9px / var(--z));background:var(--accent);border:calc(1px / var(--z)) solid var(--on-accent);border-radius:calc(2px / var(--z));display:none}
@@ -288,8 +290,13 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .pick-etat{flex:none;width:24px;font:700 15px system-ui;color:var(--muted)}
 .pick-ligne.porte .pick-etat{color:var(--green)}
 /* ---------- Choisir un combattant à mettre en scène ---------- */
-#scene-picker-body{display:flex;flex-direction:column;gap:5px;max-height:52vh;overflow:auto;margin-top:10px}
-#scene-picker .pick-ligne{gap:10px;text-align:left;margin:0 0 6px}
+/* Trois colonnes au moins : un bestiaire un peu fourni tenait sur deux écrans de haut.
+   La fenêtre s'élargit d'autant, sinon les colonnes étouffent le nom et la jauge. */
+#scene-picker{width:min(1140px,94vw)}
+#scene-picker-body{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 14px;max-height:52vh;overflow:auto;margin-top:10px}
+@media(min-width:1180px){#scene-picker-body{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:560px){#scene-picker-body{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#scene-picker .pick-ligne{gap:10px;text-align:left;margin:0}
 .pick-ligne .vignette{transform:none}
 .pick-ligne .actor-body{flex:1;min-width:0}
 .pick-ligne .pick-etat{flex:none}
@@ -337,6 +344,10 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 .jeton-rond.fantome-pose{position:fixed;z-index:70;width:44px;height:44px;font-size:20px;
  transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 6px 16px #0007;opacity:.95;transition:opacity .1s}
 .jeton-rond.fantome-pose.hors{opacity:.35}
+/* Le compte des copies, posé dans le cercle : le jeton fantôme est détouré, rien ne
+   peut déborder sans être rogné. */
+.jeton-rond .fantome-nombre{position:absolute;left:0;right:0;bottom:0;padding:1px 0;
+ background:#161c1fd9;color:#f6efe4;font:700 12px/1.2 system-ui;text-align:center;letter-spacing:.3px}
 .jeton-rond.grand{width:74px;height:74px;font-size:36px}
 /* Le portrait du bestiaire se change d'un clic : le rond s'allume au survol,
    une légende dit ce qui arrivera, et la croix retire l'illustration posée. */

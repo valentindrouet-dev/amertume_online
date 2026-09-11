@@ -165,7 +165,7 @@ for(const o of [{x:22.7,y:74.3},{x:50.5,y:47.3}]){const vision=visionPolygon(o,F
   assert.equal(pointInPolygon(p,vision),!wallsBetween(o,{x:p[0],y:p[1]},CONTOURS));compares++}
  assert.ok(compares>800)}
 /* Contour de l'union : exact, sans couture interne, avec les creux comme contours. */
-const {smoothContours,simplifyClosed,relaxContour,carveMask,distToRectEdge,carveWithPolygon:creuse,CARVE_STEP,closestOnSegment,wallShape,wallsPierced:perce,polyTouchesDisc,rectInReach}=require('./combat.js');
+const {smoothContours,simplifyClosed,relaxContour,carveMask,distToRectEdge,carveWithPolygon:creuse,CARVE_STEP,closestOnSegment,encreDroite,wallShape,wallsPierced:perce,polyTouchesDisc,rectInReach}=require('./combat.js');
 assert.equal(unionContours([{x:0,y:0,w:10,h:10},{x:10,y:0,w:10,h:10}]).length,1);      // Deux zones jointives fusionnent.
 assert.equal(unionContours([{x:0,y:0,w:10,h:10},{x:10,y:0,w:10,h:10}])[0].length,4);   // Sans couture au milieu.
 assert.equal(unionContours(subtractRects([{x:0,y:0,w:40,h:40}],[{x:15,y:15,w:10,h:10}])).length,2); // Creux : deux contours.
@@ -206,6 +206,23 @@ for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
     d=Math.min(d,Math.hypot(p[0]-q[0],p[1]-q[1]))}
    const bord=Math.min(Math.abs(p[0]-20),Math.abs(p[0]-80),Math.abs(p[1]-30),Math.abs(p[1]-38));
    assert.ok(Math.min(d,bord)<1e-9,nom+' : sommet à '+d.toFixed(3)+' du tracé')}}}
+/* La main tremble : le même geste, tracé point par point puis glissé en tremblant, doit
+   donner la même matière. Sinon le tremblement ressort en crénelures sur le mur. */
+{const NET=[[70,2],[96,28],[99,25],[73,-1]];
+ let g=1;const al=()=>{g=(g*1103515245+12345)%2147483648;return g/2147483648-.5};
+ const MAIN=[];{const A=[70,2],B=[96,28],n=44;
+  for(let i=0;i<=n;i++)MAIN.push([A[0]+(B[0]-A[0])*i/n+al()*.5,A[1]+(B[1]-A[1])*i/n+al()*.5]);
+  for(let i=n;i>=0;i--)MAIN.push([A[0]+3+(B[0]-A[0])*i/n,A[1]-3+(B[1]-A[1])*i/n])}
+ const BANDE=[{x:6,y:6,w:88,h:4},{x:6,y:90,w:88,h:4},{x:6,y:6,w:4,h:88},{x:90,y:6,w:4,h:88}];
+ const taille=poly=>{const p=encreDroite([poly])[0],r=creuse(BANDE,p,CARVE_STEP);
+  return wallShape({walls:r,doors:[],carves:[p]}).contours.map(c=>c.length)};
+ assert.deepEqual(taille(MAIN),taille(NET));          // Le tremblement ne coûte pas un sommet.
+ // Et la coupe est bien droite : trois points alignés suffiraient à la décrire.
+ const p=encreDroite([MAIN])[0],r=creuse(BANDE,p,CARVE_STEP);
+ for(const c of wallShape({walls:r,doors:[],carves:[p]}).contours)
+  for(let i=0;i<c.length;i++){const a=c[(i+c.length-1)%c.length],b=c[i],d=c[(i+1)%c.length];
+   const l=Math.min(Math.hypot(b[0]-a[0],b[1]-a[1]),Math.hypot(d[0]-b[0],d[1]-b[1]));
+   assert.ok(l>CARVE_STEP*1.5,'marche de '+l.toFixed(2)+' laissée par la main');}}
 /* Un angle taillé à l'outil Découper reste droit, même au beau milieu d'un tracé libre. */
 const OVALE=Array.from({length:48},(_,i)=>{const a=i/48*2*Math.PI;return [50+18*Math.cos(a),50+14*Math.sin(a)]});
 const BLOC=creuse([{x:10,y:10,w:80,h:60}],OVALE,CARVE_STEP);
@@ -475,4 +492,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('305 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('308 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

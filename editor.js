@@ -1144,7 +1144,7 @@ let scenePickerMode='foe';
 function openScenePicker(mode){if(view!=='mj')return;scenePickerMode=mode;
  sceneDialog2.querySelector('h2').textContent=mode==='foe'?'Ajouter un adversaire':'Placer un aventurier';
  $('scene-picker-note').textContent=mode==='foe'
-  ?'Glisse un modèle du bestiaire jusqu’à l’endroit voulu sur la carte. Un simple clic le pose au centre.'
+  ?'Glisse un modèle du bestiaire jusqu’à l’endroit voulu sur la carte. Un simple clic le pose au centre. Sans lâcher, appuie sur Maj autant de fois que tu veux d’exemplaires : ils se posent en groupe.'
   :'Toute la troupe est déjà en scène. Glisse un aventurier là où tu le veux sur la carte ; un simple clic le repose au centre.';
  $('scene-picker-new').textContent=mode==='foe'?'+ Créer un monstre au bestiaire':'+ Créer un aventurier';
  $('scene-picker-search').value='';$('scene-picker-search').oninput=renderScenePicker;
@@ -1156,8 +1156,8 @@ function renderScenePicker(){const corps=$('scene-picker-body');if(!corps)return
   const liste=catalog.monsters.map((m,i)=>[m,i]).filter(([m])=>!q||m.name.toLowerCase().includes(q));
   liste.forEach(([m,i])=>corps.append(ligneScene(m.name,m.image,
    (m.pv||0)+' PV · DEF '+(m.def||0)+' · '+(m.family||'sans famille'),
-   ()=>poserAdversaire(i,libre(),false),(x,y)=>poserAdversaire(i,{x,y},true),
-   {hero:false,pv:m.pv||0,def:m.def||0})));
+   ()=>poserAdversaire(i,libre(),false,1),(x,y,n)=>poserAdversaire(i,{x,y},true,n),
+   {hero:false,pv:m.pv||0,def:m.def||0,groupe:true})));
   if(!liste.length)corps.append(videScene(q?'Aucun modèle de ce nom.':'Le bestiaire est vide.'))}
  else{
   const liste=actors.map((a,i)=>[a,i]).filter(([a])=>a.hero&&(!q||a.name.toLowerCase().includes(q)));
@@ -1168,11 +1168,32 @@ function renderScenePicker(){const corps=$('scene-picker-body');if(!corps)return
   if(!liste.length)corps.append(videScene(q?'Aucun aventurier de ce nom.':'La troupe est vide.'))}}
 /* Poser un modèle : au hasard du centre pour un clic, au point exact pour un glissement.
    Dans les deux cas la créature est repoussée hors des murs avant d'apparaître. */
-function poserAdversaire(i,ou,glisse){saveChecks();savePool();
- const a=fromMonster(catalog.monsters[i]);Object.assign(a,ou);normalizeActor(a);
- actors.push(a);selected=actors.length-1;markOnly(selected);
- sceneDialog2.close();showPage('table');settleActor(a);render();scheduleSave();
- log(a.name+(glisse?' posé à l’endroit choisi.':' ajouté à la carte.'))}
+/* Un groupe se pose en corolle : le premier au point visé, les suivants en anneaux
+   autour de lui, espacés d'un socle. Les pourcentages ne sont pas carrés — la carte a
+   ses proportions — d'où le passage par les pixels avant de revenir en pourcentage. */
+function placesEnGroupe(centre,combien,diam){const t=mapSize();
+ const w=t.width||1,h=t.height||1,out=[{x:centre.x,y:centre.y}];
+ for(let anneau=1;out.length<combien;anneau++){
+  const places=6*anneau,r=diam*anneau*.98;
+  for(let j=0;j<places&&out.length<combien;j++){
+   const a=(j/places+(anneau%2?0:.5/places))*2*Math.PI;
+   out.push({x:centre.x+Math.cos(a)*r/w*100,y:centre.y+Math.sin(a)*r/h*100})}}
+ return out}
+/* Poser un modèle : au hasard du centre pour un clic, au point exact pour un glissement.
+   Le compte vient de la touche Maj tenue pendant le geste ; chaque exemplaire est une
+   créature à part entière, avec son identité et ses points de vie propres, et chacune
+   est repoussée hors des murs avant d'apparaître. */
+function poserAdversaire(i,ou,glisse,combien){saveChecks();savePool();
+ const m=catalog.monsters[i];if(!m)return;
+ const n=Math.max(1,Math.min(24,Math.round(Number(combien)||1)));
+ sceneDialog2.close();showPage('table');
+ const poses=placesEnGroupe(ou,n,tokenPx()*socleFacteur(m)).map(p=>{
+  const a=fromMonster(m);Object.assign(a,p);normalizeActor(a);
+  actors.push(a);settleActor(a);return a});
+ selected=actors.length-1;marked=new Set(poses.map(a=>a.id));
+ render();scheduleSave();
+ log(n>1?n+' × '+m.name+' posés en groupe.'
+  :m.name+(glisse?' posé à l’endroit choisi.':' ajouté à la carte.'))}
 function placerAventurier(i,ou,glisse){saveChecks();savePool();Object.assign(actors[i],ou);
  selected=i;markOnly(i);sceneDialog2.close();showPage('table');settleActor(actors[i]);render();scheduleSave();
  log(actors[i].name+(glisse?' placé à l’endroit choisi.':' replacé au centre de la carte.'))}
@@ -1182,23 +1203,39 @@ function surLaCarte(e){const r=$('map').getBoundingClientRect();
 /* Glisser une languette jusqu'à la carte. La fenêtre se referme dès que le geste part,
    sinon elle masque justement l'endroit que l'on vise ; un jeton fantôme suit le doigt
    et pâlit hors de la carte, pour qu'on sache où l'on pose avant de lâcher. */
-function glisserVersCarte(el,nom,image,poser){
+function glisserVersCarte(el,nom,image,poser,groupe){
  el.addEventListener('pointerdown',e=>{if(e.button!==0)return;
-  const depart={x:e.clientX,y:e.clientY};let fantome=null,parti=false;
-  const bouge=ev=>{
-   if(!parti){if(Math.hypot(ev.clientX-depart.x,ev.clientY-depart.y)<7)return;
-    parti=true;sceneDialog2.close();showPage('table');
-    fantome=jetonRond(image,nom,'mini');fantome.classList.add('fantome-pose');document.body.append(fantome)}
-   fantome.style.left=ev.clientX+'px';fantome.style.top=ev.clientY+'px';
-   fantome.classList.toggle('hors',!surLaCarte(ev))};
+  const depart={x:e.clientX,y:e.clientY};let fantome=null,parti=false,combien=1,ou=depart;
+  const lever=()=>{if(parti)return;parti=true;sceneDialog2.close();showPage('table');
+   fantome=jetonRond(image,nom,'mini');fantome.classList.add('fantome-pose');document.body.append(fantome);
+   suivre(ou)};
+  const suivre=p=>{if(!fantome)return;
+   fantome.style.left=p.clientX+'px';fantome.style.top=p.clientY+'px';
+   fantome.classList.toggle('hors',!surLaCarte(p))};
+  const compter=()=>{if(!fantome)return;
+   let b=fantome.querySelector('.fantome-nombre');
+   if(combien<2){if(b)b.remove();return}
+   if(!b){b=document.createElement('b');b.className='fantome-nombre';fantome.append(b)}
+   b.textContent='×'+combien};
+  /* Maj, pressée autant de fois qu'on veut d'exemplaires tant que le modèle est tenu :
+     le compte s'inscrit sur le jeton fantôme et tout le groupe se pose d'un seul geste.
+     La répétition d'une touche maintenue ne compte pas — sans quoi le clavier remplirait
+     la carte à lui seul. */
+  const touche=ev=>{if(!groupe||ev.key!=='Shift'||ev.repeat)return;
+   ev.preventDefault();combien=Math.min(24,combien+1);lever();compter()};
+  const bouge=ev=>{ou=ev;
+   if(!parti&&Math.hypot(ev.clientX-depart.x,ev.clientY-depart.y)<7)return;
+   lever();suivre(ev)};
   const fin=ev=>{document.removeEventListener('pointermove',bouge);document.removeEventListener('pointerup',fin);
+   document.removeEventListener('keydown',touche,true);
    if(!parti)return;
    if(fantome)fantome.remove();
    // Un glissement n'est pas un clic : le bouton ne doit pas poser un second exemplaire.
    el.dataset.glisse='1';
-   if(surLaCarte(ev)){const p=mapPct(ev);poser(p.x,p.y)}
+   if(surLaCarte(ev)){const p=mapPct(ev);poser(p.x,p.y,combien)}
    else log('Rien de posé : lâche le modèle sur la carte.')};
-  document.addEventListener('pointermove',bouge);document.addEventListener('pointerup',fin)})}
+  document.addEventListener('pointermove',bouge);document.addEventListener('pointerup',fin);
+  document.addEventListener('keydown',touche,true)})}
 /* La fenêtre de choix montre exactement ce que montre la liste des combattants : le même
    socle rond, le même nom, la même barre de vie et le même écu de DEF. Ce qu'on va poser
    se lit comme ce qui est déjà en jeu. Pas de pastilles d'activation : un modèle qui n'est
@@ -1221,7 +1258,7 @@ function ligneScene(nom,image,detail,clic,poser,fiche){const f=fiche||{};
  b.append(fleche);
  b.title=nom+(detail?' · '+detail:'');
  b.onclick=()=>{if(b.dataset.glisse){delete b.dataset.glisse;return}clic()};
- if(poser)glisserVersCarte(b,nom,image,poser);
+ if(poser)glisserVersCarte(b,nom,image,poser,!!f.groupe);
  return b}
 function videScene(texte){const v=document.createElement('p');v.className='muted';v.textContent=texte;return v}
 $('scene-picker-new').onclick=()=>{sceneDialog2.close();
