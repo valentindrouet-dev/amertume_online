@@ -1,4 +1,4 @@
-# Amertume Online — v0.88
+# Amertume Online — v0.89
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,12 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.89 — La barre de la carte sur deux rangées
+
+Tout y tenait sur une seule ligne, et depuis que le choix de carte y est revenu, il n’y avait plus la place : « Ouvrir la carte » se brisait en trois lignes, la liste des cartes se réduisait à deux lettres, les icônes se touchaient.
+
+La barre compte maintenant **deux rangées** : en haut ce qui regarde la carte — son nom, les Portées, le zoom, le brouillard —, en bas ce qui la change : la liste des cartes, « Ouvrir la carte », « Importer une carte », et la corbeille poussée au bout. Plus un mot brisé, la liste montre le nom entier, et sur une fenêtre étroite la première rangée se replie d’elle-même au lieu d’écraser ses boutons.
 
 ## v0.88 — Ce que la troupe a le droit de lire
 
