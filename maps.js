@@ -250,7 +250,9 @@ tabs.innerHTML='<button data-page="table" class="on">Table de jeu</button><butto
 document.querySelector('.view-controls').before(tabs);
 const PAGES=['table','maps','heroes','talents','armory','bestiary','settings'];
 // Les Paramètres sont un réglage d'appareil, pas du contenu de partie : ils restent ouverts aux joueurs.
-const PAGES_LIBRES=['table','settings'];
+/* La troupe a ses propres pages : ses fiches, et le bestiaire de ce qu'elle a analysé.
+   Tout ce qui s'y modifie reste au MJ — voir « vue-joueur » dans editor.css. */
+const PAGES_LIBRES=['table','heroes','bestiary','settings'];
 const tabsMJ=[...tabs.querySelectorAll('button')].filter(b=>!PAGES_LIBRES.includes(b.dataset.page));
 /* L'onglet ouvert est un réglage d'appareil, comme le thème : recharger en plein
    travail au bestiaire doit y ramener, pas rejeter sur la table de jeu. Il ne voyage
@@ -570,7 +572,7 @@ const mapOpen=document.createElement('button');mapOpen.id='map-open';mapOpen.tex
 // La carte se choisit et s'ouvre depuis la barre de la carte, à côté de l'import.
 document.querySelector('.mapbar .file').before(mapPick,mapOpen);
 function refreshMapPick(){mapPick.replaceChildren();maps.forEach(m=>mapPick.add(new Option(m.name,m.id)));
- mapPick.hidden=mapOpen.hidden=!maps.length;refreshGmBar();
+ refreshGmBar();
  if(currentMapId)mapPick.value=currentMapId}
 mapOpen.onclick=()=>{if(mapPick.value)openBattleMap(mapPick.value)};
 /* Trois icônes réservées au MJ dans la barre de la carte : remettre le brouillard,
@@ -598,6 +600,11 @@ function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  fogBar.hidden=!mj;fogReset.hidden=fogAll.hidden=!m;
  fogAll.classList.toggle('on',!!(m&&m.fogOff));
  fogAll.title=m&&m.fogOff?'Rétablir le brouillard':'Tout révéler';
+ /* Changer de carte en pleine partie appartient au MJ : la liste et son bouton suivent
+    donc la vue, et non le seul fait qu'il existe des cartes. Ils étaient montés une fois
+    pour toutes avant le chargement de la partie, quand « maps » était encore vide : ils
+    ne reparaissaient plus jusqu'à la première retouche de carte. */
+ mapPick.hidden=mapOpen.hidden=!mj||!maps.length;
  lockBtn.textContent=tokensLocked?'🔒':'🔓';lockBtn.classList.toggle('on',tokensLocked);
  lockBtn.title=tokensLocked?'Rendre les déplacements aux joueurs':'Figer les déplacements des joueurs'}
 function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
@@ -605,10 +612,11 @@ function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new E
 // L'onglet Cartes n'existe que pour le MJ ; passer en vue joueur ramène à la table.
 const renderBeforeMaps=render;render=function(){computeFog();renderBeforeMaps();renderMapLayer();
  tabsMJ.forEach(b=>b.hidden=view!=='mj');
- if(view!=='mj'&&PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x)))showPage('table',false)};
+ document.body.classList.toggle('vue-joueur',view!=='mj');
+ if(view!=='mj'&&PAGES.some(x=>!PAGES_LIBRES.includes(x)&&document.body.classList.contains('page-'+x)))showPage('table',false)};
 window.addEventListener('resize',()=>{if(document.body.classList.contains('page-maps'))renderCanvas();
  else{applyMapRatio();applyMapZoom();render()}});
 maps.forEach(ensure);refreshMapPick();renderMapLayer();refreshHistory();renderCatalogPages();
-tabsMJ.forEach(b=>b.hidden=view!=='mj');
+tabsMJ.forEach(b=>b.hidden=view!=='mj');document.body.classList.toggle('vue-joueur',view!=='mj');
 // La page d'avant se rouvre une fois la partie chargée : avant, elle n'a rien à montrer.
-document.addEventListener('amertume-partie-chargee',()=>{const p=lastPage();if(p!=='table')showPage(p)});
+document.addEventListener('amertume-partie-chargee',()=>{refreshMapPick();const p=lastPage();if(p!=='table')showPage(p)});

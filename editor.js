@@ -138,7 +138,7 @@ let champsOuverts=0;
    sortant du champ ; Échap laisse tout en place. Le nœud d'origine est remis avant
    que la valeur soit posée : la page se redessine derrière, sans reste de champ.
    Les joueurs n'ont pas ce droit — chez eux une fiche se lit, elle ne s'écrit pas. */
-function champVif(noeud,valeur,poser,titre,classe){
+function champVif(noeud,valeur,poser,titre,classe){if(view!=='mj')return;
  if(view!=='mj')return noeud;
  noeud.classList.add('modifiable');noeud.tabIndex=0;
  noeud.title=titre||'Cliquer pour modifier';
@@ -167,7 +167,7 @@ function champVif(noeud,valeur,poser,titre,classe){
  return noeud}
 /* Un choix ne se tape pas : la pastille s'échange contre un menu, qui se referme
    sur la sélection. Sortir sans choisir ne change rien. */
-function choixVif(noeud,valeur,options,poser,titre){
+function choixVif(noeud,valeur,options,poser,titre){if(view!=='mj')return;
  if(view!=='mj')return noeud;
  noeud.classList.add('modifiable');noeud.tabIndex=0;noeud.title=titre||'Cliquer pour changer';
  const ouvrir=()=>{const parent=noeud.parentNode;if(!parent)return;
@@ -186,7 +186,7 @@ function choixVif(noeud,valeur,options,poser,titre){
  noeud.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ouvrir()}};
  return noeud}
 /* Une case à cocher déguisée en pastille : un clic la retourne. */
-function basculeVive(noeud,poser,titre){
+function basculeVive(noeud,poser,titre){if(view!=='mj')return;
  if(view!=='mj')return noeud;
  noeud.classList.add('modifiable');noeud.tabIndex=0;noeud.title=titre;
  noeud.onclick=e=>{e.preventDefault();e.stopPropagation();poser()};
@@ -195,6 +195,7 @@ function basculeVive(noeud,poser,titre){
 /* Le portrait d'un modèle, cliquable : on change l'illustration là où on la regarde,
    sans passer par la fiche complète. Un portrait déjà posé se retire par sa croix. */
 function jetonVif(m,poser){const boite=document.createElement('div');boite.className='jeton-boite';
+ if(view!=='mj')return boite;
  const j=jetonRond(m.image,m.name,'grand');boite.append(j);
  if(view!=='mj')return boite;
  const fichier=document.createElement('input');fichier.type='file';fichier.hidden=true;
@@ -662,6 +663,13 @@ function bestiaryRow(m,i){const rang=document.createElement('div');rang.classNam
  const outils=document.createElement('span');outils.className='cat-tools';
  const ico=(glyphe,titre,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=glyphe;
   b.title=titre;b.setAttribute('aria-label',titre+' '+m.name);b.onclick=fn;return b};
+ /* La coche dit que la troupe a percé l'espèce. Le MJ la lève d'un clic : les créatures
+    de ce modèle redeviennent des inconnues sur tous les écrans. */
+ if(view==='mj'&&modeleAnalyse(m)){const coche=ico('✓','Analysé par la troupe — cliquer pour le lui reprendre',()=>{
+  const n=oublierAnalyse(m);if(!n)return;
+  log(m.name+' n’est plus analysé'+(n>1?' ('+n+' créatures)':'')+'.');
+  renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))});
+  coche.classList.add('coche-analyse');outils.append(coche)}
  const suppr=ico('✕','Supprimer',()=>{
   if(!confirm('Supprimer « '+m.name+' » du bestiaire ? Les copies déjà sur la carte sont conservées.'))return;
   catalog.monsters.splice(i,1);renderCatalogPages();scheduleSave()});
@@ -672,7 +680,16 @@ function bestiaryRow(m,i){const rang=document.createElement('div');rang.classNam
   suppr);
  const bloc=document.createElement('div');bloc.className='cat-entry';
  rang.append(pill,outils);bloc.append(rang,detail);return bloc}
+/* Un modèle est « analysé » dès qu'une des créatures posées qui en descend l'a été :
+   c'est l'espèce que la troupe a percée, pas l'individu. */
+function modeleAnalyse(m){return actors.some(a=>!a.hero&&a.revealed
+ &&(a.template?a.template===m.id:a.name===m.name))}
+function oublierAnalyse(m){let n=0;
+ actors.forEach(a=>{if(!a.hero&&a.revealed&&(a.template?a.template===m.id:a.name===m.name)){a.revealed=false;n++}});
+ return n}
 function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.replaceChildren();
+ // La troupe ne lit au bestiaire que ce qu'elle a analysé.
+ const troupeSeule=view!=='mj';
  const q=($('bestiary-search').value||'').trim().toLowerCase();
  const familles=[...new Set(catalog.monsters.map(m=>m.family).filter(Boolean))].sort();
  const sel=$('bestiary-family'),avant=sel.value;
@@ -682,7 +699,8 @@ function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.rep
  const tri=$('bestiary-sort').value;
  for(const [key,titre] of BEST_COLS){
   let liste=catalog.monsters.map((m,i)=>[m,i]).filter(([m])=>(m.type||'standard')===key
-   &&(!q||m.name.toLowerCase().includes(q))&&(!sel.value||m.family===sel.value));
+   &&(!q||m.name.toLowerCase().includes(q))&&(!sel.value||m.family===sel.value)
+   &&(!troupeSeule||modeleAnalyse(m)));
   liste.sort((a,b)=>tri==='nom'?a[0].name.localeCompare(b[0].name)
    :tri==='danger-'?danger(a[0])-danger(b[0]):danger(b[0])-danger(a[0]));
   const bloc=document.createElement('div');bloc.className='cat-col c-'+key;
@@ -690,7 +708,8 @@ function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.rep
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
   h.append(compte);bloc.append(h);
   liste.forEach(([m,i])=>bloc.append(bestiaryRow(m,i)));
-  if(!liste.length){const vide=document.createElement('p');vide.className='muted';vide.textContent='Rien ici.';bloc.append(vide)}
+  if(!liste.length){const vide=document.createElement('p');vide.className='muted';
+   vide.textContent=troupeSeule?'Rien d’analysé.':'Rien ici.';bloc.append(vide)}
   cols.append(bloc)}}
 /* Une colonne par classe, les Génériques en tête : c'est ainsi qu'on lit un arbre de
    talents, la souche commune d'abord et les branches ensuite. */

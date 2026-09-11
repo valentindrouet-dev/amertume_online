@@ -1,4 +1,4 @@
-# Amertume Online — v0.87
+# Amertume Online — v0.88
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,16 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.88 — Ce que la troupe a le droit de lire
+
+**Deux onglets s’ouvrent à la troupe : Aventuriers et Bestiaire.** Les joueurs consultent les fiches de leur groupe, et un bestiaire qui **ne contient que les créatures qu’ils ont analysées** — colonne par colonne, le reste porte « Rien d’analysé ». Tout ce qui s’y modifie reste au MJ : les valeurs ne se corrigent plus d’un clic, les outils de chaque languette, les boutons « + Nouvel aventurier » et « + Nouveau monstre » et le compteur de pose disparaissent de leur écran.
+
+**Une coche au bestiaire du MJ.** Un modèle dont au moins une créature a été analysée porte une **coche verte** dans ses outils. Un clic la lève : toutes les créatures de ce modèle redeviennent des inconnues, sur tous les écrans, et le modèle quitte aussitôt le bestiaire des joueurs. C’est l’espèce que la troupe a percée, pas l’individu — c’est ainsi qu’on la lui reprend.
+
+**Le choix de carte revient sur la table de jeu.** La liste des cartes et son bouton « Ouvrir la carte » étaient montés une seule fois, avant le chargement de la partie, quand aucune carte n’existait encore : ils restaient cachés jusqu’à la première retouche dans l’éditeur. Ils suivent désormais la vue — le MJ seul change de carte en cours de partie — et reparaissent dès que la partie est chargée.
+
+**Le bloc du tour de combat passe au-dessus des combattants**, là où l’on regarde en premier.
 
 ## v0.87 — Le tour appelle la suite
 
