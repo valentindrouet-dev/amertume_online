@@ -1,4 +1,4 @@
-# Amertume Online — v0.95
+# Amertume Online — v0.96
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,12 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.96 — Les parures suivent le socle
+
+Régler une carte à grande échelle rapetissait les socles, mais **rien de ce qui les entoure** : liseré, ombre, halo de sélection, cerceau rouge de la cible, jauge de vie, flèche de ciblage et sa pointe, chiffre des dégâts gardaient leur taille d’origine et noyaient des socles de seize pixels.
+
+Tout cela se mesure désormais **sur le socle lui-même**. Sur trois échelles — 2 %, 5,68 % et 12 % de la largeur de la carte — les rapports restent constants : la flèche vaut toujours 7,4 % du socle, la jauge 17 %. En chiffres, du plus grand au plus petit : le halo passe de 38 à 6 pixels, le cerceau de cible de 6 à 1, la jauge de 17 à 3, la pointe de flèche de 40 à 7.
 
 ## v0.95 — Le socle témoin
 
