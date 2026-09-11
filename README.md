@@ -1,4 +1,4 @@
-# Amertume Online — v0.85
+# Amertume Online — v0.86
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,14 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.86 — Deux pastilles, un lot, et le temps de lire les dégâts
+
+**Le chiffre des dégâts se lit deux fois plus longtemps.** Il monte aussi vite qu’avant — c’est ce qui attire l’œil — puis **se tient en l’air** avant de s’effacer : 2,5 secondes au lieu de 1,25, dont plus d’une seconde et demie à pleine lisibilité. L’allure vit maintenant sur le premier segment seulement ; appliquée à tout le trajet, elle avalait le palier et le chiffre pâlissait bien avant la fin.
+
+**Un lot reçoit tout ce qu’on lui donne.** Deux combattants pris ou plus, et les **points de vie** comme les **états** portent sur tout le lot : −5 retire cinq points à chacun, *Mort* les couche tous, *Soin* les remplit tous — chacun avec son propre écart, calculé sur ses propres PV. Un état posé depuis le socle de l’un d’eux se pose sur tous, et se lève de même : la décision se prend sur le socle visé et vaut pour le lot. Un socle qui n’est pas du lot ne reçoit que pour lui. Le bandeau des PV annonce « 3 combattants pris » au lieu d’un nom.
+
+**Deux pastilles sur la vignette.** Au-dessus à gauche de chaque languette, un point **bleu** et un point **marron** : l’Action et le Mouvement qu’il reste. Le bleu s’éteint quand le combattant a agi — une attaque —, le marron quand il s’est déplacé, au glissement comme aux flèches du clavier. La vignette descend de quatre pixels pour leur faire place, sans grandir ni pousser la ligne. Les deux points reviennent au tour suivant, comme les activations.
 
 ## v0.85 — Deux combattants ne partagent plus un identifiant
 

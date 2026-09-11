@@ -3,7 +3,7 @@
 <style>
 /* Killam Bold, fournie par Valentin, pour les chiffres des caractéristiques. Sous-ensemble
    latin en WOFF2 : 48 Ko au lieu des 188 Ko du TTF d'origine, qui reste dans fonts/. */
-@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.85') format('woff2');
+@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.86') format('woff2');
  font-weight:700;font-style:normal;font-display:swap}
 
 /* Deux palettes, un seul jeu de règles : tout le décor passe par ces jetons, si bien
@@ -21,7 +21,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 --line:#2d393d;--line-strong:#526065;--muted:#a4b1b5;--ink:#edf0e9;
 --accent:#e2ae72;--on-accent:#201b15;--green:#8ab5a0;--red-mat:#d4735a;--map-bg:#223235;
 --disabled:#33465a;--disabled-ink:#8fa2b4;--sel-fond:#2b2419;
---t-select:#a9c8e6;--t-wall:#c3d0d4;--t-door:#e9c08a;--t-start:#a9d7bc;--t-foe:#e8b0a2}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif}button,input,select{font:inherit}button{cursor:pointer;border:1px solid var(--line);color:var(--ink);background:var(--btn);border-radius:6px;padding:8px 12px}button:hover{background:var(--hover)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:700}button:disabled{opacity:.45;cursor:default}header{padding:18px 28px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:20px}.brand{display:flex;align-items:baseline;gap:14px;font-family:'Killam',Georgia,serif;font-size:30px;letter-spacing:3px}.brand .ver{font:14px system-ui;letter-spacing:1px;color:var(--muted)}.badge{font-size:13px;color:var(--accent);border:1px solid #65513c;padding:5px 10px;border-radius:30px}.intro{padding:18px 28px 0;display:flex;justify-content:space-between;align-items:center;gap:12px}h1{font-family:Georgia,serif;font-size:28px;font-weight:400;margin:0}h2{font-size:15px;margin:0 0 14px;letter-spacing:1px}p{margin:6px 0}.muted{color:var(--muted);font-size:14px}.layout{display:grid;grid-template-columns:236px minmax(0,1fr) 300px;gap:18px;padding:20px 28px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}.stack{display:flex;flex-direction:column;gap:16px}.eyebrow{font-size:12px;letter-spacing:2px;color:var(--accent);text-transform:uppercase}/* Languettes : de quoi lire un nom et des PV, pas plus. */.actor{width:100%;display:flex;align-items:center;gap:9px;text-align:left;margin:5px 0;padding:6px 8px;background:transparent}.actor strong{font-size:13px}.actor .avatar{width:26px;height:26px;font-size:15px}/* La barre et l'écu sur une même ligne, à hauteur d'œil : la barre ne porte que les PV
+--t-select:#a9c8e6;--t-wall:#c3d0d4;--t-door:#e9c08a;--t-start:#a9d7bc;--t-foe:#e8b0a2}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif}button,input,select{font:inherit}button{cursor:pointer;border:1px solid var(--line);color:var(--ink);background:var(--btn);border-radius:6px;padding:8px 12px}button:hover{background:var(--hover)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:700}button:disabled{opacity:.45;cursor:default}header{padding:18px 28px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:20px}.brand{display:flex;align-items:baseline;gap:14px;font-family:'Killam',Georgia,serif;font-size:30px;letter-spacing:3px}.brand .ver{font:14px system-ui;letter-spacing:1px;color:var(--muted)}.badge{font-size:13px;color:var(--accent);border:1px solid #65513c;padding:5px 10px;border-radius:30px}.intro{padding:18px 28px 0;display:flex;justify-content:space-between;align-items:center;gap:12px}h1{font-family:Georgia,serif;font-size:28px;font-weight:400;margin:0}h2{font-size:15px;margin:0 0 14px;letter-spacing:1px}p{margin:6px 0}.muted{color:var(--muted);font-size:14px}.layout{display:grid;grid-template-columns:236px minmax(0,1fr) 300px;gap:18px;padding:20px 28px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}.stack{display:flex;flex-direction:column;gap:16px}.eyebrow{font-size:12px;letter-spacing:2px;color:var(--accent);text-transform:uppercase}/* Languettes : de quoi lire un nom et des PV, pas plus. */.actor{width:100%;display:flex;align-items:center;gap:9px;text-align:left;margin:5px 0;padding:6px 8px;background:transparent}.actor strong{font-size:13px}.actor .avatar{width:26px;height:26px;font-size:15px}/* Deux pastilles au-dessus de la vignette : l'Action et le Mouvement qui restent. La
+   vignette descend juste ce qu'il faut pour leur faire place, sans grandir ni pousser la ligne. */.vignette{position:relative;flex:none;line-height:0;transform:translateY(4px)}.pastilles{position:absolute;left:0;top:-8px;display:flex;gap:3px;pointer-events:none}.pastilles .pt{display:block;width:7px;height:7px;border-radius:50%;box-shadow:0 0 0 1.5px var(--panel)}.pastilles .action{background:#3f8fe0}.pastilles .mvt{background:#e0a04a}.pastilles .pt.off{visibility:hidden}/* La barre et l'écu sur une même ligne, à hauteur d'œil : la barre ne porte que les PV
    du moment, le maximum se lit dans la fiche. */
 .vie-ligne{display:flex;align-items:center;gap:6px;margin-top:3px}
 .actor .lifebar{flex:1;min-width:0;height:16px;border-radius:999px;margin-top:0}
@@ -92,8 +93,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 #floaters{position:absolute;inset:0;z-index:4;pointer-events:none}/* Le cadre de sélection : tracé au-dessus de la carte, transparent aux clics. */#marquee{position:absolute;z-index:4;pointer-events:none;border:1.5px dashed var(--accent);background:rgba(160,120,60,.13);border-radius:3px}#marquee[hidden]{display:none}
 .floater{position:absolute;transform:translate(-50%,-50%);font:800 22px 'Killam',Georgia,serif;white-space:nowrap;text-shadow:0 2px 4px #000000b3,0 0 2px #0009}
 .floater.perte{color:#f0705a}.floater.gain{color:#8fd77e}.floater.nul{color:#e7d9b8}.board-die{position:absolute;display:grid;place-items:center;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:11px;font:800 20px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -3px 5px #00000026,0 7px 16px #000000a6;will-change:transform}.board-die.dark{color:#f4f6f2}.journal-title{font:600 13px system-ui;letter-spacing:3px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px}.journal{max-height:330px;display:flex;flex-direction:column;gap:9px;padding-right:4px}.journal li{border:0;padding:0}.j-entry{font-size:14px;line-height:1.45;color:var(--ink)}.j-turn{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:5px 0 1px}.j-turn::before,.j-turn::after{content:"";flex:1;height:1px;background:var(--line)}.j-name{font-weight:700}.j-key{font-weight:700}.j-num{font-weight:800;color:#b4553a}.j-dice{opacity:.7}.j-badge{display:inline-block;background:#8d3b32;color:#ffe6df;border-radius:5px;padding:1px 7px;font-weight:700;font-size:12px}
-</style><link rel="stylesheet" href="./editor.css?v=0.85"></head><body>
-<header><div class="brand">AMERTÜME<span class="ver">v0.85</span></div><div class="view-controls"><label for="view">Vue</label><select id="view"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select><span class="badge">Prototype · partie locale</span></div></header>
+</style><link rel="stylesheet" href="./editor.css?v=0.86"></head><body>
+<header><div class="brand">AMERTÜME<span class="ver">v0.86</span></div><div class="view-controls"><label for="view">Vue</label><select id="view"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select><span class="badge">Prototype · partie locale</span></div></header>
 <div class="intro" hidden><h1>Les ruines du passage</h1></div>
 <main class="layout"><aside class="stack left"><section class="panel"><h2>COMBATTANTS</h2><div id="actors"></div><button type="button" class="ajout-camp" id="new-hero" title="Ajouter un aventurier à la scène" aria-label="Ajouter un aventurier à la scène" hidden>+</button><button type="button" class="ajout-camp" id="new-monster" title="Ajouter un adversaire à la scène" aria-label="Ajouter un adversaire à la scène" hidden>+</button></section><section class="panel"><div class="turn-head"><div class="eyebrow">Tour de combat</div><div class="turn" id="round">01</div></div><div id="bloc-activation" hidden><h2>Activation</h2><div class="checks"><label><input type="checkbox" id="action"> Action</label><label><input type="checkbox" id="move"> Mvt / Analyse</label><label><input type="checkbox" id="item"> Objet</label></div><div class="divider"></div></div><div class="turn-actions"><button class="full" id="next">Tour suivant →</button><button id="reset-round" title="Revenir au tour 1 : activations et cibles remises à zéro" aria-label="Réinitialiser le tour de combat">↺</button></div><div class="side-actions"><button id="heal-foes" hidden>Adversaires à 100 %</button></div></section><section class="panel pv-panel" id="pv-panel" hidden><div class="eyebrow">Points de vie</div><p class="muted" id="pv-cible"></p><div class="hp-buttons" id="hp-buttons"></div></section></aside>
 <div class="stack"><section class="panel map-panel"><div class="mapbar"><strong id="carte-titre">CARTE TACTIQUE</strong><button class="icon-btn toggle-portees" id="portees">◎ Portées</button><div class="zoom-bar"><button id="zoom-out" aria-label="Dézoomer">−</button><span id="zoom-label">100 %</span><button id="zoom-in" aria-label="Zoomer">+</button><button id="zoom-reset">Ajuster</button></div><label class="file"><button id="upload">Importer une carte</button><input class="sr" type="file" id="mapfile" accept="image/png,image/jpeg,image/webp"></label><button class="icon-btn" id="reset-map" title="Retirer la carte de fond" aria-label="Retirer la carte de fond">🗑</button></div><div class="map" id="map" aria-label="Carte tactique. Déplacez les tokens par glissement ou avec les flèches du clavier."><div id="map-view"><svg class="plan" viewBox="0 0 800 480" preserveAspectRatio="none" aria-hidden="true"><g class="walls" fill="#172326" stroke="#57635c" stroke-width="3"></g><g fill="#9da797" font-family="system-ui" font-size="12" letter-spacing="4"><text x="305" y="130">COUR INTÉRIEURE</text><text x="318" y="462">ENTRÉE SUD</text></g></svg><svg id="map-shapes" aria-hidden="true"></svg><canvas id="fog" aria-hidden="true"></canvas><svg id="map-doors" aria-hidden="true"></svg><div id="contact-ring" hidden></div><svg id="aim" aria-hidden="true"><defs><marker id="shot-ok" markerUnits="userSpaceOnUse" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#3f7bc0"/></marker><marker id="shot-no" markerUnits="userSpaceOnUse" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#e0483c"/></marker><marker id="shot-done" markerUnits="userSpaceOnUse" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#8b969b"/></marker></defs><path id="aim-arrow"/></svg><div id="marquee" hidden aria-hidden="true"></div><div id="floaters" aria-hidden="true"></div></div><div id="dice-tray" aria-hidden="true"></div></div></section>
@@ -101,7 +102,7 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 <aside class="stack right"><section class="panel sheet" id="sheet"><div class="sheet-head"><h1 id="name"></h1><span class="sheet-class" id="kind"></span></div><p class="muted" id="class"></p><div class="chips" id="sheet-chips"></div><div class="stat-row" id="stats"></div><div class="lifebar big" id="hpbar"><span class="lifebar-fill" id="hpfill"></span><span class="lifebar-text" id="hp"></span></div><div class="divider"></div><h2>Équipement</h2><div id="gear"></div><h2 class="sheet-sous" id="talents-title">Talents</h2><div id="sheet-talents"></div><div class="divider" hidden></div><h2 hidden>Compétences</h2><div class="skills" id="skills" hidden></div><p class="muted" hidden>Clique pour un test : 4+ = réussite, 6 = réussite et relance.</p></section><section class="panel"><h2 class="journal-title"><span aria-hidden="true">📜</span> Journal de combat</h2><ol class="journal" id="journal" aria-live="polite"></ol></section></aside></main>
 <div id="state-menu" role="menu" aria-label="États" hidden></div>
 <footer>Version 0.76 · Un cadre prend ce qu’il enferme, et le bestiaire pose une meute d’un coup. Données locales conservées. Partage Firebase après activation et publication par le MJ ; les combats restent locaux. Catalogue importé de amertume_rpg ; effets et conventions de combat à valider.</footer>
-<script src="./combat.js?v=0.85"></script>
+<script src="./combat.js?v=0.86"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -305,6 +306,10 @@ function markToggle(i){const a=actors[i];if(!a)return;
  if(!isMarked(actors[selected]))selected=marked.size?actors.findIndex(x=>marked.has(x.id)):null;
  if(marked.has(a.id))selected=i}
 function markedIndexes(){return actors.map((a,i)=>[a,i]).filter(([a])=>marked.has(a.id)).map(([,i])=>i)}
+/* Ce que vise un geste du MJ — points de vie, état : le lot pris s'il y en a un, sinon
+   l'actif seul. Et pour un geste parti d'un socle précis : son lot s'il en fait partie. */
+function lotPris(){return marked.size>1?markedIndexes():(selected===null?[]:[selected])}
+function lotDe(i){return marked.size>1&&isMarked(actors[i])?markedIndexes():[i]}
 /* Un clic, un geste. La sélection multiple et le ciblage passent par ici comme le reste,
    pour que changer une touche dans les Paramètres change tout d'un coup. */
 function onGesture(geste,i){
@@ -413,7 +418,7 @@ function render(){
  actors.forEach((a,i)=>{
  const cache=cachePour(a,i),invu=hasState(a,'Invisible')&&view==='mj';
  const classes=(a.hero?'':'enemy ')+(invu?'invisible-mj ':'')+(i===selected||(marked.size>1&&isMarked(a))?'selected ':'')+(marked.size>1&&isMarked(a)?'marked ':'')+(actors[selected]&&actors[selected].target===i?'targeted ':'')+(!alive(a)?'dead ':'')+(cache?(view==='mj'?(a.hidden?'cachemj ':'veiled '):'unseen'):'');
- const b=document.createElement('button');b.className='actor '+classes;const known=hpKnown(a);b.innerHTML='<span class="avatar">'+escapeName(a.name[0])+'</span><span class="actor-body"><span class="actor-nom"><strong>'+escapeName(a.name)+'</strong></span><span class="vie-ligne">'+lifebar(known?ratio(a):(alive(a)?100:0),known?String(a.hp):'',a.hero)+'</span></span>';
+ const b=document.createElement('button');b.className='actor '+classes;const known=hpKnown(a);b.innerHTML='<span class="vignette"><span class="avatar">'+escapeName(a.name[0])+'</span><span class="pastilles" aria-hidden="true"><i class="pt action'+(a.checks&&a.checks[0]?' off':'')+'"></i><i class="pt mvt'+(a.checks&&a.checks[1]?' off':'')+'"></i></span></span><span class="actor-body"><span class="actor-nom"><strong>'+escapeName(a.name)+'</strong></span><span class="vie-ligne">'+lifebar(known?ratio(a):(alive(a)?100:0),known?String(a.hp):'',a.hero)+'</span></span>';
  // L'écu de DEF au bout de la barre, dès qu'on a le droit de lire les chiffres.
  if(known)b.querySelector('.vie-ligne').append(shieldBadge(defOf(a)));
  const rang=numeros.get(a.id);
@@ -463,11 +468,15 @@ function render(){
   updateRing();updateSight()};
  t.onpointerup=e=>{if(!drag)return;const moved=drag.moved;drag=null;t.releasePointerCapture(e.pointerId);
   // Un token ne reste jamais dans un mur ni à cheval : il en est repoussé au relâchement.
-  if(moved){(marked.size>1&&isMarked(a)?markedIndexes():[i]).forEach(k=>settleActor(actors[k]));
-   skipClick=true;pick(i)}};
+  if(moved){const lot=marked.size>1&&isMarked(a)?markedIndexes():[i];
+   lot.forEach(k=>settleActor(actors[k]));
+   skipClick=true;pick(i);
+   // La case cachée suit, sans quoi le prochain saveChecks rallumerait la pastille.
+   lot.forEach(k=>{const o=actors[k];if(o&&o.checks)o.checks[1]=true});
+   $('move').checked=true;render();scheduleSave()}};
  t.onpointercancel=()=>{drag=null};
  t.onclick=e=>{if(skipClick){skipClick=false;return}onGesture(gestureOf(e),i)};
- t.onkeydown=e=>{const dirs={ArrowLeft:[-2,0],ArrowRight:[2,0],ArrowUp:[0,-3],ArrowDown:[0,3]};if(!dirs[e.key]||!canMove(i)||(!alive(a)&&view!=='mj'))return;e.preventDefault();saveChecks();savePool();selected=i;moveActor(a,a.x+dirs[e.key][0],a.y+dirs[e.key][1]);render();document.querySelectorAll('.token')[i].focus()};$('map-view').append(t)
+ t.onkeydown=e=>{const dirs={ArrowLeft:[-2,0],ArrowRight:[2,0],ArrowUp:[0,-3],ArrowDown:[0,3]};if(!dirs[e.key]||!canMove(i)||(!alive(a)&&view!=='mj'))return;e.preventDefault();saveChecks();savePool();selected=i;moveActor(a,a.x+dirs[e.key][0],a.y+dirs[e.key][1]);if(a.checks)a.checks[1]=true;render();document.querySelectorAll('.token')[i].focus()};$('map-view').append(t)
  });
  /* Chaque camp porte son « + » : on ajoute un combattant là où on lit sa troupe.
     L'intitulé tient même sur un camp vide, tant que le MJ peut le garnir. Les deux
@@ -530,7 +539,9 @@ function renderCombat(){const a=actors[selected];
  $('next').hidden=view!=='mj';$('reset-round').hidden=view!=='mj';$('upload').hidden=view!=='mj';
  $('owner').hidden=$('owner-label').hidden=view!=='player';
  const pv=$('pv-panel');pv.hidden=view!=='mj'||!a;
- if(!pv.hidden)$('pv-cible').textContent=a.name+' · '+a.hp+' / '+a.max+' PV';
+ if(!pv.hidden){const lot=lotPris();
+  $('pv-cible').textContent=lot.length>1?lot.length+' combattants pris'
+   :a.name+' · '+a.hp+' / '+a.max+' PV'}
  // Analyser est le geste d'un aventurier sur sa cible : lui seul l'a dans ses activations.
  const rev=$('reveal');rev.hidden=!a||!a.hero;
  if(!rev.hidden){const proie=a.target!==null?actors[a.target]:null;
@@ -569,7 +580,7 @@ function saveChecks(){const a=actors[selected];if(a)a.checks=['action','move','i
 const SKILL_TINTS=['47,138,99','168,105,31','122,92,184','157,123,30','176,88,54','101,120,111','53,119,184','44,140,133'];
 const STAT_TINTS={vie:'122,92,184',endu:'44,140,133',pv:'47,122,91',def:'96,110,118',dmg:'180,72,58',xp:'157,123,30'};
 const TYPE_NOMS={standard:'Standard',solitaire:'Solitaire',alpha:'Alpha',boss:'Boss'};
-const IMG_V='0.85';
+const IMG_V='0.86';
 function imgUrl(nom){return './img/'+encodeURIComponent(nom)+'?v='+IMG_V}
 /* Les états et leur jeton, tels qu'ils sont peints sur la table. « Aucun » n'en a pas —
    c'est l'absence d'état — ni « Coma », que la barre de vie dit déjà, ni « Affaibli »,
@@ -600,17 +611,21 @@ function openStateMenu(i,x=stateMenuAt[0],y=stateMenuAt[1]){if(view!=='mj'||!act
   // Un clic pose ou lève : le menu reste ouvert, on en empile souvent plusieurs d'affilée.
   // La Saignée, elle, s'aggrave d'un point par clic ; Maj + clic la fait redescendre.
   b.onclick=ev=>{saveChecks();savePool();
-   if(etat==='Aucun'){if(!statesOf(a).length)return;a.states=[];a.bleed=0;log(a.name+' · États levés.')}
-   else if(etat==='Saignée'){const v=addBleed(a,ev.shiftKey?-1:1);
-    log(a.name+' · '+(v?'Saignée '+v:'Saignée levée')+'.')}
+   const cibles=lotDe(stateMenuFor).map(k=>actors[k]).filter(Boolean);
+   if(!cibles.length)return;
+   if(etat==='Aucun'){const portent=cibles.filter(o=>statesOf(o).length);if(!portent.length)return;
+    portent.forEach(o=>{o.states=[];o.bleed=0;log(o.name+' · États levés.')})}
+   else if(etat==='Saignée'){cibles.forEach(o=>{const v=addBleed(o,ev.shiftKey?-1:1);
+    log(o.name+' · '+(v?'Saignée '+v:'Saignée levée')+'.')})}
    else{const pose=!hasState(a,etat);
-    if(pose)log(a.name+' · '+inflictState(a,etat));
-    else{setState(a,etat,false);log(a.name+' · État levé : '+etat)}
-    if(etat==='Coma')a.hp=hasState(a,'Coma')?0:Math.max(1,a.hp);
-    // L'Onde purge l'affection la plus fraîche dès qu'elle se pose sur un blessé.
-    if(pose&&etat==='Onde'&&hasState(a,'Onde')){const mal=ondeCures(a);
-     if(mal){setState(a,mal,false);if(mal==='Saignée')a.bleed=0;setState(a,'Onde',false);
-      log(a.name+' · Onde : '+mal+' dissipé.')}}}
+    cibles.forEach(o=>{
+     if(pose)log(o.name+' · '+inflictState(o,etat));
+     else{setState(o,etat,false);log(o.name+' · État levé : '+etat)}
+     if(etat==='Coma')o.hp=hasState(o,'Coma')?0:Math.max(1,o.hp);
+     // L'Onde purge l'affection la plus fraîche dès qu'elle se pose sur un blessé.
+     if(pose&&etat==='Onde'&&hasState(o,'Onde')){const mal=ondeCures(o);
+      if(mal){setState(o,mal,false);if(mal==='Saignée')o.bleed=0;setState(o,'Onde',false);
+       log(o.name+' · Onde : '+mal+' dissipé.')}}})}
    render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));
    if(stateMenuFor!==null)openStateMenu(stateMenuFor)};
   return b}));
@@ -741,12 +756,16 @@ function floatNumber(cible,texte,genre){const couche=$('floaters'),size=mapSize(
  el.style.left=cible.x+'%';el.style.top='calc('+cible.y+'% - '+(tokenPx()*.62)+'px)';
  couche.append(el);
  const calme=matchMedia('(prefers-reduced-motion: reduce)').matches;
- const fin=el.animate(calme?[{opacity:1},{opacity:0}]
-  :[{transform:'translate(-50%,-50%) scale(.6)',opacity:0},
-    {transform:'translate(-50%,-140%) scale(1.15)',opacity:1,offset:.28},
+ /* Le chiffre monte aussi vite qu'avant, puis se tient en l'air : c'est le palier qui
+    double le temps de lecture, pas une dérive deux fois plus lente. */
+ const fin=el.animate(calme?[{opacity:1},{opacity:1,offset:.7},{opacity:0}]
+  :[{transform:'translate(-50%,-50%) scale(.6)',opacity:0,easing:'cubic-bezier(.2,.8,.3,1)'},
+    {transform:'translate(-50%,-140%) scale(1.15)',opacity:1,offset:.14},
+    {transform:'translate(-50%,-165%) scale(1)',opacity:1,offset:.66},
     {transform:'translate(-50%,-230%) scale(1)',opacity:0}],
-  {duration:calme?900:1250,easing:'cubic-bezier(.2,.8,.3,1)',fill:'both'});
- fin.onfinish=()=>el.remove();setTimeout(()=>el.remove(),2200)}
+  // L'allure vit sur le premier segment : appliquée à tout le trajet, elle avalait le palier.
+  {duration:calme?1800:2500,easing:'linear',fill:'both'});
+ fin.onfinish=()=>el.remove();setTimeout(()=>el.remove(),4400)}
 // Les PV changent : on le montre là où ça se passe.
 function showHpChange(cible,avant){const d=cible.hp-avant;
  if(!d)return;floatNumber(cible,(d>0?'+':'−')+Math.abs(d),d>0?'gain':'perte')}
@@ -794,7 +813,10 @@ function attack(){
  floatNumber(b,blocked?'Blindage':r.failed?'Échec':lost?'−'+lost:'0',blocked||r.failed||!lost?'nul':'perte');
  rollOnBoard(r.failleFace===null?r.dice:[...r.dice,[r.failleFace,7]],a,b);const message=a.name+' → '+b.name+' : '+(r.failed?'Échec (double 1).':blocked?'Blindage consommé : attaque absorbée.':(r.critical?'Critique ! ':'')+lost+' PV perdus'+(r.bleed?' (dont '+r.bleed+' de saignée)':'')+(view==='mj'?' ('+b.hp+'/'+b.max+' PV restants)':'')+'.')+(r.failleFace!==null?' Faille sur '+r.failleFace+'.':'')+(b.hp===0?' Coma.':'');log(message,{dice:true});afterAction(a);render();
 }
-function hp(delta){if(view!=="mj"||!actors[selected])return;saveChecks();savePool();const a=actors[selected];const avant=a.hp;a.hp=Math.max(0,Math.min(a.max,a.hp+delta));showHpChange(a,avant);setState(a,'Coma',a.hp===0);log(a.name+' : '+a.hp+'/'+a.max+' PV.');render()}
+function hpDe(a,delta){const avant=a.hp;a.hp=Math.max(0,Math.min(a.max,a.hp+delta));
+ showHpChange(a,avant);setState(a,'Coma',a.hp===0);log(a.name+' : '+a.hp+'/'+a.max+' PV.')}
+function hp(delta){if(view!=="mj")return;const lot=lotPris();if(!lot.length)return;
+ saveChecks();savePool();lot.forEach(k=>{if(actors[k])hpDe(actors[k],delta)});render()}
 /* Retour au tour 1 : les activations et les cibles repartent de zéro, les PV ne bougent pas. */
 $('reset-round').onclick=()=>{if(view!=='mj'||!confirm('Revenir au tour 1 ? Les activations, les cibles et les analyses sont remises à zéro ; les PV ne changent pas.'))return;
  // Les créatures analysées redeviennent des inconnues : la rencontre repart entière.
@@ -816,7 +838,12 @@ $('hp-buttons').replaceChildren(...PV_BOUTONS.map(({texte,classe,titre,ecart})=>
  const b=document.createElement('button');b.textContent=texte;b.className=classe;
  b.title=titre||(texte.startsWith('+')?'Rendre ':'Retirer ')+texte.slice(1)+' PV';
  b.setAttribute('aria-label',b.title);
- b.onclick=()=>{const a=actors[selected];if(view!=='mj'||!a)return;const d=ecart(a);if(d)hp(d)};
+ /* Mort et Soin ne portent pas le même écart d'un combattant à l'autre : chacun reçoit
+    le sien, calculé sur ses propres PV. */
+ b.onclick=()=>{if(view!=='mj')return;const lot=lotPris();if(!lot.length)return;
+  saveChecks();savePool();let bouge=false;
+  lot.forEach(k=>{const o=actors[k];if(!o)return;const d=ecart(o);if(d){hpDe(o,d);bouge=true}});
+  if(bouge)render()};
  return b}));$('next').onclick=()=>{if(view!=='mj')return;savePool();burnAll();round++;actors.forEach(a=>a.checks=[false,false,false]);$('round').textContent=String(round).padStart(2,'0');render();log('Début du tour '+round+'. Activations réinitialisées.')};$('upload').onclick=()=>$('mapfile').click();$('mapfile').onchange=()=>{const f=$('mapfile').files[0];if(!f)return;if(!['image/png','image/jpeg','image/webp'].includes(f.type)){log('Carte non chargée : utilise une image PNG, JPEG ou WebP.');return}if(mapUrl)URL.revokeObjectURL(mapUrl);mapUrl=URL.createObjectURL(f);$('map-view').style.backgroundImage='url("'+mapUrl+'")';$('map').classList.add('custom');log('Carte importée sur cet appareil. Le plan et ses murs sont masqués : plus d’obstacle défini.');};
 /* Le thème vit dans le navigateur, pas dans la partie : chacun lit comme il veut. */
 /* Les gestes de la carte et la touche qui les commande. « Aucune » veut dire le clic nu ;
@@ -933,4 +960,4 @@ $('portees').onclick=()=>{porteesOn=!porteesOn;
 majPortees();
 window.addEventListener('resize',()=>{updateRing();showAim();renderCombat()});
 render();log('Bienvenue dans Amertume. Sélectionne un aventurier ou lance tes premiers dés.');
-</script><script src="./catalog.js?v=0.85"></script><script src="./editor.js?v=0.85"></script><script src="./maps.js?v=0.85"></script><script src="./firebase-config.js?v=0.85"></script><script src="./shared-data.js?v=0.85"></script><script src="./shared.js?v=0.85"></script></body></html>
+</script><script src="./catalog.js?v=0.86"></script><script src="./editor.js?v=0.86"></script><script src="./maps.js?v=0.86"></script><script src="./firebase-config.js?v=0.86"></script><script src="./shared-data.js?v=0.86"></script><script src="./shared.js?v=0.86"></script></body></html>
