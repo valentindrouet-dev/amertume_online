@@ -419,10 +419,22 @@ function traitContraint(a,b,droit,ratio){if(!droit||!a)return b;
  if(!L)return b;
  const pas=Math.PI/4,ang=Math.round(Math.atan2(dy,dx)/pas)*pas;
  return {x:a.x+Math.cos(ang)*L/r,y:a.y+Math.sin(ang)*L}}
+/* Aimantation : à portée d'une extrémité déjà posée, le trait s'y accroche. C'est ainsi
+   qu'on ferme un carré sans le manquer d'un cheveu. Le seuil se resserre quand on zoome,
+   pour ne pas gêner un tracé serré. */
+function boutAimante(p,ratio){const m=mapDraft;if(!m)return null;
+ const r=Math.max(.05,Number(ratio)||16/9);
+ let meilleur=null,court=2.6/Math.max(1,zoomC);
+ const test=(x,y)=>{const d=Math.hypot((p.x-x)*r,p.y-y);if(d<court){court=d;meilleur={x,y}}};
+ (m.traits||[]).forEach(t=>{test(t.x1,t.y1);test(t.x2,t.y2)});
+ if(traitDepart)test(traitDepart.x,traitDepart.y);
+ return meilleur}
+function viseTrait(p,droit,ratio){const bout=boutAimante(p,ratio);
+ return bout?{x:bout.x,y:bout.y,aimante:true}:traitContraint(traitDepart,p,droit,ratio)}
 function annulerTrait(){if(!traitDepart)return false;traitDepart=traitVise=null;renderCanvas();return true}
 const HINTS={select:'Clique une forme pour la sélectionner, glisse pour la déplacer, tire un coin pour la redimensionner. ⌘Z annule.',
  wall:'Trace un rectangle : il coupe la vue et le passage. Un clic simple sur une forme existante la sélectionne. Suppr efface la sélection.',
- ligne:'Un clic pose l’origine du trait, un second l’arrête. ⌘ (ou Ctrl) le redresse à l’horizontale, à la verticale ou à quarante-cinq degrés. Maj au second clic pose un point d’appui : le trait s’arrête là et le suivant en repart, de quoi longer une salle entière sans relever la main. Échap abandonne le tracé en cours.',
+ ligne:'Un clic pose l’origine du trait, un second l’arrête. ⌘ (ou Ctrl) le redresse à l’horizontale, à la verticale ou à quarante-cinq degrés. Maj au second clic pose un point d’appui : le trait s’arrête là et le suivant en repart, de quoi longer une salle entière sans relever la main. Près d’une extrémité déjà posée, le tracé s’y aimante — une pastille verte le dit — et le carré se ferme juste. Échap abandonne.',
  cut:'Trace un rectangle à l’intérieur d’une zone de blocage : la découpe y creuse une ouverture définitive, vue et passage rétablis.',
  lasso:'Contourne la forme à creuser : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  door:'Trace une porte : elle perce d’elle-même la zone de blocage qu’elle recouvre, et le mur se referme si tu la déplaces. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
@@ -501,7 +513,13 @@ function dessineTraits(){const c=$('map-canvas'),m=mapDraft;if(!c||!m)return;
  if(traitDepart&&traitVise){const l=document.createElementNS(nsSVG,'line');
   l.setAttribute('x1',traitDepart.x);l.setAttribute('y1',traitDepart.y);
   l.setAttribute('x2',traitVise.x);l.setAttribute('y2',traitVise.y);
-  l.setAttribute('class','trait-apercu');svg.append(l)}}
+  l.setAttribute('class','trait-apercu');svg.append(l);
+  // L'aimant se voit : une pastille verte au bout du tracé quand il s'accroche.
+  if(traitVise.aimante){const o=document.createElementNS(nsSVG,'ellipse');
+   const r=Math.max(.05,Number(m.ratio)||16/9),rx=.7/Math.max(1,zoomC);
+   o.setAttribute('cx',traitVise.x);o.setAttribute('cy',traitVise.y);
+   o.setAttribute('rx',rx);o.setAttribute('ry',rx*r);
+   o.setAttribute('class','trait-aimant');svg.append(o)}}}
 function echelleEl(){const m=mapDraft;if(!m)return null;ensure(m);
  const large=$('map-canvas').clientWidth||600,t=Math.max(8,large*echelleSocle(m)/100);
  const el=document.createElement('div');el.className='echelle-token';
@@ -583,13 +601,14 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  /* Le tracé : premier clic, origine ; second clic, arrivée. Entre les deux, l'aperçu suit
     le curseur — et Maj le redresse. */
  if(mapTool==='ligne'){
-  if(!traitDepart){traitDepart={x:p.x,y:p.y};traitVise={x:p.x,y:p.y};renderCanvas();e.preventDefault();return}
-  const fin=traitContraint(traitDepart,p,e.metaKey||e.ctrlKey,mapDraft.ratio);
+  if(!traitDepart){const d=boutAimante(p,mapDraft.ratio)||p;
+   traitDepart={x:d.x,y:d.y};traitVise={x:d.x,y:d.y};renderCanvas();e.preventDefault();return}
+  const fin=viseTrait(p,e.metaKey||e.ctrlKey,mapDraft.ratio);
   const r=Math.max(.05,Number(mapDraft.ratio)||16/9);
   const pose=Math.hypot((fin.x-traitDepart.x)*r,fin.y-traitDepart.y)>=.5;
+  // On ne choisit pas ce qu'on vient de tracer : la main est encore à l'ouvrage.
   if(pose){pushUndo();
-   mapDraft.traits.push({x1:traitDepart.x,y1:traitDepart.y,x2:fin.x,y2:fin.y,e:TRAIT_EPAISSEUR});
-   mapSel={kind:'trait',i:mapDraft.traits.length-1}}
+   mapDraft.traits.push({x1:traitDepart.x,y1:traitDepart.y,x2:fin.x,y2:fin.y,e:TRAIT_EPAISSEUR})}
   /* Maj pose un point d'appui : le trait s'arrête là et le suivant en repart. C'est ainsi
      qu'on longe une salle entière sans relever la main. */
   if(pose&&e.shiftKey){traitDepart={x:fin.x,y:fin.y};traitVise={x:fin.x,y:fin.y}}
@@ -613,7 +632,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  else if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
  mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
 $('map-canvas').addEventListener('pointermove',e=>{
- if(traitDepart&&!mapDrag){traitVise=traitContraint(traitDepart,pct(e),e.metaKey||e.ctrlKey,mapDraft&&mapDraft.ratio);
+ if(traitDepart&&!mapDrag){traitVise=viseTrait(pct(e),e.metaKey||e.ctrlKey,mapDraft&&mapDraft.ratio);
   dessineTraits();return}
  if(!mapDrag)return;const p=pct(e),d=mapDrag;
  if(d.mode==='echelle'){const j=mapDraft.echelle;

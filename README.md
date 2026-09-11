@@ -1,4 +1,4 @@
-# Amertume Online — v0.103
+# Amertume Online — v0.104
 
 https://valentindrouet-dev.github.io/amertume_online/
 
@@ -152,6 +152,12 @@ Le tracé est converti en rectangles : la zone concernée est rastérisée, l’
 Le brouillard a été optimisé au passage pour absorber ces découpes : test direct segment contre rectangle avec rejet par boîte englobante, au lieu d’un parcours arête par arête. Sur une carte à 141 morceaux, le calcul passe de 47 à 5,5 millisecondes.
 
 **Déplacements.** Le MJ traverse les murs en tenant un token ; les joueurs en sont empêchés et glissent le long de l’obstacle. Dans tous les cas, **un token ne reste jamais dans une zone de blocage ni à cheval dessus** : il en est repoussé au relâchement, et les adversaires pré-placés le sont aussi à l’ouverture de la carte.
+
+## v0.104 — Le trait s’aimante, et se fait oublier
+
+**Le gros rectangle brun, c’était ma marque de sélection.** Chaque trait fraîchement posé était aussitôt choisi, et un trait choisi portait un liseré de trois pixels autour d’un trait de deux : une grosse barre ambrée. Désormais **on ne choisit plus ce qu’on vient de tracer** — la main est encore à l’ouvrage — et un trait choisi prend l’ambre **à son épaisseur réelle**, avec un simple halo.
+
+**Le tracé s’aimante aux extrémités déjà posées.** À portée d’un bout de trait, le tracé s’y accroche et une pastille verte le dit. On ferme donc un carré juste : mesuré, quatre segments enchaînés en visant le dernier point à côté, et le carré se referme **exactement** sur le premier — écart nul. Le seuil se resserre quand on zoome, pour ne pas gêner un tracé serré.
 
 ## v0.103 — Le trait est de la même matière
 
