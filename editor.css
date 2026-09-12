@@ -396,6 +396,31 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 .skill-chip .champ-vif{width:46px;padding:0 3px}
 .chip .champ-vif,span.chip.modifiable{white-space:nowrap}
 .chip.actif{border-color:var(--green);color:var(--green)}
+/* Un bloc qui se replie : l'intitulé porte le compte de ce qu'il cache, pour qu'on sache
+   s'il vaut la peine d'être ouvert. Le triangle du navigateur suffit à dire l'état. */
+.bloc-replie{margin:6px 0}
+.bloc-replie>summary{display:flex;align-items:center;gap:9px;cursor:pointer;list-style:none;
+ padding:3px 0;color:var(--ink)}
+/* Mis en boîte flexible, le résumé perd le triangle du navigateur : on en pose un à nous,
+   qui pivote à l'ouverture — sans quoi rien ne dirait que le bloc se déplie. */
+.bloc-replie>summary::-webkit-details-marker{display:none}
+.bloc-replie>summary::before{content:'▸';flex:none;width:10px;font-size:12px;color:var(--muted);
+ transition:transform .12s}
+.bloc-replie[open]>summary::before{transform:rotate(90deg)}
+.bloc-replie>summary:hover .bloc-titre{color:var(--accent)}
+.bloc-replie .bloc-titre{font:700 15px 'Killam',Georgia,serif;letter-spacing:1px;text-transform:uppercase}
+.bloc-replie>summary .compte{margin-left:auto;min-width:22px;padding:1px 7px;border-radius:11px;
+ background:var(--panel-2);border:1px solid var(--line);font:700 11px system-ui;color:var(--muted);text-align:center}
+.bloc-replie[open]>summary{margin-bottom:4px}
+/* La bibliothèque des effets, en tête de l'onglet Talents. */
+.biblio{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:0 0 14px;background:var(--panel-2)}
+.effet-fiche{padding:8px 0;border-top:1px solid var(--line)}
+.effet-fiche:first-child{border-top:0}
+.effet-tete{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.effet-tete strong{font:700 14px system-ui}
+.effet-fiche p{margin:3px 0 0;font-size:13px;line-height:1.45}
+.effet-params{margin:5px 0 0;padding-left:18px;font-size:12px;color:var(--muted)}
+.effet-params li{margin:1px 0;border:0;padding:0}
 /* ---------- Le portrait, rond comme sur la carte ---------- */
 .jeton-rond{flex:none;display:grid;place-items:center;overflow:hidden;border-radius:50%;
  background:#284a40;border:1px solid #9fc8b1;color:#cfe3d6;font-family:'Killam',Georgia,serif}

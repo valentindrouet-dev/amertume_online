@@ -123,6 +123,11 @@ talentsPage.innerHTML='<section class="cat-panel panel">'
  +'<select id="talent-family" aria-label="Classe"></select>'
  +'<select id="talent-sort" aria-label="Tri"><option value="niveau">Tri : niveau ↑</option>'
  +'<option value="niveau-">Tri : niveau ↓</option><option value="nom">Tri : nom</option></select></div>'
+ /* La bibliothèque des effets : ce que le moteur sait faire, replié par défaut. On y lit
+    ce qu'un effet fait et les réglages qu'il demande, avant d'aller créer le talent qui
+    s'en servira. */
+ +'<details class="bloc-replie biblio"><summary><span class="bloc-titre">📖 Bibliothèque des effets</span>'
+ +'<span class="compte" id="biblio-compte"></span></summary><div id="biblio-effets"></div></details>'
  +'<div class="cat-cols" id="talent-cols"></div></section>';
 const bestiaryPage=document.createElement('main');bestiaryPage.id='bestiary-page';
 bestiaryPage.innerHTML='<section class="cat-panel panel">'
@@ -772,7 +777,34 @@ function talentRow(t,i){const rang=document.createElement('div');rang.className=
   suppr);
  const bloc=document.createElement('div');bloc.className='cat-entry';
  rang.append(pill,outils);bloc.append(rang,detail);return bloc}
-function renderTalents(){const cols=$('talent-cols');if(!cols)return;cols.replaceChildren();
+/* Ce que le moteur sait appliquer, tel qu'il le déclare : le nom de la mécanique, ce
+   qu'elle fait, et les réglages qu'elle attend avec leurs bornes. Rien n'est écrit ici en
+   double — tout vient de la déclaration, donc la liste ne peut pas mentir. */
+function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
+ const codes=Object.values(TALENTS_CODES);
+ const compte=$('biblio-compte');
+ if(compte)compte.textContent=codes.length;
+ boite.replaceChildren();
+ const porteurs=cle=>(catalog.talents||[]).filter(t=>t&&t.effet===cle);
+ codes.forEach(c=>{const bloc=document.createElement('div');bloc.className='effet-fiche';
+  const tete=document.createElement('div');tete.className='effet-tete';
+  const nom=document.createElement('strong');nom.textContent=c.nom;
+  const pris=porteurs(c.cle);
+  const tag=document.createElement('span');tag.className='tag';
+  tag.textContent=pris.length?pris.map(t=>t.name).join(', '):'aucun talent ne s’en sert';
+  tete.append(nom,tag);
+  const quoi=document.createElement('p');quoi.className='muted';quoi.textContent=c.resume||c.aide||'';
+  bloc.append(tete,quoi);
+  if((c.params||[]).length){const ul=document.createElement('ul');ul.className='effet-params';
+   c.params.forEach(p=>{const li=document.createElement('li');
+    li.textContent=p.nom+' — '+(p.type==='nombre'?'nombre de '+p.min+' à '+p.max+', défaut '+p.defaut
+     :'choix : '+(p.options||[]).map(([,n])=>n).join(', '));
+    ul.append(li)});
+   bloc.append(ul)}
+  boite.append(bloc)});
+ if(!codes.length){const v=document.createElement('p');v.className='muted';
+  v.textContent='Aucun effet câblé pour l’instant.';boite.append(v)}}
+function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!cols)return;cols.replaceChildren();
  const q=($('talent-search').value||'').trim().toLowerCase();
  const familles=talentFamilies(),sel=$('talent-family'),avant=sel.value;
  sel.replaceChildren(new Option('Toutes classes',''));

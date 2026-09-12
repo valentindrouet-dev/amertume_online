@@ -127,7 +127,13 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  const large=cv.clientWidth,haut=cv.clientHeight;if(!large||!haut)return;
  // Toile à la résolution de l'écran : le bord du polygone est tracé au pixel près.
  const ech=Math.min(2,window.devicePixelRatio||1);
- const W=Math.max(1,Math.min(2400,Math.round(large*ech))),H=Math.max(1,Math.round(W*haut/large));
+ /* La toile suivait la seule taille du cadre, et le zoom l'agrandissait ensuite : à deux
+    cents pour cent, chaque pixel de toile en couvrait deux à l'écran, et le bord du champ
+    de vision — pourtant tracé d'un trait exact — montait en marches d'escalier. Elle suit
+    donc le zoom, jusqu'à un plafond de pixels : au-delà, le prix de la repeinte ne vaut
+    plus la finesse gagnée. */
+ const zoom=Math.max(1,typeof mapZoom==='number'&&mapZoom>0?mapZoom:1);
+ const W=Math.max(1,Math.min(4096,Math.round(large*ech*zoom))),H=Math.max(1,Math.round(W*haut/large));
  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
  const ctx=cv.getContext('2d');
  // Le MJ garde une vue lisible ; le joueur ne voit rien de l'inexploré.
