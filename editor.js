@@ -751,11 +751,11 @@ function talentRow(t,i){const rang=document.createElement('div');rang.className=
  const pill=talentPill(t);pill.classList.add('cliquable');
  const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev);
  const detail=document.createElement('div');detail.className='cat-detail';detail.hidden=true;
- const ligne=document.createElement('span');
- ligne.textContent=talentFamily(t)+' · '+talentType(t)[2]+' · niveau '+(t.level||1);
+ /* La languette dit déjà le nom, le type et le niveau, et la colonne dit la classe :
+    la ligne qui les répétait en tête du dépliant ne servait à rien. */
  const effet=document.createElement('span');effet.className='muted';
  effet.textContent=t.effects||'Effet à préciser.';
- detail.append(ligne,effet);
+ detail.append(effet);
  if(t.notes){const n=document.createElement('span');n.className='muted';n.textContent=t.notes;detail.append(n)}
  const porteurs=actors.filter(a=>(a.talents||[]).includes(t.id)).map(a=>a.name);
  const qui=document.createElement('span');qui.className='muted';
