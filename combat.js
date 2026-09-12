@@ -690,6 +690,16 @@ function infligeEtat(a,etat){if(!a||!etat)return false;
  if(cumulable(etat)){ajouteEtat(a,etat,1);return true}
  if(hasState(a,etat))return false;
  setState(a,etat,true);return true}
+/* Les talents dont l'effet est écrit dans le code. Un talent créé à la main dans l'onglet
+   Talents s'y reconnaît à son nom réduit — sans accents, sans casse, sans ponctuation —
+   de sorte qu'il n'a aucun identifiant particulier à porter : « Lamevent », « lame-vent »
+   ou « LAMEVENT » trouvent le même effet. Ce que le code sait faire est déclaré ici ; ce
+   qu'il en fait à l'écran vit dans la table de jeu. */
+function cleTalent(nom){return String(nom||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+ .toLowerCase().replace(/[^a-z0-9]/g,'')}
+const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',bouton:'⚡ Lamevent',
+ aide:'En terminant un mouvement : ton bonus de dégâts à un adversaire au contact.'}};
+function talentCode(t){return t&&TALENTS_CODES[cleTalent(t.name)]||null}
 /* L'Onde purge l'affection la plus fraîche — celle qui vient de tomber — et se consume.
    Les états bénéfiques et le coma ne s'en vont jamais ainsi. */
 function ondeCures(a){const l=statesOf(a).filter(e=>!ONDE_EXCLUS.includes(e));return l.length?l[l.length-1]:null}
@@ -729,6 +739,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,encreDroite,snapToCarves,ENCRE_TOL,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,traitContours,carveTrait,carveTraits,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,cleTalent,talentCode,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

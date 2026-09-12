@@ -194,7 +194,9 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .cat-pill.k-alpha{background:#e8d3cb}
 .cat-pill.k-solitaire{background:#efdcc2}
 .cat-pill.k-boss{background:#e2d0e8}
-.cat-pill .tag{font:600 12px system-ui;color:#4a3f31;opacity:.85;white-space:nowrap}
+/* L'étiquette d'un objet est plus courte qu'un dé : sans plancher, la languette d'un
+   objet s'asseyait quatre points plus bas que celle d'une arme. */
+.cat-pill .tag{display:flex;align-items:center;min-height:22px;font:600 12px system-ui;color:#4a3f31;opacity:.85;white-space:nowrap}
 .cat-pill .chev{font-size:15px;opacity:.5;transition:transform .15s}
 .cat-pill.ouvert .chev{transform:rotate(180deg)}
 /* Dés d’Amertume : la recette du jeu, en CSS pur — 22 px, rayon 5, pastille centrale de 6.
@@ -224,6 +226,10 @@ button.btn-action{width:auto;height:36px;padding:0 20px;display:inline-flex;alig
  font:700 14px/1 system-ui;background:#3f7bc0;border-color:#3f7bc0;color:#f2f7fc}
 .etat-actions button.btn-action{padding:0 18px}button.btn-action:hover:not(:disabled){background:#4d8bd2;border-color:#4d8bd2}button.btn-action:disabled{background:var(--disabled);border-color:var(--disabled);color:var(--disabled-ink)}
 /* L'analyse porte le même bouton, en violet : même barre, même dessin, autre nature. */
+/* Un talent tient le même bouton, en vert sombre : ce n'est ni une attaque ni un geste
+   du MJ, c'est un pouvoir propre au combattant. */
+button.btn-talent{background:#3f7d5e;border-color:#3f7d5e;color:#f1f9f4}
+button.btn-talent:hover:not(:disabled){background:#4b8f6d;border-color:#4b8f6d}
 button.btn-analyse{background:#9b7ad4;border-color:#9b7ad4;color:#fbf8ff}
 button.btn-analyse:hover:not(:disabled){background:#ab8ce0;border-color:#ab8ce0}
 button.btn-analyse.on{background:#8264bb;border-color:#8264bb}
@@ -247,7 +253,11 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .cible.on{box-shadow:inset 0 0 0 2px #5f9b74;background:#5f9b7440}
 .cible.adverse.on{box-shadow:inset 0 0 0 2px #c2604f;background:#c2604f40}
 .targets .muted{font-size:13px}.attack-card .dice-results:empty{display:none}.attack-card .summary:empty{display:none}.attack-extras{display:flex;align-items:center;gap:8px}.attack-extras label{flex:none}.attack-extras select{margin:0;width:auto;flex:1}.attack-extras #roll{flex:none;font-size:15px;padding:6px 10px}.attack-card .rules{margin-top:2px}
-.cat-pill .ecu{flex:none;width:23px;height:28px}.cat-pill .ecu b{font-size:12px}
+/* Toutes les languettes du catalogue tiennent la même hauteur. Elle était dictée par le
+   plus haut de leurs contenus, et l'écu de DEF dépassait le dé de six points : les armures
+   s'en trouvaient plus épaisses que les armes. L'écu se règle donc sur le dé, sa forme
+   gardée — un écu est plus haut que large. */
+.cat-pill .ecu{flex:none;width:18px;height:22px}.cat-pill .ecu b{font-size:10px}
 .cat-tools{display:flex;gap:2px}
 .ico{border:0;background:transparent;color:var(--muted);padding:4px 6px;font-size:14px;line-height:1;border-radius:6px}
 .ico:hover{background:var(--hover);color:var(--ink)}

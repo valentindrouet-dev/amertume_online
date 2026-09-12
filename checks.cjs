@@ -258,6 +258,15 @@ for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
  const beni={hp:10,max:10,states:['Onde'],bleed:0,cumuls:{}};
  assert.equal(infligeEtat(beni,'Blindage'),true);  // Un état bénéfique ne la consume pas.
  assert.ok(hasState(beni,'Onde'));}
+/* Un talent codé se reconnaît à son nom, quelle qu'en soit l'orthographe de saisie. */
+{const {cleTalent,talentCode,TALENTS_CODES}=require('./combat.js');
+ assert.equal(cleTalent('Lamevent'),'lamevent');
+ assert.equal(cleTalent('  LAME-VENT '),'lamevent');
+ assert.equal(cleTalent('Lâmevént'),'lamevent');
+ assert.equal(talentCode({name:'lamevent'}),TALENTS_CODES.lamevent);
+ assert.equal(talentCode({name:'Lame de vent'}),null);   // Un autre nom, un autre talent.
+ assert.equal(talentCode(null),null);
+ assert.equal(TALENTS_CODES.lamevent.cle,'lamevent');}
 /* Un angle taillé à l'outil Découper reste droit, même au beau milieu d'un tracé libre. */
 const OVALE=Array.from({length:48},(_,i)=>{const a=i/48*2*Math.PI;return [50+18*Math.cos(a),50+14*Math.sin(a)]});
 const BLOC=creuse([{x:10,y:10,w:80,h:60}],OVALE,CARVE_STEP);
@@ -527,4 +536,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('344 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('351 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
