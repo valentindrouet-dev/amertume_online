@@ -390,7 +390,18 @@ function poolBadges(pool){const out=document.createElement('span');out.className
   const d=document.createElement('i');d.className='die-sq valeur'+(DIE_LIGHT_PIP.includes(c)?' clair':'');
   d.style.setProperty('--face',dieFace(c,false));d.textContent='?';d.title=types[c];out.append(d)}});
  return out}
-function dicePips(dice){const out=document.createElement('span');out.className='pips';
+/* L'état qu'une arme inflige se lit à gauche de ses dés, à la même taille et sur la même
+   ligne : on voit d'un coup ce que le coup pose, sans ouvrir la fiche. Trois états n'ont
+   pas de jeton peint — ils se contentent alors de leur initiale, au même gabarit. */
+function etatPastille(etat){if(!etat)return null;
+ const s=document.createElement('span');s.className='etat-inflige';
+ s.title='Inflige '+etat;s.setAttribute('role','img');s.setAttribute('aria-label','Inflige '+etat);
+ const nom=STATE_ICONS[etat];
+ if(nom){const im=document.createElement('img');im.src=imgUrl(nom+'.png');im.alt='';im.draggable=false;s.append(im)}
+ else{s.classList.add('sans-jeton');s.textContent=etat[0]}
+ return s}
+function dicePips(dice,etat){const out=document.createElement('span');out.className='pips';
+ const e=etatPastille(etat);if(e)out.append(e);
  DIE_ORDER.forEach(c=>{for(let n=0;n<(dice&&dice[keys[c]]||0);n++){
   const d=document.createElement('i');d.className='die-sq';
   d.style.setProperty('--face',dieFace(c));d.title=types[c];out.append(d)}});
@@ -405,7 +416,7 @@ function gearPill(o){const col=itemColumn(o);
  if(col==='armor')p.append(shieldBadge(o.def||0));
  else if(col==='object'){const t=document.createElement('span');t.className='tag';
   t.textContent=(o.effects||o.notes||'—').slice(0,22);p.append(t)}
- else p.append(dicePips(o.dice));
+ else p.append(dicePips(o.dice,o.etat));
  const info=[o.etat?'inflige '+o.etat:'',o.effects,(o.traits||[]).join(', '),o.notes].filter(Boolean).join(' · ');
  p.title=info?o.name+' — '+info:o.name;
  return p}
@@ -451,7 +462,7 @@ function armoryRow(a,i){const rang=document.createElement('div');rang.className=
  if(col==='armor')pill.append(shieldBadge(a.def||0));
  else if(col==='object'){const t=document.createElement('span');t.className='tag';
   t.textContent=(a.effects||a.notes||'—').slice(0,22);pill.append(t)}
- else pill.append(dicePips(a.dice));
+ else pill.append(dicePips(a.dice,a.etat));
  pill.onclick=()=>openItem(i);
  const crayon=document.createElement('button');crayon.className='ico';crayon.textContent='✎';
  crayon.title='Modifier';crayon.setAttribute('aria-label','Modifier '+a.name);crayon.onclick=()=>openItem(i);

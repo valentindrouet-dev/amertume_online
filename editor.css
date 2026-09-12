@@ -203,7 +203,14 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
    l'un se retrouve écrasé d'un pixel, sa pastille avec. Ici la boîte fait 22 × 22, point.
    La pastille est calée au demi-pixel près par une marge entière, jamais par « auto ». */
 .pips{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
-.die-sq{box-sizing:border-box;flex:0 0 22px;width:22px;height:22px;aspect-ratio:1;border:0;background:var(--face) center/100% 100% no-repeat;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}/* Un dé qui parle : la valeur remplace la pastille, en clair sur les faces sombres. */.die-sq.valeur{display:grid;place-items:center;font:800 12px/1 system-ui;color:rgba(0,0,0,.6)}.die-sq.valeur.clair{color:rgba(255,255,255,.8)}/* Carte d'attaque : les dés de l'arme, le bonus, le bouton. Rien d'autre à l'écran. */.attack-card{display:flex;flex-direction:column;gap:9px}.attack-pool{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:30px}/* Dans la carte d'attaque, les dés sont plus gros : c'est ce qu'on regarde avant de frapper. */.attack-card .pips{gap:7px}.attack-card .die-sq{flex-basis:30px;width:30px;height:30px;font-size:16px}.attack-dmg{font:700 17px system-ui;color:var(--red-mat)}/* Un bouton court et de largeur fixe, quelle que soit l'arme équipée. *//* Ce qui coûte l'Action porte le bleu de l'attaque : frapper et se dégeler dépensent la
+/* Le jeton d'état prend exactement le gabarit d'un dé — il hérite des mêmes règles de
+   taille — et se pose en tête de la ligne, séparé du reste par un filet discret. */
+.pips .etat-inflige{order:-1;display:grid;place-items:center;overflow:hidden;border-radius:5px;
+ background:none;filter:none;margin-right:3px}
+.pips .etat-inflige img{width:100%;height:100%;object-fit:contain;display:block}
+.pips .etat-inflige.sans-jeton{background:var(--panel-2);border:1px solid var(--line);
+ font:700 12px/1 system-ui;color:var(--muted)}
+.die-sq,.pips .etat-inflige{box-sizing:border-box;flex:0 0 22px;width:22px;height:22px;aspect-ratio:1;border:0;background:var(--face) center/100% 100% no-repeat;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}/* Un dé qui parle : la valeur remplace la pastille, en clair sur les faces sombres. */.die-sq.valeur{display:grid;place-items:center;font:800 12px/1 system-ui;color:rgba(0,0,0,.6)}.die-sq.valeur.clair{color:rgba(255,255,255,.8)}/* Carte d'attaque : les dés de l'arme, le bonus, le bouton. Rien d'autre à l'écran. */.attack-card{display:flex;flex-direction:column;gap:9px}.attack-pool{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:30px}/* Dans la carte d'attaque, les dés sont plus gros : c'est ce qu'on regarde avant de frapper. */.attack-card .pips{gap:7px}.attack-card .die-sq,.attack-card .pips .etat-inflige{flex-basis:30px;width:30px;height:30px;font-size:16px}.attack-dmg{font:700 17px system-ui;color:var(--red-mat)}/* Un bouton court et de largeur fixe, quelle que soit l'arme équipée. *//* Ce qui coûte l'Action porte le bleu de l'attaque : frapper et se dégeler dépensent la
    même activation, et se ressemblent donc. Ce qui coûte le Mouvement — se relever —
    garde le bouton neutre, pour qu'on lise le coût sur la forme du bouton. */
 /* Tous les boutons d'Action ont la même hauteur, l'émoji de l'Analyse compris :
@@ -352,7 +359,7 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 button.choix-attaque{height:36px;display:inline-flex;align-items:center;gap:8px;padding:0 14px;
  font:700 13px/1 system-ui;letter-spacing:0;border-radius:7px}
 button.choix-attaque .pips{display:flex;gap:3px}
-button.choix-attaque .die-sq{flex:0 0 17px;width:17px;height:17px}
+button.choix-attaque .die-sq,button.choix-attaque .pips .etat-inflige{flex:0 0 17px;width:17px;height:17px}
 button.choix-attaque .loin{font-size:15px;line-height:1;opacity:.9}
 button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 /* ---------- Corriger une valeur là où elle est lue ---------- */
@@ -422,6 +429,6 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 .die-ajout{flex:0 0 22px;width:22px;height:22px;padding:0;border:1px dashed var(--line);
  border-radius:5px;background:transparent;color:var(--muted);font:700 14px/1 system-ui}
 .die-ajout:hover{border-color:var(--accent);color:var(--accent)}
-.best-attaque .die-sq{cursor:pointer;padding:0}
+.best-attaque .die-sq,.best-attaque .pips .etat-inflige{cursor:pointer;padding:0}
 .best-notes{margin:0;font-size:13px;white-space:pre-wrap}
 @media (max-width:900px){#heroes-page,#talents-page,#armory-page,#bestiary-page{padding:14px}.cat-cols,.hero-grid{grid-template-columns:1fr}}
