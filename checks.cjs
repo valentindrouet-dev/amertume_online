@@ -335,18 +335,25 @@ for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
  assert.equal(talentCode(null),null);
  const code=TALENTS_CODES.lamevent;
  // Les réglages sont relus au travers de leur déclaration : bornés, et jamais absents.
- assert.deepEqual(paramsTalent({effet:'lamevent'}),{cibles:1,bonus:0});
- assert.deepEqual(paramsTalent({effet:'lamevent',params:{cibles:'3',bonus:'7'}}),{cibles:3,bonus:7});
- assert.deepEqual(paramsTalent({effet:'lamevent',params:{cibles:99,bonus:-5}}),{cibles:6,bonus:0});
- assert.deepEqual(paramsTalent({effet:'lamevent',params:{cibles:'abc'}}),{cibles:1,bonus:0});
+ assert.deepEqual(paramsTalent({effet:'lamevent'}),{cibles:'1',bonus:0,etat:'',mode:'plus'});
+ assert.deepEqual(paramsTalent({effet:'lamevent',params:{cibles:'tous',bonus:'7',etat:'Feu',mode:'place'}}),
+  {cibles:'tous',bonus:7,etat:'Feu',mode:'place'});
+ /* Un choix hors de la liste, un nombre hors des bornes, ou un talent enregistré avant que
+    ces réglages n'existent : chacun retombe sur son défaut sans rien casser. */
+ assert.deepEqual(paramsTalent({effet:'lamevent',params:{cibles:1,bonus:-5,etat:'Dragon',mode:'x'}}),
+  {cibles:'1',bonus:0,etat:'',mode:'plus'});
  assert.equal(paramsTalent({effet:''}),null);
  assert.equal(reglageTalent(code,{},'inexistant'),undefined);
  /* La phrase d'un effet est bâtie par le moteur, réglages en gras : la bibliothèque et la
     fiche du talent la lisent au même endroit, elle ne peut donc pas mentir. */
  const {phraseTalent}=require('./combat.js');
  assert.match(phraseTalent('lamevent'),/<b>bonus de dégâts<\/b> à <b>un<\/b> adversaire au contact/);
- assert.match(phraseTalent('lamevent',{cibles:3,bonus:2}),/<b>bonus de dégâts \+ 2<\/b> à <b>trois<\/b> adversaires au contact/);
- assert.match(phraseTalent('lamevent',{cibles:99}),/<b>six<\/b> adversaires/);   // Borné comme le réglage.
+ assert.match(phraseTalent('lamevent',{cibles:'2',bonus:2,etat:'Gel'}),
+  /<b>bonus de dégâts \+ 2<\/b> et <b>Gel<\/b> à <b>deux<\/b> adversaires au contact/);
+ assert.match(phraseTalent('lamevent',{cibles:'tous'}),/<b>tous les adversaires<\/b> au contact/);
+ // L'état à la place des dégâts : la phrase le dit, et le moteur ne retire alors aucun PV.
+ assert.match(phraseTalent('lamevent',{cibles:'tous',etat:'Feu',mode:'place'}),
+  /inflige <b>Feu<\/b> à <b>tous les adversaires<\/b> au contact, <b>sans dégâts<\/b>/);
  assert.equal(phraseTalent('inconnu'),'');}
 /* Un angle taillé à l'outil Découper reste droit, même au beau milieu d'un tracé libre. */
 const OVALE=Array.from({length:48},(_,i)=>{const a=i/48*2*Math.PI;return [50+18*Math.cos(a),50+14*Math.sin(a)]});
@@ -617,4 +624,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('407 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('409 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

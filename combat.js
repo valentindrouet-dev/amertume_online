@@ -752,14 +752,27 @@ function cleTalent(nom){return String(nom||'').normalize('NFD').replace(/[\u0300
    ainsi qu'on le lit dans la bibliothèque comme sur la fiche du talent, et qu'on voit d'un
    coup ce qu'un réglage change. Le texte est bâti par le moteur, donc il ne peut pas
    mentir sur ce qu'il fera. */
-const EN_MOTS=['aucun','un','deux','trois','quatre','cinq','six'];
+/* Les états qu'un effet peut poser. Le coma n'en est pas : c'est ce qui arrive à zéro
+   point de vie. La liste complète, avec « Aucun » et « Coma », vit dans la table de jeu —
+   elle y sert le menu du clic droit, qui n'a pas le même office. */
+const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Gel',
+ 'Invisible','Onde','Poison','Saignée','Vie','Affaibli'];
+const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
 const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',bouton:'⚡ Lamevent',
  aide:'En terminant un mouvement : ton bonus de dégâts aux adversaires au contact.',
- params:[{cle:'cibles',nom:'Adversaires frappés',type:'nombre',defaut:1,min:1,max:6},
-  {cle:'bonus',nom:'Dégâts en plus du bonus',type:'nombre',defaut:0,min:0,max:99}],
- phrase(p){const n=Math.max(1,Math.min(6,(p&&p.cibles)|0||1)),b=(p&&p.bonus)|0;
+ params:[{cle:'cibles',nom:'Adversaires frappés',type:'choix',defaut:'1',
+   options:[['1','Un'],['2','Deux'],['tous','Tous ceux au contact']]},
+  {cle:'bonus',nom:'Dégâts en plus du bonus',type:'nombre',defaut:0,min:0,max:99},
+  {cle:'etat',nom:'État infligé',type:'choix',defaut:'',options:CHOIX_ETAT},
+  {cle:'mode',nom:'Cet état vient',type:'choix',defaut:'plus',
+   options:[['plus','en plus des dégâts'],['place','à la place des dégâts']]}],
+ phrase(p){const q=p&&p.cibles,b=(p&&p.bonus)|0,e=p&&p.etat,place=e&&(p&&p.mode)==='place';
+  const qui=q==='tous'?'<b>tous les adversaires</b> au contact'
+   :'<b>'+(q==='2'?'deux':'un')+'</b> adversaire'+(q==='2'?'s':'')+' au contact';
+  if(place)return 'En terminant un mouvement, le porteur inflige <b>'+e+'</b> à '+qui
+   +', <b>sans dégâts</b>.';
   return 'En terminant un mouvement, le porteur inflige son <b>bonus de dégâts'
-   +(b?' + '+b:'')+'</b> à <b>'+(EN_MOTS[n]||n)+'</b> adversaire'+(n>1?'s':'')+' au contact.'}}};
+   +(b?' + '+b:'')+'</b>'+(e?' et <b>'+e+'</b>':'')+' à '+qui+'.'}}};
 /* L'ordre canonique des cibles. Quand plusieurs sont éligibles à une attaque ou à un
    effet, on les prend toujours dans le même ordre, et cet ordre est écrit une fois pour
    toutes : les Boss d'abord, puis les Solitaires, les Alphas et enfin les sbires ; à type
@@ -840,6 +853,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,encreDroite,snapToCarves,ENCRE_TOL,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,traitContours,carveTrait,carveTraits,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,escalierMask,redresseEscaliers,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,EN_MOTS,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,escalierMask,redresseEscaliers,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,ETATS_JEU,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

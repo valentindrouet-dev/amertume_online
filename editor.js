@@ -856,14 +856,14 @@ function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talen
   ...actors.filter(a=>a.hero).map(a=>(a.role||'').split('·')[0].trim()).filter(Boolean),
   talentFamily(t)])];
  const famille=talentFamily(t);
- $('talent-fields').innerHTML='<div class="edit-grid">'
+ $('talent-fields').innerHTML='<div class="edit-grid quatre">'
   +field('Nom','name',t.name,'text','required maxlength="120"')
   /* Un vrai menu, et non plus une liste de suggestions : un datalist ne propose que ce
      qui ressemble à ce qui est déjà écrit, et le champ arrivant rempli de « Génériques »,
      il n'offrait que « Génériques ». Une classe inédite reste possible, par la dernière
      entrée du menu, qui ouvre un champ libre. */
   +sel('Classe','famille',famille,[...familles.map(f=>[f,f]),[AUTRE_CLASSE,'✎ Autre classe…']])
-  +sel('Nature','type',t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]))
+  +sel('Type','type',t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]))
   +field('Niveau','level',t.level||1,'number','min="1" max="20"')+'</div>'
   +'<div id="famille-autre" hidden><label>Nom de la nouvelle classe<input name="familleLibre" maxlength="60" value=""></label></div>'
   +'<label>Effet<textarea name="effects" rows="3" maxlength="600">'+esc(t.effects||'')+'</textarea></label>'
@@ -873,8 +873,7 @@ function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talen
   +'<h2 class="sous-titre">Effet appliqué par le moteur</h2>'
   +sel('Mécanique','effet',t.effet||'',[['','— Aucun : talent descriptif —'],
    ...Object.values(TALENTS_CODES).map(c=>[c.cle,c.nom])])
-  +'<div id="talent-reglages"></div>'
-  +'<label>Notes<textarea name="notes" rows="2" maxlength="600">'+esc(t.notes||'')+'</textarea></label>';
+  +'<div id="talent-reglages"></div>';
  /* « Autre classe… » ouvre le champ libre et lui donne la main ; revenir sur une classe
     connue le referme, et ce qui y était tapé ne compte plus. */
  const fam=$('talent-form').elements.famille;
@@ -890,7 +889,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.name=f.name.value.trim()||'Talent';
  t.famille=(f.famille.value===AUTRE_CLASSE?f.familleLibre.value:f.famille.value).trim()||GENERIQUES;
  t.type=f.type.value;t.level=num(f.level.value,1,20);
- t.effects=f.effects.value.trim();t.notes=f.notes.value.trim();
+ t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
  t.effet=TALENTS_CODES[f.effet.value]?f.effet.value:'';
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent()}):{};
