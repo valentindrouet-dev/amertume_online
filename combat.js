@@ -653,22 +653,39 @@ function skillRoll(bonus,roll,plafond=1000){const des=[];let reussites=0,reste=1
 function statesOf(a){return Array.isArray(a&&a.states)?a.states:[]}
 function hasState(a,etat){return statesOf(a).includes(etat)}
 function setState(a,etat,pose){const reste=statesOf(a).filter(x=>x!==etat);
- a.states=pose?[...reste,etat]:reste;return a.states}
+ a.states=pose?[...reste,etat]:reste;
+ // Un état qui s'en va emporte son compte : il ne doit pas revenir chargé de ses crans.
+ if(!pose&&a){if(etat==='Saignée')a.bleed=0;else if(a.cumuls)delete a.cumuls[etat]}
+ return a.states}
 /* Les états et ce qu'ils empêchent ou déclenchent. Tout ce qui se calcule vit ici ;
    l'interface ne fait que déclencher au bon moment et raconter. */
 const ONDE_EXCLUS=['Blindage','Invisible','Onde','Vie','Coma'];
 function frozenSolid(a){return hasState(a,'Gel')||hasState(a,'Au sol')}
 function blinded(a){return hasState(a,'Aveugle')}
-/* La saignée se cumule : chaque aggravation vaut un point, et à zéro l'état s'en va. */
-function bleedOf(a){return hasState(a,'Saignée')?Math.max(1,Math.trunc(a&&a.bleed)||1):0}
-function addBleed(a,n){const v=Math.max(0,Math.min(99,bleedOf(a)+Math.trunc(n)));
- a.bleed=v;setState(a,'Saignée',v>0);return v}
+/* Quatre états s'empilent : chaque aggravation vaut un cran, et à zéro l'état s'en va.
+   Leur effet joue autant de fois qu'ils portent de crans — trois crans de Feu, trois dés
+   de brûlure. La saignée garde le champ qui était le sien avant les autres : les parties
+   déjà enregistrées le portent, et tout ce qui s'appuie dessus continue de le lire. Les
+   trois autres logent ensemble dans « cumuls ». */
+const ETATS_CUMULES=['Saignée','Feu','Foudre','Poison'];
+function cumulable(etat){return ETATS_CUMULES.includes(etat)}
+function compteEtat(a,etat){if(!hasState(a,etat))return 0;
+ if(!cumulable(etat))return 1;
+ const v=etat==='Saignée'?(a&&a.bleed):(a&&a.cumuls&&a.cumuls[etat]);
+ return Math.max(1,Math.trunc(v)||1)}
+function ajouteEtat(a,etat,n){if(!a||!cumulable(etat))return 0;
+ const v=Math.max(0,Math.min(99,compteEtat(a,etat)+Math.trunc(n)));
+ if(etat==='Saignée')a.bleed=v;
+ else{const c=a.cumuls||(a.cumuls={});if(v>0)c[etat]=v;else delete c[etat]}
+ setState(a,etat,v>0);return v}
+function bleedOf(a){return compteEtat(a,'Saignée')}
+function addBleed(a,n){return ajouteEtat(a,'Saignée',n)}
 /* Poser sur un combattant l'état qu'une arme vient de lui infliger. La saignée se
    cumule — un point de plus à chaque coup qui porte —, les autres se posent une fois et
    y restent. Rend vrai quand quelque chose a changé, pour que le journal ne raconte que
    ce qui est arrivé. */
 function infligeEtat(a,etat){if(!a||!etat)return false;
- if(etat==='Saignée'){addBleed(a,1);return true}
+ if(cumulable(etat)){ajouteEtat(a,etat,1);return true}
  if(hasState(a,etat))return false;
  setState(a,etat,true);return true}
 /* L'Onde purge l'affection la plus fraîche — celle qui vient de tomber — et se consume.
@@ -710,6 +727,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,encreDroite,snapToCarves,ENCRE_TOL,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,traitContours,carveTrait,carveTraits,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

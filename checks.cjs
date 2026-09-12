@@ -232,11 +232,23 @@ for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
  const deux=armesAtt({weapons:['w1','w2']},stock);
  assert.deepEqual(deux[0].etats,['Saignée','Feu']);        // Les deux mains cumulent leurs états.
  assert.deepEqual(armesAtt({weapons:['w3']},stock)[0].etats,[]); // Une arme sans état n'en pose aucun.
- const cible={hp:10,max:10,states:[],bleed:0};
- assert.ok(infligeEtat(cible,'Feu'));assert.ok(hasState(cible,'Feu'));
- assert.ok(!infligeEtat(cible,'Feu'));                     // Deux fois le même : rien de neuf.
- assert.ok(infligeEtat(cible,'Saignée'));assert.equal(bleedOf(cible),1);
- assert.ok(infligeEtat(cible,'Saignée'));assert.equal(bleedOf(cible),2);} // La saignée, elle, se cumule.
+ const {compteEtat,ajouteEtat,setState,cumulable}=require('./combat.js');
+ const cible={hp:10,max:10,states:[],bleed:0,cumuls:{}};
+ // Saignée, Feu, Foudre et Poison s'empilent ; les autres se posent une fois.
+ for(const e of ['Saignée','Feu','Foudre','Poison']){assert.ok(cumulable(e),e);
+  assert.ok(infligeEtat(cible,e));assert.equal(compteEtat(cible,e),1,e);
+  assert.ok(infligeEtat(cible,e));assert.equal(compteEtat(cible,e),2,e)}
+ assert.equal(bleedOf(cible),2);                           // L'ancien compte lit le nouveau.
+ assert.ok(infligeEtat(cible,'Gel'));assert.equal(compteEtat(cible,'Gel'),1);
+ assert.ok(!infligeEtat(cible,'Gel'));                     // Deux fois le même : rien de neuf.
+ assert.equal(compteEtat(cible,'Gel'),1);
+ // Un état levé ne revient pas chargé de ses crans.
+ setState(cible,'Feu',false);assert.equal(compteEtat(cible,'Feu'),0);
+ assert.ok(infligeEtat(cible,'Feu'));assert.equal(compteEtat(cible,'Feu'),1);
+ setState(cible,'Saignée',false);assert.equal(bleedOf(cible),0);assert.equal(cible.bleed,0);
+ // On redescend aussi : à zéro cran, l'état s'en va.
+ ajouteEtat(cible,'Poison',-1);assert.equal(compteEtat(cible,'Poison'),1);
+ ajouteEtat(cible,'Poison',-1);assert.ok(!hasState(cible,'Poison'));}
 /* Un angle taillé à l'outil Découper reste droit, même au beau milieu d'un tracé libre. */
 const OVALE=Array.from({length:48},(_,i)=>{const a=i/48*2*Math.PI;return [50+18*Math.cos(a),50+14*Math.sin(a)]});
 const BLOC=creuse([{x:10,y:10,w:80,h:60}],OVALE,CARVE_STEP);
@@ -506,4 +518,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('317 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('336 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

@@ -6,7 +6,7 @@ const num=(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0));
 const poolFrom=d=>keys.map(k=>num(d?.[k],0,12));
 const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
 // STATES et les jetons d'état vivent dans index.html, chargé avant ce fichier.
-function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks??=[{name:'Attaque de base',dice:diceFrom(a.pool),range:'contact',targets:'one',useOwnDamage:true,effects:{}}];a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.revealed??=false;return a}
+function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks??=[{name:'Attaque de base',dice:diceFrom(a.pool),range:'contact',targets:'one',useOwnDamage:true,effects:{}}];a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;return a}
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
@@ -1094,7 +1094,7 @@ function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,s
    leur nom — c'est tout ce qu'on a d'elles, et seulement quand aucun lien n'est enregistré. */
 /* Ce qui appartient au combat en cours, et que corriger un modèle ne doit pas effacer :
    la place sur la carte, la blessure, les états, les activations et la cible visée. */
-const EN_JEU=['id','x','y','hp','states','bleed','checks','target','revealed','hidden','activeAttack','template'];
+const EN_JEU=['id','x','y','hp','states','bleed','cumuls','checks','target','revealed','hidden','activeAttack','template'];
 /* Corriger un modèle corrige les créatures qui le portent déjà sur la table — nom,
    chiffres, attaques, portrait : tout le profil suit. Jusqu'ici seul le plafond de PV
    descendait, si bien qu'on changeait des dés d'attaque sans rien voir changer en jeu.
