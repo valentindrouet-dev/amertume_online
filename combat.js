@@ -450,15 +450,62 @@ function dpOpen(pts,tol){const n=pts.length,garde=new Uint8Array(n);
    if(d>bd){bd=d;best=k}}
   if(best>=0){garde[best]=1;pile.push([i,best],[best,j])}}
  return garde}
+/* Un escalier se reconnaît à son allure, sans rien savoir de ce qui l'a produit, et quelle
+   que soit la taille de ses marches : une suite d'arêtes qui alternent l'horizontale et la
+   verticale, chaque marche repartant du même côté que sa voisine. C'est l'escalier d'une
+   droite. Rien de ce qu'on dessine à la main n'a cette forme — au coin d'un rectangle,
+   l'arête suivante revient en arrière et casse l'alternance. Le premier jet de ce masque
+   demandait en plus une arête courte, pour ne toucher qu'à la trame : mais la trame fond
+   ses cases en rectangles, si bien qu'un escalier grossier n'a que de longues arêtes, et
+   la moitié des marches échappait au redressement. Les bords voulus droits, eux, sont
+   soustraits au trait exact : leurs sommets tombent dessus au millième, et un quart de
+   case les met hors d'atteinte. */
+function escalierMask(pts,pas,protege){const n=pts.length,m=new Uint8Array(n);
+ if(n<6)return m;
+ // La direction d'une arête, si elle suit un axe ; rien sinon.
+ const dir=i=>{const a=pts[i],b=pts[(i+1)%n],dx=b[0]-a[0],dy=b[1]-a[1];
+  if(Math.abs(dy)<1e-9&&Math.abs(dx)>1e-9)return [Math.sign(dx),0];
+  if(Math.abs(dx)<1e-9&&Math.abs(dy)>1e-9)return [0,Math.sign(dy)];
+  return null};
+ const meme=(u,v)=>!!u&&!!v&&u[0]===v[0]&&u[1]===v[1];
+ const colle=pas*.25;
+ for(let i=0;i<n;i++){
+  const avant=dir((i+n-1)%n),apres=dir(i);
+  if(!avant||!apres)continue;
+  // Deux arêtes du même axe ne font pas une marche : c'est une ligne brisée.
+  if((avant[0]&&apres[0])||(avant[1]&&apres[1]))continue;
+  /* Une marche appartient à un escalier si la marche voisine repart du même côté. Au coin
+     d'un rectangle, la suivante revient en arrière : le coin n'est donc pas marqué. */
+  if(!meme(dir((i+1)%n),avant)&&!meme(dir((i+n-2)%n),apres))continue;
+  if((protege||[]).some(r=>r&&r.w>0&&r.h>0&&distToRectEdge(pts[i],r)<=colle))continue;
+  m[i]=1}
+ return m}
+/* Un escalier est l'approximation d'une ligne : on rend donc la ligne. Chaque suite de
+   marches est allégée entre les deux sommets francs qui l'encadrent, à une case près —
+   une marche s'écarte de sa corde d'une case et demie au plus, elle disparaît donc ; un
+   angle voulu s'en écarte bien davantage et tient bon. Une courbe creusée garde ses
+   inflexions : chacun de ses quartiers est un escalier à part, et son ventre dépasse
+   largement le seuil. */
+function redresseEscaliers(pts,pas,protege){
+ if(!pts||pts.length<=6)return pts;
+ const m=escalierMask(pts,pas,protege);
+ if(!m.some(v=>v))return pts;
+ return simplifyRuns(pts,m,pas*1.2)}
 function smoothContours(contours,carves,tol,pas,protege){
- if(!carves||!carves.length)return (contours||[]).filter(c=>c.length>=3);
  return (contours||[]).map(c=>{
   // Un quadrilatère est déjà la forme voulue : on ne touche qu'aux contours en escalier.
   if(c.length<=6)return c;
-  const marque=carveMask(c,carves,pas*1.6,pas,protege);
-  if(!marque.some(v=>v))return c;
-  const rendu=snapToCarves(c,carves,marque,pas*1.6,pas);
-  return simplifyRuns(relaxContour(rendu.pts,pas,3,rendu.reste),rendu.marque,tol)}).filter(c=>c.length>=3)}
+  let sortie=c;
+  /* Quand le tracé qui a creusé est connu, on rend d'abord chaque sommet à sa place
+     exacte dessus : c'est plus fidèle que n'importe quel redressement. Les cartes creusées
+     avant que ce tracé ne soit gardé n'ont pas cette chance — le redressement d'escalier
+     qui suit est leur seul recours, et il ne coûte rien là où le premier a déjà fait son
+     œuvre : un bord rendu au tracé n'est plus aligné sur les axes, donc plus marqué. */
+  if(carves&&carves.length){
+   const marque=carveMask(c,carves,pas*1.6,pas,protege);
+   if(marque.some(v=>v)){const rendu=snapToCarves(c,carves,marque,pas*1.6,pas);
+    sortie=simplifyRuns(relaxContour(rendu.pts,pas,3,rendu.reste),rendu.marque,tol)}}
+  return redresseEscaliers(sortie,pas,protege)}).filter(c=>c.length>=3)}
 /* Export et import des couches d'une carte : zones de blocage, portes, zone de départ,
    adversaires pré-placés, tracés à main levée et découpes. Le même nettoyage sert dans les
    deux sens — ce qui sort est déjà propre, ce qui entre le devient. Rien de ce qui vient
@@ -701,11 +748,18 @@ function infligeEtat(a,etat){if(!a||!etat)return false;
    qu'il en fait à l'écran vit dans la table de jeu. */
 function cleTalent(nom){return String(nom||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
  .toLowerCase().replace(/[^a-z0-9]/g,'')}
+/* Chaque effet sait se dire en une phrase, avec ses parties réglables en gras : c'est
+   ainsi qu'on le lit dans la bibliothèque comme sur la fiche du talent, et qu'on voit d'un
+   coup ce qu'un réglage change. Le texte est bâti par le moteur, donc il ne peut pas
+   mentir sur ce qu'il fera. */
+const EN_MOTS=['aucun','un','deux','trois','quatre','cinq','six'];
 const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',bouton:'⚡ Lamevent',
  aide:'En terminant un mouvement : ton bonus de dégâts aux adversaires au contact.',
- resume:'En terminant un mouvement, le porteur infligerait son bonus de dégâts à un ou plusieurs adversaires au contact.',
  params:[{cle:'cibles',nom:'Adversaires frappés',type:'nombre',defaut:1,min:1,max:6},
-  {cle:'bonus',nom:'Dégâts en plus du bonus',type:'nombre',defaut:0,min:0,max:99}]}};
+  {cle:'bonus',nom:'Dégâts en plus du bonus',type:'nombre',defaut:0,min:0,max:99}],
+ phrase(p){const n=Math.max(1,Math.min(6,(p&&p.cibles)|0||1)),b=(p&&p.bonus)|0;
+  return 'En terminant un mouvement, le porteur inflige son <b>bonus de dégâts'
+   +(b?' + '+b:'')+'</b> à <b>'+(EN_MOTS[n]||n)+'</b> adversaire'+(n>1?'s':'')+' au contact.'}}};
 /* L'ordre canonique des cibles. Quand plusieurs sont éligibles à une attaque ou à un
    effet, on les prend toujours dans le même ordre, et cet ordre est écrit une fois pour
    toutes : les Boss d'abord, puis les Solitaires, les Alphas et enfin les sbires ; à type
@@ -742,6 +796,11 @@ function reglageTalent(code,params,cle){const d=(code&&code.params||[]).find(p=>
  return (d.options||[]).some(([k])=>k===v)?v:d.defaut}
 function paramsTalent(t){const code=talentCode(t);if(!code)return null;
  const out={};(code.params||[]).forEach(p=>out[p.cle]=reglageTalent(code,t&&t.params,p.cle));return out}
+/* La phrase d'un effet, réglages relus au travers de leur déclaration. Sans réglages
+   donnés, ce sont les valeurs par défaut : c'est ce que montre la bibliothèque. */
+function phraseTalent(cle,params){const code=TALENTS_CODES[cle];
+ if(!code||typeof code.phrase!=='function')return code&&code.aide||'';
+ return code.phrase(paramsTalent({effet:cle,params}))}
 /* L'Onde purge l'affection la plus fraîche — celle qui vient de tomber — et se consume.
    Les états bénéfiques et le coma ne s'en vont jamais ainsi. */
 function ondeCures(a){const l=statesOf(a).filter(e=>!ONDE_EXCLUS.includes(e));return l.length?l[l.length-1]:null}
@@ -781,6 +840,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,encreDroite,snapToCarves,ENCRE_TOL,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,traitContours,carveTrait,carveTraits,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,escalierMask,redresseEscaliers,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,EN_MOTS,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

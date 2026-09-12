@@ -190,12 +190,23 @@ function applyMapRatio(){const m=currentMap(),el=$('map');
    la même encre et le même liseré — c'est la même matière, elle doit se peindre pareil.
    Deux tracés plutôt qu'un seul : réunis, la règle pair-impair ferait un trou là où un
    trait croise une zone. */
+/* Zones et traits ne sont qu'une matière, et doivent se lire comme telle : un trait posé
+   sur une zone ne doit pas y redessiner son propre contour. On peint donc en deux temps —
+   tous les liserés d'abord, sans remplissage, puis tous les remplissages par-dessus. Le
+   liseré enterré sous la matière voisine s'en trouve couvert, et il ne reste que la
+   silhouette commune, comme lorsqu'on pose une zone sur une autre.
+   Les zones gardent la règle du pair-impair, qui leur creuse leurs trous ; les traits la
+   règle ordinaire, sans quoi un trait posé sur une zone y percerait un vide. */
 function svgMatiere(groupes,cls,wrap){const svg=document.createElementNS(nsSVG,'svg');
  svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
  if(wrap)svg.setAttribute('class',wrap);
- (groupes||[]).filter(g=>g&&g.length).forEach(g=>{const el=document.createElementNS(nsSVG,'path');
+ const utiles=(groupes||[]).map((g,i)=>[g,i]).filter(([g])=>g&&g.length);
+ const tracer=(g,i,role)=>{const el=document.createElementNS(nsSVG,'path');
   el.setAttribute('d',g.map(c=>'M'+c.map(p=>p[0].toFixed(3)+' '+p[1].toFixed(3)).join('L')+'Z').join(''));
-  el.setAttribute('fill-rule','evenodd');if(cls)el.setAttribute('class',cls);svg.append(el)});
+  el.setAttribute('fill-rule',i?'nonzero':'evenodd');
+  el.setAttribute('class',(cls?cls+' ':'')+role);svg.append(el)};
+ utiles.forEach(([g,i])=>tracer(g,i,'bord'));
+ utiles.forEach(([g,i])=>tracer(g,i,'fond'));
  return svg}
 function svgPath(contours,cls,wrap){const svg=document.createElementNS(nsSVG,'svg');
  svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');

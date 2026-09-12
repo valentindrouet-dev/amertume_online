@@ -78,7 +78,12 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
    le grossissement, et le tracé reste précis. */
 #map-canvas{--z:1}
 .shape{position:absolute;box-sizing:border-box;border-width:calc(2px / var(--z))}
-.shape.wall{background:none}/* La matière est peinte par le contour lissé commun à l'éditeur et à la table ; la zone elle-même ne sert plus qu'à la saisie. */.wall-skin{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}.wall-skin path{fill:#0b1114d9;stroke:#6c7d85;stroke-width:1.4;vector-effect:non-scaling-stroke}.shape.wall.selected{outline-style:dashed}.shape.cut{background:#7faddc38;border:2px dashed #7faddc;pointer-events:none}.shape.locked{cursor:not-allowed}.shape.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.foe.locked::after{right:-4px;top:-8px}
+.shape.wall{background:none}/* La matière est peinte par le contour lissé commun à l'éditeur et à la table ; la zone elle-même ne sert plus qu'à la saisie. */.wall-skin{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}/* Zones et traits sont une seule matière et se lisent comme telle. Le voile est porté par
+   la toile entière, non par chaque tracé : sans quoi deux formes superposées cumulaient
+   leurs transparences et la seconde se dessinait en plus sombre sur la première. */
+.wall-skin{opacity:.85}
+.wall-skin path.bord{fill:none;stroke:#6c7d85;stroke-width:1.4;vector-effect:non-scaling-stroke}
+.wall-skin path.fond{fill:#0b1114;stroke:none}.shape.wall.selected{outline-style:dashed}.shape.cut{background:#7faddc38;border:2px dashed #7faddc;pointer-events:none}.shape.locked{cursor:not-allowed}.shape.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.foe.locked::after{right:-4px;top:-8px}
 .shape.door{background:#c98a4b26;border:2px solid #c98a4b}.shape.door.keyed{background:#c98a4b1f;border-color:#f3d7a6;border-width:3px}
 /* Un passage secret : violet et pointillé, dans l'éditeur comme sur la table. */
 .shape.door.secret{background:#b06fd01f;border-color:#b06fd0;border-style:dashed;border-width:3px}.shape.door.keyed::before{content:'🔑';position:absolute;left:1px;top:0;font-size:10px}
@@ -230,6 +235,9 @@ button.btn-action{width:auto;height:36px;padding:0 20px;display:inline-flex;alig
    du MJ, c'est un pouvoir propre au combattant. */
 button.btn-talent{background:#3f7d5e;border-color:#3f7d5e;color:#f1f9f4}
 button.btn-talent:hover:not(:disabled){background:#4b8f6d;border-color:#4b8f6d}
+/* Une Réaction ne coûte pas l'Action du tour : elle porte le violet, comme l'Analyse. */
+button.btn-reaction{background:#9b7ad4;border-color:#9b7ad4;color:#fbf8ff}
+button.btn-reaction:hover:not(:disabled){background:#ab8ce0;border-color:#ab8ce0}
 button.btn-analyse{background:#9b7ad4;border-color:#9b7ad4;color:#fbf8ff}
 button.btn-analyse:hover:not(:disabled){background:#ab8ce0;border-color:#ab8ce0}
 button.btn-analyse.on{background:#8264bb;border-color:#8264bb}
@@ -414,13 +422,12 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 .bloc-replie[open]>summary{margin-bottom:4px}
 /* La bibliothèque des effets, en tête de l'onglet Talents. */
 .biblio{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:0 0 14px;background:var(--panel-2)}
-.effet-fiche{padding:8px 0;border-top:1px solid var(--line)}
+/* Un effet tient sur une ligne : son nom, puis la phrase qu'il applique, dont les parties
+   réglables sont en gras — c'est là ce qu'on vient chercher. */
+.effet-fiche{padding:5px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5}
 .effet-fiche:first-child{border-top:0}
-.effet-tete{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.effet-tete strong{font:700 14px system-ui}
-.effet-fiche p{margin:3px 0 0;font-size:13px;line-height:1.45}
-.effet-params{margin:5px 0 0;padding-left:18px;font-size:12px;color:var(--muted)}
-.effet-params li{margin:1px 0;border:0;padding:0}
+.effet-fiche .nom-effet{font:700 13px system-ui;text-transform:uppercase;letter-spacing:.6px;color:var(--accent)}
+.effet-fiche b{font-weight:700;color:var(--ink)}
 /* ---------- Le portrait, rond comme sur la carte ---------- */
 .jeton-rond{flex:none;display:grid;place-items:center;overflow:hidden;border-radius:50%;
  background:#284a40;border:1px solid #9fc8b1;color:#cfe3d6;font-family:'Killam',Georgia,serif}

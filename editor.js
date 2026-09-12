@@ -786,21 +786,15 @@ function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
  if(compte)compte.textContent=codes.length;
  boite.replaceChildren();
  const porteurs=cle=>(catalog.talents||[]).filter(t=>t&&t.effet===cle);
+ /* Une ligne par effet : son nom, puis la phrase que le moteur appliquera, réglages en
+    gras. La phrase vient du moteur lui-même, jamais recopiée ici. */
  codes.forEach(c=>{const bloc=document.createElement('div');bloc.className='effet-fiche';
-  const tete=document.createElement('div');tete.className='effet-tete';
-  const nom=document.createElement('strong');nom.textContent=c.nom;
+  const nom=document.createElement('span');nom.className='nom-effet';nom.textContent=c.nom+' : ';
+  const dit=document.createElement('span');dit.innerHTML=phraseTalent(c.cle);
+  bloc.append(nom,dit);
   const pris=porteurs(c.cle);
-  const tag=document.createElement('span');tag.className='tag';
-  tag.textContent=pris.length?pris.map(t=>t.name).join(', '):'aucun talent ne s’en sert';
-  tete.append(nom,tag);
-  const quoi=document.createElement('p');quoi.className='muted';quoi.textContent=c.resume||c.aide||'';
-  bloc.append(tete,quoi);
-  if((c.params||[]).length){const ul=document.createElement('ul');ul.className='effet-params';
-   c.params.forEach(p=>{const li=document.createElement('li');
-    li.textContent=p.nom+' — '+(p.type==='nombre'?'nombre de '+p.min+' à '+p.max+', défaut '+p.defaut
-     :'choix : '+(p.options||[]).map(([,n])=>n).join(', '));
-    ul.append(li)});
-   bloc.append(ul)}
+  if(pris.length){const tag=document.createElement('span');tag.className='tag';
+   tag.textContent=' — '+pris.map(t=>t.name).join(', ');bloc.append(tag)}
   boite.append(bloc)});
  if(!codes.length){const v=document.createElement('p');v.className='muted';
   v.textContent='Aucun effet câblé pour l’instant.';boite.append(v)}}
@@ -848,7 +842,7 @@ function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)retu
  const code=TALENTS_CODES[$('talent-form').elements.effet.value]||null;
  if(!code){boite.replaceChildren();return}
  const vals=paramsTalent({effet:code.cle,params:talentDraft.params});
- boite.innerHTML='<p class="muted">'+esc(code.resume||code.aide||'')+'</p><div class="edit-grid">'
+ boite.innerHTML='<p class="effet-fiche" style="border:0;padding:0">'+phraseTalent(code.cle,talentDraft.params)+'</p><div class="edit-grid">'
   +(code.params||[]).map(p=>p.type==='nombre'
    ?field(p.nom,'p_'+p.cle,vals[p.cle],'number','min="'+p.min+'" max="'+p.max+'"')
    :sel(p.nom,'p_'+p.cle,vals[p.cle],p.options)).join('')+'</div>'}

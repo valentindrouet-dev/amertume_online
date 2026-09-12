@@ -188,13 +188,32 @@ const cassure=c=>{let pire=0;
  return pire*180/Math.PI};
 assert.ok(cassure(LISSE[1])<15);                                   // Contre 90° pour l'escalier brut.
 assert.ok(cassure(unionContours(CREUSE)[1])>85);
-// Sans tracé à main levée enregistré, rien n'est lissé : la géométrie ressort à l'identique.
-assert.deepEqual(wallShape({walls:CREUSE,doors:[]}).contours,unionContours(CREUSE));
+/* Sans tracé enregistré — une carte creusée avant qu'on ne le garde, ou reprise d'ailleurs
+   — l'escalier est tout de même redressé : c'est l'approximation d'une ligne, et la ligne
+   vaut mieux. On n'a pas le tracé pour y rendre chaque sommet, mais on reconnaît les
+   marches à leur allure, et on les allège d'une case près. */
+{const brut=unionContours(CREUSE),sans=wallShape({walls:CREUSE,doors:[]}).contours;
+ assert.equal(brut[1].length,164);
+ assert.ok(sans[1].length<brut[1].length/4,'escalier non redressé : '+sans[1].length+' sommets');
+ /* Faute du tracé, la courbe ressort plus anguleuse qu'avec lui — quarante-quatre sommets
+    et douze degrés quand il est là, dix-sept et trente-trois quand il manque. C'est le
+    prix d'une information perdue, et c'est sans commune mesure avec les quatre-vingt-dix
+    degrés d'un escalier. */
+ assert.ok(cassure(sans[1])<35,'facettes de '+cassure(sans[1]).toFixed(0)+'°');
+ // Et l'aire ne dérive pas : on redresse, on ne rogne pas.
+ assert.ok(Math.abs(aireDe(sans[1])-Math.PI*18*12)/(Math.PI*18*12)<.01);}
 const DROIT=wallShape({walls:[{x:10,y:40,w:80,h:6}],doors:[]}).contours;
 assert.equal(DROIT[0].length,4);                                   // Un mur droit n'est pas arrondi…
 assert.equal(aireDe(DROIT[0]),480);                                // … et garde son aire exacte.
 // Une découpe rectangulaire reste un rectangle : le lissage ne touche pas l'architecture.
 const RECT=[[40,38],[60,38],[60,62],[40,62]];
+/* Le redressement d'escalier ne doit jamais mordre sur ce qu'on a voulu droit : une
+   encoche rectangulaire reste un rectangle même sans tracé enregistré, parce que le bord
+   d'une découpe est soustrait au trait exact et se reconnaît comme tel. */
+{const creusee=creuse([{x:10,y:40,w:80,h:20}],RECT,CARVE_STEP);
+ const nu=wallShape({walls:creusee,doors:[],cuts:[{x:40,y:38,w:20,h:24}]}).contours;
+ assert.deepEqual(nu.map(c=>c.length),[4,4]);
+ assert.equal(nu.reduce((s,c)=>s+aireDe(c),0),1200);}
 const ENCOCHE=wallShape({walls:creuse([{x:10,y:40,w:80,h:20}],RECT,CARVE_STEP),doors:[],carves:[RECT]}).contours;
 assert.deepEqual(ENCOCHE.map(c=>c.length),[4,4]);
 assert.equal(aireDe(ENCOCHE[0])+aireDe(ENCOCHE[1]),1200);
@@ -321,7 +340,14 @@ for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
  assert.deepEqual(paramsTalent({effet:'lamevent',params:{cibles:99,bonus:-5}}),{cibles:6,bonus:0});
  assert.deepEqual(paramsTalent({effet:'lamevent',params:{cibles:'abc'}}),{cibles:1,bonus:0});
  assert.equal(paramsTalent({effet:''}),null);
- assert.equal(reglageTalent(code,{},'inexistant'),undefined);}
+ assert.equal(reglageTalent(code,{},'inexistant'),undefined);
+ /* La phrase d'un effet est bâtie par le moteur, réglages en gras : la bibliothèque et la
+    fiche du talent la lisent au même endroit, elle ne peut donc pas mentir. */
+ const {phraseTalent}=require('./combat.js');
+ assert.match(phraseTalent('lamevent'),/<b>bonus de dégâts<\/b> à <b>un<\/b> adversaire au contact/);
+ assert.match(phraseTalent('lamevent',{cibles:3,bonus:2}),/<b>bonus de dégâts \+ 2<\/b> à <b>trois<\/b> adversaires au contact/);
+ assert.match(phraseTalent('lamevent',{cibles:99}),/<b>six<\/b> adversaires/);   // Borné comme le réglage.
+ assert.equal(phraseTalent('inconnu'),'');}
 /* Un angle taillé à l'outil Découper reste droit, même au beau milieu d'un tracé libre. */
 const OVALE=Array.from({length:48},(_,i)=>{const a=i/48*2*Math.PI;return [50+18*Math.cos(a),50+14*Math.sin(a)]});
 const BLOC=creuse([{x:10,y:10,w:80,h:60}],OVALE,CARVE_STEP);
@@ -591,4 +617,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('395 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('407 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
