@@ -680,11 +680,13 @@ function ajouteEtat(a,etat,n){if(!a||!cumulable(etat))return 0;
  setState(a,etat,v>0);return v}
 function bleedOf(a){return compteEtat(a,'Saignée')}
 function addBleed(a,n){return ajouteEtat(a,'Saignée',n)}
-/* Poser sur un combattant l'état qu'une arme vient de lui infliger. La saignée se
-   cumule — un point de plus à chaque coup qui porte —, les autres se posent une fois et
-   y restent. Rend vrai quand quelque chose a changé, pour que le journal ne raconte que
-   ce qui est arrivé. */
+/* Poser sur un combattant l'affliction qu'on vient de lui infliger, d'une arme ou de la
+   main du MJ. L'Onde est un bouclier : elle absorbe celle qui arrive et se consume, d'où
+   qu'elle vienne. Les états empilables prennent un cran de plus, les autres se posent une
+   fois et y restent. Trois réponses, pour que le journal ne raconte que ce qui est
+   arrivé : vrai si l'état est posé, « onde » s'il a été absorbé, faux s'il était déjà là. */
 function infligeEtat(a,etat){if(!a||!etat)return false;
+ if(!ONDE_EXCLUS.includes(etat)&&hasState(a,'Onde')){setState(a,'Onde',false);return 'onde'}
  if(cumulable(etat)){ajouteEtat(a,etat,1);return true}
  if(hasState(a,etat))return false;
  setState(a,etat,true);return true}

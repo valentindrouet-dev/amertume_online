@@ -248,7 +248,16 @@ for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
  setState(cible,'Saignée',false);assert.equal(bleedOf(cible),0);assert.equal(cible.bleed,0);
  // On redescend aussi : à zéro cran, l'état s'en va.
  ajouteEtat(cible,'Poison',-1);assert.equal(compteEtat(cible,'Poison'),1);
- ajouteEtat(cible,'Poison',-1);assert.ok(!hasState(cible,'Poison'));}
+ ajouteEtat(cible,'Poison',-1);assert.ok(!hasState(cible,'Poison'));
+ /* L'Onde est un bouclier : elle absorbe l'affliction qui arrive, d'où qu'elle vienne,
+    et se consume. Les états bénéfiques ne la réveillent pas. */
+ const garde={hp:10,max:10,states:['Onde'],bleed:0,cumuls:{}};
+ assert.equal(infligeEtat(garde,'Feu'),'onde');
+ assert.ok(!hasState(garde,'Feu'));assert.ok(!hasState(garde,'Onde'));
+ assert.equal(infligeEtat(garde,'Feu'),true);      // L'Onde consumée, le suivant passe.
+ const beni={hp:10,max:10,states:['Onde'],bleed:0,cumuls:{}};
+ assert.equal(infligeEtat(beni,'Blindage'),true);  // Un état bénéfique ne la consume pas.
+ assert.ok(hasState(beni,'Onde'));}
 /* Un angle taillé à l'outil Découper reste droit, même au beau milieu d'un tracé libre. */
 const OVALE=Array.from({length:48},(_,i)=>{const a=i/48*2*Math.PI;return [50+18*Math.cos(a),50+14*Math.sin(a)]});
 const BLOC=creuse([{x:10,y:10,w:80,h:60}],OVALE,CARVE_STEP);
@@ -518,4 +527,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('336 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('344 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

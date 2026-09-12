@@ -836,10 +836,14 @@ function gearCount(a,id){return (a&&a.weapons||[]).filter(x=>x===id).length}
 /* Un clic fait le tour : rien, un exemplaire, deux, puis rien de nouveau. Les deux
    mains restent la limite — le second exemplaire prend la place d'une autre arme. */
 function toggleGear(a,o){
+ /* Reposer ce qu'on porte passe avant tout : une main pleine ne doit jamais empêcher de
+    la vider. Avec deux armes différentes en main, cliquer l'une d'elles ne pouvait que
+    proposer d'en prendre un second exemplaire — impossible, faute de main libre — et il
+    devenait impossible de rien retirer. On repose donc dès qu'il n'y a plus de place
+    pour un doublon ; le second exemplaire, lui, reste à un clic quand la main est libre. */
  if(o.category==='weapon'){const n=gearCount(a,o.id),total=(a.weapons||[]).length;
-  if(n>=2)a.weapons=(a.weapons||[]).filter(x=>x!==o.id);
-  else if(total>=2)return n?'Deux armes déjà en main : retire l’autre pour un second '+o.name+'.'
-   :'Deux armes déjà en main : retires-en une d’abord.';
+  if(n>=2||(n===1&&total>=2))a.weapons=(a.weapons||[]).filter(x=>x!==o.id);
+  else if(total>=2)return 'Deux armes déjà en main : retires-en une d’abord.';
   else a.weapons=[...(a.weapons||[]),o.id]}
  else if(o.category==='armor'){const cle=o.slot==='shield'?'shieldId':'armorId';
   a[cle]=a[cle]===o.id?'':o.id}
@@ -852,7 +856,7 @@ let pickerActeur=null,pickerMode='gear',pickerApres=null;
 function openPicker(a,mode,apres){if(view!=='mj')return;pickerActeur=a;pickerMode=mode;pickerApres=apres||null;
  pickerDialog.querySelector('h2').textContent=(mode==='gear'?'Équiper ':'Talents de ')+a.name;
  $('picker-note').textContent=mode==='gear'
-  ?'Clique une arme pour la prendre, une deuxième fois pour en porter deux exemplaires — leurs dés s’additionnent — une troisième pour tout reposer. Deux armes en main au plus, une armure, un bouclier.'
+  ?'Clique une arme pour la prendre, une deuxième fois pour en porter deux exemplaires — leurs dés s’additionnent — une troisième pour tout reposer. Clique une arme portée pour la reposer quand les deux mains sont prises. Deux armes en main au plus, une armure, un bouclier.'
   :'Clique un talent pour l’apprendre ou l’oublier.';
  $('picker-search').value='';$('picker-search').oninput=renderPicker;
  renderPicker();pickerDialog.showModal()}
