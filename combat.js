@@ -78,6 +78,9 @@ function weaponHands(w){return w&&w.ranged===true?2:(Number(w&&w.hands)===1?1:2)
 function poolOfWeapons(armes){const dice={};
  DICE_KEYS.forEach(k=>dice[k]=Math.min(12,armes.reduce((somme,w)=>somme+(Number(w.dice&&w.dice[k])||0),0)));
  return dice}
+/* Ce qu'une arme pose sur qui elle touche. Deux armes en main, deux états : la liste
+   sans doublon de ce que le coup inflige. */
+const etatsDArmes=armes=>[...new Set((armes||[]).map(w=>w&&w.etat).filter(Boolean))];
 function gearAttacks(actor,items){
  // Seule une arme frappe : un objet rangé là par erreur ne crée pas une attaque sans dés.
  const armes=gearOf(actor&&actor.weapons,items).filter(w=>w.category==='weapon');
@@ -87,11 +90,12 @@ function gearAttacks(actor,items){
  const sorties=[],uneMain=[];
  groupes.forEach((n,w)=>{const copies=Array(n).fill(w);
   if(weaponHands(w)===2)sorties.push({name:nommer(w,n),dice:poolOfWeapons(copies),
-   range:w.ranged===true?'distance':'contact',targets:'one',useOwnDamage:true,effects:{},gear:true});
+   range:w.ranged===true?'distance':'contact',targets:'one',useOwnDamage:true,effects:{},
+   etats:etatsDArmes(copies),gear:true});
   else uneMain.push(...copies)});
  if(uneMain.length){const groupesM=new Map();uneMain.forEach(w=>groupesM.set(w,(groupesM.get(w)||0)+1));
   sorties.unshift({name:[...groupesM].map(([w,n])=>nommer(w,n)).join(' + '),dice:poolOfWeapons(uneMain),
-   range:'contact',targets:'one',useOwnDamage:true,effects:{},gear:true})}
+   range:'contact',targets:'one',useOwnDamage:true,effects:{},etats:etatsDArmes(uneMain),gear:true})}
  return sorties}
 function attackChoices(actor,items){
  return gearAttacks(actor,items).concat(actor&&actor.attacks||[])}
@@ -659,6 +663,14 @@ function blinded(a){return hasState(a,'Aveugle')}
 function bleedOf(a){return hasState(a,'Saignée')?Math.max(1,Math.trunc(a&&a.bleed)||1):0}
 function addBleed(a,n){const v=Math.max(0,Math.min(99,bleedOf(a)+Math.trunc(n)));
  a.bleed=v;setState(a,'Saignée',v>0);return v}
+/* Poser sur un combattant l'état qu'une arme vient de lui infliger. La saignée se
+   cumule — un point de plus à chaque coup qui porte —, les autres se posent une fois et
+   y restent. Rend vrai quand quelque chose a changé, pour que le journal ne raconte que
+   ce qui est arrivé. */
+function infligeEtat(a,etat){if(!a||!etat)return false;
+ if(etat==='Saignée'){addBleed(a,1);return true}
+ if(hasState(a,etat))return false;
+ setState(a,etat,true);return true}
 /* L'Onde purge l'affection la plus fraîche — celle qui vient de tomber — et se consume.
    Les états bénéfiques et le coma ne s'en vont jamais ainsi. */
 function ondeCures(a){const l=statesOf(a).filter(e=>!ONDE_EXCLUS.includes(e));return l.length?l[l.length-1]:null}
@@ -698,6 +710,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,encreDroite,snapToCarves,ENCRE_TOL,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,traitContours,carveTrait,carveTraits,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,ondeCures,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

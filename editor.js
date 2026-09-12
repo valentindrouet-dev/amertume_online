@@ -1159,7 +1159,8 @@ $('delete-actor').onclick=()=>{if(editing===null)return;
  selected=owner;actorDialog.close();renderHeroes();render()};
 /* Les états qu'un coup peut poser. « Aucun » est l'absence d'état : il devient le tiret
    du choix, et ne figure pas deux fois. */
-const ETATS_INFLIGES=()=>STATES.filter(e=>e!=='Aucun');
+// Le coma n'est pas un état qu'on inflige : c'est ce qui arrive à zéro point de vie.
+const ETATS_INFLIGES=()=>STATES.filter(e=>e!=='Aucun'&&e!=='Coma');
 /* La catégorie porte aussi la portée : une arme de contact et une arme à distance ne se
    remplissent pas pareil, et c'est bien une seule question qu'on pose. Ce qui est
    enregistré ne change pas pour autant — category reste « weapon », ranged reste un

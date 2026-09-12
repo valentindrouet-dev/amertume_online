@@ -223,6 +223,20 @@ for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
   for(let i=0;i<c.length;i++){const a=c[(i+c.length-1)%c.length],b=c[i],d=c[(i+1)%c.length];
    const l=Math.min(Math.hypot(b[0]-a[0],b[1]-a[1]),Math.hypot(d[0]-b[0],d[1]-b[1]));
    assert.ok(l>CARVE_STEP*1.5,'marche de '+l.toFixed(2)+' laissée par la main');}}
+/* Une arme qui inflige un état le porte dans son attaque, et le pose sur qui elle touche. */
+{const {gearAttacks:armesAtt,infligeEtat,etatsDArmes,hasState,bleedOf}=require('./combat.js');
+ const stock=[{id:'w1',category:'weapon',name:'Dague',hands:1,etat:'Saignée',dice:{white:1}},
+  {id:'w2',category:'weapon',name:'Torche',hands:1,etat:'Feu',dice:{red:1}},
+  {id:'w3',category:'weapon',name:'Bâton',hands:2,dice:{bone:2}}];
+ assert.deepEqual(etatsDArmes([stock[0],stock[1],stock[0]]),['Saignée','Feu']);  // Sans doublon.
+ const deux=armesAtt({weapons:['w1','w2']},stock);
+ assert.deepEqual(deux[0].etats,['Saignée','Feu']);        // Les deux mains cumulent leurs états.
+ assert.deepEqual(armesAtt({weapons:['w3']},stock)[0].etats,[]); // Une arme sans état n'en pose aucun.
+ const cible={hp:10,max:10,states:[],bleed:0};
+ assert.ok(infligeEtat(cible,'Feu'));assert.ok(hasState(cible,'Feu'));
+ assert.ok(!infligeEtat(cible,'Feu'));                     // Deux fois le même : rien de neuf.
+ assert.ok(infligeEtat(cible,'Saignée'));assert.equal(bleedOf(cible),1);
+ assert.ok(infligeEtat(cible,'Saignée'));assert.equal(bleedOf(cible),2);} // La saignée, elle, se cumule.
 /* Un angle taillé à l'outil Découper reste droit, même au beau milieu d'un tracé libre. */
 const OVALE=Array.from({length:48},(_,i)=>{const a=i/48*2*Math.PI;return [50+18*Math.cos(a),50+14*Math.sin(a)]});
 const BLOC=creuse([{x:10,y:10,w:80,h:60}],OVALE,CARVE_STEP);
@@ -492,4 +506,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('308 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('317 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
