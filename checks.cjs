@@ -60,6 +60,18 @@ assert.deepEqual(gearApi.gearAttacks({weapons:['ar']},ARSENAL),[]);       // Une
 assert.deepEqual(gearApi.gearAttacks({weapons:[]},ARSENAL),[]);
 assert.deepEqual(gearApi.attackChoices({attacks:[{name:'Griffes'}]},ARSENAL).map(x=>x.name),['Griffes']);
 assert.deepEqual(gearApi.attackChoices({},ARSENAL),[]);                   // Ni fiche ni arme : rien à choisir.
+/* Un adversaire peut n'avoir aucune attaque : on ne lui en invente plus une. Mais un
+   modèle d'avant, qui portait ses dés à la racine sans liste d'attaques, garde les siens. */
+{const {cleanMonster}=require('./combat.js');
+ assert.deepEqual(cleanMonster({name:'Statue',attacks:[]}).attacks,[]);      // Liste vide : elle reste vide.
+ assert.deepEqual(cleanMonster({name:'Brume'}).attacks,[]);                   // Ni liste ni dés : aucune attaque.
+ const legs=cleanMonster({name:'Gobelin',dice:{white:2}});
+ assert.equal(legs.attacks.length,1);                                        // Dés à la racine : ils sont sauvés…
+ assert.equal(legs.attacks[0].dice.white,2);                                 // … avec leur compte.
+ assert.equal(legs.attacks[0].name,'Attaque');
+ // Une liste explicite l'emporte toujours sur les dés de la racine.
+ assert.deepEqual(cleanMonster({name:'Gobelin',dice:{white:2},attacks:[]}).attacks,[]);
+ assert.equal(cleanMonster({name:'Gobelin',dice:{white:2},attacks:[{name:'Griffes'}]}).attacks.length,1);}
 assert.equal(gearApi.chosenAttack({},ARSENAL).dice,null);
 // La DEF : celle de l'équipement pour un aventurier, la sienne plus l'équipement pour un adversaire.
 assert.equal(gearApi.defenseOf({hero:true,def:9,armorId:'ar'},ARSENAL),3);
@@ -690,4 +702,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('455 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('462 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

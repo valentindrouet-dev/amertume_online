@@ -6,7 +6,13 @@ const num=(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0));
 const poolFrom=d=>keys.map(k=>num(d?.[k],0,12));
 const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
 // STATES et les jetons d'état vivent dans index.html, chargé avant ce fichier.
-function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks??=[{name:'Attaque de base',dice:diceFrom(a.pool),range:'contact',targets:'one',useOwnDamage:true,effects:{}}];a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;return a}
+/* On créait d'office une « Attaque de base » à qui n'en avait pas : chez un aventurier
+   elle doublait le bouton de son arme, et personne ne l'avait demandée. Elle n'est plus
+   créée, et les fiches qui la portent encore la perdent au chargement — on ne reconnaît
+   qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
+   ses armes équipées, et un adversaire de ce que son modèle lui donne. */
+const ATTAQUE_AUTO='Attaque de base';
+function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;return a}
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  /* Les classes du jeu viennent avec lui : un catalogue enregistré avant elles les reçoit
@@ -588,7 +594,7 @@ function attaqueVive(m,at,poser,poserTexte){const l=document.createElement('div'
  const retirer=document.createElement('button');retirer.className='ico danger';retirer.textContent='✕';
  retirer.title='Retirer cette attaque';retirer.setAttribute('aria-label','Retirer l’attaque '+(at.name||''));
  retirer.onclick=e=>{e.stopPropagation();
-  if((m.attacks||[]).length<2){alert('Un adversaire garde au moins une attaque.');return}
+  // Un adversaire peut se retrouver sans aucune attaque : on le laisse faire.
   m.attacks.splice(m.attacks.indexOf(at),1);poser()};
  if(view==='mj')tete.append(retirer);
  l.append(tete,bas);return l}
@@ -612,11 +618,8 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
   choixVif(Object.assign(document.createElement('span'),
    {className:'chip',textContent:TYPE_NOMS[m.type]||'Standard'}),m.type||'standard',
    Object.entries(TYPE_NOMS),v=>{m.type=v;poser()},'Type d’adversaire'),
-  choixVif(Object.assign(document.createElement('span'),
-   {className:'chip',textContent:'🎯 '+(MENACE_NOMS[m.menace]||'Plus proche')}),m.menace||'closest',
-   Object.entries(MENACE_NOMS),v=>{m.menace=v;poser()},'Cible visée en priorité'),
-  // Rapide et Esquive sont mis de côté chez les adversaires : ni pastille, ni case,
-  // jusqu'à ce qu'une vraie règle les prenne en charge. Les valeurs sont conservées.
+  /* Le ciblage, comme Rapide et Esquive, est mis de côté chez les adversaires : ni
+     pastille, ni case, tant qu'aucune IA ne les fait agir. Les valeurs sont conservées. */
   choixVif(Object.assign(document.createElement('span'),
    {className:'chip',textContent:SOCLE_NOMS[m.socle]||'Socle moyen'}),m.socle||'medium',
    Object.entries(SOCLE_NOMS),v=>{m.socle=v;poser()},'Taille du socle'));

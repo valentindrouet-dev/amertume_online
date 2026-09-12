@@ -228,7 +228,13 @@ function cleanMonster(t){const dés={};
   pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,99)),
   damage:Math.round(borne(t&&t.damage,0,999)),xp:Math.round(borne(t&&t.xp,0,9999)),
   menace:texte(t&&t.menace,30)||'closest',esquive:!!(t&&t.esquive),rapide:!!(t&&t.rapide),
-  notes:texte(t&&t.notes,2000),attacks:attaques.length?attaques:[{name:'Attaque',dice:dés,range:'contact',targets:'one',useOwnDamage:true}]}}
+  /* Un adversaire peut n'avoir aucune attaque : c'est au maître du jeu d'en décider, et
+     un monstre qui ne frappe pas est un monstre comme un autre. Un modèle d'avant, qui
+     portait ses dés à la racine sans liste d'attaques, garde pourtant les siens —
+     sinon il les perdrait sans rien dire. */
+  notes:texte(t&&t.notes,2000),
+  attacks:attaques.length||Array.isArray(t&&t.attacks)||!DICE_KEYS.some(k=>dés[k]>0)?attaques
+   :[{name:'Attaque',dice:dés,range:'contact',targets:'one',useOwnDamage:true}]}}
 function cleanAnneau(r){return (Array.isArray(r)?r:[]).slice(0,4000).map(p=>[borne(p&&p[0]),borne(p&&p[1])])}
 function cleanMatiere(list){return (Array.isArray(list)?list:[]).slice(0,600).map(p=>{
  const anneaux=(Array.isArray(p&&p.anneaux)?p.anneaux:[]).slice(0,200).map(cleanAnneau).filter(r=>r.length>=3);
@@ -740,7 +746,7 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  if(cle==='vieMax'&&Number.isFinite(a.vie))a.vie=Math.min(a.vie,a.vieMax);
  else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
  return a[cle]}
-const api={visionPolygon,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,uncontain,spreadInZone,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ETATS_JEU,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
