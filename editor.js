@@ -229,10 +229,6 @@ function jetonVif(m,poser){const boite=document.createElement('div');boite.class
  j.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fichier.click()}};
  const legende=document.createElement('span');legende.className='jeton-legende';
  legende.textContent=m.image?'Changer':'Ajouter';boite.append(legende);
- if(m.image){const oter=document.createElement('button');oter.className='ico danger jeton-oter';
-  oter.textContent='✕';oter.title='Retirer l’illustration';
-  oter.setAttribute('aria-label','Retirer l’illustration de '+m.name);
-  oter.onclick=e=>{e.stopPropagation();m.image=null;poser()};boite.append(oter)}
  boite.append(fichier);return boite}
 /* Le portrait d'un combattant, rond comme sur la carte : petit sur une languette
    pour le reconnaître d'un coup d'œil, grand dans la fiche dépliée. */
@@ -624,9 +620,12 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
  ident.append(nom,rangee);tete.append(ident);
  // Les mêmes tuiles qu'en jeu : un modèle se lit comme la créature qu'il deviendra.
  const chiffres=document.createElement('div');chiffres.className='stat-row';
- const tuiles=[['pv','PV',m.pv||0],['def','DEF',m.def||0,true],
+ // Une armure portée dicte la DEF : la tuile la montre et ne se corrige plus à la main.
+ const defPortee=equippedDef(m,catalog.items);
+ const tuiles=[['pv','PV',m.pv||0],['def','DEF',defPortee===null?(m.def||0):defPortee,true],
   ['dmg','Dég.','+'+(m.damage||0)],['xp','XP',m.xp||0]].map(t=>statTile(...t));
  [['pv'],['def'],['damage'],['xp']].forEach(([cle],k)=>{
+  if(cle==='def'&&defPortee!==null){tuiles[k].title='DEF donnée par l’armure portée.';return}
   const cible=tuiles[k].querySelector('.ecu')||tuiles[k].querySelector('strong');
   if(cible)champVif(cible,()=>m[cle]||0,v=>{const avant=m[cle];writeStat(m,cle,v);
    if(m[cle]!==avant)poserTexte()},'Modifier '+cle.toUpperCase()+' de '+m.name)});
@@ -652,9 +651,9 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
  const kit=gearPills(m);
  const titreNotes=document.createElement('h5');titreNotes.textContent='Notes';
  const notes=document.createElement('p');notes.className='best-notes'+(m.notes?'':' muted');
- notes.textContent=m.notes||'Aucune note.';
+ notes.textContent=m.notes||'—';
  champVif(notes,()=>m.notes||'',v=>{m.notes=String(v).slice(0,600);
-  notes.textContent=m.notes||'Aucune note.';notes.classList.toggle('muted',!m.notes);poserTexte()},
+  notes.textContent=m.notes||'—';notes.classList.toggle('muted',!m.notes);poserTexte()},
   'Talents, inventaire et notes · Entrée saute une ligne, sortir du champ enregistre','zone');
  f.append(tete,chiffres,titreAtt,listeAtt,titreKit,kit,titreNotes,notes);
  return f}
@@ -817,9 +816,7 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
   h.append(compte);bloc.append(h);
   liste.forEach(([t,i])=>bloc.append(talentRow(t,i)));
   cols.append(bloc)}
- if(!(catalog.talents||[]).length){const vide=document.createElement('p');vide.className='muted';
-  vide.textContent='Aucun talent pour l’instant. « + Nouveau talent » ouvre une fiche vierge : un nom, une classe, une nature et un niveau.';
-  cols.replaceChildren(vide)}}
+}
 $('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalents;
 $('talent-sort').onchange=renderTalents;
 $('talent-add').onclick=()=>openTalent(null);
@@ -1070,6 +1067,12 @@ $('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,
   +(a.hero?'<datalist id="classes-jeu">'+(catalog.classes||[]).map(c=>'<option value="'+esc(c.name)+'">').join('')+'</datalist>'
    +'<p class="muted">Classes du jeu : '+(catalog.classes||[]).map(c=>esc(c.name)+' (PV +'+(c.pv||0)+')').join(' · ')+'.</p>':'')
   +(a.hero?'<h2 class="sous-titre">États</h2><div id="state-picker"></div><p class="muted">Un combattant peut en porter plusieurs. Le clic droit sur son socle les pose aussi, en pleine partie.</p>':'')+'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Alpha'],['boss','Boss']]):'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'')+'</div>'+(a.hero?'<button type="button" id="calculate-pv" style="margin-top:12px">Recalculer PV max : Vie × Endu + bonus</button>':'')+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Équipement<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div class="edit-grid">'+sel('Arme 1','weapon1',a.weapons[0]||'',weaponOptions)+sel('Arme 2','weapon2',a.weapons[1]||'',weaponOptions)+sel('Armure','armor',a.armorId,armorOptions('body'))+sel('Bouclier','shield',a.shieldId,armorOptions('shield'))+'</div><p class="muted" id="equip-summary"></p><p class="muted">Les dés de l’attaque et la DEF découlent de l’équipement. Mains, munitions et effets restent à vérifier à la main. La même arme peut se porter en deux exemplaires : ses dés se cumulent. Ce qui est porté donne une attaque de plus, à choisir en jeu à côté de celles ci-dessous.</p>'+'<div class="divider"></div><h2>Attaques</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p><div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
+/* Un adversaire qui porte une armure tire sa DEF d'elle seule : le champ se tait et
+   montre ce que l'armure donne. Son chiffre propre reste dessous — readActor ne lit pas
+   un champ éteint — et revient tel quel si l'armure s'en va. */
+{const f=$('actor-form').elements,porte=equippedDef(a,catalog.items);
+ if(f.def&&!a.hero&&porte!==null){f.def.value=porte;f.def.disabled=true;
+  f.def.title='DEF donnée par l’armure portée.'}}
 if(a.hero)$('calculate-pv').onclick=()=>{const f=$('actor-form').elements;f.max.value=Math.max(1,num(f.vie.value,1,999)*num(f.endu.value,1,999)+num(f.pvBonus.value,-9999,9999))};
 $('token-upload').onclick=()=>$('token-file').click();$('token-file').onchange=()=>{const f=$('token-file').files[0];if(f)openImage(f,'token',url=>{draft.image=url;$('draft-image').src=url;$('draft-image').hidden=false})};$('token-remove').onclick=()=>{draft.image=null;$('draft-image').hidden=true};$('add-attack').onclick=()=>{readAttacks();attackDraft.push({name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',useOwnDamage:true,effects:{}});renderAttacks()};renderStatePicker();
 if($('talent-filter')){$('talent-filter').oninput=renderTalentPicker;renderTalentPicker();
@@ -1167,7 +1170,7 @@ function refreshGearOptions(neuf){const f=$('actor-form').elements;if(!f||!f.wea
   const libre=cases.find(c=>!c.value);if(libre)libre.value=neuf.id}
  refreshEquip()}
 function readActor(){const f=$('actor-form').elements;readAttacks();const a=structuredClone(draft);for(const k of ['name','role','notes','socle'])a[k]=f[k].value.trim();a.states=[...statesOf(draft)];for(const k of ['sexe','race'])if(f[k])a[k]=f[k].value.trim();
- for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k])a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?999999:99999);a.max=Math.max(1,a.max);if(templateIndex!==null)a.hp=a.max;a.hp=Math.min(a.hp,a.max);setState(a,'Coma',!a.hp);if(!a.hero){a.type=f.type.value;if(f.menace)a.menace=f.menace.value}// Sans cases à l'écran (adversaires), les valeurs enregistrées sont conservées telles quelles.
+ for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k]&&!f[k].disabled)a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?999999:99999);a.max=Math.max(1,a.max);if(templateIndex!==null)a.hp=a.max;a.hp=Math.min(a.hp,a.max);setState(a,'Coma',!a.hp);if(!a.hero){a.type=f.type.value;if(f.menace)a.menace=f.menace.value}// Sans cases à l'écran (adversaires), les valeurs enregistrées sont conservées telles quelles.
  if(f.rapide)a.rapide=f.rapide.checked;if(f.esquive)a.esquive=f.esquive.checked;if(f.skill0)a.skills=skillNames.map((_,i)=>num(f['skill'+i].value,0,30));// Un adversaire n'a pas de rayon d'armurerie dans son formulaire : ce qu'il porte reste tel quel.
  if(f.weapon1){a.weapons=[f.weapon1.value,f.weapon2.value].filter(Boolean);a.armorId=f.armor.value;a.shieldId=f.shield.value}a.attacks=attackDraft;a.activeAttack=0;a.talents=[...new Set(draft.talents||[])].filter(id=>(catalog.talents||[]).some(t=>t.id===id));
  // Un aventurier ne saisit jamais sa DEF : elle vaut son armure plus son bouclier, zéro compris.
@@ -1180,7 +1183,7 @@ function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,s
    leur nom — c'est tout ce qu'on a d'elles, et seulement quand aucun lien n'est enregistré. */
 /* Ce qui appartient au combat en cours, et que corriger un modèle ne doit pas effacer :
    la place sur la carte, la blessure, les états, les activations et la cible visée. */
-const EN_JEU=['id','x','y','hp','states','bleed','cumuls','checks','target','revealed','hidden','activeAttack','template'];
+const EN_JEU=['id','x','y','hp','states','bleed','cumuls','checks','target','targets','revealed','hidden','activeAttack','template'];
 /* Corriger un modèle corrige les créatures qui le portent déjà sur la table — nom,
    chiffres, attaques, portrait : tout le profil suit. Jusqu'ici seul le plafond de PV
    descendait, si bien qu'on changeait des dés d'attaque sans rien voir changer en jeu.

@@ -19,7 +19,11 @@ const nu=lire([]);assert.equal(nu.sexe,'Femme');assert.equal(nu.race,'Humaine');
 assert.equal(gearApi.defenseOf({hero:true,def:9},[]),0);
 assert.equal(gearApi.defenseOf({hero:true,def:9,armorId:'a',shieldId:'b'},[{id:'a',def:2},{id:'b',def:1}]),3);
 assert.equal(gearApi.defenseOf({hero:false,def:5},[]),5);
-assert.equal(gearApi.defenseOf({hero:false,def:5,armorId:'a'},[{id:'a',def:2}]),7); // Sur un adversaire, l'armure s'ajoute à sa DEF propre.
+/* Un adversaire qui porte une armure tire sa DEF d'elle seule : son chiffre propre —
+   écailles, cuir épais — ne s'y ajoute plus. Sans armure, ce chiffre fait foi. */
+assert.equal(gearApi.defenseOf({hero:false,def:5,armorId:'a'},[{id:'a',def:2}]),2);
+assert.equal(gearApi.defenseOf({hero:false,def:5,armorId:'a',shieldId:'b'},[{id:'a',def:2},{id:'b',def:3}]),5);
+assert.equal(gearApi.defenseOf({hero:false,def:5,armorId:'a'},[{id:'a',def:0}]),0);   // Une armure à zéro dit zéro.
 // L'équipement est l'affaire des aventuriers : une arme posée sur une créature ne
 // rend pas muets les dés de sa carte d'attaque.
 // Porter une arme ajoute une attaque, chez l'aventurier comme chez l'adversaire :
@@ -75,8 +79,29 @@ assert.deepEqual(gearApi.attackChoices({},ARSENAL),[]);                   // Ni 
 assert.equal(gearApi.chosenAttack({},ARSENAL).dice,null);
 // La DEF : celle de l'équipement pour un aventurier, la sienne plus l'équipement pour un adversaire.
 assert.equal(gearApi.defenseOf({hero:true,def:9,armorId:'ar'},ARSENAL),3);
-assert.equal(gearApi.defenseOf({hero:false,def:4,armorId:'ar'},ARSENAL),7);
+assert.equal(gearApi.defenseOf({hero:false,def:4,armorId:'ar'},ARSENAL),3);
 assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
+/* Double attaque : un passif qui élargit ce qu'une attaque peut viser. Sans talent, une
+   cible ; avec, ce que dit son réglage ; et le plus généreux l'emporte. */
+{const {ciblesPermises,TALENTS_CODES,paramsTalent,phraseTalent,libelleTalent}=require('./combat.js');
+ const porte=n=>({code:TALENTS_CODES.doubleattaque,params:{cibles:n}});
+ assert.equal(ciblesPermises([]),1);
+ assert.equal(ciblesPermises(null),1);
+ assert.equal(ciblesPermises([{code:TALENTS_CODES.lamevent,params:{}}]),1);   // Un autre talent n'y change rien.
+ assert.equal(ciblesPermises([porte(2)]),2);
+ assert.equal(ciblesPermises([porte(3)]),3);
+ assert.equal(ciblesPermises([porte(2),porte(4)]),4);                          // Le plus généreux l'emporte.
+ assert.equal(ciblesPermises([porte(0)]),1);                                   // Jamais moins d'une.
+ // Les réglages sont bornés par leur déclaration, et la phrase les dit.
+ assert.deepEqual(paramsTalent({effet:'doubleattaque'}),{cibles:2});
+ assert.deepEqual(paramsTalent({effet:'doubleattaque',params:{cibles:'4'}}),{cibles:4});
+ assert.deepEqual(paramsTalent({effet:'doubleattaque',params:{cibles:99}}),{cibles:6});   // Borné au maximum déclaré.
+ assert.deepEqual(paramsTalent({effet:'doubleattaque',params:{cibles:'zéro'}}),{cibles:2});  // Illisible : le défaut.
+ assert.match(phraseTalent('doubleattaque'),/cibler <b>2<\/b> adversaires/);
+ assert.match(phraseTalent('doubleattaque',{cibles:3}),/cibler <b>3<\/b> adversaires/);
+ assert.ok(libelleTalent('doubleattaque').startsWith('Double attaque : '));
+ // Un passif n'ouvre aucun bouton : il n'a pas d'effet à déclencher.
+ assert.ok(!TALENTS_CODES.doubleattaque.bouton);}
 // Deux exemplaires de la même arme : les dés s'additionnent comme deux armes distinctes.
 const epee={id:'e',dice:{white:2,red:1}};
 assert.deepEqual(gearApi.equippedPool({weapons:['e']},[epee]).slice(0,4),[2,0,1,0]);
@@ -702,4 +727,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('462 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('478 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

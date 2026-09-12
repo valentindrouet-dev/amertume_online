@@ -108,8 +108,13 @@ function chosenAttack(actor,items){const liste=attackChoices(actor,items);
 /* La DEF d'un aventurier est ce que porte son armure et son bouclier, zéro compris :
    elle ne se saisit jamais à la main. Celle d'un adversaire lui est propre — écailles,
    cuir épais — et son équipement s'y ajoute s'il en porte. */
-function defenseOf(actor,items){const porte=equippedDef(actor,items)||0;
- return actor&&actor.hero?porte:(Number(actor&&actor.def)||0)+porte}
+/* Un adversaire qui porte une armure tire sa DEF d'elle seule : c'est l'armure qui dit
+   ce qu'il encaisse, et son chiffre propre — écailles, cuir épais — ne s'y ajoute plus.
+   Sans armure, ce chiffre fait foi : c'est celui d'un ours. Un aventurier n'a jamais eu
+   de DEF propre : la sienne est toujours celle de ce qu'il porte, zéro compris. */
+function defenseOf(actor,items){const porte=equippedDef(actor,items);
+ if(actor&&actor.hero)return porte||0;
+ return porte===null||porte===undefined?(Number(actor&&actor.def)||0):porte}
 /* Un passage secret est un mur pour la troupe tant qu'il est clos : il ne se dessine
    pas et le MJ seul le manœuvre. Ouvert, ce n'est plus qu'une porte — visible de tous
    et refermable par qui l'atteint, comme n'importe quelle autre. */
@@ -661,7 +666,21 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',bouton:'⚡ Lameven
   if(place)return 'En terminant un mouvement, le porteur inflige <b>'+e+'</b> à '+qui
    +', <b>sans dégâts</b>.';
   return 'En terminant un mouvement, le porteur inflige son <b>bonus de dégâts'
-   +(b?' + '+b:'')+'</b>'+(e?' et <b>'+e+'</b>':'')+' à '+qui+'.'}}};
+   +(b?' + '+b:'')+'</b>'+(e?' et <b>'+e+'</b>':'')+' à '+qui+'.'}},
+ /* Double attaque : un passif. Il n'ouvre aucun bouton — rien à déclencher — il élargit
+    seulement ce qu'une attaque peut viser. Le ciblage accumule alors jusqu'à ce compte,
+    et le bouton d'attaque les frappe toutes, chacune avec son propre jet. */
+ doubleattaque:{cle:'doubleattaque',nom:'Double attaque',
+  aide:'Passif : le porteur vise plusieurs adversaires d’une même attaque.',
+  params:[{cle:'cibles',nom:'Adversaires visés',type:'nombre',defaut:2,min:2,max:6}],
+  phrase(p){const n=Math.max(2,(p&&p.cibles)|0);
+   return 'Le porteur peut cibler <b>'+n+'</b> adversaires quand il effectue une attaque.'}}};
+/* Combien d'adversaires un combattant peut viser d'une même attaque : un, sauf si un
+   talent passif l'augmente. Qui en porte plusieurs garde le plus généreux. */
+function ciblesPermises(portes){let n=1;
+ for(const t of portes||[]){if(!t||!t.code||t.code.cle!=='doubleattaque')continue;
+  n=Math.max(n,Math.max(1,Math.trunc(t.params&&t.params.cibles)||1))}
+ return n}
 /* L'ordre canonique des cibles. Quand plusieurs sont éligibles à une attaque ou à un
    effet, on les prend toujours dans le même ordre, et cet ordre est écrit une fois pour
    toutes : les Boss d'abord, puis les Solitaires, les Alphas et enfin les sbires ; à type
@@ -748,6 +767,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,uncontain,spreadInZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ETATS_JEU,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,ETATS_JEU,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);
