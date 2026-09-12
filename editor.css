@@ -84,7 +84,19 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
    leurs transparences et la seconde se dessinait en plus sombre sur la première. */
 .wall-skin{opacity:.85}
 .wall-skin path.bord{fill:none;stroke:#6c7d85;stroke-width:1.4;vector-effect:non-scaling-stroke}
-.wall-skin path.fond{fill:#0b1114;stroke:none}.shape.wall.selected{outline-style:dashed}.shape.cut{background:#7faddc38;border:2px dashed #7faddc;pointer-events:none}.shape.locked{cursor:not-allowed}.shape.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.foe.locked::after{right:-4px;top:-8px}
+.wall-skin path.fond{fill:#0b1114;stroke:none}
+/* La masse sélectionnée : chaque morceau peint en plein dans un groupe, et c'est le groupe
+   entier qui devient translucide. Deux morceaux qui se chevauchent ne cumulent donc pas
+   leurs transparences, et aucune couture ne se voit — on éclaire une zone de blocage, pas
+   les pièces dont elle est faite. */
+.calque-masse{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}
+.calque-masse g{opacity:.42}
+.calque-masse path{fill:var(--accent);stroke:none}
+/* La boîte de la masse dit son étendue et porte les quatre poignées qui la tirent. Elle ne
+   prend pas le clic : on attrape une masse par sa matière, jamais par le vide de sa boîte. */
+.boite-masse{position:absolute;box-sizing:border-box;pointer-events:none;z-index:2;outline:calc(2px / var(--z)) dashed var(--accent);outline-offset:0}
+.boite-masse .grip{display:block;pointer-events:auto}
+.boite-masse.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.cut{background:#7faddc38;border:2px dashed #7faddc;pointer-events:none}.shape.locked{cursor:not-allowed}.shape.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.foe.locked::after{right:-4px;top:-8px}
 .shape.door{background:#c98a4b26;border:2px solid #c98a4b}.shape.door.keyed{background:#c98a4b1f;border-color:#f3d7a6;border-width:3px}
 /* Un passage secret : violet et pointillé, dans l'éditeur comme sur la table. */
 .shape.door.secret{background:#b06fd01f;border-color:#b06fd0;border-style:dashed;border-width:3px}.shape.door.keyed::before{content:'🔑';position:absolute;left:1px;top:0;font-size:10px}

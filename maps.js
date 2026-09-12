@@ -29,6 +29,41 @@ let skinCache={cle:'',contours:[]};
 function draftSkin(m){const cle=geometryKey(m);
  if(skinCache.cle!==cle)skinCache={cle,contours:wallShape(m).contours};
  return skinCache.contours}
+/* ---------- Une zone de blocage est une masse, pas une collection ---------- */
+/* L'éditeur ne désigne plus un rectangle : il désigne le bloc entier auquel ce rectangle
+   appartient. Le calcul des masses est cher — il compare les morceaux deux à deux — donc
+   il est gardé sur la clé de géométrie, et mis en sommeil pendant un geste : déplacer une
+   masse ne la scinde pas, il n'y a rien à recompter avant le relâchement. */
+let masseCache={cle:'',n:0},selCache={cle:'',g:null};
+function nbMasses(m){const cle=geometryKey(m);
+ if(masseCache.cle!==cle&&!mapDrag)masseCache={cle,n:groupesMatiere(m).length};
+ return masseCache.n}
+function estMatiere(kind){return kind==='wall'||kind==='trait'}
+function groupeSelection(){const m=mapDraft;
+ if(!m||!mapSel||!estMatiere(mapSel.kind))return null;
+ if(mapDrag&&mapDrag.groupe)return mapDrag.groupe;
+ const cle=geometryKey(m)+'|'+mapSel.kind+'|'+mapSel.i;
+ if(selCache.cle!==cle)selCache={cle,g:groupeMatiere(m,mapSel.kind,mapSel.i)};
+ return selCache.g}
+// Un seul morceau verrouillé, et toute la masse résiste : elle ne fait qu'un.
+function groupeVerrouille(g){return (g&&g.murs||[]).some(i=>(mapDraft.walls||[])[i]&&mapDraft.walls[i].locked)}
+function instantaneGroupe(g){const m=mapDraft;
+ return {murs:(g&&g.murs||[]).map(i=>({i,r:{...m.walls[i]}})),
+  traits:(g&&g.traits||[]).map(i=>({i,t:{...(m.traits||[])[i]}}))}}
+function supprimeGroupe(g){const m=mapDraft;
+ [...(g&&g.murs||[])].sort((a,b)=>b-a).forEach(i=>m.walls.splice(i,1));
+ [...(g&&g.traits||[])].sort((a,b)=>b-a).forEach(i=>(m.traits||[]).splice(i,1))}
+/* Déplacer ou redimensionner une masse, c'est appliquer la même transformation affine à
+   chacun de ses morceaux : elle se déforme d'un bloc, sans qu'aucune couture ne bouge par
+   rapport aux autres. L'épaisseur d'un trait se compte en pour cent de la largeur : c'est
+   donc le facteur horizontal qui la commande. */
+function transformeGroupe(orig,sx,sy,ox,oy,dx,dy){const m=mapDraft;
+ const X=x=>ox+dx+(x-ox)*sx,Y=y=>oy+dy+(y-oy)*sy;
+ orig.murs.forEach(({i,r})=>{const w=m.walls[i];if(!w)return;
+  w.x=X(r.x);w.y=Y(r.y);w.w=r.w*sx;w.h=r.h*sy});
+ orig.traits.forEach(({i,t})=>{const u=(m.traits||[])[i];if(!u)return;
+  u.x1=X(t.x1);u.y1=Y(t.y1);u.x2=X(t.x2);u.y2=Y(t.y2);
+  u.e=Math.max(.05,Math.min(5,(Number(t.e)||TRAIT_EPAISSEUR)*sx))})}
 function mapShapes(m){const cle=geometryKey(m);
  if(shapeCache.cle!==cle){const murs=wallShape(m);
   const traits=traitContours(m);
@@ -369,9 +404,17 @@ document.addEventListener('keydown',e=>{if(!document.body.classList.contains('pa
 document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps'))return;
  if(e.key!=='Delete'&&e.key!=='Backspace')return;
  if(e.target.closest('input,textarea,select'))return;
- const cible=mapSel&&shapeAt(mapSel);if(!cible||cible.locked)return;
- e.preventDefault();pushUndo();removeShape(mapSel);mapSel=null;
+ if(!supprimeSelection())return;
+ e.preventDefault();
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()});
+/* Supprimer, c'est enlever la masse entière : on n'ôte pas un rectangle au milieu d'un
+   mur, on efface le mur. Une forme qui n'est pas de la matière — porte, départ,
+   adversaire — reste une pièce unique, et s'enlève seule. */
+function supprimeSelection(){const m=mapDraft;if(!m||!mapSel)return false;
+ const g=groupeSelection();
+ if(g){if(groupeVerrouille(g))return false;pushUndo();supprimeGroupe(g)}
+ else{const cible=shapeAt(mapSel);if(!cible||cible.locked)return false;pushUndo();removeShape(mapSel)}
+ mapSel=null;selCache={cle:'',g:null};masseCache={cle:'',n:0};return true}
 
 /* ---------- Cartes ---------- */
 function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,walls:[],doors:[],start:null,foes:[],traits:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
@@ -499,23 +542,61 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  // Le socle témoin par-dessus tout le reste : c'est lui qu'on vient comparer.
  const jauge=echelleEl();if(jauge)c.append(jauge);
  dessineTraits();
+ // La masse sélectionnée, éclairée d'un bloc, et sa boîte de manœuvre par-dessus.
+ const masse=groupeSelection();
+ if(masse){const tache=svgSelection(masse);if(tache)c.append(tache);
+  const boite=boiteSelection(masse);if(boite)c.append(boite)}
  const cible=mapSel?shapeAt(mapSel):null;
  const adv=mapSel&&mapSel.kind==='foe'?cible:null,porte=mapSel&&mapSel.kind==='door'?cible:null;
  $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
  if(porte){$('door-key').checked=!!porte.keyLocked;$('door-secret').checked=!!porte.secret}
- $('shape-delete').hidden=!mapSel||!!(cible&&cible.locked);$('shape-lock').hidden=!mapSel;
- if(cible)$('shape-lock').textContent=cible.locked?'🔓 Déverrouiller':'🔒 Verrouiller';
- $('shape-label').textContent=mapSel?(porte&&porte.secret?'Passage secret':KINDS[mapSel.kind])+(adv?' · '+adv.tpl.name:'')+(cible&&cible.locked?' · verrouillée':''):'Aucune sélection.';
- $('map-count').textContent=m.walls.length+' zone(s) de blocage, '+m.doors.length+' porte(s), '
+ const verrou=masse?groupeVerrouille(masse):!!(cible&&cible.locked);
+ $('shape-delete').hidden=!mapSel||verrou;$('shape-lock').hidden=!mapSel;
+ if(mapSel)$('shape-lock').textContent=verrou?'🔓 Déverrouiller':'🔒 Verrouiller';
+ /* Une masse ne s'annonce pas en morceaux : elle est « la zone de blocage », qu'elle soit
+    née d'un rectangle, d'un coup de pinceau ou de vingt gestes mêlés. */
+ $('shape-label').textContent=mapSel?(masse?'Zone de blocage':porte&&porte.secret?'Passage secret':KINDS[mapSel.kind])
+  +(adv?' · '+adv.tpl.name:'')+(verrou?' · verrouillée':''):'Aucune sélection.';
+ // On compte les masses, pas les morceaux : c'est ce que l'œil voit sur la carte.
+ $('map-count').textContent=nbMasses(m)+' zone(s) de blocage, '+m.doors.length+' porte(s), '
   +m.foes.length+' adversaire(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
  $('recal-box').hidden=!recalNeeded();
  refreshHistory()}
+/* Un rectangle de blocage n'est plus qu'une prise : il ne porte ni liseré ni poignée,
+   puisqu'on ne le manie pas lui mais la masse dont il fait partie. Le liseré et les
+   quatre poignées appartiennent à la boîte de la masse, dessinée à part. */
 function shapeEl(kind,i,r){const el=document.createElement('div');
+ const matiere=estMatiere(kind);
  el.className='shape '+kind+(r.locked?' locked':'')+(kind==='door'&&r.keyLocked?' keyed':'')+(kind==='door'&&r.secret?' secret':'')
-  +(mapSel&&mapSel.kind===kind&&mapSel.i===i?' selected':'');
+  +(!matiere&&mapSel&&mapSel.kind===kind&&mapSel.i===i?' selected':'');
  el.style.left=r.x+'%';el.style.top=r.y+'%';el.style.width=r.w+'%';el.style.height=r.h+'%';
  el.dataset.kind=kind;el.dataset.i=i;
- ['nw','ne','sw','se'].forEach(g=>{const h=document.createElement('span');h.className='grip '+g;h.dataset.grip=g;el.append(h)});
+ if(!matiere)['nw','ne','sw','se'].forEach(g=>{const h=document.createElement('span');h.className='grip '+g;h.dataset.grip=g;el.append(h)});
+ return el}
+/* La masse sélectionnée se montre d'un seul tenant : chaque morceau peint en plein dans
+   un groupe qui ne devient translucide qu'une fois assemblé. Deux morceaux qui se
+   chevauchent ne foncent donc pas leur recouvrement, et aucune couture ne se voit —
+   c'est bien une seule zone que l'on éclaire, pas les pièces qui la composent. */
+function svgSelection(g){const m=mapDraft;
+ const polys=[...(g.murs||[]).map(i=>(m.walls||[])[i]).filter(Boolean).map(rectPolygon),
+  ...(g.traits||[]).map(i=>(m.traits||[])[i]).filter(Boolean)
+   .map(t=>traitPolygon(t,m.ratio)).filter(Boolean)];
+ if(!polys.length)return null;
+ const svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','calque-masse');
+ svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
+ const bloc=document.createElementNS(nsSVG,'g');
+ polys.forEach(p=>{const el=document.createElementNS(nsSVG,'path');
+  el.setAttribute('d','M'+p.map(q=>q[0].toFixed(3)+' '+q[1].toFixed(3)).join('L')+'Z');
+  bloc.append(el)});
+ svg.append(bloc);return svg}
+// La boîte de la masse : le liseré qui dit son étendue, et les quatre poignées qui la tirent.
+function boiteSelection(g){const b=boiteGroupe(mapDraft,g);if(!b)return null;
+ const el=document.createElement('div');
+ el.className='boite-masse'+(groupeVerrouille(g)?' locked':'');
+ el.style.left=b.x+'%';el.style.top=b.y+'%';el.style.width=b.w+'%';el.style.height=b.h+'%';
+ el.dataset.kind=mapSel.kind;el.dataset.i=mapSel.i;
+ if(!groupeVerrouille(g))['nw','ne','sw','se'].forEach(k=>{const h=document.createElement('span');
+  h.className='grip '+k;h.dataset.grip=k;el.append(h)});
  return el}
 function foeEl(i,f){const el=document.createElement('div');
  el.className='shape foe'+(f.locked?' locked':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
@@ -536,11 +617,15 @@ function dessineTraits(){const c=$('map-canvas'),m=mapDraft;if(!c||!m)return;
  let svg=c.querySelector('.calque-traits');
  if(!svg){svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','calque-traits');
   svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');c.append(svg)}
- /* Ce calque ne porte plus que le tracé en cours. Un trait validé est de la matière, au
-    même titre qu'une zone : il est peint avec elles, d'un seul tenant, et ne se sélectionne
-    pas plus qu'on ne sélectionne un bout de mur. On le défait à l'annulation, ou on le
-    gratte — c'est ainsi qu'on démonte de la matière, pas en la désignant. */
+ /* Un trait validé est de la matière, au même titre qu'une zone : il ne se sélectionne pas
+    pour lui-même. Il garde pourtant une prise transparente, car c'est par là qu'on attrape
+    la masse à laquelle il appartient — et un trait tracé à l'écart, qui ne touche rien,
+    est une masse à lui seul, qu'il faut bien pouvoir enlever. */
  svg.replaceChildren();
+ (m.traits||[]).forEach((t,i)=>{const p=traitPolygon(t,m.ratio);if(!p)return;
+  const o=document.createElementNS(nsSVG,'polygon');o.setAttribute('class','trait');
+  o.setAttribute('points',p.map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));
+  o.dataset.kind='trait';o.dataset.i=i;svg.append(o)});
  if(traitDepart&&traitVise){const l=document.createElementNS(nsSVG,'line');
   l.setAttribute('x1',traitDepart.x);l.setAttribute('y1',traitDepart.y);
   l.setAttribute('x2',traitVise.x);l.setAttribute('y2',traitVise.y);
@@ -600,8 +685,13 @@ function coupPinceau(p){const m=mapDraft,r=pinceauTaille();
   carveWalls(w=>carveWithPolygon(w,d,CARVE_STEP));
   carveLesTraits((x,y)=>pointInPolygon([x,y],d));
   (m.carves||(m.carves=[])).push(d.map(q=>[q[0],q[1]]));return}
- const der=pinceauDernier;
- (m.traits||(m.traits=[])).push({x1:der?der.x:p.x,y1:der?der.y:p.y,x2:p.x,y2:p.y,e:r})}
+ /* Le premier appui n'a pas de précédent : sans longueur, le trait serait invisible et
+    pourtant gardé — de la matière fantôme, ni peinte ni saisissable. On lui donne la
+    largeur du pinceau, de sorte qu'un simple clic dépose bien une touche. */
+ const der=pinceauDernier,demi=r/2;
+ (m.traits||(m.traits=[])).push(der
+  ?{x1:der.x,y1:der.y,x2:p.x,y2:p.y,e:r}
+  :{x1:borne100(p.x-demi),y1:p.y,x2:borne100(p.x+demi),y2:p.y,e:r})}
 let pinceauDernier=null;
 function carveLesTraits(dedans){mapDraft.traits=carveTraits(mapDraft.traits,dedans,.15)}
 function applyLasso(){const brut=lasso&&lasso.pts;lasso=null;
@@ -637,14 +727,21 @@ $('map-recal').onclick=()=>{const m=mapDraft;if(!recalNeeded())return;
  m.fitted=true;renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
 
 /* ---------- Verrouillage ---------- */
-$('shape-lock').onclick=()=>{const cible=mapSel&&shapeAt(mapSel);if(!cible)return;
+$('shape-lock').onclick=()=>{const g=groupeSelection();
+ // Le verrou tient la masse entière : aucun de ses morceaux ne bouge plus, ni ne se gratte.
+ if(g){const pose=!groupeVerrouille(g);pushUndo();
+  (g.murs||[]).forEach(i=>{if(mapDraft.walls[i])mapDraft.walls[i].locked=pose});
+  renderCanvas();saveMaps();return}
+ const cible=mapSel&&shapeAt(mapSel);if(!cible)return;
  pushUndo();cible.locked=!cible.locked;renderCanvas();saveMaps()};
 
 /* ---------- Tracé, sélection, déplacement ---------- */
 const pct=e=>{const r=$('map-canvas').getBoundingClientRect();
  return {x:Math.max(0,Math.min(100,100*(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(100,100*(e.clientY-r.top)/r.height))}};
 $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(mapDraft);
- const grip=e.target.dataset.grip,p=pct(e),sous=e.target.closest('.shape');
+ /* On remonte au premier élément qui se nomme : une boîte de forme, une prise de trait,
+    ou la boîte de la masse — une poignée y mène aussi bien. */
+ const grip=e.target.dataset.grip,p=pct(e),sous=e.target.closest('[data-kind]');
  /* Le socle témoin se manie à part : il n'appartient à aucune liste de formes, il ne dit
     que l'échelle. Glissé, il se promène ; tiré par son coin, il grossit. */
  if(e.target.closest('.echelle-token')&&e.button===0){pushUndo();
@@ -653,6 +750,15 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  const dessous=sous?{kind:sous.dataset.kind,i:Number(sous.dataset.i)}:null;
  // Avec l'outil Sélection, ou sur une poignée, on manipule la forme visée.
 
+ /* De la matière : on saisit la masse entière à laquelle ce morceau appartient. Elle se
+    déplace d'un bloc, se tire par les quatre coins de sa boîte, et ne se scinde pas. */
+ if(dessous&&estMatiere(dessous.kind)&&(mapTool==='select'||grip)){
+  mapSel=dessous;const g=groupeMatiere(mapDraft,dessous.kind,dessous.i);
+  if(!groupeVerrouille(g)){pushUndo();
+   mapDrag={mode:grip?'resize':'move',...dessous,grip,groupe:g,
+    orig:instantaneGroupe(g),boite:boiteGroupe(mapDraft,g),from:p};
+   $('map-canvas').setPointerCapture(e.pointerId)}
+  renderCanvas();e.preventDefault();return}
  if(dessous&&(mapTool==='select'||grip)){mapSel=dessous;const cible=shapeAt(dessous);
   if(cible&&!cible.locked){pushUndo();mapDrag={mode:grip?'resize':'move',...dessous,grip,orig:structuredClone(cible),from:p,touche:false};
    $('map-canvas').setPointerCapture(e.pointerId)}
@@ -719,6 +825,20 @@ $('map-canvas').addEventListener('pointermove',e=>{
  if(d.mode==='lasso'){const der=lasso.pts[lasso.pts.length-1];
   if(Math.hypot(p.x-der[0],p.y-der[1])>=auZoom(.6)){lasso.pts.push([p.x,p.y]);d.bouge=true;renderCanvas()}
   return}
+ /* Une masse ne se déforme pas morceau par morceau : la même transformation affine passe
+    sur tous ses morceaux. Glissée, elle reste dans la carte ; tirée, elle ne se réduit
+    jamais à rien. */
+ if(d.groupe){const o=d.boite;
+  if(!o){mapDrag=null;return}
+  if(d.mode==='move'){const dx=Math.max(-o.x,Math.min(100-o.x-o.w,p.x-d.from.x));
+   const dy=Math.max(-o.y,Math.min(100-o.y-o.h,p.y-d.from.y));
+   transformeGroupe(d.orig,1,1,o.x,o.y,dx,dy)}
+  else{const est=d.grip.includes('e'),sud=d.grip.includes('s');
+   const x1=est?o.x:p.x,x2=est?p.x:o.x+o.w,y1=sud?o.y:p.y,y2=sud?p.y:o.y+o.h;
+   const nx=Math.min(x1,x2),ny=Math.min(y1,y2);
+   const nw=Math.max(auZoom(.2),Math.abs(x2-x1)),nh=Math.max(auZoom(.2),Math.abs(y2-y1));
+   transformeGroupe(d.orig,o.w>1e-9?nw/o.w:1,o.h>1e-9?nh/o.h:1,o.x,o.y,nx-o.x,ny-o.y)}
+  renderCanvas();return}
  const cible=shapeAt(d);if(!cible)return;
  if(d.kind==='foe'){cible.x=p.x;cible.y=p.y}
  else if(d.mode==='create'||d.mode==='cut'){cible.x=Math.min(d.from.x,p.x);cible.y=Math.min(d.from.y,p.y);cible.w=Math.abs(p.x-d.from.x);cible.h=Math.abs(p.y-d.from.y);
@@ -744,13 +864,17 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
    (mapDraft.cuts||(mapDraft.cuts=[])).push({x:r.x,y:r.y,w:r.w,h:r.h})}
   else if(d.dessous){mapSel=d.dessous;mapTool='select'}
   renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render();return}
+ /* Une masse relâchée peut en avoir touché une autre : elles n'en font plus qu'une, et le
+    compte comme la tache de sélection le disent aussitôt. */
+ if(d.groupe){masseCache={cle:'',n:0};selCache={cle:'',g:null};
+  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render();return}
  const cible=d.kind==='foe'?null:shapeAt(d);
  if(cible&&!gesteTrace(cible)){removeShape(d);
   // Clic manqué : si une forme était dessous, on la sélectionne et on repasse en Sélection.
   if(d.dessous){mapSel=d.dessous;mapTool='select'}else{mapSel=null;undoStack.pop()}}
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()});
-$('shape-delete').onclick=()=>{const cible=mapSel&&shapeAt(mapSel);if(!cible||cible.locked)return;
- pushUndo();removeShape(mapSel);mapSel=null;renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};
+$('shape-delete').onclick=()=>{if(!supprimeSelection())return;
+ renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('door-key').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
  pushUndo();d.keyLocked=$('door-key').checked;renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('door-secret').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;

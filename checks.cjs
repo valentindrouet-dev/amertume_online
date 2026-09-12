@@ -624,4 +624,44 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('409 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+/* ---------- Une zone de blocage est une masse, pas un tas de morceaux ---------- */
+/* L'éditeur ne désigne plus un rectangle mais le bloc entier auquel il appartient : tout
+   ce qui se touche, même de proche en proche, même en biais, ne fait qu'une zone. */
+const C=require('./combat.js');
+const masses=m=>C.groupesMatiere(m).map(g=>({murs:g.murs,traits:g.traits}));
+const carteM=(walls,traits)=>({ratio:16/9,walls,traits:traits||[]});
+// Bord à bord : une seule masse. Séparés : deux.
+assert.deepEqual(masses(carteM([{x:10,y:10,w:10,h:10},{x:20,y:10,w:10,h:10}])),
+ [{murs:[0,1],traits:[]}]);
+assert.equal(masses(carteM([{x:10,y:10,w:10,h:10},{x:40,y:10,w:10,h:10}])).length,2);
+// De proche en proche : A touche B, B touche C, les trois n'en font qu'une.
+assert.deepEqual(masses(carteM([{x:0,y:0,w:10,h:5},{x:10,y:0,w:10,h:5},{x:20,y:0,w:10,h:5}])),
+ [{murs:[0,1,2],traits:[]}]);
+/* La croix : deux barres qui se croisent sans qu'aucun sommet de l'une tombe dans l'autre.
+   Le test de recouvrement seul les manquait — il faut aussi voir les bords se croiser. */
+assert.deepEqual(masses(carteM([{x:0,y:4,w:10,h:2},{x:4,y:0,w:2,h:10}])),
+ [{murs:[0,1],traits:[]}]);
+assert.equal(C.distSegSeg([0,4],[10,4],[4,0],[4,10]),0);
+assert.ok(C.segsCroisent([0,0],[10,10],[0,10],[10,0]));
+assert.ok(!C.segsCroisent([0,0],[10,0],[0,5],[10,5]));
+// Un trait qui rejoint une zone entre dans sa masse ; tracé à l'écart, il est sa propre masse.
+assert.deepEqual(masses(carteM([{x:10,y:10,w:10,h:10}],[{x1:20,y1:15,x2:35,y2:15,e:.3}])),
+ [{murs:[0],traits:[0]}]);
+assert.deepEqual(masses(carteM([{x:10,y:10,w:10,h:10}],[{x1:60,y1:15,x2:75,y2:15,e:.3}])),
+ [{murs:[0],traits:[]},{murs:[],traits:[0]}]);
+// La masse qu'on désigne est bien celle qui contient le morceau visé, pas une autre.
+const deux=carteM([{x:0,y:0,w:5,h:5},{x:5,y:0,w:5,h:5},{x:50,y:0,w:5,h:5}]);
+assert.deepEqual(C.groupeMatiere(deux,'wall',1),{murs:[0,1],traits:[]});
+assert.deepEqual(C.groupeMatiere(deux,'wall',2),{murs:[2],traits:[]});
+// Son étendue tient tous ses morceaux, traits compris.
+assert.deepEqual(C.boiteGroupe(deux,{murs:[0,1],traits:[]}),{x:0,y:0,w:10,h:5});
+// Une carte vide n'a aucune masse : le compte affiché doit dire zéro, pas un.
+assert.equal(masses(carteM([])).length,0);
+/* Le menu déroulant des mécaniques porte le nom ET la description : on sait ce qu'un effet
+   fait avant de le choisir, sans gras — une option ne lit pas le balisage. */
+const lib=C.libelleTalent('lamevent');
+assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+lib);
+assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
+assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
+assert.equal(C.libelleTalent('inconnu'),'');
+console.log('426 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et masses de blocage.');

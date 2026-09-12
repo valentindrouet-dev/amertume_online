@@ -303,6 +303,70 @@ function unionContours(rects){
     if(pt[0]===boucle[0][0]&&pt[1]===boucle[0][1])break}
    if(boucle.length>=4)contours.push(fuseAligned(boucle))}}
  return contours}
+/* ---------- La matière de blocage est une masse, pas un tas de morceaux ---------- */
+/* Un rectangle posé, un coup de pinceau, une cloison en biais : ce sont des coups de
+   burin, pas des objets que l'on collectionne. Dès que deux d'entre eux se touchent, ils
+   ne font plus qu'une masse, et c'est la masse entière que l'éditeur saisit, déplace ou
+   efface — il n'y a plus de rectangle à désigner dedans.
+   On ne refond pas la géométrie pour autant : les rectangles restent la monnaie du
+   moteur, exacts au millième, et une cloison en biais reste un quadrilatère. On note
+   seulement qui touche qui, de proche en proche.
+   L'écart toléré se compte séparément sur chaque axe — la grille du grattage a son jeu
+   dans les deux —, donc on ramène la carte dans un repère où cet écart vaut un : le test
+   de distance y redevient isotrope, et une cloison en biais s'y juge comme le reste. */
+function morceauxMatiere(map,tol){const t=tol>0?tol:CONTACT_MATIERE;
+ const etire=poly=>poly.map(([x,y])=>[x/t,y/t]),out=[];
+ (map&&map.walls||[]).forEach((w,i)=>{if(w&&w.w>0&&w.h>0)
+  out.push({kind:'wall',i,poly:etire(rectPolygon(w))})});
+ (map&&map.traits||[]).forEach((u,i)=>{const p=traitPolygon(u,map&&map.ratio);
+  if(p)out.push({kind:'trait',i,poly:etire(p)})});
+ return out.map(p=>({...p,boite:boitePoly(p.poly)}))}
+function boitePoly(poly){const xs=poly.map(p=>p[0]),ys=poly.map(p=>p[1]);
+ return {x1:Math.min(...xs),x2:Math.max(...xs),y1:Math.min(...ys),y2:Math.max(...ys)}}
+// Deux segments qui se croisent : le cas du plus, où aucun sommet n'est chez l'autre.
+function segsCroisent(a1,a2,b1,b2){
+ const cote=(p,q,m)=>(q[0]-p[0])*(m[1]-p[1])-(q[1]-p[1])*(m[0]-p[0]);
+ const d1=cote(b1,b2,a1),d2=cote(b1,b2,a2),d3=cote(a1,a2,b1),d4=cote(a1,a2,b2);
+ return ((d1>0)!==(d2>0))&&((d3>0)!==(d4>0))}
+function distSegSeg(a1,a2,b1,b2){if(segsCroisent(a1,a2,b1,b2))return 0;
+ const d=(p,q1,q2)=>{const c=closestOnSegment(p,q1,q2);return Math.hypot(p[0]-c[0],p[1]-c[1])};
+ return Math.min(d(a1,b1,b2),d(a2,b1,b2),d(b1,a1,a2),d(b2,a1,a2))}
+/* Deux morceaux se touchent s'ils se recouvrent — un sommet chez l'autre, ou deux bords
+   qui se croisent — ou si leurs bords se frôlent à moins que la tolérance. */
+function morceauxSeTouchent(a,b,tol){const t=tol==null?1:tol;
+ if(a.some(p=>pointInPolygon(p,b))||b.some(p=>pointInPolygon(p,a)))return true;
+ for(let i=0;i<a.length;i++){const a1=a[i],a2=a[(i+1)%a.length];
+  for(let j=0;j<b.length;j++)if(distSegSeg(a1,a2,b[j],b[(j+1)%b.length])<=t)return true}
+ return false}
+/* Les masses de la carte, chacune avec la liste des morceaux qui la composent. Rapprochés
+   de proche en proche : A touche B, B touche C, les trois n'en font qu'une. Les boîtes
+   englobantes filtrent d'abord — sur une carte fournie, l'immense majorité des paires
+   n'ont rien à voir l'une avec l'autre. */
+function groupesMatiere(map,tol){const m=morceauxMatiere(map,tol),n=m.length,t=1;
+ const pere=Array.from({length:n},(_,i)=>i);
+ const trouve=i=>{while(pere[i]!==i)i=pere[i]=pere[pere[i]];return i};
+ for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
+  const ra=trouve(i),rb=trouve(j);if(ra===rb)continue;
+  const A=m[i].boite,B=m[j].boite;
+  if(A.x2+t<B.x1||B.x2+t<A.x1||A.y2+t<B.y1||B.y2+t<A.y1)continue;
+  if(morceauxSeTouchent(m[i].poly,m[j].poly,t))pere[ra]=rb}
+ const par=new Map();
+ m.forEach((p,i)=>{const r=trouve(i);
+  if(!par.has(r))par.set(r,{murs:[],traits:[]});
+  par.get(r)[p.kind==='wall'?'murs':'traits'].push(p.i)});
+ return [...par.values()]}
+// La masse qui contient ce morceau-là : c'est elle qu'on sélectionne, jamais le morceau.
+function groupeMatiere(map,kind,i,tol){
+ const g=groupesMatiere(map,tol).find(g=>(kind==='trait'?g.traits:g.murs).includes(i));
+ return g||{murs:kind==='trait'?[]:[i],traits:kind==='trait'?[i]:[]}}
+// L'étendue d'une masse, en pour cent de la carte : la boîte qui la tient tout entière.
+function boiteGroupe(map,g){const murs=(g&&g.murs||[]).map(i=>(map.walls||[])[i]).filter(Boolean);
+ const traits=(g&&g.traits||[]).map(i=>(map.traits||[])[i]).filter(Boolean);
+ const polys=[...murs.map(rectPolygon),
+  ...traits.map(t=>traitPolygon(t,map&&map.ratio)).filter(Boolean)];
+ if(!polys.length)return null;
+ const b=boitePoly(polys.flat());
+ return {x:b.x1,y:b.y1,w:b.x2-b.x1,h:b.y2-b.y1}}
 // Trois points alignés : celui du milieu ne dit rien, on l'enlève.
 function fuseAligned(pts){const out=[];
  for(let i=0;i<pts.length;i++){const a=pts[(i+pts.length-1)%pts.length],b=pts[i],c=pts[(i+1)%pts.length];
@@ -559,6 +623,13 @@ function readMapsFile(texteBrut){let data;
    percées par les portes, puis chaque porte close. Dessin et calcul y puisent
    ensemble, donc l'ombre commence exactement là où le mur est peint. */
 const CARVE_STEP=.4;
+/* Deux morceaux de matière que l'œil voit soudés peuvent être séparés par un cheveu : le
+   grattage rastérise, et deux passes successives ne tombent pas sur la même grille, d'où
+   des jours de l'ordre du pas. Le contact se juge donc à un pas et des miettes, sur
+   chaque axe séparément — c'est là que la grille a son jeu. Plus large, on souderait un
+   couloir voulu étroit ; plus fin, une masse peinte d'un seul geste retomberait en
+   miettes. */
+const CONTACT_MATIERE=CARVE_STEP*1.1;
 /* La main tremble. Un glissement que l'on croit bien droit arrive en quarante points qui
    serpentent d'un tiers de pourcent, et comme la matière suit maintenant le tracé au
    sommet près, ce tremblement ressortait en crénelures. On redresse donc l'encre avant
@@ -814,6 +885,12 @@ function paramsTalent(t){const code=talentCode(t);if(!code)return null;
 function phraseTalent(cle,params){const code=TALENTS_CODES[cle];
  if(!code||typeof code.phrase!=='function')return code&&code.aide||'';
  return code.phrase(paramsTalent({effet:cle,params}))}
+/* La même phrase, dépouillée de son gras : une option de menu déroulant ne porte que du
+   texte. « Lamevent : En terminant un mouvement, le porteur inflige… » se lit alors d'un
+   trait dans la liste, sans qu'il faille la choisir pour savoir ce qu'elle fait. */
+function libelleTalent(cle,params){const code=TALENTS_CODES[cle];if(!code)return '';
+ const dit=phraseTalent(cle,params).replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
+ return dit?code.nom+' : '+dit:code.nom}
 /* L'Onde purge l'affection la plus fraîche — celle qui vient de tomber — et se consume.
    Les états bénéfiques et le coma ne s'en vont jamais ainsi. */
 function ondeCures(a){const l=statesOf(a).filter(e=>!ONDE_EXCLUS.includes(e));return l.length?l[l.length-1]:null}
@@ -852,7 +929,7 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,encreDroite,snapToCarves,ENCRE_TOL,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
- rectPolygon,traitPolygon,traitContours,carveTrait,carveTraits,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,escalierMask,redresseEscaliers,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,ETATS_JEU,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ rectPolygon,traitPolygon,traitContours,CONTACT_MATIERE,morceauxMatiere,morceauxSeTouchent,groupesMatiere,groupeMatiere,boiteGroupe,distSegSeg,segsCroisent,carveTrait,carveTraits,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,escalierMask,redresseEscaliers,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ETATS_JEU,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

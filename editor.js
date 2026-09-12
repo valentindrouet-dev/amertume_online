@@ -842,7 +842,7 @@ function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)retu
  const code=TALENTS_CODES[$('talent-form').elements.effet.value]||null;
  if(!code){boite.replaceChildren();return}
  const vals=paramsTalent({effet:code.cle,params:talentDraft.params});
- boite.innerHTML='<p class="effet-fiche" style="border:0;padding:0">'+phraseTalent(code.cle,talentDraft.params)+'</p><div class="edit-grid">'
+ boite.innerHTML='<div class="edit-grid">'
   +(code.params||[]).map(p=>p.type==='nombre'
    ?field(p.nom,'p_'+p.cle,vals[p.cle],'number','min="'+p.min+'" max="'+p.max+'"')
    :sel(p.nom,'p_'+p.cle,vals[p.cle],p.options)).join('')+'</div>'}
@@ -872,7 +872,7 @@ function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talen
      du talent tombe juste. */
   +'<h2 class="sous-titre">Effet appliqué par le moteur</h2>'
   +sel('Mécanique','effet',t.effet||'',[['','— Aucun : talent descriptif —'],
-   ...Object.values(TALENTS_CODES).map(c=>[c.cle,c.nom])])
+   ...Object.values(TALENTS_CODES).map(c=>[c.cle,libelleTalent(c.cle)])])
   +'<div id="talent-reglages"></div>';
  /* « Autre classe… » ouvre le champ libre et lui donne la main ; revenir sur une classe
     connue le referme, et ce qui y était tapé ne compte plus. */
