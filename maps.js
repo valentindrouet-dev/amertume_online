@@ -325,7 +325,10 @@ mapsPage.innerHTML=
  +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
- +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="cut">Découper</button><button data-tool="lasso">Découpe libre</button><button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
+ +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="pinceau">Pinceau de blocage</button>'
+ +'<button data-tool="cut">Découper</button><button data-tool="lasso">Découpe libre</button><button data-tool="gomme">Pinceau de découpe</button>'
+ +'<select id="pinceau-taille" aria-label="Grosseur du pinceau" hidden><option value=".3">Pinceau fin</option><option value=".55" selected>Pinceau moyen</option><option value="1">Pinceau large</option></select>'
+ +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<span class="bar-sep"></span><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
@@ -340,6 +343,8 @@ mapsPage.innerHTML=
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
  +'<li><i class="sw-door"></i>Porte — close au début du combat, ouverte d’un clic en jeu</li>'+'<li><i class="sw-key"></i>Porte verrouillée — le MJ seul peut l’ouvrir</li>'+'<li><i class="sw-secret"></i>Passage secret — un mur pour la troupe tant qu’il est clos</li>'
  +'<li><i class="sw-start"></i>Zone de départ des aventuriers</li>'
+ +'<li><i class="sw-wall"></i>Pinceau de blocage — de la matière peinte à main levée</li>'
+ +'<li><i class="sw-cut"></i>Pinceau de découpe — la même chose en négatif, il gratte</li>'
  +'<li><i class="sw-foe"></i>Adversaire pré-placé</li></ul><p class="muted" id="map-count"></p>'
  +'<div id="recal-box" hidden><div class="divider"></div><h2>Réparation</h2>'
   +'<p class="muted">Tes zones semblent décalées vers le centre de l’image ? Cette carte a été tracée quand l’éditeur logeait l’image dans un cadre 16/9. Le recalage leur rend leur place ; ⌘Z l’annule.</p>'
@@ -414,6 +419,7 @@ $('map-file').onchange=()=>{const f=$('map-file').files[0];$('map-file').value='
 $('map-image-clear').onclick=()=>{if(mapDraft){pushUndo();mapDraft.image=null;renderCanvas();saveMaps()}};
 $('map-play').onclick=()=>{if(mapDraft)openBattleMap(mapDraft.id)};
 document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(mapTool!=='lasso')lasso=null;
+ $('pinceau-taille').hidden=mapTool!=='pinceau'&&mapTool!=='gomme';
  // Changer d'outil abandonne le tracé en cours : on ne finit pas un trait à la truelle.
  if(mapTool!=='ligne')traitDepart=traitVise=null;
  renderCanvas()});
@@ -457,6 +463,8 @@ const HINTS={select:'Clique une forme pour la sélectionner, glisse pour la dép
  door:'Trace une porte : elle perce d’elle-même la zone de blocage qu’elle recouvre, et le mur se referme si tu la déplaces. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
  secret:'Trace un passage secret à même le mur : tant qu’il est clos, il ne perce rien et la troupe ne voit qu’un mur — toi seul le devines à son trait violet, et toi seul l’ouvres. Ouvert, il devient une porte comme une autre.',
  start:'Trace la zone où les aventuriers seront regroupés à l’ouverture de la carte. Une seule par carte.',
+ pinceau:'Glisse pour peindre de la matière à main levée, comme au feutre. Le trait se fond dans les zones qu’il touche. Sa grosseur se choisit à côté, en fraction de socle : elle suit donc l’échelle de la carte.',
+ gomme:'Glisse pour gratter la matière, comme à la gomme. Ce qui est verrouillé résiste. Sa grosseur se choisit à côté.',
  foe:'Clique pour poser l’adversaire choisi à droite de la barre. Pour le rendre invisible, donne-lui l’état Invisible en jeu.'};
 // Le plan de travail adopte le rapport de la carte et occupe la place disponible.
 function sizeCanvas(){const c=$('map-canvas'),w=document.querySelector('.canvas-wrap');
@@ -478,8 +486,13 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
   svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
   const forme=document.createElementNS(nsSVG,lasso.pts.length>2?'polygon':'polyline');
   forme.setAttribute('points',lasso.pts.map(pt=>pt.join(',')).join(' '));svg.append(forme);
-  lasso.pts.forEach(pt=>{const o=document.createElementNS(nsSVG,'circle');
-   o.setAttribute('cx',pt[0]);o.setAttribute('cy',pt[1]);o.setAttribute('r',.7);svg.append(o)});
+  /* Les points d'étape ne sont pas des cercles mais des traits de longueur nulle à bout
+     rond : un cercle est dessiné dans l'espace de la carte, donc étiré par son rapport et
+     grossi par le zoom — d'où des pastilles énormes dès qu'on approche. Un bout de trait,
+     lui, garde sa taille à l'écran, comme les pointillés du contour. */
+  lasso.pts.forEach(pt=>{const o=document.createElementNS(nsSVG,'path');
+   o.setAttribute('class','point');
+   o.setAttribute('d','M'+pt[0]+' '+pt[1]+'L'+pt[0]+' '+pt[1]);svg.append(o)});
   c.append(svg)}
  if(m.start)c.append(shapeEl('start',0,m.start));
  m.foes.forEach((f,i)=>c.append(foeEl(i,f)));
@@ -523,15 +536,11 @@ function dessineTraits(){const c=$('map-canvas'),m=mapDraft;if(!c||!m)return;
  let svg=c.querySelector('.calque-traits');
  if(!svg){svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','calque-traits');
   svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');c.append(svg)}
+ /* Ce calque ne porte plus que le tracé en cours. Un trait validé est de la matière, au
+    même titre qu'une zone : il est peint avec elles, d'un seul tenant, et ne se sélectionne
+    pas plus qu'on ne sélectionne un bout de mur. On le défait à l'annulation, ou on le
+    gratte — c'est ainsi qu'on démonte de la matière, pas en la désignant. */
  svg.replaceChildren();
- (m.traits||[]).forEach((t,i)=>{const pts=traitPolygon(t,m.ratio);if(!pts)return;
-  const el=document.createElementNS(nsSVG,'polygon');
-  el.setAttribute('points',pts.map(p=>p[0].toFixed(3)+','+p[1].toFixed(3)).join(' '));
-  /* Surtout pas la classe « shape » : sur un élément SVG, le contour de sélection des
-     boîtes se dessine autour de la boîte englobante — d'où un énorme rectangle autour
-     d'un trait en biais. Le trait choisi se marque dans sa propre encre. */
-  el.setAttribute('class','trait'+(mapSel&&mapSel.kind==='trait'&&mapSel.i===i?' on':''));
-  el.dataset.kind='trait';el.dataset.i=i;svg.append(el)});
  if(traitDepart&&traitVise){const l=document.createElementNS(nsSVG,'line');
   l.setAttribute('x1',traitDepart.x);l.setAttribute('y1',traitDepart.y);
   l.setAttribute('x2',traitVise.x);l.setAttribute('y2',traitVise.y);
@@ -572,6 +581,28 @@ function gesteTrace(r){return !!r&&Math.max(r.w,r.h)>=auZoom(1.2)&&Math.min(r.w,
 function carveWalls(fn){const libres=mapDraft.walls.filter(w=>!w.locked),verrous=mapDraft.walls.filter(w=>w.locked);
  mapDraft.walls=[...verrous,...fn(libres)]}
 // Les traits sont de la même matière : ce qui creuse les zones les creuse aussi.
+/* Les pinceaux. Peindre pose des traits de blocage bout à bout : c'est déjà de la matière
+   d'un seul tenant, la vue les arrête et une découpe les gratte, et l'affichage les fond
+   dans les zones voisines. Gratter creuse un disque à chaque pas et garde ce disque comme
+   tracé, de sorte que le contour obtenu suit la main plutôt que la trame.
+   La grosseur se dit en fraction de socle : un pinceau moyen vaut un peu plus d'un demi
+   socle, ce qui veut dire la même chose sur une carte de couloir et sur un plan de ville. */
+function pinceauTaille(){const sel=$('pinceau-taille');
+ const part=Math.max(.1,Math.min(3,Number(sel&&sel.value)||.55));
+ return Math.max(.25,echelleSocle(mapDraft)*part)}
+// Un disque, en pourcentage de carte : plus large que haut, puisque la carte l'est aussi.
+function disquePinceau(p,r,ratio){const rx=r/2,ry=rx*Math.max(.05,Number(ratio)||16/9);
+ return Array.from({length:16},(_,i)=>{const a=i/16*2*Math.PI;
+  return [borne100(p.x+Math.cos(a)*rx),borne100(p.y+Math.sin(a)*ry)]})}
+const borne100=v=>Math.max(0,Math.min(100,v));
+function coupPinceau(p){const m=mapDraft,r=pinceauTaille();
+ if(mapTool==='gomme'){const d=disquePinceau(p,r,m.ratio);
+  carveWalls(w=>carveWithPolygon(w,d,CARVE_STEP));
+  carveLesTraits((x,y)=>pointInPolygon([x,y],d));
+  (m.carves||(m.carves=[])).push(d.map(q=>[q[0],q[1]]));return}
+ const der=pinceauDernier;
+ (m.traits||(m.traits=[])).push({x1:der?der.x:p.x,y1:der?der.y:p.y,x2:p.x,y2:p.y,e:r})}
+let pinceauDernier=null;
 function carveLesTraits(dedans){mapDraft.traits=carveTraits(mapDraft.traits,dedans,.15)}
 function applyLasso(){const brut=lasso&&lasso.pts;lasso=null;
  if(!brut||brut.length<3){renderCanvas();return}
@@ -613,7 +644,7 @@ $('shape-lock').onclick=()=>{const cible=mapSel&&shapeAt(mapSel);if(!cible)retur
 const pct=e=>{const r=$('map-canvas').getBoundingClientRect();
  return {x:Math.max(0,Math.min(100,100*(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(100,100*(e.clientY-r.top)/r.height))}};
 $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(mapDraft);
- const grip=e.target.dataset.grip,p=pct(e),sous=e.target.closest('.shape,.trait');
+ const grip=e.target.dataset.grip,p=pct(e),sous=e.target.closest('.shape');
  /* Le socle témoin se manie à part : il n'appartient à aucune liste de formes, il ne dit
     que l'échelle. Glissé, il se promène ; tiré par son coin, il grossit. */
  if(e.target.closest('.echelle-token')&&e.button===0){pushUndo();
@@ -621,7 +652,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   $('map-canvas').setPointerCapture(e.pointerId);e.preventDefault();return}
  const dessous=sous?{kind:sous.dataset.kind,i:Number(sous.dataset.i)}:null;
  // Avec l'outil Sélection, ou sur une poignée, on manipule la forme visée.
- if(dessous&&dessous.kind==='trait'){mapSel=dessous;renderCanvas();e.preventDefault();return}
+
  if(dessous&&(mapTool==='select'||grip)){mapSel=dessous;const cible=shapeAt(dessous);
   if(cible&&!cible.locked){pushUndo();mapDrag={mode:grip?'resize':'move',...dessous,grip,orig:structuredClone(cible),from:p,touche:false};
    $('map-canvas').setPointerCapture(e.pointerId)}
@@ -646,6 +677,13 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   else traitDepart=traitVise=null;
   renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render();e.preventDefault();return}
  if(mapTool==='select'){mapSel=null;renderCanvas();return}
+ /* Le pinceau : on appuie, on trace, on relâche. Chaque pas dépose ou gratte, et le pas
+    vaut la moitié de la grosseur — assez serré pour que la trace soit continue, assez
+    espacé pour ne pas empiler mille formes sur un geste. */
+ if(mapTool==='pinceau'||mapTool==='gomme'){pushUndo();
+  pinceauDernier=null;coupPinceau(p);pinceauDernier={x:p.x,y:p.y};
+  mapDrag={mode:'pinceau',from:p};$('map-canvas').setPointerCapture(e.pointerId);
+  renderCanvas();e.preventDefault();return}
  if(mapTool==='lasso'){if(!lasso)lasso={pts:[]};
   // Un clic près du premier point ferme le contour, comme dans un outil de détourage.
   if(lasso.pts.length>2&&Math.hypot(p.x-lasso.pts[0][0],p.y-lasso.pts[0][1])<auZoom(1.6)){applyLasso();return}
@@ -674,6 +712,10 @@ $('map-canvas').addEventListener('pointermove',e=>{
   const dx=(p.x-j.x)/100*r.width,dy=(p.y-j.y)/100*r.height;
   j.t=Math.max(.6,Math.min(40,2*Math.hypot(dx,dy)/Math.max(1,r.width)*100));
   renderCanvas();return}
+ if(d.mode==='pinceau'){const der=pinceauDernier;
+  if(!der||Math.hypot(p.x-der.x,p.y-der.y)>=pinceauTaille()/2){
+   coupPinceau(p);pinceauDernier={x:p.x,y:p.y};renderCanvas()}
+  return}
  if(d.mode==='lasso'){const der=lasso.pts[lasso.pts.length-1];
   if(Math.hypot(p.x-der[0],p.y-der[1])>=auZoom(.6)){lasso.pts.push([p.x,p.y]);d.bouge=true;renderCanvas()}
   return}
@@ -690,6 +732,8 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
  if(d.mode==='echelle'||d.mode==='echelle-taille'){renderCanvas();saveMaps();
   if(mapDraft.id===currentMapId)render();return}
  // Un glisser ferme le contour à main levée ; une suite de clics attend Entrée.
+ if(d.mode==='pinceau'){pinceauDernier=null;
+  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render();return}
  if(d.mode==='lasso'){if(d.bouge&&lasso&&lasso.pts.length>=3)applyLasso();else renderCanvas();return}
  if(d.mode==='cut'){const r=cutRect;cutRect=null;
   if(gesteTrace(r)){pushUndo();
