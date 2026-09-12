@@ -371,22 +371,34 @@ const sommets=m=>C.matiereDe(m).map(p=>p.anneaux.map(r=>r.length));
  const cx=13,cy=21,hw=3*R,hh=1;   // en unités d'écran : demi-longueur 3·R, demi-épaisseur 1
  const attendu=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([s,t])=>[+((cx*R-t*hh)/R).toFixed(6),+(cy+s*hw).toFixed(6)]);
  assert.deepEqual(debout,attendu);
- // posePorte : droite ou debout, un rectangle sans angle ; de biais, l'angle est gardé, entre 0 et 180.
- assert.deepEqual(C.posePorte(50*R,40,20,3,0,R),{x:50-10/R,y:38.5,w:20/R,h:3,a:0});
- assert.deepEqual(C.posePorte(50*R,40,20,3,90,R),{x:50-1.5/R,y:30,w:3/R,h:20,a:0});
- assert.equal(C.posePorte(50*R,40,20,3,-135,R).a,45);
- assert.equal(C.posePorte(50*R,40,20,3,210,R).a,30);
- // L'épaisseur sous un point : un mur droit de 6 de haut, mesuré à 0° ; rien hors matière.
- const droit={ratio:R,matiere:[{anneaux:[rectPolygon({x:10,y:40,w:80,h:6})]}],doors:[]};
- assert.ok(Math.abs(C.epaisseurSous(droit,{x:50,y:43},0,R)-6)<.11);
- assert.equal(C.epaisseurSous(droit,{x:50,y:20},0,R),0);
+ /* La poignée de rotation : posée au-dessus du centre, elle amène la porte sur le curseur.
+    Maj par crans de quinze degrés ; sans rien, aimantée aux angles droits et à 45°. */
+ const c={x:50,y:50};
+ assert.equal(C.anglePoignee(c,{x:50,y:40},R),0);                       // Poignée en haut : droite.
+ assert.equal(C.anglePoignee(c,{x:60,y:50},R),90);                      // À droite : debout.
+ assert.equal(C.anglePoignee(c,{x:50,y:60},R),0);                       // En bas : droite aussi — pas de sens.
+ assert.equal(C.anglePoignee(c,{x:50+10/R,y:40},R),45);                 // Diagonale d'écran : 45°.
+ assert.equal(C.anglePoignee(c,{x:50+Math.tan(3*Math.PI/180)*10/R,y:40},R),0);   // À 3° : aimantée.
+ assert.equal(C.anglePoignee(c,{x:50+Math.tan(23*Math.PI/180)*10/R,y:40},R,true),30);   // Maj : au cran de 15.
+ assert.equal(C.anglePoignee(c,{x:50,y:50},R),0);
+ /* Redimensionner une porte tournée par un coin : le coin opposé ne bouge pas d'un iota,
+    et sans angle c'est le redimensionnement ordinaire. */
+ const orig={x:40,y:48,w:20,h:4,a:30};
+ const coins=d=>C.doorPolygon(d,R).map(p=>p.map(v=>+v.toFixed(6)));
+ const avantNW=coins(orig)[0];
+ // Le curseur : le coin sud-est poussé de +3 en largeur et +2 en hauteur, dans le repère de la porte.
+ const f=C.doorFrame(orig,R),Lx=(orig.x+orig.w+3)*R-f.cx,Ly=orig.y+orig.h+2-f.cy;
+ const cible={x:(f.cx+Lx*f.ux+Ly*f.vx)/R,y:f.cy+Lx*f.uy+Ly*f.vy};
+ const tire=C.redimPorteTournee(orig,'se',cible,R);
+ assert.equal(tire.a,30);
+ assert.deepEqual(coins(tire)[0],avantNW);                              // Le coin nord-ouest est resté.
+ assert.ok(Math.abs(tire.w-(orig.w+3))<1e-9&&Math.abs(tire.h-(orig.h+2))<1e-9,JSON.stringify(tire));
+ assert.deepEqual(C.redimPorteTournee({x:10,y:10,w:6,h:2,a:0},'se',{x:20,y:15},R),{x:10,y:10,w:10,h:5,a:0});
  // Un mur de biais à 30°, épais de 4 unités d'écran, long de 60 : bâti comme une porte géante.
- const murBiais=C.doorPolygon({...C.posePorte(50*R,50,60,4,30,R)},R);
+ const murBiais=C.doorPolygon({x:50-30/R,y:48,w:60/R,h:4,a:30},R);
  const m={ratio:R,matiere:[{anneaux:[murBiais]}],doors:[]};
- assert.ok(Math.abs(C.epaisseurSous(m,{x:50,y:50},30,R)-4)<.11);
- // La porte, glissée le long du mur : épaisseur du mur, angle du mur, dix unités de long.
- const porte={...C.posePorte(50*R,50,10,C.epaisseurSous(m,{x:50,y:50},30,R),30,R),open:false};m.doors.push(porte);
- assert.equal(porte.a,30);
+ // La porte, tracée droite sur le mur puis tournée de trente degrés par sa poignée.
+ const porte={x:50-5/R,y:48,w:10/R,h:4,a:30,open:false};m.doors.push(porte);
  assert.equal(C.wallShape(m).contours.length,2);                               // Le mur est coupé en deux.
  const trou=C.trouPorte(porte,m);assert.equal(trou.length,4);
  // De part et d'autre de la porte, perpendiculairement au mur : bloqué close, libre ouverte.

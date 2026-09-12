@@ -69,6 +69,7 @@ function readSeen(m,d){
   for(const c of [256,104]){const r=m.seen.length/c;
    if(Number.isInteger(r)&&r>10&&r<c)return regridMask(m.seen,c,r,d.w,d.h)}
  return new Uint8Array(d.n)}
+let visionCache={cle:'',vues:new Map()};
 function computeFog(){const m=currentMap();
  if(!m){fogVis=null;fogSeen=null;fogKey='';fogDim=null;return}
  const d=fogDim=fogDims(m);
@@ -79,8 +80,13 @@ function computeFog(){const m=currentMap();
   +'|'+geometryKey(m);
  if(cle===fogKey&&fogVis)return;
  fogKey=cle;
- const vues=new Map(),vu=a=>{const k=a.x+','+a.y;
-  if(!vues.has(k))vues.set(k,visionPolygon(a,formes));return vues.get(k)};
+ /* Le polygone de vision ne dépend que d'une position et de la géométrie : on le garde par
+    position tant que la géométrie ne bouge pas. Quand un seul aventurier se déplace, les
+    autres — et le maître du jeu voit par tous — ne coûtent plus rien. */
+ const geo=m.id+'|'+geometryKey(m);
+ if(visionCache.cle!==geo)visionCache={cle:geo,vues:new Map()};
+ const vues=visionCache.vues,vu=a=>{const k=a.x+','+a.y;
+  if(!vues.has(k)){if(vues.size>=48)vues.clear();vues.set(k,visionPolygon(a,formes))}return vues.get(k)};
  // La mémoire retient ce que la troupe entière a vu, où que soit le lecteur.
  let neuf=0;for(const a of troupe)neuf+=fillPolygonGrid(fogSeen,d.w,d.h,vu(a));
  fogVis=fogSeers().map(vu);
@@ -482,8 +488,8 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  ligne:'Un clic pose l’origine du trait, un second l’arrête. ⌘ (ou Ctrl) le redresse à l’horizontale, à la verticale ou à quarante-cinq degrés. Maj au second clic pose un point d’appui : le trait s’arrête là et le suivant en repart, de quoi longer une salle entière sans relever la main. Près d’une extrémité déjà posée, le tracé s’y aimante — une pastille verte le dit — et le carré se ferme juste. Échap abandonne.',
  cut:'Trace un rectangle dans la matière : la découpe y creuse exactement ce rectangle, vue et passage rétablis.',
  lasso:'Contourne la forme à creuser : glisse pour tracer à main levée, ou clique point par point. La découpe suit exactement ton tracé. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
- door:'Glisse le long du mur, d’un montant à l’autre : la porte prend l’épaisseur du mur et son inclinaison, même de biais. ⌘ (ou Ctrl) la contraint à quarante-cinq degrés. Elle perce d’elle-même la matière qu’elle recouvre, et le mur se referme si tu la déplaces. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
- secret:'Glisse le long du mur, d’un montant à l’autre, pour poser un passage secret : tant qu’il est clos, il ne perce rien et la troupe ne voit qu’un mur — toi seul le devines à son trait violet, et toi seul l’ouvres. Ouvert, il devient une porte comme une autre.',
+ door:'Trace une porte : elle perce d’elle-même la matière qu’elle recouvre, et le mur se referme si tu la déplaces. Sélectionne-la et tire sa poignée ronde pour la tourner — pour une porte de biais. Maj tourne par crans de quinze degrés. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
+ secret:'Trace un passage secret à même le mur — et tourne-le par sa poignée ronde s’il est de biais : tant qu’il est clos, il ne perce rien et la troupe ne voit qu’un mur — toi seul le devines à son trait violet, et toi seul l’ouvres. Ouvert, il devient une porte comme une autre.',
  start:'Trace la zone où les aventuriers seront regroupés à l’ouverture de la carte. Une seule par carte.',
  pinceau:'Glisse pour peindre de la matière à main levée, comme au feutre. Le trait se fond dans les zones qu’il touche. Sa grosseur se choisit à côté, en fraction de socle : elle suit donc l’échelle de la carte.',
  gomme:'Glisse pour gratter la matière, comme à la gomme. Ce qui est verrouillé résiste. Sa grosseur se choisit à côté.',
@@ -547,10 +553,12 @@ function shapeEl(kind,i,r){const el=document.createElement('div');
  el.className='shape '+kind+(r.locked?' locked':'')+(kind==='door'&&r.keyLocked?' keyed':'')+(kind==='door'&&r.secret?' secret':'')
   +(mapSel&&mapSel.kind===kind&&mapSel.i===i?' selected':'');
  el.style.left=r.x+'%';el.style.top=r.y+'%';el.style.width=r.w+'%';el.style.height=r.h+'%';
- // Une porte de biais tourne autour de son centre ; ses poignées, qui tourneraient avec, se taisent.
- if(kind==='door'&&(Number(r.a)||0)){el.style.transform='rotate('+r.a+'deg)';el.classList.add('tourne')}
+ // Une porte de biais tourne autour de son centre ; ses coins tournent avec elle et la
+ // redimensionnent dans son repère. La poignée ronde, au-dessus, la fait pivoter.
+ if(kind==='door'&&(Number(r.a)||0))el.style.transform='rotate('+r.a+'deg)';
  el.dataset.kind=kind;el.dataset.i=i;
- ['nw','ne','sw','se'].forEach(g=>{const h=document.createElement('span');h.className='grip '+g;h.dataset.grip=g;el.append(h)});
+ [...['nw','ne','sw','se'],...(kind==='door'?['rot']:[])].forEach(g=>{const h=document.createElement('span');h.className='grip '+g;h.dataset.grip=g;
+  if(g==='rot')h.title='Tourner la porte — Maj par crans de 15°';el.append(h)});
  return el}
 /* La zone choisie s'éclaire d'un seul tenant, trous compris : un seul tracé, à la règle
    pair-impair, dans un groupe translucide. */
@@ -631,8 +639,6 @@ function matiereChangee(){renderCanvas();renderMapList();saveMaps();if(mapDraft.
    continu et rond au bout ; gratter la soustrait. La grosseur se dit en fraction de
    socle : un pinceau moyen vaut un peu plus d'un demi socle, ce qui veut dire la même
    chose sur une carte de couloir et sur un plan de ville. */
-// L'épaisseur d'une porte posée hors de toute matière, en pour cent de la largeur.
-const PORTE_EPAISSEUR=1.4;
 function pinceauTaille(){const sel=$('pinceau-taille');
  const part=Math.max(.1,Math.min(3,Number(sel&&sel.value)||.55));
  return Math.max(.25,echelleSocle(mapDraft)*part)}
@@ -701,7 +707,10 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
    $('map-canvas').setPointerCapture(e.pointerId)}
   renderCanvas();e.preventDefault();return}
  if(dessous&&(mapTool==='select'||grip)){mapSel=dessous;const cible=shapeAt(dessous);
-  if(cible&&!cible.locked){pushUndo();mapDrag={mode:grip?'resize':'move',...dessous,grip,orig:structuredClone(cible),from:p,touche:false};
+  if(cible&&!cible.locked){pushUndo();
+   // La poignée ronde d'une porte la fait tourner autour de son centre.
+   mapDrag={mode:grip==='rot'?'tourne':grip?'resize':'move',...dessous,grip,orig:structuredClone(cible),from:p,touche:false,
+    centre:{x:cible.x+(cible.w||0)/2,y:cible.y+(cible.h||0)/2}};
    $('map-canvas').setPointerCapture(e.pointerId)}
   renderCanvas();e.preventDefault();return}
  if(mapTool==='foe'){const t=catalog.monsters[Number($('map-foe-tpl').value)];if(!t)return;
@@ -741,16 +750,13 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  // Le bloc se trace comme la découpe : un aperçu suit la main, l'union se fait au relâché.
  if(mapTool==='wall'){cutRect={x:p.x,y:p.y,w:0,h:0,bloc:true};mapSel=null;
   mapDrag={mode:'cut',kind:'bloc',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
- /* La porte se trace le long du mur, d'un montant à l'autre : le glisser donne sa longueur
-    et son inclinaison, le mur sous elle donne son épaisseur. Un passage secret est une
-    porte née secrète. */
- if(mapTool==='door'||mapTool==='secret'){pushUndo();
-  const porte={x:p.x,y:p.y,w:0,h:0,a:0,locked:false,open:false};if(mapTool==='secret')porte.secret=true;
-  mapDraft.doors.push(porte);mapSel={kind:'door',i:mapDraft.doors.length-1};
-  mapDrag={mode:'porte',i:mapSel.i,from:p,dessous,L:0};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  // Outil de dessin : on trace. Un clic sans glisser sélectionne la forme sous le curseur.
  pushUndo();const rect={x:p.x,y:p.y,w:0,h:0,locked:false};
- if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
+ if(mapTool==='door'||mapTool==='secret'){rect.open=false;
+  // Un passage secret est une porte, née secrète : plus besoin de percer d'abord un trou.
+  if(mapTool==='secret')rect.secret=true;
+  mapDraft.doors.push(rect);mapSel={kind:'door',i:mapDraft.doors.length-1}}
+ else if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
  mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
 $('map-canvas').addEventListener('pointermove',e=>{
  if(traitDepart&&!mapDrag){traitVise=viseTrait(pct(e),e.metaKey||e.ctrlKey,mapDraft&&mapDraft.ratio);
@@ -771,21 +777,6 @@ $('map-canvas').addEventListener('pointermove',e=>{
  if(d.mode==='lasso'){const der=lasso.pts[lasso.pts.length-1];
   if(Math.hypot(p.x-der[0],p.y-der[1])>=auZoom(.6)){lasso.pts.push([p.x,p.y]);d.bouge=true;renderCanvas()}
   return}
- /* La porte suit la main : d'un montant à l'autre, dans le repère de l'écran. ⌘/Ctrl la
-    contraint aux huit directions ; sans rien, une porte presque droite le devient tout à
-    fait — et redevient alors le rectangle d'avant. */
- if(d.mode==='porte'){const porte=mapDraft.doors[d.i];if(!porte){mapDrag=null;return}
-  const r=Math.max(.05,Number(mapDraft.ratio)||16/9);
-  const ax=d.from.x*r,ay=d.from.y,bx=p.x*r,by=p.y,L=Math.hypot(bx-ax,by-ay);
-  let ang=Math.atan2(by-ay,bx-ax)*180/Math.PI;
-  if(e.metaKey||e.ctrlKey)ang=Math.round(ang/45)*45;
-  else{const droit=Math.round(ang/90)*90;if(Math.abs(ang-droit)<=6)ang=droit}
-  let cx=(ax+bx)/2,cy=(ay+by)/2;
-  // Le mur sous la main donne l'épaisseur, et recentre la porte sur son axe.
-  const mur=sondeMur(mapDraft,{x:cx/r,y:cy},ang,r);
-  const T=mur?mur.epaisseur:PORTE_EPAISSEUR*r;
-  if(mur){cx+=mur.vx*mur.decalage;cy+=mur.vy*mur.decalage}
-  Object.assign(porte,posePorte(cx,cy,L,T,ang,r));d.L=L;renderCanvas();return}
  /* Une zone se déplace ou s'étire d'un bloc : la même transformation affine passe sur tous
     ses anneaux, trous compris. Glissée, elle reste dans la carte ; tirée, elle ne se
     réduit jamais à rien. */
@@ -801,10 +792,13 @@ $('map-canvas').addEventListener('pointermove',e=>{
   m[d.i]=transformePolygone(d.orig,([x,y])=>[o.x+dx+(x-o.x)*sx,o.y+dy+(y-o.y)*sy]);
   renderCanvas();return}
  const cible=shapeAt(d);if(!cible)return;
+ if(d.mode==='tourne'){cible.a=anglePoignee(d.centre,p,mapDraft.ratio,e.shiftKey);renderCanvas();return}
  if(d.kind==='foe'){cible.x=p.x;cible.y=p.y}
  else if(d.mode==='create'||d.mode==='cut'){cible.x=Math.min(d.from.x,p.x);cible.y=Math.min(d.from.y,p.y);cible.w=Math.abs(p.x-d.from.x);cible.h=Math.abs(p.y-d.from.y);
 }
  else if(d.mode==='move'){cible.x=Math.max(0,Math.min(100-d.orig.w,d.orig.x+p.x-d.from.x));cible.y=Math.max(0,Math.min(100-d.orig.h,d.orig.y+p.y-d.from.y))}
+ // Une porte tournée se redimensionne dans son propre repère : le coin opposé reste fixe.
+ else if(d.kind==='door'&&(Number(d.orig.a)||0))Object.assign(cible,redimPorteTournee(d.orig,d.grip,p,mapDraft.ratio));
  else{const o=d.orig,est=d.grip.includes('e'),sud=d.grip.includes('s');
   const x1=est?o.x:p.x,x2=est?p.x:o.x+o.w,y1=sud?o.y:p.y,y2=sud?p.y:o.y+o.h;
   cible.x=Math.min(x1,x2);cible.w=Math.abs(x2-x1);cible.y=Math.min(y1,y2);cible.h=Math.abs(y2-y1)}
@@ -814,10 +808,6 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
   if(mapDraft.id===currentMapId)render();return}
  // Un glisser ferme le contour à main levée ; une suite de clics attend Entrée.
  if(d.mode==='pinceau'){pinceauDernier=null;matiereChangee();return}
- // Une porte sans longueur n'est pas une porte : clic manqué, on choisit ce qu'il y avait dessous.
- if(d.mode==='porte'){if(!(d.L>=auZoom(1.2))){mapDraft.doors.splice(d.i,1);
-   if(d.dessous){mapSel=d.dessous;mapTool='select'}else{mapSel=null;undoStack.pop()}}
-  matiereChangee();return}
  if(d.mode==='lasso'){if(d.bouge&&lasso&&lasso.pts.length>=3)applyLasso();else renderCanvas();return}
  /* Le rectangle relâché : un bloc rejoint la matière, une découpe l'en ôte — exactement
     lui, angles droits compris. Un clic sans glisser ne trace rien : s'il tombait sur une

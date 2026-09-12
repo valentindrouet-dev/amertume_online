@@ -100,7 +100,7 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .shape.door{background:#c98a4b26;border:2px solid #c98a4b}.shape.door.keyed{background:#c98a4b1f;border-color:#f3d7a6;border-width:3px}
 /* Un passage secret : violet et pointillé, dans l'éditeur comme sur la table. */
 .shape.door.secret{background:#b06fd01f;border-color:#b06fd0;border-style:dashed;border-width:3px}.shape.door.keyed::before{content:'🔑';position:absolute;left:1px;top:0;font-size:10px}
-.shape.door.open{background:#c98a4b14;border-style:dashed}.shape.door.tourne .grip{display:none!important}
+.shape.door.open{background:#c98a4b14;border-style:dashed}/* La poignée ronde d'une porte, au-dessus de son centre : on la tire pour la faire pivoter. */.grip.rot{left:calc(50% - 5px / var(--z));top:calc(-22px / var(--z));width:calc(10px / var(--z));height:calc(10px / var(--z));border-radius:50%;cursor:grab}.grip.rot:active{cursor:grabbing}
 .shape.start{background:#8bbd9c26;border:2px dashed #8bbd9c}
 .shape.foe{width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#6d443c;border:2px solid #d29180;display:grid;place-items:center;font:bold 14px Georgia;color:#f6e2dc;box-shadow:0 3px 8px #0007}
 .shape.foe.hidden-foe{opacity:.55;border-style:dashed}

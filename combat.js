@@ -377,27 +377,30 @@ function doorFrame(d,ratio){const r=Math.max(.05,Number(ratio)||16/9),a=(Number(
 function doorPolygon(d,ratio){if(!d)return null;if(!(Number(d.a)||0))return rectPolygon(d);
  const f=doorFrame(d,ratio);
  return [[-1,-1],[1,-1],[1,1],[-1,1]].map(([s,t])=>[(f.cx+s*f.hw*f.ux+t*f.hh*f.vx)/f.r,f.cy+s*f.hw*f.uy+t*f.hh*f.vy])}
-/* Une porte tracée d'un montant à l'autre : centre, longueur et épaisseur dans le repère
-   de l'écran, et son angle. Droite ou debout, elle redevient un rectangle sans angle —
-   la forme d'avant — ; de biais, elle garde son angle, ramené entre 0 et 180 puisqu'une
-   porte n'a pas de sens. */
-function posePorte(cx,cy,L,T,ang,ratio){const r=Math.max(.05,Number(ratio)||16/9),a=((ang%180)+180)%180;
- if(a===90)return {x:(cx-T/2)/r,y:cy-L/2,w:T/r,h:L,a:0};
- return {x:(cx-L/2)/r,y:cy-T/2,w:L/r,h:T,a}}
-/* L'épaisseur de la matière sous un point, perpendiculairement à une direction : c'est
-   ainsi qu'une porte tracée le long d'un mur prend d'elle-même l'épaisseur de ce mur.
-   Mesurée dans le repère de l'écran, en unités de hauteur ; zéro hors de la matière. */
-function sondeMur(map,c,angDeg,ratio,max=8){const r=Math.max(.05,Number(ratio)||16/9),a=(angDeg||0)*Math.PI/180;
- const polys=matiereDe(map);if(!polys.length)return null;
- const cx=c.x*r,cy=c.y,vx=-Math.sin(a),vy=Math.cos(a),pas=.05;
- const dedans=(x,y)=>polys.some(p=>polygoneContient(p,[x/r,y]));
- if(!dedans(cx,cy))return null;
- const jusque=sens=>{for(let s=pas;s<=max;s+=pas)if(!dedans(cx+vx*sens*s,cy+vy*sens*s))return s-pas/2;return max};
- const avant=jusque(-1),apres=jusque(1);
- /* Le décalage ramène le point sur l'axe du mur : une porte tracée un peu à côté de
-    l'axe s'y recentre, au lieu de déborder d'un côté et de laisser un fil de l'autre. */
- return {epaisseur:avant+apres,decalage:(apres-avant)/2,vx,vy}}
-function epaisseurSous(map,c,angDeg,ratio,max){const m=sondeMur(map,c,angDeg,ratio,max);return m?m.epaisseur:0}
+/* Tourner une porte par sa poignée : la poignée est posée au-dessus de son centre, dans
+   son repère ; l'angle est donc celui qui amène cette direction sur le curseur. Maj
+   avance par crans de quinze degrés ; sans rien, une porte presque droite ou presque à
+   quarante-cinq degrés s'y aimante. Entre 0 et 180 : une porte n'a pas de sens. */
+function anglePoignee(centre,p,ratio,crans){const r=Math.max(.05,Number(ratio)||16/9);
+ const dx=(p.x-centre.x)*r,dy=p.y-centre.y;if(Math.hypot(dx,dy)<1e-9)return 0;
+ let a=Math.atan2(dy,dx)*180/Math.PI+90;
+ if(crans)a=Math.round(a/15)*15;
+ else{const proche=Math.round(a/45)*45;if(Math.abs(a-proche)<=4)a=proche}
+ return ((a%180)+180)%180}
+/* Redimensionner une porte tournée par un coin : le curseur est ramené dans le repère de
+   la porte, le coin opposé y reste fixe, puis le rectangle obtenu est reposé dans le
+   monde autour de son nouveau centre. Sans angle, c'est le redimensionnement ordinaire. */
+function redimPorteTournee(orig,grip,p,ratio){const r=Math.max(.05,Number(ratio)||16/9),deg=Number(orig.a)||0,a=deg*Math.PI/180;
+ const cx=(orig.x+orig.w/2)*r,cy=orig.y+orig.h/2;
+ const dx=p.x*r-cx,dy=p.y-cy,c=Math.cos(a),s=Math.sin(a);
+ const lx=deg?(cx+dx*c+dy*s)/r:p.x,ly=deg?cy-dx*s+dy*c:p.y;   // le curseur, dans le repère de la porte
+ const est=grip.includes('e'),sud=grip.includes('s');
+ const x1=est?orig.x:lx,x2=est?lx:orig.x+orig.w,y1=sud?orig.y:ly,y2=sud?ly:orig.y+orig.h;
+ const w=Math.abs(x2-x1),h=Math.abs(y2-y1),nx=Math.min(x1,x2),ny=Math.min(y1,y2);
+ if(!deg)return {x:nx,y:ny,w,h,a:0};
+ const ncx=(nx+w/2)*r-cx,ncy=ny+h/2-cy;                // le nouveau centre, retourné dans le monde
+ const wx=(cx+ncx*c-ncy*s)/r,wy=cy+ncx*s+ncy*c;
+ return {x:wx-w/2,y:wy-h/2,w,h,a:Number(orig.a)||0}}
 /* Le trou qu'une porte perce : son rectangle, prolongé sur son petit côté de chaque côté
    jusqu'à ce que la matière s'arrête — et au plus de sa propre épaisseur : si l'on ne
    ressort pas dans cette limite, c'est un gros bloc et non un mur. Le tout dans le
@@ -476,23 +479,46 @@ function rayHitsSegment(ox,oy,dx,dy,a,b){
 function contourBox(c){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
  for(const p of c){if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<y0)y0=p[1];if(p[1]>y1)y1=p[1]}
  return {x:x0,y:y0,w:x1-x0,h:y1-y0}}
+/* ---------- L'index des murs : les arêtes par paquets, chaque paquet sous sa boîte ----------
+   Un rayon ne testait un contour qu'après sa boîte englobante ; mais une matière d'un seul
+   tenant — un long geste de pinceau, une carte fondue — n'est qu'un contour de mille
+   arêtes, et sa boîte ne rejette rien : chaque rayon les parcourait toutes, et le
+   brouillard prenait deux cents millisecondes par observateur. Les arêtes sont donc
+   groupées par huit, et les groupes par huit, chacun sous sa boîte : un rayon n'ouvre que
+   les paquets qu'il traverse, et n'ouvre plus rien dès qu'un mur est plus près que le
+   paquet suivant. L'index est gardé tant que ce sont les mêmes formes. */
+const INDEX_MURS=new WeakMap();
+function boiteAretes(lot){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+ for(const [a,b] of lot)for(const p of [a,b]){if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<y0)y0=p[1];if(p[1]>y1)y1=p[1]}
+ // Un cheveu de marge : une feuille d'arêtes toutes verticales aurait une boîte sans largeur.
+ return {x:x0-1e-7,y:y0-1e-7,w:x1-x0+2e-7,h:y1-y0+2e-7}}
+function indexMurs(shapes){if(!Array.isArray(shapes))return {groupes:[]};
+ let idx=INDEX_MURS.get(shapes);if(idx)return idx;
+ const groupes=[];
+ shapes.forEach((s,forme)=>{for(const c of contoursOf(s)){if(!c||c.length<3)continue;
+  const aretes=[];for(let i=0,j=c.length-1;i<c.length;j=i++)aretes.push([c[j],c[i]]);
+  for(let g=0;g<aretes.length;g+=64){const lot=aretes.slice(g,g+64),feuilles=[];
+   for(let f=0;f<lot.length;f+=8){const petit=lot.slice(f,f+8);feuilles.push({box:boiteAretes(petit),aretes:petit})}
+   groupes.push({forme,box:boiteAretes(lot),feuilles})}}});
+ idx={groupes};INDEX_MURS.set(shapes,idx);return idx}
+// Le premier mur qu'un rayon rencontre avant t, les formes exclues mises à part.
+function rayonContre(idx,ox,oy,dx,dy,t,exclues){
+ for(const g of idx.groupes){if((exclues&&exclues.has(g.forme))||rayHitsRect(ox,oy,dx,dy,g.box)>=t)continue;
+  for(const f of g.feuilles){if(rayHitsRect(ox,oy,dx,dy,f.box)>=t)continue;
+   for(const [a,b] of f.aretes){const u=rayHitsSegment(ox,oy,dx,dy,a,b);if(u<t)t=u}}}
+ return t}
+// Un héros poussé dans la matière verrait le noir : les formes qui le contiennent sont ignorées.
+function formesAutour(o,shapes){const ex=new Set();
+ (shapes||[]).forEach((s,i)=>{if(shapeContains(s,[o.x,o.y]))ex.add(i)});return ex}
 function visionPolygon(o,shapes,box){
- const B=box||{x:0,y:0,w:100,h:100};
- // Un héros poussé dans la matière verrait le noir : la forme qui le contient est ignorée.
- const murs=[];
- for(const s of shapes||[]){if(shapeContains(s,[o.x,o.y]))continue;
-  for(const c of contoursOf(s))if(c&&c.length>=3)murs.push({pts:c,box:contourBox(c)})}
+ const B=box||{x:0,y:0,w:100,h:100},exclues=formesAutour(o,shapes),idx=indexMurs(shapes);
  const coins=[[B.x,B.y],[B.x+B.w,B.y],[B.x+B.w,B.y+B.h],[B.x,B.y+B.h]];
- for(const m of murs)for(const p of m.pts)coins.push(p);
+ (shapes||[]).forEach((s,i)=>{if(exclues.has(i))return;
+  for(const c of contoursOf(s))if(c&&c.length>=3)for(const p of c)coins.push(p)});
  const E=2e-5,pts=[];
  for(const c of coins){const base=Math.atan2(c[1]-o.y,c[0]-o.x);
   for(const a of [base-E,base,base+E]){const dx=Math.cos(a),dy=Math.sin(a);
-   let t=rayLeavesBox(o.x,o.y,dx,dy,B);
-   for(const m of murs){
-    // Rejet par boîte englobante : la plupart des contours ne sont pas sur le trajet.
-    if(rayHitsRect(o.x,o.y,dx,dy,m.box)>=t)continue;
-    const q=m.pts;
-    for(let i=0,j=q.length-1;i<q.length;j=i++){const u=rayHitsSegment(o.x,o.y,dx,dy,q[j],q[i]);if(u<t)t=u}}
+   const t=rayonContre(idx,o.x,o.y,dx,dy,rayLeavesBox(o.x,o.y,dx,dy,B),exclues);
    pts.push([a,o.x+t*dx,o.y+t*dy])}}
  pts.sort((p,q)=>p[0]-q[0]);
  return pts.map(p=>[p[1],p[2]])}
@@ -503,17 +529,12 @@ function visionPolygon(o,shapes,box){
    bien que « t » se compte en pixels : le disque reste rond à l'écran, même sur une carte
    qui n'est pas carrée. */
 function reachPolygon(o,shapes,rayon,largeur,hauteur,pas){
- const n=Math.max(24,Math.min(360,pas||72)),pts=[],murs=[];
+ const n=Math.max(24,Math.min(360,pas||72)),pts=[];
  if(!(rayon>0)||!(largeur>0)||!(hauteur>0))return pts;
- for(const s of shapes||[]){if(shapeContains(s,[o.x,o.y]))continue;
-  for(const c of contoursOf(s))if(c&&c.length>=3)murs.push({pts:c,box:contourBox(c)})}
+ const exclues=formesAutour(o,shapes),idx=indexMurs(shapes);
  for(let i=0;i<n;i++){const a=i/n*Math.PI*2;
   const dx=Math.cos(a)*100/largeur,dy=Math.sin(a)*100/hauteur;
-  let t=rayon;
-  for(const m of murs){if(rayHitsRect(o.x,o.y,dx,dy,m.box)>=t)continue;
-   const q=m.pts;
-   for(let k=0,j=q.length-1;k<q.length;j=k++){const u=rayHitsSegment(o.x,o.y,dx,dy,q[j],q[k]);if(u<t)t=u}}
-  pts.push([o.x+t*dx,o.y+t*dy])}
+  pts.push((t=>[o.x+t*dx,o.y+t*dy])(rayonContre(idx,o.x,o.y,dx,dy,rayon,exclues)))}
  return pts}
 // Un socle est vu dès qu'il mord sur la zone éclairée, pas seulement par son centre.
 function polyTouchesDisc(poly,c,r){if(!poly||poly.length<3)return false;
@@ -719,7 +740,7 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  if(cle==='vieMax'&&Number.isFinite(a.vie))a.vie=Math.min(a.vie,a.vieMax);
  else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
  return a[cle]}
-const api={visionPolygon,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,posePorte,epaisseurSous,sondeMur,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={visionPolygon,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,uncontain,spreadInZone,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ETATS_JEU,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
