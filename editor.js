@@ -444,6 +444,8 @@ const TALENT_TYPES=[['act','ACT','Action'],['reac','REAC','Réaction'],['pass','
  ['crit','CRIT','Critique'],['mait','MAIT','Maîtrise'],['ame','AME','Amélioration']];
 const talentType=t=>TALENT_TYPES.find(x=>x[0]===(t&&t.type))||TALENT_TYPES[0];
 const GENERIQUES='Génériques';
+// La valeur qui n'est pas une classe mais une invitation à en nommer une.
+const AUTRE_CLASSE='__autre';
 const talentFamily=t=>(t&&t.famille||'').trim()||GENERIQUES;
 function talent(id){return (catalog.talents||[]).find(t=>t&&t.id===id)}
 function talentPill(t){const [cle,court,nom]=talentType(t);
@@ -822,13 +824,22 @@ function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talen
  const t=i===null?{name:'Nouveau talent',famille:GENERIQUES,type:'act',level:1,effect:'',effets:'',effects:'',notes:'',effet:'',params:{}}:catalog.talents[i];
  if(i!==null&&!t)return;
  talentDraft={effet:t.effet||'',params:{...(t.params||{})}};
- const familles=[...new Set([GENERIQUES,...talentFamilies(),...actors.filter(a=>a.hero).map(a=>(a.role||'').split('·')[0].trim()).filter(Boolean)])];
+ /* Les classes offertes : celles du jeu, celles déjà portées par un talent, et celles que
+    la troupe s'est données. La classe du talent ouvert y figure toujours, fût-elle inédite. */
+ const familles=[...new Set([GENERIQUES,...talentFamilies(),
+  ...actors.filter(a=>a.hero).map(a=>(a.role||'').split('·')[0].trim()).filter(Boolean),
+  talentFamily(t)])];
+ const famille=talentFamily(t);
  $('talent-fields').innerHTML='<div class="edit-grid">'
   +field('Nom','name',t.name,'text','required maxlength="120"')
-  +'<label>Classe<input name="famille" list="talent-familles" maxlength="60" value="'+esc(talentFamily(t))+'"></label>'
+  /* Un vrai menu, et non plus une liste de suggestions : un datalist ne propose que ce
+     qui ressemble à ce qui est déjà écrit, et le champ arrivant rempli de « Génériques »,
+     il n'offrait que « Génériques ». Une classe inédite reste possible, par la dernière
+     entrée du menu, qui ouvre un champ libre. */
+  +sel('Classe','famille',famille,[...familles.map(f=>[f,f]),[AUTRE_CLASSE,'✎ Autre classe…']])
   +sel('Nature','type',t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]))
   +field('Niveau','level',t.level||1,'number','min="1" max="20"')+'</div>'
-  +'<datalist id="talent-familles">'+familles.map(f=>'<option value="'+esc(f)+'">').join('')+'</datalist>'
+  +'<div id="famille-autre" hidden><label>Nom de la nouvelle classe<input name="familleLibre" maxlength="60" value=""></label></div>'
   +'<label>Effet<textarea name="effects" rows="3" maxlength="600">'+esc(t.effects||'')+'</textarea></label>'
   /* Le texte ci-dessus se lit à la table ; celui-ci agit. On choisit l'effet dans la liste
      de ce que le moteur sait faire, puis on en règle les valeurs — plus besoin que le nom
@@ -838,6 +849,11 @@ function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talen
    ...Object.values(TALENTS_CODES).map(c=>[c.cle,c.nom])])
   +'<div id="talent-reglages"></div>'
   +'<label>Notes<textarea name="notes" rows="2" maxlength="600">'+esc(t.notes||'')+'</textarea></label>';
+ /* « Autre classe… » ouvre le champ libre et lui donne la main ; revenir sur une classe
+    connue le referme, et ce qui y était tapé ne compte plus. */
+ const fam=$('talent-form').elements.famille;
+ fam.onchange=()=>{const autre=fam.value===AUTRE_CLASSE;$('famille-autre').hidden=!autre;
+  if(autre){const champ=$('talent-form').elements.familleLibre;champ.value='';champ.focus()}};
  const menu=$('talent-form').elements.effet;
  menu.onchange=()=>{talentDraft.params=lireReglagesTalent();talentDraft.effet=menu.value;dessineReglagesTalent()};
  dessineReglagesTalent();
@@ -845,7 +861,8 @@ function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talen
 $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  const f=$('talent-form').elements;
  const t=talentIndex===null?{id:crypto.randomUUID()}:structuredClone(catalog.talents[talentIndex]);
- t.name=f.name.value.trim()||'Talent';t.famille=f.famille.value.trim()||GENERIQUES;
+ t.name=f.name.value.trim()||'Talent';
+ t.famille=(f.famille.value===AUTRE_CLASSE?f.familleLibre.value:f.famille.value).trim()||GENERIQUES;
  t.type=f.type.value;t.level=num(f.level.value,1,20);
  t.effects=f.effects.value.trim();t.notes=f.notes.value.trim();
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
