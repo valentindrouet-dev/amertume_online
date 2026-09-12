@@ -263,6 +263,25 @@ for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
  const beni={hp:10,max:10,states:['Onde'],bleed:0,cumuls:{}};
  assert.equal(infligeEtat(beni,'Blindage'),true);  // Un état bénéfique ne la consume pas.
  assert.ok(hasState(beni,'Onde'));}
+/* Une porte ou une découpe posée sur un biseau ne doit pas y laisser l'escalier : les
+   garde-fous qui protègent les angles voulus droits ne valent que sur leurs propres bords. */
+{const MURS=[{x:12,y:6,w:56,h:4},{x:12,y:82,w:56,h:4},{x:12,y:6,w:4,h:80},{x:64,y:6,w:4,h:80}];
+ const POLY=[[14,8],[58,8],[66,16],[66,74],[58,84],[14,84]];
+ const tr=encreDroite([POLY])[0],restes=creuse(MURS,tr,CARVE_STEP);
+ const marche=(a,b)=>Math.hypot(b[0]-a[0],b[1]-a[1])<=CARVE_STEP*2.5
+  &&(Math.abs(a[0]-b[0])<1e-9||Math.abs(a[1]-b[1])<1e-9);
+ const compte=cs=>{let n=0;for(const c of cs)for(let i=0;i<c.length;i++){
+  const a=c[(i+c.length-1)%c.length],b=c[i],d=c[(i+1)%c.length];
+  if(marche(a,b)&&marche(b,d))n++}return n};
+ assert.ok(compte(unionContours(restes))>20);        // L'escalier est bien là au départ…
+ for(const [nom,doors,cuts] of [
+  ['nu',[],[]],
+  ['porte sur le biseau',[{x:62,y:76,w:4,h:5,open:false}],[]],
+  ['découpe sur le biseau',[],[{x:60,y:10,w:5,h:5}]],
+  ['les deux',[{x:62,y:76,w:4,h:5,open:false}],[{x:60,y:10,w:5,h:5}]],
+  ['portes partout',[{x:62,y:76,w:4,h:5},{x:12,y:40,w:4,h:6},{x:30,y:6,w:6,h:4}],[]]])
+  assert.equal(compte(wallShape({walls:restes,doors,cuts,carves:[tr]}).contours),0,
+   'marches laissées : '+nom);}                      // … et il n'en reste aucune.
 /* L'ordre canonique des cibles : Boss, Solitaire, Alpha, sbires ; à type égal l'alphabet ;
    à nom égal la place dans la liste, qui est le numéro porté sur le socle. */
 {const {ordreCibles,rangType,cleClasse,classeDe}=require('./combat.js');
@@ -572,4 +591,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('389 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('395 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

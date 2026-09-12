@@ -348,16 +348,20 @@ function distToRectEdge(p,r){let d=Infinity;const c=rectPolygon(r);
  for(let i=0,j=c.length-1;i<c.length;j=i++){const q=closestOnSegment(p,c[j],c[i]);
   d=Math.min(d,Math.hypot(p[0]-q[0],p[1]-q[1]))}
  return d}
-/* Trois conditions, toutes ensemble : le sommet doit tomber sur un tracé à main levée,
-   porter une arête à l'échelle de la trame, et ne pas appartenir au bord d'une forme
-   voulue droite — découpe rectangulaire ou porte. Un angle taillé à l'outil Découper
-   au beau milieu d'un tracé reste donc parfaitement droit. */
+/* Deux conditions : le sommet doit tomber sur un tracé à main levée, et ne pas appartenir
+   au bord d'une forme voulue droite — découpe rectangulaire ou porte —, pour qu'un angle
+   taillé à l'outil Découper au beau milieu d'un tracé reste parfaitement droit.
+   Ces deux garde-fous étaient trop larges, et laissaient l'escalier en place là où ils
+   s'appliquaient. Le premier voulait une arête à l'échelle de la trame : il écartait donc
+   les longues arêtes — or une longue arête déjà posée sur le tracé ne bouge pas d'être
+   rendue au tracé, et une longue arête loin de lui n'est jamais marquée. Le second gardait
+   tout ce qui passait à une case et demie du bord d'une découpe : une porte posée sur un
+   biseau protégeait ainsi l'escalier tout entier. Or ces bords-là sont soustraits au trait
+   exact, donc leurs sommets tombent dessus au millième : un quart de case suffit. */
 function carveMask(pts,carves,rayon,pas,protege){const n=pts.length,marque=new Uint8Array(n);
- const libre=new Uint8Array(n);
- for(let i=0;i<n;i++){const a=pts[(i+n-1)%n],b=pts[i],c=pts[(i+1)%n];
-  const l1=Math.hypot(b[0]-a[0],b[1]-a[1]),l2=Math.hypot(c[0]-b[0],c[1]-b[1]);
-  if(Math.min(l1,l2)>pas*2.5)continue;
-  if((protege||[]).some(r=>r&&r.w>0&&r.h>0&&distToRectEdge(b,r)<=rayon))continue;
+ const libre=new Uint8Array(n),colle=pas*.25;
+ for(let i=0;i<n;i++){const b=pts[i];
+  if((protege||[]).some(r=>r&&r.w>0&&r.h>0&&distToRectEdge(b,r)<=colle))continue;
   libre[i]=1}
  for(const poly of carves||[]){if(!poly||poly.length<3)continue;
   const b=boundsOf(poly),x0=b.x-rayon,x1=b.x+b.w+rayon,y0=b.y-rayon,y1=b.y+b.h+rayon;
