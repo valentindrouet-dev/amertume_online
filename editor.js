@@ -9,6 +9,11 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
 function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks??=[{name:'Attaque de base',dice:diceFrom(a.pool),range:'contact',targets:'one',useOwnDamage:true,effects:{}}];a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;return a}
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
+ /* Les premiers talents codés se reconnaissaient à leur nom. Ils portent désormais leur
+    effet en clair : on le leur inscrit une fois, d'après ce nom, et le nom redevient
+    libre — le renommer ne fait plus perdre la mécanique. */
+ c.talents.forEach(t=>{if(t&&t.effet===undefined){const k=cleTalent(t.name);
+  t.effet=TALENTS_CODES[k]?k:''}});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{m.weapons||=[];m.armorId??='';m.shieldId??=''});
  return c}
@@ -786,13 +791,27 @@ $('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalen
 $('talent-sort').onchange=renderTalents;
 $('talent-add').onclick=()=>openTalent(null);
 const talentDialog=dialog('talent-editor','Talent','<form id="talent-form"><div id="talent-fields"></div><div class="form-actions"><button type="button" id="delete-talent">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
-let talentIndex=null,talentApres=null;
+let talentIndex=null,talentApres=null,talentDraft={effet:'',params:{}};
 /* Fermé sans enregistrer, le dialogue ne doit rien rappeler : sinon une création faite
    plus tard depuis l'armurerie irait se cocher dans une fiche déjà refermée. */
 talentDialog.addEventListener('close',()=>{talentApres=null});
+/* Les réglages d'un effet sont dessinés d'après sa déclaration : ajouter un effet au
+   moteur suffit à lui donner son formulaire, sans toucher à celui-ci. */
+function lireReglagesTalent(){const f=$('talent-form').elements,out={};
+ for(const el of f)if(el.name&&el.name.startsWith('p_'))out[el.name.slice(2)]=el.value;
+ return out}
+function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)return;
+ const code=TALENTS_CODES[$('talent-form').elements.effet.value]||null;
+ if(!code){boite.replaceChildren();return}
+ const vals=paramsTalent({effet:code.cle,params:talentDraft.params});
+ boite.innerHTML='<p class="muted">'+esc(code.resume||code.aide||'')+'</p><div class="edit-grid">'
+  +(code.params||[]).map(p=>p.type==='nombre'
+   ?field(p.nom,'p_'+p.cle,vals[p.cle],'number','min="'+p.min+'" max="'+p.max+'"')
+   :sel(p.nom,'p_'+p.cle,vals[p.cle],p.options)).join('')+'</div>'}
 function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talentApres=apres;
- const t=i===null?{name:'Nouveau talent',famille:GENERIQUES,type:'act',level:1,effects:'',notes:''}:catalog.talents[i];
+ const t=i===null?{name:'Nouveau talent',famille:GENERIQUES,type:'act',level:1,effect:'',effets:'',effects:'',notes:'',effet:'',params:{}}:catalog.talents[i];
  if(i!==null&&!t)return;
+ talentDraft={effet:t.effet||'',params:{...(t.params||{})}};
  const familles=[...new Set([GENERIQUES,...talentFamilies(),...actors.filter(a=>a.hero).map(a=>(a.role||'').split('·')[0].trim()).filter(Boolean)])];
  $('talent-fields').innerHTML='<div class="edit-grid">'
   +field('Nom','name',t.name,'text','required maxlength="120"')
@@ -801,7 +820,17 @@ function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talen
   +field('Niveau','level',t.level||1,'number','min="1" max="20"')+'</div>'
   +'<datalist id="talent-familles">'+familles.map(f=>'<option value="'+esc(f)+'">').join('')+'</datalist>'
   +'<label>Effet<textarea name="effects" rows="3" maxlength="600">'+esc(t.effects||'')+'</textarea></label>'
+  /* Le texte ci-dessus se lit à la table ; celui-ci agit. On choisit l'effet dans la liste
+     de ce que le moteur sait faire, puis on en règle les valeurs — plus besoin que le nom
+     du talent tombe juste. */
+  +'<h2 class="sous-titre">Effet appliqué par le moteur</h2>'
+  +sel('Mécanique','effet',t.effet||'',[['','— Aucun : talent descriptif —'],
+   ...Object.values(TALENTS_CODES).map(c=>[c.cle,c.nom])])
+  +'<div id="talent-reglages"></div>'
   +'<label>Notes<textarea name="notes" rows="2" maxlength="600">'+esc(t.notes||'')+'</textarea></label>';
+ const menu=$('talent-form').elements.effet;
+ menu.onchange=()=>{talentDraft.params=lireReglagesTalent();talentDraft.effet=menu.value;dessineReglagesTalent()};
+ dessineReglagesTalent();
  $('delete-talent').hidden=i===null;talentDialog.showModal()}
 $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  const f=$('talent-form').elements;
@@ -809,6 +838,9 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.name=f.name.value.trim()||'Talent';t.famille=f.famille.value.trim()||GENERIQUES;
  t.type=f.type.value;t.level=num(f.level.value,1,20);
  t.effects=f.effects.value.trim();t.notes=f.notes.value.trim();
+ // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
+ t.effet=TALENTS_CODES[f.effet.value]?f.effet.value:'';
+ t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent()}):{};
  if(talentIndex===null)catalog.talents.push(t);else catalog.talents[talentIndex]=t;
  talentDialog.close();renderCatalogPages();render();scheduleSave();
  const rappel=talentApres;talentApres=null;if(rappel)rappel(t)};

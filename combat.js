@@ -698,8 +698,24 @@ function infligeEtat(a,etat){if(!a||!etat)return false;
 function cleTalent(nom){return String(nom||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
  .toLowerCase().replace(/[^a-z0-9]/g,'')}
 const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',bouton:'⚡ Lamevent',
- aide:'En terminant un mouvement : ton bonus de dégâts à un adversaire au contact.'}};
-function talentCode(t){return t&&TALENTS_CODES[cleTalent(t.name)]||null}
+ aide:'En terminant un mouvement : ton bonus de dégâts aux adversaires au contact.',
+ resume:'En terminant un mouvement, le porteur infligerait son bonus de dégâts à un ou plusieurs adversaires au contact.',
+ params:[{cle:'cibles',nom:'Adversaires frappés',type:'nombre',defaut:1,min:1,max:6},
+  {cle:'bonus',nom:'Dégâts en plus du bonus',type:'nombre',defaut:0,min:0,max:99}]}};
+/* Un talent dit quel effet il porte, et non plus son seul nom : le nom est au joueur, la
+   mécanique au moteur, et deux talents peuvent porter le même effet réglé autrement. */
+function talentCode(t){return t&&TALENTS_CODES[t.effet]||null}
+/* La valeur d'un réglage, bornée par sa déclaration. Un talent enregistré avant qu'un
+   réglage n'existe, ou avec une valeur hors bornes, reçoit celle par défaut : le moteur
+   ne se fie jamais à ce qui est écrit dans le catalogue. */
+function reglageTalent(code,params,cle){const d=(code&&code.params||[]).find(p=>p.cle===cle);
+ if(!d)return undefined;
+ const v=params&&params[cle];
+ if(d.type==='nombre'){const n=Math.trunc(Number(v));
+  return Number.isFinite(n)?Math.max(d.min,Math.min(d.max,n)):d.defaut}
+ return (d.options||[]).some(([k])=>k===v)?v:d.defaut}
+function paramsTalent(t){const code=talentCode(t);if(!code)return null;
+ const out={};(code.params||[]).forEach(p=>out[p.cle]=reglageTalent(code,t&&t.params,p.cle));return out}
 /* L'Onde purge l'affection la plus fraîche — celle qui vient de tomber — et se consume.
    Les états bénéfiques et le coma ne s'en vont jamais ainsi. */
 function ondeCures(a){const l=statesOf(a).filter(e=>!ONDE_EXCLUS.includes(e));return l.length?l[l.length-1]:null}
@@ -739,6 +755,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,encreDroite,snapToCarves,ENCRE_TOL,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,traitContours,carveTrait,carveTraits,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,cleTalent,talentCode,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,cleTalent,talentCode,reglageTalent,paramsTalent,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

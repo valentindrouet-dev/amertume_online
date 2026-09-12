@@ -258,15 +258,24 @@ for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
  const beni={hp:10,max:10,states:['Onde'],bleed:0,cumuls:{}};
  assert.equal(infligeEtat(beni,'Blindage'),true);  // Un état bénéfique ne la consume pas.
  assert.ok(hasState(beni,'Onde'));}
-/* Un talent codé se reconnaît à son nom, quelle qu'en soit l'orthographe de saisie. */
-{const {cleTalent,talentCode,TALENTS_CODES}=require('./combat.js');
+/* Un talent porte l'effet qu'il applique, et non plus son seul nom : le nom est au
+   joueur, la mécanique au moteur. Le nom réduit ne sert qu'à reprendre les anciens. */
+{const {cleTalent,talentCode,paramsTalent,reglageTalent,TALENTS_CODES}=require('./combat.js');
  assert.equal(cleTalent('Lamevent'),'lamevent');
  assert.equal(cleTalent('  LAME-VENT '),'lamevent');
  assert.equal(cleTalent('Lâmevént'),'lamevent');
- assert.equal(talentCode({name:'lamevent'}),TALENTS_CODES.lamevent);
- assert.equal(talentCode({name:'Lame de vent'}),null);   // Un autre nom, un autre talent.
+ assert.equal(talentCode({effet:'lamevent'}),TALENTS_CODES.lamevent);
+ assert.equal(talentCode({name:'Lamevent'}),null);       // Le nom seul ne suffit plus.
+ assert.equal(talentCode({effet:'inconnu'}),null);
  assert.equal(talentCode(null),null);
- assert.equal(TALENTS_CODES.lamevent.cle,'lamevent');}
+ const code=TALENTS_CODES.lamevent;
+ // Les réglages sont relus au travers de leur déclaration : bornés, et jamais absents.
+ assert.deepEqual(paramsTalent({effet:'lamevent'}),{cibles:1,bonus:0});
+ assert.deepEqual(paramsTalent({effet:'lamevent',params:{cibles:'3',bonus:'7'}}),{cibles:3,bonus:7});
+ assert.deepEqual(paramsTalent({effet:'lamevent',params:{cibles:99,bonus:-5}}),{cibles:6,bonus:0});
+ assert.deepEqual(paramsTalent({effet:'lamevent',params:{cibles:'abc'}}),{cibles:1,bonus:0});
+ assert.equal(paramsTalent({effet:''}),null);
+ assert.equal(reglageTalent(code,{},'inexistant'),undefined);}
 /* Un angle taillé à l'outil Découper reste droit, même au beau milieu d'un tracé libre. */
 const OVALE=Array.from({length:48},(_,i)=>{const a=i/48*2*Math.PI;return [50+18*Math.cos(a),50+14*Math.sin(a)]});
 const BLOC=creuse([{x:10,y:10,w:80,h:60}],OVALE,CARVE_STEP);
@@ -536,4 +545,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('351 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('363 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
