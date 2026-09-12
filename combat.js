@@ -154,229 +154,25 @@ function traitPolygon(t,ratio){if(!t)return null;
  const e=Math.max(.05,Number(t.e)||TRAIT_EPAISSEUR)/2;
  const hx=-sy/L*e,hy=sx/L*e*r;
  return [[t.x1+hx,t.y1+hy],[t.x2+hx,t.y2+hy],[t.x2-hx,t.y2-hy],[t.x1-hx,t.y1-hy]]}
-/* Une découpe mord les traits comme elle mord les zones. On parcourt le trait, on jette
-   ce qui tombe dans la découpe, et l'on recoud ce qui reste en morceaux : la même règle
-   sert au rectangle de l'outil Découper et au tracé libre du lasso. */
-function carveTrait(t,dedans,pas){
- const L=Math.hypot(t.x2-t.x1,t.y2-t.y1);if(!(L>0))return [];
- const n=Math.max(8,Math.min(2000,Math.ceil(L/(pas||.2))));
- const au=u=>[t.x1+(t.x2-t.x1)*u,t.y1+(t.y2-t.y1)*u];
- const out=[];let debut=null;
- for(let i=0;i<=n;i++){const u=i/n,[x,y]=au(u),pris=dedans(x,y);
-  if(!pris&&debut===null)debut=u;
-  if((pris||i===n)&&debut!==null){
-   const fin=pris?(i-1)/n:u;
-   if((fin-debut)*L>=.3){const [ax,ay]=au(debut),[bx,by]=au(fin);
-    out.push({...t,x1:ax,y1:ay,x2:bx,y2:by})}
-   debut=null}}
- return out}
-function carveTraits(traits,dedans,pas){return (traits||[]).flatMap(t=>carveTrait(t,dedans,pas))}
-function traitContours(map){const r=map&&map.ratio;
- return (map&&map.traits||[]).map(t=>traitPolygon(t,r)).filter(Boolean)}
-// Différence de deux rectangles : jusqu'à quatre bandes, exactement l'aire restante.
-function diffRect(a,b){const ax2=a.x+a.w,ay2=a.y+a.h,bx2=b.x+b.w,by2=b.y+b.h;
- if(b.x>=ax2||bx2<=a.x||b.y>=ay2||by2<=a.y)return [a];
- const haut=Math.max(a.y,b.y),bas=Math.min(ay2,by2),out=[];
- if(b.y>a.y)out.push({x:a.x,y:a.y,w:a.w,h:b.y-a.y});
- if(by2<ay2)out.push({x:a.x,y:by2,w:a.w,h:ay2-by2});
- if(b.x>a.x)out.push({x:a.x,y:haut,w:b.x-a.x,h:bas-haut});
- if(bx2<ax2)out.push({x:bx2,y:haut,w:ax2-bx2,h:bas-haut});
- return out.filter(r=>r.w>1e-9&&r.h>1e-9)}
-// Zones de blocage moins zones de vision : on creuse, comme dans un fromage.
-// Garde-fou : au-delà de 600 morceaux on arrête de creuser plutôt que d'exploser.
-function subtractRects(rects,holes){let cur=rects.slice();
- for(const h of holes||[]){if(cur.length>600)break;cur=cur.flatMap(r=>diffRect(r,h))}
- return cur}
-/* Découpe d'une forme quelconque dans des rectangles : on rastérise la zone
-   concernée, on efface l'intérieur du tracé, puis on recompose en rectangles.
-   Tout le moteur continue donc de travailler sur des rectangles. */
-function boundsOf(pts){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
- for(const p of pts){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1])}
- return {x:x0,y:y0,w:x1-x0,h:y1-y0}}
-function rectsOverlap(a,b){return a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h}
-// Recompose une grille booléenne en rectangles, par bandes fusionnées.
-function gridToRects(g,cols,rows,box,cw,ch){const out=[],fait=new Uint8Array(cols*rows);
- for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const k=j*cols+i;
-  if(!g[k]||fait[k])continue;
-  let w=1;while(i+w<cols&&g[k+w]&&!fait[k+w])w++;
-  let h=1;
-  for(;j+h<rows;h++){let plein=true;
-   for(let a=0;a<w;a++){const q=(j+h)*cols+i+a;if(!g[q]||fait[q]){plein=false;break}}
-   if(!plein)break}
-  for(let b=0;b<h;b++)for(let a=0;a<w;a++)fait[(j+b)*cols+i+a]=1;
-  out.push({x:box.x+i*cw,y:box.y+j*ch,w:w*cw,h:h*ch})}
- return out}
-function carveWithPolygon(rects,poly,pas=.6){
- if(!poly||poly.length<3)return rects;
- const bb=boundsOf(poly),touches=[],intacts=[];
- (rects||[]).forEach(r=>(rectsOverlap(r,bb)?touches:intacts).push(r));
- if(!touches.length)return rects;
- const box=boundsOf(touches.flatMap(r=>[[r.x,r.y],[r.x+r.w,r.y+r.h]]));
- const cols=Math.max(4,Math.min(320,Math.ceil(box.w/pas))),rows=Math.max(4,Math.min(320,Math.ceil(box.h/pas)));
- const cw=box.w/cols,ch=box.h/rows,g=new Uint8Array(cols*rows);
- for(const r of touches){const i0=Math.max(0,Math.ceil((r.x-box.x)/cw-.5)),i1=Math.min(cols-1,Math.floor((r.x+r.w-box.x)/cw-.5));
-  const j0=Math.max(0,Math.ceil((r.y-box.y)/ch-.5)),j1=Math.min(rows-1,Math.floor((r.y+r.h-box.y)/ch-.5));
-  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++)g[j*cols+i]=1}
- for(let j=0;j<rows;j++){const y=box.y+(j+.5)*ch,xs=[];
-  for(let k=0;k<poly.length;k++){const a=poly[k],b=poly[(k+1)%poly.length];
-   if((a[1]>y)!==(b[1]>y))xs.push(a[0]+(y-a[1])*(b[0]-a[0])/(b[1]-a[1]))}
-  xs.sort((u,v)=>u-v);
-  for(let t=0;t+1<xs.length;t+=2){
-   const i0=Math.max(0,Math.ceil((xs[t]-box.x)/cw-.5)),i1=Math.min(cols-1,Math.floor((xs[t+1]-box.x)/cw-.5));
-   for(let i=i0;i<=i1;i++)g[j*cols+i]=0}}
- return [...intacts,...gridToRects(g,cols,rows,box,cw,ch)]}
-/* Une porte perce la zone de blocage qu'elle recouvre, à l'affichage comme au calcul :
-   fermée elle bloque à sa place, ouverte elle laisse le trou béant. Un passage secret,
-   lui, ne la perce qu'une fois ouvert : tant qu'il est clos, la matière reste pleine et
-   rien — ni le mur peint, ni la vue, ni le passage — ne trahit son emplacement. */
-function doorPierces(d){return !!d&&(!d.secret||!!d.open)}
-/* Une porte tracée à la main couvre rarement le mur pile d'un bord à l'autre. Il restait
-   alors dans l'embrasure un fil de matière large d'un cheveu — invisible à l'écran, et
-   parfaitement opaque : la porte semblait ouverte et personne ne voyait au travers.
-   Chaque porte perce donc le mur qu'elle recoupe sur toute son épaisseur, c'est-à-dire
-   par son petit côté. Un gros bloc n'est pas percé de part en part pour autant : on ne
-   prolonge que si l'épaisseur reste de l'ordre de la porte. */
-function rectsOverlap(a,b){return a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h}
-function doorCut(d,mur){
- if(mur.w<=mur.h){if(mur.w>d.h*2)return null;
-  const x=Math.min(d.x,mur.x),x2=Math.max(d.x+d.w,mur.x+mur.w);return {x,y:d.y,w:x2-x,h:d.h}}
- if(mur.h>d.w*2)return null;
- const y=Math.min(d.y,mur.y),y2=Math.max(d.y+d.h,mur.y+mur.h);return {x:d.x,y,w:d.w,h:y2-y}}
-// Ce qu'une porte retire au mur — et, close, ce qu'elle y rebouche : les deux sont un.
-function doorCuts(d,murs){const out=[d];
- for(const w of murs||[])if(rectsOverlap(d,w)){const c=doorCut(d,w);if(c)out.push(c)}
- return out}
-function mapWalls(map){return (map&&map.walls||[]).filter(r=>r&&r.w>0&&r.h>0)}
-function wallsPierced(map){const solide=r=>r&&r.w>0&&r.h>0;
- const murs=mapWalls(map),trous=(map.visions||[]).filter(solide);
- const coupes=(map.doors||[]).filter(d=>solide(d)&&doorPierces(d)).flatMap(d=>doorCuts(d,murs));
- return subtractRects(subtractRects(murs,trous),coupes)}
-// Une porte close rebouche exactement le trou qu'elle avait percé, épaisseur comprise.
-function doorBlocks(map){const murs=mapWalls(map);
- return (map&&map.doors||[]).filter(d=>d&&!d.open&&d.w>0&&d.h>0).flatMap(d=>doorCuts(d,murs))}
-function obstacleRectsFrom(map){if(!map)return [];
- return [...wallsPierced(map),...doorBlocks(map)]}
 /* Recalage des cartes tracées quand l'éditeur réduisait l'image dans son cadre :
    les positions enregistrées étaient comprimées vers le centre. On inverse. */
+// La même correction, point par point, pour les anneaux de la matière.
+function uncontainPoints(pts,frameRatio,imageRatio){let sx=1,sy=1;
+ if(imageRatio<frameRatio)sx=imageRatio/frameRatio;else sy=frameRatio/imageRatio;
+ const ox=(1-sx)/2*100,oy=(1-sy)/2*100;
+ return (pts||[]).map(([x,y])=>[(x-ox)/sx,(y-oy)/sy])}
 function uncontain(shapes,frameRatio,imageRatio){
  let sx=1,sy=1;
  if(imageRatio<frameRatio)sx=imageRatio/frameRatio;else sy=frameRatio/imageRatio;
  const ox=(1-sx)/2*100,oy=(1-sy)/2*100;
  return (shapes||[]).map(r=>{const o={...r};o.x=(r.x-ox)/sx;o.y=(r.y-oy)/sy;
   if(typeof r.w==='number')o.w=r.w/sx;if(typeof r.h==='number')o.h=r.h/sy;return o})}
-/* Contour exact de l'union de rectangles. Les seules lignes utiles sont les bords des
-   rectangles : on comprime les coordonnées sur ces lignes, chaque case est alors
-   entièrement pleine ou vide, et on chaîne les arêtes de bord en boucles fermées.
-   Aucune quantification, donc aucun escalier qui ne soit déjà dans les données. */
-function unionContours(rects){
- const rs=(rects||[]).filter(r=>r&&r.w>1e-9&&r.h>1e-9);
- if(!rs.length)return [];
- // Deux bords calculés autrement tombent au même endroit à 1e-15 près : on les fond,
- // sinon la grille se remplit de lamelles fantômes et le contour part en morceaux.
- const lignes=v=>{const t=[...v].sort((a,b)=>a-b),out=[];
-  for(const x of t)if(!out.length||x-out[out.length-1]>1e-7)out.push(x);
-  return out};
- const xs=lignes(rs.flatMap(r=>[r.x,r.x+r.w])),ys=lignes(rs.flatMap(r=>[r.y,r.y+r.h]));
- const C=xs.length-1,R=ys.length-1,g=new Uint8Array(C*R);
- // Chaque rectangle marque directement sa plage de cases : la case suit ses bords.
- const rang=(t,v)=>{let a=0,b=t.length-1;while(a<b){const m=(a+b)>>1;if(t[m]<v-1e-7)a=m+1;else b=m}return a};
- for(const r of rs){const i0=rang(xs,r.x),i1=rang(xs,r.x+r.w),j0=rang(ys,r.y),j1=rang(ys,r.y+r.h);
-  for(let j=j0;j<j1;j++)for(let i=i0;i<i1;i++)g[j*C+i]=1}
- // Arêtes orientées matière à gauche, indexées par leur point de départ.
- const sorties=new Map(),cle=(x,y)=>x+'|'+y;
- const arete=(ax,ay,bx,by)=>{const k=cle(ax,ay);
-  if(!sorties.has(k))sorties.set(k,[]);sorties.get(k).push([bx,by])};
- const plein=(i,j)=>i>=0&&j>=0&&i<C&&j<R&&g[j*C+i]===1;
- for(let j=0;j<R;j++)for(let i=0;i<C;i++){if(!plein(i,j))continue;
-  if(!plein(i,j-1))arete(xs[i+1],ys[j],xs[i],ys[j]);
-  if(!plein(i,j+1))arete(xs[i],ys[j+1],xs[i+1],ys[j+1]);
-  if(!plein(i-1,j))arete(xs[i],ys[j],xs[i],ys[j+1]);
-  if(!plein(i+1,j))arete(xs[i+1],ys[j+1],xs[i+1],ys[j]);}
- const contours=[];
- for(const [depart,liste] of sorties){
-  while(liste.length){
-   const boucle=[depart.split('|').map(Number)];let pt=liste.pop();
-   for(let garde=0;garde<200000;garde++){
-    boucle.push(pt);const suite=sorties.get(cle(pt[0],pt[1]));
-    if(!suite||!suite.length)break;
-    pt=suite.pop();
-    if(pt[0]===boucle[0][0]&&pt[1]===boucle[0][1])break}
-   if(boucle.length>=4)contours.push(fuseAligned(boucle))}}
- return contours}
-/* ---------- La matière de blocage est une masse, pas un tas de morceaux ---------- */
-/* Un rectangle posé, un coup de pinceau, une cloison en biais : ce sont des coups de
-   burin, pas des objets que l'on collectionne. Dès que deux d'entre eux se touchent, ils
-   ne font plus qu'une masse, et c'est la masse entière que l'éditeur saisit, déplace ou
-   efface — il n'y a plus de rectangle à désigner dedans.
-   On ne refond pas la géométrie pour autant : les rectangles restent la monnaie du
-   moteur, exacts au millième, et une cloison en biais reste un quadrilatère. On note
-   seulement qui touche qui, de proche en proche.
-   L'écart toléré se compte séparément sur chaque axe — la grille du grattage a son jeu
-   dans les deux —, donc on ramène la carte dans un repère où cet écart vaut un : le test
-   de distance y redevient isotrope, et une cloison en biais s'y juge comme le reste. */
-function morceauxMatiere(map,tol){const t=tol>0?tol:CONTACT_MATIERE;
- const etire=poly=>poly.map(([x,y])=>[x/t,y/t]),out=[];
- (map&&map.walls||[]).forEach((w,i)=>{if(w&&w.w>0&&w.h>0)
-  out.push({kind:'wall',i,poly:etire(rectPolygon(w))})});
- (map&&map.traits||[]).forEach((u,i)=>{const p=traitPolygon(u,map&&map.ratio);
-  if(p)out.push({kind:'trait',i,poly:etire(p)})});
- return out.map(p=>({...p,boite:boitePoly(p.poly)}))}
-function boitePoly(poly){const xs=poly.map(p=>p[0]),ys=poly.map(p=>p[1]);
- return {x1:Math.min(...xs),x2:Math.max(...xs),y1:Math.min(...ys),y2:Math.max(...ys)}}
-// Deux segments qui se croisent : le cas du plus, où aucun sommet n'est chez l'autre.
-function segsCroisent(a1,a2,b1,b2){
- const cote=(p,q,m)=>(q[0]-p[0])*(m[1]-p[1])-(q[1]-p[1])*(m[0]-p[0]);
- const d1=cote(b1,b2,a1),d2=cote(b1,b2,a2),d3=cote(a1,a2,b1),d4=cote(a1,a2,b2);
- return ((d1>0)!==(d2>0))&&((d3>0)!==(d4>0))}
-function distSegSeg(a1,a2,b1,b2){if(segsCroisent(a1,a2,b1,b2))return 0;
- const d=(p,q1,q2)=>{const c=closestOnSegment(p,q1,q2);return Math.hypot(p[0]-c[0],p[1]-c[1])};
- return Math.min(d(a1,b1,b2),d(a2,b1,b2),d(b1,a1,a2),d(b2,a1,a2))}
-/* Deux morceaux se touchent s'ils se recouvrent — un sommet chez l'autre, ou deux bords
-   qui se croisent — ou si leurs bords se frôlent à moins que la tolérance. */
-function morceauxSeTouchent(a,b,tol){const t=tol==null?1:tol;
- if(a.some(p=>pointInPolygon(p,b))||b.some(p=>pointInPolygon(p,a)))return true;
- for(let i=0;i<a.length;i++){const a1=a[i],a2=a[(i+1)%a.length];
-  for(let j=0;j<b.length;j++)if(distSegSeg(a1,a2,b[j],b[(j+1)%b.length])<=t)return true}
- return false}
-/* Les masses de la carte, chacune avec la liste des morceaux qui la composent. Rapprochés
-   de proche en proche : A touche B, B touche C, les trois n'en font qu'une. Les boîtes
-   englobantes filtrent d'abord — sur une carte fournie, l'immense majorité des paires
-   n'ont rien à voir l'une avec l'autre. */
-function groupesMatiere(map,tol){const m=morceauxMatiere(map,tol),n=m.length,t=1;
- const pere=Array.from({length:n},(_,i)=>i);
- const trouve=i=>{while(pere[i]!==i)i=pere[i]=pere[pere[i]];return i};
- for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
-  const ra=trouve(i),rb=trouve(j);if(ra===rb)continue;
-  const A=m[i].boite,B=m[j].boite;
-  if(A.x2+t<B.x1||B.x2+t<A.x1||A.y2+t<B.y1||B.y2+t<A.y1)continue;
-  if(morceauxSeTouchent(m[i].poly,m[j].poly,t))pere[ra]=rb}
- const par=new Map();
- m.forEach((p,i)=>{const r=trouve(i);
-  if(!par.has(r))par.set(r,{murs:[],traits:[]});
-  par.get(r)[p.kind==='wall'?'murs':'traits'].push(p.i)});
- return [...par.values()]}
-// La masse qui contient ce morceau-là : c'est elle qu'on sélectionne, jamais le morceau.
-function groupeMatiere(map,kind,i,tol){
- const g=groupesMatiere(map,tol).find(g=>(kind==='trait'?g.traits:g.murs).includes(i));
- return g||{murs:kind==='trait'?[]:[i],traits:kind==='trait'?[i]:[]}}
-// L'étendue d'une masse, en pour cent de la carte : la boîte qui la tient tout entière.
-function boiteGroupe(map,g){const murs=(g&&g.murs||[]).map(i=>(map.walls||[])[i]).filter(Boolean);
- const traits=(g&&g.traits||[]).map(i=>(map.traits||[])[i]).filter(Boolean);
- const polys=[...murs.map(rectPolygon),
-  ...traits.map(t=>traitPolygon(t,map&&map.ratio)).filter(Boolean)];
- if(!polys.length)return null;
- const b=boitePoly(polys.flat());
- return {x:b.x1,y:b.y1,w:b.x2-b.x1,h:b.y2-b.y1}}
 // Trois points alignés : celui du milieu ne dit rien, on l'enlève.
 function fuseAligned(pts){const out=[];
  for(let i=0;i<pts.length;i++){const a=pts[(i+pts.length-1)%pts.length],b=pts[i],c=pts[(i+1)%pts.length];
   const d=(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
   if(Math.abs(d)>1e-12)out.push(b)}
  return out.length>=3?out:pts}
-/* Marche d'escalier → courbe. On simplifie d'abord (Douglas-Peucker : les marches
-   cèdent la place à leur corde, l'angle droit franc a un écart trop grand pour céder),
-   puis deux passes de Chaikin arrondissent, avec une coupe plafonnée pour qu'un mur
-   droit reste droit et qu'un angle d'architecture reste un angle. */
 /* Douglas-Peucker à seuil fixe ne distingue pas un tremblement d'une courbe : pour
    redresser un trait tracé à la main il faut un seuil plus large que le tremblement, et
    ce même seuil rabote alors les courbes voulues. Or les deux ne se ressemblent que de
@@ -403,177 +199,11 @@ function simplifyClosed(pts,tol,relatif){
   if(best>=0){garde[best]=1;pile.push([i,best],[best,j])}}
  const out=pts.filter((_,i)=>garde[i]);
  return out.length>=3?out:pts}
-/* On ne lisse QUE le tracé de la découpe à main levée, et rien d'autre. Chaque contour
-   à main levée est enregistré sur la carte : seuls les sommets qui tombent sur ce tracé
-   sont assouplis. Un mur, un angle, une découpe rectangulaire ne sont jamais marqués,
-   donc jamais déplacés d'un iota — la géométrie sort bit à bit identique. */
-// Distance d'un point au bord d'un rectangle : sert à protéger les angles voulus.
-function distToRectEdge(p,r){let d=Infinity;const c=rectPolygon(r);
- for(let i=0,j=c.length-1;i<c.length;j=i++){const q=closestOnSegment(p,c[j],c[i]);
-  d=Math.min(d,Math.hypot(p[0]-q[0],p[1]-q[1]))}
- return d}
-/* Deux conditions : le sommet doit tomber sur un tracé à main levée, et ne pas appartenir
-   au bord d'une forme voulue droite — découpe rectangulaire ou porte —, pour qu'un angle
-   taillé à l'outil Découper au beau milieu d'un tracé reste parfaitement droit.
-   Ces deux garde-fous étaient trop larges, et laissaient l'escalier en place là où ils
-   s'appliquaient. Le premier voulait une arête à l'échelle de la trame : il écartait donc
-   les longues arêtes — or une longue arête déjà posée sur le tracé ne bouge pas d'être
-   rendue au tracé, et une longue arête loin de lui n'est jamais marquée. Le second gardait
-   tout ce qui passait à une case et demie du bord d'une découpe : une porte posée sur un
-   biseau protégeait ainsi l'escalier tout entier. Or ces bords-là sont soustraits au trait
-   exact, donc leurs sommets tombent dessus au millième : un quart de case suffit. */
-function carveMask(pts,carves,rayon,pas,protege){const n=pts.length,marque=new Uint8Array(n);
- const libre=new Uint8Array(n),colle=pas*.25;
- for(let i=0;i<n;i++){const b=pts[i];
-  if((protege||[]).some(r=>r&&r.w>0&&r.h>0&&distToRectEdge(b,r)<=colle))continue;
-  libre[i]=1}
- for(const poly of carves||[]){if(!poly||poly.length<3)continue;
-  const b=boundsOf(poly),x0=b.x-rayon,x1=b.x+b.w+rayon,y0=b.y-rayon,y1=b.y+b.h+rayon;
-  for(let i=0;i<n;i++){if(marque[i]||!libre[i])continue;
-   const p=pts[i];if(p[0]<x0||p[0]>x1||p[1]<y0||p[1]>y1)continue;
-   for(let k=0,j=poly.length-1;k<poly.length;j=k++){
-    const c=closestOnSegment(p,poly[j],poly[k]);
-    if(Math.hypot(p[0]-c[0],p[1]-c[1])<=rayon){marque[i]=1;break}}}}
- return marque}
-/* Adoucir par moyennes rapprochait la ligne sans jamais l'atteindre, et sur une languette
-   étroite la tirait même vers l'intérieur : une découpe bien droite ressortait en escalier.
-   On s'y prend autrement. Le tracé à main levée est gardé tel qu'il a été fait : il suffit
-   donc de rendre chaque sommet de la trame à sa place exacte sur le bord dessiné. La
-   matière épouse alors la forme voulue, et non plus la trame qui a servi à la creuser.
-   Les sommets qui ne trouvent aucun bord à portée sont signalés : eux seuls restent à
-   adoucir à l'ancienne. */
-function projeteSurTrace(p,carves,rayon){let best=null;
- for(let n=0;n<(carves||[]).length;n++){const poly=carves[n];if(!poly||poly.length<3)continue;
-  for(let k=0,j=poly.length-1;k<poly.length;j=k++){
-   const c=closestOnSegment(p,poly[j],poly[k]),d=Math.hypot(p[0]-c[0],p[1]-c[1]);
-   if(!best||d<best.d)best={d,p:[c[0],c[1]],poly:n,arete:j}}}
- return best&&best.d<=rayon?best:null}
-/* Chaque sommet marqué est rendu à sa place sur le bord dessiné ; et l'on repose au
-   passage les sommets du tracé que la trame avait sautés — sur une courbe serrée, une
-   marche unique en enjambe plusieurs, et la corde coupait l'angle. On ne relie ainsi
-   deux projections que si le chemin le long du tracé reste aussi court que la corde :
-   ailleurs, le contour longe le mur et non la découpe, et l'on n'y touche pas. */
-function snapToCarves(pts,carves,marque,rayon,pas){const n=pts.length;
- const proj=pts.map((p,i)=>marque[i]?projeteSurTrace(p,carves,rayon):null);
- const sorte=[],mq=[],rs=[];
- const pose=(p,m,r)=>{const q=sorte[sorte.length-1];
-  // Deux marches voisines visent parfois la même place : une arête de longueur nulle
-  // n'a pas de direction, et tout ce qui s'appuie sur le contour s'en trouve faussé.
-  if(q&&Math.hypot(p[0]-q[0],p[1]-q[1])<1e-7)return;
-  sorte.push([p[0],p[1]]);mq.push(m);rs.push(r)};
- for(let i=0;i<n;i++){const a=proj[i],b=proj[(i+1)%n];
-  pose(a?a.p:pts[i],marque[i],a?0:marque[i]);
-  if(!a||!b||a.poly!==b.poly)continue;
-  const poly=carves[a.poly],m=poly.length;
-  const avant=(b.arete-a.arete+m)%m,arriere=(a.arete-b.arete+m)%m;
-  if(Math.min(avant,arriere)<1||Math.min(avant,arriere)>8)continue;
-  const chemin=avant<=arriere
-   ? Array.from({length:avant},(_,k)=>poly[(a.arete+1+k)%m])
-   : Array.from({length:arriere},(_,k)=>poly[(a.arete-k+m)%m]);
-  let long=0,cur=a.p;
-  for(const q of chemin){long+=Math.hypot(q[0]-cur[0],q[1]-cur[1]);cur=q}
-  long+=Math.hypot(b.p[0]-cur[0],b.p[1]-cur[1]);
-  if(long>Math.hypot(b.p[0]-a.p[0],b.p[1]-a.p[1])+pas*3)continue;
-  for(const q of chemin)pose(q,1,0)}
- while(sorte.length>3&&Math.hypot(sorte[0][0]-sorte[sorte.length-1][0],sorte[0][1]-sorte[sorte.length-1][1])<1e-7){
-  sorte.pop();mq.pop();rs.pop()}
- return {pts:sorte,marque:Uint8Array.from(mq),reste:Uint8Array.from(rs)}}
-/* Moyenne des voisins sur les seuls sommets marqués — le filtre (1,2,1)/4 annule
-   exactement l'ondulation d'une case sur deux que laisse la rastérisation — et jamais
-   à plus de deux cases de la position d'origine, garde-fou contre toute dérive. */
-function relaxContour(pts,pas,passes,marque){
- const n=pts.length,cap=pas*2;let cur=pts;
- for(let p=0;p<passes;p++){const out=new Array(n);
-  for(let i=0;i<n;i++){if(!marque[i]){out[i]=cur[i];continue}
-   const a=cur[(i+n-1)%n],b=cur[i],c=cur[(i+1)%n];
-   let x=(a[0]+2*b[0]+c[0])/4,y=(a[1]+2*b[1]+c[1])/4;
-   const dx=x-pts[i][0],dy=y-pts[i][1],d=Math.hypot(dx,dy);
-   if(d>cap){x=pts[i][0]+dx/d*cap;y=pts[i][1]+dy/d*cap}
-   out[i]=[x,y]}
-  cur=out}
- return cur}
-// Allègement réservé aux mêmes suites : un sommet non marqué est conservé tel quel.
-function simplifyRuns(pts,marque,tol){const n=pts.length,garde=new Uint8Array(n);
- // Contour entièrement issu du tracé : c'est une boucle, pas une suite entre deux ancres.
- if(marque.every(v=>v))return simplifyClosed(pts,tol);
- for(let i=0;i<n;i++)if(!marque[i])garde[i]=1;
- for(let i=0;i<n;i++){if(garde[i])continue;
-  let fin=i;while(fin<n&&marque[fin])fin++;
-  const chemin=[pts[(i+n-1)%n]];for(let k=i;k<fin;k++)chemin.push(pts[k]);chemin.push(pts[fin%n]);
-  const tenus=dpOpen(chemin,tol);
-  for(let k=1;k<chemin.length-1;k++)if(tenus[k])garde[i+k-1]=1;
-  i=fin}
- const out=pts.filter((_,i)=>garde[i]);
- return out.length>=3?out:pts}
-function dpOpen(pts,tol){const n=pts.length,garde=new Uint8Array(n);
- garde[0]=1;garde[n-1]=1;const pile=[[0,n-1]];
- while(pile.length){const [i,j]=pile.pop();
-  let best=-1,bd=tol;
-  for(let k=i+1;k<j;k++){const c=closestOnSegment(pts[k],pts[i],pts[j]);
-   const d=Math.hypot(pts[k][0]-c[0],pts[k][1]-c[1]);
-   if(d>bd){bd=d;best=k}}
-  if(best>=0){garde[best]=1;pile.push([i,best],[best,j])}}
- return garde}
-/* Un escalier se reconnaît à son allure, sans rien savoir de ce qui l'a produit, et quelle
-   que soit la taille de ses marches : une suite d'arêtes qui alternent l'horizontale et la
-   verticale, chaque marche repartant du même côté que sa voisine. C'est l'escalier d'une
-   droite. Rien de ce qu'on dessine à la main n'a cette forme — au coin d'un rectangle,
-   l'arête suivante revient en arrière et casse l'alternance. Le premier jet de ce masque
-   demandait en plus une arête courte, pour ne toucher qu'à la trame : mais la trame fond
-   ses cases en rectangles, si bien qu'un escalier grossier n'a que de longues arêtes, et
-   la moitié des marches échappait au redressement. Les bords voulus droits, eux, sont
-   soustraits au trait exact : leurs sommets tombent dessus au millième, et un quart de
-   case les met hors d'atteinte. */
-function escalierMask(pts,pas,protege){const n=pts.length,m=new Uint8Array(n);
- if(n<6)return m;
- // La direction d'une arête, si elle suit un axe ; rien sinon.
- const dir=i=>{const a=pts[i],b=pts[(i+1)%n],dx=b[0]-a[0],dy=b[1]-a[1];
-  if(Math.abs(dy)<1e-9&&Math.abs(dx)>1e-9)return [Math.sign(dx),0];
-  if(Math.abs(dx)<1e-9&&Math.abs(dy)>1e-9)return [0,Math.sign(dy)];
-  return null};
- const meme=(u,v)=>!!u&&!!v&&u[0]===v[0]&&u[1]===v[1];
- const colle=pas*.25;
- for(let i=0;i<n;i++){
-  const avant=dir((i+n-1)%n),apres=dir(i);
-  if(!avant||!apres)continue;
-  // Deux arêtes du même axe ne font pas une marche : c'est une ligne brisée.
-  if((avant[0]&&apres[0])||(avant[1]&&apres[1]))continue;
-  /* Une marche appartient à un escalier si la marche voisine repart du même côté. Au coin
-     d'un rectangle, la suivante revient en arrière : le coin n'est donc pas marqué. */
-  if(!meme(dir((i+1)%n),avant)&&!meme(dir((i+n-2)%n),apres))continue;
-  if((protege||[]).some(r=>r&&r.w>0&&r.h>0&&distToRectEdge(pts[i],r)<=colle))continue;
-  m[i]=1}
- return m}
-/* Un escalier est l'approximation d'une ligne : on rend donc la ligne. Chaque suite de
-   marches est allégée entre les deux sommets francs qui l'encadrent, à une case près —
-   une marche s'écarte de sa corde d'une case et demie au plus, elle disparaît donc ; un
-   angle voulu s'en écarte bien davantage et tient bon. Une courbe creusée garde ses
-   inflexions : chacun de ses quartiers est un escalier à part, et son ventre dépasse
-   largement le seuil. */
-function redresseEscaliers(pts,pas,protege){
- if(!pts||pts.length<=6)return pts;
- const m=escalierMask(pts,pas,protege);
- if(!m.some(v=>v))return pts;
- return simplifyRuns(pts,m,pas*1.2)}
-function smoothContours(contours,carves,tol,pas,protege){
- return (contours||[]).map(c=>{
-  // Un quadrilatère est déjà la forme voulue : on ne touche qu'aux contours en escalier.
-  if(c.length<=6)return c;
-  let sortie=c;
-  /* Quand le tracé qui a creusé est connu, on rend d'abord chaque sommet à sa place
-     exacte dessus : c'est plus fidèle que n'importe quel redressement. Les cartes creusées
-     avant que ce tracé ne soit gardé n'ont pas cette chance — le redressement d'escalier
-     qui suit est leur seul recours, et il ne coûte rien là où le premier a déjà fait son
-     œuvre : un bord rendu au tracé n'est plus aligné sur les axes, donc plus marqué. */
-  if(carves&&carves.length){
-   const marque=carveMask(c,carves,pas*1.6,pas,protege);
-   if(marque.some(v=>v)){const rendu=snapToCarves(c,carves,marque,pas*1.6,pas);
-    sortie=simplifyRuns(relaxContour(rendu.pts,pas,3,rendu.reste),rendu.marque,tol)}}
-  return redresseEscaliers(sortie,pas,protege)}).filter(c=>c.length>=3)}
-/* Export et import des couches d'une carte : zones de blocage, portes, zone de départ,
-   adversaires pré-placés, tracés à main levée et découpes. Le même nettoyage sert dans les
-   deux sens — ce qui sort est déjà propre, ce qui entre le devient. Rien de ce qui vient
-   d'un fichier n'est cru sur parole : nombres bornés, textes coupés, image vérifiée. */
+/* Export et import des couches d'une carte : matière de blocage, portes, zone de départ,
+   adversaires pré-placés. Le même nettoyage sert dans les deux sens — ce qui sort est
+   déjà propre, ce qui entre le devient. Rien de ce qui vient d'un fichier n'est cru sur
+   parole : nombres bornés, textes coupés, image vérifiée. Un fichier d'avant, fait de
+   rectangles et de traits, est fondu en matière à la lecture. */
 const MAP_FORMAT='amertume-cartes';
 const IMAGE_RE=/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
 function borne(v,min=-1,max=101){const n=Number(v);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):0}
@@ -597,18 +227,22 @@ function cleanMonster(t){const dés={};
   damage:Math.round(borne(t&&t.damage,0,999)),xp:Math.round(borne(t&&t.xp,0,9999)),
   menace:texte(t&&t.menace,30)||'closest',esquive:!!(t&&t.esquive),rapide:!!(t&&t.rapide),
   notes:texte(t&&t.notes,2000),attacks:attaques.length?attaques:[{name:'Attaque',dice:dés,range:'contact',targets:'one',useOwnDamage:true}]}}
+function cleanAnneau(r){return (Array.isArray(r)?r:[]).slice(0,4000).map(p=>[borne(p&&p[0]),borne(p&&p[1])])}
+function cleanMatiere(list){return (Array.isArray(list)?list:[]).slice(0,600).map(p=>{
+ const anneaux=(Array.isArray(p&&p.anneaux)?p.anneaux:[]).slice(0,200).map(cleanAnneau).filter(r=>r.length>=3);
+ if(!anneaux.length)return null;const o={anneaux};if(p&&p.verrou)o.verrou=true;return o}).filter(Boolean)}
+function cleanTraits(list){return (Array.isArray(list)?list:[]).slice(0,600).map(t=>({x1:borne(t&&t.x1),y1:borne(t&&t.y1),
+ x2:borne(t&&t.x2),y2:borne(t&&t.y2),e:Math.max(.05,Math.min(5,Number(t&&t.e)||TRAIT_EPAISSEUR))}))}
 function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.image)?m.image:null;
- return {name:texte(m&&m.name,80)||'Carte',ratio:Math.max(.2,Math.min(6,Number(m&&m.ratio)||16/9)),
+ const ratio=Math.max(.2,Math.min(6,Number(m&&m.ratio)||16/9));
+ const matiere=Array.isArray(m&&m.matiere)?cleanMatiere(m.matiere)
+  :migreMatiere({ratio,walls:cleanRects(m&&m.walls),visions:cleanRects(m&&m.visions),traits:cleanTraits(m&&m.traits)}).matiere;
+ return {name:texte(m&&m.name,80)||'Carte',ratio,
   fitted:!(m&&m.fitted===false),image:img,
-  walls:cleanRects(m&&m.walls),doors:cleanRects(m&&m.doors,true),
+  matiere,doors:cleanRects(m&&m.doors,true),
   start:cleanRect(m&&m.start),
   foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
    hidden:!!(f&&f.hidden),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
-  carves:(Array.isArray(m&&m.carves)?m.carves:[]).slice(0,400)
-   .map(c=>(Array.isArray(c)?c:[]).slice(0,3000).map(p=>[borne(p&&p[0]),borne(p&&p[1])])).filter(c=>c.length>=3),
-  cuts:cleanRects(m&&m.cuts),
-  traits:(Array.isArray(m&&m.traits)?m.traits:[]).slice(0,600).map(t=>({x1:borne(t&&t.x1),y1:borne(t&&t.y1),
-   x2:borne(t&&t.x2),y2:borne(t&&t.y2),e:Math.max(.05,Math.min(5,Number(t&&t.e)||TRAIT_EPAISSEUR))})),
   // Le socle témoin voyage avec la carte : c'est lui qui dit à quelle échelle elle est tracée.
   echelle:{x:borne(m&&m.echelle&&m.echelle.x),y:borne(m&&m.echelle&&m.echelle.y),
    t:Math.max(.6,Math.min(40,Number(m&&m.echelle&&m.echelle.t)||100*46/810))}}}
@@ -619,31 +253,138 @@ function readMapsFile(texteBrut){let data;
  if(!data||data.format!==MAP_FORMAT)throw Error('Ce fichier ne vient pas de l’éditeur de cartes d’Amertume.');
  if(!Array.isArray(data.maps)||!data.maps.length)throw Error('Aucune carte dans ce fichier.');
  return data.maps.slice(0,60).map(cleanMap)}
-/* Géométrie effectivement opposée au regard et aux tirs : le contour lissé des zones
-   percées par les portes, puis chaque porte close. Dessin et calcul y puisent
-   ensemble, donc l'ombre commence exactement là où le mur est peint. */
-const CARVE_STEP=.4;
-/* Deux morceaux de matière que l'œil voit soudés peuvent être séparés par un cheveu : le
-   grattage rastérise, et deux passes successives ne tombent pas sur la même grille, d'où
-   des jours de l'ordre du pas. Le contact se juge donc à un pas et des miettes, sur
-   chaque axe séparément — c'est là que la grille a son jeu. Plus large, on souderait un
-   couloir voulu étroit ; plus fin, une masse peinte d'un seul geste retomberait en
-   miettes. */
-const CONTACT_MATIERE=CARVE_STEP*1.1;
+/* ====================================================================================
+   LA MATIÈRE DE BLOCAGE : DES POLYGONES EXACTS
+   ------------------------------------------------------------------------------------
+   Une carte porte une seule couche de blocage — la matière — faite de polygones à trous,
+   exacts au millième, sans grille ni trame. Chaque outil est une opération booléenne sur
+   cette couche : bloquer, c'est unir la forme de l'outil à la matière ; découper, c'est
+   l'en soustraire. La forme obtenue est donc exactement celle du geste — un rectangle
+   reste un rectangle, une ligne en biais reste droite, un rond reste rond — et deux
+   morceaux qui se touchent ne font plus qu'un polygone, sans couture ni marche.
+   Les opérations booléennes viennent de polygon-clipping (Martinez-Rueda), chargé avant
+   ce fichier dans la page, et requis ici sous Node pour les vérifications.
+   Un polygone de matière : { anneaux:[extérieur, trou, trou…], verrou? }. Les anneaux
+   sont ouverts (le dernier point ne répète pas le premier) et la matière se lit à la
+   règle pair-impair, comme partout dans le moteur.
+   ==================================================================================== */
+const Clipper=typeof polygonClipping!=='undefined'?polygonClipping:require('./polygon-clipping.umd.min.js');
+function anneauFerme(r){const n=r.length;
+ return n&&(r[0][0]!==r[n-1][0]||r[0][1]!==r[n-1][1])?[...r,r[0]]:r}
+function anneauOuvert(r){const n=r.length;
+ return n>1&&r[0][0]===r[n-1][0]&&r[0][1]===r[n-1][1]?r.slice(0,n-1):r}
+function versClip(polys){return (polys||[]).map(p=>(p&&p.anneaux||[]).filter(r=>r&&r.length>=3).map(anneauFerme)).filter(p=>p.length)}
+/* Ce qui sort d'une opération est remis au propre : anneaux ouverts, sommets alignés fondus
+   (la jonction de deux rectangles laisse un sommet au milieu d'un côté droit : il ne dit
+   rien, on l'enlève sans déplacer le bord d'un iota), poussières d'aire nulle jetées. */
+function depuisClip(mp){return (mp||[]).map(p=>({anneaux:p.map(r=>fuseAligned(anneauOuvert(r))).filter(r=>r.length>=3&&polygonArea(r)>1e-7)}))
+ .filter(p=>p.anneaux.length)}
+/* Un verrou tient une masse : si elle grandit par union, ou fond avec une autre, le
+   polygone né de la fusion hérite du verrou de ce qu'il a absorbé. */
+function garderVerrous(polys,avant){const verrous=(avant||[]).filter(p=>p.verrou).map(p=>versClip([p]));
+ if(!verrous.length)return polys;
+ return polys.map(p=>verrous.some(v=>Clipper.intersection(versClip([p]),v).length)?{...p,verrou:true}:p)}
+function matiereDe(map){if(!map)return [];
+ if(!Array.isArray(map.matiere))migreMatiere(map);
+ return map.matiere}
+/* Les cartes d'avant stockaient des rectangles, des traits, des découpes rastérisées et
+   des zones de vision : on les fond une fois pour toutes en polygones exacts — l'union
+   des rectangles et des traits, moins les zones de vision. Les crans que la trame y avait
+   laissés restent tels quels : c'est la géométrie que la carte avait, il n'y a pas à
+   l'inventer ; on la reprend à l'outil, qui désormais taille net. */
+function migreMatiere(map){const r=Math.max(.05,Number(map.ratio)||16/9);
+ const rects=(map.walls||[]).filter(w=>w&&w.w>0&&w.h>0);
+ const morceaux=[...rects.map(w=>[[anneauFerme(rectPolygon(w))]]),
+  ...(map.traits||[]).map(t=>traitPolygon(t,r)).filter(Boolean).map(p=>[[anneauFerme(p)]])];
+ let mp=morceaux.length?Clipper.union(...morceaux):[];
+ const trous=(map.visions||[]).filter(v=>v&&v.w>0&&v.h>0).map(v=>[[anneauFerme(rectPolygon(v))]]);
+ if(mp.length&&trous.length)mp=Clipper.difference(mp,...trous);
+ const verrous=rects.filter(w=>w.locked).map(w=>({anneaux:[rectPolygon(w)],verrou:true}));
+ map.matiere=garderVerrous(depuisClip(mp),verrous);
+ delete map.walls;delete map.traits;delete map.carves;delete map.cuts;delete map.visions;
+ return map}
+/* Bloquer : la forme de l'outil rejoint la matière. Ce qui la touche fond avec elle en un
+   seul polygone ; ce qui ne la touche pas devient un polygone à part. */
+function ajouteMatiere(map,forme){const avant=matiereDe(map);
+ if(!forme||forme.length<3)return avant;
+ map.matiere=garderVerrous(depuisClip(Clipper.union(versClip(avant),[[anneauFerme(forme)]])),avant);
+ return map.matiere}
+/* Découper : la forme de l'outil est ôtée de la matière libre. Un polygone verrouillé
+   résiste : la découpe passe à côté sans l'entamer. */
+function retireMatiere(map,forme){const avant=matiereDe(map);
+ if(!forme||forme.length<3)return avant;
+ const libres=avant.filter(p=>!p.verrou),tenus=avant.filter(p=>p.verrou);
+ if(!libres.length)return avant;
+ map.matiere=[...tenus,...depuisClip(Clipper.difference(versClip(libres),[[anneauFerme(forme)]]))];
+ return map.matiere}
+/* Après un déplacement ou une mise à l'échelle, le polygone bougé peut en recouvrir un
+   autre : on refond toute la matière pour qu'ils n'en fassent qu'un — et non un trou,
+   comme le voudrait la règle pair-impair de deux contours superposés. */
+function refondMatiere(map){const avant=matiereDe(map);if(avant.length<2)return avant;
+ map.matiere=garderVerrous(depuisClip(Clipper.union(...avant.map(p=>versClip([p])))),avant);
+ return map.matiere}
+function polygoneContient(p,pt){return (p&&p.anneaux||[]).reduce((v,r)=>pointInPolygon(pt,r)?!v:v,false)}
+// Le polygone de matière sous ce point, ou -1 : c'est lui qu'un clic désigne.
+function matiereSous(map,pt){return matiereDe(map).findIndex(p=>polygoneContient(p,pt))}
+function boitePolygone(p){const pts=(p&&p.anneaux&&p.anneaux[0])||[];if(!pts.length)return null;
+ const xs=pts.map(q=>q[0]),ys=pts.map(q=>q[1]);
+ const x=Math.min(...xs),y=Math.min(...ys);
+ return {x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y}}
+function transformePolygone(p,fn){return {...p,anneaux:p.anneaux.map(r=>r.map(q=>fn(q)))}}
+function contoursMatiere(map){return matiereDe(map).flatMap(p=>p.anneaux)}
+/* Le pinceau laisse une touche ronde à l'écran ; entre deux pas, une capsule qui relie les
+   deux touches, pour que le geste soit continu. Tout se calcule dans le repère de l'écran
+   (abscisse multipliée par le rapport de la carte) puis se ramène en pour cent : un rond
+   reste rond, quel que soit le format de la carte. L'épaisseur, comme celle d'un trait,
+   se compte en pour cent de la largeur. */
+function capsulePolygon(a,b,e,ratio,n=12){const r=Math.max(.05,Number(ratio)||16/9),demi=Math.max(.02,e*r/2);
+ const ax=a.x*r,ay=a.y,bx=b.x*r,by=b.y,dx=bx-ax,dy=by-ay,L=Math.hypot(dx,dy),pts=[];
+ if(L<1e-9)for(let i=0;i<2*n;i++){const t=i/n*Math.PI;pts.push([ax+Math.cos(t)*demi,ay+Math.sin(t)*demi])}
+ else{const ang=Math.atan2(dy,dx);
+  for(let i=0;i<=n;i++){const t=ang+Math.PI/2+i/n*Math.PI;pts.push([ax+Math.cos(t)*demi,ay+Math.sin(t)*demi])}
+  for(let i=0;i<=n;i++){const t=ang-Math.PI/2+i/n*Math.PI;pts.push([bx+Math.cos(t)*demi,by+Math.sin(t)*demi])}}
+ return pts.map(([x,y])=>[x/r,y])}
 /* La main tremble. Un glissement que l'on croit bien droit arrive en quarante points qui
-   serpentent d'un tiers de pourcent, et comme la matière suit maintenant le tracé au
-   sommet près, ce tremblement ressortait en crénelures. On redresse donc l'encre avant
-   de s'en servir. Le seuil vaut une case de trame : en deçà, la découpe n'a de toute
-   façon pas cette finesse — on n'efface que du détail qui n'a jamais existé. Les angles
-   voulus, eux, dépassent largement le seuil et tiennent bon. */
-const ENCRE_TOL=CARVE_STEP*1.1,ENCRE_PART=.012;
+   serpentent d'un tiers de pourcent ; comme la découpe suit désormais le tracé au sommet
+   près, ce tremblement ressortirait en dents. On redresse donc l'encre avant de s'en
+   servir. Le seuil est fin — moins d'un demi pour cent —, et proportionné à la corde :
+   les angles voulus, eux, dépassent largement le seuil et tiennent bon. */
+const ENCRE_TOL=.44,ENCRE_PART=.012;
 function encreDroite(carves,tol){return (carves||[]).map(p=>{
  const d=simplifyClosed(p,tol>0?tol:ENCRE_TOL,ENCRE_PART);return d&&d.length>=3?d:p})}
-function wallShape(map){return {contours:smoothContours(unionContours(wallsPierced(map)),encreDroite(map&&map.carves),CARVE_STEP*.05,CARVE_STEP,
- [...(map&&map.cuts||[]),...(map&&map.doors||[]).flatMap(d=>doorCuts(d,mapWalls(map)))])}}
+/* Les portes. Une porte percée — ouverte, ou ordinaire — ôte son rectangle à la matière ;
+   close, elle rebouche exactement ce même rectangle. Un passage secret ne perce qu'une
+   fois ouvert : tant qu'il est clos, la matière reste pleine et rien — ni le mur peint,
+   ni la vue, ni le passage — ne trahit son emplacement.
+   Une porte tracée à la main couvre rarement le mur pile d'un bord à l'autre : il restait
+   dans l'embrasure un fil de matière large d'un cheveu, invisible et pourtant opaque. On
+   prolonge donc la porte sur son petit côté, de chaque côté, jusqu'à ce que la matière
+   s'arrête — et au plus de sa propre épaisseur : si l'on ne ressort pas dans cette
+   limite, c'est un gros bloc et non un mur, on n'y creuse que la porte elle-même. */
+function doorPierces(d){return !!d&&(!d.secret||!!d.open)}
+function rectsOverlap(a,b){return a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h}
+function trouPorte(d,map){if(!d||!(d.w>0&&d.h>0))return null;
+ const polys=matiereDe(map),large=d.w>=d.h,epais=large?d.h:d.w,n=12;
+ const dedans=pt=>polys.some(p=>polygoneContient(p,pt));
+ const sonde=sens=>{if(!polys.length)return 0;
+  for(let k=1;k<=n;k++){const s=epais*k/n;
+   const pt=large?[d.x+d.w/2,sens<0?d.y-s:d.y+d.h+s]:[sens<0?d.x-s:d.x+d.w+s,d.y+d.h/2];
+   if(!dedans(pt))return s}
+  return 0};
+ const a=sonde(-1),b=sonde(1);
+ return large?{x:d.x,y:d.y-a,w:d.w,h:d.h+a+b}:{x:d.x-a,y:d.y,w:d.w+a+b,h:d.h}}
+// Une porte close rebouche exactement le trou qu'elle avait percé, prolongement compris.
+function doorBlocks(map){return (map&&map.doors||[]).filter(d=>d&&!d.open&&d.w>0&&d.h>0).map(d=>trouPorte(d,map)).filter(Boolean)}
+/* Géométrie effectivement opposée au regard et aux tirs : la matière percée de ses portes,
+   puis chaque porte close. Dessin et calcul y puisent ensemble, donc l'ombre commence
+   exactement là où le mur est peint. */
+function wallShape(map){const polys=matiereDe(map);
+ const trous=(map&&map.doors||[]).filter(d=>doorPierces(d)&&d.w>0&&d.h>0).map(d=>trouPorte(d,map)).filter(Boolean);
+ let mp=versClip(polys);
+ if(mp.length&&trous.length)mp=Clipper.difference(mp,...trous.map(t=>[[anneauFerme(rectPolygon(t))]]));
+ return {contours:depuisClip(mp).flatMap(p=>p.anneaux)}}
 function obstaclesFrom(map){if(!map)return [];
- return [wallShape(map),...doorBlocks(map).map(d=>({contours:[rectPolygon(d)]})),
-  ...traitContours(map).map(c=>({contours:[c]}))]}
+ return [wallShape(map),...doorBlocks(map).map(d=>({contours:[rectPolygon(d)]}))]}
 // Une porte se manœuvre au contact : son rectangle doit entrer dans le rayon du token.
 function rectInReach(actor,rect,size,token){
  const cx=Math.max(rect.x,Math.min(actor.x,rect.x+rect.w));
@@ -928,8 +669,8 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  if(cle==='vieMax'&&Number.isFinite(a.vie))a.vie=Math.min(a.vie,a.vieMax);
  else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
  return a[cle]}
-const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,encreDroite,snapToCarves,ENCRE_TOL,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
- rectPolygon,traitPolygon,traitContours,CONTACT_MATIERE,morceauxMatiere,morceauxSeTouchent,groupesMatiere,groupeMatiere,boiteGroupe,distSegSeg,segsCroisent,carveTrait,carveTraits,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,escalierMask,redresseEscaliers,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ETATS_JEU,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+const api={visionPolygon,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+ rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,uncontain,spreadInZone,
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ETATS_JEU,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

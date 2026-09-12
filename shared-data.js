@@ -6,7 +6,12 @@
  const visit=v=>{if(v===null||v===undefined)return;if(typeof v==='number'&&!Number.isFinite(v))throw Error('Valeur invalide.');if(typeof v==='object')for(const [k,val]of Object.entries(v)){if(['__proto__','constructor','prototype'].includes(k))throw Error('Clé interdite.');if(k==='id'&&typeof val==='string'&&!/^[A-Za-z0-9_-]{1,100}$/.test(val))throw Error('Identifiant invalide.');if(['image','mapImage'].includes(k)&&val!==null&&val!==''&&(typeof val!=='string'||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(val)))throw Error('Image publiée invalide.');visit(val)}};visit(s);
  if(s.maps!==undefined){if(!Array.isArray(s.maps)||s.maps.length>60)throw Error('Cartes publiées invalides.');
   for(const m of s.maps){if(!m||typeof m.name!=='string'||!Array.isArray(m.walls||[])||!Array.isArray(m.doors||[])||!Array.isArray(m.foes||[]))throw Error('Carte publiée invalide.');
-   for(const r of [...(m.walls||[]),...(m.visions||[]),...(m.doors||[]),...(m.start?[m.start]:[])])if(!r||!['x','y','w','h'].every(k=>Number.isFinite(r[k])&&r[k]>=-1&&r[k]<=101))throw Error('Zone de carte invalide.')}}
+   for(const r of [...(m.walls||[]),...(m.visions||[]),...(m.doors||[]),...(m.start?[m.start]:[])])if(!r||!['x','y','w','h'].every(k=>Number.isFinite(r[k])&&r[k]>=-1&&r[k]<=101))throw Error('Zone de carte invalide.');
+   // La matière : des polygones à anneaux de points bornés, en nombre borné.
+   if(m.matiere!==undefined){if(!Array.isArray(m.matiere)||m.matiere.length>600)throw Error('Matière de carte invalide.');
+    for(const p of m.matiere){if(!p||!Array.isArray(p.anneaux)||p.anneaux.length>200)throw Error('Matière de carte invalide.');
+     for(const an of p.anneaux){if(!Array.isArray(an)||an.length<3||an.length>4000)throw Error('Anneau de matière invalide.');
+      for(const q of an)if(!Array.isArray(q)||q.length!==2||!q.every(v=>Number.isFinite(v)&&v>=-1&&v<=101))throw Error('Anneau de matière invalide.')}}}}}
  for(const a of s.actors){if(typeof a.name!=='string'||typeof a.hero!=='boolean'||!Array.isArray(a.pool)||a.pool.length!==7||!a.pool.every(v=>Number.isInteger(v)&&v>=0&&v<=12)||!Array.isArray(a.skills)||a.skills.length!==8||!a.skills.every(v=>Number.isFinite(v)&&v>=0&&v<=30)||(a.states!==undefined&&(!Array.isArray(a.states)||a.states.length>40||!a.states.every(e=>typeof e==='string'&&e.length<=40))))throw Error('Fiche publiée invalide.');for(const k of ['hp','max','def','dmg','x','y'])if(!Number.isFinite(a[k])||a[k]<0)throw Error('Caractéristique invalide.');if(a.max<1||a.hp>a.max)throw Error('PV invalides.')}
  return s;
  }

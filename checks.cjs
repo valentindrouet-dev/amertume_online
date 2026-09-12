@@ -126,17 +126,7 @@ assert.equal(places.length,5);
 assert.ok(places.every(p=>p.x>=5&&p.x<=25&&p.y>=70&&p.y<=90));   // Tous dans la zone.
 assert.equal(new Set(places.map(p=>p.x+':'+p.y)).size,5);        // Aucun doublon de position.
 assert.deepEqual(spreadInZone(3,null),[]);
-// Zones de vision : elles creusent les zones de blocage.
-const {diffRect,subtractRects}=require('./combat.js');
-const aire=rs=>rs.reduce((s,r)=>s+r.w*r.h,0);
-assert.deepEqual(diffRect({x:0,y:0,w:10,h:10},{x:20,y:20,w:5,h:5}),[{x:0,y:0,w:10,h:10}]); // Sans recouvrement : intact.
-assert.equal(diffRect({x:0,y:0,w:10,h:10},{x:0,y:0,w:10,h:10}).length,0);                  // Entièrement creusé.
-const troue=diffRect({x:0,y:0,w:10,h:10},{x:4,y:4,w:2,h:2});
-assert.equal(troue.length,4);assert.equal(aire(troue),100-4);                              // Trou central : quatre bandes.
-const bord=diffRect({x:0,y:0,w:10,h:10},{x:-5,y:-5,w:10,h:20});
-assert.equal(aire(bord),50);                                                               // Creusé par la gauche.
-assert.equal(aire(subtractRects([{x:0,y:0,w:10,h:10}],[{x:2,y:2,w:2,h:2},{x:6,y:6,w:2,h:2}])),100-8);
-// Une pièce creusée dans un gros bloc : la vue passe dedans, pas au travers du plein.
+// Une carte d'avant, avec sa zone de vision : fondue en matière, la pièce creusée y est un trou.
 const FROMAGE={walls:[{x:20,y:20,w:60,h:40}],visions:[{x:30,y:30,w:40,h:20}],doors:[]};
 const troues=obstaclesFrom(FROMAGE);
 // Un contour extérieur et un contour de creux : la matière est un anneau.
@@ -161,92 +151,15 @@ assert.ok(pointInPolygon([10,10],VUE));   // De côté : vu.
 // Accord complet avec wallsBetween sur un plan chargé, hors bords des obstacles.
 const dedale=[];for(let i=0;i<8;i++){dedale.push({x:6+i*11,y:12,w:2,h:26});dedale.push({x:6+i*11,y:56,w:2,h:26})}
 for(let j=0;j<6;j++)dedale.push({x:6,y:12+j*14,w:88,h:2});
-const MORCEAUX=subtractRects(dedale,Array.from({length:30},(_,i)=>({x:7+(i*7)%84,y:13+(i*11)%74,w:4,h:4})));
-const CONTOURS=MORCEAUX.map(rectPolygon);
-const FORMES=[{contours:CONTOURS}];
+const TROUS=Array.from({length:30},(_,i)=>({x:7+(i*7)%84,y:13+(i*11)%74,w:4,h:4}));
+const C=require('./combat.js');
+const LABYRINTHE={ratio:16/9,walls:dedale,visions:TROUS,doors:[]};
+const FORMES=[{contours:C.contoursMatiere(LABYRINTHE)}];
 for(const o of [{x:22.7,y:74.3},{x:50.5,y:47.3}]){const vision=visionPolygon(o,FORMES,null);let compares=0;
  for(let i=0;i<1500;i++){const p=[(i*37.13)%100,(i*61.7)%100];
-  if(MORCEAUX.some(r=>p[0]>r.x-.3&&p[0]<r.x+r.w+.3&&p[1]>r.y-.3&&p[1]<r.y+r.h+.3))continue;
-  assert.equal(pointInPolygon(p,vision),!wallsBetween(o,{x:p[0],y:p[1]},CONTOURS));compares++}
+  if([...dedale,...TROUS].some(r=>p[0]>r.x-.3&&p[0]<r.x+r.w+.3&&p[1]>r.y-.3&&p[1]<r.y+r.h+.3))continue;
+  assert.equal(pointInPolygon(p,vision),!wallsBetween(o,{x:p[0],y:p[1]},FORMES));compares++}
  assert.ok(compares>800)}
-/* Contour de l'union : exact, sans couture interne, avec les creux comme contours. */
-const {smoothContours,simplifyClosed,relaxContour,carveMask,distToRectEdge,carveWithPolygon:creuse,CARVE_STEP,closestOnSegment,encreDroite,wallShape,wallsPierced:perce,polyTouchesDisc,rectInReach}=require('./combat.js');
-assert.equal(unionContours([{x:0,y:0,w:10,h:10},{x:10,y:0,w:10,h:10}]).length,1);      // Deux zones jointives fusionnent.
-assert.equal(unionContours([{x:0,y:0,w:10,h:10},{x:10,y:0,w:10,h:10}])[0].length,4);   // Sans couture au milieu.
-assert.equal(unionContours(subtractRects([{x:0,y:0,w:40,h:40}],[{x:15,y:15,w:10,h:10}])).length,2); // Creux : deux contours.
-/* Découpe libre : la marche d'escalier devient une courbe fidèle, l'angle droit reste droit. */
-const ELLIPSE=Array.from({length:64},(_,i)=>{const a=i/64*2*Math.PI;return [50+18*Math.cos(a),50+12*Math.sin(a)]});
-const CREUSE=creuse([{x:20,y:30,w:60,h:40}],ELLIPSE,CARVE_STEP);
-const LISSE=wallShape({walls:CREUSE,doors:[],carves:[ELLIPSE]}).contours;
-assert.equal(LISSE.length,2);
-assert.ok(Math.abs(aireDe(LISSE[1])-Math.PI*18*12)/(Math.PI*18*12)<.02); // Aire du trou à 2 % de l'ellipse voulue.
-// Aucun pli visible : le plus grand changement de cap reste doux tout au long de la courbe.
-const cassure=c=>{let pire=0;
- for(let i=0;i<c.length;i++){const a=c[(i+c.length-1)%c.length],b=c[i],d=c[(i+1)%c.length];
-  let t=Math.abs(Math.atan2(d[1]-b[1],d[0]-b[0])-Math.atan2(b[1]-a[1],b[0]-a[0]));
-  if(t>Math.PI)t=2*Math.PI-t;pire=Math.max(pire,t)}
- return pire*180/Math.PI};
-assert.ok(cassure(LISSE[1])<15);                                   // Contre 90° pour l'escalier brut.
-assert.ok(cassure(unionContours(CREUSE)[1])>85);
-/* Sans tracé enregistré — une carte creusée avant qu'on ne le garde, ou reprise d'ailleurs
-   — l'escalier est tout de même redressé : c'est l'approximation d'une ligne, et la ligne
-   vaut mieux. On n'a pas le tracé pour y rendre chaque sommet, mais on reconnaît les
-   marches à leur allure, et on les allège d'une case près. */
-{const brut=unionContours(CREUSE),sans=wallShape({walls:CREUSE,doors:[]}).contours;
- assert.equal(brut[1].length,164);
- assert.ok(sans[1].length<brut[1].length/4,'escalier non redressé : '+sans[1].length+' sommets');
- /* Faute du tracé, la courbe ressort plus anguleuse qu'avec lui — quarante-quatre sommets
-    et douze degrés quand il est là, dix-sept et trente-trois quand il manque. C'est le
-    prix d'une information perdue, et c'est sans commune mesure avec les quatre-vingt-dix
-    degrés d'un escalier. */
- assert.ok(cassure(sans[1])<35,'facettes de '+cassure(sans[1]).toFixed(0)+'°');
- // Et l'aire ne dérive pas : on redresse, on ne rogne pas.
- assert.ok(Math.abs(aireDe(sans[1])-Math.PI*18*12)/(Math.PI*18*12)<.01);}
-const DROIT=wallShape({walls:[{x:10,y:40,w:80,h:6}],doors:[]}).contours;
-assert.equal(DROIT[0].length,4);                                   // Un mur droit n'est pas arrondi…
-assert.equal(aireDe(DROIT[0]),480);                                // … et garde son aire exacte.
-// Une découpe rectangulaire reste un rectangle : le lissage ne touche pas l'architecture.
-const RECT=[[40,38],[60,38],[60,62],[40,62]];
-/* Le redressement d'escalier ne doit jamais mordre sur ce qu'on a voulu droit : une
-   encoche rectangulaire reste un rectangle même sans tracé enregistré, parce que le bord
-   d'une découpe est soustrait au trait exact et se reconnaît comme tel. */
-{const creusee=creuse([{x:10,y:40,w:80,h:20}],RECT,CARVE_STEP);
- const nu=wallShape({walls:creusee,doors:[],cuts:[{x:40,y:38,w:20,h:24}]}).contours;
- assert.deepEqual(nu.map(c=>c.length),[4,4]);
- assert.equal(nu.reduce((s,c)=>s+aireDe(c),0),1200);}
-const ENCOCHE=wallShape({walls:creuse([{x:10,y:40,w:80,h:20}],RECT,CARVE_STEP),doors:[],carves:[RECT]}).contours;
-assert.deepEqual(ENCOCHE.map(c=>c.length),[4,4]);
-assert.equal(aireDe(ENCOCHE[0])+aireDe(ENCOCHE[1]),1200);
-/* Une découpe libre suit la forme dessinée, et non la trame qui a servi à la creuser :
-   une coupe bien droite ressort bien droite, aux sommets voulus. */
-for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
- ['en pente douce',[[10,45],[90,25],[90,20],[10,40]]],
- ['presque plate',[[10,40],[90,32],[90,28],[10,36]]]]){
- const reste=creuse([{x:20,y:30,w:60,h:8}],bande,CARVE_STEP);
- for(const c of wallShape({walls:reste,doors:[],carves:[bande]}).contours){
-  assert.ok(c.length<=6,nom+' : '+c.length+' sommets');       // Plus la moindre marche.
-  for(const p of c){let d=Infinity;                           // Et chacun là où la main l'a mis.
-   for(let k=0,j=bande.length-1;k<bande.length;j=k++){const q=closestOnSegment(p,bande[j],bande[k]);
-    d=Math.min(d,Math.hypot(p[0]-q[0],p[1]-q[1]))}
-   const bord=Math.min(Math.abs(p[0]-20),Math.abs(p[0]-80),Math.abs(p[1]-30),Math.abs(p[1]-38));
-   assert.ok(Math.min(d,bord)<1e-9,nom+' : sommet à '+d.toFixed(3)+' du tracé')}}}
-/* La main tremble : le même geste, tracé point par point puis glissé en tremblant, doit
-   donner la même matière. Sinon le tremblement ressort en crénelures sur le mur. */
-{const NET=[[70,2],[96,28],[99,25],[73,-1]];
- let g=1;const al=()=>{g=(g*1103515245+12345)%2147483648;return g/2147483648-.5};
- const MAIN=[];{const A=[70,2],B=[96,28],n=44;
-  for(let i=0;i<=n;i++)MAIN.push([A[0]+(B[0]-A[0])*i/n+al()*.5,A[1]+(B[1]-A[1])*i/n+al()*.5]);
-  for(let i=n;i>=0;i--)MAIN.push([A[0]+3+(B[0]-A[0])*i/n,A[1]-3+(B[1]-A[1])*i/n])}
- const BANDE=[{x:6,y:6,w:88,h:4},{x:6,y:90,w:88,h:4},{x:6,y:6,w:4,h:88},{x:90,y:6,w:4,h:88}];
- const taille=poly=>{const p=encreDroite([poly])[0],r=creuse(BANDE,p,CARVE_STEP);
-  return wallShape({walls:r,doors:[],carves:[p]}).contours.map(c=>c.length)};
- assert.deepEqual(taille(MAIN),taille(NET));          // Le tremblement ne coûte pas un sommet.
- // Et la coupe est bien droite : trois points alignés suffiraient à la décrire.
- const p=encreDroite([MAIN])[0],r=creuse(BANDE,p,CARVE_STEP);
- for(const c of wallShape({walls:r,doors:[],carves:[p]}).contours)
-  for(let i=0;i<c.length;i++){const a=c[(i+c.length-1)%c.length],b=c[i],d=c[(i+1)%c.length];
-   const l=Math.min(Math.hypot(b[0]-a[0],b[1]-a[1]),Math.hypot(d[0]-b[0],d[1]-b[1]));
-   assert.ok(l>CARVE_STEP*1.5,'marche de '+l.toFixed(2)+' laissée par la main');}}
 /* Une arme qui inflige un état le porte dans son attaque, et le pose sur qui elle touche. */
 {const {gearAttacks:armesAtt,infligeEtat,etatsDArmes,hasState,bleedOf}=require('./combat.js');
  const stock=[{id:'w1',category:'weapon',name:'Dague',hands:1,etat:'Saignée',dice:{white:1}},
@@ -282,25 +195,6 @@ for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
  const beni={hp:10,max:10,states:['Onde'],bleed:0,cumuls:{}};
  assert.equal(infligeEtat(beni,'Blindage'),true);  // Un état bénéfique ne la consume pas.
  assert.ok(hasState(beni,'Onde'));}
-/* Une porte ou une découpe posée sur un biseau ne doit pas y laisser l'escalier : les
-   garde-fous qui protègent les angles voulus droits ne valent que sur leurs propres bords. */
-{const MURS=[{x:12,y:6,w:56,h:4},{x:12,y:82,w:56,h:4},{x:12,y:6,w:4,h:80},{x:64,y:6,w:4,h:80}];
- const POLY=[[14,8],[58,8],[66,16],[66,74],[58,84],[14,84]];
- const tr=encreDroite([POLY])[0],restes=creuse(MURS,tr,CARVE_STEP);
- const marche=(a,b)=>Math.hypot(b[0]-a[0],b[1]-a[1])<=CARVE_STEP*2.5
-  &&(Math.abs(a[0]-b[0])<1e-9||Math.abs(a[1]-b[1])<1e-9);
- const compte=cs=>{let n=0;for(const c of cs)for(let i=0;i<c.length;i++){
-  const a=c[(i+c.length-1)%c.length],b=c[i],d=c[(i+1)%c.length];
-  if(marche(a,b)&&marche(b,d))n++}return n};
- assert.ok(compte(unionContours(restes))>20);        // L'escalier est bien là au départ…
- for(const [nom,doors,cuts] of [
-  ['nu',[],[]],
-  ['porte sur le biseau',[{x:62,y:76,w:4,h:5,open:false}],[]],
-  ['découpe sur le biseau',[],[{x:60,y:10,w:5,h:5}]],
-  ['les deux',[{x:62,y:76,w:4,h:5,open:false}],[{x:60,y:10,w:5,h:5}]],
-  ['portes partout',[{x:62,y:76,w:4,h:5},{x:12,y:40,w:4,h:6},{x:30,y:6,w:6,h:4}],[]]])
-  assert.equal(compte(wallShape({walls:restes,doors,cuts,carves:[tr]}).contours),0,
-   'marches laissées : '+nom);}                      // … et il n'en reste aucune.
 /* L'ordre canonique des cibles : Boss, Solitaire, Alpha, sbires ; à type égal l'alphabet ;
    à nom égal la place dans la liste, qui est le numéro porté sur le socle. */
 {const {ordreCibles,rangType,cleClasse,classeDe}=require('./combat.js');
@@ -355,26 +249,141 @@ for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
  assert.match(phraseTalent('lamevent',{cibles:'tous',etat:'Feu',mode:'place'}),
   /inflige <b>Feu<\/b> à <b>tous les adversaires<\/b> au contact, <b>sans dégâts<\/b>/);
  assert.equal(phraseTalent('inconnu'),'');}
-/* Un angle taillé à l'outil Découper reste droit, même au beau milieu d'un tracé libre. */
-const OVALE=Array.from({length:48},(_,i)=>{const a=i/48*2*Math.PI;return [50+18*Math.cos(a),50+14*Math.sin(a)]});
-const BLOC=creuse([{x:10,y:10,w:80,h:60}],OVALE,CARVE_STEP);
-const TAILLE=wallShape({walls:subtractRects(BLOC,[{x:64,y:60,w:26,h:10}]),doors:[],carves:[OVALE]}).contours;
-const obliques=c=>c.filter((p,i)=>{const q=c[(i+1)%c.length];
- return Math.abs(p[0]-q[0])>1e-9&&Math.abs(p[1]-q[1])>1e-9}).length;
-const CONTOUR_BLOC=TAILLE.find(c=>c.length<=12);
-assert.equal(obliques(CONTOUR_BLOC),0);            // Pas une seule arête de biais.
-for(const coin of [[64,60],[64,70],[90,60]])       // Les coins de la découpe, au sommet près.
- assert.ok(TAILLE.some(c=>c.some(p=>Math.abs(p[0]-coin[0])<1e-9&&Math.abs(p[1]-coin[1])<1e-9)));
-const TROU=TAILLE.find(c=>obliques(c)>10);
-assert.ok(TROU&&TROU.length>40);                   // Le tracé libre, lui, reste une courbe.
-// Un sommet posé en plein sur un tracé libre est assoupli…
-const TRACE_TEST=[[45,36],[55,36],[55,40],[45,40]];
-const MORCEAU=[[49.6,36],[50,36],[50,36.4],[49.6,36.4]];
-assert.equal(carveMask(MORCEAU,[TRACE_TEST],CARVE_STEP*1.6,CARVE_STEP,[])[1],1);
-// … sauf s'il appartient au bord d'une découpe rectangulaire ou d'une porte : là, jamais.
-assert.equal(carveMask(MORCEAU,[TRACE_TEST],CARVE_STEP*1.6,CARVE_STEP,[{x:50,y:30,w:2,h:6}])[1],0);
-assert.equal(distToRectEdge([50,36],{x:50,y:30,w:2,h:6}),0);
-assert.ok(distToRectEdge([53,36],{x:50,y:30,w:2,h:6})>.9);
+const {simplifyClosed,closestOnSegment,encreDroite,wallShape,polyTouchesDisc,rectInReach}=require('./combat.js');
+/* ====================================================================================
+   LA MATIÈRE EST EXACTE : CHAQUE OUTIL LAISSE EXACTEMENT SA FORME
+   Plus de trame, plus de lissage : bloquer unit la forme de l'outil à la matière,
+   découper l'en soustrait, et le contour obtenu a les sommets du geste, ni plus ni moins.
+   ==================================================================================== */
+const carteVide=()=>({ratio:16/9,doors:[]});
+const rectP=(x,y,w,h)=>rectPolygon({x,y,w,h});
+const sommets=m=>C.matiereDe(m).map(p=>p.anneaux.map(r=>r.length));
+// Deux blocs jointifs fondent en un polygone : quatre sommets, sans couture au milieu.
+{const m=carteVide();C.ajouteMatiere(m,rectP(0,0,10,10));C.ajouteMatiere(m,rectP(10,0,10,10));
+ assert.deepEqual(sommets(m),[[4]]);
+ assert.equal(aireDe(C.matiereDe(m)[0].anneaux[0]),200);}
+// Deux blocs à l'écart restent deux zones ; un troisième qui les relie n'en fait qu'une.
+{const m=carteVide();C.ajouteMatiere(m,rectP(0,0,10,10));C.ajouteMatiere(m,rectP(30,0,10,10));
+ assert.equal(C.matiereDe(m).length,2);
+ C.ajouteMatiere(m,rectP(8,3,24,4));assert.equal(C.matiereDe(m).length,1);}
+// Une découpe rectangulaire au milieu : un trou de quatre sommets, aux coins tracés, l'aire exacte.
+{const m=carteVide();C.ajouteMatiere(m,rectP(10,10,60,40));C.retireMatiere(m,rectP(30,20,20,10));
+ assert.deepEqual(sommets(m),[[4,4]]);
+ const [ext,trou]=C.matiereDe(m)[0].anneaux;
+ assert.equal(aireDe(ext)-aireDe(trou),2400-200);
+ for(const coin of [[30,20],[50,20],[50,30],[30,30]])assert.ok(trou.some(p=>p[0]===coin[0]&&p[1]===coin[1]),'coin '+coin);}
+// Une découpe qui mord le bord entame le contour, sans faire de trou.
+{const m=carteVide();C.ajouteMatiere(m,rectP(10,10,60,40));C.retireMatiere(m,rectP(0,20,20,10));
+ assert.deepEqual(sommets(m),[[8]]);assert.equal(aireDe(C.matiereDe(m)[0].anneaux[0]),2400-100);}
+// Une découpe en biais : la coupe est la droite tracée, chaque sommet exactement dessus, aucune marche.
+{const m=carteVide();C.ajouteMatiere(m,rectP(20,30,60,8));
+ const bande=[[10,55],[70,-5],[75,0],[15,60]];C.retireMatiere(m,bande);
+ const polys=C.matiereDe(m);assert.equal(polys.length,2);          // Le mur est coupé en deux.
+ for(const p of polys)for(const c of p.anneaux){assert.ok(c.length<=6,c.length+' sommets');
+  for(const q of c){let d=Infinity;
+   for(let k=0,j=bande.length-1;k<bande.length;j=k++){const t=closestOnSegment(q,bande[j],bande[k]);
+    d=Math.min(d,Math.hypot(q[0]-t[0],q[1]-t[1]))}
+   const bord=Math.min(Math.abs(q[0]-20),Math.abs(q[0]-80),Math.abs(q[1]-30),Math.abs(q[1]-38));
+   assert.ok(Math.min(d,bord)<1e-6,'sommet à '+d.toFixed(4)+' du tracé')}}}
+// Une ellipse à main levée creuse exactement l'ellipse dessinée : mêmes sommets, même aire.
+{const m=carteVide();C.ajouteMatiere(m,rectP(20,30,60,40));
+ const ell=Array.from({length:64},(_,i)=>{const a=i/64*2*Math.PI;return [50+18*Math.cos(a),50+12*Math.sin(a)]});
+ C.retireMatiere(m,ell);
+ const [ext,trou]=C.matiereDe(m)[0].anneaux;
+ assert.equal(ext.length,4);assert.equal(trou.length,64);
+ assert.ok(Math.abs(aireDe(trou)-aireDe(ell))<1e-6);}
+// La main tremble : l'encre redressée ne garde que les angles voulus, et la coupe est droite.
+{const NET=[[70,2],[96,28],[99,25],[73,-1]];let g=1;const al=()=>{g=(g*1103515245+12345)%2147483648;return g/2147483648-.5};
+ const MAIN=[];{const A=[70,2],B=[96,28],n=44;
+  for(let i=0;i<=n;i++)MAIN.push([A[0]+(B[0]-A[0])*i/n+al()*.5,A[1]+(B[1]-A[1])*i/n+al()*.5]);
+  for(let i=n;i>=0;i--)MAIN.push([A[0]+3+(B[0]-A[0])*i/n,A[1]-3+(B[1]-A[1])*i/n])}
+ assert.equal(encreDroite([MAIN])[0].length,NET.length);
+ const m=carteVide();C.ajouteMatiere(m,rectP(60,0,40,40));const droite=encreDroite([MAIN])[0];C.retireMatiere(m,droite);
+ // Chaque sommet est sur la bande redressée ou sur le bord du bloc : rien n'est inventé.
+ for(const c of C.contoursMatiere(m)){assert.ok(c.length<=10,c.length+' sommets après la main');
+  for(const q of c){let d=Infinity;
+   for(let k=0,j=droite.length-1;k<droite.length;j=k++){const t=closestOnSegment(q,droite[j],droite[k]);d=Math.min(d,Math.hypot(q[0]-t[0],q[1]-t[1]))}
+   const bord=Math.min(Math.abs(q[0]-60),Math.abs(q[0]-100),Math.abs(q[1]-0),Math.abs(q[1]-40));
+   assert.ok(Math.min(d,bord)<1e-6,'sommet inventé à '+d.toFixed(4))}}}
+// Une ligne de blocage en biais est un quadrilatère exact, fondu dans la matière qu'elle touche.
+{const m=carteVide();C.ajouteMatiere(m,rectP(10,10,10,10));
+ const trait={x1:20,y1:15,x2:50,y2:40,e:.6};C.ajouteMatiere(m,C.traitPolygon(trait,m.ratio));
+ assert.equal(C.matiereDe(m).length,1);assert.equal(C.matiereDe(m)[0].anneaux.length,1);
+ assert.ok(C.wallsBetween({x:35,y:20},{x:35,y:35},C.obstaclesFrom(m)));   // Elle arrête la vue.
+ assert.ok(!C.wallsBetween({x:60,y:5},{x:60,y:45},C.obstaclesFrom(m)));   // Ailleurs, non.
+ // Un trait à l'écart est une zone à lui seul.
+ C.ajouteMatiere(m,C.traitPolygon({x1:70,y1:70,x2:90,y2:90,e:.3},m.ratio));assert.equal(C.matiereDe(m).length,2);}
+// Le pinceau : un appui laisse un rond — rond à l'écran, l'abscisse étirée du rapport —, un pas une capsule.
+{const rond=C.capsulePolygon({x:20,y:20},{x:20,y:20},2,16/9);
+ assert.equal(rond.length,24);
+ const rx=Math.max(...rond.map(p=>p[0]))-20,ry=Math.max(...rond.map(p=>p[1]))-20;
+ assert.ok(Math.abs(rx*16/9-ry)<1e-9);assert.ok(Math.abs(ry-16/9)<1e-9);   // Épaisseur 2 % de la largeur.
+ const cap=C.capsulePolygon({x:10,y:10},{x:30,y:10},2,16/9);
+ assert.equal(cap.length,26);
+ assert.ok(cap.every(p=>p[0]>=9-1e-9&&p[0]<=31+1e-9&&Math.abs(p[1]-10)<=16/9+1e-9));
+ // La gomme ôte exactement la capsule : un trou de vingt-six sommets dans un bloc intact.
+ const m=carteVide();C.ajouteMatiere(m,rectP(0,0,60,40));
+ C.retireMatiere(m,C.capsulePolygon({x:20,y:20},{x:40,y:20},3,m.ratio));
+ assert.deepEqual(sommets(m),[[4,26]]);
+ // Et deux touches qui se suivent ne font qu'une zone, sans couture.
+ const n=carteVide();C.ajouteMatiere(n,C.capsulePolygon({x:20,y:20},{x:20,y:20},3,n.ratio));
+ C.ajouteMatiere(n,C.capsulePolygon({x:20,y:20},{x:24,y:21},3,n.ratio));
+ assert.equal(C.matiereDe(n).length,1);assert.equal(C.matiereDe(n)[0].anneaux.length,1);}
+/* Le donjon aux murs minces : chaque coin de chaque mur est un sommet exact, découpes
+   rectangulaires comprises, et pas une arête de biais — tout est comme tracé. */
+{const m=carteVide();
+ for(const r of [{x:10,y:10,w:60,h:1.2},{x:10,y:10,w:1.2,h:50},{x:68.8,y:10,w:1.2,h:50},{x:10,y:58.8,w:60,h:1.2},
+  {x:30,y:20,w:1.2,h:20},{x:30,y:20,w:18,h:1.2},{x:20,y:40,w:25,h:1.2},{x:44,y:30,w:1.2,h:12}])C.ajouteMatiere(m,rectPolygon(r));
+ for(const r of [{x:33,y:20,w:6,h:1.4},{x:30,y:26,w:1.4,h:5},{x:25,y:40,w:5,h:1.4}])C.retireMatiere(m,rectPolygon(r));
+ const tous=C.contoursMatiere(m).flat();
+ // (30,40) n'est pas un sommet : la cloison verticale y prolonge le bord, en ligne droite.
+ for(const coin of [[10,10],[70,10],[70,60],[10,60],[33,20],[39,20],[25,40],[30,41.2]])
+  assert.ok(tous.some(p=>Math.abs(p[0]-coin[0])<1e-9&&Math.abs(p[1]-coin[1])<1e-9),'coin '+coin);
+ for(const c of C.contoursMatiere(m))for(let i=0;i<c.length;i++){const a=c[i],b=c[(i+1)%c.length];
+  assert.ok(Math.abs(a[0]-b[0])<1e-9||Math.abs(a[1]-b[1])<1e-9,'arête de biais')}}
+/* Les portes. Une porte perce son rectangle, prolongé sur l'épaisseur d'un mur mince pour
+   n'y laisser aucun fil ; close, elle rebouche le même trou. Un gros bloc ne se creuse
+   que de la porte elle-même. */
+{const m={ratio:16/9,matiere:[{anneaux:[rectP(10,40,80,10)]}],doors:[{x:48,y:42,w:6,h:6,open:false}]};
+ const trou=C.trouPorte(m.doors[0],m);
+ assert.ok(trou.y<=40&&trou.y+trou.h>=50,'prolongée à travers le mur : '+JSON.stringify(trou));
+ assert.equal(trou.x,48);assert.equal(trou.w,6);
+ assert.equal(C.wallShape(m).contours.length,2);                            // Le mur est coupé en deux.
+ assert.ok(C.wallsBetween({x:51,y:20},{x:51,y:70},C.obstaclesFrom(m)));    // Close : vue coupée.
+ m.doors[0].open=true;
+ assert.ok(!C.wallsBetween({x:51,y:20},{x:51,y:70},C.obstaclesFrom(m)));   // Ouverte : vue libre.
+ assert.ok(C.wallsBetween({x:30,y:20},{x:30,y:70},C.obstaclesFrom(m)));    // À côté, le mur tient.
+ // Un passage secret clos ne perce rien ; ouvert, il perce comme une porte.
+ const secret={ratio:16/9,matiere:[{anneaux:[rectP(10,40,80,10)]}],doors:[{x:48,y:42,w:6,h:6,open:false,secret:true}]};
+ assert.equal(C.wallShape(secret).contours.length,1);
+ secret.doors[0].open=true;assert.equal(C.wallShape(secret).contours.length,2);
+ const bloc={ratio:16/9,matiere:[{anneaux:[rectP(0,0,100,100)]}],doors:[{x:48,y:42,w:6,h:6,open:true}]};
+ assert.deepEqual(C.trouPorte(bloc.doors[0],bloc),{x:48,y:42,w:6,h:6});}
+// Un polygone verrouillé résiste à la découpe, et transmet son verrou à ce qui fond avec lui.
+{const m=carteVide();C.ajouteMatiere(m,rectP(0,0,20,20));C.matiereDe(m)[0].verrou=true;
+ C.retireMatiere(m,rectP(5,5,5,5));assert.deepEqual(sommets(m),[[4]]);          // Rien n'est entamé.
+ C.ajouteMatiere(m,rectP(15,5,20,5));assert.equal(C.matiereDe(m).length,1);assert.ok(C.matiereDe(m)[0].verrou);
+ C.ajouteMatiere(m,rectP(60,60,5,5));assert.ok(!C.matiereDe(m)[1].verrou);}     // Une zone à part ne l'hérite pas.
+// Le polygone sous un point, sa boîte, et la refonte après un déplacement qui en recouvre un autre.
+{const m=carteVide();C.ajouteMatiere(m,rectP(0,0,10,10));C.ajouteMatiere(m,rectP(30,0,10,10));
+ assert.equal(C.matiereSous(m,[5,5]),0);assert.equal(C.matiereSous(m,[35,5]),1);assert.equal(C.matiereSous(m,[20,5]),-1);
+ assert.deepEqual(C.boitePolygone(C.matiereDe(m)[1]),{x:30,y:0,w:10,h:10});
+ m.matiere[1]=C.transformePolygone(m.matiere[1],([x,y])=>[x-22,y]);
+ C.refondMatiere(m);assert.deepEqual(sommets(m),[[4]]);
+ assert.equal(aireDe(C.matiereDe(m)[0].anneaux[0]),180);
+ // Un trou compte comme du vide : on ne le désigne pas.
+ C.retireMatiere(m,rectP(4,4,2,2));assert.equal(C.matiereSous(m,[5,5]),-1);assert.equal(C.matiereSous(m,[2,2]),0);}
+/* Une carte d'avant — rectangles, traits, zones de vision, tracés gardés — devient une
+   matière exacte, une fois pour toutes, verrous compris ; ses anciens champs s'en vont. */
+{const leg={ratio:16/9,walls:[{x:10,y:10,w:20,h:5,locked:true},{x:0,y:0,w:0,h:5},{x:60,y:60,w:5,h:5}],
+  traits:[{x1:30,y1:12,x2:50,y2:12,e:.6}],visions:[{x:12,y:11,w:4,h:2}],cuts:[],carves:[[[1,1],[2,2],[3,1]]],doors:[]};
+ const polys=C.matiereDe(leg);
+ assert.equal(polys.length,2);
+ assert.ok(!('walls'in leg)&&!('traits'in leg)&&!('visions'in leg)&&!('carves'in leg)&&!('cuts'in leg));
+ const grand=polys.find(p=>p.anneaux[0].some(q=>q[0]===10&&q[1]===10));
+ assert.ok(grand.verrou);assert.equal(grand.anneaux.length,2);      // Verrou hérité, zone de vision creusée.
+ assert.ok(!polys.find(p=>p!==grand).verrou);
+ assert.equal(C.matiereDe({}).length,0);assert.equal(C.matiereDe(null).length,0);}
 /* Export et import des couches : aller-retour fidèle, et rien de ce qui entre n'est cru. */
 const {packMaps,readMapsFile}=require('./combat.js');
 const PLAN_EXPORT={name:'Manoir',ratio:1.64,image:'data:image/png;base64,AAAA',
@@ -386,7 +395,8 @@ const PAQUET=packMaps([PLAN_EXPORT]);
 assert.equal(PAQUET.format,'amertume-cartes');
 assert.deepEqual(readMapsFile(JSON.stringify(PAQUET)),PAQUET.maps);   // Aller-retour fidèle.
 const SORTIE=PAQUET.maps[0];
-assert.equal(SORTIE.walls.length,1);            // Le rectangle plat ne sort pas.
+assert.equal(SORTIE.matiere.length,1);          // Fondu en matière ; le rectangle plat ne compte pas.
+assert.ok(!('walls'in SORTIE)&&!('cuts'in SORTIE)&&!('carves'in SORTIE));
 assert.equal(SORTIE.doors[0].open,false);       // Une porte revient toujours close…
 assert.equal(SORTIE.doors[0].keyLocked,true);   // … mais garde son verrou.
 assert.ok(!('fog' in SORTIE));                  // La mémoire d'exploration n'est pas une couche.
@@ -398,16 +408,12 @@ const SALE=readMapsFile(JSON.stringify({format:'amertume-cartes',maps:[{name:'x'
  image:'javascript:alert(1)',walls:[{x:'NaN',y:1e9,w:5,h:5}],foes:[{x:0,y:0,tpl:{name:'<script>',pv:-4,dice:{white:99}}}]}]}));
 assert.equal(SALE[0].image,null);
 assert.equal(SALE[0].name.length,80);
-assert.equal(SALE[0].walls[0].x,0);
-assert.equal(SALE[0].walls[0].y,101);
+assert.ok(SALE[0].matiere[0].anneaux[0].some(p=>p[0]===0&&p[1]===101));   // Coordonnées bornées.
+// Une matière trafiquée : anneaux trop courts jetés, coordonnées bornées, texte refusé.
+assert.deepEqual(readMapsFile(JSON.stringify({format:'amertume-cartes',maps:[{name:'m',
+ matiere:[{anneaux:[[[1,1],[2,2]]]},{anneaux:[[[0,0],[500,'x'],[5,5]]],verrou:1}]}]}))[0].matiere,
+ [{anneaux:[[[0,0],[101,0],[5,5]]],verrou:true}]);
 assert.equal(SALE[0].foes[0].tpl.pv,1);
-/* Le donjon aux murs minces : découpes rectangulaires comprises, pas un sommet ne bouge. */
-const MINCES=subtractRects(
- [{x:10,y:10,w:60,h:1.2},{x:10,y:10,w:1.2,h:50},{x:68.8,y:10,w:1.2,h:50},{x:10,y:58.8,w:60,h:1.2},
-  {x:30,y:20,w:1.2,h:20},{x:30,y:20,w:18,h:1.2},{x:20,y:40,w:25,h:1.2},{x:44,y:30,w:1.2,h:12}],
- [{x:33,y:20,w:6,h:1.4},{x:30,y:26,w:1.4,h:5},{x:25,y:40,w:5,h:1.4}]);
-const DONJON={walls:MINCES,doors:[{x:50,y:9.6,w:4,h:2,open:false}],carves:[ELLIPSE]};
-assert.deepEqual(wallShape(DONJON).contours,unionContours(perce(DONJON)));
 /* Un socle est vu dès qu'il mord sur la zone éclairée. */
 const CHAMP=[[0,0],[50,0],[50,100],[0,100]];
 assert.ok(polyTouchesDisc(CHAMP,[25,50],3));    // Bien dedans.
@@ -429,7 +435,7 @@ assert.equal(GRILLE[2*64+2],0);                            // Loin du carré : t
 const COMPACT=packMask(GRILLE,64*36);
 assert.equal(COMPACT.length,maskChars(64*36));
 assert.deepEqual(Array.from(unpackMask(COMPACT,64*36)),Array.from(GRILLE));
-const {wallsPierced,uncontain}=require('./combat.js');
+const {uncontain}=require('./combat.js');
 const {regridMask}=require('./combat.js');
 /* Ré-échantillonnage de la mémoire d'exploration : la zone vue reste au même endroit. */
 const AVANT=(()=>{let s='';for(let j=0;j<58;j++)for(let i=0;i<104;i++)s+=(i<52&&j<29)?'1':'0';return s})();
@@ -442,13 +448,6 @@ assert.equal(lu(APRES,256,10,140),0);
 assert.equal(lu(APRES,256,127,77),1);
 assert.equal(lu(APRES,256,129,79),0);
 assert.ok(!regridMask('0'.repeat(104*58),104,58,256,156).some(v=>v));
-const AVEC_PORTE={walls:[{x:10,y:40,w:80,h:10}],doors:[{x:48,y:38,w:6,h:14,open:false}]};
-assert.equal(wallsPierced(AVEC_PORTE).length,2);                       // Le mur est coupé en deux.
-assert.ok(wallsBetween({x:51,y:20},{x:51,y:70},obstaclesFrom(AVEC_PORTE)));   // Porte close : vue coupée.
-AVEC_PORTE.doors[0].open=true;
-assert.ok(!wallsBetween({x:51,y:20},{x:51,y:70},obstaclesFrom(AVEC_PORTE)));  // Porte ouverte : vue libre.
-assert.ok(wallsBetween({x:30,y:20},{x:30,y:70},obstaclesFrom(AVEC_PORTE)));   // À côté, le mur tient.
-AVEC_PORTE.doors[0].open=false;
 // Recalage : une zone enregistrée sous l'ancien cadre 16/9 retrouve sa place sur l'image.
 const cadre=16/9,image=1232/751,ech=image/cadre,marge=(1-ech)/2*100;
 const stocke=[{x:marge+10*ech,y:20,w:5*ech,h:8}];
@@ -624,39 +623,6 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-/* ---------- Une zone de blocage est une masse, pas un tas de morceaux ---------- */
-/* L'éditeur ne désigne plus un rectangle mais le bloc entier auquel il appartient : tout
-   ce qui se touche, même de proche en proche, même en biais, ne fait qu'une zone. */
-const C=require('./combat.js');
-const masses=m=>C.groupesMatiere(m).map(g=>({murs:g.murs,traits:g.traits}));
-const carteM=(walls,traits)=>({ratio:16/9,walls,traits:traits||[]});
-// Bord à bord : une seule masse. Séparés : deux.
-assert.deepEqual(masses(carteM([{x:10,y:10,w:10,h:10},{x:20,y:10,w:10,h:10}])),
- [{murs:[0,1],traits:[]}]);
-assert.equal(masses(carteM([{x:10,y:10,w:10,h:10},{x:40,y:10,w:10,h:10}])).length,2);
-// De proche en proche : A touche B, B touche C, les trois n'en font qu'une.
-assert.deepEqual(masses(carteM([{x:0,y:0,w:10,h:5},{x:10,y:0,w:10,h:5},{x:20,y:0,w:10,h:5}])),
- [{murs:[0,1,2],traits:[]}]);
-/* La croix : deux barres qui se croisent sans qu'aucun sommet de l'une tombe dans l'autre.
-   Le test de recouvrement seul les manquait — il faut aussi voir les bords se croiser. */
-assert.deepEqual(masses(carteM([{x:0,y:4,w:10,h:2},{x:4,y:0,w:2,h:10}])),
- [{murs:[0,1],traits:[]}]);
-assert.equal(C.distSegSeg([0,4],[10,4],[4,0],[4,10]),0);
-assert.ok(C.segsCroisent([0,0],[10,10],[0,10],[10,0]));
-assert.ok(!C.segsCroisent([0,0],[10,0],[0,5],[10,5]));
-// Un trait qui rejoint une zone entre dans sa masse ; tracé à l'écart, il est sa propre masse.
-assert.deepEqual(masses(carteM([{x:10,y:10,w:10,h:10}],[{x1:20,y1:15,x2:35,y2:15,e:.3}])),
- [{murs:[0],traits:[0]}]);
-assert.deepEqual(masses(carteM([{x:10,y:10,w:10,h:10}],[{x1:60,y1:15,x2:75,y2:15,e:.3}])),
- [{murs:[0],traits:[]},{murs:[],traits:[0]}]);
-// La masse qu'on désigne est bien celle qui contient le morceau visé, pas une autre.
-const deux=carteM([{x:0,y:0,w:5,h:5},{x:5,y:0,w:5,h:5},{x:50,y:0,w:5,h:5}]);
-assert.deepEqual(C.groupeMatiere(deux,'wall',1),{murs:[0,1],traits:[]});
-assert.deepEqual(C.groupeMatiere(deux,'wall',2),{murs:[2],traits:[]});
-// Son étendue tient tous ses morceaux, traits compris.
-assert.deepEqual(C.boiteGroupe(deux,{murs:[0,1],traits:[]}),{x:0,y:0,w:10,h:5});
-// Une carte vide n'a aucune masse : le compte affiché doit dire zéro, pas un.
-assert.equal(masses(carteM([])).length,0);
 /* Le menu déroulant des mécaniques porte le nom ET la description : on sait ce qu'un effet
    fait avant de le choisir, sans gras — une option ne lit pas le balisage. */
 const lib=C.libelleTalent('lamevent');
@@ -664,4 +630,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('426 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et masses de blocage.');
+console.log('434 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

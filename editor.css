@@ -96,7 +96,7 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
    prend pas le clic : on attrape une masse par sa matière, jamais par le vide de sa boîte. */
 .boite-masse{position:absolute;box-sizing:border-box;pointer-events:none;z-index:2;outline:calc(2px / var(--z)) dashed var(--accent);outline-offset:0}
 .boite-masse .grip{display:block;pointer-events:auto}
-.boite-masse.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.cut{background:#7faddc38;border:2px dashed #7faddc;pointer-events:none}.shape.locked{cursor:not-allowed}.shape.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.foe.locked::after{right:-4px;top:-8px}
+.boite-masse.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.cut{background:#7faddc38;border:2px dashed #7faddc;pointer-events:none}/* L'aperçu d'un bloc en cours de tracé : la teinte de la matière, en pointillé. */.shape.bloc{background:#0b111466;border:2px dashed #6c7d85;pointer-events:none}.shape.cut .grip,.shape.bloc .grip{display:none!important}.shape.locked{cursor:not-allowed}.shape.locked::after{content:'🔒';position:absolute;right:2px;top:1px;font-size:11px;opacity:.9}.shape.foe.locked::after{right:-4px;top:-8px}
 .shape.door{background:#c98a4b26;border:2px solid #c98a4b}.shape.door.keyed{background:#c98a4b1f;border-color:#f3d7a6;border-width:3px}
 /* Un passage secret : violet et pointillé, dans l'éditeur comme sur la table. */
 .shape.door.secret{background:#b06fd01f;border-color:#b06fd0;border-style:dashed;border-width:3px}.shape.door.keyed::before{content:'🔑';position:absolute;left:1px;top:0;font-size:10px}
@@ -130,8 +130,6 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .sw-door-open{background:#c98a4b2e;border:1px dashed #e8b878}.sw-ligne{background:#0b1114;height:4px;align-self:center}
 /* Les traits de blocage : la même encre que les zones, en polygones puisqu'ils penchent. */
 .calque-traits{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-.calque-traits .trait{fill:transparent;pointer-events:all;cursor:pointer}
-.calque-traits .trait:hover{fill:#c9884040}
 /* Un trait choisi prend l'ambre, à son épaisseur réelle : un liseré de trois pixels
    autour d'un trait de deux en faisait une grosse barre. */
 .calque-traits .trait.on{fill:var(--accent);filter:drop-shadow(0 0 2px #c98840)}
