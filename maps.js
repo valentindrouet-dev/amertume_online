@@ -25,7 +25,7 @@ function measureRatio(m,apres){if(!m||!m.image)return;const img=new Image();
 let shapeCache={cle:'',formes:[],murs:null};
 function geometryKey(m){return m.id+'|'+matiereDe(m).map(p=>(p.verrou?'v':'')+p.anneaux.map(r=>
   r.length+':'+r.reduce((t,q)=>t+q[0]*7.31+q[1]*13.07,0).toFixed(4)).join(',')).join(';')
- +'|'+(m.doors||[]).map(d=>d.x+','+d.y+','+d.w+','+d.h+(d.open?'o':'f')+(d.secret?'s':'')).join(';')}
+ +'|'+(m.doors||[]).map(d=>d.x+','+d.y+','+d.w+','+d.h+','+(d.a||0)+(d.open?'o':'f')+(d.secret?'s':'')).join(';')}
 // L'éditeur redessine à chaque geste : son contour est gardé de la même façon.
 let skinCache={cle:'',contours:[]};
 function draftSkin(m){const cle=geometryKey(m);
@@ -33,7 +33,7 @@ function draftSkin(m){const cle=geometryKey(m);
  return skinCache.contours}
 function mapShapes(m){const cle=geometryKey(m);
  if(shapeCache.cle!==cle){const murs=wallShape(m);
-  shapeCache={cle,murs,formes:[murs,...doorBlocks(m).map(d=>({contours:[rectPolygon(d)]}))]}}
+  shapeCache={cle,murs,formes:[murs,...doorBlocks(m).map(t=>({contours:[t]}))]}}
  return shapeCache}
 /* ---------- La sélection d'une zone de blocage ---------- */
 /* Un clic dans la matière désigne le polygone qui le contient — toute la zone d'un seul
@@ -51,7 +51,7 @@ function obstacleLabel(a,b){const m=currentMap(),mj=view==='mj';
  // Un passage secret clos se nomme « un mur » pour la troupe : le message ne doit pas
  // trahir ce que le socle ne montre pas.
  const portes=(m&&m.doors||[]).filter(d=>!d.open&&!doorHiddenFrom(d,mj));
- return m&&wallsBetween(a,b,portes.map(rectPolygon))?'une porte fermée':'un mur'}
+ return m&&wallsBetween(a,b,portes.map(d=>doorPolygon(d,m.ratio)))?'une porte fermée':'un mur'}
 // Un socle est vu dès qu'il mord sur la zone éclairée, fût-ce d'un pour cent.
 function tokenRadiusPct(){const size=mapSize();return size.width?tokenPx()/2/size.width*100:1.5}
 
@@ -105,9 +105,13 @@ function seenAt(x,y){if(!fogSeen||!fogDim)return false;const d=fogDim;
 /* Une porte close est un obstacle : le regard s'arrête sur sa face, si bien que les
    cases de son rectangle ne sont jamais « vues » et qu'elle resterait invisible aux
    joueurs plantés devant. On interroge donc sa face, et la mémoire tout autour. */
-function doorProbes(d,marge){const xs=[d.x-marge,d.x+d.w/2,d.x+d.w+marge];
- const ys=[d.y-marge,d.y+d.h/2,d.y+d.h+marge],out=[];
- for(const x of xs)for(const y of ys)out.push([x,y]);
+function doorProbes(d,marge){const out=[];
+ if(!(Number(d.a)||0)){const xs=[d.x-marge,d.x+d.w/2,d.x+d.w+marge],ys=[d.y-marge,d.y+d.h/2,d.y+d.h+marge];
+  for(const x of xs)for(const y of ys)out.push([x,y]);return out}
+ // De biais : la même grille de neuf points, mais dans le repère de la porte.
+ const m=currentMap(),f=doorFrame(d,m&&m.ratio);
+ for(const s of [-1,0,1])for(const t of [-1,0,1]){const ku=s*(f.hw+marge),kv=t*(f.hh+marge);
+  out.push([(f.cx+f.ux*ku+f.vx*kv)/f.r,f.cy+f.uy*ku+f.vy*kv])}
  return out}
 // Vue à l'instant : le polygone de vision épouse la face de la porte.
 function doorInSight(d){const size=mapSize();
@@ -168,7 +172,9 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  /* Une porte n'est qu'un contour : le regard s'arrête dessus, donc son rectangle n'est
     jamais éclairé et le décor y resterait noir. On lui rend la clarté de ses abords —
     pleine si on la voit, celle de la mémoire si on l'a seulement découverte. */
- const rect=p=>ctx.fillRect(p.x/100*W,p.y/100*H,p.w/100*W,p.h/100*H);
+ const rect=p=>{if(!(Number(p.a)||0)){ctx.fillRect(p.x/100*W,p.y/100*H,p.w/100*W,p.h/100*H);return}
+  const poly=doorPolygon(p,m.ratio);ctx.beginPath();
+  poly.forEach((q,i)=>ctx[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));ctx.closePath();ctx.fill()};
  /* Un passage secret clos n'est pas une porte pour la troupe : c'est du mur, et le mur
     reste dans l'ombre. Lui rendre la clarté de ses abords le désignerait du doigt —
     c'est par là qu'il se trahissait, une plaque grise dans le noir. */
@@ -225,8 +231,13 @@ function svgPath(contours,cls,wrap){const svg=document.createElementNS(nsSVG,'sv
  svg.append(el);return svg}
 // Le joueur ne manœuvre une porte qu'au contact : elle doit mordre son rayon.
 function doorInReach(d){if(view==='mj')return true;
- const a=actors[owner],size=mapSize();
- return !!(a&&a.hero&&alive(a)&&size.width&&rectInReach(a,d,size,tokenPx()))}
+ const a=actors[owner],size=mapSize(),m=currentMap();
+ return !!(a&&a.hero&&alive(a)&&size.width&&polyInReach(a,doorPolygon(d,m&&m.ratio),size,tokenPx()))}
+// Une porte droite reste un rectangle en pour cent ; de biais, un polygone à ses quatre coins.
+function svgPorte(d,ratio,cls){if(!(Number(d.a)||0))return svgRect(d,cls);
+ const el=document.createElementNS(nsSVG,'polygon');
+ el.setAttribute('points',doorPolygon(d,ratio).map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));
+ if(cls)el.setAttribute('class',cls);return el}
 function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=currentMap();
  svg.replaceChildren();portes.replaceChildren();applyMapRatio();renderFog();refreshGmBar();
  // .hidden n'existe pas sur un élément SVG : le masquage passe par une classe.
@@ -244,7 +255,7 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
   if(doorHiddenFrom(d,mj)||!doorSeen(d))return;
   // Une porte que ce lecteur peut manœuvrer s'annonce au survol.
   const ouvrable=mj||(!doorLockedFor(d,mj)&&doorInReach(d));
-  const el=svgRect(d,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':'')
+  const el=svgPorte(d,m.ratio,'door'+(d.open?' open':'')+(d.keyLocked?' keyed':'')
    +(d.secret?' secret':'')+(ouvrable?' can-open':''));
   el.style.pointerEvents='all';
   el.onclick=()=>{
@@ -471,8 +482,8 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  ligne:'Un clic pose l’origine du trait, un second l’arrête. ⌘ (ou Ctrl) le redresse à l’horizontale, à la verticale ou à quarante-cinq degrés. Maj au second clic pose un point d’appui : le trait s’arrête là et le suivant en repart, de quoi longer une salle entière sans relever la main. Près d’une extrémité déjà posée, le tracé s’y aimante — une pastille verte le dit — et le carré se ferme juste. Échap abandonne.',
  cut:'Trace un rectangle dans la matière : la découpe y creuse exactement ce rectangle, vue et passage rétablis.',
  lasso:'Contourne la forme à creuser : glisse pour tracer à main levée, ou clique point par point. La découpe suit exactement ton tracé. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
- door:'Trace une porte : elle perce d’elle-même la zone de blocage qu’elle recouvre, et le mur se referme si tu la déplaces. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
- secret:'Trace un passage secret à même le mur : tant qu’il est clos, il ne perce rien et la troupe ne voit qu’un mur — toi seul le devines à son trait violet, et toi seul l’ouvres. Ouvert, il devient une porte comme une autre.',
+ door:'Glisse le long du mur, d’un montant à l’autre : la porte prend l’épaisseur du mur et son inclinaison, même de biais. ⌘ (ou Ctrl) la contraint à quarante-cinq degrés. Elle perce d’elle-même la matière qu’elle recouvre, et le mur se referme si tu la déplaces. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
+ secret:'Glisse le long du mur, d’un montant à l’autre, pour poser un passage secret : tant qu’il est clos, il ne perce rien et la troupe ne voit qu’un mur — toi seul le devines à son trait violet, et toi seul l’ouvres. Ouvert, il devient une porte comme une autre.',
  start:'Trace la zone où les aventuriers seront regroupés à l’ouverture de la carte. Une seule par carte.',
  pinceau:'Glisse pour peindre de la matière à main levée, comme au feutre. Le trait se fond dans les zones qu’il touche. Sa grosseur se choisit à côté, en fraction de socle : elle suit donc l’échelle de la carte.',
  gomme:'Glisse pour gratter la matière, comme à la gomme. Ce qui est verrouillé résiste. Sa grosseur se choisit à côté.',
@@ -536,6 +547,8 @@ function shapeEl(kind,i,r){const el=document.createElement('div');
  el.className='shape '+kind+(r.locked?' locked':'')+(kind==='door'&&r.keyLocked?' keyed':'')+(kind==='door'&&r.secret?' secret':'')
   +(mapSel&&mapSel.kind===kind&&mapSel.i===i?' selected':'');
  el.style.left=r.x+'%';el.style.top=r.y+'%';el.style.width=r.w+'%';el.style.height=r.h+'%';
+ // Une porte de biais tourne autour de son centre ; ses poignées, qui tourneraient avec, se taisent.
+ if(kind==='door'&&(Number(r.a)||0)){el.style.transform='rotate('+r.a+'deg)';el.classList.add('tourne')}
  el.dataset.kind=kind;el.dataset.i=i;
  ['nw','ne','sw','se'].forEach(g=>{const h=document.createElement('span');h.className='grip '+g;h.dataset.grip=g;el.append(h)});
  return el}
@@ -618,6 +631,8 @@ function matiereChangee(){renderCanvas();renderMapList();saveMaps();if(mapDraft.
    continu et rond au bout ; gratter la soustrait. La grosseur se dit en fraction de
    socle : un pinceau moyen vaut un peu plus d'un demi socle, ce qui veut dire la même
    chose sur une carte de couloir et sur un plan de ville. */
+// L'épaisseur d'une porte posée hors de toute matière, en pour cent de la largeur.
+const PORTE_EPAISSEUR=1.4;
 function pinceauTaille(){const sel=$('pinceau-taille');
  const part=Math.max(.1,Math.min(3,Number(sel&&sel.value)||.55));
  return Math.max(.25,echelleSocle(mapDraft)*part)}
@@ -726,13 +741,16 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  // Le bloc se trace comme la découpe : un aperçu suit la main, l'union se fait au relâché.
  if(mapTool==='wall'){cutRect={x:p.x,y:p.y,w:0,h:0,bloc:true};mapSel=null;
   mapDrag={mode:'cut',kind:'bloc',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
+ /* La porte se trace le long du mur, d'un montant à l'autre : le glisser donne sa longueur
+    et son inclinaison, le mur sous elle donne son épaisseur. Un passage secret est une
+    porte née secrète. */
+ if(mapTool==='door'||mapTool==='secret'){pushUndo();
+  const porte={x:p.x,y:p.y,w:0,h:0,a:0,locked:false,open:false};if(mapTool==='secret')porte.secret=true;
+  mapDraft.doors.push(porte);mapSel={kind:'door',i:mapDraft.doors.length-1};
+  mapDrag={mode:'porte',i:mapSel.i,from:p,dessous,L:0};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  // Outil de dessin : on trace. Un clic sans glisser sélectionne la forme sous le curseur.
  pushUndo();const rect={x:p.x,y:p.y,w:0,h:0,locked:false};
- if(mapTool==='door'||mapTool==='secret'){rect.open=false;
-  // Un passage secret est une porte, née secrète : plus besoin de percer d'abord un trou.
-  if(mapTool==='secret')rect.secret=true;
-  mapDraft.doors.push(rect);mapSel={kind:'door',i:mapDraft.doors.length-1}}
- else if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
+ if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
  mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
 $('map-canvas').addEventListener('pointermove',e=>{
  if(traitDepart&&!mapDrag){traitVise=viseTrait(pct(e),e.metaKey||e.ctrlKey,mapDraft&&mapDraft.ratio);
@@ -753,6 +771,21 @@ $('map-canvas').addEventListener('pointermove',e=>{
  if(d.mode==='lasso'){const der=lasso.pts[lasso.pts.length-1];
   if(Math.hypot(p.x-der[0],p.y-der[1])>=auZoom(.6)){lasso.pts.push([p.x,p.y]);d.bouge=true;renderCanvas()}
   return}
+ /* La porte suit la main : d'un montant à l'autre, dans le repère de l'écran. ⌘/Ctrl la
+    contraint aux huit directions ; sans rien, une porte presque droite le devient tout à
+    fait — et redevient alors le rectangle d'avant. */
+ if(d.mode==='porte'){const porte=mapDraft.doors[d.i];if(!porte){mapDrag=null;return}
+  const r=Math.max(.05,Number(mapDraft.ratio)||16/9);
+  const ax=d.from.x*r,ay=d.from.y,bx=p.x*r,by=p.y,L=Math.hypot(bx-ax,by-ay);
+  let ang=Math.atan2(by-ay,bx-ax)*180/Math.PI;
+  if(e.metaKey||e.ctrlKey)ang=Math.round(ang/45)*45;
+  else{const droit=Math.round(ang/90)*90;if(Math.abs(ang-droit)<=6)ang=droit}
+  let cx=(ax+bx)/2,cy=(ay+by)/2;
+  // Le mur sous la main donne l'épaisseur, et recentre la porte sur son axe.
+  const mur=sondeMur(mapDraft,{x:cx/r,y:cy},ang,r);
+  const T=mur?mur.epaisseur:PORTE_EPAISSEUR*r;
+  if(mur){cx+=mur.vx*mur.decalage;cy+=mur.vy*mur.decalage}
+  Object.assign(porte,posePorte(cx,cy,L,T,ang,r));d.L=L;renderCanvas();return}
  /* Une zone se déplace ou s'étire d'un bloc : la même transformation affine passe sur tous
     ses anneaux, trous compris. Glissée, elle reste dans la carte ; tirée, elle ne se
     réduit jamais à rien. */
@@ -781,6 +814,10 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
   if(mapDraft.id===currentMapId)render();return}
  // Un glisser ferme le contour à main levée ; une suite de clics attend Entrée.
  if(d.mode==='pinceau'){pinceauDernier=null;matiereChangee();return}
+ // Une porte sans longueur n'est pas une porte : clic manqué, on choisit ce qu'il y avait dessous.
+ if(d.mode==='porte'){if(!(d.L>=auZoom(1.2))){mapDraft.doors.splice(d.i,1);
+   if(d.dessous){mapSel=d.dessous;mapTool='select'}else{mapSel=null;undoStack.pop()}}
+  matiereChangee();return}
  if(d.mode==='lasso'){if(d.bouge&&lasso&&lasso.pts.length>=3)applyLasso();else renderCanvas();return}
  /* Le rectangle relâché : un bloc rejoint la matière, une découpe l'en ôte — exactement
     lui, angles droits compris. Un clic sans glisser ne trace rien : s'il tombait sur une

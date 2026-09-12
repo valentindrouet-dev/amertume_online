@@ -211,7 +211,9 @@ function cleanRect(r,porte){if(!r)return null;
  const o={x:borne(r.x),y:borne(r.y),w:borne(r.w,0,102),h:borne(r.h,0,102)};
  if(!(o.w>0&&o.h>0))return null;
  if(r.locked)o.locked=true;
- if(porte){o.open=false;if(r.keyLocked)o.keyLocked=true}
+ if(porte){o.open=false;if(r.keyLocked)o.keyLocked=true;if(r.secret)o.secret=true;
+  // L'angle d'une porte de biais voyage avec elle ; une porte droite n'en porte pas.
+  const a=Number(r.a);if(Number.isFinite(a)&&((a%180)+180)%180!==0)o.a=((a%180)+180)%180}
  return o}
 function cleanRects(list,porte){return (Array.isArray(list)?list:[]).map(r=>cleanRect(r,porte)).filter(Boolean).slice(0,2000)}
 function texte(v,n=200){return String(v==null?'':v).slice(0,n)}
@@ -363,16 +365,56 @@ function encreDroite(carves,tol){return (carves||[]).map(p=>{
    limite, c'est un gros bloc et non un mur, on n'y creuse que la porte elle-même. */
 function doorPierces(d){return !!d&&(!d.secret||!!d.open)}
 function rectsOverlap(a,b){return a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h}
+/* Une porte de biais. Elle garde son rectangle {x,y,w,h} et gagne un angle « a », en
+   degrés, qui la tourne autour de son centre — dans le repère de l'écran, sinon elle se
+   déformerait avec le format de la carte. Sans angle, c'est la porte d'avant, bit pour
+   bit. Le repère de la porte : son centre, ses demi-côtés et ses deux axes, en unités
+   d'écran (l'abscisse multipliée par le rapport). */
+function doorFrame(d,ratio){const r=Math.max(.05,Number(ratio)||16/9),a=(Number(d&&d.a)||0)*Math.PI/180;
+ const ux=Math.cos(a),uy=Math.sin(a);
+ return {r,cx:(d.x+d.w/2)*r,cy:d.y+d.h/2,hw:d.w*r/2,hh:d.h/2,ux,uy,vx:-uy,vy:ux}}
+// Les quatre coins de la porte, en pour cent de carte. Sans angle : ceux de son rectangle.
+function doorPolygon(d,ratio){if(!d)return null;if(!(Number(d.a)||0))return rectPolygon(d);
+ const f=doorFrame(d,ratio);
+ return [[-1,-1],[1,-1],[1,1],[-1,1]].map(([s,t])=>[(f.cx+s*f.hw*f.ux+t*f.hh*f.vx)/f.r,f.cy+s*f.hw*f.uy+t*f.hh*f.vy])}
+/* Une porte tracée d'un montant à l'autre : centre, longueur et épaisseur dans le repère
+   de l'écran, et son angle. Droite ou debout, elle redevient un rectangle sans angle —
+   la forme d'avant — ; de biais, elle garde son angle, ramené entre 0 et 180 puisqu'une
+   porte n'a pas de sens. */
+function posePorte(cx,cy,L,T,ang,ratio){const r=Math.max(.05,Number(ratio)||16/9),a=((ang%180)+180)%180;
+ if(a===90)return {x:(cx-T/2)/r,y:cy-L/2,w:T/r,h:L,a:0};
+ return {x:(cx-L/2)/r,y:cy-T/2,w:L/r,h:T,a}}
+/* L'épaisseur de la matière sous un point, perpendiculairement à une direction : c'est
+   ainsi qu'une porte tracée le long d'un mur prend d'elle-même l'épaisseur de ce mur.
+   Mesurée dans le repère de l'écran, en unités de hauteur ; zéro hors de la matière. */
+function sondeMur(map,c,angDeg,ratio,max=8){const r=Math.max(.05,Number(ratio)||16/9),a=(angDeg||0)*Math.PI/180;
+ const polys=matiereDe(map);if(!polys.length)return null;
+ const cx=c.x*r,cy=c.y,vx=-Math.sin(a),vy=Math.cos(a),pas=.05;
+ const dedans=(x,y)=>polys.some(p=>polygoneContient(p,[x/r,y]));
+ if(!dedans(cx,cy))return null;
+ const jusque=sens=>{for(let s=pas;s<=max;s+=pas)if(!dedans(cx+vx*sens*s,cy+vy*sens*s))return s-pas/2;return max};
+ const avant=jusque(-1),apres=jusque(1);
+ /* Le décalage ramène le point sur l'axe du mur : une porte tracée un peu à côté de
+    l'axe s'y recentre, au lieu de déborder d'un côté et de laisser un fil de l'autre. */
+ return {epaisseur:avant+apres,decalage:(apres-avant)/2,vx,vy}}
+function epaisseurSous(map,c,angDeg,ratio,max){const m=sondeMur(map,c,angDeg,ratio,max);return m?m.epaisseur:0}
+/* Le trou qu'une porte perce : son rectangle, prolongé sur son petit côté de chaque côté
+   jusqu'à ce que la matière s'arrête — et au plus de sa propre épaisseur : si l'on ne
+   ressort pas dans cette limite, c'est un gros bloc et non un mur. Le tout dans le
+   repère de la porte, donc valable de biais comme droit. Renvoie les quatre coins. */
 function trouPorte(d,map){if(!d||!(d.w>0&&d.h>0))return null;
- const polys=matiereDe(map),large=d.w>=d.h,epais=large?d.h:d.w,n=12;
- const dedans=pt=>polys.some(p=>polygoneContient(p,pt));
+ const f=doorFrame(d,map&&map.ratio),polys=matiereDe(map);
+ const large=f.hw>=f.hh,demi=large?f.hh:f.hw,autre=large?f.hw:f.hh,n=12;
+ // L'axe court, celui qu'on prolonge, et l'axe long, celui qu'on garde.
+ const kx=large?f.vx:f.ux,ky=large?f.vy:f.uy,lx=large?f.ux:f.vx,ly=large?f.uy:f.vy;
+ const dedans=(x,y)=>polys.some(p=>polygoneContient(p,[x/f.r,y]));
  const sonde=sens=>{if(!polys.length)return 0;
-  for(let k=1;k<=n;k++){const s=epais*k/n;
-   const pt=large?[d.x+d.w/2,sens<0?d.y-s:d.y+d.h+s]:[sens<0?d.x-s:d.x+d.w+s,d.y+d.h/2];
-   if(!dedans(pt))return s}
+  for(let k=1;k<=n;k++){const s=demi*2*k/n;
+   if(!dedans(f.cx+kx*sens*(demi+s),f.cy+ky*sens*(demi+s)))return s}
   return 0};
- const a=sonde(-1),b=sonde(1);
- return large?{x:d.x,y:d.y-a,w:d.w,h:d.h+a+b}:{x:d.x-a,y:d.y,w:d.w+a+b,h:d.h}}
+ const lo=-(demi+sonde(-1)),hi=demi+sonde(1);
+ const pt=(k,o)=>[(f.cx+kx*k+lx*o)/f.r,f.cy+ky*k+ly*o];
+ return [pt(lo,-autre),pt(hi,-autre),pt(hi,autre),pt(lo,autre)]}
 // Une porte close rebouche exactement le trou qu'elle avait percé, prolongement compris.
 function doorBlocks(map){return (map&&map.doors||[]).filter(d=>d&&!d.open&&d.w>0&&d.h>0).map(d=>trouPorte(d,map)).filter(Boolean)}
 /* Géométrie effectivement opposée au regard et aux tirs : la matière percée de ses portes,
@@ -381,15 +423,23 @@ function doorBlocks(map){return (map&&map.doors||[]).filter(d=>d&&!d.open&&d.w>0
 function wallShape(map){const polys=matiereDe(map);
  const trous=(map&&map.doors||[]).filter(d=>doorPierces(d)&&d.w>0&&d.h>0).map(d=>trouPorte(d,map)).filter(Boolean);
  let mp=versClip(polys);
- if(mp.length&&trous.length)mp=Clipper.difference(mp,...trous.map(t=>[[anneauFerme(rectPolygon(t))]]));
+ if(mp.length&&trous.length)mp=Clipper.difference(mp,...trous.map(t=>[[anneauFerme(t)]]));
  return {contours:depuisClip(mp).flatMap(p=>p.anneaux)}}
 function obstaclesFrom(map){if(!map)return [];
- return [wallShape(map),...doorBlocks(map).map(d=>({contours:[rectPolygon(d)]}))]}
+ return [wallShape(map),...doorBlocks(map).map(t=>({contours:[t]}))]}
 // Une porte se manœuvre au contact : son rectangle doit entrer dans le rayon du token.
 function rectInReach(actor,rect,size,token){
  const cx=Math.max(rect.x,Math.min(actor.x,rect.x+rect.w));
  const cy=Math.max(rect.y,Math.min(actor.y,rect.y+rect.h));
  return tokenDistance(actor,{x:cx,y:cy},size)<=contactRadius(token)}
+// La même portée pour une porte de biais : le point du polygone le plus proche, en pixels.
+function polyInReach(actor,poly,size,token){if(!poly||poly.length<3)return false;
+ if(pointInPolygon([actor.x,actor.y],poly))return true;
+ const [ax,ay]=mapPoint(actor,size),pts=poly.map(q=>mapPoint({x:q[0],y:q[1]},size));
+ let best=Infinity;
+ for(let i=0,j=pts.length-1;i<pts.length;j=i++){const q=closestOnSegment([ax,ay],pts[j],pts[i]);
+  best=Math.min(best,Math.hypot(ax-q[0],ay-q[1]))}
+ return best<=contactRadius(token)}
 // Répartit n combattants en grille dans la zone de départ, sans sortir de ses bords.
 function spreadInZone(n,zone){if(!zone||n<1)return [];
  const cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols),out=[];
@@ -669,7 +719,7 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  if(cle==='vieMax'&&Number.isFinite(a.vie))a.vie=Math.min(a.vie,a.vieMax);
  else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
  return a[cle]}
-const api={visionPolygon,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={visionPolygon,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,posePorte,epaisseurSous,sondeMur,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,uncontain,spreadInZone,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ETATS_JEU,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);

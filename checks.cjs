@@ -345,9 +345,11 @@ const sommets=m=>C.matiereDe(m).map(p=>p.anneaux.map(r=>r.length));
    n'y laisser aucun fil ; close, elle rebouche le même trou. Un gros bloc ne se creuse
    que de la porte elle-même. */
 {const m={ratio:16/9,matiere:[{anneaux:[rectP(10,40,80,10)]}],doors:[{x:48,y:42,w:6,h:6,open:false}]};
- const trou=C.trouPorte(m.doors[0],m);
- assert.ok(trou.y<=40&&trou.y+trou.h>=50,'prolongée à travers le mur : '+JSON.stringify(trou));
- assert.equal(trou.x,48);assert.equal(trou.w,6);
+ const trou=C.trouPorte(m.doors[0],m),boite=pts=>({x:Math.min(...pts.map(p=>p[0])),y:Math.min(...pts.map(p=>p[1])),
+  x2:Math.max(...pts.map(p=>p[0])),y2:Math.max(...pts.map(p=>p[1]))}),bt=boite(trou);
+ assert.equal(trou.length,4);
+ assert.ok(bt.y<=40&&bt.y2>=50,'prolongée à travers le mur : '+JSON.stringify(trou));
+ assert.ok(Math.abs(bt.x-48)<1e-9&&Math.abs(bt.x2-54)<1e-9,'largeur gardée : '+JSON.stringify(bt));
  assert.equal(C.wallShape(m).contours.length,2);                            // Le mur est coupé en deux.
  assert.ok(C.wallsBetween({x:51,y:20},{x:51,y:70},C.obstaclesFrom(m)));    // Close : vue coupée.
  m.doors[0].open=true;
@@ -358,7 +360,53 @@ const sommets=m=>C.matiereDe(m).map(p=>p.anneaux.map(r=>r.length));
  assert.equal(C.wallShape(secret).contours.length,1);
  secret.doors[0].open=true;assert.equal(C.wallShape(secret).contours.length,2);
  const bloc={ratio:16/9,matiere:[{anneaux:[rectP(0,0,100,100)]}],doors:[{x:48,y:42,w:6,h:6,open:true}]};
- assert.deepEqual(C.trouPorte(bloc.doors[0],bloc),{x:48,y:42,w:6,h:6});}
+ assert.deepEqual(C.trouPorte(bloc.doors[0],bloc).map(p=>p.map(v=>+v.toFixed(9))),[[48,42],[48,48],[54,48],[54,42]]);}
+/* Les portes de biais. Une porte garde son rectangle et gagne un angle ; sans angle, elle
+   est la porte d'avant bit pour bit. Tracée le long d'un mur incliné, elle en prend
+   l'épaisseur, le perce en deux, le bloque close et le libère ouverte. */
+{const R=16/9;
+ assert.deepEqual(C.doorPolygon({x:10,y:20,w:6,h:2},R),rectPolygon({x:10,y:20,w:6,h:2}));   // Sans angle : le rectangle.
+ // Tournée de 90°, une porte large devient debout : ses coins sont ceux du rectangle transposé autour du centre.
+ const debout=C.doorPolygon({x:10,y:20,w:6,h:2,a:90},R).map(p=>p.map(v=>+v.toFixed(6)));
+ const cx=13,cy=21,hw=3*R,hh=1;   // en unités d'écran : demi-longueur 3·R, demi-épaisseur 1
+ const attendu=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([s,t])=>[+((cx*R-t*hh)/R).toFixed(6),+(cy+s*hw).toFixed(6)]);
+ assert.deepEqual(debout,attendu);
+ // posePorte : droite ou debout, un rectangle sans angle ; de biais, l'angle est gardé, entre 0 et 180.
+ assert.deepEqual(C.posePorte(50*R,40,20,3,0,R),{x:50-10/R,y:38.5,w:20/R,h:3,a:0});
+ assert.deepEqual(C.posePorte(50*R,40,20,3,90,R),{x:50-1.5/R,y:30,w:3/R,h:20,a:0});
+ assert.equal(C.posePorte(50*R,40,20,3,-135,R).a,45);
+ assert.equal(C.posePorte(50*R,40,20,3,210,R).a,30);
+ // L'épaisseur sous un point : un mur droit de 6 de haut, mesuré à 0° ; rien hors matière.
+ const droit={ratio:R,matiere:[{anneaux:[rectPolygon({x:10,y:40,w:80,h:6})]}],doors:[]};
+ assert.ok(Math.abs(C.epaisseurSous(droit,{x:50,y:43},0,R)-6)<.11);
+ assert.equal(C.epaisseurSous(droit,{x:50,y:20},0,R),0);
+ // Un mur de biais à 30°, épais de 4 unités d'écran, long de 60 : bâti comme une porte géante.
+ const murBiais=C.doorPolygon({...C.posePorte(50*R,50,60,4,30,R)},R);
+ const m={ratio:R,matiere:[{anneaux:[murBiais]}],doors:[]};
+ assert.ok(Math.abs(C.epaisseurSous(m,{x:50,y:50},30,R)-4)<.11);
+ // La porte, glissée le long du mur : épaisseur du mur, angle du mur, dix unités de long.
+ const porte={...C.posePorte(50*R,50,10,C.epaisseurSous(m,{x:50,y:50},30,R),30,R),open:false};m.doors.push(porte);
+ assert.equal(porte.a,30);
+ assert.equal(C.wallShape(m).contours.length,2);                               // Le mur est coupé en deux.
+ const trou=C.trouPorte(porte,m);assert.equal(trou.length,4);
+ // De part et d'autre de la porte, perpendiculairement au mur : bloqué close, libre ouverte.
+ const n=[-Math.sin(Math.PI/6),Math.cos(Math.PI/6)];
+ const A={x:(50*R+n[0]*-6)/R,y:50+n[1]*-6},B={x:(50*R+n[0]*6)/R,y:50+n[1]*6};
+ assert.ok(C.wallsBetween(A,B,C.obstaclesFrom(m)));
+ porte.open=true;assert.ok(!C.wallsBetween(A,B,C.obstaclesFrom(m)));
+ // Plus loin le long du mur, il tient toujours.
+ const u=[Math.cos(Math.PI/6),Math.sin(Math.PI/6)],k=20;
+ assert.ok(C.wallsBetween({x:(50*R+u[0]*k+n[0]*-6)/R,y:50+u[1]*k+n[1]*-6},{x:(50*R+u[0]*k+n[0]*6)/R,y:50+u[1]*k+n[1]*6},C.obstaclesFrom(m)));
+ // La portée d'une porte de biais : le point du polygone le plus proche, en pixels.
+ const ecran={width:800,height:450},socle=46;
+ const poly=C.doorPolygon(porte,R);
+ assert.ok(C.polyInReach({x:50,y:50},poly,ecran,socle));                       // Dessus.
+ assert.ok(C.polyInReach({x:(50*R+n[0]*3)/R,y:50+n[1]*3},poly,ecran,socle));    // Tout près, à côté.
+ assert.ok(!C.polyInReach({x:10,y:10},poly,ecran,socle));                       // Loin.
+ assert.equal(C.polyInReach({x:50,y:50},null,ecran,socle),false);
+ // L'angle et le secret voyagent à l'export ; une porte droite n'emporte pas d'angle.
+ const sortie=C.packMaps([{ratio:R,matiere:[],doors:[{x:1,y:1,w:5,h:2,a:30,secret:true,keyLocked:true},{x:1,y:1,w:5,h:2,a:180},{x:1,y:1,w:5,h:2,a:'x'}]}]).maps[0].doors;
+ assert.deepEqual(sortie.map(d=>[d.a,!!d.secret,!!d.keyLocked]),[[30,true,true],[undefined,false,false],[undefined,false,false]]);}
 // Un polygone verrouillé résiste à la découpe, et transmet son verrou à ce qui fond avec lui.
 {const m=carteVide();C.ajouteMatiere(m,rectP(0,0,20,20));C.matiereDe(m)[0].verrou=true;
  C.retireMatiere(m,rectP(5,5,5,5));assert.deepEqual(sommets(m),[[4]]);          // Rien n'est entamé.
@@ -630,4 +678,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('434 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('455 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

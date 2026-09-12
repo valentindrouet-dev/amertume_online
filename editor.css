@@ -100,7 +100,7 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .shape.door{background:#c98a4b26;border:2px solid #c98a4b}.shape.door.keyed{background:#c98a4b1f;border-color:#f3d7a6;border-width:3px}
 /* Un passage secret : violet et pointillé, dans l'éditeur comme sur la table. */
 .shape.door.secret{background:#b06fd01f;border-color:#b06fd0;border-style:dashed;border-width:3px}.shape.door.keyed::before{content:'🔑';position:absolute;left:1px;top:0;font-size:10px}
-.shape.door.open{background:#c98a4b14;border-style:dashed}
+.shape.door.open{background:#c98a4b14;border-style:dashed}.shape.door.tourne .grip{display:none!important}
 .shape.start{background:#8bbd9c26;border:2px dashed #8bbd9c}
 .shape.foe{width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#6d443c;border:2px solid #d29180;display:grid;place-items:center;font:bold 14px Georgia;color:#f6e2dc;box-shadow:0 3px 8px #0007}
 .shape.foe.hidden-foe{opacity:.55;border-style:dashed}
@@ -185,7 +185,7 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .cat-filters{display:flex;gap:10px;margin:12px 0 18px;flex-wrap:wrap}
 .cat-filters input{flex:1 1 240px;margin:0}
 .cat-filters select{width:auto;min-width:190px;margin:0}
-.cat-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;align-items:start}
+.cat-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;align-items:start}/* Les classes de talents : quatre colonnes au plus, la cinquième passe en dessous. */#talent-cols{grid-template-columns:repeat(4,minmax(0,1fr))}
 .cat-col h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font:600 12px system-ui;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:7px}
 .cat-col h3 .compte{margin-left:auto;font-size:11px;letter-spacing:0;background:var(--hover);border-radius:9px;padding:1px 8px;color:var(--muted)}
 .cat-col h3{border-radius:6px 6px 0 0;padding:6px 8px 7px}
@@ -489,4 +489,4 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 .die-ajout:hover{border-color:var(--accent);color:var(--accent)}
 .best-attaque .die-sq,.best-attaque .pips .etat-inflige{cursor:pointer;padding:0}
 .best-notes{margin:0;font-size:13px;white-space:pre-wrap}
-@media (max-width:900px){#heroes-page,#talents-page,#armory-page,#bestiary-page{padding:14px}.cat-cols,.hero-grid{grid-template-columns:1fr}}
+@media (max-width:900px){#heroes-page,#talents-page,#armory-page,#bestiary-page{padding:14px}.cat-cols,#talent-cols,.hero-grid{grid-template-columns:1fr}}
