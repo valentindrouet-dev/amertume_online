@@ -104,7 +104,7 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 /* L'annonce ne barre plus la route : un bandeau paraît au-dessus de la table, se tient
    le temps qu'on le lise et s'efface seul. Rien à cliquer, rien à viser — il ne reçoit
    même pas la souris, pour ne jamais voler un clic à la carte qu'il survole. */
-.annonce-flottante{position:fixed;left:50%;top:17%;z-index:80;pointer-events:none;
+.annonce-flottante{position:fixed;z-index:80;pointer-events:none;
  padding:13px 30px;border-radius:14px;white-space:nowrap;
  background:#1b1410f2;color:#f6e9d8;border:1px solid #d2918059;
  font:700 clamp(21px,3.2vw,34px)/1.1 'Killam',Georgia,serif;letter-spacing:1.4px;
