@@ -86,7 +86,7 @@ const armoryPage=document.createElement('main');armoryPage.id='armory-page';
 armoryPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Armurerie</h2><div class="cat-actions">'
  +'<button id="armory-official">Catalogue officiel</button><button id="armory-add" class="primary">+ Ajouter</button></div></header>'
- +'<p class="muted">Catalogue d’armes, d’armures et d’objets. Chaque combattant y choisit son équipement depuis sa fiche.</p>'
+ 
  +'<div class="cat-filters"><input id="armory-search" placeholder="Rechercher…" aria-label="Rechercher un objet">'
  +'<select id="armory-cat" aria-label="Catégorie"><option value="">Toutes catégories</option>'
  +'<option value="melee">Armes de mêlée</option><option value="ranged">Armes à distance</option>'
@@ -124,7 +124,7 @@ const talentsPage=document.createElement('main');talentsPage.id='talents-page';
 talentsPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Talents</h2><div class="cat-actions">'
  +'<button id="talent-add" class="primary">+ Nouveau talent</button></div></header>'
- +'<p class="muted">Les talents que les aventuriers peuvent apprendre, rangés par classe. Les Génériques sont ouverts à tous. On les attribue depuis la fiche d’un aventurier, onglet Aventuriers.</p>'
+ 
  +'<div class="cat-filters"><input id="talent-search" placeholder="Rechercher…" aria-label="Rechercher un talent">'
  +'<select id="talent-family" aria-label="Classe"></select>'
  +'<select id="talent-sort" aria-label="Tri"><option value="niveau">Tri : niveau ↑</option>'
@@ -139,7 +139,7 @@ const bestiaryPage=document.createElement('main');bestiaryPage.id='bestiary-page
 bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Bestiaire</h2><div class="cat-actions">'
  +'<button id="bestiary-add" class="primary">+ Nouveau monstre</button></div></header>'
- +'<p class="muted">Modèles d’adversaires. Un modèle se pose sur la carte de combat ou se pré-place depuis l’éditeur de cartes. Ouvre une languette pour voir sa fiche entière : <b>tout s’y corrige d’un clic</b>. Changer les PV maximum met à jour les créatures déjà posées.</p>'
+ 
  +'<div class="cat-filters"><input id="bestiary-search" placeholder="Rechercher…" aria-label="Rechercher un monstre">'
  +'<select id="bestiary-family" aria-label="Famille"></select>'
  +'<select id="bestiary-sort" aria-label="Tri"><option value="danger">Tri : danger ↓</option>'
@@ -444,8 +444,7 @@ function gearPills(a){const out=document.createElement('div');out.className='gea
  const comptes=new Map();
  [...(a.weapons||[]),a.armorId,a.shieldId].map(gear).filter(Boolean)
   .forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
- if(!comptes.size){const v=document.createElement('span');v.className='muted';v.textContent='Sans équipement';out.append(v)}
- else comptes.forEach((n,o)=>{const p=gearPill(o);
+ comptes.forEach((n,o)=>{const p=gearPill(o);
   if(n>1){const x=document.createElement('span');x.className='tag exemplaires';x.textContent='×'+n;
    p.querySelector('.nom').after(x)}
   out.append(p)});
@@ -499,7 +498,6 @@ function renderArmory(){const cols=$('armory-cols');if(!cols)return;cols.replace
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
   h.append(compte);bloc.append(h);
   liste.forEach(([a,i])=>bloc.append(armoryRow(a,i)));
-  if(!liste.length){const vide=document.createElement('p');vide.className='muted';vide.textContent='Rien ici.';bloc.append(vide)}
   cols.append(bloc)}}
 // Quatre types d'adversaires, quatre colonnes : les Alpha manquaient, et leurs
 // modèles ne paraissaient donc nulle part.
@@ -643,8 +641,6 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
   titreAtt.append(ajout)}
  const listeAtt=document.createElement('div');listeAtt.className='best-attaques';
  (m.attacks||[]).forEach(at=>listeAtt.append(attaqueVive(m,at,poser,poserTexte)));
- if(!(m.attacks||[]).length){const vide=document.createElement('p');vide.className='muted';
-  vide.textContent='Aucune attaque : ce modèle ne frappe pas.';listeAtt.append(vide)}
  /* Un adversaire s'équipe comme un aventurier, et ce qu'il porte lui donne une attaque
     de plus. Le modèle transporte donc son équipement, et les créatures posées le reçoivent. */
  const titreKit=document.createElement('h5');titreKit.textContent='Équipement';
@@ -737,8 +733,6 @@ function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.rep
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
   h.append(compte);bloc.append(h);
   liste.forEach(([m,i])=>bloc.append(bestiaryRow(m,i)));
-  if(!liste.length){const vide=document.createElement('p');vide.className='muted';
-   vide.textContent=troupeSeule?'Rien d’analysé.':'Rien ici.';bloc.append(vide)}
   cols.append(bloc)}}
 /* Une colonne par classe, les Génériques en tête : c'est ainsi qu'on lit un arbre de
    talents, la souche commune d'abord et les branches ensuite. */
@@ -822,8 +816,6 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
   h.append(compte);bloc.append(h);
   liste.forEach(([t,i])=>bloc.append(talentRow(t,i)));
-  if(!liste.length){const vide=document.createElement('p');vide.className='muted';
-   vide.textContent='Rien ici.';bloc.append(vide)}
   cols.append(bloc)}
  if(!(catalog.talents||[]).length){const vide=document.createElement('p');vide.className='muted';
   vide.textContent='Aucun talent pour l’instant. « + Nouveau talent » ouvre une fiche vierge : un nom, une classe, une nature et un niveau.';
