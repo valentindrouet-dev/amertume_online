@@ -2,7 +2,12 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');const ed
 const png=new Uint8Array(24),v=new DataView(png.buffer);v.setUint32(0,0x89504e47);v.setUint32(4,0x0d0a1a0a);v.setUint32(16,4096);v.setUint32(20,2048);assert.equal(ctx.imageDimensions(png).join(','),'4096,2048');
 const jpg=new Uint8Array([255,216,255,192,0,7,8,2,0,4,0,255,217]);assert.equal(ctx.imageDimensions(jpg).join(','),'1024,512');
 const webp=new Uint8Array(30);webp.set(Buffer.from('RIFF'));webp.set(Buffer.from('WEBPVP8X'),8);webp[24]=255;webp[25]=1;webp[27]=255;assert.equal(ctx.imageDimensions(webp).join(','),'512,256');assert.throws(()=>ctx.imageDimensions(new Uint8Array(30)));
-const c={window:{}};vm.runInNewContext(fs.readFileSync('catalog.js','utf8'),c);const cat=c.window.AMERTUME_CATALOG;assert.equal(cat.items.filter(i=>i.category==='weapon').length,14);assert.equal(cat.items.filter(i=>i.category==='armor').length,5);assert.equal(cat.monsters.length,4);assert.equal(cat.monsters.find(m=>m.name==='Mystique déchu').attacks[0].dice.blue,2);
+const c={window:{}};vm.runInNewContext(fs.readFileSync('catalog.js','utf8'),c);const cat=c.window.AMERTUME_CATALOG;assert.equal(cat.classes.length,4);
+['Destructeur','Gardien','Lamevent','Mystique'].forEach(n=>{const k=cat.classes.find(x=>x.name===n);
+ assert.ok(k,'classe manquante : '+n);assert.match(k.tint,/^#[0-9a-f]{6}$/);assert.ok(k.pv>0);
+ assert.ok(k.id)});
+assert.equal(new Set(cat.classes.map(k=>k.id)).size,4);
+assert.equal(cat.items.filter(i=>i.category==='weapon').length,14);assert.equal(cat.items.filter(i=>i.category==='armor').length,5);assert.equal(cat.monsters.length,4);assert.equal(cat.monsters.find(m=>m.name==='Mystique déchu').attacks[0].dice.blue,2);
 const {resolveAttack:r}=require('./combat.js');assert.equal(r({dice:[[5,0]],def:3,dmg:0,roll:()=>2}).damage,5);assert.equal(r({dice:[[5,0]],def:3,dmg:8,roll:()=>2}).damage,13);assert.equal(r({dice:[[1,0],[1,2]],def:0,dmg:8,roll:()=>2}).damage,0);
 // Test de lecture des champs du formulaire sans navigateur.
 const read=editor.slice(editor.indexOf('function readActor()'),editor.indexOf('function toMonster'));
@@ -258,6 +263,28 @@ for(const [nom,bande] of [['de biais',[[10,55],[70,-5],[75,0],[15,60]]],
  const beni={hp:10,max:10,states:['Onde'],bleed:0,cumuls:{}};
  assert.equal(infligeEtat(beni,'Blindage'),true);  // Un état bénéfique ne la consume pas.
  assert.ok(hasState(beni,'Onde'));}
+/* L'ordre canonique des cibles : Boss, Solitaire, Alpha, sbires ; à type égal l'alphabet ;
+   à nom égal la place dans la liste, qui est le numéro porté sur le socle. */
+{const {ordreCibles,rangType,cleClasse,classeDe}=require('./combat.js');
+ const m=(name,type)=>({name,type,hero:false});
+ const troupe=[[m('Gobelin','standard'),0],[m('Reine','boss'),1],[m('Alpha des bois','alpha'),2],
+  [m('Gobelin','standard'),3],[m('Ermite','solitaire'),4],[m('Brute','standard'),5]];
+ assert.deepEqual(ordreCibles(troupe).map(([o,i])=>o.name+i),
+  ['Reine1','Ermite4','Alpha des bois2','Brute5','Gobelin0','Gobelin3']);
+ // Deux monstres du même nom : la place dans la liste tranche, donc le numéro du socle.
+ assert.deepEqual(ordreCibles([[m('Gobelin','standard'),7],[m('Gobelin','standard'),2]])
+  .map(([,i])=>i),[2,7]);
+ assert.equal(rangType({name:'Éla',hero:true}),3);        // Un aventurier compte comme un sbire.
+ assert.equal(rangType({type:'inconnu'}),3);              // Un type inattendu aussi.
+ assert.equal(rangType(null),3);
+ assert.deepEqual(ordreCibles(null),[]);
+ // Les classes du jeu, reconnues sur la seule tête du rôle.
+ const classes=[{name:'Destructeur',tint:'#b0452e',pv:16},{name:'Mystique',tint:'#7a5cb8',pv:10}];
+ assert.equal(cleClasse('Mystique · Voie du gel'),'mystique');
+ assert.equal(classeDe(classes,'mystique').pv,10);
+ assert.equal(classeDe(classes,'Destructeur · Ruine').tint,'#b0452e');
+ assert.equal(classeDe(classes,'Aventurier'),null);
+ assert.equal(classeDe(classes,''),null);}
 /* Un talent porte l'effet qu'il applique, et non plus son seul nom : le nom est au
    joueur, la mécanique au moteur. Le nom réduit ne sert qu'à reprendre les anciens. */
 {const {cleTalent,talentCode,paramsTalent,reglageTalent,TALENTS_CODES}=require('./combat.js');
@@ -545,4 +572,4 @@ typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette 
 // Aucun bandeau de colonne d'adversaire ne porte de fond : seule l'encre les distingue.
 typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\{([^}]*)\\}'));
  assert.ok(!r||!r[1].includes('background'),'bandeau teinté : '+t)});
-console.log('363 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');
+console.log('389 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact et ligne de vue.');

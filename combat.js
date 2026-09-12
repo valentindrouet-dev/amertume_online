@@ -702,6 +702,28 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',bouton:'⚡ Lameven
  resume:'En terminant un mouvement, le porteur infligerait son bonus de dégâts à un ou plusieurs adversaires au contact.',
  params:[{cle:'cibles',nom:'Adversaires frappés',type:'nombre',defaut:1,min:1,max:6},
   {cle:'bonus',nom:'Dégâts en plus du bonus',type:'nombre',defaut:0,min:0,max:99}]}};
+/* L'ordre canonique des cibles. Quand plusieurs sont éligibles à une attaque ou à un
+   effet, on les prend toujours dans le même ordre, et cet ordre est écrit une fois pour
+   toutes : les Boss d'abord, puis les Solitaires, les Alphas et enfin les sbires ; à type
+   égal, l'ordre alphabétique ; à nom égal, le numéro porté sur le socle — la cible 1 avant
+   la cible 2. Ce numéro suit la place dans la liste des combattants, c'est donc elle qui
+   tranche en dernier. Les aventuriers comptent comme des sbires : la règle parle des
+   types d'ennemis, et il faut bien que leur ordre soit défini aussi. */
+const RANG_TYPE={boss:0,solitaire:1,alpha:2,standard:3};
+function rangType(a){return a&&!a.hero&&RANG_TYPE[a.type]!==undefined?RANG_TYPE[a.type]:3}
+/* Trie des paires [combattant, place dans la liste]. On garde la place plutôt que le
+   numéro affiché : c'est elle qui le produit, et elle est toujours à portée de main. */
+function ordreCibles(paires){return [...(paires||[])].sort((u,v)=>
+ rangType(u[0])-rangType(v[0])
+ ||String(u[0]&&u[0].name||'').localeCompare(String(v[0]&&v[0].name||''),'fr')
+ ||u[1]-v[1])}
+/* Les classes d'aventurier : un nom, une encre, et les points de vie qu'elles apportent.
+   On les retrouve par leur nom réduit, et sur la seule tête du rôle : « Mystique »,
+   « mystique » ou « Mystique · Voie du gel » désignent la même classe. Un rôle écrit
+   librement reste possible — il n'a simplement pas de classe, donc pas de couleur propre. */
+function cleClasse(nom){return cleTalent(String(nom||'').split('·')[0])}
+function classeDe(classes,role){const k=cleClasse(role);
+ return k?(classes||[]).find(c=>c&&cleClasse(c.name)===k)||null:null}
 /* Un talent dit quel effet il porte, et non plus son seul nom : le nom est au joueur, la
    mécanique au moteur, et deux talents peuvent porter le même effet réglé autrement. */
 function talentCode(t){return t&&TALENTS_CODES[t.effet]||null}
@@ -755,6 +777,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,packMaps,readMapsFile,cleanMap,MAP_FORMAT,distToRectEdge,relaxContour,carveMask,simplifyRuns,polyTouchesDisc,rayHitsSegment,contourBox,unionContours,simplifyClosed,encreDroite,snapToCarves,ENCRE_TOL,smoothContours,wallShape,contoursOf,shapeContains,rectInReach,CARVE_STEP,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,traitContours,carveTrait,carveTraits,TRAIT_EPAISSEUR,obstaclesFrom,obstacleRectsFrom,wallsPierced,uncontain,spreadInZone,diffRect,subtractRects,carveWithPolygon,gridToRects,boundsOf,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,cleTalent,talentCode,reglageTalent,paramsTalent,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorCut,doorCuts,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

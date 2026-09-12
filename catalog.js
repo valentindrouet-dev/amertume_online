@@ -1,5 +1,11 @@
 /* Données embarquées de amertume_rpg/js/store.js, blob 5314d6439be28b47597a7c21b3df310b1501c8d1. Couleurs des armes à valider selon la source. */
 window.AMERTUME_CATALOG = {
+  "classes": [
+    { "id": "cls-destructeur", "name": "Destructeur", "tint": "#b0452e", "pv": 16 },
+    { "id": "cls-gardien",     "name": "Gardien",     "tint": "#3f7bc0", "pv": 18 },
+    { "id": "cls-lamevent",    "name": "Lamevent",    "tint": "#3f7d5e", "pv": 14 },
+    { "id": "cls-mystique",    "name": "Mystique",    "tint": "#7a5cb8", "pv": 10 }
+  ],
   "items": [
     {
       "id": "f436759e-262c-4103-9247-b6c90055b9f3",
