@@ -3,7 +3,7 @@
 <style>
 /* Killam Bold, fournie par Valentin, pour les chiffres des caractéristiques. Sous-ensemble
    latin en WOFF2 : 48 Ko au lieu des 188 Ko du TTF d'origine, qui reste dans fonts/. */
-@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.142') format('woff2');
+@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.143') format('woff2');
  font-weight:700;font-style:normal;font-display:swap}
 
 /* Deux palettes, un seul jeu de règles : tout le décor passe par ces jetons, si bien
@@ -105,7 +105,7 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 #state-menu button:hover{background:var(--hover);color:var(--ink)}
 #state-menu button.on{border-color:var(--green);background:var(--sel);color:var(--ink)}
 #state-menu img,#state-menu .vide{width:30px;height:30px}
-#state-menu .vide{display:grid;place-items:center;font-size:17px;color:var(--muted)}/* Le voile tient sa propre ligne, sous les etats : ce n'est pas une affection. */#state-menu .menu-sep{grid-column:1/-1;height:1px;background:var(--line);margin:4px 0 2px}#state-menu button.voile{grid-column:1/-1;grid-auto-flow:column;justify-items:start;align-items:center;justify-content:start;gap:9px;padding:7px 8px;font-size:12px}#state-menu button.voile .vide{width:22px;height:22px;font-size:15px}#state-menu button.voile.on{border-color:#e2ae72;background:#e2ae7226;color:var(--ink)}/* Deux voiles, deux raisons, deux dessins : le MJ voit d'un coup d'oeil s'il cache lui-meme un adversaire, ou si la troupe ne le voit simplement pas. Un troisieme trait, bleu, pour l'etat Invisible : celui-la, seul son joueur le voit encore. */.token.invisible-mj,.actor.invisible-mj{opacity:.55;outline:2px dashed #6fa8d0;outline-offset:2px}.token.veiled,.actor.veiled{opacity:.46;outline:2px dashed #e2ae72;outline-offset:2px}.token.cachemj,.actor.cachemj{opacity:.4;outline:2px solid #b06fd0;outline-offset:2px}.token.invisible-mj,.token.veiled,.token.cachemj{outline-width:max(1px,calc(var(--token)*.028));outline-offset:calc(var(--token)*.03)}/* Ajouter un combattant se fait au-dessus de la liste : deux boutons courts, nommés, pour ne pas confondre la troupe et ce qu'elle affronte. */.titre-outils{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ajout-combattant{flex:1;display:flex;gap:5px;justify-content:flex-end}.ajout-combattant button{white-space:nowrap;padding:3px 7px;font:600 11px system-ui;letter-spacing:0;border-radius:14px}.ajout-combattant #new-hero{color:var(--green);border-color:var(--green)}.ajout-combattant #new-monster{color:#c26a5a;border-color:#c26a5a}/* Un intitulé discret entre les deux camps : la troupe d'abord, ce qu'elle affronte ensuite. */.groupe-combattants{display:flex;align-items:center;gap:8px;margin:10px 0 3px;padding-top:9px;border-top:1px solid var(--line);font:600 10px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}button.ajout-camp{margin-left:auto;width:20px;height:20px;padding:0;display:grid;place-items:center;border-radius:50%;font:700 14px/1 system-ui;letter-spacing:0;color:var(--muted)}button.ajout-camp:hover{color:var(--accent);border-color:var(--accent)}.groupe-combattants:first-child button.ajout-camp{color:var(--green)}button.ajout-camp[hidden]{display:none}#actors>.groupe-combattants:first-child{margin-top:0;padding-top:0;border-top:0}.voile-note{display:block;margin-top:2px;font:600 10px system-ui;letter-spacing:.2px;color:#c08a4e}.actor.cachemj .voile-note{color:#b06fd0}.token.unseen,.actor.unseen{visibility:hidden;pointer-events:none}#map-shapes{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}#fog{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}/* Les portes se peignent au-dessus du brouillard : découvertes, elles restent lisibles. */#map-doors{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}#map-shapes .wall-group{opacity:.62}#map-shapes .wall-group path.fond{fill:#0b1114;stroke:none}/* À la table, la matière n'a pas de liseré : le premier passage ne peint rien. */#map-shapes .wall-group path.bord{fill:none;stroke:none}/* Une porte n'est jamais un bloc plein : close, un contour orange ; ouverte, le même en pointillé gris. */#map-doors .door{fill:none;stroke:#c98a4b;stroke-width:2.5;vector-effect:non-scaling-stroke;opacity:.95;cursor:default;transition:stroke .12s,stroke-width .12s,filter .12s}#map-doors .door.open{stroke:#96a3a7;stroke-width:2;stroke-dasharray:7 6;opacity:.8}#map-doors .door.keyed{stroke:#f3d7a6;stroke-width:3.5}/* Un passage secret ne se dessine que pour le MJ tant qu'il est clos : un trait violet   en pointillé serré, pour ne pas le confondre avec une porte que la troupe voit. */#map-doors .door.secret{stroke:#b06fd0;stroke-width:3;stroke-dasharray:4 3}#map-doors .door.secret.open{stroke:#96a3a7;stroke-width:2;stroke-dasharray:7 6}#map-doors .door.secret.can-open:hover{stroke:#c98ae0;stroke-width:4;filter:drop-shadow(0 0 6px #b06fd099)}#map-doors .door.keyed.open{stroke:#b9c3c6;stroke-width:2.5}/* Survol d'une porte que l'on peut manœuvrer : elle s'allume. */#map-doors .door.can-open{cursor:pointer}#map-doors .door.can-open:hover{stroke:#f6d9a8;stroke-width:4;opacity:1;filter:drop-shadow(0 0 6px #e2ae7299)}#map-doors .door.can-open.open:hover{stroke:#dfe8ea;stroke-width:3.5}#map-shapes .startzone{fill:#8bbd9c;opacity:.12;stroke:#8bbd9c;stroke-width:2;stroke-dasharray:8 6}/* Le plateau à dés est hors du calque zoomé : les dés se posent au bas de la table
+#state-menu .vide{display:grid;place-items:center;font-size:17px;color:var(--muted)}/* Le voile tient sa propre ligne, sous les etats : ce n'est pas une affection. */#state-menu .menu-sep{grid-column:1/-1;height:1px;background:var(--line);margin:4px 0 2px}#state-menu button.voile{grid-column:1/-1;grid-auto-flow:column;justify-items:start;align-items:center;justify-content:start;gap:9px;padding:7px 8px;font-size:12px}#state-menu button.voile .vide{width:22px;height:22px;font-size:15px}#state-menu button.voile.on{border-color:#e2ae72;background:#e2ae7226;color:var(--ink)}/* Deux voiles, deux raisons, deux dessins : le MJ voit d'un coup d'oeil s'il cache lui-meme un adversaire, ou si la troupe ne le voit simplement pas. Un troisieme trait, bleu, pour l'etat Invisible : celui-la, seul son joueur le voit encore. */.token.invisible-mj,.actor.invisible-mj{opacity:.55;outline:2px dashed #6fa8d0;outline-offset:2px}.token.veiled,.actor.veiled{opacity:.46;outline:2px dashed #e2ae72;outline-offset:2px}.token.cachemj,.actor.cachemj{opacity:.4;outline:2px solid #b06fd0;outline-offset:2px}.token.invisible-mj,.token.veiled,.token.cachemj{outline-width:max(1px,calc(var(--token)*.028));outline-offset:calc(var(--token)*.03)}/* Ajouter un combattant se fait au-dessus de la liste : deux boutons courts, nommés, pour ne pas confondre la troupe et ce qu'elle affronte. */.titre-outils{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ajout-combattant{flex:1;display:flex;gap:5px;justify-content:flex-end}.ajout-combattant button{white-space:nowrap;padding:3px 7px;font:600 11px system-ui;letter-spacing:0;border-radius:14px}.ajout-combattant #new-hero{color:var(--green);border-color:var(--green)}.ajout-combattant #new-monster{color:#c26a5a;border-color:#c26a5a}/* Un intitulé discret entre les deux camps : la troupe d'abord, ce qu'elle affronte ensuite. */.groupe-combattants{display:flex;align-items:center;gap:8px;margin:10px 0 3px;padding-top:9px;border-top:1px solid var(--line);font:600 10px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}button.ajout-camp{margin-left:auto;width:20px;height:20px;padding:0;display:grid;place-items:center;border-radius:50%;font:700 14px/1 system-ui;letter-spacing:0;color:var(--muted)}button.ajout-camp:hover{color:var(--accent);border-color:var(--accent)}.groupe-combattants:first-child button.ajout-camp{color:var(--green)}button.ajout-camp[hidden]{display:none}#actors>.groupe-combattants:first-child{margin-top:0;padding-top:0;border-top:0}.voile-note{display:block;margin-top:2px;font:600 10px system-ui;letter-spacing:.2px;color:#c08a4e}.actor.cachemj .voile-note{color:#b06fd0}.token.unseen,.actor.unseen{visibility:hidden;pointer-events:none}/* Jamais révélé : un nom, un socle, rien d'autre. Révélé mais hors de vue : la ligne entière, pâlie. */.actor.inconnu{opacity:.72}.actor.inconnu .avatar{filter:grayscale(.6)}.actor.horsvue{opacity:.5}.voile-note.inconnu{color:var(--muted)}#map-shapes{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}#fog{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}/* Les portes se peignent au-dessus du brouillard : découvertes, elles restent lisibles. */#map-doors{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}#map-shapes .wall-group{opacity:.62}#map-shapes .wall-group path.fond{fill:#0b1114;stroke:none}/* À la table, la matière n'a pas de liseré : le premier passage ne peint rien. */#map-shapes .wall-group path.bord{fill:none;stroke:none}/* Une porte n'est jamais un bloc plein : close, un contour orange ; ouverte, le même en pointillé gris. */#map-doors .door{fill:none;stroke:#c98a4b;stroke-width:2.5;vector-effect:non-scaling-stroke;opacity:.95;cursor:default;transition:stroke .12s,stroke-width .12s,filter .12s}#map-doors .door.open{stroke:#96a3a7;stroke-width:2;stroke-dasharray:7 6;opacity:.8}#map-doors .door.keyed{stroke:#f3d7a6;stroke-width:3.5}/* Un passage secret ne se dessine que pour le MJ tant qu'il est clos : un trait violet   en pointillé serré, pour ne pas le confondre avec une porte que la troupe voit. */#map-doors .door.secret{stroke:#b06fd0;stroke-width:3;stroke-dasharray:4 3}#map-doors .door.secret.open{stroke:#96a3a7;stroke-width:2;stroke-dasharray:7 6}#map-doors .door.secret.can-open:hover{stroke:#c98ae0;stroke-width:4;filter:drop-shadow(0 0 6px #b06fd099)}#map-doors .door.keyed.open{stroke:#b9c3c6;stroke-width:2.5}/* Survol d'une porte que l'on peut manœuvrer : elle s'allume. */#map-doors .door.can-open{cursor:pointer}#map-doors .door.can-open:hover{stroke:#f6d9a8;stroke-width:4;opacity:1;filter:drop-shadow(0 0 6px #e2ae7299)}#map-doors .door.can-open.open:hover{stroke:#dfe8ea;stroke-width:3.5}#map-shapes .startzone{fill:#8bbd9c;opacity:.12;stroke:#8bbd9c;stroke-width:2;stroke-dasharray:8 6}/* Le plateau à dés est hors du calque zoomé : les dés se posent au bas de la table
    visible, quel que soit le zoom ou le recadrage de la carte. */
 #dice-tray{position:absolute;inset:0;z-index:5;pointer-events:none}
 /* Les chiffres qui montent au-dessus d'un socle : ils vivent dans leur propre couche,
@@ -113,8 +113,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 #floaters{position:absolute;inset:0;z-index:4;pointer-events:none}/* Le cadre de sélection : tracé au-dessus de la carte, transparent aux clics. */#marquee{position:absolute;z-index:4;pointer-events:none;border:1.5px dashed var(--accent);background:rgba(160,120,60,.13);border-radius:3px}#marquee[hidden]{display:none}
 .floater{position:absolute;transform:translate(-50%,-50%);font:800 22px 'Killam',Georgia,serif;white-space:nowrap;text-shadow:0 2px 4px #000000b3,0 0 2px #0009}
 .floater.perte{color:#f0705a}.floater.gain{color:#8fd77e}.floater.nul{color:#e7d9b8}.board-die{position:absolute;display:grid;place-items:center;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:11px;font:800 20px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -3px 5px #00000026,0 7px 16px #000000a6;will-change:transform}.board-die.dark{color:#f4f6f2}.journal-title{font:600 13px system-ui;letter-spacing:3px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px}.journal{max-height:330px;display:flex;flex-direction:column;gap:9px;padding-right:4px}.journal li{border:0;padding:0}.j-entry{font-size:14px;line-height:1.45;color:var(--ink)}.j-turn{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:5px 0 1px}.j-turn::before,.j-turn::after{content:"";flex:1;height:1px;background:var(--line)}.j-name{font-weight:700}.j-key{font-weight:700}.j-num{font-weight:800;color:#b4553a}.j-dice{opacity:.7}.j-badge{display:inline-block;background:#8d3b32;color:#ffe6df;border-radius:5px;padding:1px 7px;font-weight:700;font-size:12px}
-</style><link rel="stylesheet" href="./editor.css?v=0.142"></head><body>
-<header><div class="brand">AMERTÜME<span class="ver">v0.142</span></div><div class="view-controls"><label for="view">Vue</label><select id="view"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select><span class="badge">Prototype · partie locale</span></div></header>
+</style><link rel="stylesheet" href="./editor.css?v=0.143"></head><body>
+<header><div class="brand">AMERTÜME<span class="ver">v0.143</span></div><div class="view-controls"><label for="view">Vue</label><select id="view"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select><span class="badge">Prototype · partie locale</span></div></header>
 <div class="intro" hidden><h1>Les ruines du passage</h1></div>
 <main class="layout"><aside class="stack left"><section class="panel"><div class="turn-head"><div class="eyebrow" id="titre-tour">Tour de combat</div><div class="turn" id="round">01</div></div><div id="bloc-activation" hidden><h2>Activation</h2><div class="checks"><label><input type="checkbox" id="action"> Action</label><label><input type="checkbox" id="move"> Mvt / Analyse</label><label><input type="checkbox" id="item"> Objet</label></div><div class="divider"></div></div><div class="turn-actions"><button class="full" id="next">Tour suivant →</button><button id="reset-round" title="Revenir au tour 1 : activations et cibles remises à zéro" aria-label="Réinitialiser le tour de combat">↺</button></div><div class="side-actions"><button id="heal-foes" hidden>Adversaires à 100 %</button></div><div class="side-actions"><button id="start-combat" class="primary" hidden>⚔ Début du combat</button><button id="end-combat" hidden>Fin du combat</button></div></section><section class="panel"><h2>COMBATTANTS</h2><div id="actors"></div><button type="button" class="ajout-camp" id="new-hero" title="Ajouter un aventurier à la scène" aria-label="Ajouter un aventurier à la scène" hidden>+</button><button type="button" class="ajout-camp" id="new-monster" title="Ajouter un adversaire à la scène" aria-label="Ajouter un adversaire à la scène" hidden>+</button></section><section class="panel pv-panel" id="pv-panel" hidden><div class="eyebrow">Points de vie</div><p class="muted" id="pv-cible"></p><div class="hp-buttons" id="hp-buttons"></div></section></aside>
 <div class="stack"><section class="panel map-panel"><div class="mapbar"><div class="mapbar-h1"><strong id="carte-titre">CARTE TACTIQUE</strong><button class="icon-btn toggle-portees" id="portees">◎ Portées</button><div class="zoom-bar"><button id="zoom-out" aria-label="Dézoomer">−</button><span id="zoom-label">100 %</span><button id="zoom-in" aria-label="Zoomer">+</button><button id="zoom-reset">Ajuster</button></div></div><div class="mapbar-h2"><label class="file"><button id="upload">Importer une carte</button><input class="sr" type="file" id="mapfile" accept="image/png,image/jpeg,image/webp"></label><button class="icon-btn" id="reset-map" title="Retirer la carte de fond" aria-label="Retirer la carte de fond">🗑</button></div></div><div class="map" id="map" aria-label="Carte tactique. Déplacez les tokens par glissement ou avec les flèches du clavier."><div id="map-view"><svg class="plan" viewBox="0 0 800 480" preserveAspectRatio="none" aria-hidden="true"><g class="walls" fill="#172326" stroke="#57635c" stroke-width="3"></g><g fill="#9da797" font-family="system-ui" font-size="12" letter-spacing="4"><text x="305" y="130">COUR INTÉRIEURE</text><text x="318" y="462">ENTRÉE SUD</text></g></svg><svg id="map-shapes" aria-hidden="true"></svg><canvas id="fog" aria-hidden="true"></canvas><svg id="map-doors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><div id="contact-ring" hidden></div><svg id="aim" aria-hidden="true"><defs><marker id="shot-ok" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#3f7bc0"/></marker><marker id="shot-no" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#e0483c"/></marker><marker id="shot-done" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#8b969b"/></marker></defs><path id="aim-arrow" class="aim-fleche"/></svg><div id="marquee" hidden aria-hidden="true"></div><div id="floaters" aria-hidden="true"></div></div><div id="dice-tray" aria-hidden="true"></div></div></section>
@@ -122,8 +122,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 <aside class="stack right"><section class="panel sheet" id="sheet"><div class="sheet-head"><h1 id="name"></h1><span class="sheet-class" id="kind"></span></div><p class="muted" id="class"></p><div class="chips" id="sheet-chips"></div><div class="stat-row" id="stats"></div><div class="lifebar big" id="hpbar"><span class="lifebar-fill" id="hpfill"></span><span class="lifebar-text" id="hp"></span></div><div class="divider"></div><details class="bloc-replie" id="bloc-gear"><summary><span class="bloc-titre">Équipement</span><span class="compte" id="gear-compte"></span></summary><div id="gear"></div></details><details class="bloc-replie" id="bloc-talents"><summary><span class="bloc-titre">Talents</span><span class="compte" id="talents-compte"></span></summary><div id="sheet-talents"></div></details><div class="divider" hidden></div><h2 hidden>Compétences</h2><div class="skills" id="skills" hidden></div><p class="muted" hidden>Clique pour un test : 4+ = réussite, 6 = réussite et relance.</p></section><section class="panel"><h2 class="journal-title"><span aria-hidden="true">📜</span> Journal de combat</h2><ol class="journal" id="journal" aria-live="polite"></ol></section></aside></main>
 <div id="state-menu" role="menu" aria-label="États" hidden></div>
 
-<script src="./polygon-clipping.umd.min.js?v=0.142"></script>
-<script src="./combat.js?v=0.142"></script>
+<script src="./polygon-clipping.umd.min.js?v=0.143"></script>
+<script src="./combat.js?v=0.143"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -138,7 +138,7 @@ const DARK_DIE=[2,3,5,7];const types=['Simple','Léger','Lourd','Mystique','Soin
    tour à un et rend à chacun son Action et son Mouvement. */
 let mode='exploration';
 const enCombat=()=>mode==='combat';
-actors.forEach(a=>{a.target=null;a.checks=[false,false,false];a.pool=[2,0,1,0,0,0,0]});
+actors.forEach(a=>{a.target=null;a.checks=[false,false,false];a.orbes=0;a.pool=[2,0,1,0,0,0,0]});
 const PLAN=[[[80,55],[310,55],[310,90],[115,90],[115,205],[80,205]],[[490,55],[720,55],[720,215],[685,215],[685,90],[490,90]],[[80,315],[115,315],[115,395],[320,395],[320,430],[80,430]],[[515,395],[685,395],[685,305],[720,305],[720,430],[515,430]],[[260,195],[305,195],[305,240],[260,240]],[[495,195],[540,195],[540,240],[495,240]],[[375,320],[425,320],[425,365],[375,365]]];
 const WALLS=PLAN.map(poly=>poly.map(([x,y])=>[x/8,y/4.8]));
 PLAN.forEach(poly=>{const el=document.createElementNS('http://www.w3.org/2000/svg','polygon');el.setAttribute('points',poly.map(pt=>pt.join(',')).join(' '));document.querySelector('.plan .walls').append(el)});
@@ -571,6 +571,13 @@ function veilNote(o){if(!o||view!=='mj')return '';
 function render(){
  $('actors').replaceChildren();document.querySelectorAll('.token').forEach(t=>t.remove());
  const numeros=nameNumbers();
+ /* Un adversaire que la troupe aperçoit pour la première fois est révélé, pour de bon :
+    sa ligne s'ouvre dans la liste et y reste ouverte, même s'il ressort du champ. Révélé
+    n'est pas visible — c'est un souvenir, pas un regard. Le voile du MJ et l'invisibilité
+    ne révèlent rien. C'est la troupe entière qui révèle, où que soit l'écran. */
+ const reveles=actors.filter(a=>!a.hero&&!a.vu&&!a.hidden&&!hasState(a,'Invisible')
+  &&(typeof troupeVoit!=='function'||troupeVoit(a)));
+ reveles.forEach(a=>{a.vu=true});
  // Toutes les cibles du combattant actif portent le liseré, pas seulement la première.
  const viseesActives=ciblesDe(actors[selected]);
  // La liste sépare la troupe de ce qu'elle affronte : deux groupes, deux intitulés.
@@ -578,9 +585,14 @@ function render(){
  actors.forEach((a,i)=>{
  const cache=cachePour(a,i),invu=hasState(a,'Invisible')&&view==='mj';
  const classes=(a.hero?'':'enemy k-'+(a.type||'standard')+' ')+(invu?'invisible-mj ':'')+(i===selected||(marked.size>1&&isMarked(a))?'selected ':'')+(marked.size>1&&isMarked(a)?'marked ':'')+(viseesActives.includes(i)?'targeted ':'')+(!alive(a)?'dead ':'')+(cache?(view==='mj'?(a.hidden?'cachemj ':'veiled '):'unseen'):'');
- const b=document.createElement('button');b.className='actor '+classes;const known=hpKnown(a);b.innerHTML='<span class="vignette"><span class="avatar">'+escapeName(a.name[0])+'</span><span class="pastilles" aria-hidden="true"><i class="pt action'+(!enCombat()||!alive(a)||(a.checks&&a.checks[0])?' off':'')+'"></i><i class="pt mvt'+(!enCombat()||!alive(a)||(a.checks&&a.checks[1])?' off':'')+'"></i></span></span><span class="actor-body"><span class="actor-nom"><strong>'+escapeName(a.name)+'</strong></span><span class="vie-ligne">'+/* Les chiffres d'un adversaire restent cachés jusqu'à l'Analyse, mais sa barre, elle,
+ /* Pour la troupe, un adversaire jamais révélé n'est qu'un nom et un socle dans la liste :
+    ni barre, ni pastilles, ni écu. Révélé puis sorti du champ, il garde sa ligne entière,
+    seulement pâlie. Sur la carte, seul ce qui est en vue se montre. */
+ const jamaisVu=!a.hero&&!a.vu&&view!=='mj';
+ const classesListe=invisiblePour(a,i)?classes:classes.replace(/\bunseen\b/,jamaisVu?'':'horsvue')+(jamaisVu?' inconnu':'');
+ const b=document.createElement('button');b.className='actor '+classesListe;const known=hpKnown(a)&&!jamaisVu;b.innerHTML='<span class="vignette"><span class="avatar">'+escapeName(a.name[0])+'</span>'+(jamaisVu?'':'<span class="pastilles" aria-hidden="true"><i class="pt action'+(!enCombat()||!alive(a)||(a.checks&&a.checks[0])?' off':'')+'"></i><i class="pt mvt'+(!enCombat()||!alive(a)||(a.checks&&a.checks[1])?' off':'')+'"></i></span>')+'</span><span class="actor-body"><span class="actor-nom"><strong>'+escapeName(a.name)+'</strong></span>'+(jamaisVu?'':'<span class="vie-ligne">'+/* Les chiffres d'un adversaire restent cachés jusqu'à l'Analyse, mais sa barre, elle,
       descend sous les yeux de tous : on voit bien qu'un coup a porté. */
-   lifebar(ratio(a),known?String(a.hp):'',a.hero)+'</span></span>';
+   lifebar(ratio(a),known?String(a.hp):'',a.hero)+'</span>')+'</span>';
  // L'écu de DEF au bout de la barre, dès qu'on a le droit de lire les chiffres.
  if(known)b.querySelector('.vie-ligne').append(shieldBadge(defOf(a)));
  const rang=numeros.get(a.id);
@@ -588,7 +600,7 @@ function render(){
   b.querySelector('.actor-nom').append(n)}
  if(a.image){const av=b.querySelector('.avatar');av.textContent='';
   const im=document.createElement('img');im.src=a.image;im.alt='';im.draggable=false;av.append(im)}
- b.title=a.name+(rang?' '+rang:'')+(known?' · '+a.hp+' / '+a.max+' PV':'')+(alive(a)?'':' · hors de combat')+veilNote(a);
+ b.title=a.name+(rang?' '+rang:'')+(known?' · '+a.hp+' / '+a.max+' PV':'')+(jamaisVu?' · pas encore révélé':alive(a)?'':' · hors de combat')+veilNote(a);
  /* Seul le voile que le MJ a posé lui-même mérite d'être écrit : c'est une décision,
     et rien à l'écran ne la distingue autrement d'une simple perte de vue. Hors de vue
     de la troupe, la languette pâlie le dit déjà ; l'invisibilité, elle, se lit au liseré
@@ -596,6 +608,9 @@ function render(){
  if(view==='mj'&&cache&&a.hidden){const note=document.createElement('small');note.className='voile-note';
   note.textContent='🚫 caché par toi';
   b.querySelector('.actor-body').append(note)}
+ // Le MJ sait ce que la troupe sait : un adversaire qu'elle n'a jamais aperçu le dit.
+ else if(view==='mj'&&!a.hero&&!a.vu){const note=document.createElement('small');note.className='voile-note inconnu';
+  note.textContent='◌ pas encore révélé';b.querySelector('.actor-body').append(note)}
  b.onclick=e=>onGesture(gestureOf(e),i);
  // Clic droit dans la liste : le même menu d'états que sur le socle.
  b.oncontextmenu=e=>{if(view!=='mj')return;e.preventDefault();openStateMenu(i,e.clientX,e.clientY)};
@@ -630,7 +645,7 @@ function render(){
   drag.px=q.x;drag.py=q.y;
   const socles=document.querySelectorAll('#map-view .token');
   lot.forEach(k=>{const el=socles[k];if(el){el.style.left=actors[k].x+'%';el.style.top=actors[k].y+'%'}});
-  updateRing();updateSight()};
+  updateRing();updateSight();if(typeof fogEnDirect==='function')fogEnDirect()};
  t.onpointerup=e=>{if(!drag)return;const moved=drag.moved;drag=null;window.socleEnMain=null;t.releasePointerCapture(e.pointerId);
   // Un token ne reste jamais dans un mur ni à cheval : il en est repoussé au relâchement.
   if(moved){const lot=marked.size>1&&isMarked(a)?markedIndexes():[i];
@@ -659,6 +674,12 @@ function render(){
   $('actors').append(h,...liste)};
  groupe('Aventuriers',troupe,AJOUT_CAMP.hero);groupe('Adversaires',adverses,AJOUT_CAMP.foe);
  $('map-view').style.setProperty('--token',tokenPx()+'px');updateRing();showAim();updateSight();renderSheet();renderCombat();
+ /* Le mot monte au-dessus du socle qui vient de paraître, sur tous les écrans, et le
+    journal le garde. Le rendu se rejoue souvent : ce n'est écrit qu'à l'instant du passage. */
+ if(reveles.length){reveles.forEach(a=>floatNumber(a,'Révélé !','nul'));
+  log(reveles.map(a=>{const r=numeros.get(a.id);return a.name+(r?' '+r:'')}).join(', ')+(reveles.length>1?' sont révélés.':' est révélé.'));
+  // Le premier rendu précède l'éditeur, et la sauvegarde avec lui.
+  if(typeof scheduleSave==='function')scheduleSave()}
 }
 /* Tant que l'onglet n'est pas affiché, la carte n'a pas de largeur : le socle prenait
    alors sa taille de repli — douze points — et ne retrouvait la bonne qu'au rendu
@@ -718,7 +739,7 @@ function passeParLaGarde(b,degats){
  return dits.length?{reste,dits}:null}
 /* Les talents que porte un combattant et dont le moteur connaît l'effet, chacun avec ses
    réglages relus au travers de leur déclaration. */
-function talentsCodes(a){return (a&&a.talents||[]).map(id=>(catalog.talents||[]).find(t=>t.id===id))
+function talentsCodes(a){return talentsTenus(a&&a.talents,typeof catalog!=='undefined'?catalog.talents:[])
  .map(t=>{const code=talentCode(t);return code?{code,talent:t,params:paramsTalent(t)}:null})
  .filter(Boolean)}
 /* Lamevent — « en terminant un mouvement, vous infligez votre bonus de dégâts à X
@@ -744,7 +765,34 @@ function lamevent(a,p){
   if(b.hp===0)mot+=' coma';
   return mot});
  return 'Lamevent : '+a.name+' touche '+dits.join(', ')+'.'}
-const TALENTS_EFFETS={lamevent};
+/* Orbes mystiques — « durant votre activation, vous lancez X orbes qui infligent Y
+   dégâts ». Gratuits : ni Action ni Mouvement n'y passent, seul le compte du tour, remis
+   à zéro avec les activations. L'orbe part sur la cible désignée si elle est en vue, sinon
+   sur la première en vue dans l'ordre canonique. Orbes de feu, au-dessus, y ajoute son
+   état. Les dégâts sont ceux d'un effet : ni DEF, ni blindage. */
+function orbesLances(a){return Math.max(0,Math.trunc(a&&a.orbes)||0)}
+function cibleOrbe(a){const vues=reachableTargets('distance').filter(j=>actors[j].hero!==a.hero);
+ if(a.target!==null&&vues.includes(a.target))return a.target;
+ return vues.length?vues[0]:null}
+function orbe(a,p){const j=cibleOrbe(a),total=orbesPermis(talentsCodes(a));
+ if(orbesLances(a)>=total)return a.name+' a lancé tous ses orbes ce tour.';
+ if(j===null)return 'Aucun adversaire en vue : l’orbe reste en main.';
+ const b=actors[j],etat=etatDesOrbes(talentsCodes(a));
+ a.orbes=orbesLances(a)+1;
+ const perdu=applyDamage(b,p.degats);floatNumber(b,'−'+perdu,'perte');
+ let mot=b.name+' −'+perdu+(view==='mj'?' ('+b.hp+'/'+b.max+')':'');
+ if(etat){const issue=infligeEtat(b,etat);mot+=issue==='onde'?' (Onde consumée)':issue===true?' · '+etat:''}
+ if(b.hp===0)mot+=' coma';
+ return 'Orbe '+a.orbes+'/'+total+' : '+a.name+' frappe '+mot+'.'}
+/* Chaque effet déclenchable : sa fonction, et — s'il le veut — l'intitulé de son bouton
+   et ce qui l'autorise. Un effet qui ne dit rien prend l'intitulé du talent. */
+const TALENTS_EFFETS={lamevent,
+ orbes:{fn:orbe,
+  libelle:(a,p,talent)=>'✦ '+(talent.name||'Orbe')+' '+orbesLances(a)+'/'+orbesPermis(talentsCodes(a)),
+  peut:a=>orbesLances(a)<orbesPermis(talentsCodes(a))&&cibleOrbe(a)!==null,
+  titre:(a,p)=>{const total=orbesPermis(talentsCodes(a));
+   return (orbesLances(a)>=total?'Tous les orbes de ce tour sont lancés.':cibleOrbe(a)===null?'Aucun adversaire en vue.':
+    'Lancer un orbe — gratuit — sur '+(actors[cibleOrbe(a)].name)+' : '+p.degats+' dégâts'+(etatDesOrbes(talentsCodes(a))?' et '+etatDesOrbes(talentsCodes(a)):'')+'.')}}};
 /* Les gestes qu'un état impose : sortir du gel, se relever. Chacun coûte l'activation
    que sa règle demande, et rend celle qu'elle promet. Les talents codés prennent la même
    barre : un pouvoir propre au combattant se déclenche là où il agit. */
@@ -759,10 +807,12 @@ function renderStateActions(a){const boite=$('etat-actions');boite.replaceChildr
  if(hasState(a,'Au sol'))geste('⤴ Se relever','Remet le combattant debout.',true,()=>{
   saveChecks();savePool();a.checks[1]=true;setState(a,'Au sol',false);
   log(a.name+' se relève : Mouvement dépensé, Action encore disponible.');render();scheduleSave()});
- talentsCodes(a).forEach(({code,talent,params})=>{const fn=TALENTS_EFFETS[code.cle];if(!fn)return;
+ talentsCodes(a).forEach(({code,talent,params})=>{const eff=TALENTS_EFFETS[code.cle];if(!eff)return;
+  const fn=typeof eff==='function'?eff:eff.fn;
   // Le bouton porte le nom que le joueur a donné au talent, l'aide dit ce que le moteur fera.
   // Le violet dit « ce n'est pas une Action » : l'Analyse le porte déjà, une Réaction aussi.
-  geste('⚡ '+(talent.name||code.nom),code.aide,true,()=>{saveChecks();savePool();
+  geste(eff.libelle?eff.libelle(a,params,talent):'⚡ '+(talent.name||code.nom),
+   eff.titre?eff.titre(a,params):code.aide,eff.peut?eff.peut(a,params):true,()=>{saveChecks();savePool();
    log(fn(a,params));render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))},
    'btn-action '+(talent.type==='reac'?'btn-reaction':'btn-talent'))})}
 /* Analyser : les chiffres d'une créature passent à toute la table. Même barre et même
@@ -847,7 +897,7 @@ function majMode(){const combat=enCombat(),mj=view==='mj';
    et la table l'annonce. Le refermer rend la scène au calme. */
 function basculerMode(neuf,annonce){mode=neuf==='combat'?'combat':'exploration';
  round=1;$('round').textContent='01';
- actors.forEach(a=>{a.checks=[false,false,false];a.target=null});
+ actors.forEach(a=>{a.checks=[false,false,false];a.target=null;a.orbes=0});
  log(enCombat()?'⚔ Le combat commence. Tour 1.':'Le combat prend fin : retour à l’exploration.');
  render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));
  if(annonce&&enCombat())annonceFlottante('⚔ Début du combat !')}
@@ -876,7 +926,7 @@ function saveChecks(){const a=actors[selected];if(a)a.checks=['action','move','i
 const SKILL_TINTS=['47,138,99','168,105,31','122,92,184','157,123,30','176,88,54','101,120,111','53,119,184','44,140,133'];
 const STAT_TINTS={vie:'122,92,184',endu:'44,140,133',pv:'47,122,91',def:'96,110,118',dmg:'180,72,58',xp:'157,123,30'};
 const TYPE_NOMS={standard:'Standard',solitaire:'Solitaire',alpha:'Alpha',boss:'Boss'};
-const IMG_V='0.142';
+const IMG_V='0.143';
 function imgUrl(nom){return './img/'+encodeURIComponent(nom)+'?v='+IMG_V}
 /* Les états et leur jeton, tels qu'ils sont peints sur la table. « Aucun » n'en a pas —
    c'est l'absence d'état — ni « Coma », que la barre de vie dit déjà, ni « Affaibli »,
@@ -1045,8 +1095,9 @@ function renderSheet(){const a=actors[selected];$('sheet').hidden=!a;if(!a)retur
     le compte, de sorte qu'on sache ce qu'elles cachent sans les ouvrir. */
  $('gear-compte').textContent=(a.weapons||[]).length+(a.armorId?1:0)+(a.shieldId?1:0);
  /* Un adversaire porte des talents comme un aventurier — Garde rapprochée est d'abord
-    un talent de monstre — et sa fiche de table les montre donc aussi. */
- $('bloc-talents').hidden=false;
+    un talent de monstre — et sa fiche de table les montre donc aussi. Sans talent, la
+    rubrique n'a rien à dire et ne prend pas de place. */
+ $('bloc-talents').hidden=!(a.talents||[]).length;
  $('talents-compte').textContent=(a.talents||[]).length;
  $('sheet-talents').replaceChildren(typeof talentPills==='function'?talentPills(a):document.createTextNode(''));
  $('skills').replaceChildren();
@@ -1168,7 +1219,7 @@ $('end-combat').onclick=()=>{if(view!=='mj')return;
  basculerMode('exploration',false)};
 $('reset-round').onclick=()=>{if(view!=='mj'||!confirm('Revenir au tour 1 ? Les activations, les cibles et les analyses sont remises à zéro ; les PV ne changent pas.'))return;
  // Les créatures analysées redeviennent des inconnues : la rencontre repart entière.
- round=1;actors.forEach(a=>{a.checks=[false,false,false];a.target=null;a.targets=[];if(!a.hero)a.revealed=false});
+ round=1;actors.forEach(a=>{a.checks=[false,false,false];a.target=null;a.targets=[];a.orbes=0;if(!a.hero){a.revealed=false;a.vu=false}});
  $('round').textContent='01';render();log('Tour de combat réinitialisé : retour au tour 1.');scheduleSave()};
 /* Huit boutons sur deux rangées : la mort ouvre en haut à gauche, le soin ferme en bas
    à droite, les retraits en rouge sur la première ligne et les ajouts en vert sur la
@@ -1196,7 +1247,7 @@ $('hp-buttons').replaceChildren(...PV_BOUTONS.map(({texte,classe,titre,ecart,pur
    if(purge&&statesOf(o).length){o.states=[];o.bleed=0;o.cumuls={};
     log(o.name+' · États levés.');bouge=true}});
   if(bouge)render()};
- return b}));$('next').onclick=()=>{if(view!=='mj')return;savePool();burnAll();round++;actors.forEach(a=>a.checks=[false,false,false]);$('round').textContent=String(round).padStart(2,'0');render();log('Début du tour '+round+'. Activations réinitialisées.')};$('upload').onclick=()=>$('mapfile').click();$('mapfile').onchange=()=>{const f=$('mapfile').files[0];if(!f)return;if(!['image/png','image/jpeg','image/webp'].includes(f.type)){log('Carte non chargée : utilise une image PNG, JPEG ou WebP.');return}if(mapUrl)URL.revokeObjectURL(mapUrl);mapUrl=URL.createObjectURL(f);$('map-view').style.backgroundImage='url("'+mapUrl+'")';$('map').classList.add('custom');log('Carte importée sur cet appareil. Le plan et ses murs sont masqués : plus d’obstacle défini.');};
+ return b}));$('next').onclick=()=>{if(view!=='mj')return;savePool();burnAll();round++;actors.forEach(a=>{a.checks=[false,false,false];a.orbes=0});$('round').textContent=String(round).padStart(2,'0');render();log('Début du tour '+round+'. Activations réinitialisées.')};$('upload').onclick=()=>$('mapfile').click();$('mapfile').onchange=()=>{const f=$('mapfile').files[0];if(!f)return;if(!['image/png','image/jpeg','image/webp'].includes(f.type)){log('Carte non chargée : utilise une image PNG, JPEG ou WebP.');return}if(mapUrl)URL.revokeObjectURL(mapUrl);mapUrl=URL.createObjectURL(f);$('map-view').style.backgroundImage='url("'+mapUrl+'")';$('map').classList.add('custom');log('Carte importée sur cet appareil. Le plan et ses murs sont masqués : plus d’obstacle défini.');};
 /* Le thème vit dans le navigateur, pas dans la partie : chacun lit comme il veut. */
 /* Les gestes de la carte et la touche qui les commande. « Aucune » veut dire le clic nu ;
    c'est ce que porte la sélection par défaut. Deux gestes ne peuvent pas partager la même
@@ -1318,5 +1369,5 @@ $('portees').onclick=()=>{porteesOn=!porteesOn;
 majPortees();
 window.addEventListener('resize',()=>{updateRing();showAim();renderCombat()});
 render();log('Bienvenue dans Amertume. Sélectionne un aventurier ou lance tes premiers dés.');
-</script><script src="./catalog.js?v=0.142"></script><script src="./editor.js?v=0.142"></script><script src="./maps.js?v=0.142"></script><script src="./firebase-config.js?v=0.142"></script><script src="./shared-data.js?v=0.142"></script><script src="./shared.js?v=0.142"></script>
-<script src="./live.js?v=0.142"></script></body></html>
+</script><script src="./catalog.js?v=0.143"></script><script src="./editor.js?v=0.143"></script><script src="./maps.js?v=0.143"></script><script src="./firebase-config.js?v=0.143"></script><script src="./shared-data.js?v=0.143"></script><script src="./shared.js?v=0.143"></script>
+<script src="./live.js?v=0.143"></script></body></html>

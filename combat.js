@@ -691,7 +691,79 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   phrase(p){const n=Math.max(1,(p&&p.sbires)|0);
    return 'Après avoir subi des dégâts, <b>'+n+'</b> sbire'+(n>1?'s':'')+' allié'+(n>1?'s':'')
     +' au contact '+(n>1?'les encaissent':'les encaisse')+' à la place du porteur, '
-    +'chacun jusqu’à son dernier point de vie ; le reliquat passe au suivant, puis au porteur.'}}};
+    +'chacun jusqu’à son dernier point de vie ; le reliquat passe au suivant, puis au porteur.'}},
+ /* Orbes mystiques : une maîtrise. À chaque activation, le porteur lance quelques orbes
+    qui ne lui coûtent rien — ni Action ni Mouvement, seul le compte du tour — sur un
+    adversaire en vue. Les dégâts d'un orbe sont ceux d'un effet : ni DEF, ni blindage. */
+ orbes:{cle:'orbes',nom:'Orbes mystiques',type:'mait',bouton:'✦ Orbe',
+  aide:'Maîtrise : à chaque activation, le porteur lance gratuitement des orbes sur un adversaire en vue, sans dépenser d’Action.',
+  params:[{cle:'orbes',nom:'Orbes par activation',type:'nombre',defaut:1,min:1,max:9},
+   {cle:'degats',nom:'Dégâts par orbe',type:'nombre',defaut:1,min:0,max:99}],
+  phrase(p){const n=Math.max(1,(p&&p.orbes)|0),d=(p&&p.degats)|0;
+   return 'Durant son activation, le porteur peut lancer <b>'+n+'</b> orbe'+(n>1?'s':'')
+    +' qui inflige'+(n>1?'nt':'')+' <b>'+d+'</b> dégâts'+(n>1?' chacun':'')+'.'}},
+ /* Orbes de feu : une amélioration, qui n'existe qu'au-dessus d'Orbes mystiques — l'effet
+    l'exige (« requiert »), quel que soit le nom donné au talent socle. Elle ne lance rien
+    elle-même : elle change ce que les orbes portent. L'état se règle, Feu par défaut. */
+ orbesfeu:{cle:'orbesfeu',nom:'Orbes de feu',type:'ame',requiert:'orbes',
+  aide:'Amélioration d’Orbes mystiques : les orbes infligent un état en plus de leurs dégâts.',
+  params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
+  phrase(p){return 'Les orbes du porteur infligent <b>'+((p&&p.etat)||'Feu')+'</b> en plus de leurs dégâts.'}}};
+/* Ce que les orbes d'un porteur valent, d'après ce qu'il tient : combien par activation,
+   quels dégâts, et l'état que l'amélioration y ajoute. Plusieurs talents d'orbes ne se
+   cumulent pas : le plus généreux fait foi. */
+function orbesPermis(portes){return (portes||[]).filter(t=>t&&t.code&&t.code.cle==='orbes')
+ .reduce((n,t)=>Math.max(n,Math.trunc(t.params&&t.params.orbes)||0),0)}
+function degatsOrbe(portes){return (portes||[]).filter(t=>t&&t.code&&t.code.cle==='orbes')
+ .reduce((n,t)=>Math.max(n,Math.trunc(t.params&&t.params.degats)||0),0)}
+function etatDesOrbes(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle==='orbesfeu');
+ return t?String(t.params&&t.params.etat||'Feu'):''}
+/* ---------- Les prérequis ----------
+   Une amélioration ne s'apprend qu'au-dessus d'un autre talent. Deux façons de le dire :
+   la fiche du talent nomme un talent du catalogue (« prerequis »), ou son effet en réclame
+   un autre par sa clé (« requiert ») — Orbes de feu ne va pas sans Orbes mystiques, quel
+   que soit le nom que le MJ a donné à ce dernier. Le catalogue est passé en argument : le
+   moteur n'en tient pas. */
+function talentDuCatalogue(talents,id){return (talents||[]).find(t=>t&&t.id===id)||null}
+/* Ce qui manque au porteur pour apprendre ce talent : le nom du prérequis absent, ou rien. */
+function manqueTalent(portes,t,talents){const ids=portes||[];
+ if(t&&t.prerequis){const p=talentDuCatalogue(talents,t.prerequis);
+  if(p&&p.id!==t.id&&!ids.includes(p.id))return p.name}
+ const code=talentCode(t);
+ if(code&&code.requiert&&!ids.some(id=>{const x=talentDuCatalogue(talents,id);return !!x&&x.effet===code.requiert}))
+  return (TALENTS_CODES[code.requiert]||{}).nom||code.requiert;
+ return ''}
+/* Le nom du prérequis d'un talent, tel que la bibliothèque et le sélecteur l'écrivent. */
+function nomPrerequis(t,talents){if(t&&t.prerequis){const p=talentDuCatalogue(talents,t.prerequis);
+  if(p&&p.id!==t.id)return p.name}
+ const code=talentCode(t);return code&&code.requiert?(TALENTS_CODES[code.requiert]||{}).nom||'':''}
+/* Les talents du catalogue qui reposent sur celui-ci, directement. */
+function talentsDependants(t,talents){if(!t)return [];
+ return (talents||[]).filter(x=>x&&x.id!==t.id&&(x.prerequis===t.id
+  ||(talentCode(x)&&talentCode(x).requiert&&t.effet===talentCode(x).requiert)))}
+/* Retirer un talent entraîne ce qui reposait sur lui : on relit la liste jusqu'à ce que
+   plus rien n'y manque. Renvoie la liste épurée et les noms de ce qui est tombé. */
+function talentsSans(portes,id,talents){let liste=(portes||[]).filter(x=>x!==id);const tombes=[];
+ for(let encore=true;encore;){encore=false;
+  for(const x of liste){const t=talentDuCatalogue(talents,x);
+   if(t&&manqueTalent(liste,t,talents)){liste=liste.filter(y=>y!==x);tombes.push(t.name);encore=true;break}}}
+ return {liste,tombes}}
+/* Les talents que le porteur tient vraiment : ceux dont le prérequis est là. Une
+   amélioration orpheline — son socle oublié, ou retiré du catalogue — ne fait rien. */
+function talentsTenus(portes,talents){return (portes||[]).map(id=>talentDuCatalogue(talents,id))
+ .filter(t=>t&&!manqueTalent(portes,t,talents))}
+/* Une liste de talents rangée en arbre : chaque amélioration suit son prérequis, avec sa
+   profondeur, si celui-ci est dans la liste ; sinon elle reste à sa place, à la racine. */
+function ordonneTalents(liste,talents){const out=[],vus=new Set();
+ const dans=new Set((liste||[]).map(t=>t&&t.id));
+ const socleDe=t=>{if(t.prerequis&&dans.has(t.prerequis)&&t.prerequis!==t.id)return t.prerequis;
+  const code=talentCode(t);if(!code||!code.requiert)return null;
+  const s=(liste||[]).find(x=>x&&x.id!==t.id&&x.effet===code.requiert);return s?s.id:null};
+ const pose=(t,prof)=>{if(vus.has(t.id))return;vus.add(t.id);out.push([t,prof]);
+  (liste||[]).filter(x=>x&&socleDe(x)===t.id).forEach(x=>pose(x,prof+1))};
+ (liste||[]).forEach(t=>{if(t&&socleDe(t)===null)pose(t,0)});
+ (liste||[]).forEach(t=>{if(t)pose(t,0)});   // un cycle, faute de racine, sort quand même
+ return out}
 /* Combien d'adversaires un combattant peut viser d'une même attaque : un, sauf si un
    talent passif l'augmente. Qui en porte plusieurs garde le plus généreux. */
 function ciblesPermises(portes){let n=1;
@@ -794,7 +866,7 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
  return a[cle]}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
- rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,uncontain,spreadInZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,degatsOrbe,etatDesOrbes,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

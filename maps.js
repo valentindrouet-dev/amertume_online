@@ -70,15 +70,26 @@ function readSeen(m,d){
    if(Number.isInteger(r)&&r>10&&r<c)return regridMask(m.seen,c,r,d.w,d.h)}
  return new Uint8Array(d.n)}
 let visionCache={cle:'',vues:new Map()};
-function computeFog(){const m=currentMap();
- if(!m){fogVis=null;fogSeen=null;fogKey='';fogDim=null;return}
+/* Les polygones déjà versés dans la mémoire d'exploration : chacun ne l'est qu'une fois.
+   Sans cela, chaque pas d'un aventurier refaisait rentrer dans la grille la vue de tous
+   les autres, immobiles — quelques millisecondes par tête, à chaque image. */
+let fogMemorise=new WeakSet();
+/* La mémoire d'exploration n'est réemballée en base64 — quelques millisecondes pour
+   deux cent mille cases — qu'une fois le socle relâché : pendant le glissement, la grille
+   suffit, et c'est elle que le brouillard peint. */
+let fogAEmballer=false;
+function emballeFog(){if(!fogAEmballer)return;fogAEmballer=false;const m=currentMap();
+ if(!m||!fogSeen||!fogDim)return;
+ m.fog=fogSeenSrc=packMask(fogSeen,fogDim.n);delete m.seen;scheduleSave()}
+function computeFog(direct){const m=currentMap();
+ if(!m){fogVis=null;fogTroupe=null;fogSeen=null;fogKey='';fogDim=null;return}
  const d=fogDim=fogDims(m);
- if(!fogSeen||fogSeen.length!==d.n||m.fog!==fogSeenSrc){fogSeen=readSeen(m,d);fogSeenSrc=m.fog;fogDirty=true}
+ if(!fogSeen||fogSeen.length!==d.n||m.fog!==fogSeenSrc){fogSeen=readSeen(m,d);fogSeenSrc=m.fog;fogDirty=true;fogMemorise=new WeakSet()}
  const formes=activeObstacles(),troupe=fogParty();
  // Le calcul ne reprend que si la scène a bougé : héros, portes, zones ou point de vue.
  const cle=m.id+'|'+d.n+'|'+view+'|'+owner+'|'+troupe.map(a=>a.x.toFixed(2)+','+a.y.toFixed(2)).join(';')
   +'|'+geometryKey(m);
- if(cle===fogKey&&fogVis)return;
+ if(cle===fogKey&&fogVis){if(!direct)emballeFog();return}
  fogKey=cle;
  /* Le polygone de vision ne dépend que d'une position et de la géométrie : on le garde par
     position tant que la géométrie ne bouge pas. Quand un seul aventurier se déplace, les
@@ -88,9 +99,11 @@ function computeFog(){const m=currentMap();
  const vues=visionCache.vues,vu=a=>{const k=a.x+','+a.y;
   if(!vues.has(k)){if(vues.size>=48)vues.clear();vues.set(k,visionPolygon(a,formes))}return vues.get(k)};
  // La mémoire retient ce que la troupe entière a vu, où que soit le lecteur.
- let neuf=0;for(const a of troupe)neuf+=fillPolygonGrid(fogSeen,d.w,d.h,vu(a));
- fogVis=fogSeers().map(vu);
- if(neuf){m.fog=fogSeenSrc=packMask(fogSeen,d.n);delete m.seen;fogDirty=true;scheduleSave()}}
+ let neuf=0;for(const a of troupe){const p=vu(a);if(fogMemorise.has(p))continue;
+  fogMemorise.add(p);neuf+=fillPolygonGrid(fogSeen,d.w,d.h,p)}
+ fogVis=fogSeers().map(vu);fogTroupe=troupe.map(vu);
+ if(neuf){fogDirty=true;fogAEmballer=true}
+ if(!direct)emballeFog()}
 // Le champ de vision en pixels : le socle est un disque, pas un point.
 let fogPx=null,fogPxKey='';
 function visionInPixels(){const size=mapSize(),k=fogKey+'|'+Math.round(size.width);
@@ -104,6 +117,17 @@ function partySees(a){const m=currentMap();
  const size=mapSize();if(!size.width)return true;
  const c=[a.x/100*size.width,a.y/100*size.height],r=tokenOf(a)/2;
  return visionInPixels().some(p=>polyTouchesDisc(p,c,r))}
+/* Ce que la troupe entière voit à l'instant, où que soit l'écran : c'est elle qui révèle
+   un adversaire, et non le seul aventurier de ce joueur. Mêmes règles qu'un socle vu. */
+let fogTroupe=null,fogTroupePx=null,fogTroupeKey='';
+function troupeVoit(a){const m=currentMap();
+ if(!fogTroupe||!m||m.fogOff)return true;
+ const size=mapSize();if(!size.width)return true;
+ const k=fogKey+'|'+Math.round(size.width);
+ if(fogTroupeKey!==k){fogTroupeKey=k;
+  fogTroupePx=fogTroupe.map(p=>p.map(([x,y])=>[x/100*size.width,y/100*size.height]))}
+ const c=[a.x/100*size.width,a.y/100*size.height],r=tokenOf(a)/2;
+ return fogTroupePx.some(p=>polyTouchesDisc(p,c,r))}
 // La mémoire d'exploration, lue en un point : sert à garder les portes visibles.
 function seenAt(x,y){if(!fogSeen||!fogDim)return false;const d=fogDim;
  const i=Math.min(d.w-1,Math.max(0,Math.floor(x/100*d.w))),j=Math.min(d.h-1,Math.max(0,Math.floor(y/100*d.h)));
@@ -119,12 +143,34 @@ function doorProbes(d,marge){const out=[];
  for(const s of [-1,0,1])for(const t of [-1,0,1]){const ku=s*(f.hw+marge),kv=t*(f.hh+marge);
   out.push([(f.cx+f.ux*ku+f.vx*kv)/f.r,f.cy+f.uy*ku+f.vy*kv])}
  return out}
-// Vue à l'instant : le polygone de vision épouse la face de la porte.
+/* Vue à l'instant. Le polygone de vision est en étoile autour de l'observateur : un
+   point s'y trouve si, et seulement si, le rayon qui l'y mène ne rencontre aucun mur.
+   On interroge donc l'index des murs plutôt que de parcourir les milliers de sommets du
+   polygone pour chacune des neuf sondes de chaque porte — douze portes coûtaient quarante
+   millisecondes à chaque pas, c'est là que la vue prenait son retard. La face d'une porte
+   close est elle-même un obstacle : on s'arrête un peu avant, d'un rayon de tolérance,
+   là où le regard la touche vraiment. Le verdict est gardé tant que la scène ne bouge
+   pas — le brouillard et le calque des portes le demandent tous deux, plusieurs fois. */
+let portesVues={cle:'',vues:new WeakMap(),yeux:[]};
 function doorInSight(d){const size=mapSize();
  if(!size.width||!fogVis)return false;
- const r=Math.max(3,tokenPx()*.12);
- const faces=doorProbes(d,0).map(([x,y])=>[x/100*size.width,y/100*size.height]);
- return visionInPixels().some(p=>faces.some(c=>polyTouchesDisc(p,c,r)))}
+ const cle=fogKey+'|'+Math.round(size.width);
+ if(portesVues.cle!==cle){const formes=activeObstacles();
+  portesVues={cle,vues:new WeakMap(),formes,idx:indexMurs(formes),
+   yeux:fogSeers().map(a=>({x:a.x,y:a.y,exclues:formesAutour(a,formes)}))}}
+ if(portesVues.vues.has(d))return portesVues.vues.get(d);
+ /* Chaque sonde est un petit disque, comme avant : son centre et huit points de son
+    bord, en pour cent de carte pour un rayon en pixels. Il suffit que l'un d'eux soit
+    en vue — c'est ainsi que la face d'une porte close se laisse voir de devant. */
+ const r=Math.max(3,tokenPx()*.12),rx=r/size.width*100,ry=r/size.height*100;
+ const points=[];for(const [x,y] of doorProbes(d,0)){points.push([x,y]);
+  for(let k=0;k<8;k++){const a=k*Math.PI/4;points.push([x+Math.cos(a)*rx,y+Math.sin(a)*ry])}}
+ const vu=portesVues.yeux.some(o=>points.some(([x,y])=>{const dx=x-o.x,dy=y-o.y;
+  const L=Math.hypot(dx/100*size.width,dy/100*size.height);
+  if(L<=1)return true;
+  // On s'arrête un demi-pixel avant le point : un mur qui passe juste là ne compte pas.
+  const t=1-.5/L;return rayonContre(portesVues.idx,o.x,o.y,dx,dy,t,o.exclues)>=t}));
+ portesVues.vues.set(d,vu);return vu}
 // Déjà explorée : la mémoire juste autour du rectangle suffit.
 function doorRemembered(d){return doorProbes(d,.9).some(([x,y])=>seenAt(x,y))}
 function doorSeen(d){const m=currentMap();
@@ -191,7 +237,7 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  ctx.globalCompositeOperation='source-over'}
 function resetFog(tout){const m=currentMap();if(!m)return;
  const d=fogDims(m),g=new Uint8Array(d.n);if(tout)g.fill(1);
- m.fog=packMask(g,d.n);delete m.seen;m.fogOff=false;fogSeen=g;fogSeenSrc=m.fog;fogDirty=true;fogKey='';
+ m.fog=packMask(g,d.n);delete m.seen;m.fogOff=false;fogSeen=g;fogSeenSrc=m.fog;fogDirty=true;fogKey='';fogMemorise=new WeakSet();
  render();scheduleSave();
  log(tout?'Brouillard levé sur toute la carte.':'Brouillard réinitialisé.')}
 
@@ -253,8 +299,11 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
  // Un passage secret clos ne perce plus la matière : le mur se peint plein pour tout le
  // monde, MJ compris, et c'est le trait violet — lui seul — qui le lui signale.
  if(formes.murs.contours.length)svg.append(svgMatiere([formes.murs.contours],null,'wall-group'));
- // Les portes se dessinent au-dessus du brouillard : une fois découverte, une porte
- // reste lisible dans la pénombre. Tant qu'elle est inexplorée, elle n'existe pas.
+ renderPortes()}
+/* Les portes se dessinent au-dessus du brouillard : une fois découverte, une porte reste
+   lisible dans la pénombre. Tant qu'elle est inexplorée, elle n'existe pas. Le calque se
+   refait seul, à part de la matière : il suit le socle qu'on tient. */
+function renderPortes(){const portes=$('map-doors'),m=currentMap();portes.replaceChildren();if(!m)return;
  (m.doors||[]).forEach((d,i)=>{
   const mj=view==='mj';
   // Un passage secret clos n'existe pas pour la troupe : elle ne voit qu'un mur.
@@ -272,8 +321,14 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
    d.open=!d.open;
    log((d.secret?'Passage secret ':'Porte ')+(i+1)+' '+(d.open?'ouvert'+(d.secret?'':'e'):'referm'+(d.secret?'é':'ée'))+'.');
    render();scheduleSave()};
-  portes.append(el)});
-}
+  portes.append(el)})}
+/* Le brouillard suit le socle qu'on tient : une image par pas, jamais davantage. Il ne
+   se levait qu'au relâchement — d'où l'impression d'un moteur en retard sur la main.
+   Rien n'est repeint si la scène vue n'a pas changé : tenir un adversaire ne coûte rien. */
+let fogDirect=0;
+function fogEnDirect(){if(fogDirect)return;
+ fogDirect=requestAnimationFrame(()=>{fogDirect=0;const avant=fogKey;computeFog(true);
+  if(fogKey!==avant){renderFog();renderPortes()}})}
 
 /* ---------- Ouverture d'une carte en combat ---------- */
 function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;

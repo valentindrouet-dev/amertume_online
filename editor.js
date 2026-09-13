@@ -12,7 +12,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;return a}
+function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;return a}
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  /* Les classes du jeu viennent avec lui : un catalogue enregistré avant elles les reçoit
@@ -23,6 +23,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
     libre — le renommer ne fait plus perdre la mécanique. */
  c.talents.forEach(t=>{if(t&&t.effet===undefined){const k=cleTalent(t.name);
   t.effet=TALENTS_CODES[k]?k:''}});
+ // Un prérequis désigne un autre talent du catalogue, ou rien : un lien mort s'efface.
+ c.talents.forEach(t=>{if(!t)return;
+  if(!t.prerequis||t.prerequis===t.id||!c.talents.some(x=>x&&x.id===t.prerequis))t.prerequis=''});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{m.weapons||=[];m.armorId??='';m.shieldId??=''});
  return c}
@@ -484,7 +487,11 @@ function talentPill(t){const [cle,court,nom]=talentType(t);
  const b=document.createElement('span');b.className='t-badge';b.textContent=court;b.title=nom;
  const niv=document.createElement('span');niv.className='tag';niv.textContent='Niv. '+(t.level||1);
  p.append(n,b,niv);
- const info=[talentFamily(t),nom,t.effects,t.notes].filter(Boolean).join(' · ');
+ // Une amélioration dit sur quoi elle repose : on le lit sans ouvrir la fiche.
+ const socle=nomPrerequis(t,catalog.talents);
+ if(socle){const s=document.createElement('span');s.className='tag prereq';s.textContent='↳ '+socle;
+  s.title='Requiert : '+socle;p.append(s)}
+ const info=[talentFamily(t),nom,t.effects,t.notes,socle?'Requiert : '+socle:''].filter(Boolean).join(' · ');
  p.title=t.name+' — '+info;
  return p}
 function talentPills(a){const out=document.createElement('div');out.className='gear-pills';
@@ -792,6 +799,11 @@ function talentRow(t,i){const rang=document.createElement('div');rang.className=
  effet.textContent=t.effects||'Effet à préciser.';
  detail.append(effet);
  if(t.notes){const n=document.createElement('span');n.className='muted';n.textContent=t.notes;detail.append(n)}
+ /* L'arbre se lit dans les deux sens : ce que ce talent exige, et ce qu'il débloque. */
+ const socle=nomPrerequis(t,catalog.talents),branches=talentsDependants(t,catalog.talents);
+ if(socle){const s=document.createElement('span');s.className='muted';s.textContent='Requiert : '+socle;detail.append(s)}
+ if(branches.length){const d=document.createElement('span');d.className='muted';
+  d.textContent='Débloque : '+branches.map(x=>x.name).join(', ');detail.append(d)}
  const porteurs=actors.filter(a=>(a.talents||[]).includes(t.id)).map(a=>a.name);
  const qui=document.createElement('span');qui.className='muted';
  qui.textContent=porteurs.length?'Appris par : '+porteurs.join(', '):'Appris par personne.';
@@ -837,6 +849,9 @@ function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
   nom.textContent=(c.monstre?'👹 ':'')+c.nom+' : ';
   const dit=document.createElement('span');dit.innerHTML=phraseTalent(c.cle);
   bloc.append(nom,dit);
+  // Une amélioration nomme la mécanique qu'elle exige : on sait où la ranger.
+  if(c.requiert&&TALENTS_CODES[c.requiert]){const r=document.createElement('span');r.className='prereq';
+   r.textContent='↳ requiert '+TALENTS_CODES[c.requiert].nom;bloc.append(r)}
   boite.append(bloc)});
  if(!codes.length){const v=document.createElement('p');v.className='muted';
   v.textContent='Aucun effet câblé pour l’instant.';boite.append(v)}}
@@ -860,7 +875,11 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
   const encre=teinteClasse(famille);if(encre)h.style.color=encre;
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
   h.append(compte);bloc.append(h);
-  liste.forEach(([t,i])=>bloc.append(talentRow(t,i)));
+  /* Une amélioration se range sous son prérequis, en retrait : la colonne se lit comme
+     l'arbre qu'elle est. Un prérequis d'une autre classe laisse le talent à la racine. */
+  const place=new Map(liste.map(([t,i])=>[t.id,i]));
+  ordonneTalents(liste.map(([t])=>t),catalog.talents).forEach(([t,prof])=>{
+   const rang=talentRow(t,place.get(t.id));if(prof)rang.classList.add('sous-talent');bloc.append(rang)});
   cols.append(bloc)}
 }
 $('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalents;
@@ -880,10 +899,17 @@ function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)retu
  const code=TALENTS_CODES[$('talent-form').elements.effet.value]||null;
  if(!code){boite.replaceChildren();return}
  const vals=paramsTalent({effet:code.cle,params:talentDraft.params});
- boite.innerHTML='<div class="edit-grid">'
+ /* Une mécanique qui en exige une autre le dit ici, sous le menu : le talent ne pourra
+    s'apprendre qu'au-dessus d'un talent portant celle-là. */
+ const exige=code.requiert&&TALENTS_CODES[code.requiert]
+  ?'<p class="muted exige">↳ Amélioration : ne s’apprend qu’au-dessus d’un talent portant la mécanique « '+esc(TALENTS_CODES[code.requiert].nom)+' ».</p>':'';
+ boite.innerHTML=exige+'<div class="edit-grid">'
   +(code.params||[]).map(p=>p.type==='nombre'
    ?field(p.nom,'p_'+p.cle,vals[p.cle],'number','min="'+p.min+'" max="'+p.max+'"')
    :sel(p.nom,'p_'+p.cle,vals[p.cle],p.options)).join('')+'</div>'}
+/* Vrai si x repose, de près ou de loin, sur t : par la fiche ou par la mécanique. */
+function descendDe(x,t,vus=new Set()){if(!x||!t||vus.has(x.id))return false;vus.add(x.id);
+ return talentsDependants(t,catalog.talents).some(d=>d.id===x.id||descendDe(x,d,vus))}
 function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talentApres=apres;
  const t=i===null?{name:'Nouveau talent',famille:GENERIQUES,type:'act',level:1,effect:'',effets:'',effects:'',notes:'',effet:'',params:{}}:catalog.talents[i];
  if(i!==null&&!t)return;
@@ -904,6 +930,10 @@ function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talen
   +sel('Type','type',t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]))
   +field('Niveau','level',t.level||1,'number','min="1" max="20"')+'</div>'
   +'<div id="famille-autre" hidden><label>Nom de la nouvelle classe<input name="familleLibre" maxlength="60" value=""></label></div>'
+  /* Le prérequis : un autre talent du catalogue, qu'il faudra posséder d'abord. Ni
+     lui-même, ni ce qui repose déjà sur lui — sans quoi l'arbre se mordrait la queue. */
+  +sel('Prérequis — talent à posséder d’abord','prerequis',t.prerequis||'',[['','— aucun —'],
+   ...(catalog.talents||[]).filter(x=>x&&x.id!==t.id&&!descendDe(x,t)).map(x=>[x.id,talentFamily(x)+' · '+x.name+' (niv. '+(x.level||1)+')'])])
   +'<label>Effet<textarea name="effects" rows="3" maxlength="600">'+esc(t.effects||'')+'</textarea></label>'
   /* Le texte ci-dessus se lit à la table ; celui-ci agit. On choisit l'effet dans la liste
      de ce que le moteur sait faire, puis on en règle les valeurs — plus besoin que le nom
@@ -928,6 +958,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.famille=(f.famille.value===AUTRE_CLASSE?f.familleLibre.value:f.famille.value).trim()||GENERIQUES;
  t.type=f.type.value;t.level=num(f.level.value,1,20);
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
+ t.prerequis=f.prerequis&&f.prerequis.value&&f.prerequis.value!==t.id&&(catalog.talents||[]).some(x=>x&&x.id===f.prerequis.value)?f.prerequis.value:'';
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
  t.effet=TALENTS_CODES[f.effet.value]?f.effet.value:'';
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent()}):{};
@@ -995,7 +1026,8 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
    const etat=document.createElement('span');etat.className='pick-etat';
    // Une arme portée en double le dit : « ×2 » plutôt qu'un coché muet.
    const n=pickerMode==='gear'&&o.category==='weapon'?gearCount(a,o.id):0;
-   etat.textContent=n>1?'×'+n:porte(o)?'✓':'+';rang.append(etat);
+   const cle=rang.querySelector('.cat-pill.verrou');if(cle)rang.classList.add('verrou');
+   etat.textContent=n>1?'×'+n:porte(o)?'✓':cle?'🔒':'+';rang.append(etat);
    rang.onclick=()=>clic(o);bloc.append(rang)});
   corps.append(bloc)};
  if(pickerMode==='gear'){
@@ -1014,18 +1046,28 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
  else{
   a.talents??=[];
   const porte=t=>a.talents.includes(t.id);
-  /* Le rappel du demandeur passait à la trappe ici, alors que la branche de l'équipement
-     l'honore : une fiche de bestiaire ne se redessinait donc pas quand on décochait un
-     talent, et il fallait rafraîchir la page pour le voir partir. */
-  const clic=t=>{a.talents=porte(t)?a.talents.filter(x=>x!==t.id):[...a.talents,t.id];
+  /* Une amélioration reste sous clé tant que son prérequis n'est pas appris ; l'oublier
+     entraîne ce qui reposait dessus, et la note le dit. Le rappel du demandeur est honoré
+     comme dans la branche de l'équipement, sans quoi une fiche de bestiaire ne se
+     redessinait pas quand on décochait un talent. */
+  const manque=t=>porte(t)?'':manqueTalent(a.talents,t,catalog.talents);
+  const clic=t=>{const m=manque(t);
+   if(m){$('picker-note').textContent='« '+t.name+' » exige d’abord « '+m+' ».';return}
+   if(porte(t)){const {liste,tombes}=talentsSans(a.talents,t.id,catalog.talents);a.talents=liste;
+    $('picker-note').textContent=tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'Clique un talent pour l’apprendre ou l’oublier.'}
+   else{a.talents=[...a.talents,t.id];$('picker-note').textContent='Clique un talent pour l’apprendre ou l’oublier.'}
    renderPicker();
    if(pickerApres)pickerApres();else{renderHeroes();render();scheduleSave()}};
+  const prof=new Map();
+  const pastille=t=>{const p=talentPill(t);if(prof.get(t.id))p.classList.add('sous-talent');
+   const m=manque(t);if(m){p.classList.add('verrou');p.title+=' — sous clé : requiert '+m}return p};
   const sienne=(a.role||'').split('·')[0].trim(),toutes=talentFamilies();
   const tete=[GENERIQUES,...(sienne&&toutes.includes(sienne)?[sienne]:[])];
   for(const famille of [...tete,...toutes.filter(f=>!tete.includes(f))])
-   groupe(famille,(catalog.talents||[]).filter(t=>talentFamily(t)===famille
+   groupe(famille,ordonneTalents((catalog.talents||[]).filter(t=>talentFamily(t)===famille
     &&(!q||t.name.toLowerCase().includes(q)||(t.effects||'').toLowerCase().includes(q)))
-    .sort((x,y)=>(x.level||1)-(y.level||1)||x.name.localeCompare(y.name,'fr')),porte,talentPill,clic);
+    .sort((x,y)=>(x.level||1)-(y.level||1)||x.name.localeCompare(y.name,'fr')),catalog.talents)
+    .map(([t,p])=>{prof.set(t.id,p);return t}),porte,pastille,clic);
   if(!corps.childElementCount){const v=document.createElement('p');v.className='muted';
    v.textContent=q?'Aucun talent de ce nom.':'Aucun talent au catalogue : crée-en un dans l’onglet Talents.';
    corps.append(v)}}}

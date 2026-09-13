@@ -147,7 +147,52 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  assert.match(phraseTalent('garderapprochee',{sbires:2}),/<b>2<\/b> sbires alliés au contact les encaissent/);
  // La phrase dit la cascade : chacun jusqu'à son dernier point de vie, puis le reliquat.
  assert.match(phraseTalent('garderapprochee'),/dernier point de vie ; le reliquat passe au suivant, puis au porteur/);
- assert.ok(libelleTalent('garderapprochee').startsWith('Garde rapprochée : '));}
+ assert.ok(libelleTalent('garderapprochee').startsWith('Garde rapprochée : '));
+ /* Orbes mystiques : une maîtrise gratuite, réglée en nombre d'orbes et en dégâts. */
+ const {orbesPermis,degatsOrbe,etatDesOrbes}=require('./combat.js');
+ assert.equal(TALENTS_CODES.orbes.type,'mait');
+ assert.deepEqual(paramsTalent({effet:'orbes'}),{orbes:1,degats:1});
+ assert.deepEqual(paramsTalent({effet:'orbes',params:{orbes:'3',degats:12}}),{orbes:3,degats:12});
+ assert.match(phraseTalent('orbes'),/lancer <b>1<\/b> orbe qui inflige <b>1<\/b> dégâts\./);
+ assert.match(phraseTalent('orbes',{orbes:3,degats:2}),/<b>3<\/b> orbes qui infligent <b>2<\/b> dégâts chacun/);
+ const tenus=[{code:TALENTS_CODES.orbes,params:{orbes:2,degats:3}},{code:TALENTS_CODES.orbes,params:{orbes:1,degats:5}}];
+ assert.equal(orbesPermis(tenus),2);assert.equal(degatsOrbe(tenus),5);assert.equal(orbesPermis([]),0);
+ assert.equal(etatDesOrbes(tenus),'');
+ /* Orbes de feu : une amélioration, qui exige la mécanique des orbes ; Feu par défaut. */
+ assert.equal(TALENTS_CODES.orbesfeu.type,'ame');assert.equal(TALENTS_CODES.orbesfeu.requiert,'orbes');
+ assert.deepEqual(paramsTalent({effet:'orbesfeu'}),{etat:'Feu'});
+ assert.deepEqual(paramsTalent({effet:'orbesfeu',params:{etat:'Gel'}}),{etat:'Gel'});
+ assert.deepEqual(paramsTalent({effet:'orbesfeu',params:{etat:'Coma'}}),{etat:'Feu'});
+ assert.match(phraseTalent('orbesfeu'),/infligent <b>Feu<\/b> en plus/);
+ assert.equal(etatDesOrbes([...tenus,{code:TALENTS_CODES.orbesfeu,params:{etat:'Gel'}}]),'Gel');}
+/* Les prérequis : par la fiche (« prerequis ») ou par la mécanique (« requiert »). */
+{const {manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents}=require('./combat.js');
+ const a={id:'a',name:'Orbes mystiques',effet:'orbes'},b={id:'b',name:'Orbes de feu',effet:'orbesfeu'},
+  c={id:'c',name:'Souffle',effet:'',prerequis:'a'},d={id:'d',name:'Brasier',effet:'',prerequis:'b'},e={id:'e',name:'Lamevent',effet:'lamevent'};
+ const cat=[a,b,c,d,e];
+ assert.equal(manqueTalent([],b,cat),'Orbes mystiques');    // la mécanique le réclame
+ assert.equal(manqueTalent(['a'],b,cat),'');
+ assert.equal(manqueTalent([],c,cat),'Orbes mystiques');    // la fiche le nomme
+ assert.equal(manqueTalent(['a'],c,cat),'');
+ assert.equal(manqueTalent([],a,cat),'');assert.equal(manqueTalent([],e,cat),'');
+ assert.equal(manqueTalent(['b'],d,cat),'');
+ assert.equal(nomPrerequis(b,cat),'Orbes mystiques');assert.equal(nomPrerequis(c,cat),'Orbes mystiques');
+ assert.equal(nomPrerequis(d,cat),'Orbes de feu');assert.equal(nomPrerequis(a,cat),'');
+ assert.deepEqual(talentsDependants(a,cat).map(t=>t.id),['b','c']);
+ assert.deepEqual(talentsDependants(b,cat).map(t=>t.id),['d']);
+ // Oublier le socle fait tomber toute la branche, de proche en proche.
+ assert.deepEqual(talentsSans(['a','b','c','d','e'],'a',cat),{liste:['e'],tombes:['Orbes de feu','Souffle','Brasier']});
+ assert.deepEqual(talentsSans(['a','b','d'],'b',cat),{liste:['a'],tombes:['Brasier']});
+ // Une amélioration orpheline ne compte pas pour le moteur.
+ assert.deepEqual(talentsTenus(['b','e'],cat).map(t=>t.id),['e']);
+ assert.deepEqual(talentsTenus(['a','b'],cat).map(t=>t.id),['a','b']);
+ // L'arbre : chaque amélioration suit son socle ; sans socle dans la liste, à la racine.
+ assert.deepEqual(ordonneTalents([e,a,b,c,d],cat).map(([t,p])=>t.id+p),['e0','a0','b1','d2','c1']);
+ assert.deepEqual(ordonneTalents([b,d],cat).map(([t,p])=>t.id+p),['b0','d1']);
+ assert.deepEqual(ordonneTalents([d],cat).map(([t,p])=>t.id+p),['d0']);
+ // Un cycle ne bloque rien : tout finit par sortir, une fois.
+ const x={id:'x',name:'X',prerequis:'y'},y={id:'y',name:'Y',prerequis:'x'};
+ assert.deepEqual(ordonneTalents([x,y],[x,y]).map(([t])=>t.id).sort(),['x','y']);}
 // Deux exemplaires de la même arme : les dés s'additionnent comme deux armes distinctes.
 const epee={id:'e',dice:{white:2,red:1}};
 assert.deepEqual(gearApi.equippedPool({weapons:['e']},[epee]).slice(0,4),[2,0,1,0]);
@@ -773,4 +818,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('509 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('547 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
