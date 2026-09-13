@@ -97,8 +97,12 @@ function gearAttacks(actor,items){
   sorties.unshift({name:[...groupesM].map(([w,n])=>nommer(w,n)).join(' + '),dice:poolOfWeapons(uneMain),
    range:'contact',targets:'one',useOwnDamage:true,effects:{},etats:etatsDArmes(uneMain),gear:true})}
  return sorties}
+/* Une attaque de fiche — l'attaque spéciale d'un adversaire — peut poser une affliction,
+   tout comme une arme. On lui donne la même forme qu'à une attaque d'équipement, « etats »,
+   pour que le moteur n'ait pas à connaître deux façons de dire la même chose. */
 function attackChoices(actor,items){
- return gearAttacks(actor,items).concat(actor&&actor.attacks||[])}
+ return gearAttacks(actor,items).concat((actor&&actor.attacks||[])
+  .map(at=>at&&at.etat&&!at.etats?{...at,etats:[at.etat]}:at))}
 /* L'attaque retenue, quoi qu'il arrive : un choix devenu caduc — l'arme retirée, une
    attaque effacée — retombe sur la première offerte plutôt que sur rien du tout. */
 function chosenAttack(actor,items){const liste=attackChoices(actor,items);
@@ -226,8 +230,10 @@ function cleanMonster(t){const dés={};
  for(const k of DICE_KEYS)dés[k]=Math.max(0,Math.min(12,Math.round(borne(t&&t.dice&&t.dice[k],0,12))));
  const attaques=(Array.isArray(t&&t.attacks)?t.attacks:[]).slice(0,6).map(a=>{const d={};
   for(const k of DICE_KEYS)d[k]=Math.max(0,Math.min(12,Math.round(borne(a&&a.dice&&a.dice[k],0,12))));
-  return {name:texte(a&&a.name,100)||'Attaque',dice:d,range:a&&a.range==='distance'?'distance':'contact',
-   targets:a&&a.targets==='all'?'all':'one',useOwnDamage:!(a&&a.useOwnDamage===false)}});
+  const o={name:texte(a&&a.name,100)||'Attaque',dice:d,range:a&&a.range==='distance'?'distance':'contact',
+   targets:a&&a.targets==='all'?'all':'one',useOwnDamage:!(a&&a.useOwnDamage===false)};
+  if(ETATS_JEU.includes(a&&a.etat))o.etat=a.etat;
+  return o});
  return {name:texte(t&&t.name,120)||'Adversaire',type:['standard','solitaire','boss'].includes(t&&t.type)?t.type:'standard',
   socle:texte(t&&t.socle,20)||'medium',family:texte(t&&t.family,60),
   pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,99)),
@@ -696,6 +702,17 @@ function ordreCibles(paires){return [...(paires||[])].sort((u,v)=>
  rangType(u[0])-rangType(v[0])
  ||String(u[0]&&u[0].name||'').localeCompare(String(v[0]&&v[0].name||''),'fr')
  ||u[1]-v[1])}
+/* Le bonus de points de vie d'un aventurier : ce que lui donnent sa classe et son espèce,
+   et rien d'autre — il ne se saisit pas. Les classes sont au catalogue ; les espèces
+   n'ont pas encore de table, leur part vaut donc zéro, et le calcul l'attend déjà.
+   De là découlent les points de vie maximum : Vie × Endurance + ce bonus. */
+const ESPECES_PV={};
+function pvEspece(nom){const cle=cleClasse(nom);return (cle&&ESPECES_PV[cle])||0}
+function bonusPV(classes,role,espece){const c=classeDe(classes,role);
+ return ((c&&Number(c.pv))||0)+pvEspece(espece)}
+function pvMaximum(classes,a){const vie=Math.max(1,Math.trunc(Number(a&&a.vie))||1);
+ const endu=Math.max(1,Math.trunc(Number(a&&a.endu))||1);
+ return Math.max(1,vie*endu+bonusPV(classes,a&&a.role,a&&a.race))}
 /* Les classes d'aventurier : un nom, une encre, et les points de vie qu'elles apportent.
    On les retrouve par leur nom réduit, et sur la seule tête du rôle : « Mystique »,
    « mystique » ou « Mystique · Voie du gel » désignent la même classe. Un rôle écrit
@@ -767,6 +784,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,uncontain,spreadInZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,ETATS_JEU,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

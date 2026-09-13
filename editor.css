@@ -404,7 +404,9 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 .modifiable:hover{background:var(--hover);box-shadow:inset 0 -1px 0 var(--accent)}
 .modifiable:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .ecu.modifiable{cursor:text}
-.ecu.verrou{opacity:.85;cursor:help}
+/* La DEF d'un aventurier s'explique en infobulle, mais ne se clique pas : le curseur ne
+   doit donc promettre aucun geste. */
+.ecu.verrou{opacity:.85;cursor:default}
 .champ-vif{box-sizing:border-box;font:inherit;max-width:100%;padding:2px 5px;text-align:center;
  border:1px solid var(--accent);border-radius:6px;background:var(--field);color:var(--ink)}
 .champ-vif.petit{font:600 12px/1.3 system-ui}

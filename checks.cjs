@@ -81,6 +81,34 @@ assert.equal(gearApi.chosenAttack({},ARSENAL).dice,null);
 assert.equal(gearApi.defenseOf({hero:true,def:9,armorId:'ar'},ARSENAL),3);
 assert.equal(gearApi.defenseOf({hero:false,def:4,armorId:'ar'},ARSENAL),3);
 assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
+/* Les points de vie d'un aventurier ne se saisissent pas : son bonus vient de sa classe
+   et de son espèce, son maximum en découle — Vie × Endurance + ce bonus. */
+{const {bonusPV,pvMaximum,pvEspece,ESPECES_PV}=require('./combat.js');
+ const CLASSES=[{name:'Gardien',tint:'#3f7bc0',pv:18},{name:'Mystique',tint:'#7a5cb8',pv:10}];
+ assert.equal(bonusPV(CLASSES,'Gardien'),18);
+ assert.equal(bonusPV(CLASSES,'Gardien · Voie du roc'),18);   // La tête du rôle suffit.
+ assert.equal(bonusPV(CLASSES,'Mystique'),10);
+ assert.equal(bonusPV(CLASSES,'Chasseur'),0);                 // Un rôle libre n'apporte rien.
+ assert.equal(bonusPV(CLASSES,''),0);
+ assert.equal(bonusPV(null,'Gardien'),0);
+ // Les espèces n'ont pas encore de table : leur part vaut zéro, et le calcul l'attend.
+ assert.deepEqual(ESPECES_PV,{});
+ assert.equal(pvEspece('Nain'),0);
+ assert.equal(bonusPV(CLASSES,'Gardien','Nain'),18);
+ assert.equal(pvMaximum(CLASSES,{vie:8,endu:3,role:'Gardien'}),8*3+18);
+ assert.equal(pvMaximum(CLASSES,{vie:10,endu:3,role:'Gardien'}),10*3+18);
+ assert.equal(pvMaximum(CLASSES,{vie:4,endu:2,role:'Chasseur'}),8);
+ assert.equal(pvMaximum(CLASSES,{}),1);                       // Jamais moins d'un point de vie.
+ assert.equal(pvMaximum(CLASSES,{vie:'x',endu:null,role:'Mystique'}),11);}
+/* Une attaque spéciale d'adversaire peut poser une affliction, comme une arme : le moteur
+   la reçoit sous la même forme, et elle voyage à l'export. */
+{const {attackChoices,cleanMonster}=require('./combat.js');
+ const bete={attacks:[{name:'Morsure',etat:'Poison'},{name:'Charge'}]};
+ assert.deepEqual(attackChoices(bete,[]).map(x=>x.etats||null),[['Poison'],null]);
+ assert.deepEqual(attackChoices({attacks:[{name:'X',etat:'Feu',etats:['Gel']}]},[])[0].etats,['Gel']);
+ const sortie=cleanMonster({name:'Vipère',attacks:[{name:'Morsure',etat:'Poison'},{name:'Queue',etat:'Dragon'}]});
+ assert.equal(sortie.attacks[0].etat,'Poison');
+ assert.ok(!('etat'in sortie.attacks[1]));}
 /* Double attaque : un passif qui élargit ce qu'une attaque peut viser. Sans talent, une
    cible ; avec, ce que dit son réglage ; et le plus généreux l'emporte. */
 {const {ciblesPermises,TALENTS_CODES,paramsTalent,phraseTalent,libelleTalent}=require('./combat.js');
@@ -727,4 +755,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('478 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('496 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

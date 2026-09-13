@@ -147,6 +147,20 @@ bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="cat-cols" id="bestiary-cols"></div></section>';
 document.querySelector('main.layout').after(heroesPage,talentsPage,armoryPage,bestiaryPage,settingsPage);
 /* Un sous-titre de carte, avec son « + » : équiper ou attribuer sans ouvrir la fiche. */
+/* Un menu déroulant posé à côté d'un bouton, le temps d'un choix. choixVif remplace le
+   nœud qu'il décore ; ici il n'y a rien à remplacer, seulement une liste à offrir. */
+function choixMenu(ancre,options,poser){if(view!=='mj'||!ancre||!ancre.parentNode)return;
+ const menu=document.createElement('select');menu.className='champ-vif choix';
+ menu.setAttribute('aria-label',ancre.title||'Choisir');
+ menu.add(new Option('—',''));
+ options.forEach(([v,t])=>menu.add(new Option(t,v)));
+ ancre.after(menu);menu.focus();champsOuverts++;
+ let clos=false;
+ const fermer=garder=>{if(clos)return;clos=true;champsOuverts--;
+  const v=menu.value;menu.remove();if(garder&&v)poser(v)};
+ menu.onchange=()=>fermer(true);
+ menu.onblur=()=>fermer(false);
+ menu.onkeydown=ev=>{if(ev.key==='Escape'){ev.preventDefault();fermer(false)}}}
 function sousTitre(texte,titre,fn){const h=document.createElement('h4');h.className='hero-sous';
  h.append(texte);
  const b=document.createElement('button');b.className='ico plus';b.textContent='+';
@@ -345,10 +359,20 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // Le MJ corrige un chiffre là où il le lit ; la fiche complète reste pour le reste.
  tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],['hp','max'],['def'],['dmg']],c);
  chiffres.append(...tuiles);
- const titreComp=document.createElement('h4');titreComp.className='hero-sous';titreComp.textContent='Compétences';
+ /* La fiche ne montre que ce que l'aventurier sait faire : une compétence à zéro
+    n'apprend rien à personne et prenait une case pour rien. Le « + » ouvre la liste
+    entière et donne un point à celle qu'on choisit — c'est ainsi qu'une compétence
+    inédite paraît. */
+ const titreComp=sousTitre('Compétences','Ajouter un point de compétence à '+a.name,ev=>{
+  ev.stopPropagation();
+  choixMenu(ev.currentTarget,skillNames.map((n,k)=>[String(k),n+' +'+a.skills[k]]),v=>{
+   const k=Number(v);if(!(k>=0&&k<skillNames.length))return;
+   a.skills[k]=readStat('skill',a.skills[k]+1,a.skills[k]);
+   majFiche(c,a);rendrePlusTard();scheduleSave();
+   document.dispatchEvent(new Event('amertume-content-changed'))})});
  const comps=document.createElement('div');comps.className='skills';
- // Un bonus de 0 reste une compétence qu'on teste — le dé de base est toujours lancé.
  skillNames.forEach((n,k)=>{
+  if(!a.skills[k])return;
   const puce=document.createElement('span');puce.className='skill-chip'+(a.skills[k]?'':' zero');
   puce.style.setProperty('--tint',SKILL_TINTS[k]);
   const l=document.createElement('span');l.textContent=n;
@@ -578,6 +602,10 @@ function attaqueVive(m,at,poser,poserTexte){const l=document.createElement('div'
   puce(at.useOwnDamage===false?'SANS BONUS':'AVEC BONUS DE DÉGÂTS',at.useOwnDamage===false?'non':'oui',
    [['oui','Ajoute les dégâts du monstre'],['non','Dés seuls']],'Bonus de dégâts',
    v=>at.useOwnDamage=v==='oui'));
+ /* Une attaque spéciale peut poser une affliction sur qui elle touche, comme une arme :
+    l'état choisi ici est infligé dès que des points de vie partent. */
+ bas.append(puce(at.etat?at.etat.toUpperCase():'SANS ÉTAT',at.etat||'',
+   CHOIX_ETAT,'État infligé par l’attaque',v=>at.etat=v));
  const effetDe=()=>at.effectText||Object.entries(at.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', ');
  const note=document.createElement('span');note.className='tag-mini effet';
  note.textContent=effetDe()?effetDe().toUpperCase():'+ EFFET';
@@ -630,7 +658,7 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
   if(cible)champVif(cible,()=>m[cle]||0,v=>{const avant=m[cle];writeStat(m,cle,v);
    if(m[cle]!==avant)poserTexte()},'Modifier '+cle.toUpperCase()+' de '+m.name)});
  chiffres.append(...tuiles);
- const titreAtt=document.createElement('h5');titreAtt.textContent='Attaques';
+ const titreAtt=document.createElement('h5');titreAtt.textContent='Attaques spéciales';
  if(view==='mj'){const ajout=document.createElement('button');ajout.className='ico plus';
   ajout.textContent='+';ajout.title='Ajouter une attaque';
   ajout.setAttribute('aria-label','Ajouter une attaque à '+m.name);
@@ -649,13 +677,22 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
   plus.onclick=e=>{e.stopPropagation();openPicker(m,'gear',()=>poserModele(m,f,true))};
   titreKit.append(plus)}
  const kit=gearPills(m);
+ /* Un adversaire porte des talents comme un aventurier : sa fiche les montre, et le « + »
+    ouvre la même liste que pour la troupe. */
+ const titreTal=document.createElement('h5');titreTal.textContent='Talents';
+ if(view==='mj'){const plus=document.createElement('button');plus.className='ico plus';
+  plus.textContent='+';plus.title='Donner un talent à '+m.name;
+  plus.setAttribute('aria-label','Donner un talent à '+m.name);
+  plus.onclick=ev=>{ev.stopPropagation();openPicker(m,'talent',()=>poserModele(m,f,true))};
+  titreTal.append(plus)}
+ const tal=talentPills(m);
  const titreNotes=document.createElement('h5');titreNotes.textContent='Notes';
  const notes=document.createElement('p');notes.className='best-notes'+(m.notes?'':' muted');
  notes.textContent=m.notes||'—';
  champVif(notes,()=>m.notes||'',v=>{m.notes=String(v).slice(0,600);
   notes.textContent=m.notes||'—';notes.classList.toggle('muted',!m.notes);poserTexte()},
   'Talents, inventaire et notes · Entrée saute une ligne, sortir du champ enregistre','zone');
- f.append(tete,chiffres,titreAtt,listeAtt,titreKit,kit,titreNotes,notes);
+ f.append(tete,chiffres,titreAtt,listeAtt,titreKit,kit,titreTal,tal,titreNotes,notes);
  return f}
 function bestiaryRow(m,i){const rang=document.createElement('div');rang.className='cat-row';
  const pill=document.createElement('button');pill.className='cat-pill k-'+(m.type||'standard');
@@ -1063,18 +1100,26 @@ function fromMonster(m){const a=baseActor(false);Object.assign(a,{template:m.id,
 function openActor(index=null,hero=true,template=null){if(view!=='mj')return;
  if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero;renderActorForm();actorDialog.showModal()}
 function renderActorForm(){const a=draft;const weaponOptions=[['','Aucune'],...catalog.items.filter(w=>w.category==='weapon').map(w=>[w.id,w.name])];const armorOptions=slot=>[['','Aucune'],...catalog.items.filter(w=>w.category==='armor'&&w.slot===slot).map(w=>[w.id,w.name])];
-$('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role,'text',a.hero?'list="classes-jeu" maxlength="120"':'')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum (modifiable)','max',a.max,'number','min="1" max="99999" required')+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="99"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"')+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+field('Peuple','race',a.race,'text','maxlength="40"'):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any"')+field('Endurance','endu',a.endu,'number','min="1" max="999"')+field('Bonus PV','pvBonus',a.pvBonus,'number','min="-9999" max="9999"')+field('Niveau','level',a.level,'number','min="1" max="7"'):'')+'</div>'
+$('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role,'text',a.hero?'list="classes-jeu" maxlength="120"':'')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum','max',a.max,'number','min="1" max="99999" required'+(a.hero?' readonly':''))+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="99"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"')+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+field('Espèce','race',a.race,'text','maxlength="40"'):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any"')+field('Endurance','endu',a.endu,'number','min="1" max="999"')+field('Bonus PV (classe + espèce)','pvBonus',a.pvBonus,'number','min="-9999" max="9999" readonly')+field('Niveau','level',a.level,'number','min="1" max="7"'):'')+'</div>'
   +(a.hero?'<datalist id="classes-jeu">'+(catalog.classes||[]).map(c=>'<option value="'+esc(c.name)+'">').join('')+'</datalist>'
    +'<p class="muted">Classes du jeu : '+(catalog.classes||[]).map(c=>esc(c.name)+' (PV +'+(c.pv||0)+')').join(' · ')+'.</p>':'')
-  +(a.hero?'<h2 class="sous-titre">États</h2><div id="state-picker"></div><p class="muted">Un combattant peut en porter plusieurs. Le clic droit sur son socle les pose aussi, en pleine partie.</p>':'')+'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Alpha'],['boss','Boss']]):'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'')+'</div>'+(a.hero?'<button type="button" id="calculate-pv" style="margin-top:12px">Recalculer PV max : Vie × Endu + bonus</button>':'')+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Équipement<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div class="edit-grid">'+sel('Arme 1','weapon1',a.weapons[0]||'',weaponOptions)+sel('Arme 2','weapon2',a.weapons[1]||'',weaponOptions)+sel('Armure','armor',a.armorId,armorOptions('body'))+sel('Bouclier','shield',a.shieldId,armorOptions('shield'))+'</div><p class="muted" id="equip-summary"></p><p class="muted">Les dés de l’attaque et la DEF découlent de l’équipement. Mains, munitions et effets restent à vérifier à la main. La même arme peut se porter en deux exemplaires : ses dés se cumulent. Ce qui est porté donne une attaque de plus, à choisir en jeu à côté de celles ci-dessous.</p>'+'<div class="divider"></div><h2>Attaques</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p><div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
+  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Alpha'],['boss','Boss']]):'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'')+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Équipement<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div class="edit-grid">'+sel('Arme 1','weapon1',a.weapons[0]||'',weaponOptions)+sel('Arme 2','weapon2',a.weapons[1]||'',weaponOptions)+sel('Armure','armor',a.armorId,armorOptions('body'))+sel('Bouclier','shield',a.shieldId,armorOptions('shield'))+'</div><p class="muted" id="equip-summary"></p><p class="muted">Les dés de l’attaque et la DEF découlent de l’équipement. Mains, munitions et effets restent à vérifier à la main. La même arme peut se porter en deux exemplaires : ses dés se cumulent. Ce qui est porté donne une attaque de plus, à choisir en jeu à côté de celles ci-dessous.</p>'+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
 /* Un adversaire qui porte une armure tire sa DEF d'elle seule : le champ se tait et
    montre ce que l'armure donne. Son chiffre propre reste dessous — readActor ne lit pas
    un champ éteint — et revient tel quel si l'armure s'en va. */
 {const f=$('actor-form').elements,porte=equippedDef(a,catalog.items);
  if(f.def&&!a.hero&&porte!==null){f.def.value=porte;f.def.disabled=true;
   f.def.title='DEF donnée par l’armure portée.'}}
-if(a.hero)$('calculate-pv').onclick=()=>{const f=$('actor-form').elements;f.max.value=Math.max(1,num(f.vie.value,1,999)*num(f.endu.value,1,999)+num(f.pvBonus.value,-9999,9999))};
-$('token-upload').onclick=()=>$('token-file').click();$('token-file').onchange=()=>{const f=$('token-file').files[0];if(f)openImage(f,'token',url=>{draft.image=url;$('draft-image').src=url;$('draft-image').hidden=false})};$('token-remove').onclick=()=>{draft.image=null;$('draft-image').hidden=true};$('add-attack').onclick=()=>{readAttacks();attackDraft.push({name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',useOwnDamage:true,effects:{}});renderAttacks()};renderStatePicker();
+/* Les points de vie d'un aventurier ne se saisissent plus : son bonus vient de sa classe
+   et de son espèce, et son maximum en découle — Vie × Endurance + bonus. Les deux champs
+   se recalculent à chaque frappe dans Vie, Endurance, la classe ou l'espèce. */
+if(a.hero){const f=$('actor-form').elements;
+ const majPV=()=>{const bonus=bonusPV(catalog.classes,f.role.value,f.race.value);
+  f.pvBonus.value=bonus;
+  f.max.value=Math.max(1,num(f.vie.value,1,999)*num(f.endu.value,1,999)+bonus)};
+ ['vie','endu','role','race'].forEach(k=>{if(f[k])f[k].addEventListener('input',majPV)});
+ majPV()}
+$('token-upload').onclick=()=>$('token-file').click();$('token-file').onchange=()=>{const f=$('token-file').files[0];if(f)openImage(f,'token',url=>{draft.image=url;$('draft-image').src=url;$('draft-image').hidden=false})};$('token-remove').onclick=()=>{draft.image=null;$('draft-image').hidden=true};if($('add-attack'))$('add-attack').onclick=()=>{readAttacks();attackDraft.push({name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',useOwnDamage:true,effects:{}});renderAttacks()};renderStatePicker();
 if($('talent-filter')){$('talent-filter').oninput=renderTalentPicker;renderTalentPicker();
  // Créé depuis la fiche, le talent y est aussitôt coché : on l'ajoutait pour cet aventurier.
  $('add-talent').onclick=()=>openTalent(null,t=>{draft.talents=[...new Set([...(draft.talents||[]),t.id])];
@@ -1101,8 +1146,8 @@ function refreshEquip(){const f=$('actor-form').elements,ids=[f.weapon1.value,f.
   +' '+(heros?'DEF de l’équipement : '+d+', champ verrouillé.'
    :porte?'DEF : '+num(f.def.value,0,99)+' à lui, plus '+porte+' d’équipement, soit '+d+'.'
    :'DEF : la sienne, sans équipement pour l’augmenter.')}
-function renderAttacks(){$('attack-edit-list').innerHTML=attackDraft.map((a,i)=>'<div class="attack-card" data-attack="'+i+'"><div class="edit-grid">'+field('Nom','an'+i,a.name,'text','required maxlength="100"')+sel('Portée','ar'+i,a.range,[['contact','Contact'],['distance','Distance']])+sel('Cibles','at'+i,a.targets,[['one','Unique'],['all','Multiples (manuel)']])+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('');habilleDes($('attack-edit-list'));document.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
-function readAttacks(){const f=$('actor-form').elements;attackDraft=attackDraft.map((a,i)=>({...a,name:f['an'+i].value.trim()||'Attaque',range:f['ar'+i].value,targets:f['at'+i].value,useOwnDamage:f['ab'+i].checked,effectText:f['ae'+i].value,dice:diceFrom(keys.map((_,c)=>num(f['ad'+i+'_'+c].value,0,12)))}))}
+function renderAttacks(){if(!$('attack-edit-list'))return;$('attack-edit-list').innerHTML=attackDraft.map((a,i)=>'<div class="attack-card" data-attack="'+i+'"><div class="edit-grid">'+field('Nom','an'+i,a.name,'text','required maxlength="100"')+sel('Portée','ar'+i,a.range,[['contact','Contact'],['distance','Distance']])+sel('Cibles','at'+i,a.targets,[['one','Unique'],['all','Multiples (manuel)']])+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('');habilleDes($('attack-edit-list'));document.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
+function readAttacks(){const f=$('actor-form').elements;if(!f.an0&&attackDraft.length)return;attackDraft=attackDraft.map((a,i)=>({...a,name:f['an'+i].value.trim()||'Attaque',range:f['ar'+i].value,targets:f['at'+i].value,useOwnDamage:f['ab'+i].checked,effectText:f['ae'+i].value,dice:diceFrom(keys.map((_,c)=>num(f['ad'+i+'_'+c].value,0,12)))}))}
 /* Les états de la fiche : la même grille de jetons que le clic droit sur le socle, pour
    qu'on reconnaisse le geste. Ils vivent sur le brouillon jusqu'à l'enregistrement. */
 function renderStatePicker(){const boite=$('state-picker');if(!boite)return;
