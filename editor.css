@@ -511,3 +511,52 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 .pick-ligne.verrou .pick-etat{font-size:13px}
 .effet-fiche .prereq{display:block;margin-top:2px;font:600 12px system-ui;color:#3f7d5e}
 #talent-reglages .exige{margin:4px 0 8px;color:#3f7d5e}
+
+/* ---------- Le dépliant d'un talent ---------- */
+/* Vignette et dépliant, l'un sous l'autre, de la même largeur : le dépliant a une largeur
+   nulle et un minimum de cent pour cent, il prend donc celle de la vignette sans jamais
+   l'élargir. Même teinte et même liseré que la vignette, coins du bas arrondis. */
+.talent-bloc{display:inline-flex;flex-direction:column;align-items:stretch;max-width:100%;vertical-align:top}
+.cat-row .talent-bloc{flex:1;min-width:0}
+.talent-bloc .cat-pill{width:100%}
+.talent-bloc .cat-pill.ouvert{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.talent-detail{width:0;min-width:100%;box-sizing:border-box;margin-top:-1px;padding:8px 11px 9px;
+ border:1px solid #00000026;border-top:1px dashed #00000033;border-radius:0 0 9px 9px;
+ font:13px/1.45 system-ui;color:#2a2118;box-shadow:0 2px 5px #0000002e}
+.talent-detail p{margin:0 0 5px}.talent-detail p:last-child{margin-bottom:0}
+.talent-detail .nature{font:600 10px system-ui;letter-spacing:1.4px;text-transform:uppercase;opacity:.7;margin-bottom:6px}
+.talent-detail b{color:#7a4f1a}
+.talent-detail.t-act{background:#cfdcea;border-left:4px solid #4f7fb5}
+.talent-detail.t-reac{background:#ddd3ea;border-left:4px solid #8b6bb5}
+.talent-detail.t-pass{background:#dcd8cf;border-left:4px solid #8a8474}
+.talent-detail.t-crit{background:#eccfd0;border-left:4px solid #b5525a}
+.talent-detail.t-mait{background:#f0e0bd;border-left:4px solid #c99a3c}
+.talent-detail.t-ame{background:#d3e5cd;border-left:4px solid #5e9a5b}
+/* L'attaque spéciale d'un monstre : l'état infligé devant le nom, les dés au bout. */
+.best-att-tete .etat-inflige{flex:none;width:24px;height:24px;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.best-att-tete .etat-inflige img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+.best-att-tete .etat-inflige.vide{border:1px dashed var(--line-strong,#a99a83);border-radius:50%;color:var(--muted);font:700 14px/1 system-ui;background:transparent}
+
+/* ---------- Les objets et mécanismes ---------- */
+#map-tools [data-tool=objet]{border-color:#9a7a3a;color:#e9c08a}
+#map-tools [data-tool=objet].on{background:#e2b56a;border-color:#e2b56a}
+.sw-objet{background:#4a3d26;border:2px solid #e9c08a;border-radius:50%;width:15px;height:15px}
+.shape.objet{width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#4a3d26;border:2px solid #e9c08a;display:grid;place-items:center;font:bold 14px 'Killam',Georgia;color:#f6e8cf;box-shadow:0 3px 8px #0007;cursor:grab}
+.shape.objet.cache{opacity:.6;border-style:dashed}
+.shape.objet .grip{display:none!important}
+/* À la table : le même socle, doré ; caché, en pointillé — le MJ seul le voit. */
+.token.objet{background:#4a3d26;border-color:#e9c08a;color:#f6e8cf;z-index:1;cursor:pointer}
+.token.objet.cache{opacity:.62;border-style:dashed}
+.token.objet:hover{box-shadow:0 calc(var(--token)*.055) calc(var(--token)*.17) #0008,0 0 0 max(1px,calc(var(--token)*.04)) #ffffffcc}
+.objet-liste{display:flex;flex-direction:column;gap:5px;max-height:38vh;overflow:auto;margin-top:8px}
+.objet-liste h3{margin:8px 0 2px;font:600 11px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.objet-choix{display:flex;align-items:center;gap:9px;cursor:pointer}
+.objet-choix input{width:auto;margin:0;accent-color:var(--accent)}
+.objet-choix .cat-pill{flex:1}
+#objet-vue{width:min(560px,94vw)}
+#objet-vue .objet-desc{font-size:15px;line-height:1.5;white-space:pre-wrap}
+#objet-vue h3{margin:16px 0 8px;font:600 11px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--accent)}
+.objet-ligne{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.objet-ligne .cat-pill{flex:1}.objet-ligne .tresor{flex:1;font:700 15px 'Killam',Georgia,serif;color:#9a7a3a}
+.objet-ligne button{white-space:nowrap}
+.objet-outils{display:flex;gap:8px;flex-wrap:wrap}

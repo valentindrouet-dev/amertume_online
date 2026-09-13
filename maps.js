@@ -9,7 +9,7 @@ const nsSVG='http://www.w3.org/2000/svg';
 // Grille du brouillard : des cellules carrées et fines, pour un bord net qui suit les murs.
 const FOG_COLS=640;let fogVis=null,fogSeen=null,fogSeenSrc=null,fogKey='',fogDim=null,fogMem=null,fogDirty=true;
 function fogDims(m){const r=(m&&m.ratio)||16/9,w=FOG_COLS,h=Math.max(32,Math.round(w/r));return{w,h,n:w*h}}
-const KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire'};
+const KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet'};
 function currentMap(){return maps.find(m=>m.id===currentMapId)||null}
 // L'éditeur et la table étirent l'image de la même façon ; encore faut-il que le cadre
 // ait le bon rapport. On le relit sur l'image pour les cartes d'avant son enregistrement.
@@ -299,7 +299,77 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
  // Un passage secret clos ne perce plus la matière : le mur se peint plein pour tout le
  // monde, MJ compris, et c'est le trait violet — lui seul — qui le lui signale.
  if(formes.murs.contours.length)svg.append(svgMatiere([formes.murs.contours],null,'wall-group'));
- renderPortes()}
+ renderPortes();renderObjets()}
+/* ---------- Les objets à la table ----------
+   Un objet visible est un socle comme un autre, doré, que chacun peut ouvrir : on y lit
+   la description, et un aventurier au contact y prend ce qui s'y trouve. Caché, seul le
+   MJ le voit — en pointillé — jusqu'à ce qu'un test le découvre. Le brouillard ne le
+   cache pas : c'est la description qui dit s'il est dans un recoin. */
+function renderObjets(){const vue=$('map-view'),m=currentMap();
+ vue.querySelectorAll('.token.objet').forEach(t=>t.remove());if(!m)return;
+ (m.objets||[]).forEach((o,i)=>{if(!o.visible&&view!=='mj')return;
+  const t=document.createElement('button');t.className='token objet'+(o.visible?'':' cache');
+  t.textContent=(o.nom||'?')[0].toUpperCase();t.style.left=o.x+'%';t.style.top=o.y+'%';
+  t.style.setProperty('--token',tokenPx()*(SOCLE_TAILLES[o.taille]||1)+'px');
+  t.title=o.nom+(o.visible?'':' · caché — '+skillNames[o.test.comp]+' × '+o.test.reussites);
+  t.setAttribute('aria-label',t.title);
+  t.onclick=e=>{e.stopPropagation();openObjetTable(i)};
+  vue.append(t)})}
+function objetAPortee(a,o){const size=mapSize();if(!a||!size.width)return false;
+ return inContact(a,o,size,tokenOf(a),tokenPx()*(SOCLE_TAILLES[o.taille]||1))&&!wallsBetween(a,o,walls())}
+function noteInventaire(a,texte){a.notes=(a.notes?a.notes.replace(/\s+$/,'')+'\n':'')+'• '+texte}
+/* Prendre : une arme va en main si une main est libre, une armure sur le dos ou au bras si
+   la place est vide ; sinon, et pour tout le reste, une ligne à l'inventaire. */
+function prendreObjet(a,o,it){const k=(o.items||[]).indexOf(it.id);if(k<0)return;
+ let ou;a.weapons??=[];
+ if(it.category==='weapon'){if(a.weapons.length<2){a.weapons.push(it.id);ou='en main'}else{noteInventaire(a,it.name);ou='à l’inventaire, les mains étant prises'}}
+ else if(it.category==='armor'&&it.slot==='shield'){if(!a.shieldId){a.shieldId=it.id;ou='au bras'}else{noteInventaire(a,it.name);ou='à l’inventaire'}}
+ else if(it.category==='armor'){if(!a.armorId){a.armorId=it.id;ou='sur le dos'}else{noteInventaire(a,it.name);ou='à l’inventaire'}}
+ else{noteInventaire(a,it.name);ou='à l’inventaire'}
+ o.items.splice(k,1);if(typeof syncEquipped==='function')syncEquipped(a);
+ log(a.name+' prend '+it.name+' — '+o.nom+' — '+ou+'.');
+ render();saveMaps()}
+function prendreTresor(a,o){if(!o.tresor)return;noteInventaire(a,o.tresor);
+ log(a.name+' ramasse '+o.tresor+' — '+o.nom+'.');o.tresor='';render();saveMaps()}
+/* Le test de découverte : l'aventurier choisi lance sa compétence ; assez de réussites,
+   et l'objet paraît à toute la table. Les dés roulent sur le plateau comme pour un test. */
+function testerObjet(a,o){const jet=skillRoll(a.skills[o.test.comp]||0,d6);
+ rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,a);
+ const trouve=jet.reussites>=o.test.reussites;
+ log(a.name+' · '+skillNames[o.test.comp]+' : '+jet.reussites+' réussite(s) sur '+o.test.reussites+' — '
+  +(trouve?'découvre '+o.nom+' !':'ne trouve rien.'),{dice:true});
+ if(trouve){o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Découvert !','nul');render();saveMaps()}
+ return trouve}
+const objetVue=dialog('objet-vue','Objet','<div id="objet-corps"></div>');
+function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o||(!o.visible&&view!=='mj'))return;
+ objetVue.querySelector('h2').textContent=(o.visible?'':'◌ ')+o.nom;
+ const corps=$('objet-corps');corps.replaceChildren();
+ const p=(cls,txt)=>{const e=document.createElement('p');if(cls)e.className=cls;e.textContent=txt;corps.append(e);return e};
+ p(o.desc?'objet-desc':'muted',o.desc||'Aucune description.');
+ const a=actors[selected],mien=!!(a&&a.hero&&controlled(selected)&&alive(a)),pres=mien&&objetAPortee(a,o);
+ const pourquoi=!mien?'Sélectionne d’abord ton aventurier.':!pres?'Approche ton aventurier : il faut être au contact.':'';
+ const liste=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
+ if(liste.length||o.tresor){const h=document.createElement('h3');h.textContent='À prendre';corps.append(h)}
+ liste.forEach(it=>{const ligne=document.createElement('div');ligne.className='objet-ligne';ligne.append(gearPill(it));
+  const b=document.createElement('button');b.textContent='Prendre';b.disabled=!pres;b.title=pourquoi;
+  b.onclick=()=>{prendreObjet(a,o,it);openObjetTable(i)};ligne.append(b);corps.append(ligne)});
+ if(o.tresor){const ligne=document.createElement('div');ligne.className='objet-ligne';
+  const t=document.createElement('span');t.className='tresor';t.textContent='✦ '+o.tresor;ligne.append(t);
+  const b=document.createElement('button');b.textContent='Ramasser';b.disabled=!pres;b.title=pourquoi;
+  b.onclick=()=>{prendreTresor(a,o);openObjetTable(i)};ligne.append(b);corps.append(ligne)}
+ if(!liste.length&&!o.tresor&&o.desc)p('muted','Rien à prendre ici.');
+ if(pourquoi&&(liste.length||o.tresor))p('muted',pourquoi);
+ if(view==='mj'){const outils=document.createElement('div');outils.className='objet-outils';
+  const h=document.createElement('h3');h.textContent='Maître du jeu';corps.append(h);
+  const voile=document.createElement('button');voile.textContent=o.visible?'Cacher à la troupe':'Révéler à la troupe';
+  voile.onclick=()=>{o.visible=!o.visible;log(o.nom+(o.visible?' est révélé.':' est caché.'));render();saveMaps();openObjetTable(i)};
+  outils.append(voile);
+  if(!o.visible){const test=document.createElement('button');
+   test.textContent='🎲 Test : '+skillNames[o.test.comp]+' × '+o.test.reussites+(a&&a.hero?' pour '+a.name:'');
+   test.disabled=!(a&&a.hero);test.title=a&&a.hero?'Lance la compétence de l’aventurier sélectionné.':'Sélectionne l’aventurier qui cherche.';
+   test.onclick=()=>{objetVue.close();testerObjet(a,o)};outils.append(test)}
+  corps.append(outils)}
+ objetVue.showModal()}
 /* Les portes se dessinent au-dessus du brouillard : une fois découverte, une porte reste
    lisible dans la pénombre. Tant qu'elle est inexplorée, elle n'existe pas. Le calque se
    refait seul, à part de la matière : il suit le socle qu'on tient. */
@@ -396,7 +466,7 @@ mapsPage.innerHTML=
  '<aside class="maps-side panel"><h2>Cartes</h2><div id="map-list"></div>'
  +'<div class="side-actions"><button id="map-new" class="primary">+ Nouvelle carte</button><button id="map-copy">Dupliquer</button><button id="map-del">Supprimer</button></div>'
  +'<div class="divider"></div><h2>Sauvegarde</h2>'
- +'<p class="muted">Un fichier qui contient toutes tes cartes : zones, portes, découpes, zone de départ, adversaires et image de fond. À garder de côté, et à réimporter si la partie saute.</p>'
+ +'<p class="muted">Un fichier qui contient toutes tes cartes : zones, portes, découpes, zone de départ, adversaires, objets et image de fond. À garder de côté, et à réimporter si la partie saute.</p>'
  +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
  +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
  +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label>'
@@ -408,6 +478,7 @@ mapsPage.innerHTML=
  +'<select id="pinceau-taille" aria-label="Grosseur du pinceau" hidden><option value=".3">Pinceau fin</option><option value=".55" selected>Pinceau moyen</option><option value="1">Pinceau large</option></select>'
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
+ +'<button data-tool="objet">+ Objet</button>'
  +'<span class="bar-sep"></span><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
  +'<button id="czoom-in" aria-label="Zoomer">+</button><button id="czoom-reset">Ajuster</button></div>'
@@ -416,6 +487,7 @@ mapsPage.innerHTML=
  +'<button id="shape-lock" hidden>🔒 Verrouiller</button>'
   +'<label id="door-key-label" hidden><input type="checkbox" id="door-key"> Verrouillée — le MJ seul l’ouvre</label>'
   +'<label id="door-secret-label" hidden><input type="checkbox" id="door-secret"> Passage secret — un mur pour la troupe tant qu’il est clos</label>'
+ +'<button id="objet-edit" hidden>✎ Modifier l’objet</button>'
  +'<button id="shape-delete" hidden>Supprimer la forme</button>'+'<div class="divider"></div><h2 id="echelle-titre">Échelle de la carte</h2>'+'<p class="muted" id="echelle-info"></p>'+'<p class="muted">Le socle témoin se promène sur la carte : pose-le contre une porte, un lit, un couloir, et tire son coin jusqu’à ce qu’un combattant y tienne. Il ne paraît jamais en partie.</p>'+'<button id="echelle-reset">Rétablir la mesure d’origine</button>'+'<div class="divider"></div><h2>Légende</h2>'
  +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'+'<li><i class="sw-ligne"></i>Ligne de blocage — la même chose, d’un seul trait fin</li>'
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
@@ -423,7 +495,8 @@ mapsPage.innerHTML=
  +'<li><i class="sw-start"></i>Zone de départ des aventuriers</li>'
  +'<li><i class="sw-wall"></i>Pinceau de blocage — de la matière peinte à main levée</li>'
  +'<li><i class="sw-cut"></i>Pinceau de découpe — la même chose en négatif, il gratte</li>'
- +'<li><i class="sw-foe"></i>Adversaire pré-placé</li></ul><p class="muted" id="map-count"></p>'
+ +'<li><i class="sw-foe"></i>Adversaire pré-placé</li>'
+ +'<li><i class="sw-objet"></i>Objet ou mécanisme — visible, la troupe l’ouvre d’un clic ; caché, un test de compétence le découvre</li></ul><p class="muted" id="map-count"></p>'
  +'<div id="recal-box" hidden><div class="divider"></div><h2>Réparation</h2>'
   +'<p class="muted">Tes zones semblent décalées vers le centre de l’image ? Cette carte a été tracée quand l’éditeur logeait l’image dans un cadre 16/9. Le recalage leur rend leur place ; ⌘Z l’annule.</p>'
   +'<button id="map-recal">Recaler les zones sur l’image</button></div></aside>';
@@ -458,9 +531,11 @@ function supprimeSelection(){const m=mapDraft;if(!m||!mapSel)return false;
  mapSel=null;return true}
 
 /* ---------- Cartes ---------- */
-function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,matiere:[],doors:[],start:null,foes:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
+function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,matiere:[],doors:[],start:null,foes:[],objets:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
 function ensure(m){m.doors??=[];m.foes??=[];m.ratio??=16/9;
+ // Les objets sont nés en v0.144 ; chacun porte un identifiant, la table s'y réfère.
+ m.objets??=[];m.objets.forEach(o=>{o.id||=crypto.randomUUID();o.test??={comp:3,reussites:1};o.items??=[]});
  m.echelle??={x:8,y:8,t:SOCLE_DEFAUT};
  // Une carte d'avant — rectangles, traits, zones de vision — est fondue en matière exacte.
  matiereDe(m);return m}
@@ -510,7 +585,7 @@ function renderMapList(){$('map-list').replaceChildren(...maps.map(m=>{const b=d
  b.className='map-row'+(m===mapDraft?' current':'')+(m.id===currentMapId?' live':'');
  const nom=document.createElement('strong');nom.textContent=m.name;
  const det=document.createElement('small');ensure(m);
- det.textContent=matiereDe(m).length+' zone(s) · '+m.doors.length+' porte(s) · '+m.foes.length+' adversaire(s)';
+ det.textContent=matiereDe(m).length+' zone(s) · '+m.doors.length+' porte(s) · '+m.foes.length+' adversaire(s)'+((m.objets||[]).length?' · '+m.objets.length+' objet(s)':'');
  b.append(nom,det);b.onclick=()=>{mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()};return b}));
  if(mapDraft)$('map-name').value=mapDraft.name;
  $('map-foe-tpl').replaceChildren();catalog.monsters.forEach((m,i)=>$('map-foe-tpl').add(new Option(m.name,String(i))))}
@@ -548,7 +623,8 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  start:'Trace la zone où les aventuriers seront regroupés à l’ouverture de la carte. Une seule par carte.',
  pinceau:'Glisse pour peindre de la matière à main levée, comme au feutre. Le trait se fond dans les zones qu’il touche. Sa grosseur se choisit à côté, en fraction de socle : elle suit donc l’échelle de la carte.',
  gomme:'Glisse pour gratter la matière, comme à la gomme. Ce qui est verrouillé résiste. Sa grosseur se choisit à côté.',
- foe:'Clique pour poser l’adversaire choisi à droite de la barre. Pour le rendre invisible, donne-lui l’état Invisible en jeu.'};
+ foe:'Clique pour poser l’adversaire choisi à droite de la barre. Pour le rendre invisible, donne-lui l’état Invisible en jeu.',
+ objet:'Clique pour poser un objet ou un mécanisme : coffre, levier, trésor. Sa fiche s’ouvre aussitôt — nom, taille, description, objets à prendre, et s’il est caché, le test qui le découvre. Double-clic sur un objet posé pour le modifier.'};
 // Le plan de travail adopte le rapport de la carte et occupe la place disponible.
 function sizeCanvas(){const c=$('map-canvas'),w=document.querySelector('.canvas-wrap');
  const ratio=(mapDraft&&mapDraft.ratio)||16/9,dispoW=w.clientWidth||600,dispoH=w.clientHeight||400;
@@ -582,6 +658,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
   c.append(svg)}
  if(m.start)c.append(shapeEl('start',0,m.start));
  m.foes.forEach((f,i)=>c.append(foeEl(i,f)));
+ m.objets.forEach((o,i)=>c.append(objetEl(i,o)));
  // Le socle témoin par-dessus tout le reste : c'est lui qu'on vient comparer.
  const jauge=echelleEl();if(jauge)c.append(jauge);
  dessineTraits();
@@ -590,6 +667,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  if(masse){c.append(svgSelection(masse));const boite=boiteSelection(masse);if(boite)c.append(boite)}
  const cible=mapSel?shapeAt(mapSel):null;
  const adv=mapSel&&mapSel.kind==='foe'?cible:null,porte=mapSel&&mapSel.kind==='door'?cible:null;
+ const obj=mapSel&&mapSel.kind==='objet'?cible:null;$('objet-edit').hidden=!obj;
  $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
  if(porte){$('door-key').checked=!!porte.keyLocked;$('door-secret').checked=!!porte.secret}
  const verrou=masse?!!masse.verrou:!!(cible&&cible.locked);
@@ -598,9 +676,9 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  /* Une masse ne s'annonce pas en morceaux : elle est « la zone de blocage », qu'elle soit
     née d'un rectangle, d'un coup de pinceau ou de vingt gestes mêlés. */
  $('shape-label').textContent=mapSel?(porte&&porte.secret?'Passage secret':KINDS[mapSel.kind])
-  +(adv?' · '+adv.tpl.name:'')+(verrou?' · verrouillée':''):'Aucune sélection.';
+  +(adv?' · '+adv.tpl.name:'')+(obj?' · '+obj.nom+(obj.visible?'':' · caché'):'')+(verrou?' · verrouillée':''):'Aucune sélection.';
  $('map-count').textContent=matiereDe(m).length+' zone(s) de blocage, '+m.doors.length+' porte(s), '
-  +m.foes.length+' adversaire(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
+  +m.foes.length+' adversaire(s), '+m.objets.length+' objet(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
  $('recal-box').hidden=!recalNeeded();
  refreshHistory()}
 // Portes, zone de départ et aperçus de tracé sont des boîtes ; la matière, elle, est peinte.
@@ -630,6 +708,16 @@ function boiteSelection(p){const b=boitePolygone(p);if(!b)return null;
  el.dataset.kind='matiere';el.dataset.i=mapSel.i;
  if(!p.verrou)['nw','ne','sw','se'].forEach(k=>{const h=document.createElement('span');
   h.className='grip '+k;h.dataset.grip=k;el.append(h)});
+ return el}
+/* Un objet sur le plan de travail : un socle rond, comme un adversaire, à la taille qu'il
+   aura en partie ; caché, il se dessine en pointillé. */
+function objetEl(i,o){const el=document.createElement('div');
+ el.className='shape objet'+(o.visible?'':' cache')+(o.locked?' locked':'')+(mapSel&&mapSel.kind==='objet'&&mapSel.i===i?' selected':'');
+ const t=Math.max(10,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100*(SOCLE_TAILLES[o.taille]||1));
+ el.style.width=el.style.height=t+'px';el.style.margin=(-t/2)+'px 0 0 '+(-t/2)+'px';el.style.fontSize=(t*.47)+'px';
+ el.style.left=o.x+'%';el.style.top=o.y+'%';el.dataset.kind='objet';el.dataset.i=i;
+ el.textContent=(o.nom||'?')[0].toUpperCase();el.title=o.nom+(o.visible?'':' · caché')+' — double-clic pour modifier';
+ el.ondblclick=e=>{e.stopPropagation();openObjet(i)};
  return el}
 function foeEl(i,f){const el=document.createElement('div');
  el.className='shape foe'+(f.locked?' locked':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
@@ -709,10 +797,10 @@ function applyLasso(){const brut=lasso&&lasso.pts;lasso=null;
  pushUndo();retireMatiere(mapDraft,encreDroite([brut])[0]);mapSel=null;
  matiereChangee()}
 function shapeAt(d){const m=mapDraft;if(!m)return null;if(d.kind==='cut'||d.kind==='bloc')return cutRect;
- return d.kind==='start'?m.start:(d.kind==='door'?m.doors:m.foes)[d.i]}
+ return d.kind==='start'?m.start:(d.kind==='door'?m.doors:d.kind==='objet'?m.objets:m.foes)[d.i]}
 function removeShape(d){const m=mapDraft;
  if(d.kind==='start')m.start=null;
- else (d.kind==='door'?m.doors:m.foes).splice(d.i,1)}
+ else (d.kind==='door'?m.doors:d.kind==='objet'?m.objets:m.foes).splice(d.i,1)}
 
 /* ---------- Recalage des cartes tracées avant la v0.23 ---------- */
 // L'éditeur d'alors logeait l'image dans un cadre 16/9 : tout le tracé s'en trouvait
@@ -725,7 +813,7 @@ $('echelle-reset').onclick=()=>{const m=mapDraft;if(!m)return;ensure(m);pushUndo
 $('map-recal').onclick=()=>{const m=mapDraft;if(!recalNeeded())return;
  pushUndo();const remis=s=>uncontain(s,16/9,m.ratio);
  m.matiere=matiereDe(m).map(p=>({...p,anneaux:p.anneaux.map(r=>uncontainPoints(r,16/9,m.ratio))}));
- m.doors=remis(m.doors);m.foes=remis(m.foes);
+ m.doors=remis(m.doors);m.foes=remis(m.foes);m.objets=remis(m.objets||[]);
  if(m.start)m.start=remis([m.start])[0];
  m.fitted=true;renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
 
@@ -771,6 +859,10 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(mapTool==='foe'){const t=catalog.monsters[Number($('map-foe-tpl').value)];if(!t)return;
   pushUndo();mapDraft.foes.push({tpl:structuredClone(t),x:p.x,y:p.y,locked:false});
   mapSel={kind:'foe',i:mapDraft.foes.length-1};renderCanvas();saveMaps();return}
+ /* Un objet se pose d'un clic et sa fiche s'ouvre aussitôt : on le nomme avant de l'oublier. */
+ if(mapTool==='objet'){pushUndo();
+  mapDraft.objets.push({id:crypto.randomUUID(),nom:'Objet',desc:'',x:p.x,y:p.y,taille:'medium',visible:true,items:[],tresor:'',test:{comp:3,reussites:1}});
+  mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
  /* Le tracé : premier clic, origine ; second clic, arrivée. Entre les deux, l'aperçu suit
     le curseur — et Maj le redresse. */
  if(mapTool==='ligne'){
@@ -848,7 +940,7 @@ $('map-canvas').addEventListener('pointermove',e=>{
   renderCanvas();return}
  const cible=shapeAt(d);if(!cible)return;
  if(d.mode==='tourne'){cible.a=anglePoignee(d.centre,p,mapDraft.ratio,e.shiftKey);renderCanvas();return}
- if(d.kind==='foe'){cible.x=p.x;cible.y=p.y}
+ if(d.kind==='foe'||d.kind==='objet'){cible.x=p.x;cible.y=p.y}
  else if(d.mode==='create'||d.mode==='cut'){cible.x=Math.min(d.from.x,p.x);cible.y=Math.min(d.from.y,p.y);cible.w=Math.abs(p.x-d.from.x);cible.h=Math.abs(p.y-d.from.y);
 }
  else if(d.mode==='move'){cible.x=Math.max(0,Math.min(100-d.orig.w,d.orig.x+p.x-d.from.x));cible.y=Math.max(0,Math.min(100-d.orig.h,d.orig.y+p.y-d.from.y))}
@@ -881,11 +973,45 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
   const i=bouge?zoneApres(bouge):-1;
   mapSel=i>=0?{kind:'matiere',i}:null;
   matiereChangee();return}
- const cible=d.kind==='foe'?null:shapeAt(d);
+ const cible=d.kind==='foe'||d.kind==='objet'?null:shapeAt(d);
  if(cible&&!gesteTrace(cible)){removeShape(d);
   // Clic manqué : si une forme était dessous, on la sélectionne et on repasse en Sélection.
   if(d.dessous){mapSel=d.dessous;mapTool='select'}else{mapSel=null;undoStack.pop()}}
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()});
+/* ---------- La fiche d'un objet ---------- */
+const objetDialog=dialog('objet-editor','Objet','<form id="objet-form"><div id="objet-fields"></div><div class="form-actions"><button type="button" id="objet-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
+let objetIndex=null;
+function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!=='mj')return;objetIndex=i;
+ objetDialog.querySelector('h2').textContent=o.nom||'Objet';
+ $('objet-fields').innerHTML='<div class="edit-grid">'
+  +field('Nom','nom',o.nom,'text','required maxlength="60"')
+  +sel('Taille','taille',o.taille,[['small','Petit'],['medium','Moyen'],['large','Grand']])
+  +sel('Visibilité','visible',o.visible?'1':'0',[['1','Visible — la troupe le voit et l’ouvre'],['0','Caché — un test le découvre']])+'</div>'
+  +'<label>Description lue par les joueurs<textarea name="desc" rows="3" maxlength="600">'+esc(o.desc||'')+'</textarea></label>'
+  +'<div class="edit-grid">'+sel('Test de découverte — compétence','comp',String(o.test.comp),skillNames.map((n,k)=>[String(k),n]))
+  +field('Réussites nécessaires','reussites',o.test.reussites,'number','min="1" max="9"')
+  +field('Trésor — en toutes lettres','tresor',o.tresor||'','text','maxlength="200"')+'</div>'
+  +'<h2 class="sous-titre">Objets à prendre</h2><input id="objet-filtre" placeholder="Filtrer l’armurerie…" aria-label="Filtrer l’armurerie"><div id="objet-liste" class="objet-liste"></div>'
+  +'<p class="muted">Ce qui est coché attend dans l’objet : un aventurier au contact le prend d’un clic. Une arme va en main si une main est libre, une armure sur le dos si rien n’y est, le reste à l’inventaire.</p>';
+ const pris=new Set(o.items||[]);
+ const liste=()=>{const q=($('objet-filtre').value||'').trim().toLowerCase(),boite=$('objet-liste');boite.replaceChildren();
+  [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets']].forEach(([cat,titre])=>{
+   const lot=(catalog.items||[]).filter(it=>it&&it.category===cat&&(!q||it.name.toLowerCase().includes(q)));
+   if(!lot.length)return;const h=document.createElement('h3');h.textContent=titre;boite.append(h);
+   lot.forEach(it=>{const l=document.createElement('label');l.className='objet-choix';
+    const c=document.createElement('input');c.type='checkbox';c.checked=pris.has(it.id);
+    c.onchange=()=>{if(c.checked)pris.add(it.id);else pris.delete(it.id)};
+    l.append(c,gearPill(it));boite.append(l)})})};
+ $('objet-filtre').oninput=liste;liste();
+ $('objet-form').onsubmit=e=>{e.preventDefault();const f=$('objet-form').elements;pushUndo();
+  o.nom=f.nom.value.trim().slice(0,60)||'Objet';o.taille=f.taille.value;o.visible=f.visible.value==='1';
+  o.desc=f.desc.value.trim().slice(0,600);o.tresor=f.tresor.value.trim().slice(0,200);
+  o.test={comp:Math.max(0,Math.min(7,Number(f.comp.value)||0)),reussites:Math.max(1,Math.min(9,Number(f.reussites.value)||1))};
+  o.items=[...pris];objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+ $('objet-suppr').onclick=()=>{if(!confirm('Supprimer « '+o.nom+' » ?'))return;pushUndo();
+  m.objets.splice(i,1);mapSel=null;objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+ objetDialog.showModal()}
+$('objet-edit').onclick=()=>{if(mapSel&&mapSel.kind==='objet')openObjet(mapSel.i)};
 $('shape-delete').onclick=()=>{if(!supprimeSelection())return;
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('door-key').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;

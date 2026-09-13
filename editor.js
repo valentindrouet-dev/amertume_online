@@ -12,7 +12,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;return a}
+function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;return a}
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  /* Les classes du jeu viennent avec lui : un catalogue enregistré avant elles les reçoit
@@ -494,10 +494,34 @@ function talentPill(t){const [cle,court,nom]=talentType(t);
  const info=[talentFamily(t),nom,t.effects,t.notes,socle?'Requiert : '+socle:''].filter(Boolean).join(' · ');
  p.title=t.name+' — '+info;
  return p}
+/* Ce que dit un talent, sous sa vignette : sa nature, la phrase que le moteur appliquera
+   — réglages en gras — ou le texte libre de la fiche, les notes, et l'arbre (requiert,
+   débloque). Pas de « appris par » : la vignette est sur la fiche de qui l'a appris. */
+function talentDetail(t){const d=document.createElement('div');d.className='talent-detail t-'+talentType(t)[0];
+ const ligne=(texte,html)=>{if(!texte)return;const p=document.createElement('p');
+  if(html)p.innerHTML=texte;else p.textContent=texte;d.append(p)};
+ const nature=document.createElement('p');nature.className='nature';
+ nature.textContent=talentType(t)[2]+' · niveau '+(t.level||1)+' · '+talentFamily(t);d.append(nature);
+ if(t.effet&&TALENTS_CODES[t.effet])ligne(phraseTalent(t.effet,t.params),true);
+ ligne(t.effects||(t.effet?'':'Effet à préciser.'));
+ ligne(t.notes);
+ const socle=nomPrerequis(t,catalog.talents),branches=talentsDependants(t,catalog.talents);
+ if(socle)ligne('↳ Requiert : '+socle);
+ if(branches.length)ligne('Débloque : '+branches.map(x=>x.name).join(', '));
+ return d}
+/* La vignette et son dépliant, l'un sous l'autre, de la même largeur : le bloc prend la
+   largeur de la vignette, et le dépliant s'y range sans l'élargir. Un clic ouvre, un
+   autre referme. Le sélecteur n'en veut pas — sa ligne entière est déjà un bouton. */
+function talentBloc(t){const bloc=document.createElement('span');bloc.className='talent-bloc';
+ const pill=talentPill(t);pill.classList.add('cliquable');
+ const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev);
+ const detail=talentDetail(t);detail.hidden=true;
+ pill.onclick=e=>{e.stopPropagation();detail.hidden=!detail.hidden;pill.classList.toggle('ouvert',!detail.hidden)};
+ bloc.append(pill,detail);return bloc}
 function talentPills(a){const out=document.createElement('div');out.className='gear-pills';
  const liste=(a.talents||[]).map(talent).filter(Boolean);
  if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v)}
- else liste.forEach(t=>out.append(talentPill(t)));
+ else liste.forEach(t=>out.append(talentBloc(t)));
  return out}
 const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets']];
 function armoryRow(a,i){const rang=document.createElement('div');rang.className='cat-row';
@@ -597,38 +621,21 @@ function attaqueVive(m,at,poser,poserTexte){const l=document.createElement('div'
  const nom=document.createElement('b');nom.textContent=at.name||'Attaque';
  champVif(nom,()=>at.name||'',v=>{const t=String(v).trim().slice(0,100);
   if(t&&t!==at.name){at.name=t;nom.textContent=t;poserTexte()}},'Renommer cette attaque','texte');
- tete.append(nom,desVifs(at,poser));
- const bas=document.createElement('div');bas.className='best-att-bas';
- const puce=(texte,valeur,options,titre,ecrire)=>{const p=document.createElement('span');
-  p.className='tag-mini';p.textContent=texte;
-  return choixVif(p,valeur,options,v=>{ecrire(v);poser()},titre)};
- bas.append(puce(at.range==='distance'?'DISTANCE':'CONTACT',at.range||'contact',
-   [['contact','Contact'],['distance','Distance']],'Portée de l’attaque',v=>at.range=v),
-  puce(at.targets==='all'?'TOUTES CIBLES':'CIBLE UNIQUE',at.targets||'one',
-   [['one','Cible unique'],['all','Toutes cibles (manuel)']],'Cibles de l’attaque',v=>at.targets=v),
-  puce(at.useOwnDamage===false?'SANS BONUS':'AVEC BONUS DE DÉGÂTS',at.useOwnDamage===false?'non':'oui',
-   [['oui','Ajoute les dégâts du monstre'],['non','Dés seuls']],'Bonus de dégâts',
-   v=>at.useOwnDamage=v==='oui'));
- /* Une attaque spéciale peut poser une affliction sur qui elle touche, comme une arme :
-    l'état choisi ici est infligé dès que des points de vie partent. */
- /* « SANS ÉTAT » se lisait comme un constat, pas comme une invite : la puce vide porte
-    donc un « + », comme celle des effets, pour qu'on sache qu'il y a là un choix à faire. */
- bas.append(puce(at.etat?at.etat.toUpperCase():'+ ÉTAT',at.etat||'',
-   CHOIX_ETAT,'État infligé par l’attaque',v=>at.etat=v));
- const effetDe=()=>at.effectText||Object.entries(at.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', ');
- const note=document.createElement('span');note.className='tag-mini effet';
- note.textContent=effetDe()?effetDe().toUpperCase():'+ EFFET';
- champVif(note,effetDe,v=>{at.effectText=String(v).trim().slice(0,160);
-  note.textContent=at.effectText?at.effectText.toUpperCase():'+ EFFET';poserTexte()},
-  'Effets à appliquer à la main','texte');
- bas.append(note);
+ /* L'état que l'attaque inflige se lit devant son nom, comme sur une arme : un jeton, ou
+    un rond vide qui invite à en choisir un. Clic : le menu des états. Rien d'autre sur la
+    ligne — nom, dés, et c'est tout. Portée, cibles et bonus gardent leur valeur enregistrée
+    mais ne se règlent plus ici. */
+ const etat=etatPastille(at.etat)||(()=>{const s=document.createElement('span');s.className='etat-inflige sans-jeton vide';
+  s.textContent='+';s.title='Choisir l’état infligé';return s})();
+ choixVif(etat,at.etat||'',CHOIX_ETAT,v=>{at.etat=v;poser()},'État infligé par l’attaque');
+ tete.append(etat,nom,desVifs(at,poser));
  const retirer=document.createElement('button');retirer.className='ico danger';retirer.textContent='✕';
  retirer.title='Retirer cette attaque';retirer.setAttribute('aria-label','Retirer l’attaque '+(at.name||''));
  retirer.onclick=e=>{e.stopPropagation();
   // Un adversaire peut se retrouver sans aucune attaque : on le laisse faire.
   m.attacks.splice(m.attacks.indexOf(at),1);poser()};
  if(view==='mj')tete.append(retirer);
- l.append(tete,bas);return l}
+ l.append(tete);return l}
 /* La fiche d'un modèle, dépliée sous sa languette : le portrait en grand, tous les
    chiffres, les attaques. Le MJ corrige chaque valeur là où il la lit ; les copies
    déjà posées sur la table suivent le plafond de PV, comme depuis la v0.54. */
@@ -790,25 +797,8 @@ function talentFamilies(){
 // L'encre d'une classe, pour un intitulé de colonne ou une languette.
 function teinteClasse(nom){const c=classeDe(catalog.classes,nom);return c&&c.tint||''}
 function talentRow(t,i){const rang=document.createElement('div');rang.className='cat-row';
- const pill=talentPill(t);pill.classList.add('cliquable');
- const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev);
- const detail=document.createElement('div');detail.className='cat-detail';detail.hidden=true;
- /* La languette dit déjà le nom, le type et le niveau, et la colonne dit la classe :
-    la ligne qui les répétait en tête du dépliant ne servait à rien. */
- const effet=document.createElement('span');effet.className='muted';
- effet.textContent=t.effects||'Effet à préciser.';
- detail.append(effet);
- if(t.notes){const n=document.createElement('span');n.className='muted';n.textContent=t.notes;detail.append(n)}
- /* L'arbre se lit dans les deux sens : ce que ce talent exige, et ce qu'il débloque. */
- const socle=nomPrerequis(t,catalog.talents),branches=talentsDependants(t,catalog.talents);
- if(socle){const s=document.createElement('span');s.className='muted';s.textContent='Requiert : '+socle;detail.append(s)}
- if(branches.length){const d=document.createElement('span');d.className='muted';
-  d.textContent='Débloque : '+branches.map(x=>x.name).join(', ');detail.append(d)}
- const porteurs=actors.filter(a=>(a.talents||[]).includes(t.id)).map(a=>a.name);
- const qui=document.createElement('span');qui.className='muted';
- qui.textContent=porteurs.length?'Appris par : '+porteurs.join(', '):'Appris par personne.';
- detail.append(qui);
- pill.onclick=()=>{detail.hidden=!detail.hidden;pill.classList.toggle('ouvert',!detail.hidden)};
+ // Le même dépliant qu'ailleurs, sous la vignette ; les outils restent à droite.
+ const bloc=talentBloc(t),pill=bloc.querySelector('.cat-pill');
  const outils=document.createElement('span');outils.className='cat-tools';
  const ico=(glyphe,titre,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=glyphe;
   b.title=titre;b.setAttribute('aria-label',titre+' '+t.name);b.onclick=fn;return b};
@@ -822,8 +812,8 @@ function talentRow(t,i){const rang=document.createElement('div');rang.className=
   ico('⧉','Dupliquer',()=>{const copie=structuredClone(t);copie.id=crypto.randomUUID();
    copie.name=t.name+' (copie)';catalog.talents.splice(i+1,0,copie);renderCatalogPages();scheduleSave()}),
   suppr);
- const bloc=document.createElement('div');bloc.className='cat-entry';
- rang.append(pill,outils);bloc.append(rang,detail);return bloc}
+ const entree=document.createElement('div');entree.className='cat-entry';
+ rang.append(bloc,outils);entree.append(rang);return entree}
 /* Ce que le moteur sait appliquer, tel qu'il le déclare : le nom de la mécanique, ce
    qu'elle fait, et les réglages qu'elle attend avec leurs bornes. Rien n'est écrit ici en
    double — tout vient de la déclaration, donc la liste ne peut pas mentir. */

@@ -193,6 +193,33 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  // Un cycle ne bloque rien : tout finit par sortir, une fois.
  const x={id:'x',name:'X',prerequis:'y'},y={id:'y',name:'Y',prerequis:'x'};
  assert.deepEqual(ordonneTalents([x,y],[x,y]).map(([t])=>t.id).sort(),['x','y']);}
+/* Débordement, Rempart, Gardien et son amélioration : déclarés, réglés, et les petites
+   règles pures qui les portent. */
+{const {TALENTS_CODES,paramsTalent,phraseTalent,etatsDuGardien,partDuRempart,porteEffet,ONDE_EXCLUS}=require('./combat.js');
+ assert.equal(TALENTS_CODES.debordement.type,'pass');assert.match(phraseTalent('debordement'),/<b>reliquat de dégâts<\/b>/);
+ assert.equal(TALENTS_CODES.rempart.type,'pass');assert.match(phraseTalent('rempart'),/<b>la moitié<\/b>/);
+ assert.equal(TALENTS_CODES.gardien.type,'mait');assert.match(phraseTalent('gardien'),/devient <b>Gardé<\/b>/);
+ assert.equal(TALENTS_CODES.gardienblindage.type,'ame');assert.equal(TALENTS_CODES.gardienblindage.requiert,'gardien');
+ assert.deepEqual(paramsTalent({effet:'gardienblindage'}),{etat:'Blindage'});
+ assert.match(phraseTalent('gardienblindage',{etat:'Vie'}),/reçoit aussi <b>Vie<\/b>/);
+ // La part du rempart : la moitié arrondie au-dessus, rien sur rien.
+ assert.equal(partDuRempart(5),3);assert.equal(partDuRempart(4),2);assert.equal(partDuRempart(1),1);assert.equal(partDuRempart(0),0);
+ const g=[{code:TALENTS_CODES.gardien,params:{}}];
+ assert.deepEqual(etatsDuGardien(g),['Gardé']);
+ assert.deepEqual(etatsDuGardien([...g,{code:TALENTS_CODES.gardienblindage,params:{etat:'Blindage'}}]),['Gardé','Blindage']);
+ assert.ok(porteEffet(g,'gardien'));assert.ok(!porteEffet(g,'rempart'));
+ // Gardé est un état que l'Onde ne lève pas.
+ assert.ok(ONDE_EXCLUS.includes('Gardé'));}
+/* Les objets de carte : relus au travers de leur déclaration, bornés, jamais illisibles. */
+{const {cleanObjet,cleanMap}=require('./combat.js');
+ const o=cleanObjet({id:'o1',nom:'Coffre',desc:'Un coffre.',x:150,y:-3,taille:'huge',visible:false,items:['e','',7,'a'],tresor:'12 pièces',test:{comp:9,reussites:0}});
+ assert.equal(o.nom,'Coffre');assert.equal(o.x,100);assert.equal(o.y,0);assert.equal(o.taille,'medium');
+ assert.equal(o.visible,false);assert.deepEqual(o.items,['e','a']);assert.equal(o.tresor,'12 pièces');
+ assert.deepEqual(o.test,{comp:7,reussites:1});
+ assert.deepEqual(cleanObjet({}).test,{comp:0,reussites:1});assert.equal(cleanObjet({}).visible,true);assert.equal(cleanObjet({}).nom,'Objet');
+ const m=cleanMap({name:'C',objets:[{nom:'Levier',x:10,y:20,taille:'small',visible:true}]});
+ assert.equal(m.objets.length,1);assert.equal(m.objets[0].taille,'small');
+ assert.deepEqual(cleanMap({name:'C'}).objets,[]);}
 // Deux exemplaires de la même arme : les dés s'additionnent comme deux armes distinctes.
 const epee={id:'e',dice:{white:2,red:1}};
 assert.deepEqual(gearApi.equippedPool({weapons:['e']},[epee]).slice(0,4),[2,0,1,0]);
@@ -818,4 +845,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('547 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('580 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -20,7 +20,7 @@
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armorId','shieldId','states','bleed','cumuls','checks','target','activeAttack',
- 'revealed','hidden','vu','orbes'];
+ 'revealed','hidden','vu','orbes','garde','notes'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode'];
 const TABLE_CLE='amertume-table';
 let tableId=null,salleRef=null,siegesRef=null,enLigne=false,appliquantDistant=false;

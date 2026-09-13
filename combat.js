@@ -252,6 +252,19 @@ function cleanMatiere(list){return (Array.isArray(list)?list:[]).slice(0,600).ma
  if(!anneaux.length)return null;const o={anneaux};if(p&&p.verrou)o.verrou=true;return o}).filter(Boolean)}
 function cleanTraits(list){return (Array.isArray(list)?list:[]).slice(0,600).map(t=>({x1:borne(t&&t.x1),y1:borne(t&&t.y1),
  x2:borne(t&&t.x2),y2:borne(t&&t.y2),e:Math.max(.05,Math.min(5,Number(t&&t.e)||TRAIT_EPAISSEUR))}))}
+/* Un objet posé sur la carte : un coffre, un levier, un trésor sous une dalle. Un nom, une
+   description que la troupe lira, des objets de l'armurerie à prendre, un trésor en
+   toutes lettres ; visible, ou caché derrière un test de compétence — la compétence est
+   un rang de la liste (Perception vaut 3), et il faut tant de réussites. */
+const TAILLES_OBJET=['small','medium','large'];
+function cleanObjet(o){const t=o&&o.test||{};
+ return {id:texte(o&&o.id,40),nom:texte(o&&o.nom,60)||'Objet',desc:texte(o&&o.desc,600),
+  x:borne(o&&o.x,0,100),y:borne(o&&o.y,0,100),taille:TAILLES_OBJET.includes(o&&o.taille)?o.taille:'medium',
+  visible:!(o&&o.visible===false),
+  items:(Array.isArray(o&&o.items)?o.items:[]).filter(x=>typeof x==='string').slice(0,20).map(x=>texte(x,60)).filter(Boolean),
+  tresor:texte(o&&o.tresor,200),
+  test:{comp:Math.max(0,Math.min(7,Math.trunc(Number(t.comp))||0)),
+   reussites:Math.max(1,Math.min(9,Math.trunc(Number(t.reussites))||1))}}}
 function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.image)?m.image:null;
  const ratio=Math.max(.2,Math.min(6,Number(m&&m.ratio)||16/9));
  const matiere=Array.isArray(m&&m.matiere)?cleanMatiere(m.matiere)
@@ -262,6 +275,7 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
   start:cleanRect(m&&m.start),
   foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
    hidden:!!(f&&f.hidden),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
+  objets:(Array.isArray(m&&m.objets)?m.objets:[]).slice(0,200).map(cleanObjet),
   // Le socle témoin voyage avec la carte : c'est lui qui dit à quelle échelle elle est tracée.
   echelle:{x:borne(m&&m.echelle&&m.echelle.x),y:borne(m&&m.echelle&&m.echelle.y),
    t:Math.max(.6,Math.min(40,Number(m&&m.echelle&&m.echelle.t)||100*46/810))}}}
@@ -610,7 +624,7 @@ function setState(a,etat,pose){const reste=statesOf(a).filter(x=>x!==etat);
  return a.states}
 /* Les états et ce qu'ils empêchent ou déclenchent. Tout ce qui se calcule vit ici ;
    l'interface ne fait que déclencher au bon moment et raconter. */
-const ONDE_EXCLUS=['Blindage','Invisible','Onde','Vie','Coma'];
+const ONDE_EXCLUS=['Blindage','Invisible','Onde','Vie','Coma','Gardé'];
 function frozenSolid(a){return hasState(a,'Gel')||hasState(a,'Au sol')}
 function blinded(a){return hasState(a,'Aveugle')}
 /* Quatre états s'empilent : chaque aggravation vaut un cran, et à zéro l'état s'en va.
@@ -708,7 +722,39 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  orbesfeu:{cle:'orbesfeu',nom:'Orbes de feu',type:'ame',requiert:'orbes',
   aide:'Amélioration d’Orbes mystiques : les orbes infligent un état en plus de leurs dégâts.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
-  phrase(p){return 'Les orbes du porteur infligent <b>'+((p&&p.etat)||'Feu')+'</b> en plus de leurs dégâts.'}}};
+  phrase(p){return 'Les orbes du porteur infligent <b>'+((p&&p.etat)||'Feu')+'</b> en plus de leurs dégâts.'}},
+ /* Débordement : un passif. Le coup qui achève un adversaire ne s'arrête pas à lui — ce
+    qu'il n'a pas pu encaisser passe à un autre adversaire à portée de l'attaque. */
+ debordement:{cle:'debordement',nom:'Débordement',type:'pass',
+  aide:'Passif : après avoir achevé un adversaire, le reliquat de dégâts est infligé à un autre adversaire à portée.',
+  params:[],
+  phrase(){return 'Après avoir achevé un adversaire, le <b>reliquat de dégâts</b> est infligé à un autre adversaire à portée.'}},
+ /* Rempart : un passif, le pendant de Garde rapprochée côté troupe. Avant qu'un
+    aventurier au contact ne subisse des dégâts, le porteur en prend la moitié — arrondie
+    au-dessus, c'est lui le mur — et l'aventurier visé subit le reste. */
+ rempart:{cle:'rempart',nom:'Rempart',type:'pass',
+  aide:'Passif : avant qu’un aventurier au contact ne subisse des dégâts, le porteur en subit la moitié à sa place.',
+  params:[],
+  phrase(){return 'Avant qu’un aventurier au contact ne subisse des dégâts, le porteur subit <b>la moitié</b> des dégâts à sa place ; l’aventurier visé subit le reliquat.'}},
+ /* Gardien : une maîtrise. Au début du combat, le porteur désigne un aventurier allié,
+    qui devient Gardé — un état à part, que l'Onde ne lève pas. */
+ gardien:{cle:'gardien',nom:'Gardien',type:'mait',bouton:'🛡 Gardien',
+  aide:'Maîtrise : au début du premier tour de combat, le porteur désigne un aventurier allié, qui devient Gardé.',
+  params:[],
+  phrase(){return 'Au début du premier tour de combat, le porteur désigne un aventurier allié : il devient <b>Gardé</b>.'}},
+ /* Le gardien renforcé : une amélioration au-dessus de Gardien. Le protégé reçoit aussi
+    un état — Blindage, sauf réglage. */
+ gardienblindage:{cle:'gardienblindage',nom:'Gardien : Blindage',type:'ame',requiert:'gardien',
+  aide:'Amélioration de Gardien : l’aventurier désigné reçoit aussi un état, Blindage par défaut.',
+  params:[{cle:'etat',nom:'État reçu en plus',type:'choix',defaut:'Blindage',options:ETATS_JEU.map(e=>[e,e])}],
+  phrase(p){return 'L’aventurier désigné par le gardien reçoit aussi <b>'+((p&&p.etat)||'Blindage')+'</b>.'}}};
+/* Ce que le gardien pose sur son protégé : Gardé, et ce que l'amélioration y ajoute. */
+function etatsDuGardien(portes){const out=['Gardé'];
+ const plus=(portes||[]).find(t=>t&&t.code&&t.code.cle==='gardienblindage');
+ if(plus)out.push(String(plus.params&&plus.params.etat||'Blindage'));return out}
+/* Rempart : la part du mur. La moitié, arrondie au-dessus, et jamais plus que les dégâts. */
+function partDuRempart(degats){const d=Math.max(0,Math.trunc(degats)||0);return Math.ceil(d/2)}
+function porteEffet(portes,cle){return (portes||[]).some(t=>t&&t.code&&t.code.cle===cle)}
 /* Ce que les orbes d'un porteur valent, d'après ce qu'il tient : combien par activation,
    quels dégâts, et l'état que l'amélioration y ajoute. Plusieurs talents d'orbes ne se
    cumulent pas : le plus généreux fait foi. */
@@ -865,8 +911,8 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  if(cle==='vieMax'&&Number.isFinite(a.vie))a.vie=Math.min(a.vie,a.vieMax);
  else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
  return a[cle]}
-const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,degatsOrbe,etatDesOrbes,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,degatsOrbe,etatDesOrbes,etatsDuGardien,partDuRempart,porteEffet,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);
