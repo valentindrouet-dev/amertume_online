@@ -690,7 +690,8 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   params:[{cle:'sbires',nom:'Sbires qui encaissent',type:'nombre',defaut:1,min:1,max:6}],
   phrase(p){const n=Math.max(1,(p&&p.sbires)|0);
    return 'Après avoir subi des dégâts, <b>'+n+'</b> sbire'+(n>1?'s':'')+' allié'+(n>1?'s':'')
-    +' au contact '+(n>1?'subissent':'subit')+' ces dégâts à la place du porteur.'}}};
+    +' au contact '+(n>1?'les encaissent':'les encaisse')+' à la place du porteur, '
+    +'chacun jusqu’à son dernier point de vie ; le reliquat passe au suivant, puis au porteur.'}}};
 /* Combien d'adversaires un combattant peut viser d'une même attaque : un, sauf si un
    talent passif l'augmente. Qui en porte plusieurs garde le plus généreux. */
 function ciblesPermises(portes){let n=1;

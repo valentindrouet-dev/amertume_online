@@ -446,7 +446,8 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 .effet-fiche .type-effet{display:inline-block;min-width:44px;margin-right:8px;text-align:center;
  font:700 10px system-ui;letter-spacing:.8px;color:var(--muted);background:var(--hover);
  border-radius:6px;padding:1px 6px;vertical-align:1px}
-.effet-fiche b{font-weight:700;color:var(--ink)}
+/* Les variables d'un effet sautent aux yeux : grasses et dorées, comme l'accent de la page. */
+.effet-fiche b{font-weight:700;color:var(--accent)}
 /* ---------- Le portrait, rond comme sur la carte ---------- */
 .jeton-rond{flex:none;display:grid;place-items:center;overflow:hidden;border-radius:50%;
  background:#284a40;border:1px solid #9fc8b1;color:#cfe3d6;font-family:'Killam',Georgia,serif}

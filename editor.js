@@ -826,7 +826,6 @@ function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
  const compte=$('biblio-compte');
  if(compte)compte.textContent=codes.length;
  boite.replaceChildren();
- const porteurs=cle=>(catalog.talents||[]).filter(t=>t&&t.effet===cle);
  /* Une ligne par effet : son nom, puis la phrase que le moteur appliquera, réglages en
     gras. La phrase vient du moteur lui-même, jamais recopiée ici. */
  codes.forEach(c=>{const bloc=document.createElement('div');bloc.className='effet-fiche';
@@ -838,9 +837,6 @@ function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
   nom.textContent=(c.monstre?'👹 ':'')+c.nom+' : ';
   const dit=document.createElement('span');dit.innerHTML=phraseTalent(c.cle);
   bloc.append(nom,dit);
-  const pris=porteurs(c.cle);
-  if(pris.length){const tag=document.createElement('span');tag.className='tag';
-   tag.textContent=' — '+pris.map(t=>t.name).join(', ');bloc.append(tag)}
   boite.append(bloc)});
  if(!codes.length){const v=document.createElement('p');v.className='muted';
   v.textContent='Aucun effet câblé pour l’instant.';boite.append(v)}}

@@ -143,8 +143,10 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  assert.deepEqual(paramsTalent({effet:'garderapprochee'}),{sbires:1});
  assert.deepEqual(paramsTalent({effet:'garderapprochee',params:{sbires:'3'}}),{sbires:3});
  assert.deepEqual(paramsTalent({effet:'garderapprochee',params:{sbires:99}}),{sbires:6});
- assert.match(phraseTalent('garderapprochee'),/<b>1<\/b> sbire allié au contact subit ces dégâts/);
- assert.match(phraseTalent('garderapprochee',{sbires:2}),/<b>2<\/b> sbires alliés au contact subissent/);
+ assert.match(phraseTalent('garderapprochee'),/<b>1<\/b> sbire allié au contact les encaisse/);
+ assert.match(phraseTalent('garderapprochee',{sbires:2}),/<b>2<\/b> sbires alliés au contact les encaissent/);
+ // La phrase dit la cascade : chacun jusqu'à son dernier point de vie, puis le reliquat.
+ assert.match(phraseTalent('garderapprochee'),/dernier point de vie ; le reliquat passe au suivant, puis au porteur/);
  assert.ok(libelleTalent('garderapprochee').startsWith('Garde rapprochée : '));}
 // Deux exemplaires de la même arme : les dés s'additionnent comme deux armes distinctes.
 const epee={id:'e',dice:{white:2,red:1}};
@@ -771,4 +773,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('508 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('509 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
