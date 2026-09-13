@@ -121,7 +121,9 @@ function partySees(a){const m=currentMap();
    un adversaire, et non le seul aventurier de ce joueur. Mêmes règles qu'un socle vu. */
 let fogTroupe=null,fogTroupePx=null,fogTroupeKey='';
 function troupeVoit(a){const m=currentMap();
- if(!fogTroupe||!m||m.fogOff)return true;
+ if(!m||m.fogOff)return true;
+ // Une carte dont le brouillard n'est pas encore calculé ne révèle rien : on attend.
+ if(!fogTroupe)return false;
  const size=mapSize();if(!size.width)return true;
  const k=fogKey+'|'+Math.round(size.width);
  if(fogTroupeKey!==k){fogTroupeKey=k;
