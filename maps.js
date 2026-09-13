@@ -75,13 +75,12 @@ let visionCache={cle:'',vues:new Map()};
    les autres, immobiles — quelques millisecondes par tête, à chaque image. */
 let fogMemorise=new WeakSet();
 /* La mémoire d'exploration n'est réemballée en base64 — quelques millisecondes pour
-   deux cent mille cases — qu'une fois le socle relâché : pendant le glissement, la grille
-   suffit, et c'est elle que le brouillard peint. */
+   deux cent mille cases — que lorsqu'elle a changé, et une fois par calcul. */
 let fogAEmballer=false;
 function emballeFog(){if(!fogAEmballer)return;fogAEmballer=false;const m=currentMap();
  if(!m||!fogSeen||!fogDim)return;
  m.fog=fogSeenSrc=packMask(fogSeen,fogDim.n);delete m.seen;scheduleSave()}
-function computeFog(direct){const m=currentMap();
+function computeFog(){const m=currentMap();
  if(!m){fogVis=null;fogTroupe=null;fogSeen=null;fogKey='';fogDim=null;return}
  const d=fogDim=fogDims(m);
  if(!fogSeen||fogSeen.length!==d.n||m.fog!==fogSeenSrc){fogSeen=readSeen(m,d);fogSeenSrc=m.fog;fogDirty=true;fogMemorise=new WeakSet()}
@@ -89,7 +88,7 @@ function computeFog(direct){const m=currentMap();
  // Le calcul ne reprend que si la scène a bougé : héros, portes, zones ou point de vue.
  const cle=m.id+'|'+d.n+'|'+view+'|'+owner+'|'+troupe.map(a=>a.x.toFixed(2)+','+a.y.toFixed(2)).join(';')
   +'|'+geometryKey(m);
- if(cle===fogKey&&fogVis){if(!direct)emballeFog();return}
+ if(cle===fogKey&&fogVis){emballeFog();return}
  fogKey=cle;
  /* Le polygone de vision ne dépend que d'une position et de la géométrie : on le garde par
     position tant que la géométrie ne bouge pas. Quand un seul aventurier se déplace, les
@@ -103,7 +102,7 @@ function computeFog(direct){const m=currentMap();
   fogMemorise.add(p);neuf+=fillPolygonGrid(fogSeen,d.w,d.h,p)}
  fogVis=fogSeers().map(vu);fogTroupe=troupe.map(vu);
  if(neuf){fogDirty=true;fogAEmballer=true}
- if(!direct)emballeFog()}
+ emballeFog()}
 // Le champ de vision en pixels : le socle est un disque, pas un point.
 let fogPx=null,fogPxKey='';
 function visionInPixels(){const size=mapSize(),k=fogKey+'|'+Math.round(size.width);
@@ -394,13 +393,11 @@ function renderPortes(){const portes=$('map-doors'),m=currentMap();portes.replac
    log((d.secret?'Passage secret ':'Porte ')+(i+1)+' '+(d.open?'ouvert'+(d.secret?'':'e'):'referm'+(d.secret?'é':'ée'))+'.');
    render();scheduleSave()};
   portes.append(el)})}
-/* Le brouillard suit le socle qu'on tient : une image par pas, jamais davantage. Il ne
-   se levait qu'au relâchement — d'où l'impression d'un moteur en retard sur la main.
-   Rien n'est repeint si la scène vue n'a pas changé : tenir un adversaire ne coûte rien. */
-let fogDirect=0;
-function fogEnDirect(){if(fogDirect)return;
- fogDirect=requestAnimationFrame(()=>{fogDirect=0;const avant=fogKey;computeFog(true);
-  if(fogKey!==avant){renderFog();renderPortes()}})}
+/* Le brouillard ne se recalcule qu'au relâchement du socle, jamais pendant le geste : le
+   repeindre à chaque image — une toile de quatre mille pixels, floutée — faisait accrocher
+   la main, et c'est la main qui prime. Au relâchement, il est prêt en quelques
+   millisecondes : les portes sont testées par lancer de rayon, la mémoire n'est
+   réemballée qu'une fois. */
 
 /* ---------- Ouverture d'une carte en combat ---------- */
 function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
