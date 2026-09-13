@@ -129,7 +129,23 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  assert.match(phraseTalent('doubleattaque',{cibles:3}),/cibler <b>3<\/b> adversaires/);
  assert.ok(libelleTalent('doubleattaque').startsWith('Double attaque : '));
  // Un passif n'ouvre aucun bouton : il n'a pas d'effet à déclencher.
- assert.ok(!TALENTS_CODES.doubleattaque.bouton);}
+ assert.ok(!TALENTS_CODES.doubleattaque.bouton);
+ /* Chaque effet câblé dit son type : la bibliothèque s'y range, et un talent de monstre
+    porte sa marque. */
+ assert.equal(TALENTS_CODES.lamevent.type,'mait');
+ assert.equal(TALENTS_CODES.doubleattaque.type,'pass');
+ assert.equal(TALENTS_CODES.garderapprochee.type,'pass');
+ assert.ok(TALENTS_CODES.garderapprochee.monstre);
+ assert.ok(!TALENTS_CODES.lamevent.monstre);
+ /* Garde rapprochée : un passif, sans bouton, dont le réglage est le nombre de sbires
+    qui encaissent. */
+ assert.ok(!TALENTS_CODES.garderapprochee.bouton);
+ assert.deepEqual(paramsTalent({effet:'garderapprochee'}),{sbires:1});
+ assert.deepEqual(paramsTalent({effet:'garderapprochee',params:{sbires:'3'}}),{sbires:3});
+ assert.deepEqual(paramsTalent({effet:'garderapprochee',params:{sbires:99}}),{sbires:6});
+ assert.match(phraseTalent('garderapprochee'),/<b>1<\/b> sbire allié au contact subit ces dégâts/);
+ assert.match(phraseTalent('garderapprochee',{sbires:2}),/<b>2<\/b> sbires alliés au contact subissent/);
+ assert.ok(libelleTalent('garderapprochee').startsWith('Garde rapprochée : '));}
 // Deux exemplaires de la même arme : les dés s'additionnent comme deux armes distinctes.
 const epee={id:'e',dice:{white:2,red:1}};
 assert.deepEqual(gearApi.equippedPool({weapons:['e']},[epee]).slice(0,4),[2,0,1,0]);
@@ -755,4 +771,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('496 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('508 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

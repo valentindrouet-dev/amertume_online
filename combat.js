@@ -658,7 +658,7 @@ function cleTalent(nom){return String(nom||'').normalize('NFD').replace(/[\u0300
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Gel',
  'Invisible','Onde','Poison','Saignée','Vie','Affaibli'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
-const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',bouton:'⚡ Lamevent',
+const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:'⚡ Lamevent',
  aide:'En terminant un mouvement : ton bonus de dégâts aux adversaires au contact.',
  params:[{cle:'cibles',nom:'Adversaires frappés',type:'choix',defaut:'1',
    options:[['1','Un'],['2','Deux'],['tous','Tous ceux au contact']]},
@@ -676,11 +676,21 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',bouton:'⚡ Lameven
  /* Double attaque : un passif. Il n'ouvre aucun bouton — rien à déclencher — il élargit
     seulement ce qu'une attaque peut viser. Le ciblage accumule alors jusqu'à ce compte,
     et le bouton d'attaque les frappe toutes, chacune avec son propre jet. */
- doubleattaque:{cle:'doubleattaque',nom:'Double attaque',
+ doubleattaque:{cle:'doubleattaque',nom:'Double attaque',type:'pass',
   aide:'Passif : le porteur vise plusieurs adversaires d’une même attaque.',
   params:[{cle:'cibles',nom:'Adversaires visés',type:'nombre',defaut:2,min:2,max:6}],
   phrase(p){const n=Math.max(2,(p&&p.cibles)|0);
-   return 'Le porteur peut cibler <b>'+n+'</b> adversaires quand il effectue une attaque.'}}};
+   return 'Le porteur peut cibler <b>'+n+'</b> adversaires quand il effectue une attaque.'}},
+ /* Garde rapprochée : un passif, et d'abord un talent de monstre — un chef entouré de sa
+    piétaille. Le coup est détourné avant de porter : les sbires alliés au contact
+    encaissent à sa place, chacun le plein des dégâts. Sans sbire au contact, le porteur
+    encaisse comme n'importe qui. */
+ garderapprochee:{cle:'garderapprochee',nom:'Garde rapprochée',type:'pass',monstre:true,
+  aide:'Passif : des sbires alliés au contact encaissent les dégâts à la place du porteur.',
+  params:[{cle:'sbires',nom:'Sbires qui encaissent',type:'nombre',defaut:1,min:1,max:6}],
+  phrase(p){const n=Math.max(1,(p&&p.sbires)|0);
+   return 'Après avoir subi des dégâts, <b>'+n+'</b> sbire'+(n>1?'s':'')+' allié'+(n>1?'s':'')
+    +' au contact '+(n>1?'subissent':'subit')+' ces dégâts à la place du porteur.'}}};
 /* Combien d'adversaires un combattant peut viser d'une même attaque : un, sauf si un
    talent passif l'augmente. Qui en porte plusieurs garde le plus généreux. */
 function ciblesPermises(portes){let n=1;

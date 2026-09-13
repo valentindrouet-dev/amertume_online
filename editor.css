@@ -441,6 +441,11 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 .effet-fiche{padding:5px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5}
 .effet-fiche:first-child{border-top:0}
 .effet-fiche .nom-effet{font:700 13px system-ui;text-transform:uppercase;letter-spacing:.6px;color:var(--accent)}
+/* Le type d'un effet, en tête de sa ligne : la même languette que sur un talent, assez
+   large pour que les six sigles s'alignent les uns sous les autres. */
+.effet-fiche .type-effet{display:inline-block;min-width:44px;margin-right:8px;text-align:center;
+ font:700 10px system-ui;letter-spacing:.8px;color:var(--muted);background:var(--hover);
+ border-radius:6px;padding:1px 6px;vertical-align:1px}
 .effet-fiche b{font-weight:700;color:var(--ink)}
 /* ---------- Le portrait, rond comme sur la carte ---------- */
 .jeton-rond{flex:none;display:grid;place-items:center;overflow:hidden;border-radius:50%;

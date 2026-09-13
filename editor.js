@@ -814,7 +814,13 @@ function talentRow(t,i){const rang=document.createElement('div');rang.className=
    qu'elle fait, et les réglages qu'elle attend avec leurs bornes. Rien n'est écrit ici en
    double — tout vient de la déclaration, donc la liste ne peut pas mentir. */
 function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
- const codes=Object.values(TALENTS_CODES);
+ /* Rangés par type — Action, Réaction, Passif, Critique, Maîtrise, Amélioration — puis
+    par nom : on lit la bibliothèque comme on lit un arbre de talents. */
+ const codes=Object.values(TALENTS_CODES).map(c=>{
+  const k=TALENT_TYPES.findIndex(t=>t[0]===(c.type||'act'));
+  return [c,k<0?TALENT_TYPES.length:k]})
+  .sort((u,v)=>u[1]-v[1]||String(u[0].nom).localeCompare(String(v[0].nom),'fr'))
+  .map(([c])=>c);
  const compte=$('biblio-compte');
  if(compte)compte.textContent=codes.length;
  boite.replaceChildren();
@@ -822,7 +828,12 @@ function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
  /* Une ligne par effet : son nom, puis la phrase que le moteur appliquera, réglages en
     gras. La phrase vient du moteur lui-même, jamais recopiée ici. */
  codes.forEach(c=>{const bloc=document.createElement('div');bloc.className='effet-fiche';
-  const nom=document.createElement('span');nom.className='nom-effet';nom.textContent=c.nom+' : ';
+  // Le type en tête, comme sur une languette de talent : on voit la famille avant le nom.
+  const type=document.createElement('span');type.className='tag type-effet';
+  type.textContent=talentType(c)[1];bloc.append(type);
+  const nom=document.createElement('span');nom.className='nom-effet';
+  // Un talent de monstre porte sa marque : on ne le cherche pas parmi ceux de la troupe.
+  nom.textContent=(c.monstre?'👹 ':'')+c.nom+' : ';
   const dit=document.createElement('span');dit.innerHTML=phraseTalent(c.cle);
   bloc.append(nom,dit);
   const pris=porteurs(c.cle);
