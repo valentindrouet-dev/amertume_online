@@ -604,7 +604,9 @@ function attaqueVive(m,at,poser,poserTexte){const l=document.createElement('div'
    v=>at.useOwnDamage=v==='oui'));
  /* Une attaque spéciale peut poser une affliction sur qui elle touche, comme une arme :
     l'état choisi ici est infligé dès que des points de vie partent. */
- bas.append(puce(at.etat?at.etat.toUpperCase():'SANS ÉTAT',at.etat||'',
+ /* « SANS ÉTAT » se lisait comme un constat, pas comme une invite : la puce vide porte
+    donc un « + », comme celle des effets, pour qu'on sache qu'il y a là un choix à faire. */
+ bas.append(puce(at.etat?at.etat.toUpperCase():'+ ÉTAT',at.etat||'',
    CHOIX_ETAT,'État infligé par l’attaque',v=>at.etat=v));
  const effetDe=()=>at.effectText||Object.entries(at.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', ');
  const note=document.createElement('span');note.className='tag-mini effet';
@@ -683,7 +685,7 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
  if(view==='mj'){const plus=document.createElement('button');plus.className='ico plus';
   plus.textContent='+';plus.title='Donner un talent à '+m.name;
   plus.setAttribute('aria-label','Donner un talent à '+m.name);
-  plus.onclick=ev=>{ev.stopPropagation();openPicker(m,'talent',()=>poserModele(m,f,true))};
+  plus.onclick=ev=>{ev.stopPropagation();openPicker(m,'talents',()=>poserModele(m,f,true))};
   titreTal.append(plus)}
  const tal=talentPills(m);
  const titreNotes=document.createElement('h5');titreNotes.textContent='Notes';
@@ -1016,8 +1018,12 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
  else{
   a.talents??=[];
   const porte=t=>a.talents.includes(t.id);
+  /* Le rappel du demandeur passait à la trappe ici, alors que la branche de l'équipement
+     l'honore : une fiche de bestiaire ne se redessinait donc pas quand on décochait un
+     talent, et il fallait rafraîchir la page pour le voir partir. */
   const clic=t=>{a.talents=porte(t)?a.talents.filter(x=>x!==t.id):[...a.talents,t.id];
-   renderPicker();renderHeroes();render();scheduleSave()};
+   renderPicker();
+   if(pickerApres)pickerApres();else{renderHeroes();render();scheduleSave()}};
   const sienne=(a.role||'').split('·')[0].trim(),toutes=talentFamilies();
   const tete=[GENERIQUES,...(sienne&&toutes.includes(sienne)?[sienne]:[])];
   for(const famille of [...tete,...toutes.filter(f=>!tete.includes(f))])
