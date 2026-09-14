@@ -239,20 +239,34 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
    garde le bouton neutre, pour qu'on lise le coût sur la forme du bouton. */
 /* Tous les boutons d'Action ont la même hauteur, l'émoji de l'Analyse compris :
    sans hauteur fixe, sa ligne plus haute le faisait dépasser de la rangée. */
-button.btn-action{width:auto;height:36px;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;
- font:700 14px/1 system-ui;background:#3f7bc0;border-color:#3f7bc0;color:#f2f7fc}
-.etat-actions button.btn-action{padding:0 18px}button.btn-action:hover:not(:disabled){background:#4d8bd2;border-color:#4d8bd2}button.btn-action:disabled{background:var(--disabled);border-color:var(--disabled);color:var(--disabled-ink)}
+/* Un bouton d'action se tient comme un dé : une face bombée par un reflet en haut et une
+   ombre en bas, une tranche plus sombre dessous — de la couleur du bouton — et une ombre
+   portée. Au survol il se soulève, au clic il s'enfonce. Chaque nature ne donne que sa
+   couleur (--fond) ; le relief se déduit d'elle. */
+button.btn-action{--fond:#3f7bc0;--bord:color-mix(in srgb,var(--fond) 58%,#000);
+ --relief:inset 0 1px 0 rgba(255,255,255,.42),inset 0 -3px 0 rgba(0,0,0,.2),0 3px 0 var(--bord),0 6px 12px rgba(0,0,0,.28);
+ width:auto;height:38px;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;
+ font:800 14px/1 system-ui;letter-spacing:.2px;color:#f6f9fd;text-shadow:0 1px 1px rgba(0,0,0,.4);
+ background-color:var(--fond);background-image:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.04) 48%,rgba(0,0,0,.12));
+ border:0;border-radius:10px;box-shadow:var(--relief);margin-bottom:3px;
+ transition:transform .09s ease,box-shadow .09s ease,filter .12s ease}
+.etat-actions button.btn-action{padding:0 18px}
+button.btn-action:hover:not(:disabled){filter:brightness(1.08) saturate(1.05);transform:translateY(-1px);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -3px 0 rgba(0,0,0,.2),0 4px 0 var(--bord),0 9px 16px rgba(0,0,0,.32)}
+button.btn-action:active:not(:disabled){filter:brightness(.97);transform:translateY(2px);
+ box-shadow:inset 0 2px 5px rgba(0,0,0,.35),0 1px 0 var(--bord),0 2px 4px rgba(0,0,0,.2)}
+button.btn-action:disabled{--fond:var(--disabled);color:var(--disabled-ink);text-shadow:none;background-image:none;
+ box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);transform:none;filter:none;cursor:default}
+/* Un texte sombre — la Maîtrise dorée — porte un reflet clair plutôt qu'une ombre. */
+button.btn-action.encre-sombre{color:#2a2118;text-shadow:0 1px 0 rgba(255,255,255,.4)}
 /* L'analyse porte le même bouton, en violet : même barre, même dessin, autre nature. */
 /* Un talent tient le même bouton, en vert sombre : ce n'est ni une attaque ni un geste
    du MJ, c'est un pouvoir propre au combattant. */
-button.btn-talent{background:#3f7d5e;border-color:#3f7d5e;color:#f1f9f4}
-button.btn-talent:hover:not(:disabled){background:#4b8f6d;border-color:#4b8f6d}
+button.btn-talent{--fond:#3f7d5e}
 /* Une Réaction ne coûte pas l'Action du tour : elle porte le violet, comme l'Analyse. */
-button.btn-reaction{background:#9b7ad4;border-color:#9b7ad4;color:#fbf8ff}
-button.btn-reaction:hover:not(:disabled){background:#ab8ce0;border-color:#ab8ce0}
-button.btn-analyse{background:#9b7ad4;border-color:#9b7ad4;color:#fbf8ff}
-button.btn-analyse:hover:not(:disabled){background:#ab8ce0;border-color:#ab8ce0}
-button.btn-analyse.on{background:#8264bb;border-color:#8264bb}
+button.btn-reaction{--fond:#9b7ad4}
+button.btn-analyse{--fond:#9b7ad4}
+button.btn-analyse.on{--fond:#8264bb}
 button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .summary,.attack-card #attack-help{margin:0;font-size:13px}
 /* Les cibles à portée, cliquables : plus besoin de viser sur la carte pour en changer. */
 .targets{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:34px}
@@ -391,8 +405,8 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
    plein des Actions et leur hauteur ; celui qui vient de partir garde un liseré clair,
    car c'est sa réserve que la carte affiche. Ce qui empêche de frapper grise le bouton
    et en dit la raison au survol. */
-button.choix-attaque{height:auto;min-width:118px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:7px 14px 6px;
- font:700 13px/1 system-ui;letter-spacing:0;border-radius:7px;text-align:center}
+button.choix-attaque{height:auto;min-width:118px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px 16px 7px;
+ font:800 13px/1 system-ui;letter-spacing:0;border-radius:10px;text-align:center}
 button.choix-attaque .nom{display:block}
 button.choix-attaque .des-bonus{display:inline-flex;align-items:center;gap:5px}
 button.choix-attaque .bonus{font:800 13px/1 system-ui;margin-left:2px}
@@ -400,7 +414,8 @@ button.choix-attaque .dmg-ico{width:18px;height:18px;object-fit:contain;display:
 button.choix-attaque .pips{display:flex;gap:3px}
 button.choix-attaque .die-sq,button.choix-attaque .pips .etat-inflige{flex:0 0 17px;width:17px;height:17px}
 button.choix-attaque .loin{font-size:15px;line-height:1;opacity:.9}
-button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
+button.choix-attaque.on{box-shadow:var(--relief),0 0 0 2px rgba(255,255,255,.75)}
+button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -3px 0 rgba(0,0,0,.2),0 4px 0 var(--bord),0 9px 16px rgba(0,0,0,.32),0 0 0 2px rgba(255,255,255,.75)}
 /* ---------- Corriger une valeur là où elle est lue ---------- */
 /* Ce qui se modifie se voit : un soulignement discret au survol, le champ prend
    exactement la place du chiffre qu'il remplace. */
@@ -572,9 +587,10 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 /* Un bouton de talent porte la couleur de son type, comme sa vignette : doré pour une
    Maîtrise, gris pour un Passif, bleu Action, violet Réaction, rouge Critique, vert
    Amélioration. */
-button.btn-talent.t-act{background:#4f7fb5;border-color:#4f7fb5;color:#f2f7fc}button.btn-talent.t-act:hover:not(:disabled){background:#5d8dc3;border-color:#5d8dc3}
-button.btn-talent.t-reac{background:#8b6bb5;border-color:#8b6bb5;color:#fbf8ff}button.btn-talent.t-reac:hover:not(:disabled){background:#9a7cc4;border-color:#9a7cc4}
-button.btn-talent.t-pass{background:#8a8474;border-color:#8a8474;color:#f6f3ec}button.btn-talent.t-pass:hover:not(:disabled){background:#979283;border-color:#979283}
-button.btn-talent.t-crit{background:#b5525a;border-color:#b5525a;color:#fff3f3}button.btn-talent.t-crit:hover:not(:disabled){background:#c2616a;border-color:#c2616a}
-button.btn-talent.t-mait{background:#c99a3c;border-color:#c99a3c;color:#2a2118}button.btn-talent.t-mait:hover:not(:disabled){background:#d6a94b;border-color:#d6a94b}
-button.btn-talent.t-ame{background:#5e9a5b;border-color:#5e9a5b;color:#f1f9f0}button.btn-talent.t-ame:hover:not(:disabled){background:#6ca869;border-color:#6ca869}
+button.btn-talent.t-act{--fond:#4f7fb5}
+button.btn-talent.t-reac{--fond:#8b6bb5}
+button.btn-talent.t-pass{--fond:#8a8474}
+button.btn-talent.t-crit{--fond:#b5525a}
+button.btn-talent.t-mait{--fond:#d4a341;color:#2a2118;text-shadow:0 1px 0 rgba(255,255,255,.4)}
+button.btn-talent.t-mait:disabled{color:var(--disabled-ink);text-shadow:none}
+button.btn-talent.t-ame{--fond:#5e9a5b}
