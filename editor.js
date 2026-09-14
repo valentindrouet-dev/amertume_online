@@ -72,7 +72,10 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
      pas de bonus, et n'en écrivent pas. */
   const bas=document.createElement('span');bas.className='des-bonus';bas.append(dicePips(at.dice));
   const bonus=hasState(a,'Affaibli')||at.useOwnDamage===false?0:(Number(a.dmg)||0);
-  if(bonus){const plus=document.createElement('b');plus.className='bonus';plus.textContent='+'+bonus;bas.append(plus)}
+  if(bonus){const plus=document.createElement('b');plus.className='bonus';plus.textContent='+'+bonus;
+   // Le jeton des dégâts, après la valeur : on lit « +2 » et l'on voit de quoi il s'agit.
+   const ico=document.createElement('img');ico.className='dmg-ico';ico.src=imgUrl('DEGATS.webp');ico.alt='dégâts';ico.draggable=false;
+   bas.append(plus,ico)}
   b.append(nom,bas);
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
   b.disabled=!!refus;

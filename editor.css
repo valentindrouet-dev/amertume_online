@@ -396,6 +396,7 @@ button.choix-attaque{height:auto;min-width:118px;display:inline-flex;flex-direct
 button.choix-attaque .nom{display:block}
 button.choix-attaque .des-bonus{display:inline-flex;align-items:center;gap:5px}
 button.choix-attaque .bonus{font:800 13px/1 system-ui;margin-left:2px}
+button.choix-attaque .dmg-ico{width:18px;height:18px;object-fit:contain;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
 button.choix-attaque .pips{display:flex;gap:3px}
 button.choix-attaque .die-sq,button.choix-attaque .pips .etat-inflige{flex:0 0 17px;width:17px;height:17px}
 button.choix-attaque .loin{font-size:15px;line-height:1;opacity:.9}
