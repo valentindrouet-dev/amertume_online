@@ -4,11 +4,14 @@
    « faille » ajoute un dé rose : il ne blesse jamais, mais tous les dés qui tombent sur
    sa valeur sortent du compte des dégâts. « bleed » est la saignée de la cible, qui
    s'ajoute à tout coup qui passe. */
-function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0}){
+/* « doublesCritiques » : Destructeur — n'importe quel double vaut un critique, pas
+   seulement deux 6 ; un double 1 reste un échec, il est jugé avant. */
+function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0,doublesCritiques=false}){
  const all=dice.map(d=>[...d]);
  if(!all.length||all.some(([v,c])=>!Number.isInteger(v)||v<1||v>6||![0,1,2,3,5,6].includes(c)))throw Error('Réserve offensive invalide');
  if(all.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false};
- const critical=all.filter(([v])=>v===6).length>=2;
+ const faces={};all.forEach(([v])=>faces[v]=(faces[v]||0)+1);
+ const critical=faces[6]>=2||(doublesCritiques&&Object.keys(faces).some(v=>Number(v)!==1&&faces[v]>=2));
  if(critical){if(!all.some(([,c])=>c===criticalColor))throw Error('Couleur critique absente');let v;let count=0;do{v=roll();all.push([v,criticalColor]);if(++count>=100&&v===6)throw Error('Limite de relances atteinte, attaque non appliquée');}while(v===6)}
  const failleFace=faille?roll():null;
  const counts={};all.forEach(([v])=>counts[v]=(counts[v]||0)+1);
@@ -672,6 +675,8 @@ function cleTalent(nom){return String(nom||'').normalize('NFD').replace(/[\u0300
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Gel',
  'Invisible','Onde','Poison','Saignée','Vie','Affaibli'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
+/* Les dés qu'un orbe peut lancer : ceux de l'attaque, moins le dé de Soin, qui ne frappe pas. */
+const DES_ORBE=[['white','Simple'],['bone','Léger'],['red','Lourd'],['blue','Mystique'],['black','Mortel'],['yellow','Phase']];
 const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:'⚡ Lamevent',
  aide:'En terminant un mouvement : ton bonus de dégâts aux adversaires au contact.',
  params:[{cle:'cibles',nom:'Adversaires frappés',type:'choix',defaut:'1',
@@ -712,10 +717,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  orbes:{cle:'orbes',nom:'Orbes mystiques',type:'mait',bouton:'✦ Orbe',
   aide:'Maîtrise : à chaque activation, le porteur lance gratuitement des orbes sur un adversaire en vue, sans dépenser d’Action.',
   params:[{cle:'orbes',nom:'Orbes par activation',type:'nombre',defaut:1,min:1,max:9},
-   {cle:'degats',nom:'Dégâts par orbe',type:'nombre',defaut:1,min:0,max:99}],
-  phrase(p){const n=Math.max(1,(p&&p.orbes)|0),d=(p&&p.degats)|0;
+   {cle:'des',nom:'Dés par orbe',type:'nombre',defaut:1,min:1,max:6},
+   {cle:'couleur',nom:'Couleur des dés',type:'choix',defaut:'blue',options:DES_ORBE}],
+  phrase(p){const n=Math.max(1,(p&&p.orbes)|0),d=Math.max(1,(p&&p.des)|0);
+   const nom=(DES_ORBE.find(([k])=>k===(p&&p.couleur))||DES_ORBE[3])[1];
    return 'Durant son activation, le porteur peut lancer <b>'+n+'</b> orbe'+(n>1?'s':'')
-    +' qui inflige'+(n>1?'nt':'')+' <b>'+d+'</b> dégâts'+(n>1?' chacun':'')+'.'}},
+    +' qui lance'+(n>1?'nt':'')+' <b>'+d+' dé'+(d>1?'s':'')+' '+nom+(d>1?'s':'')+'</b>'+(n>1?' chacun':'')+'.'}},
  /* Orbes de feu : une amélioration, qui n'existe qu'au-dessus d'Orbes mystiques — l'effet
     l'exige (« requiert »), quel que soit le nom donné au talent socle. Elle ne lance rien
     elle-même : elle change ce que les orbes portent. L'état se règle, Feu par défaut. */
@@ -747,7 +754,13 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  gardienblindage:{cle:'gardienblindage',nom:'Gardien : Blindage',type:'ame',requiert:'gardien',
   aide:'Amélioration de Gardien : l’aventurier désigné reçoit aussi un état, Blindage par défaut.',
   params:[{cle:'etat',nom:'État reçu en plus',type:'choix',defaut:'Blindage',options:ETATS_JEU.map(e=>[e,e])}],
-  phrase(p){return 'L’aventurier désigné par le gardien reçoit aussi <b>'+((p&&p.etat)||'Blindage')+'</b>.'}}};
+  phrase(p){return 'L’aventurier désigné par le gardien reçoit aussi <b>'+((p&&p.etat)||'Blindage')+'</b>.'}},
+ /* Destructeur : une maîtrise. Tous les doubles sont des critiques, pas seulement les
+    6 ; le double 1 reste ce qu'il est, un échec. Rien à régler, rien à déclencher. */
+ destructeur:{cle:'destructeur',nom:'Destructeur',type:'mait',
+  aide:'Maîtrise : le porteur réussit un critique sur tous ses doubles, pas seulement les 6.',
+  params:[],
+  phrase(){return 'Le porteur réalise des <b>critiques sur tous ses doubles</b>, pas seulement les 6 ; un double 1 reste un échec.'}}};
 /* Ce que le gardien pose sur son protégé : Gardé, et ce que l'amélioration y ajoute. */
 function etatsDuGardien(portes){const out=['Gardé'];
  const plus=(portes||[]).find(t=>t&&t.code&&t.code.cle==='gardienblindage');
@@ -760,8 +773,11 @@ function porteEffet(portes,cle){return (portes||[]).some(t=>t&&t.code&&t.code.cl
    cumulent pas : le plus généreux fait foi. */
 function orbesPermis(portes){return (portes||[]).filter(t=>t&&t.code&&t.code.cle==='orbes')
  .reduce((n,t)=>Math.max(n,Math.trunc(t.params&&t.params.orbes)||0),0)}
-function degatsOrbe(portes){return (portes||[]).filter(t=>t&&t.code&&t.code.cle==='orbes')
- .reduce((n,t)=>Math.max(n,Math.trunc(t.params&&t.params.degats)||0),0)}
+/* Les dés d'un orbe : le talent le plus généreux en dés fait foi, avec sa couleur. */
+function desOrbe(portes){const t=(portes||[]).filter(t=>t&&t.code&&t.code.cle==='orbes')
+ .sort((u,v)=>(Math.trunc(v.params&&v.params.des)||0)-(Math.trunc(u.params&&u.params.des)||0))[0];
+ if(!t)return null;const couleur=DES_ORBE.some(([k])=>k===(t.params&&t.params.couleur))?t.params.couleur:'blue';
+ return {n:Math.max(1,Math.trunc(t.params&&t.params.des)||1),couleur,nom:DES_ORBE.find(([k])=>k===couleur)[1]}}
 function etatDesOrbes(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle==='orbesfeu');
  return t?String(t.params&&t.params.etat||'Feu'):''}
 /* ---------- Les prérequis ----------
@@ -913,6 +929,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,degatsOrbe,etatDesOrbes,etatsDuGardien,partDuRempart,porteEffet,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,etatsDuGardien,partDuRempart,porteEffet,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

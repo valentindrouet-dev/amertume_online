@@ -391,8 +391,11 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
    plein des Actions et leur hauteur ; celui qui vient de partir garde un liseré clair,
    car c'est sa réserve que la carte affiche. Ce qui empêche de frapper grise le bouton
    et en dit la raison au survol. */
-button.choix-attaque{height:36px;display:inline-flex;align-items:center;gap:8px;padding:0 14px;
- font:700 13px/1 system-ui;letter-spacing:0;border-radius:7px}
+button.choix-attaque{height:auto;min-width:118px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:7px 14px 6px;
+ font:700 13px/1 system-ui;letter-spacing:0;border-radius:7px;text-align:center}
+button.choix-attaque .nom{display:block}
+button.choix-attaque .des-bonus{display:inline-flex;align-items:center;gap:5px}
+button.choix-attaque .bonus{font:800 13px/1 system-ui;margin-left:2px}
 button.choix-attaque .pips{display:flex;gap:3px}
 button.choix-attaque .die-sq,button.choix-attaque .pips .etat-inflige{flex:0 0 17px;width:17px;height:17px}
 button.choix-attaque .loin{font-size:15px;line-height:1;opacity:.9}
@@ -565,3 +568,12 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 .talent-bloc .modifiable:hover{outline:1px dashed #00000055;outline-offset:2px}
 .talent-detail .champ-vif{width:100%;box-sizing:border-box;font:13px/1.4 system-ui;margin:0 0 5px}
 .cat-pill .champ-vif.texte{max-width:140px;font:700 14px 'Killam',Georgia,serif;padding:2px 6px;margin:0}
+/* Un bouton de talent porte la couleur de son type, comme sa vignette : doré pour une
+   Maîtrise, gris pour un Passif, bleu Action, violet Réaction, rouge Critique, vert
+   Amélioration. */
+button.btn-talent.t-act{background:#4f7fb5;border-color:#4f7fb5;color:#f2f7fc}button.btn-talent.t-act:hover:not(:disabled){background:#5d8dc3;border-color:#5d8dc3}
+button.btn-talent.t-reac{background:#8b6bb5;border-color:#8b6bb5;color:#fbf8ff}button.btn-talent.t-reac:hover:not(:disabled){background:#9a7cc4;border-color:#9a7cc4}
+button.btn-talent.t-pass{background:#8a8474;border-color:#8a8474;color:#f6f3ec}button.btn-talent.t-pass:hover:not(:disabled){background:#979283;border-color:#979283}
+button.btn-talent.t-crit{background:#b5525a;border-color:#b5525a;color:#fff3f3}button.btn-talent.t-crit:hover:not(:disabled){background:#c2616a;border-color:#c2616a}
+button.btn-talent.t-mait{background:#c99a3c;border-color:#c99a3c;color:#2a2118}button.btn-talent.t-mait:hover:not(:disabled){background:#d6a94b;border-color:#d6a94b}
+button.btn-talent.t-ame{background:#5e9a5b;border-color:#5e9a5b;color:#f1f9f0}button.btn-talent.t-ame:hover:not(:disabled){background:#6ca869;border-color:#6ca869}

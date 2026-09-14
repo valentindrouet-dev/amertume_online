@@ -149,15 +149,25 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  assert.match(phraseTalent('garderapprochee'),/dernier point de vie ; le reliquat passe au suivant, puis au porteur/);
  assert.ok(libelleTalent('garderapprochee').startsWith('Garde rapprochée : '));
  /* Orbes mystiques : une maîtrise gratuite, réglée en nombre d'orbes et en dégâts. */
- const {orbesPermis,degatsOrbe,etatDesOrbes}=require('./combat.js');
+ const {orbesPermis,desOrbe,etatDesOrbes,resolveAttack}=require('./combat.js');
  assert.equal(TALENTS_CODES.orbes.type,'mait');
- assert.deepEqual(paramsTalent({effet:'orbes'}),{orbes:1,degats:1});
- assert.deepEqual(paramsTalent({effet:'orbes',params:{orbes:'3',degats:12}}),{orbes:3,degats:12});
- assert.match(phraseTalent('orbes'),/lancer <b>1<\/b> orbe qui inflige <b>1<\/b> dégâts\./);
- assert.match(phraseTalent('orbes',{orbes:3,degats:2}),/<b>3<\/b> orbes qui infligent <b>2<\/b> dégâts chacun/);
- const tenus=[{code:TALENTS_CODES.orbes,params:{orbes:2,degats:3}},{code:TALENTS_CODES.orbes,params:{orbes:1,degats:5}}];
- assert.equal(orbesPermis(tenus),2);assert.equal(degatsOrbe(tenus),5);assert.equal(orbesPermis([]),0);
+ // Un orbe lance des dés, pas des dégâts : tant de dés d'une couleur, Mystique par défaut.
+ assert.deepEqual(paramsTalent({effet:'orbes'}),{orbes:1,des:1,couleur:'blue'});
+ assert.deepEqual(paramsTalent({effet:'orbes',params:{orbes:'3',des:12,couleur:'red'}}),{orbes:3,des:6,couleur:'red'});
+ assert.deepEqual(paramsTalent({effet:'orbes',params:{couleur:'green'}}),{orbes:1,des:1,couleur:'blue'});  // Le Soin ne frappe pas.
+ assert.match(phraseTalent('orbes'),/lancer <b>1<\/b> orbe qui lance <b>1 dé Mystique<\/b>\./);
+ assert.match(phraseTalent('orbes',{orbes:3,des:2,couleur:'red'}),/<b>3<\/b> orbes qui lancent <b>2 dés Lourds<\/b> chacun/);
+ const tenus=[{code:TALENTS_CODES.orbes,params:{orbes:2,des:1,couleur:'blue'}},{code:TALENTS_CODES.orbes,params:{orbes:1,des:3,couleur:'black'}}];
+ assert.equal(orbesPermis(tenus),2);assert.deepEqual(desOrbe(tenus),{n:3,couleur:'black',nom:'Mortel'});assert.equal(desOrbe([]),null);
+ assert.equal(orbesPermis([]),0);
  assert.equal(etatDesOrbes(tenus),'');
+ /* Destructeur : tous les doubles sont des critiques ; le double 1 reste un échec. */
+ assert.equal(TALENTS_CODES.destructeur.type,'mait');assert.match(phraseTalent('destructeur'),/<b>critiques sur tous ses doubles<\/b>/);
+ assert.equal(resolveAttack({dice:[[3,0],[3,0]],def:0,dmg:0,roll:()=>2}).critical,false);
+ const crit=resolveAttack({dice:[[3,0],[3,0]],def:0,dmg:0,roll:()=>2,doublesCritiques:true});
+ assert.equal(crit.critical,true);assert.equal(crit.dice.length,3);
+ assert.equal(resolveAttack({dice:[[1,0],[1,0]],def:0,dmg:0,roll:()=>2,doublesCritiques:true}).failed,true);
+ assert.equal(resolveAttack({dice:[[3,0],[4,0]],def:0,dmg:0,roll:()=>2,doublesCritiques:true}).critical,false);
  /* Orbes de feu : une amélioration, qui exige la mécanique des orbes ; Feu par défaut. */
  assert.equal(TALENTS_CODES.orbesfeu.type,'ame');assert.equal(TALENTS_CODES.orbesfeu.requiert,'orbes');
  assert.deepEqual(paramsTalent({effet:'orbesfeu'}),{etat:'Feu'});
@@ -845,4 +855,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('580 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('588 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

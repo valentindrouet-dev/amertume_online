@@ -65,10 +65,15 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  liste.forEach((at,i)=>{const b=document.createElement('button');
   b.className='btn-action choix-attaque'+(i===(retenu<liste.length?retenu:0)?' on':'');
   const nom=document.createElement('span');nom.className='nom';nom.textContent=at.name||'Attaque';
-  // Les dés partent avec le nom : on choisit son attaque en voyant ce qu'elle lance.
-  b.append(nom,dicePips(at.dice));
   if(at.range==='distance'){const loin=document.createElement('span');loin.className='loin';
-   loin.textContent='⤳';loin.setAttribute('aria-hidden','true');b.append(loin)}
+   loin.textContent=' ⤳';loin.setAttribute('aria-hidden','true');nom.append(loin)}
+  /* Deux lignes, centrées : le nom, puis les dés et le bonus de dégâts — on choisit son
+     attaque en voyant tout ce qu'elle lance. Affaibli ou une attaque « dés seuls » n'ont
+     pas de bonus, et n'en écrivent pas. */
+  const bas=document.createElement('span');bas.className='des-bonus';bas.append(dicePips(at.dice));
+  const bonus=hasState(a,'Affaibli')||at.useOwnDamage===false?0:(Number(a.dmg)||0);
+  if(bonus){const plus=document.createElement('b');plus.className='bonus';plus.textContent='+'+bonus;bas.append(plus)}
+  b.append(nom,bas);
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
   b.disabled=!!refus;
   b.title=refus||('Frapper : '+(at.gear?'attaque avec l’équipement':'attaque de fiche')
@@ -550,7 +555,12 @@ function armoryRow(a,i){const rang=document.createElement('div');rang.className=
  pill.onclick=()=>openItem(i);
  const crayon=document.createElement('button');crayon.className='ico';crayon.textContent='✎';
  crayon.title='Modifier';crayon.setAttribute('aria-label','Modifier '+a.name);crayon.onclick=()=>openItem(i);
- rang.append(pill,crayon);return rang}
+ // Dupliquer : une copie juste en dessous, à corriger — une variante d'arme se fait en un clic.
+ const double=document.createElement('button');double.className='ico';double.textContent='⧉';
+ double.title='Dupliquer';double.setAttribute('aria-label','Dupliquer '+a.name);
+ double.onclick=()=>{const copie=structuredClone(a);copie.id=crypto.randomUUID();copie.name=a.name+' (copie)';
+  catalog.items.splice(i+1,0,copie);renderCatalogPages();scheduleSave()};
+ rang.append(pill,crayon,double);return rang}
 function renderArmory(){const cols=$('armory-cols');if(!cols)return;cols.replaceChildren();
  const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value;
  for(const [key,titre] of ARMORY_COLS){
@@ -802,11 +812,12 @@ function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.rep
 /* Une colonne par classe, les Génériques en tête : c'est ainsi qu'on lit un arbre de
    talents, la souche commune d'abord et les branches ensuite. */
 function talentFamilies(){
- // Les classes du jeu ont leur colonne même vide : c'est là qu'on vient poser leurs talents.
- const noms=[...(catalog.classes||[]).map(c=>c&&c.name).filter(Boolean),
-  ...(catalog.talents||[]).map(talentFamily)];
- const autres=[...new Set(noms)].filter(f=>f!==GENERIQUES).sort((a,b)=>a.localeCompare(b,'fr'));
- return [GENERIQUES,...autres]}
+ /* Les classes du jeu d'abord, dans l'ordre alphabétique — chacune a sa colonne même
+    vide — puis les Génériques, puis les familles d'adversaires. */
+ const classes=[...new Set((catalog.classes||[]).map(c=>c&&c.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
+ const autres=[...new Set((catalog.talents||[]).map(talentFamily))]
+  .filter(f=>f!==GENERIQUES&&!classes.includes(f)).sort((a,b)=>a.localeCompare(b,'fr'));
+ return [...classes,GENERIQUES,...autres]}
 // L'encre d'une classe, pour un intitulé de colonne ou une languette.
 function teinteClasse(nom){const c=classeDe(catalog.classes,nom);return c&&c.tint||''}
 function talentRow(t,i){const rang=document.createElement('div');rang.className='cat-row';
