@@ -67,7 +67,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Même seule, une attaque se montre : on lit ce qui part avant de frapper.
  boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;
  talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque';
-  if(t.teinte)b.style.setProperty('--fond',t.teinte);
+  if(t.teinte){b.style.setProperty('--fond',t.teinte);b.classList.add('teinte-propre')}
   const im=logoTalent({logo:t.logo},'bouton');
   if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);b.classList.add('avec-logo');b.append(logos)}
   const nom=document.createElement('span');nom.className='nom';nom.textContent=t.texte;

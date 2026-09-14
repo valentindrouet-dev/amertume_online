@@ -611,3 +611,5 @@ button.choix-attaque .logo-equip{width:38px;height:38px;margin:0;filter:drop-sha
 #talent-form label:has(> select[name=logo]) select{flex:1;min-width:120px}
 /* Un talent sur la rangée des attaques : la seconde ligne dit sa nature quand il ne lance pas de dés. */
 button.choix-attaque .nature{font:600 11px system-ui;letter-spacing:1.4px;text-transform:uppercase;opacity:.85}
+/* Une teinte propre — le violet des orbes — porte un texte blanc, même sur une Maîtrise. */
+button.btn-talent.teinte-propre{color:#f6f9fd;text-shadow:0 1px 1px rgba(0,0,0,.4)}
