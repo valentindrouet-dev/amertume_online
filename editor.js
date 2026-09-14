@@ -497,13 +497,14 @@ function talentPill(t){const [cle,court,nom]=talentType(t);
 /* Ce que dit un talent, sous sa vignette : sa nature, la phrase que le moteur appliquera
    — réglages en gras — ou le texte libre de la fiche, les notes, et l'arbre (requiert,
    débloque). Pas de « appris par » : la vignette est sur la fiche de qui l'a appris. */
-function talentDetail(t){const d=document.createElement('div');d.className='talent-detail t-'+talentType(t)[0];
- const ligne=(texte,html)=>{if(!texte)return;const p=document.createElement('p');
-  if(html)p.innerHTML=texte;else p.textContent=texte;d.append(p)};
- const nature=document.createElement('p');nature.className='nature';
- nature.textContent=talentType(t)[2]+' · niveau '+(t.level||1)+' · '+talentFamily(t);d.append(nature);
+function talentDetail(t,vif){const d=document.createElement('div');d.className='talent-detail t-'+talentType(t)[0];
+ const ligne=(texte,html)=>{if(!texte)return null;const p=document.createElement('p');
+  if(html)p.innerHTML=texte;else p.textContent=texte;d.append(p);return p};
+ // Ni nature, ni niveau, ni classe ici : la vignette juste au-dessus les dit déjà.
  if(t.effet&&TALENTS_CODES[t.effet])ligne(phraseTalent(t.effet,t.params),true);
- ligne(t.effects||(t.effet?'':'Effet à préciser.'));
+ // Le texte de la fiche se corrige là où on le lit, dans l'onglet Talents.
+ const effet=ligne(t.effects||'Effet à préciser.');
+ if(vif&&effet)champVif(effet,()=>t.effects||'',v=>{t.effects=String(v).trim().slice(0,600);talentCorrige()},'Corriger l’effet — ⌘ Entrée valide','zone');
  ligne(t.notes);
  const socle=nomPrerequis(t,catalog.talents),branches=talentsDependants(t,catalog.talents);
  if(socle)ligne('↳ Requiert : '+socle);
@@ -512,11 +513,23 @@ function talentDetail(t){const d=document.createElement('div');d.className='tale
 /* La vignette et son dépliant, l'un sous l'autre, de la même largeur : le bloc prend la
    largeur de la vignette, et le dépliant s'y range sans l'élargir. Un clic ouvre, un
    autre referme. Le sélecteur n'en veut pas — sa ligne entière est déjà un bouton. */
-function talentBloc(t){const bloc=document.createElement('span');bloc.className='talent-bloc';
+/* Les dépliants ouverts survivent au rendu : corriger un talent redessine l'onglet, et
+   le dépliant qu'on corrigeait doit rester ouvert. */
+const talentsOuverts=new Set();
+function talentCorrige(){renderCatalogPages();render();scheduleSave()}
+/* « vif » : dans l'onglet Talents, le MJ corrige le nom, le type, le niveau et l'effet là
+   où il les lit — comme sur une fiche d'aventurier. La mécanique du moteur et les
+   réglages passent toujours par le crayon. */
+function talentBloc(t,vif){const bloc=document.createElement('span');bloc.className='talent-bloc';
  const pill=talentPill(t);pill.classList.add('cliquable');
  const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev);
- const detail=talentDetail(t);detail.hidden=true;
- pill.onclick=e=>{e.stopPropagation();detail.hidden=!detail.hidden;pill.classList.toggle('ouvert',!detail.hidden)};
+ const detail=talentDetail(t,vif);
+ const ouvert=talentsOuverts.has(t.id);detail.hidden=!ouvert;pill.classList.toggle('ouvert',ouvert);
+ pill.onclick=e=>{e.stopPropagation();const o=detail.hidden;detail.hidden=!o;pill.classList.toggle('ouvert',o);
+  if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};
+ if(vif){champVif(pill.querySelector('.nom'),()=>t.name,v=>{const n=String(v).trim().slice(0,120);if(n){t.name=n;talentCorrige()}},'Renommer ce talent','texte');
+  choixVif(pill.querySelector('.t-badge'),()=>t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]),v=>{t.type=v;talentCorrige()},'Changer le type');
+  champVif([...pill.querySelectorAll('.tag')].find(x=>x.textContent.startsWith('Niv.')),()=>t.level||1,v=>{t.level=num(v,1,20);talentCorrige()},'Changer le niveau (1 à 20)','texte')}
  bloc.append(pill,detail);return bloc}
 function talentPills(a){const out=document.createElement('div');out.className='gear-pills';
  const liste=(a.talents||[]).map(talent).filter(Boolean);
@@ -797,8 +810,8 @@ function talentFamilies(){
 // L'encre d'une classe, pour un intitulé de colonne ou une languette.
 function teinteClasse(nom){const c=classeDe(catalog.classes,nom);return c&&c.tint||''}
 function talentRow(t,i){const rang=document.createElement('div');rang.className='cat-row';
- // Le même dépliant qu'ailleurs, sous la vignette ; les outils restent à droite.
- const bloc=talentBloc(t),pill=bloc.querySelector('.cat-pill');
+ // Le même dépliant qu'ailleurs, sous la vignette — corrigeable ici — les outils à droite.
+ const bloc=talentBloc(t,view==='mj'),pill=bloc.querySelector('.cat-pill');
  const outils=document.createElement('span');outils.className='cat-tools';
  const ico=(glyphe,titre,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=glyphe;
   b.title=titre;b.setAttribute('aria-label',titre+' '+t.name);b.onclick=fn;return b};

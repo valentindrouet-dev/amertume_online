@@ -524,7 +524,6 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
  border:1px solid #00000026;border-top:1px dashed #00000033;border-radius:0 0 9px 9px;
  font:13px/1.45 system-ui;color:#2a2118;box-shadow:0 2px 5px #0000002e}
 .talent-detail p{margin:0 0 5px}.talent-detail p:last-child{margin-bottom:0}
-.talent-detail .nature{font:600 10px system-ui;letter-spacing:1.4px;text-transform:uppercase;opacity:.7;margin-bottom:6px}
 .talent-detail b{color:#7a4f1a}
 .talent-detail.t-act{background:#cfdcea;border-left:4px solid #4f7fb5}
 .talent-detail.t-reac{background:#ddd3ea;border-left:4px solid #8b6bb5}
@@ -560,3 +559,9 @@ button.choix-attaque.on{box-shadow:inset 0 0 0 2px #ffffffa6}
 .objet-ligne .cat-pill{flex:1}.objet-ligne .tresor{flex:1;font:700 15px 'Killam',Georgia,serif;color:#9a7a3a}
 .objet-ligne button{white-space:nowrap}
 .objet-outils{display:flex;gap:8px;flex-wrap:wrap}
+/* Dans l'onglet Talents, ce qui se corrige d'un clic se signale au survol. */
+.talent-bloc .modifiable{cursor:text;border-radius:5px}
+.talent-bloc .t-badge.modifiable{cursor:pointer}
+.talent-bloc .modifiable:hover{outline:1px dashed #00000055;outline-offset:2px}
+.talent-detail .champ-vif{width:100%;box-sizing:border-box;font:13px/1.4 system-ui;margin:0 0 5px}
+.cat-pill .champ-vif.texte{max-width:140px;font:700 14px 'Killam',Georgia,serif;padding:2px 6px;margin:0}
