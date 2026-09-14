@@ -745,9 +745,9 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  /* Gardien : une maîtrise. Au début du combat, le porteur désigne un aventurier allié,
     qui devient Gardé — un état à part, que l'Onde ne lève pas. */
  gardien:{cle:'gardien',nom:'Gardien',type:'mait',bouton:'🛡 Gardien',
-  aide:'Maîtrise : au début du premier tour de combat, le porteur désigne un aventurier allié, qui devient Gardé.',
+  aide:'Maîtrise : au début du premier tour de combat, un aventurier allié au contact devient Gardé — l’allié ciblé, sinon le plus proche.',
   params:[],
-  phrase(){return 'Au début du premier tour de combat, le porteur désigne un aventurier allié : il devient <b>Gardé</b>.'}},
+  phrase(){return 'Au début du premier tour de combat, un aventurier allié <b>au contact</b> devient <b>Gardé</b> : l’allié ciblé, sinon le plus proche.'}},
  /* Le gardien renforcé : une amélioration au-dessus de Gardien. Le protégé reçoit aussi
     un état — Blindage, sauf réglage. */
  gardienblindage:{cle:'gardienblindage',nom:'Gardien : Blindage',type:'ame',requiert:'gardien',
