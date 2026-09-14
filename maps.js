@@ -105,7 +105,12 @@ function computeFog(){const m=currentMap();
  emballeFog()}
 // Le champ de vision en pixels : le socle est un disque, pas un point.
 let fogPx=null,fogPxKey='';
-function visionInPixels(){const size=mapSize(),k=fogKey+'|'+Math.round(size.width);
+/* La clé porte la largeur et la hauteur du cadre : au chargement, le cadre prend la
+   taille de la carte après le premier calcul, et un polygone mis à l'échelle de l'ancien
+   cadre disait la troupe aveugle jusqu'au premier pas — d'où des socles voilés et des
+   adversaires non révélés sous les yeux mêmes d'un aventurier. */
+function cleCadre(size){return fogKey+'|'+Math.round(size.width)+'x'+Math.round(size.height)}
+function visionInPixels(){const size=mapSize(),k=cleCadre(size);
  if(fogPxKey!==k){fogPxKey=k;
   fogPx=(fogVis||[]).map(p=>p.map(([x,y])=>[x/100*size.width,y/100*size.height]))}
  return fogPx}
@@ -125,7 +130,7 @@ function troupeVoit(a){const m=currentMap();
  if(!fogTroupe)return false;
  // Un autre onglet est affiché : la carte n'a pas de largeur, on ne peut rien en dire.
  const size=mapSize();if(!size.width)return false;
- const k=fogKey+'|'+Math.round(size.width);
+ const k=cleCadre(size);
  if(fogTroupeKey!==k){fogTroupeKey=k;
   fogTroupePx=fogTroupe.map(p=>p.map(([x,y])=>[x/100*size.width,y/100*size.height]))}
  const c=[a.x/100*size.width,a.y/100*size.height],r=tokenOf(a)/2;
@@ -156,7 +161,7 @@ function doorProbes(d,marge){const out=[];
 let portesVues={cle:'',vues:new WeakMap(),yeux:[]};
 function doorInSight(d){const size=mapSize();
  if(!size.width||!fogVis)return false;
- const cle=fogKey+'|'+Math.round(size.width);
+ const cle=cleCadre(size);
  if(portesVues.cle!==cle){const formes=activeObstacles();
   portesVues={cle,vues:new WeakMap(),formes,idx:indexMurs(formes),
    yeux:fogSeers().map(a=>({x:a.x,y:a.y,exclues:formesAutour(a,formes)}))}}
@@ -401,6 +406,9 @@ function renderPortes(){const portes=$('map-doors'),m=currentMap();portes.replac
    réemballée qu'une fois. */
 
 /* ---------- Ouverture d'une carte en combat ---------- */
+function modeleActuel(tpl){if(!tpl)return tpl;const liste=catalog.monsters||[];
+ const parId=tpl.id&&liste.find(x=>x&&x.id===tpl.id);if(parId)return parId;
+ const parNom=liste.filter(x=>x&&x.name===tpl.name);return parNom.length===1?parNom[0]:tpl}
 function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  if(!confirm('Ouvrir « '+m.name+' » ? Les aventuriers sont regroupés dans la zone de départ et les adversaires de la scène sont remplacés par ceux de la carte.'))return;
  currentMapId=id;mapImage=m.image||null;measureRatio(m,render);
@@ -413,7 +421,11 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  m.fog=packMask(new Uint8Array(grille.n),grille.n);delete m.seen;m.fogOff=false;fogSeen=null;fogSeenSrc=null;fogKey='';
  /* L'invisibilité ne se pose plus sur la carte : c'est un état, donné en jeu. Une carte
     tracée avant la v0.82 garde ses invisibles, mais sous forme d'état. */
- (m.foes||[]).forEach(f=>{const a=fromMonster(f.tpl);a.x=f.x;a.y=f.y;normalizeActor(a);
+ /* Le modèle a été recopié sur la carte le jour où l'adversaire y a été posé ; le
+    bestiaire, lui, a pu changer depuis. C'est le bestiaire qui fait foi : le modèle du
+    même identifiant, ou à défaut du même nom s'il est seul à le porter. La copie ne
+    sert plus que si le modèle a disparu. */
+ (m.foes||[]).forEach(f=>{const a=fromMonster(modeleActuel(f.tpl));a.x=f.x;a.y=f.y;normalizeActor(a);
   if(f.hidden)setState(a,'Invisible',true);actors.push(a)});
  render();actors.forEach(settleActor);   // Personne ne démarre dans un mur.
 
@@ -1087,7 +1099,9 @@ function refreshGmBar(){const m=currentMap(),mj=view==='mj';
 function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 
 // L'onglet Cartes n'existe que pour le MJ ; passer en vue joueur ramène à la table.
-const renderBeforeMaps=render;render=function(){computeFog();renderBeforeMaps();renderMapLayer();
+/* Le cadre prend la taille de la carte avant tout : ce que le rendu mesure — vue,
+   contact, révélation — se mesure dans le bon cadre dès le premier passage. */
+const renderBeforeMaps=render;render=function(){applyMapRatio();computeFog();renderBeforeMaps();renderMapLayer();
  tabsMJ.forEach(b=>b.hidden=view!=='mj');
  document.body.classList.toggle('vue-joueur',view!=='mj');
  if(view!=='mj'&&PAGES.some(x=>!PAGES_LIBRES.includes(x)&&document.body.classList.contains('page-'+x)))showPage('table',false)};
