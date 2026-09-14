@@ -31,14 +31,16 @@ assert.equal(gearApi.defenseOf({hero:false,def:5,armorId:'a'},[{id:'a',def:0}]),
 const ARSENAL=[{id:'e',name:'Épée',category:'weapon',hands:1,dice:{white:2,red:1}},{id:'d',name:'Dague',category:'weapon',hands:1,dice:{bone:1}},{id:'ar',name:'Armure',category:'armor',def:3}];
 const bete={hero:false,def:4,weapons:['e','e'],armorId:'ar',attacks:[{name:'Griffes',dice:{white:1}},{name:'Souffle',dice:{red:2}}]};
 assert.deepEqual(gearApi.attackChoices(bete,ARSENAL).map(x=>x.name),['Épée ×2','Griffes','Souffle']);
-// Une arme à deux mains s'emploie seule : elle vaut son propre bouton, et une arme à
-// distance l'est toujours — rapière au contact et arc au loin sont deux attaques.
+// Tout ce qu'on porte fait une seule attaque, dés cumulés ; à distance seulement si
+// toutes les armes le sont — la rapière ramène l'arc au contact.
 const PANOPLIE=[{id:'rap',name:'Rapière',category:'weapon',hands:1,dice:{white:2}},
  {id:'arc',name:'Arc court',category:'weapon',ranged:true,dice:{red:2}},
  {id:'dag',name:'Dague',category:'weapon',hands:1,dice:{bone:1}},
  {id:'hache',name:'Hache lourde',category:'weapon',hands:2,dice:{black:3}}];
 assert.deepEqual(gearApi.attackChoices({weapons:['rap','arc'],attacks:[]},PANOPLIE)
- .map(x=>x.name+'/'+x.range),['Rapière/contact','Arc court/distance']);
+ .map(x=>x.name+'/'+x.range),['Rapière + Arc court/contact']);
+assert.deepEqual(gearApi.attackChoices({weapons:['arc'],attacks:[]},PANOPLIE).map(x=>x.name+'/'+x.range),['Arc court/distance']);
+assert.deepEqual(gearApi.gearAttacks({weapons:['rap','arc']},PANOPLIE)[0].dice,{white:2,red:2,bone:0,blue:0,green:0,black:0,yellow:0});
 assert.deepEqual(gearApi.attackChoices({weapons:['rap','dag'],attacks:[]},PANOPLIE)
  .map(x=>x.name),['Rapière + Dague']);                       // Deux mains libres : une seule attaque.
 assert.equal(gearApi.gearAttacks({weapons:['hache','hache']},PANOPLIE)[0].dice.black,6); // Deux exemplaires cumulent.
@@ -226,11 +228,13 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  assert.ok(m,'LOGOS_EQUIPEMENT introuvable');const declares=JSON.parse(m[1].replace(/'/g,'"')).sort();
  const fichiers=fs.readdirSync('img').filter(f=>/^weapon_.*\.png$/.test(f)).map(f=>f.replace(/\.png$/,'')).sort();
  assert.deepEqual(declares,fichiers,'LOGOS_EQUIPEMENT doit lister img/weapon_*.png : '+fichiers.join(', '));
- // Le logo d'une arme suit l'attaque qu'elle forme, une fois par arme, sans les vides.
+ // Un seul bouton, et le logo de la première arme équipée — ou de la première qui en a un.
  const {gearAttacks}=require('./combat.js');
- const items=[{id:'e',name:'Épée',category:'weapon',hands:1,dice:{white:1},logo:'weapon_epee'},{id:'d',name:'Dague',category:'weapon',hands:1,dice:{white:1}},{id:'a',name:'Arc',category:'weapon',hands:2,ranged:true,dice:{white:1},logo:'weapon_epee'}];
+ const items=[{id:'e',name:'Épée',category:'weapon',hands:1,dice:{white:1},logo:'weapon_epee'},{id:'d',name:'Dague',category:'weapon',hands:1,dice:{white:1}},{id:'a',name:'Arc',category:'weapon',hands:2,ranged:true,dice:{white:1},logo:'weapon_arc'}];
  const att=gearAttacks({weapons:['e','e','d','a']},items);
- assert.deepEqual(att.map(x=>x.logos),[['weapon_epee'],['weapon_epee']]);
+ assert.equal(att.length,1);assert.deepEqual(att[0].logos,['weapon_epee']);assert.equal(att[0].dice.white,4);
+ assert.deepEqual(gearAttacks({weapons:['a','e']},items)[0].logos,['weapon_arc']);
+ assert.deepEqual(gearAttacks({weapons:['d','e']},items)[0].logos,['weapon_epee']);
  assert.deepEqual(gearAttacks({weapons:['d']},items)[0].logos,[]);}
 /* Les objets de carte : relus au travers de leur déclaration, bornés, jamais illisibles. */
 {const {cleanObjet,cleanMap}=require('./combat.js');
@@ -867,4 +871,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('592 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('597 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

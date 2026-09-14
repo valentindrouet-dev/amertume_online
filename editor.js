@@ -1381,7 +1381,7 @@ const ETATS_INFLIGES=()=>STATES.filter(e=>e!=='Aucun'&&e!=='Coma');
 /* Les logos d'équipement : les fichiers img/weapon_*.png, sans leur extension. Le site
    est servi tel quel, sans liste de dossier : un logo ajouté dans img/ se déclare ici —
    node checks.cjs le réclame. L'intitulé du menu vient du nom du fichier. */
-const LOGOS_EQUIPEMENT=['weapon_arbalete','weapon_arc','weapon_armure','weapon_bouclier','weapon_epee','weapon_hache'];
+const LOGOS_EQUIPEMENT=['weapon_arbalete','weapon_arc','weapon_armure','weapon_bouclier','weapon_epee','weapon_hache','weapon_lance'];
 const nomLogo=l=>{const n=String(l||'').replace(/^weapon_/,'').replace(/[_-]+/g,' ');return n?n[0].toUpperCase()+n.slice(1):''};
 /* Le logo d'un objet, devant son nom : un jeton, ou rien. Un logo inconnu du dossier ne
    se dessine pas — un objet importé d'ailleurs n'affiche pas une image cassée. */
