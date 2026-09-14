@@ -753,12 +753,13 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Amélioration de Gardien : l’aventurier désigné reçoit aussi un état, Blindage par défaut.',
   params:[{cle:'etat',nom:'État reçu en plus',type:'choix',defaut:'Blindage',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'L’aventurier désigné par le gardien reçoit aussi <b>'+((p&&p.etat)||'Blindage')+'</b>.'}},
- /* Destructeur : une maîtrise. Tous les doubles sont des critiques, pas seulement les
-    6 ; le double 1 reste ce qu'il est, un échec. Rien à régler, rien à déclencher. */
+ /* Destructeur : une maîtrise. Avec une arme au contact, tous les doubles sont des
+    critiques, pas seulement les 6 ; le double 1 reste ce qu'il est, un échec. Ni les
+    armes à distance, ni les orbes, ni les attaques de fiche n'en profitent. */
  destructeur:{cle:'destructeur',nom:'Destructeur',type:'mait',
-  aide:'Maîtrise : le porteur réussit un critique sur tous ses doubles, pas seulement les 6.',
+  aide:'Maîtrise : avec une arme au contact, le porteur réussit un critique sur tous ses doubles, pas seulement les 6.',
   params:[],
-  phrase(){return 'Le porteur réalise des <b>critiques sur tous ses doubles</b>, pas seulement les 6 ; un double 1 reste un échec.'}}};
+  phrase(){return 'Le porteur réalise des <b>critiques sur tous ses doubles</b> avec une <b>arme au contact</b> ; un double 1 reste un échec.'}}};
 /* Ce que le gardien pose sur son protégé : Gardé, et ce que l'amélioration y ajoute. */
 function etatsDuGardien(portes){const out=['Gardé'];
  const plus=(portes||[]).find(t=>t&&t.code&&t.code.cle==='gardienblindage');

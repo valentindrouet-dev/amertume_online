@@ -514,9 +514,9 @@ function talentPill(t){const [cle,court,nom]=talentType(t);
 function talentDetail(t,vif){const d=document.createElement('div');d.className='talent-detail t-'+talentType(t)[0];
  const ligne=(texte,html)=>{if(!texte)return null;const p=document.createElement('p');
   if(html)p.innerHTML=texte;else p.textContent=texte;d.append(p);return p};
- // Ni nature, ni niveau, ni classe ici : la vignette juste au-dessus les dit déjà.
- if(t.effet&&TALENTS_CODES[t.effet])ligne(phraseTalent(t.effet,t.params),true);
- // Le texte de la fiche se corrige là où on le lit, dans l'onglet Talents.
+ /* Ni nature, ni niveau, ni classe — la vignette les dit — ni la phrase du moteur : la
+    bibliothèque des effets la garde. Ici, seul le texte que le MJ a écrit, et il se
+    corrige là où on le lit, dans l'onglet Talents. */
  const effet=ligne(t.effects||'Effet à préciser.');
  if(vif&&effet)champVif(effet,()=>t.effects||'',v=>{t.effects=String(v).trim().slice(0,600);talentCorrige()},'Corriger l’effet — ⌘ Entrée valide','zone');
  ligne(t.notes);
