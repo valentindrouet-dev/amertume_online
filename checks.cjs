@@ -220,6 +220,18 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  assert.ok(porteEffet(g,'gardien'));assert.ok(!porteEffet(g,'rempart'));
  // Gardé est un état que l'Onde ne lève pas.
  assert.ok(ONDE_EXCLUS.includes('Gardé'));}
+/* Les logos d'équipement déclarés dans l'éditeur sont exactement les weapon_*.png du
+   dossier img : un fichier ajouté sans être déclaré n'apparaîtrait dans aucun menu. */
+{const src=fs.readFileSync('editor.js','utf8');const m=src.match(/const LOGOS_EQUIPEMENT=(\[[^\]]*\]);/);
+ assert.ok(m,'LOGOS_EQUIPEMENT introuvable');const declares=JSON.parse(m[1].replace(/'/g,'"')).sort();
+ const fichiers=fs.readdirSync('img').filter(f=>/^weapon_.*\.png$/.test(f)).map(f=>f.replace(/\.png$/,'')).sort();
+ assert.deepEqual(declares,fichiers,'LOGOS_EQUIPEMENT doit lister img/weapon_*.png : '+fichiers.join(', '));
+ // Le logo d'une arme suit l'attaque qu'elle forme, une fois par arme, sans les vides.
+ const {gearAttacks}=require('./combat.js');
+ const items=[{id:'e',name:'Épée',category:'weapon',hands:1,dice:{white:1},logo:'weapon_epee'},{id:'d',name:'Dague',category:'weapon',hands:1,dice:{white:1}},{id:'a',name:'Arc',category:'weapon',hands:2,ranged:true,dice:{white:1},logo:'weapon_epee'}];
+ const att=gearAttacks({weapons:['e','e','d','a']},items);
+ assert.deepEqual(att.map(x=>x.logos),[['weapon_epee'],['weapon_epee']]);
+ assert.deepEqual(gearAttacks({weapons:['d']},items)[0].logos,[]);}
 /* Les objets de carte : relus au travers de leur déclaration, bornés, jamais illisibles. */
 {const {cleanObjet,cleanMap}=require('./combat.js');
  const o=cleanObjet({id:'o1',nom:'Coffre',desc:'Un coffre.',x:150,y:-3,taille:'huge',visible:false,items:['e','',7,'a'],tresor:'12 pièces',test:{comp:9,reussites:0}});
@@ -855,4 +867,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('588 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('592 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

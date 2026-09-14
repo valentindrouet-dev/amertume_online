@@ -64,7 +64,9 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  const retenu=Math.trunc(a.activeAttack)||0;
  liste.forEach((at,i)=>{const b=document.createElement('button');
   b.className='btn-action choix-attaque'+(i===(retenu<liste.length?retenu:0)?' on':'');
-  const nom=document.createElement('span');nom.className='nom';nom.textContent=at.name||'Attaque';
+  const nom=document.createElement('span');nom.className='nom';
+  (at.logos||[]).forEach(l=>{const im=logoEquipement({logo:l},'bouton');if(im)nom.append(im)});
+  nom.append(at.name||'Attaque');
   if(at.range==='distance'){const loin=document.createElement('span');loin.className='loin';
    loin.textContent=' ⤳';loin.setAttribute('aria-hidden','true');nom.append(loin)}
   /* Deux lignes, centrées : le nom, puis les dés et le bonus de dégâts — on choisit son
@@ -462,6 +464,7 @@ function itemColumn(a){return a.category==='armor'?'armor'
    on ne le modifie pas d'un clic. Les dés de l'arme, la DEF de l'armure, l'effet d'un objet. */
 function gearPill(o){const col=itemColumn(o);
  const p=document.createElement('span');p.className='cat-pill k-'+col+(o.consumable?' consommable':'');
+ const logo=logoEquipement(o);if(logo)p.append(logo);
  const nom=document.createElement('span');nom.className='nom';nom.textContent=o.name;p.append(nom);
  if(col==='armor')p.append(shieldBadge(o.def||0));
  else if(col==='object'){const t=document.createElement('span');t.className='tag';
@@ -550,6 +553,7 @@ function armoryRow(a,i){const rang=document.createElement('div');rang.className=
  const pill=document.createElement('button');
  pill.className='cat-pill k-'+col+(a.consumable?' consommable':'');
  pill.title='Modifier '+a.name;
+ const logo=logoEquipement(a);if(logo)pill.append(logo);
  const nom=document.createElement('span');nom.className='nom';nom.textContent=a.name;pill.append(nom);
  if(col==='armor')pill.append(shieldBadge(a.def||0));
  else if(col==='object'){const t=document.createElement('span');t.className='tag';
@@ -1371,6 +1375,15 @@ const ETATS_INFLIGES=()=>STATES.filter(e=>e!=='Aucun'&&e!=='Coma');
    remplissent pas pareil, et c'est bien une seule question qu'on pose. Ce qui est
    enregistré ne change pas pour autant — category reste « weapon », ranged reste un
    booléen — pour que rien de ce qui s'appuie dessus n'ait à bouger. */
+/* Les logos d'équipement : les fichiers img/weapon_*.png, sans leur extension. Le site
+   est servi tel quel, sans liste de dossier : un logo ajouté dans img/ se déclare ici —
+   node checks.cjs le réclame. L'intitulé du menu vient du nom du fichier. */
+const LOGOS_EQUIPEMENT=['weapon_epee'];
+const nomLogo=l=>{const n=String(l||'').replace(/^weapon_/,'').replace(/[_-]+/g,' ');return n?n[0].toUpperCase()+n.slice(1):''};
+/* Le logo d'un objet, devant son nom : un jeton, ou rien. Un logo inconnu du dossier ne
+   se dessine pas — un objet importé d'ailleurs n'affiche pas une image cassée. */
+function logoEquipement(o,cls){const l=o&&o.logo;if(!l||!LOGOS_EQUIPEMENT.includes(l))return null;
+ const im=document.createElement('img');im.className='logo-equip'+(cls?' '+cls:'');im.src=imgUrl(l+'.png');im.alt='';im.draggable=false;return im}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['armor','Armure'],
  ['ammo','Munition'],['object','Objet'],['misc','Divers']];
 /* Ce que le formulaire affiche à l'instant, relu tel quel. Les champs absents ne sont pas
@@ -1378,6 +1391,7 @@ const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['arm
 function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  const c=f.category.value;a.ranged=c==='ranged';a.category=c==='melee'||c==='ranged'?'weapon':c;
  for(const k of ['name','slot','etat','notes'])if(f[k])a[k]=f[k].value.trim();
+ if(f.logo)a.logo=LOGOS_EQUIPEMENT.includes(f.logo.value)?f.logo.value:'';
  for(const k of ['qty','price','hands','def'])if(f[k])a[k]=num(f[k].value,0,999999);
  for(const k of ['usesAmmo','consumable'])if(f[k])a[k]=f[k].checked;
  if(f.itemdie0)a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));
@@ -1390,6 +1404,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
  $('item-fields').innerHTML='<div class="edit-grid">'
   +field('Nom','name',a.name,'text','required maxlength="120"')
   +sel('Catégorie','category',cat,ITEM_CATS)
+  +sel('Logo','logo',a.logo||'',[['','— aucun —'],...LOGOS_EQUIPEMENT.map(l=>[l,nomLogo(l)])])
   +field('Prix','price',a.price||0,'number','min="0" max="999999"')
   +(arme?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="99"')
@@ -1402,6 +1417,11 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +(arme||armure?'':'<label class="field-check"><input name="consumable" type="checkbox" '+(a.consumable?'checked':'')+'>Consommable</label>')
   +'<label>Notes<textarea name="notes">'+esc(a.notes||'')+'</textarea></label>';
  habilleDes($('item-fields'));
+ /* L'aperçu du logo, à côté de son menu : on voit ce qu'on choisit. */
+ const menuLogo=$('item-form').elements.logo;
+ const apercu=document.createElement('img');apercu.className='logo-equip apercu';apercu.alt='';
+ const montre=()=>{const l=menuLogo.value;apercu.hidden=!l;if(l)apercu.src=imgUrl(l+'.png')};
+ menuLogo.parentNode.append(apercu);montre();menuLogo.onchange=montre;
  $('item-form').elements.category.onchange=()=>{itemDraft=itemDepuisForm(itemDraft);dessineItem()}}
 function openItem(i=null,apres=null){itemIndex=i;itemApres=apres;
  itemDraft=i===null?{name:'Nouvel objet',category:'weapon',ranged:false,hands:1,qty:1,price:0,def:0,slot:'body',dice:{},traits:[]}

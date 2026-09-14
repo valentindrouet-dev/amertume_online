@@ -90,15 +90,17 @@ function gearAttacks(actor,items){
  if(!armes.length)return [];
  const groupes=new Map();armes.forEach(w=>groupes.set(w,(groupes.get(w)||0)+1));
  const nommer=(w,n)=>w.name+(n>1?' ×'+n:'');
+ // Le logo de chaque arme, une fois, dans l'ordre des armes : le bouton d'attaque les montre devant le nom.
+ const logos=liste=>[...new Set(liste.map(w=>String(w.logo||'')).filter(Boolean))];
  const sorties=[],uneMain=[];
  groupes.forEach((n,w)=>{const copies=Array(n).fill(w);
   if(weaponHands(w)===2)sorties.push({name:nommer(w,n),dice:poolOfWeapons(copies),
    range:w.ranged===true?'distance':'contact',targets:'one',useOwnDamage:true,effects:{},
-   etats:etatsDArmes(copies),gear:true});
+   etats:etatsDArmes(copies),logos:logos(copies),gear:true});
   else uneMain.push(...copies)});
  if(uneMain.length){const groupesM=new Map();uneMain.forEach(w=>groupesM.set(w,(groupesM.get(w)||0)+1));
   sorties.unshift({name:[...groupesM].map(([w,n])=>nommer(w,n)).join(' + '),dice:poolOfWeapons(uneMain),
-   range:'contact',targets:'one',useOwnDamage:true,effects:{},etats:etatsDArmes(uneMain),gear:true})}
+   range:'contact',targets:'one',useOwnDamage:true,effects:{},etats:etatsDArmes(uneMain),logos:logos(uneMain),gear:true})}
  return sorties}
 /* Une attaque de fiche — l'attaque spéciale d'un adversaire — peut poser une affliction,
    tout comme une arme. On lui donne la même forme qu'à une attaque d'équipement, « etats »,
