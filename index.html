@@ -3,7 +3,7 @@
 <style>
 /* Killam Bold, fournie par Valentin, pour les chiffres des caractéristiques. Sous-ensemble
    latin en WOFF2 : 48 Ko au lieu des 188 Ko du TTF d'origine, qui reste dans fonts/. */
-@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.165') format('woff2');
+@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.167') format('woff2');
  font-weight:700;font-style:normal;font-display:swap}
 
 /* Deux palettes, un seul jeu de règles : tout le décor passe par ces jetons, si bien
@@ -113,8 +113,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 #floaters{position:absolute;inset:0;z-index:4;pointer-events:none}/* Le cadre de sélection : tracé au-dessus de la carte, transparent aux clics. */#marquee{position:absolute;z-index:4;pointer-events:none;border:1.5px dashed var(--accent);background:rgba(160,120,60,.13);border-radius:3px}#marquee[hidden]{display:none}
 .floater{position:absolute;transform:translate(-50%,-50%);font:800 22px 'Killam',Georgia,serif;white-space:nowrap;text-shadow:0 2px 4px #000000b3,0 0 2px #0009}
 .floater.perte{color:#f0705a}.floater.gain{color:#8fd77e}.floater.nul{color:#e7d9b8}.board-die{position:absolute;display:grid;place-items:center;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:11px;font:800 20px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -3px 5px #00000026,0 7px 16px #000000a6;will-change:transform}.board-die.dark{color:#f4f6f2}.journal-title{font:600 13px system-ui;letter-spacing:3px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px}.journal{max-height:330px;display:flex;flex-direction:column;gap:9px;padding-right:4px}.journal li{border:0;padding:0}.j-entry{font-size:14px;line-height:1.45;color:var(--ink)}.j-turn{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:5px 0 1px}.j-turn::before,.j-turn::after{content:"";flex:1;height:1px;background:var(--line)}.j-name{font-weight:700}.j-key{font-weight:700}.j-num{font-weight:800;color:#b4553a}.j-dice{opacity:.7}/* La ligne d'attaque : le logo de l'arme entre les deux noms, les dégâts cliquables, le détail des dés dessous. */.j-attaque .logo-equip{width:20px;height:20px;vertical-align:-5px;margin:0 1px;filter:drop-shadow(0 1px 1px #0006)}.j-degats{font-weight:800;color:#b4553a}.j-degats.cliquable{cursor:pointer;border-bottom:1px dashed currentColor}.j-degats.cliquable:hover,.j-degats.ouvert{color:#d0644a}.j-detail{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:6px}.j-de{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;font:800 12px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -2px 3px #00000026,0 2px 4px #0000005e}.j-de.dark{color:#f4f6f2}.j-plus{font:600 12px system-ui;color:var(--muted)}.j-plus.total{font-weight:800;color:var(--ink)}.j-badge{display:inline-block;background:#8d3b32;color:#ffe6df;border-radius:5px;padding:1px 7px;font-weight:700;font-size:12px}
-</style><link rel="stylesheet" href="./editor.css?v=0.165"></head><body>
-<header><div class="brand">AMERTÜME<span class="ver">v0.165</span></div><div class="view-controls"><label for="view">Vue</label><select id="view"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select><span class="badge">Prototype · partie locale</span></div></header>
+</style><link rel="stylesheet" href="./editor.css?v=0.167"></head><body>
+<header><div class="brand">AMERTÜME<span class="ver">v0.167</span></div><div class="view-controls"><label for="view">Vue</label><select id="view"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select><span class="badge">Prototype · partie locale</span></div></header>
 <div class="intro" hidden><h1>Les ruines du passage</h1></div>
 <main class="layout"><aside class="stack left"><section class="panel"><div class="turn-head"><div class="eyebrow" id="titre-tour">Tour de combat</div><div class="turn" id="round">01</div></div><div id="bloc-activation" hidden><h2>Activation</h2><div class="checks"><label><input type="checkbox" id="action"> Action</label><label><input type="checkbox" id="move"> Mvt / Analyse</label><label><input type="checkbox" id="item"> Objet</label></div><div class="divider"></div></div><div class="turn-actions"><button class="full" id="next">Tour suivant →</button><button id="reset-round" title="Revenir au tour 1 : activations, cibles et analyses remises à zéro, adversaires à nouveau inconnus" aria-label="Réinitialiser le tour de combat">↺</button></div><div class="side-actions"><button id="heal-foes" hidden>Adversaires à 100 %</button></div><div class="side-actions"><button id="start-combat" class="primary" hidden>⚔ Début du combat</button><button id="end-combat" hidden>Fin du combat</button></div></section><section class="panel"><h2>COMBATTANTS</h2><div id="actors"></div><button type="button" class="ajout-camp" id="new-hero" title="Ajouter un aventurier à la scène" aria-label="Ajouter un aventurier à la scène" hidden>+</button><button type="button" class="ajout-camp" id="new-monster" title="Ajouter un adversaire à la scène" aria-label="Ajouter un adversaire à la scène" hidden>+</button></section><section class="panel pv-panel" id="pv-panel" hidden><div class="eyebrow">Points de vie</div><p class="muted" id="pv-cible"></p><div class="hp-buttons" id="hp-buttons"></div></section></aside>
 <div class="stack"><section class="panel map-panel"><div class="mapbar"><div class="mapbar-h1"><strong id="carte-titre">CARTE TACTIQUE</strong><button class="icon-btn toggle-portees" id="portees">◎ Portées</button><div class="zoom-bar"><button id="zoom-out" aria-label="Dézoomer">−</button><span id="zoom-label">100 %</span><button id="zoom-in" aria-label="Zoomer">+</button><button id="zoom-reset">Ajuster</button></div></div><div class="mapbar-h2"><label class="file"><button id="upload">Importer une carte</button><input class="sr" type="file" id="mapfile" accept="image/png,image/jpeg,image/webp"></label><button class="icon-btn" id="reset-map" title="Retirer la carte de fond" aria-label="Retirer la carte de fond">🗑</button></div></div><div class="map" id="map" aria-label="Carte tactique. Déplacez les tokens par glissement ou avec les flèches du clavier."><div id="map-view"><svg class="plan" viewBox="0 0 800 480" preserveAspectRatio="none" aria-hidden="true"><g class="walls" fill="#172326" stroke="#57635c" stroke-width="3"></g><g fill="#9da797" font-family="system-ui" font-size="12" letter-spacing="4"><text x="305" y="130">COUR INTÉRIEURE</text><text x="318" y="462">ENTRÉE SUD</text></g></svg><svg id="map-shapes" aria-hidden="true"></svg><canvas id="fog" aria-hidden="true"></canvas><svg id="map-doors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><div id="contact-ring" hidden></div><svg id="aim" aria-hidden="true"><defs><marker id="shot-ok" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#3f7bc0"/></marker><marker id="shot-no" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#e0483c"/></marker><marker id="shot-done" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#8b969b"/></marker></defs><path id="aim-arrow" class="aim-fleche"/></svg><div id="marquee" hidden aria-hidden="true"></div><div id="floaters" aria-hidden="true"></div></div><div id="dice-tray" aria-hidden="true"></div></div></section>
@@ -122,8 +122,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 <aside class="stack right"><section class="panel sheet" id="sheet"><div class="sheet-head"><h1 id="name"></h1><span class="sheet-class" id="kind"></span></div><p class="muted" id="class"></p><div class="chips" id="sheet-chips"></div><div class="stat-row" id="stats"></div><div class="lifebar big" id="hpbar"><span class="lifebar-fill" id="hpfill"></span><span class="lifebar-text" id="hp"></span></div><div class="divider"></div><details class="bloc-replie" id="bloc-gear"><summary><span class="bloc-titre">Équipement</span><span class="compte" id="gear-compte"></span></summary><div id="gear"></div></details><details class="bloc-replie" id="bloc-talents"><summary><span class="bloc-titre">Talents</span><span class="compte" id="talents-compte"></span></summary><div id="sheet-talents"></div></details><div class="divider" hidden></div><h2 hidden>Compétences</h2><div class="skills" id="skills" hidden></div><p class="muted" hidden>Clique pour un test : 4+ = réussite, 6 = réussite et relance.</p></section><section class="panel"><h2 class="journal-title"><span aria-hidden="true">📜</span> Journal de combat</h2><ol class="journal" id="journal" aria-live="polite"></ol></section></aside></main>
 <div id="state-menu" role="menu" aria-label="États" hidden></div>
 
-<script src="./polygon-clipping.umd.min.js?v=0.165"></script>
-<script src="./combat.js?v=0.165"></script>
+<script src="./polygon-clipping.umd.min.js?v=0.167"></script>
+<script src="./combat.js?v=0.167"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -548,7 +548,7 @@ function logAttaque(a,b,logo,corps,detail,suite){const j=$('journal');separateur
  const li=ligneJournal();li.classList.add('j-attaque');
  const nom=o=>{const s=document.createElement('span');s.className='j-name';s.textContent=o.name;s.style.color=actorTint(o);return s};
  li.append(nom(a));
- if(logo&&typeof logoEquipement==='function'){const im=logoEquipement({logo},'journal');if(im)li.append(' ',im)}
+ if(logo&&typeof logoEquipement==='function'){const im=logoEquipement({logo},'journal')||logoTalent({logo},'journal');if(im)li.append(' ',im)}
  li.append(' ',nom(b),' : ');
  const deg=document.createElement('span');deg.className='j-degats'+(detail?' cliquable':'');deg.textContent=corps;li.append(deg);
  if(suite)decorate(li,suite);
@@ -561,7 +561,10 @@ function logAttaque(a,b,logo,corps,detail,suite){const j=$('journal');separateur
   if(detail.saignee)plus('+ '+detail.saignee+' de saignée');
   plus('= '+detail.total+' Dégâts','total');
   deg.title='Le détail des dés et du bonus';deg.tabIndex=0;deg.setAttribute('role','button');
-  deg.onclick=()=>{d.hidden=!d.hidden;deg.classList.toggle('ouvert',!d.hidden)};
+  /* Le détail s'ouvre sous la dernière ligne d'un journal qui défile : on le fait venir
+     dans la fenêtre, sinon il se dépliait hors de vue, sous le bord. */
+  deg.onclick=()=>{d.hidden=!d.hidden;deg.classList.toggle('ouvert',!d.hidden);
+   if(!d.hidden)d.scrollIntoView({block:'nearest'})};
   deg.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();deg.onclick()}};
   li.append(d)}
  poseAuJournal(j,li)}
@@ -803,7 +806,7 @@ function debordement(a,b,degats,portee){
  const j=actors.indexOf(b),suivant=reachableTargets(portee).filter(k=>k!==j&&actors[k].hero!==a.hero)[0];
  if(suivant===undefined)return null;
  const c=actors[suivant],perdu=applyDamage(c,degats);floatNumber(c,'−'+perdu,'perte');
- return c.name+' −'+perdu+(view==='mj'?' ('+c.hp+'/'+c.max+')':'')+(c.hp===0?' (coma)':'')}
+ return c.name+' −'+perdu+(c.hp===0?' (coma)':'')}
 /* Les talents que porte un combattant et dont le moteur connaît l'effet, chacun avec ses
    réglages relus au travers de leur déclaration. */
 function talentsCodes(a){return talentsTenus(a&&a.talents,typeof catalog!=='undefined'?catalog.talents:[])
@@ -827,7 +830,7 @@ function lamevent(a,p){
  const dits=frappes.map(([b])=>{let mot=b.name;
   if(degats){const partage=degatsRepartis(b,degats);
    const perdu=applyDamage(b,partage.reste);floatNumber(b,'−'+perdu,'perte');
-   mot+=' −'+perdu+(view==='mj'?' ('+b.hp+'/'+b.max+')':'');
+   mot+=' −'+perdu;
    if(partage.rempart.length)mot+=' (Rempart : '+partage.rempart.join(', ')+')';
    if(partage.garde.length)mot+=' (Garde rapprochée : '+partage.garde.join(', ')+')'}
   if(p.etat){const issue=infligeEtat(b,p.etat);
@@ -844,7 +847,7 @@ function orbesLances(a){return Math.max(0,Math.trunc(a&&a.orbes)||0)}
 function cibleOrbe(a){const vues=reachableTargets('distance').filter(j=>actors[j].hero!==a.hero);
  if(a.target!==null&&vues.includes(a.target))return a.target;
  return vues.length?vues[0]:null}
-function orbe(a,p){const j=cibleOrbe(a),total=orbesPermis(talentsCodes(a));
+function orbe(a,p,talent){const j=cibleOrbe(a),total=orbesPermis(talentsCodes(a));
  if(orbesLances(a)>=total)return a.name+' a lancé tous ses orbes ce tour.';
  if(j===null)return 'Aucun adversaire en vue : l’orbe reste en main.';
  const b=actors[j],etat=etatDesOrbes(talentsCodes(a)),des=desOrbe(talentsCodes(a));
@@ -856,19 +859,23 @@ function orbe(a,p){const j=cibleOrbe(a),total=orbesPermis(talentsCodes(a));
  let r;try{r=resolveAttack({dice,def:hasState(b,'Au sol')?0:defOf(b),dmg:0,round,criticalColor:c,roll:d6,
   faille:hasState(a,'Faille'),bleed:bleedOf(b)})}catch(e){return e.message}
  rollOnBoard(r.failleFace===null?r.dice:[...r.dice,[r.failleFace,7]],a,b);
- const tete='Orbe '+a.orbes+'/'+total+' : '+a.name+' → '+b.name+' : ';
- if(r.failed){floatNumber(b,'Échec','nul');return tete+'Échec (double 1).'}
- if(!r.hit||!r.damage){floatNumber(b,'0','nul');return tete+'les dés ne passent pas la DEF.'}
+ /* Au journal, l'orbe se lit comme une attaque : le lanceur, le logo du talent, la cible,
+    les dégâts — et leur détail au clic. L'effet écrit lui-même sa ligne et ne rend rien. */
+ const logo=talent&&talent.logo||'';
+ if(r.failed){floatNumber(b,'Échec','nul');logAttaque(a,b,logo,'Échec (double 1).',null,'');return ''}
+ if(!r.hit||!r.damage){floatNumber(b,'0','nul');
+  logAttaque(a,b,logo,'0 Dégâts.',{dice:r.dice,bonus:0,saignee:0,faille:r.failleFace,total:0},' Les dés ne passent pas la DEF.');return ''}
  const partage=degatsRepartis(b,r.damage);
  const perdu=applyDamage(b,partage.reste);floatNumber(b,'−'+perdu,'perte');
- let mot=(r.critical?'Critique ! ':'')+perdu+' PV perdus'+(view==='mj'?' ('+b.hp+'/'+b.max+')':'');
- if(partage.rempart.length)mot+=' (Rempart : '+partage.rempart.join(', ')+')';
- if(partage.garde.length)mot+=' (Garde rapprochée : '+partage.garde.join(', ')+')';
+ let suite='';
+ if(partage.rempart.length)suite+=' Rempart : '+partage.rempart.join(', ')+' prend la moitié.';
+ if(partage.garde.length)suite+=' Garde rapprochée : '+partage.garde.join(', ')+'.';
  const deborde=b.hp===0&&partage.reste>perdu?debordement(a,b,partage.reste-perdu,'distance'):null;
- if(deborde)mot+=' — Débordement : '+deborde;
- if(etat){const issue=infligeEtat(b,etat);mot+=issue==='onde'?' (Onde consumée)':issue===true?' · '+etat:''}
- if(b.hp===0)mot+=' — coma';
- return tete+mot+'.'}
+ if(deborde)suite+=' Débordement : '+deborde+'.';
+ if(etat){const issue=infligeEtat(b,etat);suite+=issue==='onde'?' Onde consumée : '+etat+' ignoré.':issue===true?' '+b.name+' subit '+etat+'.':''}
+ if(b.hp===0)suite+=' Coma.';
+ logAttaque(a,b,logo,(r.critical?'Critique ! ':'')+r.damage+' Dégâts.',{dice:r.dice,bonus:0,saignee:r.bleed,faille:r.failleFace,total:r.damage},suite);
+ return ''}
 /* Un talent qui vise un allié le choisit comme une attaque choisit sa cible : l'allié
    que le porteur cible s'il remplit la condition — au contact, en vue, selon le talent —
    sinon le plus proche qui la remplit. Jamais de menu : le geste part au clic. */
@@ -909,8 +916,8 @@ function boutonsTalents(a){if(!a||view!=='mj'&&!controlled(selected)||!alive(a))
    teinte:code.teinte||'',
    classe:'btn-action btn-talent t-'+(TALENT_TYPES_CLES.includes(talent.type)?talent.type:'act'),
    // Un effet qui rend null attend encore un choix : on ne redessine rien sous lui.
-   agir:()=>{saveChecks();savePool();const dit=fn(a,params);if(dit===null)return;
-    log(dit);render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}}}).filter(Boolean)}
+   agir:()=>{saveChecks();savePool();const dit=fn(a,params,talent);if(dit===null)return;
+    if(dit)log(dit);render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}}}).filter(Boolean)}
 /* Chaque effet déclenchable : sa fonction, et — s'il le veut — l'intitulé de son bouton,
    ce qui l'autorise, et les dés qu'il lance. Un effet qui ne dit rien prend l'intitulé
    du talent. */
@@ -954,8 +961,19 @@ function renderStateActions(a){const boite=$('etat-actions');boite.replaceChildr
 const TALENT_TYPES_CLES=['act','reac','pass','crit','mait','ame'];
 /* Analyser : les chiffres d'une créature passent à toute la table. Même barre et même
    dessin que l'attaque, en violet — c'est un geste du MJ, pas une activation du tour. */
-$('reveal').onclick=()=>{const a=actors[selected];if(!a||!a.hero||a.target===null)return;
- analyse(a.target);document.dispatchEvent(new Event('amertume-content-changed'))};
+/* La cible d'une Analyse se choisit comme celle d'une attaque : l'adversaire ciblé s'il
+   est en vue et pas encore analysé, sinon le premier en vue qui reste à analyser, dans
+   l'ordre canonique. Le bouton vit dès qu'il reste quelqu'un à regarder ; le clic cible
+   et analyse. Tout le monde analysé : il le dit, grisé. */
+function cibleAnalyse(a){if(!a||!a.hero)return null;
+ const vues=reachableTargets('distance').filter(j=>actors[j].hero!==a.hero);
+ if(a.target!==null&&vues.includes(a.target)&&!actors[a.target].revealed)return a.target;
+ const neuve=vues.find(j=>!actors[j].revealed);if(neuve!==undefined)return neuve;
+ return a.target!==null&&vues.includes(a.target)?a.target:(vues.length?vues[0]:null)}
+$('reveal').onclick=()=>{const a=actors[selected];if(!a||!a.hero)return;
+ const j=cibleAnalyse(a);if(j===null)return;
+ if(!ciblesDe(a).includes(j))poseCibles(a,[j]);
+ analyse(j);document.dispatchEvent(new Event('amertume-content-changed'))};
 function renderTargets(){const boite=$('targets'),a=actors[selected];boite.replaceChildren();if(!a)return;
  const rangs=reachableTargets(),numeros=nameNumbers(),visees=ciblesDe(a);
  if(!rangs.length){const v=document.createElement('span');v.className='muted';
@@ -992,13 +1010,12 @@ function renderCombat(){const a=actors[selected];
    :a.name+' · '+a.hp+' / '+a.max+' PV'}
  // Analyser est le geste d'un aventurier sur sa cible : lui seul l'a dans ses activations.
  const rev=$('reveal');rev.hidden=!a||!a.hero;
- if(!rev.hidden){const proie=a.target!==null?actors[a.target]:null;
+ if(!rev.hidden){const j=cibleAnalyse(a),proie=j===null?null:actors[j];
   const dejà=proie&&proie.revealed;
   rev.textContent=dejà?'🔍 Analysé':'🔍 Analyser';rev.classList.toggle('on',!!dejà);
   const refus=!controlled(selected)?'Cet aventurier ne t’appartient pas.'
    :!alive(a)?'Un combattant dans le coma ne peut pas analyser.'
-   :!proie?'Choisis une cible à analyser.'
-   :proie.hero?'Cible alliée : il n’y a rien à analyser.'
+   :!proie?'Aucun adversaire en vue à analyser.'
    :dejà?proie.name+' est déjà analysé.'
    :'';
   rev.disabled=!!refus;
@@ -1062,7 +1079,7 @@ function saveChecks(){const a=actors[selected];if(a)a.checks=['action','move','i
 const SKILL_TINTS=['47,138,99','168,105,31','122,92,184','157,123,30','176,88,54','101,120,111','53,119,184','44,140,133'];
 const STAT_TINTS={vie:'122,92,184',endu:'44,140,133',pv:'47,122,91',def:'96,110,118',dmg:'180,72,58',xp:'157,123,30'};
 const TYPE_NOMS={standard:'Standard',solitaire:'Solitaire',alpha:'Alpha',boss:'Boss'};
-const IMG_V='0.165';
+const IMG_V='0.167';
 function imgUrl(nom){return './img/'+encodeURIComponent(nom)+'?v='+IMG_V}
 /* Les états et leur jeton, tels qu'ils sont peints sur la table. « Aucun » n'en a pas —
    c'est l'absence d'état — ni « Coma », que la barre de vie dit déjà, ni « Affaibli »,
@@ -1525,5 +1542,5 @@ $('portees').onclick=()=>{porteesOn=!porteesOn;
 majPortees();
 window.addEventListener('resize',()=>{updateRing();showAim();renderCombat()});
 render();log('Bienvenue dans Amertume. Sélectionne un aventurier ou lance tes premiers dés.');
-</script><script src="./catalog.js?v=0.165"></script><script src="./editor.js?v=0.165"></script><script src="./maps.js?v=0.165"></script><script src="./firebase-config.js?v=0.165"></script><script src="./shared-data.js?v=0.165"></script><script src="./shared.js?v=0.165"></script>
-<script src="./live.js?v=0.165"></script></body></html>
+</script><script src="./catalog.js?v=0.167"></script><script src="./editor.js?v=0.167"></script><script src="./maps.js?v=0.167"></script><script src="./firebase-config.js?v=0.167"></script><script src="./shared-data.js?v=0.167"></script><script src="./shared.js?v=0.167"></script>
+<script src="./live.js?v=0.167"></script></body></html>
