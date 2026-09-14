@@ -58,8 +58,22 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Plusieurs combattants pris : la carte des Actions ne propose rien.
  if(marked.size>1){boite.replaceChildren();boite.hidden=true;return}
  const a=actors[selected],liste=a?attackChoices(a,catalog.items):[];
+ /* Les talents de la rangée des attaques se dessinent à leur suite, en grands boutons à
+    deux lignes : le logo à gauche, le nom, puis les dés qu'ils lancent — ou, sans dés, la
+    nature du talent. Leur couleur est celle du type, sauf teinte propre. */
+ const talents=a&&typeof boutonsTalents==='function'?boutonsTalents(a).filter(b=>b.rangee==='attaques'):[];
  // Même seule, une attaque se montre : on lit ce qui part avant de frapper.
- boite.replaceChildren();boite.hidden=!liste.length;
+ boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;
+ talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque';
+  if(t.teinte)b.style.setProperty('--fond',t.teinte);
+  const im=logoTalent({logo:t.logo},'bouton');
+  if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);b.classList.add('avec-logo');b.append(logos)}
+  const nom=document.createElement('span');nom.className='nom';nom.textContent=t.texte;
+  const bas=document.createElement('span');bas.className='des-bonus';
+  if(t.des)bas.append(dicePips(t.des));
+  else{const n=document.createElement('span');n.className='nature';n.textContent=talentType(t.talent)[2];bas.append(n)}
+  b.append(nom,bas);b.disabled=!t.peut;b.title=t.titre;b.setAttribute('aria-label',t.texte+' — '+t.titre);
+  b.onclick=t.agir;boite.append(b)});
  if(!liste.length)return;
  const retenu=Math.trunc(a.activeAttack)||0;
  liste.forEach((at,i)=>{const b=document.createElement('button');
@@ -91,9 +105,11 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   /* Le bouton n'arme plus l'attaque : il la porte. On retient laquelle est partie —
      la réserve affichée la suit — puis le coup part aussitôt. */
   b.onclick=()=>{a.activeAttack=i;
-   boite.querySelectorAll('.choix-attaque').forEach((x,k)=>x.classList.toggle('on',k===i));
+   boite.querySelectorAll('.choix-attaque:not(.btn-talent)').forEach((x,k)=>x.classList.toggle('on',k===i));
    attack();scheduleSave()};
-  boite.append(b)})}
+  // Les attaques d'abord, les talents à leur suite.
+  const premierTalent=boite.querySelector('.btn-talent');
+  if(premierTalent)boite.insertBefore(b,premierTalent);else boite.append(b)})}
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
 const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-form"><div id="actor-fields"></div><p class="form-error" id="actor-error" role="alert"></p><div class="form-actions"><button type="button" id="delete-actor">Retirer de la scène</button><button type="button" id="save-template">Enregistrer au bestiaire</button><button type="submit" class="primary">Enregistrer la fiche</button></div></form>');
@@ -954,7 +970,11 @@ function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talen
   +sel('Classe','famille',famille,[...familles.map(f=>[f,f]),[AUTRE_CLASSE,'✎ Autre classe…']])
   +sel('Type','type',t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]))
   +field('Niveau','level',t.level||1,'number','min="1" max="20"')
-  +sel('Logo','logo',t.logo||'',[['','— aucun —'],...LOGOS_TALENT.map(l=>[l,nomLogo(l)])])+'</div>'
+  +sel('Logo','logo',t.logo||'',[['','— aucun —'],...LOGOS_TALENT.map(l=>[l,nomLogo(l)])])
+  /* Où le bouton du talent se tient à la table : avec les attaques, en grand ; sur la
+     ligne des réactions, dessous ; ou nulle part — un passif se lit sur la fiche. */
+  +sel('Rangée à la table','rangee',t.rangee||'',[['','Selon le type'],['attaques','Attaques — grand bouton à deux lignes'],
+   ['reactions','Réactions — la ligne dessous'],['aucune','Aucune — passifs et améliorations, sur la fiche seulement']])+'</div>'
   +'<div id="famille-autre" hidden><label>Nom de la nouvelle classe<input name="familleLibre" maxlength="60" value=""></label></div>'
   /* Le prérequis : un autre talent du catalogue, qu'il faudra posséder d'abord. Ni
      lui-même, ni ce qui repose déjà sur lui — sans quoi l'arbre se mordrait la queue. */
@@ -991,6 +1011,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
  t.prerequis=f.prerequis&&f.prerequis.value&&f.prerequis.value!==t.id&&(catalog.talents||[]).some(x=>x&&x.id===f.prerequis.value)?f.prerequis.value:'';
  t.logo=f.logo&&LOGOS_TALENT.includes(f.logo.value)?f.logo.value:'';
+ t.rangee=f.rangee&&['attaques','reactions','aucune'].includes(f.rangee.value)?f.rangee.value:'';
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
  t.effet=TALENTS_CODES[f.effet.value]?f.effet.value:'';
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent()}):{};

@@ -713,7 +713,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  /* Orbes mystiques : une maîtrise. À chaque activation, le porteur lance quelques orbes
     qui ne lui coûtent rien — ni Action ni Mouvement, seul le compte du tour — sur un
     adversaire en vue. Les dégâts d'un orbe sont ceux d'un effet : ni DEF, ni blindage. */
- orbes:{cle:'orbes',nom:'Orbes mystiques',type:'mait',bouton:'✦ Orbe',
+ orbes:{cle:'orbes',nom:'Orbes mystiques',type:'mait',bouton:'✦ Orbe',teinte:'#9b7ad4',
   aide:'Maîtrise : à chaque activation, le porteur lance gratuitement des orbes sur un adversaire en vue, sans dépenser d’Action.',
   params:[{cle:'orbes',nom:'Orbes par activation',type:'nombre',defaut:1,min:1,max:9},
    {cle:'des',nom:'Dés par orbe',type:'nombre',defaut:1,min:1,max:6},
