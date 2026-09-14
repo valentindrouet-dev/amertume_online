@@ -64,9 +64,12 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  const retenu=Math.trunc(a.activeAttack)||0;
  liste.forEach((at,i)=>{const b=document.createElement('button');
   b.className='btn-action choix-attaque'+(i===(retenu<liste.length?retenu:0)?' on':'');
-  const nom=document.createElement('span');nom.className='nom';
-  (at.logos||[]).forEach(l=>{const im=logoEquipement({logo:l},'bouton');if(im)nom.append(im)});
-  nom.append(at.name||'Attaque');
+  /* Le logo de l'arme à gauche, sur les deux lignes de hauteur ; à sa droite, le nom puis
+     les dés — chacun sur sa ligne. Sans logo, les deux lignes occupent tout le bouton. */
+  const logos=document.createElement('span');logos.className='logos';
+  (at.logos||[]).forEach(l=>{const im=logoEquipement({logo:l},'bouton');if(im)logos.append(im)});
+  if(logos.childElementCount){b.classList.add('avec-logo');b.append(logos)}
+  const nom=document.createElement('span');nom.className='nom';nom.textContent=at.name||'Attaque';
   if(at.range==='distance'){const loin=document.createElement('span');loin.className='loin';
    loin.textContent=' ⤳';loin.setAttribute('aria-hidden','true');nom.append(loin)}
   /* Deux lignes, centrées : le nom, puis les dés et le bonus de dégâts — on choisit son

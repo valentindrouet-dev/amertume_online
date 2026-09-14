@@ -405,8 +405,12 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
    plein des Actions et leur hauteur ; celui qui vient de partir garde un liseré clair,
    car c'est sa réserve que la carte affiche. Ce qui empêche de frapper grise le bouton
    et en dit la raison au survol. */
-button.choix-attaque{height:auto;min-width:118px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px 16px 7px;
+button.choix-attaque{height:auto;min-width:118px;display:inline-grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:auto;align-items:center;justify-items:center;row-gap:5px;padding:8px 16px 7px;
  font:800 13px/1 system-ui;letter-spacing:0;border-radius:10px;text-align:center}
+/* Avec un logo : deux colonnes, le logo à gauche sur les deux lignes, le texte à droite. */
+button.choix-attaque.avec-logo{grid-template-columns:auto minmax(0,1fr);column-gap:10px;padding-left:12px}
+button.choix-attaque.avec-logo .logos{grid-column:1;grid-row:1/3;display:flex;gap:4px;align-items:center}
+button.choix-attaque.avec-logo .nom,button.choix-attaque.avec-logo .des-bonus{grid-column:2}
 button.choix-attaque .nom{display:block}
 button.choix-attaque .des-bonus{display:inline-flex;align-items:center;gap:5px}
 button.choix-attaque .bonus{font:800 13px/1 system-ui;margin-left:2px}
@@ -597,7 +601,7 @@ button.btn-talent.t-ame{--fond:#5e9a5b}
 /* Le logo d'un équipement, devant son nom : sur les vignettes, dans le bouton d'attaque. */
 .logo-equip{flex:none;width:22px;height:22px;object-fit:contain;display:inline-block;vertical-align:middle;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
 .cat-pill .logo-equip{margin-right:-2px}
-button.choix-attaque .logo-equip{width:20px;height:20px;margin:-3px 5px -3px 0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+button.choix-attaque .logo-equip{width:38px;height:38px;margin:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
 .logo-equip.apercu{width:28px;height:28px;margin:6px 0 0 8px}
 #item-form label:has(> select[name=logo]){display:flex;flex-wrap:wrap;align-items:center}
 #item-form label:has(> select[name=logo]) select{flex:1;min-width:120px}
