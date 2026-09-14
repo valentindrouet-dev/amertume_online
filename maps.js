@@ -123,7 +123,8 @@ function troupeVoit(a){const m=currentMap();
  if(!m||m.fogOff)return true;
  // Une carte dont le brouillard n'est pas encore calculé ne révèle rien : on attend.
  if(!fogTroupe)return false;
- const size=mapSize();if(!size.width)return true;
+ // Un autre onglet est affiché : la carte n'a pas de largeur, on ne peut rien en dire.
+ const size=mapSize();if(!size.width)return false;
  const k=fogKey+'|'+Math.round(size.width);
  if(fogTroupeKey!==k){fogTroupeKey=k;
   fogTroupePx=fogTroupe.map(p=>p.map(([x,y])=>[x/100*size.width,y/100*size.height]))}
