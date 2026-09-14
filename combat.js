@@ -626,7 +626,7 @@ function setState(a,etat,pose){const reste=statesOf(a).filter(x=>x!==etat);
  return a.states}
 /* Les états et ce qu'ils empêchent ou déclenchent. Tout ce qui se calcule vit ici ;
    l'interface ne fait que déclencher au bon moment et raconter. */
-const ONDE_EXCLUS=['Blindage','Invisible','Onde','Vie','Coma','Gardé'];
+const ONDE_EXCLUS=['Blindage','Invisible','Onde','Vie','Coma'];
 function frozenSolid(a){return hasState(a,'Gel')||hasState(a,'Au sol')}
 function blinded(a){return hasState(a,'Aveugle')}
 /* Quatre états s'empilent : chaque aggravation vaut un cran, et à zéro l'état s'en va.
@@ -742,18 +742,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Passif : avant qu’un aventurier au contact ne subisse des dégâts, le porteur en subit la moitié à sa place.',
   params:[],
   phrase(){return 'Avant qu’un aventurier au contact ne subisse des dégâts, le porteur subit <b>la moitié</b> des dégâts à sa place ; l’aventurier visé subit le reliquat.'}},
- /* Gardien : une maîtrise. Au début du combat, le porteur désigne un aventurier allié,
-    qui devient Gardé — un état à part, que l'Onde ne lève pas. */
+ /* Gardien : une maîtrise. Au début du combat, un aventurier allié au contact reçoit
+    Blindage — l'allié ciblé, sinon le plus proche. Une fois par combat. */
  gardien:{cle:'gardien',nom:'Gardien',type:'mait',bouton:'🛡 Gardien',
-  aide:'Maîtrise : au début du premier tour de combat, un aventurier allié au contact devient Gardé — l’allié ciblé, sinon le plus proche.',
+  aide:'Maîtrise : au début du premier tour de combat, un aventurier allié au contact reçoit Blindage — l’allié ciblé, sinon le plus proche.',
   params:[],
-  phrase(){return 'Au début du premier tour de combat, un aventurier allié <b>au contact</b> devient <b>Gardé</b> : l’allié ciblé, sinon le plus proche.'}},
- /* Le gardien renforcé : une amélioration au-dessus de Gardien. Le protégé reçoit aussi
-    un état — Blindage, sauf réglage. */
- gardienblindage:{cle:'gardienblindage',nom:'Gardien : Blindage',type:'ame',requiert:'gardien',
-  aide:'Amélioration de Gardien : l’aventurier désigné reçoit aussi un état, Blindage par défaut.',
-  params:[{cle:'etat',nom:'État reçu en plus',type:'choix',defaut:'Blindage',options:ETATS_JEU.map(e=>[e,e])}],
-  phrase(p){return 'L’aventurier désigné par le gardien reçoit aussi <b>'+((p&&p.etat)||'Blindage')+'</b>.'}},
+  phrase(){return 'Au début du premier tour de combat, un aventurier allié <b>au contact</b> reçoit <b>Blindage</b> : l’allié ciblé, sinon le plus proche.'}},
  /* Destructeur : une maîtrise. Avec une arme au contact, tous les doubles sont des
     critiques, pas seulement les 6 ; le double 1 reste ce qu'il est, un échec. Ni les
     armes à distance, ni les orbes, ni les attaques de fiche n'en profitent. */
@@ -761,10 +755,6 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Maîtrise : avec une arme au contact, le porteur réussit un critique sur tous ses doubles, pas seulement les 6.',
   params:[],
   phrase(){return 'Le porteur réalise des <b>critiques sur tous ses doubles</b> avec une <b>arme au contact</b> ; un double 1 reste un échec.'}}};
-/* Ce que le gardien pose sur son protégé : Gardé, et ce que l'amélioration y ajoute. */
-function etatsDuGardien(portes){const out=['Gardé'];
- const plus=(portes||[]).find(t=>t&&t.code&&t.code.cle==='gardienblindage');
- if(plus)out.push(String(plus.params&&plus.params.etat||'Blindage'));return out}
 /* Rempart : la part du mur. La moitié, arrondie au-dessus, et jamais plus que les dégâts. */
 function partDuRempart(degats){const d=Math.max(0,Math.trunc(degats)||0);return Math.ceil(d/2)}
 function porteEffet(portes,cle){return (portes||[]).some(t=>t&&t.code&&t.code.cle===cle)}
@@ -929,6 +919,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,etatsDuGardien,partDuRempart,porteEffet,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

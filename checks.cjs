@@ -209,21 +209,16 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  assert.deepEqual(ordonneTalents([x,y],[x,y]).map(([t])=>t.id).sort(),['x','y']);}
 /* Débordement, Rempart, Gardien et son amélioration : déclarés, réglés, et les petites
    règles pures qui les portent. */
-{const {TALENTS_CODES,paramsTalent,phraseTalent,etatsDuGardien,partDuRempart,porteEffet,ONDE_EXCLUS}=require('./combat.js');
+{const {TALENTS_CODES,paramsTalent,phraseTalent,partDuRempart,porteEffet,ONDE_EXCLUS}=require('./combat.js');
  assert.equal(TALENTS_CODES.debordement.type,'pass');assert.match(phraseTalent('debordement'),/<b>reliquat de dégâts<\/b>/);
  assert.equal(TALENTS_CODES.rempart.type,'pass');assert.match(phraseTalent('rempart'),/<b>la moitié<\/b>/);
- assert.equal(TALENTS_CODES.gardien.type,'mait');assert.match(phraseTalent('gardien'),/devient <b>Gardé<\/b>/);
- assert.equal(TALENTS_CODES.gardienblindage.type,'ame');assert.equal(TALENTS_CODES.gardienblindage.requiert,'gardien');
- assert.deepEqual(paramsTalent({effet:'gardienblindage'}),{etat:'Blindage'});
- assert.match(phraseTalent('gardienblindage',{etat:'Vie'}),/reçoit aussi <b>Vie<\/b>/);
+ assert.equal(TALENTS_CODES.gardien.type,'mait');assert.match(phraseTalent('gardien'),/<b>au contact<\/b> reçoit <b>Blindage<\/b>/);
+ assert.ok(!TALENTS_CODES.gardienblindage);   // L'amélioration a disparu avec l'état Gardé.
  // La part du rempart : la moitié arrondie au-dessus, rien sur rien.
  assert.equal(partDuRempart(5),3);assert.equal(partDuRempart(4),2);assert.equal(partDuRempart(1),1);assert.equal(partDuRempart(0),0);
  const g=[{code:TALENTS_CODES.gardien,params:{}}];
- assert.deepEqual(etatsDuGardien(g),['Gardé']);
- assert.deepEqual(etatsDuGardien([...g,{code:TALENTS_CODES.gardienblindage,params:{etat:'Blindage'}}]),['Gardé','Blindage']);
  assert.ok(porteEffet(g,'gardien'));assert.ok(!porteEffet(g,'rempart'));
- // Gardé est un état que l'Onde ne lève pas.
- assert.ok(ONDE_EXCLUS.includes('Gardé'));}
+ assert.ok(!ONDE_EXCLUS.includes('Gardé'));}
 /* Les logos d'équipement déclarés dans l'éditeur sont exactement les weapon_*.png du
    dossier img : un fichier ajouté sans être déclaré n'apparaîtrait dans aucun menu. */
 {const src=fs.readFileSync('editor.js','utf8');const m=src.match(/const LOGOS_EQUIPEMENT=(\[[^\]]*\]);/);
@@ -878,4 +873,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('603 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('598 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
