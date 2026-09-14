@@ -497,6 +497,7 @@ const talentFamily=t=>(t&&t.famille||'').trim()||GENERIQUES;
 function talent(id){return (catalog.talents||[]).find(t=>t&&t.id===id)}
 function talentPill(t){const [cle,court,nom]=talentType(t);
  const p=document.createElement('span');p.className='cat-pill t-'+cle;
+ const logo=logoTalent(t);if(logo)p.append(logo);
  const n=document.createElement('span');n.className='nom';n.textContent=t.name;
  const b=document.createElement('span');b.className='t-badge';b.textContent=court;b.title=nom;
  const niv=document.createElement('span');niv.className='tag';niv.textContent='Niv. '+(t.level||1);
@@ -952,7 +953,8 @@ function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talen
      entrée du menu, qui ouvre un champ libre. */
   +sel('Classe','famille',famille,[...familles.map(f=>[f,f]),[AUTRE_CLASSE,'✎ Autre classe…']])
   +sel('Type','type',t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]))
-  +field('Niveau','level',t.level||1,'number','min="1" max="20"')+'</div>'
+  +field('Niveau','level',t.level||1,'number','min="1" max="20"')
+  +sel('Logo','logo',t.logo||'',[['','— aucun —'],...LOGOS_TALENT.map(l=>[l,nomLogo(l)])])+'</div>'
   +'<div id="famille-autre" hidden><label>Nom de la nouvelle classe<input name="familleLibre" maxlength="60" value=""></label></div>'
   /* Le prérequis : un autre talent du catalogue, qu'il faudra posséder d'abord. Ni
      lui-même, ni ce qui repose déjà sur lui — sans quoi l'arbre se mordrait la queue. */
@@ -973,6 +975,11 @@ function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talen
   if(autre){const champ=$('talent-form').elements.familleLibre;champ.value='';champ.focus()}};
  const menu=$('talent-form').elements.effet;
  menu.onchange=()=>{talentDraft.params=lireReglagesTalent();talentDraft.effet=menu.value;dessineReglagesTalent()};
+ // L'aperçu du logo, à côté de son menu, comme pour un objet.
+ const menuLogo=$('talent-form').elements.logo;
+ const apercu=document.createElement('img');apercu.className='logo-equip apercu';apercu.alt='';
+ const montre=()=>{const l=menuLogo.value;apercu.hidden=!l;if(l)apercu.src=imgUrl(l+'.png')};
+ menuLogo.parentNode.append(apercu);montre();menuLogo.onchange=montre;
  dessineReglagesTalent();
  $('delete-talent').hidden=i===null;talentDialog.showModal()}
 $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
@@ -983,6 +990,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.type=f.type.value;t.level=num(f.level.value,1,20);
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
  t.prerequis=f.prerequis&&f.prerequis.value&&f.prerequis.value!==t.id&&(catalog.talents||[]).some(x=>x&&x.id===f.prerequis.value)?f.prerequis.value:'';
+ t.logo=f.logo&&LOGOS_TALENT.includes(f.logo.value)?f.logo.value:'';
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
  t.effet=TALENTS_CODES[f.effet.value]?f.effet.value:'';
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent()}):{};
@@ -1382,11 +1390,15 @@ const ETATS_INFLIGES=()=>STATES.filter(e=>e!=='Aucun'&&e!=='Coma');
    est servi tel quel, sans liste de dossier : un logo ajouté dans img/ se déclare ici —
    node checks.cjs le réclame. L'intitulé du menu vient du nom du fichier. */
 const LOGOS_EQUIPEMENT=['weapon_arbalete','weapon_arc','weapon_armure','weapon_bouclier','weapon_epee','weapon_hache','weapon_lance'];
-const nomLogo=l=>{const n=String(l||'').replace(/^weapon_/,'').replace(/[_-]+/g,' ');return n?n[0].toUpperCase()+n.slice(1):''};
-/* Le logo d'un objet, devant son nom : un jeton, ou rien. Un logo inconnu du dossier ne
-   se dessine pas — un objet importé d'ailleurs n'affiche pas une image cassée. */
-function logoEquipement(o,cls){const l=o&&o.logo;if(!l||!LOGOS_EQUIPEMENT.includes(l))return null;
+// Les logos de talents, de même : les img/spell_*.png.
+const LOGOS_TALENT=['spell_orbes'];
+const nomLogo=l=>{const n=String(l||'').replace(/^(weapon|spell)_/,'').replace(/[_-]+/g,' ');return n?n[0].toUpperCase()+n.slice(1):''};
+/* Un logo devant un nom : un jeton, ou rien. Un logo inconnu du dossier ne se dessine
+   pas — un objet importé d'ailleurs n'affiche pas une image cassée. */
+function logoImage(l,liste,cls){if(!l||!liste.includes(l))return null;
  const im=document.createElement('img');im.className='logo-equip'+(cls?' '+cls:'');im.src=imgUrl(l+'.png');im.alt='';im.draggable=false;return im}
+function logoEquipement(o,cls){return logoImage(o&&o.logo,LOGOS_EQUIPEMENT,cls)}
+function logoTalent(t,cls){return logoImage(t&&t.logo,LOGOS_TALENT,cls)}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['armor','Armure'],
  ['ammo','Munition'],['object','Objet'],['misc','Divers']];
 /* Ce que le formulaire affiche à l'instant, relu tel quel. Les champs absents ne sont pas

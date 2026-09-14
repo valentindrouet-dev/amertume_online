@@ -31,16 +31,18 @@ assert.equal(gearApi.defenseOf({hero:false,def:5,armorId:'a'},[{id:'a',def:0}]),
 const ARSENAL=[{id:'e',name:'Épée',category:'weapon',hands:1,dice:{white:2,red:1}},{id:'d',name:'Dague',category:'weapon',hands:1,dice:{bone:1}},{id:'ar',name:'Armure',category:'armor',def:3}];
 const bete={hero:false,def:4,weapons:['e','e'],armorId:'ar',attacks:[{name:'Griffes',dice:{white:1}},{name:'Souffle',dice:{red:2}}]};
 assert.deepEqual(gearApi.attackChoices(bete,ARSENAL).map(x=>x.name),['Épée ×2','Griffes','Souffle']);
-// Tout ce qu'on porte fait une seule attaque, dés cumulés ; à distance seulement si
-// toutes les armes le sont — la rapière ramène l'arc au contact.
+// Les armes d'une même portée font une seule attaque, dés cumulés ; contact et distance
+// ne se cumulent pas — la rapière et l'arc font deux boutons, le contact d'abord.
 const PANOPLIE=[{id:'rap',name:'Rapière',category:'weapon',hands:1,dice:{white:2}},
  {id:'arc',name:'Arc court',category:'weapon',ranged:true,dice:{red:2}},
  {id:'dag',name:'Dague',category:'weapon',hands:1,dice:{bone:1}},
  {id:'hache',name:'Hache lourde',category:'weapon',hands:2,dice:{black:3}}];
 assert.deepEqual(gearApi.attackChoices({weapons:['rap','arc'],attacks:[]},PANOPLIE)
- .map(x=>x.name+'/'+x.range),['Rapière + Arc court/contact']);
+ .map(x=>x.name+'/'+x.range),['Rapière/contact','Arc court/distance']);
+assert.deepEqual(gearApi.attackChoices({weapons:['arc','rap'],attacks:[]},PANOPLIE).map(x=>x.name),['Rapière','Arc court']);
 assert.deepEqual(gearApi.attackChoices({weapons:['arc'],attacks:[]},PANOPLIE).map(x=>x.name+'/'+x.range),['Arc court/distance']);
-assert.deepEqual(gearApi.gearAttacks({weapons:['rap','arc']},PANOPLIE)[0].dice,{white:2,red:2,bone:0,blue:0,green:0,black:0,yellow:0});
+assert.deepEqual(gearApi.gearAttacks({weapons:['rap','arc']},PANOPLIE)[0].dice,{white:2,red:0,bone:0,blue:0,green:0,black:0,yellow:0});
+assert.deepEqual(gearApi.gearAttacks({weapons:['rap','arc']},PANOPLIE)[1].dice.red,2);
 assert.deepEqual(gearApi.attackChoices({weapons:['rap','dag'],attacks:[]},PANOPLIE)
  .map(x=>x.name),['Rapière + Dague']);                       // Deux mains libres : une seule attaque.
 assert.equal(gearApi.gearAttacks({weapons:['hache','hache']},PANOPLIE)[0].dice.black,6); // Deux exemplaires cumulent.
@@ -232,10 +234,15 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  const {gearAttacks}=require('./combat.js');
  const items=[{id:'e',name:'Épée',category:'weapon',hands:1,dice:{white:1},logo:'weapon_epee'},{id:'d',name:'Dague',category:'weapon',hands:1,dice:{white:1}},{id:'a',name:'Arc',category:'weapon',hands:2,ranged:true,dice:{white:1},logo:'weapon_arc'}];
  const att=gearAttacks({weapons:['e','e','d','a']},items);
- assert.equal(att.length,1);assert.deepEqual(att[0].logos,['weapon_epee']);assert.equal(att[0].dice.white,4);
- assert.deepEqual(gearAttacks({weapons:['a','e']},items)[0].logos,['weapon_arc']);
+ assert.equal(att.length,2);assert.deepEqual(att[0].logos,['weapon_epee']);assert.equal(att[0].dice.white,3);
+ assert.deepEqual(att[1].logos,['weapon_arc']);assert.equal(att[1].range,'distance');
+ assert.deepEqual(gearAttacks({weapons:['a','e']},items).map(x=>x.logos),[['weapon_epee'],['weapon_arc']]);
  assert.deepEqual(gearAttacks({weapons:['d','e']},items)[0].logos,['weapon_epee']);
- assert.deepEqual(gearAttacks({weapons:['d']},items)[0].logos,[]);}
+ assert.deepEqual(gearAttacks({weapons:['d']},items)[0].logos,[]);
+ // Les logos de talents déclarés sont exactement les spell_*.png du dossier.
+ const mt=src.match(/const LOGOS_TALENT=(\[[^\]]*\]);/);assert.ok(mt,'LOGOS_TALENT introuvable');
+ const sorts=fs.readdirSync('img').filter(f=>/^spell_.*\.png$/.test(f)).map(f=>f.replace(/\.png$/,'')).sort();
+ assert.deepEqual(JSON.parse(mt[1].replace(/'/g,'"')).sort(),sorts,'LOGOS_TALENT doit lister img/spell_*.png : '+sorts.join(', '));}
 /* Les objets de carte : relus au travers de leur déclaration, bornés, jamais illisibles. */
 {const {cleanObjet,cleanMap}=require('./combat.js');
  const o=cleanObjet({id:'o1',nom:'Coffre',desc:'Un coffre.',x:150,y:-3,taille:'huge',visible:false,items:['e','',7,'a'],tresor:'12 pièces',test:{comp:9,reussites:0}});
@@ -871,4 +878,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('597 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('603 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

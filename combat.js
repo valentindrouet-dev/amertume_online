@@ -88,15 +88,16 @@ function gearAttacks(actor,items){
  // Seule une arme frappe : un objet rangé là par erreur ne crée pas une attaque sans dés.
  const armes=gearOf(actor&&actor.weapons,items).filter(w=>w.category==='weapon');
  if(!armes.length)return [];
- /* Tout ce qu'on porte fait une seule attaque : les dés de toutes les armes cumulés, un
-    seul bouton. Le nom les énumère ; le logo est celui de la première arme équipée — ou,
-    si elle n'en a pas, de la première qui en a un. À distance seulement si toutes les
-    armes le sont : une dague dans l'autre main ramène le coup au contact. */
- const groupes=new Map();armes.forEach(w=>groupes.set(w,(groupes.get(w)||0)+1));
- const nom=[...groupes].map(([w,n])=>w.name+(n>1?' ×'+n:'')).join(' + ');
- const premier=armes.find(w=>w.logo);
- const sorties=[{name:nom,dice:poolOfWeapons(armes),range:armes.every(w=>w.ranged===true)?'distance':'contact',
-  targets:'one',useOwnDamage:true,effects:{},etats:etatsDArmes(armes),logos:premier?[String(premier.logo)]:[],gear:true}];
+ /* Les armes d'une même portée font une seule attaque : dés cumulés, un seul bouton, le
+    nom les énumère, et le logo est celui de la première arme équipée — ou, si elle n'en
+    a pas, de la première qui en a un. Contact et distance ne se cumulent pas : une épée
+    et un arc font deux boutons, le contact d'abord. */
+ const attaque=(lot,range)=>{const groupes=new Map();lot.forEach(w=>groupes.set(w,(groupes.get(w)||0)+1));
+  const premier=lot.find(w=>w.logo);
+  return {name:[...groupes].map(([w,n])=>w.name+(n>1?' ×'+n:'')).join(' + '),dice:poolOfWeapons(lot),range,
+   targets:'one',useOwnDamage:true,effects:{},etats:etatsDArmes(lot),logos:premier?[String(premier.logo)]:[],gear:true}};
+ const contact=armes.filter(w=>w.ranged!==true),distance=armes.filter(w=>w.ranged===true);
+ const sorties=[];if(contact.length)sorties.push(attaque(contact,'contact'));if(distance.length)sorties.push(attaque(distance,'distance'));
  return sorties}
 /* Une attaque de fiche — l'attaque spéciale d'un adversaire — peut poser une affliction,
    tout comme une arme. On lui donne la même forme qu'à une attaque d'équipement, « etats »,
