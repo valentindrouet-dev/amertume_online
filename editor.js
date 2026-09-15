@@ -494,15 +494,20 @@ function gearPill(o){const col=itemColumn(o);
  const info=[o.etat?'inflige '+o.etat:'',o.effects,(o.traits||[]).join(', '),o.notes].filter(Boolean).join(' · ');
  p.title=info?o.name+' — '+info:o.name;
  return p}
+/* L'équipement d'une fiche, sur deux lignes de deux — comme les compétences : les armes
+   sur la première, l'armure et le bouclier sur la seconde. Deux exemplaires de la même
+   arme font une pastille marquée « ×2 », pas deux jumelles. */
 function gearPills(a){const out=document.createElement('div');out.className='gear-pills';
- // Deux exemplaires de la même arme font une pastille marquée « ×2 », pas deux jumelles.
- const comptes=new Map();
- [...(a.weapons||[]),a.armorId,a.shieldId].map(gear).filter(Boolean)
-  .forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
- comptes.forEach((n,o)=>{const p=gearPill(o);
-  if(n>1){const x=document.createElement('span');x.className='tag exemplaires';x.textContent='×'+n;
-   p.querySelector('.nom').after(x)}
-  out.append(p)});
+ const rangee=ids=>{const r=document.createElement('div');r.className='gear-rangee';
+  const comptes=new Map();ids.map(gear).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
+  comptes.forEach((n,o)=>{const p=gearPill(o);p.classList.add('mini');
+   if(n>1){const x=document.createElement('span');x.className='tag exemplaires';x.textContent='×'+n;
+    p.querySelector('.nom').after(x)}
+   r.append(p)});
+  return r};
+ const armes=rangee(a.weapons||[]),armures=rangee([a.armorId,a.shieldId]);
+ if(armes.childElementCount)out.append(armes);
+ if(armures.childElementCount)out.append(armures);
  return out}
 /* Talents : six natures, chacune sa couleur et son abrégé, comme dans le jeu de table. */
 const TALENT_TYPES=[['act','ACT','Action'],['reac','REAC','Réaction'],['pass','PASS','Passif'],
