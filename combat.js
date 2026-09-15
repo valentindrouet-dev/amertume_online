@@ -822,21 +822,25 @@ function ciblesPermises(portes){let n=1;
  for(const t of portes||[]){if(!t||!t.code||t.code.cle!=='doubleattaque')continue;
   n=Math.max(n,Math.max(1,Math.trunc(t.params&&t.params.cibles)||1))}
  return n}
-/* L'ordre canonique des cibles. Quand plusieurs sont éligibles à une attaque ou à un
-   effet, on les prend toujours dans le même ordre, et cet ordre est écrit une fois pour
-   toutes : les Boss d'abord, puis les Solitaires, les Alphas et enfin les sbires ; à type
-   égal, l'ordre alphabétique ; à nom égal, le numéro porté sur le socle — la cible 1 avant
-   la cible 2. Ce numéro suit la place dans la liste des combattants, c'est donc elle qui
-   tranche en dernier. Les aventuriers comptent comme des sbires : la règle parle des
-   types d'ennemis, et il faut bien que leur ordre soit défini aussi. */
-const RANG_TYPE={boss:0,solitaire:1,alpha:2,standard:3};
-function rangType(a){return a&&!a.hero&&RANG_TYPE[a.type]!==undefined?RANG_TYPE[a.type]:3}
-/* Trie des paires [combattant, place dans la liste]. On garde la place plutôt que le
-   numéro affiché : c'est elle qui le produit, et elle est toujours à portée de main. */
-function ordreCibles(paires){return [...(paires||[])].sort((u,v)=>
- rangType(u[0])-rangType(v[0])
- ||String(u[0]&&u[0].name||'').localeCompare(String(v[0]&&v[0].name||''),'fr')
- ||u[1]-v[1])}
+/* L'ordre canonique des cibles. Quand plusieurs sont éligibles à une attaque, une
+   analyse ou un effet, on les prend toujours dans le même ordre, écrit une fois pour
+   toutes : les plus proches du socle d'abord ; à distance égale — au pixel près — par
+   type croissant, sbires, puis Élites, Solitaires et Boss ; à type égal, par numéro de
+   socle, c'est-à-dire par place dans la liste des combattants. Les aventuriers comptent
+   comme des sbires : la règle parle des types d'ennemis, et il faut bien que leur ordre
+   soit défini aussi. Sans point de départ — ni combattant ni cadre — la distance ne
+   compte pas et le type tranche d'abord. */
+const RANG_TYPE={standard:0,alpha:1,solitaire:2,boss:3};
+function rangType(a){return a&&!a.hero&&RANG_TYPE[a.type]!==undefined?RANG_TYPE[a.type]:0}
+/* Trie des paires [combattant, place dans la liste], depuis un combattant et dans un
+   cadre en pixels. On garde la place plutôt que le numéro affiché : c'est elle qui le
+   produit, et elle est toujours à portée de main. */
+function ordreCibles(paires,depuis,size){
+ const mesure=depuis&&size&&size.width>0?o=>Math.round(tokenDistance(depuis,o,size)):()=>0;
+ return [...(paires||[])].sort((u,v)=>
+  mesure(u[0])-mesure(v[0])
+  ||rangType(u[0])-rangType(v[0])
+  ||u[1]-v[1])}
 /* Le bonus de points de vie d'un aventurier : ce que lui donnent sa classe et son espèce,
    et rien d'autre — il ne se saisit pas. Les classes sont au catalogue ; les espèces
    n'ont pas encore de table, leur part vaut donc zéro, et le calcul l'attend déjà.

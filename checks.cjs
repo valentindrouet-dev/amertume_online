@@ -378,20 +378,25 @@ for(const o of [{x:22.7,y:74.3},{x:50.5,y:47.3}]){const vision=visionPolygon(o,F
  const beni={hp:10,max:10,states:['Onde'],bleed:0,cumuls:{}};
  assert.equal(infligeEtat(beni,'Blindage'),true);  // Un état bénéfique ne la consume pas.
  assert.ok(hasState(beni,'Onde'));}
-/* L'ordre canonique des cibles : Boss, Solitaire, Alpha, sbires ; à type égal l'alphabet ;
+/* L'ordre canonique des cibles : les plus proches ; à égalité sbires, Élites, Solitaires, Boss ;
    à nom égal la place dans la liste, qui est le numéro porté sur le socle. */
 {const {ordreCibles,rangType,cleClasse,classeDe}=require('./combat.js');
- const m=(name,type)=>({name,type,hero:false});
- const troupe=[[m('Gobelin','standard'),0],[m('Reine','boss'),1],[m('Alpha des bois','alpha'),2],
+ const m=(name,type,x=0,y=0)=>({name,type,hero:false,x,y});
+ // Sans point de départ, le type tranche : sbires, Élites, Solitaires, Boss ; puis la place.
+ const troupe=[[m('Gobelin','standard'),0],[m('Reine','boss'),1],[m('Élite des bois','alpha'),2],
   [m('Gobelin','standard'),3],[m('Ermite','solitaire'),4],[m('Brute','standard'),5]];
  assert.deepEqual(ordreCibles(troupe).map(([o,i])=>o.name+i),
-  ['Reine1','Ermite4','Alpha des bois2','Brute5','Gobelin0','Gobelin3']);
+  ['Gobelin0','Gobelin3','Brute5','Élite des bois2','Ermite4','Reine1']);
+ // Depuis un socle : le plus proche d'abord, quel que soit son type.
+ const depuis={x:10,y:50},cadre={width:1000,height:1000};
+ const proches=[[m('Gobelin','standard',40,50),0],[m('Reine','boss',20,50),1],[m('Gobelin','standard',20,50),2],[m('Ermite','solitaire',30,50),3]];
+ assert.deepEqual(ordreCibles(proches,depuis,cadre).map(([o,i])=>o.name+i),['Gobelin2','Reine1','Ermite3','Gobelin0']);
  // Deux monstres du même nom : la place dans la liste tranche, donc le numéro du socle.
  assert.deepEqual(ordreCibles([[m('Gobelin','standard'),7],[m('Gobelin','standard'),2]])
   .map(([,i])=>i),[2,7]);
- assert.equal(rangType({name:'Éla',hero:true}),3);        // Un aventurier compte comme un sbire.
- assert.equal(rangType({type:'inconnu'}),3);              // Un type inattendu aussi.
- assert.equal(rangType(null),3);
+ assert.equal(rangType({name:'Éla',hero:true}),0);        // Un aventurier compte comme un sbire.
+ assert.equal(rangType({type:'inconnu'}),0);              // Un type inattendu aussi.
+ assert.equal(rangType(null),0);
  assert.deepEqual(ordreCibles(null),[]);
  // Les classes du jeu, reconnues sur la seule tête du rôle.
  const classes=[{name:'Destructeur',tint:'#b0452e',pv:16},{name:'Mystique',tint:'#7a5cb8',pv:10}];
@@ -873,4 +878,4 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('598 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('599 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
