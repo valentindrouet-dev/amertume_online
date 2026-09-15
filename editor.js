@@ -494,20 +494,19 @@ function gearPill(o){const col=itemColumn(o);
  const info=[o.etat?'inflige '+o.etat:'',o.effects,(o.traits||[]).join(', '),o.notes].filter(Boolean).join(' · ');
  p.title=info?o.name+' — '+info:o.name;
  return p}
-/* L'équipement d'une fiche, sur deux lignes de deux — comme les compétences : les armes
-   sur la première, l'armure et le bouclier sur la seconde. Deux exemplaires de la même
-   arme font une pastille marquée « ×2 », pas deux jumelles. */
+/* L'équipement d'une fiche, sur deux colonnes : les armes à gauche, l'armure et le
+   bouclier à droite, chaque colonne empilant les siens. Deux exemplaires de la même arme
+   font une pastille marquée « ×2 », pas deux jumelles. */
 function gearPills(a){const out=document.createElement('div');out.className='gear-pills';
- const rangee=ids=>{const r=document.createElement('div');r.className='gear-rangee';
+ const rangee=ids=>{const r=document.createElement('div');r.className='gear-colonne';
   const comptes=new Map();ids.map(gear).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
   comptes.forEach((n,o)=>{const p=gearPill(o);p.classList.add('mini');
    if(n>1){const x=document.createElement('span');x.className='tag exemplaires';x.textContent='×'+n;
     p.querySelector('.nom').after(x)}
    r.append(p)});
   return r};
- const armes=rangee(a.weapons||[]),armures=rangee([a.armorId,a.shieldId]);
- if(armes.childElementCount)out.append(armes);
- if(armures.childElementCount)out.append(armures);
+ // Les deux colonnes sont toujours là : la gauche dit les armes, la droite l'armure, même vide.
+ out.append(rangee(a.weapons||[]),rangee([a.armorId,a.shieldId]));
  return out}
 /* Talents : six natures, chacune sa couleur et son abrégé, comme dans le jeu de table. */
 const TALENT_TYPES=[['act','ACT','Action'],['reac','REAC','Réaction'],['pass','PASS','Passif'],

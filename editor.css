@@ -324,9 +324,9 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .hero-kit{margin:0;font-size:13px}
 /* Pastilles posées : sur une fiche on lit son équipement et ses talents, on ne clique pas.
    Même dessin qu'à l'armurerie, sans le survol ni le curseur d'un bouton. */
-.gear-pills{display:flex;flex-direction:column;gap:8px;margin:2px 0 4px}
-/* Deux colonnes par ligne, comme les compétences ; une seule pastille prend la moitié. */
-.gear-rangee{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gear-pills{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 4px;align-items:start}
+/* Deux colonnes : les armes à gauche, l'armure et le bouclier à droite, empilés. */
+.gear-colonne{display:flex;flex-direction:column;gap:8px;min-width:0}
 .gear-pills .cat-pill{flex:none;cursor:default;min-width:0}
 /* La pastille réduite de moitié : plus basse, plus petite, ses dés et son écu avec elle. */
 .cat-pill.mini{padding:5px 9px;gap:6px;font-size:13px;border-radius:8px;min-height:34px}
