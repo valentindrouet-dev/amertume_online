@@ -9,13 +9,17 @@
 function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0,doublesCritiques=false}){
  const all=dice.map(d=>[...d]);
  if(!all.length||all.some(([v,c])=>!Number.isInteger(v)||v<1||v>6||![0,1,2,3,5,6].includes(c)))throw Error('Réserve offensive invalide');
- if(all.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false};
- const faces={};all.forEach(([v])=>faces[v]=(faces[v]||0)+1);
+ /* Un dé d'os qui double avec un autre dé lancé s'en va d'abord, avant tout le reste :
+    il ne compte ni pour l'échec, ni pour le critique, ni pour les dégâts. Un 6 d'os et
+    un 6 blanc ne font donc pas de critique — l'os est parti avant qu'on les compte. */
+ const faces0={};all.forEach(([v])=>faces0[v]=(faces0[v]||0)+1);
+ const vifs=all.filter(([v,c])=>!(c===1&&faces0[v]>1));
+ if(vifs.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false};
+ const faces={};vifs.forEach(([v])=>faces[v]=(faces[v]||0)+1);
  const critical=faces[6]>=2||(doublesCritiques&&Object.keys(faces).some(v=>Number(v)!==1&&faces[v]>=2));
- if(critical){if(!all.some(([,c])=>c===criticalColor))throw Error('Couleur critique absente');let v;let count=0;do{v=roll();all.push([v,criticalColor]);if(++count>=100&&v===6)throw Error('Limite de relances atteinte, attaque non appliquée');}while(v===6)}
+ if(critical){if(!vifs.some(([,c])=>c===criticalColor))throw Error('Couleur critique absente');let v;let count=0;do{v=roll();all.push([v,criticalColor]);vifs.push([v,criticalColor]);if(++count>=100&&v===6)throw Error('Limite de relances atteinte, attaque non appliquée');}while(v===6)}
  const failleFace=faille?roll():null;
- const counts={};all.forEach(([v])=>counts[v]=(counts[v]||0)+1);
- const kept=all.filter(([v,c])=>!(c===1&&counts[v]>1)&&v!==failleFace);const remaining={};kept.forEach(([v])=>remaining[v]=(remaining[v]||0)+1);
+ const kept=vifs.filter(([v])=>v!==failleFace);const remaining={};kept.forEach(([v])=>remaining[v]=(remaining[v]||0)+1);
  let damage=0,hit=false;
  kept.forEach(([v,c])=>{if(c===2||c===5||v>def){hit=true;damage+=v*(c===3&&remaining[v]>1?2:c===6?Math.min(3,Math.max(1,round)):1)}});
  const saignee=hit?Math.max(0,Math.trunc(bleed)||0):0;
