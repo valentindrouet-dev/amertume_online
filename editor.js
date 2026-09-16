@@ -86,8 +86,6 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   (at.logos||[]).forEach(l=>{const im=logoEquipement({logo:l},'bouton');if(im)logos.append(im)});
   if(logos.childElementCount){b.classList.add('avec-logo');b.append(logos)}
   const nom=document.createElement('span');nom.className='nom';nom.textContent=at.name||'Attaque';
-  if(at.range==='distance'){const loin=document.createElement('span');loin.className='loin';
-   loin.textContent=' ⤳';loin.setAttribute('aria-hidden','true');nom.append(loin)}
   /* Deux lignes, centrées : le nom, puis les dés et le bonus de dégâts — on choisit son
      attaque en voyant tout ce qu'elle lance. Affaibli ou une attaque « dés seuls » n'ont
      pas de bonus, et n'en écrivent pas. */

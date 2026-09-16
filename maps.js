@@ -181,7 +181,7 @@ function doorInSight(d){const size=mapSize();
 // Déjà explorée : la mémoire juste autour du rectangle suffit.
 function doorRemembered(d){return doorProbes(d,.9).some(([x,y])=>seenAt(x,y))}
 function doorSeen(d){const m=currentMap();
- if(view==='mj'||!m||m.fogOff||!fogVis)return true;
+ if(!oeilJoueur()||!m||m.fogOff||!fogVis)return true;
  return doorInSight(d)||doorRemembered(d)}
 // La mémoire est peinte une fois par changement, puis réutilisée telle quelle.
 function memoryCanvas(d){if(!fogSeen)return null;
@@ -201,6 +201,8 @@ function cleVoile(){const m=currentMap();return m?m.id+'|'+(m.fogOff?1:0):''}
 function leverVoile(){const m=currentMap(),cv=$('fog');
  const peint=!m||m.fogOff||(fogVis&&fogDim&&cv.clientWidth>0&&cv.clientHeight>0);
  if(!peint)return;cartePeinte=cleVoile();voileAttente.hidden=true}
+let vueTroupe=false;
+function oeilJoueur(){return view!=='mj'||vueTroupe}
 function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  // Voile levé par le MJ : plus rien ne masque la carte, pour personne.
  if(!m||!fogVis||!d||m.fogOff){cv.style.display='none';return}
@@ -218,7 +220,7 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
  const ctx=cv.getContext('2d');
  // Le MJ garde une vue lisible ; le joueur ne voit rien de l'inexploré.
- const inconnu=view==='mj'?110:255,memoire=view==='mj'?40:150;
+ const inconnu=oeilJoueur()?255:110,memoire=oeilJoueur()?150:40;
  ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
  ctx.clearRect(0,0,W,H);
  ctx.fillStyle='rgba(6,9,11,'+(inconnu/255).toFixed(3)+')';ctx.fillRect(0,0,W,H);
@@ -410,7 +412,6 @@ function renderPortes(){const portes=$('map-doors'),m=currentMap();portes.replac
     :'Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
    if(!doorInReach(d)){log('Trop loin de la porte : approche ton aventurier pour la manœuvrer.',{local:true});return}
    d.open=!d.open;
-   log((d.secret?'Passage secret ':'Porte ')+(i+1)+' '+(d.open?'ouvert'+(d.secret?'':'e'):'referm'+(d.secret?'é':'ée'))+'.',{ton:'carte'});
    render();scheduleSave()};
   portes.append(el)})}
 /* Le brouillard ne se recalcule qu'au relâchement du socle, jamais pendant le geste : le
@@ -1087,7 +1088,11 @@ const icone=(id,glyphe,titre)=>{const b=document.createElement('button');b.id=id
 const fogReset=icone('fog-reset','🌫','Remettre le brouillard');
 const fogAll=icone('fog-all','👁','Tout révéler');
 const lockBtn=icone('token-lock','🔓','Figer les déplacements des joueurs');
-fogBar.append(fogReset,fogAll,lockBtn);document.querySelector('.mapbar .zoom-bar').after(fogBar);
+/* L'œil de la troupe : le MJ voit la carte comme ses joueurs — brouillard noir, socles
+   qu'ils ne voient pas absents — sans quitter sa vue. La liste, elle, reste la sienne. */
+const eyeBtn=icone('troupe-eye','🎭','Voir la carte comme la troupe');
+fogBar.append(fogReset,fogAll,eyeBtn,lockBtn);document.querySelector('.mapbar .zoom-bar').after(fogBar);
+eyeBtn.onclick=()=>{vueTroupe=!vueTroupe;fogKey='';render()};
 fogReset.onclick=()=>resetFog(false);
 fogAll.onclick=()=>{const m=currentMap();if(!m)return;
  m.fogOff=!m.fogOff;fogKey='';render();scheduleSave();
@@ -1102,7 +1107,7 @@ function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  const titre=$('carte-titre');
  if(titre)titre.textContent=m&&m.name?m.name:'Carte tactique';
  fogBar.hidden=!mj;fogReset.hidden=fogAll.hidden=!m;
- fogAll.classList.toggle('on',!!(m&&m.fogOff));
+ fogAll.classList.toggle('on',!!(m&&m.fogOff));eyeBtn.hidden=!m;eyeBtn.classList.toggle('on',vueTroupe);
  fogAll.title=m&&m.fogOff?'Rétablir le brouillard':'Tout révéler';
  /* Changer de carte en pleine partie appartient au MJ : la liste et son bouton suivent
     donc la vue, et non le seul fait qu'il existe des cartes. Ils étaient montés une fois
