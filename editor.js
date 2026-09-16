@@ -576,15 +576,13 @@ function talentBloc(t,vif,compact){const bloc=document.createElement('span');blo
   choixVif(pill.querySelector('.t-badge'),()=>t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]),v=>{t.type=v;talentCorrige()},'Changer le type');
   champVif([...pill.querySelectorAll('.tag')].find(x=>x.textContent.startsWith('Niv.')),()=>t.level||1,v=>{t.level=num(v,1,20);talentCorrige()},'Changer le niveau (1 à 20)','texte')}
  bloc.append(pill,detail);return bloc}
-/* Les talents d'une fiche, sur deux colonnes comme l'équipement : à gauche ce qui se
-   déclenche (actions, réactions, maîtrises — un bouton en combat), à droite ce qui joue
-   tout seul (passifs, améliorations, critiques). */
+/* Les talents d'une fiche, sur deux colonnes comme l'équipement, dans l'ordre où ils sont
+   appris : le premier à gauche, le deuxième à droite, et ainsi de suite. */
 function talentPills(a){const out=document.createElement('div');out.className='gear-pills talent-pills';
  const liste=(a.talents||[]).map(talent).filter(Boolean);
  if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
- const passif=t=>(typeof rangeeTalent==='function'?rangeeTalent(t):((t.type==='pass'||t.type==='ame')?'aucune':'attaques'))==='aucune';
  const colonne=ts=>{const r=document.createElement('div');r.className='gear-colonne';ts.forEach(t=>r.append(talentBloc(t,false,true)));return r};
- out.append(colonne(liste.filter(t=>!passif(t))),colonne(liste.filter(passif)));
+ out.append(colonne(liste.filter((t,i)=>i%2===0)),colonne(liste.filter((t,i)=>i%2===1)));
  return out}
 const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets']];
 function armoryRow(a,i){const rang=document.createElement('div');rang.className='cat-row';
@@ -1133,9 +1131,13 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   const prof=new Map();
   const pastille=t=>{const p=talentPill(t);if(prof.get(t.id))p.classList.add('sous-talent');
    const m=manque(t);if(m){p.classList.add('verrou');p.title+=' — sous clé : requiert '+m}return p};
+  /* Un aventurier n'a que les génériques et les talents de sa classe ; un adversaire
+     voit toutes les familles. La classe se reconnaît à sa clé (Gardien, Gardienne…). */
   const sienne=(a.role||'').split('·')[0].trim(),toutes=talentFamilies();
-  const tete=[GENERIQUES,...(sienne&&toutes.includes(sienne)?[sienne]:[])];
-  for(const famille of [...tete,...toutes.filter(f=>!tete.includes(f))])
+  const cle=typeof cleClasse==='function'?cleClasse(sienne):'';
+  const classe=sienne?toutes.find(f=>f===sienne)||toutes.find(f=>cle&&cleClasse(f)===cle)||toutes.find(f=>cle&&cle.startsWith(cleClasse(f))):null;
+  const tete=[GENERIQUES,...(classe?[classe]:[])];
+  for(const famille of (a.hero?tete:[...tete,...toutes.filter(f=>!tete.includes(f))]))
    groupe(famille,ordonneTalents((catalog.talents||[]).filter(t=>talentFamily(t)===famille
     &&(!q||t.name.toLowerCase().includes(q)||(t.effects||'').toLowerCase().includes(q)))
     .sort((x,y)=>(x.level||1)-(y.level||1)||x.name.localeCompare(y.name,'fr')),catalog.talents)

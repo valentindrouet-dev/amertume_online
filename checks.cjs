@@ -956,7 +956,7 @@ const cartes=fs.readFileSync('maps.js','utf8');
 assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false;")&&cartes.includes('renderFog();leverVoile();')&&page.includes('#voile-attente{'),'la carte se voile jusqu’au brouillard');
 assert.ok(page.includes(".j-entry.ton-talent{")&&page.includes("li.classList.add('j-attaque','ton',/^spell_/.test(logo||'')?'ton-talent':'ton-attaque')"),'le journal a ses tons');
 // Le journal se cale sur le bas de la carte, et se libère sur une colonne.
-assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderMapLayer();calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1')&&page.includes('.stack.left.calee>.pv-panel{margin-top:auto}'),'les colonnes se calent sur la centrale');
+assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderMapLayer();calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
 assert.ok(cartes.includes("moveActor(heros[i],p.x,p.y,true)"),'l’ouverture d’une carte place librement');
 assert.ok(feuille.includes('repeat(4,minmax(0,1fr))')&&feuille.includes("@media(max-width:1150px){.hero-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}"),'quatre aventuriers par ligne');
 assert.ok(page.includes(".eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title,.titre-actions,.panel>h2,#carte-titre{font:600 13px")&&feuille.includes(".bloc-titre,.bloc-replie .bloc-titre{font:600 13px")&&page.includes('.actions-rangee>.attack-card{margin:0}'),'un seul lettrage de titres');
@@ -975,9 +975,12 @@ assert.ok(!src.includes("loin.textContent=' ⤳'")&&page.includes('.actor.enemy.
 assert.ok(page.includes('function remiseAuTourUn')&&cartes.includes("if(typeof remiseAuTourUn==='function')remiseAuTourUn();"),'ouvrir une carte revient au tour 1');
 assert.ok(page.includes('function prochainNumero')&&page.includes("a.vu=true;if(!a.numero)a.numero=prochainNumero(a)")&&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('numero'),'les numéros se donnent à la révélation');
 assert.ok(page.includes("groupeReplie('Adversaires cachés',cachees)")&&page.includes('let cachesOuverts=false;'),'les adversaires cachés se replient');
-assert.ok(page.includes("imgUrl('ONDE.png')")&&src.includes("out.className='gear-pills talent-pills'")&&src.includes('colonne(liste.filter(passif))'),'l’Onde et les deux colonnes de talents');
+assert.ok(page.includes("imgUrl('ONDE.png')")&&src.includes("out.className='gear-pills talent-pills'")&&src.includes('liste.filter((t,i)=>i%2===0)'),'l’Onde et les deux colonnes de talents');
 /* La troupe ne voit ni porte de côté ni objet dans le noir ; la barre de la carte se vide ; qui parle. */
 assert.ok(cartes.includes('function doorFaces')&&cartes.includes("const t=1-r/L;return rayonContre(")&&cartes.includes("if(oeilJoueur()&&!(seenAt(o.x,o.y)"),'portes et objets ne se devinent plus');
 assert.ok(!cartes.includes("before(mapPick,mapOpen)")&&page.includes('<div class="mapbar-h2" hidden>')&&!src.includes("' de la scène.'"),'la barre de la carte se vide');
 assert.ok(page.includes("const a=selected!==null?actors[selected]:null;return a?a:{name:'MJ',mj:true}"),'le socle sélectionné parle, sinon le MJ');
-console.log('679 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Le zoom reste net, les points de vie précèdent les combattants, le sélecteur de talents se limite à la classe. */
+assert.ok(page.includes('#map-view{--token:46px;position:absolute;inset:0;transform-origin:0 0;background-image')&&!page.includes('id="pv-cible"')&&page.indexOf('id="pv-panel"')<page.indexOf('id="actors"'),'zoom net, points de vie en haut');
+assert.ok(src.includes("a.hero?tete:")&&src.includes("cle.startsWith(cleClasse(f))"),'les talents de la classe seulement');
+console.log('681 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
