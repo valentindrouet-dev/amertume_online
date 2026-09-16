@@ -908,11 +908,15 @@ assert.equal(sauve.tailleLisible(3*1048576),'3,0 Mo');
 // Les Paramètres portent les deux gestes, et l'import ne prend que du JSON.
 ['id="export-tout"','id="import-tout"','id="import-fichier"','accept=".json,application/json"','id="import-erreur"'].forEach(m=>assert.ok(src.includes(m),'Paramètres sans '+m));
 // La sauvegarde locale et le fichier passent par la même vérification et la même pose.
-assert.ok(src.includes('if(!verifieSauvegarde(s))appliquerSauvegarde(s);finish()'));
+assert.ok(src.includes('get.onsuccess=()=>{poser(get.result);finish()}')&&src.includes('if(verifieSauvegarde(s))return;'));
 /* La table en ligne : ce que le joueur voit quand ça coince, et l'ordre des choses. */
 const vivant=fs.readFileSync('live.js','utf8');
 assert.ok(vivant.indexOf('onAuthStateChanged(u=>{off();r(u)})')<vivant.indexOf('await auth.signInAnonymously()'),'l’identité mémorisée revient avant toute connexion anonyme');
 assert.ok(vivant.includes("liveErreur(e));ouvreTable();return"),'un échec pour rejoindre ouvre la fenêtre');
 assert.ok(vivant.includes('await publishShared(false)'),'ouvrir une table publie d’abord le contenu');
 assert.ok(vivant.includes("if(invite){view='player'"),'un invité joue en joueur');
-console.log('632 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Le chargement n'attend pas une sauvegarde muette, et une erreur se lit sur le voile. */
+assert.ok(src.includes("setTimeout(()=>{if(!sessionRepondue)ouvrir()},3000)"),'une ouverture sans réponse se relance');
+assert.ok(src.includes("finish()}},8000)"),'la scène s’ouvre quoi qu’il arrive');
+assert.ok(page.includes("c.textContent='Le chargement a échoué : '"),'le voile dit l’erreur');
+console.log('635 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

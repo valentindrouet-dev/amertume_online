@@ -1673,7 +1673,27 @@ function noterSauvegarde(texte,souci){saveLabel.textContent=texte;
  if(!souci)dernierSouci=''}
 function saveNow(){if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}try{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(snapshot(),'session');tx.oncomplete=()=>noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur');tx.onerror=()=>noterSauvegarde('Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.',true)}catch(e){noterSauvegarde('Impossible d’enregistrer : '+e.message,true)}}
 document.addEventListener('change',scheduleSave);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!loading)saveNow()});
-function loadSession(){try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onerror=finish;req.onblocked=finish;req.onsuccess=()=>{db=req.result;const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;get.onsuccess=()=>{const s=get.result;if(!verifieSauvegarde(s))appliquerSauvegarde(s);finish()}}}catch(e){finish()}}
+/* Safari iOS laisse parfois une ouverture d'IndexedDB sans réponse. On réessaie une fois,
+   puis la scène s'ouvre quand même ; si la sauvegarde répond plus tard, elle se pose
+   (sauf chez un invité en table, dont la partie vient du MJ). Une sauvegarde illisible
+   ne bloque plus rien : elle se dit au journal. */
+let sessionRepondue=false;
+function loadSession(){
+ const poser=s=>{try{if(verifieSauvegarde(s))return;
+   if(!loading){const invite=typeof auth!=='undefined'&&auth&&auth.currentUser&&auth.currentUser.isAnonymous;if(invite)return}
+   appliquerSauvegarde(s);
+   if(!loading){if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();
+    if(typeof reappliquerTable==='function')reappliquerTable()}}
+  catch(e){noterSauvegarde('Partie enregistrée illisible : '+e.message,true)}};
+ const ouvrir=()=>{try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');
+   req.onerror=()=>{sessionRepondue=true;finish()};req.onblocked=()=>finish();
+   req.onsuccess=()=>{if(sessionRepondue){req.result.close();return}sessionRepondue=true;db=req.result;
+    const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;
+    get.onsuccess=()=>{poser(get.result);finish()}}}
+  catch(e){sessionRepondue=true;finish()}};
+ ouvrir();
+ setTimeout(()=>{if(!sessionRepondue)ouvrir()},3000);
+ setTimeout(()=>{if(loading){noterSauvegarde('La partie enregistrée ne répond pas : la scène s’ouvre sans elle, elle se posera si l’appareil finit par la lire.',true);finish()}},8000)}
 function finish(){if(!loading)return;loading=false;cover.hidden=true;render();
  if(!db)noterSauvegarde('Sauvegarde locale indisponible dans ce navigateur.',true);
  // La partie est là : les onglets peuvent rouvrir la page où l'on travaillait.
