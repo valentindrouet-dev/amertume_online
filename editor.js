@@ -71,10 +71,11 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   const im=logoTalent({logo:t.logo},'bouton');
   if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);b.classList.add('avec-logo');b.append(logos)}
   const nom=document.createElement('span');nom.className='nom';nom.textContent=t.texte;
-  const bas=document.createElement('span');bas.className='des-bonus';
-  if(t.des)bas.append(dicePips(t.des));
-  else{const n=document.createElement('span');n.className='nature';n.textContent=talentType(t.talent)[2];bas.append(n)}
-  b.append(nom,bas);inerte(b,!t.peut);b.title=t.titre;b.setAttribute('aria-label',t.texte+' — '+t.titre);
+  // Les dés qu'il lance sur la seconde ligne ; sans dés, le nom seul — rien d'autre à dire.
+  b.append(nom);
+  if(t.des){const bas=document.createElement('span');bas.className='des-bonus';bas.append(dicePips(t.des));b.append(bas)}
+  else b.classList.add('sans-des');
+  inerte(b,!t.peut);b.title=t.titre;b.setAttribute('aria-label',t.texte+' — '+t.titre);
   b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(b)});
  if(!liste.length)return;
  const retenu=Math.trunc(a.activeAttack)||0;
@@ -1426,13 +1427,28 @@ function removeActors(liste,demande){
  if(demande||heros){const quoi=noms.length===1?'Retirer '+noms[0]+' de la scène ?'
   :'Retirer '+noms.length+' combattants de la scène ?\n\n'+noms.join(', ');
   if(!confirm(quoi))return null}
+ const partants=rangs.map(i=>actors[i]);
+ /* Les cibles sont des rangs dans la liste : on les retient par identifiant avant de
+    retirer, et on les repose après — sinon elles glissaient sur d'autres combattants. */
+ const visees=actors.map(a=>[a,(Array.isArray(a.targets)?a.targets:(a.target===null||a.target===undefined?[]:[a.target]))
+  .map(j=>actors[j]&&actors[j].id).filter(Boolean)]);
  rangs.forEach(i=>{actors.splice(i,1);
-  actors.forEach(a=>{if(a.target===i)a.target=null;else if(a.target>i)a.target--});
   if(owner>=i)owner=Math.max(0,owner-1);
   if(selected!==null&&selected>=i)selected=selected>i?selected-1:null});
+ visees.forEach(([a,ids])=>{if(!actors.includes(a))return;
+  poseCibles(a,ids.map(id=>actors.findIndex(o=>o&&o.id===id)).filter(j=>j>=0))});
  if(!actors[owner]?.hero)owner=actors.findIndex(a=>a.hero);
  marked.clear();
+ xpDesRetires(partants);
  render();scheduleSave();return null}
+/* Un adversaire retiré de la scène laisse son XP : elle va à chaque aventurier présent
+   sur la carte, en entier. Une seule ligne au journal, partagée à la table. */
+function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!f.hero&&(Math.trunc(Number(f.xp))||0)>0);
+ const xp=vaincus.reduce((s,f)=>s+Math.trunc(Number(f.xp)),0),heros=actors.filter(a=>a&&a.hero);
+ if(!xp||!heros.length)return;
+ heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));
+ log('+'+xp+' XP pour '+heros.map(h=>h.name).join(', ')+' ('+vaincus.map(f=>f.name).join(', ')+').');
+ document.dispatchEvent(new Event('amertume-content-changed'))}
 /* Rejouer la même rencontre : les adversaires repartent intacts, la troupe garde ses
    blessures — c'est le combat qu'on recommence, pas la partie. */
 $('heal-foes').onclick=()=>{if(view!=='mj')return;

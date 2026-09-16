@@ -1029,4 +1029,12 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
  assert.ok(!orbeSrc.includes('mauvaisSort(')&&!orbeSrc.includes('Mauvais Sort :')&&orbeSrc.includes("let suite='',pose='';"),'l’orbe est un talent : pas de Mauvais Sort');
  const frappeSrc=page.slice(page.indexOf('function frappe('),page.indexOf('function frappe(')+1200);
  assert.ok(frappeSrc.includes("porteEffet(talentsCodes(b),'mauvaissort')?mauvaisSort(dice,d6):null"),'Mauvais Sort reste sur les attaques');}
-console.log('704 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les boutons d'action écrivent en blanc, actifs, grisés ou inertes ; un talent sans dés ne porte
+   plus sa nature ; un adversaire retiré laisse son XP aux aventuriers et les cibles ne glissent pas. */
+assert.ok(feuille.includes('letter-spacing:.2px;color:#fff;')&&feuille.includes('button.btn-action:disabled{--fond:var(--disabled);color:#fff;opacity:1;')
+ &&feuille.includes('button.btn-action.inerte,button.btn-action.inerte:hover{opacity:1;filter:saturate(.35) brightness(1.1);color:#fff;')
+ &&!feuille.includes('encre-sombre')&&!/button\.btn-[a-z]+[^{]*\{[^}]*(color:#2a2118|disabled-ink)/.test(feuille)&&feuille.includes('button.btn-talent.t-mait{--fond:#d4a341}'),'les boutons d’action écrivent en blanc');
+assert.ok(!src.includes("className='nature'")&&!feuille.includes('.nature{')&&src.includes("else b.classList.add('sans-des');"),'un talent sans dés ne dit plus sa nature');
+assert.ok(src.includes('function xpDesRetires(')&&src.includes('xpDesRetires(partants);')&&src.includes("heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));")
+ &&src.includes("poseCibles(a,ids.map(id=>actors.findIndex(o=>o&&o.id===id)).filter(j=>j>=0))")&&!src.includes('if(a.target===i)a.target=null;else if(a.target>i)a.target--'),'l’XP d’un adversaire retiré va aux aventuriers, les cibles suivent');
+console.log('707 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
