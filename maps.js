@@ -460,7 +460,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  actors.forEach(a=>{a.target=null});
  owner=actors.findIndex(a=>a.hero);selected=Math.max(0,owner);
  resetMapZoom();showPage('table');render();
- log('Carte « '+m.name+' » ouverte : '+heros.length+' aventurier(s) placé(s), '+(m.foes||[]).length+' adversaire(s) en place. Tour 1.',{ton:'carte'});scheduleSave()}
+ scheduleSave()}
 
 /* ---------- Onglets de page, réservés au MJ ---------- */
 const tabs=document.createElement('nav');tabs.className='tabs';

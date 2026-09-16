@@ -576,13 +576,22 @@ function talentBloc(t,vif,compact){const bloc=document.createElement('span');blo
   choixVif(pill.querySelector('.t-badge'),()=>t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]),v=>{t.type=v;talentCorrige()},'Changer le type');
   champVif([...pill.querySelectorAll('.tag')].find(x=>x.textContent.startsWith('Niv.')),()=>t.level||1,v=>{t.level=num(v,1,20);talentCorrige()},'Changer le niveau (1 à 20)','texte')}
  bloc.append(pill,detail);return bloc}
-/* Les talents d'une fiche, sur deux colonnes comme l'équipement, dans l'ordre où ils sont
-   appris : le premier à gauche, le deuxième à droite, et ainsi de suite. */
-function talentPills(a){const out=document.createElement('div');out.className='gear-pills talent-pills';
+/* Les talents d'une fiche : une grille de deux colonnes, dans l'ordre où ils sont appris —
+   le premier à gauche, le deuxième à droite. Le dépliant d'un talent s'étale sous les deux
+   vignettes de sa rangée : moins haut, et la rangée suivante ne se décale pas de travers. */
+function talentPills(a){const out=document.createElement('div');out.className='talent-grille';
  const liste=(a.talents||[]).map(talent).filter(Boolean);
  if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
- const colonne=ts=>{const r=document.createElement('div');r.className='gear-colonne';ts.forEach(t=>r.append(talentBloc(t,false,true)));return r};
- out.append(colonne(liste.filter((t,i)=>i%2===0)),colonne(liste.filter((t,i)=>i%2===1)));
+ for(let i=0;i<liste.length;i+=2){const rangee=liste.slice(i,i+2),details=[];
+  rangee.forEach(t=>{const pill=talentPill(t,true);pill.classList.add('cliquable');
+   const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev);
+   const detail=talentDetail(t,false);detail.classList.add('large');
+   const ouvert=talentsOuverts.has(t.id);detail.hidden=!ouvert;pill.classList.toggle('ouvert',ouvert);
+   pill.onclick=e=>{e.stopPropagation();const o=detail.hidden;detail.hidden=!o;pill.classList.toggle('ouvert',o);
+    if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};
+   out.append(pill);details.push(detail)});
+  if(rangee.length===1){const vide=document.createElement('span');vide.className='vide';out.append(vide)}
+  details.forEach(d=>out.append(d))}
  return out}
 const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets']];
 function armoryRow(a,i){const rang=document.createElement('div');rang.className='cat-row';
@@ -639,7 +648,6 @@ function reclasserPlusTard(){clearTimeout(reclassement);
    été délivré ; une saisie validée, elle, doit se contenter de réécrire les chiffres
    sur place, sans quoi le clic suivant tomberait dans le vide. */
 function poserModele(m,f,refaire){const suivis=syncFromTemplate(m);
- if(suivis)log(suivis+' créature(s) « '+m.name+' » sur la table mise(s) à jour.');
  if(refaire&&f)f.replaceChildren(...monsterSheet(m).childNodes);
  else majModele(f,m);
  reclasserPlusTard();render();scheduleSave();
@@ -1381,8 +1389,7 @@ function syncFromTemplate(m){let touches=0;
  return touches}
 $('actor-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;const a=readActor();if(templateIndex!==null){const modele={...toMonster(a),id:catalog.monsters[templateIndex].id};catalog.monsters[templateIndex]=modele;
  const suivis=syncFromTemplate(modele);
- if(suivis)log(suivis+' créature(s) « '+modele.name+' » sur la table mise(s) à jour.');
- renderCatalogPages()}else if(editing===null){actors.push(a);selected=actors.length-1}else actors[editing]=a;actorDialog.close();renderHeroes();render();log('Fiche enregistrée : '+a.name);scheduleSave()};
+ renderCatalogPages()}else if(editing===null){actors.push(a);selected=actors.length-1}else actors[editing]=a;actorDialog.close();renderHeroes();render();scheduleSave()};
 $('save-template').onclick=()=>{if(!$('actor-form').reportValidity()||view!=='mj')return;catalog.monsters.push(toMonster(readActor()));$('actor-error').textContent='Copie ajoutée au bestiaire.';scheduleSave()};
 /* Retirer un combattant : les cibles qui le visaient et les indices qui le suivaient
    sont recalés, et la scène garde toujours au moins un aventurier. */
