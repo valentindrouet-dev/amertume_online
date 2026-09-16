@@ -758,7 +758,20 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  destructeur:{cle:'destructeur',nom:'Destructeur',type:'mait',
   aide:'Maîtrise : avec une arme au contact, le porteur réussit un critique sur tous ses doubles, pas seulement les 6.',
   params:[],
-  phrase(){return 'Le porteur réalise des <b>critiques sur tous ses doubles</b> avec une <b>arme au contact</b> ; un double 1 reste un échec.'}}};
+  phrase(){return 'Le porteur réalise des <b>critiques sur tous ses doubles</b> avec une <b>arme au contact</b> ; un double 1 reste un échec.'}},
+ insaisissable:{cle:'insaisissable',nom:'Insaisissable',type:'pass',
+  aide:'Passif : le porteur ignore les Dégâts d’Opportunité quand il effectue un mouvement.',
+  params:[],
+  phrase(){return 'Le porteur <b>ignore les Dégâts d’Opportunité</b> en effectuant un mouvement.'}},
+ mauvaissort:{cle:'mauvaissort',nom:'Mauvais Sort',type:'pass',monstre:true,
+  aide:'Passif : un combattant qui cible le porteur relance son meilleur dé de dégâts, avant le calcul des dégâts.',
+  params:[],
+  phrase(){return 'Qui cible le porteur <b>relance son meilleur dé</b> de dégâts, avant le calcul.'}}};
+/* Mauvais Sort : le meilleur dé de l'attaquant — la plus haute face, le premier en cas
+   d'égalité — est relancé sur place, avant tout calcul. La relance peut être meilleure. */
+function mauvaisSort(dice,roll){if(!Array.isArray(dice)||!dice.length)return null;
+ let i=0;dice.forEach((d,k)=>{if(d[0]>dice[i][0])i=k});
+ const avant=dice[i][0],apres=roll();dice[i]=[apres,dice[i][1]];return {index:i,avant,apres}}
 /* Rempart : la part du mur. La moitié, arrondie au-dessus, et jamais plus que les dégâts. */
 function partDuRempart(degats){const d=Math.max(0,Math.trunc(degats)||0);return Math.ceil(d/2)}
 function porteEffet(portes,cle){return (portes||[]).some(t=>t&&t.code&&t.code.cle===cle)}
@@ -927,6 +940,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

@@ -983,4 +983,12 @@ assert.ok(page.includes("const a=selected!==null?actors[selected]:null;return a?
 /* Le zoom reste net, les points de vie précèdent les combattants, le sélecteur de talents se limite à la classe. */
 assert.ok(page.includes('#map-view{--token:46px;position:absolute;inset:0;transform-origin:0 0;background-image')&&!page.includes('id="pv-cible"')&&page.indexOf('id="pv-panel"')<page.indexOf('id="actors"'),'zoom net, points de vie en haut');
 assert.ok(src.includes("a.hero?tete:")&&src.includes("cle.startsWith(cleClasse(f))"),'les talents de la classe seulement');
-console.log('681 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Dégâts d'opportunité, Insaisissable, Mauvais Sort. */
+{const C2=require('./combat.js');
+ assert.equal(C2.TALENTS_CODES.insaisissable.type,'pass');assert.equal(C2.TALENTS_CODES.mauvaissort.monstre,true);
+ const des=[[3,0],[6,1],[6,0]],s=C2.mauvaisSort(des,()=>2);
+ assert.deepEqual([s.index,s.avant,s.apres],[1,6,2]);assert.equal(des[1][0],2);assert.equal(des[1][1],1);   // Le premier des meilleurs, sa couleur gardée.
+ assert.equal(C2.mauvaisSort([],()=>2),null);}
+assert.ok(page.includes('function degatsOpportunite')&&page.includes("avant.forEach(([k,liste])=>degatsOpportunite(actors[k],liste));")&&page.includes("const avant=contactsDe(a);moveActor("),'les dégâts d’opportunité se jugent au lâcher et au clavier');
+assert.ok(page.includes("porteEffet(talentsCodes(a),'insaisissable')")&&page.includes("porteEffet(talentsCodes(b),'mauvaissort')?mauvaisSort(dice,d6):null"),'Insaisissable et Mauvais Sort câblés');
+console.log('688 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
