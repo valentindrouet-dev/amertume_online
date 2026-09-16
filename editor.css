@@ -310,7 +310,7 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .pose-nombre button{margin:0}
 /* Une fiche d'aventurier par carte : portrait, chiffres et équipement d'un coup d'œil. */
 #hero-search{flex:0 1 340px}
-.hero-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;align-items:start}
+.hero-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:start}
 .hero-card{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:14px 15px 13px}
 .hero-head{display:flex;align-items:center;gap:11px}
 .hero-id{flex:1;min-width:0}
@@ -623,3 +623,10 @@ button.choix-attaque .logo-equip{width:38px;height:38px;margin:0;filter:drop-sha
 button.choix-attaque .nature{font:600 11px system-ui;letter-spacing:1.4px;text-transform:uppercase;opacity:.85}
 /* Une teinte propre — le violet des orbes — porte un texte blanc, même sur une Maîtrise. */
 button.btn-talent.teinte-propre{color:#f6f9fd;text-shadow:0 1px 1px rgba(0,0,0,.4)}
+
+/* Quatre aventuriers par ligne au plus, puis trois, deux, un selon la largeur. */
+@media(max-width:1500px){.hero-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1150px){.hero-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr}}
+/* Les titres de blocs partagent un seul lettrage, sans Killam. */
+.bloc-titre,.bloc-replie .bloc-titre{font:600 13px/1.25 system-ui,-apple-system,'Segoe UI',sans-serif;letter-spacing:2.5px;text-transform:uppercase}

@@ -956,10 +956,13 @@ const cartes=fs.readFileSync('maps.js','utf8');
 assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false;")&&cartes.includes('renderFog();leverVoile();')&&page.includes('#voile-attente{'),'la carte se voile jusqu’au brouillard');
 assert.ok(page.includes(".j-entry.ton-talent{")&&page.includes("li.classList.add('j-attaque','ton',/^spell_/.test(logo||'')?'ton-talent':'ton-attaque')"),'le journal a ses tons');
 // Le journal se cale sur le bas de la carte, et se libère sur une colonne.
-assert.ok(cartes.includes('function calerJournal')&&cartes.includes('renderMapLayer();calerJournal();')&&page.includes('.journal-cale .journal{flex:1'),'le journal descend au bas de la carte');
+assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderMapLayer();calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1')&&page.includes('.stack.left.calee>.pv-panel{margin-top:auto}'),'les colonnes se calent sur la centrale');
+assert.ok(cartes.includes("moveActor(heros[i],p.x,p.y,true)"),'l’ouverture d’une carte place librement');
+assert.ok(feuille.includes('repeat(4,minmax(0,1fr))')&&feuille.includes("@media(max-width:1150px){.hero-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}"),'quatre aventuriers par ligne');
+assert.ok(page.includes(".eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title,.titre-actions,.panel>h2,#carte-titre{font:600 13px")&&feuille.includes(".bloc-titre,.bloc-replie .bloc-titre{font:600 13px")&&page.includes('.actions-rangee>.attack-card{margin:0}'),'un seul lettrage de titres');
 /* Le journal se vide et s'écrit ; les lignes ne disent plus « Coma » mais 💀 ; la fiche tient dans sa colonne. */
 assert.ok(page.includes('id="journal-chat"')&&page.includes('function logChat(')&&vivant.includes("rec.effet==='vider'&&duMJ"),'le journal s’écrit et se vide');
 assert.ok(!page.includes("' Coma.'")&&page.includes("' 💀'")&&!page.includes('Les dés ne passent pas la DEF'),'💀 et rien de plus');
 assert.ok(src.includes('function talentPill(t,compact)')&&src.includes("talentBloc(t,false,true)")&&feuille.includes('.talent-pills{'),'les talents de la fiche sont compacts');
 assert.ok(page.includes('minmax(0,1fr) 340px')&&page.includes('minmax(0,1fr) 380px'),'la colonne de droite s’élargit');
-console.log('664 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('667 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -428,7 +428,8 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  currentMapId=id;mapImage=m.image||null;measureRatio(m,render);
  $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);
  const heros=actors.filter(a=>a.hero);
- if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y));
+ // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
+ if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...heros);
  // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
  (m.doors||[]).forEach(d=>{d.open=false});const grille=fogDims(m);
@@ -1118,20 +1119,21 @@ function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new E
 const renderBeforeMaps=render;render=function(){
  // Une autre carte, ou un voile qui change : elle se couvre jusqu'à la prochaine peinture.
  if(cleVoile()!==cartePeinte)voileAttente.hidden=false;
- applyMapRatio();computeFog();renderBeforeMaps();renderMapLayer();calerJournal();
+ applyMapRatio();computeFog();renderBeforeMaps();renderMapLayer();calerColonnes();
  tabsMJ.forEach(b=>b.hidden=view!=='mj');
  document.body.classList.toggle('vue-joueur',view!=='mj');
  if(view!=='mj'&&PAGES.some(x=>!PAGES_LIBRES.includes(x)&&document.body.classList.contains('page-'+x)))showPage('table',false)};
 /* Le journal descend jusqu'au bas de la carte : son panneau est calé dessus à chaque rendu
    et à chaque changement de taille. Sur une seule colonne, il reprend sa hauteur propre. */
-function calerJournal(){const j=$('journal'),p=j&&j.closest('.panel'),carte=document.querySelector('.map-panel');
- if(!j||!p||!carte)return;
- const rc=carte.getBoundingClientRect(),rp=p.getBoundingClientRect();
- const aCote=rp.left>=rc.right-1&&rc.height>0,h=Math.round(rc.bottom-rp.top);
- if(!aCote||h<160){p.style.height='';p.classList.remove('journal-cale');return}
- p.classList.add('journal-cale');p.style.height=h+'px'}
-if(typeof ResizeObserver==='function'){const carte=document.querySelector('.map-panel');if(carte)new ResizeObserver(()=>calerJournal()).observe(carte)}
-window.addEventListener('resize',()=>{calerJournal();if(document.body.classList.contains('page-maps'))renderCanvas();
+function calerColonnes(){const centre=document.querySelector('.layout>.stack:not(.left):not(.right)'),droite=document.querySelector('.stack.right'),gauche=document.querySelector('.stack.left');
+ if(!centre||!droite||!centre.lastElementChild)return;
+ const rc=centre.getBoundingClientRect(),rd=droite.getBoundingClientRect(),bas=centre.lastElementChild.getBoundingClientRect().bottom;
+ const aCote=rd.left>=rc.right-1&&rc.height>0,h=Math.round(bas-rd.top);
+ if(!aCote||h<300){droite.style.height='';droite.classList.remove('calee');if(gauche)gauche.classList.remove('calee');return}
+ droite.classList.add('calee');droite.style.height=h+'px';if(gauche)gauche.classList.add('calee')}
+if(typeof ResizeObserver==='function'){const ro=new ResizeObserver(()=>calerColonnes());
+ ['.map-panel','.actions-rangee','.stack.right>.panel:first-child'].forEach(s=>{const el=document.querySelector(s);if(el)ro.observe(el)})}
+window.addEventListener('resize',()=>{calerColonnes();if(document.body.classList.contains('page-maps'))renderCanvas();
  else{applyMapRatio();applyMapZoom();render()}});
 maps.forEach(ensure);refreshMapPick();renderMapLayer();refreshHistory();renderCatalogPages();
 tabsMJ.forEach(b=>b.hidden=view!=='mj');document.body.classList.toggle('vue-joueur',view!=='mj');
