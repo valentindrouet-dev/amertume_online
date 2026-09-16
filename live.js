@@ -200,7 +200,7 @@ function reappliquerTable(){if(dernierDoc){dernierPousse=null;appliquerSalle(der
    quel dans la page. Les lignes propres à l'appareil (sauvegarde, imports) restent chez
    elles. Qui rejoint la table reçoit les dernières lignes, à la place de son journal. */
 const CLES_JOURNAL=['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite','effet','ton'];
-const logLocal=log,logAttaqueLocal=logAttaque;
+const logLocal=log,logAttaqueLocal=logAttaque,logChatLocal=logChat,viderJournalLocal=viderJournal;
 // Firestore refuse les tableaux imbriqués : un dé [valeur, couleur] devient un seul nombre.
 function codeDes(dice){return (dice||[]).map(([v,c])=>v*8+c)}
 function decodeDes(des){return (des||[]).map(x=>[Math.floor(x/8),x%8])}
@@ -221,9 +221,22 @@ logAttaque=function(a,b,logo,corps,detail,suite){logAttaqueLocal(a,b,logo,corps,
   faille:Number.isInteger(detail.faille)?detail.faille:null,bonus:detail.bonus||0,saignee:detail.saignee||0,total:detail.total||0}:null;
  diffuser({genre:'attaque',a:fiche(a),b:fiche(b),logo:logo?String(logo).slice(0,40):null,corps:String(corps).slice(0,60),detail:d,suite:suite?String(suite).slice(0,200):null})};
 function diffuserEffet(type,a,b,couleur){diffuser({genre:'effet',effet:String(type).slice(0,20),a:fiche(a),b:fiche(b),logo:couleur?String(couleur).slice(0,20):null})}
+// Une parole part avec la fiche de qui parle ; le MJ se reconnaît à son identifiant, pas à son nom.
+logChat=function(qui,texte){logChatLocal(qui,texte);
+ diffuser({genre:'texte',texte:String(texte).slice(0,400),a:qui&&qui.mj?{id:null,name:'MJ',hero:false}:fiche(qui),ton:'chat'})};
+viderJournal=function(){viderJournalLocal();if(!enLigne||!estMJ()||!journalRef)return;
+ diffuser({genre:'effet',effet:'vider',a:null,b:null,logo:null});balayerJournal()};
+// Le MJ balaie les lignes de la table : qui rejoint ensuite ne rejoue rien.
+async function balayerJournal(){try{let lot;do{lot=await journalRef.limit(200).get();if(!lot.size)break;
+  const b=cloud.batch();lot.forEach(d=>b.delete(d.ref));await b.commit()}while(lot.size===200)}catch(e){}}
 function poserLigne(rec){if(!rec||typeof rec!=='object')return;
+ const duMJ=!!(dernierDoc&&rec.de&&rec.de===dernierDoc.mj);
+ if(rec.genre==='texte'&&rec.a&&typeof rec.a==='object'){const f=rec.a;
+  const qui=f.id?acteurDuJournal(f):{name:duMJ&&f.name==='MJ'?'MJ':String(f.name||'?').slice(0,60),mj:duMJ&&f.name==='MJ'};
+  logChatLocal(qui,String(rec.texte||''));return}
  // Un effet ne s'écrit pas : il se joue, et seulement en direct.
- if(rec.genre==='effet'){if(rec.effet==='orbe'&&typeof volOrbe==='function')volOrbe(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'');return}
+ if(rec.genre==='effet'){if(rec.effet==='vider'&&duMJ)viderJournalLocal();
+  else if(rec.effet==='orbe'&&typeof volOrbe==='function')volOrbe(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'');return}
  if(rec.genre==='attaque'){const r=rec.detail&&typeof rec.detail==='object'?rec.detail:null;
   const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,total:r.total}:null;
   logAttaqueLocal(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'',String(rec.corps||''),d,rec.suite?String(rec.suite):'')}

@@ -957,4 +957,9 @@ assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false
 assert.ok(page.includes(".j-entry.ton-talent{")&&page.includes("li.classList.add('j-attaque','ton',/^spell_/.test(logo||'')?'ton-talent':'ton-attaque')"),'le journal a ses tons');
 // Le journal se cale sur le bas de la carte, et se libère sur une colonne.
 assert.ok(cartes.includes('function calerJournal')&&cartes.includes('renderMapLayer();calerJournal();')&&page.includes('.journal-cale .journal{flex:1'),'le journal descend au bas de la carte');
-console.log('660 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Le journal se vide et s'écrit ; les lignes ne disent plus « Coma » mais 💀 ; la fiche tient dans sa colonne. */
+assert.ok(page.includes('id="journal-chat"')&&page.includes('function logChat(')&&vivant.includes("rec.effet==='vider'&&duMJ"),'le journal s’écrit et se vide');
+assert.ok(!page.includes("' Coma.'")&&page.includes("' 💀'")&&!page.includes('Les dés ne passent pas la DEF'),'💀 et rien de plus');
+assert.ok(src.includes('function talentPill(t,compact)')&&src.includes("talentBloc(t,false,true)")&&feuille.includes('.talent-pills{'),'les talents de la fiche sont compacts');
+assert.ok(page.includes('minmax(0,1fr) 340px')&&page.includes('minmax(0,1fr) 380px'),'la colonne de droite s’élargit');
+console.log('664 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

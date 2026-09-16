@@ -524,17 +524,20 @@ const GENERIQUES='Génériques';
 const AUTRE_CLASSE='__autre';
 const talentFamily=t=>(t&&t.famille||'').trim()||GENERIQUES;
 function talent(id){return (catalog.talents||[]).find(t=>t&&t.id===id)}
-function talentPill(t){const [cle,court,nom]=talentType(t);
+// « compact » : sur une fiche, la vignette ne dit que le nom — la nature et le niveau
+// encombraient une colonne étroite, et le dépliant les redit.
+function talentPill(t,compact){const [cle,court,nom]=talentType(t);
  const p=document.createElement('span');p.className='cat-pill t-'+cle;
  const logo=logoTalent(t);if(logo)p.append(logo);
  const n=document.createElement('span');n.className='nom';n.textContent=t.name;
- const b=document.createElement('span');b.className='t-badge';b.textContent=court;b.title=nom;
- const niv=document.createElement('span');niv.className='tag';niv.textContent='Niv. '+(t.level||1);
- p.append(n,b,niv);
- // Une amélioration dit sur quoi elle repose : on le lit sans ouvrir la fiche.
+ p.append(n);
  const socle=nomPrerequis(t,catalog.talents);
- if(socle){const s=document.createElement('span');s.className='tag prereq';s.textContent='↳ '+socle;
-  s.title='Requiert : '+socle;p.append(s)}
+ if(!compact){const b=document.createElement('span');b.className='t-badge';b.textContent=court;b.title=nom;
+  const niv=document.createElement('span');niv.className='tag';niv.textContent='Niv. '+(t.level||1);
+  p.append(b,niv);
+  // Une amélioration dit sur quoi elle repose : on le lit sans ouvrir la fiche.
+  if(socle){const s=document.createElement('span');s.className='tag prereq';s.textContent='↳ '+socle;
+   s.title='Requiert : '+socle;p.append(s)}}
  const info=[talentFamily(t),nom,t.effects,t.notes,socle?'Requiert : '+socle:''].filter(Boolean).join(' · ');
  p.title=t.name+' — '+info;
  return p}
@@ -564,8 +567,8 @@ function talentCorrige(){renderCatalogPages();render();scheduleSave()}
 /* « vif » : dans l'onglet Talents, le MJ corrige le nom, le type, le niveau et l'effet là
    où il les lit — comme sur une fiche d'aventurier. La mécanique du moteur et les
    réglages passent toujours par le crayon. */
-function talentBloc(t,vif){const bloc=document.createElement('span');bloc.className='talent-bloc';
- const pill=talentPill(t);pill.classList.add('cliquable');
+function talentBloc(t,vif,compact){const bloc=document.createElement('span');bloc.className='talent-bloc';
+ const pill=talentPill(t,compact);pill.classList.add('cliquable');
  const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev);
  const detail=talentDetail(t,vif);
  const ouvert=talentsOuverts.has(t.id);detail.hidden=!ouvert;pill.classList.toggle('ouvert',ouvert);
@@ -575,10 +578,10 @@ function talentBloc(t,vif){const bloc=document.createElement('span');bloc.classN
   choixVif(pill.querySelector('.t-badge'),()=>t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]),v=>{t.type=v;talentCorrige()},'Changer le type');
   champVif([...pill.querySelectorAll('.tag')].find(x=>x.textContent.startsWith('Niv.')),()=>t.level||1,v=>{t.level=num(v,1,20);talentCorrige()},'Changer le niveau (1 à 20)','texte')}
  bloc.append(pill,detail);return bloc}
-function talentPills(a){const out=document.createElement('div');out.className='gear-pills';
+function talentPills(a){const out=document.createElement('div');out.className='talent-pills';
  const liste=(a.talents||[]).map(talent).filter(Boolean);
  if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v)}
- else liste.forEach(t=>out.append(talentBloc(t)));
+ else liste.forEach(t=>out.append(talentBloc(t,false,true)));
  return out}
 const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets']];
 function armoryRow(a,i){const rang=document.createElement('div');rang.className='cat-row';
