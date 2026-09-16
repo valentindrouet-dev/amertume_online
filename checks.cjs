@@ -939,9 +939,15 @@ assert.ok(page.includes("(typeof spectateur==='function'&&spectateur())?[]:actor
 assert.ok(vivant.includes("if(meta&&meta.local)return;"),'les lignes propres à l’appareil restent chez elles');
 /* La table : la référence se prend avant le rendu, les positions partent par salves, les
    socles reçus glissent, et deux doigts mènent la carte. */
-assert.ok(vivant.includes("base=etatVivant();\n  render();")&&vivant.includes("dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()"),'la référence précède le rendu');
+assert.ok(vivant.indexOf("base=etatVivant();")<vivant.indexOf("aRepousser.forEach(([id,k])")&&vivant.indexOf("aRepousser.forEach(([id,k])")<vivant.indexOf("  render();\n }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()")
+ ,'la référence précède le rendu');
 assert.ok(vivant.includes('function pousserBientot')&&page.includes("if(typeof pousserBientot==='function')pousserBientot()"),'le glissement part par salves');
 assert.ok(vivant.includes("appliquerSalle(dernierDoc,true)")&&vivant.includes("seulementPositions(docPrecedent,d)"),'les positions seules glissent sans rendu');
 assert.ok(page.includes("t.dataset.id=a.id")&&page.includes(".token.glisse{transition:"),'le socle reçu est retrouvé et glisse');
 assert.ok(page.includes("addEventListener('touchmove'")&&page.includes("mapPanX+=c.x-doigts.x"),'deux doigts font glisser la carte');
-console.log('652 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Le point d'Action chez le joueur, les orbes gratuits, l'orbe qui vole. */
+assert.ok(/orbes:\{[^}]*gratuit:true/.test(fs.readFileSync('combat.js','utf8')),'les orbes se disent gratuits');
+assert.ok(page.includes("if(actionPrise(a)){log(a.name+' a déjà dépensé son Action ce tour.'")&&page.includes("if(actionPrise(a))return 'Action déjà dépensée ce tour.';"),'l’Action prise ferme la rangée');
+assert.ok(page.includes('function volOrbe(')&&vivant.includes("rec.genre==='effet'"),'l’orbe vole ici et en face');
+assert.ok(vivant.includes("if(!estMJ()&&CHAMPS_ACTEUR_MJ.includes(k))return;")&&vivant.includes('aRepousser.push([id,k])'),'« vu » n’appartient qu’au MJ');
+console.log('656 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

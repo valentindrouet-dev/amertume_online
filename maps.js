@@ -242,11 +242,15 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  if(retenues.length){ctx.globalAlpha=1-memoire/inconnu;retenues.forEach(rect);ctx.globalAlpha=1}
  portes.filter(doorInSight).forEach(rect);
  ctx.globalCompositeOperation='source-over'}
-function resetFog(tout){const m=currentMap();if(!m)return;
+/* Chaque remise à zéro du brouillard se compte : le numéro voyage par la table, et les
+   joueurs rejouent la même remise à zéro, en silence. */
+let brouillardReset={n:0,tout:false};
+function resetFog(tout,silencieux){const m=currentMap();if(!m)return;
  const d=fogDims(m),g=new Uint8Array(d.n);if(tout)g.fill(1);
  m.fog=packMask(g,d.n);delete m.seen;m.fogOff=false;fogSeen=g;fogSeenSrc=m.fog;fogDirty=true;fogKey='';fogMemorise=new WeakSet();
+ if(!silencieux)brouillardReset={n:brouillardReset.n+1,tout:!!tout};
  render();scheduleSave();
- log(tout?'Brouillard levé sur toute la carte.':'Brouillard réinitialisé.')}
+ if(!silencieux)log(tout?'Brouillard levé sur toute la carte.':'Brouillard réinitialisé.')}
 
 /* ---------- Rendu sur la table de jeu ---------- */
 function svgRect(r,cls){const el=document.createElementNS(nsSVG,'rect');

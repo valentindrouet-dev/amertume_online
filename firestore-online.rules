@@ -34,7 +34,7 @@ match /amertume_online_versions/{revision}/parts/{part} {
   allow delete: if isOnlineMJ();
 }
 
-// ---- Table en ligne (v0.91, clés à jour en v0.181) : la partie jouée à plusieurs ----
+// ---- Table en ligne (v0.91, clés à jour en v0.184) : la partie jouée à plusieurs ----
 // La liste des clés doit suivre CHAMPS_MJ de live.js : checks.cjs le vérifie.
 // Le code de la table tient lieu de clef : il faut connaître son identifiant pour la
 // lire. Le MJ seul l'ouvre et la ferme ; tout joueur connecté — même anonymement —
@@ -47,7 +47,7 @@ match /amertume_online_live/{table} {
   allow update: if request.auth != null
     && resource.data.mj is string
     && request.resource.data.mj == resource.data.mj
-    && request.resource.data.keys().hasOnly(['actors','doors','round','locked','title','mode','mapId','mj','at'])
+    && request.resource.data.keys().hasOnly(['actors','doors','round','locked','title','mode','mapId','mj','at','fogOff','fogReset'])
     && (isOnlineMJ()
         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actors','doors','at']));
 
@@ -67,8 +67,8 @@ match /amertume_online_live/{table} {
     allow create: if request.auth != null
       && request.resource.data.de == request.auth.uid
       && request.resource.data.t is number
-      && request.resource.data.keys().hasOnly(['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite'])
-      && request.resource.data.genre in ['texte','attaque']
+      && request.resource.data.keys().hasOnly(['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite','effet'])
+      && request.resource.data.genre in ['texte','attaque','effet']
       && (!('texte' in request.resource.data) || request.resource.data.texte == null || request.resource.data.texte.size() <= 400);
     allow update: if false;
     allow delete: if isOnlineMJ();

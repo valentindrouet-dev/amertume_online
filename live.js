@@ -21,10 +21,12 @@
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armorId','shieldId','states','bleed','cumuls','checks','target','activeAttack',
  'revealed','hidden','vu','orbes','garde','notes'];
-const CHAMPS_MJ=['round','mapId','locked','title','mode'];
+const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
+// Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
+const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden'];
 const TABLE_CLE='amertume-table';
 let tableId=null,salleRef=null,siegesRef=null,enLigne=false,appliquantDistant=false;
-let dernierPousse=null,poussePret=false,pousseTimer=null,docPrecedent=null,renduDiffere=null;
+let dernierPousse=null,poussePret=false,pousseTimer=null,docPrecedent=null,renduDiffere=null,dernierRefus='';
 let monUid=null,monSiege=null,sieges={},quitteSalle=null,quitteSieges=null,dernierDoc=null;
 let journalRef=null,quitteJournal=null,journalVus=new Set(),journalPremier=true;
 /* Chez un joueur en ligne, révéler n'est pas son affaire : le MJ révèle, et « vu » lui
@@ -59,17 +61,24 @@ function etatVivant(){const out={actors:{}};
  out.title=typeof sceneTitle==='function'?sceneTitle():'';
  const m=typeof currentMap==='function'?currentMap():null;
  out.doors=m?(m.doors||[]).map(d=>!!d.open):[];
- return out}
+ out.fogOff=!!(m&&m.fogOff);
+ out.fogReset=typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false};
+ /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
+    tableaux qu'on modifie en place (états, cases, cumuls), sinon rien n'en partait. */
+ return JSON.parse(JSON.stringify(out))}
 const pareil=(a,b)=>JSON.stringify(a===undefined?null:a)===JSON.stringify(b===undefined?null:b);
 /* La différence, en chemins de champs. Un acteur disparu s'efface, un acteur neuf part
    entier — c'est ainsi qu'un adversaire posé en pleine partie arrive chez les joueurs
    sans republier tout le contenu. */
 function diffEtat(av,ap){const maj={},SUPPR=firebase.firestore.FieldValue.delete();
  const ids=new Set([...Object.keys(av&&av.actors||{}),...Object.keys(ap.actors||{})]);
- ids.forEach(id=>{const a=(av&&av.actors||{})[id],b=ap.actors[id];
+ ids.forEach(id=>{let a=(av&&av.actors||{})[id];const b=ap.actors[id];
   if(!b){maj['actors.'+id]=SUPPR;return}
+  // Sans référence, un joueur compare au dernier document reçu : il n'écrit jamais un combattant entier qui existe déjà.
+  if(!a&&!estMJ()&&docPrecedent&&docPrecedent.actors&&docPrecedent.actors[id])a=docPrecedent.actors[id];
   if(!a){maj['actors.'+id]=b;return}
-  CHAMPS_VIVANTS.forEach(k=>{if(!pareil(a[k],b[k]))maj['actors.'+id+'.'+k]=b[k]===undefined?SUPPR:b[k]})});
+  CHAMPS_VIVANTS.forEach(k=>{if(!estMJ()&&CHAMPS_ACTEUR_MJ.includes(k))return;
+   if(!pareil(a[k],b[k]))maj['actors.'+id+'.'+k]=b[k]===undefined?SUPPR:b[k]})});
  if(!pareil(av&&av.doors,ap.doors))maj.doors=ap.doors;
  // Le tour, la carte ouverte, le verrou et le titre appartiennent au MJ.
  if(estMJ())CHAMPS_MJ.forEach(k=>{if(!pareil(av&&av[k],ap[k]))maj[k]=ap[k]});
@@ -86,28 +95,37 @@ function pousserEtat(){pousseTimer=null;if(!enLigne||!salleRef)return;
  const ap=etatVivant(),maj=diffEtat(dernierPousse,ap);
  if(!Object.keys(maj).length)return;
  dernierPousse=ap;maj.at=firebase.firestore.FieldValue.serverTimestamp();
- salleRef.update(maj).catch(e=>{dernierPousse=null;liveStatus('Envoi impossible. '+liveErreur(e))})}
+ salleRef.update(maj).then(()=>{const b=$('open-live');if(b&&b.dataset.souci){delete b.dataset.souci;b.title=''}})
+  .catch(e=>{dernierPousse=null;const texte='Envoi impossible. '+liveErreur(e);liveStatus(texte);
+   // Un refus se voit sur le bouton de la table, et se dit une fois au journal de l'appareil.
+   const b=$('open-live');if(b){b.dataset.souci='1';b.title=texte}
+   if(texte!==dernierRefus){dernierRefus=texte;log('Table : '+texte,{local:true})}})}
 /* Rien d'autre que des positions n'a bougé ? Les socles glissent sans rendu complet. */
 function seulementPositions(av,ap){
- for(const k of ['round','locked','mode','mapId','title'])if(!pareil(av[k],ap[k]))return false;
+ for(const k of CHAMPS_MJ)if(!pareil(av[k],ap[k]))return false;
  if(!pareil(av.doors,ap.doors))return false;
  const A=av.actors||{},B=ap.actors||{},ids=Object.keys(B);
  if(ids.length!==Object.keys(A).length)return false;
  for(const id of ids){const a=A[id],b=B[id];if(!a||!b)return false;
   for(const k of CHAMPS_VIVANTS){if(k==='x'||k==='y')continue;if(!pareil(a[k],b[k]))return false}}
  return true}
-function glisserDistant(d){const B=d.actors||{};let bouge=false;
+function glisserDistant(d,force){const B=d.actors||{};let bouge=false;
  Object.entries(B).forEach(([id,e])=>{const a=actors.find(x=>x.id===id);
   if(!a||window.socleEnMain===id||typeof e.x!=='number'||typeof e.y!=='number')return;
+  // Ce qui revient tel qu'on l'a envoyé n'apprend rien : le local est plus récent.
+  const r=dernierPousse&&dernierPousse.actors&&dernierPousse.actors[id];
+  if(r&&r.x===e.x&&r.y===e.y)return;
+  if(r){r.x=e.x;r.y=e.y}
   if(a.x===e.x&&a.y===e.y)return;
   a.x=e.x;a.y=e.y;bouge=true;
-  // La référence suit ces deux champs seulement : un changement local en attente reste dû.
-  const r=dernierPousse&&dernierPousse.actors&&dernierPousse.actors[id];if(r){r.x=e.x;r.y=e.y}
   const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(id)+'"]');
   if(el){el.classList.add('glisse');el.style.left=e.x+'%';el.style.top=e.y+'%'}});
- if(!bouge)return;
- if(typeof updateRing==='function')updateRing();if(typeof updateSight==='function')updateSight();
- clearTimeout(renduDiffere);renduDiffere=setTimeout(()=>{if(dernierDoc)appliquerSalle(dernierDoc,true)},220)}
+ if(bouge){if(typeof updateRing==='function')updateRing();if(typeof updateSight==='function')updateSight()}
+ if(bouge||force)planifieRenduComplet()}
+/* Le rendu complet attend la fin du geste local : un rendu détruirait le socle tenu. */
+function planifieRenduComplet(){clearTimeout(renduDiffere);
+ renduDiffere=setTimeout(()=>{if(window.socleEnMain){planifieRenduComplet();return}
+  if(dernierDoc)appliquerSalle(dernierDoc,true)},220)}
 
 /* Un combattant que l'on ne connaît pas encore : on le rebâtit depuis le bestiaire publié,
    et à défaut depuis ce que l'état vivant en dit. Son identifiant est celui de la table. */
@@ -119,8 +137,10 @@ function instancierActeur(id,e){
  if(!a)a={...baseActor(e.hero===true)};
  a.id=id;normalizeActor(a);return a}
 function appliquerSalle(d,complet){if(!d)return;
- // Seules des positions ont bougé : les socles glissent, le rendu complet attend la fin.
- if(!complet&&poussePret&&docPrecedent&&seulementPositions(docPrecedent,d)){docPrecedent=d;glisserDistant(d);return}
+ /* Seules des positions ont bougé, ou un socle est sous le doigt ici : les socles glissent,
+    le rendu complet attend la fin du geste. */
+ const enGeste=!!window.socleEnMain;
+ if(!complet&&poussePret&&docPrecedent&&(enGeste||seulementPositions(docPrecedent,d))){docPrecedent=d;glisserDistant(d,enGeste);return}
  docPrecedent=d;clearTimeout(renduDiffere);
  appliquantDistant=true;let base=null;
  try{
@@ -132,16 +152,27 @@ function appliquerSalle(d,complet){if(!d)return;
    if(d.mapId&&d.mapId!==currentMapId&&maps.some(m=>m.id===d.mapId)){
     currentMapId=d.mapId;const m=currentMap();mapImage=m&&m.image||null;
     $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';
-    $('map').classList.toggle('custom',!!mapImage)}}
-  const vus=new Set();
+    $('map').classList.toggle('custom',!!mapImage)}
+   // Le voile levé et la remise à zéro du brouillard viennent du MJ.
+   const m0=typeof currentMap==='function'?currentMap():null;
+   if(m0&&typeof d.fogOff==='boolean'&&!!m0.fogOff!==d.fogOff){m0.fogOff=d.fogOff;if(typeof fogKey!=='undefined')fogKey=''}
+   if(d.fogReset&&typeof d.fogReset.n==='number'&&typeof brouillardReset!=='undefined'&&d.fogReset.n!==brouillardReset.n){
+    brouillardReset={n:d.fogReset.n,tout:!!d.fogReset.tout};if(m0&&typeof resetFog==='function')resetFog(brouillardReset.tout,true)}}
+  const vus=new Set(),aRepousser=[];
   Object.entries(d.actors||{}).forEach(([id,e])=>{if(!e||typeof e!=='object')return;
    vus.add(id);
    let a=actors.find(x=>x.id===id);
    if(!a){a=instancierActeur(id,e);actors.push(a)}
    // Ce qu'on tient sous le doigt garde sa place : le réseau ne le reprend pas en main.
-   const enMain=window.socleEnMain===id;
+   const enMain=window.socleEnMain===id,r=dernierPousse&&dernierPousse.actors&&dernierPousse.actors[id];
    CHAMPS_VIVANTS.forEach(k=>{if(e[k]===undefined)return;
     if(enMain&&(k==='x'||k==='y'))return;
+    /* Ce qui revient tel qu'on l'a envoyé n'apprend rien : un changement local survenu
+       depuis est plus récent, il partira au prochain envoi au lieu d'être écrasé. */
+    if(r&&pareil(r[k],e[k])&&!pareil(a[k],e[k]))return;
+    /* Révélé, pour de bon : le MJ ne reprend jamais un « vu » à faux venu du réseau, il le
+       renvoie à vrai. Ses propres remises à zéro passent, elles partent de chez lui. */
+    if(estMJ()&&CHAMPS_ACTEUR_MJ.includes(k)&&k!=='hidden'&&a[k]===true&&e[k]===false){aRepousser.push([id,k]);return}
     if(!pareil(a[k],e[k]))a[k]=structuredClone(e[k])});
    normalizeActor(a)});
   // La composition de la scène appartient au MJ : chez les joueurs, ce qui n'y est plus s'en va.
@@ -156,18 +187,19 @@ function appliquerSalle(d,complet){if(!d)return;
      révélation chez le MJ) est alors une différence, et part. Prise après, elle s'y
      fondait et n'arrivait jamais en face. */
   base=etatVivant();
+  aRepousser.forEach(([id,k])=>{if(base.actors[id])base.actors[id][k]=false});
   render();
  }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()}}
 
 /* Le contenu publié vient d'être posé : il a remplacé les fiches et les cartes, donc
    l'état vivant doit être reposé par-dessus, sans quoi la table reculerait d'un cran. */
-function reappliquerTable(){if(dernierDoc)appliquerSalle(dernierDoc,true)}
+function reappliquerTable(){if(dernierDoc){dernierPousse=null;appliquerSalle(dernierDoc,true)}}
 /* ---------- Le journal partagé ----------
    Chaque ligne part vers la table en texte et en chiffres, jamais en balisage : l'autre
    côté la rebâtit avec ses propres fonctions, et rien de ce qui arrive n'est posé tel
    quel dans la page. Les lignes propres à l'appareil (sauvegarde, imports) restent chez
    elles. Qui rejoint la table reçoit les dernières lignes, à la place de son journal. */
-const CLES_JOURNAL=['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite'];
+const CLES_JOURNAL=['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite','effet'];
 const logLocal=log,logAttaqueLocal=logAttaque;
 // Firestore refuse les tableaux imbriqués : un dé [valeur, couleur] devient un seul nombre.
 function codeDes(dice){return (dice||[]).map(([v,c])=>v*8+c)}
@@ -184,13 +216,16 @@ logAttaque=function(a,b,logo,corps,detail,suite){logAttaqueLocal(a,b,logo,corps,
  const d=detail?{des:codeDes(detail.dice),origine:Number.isInteger(detail.origine)?detail.origine:null,
   faille:Number.isInteger(detail.faille)?detail.faille:null,bonus:detail.bonus||0,saignee:detail.saignee||0,total:detail.total||0}:null;
  diffuser({genre:'attaque',a:fiche(a),b:fiche(b),logo:logo?String(logo).slice(0,40):null,corps:String(corps).slice(0,60),detail:d,suite:suite?String(suite).slice(0,200):null})};
+function diffuserEffet(type,a,b,couleur){diffuser({genre:'effet',effet:String(type).slice(0,20),a:fiche(a),b:fiche(b),logo:couleur?String(couleur).slice(0,20):null})}
 function poserLigne(rec){if(!rec||typeof rec!=='object')return;
+ // Un effet ne s'écrit pas : il se joue, et seulement en direct.
+ if(rec.genre==='effet'){if(rec.effet==='orbe'&&typeof volOrbe==='function')volOrbe(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'');return}
  if(rec.genre==='attaque'){const r=rec.detail&&typeof rec.detail==='object'?rec.detail:null;
   const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,total:r.total}:null;
   logAttaqueLocal(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'',String(rec.corps||''),d,rec.suite?String(rec.suite):'')}
  else logLocal(String(rec.texte||''),rec.badge?{badge:String(rec.badge)}:undefined)}
 function rejouerJournal(docs){const j=$('journal');if(!j)return;j.replaceChildren();let tour=null;
- docs.forEach(d=>{const rec=d.data();
+ docs.forEach(d=>{const rec=d.data();if(!rec||rec.genre==='effet')return;
   if(rec.tour!==tour){tour=rec.tour;const sep=document.createElement('li');sep.className='j-turn';
    const t=document.createElement('span');t.textContent='Tour '+tour;sep.append(t);j.append(sep)}
   logRound=round;poserLigne(rec)});
