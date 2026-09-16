@@ -304,8 +304,16 @@ function rendrePlusTard(){clearTimeout(rendreTimer);
  rendreTimer=setTimeout(function encore(){
   if(champsOuverts){rendreTimer=setTimeout(encore,200);return}
   render()},300)}
+/* Les PV maximum d'un aventurier ne se saisissent jamais : Vie × Endurance + bonus de
+   classe et d'espèce. Toucher Vie ou Endurance les recalcule donc aussitôt, et les PV du
+   moment restent sous le nouveau plafond. */
+function recalculerPV(a){if(!a||!a.hero)return false;
+ const max=pvMaximum(catalog.classes,a);a.pvBonus=bonusPV(catalog.classes,a.role,a.race);
+ if(max===a.max)return false;
+ writeStat(a,'max',max);return true}
 function poserCarac(a,cle,brut,carte){const avant=a[cle];writeStat(a,cle,brut);
  if(a[cle]===avant)return;
+ if(cle==='vie'||cle==='endu')recalculerPV(a);
  majFiche(carte,a);rendrePlusTard();scheduleSave();
  // Une fiche corrigée est du contenu : une publication en cours la reprend.
  document.dispatchEvent(new Event('amertume-content-changed'))}
@@ -909,6 +917,12 @@ function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
  /* Une ligne par effet : son nom, puis la phrase que le moteur appliquera, réglages en
     gras. La phrase vient du moteur lui-même, jamais recopiée ici. */
  codes.forEach(c=>{const bloc=document.createElement('div');bloc.className='effet-fiche';
+  /* Une coche verte devant l'effet déjà porté par au moins un talent du catalogue : on voit
+     d'un coup d'œil ce qui reste à câbler. Les talents porteurs se lisent au survol. */
+  const porteurs=(catalog.talents||[]).filter(t=>t&&t.effet===c.cle).map(t=>t.name);
+  const coche=document.createElement('span');coche.className='utilise';
+  if(porteurs.length){coche.textContent='✅';coche.title='Utilisé par : '+porteurs.join(', ')}
+  bloc.append(coche);
   // Le type en tête, comme sur une languette de talent : on voit la famille avant le nom.
   const type=document.createElement('span');type.className='tag type-effet';
   type.textContent=talentType(c)[1];bloc.append(type);
@@ -1442,14 +1456,20 @@ const ETATS_INFLIGES=()=>STATES.filter(e=>e!=='Aucun'&&e!=='Coma');
    est servi tel quel, sans liste de dossier : un logo ajouté dans img/ se déclare ici —
    node checks.cjs le réclame. L'intitulé du menu vient du nom du fichier. */
 const LOGOS_EQUIPEMENT=['weapon_arbalete','weapon_arc','weapon_armure','weapon_bouclier','weapon_epee','weapon_hache','weapon_lance'];
+/* Les logos d'objets, de même : les img/item_*.png. Munitions, objets et divers y puisent ;
+   armes et armures gardent les leurs. */
+const LOGOS_OBJET=['item_healpotion'];
 // Les logos de talents, de même : les img/spell_*.png.
 const LOGOS_TALENT=['spell_orbes'];
-const nomLogo=l=>{const n=String(l||'').replace(/^(weapon|spell)_/,'').replace(/[_-]+/g,' ');return n?n[0].toUpperCase()+n.slice(1):''};
+const nomLogo=l=>{const n=String(l||'').replace(/^(weapon|spell|item)_/,'').replace(/[_-]+/g,' ');return n?n[0].toUpperCase()+n.slice(1):''};
+// Le menu de logos d'un objet dépend de sa catégorie : une arme ou une armure choisit parmi
+// les weapon_*, tout le reste parmi les item_*.
+function logosItem(o){const c=o&&o.category;return c==='weapon'||c==='armor'?LOGOS_EQUIPEMENT:LOGOS_OBJET}
 /* Un logo devant un nom : un jeton, ou rien. Un logo inconnu du dossier ne se dessine
    pas — un objet importé d'ailleurs n'affiche pas une image cassée. */
 function logoImage(l,liste,cls){if(!l||!liste.includes(l))return null;
  const im=document.createElement('img');im.className='logo-equip'+(cls?' '+cls:'');im.src=imgUrl(l+'.png');im.alt='';im.draggable=false;return im}
-function logoEquipement(o,cls){return logoImage(o&&o.logo,LOGOS_EQUIPEMENT,cls)}
+function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)}
 function logoTalent(t,cls){return logoImage(t&&t.logo,LOGOS_TALENT,cls)}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['armor','Armure'],
  ['ammo','Munition'],['object','Objet'],['misc','Divers']];
@@ -1458,7 +1478,7 @@ const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['arm
 function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  const c=f.category.value;a.ranged=c==='ranged';a.category=c==='melee'||c==='ranged'?'weapon':c;
  for(const k of ['name','slot','etat','notes'])if(f[k])a[k]=f[k].value.trim();
- if(f.logo)a.logo=LOGOS_EQUIPEMENT.includes(f.logo.value)?f.logo.value:'';
+ if(f.logo)a.logo=logosItem(a).includes(f.logo.value)?f.logo.value:'';
  for(const k of ['qty','price','hands','def'])if(f[k])a[k]=num(f[k].value,0,999999);
  for(const k of ['usesAmmo','consumable'])if(f[k])a[k]=f[k].checked;
  if(f.itemdie0)a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));
@@ -1471,7 +1491,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
  $('item-fields').innerHTML='<div class="edit-grid">'
   +field('Nom','name',a.name,'text','required maxlength="120"')
   +sel('Catégorie','category',cat,ITEM_CATS)
-  +sel('Logo','logo',a.logo||'',[['','— aucun —'],...LOGOS_EQUIPEMENT.map(l=>[l,nomLogo(l)])])
+  +sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])])
   +field('Prix','price',a.price||0,'number','min="0" max="999999"')
   +(arme?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="99"')

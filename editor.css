@@ -266,7 +266,7 @@ button.btn-action.encre-sombre{color:#2a2118;text-shadow:0 1px 0 rgba(255,255,25
 button.btn-talent{--fond:#3f7d5e}
 /* Une Réaction ne coûte pas l'Action du tour : elle porte le violet, comme l'Analyse. */
 button.btn-reaction{--fond:#9b7ad4}
-button.btn-analyse{--fond:#2f7f8f}
+/* Analyser dépense le point de Mouvement : il en porte la couleur, en lettres blanches. */button.btn-analyse{--fond:#e0a04a;color:#fff}
 button.btn-analyse.on{--fond:#8264bb}
 button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .summary,.attack-card #attack-help{margin:0;font-size:13px}
 /* Les cibles à portée, cliquables : plus besoin de viser sur la carte pour en changer. */
@@ -476,6 +476,8 @@ button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,2
 .effet-fiche .nom-effet{font:700 13px system-ui;text-transform:uppercase;letter-spacing:.6px;color:var(--accent)}
 /* Le type d'un effet, en tête de sa ligne : la même languette que sur un talent, assez
    large pour que les six sigles s'alignent les uns sous les autres. */
+/* La coche « déjà utilisé » tient sa place même absente : les languettes restent alignées. */
+.effet-fiche .utilise{display:inline-block;width:18px;margin-right:4px;font-size:11px;text-align:center;vertical-align:1px}
 .effet-fiche .type-effet{display:inline-block;min-width:44px;margin-right:8px;text-align:center;
  font:700 10px system-ui;letter-spacing:.8px;color:var(--muted);background:var(--hover);
  border-radius:6px;padding:1px 6px;vertical-align:1px}
