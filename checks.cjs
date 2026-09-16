@@ -1037,4 +1037,6 @@ assert.ok(feuille.includes('letter-spacing:.2px;color:#fff;')&&feuille.includes(
 assert.ok(!src.includes("className='nature'")&&!feuille.includes('.nature{')&&src.includes("else b.classList.add('sans-des');"),'un talent sans dés ne dit plus sa nature');
 assert.ok(src.includes('function xpDesRetires(')&&src.includes('xpDesRetires(partants);')&&src.includes("heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));")
  &&src.includes("poseCibles(a,ids.map(id=>actors.findIndex(o=>o&&o.id===id)).filter(j=>j>=0))")&&!src.includes('if(a.target===i)a.target=null;else if(a.target>i)a.target--'),'l’XP d’un adversaire retiré va aux aventuriers, les cibles suivent');
-console.log('707 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Le verrou des déplacements et la remise à zéro d'un bouton se notent chez le MJ seul. */
+assert.ok(cartes.includes("'Déplacements rendus aux joueurs.',{ton:'carte',local:true})")&&page.includes("' » réinitialisé.',{local:true})"),'verrou et remise à zéro : notes locales au MJ');
+console.log('708 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

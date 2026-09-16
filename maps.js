@@ -1111,7 +1111,8 @@ fogAll.onclick=()=>{const m=currentMap();if(!m)return;
  log(m.fogOff?'Voile levé : toute la carte est visible.':'Brouillard rétabli.',{ton:'carte'})};
 lockBtn.onclick=()=>{tokensLocked=!tokensLocked;refreshGmBar();render();scheduleSave();
  document.dispatchEvent(new Event('amertume-content-changed'));
- log(tokensLocked?'Déplacements figés : les joueurs ne peuvent plus bouger leurs tokens.':'Déplacements rendus aux joueurs.',{ton:'carte'})};
+ // Une note pour le MJ seul : chez les joueurs, le verrou se voit, il ne s'annonce pas.
+ log(tokensLocked?'Déplacements figés : les joueurs ne peuvent plus bouger leurs tokens.':'Déplacements rendus aux joueurs.',{ton:'carte',local:true})};
 // L'état des icônes se lit d'un coup d'œil : voile levé, déplacements gelés.
 function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  // La barre annonce la carte qu'on joue, pas le mot « carte tactique » : c'est la seule
