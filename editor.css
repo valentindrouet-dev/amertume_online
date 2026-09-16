@@ -329,7 +329,7 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .gear-colonne{display:flex;flex-direction:column;gap:8px;min-width:0}
 .gear-pills .cat-pill{flex:none;cursor:default;min-width:0}
 /* La pastille réduite de moitié : plus basse, plus petite, ses dés et son écu avec elle. */
-.cat-pill.mini{padding:7px 10px;gap:7px;font-size:14px;border-radius:8px;min-height:38px}/* Les talents d'une fiche : une colonne, la vignette entière, sans nature ni niveau. */.talent-pills{display:flex;flex-direction:column;gap:8px;margin:2px 0 4px}.talent-pills .talent-bloc{width:100%}.talent-pills .cat-pill{width:100%;padding:7px 10px;font-size:14px;min-height:38px;cursor:pointer}
+.cat-pill.mini{padding:7px 10px;gap:7px;font-size:14px;border-radius:8px;min-height:38px}/* Les talents d'une fiche : une colonne, la vignette entière, sans nature ni niveau. */.talent-pills .talent-bloc{width:100%;display:flex}.talent-pills .cat-pill{width:100%;padding:7px 10px;font-size:14px;min-height:38px;cursor:pointer}
 .cat-pill.mini .pips{gap:2px}
 .cat-pill.mini .die-sq,.cat-pill.mini .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}
 .cat-pill.mini .ecu{width:15px;height:18px}.cat-pill.mini .ecu b{font-size:9px}

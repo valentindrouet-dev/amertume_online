@@ -12,7 +12,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;
+function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
  // L'état Gardé n'existe plus depuis la v0.164 : Gardien pose Blindage.
  a.states=a.states.filter(s=>s!=='Gardé');return a}
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
@@ -576,10 +576,15 @@ function talentBloc(t,vif,compact){const bloc=document.createElement('span');blo
   choixVif(pill.querySelector('.t-badge'),()=>t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]),v=>{t.type=v;talentCorrige()},'Changer le type');
   champVif([...pill.querySelectorAll('.tag')].find(x=>x.textContent.startsWith('Niv.')),()=>t.level||1,v=>{t.level=num(v,1,20);talentCorrige()},'Changer le niveau (1 à 20)','texte')}
  bloc.append(pill,detail);return bloc}
-function talentPills(a){const out=document.createElement('div');out.className='talent-pills';
+/* Les talents d'une fiche, sur deux colonnes comme l'équipement : à gauche ce qui se
+   déclenche (actions, réactions, maîtrises — un bouton en combat), à droite ce qui joue
+   tout seul (passifs, améliorations, critiques). */
+function talentPills(a){const out=document.createElement('div');out.className='gear-pills talent-pills';
  const liste=(a.talents||[]).map(talent).filter(Boolean);
- if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v)}
- else liste.forEach(t=>out.append(talentBloc(t,false,true)));
+ if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
+ const passif=t=>(typeof rangeeTalent==='function'?rangeeTalent(t):((t.type==='pass'||t.type==='ame')?'aucune':'attaques'))==='aucune';
+ const colonne=ts=>{const r=document.createElement('div');r.className='gear-colonne';ts.forEach(t=>r.append(talentBloc(t,false,true)));return r};
+ out.append(colonne(liste.filter(t=>!passif(t))),colonne(liste.filter(passif)));
  return out}
 const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets']];
 function armoryRow(a,i){const rang=document.createElement('div');rang.className='cat-row';

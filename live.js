@@ -20,10 +20,10 @@
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armorId','shieldId','states','bleed','cumuls','checks','target','activeAttack',
- 'revealed','hidden','vu','orbes','garde','notes'];
+ 'revealed','hidden','vu','numero','orbes','garde','notes'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
-const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden'];
+const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero'];
 const TABLE_CLE='amertume-table';
 let tableId=null,salleRef=null,siegesRef=null,enLigne=false,appliquantDistant=false;
 let dernierPousse=null,poussePret=false,pousseTimer=null,docPrecedent=null,renduDiffere=null,dernierRefus='';

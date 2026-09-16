@@ -963,7 +963,7 @@ assert.ok(page.includes(".eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title
 /* Le journal se vide et s'écrit ; les lignes ne disent plus « Coma » mais 💀 ; la fiche tient dans sa colonne. */
 assert.ok(page.includes('id="journal-chat"')&&page.includes('function logChat(')&&vivant.includes("rec.effet==='vider'&&duMJ"),'le journal s’écrit et se vide');
 assert.ok(!page.includes("' Coma.'")&&page.includes("' 💀'")&&!page.includes('Les dés ne passent pas la DEF'),'💀 et rien de plus');
-assert.ok(src.includes('function talentPill(t,compact)')&&src.includes("talentBloc(t,false,true)")&&feuille.includes('.talent-pills{'),'les talents de la fiche sont compacts');
+assert.ok(src.includes('function talentPill(t,compact)')&&src.includes("talentBloc(t,false,true)")&&feuille.includes('.talent-pills .cat-pill{'),'les talents de la fiche sont compacts');
 assert.ok(page.includes('minmax(0,1fr) 340px')&&page.includes('minmax(0,1fr) 380px'),'la colonne de droite s’élargit');
 /* L'orbe et la flèche volent avant que les dégâts tombent ; l'œil de la troupe ; le journal épuré. */
 assert.ok(page.includes('function volFleche(')&&vivant.includes("rec.effet==='fleche'")&&page.includes("diffuserEffet('fleche',a,actors[j],null)"),'la flèche vole ici et en face');
@@ -971,4 +971,9 @@ assert.ok(page.includes("if(duree>0)setTimeout(()=>{poser();render();")&&page.in
 assert.ok(cartes.includes("icone('troupe-eye'")&&cartes.includes('function oeilJoueur')&&cartes.includes("inconnu=oeilJoueur()?255:110"),'l’œil de la troupe');
 assert.ok(!page.includes('Bienvenue dans Amertume')&&!cartes.includes("(d.secret?'Passage secret ':'Porte ')")&&page.includes(" garde '+o.name+' : Blindage.'")&&page.includes("' 🔍 '+o.name+' :\\n'"),'le journal s’épure');
 assert.ok(!src.includes("loin.textContent=' ⤳'")&&page.includes('.actor.enemy.k-alpha:not(.selected){background:#efdcc2}')&&page.includes("r.damage+' Dégâts'+(poses.length?' + '+poses.join(' + '):'')+'.'"),'boutons et vignettes');
-console.log('672 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Le tour 1 à l'ouverture d'une carte, les numéros à la révélation, les adversaires cachés repliés, l'Onde et les talents en colonnes. */
+assert.ok(page.includes('function remiseAuTourUn')&&cartes.includes("if(typeof remiseAuTourUn==='function')remiseAuTourUn();"),'ouvrir une carte revient au tour 1');
+assert.ok(page.includes('function prochainNumero')&&page.includes("a.vu=true;if(!a.numero)a.numero=prochainNumero(a)")&&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('numero'),'les numéros se donnent à la révélation');
+assert.ok(page.includes("groupeReplie('Adversaires cachés',cachees)")&&page.includes('let cachesOuverts=false;'),'les adversaires cachés se replient');
+assert.ok(page.includes("imgUrl('ONDE.png')")&&src.includes("out.className='gear-pills talent-pills'")&&src.includes('colonne(liste.filter(passif))'),'l’Onde et les deux colonnes de talents');
+console.log('676 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

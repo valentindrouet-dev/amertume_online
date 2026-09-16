@@ -443,12 +443,14 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
     sert plus que si le modèle a disparu. */
  (m.foes||[]).forEach(f=>{const a=fromMonster(modeleActuel(f.tpl));a.x=f.x;a.y=f.y;normalizeActor(a);
   if(f.hidden)setState(a,'Invisible',true);actors.push(a)});
+ // Une carte qui s'ouvre, c'est une rencontre qui commence : tour 1, tout remis à zéro.
+ if(typeof remiseAuTourUn==='function')remiseAuTourUn();
  render();actors.forEach(settleActor);   // Personne ne démarre dans un mur.
 
  actors.forEach(a=>{a.target=null});
  owner=actors.findIndex(a=>a.hero);selected=Math.max(0,owner);
  resetMapZoom();showPage('table');render();
- log('Carte « '+m.name+' » ouverte : '+heros.length+' aventurier(s) placé(s), '+(m.foes||[]).length+' adversaire(s) en place.',{ton:'carte'});scheduleSave()}
+ log('Carte « '+m.name+' » ouverte : '+heros.length+' aventurier(s) placé(s), '+(m.foes||[]).length+' adversaire(s) en place. Tour 1.',{ton:'carte'});scheduleSave()}
 
 /* ---------- Onglets de page, réservés au MJ ---------- */
 const tabs=document.createElement('nav');tabs.className='tabs';
