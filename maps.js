@@ -169,17 +169,25 @@ function doorInSight(d){const size=mapSize();
  /* Chaque sonde est un petit disque, comme avant : son centre et huit points de son
     bord, en pour cent de carte pour un rayon en pixels. Il suffit que l'un d'eux soit
     en vue — c'est ainsi que la face d'une porte close se laisse voir de devant. */
- const r=Math.max(3,tokenPx()*.12),rx=r/size.width*100,ry=r/size.height*100;
- const points=[];for(const [x,y] of doorProbes(d,0)){points.push([x,y]);
-  for(let k=0;k<8;k++){const a=k*Math.PI/4;points.push([x+Math.cos(a)*rx,y+Math.sin(a)*ry])}}
+ /* Le rayon doit arriver à moins de r pixels du point : la face d'une porte close se
+    voit de devant, mais une porte derrière un mur ne se devine plus par le côté — les
+    petits disques autour des sondes passaient à travers la cloison d'à côté. */
+ const r=Math.max(6,tokenPx()*.25);
+ const points=doorProbes(d,0);
  const vu=portesVues.yeux.some(o=>points.some(([x,y])=>{const dx=x-o.x,dy=y-o.y;
   const L=Math.hypot(dx/100*size.width,dy/100*size.height);
-  if(L<=1)return true;
-  // On s'arrête un demi-pixel avant le point : un mur qui passe juste là ne compte pas.
-  const t=1-.5/L;return rayonContre(portesVues.idx,o.x,o.y,dx,dy,t,o.exclues)>=t}));
+  if(L<=r)return true;
+  const t=1-r/L;return rayonContre(portesVues.idx,o.x,o.y,dx,dy,t,o.exclues)>=t}));
  portesVues.vues.set(d,vu);return vu}
-// Déjà explorée : la mémoire juste autour du rectangle suffit.
-function doorRemembered(d){return doorProbes(d,.9).some(([x,y])=>seenAt(x,y))}
+/* Déjà explorée : la mémoire devant ou derrière la porte, dans son axe — pas sur ses
+   côtés, où la case voisine appartient souvent au couloir d'à côté. */
+function doorFaces(d,marge){
+ if(!(Number(d.a)||0)){const cx=d.x+d.w/2,cy=d.y+d.h/2;
+  return d.w>=d.h?[[cx,d.y-marge],[cx,d.y+d.h+marge]]:[[d.x-marge,cy],[d.x+d.w+marge,cy]]}
+ const m=currentMap(),f=doorFrame(d,m&&m.ratio),long=f.hw>=f.hh;
+ return [-1,1].map(k=>{const ku=long?0:k*(f.hw+marge),kv=long?k*(f.hh+marge):0;
+  return [(f.cx+f.ux*ku+f.vx*kv)/f.r,f.cy+f.uy*ku+f.vy*kv]})}
+function doorRemembered(d){return doorFaces(d,.9).some(([x,y])=>seenAt(x,y))}
 function doorSeen(d){const m=currentMap();
  if(!oeilJoueur()||!m||m.fogOff||!fogVis)return true;
  return doorInSight(d)||doorRemembered(d)}
@@ -331,6 +339,8 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
 function renderObjets(){const vue=$('map-view'),m=currentMap();
  vue.querySelectorAll('.token.objet').forEach(t=>t.remove());if(!m)return;
  (m.objets||[]).forEach((o,i)=>{if(!o.visible&&view!=='mj')return;
+  // Pour la troupe, un objet dans le noir n'existe pas : il faut le voir, ou l'avoir vu.
+  if(oeilJoueur()&&!(seenAt(o.x,o.y)||partySees({x:o.x,y:o.y,socle:'medium'})))return;
   const t=document.createElement('button');t.className='token objet'+(o.visible?'':' cache');
   t.textContent=(o.nom||'?')[0].toUpperCase();t.style.left=o.x+'%';t.style.top=o.y+'%';
   t.style.setProperty('--token',tokenPx()*(SOCLE_TAILLES[o.taille]||1)+'px');
@@ -1076,8 +1086,8 @@ wrap.addEventListener('gesturechange',e=>{e.preventDefault();const r=$('map-canv
 const mapPick=document.createElement('select');mapPick.id='map-pick';mapPick.setAttribute('aria-label','Carte de combat');
 mapPick.style.width='auto';mapPick.style.margin='0';
 const mapOpen=document.createElement('button');mapOpen.id='map-open';mapOpen.textContent='Ouvrir la carte';
-// La carte se choisit et s'ouvre depuis la barre de la carte, à côté de l'import.
-document.querySelector('.mapbar .file').before(mapPick,mapOpen);
+// Les cartes se choisissent et s'ouvrent depuis l'onglet Cartes : la barre de la table
+// n'en propose plus ni la liste, ni l'ouverture, ni l'import d'image.
 function refreshMapPick(){mapPick.replaceChildren();maps.forEach(m=>mapPick.add(new Option(m.name,m.id)));
  refreshGmBar();
  if(currentMapId)mapPick.value=currentMapId}

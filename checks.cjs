@@ -976,4 +976,8 @@ assert.ok(page.includes('function remiseAuTourUn')&&cartes.includes("if(typeof r
 assert.ok(page.includes('function prochainNumero')&&page.includes("a.vu=true;if(!a.numero)a.numero=prochainNumero(a)")&&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('numero'),'les numéros se donnent à la révélation');
 assert.ok(page.includes("groupeReplie('Adversaires cachés',cachees)")&&page.includes('let cachesOuverts=false;'),'les adversaires cachés se replient');
 assert.ok(page.includes("imgUrl('ONDE.png')")&&src.includes("out.className='gear-pills talent-pills'")&&src.includes('colonne(liste.filter(passif))'),'l’Onde et les deux colonnes de talents');
-console.log('676 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* La troupe ne voit ni porte de côté ni objet dans le noir ; la barre de la carte se vide ; qui parle. */
+assert.ok(cartes.includes('function doorFaces')&&cartes.includes("const t=1-r/L;return rayonContre(")&&cartes.includes("if(oeilJoueur()&&!(seenAt(o.x,o.y)"),'portes et objets ne se devinent plus');
+assert.ok(!cartes.includes("before(mapPick,mapOpen)")&&page.includes('<div class="mapbar-h2" hidden>')&&!src.includes("' de la scène.'"),'la barre de la carte se vide');
+assert.ok(page.includes("const a=selected!==null?actors[selected]:null;return a?a:{name:'MJ',mj:true}"),'le socle sélectionné parle, sinon le MJ');
+console.log('679 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -1407,7 +1407,7 @@ function removeActors(liste,demande){
   if(selected!==null&&selected>=i)selected=selected>i?selected-1:null});
  if(!actors[owner]?.hero)owner=actors.findIndex(a=>a.hero);
  marked.clear();
- render();scheduleSave();log(noms.join(', ')+(noms.length>1?' retirés':' retiré')+' de la scène.');return null}
+ render();scheduleSave();return null}
 /* Rejouer la même rencontre : les adversaires repartent intacts, la troupe garde ses
    blessures — c'est le combat qu'on recommence, pas la partie. */
 $('heal-foes').onclick=()=>{if(view!=='mj')return;
