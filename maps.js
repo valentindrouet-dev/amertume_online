@@ -191,6 +191,16 @@ function memoryCanvas(d){if(!fogSeen)return null;
   for(let k=0;k<d.n;k++)if(fogSeen[k]){const p=k*4;img.data[p]=img.data[p+1]=img.data[p+2]=img.data[p+3]=255}
   c.putImageData(img,0,0);fogDirty=false}
  return fogMem}
+/* Au chargement, l'image de la carte paraissait avant que le brouillard ne la couvre :
+   un instant, et toute l'aventure était lue. Un voile opaque couvre la carte tant que le
+   brouillard de la carte ouverte n'a pas été peint ; sans carte ou voile levé, il s'ôte. */
+const voileAttente=document.createElement('div');voileAttente.id='voile-attente';$('map').append(voileAttente);
+let cartePeinte=null;
+function cleVoile(){const m=currentMap();return m?m.id+'|'+(m.fogOff?1:0):''}
+// Peint, ou rien à peindre : le voile s'ôte. Brouillard pas encore calculé, cadre sans largeur : il reste.
+function leverVoile(){const m=currentMap(),cv=$('fog');
+ const peint=!m||m.fogOff||(fogVis&&fogDim&&cv.clientWidth>0&&cv.clientHeight>0);
+ if(!peint)return;cartePeinte=cleVoile();voileAttente.hidden=true}
 function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  // Voile levé par le MJ : plus rien ne masque la carte, pour personne.
  if(!m||!fogVis||!d||m.fogOff){cv.style.display='none';return}
@@ -250,7 +260,7 @@ function resetFog(tout,silencieux){const m=currentMap();if(!m)return;
  m.fog=packMask(g,d.n);delete m.seen;m.fogOff=false;fogSeen=g;fogSeenSrc=m.fog;fogDirty=true;fogKey='';fogMemorise=new WeakSet();
  if(!silencieux)brouillardReset={n:brouillardReset.n+1,tout:!!tout};
  render();scheduleSave();
- if(!silencieux)log(tout?'Brouillard levé sur toute la carte.':'Brouillard réinitialisé.')}
+ if(!silencieux)log(tout?'Brouillard levé sur toute la carte.':'Brouillard réinitialisé.',{ton:'carte'})}
 
 /* ---------- Rendu sur la table de jeu ---------- */
 function svgRect(r,cls){const el=document.createElementNS(nsSVG,'rect');
@@ -302,7 +312,7 @@ function svgPorte(d,ratio,cls){if(!(Number(d.a)||0))return svgRect(d,cls);
  el.setAttribute('points',doorPolygon(d,ratio).map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));
  if(cls)el.setAttribute('class',cls);return el}
 function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=currentMap();
- svg.replaceChildren();portes.replaceChildren();applyMapRatio();renderFog();refreshGmBar();
+ svg.replaceChildren();portes.replaceChildren();applyMapRatio();renderFog();leverVoile();refreshGmBar();
  // .hidden n'existe pas sur un élément SVG : le masquage passe par une classe.
  $('map').classList.toggle('has-map',!!m);if(!m)return;
  if(m.start&&view==='mj')svg.append(svgRect(m.start,'startzone'));
@@ -338,10 +348,10 @@ function prendreObjet(a,o,it){const k=(o.items||[]).indexOf(it.id);if(k<0)return
  else if(it.category==='armor'){if(!a.armorId){a.armorId=it.id;ou='sur le dos'}else{noteInventaire(a,it.name);ou='à l’inventaire'}}
  else{noteInventaire(a,it.name);ou='à l’inventaire'}
  o.items.splice(k,1);if(typeof syncEquipped==='function')syncEquipped(a);
- log(a.name+' prend '+it.name+' — '+o.nom+' — '+ou+'.');
+ log(a.name+' prend '+it.name+' — '+o.nom+' — '+ou+'.',{ton:'carte'});
  render();saveMaps()}
 function prendreTresor(a,o){if(!o.tresor)return;noteInventaire(a,o.tresor);
- log(a.name+' ramasse '+o.tresor+' — '+o.nom+'.');o.tresor='';render();saveMaps()}
+ log(a.name+' ramasse '+o.tresor+' — '+o.nom+'.',{ton:'carte'});o.tresor='';render();saveMaps()}
 /* Le test de découverte : l'aventurier choisi lance sa compétence ; assez de réussites,
    et l'objet paraît à toute la table. Les dés roulent sur le plateau comme pour un test. */
 function testerObjet(a,o){const jet=skillRoll(a.skills[o.test.comp]||0,d6);
@@ -373,7 +383,7 @@ function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o
  if(view==='mj'){const outils=document.createElement('div');outils.className='objet-outils';
   const h=document.createElement('h3');h.textContent='Maître du jeu';corps.append(h);
   const voile=document.createElement('button');voile.textContent=o.visible?'Cacher à la troupe':'Révéler à la troupe';
-  voile.onclick=()=>{o.visible=!o.visible;log(o.nom+(o.visible?' est révélé.':' est caché.'));render();saveMaps();openObjetTable(i)};
+  voile.onclick=()=>{o.visible=!o.visible;log(o.nom+(o.visible?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();openObjetTable(i)};
   outils.append(voile);
   if(!o.visible){const test=document.createElement('button');
    test.textContent='🎲 Test : '+skillNames[o.test.comp]+' × '+o.test.reussites+(a&&a.hero?' pour '+a.name:'');
@@ -400,7 +410,7 @@ function renderPortes(){const portes=$('map-doors'),m=currentMap();portes.replac
     :'Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
    if(!doorInReach(d)){log('Trop loin de la porte : approche ton aventurier pour la manœuvrer.',{local:true});return}
    d.open=!d.open;
-   log((d.secret?'Passage secret ':'Porte ')+(i+1)+' '+(d.open?'ouvert'+(d.secret?'':'e'):'referm'+(d.secret?'é':'ée'))+'.');
+   log((d.secret?'Passage secret ':'Porte ')+(i+1)+' '+(d.open?'ouvert'+(d.secret?'':'e'):'referm'+(d.secret?'é':'ée'))+'.',{ton:'carte'});
    render();scheduleSave()};
   portes.append(el)})}
 /* Le brouillard ne se recalcule qu'au relâchement du socle, jamais pendant le geste : le
@@ -436,7 +446,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  actors.forEach(a=>{a.target=null});
  owner=actors.findIndex(a=>a.hero);selected=Math.max(0,owner);
  resetMapZoom();showPage('table');render();
- log('Carte « '+m.name+' » ouverte : '+heros.length+' aventurier(s) placé(s), '+(m.foes||[]).length+' adversaire(s) en place.');scheduleSave()}
+ log('Carte « '+m.name+' » ouverte : '+heros.length+' aventurier(s) placé(s), '+(m.foes||[]).length+' adversaire(s) en place.',{ton:'carte'});scheduleSave()}
 
 /* ---------- Onglets de page, réservés au MJ ---------- */
 const tabs=document.createElement('nav');tabs.className='tabs';
@@ -1080,10 +1090,10 @@ fogBar.append(fogReset,fogAll,lockBtn);document.querySelector('.mapbar .zoom-bar
 fogReset.onclick=()=>resetFog(false);
 fogAll.onclick=()=>{const m=currentMap();if(!m)return;
  m.fogOff=!m.fogOff;fogKey='';render();scheduleSave();
- log(m.fogOff?'Voile levé : toute la carte est visible.':'Brouillard rétabli.')};
+ log(m.fogOff?'Voile levé : toute la carte est visible.':'Brouillard rétabli.',{ton:'carte'})};
 lockBtn.onclick=()=>{tokensLocked=!tokensLocked;refreshGmBar();render();scheduleSave();
  document.dispatchEvent(new Event('amertume-content-changed'));
- log(tokensLocked?'Déplacements figés : les joueurs ne peuvent plus bouger leurs tokens.':'Déplacements rendus aux joueurs.')};
+ log(tokensLocked?'Déplacements figés : les joueurs ne peuvent plus bouger leurs tokens.':'Déplacements rendus aux joueurs.',{ton:'carte'})};
 // L'état des icônes se lit d'un coup d'œil : voile levé, déplacements gelés.
 function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  // La barre annonce la carte qu'on joue, pas le mot « carte tactique » : c'est la seule
@@ -1105,7 +1115,10 @@ function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new E
 // L'onglet Cartes n'existe que pour le MJ ; passer en vue joueur ramène à la table.
 /* Le cadre prend la taille de la carte avant tout : ce que le rendu mesure — vue,
    contact, révélation — se mesure dans le bon cadre dès le premier passage. */
-const renderBeforeMaps=render;render=function(){applyMapRatio();computeFog();renderBeforeMaps();renderMapLayer();
+const renderBeforeMaps=render;render=function(){
+ // Une autre carte, ou un voile qui change : elle se couvre jusqu'à la prochaine peinture.
+ if(cleVoile()!==cartePeinte)voileAttente.hidden=false;
+ applyMapRatio();computeFog();renderBeforeMaps();renderMapLayer();
  tabsMJ.forEach(b=>b.hidden=view!=='mj');
  document.body.classList.toggle('vue-joueur',view!=='mj');
  if(view!=='mj'&&PAGES.some(x=>!PAGES_LIBRES.includes(x)&&document.body.classList.contains('page-'+x)))showPage('table',false)};

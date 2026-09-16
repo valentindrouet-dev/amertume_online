@@ -199,7 +199,7 @@ function reappliquerTable(){if(dernierDoc){dernierPousse=null;appliquerSalle(der
    côté la rebâtit avec ses propres fonctions, et rien de ce qui arrive n'est posé tel
    quel dans la page. Les lignes propres à l'appareil (sauvegarde, imports) restent chez
    elles. Qui rejoint la table reçoit les dernières lignes, à la place de son journal. */
-const CLES_JOURNAL=['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite','effet'];
+const CLES_JOURNAL=['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite','effet','ton'];
 const logLocal=log,logAttaqueLocal=logAttaque;
 // Firestore refuse les tableaux imbriqués : un dé [valeur, couleur] devient un seul nombre.
 function codeDes(dice){return (dice||[]).map(([v,c])=>v*8+c)}
@@ -208,10 +208,14 @@ function fiche(o){return {id:o&&o.id||null,name:String(o&&o.name||'?').slice(0,6
 function acteurDuJournal(f){return (f&&f.id&&actors.find(x=>x.id===f.id))||{name:String(f&&f.name||'?'),hero:!!(f&&f.hero)}}
 function idJournal(){return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}
 function diffuser(rec){if(!enLigne||!journalRef||!monUid)return;
- const id=idJournal();journalVus.add(id);
- journalRef.doc(id).set({t:Date.now(),de:monUid,tour:round,...rec}).catch(e=>liveStatus('Journal non partagé. '+liveErreur(e)))}
+ const id=idJournal();journalVus.add(id);const ref=journalRef.doc(id),plein={t:Date.now(),de:monUid,tour:round,...rec};
+ ref.set(plein).catch(e=>{
+  // Une règle qui ignore encore « ton » refuse la ligne : elle repart sans sa couleur.
+  if('ton' in plein&&/permission|insufficient/i.test(String(e&&e.code)+' '+String(e&&e.message))){
+   const sans={...plein};delete sans.ton;return ref.set(sans).catch(e2=>liveStatus('Journal non partagé. '+liveErreur(e2)))}
+  liveStatus('Journal non partagé. '+liveErreur(e))})}
 log=function(text,meta){logLocal(text,meta);if(meta&&meta.local)return;
- diffuser({genre:'texte',texte:String(text).slice(0,400),badge:meta&&meta.badge?String(meta.badge).slice(0,40):null})};
+ diffuser({genre:'texte',texte:String(text).slice(0,400),badge:meta&&meta.badge?String(meta.badge).slice(0,40):null,ton:meta&&meta.ton?String(meta.ton).slice(0,20):null})};
 logAttaque=function(a,b,logo,corps,detail,suite){logAttaqueLocal(a,b,logo,corps,detail,suite);
  const d=detail?{des:codeDes(detail.dice),origine:Number.isInteger(detail.origine)?detail.origine:null,
   faille:Number.isInteger(detail.faille)?detail.faille:null,bonus:detail.bonus||0,saignee:detail.saignee||0,total:detail.total||0}:null;
@@ -223,7 +227,7 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
  if(rec.genre==='attaque'){const r=rec.detail&&typeof rec.detail==='object'?rec.detail:null;
   const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,total:r.total}:null;
   logAttaqueLocal(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'',String(rec.corps||''),d,rec.suite?String(rec.suite):'')}
- else logLocal(String(rec.texte||''),rec.badge?{badge:String(rec.badge)}:undefined)}
+ else logLocal(String(rec.texte||''),{badge:rec.badge?String(rec.badge):undefined,ton:typeof rec.ton==='string'?rec.ton:undefined})}
 function rejouerJournal(docs){const j=$('journal');if(!j)return;j.replaceChildren();let tour=null;
  docs.forEach(d=>{const rec=d.data();if(!rec||rec.genre==='effet')return;
   if(rec.tour!==tour){tour=rec.tour;const sep=document.createElement('li');sep.className='j-turn';
@@ -328,7 +332,7 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
 /* La fenêtre ne cache plus ses boutons : elle les montre, grisés quand il manque quelque
    chose, et dit lequel. Masquer « Ouvrir une table » tant que le MJ n'était pas reconnu ne
    laissait qu'une fenêtre vide, sans rien à faire ni rien à comprendre. */
-function majTable(){const ouvert=!!tableId,pret=!!cloud&&typeof firebase!=='undefined';
+function majTable(){const ouvert=!!tableId,pret=!!cloud&&typeof firebase!=='undefined';verrouillerInvite();
  const connecte=!!(auth&&auth.currentUser),mj=estMJ();
  const ligne=$('live-lien');if(ligne){ligne.hidden=!ouvert;if(ouvert)ligne.value=lienTable(tableId)}
  const montre=(id,vu,off,pourquoi)=>{const e=$(id);if(!e)return;
@@ -404,6 +408,18 @@ document.addEventListener('amertume-firebase-prete',async()=>{
  liveStatus('Table rejointe. Choisis l’aventurier que tu incarnes.');
  setTimeout(()=>{if(!monSiege&&invite)ouvreTable()},1200)});
 
+/* Un invité joue, il ne dirige pas : ni la vue MJ, ni le choix d'un autre aventurier (son
+   siège est son aventurier), ni le partage, ni le bestiaire. Ce qui est caché ici l'est
+   après chaque rendu, pour que rien ne le rouvre. */
+function verrouillerInvite(){const inv=spectateur();
+ const cache=(el,oui)=>{if(el)el.hidden=oui};
+ cache($('view'),inv);cache(document.querySelector('label[for="view"]'),inv);
+ if(inv){cache($('owner'),true);cache($('owner-label'),true)}
+ cache($('open-share'),inv);
+ const best=typeof tabs!=='undefined'&&tabs?tabs.querySelector('button[data-page="bestiary"]'):null;cache(best,inv);
+ if(inv&&document.body.classList.contains('page-bestiary')&&typeof showPage==='function')showPage('table',false)}
 // Après chaque rendu, ce qui a bougé part sur le réseau — et rien d'autre.
-const renderAvantTable=render;render=function(){renderAvantTable();pousserPlusTard()};
+const renderAvantTable=render;render=function(){
+ if(spectateur()&&view!=='player'){view='player';$('view').value='player'}
+ renderAvantTable();verrouillerInvite();pousserPlusTard()};
 majTable();

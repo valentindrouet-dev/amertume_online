@@ -1408,7 +1408,7 @@ $('heal-foes').onclick=()=>{if(view!=='mj')return;
  const blesses=actors.filter(a=>!a.hero&&(a.hp<a.max||hasState(a,'Coma')));
  if(!blesses.length){log('Aucun adversaire à soigner : ils sont tous au complet.',{local:true});return}
  blesses.forEach(a=>{a.hp=a.max;setState(a,'Coma',false)});
- render();log(blesses.length+' adversaire(s) remis à 100 % de leurs PV.');scheduleSave()};
+ render();log(blesses.length+' adversaire(s) remis à 100 % de leurs PV.',{ton:'soin'});scheduleSave()};
 $('delete-actor').onclick=()=>{if(editing===null)return;
  const souci=removeActor(editing);
  if(souci){$('actor-error').textContent=souci;return}

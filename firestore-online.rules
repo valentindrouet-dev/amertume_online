@@ -67,7 +67,7 @@ match /amertume_online_live/{table} {
     allow create: if request.auth != null
       && request.resource.data.de == request.auth.uid
       && request.resource.data.t is number
-      && request.resource.data.keys().hasOnly(['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite','effet'])
+      && request.resource.data.keys().hasOnly(['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite','effet','ton'])
       && request.resource.data.genre in ['texte','attaque','effet']
       && (!('texte' in request.resource.data) || request.resource.data.texte == null || request.resource.data.texte.size() <= 400);
     allow update: if false;
