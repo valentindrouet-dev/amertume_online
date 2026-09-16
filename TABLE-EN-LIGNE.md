@@ -88,7 +88,8 @@ Dans l’application, dans cet ordre :
 2. **Partager → Publier mon contenu.** C’est ce qui envoie les fiches, le
    bestiaire, l’armurerie et les cartes à tes joueurs. À refaire quand tu
    changes le contenu — pas à chaque coup d’épée.
-3. **Table en ligne → Ouvrir une table.** Un code est tiré.
+3. **Table en ligne → Ouvrir une table.** La table publie d’abord ce qui a
+   changé dans ton contenu, puis un code est tiré.
 4. **Copier le lien** et l’envoyer à tes joueurs.
 
 Tes joueurs ouvrent le lien : rien à installer, aucun compte. La fenêtre
@@ -107,5 +108,7 @@ s’ouvre, ils choisissent l’aventurier qu’ils incarnent, et vous jouez.
 | Connexion anonyme désactivée | Étape 1 |
 | Cette table n’existe plus | Le MJ a fermé la table, ou le lien est périmé |
 
-Et si un joueur voit la carte mais aucun aventurier à incarner : le contenu n’a
-pas encore été publié — étape 5.2.
+Chez un joueur, la fenêtre *Table en ligne* s’ouvre d’elle-même et dit ce qui
+manque : si elle n’apparaît pas, il l’ouvre depuis le bouton en haut de la page
+et lit la première ligne. Et si un joueur voit la carte mais aucun aventurier à
+incarner : le contenu n’a pas encore été publié — étape 5.2.

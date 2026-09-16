@@ -125,6 +125,8 @@ function appliquerSalle(d){if(!d)return;
 function reappliquerTable(){if(dernierDoc)appliquerSalle(dernierDoc)}
 /* ---------- Sièges : qui incarne qui ---------- */
 function renderSieges(){const boite=$('live-sieges');if(!boite)return;boite.replaceChildren();
+ if(tableId&&!estMJ()&&!(typeof remote!=='undefined'&&remote)){const p=document.createElement('p');p.className='muted';
+  p.textContent='Le MJ n’a pas encore publié son contenu : fiches, images et cartes arriveront dès qu’il l’aura fait (Partager → Publier mon contenu).';boite.append(p)}
  const troupe=actors.filter(a=>a.hero);
  if(!troupe.length){const v=document.createElement('p');v.className='muted';
   v.textContent='Aucun aventurier dans la scène publiée.';boite.append(v);return}
@@ -171,6 +173,13 @@ function codeNeuf(){const lettres='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';
 async function ouvrirTable(){if(!cloud||!auth||!auth.currentUser){liveStatus('Connexion Firebase pas encore prête.');return}
  if(!estMJ()){liveStatus('Seul un MJ connecté peut ouvrir une table.');return}
  monUid=auth.currentUser.uid;
+ // Sans contenu publié, les joueurs n'auraient ni fiches ni cartes : la table publie d'abord
+ // ce qui a changé, et ne s'ouvre pas si la publication échoue.
+ if(typeof publishShared==='function'&&typeof publicContent==='function'){
+  const b=$('live-open');if(b)b.disabled=true;liveStatus('Publication du contenu pour tes joueurs…');
+  try{while(publishing)await new Promise(r=>setTimeout(r,200));await publishShared(false)}finally{if(b)b.disabled=false}
+  if(JSON.stringify(publicContent())!==lastPublishedText){
+   liveStatus('Table non ouverte : le contenu n’a pas pu être publié. '+$('shared-status').textContent);return}}
  const code=codeNeuf();
  try{await cloud.doc('amertume_online_live/'+code).set({...etatVivant(),
    mj:auth.currentUser.uid,at:firebase.firestore.FieldValue.serverTimestamp()});
@@ -189,9 +198,9 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
  siegesRef=salleRef.collection('seats');
  enLigne=true;poussePret=false;dernierPousse=null;
  quitteSalle=salleRef.onSnapshot(doc=>{
-  if(!doc.exists){liveStatus('Cette table n’existe plus.');debrancherTable();return}
+  if(!doc.exists){liveStatus('Cette table n’existe plus. Demande un nouveau lien au MJ.');debrancherTable();if(!estMJ())ouvreTable();return}
   dernierDoc=doc.data();appliquerSalle(dernierDoc);majTable()},
-  e=>liveStatus('Écoute interrompue. '+liveErreur(e)));
+  e=>{liveStatus('Écoute interrompue. '+liveErreur(e));if(!estMJ())ouvreTable()});
  quitteSieges=siegesRef.onSnapshot(s=>{sieges={};s.forEach(d=>sieges[d.id]=d.data());
   const mien=monUid&&sieges[monUid];monSiege=mien?mien.actorId:null;
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
@@ -235,6 +244,8 @@ const liveDialog=dialog('live-panel','Table en ligne',
  +'<input id="live-lien" readonly hidden aria-label="Lien de la table">'
  +'<p class="muted" id="live-compte"></p>'
  +'<h2 class="sous-titre" id="live-titre-sieges" hidden>Qui incarne qui</h2><div id="live-sieges" hidden></div>');
+// Ce qui coince se montre : une fenêtre fermée ne renseigne personne.
+const ouvreTable=()=>{if(!liveDialog.open)liveDialog.showModal()};
 const liveButton=document.createElement('button');liveButton.id='open-live';
 liveButton.textContent='Table en ligne';liveButton.onclick=()=>{renderSieges();majTable();liveDialog.showModal()};
 document.querySelector('.view-controls').append(liveButton);
@@ -256,13 +267,23 @@ $('live-copy').onclick=async()=>{try{await navigator.clipboard.writeText(lienTab
 document.addEventListener('amertume-firebase-prete',async()=>{
  const code=new URL(location.href).searchParams.get('table')||localStorage.getItem(TABLE_CLE);
  if(!code)return;
- try{if(!auth.currentUser)await auth.signInAnonymously()}catch(e){
-  liveStatus(liveErreur(e));return}
+ // La partie locale se pose d'abord : la table la recouvre ensuite, pas l'inverse.
+ if(typeof loading!=='undefined'&&loading)await new Promise(r=>document.addEventListener('amertume-partie-chargee',r,{once:true}));
+ // Le compte MJ mémorisé revient tout seul, mais pas tout de suite : on l'attend avant
+ // de créer une identité anonyme, qui prendrait sa place.
+ const deja=await new Promise(r=>{const off=auth.onAuthStateChanged(u=>{off();r(u)})});
+ try{if(!deja)await auth.signInAnonymously()}catch(e){
+  liveStatus('Impossible de rejoindre la table. '+liveErreur(e));ouvreTable();return}
  monUid=auth.currentUser?auth.currentUser.uid:null;
  auth.onAuthStateChanged(u=>{monUid=u?u.uid:null;majTable()});
  brancherTable(code);
+ // Un invité joue en joueur, avec le contenu publié s'il est déjà arrivé : sinon il
+ // n'aurait que la scène de cet appareil, et rien pour le lui dire.
+ const invite=!!(auth.currentUser&&auth.currentUser.isAnonymous);
+ if(invite){view='player';$('view').value='player';
+  if(typeof remote!=='undefined'&&remote&&typeof applyRemote==='function')applyRemote();else render()}
  liveStatus('Table rejointe. Choisis l’aventurier que tu incarnes.');
- setTimeout(()=>{if(!monSiege&&!estMJ())liveDialog.showModal()},1200)});
+ setTimeout(()=>{if(!monSiege&&invite)ouvreTable()},1200)});
 
 // Après chaque rendu, ce qui a bougé part sur le réseau — et rien d'autre.
 const renderAvantTable=render;render=function(){renderAvantTable();pousserPlusTard()};
