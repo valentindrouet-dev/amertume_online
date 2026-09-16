@@ -19,7 +19,7 @@
 /* Ce qui vit et se synchronise. Les images n'y sont pas : elles voyagent avec le contenu
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
- 'pool','attacks','weapons','armorId','shieldId','states','bleed','cumuls','checks','target','activeAttack',
+ 'pool','attacks','weapons','armorId','shieldId','states','bleed','cumuls','checks','cibles','activeAttack',
  'revealed','hidden','vu','numero','orbes','garde','notes'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
@@ -52,9 +52,18 @@ function liveErreur(e){const code=(e&&(e.code||''))+' '+(e&&e.message||'');
  return (e&&e.message)||(e&&e.code)||'Erreur inconnue'}
 
 /* ---------- Lecture et écriture de l'état vivant ---------- */
+/* Les cibles d'un combattant sont des rangs dans la liste locale, et chaque table range
+   ses combattants dans son propre ordre : un rang envoyé tel quel désignait n'importe qui
+   chez l'autre. Sur le réseau, elles voyagent donc par identifiant, et se retraduisent
+   à l'arrivée. */
+function ciblesIds(a){const brut=Array.isArray(a.targets)?a.targets
+  :(a.target===null||a.target===undefined?[]:[a.target]);
+ return brut.map(j=>actors[j]&&actors[j].id).filter(Boolean)}
+function indicesDesCibles(ids){return (Array.isArray(ids)?ids:[]).map(id=>actors.findIndex(o=>o&&o.id===id)).filter(j=>j>=0)}
 function etatVivant(){const out={actors:{}};
  actors.forEach(a=>{if(!a||!a.id)return;const e={};
   CHAMPS_VIVANTS.forEach(k=>{if(a[k]!==undefined)e[k]=a[k]});
+  e.cibles=ciblesIds(a);
   out.actors[a.id]=e});
  out.round=round;out.locked=!!tokensLocked;out.mode=mode;
  out.mapId=(typeof currentMapId!=='undefined'&&currentMapId)||null;
@@ -158,7 +167,7 @@ function appliquerSalle(d,complet){if(!d)return;
    if(m0&&typeof d.fogOff==='boolean'&&!!m0.fogOff!==d.fogOff){m0.fogOff=d.fogOff;if(typeof fogKey!=='undefined')fogKey=''}
    if(d.fogReset&&typeof d.fogReset.n==='number'&&typeof brouillardReset!=='undefined'&&d.fogReset.n!==brouillardReset.n){
     brouillardReset={n:d.fogReset.n,tout:!!d.fogReset.tout};if(m0&&typeof resetFog==='function')resetFog(brouillardReset.tout,true)}}
-  const vus=new Set(),aRepousser=[],gardes=[];
+  const vus=new Set(),aRepousser=[],gardes=[],cibles=[];
   Object.entries(d.actors||{}).forEach(([id,e])=>{if(!e||typeof e!=='object')return;
    vus.add(id);
    let a=actors.find(x=>x.id===id);
@@ -167,16 +176,22 @@ function appliquerSalle(d,complet){if(!d)return;
    const enMain=window.socleEnMain===id,r=dernierPousse&&dernierPousse.actors&&dernierPousse.actors[id];
    CHAMPS_VIVANTS.forEach(k=>{if(e[k]===undefined)return;
     if(enMain&&(k==='x'||k==='y'))return;
+    // Les cibles se comparent par identifiant, telles qu'elles partent : jamais par rang.
+    const local=k==='cibles'?ciblesIds(a):a[k];
     /* Ce qui revient tel qu'on l'a envoyé n'apprend rien : un changement local survenu
        depuis est plus récent. On le garde, et la référence retient la valeur reçue pour
        qu'il parte au prochain envoi — sinon il s'y fondait, ne partait jamais, et le
        document suivant l'écrasait (des PV corrigés qui « ne comptaient pas »). */
-    if(r&&pareil(r[k],e[k])&&!pareil(a[k],e[k])){gardes.push([id,k,structuredClone(e[k])]);return}
+    if(r&&pareil(r[k],e[k])&&!pareil(local,e[k])){gardes.push([id,k,structuredClone(e[k])]);return}
     /* Révélé, pour de bon : le MJ ne reprend jamais un « vu » à faux venu du réseau, il le
        renvoie à vrai. Ses propres remises à zéro passent, elles partent de chez lui. */
     if(estMJ()&&CHAMPS_ACTEUR_MJ.includes(k)&&k!=='hidden'&&a[k]===true&&e[k]===false){aRepousser.push([id,k]);return}
-    if(!pareil(a[k],e[k]))a[k]=structuredClone(e[k])});
+    if(pareil(local,e[k]))return;
+    // Les cibles attendent que toute la scène soit en place : leur combattant peut suivre.
+    if(k==='cibles'){cibles.push([a,e[k]]);return}
+    a[k]=structuredClone(e[k])});
    normalizeActor(a)});
+  cibles.forEach(([a,ids])=>{if(typeof poseCibles==='function')poseCibles(a,indicesDesCibles(ids))});
   // La composition de la scène appartient au MJ : chez les joueurs, ce qui n'y est plus s'en va.
   if(!estMJ())for(let i=actors.length-1;i>=0;i--)if(!vus.has(actors[i].id))actors.splice(i,1);
   const m=typeof currentMap==='function'?currentMap():null;

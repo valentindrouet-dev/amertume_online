@@ -1016,4 +1016,17 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
  assert.equal(pvMaximum(cls,h),27);h.endu=2;assert.equal(pvMaximum(cls,h),24);
  writeStat(h,'max',pvMaximum(cls,h));assert.equal(h.max,24);assert.equal(h.hp,24);
  h.vie=0.5;assert.equal(pvMaximum(cls,h),20);}   // Vie fractionnaire tronquée à 1, jamais 0 : 1 × 2 + 18.
-console.log('699 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les cibles voyagent par identifiant : chaque table range ses combattants à sa façon, un rang
+   envoyé tel quel désignait n'importe qui. Un aventurier ne vise jamais de lui-même un adversaire
+   caché à la troupe ; la flèche ne suit qu'une cible valide ; l'orbe ignore Mauvais Sort. */
+{const champs=JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"'));
+ assert.ok(champs.includes('cibles')&&!champs.includes('target')&&!champs.includes('targets'),'les cibles partent en identifiants');
+ assert.ok(vivant.includes('function ciblesIds(')&&vivant.includes('function indicesDesCibles(')&&vivant.includes('e.cibles=ciblesIds(a);')
+  &&vivant.includes("const local=k==='cibles'?ciblesIds(a):a[k];")&&vivant.includes("if(k==='cibles'){cibles.push([a,e[k]]);return}")
+  &&vivant.includes('cibles.forEach(([a,ids])=>{if(typeof poseCibles===\'function\')poseCibles(a,indicesDesCibles(ids))});'),'les cibles se retraduisent à l’arrivée, une fois la scène en place');
+ assert.ok(page.includes("if(cachePour(o,j)&&(view!=='mj'||a.hero))return false;")&&page.includes('function reach(){const a=actors[selected],j=a?ciblesDe(a)[0]:undefined;'),'un aventurier ne vise pas un adversaire caché');
+ const orbeSrc=page.slice(page.indexOf('function orbe('),page.indexOf('function cibleAlliee('));
+ assert.ok(!orbeSrc.includes('mauvaisSort(')&&!orbeSrc.includes('Mauvais Sort :')&&orbeSrc.includes("let suite='',pose='';"),'l’orbe est un talent : pas de Mauvais Sort');
+ const frappeSrc=page.slice(page.indexOf('function frappe('),page.indexOf('function frappe(')+1200);
+ assert.ok(frappeSrc.includes("porteEffet(talentsCodes(b),'mauvaissort')?mauvaisSort(dice,d6):null"),'Mauvais Sort reste sur les attaques');}
+console.log('704 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
