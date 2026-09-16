@@ -955,4 +955,6 @@ assert.ok(vivant.includes('function verrouillerInvite')&&vivant.includes("if(spe
 const cartes=fs.readFileSync('maps.js','utf8');
 assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false;")&&cartes.includes('renderFog();leverVoile();')&&page.includes('#voile-attente{'),'la carte se voile jusqu’au brouillard');
 assert.ok(page.includes(".j-entry.ton-talent{")&&page.includes("li.classList.add('j-attaque','ton',/^spell_/.test(logo||'')?'ton-talent':'ton-attaque')"),'le journal a ses tons');
-console.log('659 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+// Le journal se cale sur le bas de la carte, et se libère sur une colonne.
+assert.ok(cartes.includes('function calerJournal')&&cartes.includes('renderMapLayer();calerJournal();')&&page.includes('.journal-cale .journal{flex:1'),'le journal descend au bas de la carte');
+console.log('660 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

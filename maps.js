@@ -1118,11 +1118,20 @@ function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new E
 const renderBeforeMaps=render;render=function(){
  // Une autre carte, ou un voile qui change : elle se couvre jusqu'à la prochaine peinture.
  if(cleVoile()!==cartePeinte)voileAttente.hidden=false;
- applyMapRatio();computeFog();renderBeforeMaps();renderMapLayer();
+ applyMapRatio();computeFog();renderBeforeMaps();renderMapLayer();calerJournal();
  tabsMJ.forEach(b=>b.hidden=view!=='mj');
  document.body.classList.toggle('vue-joueur',view!=='mj');
  if(view!=='mj'&&PAGES.some(x=>!PAGES_LIBRES.includes(x)&&document.body.classList.contains('page-'+x)))showPage('table',false)};
-window.addEventListener('resize',()=>{if(document.body.classList.contains('page-maps'))renderCanvas();
+/* Le journal descend jusqu'au bas de la carte : son panneau est calé dessus à chaque rendu
+   et à chaque changement de taille. Sur une seule colonne, il reprend sa hauteur propre. */
+function calerJournal(){const j=$('journal'),p=j&&j.closest('.panel'),carte=document.querySelector('.map-panel');
+ if(!j||!p||!carte)return;
+ const rc=carte.getBoundingClientRect(),rp=p.getBoundingClientRect();
+ const aCote=rp.left>=rc.right-1&&rc.height>0,h=Math.round(rc.bottom-rp.top);
+ if(!aCote||h<160){p.style.height='';p.classList.remove('journal-cale');return}
+ p.classList.add('journal-cale');p.style.height=h+'px'}
+if(typeof ResizeObserver==='function'){const carte=document.querySelector('.map-panel');if(carte)new ResizeObserver(()=>calerJournal()).observe(carte)}
+window.addEventListener('resize',()=>{calerJournal();if(document.body.classList.contains('page-maps'))renderCanvas();
  else{applyMapRatio();applyMapZoom();render()}});
 maps.forEach(ensure);refreshMapPick();renderMapLayer();refreshHistory();renderCatalogPages();
 tabsMJ.forEach(b=>b.hidden=view!=='mj');document.body.classList.toggle('vue-joueur',view!=='mj');
