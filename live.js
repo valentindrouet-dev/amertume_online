@@ -24,7 +24,7 @@ const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp
 const CHAMPS_MJ=['round','mapId','locked','title','mode'];
 const TABLE_CLE='amertume-table';
 let tableId=null,salleRef=null,siegesRef=null,enLigne=false,appliquantDistant=false;
-let dernierPousse=null,poussePret=false,pousseTimer=null,pousseEnCours=false;
+let dernierPousse=null,poussePret=false,pousseTimer=null,docPrecedent=null,renduDiffere=null;
 let monUid=null,monSiege=null,sieges={},quitteSalle=null,quitteSieges=null,dernierDoc=null;
 let journalRef=null,quitteJournal=null,journalVus=new Set(),journalPremier=true;
 /* Chez un joueur en ligne, révéler n'est pas son affaire : le MJ révèle, et « vu » lui
@@ -75,14 +75,39 @@ function diffEtat(av,ap){const maj={},SUPPR=firebase.firestore.FieldValue.delete
  if(estMJ())CHAMPS_MJ.forEach(k=>{if(!pareil(av&&av[k],ap[k]))maj[k]=ap[k]});
  return maj}
 function pousserPlusTard(){if(!enLigne||appliquantDistant||!poussePret)return;
- clearTimeout(pousseTimer);pousseTimer=setTimeout(pousserEtat,140)}
-async function pousserEtat(){if(!enLigne||!salleRef||pousseEnCours)return;
+ clearTimeout(pousseTimer);pousseTimer=setTimeout(pousserEtat,60)}
+/* Pendant un glissement, la position part par salves : assez souvent pour que le socle
+   glisse en face, pas à chaque pixel. */
+function pousserBientot(){if(!enLigne||appliquantDistant||!poussePret||pousseTimer)return;
+ pousseTimer=setTimeout(pousserEtat,150)}
+/* Les envois se suivent sans s'attendre : Firestore les ordonne. Un refus fait repartir
+   l'état entier au prochain envoi, pour que rien ne manque en face. */
+function pousserEtat(){pousseTimer=null;if(!enLigne||!salleRef)return;
  const ap=etatVivant(),maj=diffEtat(dernierPousse,ap);
  if(!Object.keys(maj).length)return;
- pousseEnCours=true;const avant=dernierPousse;dernierPousse=ap;
- try{maj.at=firebase.firestore.FieldValue.serverTimestamp();await salleRef.update(maj)}
- catch(e){dernierPousse=avant;liveStatus('Envoi impossible. '+liveErreur(e))}
- finally{pousseEnCours=false}}
+ dernierPousse=ap;maj.at=firebase.firestore.FieldValue.serverTimestamp();
+ salleRef.update(maj).catch(e=>{dernierPousse=null;liveStatus('Envoi impossible. '+liveErreur(e))})}
+/* Rien d'autre que des positions n'a bougé ? Les socles glissent sans rendu complet. */
+function seulementPositions(av,ap){
+ for(const k of ['round','locked','mode','mapId','title'])if(!pareil(av[k],ap[k]))return false;
+ if(!pareil(av.doors,ap.doors))return false;
+ const A=av.actors||{},B=ap.actors||{},ids=Object.keys(B);
+ if(ids.length!==Object.keys(A).length)return false;
+ for(const id of ids){const a=A[id],b=B[id];if(!a||!b)return false;
+  for(const k of CHAMPS_VIVANTS){if(k==='x'||k==='y')continue;if(!pareil(a[k],b[k]))return false}}
+ return true}
+function glisserDistant(d){const B=d.actors||{};let bouge=false;
+ Object.entries(B).forEach(([id,e])=>{const a=actors.find(x=>x.id===id);
+  if(!a||window.socleEnMain===id||typeof e.x!=='number'||typeof e.y!=='number')return;
+  if(a.x===e.x&&a.y===e.y)return;
+  a.x=e.x;a.y=e.y;bouge=true;
+  // La référence suit ces deux champs seulement : un changement local en attente reste dû.
+  const r=dernierPousse&&dernierPousse.actors&&dernierPousse.actors[id];if(r){r.x=e.x;r.y=e.y}
+  const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(id)+'"]');
+  if(el){el.classList.add('glisse');el.style.left=e.x+'%';el.style.top=e.y+'%'}});
+ if(!bouge)return;
+ if(typeof updateRing==='function')updateRing();if(typeof updateSight==='function')updateSight();
+ clearTimeout(renduDiffere);renduDiffere=setTimeout(()=>{if(dernierDoc)appliquerSalle(dernierDoc,true)},220)}
 
 /* Un combattant que l'on ne connaît pas encore : on le rebâtit depuis le bestiaire publié,
    et à défaut depuis ce que l'état vivant en dit. Son identifiant est celui de la table. */
@@ -93,8 +118,11 @@ function instancierActeur(id,e){
   if(m)a=fromMonster(m)}
  if(!a)a={...baseActor(e.hero===true)};
  a.id=id;normalizeActor(a);return a}
-function appliquerSalle(d){if(!d)return;
- appliquantDistant=true;
+function appliquerSalle(d,complet){if(!d)return;
+ // Seules des positions ont bougé : les socles glissent, le rendu complet attend la fin.
+ if(!complet&&poussePret&&docPrecedent&&seulementPositions(docPrecedent,d)){docPrecedent=d;glisserDistant(d);return}
+ docPrecedent=d;clearTimeout(renduDiffere);
+ appliquantDistant=true;let base=null;
  try{
   if(!estMJ()){
    if(Number.isFinite(d.round))round=d.round;
@@ -124,12 +152,16 @@ function appliquerSalle(d){if(!d)return;
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
   if(typeof marked!=='undefined')marked=new Set([...marked].filter(id=>actors.some(a=>a.id===id)));
   $('round').textContent=String(round).padStart(2,'0');
+  /* Ce qui est reçu devient la référence AVANT le rendu : ce que le rendu ajoute (une
+     révélation chez le MJ) est alors une différence, et part. Prise après, elle s'y
+     fondait et n'arrivait jamais en face. */
+  base=etatVivant();
   render();
- }finally{appliquantDistant=false;dernierPousse=etatVivant();poussePret=true}}
+ }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()}}
 
 /* Le contenu publié vient d'être posé : il a remplacé les fiches et les cartes, donc
    l'état vivant doit être reposé par-dessus, sans quoi la table reculerait d'un cran. */
-function reappliquerTable(){if(dernierDoc)appliquerSalle(dernierDoc)}
+function reappliquerTable(){if(dernierDoc)appliquerSalle(dernierDoc,true)}
 /* ---------- Le journal partagé ----------
    Chaque ligne part vers la table en texte et en chiffres, jamais en balisage : l'autre
    côté la rebâtit avec ses propres fonctions, et rien de ce qui arrive n'est posé tel

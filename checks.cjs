@@ -937,4 +937,11 @@ const jl={};vm.createContext(jl);vm.runInContext(vivant.slice(vivant.indexOf('fu
 assert.equal(JSON.stringify(jl.decodeDes(jl.codeDes([[5,0],[3,1],[6,7]]))),'[[5,0],[3,1],[6,7]]');
 assert.ok(page.includes("(typeof spectateur==='function'&&spectateur())?[]:actors.filter("),'un joueur en ligne ne révèle pas');
 assert.ok(vivant.includes("if(meta&&meta.local)return;"),'les lignes propres à l’appareil restent chez elles');
-console.log('647 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* La table : la référence se prend avant le rendu, les positions partent par salves, les
+   socles reçus glissent, et deux doigts mènent la carte. */
+assert.ok(vivant.includes("base=etatVivant();\n  render();")&&vivant.includes("dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()"),'la référence précède le rendu');
+assert.ok(vivant.includes('function pousserBientot')&&page.includes("if(typeof pousserBientot==='function')pousserBientot()"),'le glissement part par salves');
+assert.ok(vivant.includes("appliquerSalle(dernierDoc,true)")&&vivant.includes("seulementPositions(docPrecedent,d)"),'les positions seules glissent sans rendu');
+assert.ok(page.includes("t.dataset.id=a.id")&&page.includes(".token.glisse{transition:"),'le socle reçu est retrouvé et glisse');
+assert.ok(page.includes("addEventListener('touchmove'")&&page.includes("mapPanX+=c.x-doigts.x"),'deux doigts font glisser la carte');
+console.log('652 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

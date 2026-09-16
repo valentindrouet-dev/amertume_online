@@ -394,7 +394,7 @@ function renderPortes(){const portes=$('map-doors'),m=currentMap();portes.replac
    if(doorLockedFor(d,mj)){log(d.secret&&!d.open
     ?'Rien ici qu’un mur : ce passage n’existe pas pour la troupe.'
     :'Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
-   if(!doorInReach(d)){log('Trop loin de la porte : approche ton aventurier pour la manœuvrer.');return}
+   if(!doorInReach(d)){log('Trop loin de la porte : approche ton aventurier pour la manœuvrer.',{local:true});return}
    d.open=!d.open;
    log((d.secret?'Passage secret ':'Porte ')+(i+1)+' '+(d.open?'ouvert'+(d.secret?'':'e'):'referm'+(d.secret?'é':'ée'))+'.');
    render();scheduleSave()};

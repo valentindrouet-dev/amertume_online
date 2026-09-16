@@ -1406,7 +1406,7 @@ function removeActors(liste,demande){
    blessures — c'est le combat qu'on recommence, pas la partie. */
 $('heal-foes').onclick=()=>{if(view!=='mj')return;
  const blesses=actors.filter(a=>!a.hero&&(a.hp<a.max||hasState(a,'Coma')));
- if(!blesses.length){log('Aucun adversaire à soigner : ils sont tous au complet.');return}
+ if(!blesses.length){log('Aucun adversaire à soigner : ils sont tous au complet.',{local:true});return}
  blesses.forEach(a=>{a.hp=a.max;setState(a,'Coma',false)});
  render();log(blesses.length+' adversaire(s) remis à 100 % de leurs PV.');scheduleSave()};
 $('delete-actor').onclick=()=>{if(editing===null)return;
@@ -1583,7 +1583,7 @@ function glisserVersCarte(el,nom,image,poser,groupe){
    // Un glissement n'est pas un clic : le bouton ne doit pas poser un second exemplaire.
    el.dataset.glisse='1';
    if(surLaCarte(ev)){const p=mapPct(ev);poser(p.x,p.y,combien)}
-   else log('Rien de posé : lâche le modèle sur la carte.')};
+   else log('Rien de posé : lâche le modèle sur la carte.',{local:true})};
   document.addEventListener('pointermove',bouge);document.addEventListener('pointerup',fin);
   document.addEventListener('keydown',touche,true)})}
 /* La fenêtre de choix montre exactement ce que montre la liste des combattants : le même
