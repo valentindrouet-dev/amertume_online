@@ -158,7 +158,7 @@ function appliquerSalle(d,complet){if(!d)return;
    if(m0&&typeof d.fogOff==='boolean'&&!!m0.fogOff!==d.fogOff){m0.fogOff=d.fogOff;if(typeof fogKey!=='undefined')fogKey=''}
    if(d.fogReset&&typeof d.fogReset.n==='number'&&typeof brouillardReset!=='undefined'&&d.fogReset.n!==brouillardReset.n){
     brouillardReset={n:d.fogReset.n,tout:!!d.fogReset.tout};if(m0&&typeof resetFog==='function')resetFog(brouillardReset.tout,true)}}
-  const vus=new Set(),aRepousser=[];
+  const vus=new Set(),aRepousser=[],gardes=[];
   Object.entries(d.actors||{}).forEach(([id,e])=>{if(!e||typeof e!=='object')return;
    vus.add(id);
    let a=actors.find(x=>x.id===id);
@@ -168,8 +168,10 @@ function appliquerSalle(d,complet){if(!d)return;
    CHAMPS_VIVANTS.forEach(k=>{if(e[k]===undefined)return;
     if(enMain&&(k==='x'||k==='y'))return;
     /* Ce qui revient tel qu'on l'a envoyé n'apprend rien : un changement local survenu
-       depuis est plus récent, il partira au prochain envoi au lieu d'être écrasé. */
-    if(r&&pareil(r[k],e[k])&&!pareil(a[k],e[k]))return;
+       depuis est plus récent. On le garde, et la référence retient la valeur reçue pour
+       qu'il parte au prochain envoi — sinon il s'y fondait, ne partait jamais, et le
+       document suivant l'écrasait (des PV corrigés qui « ne comptaient pas »). */
+    if(r&&pareil(r[k],e[k])&&!pareil(a[k],e[k])){gardes.push([id,k,structuredClone(e[k])]);return}
     /* Révélé, pour de bon : le MJ ne reprend jamais un « vu » à faux venu du réseau, il le
        renvoie à vrai. Ses propres remises à zéro passent, elles partent de chez lui. */
     if(estMJ()&&CHAMPS_ACTEUR_MJ.includes(k)&&k!=='hidden'&&a[k]===true&&e[k]===false){aRepousser.push([id,k]);return}
@@ -188,6 +190,7 @@ function appliquerSalle(d,complet){if(!d)return;
      fondait et n'arrivait jamais en face. */
   base=etatVivant();
   aRepousser.forEach(([id,k])=>{if(base.actors[id])base.actors[id][k]=false});
+  gardes.forEach(([id,k,v])=>{if(base.actors[id])base.actors[id][k]=v});
   render();
  }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()}}
 

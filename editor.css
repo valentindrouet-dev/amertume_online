@@ -266,7 +266,7 @@ button.btn-action.encre-sombre{color:#2a2118;text-shadow:0 1px 0 rgba(255,255,25
 button.btn-talent{--fond:#3f7d5e}
 /* Une Réaction ne coûte pas l'Action du tour : elle porte le violet, comme l'Analyse. */
 button.btn-reaction{--fond:#9b7ad4}
-button.btn-analyse{--fond:#9b7ad4}
+button.btn-analyse{--fond:#2f7f8f}
 button.btn-analyse.on{--fond:#8264bb}
 button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .summary,.attack-card #attack-help{margin:0;font-size:13px}
 /* Les cibles à portée, cliquables : plus besoin de viser sur la carte pour en changer. */

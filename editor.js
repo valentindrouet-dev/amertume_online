@@ -74,8 +74,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   const bas=document.createElement('span');bas.className='des-bonus';
   if(t.des)bas.append(dicePips(t.des));
   else{const n=document.createElement('span');n.className='nature';n.textContent=talentType(t.talent)[2];bas.append(n)}
-  b.append(nom,bas);b.disabled=!t.peut;b.title=t.titre;b.setAttribute('aria-label',t.texte+' — '+t.titre);
-  b.onclick=t.agir;boite.append(b)});
+  b.append(nom,bas);inerte(b,!t.peut);b.title=t.titre;b.setAttribute('aria-label',t.texte+' — '+t.titre);
+  b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(b)});
  if(!liste.length)return;
  const retenu=Math.trunc(a.activeAttack)||0;
  liste.forEach((at,i)=>{const b=document.createElement('button');
@@ -97,14 +97,16 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
    bas.append(plus,ico)}
   b.append(nom,bas);
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
-  b.disabled=!!refus;
+  inerte(b,!!refus);
+  // Le clic droit du MJ rend l'Action et pose la flèche en vol.
+  b.reinit=()=>{if(a.checks)a.checks[0]=false;if(typeof tirEnVol!=='undefined')tirEnVol=false};
   b.title=refus||('Frapper : '+(at.gear?'attaque avec l’équipement':'attaque de fiche')
    +' · '+(at.range==='distance'?'à distance':'au contact')
    +(at.targets==='all'?' · toutes cibles':''));
   b.setAttribute('aria-label',(at.name||'Attaque')+' — '+b.title);
   /* Le bouton n'arme plus l'attaque : il la porte. On retient laquelle est partie —
      la réserve affichée la suit — puis le coup part aussitôt. */
-  b.onclick=()=>{a.activeAttack=i;
+  b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;
    boite.querySelectorAll('.choix-attaque:not(.btn-talent)').forEach((x,k)=>x.classList.toggle('on',k===i));
    attack();scheduleSave()};
   // Les attaques d'abord, les talents à leur suite.
