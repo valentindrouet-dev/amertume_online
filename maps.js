@@ -276,9 +276,23 @@ function resetFog(tout,silencieux){const m=currentMap();if(!m)return;
 function svgRect(r,cls){const el=document.createElementNS(nsSVG,'rect');
  el.setAttribute('x',r.x+'%');el.setAttribute('y',r.y+'%');el.setAttribute('width',r.w+'%');el.setAttribute('height',r.h+'%');
  if(cls)el.setAttribute('class',cls);return el}
+/* La carte tient dans l'écran : sa hauteur laisse, en dessous, la place de la rangée des
+   Actions et des Dés puis de la marge du bas — plus rien à faire défiler pour voir le bas
+   des boutons. On mesure depuis le haut de la page, comme si elle n'était pas défilée.
+   Sur une seule colonne (téléphone), tout défile de toute façon : on garde la borne
+   d'avant, comme pour une carte masquée qui ne se mesure pas. */
+function hauteurDispoCarte(el){const repli=Math.round(innerHeight*.72),r=el.getBoundingClientRect();
+ if(!el.offsetParent||!r.width)return repli;
+ const rangee=document.querySelector('.actions-rangee'),layout=document.querySelector('.layout');
+ if(!rangee||!rangee.offsetParent||getComputedStyle(rangee).gridTemplateColumns.trim().split(/\s+/).length<2)return repli;
+ /* Tout ce qui sépare le bas de la carte du bas de la rangée des Actions — le bas de son
+    panneau, l'écart, la rangée — puis la marge de la page : rien de cela ne dépend de la
+    hauteur de la carte. (Le bas de la colonne, lui, s'étire sur la plus haute des trois.) */
+ const sous=rangee.getBoundingClientRect().bottom-r.bottom,marge=layout?parseFloat(getComputedStyle(layout).paddingBottom)||0:0;
+ return Math.round(innerHeight-(r.top+scrollY)-sous-marge)}
 function applyMapRatio(){const m=currentMap(),el=$('map');
  if(!m||!m.ratio){el.style.width='';el.style.height='';return}
- const dispo=el.parentElement.clientWidth||el.clientWidth||600,hMax=Math.max(260,Math.round(innerHeight*.72));
+ const dispo=el.parentElement.clientWidth||el.clientWidth||600,hMax=Math.max(260,hauteurDispoCarte(el));
  let w=dispo,h=w/m.ratio;if(h>hMax){h=hMax;w=h*m.ratio}
  el.style.width=Math.round(w)+'px';el.style.height=Math.round(h)+'px'}
 /* Le contour lissé devient un tracé SVG dans un repère de 0 à 100 : c'est très
@@ -1150,7 +1164,14 @@ function calerColonnes(){const centre=document.querySelector('.layout>.stack:not
  if(!aCote||h<300){droite.style.height='';droite.classList.remove('calee');if(gauche)gauche.classList.remove('calee');return}
  droite.classList.add('calee');droite.style.height=h+'px';if(gauche)gauche.classList.add('calee')}
 if(typeof ResizeObserver==='function'){const ro=new ResizeObserver(()=>calerColonnes());
- ['.map-panel','.actions-rangee','.stack.right>.panel:first-child'].forEach(s=>{const el=document.querySelector(s);if(el)ro.observe(el)})}
+ ['.map-panel','.actions-rangee','.stack.right>.panel:first-child'].forEach(s=>{const el=document.querySelector(s);if(el)ro.observe(el)});
+ /* La rangée des Actions change de hauteur au fil des boutons : la carte se remesure, et
+    ne se redessine que si sa hauteur a bougé — la rangée ne dépend pas de la carte, donc
+    cela s'arrête de soi-même. */
+ const rangee=document.querySelector('.actions-rangee');
+ if(rangee)new ResizeObserver(()=>{if(document.body.classList.contains('page-maps'))return;
+  const el=$('map'),h=el.offsetHeight;applyMapRatio();
+  if(Math.abs(el.offsetHeight-h)>1){applyMapZoom();render()}}).observe(rangee)}
 window.addEventListener('resize',()=>{calerColonnes();if(document.body.classList.contains('page-maps'))renderCanvas();
  else{applyMapRatio();applyMapZoom();render()}});
 maps.forEach(ensure);refreshMapPick();renderMapLayer();refreshHistory();renderCatalogPages();

@@ -1039,4 +1039,9 @@ assert.ok(src.includes('function xpDesRetires(')&&src.includes('xpDesRetires(par
  &&src.includes("poseCibles(a,ids.map(id=>actors.findIndex(o=>o&&o.id===id)).filter(j=>j>=0))")&&!src.includes('if(a.target===i)a.target=null;else if(a.target>i)a.target--'),'l’XP d’un adversaire retiré va aux aventuriers, les cibles suivent');
 /* Le verrou des déplacements et la remise à zéro d'un bouton se notent chez le MJ seul. */
 assert.ok(cartes.includes("'Déplacements rendus aux joueurs.',{ton:'carte',local:true})")&&page.includes("' » réinitialisé.',{local:true})"),'verrou et remise à zéro : notes locales au MJ');
-console.log('708 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* La carte tient dans l'écran : sa hauteur laisse la place de la rangée Actions/Dés, et se remesure
+   quand cette rangée change de hauteur. */
+assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('return Math.round(innerHeight-(r.top+scrollY)-sous-marge)}')
+ &&cartes.includes('hMax=Math.max(260,hauteurDispoCarte(el))')&&!cartes.includes('Math.round(innerHeight*.72));')
+ &&cartes.includes("if(Math.abs(el.offsetHeight-h)>1){applyMapZoom();render()}}).observe(rangee)"),'la carte tient dans l’écran');
+console.log('709 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
