@@ -887,4 +887,26 @@ assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+li
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
-console.log('607 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* La sauvegarde globale : ce que l'import accepte, ce qu'il refuse, et le résumé qu'il annonce. */
+const sauve={};vm.createContext(sauve);vm.runInContext(editor.slice(editor.indexOf('function nomSauvegarde'),editor.indexOf('function appliquerSauvegarde')),sauve);
+const bonne={version:8,actors:[{hero:true,name:'A'},{hero:true},{hero:false}],catalog:{monsters:[1,2],items:[1],talents:[1,2,3]},maps:[{},{}]};
+assert.equal(sauve.verifieSauvegarde(bonne),'');
+assert.equal(sauve.verifieSauvegarde({...bonne,version:7}),'');                                    // L'ancienne forme se relit.
+assert.match(sauve.verifieSauvegarde(null),/pas une sauvegarde/);
+assert.match(sauve.verifieSauvegarde([1]),/pas une sauvegarde/);
+assert.match(sauve.verifieSauvegarde({...bonne,version:3}),/Version de sauvegarde inconnue \(3\)/);
+assert.match(sauve.verifieSauvegarde({...bonne,actors:[]}),/aucun combattant/);
+assert.match(sauve.verifieSauvegarde({...bonne,actors:[{hero:false}]}),/aucun aventurier/);
+assert.match(sauve.verifieSauvegarde({...bonne,catalog:[]}),/catalogue/);
+assert.match(sauve.verifieSauvegarde({...bonne,maps:{}}),/cartes/);
+assert.equal(sauve.verifieSauvegarde({...bonne,catalog:undefined,maps:undefined}),'');          // Sans cartes ni catalogue : lisible quand même.
+assert.equal(sauve.resumeSauvegarde(bonne),'2 aventuriers, 1 adversaire, 2 cartes, 2 modèles, 1 équipement, 3 talents');
+assert.equal(sauve.resumeSauvegarde({actors:[{hero:true}]}),'1 aventurier, 0 adversaire, 0 carte, 0 modèle, 0 équipement, 0 talent');
+assert.equal(sauve.nomSauvegarde(new Date(2026,8,16,9,5)),'amertume-20260916-0905.json');
+assert.equal(sauve.tailleLisible(500),'1 Ko');
+assert.equal(sauve.tailleLisible(3*1048576),'3,0 Mo');
+// Les Paramètres portent les deux gestes, et l'import ne prend que du JSON.
+['id="export-tout"','id="import-tout"','id="import-fichier"','accept=".json,application/json"','id="import-erreur"'].forEach(m=>assert.ok(src.includes(m),'Paramètres sans '+m));
+// La sauvegarde locale et le fichier passent par la même vérification et la même pose.
+assert.ok(src.includes('if(!verifieSauvegarde(s))appliquerSauvegarde(s);finish()'));
+console.log('628 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -153,6 +153,13 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<button id="edit-scene">Modifier la scène</button></div></div>'
  +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde</h3>'
  +'<div id="bloc-sauvegarde"></div>'
+ +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde globale</h3>'
+ +'<p class="muted">Toute la partie dans un seul fichier : aventuriers, adversaires, bestiaire, armurerie, talents, cartes et scène en cours. À garder au chaud, au cas où ce navigateur perdrait ses données.</p>'
+ +'<div class="reglage"><div><strong>Exporter toute la partie</strong><p class="muted">Télécharge un fichier .json sur cet appareil.</p></div>'
+ +'<button id="export-tout" class="primary">⇩ Exporter</button></div>'
+ +'<div class="reglage" id="reglage-import"><div><strong>Importer une sauvegarde</strong><p class="muted">Remplace la partie de ce navigateur par le fichier choisi. Exporte d’abord la partie actuelle si tu veux la garder.</p></div>'
+ +'<button id="import-tout">⇧ Importer</button><input type="file" id="import-fichier" accept=".json,application/json" hidden></div>'
+ +'<p class="form-error" id="import-erreur" role="status" aria-live="polite"></p>'
  +'</section>';
 const talentsPage=document.createElement('main');talentsPage.id='talents-page';
 talentsPage.innerHTML='<section class="cat-panel panel">'
@@ -1139,6 +1146,7 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
  $('scene-titre').textContent=sceneTitle();
  $('scene-tour').textContent='Tour de combat '+String(round).padStart(2,'0');
  if(saveLabel.parentNode!==$('bloc-sauvegarde'))$('bloc-sauvegarde').append(saveLabel);
+ $('reglage-import').hidden=view!=='mj';
  boite.replaceChildren(...GESTES.map(([cle,nom,aide])=>{
   const ligne=document.createElement('div');ligne.className='reglage';
   const gauche=document.createElement('div');
@@ -1621,6 +1629,41 @@ const originalRender=render;render=function(){originalRender();
 const rawLog=log;log=function(...args){rawLog(...args);scheduleSave()};
 function scheduleSave(){if(loading)return;clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,200)}
 function snapshot(){return {version:8,actors,catalog,round,mode,owner,selected,mapImage,maps,currentMapId,title:sceneTitle()}}
+/* La sauvegarde globale est la sauvegarde locale, mise dans un fichier : même forme, même
+   lecture. Elle ajoute ce qui aide à la reconnaître et le verrou des tokens. */
+function sauvegardeGlobale(){return Object.assign({app:'amertume_online',exporte:new Date().toISOString()},snapshot(),{locked:typeof tokensLocked!=='undefined'&&tokensLocked===true})}
+function nomSauvegarde(d=new Date()){const p=n=>String(n).padStart(2,'0');return 'amertume-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+'.json'}
+function tailleLisible(octets){return octets<1024*1024?Math.max(1,Math.round(octets/1024))+' Ko':(octets/1048576).toFixed(1).replace('.',',')+' Mo'}
+function verifieSauvegarde(s){if(!s||typeof s!=='object'||Array.isArray(s))return 'Ce fichier n’est pas une sauvegarde d’Amertume Online.';
+ if(s.version!==7&&s.version!==8)return 'Version de sauvegarde inconnue ('+s.version+'). Cette application lit les versions 7 et 8.';
+ if(!Array.isArray(s.actors)||!s.actors.length)return 'La sauvegarde ne contient aucun combattant.';
+ if(!s.actors.some(a=>a&&typeof a==='object'&&a.hero))return 'La sauvegarde ne contient aucun aventurier.';
+ if(s.catalog!=null&&(typeof s.catalog!=='object'||Array.isArray(s.catalog)))return 'Le catalogue de la sauvegarde est illisible.';
+ if(s.maps!=null&&!Array.isArray(s.maps))return 'Les cartes de la sauvegarde sont illisibles.';
+ return ''}
+function resumeSauvegarde(s){const n=(x,un,des)=>x+' '+(x>1?des:un);const c=s.catalog||{},l=k=>Array.isArray(c[k])?c[k].length:0;
+ return [n(s.actors.filter(a=>a&&a.hero).length,'aventurier','aventuriers'),n(s.actors.filter(a=>a&&!a.hero).length,'adversaire','adversaires'),
+  n(Array.isArray(s.maps)?s.maps.length:0,'carte','cartes'),n(l('monsters'),'modèle','modèles'),n(l('items'),'équipement','équipements'),n(l('talents'),'talent','talents')].join(', ')}
+function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(normalizeActor));idsUniques(actors);catalog=normalizeCatalog(s.catalog);
+ round=Number.isInteger(s.round)&&s.round>0?s.round:1;mode=s.mode==='exploration'?'exploration':'combat';
+ owner=Number.isInteger(s.owner)&&actors[s.owner]?s.owner:Math.max(0,actors.findIndex(a=>a.hero));
+ selected=Number.isInteger(s.selected)&&actors[s.selected]?s.selected:(s.selected===null?null:owner);
+ mapImage=typeof s.mapImage==='string'&&s.mapImage?s.mapImage:null;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;sceneTitle(s.title);
+ if(typeof tokensLocked!=='undefined'&&typeof s.locked==='boolean')tokensLocked=s.locked;
+ $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);$('round').textContent=String(round).padStart(2,'0')}
+function exporterTout(){const texte=JSON.stringify(sauvegardeGlobale());const url=URL.createObjectURL(new Blob([texte],{type:'application/json'}));
+ const a=document.createElement('a');a.href=url;a.download=nomSauvegarde();document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+ log('Sauvegarde globale exportée : '+a.download+' ('+tailleLisible(texte.length)+').')}
+function importerTout(fichier){const erreur=$('import-erreur');erreur.textContent='';
+ fichier.text().then(texte=>{let s;try{s=JSON.parse(texte)}catch(e){throw Error('ce fichier n’est pas du JSON lisible.')}
+  const souci=verifieSauvegarde(s);if(souci)throw Error(souci);
+  if(!confirm('Remplacer la partie de ce navigateur par « '+fichier.name+' » ?\n'+resumeSauvegarde(s)+'.\nLa partie actuelle sera perdue si elle n’a pas été exportée.'))return;
+  appliquerSauvegarde(s);if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();saveNow();
+  log('Sauvegarde importée : '+fichier.name+' — '+resumeSauvegarde(s)+'.');document.dispatchEvent(new Event('amertume-content-changed'))})
+ .catch(e=>{erreur.textContent='Import refusé : '+e.message})}
+$('export-tout').onclick=exporterTout;
+$('import-tout').onclick=()=>{if(view!=='mj')return;$('import-fichier').click()};
+$('import-fichier').onchange=()=>{const f=$('import-fichier').files[0];$('import-fichier').value='';if(f)importerTout(f)};
 /* L'état de la sauvegarde a quitté la table pour les Paramètres. Un échec, lui, ne
    doit pas attendre qu'on aille l'y chercher : il passe une fois par le journal. */
 let dernierSouci='';
@@ -1630,7 +1673,7 @@ function noterSauvegarde(texte,souci){saveLabel.textContent=texte;
  if(!souci)dernierSouci=''}
 function saveNow(){if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}try{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(snapshot(),'session');tx.oncomplete=()=>noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur');tx.onerror=()=>noterSauvegarde('Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.',true)}catch(e){noterSauvegarde('Impossible d’enregistrer : '+e.message,true)}}
 document.addEventListener('change',scheduleSave);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!loading)saveNow()});
-function loadSession(){try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onerror=finish;req.onblocked=finish;req.onsuccess=()=>{db=req.result;const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;get.onsuccess=()=>{const s=get.result;if(s&&(s.version===7||s.version===8)&&Array.isArray(s.actors)&&s.actors.length&&s.actors.some(a=>a.hero)){actors.splice(0,actors.length,...s.actors.map(normalizeActor));idsUniques(actors);catalog=normalizeCatalog(s.catalog);round=s.round;mode=s.mode==='exploration'?'exploration':'combat';owner=s.owner;selected=s.selected;mapImage=s.mapImage;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;sceneTitle(s.title);if(mapImage){$('map-view').style.backgroundImage='url("'+mapImage+'")';$('map').classList.add('custom')}$('round').textContent=String(round).padStart(2,'0')}finish()}}}catch(e){finish()}}
+function loadSession(){try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onerror=finish;req.onblocked=finish;req.onsuccess=()=>{db=req.result;const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;get.onsuccess=()=>{const s=get.result;if(!verifieSauvegarde(s))appliquerSauvegarde(s);finish()}}}catch(e){finish()}}
 function finish(){if(!loading)return;loading=false;cover.hidden=true;render();
  if(!db)noterSauvegarde('Sauvegarde locale indisponible dans ce navigateur.',true);
  // La partie est là : les onglets peuvent rouvrir la page où l'on travaillait.
