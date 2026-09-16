@@ -566,7 +566,7 @@ $('map-export').onclick=()=>{
  const url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download='amertume-cartes-'+new Date().toISOString().slice(0,10)+'.json';
  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
- log(maps.length+' carte(s) exportée(s) dans un fichier.')};
+ log(maps.length+' carte(s) exportée(s) dans un fichier.',{local:true})};
 $('map-import').onclick=()=>$('map-json').click();
 $('map-json').onchange=()=>{const f=$('map-json').files[0];$('map-json').value='';if(!f)return;
  const lecteur=new FileReader();
@@ -576,7 +576,7 @@ $('map-json').onchange=()=>{const f=$('map-json').files[0];$('map-json').value='
   entrantes.forEach(m=>{m.id=crypto.randomUUID();m.name+=' (importée)';maps.push(m)});
   mapDraft=maps[maps.length-1];mapSel=null;undoStack=[];redoStack=[];
   measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas();saveMaps();
-  log(entrantes.length+' carte(s) importée(s).')};
+  log(entrantes.length+' carte(s) importée(s).',{local:true})};
  lecteur.readAsText(f)};
 $('map-image').onclick=()=>$('map-file').click();
 $('map-file').onchange=()=>{const f=$('map-file').files[0];$('map-file').value='';

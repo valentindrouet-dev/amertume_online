@@ -928,4 +928,13 @@ const clesRegle=JSON.parse(regleLive.match(/request\.resource\.data\.keys\(\)\.h
 assert.deepEqual([...clesRegle].sort(),[...champsMJ,'actors','doors','mj','at'].sort(),'les clés de la règle update ne suivent pas CHAMPS_MJ');
 // Ce que le client envoie vraiment : les clés d'etatVivant, toutes dans la règle.
 ['actors','round','locked','mode','mapId','title','doors'].forEach(k=>assert.ok(clesRegle.includes(k),'clé absente de la règle : '+k));
-console.log('643 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Le journal partagé : les clés de la règle suivent le client, les dés font l'aller-retour,
+   et un joueur en ligne ne révèle rien de lui-même. */
+const clesJournal=JSON.parse(vivant.match(/const CLES_JOURNAL=(\[[^\]]*\]);/)[1].replace(/'/g,'"'));
+const regleJournal=regles.slice(regles.indexOf('match /journal/{ligne}'));
+assert.deepEqual(JSON.parse(regleJournal.match(/hasOnly\((\[[^\]]*\])\)/)[1].replace(/'/g,'"')).sort(),[...clesJournal].sort(),'les clés du journal ne suivent pas la règle');
+const jl={};vm.createContext(jl);vm.runInContext(vivant.slice(vivant.indexOf('function codeDes'),vivant.indexOf('function fiche')),jl);
+assert.equal(JSON.stringify(jl.decodeDes(jl.codeDes([[5,0],[3,1],[6,7]]))),'[[5,0],[3,1],[6,7]]');
+assert.ok(page.includes("(typeof spectateur==='function'&&spectateur())?[]:actors.filter("),'un joueur en ligne ne révèle pas');
+assert.ok(vivant.includes("if(meta&&meta.local)return;"),'les lignes propres à l’appareil restent chez elles');
+console.log('647 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

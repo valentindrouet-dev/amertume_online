@@ -1653,13 +1653,13 @@ function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(no
  $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);$('round').textContent=String(round).padStart(2,'0')}
 function exporterTout(){const texte=JSON.stringify(sauvegardeGlobale());const url=URL.createObjectURL(new Blob([texte],{type:'application/json'}));
  const a=document.createElement('a');a.href=url;a.download=nomSauvegarde();document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
- log('Sauvegarde globale exportée : '+a.download+' ('+tailleLisible(texte.length)+').')}
+ log('Sauvegarde globale exportée : '+a.download+' ('+tailleLisible(texte.length)+').',{local:true})}
 function importerTout(fichier){const erreur=$('import-erreur');erreur.textContent='';
  fichier.text().then(texte=>{let s;try{s=JSON.parse(texte)}catch(e){throw Error('ce fichier n’est pas du JSON lisible.')}
   const souci=verifieSauvegarde(s);if(souci)throw Error(souci);
   if(!confirm('Remplacer la partie de ce navigateur par « '+fichier.name+' » ?\n'+resumeSauvegarde(s)+'.\nLa partie actuelle sera perdue si elle n’a pas été exportée.'))return;
   appliquerSauvegarde(s);if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();saveNow();
-  log('Sauvegarde importée : '+fichier.name+' — '+resumeSauvegarde(s)+'.');document.dispatchEvent(new Event('amertume-content-changed'))})
+  log('Sauvegarde importée : '+fichier.name+' — '+resumeSauvegarde(s)+'.',{local:true});document.dispatchEvent(new Event('amertume-content-changed'))})
  .catch(e=>{erreur.textContent='Import refusé : '+e.message})}
 $('export-tout').onclick=exporterTout;
 $('import-tout').onclick=()=>{if(view!=='mj')return;$('import-fichier').click()};
@@ -1669,7 +1669,7 @@ $('import-fichier').onchange=()=>{const f=$('import-fichier').files[0];$('import
 let dernierSouci='';
 function noterSauvegarde(texte,souci){saveLabel.textContent=texte;
  saveLabel.classList.toggle('form-error',!!souci);
- if(souci&&texte!==dernierSouci){dernierSouci=texte;log(texte)}
+ if(souci&&texte!==dernierSouci){dernierSouci=texte;log(texte,{local:true})}
  if(!souci)dernierSouci=''}
 function saveNow(){if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}try{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(snapshot(),'session');tx.oncomplete=()=>noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur');tx.onerror=()=>noterSauvegarde('Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.',true)}catch(e){noterSauvegarde('Impossible d’enregistrer : '+e.message,true)}}
 document.addEventListener('change',scheduleSave);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!loading)saveNow()});
@@ -1715,7 +1715,7 @@ async function openImage(file,kind,accept){if(view!=='mj')return;try{if(file.siz
  if(kind==='token'){const job=imageJob;const bmp=await createImageBitmap(file);
   if(job!==imageJob){bmp.close();return}job.bitmap=bmp;drawTokenPreview()}
  await optimizeImage();
-}catch(e){if(imgDialog.open)$('image-error').textContent=e.message;else log(e.message)}}
+}catch(e){if(imgDialog.open)$('image-error').textContent=e.message;else log(e.message,{local:true})}}
 async function optimizeImage(){const job=imageJob;if(!job)return;const generation=++imageGeneration;$('image-accept').disabled=true;$('image-recalc').disabled=true;$('image-size').disabled=$('image-quality').disabled=true;$('image-error').textContent='Optimisation en cours…';let bitmap;try{bitmap=job.bitmap||await createImageBitmap(job.file);if(job!==imageJob||generation!==imageGeneration)return;const carre=job.kind==='token';
  const factor=Math.min(1,Number($('image-size').value)/Math.max(bitmap.width,bitmap.height));
  const cote=Math.max(1,Math.round(Number($('image-size').value)));
@@ -1767,5 +1767,5 @@ $('token-center').onclick=()=>{if(!imageJob)return;imageJob.zoom=1;imageJob.dx=i
 function cleanupImage(){imageGeneration++;clearTimeout(retoucheTimer);if(imageJob){URL.revokeObjectURL(imageJob.original);if(imageJob.url)URL.revokeObjectURL(imageJob.url);imageJob.bitmap?.close()}imageJob=null;$('image-before').removeAttribute('src');$('image-after').removeAttribute('src')}
 $('image-quality').oninput=()=>{$('quality-label').textContent=$('image-quality').value+' %';retouche()};$('image-size').onchange=retouche;$('image-recalc').onclick=optimizeImage;$('image-cancel').onclick=()=>imgDialog.close();imgDialog.addEventListener('close',cleanupImage);
 $('image-accept').onclick=()=>{const job=imageJob;if(!job?.output||view!=='mj')return;$('image-accept').disabled=true;const reader=new FileReader();reader.onerror=()=>{$('image-error').textContent='Impossible de lire la copie optimisée.'};reader.onload=()=>{if(job!==imageJob)return;job.accept(reader.result);imgDialog.close();scheduleSave()};reader.readAsDataURL(job.output)};
-$('mapfile').onchange=()=>{const file=$('mapfile').files[0];$('mapfile').value='';if(file)openImage(file,'map',url=>{mapImage=url;$('map-view').style.backgroundImage='url("'+url+'")';$('map').classList.add('custom');log('Carte optimisée et importée.');document.dispatchEvent(new Event('amertume-content-changed'))})};
+$('mapfile').onchange=()=>{const file=$('mapfile').files[0];$('mapfile').value='';if(file)openImage(file,'map',url=>{mapImage=url;$('map-view').style.backgroundImage='url("'+url+'")';$('map').classList.add('custom');log('Carte optimisée et importée.',{local:true});document.dispatchEvent(new Event('amertume-content-changed'))})};
 loadSession();

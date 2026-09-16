@@ -59,4 +59,18 @@ match /amertume_online_live/{table} {
       && request.resource.data.actorId.size() <= 100;
     allow delete: if request.auth != null && (request.auth.uid == uid || isOnlineMJ());
   }
+
+  // Le journal partagé (v0.182) : chaque ligne est écrite une fois par son auteur, en
+  // texte et en chiffres. Tout le monde à la table le lit, le MJ seul le balaie.
+  match /journal/{ligne} {
+    allow get, list: if true;
+    allow create: if request.auth != null
+      && request.resource.data.de == request.auth.uid
+      && request.resource.data.t is number
+      && request.resource.data.keys().hasOnly(['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite'])
+      && request.resource.data.genre in ['texte','attaque']
+      && (!('texte' in request.resource.data) || request.resource.data.texte == null || request.resource.data.texte.size() <= 400);
+    allow update: if false;
+    allow delete: if isOnlineMJ();
+  }
 }

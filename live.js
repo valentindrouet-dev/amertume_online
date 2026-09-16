@@ -26,6 +26,13 @@ const TABLE_CLE='amertume-table';
 let tableId=null,salleRef=null,siegesRef=null,enLigne=false,appliquantDistant=false;
 let dernierPousse=null,poussePret=false,pousseTimer=null,pousseEnCours=false;
 let monUid=null,monSiege=null,sieges={},quitteSalle=null,quitteSieges=null,dernierDoc=null;
+let journalRef=null,quitteJournal=null,journalVus=new Set(),journalPremier=true;
+/* Chez un joueur en ligne, révéler n'est pas son affaire : le MJ révèle, et « vu » lui
+   arrive par la table. Sinon chaque appareil révélait de son côté, et un joueur qui
+   arrivait voyait « révélés » des créatures que personne n'avait aperçues. */
+const tableVoulue=!!new URL(location.href).searchParams.get('table');
+function spectateur(){if(estMJ())return false;
+ return enLigne||tableVoulue||!!(typeof auth!=='undefined'&&auth&&auth.currentUser&&auth.currentUser.isAnonymous)}
 // Le socle qu'on tient sous le doigt ne doit pas être replacé par ce qui arrive du réseau.
 window.socleEnMain=null;
 const estMJ=()=>typeof admin!=='undefined'&&admin===true;
@@ -123,6 +130,47 @@ function appliquerSalle(d){if(!d)return;
 /* Le contenu publié vient d'être posé : il a remplacé les fiches et les cartes, donc
    l'état vivant doit être reposé par-dessus, sans quoi la table reculerait d'un cran. */
 function reappliquerTable(){if(dernierDoc)appliquerSalle(dernierDoc)}
+/* ---------- Le journal partagé ----------
+   Chaque ligne part vers la table en texte et en chiffres, jamais en balisage : l'autre
+   côté la rebâtit avec ses propres fonctions, et rien de ce qui arrive n'est posé tel
+   quel dans la page. Les lignes propres à l'appareil (sauvegarde, imports) restent chez
+   elles. Qui rejoint la table reçoit les dernières lignes, à la place de son journal. */
+const CLES_JOURNAL=['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite'];
+const logLocal=log,logAttaqueLocal=logAttaque;
+// Firestore refuse les tableaux imbriqués : un dé [valeur, couleur] devient un seul nombre.
+function codeDes(dice){return (dice||[]).map(([v,c])=>v*8+c)}
+function decodeDes(des){return (des||[]).map(x=>[Math.floor(x/8),x%8])}
+function fiche(o){return {id:o&&o.id||null,name:String(o&&o.name||'?').slice(0,60),hero:!!(o&&o.hero)}}
+function acteurDuJournal(f){return (f&&f.id&&actors.find(x=>x.id===f.id))||{name:String(f&&f.name||'?'),hero:!!(f&&f.hero)}}
+function idJournal(){return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}
+function diffuser(rec){if(!enLigne||!journalRef||!monUid)return;
+ const id=idJournal();journalVus.add(id);
+ journalRef.doc(id).set({t:Date.now(),de:monUid,tour:round,...rec}).catch(e=>liveStatus('Journal non partagé. '+liveErreur(e)))}
+log=function(text,meta){logLocal(text,meta);if(meta&&meta.local)return;
+ diffuser({genre:'texte',texte:String(text).slice(0,400),badge:meta&&meta.badge?String(meta.badge).slice(0,40):null})};
+logAttaque=function(a,b,logo,corps,detail,suite){logAttaqueLocal(a,b,logo,corps,detail,suite);
+ const d=detail?{des:codeDes(detail.dice),origine:Number.isInteger(detail.origine)?detail.origine:null,
+  faille:Number.isInteger(detail.faille)?detail.faille:null,bonus:detail.bonus||0,saignee:detail.saignee||0,total:detail.total||0}:null;
+ diffuser({genre:'attaque',a:fiche(a),b:fiche(b),logo:logo?String(logo).slice(0,40):null,corps:String(corps).slice(0,60),detail:d,suite:suite?String(suite).slice(0,200):null})};
+function poserLigne(rec){if(!rec||typeof rec!=='object')return;
+ if(rec.genre==='attaque'){const r=rec.detail&&typeof rec.detail==='object'?rec.detail:null;
+  const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,total:r.total}:null;
+  logAttaqueLocal(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'',String(rec.corps||''),d,rec.suite?String(rec.suite):'')}
+ else logLocal(String(rec.texte||''),rec.badge?{badge:String(rec.badge)}:undefined)}
+function rejouerJournal(docs){const j=$('journal');if(!j)return;j.replaceChildren();let tour=null;
+ docs.forEach(d=>{const rec=d.data();
+  if(rec.tour!==tour){tour=rec.tour;const sep=document.createElement('li');sep.className='j-turn';
+   const t=document.createElement('span');t.textContent='Tour '+tour;sep.append(t);j.append(sep)}
+  logRound=round;poserLigne(rec)});
+ // La prochaine ligne locale rouvre un tour si le journal reçu s'arrête avant le tour en cours.
+ logRound=tour===round?round:null}
+function ecouterJournal(){journalPremier=true;
+ quitteJournal=journalRef.orderBy('t').limitToLast(60).onSnapshot(s=>{
+  if(journalPremier){journalPremier=false;const docs=s.docs.filter(d=>!journalVus.has(d.id));
+   if(docs.length){docs.forEach(d=>journalVus.add(d.id));rejouerJournal(docs)}return}
+  s.docChanges().forEach(ch=>{if(ch.type!=='added'||journalVus.has(ch.doc.id))return;
+   journalVus.add(ch.doc.id);poserLigne(ch.doc.data())})},()=>{})}
+
 /* ---------- Sièges : qui incarne qui ---------- */
 function renderSieges(){const boite=$('live-sieges');if(!boite)return;boite.replaceChildren();
  if(tableId&&!estMJ()&&!(typeof remote!=='undefined'&&remote)){const p=document.createElement('p');p.className='muted';
@@ -189,14 +237,18 @@ async function ouvrirTable(){if(!cloud||!auth||!auth.currentUser){liveStatus('Co
 async function fermerTable(){if(!estMJ()||!tableId)return;
  if(!confirm('Fermer la table ? Les joueurs connectés ne verront plus la partie.'))return;
  try{await salleRef.delete()}catch(e){}
+ // Les sièges et le journal ne suivent pas le document : on les balaie, sans en faire une affaire.
+ for(const col of [siegesRef,journalRef]){if(!col)continue;
+  try{let lot;do{lot=await col.limit(200).get();if(!lot.size)break;const b=cloud.batch();lot.forEach(d=>b.delete(d.ref));await b.commit()}while(lot.size===200)}catch(e){}}
  debrancherTable();localStorage.removeItem(TABLE_CLE);liveStatus('Table fermée.')}
-function debrancherTable(){if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();
- quitteSalle=quitteSieges=null;enLigne=false;poussePret=false;tableId=null;salleRef=siegesRef=null;
+function debrancherTable(){if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
+ quitteSalle=quitteSieges=quitteJournal=null;enLigne=false;poussePret=false;tableId=null;salleRef=siegesRef=journalRef=null;journalVus=new Set();
  sieges={};monSiege=null;majTable()}
 function brancherTable(code){if(!cloud)return;debrancherTable();
  tableId=code;salleRef=cloud.doc('amertume_online_live/'+code);
- siegesRef=salleRef.collection('seats');
+ siegesRef=salleRef.collection('seats');journalRef=salleRef.collection('journal');
  enLigne=true;poussePret=false;dernierPousse=null;
+ ecouterJournal();
  quitteSalle=salleRef.onSnapshot(doc=>{
   if(!doc.exists){liveStatus('Cette table n’existe plus. Demande un nouveau lien au MJ.');debrancherTable();if(!estMJ())ouvreTable();return}
   dernierDoc=doc.data();appliquerSalle(dernierDoc);majTable()},

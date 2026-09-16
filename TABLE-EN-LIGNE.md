@@ -94,6 +94,8 @@ Dans l’application, dans cet ordre :
 
 Tes joueurs ouvrent le lien : rien à installer, aucun compte. La fenêtre
 s’ouvre, ils choisissent l’aventurier qu’ils incarnent, et vous jouez.
+Le journal de combat est commun : chaque ligne écrite d’un côté paraît de
+l’autre, et qui rejoint la table reçoit les soixante dernières.
 
 ---
 
@@ -105,6 +107,7 @@ s’ouvre, ils choisissent l’aventurier qu’ils incarnent, et vous jouez.
 | Connecte-toi avec ton compte MJ | Étape 5.1 |
 | Pas encore autorisé comme MJ | Étape 4 |
 | Règles Firestore incomplètes ou périmées pour la table | Étape 3. Si le bloc est déjà là mais que l’envoi échoue, sa liste `hasOnly([...])` doit contenir `'mode'` (v0.181) |
+| Journal non partagé. Règles Firestore… | Le sous-bloc `match /journal/{ligne}` (v0.182) manque dans `amertume_online_live` — étape 3 |
 | Connexion anonyme désactivée | Étape 1 |
 | Cette table n’existe plus | Le MJ a fermé la table, ou le lien est périmé |
 
