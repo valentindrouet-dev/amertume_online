@@ -919,4 +919,13 @@ assert.ok(vivant.includes("if(invite){view='player'"),'un invité joue en joueur
 assert.ok(src.includes("setTimeout(()=>{if(!sessionRepondue)ouvrir()},3000)"),'une ouverture sans réponse se relance');
 assert.ok(src.includes("finish()}},8000)"),'la scène s’ouvre quoi qu’il arrive');
 assert.ok(page.includes("c.textContent='Le chargement a échoué : '"),'le voile dit l’erreur');
-console.log('635 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les règles de la table doivent connaître chaque clé du document vivant : une clé de plus
+   côté client, et chaque envoi est refusé (c'est arrivé avec « mode »). */
+const regles=fs.readFileSync('firestore-online.rules','utf8');
+const champsMJ=JSON.parse(vivant.match(/const CHAMPS_MJ=(\[[^\]]*\]);/)[1].replace(/'/g,'"'));
+const regleLive=regles.slice(regles.indexOf('match /amertume_online_live/'));
+const clesRegle=JSON.parse(regleLive.match(/request\.resource\.data\.keys\(\)\.hasOnly\((\[[^\]]*\])\)/)[1].replace(/'/g,'"'));
+assert.deepEqual([...clesRegle].sort(),[...champsMJ,'actors','doors','mj','at'].sort(),'les clés de la règle update ne suivent pas CHAMPS_MJ');
+// Ce que le client envoie vraiment : les clés d'etatVivant, toutes dans la règle.
+['actors','round','locked','mode','mapId','title','doors'].forEach(k=>assert.ok(clesRegle.includes(k),'clé absente de la règle : '+k));
+console.log('643 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

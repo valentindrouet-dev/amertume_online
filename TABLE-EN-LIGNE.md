@@ -104,7 +104,7 @@ s’ouvre, ils choisissent l’aventurier qu’ils incarnent, et vous jouez.
 | Firebase ne répond pas… | Réseau, ou un bloqueur qui empêche `gstatic.com` |
 | Connecte-toi avec ton compte MJ | Étape 5.1 |
 | Pas encore autorisé comme MJ | Étape 4 |
-| Règles Firestore incomplètes pour la table | Étape 3 |
+| Règles Firestore incomplètes ou périmées pour la table | Étape 3. Si le bloc est déjà là mais que l’envoi échoue, sa liste `hasOnly([...])` doit contenir `'mode'` (v0.181) |
 | Connexion anonyme désactivée | Étape 1 |
 | Cette table n’existe plus | Le MJ a fermé la table, ou le lien est périmé |
 

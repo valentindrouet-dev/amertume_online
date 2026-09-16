@@ -35,7 +35,7 @@ const liveStatus=t=>{const e=$('live-status');if(e)e.textContent=t};
    déployé dans le projet Firebase. Autant l'écrire. */
 function liveErreur(e){const code=(e&&(e.code||''))+' '+(e&&e.message||'');
  if(/permission|insufficient/i.test(code))
-  return 'Règles Firestore incomplètes pour la table. Dans la console Firebase → Firestore → Règles, ajoute le bloc « amertume_online_live » du fichier firestore-online.rules, publie, puis réessaie.';
+  return 'Règles Firestore incomplètes ou périmées pour la table. Dans la console Firebase → Firestore → Règles, reprends le bloc « amertume_online_live » tel qu’il est aujourd’hui dans le fichier firestore-online.rules (sa liste de clés doit contenir « mode »), publie, puis réessaie.';
  if(/unauthenticated/i.test(code))return 'Personne n’est connecté : reconnecte-toi avant d’ouvrir la table.';
  if(/operation-not-allowed|admin-restricted/i.test(code))
   return 'Connexion anonyme désactivée. Console Firebase → Authentication → Sign-in method → Anonyme : activer.';

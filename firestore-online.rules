@@ -34,7 +34,8 @@ match /amertume_online_versions/{revision}/parts/{part} {
   allow delete: if isOnlineMJ();
 }
 
-// ---- Table en ligne (v0.91) : la partie jouée à plusieurs ----
+// ---- Table en ligne (v0.91, clés à jour en v0.181) : la partie jouée à plusieurs ----
+// La liste des clés doit suivre CHAMPS_MJ de live.js : checks.cjs le vérifie.
 // Le code de la table tient lieu de clef : il faut connaître son identifiant pour la
 // lire. Le MJ seul l'ouvre et la ferme ; tout joueur connecté — même anonymement —
 // pousse l'état vivant des combattants et des portes, jamais le tour ni le verrou.
@@ -46,7 +47,7 @@ match /amertume_online_live/{table} {
   allow update: if request.auth != null
     && resource.data.mj is string
     && request.resource.data.mj == resource.data.mj
-    && request.resource.data.keys().hasOnly(['actors','doors','round','locked','title','mapId','mj','at'])
+    && request.resource.data.keys().hasOnly(['actors','doors','round','locked','title','mode','mapId','mj','at'])
     && (isOnlineMJ()
         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actors','doors','at']));
 
