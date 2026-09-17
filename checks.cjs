@@ -997,7 +997,7 @@ assert.ok(src.includes("a.hero?tete:")&&src.includes("cle.startsWith(cleClasse(f
  const des=[[3,0],[6,1],[6,0]],s=C2.mauvaisSort(des,()=>2);
  assert.deepEqual([s.index,s.avant,s.apres],[1,6,2]);assert.equal(des[1][0],2);assert.equal(des[1][1],1);   // Le premier des meilleurs, sa couleur gardée.
  assert.equal(C2.mauvaisSort([],()=>2),null);}
-assert.ok(page.includes('function degatsOpportunite')&&page.includes("avant.forEach(([k,liste])=>degatsOpportunite(actors[k],liste));")&&page.includes("const avant=contactsDe(a);moveActor("),'les dégâts d’opportunité se jugent au lâcher et au clavier');
+assert.ok(page.includes('function degatsOpportunite')&&page.includes("croises.forEach(([k,set])=>degatsOpportunite(actors[k],[...set]));")&&page.includes("const avant=contactsDe(a);moveActor("),'les dégâts d’opportunité se jugent au lâcher et au clavier');
 assert.ok(page.includes("porteEffet(talentsCodes(a),'insaisissable')")&&page.includes("porteEffet(talentsCodes(b),'mauvaissort')?mauvaisSort(dice,d6):null"),'Insaisissable et Mauvais Sort câblés');
 // Le journal ne dit ni la fiche enregistrée, ni les créatures mises à jour, ni la carte ouverte.
 assert.ok(!src.includes('Fiche enregistrée')&&!src.includes('mise(s) à jour')&&!cartes.includes('» ouverte : '),'le journal se tait sur l’intendance');
@@ -1082,4 +1082,12 @@ assert.ok(page.includes('let inspecteId=null;')&&page.includes("if(!controlled(i
  &&page.includes("const k=view!=='mj'&&inspecteIndex()>=0?inspecteIndex():selected,a=actors[k];")&&page.includes("const s=actors[selected];['action','move','item'].forEach((id,i)=>$(id).checked=!!(s&&s.checks&&s.checks[i]));")
  &&page.includes('#sheet.secret :is(#sheet-chips,#stats,#hpbar,#bloc-gear,#bloc-talents,#skills,.divider){display:none}')&&page.includes("a.id===inspecteId?'inspecte ':''"),'un joueur inspecte sans contrôler');
 assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:650}')&&page.includes('Math.max(450,Math.min(800,Math.hypot(dx,dy)*1.6))')&&page.includes('Math.max(16,tokenOf(vers)*.7)')&&page.includes('Math.max(28,tokenOf(vers)*1.1)'),'projectiles plus lents et plus visibles');
-console.log('719 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Dégâts d'opportunité étendus : traverser une zone de contact pendant un glissement compte comme
+   s'y arrêter puis en sortir ; tirer ou lancer un orbe au contact déclenche l'occasion de tous les
+   adversaires au contact, après les dégâts du tir — un adversaire tué ou entravé ne frappe pas. */
+assert.ok(page.includes('function ramasseContacts(')&&page.includes("croises:lot0.map(k=>[k,new Set(contactsDe(actors[k])),{x:actors[k].x,y:actors[k].y}])")
+ &&page.includes("drag.croises.forEach(([k,set,pos])=>{const o=actors[k];if(!o)return;ramasseContacts(o,set,pos);pos.x=o.x;pos.y=o.y});"),'la traversée d’une zone de contact compte');
+assert.ok(page.includes('function peutFrapperOpportunite(e){return !!e&&alive(e)&&!frozenSolid(e)&&Number(e.dmg)>0}')&&page.includes('function opportuniteAuTir(')
+ &&page.includes("const contacts=rangeOf(a)==='distance'?contactsDe(a):[];")&&page.includes("afterAction(a);opportuniteAuTir(a,contacts,'tir')}")
+ &&page.includes("const poser=()=>{poserOrbe();opportuniteAuTir(a,contacts,'sort')};"),'tir et sort au contact : occasion après les dégâts');
+console.log('721 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
