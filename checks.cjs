@@ -1127,4 +1127,9 @@ assert.ok(cartes.includes('let obstaclesTache=null;')&&cartes.includes("obstacle
 assert.ok(page.includes('function ciblesAtteignables(a,liste,portee)')&&page.includes("if(ciblesAtteignables(a,vises,portee).length||cibleAutomatique(a,portee).length)return '';")
  &&!page.includes('poseCibles(a,cibleAutomatique(a))')&&page.includes("if(!vises.length){vises=cibleAutomatique(a,portee);if(designees.length){poseCibles(a,[]);render()}}")
  &&!page.includes('Hors du rayon de contact : rapproche-toi'),'l’attaque prend qui est à portée');
-console.log('730 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les questions de la table passent par une boîte de la page, jamais par confirm() ; la fin du combat
+   s'annonce comme son début. */
+assert.ok(page.includes('function demander(texte,ok)')&&!page.includes("confirm('Mettre fin au combat")&&!page.includes("confirm('Revenir au tour 1")&&!page.includes("confirm('Vider le journal")
+ &&page.includes("if(!await demander('Mettre fin au combat ?")&&page.includes("basculerMode('exploration',true)};")&&page.includes("if(annonce)annonceFlottante(enCombat()?'⚔ Début du combat !':'🕊 Fin du combat')}")
+ &&feuille.includes('dialog.demande{width:min(440px,94vw)}'),'les questions de la table ont leur boîte, la fin du combat s’annonce');
+console.log('731 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
