@@ -1122,4 +1122,9 @@ assert.ok(cartes.includes('let obstaclesTache=null;')&&cartes.includes("obstacle
  &&page.includes('let mursPxTache=null;')&&page.includes("let auraCache={formes:null,cle:'',pts:new Map()};")&&page.includes("auraCache.pts.set(k,pts)")
  &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>{if(drag)drag.image=0;updateRing();updateSight()});")
  &&page.includes("if(enCombat()){const size=mapSize(),murs=walls();")&&page.includes('function ramasseContacts(a,croises,de,size,murs){'),'glisser un lot reste léger');
-console.log('729 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Ciblage : une cible désignée hors de portée ne grise plus l'attaque ; le coup part sur qui est à
+   portée, sans jamais retenir une cible automatique ; la désignation lointaine s'efface. */
+assert.ok(page.includes('function ciblesAtteignables(a,liste,portee)')&&page.includes("if(ciblesAtteignables(a,vises,portee).length||cibleAutomatique(a,portee).length)return '';")
+ &&!page.includes('poseCibles(a,cibleAutomatique(a))')&&page.includes("if(!vises.length){vises=cibleAutomatique(a,portee);if(designees.length){poseCibles(a,[]);render()}}")
+ &&!page.includes('Hors du rayon de contact : rapproche-toi'),'l’attaque prend qui est à portée');
+console.log('730 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
