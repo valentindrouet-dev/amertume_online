@@ -125,7 +125,10 @@ function partySees(a){const m=currentMap();
    un adversaire, et non le seul aventurier de ce joueur. Mêmes règles qu'un socle vu. */
 let fogTroupe=null,fogTroupePx=null,fogTroupeKey='';
 function troupeVoit(a){const m=currentMap();
- if(!m||m.fogOff)return true;
+ /* Sans carte, rien ne se voit. Et le voile levé n'est qu'une aide à l'affichage : il ne
+    vaut pas regard. Il comptait comme tel, et une carte enregistrée voile levé révélait
+    tous ses adversaires d'un coup au rechargement. Seule la vision réelle révèle. */
+ if(!m)return false;
  // Une carte dont le brouillard n'est pas encore calculé ne révèle rien : on attend.
  if(!fogTroupe)return false;
  // Un autre onglet est affiché : la carte n'a pas de largeur, on ne peut rien en dire.

@@ -1107,4 +1107,8 @@ assert.ok(src.includes("if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES
  const t={name:'Double Attaque',effet:'doubleattaque',params:{cibles:3}};
  assert.equal(ciblesPermises([{code:T.doubleattaque,talent:t,params:paramsTalent(t)}]),3);
  assert.equal(ciblesPermises([{code:T.doubleattaque,talent:{effet:'doubleattaque'},params:paramsTalent({effet:'doubleattaque'})}]),2);}
-console.log('726 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* La révélation ne suit que la vision réelle de la troupe : ni le voile levé, ni l'absence de carte
+   ne révèlent quoi que ce soit (au rechargement, une carte voile levé révélait tout d'un coup). */
+{const tv=cartes.slice(cartes.indexOf('function troupeVoit('),cartes.indexOf('function seenAt('));
+ assert.ok(tv.includes('if(!m)return false;')&&!tv.includes('fogOff')&&tv.includes('if(!fogTroupe)return false;')&&tv.includes('if(!size.width)return false;'),'seule la vision réelle révèle');}
+console.log('727 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
