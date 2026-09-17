@@ -44,8 +44,17 @@ function polygoneSel(){const m=mapDraft;
 // Après une refonte, la zone qu'on tenait : celle qui recouvre encore ce qu'elle était.
 function zoneApres(avant){return matiereDe(mapDraft).findIndex(p=>Clipper.intersection(p.anneaux,avant.anneaux).length)}
 // Obstacles du moteur : la carte ouverte fait foi, sinon le plan schématique de départ.
+/* La clé de géométrie se recalcule en parcourant tous les sommets : demandée des centaines
+   de fois par geste (chaque socle du lot, chaque échantillon de contact, chaque aura), elle
+   pesait plus que le reste. Le résultat vaut pour toute la tâche en cours et s'oublie juste
+   après : un geste ou un rendu ne le reconstruit qu'une fois, et un mur modifié entre deux
+   tâches est vu à la suivante. */
+let obstaclesTache=null;
 function activeObstacles(){const m=currentMap();
- return m?mapShapes(m).formes:$('map').classList.contains('custom')?[]:WALLS.map(p=>({contours:[p]}))}
+ if(obstaclesTache&&obstaclesTache.m===m)return obstaclesTache.formes;
+ const formes=m?mapShapes(m).formes:$('map').classList.contains('custom')?[]:WALLS.map(p=>({contours:[p]}));
+ obstaclesTache={m,formes};setTimeout(()=>{obstaclesTache=null},0);
+ return formes}
 // Nomme l'obstacle qui coupe la vue, pour que le MJ sache s'il peut l'ouvrir.
 function obstacleLabel(a,b){const m=currentMap(),mj=view==='mj';
  // Un passage secret clos se nomme « un mur » pour la troupe : le message ne doit pas
@@ -470,8 +479,10 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
     sert plus que si le modèle a disparu. */
  (m.foes||[]).forEach(f=>{const a=fromMonster(modeleActuel(f.tpl));a.x=f.x;a.y=f.y;normalizeActor(a);
   if(f.hidden)setState(a,'Invisible',true);actors.push(a)});
- // Une carte qui s'ouvre, c'est une rencontre qui commence : tour 1, tout remis à zéro.
+ /* Une carte qui s'ouvre, c'est une rencontre à venir : tour 1, tout remis à zéro, et la
+    troupe en exploration — le combat commencera de lui-même au premier adversaire révélé. */
  if(typeof remiseAuTourUn==='function')remiseAuTourUn();
+ mode='exploration';
  render();actors.forEach(settleActor);   // Personne ne démarre dans un mur.
 
  actors.forEach(a=>{a.target=null});

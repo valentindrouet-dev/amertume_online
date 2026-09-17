@@ -1086,7 +1086,7 @@ assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:6
    s'y arrêter puis en sortir ; tirer ou lancer un orbe au contact déclenche l'occasion de tous les
    adversaires au contact, après les dégâts du tir — un adversaire tué ou entravé ne frappe pas. */
 assert.ok(page.includes('function ramasseContacts(')&&page.includes("croises:lot0.map(k=>[k,new Set(contactsDe(actors[k])),{x:actors[k].x,y:actors[k].y}])")
- &&page.includes("drag.croises.forEach(([k,set,pos])=>{const o=actors[k];if(!o)return;ramasseContacts(o,set,pos);pos.x=o.x;pos.y=o.y});"),'la traversée d’une zone de contact compte');
+ &&page.includes("drag.croises.forEach(([k,set,pos])=>{const o=actors[k];if(!o)return;ramasseContacts(o,set,pos,size,murs);pos.x=o.x;pos.y=o.y})}"),'la traversée d’une zone de contact compte');
 assert.ok(page.includes('function peutFrapperOpportunite(e){return !!e&&alive(e)&&!frozenSolid(e)&&Number(e.dmg)>0}')&&page.includes('function opportuniteAuTir(')
  &&page.includes("const contacts=rangeOf(a)==='distance'?contactsDe(a):[];")&&page.includes("afterAction(a);opportuniteAuTir(a,contacts,'tir')}")
  &&page.includes("const poser=()=>{poserOrbe();opportuniteAuTir(a,contacts,'sort')};"),'tir et sort au contact : occasion après les dégâts');
@@ -1111,4 +1111,15 @@ assert.ok(src.includes("if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES
    ne révèlent quoi que ce soit (au rechargement, une carte voile levé révélait tout d'un coup). */
 {const tv=cartes.slice(cartes.indexOf('function troupeVoit('),cartes.indexOf('function seenAt('));
  assert.ok(tv.includes('if(!m)return false;')&&!tv.includes('fogOff')&&tv.includes('if(!fogTroupe)return false;')&&tv.includes('if(!size.width)return false;'),'seule la vision réelle révèle');}
-console.log('727 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Le combat commence de lui-même dès qu'un adversaire est révélé — par la vue ou à la main — et
+   l'ouverture d'une carte remet la troupe en exploration. */
+assert.ok(page.includes("if(!enCombat()&&view==='mj')setTimeout(()=>{if(!enCombat())basculerMode('combat',true)},0);")&&page.includes("if(a.vu&&!enCombat())basculerMode('combat',true);")
+ &&cartes.includes("if(typeof remiseAuTourUn==='function')remiseAuTourUn();\n mode='exploration';"),'le combat commence à la première révélation');
+/* Glisser plusieurs socles ne coûte plus en proportion : obstacles et murs en pixels construits une
+   fois par tâche, auras mémorisées par socle, redessin au plus une fois par image, contacts relevés en
+   combat seulement, avec cadre et murs lus une fois. */
+assert.ok(cartes.includes('let obstaclesTache=null;')&&cartes.includes("obstaclesTache={m,formes};setTimeout(()=>{obstaclesTache=null},0);")
+ &&page.includes('let mursPxTache=null;')&&page.includes("let auraCache={formes:null,cle:'',pts:new Map()};")&&page.includes("auraCache.pts.set(k,pts)")
+ &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>{if(drag)drag.image=0;updateRing();updateSight()});")
+ &&page.includes("if(enCombat()){const size=mapSize(),murs=walls();")&&page.includes('function ramasseContacts(a,croises,de,size,murs){'),'glisser un lot reste léger');
+console.log('729 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
