@@ -1004,12 +1004,12 @@ assert.ok(!src.includes('Fiche enregistrée')&&!src.includes('mise(s) à jour')&
 /* Un changement local gardé part au prochain envoi ; le MJ réinitialise d'un clic droit ; pastilles à droite. */
 assert.ok(vivant.includes("gardes.push([id,k,structuredClone(e[k])])")&&vivant.includes("gardes.forEach(([id,k,v])=>{if(base.actors[id])base.actors[id][k]=v})"),'un changement local gardé part');
 assert.ok(page.includes('function inerte(')&&page.includes('function reinitialiser(')&&src.includes('inerte(b,!!refus)')&&src.includes('inerte(b,!t.peut)')&&page.includes('inerte(rev,!!refus)'),'le clic droit du MJ réinitialise');
-assert.ok(page.includes('.pastilles{position:absolute;right:8px')&&page.includes('.actor-nom strong{overflow:hidden;text-overflow:ellipsis')&&feuille.includes('button.btn-analyse{--fond:#e0a04a;color:#fff}')&&page.includes('function mouvementPris(')&&page.includes(":mouvementPris(a)?'Mouvement déjà dépensé ce tour")&&page.includes('body.vue-joueur .turn-head{margin-bottom:0}'),'pastilles à droite, nom coupé, Analyser teal, tour compact');
+assert.ok(page.includes('.pastilles{position:absolute;right:8px')&&page.includes('.actor-nom strong{overflow:hidden;text-overflow:ellipsis')&&feuille.includes('button.btn-analyse,button.btn-analyse.on{--fond:#e0a04a;color:#fff;background-image:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.07))}')&&!feuille.includes('#8264bb')&&page.includes('function mouvementPris(')&&page.includes(":mouvementPris(a)?'Mouvement déjà dépensé ce tour")&&page.includes('body.vue-joueur .turn-head{margin-bottom:0}'),'pastilles à droite, nom coupé, Analyser teal, tour compact');
 /* Vie ou Endurance corrigée sur une fiche : les PV maximum suivent (Vie × Endu + bonus), sans
    dépasser leurs bornes ni laisser les PV du moment au-dessus ; le sélecteur Analyser n'est pas
    « button button » ; chaque effet déjà porté par un talent du catalogue arbore sa coche verte. */
 assert.ok(src.includes('function recalculerPV(')&&src.includes("if(cle==='vie'||cle==='endu')recalculerPV(a);")&&src.includes("writeStat(a,'max',max)"),'les PV max suivent Vie et Endurance');
-assert.ok(!/button\s*\/\*[^*]*\*\/\s*button\.btn-analyse/.test(feuille)&&/\*\/button\.btn-analyse\{--fond:#e0a04a;color:#fff\}/.test(feuille),'le sélecteur Analyser vise bien le bouton');
+assert.ok(!/button\s*\/\*[^*]*\*\/\s*button\.btn-analyse/.test(feuille)&&/\*\/\s*button\.btn-analyse,button\.btn-analyse\.on\{--fond:#e0a04a;color:#fff;/.test(feuille),'le sélecteur Analyser vise bien le bouton');
 assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.includes("coche.className='utilise'")&&src.includes("coche.textContent='✅'")&&feuille.includes('.effet-fiche .utilise{display:inline-block;width:18px'),'coche verte sur les effets utilisés');
 {const {pvMaximum,writeStat,setState}=C;const cls=[{name:'Gardien',pv:18}];
  const h={hero:true,role:'Gardien',race:'',vie:3,vieMax:4,endu:3,hp:27,max:27,states:[]};
