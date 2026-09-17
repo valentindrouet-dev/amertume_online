@@ -145,12 +145,20 @@ function instancierActeur(id,e){
   if(m)a=fromMonster(m)}
  if(!a)a={...baseActor(e.hero===true)};
  a.id=id;normalizeActor(a);return a}
+/* Les instantanés arrivent en rafale — quatre joueurs, l'écho de nos propres envois — et
+   chacun redessinait toute la table. On n'applique que le dernier reçu, un instant plus
+   tard : une rafale ne coûte qu'une application. */
+let applicationTimer=null;
+function programmerApplication(){if(applicationTimer)return;
+ applicationTimer=setTimeout(()=>{applicationTimer=null;if(dernierDoc){appliquerSalle(dernierDoc);majTable()}},40)}
 function appliquerSalle(d,complet){if(!d)return;
  /* Seules des positions ont bougé, ou un socle est sous le doigt ici : les socles glissent,
     le rendu complet attend la fin du geste. */
  const enGeste=!!window.socleEnMain;
  if(!complet&&poussePret&&docPrecedent&&(enGeste||seulementPositions(docPrecedent,d))){docPrecedent=d;glisserDistant(d,enGeste);return}
  docPrecedent=d;clearTimeout(renduDiffere);
+ // L'état d'avant, pour ne redessiner que si le document a changé quelque chose ici.
+ const avant=JSON.stringify(etatVivant());
  appliquantDistant=true;let base=null;
  try{
   if(!estMJ()){
@@ -204,9 +212,11 @@ function appliquerSalle(d,complet){if(!d)return;
      révélation chez le MJ) est alors une différence, et part. Prise après, elle s'y
      fondait et n'arrivait jamais en face. */
   base=etatVivant();
+  const change=complet||JSON.stringify(base)!==avant;
   aRepousser.forEach(([id,k])=>{if(base.actors[id])base.actors[id][k]=false});
   gardes.forEach(([id,k,v])=>{if(base.actors[id])base.actors[id][k]=v});
-  render();
+  // L'écho de notre propre envoi n'a rien changé : pas de rendu pour rien.
+  if(change)render();
  }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()}}
 
 /* Le contenu publié vient d'être posé : il a remplacé les fiches et les cartes, donc
@@ -329,7 +339,7 @@ async function ouvrirTable(){if(!cloud||!auth||!auth.currentUser){liveStatus('Co
  if(typeof publishShared==='function'&&typeof publicContent==='function'){
   const b=$('live-open');if(b)b.disabled=true;liveStatus('Publication du contenu pour tes joueurs…');
   try{while(publishing)await new Promise(r=>setTimeout(r,200));await publishShared(false)}finally{if(b)b.disabled=false}
-  if(JSON.stringify(publicContent())!==lastPublishedText){
+  if(texteStable(publicContent())!==lastPublishedText){
    liveStatus('Table non ouverte : le contenu n’a pas pu être publié. '+$('shared-status').textContent);return}}
  const code=codeNeuf();
  try{await cloud.doc('amertume_online_live/'+code).set({...etatVivant(),
@@ -354,7 +364,7 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
  ecouterJournal();
  quitteSalle=salleRef.onSnapshot(doc=>{
   if(!doc.exists){liveStatus('Cette table n’existe plus. Demande un nouveau lien au MJ.');debrancherTable();if(!estMJ())ouvreTable();return}
-  dernierDoc=doc.data();appliquerSalle(dernierDoc);majTable()},
+  dernierDoc=doc.data();programmerApplication()},
   e=>{liveStatus('Écoute interrompue. '+liveErreur(e));if(!estMJ())ouvreTable()});
  quitteSieges=siegesRef.onSnapshot(s=>{sieges={};s.forEach(d=>sieges[d.id]=d.data());
   const mien=monUid&&sieges[monUid];monSiege=mien?mien.actorId:null;

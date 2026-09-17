@@ -947,7 +947,7 @@ assert.ok(page.includes("(typeof spectateur==='function'&&spectateur())?[]:actor
 assert.ok(vivant.includes("if(meta&&meta.local)return;"),'les lignes propres à l’appareil restent chez elles');
 /* La table : la référence se prend avant le rendu, les positions partent par salves, les
    socles reçus glissent, et deux doigts mènent la carte. */
-assert.ok(vivant.indexOf("base=etatVivant();")<vivant.indexOf("aRepousser.forEach(([id,k])")&&vivant.indexOf("aRepousser.forEach(([id,k])")<vivant.indexOf("  render();\n }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()")
+assert.ok(vivant.indexOf("base=etatVivant();")<vivant.indexOf("aRepousser.forEach(([id,k])")&&vivant.indexOf("aRepousser.forEach(([id,k])")<vivant.indexOf("  if(change)render();\n }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()")
  ,'la référence précède le rendu');
 assert.ok(vivant.includes('function pousserBientot')&&page.includes("if(typeof pousserBientot==='function')pousserBientot()"),'le glissement part par salves');
 assert.ok(vivant.includes("appliquerSalle(dernierDoc,true)")&&vivant.includes("seulementPositions(docPrecedent,d)"),'les positions seules glissent sans rendu');
@@ -1044,4 +1044,27 @@ assert.ok(cartes.includes("'Déplacements rendus aux joueurs.',{ton:'carte',loca
 assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('return Math.round(innerHeight-(r.top+scrollY)-sous-marge)}')
  &&cartes.includes('hMax=Math.max(260,hauteurDispoCarte(el))')&&!cartes.includes('Math.round(innerHeight*.72));')
  &&cartes.includes("if(Math.abs(el.offsetHeight-h)>1){applyMapZoom();render()}}).observe(rangee)"),'la carte tient dans l’écran');
-console.log('709 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Une partie à quatre ne republie plus tout à chaque coup : la publication ne suit que le contenu
+   (fiches, cartes, catalogue), jamais l'état vivant ; les instantanés en rafale ne coûtent qu'une
+   application ; l'écho de son propre envoi ne redessine rien ; l'Action d'un joueur se dépense
+   même hors combat. */
+{const partage=fs.readFileSync('shared.js','utf8');
+ assert.ok(partage.includes('function texteStable(')&&partage.includes("const value=publicContent(),text=texteStable(value);if(!explicit&&text===lastPublishedText)return;")
+  &&partage.includes('lastPublishedText=texteStable(publicContent())')&&!partage.includes("b.closest('#hp-buttons')"),'la publication ne suit que le contenu');
+ const vol=JSON.parse(partage.match(/const CHAMPS_VOLATILS=(\[[^\]]*\]);/)[1].replace(/'/g,'"'));
+ ['x','y','hp','states','checks','target','targets','revealed','vu','numero','orbes','garde'].forEach(k=>assert.ok(vol.includes(k),'volatil : '+k));
+ assert.ok(vivant.includes('texteStable(publicContent())!==lastPublishedText')&&vivant.includes('function programmerApplication(')
+  &&vivant.includes('dernierDoc=doc.data();programmerApplication()')&&vivant.includes('const avant=JSON.stringify(etatVivant());')
+  &&vivant.includes('const change=complet||JSON.stringify(base)!==avant;')&&vivant.includes('if(change)render();'),'rafales et échos ne redessinent pas pour rien');
+ assert.ok(page.includes("function actionPrise(a){return view!=='mj'&&!!(a&&a.checks&&a.checks[0])}")&&page.includes("if(coute&&a.checks&&!a.checks[0]){a.checks[0]=true;afterAction(a)}")
+  &&page.includes(`<i class="pt action'+(!alive(a)||(a.checks&&a.checks[0])?' off':'')+'"></i>`)&&page.includes("function mouvementPris(a){return view!=='mj'&&enCombat()&&"),'l’Action se dépense même hors combat, le Mouvement en combat');
+ // Le texte stable ignore l'état vivant et retient le contenu.
+ const src2=partage.slice(partage.indexOf('const CHAMPS_VOLATILS='),partage.indexOf('function publicContent('));
+ const texteStable=new Function(src2+';return texteStable')();
+ const base={schema:1,title:'T',round:1,mode:'exploration',mapImage:null,currentMapId:'m1',locked:false,catalog:{items:[]},maps:[{id:'m1',fog:'aaa',doors:[{x:1,y:2,w:3,h:1,open:false}]}],actors:[{id:'a',name:'Éla',hp:10,x:5,y:5,checks:[false,false,false],states:[]}]};
+ const joue=structuredClone(base);joue.round=4;joue.mode='combat';joue.locked=true;joue.currentMapId='m2';joue.maps[0].fog='bbb';joue.maps[0].doors[0].open=true;
+ Object.assign(joue.actors[0],{hp:3,x:40,y:9,checks:[true,true,false],states:['Feu'],target:2,vu:true,numero:1});
+ assert.equal(texteStable(joue),texteStable(base));
+ const contenu=structuredClone(base);contenu.actors[0].name='Ela';assert.notEqual(texteStable(contenu),texteStable(base));
+ const carte=structuredClone(base);carte.maps[0].doors[0].x=9;assert.notEqual(texteStable(carte),texteStable(base));}
+console.log('713 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

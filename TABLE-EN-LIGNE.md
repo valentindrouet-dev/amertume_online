@@ -97,6 +97,29 @@ s’ouvre, ils choisissent l’aventurier qu’ils incarnent, et vous jouez.
 Le journal de combat est commun : chaque ligne écrite d’un côté paraît de
 l’autre, et qui rejoint la table reçoit les soixante dernières.
 
+## 6. Fluidité à plusieurs
+
+Tu n’héberges rien : chaque appareil, le tien compris, parle directement
+à Firebase, qui distribue les changements. Ta machine n’a donc pas plus
+de travail avec quatre joueurs qu’avec un — sauf ce qu’elle s’impose
+elle-même. Depuis la v0.201 :
+
+- La **publication automatique** ne repart que si le contenu change
+  (fiche, carte, catalogue), jamais pour un coup porté, un déplacement ou
+  des PV. Avant, chaque action republiait tout, images comprises, et chaque
+  joueur retéléchargeait tout : c’était la latence.
+- Les mises à jour qui arrivent en rafale ne sont appliquées qu’une fois,
+  et l’écho de tes propres envois ne redessine rien.
+
+Ce qui reste à ta main :
+
+- **Des images de carte légères** (autour de 1 Mo, pas 10) : elles partent
+  à chaque publication et arrivent chez chaque joueur.
+- **Un seul onglet Amertume** ouvert pendant la partie, et l’onglet au
+  premier plan : les navigateurs ralentissent les onglets cachés.
+- **Publier avant d’ouvrir la table**, pas pendant la partie, sauf si tu
+  modifies vraiment le contenu.
+
 ---
 
 ## Si ça coince
