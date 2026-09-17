@@ -1073,4 +1073,13 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
  assert.ok(!/\{[^}]*\bleft:/.test(orbe.slice(orbe.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(fleche.slice(fleche.indexOf('el.animate'))),'pas de left/top animé');
  assert.ok(page.includes('function deplacement(couche,de,vers)')&&orbe.includes("transform:'translate('+arrivee+') scale(1)'")&&fleche.includes("transform:'translate('+arrivee+')'+tourne")
   &&page.includes('.orbe-vol{position:absolute;will-change:transform,opacity;')&&page.includes('.fleche-vol{position:absolute;will-change:transform,opacity;'),'le vol est porté par le compositeur');}
-console.log('716 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Contacts : tous les rayons (aventuriers et adversaires révélés) quand il est actif, la seule
+   sélection sinon ; un joueur inspecte n'importe quel combattant — fiche selon ce qu'il en sait,
+   aura — sans le contrôler, et ses cases d'activation restent celles de son actif ; les
+   projectiles sont plus lents et plus gros. */
+assert.ok(page.includes('id="portees">◎ Contacts<')&&page.includes("let porteesOn=localStorage.getItem('amertume-portees')==='1';")&&page.includes("return a.hero||(a.vu&&!a.hidden)")&&!page.includes("couche.hidden=!porteesOn"),'Contacts : tous les rayons, ou la sélection');
+assert.ok(page.includes('let inspecteId=null;')&&page.includes("if(!controlled(i)){const a=actors[i];inspecteId=a&&inspecteId!==a.id?a.id:null;render();return}")&&!page.includes('Sélectionne ton aventurier, puis cible')
+ &&page.includes("const k=view!=='mj'&&inspecteIndex()>=0?inspecteIndex():selected,a=actors[k];")&&page.includes("const s=actors[selected];['action','move','item'].forEach((id,i)=>$(id).checked=!!(s&&s.checks&&s.checks[i]));")
+ &&page.includes('#sheet.secret :is(#sheet-chips,#stats,#hpbar,#bloc-gear,#bloc-talents,#skills,.divider){display:none}')&&page.includes("a.id===inspecteId?'inspecte ':''"),'un joueur inspecte sans contrôler');
+assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:650}')&&page.includes('Math.max(450,Math.min(800,Math.hypot(dx,dy)*1.6))')&&page.includes('Math.max(16,tokenOf(vers)*.7)')&&page.includes('Math.max(28,tokenOf(vers)*1.1)'),'projectiles plus lents et plus visibles');
+console.log('719 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
