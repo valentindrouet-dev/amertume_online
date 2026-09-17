@@ -1090,4 +1090,8 @@ assert.ok(page.includes('function ramasseContacts(')&&page.includes("croises:lot
 assert.ok(page.includes('function peutFrapperOpportunite(e){return !!e&&alive(e)&&!frozenSolid(e)&&Number(e.dmg)>0}')&&page.includes('function opportuniteAuTir(')
  &&page.includes("const contacts=rangeOf(a)==='distance'?contactsDe(a):[];")&&page.includes("afterAction(a);opportuniteAuTir(a,contacts,'tir')}")
  &&page.includes("const poser=()=>{poserOrbe();opportuniteAuTir(a,contacts,'sort')};"),'tir et sort au contact : occasion après les dégâts');
-console.log('721 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Le bestiaire crée des modèles : « + Nouveau monstre » enregistre au bestiaire, pas en scène. */
+assert.ok(src.includes('let templateNeuf=false;')&&src.includes("$('bestiary-add').onclick=()=>openActor(null,false,null,true);")
+ &&src.includes("templateNeuf=!!neuf&&template===null&&!hero;")&&src.includes("else if(templateNeuf){catalog.monsters.push(toMonster(a));templateNeuf=false;renderCatalogPages();")
+ &&src.includes("$('save-template').hidden=draft.hero||templateNeuf;"),'un nouveau monstre du bestiaire y entre');
+console.log('722 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
