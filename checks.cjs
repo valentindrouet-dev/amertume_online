@@ -967,7 +967,7 @@ assert.ok(page.includes(".j-entry.ton-talent{")&&page.includes("li.classList.add
 assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderMapLayer();calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
 assert.ok(cartes.includes("moveActor(heros[i],p.x,p.y,true)"),'l’ouverture d’une carte place librement');
 assert.ok(feuille.includes('repeat(4,minmax(0,1fr))')&&feuille.includes("@media(max-width:1150px){.hero-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}"),'quatre aventuriers par ligne');
-assert.ok(page.includes(".eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title,.titre-actions,.panel>h2,#carte-titre{font:600 13px")&&feuille.includes(".bloc-titre,.bloc-replie .bloc-titre{font:600 13px")&&page.includes('.actions-rangee>.attack-card{margin:0;min-height:210px}'),'un seul lettrage de titres');
+assert.ok(page.includes(".eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title,.titre-actions,.panel>h2,#carte-titre{font:600 13px")&&feuille.includes(".bloc-titre,.bloc-replie .bloc-titre{font:600 13px")&&page.includes('.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}'),'un seul lettrage de titres');
 /* Le journal se vide et s'écrit ; les lignes ne disent plus « Coma » mais 💀 ; la fiche tient dans sa colonne. */
 assert.ok(page.includes('id="journal-chat"')&&page.includes('function logChat(')&&vivant.includes("rec.effet==='vider'&&duMJ"),'le journal s’écrit et se vide');
 assert.ok(!page.includes("' Coma.'")&&page.includes("' 💀'")&&!page.includes('Les dés ne passent pas la DEF'),'💀 et rien de plus');
@@ -1098,5 +1098,13 @@ assert.ok(src.includes('let templateNeuf=false;')&&src.includes("$('bestiary-add
    hauteur de repos pour que la carte calée dessus ne bouge pas au clic. */
 assert.ok(page.includes("pv.hidden=view!=='mj';pv.classList.toggle('vide',!a);")&&page.includes("document.querySelector('.attack-card').classList.toggle('vide',!a);")
  &&!page.includes("document.querySelector('.attack-card').hidden=!a")&&page.includes("$('sheet').hidden=false;$('sheet').classList.toggle('vide',!a);")
- &&page.includes('.actions-rangee>.attack-card{margin:0;min-height:210px}')&&page.includes('#sheet.vide #hpbar,#sheet.vide #bloc-gear,#sheet.vide .divider{display:none}')&&page.includes('#sheet{min-height:346px}'),'les blocs restent en place, vides');
-console.log('723 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+ &&page.includes('.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}')&&page.includes('#sheet.vide #hpbar,#sheet.vide #bloc-gear,#sheet.vide .divider{display:none}')&&page.includes('#sheet{height:380px;overflow:auto}')&&page.includes('.piste-des{display:flex;flex-direction:column;gap:8px;height:220px;overflow:hidden}'),'les blocs restent en place, vides');
+/* Un talent sans mécanique dont le nom est celui d'une mécanique la reçoit (Double Attaque) ; la ligne
+   « Cible : » a disparu ; les blocs vides n'affichent aucun texte. */
+assert.ok(src.includes("if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES[t.effet])){const k=cleTalent(t.name);")&&!page.includes("'Cible : '+actors[a.target].name")
+ &&!page.includes('Sélectionne un combattant pour agir.')&&!page.includes('Aucun combattant sélectionné.'),'Double Attaque se câble par son nom, plus de ligne Cible');
+{const {ciblesPermises,TALENTS_CODES:T,paramsTalent}=C;
+ const t={name:'Double Attaque',effet:'doubleattaque',params:{cibles:3}};
+ assert.equal(ciblesPermises([{code:T.doubleattaque,talent:t,params:paramsTalent(t)}]),3);
+ assert.equal(ciblesPermises([{code:T.doubleattaque,talent:{effet:'doubleattaque'},params:paramsTalent({effet:'doubleattaque'})}]),2);}
+console.log('726 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

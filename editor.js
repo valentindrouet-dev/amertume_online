@@ -23,7 +23,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  /* Les premiers talents codés se reconnaissaient à leur nom. Ils portent désormais leur
     effet en clair : on le leur inscrit une fois, d'après ce nom, et le nom redevient
     libre — le renommer ne fait plus perdre la mécanique. */
- c.talents.forEach(t=>{if(t&&t.effet===undefined){const k=cleTalent(t.name);
+ c.talents.forEach(t=>{if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES[t.effet])){const k=cleTalent(t.name);
   t.effet=TALENTS_CODES[k]?k:''}});
  // Un prérequis désigne un autre talent du catalogue, ou rien : un lien mort s'efface.
  c.talents.forEach(t=>{if(!t)return;
