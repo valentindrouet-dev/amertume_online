@@ -1067,4 +1067,10 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
  assert.equal(texteStable(joue),texteStable(base));
  const contenu=structuredClone(base);contenu.actors[0].name='Ela';assert.notEqual(texteStable(contenu),texteStable(base));
  const carte=structuredClone(base);carte.maps[0].doors[0].x=9;assert.notEqual(texteStable(carte),texteStable(base));}
-console.log('713 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les projectiles volent sur transform et opacity seulement : le compositeur les mène même quand le
+   fil principal est pris (dés, rendu complet, état reçu). Plus de left/top dans les images clés. */
+{const orbe=page.slice(page.indexOf('function volOrbe('),page.indexOf('function deplacement(')),fleche=page.slice(page.indexOf('function volFleche('),page.indexOf('function floatNumber('));
+ assert.ok(!/\{[^}]*\bleft:/.test(orbe.slice(orbe.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(fleche.slice(fleche.indexOf('el.animate'))),'pas de left/top animé');
+ assert.ok(page.includes('function deplacement(couche,de,vers)')&&orbe.includes("transform:'translate('+arrivee+') scale(1)'")&&fleche.includes("transform:'translate('+arrivee+')'+tourne")
+  &&page.includes('.orbe-vol{position:absolute;will-change:transform,opacity;')&&page.includes('.fleche-vol{position:absolute;will-change:transform,opacity;'),'le vol est porté par le compositeur');}
+console.log('716 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
