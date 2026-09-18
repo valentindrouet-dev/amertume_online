@@ -265,7 +265,8 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
  // Un effet ne s'écrit pas : il se joue, et seulement en direct.
  if(rec.genre==='effet'){if(rec.effet==='vider'&&duMJ)viderJournalLocal();
   else if(rec.effet==='orbe'&&typeof volOrbe==='function')volOrbe(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'');
-  else if(rec.effet==='fleche'&&typeof volFleche==='function')volFleche(acteurDuJournal(rec.a),acteurDuJournal(rec.b));return}
+  else if(rec.effet==='fleche'&&typeof volFleche==='function')volFleche(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
+  else if(rec.effet==='balayage'&&typeof volBalayage==='function')volBalayage(acteurDuJournal(rec.a),acteurDuJournal(rec.b));return}
  if(rec.genre==='attaque'){const r=rec.detail&&typeof rec.detail==='object'?rec.detail:null;
   const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,total:r.total}:null;
   logAttaqueLocal(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'',String(rec.corps||''),d,rec.suite?String(rec.suite):'')}

@@ -2,7 +2,7 @@
    Les valeurs cliquables sont déjà muettes pour elle (voir champVif dans editor.js). */
 body.vue-joueur .cat-tools,body.vue-joueur .pose-nombre,body.vue-joueur #hero-add,
 body.vue-joueur #bestiary-add,body.vue-joueur .cat-actions{display:none!important}
-button.ico.coche-analyse{color:var(--green);border-color:var(--green);font-weight:700}
+/* La coche d'un modèle analysé, dans sa vignette : un petit rond vert devant le nom. */.cat-pill .coche-modele{flex:none;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font:700 11px/1 system-ui;color:#fff;background:var(--green);cursor:pointer}.cat-pill .coche-modele:hover{filter:brightness(1.1)}
 /* La table en ligne : son lien se lit d'un coup d'oeil et se copie d'un clic. */
 #live-lien{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:6px}
 #live-sieges{display:flex;flex-direction:column;gap:2px;margin-top:4px}

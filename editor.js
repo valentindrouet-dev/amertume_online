@@ -828,11 +828,13 @@ function bestiaryRow(m,i){const rang=document.createElement('div');rang.classNam
   b.title=titre;b.setAttribute('aria-label',titre+' '+m.name);b.onclick=fn;return b};
  /* La coche dit que la troupe a percé l'espèce. Le MJ la lève d'un clic : les créatures
     de ce modèle redeviennent des inconnues sur tous les écrans. */
- if(view==='mj'&&modeleAnalyse(m)){const coche=ico('✓','Analysé par la troupe — cliquer pour le lui reprendre',()=>{
-  const n=oublierAnalyse(m);if(!n)return;
-  log(m.name+' n’est plus analysé'+(n>1?' ('+n+' créatures)':'')+'.');
-  renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))});
-  coche.classList.add('coche-analyse');outils.append(coche)}
+ /* Elle se pose dans la vignette, à gauche du nom : la vignette ne change pas de taille. */
+ if(view==='mj'&&modeleAnalyse(m)){const coche=document.createElement('span');coche.className='coche-modele';coche.textContent='✓';
+  coche.setAttribute('role','button');coche.tabIndex=0;coche.title='Analysé par la troupe — cliquer pour le lui reprendre';coche.setAttribute('aria-label',coche.title+' '+m.name);
+  const lever=e=>{e.stopPropagation();e.preventDefault();const n=oublierAnalyse(m);if(!n)return;
+   log(m.name+' n’est plus analysé'+(n>1?' ('+n+' créatures)':'')+'.');
+   renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+  coche.onclick=lever;coche.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')lever(e)};pill.prepend(coche)}
  const suppr=ico('✕','Supprimer',()=>{
   if(!confirm('Supprimer « '+m.name+' » du bestiaire ? Les copies déjà sur la carte sont conservées.'))return;
   catalog.monsters.splice(i,1);renderCatalogPages();scheduleSave()});

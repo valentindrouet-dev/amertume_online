@@ -974,7 +974,8 @@ assert.ok(!page.includes("' Coma.'")&&page.includes("' 💀'")&&!page.includes('
 assert.ok(src.includes('function talentPill(t,compact)')&&src.includes("talentPill(t,true)")&&feuille.includes('.talent-grille .cat-pill{'),'les talents de la fiche sont compacts');
 assert.ok(page.includes('minmax(0,1fr) 340px')&&page.includes('minmax(0,1fr) 380px'),'la colonne de droite s’élargit');
 /* L'orbe et la flèche volent avant que les dégâts tombent ; l'œil de la troupe ; le journal épuré. */
-assert.ok(page.includes('function volFleche(')&&vivant.includes("rec.effet==='fleche'")&&page.includes("diffuserEffet('fleche',a,actors[j],null)"),'la flèche vole ici et en face');
+assert.ok(page.includes('function volFleche(')&&vivant.includes("rec.effet==='fleche'")&&page.includes("diffuserEffet('fleche',a,actors[j],null)")
+ &&page.includes('function volBalayage(')&&vivant.includes("rec.effet==='balayage'")&&page.includes("diffuserEffet('balayage',a,actors[j],null)"),'le souffle et le balayage jouent ici et en face');
 assert.ok(page.includes("if(duree>0)setTimeout(()=>{poser();render();")&&page.includes("setTimeout(()=>{tirEnVol=false;frapper();scheduleSave()},duree)"),'les dégâts attendent le vol');
 assert.ok(cartes.includes("icone('troupe-eye'")&&cartes.includes('function oeilJoueur')&&cartes.includes("inconnu=oeilJoueur()?255:110"),'l’œil de la troupe');
 assert.ok(!page.includes('Bienvenue dans Amertume')&&!cartes.includes("(d.secret?'Passage secret ':'Porte ')")&&page.includes(" garde '+o.name+' : Blindage.'")&&page.includes("' 🔍 '+o.name+' :\\n'"),'le journal s’épure');
@@ -1069,10 +1070,12 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
  const carte=structuredClone(base);carte.maps[0].doors[0].x=9;assert.notEqual(texteStable(carte),texteStable(base));}
 /* Les projectiles volent sur transform et opacity seulement : le compositeur les mène même quand le
    fil principal est pris (dés, rendu complet, état reçu). Plus de left/top dans les images clés. */
-{const orbe=page.slice(page.indexOf('function volOrbe('),page.indexOf('function deplacement(')),fleche=page.slice(page.indexOf('function volFleche('),page.indexOf('function floatNumber('));
+{const orbe=page.slice(page.indexOf('function volOrbe('),page.indexOf('function deplacement(')),fleche=page.slice(page.indexOf('function volFleche('),page.indexOf('function volBalayage('));
+ const balayage=page.slice(page.indexOf('function volBalayage('),page.indexOf('function floatNumber('));
+ assert.ok(!/\{[^}]*\bleft:/.test(balayage.slice(balayage.indexOf('el.animate')))&&balayage.includes('duree=calme?1:320')&&fleche.includes('duree=calme?1:650'),'balayage et souffle : compositeur, rythme fixé');
  assert.ok(!/\{[^}]*\bleft:/.test(orbe.slice(orbe.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(fleche.slice(fleche.indexOf('el.animate'))),'pas de left/top animé');
  assert.ok(page.includes('function deplacement(couche,de,vers)')&&orbe.includes("transform:'translate('+arrivee+') scale(1)'")&&fleche.includes("transform:'translate('+arrivee+')'+tourne")
-  &&page.includes('.orbe-vol{position:absolute;will-change:transform,opacity;')&&page.includes('.fleche-vol{position:absolute;will-change:transform,opacity;'),'le vol est porté par le compositeur');}
+  &&page.includes('.orbe-vol{position:absolute;will-change:transform,opacity;')&&page.includes('.souffle-vol{position:absolute;will-change:transform,opacity;')&&page.includes('.balayage-vol{position:absolute;will-change:transform,opacity;')&&!page.includes('fleche-vol'),'le vol est porté par le compositeur');}
 /* Contacts : tous les rayons (aventuriers et adversaires révélés) quand il est actif, la seule
    sélection sinon ; un joueur inspecte n'importe quel combattant — fiche selon ce qu'il en sait,
    aura — sans le contrôler, et ses cases d'activation restent celles de son actif ; les
@@ -1081,7 +1084,7 @@ assert.ok(page.includes('id="portees">◎ Contacts<')&&page.includes("let portee
 assert.ok(page.includes('let inspecteId=null;')&&page.includes("if(!controlled(i)){const a=actors[i];inspecteId=a&&inspecteId!==a.id?a.id:null;render();return}")&&!page.includes('Sélectionne ton aventurier, puis cible')
  &&page.includes("const k=view!=='mj'&&inspecteIndex()>=0?inspecteIndex():selected,a=actors[k];")&&page.includes("const s=actors[selected];['action','move','item'].forEach((id,i)=>$(id).checked=!!(s&&s.checks&&s.checks[i]));")
  &&page.includes('#sheet.secret :is(#sheet-chips,#stats,#hpbar,#bloc-gear,#bloc-talents,#skills,.divider){display:none}')&&page.includes("a.id===inspecteId?'inspecte ':''"),'un joueur inspecte sans contrôler');
-assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:650}')&&page.includes('Math.max(450,Math.min(800,Math.hypot(dx,dy)*1.6))')&&page.includes('Math.max(16,tokenOf(vers)*.7)')&&page.includes('Math.max(28,tokenOf(vers)*1.1)'),'projectiles plus lents et plus visibles');
+assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:650}')&&page.includes('Math.max(16,tokenOf(vers)*.7)')&&page.includes('const long=Math.max(40,tokenOf(vers)*1.7),haut=Math.max(12,tokenOf(vers)*.5);'),'projectiles plus lents et plus visibles');
 /* Dégâts d'opportunité étendus : traverser une zone de contact pendant un glissement compte comme
    s'y arrêter puis en sortir ; tirer ou lancer un orbe au contact déclenche l'occasion de tous les
    adversaires au contact, après les dégâts du tir — un adversaire tué ou entravé ne frappe pas. */
@@ -1138,4 +1141,9 @@ assert.ok(!page.includes('Cible alliée : aucun coup ne part sur un allié.')&&p
 /* L'Onde de chaque camp, à gauche du « + » : Aventuriers ou Adversaires à 100 % ; l'ancien bouton a disparu. */
 assert.ok(!page.includes('id="heal-foes"')&&!src.includes("$('heal-foes')")&&!page.includes("$('heal-foes')")&&page.includes('function remettreCamp(hero)')&&page.includes("b.className='ajout-camp soin-camp'")
  &&page.includes("groupe('Aventuriers',troupe,AJOUT_CAMP.hero,soinCamp().hero)")&&page.includes("if(mj&&soin){soin.hidden=false;h.append(soin)}")&&page.includes('.ajout-camp.soin-camp{margin-left:auto}.ajout-camp.soin-camp+.ajout-camp{margin-left:0}'),'l’Onde de chaque camp remplace Adversaires à 100 %');
-console.log('733 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Sans équipement, pas de rubrique Équipement sur la fiche de table ; la coche d'un modèle analysé se pose
+   dans la vignette, à gauche du nom ; les projectiles sont un souffle (650 ms) et le coup au contact un
+   balayage d'air (320 ms), le coup tombant au bout du geste. */
+assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidden=!nbGear;")&&src.includes("coche.className='coche-modele'")&&src.includes('pill.prepend(coche)')&&!src.includes("coche.classList.add('coche-analyse')")
+ &&feuille.includes('.cat-pill .coche-modele{flex:none;width:16px;height:16px;')&&page.includes("if(rangeOf(a)!=='distance'&&typeof volBalayage==='function'){"),'équipement vide masqué, coche dans la vignette, balayage au contact');
+console.log('735 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
