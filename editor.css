@@ -674,3 +674,34 @@ button.choix-attaque.sans-des{grid-auto-rows:1fr}
 @media(max-width:900px){.hero-grid{grid-template-columns:1fr}}
 /* Les titres de blocs partagent un seul lettrage, sans Killam. */
 .bloc-titre,.bloc-replie .bloc-titre{font:600 13px/1.25 system-ui,-apple-system,'Segoe UI',sans-serif;letter-spacing:2.5px;text-transform:uppercase}
+/* Les arbres de talents : la classe et ses maîtrises en tête, puis une colonne par
+   spécialisation, lue de haut en bas, un fil reliant les talents. Le bandeau d'une colonne
+   porte l'encre de la classe et se termine en pointe, comme une bannière. */
+#arbres{width:min(1180px,96vw)}
+#arbres-corps{max-height:min(74vh,760px);overflow:auto;padding:4px 2px}
+.arbres-tete{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:16px}
+.arbres-classe{margin:0;font:700 22px 'Killam',Georgia,serif;letter-spacing:3px;text-transform:uppercase;color:var(--encre,var(--ink))}
+.arbre-maitrises{display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
+.arbre-maitrises .arbre-noeud{width:auto;min-width:120px}
+.arbres-cols{display:flex;gap:16px;align-items:stretch;justify-content:center;flex-wrap:wrap}
+.arbre-col{flex:1 1 150px;min-width:150px;max-width:230px;display:flex;flex-direction:column;align-items:center;padding:0 0 16px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line)}
+.arbre-col.libre{border-style:dashed;--encre:#7a6d5c}
+.arbre-col>.muted{font-size:13px;margin-top:8px}
+.arbre-titre{width:100%;box-sizing:border-box;margin:0 0 12px;padding:9px 10px 14px;text-align:center;font:700 12px system-ui;letter-spacing:2px;text-transform:uppercase;color:#fff;background:var(--encre,#6b5d4b);border-radius:11px 11px 0 0;clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),50% 100%,0 calc(100% - 8px))}
+.arbre-noeud{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;box-sizing:border-box;padding:0 8px;border:0;background:transparent;color:var(--ink);cursor:pointer;font:600 13px system-ui;position:relative}
+.arbre-noeud+.arbre-noeud::before{content:'';display:block;width:3px;height:18px;border-radius:2px;background:var(--line-strong);margin:2px 0}
+.arbre-rond{position:relative;display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:var(--panel);border:3px solid var(--teinte);box-shadow:0 0 0 3px var(--panel),0 2px 6px #0004;font-size:24px;line-height:1;color:var(--teinte)}
+.arbre-rond img{width:64%;height:64%;object-fit:contain}
+.arbre-nom{max-width:100%;text-align:center;line-height:1.2}
+.arbre-niv{font:600 11px system-ui;color:var(--muted)}
+.arbre-noeud.t-act{--teinte:#4f7fb5}.arbre-noeud.t-reac{--teinte:#8b6bb5}.arbre-noeud.t-pass{--teinte:#8a8474}
+.arbre-noeud.t-crit{--teinte:#b5525a}.arbre-noeud.t-mait{--teinte:#c99a3c}.arbre-noeud.t-ame{--teinte:#5e9a5b}
+.arbre-noeud.acquis .arbre-rond{box-shadow:0 0 0 3px var(--panel),0 0 0 5px var(--teinte),0 2px 8px #0005}
+.arbre-noeud.acquis .arbre-rond::after{content:'✓';position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--green);color:#fff;font:700 12px/18px system-ui;text-align:center;border:2px solid var(--panel)}
+.arbre-noeud.acquis .arbre-nom{color:var(--teinte)}
+.arbre-noeud.verrou{opacity:.45;cursor:not-allowed}
+.arbre-noeud.verrou .arbre-rond{filter:grayscale(1)}
+.arbre-noeud.auto{cursor:default}
+.arbre-noeud:not(.verrou):not(.auto):hover .arbre-rond{transform:scale(1.06)}
+.hero-sous .ico.plus.rouage{font-weight:400;font-size:15px;padding:0 6px 1px}
+.cat-pill .tag.voie{color:#7a4f1a;font-style:italic;max-width:120px;overflow:hidden;text-overflow:ellipsis}

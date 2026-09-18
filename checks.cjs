@@ -1243,4 +1243,61 @@ assert.ok(src.includes('function libereMains(a,besoin)')&&src.includes('else{lib
    autour du carré ouvert : rien ne laisse croire qu'il est encore porté. */
 assert.ok(src.includes('let gearOuvert=null;')&&!src.includes('gearOuverts')&&src.includes('const ouvert=gearOuvert===o.id;detail.hidden=!ouvert;')
  &&src.includes('const basculer=()=>{gearOuvert=ouvert?null:o.id;redessine()};')&&!feuille.includes('.cat-pill.gear-carre.ouvert'),'une seule description, sans liseré');
-console.log('804 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les arbres de talents : le rouage remplace le « + » des talents d'une fiche, la popup dessine
+   la classe, ses maîtrises acquises d'office, puis une colonne par spécialisation — trois au plus
+   — lue de haut en bas, et les génériques à part. La voie d'un talent se choisit au formulaire. */
+assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.includes("const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,()=>openArbres(a),'⚙');")
+ &&!src.includes("openPicker(a,'talents')")&&src.includes("const arbresDialog=dialog('arbres','Arbres de talents','<p class=\"muted\" id=\"arbres-note\"></p><div id=\"arbres-corps\"></div>');")
+ &&src.includes('function openArbres(a){if(view!==\'mj\')return;arbresActeur=a;')&&src.includes("const classe=classeDuHeros(a),toutes=talentFamilies();")
+ &&src.includes("if(view==='mj'){let acquis=false;troupe.forEach(a=>{if(assureMaitrises(a))acquis=true});if(acquis)scheduleSave()}")
+ &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):''});")&&src.includes("+sel('Spécialisation','voie',t.voie||'',optionsVoie(famille,t.voie||''))")
+ &&src.includes("if(voie&&!autres.includes(voie)&&autres.length>=VOIES_MAX){alert(")&&src.includes("v.className='tag voie';v.textContent=t.voie;")
+ &&src.includes("const verrou=acquis?'':(libre?'':verrouColonne(a.talents,c.liste,t))||manqueTalent(a.talents,t,catalog.talents);")
+ &&src.includes("n.title=t.name+' — Maîtrise de classe, acquise avec la classe.';")
+ &&feuille.includes('#arbres{width:min(1180px,96vw)}')&&feuille.includes('.arbre-noeud+.arbre-noeud::before{content:\'\';display:block;width:3px;height:18px;')
+ &&feuille.includes('.arbre-titre{width:100%;')&&feuille.includes('clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),50% 100%,0 calc(100% - 8px))}')
+ &&feuille.includes('.arbre-noeud.acquis .arbre-rond::after{content:\'✓\';')&&feuille.includes('.arbre-noeud.verrou{opacity:.45;cursor:not-allowed}')
+ &&feuille.includes('.hero-sous .ico.plus.rouage{')&&feuille.includes('.cat-pill .tag.voie{'),'arbres de talents : rouage, popup, voie au formulaire');
+{const morceau=(debut,fin)=>{const i=src.indexOf(debut);return src.slice(i,src.indexOf(fin,i))};
+ const ctx={catalog:{classes:[{name:'Gardien',tint:'#3f7bc0'}],talents:[
+   {id:'m',name:'Maîtrise du bouclier',famille:'Gardien',type:'mait',level:1,voie:''},
+   {id:'b',name:'Rempart de fer',famille:'Gardien',type:'ame',level:3,voie:'Rempart',prerequis:'a'},
+   {id:'a',name:'Rempart',famille:'Gardien',type:'act',level:1,voie:'Rempart'},
+   {id:'c',name:'Charge',famille:'Gardien',type:'act',level:2,voie:'Assaut'},
+   {id:'d',name:'Souffle',famille:'Gardien',type:'pass',level:1,voie:''},
+   {id:'e',name:'Serment',famille:'Gardien',type:'pass',level:2,voie:'Serment'},
+   {id:'f',name:'Foi',famille:'Gardien',type:'pass',level:2,voie:'Quatrième'},
+   {id:'g',name:'Vigilance',famille:'',type:'pass',level:1,voie:''}]},
+  cleClasse:C.cleClasse,ordonneTalents:C.ordonneTalents,talentCode:C.talentCode,manqueTalent:C.manqueTalent};
+ vm.createContext(ctx);
+ vm.runInContext(morceau('const TALENT_TYPES=','function talent(id)')+morceau('function talentFamilies()',"// L'encre d'une classe")
+  +morceau('const VOIES_MAX=','const arbresDialog='),ctx);
+ // Trois voies au plus, dans l'ordre du catalogue ; la quatrième n'existe pas pour l'arbre.
+ assert.equal(JSON.stringify(ctx.voiesDe('Gardien')),JSON.stringify(['Rempart','Assaut','Serment']));
+ assert.equal(JSON.stringify(ctx.voiesDe('Mystique')),'[]');
+ assert.equal(JSON.stringify(ctx.optionsVoie('Gardien','')),JSON.stringify([['','— tronc commun —'],['Rempart','Rempart'],['Assaut','Assaut'],['Serment','Serment']]),'plus de place : pas de nouvelle voie');
+ assert.equal(ctx.optionsVoie('Mystique','').length,2,'le tronc commun et une nouvelle voie');
+ // Une Gardienne trouve la colonne Gardien ; sans classe, pas de colonne.
+ assert.equal(ctx.classeDuHeros({role:'Gardienne · niveau 2'}),'Gardien');
+ assert.equal(ctx.classeDuHeros({role:'Gardien'}),'Gardien');
+ assert.equal(ctx.classeDuHeros({role:''}),null);
+ assert.equal(ctx.classeDuHeros({role:'Barde'}),null);
+ // La maîtrise vient avec la classe, une seule fois.
+ const h={hero:true,role:'Gardien',talents:['a']};
+ assert.equal(ctx.maitrisesDe('Gardien').map(t=>t.id).join(),'m');
+ assert.equal(ctx.assureMaitrises(h),true);assert.equal(JSON.stringify(h.talents),JSON.stringify(['a','m']));
+ assert.equal(ctx.assureMaitrises(h),false);
+ assert.equal(ctx.assureMaitrises({hero:false,role:'Gardien',talents:[]}),false,'un adversaire ne reçoit rien');
+ // Les colonnes : une par voie, l'amélioration sous son prérequis, le tronc commun en dernier,
+ // sans la maîtrise ni la voie de trop.
+ const cols=ctx.colonnesArbre('Gardien');
+ assert.equal(JSON.stringify(cols.map(c=>c.titre)),JSON.stringify(['Rempart','Assaut','Serment','Tronc commun']));
+ assert.equal(JSON.stringify(cols.map(c=>c.liste.map(t=>t.id))),JSON.stringify([['a','b'],['c'],['e'],['d','f']]));
+ assert.equal(ctx.colonnesArbre('Mystique').length,1,'une classe sans voie a une colonne à son nom');
+ assert.equal(ctx.colonnesArbre('Mystique')[0].titre,'Mystique');
+ // De haut en bas : le second attend le premier.
+ const rempart=cols[0].liste;
+ assert.equal(ctx.verrouColonne([],rempart,rempart[1]),'Rempart');
+ assert.equal(ctx.verrouColonne(['a'],rempart,rempart[1]),'');
+ assert.equal(ctx.verrouColonne([],rempart,rempart[0]),'','le premier est toujours libre');}
+console.log('831 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
