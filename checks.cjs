@@ -22,7 +22,7 @@ assert.equal(r({dice:[[3,1],[6,0],[6,0]],def:0,dmg:0,roll:()=>3}).damage,18);   
 const read=editor.slice(editor.indexOf('function readActor()'),editor.indexOf('function toMonster'));
 const values={name:'<Éla>',role:'Gardienne',notes:'texte',state:'Aucun',socle:'medium',sexe:'Femme',race:'Humaine',hp:'99',max:'20',def:'7',dmg:'8',xp:'50',vie:'5',vieMax:'6',endu:'4',pvBonus:'0',level:'3',weapon1:'w',weapon2:'',armor:'a',shield:''};const elements=Object.fromEntries(Object.entries(values).map(([k,value])=>[k,{value}]));elements.rapide={checked:true};elements.esquive={checked:false};for(let i=0;i<8;i++)elements['skill'+i]={value:'4'};
 const gearApi=require('./combat.js');
-const lire=inventaire=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],skillNames:Array(8).fill(''),templateIndex:null,draft:{hero:true},attackDraft:[{dice:{white:2}}],readAttacks(){},$:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,defenseOf:gearApi.defenseOf,chosenAttack:gearApi.chosenAttack,statesOf:gearApi.statesOf,setState:gearApi.setState,catalog:{items:inventaire}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result};
+const lire=(inventaire,brouillon={hero:true})=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],skillNames:Array(8).fill(''),templateIndex:null,draft:brouillon,attackDraft:[{dice:{white:2}}],readAttacks(){},$:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,defenseOf:gearApi.defenseOf,chosenAttack:gearApi.chosenAttack,statesOf:gearApi.statesOf,setState:gearApi.setState,catalog:{items:inventaire}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result};
 const nu=lire([]);assert.equal(nu.sexe,'Femme');assert.equal(nu.race,'Humaine');assert.equal(nu.vieMax,6);assert.equal(nu.hp,20);assert.equal(nu.def,0);   // Aventurier sans armure ni bouclier : DEF nulle, la saisie ne compte pas.
 // La DEF d'un aventurier est dérivée, celle d'un adversaire lui appartient.
 assert.equal(gearApi.defenseOf({hero:true,def:9},[]),0);
@@ -276,7 +276,9 @@ assert.deepEqual(gearApi.equippedPool({weapons:['e','e']},[epee]).slice(0,4),[4,
 assert.deepEqual(gearApi.equippedPool({weapons:['e','e']},[{id:'e',dice:{white:9}}]).slice(0,1),[12]); // Plafond à douze.
 assert.equal(nu.dmg,8);assert.equal(nu.skills[0],4);assert.equal(nu.pool[0],2);assert.equal(nu.name,'<Éla>');
 // Équipé : les dés viennent de l'arme et la DEF de l'armure, pas des champs saisis.
-const equipe=lire([{id:'w',category:'weapon',dice:{white:3}},{id:'a',category:'armor',slot:'body',def:5}]);
+const equipe=lire([{id:'w',category:'weapon',dice:{white:3}},{id:'a',category:'armor',slot:'body',def:5}],{hero:true,inventaire:['w','a'],weapons:['w'],armorId:'a'});
+assert.deepEqual(equipe.inventaire,['w','a']);   // L'inventaire suit, l'équipement en fait partie.
+const porteSansAvoir=lire([{id:'w',category:'weapon',dice:{white:3}}],{hero:true,inventaire:[],weapons:['w']});assert.deepEqual(porteSansAvoir.inventaire,['w']);   // Porté sans être possédé : entre dans l'inventaire.
 assert.equal(equipe.pool[0],3);assert.equal(equipe.def,5);
 // Portée de contact et ligne de vue, en pixels de carte affichée.
 const {contactRadius,tokenDistance,inContact,sightBlockers,hasLineOfSight}=require('./combat.js');const size={width:800,height:400},TOKEN=46;
@@ -1159,8 +1161,8 @@ assert.ok(page.includes('margin-bottom:3px;height:6px;border-radius:999px;backgr
    bestiaire suit le nom ; l'équipement se lit en carrés — logo dessus, dés dessous — dont la description
    prend toute la ligne. */
 assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('clip-path:polygon(')&&page.includes("r(-45)+' scale(.8)'")&&page.includes("r(45)+' scale(1.05)'")&&page.includes('tokenOf(de)*1.6)')
- &&src.includes('function gearCarre(o,n)')&&src.includes('function gearDetail(o)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large k-'+col;")&&!src.includes("out.className='gear-pills'")
- &&feuille.includes('.gear-grille{display:grid;grid-template-columns:repeat(auto-fill,52px);justify-content:start;')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:52px;min-height:0;flex-direction:column;')&&feuille.includes('.gear-detail.large{grid-column:1/-1;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col;")&&!src.includes('ligne(o.notes)')&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
+ &&src.includes('function gearCarre(o,n,portes)')&&src.includes('function gearDetail(o)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large k-'+col;")&&!src.includes("out.className='gear-pills'")
+ &&feuille.includes('.gear-grille{display:flex;flex-wrap:wrap;gap:6px;')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:auto;min-width:52px;min-height:52px;flex-direction:column;')&&feuille.includes('.gear-detail.large{flex-basis:100%;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col;")&&!src.includes('ligne(o.notes)')&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
 /* Invocation et Régénération : deux mécaniques d'adversaire câblées — la pose au clic, les soins au
    tour ou dès le coup reçu, l'état qui les empêche ; le modèle invoqué se choisit au bestiaire. Deux
    armes équipées croisent leurs logos ; la grille d'équipement se serre sur des carrés de 52 px. */
@@ -1181,4 +1183,34 @@ assert.ok(page.includes('function invocation(a,p,talent)')&&page.includes('funct
  &&page.includes("actors.forEach(o=>regenerer(o,'fin'));round++;")&&page.includes("if(actors.filter(o=>regenerer(o,'debut')).length)render()")&&page.includes('.placement #map{cursor:crosshair}')
  &&src.includes("p.type==='modele'?sel(p.nom,'p_'+p.cle,vals[p.cle],[['','— choisir un adversaire —'],...(catalog.monsters||[]).map(m=>[m.id,m.name])])")&&src.includes('function nomModele(id)')
  &&src.includes("if(logos.childElementCount>1)logos.classList.add('croises');")&&feuille.includes('button.choix-attaque .logos.croises .logo-equip:first-child{transform:scaleX(-1)'),'Invocation, Régénération, logos croisés');
-console.log('753 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Inventaire et équipement : tout ce qu'on possède d'un côté, ce qu'on porte de l'autre — deux mains au
+   plus, une armure — et l'équipement fait toujours partie de l'inventaire. Les carrés s'élargissent
+   avec leurs icônes, jamais sur deux lignes. Les attaques spéciales du bestiaire prennent l'allure
+   d'un talent d'action. */
+{const morceau=(debut,fin)=>{const i=src.indexOf(debut);return src.slice(i,src.indexOf(fin,i))};
+ const code=morceau('function completerInventaire(a)','function syncEquipped(a)')+'\n'+morceau('function gearCount(a,id)','/* Ajouter ou retirer un exemplaire')+'\n'+morceau('function ajouterInventaire(a,o)','const pickerDialog=dialog(');
+ const t={catalog:{items:[{id:'e',name:'Épée',category:'weapon',hands:1},{id:'h',name:'Hache',category:'weapon',hands:1},{id:'arc',name:'Arc',category:'weapon',hands:2,ranged:true},{id:'b',name:'Bouclier',category:'armor',slot:'shield',def:1},{id:'ar',name:'Cotte',category:'armor',slot:'body',def:2},{id:'p',name:'Potion',category:'object'}]},weaponHands:C.weaponHands,syncEquipped(){}};
+ vm.createContext(t);vm.runInContext(code+';this.mainsPrises=mainsPrises;this.toggleEquip=toggleEquip;this.completerInventaire=completerInventaire;this.retirerInventaire=retirerInventaire;this.ajouterInventaire=ajouterInventaire',t);
+ const a={inventaire:['e','h','arc','b','ar','p','e'],weapons:[],armorId:'',shieldId:''},o=id=>t.catalog.items.find(x=>x.id===id);
+ assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify(['e']));assert.equal(t.mainsPrises(a),1);
+ assert.equal(t.toggleEquip(a,o('b')),null);assert.equal(a.shieldId,'b');assert.equal(t.mainsPrises(a),2);
+ assert.ok(/mains sont prises/.test(t.toggleEquip(a,o('h'))));            // Épée + bouclier : plus de main pour la hache.
+ assert.equal(t.toggleEquip(a,o('b')),null);assert.equal(a.shieldId,'');   // Le bouclier se repose.
+ assert.equal(t.toggleEquip(a,o('h')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify(['e','h']));
+ assert.ok(/mains sont prises/.test(t.toggleEquip(a,o('arc'))));          // Deux armes : pas d'arc à deux mains.
+ assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(t.toggleEquip(a,o('h')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify([]));
+ assert.equal(t.toggleEquip(a,o('arc')),null);assert.ok(/mains sont prises/.test(t.toggleEquip(a,o('b'))));   // Arc en main : pas de bouclier.
+ assert.equal(t.toggleEquip(a,o('arc')),null);assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify(['e','e']));   // Deux exemplaires possédés : les deux en main.
+ assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify([]));   // Troisième clic : tout reposé.
+ assert.equal(t.toggleEquip(a,o('ar')),null);assert.equal(a.armorId,'ar');assert.ok(/ne s’équipe pas/.test(t.toggleEquip(a,o('p'))));
+ assert.ok(/pas dans l’inventaire/.test(t.toggleEquip({inventaire:[],weapons:[]},o('e'))));
+ t.toggleEquip(a,o('e'));t.retirerInventaire(a,o('e'));t.retirerInventaire(a,o('e'));assert.equal(JSON.stringify(a.weapons),JSON.stringify([]));assert.ok(!a.inventaire.includes('e'));   // Retirer le dernier exemplaire le repose.
+ const b={weapons:['h'],armorId:'ar',shieldId:'',inventaire:[]};t.completerInventaire(b);assert.equal(JSON.stringify(b.inventaire),JSON.stringify(['h','ar']));}
+assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])]}}")&&src.includes("inventaire:[...(m.inventaire||[])]});completerInventaire(a);")
+ &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
+ &&src.includes("rangees(equipement,objets.length?'Équipement':'');rangees(objets,'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=i>=0&&(view==='mj'||i===owner);")
+ &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
+ &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armorId','shieldId'];")&&page.includes("const nbGear=(a.inventaire||[]).length||")
+ &&feuille.includes('.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}')&&feuille.includes('.cat-pill.gear-carre.dispo{opacity:.55}')&&feuille.includes('.gear-rangee-titre{flex-basis:100%;')
+ &&feuille.includes('.best-attaque{background:#cfdcea;border:1px solid #00000026;border-left:4px solid #4f7fb5;border-radius:9px;'),'inventaire, équipement et attaques spéciales');
+console.log('790 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

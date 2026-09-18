@@ -333,22 +333,31 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
    Même dessin qu'à l'armurerie, sans le survol ni le curseur d'un bouton. */
 /* L'équipement en carrés : quatre par ligne, le logo dessus, les dés dessous ; la description
    ouverte prend toute la ligne, comme celle d'un talent. */
-.gear-grille{display:grid;grid-template-columns:repeat(auto-fill,52px);justify-content:start;gap:6px;margin:2px 0 4px;align-items:start}
+.gear-grille{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 4px;align-items:flex-start}
+.gear-rangee-titre{flex-basis:100%;font:600 10px system-ui;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);margin:3px 0 -1px}
 /* Le carré se serre sur ses icônes : le logo, puis les dés à leur taille d'avant, et rien autour. */
-.cat-pill.gear-carre{flex:none;width:52px;min-height:0;flex-direction:column;justify-content:center;gap:3px;padding:4px 3px;text-align:center;cursor:pointer;position:relative;box-sizing:border-box}
+.cat-pill.gear-carre{flex:none;width:auto;min-width:52px;min-height:52px;flex-direction:column;justify-content:center;gap:3px;padding:4px 3px;text-align:center;cursor:pointer;position:relative;box-sizing:border-box}
 .cat-pill.gear-carre .logo-equip{width:28px;height:28px;margin:0}
 .cat-pill.gear-carre .glyphe{font-size:20px;line-height:1}
-.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:wrap}
+.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}
 .cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}
 .cat-pill.gear-carre .ecu{width:16px;height:19px}.cat-pill.gear-carre .ecu b{font-size:9px}
 .cat-pill.gear-carre .exemplaires{position:absolute;top:2px;right:5px;font:700 10px system-ui;letter-spacing:0;color:var(--muted)}
 .cat-pill.gear-carre.ouvert{box-shadow:0 0 0 2px var(--accent) inset}
+/* Porté : en clair, coché ; possédé sans être porté : en pâle. Le chevron du coin déplie. */
+.cat-pill.gear-carre.dispo{opacity:.55}.cat-pill.gear-carre.dispo:hover{opacity:.8}
+.cat-pill.gear-carre .marque-porte{display:none;position:absolute;top:1px;left:4px;font:800 11px/1 system-ui;color:var(--green)}
+.cat-pill.gear-carre.porte .marque-porte{display:block}
+.cat-pill.gear-carre .chev{position:absolute;right:3px;bottom:-1px;font-size:11px;line-height:1;color:var(--muted);cursor:pointer;padding:0 2px}
+.inv-ligne{display:flex;align-items:center;gap:8px;margin:4px 0}.inv-ligne .cat-pill{flex:1;min-width:0}
+.inv-ligne button{flex:none;padding:4px 9px;font:600 12px system-ui;border-radius:8px}.inv-ligne .inv-equiper.on{color:var(--green);border-color:var(--green)}
+.inv-ajout{align-items:end}.inv-ajout button{height:34px}
+.pick-moins{margin-left:6px;padding:0 7px;border:1px solid var(--line);border-radius:8px;font:700 13px system-ui;cursor:pointer}
 /* Le dépliant d'un équipement : la même boîte que celui d'un talent, teintée par sa famille. */
-.gear-detail.large{grid-column:1/-1;padding:9px 12px;border-radius:8px;font:13px/1.45 system-ui;color:#2a2118;margin-top:-2px;background:#dcd8cf;border-left:4px solid #8a8474}
+.gear-detail.large{flex-basis:100%;padding:9px 12px;border-radius:8px;font:13px/1.45 system-ui;color:#2a2118;margin-top:-2px;background:#dcd8cf;border-left:4px solid #8a8474}
 .gear-detail.k-melee{background:#e6dccb;border-left-color:#8a7a5a}.gear-detail.k-ranged{background:#dfe6d2;border-left-color:#6f8a5a}.gear-detail.k-armor{background:#d9dde3;border-left-color:#6b7a8a}
 .gear-detail p{margin:0 0 5px}.gear-detail p:last-child{margin-bottom:0}.gear-detail .gear-nom{font:700 14px 'Killam',Georgia,serif;letter-spacing:.2px}
 /* Deux colonnes : les armes à gauche, l'armure et le bouclier à droite, empilés. */
-.gear-grille .cat-pill{min-width:0}
 /* La pastille réduite de moitié : plus basse, plus petite, ses dés et son écu avec elle. */
 .cat-pill.mini{padding:7px 10px;gap:7px;font-size:14px;border-radius:8px;min-height:38px}/* Les talents d'une fiche : une colonne, la vignette entière, sans nature ni niveau. *//* La grille des talents d'une fiche : deux colonnes, et un dépliant qui prend toute la largeur de sa rangée. */.talent-grille{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 4px;align-items:start}.talent-grille .cat-pill{width:100%;padding:7px 10px;font-size:14px;min-height:38px;cursor:pointer;box-sizing:border-box}.talent-grille .cat-pill.ouvert{border-bottom-left-radius:9px;border-bottom-right-radius:9px}.talent-detail.large{grid-column:1/-1;padding:9px 12px;border-radius:8px;font:13px/1.45 system-ui;color:#2a2118;margin-top:-2px}
 .cat-pill.mini .pips{gap:2px}
@@ -357,7 +366,7 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .cat-pill.mini .logo-equip{width:20px;height:20px}
 .cat-pill.mini .tag{font-size:11px;min-height:0}
 .gear-grille .cat-pill:hover{filter:brightness(1.03)}
-.gear-grille .muted{font-size:13px;grid-column:1/-1}
+.gear-grille .muted{font-size:13px;flex-basis:100%}
 .hero-sous{display:flex;align-items:center;gap:8px;margin:12px 0 6px;font:600 10px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
 .hero-sous .ico.plus{font:700 14px system-ui;letter-spacing:0;padding:0 7px 2px}
 /* Talents : une couleur par nature, portée par le liseré gauche et par l'abrégé. */
@@ -540,8 +549,8 @@ button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,2
 .best-fiche h5{margin:4px 0 0;font:600 10px system-ui;letter-spacing:2px;text-transform:uppercase;
  color:var(--muted);display:flex;align-items:center;gap:7px}
 .best-attaques{display:flex;flex-direction:column;gap:7px}
-.best-attaque{border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:7px 9px;
- background:var(--panel);display:flex;flex-direction:column;gap:6px}
+/* Une attaque spéciale se lit comme un talent d'action : la même vignette bleue, le même liseré. */
+.best-attaque{background:#cfdcea;border:1px solid #00000026;border-left:4px solid #4f7fb5;border-radius:9px;padding:7px 10px;display:flex;flex-direction:column;gap:6px}
 .best-att-tete{display:flex;align-items:center;gap:9px}
 .best-att-tete b{font:700 15px 'Killam',Georgia,serif;letter-spacing:.3px}
 .best-att-tete .pips{margin-left:auto;display:flex;gap:5px;align-items:center}

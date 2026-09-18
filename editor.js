@@ -12,7 +12,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
+function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
  // L'état Gardé n'existe plus depuis la v0.164 : Gardien pose Blindage.
  a.states=a.states.filter(s=>s!=='Gardé');return a}
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
@@ -435,7 +435,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
     document.dispatchEvent(new Event('amertume-content-changed'))}},'Modifier '+n+' de '+a.name,'petit');
   puce.append(l,v);comps.append(puce)});
 
- const titreKit=sousTitre('Équipement','Équiper '+a.name,()=>openPicker(a,'gear'));
+ const titreKit=sousTitre('Équipement','Inventaire de '+a.name,()=>openPicker(a,'gear'));
  const titreTal=sousTitre('Talents','Ajouter un talent à '+a.name,()=>openPicker(a,'talents'));
  c.append(tete,puces,chiffres,titreComp,comps,titreKit,gearPills(a),titreTal,talentPills(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
@@ -520,14 +520,16 @@ function gearPill(o){const col=itemColumn(o);
    comme les talents. Les armes d'abord, l'armure et le bouclier ensuite ; deux exemplaires
    de la même arme ne font qu'un carré, marqué ×2. Les carrés ouverts le restent au rendu. */
 const gearOuverts=new Set();
-function gearCarre(o,n){const col=itemColumn(o);
- const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+(o.consumable?' consommable':'');p.setAttribute('role','button');p.tabIndex=0;
+function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor';
+ const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
+ if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
  const logo=logoEquipement(o);
  if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':'⚔';p.append(g)}
  if(col==='armor')p.append(shieldBadge(o.def||0));
  else if(col!=='object')p.append(dicePips(o.dice,o.etat));
- if(n>1){const x=document.createElement('span');x.className='exemplaires';x.textContent='×'+n;p.append(x)}
- p.title=o.name;p.setAttribute('aria-label',o.name);
+ if(n>1){const x=document.createElement('span');x.className='exemplaires';x.textContent=(portes>1?portes+'/':'×')+n;p.append(x)}
+ const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';chev.title='Détail';p.append(chev);
+ p.title=o.name+(equipable?(portes?' — porté, cliquer pour reposer':' — cliquer pour équiper'):'');p.setAttribute('aria-label',p.title);
  return p}
 /* Le dépliant ne dit que l'essentiel : le nom, les mains et la portée d'une arme — les dés
    sont sur le carré —, la DEF d'une armure, l'état qu'elle inflige s'il y en a un. */
@@ -538,19 +540,35 @@ function gearDetail(o){const col=itemColumn(o),d=document.createElement('div');d
  else if(col!=='object')ligne((o.hands===2?'2 mains':'1 main')+(col==='ranged'?' · à distance':' · au contact'));
  if(o.etat)ligne('Inflige : '+o.etat);
  return d}
+/* L'inventaire d'une fiche : l'équipement d'abord — porté en clair, possédé en pâle —, les
+   objets sur leur ligne. Un clic sur un carré d'équipement l'équipe ou le repose, pour le
+   MJ ou le joueur qui tient l'aventurier ; le chevron déplie sa description. */
 function gearPills(a){const out=document.createElement('div');out.className='gear-grille';
- const comptes=new Map();[...(a.weapons||[]),a.armorId,a.shieldId].map(gear).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
- const liste=[...comptes.entries()];
- if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun équipement';out.append(v);return out}
+ const possede=(a.inventaire&&a.inventaire.length)?a.inventaire:[...(a.weapons||[]),a.armorId,a.shieldId].filter(Boolean);
+ const comptes=new Map();possede.map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
+ const tous=[...comptes.entries()],equipement=tous.filter(([o])=>o.category==='weapon'||o.category==='armor'),objets=tous.filter(([o])=>o.category!=='weapon'&&o.category!=='armor');
+ if(!tous.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun équipement';out.append(v);return out}
+ const i=actors.indexOf(a),peutEquiper=i>=0&&(view==='mj'||i===owner);
+ const portes=o=>o.category==='weapon'?gearCount(a,o.id):(a.armorId===o.id||a.shieldId===o.id)?1:0;
  const PAR_LIGNE=6;
- for(let i=0;i<liste.length;i+=PAR_LIGNE){const rangee=liste.slice(i,i+PAR_LIGNE),details=[];
-  rangee.forEach(([o,n])=>{const p=gearCarre(o,n),detail=gearDetail(o);
-   const ouvert=gearOuverts.has(o.id);detail.hidden=!ouvert;p.classList.toggle('ouvert',ouvert);
-   const bascule=e=>{e.stopPropagation();const ouvre=detail.hidden;detail.hidden=!ouvre;p.classList.toggle('ouvert',ouvre);
-    if(ouvre)gearOuverts.add(o.id);else gearOuverts.delete(o.id)};
-   p.onclick=bascule;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bascule(e)}};
-   out.append(p);details.push(detail)});
-  details.forEach(d=>out.append(d))}
+ const rangees=(liste,titre)=>{if(!liste.length)return;
+  if(titre){const t=document.createElement('span');t.className='gear-rangee-titre';t.textContent=titre;out.append(t)}
+  for(let k=0;k<liste.length;k+=PAR_LIGNE){const rangee=liste.slice(k,k+PAR_LIGNE),details=[];
+   rangee.forEach(([o,n])=>{const p=gearCarre(o,n,portes(o)),detail=gearDetail(o);
+    const ouvert=gearOuverts.has(o.id);detail.hidden=!ouvert;p.classList.toggle('ouvert',ouvert);
+    const deplie=e=>{e.stopPropagation();const ouvre=detail.hidden;detail.hidden=!ouvre;p.classList.toggle('ouvert',ouvre);
+     if(ouvre)gearOuverts.add(o.id);else gearOuverts.delete(o.id)};
+    const equipable=o.category==='weapon'||o.category==='armor';
+    const agir=e=>{e.stopPropagation();
+     if(!equipable||!peutEquiper){deplie(e);return}
+     const souci=toggleEquip(a,o);
+     if(souci){log(souci,{local:true});return}
+     render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave()};
+    p.querySelector('.chev').onclick=deplie;
+    p.onclick=agir;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();agir(e)}};
+    out.append(p);details.push(detail)});
+   details.forEach(d=>out.append(d))}};
+ rangees(equipement,objets.length?'Équipement':'');rangees(objets,'Objets');
  return out}
 /* Talents : six natures, chacune sa couleur et son abrégé, comme dans le jeu de table. */
 const TALENT_TYPES=[['act','ACT','Action'],['reac','REAC','Réaction'],['pass','PASS','Passif'],
@@ -802,8 +820,8 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
     de plus. Le modèle transporte donc son équipement, et les créatures posées le reçoivent. */
  const titreKit=document.createElement('h5');titreKit.textContent='Équipement';
  if(view==='mj'){const plus=document.createElement('button');plus.className='ico plus';
-  plus.textContent='+';plus.title='Équiper '+m.name;
-  plus.setAttribute('aria-label','Équiper '+m.name);
+  plus.textContent='+';plus.title='Inventaire de '+m.name;
+  plus.setAttribute('aria-label','Inventaire de '+m.name);
   plus.onclick=e=>{e.stopPropagation();openPicker(m,'gear',()=>poserModele(m,f,true))};
   titreKit.append(plus)}
  const kit=gearPills(m);
@@ -1108,6 +1126,12 @@ $('delete-talent').onclick=()=>{if(talentIndex===null)return;
    et se réécrit ici ; celle d'un adversaire lui reste propre — son armure s'y ajoute à la
    lecture, jamais dans sa fiche, sans quoi elle grossirait à chaque passage. Un modèle de
    bestiaire n'a ni PV du moment ni réserve : on ne lui écrit rien. */
+/* L'inventaire est tout ce que le combattant possède ; l'équipement, ce qu'il porte, en
+   fait toujours partie : ce qui est porté sans être possédé entre dans l'inventaire. */
+function completerInventaire(a){if(!a)return;a.inventaire??=[];
+ const besoin=new Map();[...(a.weapons||[]),a.armorId,a.shieldId].filter(Boolean).forEach(id=>besoin.set(id,(besoin.get(id)||0)+1));
+ besoin.forEach((n,id)=>{const ont=a.inventaire.filter(x=>x===id).length;for(let k=ont;k<n;k++)a.inventaire.push(id)})}
+const objetDe=id=>(catalog.items||[]).find(o=>o&&o.id===id)||null;
 function syncEquipped(a){if(!a||!Number.isFinite(a.max))return;
  if(a.hero)a.def=defenseOf(a,catalog.items);
  a.pool=poolFrom(chosenAttack(a,catalog.items).dice)||a.pool}
@@ -1117,28 +1141,45 @@ function syncEquipped(a){if(!a||!Number.isFinite(a.max))return;
 function gearCount(a,id){return (a&&a.weapons||[]).filter(x=>x===id).length}
 /* Un clic fait le tour : rien, un exemplaire, deux, puis rien de nouveau. Les deux
    mains restent la limite — le second exemplaire prend la place d'une autre arme. */
-function toggleGear(a,o){
- /* Reposer ce qu'on porte passe avant tout : une main pleine ne doit jamais empêcher de
-    la vider. Avec deux armes différentes en main, cliquer l'une d'elles ne pouvait que
-    proposer d'en prendre un second exemplaire — impossible, faute de main libre — et il
-    devenait impossible de rien retirer. On repose donc dès qu'il n'y a plus de place
-    pour un doublon ; le second exemplaire, lui, reste à un clic quand la main est libre. */
- if(o.category==='weapon'){const n=gearCount(a,o.id),total=(a.weapons||[]).length;
-  if(n>=2||(n===1&&total>=2))a.weapons=(a.weapons||[]).filter(x=>x!==o.id);
-  else if(total>=2)return 'Deux armes déjà en main : retires-en une d’abord.';
+/* Les mains : deux au plus. Une arme à une main en prend une, une arme à deux mains — ou
+   à distance — les deux, un bouclier une. Une armure se porte seule, sans main. */
+function mainsPrises(a){const armes=(a.weapons||[]).map(objetDe).filter(Boolean);
+ return armes.reduce((s,w)=>s+weaponHands(w),0)+(a.shieldId?1:0)}
+/* Équiper depuis l'inventaire, d'un clic sur le carré : une arme se prend si les mains le
+   permettent — un second clic prend un second exemplaire s'il est possédé et qu'une main
+   reste, sinon repose tout ; un bouclier prend une main ; une armure se porte ou se
+   repose. Ce qui n'est pas possédé ne se porte pas. Renvoie le souci, ou null. */
+function toggleEquip(a,o){if(!a||!o)return 'Rien à équiper.';
+ const dans=(a.inventaire||[]).filter(x=>x===o.id).length;
+ if(!dans)return o.name+' n’est pas dans l’inventaire.';
+ if(o.category==='weapon'){const n=gearCount(a,o.id);
+  if(n>0&&n<dans&&mainsPrises(a)+weaponHands(o)<=2)a.weapons=[...(a.weapons||[]),o.id];
+  else if(n>0)a.weapons=(a.weapons||[]).filter(x=>x!==o.id);
+  else if(mainsPrises(a)+weaponHands(o)>2)return 'Les mains sont prises : repose d’abord une arme ou le bouclier.';
   else a.weapons=[...(a.weapons||[]),o.id]}
- else if(o.category==='armor'){const cle=o.slot==='shield'?'shieldId':'armorId';
-  a[cle]=a[cle]===o.id?'':o.id}
- else return 'Cet objet n’a pas d’emplacement : il se note dans l’inventaire de la fiche.';
+ else if(o.category==='armor'&&o.slot==='shield'){
+  if(a.shieldId===o.id)a.shieldId='';
+  else if(mainsPrises(a)+1>2)return 'Les mains sont prises : repose d’abord une arme.';
+  else a.shieldId=o.id}
+ else if(o.category==='armor')a.armorId=a.armorId===o.id?'':o.id;
+ else return 'Un objet ne s’équipe pas : il reste dans l’inventaire.';
  syncEquipped(a);return null}
+/* Ajouter ou retirer un exemplaire à l'inventaire. Retirer le dernier exemplaire porté
+   le repose d'abord. */
+function ajouterInventaire(a,o){if(!a||!o)return;a.inventaire??=[];a.inventaire.push(o.id)}
+function retirerInventaire(a,o){if(!a||!o)return;a.inventaire??=[];const i=a.inventaire.lastIndexOf(o.id);if(i<0)return;
+ a.inventaire.splice(i,1);const reste=a.inventaire.filter(x=>x===o.id).length;
+ if(o.category==='weapon'){while(gearCount(a,o.id)>reste){const k=(a.weapons||[]).lastIndexOf(o.id);a.weapons.splice(k,1)}}
+ else if(!reste){if(a.armorId===o.id)a.armorId='';if(a.shieldId===o.id)a.shieldId=''}
+ syncEquipped(a)}
 const pickerDialog=dialog('picker','Équiper','<p class="muted" id="picker-note"></p>'
  +'<input id="picker-search" placeholder="Rechercher…" aria-label="Rechercher">'
  +'<div id="picker-body"></div>');
 let pickerActeur=null,pickerMode='gear',pickerApres=null;
 function openPicker(a,mode,apres){if(view!=='mj')return;pickerActeur=a;pickerMode=mode;pickerApres=apres||null;
- pickerDialog.querySelector('h2').textContent=(mode==='gear'?'Équiper ':'Talents de ')+a.name;
+ pickerDialog.querySelector('h2').textContent=(mode==='gear'?'Inventaire de ':'Talents de ')+a.name;
  $('picker-note').textContent=mode==='gear'
-  ?'Clique une arme pour la prendre, une deuxième fois pour en porter deux exemplaires — leurs dés s’additionnent — une troisième pour tout reposer. Clique une arme portée pour la reposer quand les deux mains sont prises. Deux armes en main au plus, une armure, un bouclier.'
+  ?'Clique un objet pour l’ajouter à l’inventaire — encore une fois pour un second exemplaire — et « − » pour en retirer un. Ce qui est porté se choisit sur la fiche, en cliquant les carrés : deux mains au plus, une armure.'
   :'Clique un talent pour l’apprendre ou l’oublier.';
  $('picker-search').value='';$('picker-search').oninput=renderPicker;
  renderPicker();pickerDialog.showModal()}
@@ -1153,22 +1194,24 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   liste.forEach(o=>{const rang=document.createElement('button');rang.className='pick-ligne'+(porte(o)?' porte':'');
    rang.append(pastille(o));
    const etat=document.createElement('span');etat.className='pick-etat';
-   // Une arme portée en double le dit : « ×2 » plutôt qu'un coché muet.
-   const n=pickerMode==='gear'&&o.category==='weapon'?gearCount(a,o.id):0;
+   // Possédé en plusieurs exemplaires, l'inventaire le dit : « ×2 ».
+   const n=pickerMode==='gear'?(a.inventaire||[]).filter(x=>x===o.id).length:0;
    const cle=rang.querySelector('.cat-pill.verrou');if(cle)rang.classList.add('verrou');
    etat.textContent=n>1?'×'+n:porte(o)?'✓':cle?'🔒':'+';rang.append(etat);
+   if(pickerMode==='gear'&&n){const moins=document.createElement('span');moins.className='pick-moins';moins.textContent='−';moins.title='Retirer un exemplaire';
+    moins.setAttribute('role','button');moins.onclick=e=>{e.stopPropagation();clic(o,true)};rang.append(moins)}
    rang.onclick=()=>clic(o);bloc.append(rang)});
   corps.append(bloc)};
  if(pickerMode==='gear'){
-  const porte=o=>o.category==='weapon'?gearCount(a,o.id)>0:(a.armorId===o.id||a.shieldId===o.id);
-  const clic=o=>{const souci=toggleGear(a,o);
-   if(souci){$('picker-note').textContent=souci;return}
-   renderPicker();if(pickerApres)pickerApres();else{renderHeroes();render();scheduleSave()}};
+  const porte=o=>(a.inventaire||[]).includes(o.id);
+  const clic=(o,retirer)=>{if(retirer)retirerInventaire(a,o);else ajouterInventaire(a,o);
+   renderPicker();if(pickerApres)pickerApres();else{renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}};
   const filtre=p=>catalog.items.filter(o=>p(o)&&(!q||o.name.toLowerCase().includes(q)));
   groupe('Armes de mêlée',filtre(o=>o.category==='weapon'&&!o.ranged),porte,gearPill,clic);
   groupe('Armes à distance',filtre(o=>o.category==='weapon'&&o.ranged),porte,gearPill,clic);
   groupe('Armures',filtre(o=>o.category==='armor'&&o.slot!=='shield'),porte,gearPill,clic);
   groupe('Boucliers',filtre(o=>o.category==='armor'&&o.slot==='shield'),porte,gearPill,clic);
+  groupe('Objets',filtre(o=>o.category!=='weapon'&&o.category!=='armor'),porte,gearPill,clic);
   if(!corps.childElementCount){const v=document.createElement('p');v.className='muted';
    v.textContent=q?'Aucun objet de ce nom.':'L’armurerie est vide : crée un objet dans l’onglet Armurerie.';
    corps.append(v)}}
@@ -1288,14 +1331,14 @@ let editing=null,draft=null,attackDraft=[],templateIndex=null,itemIndex=null,ite
 // Vrai quand la fiche ouverte crée un modèle du bestiaire, et non un combattant de la scène.
 let templateNeuf=false;
 function baseActor(hero){return normalizeActor({name:hero?'Nouvel aventurier':'Nouveau monstre',hero,role:hero?'Aventurier':'Adversaire',hp:12,max:12,def:2,dmg:2,x:50,y:60,pool:[2,0,0,0,0,0,0],checks:[false,false,false],target:null,skills:Array(8).fill(0)})}
-function fromMonster(m){const a=baseActor(false);Object.assign(a,{template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,weapons:[...(m.weapons||[])],armorId:m.armorId||'',shieldId:m.shieldId||''});a.activeAttack=0;a.pool=poolOf(a);return a}
+function fromMonster(m){const a=baseActor(false);Object.assign(a,{template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,weapons:[...(m.weapons||[])],armorId:m.armorId||'',shieldId:m.shieldId||'',inventaire:[...(m.inventaire||[])]});completerInventaire(a);a.activeAttack=0;a.pool=poolOf(a);return a}
 function openActor(index=null,hero=true,template=null,neuf=false){if(view!=='mj')return;
  if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;templateNeuf=!!neuf&&template===null&&!hero;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero||templateNeuf;renderActorForm();actorDialog.showModal()}
 function renderActorForm(){const a=draft;const weaponOptions=[['','Aucune'],...catalog.items.filter(w=>w.category==='weapon').map(w=>[w.id,w.name])];const armorOptions=slot=>[['','Aucune'],...catalog.items.filter(w=>w.category==='armor'&&w.slot===slot).map(w=>[w.id,w.name])];
 $('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role,'text',a.hero?'list="classes-jeu" maxlength="120"':'')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum','max',a.max,'number','min="1" max="99999" required'+(a.hero?' readonly':''))+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="99"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"')+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+field('Espèce','race',a.race,'text','maxlength="40"'):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any"')+field('Endurance','endu',a.endu,'number','min="1" max="999"')+field('Bonus PV (classe + espèce)','pvBonus',a.pvBonus,'number','min="-9999" max="9999" readonly')+field('Niveau','level',a.level,'number','min="1" max="7"'):'')+'</div>'
   +(a.hero?'<datalist id="classes-jeu">'+(catalog.classes||[]).map(c=>'<option value="'+esc(c.name)+'">').join('')+'</datalist>'
    +'<p class="muted">Classes du jeu : '+(catalog.classes||[]).map(c=>esc(c.name)+' (PV +'+(c.pv||0)+')').join(' · ')+'.</p>':'')
-  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']]):'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'')+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Équipement<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div class="edit-grid">'+sel('Arme 1','weapon1',a.weapons[0]||'',weaponOptions)+sel('Arme 2','weapon2',a.weapons[1]||'',weaponOptions)+sel('Armure','armor',a.armorId,armorOptions('body'))+sel('Bouclier','shield',a.shieldId,armorOptions('shield'))+'</div><p class="muted" id="equip-summary"></p><p class="muted">Les dés de l’attaque et la DEF découlent de l’équipement. Mains, munitions et effets restent à vérifier à la main. La même arme peut se porter en deux exemplaires : ses dés se cumulent. Ce qui est porté donne une attaque de plus, à choisir en jeu à côté de celles ci-dessous.</p>'+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
+  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']]):'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'')+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Inventaire<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div id="inventaire-edit"></div><div class="edit-grid inv-ajout">'+sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())+'<button type="button" id="inv-ajouter">Ajouter</button></div><p class="muted" id="equip-summary"></p><p class="muted">L’inventaire dit tout ce que le combattant possède ; l’équipement, ce qu’il porte — deux mains au plus : une arme à une main et un bouclier, deux armes à une main, ou une arme à deux mains — et une armure. Les dés de l’attaque et la DEF découlent de ce qui est porté ; les objets restent dans l’inventaire.</p>'+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
 /* Un adversaire qui porte une armure tire sa DEF d'elle seule : le champ se tait et
    montre ce que l'armure donne. Son chiffre propre reste dessous — readActor ne lit pas
    un champ éteint — et revient tel quel si l'armure s'en va. */
@@ -1317,17 +1360,38 @@ if($('talent-filter')){$('talent-filter').oninput=renderTalentPicker;renderTalen
  $('add-talent').onclick=()=>openTalent(null,t=>{draft.talents=[...new Set([...(draft.talents||[]),t.id])];
   if($('talent-filter'))$('talent-filter').value='';renderTalentPicker()})}
 // Créé depuis la fiche, l'objet se pose dans le premier emplacement libre qui lui convient.
-$('add-gear').onclick=()=>openItem(null,o=>refreshGearOptions(o));['weapon1','weapon2','armor','shield'].forEach(k=>{$('actor-form').elements[k].onchange=refreshEquip});refreshEquip();
+$('add-gear').onclick=()=>openItem(null,o=>{ajouterInventaire(draft,o);dessineInventaire();refreshEquip()});
+$('inv-ajouter').onclick=()=>{const o=objetDe($('actor-form').elements.inv_ajout.value);if(!o)return;ajouterInventaire(draft,o);dessineInventaire();refreshEquip()};
+dessineInventaire();refreshEquip();
 renderAttacks()}
 // Aperçu vivant de l'équipement : dés cumulés, portée et DEF verrouillée par l'armure.
-function refreshEquip(){const f=$('actor-form').elements,ids=[f.weapon1.value,f.weapon2.value].filter(Boolean);
+/* Le menu d'ajout : toute l'armurerie, rangée par famille. */
+function inventaireOptions(){const nomCat=o=>o.category==='weapon'?(o.ranged?'à distance':'mêlée'):o.category==='armor'?(o.slot==='shield'?'bouclier':'armure'):'objet';
+ const ordre=o=>o.category==='weapon'?(o.ranged?1:0):o.category==='armor'?(o.slot==='shield'?3:2):4;
+ return [['','— choisir —'],...[...(catalog.items||[])].sort((x,y)=>ordre(x)-ordre(y)||x.name.localeCompare(y.name,'fr')).map(o=>[o.id,o.name+' · '+nomCat(o)])]}
+/* L'inventaire du formulaire : une ligne par objet possédé, son compte, « Équiper » ou
+   « Porté » pour l'équipement, « − » pour en retirer un exemplaire. */
+function dessineInventaire(){const boite=$('inventaire-edit');if(!boite||!draft)return;boite.replaceChildren();
+ const comptes=new Map();(draft.inventaire||[]).map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
+ if(!comptes.size){const v=document.createElement('p');v.className='muted';v.textContent='Inventaire vide.';boite.append(v);return}
+ comptes.forEach((n,o)=>{const ligne=document.createElement('div');ligne.className='inv-ligne';
+  const p=gearPill(o);p.classList.add('mini');ligne.append(p);
+  if(n>1){const x=document.createElement('span');x.className='tag exemplaires';x.textContent='×'+n;ligne.append(x)}
+  const equipable=o.category==='weapon'||o.category==='armor';
+  if(equipable){const portes=o.category==='weapon'?gearCount(draft,o.id):(draft.armorId===o.id||draft.shieldId===o.id)?1:0;
+   const b=document.createElement('button');b.type='button';b.className='inv-equiper'+(portes?' on':'');b.textContent=portes?'Porté'+(portes>1?' ×'+portes:''):'Équiper';
+   b.onclick=()=>{const souci=toggleEquip(draft,o);$('equip-summary').textContent=souci||'';dessineInventaire();refreshEquip()};ligne.append(b)}
+  const moins=document.createElement('button');moins.type='button';moins.className='inv-retirer';moins.textContent='−';moins.title='Retirer un exemplaire';
+  moins.onclick=()=>{retirerInventaire(draft,o);dessineInventaire();refreshEquip()};ligne.append(moins);
+  boite.append(ligne)})}
+function refreshEquip(){const f=$('actor-form').elements;if(!f||!$('equip-summary'))return;const ids=[...(draft&&draft.weapons||[])];
  const armes=ids.map(id=>catalog.items.find(w=>w.id===id)).filter(Boolean);
  const p=equippedPool({weapons:ids},catalog.items);
  /* Un aventurier ne saisit jamais sa DEF : elle est la somme de son armure et de son
     bouclier, zéro compris, et le champ est verrouillé. Un adversaire garde la sienne —
     écailles, cuir épais — et ce qu'il porte s'y ajoute : le champ reste à lui. */
  const heros=!!(draft&&draft.hero);
- const porte=equippedDef({armorId:f.armor.value,shieldId:f.shield.value},catalog.items)||0;
+ const porte=equippedDef({armorId:draft&&draft.armorId||'',shieldId:draft&&draft.shieldId||''},catalog.items)||0;
  const d=heros?porte:num(f.def.value,0,99)+porte;
  f.def.readOnly=heros;if(heros)f.def.value=porte;
  const des=p?p.map((n,i)=>n?n+' '+types[i]:'').filter(Boolean).join(' · ')||'aucun dé':'';
@@ -1394,26 +1458,18 @@ function renderTalentPicker(){const boite=$('talent-picker');if(!boite)return;bo
 /* Recharger les quatre listes d'équipement en place : reconstruire tout le formulaire
    perdrait ce qui y est saisi et pas encore enregistré. Le choix courant est conservé,
    et un objet tout neuf va se poser dans le premier emplacement libre qui l'accepte. */
-function refreshGearOptions(neuf){const f=$('actor-form').elements;if(!f||!f.weapon1)return;
- const remplir=(el,liste)=>{const avant=el.value;
-  el.replaceChildren(...[['','Aucune'],...liste.map(w=>[w.id,w.name])].map(([v,t])=>new Option(t,v)));
-  el.value=liste.some(w=>w.id===avant)?avant:''};
- const armes=catalog.items.filter(w=>w.category==='weapon');
- const armures=slot=>catalog.items.filter(w=>w.category==='armor'&&w.slot===slot);
- remplir(f.weapon1,armes);remplir(f.weapon2,armes);
- remplir(f.armor,armures('body'));remplir(f.shield,armures('shield'));
- if(neuf){const cases=neuf.category==='weapon'?[f.weapon1,f.weapon2]
-  :neuf.category==='armor'?[neuf.slot==='shield'?f.shield:f.armor]:[];
-  const libre=cases.find(c=>!c.value);if(libre)libre.value=neuf.id}
- refreshEquip()}
 function readActor(){const f=$('actor-form').elements;readAttacks();const a=structuredClone(draft);for(const k of ['name','role','notes','socle'])a[k]=f[k].value.trim();a.states=[...statesOf(draft)];for(const k of ['sexe','race'])if(f[k])a[k]=f[k].value.trim();
  for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k]&&!f[k].disabled)a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?999999:99999);a.max=Math.max(1,a.max);if(templateIndex!==null)a.hp=a.max;a.hp=Math.min(a.hp,a.max);setState(a,'Coma',!a.hp);if(!a.hero){a.type=f.type.value;if(f.menace)a.menace=f.menace.value}// Sans cases à l'écran (adversaires), les valeurs enregistrées sont conservées telles quelles.
  if(f.rapide)a.rapide=f.rapide.checked;if(f.esquive)a.esquive=f.esquive.checked;if(f.skill0)a.skills=skillNames.map((_,i)=>num(f['skill'+i].value,0,30));// Un adversaire n'a pas de rayon d'armurerie dans son formulaire : ce qu'il porte reste tel quel.
- if(f.weapon1){a.weapons=[f.weapon1.value,f.weapon2.value].filter(Boolean);a.armorId=f.armor.value;a.shieldId=f.shield.value}a.attacks=attackDraft;a.activeAttack=0;a.talents=[...new Set(draft.talents||[])].filter(id=>(catalog.talents||[]).some(t=>t.id===id));
+ // L'inventaire et l'équipement viennent du brouillon, où le formulaire les a composés ; ce qui n'est plus au catalogue s'efface.
+ a.inventaire=(Array.isArray(a.inventaire)?a.inventaire:[]).filter(id=>catalog.items.some(o=>o.id===id));a.weapons=(a.weapons||[]).filter(id=>catalog.items.some(o=>o.id===id));
+ if(!catalog.items.some(o=>o.id===a.armorId))a.armorId='';if(!catalog.items.some(o=>o.id===a.shieldId))a.shieldId='';
+ {const besoin=new Map();[...a.weapons,a.armorId,a.shieldId].filter(Boolean).forEach(id=>besoin.set(id,(besoin.get(id)||0)+1));besoin.forEach((n,id)=>{const ont=a.inventaire.filter(x=>x===id).length;for(let k=ont;k<n;k++)a.inventaire.push(id)})}
+ a.attacks=attackDraft;a.activeAttack=0;a.talents=[...new Set(draft.talents||[])].filter(id=>(catalog.talents||[]).some(t=>t.id===id));
  // Un aventurier ne saisit jamais sa DEF : elle vaut son armure plus son bouclier, zéro compris.
  if(a.hero)a.def=defenseOf(a,catalog.items);
  a.pool=poolFrom(chosenAttack(a,catalog.items).dice)||poolFrom(attackDraft[0]?.dice);return a}
-function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,notes:a.notes,talents:[...(a.talents||[])],attacks:structuredClone(a.attacks),image:a.image||null,weapons:[...(a.weapons||[])],armorId:a.armorId||'',shieldId:a.shieldId||''}}
+function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,notes:a.notes,talents:[...(a.talents||[])],attacks:structuredClone(a.attacks),image:a.image||null,weapons:[...(a.weapons||[])],armorId:a.armorId||'',shieldId:a.shieldId||'',inventaire:[...(a.inventaire||[])]}}
 /* Une créature posée sur la table garde le lien vers son modèle : corriger les PV maximum
    au bestiaire corrige ceux qui combattent déjà. Une créature blessée garde sa blessure,
    une créature intacte reste intacte. Les créatures d'avant ce lien sont rattrapées par

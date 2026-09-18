@@ -19,7 +19,7 @@
 /* Ce qui vit et se synchronise. Les images n'y sont pas : elles voyagent avec le contenu
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
- 'pool','attacks','weapons','armorId','shieldId','states','bleed','cumuls','checks','cibles','activeAttack',
+ 'pool','attacks','weapons','armorId','shieldId','inventaire','states','bleed','cumuls','checks','cibles','activeAttack',
  'revealed','hidden','vu','numero','orbes','garde','notes'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
