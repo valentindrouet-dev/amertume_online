@@ -349,7 +349,6 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}
 .cat-pill.gear-carre .ecu{width:16px;height:19px}.cat-pill.gear-carre .ecu b{font-size:9px}
 .cat-pill.gear-carre .exemplaires{position:absolute;top:2px;right:5px;font:700 10px system-ui;letter-spacing:0;color:var(--muted)}
-.cat-pill.gear-carre.ouvert{box-shadow:0 0 0 2px var(--accent) inset}
 /* Porté : en clair, coché ; possédé sans être porté : en pâle. Le chevron du coin déplie. */
 .cat-pill.gear-carre.dispo{opacity:.55}.cat-pill.gear-carre.dispo:hover{opacity:.8}
 /* La coche d'un équipement porté : un petit rond vert, à cheval sur l'angle supérieur gauche. */

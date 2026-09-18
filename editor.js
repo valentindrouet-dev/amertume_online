@@ -519,7 +519,8 @@ function gearPill(o){const col=itemColumn(o);
    d'autre. Un clic déplie sa description sur toute la ligne, sous la rangée de carrés,
    comme les talents. Les armes d'abord, l'armure et le bouclier ensuite ; deux exemplaires
    de la même arme ne font qu'un carré, marqué ×2. Les carrés ouverts le restent au rendu. */
-const gearOuverts=new Set();
+/* Une seule description à la fois, sous la rangée : celle du dernier carré cliqué. */
+let gearOuvert=null;
 function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor';
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
@@ -586,10 +587,10 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
   if(titre){const t=document.createElement('span');t.className='gear-rangee-titre';t.textContent=titre;out.append(t)}
   for(let k=0;k<liste.length;k+=PAR_LIGNE){const rangee=liste.slice(k,k+PAR_LIGNE),details=[];
    rangee.forEach(([o,n])=>{const p=gearCarre(o,n,portes(o)),detail=gearDetail(o,a,!tout);
-    const ouvert=gearOuverts.has(o.id);detail.hidden=!ouvert;p.classList.toggle('ouvert',ouvert);
-    const ouvrir=()=>{detail.hidden=false;p.classList.add('ouvert');gearOuverts.add(o.id)};
-    const basculer=()=>{const ouvre=detail.hidden;detail.hidden=!ouvre;p.classList.toggle('ouvert',ouvre);
-     if(ouvre)gearOuverts.add(o.id);else gearOuverts.delete(o.id)};
+    const ouvert=gearOuvert===o.id;detail.hidden=!ouvert;
+    const redessine=()=>{render();if(typeof renderHeroes==='function')renderHeroes()};
+    const ouvrir=()=>{gearOuvert=o.id};
+    const basculer=()=>{gearOuvert=ouvert?null:o.id;redessine()};
     /* En jeu, on ne voit que le porté : un clic y ouvre la description, sans rien reposer
        qu'on ne pourrait reprendre. Là où tout l'inventaire est offert, le clic équipe —
        en remplaçant ce qu'il faut — et ouvre la description par la même occasion. */
@@ -597,7 +598,7 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
     const agir=e=>{e.stopPropagation();
      if(!equipable){basculer();return}
      toggleEquip(a,o);ouvrir();
-     render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave()};
+     redessine();scheduleSave()};
     p.onclick=agir;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();agir(e)}};
     out.append(p);details.push(detail)});
    details.forEach(d=>out.append(d))}};
