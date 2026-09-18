@@ -93,13 +93,12 @@ function gearAttacks(actor,items){
  const armes=gearOf(actor&&actor.weapons,items).filter(w=>w.category==='weapon');
  if(!armes.length)return [];
  /* Les armes d'une même portée font une seule attaque : dés cumulés, un seul bouton, le
-    nom les énumère, et le logo est celui de la première arme équipée — ou, si elle n'en
-    a pas, de la première qui en a un. Contact et distance ne se cumulent pas : une épée
-    et un arc font deux boutons, le contact d'abord. */
+    nom les énumère, et les logos sont ceux des armes du lot qui en ont un — deux au plus,
+    que le bouton croise. Contact et distance ne se cumulent pas : une épée et un arc font
+    deux boutons, le contact d'abord. */
  const attaque=(lot,range)=>{const groupes=new Map();lot.forEach(w=>groupes.set(w,(groupes.get(w)||0)+1));
-  const premier=lot.find(w=>w.logo);
   return {name:[...groupes].map(([w,n])=>w.name+(n>1?' ×'+n:'')).join(' + '),dice:poolOfWeapons(lot),range,
-   targets:'one',useOwnDamage:true,effects:{},etats:etatsDArmes(lot),logos:premier?[String(premier.logo)]:[],gear:true}};
+   targets:'one',useOwnDamage:true,effects:{},etats:etatsDArmes(lot),logos:lot.filter(w=>w.logo).map(w=>String(w.logo)).slice(0,2),gear:true}};
  const contact=armes.filter(w=>w.ranged!==true),distance=armes.filter(w=>w.ranged===true);
  const sorties=[];if(contact.length)sorties.push(attaque(contact,'contact'));if(distance.length)sorties.push(attaque(distance,'distance'));
  return sorties}
@@ -763,6 +762,27 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Passif : le porteur ignore les Dégâts d’Opportunité quand il effectue un mouvement.',
   params:[],
   phrase(){return 'Le porteur <b>ignore les Dégâts d’Opportunité</b> en effectuant un mouvement.'}},
+ /* Invocation : un adversaire en appelle un autre du bestiaire, posé sur la carte là où le
+    MJ clique. Le modèle se choisit à la création du talent ; son nom se lit par la page,
+    qui seule connaît le bestiaire. */
+ invocation:{cle:'invocation',nom:'Invocation',type:'act',monstre:true,bouton:'✦ Invocation',
+  aide:'Action : pose sur la carte, là où tu cliques, un allié du bestiaire.',
+  params:[{cle:'modele',nom:'Adversaire invoqué',type:'modele',defaut:''}],
+  phrase(p){const nom=typeof nomModele==='function'?nomModele(p&&p.modele):'';
+   return 'Le porteur invoque <b>'+(nom||'un combattant du bestiaire')+'</b>, allié, posé sur la carte où le MJ le veut.'}},
+ /* Régénération : le porteur se soigne — d'un montant fixe, de dés, ou de son Endurance ou
+    sa Vie majorées — aussitôt frappé, au début du tour ou à sa fin ; un état peut l'en
+    empêcher tant qu'il le porte. */
+ regeneration:{cle:'regeneration',nom:'Régénération',type:'pass',monstre:true,
+  aide:'Passif : le porteur regagne des PV à chaque tour, ou dès qu’il est frappé.',
+  params:[{cle:'quantite',nom:'Quantité',type:'nombre',defaut:2,min:1,max:99},
+   {cle:'forme',nom:'Sous la forme de',type:'choix',defaut:'fixe',options:[['fixe','PV'],['des','dés (d6)'],['endu','PV + Endurance'],['vie','PV + Vie']]},
+   {cle:'moment',nom:'Se produit',type:'choix',defaut:'debut',options:[['immediat','immédiatement, dès qu’il est frappé'],['debut','au début du tour'],['fin','à la fin du tour']]},
+   {cle:'bloque',nom:'Empêchée par l’état',type:'choix',defaut:'',options:CHOIX_ETAT}],
+  phrase(p){const n=Math.max(1,(p&&p.quantite)|0),f=p&&p.forme,m=p&&p.moment,b=p&&p.bloque;
+   const combien=f==='des'?'<b>'+n+'d6</b>':f==='endu'?'<b>'+n+' + Endurance</b>':f==='vie'?'<b>'+n+' + Vie</b>':'<b>'+n+'</b>';
+   const quand=m==='immediat'?'<b>dès qu’il est frappé</b>':m==='fin'?'<b>à la fin du tour</b>':'<b>au début du tour</b>';
+   return 'Le porteur se soigne de '+combien+' PV '+quand+'.'+(b?' <b>'+b+'</b> l’en empêche tant qu’il le porte.':'')}},
  mauvaissort:{cle:'mauvaissort',nom:'Mauvais Sort',type:'pass',monstre:true,
   aide:'Passif : un combattant qui cible le porteur relance son meilleur dé de dégâts, avant le calcul des dégâts.',
   params:[],
@@ -887,7 +907,18 @@ function reglageTalent(code,params,cle){const d=(code&&code.params||[]).find(p=>
  const v=params&&params[cle];
  if(d.type==='nombre'){const n=Math.trunc(Number(v));
   return Number.isFinite(n)?Math.max(d.min,Math.min(d.max,n)):d.defaut}
+ // Un modèle du bestiaire : un identifiant, que seule la page peut vérifier.
+ if(d.type==='modele')return typeof v==='string'?v.slice(0,100):(d.defaut||'');
  return (d.options||[]).some(([k])=>k===v)?v:d.defaut}
+/* La Régénération que porte un combattant, réglages relus ; null s'il n'en a pas. */
+function regenerationDe(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle==='regeneration');
+ return t?paramsTalent({effet:'regeneration',params:t.params}):null}
+/* Ce qu'une Régénération rend : le montant, et les dés lancés s'il y en a. */
+function montantRegeneration(a,p,roll){const n=Math.max(1,(p&&p.quantite)|0),f=p&&p.forme,jets=[];
+ if(f==='des'){for(let i=0;i<n;i++)jets.push(roll());return {total:jets.reduce((s,v)=>s+v,0),jets}}
+ if(f==='endu')return {total:n+Math.max(0,Math.trunc(Number(a&&a.endu))||0),jets};
+ if(f==='vie')return {total:n+Math.max(0,Math.trunc(Number(a&&a.vie))||0),jets};
+ return {total:n,jets}}
 function paramsTalent(t){const code=talentCode(t);if(!code)return null;
  const out={};(code.params||[]).forEach(p=>out[p.cle]=reglageTalent(code,t&&t.params,p.cle));return out}
 /* La phrase d'un effet, réglages relus au travers de leur déclaration. Sans réglages
@@ -940,6 +971,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

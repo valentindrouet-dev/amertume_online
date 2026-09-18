@@ -85,6 +85,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
      les dés — chacun sur sa ligne. Sans logo, les deux lignes occupent tout le bouton. */
   const logos=document.createElement('span');logos.className='logos';
   (at.logos||[]).forEach(l=>{const im=logoEquipement({logo:l},'bouton');if(im)logos.append(im)});
+  // Deux armes : les logos l'un sur l'autre, celui de derrière en miroir — croisés.
+  if(logos.childElementCount>1)logos.classList.add('croises');
   if(logos.childElementCount){b.classList.add('avec-logo');b.append(logos)}
   const nom=document.createElement('span');nom.className='nom';nom.textContent=at.name||'Attaque';
   /* Deux lignes, centrées : le nom, puis les dés et le bonus de dégâts — on choisit son
@@ -1017,7 +1019,11 @@ function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)retu
  boite.innerHTML=exige+'<div class="edit-grid">'
   +(code.params||[]).map(p=>p.type==='nombre'
    ?field(p.nom,'p_'+p.cle,vals[p.cle],'number','min="'+p.min+'" max="'+p.max+'"')
+   // Un modèle du bestiaire : le menu se remplit des adversaires créés.
+   :p.type==='modele'?sel(p.nom,'p_'+p.cle,vals[p.cle],[['','— choisir un adversaire —'],...(catalog.monsters||[]).map(m=>[m.id,m.name])])
    :sel(p.nom,'p_'+p.cle,vals[p.cle],p.options)).join('')+'</div>'}
+// Le nom d'un modèle du bestiaire, pour les phrases du moteur qui ne le connaissent pas.
+function nomModele(id){const m=(catalog.monsters||[]).find(x=>x&&x.id===id);return m?m.name:''}
 /* Vrai si x repose, de près ou de loin, sur t : par la fiche ou par la mécanique. */
 function descendDe(x,t,vus=new Set()){if(!x||!t||vus.has(x.id))return false;vus.add(x.id);
  return talentsDependants(t,catalog.talents).some(d=>d.id===x.id||descendDe(x,d,vus))}

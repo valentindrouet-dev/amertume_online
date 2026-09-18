@@ -238,11 +238,15 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  const {gearAttacks}=require('./combat.js');
  const items=[{id:'e',name:'Épée',category:'weapon',hands:1,dice:{white:1},logo:'weapon_epee'},{id:'d',name:'Dague',category:'weapon',hands:1,dice:{white:1}},{id:'a',name:'Arc',category:'weapon',hands:2,ranged:true,dice:{white:1},logo:'weapon_arc'}];
  const att=gearAttacks({weapons:['e','e','d','a']},items);
- assert.equal(att.length,2);assert.deepEqual(att[0].logos,['weapon_epee']);assert.equal(att[0].dice.white,3);
+ assert.equal(att.length,2);assert.deepEqual(att[0].logos,['weapon_epee','weapon_epee']);   // Deux épées : deux logos, croisés.assert.equal(att[0].dice.white,3);
  assert.deepEqual(att[1].logos,['weapon_arc']);assert.equal(att[1].range,'distance');
  assert.deepEqual(gearAttacks({weapons:['a','e']},items).map(x=>x.logos),[['weapon_epee'],['weapon_arc']]);
  assert.deepEqual(gearAttacks({weapons:['d','e']},items)[0].logos,['weapon_epee']);
  assert.deepEqual(gearAttacks({weapons:['d']},items)[0].logos,[]);
+ // Deux armes à logo : les deux logos, dans l'ordre d'équipement, pour que le bouton les croise.
+ const h={id:'h',name:'Hache',category:'weapon',hands:1,dice:{white:1},logo:'weapon_hache'};
+ assert.deepEqual(gearAttacks({weapons:['e','h']},[...items,h])[0].logos,['weapon_epee','weapon_hache']);
+ assert.deepEqual(gearAttacks({weapons:['e','e']},items)[0].logos,['weapon_epee','weapon_epee']);
  // Les logos d'objets déclarés sont exactement les item_*.png du dossier ; le menu d'un objet les
  // propose, celui d'une arme ou d'une armure garde les weapon_* ; une pastille accepte les deux.
  const mo=src.match(/const LOGOS_OBJET=(\[[^\]]*\]);/);assert.ok(mo,'LOGOS_OBJET introuvable');
@@ -1156,5 +1160,25 @@ assert.ok(page.includes('margin-bottom:3px;height:6px;border-radius:999px;backgr
    prend toute la ligne. */
 assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('clip-path:polygon(')&&page.includes("r(-45)+' scale(.8)'")&&page.includes("r(45)+' scale(1.05)'")&&page.includes('tokenOf(de)*1.6)')
  &&src.includes('function gearCarre(o,n)')&&src.includes('function gearDetail(o)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large k-'+col;")&&!src.includes("out.className='gear-pills'")
- &&feuille.includes('.gear-grille{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:100%;min-height:0;flex-direction:column;')&&feuille.includes('.gear-detail.large{grid-column:1/-1;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col;")&&!src.includes('ligne(o.notes)')&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
-console.log('737 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+ &&feuille.includes('.gear-grille{display:grid;grid-template-columns:repeat(auto-fill,52px);justify-content:start;')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:52px;min-height:0;flex-direction:column;')&&feuille.includes('.gear-detail.large{grid-column:1/-1;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col;")&&!src.includes('ligne(o.notes)')&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
+/* Invocation et Régénération : deux mécaniques d'adversaire câblées — la pose au clic, les soins au
+   tour ou dès le coup reçu, l'état qui les empêche ; le modèle invoqué se choisit au bestiaire. Deux
+   armes équipées croisent leurs logos ; la grille d'équipement se serre sur des carrés de 52 px. */
+{const {TALENTS_CODES:T,reglageTalent,paramsTalent,regenerationDe,montantRegeneration,phraseTalent}=C;
+ assert.equal(T.invocation.type,'act');assert.ok(T.invocation.monstre&&T.invocation.bouton);assert.equal(T.regeneration.type,'pass');assert.ok(T.regeneration.monstre&&!T.regeneration.bouton);
+ assert.equal(reglageTalent(T.invocation,{modele:'abc'},'modele'),'abc');assert.equal(reglageTalent(T.invocation,{},'modele'),'');
+ const p=paramsTalent({effet:'regeneration',params:{quantite:3,forme:'endu',moment:'fin',bloque:'Feu'}});
+ assert.deepEqual(JSON.parse(JSON.stringify(p)),{quantite:3,forme:'endu',moment:'fin',bloque:'Feu'});
+ assert.deepEqual(JSON.parse(JSON.stringify(regenerationDe([{code:T.regeneration,params:{quantite:2,forme:'des',moment:'immediat',bloque:''}}]))),{quantite:2,forme:'des',moment:'immediat',bloque:''});
+ assert.equal(regenerationDe([{code:T.lamevent,params:{}}]),null);
+ assert.deepEqual(montantRegeneration({endu:4,vie:7},{quantite:3,forme:'endu'},()=>6),{total:7,jets:[]});
+ assert.deepEqual(montantRegeneration({endu:4,vie:7},{quantite:3,forme:'vie'},()=>6),{total:10,jets:[]});
+ assert.deepEqual(montantRegeneration({},{quantite:2,forme:'des'},()=>5),{total:10,jets:[5,5]});
+ assert.deepEqual(montantRegeneration({},{quantite:4,forme:'fixe'},()=>1),{total:4,jets:[]});
+ assert.ok(phraseTalent('regeneration',{quantite:2,forme:'des',moment:'immediat',bloque:'Feu'}).includes('2d6')&&phraseTalent('regeneration',{quantite:2,forme:'des',moment:'immediat',bloque:'Feu'}).includes('Feu'));
+ assert.ok(phraseTalent('invocation',{modele:''}).includes('un combattant du bestiaire'));}
+assert.ok(page.includes('function invocation(a,p,talent)')&&page.includes('function annulerPlacement()')&&page.includes('function regenerer(a,quand)')&&page.includes('applyDamage=function(a,montant)')
+ &&page.includes("actors.forEach(o=>regenerer(o,'fin'));round++;")&&page.includes("if(actors.filter(o=>regenerer(o,'debut')).length)render()")&&page.includes('.placement #map{cursor:crosshair}')
+ &&src.includes("p.type==='modele'?sel(p.nom,'p_'+p.cle,vals[p.cle],[['','— choisir un adversaire —'],...(catalog.monsters||[]).map(m=>[m.id,m.name])])")&&src.includes('function nomModele(id)')
+ &&src.includes("if(logos.childElementCount>1)logos.classList.add('croises');")&&feuille.includes('button.choix-attaque .logos.croises .logo-equip:first-child{transform:scaleX(-1)'),'Invocation, Régénération, logos croisés');
+console.log('753 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

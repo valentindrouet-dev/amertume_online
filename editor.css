@@ -333,9 +333,9 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
    Même dessin qu'à l'armurerie, sans le survol ni le curseur d'un bouton. */
 /* L'équipement en carrés : quatre par ligne, le logo dessus, les dés dessous ; la description
    ouverte prend toute la ligne, comme celle d'un talent. */
-.gear-grille{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:2px 0 4px;align-items:start}
+.gear-grille{display:grid;grid-template-columns:repeat(auto-fill,52px);justify-content:start;gap:6px;margin:2px 0 4px;align-items:start}
 /* Le carré se serre sur ses icônes : le logo, puis les dés à leur taille d'avant, et rien autour. */
-.cat-pill.gear-carre{flex:none;width:100%;min-height:0;flex-direction:column;justify-content:center;gap:3px;padding:4px 3px;text-align:center;cursor:pointer;position:relative;box-sizing:border-box}
+.cat-pill.gear-carre{flex:none;width:52px;min-height:0;flex-direction:column;justify-content:center;gap:3px;padding:4px 3px;text-align:center;cursor:pointer;position:relative;box-sizing:border-box}
 .cat-pill.gear-carre .logo-equip{width:28px;height:28px;margin:0}
 .cat-pill.gear-carre .glyphe{font-size:20px;line-height:1}
 .cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:wrap}
@@ -634,6 +634,8 @@ button.btn-talent.t-ame{--fond:#5e9a5b}
 .logo-equip{flex:none;width:22px;height:22px;object-fit:contain;display:inline-block;vertical-align:middle;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
 .cat-pill .logo-equip{margin-right:-2px}
 button.choix-attaque .logo-equip{width:38px;height:38px;margin:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+/* Deux armes équipées : les deux logos centrés l'un sur l'autre, celui de derrière retourné, comme deux lames croisées. */
+button.choix-attaque .logos.croises{position:relative;width:38px;height:38px;display:block}button.choix-attaque .logos.croises .logo-equip{position:absolute;left:0;top:0}button.choix-attaque .logos.croises .logo-equip:first-child{transform:scaleX(-1);opacity:.92;z-index:0}button.choix-attaque .logos.croises .logo-equip:last-child{z-index:1}
 .logo-equip.apercu{width:28px;height:28px;margin:6px 0 0 8px}
 #item-form label:has(> select[name=logo]){display:flex;flex-wrap:wrap;align-items:center}
 #item-form label:has(> select[name=logo]) select{flex:1;min-width:120px}
