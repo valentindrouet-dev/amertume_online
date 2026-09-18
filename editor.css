@@ -308,6 +308,12 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .ico.plus{font:700 16px system-ui;color:var(--accent);border:1px solid var(--line);padding:1px 8px 3px}
 .ico.plus:hover{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .ico.danger:hover{background:#5c2b26;color:#ffd9d2}
+/* Le dépliant d'un modèle et son cartouche de type portent la couleur de son type : le bloc se lit d'un coup d'œil comme sa vignette. */
+.cat-detail.k-standard,.chip.chip-type.k-standard{background:#dcd8cf}
+.cat-detail.k-alpha,.chip.chip-type.k-alpha{background:#efdcc2}
+.cat-detail.k-solitaire,.chip.chip-type.k-solitaire{background:#e8d3cb}
+.cat-detail.k-boss,.chip.chip-type.k-boss{background:#e2d0e8}
+.chip.chip-type{color:var(--ink);border-color:#00000026}
 .cat-detail{display:flex;flex-direction:column;gap:6px;align-items:flex-start;font-size:13px;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin:-3px 0 9px}
 .cat-detail button{width:auto;margin:2px 0 0}
 /* Poser une meute : le chiffre d'abord, le bouton ensuite. */

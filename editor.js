@@ -779,14 +779,19 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
  const nom=document.createElement('h4');nom.textContent=m.name;
  champVif(nom,()=>m.name,v=>{const t=String(v).trim().slice(0,120);
   if(t&&t!==m.name){m.name=t;poserTexte()}},'Renommer ce modèle','texte');
+ /* « Adversaire » ne dit rien de plus que la page : une famille par défaut, ou vide, ne
+    prend pas de cartouche. Une vraie famille — Gobelins, Morts-vivants — le garde. */
+ const vraieFamille=f=>!!f&&f!=='Adversaire';
  const famille=document.createElement('span');famille.className='chip';
- famille.textContent=m.family||'Sans famille';
+ famille.textContent=m.family||'Sans famille';famille.hidden=!vraieFamille(m.family);
  champVif(famille,()=>m.family||'',v=>{m.family=String(v).trim().slice(0,60);
-  famille.textContent=m.family||'Sans famille';poserTexte()},'Modifier la famille','texte');
+  famille.textContent=m.family||'Sans famille';famille.hidden=!vraieFamille(m.family);poserTexte()},'Modifier la famille','texte');
  const rangee=document.createElement('div');rangee.className='chips';
+ // Le cartouche du type porte la couleur du type, comme la vignette de la liste.
+ const chipType=Object.assign(document.createElement('span'),
+  {className:'chip chip-type k-'+(m.type||'standard'),textContent:TYPE_NOMS[m.type]||'Standard'});
  rangee.append(famille,
-  choixVif(Object.assign(document.createElement('span'),
-   {className:'chip',textContent:TYPE_NOMS[m.type]||'Standard'}),m.type||'standard',
+  choixVif(chipType,m.type||'standard',
    Object.entries(TYPE_NOMS),v=>{m.type=v;poser()},'Type d’adversaire'),
   /* Le ciblage, comme Rapide et Esquive, est mis de côté chez les adversaires : ni
      pastille, ni case, tant qu'aucune IA ne les fait agir. Les valeurs sont conservées. */
@@ -824,7 +829,10 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
   plus.setAttribute('aria-label','Inventaire de '+m.name);
   plus.onclick=e=>{e.stopPropagation();openPicker(m,'gear',()=>poserModele(m,f,true))};
   titreKit.append(plus)}
- const kit=gearPills(m);
+ /* Sans rien à porter, la rubrique disparaît tout entière : la fiche remonte d'autant. */
+ const aDuKit=!!((m.inventaire||[]).length||(m.weapons||[]).length||m.armorId||m.shieldId);
+ const kit=aDuKit?gearPills(m):document.createElement('span');
+ if(!aDuKit){titreKit.hidden=true;kit.hidden=true}
  /* Un adversaire porte des talents comme un aventurier : sa fiche les montre, et le « + »
     ouvre la même liste que pour la troupe. */
  const titreTal=document.createElement('h5');titreTal.textContent='Talents';
@@ -834,13 +842,7 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
   plus.onclick=ev=>{ev.stopPropagation();openPicker(m,'talents',()=>poserModele(m,f,true))};
   titreTal.append(plus)}
  const tal=talentPills(m);
- const titreNotes=document.createElement('h5');titreNotes.textContent='Notes';
- const notes=document.createElement('p');notes.className='best-notes'+(m.notes?'':' muted');
- notes.textContent=m.notes||'—';
- champVif(notes,()=>m.notes||'',v=>{m.notes=String(v).slice(0,600);
-  notes.textContent=m.notes||'—';notes.classList.toggle('muted',!m.notes);poserTexte()},
-  'Talents, inventaire et notes · Entrée saute une ligne, sortir du champ enregistre','zone');
- f.append(tete,chiffres,titreAtt,listeAtt,titreKit,kit,titreTal,tal,titreNotes,notes);
+ f.append(tete,chiffres,titreAtt,listeAtt,titreKit,kit,titreTal,tal);
  return f}
 function bestiaryRow(m,i){const rang=document.createElement('div');rang.className='cat-row';
  const pill=document.createElement('button');pill.className='cat-pill k-'+(m.type||'standard');
@@ -848,23 +850,10 @@ function bestiaryRow(m,i){const rang=document.createElement('div');rang.classNam
  const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';
  pill.append(jetonRond(m.image,m.name,'mini'),nom,chev);
  // Corriger une valeur redessine la page : la languette ouverte doit le rester.
- const detail=document.createElement('div');detail.className='cat-detail';
+ const detail=document.createElement('div');detail.className='cat-detail k-'+(m.type||'standard');
  detail.hidden=!bestiaireOuverts.has(cleModele(m));
  pill.classList.toggle('ouvert',!detail.hidden);
  if(!detail.hidden)detail.append(monsterSheet(m));
- /* Une meute se pose d'un coup : le chiffre dit combien de créatures partent sur la carte. */
- const pose=document.createElement('div');pose.className='pose-nombre';
- const combien=document.createElement('input');combien.type='number';combien.min='1';combien.max='20';
- combien.value='1';combien.setAttribute('aria-label','Nombre de '+m.name+' à poser');
- const poser=document.createElement('button');poser.dataset.catAdd=i;poser.textContent='Ajouter à la carte';
- pose.append(combien,poser);detail.append(pose);
- poser.onclick=()=>{saveChecks();savePool();
-  const n=Math.max(1,Math.min(20,Math.trunc(Number(combien.value))||1));
-  for(let k=0;k<n;k++){const a=fromMonster(catalog.monsters[i]);
-   a.x=30+Math.random()*40;a.y=20+Math.random()*30;normalizeActor(a);actors.push(a);
-   settleActor(a);selected=actors.length-1}
-  markOnly(selected);showPage('table');render();scheduleSave();
-  log(n>1?n+' × '+m.name+' ajoutés à la carte.':m.name+' ajouté à la carte.')};
  pill.onclick=()=>{const ouvrir=detail.hidden;
   if(ouvrir)bestiaireOuverts.add(cleModele(m));else bestiaireOuverts.delete(cleModele(m));
   detail.hidden=!ouvrir;pill.classList.toggle('ouvert',ouvrir);

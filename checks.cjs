@@ -1213,4 +1213,11 @@ assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.fi
  &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armorId','shieldId'];")&&page.includes("const nbGear=(a.inventaire||[]).length||")
  &&feuille.includes('.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}')&&feuille.includes('.cat-pill.gear-carre.dispo{opacity:.55}')&&feuille.includes('.gear-rangee-titre{flex-basis:100%;')
  &&feuille.includes('.best-attaque{background:#cfdcea;border:1px solid #00000026;border-left:4px solid #4f7fb5;border-radius:9px;'),'inventaire, équipement et attaques spéciales');
-console.log('790 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Fiche d'un modèle : plus de cartouche « Adversaire », le type porte sa couleur comme tout le bloc,
+   pas de rubrique Équipement quand il n'y a rien, ni Notes, ni pose depuis la fiche. */
+assert.ok(src.includes("const vraieFamille=f=>!!f&&f!=='Adversaire';")&&src.includes("famille.hidden=!vraieFamille(m.family);")
+ &&src.includes("{className:'chip chip-type k-'+(m.type||'standard'),textContent:TYPE_NOMS[m.type]||'Standard'}")
+ &&src.includes("detail.className='cat-detail k-'+(m.type||'standard');")&&src.includes('const aDuKit=!!((m.inventaire||[]).length')&&src.includes("if(!aDuKit){titreKit.hidden=true;kit.hidden=true}")
+ &&src.includes('f.append(tete,chiffres,titreAtt,listeAtt,titreKit,kit,titreTal,tal);')&&!src.includes("titreNotes")&&!src.includes('best-notes')&&!src.includes("pose-nombre")&&!src.includes('Ajouter à la carte')
+ &&feuille.includes('.cat-detail.k-solitaire,.chip.chip-type.k-solitaire{background:#e8d3cb}')&&feuille.includes('.chip.chip-type{color:var(--ink);border-color:#00000026}'),'la fiche d’un modèle est sobre et teintée');
+console.log('791 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
