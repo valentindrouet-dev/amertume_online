@@ -520,8 +520,6 @@ function gearPill(o){const col=itemColumn(o);
    comme les talents. Les armes d'abord, l'armure et le bouclier ensuite ; deux exemplaires
    de la même arme ne font qu'un carré, marqué ×2. Les carrés ouverts le restent au rendu. */
 const gearOuverts=new Set();
-// En jeu, le reste de l'inventaire — ce qui n'est pas porté — se déplie d'un bouton, par combattant.
-const inventairesOuverts=new Set();
 function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor';
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
@@ -530,11 +528,11 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
  if(col==='armor')p.append(shieldBadge(o.def||0));
  else if(col!=='object')p.append(dicePips(o.dice,o.etat));
  if(n>1){const x=document.createElement('span');x.className='exemplaires';x.textContent=(portes>1?portes+'/':'×')+n;p.append(x)}
- p.title=o.name+(equipable?(portes?' — porté, cliquer pour reposer':' — cliquer pour équiper'):' — cliquer pour lire et utiliser');p.setAttribute('aria-label',p.title);
+ p.title=o.name+(portes?' — porté':'');p.setAttribute('aria-label',p.title);
  return p}
 /* Le dépliant ne dit que l'essentiel : le nom, les mains et la portée d'une arme — les dés
    sont sur le carré —, la DEF d'une armure, l'état qu'elle inflige s'il y en a un. */
-function gearDetail(o,a){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+(o.consumable?' consommable':'');
+function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+(o.consumable?' consommable':'');
  const titre=document.createElement('p');titre.className='gear-nom';titre.textContent=o.name;d.append(titre);
  const ligne=texte=>{if(!texte)return;const p=document.createElement('p');p.textContent=texte;d.append(p)};
  if(col==='armor')ligne('DEF '+(o.def||0)+(o.slot==='shield'?' · bouclier':' · armure'));
@@ -543,15 +541,23 @@ function gearDetail(o,a){const col=itemColumn(o),d=document.createElement('div')
  /* Un objet dit ce qu'il fait et s'utilise d'un bouton : l'effet part au journal de la
     table, et un consommable quitte l'inventaire. Le moteur ne devine rien de plus. */
  if(col==='object'){ligne(o.effects||o.notes||'Effet à préciser dans l’armurerie.');
-  if(a){const b=document.createElement('button');b.type='button';b.className='gear-utiliser';b.textContent='Utiliser';
+  // Un objet ne s'emploie qu'à la table de jeu : la page Aventuriers ne fait que le ranger.
+  if(a&&enJeu){const b=document.createElement('button');b.type='button';b.className='gear-utiliser';b.textContent='Utiliser';
    b.onclick=e=>{e.stopPropagation();utiliserObjet(a,o)};d.append(b)}}
  return d}
-/* Utiliser un objet : le journal le dit à toute la table, l'état qu'il porte se pose sur
-   celui qui l'utilise, et un consommable disparaît de son inventaire. */
+/* Utiliser un objet : on désigne d'abord la cible — un combattant, ou l'endroit visé pour
+   ce qui frappe une zone —, puis l'effet se joue. Le journal et une annonce au-dessus de
+   la carte disent l'objet, sa cible et ce qu'il fait ; un consommable quitte l'inventaire. */
 function utiliserObjet(a,o){if(!a||!o)return;
+ if(typeof viserCible!=='function'){appliquerObjet(a,o,a,null);return}
+ viserCible('◈ '+o.name+' — clique le combattant ou l’endroit visé',
+  (vise,q)=>appliquerObjet(a,o,vise,q),o.name+' : geste annulé.')}
+function appliquerObjet(a,o,vise,q){
  const dit=(o.effects||o.notes||'').trim();
- if(o.etat&&typeof infligeEtat==='function')infligeEtat(a,o.etat);
- log(a.name+' utilise '+o.name+(dit?' : '+dit:'.'),{ton:'talent'});
+ const ou=vise?(vise===a?'lui-même':vise.name):'la zone visée';
+ if(vise&&o.etat&&typeof infligeEtat==='function')infligeEtat(vise,o.etat);
+ log(a.name+' utilise '+o.name+' sur '+ou+(dit?' : '+dit:'.'),{ton:'talent'});
+ if(typeof annonceFlottante==='function')annonceFlottante('◈ '+o.name+' → '+ou+(dit?' · '+dit:''));
  if(o.consumable)retirerInventaire(a,o);
  render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();
  document.dispatchEvent(new Event('amertume-content-changed'))}
@@ -570,10 +576,8 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
  /* En jeu, le rangé reste rangé : on ne montre que ce qui est porté, plus les objets. Le
     bouton du bout déplie le reste du sac — c'est ainsi qu'on change d'arme en pleine
     partie, joueur comme MJ. Ailleurs, tout l'inventaire est là d'emblée. */
- const deplie=tout||inventairesOuverts.has(a.id);
  const armurerie=tous.filter(([o])=>o.category==='weapon'||o.category==='armor');
- const equipement=armurerie.filter(([o])=>deplie||portes(o));
- const range=armurerie.length-equipement.length;
+ const equipement=armurerie.filter(([o])=>tout||portes(o));
  const objets=tous.filter(([o])=>o.category!=='weapon'&&o.category!=='armor');
  if(!equipement.length&&!objets.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun équipement';out.append(v);return out}
  const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);
@@ -581,28 +585,23 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
  const rangees=(liste,titre)=>{if(!liste.length)return;
   if(titre){const t=document.createElement('span');t.className='gear-rangee-titre';t.textContent=titre;out.append(t)}
   for(let k=0;k<liste.length;k+=PAR_LIGNE){const rangee=liste.slice(k,k+PAR_LIGNE),details=[];
-   rangee.forEach(([o,n])=>{const p=gearCarre(o,n,portes(o)),detail=gearDetail(o,a);
+   rangee.forEach(([o,n])=>{const p=gearCarre(o,n,portes(o)),detail=gearDetail(o,a,!tout);
     const ouvert=gearOuverts.has(o.id);detail.hidden=!ouvert;p.classList.toggle('ouvert',ouvert);
-    const deplie=e=>{e.stopPropagation();const ouvre=detail.hidden;detail.hidden=!ouvre;p.classList.toggle('ouvert',ouvre);
+    const ouvrir=()=>{detail.hidden=false;p.classList.add('ouvert');gearOuverts.add(o.id)};
+    const basculer=()=>{const ouvre=detail.hidden;detail.hidden=!ouvre;p.classList.toggle('ouvert',ouvre);
      if(ouvre)gearOuverts.add(o.id);else gearOuverts.delete(o.id)};
-    const equipable=o.category==='weapon'||o.category==='armor';
+    /* En jeu, on ne voit que le porté : un clic y ouvre la description, sans rien reposer
+       qu'on ne pourrait reprendre. Là où tout l'inventaire est offert, le clic équipe —
+       en remplaçant ce qu'il faut — et ouvre la description par la même occasion. */
+    const equipable=(o.category==='weapon'||o.category==='armor')&&tout&&peutEquiper;
     const agir=e=>{e.stopPropagation();
-     if(!equipable||!peutEquiper){deplie(e);return}
-     const souci=toggleEquip(a,o);
-     if(souci){log(souci,{local:true});return}
+     if(!equipable){basculer();return}
+     toggleEquip(a,o);ouvrir();
      render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave()};
     p.onclick=agir;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();agir(e)}};
     out.append(p);details.push(detail)});
    details.forEach(d=>out.append(d))}};
- rangees(equipement,'');
- if(!tout&&(range||inventairesOuverts.has(a.id))){const b=document.createElement('button');b.type='button';b.className='cat-pill gear-carre gear-sac';
-  b.textContent=deplie?'−':'+'+range;
-  b.title=deplie?'Ranger ce qui n’est pas porté':range+' pièce'+(range>1?'s':'')+' au sac : déplier pour équiper';
-  b.setAttribute('aria-label',b.title);
-  b.onclick=e=>{e.stopPropagation();if(inventairesOuverts.has(a.id))inventairesOuverts.delete(a.id);else inventairesOuverts.add(a.id);
-   render();if(typeof renderHeroes==='function')renderHeroes()};
-  out.append(b)}
- rangees(objets,'Objets');
+ rangees(equipement,'');rangees(objets,'Objets');
  return out}
 /* Talents : six natures, chacune sa couleur et son abrégé, comme dans le jeu de table. */
 const TALENT_TYPES=[['act','ACT','Action'],['reac','REAC','Réaction'],['pass','PASS','Passif'],
@@ -1168,22 +1167,28 @@ function gearCount(a,id){return (a&&a.weapons||[]).filter(x=>x===id).length}
    à distance — les deux, un bouclier une. Une armure se porte seule, sans main. */
 function mainsPrises(a){const armes=(a.weapons||[]).map(objetDe).filter(Boolean);
  return armes.reduce((s,w)=>s+weaponHands(w),0)+(a.shieldId?1:0)}
-/* Équiper depuis l'inventaire, d'un clic sur le carré : une arme se prend si les mains le
-   permettent — un second clic prend un second exemplaire s'il est possédé et qu'une main
-   reste, sinon repose tout ; un bouclier prend une main ; une armure se porte ou se
-   repose. Ce qui n'est pas possédé ne se porte pas. Renvoie le souci, ou null. */
+/* Faire la place qu'il faut : on repose, du plus ancien au plus récent, ce qui occupe les
+   mains jusqu'à loger ce qu'on prend. C'est la règle de l'armure, étendue aux mains :
+   cliquer une arme ou un bouclier remplace, jamais ne refuse. */
+function libereMains(a,besoin){a.weapons??=[];
+ while(mainsPrises(a)+besoin>2){
+  if(a.weapons.length)a.weapons.shift();
+  else if(a.shieldId)a.shieldId='';
+  else break}}
+/* Équiper depuis l'inventaire, d'un clic sur le carré : une arme prend la place qu'il
+   faut — un second clic prend un second exemplaire s'il est possédé et qu'une main reste,
+   sinon repose tout ; un bouclier prend une main ; une armure se porte ou se repose. Ce
+   qui n'est pas possédé ne se porte pas. Renvoie le souci, ou null. */
 function toggleEquip(a,o){if(!a||!o)return 'Rien à équiper.';
  const dans=(a.inventaire||[]).filter(x=>x===o.id).length;
  if(!dans)return o.name+' n’est pas dans l’inventaire.';
  if(o.category==='weapon'){const n=gearCount(a,o.id);
   if(n>0&&n<dans&&mainsPrises(a)+weaponHands(o)<=2)a.weapons=[...(a.weapons||[]),o.id];
   else if(n>0)a.weapons=(a.weapons||[]).filter(x=>x!==o.id);
-  else if(mainsPrises(a)+weaponHands(o)>2)return o.name+' demande '+(weaponHands(o)===2?'deux mains':'une main')+' et il n’en reste '+(2-mainsPrises(a))+' : repose d’abord une arme ou le bouclier.';
-  else a.weapons=[...(a.weapons||[]),o.id]}
+  else{libereMains(a,weaponHands(o));a.weapons=[...(a.weapons||[]),o.id]}}
  else if(o.category==='armor'&&o.slot==='shield'){
   if(a.shieldId===o.id)a.shieldId='';
-  else if(mainsPrises(a)+1>2)return 'Un bouclier demande une main et il n’en reste aucune : repose d’abord une arme.';
-  else a.shieldId=o.id}
+  else{libereMains(a,1);a.shieldId=o.id}}
  else if(o.category==='armor')a.armorId=a.armorId===o.id?'':o.id;
  else return 'Un objet ne s’équipe pas : il reste dans l’inventaire.';
  syncEquipped(a);return null}

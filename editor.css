@@ -357,9 +357,7 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
  background:var(--green);color:#fff;border:2px solid var(--panel);box-shadow:0 1px 3px #0004;font:800 10px/13px system-ui;text-align:center}
 .cat-pill.gear-carre.porte .marque-porte{display:block}
 .cat-pill.gear-carre.porte{box-shadow:0 0 0 1px var(--green) inset}
-/* Le bouton du sac : le même carré, en creux, qui déplie ce qui n'est pas porté. */
-.cat-pill.gear-carre.gear-sac{background:transparent;border:1px dashed var(--line);color:var(--muted);font:700 14px system-ui;letter-spacing:0;cursor:pointer}
-.cat-pill.gear-carre.gear-sac:hover{border-color:var(--accent);color:var(--accent)}
+
 .inv-ligne{display:flex;align-items:center;gap:8px;margin:4px 0}.inv-ligne .cat-pill{flex:1;min-width:0}
 .inv-ligne button{flex:none;padding:4px 9px;font:600 12px system-ui;border-radius:8px}.inv-ligne .inv-equiper.on{color:var(--green);border-color:var(--green)}
 .inv-ajout{align-items:end}.inv-ajout button{height:34px}
