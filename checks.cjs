@@ -1146,4 +1146,9 @@ assert.ok(!page.includes('id="heal-foes"')&&!src.includes("$('heal-foes')")&&!pa
    balayage d'air (320 ms), le coup tombant au bout du geste. */
 assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidden=!nbGear;")&&src.includes("coche.className='coche-modele'")&&src.includes('pill.prepend(coche)')&&!src.includes("coche.classList.add('coche-analyse')")
  &&feuille.includes('.cat-pill .coche-modele{flex:none;width:16px;height:16px;')&&page.includes("if(rangeOf(a)!=='distance'&&typeof volBalayage==='function'){"),'équipement vide masqué, coche dans la vignette, balayage au contact');
-console.log('735 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* La barre de PV des tokens a la même hauteur pour tous ; sur la piste des dés, le lanceur à gauche et,
+   au bout de chaque ligne, qui reçoit. */
+assert.ok(page.includes('margin-bottom:3px;height:6px;border-radius:999px;background:#211f1b;border:1px solid #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
+ &&page.includes("const de=from||(lignes.find(l=>l.de)||{}).de||null;")&&page.includes("const cible=recoit(l),tc=lignes.length>1?petit:Math.max(petit,taille);if(cible)visage(cible,tc,bordD+10+tc/2,cy)")
+ &&page.includes('.board-token{position:absolute;transform:translate(-50%,-50%);border-radius:50%;'),'barre de PV égale, visages sur la piste');
+console.log('736 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
