@@ -527,21 +527,20 @@ function gearCarre(o,n){const col=itemColumn(o);
  if(n>1){const x=document.createElement('span');x.className='exemplaires';x.textContent='×'+n;p.append(x)}
  p.title=o.name;p.setAttribute('aria-label',o.name);
  return p}
-function gearDetail(o){const d=document.createElement('div');d.className='gear-detail large';
+/* Le dépliant ne dit que l'essentiel : le nom, les mains et la portée d'une arme — les dés
+   sont sur le carré —, la DEF d'une armure, l'état qu'elle inflige s'il y en a un. */
+function gearDetail(o){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col;
  const titre=document.createElement('p');titre.className='gear-nom';titre.textContent=o.name;d.append(titre);
  const ligne=texte=>{if(!texte)return;const p=document.createElement('p');p.textContent=texte;d.append(p)};
- const col=itemColumn(o);
  if(col==='armor')ligne('DEF '+(o.def||0)+(o.slot==='shield'?' · bouclier':' · armure'));
- else if(col!=='object'){const des=keys.map((k,i)=>o.dice&&o.dice[k]?o.dice[k]+' '+types[i]:'').filter(Boolean).join(' · ');
-  ligne((des||'Aucun dé')+(o.hands===2?' · 2 mains':' · 1 main')+(col==='ranged'?' · à distance':' · au contact'))}
+ else if(col!=='object')ligne((o.hands===2?'2 mains':'1 main')+(col==='ranged'?' · à distance':' · au contact'));
  if(o.etat)ligne('Inflige : '+o.etat);
- ligne(o.effects);if((o.traits||[]).length)ligne((o.traits||[]).join(', '));ligne(o.notes);
  return d}
 function gearPills(a){const out=document.createElement('div');out.className='gear-grille';
  const comptes=new Map();[...(a.weapons||[]),a.armorId,a.shieldId].map(gear).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
  const liste=[...comptes.entries()];
  if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun équipement';out.append(v);return out}
- const PAR_LIGNE=4;
+ const PAR_LIGNE=6;
  for(let i=0;i<liste.length;i+=PAR_LIGNE){const rangee=liste.slice(i,i+PAR_LIGNE),details=[];
   rangee.forEach(([o,n])=>{const p=gearCarre(o,n),detail=gearDetail(o);
    const ouvert=gearOuverts.has(o.id);detail.hidden=!ouvert;p.classList.toggle('ouvert',ouvert);

@@ -1101,7 +1101,7 @@ assert.ok(src.includes('let templateNeuf=false;')&&src.includes("$('bestiary-add
    hauteur de repos pour que la carte calée dessus ne bouge pas au clic. */
 assert.ok(page.includes("pv.hidden=view!=='mj';pv.classList.toggle('vide',!a);")&&page.includes("document.querySelector('.attack-card').classList.toggle('vide',!a);")
  &&!page.includes("document.querySelector('.attack-card').hidden=!a")&&page.includes("$('sheet').hidden=false;$('sheet').classList.toggle('vide',!a);")
- &&page.includes('.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}')&&page.includes('#sheet.vide #hpbar,#sheet.vide #bloc-gear,#sheet.vide .divider{display:none}')&&page.includes('#sheet{height:380px;overflow:auto}')&&page.includes('.piste-des{display:flex;flex-direction:column;gap:8px;height:220px;overflow:hidden}'),'les blocs restent en place, vides');
+ &&page.includes('.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}')&&page.includes('#sheet.vide #hpbar,#sheet.vide #bloc-gear,#sheet.vide .divider{display:none}')&&page.includes('#sheet{min-height:0}')&&page.includes('.piste-des{display:flex;flex-direction:column;gap:8px;height:220px;overflow:hidden}'),'les blocs restent en place, vides');
 /* Un talent sans mécanique dont le nom est celui d'une mécanique la reçoit (Double Attaque) ; la ligne
    « Cible : » a disparu ; les blocs vides n'affichent aucun texte. */
 assert.ok(src.includes("if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES[t.effet])){const k=cleTalent(t.name);")&&!page.includes("'Cible : '+actors[a.target].name")
@@ -1155,6 +1155,6 @@ assert.ok(page.includes('margin-bottom:3px;height:6px;border-radius:999px;backgr
    bestiaire suit le nom ; l'équipement se lit en carrés — logo dessus, dés dessous — dont la description
    prend toute la ligne. */
 assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('clip-path:polygon(')&&page.includes("r(-45)+' scale(.8)'")&&page.includes("r(45)+' scale(1.05)'")&&page.includes('tokenOf(de)*1.6)')
- &&src.includes('function gearCarre(o,n)')&&src.includes('function gearDetail(o)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large'")&&!src.includes("out.className='gear-pills'")
- &&feuille.includes('.gear-grille{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:100%;aspect-ratio:1;')&&feuille.includes('.gear-detail.large{grid-column:1/-1;')&&!feuille.includes('.gear-pills'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
+ &&src.includes('function gearCarre(o,n)')&&src.includes('function gearDetail(o)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large k-'+col;")&&!src.includes("out.className='gear-pills'")
+ &&feuille.includes('.gear-grille{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:100%;min-height:0;flex-direction:column;')&&feuille.includes('.gear-detail.large{grid-column:1/-1;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col;")&&!src.includes('ligne(o.notes)')&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
 console.log('737 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
