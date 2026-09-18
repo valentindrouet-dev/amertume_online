@@ -1144,11 +1144,17 @@ assert.ok(!page.includes('id="heal-foes"')&&!src.includes("$('heal-foes')")&&!pa
 /* Sans équipement, pas de rubrique Équipement sur la fiche de table ; la coche d'un modèle analysé se pose
    dans la vignette, à gauche du nom ; les projectiles sont un souffle (650 ms) et le coup au contact un
    balayage d'air (320 ms), le coup tombant au bout du geste. */
-assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidden=!nbGear;")&&src.includes("coche.className='coche-modele'")&&src.includes('pill.prepend(coche)')&&!src.includes("coche.classList.add('coche-analyse')")
+assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidden=!nbGear;")&&src.includes("coche.className='coche-modele'")&&src.includes('nom.after(coche)')&&!src.includes("coche.classList.add('coche-analyse')")
  &&feuille.includes('.cat-pill .coche-modele{flex:none;width:16px;height:16px;')&&page.includes("if(rangeOf(a)!=='distance'&&typeof volBalayage==='function'){"),'équipement vide masqué, coche dans la vignette, balayage au contact');
 /* La barre de PV des tokens a la même hauteur pour tous ; sur la piste des dés, le lanceur à gauche et,
    au bout de chaque ligne, qui reçoit. */
 assert.ok(page.includes('margin-bottom:3px;height:6px;border-radius:999px;background:#211f1b;border:1px solid #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
  &&page.includes("const de=from||(lignes.find(l=>l.de)||{}).de||null;")&&page.includes("const cible=recoit(l),tc=lignes.length>1?petit:Math.max(petit,taille);if(cible)visage(cible,tc,bordD+10+tc/2,cy)")
  &&page.includes('.board-token{position:absolute;transform:translate(-50%,-50%);border-radius:50%;'),'barre de PV égale, visages sur la piste');
-console.log('736 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Plus de chip Niveau sur la fiche de table ; le balayage est une déchirure dentelée de 90° ; la coche du
+   bestiaire suit le nom ; l'équipement se lit en carrés — logo dessus, dés dessous — dont la description
+   prend toute la ligne. */
+assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('clip-path:polygon(')&&page.includes("r(-45)+' scale(.8)'")&&page.includes("r(45)+' scale(1.05)'")&&page.includes('tokenOf(de)*1.6)')
+ &&src.includes('function gearCarre(o,n)')&&src.includes('function gearDetail(o)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large'")&&!src.includes("out.className='gear-pills'")
+ &&feuille.includes('.gear-grille{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:100%;aspect-ratio:1;')&&feuille.includes('.gear-detail.large{grid-column:1/-1;')&&!feuille.includes('.gear-pills'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
+console.log('737 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

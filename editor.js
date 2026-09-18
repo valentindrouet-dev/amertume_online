@@ -513,16 +513,43 @@ function gearPill(o){const col=itemColumn(o);
 /* L'équipement d'une fiche, sur deux colonnes : les armes à gauche, l'armure et le
    bouclier à droite, chaque colonne empilant les siens. Deux exemplaires de la même arme
    font une pastille marquée « ×2 », pas deux jumelles. */
-function gearPills(a){const out=document.createElement('div');out.className='gear-pills';
- const rangee=ids=>{const r=document.createElement('div');r.className='gear-colonne';
-  const comptes=new Map();ids.map(gear).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
-  comptes.forEach((n,o)=>{const p=gearPill(o);p.classList.add('mini');
-   if(n>1){const x=document.createElement('span');x.className='tag exemplaires';x.textContent='×'+n;
-    p.querySelector('.nom').after(x)}
-   r.append(p)});
-  return r};
- // Les deux colonnes sont toujours là : la gauche dit les armes, la droite l'armure, même vide.
- out.append(rangee(a.weapons||[]),rangee([a.armorId,a.shieldId]));
+/* L'équipement d'une fiche, en carrés : le logo en haut, les dés — ou l'écu — en bas, rien
+   d'autre. Un clic déplie sa description sur toute la ligne, sous la rangée de carrés,
+   comme les talents. Les armes d'abord, l'armure et le bouclier ensuite ; deux exemplaires
+   de la même arme ne font qu'un carré, marqué ×2. Les carrés ouverts le restent au rendu. */
+const gearOuverts=new Set();
+function gearCarre(o,n){const col=itemColumn(o);
+ const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+(o.consumable?' consommable':'');p.setAttribute('role','button');p.tabIndex=0;
+ const logo=logoEquipement(o);
+ if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':'⚔';p.append(g)}
+ if(col==='armor')p.append(shieldBadge(o.def||0));
+ else if(col!=='object')p.append(dicePips(o.dice,o.etat));
+ if(n>1){const x=document.createElement('span');x.className='exemplaires';x.textContent='×'+n;p.append(x)}
+ p.title=o.name;p.setAttribute('aria-label',o.name);
+ return p}
+function gearDetail(o){const d=document.createElement('div');d.className='gear-detail large';
+ const titre=document.createElement('p');titre.className='gear-nom';titre.textContent=o.name;d.append(titre);
+ const ligne=texte=>{if(!texte)return;const p=document.createElement('p');p.textContent=texte;d.append(p)};
+ const col=itemColumn(o);
+ if(col==='armor')ligne('DEF '+(o.def||0)+(o.slot==='shield'?' · bouclier':' · armure'));
+ else if(col!=='object'){const des=keys.map((k,i)=>o.dice&&o.dice[k]?o.dice[k]+' '+types[i]:'').filter(Boolean).join(' · ');
+  ligne((des||'Aucun dé')+(o.hands===2?' · 2 mains':' · 1 main')+(col==='ranged'?' · à distance':' · au contact'))}
+ if(o.etat)ligne('Inflige : '+o.etat);
+ ligne(o.effects);if((o.traits||[]).length)ligne((o.traits||[]).join(', '));ligne(o.notes);
+ return d}
+function gearPills(a){const out=document.createElement('div');out.className='gear-grille';
+ const comptes=new Map();[...(a.weapons||[]),a.armorId,a.shieldId].map(gear).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
+ const liste=[...comptes.entries()];
+ if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun équipement';out.append(v);return out}
+ const PAR_LIGNE=4;
+ for(let i=0;i<liste.length;i+=PAR_LIGNE){const rangee=liste.slice(i,i+PAR_LIGNE),details=[];
+  rangee.forEach(([o,n])=>{const p=gearCarre(o,n),detail=gearDetail(o);
+   const ouvert=gearOuverts.has(o.id);detail.hidden=!ouvert;p.classList.toggle('ouvert',ouvert);
+   const bascule=e=>{e.stopPropagation();const ouvre=detail.hidden;detail.hidden=!ouvre;p.classList.toggle('ouvert',ouvre);
+    if(ouvre)gearOuverts.add(o.id);else gearOuverts.delete(o.id)};
+   p.onclick=bascule;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bascule(e)}};
+   out.append(p);details.push(detail)});
+  details.forEach(d=>out.append(d))}
  return out}
 /* Talents : six natures, chacune sa couleur et son abrégé, comme dans le jeu de table. */
 const TALENT_TYPES=[['act','ACT','Action'],['reac','REAC','Réaction'],['pass','PASS','Passif'],
@@ -828,13 +855,13 @@ function bestiaryRow(m,i){const rang=document.createElement('div');rang.classNam
   b.title=titre;b.setAttribute('aria-label',titre+' '+m.name);b.onclick=fn;return b};
  /* La coche dit que la troupe a percé l'espèce. Le MJ la lève d'un clic : les créatures
     de ce modèle redeviennent des inconnues sur tous les écrans. */
- /* Elle se pose dans la vignette, à gauche du nom : la vignette ne change pas de taille. */
+ /* Elle se pose dans la vignette, juste à droite du nom : la vignette ne change pas de taille. */
  if(view==='mj'&&modeleAnalyse(m)){const coche=document.createElement('span');coche.className='coche-modele';coche.textContent='✓';
   coche.setAttribute('role','button');coche.tabIndex=0;coche.title='Analysé par la troupe — cliquer pour le lui reprendre';coche.setAttribute('aria-label',coche.title+' '+m.name);
   const lever=e=>{e.stopPropagation();e.preventDefault();const n=oublierAnalyse(m);if(!n)return;
    log(m.name+' n’est plus analysé'+(n>1?' ('+n+' créatures)':'')+'.');
    renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
-  coche.onclick=lever;coche.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')lever(e)};pill.prepend(coche)}
+  coche.onclick=lever;coche.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')lever(e)};nom.after(coche)}
  const suppr=ico('✕','Supprimer',()=>{
   if(!confirm('Supprimer « '+m.name+' » du bestiaire ? Les copies déjà sur la carte sont conservées.'))return;
   catalog.monsters.splice(i,1);renderCatalogPages();scheduleSave()});

@@ -331,10 +331,21 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .hero-kit{margin:0;font-size:13px}
 /* Pastilles posées : sur une fiche on lit son équipement et ses talents, on ne clique pas.
    Même dessin qu'à l'armurerie, sans le survol ni le curseur d'un bouton. */
-.gear-pills{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 4px;align-items:start}
+/* L'équipement en carrés : quatre par ligne, le logo dessus, les dés dessous ; la description
+   ouverte prend toute la ligne, comme celle d'un talent. */
+.gear-grille{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:2px 0 4px;align-items:start}
+.cat-pill.gear-carre{flex:none;width:100%;aspect-ratio:1;min-height:0;flex-direction:column;justify-content:center;gap:5px;padding:6px 4px;text-align:center;cursor:pointer;position:relative;box-sizing:border-box}
+.cat-pill.gear-carre .logo-equip{width:30px;height:30px;margin:0}
+.cat-pill.gear-carre .glyphe{font-size:22px;line-height:1}
+.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:wrap}
+.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:15px;width:15px;height:15px}
+.cat-pill.gear-carre .ecu{width:16px;height:19px}.cat-pill.gear-carre .ecu b{font-size:9px}
+.cat-pill.gear-carre .exemplaires{position:absolute;top:2px;right:5px;font:700 10px system-ui;letter-spacing:0;color:var(--muted)}
+.cat-pill.gear-carre.ouvert{box-shadow:0 0 0 2px var(--accent) inset}
+.gear-detail.large{grid-column:1/-1;padding:9px 12px;border-radius:8px;font:13px/1.45 system-ui;color:#2a2118;background:#f4efe3;border:1px solid #00000014;margin-top:-2px}
+.gear-detail p{margin:0 0 3px}.gear-detail .gear-nom{font:700 14px 'Killam',Georgia,serif;letter-spacing:.2px}
 /* Deux colonnes : les armes à gauche, l'armure et le bouclier à droite, empilés. */
-.gear-colonne{display:flex;flex-direction:column;gap:8px;min-width:0}
-.gear-pills .cat-pill{flex:none;cursor:default;min-width:0}
+.gear-grille .cat-pill{min-width:0}
 /* La pastille réduite de moitié : plus basse, plus petite, ses dés et son écu avec elle. */
 .cat-pill.mini{padding:7px 10px;gap:7px;font-size:14px;border-radius:8px;min-height:38px}/* Les talents d'une fiche : une colonne, la vignette entière, sans nature ni niveau. *//* La grille des talents d'une fiche : deux colonnes, et un dépliant qui prend toute la largeur de sa rangée. */.talent-grille{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 4px;align-items:start}.talent-grille .cat-pill{width:100%;padding:7px 10px;font-size:14px;min-height:38px;cursor:pointer;box-sizing:border-box}.talent-grille .cat-pill.ouvert{border-bottom-left-radius:9px;border-bottom-right-radius:9px}.talent-detail.large{grid-column:1/-1;padding:9px 12px;border-radius:8px;font:13px/1.45 system-ui;color:#2a2118;margin-top:-2px}
 .cat-pill.mini .pips{gap:2px}
@@ -342,8 +353,8 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .cat-pill.mini .ecu{width:15px;height:18px}.cat-pill.mini .ecu b{font-size:9px}
 .cat-pill.mini .logo-equip{width:20px;height:20px}
 .cat-pill.mini .tag{font-size:11px;min-height:0}
-.gear-pills .cat-pill:hover{filter:none}
-.gear-pills .muted{font-size:13px}
+.gear-grille .cat-pill:hover{filter:brightness(1.03)}
+.gear-grille .muted{font-size:13px;grid-column:1/-1}
 .hero-sous{display:flex;align-items:center;gap:8px;margin:12px 0 6px;font:600 10px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
 .hero-sous .ico.plus{font:700 14px system-ui;letter-spacing:0;padding:0 7px 2px}
 /* Talents : une couleur par nature, portée par le liseré gauche et par l'abrégé. */
