@@ -1456,11 +1456,6 @@ function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!f.hero&&(Ma
  document.dispatchEvent(new Event('amertume-content-changed'))}
 /* Rejouer la même rencontre : les adversaires repartent intacts, la troupe garde ses
    blessures — c'est le combat qu'on recommence, pas la partie. */
-$('heal-foes').onclick=()=>{if(view!=='mj')return;
- const blesses=actors.filter(a=>!a.hero&&(a.hp<a.max||hasState(a,'Coma')));
- if(!blesses.length){log('Aucun adversaire à soigner : ils sont tous au complet.',{local:true});return}
- blesses.forEach(a=>{a.hp=a.max;setState(a,'Coma',false)});
- render();log(blesses.length+' adversaire(s) remis à 100 % de leurs PV.',{ton:'soin'});scheduleSave()};
 $('delete-actor').onclick=()=>{if(editing===null)return;
  const souci=removeActor(editing);
  if(souci){$('actor-error').textContent=souci;return}
@@ -1676,7 +1671,7 @@ const sceneDialog=dialog('scene-editor','Scène','<form id="scene-form"><label>T
 $('edit-scene').onclick=()=>{if(view!=='mj')return;$('scene-form').elements.title.value=sceneTitle();$('scene-form').elements.round.value=round;sceneDialog.showModal()};$('scene-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;round=num($('scene-form').elements.round.value,1,999);sceneTitle($('scene-form').elements.title.value);renderSettings();$('round').textContent=String(round).padStart(2,'0');sceneDialog.close();scheduleSave()};
 $('reset-map').onclick=()=>{if(view!=='mj')return;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom');scheduleSave()};
 const originalRender=render;render=function(){originalRender();
- const mj=view==='mj';['reset-map','heal-foes'].forEach(id=>{const el=$(id);if(el)el.hidden=!mj});$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero)$('owner').add(new Option(a.name,String(i)))});$('owner').value=String(owner);const a=actors[selected];$('actor-notes').textContent=a&&a.notes||'';
+ const mj=view==='mj';['reset-map'].forEach(id=>{const el=$(id);if(el)el.hidden=!mj});$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero)$('owner').add(new Option(a.name,String(i)))});$('owner').value=String(owner);const a=actors[selected];$('actor-notes').textContent=a&&a.notes||'';
 
  // Le menu des attaques ne paraît que s'il y a vraiment à choisir : la barre sous
  // « Attaque » appartient désormais aux cibles à portée.
