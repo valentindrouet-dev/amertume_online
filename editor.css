@@ -352,9 +352,14 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .cat-pill.gear-carre.ouvert{box-shadow:0 0 0 2px var(--accent) inset}
 /* Porté : en clair, coché ; possédé sans être porté : en pâle. Le chevron du coin déplie. */
 .cat-pill.gear-carre.dispo{opacity:.55}.cat-pill.gear-carre.dispo:hover{opacity:.8}
-.cat-pill.gear-carre .marque-porte{display:none;position:absolute;top:1px;left:4px;font:800 11px/1 system-ui;color:var(--green)}
+/* La coche d'un équipement porté : un petit rond vert, à cheval sur l'angle supérieur gauche. */
+.cat-pill.gear-carre .marque-porte{display:none;position:absolute;top:-6px;left:-6px;width:17px;height:17px;border-radius:50%;
+ background:var(--green);color:#fff;border:2px solid var(--panel);box-shadow:0 1px 3px #0004;font:800 10px/13px system-ui;text-align:center}
 .cat-pill.gear-carre.porte .marque-porte{display:block}
-.cat-pill.gear-carre .chev{position:absolute;right:3px;bottom:-1px;font-size:11px;line-height:1;color:var(--muted);cursor:pointer;padding:0 2px}
+.cat-pill.gear-carre.porte{box-shadow:0 0 0 1px var(--green) inset}
+/* Le bouton du sac : le même carré, en creux, qui déplie ce qui n'est pas porté. */
+.cat-pill.gear-carre.gear-sac{background:transparent;border:1px dashed var(--line);color:var(--muted);font:700 14px system-ui;letter-spacing:0;cursor:pointer}
+.cat-pill.gear-carre.gear-sac:hover{border-color:var(--accent);color:var(--accent)}
 .inv-ligne{display:flex;align-items:center;gap:8px;margin:4px 0}.inv-ligne .cat-pill{flex:1;min-width:0}
 .inv-ligne button{flex:none;padding:4px 9px;font:600 12px system-ui;border-radius:8px}.inv-ligne .inv-equiper.on{color:var(--green);border-color:var(--green)}
 .inv-ajout{align-items:end}.inv-ajout button{height:34px}
@@ -362,6 +367,11 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 /* Le dépliant d'un équipement : la même boîte que celui d'un talent, teintée par sa famille. */
 .gear-detail.large{flex-basis:100%;padding:9px 12px;border-radius:8px;font:13px/1.45 system-ui;color:#2a2118;margin-top:-2px;background:#dcd8cf;border-left:4px solid #8a8474}
 .gear-detail.k-melee{background:#e6dccb;border-left-color:#8a7a5a}.gear-detail.k-ranged{background:#dfe6d2;border-left-color:#6f8a5a}.gear-detail.k-armor{background:#d9dde3;border-left-color:#6b7a8a}
+/* Un objet garde la couleur de son carré, vert s'il se consomme, et porte son bouton Utiliser. */
+.gear-detail.k-object{background:#e6d9bd;border-left-color:#9c8a55}.gear-detail.k-object.consommable{background:#d9e7cd;border-left-color:#4f8a52}
+.gear-utiliser{margin-top:4px;align-self:flex-start;padding:4px 12px;font:700 12px system-ui;border-radius:8px;color:#2f6d3a;border-color:#4f8a52;background:#ffffff8c}
+.gear-utiliser:hover{background:#fff}
+.gear-detail{display:flex;flex-direction:column}
 .gear-detail p{margin:0 0 5px}.gear-detail p:last-child{margin-bottom:0}.gear-detail .gear-nom{font:700 14px 'Killam',Georgia,serif;letter-spacing:.2px}
 /* Deux colonnes : les armes à gauche, l'armure et le bouclier à droite, empilés. */
 /* La pastille réduite de moitié : plus basse, plus petite, ses dés et son écu avec elle. */

@@ -1161,8 +1161,8 @@ assert.ok(page.includes('margin-bottom:3px;height:6px;border-radius:999px;backgr
    bestiaire suit le nom ; l'équipement se lit en carrés — logo dessus, dés dessous — dont la description
    prend toute la ligne. */
 assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('clip-path:polygon(')&&page.includes("r(-45)+' scale(.8)'")&&page.includes("r(45)+' scale(1.05)'")&&page.includes('tokenOf(de)*1.6)')
- &&src.includes('function gearCarre(o,n,portes)')&&src.includes('function gearDetail(o)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large k-'+col;")&&!src.includes("out.className='gear-pills'")
- &&feuille.includes('.gear-grille{display:flex;flex-wrap:wrap;gap:6px;')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:auto;min-width:52px;min-height:52px;flex-direction:column;')&&feuille.includes('.gear-detail.large{flex-basis:100%;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col;")&&!src.includes('ligne(o.notes)')&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
+ &&src.includes('function gearCarre(o,n,portes)')&&src.includes('function gearDetail(o,a)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large k-'+col+(o.consumable?' consommable':'');")&&!src.includes("out.className='gear-pills'")
+ &&feuille.includes('.gear-grille{display:flex;flex-wrap:wrap;gap:6px;')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:auto;min-width:52px;min-height:52px;flex-direction:column;')&&feuille.includes('.gear-detail.large{flex-basis:100%;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col+(o.consumable?' consommable':'');")&&!src.includes('ligne(o.notes)')&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
 /* Invocation et Régénération : deux mécaniques d'adversaire câblées — la pose au clic, les soins au
    tour ou dès le coup reçu, l'état qui les empêche ; le modèle invoqué se choisit au bestiaire. Deux
    armes équipées croisent leurs logos ; la grille d'équipement se serre sur des carrés de 52 px. */
@@ -1194,12 +1194,12 @@ assert.ok(page.includes('function invocation(a,p,talent)')&&page.includes('funct
  const a={inventaire:['e','h','arc','b','ar','p','e'],weapons:[],armorId:'',shieldId:''},o=id=>t.catalog.items.find(x=>x.id===id);
  assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify(['e']));assert.equal(t.mainsPrises(a),1);
  assert.equal(t.toggleEquip(a,o('b')),null);assert.equal(a.shieldId,'b');assert.equal(t.mainsPrises(a),2);
- assert.ok(/mains sont prises/.test(t.toggleEquip(a,o('h'))));            // Épée + bouclier : plus de main pour la hache.
+ assert.ok(/il n’en reste/.test(t.toggleEquip(a,o('h'))));            // Épée + bouclier : plus de main pour la hache.
  assert.equal(t.toggleEquip(a,o('b')),null);assert.equal(a.shieldId,'');   // Le bouclier se repose.
  assert.equal(t.toggleEquip(a,o('h')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify(['e','h']));
- assert.ok(/mains sont prises/.test(t.toggleEquip(a,o('arc'))));          // Deux armes : pas d'arc à deux mains.
+ assert.ok(/il n’en reste/.test(t.toggleEquip(a,o('arc'))));          // Deux armes : pas d'arc à deux mains.
  assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(t.toggleEquip(a,o('h')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify([]));
- assert.equal(t.toggleEquip(a,o('arc')),null);assert.ok(/mains sont prises/.test(t.toggleEquip(a,o('b'))));   // Arc en main : pas de bouclier.
+ assert.equal(t.toggleEquip(a,o('arc')),null);assert.ok(/il n’en reste/.test(t.toggleEquip(a,o('b'))));   // Arc en main : pas de bouclier.
  assert.equal(t.toggleEquip(a,o('arc')),null);assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify(['e','e']));   // Deux exemplaires possédés : les deux en main.
  assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify([]));   // Troisième clic : tout reposé.
  assert.equal(t.toggleEquip(a,o('ar')),null);assert.equal(a.armorId,'ar');assert.ok(/ne s’équipe pas/.test(t.toggleEquip(a,o('p'))));
@@ -1208,9 +1208,9 @@ assert.ok(page.includes('function invocation(a,p,talent)')&&page.includes('funct
  const b={weapons:['h'],armorId:'ar',shieldId:'',inventaire:[]};t.completerInventaire(b);assert.equal(JSON.stringify(b.inventaire),JSON.stringify(['h','ar']));}
 assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])]}}")&&src.includes("inventaire:[...(m.inventaire||[])]});completerInventaire(a);")
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
- &&src.includes("rangees(equipement,objets.length?'Équipement':'');rangees(objets,'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=i>=0&&(view==='mj'||i===owner);")
+ &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
- &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armorId','shieldId'];")&&page.includes("const nbGear=(a.inventaire||[]).length||")
+ &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armorId','shieldId'];")&&page.includes("const nbGear=(a.weapons||[]).length+(a.armorId?1:0)+(a.shieldId?1:0)+(a.inventaire||[])")
  &&feuille.includes('.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}')&&feuille.includes('.cat-pill.gear-carre.dispo{opacity:.55}')&&feuille.includes('.gear-rangee-titre{flex-basis:100%;')
  &&feuille.includes('.best-attaque{background:#cfdcea;border:1px solid #00000026;border-left:4px solid #4f7fb5;border-radius:9px;'),'inventaire, équipement et attaques spéciales');
 /* Fiche d'un modèle : plus de cartouche « Adversaire », le type porte sa couleur comme tout le bloc,
@@ -1220,4 +1220,14 @@ assert.ok(src.includes("const vraieFamille=f=>!!f&&f!=='Adversaire';")&&src.incl
  &&src.includes("detail.className='cat-detail k-'+(m.type||'standard');")&&src.includes('const aDuKit=!!((m.inventaire||[]).length')&&src.includes("if(!aDuKit){titreKit.hidden=true;kit.hidden=true}")
  &&src.includes('f.append(tete,chiffres,titreAtt,listeAtt,titreKit,kit,titreTal,tal);')&&!src.includes("titreNotes")&&!src.includes('best-notes')&&!src.includes("pose-nombre")&&!src.includes('Ajouter à la carte')
  &&feuille.includes('.cat-detail.k-solitaire,.chip.chip-type.k-solitaire{background:#e8d3cb}')&&feuille.includes('.chip.chip-type{color:var(--ink);border-color:#00000026}'),'la fiche d’un modèle est sobre et teintée');
-console.log('791 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* En jeu, la fiche ne montre que le porté et les objets ; la coche est un rond à cheval sur l'angle ;
+   plus de chevron ni de titre « Équipement » en double ; un objet se lit et s'utilise ; le MJ équipe
+   aussi un modèle du bestiaire, et un refus dit combien de mains manquent. */
+assert.ok(src.includes('function gearPills(a,tout=true)')&&page.includes('gearPills(a,false)')&&src.includes("const armurerie=tous.filter(([o])=>o.category==='weapon'||o.category==='armor');")&&src.includes("const equipement=armurerie.filter(([o])=>deplie||portes(o));")
+ &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,'Objets');")&&!src.includes("chev.title='Détail'")&&!src.includes("p.querySelector('.chev').onclick=deplie;")
+ &&src.includes('function utiliserObjet(a,o)')&&src.includes("b.className='gear-utiliser'")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
+ &&src.includes("o.name+' demande '+(weaponHands(o)===2?'deux mains':'une main')+' et il n’en reste '")
+ &&feuille.includes('.cat-pill.gear-carre .marque-porte{display:none;position:absolute;top:-6px;left:-6px;')&&feuille.includes('.gear-detail.k-object.consommable{background:#d9e7cd;')
+ &&page.includes("const nbGear=(a.weapons||[]).length+(a.armorId?1:0)+(a.shieldId?1:0)+(a.inventaire||[])")
+ &&src.includes('const inventairesOuverts=new Set();')&&src.includes("const deplie=tout||inventairesOuverts.has(a.id);")&&src.includes("b.textContent=deplie?'−':'+'+range;")&&feuille.includes('.cat-pill.gear-carre.gear-sac{background:transparent;border:1px dashed'),'fiche en jeu : porté et objets, coche ronde, objet utilisable, sac dépliable');
+console.log('792 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
