@@ -1132,4 +1132,7 @@ assert.ok(page.includes('function ciblesAtteignables(a,liste,portee)')&&page.inc
 assert.ok(page.includes('function demander(texte,ok)')&&!page.includes("confirm('Mettre fin au combat")&&!page.includes("confirm('Revenir au tour 1")&&!page.includes("confirm('Vider le journal")
  &&page.includes("if(!await demander('Mettre fin au combat ?")&&page.includes("basculerMode('exploration',true)};")&&page.includes("if(annonce)annonceFlottante(enCombat()?'⚔ Début du combat !':'🕊 Fin du combat')}")
  &&feuille.includes('dialog.demande{width:min(440px,94vw)}'),'les questions de la table ont leur boîte, la fin du combat s’annonce');
-console.log('731 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Un allié désigné ne grise jamais l'attaque : le coup part sur l'adversaire à portée, la désignation
+   alliée (protégé d'un Gardien) reste. */
+assert.ok(!page.includes('Cible alliée : aucun coup ne part sur un allié.')&&page.includes("const vises=ciblesDe(a).filter(j=>actors[j]&&alive(actors[j])&&actors[j].hero!==a.hero);\n if(ciblesAtteignables(a,vises,portee).length||cibleAutomatique(a,portee).length)return '';"),'un allié désigné ne bloque pas l’attaque');
+console.log('732 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
