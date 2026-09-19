@@ -844,6 +844,25 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  /* Provocation : une action. Un adversaire en ligne de vue doit faire un mouvement vers le
     porteur — l'adversaire visé s'il est en vue, sinon le premier en vue — jusqu'au contact,
     les murs l'arrêtant ; puis le porteur effectue une attaque contre lui. */
+ /* Ignition : une amélioration d'Orbes de feu. L'orbe ne frappe plus, il allume : lancé sur
+    un allié, il charge sa prochaine attaque au contact de l'affection que portent les orbes.
+    L'allié doit être désigné — on ne brûle pas un camarade par mégarde. */
+ ignition:{cle:'ignition',nom:'Ignition',type:'ame',requiert:'orbesfeu',
+  aide:'Amélioration d’Orbes de feu : un orbe lancé sur un allié désigné charge sa prochaine attaque au contact.',
+  params:[],
+  phrase(){return 'Un orbe lancé sur un <b>allié désigné</b> ne lui fait aucun mal : sa <b>prochaine attaque au contact</b> inflige l’affection des orbes du porteur.'}},
+ /* Invulnérable : une amélioration. L'affection réglée ne prend jamais sur le porteur, d'où
+    qu'elle vienne — arme, orbe, objet ou main du MJ par un effet. */
+ invulnerable:{cle:'invulnerable',nom:'Invulnérable',type:'ame',
+  aide:'Amélioration : le porteur ne subit jamais l’état réglé.',
+  params:[{cle:'etat',nom:'État jamais subi',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
+  phrase(p){return 'Le porteur ne subit <b>jamais '+((p&&p.etat)||'Feu')+'</b>.'}},
+ /* Brise : une amélioration. Contre une cible qui porte l'affection réglée, les attaques du
+    porteur passent la garde : la DEF ne compte plus. */
+ brise:{cle:'brise',nom:'Brise',type:'ame',
+  aide:'Amélioration : les attaques du porteur ignorent la DEF des cibles portant l’état réglé.',
+  params:[{cle:'etat',nom:'État qui ouvre la garde',type:'choix',defaut:'Gel',options:ETATS_JEU.map(e=>[e,e])}],
+  phrase(p){return 'Les attaques du porteur <b>ignorent la DEF</b> des cibles qui portent <b>'+((p&&p.etat)||'Gel')+'</b>.'}},
  provocation:{cle:'provocation',nom:'Provocation',type:'act',bouton:'📣 Provocation',attaque:true,
   aide:'Action : un adversaire en vue s’avance jusqu’au porteur, qui l’attaque aussitôt.',
   params:[],
@@ -868,6 +887,38 @@ function desOrbe(portes){const t=(portes||[]).filter(t=>t&&t.code&&t.code.cle===
  return {n:Math.max(1,Math.trunc(t.params&&t.params.des)||1),couleur,nom:DES_ORBE.find(([k])=>k===couleur)[1]}}
 function etatDesOrbes(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle==='orbesfeu');
  return t?String(t.params&&t.params.etat||'Feu'):''}
+/* Une affection que le porteur ne subit jamais : Invulnérable la refuse avant qu'elle ne
+   se pose, d'où qu'elle vienne. */
+function etatRefuse(portes,etat){if(!etat)return false;
+ return (portes||[]).some(t=>t&&t.code&&t.code.cle==='invulnerable'&&String(t.params&&t.params.etat||'Feu')===etat)}
+/* Brise : contre une cible qui porte l'affection réglée, la DEF ne compte plus. */
+function briseLaGarde(portes,cible){
+ return (portes||[]).some(t=>t&&t.code&&t.code.cle==='brise'&&hasState(cible,String(t.params&&t.params.etat||'Gel')))}
+/* ---------- Les points d'activation ----------
+   Ce qu'un combattant peut dépenser dans son tour : une Action, un Mouvement et un Objet
+   d'ordinaire. Des talents en donneront davantage ; le jeu est prêt à les compter, jusqu'à
+   ces plafonds. Les comptes vivent dans « checks », qui portait des oui-non : un ancien
+   « true » vaut un point dépensé, et tout ce qui lisait « a-t-il joué ? » lit toujours vrai. */
+const POINTS_MAX={action:4,mouvement:3,objet:1};
+const POINTS_CLES=['action','mouvement','objet'];
+// Combien il en a : ce que sa fiche déclare, borné au plafond, un au moins.
+function pointsMax(a,quoi){const plafond=POINTS_MAX[quoi]||1;
+ const v=Math.trunc(Number(a&&a.points&&a.points[quoi]));
+ return Math.max(1,Math.min(plafond,Number.isFinite(v)&&v>0?v:1))}
+// Combien il en a dépensés, jamais plus qu'il n'en a.
+function pointsUses(a,quoi){const i=POINTS_CLES.indexOf(quoi);if(i<0)return 0;
+ const c=a&&a.checks&&a.checks[i];
+ const n=c===true?1:Math.max(0,Math.trunc(Number(c))||0);
+ return Math.min(pointsMax(a,quoi),n)}
+function pointsRestants(a,quoi){return pointsMax(a,quoi)-pointsUses(a,quoi)}
+// Dépenser, rendre : le compte bouge d'un cran, et reste entre zéro et le plafond.
+function poseUses(a,quoi,n){const i=POINTS_CLES.indexOf(quoi);if(i<0||!a)return 0;
+ if(!Array.isArray(a.checks))a.checks=[0,0,0];
+ a.checks[i]=Math.max(0,Math.min(pointsMax(a,quoi),Math.trunc(n)||0));return a.checks[i]}
+function depensePoint(a,quoi,n=1){return poseUses(a,quoi,pointsUses(a,quoi)+n)}
+function rendPoint(a,quoi,n=1){return poseUses(a,quoi,pointsUses(a,quoi)-n)}
+// Tout dépenser d'un coup, ou tout rendre : ce que coche la case d'activation.
+function epuisePoints(a,quoi){return poseUses(a,quoi,pointsMax(a,quoi))}
 /* ---------- Les prérequis ----------
    Une amélioration ne s'apprend qu'au-dessus d'un autre talent. Deux façons de le dire :
    la fiche du talent nomme un talent du catalogue (« prerequis »), ou son effet en réclame
@@ -1032,6 +1083,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

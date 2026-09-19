@@ -1073,8 +1073,8 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
  assert.ok(vivant.includes('texteStable(publicContent())!==lastPublishedText')&&vivant.includes('function programmerApplication(')
   &&vivant.includes('dernierDoc=doc.data();programmerApplication()')&&vivant.includes('const avant=JSON.stringify(etatVivant());')
   &&vivant.includes('const change=complet||JSON.stringify(base)!==avant;')&&vivant.includes('if(change)render();'),'rafales et échos ne redessinent pas pour rien');
- assert.ok(page.includes("function actionPrise(a){return view!=='mj'&&!!(a&&a.checks&&a.checks[0])}")&&page.includes("if(coute&&a.checks&&!a.checks[0]){a.checks[0]=true;afterAction(a)}")
-  &&page.includes(`<i class="pt action'+(!alive(a)||(a.checks&&a.checks[0])?' off':'')+'"></i>`)&&page.includes("function mouvementPris(a){return view!=='mj'&&enCombat()&&"),'l’Action se dépense même hors combat, le Mouvement en combat');
+ assert.ok(page.includes("function actionPrise(a){return view!=='mj'&&!!a&&pointsRestants(a,'action')<=0}")&&page.includes("if(coute&&pointsRestants(a,'action')>0){depensePoint(a,'action');afterAction(a)}")
+  &&page.includes('function pastillesPoints(a)')&&page.includes("function mouvementPris(a){return view!=='mj'&&enCombat()&&"),'l’Action se dépense même hors combat, le Mouvement en combat');
  // Le texte stable ignore l'état vivant et retient le contenu.
  const src2=partage.slice(partage.indexOf('const CHAMPS_VOLATILS='),partage.indexOf('function publicContent('));
  const texteStable=new Function(src2+';return texteStable')();
@@ -1098,7 +1098,7 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
    projectiles sont plus lents et plus gros. */
 assert.ok(page.includes('id="portees">◎ Contacts<')&&page.includes("let porteesOn=localStorage.getItem('amertume-portees')==='1';")&&page.includes("return a.hero||(a.vu&&!a.hidden)")&&!page.includes("couche.hidden=!porteesOn"),'Contacts : tous les rayons, ou la sélection');
 assert.ok(page.includes('let inspecteId=null;')&&page.includes("if(!controlled(i)){const a=actors[i];inspecteId=a&&inspecteId!==a.id?a.id:null;render();return}")&&!page.includes('Sélectionne ton aventurier, puis cible')
- &&page.includes("const k=view!=='mj'&&inspecteIndex()>=0?inspecteIndex():selected,a=actors[k];")&&page.includes("const s=actors[selected];['action','move','item'].forEach((id,i)=>$(id).checked=!!(s&&s.checks&&s.checks[i]));")
+ &&page.includes("const k=view!=='mj'&&inspecteIndex()>=0?inspecteIndex():selected,a=actors[k];")&&page.includes("  $(id).checked=!!s&&pointsRestants(s,quoi)<=0;")
  &&page.includes('#sheet.secret :is(#sheet-chips,#stats,#hpbar,#bloc-gear,#bloc-talents,#skills,.divider){display:none}')&&page.includes("a.id===inspecteId?'inspecte ':''"),'un joueur inspecte sans contrôler');
 assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:650}')&&page.includes('Math.max(16,tokenOf(vers)*.7)')&&page.includes('const long=Math.max(40,tokenOf(vers)*1.7),haut=Math.max(12,tokenOf(vers)*.5);'),'projectiles plus lents et plus visibles');
 /* Dégâts d'opportunité étendus : traverser une zone de contact pendant un glissement compte comme
@@ -1164,7 +1164,7 @@ assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidd
  &&feuille.includes('.cat-pill .coche-modele{flex:none;width:16px;height:16px;')&&page.includes("if(rangeOf(a)!=='distance'&&typeof volBalayage==='function'){"),'équipement vide masqué, coche dans la vignette, balayage au contact');
 /* La barre de PV d'un token est pleine, entamée ou non — c'est sa hauteur qui dit l'actif ;
    sur la piste des dés, le lanceur à gauche et, au bout de chaque ligne, qui reçoit. */
-assert.ok(page.includes('margin-bottom:3px;height:4px;border-radius:999px;background:#211f1b;border:1px solid #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
+assert.ok(page.includes('margin-bottom:3px;height:3.2px;border-radius:999px;background:#211f1b;border:1px solid #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
  &&page.includes("const de=from||(lignes.find(l=>l.de)||{}).de||null;")&&page.includes("const cible=recoit(l),tc=lignes.length>1?petit:Math.max(petit,taille);if(cible)visage(cible,tc,bordD+10+tc/2,cy)")
  &&page.includes('.board-token{position:absolute;transform:translate(-50%,-50%);border-radius:50%;'),'barre de PV égale, visages sur la piste');
 /* Plus de chip Niveau sur la fiche de table ; le balayage est une déchirure dentelée de 90° ; la coche du
@@ -1379,9 +1379,9 @@ assert.ok(page.includes('const croises=new Set(contactsDe(b)),depart={x:b.x,y:b.
  &&page.includes('if(venu)ramasseContacts(b,croises,depart,mapSize(),walls());')
  &&page.includes('if(venu)degatsOpportunite(b,[...croises]);')
  &&page.includes("if(!alive(b)){log(b.name+' tombe en chemin : le coup ne part pas.',{ton:'degats'});")
- &&page.includes("if(a.checks&&!a.checks[0]){a.checks[0]=true;afterAction(a)}"),'la Provocation paie ses dégâts d’opportunité');
+ &&page.includes("if(pointsRestants(a,'action')>0){depensePoint(a,'action');afterAction(a)}"),'la Provocation paie ses dégâts d’opportunité');
 assert.ok(page.includes('function attack(opts={})')&&page.includes('if(opts.vises){vises=ciblesAtteignables(a,opts.vises,portee);')
- &&page.includes("a.checks[0]=true;afterAction(a);render();return}}")&&page.includes('const vivants=vises.filter(j=>alive(actors[j]));')
+ &&page.includes("depensePoint(a,'action');afterAction(a);render();return}}")&&page.includes('const vivants=vises.filter(j=>alive(actors[j]));')
  &&page.includes('if(opts.apres)opts.apres({vises,partis,tues:vivants.filter(j=>!alive(actors[j]))});')
  &&page.includes('function attaqueEtat(a,p,talent)')&&page.includes("const survit=p.condition==='survit',gagne=survit?tues.length<vises.length:tues.length>0;")
  &&page.includes('const issue=infligeEtat(a,p.etat);')&&page.includes('function cibleProvocation(a)')&&page.includes('function rapprocher(b,a)')
@@ -1506,9 +1506,9 @@ assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&(a.hp<a
  &&page.includes("soignes.forEach(a=>{if(a.hp<a.max)rendus++;a.hp=a.max;setState(a,'Coma',false);\n  if(statesOf(a).length){a.states=[];a.bleed=0;a.cumuls={};leves++}});")
  &&page.includes("' remis d’aplomb'+(rendus?' : PV au complet':'')+(leves?(rendus?', ':' : ')+'états levés':'')+'.'")
  &&!page.includes('const blesses=actors.filter'),'l’Onde du camp lève les états, même sans blessure');
-/* La jauge du socle actif donne la mesure ; les autres sont d'un tiers plus fines. */
-assert.ok(page.includes('.token .pv{position:absolute;left:2%;right:2%;bottom:100%;margin-bottom:3px;height:4px;')
- &&page.includes('.token.selected .pv{height:6px}'),'la jauge de l’actif est la plus épaisse');
+/* La jauge de PV est un fil, et le même pour tous les socles — l'actif n'y fait rien. */
+assert.ok(page.includes('.token .pv{position:absolute;left:2%;right:2%;bottom:100%;margin-bottom:3px;height:3.2px;')
+ &&!page.includes('.token.selected .pv'),'la jauge est fine et pareille pour tous');
 /* L'arbre d'une classe s'ouvre depuis l'onglet Talents, par le rouage posé contre son nom :
    sans combattant, nul n'y porte rien, le clic sur un talent le corrige, et la Provocation
    ne pose plus de bandeau en travers de la carte. */
@@ -1525,4 +1525,65 @@ assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null
  &&src.includes('const NOTE_ARBRES_CLASSE=')&&feuille.includes('.arbre-noeud.modele{cursor:pointer}')
  &&feuille.includes('.cat-col>h3 .ico.plus.rouage{')
  &&!page.includes("annonceFlottante('📣 '"),'l’arbre d’une classe s’ouvre depuis l’onglet Talents');
-console.log('973 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Trois mécaniques de plus : Ignition charge un allié désigné d'un orbe, Invulnérable refuse
+   une affection au porteur, Brise ouvre la garde d'une cible affligée. */
+{const ig=C.TALENTS_CODES.ignition,inv=C.TALENTS_CODES.invulnerable,br=C.TALENTS_CODES.brise;
+ assert.ok(ig&&ig.type==='ame'&&ig.requiert==='orbesfeu'&&!ig.params.length,'Ignition pend sous Orbes de feu');
+ assert.ok(inv&&inv.type==='ame'&&inv.params[0].cle==='etat'&&br&&br.type==='ame'&&br.params[0].cle==='etat','Invulnérable et Brise se règlent sur un état');
+ assert.ok(C.phraseTalent('ignition',{}).includes('<b>allié désigné</b>')&&C.phraseTalent('invulnerable',{etat:'Poison'}).includes('<b>jamais Poison</b>')
+  &&C.phraseTalent('brise',{etat:'Gel'}).includes('<b>ignorent la DEF</b>'),'chacune se dit en une phrase');
+ assert.equal(C.effetParNom('Ignition'),'ignition');
+ // Invulnérable ne refuse que son affection, et seulement à qui la porte.
+ const porte=e=>[{code:C.TALENTS_CODES.invulnerable,params:{etat:e}}];
+ assert.equal(C.etatRefuse(porte('Feu'),'Feu'),true);
+ assert.equal(C.etatRefuse(porte('Feu'),'Gel'),false);
+ assert.equal(C.etatRefuse([],'Feu'),false);
+ assert.equal(C.etatRefuse(porte('Feu'),''),false);
+ // Brise regarde la cible, pas le porteur.
+ const brise=e=>[{code:C.TALENTS_CODES.brise,params:{etat:e}}];
+ assert.equal(C.briseLaGarde(brise('Gel'),{states:['Gel']}),true);
+ assert.equal(C.briseLaGarde(brise('Gel'),{states:['Feu']}),false);
+ assert.equal(C.briseLaGarde([],{states:['Gel']}),false);}
+/* Les points d'activation : un de chaque d'ordinaire, quatre Actions et trois Mouvements au
+   plus. Les comptes vivent dans « checks », qui portait des oui-non — un ancien « true » vaut
+   un point dépensé, et rien de ce qui lisait « a-t-il joué ? » ne s'y perd. */
+assert.equal(JSON.stringify(C.POINTS_MAX),JSON.stringify({action:4,mouvement:3,objet:1}));
+assert.equal(JSON.stringify(C.POINTS_CLES),JSON.stringify(['action','mouvement','objet']));
+assert.equal(C.pointsMax({},'action'),1,'sans rien de dit, un point');
+assert.equal(C.pointsMax({points:{action:3}},'action'),3);
+assert.equal(C.pointsMax({points:{action:9}},'action'),4,'jamais plus que le plafond');
+assert.equal(C.pointsMax({points:{mouvement:9}},'mouvement'),3);
+assert.equal(C.pointsMax({points:{objet:9}},'objet'),1);
+assert.equal(C.pointsMax({points:{action:0}},'action'),1,'jamais moins d’un');
+assert.equal(C.pointsUses({checks:[true,false,false]},'action'),1,'un ancien oui vaut un point');
+assert.equal(C.pointsUses({checks:[2,0,0],points:{action:3}},'action'),2);
+assert.equal(C.pointsUses({checks:[7,0,0],points:{action:3}},'action'),3,'jamais plus qu’il n’en a');
+assert.equal(C.pointsUses({},'action'),0);
+assert.equal(C.pointsRestants({points:{action:3},checks:[1,0,0]},'action'),2);
+{const a={points:{action:3},checks:[0,0,0]};
+ assert.equal(C.depensePoint(a,'action'),1);assert.equal(C.depensePoint(a,'action'),2);
+ assert.equal(C.pointsRestants(a,'action'),1);
+ assert.equal(C.rendPoint(a,'action'),1);
+ assert.equal(C.epuisePoints(a,'action'),3);assert.equal(C.pointsRestants(a,'action'),0);
+ assert.equal(C.depensePoint(a,'action'),3,'on ne dépense pas ce qu’on n’a plus');
+ assert.equal(C.rendPoint(a,'action',9),0,'rendre plus que tout remet à zéro');
+ const vide={};C.depensePoint(vide,'action');assert.equal(JSON.stringify(vide.checks),JSON.stringify([1,0,0]),'les comptes naissent avec la dépense');}
+/* À la table : l'Action et le Mouvement se dépensent point par point, les pastilles en
+   comptent autant qu'il en reste, et les cases disent l'épuisement sans raboter un compte. */
+assert.ok(page.includes('function pastillesPoints(a)')&&page.includes("const act=alive(a)?pointsRestants(a,'action'):0;")
+ &&page.includes("const mvt=alive(a)&&enCombat()?pointsRestants(a,'mouvement'):0;")
+ &&page.includes("if(coche&&!epuise)epuisePoints(a,quoi);else if(!coche&&epuise)rendPoint(a,quoi,POINTS_MAX[quoi])})}")
+ &&page.includes("l.lastChild.textContent=' '+LIBELLES_POINTS[i]+(s&&max>1?' '+pointsRestants(s,quoi)+'/'+max:'')});")
+ &&page.includes("reinit:()=>{if(code.cle==='orbes')a.orbes=0;else if(code.cle==='gardien')a.garde=null;else rendPoint(a,'action')},")
+ &&page.includes("actors.forEach(a=>{a.checks=[0,0,0];a.orbes=0});")&&!page.includes('a.checks=[false,false,false]')
+ &&src.includes("a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};")
+ &&vivant.includes("'checks','points','ignition','cibles'"),'les points d’activation se comptent');
+/* Ignition à la table : l'orbe part sur l'allié désigné, ne blesse pas, et sa braise s'en va
+   avec le premier coup au contact. Invulnérable et Brise s'entendent dans le journal. */
+assert.ok(page.includes('function alliePourIgnition(a)')&&page.includes("const j=ciblesDe(a).find(k=>vus.includes(k)&&actors[k]&&actors[k].hero===a.hero&&actors[k]!==a);")
+ &&page.includes('if(allie!==null){const feu=etat||\'Feu\';')&&page.includes("const poser=()=>{b.ignition=feu;floatNumber(b,'✦ '+feu,'gain');")
+ &&page.includes("const charge=(rangeOf(a)==='distance'?'':a.ignition)||'';")&&page.includes("if(charge)a.ignition=''}")
+ &&page.includes('const infligeEtatBrut=infligeEtat;')&&page.includes("if(etatRefuse(talentsCodes(a),etat))return 'immunise';")
+ &&page.includes('const ouverte=briseLaGarde(talentsCodes(a),b);')&&page.includes("const def=hasState(b,'Au sol')||ouverte?0:defOf(b);")
+ &&page.includes("(ouverte?' Brise : la DEF ne compte pas.':'')")&&page.includes("(immunises.length?' Invulnérable : '+immunises.join(', ')+' sans effet.':'')"),'Ignition, Invulnérable et Brise câblés');
+console.log('1020 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

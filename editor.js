@@ -12,7 +12,9 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
+function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
+ a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};
+ a.checks=Array.isArray(a.checks)?POINTS_CLES.map((q,i)=>Math.max(0,Math.min(pointsMax(a,q),a.checks[i]===true?1:Math.trunc(Number(a.checks[i]))||0))):[0,0,0];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
  // L'état Gardé n'existe plus depuis la v0.164 : Gardien pose Blindage.
  a.states=a.states.filter(s=>s!=='Gardé');return a}
 // Trois spécialisations par classe, pas une de plus : les trois branches de l'arbre.
@@ -125,7 +127,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
   inerte(b,!!refus);
   // Le clic droit du MJ rend l'Action et pose la flèche en vol.
-  b.reinit=()=>{if(a.checks)a.checks[0]=false;if(typeof tirEnVol!=='undefined')tirEnVol=false};
+  b.reinit=()=>{rendPoint(a,'action');if(typeof tirEnVol!=='undefined')tirEnVol=false};
   b.title=refus||((at.gear&&at.name?at.name+' — ':'')+'Frapper : '+(at.gear?'attaque avec l’équipement':'attaque de fiche')
    +' · '+(at.range==='distance'?'à distance':'au contact')
    +(at.targets==='all'?' · toutes cibles':''));
@@ -414,7 +416,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
    // Une copie est un autre combattant : elle ne peut pas garder l'identifiant de l'original,
    // sous peine d'être prise, marquée et comptée avec lui.
    const copie=structuredClone(a);delete copie.id;normalizeActor(copie);
-   copie.name=a.name+' (copie)';copie.target=null;copie.checks=[false,false,false];
+   copie.name=a.name+' (copie)';copie.target=null;copie.checks=[0,0,0];
    actors.push(copie);renderHeroes();render();scheduleSave()}),suppr);
  tete.append(jeton,titre,classe,outils);
  const puces=document.createElement('div');puces.className='chips';
