@@ -786,7 +786,25 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  mauvaissort:{cle:'mauvaissort',nom:'Mauvais Sort',type:'pass',monstre:true,
   aide:'Passif : un combattant qui cible le porteur relance son meilleur dé de dégâts, avant le calcul des dégâts.',
   params:[],
-  phrase(){return 'Qui cible le porteur <b>relance son meilleur dé</b> de dégâts, avant le calcul.'}}};
+  phrase(){return 'Qui cible le porteur <b>relance son meilleur dé</b> de dégâts, avant le calcul.'}},
+ /* Attaque État : une action. Le porteur effectue une attaque — celle de son bouton, cibles
+    et geste compris — et, selon l'issue, gagne l'état réglé : s'il tue la cible, ou si elle
+    en réchappe. C'est le porteur qui reçoit l'état, jamais la cible. */
+ attaqueetat:{cle:'attaqueetat',nom:'Attaque État',type:'act',bouton:'⚔ Attaque État',
+  aide:'Action : le porteur effectue une attaque et, selon son issue, gagne un état.',
+  params:[{cle:'condition',nom:'Le porteur gagne l’état si',type:'choix',defaut:'tue',
+    options:[['tue','il tue la cible'],['survit','la cible n’est pas tuée']]},
+   {cle:'etat',nom:'État gagné',type:'choix',defaut:'',options:CHOIX_ETAT}],
+  phrase(p){const e=p&&p.etat,c=p&&p.condition;
+   return 'Le porteur effectue <b>une attaque</b>. '+(c==='survit'?'Si <b>la cible n’est pas tuée</b>':'S’il <b>tue la cible</b>')
+    +', il gagne <b>'+(e||'un état à régler')+'</b>.'}},
+ /* Provocation : une action. Un adversaire en ligne de vue doit faire un mouvement vers le
+    porteur — l'adversaire visé s'il est en vue, sinon le premier en vue — jusqu'au contact,
+    les murs l'arrêtant ; puis le porteur effectue une attaque contre lui. */
+ provocation:{cle:'provocation',nom:'Provocation',type:'act',bouton:'📣 Provocation',
+  aide:'Action : un adversaire en vue s’avance jusqu’au porteur, qui l’attaque aussitôt.',
+  params:[],
+  phrase(){return 'Un adversaire <b>en ligne de vue</b> doit faire un mouvement vers le porteur — l’adversaire visé, sinon le premier en vue — puis le porteur effectue <b>une attaque</b> contre lui.'}}};
 /* Mauvais Sort : le meilleur dé de l'attaquant — la plus haute face, le premier en cas
    d'égalité — est relancé sur place, avant tout calcul. La relance peut être meilleure. */
 function mauvaisSort(dice,roll){if(!Array.isArray(dice)||!dice.length)return null;

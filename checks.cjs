@@ -1300,4 +1300,24 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  assert.equal(ctx.verrouColonne([],rempart,rempart[1]),'Rempart');
  assert.equal(ctx.verrouColonne(['a'],rempart,rempart[1]),'');
  assert.equal(ctx.verrouColonne([],rempart,rempart[0]),'','le premier est toujours libre');}
-console.log('831 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Deux effets de plus : Attaque État — le porteur attaque et, selon l'issue, gagne un état — et
+   Provocation — un adversaire en vue s'avance au contact, puis le coup part. attack() accepte
+   une cible imposée et un rappel après les dégâts, pour que les talents bâtissent dessus. */
+{const ae=C.TALENTS_CODES.attaqueetat,pv=C.TALENTS_CODES.provocation;
+ assert.ok(ae&&ae.type==='act'&&ae.params.map(p=>p.cle).join()==='condition,etat'&&!ae.monstre,'Attaque État déclaré');
+ assert.ok(pv&&pv.type==='act'&&pv.params.length===0&&!pv.monstre&&pv.bouton==='📣 Provocation','Provocation déclarée');
+ const d=C.paramsTalent({effet:'attaqueetat',params:{}});assert.equal(d.condition,'tue');assert.equal(d.etat,'');
+ assert.ok(C.phraseTalent('attaqueetat',{condition:'survit',etat:'Feu'}).includes('Si <b>la cible n’est pas tuée</b>, il gagne <b>Feu</b>.'));
+ assert.ok(C.phraseTalent('attaqueetat',{condition:'tue',etat:'Blindage'}).includes('S’il <b>tue la cible</b>, il gagne <b>Blindage</b>.'));
+ assert.ok(C.phraseTalent('provocation',{}).includes('<b>en ligne de vue</b>')&&C.phraseTalent('provocation',{}).includes('<b>une attaque</b> contre lui.'));
+ assert.equal(C.cleTalent('Attaque État'),'attaqueetat','un talent nommé ainsi trouve son effet');}
+assert.ok(page.includes('function attack(opts={})')&&page.includes('if(opts.vises){vises=ciblesAtteignables(a,opts.vises,portee);')
+ &&page.includes("a.checks[0]=true;afterAction(a);render();return}}")&&page.includes('const vivants=vises.filter(j=>alive(actors[j]));')
+ &&page.includes('if(opts.apres)opts.apres({vises,partis,tues:vivants.filter(j=>!alive(actors[j]))});')
+ &&page.includes('function attaqueEtat(a,p,talent)')&&page.includes("const survit=p.condition==='survit',gagne=survit?tues.length<vises.length:tues.length>0;")
+ &&page.includes('const issue=infligeEtat(a,p.etat);')&&page.includes('function cibleProvocation(a)')&&page.includes('function rapprocher(b,a)')
+ &&page.includes('const arret=Math.max(tokenOf(a)/2+tokenOf(b)/2,contactRadius(tokenOf(a))+tokenOf(b)/2-3);')&&page.includes('if(d<=arret)return false;')
+ &&page.includes("if(el){el.classList.add('glisse');el.style.left=b.x+'%';el.style.top=b.y+'%'}")&&page.includes('function provocation(a,p,talent)')
+ &&page.includes("poseCibles(a,[j]);if(venu)afterMove(b);")&&page.includes("attack({vises:[j]});scheduleSave()},venu?220:0);")
+ &&page.includes('attaqueetat:{fn:attaqueEtat,')&&page.includes('provocation:{fn:provocation,')&&page.includes("peut:a=>!hasState(a,'Au sol')&&cibleProvocation(a)!==null,"),'Attaque État et Provocation câblés à la table');
+console.log('844 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
