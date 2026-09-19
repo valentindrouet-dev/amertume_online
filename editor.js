@@ -31,8 +31,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  /* Les premiers talents codés se reconnaissaient à leur nom. Ils portent désormais leur
     effet en clair : on le leur inscrit une fois, d'après ce nom, et le nom redevient
     libre — le renommer ne fait plus perdre la mécanique. */
- c.talents.forEach(t=>{if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES[t.effet])){const k=cleTalent(t.name);
-  t.effet=TALENTS_CODES[k]?k:''}});
+ c.talents.forEach(t=>{if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES[t.effet]))t.effet=effetParNom(t.name)});
  // Un prérequis désigne un autre talent du catalogue, ou rien : un lien mort s'efface.
  c.talents.forEach(t=>{if(!t)return;
   if(!t.prerequis||t.prerequis===t.id||!c.talents.some(x=>x&&x.id===t.prerequis))t.prerequis='';
@@ -537,7 +536,11 @@ function gearPill(o){const col=itemColumn(o);
    comme les talents. Les armes d'abord, l'armure et le bouclier ensuite ; deux exemplaires
    de la même arme ne font qu'un carré, marqué ×2. Les carrés ouverts le restent au rendu. */
 /* Une seule description à la fois, sous la rangée : celle du dernier carré cliqué. */
+/* La description ouverte : une seule à la fois, et sur la fiche où l'on a cliqué. Retenue
+   au seul identifiant de l'objet, elle s'ouvrait aussi chez les autres porteurs du même
+   objet, dont les carrés se décalaient sans qu'on y touche. */
 let gearOuvert=null;
+const cleGear=(a,o)=>(a&&a.id||'?')+'|'+(o&&o.id||'?');
 function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor';
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
@@ -604,10 +607,10 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
   if(titre){const t=document.createElement('span');t.className='gear-rangee-titre';t.textContent=titre;out.append(t)}
   for(let k=0;k<liste.length;k+=PAR_LIGNE){const rangee=liste.slice(k,k+PAR_LIGNE),details=[];
    rangee.forEach(([o,n])=>{const p=gearCarre(o,n,portes(o)),detail=gearDetail(o,a,!tout);
-    const ouvert=gearOuvert===o.id;detail.hidden=!ouvert;
+    const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert;
     const redessine=()=>{render();if(typeof renderHeroes==='function')renderHeroes()};
-    const ouvrir=()=>{gearOuvert=o.id};
-    const basculer=()=>{gearOuvert=ouvert?null:o.id;redessine()};
+    const ouvrir=()=>{gearOuvert=cle};
+    const basculer=()=>{gearOuvert=ouvert?null:cle;redessine()};
     /* En jeu, on ne voit que le porté : un clic y ouvre la description, sans rien reposer
        qu'on ne pourrait reprendre. Là où tout l'inventaire est offert, le clic équipe —
        en remplaçant ce qu'il faut — et ouvre la description par la même occasion. */
@@ -692,10 +695,20 @@ function talentBloc(t,vif,compact){const bloc=document.createElement('span');blo
 function talentPills(a){const out=document.createElement('div');out.className='talent-grille';
  const liste=(a.talents||[]).map(talent).filter(Boolean);
  if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
+ /* Un talent appris dont le socle manque ne fait rien : il se taisait, et on le croyait à
+    l'œuvre. Il porte désormais sa marque, et son dépliant dit ce qu'il attend. */
+ const sansEffet=t=>typeof manqueTalent==='function'?manqueTalent(a.talents||[],t,catalog.talents):'';
  for(let i=0;i<liste.length;i+=2){const rangee=liste.slice(i,i+2),details=[];
   rangee.forEach(t=>{const pill=talentPill(t,true);pill.classList.add('cliquable');
+   const manque=sansEffet(t);
    const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev);
    const detail=talentDetail(t,false);detail.classList.add('large');
+   if(manque){pill.classList.add('sans-effet');
+    const m=document.createElement('span');m.className='t-sans-effet';m.textContent='⚠';
+    m.title='Sans effet : « '+t.name+' » requiert « '+manque+' », que '+a.name+' n’a pas.';pill.append(m);
+    pill.title+=' — sans effet : requiert '+manque;
+    const dit=document.createElement('p');dit.className='sans-effet-dit';
+    dit.textContent='⚠ Sans effet : requiert « '+manque+' », que '+a.name+' n’a pas appris.';detail.prepend(dit)}
    const ouvert=talentsOuverts.has(t.id);detail.hidden=!ouvert;pill.classList.toggle('ouvert',ouvert);
    pill.onclick=e=>{e.stopPropagation();const o=detail.hidden;detail.hidden=!o;pill.classList.toggle('ouvert',o);
     if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};

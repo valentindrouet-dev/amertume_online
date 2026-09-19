@@ -734,3 +734,8 @@ button.choix-attaque.sans-des{grid-auto-rows:1fr}
 .arbre-noeud:not(.verrou):not(.auto):hover .arbre-rond{transform:scale(1.06)}
 .hero-sous .ico.plus.rouage{font-weight:400;font-size:15px;padding:0 6px 1px}
 .cat-pill .tag.voie{color:#7a4f1a;font-style:italic;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+/* Un talent appris qui n'agit pas — son socle manque — se lit comme tel : la vignette pâlit
+   et porte un ⚠, son dépliant dit ce qu'il attend. */
+.cat-pill.sans-effet{filter:saturate(.4)}
+.cat-pill .t-sans-effet{margin-left:auto;font-size:13px;line-height:1;color:#b03828}
+.talent-detail .sans-effet-dit{font-weight:700;color:#b03828}

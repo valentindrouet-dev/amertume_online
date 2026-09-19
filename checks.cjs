@@ -1110,7 +1110,7 @@ assert.ok(page.includes("pv.hidden=view!=='mj';pv.classList.toggle('vide',!a);")
  &&page.includes('.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}')&&page.includes('#sheet.vide #hpbar,#sheet.vide #bloc-gear,#sheet.vide .divider{display:none}')&&page.includes('#sheet{min-height:0}')&&page.includes('.piste-des{display:flex;flex-direction:column;gap:8px;height:220px;overflow:hidden}'),'les blocs restent en place, vides');
 /* Un talent sans mécanique dont le nom est celui d'une mécanique la reçoit (Double Attaque) ; la ligne
    « Cible : » a disparu ; les blocs vides n'affichent aucun texte. */
-assert.ok(src.includes("if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES[t.effet])){const k=cleTalent(t.name);")&&!page.includes("'Cible : '+actors[a.target].name")
+assert.ok(src.includes("if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES[t.effet]))t.effet=effetParNom(t.name)});")&&!page.includes("'Cible : '+actors[a.target].name")
  &&!page.includes('Sélectionne un combattant pour agir.')&&!page.includes('Aucun combattant sélectionné.'),'Double Attaque se câble par son nom, plus de ligne Cible');
 {const {ciblesPermises,TALENTS_CODES:T,paramsTalent}=C;
  const t={name:'Double Attaque',effet:'doubleattaque',params:{cibles:3}};
@@ -1241,8 +1241,8 @@ assert.ok(src.includes('function libereMains(a,besoin)')&&src.includes('else{lib
  assert.ok(src2.includes('while(mainsPrises(a)+besoin>2)')&&src2.includes('if(a.weapons.length)a.weapons.shift();')&&src2.includes("else if(a.shieldId)a.shieldId='';"),'les mains se libèrent du plus ancien');}
 /* Une seule description ouverte à la fois, celle du dernier carré cliqué, et plus de liseré brun
    autour du carré ouvert : rien ne laisse croire qu'il est encore porté. */
-assert.ok(src.includes('let gearOuvert=null;')&&!src.includes('gearOuverts')&&src.includes('const ouvert=gearOuvert===o.id;detail.hidden=!ouvert;')
- &&src.includes('const basculer=()=>{gearOuvert=ouvert?null:o.id;redessine()};')&&!feuille.includes('.cat-pill.gear-carre.ouvert'),'une seule description, sans liseré');
+assert.ok(src.includes('let gearOuvert=null;')&&!src.includes('gearOuverts')&&src.includes('const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert;')
+ &&src.includes('const basculer=()=>{gearOuvert=ouvert?null:cle;redessine()};')&&!feuille.includes('.cat-pill.gear-carre.ouvert'),'une seule description, sans liseré');
 /* Les arbres de talents : le rouage remplace le « + » des talents d'une fiche, la popup dessine
    la classe, ses maîtrises acquises d'office, puis une colonne par spécialisation — trois au plus
    — lue de haut en bas, et les génériques à part. La voie d'un talent se choisit au formulaire. */
@@ -1372,4 +1372,33 @@ assert.ok(page.includes('function attack(opts={})')&&page.includes('if(opts.vise
  &&page.includes("if(el){el.classList.add('glisse');el.style.left=b.x+'%';el.style.top=b.y+'%'}")&&page.includes('function provocation(a,p,talent)')
  &&page.includes("poseCibles(a,[j]);if(venu)afterMove(b);")&&page.includes("attack({vises:[j]});scheduleSave()},venu?220:0);")
  &&page.includes('attaqueetat:{fn:attaqueEtat,')&&page.includes('provocation:{fn:provocation,')&&page.includes("peut:a=>!hasState(a,'Au sol')&&cibleProvocation(a)!==null,"),'Attaque État et Provocation câblés à la table');
-console.log('887 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Un talent nommé comme sa mécanique la reçoit, que son nom en donne la clé ou l'intitulé :
+   « Orbes de feu » et « Orbes mystiques » restaient descriptifs, donc muets — les orbes
+   n'infligeaient pas Feu. */
+assert.equal(C.effetParNom('Double Attaque'),'doubleattaque');
+assert.equal(C.effetParNom('Orbes de feu'),'orbesfeu');
+assert.equal(C.effetParNom('ORBES DE FEU'),'orbesfeu');
+assert.equal(C.effetParNom('Orbes mystiques'),'orbes');
+assert.equal(C.effetParNom('Orbes'),'orbes','la clé elle-même vaut toujours');
+assert.equal(C.effetParNom('Garde rapprochée'),'garderapprochee');
+assert.equal(C.effetParNom('Attaque État'),'attaqueetat');
+assert.equal(C.effetParNom('Souffle du dragon'),'','un nom libre reste descriptif');
+assert.equal(C.effetParNom(''),'');
+// Un orbe de feu porté par un talent câblé inflige bien son état, et son vol flambe.
+assert.equal(C.etatDesOrbes([{code:C.TALENTS_CODES.orbesfeu,params:{etat:'Feu'}}]),'Feu');
+assert.ok(page.includes('function volOrbe(de,vers,couleur,etat)')&&page.includes("const el=document.createElement('span');el.className='orbe-vol'+(etat==='Feu'?' feu':'');")
+ &&page.includes("el.style.setProperty('--orbe',TEINTE_ORBE[etat]||'#9b7ad4');")&&page.includes("const TEINTE_ORBE={Feu:'#ff6a2c',")
+ &&page.includes('const duree=volOrbe(a,b,des.couleur,etat);')&&page.includes("diffuserEffet('orbe',a,b,des.couleur+(etat?'|'+etat:''));")
+ &&vivant.includes("const [couleur,etat]=(typeof rec.logo==='string'?rec.logo:'').split('|');")
+ &&page.includes('.orbe-vol.feu::after{content:')&&page.includes('@keyframes flamme{'),'l’orbe porte son état, et le feu flambe');
+/* La description d'un équipement s'ouvre sur la fiche où l'on a cliqué, et nulle part ailleurs :
+   deux aventuriers portant la même hache ne s'ouvrent plus l'un l'autre. */
+assert.ok(src.includes("const cleGear=(a,o)=>(a&&a.id||'?')+'|'+(o&&o.id||'?');")&&src.includes("const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert;")
+ &&src.includes("const ouvrir=()=>{gearOuvert=cle};")&&src.includes("const basculer=()=>{gearOuvert=ouvert?null:cle;redessine()};")
+ &&!src.includes('gearOuvert===o.id'),'une description par fiche, pas par objet');
+/* Un talent appris dont le socle manque ne fait rien : la fiche le dit, au lieu de le taire. */
+assert.ok(src.includes("const sansEffet=t=>typeof manqueTalent==='function'?manqueTalent(a.talents||[],t,catalog.talents):'';")
+ &&src.includes("if(manque){pill.classList.add('sans-effet');")&&src.includes("m.className='t-sans-effet';m.textContent='⚠';")
+ &&src.includes("dit.textContent='⚠ Sans effet : requiert « '+manque+' », que '+a.name+' n’a pas appris.';detail.prepend(dit)}")
+ &&feuille.includes('.cat-pill.sans-effet{filter:saturate(.4)}')&&feuille.includes('.talent-detail .sans-effet-dit{font-weight:700;color:#b03828}'),'un talent sans effet le dit');
+console.log('907 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
