@@ -766,3 +766,10 @@ button.choix-attaque.sans-des{grid-auto-rows:1fr}
 .bulle:has(.t-act){--bulle-bord:#cfdcea}.bulle:has(.t-reac){--bulle-bord:#ddd3ea}
 .bulle:has(.t-pass){--bulle-bord:#dcd8cf}.bulle:has(.t-crit){--bulle-bord:#eccfd0}
 .bulle:has(.t-mait){--bulle-bord:#f0e0bd}.bulle:has(.t-ame){--bulle-bord:#d3e5cd}
+/* L'icône d'une attaque spéciale, devant son état : un jeton, ou un losange vide qui invite
+   à en choisir un — comme la pastille d'état à côté. */
+.best-att-tete .att-logo{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:7px}
+.best-att-tete .att-logo img{width:22px;height:22px;object-fit:contain;display:block}
+.best-att-tete .att-logo.vide{border:1px dashed var(--line-strong);color:var(--muted);font:700 13px system-ui}
+/* Une colonne pas encore baptisée : son intitulé s'efface un peu, pour inviter au clic. */
+.arbre-titre .arbre-voie.vierge{opacity:.72;font-style:italic}

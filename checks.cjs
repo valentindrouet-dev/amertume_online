@@ -254,8 +254,18 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  assert.deepEqual(JSON.parse(mo[1].replace(/'/g,'"')).sort(),objets,'LOGOS_OBJET doit lister img/item_*.png : '+objets.join(', '));
  assert.ok(src.includes("function logosItem(o){const c=o&&o.category;return c==='weapon'||c==='armor'?LOGOS_EQUIPEMENT:LOGOS_OBJET}")
   &&src.includes("...logosItem(a).map(l=>[l,nomLogo(l)])")&&src.includes("a.logo=logosItem(a).includes(f.logo.value)?f.logo.value:''")
-  &&src.includes("logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)")&&src.includes("replace(/^(weapon|spell|item)_/,'')"),'les objets choisissent parmi les item_*');
+  &&src.includes("logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)")&&src.includes("replace(/^(weapon|spell|item|attack)_/,'')"),'les objets choisissent parmi les item_*');
  // Les logos de talents déclarés sont exactement les spell_*.png du dossier.
+ {const ma=src.match(/const LOGOS_ATTAQUE=(\[[^\]]*\]);/);assert.ok(ma,'LOGOS_ATTAQUE introuvable');
+  const attaques=fs.readdirSync('img').filter(f=>/^attack_.*\.png$/i.test(f)).map(f=>f.replace(/\.png$/i,'')).sort();
+  assert.deepEqual(JSON.parse(ma[1].replace(/'/g,'"')).sort(),attaques,'LOGOS_ATTAQUE doit lister img/attack_*.png : '+attaques.join(', '));
+  assert.ok(src.includes('const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET];')
+   &&src.includes('function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}')
+   &&src.includes("(at.logos||[]).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
+   &&src.includes("choixVif(icone,(at.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])],")
+   &&src.includes("v=>{at.logos=v?[v]:[];dessineIcone();poser()},'Icône de l’attaque');")
+   &&src.includes("replace(/^(weapon|spell|item|attack)_/,'')")
+   &&fs.readFileSync('editor.css','utf8').includes('.best-att-tete .att-logo{'),'une attaque spéciale choisit son icône parmi toutes celles du dossier');}
  const mt=src.match(/const LOGOS_TALENT=(\[[^\]]*\]);/);assert.ok(mt,'LOGOS_TALENT introuvable');
  const sorts=fs.readdirSync('img').filter(f=>/^spell_.*\.png$/.test(f)).map(f=>f.replace(/\.png$/,'')).sort();
  assert.deepEqual(JSON.parse(mt[1].replace(/'/g,'"')).sort(),sorts,'LOGOS_TALENT doit lister img/spell_*.png : '+sorts.join(', '));}
@@ -1283,8 +1293,12 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  vm.runInContext(morceau('const TALENT_TYPES=','function talent(id)')+morceau('function talentFamilies()',"// L'encre d'une classe")
   +morceau('function descendDe(','function openTalent(')+morceau('const AUTRE_VOIE=','const arbresDialog='),ctx);
  // Trois voies au plus, dans l'ordre du catalogue ; la quatrième n'existe pas pour l'arbre.
+ // Trois rangs, toujours : nommés, ou vides en attendant qu'on les baptise.
  assert.equal(JSON.stringify(ctx.voiesDe('Gardien')),JSON.stringify(['Rempart','Assaut','Serment']));
- assert.equal(JSON.stringify(ctx.voiesDe('Mystique')),'[]');
+ assert.equal(JSON.stringify(ctx.voiesDe('Mystique')),JSON.stringify(['','','']));
+ assert.equal(JSON.stringify(ctx.voiesNommees('Mystique')),'[]');
+ assert.equal(ctx.rangDAccueil('Mystique'),0,'sans nom, le premier rang accueille les sans-voie');
+ assert.equal(ctx.rangDAccueil('Gardien'),0,'tous nommés : les orphelins reviennent au premier');
  assert.equal(JSON.stringify(ctx.optionsVoie('Gardien','')),JSON.stringify([['','— tronc commun —'],['Rempart','Rempart'],['Assaut','Assaut'],['Serment','Serment']]),'plus de place : pas de nouvelle voie');
  assert.equal(ctx.optionsVoie('Mystique','').length,2,'le tronc commun et une nouvelle voie');
  // Une Gardienne trouve la colonne Gardien ; sans classe, pas de colonne.
@@ -1301,18 +1315,21 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  // Les colonnes : une par voie, l'amélioration suspendue sous son prérequis, le tronc commun en
  // dernier, sans la maîtrise ni la voie de trop ; l'ordre est celui du catalogue.
  const cols=ctx.colonnesArbre('Gardien');
- assert.equal(JSON.stringify(cols.map(c=>c.titre)),JSON.stringify(['Rempart','Assaut','Serment','Tronc commun']));
- assert.equal(JSON.stringify(cols.map(c=>c.liste.map(t=>t.id))),JSON.stringify([['a','b'],['c'],['e'],['d','f']]));
- assert.equal(JSON.stringify(cols[0].racines.map(t=>t.id)),'["a"]','b pend sous a : une seule racine');
+ assert.equal(cols.length,3,'trois colonnes, ni plus ni moins');
+ assert.equal(JSON.stringify(cols.map(c=>c.titre)),JSON.stringify(['Rempart','Assaut','Serment']));
+ // Toutes les voies sont nommées : les talents sans voie reviennent au premier rang.
+ assert.equal(JSON.stringify(cols.map(c=>c.liste.map(t=>t.id))),JSON.stringify([['a','b','d','f'],['c'],['e']]));
+ assert.equal(JSON.stringify(cols[0].racines.map(t=>t.id)),JSON.stringify(['a','d','f']),'b pend sous a ; les sans-voie sont des racines à part');
  assert.equal(cols[0].arbre[0].enfants[0].t.id,'b');
- assert.equal(cols[0].famille,'Gardien');assert.equal(cols[3].voie,'');
- assert.equal(ctx.colonnesArbre('Mystique').length,1,'une classe sans voie a une colonne à son nom');
- assert.equal(ctx.colonnesArbre('Mystique')[0].titre,'Mystique');
+ assert.equal(cols[0].famille,'Gardien');assert.equal(cols[0].rang,0);assert.equal(cols[2].rang,2);
+ {const vides=ctx.colonnesArbre('Mystique');
+  assert.equal(vides.length,3,'une classe sans voie a quand même ses trois colonnes');
+  assert.equal(JSON.stringify(vides.map(c=>c.titre)),JSON.stringify(['Tronc commun','Spécialisation 2','Spécialisation 3']));}
  // De haut en bas : la seconde racine attend la première ; un talent suspendu attend son prérequis, pas la chaîne.
- const tronc=cols[3];
- assert.equal(ctx.verrouColonne([],tronc.racines,tronc.liste[1]),'Souffle');
- assert.equal(ctx.verrouColonne(['d'],tronc.racines,tronc.liste[1]),'');
- assert.equal(ctx.verrouColonne([],tronc.racines,tronc.liste[0]),'','la première est toujours libre');
+ {const troncs=[{id:'d',name:'Souffle'},{id:'f',name:'Foi'}];
+  assert.equal(ctx.verrouColonne([],troncs,troncs[1]),'Souffle');
+  assert.equal(ctx.verrouColonne(['d'],troncs,troncs[1]),'');
+  assert.equal(ctx.verrouColonne([],troncs,troncs[0]),'','la première est toujours libre');}
  assert.equal(ctx.verrouColonne([],cols[0].racines,cols[0].liste[1]),'','b n’est pas une racine');
  assert.equal(C.manqueTalent([],cols[0].liste[1],ctx.catalog.talents),'Rempart','c’est le prérequis qui verrouille b');
  // Chargé, le catalogue nomme les voies que ses talents portaient : ici, on le fait à la main.
@@ -1320,11 +1337,13 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  // Placer un talent : sous un autre, avant un frère, en dernier ; jamais sous ce qui repose sur lui.
  assert.equal(ctx.placerTalent('c',{famille:'Gardien',voie:'Rempart',prerequis:'b'}),true);
  {const c=ctx.catalog.talents.find(t=>t.id==='c');assert.equal(c.voie+'|'+c.prerequis,'Rempart|b');assert.equal(ctx.catalog.talents.at(-1).id,'c','en dernier');}
- assert.equal(JSON.stringify(ctx.colonnesArbre('Gardien')[0].liste.map(t=>t.id)),JSON.stringify(['a','b','c']));
+ assert.equal(JSON.stringify(ctx.colonnesArbre('Gardien')[0].liste.map(t=>t.id)),JSON.stringify(['a','b','c','d','f']),'c a rejoint Rempart, les sans-voie restent hébergés');
  assert.equal(ctx.placerTalent('a',{famille:'Gardien',voie:'Rempart',prerequis:'c'}),false,'c repose sur a : refusé');
  assert.equal(ctx.placerTalent('a',{famille:'Gardien',voie:'Rempart',prerequis:'a'}),false,'pas sous lui-même');
  assert.equal(ctx.placerTalent('f',{famille:'Gardien',voie:'',avant:'d'}),true);
- assert.equal(JSON.stringify(ctx.colonnesArbre('Gardien').at(-1).liste.map(t=>t.id)),JSON.stringify(['f','d']),'f passe avant d');
+ {const prem=ctx.colonnesArbre('Gardien')[0].liste.map(t=>t.id);
+  ['a','b','c','f','d'].forEach(id=>assert.ok(prem.includes(id),'le premier rang tient '+id+' : les sans-voie ne se perdent pas'));
+  assert.ok(prem.indexOf('f')<prem.indexOf('d'),'f passe avant d');}
  assert.equal(ctx.placerTalent('d',{famille:'',voie:''}),true);
  assert.equal(ctx.catalog.talents.find(t=>t.id==='d').famille,'Génériques','sans classe, un générique');
  assert.equal(ctx.placerTalent('zzz',{famille:'Gardien'}),false);
@@ -1334,14 +1353,24 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  assert.equal(ctx.enregistreVoie('Mystique','Foudre'),false,'quatrième refusée');
  assert.equal(JSON.stringify(ctx.voiesDe('Mystique')),JSON.stringify(['Feu','Givre','Onde']));
  assert.equal(ctx.enregistreVoie('Mystique','  '),false);
+ // Baptiser un rang, le renommer, lui reprendre son nom : ses talents suivent à chaque fois.
  assert.equal(ctx.renommerVoie('Gardien','Rempart','Mur'),true);
  assert.equal(ctx.catalog.talents.find(t=>t.id==='a').voie,'Mur');
  assert.equal(JSON.stringify(ctx.voiesDe('Gardien')),JSON.stringify(['Mur','Assaut','Serment']));
  assert.equal(ctx.renommerVoie('Gardien','Mur','Assaut'),false,'un nom déjà pris');
+ assert.equal(ctx.nommerVoie('Gardien',0,'Mur'),false,'le même nom ne change rien');
  assert.equal(ctx.dissoudreVoie('Gardien','Mur'),true);
  assert.equal(ctx.catalog.talents.find(t=>t.id==='a').voie,'','ses talents rejoignent le tronc commun');
- assert.equal(JSON.stringify(ctx.voiesDe('Gardien')),JSON.stringify(['Assaut','Serment']));
+ assert.equal(JSON.stringify(ctx.voiesDe('Gardien')),JSON.stringify(['','Assaut','Serment']),'le rang reste, sans nom');
  assert.equal(ctx.colonnesArbre('Gardien').length,3);
+ assert.equal(ctx.colonnesArbre('Gardien')[0].titre,'Tronc commun');
+ // Nommer le rang qui héberge les sans-voie les emmène avec lui : rien ne disparaît de l'arbre.
+ {const avant=ctx.colonnesArbre('Gardien')[0].liste.map(t=>t.id);
+  assert.ok(avant.includes('a'),'le tronc commun tient les sans-voie');
+  assert.equal(ctx.nommerVoie('Gardien',0,'Protection'),true);
+  assert.equal(ctx.catalog.talents.find(t=>t.id==='a').voie,'Protection');
+  assert.equal(JSON.stringify(ctx.colonnesArbre('Gardien')[0].liste.map(t=>t.id)),JSON.stringify(avant));}
+ assert.equal(ctx.nommerVoie('Gardien',7,'Ailleurs'),false,'il n’y a que trois rangs');
  // Une forêt sans racine — un cycle — sort quand même.
  assert.equal(ctx.foretArbre([{id:'p',prerequis:'q'},{id:'q',prerequis:'p'}]).length,1);}
 /* L'arbre s'édite en place : les voies vivent au catalogue, un talent créé depuis l'arbre arrive
@@ -1353,11 +1382,15 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
  &&src.includes("if(!p||p===t||descendDe(p,t))return false}")&&src.includes("el.addEventListener('dragstart',e=>{arbreGlisse=t.id;el.classList.add('tire');corps.classList.add('glisse');")
  &&src.includes("if(!id)return;if(placerTalent(id,dest))arbreChange();else note(")&&src.includes("glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,prerequis:t.id});")
  &&src.includes("sous.append(entre({famille:col.famille,voie:col.voie,prerequis:t.id,avant:e.t.id}),branche(e,col,libre,false));")
- &&src.includes("cible(h,{famille:c.famille,voie:c.voie});")&&src.includes("if(renommerVoie(c.famille,c.voie,v))arbreChange();")&&src.includes("if(dissoudreVoie(c.famille,c.voie))arbreChange()});")
+ &&src.includes("cible(h,{famille:c.famille,voie:c.voie});")&&src.includes("champVif(nomVoie,()=>c.voie,v=>{if(nommerVoie(c.famille,c.rang,v))arbreChange();")&&src.includes("nomVoie.classList.toggle('vierge',!c.voie);")&&feuille.includes('.arbre-titre .arbre-voie.vierge{')&&src.includes("if(nommerVoie(c.famille,c.rang,''))arbreChange()});")
  &&src.includes("plus.onclick=()=>openTalent(null,renderArbres,{famille:c.famille,voie:c.voie});col.append(plus)}")
  &&src.includes("{famille:talentFamily(t),voie:t.voie||'',prerequis:t.id,level:Math.min(20,(t.level||1)+1)})));")
  &&src.includes("plus.onclick=()=>openTalent(null,renderArbres,{famille:classe,type:'mait',name:'Maîtrise'});tete.append(plus)}}")
- &&src.includes("if(mj&&classe&&classe!==GENERIQUES&&voiesDe(classe).length<VOIES_MAX)grille.append(nouvelle());")&&src.includes("if(garder&&v){if(enregistreVoie(classe,v))arbreChange();")
+ /* Trois colonnes, toujours : plus de colonne « + Spécialisation », et les génériques ont leur
+    propre arbre au lieu d'encombrer celui d'une classe. */
+ &&!src.includes('+ Spécialisation')&&!src.includes('arbre-col nouvelle')
+ &&src.includes(" (classe?colonnesArbre(classe):[]).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
+ &&!src.includes("grille.append(colonne(colonneArbre(GENERIQUES,GENERIQUES,")
  &&src.includes("const oublier=(t,racines)=>{")&&src.includes("const chute=racines.includes(t)?racines.slice(racines.indexOf(t)):[t];")
  &&feuille.includes('.glisse .arbre-entre{height:12px;margin:3px 0;border:1px dashed var(--line-strong)}')&&feuille.includes('.arbre-enfants{display:flex;justify-content:center;align-items:flex-start;width:100%}')
  &&feuille.includes('.arbre-noeud:hover .arbre-outils,.arbre-noeud:focus-within .arbre-outils{display:flex}')&&feuille.includes('.arbre-col.nouvelle{border-style:dashed;'),'l’arbre s’édite en place');
@@ -1518,10 +1551,14 @@ assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null
  &&src.includes("const classe=a?classeDuHeros(a):arbresClasse;")&&src.includes("const porte=t=>!!a&&a.talents.includes(t.id);")
  &&src.includes("el.onclick=()=>{if(!a){openTalent(catalog.talents.indexOf(t),renderArbres);return}")
  &&src.includes("const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);")
- &&src.includes("if(classe!==GENERIQUES)grille.append(colonne(colonneArbre(GENERIQUES,GENERIQUES,'',")
  &&src.includes("arbresDialog.addEventListener('close',()=>{arbresActeur=null;arbresClasse=null});")
  &&src.includes("rouage.textContent='⚙';rouage.title='Arbre de talents — '+famille;")
- &&src.includes("rouage.onclick=e=>{e.stopPropagation();openArbresClasse(famille)};h.append(rouage)}")
+ &&src.includes("rouage.onclick=e=>{e.stopPropagation();openArbresClasse(famille)};h.append(rouage);")
+ /* Le nom de la classe ouvre le même arbre, un clic hors de la fenêtre la referme, et ni
+    l'intitulé ni la notice d'édition ne paraissent sur l'arbre d'une classe. */
+ &&src.includes("h.onclick=()=>openArbresClasse(famille)}")
+ &&src.includes("arbresDialog.addEventListener('click',e=>{if(e.target===arbresDialog)arbresDialog.close()});")
+ &&src.includes("titre.textContent='Arbres de talents — '+(a?a.name:classe);titre.hidden=!a;")&&src.includes("$('arbres-note').hidden=!a;")
  &&src.includes('const NOTE_ARBRES_CLASSE=')&&feuille.includes('.arbre-noeud.modele{cursor:pointer}')
  &&feuille.includes('.cat-col>h3 .ico.plus.rouage{')
  &&!page.includes("annonceFlottante('📣 '"),'l’arbre d’une classe s’ouvre depuis l’onglet Talents');
@@ -1590,16 +1627,23 @@ assert.ok(page.includes('function alliePourIgnition(a)')&&page.includes("const j
    vignette cliquée, au lieu d'écarter ses voisines. Le dépliant d'avant reste en place dans
    le code, sous « BULLES » : un mot à faux le ramène. */
 assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle(ancre,contenu,classe)')&&src.includes('function placerBulle()')
+ /* Le survol ouvre la bulle, la quitter la referme après un souffle, et la survoler la retient :
+    on va y chercher le bouton « Utiliser » d'un objet sans qu'elle fuie. */
+ &&src.includes('const BULLE_GRACE=180;')&&src.includes('function surveille(el,quoi)')
+ &&src.includes("el.addEventListener('pointerenter',ouvre);")&&src.includes("el.addEventListener('pointerleave',bulleLache);")
+ &&src.includes("bulleEl.addEventListener('pointerenter',bulleRetient);")&&src.includes('if(BULLES)surveille(p,montre);')
+ &&src.includes('if(BULLES)surveille(pill,montre);')&&src.includes('     if(!equipable){if(!BULLES)basculer();return}')
+ &&src.includes('    if(BULLES)return;   // au survol, la description se montre seule')
  &&src.includes('function fermerBulle()')&&src.includes("document.addEventListener('pointerdown',bulleDehors,true);")
  &&src.includes("document.addEventListener('keydown',bulleEchap,true);")&&src.includes(" e.preventDefault();e.stopPropagation();fermerBulle()}")&&src.includes("window.addEventListener('scroll',fermerBulle,true);window.addEventListener('resize',fermerBulle)")
  &&src.includes("if(!bulleAncre.isConnected||(!r.width&&!r.height)){fermerBulle();return}")&&src.includes("function ancreVisible(el){return !!el&&el.isConnected&&!!el.offsetParent}")&&src.includes('const dessous=r.top-b.height-12<marge;')
  &&src.includes("bulleEl.style.setProperty('--fleche',")
  // Les deux chemins cohabitent : la bulle, et le dépliant d'avant si l'on repasse BULLES à faux.
- &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(gearOuvert===cle&&ancreVisible(p)){")
+ &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(gearOuvert===cle&&ancreVisible(p))montre()});")
  &&src.includes("out.append(p);if(!BULLES)details.push(detail)});")&&src.includes("out.append(pill);if(!BULLES)details.push(detail)});")
  &&src.includes('let talentOuvert=null;')&&src.includes("const cle=(a.id||'?')+'|'+t.id,ouvert=BULLES?talentOuvert===cle:talentsOuverts.has(t.id);")
- &&src.includes("if(BULLES){const etait=talentOuvert===cle;fermerBulle();talentOuvert=etait?null:cle;")
+ &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(talentOuvert===cle&&ancreVisible(pill))montre()});")
  &&src.includes("if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};")
  &&feuille.includes('.bulle{position:fixed;z-index:60;')&&feuille.includes(".bulle::after{content:'';position:absolute;left:var(--fleche,50%);")
  &&feuille.includes('.bulle.dessous::after{'),'la description se pose en bulle, le dépliant reste sous BULLES');
-console.log('1035 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1058 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

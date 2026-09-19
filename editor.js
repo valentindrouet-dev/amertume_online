@@ -110,7 +110,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   /* Le logo de l'arme à gauche, sur les deux lignes de hauteur ; à sa droite, le nom puis
      les dés — chacun sur sa ligne. Sans logo, les deux lignes occupent tout le bouton. */
   const logos=document.createElement('span');logos.className='logos';
-  (at.logos||[]).forEach(l=>{const im=logoEquipement({logo:l},'bouton');if(im)logos.append(im)});
+  (at.logos||[]).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});
   // Deux armes : les logos l'un sur l'autre, celui de derrière en miroir — croisés.
   if(logos.childElementCount>1)logos.classList.add('croises');
   if(logos.childElementCount){b.classList.add('avec-logo');b.append(logos)}
@@ -560,8 +560,23 @@ function gearPill(o){const col=itemColumn(o);
    « BULLES » commande tout : à faux, les dépliants d'avant reviennent tels quels, en place
    sous la vignette — le code des deux est là, et l'on bascule d'un mot. */
 const BULLES=true;
-let bulleEl=null,bulleAncre=null;
-function fermerBulle(){if(!bulleEl)return;bulleEl.remove();bulleEl=null;bulleAncre=null;
+let bulleEl=null,bulleAncre=null,bulleDelai=null;
+/* La bulle s'ouvre au survol de la vignette et s'en va quand le doigt la quitte — après un
+   souffle, le temps d'aller jusqu'à elle : on y trouve le bouton « Utiliser » d'un objet, et
+   la survoler la retient. */
+const BULLE_GRACE=180;
+function bulleRetient(){clearTimeout(bulleDelai);bulleDelai=null}
+function bulleLache(){bulleRetient();bulleDelai=setTimeout(fermerBulle,BULLE_GRACE)}
+/* Une vignette qui montre sa description au survol : elle l'ouvre en arrivant, la lâche en
+   partant, et le clavier fait de même par le focus. */
+function surveille(el,quoi){if(!BULLES||!el)return el;
+ const ouvre=()=>{bulleRetient();quoi()};
+ el.addEventListener('pointerenter',ouvre);
+ el.addEventListener('focus',ouvre);
+ el.addEventListener('pointerleave',bulleLache);
+ el.addEventListener('blur',bulleLache);
+ return el}
+function fermerBulle(){bulleRetient();if(!bulleEl)return;bulleEl.remove();bulleEl=null;bulleAncre=null;
  document.removeEventListener('pointerdown',bulleDehors,true);
  document.removeEventListener('keydown',bulleEchap,true);
  window.removeEventListener('scroll',fermerBulle,true);window.removeEventListener('resize',fermerBulle)}
@@ -589,6 +604,9 @@ function ancreVisible(el){return !!el&&el.isConnected&&!!el.offsetParent}
 function ouvrirBulle(ancre,contenu,classe){fermerBulle();if(!ancreVisible(ancre)||!contenu)return null;
  bulleEl=document.createElement('div');bulleEl.className='bulle'+(classe?' '+classe:'');
  bulleEl.append(contenu);document.body.append(bulleEl);bulleAncre=ancre;
+ // Survoler la bulle la retient : on va y chercher le bouton d'un objet sans la voir fuir.
+ bulleEl.addEventListener('pointerenter',bulleRetient);
+ bulleEl.addEventListener('pointerleave',bulleLache);
  placerBulle();
  document.addEventListener('pointerdown',bulleDehors,true);
  document.addEventListener('keydown',bulleEchap,true);
@@ -666,10 +684,13 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
   for(let k=0;k<liste.length;k+=PAR_LIGNE){const rangee=liste.slice(k,k+PAR_LIGNE),details=[];
    rangee.forEach(([o,n])=>{const p=gearCarre(o,n,portes(o)),detail=gearDetail(o,a,!tout);
     const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert||BULLES;
-    /* La bulle se pose après le rendu, quand la vignette a sa place à l'écran : c'est elle
-       qui porte la description, et l'état ouvert la rouvre à chaque redessin. */
-    if(BULLES&&ouvert)requestAnimationFrame(()=>{if(gearOuvert===cle&&ancreVisible(p)){
-     const d=gearDetail(o,a,!tout);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')}});
+    // La description se montre au survol de la vignette, dans une bulle qui n'écarte rien.
+    const montre=()=>{gearOuvert=cle;talentOuvert=null;
+     const d=gearDetail(o,a,!tout);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')};
+    /* Après un rendu — on vient d'équiper — la bulle se repose d'elle-même sur la vignette
+       refaite : le doigt n'a pas bougé, aucun survol ne se déclencherait. */
+    if(BULLES&&ouvert)requestAnimationFrame(()=>{if(gearOuvert===cle&&ancreVisible(p))montre()});
+    if(BULLES)surveille(p,montre);
     const redessine=()=>{render();if(typeof renderHeroes==='function')renderHeroes()};
     // Une seule description à la fois : ouvrir celle d'un objet referme celle d'un talent.
     const ouvrir=()=>{gearOuvert=cle;talentOuvert=null};
@@ -679,7 +700,8 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
        en remplaçant ce qu'il faut — et ouvre la description par la même occasion. */
     const equipable=(o.category==='weapon'||o.category==='armor')&&tout&&peutEquiper;
     const agir=e=>{e.stopPropagation();
-     if(!equipable){basculer();return}
+     // Au survol, la description se montre seule : le clic ne sert plus qu'à équiper.
+     if(!equipable){if(!BULLES)basculer();return}
      toggleEquip(a,o);ouvrir();
      redessine();scheduleSave()};
     p.onclick=agir;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();agir(e)}};
@@ -776,11 +798,12 @@ function talentPills(a){const out=document.createElement('div');out.className='t
     dit.textContent='⚠ Sans effet : requiert « '+manque+' », que '+a.name+' n’a pas appris.';detail.prepend(dit)}
    const cle=(a.id||'?')+'|'+t.id,ouvert=BULLES?talentOuvert===cle:talentsOuverts.has(t.id);
    detail.hidden=!ouvert||BULLES;pill.classList.toggle('ouvert',ouvert);
-   if(BULLES&&ouvert)requestAnimationFrame(()=>{if(talentOuvert===cle&&ancreVisible(pill)){
-    const d=detail.cloneNode(true);d.hidden=false;ouvrirBulle(pill,d,'bulle-talent')}});
+   const montre=()=>{talentOuvert=cle;gearOuvert=null;
+    const d=detail.cloneNode(true);d.hidden=false;ouvrirBulle(pill,d,'bulle-talent')};
+   if(BULLES&&ouvert)requestAnimationFrame(()=>{if(talentOuvert===cle&&ancreVisible(pill))montre()});
+   if(BULLES)surveille(pill,montre);
    pill.onclick=e=>{e.stopPropagation();
-    if(BULLES){const etait=talentOuvert===cle;fermerBulle();talentOuvert=etait?null:cle;gearOuvert=null;
-     if(typeof render==='function')render();if(typeof renderHeroes==='function')renderHeroes();return}
+    if(BULLES)return;   // au survol, la description se montre seule
     const o=detail.hidden;detail.hidden=!o;pill.classList.toggle('ouvert',o);
     if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};
    out.append(pill);if(!BULLES)details.push(detail)});
@@ -897,7 +920,17 @@ function attaqueVive(m,at,poser,poserTexte){const l=document.createElement('div'
  const etat=etatPastille(at.etat)||(()=>{const s=document.createElement('span');s.className='etat-inflige sans-jeton vide';
   s.textContent='+';s.title='Choisir l’état infligé';return s})();
  choixVif(etat,at.etat||'',CHOIX_ETAT,v=>{at.etat=v;poser()},'État infligé par l’attaque');
- tete.append(etat,nom,desVifs(at,poser));
+/* L'icône de l'attaque, devant son état : un jeton, ou un rond vide qui invite à en choisir
+    un. Elle se retrouve sur le bouton d'action à la table et dans le journal. */
+ const icone=document.createElement('span');icone.className='att-logo';
+ const dessineIcone=()=>{icone.replaceChildren();
+  const im=logoAttaque((at.logos||[])[0],'bouton');
+  if(im)icone.append(im);else{icone.textContent='◇';icone.classList.add('vide')}
+  icone.classList.toggle('vide',!im)};
+ dessineIcone();
+ choixVif(icone,(at.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])],
+  v=>{at.logos=v?[v]:[];dessineIcone();poser()},'Icône de l’attaque');
+ tete.append(icone,etat,nom,desVifs(at,poser));
  const retirer=document.createElement('button');retirer.className='ico danger';retirer.textContent='✕';
  retirer.title='Retirer cette attaque';retirer.setAttribute('aria-label','Retirer l’attaque '+(at.name||''));
  retirer.onclick=e=>{e.stopPropagation();
@@ -1135,7 +1168,10 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
   if(view==='mj'){const rouage=document.createElement('button');rouage.type='button';rouage.className='ico plus rouage';
    rouage.textContent='⚙';rouage.title='Arbre de talents — '+famille;
    rouage.setAttribute('aria-label','Ouvrir l’arbre de talents de '+famille);
-   rouage.onclick=e=>{e.stopPropagation();openArbresClasse(famille)};h.append(rouage)}
+   rouage.onclick=e=>{e.stopPropagation();openArbresClasse(famille)};h.append(rouage);
+   // Le nom de la classe ouvre le même arbre : on clique où l'on regarde.
+   h.classList.add('cliquable');h.title='Ouvrir l’arbre de talents de '+famille;
+   h.onclick=()=>openArbresClasse(famille)}
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
   h.append(compte);bloc.append(h);
   /* Une amélioration se range sous son prérequis, en retrait : la colonne se lit comme
@@ -1417,27 +1453,46 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
    deux pour l'insérer ; il crée un talent depuis une colonne ou sous un talent. Comment les
    points de talent débloquent les rangs viendra ensuite. */
 const AUTRE_VOIE='__voie';
-/* Les voies d'une classe : celles que le MJ a nommées, dans son ordre, puis celles qu'un
-   talent porte sans y figurer — un catalogue d'avant les voies nommées. */
-function voiesDe(famille){const out=[...((catalog.voies||{})[famille]||[])];
- (catalog.talents||[]).forEach(t=>{if(t&&talentFamily(t)===famille&&t.voie&&!out.includes(t.voie))out.push(t.voie)});
- return out.slice(0,VOIES_MAX)}
-// Nommer une voie : vrai si elle y est — trois par classe, jamais deux fois le même nom.
-function enregistreVoie(famille,nom){nom=String(nom||'').trim().slice(0,60);if(!famille||!nom)return false;
- const voies=voiesDe(famille);if(voies.includes(nom))return true;if(voies.length>=VOIES_MAX)return false;
- catalog.voies||={};catalog.voies[famille]=[...voies,nom];return true}
-// Renommer une voie : le nom change sur la liste et sur chacun de ses talents.
-function renommerVoie(famille,avant,apres){apres=String(apres||'').trim().slice(0,60);
- if(!avant||!apres||apres===avant)return false;
- const voies=voiesDe(famille);if(!voies.includes(avant)||voies.includes(apres))return false;
- catalog.voies||={};catalog.voies[famille]=voies.map(v=>v===avant?apres:v);
- (catalog.talents||[]).forEach(t=>{if(t&&talentFamily(t)===famille&&t.voie===avant)t.voie=apres});return true}
-// Dissoudre une voie : ses talents rejoignent le tronc commun, rien n'est perdu.
-function dissoudreVoie(famille,nom){const voies=voiesDe(famille);if(!voies.includes(nom))return false;
- catalog.voies||={};catalog.voies[famille]=voies.filter(v=>v!==nom);
- (catalog.talents||[]).forEach(t=>{if(t&&talentFamily(t)===famille&&t.voie===nom)t.voie=''});return true}
-// Le menu des voies du formulaire : le tronc commun, les voies connues, et une nouvelle s'il reste de la place.
-function optionsVoie(famille,actuelle){const voies=voiesDe(famille);
+/* Une classe a toujours ses trois colonnes, nommées ou non : un arbre se lit d'un coup
+   d'œil, et l'on ne compte pas les cases vides. Chaque rang porte un nom — ou rien tant que
+   le MJ ne l'a pas baptisé. Un catalogue d'avant les voies nommées donne les siennes par
+   les talents qui les portent. */
+function voiesDe(famille){const brut=[...((catalog.voies||{})[famille]||[])].filter(v=>typeof v==='string');
+ (catalog.talents||[]).forEach(t=>{if(t&&talentFamily(t)===famille&&t.voie&&!brut.includes(t.voie))brut.push(t.voie)});
+ const out=brut.slice(0,VOIES_MAX);while(out.length<VOIES_MAX)out.push('');
+ return out}
+// Les voies qui portent un nom, pour les menus et les comptes.
+function voiesNommees(famille){return voiesDe(famille).filter(Boolean)}
+// Le rang qui accueille les talents sans voie : le premier sans nom, le premier sinon.
+function rangDAccueil(famille){const voies=voiesDe(famille),i=voies.indexOf('');return i<0?0:i}
+/* Baptiser un rang : le nom s'écrit sur la colonne et sur ses talents. Un nom vide l'efface
+   — ses talents redeviennent sans voie et reviennent au tronc commun. Le rang qui hébergeait
+   les sans-voie les emmène avec lui : ils ne disparaissent jamais de l'arbre. */
+function nommerVoie(famille,rang,nom){nom=String(nom||'').trim().slice(0,60);
+ if(!famille||!(rang>=0&&rang<VOIES_MAX))return false;
+ const voies=voiesDe(famille),avant=voies[rang];
+ if(nom===avant)return false;
+ if(nom&&voies.some((v,i)=>v===nom&&i!==rang))return false;
+ const accueil=rangDAccueil(famille);
+ catalog.voies||={};catalog.voies[famille]=voies.map((v,i)=>i===rang?nom:v);
+ // Une maîtrise trône au-dessus des colonnes : elle n'a que faire d'une voie.
+ (catalog.talents||[]).forEach(t=>{if(!t||talentFamily(t)!==famille||t.type==='mait')return;
+  const sansVoie=!t.voie||!voies.filter(Boolean).includes(t.voie);
+  if(avant&&t.voie===avant)t.voie=nom;
+  else if(!avant&&sansVoie&&rang===accueil)t.voie=nom});
+ return true}
+// Renommer par l'ancien nom, pour qui ne connaît que lui.
+function renommerVoie(famille,avant,apres){const i=voiesDe(famille).indexOf(avant);
+ return i<0?false:nommerVoie(famille,i,apres)}
+// Nommer la première colonne libre : vrai si elle y est.
+function enregistreVoie(famille,nom){const voies=voiesDe(famille);nom=String(nom||'').trim().slice(0,60);
+ if(!nom)return false;if(voies.includes(nom))return true;
+ const i=voies.indexOf('');return i<0?false:nommerVoie(famille,i,nom)}
+// Dissoudre une voie : son nom s'efface, ses talents rejoignent le tronc commun.
+function dissoudreVoie(famille,nom){const i=voiesDe(famille).indexOf(nom);
+ return i<0?false:nommerVoie(famille,i,'')}
+// Le menu des voies du formulaire : le tronc commun, les voies nommées, et une nouvelle s'il reste un rang.
+function optionsVoie(famille,actuelle){const voies=voiesNommees(famille);
  return [['','— tronc commun —'],...voies.map(v=>[v,v]),
   ...(voies.length<VOIES_MAX||(actuelle&&!voies.includes(actuelle))?[[AUTRE_VOIE,'✎ Nouvelle spécialisation…']]:[])]}
 /* La classe d'un aventurier telle que le catalogue la nomme : par son nom, ou par sa clé —
@@ -1460,15 +1515,19 @@ function foretArbre(liste){const ids=new Set(liste.map(t=>t.id)),vus=new Set();
  liste.forEach(t=>{if(!vus.has(t.id)){const n=noeud(t);if(n)racines.push(n)}});   // un cycle, faute de racine, sort quand même
  return racines}
 const aplatit=n=>[n.t,...n.enfants.flatMap(aplatit)];
-function colonneArbre(titre,famille,voie,liste){const arbre=foretArbre(liste);
- return {titre,famille,voie,arbre,racines:arbre.map(n=>n.t),liste:arbre.flatMap(aplatit)}}
-/* Les colonnes d'une classe : une par voie, puis le tronc commun — toujours là quand la
-   classe a des voies, pour y ranger un talent — ou, sans voie, une seule colonne au nom de
-   la classe. Les maîtrises n'y sont pas : elles trônent au-dessus. */
+function colonneArbre(titre,famille,voie,liste,rang){const arbre=foretArbre(liste);
+ return {titre,famille,voie,rang,arbre,racines:arbre.map(n=>n.t),liste:arbre.flatMap(aplatit)}}
+/* Les colonnes d'une classe : trois, toujours, nommées ou non. Celle qui accueille les
+   talents sans voie s'appelle « Tronc commun » tant qu'elle n'a pas de nom ; les autres
+   attendent le leur. Les maîtrises n'y sont pas : elles trônent au-dessus. */
 function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&t.type!=='mait');
- const voies=voiesDe(classe),cols=voies.map(v=>colonneArbre(v,classe,v,talents.filter(t=>t.voie===v)));
- cols.push(colonneArbre(voies.length?'Tronc commun':classe,classe,'',talents.filter(t=>!voies.includes(t.voie||''))));
- return cols}
+ const voies=voiesDe(classe),nommees=voies.filter(Boolean),accueil=rangDAccueil(classe);
+ return voies.map((v,i)=>{
+  /* Le rang d'accueil prend les siens et les sans-voie : quand les trois portent un nom,
+     un talent sans voie s'y range quand même plutôt que de disparaître de l'arbre. */
+  const liste=talents.filter(t=>(v&&t.voie===v)||(i===accueil&&!nommees.includes(t.voie||'')));
+  const titre=v||(i===accueil?'Tronc commun':'Spécialisation '+(i+1));
+  return colonneArbre(titre,classe,v,liste,i)})}
 /* De haut en bas : une racine ne s'apprend qu'une fois la racine du dessus apprise ; un
    talent suspendu attend son prérequis, ce que dit déjà le catalogue. */
 function verrouColonne(portes,racines,t){const i=racines.indexOf(t);
@@ -1497,6 +1556,9 @@ const arbresDialog=dialog('arbres','Arbres de talents','<p class="muted" id="arb
 let arbresActeur=null,arbresClasse=null,arbreGlisse=null;
 // Refermé, l'arbre ne retient ni fiche ni classe : la prochaine ouverture repart de zéro.
 arbresDialog.addEventListener('close',()=>{arbresActeur=null;arbresClasse=null});
+/* Un clic hors de la fenêtre la referme, comme le ✕ : la cible du clic est le dialogue
+   lui-même quand il tombe sur le fond, jamais quand il tombe sur son contenu. */
+arbresDialog.addEventListener('click',e=>{if(e.target===arbresDialog)arbresDialog.close()});
 function noteArbres(texte){$('arbres-note').textContent=texte
  ||(!arbresActeur?NOTE_ARBRES_CLASSE:view==='mj'?NOTE_ARBRES_MJ:NOTE_ARBRES)}
 // Le MJ ouvre l'arbre de n'importe quelle fiche ; un joueur, celui de son aventurier.
@@ -1515,7 +1577,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(assureMaitrises(a))scheduleSave()}
  else if(!mj){arbresDialog.close();return}
  const classe=a?classeDuHeros(a):arbresClasse;
- arbresDialog.querySelector('h2').textContent='Arbres de talents — '+(a?a.name:classe);
+ /* L'arbre d'une classe se passe d'intitulé : son nom est écrit en grand au-dessus des
+    colonnes, et la longue notice d'édition prenait la moitié de la fenêtre. */
+ const titre=arbresDialog.querySelector('h2');
+ titre.textContent='Arbres de talents — '+(a?a.name:classe);titre.hidden=!a;
+ $('arbres-note').hidden=!a;
  const note=noteArbres;
  // Sans combattant, nul ne porte rien : l'arbre se lit comme un plan, et se corrige.
  const porte=t=>!!a&&a.talents.includes(t.id);
@@ -1604,11 +1670,16 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const h=document.createElement('h4');h.className='arbre-titre';
   const nomVoie=document.createElement('span');nomVoie.className='arbre-voie';nomVoie.textContent=c.titre;h.append(nomVoie);
   cible(h,{famille:c.famille,voie:c.voie});
-  if(mj&&c.voie){champVif(nomVoie,()=>c.voie,v=>{if(renommerVoie(c.famille,c.voie,v))arbreChange();else note('Ce nom de spécialisation est vide ou déjà pris.')},'Renommer la spécialisation','texte');
-   const x=ico('✕','Dissoudre « '+c.voie+' » : ses talents rejoignent le tronc commun',async()=>{
-    if(typeof demander==='function'&&!await demander('Dissoudre la spécialisation « '+c.voie+' » ? Ses talents rejoignent le tronc commun de '+c.famille+'.','Dissoudre'))return;
-    if(dissoudreVoie(c.famille,c.voie))arbreChange()});
-   x.classList.add('voie-x');h.append(x)}
+  /* Le nom d'une colonne se corrige là où il se lit, nommée ou non : c'est ainsi qu'on
+     baptise une spécialisation, et le ✕ lui reprend son nom — ses talents reviennent au
+     tronc commun sans rien perdre. */
+  if(mj&&c.rang>=0){nomVoie.classList.toggle('vierge',!c.voie);
+   champVif(nomVoie,()=>c.voie,v=>{if(nommerVoie(c.famille,c.rang,v))arbreChange();
+    else note('Ce nom de spécialisation est vide, inchangé, ou déjà pris par une autre colonne.')},'Nommer cette colonne','texte');
+   if(c.voie){const x=ico('✕','Effacer le nom « '+c.voie+' » : ses talents rejoignent le tronc commun',async()=>{
+     if(typeof demander==='function'&&!await demander('Effacer la spécialisation « '+c.voie+' » ? Ses talents rejoignent le tronc commun de '+c.famille+'.','Effacer'))return;
+     if(nommerVoie(c.famille,c.rang,''))arbreChange()});
+    x.classList.add('voie-x');h.append(x)}}
   col.append(h);
   if(!c.liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';col.append(v)}
   c.arbre.forEach((n,k)=>{if(mj)col.append(entre({famille:c.famille,voie:c.voie,avant:n.t.id}));col.append(branche(n,c,libre,k===0))});
@@ -1617,25 +1688,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    plus.title='Créer un talent dans '+c.titre;
    plus.onclick=()=>openTalent(null,renderArbres,{famille:c.famille,voie:c.voie});col.append(plus)}
   return col};
- // La colonne en pointillé qui attend une voie de plus : on la nomme, elle paraît.
- const nouvelle=()=>{const col=document.createElement('div');col.className='arbre-col nouvelle';
-  const b=document.createElement('button');b.type='button';b.className='arbre-ajout';b.textContent='+ Spécialisation';
-  b.title='Nommer une spécialisation de '+classe+' — '+voiesDe(classe).length+' / '+VOIES_MAX;
-  b.onclick=()=>{const champ=document.createElement('input');champ.className='champ-vif';champ.placeholder='Nom de la spécialisation';champ.maxLength=60;
-   champ.setAttribute('aria-label','Nom de la nouvelle spécialisation');
-   b.replaceWith(champ);champ.focus();let clos=false;
-   const fermer=garder=>{if(clos)return;clos=true;const v=champ.value.trim();
-    if(garder&&v){if(enregistreVoie(classe,v))arbreChange();else{note('« '+v+' » existe déjà, ou '+classe+' a ses '+VOIES_MAX+' spécialisations.');renderArbres()}}
-    else renderArbres()};
-   champ.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();fermer(true)}else if(e.key==='Escape'){e.preventDefault();fermer(false)}};
-   champ.onblur=()=>fermer(false)};
-  col.append(b);return col};
- // Les colonnes : les spécialisations de la classe, la voie à nommer, puis les génériques, libres.
+ /* Les colonnes : les trois de la classe, ni plus ni moins. Les génériques ont leur propre
+    arbre — on l'ouvre par son rouage, dans l'onglet Talents — et n'encombrent plus celui
+    d'une classe. */
  const grille=document.createElement('div');grille.className='arbres-cols';
- (classe?colonnesArbre(classe):[]).forEach(c=>grille.append(colonne(c,false)));
- if(mj&&classe&&classe!==GENERIQUES&&voiesDe(classe).length<VOIES_MAX)grille.append(nouvelle());
- // Les génériques en dernier, libres — sauf quand c'est d'eux que l'arbre parle.
- if(classe!==GENERIQUES)grille.append(colonne(colonneArbre(GENERIQUES,GENERIQUES,'',(catalog.talents||[]).filter(t=>t&&talentFamily(t)===GENERIQUES)),true));
+ (classe?colonnesArbre(classe):[]).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));
  corps.append(grille)}
 /* Les réglages de l'appareil : le thème et les touches de la carte. Rien n'est enregistré
    dans la partie — c'est le navigateur qui s'en souvient, pour ce poste seulement. */
@@ -1970,7 +2027,12 @@ const LOGOS_EQUIPEMENT=['weapon_arbalete','weapon_arc','weapon_armure','weapon_b
 const LOGOS_OBJET=['item_healpotion'];
 // Les logos de talents, de même : les img/spell_*.png.
 const LOGOS_TALENT=['spell_orbes'];
-const nomLogo=l=>{const n=String(l||'').replace(/^(weapon|spell|item)_/,'').replace(/[_-]+/g,' ');return n?n[0].toUpperCase()+n.slice(1):''};
+/* Les logos d'attaque, de même : les img/attack_*.png. Une attaque spéciale d'adversaire y
+   puise — mais elle peut prendre n'importe quelle icône du dossier : griffes, arme, sort ou
+   objet, c'est au MJ de dire ce que la bête brandit. */
+const LOGOS_ATTAQUE=['attack_griffes'];
+const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET];
+const nomLogo=l=>{const n=String(l||'').replace(/^(weapon|spell|item|attack)_/,'').replace(/[_-]+/g,' ');return n?n[0].toUpperCase()+n.slice(1):''};
 // Le menu de logos d'un objet dépend de sa catégorie : une arme ou une armure choisit parmi
 // les weapon_*, tout le reste parmi les item_*.
 function logosItem(o){const c=o&&o.category;return c==='weapon'||c==='armor'?LOGOS_EQUIPEMENT:LOGOS_OBJET}
@@ -1980,6 +2042,8 @@ function logoImage(l,liste,cls){if(!l||!liste.includes(l))return null;
  const im=document.createElement('img');im.className='logo-equip'+(cls?' '+cls:'');im.src=imgUrl(l+'.png');im.alt='';im.draggable=false;return im}
 function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)}
 function logoTalent(t,cls){return logoImage(t&&t.logo,LOGOS_TALENT,cls)}
+// Le logo d'une attaque : n'importe quelle icône du dossier, sans distinction de famille.
+function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['armor','Armure'],
  ['ammo','Munition'],['object','Objet'],['misc','Divers']];
 /* Ce que le formulaire affiche à l'instant, relu tel quel. Les champs absents ne sont pas
