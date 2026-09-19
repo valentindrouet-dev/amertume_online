@@ -1258,11 +1258,11 @@ assert.ok(src.includes('let gearOuvert=null;')&&!src.includes('gearOuverts')&&sr
    — lue de haut en bas, et les génériques à part. La voie d'un talent se choisit au formulaire. */
 assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.includes("mien?()=>openArbres(a):null,'⚙');")
  &&!src.includes("openPicker(a,'talents')")&&src.includes("const arbresDialog=dialog('arbres','Arbres de talents','<p class=\"muted\" id=\"arbres-note\"></p><div id=\"arbres-corps\"></div>');")
- &&src.includes('function openArbres(a){if(!peutVoirArbres(a))return;arbresActeur=a;')&&src.includes("const classe=classeDuHeros(a),toutes=talentFamilies();")
+ &&src.includes('function openArbres(a){if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;')&&src.includes("const classe=classeDuHeros(a),toutes=talentFamilies();")
  &&src.includes("if(view==='mj'){let acquis=false;troupe.forEach(a=>{if(assureMaitrises(a))acquis=true});if(acquis)scheduleSave()}")
  &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):''});")&&src.includes("+sel('Spécialisation','voie',t.voie||'',optionsVoie(famille,t.voie||''))")
  &&src.includes("if(voie&&!connues.includes(voie)&&connues.length>=VOIES_MAX){alert(")&&src.includes('t.voie=voie;if(voie)enregistreVoie(t.famille,voie);')&&src.includes("v.className='tag voie';v.textContent=t.voie;")
- &&src.includes("const verrou=acquis?'':(libre?'':verrouColonne(a.talents,col.racines,t))||manqueTalent(a.talents,t,catalog.talents);")
+ &&src.includes("const verrou=!a||acquis?'':(libre?'':verrouColonne(a.talents,col.racines,t))||manqueTalent(a.talents,t,catalog.talents);")
  &&src.includes("n.title=t.name+' — Maîtrise de classe, acquise avec la classe.';")
  &&feuille.includes('#arbres{width:min(1180px,96vw)}')&&feuille.includes('.arbre-noeud::before{content:\'\';display:block;width:3px;height:18px;')&&feuille.includes('.arbre-noeud.premier::before,.arbre-maitrises .arbre-noeud::before{display:none}')
  &&feuille.includes('.arbre-titre{width:100%;')&&feuille.includes('clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),50% 100%,0 calc(100% - 8px))}')
@@ -1357,7 +1357,7 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
  &&src.includes("plus.onclick=()=>openTalent(null,renderArbres,{famille:c.famille,voie:c.voie});col.append(plus)}")
  &&src.includes("{famille:talentFamily(t),voie:t.voie||'',prerequis:t.id,level:Math.min(20,(t.level||1)+1)})));")
  &&src.includes("plus.onclick=()=>openTalent(null,renderArbres,{famille:classe,type:'mait',name:'Maîtrise'});tete.append(plus)}}")
- &&src.includes("if(mj&&classe&&voiesDe(classe).length<VOIES_MAX)grille.append(nouvelle());")&&src.includes("if(garder&&v){if(enregistreVoie(classe,v))arbreChange();")
+ &&src.includes("if(mj&&classe&&classe!==GENERIQUES&&voiesDe(classe).length<VOIES_MAX)grille.append(nouvelle());")&&src.includes("if(garder&&v){if(enregistreVoie(classe,v))arbreChange();")
  &&src.includes("const oublier=(t,racines)=>{")&&src.includes("const chute=racines.includes(t)?racines.slice(racines.indexOf(t)):[t];")
  &&feuille.includes('.glisse .arbre-entre{height:12px;margin:3px 0;border:1px dashed var(--line-strong)}')&&feuille.includes('.arbre-enfants{display:flex;justify-content:center;align-items:flex-start;width:100%}')
  &&feuille.includes('.arbre-noeud:hover .arbre-outils,.arbre-noeud:focus-within .arbre-outils{display:flex}')&&feuille.includes('.arbre-col.nouvelle{border-style:dashed;'),'l’arbre s’édite en place');
@@ -1421,8 +1421,8 @@ assert.ok(src.includes("const sansEffet=t=>typeof manqueTalent==='function'?manq
 /* Le joueur ouvre les arbres de son aventurier, sans les outils du MJ ; les « + » du MJ ne
    paraissent plus chez lui, et son choix de talents part à la table avec sa fiche. */
 assert.ok(src.includes('function peutVoirArbres(a){return !!a&&(view===\'mj\'||(a.hero&&actors.indexOf(a)===owner))}')
- &&src.includes('function openArbres(a){if(!peutVoirArbres(a))return;arbresActeur=a;')
- &&src.includes("if(!peutVoirArbres(a)){arbresDialog.close();return}")
+ &&src.includes('function openArbres(a){if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;')
+ &&src.includes("if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}")
  &&src.includes("const mien=view==='mj'||actors.indexOf(a)===owner;")
  &&src.includes("const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');")
  &&src.includes("const titreKit=sousTitre('Équipement','Inventaire de '+a.name,view!=='mj'?null:()=>openPicker(a,'gear'));")
@@ -1509,4 +1509,20 @@ assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&(a.hp<a
 /* La jauge du socle actif donne la mesure ; les autres sont d'un tiers plus fines. */
 assert.ok(page.includes('.token .pv{position:absolute;left:2%;right:2%;bottom:100%;margin-bottom:3px;height:4px;')
  &&page.includes('.token.selected .pv{height:6px}'),'la jauge de l’actif est la plus épaisse');
-console.log('962 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* L'arbre d'une classe s'ouvre depuis l'onglet Talents, par le rouage posé contre son nom :
+   sans combattant, nul n'y porte rien, le clic sur un talent le corrige, et la Provocation
+   ne pose plus de bandeau en travers de la carte. */
+assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null;')
+ &&src.includes("function openArbresClasse(famille){if(view!=='mj')return;arbresActeur=null;arbresClasse=famille||GENERIQUES;")
+ &&src.includes("function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();")
+ &&src.includes("const classe=a?classeDuHeros(a):arbresClasse;")&&src.includes("const porte=t=>!!a&&a.talents.includes(t.id);")
+ &&src.includes("el.onclick=()=>{if(!a){openTalent(catalog.talents.indexOf(t),renderArbres);return}")
+ &&src.includes("const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);")
+ &&src.includes("if(classe!==GENERIQUES)grille.append(colonne(colonneArbre(GENERIQUES,GENERIQUES,'',")
+ &&src.includes("arbresDialog.addEventListener('close',()=>{arbresActeur=null;arbresClasse=null});")
+ &&src.includes("rouage.textContent='⚙';rouage.title='Arbre de talents — '+famille;")
+ &&src.includes("rouage.onclick=e=>{e.stopPropagation();openArbresClasse(famille)};h.append(rouage)}")
+ &&src.includes('const NOTE_ARBRES_CLASSE=')&&feuille.includes('.arbre-noeud.modele{cursor:pointer}')
+ &&feuille.includes('.cat-col>h3 .ico.plus.rouage{')
+ &&!page.includes("annonceFlottante('📣 '"),'l’arbre d’une classe s’ouvre depuis l’onglet Talents');
+console.log('973 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

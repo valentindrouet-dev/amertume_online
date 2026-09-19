@@ -1074,6 +1074,12 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
   const h=document.createElement('h3');h.textContent=famille;
   // Seule l'encre distingue une classe : les bandeaux restent sans fond, comme partout.
   const encre=teinteClasse(famille);if(encre)h.style.color=encre;
+  /* Le même rouage que sur une fiche, à côté du nom de la classe : l'arbre s'ouvre là où
+     l'on range ses talents, sans passer par un aventurier. */
+  if(view==='mj'){const rouage=document.createElement('button');rouage.type='button';rouage.className='ico plus rouage';
+   rouage.textContent='⚙';rouage.title='Arbre de talents — '+famille;
+   rouage.setAttribute('aria-label','Ouvrir l’arbre de talents de '+famille);
+   rouage.onclick=e=>{e.stopPropagation();openArbresClasse(famille)};h.append(rouage)}
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
   h.append(compte);bloc.append(h);
   /* Une amélioration se range sous son prérequis, en retrait : la colonne se lit comme
@@ -1425,24 +1431,38 @@ function placerTalent(id,dest){const liste=catalog.talents||[],i=liste.findIndex
  return true}
 const GLYPHES_TALENT={act:'⚔',reac:'↩',pass:'◆',crit:'✸',mait:'★',ame:'⇧'};
 const NOTE_ARBRES='Clique un talent pour l’apprendre — de haut en bas dans chaque spécialisation — ou pour l’oublier.';
-const NOTE_ARBRES_MJ=NOTE_ARBRES+' Glisse un talent sur un autre pour l’y suspendre, sur un bandeau pour l’y ranger, entre deux pour l’insérer ; ✎ le corrige, ⊕ en crée un dessous.';
+const EDITION_ARBRES='Glisse un talent sur un autre pour l’y suspendre, sur un bandeau pour l’y ranger, entre deux pour l’insérer ; ✎ le corrige, ⊕ en crée un dessous.';
+const NOTE_ARBRES_MJ=NOTE_ARBRES+' '+EDITION_ARBRES;
+const NOTE_ARBRES_CLASSE='L’arbre de la classe, sans personne à équiper : clique un talent pour le corriger. '+EDITION_ARBRES;
 const arbresDialog=dialog('arbres','Arbres de talents','<p class="muted" id="arbres-note"></p><div id="arbres-corps"></div>');
-let arbresActeur=null,arbreGlisse=null;
-function noteArbres(texte){$('arbres-note').textContent=texte||(view==='mj'?NOTE_ARBRES_MJ:NOTE_ARBRES)}
+/* L'arbre s'ouvre de deux façons : sur la fiche d'un combattant — il y choisit ses talents —
+   ou depuis l'onglet Talents, pour une classe seule, que le MJ y bâtit sans personne à
+   équiper. « arbresClasse » porte ce second cas. */
+let arbresActeur=null,arbresClasse=null,arbreGlisse=null;
+// Refermé, l'arbre ne retient ni fiche ni classe : la prochaine ouverture repart de zéro.
+arbresDialog.addEventListener('close',()=>{arbresActeur=null;arbresClasse=null});
+function noteArbres(texte){$('arbres-note').textContent=texte
+ ||(!arbresActeur?NOTE_ARBRES_CLASSE:view==='mj'?NOTE_ARBRES_MJ:NOTE_ARBRES)}
 // Le MJ ouvre l'arbre de n'importe quelle fiche ; un joueur, celui de son aventurier.
 function peutVoirArbres(a){return !!a&&(view==='mj'||(a.hero&&actors.indexOf(a)===owner))}
-function openArbres(a){if(!peutVoirArbres(a))return;arbresActeur=a;
+function openArbres(a){if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;
  if(assureMaitrises(a))scheduleSave();
+ noteArbres('');renderArbres();arbresDialog.showModal()}
+// L'arbre d'une classe, sans combattant : le MJ le bâtit, personne n'y apprend rien.
+function openArbresClasse(famille){if(view!=='mj')return;arbresActeur=null;arbresClasse=famille||GENERIQUES;
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
 function arbreChange(){noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
-function renderArbres(){const corps=$('arbres-corps');if(!corps||!arbresActeur)return;corps.replaceChildren();
- const a=arbresActeur;a.talents??=[];const classe=classeDuHeros(a),mj=view==='mj';
- if(!peutVoirArbres(a)){arbresDialog.close();return}
- if(assureMaitrises(a))scheduleSave();
- arbresDialog.querySelector('h2').textContent='Arbres de talents — '+a.name;
+function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();
+ const a=arbresActeur,mj=view==='mj';
+ if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}
+  if(assureMaitrises(a))scheduleSave()}
+ else if(!mj){arbresDialog.close();return}
+ const classe=a?classeDuHeros(a):arbresClasse;
+ arbresDialog.querySelector('h2').textContent='Arbres de talents — '+(a?a.name:classe);
  const note=noteArbres;
- const porte=t=>a.talents.includes(t.id);
+ // Sans combattant, nul ne porte rien : l'arbre se lit comme un plan, et se corrige.
+ const porte=t=>!!a&&a.talents.includes(t.id);
  /* Le choix d'un joueur part à la table comme le reste de sa fiche : les talents voyagent
     avec les champs vivants — le rendu les pousse — et le MJ les voit sans republier. */
  const majTable=()=>{renderArbres();renderHeroes();render();scheduleSave()};
@@ -1492,10 +1512,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||!arbresActeur)r
  tete.append(nomClasse);
  const maitrises=maitrisesDe(classe);
  if(maitrises.length){const bande=document.createElement('div');bande.className='arbre-maitrises';
-  maitrises.forEach(t=>{const n=noeud(t,'acquis auto');n.title=t.name+' — Maîtrise de classe, acquise avec la classe.';bande.append(n)});
+  maitrises.forEach(t=>{const n=noeud(t,a?'acquis auto':'modele');
+   n.title=t.name+' — Maîtrise de classe, acquise avec la classe.';
+   if(!a)n.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres);
+   bande.append(n)});
   tete.append(bande)}
  else{const v=document.createElement('p');v.className='muted';
-  v.textContent=classe?'Aucune maîtrise pour '+classe+'.':'Donne une classe à '+a.name+' pour lui ouvrir un arbre.';
+  v.textContent=classe?'Aucune maîtrise pour '+classe+'.':'Donne une classe à '+a.name+' pour lui ouvrir un arbre.';   // eslint-disable-line
   tete.append(v);
   if(mj&&classe){const plus=document.createElement('button');plus.type='button';plus.className='arbre-ajout';plus.textContent='+ Maîtrise';
    plus.title='Créer la maîtrise de '+classe+' : elle vient avec la classe';
@@ -1504,9 +1527,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||!arbresActeur)r
  // Une branche : le talent, puis, en rangée dessous, les branches qui le requièrent.
  const branche=(n,col,libre,premier)=>{const bloc=document.createElement('div');bloc.className='arbre-branche';
   const t=n.t,acquis=porte(t);
-  const verrou=acquis?'':(libre?'':verrouColonne(a.talents,col.racines,t))||manqueTalent(a.talents,t,catalog.talents);
-  const el=noeud(t,acquis?'acquis':verrou?'verrou':'dispo',verrou);if(premier)el.classList.add('premier');
-  el.onclick=()=>{if(verrou){note('« '+t.name+' » exige d’abord « '+verrou+' ».');return}
+  const verrou=!a||acquis?'':(libre?'':verrouColonne(a.talents,col.racines,t))||manqueTalent(a.talents,t,catalog.talents);
+  const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);if(premier)el.classList.add('premier');
+  // Sans combattant, le clic ouvre le talent : c'est le plan de la classe qu'on corrige.
+  el.onclick=()=>{if(!a){openTalent(catalog.talents.indexOf(t),renderArbres);return}
+   if(verrou){note('« '+t.name+' » exige d’abord « '+verrou+' ».');return}
    if(acquis){const tombes=oublier(t,libre?[]:col.racines);
     note(tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'')}
    else{a.talents=[...a.talents,t.id];note('')}
@@ -1552,8 +1577,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||!arbresActeur)r
  // Les colonnes : les spécialisations de la classe, la voie à nommer, puis les génériques, libres.
  const grille=document.createElement('div');grille.className='arbres-cols';
  (classe?colonnesArbre(classe):[]).forEach(c=>grille.append(colonne(c,false)));
- if(mj&&classe&&voiesDe(classe).length<VOIES_MAX)grille.append(nouvelle());
- grille.append(colonne(colonneArbre(GENERIQUES,GENERIQUES,'',(catalog.talents||[]).filter(t=>t&&talentFamily(t)===GENERIQUES)),true));
+ if(mj&&classe&&classe!==GENERIQUES&&voiesDe(classe).length<VOIES_MAX)grille.append(nouvelle());
+ // Les génériques en dernier, libres — sauf quand c'est d'eux que l'arbre parle.
+ if(classe!==GENERIQUES)grille.append(colonne(colonneArbre(GENERIQUES,GENERIQUES,'',(catalog.talents||[]).filter(t=>t&&talentFamily(t)===GENERIQUES)),true));
  corps.append(grille)}
 /* Les réglages de l'appareil : le thème et les touches de la carte. Rien n'est enregistré
    dans la partie — c'est le navigateur qui s'en souvient, pour ce poste seulement. */

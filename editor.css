@@ -742,3 +742,8 @@ button.choix-attaque.sans-des{grid-auto-rows:1fr}
 .cat-pill.sans-effet{filter:saturate(.4)}
 .cat-pill .t-sans-effet{margin-left:auto;font-size:13px;line-height:1;color:#b03828}
 .talent-detail .sans-effet-dit{font-weight:700;color:#b03828}
+/* Un nœud lu sans porteur — l'arbre d'une classe, ouvert depuis l'onglet Talents — n'est ni
+   acquis ni sous clé : il se lit comme un plan, et le clic le corrige. */
+.arbre-noeud.modele{cursor:pointer}
+.arbre-noeud.modele .arbre-rond{border-style:dashed}
+.cat-col>h3 .ico.plus.rouage{margin-left:2px;font-weight:400;font-size:14px;padding:0 5px 1px}
