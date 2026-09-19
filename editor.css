@@ -688,8 +688,37 @@ button.choix-attaque.sans-des{grid-auto-rows:1fr}
 .arbre-col.libre{border-style:dashed;--encre:#7a6d5c}
 .arbre-col>.muted{font-size:13px;margin-top:8px}
 .arbre-titre{width:100%;box-sizing:border-box;margin:0 0 12px;padding:9px 10px 14px;text-align:center;font:700 12px system-ui;letter-spacing:2px;text-transform:uppercase;color:#fff;background:var(--encre,#6b5d4b);border-radius:11px 11px 0 0;clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),50% 100%,0 calc(100% - 8px))}
-.arbre-noeud{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;box-sizing:border-box;padding:0 8px;border:0;background:transparent;color:var(--ink);cursor:pointer;font:600 13px system-ui;position:relative}
-.arbre-noeud+.arbre-noeud::before{content:'';display:block;width:3px;height:18px;border-radius:2px;background:var(--line-strong);margin:2px 0}
+.arbre-noeud{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;box-sizing:border-box;padding:0 8px;border:0;background:transparent;color:var(--ink);cursor:pointer;font:600 13px system-ui;position:relative;user-select:none}
+/* Le fil : chaque talent le tient au-dessus de lui, sauf la première racine d'une colonne et les maîtrises. */
+.arbre-noeud::before{content:'';display:block;width:3px;height:18px;border-radius:2px;background:var(--line-strong);margin:2px 0}
+.arbre-noeud.premier::before,.arbre-maitrises .arbre-noeud::before{display:none}
+.arbre-branche{display:flex;flex-direction:column;align-items:center;width:100%;min-width:0}
+/* Les sous-branches : en rangée sous leur talent, chacune sa part de la colonne. */
+.arbre-enfants{display:flex;justify-content:center;align-items:flex-start;width:100%}
+.arbre-enfants>.arbre-branche{flex:1 1 0}
+/* Les zones d'insertion ne paraissent que pendant un glissement, entre deux frères et au bas d'une colonne. */
+.arbre-entre{height:0;width:70%;box-sizing:border-box;border-radius:6px;transition:height .1s,margin .1s}
+.glisse .arbre-entre{height:12px;margin:3px 0;border:1px dashed var(--line-strong)}
+.arbre-entre.survol{background:var(--sel);border-color:var(--green)}
+.arbre-noeud.tire{opacity:.4}
+.arbre-noeud.survol .arbre-rond{box-shadow:0 0 0 3px var(--panel),0 0 0 6px var(--green)}
+.arbre-titre.survol{filter:brightness(1.25)}
+/* Les outils du MJ sur un talent, au survol : corriger, suspendre un talent dessous. */
+.arbre-outils{display:none;position:absolute;top:0;right:2px;gap:2px;z-index:1}
+.arbre-noeud:hover .arbre-outils,.arbre-noeud:focus-within .arbre-outils{display:flex}
+.arbre-outils .ico{padding:2px 5px;font-size:13px;line-height:1;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink)}
+.arbre-outils .ico:hover{color:var(--accent);border-color:var(--accent)}
+.arbre-titre{position:relative}
+.arbre-titre .arbre-voie.modifiable{cursor:text;border-radius:4px;padding:0 4px}
+.arbre-titre .ico.voie-x{position:absolute;top:5px;right:5px;padding:1px 5px;font-size:12px;color:#fff;opacity:0;transition:opacity .12s}
+.arbre-col:hover .arbre-titre .ico.voie-x,.arbre-titre .ico.voie-x:focus{opacity:.9}
+.arbre-ajout{margin-top:auto;padding:5px 11px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;color:var(--muted);font:600 12px system-ui;cursor:pointer}
+.arbre-col .arbre-ajout{margin-top:12px}
+.arbre-ajout:hover{color:var(--accent);border-color:var(--accent)}
+.arbre-col.nouvelle{border-style:dashed;background:transparent;justify-content:center;min-height:150px}
+.arbre-col.nouvelle .arbre-ajout{margin:0}
+.arbre-col.nouvelle .champ-vif{width:85%;box-sizing:border-box}
+.arbres-tete .arbre-ajout{margin-top:0}
 .arbre-rond{position:relative;display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:var(--panel);border:3px solid var(--teinte);box-shadow:0 0 0 3px var(--panel),0 2px 6px #0004;font-size:24px;line-height:1;color:var(--teinte)}
 .arbre-rond img{width:64%;height:64%;object-fit:contain}
 .arbre-nom{max-width:100%;text-align:center;line-height:1.2}

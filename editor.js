@@ -15,8 +15,16 @@ const ATTAQUE_AUTO='Attaque de base';
 function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
  // L'état Gardé n'existe plus depuis la v0.164 : Gardien pose Blindage.
  a.states=a.states.filter(s=>s!=='Gardé');return a}
+// Trois spécialisations par classe, pas une de plus : les trois branches de l'arbre.
+const VOIES_MAX=3;
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
+ /* Les spécialisations de chaque classe, dans l'ordre du MJ : des noms, trois au plus par
+    classe, sans doublon. Une voie qu'un talent nomme sans y figurer s'y lit quand même. */
+ const voies=c.voies&&typeof c.voies==='object'&&!Array.isArray(c.voies)?c.voies:{};
+ c.voies={};Object.entries(voies).forEach(([f,l])=>{if(!Array.isArray(l))return;
+  const noms=[...new Set(l.filter(v=>typeof v==='string').map(v=>v.trim().slice(0,60)).filter(Boolean))].slice(0,VOIES_MAX);
+  if(noms.length)c.voies[f]=noms});
  /* Les classes du jeu viennent avec lui : un catalogue enregistré avant elles les reçoit
     une fois. Ensuite elles lui appartiennent, et le MJ peut les corriger. */
  if(!Array.isArray(c.classes))c.classes=structuredClone((window.AMERTUME_CATALOG||{}).classes||[]);
@@ -30,6 +38,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(!t.prerequis||t.prerequis===t.id||!c.talents.some(x=>x&&x.id===t.prerequis))t.prerequis='';
   // La spécialisation d'un talent : la voie de l'arbre où il se range, ou rien.
   t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):''});
+ /* Une voie qu'un talent porte sans qu'elle soit nommée entre dans la liste de sa classe :
+    la colonne ne disparaît pas quand on en sort le dernier talent. */
+ c.talents.forEach(t=>{if(!t||!t.voie)return;const f=(t.famille||'').trim()||'Génériques',l=c.voies[f]||[];
+  if(!l.includes(t.voie)&&l.length<VOIES_MAX)c.voies[f]=[...l,t.voie]});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{m.weapons||=[];m.armorId??='';m.shieldId??=''});
  return c}
@@ -1050,7 +1062,9 @@ const talentDialog=dialog('talent-editor','Talent','<form id="talent-form"><div 
 let talentIndex=null,talentApres=null,talentDraft={effet:'',params:{}};
 /* Fermé sans enregistrer, le dialogue ne doit rien rappeler : sinon une création faite
    plus tard depuis l'armurerie irait se cocher dans une fiche déjà refermée. */
-talentDialog.addEventListener('close',()=>{talentApres=null});
+talentDialog.addEventListener('close',()=>{talentApres=null;
+ // L'arbre ouvert dessous se redessine : un talent créé, corrigé ou supprimé y paraît.
+ if(typeof arbresDialog!=='undefined'&&arbresDialog.open)renderArbres()});
 /* Les réglages d'un effet sont dessinés d'après sa déclaration : ajouter un effet au
    moteur suffit à lui donner son formulaire, sans toucher à celui-ci. */
 function lireReglagesTalent(){const f=$('talent-form').elements,out={};
@@ -1073,10 +1087,14 @@ function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)retu
 // Le nom d'un modèle du bestiaire, pour les phrases du moteur qui ne le connaissent pas.
 function nomModele(id){const m=(catalog.monsters||[]).find(x=>x&&x.id===id);return m?m.name:''}
 /* Vrai si x repose, de près ou de loin, sur t : par la fiche ou par la mécanique. */
-function descendDe(x,t,vus=new Set()){if(!x||!t||vus.has(x.id))return false;vus.add(x.id);
+/* Le garde-fou marque les ancêtres parcourus — t — et non le candidat x : marquer x coupait la
+   descente au premier étage, et un cycle à trois talents passait. */
+function descendDe(x,t,vus=new Set()){if(!x||!t||vus.has(t.id))return false;vus.add(t.id);
  return talentsDependants(t,catalog.talents).some(d=>d.id===x.id||descendDe(x,d,vus))}
-function openTalent(i=null,apres=null){if(view!=='mj')return;talentIndex=i;talentApres=apres;
- const t=i===null?{name:'Nouveau talent',famille:GENERIQUES,type:'act',level:1,effect:'',effets:'',effects:'',notes:'',effet:'',params:{}}:catalog.talents[i];
+/* « defauts » : ce que l'arbre sait déjà d'un talent qu'on y crée — sa classe, sa voie, le
+   talent dont il pendra, sa nature — pour ne pas le redire au formulaire. */
+function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talentIndex=i;talentApres=apres;
+ const t=i===null?{name:'Nouveau talent',famille:GENERIQUES,type:'act',level:1,effect:'',effets:'',effects:'',notes:'',effet:'',params:{},...(defauts||{})}:catalog.talents[i];
  if(i!==null&&!t)return;
  talentDraft={effet:t.effet||'',params:{...(t.params||{})}};
  /* Les classes offertes : celles du jeu, celles déjà portées par un talent, et celles que
@@ -1146,9 +1164,9 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  /* Trois voies par classe, pas une de plus : une quatrième est refusée en le disant, et le
     formulaire reste ouvert pour en choisir une autre. */
  const voie=(f.voie.value===AUTRE_VOIE?f.voieLibre.value:f.voie.value).trim().slice(0,60);
- const autres=[...new Set((catalog.talents||[]).filter((x,k)=>x&&k!==talentIndex&&talentFamily(x)===t.famille&&x.voie).map(x=>x.voie))];
- if(voie&&!autres.includes(voie)&&autres.length>=VOIES_MAX){alert('« '+t.famille+' » a déjà ses '+VOIES_MAX+' spécialisations : '+autres.join(', ')+'.');return}
- t.voie=voie;
+ const connues=voiesDe(t.famille);
+ if(voie&&!connues.includes(voie)&&connues.length>=VOIES_MAX){alert('« '+t.famille+' » a déjà ses '+VOIES_MAX+' spécialisations : '+connues.join(', ')+'.');return}
+ t.voie=voie;if(voie)enregistreVoie(t.famille,voie);
  t.type=f.type.value;t.level=num(f.level.value,1,20);
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
  t.prerequis=f.prerequis&&f.prerequis.value&&f.prerequis.value!==t.id&&(catalog.talents||[]).some(x=>x&&x.id===f.prerequis.value)?f.prerequis.value:'';
@@ -1301,14 +1319,33 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
    corps.append(v)}}}
 /* ---------- Arbres de talents ---------- */
 /* Une classe se lit comme un arbre : sa maîtrise en tête, acquise avec la classe, puis une
-   colonne par spécialisation — trois au plus — dont les talents se prennent de haut en bas.
-   Les talents sans voie forment le tronc commun ; les génériques, une colonne à part, se
-   choisissent librement. Comment les points de talent débloquent les rangs viendra ensuite. */
-const VOIES_MAX=3,AUTRE_VOIE='__voie';
-// Les voies d'une classe, dans l'ordre où le catalogue les rencontre.
-function voiesDe(famille){const out=[];
+   colonne par spécialisation — trois au plus — dont les racines se prennent de haut en bas ;
+   sous un talent pendent des sous-branches, les talents qui le requièrent. Les talents sans
+   voie forment le tronc commun ; les génériques, une colonne à part, se choisissent
+   librement. Le MJ bâtit l'arbre ici même : il nomme une voie, la renomme, la dissout ;
+   il glisse un talent sur un autre pour l'y suspendre, sur un bandeau pour l'y ranger, entre
+   deux pour l'insérer ; il crée un talent depuis une colonne ou sous un talent. Comment les
+   points de talent débloquent les rangs viendra ensuite. */
+const AUTRE_VOIE='__voie';
+/* Les voies d'une classe : celles que le MJ a nommées, dans son ordre, puis celles qu'un
+   talent porte sans y figurer — un catalogue d'avant les voies nommées. */
+function voiesDe(famille){const out=[...((catalog.voies||{})[famille]||[])];
  (catalog.talents||[]).forEach(t=>{if(t&&talentFamily(t)===famille&&t.voie&&!out.includes(t.voie))out.push(t.voie)});
  return out.slice(0,VOIES_MAX)}
+// Nommer une voie : vrai si elle y est — trois par classe, jamais deux fois le même nom.
+function enregistreVoie(famille,nom){nom=String(nom||'').trim().slice(0,60);if(!famille||!nom)return false;
+ const voies=voiesDe(famille);if(voies.includes(nom))return true;if(voies.length>=VOIES_MAX)return false;
+ catalog.voies||={};catalog.voies[famille]=[...voies,nom];return true}
+// Renommer une voie : le nom change sur la liste et sur chacun de ses talents.
+function renommerVoie(famille,avant,apres){apres=String(apres||'').trim().slice(0,60);
+ if(!avant||!apres||apres===avant)return false;
+ const voies=voiesDe(famille);if(!voies.includes(avant)||voies.includes(apres))return false;
+ catalog.voies||={};catalog.voies[famille]=voies.map(v=>v===avant?apres:v);
+ (catalog.talents||[]).forEach(t=>{if(t&&talentFamily(t)===famille&&t.voie===avant)t.voie=apres});return true}
+// Dissoudre une voie : ses talents rejoignent le tronc commun, rien n'est perdu.
+function dissoudreVoie(famille,nom){const voies=voiesDe(famille);if(!voies.includes(nom))return false;
+ catalog.voies||={};catalog.voies[famille]=voies.filter(v=>v!==nom);
+ (catalog.talents||[]).forEach(t=>{if(t&&talentFamily(t)===famille&&t.voie===nom)t.voie=''});return true}
 // Le menu des voies du formulaire : le tronc commun, les voies connues, et une nouvelle s'il reste de la place.
 function optionsVoie(famille,actuelle){const voies=voiesDe(famille);
  return [['','— tronc commun —'],...voies.map(v=>[v,v]),
@@ -1324,39 +1361,81 @@ function maitrisesDe(classe){return classe?(catalog.talents||[]).filter(t=>t&&t.
 function assureMaitrises(a){if(!a||!a.hero)return false;a.talents??=[];let change=false;
  maitrisesDe(classeDuHeros(a)).forEach(t=>{if(!a.talents.includes(t.id)){a.talents.push(t.id);change=true}});
  return change}
-// L'ordre d'une colonne : par niveau, puis par nom, une amélioration sous son prérequis.
-function ordreArbre(liste){return ordonneTalents([...liste].sort((x,y)=>(x.level||1)-(y.level||1)||x.name.localeCompare(y.name,'fr')),catalog.talents).map(([t])=>t)}
+/* Une colonne en forêt : les racines — sans prérequis dans la colonne — dans l'ordre du
+   catalogue, qui est celui du MJ, et sous chacune les talents qui la requièrent. */
+function foretArbre(liste){const ids=new Set(liste.map(t=>t.id)),vus=new Set();
+ const noeud=t=>{if(vus.has(t.id))return null;vus.add(t.id);
+  return {t,enfants:liste.filter(x=>x.prerequis===t.id&&x.id!==t.id).map(noeud).filter(Boolean)}};
+ const racines=liste.filter(t=>!t.prerequis||t.prerequis===t.id||!ids.has(t.prerequis)).map(noeud).filter(Boolean);
+ liste.forEach(t=>{if(!vus.has(t.id)){const n=noeud(t);if(n)racines.push(n)}});   // un cycle, faute de racine, sort quand même
+ return racines}
+const aplatit=n=>[n.t,...n.enfants.flatMap(aplatit)];
+function colonneArbre(titre,famille,voie,liste){const arbre=foretArbre(liste);
+ return {titre,famille,voie,arbre,racines:arbre.map(n=>n.t),liste:arbre.flatMap(aplatit)}}
+/* Les colonnes d'une classe : une par voie, puis le tronc commun — toujours là quand la
+   classe a des voies, pour y ranger un talent — ou, sans voie, une seule colonne au nom de
+   la classe. Les maîtrises n'y sont pas : elles trônent au-dessus. */
 function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&t.type!=='mait');
- const voies=voiesDe(classe),cols=voies.map(v=>({titre:v,liste:ordreArbre(talents.filter(t=>t.voie===v))}));
- const tronc=talents.filter(t=>!voies.includes(t.voie||''));
- if(tronc.length||!cols.length)cols.push({titre:voies.length?'Tronc commun':classe,liste:ordreArbre(tronc)});
+ const voies=voiesDe(classe),cols=voies.map(v=>colonneArbre(v,classe,v,talents.filter(t=>t.voie===v)));
+ cols.push(colonneArbre(voies.length?'Tronc commun':classe,classe,'',talents.filter(t=>!voies.includes(t.voie||''))));
  return cols}
-/* Dans une colonne, un talent ne s'apprend qu'une fois celui du dessus appris : le nom de
-   ce qui manque, ou rien. */
-function verrouColonne(portes,liste,t){const i=liste.indexOf(t);
- return i>0&&!(portes||[]).includes(liste[i-1].id)?liste[i-1].name:''}
+/* De haut en bas : une racine ne s'apprend qu'une fois la racine du dessus apprise ; un
+   talent suspendu attend son prérequis, ce que dit déjà le catalogue. */
+function verrouColonne(portes,racines,t){const i=racines.indexOf(t);
+ return i>0&&!(portes||[]).includes(racines[i-1].id)?racines[i-1].name:''}
+/* Placer un talent dans l'arbre : sa classe, sa voie, ce qu'il requiert, et sa place parmi
+   ses frères — avant celui qu'on désigne, sinon en dernier. Jamais sous lui-même ni sous ce
+   qui repose déjà sur lui : l'arbre ne se mord pas la queue. */
+function placerTalent(id,dest){const liste=catalog.talents||[],i=liste.findIndex(t=>t&&t.id===id);if(i<0)return false;
+ const t=liste[i];
+ if(dest.prerequis){const p=liste.find(x=>x&&x.id===dest.prerequis);if(!p||p===t||descendDe(p,t))return false}
+ if(dest.avant===t.id)return false;
+ t.famille=dest.famille||GENERIQUES;t.voie=dest.voie||'';t.prerequis=dest.prerequis||'';
+ liste.splice(i,1);
+ const k=dest.avant?liste.findIndex(x=>x&&x.id===dest.avant):-1;
+ if(k>=0)liste.splice(k,0,t);else liste.push(t);
+ return true}
 const GLYPHES_TALENT={act:'⚔',reac:'↩',pass:'◆',crit:'✸',mait:'★',ame:'⇧'};
 const NOTE_ARBRES='Clique un talent pour l’apprendre — de haut en bas dans chaque spécialisation — ou pour l’oublier.';
+const NOTE_ARBRES_MJ=NOTE_ARBRES+' Glisse un talent sur un autre pour l’y suspendre, sur un bandeau pour l’y ranger, entre deux pour l’insérer ; ✎ le corrige, ⊕ en crée un dessous.';
 const arbresDialog=dialog('arbres','Arbres de talents','<p class="muted" id="arbres-note"></p><div id="arbres-corps"></div>');
-let arbresActeur=null;
+let arbresActeur=null,arbreGlisse=null;
+function noteArbres(texte){$('arbres-note').textContent=texte||(view==='mj'?NOTE_ARBRES_MJ:NOTE_ARBRES)}
 function openArbres(a){if(view!=='mj')return;arbresActeur=a;
  if(assureMaitrises(a))scheduleSave();
- $('arbres-note').textContent=NOTE_ARBRES;renderArbres();arbresDialog.showModal()}
+ noteArbres('');renderArbres();arbresDialog.showModal()}
+// Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
+function arbreChange(){noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
 function renderArbres(){const corps=$('arbres-corps');if(!corps||!arbresActeur)return;corps.replaceChildren();
- const a=arbresActeur;a.talents??=[];const classe=classeDuHeros(a);
+ const a=arbresActeur;a.talents??=[];const classe=classeDuHeros(a),mj=view==='mj';
+ if(assureMaitrises(a))scheduleSave();
  arbresDialog.querySelector('h2').textContent='Arbres de talents — '+a.name;
- const note=texte=>{$('arbres-note').textContent=texte||NOTE_ARBRES};
+ const note=noteArbres;
  const porte=t=>a.talents.includes(t.id);
  const majTable=()=>{renderArbres();renderHeroes();render();scheduleSave()};
- /* Oublier un talent fait tomber ceux du dessous dans sa colonne, et ce qui reposait sur
-    eux ; du bas vers le haut, pour que chaque retrait n'emporte que le sien. */
- const oublier=(t,liste)=>{const avant=a.talents;let reste=avant;
-  const chute=liste?liste.slice(liste.indexOf(t)):[t];
+ /* Oublier une racine fait tomber les racines du dessous, et tout ce qui reposait sur
+    elles ; du bas vers le haut, pour que chaque retrait n'emporte que le sien. */
+ const oublier=(t,racines)=>{const avant=a.talents;let reste=avant;
+  const chute=racines.includes(t)?racines.slice(racines.indexOf(t)):[t];
   [...chute].reverse().forEach(x=>{reste=talentsSans(reste,x.id,catalog.talents).liste});
   a.talents=reste;
   return avant.filter(id=>id!==t.id&&!reste.includes(id)).map(id=>{const x=talent(id);return x?x.name:''}).filter(Boolean)};
+ const ico=(g,titre,fn)=>{const b=document.createElement('button');b.type='button';b.className='ico';b.textContent=g;
+  b.title=titre;b.setAttribute('aria-label',titre);b.draggable=false;b.onclick=e=>{e.stopPropagation();fn()};return b};
+ /* Le glisser-déposer du MJ : la source est le talent tiré, la cible dit où il va — sous
+    un talent, en dernier d'un bandeau, ou avant un frère. */
+ const glissable=(el,t)=>{if(!mj)return;el.draggable=true;
+  el.addEventListener('dragstart',e=>{arbreGlisse=t.id;el.classList.add('tire');corps.classList.add('glisse');
+   try{e.dataTransfer.setData('text/plain',t.id);e.dataTransfer.effectAllowed='move'}catch(_){}});
+  el.addEventListener('dragend',()=>{arbreGlisse=null;el.classList.remove('tire');corps.classList.remove('glisse')})};
+ const cible=(el,dest)=>{if(!mj)return;
+  el.addEventListener('dragover',e=>{if(!arbreGlisse)return;e.preventDefault();el.classList.add('survol');try{e.dataTransfer.dropEffect='move'}catch(_){}});
+  el.addEventListener('dragleave',()=>el.classList.remove('survol'));
+  el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('survol');const id=arbreGlisse;arbreGlisse=null;corps.classList.remove('glisse');
+   if(!id)return;if(placerTalent(id,dest))arbreChange();else note('Ce talent ne peut pas aller là : il se retrouverait sous lui-même.')})};
+ const entre=dest=>{const z=document.createElement('div');z.className='arbre-entre';cible(z,dest);return z};
  // Un nœud de l'arbre : le rond au logo — ou au glyphe de sa nature — le nom, le niveau.
- const noeud=(t,etat,verrou)=>{const b=document.createElement('button');b.type='button';
+ const noeud=(t,etat,verrou)=>{const b=document.createElement('div');b.tabIndex=0;b.setAttribute('role','button');
   b.className='arbre-noeud t-'+talentType(t)[0]+(etat?' '+etat:'');
   const rond=document.createElement('span');rond.className='arbre-rond';
   const logo=logoTalent(t);if(logo)rond.append(logo);else rond.textContent=GLYPHES_TALENT[t.type]||'✦';
@@ -1364,6 +1443,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||!arbresActeur)r
   const niv=document.createElement('span');niv.className='arbre-niv';niv.textContent='Niv. '+(t.level||1);
   b.append(rond,nom,niv);
   b.title=t.name+' — '+[talentType(t)[2],t.effects].filter(Boolean).join(' · ')+(verrou?' — sous clé : requiert '+verrou:'');
+  b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}};
+  // Les outils du MJ, au survol : corriger le talent, en suspendre un nouveau dessous.
+  if(mj){const outils=document.createElement('span');outils.className='arbre-outils';
+   outils.append(ico('✎','Corriger '+t.name,()=>openTalent(catalog.talents.indexOf(t),renderArbres)));
+   if(t.type!=='mait')outils.append(ico('⊕','Créer un talent sous '+t.name,()=>openTalent(null,renderArbres,
+    {famille:talentFamily(t),voie:t.voie||'',prerequis:t.id,level:Math.min(20,(t.level||1)+1)})));
+   b.append(outils)}
   return b};
  // La tête : la classe, et ses maîtrises, acquises d'office.
  const tete=document.createElement('div');tete.className='arbres-tete';
@@ -1376,26 +1462,65 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||!arbresActeur)r
   maitrises.forEach(t=>{const n=noeud(t,'acquis auto');n.title=t.name+' — Maîtrise de classe, acquise avec la classe.';bande.append(n)});
   tete.append(bande)}
  else{const v=document.createElement('p');v.className='muted';
-  v.textContent=classe?'Aucune maîtrise pour '+classe+' : crée un talent de type Maîtrise dans l’onglet Talents.':'Donne une classe à '+a.name+' pour lui ouvrir un arbre.';
-  tete.append(v)}
+  v.textContent=classe?'Aucune maîtrise pour '+classe+'.':'Donne une classe à '+a.name+' pour lui ouvrir un arbre.';
+  tete.append(v);
+  if(mj&&classe){const plus=document.createElement('button');plus.type='button';plus.className='arbre-ajout';plus.textContent='+ Maîtrise';
+   plus.title='Créer la maîtrise de '+classe+' : elle vient avec la classe';
+   plus.onclick=()=>openTalent(null,renderArbres,{famille:classe,type:'mait',name:'Maîtrise'});tete.append(plus)}}
  corps.append(tete);
- // Les colonnes : les spécialisations de la classe, puis les génériques, libres.
- const grille=document.createElement('div');grille.className='arbres-cols';
+ // Une branche : le talent, puis, en rangée dessous, les branches qui le requièrent.
+ const branche=(n,col,libre,premier)=>{const bloc=document.createElement('div');bloc.className='arbre-branche';
+  const t=n.t,acquis=porte(t);
+  const verrou=acquis?'':(libre?'':verrouColonne(a.talents,col.racines,t))||manqueTalent(a.talents,t,catalog.talents);
+  const el=noeud(t,acquis?'acquis':verrou?'verrou':'dispo',verrou);if(premier)el.classList.add('premier');
+  el.onclick=()=>{if(verrou){note('« '+t.name+' » exige d’abord « '+verrou+' ».');return}
+   if(acquis){const tombes=oublier(t,libre?[]:col.racines);
+    note(tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'')}
+   else{a.talents=[...a.talents,t.id];note('')}
+   majTable()};
+  glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,prerequis:t.id});
+  bloc.append(el);
+  if(n.enfants.length){const rang=document.createElement('div');rang.className='arbre-enfants';
+   n.enfants.forEach(e=>{const sous=document.createElement('div');sous.className='arbre-branche';
+    sous.append(entre({famille:col.famille,voie:col.voie,prerequis:t.id,avant:e.t.id}),branche(e,col,libre,false));rang.append(sous)});
+   bloc.append(rang)}
+  return bloc};
+ // Une colonne : le bandeau — renommable, dissoluble — les racines et leurs branches, et « + Talent ».
  const colonne=(c,libre)=>{const col=document.createElement('div');col.className='arbre-col'+(libre?' libre':'');
-  const h=document.createElement('h4');h.className='arbre-titre';h.textContent=c.titre;col.append(h);
+  const h=document.createElement('h4');h.className='arbre-titre';
+  const nomVoie=document.createElement('span');nomVoie.className='arbre-voie';nomVoie.textContent=c.titre;h.append(nomVoie);
+  cible(h,{famille:c.famille,voie:c.voie});
+  if(mj&&c.voie){champVif(nomVoie,()=>c.voie,v=>{if(renommerVoie(c.famille,c.voie,v))arbreChange();else note('Ce nom de spécialisation est vide ou déjà pris.')},'Renommer la spécialisation','texte');
+   const x=ico('✕','Dissoudre « '+c.voie+' » : ses talents rejoignent le tronc commun',async()=>{
+    if(typeof demander==='function'&&!await demander('Dissoudre la spécialisation « '+c.voie+' » ? Ses talents rejoignent le tronc commun de '+c.famille+'.','Dissoudre'))return;
+    if(dissoudreVoie(c.famille,c.voie))arbreChange()});
+   x.classList.add('voie-x');h.append(x)}
+  col.append(h);
   if(!c.liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';col.append(v)}
-  c.liste.forEach(t=>{const acquis=porte(t);
-   const verrou=acquis?'':(libre?'':verrouColonne(a.talents,c.liste,t))||manqueTalent(a.talents,t,catalog.talents);
-   const n=noeud(t,acquis?'acquis':verrou?'verrou':'dispo',verrou);
-   n.onclick=()=>{if(verrou){note('« '+t.name+' » exige d’abord « '+verrou+' ».');return}
-    if(acquis){const tombes=oublier(t,libre?null:c.liste);
-     note(tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'')}
-    else{a.talents=[...a.talents,t.id];note('')}
-    majTable()};
-   col.append(n)});
+  c.arbre.forEach((n,k)=>{if(mj)col.append(entre({famille:c.famille,voie:c.voie,avant:n.t.id}));col.append(branche(n,c,libre,k===0))});
+  if(mj){col.append(entre({famille:c.famille,voie:c.voie}));
+   const plus=document.createElement('button');plus.type='button';plus.className='arbre-ajout';plus.textContent='+ Talent';
+   plus.title='Créer un talent dans '+c.titre;
+   plus.onclick=()=>openTalent(null,renderArbres,{famille:c.famille,voie:c.voie});col.append(plus)}
   return col};
+ // La colonne en pointillé qui attend une voie de plus : on la nomme, elle paraît.
+ const nouvelle=()=>{const col=document.createElement('div');col.className='arbre-col nouvelle';
+  const b=document.createElement('button');b.type='button';b.className='arbre-ajout';b.textContent='+ Spécialisation';
+  b.title='Nommer une spécialisation de '+classe+' — '+voiesDe(classe).length+' / '+VOIES_MAX;
+  b.onclick=()=>{const champ=document.createElement('input');champ.className='champ-vif';champ.placeholder='Nom de la spécialisation';champ.maxLength=60;
+   champ.setAttribute('aria-label','Nom de la nouvelle spécialisation');
+   b.replaceWith(champ);champ.focus();let clos=false;
+   const fermer=garder=>{if(clos)return;clos=true;const v=champ.value.trim();
+    if(garder&&v){if(enregistreVoie(classe,v))arbreChange();else{note('« '+v+' » existe déjà, ou '+classe+' a ses '+VOIES_MAX+' spécialisations.');renderArbres()}}
+    else renderArbres()};
+   champ.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();fermer(true)}else if(e.key==='Escape'){e.preventDefault();fermer(false)}};
+   champ.onblur=()=>fermer(false)};
+  col.append(b);return col};
+ // Les colonnes : les spécialisations de la classe, la voie à nommer, puis les génériques, libres.
+ const grille=document.createElement('div');grille.className='arbres-cols';
  (classe?colonnesArbre(classe):[]).forEach(c=>grille.append(colonne(c,false)));
- grille.append(colonne({titre:GENERIQUES,liste:ordreArbre((catalog.talents||[]).filter(t=>t&&talentFamily(t)===GENERIQUES))},true));
+ if(mj&&classe&&voiesDe(classe).length<VOIES_MAX)grille.append(nouvelle());
+ grille.append(colonne(colonneArbre(GENERIQUES,GENERIQUES,'',(catalog.talents||[]).filter(t=>t&&talentFamily(t)===GENERIQUES)),true));
  corps.append(grille)}
 /* Les réglages de l'appareil : le thème et les touches de la carte. Rien n'est enregistré
    dans la partie — c'est le navigateur qui s'en souvient, pour ce poste seulement. */

@@ -1251,10 +1251,10 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  &&src.includes('function openArbres(a){if(view!==\'mj\')return;arbresActeur=a;')&&src.includes("const classe=classeDuHeros(a),toutes=talentFamilies();")
  &&src.includes("if(view==='mj'){let acquis=false;troupe.forEach(a=>{if(assureMaitrises(a))acquis=true});if(acquis)scheduleSave()}")
  &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):''});")&&src.includes("+sel('Spécialisation','voie',t.voie||'',optionsVoie(famille,t.voie||''))")
- &&src.includes("if(voie&&!autres.includes(voie)&&autres.length>=VOIES_MAX){alert(")&&src.includes("v.className='tag voie';v.textContent=t.voie;")
- &&src.includes("const verrou=acquis?'':(libre?'':verrouColonne(a.talents,c.liste,t))||manqueTalent(a.talents,t,catalog.talents);")
+ &&src.includes("if(voie&&!connues.includes(voie)&&connues.length>=VOIES_MAX){alert(")&&src.includes('t.voie=voie;if(voie)enregistreVoie(t.famille,voie);')&&src.includes("v.className='tag voie';v.textContent=t.voie;")
+ &&src.includes("const verrou=acquis?'':(libre?'':verrouColonne(a.talents,col.racines,t))||manqueTalent(a.talents,t,catalog.talents);")
  &&src.includes("n.title=t.name+' — Maîtrise de classe, acquise avec la classe.';")
- &&feuille.includes('#arbres{width:min(1180px,96vw)}')&&feuille.includes('.arbre-noeud+.arbre-noeud::before{content:\'\';display:block;width:3px;height:18px;')
+ &&feuille.includes('#arbres{width:min(1180px,96vw)}')&&feuille.includes('.arbre-noeud::before{content:\'\';display:block;width:3px;height:18px;')&&feuille.includes('.arbre-noeud.premier::before,.arbre-maitrises .arbre-noeud::before{display:none}')
  &&feuille.includes('.arbre-titre{width:100%;')&&feuille.includes('clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),50% 100%,0 calc(100% - 8px))}')
  &&feuille.includes('.arbre-noeud.acquis .arbre-rond::after{content:\'✓\';')&&feuille.includes('.arbre-noeud.verrou{opacity:.45;cursor:not-allowed}')
  &&feuille.includes('.hero-sous .ico.plus.rouage{')&&feuille.includes('.cat-pill .tag.voie{'),'arbres de talents : rouage, popup, voie au formulaire');
@@ -1268,10 +1268,10 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
    {id:'e',name:'Serment',famille:'Gardien',type:'pass',level:2,voie:'Serment'},
    {id:'f',name:'Foi',famille:'Gardien',type:'pass',level:2,voie:'Quatrième'},
    {id:'g',name:'Vigilance',famille:'',type:'pass',level:1,voie:''}]},
-  cleClasse:C.cleClasse,ordonneTalents:C.ordonneTalents,talentCode:C.talentCode,manqueTalent:C.manqueTalent};
+  cleClasse:C.cleClasse,ordonneTalents:C.ordonneTalents,talentCode:C.talentCode,manqueTalent:C.manqueTalent,talentsDependants:C.talentsDependants,VOIES_MAX:3};
  vm.createContext(ctx);
  vm.runInContext(morceau('const TALENT_TYPES=','function talent(id)')+morceau('function talentFamilies()',"// L'encre d'une classe")
-  +morceau('const VOIES_MAX=','const arbresDialog='),ctx);
+  +morceau('function descendDe(','function openTalent(')+morceau('const AUTRE_VOIE=','const arbresDialog='),ctx);
  // Trois voies au plus, dans l'ordre du catalogue ; la quatrième n'existe pas pour l'arbre.
  assert.equal(JSON.stringify(ctx.voiesDe('Gardien')),JSON.stringify(['Rempart','Assaut','Serment']));
  assert.equal(JSON.stringify(ctx.voiesDe('Mystique')),'[]');
@@ -1288,18 +1288,70 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  assert.equal(ctx.assureMaitrises(h),true);assert.equal(JSON.stringify(h.talents),JSON.stringify(['a','m']));
  assert.equal(ctx.assureMaitrises(h),false);
  assert.equal(ctx.assureMaitrises({hero:false,role:'Gardien',talents:[]}),false,'un adversaire ne reçoit rien');
- // Les colonnes : une par voie, l'amélioration sous son prérequis, le tronc commun en dernier,
- // sans la maîtrise ni la voie de trop.
+ // Les colonnes : une par voie, l'amélioration suspendue sous son prérequis, le tronc commun en
+ // dernier, sans la maîtrise ni la voie de trop ; l'ordre est celui du catalogue.
  const cols=ctx.colonnesArbre('Gardien');
  assert.equal(JSON.stringify(cols.map(c=>c.titre)),JSON.stringify(['Rempart','Assaut','Serment','Tronc commun']));
  assert.equal(JSON.stringify(cols.map(c=>c.liste.map(t=>t.id))),JSON.stringify([['a','b'],['c'],['e'],['d','f']]));
+ assert.equal(JSON.stringify(cols[0].racines.map(t=>t.id)),'["a"]','b pend sous a : une seule racine');
+ assert.equal(cols[0].arbre[0].enfants[0].t.id,'b');
+ assert.equal(cols[0].famille,'Gardien');assert.equal(cols[3].voie,'');
  assert.equal(ctx.colonnesArbre('Mystique').length,1,'une classe sans voie a une colonne à son nom');
  assert.equal(ctx.colonnesArbre('Mystique')[0].titre,'Mystique');
- // De haut en bas : le second attend le premier.
- const rempart=cols[0].liste;
- assert.equal(ctx.verrouColonne([],rempart,rempart[1]),'Rempart');
- assert.equal(ctx.verrouColonne(['a'],rempart,rempart[1]),'');
- assert.equal(ctx.verrouColonne([],rempart,rempart[0]),'','le premier est toujours libre');}
+ // De haut en bas : la seconde racine attend la première ; un talent suspendu attend son prérequis, pas la chaîne.
+ const tronc=cols[3];
+ assert.equal(ctx.verrouColonne([],tronc.racines,tronc.liste[1]),'Souffle');
+ assert.equal(ctx.verrouColonne(['d'],tronc.racines,tronc.liste[1]),'');
+ assert.equal(ctx.verrouColonne([],tronc.racines,tronc.liste[0]),'','la première est toujours libre');
+ assert.equal(ctx.verrouColonne([],cols[0].racines,cols[0].liste[1]),'','b n’est pas une racine');
+ assert.equal(C.manqueTalent([],cols[0].liste[1],ctx.catalog.talents),'Rempart','c’est le prérequis qui verrouille b');
+ // Chargé, le catalogue nomme les voies que ses talents portaient : ici, on le fait à la main.
+ ctx.catalog.voies={Gardien:ctx.voiesDe('Gardien')};
+ // Placer un talent : sous un autre, avant un frère, en dernier ; jamais sous ce qui repose sur lui.
+ assert.equal(ctx.placerTalent('c',{famille:'Gardien',voie:'Rempart',prerequis:'b'}),true);
+ {const c=ctx.catalog.talents.find(t=>t.id==='c');assert.equal(c.voie+'|'+c.prerequis,'Rempart|b');assert.equal(ctx.catalog.talents.at(-1).id,'c','en dernier');}
+ assert.equal(JSON.stringify(ctx.colonnesArbre('Gardien')[0].liste.map(t=>t.id)),JSON.stringify(['a','b','c']));
+ assert.equal(ctx.placerTalent('a',{famille:'Gardien',voie:'Rempart',prerequis:'c'}),false,'c repose sur a : refusé');
+ assert.equal(ctx.placerTalent('a',{famille:'Gardien',voie:'Rempart',prerequis:'a'}),false,'pas sous lui-même');
+ assert.equal(ctx.placerTalent('f',{famille:'Gardien',voie:'',avant:'d'}),true);
+ assert.equal(JSON.stringify(ctx.colonnesArbre('Gardien').at(-1).liste.map(t=>t.id)),JSON.stringify(['f','d']),'f passe avant d');
+ assert.equal(ctx.placerTalent('d',{famille:'',voie:''}),true);
+ assert.equal(ctx.catalog.talents.find(t=>t.id==='d').famille,'Génériques','sans classe, un générique');
+ assert.equal(ctx.placerTalent('zzz',{famille:'Gardien'}),false);
+ // Les voies nommées : trois par classe, renommées sur leurs talents, dissoutes vers le tronc.
+ assert.equal(ctx.enregistreVoie('Mystique','Feu'),true);assert.equal(ctx.enregistreVoie('Mystique','Feu'),true,'déjà là : rien à redire');
+ assert.equal(ctx.enregistreVoie('Mystique','Givre'),true);assert.equal(ctx.enregistreVoie('Mystique','Onde'),true);
+ assert.equal(ctx.enregistreVoie('Mystique','Foudre'),false,'quatrième refusée');
+ assert.equal(JSON.stringify(ctx.voiesDe('Mystique')),JSON.stringify(['Feu','Givre','Onde']));
+ assert.equal(ctx.enregistreVoie('Mystique','  '),false);
+ assert.equal(ctx.renommerVoie('Gardien','Rempart','Mur'),true);
+ assert.equal(ctx.catalog.talents.find(t=>t.id==='a').voie,'Mur');
+ assert.equal(JSON.stringify(ctx.voiesDe('Gardien')),JSON.stringify(['Mur','Assaut','Serment']));
+ assert.equal(ctx.renommerVoie('Gardien','Mur','Assaut'),false,'un nom déjà pris');
+ assert.equal(ctx.dissoudreVoie('Gardien','Mur'),true);
+ assert.equal(ctx.catalog.talents.find(t=>t.id==='a').voie,'','ses talents rejoignent le tronc commun');
+ assert.equal(JSON.stringify(ctx.voiesDe('Gardien')),JSON.stringify(['Assaut','Serment']));
+ assert.equal(ctx.colonnesArbre('Gardien').length,3);
+ // Une forêt sans racine — un cycle — sort quand même.
+ assert.equal(ctx.foretArbre([{id:'p',prerequis:'q'},{id:'q',prerequis:'p'}]).length,1);}
+/* L'arbre s'édite en place : les voies vivent au catalogue, un talent créé depuis l'arbre arrive
+   déjà rangé, le formulaire refermé redessine l'arbre, et le glisser-déposer place les talents. */
+assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.isArray(c.voies)?c.voies:{};")&&src.includes('const VOIES_MAX=3;')
+ &&src.includes("if(!l.includes(t.voie)&&l.length<VOIES_MAX)c.voies[f]=[...l,t.voie]});")&&src.includes('function descendDe(x,t,vus=new Set()){if(!x||!t||vus.has(t.id))return false;vus.add(t.id);')
+ &&src.includes('function openTalent(i=null,apres=null,defauts=null)')&&src.includes(",...(defauts||{})}:catalog.talents[i];")
+ &&src.includes("if(typeof arbresDialog!=='undefined'&&arbresDialog.open)renderArbres()});")&&src.includes('function placerTalent(id,dest)')
+ &&src.includes("if(!p||p===t||descendDe(p,t))return false}")&&src.includes("el.addEventListener('dragstart',e=>{arbreGlisse=t.id;el.classList.add('tire');corps.classList.add('glisse');")
+ &&src.includes("if(!id)return;if(placerTalent(id,dest))arbreChange();else note(")&&src.includes("glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,prerequis:t.id});")
+ &&src.includes("sous.append(entre({famille:col.famille,voie:col.voie,prerequis:t.id,avant:e.t.id}),branche(e,col,libre,false));")
+ &&src.includes("cible(h,{famille:c.famille,voie:c.voie});")&&src.includes("if(renommerVoie(c.famille,c.voie,v))arbreChange();")&&src.includes("if(dissoudreVoie(c.famille,c.voie))arbreChange()});")
+ &&src.includes("plus.onclick=()=>openTalent(null,renderArbres,{famille:c.famille,voie:c.voie});col.append(plus)}")
+ &&src.includes("{famille:talentFamily(t),voie:t.voie||'',prerequis:t.id,level:Math.min(20,(t.level||1)+1)})));")
+ &&src.includes("plus.onclick=()=>openTalent(null,renderArbres,{famille:classe,type:'mait',name:'Maîtrise'});tete.append(plus)}}")
+ &&src.includes("if(mj&&classe&&voiesDe(classe).length<VOIES_MAX)grille.append(nouvelle());")&&src.includes("if(garder&&v){if(enregistreVoie(classe,v))arbreChange();")
+ &&src.includes("const oublier=(t,racines)=>{")&&src.includes("const chute=racines.includes(t)?racines.slice(racines.indexOf(t)):[t];")
+ &&feuille.includes('.glisse .arbre-entre{height:12px;margin:3px 0;border:1px dashed var(--line-strong)}')&&feuille.includes('.arbre-enfants{display:flex;justify-content:center;align-items:flex-start;width:100%}')
+ &&feuille.includes('.arbre-noeud:hover .arbre-outils,.arbre-noeud:focus-within .arbre-outils{display:flex}')&&feuille.includes('.arbre-col.nouvelle{border-style:dashed;'),'l’arbre s’édite en place');
+
 /* Deux effets de plus : Attaque État — le porteur attaque et, selon l'issue, gagne un état — et
    Provocation — un adversaire en vue s'avance au contact, puis le coup part. attack() accepte
    une cible imposée et un rappel après les dégâts, pour que les talents bâtissent dessus. */
@@ -1320,4 +1372,4 @@ assert.ok(page.includes('function attack(opts={})')&&page.includes('if(opts.vise
  &&page.includes("if(el){el.classList.add('glisse');el.style.left=b.x+'%';el.style.top=b.y+'%'}")&&page.includes('function provocation(a,p,talent)')
  &&page.includes("poseCibles(a,[j]);if(venu)afterMove(b);")&&page.includes("attack({vises:[j]});scheduleSave()},venu?220:0);")
  &&page.includes('attaqueetat:{fn:attaqueEtat,')&&page.includes('provocation:{fn:provocation,')&&page.includes("peut:a=>!hasState(a,'Au sol')&&cibleProvocation(a)!==null,"),'Attaque État et Provocation câblés à la table');
-console.log('844 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('887 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
