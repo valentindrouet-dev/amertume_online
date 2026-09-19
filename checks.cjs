@@ -778,8 +778,12 @@ const table=[{hero:true,name:'Éla',hp:9,max:24},                        // La t
  {hero:false,name:'Sbire',template:'t1',hp:4,max:12},                   // Blessé : garde sa blessure.
  {hero:false,name:'Sbire',template:'t1',hp:12,max:12,states:['Coma']},  // Un cas incohérent hérité.
  {hero:false,name:'Sbire',hp:12,max:12},                                // Sans lien : rattrapé par le nom.
- {hero:false,name:'Autre',template:'t2',hp:12,max:12}];                 // Autre modèle : intouché.
+ {hero:false,name:'Autre',template:'t2',hp:12,max:12},                  // Autre modèle : intouché.
+ {hero:false,name:'Sbire',template:'perdu',hp:12,max:12}];               // Modèle disparu : repris par le nom.
 const ctxT={actors:table,num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),
+ // Le bestiaire et les cartes du test : « t2 » existe, « perdu » n'existe plus.
+ catalog:{monsters:[{id:'t1',name:'Sbire'},{id:'t2',name:'Autre'}]},
+ maps:[{foes:[{tpl:{id:'t1',name:'Sbire',pv:12}},{tpl:{id:'t2',name:'Autre',pv:12}},{}]}],saveMaps:()=>{},
  setState:gearApi.setState,structuredClone,normalizeActor:a=>a,poolFrom:()=>null,
  activeAttack:a=>(a.attacks&&a.attacks[0])||{},
  fromMonster:m=>({hero:false,template:m.id,name:m.name,role:m.family||'Adversaire',
@@ -787,13 +791,19 @@ const ctxT={actors:table,num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Numb
   notes:m.notes||'',attacks:structuredClone(m.attacks||[]),image:m.image||null})};
 vm.createContext(ctxT);
 vm.runInContext(bloc+';result=syncFromTemplate({id:"t1",name:"Sbire",pv:20})',ctxT);
-assert.equal(ctxT.result,4);                                    // Quatre créatures suivies.
+assert.equal(ctxT.result,5);                                    // Cinq créatures suivies.
 assert.equal(table[0].max,24);                                  // Le héros n'a pas bougé.
 assert.equal(table[1].hp+'/'+table[1].max,'20/20');             // Intact, plein au nouveau plafond.
 assert.equal(table[2].hp+'/'+table[2].max,'4/20');              // Blessé, la blessure tient.
 assert.equal(table[3].states.length,0);                         // PV rendus, le Coma tombe.
 assert.equal(table[4].hp+'/'+table[4].max,'20/20');             // Le rattrapage par le nom a joué.
 assert.equal(table[5].max,12);                                  // L'autre modèle est resté à part.
+assert.equal(table[6].hp+'/'+table[6].max,'20/20');             // Modèle disparu, repris par son nom.
+assert.equal(table[6].template,'t1','elle adopte le modèle qui l’a reprise');
+assert.equal(table[4].template,'t1','celle qui n’en avait pas l’adopte aussi');
+// La copie que la carte garde du modèle suit : plus besoin de rouvrir la carte pour la voir changer.
+assert.equal(ctxT.maps[0].foes[0].tpl.pv,20);
+assert.equal(ctxT.maps[0].foes[1].tpl.pv,12,'le modèle d’à côté n’a pas bougé');
 // Baisser le plafond écrête, sans jamais passer sous 1.
 vm.runInContext('result=syncFromTemplate({id:"t1",name:"Sbire",pv:3})',ctxT);
 assert.equal(table[2].hp+'/'+table[2].max,'3/3');
@@ -1246,9 +1256,9 @@ assert.ok(src.includes('let gearOuvert=null;')&&!src.includes('gearOuverts')&&sr
 /* Les arbres de talents : le rouage remplace le « + » des talents d'une fiche, la popup dessine
    la classe, ses maîtrises acquises d'office, puis une colonne par spécialisation — trois au plus
    — lue de haut en bas, et les génériques à part. La voie d'un talent se choisit au formulaire. */
-assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.includes("const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,()=>openArbres(a),'⚙');")
+assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.includes("mien?()=>openArbres(a):null,'⚙');")
  &&!src.includes("openPicker(a,'talents')")&&src.includes("const arbresDialog=dialog('arbres','Arbres de talents','<p class=\"muted\" id=\"arbres-note\"></p><div id=\"arbres-corps\"></div>');")
- &&src.includes('function openArbres(a){if(view!==\'mj\')return;arbresActeur=a;')&&src.includes("const classe=classeDuHeros(a),toutes=talentFamilies();")
+ &&src.includes('function openArbres(a){if(!peutVoirArbres(a))return;arbresActeur=a;')&&src.includes("const classe=classeDuHeros(a),toutes=talentFamilies();")
  &&src.includes("if(view==='mj'){let acquis=false;troupe.forEach(a=>{if(assureMaitrises(a))acquis=true});if(acquis)scheduleSave()}")
  &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):''});")&&src.includes("+sel('Spécialisation','voie',t.voie||'',optionsVoie(famille,t.voie||''))")
  &&src.includes("if(voie&&!connues.includes(voie)&&connues.length>=VOIES_MAX){alert(")&&src.includes('t.voie=voie;if(voie)enregistreVoie(t.famille,voie);')&&src.includes("v.className='tag voie';v.textContent=t.voie;")
@@ -1401,4 +1411,24 @@ assert.ok(src.includes("const sansEffet=t=>typeof manqueTalent==='function'?manq
  &&src.includes("if(manque){pill.classList.add('sans-effet');")&&src.includes("m.className='t-sans-effet';m.textContent='⚠';")
  &&src.includes("dit.textContent='⚠ Sans effet : requiert « '+manque+' », que '+a.name+' n’a pas appris.';detail.prepend(dit)}")
  &&feuille.includes('.cat-pill.sans-effet{filter:saturate(.4)}')&&feuille.includes('.talent-detail .sans-effet-dit{font-weight:700;color:#b03828}'),'un talent sans effet le dit');
-console.log('907 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Le joueur ouvre les arbres de son aventurier, sans les outils du MJ ; les « + » du MJ ne
+   paraissent plus chez lui, et son choix de talents part à la table avec sa fiche. */
+assert.ok(src.includes('function peutVoirArbres(a){return !!a&&(view===\'mj\'||(a.hero&&actors.indexOf(a)===owner))}')
+ &&src.includes('function openArbres(a){if(!peutVoirArbres(a))return;arbresActeur=a;')
+ &&src.includes("if(!peutVoirArbres(a)){arbresDialog.close();return}")
+ &&src.includes("const mien=view==='mj'||actors.indexOf(a)===owner;")
+ &&src.includes("const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');")
+ &&src.includes("const titreKit=sousTitre('Équipement','Inventaire de '+a.name,view!=='mj'?null:()=>openPicker(a,'gear'));")
+ &&src.includes("function sousTitre(texte,titre,fn,glyphe='+'){")&&src.includes(' if(!fn)return h;')
+ &&vivant.includes("'inventaire','talents','states'"),'le joueur choisit ses talents dans l’arbre');
+/* Le bestiaire gouverne la table sur-le-champ : les créatures en scène et la copie des cartes. */
+assert.ok(src.includes('function suitLeModele(a,m)')&&src.includes('function syncCartes(m)')
+ &&src.includes('function syncFromTemplate(m){let touches=0;syncCartes(m);')&&src.includes('if(!suitLeModele(a,m))return;a.template=m.id;')
+ &&src.includes("if(!f||!f.tpl||f.tpl.id!==m.id)return;f.tpl=structuredClone(m);touches++}));"),'le modèle corrigé descend jusqu’aux cartes');
+/* Plus de « Personne à portée de contact. » sous les Actions, ni de cartouche « Prototype » :
+   l'en-tête porte le nom du jeu et ONLINE dessous, en brun clair. */
+assert.ok(!page.includes('Personne à portée de contact.')&&!page.includes("'Hors de combat.'")&&page.includes(' if(!rangs.length)return;')
+ &&!page.includes('Prototype · partie locale')&&!page.includes('class="badge"')
+ &&page.includes('<span class="brand-nom">Amertüme</span>')&&page.includes('<span class="brand-online">ONLINE</span>')
+ &&page.includes('.brand-online{font:600 13px system-ui;letter-spacing:7px;color:var(--accent)}'),'en-tête sur deux lignes, sans cartouche');
+console.log('918 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

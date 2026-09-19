@@ -218,8 +218,10 @@ function choixMenu(ancre,options,poser){if(view!=='mj'||!ancre||!ancre.parentNod
  menu.onchange=()=>fermer(true);
  menu.onblur=()=>fermer(false);
  menu.onkeydown=ev=>{if(ev.key==='Escape'){ev.preventDefault();fermer(false)}}}
+// « fn » nul : l'intitulé paraît sans son bouton — un outil que ce regard n'a pas.
 function sousTitre(texte,titre,fn,glyphe='+'){const h=document.createElement('h4');h.className='hero-sous';
  h.append(texte);
+ if(!fn)return h;
  const b=document.createElement('button');b.className='ico plus'+(glyphe==='+'?'':' rouage');b.textContent=glyphe;
  b.title=titre;b.setAttribute('aria-label',titre);b.onclick=fn;h.append(b);return h}
 /* ---------- Corriger une valeur là où elle est lue ---------- */
@@ -428,7 +430,10 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
     n'apprend rien à personne et prenait une case pour rien. Le « + » ouvre la liste
     entière et donne un point à celle qu'on choisit — c'est ainsi qu'une compétence
     inédite paraît. */
- const titreComp=sousTitre('Compétences','Ajouter un point de compétence à '+a.name,ev=>{
+ /* Un joueur lit les fiches de la troupe, mais ne tient d'outils que sur la sienne : les
+    « + » sont au MJ, et le rouage des arbres s'ouvre pour son propre aventurier. */
+ const mien=view==='mj'||actors.indexOf(a)===owner;
+ const titreComp=sousTitre('Compétences','Ajouter un point de compétence à '+a.name,view!=='mj'?null:ev=>{
   ev.stopPropagation();
   choixMenu(ev.currentTarget,skillNames.map((n,k)=>[String(k),n+' +'+a.skills[k]]),v=>{
    const k=Number(v);if(!(k>=0&&k<skillNames.length))return;
@@ -448,9 +453,9 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
     document.dispatchEvent(new Event('amertume-content-changed'))}},'Modifier '+n+' de '+a.name,'petit');
   puce.append(l,v);comps.append(puce)});
 
- const titreKit=sousTitre('Équipement','Inventaire de '+a.name,()=>openPicker(a,'gear'));
+ const titreKit=sousTitre('Équipement','Inventaire de '+a.name,view!=='mj'?null:()=>openPicker(a,'gear'));
  // Le rouage ouvre les arbres de la classe : les talents s'y choisissent de haut en bas.
- const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,()=>openArbres(a),'⚙');
+ const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');
  c.append(tete,puces,chiffres,titreComp,comps,titreKit,gearPills(a),titreTal,talentPills(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
@@ -1414,17 +1419,22 @@ const NOTE_ARBRES_MJ=NOTE_ARBRES+' Glisse un talent sur un autre pour l’y susp
 const arbresDialog=dialog('arbres','Arbres de talents','<p class="muted" id="arbres-note"></p><div id="arbres-corps"></div>');
 let arbresActeur=null,arbreGlisse=null;
 function noteArbres(texte){$('arbres-note').textContent=texte||(view==='mj'?NOTE_ARBRES_MJ:NOTE_ARBRES)}
-function openArbres(a){if(view!=='mj')return;arbresActeur=a;
+// Le MJ ouvre l'arbre de n'importe quelle fiche ; un joueur, celui de son aventurier.
+function peutVoirArbres(a){return !!a&&(view==='mj'||(a.hero&&actors.indexOf(a)===owner))}
+function openArbres(a){if(!peutVoirArbres(a))return;arbresActeur=a;
  if(assureMaitrises(a))scheduleSave();
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
 function arbreChange(){noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
 function renderArbres(){const corps=$('arbres-corps');if(!corps||!arbresActeur)return;corps.replaceChildren();
  const a=arbresActeur;a.talents??=[];const classe=classeDuHeros(a),mj=view==='mj';
+ if(!peutVoirArbres(a)){arbresDialog.close();return}
  if(assureMaitrises(a))scheduleSave();
  arbresDialog.querySelector('h2').textContent='Arbres de talents — '+a.name;
  const note=noteArbres;
  const porte=t=>a.talents.includes(t.id);
+ /* Le choix d'un joueur part à la table comme le reste de sa fiche : les talents voyagent
+    avec les champs vivants — le rendu les pousse — et le MJ les voit sans republier. */
  const majTable=()=>{renderArbres();renderHeroes();render();scheduleSave()};
  /* Oublier une racine fait tomber les racines du dessous, et tout ce qui reposait sur
     elles ; du bas vers le haut, pour que chaque retrait n'emporte que le sien. */
@@ -1769,9 +1779,22 @@ const EN_JEU=['id','x','y','hp','states','bleed','cumuls','checks','target','tar
    chiffres, attaques, portrait : tout le profil suit. Jusqu'ici seul le plafond de PV
    descendait, si bien qu'on changeait des dés d'attaque sans rien voir changer en jeu.
    La créature est modifiée sur place, jamais remplacée : rien ne devient orphelin. */
-function syncFromTemplate(m){let touches=0;
+/* Un modèle corrigé gouverne aussitôt ce qui en descend : les créatures en scène, et la
+   copie que chaque carte garde de lui — sans quoi il fallait rouvrir la carte pour voir
+   le changement. Une créature sans modèle, ou dont le modèle a disparu du bestiaire, se
+   reconnaît encore à son nom : elle adopte alors le modèle, et suivra ses corrections. */
+function suitLeModele(a,m){if(a.hero)return false;
+ if(a.template)return a.template===m.id
+  ||(!(catalog.monsters||[]).some(x=>x&&x.id===a.template)&&a.name===m.name);
+ return a.name===m.name}
+function syncCartes(m){let touches=0;
+ (typeof maps!=='undefined'?maps:[]).forEach(carte=>(carte.foes||[]).forEach(f=>{
+  if(!f||!f.tpl||f.tpl.id!==m.id)return;f.tpl=structuredClone(m);touches++}));
+ if(touches&&typeof saveMaps==='function')saveMaps();
+ return touches}
+function syncFromTemplate(m){let touches=0;syncCartes(m);
  actors.forEach(a=>{if(a.hero)return;
-  if(a.template?a.template!==m.id:a.name!==m.name)return;
+  if(!suitLeModele(a,m))return;a.template=m.id;
   const plein=a.hp>=a.max,neuf=fromMonster(m);
   // Le modèle gouverne exactement ce que « fromMonster » sait produire : comparer clé
   // par clé, et non deux sérialisations dont l'ordre d'insertion diffère toujours.
