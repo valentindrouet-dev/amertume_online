@@ -1453,6 +1453,12 @@ assert.ok(!page.includes('Personne à portée de contact.')&&!page.includes("'Ho
  // Un socle vide ou nul ne fait rien planter.
  assert.equal(JSON.stringify(C.ecarteDesSocles([5,5],[null],10)),JSON.stringify([5,5]));
  assert.equal(JSON.stringify(C.ecarteDesSocles([5,5],null,10)),JSON.stringify([5,5]));
+ // Tomber sur un socle : dès que les deux se couvriraient, la marge du bord exceptée.
+ assert.equal(C.dansUnSocle([15,0],[cercle(0,0,10)],10),true);
+ assert.equal(C.dansUnSocle([20,0],[cercle(0,0,10)],10),false,'pile au contact : on touche sans couvrir');
+ assert.equal(C.dansUnSocle([25,0],[cercle(0,0,10)],10),false);
+ assert.equal(C.dansUnSocle([0,0],[],10),false);
+ assert.equal(C.dansUnSocle([0,0],[null],10),false);
  // Traverser : le segment passe sous les deux rayons réunis.
  assert.equal(C.segmentCoupeSocles([-50,0],[50,0],[cercle(0,0,10)],10),true);
  assert.equal(C.segmentCoupeSocles([-50,40],[50,40],[cercle(0,0,10)],10),false,'on passe à côté');
@@ -1471,9 +1477,11 @@ assert.ok(page.includes('function soclesOccupes(a,size,ignorer,adverses)')
  &&page.includes('return actors.filter(o=>o!==a&&alive(o)&&!(ignorer&&ignorer.has(o.id))')&&page.includes("&&(!adverses||o.hero!==a.hero))")
  &&page.includes('function settleActor(a,ignorer)')&&page.includes(' const [x,y]=alive(a)\n  ?poserHorsDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,false),polys,r)\n  :slideOutOfWalls(px(a.x,a.y),polys,r);')
  &&page.includes('function moveActor(a,xp,yp,libre,ignorer)')
- &&page.includes('const barrent=alive(a)?soclesOccupes(a,size,ignorer,true):[];')&&page.includes('const tiennent=alive(a)?soclesOccupes(a,size,ignorer,false):[];')
- &&page.includes('if(barrent.length)suivant=slideOutOfWalls(ecarteDesSocles(suivant,barrent,r),polys,r);')
- &&page.includes('if(segmentHitsPolys(last,suivant,polys)||segmentCoupeSocles(last,suivant,barrent,r))break;')
+ &&page.includes(' const barrent=(alive(a)?soclesOccupes(a,size,ignorer,true):[])\n  .filter(c=>Math.hypot(start[0]-c.x,start[1]-c.y)>=r+c.r-.5);')&&page.includes('const tiennent=alive(a)?soclesOccupes(a,size,ignorer,false):[];')
+ /* L'adversaire barre : on s'arrête devant lui, on ne glisse pas sur son flanc. Les murs,
+    eux, se longent toujours — c'est ce qui assure le passage des portes. */
+ &&!page.includes('ecarteDesSocles(suivant,barrent,r)')&&page.includes(' if(segmentHitsPolys(last,suivant,polys))break;')
+ &&page.includes('if(barrent.length&&(dansUnSocle(suivant,barrent,r)||segmentCoupeSocles(last,suivant,barrent,r)))break;')
  &&page.includes('if(tiennent.length)last=poserHorsDesSocles(last,tiennent,polys,r);')
  &&page.includes("const enMain=new Set(lot.map(k=>actors[k]&&actors[k].id).filter(Boolean));")
  &&page.includes("moveActor(o,o.x+dx,o.y+dy,view==='mj',enMain)})}")&&page.includes("else moveActor(a,q.x,q.y,view==='mj',enMain);")
@@ -1501,4 +1509,4 @@ assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&(a.hp<a
 /* La jauge du socle actif donne la mesure ; les autres sont d'un tiers plus fines. */
 assert.ok(page.includes('.token .pv{position:absolute;left:2%;right:2%;bottom:100%;margin-bottom:3px;height:4px;')
  &&page.includes('.token.selected .pv{height:6px}'),'la jauge de l’actif est la plus épaisse');
-console.log('957 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('962 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
