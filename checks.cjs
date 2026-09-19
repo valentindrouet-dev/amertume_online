@@ -1471,4 +1471,20 @@ assert.ok(page.includes('function soclesOccupes(a,size,ignorer,adverses)')
  &&page.includes("const enMain=new Set(lot.map(k=>actors[k]&&actors[k].id).filter(Boolean));")
  &&page.includes("moveActor(o,o.x+dx,o.y+dy,view==='mj',enMain)})}")&&page.includes("else moveActor(a,q.x,q.y,view==='mj',enMain);")
  &&page.includes("const [x,y]=ecarteDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,false),tokenOf(a)/2);"),'les socles tiennent la place sur la table');
-console.log('937 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* La fiche en jeu : plus de barre sous les PV, l'équipement ouvert d'office et les talents
+   repliés ; l'attaque d'équipement s'appelle « Attaque » ; un talent qui frappe porte les dés,
+   le bonus et son jeton, comme une attaque ; l'Onde du camp lève les états comme le bouton Soin. */
+assert.ok(page.includes('<span class="lifebar-text" id="hp"></span></div><div class="bloc-fixe" id="bloc-gear"><div class="bloc-tete"><span class="bloc-titre">Équipement</span><span class="compte" id="gear-compte"></span></div><div id="gear"></div></div>')
+ &&!page.includes('<details class="bloc-replie" id="bloc-gear">')&&page.includes('<details class="bloc-replie" id="bloc-talents">')
+ &&feuille.includes('.bloc-replie,.bloc-fixe{margin:6px 0}')&&feuille.includes(".bloc-replie .bloc-titre,.bloc-fixe .bloc-titre{font:700 15px 'Killam'")
+ &&(page.match(/class="divider"/g)||[]).length===2,'fiche en jeu : équipement ouvert, pas de barre sous les PV');
+assert.ok(src.includes("const libelle=at.gear?'Attaque':(at.name||'Attaque');")&&src.includes("nom.textContent=libelle;")
+ &&src.includes('function desEtBonus(dice,bonus)')&&src.includes('b.append(nom,desEtBonus(at.dice,bonus));')
+ &&src.includes('if(t.des)b.append(desEtBonus(t.des,t.bonus||0));')
+ &&page.includes('des:eff.des?eff.des(a,params):code.attaque?activeAttack(a).dice:null,')
+ &&page.includes("bonus:code.attaque&&!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false?(Number(a.dmg)||0):0,")
+ &&C.TALENTS_CODES.attaqueetat.attaque===true&&C.TALENTS_CODES.provocation.attaque===true
+ &&!C.TALENTS_CODES.orbes.attaque,'le bouton d’attaque dit « Attaque », le talent qui frappe montre ses dés');
+assert.ok(page.includes("blesses.forEach(a=>{a.hp=a.max;setState(a,'Coma',false);\n  if(statesOf(a).length){a.states=[];a.bleed=0;a.cumuls={};leves++}});")
+ &&page.includes("' remis à 100 % de leurs PV'+(leves?', états levés':'')+'.'"),'l’Onde du camp lève les états');
+console.log('948 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

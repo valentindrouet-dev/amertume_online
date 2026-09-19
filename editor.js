@@ -69,6 +69,15 @@ const note=document.createElement('p');note.id='actor-notes';note.className='mut
 /* Les attaques d'un combattant s'offrent en boutons nommés, celles de sa fiche comme
    celle que lui donne son équipement : on lit d'un coup ce qu'il sait faire et on
    clique celle qui part. Le bouton retenu est plein, les autres sont dessinés. */
+/* Les dés d'une attaque et, s'il y a lieu, le bonus de dégâts avec son jeton : la même
+   seconde ligne pour l'attaque d'une arme et pour le talent qui frappe. */
+function desEtBonus(dice,bonus){const bas=document.createElement('span');bas.className='des-bonus';
+ bas.append(dicePips(dice));
+ if(bonus){const plus=document.createElement('b');plus.className='bonus';plus.textContent='+'+bonus;
+  // Le jeton des dégâts, après la valeur : on lit « +2 » et l'on voit de quoi il s'agit.
+  const ico=document.createElement('img');ico.className='dmg-ico';ico.src=imgUrl('DEGATS.webp');ico.alt='dégâts';ico.draggable=false;
+  bas.append(plus,ico)}
+ return bas}
 function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Plusieurs combattants pris : la carte des Actions ne propose rien.
  if(marked.size>1){boite.replaceChildren();boite.hidden=true;return}
@@ -86,7 +95,9 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   const nom=document.createElement('span');nom.className='nom';nom.textContent=t.texte;
   // Les dés qu'il lance sur la seconde ligne ; sans dés, le nom seul — rien d'autre à dire.
   b.append(nom);
-  if(t.des){const bas=document.createElement('span');bas.className='des-bonus';bas.append(dicePips(t.des));b.append(bas)}
+  /* Un talent qui frappe se lit comme une attaque : son nom, puis les dés qu'il lance, le
+     bonus de dégâts et son jeton. Un talent sans dés garde le nom seul. */
+  if(t.des)b.append(desEtBonus(t.des,t.bonus||0));
   else b.classList.add('sans-des');
   inerte(b,!t.peut);b.title=t.titre;b.setAttribute('aria-label',t.texte+' — '+t.titre);
   b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(b)});
@@ -101,25 +112,24 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   // Deux armes : les logos l'un sur l'autre, celui de derrière en miroir — croisés.
   if(logos.childElementCount>1)logos.classList.add('croises');
   if(logos.childElementCount){b.classList.add('avec-logo');b.append(logos)}
-  const nom=document.createElement('span');nom.className='nom';nom.textContent=at.name||'Attaque';
+  /* Une attaque d'équipement s'appelle « Attaque » : les armes se lisent à leurs logos et
+     à leurs dés, et leurs noms bout à bout débordaient du bouton. Une attaque de fiche —
+     l'Attaque Blindée d'un adversaire — garde le nom qu'on lui a donné. */
+  const libelle=at.gear?'Attaque':(at.name||'Attaque');
+  const nom=document.createElement('span');nom.className='nom';nom.textContent=libelle;
   /* Deux lignes, centrées : le nom, puis les dés et le bonus de dégâts — on choisit son
      attaque en voyant tout ce qu'elle lance. Affaibli ou une attaque « dés seuls » n'ont
      pas de bonus, et n'en écrivent pas. */
-  const bas=document.createElement('span');bas.className='des-bonus';bas.append(dicePips(at.dice));
   const bonus=hasState(a,'Affaibli')||at.useOwnDamage===false?0:(Number(a.dmg)||0);
-  if(bonus){const plus=document.createElement('b');plus.className='bonus';plus.textContent='+'+bonus;
-   // Le jeton des dégâts, après la valeur : on lit « +2 » et l'on voit de quoi il s'agit.
-   const ico=document.createElement('img');ico.className='dmg-ico';ico.src=imgUrl('DEGATS.webp');ico.alt='dégâts';ico.draggable=false;
-   bas.append(plus,ico)}
-  b.append(nom,bas);
+  b.append(nom,desEtBonus(at.dice,bonus));
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
   inerte(b,!!refus);
   // Le clic droit du MJ rend l'Action et pose la flèche en vol.
   b.reinit=()=>{if(a.checks)a.checks[0]=false;if(typeof tirEnVol!=='undefined')tirEnVol=false};
-  b.title=refus||('Frapper : '+(at.gear?'attaque avec l’équipement':'attaque de fiche')
+  b.title=refus||((at.gear&&at.name?at.name+' — ':'')+'Frapper : '+(at.gear?'attaque avec l’équipement':'attaque de fiche')
    +' · '+(at.range==='distance'?'à distance':'au contact')
    +(at.targets==='all'?' · toutes cibles':''));
-  b.setAttribute('aria-label',(at.name||'Attaque')+' — '+b.title);
+  b.setAttribute('aria-label',libelle+(at.gear&&at.name?' ('+at.name+')':'')+' — '+b.title);
   /* Le bouton n'arme plus l'attaque : il la porte. On retient laquelle est partie —
      la réserve affichée la suit — puis le coup part aussitôt. */
   b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;

@@ -829,7 +829,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  /* Attaque État : une action. Le porteur effectue une attaque — celle de son bouton, cibles
     et geste compris — et, selon l'issue, gagne l'état réglé : s'il tue la cible, ou si elle
     en réchappe. C'est le porteur qui reçoit l'état, jamais la cible. */
- attaqueetat:{cle:'attaqueetat',nom:'Attaque État',type:'act',bouton:'⚔ Attaque État',
+ attaqueetat:{cle:'attaqueetat',nom:'Attaque État',type:'act',bouton:'⚔ Attaque État',attaque:true,
   aide:'Action : le porteur effectue une attaque et, selon son issue, gagne un état.',
   params:[{cle:'condition',nom:'Le porteur gagne l’état si',type:'choix',defaut:'tue',
     options:[['tue','il tue la cible'],['survit','la cible n’est pas tuée']]},
@@ -840,7 +840,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  /* Provocation : une action. Un adversaire en ligne de vue doit faire un mouvement vers le
     porteur — l'adversaire visé s'il est en vue, sinon le premier en vue — jusqu'au contact,
     les murs l'arrêtant ; puis le porteur effectue une attaque contre lui. */
- provocation:{cle:'provocation',nom:'Provocation',type:'act',bouton:'📣 Provocation',
+ provocation:{cle:'provocation',nom:'Provocation',type:'act',bouton:'📣 Provocation',attaque:true,
   aide:'Action : un adversaire en vue s’avance jusqu’au porteur, qui l’attaque aussitôt.',
   params:[],
   phrase(){return 'Un adversaire <b>en ligne de vue</b> doit faire un mouvement vers le porteur — l’adversaire visé, sinon le premier en vue — puis le porteur effectue <b>une attaque</b> contre lui.'}}};

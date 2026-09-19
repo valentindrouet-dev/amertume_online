@@ -496,7 +496,10 @@ button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,2
 .chip.actif{border-color:var(--green);color:var(--green)}
 /* Un bloc qui se replie : l'intitulé porte le compte de ce qu'il cache, pour qu'on sache
    s'il vaut la peine d'être ouvert. Le triangle du navigateur suffit à dire l'état. */
-.bloc-replie{margin:6px 0}
+/* L'équipement ne se replie pas : il se lit d'un coup d'œil en jeu. Même intitulé que les
+   blocs repliables, sans le triangle ni le clic. */
+.bloc-replie,.bloc-fixe{margin:6px 0}
+.bloc-fixe .bloc-tete{display:flex;align-items:center;gap:9px;padding:3px 0 4px;color:var(--ink)}
 .bloc-replie>summary{display:flex;align-items:center;gap:9px;cursor:pointer;list-style:none;
  padding:3px 0;color:var(--ink)}
 /* Mis en boîte flexible, le résumé perd le triangle du navigateur : on en pose un à nous,
@@ -506,8 +509,8 @@ button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,2
  transition:transform .12s}
 .bloc-replie[open]>summary::before{transform:rotate(90deg)}
 .bloc-replie>summary:hover .bloc-titre{color:var(--accent)}
-.bloc-replie .bloc-titre{font:700 15px 'Killam',Georgia,serif;letter-spacing:1px;text-transform:uppercase}
-.bloc-replie>summary .compte{margin-left:auto;min-width:22px;padding:1px 7px;border-radius:11px;
+.bloc-replie .bloc-titre,.bloc-fixe .bloc-titre{font:700 15px 'Killam',Georgia,serif;letter-spacing:1px;text-transform:uppercase}
+.bloc-replie>summary .compte,.bloc-fixe .bloc-tete .compte{margin-left:auto;min-width:22px;padding:1px 7px;border-radius:11px;
  background:var(--panel-2);border:1px solid var(--line);font:700 11px system-ui;color:var(--muted);text-align:center}
 .bloc-replie[open]>summary{margin-bottom:4px}
 /* La bibliothèque des effets, en tête de l'onglet Talents. */
