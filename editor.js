@@ -553,6 +553,47 @@ function gearPill(o){const col=itemColumn(o);
    comme les talents. Les armes d'abord, l'armure et le bouclier ensuite ; deux exemplaires
    de la même arme ne font qu'un carré, marqué ×2. Les carrés ouverts le restent au rendu. */
 /* Une seule description à la fois, sous la rangée : celle du dernier carré cliqué. */
+/* ---------- La bulle flottante ----------
+   La description d'un objet ou d'un talent ne pousse plus ses voisins : elle sort du flux et
+   se pose au-dessus de la vignette cliquée, dans une bulle à elle. Un clic ailleurs, Échap,
+   un défilement ou un changement de taille la referment.
+   « BULLES » commande tout : à faux, les dépliants d'avant reviennent tels quels, en place
+   sous la vignette — le code des deux est là, et l'on bascule d'un mot. */
+const BULLES=true;
+let bulleEl=null,bulleAncre=null;
+function fermerBulle(){if(!bulleEl)return;bulleEl.remove();bulleEl=null;bulleAncre=null;
+ document.removeEventListener('pointerdown',bulleDehors,true);
+ document.removeEventListener('keydown',bulleEchap,true);
+ window.removeEventListener('scroll',fermerBulle,true);window.removeEventListener('resize',fermerBulle)}
+function bulleDehors(e){if(bulleEl&&!bulleEl.contains(e.target)&&(!bulleAncre||!bulleAncre.contains(e.target)))fermerBulle()}
+/* Échap ferme d'abord la bulle, et rien d'autre : la table déselectionne au même geste, et
+   l'on perdait sa fiche en refermant une description. Un second Échap, elle. */
+function bulleEchap(e){if(e.key!=='Escape'||!bulleEl)return;
+ e.preventDefault();e.stopPropagation();fermerBulle()}
+/* Où la poser : au-dessus de la vignette si la place y est, dessous sinon ; centrée sur elle,
+   sans jamais déborder de la fenêtre. La flèche vise le centre de la vignette. */
+function placerBulle(){if(!bulleEl||!bulleAncre)return;
+ const r=bulleAncre.getBoundingClientRect(),b=bulleEl.getBoundingClientRect(),marge=8;
+ /* Une vignette sans place à l'écran — la fiche d'un onglet caché, la même qu'ailleurs —
+    n'ancre rien : la bulle s'en irait se coller dans le coin. */
+ if(!bulleAncre.isConnected||(!r.width&&!r.height)){fermerBulle();return}
+ const dessous=r.top-b.height-12<marge;
+ const haut=dessous?r.bottom+10:r.top-b.height-10;
+ let gauche=r.left+r.width/2-b.width/2;
+ gauche=Math.max(marge,Math.min(innerWidth-b.width-marge,gauche));
+ bulleEl.style.top=Math.max(marge,haut)+'px';bulleEl.style.left=gauche+'px';
+ bulleEl.classList.toggle('dessous',dessous);
+ bulleEl.style.setProperty('--fleche',Math.max(14,Math.min(b.width-14,r.left+r.width/2-gauche))+'px')}
+// « ancre » doit être visible : une vignette d'une page repliée n'ouvre pas de bulle.
+function ancreVisible(el){return !!el&&el.isConnected&&!!el.offsetParent}
+function ouvrirBulle(ancre,contenu,classe){fermerBulle();if(!ancreVisible(ancre)||!contenu)return null;
+ bulleEl=document.createElement('div');bulleEl.className='bulle'+(classe?' '+classe:'');
+ bulleEl.append(contenu);document.body.append(bulleEl);bulleAncre=ancre;
+ placerBulle();
+ document.addEventListener('pointerdown',bulleDehors,true);
+ document.addEventListener('keydown',bulleEchap,true);
+ window.addEventListener('scroll',fermerBulle,true);window.addEventListener('resize',fermerBulle);
+ return bulleEl}
 /* La description ouverte : une seule à la fois, et sur la fiche où l'on a cliqué. Retenue
    au seul identifiant de l'objet, elle s'ouvrait aussi chez les autres porteurs du même
    objet, dont les carrés se décalaient sans qu'on y touche. */
@@ -624,10 +665,15 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
   if(titre){const t=document.createElement('span');t.className='gear-rangee-titre';t.textContent=titre;out.append(t)}
   for(let k=0;k<liste.length;k+=PAR_LIGNE){const rangee=liste.slice(k,k+PAR_LIGNE),details=[];
    rangee.forEach(([o,n])=>{const p=gearCarre(o,n,portes(o)),detail=gearDetail(o,a,!tout);
-    const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert;
+    const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert||BULLES;
+    /* La bulle se pose après le rendu, quand la vignette a sa place à l'écran : c'est elle
+       qui porte la description, et l'état ouvert la rouvre à chaque redessin. */
+    if(BULLES&&ouvert)requestAnimationFrame(()=>{if(gearOuvert===cle&&ancreVisible(p)){
+     const d=gearDetail(o,a,!tout);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')}});
     const redessine=()=>{render();if(typeof renderHeroes==='function')renderHeroes()};
-    const ouvrir=()=>{gearOuvert=cle};
-    const basculer=()=>{gearOuvert=ouvert?null:cle;redessine()};
+    // Une seule description à la fois : ouvrir celle d'un objet referme celle d'un talent.
+    const ouvrir=()=>{gearOuvert=cle;talentOuvert=null};
+    const basculer=()=>{gearOuvert=ouvert?null:cle;if(BULLES&&ouvert)fermerBulle();redessine()};
     /* En jeu, on ne voit que le porté : un clic y ouvre la description, sans rien reposer
        qu'on ne pourrait reprendre. Là où tout l'inventaire est offert, le clic équipe —
        en remplaçant ce qu'il faut — et ouvre la description par la même occasion. */
@@ -637,7 +683,7 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
      toggleEquip(a,o);ouvrir();
      redessine();scheduleSave()};
     p.onclick=agir;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();agir(e)}};
-    out.append(p);details.push(detail)});
+    out.append(p);if(!BULLES)details.push(detail)});
    details.forEach(d=>out.append(d))}};
  rangees(equipement,'');rangees(objets,'Objets');
  return out}
@@ -691,6 +737,8 @@ function talentDetail(t,vif){const d=document.createElement('div');d.className='
 /* Les dépliants ouverts survivent au rendu : corriger un talent redessine l'onglet, et
    le dépliant qu'on corrigeait doit rester ouvert. */
 const talentsOuverts=new Set();
+// Avec les bulles, une seule description à la fois : la fiche et le talent qu'on regarde.
+let talentOuvert=null;
 function talentCorrige(){renderCatalogPages();render();scheduleSave()}
 /* « vif » : dans l'onglet Talents, le MJ corrige le nom, le type, le niveau et l'effet là
    où il les lit — comme sur une fiche d'aventurier. La mécanique du moteur et les
@@ -726,10 +774,16 @@ function talentPills(a){const out=document.createElement('div');out.className='t
     pill.title+=' — sans effet : requiert '+manque;
     const dit=document.createElement('p');dit.className='sans-effet-dit';
     dit.textContent='⚠ Sans effet : requiert « '+manque+' », que '+a.name+' n’a pas appris.';detail.prepend(dit)}
-   const ouvert=talentsOuverts.has(t.id);detail.hidden=!ouvert;pill.classList.toggle('ouvert',ouvert);
-   pill.onclick=e=>{e.stopPropagation();const o=detail.hidden;detail.hidden=!o;pill.classList.toggle('ouvert',o);
+   const cle=(a.id||'?')+'|'+t.id,ouvert=BULLES?talentOuvert===cle:talentsOuverts.has(t.id);
+   detail.hidden=!ouvert||BULLES;pill.classList.toggle('ouvert',ouvert);
+   if(BULLES&&ouvert)requestAnimationFrame(()=>{if(talentOuvert===cle&&ancreVisible(pill)){
+    const d=detail.cloneNode(true);d.hidden=false;ouvrirBulle(pill,d,'bulle-talent')}});
+   pill.onclick=e=>{e.stopPropagation();
+    if(BULLES){const etait=talentOuvert===cle;fermerBulle();talentOuvert=etait?null:cle;gearOuvert=null;
+     if(typeof render==='function')render();if(typeof renderHeroes==='function')renderHeroes();return}
+    const o=detail.hidden;detail.hidden=!o;pill.classList.toggle('ouvert',o);
     if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};
-   out.append(pill);details.push(detail)});
+   out.append(pill);if(!BULLES)details.push(detail)});
   if(rangee.length===1){const vide=document.createElement('span');vide.className='vide';out.append(vide)}
   details.forEach(d=>out.append(d))}
  return out}

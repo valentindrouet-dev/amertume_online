@@ -512,6 +512,8 @@ function lastPage(){try{const p=localStorage.getItem('amertume-page');
 /* « retenir » distingue le choix d'un onglet du repli imposé : passer en vue joueur
    ramène à la table, mais cela ne doit pas effacer l'onglet où le MJ travaillait. */
 function showPage(p,retenir=true){if(!PAGES_LIBRES.includes(p)&&view!=='mj')return;
+ // Une bulle ouverte appartient à la page qu'on quitte : elle s'en va avec elle.
+ if(typeof fermerBulle==='function')fermerBulle();
  if(retenir)rememberPage(p);
  PAGES.forEach(x=>document.body.classList.toggle('page-'+x,x===p&&x!=='table'));
  tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.page===p));

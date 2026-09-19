@@ -1251,8 +1251,8 @@ assert.ok(src.includes('function libereMains(a,besoin)')&&src.includes('else{lib
  assert.ok(src2.includes('while(mainsPrises(a)+besoin>2)')&&src2.includes('if(a.weapons.length)a.weapons.shift();')&&src2.includes("else if(a.shieldId)a.shieldId='';"),'les mains se libèrent du plus ancien');}
 /* Une seule description ouverte à la fois, celle du dernier carré cliqué, et plus de liseré brun
    autour du carré ouvert : rien ne laisse croire qu'il est encore porté. */
-assert.ok(src.includes('let gearOuvert=null;')&&!src.includes('gearOuverts')&&src.includes('const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert;')
- &&src.includes('const basculer=()=>{gearOuvert=ouvert?null:cle;redessine()};')&&!feuille.includes('.cat-pill.gear-carre.ouvert'),'une seule description, sans liseré');
+assert.ok(src.includes('let gearOuvert=null;')&&!src.includes('gearOuverts')&&src.includes('const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert||BULLES;')
+ &&src.includes('const basculer=()=>{gearOuvert=ouvert?null:cle;if(BULLES&&ouvert)fermerBulle();redessine()};')&&!feuille.includes('.cat-pill.gear-carre.ouvert'),'une seule description, sans liseré');
 /* Les arbres de talents : le rouage remplace le « + » des talents d'une fiche, la popup dessine
    la classe, ses maîtrises acquises d'office, puis une colonne par spécialisation — trois au plus
    — lue de haut en bas, et les génériques à part. La voie d'un talent se choisit au formulaire. */
@@ -1410,8 +1410,8 @@ assert.ok(page.includes('function volOrbe(de,vers,couleur,etat)')&&page.includes
  &&page.includes('.orbe-vol.feu::after{content:')&&page.includes('@keyframes flamme{'),'l’orbe porte son état, et le feu flambe');
 /* La description d'un équipement s'ouvre sur la fiche où l'on a cliqué, et nulle part ailleurs :
    deux aventuriers portant la même hache ne s'ouvrent plus l'un l'autre. */
-assert.ok(src.includes("const cleGear=(a,o)=>(a&&a.id||'?')+'|'+(o&&o.id||'?');")&&src.includes("const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert;")
- &&src.includes("const ouvrir=()=>{gearOuvert=cle};")&&src.includes("const basculer=()=>{gearOuvert=ouvert?null:cle;redessine()};")
+assert.ok(src.includes("const cleGear=(a,o)=>(a&&a.id||'?')+'|'+(o&&o.id||'?');")&&src.includes("const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert||BULLES;")
+ &&src.includes("const ouvrir=()=>{gearOuvert=cle;talentOuvert=null};")&&cartes.includes("if(typeof fermerBulle==='function')fermerBulle();")&&src.includes("const basculer=()=>{gearOuvert=ouvert?null:cle;if(BULLES&&ouvert)fermerBulle();redessine()};")
  &&!src.includes('gearOuvert===o.id'),'une description par fiche, pas par objet');
 /* Un talent appris dont le socle manque ne fait rien : la fiche le dit, au lieu de le taire. */
 assert.ok(src.includes("const sansEffet=t=>typeof manqueTalent==='function'?manqueTalent(a.talents||[],t,catalog.talents):'';")
@@ -1586,4 +1586,20 @@ assert.ok(page.includes('function alliePourIgnition(a)')&&page.includes("const j
  &&page.includes('const infligeEtatBrut=infligeEtat;')&&page.includes("if(etatRefuse(talentsCodes(a),etat))return 'immunise';")
  &&page.includes('const ouverte=briseLaGarde(talentsCodes(a),b);')&&page.includes("const def=hasState(b,'Au sol')||ouverte?0:defOf(b);")
  &&page.includes("(ouverte?' Brise : la DEF ne compte pas.':'')")&&page.includes("(immunises.length?' Invulnérable : '+immunises.join(', ')+' sans effet.':'')"),'Ignition, Invulnérable et Brise câblés');
-console.log('1020 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les descriptions d'objet et de talent sortent du flux : une bulle se pose au-dessus de la
+   vignette cliquée, au lieu d'écarter ses voisines. Le dépliant d'avant reste en place dans
+   le code, sous « BULLES » : un mot à faux le ramène. */
+assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle(ancre,contenu,classe)')&&src.includes('function placerBulle()')
+ &&src.includes('function fermerBulle()')&&src.includes("document.addEventListener('pointerdown',bulleDehors,true);")
+ &&src.includes("document.addEventListener('keydown',bulleEchap,true);")&&src.includes(" e.preventDefault();e.stopPropagation();fermerBulle()}")&&src.includes("window.addEventListener('scroll',fermerBulle,true);window.addEventListener('resize',fermerBulle)")
+ &&src.includes("if(!bulleAncre.isConnected||(!r.width&&!r.height)){fermerBulle();return}")&&src.includes("function ancreVisible(el){return !!el&&el.isConnected&&!!el.offsetParent}")&&src.includes('const dessous=r.top-b.height-12<marge;')
+ &&src.includes("bulleEl.style.setProperty('--fleche',")
+ // Les deux chemins cohabitent : la bulle, et le dépliant d'avant si l'on repasse BULLES à faux.
+ &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(gearOuvert===cle&&ancreVisible(p)){")
+ &&src.includes("out.append(p);if(!BULLES)details.push(detail)});")&&src.includes("out.append(pill);if(!BULLES)details.push(detail)});")
+ &&src.includes('let talentOuvert=null;')&&src.includes("const cle=(a.id||'?')+'|'+t.id,ouvert=BULLES?talentOuvert===cle:talentsOuverts.has(t.id);")
+ &&src.includes("if(BULLES){const etait=talentOuvert===cle;fermerBulle();talentOuvert=etait?null:cle;")
+ &&src.includes("if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};")
+ &&feuille.includes('.bulle{position:fixed;z-index:60;')&&feuille.includes(".bulle::after{content:'';position:absolute;left:var(--fleche,50%);")
+ &&feuille.includes('.bulle.dessous::after{'),'la description se pose en bulle, le dépliant reste sous BULLES');
+console.log('1035 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
