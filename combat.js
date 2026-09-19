@@ -136,6 +136,38 @@ function closestOnSegment(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],len2=dx*dx+dy*d
 function pointInPolygon(p,poly){let inside=false;
  for(let i=0,j=poly.length-1;i<poly.length;j=i++){const [xi,yi]=poly[i],[xj,yj]=poly[j];
   if((yi>p[1])!==(yj>p[1])&&p[0]<(xj-xi)*(p[1]-yi)/(yj-yi)+xi)inside=!inside}return inside}
+/* ---------- Les socles occupent la place ----------
+   Un combattant vivant tient sa place sur le plateau : on ne finit jamais à cheval sur lui,
+   et le camp d'en face barre le passage — comme la matière. Un corps à zéro point de vie ne
+   tient plus rien : on lui passe dessus et on s'y arrête. Les socles sont donnés en pixels
+   de carte, {x,y,r}, et « r » est le rayon de celui qui bouge. */
+/* Écarter un point des socles qu'il chevauche : juste assez pour que les deux se touchent
+   sans se couvrir, en s'éloignant du centre. Quelques passes, car sortir de l'un peut
+   entrer dans l'autre ; deux centres confondus partent vers la droite, faute de direction. */
+function ecarteDesSocles(p,cercles,r){let x=p[0],y=p[1];
+ for(let pass=0;pass<4;pass++){let touche=false;
+  for(const c of cercles||[]){if(!c)continue;
+   const dx=x-c.x,dy=y-c.y,d=Math.hypot(dx,dy),min=r+c.r;
+   if(d>=min-1e-9)continue;
+   const nx=d>1e-6?dx/d:1,ny=d>1e-6?dy/d:0;
+   x=c.x+nx*min;y=c.y+ny*min;touche=true}
+  if(!touche)break}
+ return [x,y]}
+/* Un pas qui traverse un socle : le segment passe sous les deux rayons réunis. La marge
+   laisse longer un socle sans s'y coller — un point posé pile au bord ne se bloque pas
+   lui-même. */
+function segmentCoupeSocles(p,q,cercles,r,marge=.5){const seuil=(c)=>r+c.r-marge;
+ return (cercles||[]).some(c=>{if(!c)return false;
+  const proche=closestOnSegment([c.x,c.y],p,q);
+  return Math.hypot(c.x-proche[0],c.y-proche[1])<seuil(c)})}
+/* Où poser un socle pour qu'il ne couvre ni la matière ni un autre : on écarte, on remet
+   hors des murs, et on recommence tant que l'un défait l'autre — trois passes suffisent,
+   et dans un couloir trop étroit c'est le mur qui l'emporte. */
+function poserHorsDesSocles(p,cercles,shapes,r){let q=p;
+ for(let pass=0;pass<3;pass++){const avant=q;
+  q=slideOutOfWalls(ecarteDesSocles(q,cercles,r),shapes,r);
+  if(Math.abs(q[0]-avant[0])<.01&&Math.abs(q[1]-avant[1])<.01)break}
+ return q}
 function slideOutOfWalls(p,shapes,r){let x=p[0],y=p[1];
  for(let pass=0;pass<4;pass++){let touched=false;
   for(const s of shapes||[]){const contours=contoursOf(s).filter(c=>c&&c.length>=3);
@@ -996,6 +1028,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

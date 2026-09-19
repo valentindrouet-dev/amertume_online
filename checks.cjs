@@ -1431,4 +1431,44 @@ assert.ok(!page.includes('Personne à portée de contact.')&&!page.includes("'Ho
  &&!page.includes('Prototype · partie locale')&&!page.includes('class="badge"')
  &&page.includes('<span class="brand-nom">Amertüme</span>')&&page.includes('<span class="brand-online">ONLINE</span>')
  &&page.includes('.brand-online{font:600 13px system-ui;letter-spacing:7px;color:var(--accent)}'),'en-tête sur deux lignes, sans cartouche');
-console.log('918 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les socles occupent la place : on ne finit jamais à cheval sur un vivant, le camp d'en face
+   barre le passage, les alliés se laissent traverser, et un corps à terre ne tient plus rien. */
+{const cercle=(x,y,r)=>({x,y,r});
+ // Écarter : juste assez pour que les deux se touchent, dans l'axe des centres.
+ assert.equal(JSON.stringify(C.ecarteDesSocles([10,0],[cercle(0,0,10)],10)),JSON.stringify([20,0]));
+ assert.equal(JSON.stringify(C.ecarteDesSocles([30,0],[cercle(0,0,10)],10)),JSON.stringify([30,0]),'assez loin : rien ne bouge');
+ assert.equal(JSON.stringify(C.ecarteDesSocles([20,0],[cercle(0,0,10)],10)),JSON.stringify([20,0]),'pile au contact : rien ne bouge');
+ // Deux centres confondus : on part vers la droite, faute de direction.
+ assert.equal(JSON.stringify(C.ecarteDesSocles([0,0],[cercle(0,0,8)],12)),JSON.stringify([20,0]));
+ // Sortir de l'un sans entrer dans l'autre : les passes s'enchaînent.
+ {const [x,y]=C.ecarteDesSocles([0,0],[cercle(-6,0,10),cercle(6,0,10)],10);
+  assert.ok(Math.hypot(x+6,y)>=19.99&&Math.hypot(x-6,y)>=19.99,'écarté des deux à la fois');}
+ // Un socle vide ou nul ne fait rien planter.
+ assert.equal(JSON.stringify(C.ecarteDesSocles([5,5],[null],10)),JSON.stringify([5,5]));
+ assert.equal(JSON.stringify(C.ecarteDesSocles([5,5],null,10)),JSON.stringify([5,5]));
+ // Traverser : le segment passe sous les deux rayons réunis.
+ assert.equal(C.segmentCoupeSocles([-50,0],[50,0],[cercle(0,0,10)],10),true);
+ assert.equal(C.segmentCoupeSocles([-50,40],[50,40],[cercle(0,0,10)],10),false,'on passe à côté');
+ assert.equal(C.segmentCoupeSocles([-50,0],[50,0],[],10),false);
+ // Longer un socle sans s'y coller : le pas qui part du bord ne se bloque pas lui-même.
+ assert.equal(C.segmentCoupeSocles([20,0],[20,30],[cercle(0,0,10)],10),false);
+ // Poser hors des socles ET hors des murs : le mur l'emporte quand les deux se disputent.
+ {const mur=[{contours:[[[100,-100],[200,-100],[200,100],[100,100]]]}];
+  const [x,y]=C.poserHorsDesSocles([85,0],[],mur,10);   // sans socle : juste hors du mur
+  assert.ok(x<=90.01&&Math.abs(y)<1e-6,'le mur repousse');
+  const [x2,y2]=C.poserHorsDesSocles([85,0],[cercle(70,0,10)],mur,10);
+  assert.ok(Math.hypot(x2-70,y2)>=19.9||x2<=90.01,'écarté du socle, jamais dans le mur');}}
+/* La table applique la règle : le camp d'en face barre le pas, l'allié se laisse traverser mais
+   pas couvrir, un corps à terre ne tient plus la place, et un lot pris ensemble ne se repousse pas. */
+assert.ok(page.includes('function soclesOccupes(a,size,ignorer,adverses)')
+ &&page.includes('return actors.filter(o=>o!==a&&alive(o)&&!(ignorer&&ignorer.has(o.id))')&&page.includes("&&(!adverses||o.hero!==a.hero))")
+ &&page.includes('function settleActor(a,ignorer)')&&page.includes(' const [x,y]=alive(a)\n  ?poserHorsDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,false),polys,r)\n  :slideOutOfWalls(px(a.x,a.y),polys,r);')
+ &&page.includes('function moveActor(a,xp,yp,libre,ignorer)')
+ &&page.includes('const barrent=alive(a)?soclesOccupes(a,size,ignorer,true):[];')&&page.includes('const tiennent=alive(a)?soclesOccupes(a,size,ignorer,false):[];')
+ &&page.includes('if(barrent.length)suivant=slideOutOfWalls(ecarteDesSocles(suivant,barrent,r),polys,r);')
+ &&page.includes('if(segmentHitsPolys(last,suivant,polys)||segmentCoupeSocles(last,suivant,barrent,r))break;')
+ &&page.includes('if(tiennent.length)last=poserHorsDesSocles(last,tiennent,polys,r);')
+ &&page.includes("const enMain=new Set(lot.map(k=>actors[k]&&actors[k].id).filter(Boolean));")
+ &&page.includes("moveActor(o,o.x+dx,o.y+dy,view==='mj',enMain)})}")&&page.includes("else moveActor(a,q.x,q.y,view==='mj',enMain);")
+ &&page.includes("const [x,y]=ecarteDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,false),tokenOf(a)/2);"),'les socles tiennent la place sur la table');
+console.log('937 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
