@@ -1373,6 +1373,13 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
  assert.ok(C.phraseTalent('attaqueetat',{condition:'tue',etat:'Blindage'}).includes('S’il <b>tue la cible</b>, il gagne <b>Blindage</b>.'));
  assert.ok(C.phraseTalent('provocation',{}).includes('<b>en ligne de vue</b>')&&C.phraseTalent('provocation',{}).includes('<b>une attaque</b> contre lui.'));
  assert.equal(C.cleTalent('Attaque État'),'attaqueetat','un talent nommé ainsi trouve son effet');}
+/* Le mouvement forcé d'une Provocation coûte comme un autre : ce que le provoqué quitte le
+   frappe, y compris les zones traversées en chemin, et tombé en route il n'y a plus de coup. */
+assert.ok(page.includes('const croises=new Set(contactsDe(b)),depart={x:b.x,y:b.y};')
+ &&page.includes('if(venu)ramasseContacts(b,croises,depart,mapSize(),walls());')
+ &&page.includes('if(venu)degatsOpportunite(b,[...croises]);')
+ &&page.includes("if(!alive(b)){log(b.name+' tombe en chemin : le coup ne part pas.',{ton:'degats'});")
+ &&page.includes("if(a.checks&&!a.checks[0]){a.checks[0]=true;afterAction(a)}"),'la Provocation paie ses dégâts d’opportunité');
 assert.ok(page.includes('function attack(opts={})')&&page.includes('if(opts.vises){vises=ciblesAtteignables(a,opts.vises,portee);')
  &&page.includes("a.checks[0]=true;afterAction(a);render();return}}")&&page.includes('const vivants=vises.filter(j=>alive(actors[j]));')
  &&page.includes('if(opts.apres)opts.apres({vises,partis,tues:vivants.filter(j=>!alive(actors[j]))});')
@@ -1494,4 +1501,4 @@ assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&(a.hp<a
 /* La jauge du socle actif donne la mesure ; les autres sont d'un tiers plus fines. */
 assert.ok(page.includes('.token .pv{position:absolute;left:2%;right:2%;bottom:100%;margin-bottom:3px;height:4px;')
  &&page.includes('.token.selected .pv{height:6px}'),'la jauge de l’actif est la plus épaisse');
-console.log('952 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('957 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
