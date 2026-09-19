@@ -1162,9 +1162,9 @@ assert.ok(!page.includes('id="heal-foes"')&&!src.includes("$('heal-foes')")&&!pa
    balayage d'air (320 ms), le coup tombant au bout du geste. */
 assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidden=!nbGear;")&&src.includes("coche.className='coche-modele'")&&src.includes('nom.after(coche)')&&!src.includes("coche.classList.add('coche-analyse')")
  &&feuille.includes('.cat-pill .coche-modele{flex:none;width:16px;height:16px;')&&page.includes("if(rangeOf(a)!=='distance'&&typeof volBalayage==='function'){"),'équipement vide masqué, coche dans la vignette, balayage au contact');
-/* La barre de PV des tokens a la même hauteur pour tous ; sur la piste des dés, le lanceur à gauche et,
-   au bout de chaque ligne, qui reçoit. */
-assert.ok(page.includes('margin-bottom:3px;height:6px;border-radius:999px;background:#211f1b;border:1px solid #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
+/* La barre de PV d'un token est pleine, entamée ou non — c'est sa hauteur qui dit l'actif ;
+   sur la piste des dés, le lanceur à gauche et, au bout de chaque ligne, qui reçoit. */
+assert.ok(page.includes('margin-bottom:3px;height:4px;border-radius:999px;background:#211f1b;border:1px solid #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
  &&page.includes("const de=from||(lignes.find(l=>l.de)||{}).de||null;")&&page.includes("const cible=recoit(l),tc=lignes.length>1?petit:Math.max(petit,taille);if(cible)visage(cible,tc,bordD+10+tc/2,cy)")
  &&page.includes('.board-token{position:absolute;transform:translate(-50%,-50%);border-radius:50%;'),'barre de PV égale, visages sur la piste');
 /* Plus de chip Niveau sur la fiche de table ; le balayage est une déchirure dentelée de 90° ; la coche du
@@ -1485,6 +1485,13 @@ assert.ok(src.includes("const libelle=at.gear?'Attaque':(at.name||'Attaque');")&
  &&page.includes("bonus:code.attaque&&!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false?(Number(a.dmg)||0):0,")
  &&C.TALENTS_CODES.attaqueetat.attaque===true&&C.TALENTS_CODES.provocation.attaque===true
  &&!C.TALENTS_CODES.orbes.attaque,'le bouton d’attaque dit « Attaque », le talent qui frappe montre ses dés');
-assert.ok(page.includes("blesses.forEach(a=>{a.hp=a.max;setState(a,'Coma',false);\n  if(statesOf(a).length){a.states=[];a.bleed=0;a.cumuls={};leves++}});")
- &&page.includes("' remis à 100 % de leurs PV'+(leves?', états levés':'')+'.'"),'l’Onde du camp lève les états');
-console.log('948 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* L'Onde d'un camp lève les états avec les blessures, et prend aussi celui qui n'a rien perdu
+   mais porte une affliction — empoisonné au complet, il restait sur le carreau. */
+assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&(a.hp<a.max||statesOf(a).length));")
+ &&page.includes("soignes.forEach(a=>{if(a.hp<a.max)rendus++;a.hp=a.max;setState(a,'Coma',false);\n  if(statesOf(a).length){a.states=[];a.bleed=0;a.cumuls={};leves++}});")
+ &&page.includes("' remis d’aplomb'+(rendus?' : PV au complet':'')+(leves?(rendus?', ':' : ')+'états levés':'')+'.'")
+ &&!page.includes('const blesses=actors.filter'),'l’Onde du camp lève les états, même sans blessure');
+/* La jauge du socle actif donne la mesure ; les autres sont d'un tiers plus fines. */
+assert.ok(page.includes('.token .pv{position:absolute;left:2%;right:2%;bottom:100%;margin-bottom:3px;height:4px;')
+ &&page.includes('.token.selected .pv{height:6px}'),'la jauge de l’actif est la plus épaisse');
+console.log('952 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
