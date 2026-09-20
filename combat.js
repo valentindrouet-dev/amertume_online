@@ -6,7 +6,7 @@
    s'ajoute à tout coup qui passe. */
 /* « doublesCritiques » : Destructeur — n'importe quel double vaut un critique, pas
    seulement deux 6 ; un double 1 reste un échec, il est jugé avant. */
-function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0,doublesCritiques=false}){
+function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0,doublesCritiques=false,solidite=false}){
  const all=dice.map(d=>[...d]);
  if(!all.length||all.some(([v,c])=>!Number.isInteger(v)||v<1||v>6||![0,1,2,3,5,6].includes(c)))throw Error('Réserve offensive invalide');
  /* Un dé d'os qui double avec un autre dé lancé s'en va d'abord, avant tout le reste :
@@ -14,16 +14,21 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,b
     un 6 blanc ne font donc pas de critique — l'os est parti avant qu'on les compte. */
  const faces0={};all.forEach(([v])=>faces0[v]=(faces0[v]||0)+1);
  const vifs=all.filter(([v,c])=>!(c===1&&faces0[v]>1));
- if(vifs.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false};
+ if(vifs.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,reduction:0,damage:0,failed:true,critical:false};
  const faces={};vifs.forEach(([v])=>faces[v]=(faces[v]||0)+1);
  const critical=faces[6]>=2||(doublesCritiques&&Object.keys(faces).some(v=>Number(v)!==1&&faces[v]>=2));
  if(critical){if(!vifs.some(([,c])=>c===criticalColor))throw Error('Couleur critique absente');let v;let count=0;do{v=roll();all.push([v,criticalColor]);vifs.push([v,criticalColor]);if(++count>=100&&v===6)throw Error('Limite de relances atteinte, attaque non appliquée');}while(v===6)}
  const failleFace=faille?roll():null;
  const kept=vifs.filter(([v])=>v!==failleFace);const remaining={};kept.forEach(([v])=>remaining[v]=(remaining[v]||0)+1);
- let damage=0,hit=false;
- kept.forEach(([v,c])=>{if(c===2||c===5||v>def){hit=true;damage+=v*(c===3&&remaining[v]>1?2:c===6?Math.min(3,Math.max(1,round)):1)}});
+ /* La DEF n'écarte plus aucun dé : tous passent, et les dégâts subis — dés, bonus et
+    saignée ensemble — baissent de sa valeur, jamais sous zéro. Le Lourd (rouge) et le
+    Mortel (noir) l'ignorent et s'appliquent en entier ; sous Solidité, le Lourd la subit. */
+ let brut=0,fixe=0,hit=false;
+ kept.forEach(([v,c])=>{hit=true;const d=v*(c===3&&remaining[v]>1?2:c===6?Math.min(3,Math.max(1,round)):1);
+  if(c===5||(c===2&&!solidite))fixe+=d;else brut+=d});
  const saignee=hit?Math.max(0,Math.trunc(bleed)||0):0;
- return {dice:all,failleFace,bleed:saignee,damage:damage+(hit?dmg:0)+saignee,failed:false,critical,hit};
+ const subi=brut+(hit?dmg:0)+saignee,reduction=Math.min(subi,Math.max(0,Math.trunc(def)||0));
+ return {dice:all,failleFace,bleed:saignee,reduction,damage:subi-reduction+fixe,failed:false,critical,hit};
 }
 /* Portée : le rayon de contact vaut 3 tailles de token en diamètre. Les positions
    sont en pourcentage de la carte, converties en pixels avec sa taille affichée. */
@@ -913,6 +918,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Amélioration : les attaques du porteur ignorent la DEF des cibles portant l’état réglé.',
   params:[{cle:'etat',nom:'État qui ouvre la garde',type:'choix',defaut:'Gel',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Les attaques du porteur <b>ignorent la DEF</b> des cibles qui portent <b>'+((p&&p.etat)||'Gel')+'</b>.'}},
+ /* Solidité : une amélioration. La DEF du porteur retranche aussi les dés Lourds — le rouge,
+    qui l'ignore chez tout autre. Le Mortel, noir, passe toujours en entier. */
+ solidite:{cle:'solidite',nom:'Solidité',type:'ame',
+  aide:'Amélioration : la DEF du porteur réduit aussi les dés rouges (Lourds), qui d’ordinaire l’ignorent.',
+  params:[],
+  phrase(){return 'La DEF du porteur réduit aussi les <b>dés de dégâts mortels</b> (rouges).'}},
  provocation:{cle:'provocation',nom:'Provocation',type:'act',bouton:'📣 Provocation',attaque:true,
   aide:'Action : un adversaire en vue s’avance jusqu’au porteur, qui l’attaque aussitôt.',
   params:[],

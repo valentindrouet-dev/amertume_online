@@ -246,7 +246,7 @@ log=function(text,meta){logLocal(text,meta);if(meta&&meta.local)return;
  diffuser({genre:'texte',texte:String(text).slice(0,400),badge:meta&&meta.badge?String(meta.badge).slice(0,40):null,ton:meta&&meta.ton?String(meta.ton).slice(0,20):null})};
 logAttaque=function(a,b,logo,corps,detail,suite){logAttaqueLocal(a,b,logo,corps,detail,suite);
  const d=detail?{des:codeDes(detail.dice),origine:Number.isInteger(detail.origine)?detail.origine:null,
-  faille:Number.isInteger(detail.faille)?detail.faille:null,bonus:detail.bonus||0,saignee:detail.saignee||0,total:detail.total||0}:null;
+  faille:Number.isInteger(detail.faille)?detail.faille:null,bonus:detail.bonus||0,saignee:detail.saignee||0,reduction:detail.reduction||0,total:detail.total||0}:null;
  diffuser({genre:'attaque',a:fiche(a),b:fiche(b),logo:logo?String(logo).slice(0,40):null,corps:String(corps).slice(0,60),detail:d,suite:suite?String(suite).slice(0,200):null})};
 function diffuserEffet(type,a,b,couleur){diffuser({genre:'effet',effet:String(type).slice(0,20),a:fiche(a),b:fiche(b),logo:couleur?String(couleur).slice(0,20):null})}
 // Une parole part avec la fiche de qui parle ; le MJ se reconnaît à son identifiant, pas à son nom.
@@ -269,7 +269,7 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
   else if(rec.effet==='fleche'&&typeof volFleche==='function')volFleche(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
   else if(rec.effet==='balayage'&&typeof volBalayage==='function')volBalayage(acteurDuJournal(rec.a),acteurDuJournal(rec.b));return}
  if(rec.genre==='attaque'){const r=rec.detail&&typeof rec.detail==='object'?rec.detail:null;
-  const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,total:r.total}:null;
+  const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,reduction:r.reduction,total:r.total}:null;
   logAttaqueLocal(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'',String(rec.corps||''),d,rec.suite?String(rec.suite):'')}
  else logLocal(String(rec.texte||''),{badge:rec.badge?String(rec.badge):undefined,ton:typeof rec.ton==='string'?rec.ton:undefined})}
 function rejouerJournal(docs){const j=$('journal');if(!j)return;j.replaceChildren();let tour=null;

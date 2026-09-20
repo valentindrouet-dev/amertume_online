@@ -8,7 +8,7 @@ const c={window:{}};vm.runInNewContext(fs.readFileSync('catalog.js','utf8'),c);c
  assert.ok(k.id)});
 assert.equal(new Set(cat.classes.map(k=>k.id)).size,4);
 assert.equal(cat.items.filter(i=>i.category==='weapon').length,14);assert.equal(cat.items.filter(i=>i.category==='armor').length,5);assert.equal(cat.monsters.length,4);assert.equal(cat.monsters.find(m=>m.name==='Mystique déchu').attacks[0].dice.blue,2);
-const {resolveAttack:r}=require('./combat.js');assert.equal(r({dice:[[5,0]],def:3,dmg:0,roll:()=>2}).damage,5);
+const {resolveAttack:r}=require('./combat.js');assert.equal(r({dice:[[5,0]],def:3,dmg:0,roll:()=>2}).damage,2); // La DEF retranche : 5−3.
 /* L'os qui double s'en va avant tout : ni critique, ni échec, ni dégâts avec lui. */
 assert.equal(r({dice:[[6,0],[6,1]],def:0,dmg:0,roll:()=>2}).critical,false);      // 6 blanc + 6 os : pas de critique.
 assert.equal(r({dice:[[6,0],[6,1]],def:0,dmg:0,roll:()=>2}).damage,6);            // Le seul 6 blanc compte.
@@ -17,7 +17,7 @@ assert.equal(r({dice:[[6,0],[6,0],[6,1]],def:0,dmg:0,roll:()=>2}).damage,14);   
 assert.equal(r({dice:[[1,0],[1,1]],def:0,dmg:0,roll:()=>2}).failed,false);        // 1 blanc + 1 os : l'os parti, pas de double 1.
 assert.equal(r({dice:[[3,1],[3,1]],def:0,dmg:0,roll:()=>2}).damage,0);            // Deux os qui doublent : plus rien.
 assert.equal(r({dice:[[4,0],[4,1]],def:0,dmg:0,roll:()=>2,doublesCritiques:true}).critical,false); // Destructeur non plus.
-assert.equal(r({dice:[[3,1],[6,0],[6,0]],def:0,dmg:0,roll:()=>3}).damage,18);     // La relance à 3 ne retire pas l'os 3 : 3 + 6 + 6 + 3.assert.equal(r({dice:[[5,0]],def:3,dmg:8,roll:()=>2}).damage,13);assert.equal(r({dice:[[1,0],[1,2]],def:0,dmg:8,roll:()=>2}).damage,0);
+assert.equal(r({dice:[[3,1],[6,0],[6,0]],def:0,dmg:0,roll:()=>3}).damage,18);     // La relance à 3 ne retire pas l'os 3 : 3 + 6 + 6 + 3.assert.equal(r({dice:[[5,0]],def:3,dmg:8,roll:()=>2}).damage,10);assert.equal(r({dice:[[1,0],[1,2]],def:0,dmg:8,roll:()=>2}).damage,0);
 // Test de lecture des champs du formulaire sans navigateur.
 const read=editor.slice(editor.indexOf('function readActor()'),editor.indexOf('function toMonster'));
 const values={name:'<Éla>',role:'Gardienne',notes:'texte',state:'Aucun',socle:'medium',sexe:'Femme',race:'Humaine',hp:'99',max:'20',def:'7',dmg:'8',xp:'50',vie:'5',vieMax:'6',endu:'4',pvBonus:'0',level:'3',weapon1:'w',weapon2:'',armor:'a',shield:''};const elements=Object.fromEntries(Object.entries(values).map(([k,value])=>[k,{value}]));elements.rapide={checked:true};elements.esquive={checked:false};for(let i=0;i<8;i++)elements['skill'+i]={value:'4'};
@@ -846,7 +846,7 @@ assert.equal(r({dice:[[5,0]],def:0,dmg:0,faille:true,roll:rose(2)}).damage,5); /
 assert.equal(r({dice:[[5,0]],def:0,dmg:2,bleed:3,roll:()=>2}).damage,10);
 assert.equal(r({dice:[[5,0]],def:0,dmg:2,bleed:3,roll:()=>2}).bleed,3);
 assert.equal(r({dice:[[1,0],[1,0]],def:0,dmg:2,bleed:3,roll:()=>2}).damage,0);
-assert.equal(r({dice:[[2,0]],def:5,dmg:2,bleed:3,roll:()=>2}).damage,0); // Aucun dé ne passe la DEF.
+assert.equal(r({dice:[[2,0]],def:5,dmg:2,bleed:3,roll:()=>2}).damage,2); // 2+2+3−5 : bonus et saignée sont des dégâts subis, la DEF les retranche aussi.
 assert.equal(r({dice:[[5,0]],def:0,dmg:0,bleed:-4,roll:()=>2}).damage,5); // Une saignée négative ne soigne pas.
 // Cumul de saignée, purge par l'Onde, dégâts et soins d'effet.
 const {bleedOf,addBleed,ondeCures,applyDamage,applyHeal,frozenSolid,blinded}=require('./combat.js');
@@ -2128,7 +2128,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
 assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessines.has(texte))return ecusDessines.get(texte);")
  &&page.includes("if(!ecuPret){preparerEcus();return imgUrl('DEF '+(Number.isInteger(n)&&n>=0&&n<=6?n:'VIDE')+'.png')}")
  &&page.includes("ctx.font='700 100px Killam';const m=ctx.measureText(texte);")
- &&page.includes(" const F=Math.min(ECU_HAUTEUR*.604/Math.max(.01,haut),ECU_LARGEUR*.72/Math.max(.01,large));")
+ &&page.includes(" const F=Math.min(ECU_HAUTEUR*.604/Math.max(.01,haut),ECU_LARGEUR*.56/Math.max(.01,large));")
  &&page.includes("ctx.fillStyle='#000';ctx.textAlign='center';ctx.textBaseline='alphabetic';")
  &&page.includes("ctx.fillText(texte,ECU_LARGEUR*.493,ECU_HAUTEUR*.483+(mm.actualBoundingBoxAscent-mm.actualBoundingBoxDescent)/2);")
  &&page.includes("const police=document.fonts&&document.fonts.load?document.fonts.load('700 100px Killam'):Promise.resolve();")
@@ -2136,4 +2136,35 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  &&page.includes("const im=document.createElement('img');im.src=ecuDef(valeur);")&&!page.includes("const b=document.createElement('b');b.textContent=valeur;w.append(b)")
  &&src.includes(" const im=ecu.querySelector('img');if(im)im.src=ecuDef(valeur);")&&src.includes(" const b=ecu.querySelector('b');if(b)b.remove()}")
  &&!src.includes("imgUrl('DEF '+(peint?n:'VIDE')+'.png')")&&page.includes("@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2"),'l’écu de DEF se dessine en Killam, pour toute valeur');
-console.log('1363 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.255 — La DEF retranche au lieu d'écarter : tous les dés passent, les dégâts subis baissent
+   de sa valeur. Lourd et Mortel l'ignorent ; Solidité y soumet le Lourd. */
+{const r=C.resolveAttack,j=()=>2;
+ assert.equal(r({dice:[[2,0],[3,0]],def:4,dmg:0,roll:j}).damage,1);                 // 2+3−4.
+ const rien=r({dice:[[2,0]],def:4,dmg:0,roll:j});
+ assert.equal(rien.damage,0);assert.equal(rien.reduction,2);assert.equal(rien.hit,true); // Jamais sous zéro ; le dé est passé.
+ assert.equal(r({dice:[[5,2]],def:4,dmg:0,roll:j}).damage,5);                       // Le Lourd ignore la DEF.
+ assert.equal(r({dice:[[5,5]],def:4,dmg:0,roll:j}).damage,5);                       // Le Mortel aussi.
+ assert.equal(r({dice:[[5,2],[3,0]],def:4,dmg:0,roll:j}).damage,5);                 // 5 en entier, 3−4 à zéro.
+ assert.equal(r({dice:[[5,2],[3,0]],def:4,dmg:0,roll:j}).reduction,3);              // La DEF ne retranche que ce qu'elle peut.
+ assert.equal(r({dice:[[5,2]],def:4,dmg:0,roll:j,solidite:true}).damage,1);         // Solidité : le Lourd réduit.
+ assert.equal(r({dice:[[5,5]],def:4,dmg:0,roll:j,solidite:true}).damage,5);         // Le Mortel, jamais.
+ assert.equal(r({dice:[[3,0]],def:4,dmg:2,bleed:1,roll:j}).damage,2);               // 3+2+1−4 : bonus et saignée sont subis.
+ assert.equal(r({dice:[[4,3],[4,3]],def:5,dmg:0,roll:j}).damage,11);                // Doubles mystiques ×2 : 16−5.
+ assert.equal(r({dice:[[3,6]],def:2,dmg:0,round:3,roll:j}).damage,7);               // Phase ×3 au tour 3 : 9−2.
+ assert.equal(r({dice:[[1,0],[1,0]],def:4,dmg:0,roll:j}).reduction,0);              // L'échec ne retranche rien.
+ assert.equal(r({dice:[[3,1],[3,1]],def:2,dmg:5,roll:j}).damage,0);                 // Plus un dé : ni bonus, ni DEF.
+ const s=C.TALENTS_CODES.solidite;
+ assert.ok(s&&s.type==='ame'&&!s.params.length&&s.requiert===undefined,'Solidité : une amélioration libre');
+ assert.match(C.phraseTalent('solidite',{}),/<b>dés de dégâts mortels<\/b> \(rouges\)/);
+ assert.equal(C.effetParNom('Solidité'),'solidite');
+ assert.ok(C.porteEffet([{code:s,params:{}}],'solidite'));
+ assert.ok(page.includes("const solide=porteEffet(talentsCodes(b),'solidite');")&&page.includes("doublesCritiques:destructeur,solidite:solide})")
+  &&page.includes("const defCible=hasState(b,'Au sol')?0:defOf(b),solide=porteEffet(talentsCodes(b),'solidite');")&&page.includes("bleed:bleedOf(b),solidite:solide})}catch(e){return e.message}")
+  &&page.includes(":l.reduction&&(c===5||(c===2&&!l.solidite))?' — ignore la DEF':'');"),'attaque et orbe demandent Solidité à la cible, et la piste le sait');
+ assert.ok(page.includes("poseJet({dice:r.dice,origine:dice.length,faille:r.failleFace,def,bonus:r.failed||blocked?0:bonus,reduction:r.failed||blocked?0:r.reduction,solidite:solide},a,b);")
+  &&page.includes("if(l.reduction){const d=document.createElement('span');d.className='board-def';")
+  &&page.includes("im.src=ecuDef(l.def);")&&!page.includes('ne passe pas la DEF')&&!page.includes("im.className='rate'"),'la piste montre l’écu qui retranche, plus de dé barré par la DEF');
+ assert.ok(page.includes("if(detail.reduction)plus('− '+detail.reduction+' de DEF','def');")&&page.includes('.j-plus.def{')
+  &&vivant.includes('reduction:detail.reduction||0')&&vivant.includes('reduction:r.reduction'),'le journal dit la DEF retranchée, ici et en table');
+}
+console.log('1385 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
