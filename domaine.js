@@ -1,7 +1,7 @@
 /* Le Domaine : le fief de la troupe, d'où partent les aventures et où se nouent les
    intrigues. Un onglet pour le gérer — bâtiments, trésor, habitants, aventuriers — et,
-   dans l'onglet Cartes, un éditeur à part pour sa carte : quatre calques superposés, un
-   par étape de construction, dans lesquels chaque bâtiment se découpe à son étape.
+   dans l'onglet Cartes, un éditeur à part pour sa carte : des calques superposés — un par
+   étape de construction, un par état — dans lesquels chaque bâtiment se découpe au sien.
    Les règles sont dans combat.js ; ici, l'écran. Le domaine vit dans la sauvegarde de
    la partie, sur l'appareil du MJ seulement : il ne se publie pas, ne va pas à la table. */
 'use strict';
@@ -10,7 +10,8 @@ let domaine=normaliseDomaine(null);
 const snapshotSansDomaine=snapshot;snapshot=function(){return Object.assign(snapshotSansDomaine(),{domaine})};
 const appliquerSansDomaine=appliquerSauvegarde;appliquerSauvegarde=function(s){appliquerSansDomaine(s);domaine=normaliseDomaine(s&&s.domaine);domSel=null;domPageSel=null};
 function sauveDomaine(){scheduleSave()}
-const TEINTES_ETAPE=['#b9a48a','#c9953f','#7faddc','#8bbd9c','#d9532b','#6e6a66'];
+const TEINTES_ETAPE=['#b9a48a','#c9953f','#7faddc','#8bbd9c','#d9532b','#6e6a66','#9b7fd4','#a89f8f','#7d9b3c'];
+const etatBatimentValide=v=>v&&ETATS_BATIMENT.some(([k])=>k===v)?v:'';
 const batimentDom=id=>domaine.batiments.find(b=>b.id===id)||null;
 function nomLieu(lieu){if(lieu==='aventure')return 'En aventure';if(lieu==='absent')return 'Absent';
  const b=lieu?batimentDom(lieu):null;return b?b.nom:'Au domaine'}
@@ -48,12 +49,16 @@ function dessineDomaine(canvas,vue,redessine){const d=domaine,c=d.carte,ctx=canv
    sans mouvement va à « clic ». */
 function rendEtiquetteDeplacable(e,b,boite,opts){e.classList.add('deplacable');
  e.onpointerdown=ev=>{if(ev.button!==0)return;ev.stopPropagation();ev.preventDefault();
-  const r=boite.getBoundingClientRect(),depart={x:ev.clientX,y:ev.clientY};let bouge=false,pt=null;
+  const r=boite.getBoundingClientRect(),depart={x:ev.clientX,y:ev.clientY},id=ev.pointerId;let bouge=false,pt=null;
   const pos=m=>({x:Math.max(0,Math.min(100,100*(m.clientX-r.left)/r.width)),y:Math.max(0,Math.min(100,100*(m.clientY-r.top)/r.height))});
-  const suit=m=>{if(!bouge&&Math.hypot(m.clientX-depart.x,m.clientY-depart.y)<4)return;bouge=true;pt=pos(m);e.style.left=pt.x+'%';e.style.top=pt.y+'%'};
-  const lache=()=>{e.releasePointerCapture&&e.releasePointerCapture(ev.pointerId);e.removeEventListener('pointermove',suit);e.removeEventListener('pointerup',lache);e.removeEventListener('pointercancel',lache);
+  /* Le geste s'écoute sur la fenêtre, pas sur l'étiquette : il se poursuit même si la
+     capture du pointeur est refusée, ou si la souris file hors du nom en chemin. */
+  const suit=m=>{if(m.pointerId!==id)return;if(!bouge&&Math.hypot(m.clientX-depart.x,m.clientY-depart.y)<4)return;bouge=true;pt=pos(m);e.style.left=pt.x+'%';e.style.top=pt.y+'%'};
+  const lache=m=>{if(m&&m.pointerId!==id)return;window.removeEventListener('pointermove',suit);window.removeEventListener('pointerup',lache);window.removeEventListener('pointercancel',lache);
+   try{e.releasePointerCapture(id)}catch(_){}
    if(bouge&&pt&&opts.deplace)opts.deplace(b,[pt.x,pt.y]);else if(!bouge&&opts.clic)opts.clic(b)};
-  e.setPointerCapture&&e.setPointerCapture(ev.pointerId);e.addEventListener('pointermove',suit);e.addEventListener('pointerup',lache);e.addEventListener('pointercancel',lache)}}
+  try{e.setPointerCapture(id)}catch(_){}
+  window.addEventListener('pointermove',suit);window.addEventListener('pointerup',lache);window.addEventListener('pointercancel',lache)}}
 function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildren();etiquettes.replaceChildren();
  const ns='http://www.w3.org/2000/svg';
  d.batiments.forEach((b,i)=>{if(!b.zone)return;
@@ -72,7 +77,7 @@ function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildre
 /* ---------- L'éditeur, dans l'onglet Cartes ---------- */
 /* La carte du domaine n'est pas une carte de combat : ni matière, ni porte, ni socle. Elle
    a sa propre ligne en tête de la liste des cartes, et ses propres outils quand on l'ouvre :
-   les quatre calques à charger, la vue, le tracé des bâtiments. */
+   les calques à charger — étapes et états —, la vue, le tracé des bâtiments. */
 let domaineEdite=false,domOutil='select',domSel=null,domDrag=null,domTrace=null,domVue=-1;
 let domZoom=1,domPanX=0,domPanY=0,domUndo=[],domRedo=[],calqueVise=null;
 const domEditeur=document.createElement('section');domEditeur.className='maps-main panel';domEditeur.id='domaine-editeur';
@@ -86,6 +91,7 @@ domEditeur.innerHTML=
  +'<span class="bar-sep"></span><label class="dom-vue">Vue <select id="dom-vue"><option value="-1">Composée — chaque bâtiment à son étape</option>'
  +CALQUES_DOMAINE.map(([k,nom],i)=>'<option value="'+i+'">Calque '+nom+' entier</option>').join('')+'</select></label></div>'
  +'<div class="tool-bar" id="dom-outils"><button data-outil="select">Sélection</button><button data-outil="zone">Tracer un bâtiment</button>'
+ +'<span class="bar-sep"></span><button id="dom-contours-editeur" title="Montrer ou cacher le contour des bâtiments — le même réglage que dans l’onglet Domaine">▦ Contours</button>'
  +'<span class="bar-sep"></span><button id="dom-undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="dom-redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="dom-zoom-out" aria-label="Dézoomer">−</button><span id="dom-zoom-label" class="muted">100 %</span>'
  +'<button id="dom-zoom-in" aria-label="Zoomer">+</button><button id="dom-zoom-reset">Ajuster</button></div>'
@@ -98,7 +104,7 @@ domProps.innerHTML='<h2>Bâtiments</h2><p class="muted">Clique un bâtiment pour
  +'<div class="divider"></div><h2>Légende</h2><ul class="legend">'
  +CALQUES_DOMAINE.map(([k,nom],i)=>'<li><i class="sw-etape" style="--t:'+TEINTES_ETAPE[i]+'"></i>'+nom+(i>=4?' — un état, pas une étape':'')+'</li>').join('')
  +'<li><i class="sw-cut"></i>Tracé en cours — Entrée ferme, Échap abandonne</li></ul>'
- +'<p class="muted">Les quatre calques doivent avoir le même cadrage : la même vue du village, à chaque étape. Le premier chargé fixe le cadre.</p>';
+ +'<p class="muted">Tous les calques doivent avoir le même cadrage : la même vue du village, à chaque étape et dans chaque état. Le premier chargé fixe le cadre.</p>';
 mapsPage.append(domEditeur,domProps);
 const DOM_HINTS={select:'Clique un bâtiment pour le choisir, glisse-le pour le déplacer, tire un de ses sommets pour le retoucher. Suppr efface sa zone. ⌘Z annule.',
  zone:'Contourne le bâtiment : clique point par point, ou glisse à main levée. Un clic sur le premier point, ou Entrée, ferme le tracé ; Échap l’abandonne. Le tracé va au bâtiment choisi — ou en crée un s’il n’y en a pas.'};
@@ -164,7 +170,8 @@ function renderDomaineEditeur(){if(!domaineEdite)return;const d=domaine;
  $('dom-nom').value=d.nom;$('dom-vue').value=String(domVue);
  CALQUES_DOMAINE.forEach((_,i)=>{const on=!!d.carte.calques[i];$('dom-calque-'+i).classList.toggle('on',on);$('dom-calque-x-'+i).hidden=!on});
  document.querySelectorAll('#dom-outils [data-outil]').forEach(b=>b.classList.toggle('on',b.dataset.outil===domOutil));
- $('dom-hint').textContent=d.carte.calques.some(Boolean)?DOM_HINTS[domOutil]||'':'Commence par charger le calque « Friche » : l’image du village avant toute construction. Puis les trois autres, au même cadrage.';
+ $('dom-canvas').classList.toggle('sans-contours',!domContours);$('dom-contours-editeur').classList.toggle('on',domContours);
+ $('dom-hint').textContent=d.carte.calques.some(Boolean)?DOM_HINTS[domOutil]||'':'Commence par charger le calque « Friche » : l’image du village avant toute construction. Puis les autres — étapes, puis états — au même cadrage.';
  $('dom-undo').disabled=!domUndo.length;$('dom-redo').disabled=!domRedo.length;
  sizeDomCanvas();applyDomZoom();
  const vide=!dessineDomaine($('dom-fond'),domVue,()=>{if(domaineEdite)dessineDomaine($('dom-fond'),domVue)});
@@ -189,10 +196,10 @@ function renderDomSel(){const boite=$('dom-sel-boite');boite.replaceChildren();c
  const etape=document.createElement('select');etape.setAttribute('aria-label','Étape');
  ETAPES_DOMAINE.forEach(([k,n],i)=>etape.add(new Option(n,String(i))));etape.value=String(b.etape);
  etape.onchange=()=>{pushDomUndo();b.etape=Number(etape.value);renderDomaineEditeur();sauveDomaine()};
- // L'état : intact, en feu, en ruines — il ne se construit pas, il arrive.
+ // L'état : intact, en feu, en ruines, hanté, abandonné, envahi — il ne se construit pas, il arrive.
  const etat=document.createElement('select');etat.setAttribute('aria-label','État');
  ETATS_BATIMENT.forEach(([k,n])=>etat.add(new Option(n,k)));etat.value=b.etat||'';
- etat.onchange=()=>{pushDomUndo();b.etat=etat.value==='feu'||etat.value==='ruine'?etat.value:'';renderDomaineEditeur();sauveDomaine()};
+ etat.onchange=()=>{pushDomUndo();b.etat=etatBatimentValide(etat.value);renderDomaineEditeur();sauveDomaine()};
  const tracer=document.createElement('button');tracer.textContent=b.zone?'Retracer la zone':'Tracer la zone';
  tracer.onclick=()=>{domOutil='zone';domTrace=null;renderDomaineEditeur()};
  const actions=document.createElement('div');actions.className='side-actions';actions.append(tracer);
@@ -253,18 +260,44 @@ const domainePage=document.createElement('main');domainePage.id='domaine-page';
 domainePage.innerHTML=
  '<aside class="panel dom-col" id="dom-col-bat"><h2>Bâtiments</h2><div id="dom-bats"></div></aside>'
  +'<section class="panel dom-centre"><header class="dom-tete"><h2 id="dom-titre"></h2>'
- +'<span class="dom-tresor" id="dom-tresor-tete"></span><button id="dom-contours" title="Montrer ou cacher le contour des bâtiments">▦ Contours</button><button id="dom-editer">✎ Modifier la carte</button></header>'
+ +'<span class="dom-tresor" id="dom-tresor-tete"></span><span class="dom-actions"><button id="dom-contours" title="Montrer ou cacher le contour des bâtiments">▦ Contours</button><button id="dom-editer">✎ Modifier la carte</button>'
+ +'<button id="dom-export" title="Télécharger le domaine — carte, bâtiments, finances, habitants — dans un fichier .json">⇩ Exporter</button><button id="dom-import" title="Reprendre un domaine exporté, à la place de celui-ci">⇧ Importer</button><input type="file" id="dom-json" accept="application/json,.json" hidden></span></header>'
  +'<div class="dom-carte-wrap"><div id="dom-plan"><canvas id="dom-plan-fond"></canvas><svg id="dom-plan-zones" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>'
- +'<div id="dom-plan-etiquettes"></div><p class="muted dom-plan-vide" id="dom-plan-vide" hidden>Aucune carte du domaine. Dessine-la dans l’onglet Cartes : quatre calques, un par étape.</p></div></div>'
+ +'<div id="dom-plan-etiquettes"></div><p class="muted dom-plan-vide" id="dom-plan-vide" hidden>Aucune carte du domaine. Dessine-la dans l’onglet Cartes : des calques — un par étape, un par état.</p></div></div>'
  +'<div id="dom-fiche"></div></section>'
  +'<aside class="panel dom-col" id="dom-col-gestion"><h2>Finances</h2><div id="dom-finances"></div>'
  +'<div class="divider"></div><h2>Habitants et visiteurs</h2><div id="dom-pnj"></div>'
  +'<div class="divider"></div><h2>Aventuriers</h2><div id="dom-aventuriers"></div></aside>';
 document.querySelector('main.layout').after(domainePage);
 $('dom-editer').onclick=ouvreEditeurDomaine;
-// Les contours des bâtiments ne se montrent que sur demande : la carte se lit sans traits.
+/* Le domaine s'exporte à part : un fichier .json qui se suffit — calques compris —, pour le
+   garder ou le reprendre ailleurs. Il vit aussi dans la sauvegarde globale de la partie, et
+   c'est elle que l'import sait lire aussi : on en tire le domaine, rien d'autre. */
+function nomFichierDomaine(d=new Date()){const p=n=>String(n).padStart(2,'0');
+ const nom=(domaine.nom||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-|-$/g,'').toLowerCase().slice(0,40)||'domaine';
+ return 'amertume-domaine-'+nom+'-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+'.json'}
+function exporterDomaine(){const texte=JSON.stringify({app:'amertume_online',genre:'domaine',exporte:new Date().toISOString(),domaine});
+ const url=URL.createObjectURL(new Blob([texte],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=nomFichierDomaine();
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+ log('Domaine exporté : '+a.download+' ('+tailleLisible(texte.length)+').',{local:true})}
+function lireFichierDomaine(texte){let o;try{o=JSON.parse(texte)}catch(e){throw Error('Ce fichier n’est pas du JSON.')}
+ const d=o&&typeof o==='object'&&!Array.isArray(o)?(o.genre==='domaine'||o.domaine?o.domaine:Array.isArray(o.batiments)?o:null):null;
+ if(!d||typeof d!=='object'||Array.isArray(d)||!Array.isArray(d.batiments))throw Error('Ce fichier n’est pas un domaine d’Amertume Online.');
+ return normaliseDomaine(d)}
+function importerDomaine(f){const lecteur=new FileReader();lecteur.onerror=()=>alert('Lecture du fichier impossible.');
+ lecteur.onload=()=>{let d;try{d=lireFichierDomaine(String(lecteur.result))}catch(e){alert(e.message);return}
+  if(!confirm('Remplacer le domaine actuel « '+domaine.nom+' » par « '+d.nom+' » ? Bâtiments, carte, finances, habitants et aventuriers seront ceux du fichier.'))return;
+  domaine=d;domSel=null;domPageSel=null;domUndo=[];domRedo=[];imagesDom.clear();
+  renderDomaine();renderMapList();sauveDomaine();log('Domaine importé : '+d.nom+'.',{local:true})};
+ lecteur.readAsText(f)}
+$('dom-export').onclick=exporterDomaine;$('dom-import').onclick=()=>$('dom-json').click();
+$('dom-json').onchange=()=>{const f=$('dom-json').files[0];$('dom-json').value='';if(f)importerDomaine(f)};
+/* Les contours des bâtiments ne se montrent que sur demande : la carte se lit sans traits.
+   Un seul réglage pour l'onglet et l'éditeur — le bouton de l'un suit celui de l'autre. */
 let domContours=false;
-$('dom-contours').onclick=()=>{domContours=!domContours;renderDomaine()};
+function basculeContours(){domContours=!domContours;
+ if(document.body.classList.contains('page-domaine'))renderDomaine();else if(domaineEdite)renderDomaineEditeur()}
+$('dom-contours').onclick=basculeContours;$('dom-contours-editeur').onclick=basculeContours;
 function renderDomaine(){const d=domaine;
  $('dom-titre').textContent=d.nom;$('dom-tresor-tete').textContent='Trésor : '+montantLisible(d.finances.tresor);
  if(domPageSel!==null&&!batimentDom(domPageSel))domPageSel=null;
@@ -314,10 +347,10 @@ function renderDomFiche(){const boite=$('dom-fiche');boite.replaceChildren();con
  const et=document.createElement('span');et.className='dom-etape e'+b.etape;et.textContent=NOM_ETAPE(b.etape);
  const recul=document.createElement('button');recul.textContent='↩ Étape précédente';recul.title='Corriger : revenir à l’étape d’avant, sans remboursement';recul.disabled=b.etape===0;
  recul.onclick=()=>{if(reculerEtape(b)){renderDomaine();sauveDomaine()}};
- // L'état du bâtiment : intact, en feu, en ruines — la carte le montre s'il a son calque.
+ // L'état du bâtiment : intact, en feu, en ruines, hanté, abandonné, envahi — la carte le montre s'il a son calque.
  const etat=document.createElement('select');etat.className='dom-etat-choix';etat.setAttribute('aria-label','État du bâtiment');
  ETATS_BATIMENT.forEach(([k,n])=>etat.add(new Option(n,k)));etat.value=b.etat||'';
- etat.onchange=()=>{b.etat=etat.value==='feu'||etat.value==='ruine'?etat.value:'';renderDomaine();sauveDomaine()};
+ etat.onchange=()=>{b.etat=etatBatimentValide(etat.value);renderDomaine();sauveDomaine()};
  tete.append(nom,et,etat,boutonConstruire(b),recul);boite.append(tete);
  const grille=document.createElement('div');grille.className='dom-couts';
  [1,2,3].forEach(e=>{const l=document.createElement('label');l.textContent='Coût — '+NOM_ETAPE(e);

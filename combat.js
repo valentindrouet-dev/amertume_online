@@ -1310,8 +1310,10 @@ const NOM_ETAPE=i=>(ETAPES_DOMAINE[i]||ETAPES_DOMAINE[0])[1];
 /* Les calques de la carte : les quatre étapes, puis deux états qui ne se construisent pas —
    le village en feu, le village en ruines. Un bâtiment en feu ou en ruines se découpe dans
    le calque de son état, s'il est chargé ; sinon dans celui de son étape. */
-const CALQUES_DOMAINE=[...ETAPES_DOMAINE,['feu','En feu'],['ruine','Ruines']];
-const ETATS_BATIMENT=[['','Intact'],['feu','En feu'],['ruine','En ruines']];
+/* Après les quatre étapes, un calque par état du bâtiment : ce qui lui arrive, et ne se
+   construit pas — le feu, la ruine, les spectres, l'abandon, l'ennemi qui s'y installe. */
+const CALQUES_DOMAINE=[...ETAPES_DOMAINE,['feu','En feu'],['ruine','Ruines'],['hante','Hanté'],['abandonne','Abandonné'],['envahi','Envahi']];
+const ETATS_BATIMENT=[['','Intact'],['feu','En feu'],['ruine','En ruines'],['hante','Hanté'],['abandonne','Abandonné'],['envahi','Envahi']];
 const NOM_ETAT_BATIMENT=e=>(ETATS_BATIMENT.find(([k])=>k===e)||ETATS_BATIMENT[0])[1];
 const BATIMENTS_DEFAUT=['Étables','Auberge','Magasin','Tour de Mystique','Temple','Bibliothèque','Forge','Tannerie','Taverne','Baraquements','Entrepôts','Laboratoire','Cartographe'];
 const STATUTS_PNJ=[['habitant','Habitant'],['visiteur','Visiteur']];
@@ -1324,7 +1326,7 @@ function zoneValide(z){if(!Array.isArray(z)||z.length<3)return null;
 function nouveauBatiment(nom,id){return {id:id||idDomaine(),nom:String(nom||'Bâtiment').slice(0,60),etape:0,etat:'',zone:null,etiquette:null,couts:[0,0,0],effets:['','','',''],notes:''}}
 function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
  n.etape=Math.max(0,Math.min(3,Math.trunc(Number(b&&b.etape))||0));
- n.etat=b&&(b.etat==='feu'||b.etat==='ruine')?b.etat:'';
+ n.etat=b&&typeof b.etat==='string'&&b.etat&&ETATS_BATIMENT.some(([k])=>k===b.etat)?b.etat:'';
  n.zone=zoneValide(b&&b.zone);
  // Où s'écrit son nom : là où le MJ l'a posé, sinon au centre de sa zone.
  const et=b&&b.etiquette;n.etiquette=Array.isArray(et)&&et.length>=2&&Number.isFinite(Number(et[0]))&&Number.isFinite(Number(et[1]))?[borne(et[0],0,100),borne(et[1],0,100)]:null;
@@ -1372,7 +1374,9 @@ function calqueDisponible(calques,etape){const c=calques||[],e=Math.max(0,Math.m
  return -1}
 // Le calque où se découpe un bâtiment : celui de son état s'il est chargé, sinon celui de son étape.
 function calqueDuBatiment(calques,b){const c=calques||[];
- if(b&&b.etat==='feu'&&c[4])return 4;if(b&&b.etat==='ruine'&&c[5])return 5;
+ // Un état a son calque, s'il est chargé ; sinon le bâtiment se montre à son étape.
+ const k=b&&b.etat?CALQUES_DOMAINE.findIndex(([cle],i)=>i>=4&&cle===b.etat):-1;
+ if(k>=0&&c[k])return k;
  return calqueDisponible(c,b&&b.etape)}
 // Le centre d'une zone, là où son nom s'écrit : le barycentre de sa surface.
 function centroide(zone){const z=zoneValide(zone);if(!z)return null;

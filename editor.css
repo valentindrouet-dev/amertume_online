@@ -877,7 +877,8 @@ body.page-domaine .intro,body.page-domaine .mj-tools,body.page-domaine main.layo
 #domaine-page h2{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-top:0}
 #domaine-page .dom-col{position:sticky;top:14px;max-height:calc(100dvh - 40px);overflow:auto}
 .dom-centre{display:flex;flex-direction:column;gap:14px}
-.dom-tete{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.dom-tete{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-start}
+/* Les boutons de l'en-tête restent ensemble, même passés à la ligne. */.dom-tete .dom-actions{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
 #domaine-page .dom-tete h2{flex:1;font:32px 'Killam',Georgia,serif;letter-spacing:.5px;text-transform:none;color:var(--ink);margin:0}
 .dom-tresor{font:700 15px system-ui;color:#9d7b1e;background:#c9953f1f;border:1px solid #c9953f55;border-radius:20px;padding:4px 12px}
 #dom-plan{position:relative;width:100%;aspect-ratio:var(--ratio,16/9);background:var(--map-bg);border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;box-shadow:0 10px 30px #0004}
@@ -887,7 +888,7 @@ body.page-domaine .intro,body.page-domaine .mj-tools,body.page-domaine main.layo
 .dom-bat{border:1px solid var(--line);border-left:4px solid var(--t,var(--line));border-radius:9px;padding:8px 10px 9px;background:var(--panel-2);cursor:pointer;display:flex;flex-direction:column;gap:5px}
 .dom-bat:hover{border-color:var(--accent)}.dom-bat.sel{border-color:var(--accent);background:var(--sel-fond)}
 .dom-bat.e0{--t:#b9a48a}.dom-bat.e1{--t:#c9953f}.dom-bat.e2{--t:#7faddc}.dom-bat.e3{--t:#8bbd9c}
-.dom-bat-tete{display:flex;align-items:center;justify-content:space-between;gap:8px}.dom-bat-tete strong{font-size:14px}
+.dom-bat-tete{display:flex;align-items:center;justify-content:space-between;gap:6px 8px;flex-wrap:wrap}.dom-bat-tete strong{font-size:14px}
 .dom-etape{font:600 10px system-ui;letter-spacing:1.5px;text-transform:uppercase;color:var(--t,var(--muted));white-space:nowrap}
 .dom-etape.e0{--t:#8f7c63}.dom-etape.e1{--t:#a4782a}.dom-etape.e2{--t:#4d7fb0}.dom-etape.e3{--t:#4a8a5e}
 .dom-effet{margin:0;font-size:12.5px;line-height:1.35;color:var(--ink)}.dom-presents{margin:0;font-size:11px}
@@ -988,11 +989,13 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .sac.survol{outline:2px dashed var(--green);outline-offset:4px;border-radius:8px}
 .sac{min-height:24px}
 
-/* Un bâtiment en feu ou en ruines : sa zone et son étiquette le disent. */
+/* Un bâtiment en feu, en ruines, hanté, abandonné ou envahi : sa zone et son étiquette le disent. */
 .dom-zone.etat-feu{--t:#d9532b}.dom-zone.etat-ruine{--t:#6e6a66}
+.dom-zone.etat-hante{--t:#9b7fd4}.dom-zone.etat-abandonne{--t:#a89f8f}.dom-zone.etat-envahi{--t:#7d9b3c}
 .dom-etiquette.etat-feu small{color:#ffb39a}.dom-etiquette.etat-ruine small{color:#cfcac4}
+.dom-etiquette.etat-hante small{color:#d9ccf5}.dom-etiquette.etat-abandonne small{color:#e6dfd2}.dom-etiquette.etat-envahi small{color:#d2e6a8}
 .dom-etat{font:700 10px system-ui;letter-spacing:1px;text-transform:uppercase;border-radius:9px;padding:1px 7px;color:#fff;background:#6e6a66}
-.dom-etat.etat-feu{background:#d9532b}
+.dom-etat.etat-feu{background:#d9532b}.dom-etat.etat-hante{background:#8f6fc4}.dom-etat.etat-abandonne{background:#9a8f80}.dom-etat.etat-envahi{background:#7d9b3c}
 .dom-etat-choix{width:auto;margin:0;padding:4px 8px;font-size:13px}
 #dom-calques .dom-calque-etat button:first-child{border-style:dashed}
 
@@ -1010,4 +1013,6 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .dom-etiquette.sel b{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
 #dom-plan.sans-contours .dom-zone{stroke:transparent;fill:transparent}
 #dom-plan.sans-contours .dom-zone:hover{fill:#ffffff14}
-#dom-contours.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+#dom-contours.on,#dom-contours-editeur.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+/* Dans l'éditeur aussi, sur le même réglage ; le bâtiment choisi garde son contour : on le retouche. */
+#dom-canvas.sans-contours .dom-zone:not(.sel){stroke:transparent;fill:transparent}

@@ -1811,7 +1811,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
  assert.deepEqual(C.ETAPES_DOMAINE.map(e=>e[1]),['Friche','Fondations','Construction','Construit']);
  assert.equal(D.batiments.length,13);assert.equal(D.batiments[0].nom,'Étables');
  assert.ok(D.batiments.every(b=>b.etape===0&&b.zone===null&&b.couts.length===3&&b.effets.length===4&&b.id));
- assert.equal(D.finances.tresor,0);assert.deepEqual(D.finances.journal,[]);assert.deepEqual(D.carte.calques,[null,null,null,null,null,null]);
+ assert.equal(D.finances.tresor,0);assert.deepEqual(D.finances.journal,[]);assert.deepEqual(D.carte.calques,Array(9).fill(null));
  assert.equal(D.carte.ratio,16/9);assert.deepEqual(D.pnj,[]);assert.equal(D.nom,'Le Domaine');assert.equal(D.monnaie,'or');
  // Un domaine abîmé se relit borné : étapes dans [0,3], zones valides ou rien, journal court.
  const G=C.normaliseDomaine({nom:42,batiments:[{nom:'Forge',etape:7,zone:[[0,0],[200,-5],[10,10]],couts:['a',5,-3]},{etape:-2,zone:[[0,0],[1,1]]},null],
@@ -1819,7 +1819,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
   pnj:[{nom:'Brenn',statut:'roi'},{statut:'visiteur'}],aventuriers:{h1:{lieu:'x',notes:'n'}}});
  assert.equal(G.nom,'42');assert.equal(G.batiments.length,2);assert.equal(G.batiments[0].etape,3);assert.deepEqual(G.batiments[0].zone,[[0,0],[100,0],[10,10]]);
  assert.deepEqual(G.batiments[0].couts,[0,5,0]);assert.equal(G.batiments[1].etape,0);assert.equal(G.batiments[1].zone,null);assert.equal(G.batiments[1].nom,'Bâtiment');
- assert.deepEqual(G.carte.calques,['a',null,null,null,null,null]);assert.equal(G.carte.ratio,16/9);assert.equal(G.finances.tresor,12);assert.equal(G.finances.journal.length,200);
+ assert.deepEqual(G.carte.calques,['a',...Array(8).fill(null)]);assert.equal(G.carte.ratio,16/9);assert.equal(G.finances.tresor,12);assert.equal(G.finances.journal.length,200);
  assert.equal(G.pnj[0].statut,'habitant');assert.equal(G.pnj[1].statut,'visiteur');assert.equal(G.pnj[1].nom,'Inconnu');assert.deepEqual(G.aventuriers.h1,{lieu:'x',notes:'n'});
  // Construire : le trésor paie, le journal note, l'étape avance ; sans le sou, rien — sauf forcé.
  const b=D.batiments.find(x=>x.nom==='Forge');b.couts=[100,200,300];D.finances.tresor=150;
@@ -2085,10 +2085,10 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
   &&cartes.includes("e.preventDefault();zoneTrait=zoneVise=null;dessineZonesEditeur()});")
   &&cartes.includes('function peindreZones(cv,noms,z,surnoms,edite){if(!z)return;')&&cartes.includes("peindreZones(cv,noms,z,nomsDesZones(m,z),(n,x,y,span)=>{")
   &&feuille.includes('.calque-zones .coupure{stroke:#e04a2f;')&&feuille.includes('.calque-zones .lien{stroke:#2f8a63;')&&feuille.includes('#map-tools [data-tool=separer]{'),'l’outil Zones : voir, séparer, regrouper, choisir, effacer');}
-/* Le domaine : deux calques de plus — En feu, Ruines — qui ne se construisent pas, et un état
+/* Le domaine : des calques de plus — En feu, Ruines, puis Hanté, Abandonné, Envahi — qui ne se construisent pas, et un état
    par bâtiment qui dit lequel le découpe. */
 {const d=C.normaliseDomaine({batiments:[{nom:'Forge',etape:2,etat:'feu'},{nom:'Temple',etat:'zzz'},{nom:'Tour',etape:1,etat:'ruine'}]});
- assert.equal(C.CALQUES_DOMAINE.length,6);assert.deepEqual(C.CALQUES_DOMAINE.slice(4).map(c=>c[0]),['feu','ruine']);assert.equal(d.carte.calques.length,6);
+ assert.equal(C.CALQUES_DOMAINE.length,9);assert.deepEqual(C.CALQUES_DOMAINE.slice(4).map(c=>c[0]),['feu','ruine','hante','abandonne','envahi']);assert.equal(d.carte.calques.length,9);
  assert.deepEqual(d.batiments.map(b=>b.etat),['feu','','ruine']);assert.equal(C.nouveauBatiment('x').etat,'');
  assert.equal(C.calqueDuBatiment([null,'a',null,null,'F','R'],d.batiments[0]),4,'en feu, le calque du feu');
  assert.equal(C.calqueDuBatiment([null,'a',null,null,null,'R'],d.batiments[0]),1,'sans calque du feu, celui de l’étape — le plus proche en dessous');
@@ -2167,4 +2167,34 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("if(detail.reduction)plus('− '+detail.reduction+' de DEF','def');")&&page.includes('.j-plus.def{')
   &&vivant.includes('reduction:detail.reduction||0')&&vivant.includes('reduction:r.reduction'),'le journal dit la DEF retranchée, ici et en table');
 }
-console.log('1385 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.256 — Trois états de plus (hanté, abandonné, envahi), chacun avec son calque ; le domaine
+   s'exporte et se reprend à part ; les contours ont un bouton dans l'éditeur, lié à celui de
+   l'onglet ; le nom d'un bâtiment se glisse en écoutant la fenêtre. */
+{const d=C.normaliseDomaine({batiments:[{nom:'Crypte',etape:3,etat:'hante'},{nom:'Moulin',etat:'abandonne'},{nom:'Fort',etape:1,etat:'envahi'},{nom:'Puits',etat:'feu '}]});
+ assert.deepEqual(C.ETATS_BATIMENT.map(e=>e[0]),['','feu','ruine','hante','abandonne','envahi']);
+ assert.deepEqual(d.batiments.map(b=>b.etat),['hante','abandonne','envahi','']);
+ assert.equal(C.NOM_ETAT_BATIMENT('hante'),'Hanté');assert.equal(C.NOM_ETAT_BATIMENT('envahi'),'Envahi');
+ const c9=['a','b',null,null,'F','R','H','A','E'];
+ assert.equal(C.calqueDuBatiment(c9,d.batiments[0]),6);assert.equal(C.calqueDuBatiment(c9,d.batiments[1]),7);assert.equal(C.calqueDuBatiment(c9,d.batiments[2]),8);
+ assert.equal(C.calqueDuBatiment(['a','b',null,null,'F','R',null,null,null],d.batiments[0]),1,'sans calque de l’état, celui de l’étape');
+ assert.equal(C.calqueDuBatiment(['a','b',null,null,'F','R'],d.batiments[2]),1,'un vieux domaine à six calques tient toujours');
+ const fief=fs.readFileSync('domaine.js','utf8');
+ assert.ok(fief.includes("const TEINTES_ETAPE=['#b9a48a','#c9953f','#7faddc','#8bbd9c','#d9532b','#6e6a66','#9b7fd4','#a89f8f','#7d9b3c'];")
+  &&fief.includes("const etatBatimentValide=v=>v&&ETATS_BATIMENT.some(([k])=>k===v)?v:'';")&&!fief.includes("etat.value==='feu'||etat.value==='ruine'")
+  &&feuille.includes('.dom-zone.etat-hante{--t:#9b7fd4}')&&feuille.includes('.dom-etat.etat-envahi{background:#7d9b3c}'),'hanté, abandonné, envahi : teintes, choix et calques');
+ assert.ok(fief.includes('<button id="dom-export" title=')&&fief.includes('<input type="file" id="dom-json" accept="application/json,.json" hidden>')
+  &&fief.includes("function exporterDomaine(){const texte=JSON.stringify({app:'amertume_online',genre:'domaine',exporte:new Date().toISOString(),domaine});")
+  &&fief.includes("domaine=d;domSel=null;domPageSel=null;domUndo=[];domRedo=[];imagesDom.clear();")
+  &&fief.includes("$('dom-export').onclick=exporterDomaine;$('dom-import').onclick=()=>$('dom-json').click();"),'le domaine s’exporte et se reprend');
+ const ctxD={normaliseDomaine:C.normaliseDomaine};vm.createContext(ctxD);
+ vm.runInContext(fief.slice(fief.indexOf('function lireFichierDomaine(texte)'),fief.indexOf('function importerDomaine(f)')),ctxD);
+ assert.equal(ctxD.lireFichierDomaine(JSON.stringify({genre:'domaine',domaine:{nom:'Val',batiments:[{nom:'Forge',etat:'hante'}]}})).batiments[0].etat,'hante');
+ assert.equal(ctxD.lireFichierDomaine(JSON.stringify({app:'amertume_online',actors:[],domaine:{nom:'Val',batiments:[]}})).nom,'Val','une sauvegarde globale rend son domaine');
+ assert.throws(()=>ctxD.lireFichierDomaine('{"actors":[]}'),/pas un domaine/);assert.throws(()=>ctxD.lireFichierDomaine('nope'),/JSON/);
+ assert.ok(fief.includes('<button id="dom-contours-editeur" title=')&&fief.includes("$('dom-contours').onclick=basculeContours;$('dom-contours-editeur').onclick=basculeContours;")
+  &&fief.includes("$('dom-canvas').classList.toggle('sans-contours',!domContours);$('dom-contours-editeur').classList.toggle('on',domContours);")
+  &&feuille.includes('#dom-contours.on,#dom-contours-editeur.on{')&&feuille.includes('#dom-canvas.sans-contours .dom-zone:not(.sel){stroke:transparent;fill:transparent}'),'un seul réglage de contours, deux boutons');
+ assert.ok(fief.includes("window.addEventListener('pointermove',suit);window.addEventListener('pointerup',lache);window.addEventListener('pointercancel',lache)}}")
+  &&fief.includes("const suit=m=>{if(m.pointerId!==id)return;"),'le glisser du nom écoute la fenêtre');
+}
+console.log('1402 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
