@@ -930,7 +930,9 @@ function attaqueVive(m,at,poser,poserTexte){const l=document.createElement('div'
  dessineIcone();
  choixVif(icone,(at.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])],
   v=>{at.logos=v?[v]:[];dessineIcone();poser()},'Icône de l’attaque');
- tete.append(icone,etat,nom,desVifs(at,poser));
+ /* Comme une arme à l'armurerie : le logo à gauche du nom, puis, tout à droite, l'état
+    infligé juste avant les dés de dégâts. */
+ tete.append(icone,nom,etat,desVifs(at,poser));
  const retirer=document.createElement('button');retirer.className='ico danger';retirer.textContent='✕';
  retirer.title='Retirer cette attaque';retirer.setAttribute('aria-label','Retirer l’attaque '+(at.name||''));
  retirer.onclick=e=>{e.stopPropagation();

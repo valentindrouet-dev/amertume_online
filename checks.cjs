@@ -264,6 +264,8 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
    &&src.includes("(at.logos||[]).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
    &&src.includes("choixVif(icone,(at.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])],")
    &&src.includes("v=>{at.logos=v?[v]:[];dessineIcone();poser()},'Icône de l’attaque');")
+   &&src.includes(' tete.append(icone,nom,etat,desVifs(at,poser));')
+   &&fs.readFileSync('editor.css','utf8').includes('.best-att-tete .etat-inflige{margin-left:auto}')
    &&src.includes("replace(/^(weapon|spell|item|attack)_/,'')")
    &&fs.readFileSync('editor.css','utf8').includes('.best-att-tete .att-logo{'),'une attaque spéciale choisit son icône parmi toutes celles du dossier');}
  const mt=src.match(/const LOGOS_TALENT=(\[[^\]]*\]);/);assert.ok(mt,'LOGOS_TALENT introuvable');
