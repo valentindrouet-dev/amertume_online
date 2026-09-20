@@ -437,12 +437,10 @@ function poserCarac(a,cle,brut,carte){const avant=a[cle];writeStat(a,cle,brut);
  document.dispatchEvent(new Event('amertume-content-changed'))}
 /* L'écu de DEF redessiné sans être remplacé : même élément, autre image. */
 function majEcu(ecu,valeur){if(!ecu)return;
- const n=Number(valeur),peint=Number.isInteger(n)&&n>=0&&n<=6;
- const im=ecu.querySelector('img');if(im)im.src=imgUrl('DEF '+(peint?n:'VIDE')+'.png');
+ const im=ecu.querySelector('img');if(im)im.src=ecuDef(valeur);
  ecu.setAttribute('aria-label','DEF '+valeur);
- let b=ecu.querySelector('b');
- if(peint){if(b)b.remove()}
- else{if(!b){b=document.createElement('b');ecu.append(b)}b.textContent=valeur}}
+ // L'écu est dessiné, chiffre compris : plus de texte posé dessus.
+ const b=ecu.querySelector('b');if(b)b.remove()}
 /* Réécrire les chiffres d'une carte d'aventurier là où ils sont, sans rien remplacer.
    Un chiffre en cours de saisie n'est pas dans la page : le sélecteur ne le trouve
    pas, et il n'est donc pas écrasé sous les doigts. */

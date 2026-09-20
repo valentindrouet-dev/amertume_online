@@ -2122,4 +2122,18 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
   &&src.includes(" const p=gearCarre(a,1,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();")
   &&src.includes("bloc.className='cat-col armurerie-grille';")&&src.includes(" outils.append(crayon,double);carte.append(p,nom,outils);return carte}")
   &&feuille.includes('.cat-col.armurerie-grille{display:flex;flex-wrap:wrap;')&&feuille.includes('.cat-carte .nom-carte{'),'l’armurerie en carrés teintés de leur rareté');}
-console.log('1362 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* L'écu de DEF se dessine : l'écu vide et le chiffre en Killam Bold, noir pur, mesuré sur la
+   police, pour n'importe quelle valeur — deux chiffres se serrent. Une fois par valeur ; en
+   attendant la police et l'écu vide, l'écu peint, puis tout se redessine. */
+assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessines.has(texte))return ecusDessines.get(texte);")
+ &&page.includes("if(!ecuPret){preparerEcus();return imgUrl('DEF '+(Number.isInteger(n)&&n>=0&&n<=6?n:'VIDE')+'.png')}")
+ &&page.includes("ctx.font='700 100px Killam';const m=ctx.measureText(texte);")
+ &&page.includes(" const F=Math.min(ECU_HAUTEUR*.604/Math.max(.01,haut),ECU_LARGEUR*.72/Math.max(.01,large));")
+ &&page.includes("ctx.fillStyle='#000';ctx.textAlign='center';ctx.textBaseline='alphabetic';")
+ &&page.includes("ctx.fillText(texte,ECU_LARGEUR*.493,ECU_HAUTEUR*.483+(mm.actualBoundingBoxAscent-mm.actualBoundingBoxDescent)/2);")
+ &&page.includes("const police=document.fonts&&document.fonts.load?document.fonts.load('700 100px Killam'):Promise.resolve();")
+ &&page.includes("Promise.all([police,image]).then(([,im])=>{if(!im)return;ecuVide=im;ecuPret=true;ecusDessines.clear();")
+ &&page.includes("const im=document.createElement('img');im.src=ecuDef(valeur);")&&!page.includes("const b=document.createElement('b');b.textContent=valeur;w.append(b)")
+ &&src.includes(" const im=ecu.querySelector('img');if(im)im.src=ecuDef(valeur);")&&src.includes(" const b=ecu.querySelector('b');if(b)b.remove()}")
+ &&!src.includes("imgUrl('DEF '+(peint?n:'VIDE')+'.png')")&&page.includes("@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2"),'l’écu de DEF se dessine en Killam, pour toute valeur');
+console.log('1363 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
