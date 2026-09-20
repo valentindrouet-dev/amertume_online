@@ -1873,7 +1873,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
   &&feuille.includes('#maps-page.mode-domaine #domaine-editeur{display:flex}')&&feuille.includes('#maps-page.mode-domaine>.maps-main:not(#domaine-editeur)'),'la carte du domaine s’édite dans Cartes : calques, tracé, déplacement, sommets');
  assert.ok(fief.includes("if(!p.ok&&!confirm('Le trésor ne suffit pas : il manque '")&&fief.includes('construire(domaine,b,true);renderDomaine();sauveDomaine()}')
   &&fief.includes("mouvementFinance(domaine,signe*m,libelle.value.trim()||(signe>0?'Recette':'Dépense'));")
-  &&fief.includes("const pnjDialog=dialog('dom-pnj-editor','Personnage',")&&fief.includes("[['','Au domaine'],...domaine.batiments.map(b=>[b.id,b.nom]),['aventure','En aventure'],['absent','Absent']]")
+  &&fief.includes("const pnjDialog=dialog('dom-pnj-editor','Personnage',")&&fief.includes("[['','Au domaine'],...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),['aventure','En aventure'],['absent','Absent']]")
   &&fief.includes("ta.onchange=()=>{b.effets[i]=ta.value.slice(0,600);renderDomBats();sauveDomaine()}")
   &&feuille.includes('body.page-domaine #domaine-page{display:grid;')&&feuille.includes('body.page-domaine main.layout'),'l’onglet Domaine : construire, financer, peupler, loger, conférer');}
 /* Six retouches d'écran : plus de spécialisation sur la vignette ; l'infobulle du système
@@ -2053,7 +2053,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.ok(src.includes('function corpsEtSac(a){')&&src.includes(" c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),titreTal,talentPills(a));return c}")
   &&src.includes("function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){")&&src.includes("const p=carreDeFiche(a,o,n,tout,portes,peutEquiper);")
   &&src.includes("  recoit(corps,(o,g)=>!g.porte&&equiperPiece(a,o));\n  recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}")
-  &&src.includes("if(corps!==undefined&&equipable){p.draggable=true;")&&src.includes("const SILHOUETTE='<img class=\"silhouette\" src=\"'+imgUrl('PERSO.png')+'\"")&&feuille.includes('.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);object-fit:cover;')
+  &&src.includes("if(corps!==undefined&&equipable){p.draggable=true;")&&src.includes("const SILHOUETTE='<img class=\"silhouette\" src=\"'+imgUrl('PERSO.png')+'\"")&&feuille.includes('.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);object-fit:contain;object-position:center;')
   &&src.includes("['main','Main gauche',mains[1]||null],['torse','Torse',seul('torse')],['main','Main droite',mains[0]||null],")
   &&feuille.includes('.corps{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));')&&feuille.includes('.corps .place.bottes{grid-column:2}')
   &&feuille.includes('.corps .gear-carre.deux-mains{opacity:.45;pointer-events:none}')&&feuille.includes('.sac.survol{'),'le corps et le sac, et le glisser-déposer');}
@@ -2217,8 +2217,18 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const fief=fs.readFileSync('domaine.js','utf8');
  assert.ok(fief.includes("if(opts.jeu){const presents=actors.filter(a=>a.hero&&(domaine.aventuriers[a.id]||{}).lieu===b.id);")
   &&fief.includes("presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name;j.append(t)});e.append(j)}}")
-  &&feuille.includes('.dom-etiquette-jetons{display:flex;justify-content:center;'),'les jetons des présents sous le nom, sur le plan');
+  &&feuille.includes('.dom-etiquette-jetons{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;'),'les jetons des présents sous le nom, sur le plan, sans le soulever');
  assert.ok(fief.includes(" boite.hidden=!b;if(!b)return;")&&!fief.includes('Choisis un bâtiment, dans la liste ou sur la carte')
   &&fief.includes("  row.append(tete,lieu);boite.append(row)})}")&&!fief.includes("notes.placeholder='Note'"),'fiche muette sans bâtiment, lieu sans note');
 }
-console.log('1406 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.262 — Seuls les bâtiments construits accueillent un aventurier ; si l'étape recule, il en sort. */
+{const fief=fs.readFileSync('domaine.js','utf8');
+ const ctxE={domaine:{aventuriers:{a:{lieu:'x',notes:''},b:{lieu:'y',notes:''},c:{lieu:'aventure',notes:''},d:{lieu:'',notes:''},e:{lieu:'perdu',notes:''}},batiments:[{id:'x',etape:2},{id:'y',etape:3}]},ETAPES_DOMAINE:C.ETAPES_DOMAINE};
+ ctxE.batimentDom=id=>ctxE.domaine.batiments.find(b=>b.id===id)||null;vm.createContext(ctxE);
+ vm.runInContext(fief.slice(fief.indexOf('const batimentConstruit='),fief.indexOf('function nomLieu(')),ctxE);
+ assert.equal(ctxE.evacueNonConstruits(),1);
+ assert.deepEqual(Object.values(ctxE.domaine.aventuriers).map(v=>v.lieu),['','y','aventure','','perdu']);
+ assert.ok(fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave()}")&&fief.includes("function renderDomaine(){const d=domaine;evacueNonConstruits();")
+  &&fief.includes("...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),")&&fief.includes("batimentConstruit(batimentDom(v.lieu))))?v.lieu:'';"),'la liste des lieux ne propose que le construit');
+}
+console.log('1409 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

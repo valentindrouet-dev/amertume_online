@@ -973,7 +973,7 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
    haut ; les mains de part et d'autre du torse ; les trois anneaux ; les bottes. */
 .corps-sac{display:flex;flex-direction:column;gap:8px;margin:2px 0 4px}
 .corps{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 6px;padding:8px 4px 6px;border-radius:12px;background:color-mix(in srgb,var(--ink) 4%,transparent);border:1px solid var(--line)}
-.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);object-fit:cover;object-position:center;opacity:.75;pointer-events:none;user-select:none}body.sombre .corps .silhouette{opacity:.3}
+/* La silhouette se voit toujours en entier, centrée, quelle que soit la largeur de la page : jamais recadrée. */.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);object-fit:contain;object-position:center;opacity:.75;pointer-events:none;user-select:none}body.sombre .corps .silhouette{opacity:.3}
 .corps .place{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:86px;border-radius:9px}
 .corps .place.bottes{grid-column:2}
 .corps .nom-place{font:600 9px system-ui;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
@@ -1012,7 +1012,7 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .dom-etiquette.deplacable:active{cursor:grabbing}
 .dom-etiquette.cliquable{pointer-events:auto;cursor:pointer;user-select:none}
 .dom-etiquette.sel b{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
-/* Les jetons des aventuriers présents, en rang sous le nom du bâtiment. */.dom-etiquette-jetons{display:flex;justify-content:center;gap:3px;margin-top:4px;pointer-events:none}.dom-etiquette .jeton-rond.mini{width:24px;height:24px;font-size:12px;border:2px solid #fff;box-shadow:0 1px 3px #000a}
+/* Les jetons des aventuriers présents, en rang sous le nom du bâtiment — accrochés dessous, hors du cadre du nom, qui ne bouge pas d'un pixel quand ils arrivent. */.dom-etiquette-jetons{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;gap:3px;margin-top:2px;pointer-events:none}.dom-etiquette .jeton-rond.mini{width:24px;height:24px;font-size:12px;border:2px solid #fff;box-shadow:0 1px 3px #000a}
 #dom-plan.sans-contours .dom-zone{stroke:transparent;fill:transparent}
 #dom-plan.sans-contours .dom-zone:hover{fill:#ffffff14}
 #dom-contours.on,#dom-contours-editeur.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}

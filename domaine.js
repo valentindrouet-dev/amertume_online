@@ -9,10 +9,16 @@ let domaine=normaliseDomaine(null);
 // La sauvegarde l'emporte et le rend, sans que l'éditeur de partie ait à le connaître.
 const snapshotSansDomaine=snapshot;snapshot=function(){return Object.assign(snapshotSansDomaine(),{domaine})};
 const appliquerSansDomaine=appliquerSauvegarde;appliquerSauvegarde=function(s){appliquerSansDomaine(s);domaine=normaliseDomaine(s&&s.domaine);domSel=null;domPageSel=null};
-function sauveDomaine(){scheduleSave()}
+// Avant chaque sauvegarde, personne ne reste dans un bâtiment qui n'est plus construit.
+function sauveDomaine(){evacueNonConstruits();scheduleSave()}
 const TEINTES_ETAPE=['#b9a48a','#c9953f','#7faddc','#8bbd9c','#d9532b','#6e6a66','#9b7fd4','#a89f8f','#7d9b3c'];
 const etatBatimentValide=v=>v&&ETATS_BATIMENT.some(([k])=>k===v)?v:'';
 const batimentDom=id=>domaine.batiments.find(b=>b.id===id)||null;
+/* Un aventurier ne loge que dans un bâtiment construit : si l'étape recule, il en sort
+   aussitôt et se retrouve simplement au domaine. Renvoie le nombre d'évacués. */
+const batimentConstruit=b=>!!b&&b.etape>=ETAPES_DOMAINE.length-1;
+function evacueNonConstruits(){let n=0;Object.values(domaine.aventuriers).forEach(v=>{if(!v||!v.lieu)return;
+ const b=batimentDom(v.lieu);if(b&&!batimentConstruit(b)){v.lieu='';n++}});return n}
 function nomLieu(lieu){if(lieu==='aventure')return 'En aventure';if(lieu==='absent')return 'Absent';
  const b=lieu?batimentDom(lieu):null;return b?b.nom:'Au domaine'}
 function montantLisible(n){const s=Math.abs(n).toLocaleString('fr-FR');return (n<0?'−':'')+s+' '+domaine.monnaie}
@@ -309,7 +315,7 @@ let domContours=false;
 function basculeContours(){domContours=!domContours;
  if(document.body.classList.contains('page-domaine'))renderDomaine();else if(domaineEdite)renderDomaineEditeur()}
 $('dom-contours').onclick=basculeContours;$('dom-contours-editeur').onclick=basculeContours;
-function renderDomaine(){const d=domaine;
+function renderDomaine(){const d=domaine;evacueNonConstruits();
  $('dom-titre').textContent=d.nom;$('dom-tresor-tete').textContent='Trésor : '+montantLisible(d.finances.tresor);
  if(domPageSel!==null&&!batimentDom(domPageSel))domPageSel=null;
  const plan=$('dom-plan');plan.style.setProperty('--ratio',String(d.carte.ratio||16/9));
@@ -441,8 +447,9 @@ function renderDomAventuriers(){const boite=$('dom-aventuriers');boite.replaceCh
   const tete=document.createElement('div');tete.className='dom-av-tete';
   const nom=document.createElement('strong');nom.textContent=a.name;tete.append(jetonRond(a.image,a.name,'mini'),nom);
   const lieu=document.createElement('select');lieu.setAttribute('aria-label','Où est '+a.name);
-  [['','Au domaine'],...domaine.batiments.map(b=>[b.id,b.nom]),['aventure','En aventure'],['absent','Absent']].forEach(([k,n])=>lieu.add(new Option(n,k)));
-  lieu.value=(v.lieu&&(v.lieu==='aventure'||v.lieu==='absent'||batimentDom(v.lieu)))?v.lieu:'';
+  // Seuls les bâtiments construits accueillent quelqu'un.
+  [['','Au domaine'],...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),['aventure','En aventure'],['absent','Absent']].forEach(([k,n])=>lieu.add(new Option(n,k)));
+  lieu.value=(v.lieu&&(v.lieu==='aventure'||v.lieu==='absent'||batimentConstruit(batimentDom(v.lieu))))?v.lieu:'';
   lieu.onchange=()=>{v.lieu=lieu.value;renderDomaine();sauveDomaine()};
   // La note de l'aventurier reste dans les données et l'export ; elle ne s'affiche plus ici.
   row.append(tete,lieu);boite.append(row)})}
