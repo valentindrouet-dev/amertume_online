@@ -938,7 +938,11 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .calque-zones .apercu{opacity:.6}
 .calque-zones .lien-bout,.calque-zones .coupure-bout{stroke-width:11;stroke-linecap:round;vector-effect:non-scaling-stroke;fill:none}
 .calque-zones .lien-bout{stroke:#2f8a63}.calque-zones .coupure-bout{stroke:#e04a2f}
-#map-tools [data-tool=zones]{border-color:#2f8a63;color:#2f8a63}#map-tools [data-tool=zones].on{background:#2f8a63;border-color:#2f8a63;color:#fff}
+#map-tools [data-tool=zones],#map-tools [data-tool=regrouper]{border-color:#2f8a63;color:#2f8a63}#map-tools [data-tool=zones].on,#map-tools [data-tool=regrouper].on{background:#2f8a63;border-color:#2f8a63;color:#fff}
+#map-tools [data-tool=separer]{border-color:#e04a2f;color:#c2452c}#map-tools [data-tool=separer].on{background:#e04a2f;border-color:#e04a2f;color:#fff}
+/* Un numéro de zone se renomme d'un clic, dans l'éditeur. */
+.zones-noms span.editable{pointer-events:auto;cursor:text}.zones-noms span.editable:hover{filter:brightness(1.15);outline:2px solid #fff}
+.zone-nom-champ{width:6.5em;margin:0;padding:1px 4px;font:800 12px/1 system-ui;text-align:center;border-radius:6px;border:1px solid #fff;background:#fff;color:#222}
 /* Un nœud de bonus dans l'arbre : un rond ambré à la valeur, la caractéristique en nom. */
 .arbre-noeud.bonus{--teinte:#b8862b}
 .arbre-noeud.bonus .arbre-rond{width:46px;height:46px;font:800 17px system-ui;letter-spacing:-.5px;border-style:double;border-width:4px}
@@ -991,3 +995,19 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .dom-etat.etat-feu{background:#d9532b}
 .dom-etat-choix{width:auto;margin:0;padding:4px 8px;font-size:13px}
 #dom-calques .dom-calque-etat button:first-child{border-style:dashed}
+
+/* ---------- L'armurerie en carrés ---------- */
+.cat-col.armurerie-grille{display:flex;flex-wrap:wrap;gap:10px 8px;align-items:flex-start}
+.cat-col.armurerie-grille h3{flex-basis:100%}
+.cat-carte{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;width:84px}
+.cat-carte .nom-carte{font:600 11px/1.2 system-ui;text-align:center;color:var(--ink);max-width:84px;overflow-wrap:anywhere}
+.cat-carte .cat-tools{position:absolute;top:-9px;right:-2px;gap:1px;opacity:0;transition:opacity .12s;z-index:1}
+.cat-carte:hover .cat-tools,.cat-carte:focus-within .cat-tools{opacity:1}
+.cat-carte .cat-tools .ico{padding:1px 5px;font-size:12px;background:var(--panel);border:1px solid var(--line);border-radius:6px}
+/* Le nom d'un bâtiment se glisse ; les contours ne se montrent que sur demande. */
+.dom-etiquette.deplacable{pointer-events:auto;cursor:grab;user-select:none;touch-action:none}
+.dom-etiquette.deplacable:active{cursor:grabbing}
+.dom-etiquette.sel b{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+#dom-plan.sans-contours .dom-zone{stroke:transparent;fill:transparent}
+#dom-plan.sans-contours .dom-zone:hover{fill:#ffffff14}
+#dom-contours.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}

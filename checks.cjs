@@ -2074,17 +2074,17 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  const nettoyee=C.cleanMap({name:'z',zonesCoupures:[{x1:1,y1:1,x2:2,y2:2}],zonesLiens:'nope'});
  assert.deepEqual(nettoyee.zonesCoupures,[{x1:1,y1:1,x2:2,y2:2}]);assert.deepEqual(nettoyee.zonesLiens,[]);
  assert.ok(cartes.includes("KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coupure:'Séparation de zones',lien:'Regroupement de zones'}")
-  &&cartes.includes('<button data-tool="zones">Zones</button><select id="zones-mode"')&&cartes.includes(" $('zones-mode').hidden=mapTool!=='zones';zoneTrait=zoneVise=null;")
+  &&cartes.includes('<button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>')&&cartes.includes("const OUTILS_ZONES=['zones','separer','regrouper'];")
   &&cartes.includes(" m.zonesCoupures??=[];m.zonesLiens??=[];")&&cartes.includes(' dessineTraits();dessineZonesEditeur();')
   &&cartes.includes("if(d.kind==='coupure')return (m.zonesCoupures||[])[d.i];if(d.kind==='lien')return (m.zonesLiens||[])[d.i];")
   &&cartes.includes("else if(d.kind==='coupure')m.zonesCoupures.splice(d.i,1);else if(d.kind==='lien')m.zonesLiens.splice(d.i,1);")
   &&cartes.includes('function dessineZonesEditeur(){')&&cartes.includes('function segmentSous(p){')&&cartes.includes('function clicZones(p){')
-  &&cartes.includes("if(mapTool==='zones'&&e.button===0){clicZones(p);e.preventDefault();return}")
+  &&cartes.includes("if(enZones()&&e.button===0){clicZones(p);e.preventDefault();return}")
   &&cartes.includes("if(mode==='regrouper'){const z=zonesDe(m),a=zoneAu(z,seg.x1,seg.y1),b=zoneAu(z,seg.x2,seg.y2);if(!a||!b||a===b){renderCanvas();return}")
-  &&cartes.includes("if(mapTool==='zones'&&zoneTrait&&!mapDrag){zoneVise=pct(e);dessineZonesEditeur();return}")
+  &&cartes.includes("if(enZones()&&zoneTrait&&!mapDrag){zoneVise=pct(e);dessineZonesEditeur();return}")
   &&cartes.includes("e.preventDefault();zoneTrait=zoneVise=null;dessineZonesEditeur()});")
-  &&cartes.includes('function peindreZones(cv,noms,z){if(!z)return;')&&cartes.includes("c.append(cv,noms);peindreZones(cv,noms,z);")
-  &&feuille.includes('.calque-zones .coupure{stroke:#e04a2f;')&&feuille.includes('.calque-zones .lien{stroke:#2f8a63;')&&feuille.includes('#map-tools [data-tool=zones]{'),'l’outil Zones : voir, séparer, regrouper, choisir, effacer');}
+  &&cartes.includes('function peindreZones(cv,noms,z,surnoms,edite){if(!z)return;')&&cartes.includes("peindreZones(cv,noms,z,nomsDesZones(m,z),(n,x,y,span)=>{")
+  &&feuille.includes('.calque-zones .coupure{stroke:#e04a2f;')&&feuille.includes('.calque-zones .lien{stroke:#2f8a63;')&&feuille.includes('#map-tools [data-tool=separer]{'),'l’outil Zones : voir, séparer, regrouper, choisir, effacer');}
 /* Le domaine : deux calques de plus — En feu, Ruines — qui ne se construisent pas, et un état
    par bâtiment qui dit lequel le découpe. */
 {const d=C.normaliseDomaine({batiments:[{nom:'Forge',etape:2,etat:'feu'},{nom:'Temple',etat:'zzz'},{nom:'Tour',etape:1,etat:'ruine'}]});
@@ -2099,4 +2099,27 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.ok(fief.includes("+CALQUES_DOMAINE.map(([k,nom],i)=>'<span class=\"dom-calque'+(i>=4?' dom-calque-etat':'')+'\">")&&fief.includes(" CALQUES_DOMAINE.forEach((_,i)=>{const on=!!d.carte.calques[i];")
   &&fief.includes("const etat=document.createElement('select');etat.className='dom-etat-choix';")&&fief.includes(" tete.append(nom,et,etat,boutonConstruire(b),recul);boite.append(tete);")
   &&fief.includes("if(b.etat){const x=document.createElement('span');x.className='dom-etat etat-'+b.etat;")&&feuille.includes('.dom-zone.etat-feu{--t:#d9532b}'),'En feu et Ruines : les calques, l’état sur la fiche et la carte');}
-console.log('1354 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les zones se renomment d'un clic sur leur numéro, dans l'éditeur ; le nom tient par un point
+   de la zone et voyage avec la carte. Le nom d'un bâtiment du domaine se glisse où l'on veut ;
+   les contours ne se montrent que sur demande. L'armurerie montre ses pièces en carrés. */
+{assert.deepEqual(C.cleanEtiquettes([{x:-1,y:300,nom:'  Cave  '},{x:1,y:1,nom:''},null,{x:2,y:2,nom:'x'.repeat(30)}]),[{x:0,y:100,nom:'Cave'},{x:2,y:2,nom:'x'.repeat(12)}]);
+ assert.deepEqual(C.cleanMap({name:'z',zonesNoms:[{x:5,y:5,nom:'Salle'}]}).zonesNoms,[{x:5,y:5,nom:'Salle'}]);assert.deepEqual(C.cleanMap({name:'z'}).zonesNoms,[]);
+ const d=C.normaliseDomaine({batiments:[{nom:'Forge',etiquette:[120,'7']},{nom:'Temple',etiquette:'x'},{nom:'Tour'}]});
+ assert.deepEqual(d.batiments.map(b=>b.etiquette),[[100,7],null,null]);assert.equal(C.nouveauBatiment('x').etiquette,null);
+ const fief=fs.readFileSync('domaine.js','utf8');
+ assert.ok(cartes.includes("function nomsDesZones(m,z){")&&cartes.includes("function renommeZone(m,z,n,x,y,nom){nom=String(nom||'').trim().slice(0,12);")
+  &&cartes.includes(" if(nom&&nom!==String(n))m.zonesNoms.push({x,y,nom});")&&cartes.includes(" m.zonesCoupures??=[];m.zonesLiens??=[];m.zonesNoms??=[];")
+  &&cartes.includes("e.textContent=(surnoms&&surnoms.get(n))||String(n);")&&cartes.includes("if(edite){e.classList.add('editable');")
+  &&cartes.includes("peindreZones(cv,noms,z,nomsDesZones(m,z))}")&&cartes.includes("const zonesMode=()=>mapTool==='separer'?'separer':mapTool==='regrouper'?'regrouper':'voir';")
+  &&feuille.includes('.zones-noms span.editable{pointer-events:auto;cursor:text}'),'les zones se renomment, et les trois outils sont des boutons');
+ assert.ok(fief.includes('function rendEtiquetteDeplacable(e,b,boite,opts){')&&fief.includes("const c=b.etiquette||centroide(b.zone);if(!c)return;")
+  &&fief.includes("if(opts.deplace||opts.clic)rendEtiquetteDeplacable(e,b,etiquettes,opts);")
+  &&fief.includes("...(domOutil==='select'?{deplace:(b,pt)=>{pushDomUndo();b.etiquette=pt;renderDomaineEditeur();sauveDomaine()},")
+  &&fief.includes("deplace:(b,pt)=>{b.etiquette=pt;renderDomaine();sauveDomaine()},clic:b=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()}});")
+  &&fief.includes('<button id="dom-contours" title="Montrer ou cacher le contour des bâtiments">▦ Contours</button>')&&fief.includes("plan.classList.toggle('sans-contours',!domContours);")
+  &&feuille.includes('#dom-plan.sans-contours .dom-zone{stroke:transparent;fill:transparent}')&&feuille.includes('.dom-etiquette.deplacable{pointer-events:auto;cursor:grab;'),'le nom d’un bâtiment se glisse, les contours sur un bouton');
+ assert.ok(src.includes("function armoryRow(a,i){const carte=document.createElement('div');carte.className='cat-carte';")
+  &&src.includes(" const p=gearCarre(a,1,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();")
+  &&src.includes("bloc.className='cat-col armurerie-grille';")&&src.includes(" outils.append(crayon,double);carte.append(p,nom,outils);return carte}")
+  &&feuille.includes('.cat-col.armurerie-grille{display:flex;flex-wrap:wrap;')&&feuille.includes('.cat-carte .nom-carte{'),'l’armurerie en carrés teintés de leur rareté');}
+console.log('1362 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

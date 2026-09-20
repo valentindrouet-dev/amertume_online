@@ -1048,18 +1048,16 @@ function talentPills(a){const out=document.createElement('div');out.className='t
   details.forEach(d=>out.append(d))}
  bulleOrpheline();return out}
 const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets']];
-function armoryRow(a,i){const rang=document.createElement('div');rang.className='cat-row';
- const col=itemColumn(a);
- const pill=document.createElement('button');
- pill.className='cat-pill k-'+col+(a.consumable?' consommable':'');
- pill.title='Modifier '+a.name;
- const logo=logoEquipement(a);if(logo)pill.append(logo);
- const nom=document.createElement('span');nom.className='nom';nom.textContent=a.name;pill.append(nom);
- if(col==='armor')pill.append(shieldBadge(a.def||0));
- else if(col==='object'){const t=document.createElement('span');t.className='tag';
-  t.textContent=(a.effects||a.notes||'—').slice(0,22);pill.append(t)}
- else pill.append(dicePips(a.dice,a.etat));
- pill.onclick=()=>openItem(i);
+/* Une pièce de l'armurerie : le même carré qu'à la table et sur le corps de l'aventurier,
+   teinté de sa rareté, son nom dessous, sa description en bulle au survol. Le clic ouvre
+   le formulaire ; ✎ et ⧉ paraissent au survol. */
+function armoryRow(a,i){const carte=document.createElement('div');carte.className='cat-carte';
+ const p=gearCarre(a,1,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();
+ p.removeAttribute('title');p.setAttribute('aria-label','Modifier '+a.name);
+ if(BULLES)surveille(p,()=>{const d=gearDetail(a,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});
+ p.onclick=()=>openItem(i);p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openItem(i)}};
+ const nom=document.createElement('span');nom.className='nom-carte';nom.textContent=a.name;
+ const outils=document.createElement('span');outils.className='cat-tools';
  const crayon=document.createElement('button');crayon.className='ico';crayon.textContent='✎';
  crayon.title='Modifier';crayon.setAttribute('aria-label','Modifier '+a.name);crayon.onclick=()=>openItem(i);
  // Dupliquer : une copie juste en dessous, à corriger — une variante d'arme se fait en un clic.
@@ -1067,19 +1065,20 @@ function armoryRow(a,i){const rang=document.createElement('div');rang.className=
  double.title='Dupliquer';double.setAttribute('aria-label','Dupliquer '+a.name);
  double.onclick=()=>{const copie=structuredClone(a);copie.id=crypto.randomUUID();copie.name=a.name+' (copie)';
   catalog.items.splice(i+1,0,copie);renderCatalogPages();scheduleSave()};
- rang.append(pill,crayon,double);return rang}
+ outils.append(crayon,double);carte.append(p,nom,outils);return carte}
 function renderArmory(){renderBiblioObjets();const cols=$('armory-cols');if(!cols)return;cols.replaceChildren();
  const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value;
  for(const [key,titre] of ARMORY_COLS){
   if(choisie&&choisie!==key)continue;
   const liste=catalog.items.map((a,i)=>[a,i]).filter(([a])=>itemColumn(a)===key
    &&(!q||a.name.toLowerCase().includes(q)));
-  const bloc=document.createElement('div');bloc.className='cat-col';
+  const bloc=document.createElement('div');bloc.className='cat-col armurerie-grille';
   const h=document.createElement('h3');h.textContent=titre;
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
   h.append(compte);bloc.append(h);
   liste.forEach(([a,i])=>bloc.append(armoryRow(a,i)));
-  cols.append(bloc)}}
+  cols.append(bloc)}
+ bulleOrpheline()}
 // Quatre types d'adversaires, quatre colonnes : les Élites manquaient, et leurs
 // modèles ne paraissaient donc nulle part.
 const BEST_COLS=[['standard','Sbires'],['alpha','Élites'],['solitaire','Solitaires'],['boss','Boss']];

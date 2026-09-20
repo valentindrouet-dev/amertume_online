@@ -43,17 +43,28 @@ function dessineDomaine(canvas,vue,redessine){const d=domaine,c=d.carte,ctx=canv
  return true}
 /* Les zones par-dessus l'image : un polygone par bâtiment, teinté de son étape, et son
    nom au centre. Le tracé en cours, s'il y en a un, en pointillé. */
+/* Le nom d'un bâtiment se glisse là où on le veut : il reste à ce point, et non plus au
+   centre de la zone. « deplace » reçoit le bâtiment et le point où on l'a lâché ; un clic
+   sans mouvement va à « clic ». */
+function rendEtiquetteDeplacable(e,b,boite,opts){e.classList.add('deplacable');
+ e.onpointerdown=ev=>{if(ev.button!==0)return;ev.stopPropagation();ev.preventDefault();
+  const r=boite.getBoundingClientRect(),depart={x:ev.clientX,y:ev.clientY};let bouge=false,pt=null;
+  const pos=m=>({x:Math.max(0,Math.min(100,100*(m.clientX-r.left)/r.width)),y:Math.max(0,Math.min(100,100*(m.clientY-r.top)/r.height))});
+  const suit=m=>{if(!bouge&&Math.hypot(m.clientX-depart.x,m.clientY-depart.y)<4)return;bouge=true;pt=pos(m);e.style.left=pt.x+'%';e.style.top=pt.y+'%'};
+  const lache=()=>{e.releasePointerCapture&&e.releasePointerCapture(ev.pointerId);e.removeEventListener('pointermove',suit);e.removeEventListener('pointerup',lache);e.removeEventListener('pointercancel',lache);
+   if(bouge&&pt&&opts.deplace)opts.deplace(b,[pt.x,pt.y]);else if(!bouge&&opts.clic)opts.clic(b)};
+  e.setPointerCapture&&e.setPointerCapture(ev.pointerId);e.addEventListener('pointermove',suit);e.addEventListener('pointerup',lache);e.addEventListener('pointercancel',lache)}}
 function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildren();etiquettes.replaceChildren();
  const ns='http://www.w3.org/2000/svg';
  d.batiments.forEach((b,i)=>{if(!b.zone)return;
   const p=document.createElementNS(ns,'polygon');p.setAttribute('points',b.zone.map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));
   p.setAttribute('class','dom-zone e'+b.etape+(b.etat?' etat-'+b.etat:'')+(opts.sel===i?' sel':''));p.dataset.bat=String(i);
   const t=document.createElementNS(ns,'title');t.textContent=b.nom+' — '+NOM_ETAPE(b.etape)+(b.etat?' · '+NOM_ETAT_BATIMENT(b.etat):'');p.append(t);svg.append(p);
-  const c=centroide(b.zone);if(!c)return;
+  const c=b.etiquette||centroide(b.zone);if(!c)return;
   const e=document.createElement('span');e.className='dom-etiquette e'+b.etape+(b.etat?' etat-'+b.etat:'')+(opts.sel===i?' sel':'');
-  e.style.left=c[0]+'%';e.style.top=c[1]+'%';
+  e.style.left=c[0]+'%';e.style.top=c[1]+'%';e.dataset.bat=String(i);
   const nom=document.createElement('b');nom.textContent=b.nom;const et=document.createElement('small');et.textContent=b.etat?NOM_ETAT_BATIMENT(b.etat):NOM_ETAPE(b.etape);
-  e.append(nom,et);etiquettes.append(e)});
+  e.append(nom,et);if(opts.deplace||opts.clic)rendEtiquetteDeplacable(e,b,etiquettes,opts);etiquettes.append(e)});
  if(opts.trace&&opts.trace.pts.length){const pts=opts.trace.pts;
   const f=document.createElementNS(ns,pts.length>2?'polygon':'polyline');
   f.setAttribute('points',pts.map(q=>q.join(',')).join(' '));f.setAttribute('class','dom-trace');svg.append(f)}}
@@ -160,7 +171,8 @@ function renderDomaineEditeur(){if(!domaineEdite)return;const d=domaine;
  $('dom-canvas').classList.toggle('no-image',vide);
  renderDomZones();renderDomListe();renderDomSel()}
 // Les zones et les sommets se redessinent seuls pendant un geste : l'image, elle, ne bouge pas.
-function renderDomZones(){dessineZonesDom($('dom-zones'),$('dom-etiquettes'),{sel:domSel,trace:domTrace});
+function renderDomZones(){dessineZonesDom($('dom-zones'),$('dom-etiquettes'),{sel:domSel,trace:domTrace,
+  ...(domOutil==='select'?{deplace:(b,pt)=>{pushDomUndo();b.etiquette=pt;renderDomaineEditeur();sauveDomaine()},clic:b=>{domSel=domaine.batiments.indexOf(b);renderDomaineEditeur()}}:{})});
  const boite=$('dom-sommets');boite.replaceChildren();const b=domSel!==null?domaine.batiments[domSel]:null;
  if(!b||!b.zone||domOutil!=='select')return;
  b.zone.forEach(([x,y],i)=>{const s=document.createElement('span');s.className='dom-sommet';s.dataset.sommet=String(i);
@@ -241,7 +253,7 @@ const domainePage=document.createElement('main');domainePage.id='domaine-page';
 domainePage.innerHTML=
  '<aside class="panel dom-col" id="dom-col-bat"><h2>Bâtiments</h2><div id="dom-bats"></div></aside>'
  +'<section class="panel dom-centre"><header class="dom-tete"><h2 id="dom-titre"></h2>'
- +'<span class="dom-tresor" id="dom-tresor-tete"></span><button id="dom-editer">✎ Modifier la carte</button></header>'
+ +'<span class="dom-tresor" id="dom-tresor-tete"></span><button id="dom-contours" title="Montrer ou cacher le contour des bâtiments">▦ Contours</button><button id="dom-editer">✎ Modifier la carte</button></header>'
  +'<div class="dom-carte-wrap"><div id="dom-plan"><canvas id="dom-plan-fond"></canvas><svg id="dom-plan-zones" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>'
  +'<div id="dom-plan-etiquettes"></div><p class="muted dom-plan-vide" id="dom-plan-vide" hidden>Aucune carte du domaine. Dessine-la dans l’onglet Cartes : quatre calques, un par étape.</p></div></div>'
  +'<div id="dom-fiche"></div></section>'
@@ -250,6 +262,9 @@ domainePage.innerHTML=
  +'<div class="divider"></div><h2>Aventuriers</h2><div id="dom-aventuriers"></div></aside>';
 document.querySelector('main.layout').after(domainePage);
 $('dom-editer').onclick=ouvreEditeurDomaine;
+// Les contours des bâtiments ne se montrent que sur demande : la carte se lit sans traits.
+let domContours=false;
+$('dom-contours').onclick=()=>{domContours=!domContours;renderDomaine()};
 function renderDomaine(){const d=domaine;
  $('dom-titre').textContent=d.nom;$('dom-tresor-tete').textContent='Trésor : '+montantLisible(d.finances.tresor);
  if(domPageSel!==null&&!batimentDom(domPageSel))domPageSel=null;
@@ -257,7 +272,9 @@ function renderDomaine(){const d=domaine;
  const vide=!dessineDomaine($('dom-plan-fond'),-1,()=>{if(document.body.classList.contains('page-domaine'))dessineDomaine($('dom-plan-fond'),-1)});
  $('dom-plan-vide').hidden=!vide;plan.classList.toggle('no-image',vide);
  const sel=d.batiments.findIndex(b=>b.id===domPageSel);
- dessineZonesDom($('dom-plan-zones'),$('dom-plan-etiquettes'),{sel:sel>=0?sel:null});
+ plan.classList.toggle('sans-contours',!domContours);$('dom-contours').classList.toggle('on',domContours);
+ dessineZonesDom($('dom-plan-zones'),$('dom-plan-etiquettes'),{sel:sel>=0?sel:null,
+  deplace:(b,pt)=>{b.etiquette=pt;renderDomaine();sauveDomaine()},clic:b=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()}});
  renderDomBats();renderDomFiche();renderDomFinances();renderDomPnj();renderDomAventuriers()}
 $('dom-plan-zones').addEventListener('click',e=>{const z=e.target.closest('[data-bat]');if(!z)return;
  const b=domaine.batiments[Number(z.dataset.bat)];domPageSel=b&&domPageSel!==b.id?b.id:null;renderDomaine()});

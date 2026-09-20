@@ -342,7 +342,7 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
    hidden:!!(f&&f.hidden),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
   objets:(Array.isArray(m&&m.objets)?m.objets:[]).slice(0,200).map(cleanObjet),
   // Les zones que le MJ a séparées ou regroupées voyagent avec la carte.
-  zonesCoupures:cleanSegments(m&&m.zonesCoupures),zonesLiens:cleanSegments(m&&m.zonesLiens),
+  zonesCoupures:cleanSegments(m&&m.zonesCoupures),zonesLiens:cleanSegments(m&&m.zonesLiens),zonesNoms:cleanEtiquettes(m&&m.zonesNoms),
   // Le socle témoin voyage avec la carte : c'est lui qui dit à quelle échelle elle est tracée.
   echelle:{x:borne(m&&m.echelle&&m.echelle.x),y:borne(m&&m.echelle&&m.echelle.y),
    t:Math.max(.6,Math.min(40,Number(m&&m.echelle&&m.echelle.t)||100*46/810))}}}
@@ -1256,6 +1256,9 @@ function rempliAnneaux(grid,cols,rows,anneaux,valeur){
 /* Les coupures et les liens du MJ. Une coupure est un trait fin qui sépare — une porte
    ouverte, un seuil, une arche — sans rien bloquer d'autre ; un lien est une paire de
    points dont les zones n'en font qu'une. Les deux se disent en pour cent de carte. */
+// Les noms que le MJ donne aux zones : un point qui désigne la zone, et son nom — douze signes.
+function cleanEtiquettes(l){return (Array.isArray(l)?l:[]).filter(e=>e&&typeof e==='object').slice(0,200)
+ .map(e=>({x:borne(e.x,0,100),y:borne(e.y,0,100),nom:String(e.nom||'').trim().slice(0,12)})).filter(e=>e.nom)}
 function cleanSegments(l){return (Array.isArray(l)?l:[]).filter(s=>s&&typeof s==='object').slice(0,200)
  .map(s=>({x1:borne(s.x1,0,100),y1:borne(s.y1,0,100),x2:borne(s.x2,0,100),y2:borne(s.y2,0,100)}))}
 /* Une coupure se trace cellule par cellule le long de son trait : une ligne d'une case,
@@ -1307,11 +1310,13 @@ function zoneValide(z){if(!Array.isArray(z)||z.length<3)return null;
  const pts=z.filter(p=>Array.isArray(p)&&p.length>=2&&Number.isFinite(Number(p[0]))&&Number.isFinite(Number(p[1])))
   .map(p=>[borne(p[0],0,100),borne(p[1],0,100)]);
  return pts.length>=3?pts.slice(0,400):null}
-function nouveauBatiment(nom,id){return {id:id||idDomaine(),nom:String(nom||'Bâtiment').slice(0,60),etape:0,etat:'',zone:null,couts:[0,0,0],effets:['','','',''],notes:''}}
+function nouveauBatiment(nom,id){return {id:id||idDomaine(),nom:String(nom||'Bâtiment').slice(0,60),etape:0,etat:'',zone:null,etiquette:null,couts:[0,0,0],effets:['','','',''],notes:''}}
 function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
  n.etape=Math.max(0,Math.min(3,Math.trunc(Number(b&&b.etape))||0));
  n.etat=b&&(b.etat==='feu'||b.etat==='ruine')?b.etat:'';
  n.zone=zoneValide(b&&b.zone);
+ // Où s'écrit son nom : là où le MJ l'a posé, sinon au centre de sa zone.
+ const et=b&&b.etiquette;n.etiquette=Array.isArray(et)&&et.length>=2&&Number.isFinite(Number(et[0]))&&Number.isFinite(Number(et[1]))?[borne(et[0],0,100),borne(et[1],0,100)]:null;
  n.couts=[0,1,2].map(i=>Math.max(0,Math.trunc(Number(b&&b.couts&&b.couts[i]))||0));
  n.effets=[0,1,2,3].map(i=>String(b&&b.effets&&b.effets[i]||'').slice(0,600));
  n.notes=String(b&&b.notes||'').slice(0,2000);return n}
@@ -1377,7 +1382,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  return z.map(([x,y])=>[x+dx,y+dy])}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
- CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,traceCoupure,
+ CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};

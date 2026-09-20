@@ -552,7 +552,7 @@ mapsPage.innerHTML=
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="objet">+ Objet</button>'
- +'<button data-tool="zones">Zones</button><select id="zones-mode" aria-label="Outil de zones" hidden><option value="voir">Voir les zones</option><option value="separer">Séparer — un trait</option><option value="regrouper">Regrouper — deux clics</option></select>'
+ +'<span class="bar-sep"></span><button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>'
  +'<span class="bar-sep"></span><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
  +'<button id="czoom-in" aria-label="Zoomer">+</button><button id="czoom-reset">Ajuster</button></div>'
@@ -613,8 +613,8 @@ function supprimeSelection(){const m=mapDraft;if(!m||!mapSel)return false;
 function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,matiere:[],doors:[],start:null,foes:[],objets:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
 function ensure(m){m.doors??=[];m.foes??=[];m.ratio??=16/9;
- // Les zones séparées ou regroupées par le MJ : nées en v0.252.
- m.zonesCoupures??=[];m.zonesLiens??=[];
+ // Les zones séparées, regroupées ou nommées par le MJ : nées en v0.252.
+ m.zonesCoupures??=[];m.zonesLiens??=[];m.zonesNoms??=[];
  // Les objets sont nés en v0.144 ; chacun porte un identifiant, la table s'y réfère.
  m.objets??=[];m.objets.forEach(o=>{o.id||=crypto.randomUUID();o.test??={comp:3,reussites:1};o.items??=[]});
  m.echelle??={x:8,y:8,t:SOCLE_DEFAUT};
@@ -658,7 +658,7 @@ $('map-image-clear').onclick=()=>{if(mapDraft){pushUndo();mapDraft.image=null;re
 $('map-play').onclick=()=>{if(mapDraft)openBattleMap(mapDraft.id)};
 document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(mapTool!=='lasso')lasso=null;
  $('pinceau-taille').hidden=mapTool!=='pinceau'&&mapTool!=='gomme';
- $('zones-mode').hidden=mapTool!=='zones';zoneTrait=zoneVise=null;
+ zoneTrait=zoneVise=null;
  // Changer d'outil abandonne le tracé en cours : on ne finit pas un trait à la truelle.
  if(mapTool!=='ligne')traitDepart=traitVise=null;
  renderCanvas()});
@@ -707,7 +707,9 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  gomme:'Glisse pour gratter la matière, comme à la gomme. Ce qui est verrouillé résiste. Sa grosseur se choisit à côté.',
  foe:'Clique pour poser l’adversaire choisi à droite de la barre. Pour le rendre invisible, donne-lui l’état Invisible en jeu.',
  objet:'Clique pour poser un objet ou un mécanisme : coffre, levier, trésor. Sa fiche s’ouvre aussitôt — nom, taille, description, objets à prendre, et s’il est caché, le test qui le découvre. Double-clic sur un objet posé pour le modifier.',
- zones:'Les zones : toute étendue close par la matière et les portes en est une, chacune de sa couleur. « Séparer » : deux clics tracent un trait qui coupe une zone en deux — un seuil, une arche — sans rien bloquer d’autre. « Regrouper » : un clic dans chaque zone les fond en une. Clique un trait ou un lien pour le choisir, Suppr l’efface, Échap abandonne un tracé.'};
+ zones:'Les zones : toute étendue close par la matière et les portes en est une, chacune de sa couleur et de son numéro. Clique un numéro pour le renommer. Clique un trait de séparation ou un lien pour le choisir, Suppr l’efface.',
+ separer:'Deux clics tracent un trait qui coupe une zone en deux — un seuil, une arche — sans rien bloquer d’autre. Il s’aimante aux angles de la matière et aux bords de la carte. Échap abandonne, Suppr efface le trait choisi.',
+ regrouper:'Un clic dans une zone, un clic dans une autre : les deux n’en font plus qu’une. Suppr efface le lien choisi.'};
 // Le plan de travail adopte le rapport de la carte et occupe la place disponible.
 function sizeCanvas(){const c=$('map-canvas'),w=document.querySelector('.canvas-wrap');
  const ratio=(mapDraft&&mapDraft.ratio)||16/9,dispoW=w.clientWidth||600,dispoH=w.clientHeight||400;
@@ -892,13 +894,30 @@ function removeShape(d){const m=mapDraft;
    lien — un clic dans chaque zone. Un trait ou un lien se choisit d'un clic et s'efface
    par Suppr. Ce sont les mêmes zones que la table calcule. */
 let zoneTrait=null,zoneVise=null;
-const zonesMode=()=>$('zones-mode')?$('zones-mode').value:'voir';
+// Trois outils, un même calque : voir les zones, les séparer, les regrouper.
+const OUTILS_ZONES=['zones','separer','regrouper'];
+const enZones=()=>OUTILS_ZONES.includes(mapTool);
+const zonesMode=()=>mapTool==='separer'?'separer':mapTool==='regrouper'?'regrouper':'voir';
+/* Les noms des zones : le MJ renomme un numéro d'un clic dessus. Chaque nom est retenu par
+   un point de la zone, pour survivre à un recalcul qui renumérote. */
+function nomsDesZones(m,z){const out=new Map();(m&&m.zonesNoms||[]).forEach(e=>{const n=zoneAu(z,e.x,e.y);if(n)out.set(n,e.nom)});return out}
+function renommeZone(m,z,n,x,y,nom){nom=String(nom||'').trim().slice(0,12);
+ pushUndo();m.zonesNoms=(m.zonesNoms||[]).filter(e=>zoneAu(z,e.x,e.y)!==n);
+ if(nom&&nom!==String(n))m.zonesNoms.push({x,y,nom});
+ matiereChangee()}
 function dessineZonesEditeur(){const c=$('map-canvas'),m=mapDraft;if(!c||!m)return;
  c.querySelectorAll('.zones-apercu,.zones-noms,.calque-zones').forEach(e=>e.remove());
- if(mapTool!=='zones')return;
+ if(!enZones())return;
  const z=zonesDe(m);
  const cv=document.createElement('canvas');cv.className='zones-apercu';const noms=document.createElement('div');noms.className='zones-noms';
- c.append(cv,noms);peindreZones(cv,noms,z);
+ c.append(cv,noms);
+ // Un clic sur un numéro le remplace par un champ : Entrée ou la sortie valident, Échap renonce.
+ peindreZones(cv,noms,z,nomsDesZones(m,z),(n,x,y,span)=>{const champ=document.createElement('input');champ.maxLength=12;champ.value=span.textContent;champ.className='zone-nom-champ';
+  champ.setAttribute('aria-label','Nom de la zone '+n);
+  let fini=false;const valide=()=>{if(fini)return;fini=true;renommeZone(m,z,n,x,y,champ.value)};
+  champ.onkeydown=ev=>{ev.stopPropagation();if(ev.key==='Enter'){ev.preventDefault();valide()}else if(ev.key==='Escape'){ev.preventDefault();fini=true;renderCanvas()}};
+  champ.onblur=valide;champ.onpointerdown=ev=>ev.stopPropagation();
+  span.replaceChildren(champ);champ.focus();champ.select()});
  const svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','calque-zones');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
  const trait=(seg,classe,i)=>{const l=document.createElementNS(nsSVG,'line');l.setAttribute('x1',seg.x1);l.setAttribute('y1',seg.y1);l.setAttribute('x2',seg.x2);l.setAttribute('y2',seg.y2);
   l.setAttribute('class',classe+(i!==undefined&&mapSel&&mapSel.kind===classe&&mapSel.i===i?' selected':''));svg.append(l);return l};
@@ -915,7 +934,7 @@ function segmentSous(p){const m=mapDraft;if(!m)return null;const r=Math.max(.05,
  test(m.zonesCoupures||[],'coupure');test(m.zonesLiens||[],'lien');return meilleur}
 /* Un clic de l'outil Zones : un trait ou un lien sous le curseur se choisit ; sinon, en
    mode Séparer ou Regrouper, le premier clic pose l'origine et le second achève. */
-function clicZones(p){const m=mapDraft,mode=zonesMode();
+function clicZones(p){const m=mapDraft,mode=zonesMode();if(!m)return;
  if(!zoneTrait){const sous=segmentSous(p);if(sous){mapSel=sous;renderCanvas();return}}
  if(mode==='voir'){mapSel=null;renderCanvas();return}
  /* Une coupure s'aimante : à un angle de la matière à portée — le pied d'un mur —, et au
@@ -966,7 +985,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapDrag={mode:e.target.dataset.echelleGrip?'echelle-taille':'echelle',from:p,orig:{...mapDraft.echelle}};
   $('map-canvas').setPointerCapture(e.pointerId);e.preventDefault();return}
  const dessous=sous?{kind:sous.dataset.kind,i:Number(sous.dataset.i)}:null;
- if(mapTool==='zones'&&e.button===0){clicZones(p);e.preventDefault();return}
+ if(enZones()&&e.button===0){clicZones(p);e.preventDefault();return}
  // Avec l'outil Sélection, ou sur une poignée, on manipule la forme visée.
 
  /* Une zone de blocage : celle sous le curseur avec l'outil Sélection, ou celle dont on
@@ -1036,7 +1055,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  else if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
  mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
 $('map-canvas').addEventListener('pointermove',e=>{
- if(mapTool==='zones'&&zoneTrait&&!mapDrag){zoneVise=pct(e);dessineZonesEditeur();return}
+ if(enZones()&&zoneTrait&&!mapDrag){zoneVise=pct(e);dessineZonesEditeur();return}
  if(traitDepart&&!mapDrag){traitVise=viseTrait(pct(e),e.metaKey||e.ctrlKey,mapDraft&&mapDraft.ratio);
   dessineTraits();return}
  if(!mapDrag)return;const p=pct(e),d=mapDrag;
@@ -1222,18 +1241,23 @@ function hslVersRgb(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1
 function renderZones(){const cv=$('map-zones'),noms=$('map-zones-noms');if(!cv||!noms)return;const m=currentMap();
  if(!zonesVisibles||!m||view!=='mj'){cv.style.display='none';noms.hidden=true;return}
  const z=zonesDe(m);if(!z||!z.compte){cv.style.display='none';noms.hidden=true;return}
- cv.style.display='';noms.hidden=false;peindreZones(cv,noms,z)}
-// La même peinture pour la table et pour l'éditeur : la toile à la grille du calcul, les numéros à part.
-function peindreZones(cv,noms,z){if(!z)return;
+ cv.style.display='';noms.hidden=false;peindreZones(cv,noms,z,nomsDesZones(m,z))}
+/* La même peinture pour la table et pour l'éditeur : la toile à la grille du calcul, les
+   numéros à part — ou les noms que le MJ leur a donnés. « edite » : ce que fait un clic
+   sur un numéro, dans l'éditeur seulement. */
+function peindreZones(cv,noms,z,surnoms,edite){if(!z)return;
  const W=z.cols,H=z.rows;if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
  const ctx=cv.getContext('2d'),img=ctx.createImageData(W,H),px=img.data,sx=new Float64Array(z.compte+1),sy=new Float64Array(z.compte+1),nb=new Int32Array(z.compte+1);
  for(let k=0;k<W*H;k++){const n=z.zone[k];if(!n)continue;const [h,s]=TEINTES_ZONE[(n-1)%TEINTES_ZONE.length],[r,g,b]=hslVersRgb(h,s,55);
   const o=k*4;px[o]=r;px[o+1]=g;px[o+2]=b;px[o+3]=110;const i=k%W;sx[n]+=i+.5;sy[n]+=(k-i)/W+.5;nb[n]++}
  ctx.putImageData(img,0,0);
  noms.replaceChildren();
- for(let n=1;n<=z.compte;n++){if(!nb[n])continue;const e=document.createElement('span');e.textContent=String(n);
+ for(let n=1;n<=z.compte;n++){if(!nb[n])continue;const e=document.createElement('span');e.textContent=(surnoms&&surnoms.get(n))||String(n);
   const [h,s]=TEINTES_ZONE[(n-1)%TEINTES_ZONE.length];e.style.setProperty('--z','hsl('+h+' '+s+'% 38%)');
-  e.style.left=(sx[n]/nb[n]/W*100)+'%';e.style.top=(sy[n]/nb[n]/H*100)+'%';noms.append(e)}}
+  const x=sx[n]/nb[n]/W*100,y=sy[n]/nb[n]/H*100;e.style.left=x+'%';e.style.top=y+'%';
+  if(edite){e.classList.add('editable');e.title='Renommer la zone '+n;e.setAttribute('role','button');
+   e.onpointerdown=ev=>ev.stopPropagation();e.onclick=ev=>{ev.stopPropagation();edite(n,x,y,e)}}
+  noms.append(e)}}
 eyeBtn.onclick=()=>{vueTroupe=!vueTroupe;fogKey='';render()};
 fogReset.onclick=()=>resetFog(false);
 fogAll.onclick=()=>{const m=currentMap();if(!m)return;
