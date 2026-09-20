@@ -342,9 +342,10 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .gear-grille{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 4px;align-items:flex-start}
 .gear-rangee-titre{flex-basis:100%;font:600 10px system-ui;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);margin:3px 0 -1px}
 /* Le carré se serre sur ses icônes : le logo, puis les dés à leur taille d'avant, et rien autour. */
-.cat-pill.gear-carre{flex:none;width:auto;min-width:52px;min-height:52px;flex-direction:column;justify-content:center;gap:3px;padding:4px 3px;text-align:center;cursor:pointer;position:relative;box-sizing:border-box}
-.cat-pill.gear-carre .logo-equip{width:28px;height:28px;margin:0}
-.cat-pill.gear-carre .glyphe{font-size:20px;line-height:1}
+/* Un tiers plus grand qu'avant : le logo grandit avec le carré, les dés et l'état gardent leur taille. */
+.cat-pill.gear-carre{flex:none;width:auto;min-width:69px;min-height:69px;flex-direction:column;justify-content:center;gap:4px;padding:5px 4px;text-align:center;cursor:pointer;position:relative;box-sizing:border-box}
+.cat-pill.gear-carre .logo-equip{width:38px;height:38px;margin:0}
+.cat-pill.gear-carre .glyphe{font-size:27px;line-height:1}
 .cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}
 .cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}
 .cat-pill.gear-carre .ecu{width:16px;height:19px}.cat-pill.gear-carre .ecu b{font-size:9px}
@@ -930,3 +931,43 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .arbre-noeud.bonus{--teinte:#b8862b}
 .arbre-noeud.bonus .arbre-rond{width:46px;height:46px;font:800 17px system-ui;letter-spacing:-.5px;border-style:double;border-width:4px}
 .arbre-noeud.bonus .arbre-nom{font:700 12px system-ui;letter-spacing:1px;text-transform:uppercase}
+
+/* ---------- Les raretés ---------- */
+/* Un carré, une pastille, une description se teintent de leur rareté, plus de leur famille :
+   commun gris, rare bleu, mystique violet, épique orange. */
+.cat-pill.r-commun{background:#dedad3;border-color:#00000026}
+.cat-pill.r-rare{background:#cfe0f5;border-color:#4d7fb055}
+.cat-pill.r-mystique{background:#e3d6f2;border-color:#7a5fc055}
+.cat-pill.r-epique{background:#f5dcc0;border-color:#c26a2f55}
+.cat-pill.gear-carre.r-rare{box-shadow:0 0 0 1px #4d7fb0 inset}.cat-pill.gear-carre.r-mystique{box-shadow:0 0 0 1px #7a5fc0 inset}.cat-pill.gear-carre.r-epique{box-shadow:0 0 0 1px #c26a2f inset}
+.cat-pill.gear-carre.porte.r-rare,.cat-pill.gear-carre.porte.r-mystique,.cat-pill.gear-carre.porte.r-epique{box-shadow:0 0 0 1px var(--green) inset}
+.gear-detail.r-commun{background:#e2ded7;border-left-color:#7d7a74}.gear-detail.r-rare{background:#d9e6f5;border-left-color:#4d7fb0}
+.gear-detail.r-mystique{background:#e6dcf2;border-left-color:#7a5fc0}.gear-detail.r-epique{background:#f5e0cc;border-left-color:#c26a2f}
+.bulle:has(.r-commun){--bulle-bord:#e2ded7}.bulle:has(.r-rare){--bulle-bord:#d9e6f5}.bulle:has(.r-mystique){--bulle-bord:#e6dcf2}.bulle:has(.r-epique){--bulle-bord:#f5e0cc}
+.gear-detail .gear-rarete{font:600 11px system-ui;letter-spacing:2px;text-transform:uppercase}
+.gear-detail .gear-rarete.r-rare{color:#4d7fb0}.gear-detail .gear-rarete.r-mystique{color:#7a5fc0}.gear-detail .gear-rarete.r-epique{color:#c26a2f}
+.gear-detail .gear-bonus{font-weight:700;color:#2f6d3a}
+/* Les lignes de bonus du formulaire d'objet. */
+.bonus-ligne{display:flex;align-items:center;gap:6px;margin:4px 0}.bonus-ligne .bonus-plus{font:800 16px system-ui;color:var(--muted)}
+.bonus-ligne input{width:64px;margin:0}.bonus-ligne select{width:auto;flex:1;margin:0}.bonus-ligne select[hidden]{display:none}
+.bonus-ligne .ico{padding:3px 7px;font-size:12px}
+/* ---------- Le corps de l'aventurier ---------- */
+/* Un pâle bonhomme derrière la grille des emplacements : le dos, la tête et l'amulette en
+   haut ; les mains de part et d'autre du torse ; les trois anneaux ; les bottes. */
+.corps-sac{display:flex;flex-direction:column;gap:8px;margin:2px 0 4px}
+.corps{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 6px;padding:8px 4px 6px;border-radius:12px;background:color-mix(in srgb,var(--ink) 4%,transparent);border:1px solid var(--line)}
+.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);fill:var(--ink);opacity:.06;pointer-events:none}
+.corps .place{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:86px;border-radius:9px}
+.corps .place.bottes{grid-column:2}
+.corps .nom-place{font:600 9px system-ui;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.corps .vide{width:69px;height:69px;box-sizing:border-box;border:2px dashed var(--line-strong);border-radius:9px;display:grid;place-items:center;color:var(--muted);opacity:.55;font-size:18px}
+.corps .gear-carre.deux-mains{opacity:.45;pointer-events:none}
+.corps .gear-carre.tire,.sac .gear-carre.tire{opacity:.35}
+/* Pendant le glisser, la place qui attend la pièce s'allume ; sur le corps ou sur le sac, le dépôt se voit. */
+.corps-sac.glisse-main .place.p-main .vide,.corps-sac.glisse-main .place.p-main .gear-carre,.corps-sac.glisse-torse .place.p-torse .vide,.corps-sac.glisse-torse .place.p-torse .gear-carre,
+.corps-sac.glisse-dos .place.p-dos .vide,.corps-sac.glisse-dos .place.p-dos .gear-carre,.corps-sac.glisse-tete .place.p-tete .vide,.corps-sac.glisse-tete .place.p-tete .gear-carre,
+.corps-sac.glisse-anneau .place.p-anneau .vide,.corps-sac.glisse-anneau .place.p-anneau .gear-carre,.corps-sac.glisse-amulette .place.p-amulette .vide,.corps-sac.glisse-amulette .place.p-amulette .gear-carre,
+.corps-sac.glisse-bottes .place.p-bottes .vide,.corps-sac.glisse-bottes .place.p-bottes .gear-carre{outline:2px solid var(--green);outline-offset:2px;opacity:1}
+.corps.survol{background:color-mix(in srgb,var(--green) 12%,transparent);border-color:var(--green)}
+.sac.survol{outline:2px dashed var(--green);outline-offset:4px;border-radius:8px}
+.sac{min-height:24px}

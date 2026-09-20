@@ -61,6 +61,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(o.category==='armor')o.slot=emplacementDe(o);
   o.effet=OBJETS_CODES[o.effet]?o.effet:'';
   o.params=o.effet?paramsObjet(o):{};
+  // Sa rareté, et ses bonus, relus au travers de leur déclaration.
+  o.rarete=rareteDe(o);o.bonus=normaliseBonusEquip(o.bonus);
   o.usage=usageObjet(o);o.consumable=o.usage==='conso'});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??=''});
@@ -103,6 +105,8 @@ function desEtBonus(dice,bonus){const bas=document.createElement('span');bas.cla
    offre son bouton dans la rangée des Actions, à l'encre de sa famille — brun pour une arme,
    vert pour un consommable, bleu-gris pour une armure. */
 const TEINTE_OBJET={melee:'#8a7a5a',ranged:'#6f8a5a',armor:'#6b7a8a',object:'#9c8a55'};
+// La teinte d'une rareté : c'est elle qui colore les carrés et les boutons, plus la famille.
+const TEINTE_RARETE={commun:'#7d7a74',rare:'#4d7fb0',mystique:'#7a5fc0',epique:'#c26a2f'};
 function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||!alive(a))return [];
  const vus=new Set(),out=[];
  (a.inventaire||[]).forEach(id=>{if(vus.has(id))return;vus.add(id);
@@ -114,7 +118,7 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
   const texte=code.cle==='etat'?(p&&p.etat)||code.nom:code.nom;
   const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':'repos'):'';
   out.push({objet:o,texte,compte,
-   teinte:TEINTE_OBJET[itemColumn(o)]||TEINTE_OBJET.object,
+   teinte:TEINTE_RARETE[rareteDe(o)]||TEINTE_OBJET.object,
    peut:dispo,limite:usageLimite(usage),epuise:!dispo,
    titre:dispo?o.name+' — '+NOM_USAGE(usage)+' · '+code.phrase(paramsObjet(o)).replace(/<[^>]*>/g,'')
     :o.name+' a déjà servi aujourd’hui : il faut une nuit de repos.',
@@ -418,7 +422,7 @@ function recalculerPV(a){if(!a||!a.hero)return false;
     en arrivant sous l'aura, ils montent d'autant, une fois. Le MJ calcule l'aura, la
     table la transporte : un joueur relit celle qu'on lui a donnée. */
  const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);
- const max=pvMaximum(catalog.classes,a,catalog.talents)+aura;a.pvBonus=bonusPV(catalog.classes,a.role,a.race);
+ const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;a.pvBonus=bonusPV(catalog.classes,a.role,a.race);
  const delta=aura-(Number(a.auraPv)||0);a.auraPv=aura;
  if(max===a.max&&!delta)return false;
  writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}
@@ -553,7 +557,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const titreKit=sousTitre('Équipement','Inventaire de '+a.name,view!=='mj'?null:()=>openPicker(a,'gear'));
  // Le rouage ouvre les arbres de la classe : les talents s'y choisissent de haut en bas.
  const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');
- c.append(tete,puces,chiffres,titreComp,comps,titreKit,gearPills(a),titreTal,talentPills(a));return c}
+ c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),titreTal,talentPills(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
  const troupe=actors.filter(a=>a.hero);
@@ -620,7 +624,7 @@ function itemColumn(a){return a.category==='armor'?'armor'
 /* La même pastille qu'à l'armurerie, mais posée : sur une fiche on lit son équipement,
    on ne le modifie pas d'un clic. Les dés de l'arme, la DEF de l'armure, l'effet d'un objet. */
 function gearPill(o){const col=itemColumn(o);
- const p=document.createElement('span');p.className='cat-pill k-'+col+(o.consumable?' consommable':'');
+ const p=document.createElement('span');p.className='cat-pill k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
  const logo=logoEquipement(o);if(logo)p.append(logo);
  const nom=document.createElement('span');nom.className='nom';nom.textContent=o.name;p.append(nom);
  if(col==='armor')p.append(shieldBadge(o.def||0));
@@ -717,7 +721,7 @@ function ouvrirBulle(ancre,contenu,classe){retireBulle();if(!ancreVisible(ancre)
 let gearOuvert=null;
 const cleGear=(a,o)=>(a&&a.id||'?')+'|'+(o&&o.id||'?');
 function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor';
- const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
+ const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
  const logo=logoEquipement(o);
  if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':'⚔';p.append(g)}
@@ -728,9 +732,12 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
  return p}
 /* Le dépliant ne dit que l'essentiel : le nom, les mains et la portée d'une arme — les dés
    sont sur le carré —, la DEF d'une armure, l'état qu'elle inflige s'il y en a un. */
-function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+(o.consumable?' consommable':'');
+function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
  const titre=document.createElement('p');titre.className='gear-nom';titre.textContent=o.name;d.append(titre);
- const ligne=texte=>{if(!texte)return;const p=document.createElement('p');p.textContent=texte;d.append(p)};
+ const ligne=(texte,classe)=>{if(!texte)return;const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p)};
+ // La rareté, puis ce que la pièce confère, une ligne par bonus.
+ if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));
+ normaliseBonusEquip(o.bonus).forEach(b=>ligne(libelleBonus(b),'gear-bonus'));
  if(col==='armor')ligne('DEF '+(o.def||0)+' · '+NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase());
  else if(col!=='object')ligne((o.hands===2?'2 mains':'1 main')+(col==='ranged'?' · à distance':' · au contact'));
  if(o.etat)ligne('Inflige : '+o.etat);
@@ -816,10 +823,106 @@ function appliquerObjet(a,o,vise,q){
 /* L'inventaire d'une fiche : l'équipement d'abord — porté en clair, possédé en pâle —, les
    objets sur leur ligne. Un clic sur un carré d'équipement l'équipe ou le repose, pour le
    MJ ou le joueur qui tient l'aventurier ; le chevron déplie sa description. */
+/* Un carré d'une fiche, avec sa bulle et son clic. La description se montre au survol ;
+   en jeu, le clic sur un objet l'épingle — le temps d'aller y chercher « Utiliser » ;
+   là où tout l'inventaire est offert, le clic équipe une arme, une armure, un bouclier —
+   en remplaçant ce qu'il faut. « porte » : ce qui est déjà porté, pour la coche. */
+function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n,portes(o)),detail=gearDetail(o,a,!tout);
+ const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert||BULLES;
+ const montre=()=>{gearOuvert=cle;talentOuvert=null;
+  const d=gearDetail(o,a,!tout);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')};
+ /* Après un rendu — on vient d'équiper — la bulle se repose d'elle-même sur la vignette
+    refaite : le doigt n'a pas bougé, aucun survol ne se déclencherait. */
+ if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&gearOuvert===cle&&ancreVisible(p))reposeBulle(montre)});
+ if(BULLES)surveille(p,montre);
+ const redessine=()=>{render();if(typeof renderHeroes==='function')renderHeroes()};
+ // Une seule description à la fois : ouvrir celle d'un objet referme celle d'un talent.
+ const ouvrir=()=>{gearOuvert=cle;talentOuvert=null};
+ const basculer=()=>{gearOuvert=ouvert?null:cle;if(BULLES&&ouvert)fermerBulle();redessine()};
+ const equipable=(o.category==='weapon'||o.category==='armor')&&tout&&peutEquiper;
+ const agir=e=>{e.stopPropagation();
+  /* Au survol, la description se montre seule. En jeu, le clic l'épingle — le temps
+     d'aller y chercher « Utiliser » ; ailleurs, il ne sert plus qu'à équiper. */
+  if(!equipable){if(BULLES){if(!tout)basculeEpingle(p,montre)}else basculer();return}
+  toggleEquip(a,o);ouvrir();
+  redessine();scheduleSave()};
+ p.onclick=agir;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();agir(e)}};
+ /* Sur le corps de l'aventurier, la pièce se tire : du sac vers le corps pour l'équiper,
+    du corps vers le sac pour la reposer. */
+ if(corps!==undefined&&equipable){p.draggable=true;
+  p.addEventListener('dragstart',e=>{gearGlisse={id:o.id,porte:!!corps};p.classList.add('tire');fermerBulle();
+   try{e.dataTransfer.setData('text/plain',o.id);e.dataTransfer.effectAllowed='move'}catch(_){}
+   const boite=p.closest('.corps-sac');if(boite)boite.classList.add('glisse-'+placeDe(o))});
+  p.addEventListener('dragend',()=>{gearGlisse=null;p.classList.remove('tire');
+   const boite=p.closest('.corps-sac');if(boite)boite.className='corps-sac'})}
+ p.detailPlie=detail;return p}
+let gearGlisse=null;
+// L'emplacement où va une pièce : ses mains pour une arme ou un bouclier, le sien pour une armure.
+function placeDe(o){return o.category==='weapon'||emplacementDe(o)==='shield'?'main':emplacementDe(o)}
+/* Équiper une pièce de plus, ou en reposer une : les deux moitiés du basculement, pour le
+   glisser-déposer qui sait où il va. */
+function equiperPiece(a,o){if(!a||!o)return false;const dans=(a.inventaire||[]).filter(x=>x===o.id).length;
+ if(o.category==='weapon'){if(gearCount(a,o.id)>=dans)return false;libereMains(a,weaponHands(o));a.weapons=[...(a.weapons||[]),o.id];return true}
+ if(o.category!=='armor')return false;
+ if(emplacementDe(o)==='shield'){if(a.shieldId===o.id)return false;libereMains(a,1);a.shieldId=o.id;return true}
+ const slot=emplacementDe(o);a.armures=armuresDe(a);
+ if(a.armures.filter(x=>x===o.id).length>=dans)return false;
+ libereEmplacement(a,slot,1);a.armures.push(o.id);return true}
+function reposerPiece(a,o){if(!a||!o)return false;
+ if(o.category==='weapon'){const i=(a.weapons||[]).lastIndexOf(o.id);if(i<0)return false;a.weapons.splice(i,1);return true}
+ if(o.category!=='armor')return false;
+ if(emplacementDe(o)==='shield'){if(a.shieldId!==o.id)return false;a.shieldId='';return true}
+ a.armures=armuresDe(a);const i=a.armures.lastIndexOf(o.id);if(i<0)return false;a.armures.splice(i,1);return true}
+// Le corps, stylisé : un pâle bonhomme derrière les emplacements.
+const SILHOUETTE='<svg class="silhouette" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><circle cx="50" cy="17" r="13"/><path d="M34 36h32c9 0 14 6 15 14l6 44h-10l-4-30v92H62V96h-8v60H43V64l-4 30H29l6-44c1-8 6-14 15-14z"/></svg>';
+/* La page Aventuriers montre le corps de l'aventurier — tête, torse, dos, mains, anneaux,
+   amulette, bottes — et ce qu'il y porte ; le sac, dessous, tient le reste. On glisse une
+   pièce du sac sur le corps pour l'équiper à sa place, une pièce du corps sur le sac pour
+   la reposer ; le clic fait de même. Une pièce sans place libre prend celle de la plus
+   ancienne. */
+function corpsEtSac(a){const out=document.createElement('div');out.className='corps-sac';
+ const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);
+ const possede=(a.inventaire&&a.inventaire.length)?a.inventaire:[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean);
+ const comptes=new Map();possede.map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
+ const portes=o=>o.category==='weapon'?gearCount(a,o.id):o.id===a.shieldId?1:armuresDe(a).filter(x=>x===o.id).length;
+ const corps=document.createElement('div');corps.className='corps';corps.innerHTML=SILHOUETTE;
+ // Les mains : les armes dans l'ordre, puis le bouclier ; une arme à deux mains tient les deux.
+ const mains=[];(a.weapons||[]).map(objetDe).filter(Boolean).forEach(o=>{mains.push(o);if(weaponHands(o)===2)mains.push({deux:o})});
+ if(a.shieldId){const s=objetDe(a.shieldId);if(s)mains.push(s)}
+ const anneaux=portesA(a,'anneau',catalog.items).map(objetDe).filter(Boolean);
+ const seul=slot=>{const id=portesA(a,slot,catalog.items)[0];return id?objetDe(id):null};
+ const places=[['dos','Dos',seul('dos')],['tete','Tête',seul('tete')],['amulette','Amulette',seul('amulette')],
+  ['main','Main gauche',mains[1]||null],['torse','Torse',seul('torse')],['main','Main droite',mains[0]||null],
+  ['anneau','Anneau',anneaux[0]||null],['anneau','Anneau',anneaux[1]||null],['anneau','Anneau',anneaux[2]||null],['bottes','Bottes',seul('bottes')]];
+ places.forEach(([cle,nom,o],k)=>{const pl=document.createElement('div');pl.className='place p-'+cle+(k===9?' bottes':'');pl.dataset.place=cle;
+  const l=document.createElement('span');l.className='nom-place';l.textContent=nom;pl.append(l);
+  if(o&&o.deux){const p=gearCarre(o.deux,1,1);p.classList.add('deux-mains');p.removeAttribute('title');p.setAttribute('aria-label',o.deux.name+' — à deux mains');pl.append(p)}
+  else if(o)pl.append(carreDeFiche(a,o,1,true,portes,peutEquiper,true));
+  else{const v=document.createElement('span');v.className='vide';v.textContent='·';pl.append(v)}
+  corps.append(pl)});
+ out.append(corps);
+ // Le sac : ce qui n'est pas porté, puis les objets.
+ const sac=document.createElement('div');sac.className='sac gear-grille';
+ const titre=document.createElement('span');titre.className='gear-rangee-titre';titre.textContent='Inventaire';sac.append(titre);
+ let rien=true;
+ [...comptes.entries()].forEach(([o,n])=>{const equipement=o.category==='weapon'||o.category==='armor';
+  const reste=equipement?n-portes(o):n;if(reste<=0)return;rien=false;
+  const p=carreDeFiche(a,o,reste,true,()=>0,peutEquiper,equipement?false:undefined);sac.append(p)});
+ if(rien){const v=document.createElement('span');v.className='muted';v.textContent='Rien dans le sac.';sac.append(v)}
+ out.append(sac);
+ /* Le dépôt : sur le corps, la pièce s'équipe à sa place ; sur le sac, elle se repose. */
+ if(peutEquiper){const redessine=()=>{render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+  const recoit=(el,fn)=>{el.addEventListener('dragover',e=>{if(!gearGlisse)return;e.preventDefault();el.classList.add('survol');try{e.dataTransfer.dropEffect='move'}catch(_){}});
+   el.addEventListener('dragleave',()=>el.classList.remove('survol'));
+   el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('survol');const g=gearGlisse;gearGlisse=null;if(!g)return;
+    const o=objetDe(g.id);if(o&&fn(o,g))redessine()})};
+  recoit(corps,(o,g)=>!g.porte&&equiperPiece(a,o));
+  recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}
+ bulleOrpheline();return out}
 /* Les carrés d'une fiche. En jeu (« tout » faux), on ne voit que ce qui est porté, plus les
-   objets, qui servent pendant la partie ; ailleurs — page Aventuriers, bestiaire — tout
-   l'inventaire, pour composer ce qu'on emporte. Un clic équipe ou repose une arme, une
-   armure, un bouclier ; sur un objet, il ouvre sa description et son bouton Utiliser. */
+   objets, qui servent pendant la partie ; ailleurs — bestiaire — tout l'inventaire, pour
+   composer ce qu'on emporte. Un clic équipe ou repose une arme, une armure, un bouclier ;
+   sur un objet, il ouvre sa description et son bouton Utiliser. */
 function gearPills(a,tout=true){const out=document.createElement('div');out.className='gear-grille';
  const possede=(a.inventaire&&a.inventaire.length)?a.inventaire:[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean);
  const comptes=new Map();possede.map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
@@ -837,32 +940,9 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
  const rangees=(liste,titre)=>{if(!liste.length)return;
   if(titre){const t=document.createElement('span');t.className='gear-rangee-titre';t.textContent=titre;out.append(t)}
   for(let k=0;k<liste.length;k+=PAR_LIGNE){const rangee=liste.slice(k,k+PAR_LIGNE),details=[];
-   rangee.forEach(([o,n])=>{const p=gearCarre(o,n,portes(o)),detail=gearDetail(o,a,!tout);
-    const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert||BULLES;
-    // La description se montre au survol de la vignette, dans une bulle qui n'écarte rien.
-    const montre=()=>{gearOuvert=cle;talentOuvert=null;
-     const d=gearDetail(o,a,!tout);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')};
-    /* Après un rendu — on vient d'équiper — la bulle se repose d'elle-même sur la vignette
-       refaite : le doigt n'a pas bougé, aucun survol ne se déclencherait. */
-    if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&gearOuvert===cle&&ancreVisible(p))reposeBulle(montre)});
-    if(BULLES)surveille(p,montre);
-    const redessine=()=>{render();if(typeof renderHeroes==='function')renderHeroes()};
-    // Une seule description à la fois : ouvrir celle d'un objet referme celle d'un talent.
-    const ouvrir=()=>{gearOuvert=cle;talentOuvert=null};
-    const basculer=()=>{gearOuvert=ouvert?null:cle;if(BULLES&&ouvert)fermerBulle();redessine()};
-    /* En jeu, on ne voit que le porté : un clic y ouvre la description, sans rien reposer
-       qu'on ne pourrait reprendre. Là où tout l'inventaire est offert, le clic équipe —
-       en remplaçant ce qu'il faut — et ouvre la description par la même occasion. */
-    const equipable=(o.category==='weapon'||o.category==='armor')&&tout&&peutEquiper;
-    const agir=e=>{e.stopPropagation();
-     /* Au survol, la description se montre seule. En jeu, le clic l'épingle — le temps
-        d'aller y chercher « Utiliser » ; ailleurs, il ne sert plus qu'à équiper. */
-     if(!equipable){if(BULLES){if(!tout)basculeEpingle(p,montre)}else basculer();return}
-     toggleEquip(a,o);ouvrir();
-     redessine();scheduleSave()};
-    p.onclick=agir;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();agir(e)}};
-    out.append(p);if(!BULLES)details.push(detail)});
-   details.forEach(d=>out.append(d))}};
+   rangee.forEach(([o,n])=>{const p=carreDeFiche(a,o,n,tout,portes,peutEquiper);
+    out.append(p);if(!BULLES)details.push(p.detailPlie)});
+   details.forEach(d=>d&&out.append(d))}};
  rangees(equipement,'');rangees(objets,'Objets');bulleOrpheline();
  return out}
 /* Talents : six natures, chacune sa couleur et son abrégé, comme dans le jeu de table. */
@@ -2362,6 +2442,8 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  a.params=a.effet?paramsObjet({effet:a.effet,params:lireReglagesObjet()}):{};
  a.consumable=usageObjet(a)==='conso';
  if(f.logo)a.logo=logosItem(a).includes(f.logo.value)?f.logo.value:'';
+ if(f.rarete)a.rarete=rareteDe({rarete:f.rarete.value});
+ if($('item-bonus'))a.bonus=lireBonusItem();
  for(const k of ['qty','price','hands','def'])if(f[k])a[k]=num(f[k].value,0,999999);
  // « consommable » n'a plus de case : c'est l'usage qui le dit, plus haut.
  for(const k of ['usesAmmo'])if(f[k])a[k]=f[k].checked;
@@ -2394,6 +2476,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +field('Nom','name',a.name,'text','required maxlength="120"')
   +sel('Catégorie','category',cat,ITEM_CATS)
   +sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])])
+  +sel('Rareté','rarete',rareteDe(a),RARETES)
   +field('Prix','price',a.price||0,'number','min="0" max="999999"')
   +(arme?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="99"')
@@ -2410,8 +2493,14 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +'<div class="edit-grid">'
   +sel('Effet','effet',a.effet||'',[['','— Aucun : objet descriptif —'],...Object.values(OBJETS_CODES).map(c=>[c.cle,c.nom])])
   +sel('Usage','usage',usageObjet(a),USAGES_OBJET)+'</div>'
-  +'<div id="objet-reglages"></div>';
+  +'<div id="objet-reglages"></div>'
+  /* Ce que la pièce confère à qui la porte : une ligne par bonus, cumulables, qu'on ajoute
+     et retire ici et qu'on relit sur sa fiche. */
+  +'<h2 class="sous-titre">Bonus de caractéristiques</h2><div id="item-bonus"></div>'
+  +'<button type="button" id="item-bonus-add" class="arbre-ajout">+ Bonus</button>';
  habilleDes($('item-fields'));
+ dessineBonusItem();
+ $('item-bonus-add').onclick=()=>{itemDraft=itemDepuisForm(itemDraft);itemDraft.bonus=[...normaliseBonusEquip(itemDraft.bonus),{carac:'pv',valeur:1,comp:'0'}];dessineBonusItem()};
  /* Les réglages de l'effet sont dessinés d'après sa déclaration : ajouter un effet au
     moteur suffit à lui donner son formulaire. */
  const menuEffet=$('item-form').elements.effet;
@@ -2423,6 +2512,22 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
  const montre=()=>{const l=menuLogo.value;apercu.hidden=!l;if(l)apercu.src=imgUrl(l+'.png')};
  menuLogo.parentNode.append(apercu);montre();menuLogo.onchange=montre;
  $('item-form').elements.category.onchange=()=>{itemDraft=itemDepuisForm(itemDraft);dessineItem()}}
+/* Les lignes de bonus du formulaire : caractéristique, valeur, et la compétence quand c'en
+   est une. Elles se lisent avec le reste du formulaire, et se retirent d'un ✕. */
+function dessineBonusItem(){const boite=$('item-bonus');if(!boite)return;boite.replaceChildren();
+ normaliseBonusEquip(itemDraft.bonus).forEach((b,i)=>{const l=document.createElement('div');l.className='bonus-ligne';
+  const carac=document.createElement('select');carac.name='bonus_carac_'+i;CARACS_EQUIP.forEach(([k,n])=>carac.add(new Option(n,k)));carac.value=b.carac;
+  const val=document.createElement('input');val.name='bonus_valeur_'+i;val.type='number';val.min='1';val.max='99';val.value=String(b.valeur);val.setAttribute('aria-label','Valeur du bonus');
+  const comp=document.createElement('select');comp.name='bonus_comp_'+i;COMPETENCES.forEach((n,k)=>comp.add(new Option(n,String(k))));comp.value=b.comp;comp.hidden=b.carac!=='comp';
+  carac.onchange=()=>{comp.hidden=carac.value!=='comp'};
+  const x=document.createElement('button');x.type='button';x.className='ico';x.textContent='✕';x.title='Retirer ce bonus';x.setAttribute('aria-label','Retirer ce bonus');
+  x.onclick=()=>{itemDraft=itemDepuisForm(itemDraft);itemDraft.bonus.splice(i,1);dessineBonusItem()};
+  const plus=document.createElement('span');plus.className='bonus-plus';plus.textContent='+';
+  l.append(plus,val,carac,comp,x);boite.append(l)});
+ if(!boite.childElementCount){const v=document.createElement('p');v.className='muted';v.textContent='Aucun bonus : la pièce ne confère rien de plus que ses dés ou sa DEF.';boite.append(v)}}
+function lireBonusItem(){const f=$('item-form').elements,out=[];
+ for(let i=0;f['bonus_carac_'+i];i++)out.push({carac:f['bonus_carac_'+i].value,valeur:f['bonus_valeur_'+i].value,comp:f['bonus_comp_'+i].value});
+ return normaliseBonusEquip(out)}
 function openItem(i=null,apres=null){itemIndex=i;itemApres=apres;
  itemDraft=i===null?{name:'Nouvel objet',category:'weapon',ranged:false,hands:1,qty:1,price:0,def:0,slot:'torse',dice:{},traits:[]}
   :structuredClone(catalog.items[i]);

@@ -1191,8 +1191,8 @@ assert.ok(page.includes('margin-bottom:3px;height:3.2px;border-radius:999px;back
    bestiaire suit le nom ; l'équipement se lit en carrés — logo dessus, dés dessous — dont la description
    prend toute la ligne. */
 assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('clip-path:polygon(')&&page.includes("r(-45)+' scale(.8)'")&&page.includes("r(45)+' scale(1.05)'")&&page.includes('tokenOf(de)*1.6)')
- &&src.includes('function gearCarre(o,n,portes)')&&src.includes('function gearDetail(o,a,enJeu)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large k-'+col+(o.consumable?' consommable':'');")&&!src.includes("out.className='gear-pills'")
- &&feuille.includes('.gear-grille{display:flex;flex-wrap:wrap;gap:6px;')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:auto;min-width:52px;min-height:52px;flex-direction:column;')&&feuille.includes('.gear-detail.large{flex-basis:100%;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col+(o.consumable?' consommable':'');")&&!src.includes('ligne(o.notes)')&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
+ &&src.includes('function gearCarre(o,n,portes)')&&src.includes('function gearDetail(o,a,enJeu)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');")&&!src.includes("out.className='gear-pills'")
+ &&feuille.includes('.gear-grille{display:flex;flex-wrap:wrap;gap:6px;')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:auto;min-width:69px;min-height:69px;flex-direction:column;')&&feuille.includes('.gear-detail.large{flex-basis:100%;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');")&&!src.includes('ligne(o.notes)')&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
 /* Invocation et Régénération : deux mécaniques d'adversaire câblées — la pose au clic, les soins au
    tour ou dès le coup reçu, l'état qui les empêche ; le modèle invoqué se choisit au bestiaire. Deux
    armes équipées croisent leurs logos ; la grille d'équipement se serre sur des carrés de 52 px. */
@@ -1691,7 +1691,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
  &&src.includes("bulleEl.style.setProperty('--fleche',")
  // Les deux chemins cohabitent : la bulle, et le dépliant d'avant si l'on repasse BULLES à faux.
  &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&gearOuvert===cle&&ancreVisible(p))reposeBulle(montre)});")
- &&src.includes("out.append(p);if(!BULLES)details.push(detail)});")&&src.includes("out.append(pill);if(!BULLES)details.push(detail)});")
+ &&src.includes("out.append(p);if(!BULLES)details.push(p.detailPlie)});")&&src.includes("out.append(pill);if(!BULLES)details.push(detail)});")
  &&src.includes('let talentOuvert=null;')&&src.includes("const cle=(a.id||'?')+'|'+t.id,ouvert=BULLES?talentOuvert===cle:talentsOuverts.has(t.id);")
  &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});")
  &&src.includes("if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};")
@@ -1957,13 +1957,13 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   {id:'b3',name:'Souffle',effet:'bonus',params:{carac:'endu',valeur:1}},{id:'b4',name:'Tranchant',effet:'bonus',params:{carac:'dmg',valeur:3}},
   {id:'b5',name:'Sève',effet:'bonus',params:{carac:'vie',valeur:2}},{id:'t',name:'Lamevent',effet:'lamevent'}];
  const a={vie:6,endu:3,role:'x',talents:['b1','b2','b3','b4','b5','t']};
- assert.deepEqual(C.bonusDe(a,cat),{pv:4,endu:1,vie:2,dmg:3,skills:[0,2,0,0,0,0,0,0]});
+ assert.deepEqual(C.bonusDe(a,cat),{pv:4,endu:1,vie:2,def:0,dmg:3,skills:[0,2,0,0,0,0,0,0]});
  assert.equal(C.pvMaximum([],a,cat),(6+2)*(3+1)+4);assert.equal(C.pvMaximum([],a),18,'sans catalogue, la fiche seule');
  assert.equal(C.vieDe(a,cat),8);assert.equal(C.enduDe(a,cat),4);assert.equal(C.vieDe({vie:'x'},cat),0);
  assert.equal(C.libelleBonus({carac:'comp',valeur:2,comp:'1'}),'+2 Force');assert.equal(C.libelleBonus({carac:'pv',valeur:4}),'+4 PV max');assert.equal(C.libelleBonus({carac:'pv',valeur:4},true),'+4 PV');
  assert.equal(C.libelleBonus({carac:'dmg',valeur:1},true),'+1 Dég.');assert.equal(C.libelleBonus({}),'+1 PV max');
  assert.deepEqual(C.paramsTalent({effet:'bonus',params:{carac:'zzz',valeur:99,comp:'9'}}),{carac:'pv',valeur:20,comp:'0'},'relu au travers de la déclaration');
- assert.deepEqual(C.bonusDe({talents:['b1']},[]),{pv:0,endu:0,vie:0,dmg:0,skills:[0,0,0,0,0,0,0,0]},'un nœud absent du catalogue ne donne rien');
+ assert.deepEqual(C.bonusDe({talents:['b1']},[]),{pv:0,endu:0,vie:0,def:0,dmg:0,skills:[0,0,0,0,0,0,0,0]},'un nœud absent du catalogue ne donne rien');
  assert.equal(C.COMPETENCES.length,8);assert.ok(page.includes('const skillNames=COMPETENCES;'));
  assert.match(C.phraseTalent('bonus',{carac:'endu',valeur:2}),/<b>\+2 Endurance<\/b>/);}
 /* Meneur : un passif qui augmente les dégâts, la DEF ou les PV max temporaires des alliés
@@ -1974,7 +1974,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  assert.deepEqual(C.elusMeneur({combien:'deux'},[{a:'c',dist:3},{a:'a',dist:1},{a:'b',dist:2}]),['a','b']);
  assert.deepEqual(C.elusMeneur({combien:'un'},[{a:'c',dist:3},{a:'a',dist:1}]),['a']);
  assert.equal(C.elusMeneur({combien:'tous'},[{a:'c',dist:3},{a:'a',dist:1}]).length,2);assert.deepEqual(C.elusMeneur({},[]),[]);
- assert.ok(page.includes("function defOf(a){return defenseOf(a,items())+auraMeneur(a,'def')}")&&page.includes("function degatsDe(a){return (Number(a&&a.dmg)||0)+bonusFiche(a).dmg+auraMeneur(a,'dmg')}")
+ assert.ok(page.includes("function defOf(a){return defenseOf(a,items())+bonusFiche(a).def+auraMeneur(a,'def')}")&&page.includes("function degatsDe(a){return (Number(a&&a.dmg)||0)+bonusFiche(a).dmg+auraMeneur(a,'dmg')}")
   &&page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=Math.max(1,params.valeur|0)})});")
@@ -1982,7 +1982,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&page.includes(" const jet=skillRoll(competenceDe(a,i),d6);")&&page.includes("useOwnDamage===false?0:degatsDe(a);")
   &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")&&page.includes("const n=degatsDe(e);applyDamage(a,n);")
   &&src.includes("const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
-  &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
+  &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
   &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','auraPv'];")
   &&src.includes("const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus');")
@@ -2012,4 +2012,49 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
 assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&selected!==null&&selected!==i&&markRange(i))return;onGesture(gestureOf(e),i)};")
  &&page.includes("function markRange(i){const lignes=[...document.querySelectorAll('#actors .actor[data-index]')].map(b=>Number(b.dataset.index));")
  &&page.includes(" marked=new Set(plage);render();return true}"),'la plage de sélection');
-console.log('1289 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les raretés et les bonus d'équipement : une pièce se teinte de sa rareté, plus de sa
+   famille ; portée, elle confère ses bonus, une ligne chacun, cumulables — deux anneaux,
+   deux fois. Les carrés ont grandi d'un tiers, le logo avec, les dés non. */
+{const it=[{id:'w',category:'weapon',hands:1,rarete:'rare',bonus:[{carac:'dmg',valeur:2},{carac:'comp',valeur:1,comp:'3'}]},
+  {id:'r',category:'armor',slot:'anneau',bonus:[{carac:'pv',valeur:3},{carac:'def',valeur:1}]},{id:'x',category:'armor',slot:'torse',rarete:'zzz',bonus:'nope'},{id:'s',category:'armor',slot:'shield',bonus:[{carac:'endu',valeur:1},{carac:'vie',valeur:1}]}];
+ const a={weapons:['w'],armures:['r','r','x'],shieldId:'s',vie:6,endu:3,talents:[]};
+ assert.deepEqual(C.bonusEquipement(a,it),{pv:6,endu:1,vie:1,def:2,dmg:2,skills:[0,0,0,1,0,0,0,0]});
+ assert.equal(C.rareteDe(it[0]),'rare');assert.equal(C.rareteDe(it[2]),'commun');assert.equal(C.rareteDe(null),'commun');assert.equal(C.NOM_RARETE('epique'),'Épique');assert.equal(C.NOM_RARETE('zzz'),'Commun');
+ assert.deepEqual(C.normaliseBonusEquip(it[2].bonus),[]);assert.deepEqual(C.normaliseBonusEquip([{carac:'zzz',valeur:0,comp:'99'},null,{carac:'comp',valeur:150,comp:'2'}]),[{carac:'pv',valeur:1,comp:'7'},{carac:'comp',valeur:99,comp:'2'}],'bornés : la compétence à la dernière, la valeur à 99');
+ assert.equal(C.pvMaximum([],a,[],it),(6+1)*(3+1)+6);assert.equal(C.vieDe(a,[],it),7);assert.equal(C.enduDe(a,[],it),4);
+ assert.deepEqual(C.bonusDe(a,[],it),{pv:6,endu:1,vie:1,def:2,dmg:2,skills:[0,0,0,1,0,0,0,0]});
+ assert.deepEqual(C.bonusDe(a,[]),C.bonusVide(),'sans équipement passé, les talents seuls — ici aucun');
+ assert.equal(C.libelleBonus({carac:'def',valeur:1}),'+1 DEF');
+ assert.ok(src.includes("o.rarete=rareteDe(o);o.bonus=normaliseBonusEquip(o.bonus);")&&src.includes("+sel('Rareté','rarete',rareteDe(a),RARETES)")
+  &&src.includes("if(f.rarete)a.rarete=rareteDe({rarete:f.rarete.value});")&&src.includes(" if($('item-bonus'))a.bonus=lireBonusItem();")
+  &&src.includes('function dessineBonusItem(){')&&src.includes('function lireBonusItem(){')&&src.includes("teinte:TEINTE_RARETE[rareteDe(o)]||TEINTE_OBJET.object,")
+  &&src.includes("p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+")&&src.includes("p.className='cat-pill k-'+col+' r-'+rareteDe(o)+")
+  &&src.includes("if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));")&&src.includes("normaliseBonusEquip(o.bonus).forEach(b=>ligne(libelleBonus(b),'gear-bonus'));")
+  &&page.includes("function bonusFiche(a){return bonusDe(a,typeof catalog!=='undefined'?catalog.talents:[],items())}")
+  &&feuille.includes('.cat-pill.r-rare{background:#cfe0f5;')&&feuille.includes('.cat-pill.gear-carre .logo-equip{width:38px;height:38px;margin:0}')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}'),'rareté et bonus : formulaire, carrés, bulle, moteur');}
+/* Le corps de l'aventurier sur sa page : les emplacements et ce qu'ils portent, le sac
+   dessous ; on glisse une pièce du sac sur le corps pour l'équiper, du corps sur le sac
+   pour la reposer. Équiper de plus, reposer : les deux moitiés du basculement. */
+{const morceau=(debut,fin)=>{const i=src.indexOf(debut);return src.slice(i,src.indexOf(fin,i))};
+ const items=[{id:'e',name:'Épée',category:'weapon',hands:1},{id:'g',name:'Grande hache',category:'weapon',hands:2},{id:'b',name:'Bouclier',category:'armor',slot:'shield'},{id:'r',name:'Anneau',category:'armor',slot:'anneau'},{id:'t',name:'Cuir',category:'armor',slot:'torse'}];
+ const ctx={catalog:{items},objetDe:id=>items.find(o=>o.id===id),gearCount:(a,id)=>(a.weapons||[]).filter(x=>x===id).length,weaponHands:C.weaponHands,emplacementDe:C.emplacementDe,armuresDe:C.armuresDe,placesLibres:C.placesLibres};
+ vm.createContext(ctx);vm.runInContext(morceau('function mainsPrises(a)','function toggleEquip(a,o)')+morceau('function placeDe(o)','/* Équiper une pièce de plus')+morceau('function equiperPiece(a,o)','// Le corps, stylisé'),ctx);
+ const a={weapons:[],armures:[],shieldId:'',inventaire:['e','e','g','b','r','r','r','r','t']};
+ assert.equal(ctx.placeDe(items[0]),'main');assert.equal(ctx.placeDe(items[2]),'main');assert.equal(ctx.placeDe(items[3]),'anneau');
+ assert.equal(ctx.equiperPiece(a,items[0]),true);assert.equal(ctx.equiperPiece(a,items[0]),true,'la seconde épée dans l’autre main');assert.equal(JSON.stringify(a.weapons),'["e","e"]');
+ assert.equal(ctx.equiperPiece(a,items[0]),false,'pas de troisième exemplaire');
+ assert.equal(ctx.equiperPiece(a,items[2]),true);assert.equal(JSON.stringify([a.weapons,a.shieldId]),'[["e"],"b"]','le bouclier prend la place de la plus ancienne épée');
+ assert.equal(ctx.equiperPiece(a,items[1]),true);assert.equal(JSON.stringify([a.weapons,a.shieldId]),'[["g"],""]','deux mains : tout le reste cède');
+ assert.equal(ctx.reposerPiece(a,items[1]),true);assert.equal(JSON.stringify(a.weapons),'[]');assert.equal(ctx.reposerPiece(a,items[1]),false);
+ [0,1,2].forEach(()=>assert.equal(ctx.equiperPiece(a,items[3]),true));assert.equal(ctx.equiperPiece(a,items[3]),true,'un quatrième anneau : le plus ancien cède');assert.equal(a.armures.filter(x=>x==='r').length,3);
+ assert.equal(ctx.reposerPiece(a,items[3]),true);assert.equal(a.armures.filter(x=>x==='r').length,2);
+ assert.equal(ctx.equiperPiece(a,items[4]),true);assert.equal(ctx.reposerPiece(a,items[4]),true);assert.equal(ctx.reposerPiece(a,items[4]),false);
+ assert.equal(ctx.equiperPiece(a,{id:'zz',category:'object'}),false);assert.equal(ctx.reposerPiece(a,null),false);
+ assert.ok(src.includes('function corpsEtSac(a){')&&src.includes(" c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),titreTal,talentPills(a));return c}")
+  &&src.includes("function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){")&&src.includes("const p=carreDeFiche(a,o,n,tout,portes,peutEquiper);")
+  &&src.includes("  recoit(corps,(o,g)=>!g.porte&&equiperPiece(a,o));\n  recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}")
+  &&src.includes("if(corps!==undefined&&equipable){p.draggable=true;")&&src.includes("const SILHOUETTE='<svg class=\"silhouette\"")
+  &&src.includes("['main','Main gauche',mains[1]||null],['torse','Torse',seul('torse')],['main','Main droite',mains[0]||null],")
+  &&feuille.includes('.corps{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));')&&feuille.includes('.corps .place.bottes{grid-column:2}')
+  &&feuille.includes('.corps .gear-carre.deux-mains{opacity:.45;pointer-events:none}')&&feuille.includes('.sac.survol{'),'le corps et le sac, et le glisser-déposer');}
+console.log('1329 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

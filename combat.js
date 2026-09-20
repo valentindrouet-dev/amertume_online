@@ -1101,7 +1101,7 @@ function pvEspece(nom){const cle=cleClasse(nom);return (cle&&ESPECES_PV[cle])||0
 function bonusPV(classes,role,espece){const c=classeDe(classes,role);
  return ((c&&Number(c.pv))||0)+pvEspece(espece)}
 // Avec le catalogue, les nœuds de bonus appris comptent : Vie et Endurance majorées, PV max en plus.
-function pvMaximum(classes,a,talents){const b=talents?bonusDe(a,talents):null;
+function pvMaximum(classes,a,talents,items){const b=talents||items?bonusDe(a,talents,items):null;
  const vie=Math.max(1,Math.trunc(Number(a&&a.vie))||1)+(b?b.vie:0);
  const endu=Math.max(1,Math.trunc(Number(a&&a.endu))||1)+(b?b.endu:0);
  return Math.max(1,vie*endu+bonusPV(classes,a&&a.role,a&&a.race)+(b?b.pv:0))}
@@ -1196,22 +1196,42 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
    la table ni vers les joueurs : le domaine reste sur l'appareil du MJ.
    ==================================================================================== */
 /* ---------- Les compétences et les bonus de caractéristique ---------- */
-const NOM_CARAC={pv:'PV max',endu:'Endurance',vie:'Vie',dmg:'Dégâts'},NOM_CARAC_COURT={pv:'PV',endu:'Endu',vie:'Vie',dmg:'Dég.'};
+const NOM_CARAC={pv:'PV max',endu:'Endurance',vie:'Vie',def:'DEF',dmg:'Dégâts'},NOM_CARAC_COURT={pv:'PV',endu:'Endu',vie:'Vie',def:'DEF',dmg:'Dég.'};
 // « +2 PV max », « +1 Force » — ou, en court pour un nœud d'arbre, « +2 PV ».
 function libelleBonus(p,court){const n=Math.max(1,(p&&p.valeur)|0),c=p&&p.carac;
  if(c==='comp')return '+'+n+' '+(COMPETENCES[Number(p&&p.comp)||0]||COMPETENCES[0]);
  return '+'+n+' '+((court?NOM_CARAC_COURT:NOM_CARAC)[c]||(court?'PV':'PV max'))}
-// Ce que les nœuds de bonus appris ajoutent, en tout : par caractéristique, et par compétence.
-function bonusTalents(portes){const out={pv:0,endu:0,vie:0,dmg:0,skills:COMPETENCES.map(()=>0)};
- (portes||[]).forEach(t=>{if(!t||!t.code||t.code.cle!=='bonus')return;const p=t.params||{},n=Math.max(1,p.valeur|0);
-  if(p.carac==='comp'){const k=Number(p.comp)||0;if(out.skills[k]!==undefined)out.skills[k]+=n}
-  else if(p.carac==='pv'||p.carac==='endu'||p.carac==='vie'||p.carac==='dmg')out[p.carac]+=n});
+// Un compte de bonus, vide : par caractéristique, et par compétence.
+function bonusVide(){return {pv:0,endu:0,vie:0,def:0,dmg:0,skills:COMPETENCES.map(()=>0)}}
+function ajouteBonus(out,carac,n,comp){n=Math.max(0,Math.trunc(Number(n))||0);if(!n)return;
+ if(carac==='comp'){const k=Number(comp)||0;if(out.skills[k]!==undefined)out.skills[k]+=n}
+ else if(carac==='pv'||carac==='endu'||carac==='vie'||carac==='def'||carac==='dmg')out[carac]+=n}
+// Ce que les nœuds de bonus appris ajoutent, en tout.
+function bonusTalents(portes){const out=bonusVide();
+ (portes||[]).forEach(t=>{if(!t||!t.code||t.code.cle!=='bonus')return;const p=t.params||{};ajouteBonus(out,p.carac,Math.max(1,p.valeur|0),p.comp)});
  return out}
-function bonusDe(a,talents){return bonusTalents(talentsTenus(a&&a.talents,talents)
- .map(t=>{const code=talentCode(t);return code?{code,params:paramsTalent(t)}:null}).filter(Boolean))}
-// La Vie et l'Endurance telles qu'elles jouent : la fiche, plus les bonus appris.
-function vieDe(a,talents){return (Math.trunc(Number(a&&a.vie))||0)+(talents?bonusDe(a,talents).vie:0)}
-function enduDe(a,talents){return (Math.trunc(Number(a&&a.endu))||0)+(talents?bonusDe(a,talents).endu:0)}
+/* ---------- Les raretés et les bonus d'équipement ----------
+   Une pièce a une rareté — commune, rare, mystique, épique — qui la teinte, et peut
+   conférer des bonus, une ligne chacun, qui jouent tant qu'elle est portée et se cumulent. */
+const RARETES=[['commun','Commun'],['rare','Rare'],['mystique','Mystique'],['epique','Épique']];
+function rareteDe(o){const r=o&&o.rarete;return RARETES.some(([k])=>k===r)?r:'commun'}
+const NOM_RARETE=r=>(RARETES.find(([k])=>k===r)||RARETES[0])[1];
+const CARACS_EQUIP=[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['def','DEF'],['dmg','Dégâts'],['comp','Compétence']];
+function normaliseBonusEquip(l){return (Array.isArray(l)?l:[]).filter(b=>b&&typeof b==='object').slice(0,12).map(b=>({
+ carac:CARACS_EQUIP.some(([k])=>k===b.carac)?b.carac:'pv',valeur:Math.max(1,Math.min(99,Math.trunc(Number(b.valeur))||1)),
+ comp:String(Math.max(0,Math.min(COMPETENCES.length-1,Math.trunc(Number(b.comp))||0)))}))}
+// Ce que l'équipement porté confère : chaque pièce aux mains, sur le corps, au bras — deux anneaux, deux fois.
+function bonusEquipement(a,items){const out=bonusVide();
+ gearOf(a&&[...(a.weapons||[]),...armuresDe(a),a.shieldId],items).forEach(o=>normaliseBonusEquip(o.bonus).forEach(b=>ajouteBonus(out,b.carac,b.valeur,b.comp)));
+ return out}
+// Tout ce qui s'ajoute à la fiche : les nœuds appris, et l'équipement porté.
+function bonusDe(a,talents,items){const out=bonusTalents(talentsTenus(a&&a.talents,talents)
+ .map(t=>{const code=talentCode(t);return code?{code,params:paramsTalent(t)}:null}).filter(Boolean));
+ if(items){const e=bonusEquipement(a,items);['pv','endu','vie','def','dmg'].forEach(k=>out[k]+=e[k]);e.skills.forEach((n,k)=>out.skills[k]+=n)}
+ return out}
+// La Vie et l'Endurance telles qu'elles jouent : la fiche, plus les bonus appris et portés.
+function vieDe(a,talents,items){return (Math.trunc(Number(a&&a.vie))||0)+(talents||items?bonusDe(a,talents,items).vie:0)}
+function enduDe(a,talents,items){return (Math.trunc(Number(a&&a.endu))||0)+(talents||items?bonusDe(a,talents,items).endu:0)}
 /* Les élus d'un Meneur : parmi les alliés à sa portée, les plus proches — un, deux, ou
    tous. « candidats » : des {a,dist}, la table les a déjà triés par portée. */
 function elusMeneur(p,candidats){const c=p&&p.combien,n=c==='tous'?Infinity:c==='deux'?2:1;
@@ -1325,7 +1345,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  return z.map(([x,y])=>[x+dx,y+dy])}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
- COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,rempliAnneaux,calculeZones,zoneAu,
+ COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
