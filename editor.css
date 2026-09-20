@@ -1011,6 +1011,7 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .dom-etiquette.deplacable{pointer-events:auto;cursor:grab;user-select:none;touch-action:none}
 .dom-etiquette.deplacable:active{cursor:grabbing}
 .dom-etiquette.sel b{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+/* Les jetons des aventuriers présents, en rang sous le nom du bâtiment. */.dom-etiquette-jetons{display:flex;justify-content:center;gap:3px;margin-top:4px;pointer-events:none}.dom-etiquette .jeton-rond.mini{width:24px;height:24px;font-size:12px;border:2px solid #fff;box-shadow:0 1px 3px #000a}
 #dom-plan.sans-contours .dom-zone{stroke:transparent;fill:transparent}
 #dom-plan.sans-contours .dom-zone:hover{fill:#ffffff14}
 #dom-contours.on,#dom-contours-editeur.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}

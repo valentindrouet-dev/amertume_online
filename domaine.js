@@ -75,6 +75,10 @@ function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildre
   const nom=document.createElement('b');nom.textContent=friche?NOM_ETAPE(0):b.nom;e.append(nom);
   const sous=b.etat?NOM_ETAT_BATIMENT(b.etat):friche||fini?'':NOM_ETAPE(b.etape);
   if(sous){const et=document.createElement('small');et.textContent=sous;e.append(et)}
+  // Sur le plan, les aventuriers qui s'y trouvent : leur jeton sous le nom du bâtiment.
+  if(opts.jeu){const presents=actors.filter(a=>a.hero&&(domaine.aventuriers[a.id]||{}).lieu===b.id);
+   if(presents.length){const j=document.createElement('div');j.className='dom-etiquette-jetons';
+    presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name;j.append(t)});e.append(j)}}
   if(opts.deplace||opts.clic)rendEtiquetteDeplacable(e,b,etiquettes,opts);etiquettes.append(e)});
  if(opts.trace&&opts.trace.pts.length){const pts=opts.trace.pts;
   const f=document.createElementNS(ns,pts.length>2?'polygon':'polyline');
@@ -341,7 +345,8 @@ function renderDomBats(){const boite=$('dom-bats');boite.replaceChildren();
 /* La fiche du bâtiment choisi : son nom, son étape, ce qu'elle coûte, ce qu'elle confère
    — un effet passif par étape, en toutes lettres pour l'instant —, et qui s'y trouve. */
 function renderDomFiche(){const boite=$('dom-fiche');boite.replaceChildren();const b=batimentDom(domPageSel);
- if(!b){const p=document.createElement('p');p.className='muted';p.textContent='Choisis un bâtiment, dans la liste ou sur la carte, pour lire sa fiche.';boite.append(p);return}
+ // Sans bâtiment choisi, la fiche ne prend pas de place : ni texte, ni cadre.
+ boite.hidden=!b;if(!b)return;
  const tete=document.createElement('div');tete.className='dom-fiche-tete';
  const nom=document.createElement('input');nom.value=b.nom;nom.maxLength=60;nom.className='dom-fiche-nom';nom.setAttribute('aria-label','Nom du bâtiment');
  nom.onchange=()=>{b.nom=nom.value.trim().slice(0,60)||'Bâtiment';renderDomaine();sauveDomaine()};
@@ -437,6 +442,5 @@ function renderDomAventuriers(){const boite=$('dom-aventuriers');boite.replaceCh
   [['','Au domaine'],...domaine.batiments.map(b=>[b.id,b.nom]),['aventure','En aventure'],['absent','Absent']].forEach(([k,n])=>lieu.add(new Option(n,k)));
   lieu.value=(v.lieu&&(v.lieu==='aventure'||v.lieu==='absent'||batimentDom(v.lieu)))?v.lieu:'';
   lieu.onchange=()=>{v.lieu=lieu.value;renderDomaine();sauveDomaine()};
-  const notes=document.createElement('input');notes.maxLength=1000;notes.placeholder='Note';notes.value=v.notes;notes.setAttribute('aria-label','Note sur '+a.name);
-  notes.onchange=()=>{v.notes=notes.value.slice(0,1000);sauveDomaine()};
-  row.append(tete,lieu,notes);boite.append(row)})}
+  // La note de l'aventurier reste dans les données et l'export ; elle ne s'affiche plus ici.
+  row.append(tete,lieu);boite.append(row)})}

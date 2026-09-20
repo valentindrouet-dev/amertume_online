@@ -2211,4 +2211,13 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&fief.includes("nom.textContent=friche?NOM_ETAPE(0):b.nom;e.append(nom);")&&fief.includes("const sous=b.etat?NOM_ETAT_BATIMENT(b.etat):friche||fini?'':NOM_ETAPE(b.etape);")
   &&fief.includes("{sel:sel>=0?sel:null,jeu:true,")&&!fief.includes("sel:domSel,trace:domTrace,jeu"),'l’étiquette du plan est sobre, celle de l’éditeur complète');
 }
-console.log('1404 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.260 — Sur le plan, le jeton des aventuriers présents sous le nom du bâtiment ; plus de note
+   sous le lieu d'un aventurier ; sans bâtiment choisi, la fiche disparaît. */
+{const fief=fs.readFileSync('domaine.js','utf8');
+ assert.ok(fief.includes("if(opts.jeu){const presents=actors.filter(a=>a.hero&&(domaine.aventuriers[a.id]||{}).lieu===b.id);")
+  &&fief.includes("presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name;j.append(t)});e.append(j)}}")
+  &&feuille.includes('.dom-etiquette-jetons{display:flex;justify-content:center;'),'les jetons des présents sous le nom, sur le plan');
+ assert.ok(fief.includes(" boite.hidden=!b;if(!b)return;")&&!fief.includes('Choisis un bâtiment, dans la liste ou sur la carte')
+  &&fief.includes("  row.append(tete,lieu);boite.append(row)})}")&&!fief.includes("notes.placeholder='Note'"),'fiche muette sans bâtiment, lieu sans note');
+}
+console.log('1406 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
