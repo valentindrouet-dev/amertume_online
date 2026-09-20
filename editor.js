@@ -97,9 +97,13 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
  const vus=new Set(),out=[];
  (a.inventaire||[]).forEach(id=>{if(vus.has(id))return;vus.add(id);
   const o=objetDe(id),code=objetCode(o);if(!o||!code)return;
-  const dispo=objetDisponible(a,o),usage=usageObjet(o);
-  const reste=usageLimite(usage)?(dispo?' 1/1':' 0/1'):'';
-  out.push({objet:o,texte:o.name+reste,
+  const dispo=objetDisponible(a,o),usage=usageObjet(o),p=paramsObjet(o);
+  /* Le bouton dit ce que l'objet prodigue — Invisibilité, Soin, Invulnérabilité — plutôt
+     que son nom : c'est l'effet qu'on choisit. Un usage compté s'écrit dessous : 1 / jour,
+     0 / jour une fois pris ; 1 / repos entre deux repos courts. */
+  const texte=code.cle==='etat'?(p&&p.etat)||code.nom:code.nom;
+  const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':'repos'):'';
+  out.push({objet:o,texte,compte,
    teinte:TEINTE_OBJET[itemColumn(o)]||TEINTE_OBJET.object,
    peut:dispo,limite:usageLimite(usage),epuise:!dispo,
    titre:dispo?o.name+' — '+NOM_USAGE(usage)+' · '+code.phrase(paramsObjet(o)).replace(/<[^>]*>/g,'')
@@ -138,8 +142,11 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   const im=logoEquipement({logo:b.objet.logo},'bouton');
   if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);el.classList.add('avec-logo');el.append(logos)}
   const nom=document.createElement('span');nom.className='nom';nom.textContent=b.texte;
-  el.append(nom);el.classList.add('sans-des');
-  inerte(el,!b.peut);el.title=b.titre;el.setAttribute('aria-label',b.texte+' — '+b.titre);
+  el.append(nom);
+  // Le compte des usages sur la seconde ligne ; sans compte, le nom seul.
+  if(b.compte){const c=document.createElement('span');c.className='compte';c.textContent=b.compte;el.append(c)}
+  else el.classList.add('sans-des');
+  inerte(el,!b.peut);el.title=b.titre;el.setAttribute('aria-label',b.objet.name+' : '+b.texte+(b.compte?' ('+b.compte+')':'')+' — '+b.titre);
   /* Un usage compté porte son chrono, en haut à droite : il dit que la charge se rend au
      repos, et le MJ la rend d'un clic — les joueurs, non, leur bouton est désactivé. */
   if(b.limite){const chrono=document.createElement('span');chrono.className='chrono'+(b.epuise?' vide':'');
@@ -191,9 +198,9 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;
    boite.querySelectorAll('.choix-attaque:not(.btn-talent)').forEach((x,k)=>x.classList.toggle('on',k===i));
    attack();scheduleSave()};
-  // Les attaques d'abord, les talents à leur suite.
-  const premierTalent=boite.querySelector('.btn-talent');
-  if(premierTalent)boite.insertBefore(b,premierTalent);else boite.append(b)})}
+  // Les attaques d'abord, toujours : les talents et les objets viennent à leur suite.
+  const premierAutre=boite.querySelector('.btn-talent,.btn-objet');
+  if(premierAutre)boite.insertBefore(b,premierAutre);else boite.append(b)})}
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
 const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-form"><div id="actor-fields"></div><p class="form-error" id="actor-error" role="alert"></p><div class="form-actions"><button type="button" id="delete-actor">Retirer de la scène</button><button type="button" id="save-template">Enregistrer au bestiaire</button><button type="submit" class="primary">Enregistrer la fiche</button></div></form>');
@@ -623,6 +630,10 @@ let bulleEl=null,bulleAncre=null,bulleEpinglee=false;
    attendre, et sans qu'on puisse la retenir en la survolant : tant qu'elle n'est pas
    épinglée, la souris la traverse. Le clavier fait de même par le focus. */
 function surveille(el,quoi){if(!BULLES||!el)return el;
+ /* L'infobulle du système doublait la bulle, et les deux se lisaient l'une sur l'autre :
+    la vignette et ce qu'elle contient n'en gardent aucune — le nom reste au lecteur d'écran. */
+ [el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x.title)return;
+  if(!x.getAttribute('aria-label'))x.setAttribute('aria-label',x.title);x.removeAttribute('title')});
  const ouvre=()=>{if(!bulleEpinglee)quoi()};
  const lache=()=>{if(!bulleEpinglee)fermerBulle()};
  el.addEventListener('pointerenter',ouvre);
@@ -854,8 +865,7 @@ function talentPill(t,compact){const [cle,court,nom]=talentType(t);
  if(!compact){const b=document.createElement('span');b.className='t-badge';b.textContent=court;b.title=nom;
   const niv=document.createElement('span');niv.className='tag';niv.textContent='Niv. '+(t.level||1);
   p.append(b,niv);
-  // La spécialisation, en italique : on sait dans quelle colonne de l'arbre il se range.
-  if(t.voie){const v=document.createElement('span');v.className='tag voie';v.textContent=t.voie;v.title='Spécialisation : '+t.voie;p.append(v)}
+  // La spécialisation ne s'écrit pas sur la vignette : l'arbre la montre, le formulaire la règle.
   // Une amélioration dit sur quoi elle repose : on le lit sans ouvrir la fiche.
   if(socle){const s=document.createElement('span');s.className='tag prereq';s.textContent='↳ '+socle;
    s.title='Requiert : '+socle;p.append(s)}}
@@ -1723,9 +1733,13 @@ arbresDialog.addEventListener('close',()=>{arbresActeur=null;arbresClasse=null})
 arbresDialog.addEventListener('click',e=>{if(e.target===arbresDialog)arbresDialog.close()});
 function noteArbres(texte){$('arbres-note').textContent=texte
  ||(!arbresActeur?NOTE_ARBRES_CLASSE:view==='mj'?NOTE_ARBRES_MJ:NOTE_ARBRES)}
+/* La fiche d'un combattant telle qu'elle est maintenant : les fiches se remplacent en
+   bloc quand la scène publiée ou la table arrive, et une page dessinée avant tenait
+   l'ancienne — le rouage d'un joueur restait muet, sa fiche n'étant plus « la sienne ». */
+function acteurCourant(a){if(!a||actors.includes(a))return a;return actors.find(x=>x&&x.id===a.id)||a}
 // Le MJ ouvre l'arbre de n'importe quelle fiche ; un joueur, celui de son aventurier.
-function peutVoirArbres(a){return !!a&&(view==='mj'||(a.hero&&actors.indexOf(a)===owner))}
-function openArbres(a){if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;
+function peutVoirArbres(a){a=acteurCourant(a);return !!a&&(view==='mj'||(a.hero&&actors.indexOf(a)===owner))}
+function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;
  if(assureMaitrises(a))scheduleSave();
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // L'arbre d'une classe, sans combattant : le MJ le bâtit, personne n'y apprend rien.
@@ -1734,6 +1748,7 @@ function openArbresClasse(famille){if(view!=='mj')return;arbresActeur=null;arbre
 // Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
 function arbreChange(){noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
 function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();
+ if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);
  const a=arbresActeur,mj=view==='mj';
  if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}
   if(assureMaitrises(a))scheduleSave()}

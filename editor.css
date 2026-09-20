@@ -463,7 +463,8 @@ button.choix-attaque{height:auto;min-width:118px;display:inline-grid;grid-templa
 /* Avec un logo : deux colonnes, le logo à gauche sur les deux lignes, le texte à droite. */
 button.choix-attaque.avec-logo{grid-template-columns:auto minmax(0,1fr);column-gap:10px;padding-left:12px}
 button.choix-attaque.avec-logo .logos{grid-column:1;grid-row:1/3;display:flex;gap:4px;align-items:center}
-button.choix-attaque.avec-logo .nom,button.choix-attaque.avec-logo .des-bonus{grid-column:2}
+button.choix-attaque.avec-logo .nom,button.choix-attaque.avec-logo .des-bonus,button.choix-attaque.avec-logo .compte{grid-column:2}
+button.choix-attaque .compte{font:700 11px system-ui;letter-spacing:.5px;opacity:.85}
 button.choix-attaque .nom{display:block}
 button.choix-attaque .des-bonus{display:inline-flex;align-items:center;gap:5px}
 button.choix-attaque .bonus{font:800 13px/1 system-ui;margin-left:2px}

@@ -1298,10 +1298,10 @@ assert.ok(src.includes('let gearOuvert=null;')&&!src.includes('gearOuverts')&&sr
    — lue de haut en bas, et les génériques à part. La voie d'un talent se choisit au formulaire. */
 assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.includes("mien?()=>openArbres(a):null,'⚙');")
  &&!src.includes("openPicker(a,'talents')")&&src.includes("const arbresDialog=dialog('arbres','Arbres de talents','<p class=\"muted\" id=\"arbres-note\"></p><div id=\"arbres-corps\"></div>');")
- &&src.includes('function openArbres(a){if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;')&&src.includes("const classe=classeDuHeros(a),toutes=talentFamilies();")
+ &&src.includes('function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;')&&src.includes("const classe=classeDuHeros(a),toutes=talentFamilies();")
  &&src.includes("if(view==='mj'){let acquis=false;troupe.forEach(a=>{if(assureMaitrises(a))acquis=true});if(acquis)scheduleSave()}")
  &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):''});")&&src.includes("+sel('Spécialisation','voie',t.voie||'',optionsVoie(famille,t.voie||''))")
- &&src.includes("if(voie&&!connues.includes(voie)&&connues.length>=VOIES_MAX){alert(")&&src.includes('t.voie=voie;if(voie)enregistreVoie(t.famille,voie);')&&src.includes("v.className='tag voie';v.textContent=t.voie;")
+ &&src.includes("if(voie&&!connues.includes(voie)&&connues.length>=VOIES_MAX){alert(")&&src.includes('t.voie=voie;if(voie)enregistreVoie(t.famille,voie);')&&!src.includes("v.className='tag voie';v.textContent=t.voie;")
  &&src.includes("const verrou=!a||acquis?'':(libre?'':verrouColonne(a.talents,col.racines,t))||manqueTalent(a.talents,t,catalog.talents);")
  &&src.includes("n.title=t.name+' — Maîtrise de classe, acquise avec la classe.';")
  &&feuille.includes('#arbres{width:min(1180px,96vw)}')&&feuille.includes('.arbre-noeud::before{content:\'\';display:block;width:3px;height:18px;')&&feuille.includes('.arbre-noeud.premier::before,.arbre-maitrises .arbre-noeud::before{display:none}')
@@ -1483,8 +1483,14 @@ assert.ok(src.includes("const sansEffet=t=>typeof manqueTalent==='function'?manq
  &&feuille.includes('.cat-pill.sans-effet{filter:saturate(.4)}')&&feuille.includes('.talent-detail .sans-effet-dit{font-weight:700;color:#b03828}'),'un talent sans effet le dit');
 /* Le joueur ouvre les arbres de son aventurier, sans les outils du MJ ; les « + » du MJ ne
    paraissent plus chez lui, et son choix de talents part à la table avec sa fiche. */
-assert.ok(src.includes('function peutVoirArbres(a){return !!a&&(view===\'mj\'||(a.hero&&actors.indexOf(a)===owner))}')
- &&src.includes('function openArbres(a){if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;')
+/* Les fiches se remplacent en bloc quand la scène publiée ou la table arrive : le rouage
+   d'une page dessinée avant tenait l'ancienne, et restait muet chez un joueur. La fiche se
+   retrouve par son identifiant. */
+assert.ok(src.includes('function acteurCourant(a){if(!a||actors.includes(a))return a;return actors.find(x=>x&&x.id===a.id)||a}')
+ &&src.includes('function peutVoirArbres(a){a=acteurCourant(a);return !!a&&(view===\'mj\'||(a.hero&&actors.indexOf(a)===owner))}')
+ &&src.includes(' if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);')
+ &&fs.readFileSync('shared.js','utf8').includes("if(typeof renderCatalogPages==='function')renderCatalogPages()}")
+ &&src.includes('function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;')
  &&src.includes("if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}")
  &&src.includes("const mien=view==='mj'||actors.indexOf(a)===owner;")
  &&src.includes("const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');")
@@ -1870,4 +1876,15 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
   &&fief.includes("const pnjDialog=dialog('dom-pnj-editor','Personnage',")&&fief.includes("[['','Au domaine'],...domaine.batiments.map(b=>[b.id,b.nom]),['aventure','En aventure'],['absent','Absent']]")
   &&fief.includes("ta.onchange=()=>{b.effets[i]=ta.value.slice(0,600);renderDomBats();sauveDomaine()}")
   &&feuille.includes('body.page-domaine #domaine-page{display:grid;')&&feuille.includes('body.page-domaine main.layout'),'l’onglet Domaine : construire, financer, peupler, loger, conférer');}
-console.log('1210 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Six retouches d'écran : plus de spécialisation sur la vignette ; l'infobulle du système
+   cède à la bulle ; un objet se nomme par ce qu'il prodigue et compte ses usages dessous ;
+   l'Attaque reste le premier bouton ; le logo des Orbes suit l'amélioration tenue. */
+assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x.title)return;")&&src.includes("if(!x.getAttribute('aria-label'))x.setAttribute('aria-label',x.title);x.removeAttribute('title')});")
+ &&src.includes("const texte=code.cle==='etat'?(p&&p.etat)||code.nom:code.nom;")
+ &&src.includes("const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':'repos'):'';")
+ &&src.includes("if(b.compte){const c=document.createElement('span');c.className='compte';c.textContent=b.compte;el.append(c)}")
+ &&!src.includes("' 1/1'")&&feuille.includes('button.choix-attaque .compte{')
+ &&src.includes("const premierAutre=boite.querySelector('.btn-talent,.btn-objet');")&&!src.includes("boite.querySelector('.btn-talent');")
+ &&page.includes("const tenus=talentsCodes(a),affine=tenus.find(x=>x.code.cle==='orbesfeu');")
+ &&page.includes("const logo=(code.cle==='orbes'&&affine&&affine.talent.logo)||talent.logo||'';")&&page.includes('return {talent,code,params,rangee,logo,'),'vignettes, bulles, objets, attaque première, logo des orbes');
+console.log('1211 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
