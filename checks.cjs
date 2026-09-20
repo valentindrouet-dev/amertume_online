@@ -1658,22 +1658,36 @@ assert.ok(page.includes('function alliePourIgnition(a)')&&page.includes("const j
    vignette cliquée, au lieu d'écarter ses voisines. Le dépliant d'avant reste en place dans
    le code, sous « BULLES » : un mot à faux le ramène. */
 assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle(ancre,contenu,classe)')&&src.includes('function placerBulle()')
- /* Le survol ouvre la bulle, la quitter la referme après un souffle, et la survoler la retient :
+ /* Le survol ouvre la bulle, la quitter la referme aussitôt, et la survoler ne la retient pas :
     on va y chercher le bouton « Utiliser » d'un objet sans qu'elle fuie. */
- &&src.includes('const BULLE_GRACE=180;')&&src.includes('function surveille(el,quoi)')
- &&src.includes("el.addEventListener('pointerenter',ouvre);")&&src.includes("el.addEventListener('pointerleave',bulleLache);")
- &&src.includes("bulleEl.addEventListener('pointerenter',bulleRetient);")&&src.includes('if(BULLES)surveille(p,montre);')
- &&src.includes('if(BULLES)surveille(pill,montre);')&&src.includes('     if(!equipable){if(!BULLES)basculer();return}')
+ &&!src.includes('BULLE_GRACE')&&!src.includes('bulleRetient')&&!src.includes('bulleLache')&&src.includes('function surveille(el,quoi)')
+ &&src.includes("const ouvre=()=>{if(!bulleEpinglee)quoi()};")&&src.includes("const lache=()=>{if(!bulleEpinglee)fermerBulle()};")
+ &&src.includes("el.addEventListener('pointerenter',ouvre);")&&src.includes("el.addEventListener('pointerleave',lache);")
+ &&src.includes("bulleEl.addEventListener('pointerleave',()=>{if(bulleEpinglee)fermerBulle()});")&&src.includes('if(BULLES)surveille(p,montre);')
+ &&feuille.includes('box-sizing:border-box;pointer-events:none;')&&feuille.includes('.bulle.epinglee{pointer-events:auto}')
+ /* En jeu, le clic sur un objet épingle sa bulle — son bouton « Utiliser » y est — et la même
+    vignette, cliquée encore, la referme ; un rendu la repose épinglée. Refermée, plus rien
+    n'est ouvert : un rendu venu d'ailleurs ne la fait pas renaître. */
+ &&src.includes('function epingleBulle(oui){bulleEpinglee=!!oui&&!!bulleEl;')&&src.includes('function basculeEpingle(el,quoi){if(bulleEpinglee&&bulleAncre===el){fermerBulle();return}')
+ &&src.includes('function reposeBulle(quoi){const ep=bulleEpinglee;quoi();if(ep)epingleBulle(true)}')
+ &&src.includes('function fermerBulle(){retireBulle();if(BULLES){gearOuvert=null;talentOuvert=null}}')
+ &&src.includes('function retireBulle(){bulleEpinglee=false;if(!bulleEl)return;')&&src.includes('function ouvrirBulle(ancre,contenu,classe){retireBulle();')
+ &&src.includes('function bulleOrpheline(){if(BULLES)requestAnimationFrame(()=>{if(bulleEl&&bulleAncre&&!bulleAncre.isConnected)fermerBulle()})}')
+ &&src.includes("rangees(equipement,'');rangees(objets,'Objets');bulleOrpheline();")&&src.includes(' bulleOrpheline();return out}')
+ &&src.includes("if(!equipable){if(BULLES){if(!tout)basculeEpingle(p,montre)}else basculer();return}")
+ // Le chevron des vignettes de talent d'une fiche ne dépliait que l'ancien dépliant.
+ &&src.includes("if(!BULLES){const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev)}")
+ &&src.includes('if(BULLES)surveille(pill,montre);')
  &&src.includes('    if(BULLES)return;   // au survol, la description se montre seule')
  &&src.includes('function fermerBulle()')&&src.includes("document.addEventListener('pointerdown',bulleDehors,true);")
  &&src.includes("document.addEventListener('keydown',bulleEchap,true);")&&src.includes(" e.preventDefault();e.stopPropagation();fermerBulle()}")&&src.includes("window.addEventListener('scroll',fermerBulle,true);window.addEventListener('resize',fermerBulle)")
  &&src.includes("if(!bulleAncre.isConnected||(!r.width&&!r.height)){fermerBulle();return}")&&src.includes("function ancreVisible(el){return !!el&&el.isConnected&&!!el.offsetParent}")&&src.includes('const dessous=r.top-b.height-12<marge;')
  &&src.includes("bulleEl.style.setProperty('--fleche',")
  // Les deux chemins cohabitent : la bulle, et le dépliant d'avant si l'on repasse BULLES à faux.
- &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(gearOuvert===cle&&ancreVisible(p))montre()});")
+ &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&gearOuvert===cle&&ancreVisible(p))reposeBulle(montre)});")
  &&src.includes("out.append(p);if(!BULLES)details.push(detail)});")&&src.includes("out.append(pill);if(!BULLES)details.push(detail)});")
  &&src.includes('let talentOuvert=null;')&&src.includes("const cle=(a.id||'?')+'|'+t.id,ouvert=BULLES?talentOuvert===cle:talentsOuverts.has(t.id);")
- &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(talentOuvert===cle&&ancreVisible(pill))montre()});")
+ &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});")
  &&src.includes("if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};")
  &&feuille.includes('.bulle{position:fixed;z-index:60;')&&feuille.includes(".bulle::after{content:'';position:absolute;left:var(--fleche,50%);")
  &&feuille.includes('.bulle.dessous::after{'),'la description se pose en bulle, le dépliant reste sous BULLES');

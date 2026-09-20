@@ -618,23 +618,34 @@ function gearPill(o){const col=itemColumn(o);
    « BULLES » commande tout : à faux, les dépliants d'avant reviennent tels quels, en place
    sous la vignette — le code des deux est là, et l'on bascule d'un mot. */
 const BULLES=true;
-let bulleEl=null,bulleAncre=null,bulleDelai=null;
-/* La bulle s'ouvre au survol de la vignette et s'en va quand le doigt la quitte — après un
-   souffle, le temps d'aller jusqu'à elle : on y trouve le bouton « Utiliser » d'un objet, et
-   la survoler la retient. */
-const BULLE_GRACE=180;
-function bulleRetient(){clearTimeout(bulleDelai);bulleDelai=null}
-function bulleLache(){bulleRetient();bulleDelai=setTimeout(fermerBulle,BULLE_GRACE)}
-/* Une vignette qui montre sa description au survol : elle l'ouvre en arrivant, la lâche en
-   partant, et le clavier fait de même par le focus. */
+let bulleEl=null,bulleAncre=null,bulleEpinglee=false;
+/* La bulle s'ouvre au survol de la vignette et s'en va dès que le doigt la quitte — sans
+   attendre, et sans qu'on puisse la retenir en la survolant : tant qu'elle n'est pas
+   épinglée, la souris la traverse. Le clavier fait de même par le focus. */
 function surveille(el,quoi){if(!BULLES||!el)return el;
- const ouvre=()=>{bulleRetient();quoi()};
+ const ouvre=()=>{if(!bulleEpinglee)quoi()};
+ const lache=()=>{if(!bulleEpinglee)fermerBulle()};
  el.addEventListener('pointerenter',ouvre);
  el.addEventListener('focus',ouvre);
- el.addEventListener('pointerleave',bulleLache);
- el.addEventListener('blur',bulleLache);
+ el.addEventListener('pointerleave',lache);
+ el.addEventListener('blur',lache);
  return el}
-function fermerBulle(){bulleRetient();if(!bulleEl)return;bulleEl.remove();bulleEl=null;bulleAncre=null;
+/* Épinglée, la bulle tient le temps d'aller y chercher le bouton « Utiliser » d'un objet :
+   elle s'en va quand on la quitte, elle, d'un clic ailleurs, ou d'Échap. */
+function epingleBulle(oui){bulleEpinglee=!!oui&&!!bulleEl;if(bulleEl)bulleEl.classList.toggle('epinglee',bulleEpinglee)}
+// Le clic épingle la bulle de cette vignette ; le même clic, encore, la referme.
+function basculeEpingle(el,quoi){if(bulleEpinglee&&bulleAncre===el){fermerBulle();return}
+ quoi();if(bulleAncre===el)epingleBulle(true)}
+// Après un rendu, la bulle se repose telle qu'elle était : épinglée si elle l'était.
+function reposeBulle(quoi){const ep=bulleEpinglee;quoi();if(ep)epingleBulle(true)}
+/* Et si sa vignette n'est plus là après le rendu — l'objet consommé, la fiche changée —,
+   elle s'en va : une bulle sans ancre ne se repose sur rien. */
+function bulleOrpheline(){if(BULLES)requestAnimationFrame(()=>{if(bulleEl&&bulleAncre&&!bulleAncre.isConnected)fermerBulle()})}
+/* Refermée, plus rien n'est « ouvert » : un rendu venu d'ailleurs — un jet, la table d'en
+   face — ne la ferait pas renaître sur la dernière vignette survolée. */
+function fermerBulle(){retireBulle();if(BULLES){gearOuvert=null;talentOuvert=null}}
+// Ôter la bulle sans rien oublier de ce qui est ouvert : c'est ainsi qu'elle se remplace.
+function retireBulle(){bulleEpinglee=false;if(!bulleEl)return;bulleEl.remove();bulleEl=null;bulleAncre=null;
  document.removeEventListener('pointerdown',bulleDehors,true);
  document.removeEventListener('keydown',bulleEchap,true);
  window.removeEventListener('scroll',fermerBulle,true);window.removeEventListener('resize',fermerBulle)}
@@ -659,12 +670,11 @@ function placerBulle(){if(!bulleEl||!bulleAncre)return;
  bulleEl.style.setProperty('--fleche',Math.max(14,Math.min(b.width-14,r.left+r.width/2-gauche))+'px')}
 // « ancre » doit être visible : une vignette d'une page repliée n'ouvre pas de bulle.
 function ancreVisible(el){return !!el&&el.isConnected&&!!el.offsetParent}
-function ouvrirBulle(ancre,contenu,classe){fermerBulle();if(!ancreVisible(ancre)||!contenu)return null;
+function ouvrirBulle(ancre,contenu,classe){retireBulle();if(!ancreVisible(ancre)||!contenu)return null;
  bulleEl=document.createElement('div');bulleEl.className='bulle'+(classe?' '+classe:'');
  bulleEl.append(contenu);document.body.append(bulleEl);bulleAncre=ancre;
- // Survoler la bulle la retient : on va y chercher le bouton d'un objet sans la voir fuir.
- bulleEl.addEventListener('pointerenter',bulleRetient);
- bulleEl.addEventListener('pointerleave',bulleLache);
+ // Seule une bulle épinglée reçoit la souris : la quitter, alors, la referme.
+ bulleEl.addEventListener('pointerleave',()=>{if(bulleEpinglee)fermerBulle()});
  placerBulle();
  document.addEventListener('pointerdown',bulleDehors,true);
  document.addEventListener('keydown',bulleEchap,true);
@@ -803,7 +813,7 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
      const d=gearDetail(o,a,!tout);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')};
     /* Après un rendu — on vient d'équiper — la bulle se repose d'elle-même sur la vignette
        refaite : le doigt n'a pas bougé, aucun survol ne se déclencherait. */
-    if(BULLES&&ouvert)requestAnimationFrame(()=>{if(gearOuvert===cle&&ancreVisible(p))montre()});
+    if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&gearOuvert===cle&&ancreVisible(p))reposeBulle(montre)});
     if(BULLES)surveille(p,montre);
     const redessine=()=>{render();if(typeof renderHeroes==='function')renderHeroes()};
     // Une seule description à la fois : ouvrir celle d'un objet referme celle d'un talent.
@@ -814,14 +824,15 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
        en remplaçant ce qu'il faut — et ouvre la description par la même occasion. */
     const equipable=(o.category==='weapon'||o.category==='armor')&&tout&&peutEquiper;
     const agir=e=>{e.stopPropagation();
-     // Au survol, la description se montre seule : le clic ne sert plus qu'à équiper.
-     if(!equipable){if(!BULLES)basculer();return}
+     /* Au survol, la description se montre seule. En jeu, le clic l'épingle — le temps
+        d'aller y chercher « Utiliser » ; ailleurs, il ne sert plus qu'à équiper. */
+     if(!equipable){if(BULLES){if(!tout)basculeEpingle(p,montre)}else basculer();return}
      toggleEquip(a,o);ouvrir();
      redessine();scheduleSave()};
     p.onclick=agir;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();agir(e)}};
     out.append(p);if(!BULLES)details.push(detail)});
    details.forEach(d=>out.append(d))}};
- rangees(equipement,'');rangees(objets,'Objets');
+ rangees(equipement,'');rangees(objets,'Objets');bulleOrpheline();
  return out}
 /* Talents : six natures, chacune sa couleur et son abrégé, comme dans le jeu de table. */
 const TALENT_TYPES=[['act','ACT','Action'],['reac','REAC','Réaction'],['pass','PASS','Passif'],
@@ -902,7 +913,8 @@ function talentPills(a){const out=document.createElement('div');out.className='t
  for(let i=0;i<liste.length;i+=2){const rangee=liste.slice(i,i+2),details=[];
   rangee.forEach(t=>{const pill=talentPill(t,true);pill.classList.add('cliquable');
    const manque=sansEffet(t);
-   const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev);
+   // Le chevron ne dépliait que l'ancien dépliant : sous la bulle, rien à déplier.
+   if(!BULLES){const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev)}
    const detail=talentDetail(t,false);detail.classList.add('large');
    if(manque){pill.classList.add('sans-effet');
     const m=document.createElement('span');m.className='t-sans-effet';m.textContent='⚠';
@@ -914,7 +926,7 @@ function talentPills(a){const out=document.createElement('div');out.className='t
    detail.hidden=!ouvert||BULLES;pill.classList.toggle('ouvert',ouvert);
    const montre=()=>{talentOuvert=cle;gearOuvert=null;
     const d=detail.cloneNode(true);d.hidden=false;ouvrirBulle(pill,d,'bulle-talent')};
-   if(BULLES&&ouvert)requestAnimationFrame(()=>{if(talentOuvert===cle&&ancreVisible(pill))montre()});
+   if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});
    if(BULLES)surveille(pill,montre);
    pill.onclick=e=>{e.stopPropagation();
     if(BULLES)return;   // au survol, la description se montre seule
@@ -923,7 +935,7 @@ function talentPills(a){const out=document.createElement('div');out.className='t
    out.append(pill);if(!BULLES)details.push(detail)});
   if(rangee.length===1){const vide=document.createElement('span');vide.className='vide';out.append(vide)}
   details.forEach(d=>out.append(d))}
- return out}
+ bulleOrpheline();return out}
 const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets']];
 function armoryRow(a,i){const rang=document.createElement('div');rang.className='cat-row';
  const col=itemColumn(a);
