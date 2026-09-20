@@ -2204,4 +2204,11 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&!fief.includes("p.className='muted dom-presents'")&&!fief.includes("p.className='dom-effet'")&&!fief.includes("row.append(boutonConstruire(b));")
   &&feuille.includes('.dom-bat>.dom-etat{align-self:flex-start}'),'la colonne des bâtiments s’en tient au nom, à l’étape et à l’état');
 }
-console.log('1403 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.258 — Sur le plan du Domaine, l'étiquette parle en joueur : « Friche » sans nom, le nom seul
+   une fois construit, l'état toujours ; l'éditeur garde nom et étape. */
+{const fief=fs.readFileSync('domaine.js','utf8');
+ assert.ok(fief.includes("const friche=!!opts.jeu&&b.etape===0,fini=!!opts.jeu&&b.etape>=ETAPES_DOMAINE.length-1;")
+  &&fief.includes("nom.textContent=friche?NOM_ETAPE(0):b.nom;e.append(nom);")&&fief.includes("const sous=b.etat?NOM_ETAT_BATIMENT(b.etat):friche||fini?'':NOM_ETAPE(b.etape);")
+  &&fief.includes("{sel:sel>=0?sel:null,jeu:true,")&&!fief.includes("sel:domSel,trace:domTrace,jeu"),'l’étiquette du plan est sobre, celle de l’éditeur complète');
+}
+console.log('1404 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -68,8 +68,14 @@ function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildre
   const c=b.etiquette||centroide(b.zone);if(!c)return;
   const e=document.createElement('span');e.className='dom-etiquette e'+b.etape+(b.etat?' etat-'+b.etat:'')+(opts.sel===i?' sel':'');
   e.style.left=c[0]+'%';e.style.top=c[1]+'%';e.dataset.bat=String(i);
-  const nom=document.createElement('b');nom.textContent=b.nom;const et=document.createElement('small');et.textContent=b.etat?NOM_ETAT_BATIMENT(b.etat):NOM_ETAPE(b.etape);
-  e.append(nom,et);if(opts.deplace||opts.clic)rendEtiquetteDeplacable(e,b,etiquettes,opts);etiquettes.append(e)});
+  /* Sur le plan du Domaine (« jeu »), l'étiquette parle en joueur : en friche, il n'y a pas
+     encore de bâtiment — « Friche » tient lieu de nom ; construit, c'est la normale — rien
+     dessous. Un état se dit toujours. L'éditeur, lui, montre tout : nom, puis étape ou état. */
+  const friche=!!opts.jeu&&b.etape===0,fini=!!opts.jeu&&b.etape>=ETAPES_DOMAINE.length-1;
+  const nom=document.createElement('b');nom.textContent=friche?NOM_ETAPE(0):b.nom;e.append(nom);
+  const sous=b.etat?NOM_ETAT_BATIMENT(b.etat):friche||fini?'':NOM_ETAPE(b.etape);
+  if(sous){const et=document.createElement('small');et.textContent=sous;e.append(et)}
+  if(opts.deplace||opts.clic)rendEtiquetteDeplacable(e,b,etiquettes,opts);etiquettes.append(e)});
  if(opts.trace&&opts.trace.pts.length){const pts=opts.trace.pts;
   const f=document.createElementNS(ns,pts.length>2?'polygon':'polyline');
   f.setAttribute('points',pts.map(q=>q.join(',')).join(' '));f.setAttribute('class','dom-trace');svg.append(f)}}
@@ -306,7 +312,7 @@ function renderDomaine(){const d=domaine;
  $('dom-plan-vide').hidden=!vide;plan.classList.toggle('no-image',vide);
  const sel=d.batiments.findIndex(b=>b.id===domPageSel);
  plan.classList.toggle('sans-contours',!domContours);$('dom-contours').classList.toggle('on',domContours);
- dessineZonesDom($('dom-plan-zones'),$('dom-plan-etiquettes'),{sel:sel>=0?sel:null,
+ dessineZonesDom($('dom-plan-zones'),$('dom-plan-etiquettes'),{sel:sel>=0?sel:null,jeu:true,
   deplace:(b,pt)=>{b.etiquette=pt;renderDomaine();sauveDomaine()},clic:b=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()}});
  renderDomBats();renderDomFiche();renderDomFinances();renderDomPnj();renderDomAventuriers()}
 $('dom-plan-zones').addEventListener('click',e=>{const z=e.target.closest('[data-bat]');if(!z)return;
