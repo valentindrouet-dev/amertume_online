@@ -2176,12 +2176,12 @@ const ETATS_INFLIGES=()=>STATES.filter(e=>e!=='Aucun'&&e!=='Coma');
 /* Les logos d'équipement : les fichiers img/weapon_*.png, sans leur extension. Le site
    est servi tel quel, sans liste de dossier : un logo ajouté dans img/ se déclare ici —
    node checks.cjs le réclame. L'intitulé du menu vient du nom du fichier. */
-const LOGOS_EQUIPEMENT=['weapon_arbalete','weapon_arc','weapon_armure','weapon_bouclier','weapon_cape','weapon_cape_elfique','weapon_cape_magique','weapon_epee','weapon_hache','weapon_lance'];
+const LOGOS_EQUIPEMENT=['weapon_anneau_argent','weapon_anneau_bronze','weapon_arbalete','weapon_arc','weapon_armure','weapon_bouclier','weapon_cape','weapon_cape_elfique','weapon_cape_magique','weapon_epee','weapon_hache','weapon_lance'];
 /* Les logos d'objets, de même : les img/item_*.png. Munitions, objets et divers y puisent ;
    armes et armures gardent les leurs. */
 const LOGOS_OBJET=['item_healpotion'];
 // Les logos de talents, de même : les img/spell_*.png.
-const LOGOS_TALENT=['spell_orbes'];
+const LOGOS_TALENT=['spell_orbes','spell_orbes_feu'];
 /* Les logos d'attaque, de même : les img/attack_*.png. Une attaque spéciale d'adversaire y
    puise — mais elle peut prendre n'importe quelle icône du dossier : griffes, arme, sort ou
    objet, c'est au MJ de dire ce que la bête brandit. */
