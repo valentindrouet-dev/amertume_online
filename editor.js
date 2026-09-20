@@ -13,6 +13,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
 function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
+ a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};
  a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};
  a.checks=Array.isArray(a.checks)?POINTS_CLES.map((q,i)=>Math.max(0,Math.min(pointsMax(a,q),a.checks[i]===true?1:Math.trunc(Number(a.checks[i]))||0))):[0,0,0];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
  // L'état Gardé n'existe plus depuis la v0.164 : Gardien pose Blindage.
@@ -43,6 +44,12 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
     la colonne ne disparaît pas quand on en sort le dernier talent. */
  c.talents.forEach(t=>{if(!t||!t.voie)return;const f=(t.famille||'').trim()||'Génériques',l=c.voies[f]||[];
   if(!l.includes(t.voie)&&l.length<VOIES_MAX)c.voies[f]=[...l,t.voie]});
+ /* Un objet porte un effet du moteur, ses réglages et sa manière d'en user. Un objet
+    d'avant les effets n'en a pas, et son ancienne case « consommable » devient son usage. */
+ c.items.forEach(o=>{if(!o)return;
+  o.effet=OBJETS_CODES[o.effet]?o.effet:'';
+  o.params=o.effet?paramsObjet(o):{};
+  o.usage=usageObjet(o);o.consumable=o.usage==='conso'});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{m.weapons||=[];m.armorId??='';m.shieldId??=''});
  return c}
@@ -153,6 +160,10 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
  +'<select id="armory-cat" aria-label="Catégorie"><option value="">Toutes catégories</option>'
  +'<option value="melee">Armes de mêlée</option><option value="ranged">Armes à distance</option>'
  +'<option value="armor">Armures</option><option value="object">Objets</option></select></div>'
+ /* La banque des effets d'équipement, comme celle des talents : ce que le moteur sait
+    faire quand on se sert d'un objet, replié par défaut. */
+ +'<details class="bloc-replie biblio"><summary><span class="bloc-titre">📖 Banque des effets d’équipement</span>'
+ +'<span class="compte" id="biblio-objets-compte"></span></summary><div id="biblio-objets"></div></details>'
  +'<div class="cat-cols" id="armory-cols"></div></section>';
 const heroesPage=document.createElement('main');heroesPage.id='heroes-page';
 heroesPage.innerHTML='<section class="cat-panel panel">'
@@ -637,15 +648,57 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  if(o.etat)ligne('Inflige : '+o.etat);
  /* Un objet dit ce qu'il fait et s'utilise d'un bouton : l'effet part au journal de la
     table, et un consommable quitte l'inventaire. Le moteur ne devine rien de plus. */
- if(col==='object'){ligne(o.effects||o.notes||'Effet à préciser dans l’armurerie.');
-  // Un objet ne s'emploie qu'à la table de jeu : la page Aventuriers ne fait que le ranger.
-  if(a&&enJeu){const b=document.createElement('button');b.type='button';b.className='gear-utiliser';b.textContent='Utiliser';
-   b.onclick=e=>{e.stopPropagation();utiliserObjet(a,o)};d.append(b)}}
+ if(col==='object')ligne(o.effects||o.notes||'Effet à préciser dans l’armurerie.');
+ /* Ce que le moteur en fera, et comment on en use : la phrase vient du moteur, jamais
+    recopiée ici, et l'usage dit si l'objet se garde, se défausse ou attend le lendemain. */
+ const code=objetCode(o);
+ if(code){const p=document.createElement('p');p.className='gear-effet';
+  p.innerHTML=code.phrase(paramsObjet(o));d.append(p);
+  ligne('Usage : '+NOM_USAGE(usageObjet(o))+(usageObjet(o)==='jour'&&a&&usageEpuise(a,o)?' — déjà employé':''))}
+ /* Un objet s'emploie à la table de jeu ; un équipement qui porte un effet aussi — la page
+    Aventuriers, elle, ne fait que ranger l'inventaire. */
+ if(a&&enJeu&&(col==='object'||code)){const b=document.createElement('button');b.type='button';b.className='gear-utiliser';b.textContent='Utiliser';
+  if(code&&!objetDisponible(a,o)){b.disabled=true;b.title='Déjà employé : il faut une nuit de repos.'}
+  b.onclick=e=>{e.stopPropagation();utiliserObjet(a,o)};d.append(b)}
  return d}
 /* Utiliser un objet : on désigne d'abord la cible — un combattant, ou l'endroit visé pour
    ce qui frappe une zone —, puis l'effet se joue. Le journal et une annonce au-dessus de
    la carte disent l'objet, sa cible et ce qu'il fait ; un consommable quitte l'inventaire. */
+/* Une fois par jour : la charge est retenue sur le porteur, objet par objet, et revient
+   avec le repos — le retour au tour 1 d'une rencontre, ou l'Onde qui remet un camp d'aplomb. */
+function usageEpuise(a,o){return !!(a&&o&&a.usages&&a.usages[o.id])}
+function objetDisponible(a,o){return usageObjet(o)!=='jour'||!usageEpuise(a,o)}
+/* Un objet dont le moteur connaît l'effet agit sur son porteur : rien à viser, le geste est
+   pour soi. Le reste — les objets purement décrits — se vise comme avant. */
+function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
+ if(!objetDisponible(a,o)){log(o.name+' a déjà servi aujourd’hui : il faut une nuit de repos.',{local:true});return}
+ const p=paramsObjet(o),usage=usageObjet(o);let dit='';
+ if(code.cle==='soin'){
+  if(a.hp>=a.max){log(a.name+' est déjà au complet : '+o.name+' reste en réserve.',{local:true});return}
+  const {total,jets}=montantRegeneration(a,p,d6),gagne=applyHeal(a,total);
+  if(jets.length&&typeof rollOnBoard==='function')rollOnBoard(jets.map(v=>[v,4]),a,a);
+  if(typeof floatNumber==='function')floatNumber(a,'+'+gagne,'gain');
+  dit='+'+gagne+' PV'+(jets.length?' ('+jets.join(' + ')+')':'')}
+ else if(code.cle==='etat'){const issue=infligeEtat(a,p.etat);
+  if(typeof floatNumber==='function')floatNumber(a,issue===true?'+'+p.etat:p.etat,issue===true?'gain':'nul');
+  dit=issue===true?p.etat+' obtenu':issue==='onde'?'l’Onde a absorbé '+p.etat:issue==='immunise'?p.etat+' sans effet : il y est insensible':p.etat+' déjà porté'}
+ else if(code.cle==='invulnerabilite'){
+  const des=p.contre==='des',valeur=des?p.des:p.etat;
+  const nom=des?((DES_ORBE.find(([k])=>k===valeur)||[])[1]||valeur)+'s':valeur;
+  const neuf=poseImmunite(a,des?'des':'etats',valeur);
+  if(des&&!neuf)dit='déjà insensible aux dés '+nom;
+  else dit='insensible '+(des?'aux dés ':'à ')+nom+(neuf?'':' — déjà');
+  if(neuf&&!des&&hasState(a,valeur)){setState(a,valeur,false);dit+=', et '+valeur+' se dissipe'}}
+ // La charge du jour est prise, le consommable quitte l'inventaire.
+ if(usage==='jour'){a.usages={...(a.usages||{}),[o.id]:true}}
+ if(usage==='conso')retirerInventaire(a,o);
+ log(a.name+' emploie '+o.name+(dit?' : '+dit:'')+'.',{ton:'talent'});
+ if(typeof annonceFlottante==='function')annonceFlottante('◈ '+o.name+(dit?' · '+dit:''));
+ render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();
+ document.dispatchEvent(new Event('amertume-content-changed'))}
 function utiliserObjet(a,o){if(!a||!o)return;
+ // Un objet qui porte un effet du moteur agit sur son porteur : il n'y a rien à désigner.
+ if(objetCode(o)){appliquerEffetObjet(a,o);return}
  if(typeof viserCible!=='function'){appliquerObjet(a,o,a,null);return}
  viserCible('◈ '+o.name+' — clique le combattant ou l’endroit visé',
   (vise,q)=>appliquerObjet(a,o,vise,q),o.name+' : geste annulé.')}
@@ -831,7 +884,7 @@ function armoryRow(a,i){const rang=document.createElement('div');rang.className=
  double.onclick=()=>{const copie=structuredClone(a);copie.id=crypto.randomUUID();copie.name=a.name+' (copie)';
   catalog.items.splice(i+1,0,copie);renderCatalogPages();scheduleSave()};
  rang.append(pill,crayon,double);return rang}
-function renderArmory(){const cols=$('armory-cols');if(!cols)return;cols.replaceChildren();
+function renderArmory(){renderBiblioObjets();const cols=$('armory-cols');if(!cols)return;cols.replaceChildren();
  const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value;
  for(const [key,titre] of ARMORY_COLS){
   if(choisie&&choisie!==key)continue;
@@ -1113,6 +1166,25 @@ function talentRow(t,i){const rang=document.createElement('div');rang.className=
 /* Ce que le moteur sait appliquer, tel qu'il le déclare : le nom de la mécanique, ce
    qu'elle fait, et les réglages qu'elle attend avec leurs bornes. Rien n'est écrit ici en
    double — tout vient de la déclaration, donc la liste ne peut pas mentir. */
+/* La banque des effets d'équipement : une ligne par effet, sa phrase telle que le moteur
+   l'écrira, et la coche verte des effets déjà portés par un objet du catalogue. */
+function renderBiblioObjets(){const boite=$('biblio-objets');if(!boite)return;
+ const codes=Object.values(OBJETS_CODES);
+ const compte=$('biblio-objets-compte');if(compte)compte.textContent=codes.length;
+ boite.replaceChildren();
+ codes.forEach(c=>{const bloc=document.createElement('div');bloc.className='effet-fiche';
+  const porteurs=(catalog.items||[]).filter(o=>o&&o.effet===c.cle).map(o=>o.name);
+  const coche=document.createElement('span');coche.className='utilise';
+  if(porteurs.length){coche.textContent='✅';coche.title='Utilisé par : '+porteurs.join(', ')}
+  bloc.append(coche);
+  const nom=document.createElement('span');nom.className='nom';nom.textContent=c.nom+' : ';
+  const dit=document.createElement('span');dit.className='dit';dit.innerHTML=c.phrase(paramsObjet({effet:c.cle,params:{}}));
+  bloc.append(nom,dit);
+  // Les manières d'en user, rappelées une fois : elles valent pour tous les effets.
+  boite.append(bloc)});
+ const note=document.createElement('p');note.className='muted';
+ note.textContent='Chaque objet dit ensuite comment on s’en sert : '+USAGES_OBJET.map(([,n])=>n.toLowerCase()).join(', ')+'.';
+ boite.append(note)}
 function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
  /* Rangés par type — Action, Réaction, Passif, Critique, Maîtrise, Amélioration — puis
     par nom : on lit la bibliothèque comme on lit un arbre de talents. */
@@ -2053,14 +2125,39 @@ const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['arm
 function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  const c=f.category.value;a.ranged=c==='ranged';a.category=c==='melee'||c==='ranged'?'weapon':c;
  for(const k of ['name','slot','etat','notes'])if(f[k])a[k]=f[k].value.trim();
+ /* L'effet, son usage et ses réglages, relus au travers de la déclaration : « consommable »
+    n'est plus une case à part, c'est l'un des trois usages. */
+ if(f.effet)a.effet=OBJETS_CODES[f.effet.value]?f.effet.value:'';
+ if(f.usage)a.usage=USAGES_OBJET.some(([k])=>k===f.usage.value)?f.usage.value:'libre';
+ a.params=a.effet?paramsObjet({effet:a.effet,params:lireReglagesObjet()}):{};
+ a.consumable=usageObjet(a)==='conso';
  if(f.logo)a.logo=logosItem(a).includes(f.logo.value)?f.logo.value:'';
  for(const k of ['qty','price','hands','def'])if(f[k])a[k]=num(f[k].value,0,999999);
- for(const k of ['usesAmmo','consumable'])if(f[k])a[k]=f[k].checked;
+ // « consommable » n'a plus de case : c'est l'usage qui le dit, plus haut.
+ for(const k of ['usesAmmo'])if(f[k])a[k]=f[k].checked;
  if(f.itemdie0)a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));
  return a}
 /* Une arme ne porte pas de DEF, une armure pas de dés : le formulaire ne montre que les
    champs qui veulent dire quelque chose pour la catégorie choisie. Changer de catégorie
    le redessine, sans perdre ce qui vient d'être tapé. */
+/* Les réglages de l'effet d'un objet, relus de sa déclaration — comme ceux d'un talent.
+   Invulnérabilité ne montre que le réglage qui compte : un état, ou une couleur de dés. */
+function dessineReglagesObjet(){const boite=$('objet-reglages');if(!boite)return;
+ const f=$('item-form').elements,code=OBJETS_CODES[f.effet.value]||null;
+ if(!code){boite.replaceChildren();return}
+ const vals=paramsObjet({effet:code.cle,params:lireReglagesObjet()});
+ const contre=vals.contre;
+ boite.innerHTML='<div class="edit-grid">'
+  +(code.params||[]).filter(p=>code.cle!=='invulnerabilite'||p.cle==='contre'
+    ||(p.cle==='etat'&&contre!=='des')||(p.cle==='des'&&contre==='des'))
+   .map(p=>p.type==='nombre'
+    ?field(p.nom,'q_'+p.cle,vals[p.cle],'number','min="'+p.min+'" max="'+p.max+'"')
+    :sel(p.nom,'q_'+p.cle,vals[p.cle],p.options)).join('')+'</div>';
+ // Changer « Insensible à » remonte le bon réglage sans quitter le formulaire.
+ const choix=f.q_contre;if(choix)choix.onchange=()=>{itemDraft.params=lireReglagesObjet();dessineReglagesObjet()}}
+function lireReglagesObjet(){const f=$('item-form').elements,out={...(itemDraft.params||{})};
+ for(const el of f)if(el.name&&el.name.startsWith('q_'))out[el.name.slice(2)]=el.value;
+ return out}
 function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.category==='armor';
  const cat=arme?(a.ranged?'ranged':'melee'):a.category;
  $('item-fields').innerHTML='<div class="edit-grid">'
@@ -2076,9 +2173,20 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +(arme?'<p class="etiquette">Dés de l’arme</p>'+poolFields(poolFrom(a.dice),'itemdie')
    +sel('État infligé','etat',a.etat||'',[['','—'],...ETATS_INFLIGES().map(e=>[e,e])]):'')
   +(arme&&a.ranged?'<label class="field-check"><input name="usesAmmo" type="checkbox" '+(a.usesAmmo?'checked':'')+'>Munitions nécessaires</label>':'')
-  +(arme||armure?'':'<label class="field-check"><input name="consumable" type="checkbox" '+(a.consumable?'checked':'')+'>Consommable</label>')
-  +'<label>Notes<textarea name="notes">'+esc(a.notes||'')+'</textarea></label>';
+  +'<label>Notes<textarea name="notes">'+esc(a.notes||'')+'</textarea></label>'
+  /* Ce que l'objet fait quand on s'en sert, et comment on en use : la même grammaire que
+     les talents — on choisit l'effet, puis on le règle. */
+  +'<h2 class="sous-titre">Effet appliqué par le moteur</h2>'
+  +'<div class="edit-grid">'
+  +sel('Effet','effet',a.effet||'',[['','— Aucun : objet descriptif —'],...Object.values(OBJETS_CODES).map(c=>[c.cle,c.nom])])
+  +sel('Usage','usage',usageObjet(a),USAGES_OBJET)+'</div>'
+  +'<div id="objet-reglages"></div>';
  habilleDes($('item-fields'));
+ /* Les réglages de l'effet sont dessinés d'après sa déclaration : ajouter un effet au
+    moteur suffit à lui donner son formulaire. */
+ const menuEffet=$('item-form').elements.effet;
+ menuEffet.onchange=()=>{itemDraft=itemDepuisForm(itemDraft);itemDraft.effet=menuEffet.value;itemDraft.params={};dessineReglagesObjet()};
+ dessineReglagesObjet();
  /* L'aperçu du logo, à côté de son menu : on voit ce qu'on choisit. */
  const menuLogo=$('item-form').elements.logo;
  const apercu=document.createElement('img');apercu.className='logo-equip apercu';apercu.alt='';

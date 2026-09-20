@@ -775,3 +775,7 @@ button.choix-attaque.sans-des{grid-auto-rows:1fr}
 .best-att-tete .att-logo.vide{border:1px dashed var(--line-strong);color:var(--muted);font:700 13px system-ui}
 /* Une colonne pas encore baptisée : son intitulé s'efface un peu, pour inviter au clic. */
 .arbre-titre .arbre-voie.vierge{opacity:.72;font-style:italic}
+/* La phrase que le moteur appliquera, sous la description d'un objet : en retrait léger,
+   comme dans la banque des effets. */
+.gear-detail .gear-effet{font-weight:600}
+.gear-detail .gear-effet b{color:#7a4f1a}

@@ -867,6 +867,57 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Action : un adversaire en vue s’avance jusqu’au porteur, qui l’attaque aussitôt.',
   params:[],
   phrase(){return 'Un adversaire <b>en ligne de vue</b> doit faire un mouvement vers le porteur — l’adversaire visé, sinon le premier en vue — puis le porteur effectue <b>une attaque</b> contre lui.'}}};
+/* ---------- Les effets d'équipement ----------
+   Ce qu'un objet sait faire quand on s'en sert : même grammaire que les talents — une clé,
+   des réglages, une phrase que le moteur écrit lui-même — et trois manières d'en user.
+   Ce qu'il en advient à l'écran vit dans la table de jeu. */
+const USAGES_OBJET=[['libre','À volonté'],['conso','Consommable — l’objet est défaussé'],
+ ['jour','Une fois par jour']];
+const NOM_USAGE=u=>(USAGES_OBJET.find(([k])=>k===u)||USAGES_OBJET[0])[1];
+const OBJETS_CODES={
+ /* Soin : le porteur se remet d'aplomb — d'un montant fixe, de dés, ou de son Endurance ou
+    sa Vie majorées, comme la Régénération d'un adversaire. */
+ soin:{cle:'soin',nom:'Soin',aide:'Le porteur regagne des points de vie.',
+  params:[{cle:'quantite',nom:'Quantité',type:'nombre',defaut:5,min:1,max:99},
+   {cle:'forme',nom:'Sous la forme de',type:'choix',defaut:'fixe',
+    options:[['fixe','PV'],['des','dés (d6)'],['endu','PV + Endurance'],['vie','PV + Vie']]}],
+  phrase(p){const n=Math.max(1,(p&&p.quantite)|0),f=p&&p.forme;
+   const combien=f==='des'?'<b>'+n+'d6</b>':f==='endu'?'<b>'+n+' + Endurance</b>':f==='vie'?'<b>'+n+' + Vie</b>':'<b>'+n+'</b>';
+   return 'Le porteur se soigne de '+combien+' PV.'}},
+ /* État : le porteur gagne l'affection réglée — un Blindage, une Onde, ce que le MJ veut. */
+ etat:{cle:'etat',nom:'État',aide:'Le porteur reçoit l’état réglé.',
+  params:[{cle:'etat',nom:'État obtenu',type:'choix',defaut:'Blindage',options:ETATS_JEU.map(e=>[e,e])}],
+  phrase(p){return 'Le porteur obtient <b>'+((p&&p.etat)||'Blindage')+'</b>.'}},
+ /* Invulnérabilité : le porteur ne craint plus, jusqu'à la fin de la rencontre, soit une
+    affection, soit une couleur de dés — ceux-là ne l'entament plus. */
+ invulnerabilite:{cle:'invulnerabilite',nom:'Invulnérabilité',
+  aide:'Le porteur devient insensible à un état, ou à une couleur de dés de dégâts.',
+  params:[{cle:'contre',nom:'Insensible à',type:'choix',defaut:'etat',
+    options:[['etat','un état'],['des','une couleur de dés']]},
+   {cle:'etat',nom:'État',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])},
+   {cle:'des',nom:'Couleur de dés',type:'choix',defaut:'red',options:DES_ORBE}],
+  phrase(p){const quoi=(p&&p.contre)==='des'
+    ?'aux dés <b>'+((DES_ORBE.find(([k])=>k===(p&&p.des))||DES_ORBE[2])[1])+'s</b>'
+    :'à <b>'+((p&&p.etat)||'Feu')+'</b>';
+   return 'Jusqu’à la fin de la rencontre, le porteur est <b>insensible</b> '+quoi+'.'}}};
+function objetCode(o){return o&&OBJETS_CODES[o.effet]||null}
+// Les réglages d'un objet, relus au travers de la déclaration de son effet : rien d'illisible n'entre.
+function paramsObjet(o){const code=objetCode(o);if(!code)return null;
+ const out={};(code.params||[]).forEach(p=>{out[p.cle]=reglageTalent(code,o&&o.params,p.cle)});return out}
+function phraseObjet(cle,params){const code=OBJETS_CODES[cle];
+ return code?code.phrase(paramsObjet({effet:cle,params})):''}
+// L'usage d'un objet : à volonté, consommable, ou une fois par jour.
+function usageObjet(o){const u=o&&o.usage;
+ return USAGES_OBJET.some(([k])=>k===u)?u:(o&&o.consumable?'conso':'libre')}
+/* Ce dont un combattant est devenu insensible : les états qu'il ne subit plus, les couleurs
+   de dés qui ne l'entament plus. */
+function immunites(a){const i=a&&a.immunites;
+ return {etats:Array.isArray(i&&i.etats)?i.etats:[],des:Array.isArray(i&&i.des)?i.des:[]}}
+function immuniseEtat(a,etat){return !!etat&&immunites(a).etats.includes(etat)}
+function immuniseDe(a,couleur){return !!couleur&&immunites(a).des.includes(couleur)}
+function poseImmunite(a,quoi,valeur){if(!a||!valeur)return false;
+ const i=immunites(a);if(i[quoi].includes(valeur))return false;
+ a.immunites={etats:[...i.etats],des:[...i.des]};a.immunites[quoi].push(valeur);return true}
 /* Mauvais Sort : le meilleur dé de l'attaquant — la plus haute face, le premier en cas
    d'égalité — est relancé sur place, avant tout calcul. La relance peut être meilleure. */
 function mauvaisSort(dice,roll){if(!Array.isArray(dice)||!dice.length)return null;
@@ -1083,6 +1134,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

@@ -1256,7 +1256,7 @@ assert.ok(src.includes('function gearPills(a,tout=true)')&&page.includes('gearPi
 /* Les mains se remplacent au lieu de refuser ; en jeu, pas de sac à déplier, le clic ouvre la
    description, et un objet se vise avant de s'employer, à la table de jeu seulement. */
 assert.ok(src.includes('function libereMains(a,besoin)')&&src.includes('else{libereMains(a,weaponHands(o));a.weapons=[...(a.weapons||[]),o.id]}}')&&src.includes('else{libereMains(a,1);a.shieldId=o.id}}')
- &&src.includes('function gearDetail(o,a,enJeu)')&&src.includes('if(a&&enJeu){const b=document.createElement(\'button\')')&&src.includes('function appliquerObjet(a,o,vise,q)')
+ &&src.includes('function gearDetail(o,a,enJeu)')&&src.includes("if(a&&enJeu&&(col==='object'||code)){const b=document.createElement('button')")&&src.includes('function appliquerObjet(a,o,vise,q)')
  &&src.includes("viserCible('◈ '+o.name+' — clique le combattant ou l’endroit visé',")&&src.includes("const equipable=(o.category==='weapon'||o.category==='armor')&&tout&&peutEquiper;")
  &&src.includes('toggleEquip(a,o);ouvrir();')&&page.includes('function viserCible(annonce,fn,refus)')&&page.includes("viserCible('✦ Clique sur la carte pour poser '+m.name,"),'mains remplacées, objet visé, description à l’équipement');
 {const t={mainsPrises:null},src2=src.slice(src.indexOf('function libereMains(a,besoin)'),src.indexOf('/* Équiper depuis l’inventaire'));
@@ -1538,7 +1538,7 @@ assert.ok(src.includes("const libelle=at.gear?'Attaque':(at.name||'Attaque');")&
 /* L'Onde d'un camp lève les états avec les blessures, et prend aussi celui qui n'a rien perdu
    mais porte une affliction — empoisonné au complet, il restait sur le carreau. */
 assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&(a.hp<a.max||statesOf(a).length));")
- &&page.includes("soignes.forEach(a=>{if(a.hp<a.max)rendus++;a.hp=a.max;setState(a,'Coma',false);\n  if(statesOf(a).length){a.states=[];a.bleed=0;a.cumuls={};leves++}});")
+ &&page.includes("soignes.forEach(a=>{if(a.hp<a.max)rendus++;a.hp=a.max;setState(a,'Coma',false);a.usages={};")
  &&page.includes("' remis d’aplomb'+(rendus?' : PV au complet':'')+(leves?(rendus?', ':' : ')+'états levés':'')+'.'")
  &&!page.includes('const blesses=actors.filter'),'l’Onde du camp lève les états, même sans blessure');
 /* La jauge de PV est un fil, et le même pour tous les socles — l'actif n'y fait rien. */
@@ -1616,13 +1616,13 @@ assert.ok(page.includes('function pastillesPoints(a)')&&page.includes("const act
  &&page.includes("reinit:()=>{if(code.cle==='orbes')a.orbes=0;else if(code.cle==='gardien')a.garde=null;else rendPoint(a,'action')},")
  &&page.includes("actors.forEach(a=>{a.checks=[0,0,0];a.orbes=0});")&&!page.includes('a.checks=[false,false,false]')
  &&src.includes("a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};")
- &&vivant.includes("'checks','points','ignition','cibles'"),'les points d’activation se comptent');
+ &&vivant.includes("'checks','points','ignition','immunites','usages','cibles'"),'les points d’activation se comptent');
 /* Ignition à la table : l'orbe part sur l'allié désigné, ne blesse pas, et sa braise s'en va
    avec le premier coup au contact. Invulnérable et Brise s'entendent dans le journal. */
 assert.ok(page.includes('function alliePourIgnition(a)')&&page.includes("const j=ciblesDe(a).find(k=>vus.includes(k)&&actors[k]&&actors[k].hero===a.hero&&actors[k]!==a);")
  &&page.includes('if(allie!==null){const feu=etat||\'Feu\';')&&page.includes("const poser=()=>{b.ignition=feu;floatNumber(b,'✦ '+feu,'gain');")
  &&page.includes("const charge=(rangeOf(a)==='distance'?'':a.ignition)||'';")&&page.includes("if(charge)a.ignition=''}")
- &&page.includes('const infligeEtatBrut=infligeEtat;')&&page.includes("if(etatRefuse(talentsCodes(a),etat))return 'immunise';")
+ &&page.includes('const infligeEtatBrut=infligeEtat;')&&page.includes("if(etatRefuse(talentsCodes(a),etat)||immuniseEtat(a,etat))return 'immunise';")
  &&page.includes('const ouverte=briseLaGarde(talentsCodes(a),b);')&&page.includes("const def=hasState(b,'Au sol')||ouverte?0:defOf(b);")
  &&page.includes("(ouverte?' Brise : la DEF ne compte pas.':'')")&&page.includes("(immunises.length?' Invulnérable : '+immunises.join(', ')+' sans effet.':'')"),'Ignition, Invulnérable et Brise câblés');
 /* Les descriptions d'objet et de talent sortent du flux : une bulle se pose au-dessus de la
@@ -1648,4 +1648,50 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
  &&src.includes("if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};")
  &&feuille.includes('.bulle{position:fixed;z-index:60;')&&feuille.includes(".bulle::after{content:'';position:absolute;left:var(--fleche,50%);")
  &&feuille.includes('.bulle.dessous::after{'),'la description se pose en bulle, le dépliant reste sous BULLES');
-console.log('1058 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les effets d'équipement : une banque déclarée comme celle des talents — une clé, des
+   réglages, une phrase — et trois manières d'en user. */
+{const codes=C.OBJETS_CODES;
+ assert.equal(Object.keys(codes).sort().join(),'etat,invulnerabilite,soin');
+ assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','jour']));
+ assert.equal(C.NOM_USAGE('jour'),'Une fois par jour');assert.equal(C.NOM_USAGE('bidon'),'À volonté');
+ // Chaque effet se dit en une phrase, réglages en gras, écrite par le moteur.
+ assert.ok(C.phraseObjet('soin',{quantite:2,forme:'des'}).includes('<b>2d6</b> PV'));
+ assert.ok(C.phraseObjet('soin',{quantite:3,forme:'endu'}).includes('<b>3 + Endurance</b>'));
+ assert.ok(C.phraseObjet('etat',{etat:'Onde'}).includes('obtient <b>Onde</b>'));
+ assert.ok(C.phraseObjet('invulnerabilite',{contre:'etat',etat:'Poison'}).includes('insensible</b> à <b>Poison</b>'));
+ assert.ok(C.phraseObjet('invulnerabilite',{contre:'des',des:'black'}).includes('aux dés <b>Mortels</b>'));
+ assert.equal(C.phraseObjet('inconnu',{}),'','un effet inconnu ne dit rien');
+ // Les réglages manquants prennent leur défaut, et rien d'illisible n'entre.
+ {const p=C.paramsObjet({effet:'soin',params:{}});assert.equal(p.quantite,5);assert.equal(p.forme,'fixe');
+  assert.equal(C.paramsObjet({effet:'soin',params:{quantite:'999'}}).quantite,99,'borné au maximum déclaré');
+  assert.equal(C.paramsObjet({effet:''}),null);}
+ // L'usage : celui qui est dit, sinon l'ancienne case « consommable », sinon à volonté.
+ assert.equal(C.usageObjet({usage:'jour'}),'jour');
+ assert.equal(C.usageObjet({consumable:true}),'conso','un objet d’avant les usages garde le sien');
+ assert.equal(C.usageObjet({}),'libre');
+ assert.equal(C.usageObjet({usage:'n’importe quoi'}),'libre');
+ // Les insensibilités d'un combattant : des états, des couleurs de dés, jamais deux fois la même.
+ {const a={};
+  assert.equal(JSON.stringify(C.immunites(a)),JSON.stringify({etats:[],des:[]}));
+  assert.equal(C.poseImmunite(a,'etats','Feu'),true);
+  assert.equal(C.poseImmunite(a,'etats','Feu'),false,'déjà insensible');
+  assert.equal(C.poseImmunite(a,'des','red'),true);
+  assert.equal(C.immuniseEtat(a,'Feu'),true);assert.equal(C.immuniseEtat(a,'Gel'),false);
+  assert.equal(C.immuniseDe(a,'red'),true);assert.equal(C.immuniseDe(a,'blue'),false);
+  assert.equal(C.poseImmunite(null,'etats','Feu'),false);assert.equal(C.poseImmunite(a,'etats',''),false);}}
+/* À la table et à l'armurerie : la banque au-dessus des objets, l'effet et son usage au
+   formulaire, le bouton qui l'emploie, la charge du jour et les dés écartés. */
+assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function renderArmory(){renderBiblioObjets();")
+ &&src.includes('📖 Banque des effets d’équipement')&&src.includes("const porteurs=(catalog.items||[]).filter(o=>o&&o.effet===c.cle).map(o=>o.name);")
+ &&src.includes("o.effet=OBJETS_CODES[o.effet]?o.effet:'';")&&src.includes("o.usage=usageObjet(o);o.consumable=o.usage==='conso'});")
+ &&src.includes("+sel('Usage','usage',usageObjet(a),USAGES_OBJET)+'</div>'")&&src.includes('function dessineReglagesObjet()')
+ &&src.includes("a.params=a.effet?paramsObjet({effet:a.effet,params:lireReglagesObjet()}):{};")&&!src.includes(">Consommable</label>')")
+ &&src.includes('function usageEpuise(a,o)')&&src.includes("function objetDisponible(a,o){return usageObjet(o)!=='jour'||!usageEpuise(a,o)}")
+ &&src.includes('function appliquerEffetObjet(a,o)')&&src.includes("if(usage==='jour'){a.usages={...(a.usages||{}),[o.id]:true}}")
+ &&src.includes("if(usage==='conso')retirerInventaire(a,o);")&&src.includes('if(objetCode(o)){appliquerEffetObjet(a,o);return}')
+ &&src.includes("a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};")
+ &&page.includes('function desRecus(b,dice)')&&page.includes('const {gardes:dice,ecartes}=desRecus(b,tous);')
+ &&page.includes('const suite=ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
+ &&page.includes("a.immunites={etats:[],des:[]};a.usages={};")&&page.includes("setState(a,'Coma',false);a.usages={};")
+ &&feuille.includes('.gear-detail .gear-effet{font-weight:600}'),'les effets d’équipement sont câblés');
+console.log('1093 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
