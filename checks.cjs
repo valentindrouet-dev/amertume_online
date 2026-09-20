@@ -2197,4 +2197,11 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fief.includes("window.addEventListener('pointermove',suit);window.addEventListener('pointerup',lache);window.addEventListener('pointercancel',lache)}}")
   &&fief.includes("const suit=m=>{if(m.pointerId!==id)return;"),'le glisser du nom écoute la fenêtre');
 }
-console.log('1402 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.257 — La colonne des bâtiments du Domaine : le nom et l'étape, l'état dessous, rien d'autre. */
+{const fief=fs.readFileSync('domaine.js','utf8');
+ assert.ok(fief.includes("et.className='dom-etape';et.textContent=NOM_ETAPE(b.etape);tete.append(nom,et);row.append(tete);")
+  &&fief.includes("if(b.etat){const x=document.createElement('span');x.className='dom-etat etat-'+b.etat;x.textContent=NOM_ETAT_BATIMENT(b.etat);row.append(x)}")
+  &&!fief.includes("p.className='muted dom-presents'")&&!fief.includes("p.className='dom-effet'")&&!fief.includes("row.append(boutonConstruire(b));")
+  &&feuille.includes('.dom-bat>.dom-etat{align-self:flex-start}'),'la colonne des bâtiments s’en tient au nom, à l’étape et à l’état');
+}
+console.log('1403 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -320,19 +320,14 @@ function boutonConstruire(b){const p=peutConstruire(domaine,b),btn=document.crea
  const e=prochaineEtape(b);btn.textContent='Construire → '+NOM_ETAPE(e)+(p.cout?' · '+montantLisible(p.cout):' · gratuit');
  btn.classList.toggle('manque',!p.ok);btn.title=p.ok?'Le trésor paie l’étape suivante':'Il manque '+montantLisible(p.manque);
  btn.onclick=ev=>{ev.stopPropagation();construireDom(b)};return btn}
+/* La colonne des bâtiments ne dit que l'essentiel : le nom et l'étape sur une ligne, et,
+   dessous, l'état particulier s'il y en a un. Effets, présents et construction sont sur la fiche. */
 function renderDomBats(){const boite=$('dom-bats');boite.replaceChildren();
  domaine.batiments.forEach(b=>{const row=document.createElement('div');row.className='dom-bat e'+b.etape+(domPageSel===b.id?' sel':'');row.setAttribute('role','button');row.tabIndex=0;
   const tete=document.createElement('div');tete.className='dom-bat-tete';
   const nom=document.createElement('strong');nom.textContent=b.nom;
-  const et=document.createElement('span');et.className='dom-etape';et.textContent=NOM_ETAPE(b.etape);tete.append(nom,et);
-  if(b.etat){const x=document.createElement('span');x.className='dom-etat etat-'+b.etat;x.textContent=NOM_ETAT_BATIMENT(b.etat);tete.append(x)}
-  row.append(tete);
-  const effet=(b.effets[b.etape]||'').trim();
-  if(effet){const p=document.createElement('p');p.className='dom-effet';p.textContent=effet;row.append(p)}
-  const pnj=pnjDuBatiment(domaine,b.id).length,av=actors.filter(a=>a.hero&&(domaine.aventuriers[a.id]||{}).lieu===b.id).length;
-  if(pnj||av){const p=document.createElement('p');p.className='muted dom-presents';
-   p.textContent=[pnj?pnj+' PNJ':'',av?av+' aventurier'+(av>1?'s':''):''].filter(Boolean).join(' · ');row.append(p)}
-  row.append(boutonConstruire(b));
+  const et=document.createElement('span');et.className='dom-etape';et.textContent=NOM_ETAPE(b.etape);tete.append(nom,et);row.append(tete);
+  if(b.etat){const x=document.createElement('span');x.className='dom-etat etat-'+b.etat;x.textContent=NOM_ETAT_BATIMENT(b.etat);row.append(x)}
   const choisir=()=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()};
   row.onclick=choisir;row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choisir()}};
   boite.append(row)});

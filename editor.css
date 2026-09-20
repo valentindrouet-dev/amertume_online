@@ -891,7 +891,7 @@ body.page-domaine .intro,body.page-domaine .mj-tools,body.page-domaine main.layo
 .dom-bat-tete{display:flex;align-items:center;justify-content:space-between;gap:6px 8px;flex-wrap:wrap}.dom-bat-tete strong{font-size:14px}
 .dom-etape{font:600 10px system-ui;letter-spacing:1.5px;text-transform:uppercase;color:var(--t,var(--muted));white-space:nowrap}
 .dom-etape.e0{--t:#8f7c63}.dom-etape.e1{--t:#a4782a}.dom-etape.e2{--t:#4d7fb0}.dom-etape.e3{--t:#4a8a5e}
-.dom-effet{margin:0;font-size:12.5px;line-height:1.35;color:var(--ink)}.dom-presents{margin:0;font-size:11px}
+/* Le cartouche d'état, seul sur sa ligne sous le nom. */.dom-bat>.dom-etat{align-self:flex-start}
 button.dom-construire{align-self:flex-start;padding:4px 10px;font:700 12px system-ui;border-radius:8px;color:#2f6d3a;border-color:#4f8a52;background:#ffffff8c}
 button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire.manque{color:#9d7b1e;border-color:#c9953f}button.dom-construire:disabled{opacity:.55;cursor:default}
 .dom-fiche-tete{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
