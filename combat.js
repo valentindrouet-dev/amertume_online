@@ -1160,8 +1160,92 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  if(cle==='vieMax'&&Number.isFinite(a.vie))a.vie=Math.min(a.vie,a.vieMax);
  else if(cle==='vie'&&Number.isFinite(a.vieMax)&&a.vie>a.vieMax)a.vie=a.vieMax;
  return a[cle]}
+/* ====================================================================================
+   LE DOMAINE
+   ------------------------------------------------------------------------------------
+   Le fief de la troupe : des bâtiments qui se bâtissent en quatre étapes — friche,
+   fondations, construction, construit —, un trésor qui les paie, des habitants et des
+   visiteurs, et les aventuriers qui y séjournent. Le moteur tient les règles ; l'image
+   du village, elle, est faite de quatre calques, un par étape, dans lesquels chaque
+   bâtiment se découpe à l'étape où il en est. Rien de tout cela ne voyage encore vers
+   la table ni vers les joueurs : le domaine reste sur l'appareil du MJ.
+   ==================================================================================== */
+const ETAPES_DOMAINE=[['friche','Friche'],['fondation','Fondations'],['construction','Construction'],['construit','Construit']];
+const NOM_ETAPE=i=>(ETAPES_DOMAINE[i]||ETAPES_DOMAINE[0])[1];
+const BATIMENTS_DEFAUT=['Étables','Auberge','Magasin','Tour de Mystique','Temple','Bibliothèque','Forge','Tannerie','Taverne','Baraquements','Entrepôts','Laboratoire','Cartographe'];
+const STATUTS_PNJ=[['habitant','Habitant'],['visiteur','Visiteur']];
+function idDomaine(){return typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'d'+Math.random().toString(36).slice(2)}
+// Une zone de bâtiment : au moins trois sommets, en pourcentage de la carte, sans trou.
+function zoneValide(z){if(!Array.isArray(z)||z.length<3)return null;
+ const pts=z.filter(p=>Array.isArray(p)&&p.length>=2&&Number.isFinite(Number(p[0]))&&Number.isFinite(Number(p[1])))
+  .map(p=>[borne(p[0],0,100),borne(p[1],0,100)]);
+ return pts.length>=3?pts.slice(0,400):null}
+function nouveauBatiment(nom,id){return {id:id||idDomaine(),nom:String(nom||'Bâtiment').slice(0,60),etape:0,zone:null,couts:[0,0,0],effets:['','','',''],notes:''}}
+function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
+ n.etape=Math.max(0,Math.min(3,Math.trunc(Number(b&&b.etape))||0));
+ n.zone=zoneValide(b&&b.zone);
+ n.couts=[0,1,2].map(i=>Math.max(0,Math.trunc(Number(b&&b.couts&&b.couts[i]))||0));
+ n.effets=[0,1,2,3].map(i=>String(b&&b.effets&&b.effets[i]||'').slice(0,600));
+ n.notes=String(b&&b.notes||'').slice(0,2000);return n}
+function normalisePnj(p){return {id:p&&p.id||idDomaine(),nom:String(p&&p.nom||'Inconnu').slice(0,60),role:String(p&&p.role||'').slice(0,80),
+ statut:p&&p.statut==='visiteur'?'visiteur':'habitant',batiment:String(p&&p.batiment||'').slice(0,60),notes:String(p&&p.notes||'').slice(0,2000)}}
+/* Le domaine relu au travers de sa déclaration, comme tout ce que le moteur enregistre :
+   un domaine absent naît avec ses treize bâtiments en friche et un trésor vide. */
+function normaliseDomaine(d){d=d&&typeof d==='object'&&!Array.isArray(d)?d:{};
+ const calques=[0,1,2,3].map(i=>{const c=d.carte&&Array.isArray(d.carte.calques)?d.carte.calques[i]:null;return typeof c==='string'&&c?c:null});
+ const ratio=Number(d.carte&&d.carte.ratio);
+ const batiments=Array.isArray(d.batiments)?d.batiments.filter(Boolean).slice(0,80).map(normaliseBatiment):BATIMENTS_DEFAUT.map(n=>nouveauBatiment(n));
+ const ids=new Set();batiments.forEach(b=>{if(ids.has(b.id))b.id=idDomaine();ids.add(b.id)});
+ const journal=(d.finances&&Array.isArray(d.finances.journal)?d.finances.journal:[]).filter(e=>e&&typeof e==='object').slice(-200)
+  .map(e=>({t:Number(e.t)||0,libelle:String(e.libelle||'').slice(0,120),montant:Math.trunc(Number(e.montant))||0}));
+ const aventuriers={};if(d.aventuriers&&typeof d.aventuriers==='object')Object.keys(d.aventuriers).slice(0,100).forEach(k=>{const v=d.aventuriers[k]||{};
+  aventuriers[k]={lieu:String(v.lieu||'').slice(0,60),notes:String(v.notes||'').slice(0,1000)}});
+ return {nom:String(d.nom||'Le Domaine').slice(0,80),monnaie:String(d.monnaie||'or').slice(0,20),
+  carte:{calques,ratio:ratio>0?ratio:16/9},batiments,
+  finances:{tresor:Math.trunc(Number(d.finances&&d.finances.tresor))||0,journal},
+  pnj:(Array.isArray(d.pnj)?d.pnj:[]).filter(Boolean).slice(0,300).map(normalisePnj),aventuriers}}
+// Le coût pour atteindre une étape : les fondations, la construction, le bâti.
+function coutEtape(b,etape){return etape>=1&&etape<=3?Math.max(0,Math.trunc(Number((b&&b.couts||[])[etape-1]))||0):0}
+function prochaineEtape(b){return b&&b.etape<3?b.etape+1:null}
+function peutConstruire(d,b){const e=prochaineEtape(b);if(e===null)return {ok:false,cout:0,manque:0,fini:true};
+ const cout=coutEtape(b,e),manque=Math.max(0,cout-d.finances.tresor);return {ok:manque===0,cout,manque,fini:false}}
+function mouvementFinance(d,montant,libelle){const m=Math.trunc(Number(montant));if(!Number.isFinite(m))return null;
+ d.finances.tresor+=m;const e={t:Date.now(),libelle:String(libelle||'').slice(0,120),montant:m};
+ d.finances.journal.push(e);if(d.finances.journal.length>200)d.finances.journal.splice(0,d.finances.journal.length-200);return e}
+/* Construire : le trésor paie l'étape, le journal la note, l'étape avance. Sans le sou,
+   rien ne se fait — sauf si le MJ force, et le trésor passe alors en dessous de zéro. */
+function construire(d,b,force){const e=prochaineEtape(b);if(e===null)return false;
+ const cout=coutEtape(b,e);if(cout>d.finances.tresor&&!force)return false;
+ mouvementFinance(d,-cout,'Construction — '+b.nom+' : '+NOM_ETAPE(e));b.etape=e;return true}
+// Défaire une étape ne rembourse rien : c'est une correction, le trésor se règle à part.
+function reculerEtape(b){if(!b||b.etape<=0)return false;b.etape-=1;return true}
+/* Le calque qui montre une étape : le sien s'il est chargé, sinon le plus proche en
+   dessous — un bâtiment en construction sur un village sans calque de construction se
+   montre en fondations —, sinon le plus proche au-dessus. Aucun calque : -1. */
+function calqueDisponible(calques,etape){const c=calques||[],e=Math.max(0,Math.min(3,Math.trunc(Number(etape))||0));
+ for(let i=e;i>=0;i--)if(c[i])return i;
+ for(let i=e+1;i<4;i++)if(c[i])return i;
+ return -1}
+// Le centre d'une zone, là où son nom s'écrit : le barycentre de sa surface.
+function centroide(zone){const z=zoneValide(zone);if(!z)return null;
+ let a=0,cx=0,cy=0;
+ for(let i=0,j=z.length-1;i<z.length;j=i++){const f=z[j][0]*z[i][1]-z[i][0]*z[j][1];a+=f;cx+=(z[j][0]+z[i][0])*f;cy+=(z[j][1]+z[i][1])*f}
+ if(Math.abs(a)<1e-9)return [z.reduce((s,p)=>s+p[0],0)/z.length,z.reduce((s,p)=>s+p[1],0)/z.length];
+ return [cx/(3*a),cy/(3*a)]}
+// Le bâtiment sous un point : le dernier tracé l'emporte, comme le dernier posé.
+function batimentSous(d,pt){const l=d&&d.batiments||[];
+ for(let i=l.length-1;i>=0;i--){const z=l[i].zone;if(z&&pointInPolygon(pt,z))return i}
+ return -1}
+function pnjDuBatiment(d,id){return (d&&d.pnj||[]).filter(p=>p.batiment===id)}
+// Une zone glissée reste dans la carte : le déplacement se borne à ce que ses bords permettent.
+function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
+ const xs=z.map(p=>p[0]),ys=z.map(p=>p[1]);
+ dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
+ dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
+ return z.map(([x,y])=>[x+dx,y+dy])}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
+ ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

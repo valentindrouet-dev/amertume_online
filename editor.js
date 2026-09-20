@@ -240,7 +240,7 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde</h3>'
  +'<div id="bloc-sauvegarde"></div>'
  +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde globale</h3>'
- +'<p class="muted">Toute la partie dans un seul fichier : aventuriers, adversaires, bestiaire, armurerie, talents, cartes et scène en cours. À garder au chaud, au cas où ce navigateur perdrait ses données.</p>'
+ +'<p class="muted">Toute la partie dans un seul fichier : aventuriers, adversaires, bestiaire, armurerie, talents, cartes, domaine et scène en cours. À garder au chaud, au cas où ce navigateur perdrait ses données.</p>'
  +'<div class="reglage"><div><strong>Exporter toute la partie</strong><p class="muted">Télécharge un fichier .json sur cet appareil.</p></div>'
  +'<button id="export-tout" class="primary">⇩ Exporter</button></div>'
  +'<div class="reglage" id="reglage-import"><div><strong>Importer une sauvegarde</strong><p class="muted">Remplace la partie de ce navigateur par le fichier choisi. Exporte d’abord la partie actuelle si tu veux la garder.</p></div>'
@@ -2453,6 +2453,7 @@ function verifieSauvegarde(s){if(!s||typeof s!=='object'||Array.isArray(s))retur
  if(!s.actors.some(a=>a&&typeof a==='object'&&a.hero))return 'La sauvegarde ne contient aucun aventurier.';
  if(s.catalog!=null&&(typeof s.catalog!=='object'||Array.isArray(s.catalog)))return 'Le catalogue de la sauvegarde est illisible.';
  if(s.maps!=null&&!Array.isArray(s.maps))return 'Les cartes de la sauvegarde sont illisibles.';
+ if(s.domaine!=null&&(typeof s.domaine!=='object'||Array.isArray(s.domaine)))return 'Le domaine de la sauvegarde est illisible.';
  return ''}
 function resumeSauvegarde(s){const n=(x,un,des)=>x+' '+(x>1?des:un);const c=s.catalog||{},l=k=>Array.isArray(c[k])?c[k].length:0;
  return [n(s.actors.filter(a=>a&&a.hero).length,'aventurier','aventuriers'),n(s.actors.filter(a=>a&&!a.hero).length,'adversaire','adversaires'),

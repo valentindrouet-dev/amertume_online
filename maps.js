@@ -493,11 +493,11 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
 /* ---------- Onglets de page, réservés au MJ ---------- */
 const tabs=document.createElement('nav');tabs.className='tabs';
 tabs.innerHTML='<button data-page="table" class="on">Table de jeu</button><button data-page="maps">Cartes</button>'
- +'<button data-page="heroes">Aventuriers</button><button data-page="talents">Talents</button>'
+ +'<button data-page="domaine">Domaine</button><button data-page="heroes">Aventuriers</button><button data-page="talents">Talents</button>'
  +'<button data-page="armory">Armurerie</button><button data-page="bestiary">Bestiaire</button>'
  +'<button data-page="settings">Paramètres</button>';
 document.querySelector('.view-controls').before(tabs);
-const PAGES=['table','maps','heroes','talents','armory','bestiary','settings'];
+const PAGES=['table','maps','domaine','heroes','talents','armory','bestiary','settings'];
 // Les Paramètres sont un réglage d'appareil, pas du contenu de partie : ils restent ouverts aux joueurs.
 /* La troupe a ses propres pages : ses fiches, et le bestiaire de ce qu'elle a analysé.
    Tout ce qui s'y modifie reste au MJ — voir « vue-joueur » dans editor.css. */
@@ -518,8 +518,11 @@ function showPage(p,retenir=true){if(!PAGES_LIBRES.includes(p)&&view!=='mj')retu
  PAGES.forEach(x=>document.body.classList.toggle('page-'+x,x===p&&x!=='table'));
  tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.page===p));
  if(p==='maps'){if(!maps.length)newMap();if(!mapDraft)mapDraft=maps.find(m=>m.id===currentMapId)||maps[0];
-  measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas()}
+  // La carte du domaine, si c'est elle qu'on éditait, se rouvre à sa place.
+  if(typeof domaineEdite!=='undefined'&&domaineEdite){renderMapList();renderDomaineEditeur()}
+  else{measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas()}}
  else if(p==='table')render();
+ else if(p==='domaine')renderDomaine();
  else if(p==='heroes')renderHeroes();
  else if(p==='talents')renderTalents();
  else if(p==='armory')renderArmory();
@@ -580,14 +583,16 @@ function applySnapshot(snap){const i=maps.findIndex(m=>m.id===snap.id);if(i<0)re
 function undo(){if(!undoStack.length||!mapDraft)return;redoStack.push(structuredClone(mapDraft));applySnapshot(undoStack.pop())}
 function redo(){if(!redoStack.length||!mapDraft)return;undoStack.push(structuredClone(mapDraft));applySnapshot(redoStack.pop())}
 $('undo').onclick=undo;$('redo').onclick=redo;
-document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps'))return;
+// Quand c'est la carte du domaine qu'on édite, ces touches sont à son éditeur (domaine.js).
+const editeDomaine=()=>typeof domaineEdite!=='undefined'&&domaineEdite;
+document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps')||editeDomaine())return;
  if(e.key.toLowerCase()!=='z'||!(e.metaKey||e.ctrlKey))return;
  if(e.target.closest('input,textarea,select'))return;
  e.preventDefault();e.shiftKey?redo():undo()});
-document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps')||!lasso)return;
+document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps')||editeDomaine()||!lasso)return;
  if(e.key==='Enter'){e.preventDefault();applyLasso()}
  else if(e.key==='Escape'){e.preventDefault();if(!annulerTrait()){lasso=null;renderCanvas()}}});
-document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps'))return;
+document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps')||editeDomaine())return;
  if(e.key!=='Delete'&&e.key!=='Backspace')return;
  if(e.target.closest('input,textarea,select'))return;
  if(!supprimeSelection())return;

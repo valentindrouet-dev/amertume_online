@@ -793,3 +793,98 @@ button.choix-attaque.sans-des{grid-auto-rows:1fr}
 .btn-objet .chrono.vide{opacity:.5;filter:grayscale(1)}
 .btn-objet .chrono[role=button]{cursor:pointer}
 .btn-objet .chrono[role=button]:hover{opacity:1;filter:none;transform:scale(1.15)}
+
+/* ---------- Le Domaine ---------- */
+/* Dans l'onglet Cartes, la carte du domaine remplace le plan de combat et ses outils :
+   même place, mêmes cadres, ses propres calques et son tracé de bâtiments. */
+#domaine-editeur,#domaine-props{display:none}
+#maps-page.mode-domaine>.maps-main:not(#domaine-editeur),#maps-page.mode-domaine>.maps-props:not(#domaine-props){display:none}
+#maps-page.mode-domaine #domaine-editeur{display:flex}#maps-page.mode-domaine #domaine-props{display:block}
+.map-row.dom-row{border-color:#c9953f66;background:#c9953f14}.map-row.dom-row.current{border-color:#c9953f;background:var(--sel-fond)}
+#dom-calques .dom-calque{display:inline-flex;align-items:center;gap:2px}
+#dom-calques [data-calque].on{background:#8bbd9c;border-color:#8bbd9c;color:#12261a}
+#dom-calques [data-calque].on::after{content:' ✓'}
+#dom-calques .dom-calque-x{padding:2px 7px;font-weight:700;color:var(--muted)}#dom-calques .dom-calque-x:hover{color:#b03828;border-color:#b03828}
+#dom-calques .dom-vue{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+#dom-outils [data-outil=zone]{border-color:#4d6c8a;color:var(--t-select)}#dom-outils [data-outil=zone].on{background:#7faddc;border-color:#7faddc;color:#0f1b26}
+#dom-canvas{position:relative;transform-origin:0 0;will-change:transform;--z:1;background:var(--map-bg);border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;touch-action:none;user-select:none;box-shadow:0 10px 30px #0006}
+#dom-canvas.no-image,#dom-plan.no-image{background-image:linear-gradient(#84958a1f 1px,transparent 1px),linear-gradient(90deg,#84958a1f 1px,transparent 1px);background-size:5% 8.333%}
+#dom-canvas canvas,#dom-canvas svg,#dom-canvas #dom-etiquettes,#dom-canvas #dom-sommets,#dom-plan canvas,#dom-plan svg,#dom-plan #dom-plan-etiquettes{position:absolute;inset:0;width:100%;height:100%}
+#dom-canvas canvas,#dom-plan canvas{display:block}
+#dom-canvas #dom-etiquettes,#dom-plan #dom-plan-etiquettes{pointer-events:none}
+#dom-canvas #dom-sommets{pointer-events:none}
+.dom-zone{fill:#ffffff10;stroke:var(--t,#fff);stroke-width:2;vector-effect:non-scaling-stroke;cursor:pointer;transition:fill .12s}
+.dom-zone.e0{--t:#b9a48a}.dom-zone.e1{--t:#c9953f}.dom-zone.e2{--t:#7faddc}.dom-zone.e3{--t:#8bbd9c}
+.dom-zone:hover{fill:#ffffff2a}.dom-zone.sel{fill:#ffffff33;stroke-width:3.5;stroke:#fff}
+/* Dans l'éditeur, les zones ne prennent pas la souris : c'est le plan qui écoute, et il
+   sait ce qu'il y a dessous. */
+#dom-zones .dom-zone{pointer-events:none}
+.dom-trace{fill:#7faddc2e;stroke:#7faddc;stroke-width:2;stroke-dasharray:6 5;vector-effect:non-scaling-stroke}
+.dom-etiquette{position:absolute;transform:translate(-50%,-50%);text-align:center;font:700 12px system-ui;color:#fff;text-shadow:0 1px 3px #000d,0 0 8px #0008;letter-spacing:.3px;white-space:nowrap;line-height:1.1}
+.dom-etiquette small{display:block;font:600 9px system-ui;letter-spacing:1px;text-transform:uppercase;opacity:.92;margin-top:2px}
+.dom-etiquette.e0 small{color:#e8dcc8}.dom-etiquette.e1 small{color:#f0c979}.dom-etiquette.e2 small{color:#b9d6f2}.dom-etiquette.e3 small{color:#bfe3cb}
+#dom-canvas .dom-etiquette{font-size:calc(12px / var(--z))}#dom-canvas .dom-etiquette small{font-size:calc(9px / var(--z))}
+.dom-sommet{position:absolute;pointer-events:auto;width:calc(11px / var(--z));height:calc(11px / var(--z));margin:calc(-5.5px / var(--z)) 0 0 calc(-5.5px / var(--z));background:var(--accent);border:calc(1.5px / var(--z)) solid var(--on-accent);border-radius:50%;cursor:move;box-shadow:0 1px 3px #0008}
+.dom-sommet:hover{transform:scale(1.3)}
+.sw-etape{background:color-mix(in srgb,var(--t) 30%,transparent);border:2px solid var(--t)}
+#dom-liste{display:flex;flex-direction:column;gap:5px;max-height:38vh;overflow:auto}
+.dom-ligne{display:block;width:100%;text-align:left;padding:6px 9px;border-radius:8px;border-left:4px solid var(--t,var(--line))}
+.dom-ligne strong{display:block;font-size:13px}.dom-ligne small{color:var(--muted);font-size:11px}
+.dom-ligne.e0{--t:#b9a48a}.dom-ligne.e1{--t:#c9953f}.dom-ligne.e2{--t:#7faddc}.dom-ligne.e3{--t:#8bbd9c}
+.dom-ligne.current{border-color:var(--accent);background:var(--sel-fond)}
+#dom-sel-boite label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px}
+#dom-sel-boite input,#dom-sel-boite select{width:100%;margin-top:4px}
+#dom-sel-boite .side-actions{margin-top:4px}
+button.dom-danger{color:#b03828;border-color:#b0382866}button.dom-danger:hover{border-color:#b03828}
+/* L'onglet : la liste des bâtiments à gauche, la carte et la fiche au centre, la gestion à droite. */
+#domaine-page{display:none}
+body.page-domaine #domaine-page{display:grid;grid-template-columns:260px minmax(0,1fr) 320px;gap:16px;padding:16px 28px 26px;align-items:start}
+body.page-domaine .intro,body.page-domaine .mj-tools,body.page-domaine main.layout,body.page-domaine #save-status,body.page-domaine footer{display:none!important}
+#domaine-page h2{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-top:0}
+#domaine-page .dom-col{position:sticky;top:14px;max-height:calc(100dvh - 40px);overflow:auto}
+.dom-centre{display:flex;flex-direction:column;gap:14px}
+.dom-tete{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#domaine-page .dom-tete h2{flex:1;font:32px 'Killam',Georgia,serif;letter-spacing:.5px;text-transform:none;color:var(--ink);margin:0}
+.dom-tresor{font:700 15px system-ui;color:#9d7b1e;background:#c9953f1f;border:1px solid #c9953f55;border-radius:20px;padding:4px 12px}
+#dom-plan{position:relative;width:100%;aspect-ratio:var(--ratio,16/9);background:var(--map-bg);border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;box-shadow:0 10px 30px #0004}
+#dom-plan .dom-plan-vide{position:absolute;left:12%;right:12%;top:50%;transform:translateY(-50%);text-align:center;font-size:14px}
+#dom-plan .dom-zone{pointer-events:auto}
+#dom-bats{display:flex;flex-direction:column;gap:8px}
+.dom-bat{border:1px solid var(--line);border-left:4px solid var(--t,var(--line));border-radius:9px;padding:8px 10px 9px;background:var(--panel-2);cursor:pointer;display:flex;flex-direction:column;gap:5px}
+.dom-bat:hover{border-color:var(--accent)}.dom-bat.sel{border-color:var(--accent);background:var(--sel-fond)}
+.dom-bat.e0{--t:#b9a48a}.dom-bat.e1{--t:#c9953f}.dom-bat.e2{--t:#7faddc}.dom-bat.e3{--t:#8bbd9c}
+.dom-bat-tete{display:flex;align-items:center;justify-content:space-between;gap:8px}.dom-bat-tete strong{font-size:14px}
+.dom-etape{font:600 10px system-ui;letter-spacing:1.5px;text-transform:uppercase;color:var(--t,var(--muted));white-space:nowrap}
+.dom-etape.e0{--t:#8f7c63}.dom-etape.e1{--t:#a4782a}.dom-etape.e2{--t:#4d7fb0}.dom-etape.e3{--t:#4a8a5e}
+.dom-effet{margin:0;font-size:12.5px;line-height:1.35;color:var(--ink)}.dom-presents{margin:0;font-size:11px}
+button.dom-construire{align-self:flex-start;padding:4px 10px;font:700 12px system-ui;border-radius:8px;color:#2f6d3a;border-color:#4f8a52;background:#ffffff8c}
+button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire.manque{color:#9d7b1e;border-color:#c9953f}button.dom-construire:disabled{opacity:.55;cursor:default}
+.dom-fiche-tete{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dom-fiche-nom{flex:1 1 200px;font:700 18px 'Killam',Georgia,serif;margin:0;padding:6px 10px}
+.dom-couts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0}
+.dom-couts label,.dom-effet-etape,.dom-notes{display:block;font-size:12px;color:var(--muted)}
+.dom-couts input,.dom-effet-etape textarea,.dom-notes textarea{width:100%;margin-top:3px}
+.dom-effets{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:6px}.dom-effets .reglage-title,.dom-effets h3{grid-column:1/-1;margin:0}
+.dom-effet-etape{border-left:3px solid var(--t,var(--line));padding-left:8px}
+.dom-effet-etape.e0{--t:#b9a48a}.dom-effet-etape.e1{--t:#c9953f}.dom-effet-etape.e2{--t:#7faddc}.dom-effet-etape.e3{--t:#8bbd9c}
+.dom-effet-etape.actuelle{color:var(--ink);font-weight:700}
+.dom-notes{margin-top:10px}.dom-qui{font-size:13px;margin:10px 0 0}
+.dom-tresor-ligne{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.dom-tresor-val{font:800 24px system-ui;color:#9d7b1e}.dom-tresor-val.dette{color:#b03828}
+.dom-monnaie{width:80px;margin:0;padding:3px 7px;font-size:13px}
+.dom-mouvement{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.dom-mouvement input,.dom-mouvement button{margin:0;min-width:0}.dom-mouvement input:nth-child(2){grid-column:1/-1}
+.dom-mouvement button{padding:7px 6px;font:700 13px system-ui;white-space:nowrap}
+.dom-mouvement .dom-plus{color:#2f6d3a;border-color:#4f8a52}.dom-mouvement .dom-moins{color:#b03828;border-color:#b0382866}
+.dom-journal{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;max-height:220px;overflow:auto}
+.dom-journal li{display:flex;align-items:baseline;gap:8px;font-size:12.5px;border-bottom:1px dashed var(--line);padding:3px 0}
+.dom-journal small{color:var(--muted);flex:none;width:38px}.dom-journal span{flex:1;min-width:0;overflow-wrap:anywhere}
+.dom-journal b.gain{color:#2f6d3a}.dom-journal b.dette{color:#b03828}
+#dom-pnj .reglage-titre{margin-top:8px}
+.dom-pnj{display:block;width:100%;text-align:left;margin:4px 0;padding:6px 9px;border-radius:8px}
+.dom-pnj strong{display:block;font-size:13px}.dom-pnj small{color:var(--muted);font-size:11px}
+.dom-ajout{margin-top:8px;width:100%}
+.dom-aventurier{display:flex;flex-direction:column;gap:5px;padding:8px 0;border-bottom:1px solid var(--line)}
+.dom-av-tete{display:flex;align-items:center;gap:8px}.dom-av-tete strong{font-size:14px}
+.dom-aventurier select,.dom-aventurier input{width:100%;margin:0}
+@media(max-width:1150px){body.page-domaine #domaine-page{grid-template-columns:1fr;padding:14px}#domaine-page .dom-col{position:static;max-height:none}.dom-effets{grid-template-columns:1fr}}

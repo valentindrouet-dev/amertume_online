@@ -1796,4 +1796,78 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
  /* Le bouton d'un joueur est désactivé, celui du MJ seulement pâli : c'est ce qui laisse le
     chrono cliquable pour l'un et muet pour l'autre. */
  &&page.includes("function inerte(b,off){if(view==='mj'){b.disabled=false;b.classList.toggle('inerte',!!off);"),'le chrono rend sa charge, pour le MJ seul');
-console.log('1134 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* ---------- Le Domaine ---------- */
+/* Le fief de la troupe : treize bâtiments en quatre étapes, un trésor qui les paie, des
+   habitants et des visiteurs, les aventuriers qui y séjournent. Les règles sont pures ; le
+   domaine vit dans la sauvegarde de la partie et nulle part ailleurs. */
+{const D=C.normaliseDomaine(null);
+ assert.equal(C.BATIMENTS_DEFAUT.length,13);assert.ok(C.BATIMENTS_DEFAUT.includes('Cartographe')&&C.BATIMENTS_DEFAUT.includes('Tour de Mystique'));
+ assert.deepEqual(C.ETAPES_DOMAINE.map(e=>e[1]),['Friche','Fondations','Construction','Construit']);
+ assert.equal(D.batiments.length,13);assert.equal(D.batiments[0].nom,'Étables');
+ assert.ok(D.batiments.every(b=>b.etape===0&&b.zone===null&&b.couts.length===3&&b.effets.length===4&&b.id));
+ assert.equal(D.finances.tresor,0);assert.deepEqual(D.finances.journal,[]);assert.deepEqual(D.carte.calques,[null,null,null,null]);
+ assert.equal(D.carte.ratio,16/9);assert.deepEqual(D.pnj,[]);assert.equal(D.nom,'Le Domaine');assert.equal(D.monnaie,'or');
+ // Un domaine abîmé se relit borné : étapes dans [0,3], zones valides ou rien, journal court.
+ const G=C.normaliseDomaine({nom:42,batiments:[{nom:'Forge',etape:7,zone:[[0,0],[200,-5],[10,10]],couts:['a',5,-3]},{etape:-2,zone:[[0,0],[1,1]]},null],
+  carte:{calques:['a',null,3,''],ratio:'x'},finances:{tresor:'12.9',journal:Array.from({length:250},(_,i)=>({t:i,libelle:'l'+i,montant:1}))},
+  pnj:[{nom:'Brenn',statut:'roi'},{statut:'visiteur'}],aventuriers:{h1:{lieu:'x',notes:'n'}}});
+ assert.equal(G.nom,'42');assert.equal(G.batiments.length,2);assert.equal(G.batiments[0].etape,3);assert.deepEqual(G.batiments[0].zone,[[0,0],[100,0],[10,10]]);
+ assert.deepEqual(G.batiments[0].couts,[0,5,0]);assert.equal(G.batiments[1].etape,0);assert.equal(G.batiments[1].zone,null);assert.equal(G.batiments[1].nom,'Bâtiment');
+ assert.deepEqual(G.carte.calques,['a',null,null,null]);assert.equal(G.carte.ratio,16/9);assert.equal(G.finances.tresor,12);assert.equal(G.finances.journal.length,200);
+ assert.equal(G.pnj[0].statut,'habitant');assert.equal(G.pnj[1].statut,'visiteur');assert.equal(G.pnj[1].nom,'Inconnu');assert.deepEqual(G.aventuriers.h1,{lieu:'x',notes:'n'});
+ // Construire : le trésor paie, le journal note, l'étape avance ; sans le sou, rien — sauf forcé.
+ const b=D.batiments.find(x=>x.nom==='Forge');b.couts=[100,200,300];D.finances.tresor=150;
+ assert.deepEqual(C.peutConstruire(D,b),{ok:true,cout:100,manque:0,fini:false});
+ assert.equal(C.construire(D,b),true);assert.equal(b.etape,1);assert.equal(D.finances.tresor,50);
+ assert.deepEqual(D.finances.journal.map(e=>[e.libelle,e.montant]),[['Construction — Forge : Fondations',-100]]);
+ assert.deepEqual(C.peutConstruire(D,b),{ok:false,cout:200,manque:150,fini:false});
+ assert.equal(C.construire(D,b),false);assert.equal(b.etape,1);assert.equal(D.finances.tresor,50);
+ assert.equal(C.construire(D,b,true),true);assert.equal(b.etape,2);assert.equal(D.finances.tresor,-150);
+ assert.equal(C.construire(D,b,true),true);assert.equal(b.etape,3);assert.equal(C.construire(D,b,true),false);assert.equal(C.prochaineEtape(b),null);
+ assert.deepEqual(C.peutConstruire(D,b),{ok:false,cout:0,manque:0,fini:true});
+ // Reculer ne rembourse rien ; un mouvement se note, et le journal ne garde que les 200 derniers.
+ assert.equal(C.reculerEtape(b),true);assert.equal(b.etape,2);assert.equal(D.finances.tresor,-450);
+ assert.equal(C.mouvementFinance(D,'abc','?'),null);assert.equal(C.mouvementFinance(D,500.9,'Butin').montant,500);assert.equal(D.finances.tresor,50);
+ for(let i=0;i<210;i++)C.mouvementFinance(D,1,'x');assert.equal(D.finances.journal.length,200);
+ assert.equal(C.coutEtape(b,0),0);assert.equal(C.coutEtape(b,3),300);assert.equal(C.coutEtape(b,4),0);
+ // Le calque d'une étape : le sien, sinon le plus proche en dessous, sinon au-dessus.
+ assert.equal(C.calqueDisponible([null,'f',null,'c'],2),1);assert.equal(C.calqueDisponible([null,'f',null,'c'],3),3);
+ assert.equal(C.calqueDisponible([null,null,null,'c'],0),3);assert.equal(C.calqueDisponible(['a',null,null,null],3),0);assert.equal(C.calqueDisponible([],2),-1);
+ // Le centre d'une zone, le bâtiment sous un point, la zone qui ne sort pas de la carte.
+ const carre=[[0,0],[10,0],[10,10],[0,10]];
+ assert.deepEqual(C.centroide(carre),[5,5]);assert.equal(C.centroide([[0,0],[1,1]]),null);
+ assert.equal(C.batimentSous({batiments:[{zone:carre},{zone:[[5,5],[20,5],[20,20],[5,20]]}]},[7,7]),1);
+ assert.equal(C.batimentSous({batiments:[{zone:carre},{zone:null}]},[2,2]),0);assert.equal(C.batimentSous({batiments:[{zone:carre}]},[50,50]),-1);
+ assert.deepEqual(C.deplaceZone(carre,-5,95),[[0,90],[10,90],[10,100],[0,100]]);assert.equal(C.deplaceZone(null,1,1),null);
+ assert.equal(C.pnjDuBatiment({pnj:[{batiment:'a'},{batiment:'b'},{batiment:'a'}]},'a').length,2);
+ assert.ok(typeof C.idDomaine()==='string'&&C.idDomaine()!==C.idDomaine());}
+/* L'écran : un onglet, un script à part, la carte du domaine dans l'onglet Cartes, et
+   la sauvegarde qui l'emporte. Le domaine ne se publie pas et ne va pas à la table. */
+{const fief=fs.readFileSync('domaine.js','utf8'),partage=fs.readFileSync('shared.js','utf8');
+ assert.ok(page.includes('<script src="./maps.js?v=')&&/maps\.js\?v=[\d.]+"><\/script><script src="\.\/domaine\.js\?v=/.test(page),'domaine.js se charge après maps.js');
+ assert.ok(cartes.includes("const PAGES=['table','maps','domaine','heroes','talents','armory','bestiary','settings'];")
+  &&cartes.includes('<button data-page="domaine">Domaine</button>')&&cartes.includes("else if(p==='domaine')renderDomaine();")
+  &&cartes.includes("if(typeof domaineEdite!=='undefined'&&domaineEdite){renderMapList();renderDomaineEditeur()}")
+  &&cartes.includes("const editeDomaine=()=>typeof domaineEdite!=='undefined'&&domaineEdite;")
+  &&(cartes.match(/\|\|editeDomaine\(\)/g)||[]).length===3,'l’onglet Domaine, MJ seul, et l’éditeur de combat cède ses touches');
+ assert.ok(fief.includes('let domaine=normaliseDomaine(null);')
+  &&fief.includes('snapshot=function(){return Object.assign(snapshotSansDomaine(),{domaine})};')
+  &&fief.includes('appliquerSauvegarde=function(s){appliquerSansDomaine(s);domaine=normaliseDomaine(s&&s.domaine);')
+  &&src.includes("if(s.domaine!=null&&(typeof s.domaine!=='object'||Array.isArray(s.domaine)))return 'Le domaine de la sauvegarde est illisible.';")
+  &&!/\bdomaine\b/.test(partage)&&!/\bdomaine\b/.test(vivant),'le domaine voyage dans la sauvegarde, et nulle part ailleurs');
+ assert.ok(fief.includes('function dessineDomaine(canvas,vue,redessine)')&&fief.includes('const fond=calqueDisponible(c.calques,0);if(fond<0)return false;')
+  &&fief.includes("ctx.closePath();ctx.clip();")&&fief.includes('const k=calqueDisponible(c.calques,b.etape);if(k<0||k===fond)return;')
+  &&fief.includes("if(vue>=0){const im=charge(vue);if(im)ctx.drawImage(im,0,0,W,H);return !!c.calques[vue]}"),'le village composé : chaque bâtiment découpé dans le calque de son étape');
+ assert.ok(fief.includes('renderMapList=function(){renderMapListSansDomaine();')&&fief.includes('mapsPage.append(domEditeur,domProps);')
+  &&fief.includes('function entreDomaine(){domaineEdite=true;mapsPage.classList.add(\'mode-domaine\');')
+  &&fief.includes('function fermeTraceDom(){')&&fief.includes('const pts=zoneValide(t.bouge?encreDroite([t.pts])[0]:t.pts);')
+  &&fief.includes("if(domTrace.pts.length>2&&Math.hypot(p.x-domTrace.pts[0][0],p.y-domTrace.pts[0][1])<domAuZoom(1.6)){fermeTraceDom();return}")
+  &&fief.includes("if(d.mode==='move'){b.zone=deplaceZone(d.orig,p.x-d.from.x,p.y-d.from.y);renderDomZones()}")
+  &&fief.includes("if(d.mode==='sommet'){b.zone[d.i]=[p.x,p.y];renderDomZones();return}")
+  &&feuille.includes('#maps-page.mode-domaine #domaine-editeur{display:flex}')&&feuille.includes('#maps-page.mode-domaine>.maps-main:not(#domaine-editeur)'),'la carte du domaine s’édite dans Cartes : calques, tracé, déplacement, sommets');
+ assert.ok(fief.includes("if(!p.ok&&!confirm('Le trésor ne suffit pas : il manque '")&&fief.includes('construire(domaine,b,true);renderDomaine();sauveDomaine()}')
+  &&fief.includes("mouvementFinance(domaine,signe*m,libelle.value.trim()||(signe>0?'Recette':'Dépense'));")
+  &&fief.includes("const pnjDialog=dialog('dom-pnj-editor','Personnage',")&&fief.includes("[['','Au domaine'],...domaine.batiments.map(b=>[b.id,b.nom]),['aventure','En aventure'],['absent','Absent']]")
+  &&fief.includes("ta.onchange=()=>{b.effets[i]=ta.value.slice(0,600);renderDomBats();sauveDomaine()}")
+  &&feuille.includes('body.page-domaine #domaine-page{display:grid;')&&feuille.includes('body.page-domaine main.layout'),'l’onglet Domaine : construire, financer, peupler, loger, conférer');}
+console.log('1210 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
