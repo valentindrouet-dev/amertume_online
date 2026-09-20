@@ -779,11 +779,14 @@ button.choix-attaque.sans-des{grid-auto-rows:1fr}
    comme dans la banque des effets. */
 .gear-detail .gear-effet{font-weight:600}
 .gear-detail .gear-effet b{color:#7a4f1a}
-/* Le chrono d'un usage compté, en haut à droite du bouton : il dit qu'une charge se rend au
-   repos. Vide, il pâlit ; le MJ le clique pour la rendre ou la reprendre. */
+/* Le chrono d'un usage compté : une pastille à cheval sur le coin haut droit du bouton,
+   comme la marque d'un objet porté sur sa vignette. Elle dit qu'une charge se rend au
+   repos. Vide, elle pâlit ; le MJ la clique pour la rendre ou la reprendre. */
 .btn-objet{position:relative}
-.btn-objet .chrono{position:absolute;top:3px;right:5px;font-size:12px;line-height:1;opacity:.9;
- text-shadow:0 1px 2px #0006;pointer-events:auto}
-.btn-objet .chrono.vide{opacity:.45;filter:grayscale(1)}
+.btn-objet .chrono{position:absolute;top:-6px;right:-6px;z-index:2;width:19px;height:19px;
+ box-sizing:border-box;border-radius:50%;display:grid;place-items:center;
+ font:12px/1 system-ui;color:#fff;background:var(--fond,#3f7bc0);
+ border:2px solid var(--panel);box-shadow:0 1px 3px #0005;pointer-events:auto}
+.btn-objet .chrono.vide{opacity:.5;filter:grayscale(1)}
 .btn-objet .chrono[role=button]{cursor:pointer}
-.btn-objet .chrono[role=button]:hover{opacity:1;transform:scale(1.15)}
+.btn-objet .chrono[role=button]:hover{opacity:1;filter:none;transform:scale(1.15)}

@@ -181,25 +181,32 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  assert.equal(crit.critical,true);assert.equal(crit.dice.length,3);
  assert.equal(resolveAttack({dice:[[1,0],[1,0]],def:0,dmg:0,roll:()=>2,doublesCritiques:true}).failed,true);
  assert.equal(resolveAttack({dice:[[3,0],[4,0]],def:0,dmg:0,roll:()=>2,doublesCritiques:true}).critical,false);
- /* Orbes de feu : une amélioration, qui exige la mécanique des orbes ; Feu par défaut. */
- assert.equal(TALENTS_CODES.orbesfeu.type,'ame');assert.equal(TALENTS_CODES.orbesfeu.requiert,'orbes');
+ /* Orbes de feu : une amélioration libre. Le moteur ne réclame plus les orbes au-dessus —
+    c'est le MJ qui nomme le prérequis, talent par talent ; Feu par défaut. */
+ assert.equal(TALENTS_CODES.orbesfeu.type,'ame');assert.equal(TALENTS_CODES.orbesfeu.requiert,undefined);
  assert.deepEqual(paramsTalent({effet:'orbesfeu'}),{etat:'Feu'});
  assert.deepEqual(paramsTalent({effet:'orbesfeu',params:{etat:'Gel'}}),{etat:'Gel'});
  assert.deepEqual(paramsTalent({effet:'orbesfeu',params:{etat:'Coma'}}),{etat:'Feu'});
  assert.match(phraseTalent('orbesfeu'),/infligent <b>Feu<\/b> en plus/);
  assert.equal(etatDesOrbes([...tenus,{code:TALENTS_CODES.orbesfeu,params:{etat:'Gel'}}]),'Gel');}
-/* Les prérequis : par la fiche (« prerequis ») ou par la mécanique (« requiert »). */
-{const {manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents}=require('./combat.js');
- const a={id:'a',name:'Orbes mystiques',effet:'orbes'},b={id:'b',name:'Orbes de feu',effet:'orbesfeu'},
+/* Les prérequis : par la fiche (« prerequis ») ou par la mécanique (« requiert »). Aucune
+   mécanique livrée n'impose plus de socle — le MJ le nomme lui-même, talent par talent —
+   mais la machinerie demeure, et s'éprouve ici sur une mécanique d'essai. */
+{const {TALENTS_CODES,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents}=require('./combat.js');
+ assert.deepEqual(Object.values(TALENTS_CODES).filter(c=>c.requiert).map(c=>c.cle),[],'aucune mécanique livrée n’exige un socle');
+ TALENTS_CODES.__socle={cle:'__socle',nom:'Socle d’essai',type:'mait',params:[],phrase(){return ''}};
+ TALENTS_CODES.__ame={cle:'__ame',nom:'Âme d’essai',type:'ame',requiert:'__socle',params:[],phrase(){return ''}};
+ try{
+ const a={id:'a',name:'Orbes mystiques',effet:'__socle'},b={id:'b',name:'Orbes de feu',effet:'__ame'},
   c={id:'c',name:'Souffle',effet:'',prerequis:'a'},d={id:'d',name:'Brasier',effet:'',prerequis:'b'},e={id:'e',name:'Lamevent',effet:'lamevent'};
  const cat=[a,b,c,d,e];
- assert.equal(manqueTalent([],b,cat),'Orbes mystiques');    // la mécanique le réclame
+ assert.equal(manqueTalent([],b,cat),'Socle d’essai');    // la mécanique le réclame
  assert.equal(manqueTalent(['a'],b,cat),'');
  assert.equal(manqueTalent([],c,cat),'Orbes mystiques');    // la fiche le nomme
  assert.equal(manqueTalent(['a'],c,cat),'');
  assert.equal(manqueTalent([],a,cat),'');assert.equal(manqueTalent([],e,cat),'');
  assert.equal(manqueTalent(['b'],d,cat),'');
- assert.equal(nomPrerequis(b,cat),'Orbes mystiques');assert.equal(nomPrerequis(c,cat),'Orbes mystiques');
+ assert.equal(nomPrerequis(b,cat),'Socle d’essai');assert.equal(nomPrerequis(c,cat),'Orbes mystiques');
  assert.equal(nomPrerequis(d,cat),'Orbes de feu');assert.equal(nomPrerequis(a,cat),'');
  assert.deepEqual(talentsDependants(a,cat).map(t=>t.id),['b','c']);
  assert.deepEqual(talentsDependants(b,cat).map(t=>t.id),['d']);
@@ -215,7 +222,8 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  assert.deepEqual(ordonneTalents([d],cat).map(([t,p])=>t.id+p),['d0']);
  // Un cycle ne bloque rien : tout finit par sortir, une fois.
  const x={id:'x',name:'X',prerequis:'y'},y={id:'y',name:'Y',prerequis:'x'};
- assert.deepEqual(ordonneTalents([x,y],[x,y]).map(([t])=>t.id).sort(),['x','y']);}
+ assert.deepEqual(ordonneTalents([x,y],[x,y]).map(([t])=>t.id).sort(),['x','y']);
+ }finally{delete TALENTS_CODES.__socle;delete TALENTS_CODES.__ame}}
 /* Débordement, Rempart, Gardien et son amélioration : déclarés, réglés, et les petites
    règles pures qui les portent. */
 {const {TALENTS_CODES,paramsTalent,phraseTalent,partDuRempart,porteEffet,ONDE_EXCLUS}=require('./combat.js');
@@ -1585,9 +1593,10 @@ assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null
  &&feuille.includes('.cat-col>h3 .ico.plus.rouage{')
  &&!page.includes("annonceFlottante('📣 '"),'l’arbre d’une classe s’ouvre depuis l’onglet Talents');
 /* Trois mécaniques de plus : Ignition charge un allié désigné d'un orbe, Invulnérable refuse
-   une affection au porteur, Brise ouvre la garde d'une cible affligée. */
+   une affection au porteur, Brise ouvre la garde d'une cible affligée. Aucune n'exige de
+   socle : le MJ nomme le prérequis dans le talent qu'il écrit. */
 {const ig=C.TALENTS_CODES.ignition,inv=C.TALENTS_CODES.invulnerable,br=C.TALENTS_CODES.brise;
- assert.ok(ig&&ig.type==='ame'&&ig.requiert==='orbesfeu'&&!ig.params.length,'Ignition pend sous Orbes de feu');
+ assert.ok(ig&&ig.type==='ame'&&ig.requiert===undefined&&!ig.params.length,'Ignition ne se règle pas, et ne s’impose pas de socle');
  assert.ok(inv&&inv.type==='ame'&&inv.params[0].cle==='etat'&&br&&br.type==='ame'&&br.params[0].cle==='etat','Invulnérable et Brise se règlent sur un état');
  assert.ok(C.phraseTalent('ignition',{}).includes('<b>allié désigné</b>')&&C.phraseTalent('invulnerable',{etat:'Poison'}).includes('<b>jamais Poison</b>')
   &&C.phraseTalent('brise',{etat:'Gel'}).includes('<b>ignorent la DEF</b>'),'chacune se dit en une phrase');
@@ -1757,9 +1766,9 @@ assert.ok(src.includes("a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a
  &&src.includes("el.className='btn-action choix-attaque btn-objet teinte-propre';")&&src.includes("el.style.setProperty('--fond',b.teinte);")
  &&src.includes("boite.hidden=!liste.length&&!talents.length&&!objets.length;")
  &&!src.includes('a.armorId=')&&!src.includes('draft.armorId'),'les emplacements du corps et les boutons d’objets');
-/* Un usage compté porte son chrono, en haut à droite de son bouton : il dit que la charge se
-   rend au repos, et le MJ la rend — ou la reprend — d'un clic. Les joueurs, non : leur bouton
-   épuisé est désactivé, et rien dedans ne se clique. */
+/* Un usage compté porte son chrono, en pastille à cheval sur le coin haut droit de son
+   bouton : il dit que la charge se rend au repos, et le MJ la rend — ou la reprend — d'un
+   clic. Les joueurs, non : leur bouton épuisé est désactivé, et rien dedans ne se clique. */
 assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='mj'||!a||!o||!usageEpuise(a,o))return false;")
  &&src.includes('function prendreUsage(a,o){')&&src.includes("if(view!=='mj'||!a||!o||!usageLimite(usageObjet(o))||usageEpuise(a,o))return false;")
  &&src.includes("function reposer(a,type='long'){")&&src.includes("if(type==='long'||quoi==='court')rendues.push(id);else garde[id]=quoi});")
@@ -1767,7 +1776,9 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
  &&src.includes("if(view==='mj'){chrono.setAttribute('role','button');chrono.tabIndex=0;")
  &&src.includes("const a2=b.acteur;")&&src.includes("if(b.epuise?rendreUsage(a2,b.objet):prendreUsage(a2,b.objet)){")
  &&src.includes("acteur:a,agir:()=>utiliserObjet(a,o)})});")
- &&feuille.includes('.btn-objet .chrono{position:absolute;top:3px;right:5px;')&&feuille.includes('.btn-objet .chrono.vide{opacity:.45;filter:grayscale(1)}')
+ &&feuille.includes('.btn-objet .chrono{position:absolute;top:-6px;right:-6px;z-index:2;width:19px;height:19px;')
+ &&feuille.includes('border:2px solid var(--panel);box-shadow:0 1px 3px #0005;pointer-events:auto}')
+ &&feuille.includes('.btn-objet .chrono.vide{opacity:.5;filter:grayscale(1)}')
  /* Le bouton d'un joueur est désactivé, celui du MJ seulement pâli : c'est ce qui laisse le
     chrono cliquable pour l'un et muet pour l'autre. */
  &&page.includes("function inerte(b,off){if(view==='mj'){b.disabled=false;b.classList.toggle('inerte',!!off);"),'le chrono rend sa charge, pour le MJ seul');

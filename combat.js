@@ -792,11 +792,11 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
    const nom=(DES_ORBE.find(([k])=>k===(p&&p.couleur))||DES_ORBE[3])[1];
    return 'Durant son activation, le porteur peut lancer <b>'+n+'</b> orbe'+(n>1?'s':'')
     +' qui lance'+(n>1?'nt':'')+' <b>'+d+' dé'+(d>1?'s':'')+' '+nom+(d>1?'s':'')+'</b>'+(n>1?' chacun':'')+'.'}},
- /* Orbes de feu : une amélioration, qui n'existe qu'au-dessus d'Orbes mystiques — l'effet
-    l'exige (« requiert »), quel que soit le nom donné au talent socle. Elle ne lance rien
-    elle-même : elle change ce que les orbes portent. L'état se règle, Feu par défaut. */
- orbesfeu:{cle:'orbesfeu',nom:'Orbes de feu',type:'ame',requiert:'orbes',
-  aide:'Amélioration d’Orbes mystiques : les orbes infligent un état en plus de leurs dégâts.',
+ /* Orbes de feu : une amélioration. Elle ne lance rien elle-même : elle change ce que les
+    orbes du porteur emportent, et l'état se règle, Feu par défaut. Le moteur n'exige plus
+    d'Orbes mystiques au-dessus : c'est le MJ qui nomme le prérequis, talent par talent. */
+ orbesfeu:{cle:'orbesfeu',nom:'Orbes de feu',type:'ame',
+  aide:'Les orbes du porteur infligent un état en plus de leurs dégâts.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Les orbes du porteur infligent <b>'+((p&&p.etat)||'Feu')+'</b> en plus de leurs dégâts.'}},
  /* Débordement : un passif. Le coup qui achève un adversaire ne s'arrête pas à lui — ce
@@ -868,11 +868,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  /* Provocation : une action. Un adversaire en ligne de vue doit faire un mouvement vers le
     porteur — l'adversaire visé s'il est en vue, sinon le premier en vue — jusqu'au contact,
     les murs l'arrêtant ; puis le porteur effectue une attaque contre lui. */
- /* Ignition : une amélioration d'Orbes de feu. L'orbe ne frappe plus, il allume : lancé sur
-    un allié, il charge sa prochaine attaque au contact de l'affection que portent les orbes.
-    L'allié doit être désigné — on ne brûle pas un camarade par mégarde. */
- ignition:{cle:'ignition',nom:'Ignition',type:'ame',requiert:'orbesfeu',
-  aide:'Amélioration d’Orbes de feu : un orbe lancé sur un allié désigné charge sa prochaine attaque au contact.',
+ /* Ignition : une amélioration. L'orbe ne frappe plus, il allume : lancé sur un allié, il
+    charge sa prochaine attaque au contact de l'affection que portent les orbes. L'allié doit
+    être désigné — on ne brûle pas un camarade par mégarde. Là encore, le prérequis est au
+    MJ : le moteur n'impose rien au-dessus. */
+ ignition:{cle:'ignition',nom:'Ignition',type:'ame',
+  aide:'Un orbe lancé sur un allié désigné charge sa prochaine attaque au contact, au lieu de blesser.',
   params:[],
   phrase(){return 'Un orbe lancé sur un <b>allié désigné</b> ne lui fait aucun mal : sa <b>prochaine attaque au contact</b> inflige l’affection des orbes du porteur.'}},
  /* Invulnérable : une amélioration. L'affection réglée ne prend jamais sur le porteur, d'où

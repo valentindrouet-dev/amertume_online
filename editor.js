@@ -2181,7 +2181,7 @@ const LOGOS_EQUIPEMENT=['weapon_anneau_argent','weapon_anneau_bronze','weapon_ar
    armes et armures gardent les leurs. */
 const LOGOS_OBJET=['item_healpotion'];
 // Les logos de talents, de même : les img/spell_*.png.
-const LOGOS_TALENT=['spell_orbes','spell_orbes_feu'];
+const LOGOS_TALENT=['spell_orbes','spell_orbes_feu','spell_orbes_foudre','spell_orbes_gel'];
 /* Les logos d'attaque, de même : les img/attack_*.png. Une attaque spéciale d'adversaire y
    puise — mais elle peut prendre n'importe quelle icône du dossier : griffes, arme, sort ou
    objet, c'est au MJ de dire ce que la bête brandit. */
