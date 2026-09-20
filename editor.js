@@ -12,7 +12,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armorId??='';a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
+function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
  a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};
  a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};
  a.checks=Array.isArray(a.checks)?POINTS_CLES.map((q,i)=>Math.max(0,Math.min(pointsMax(a,q),a.checks[i]===true?1:Math.trunc(Number(a.checks[i]))||0))):[0,0,0];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
@@ -47,11 +47,13 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  /* Un objet porte un effet du moteur, ses réglages et sa manière d'en user. Un objet
     d'avant les effets n'en a pas, et son ancienne case « consommable » devient son usage. */
  c.items.forEach(o=>{if(!o)return;
+  // L'emplacement d'une pièce : le sien s'il est connu, le torse pour les armures d'avant.
+  if(o.category==='armor')o.slot=emplacementDe(o);
   o.effet=OBJETS_CODES[o.effet]?o.effet:'';
   o.params=o.effet?paramsObjet(o):{};
   o.usage=usageObjet(o);o.consumable=o.usage==='conso'});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
- c.monsters.forEach(m=>{m.weapons||=[];m.armorId??='';m.shieldId??=''});
+ c.monsters.forEach(m=>{m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??=''});
  return c}
 function idsUniques(liste){const vus=new Set();
  (liste||[]).forEach(a=>{if(!a)return;
@@ -62,7 +64,7 @@ actors.forEach(normalizeActor);idsUniques(actors);normalizeCatalog(catalog);
 (function(){const parNom=n=>catalog.items.find(w=>w.name===n)?.id||'';
  [['Éla',['Épée'],'Armure de mailles','Bouclier'],['Kaël',['Arc'],'Armure de cuir',''],['Sentinelle',['Lance'],'Armure de mailles','Bouclier'],['Rôdeur des ruines',['Hache'],'Armure de plates','Bouclier']]
  .forEach(([nom,armes,armure,bouclier])=>{const a=actors.find(x=>x.name===nom);if(!a||a.weapons.length)return;
-  a.weapons=armes.map(parNom).filter(Boolean);a.armorId=parNom(armure);a.shieldId=parNom(bouclier);
+  a.weapons=armes.map(parNom).filter(Boolean);a.armures=[parNom(armure)].filter(Boolean);a.shieldId=parNom(bouclier);
   a.def=defenseOf(a,catalog.items);a.pool=poolOf(a)})})();
 /* Le bandeau de scène a quitté la table : chaque action qu'il portait a rejoint
    l'endroit qui la concerne — ajouter un combattant, la liste des combattants ;
@@ -87,6 +89,23 @@ function desEtBonus(dice,bonus){const bas=document.createElement('span');bas.cla
   const ico=document.createElement('img');ico.className='dmg-ico';ico.src=imgUrl('DEGATS.webp');ico.alt='dégâts';ico.draggable=false;
   bas.append(plus,ico)}
  return bas}
+/* Les objets qui agissent : chaque pièce portée ou rangée dont le moteur connaît l'effet
+   offre son bouton dans la rangée des Actions, à l'encre de sa famille — brun pour une arme,
+   vert pour un consommable, bleu-gris pour une armure. */
+const TEINTE_OBJET={melee:'#8a7a5a',ranged:'#6f8a5a',armor:'#6b7a8a',object:'#9c8a55'};
+function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||!alive(a))return [];
+ const vus=new Set(),out=[];
+ (a.inventaire||[]).forEach(id=>{if(vus.has(id))return;vus.add(id);
+  const o=objetDe(id),code=objetCode(o);if(!o||!code)return;
+  const dispo=objetDisponible(a,o),usage=usageObjet(o);
+  const reste=usage==='jour'?(dispo?' 1/1':' 0/1'):'';
+  out.push({objet:o,texte:o.name+reste,
+   teinte:TEINTE_OBJET[itemColumn(o)]||TEINTE_OBJET.object,
+   peut:dispo,
+   titre:dispo?o.name+' — '+NOM_USAGE(usage)+' · '+code.phrase(paramsObjet(o)).replace(/<[^>]*>/g,'')
+    :o.name+' a déjà servi aujourd’hui : il faut une nuit de repos.',
+   agir:()=>utiliserObjet(a,o)})});
+ return out}
 function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Plusieurs combattants pris : la carte des Actions ne propose rien.
  if(marked.size>1){boite.replaceChildren();boite.hidden=true;return}
@@ -96,7 +115,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
     nature du talent. Leur couleur est celle du type, sauf teinte propre. */
  const talents=a&&typeof boutonsTalents==='function'?boutonsTalents(a).filter(b=>b.rangee==='attaques'):[];
  // Même seule, une attaque se montre : on lit ce qui part avant de frapper.
- boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;
+ const objets=a&&typeof boutonsObjets==='function'?boutonsObjets(a):[];
+ boite.replaceChildren();boite.hidden=!liste.length&&!talents.length&&!objets.length;
  talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque';
   if(t.teinte){b.style.setProperty('--fond',t.teinte);b.classList.add('teinte-propre')}
   const im=logoTalent({logo:t.logo},'bouton');
@@ -110,6 +130,17 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   else b.classList.add('sans-des');
   inerte(b,!t.peut);b.title=t.titre;b.setAttribute('aria-label',t.texte+' — '+t.titre);
   b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(b)});
+ /* Les objets qui agissent viennent après les talents : mêmes grands boutons, l'encre de
+    leur famille, et le logo de l'objet à gauche. */
+ (a?boutonsObjets(a):[]).forEach(b=>{const el=document.createElement('button');
+  el.className='btn-action choix-attaque btn-objet teinte-propre';
+  el.style.setProperty('--fond',b.teinte);
+  const im=logoEquipement({logo:b.objet.logo},'bouton');
+  if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);el.classList.add('avec-logo');el.append(logos)}
+  const nom=document.createElement('span');nom.className='nom';nom.textContent=b.texte;
+  el.append(nom);el.classList.add('sans-des');
+  inerte(el,!b.peut);el.title=b.titre;el.setAttribute('aria-label',b.texte+' — '+b.titre);
+  el.onclick=()=>{if(estInerte(el))return;b.agir()};boite.append(el)});
  if(!liste.length)return;
  const retenu=Math.trunc(a.activeAttack)||0;
  liste.forEach((at,i)=>{const b=document.createElement('button');
@@ -643,7 +674,7 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
 function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+(o.consumable?' consommable':'');
  const titre=document.createElement('p');titre.className='gear-nom';titre.textContent=o.name;d.append(titre);
  const ligne=texte=>{if(!texte)return;const p=document.createElement('p');p.textContent=texte;d.append(p)};
- if(col==='armor')ligne('DEF '+(o.def||0)+(o.slot==='shield'?' · bouclier':' · armure'));
+ if(col==='armor')ligne('DEF '+(o.def||0)+' · '+NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase());
  else if(col!=='object')ligne((o.hands===2?'2 mains':'1 main')+(col==='ranged'?' · à distance':' · au contact'));
  if(o.etat)ligne('Inflige : '+o.etat);
  /* Un objet dit ce qu'il fait et s'utilise d'un bouton : l'effet part au journal de la
@@ -719,9 +750,9 @@ function appliquerObjet(a,o,vise,q){
    l'inventaire, pour composer ce qu'on emporte. Un clic équipe ou repose une arme, une
    armure, un bouclier ; sur un objet, il ouvre sa description et son bouton Utiliser. */
 function gearPills(a,tout=true){const out=document.createElement('div');out.className='gear-grille';
- const possede=(a.inventaire&&a.inventaire.length)?a.inventaire:[...(a.weapons||[]),a.armorId,a.shieldId].filter(Boolean);
+ const possede=(a.inventaire&&a.inventaire.length)?a.inventaire:[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean);
  const comptes=new Map();possede.map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
- const portes=o=>o.category==='weapon'?gearCount(a,o.id):(a.armorId===o.id||a.shieldId===o.id)?1:0;
+ const portes=o=>o.category==='weapon'?gearCount(a,o.id):o.id===a.shieldId?1:armuresDe(a).filter(x=>x===o.id).length;
  const tous=[...comptes.entries()];
  /* En jeu, le rangé reste rangé : on ne montre que ce qui est porté, plus les objets. Le
     bouton du bout déplie le reste du sac — c'est ainsi qu'on change d'arme en pleine
@@ -1055,7 +1086,7 @@ function monsterSheet(m){const f=document.createElement('div');f.className='best
   plus.onclick=e=>{e.stopPropagation();openPicker(m,'gear',()=>poserModele(m,f,true))};
   titreKit.append(plus)}
  /* Sans rien à porter, la rubrique disparaît tout entière : la fiche remonte d'autant. */
- const aDuKit=!!((m.inventaire||[]).length||(m.weapons||[]).length||m.armorId||m.shieldId);
+ const aDuKit=!!((m.inventaire||[]).length||(m.weapons||[]).length||armuresDe(m).length||m.shieldId);
  const kit=aDuKit?gearPills(m):document.createElement('span');
  if(!aDuKit){titreKit.hidden=true;kit.hidden=true}
  /* Un adversaire porte des talents comme un aventurier : sa fiche les montre, et le « + »
@@ -1395,7 +1426,7 @@ $('delete-talent').onclick=()=>{if(talentIndex===null)return;
 /* L'inventaire est tout ce que le combattant possède ; l'équipement, ce qu'il porte, en
    fait toujours partie : ce qui est porté sans être possédé entre dans l'inventaire. */
 function completerInventaire(a){if(!a)return;a.inventaire??=[];
- const besoin=new Map();[...(a.weapons||[]),a.armorId,a.shieldId].filter(Boolean).forEach(id=>besoin.set(id,(besoin.get(id)||0)+1));
+ const besoin=new Map();[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean).forEach(id=>besoin.set(id,(besoin.get(id)||0)+1));
  besoin.forEach((n,id)=>{const ont=a.inventaire.filter(x=>x===id).length;for(let k=ont;k<n;k++)a.inventaire.push(id)})}
 const objetDe=id=>(catalog.items||[]).find(o=>o&&o.id===id)||null;
 function syncEquipped(a){if(!a||!Number.isFinite(a.max))return;
@@ -1423,6 +1454,12 @@ function libereMains(a,besoin){a.weapons??=[];
    faut — un second clic prend un second exemplaire s'il est possédé et qu'une main reste,
    sinon repose tout ; un bouclier prend une main ; une armure se porte ou se repose. Ce
    qui n'est pas possédé ne se porte pas. Renvoie le souci, ou null. */
+/* Faire de la place à un emplacement : la pièce la plus anciennement mise s'en va, autant
+   de fois qu'il le faut pour que la nouvelle entre. */
+function libereEmplacement(a,slot,besoin){if(!a)return;a.armures=armuresDe(a);
+ while(placesLibres(a,slot,catalog.items)<besoin){
+  const i=a.armures.findIndex(id=>emplacementDe(objetDe(id))===slot);
+  if(i<0)break;a.armures.splice(i,1)}}
 function toggleEquip(a,o){if(!a||!o)return 'Rien à équiper.';
  const dans=(a.inventaire||[]).filter(x=>x===o.id).length;
  if(!dans)return o.name+' n’est pas dans l’inventaire.';
@@ -1430,10 +1467,17 @@ function toggleEquip(a,o){if(!a||!o)return 'Rien à équiper.';
   if(n>0&&n<dans&&mainsPrises(a)+weaponHands(o)<=2)a.weapons=[...(a.weapons||[]),o.id];
   else if(n>0)a.weapons=(a.weapons||[]).filter(x=>x!==o.id);
   else{libereMains(a,weaponHands(o));a.weapons=[...(a.weapons||[]),o.id]}}
- else if(o.category==='armor'&&o.slot==='shield'){
+ else if(o.category==='armor'&&emplacementDe(o)==='shield'){
   if(a.shieldId===o.id)a.shieldId='';
   else{libereMains(a,1);a.shieldId=o.id}}
- else if(o.category==='armor')a.armorId=a.armorId===o.id?'':o.id;
+ /* Une pièce d'équipement va à son emplacement, qui a ses places : trois anneaux, un
+    torse, un dos… Plein, c'est la plus ancienne pièce qui cède la sienne, comme les mains. */
+ else if(o.category==='armor'){const slot=emplacementDe(o);
+  a.armures=armuresDe(a);
+  const portes=a.armures.filter(x=>x===o.id).length;
+  if(portes>0&&portes<dans&&placesLibres(a,slot,catalog.items)>0)a.armures=[...a.armures,o.id];
+  else if(portes>0)a.armures=a.armures.filter(x=>x!==o.id);
+  else{libereEmplacement(a,slot,1);a.armures=[...a.armures,o.id]}}
  else return 'Un objet ne s’équipe pas : il reste dans l’inventaire.';
  syncEquipped(a);return null}
 /* Ajouter ou retirer un exemplaire à l'inventaire. Retirer le dernier exemplaire porté
@@ -1442,7 +1486,9 @@ function ajouterInventaire(a,o){if(!a||!o)return;a.inventaire??=[];a.inventaire.
 function retirerInventaire(a,o){if(!a||!o)return;a.inventaire??=[];const i=a.inventaire.lastIndexOf(o.id);if(i<0)return;
  a.inventaire.splice(i,1);const reste=a.inventaire.filter(x=>x===o.id).length;
  if(o.category==='weapon'){while(gearCount(a,o.id)>reste){const k=(a.weapons||[]).lastIndexOf(o.id);a.weapons.splice(k,1)}}
- else if(!reste){if(a.armorId===o.id)a.armorId='';if(a.shieldId===o.id)a.shieldId=''}
+ else if(o.category==='armor'){a.armures=armuresDe(a);
+  while(a.armures.filter(x=>x===o.id).length>reste){const k=a.armures.lastIndexOf(o.id);a.armures.splice(k,1)}
+  if(!reste&&a.shieldId===o.id)a.shieldId=''}
  syncEquipped(a)}
 const pickerDialog=dialog('picker','Équiper','<p class="muted" id="picker-note"></p>'
  +'<input id="picker-search" placeholder="Rechercher…" aria-label="Rechercher">'
@@ -1852,7 +1898,7 @@ let editing=null,draft=null,attackDraft=[],templateIndex=null,itemIndex=null,ite
 // Vrai quand la fiche ouverte crée un modèle du bestiaire, et non un combattant de la scène.
 let templateNeuf=false;
 function baseActor(hero){return normalizeActor({name:hero?'Nouvel aventurier':'Nouveau monstre',hero,role:hero?'Aventurier':'Adversaire',hp:12,max:12,def:2,dmg:2,x:50,y:60,pool:[2,0,0,0,0,0,0],checks:[false,false,false],target:null,skills:Array(8).fill(0)})}
-function fromMonster(m){const a=baseActor(false);Object.assign(a,{template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,weapons:[...(m.weapons||[])],armorId:m.armorId||'',shieldId:m.shieldId||'',inventaire:[...(m.inventaire||[])]});completerInventaire(a);a.activeAttack=0;a.pool=poolOf(a);return a}
+function fromMonster(m){const a=baseActor(false);Object.assign(a,{template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,weapons:[...(m.weapons||[])],armures:[...armuresDe(m)],shieldId:m.shieldId||'',inventaire:[...(m.inventaire||[])]});completerInventaire(a);a.activeAttack=0;a.pool=poolOf(a);return a}
 function openActor(index=null,hero=true,template=null,neuf=false){if(view!=='mj')return;
  if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;templateNeuf=!!neuf&&template===null&&!hero;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero||templateNeuf;renderActorForm();actorDialog.showModal()}
 function renderActorForm(){const a=draft;const weaponOptions=[['','Aucune'],...catalog.items.filter(w=>w.category==='weapon').map(w=>[w.id,w.name])];const armorOptions=slot=>[['','Aucune'],...catalog.items.filter(w=>w.category==='armor'&&w.slot===slot).map(w=>[w.id,w.name])];
@@ -1887,8 +1933,8 @@ dessineInventaire();refreshEquip();
 renderAttacks()}
 // Aperçu vivant de l'équipement : dés cumulés, portée et DEF verrouillée par l'armure.
 /* Le menu d'ajout : toute l'armurerie, rangée par famille. */
-function inventaireOptions(){const nomCat=o=>o.category==='weapon'?(o.ranged?'à distance':'mêlée'):o.category==='armor'?(o.slot==='shield'?'bouclier':'armure'):'objet';
- const ordre=o=>o.category==='weapon'?(o.ranged?1:0):o.category==='armor'?(o.slot==='shield'?3:2):4;
+function inventaireOptions(){const nomCat=o=>o.category==='weapon'?(o.ranged?'à distance':'mêlée'):o.category==='armor'?NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase():'objet';
+ const ordre=o=>o.category==='weapon'?(o.ranged?1:0):o.category==='armor'?(emplacementDe(o)==='shield'?3:2):4;
  return [['','— choisir —'],...[...(catalog.items||[])].sort((x,y)=>ordre(x)-ordre(y)||x.name.localeCompare(y.name,'fr')).map(o=>[o.id,o.name+' · '+nomCat(o)])]}
 /* L'inventaire du formulaire : une ligne par objet possédé, son compte, « Équiper » ou
    « Porté » pour l'équipement, « − » pour en retirer un exemplaire. */
@@ -1899,7 +1945,7 @@ function dessineInventaire(){const boite=$('inventaire-edit');if(!boite||!draft)
   const p=gearPill(o);p.classList.add('mini');ligne.append(p);
   if(n>1){const x=document.createElement('span');x.className='tag exemplaires';x.textContent='×'+n;ligne.append(x)}
   const equipable=o.category==='weapon'||o.category==='armor';
-  if(equipable){const portes=o.category==='weapon'?gearCount(draft,o.id):(draft.armorId===o.id||draft.shieldId===o.id)?1:0;
+  if(equipable){const portes=o.category==='weapon'?gearCount(draft,o.id):o.id===draft.shieldId?1:armuresDe(draft).filter(x=>x===o.id).length;
    const b=document.createElement('button');b.type='button';b.className='inv-equiper'+(portes?' on':'');b.textContent=portes?'Porté'+(portes>1?' ×'+portes:''):'Équiper';
    b.onclick=()=>{const souci=toggleEquip(draft,o);$('equip-summary').textContent=souci||'';dessineInventaire();refreshEquip()};ligne.append(b)}
   const moins=document.createElement('button');moins.type='button';moins.className='inv-retirer';moins.textContent='−';moins.title='Retirer un exemplaire';
@@ -1912,14 +1958,19 @@ function refreshEquip(){const f=$('actor-form').elements;if(!f||!$('equip-summar
     bouclier, zéro compris, et le champ est verrouillé. Un adversaire garde la sienne —
     écailles, cuir épais — et ce qu'il porte s'y ajoute : le champ reste à lui. */
  const heros=!!(draft&&draft.hero);
- const porte=equippedDef({armorId:draft&&draft.armorId||'',shieldId:draft&&draft.shieldId||''},catalog.items)||0;
+ const porte=equippedDef({armures:armuresDe(draft),shieldId:draft&&draft.shieldId||''},catalog.items)||0;
  const d=heros?porte:num(f.def.value,0,99)+porte;
  f.def.readOnly=heros;if(heros)f.def.value=porte;
  const des=p?p.map((n,i)=>n?n+' '+types[i]:'').filter(Boolean).join(' · ')||'aucun dé':'';
  // Deux exemplaires de la même arme se lisent « ×2 » plutôt que deux fois le même nom.
  const noms=[...new Set(ids)].map(id=>{const w=armes.find(x=>x.id===id),n=ids.filter(x=>x===id).length;
   return w?w.name+(n>1?' ×'+n:''):''}).filter(Boolean);
+ /* Ce qui est porté ailleurs qu'aux mains, emplacement par emplacement : on voit d'un coup
+    ce qui reste libre — trois anneaux, un dos, une tête. */
+ const ailleurs=EMPLACEMENTS.map(([k,nom,places])=>{const mis=portesA(draft,k,catalog.items).map(id=>{const o=objetDe(id);return o?o.name:''}).filter(Boolean);
+  return mis.length?nom+' : '+mis.join(', ')+(places>1?' ('+mis.length+'/'+places+')':''):''}).filter(Boolean).join(' · ');
  $('equip-summary').textContent=(armes.length?'Dés de '+noms.join(' + ')+' : '+des+(armes.some(w=>w.ranged)?' · tir à distance.':' · contact.'):'Aucune arme équipée : les dés viennent des attaques ci-dessous.')
+  +(ailleurs?' '+ailleurs+'.':'')
   +' '+(heros?'DEF de l’équipement : '+d+', champ verrouillé.'
    :porte?'DEF : '+num(f.def.value,0,99)+' à lui, plus '+porte+' d’équipement, soit '+d+'.'
    :'DEF : la sienne, sans équipement pour l’augmenter.')}
@@ -1984,13 +2035,13 @@ function readActor(){const f=$('actor-form').elements;readAttacks();const a=stru
  if(f.rapide)a.rapide=f.rapide.checked;if(f.esquive)a.esquive=f.esquive.checked;if(f.skill0)a.skills=skillNames.map((_,i)=>num(f['skill'+i].value,0,30));// Un adversaire n'a pas de rayon d'armurerie dans son formulaire : ce qu'il porte reste tel quel.
  // L'inventaire et l'équipement viennent du brouillon, où le formulaire les a composés ; ce qui n'est plus au catalogue s'efface.
  a.inventaire=(Array.isArray(a.inventaire)?a.inventaire:[]).filter(id=>catalog.items.some(o=>o.id===id));a.weapons=(a.weapons||[]).filter(id=>catalog.items.some(o=>o.id===id));
- if(!catalog.items.some(o=>o.id===a.armorId))a.armorId='';if(!catalog.items.some(o=>o.id===a.shieldId))a.shieldId='';
- {const besoin=new Map();[...a.weapons,a.armorId,a.shieldId].filter(Boolean).forEach(id=>besoin.set(id,(besoin.get(id)||0)+1));besoin.forEach((n,id)=>{const ont=a.inventaire.filter(x=>x===id).length;for(let k=ont;k<n;k++)a.inventaire.push(id)})}
+ a.armures=armuresDe(a).filter(id=>catalog.items.some(o=>o.id===id));if(!catalog.items.some(o=>o.id===a.shieldId))a.shieldId='';
+ {const besoin=new Map();[...a.weapons,...a.armures,a.shieldId].filter(Boolean).forEach(id=>besoin.set(id,(besoin.get(id)||0)+1));besoin.forEach((n,id)=>{const ont=a.inventaire.filter(x=>x===id).length;for(let k=ont;k<n;k++)a.inventaire.push(id)})}
  a.attacks=attackDraft;a.activeAttack=0;a.talents=[...new Set(draft.talents||[])].filter(id=>(catalog.talents||[]).some(t=>t.id===id));
  // Un aventurier ne saisit jamais sa DEF : elle vaut son armure plus son bouclier, zéro compris.
  if(a.hero)a.def=defenseOf(a,catalog.items);
  a.pool=poolFrom(chosenAttack(a,catalog.items).dice)||poolFrom(attackDraft[0]?.dice);return a}
-function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,notes:a.notes,talents:[...(a.talents||[])],attacks:structuredClone(a.attacks),image:a.image||null,weapons:[...(a.weapons||[])],armorId:a.armorId||'',shieldId:a.shieldId||'',inventaire:[...(a.inventaire||[])]}}
+function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,notes:a.notes,talents:[...(a.talents||[])],attacks:structuredClone(a.attacks),image:a.image||null,weapons:[...(a.weapons||[])],armures:[...armuresDe(a)],shieldId:a.shieldId||'',inventaire:[...(a.inventaire||[])]}}
 /* Une créature posée sur la table garde le lien vers son modèle : corriger les PV maximum
    au bestiaire corrige ceux qui combattent déjà. Une créature blessée garde sa blessure,
    une créature intacte reste intacte. Les créatures d'avant ce lien sont rattrapées par
@@ -2167,7 +2218,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +field('Prix','price',a.price||0,'number','min="0" max="999999"')
   +(arme?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="99"')
-   +sel('Emplacement','slot',a.slot||'body',[['body','Corps'],['shield','Bouclier']]):'')
+   +sel('Emplacement','slot',emplacementDe(a),[...EMPLACEMENTS.map(([k,n,p])=>[k,n+(p>1?' ('+p+')':'')]),['shield','Bouclier — une main']]):'')
   +(arme||armure?'':field('Quantité','qty',a.qty||1,'number','min="1" max="9999"'))
   +'</div>'
   +(arme?'<p class="etiquette">Dés de l’arme</p>'+poolFields(poolFrom(a.dice),'itemdie')
@@ -2194,13 +2245,13 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
  menuLogo.parentNode.append(apercu);montre();menuLogo.onchange=montre;
  $('item-form').elements.category.onchange=()=>{itemDraft=itemDepuisForm(itemDraft);dessineItem()}}
 function openItem(i=null,apres=null){itemIndex=i;itemApres=apres;
- itemDraft=i===null?{name:'Nouvel objet',category:'weapon',ranged:false,hands:1,qty:1,price:0,def:0,slot:'body',dice:{},traits:[]}
+ itemDraft=i===null?{name:'Nouvel objet',category:'weapon',ranged:false,hands:1,qty:1,price:0,def:0,slot:'torse',dice:{},traits:[]}
   :structuredClone(catalog.items[i]);
  dessineItem();$('delete-item').hidden=i===null;itemDialog.showModal()}
 $('item-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  const a=itemDepuisForm({...(itemIndex===null?{id:crypto.randomUUID()}:structuredClone(catalog.items[itemIndex])),...itemDraft});
  if(itemIndex===null)catalog.items.push(a);else catalog.items[itemIndex]=a;itemDialog.close();renderCatalogPages();scheduleSave();const rappel=itemApres;itemApres=null;if(rappel)rappel(a)};
-$('delete-item').onclick=()=>{if(view!=='mj'||itemIndex===null||!confirm('Supprimer cet objet du catalogue ? Les attaques déjà appliquées restent inchangées.'))return;const id=catalog.items[itemIndex].id;actors.forEach(a=>{a.weapons=a.weapons.filter(w=>w!==id);if(a.armorId===id)a.armorId='';if(a.shieldId===id)a.shieldId=''});catalog.items.splice(itemIndex,1);itemDialog.close();renderCatalogPages();scheduleSave()};
+$('delete-item').onclick=()=>{if(view!=='mj'||itemIndex===null||!confirm('Supprimer cet objet du catalogue ? Les attaques déjà appliquées restent inchangées.'))return;const id=catalog.items[itemIndex].id;actors.forEach(a=>{a.weapons=a.weapons.filter(w=>w!==id);a.armures=armuresDe(a).filter(x=>x!==id);if(a.shieldId===id)a.shieldId=''});catalog.items.splice(itemIndex,1);itemDialog.close();renderCatalogPages();scheduleSave()};
 
 /* Ajouter un combattant à la scène, c'est prendre dans ce qu'on a déjà — le bestiaire
    pour les adversaires, la troupe pour les aventuriers — et non remplir une fiche vierge.

@@ -68,7 +68,31 @@ function gearOf(ids,items){return (ids||[]).filter(Boolean).map(id=>(items||[]).
 function equippedPool(actor,items){const worn=gearOf(actor&&actor.weapons,items);if(!worn.length)return null;
  return DICE_KEYS.map(k=>Math.min(12,worn.reduce((sum,w)=>sum+(Number(w.dice&&w.dice[k])||0),0)))}
 function equippedRanged(actor,items){const worn=gearOf(actor&&actor.weapons,items);return worn.length?worn.some(w=>w.ranged===true):null}
-function equippedDef(actor,items){const worn=gearOf(actor&&[actor.armorId,actor.shieldId],items);
+/* ---------- Les emplacements d'équipement ----------
+   Ce qu'un corps peut porter, et combien de chaque : deux mains pour les armes et le
+   bouclier, puis un torse, un dos, une tête, trois anneaux, une amulette et des bottes.
+   Une cape et une armure se portent donc ensemble ; deux armures, jamais. */
+const MAINS_MAX=2;
+const EMPLACEMENTS=[['torse','Torse',1],['dos','Dos',1],['tete','Tête',1],
+ ['anneau','Anneaux',3],['amulette','Amulette',1],['bottes','Bottes',1]];
+const NOM_EMPLACEMENT=s=>s==='shield'?'Bouclier':(EMPLACEMENTS.find(([k])=>k===s)||[])[1]||'';
+function placesEmplacement(s){const e=EMPLACEMENTS.find(([k])=>k===s);return e?e[2]:0}
+/* Où se porte une pièce : à l'emplacement qu'elle nomme, au torse à défaut — c'est là que
+   se rangent les armures d'avant les emplacements — et aux mains pour un bouclier. */
+function emplacementDe(o){if(!o||o.category!=='armor')return '';
+ if(o.slot==='shield')return 'shield';
+ const s=String(o.slot||'').trim();
+ return EMPLACEMENTS.some(([k])=>k===s)?s:'torse'}
+/* Ce qu'un combattant porte, hors mains : une liste, car les emplacements se cumulent. Une
+   fiche d'avant les emplacements n'avait qu'une armure — on la lit comme une liste d'une. */
+function armuresDe(a){const l=a&&a.armures;
+ if(Array.isArray(l))return l.filter(Boolean);
+ return a&&a.armorId?[a.armorId]:[]}
+// Ce qui occupe un emplacement donné, dans l'ordre où cela a été mis.
+function portesA(a,slot,items){return armuresDe(a).filter(id=>emplacementDe((items||[]).find(o=>o&&o.id===id))===slot)}
+// Les places qui restent à un emplacement : zéro quand il est plein.
+function placesLibres(a,slot,items){return Math.max(0,placesEmplacement(slot)-portesA(a,slot,items).length)}
+function equippedDef(actor,items){const worn=gearOf(actor&&[...armuresDe(actor),actor&&actor.shieldId],items);
  return worn.length?worn.reduce((sum,w)=>sum+(Number(w.def)||0),0):null}
 /* Porter une arme, c'est savoir s'en servir — adversaires compris. L'équipement ne
    fait donc plus taire la fiche : il ajoute une attaque de plus, à côté des crocs, des
@@ -1134,6 +1158,6 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  return a[cle]}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

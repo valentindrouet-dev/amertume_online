@@ -22,23 +22,23 @@ assert.equal(r({dice:[[3,1],[6,0],[6,0]],def:0,dmg:0,roll:()=>3}).damage,18);   
 const read=editor.slice(editor.indexOf('function readActor()'),editor.indexOf('function toMonster'));
 const values={name:'<Éla>',role:'Gardienne',notes:'texte',state:'Aucun',socle:'medium',sexe:'Femme',race:'Humaine',hp:'99',max:'20',def:'7',dmg:'8',xp:'50',vie:'5',vieMax:'6',endu:'4',pvBonus:'0',level:'3',weapon1:'w',weapon2:'',armor:'a',shield:''};const elements=Object.fromEntries(Object.entries(values).map(([k,value])=>[k,{value}]));elements.rapide={checked:true};elements.esquive={checked:false};for(let i=0;i<8;i++)elements['skill'+i]={value:'4'};
 const gearApi=require('./combat.js');
-const lire=(inventaire,brouillon={hero:true})=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],skillNames:Array(8).fill(''),templateIndex:null,draft:brouillon,attackDraft:[{dice:{white:2}}],readAttacks(){},$:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,defenseOf:gearApi.defenseOf,chosenAttack:gearApi.chosenAttack,statesOf:gearApi.statesOf,setState:gearApi.setState,catalog:{items:inventaire}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result};
+const lire=(inventaire,brouillon={hero:true})=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],skillNames:Array(8).fill(''),templateIndex:null,draft:brouillon,attackDraft:[{dice:{white:2}}],readAttacks(){},$:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,armuresDe:gearApi.armuresDe,emplacementDe:gearApi.emplacementDe,placesLibres:gearApi.placesLibres,placesEmplacement:gearApi.placesEmplacement,EMPLACEMENTS:gearApi.EMPLACEMENTS,portesA:gearApi.portesA,defenseOf:gearApi.defenseOf,chosenAttack:gearApi.chosenAttack,statesOf:gearApi.statesOf,setState:gearApi.setState,catalog:{items:inventaire}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result};
 const nu=lire([]);assert.equal(nu.sexe,'Femme');assert.equal(nu.race,'Humaine');assert.equal(nu.vieMax,6);assert.equal(nu.hp,20);assert.equal(nu.def,0);   // Aventurier sans armure ni bouclier : DEF nulle, la saisie ne compte pas.
 // La DEF d'un aventurier est dérivée, celle d'un adversaire lui appartient.
 assert.equal(gearApi.defenseOf({hero:true,def:9},[]),0);
-assert.equal(gearApi.defenseOf({hero:true,def:9,armorId:'a',shieldId:'b'},[{id:'a',def:2},{id:'b',def:1}]),3);
+assert.equal(gearApi.defenseOf({hero:true,def:9,armures:['a'],shieldId:'b'},[{id:'a',def:2},{id:'b',def:1}]),3);
 assert.equal(gearApi.defenseOf({hero:false,def:5},[]),5);
 /* Un adversaire qui porte une armure tire sa DEF d'elle seule : son chiffre propre —
    écailles, cuir épais — ne s'y ajoute plus. Sans armure, ce chiffre fait foi. */
-assert.equal(gearApi.defenseOf({hero:false,def:5,armorId:'a'},[{id:'a',def:2}]),2);
-assert.equal(gearApi.defenseOf({hero:false,def:5,armorId:'a',shieldId:'b'},[{id:'a',def:2},{id:'b',def:3}]),5);
-assert.equal(gearApi.defenseOf({hero:false,def:5,armorId:'a'},[{id:'a',def:0}]),0);   // Une armure à zéro dit zéro.
+assert.equal(gearApi.defenseOf({hero:false,def:5,armures:['a']},[{id:'a',def:2}]),2);
+assert.equal(gearApi.defenseOf({hero:false,def:5,armures:['a'],shieldId:'b'},[{id:'a',def:2},{id:'b',def:3}]),5);
+assert.equal(gearApi.defenseOf({hero:false,def:5,armures:['a']},[{id:'a',def:0}]),0);   // Une armure à zéro dit zéro.
 // L'équipement est l'affaire des aventuriers : une arme posée sur une créature ne
 // rend pas muets les dés de sa carte d'attaque.
 // Porter une arme ajoute une attaque, chez l'aventurier comme chez l'adversaire :
 // elle vient en tête, si bien qu'une fiche d'avant ce choix retrouve son arme.
 const ARSENAL=[{id:'e',name:'Épée',category:'weapon',hands:1,dice:{white:2,red:1}},{id:'d',name:'Dague',category:'weapon',hands:1,dice:{bone:1}},{id:'ar',name:'Armure',category:'armor',def:3}];
-const bete={hero:false,def:4,weapons:['e','e'],armorId:'ar',attacks:[{name:'Griffes',dice:{white:1}},{name:'Souffle',dice:{red:2}}]};
+const bete={hero:false,def:4,weapons:['e','e'],armures:['ar'],attacks:[{name:'Griffes',dice:{white:1}},{name:'Souffle',dice:{red:2}}]};
 assert.deepEqual(gearApi.attackChoices(bete,ARSENAL).map(x=>x.name),['Épée ×2','Griffes','Souffle']);
 // Les armes d'une même portée font une seule attaque, dés cumulés ; contact et distance
 // ne se cumulent pas — la rapière et l'arc font deux boutons, le contact d'abord.
@@ -91,8 +91,8 @@ assert.deepEqual(gearApi.attackChoices({},ARSENAL),[]);                   // Ni 
  assert.equal(cleanMonster({name:'Gobelin',dice:{white:2},attacks:[{name:'Griffes'}]}).attacks.length,1);}
 assert.equal(gearApi.chosenAttack({},ARSENAL).dice,null);
 // La DEF : celle de l'équipement pour un aventurier, la sienne plus l'équipement pour un adversaire.
-assert.equal(gearApi.defenseOf({hero:true,def:9,armorId:'ar'},ARSENAL),3);
-assert.equal(gearApi.defenseOf({hero:false,def:4,armorId:'ar'},ARSENAL),3);
+assert.equal(gearApi.defenseOf({hero:true,def:9,armures:['ar']},ARSENAL),3);
+assert.equal(gearApi.defenseOf({hero:false,def:4,armures:['ar']},ARSENAL),3);
 assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
 /* Les points de vie d'un aventurier ne se saisissent pas : son bonus vient de sa classe
    et de son espèce, son maximum en découle — Vie × Endurance + ce bonus. */
@@ -288,7 +288,7 @@ assert.deepEqual(gearApi.equippedPool({weapons:['e','e']},[epee]).slice(0,4),[4,
 assert.deepEqual(gearApi.equippedPool({weapons:['e','e']},[{id:'e',dice:{white:9}}]).slice(0,1),[12]); // Plafond à douze.
 assert.equal(nu.dmg,8);assert.equal(nu.skills[0],4);assert.equal(nu.pool[0],2);assert.equal(nu.name,'<Éla>');
 // Équipé : les dés viennent de l'arme et la DEF de l'armure, pas des champs saisis.
-const equipe=lire([{id:'w',category:'weapon',dice:{white:3}},{id:'a',category:'armor',slot:'body',def:5}],{hero:true,inventaire:['w','a'],weapons:['w'],armorId:'a'});
+const equipe=lire([{id:'w',category:'weapon',dice:{white:3}},{id:'a',category:'armor',slot:'torse',def:5}],{hero:true,inventaire:['w','a'],weapons:['w'],armorId:'a'});
 assert.deepEqual(equipe.inventaire,['w','a']);   // L'inventaire suit, l'équipement en fait partie.
 const porteSansAvoir=lire([{id:'w',category:'weapon',dice:{white:3}}],{hero:true,inventaire:[],weapons:['w']});assert.deepEqual(porteSansAvoir.inventaire,['w']);   // Porté sans être possédé : entre dans l'inventaire.
 assert.equal(equipe.pool[0],3);assert.equal(equipe.def,5);
@@ -318,8 +318,8 @@ assert.equal(equippedPool({weapons:[]},OBJETS),null);                        // 
 assert.equal(equippedRanged({weapons:['ep']},OBJETS),false);
 assert.equal(equippedRanged({weapons:['ep','arc']},OBJETS),true);            // Une arme à distance suffit.
 assert.equal(equippedRanged({weapons:[]},OBJETS),null);
-assert.equal(equippedDef({armorId:'ma',shieldId:'bo'},OBJETS),4);
-assert.equal(equippedDef({armorId:'ma'},OBJETS),3);
+assert.equal(equippedDef({armures:['ma'],shieldId:'bo'},OBJETS),4);
+assert.equal(equippedDef({armures:['ma']},OBJETS),3);
 assert.equal(equippedDef({},OBJETS),null);
 // Collision : carré de 10 à 30, socle de rayon 5.
 const CARRE=[[[10,10],[30,10],[30,30],[10,30]]];
@@ -743,7 +743,7 @@ assert.ok(Math.abs(uncontain([{x:0,y:0}],cadre,image)[0].x+marge/ech)<1e-6);
 const avecTalents=(brouillon,rayon)=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],
  skillNames:Array(8).fill(''),templateIndex:null,draft:{hero:true,talents:brouillon},attackDraft:[{dice:{white:2}}],readAttacks(){},
  $:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),
- poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,defenseOf:gearApi.defenseOf,chosenAttack:gearApi.chosenAttack,statesOf:gearApi.statesOf,setState:gearApi.setState,
+ poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,armuresDe:gearApi.armuresDe,emplacementDe:gearApi.emplacementDe,placesLibres:gearApi.placesLibres,placesEmplacement:gearApi.placesEmplacement,EMPLACEMENTS:gearApi.EMPLACEMENTS,portesA:gearApi.portesA,defenseOf:gearApi.defenseOf,chosenAttack:gearApi.chosenAttack,statesOf:gearApi.statesOf,setState:gearApi.setState,
  catalog:{items:[],talents:rayon}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result.talents.join(',')};
 const rayon=[{id:'t1'},{id:'t2'}];
 assert.equal(avecTalents(['t1','t2'],rayon),'t1,t2');       // Les deux existent : les deux restent.
@@ -1212,9 +1212,13 @@ assert.ok(page.includes('function invocation(a,p,talent)')&&page.includes('funct
 {const morceau=(debut,fin)=>{const i=src.indexOf(debut);return src.slice(i,src.indexOf(fin,i))};
  const code=morceau('function completerInventaire(a)','function syncEquipped(a)')+'\n'+morceau('function gearCount(a,id)','/* Ajouter ou retirer un exemplaire')+'\n'+morceau('function ajouterInventaire(a,o)','const pickerDialog=dialog(');
  t2=null;
- const t={catalog:{items:[{id:'e',name:'Épée',category:'weapon',hands:1},{id:'h',name:'Hache',category:'weapon',hands:1},{id:'arc',name:'Arc',category:'weapon',hands:2,ranged:true},{id:'b',name:'Bouclier',category:'armor',slot:'shield',def:1},{id:'ar',name:'Cotte',category:'armor',slot:'body',def:2},{id:'p',name:'Potion',category:'object'}]},weaponHands:C.weaponHands,syncEquipped(){}};
- vm.createContext(t);vm.runInContext(code+';this.mainsPrises=mainsPrises;this.toggleEquip=toggleEquip;this.libereMains=libereMains;this.completerInventaire=completerInventaire;this.retirerInventaire=retirerInventaire;this.ajouterInventaire=ajouterInventaire',t);
- const a={inventaire:['e','h','arc','b','ar','p','e'],weapons:[],armorId:'',shieldId:''},o=id=>t.catalog.items.find(x=>x.id===id);
+ const t={catalog:{items:[{id:'e',name:'Épée',category:'weapon',hands:1},{id:'h',name:'Hache',category:'weapon',hands:1},{id:'arc',name:'Arc',category:'weapon',hands:2,ranged:true},{id:'b',name:'Bouclier',category:'armor',slot:'shield',def:1},{id:'ar',name:'Cotte',category:'armor',slot:'torse',def:2},{id:'p',name:'Potion',category:'object'},
+  {id:'cape',name:'Cape',category:'armor',slot:'dos',def:1},{id:'an',name:'Anneau',category:'armor',slot:'anneau',def:0},
+  {id:'an2',name:'Anneau de fer',category:'armor',slot:'anneau',def:0}]},
+  weaponHands:C.weaponHands,syncEquipped(){},objetDe(id){return t.catalog.items.find(x=>x&&x.id===id)||null},
+  armuresDe:C.armuresDe,emplacementDe:C.emplacementDe,placesLibres:C.placesLibres};
+ vm.createContext(t);vm.runInContext(code+';this.mainsPrises=mainsPrises;this.toggleEquip=toggleEquip;this.libereMains=libereMains;this.libereEmplacement=libereEmplacement;this.completerInventaire=completerInventaire;this.retirerInventaire=retirerInventaire;this.ajouterInventaire=ajouterInventaire',t);
+ const a={inventaire:['e','h','arc','b','ar','p','e','cape','an','an','an','an2'],weapons:[],armures:[],shieldId:''},o=id=>t.catalog.items.find(x=>x.id===id);
  assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify(['e']));assert.equal(t.mainsPrises(a),1);
  assert.equal(t.toggleEquip(a,o('b')),null);assert.equal(a.shieldId,'b');assert.equal(t.mainsPrises(a),2);
  // Mains pleines (épée + bouclier) : la hache à une main chasse la plus ancienne, le bouclier reste.
@@ -1226,15 +1230,31 @@ assert.ok(page.includes('function invocation(a,p,talent)')&&page.includes('funct
  a.weapons=[];a.shieldId='';
  assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify(['e','e']));   // Deux exemplaires possédés : les deux en main.
  assert.equal(t.toggleEquip(a,o('e')),null);assert.equal(JSON.stringify(a.weapons),JSON.stringify([]));   // Troisième clic : tout reposé.
- assert.equal(t.toggleEquip(a,o('ar')),null);assert.equal(a.armorId,'ar');assert.ok(/ne s’équipe pas/.test(t.toggleEquip(a,o('p'))));
+assert.equal(t.toggleEquip(a,o('ar')),null);assert.equal(JSON.stringify(a.armures),JSON.stringify(['ar']));assert.ok(/ne s’équipe pas/.test(t.toggleEquip(a,o('p'))));
+ /* Les emplacements se cumulent : une cape au dos tient avec l'armure au torse, et trois
+    anneaux tiennent ensemble — le quatrième chasse le plus ancien. */
+ assert.equal(t.toggleEquip(a,o('cape')),null);assert.equal(JSON.stringify(a.armures),JSON.stringify(['ar','cape']),'le dos et le torse se cumulent');
+ assert.equal(t.toggleEquip(a,o('an')),null);assert.equal(t.toggleEquip(a,o('an')),null);assert.equal(t.toggleEquip(a,o('an')),null);
+ assert.equal(JSON.stringify(a.armures),JSON.stringify(['ar','cape','an','an','an']),'trois anneaux au doigt');
+ assert.equal(t.toggleEquip(a,o('an2')),null);
+ assert.equal(JSON.stringify(a.armures),JSON.stringify(['ar','cape','an','an','an2']),'le quatrième anneau chasse le plus ancien');
+ assert.equal(t.toggleEquip(a,o('cape')),null);assert.ok(!a.armures.includes('cape'),'un second clic repose la pièce');
+ // Une seconde armure de torse remplace la première : une seule place.
+ t.catalog.items.push({id:'plaque',name:'Plaque',category:'armor',slot:'torse',def:4});a.inventaire.push('plaque');
+ assert.equal(t.toggleEquip(a,o('plaque')),null);
+ assert.ok(a.armures.includes('plaque')&&!a.armures.includes('ar'),'un seul torse à la fois');
+ // Retirer les exemplaires d'un anneau le dépose au fur et à mesure.
+ t.retirerInventaire(a,o('an'));assert.equal(a.armures.filter(x=>x==='an').length,2,'un exemplaire de moins, un anneau de moins');
+ t.retirerInventaire(a,o('an'));t.retirerInventaire(a,o('an'));
+ assert.ok(!a.armures.includes('an'),'plus d’exemplaire, plus au doigt');
  assert.ok(/pas dans l’inventaire/.test(t.toggleEquip({inventaire:[],weapons:[]},o('e'))));
  a.weapons=[];t.toggleEquip(a,o('e'));t.retirerInventaire(a,o('e'));t.retirerInventaire(a,o('e'));assert.equal(JSON.stringify(a.weapons),JSON.stringify([]));assert.ok(!a.inventaire.includes('e'));   // Retirer le dernier exemplaire le repose.
- const b={weapons:['h'],armorId:'ar',shieldId:'',inventaire:[]};t.completerInventaire(b);assert.equal(JSON.stringify(b.inventaire),JSON.stringify(['h','ar']));}
+ const b={weapons:['h'],armures:['ar'],shieldId:'',inventaire:[]};t.completerInventaire(b);assert.equal(JSON.stringify(b.inventaire),JSON.stringify(['h','ar']));}
 assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])]}}")&&src.includes("inventaire:[...(m.inventaire||[])]});completerInventaire(a);")
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
- &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armorId','shieldId'];")&&page.includes("const nbGear=(a.weapons||[]).length+(a.armorId?1:0)+(a.shieldId?1:0)+(a.inventaire||[])")
+ &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armures','shieldId'];")&&page.includes("const nbGear=(a.weapons||[]).length+armuresDe(a).length+(a.shieldId?1:0)+(a.inventaire||[])")
  &&feuille.includes('.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}')&&feuille.includes('.cat-pill.gear-carre.dispo{opacity:.55}')&&feuille.includes('.gear-rangee-titre{flex-basis:100%;')
  &&feuille.includes('.best-attaque{background:#cfdcea;border:1px solid #00000026;border-left:4px solid #4f7fb5;border-radius:9px;'),'inventaire, équipement et attaques spéciales');
 /* Fiche d'un modèle : plus de cartouche « Adversaire », le type porte sa couleur comme tout le bloc,
@@ -1251,7 +1271,7 @@ assert.ok(src.includes('function gearPills(a,tout=true)')&&page.includes('gearPi
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,'Objets');")&&!src.includes("chev.title='Détail'")&&!src.includes("p.querySelector('.chev').onclick=deplie;")
  &&src.includes('function utiliserObjet(a,o)')&&src.includes("b.className='gear-utiliser'")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&feuille.includes('.cat-pill.gear-carre .marque-porte{display:none;position:absolute;top:-6px;left:-6px;')&&feuille.includes('.gear-detail.k-object.consommable{background:#d9e7cd;')
- &&page.includes("const nbGear=(a.weapons||[]).length+(a.armorId?1:0)+(a.shieldId?1:0)+(a.inventaire||[])")
+ &&page.includes("const nbGear=(a.weapons||[]).length+armuresDe(a).length+(a.shieldId?1:0)+(a.inventaire||[])")
  &&!src.includes('inventairesOuverts')&&!src.includes('gear-sac')&&!feuille.includes('gear-sac'),'fiche en jeu : porté et objets, coche ronde, objet utilisable');
 /* Les mains se remplacent au lieu de refuser ; en jeu, pas de sac à déplier, le clic ouvre la
    description, et un objet se vise avant de s'employer, à la table de jeu seulement. */
@@ -1694,4 +1714,44 @@ assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function 
  &&page.includes('const suite=ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
  &&page.includes("a.immunites={etats:[],des:[]};a.usages={};")&&page.includes("setState(a,'Coma',false);a.usages={};")
  &&feuille.includes('.gear-detail .gear-effet{font-weight:600}'),'les effets d’équipement sont câblés');
-console.log('1093 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les emplacements du corps : deux mains, un torse, un dos, une tête, trois anneaux, une
+   amulette, des bottes. Une cape et une armure se portent ensemble ; deux armures, jamais. */
+assert.equal(C.MAINS_MAX,2);
+assert.equal(JSON.stringify(C.EMPLACEMENTS),JSON.stringify([['torse','Torse',1],['dos','Dos',1],['tete','Tête',1],
+ ['anneau','Anneaux',3],['amulette','Amulette',1],['bottes','Bottes',1]]));
+assert.equal(C.placesEmplacement('anneau'),3);assert.equal(C.placesEmplacement('torse'),1);
+assert.equal(C.placesEmplacement('nulle part'),0);
+assert.equal(C.NOM_EMPLACEMENT('shield'),'Bouclier');assert.equal(C.NOM_EMPLACEMENT('bottes'),'Bottes');
+// Où va une pièce : à l'emplacement qu'elle nomme, au torse à défaut, aux mains pour un bouclier.
+assert.equal(C.emplacementDe({category:'armor',slot:'dos'}),'dos');
+assert.equal(C.emplacementDe({category:'armor',slot:'body'}),'torse','une armure d’avant les emplacements');
+assert.equal(C.emplacementDe({category:'armor',slot:'n’importe quoi'}),'torse');
+assert.equal(C.emplacementDe({category:'armor',slot:'shield'}),'shield');
+assert.equal(C.emplacementDe({category:'weapon'}),'','une arme n’a pas d’emplacement de corps');
+assert.equal(C.emplacementDe(null),'');
+{const objets=[{id:'ar',category:'armor',slot:'torse',def:2},{id:'cape',category:'armor',slot:'dos',def:1},
+  {id:'an',category:'armor',slot:'anneau',def:0},{id:'b',category:'armor',slot:'shield',def:1}];
+ const h={armures:['ar','cape','an','an'],shieldId:'b'};
+ // La DEF est la somme de tout ce qui se porte, bouclier compris.
+ assert.equal(C.equippedDef(h,objets),4);
+ assert.equal(JSON.stringify(C.portesA(h,'anneau',objets)),JSON.stringify(['an','an']));
+ assert.equal(C.placesLibres(h,'anneau',objets),1);assert.equal(C.placesLibres(h,'torse',objets),0);
+ assert.equal(C.placesLibres(h,'bottes',objets),1,'rien aux pieds : la place est libre');
+ // Une fiche d'avant les emplacements se lit comme une liste d'une seule armure.
+ assert.equal(JSON.stringify(C.armuresDe({armorId:'ar'})),JSON.stringify(['ar']));
+ assert.equal(JSON.stringify(C.armuresDe({})),'[]');
+ assert.equal(C.equippedDef({armorId:'ar'},objets),2,'l’ancienne fiche garde sa DEF');}
+/* À la table : ce qu'on porte va à son emplacement, la fiche en tient la liste, et les objets
+   qui agissent offrent leur bouton dans la rangée des Actions, à l'encre de leur famille. */
+assert.ok(src.includes("a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';")
+ &&src.includes("if(o.category==='armor')o.slot=emplacementDe(o);")&&src.includes('function libereEmplacement(a,slot,besoin)')
+ &&src.includes("else if(o.category==='armor'){const slot=emplacementDe(o);")
+ &&src.includes("if(portes>0&&portes<dans&&placesLibres(a,slot,catalog.items)>0)a.armures=[...a.armures,o.id];")
+ &&src.includes("else{libereEmplacement(a,slot,1);a.armures=[...a.armures,o.id]}}")
+ &&src.includes("+sel('Emplacement','slot',emplacementDe(a),[...EMPLACEMENTS.map(([k,n,p])=>[k,n+(p>1?' ('+p+')':'')]),['shield','Bouclier — une main']]):'')")
+ &&src.includes('const TEINTE_OBJET={melee:')&&src.includes('function boutonsObjets(a)')
+ &&src.includes("const o=objetDe(id),code=objetCode(o);if(!o||!code)return;")
+ &&src.includes("el.className='btn-action choix-attaque btn-objet teinte-propre';")&&src.includes("el.style.setProperty('--fond',b.teinte);")
+ &&src.includes("boite.hidden=!liste.length&&!talents.length&&!objets.length;")
+ &&!src.includes('a.armorId=')&&!src.includes('draft.armorId'),'les emplacements du corps et les boutons d’objets');
+console.log('1122 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
