@@ -741,6 +741,8 @@ function effetParNom(nom){const k=cleTalent(nom);if(!k)return '';
 /* Les états qu'un effet peut poser. Le coma n'en est pas : c'est ce qui arrive à zéro
    point de vie. La liste complète, avec « Aucun » et « Coma », vit dans la table de jeu —
    elle y sert le menu du clic droit, qui n'a pas le même office. */
+// Les huit compétences, dans l'ordre des fiches : la table les nomme depuis le moteur.
+const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ruse','Savoir','Technique'];
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Gel',
  'Invisible','Onde','Poison','Saignée','Vie','Affaibli'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
@@ -865,6 +867,27 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   phrase(p){const e=p&&p.etat,c=p&&p.condition;
    return 'Le porteur effectue <b>une attaque</b>. '+(c==='survit'?'Si <b>la cible n’est pas tuée</b>':'S’il <b>tue la cible</b>')
     +', il gagne <b>'+(e||'un état à régler')+'</b>.'}},
+ /* Meneur : un passif. Le porteur augmente les dégâts, la DEF ou — temporairement — les
+    PV max d'un, deux ou tous ses alliés au contact ou dans sa ligne de vue : les plus
+    proches d'abord. C'est la table qui sait qui est où ; le moteur ne fait que choisir. */
+ meneur:{cle:'meneur',nom:'Meneur',type:'pass',
+  aide:'Passif : le porteur augmente les dégâts, la DEF ou les PV max — temporairement — d’un, deux ou tous ses alliés au contact ou dans sa ligne de vue.',
+  params:[{cle:'quoi',nom:'Ce qu’il augmente',type:'choix',defaut:'dmg',options:[['dmg','les dégâts'],['def','la DEF'],['pv','les PV max, temporairement']]},
+   {cle:'valeur',nom:'De combien',type:'nombre',defaut:1,min:1,max:20},
+   {cle:'combien',nom:'Pour',type:'choix',defaut:'un',options:[['un','un allié'],['deux','deux alliés'],['tous','tous les alliés']]},
+   {cle:'portee',nom:'Qui se trouve',type:'choix',defaut:'contact',options:[['contact','au contact'],['vue','dans la ligne de vue']]}],
+  phrase(p){const q={dmg:'les dégâts',def:'la DEF',pv:'les PV max temporaires'}[p&&p.quoi]||'les dégâts';
+   const c={un:'un allié',deux:'deux alliés',tous:'tous les alliés'}[p&&p.combien]||'un allié';
+   return 'Vous augmentez <b>'+q+'</b> de <b>'+Math.max(1,(p&&p.valeur)|0)+'</b> pour <b>'+c+'</b> <b>'+((p&&p.portee)==='vue'?'dans votre ligne de vue':'au contact')+'</b>.'}},
+ /* Bonus de caractéristique : un nœud d'arbre qui n'est pas un talent. Appris, il ajoute
+    à la fiche : des PV max, de l'Endurance, de la Vie, des dégâts, ou un point à une
+    compétence. La fiche garde ses valeurs propres ; le bonus s'ajoute à la lecture. */
+ bonus:{cle:'bonus',nom:'Bonus de caractéristique',type:'pass',
+  aide:'Un nœud d’arbre qui n’est pas un talent : +x PV max, Endurance, Vie, Dégâts, ou un point à une compétence.',
+  params:[{cle:'carac',nom:'Caractéristique',type:'choix',defaut:'pv',options:[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],['comp','Compétence']]},
+   {cle:'valeur',nom:'Bonus',type:'nombre',defaut:1,min:1,max:20},
+   {cle:'comp',nom:'Compétence',type:'choix',defaut:'0',options:COMPETENCES.map((n,i)=>[String(i),n])}],
+  phrase(p){return '<b>'+libelleBonus(p)+'</b>.'}},
  /* Provocation : une action. Un adversaire en ligne de vue doit faire un mouvement vers le
     porteur — l'adversaire visé s'il est en vue, sinon le premier en vue — jusqu'au contact,
     les murs l'arrêtant ; puis le porteur effectue une attaque contre lui. */
@@ -1077,9 +1100,11 @@ const ESPECES_PV={};
 function pvEspece(nom){const cle=cleClasse(nom);return (cle&&ESPECES_PV[cle])||0}
 function bonusPV(classes,role,espece){const c=classeDe(classes,role);
  return ((c&&Number(c.pv))||0)+pvEspece(espece)}
-function pvMaximum(classes,a){const vie=Math.max(1,Math.trunc(Number(a&&a.vie))||1);
- const endu=Math.max(1,Math.trunc(Number(a&&a.endu))||1);
- return Math.max(1,vie*endu+bonusPV(classes,a&&a.role,a&&a.race))}
+// Avec le catalogue, les nœuds de bonus appris comptent : Vie et Endurance majorées, PV max en plus.
+function pvMaximum(classes,a,talents){const b=talents?bonusDe(a,talents):null;
+ const vie=Math.max(1,Math.trunc(Number(a&&a.vie))||1)+(b?b.vie:0);
+ const endu=Math.max(1,Math.trunc(Number(a&&a.endu))||1)+(b?b.endu:0);
+ return Math.max(1,vie*endu+bonusPV(classes,a&&a.role,a&&a.race)+(b?b.pv:0))}
 /* Les classes d'aventurier : un nom, une encre, et les points de vie qu'elles apportent.
    On les retrouve par leur nom réduit, et sur la seule tête du rôle : « Mystique »,
    « mystique » ou « Mystique · Voie du gel » désignent la même classe. Un rôle écrit
@@ -1170,6 +1195,61 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
    bâtiment se découpe à l'étape où il en est. Rien de tout cela ne voyage encore vers
    la table ni vers les joueurs : le domaine reste sur l'appareil du MJ.
    ==================================================================================== */
+/* ---------- Les compétences et les bonus de caractéristique ---------- */
+const NOM_CARAC={pv:'PV max',endu:'Endurance',vie:'Vie',dmg:'Dégâts'},NOM_CARAC_COURT={pv:'PV',endu:'Endu',vie:'Vie',dmg:'Dég.'};
+// « +2 PV max », « +1 Force » — ou, en court pour un nœud d'arbre, « +2 PV ».
+function libelleBonus(p,court){const n=Math.max(1,(p&&p.valeur)|0),c=p&&p.carac;
+ if(c==='comp')return '+'+n+' '+(COMPETENCES[Number(p&&p.comp)||0]||COMPETENCES[0]);
+ return '+'+n+' '+((court?NOM_CARAC_COURT:NOM_CARAC)[c]||(court?'PV':'PV max'))}
+// Ce que les nœuds de bonus appris ajoutent, en tout : par caractéristique, et par compétence.
+function bonusTalents(portes){const out={pv:0,endu:0,vie:0,dmg:0,skills:COMPETENCES.map(()=>0)};
+ (portes||[]).forEach(t=>{if(!t||!t.code||t.code.cle!=='bonus')return;const p=t.params||{},n=Math.max(1,p.valeur|0);
+  if(p.carac==='comp'){const k=Number(p.comp)||0;if(out.skills[k]!==undefined)out.skills[k]+=n}
+  else if(p.carac==='pv'||p.carac==='endu'||p.carac==='vie'||p.carac==='dmg')out[p.carac]+=n});
+ return out}
+function bonusDe(a,talents){return bonusTalents(talentsTenus(a&&a.talents,talents)
+ .map(t=>{const code=talentCode(t);return code?{code,params:paramsTalent(t)}:null}).filter(Boolean))}
+// La Vie et l'Endurance telles qu'elles jouent : la fiche, plus les bonus appris.
+function vieDe(a,talents){return (Math.trunc(Number(a&&a.vie))||0)+(talents?bonusDe(a,talents).vie:0)}
+function enduDe(a,talents){return (Math.trunc(Number(a&&a.endu))||0)+(talents?bonusDe(a,talents).endu:0)}
+/* Les élus d'un Meneur : parmi les alliés à sa portée, les plus proches — un, deux, ou
+   tous. « candidats » : des {a,dist}, la table les a déjà triés par portée. */
+function elusMeneur(p,candidats){const c=p&&p.combien,n=c==='tous'?Infinity:c==='deux'?2:1;
+ const tries=[...(candidats||[])].sort((u,v)=>u.dist-v.dist);
+ return (n===Infinity?tries:tries.slice(0,n)).map(x=>x.a)}
+/* ---------- Les zones d'une carte ----------
+   Toute étendue close par la matière et par les portes — ouvertes ou fermées — est une
+   zone. Le calcul se fait sur une grille fine : chaque case est bouchée si elle tombe dans
+   la matière ou dans une porte, et ce qui reste se partage en régions d'un seul tenant.
+   Les miettes — quelques cases coincées dans l'épaisseur d'un mur — ne comptent pas. */
+// Remplir, à la règle pair-impair sur l'ensemble des anneaux d'un polygone : les trous restent vides.
+function rempliAnneaux(grid,cols,rows,anneaux,valeur){
+ for(let j=0;j<rows;j++){const y=(j+.5)/rows*100,xs=[];
+  for(const r of anneaux){if(!r||r.length<3)continue;
+   for(let i=0,k=r.length-1;i<r.length;k=i++){const a=r[k],b=r[i];
+    if((a[1]>y)!==(b[1]>y))xs.push(a[0]+(y-a[1])*(b[0]-a[0])/(b[1]-a[1]))}}
+  xs.sort((u,v)=>u-v);
+  for(let t=0;t+1<xs.length;t+=2){const i0=Math.max(0,Math.ceil(xs[t]/100*cols-.5)),i1=Math.min(cols-1,Math.floor(xs[t+1]/100*cols-.5));
+   for(let i=i0;i<=i1;i++)grid[j*cols+i]=valeur}}}
+function calculeZones(polys,portes,cols,rows,miette=10){const n=cols*rows,bouche=new Uint8Array(n);
+ (polys||[]).forEach(p=>{if(p&&p.anneaux)rempliAnneaux(bouche,cols,rows,p.anneaux,1)});
+ (portes||[]).forEach(q=>{if(q&&q.length>=3)rempliAnneaux(bouche,cols,rows,[q],1)});
+ const zone=new Int16Array(n),tailles=[0],pile=new Int32Array(n);let compte=0;
+ for(let s=0;s<n;s++){if(bouche[s]||zone[s])continue;
+  compte++;let haut=0,taille=0;pile[haut++]=s;zone[s]=compte;
+  while(haut){const k=pile[--haut];taille++;const i=k%cols,j=(k-i)/cols;
+   const voisins=[i>0?k-1:-1,i<cols-1?k+1:-1,j>0?k-cols:-1,j<rows-1?k+cols:-1];
+   for(const v of voisins)if(v>=0&&!bouche[v]&&!zone[v]){zone[v]=compte;pile[haut++]=v}}
+  tailles.push(taille)}
+ // Les miettes s'effacent, et les numéros se resserrent, dans l'ordre de lecture.
+ const renum=new Int16Array(compte+1),finales=[0];let m=0;
+ for(let z=1;z<=compte;z++){renum[z]=tailles[z]>=miette?++m:0;if(renum[z])finales.push(tailles[z])}
+ for(let s=0;s<n;s++)zone[s]=renum[zone[s]];
+ return {cols,rows,zone,compte:m,tailles:finales}}
+// La zone sous un point de la carte, en pour cent : 0 dans un mur, une porte, ou une miette.
+function zoneAu(z,x,y){if(!z)return 0;
+ const i=Math.max(0,Math.min(z.cols-1,Math.floor(x/100*z.cols))),j=Math.max(0,Math.min(z.rows-1,Math.floor(y/100*z.rows)));
+ return z.zone[j*z.cols+i]}
 const ETAPES_DOMAINE=[['friche','Friche'],['fondation','Fondations'],['construction','Construction'],['construit','Construit']];
 const NOM_ETAPE=i=>(ETAPES_DOMAINE[i]||ETAPES_DOMAINE[0])[1];
 const BATIMENTS_DEFAUT=['Étables','Auberge','Magasin','Tour de Mystique','Temple','Bibliothèque','Forge','Tannerie','Taverne','Baraquements','Entrepôts','Laboratoire','Cartographe'];
@@ -1245,6 +1325,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  return z.map(([x,y])=>[x+dx,y+dy])}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
+ COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);

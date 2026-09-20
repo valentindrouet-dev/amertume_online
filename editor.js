@@ -193,7 +193,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   /* Deux lignes, centrées : le nom, puis les dés et le bonus de dégâts — on choisit son
      attaque en voyant tout ce qu'elle lance. Affaibli ou une attaque « dés seuls » n'ont
      pas de bonus, et n'en écrivent pas. */
-  const bonus=hasState(a,'Affaibli')||at.useOwnDamage===false?0:(Number(a.dmg)||0);
+  const bonus=hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
   b.append(nom,desEtBonus(at.dice,bonus));
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
   inerte(b,!!refus);
@@ -413,9 +413,18 @@ function rendrePlusTard(){clearTimeout(rendreTimer);
    classe et d'espèce. Toucher Vie ou Endurance les recalcule donc aussitôt, et les PV du
    moment restent sous le nouveau plafond. */
 function recalculerPV(a){if(!a||!a.hero)return false;
- const max=pvMaximum(catalog.classes,a);a.pvBonus=bonusPV(catalog.classes,a.role,a.race);
- if(max===a.max)return false;
- writeStat(a,'max',max);return true}
+ /* Les nœuds de bonus appris comptent, et ce qu'un Meneur allié confère à portée aussi —
+    temporairement : le plafond redescend quand on s'éloigne, et les PV du moment suivent ;
+    en arrivant sous l'aura, ils montent d'autant, une fois. Le MJ calcule l'aura, la
+    table la transporte : un joueur relit celle qu'on lui a donnée. */
+ const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);
+ const max=pvMaximum(catalog.classes,a,catalog.talents)+aura;a.pvBonus=bonusPV(catalog.classes,a.role,a.race);
+ const delta=aura-(Number(a.auraPv)||0);a.auraPv=aura;
+ if(max===a.max&&!delta)return false;
+ writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}
+// À chaque rendu du MJ, les PV max de la troupe se relisent : un nœud appris, un Meneur qui s'approche.
+function synchronisePV(){if(view!=='mj')return false;let change=false;
+ actors.forEach(a=>{if(a&&a.hero&&recalculerPV(a))change=true});return change}
 function poserCarac(a,cle,brut,carte){const avant=a[cle];writeStat(a,cle,brut);
  if(a[cle]===avant)return;
  if(cle==='vie'||cle==='endu')recalculerPV(a);
@@ -435,15 +444,15 @@ function majEcu(ecu,valeur){if(!ecu)return;
    pas, et il n'est donc pas écrasé sous les doigts. */
 function majFiche(carte,a){if(!carte)return;
  const ecrire=(sel,texte)=>{const n=carte.querySelector(sel);if(n)n.textContent=texte};
- ecrire('.stat-tile.t-vie strong',a.vie);ecrire('.stat-tile.t-vie small','MAX '+(a.vieMax??a.vie));
- ecrire('.stat-tile.t-endu strong',a.endu);
+ ecrire('.stat-tile.t-vie strong',vieAffichee(a));ecrire('.stat-tile.t-vie small','MAX '+(a.vieMax??a.vie));
+ ecrire('.stat-tile.t-endu strong',enduAffichee(a));
  ecrire('.stat-tile.t-pv strong',a.hp);ecrire('.stat-tile.t-pv small','MAX '+a.max);
- ecrire('.stat-tile.t-dmg strong','+'+a.dmg);ecrire('.stat-tile.t-xp strong',a.xp||0);
+ ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));ecrire('.stat-tile.t-xp strong',a.xp||0);
  ecrire('.chip-niveau','Niveau '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
  majEcu(carte.querySelector('.stat-tile.t-def .ecu'),defOf(a));
  carte.querySelectorAll('.skill-chip').forEach((puce,k)=>{
-  const b=puce.querySelector('b');if(b)b.textContent='+'+a.skills[k];
-  puce.classList.toggle('zero',!a.skills[k])})}
+  const b=puce.querySelector('b');if(b)b.textContent='+'+competenceDe(a,k);
+  puce.classList.toggle('zero',!competenceDe(a,k))})}
 /* Rendre modifiables les tuiles d'une rangée : la grosse valeur, et le plafond
    écrit en petit dessous quand il y en a un. La DEF fait exception dès qu'une
    armure la commande — elle se change alors dans l'équipement, pas ici. */
@@ -507,8 +516,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // Les caractéristiques reprennent les tuiles de la fiche en jeu : libellé au-dessus,
  // valeur en gros, une teinte par caractéristique, l'écu pour la DEF.
  const chiffres=document.createElement('div');chiffres.className='stat-row';
- const tuiles=[['vie','Vie',a.vie,false,a.vieMax??a.vie],['endu','Endu',a.endu],
-  ['pv','PV',a.hp,false,a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+'+a.dmg]]
+ const tuiles=[['vie','Vie',vieAffichee(a),false,a.vieMax??a.vie],['endu','Endu',enduAffichee(a)],
+  ['pv','PV',a.hp,false,a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+'+degatsDe(a)]]
   .map(t=>statTile(...t));
  // Le MJ corrige un chiffre là où il le lit ; la fiche complète reste pour le reste.
  tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],['hp','max'],['def'],['dmg']],c);
@@ -529,11 +538,12 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
    document.dispatchEvent(new Event('amertume-content-changed'))})});
  const comps=document.createElement('div');comps.className='skills';
  skillNames.forEach((n,k)=>{
-  if(!a.skills[k])return;
-  const puce=document.createElement('span');puce.className='skill-chip'+(a.skills[k]?'':' zero');
+  // Un point appris dans l'arbre compte : la puce paraît, la valeur le porte, et le clic corrige la fiche.
+  if(!competenceDe(a,k))return;
+  const puce=document.createElement('span');puce.className='skill-chip'+(competenceDe(a,k)?'':' zero');
   puce.style.setProperty('--tint',SKILL_TINTS[k]);
   const l=document.createElement('span');l.textContent=n;
-  const v=document.createElement('b');v.textContent='+'+a.skills[k];
+  const v=document.createElement('b');v.textContent='+'+competenceDe(a,k);
   champVif(v,()=>a.skills[k],brut=>{const avant=a.skills[k];
    a.skills[k]=readStat('skill',brut,avant);
    if(a.skills[k]!==avant){majFiche(c,a);rendrePlusTard();scheduleSave();
@@ -925,7 +935,8 @@ function talentBloc(t,vif,compact){const bloc=document.createElement('span');blo
    le premier à gauche, le deuxième à droite. Le dépliant d'un talent s'étale sous les deux
    vignettes de sa rangée : moins haut, et la rangée suivante ne se décale pas de travers. */
 function talentPills(a){const out=document.createElement('div');out.className='talent-grille';
- const liste=(a.talents||[]).map(talent).filter(Boolean);
+ // Un nœud de bonus n'est pas un talent : la fiche le porte dans ses chiffres, pas ici.
+ const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');
  if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
  /* Un talent appris dont le socle manque ne fait rien : il se taisait, et on le croyait à
     l'œuvre. Il porte désormais sa marque, et son dépliant dit ce qu'il attend. */
@@ -1851,6 +1862,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const logo=logoTalent(t);if(logo)rond.append(logo);else rond.textContent=GLYPHES_TALENT[t.type]||'✦';
   const nom=document.createElement('span');nom.className='arbre-nom';nom.textContent=t.name;
   const niv=document.createElement('span');niv.className='arbre-niv';niv.textContent='Niv. '+(t.level||1);
+  /* Un nœud de bonus n'est pas un talent : son rond dit la valeur, son nom la caractéristique,
+     et le nom qu'on lui a donné passe dessous. */
+  if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus');
+   rond.textContent='+'+Math.max(1,(p&&p.valeur)|0);nom.textContent=libelleBonus(p,true).replace(/^\+\d+ /,'');
+   niv.textContent=t.name&&t.name!==libelleBonus(p,true)&&t.name!=='Nouveau talent'?t.name:'Niv. '+(t.level||1)}
   b.append(rond,nom,niv);
   b.title=t.name+' — '+[talentType(t)[2],t.effects].filter(Boolean).join(' · ')+(verrou?' — sous clé : requiert '+verrou:'');
   b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}};
@@ -2551,7 +2567,7 @@ $('new-hero').onclick=()=>openScenePicker('hero');$('new-monster').onclick=()=>o
 const sceneDialog=dialog('scene-editor','Scène','<form id="scene-form"><label>Titre<input name="title" maxlength="120" required></label><label>Tour de combat<input name="round" type="number" min="1" max="999" required></label><div class="form-actions"><button class="primary">Enregistrer</button></div></form>');
 $('edit-scene').onclick=()=>{if(view!=='mj')return;$('scene-form').elements.title.value=sceneTitle();$('scene-form').elements.round.value=round;sceneDialog.showModal()};$('scene-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;round=num($('scene-form').elements.round.value,1,999);sceneTitle($('scene-form').elements.title.value);renderSettings();$('round').textContent=String(round).padStart(2,'0');sceneDialog.close();scheduleSave()};
 $('reset-map').onclick=()=>{if(view!=='mj')return;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom');scheduleSave()};
-const originalRender=render;render=function(){originalRender();
+const originalRender=render;render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();
  const mj=view==='mj';['reset-map'].forEach(id=>{const el=$(id);if(el)el.hidden=!mj});$('owner').replaceChildren();actors.forEach((a,i)=>{if(a.hero)$('owner').add(new Option(a.name,String(i)))});$('owner').value=String(owner);const a=actors[selected];$('actor-notes').textContent=a&&a.notes||'';
 
  // Le menu des attaques ne paraît que s'il y a vraiment à choisir : la barre sous

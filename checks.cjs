@@ -997,7 +997,7 @@ assert.ok(vivant.includes("if(!estMJ()&&CHAMPS_ACTEUR_MJ.includes(k))return;")&&
 /* Les invités ne dirigent pas, la carte reste voilée jusqu'au brouillard, le journal a ses tons. */
 assert.ok(vivant.includes('function verrouillerInvite')&&vivant.includes("if(spectateur()&&view!=='player'){view='player'"),'un invité reste en vue joueur');
 const cartes=fs.readFileSync('maps.js','utf8');
-assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false;")&&cartes.includes('renderFog();leverVoile();')&&page.includes('#voile-attente{'),'la carte se voile jusqu’au brouillard');
+assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false;")&&cartes.includes('renderFog();renderZones();leverVoile();')&&page.includes('#voile-attente{'),'la carte se voile jusqu’au brouillard');
 assert.ok(page.includes(".j-entry.ton-talent{")&&page.includes("li.classList.add('j-attaque','ton',/^spell_/.test(logo||'')?'ton-talent':'ton-attaque')"),'le journal a ses tons');
 // Le journal se cale sur le bas de la carte, et se libère sur une colonne.
 assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderMapLayer();calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
@@ -1126,7 +1126,7 @@ assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:6
    adversaires au contact, après les dégâts du tir — un adversaire tué ou entravé ne frappe pas. */
 assert.ok(page.includes('function ramasseContacts(')&&page.includes("croises:lot0.map(k=>[k,new Set(contactsDe(actors[k])),{x:actors[k].x,y:actors[k].y}])")
  &&page.includes("drag.croises.forEach(([k,set,pos])=>{const o=actors[k];if(!o)return;ramasseContacts(o,set,pos,size,murs);pos.x=o.x;pos.y=o.y})}"),'la traversée d’une zone de contact compte');
-assert.ok(page.includes('function peutFrapperOpportunite(e){return !!e&&alive(e)&&!frozenSolid(e)&&Number(e.dmg)>0}')&&page.includes('function opportuniteAuTir(')
+assert.ok(page.includes('function peutFrapperOpportunite(e){return !!e&&alive(e)&&!frozenSolid(e)&&degatsDe(e)>0}')&&page.includes('function opportuniteAuTir(')
  &&page.includes("const contacts=rangeOf(a)==='distance'?contactsDe(a):[];")&&page.includes("afterAction(a);opportuniteAuTir(a,contacts,'tir')}")
  &&page.includes("const poser=()=>{poserOrbe();opportuniteAuTir(a,contacts,'sort')};"),'tir et sort au contact : occasion après les dégâts');
 /* Le bestiaire crée des modèles : « + Nouveau monstre » enregistre au bestiaire, pas en scène. */
@@ -1262,7 +1262,7 @@ assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.fi
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
- &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armures','shieldId'];")&&page.includes("const nbGear=(a.weapons||[]).length+armuresDe(a).length+(a.shieldId?1:0)+(a.inventaire||[])")
+ &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armures','shieldId','auraPv'];")&&page.includes("const nbGear=(a.weapons||[]).length+armuresDe(a).length+(a.shieldId?1:0)+(a.inventaire||[])")
  &&feuille.includes('.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}')&&feuille.includes('.cat-pill.gear-carre.dispo{opacity:.55}')&&feuille.includes('.gear-rangee-titre{flex-basis:100%;')
  &&feuille.includes('.best-attaque{background:#cfdcea;border:1px solid #00000026;border-left:4px solid #4f7fb5;border-radius:9px;'),'inventaire, équipement et attaques spéciales');
 /* Fiche d'un modèle : plus de cartouche « Adversaire », le type porte sa couleur comme tout le bloc,
@@ -1566,7 +1566,7 @@ assert.ok(src.includes("const libelle=at.gear?'Attaque':(at.name||'Attaque');")&
  &&src.includes('function desEtBonus(dice,bonus)')&&src.includes('b.append(nom,desEtBonus(at.dice,bonus));')
  &&src.includes('if(t.des)b.append(desEtBonus(t.des,t.bonus||0));')
  &&page.includes('des:eff.des?eff.des(a,params):code.attaque?activeAttack(a).dice:null,')
- &&page.includes("bonus:code.attaque&&!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false?(Number(a.dmg)||0):0,")
+ &&page.includes("bonus:code.attaque&&!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false?degatsDe(a):0,")
  &&C.TALENTS_CODES.attaqueetat.attaque===true&&C.TALENTS_CODES.provocation.attaque===true
  &&!C.TALENTS_CODES.orbes.attaque,'le bouton d’attaque dit « Attaque », le talent qui frappe montre ses dés');
 /* L'Onde d'un camp lève les états avec les blessures, et prend aussi celui qui n'a rien perdu
@@ -1950,4 +1950,66 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  &&feuille.includes('.arbre-chemins{position:absolute;inset:0;')&&feuille.includes('.arbre-chemins .chemin.cache .trait{stroke-dasharray:5 7;opacity:.3}')
  &&feuille.includes('.arbre-col.editable .arbre-chemins .chemin{pointer-events:stroke;cursor:pointer}')&&feuille.includes('.arbre-etages .arbre-noeud::before{display:none}')
  &&feuille.includes('.arbre-place:empty{visibility:hidden}')&&feuille.includes('.arbres-vue.on{'),'les chemins tracés, fermés d’un clic, et la vue joueur');
-console.log('1247 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les bonus de caractéristique : des nœuds d'arbre qui ne sont pas des talents. Appris,
+   ils s'ajoutent à la lecture — PV max, Endurance, Vie, dégâts, un point de compétence — et
+   la fiche garde ses valeurs propres. */
+{const cat=[{id:'b1',name:'Vigueur',effet:'bonus',params:{carac:'pv',valeur:4}},{id:'b2',name:'Poigne',effet:'bonus',params:{carac:'comp',valeur:2,comp:'1'}},
+  {id:'b3',name:'Souffle',effet:'bonus',params:{carac:'endu',valeur:1}},{id:'b4',name:'Tranchant',effet:'bonus',params:{carac:'dmg',valeur:3}},
+  {id:'b5',name:'Sève',effet:'bonus',params:{carac:'vie',valeur:2}},{id:'t',name:'Lamevent',effet:'lamevent'}];
+ const a={vie:6,endu:3,role:'x',talents:['b1','b2','b3','b4','b5','t']};
+ assert.deepEqual(C.bonusDe(a,cat),{pv:4,endu:1,vie:2,dmg:3,skills:[0,2,0,0,0,0,0,0]});
+ assert.equal(C.pvMaximum([],a,cat),(6+2)*(3+1)+4);assert.equal(C.pvMaximum([],a),18,'sans catalogue, la fiche seule');
+ assert.equal(C.vieDe(a,cat),8);assert.equal(C.enduDe(a,cat),4);assert.equal(C.vieDe({vie:'x'},cat),0);
+ assert.equal(C.libelleBonus({carac:'comp',valeur:2,comp:'1'}),'+2 Force');assert.equal(C.libelleBonus({carac:'pv',valeur:4}),'+4 PV max');assert.equal(C.libelleBonus({carac:'pv',valeur:4},true),'+4 PV');
+ assert.equal(C.libelleBonus({carac:'dmg',valeur:1},true),'+1 Dég.');assert.equal(C.libelleBonus({}),'+1 PV max');
+ assert.deepEqual(C.paramsTalent({effet:'bonus',params:{carac:'zzz',valeur:99,comp:'9'}}),{carac:'pv',valeur:20,comp:'0'},'relu au travers de la déclaration');
+ assert.deepEqual(C.bonusDe({talents:['b1']},[]),{pv:0,endu:0,vie:0,dmg:0,skills:[0,0,0,0,0,0,0,0]},'un nœud absent du catalogue ne donne rien');
+ assert.equal(C.COMPETENCES.length,8);assert.ok(page.includes('const skillNames=COMPETENCES;'));
+ assert.match(C.phraseTalent('bonus',{carac:'endu',valeur:2}),/<b>\+2 Endurance<\/b>/);}
+/* Meneur : un passif qui augmente les dégâts, la DEF ou les PV max temporaires des alliés
+   les plus proches à portée — un, deux ou tous. Le moteur choisit ; la table mesure. */
+{const m=C.TALENTS_CODES.meneur;assert.ok(m&&m.type==='pass'&&m.params.map(p=>p.cle).join()==='quoi,valeur,combien,portee');
+ assert.match(C.phraseTalent('meneur',{quoi:'def',valeur:2,combien:'tous',portee:'vue'}),/<b>la DEF<\/b> de <b>2<\/b> pour <b>tous les alliés<\/b> <b>dans votre ligne de vue<\/b>/);
+ assert.match(C.phraseTalent('meneur',{}),/<b>les dégâts<\/b> de <b>1<\/b> pour <b>un allié<\/b> <b>au contact<\/b>/);
+ assert.deepEqual(C.elusMeneur({combien:'deux'},[{a:'c',dist:3},{a:'a',dist:1},{a:'b',dist:2}]),['a','b']);
+ assert.deepEqual(C.elusMeneur({combien:'un'},[{a:'c',dist:3},{a:'a',dist:1}]),['a']);
+ assert.equal(C.elusMeneur({combien:'tous'},[{a:'c',dist:3},{a:'a',dist:1}]).length,2);assert.deepEqual(C.elusMeneur({},[]),[]);
+ assert.ok(page.includes("function defOf(a){return defenseOf(a,items())+auraMeneur(a,'def')}")&&page.includes("function degatsDe(a){return (Number(a&&a.dmg)||0)+bonusFiche(a).dmg+auraMeneur(a,'dmg')}")
+  &&page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
+  &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
+  &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=Math.max(1,params.valeur|0)})});")
+  &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")
+  &&page.includes(" const jet=skillRoll(competenceDe(a,i),d6);")&&page.includes("useOwnDamage===false?0:degatsDe(a);")
+  &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")&&page.includes("const n=degatsDe(e);applyDamage(a,n);")
+  &&src.includes("const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
+  &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
+  &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
+  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','auraPv'];")
+  &&src.includes("const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus');")
+  &&src.includes(" ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));")&&src.includes("  if(!competenceDe(a,k))return;")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
+/* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
+   en est une ; les miettes ne comptent pas ; le MJ les voit d'un bouton. */
+{const mur={anneaux:[[[49,0],[51,0],[51,100],[49,100]]]};
+ const z=C.calculeZones([mur],[[[49,40],[51,40],[51,60],[49,60]]],100,50);
+ assert.equal(z.compte,2);assert.equal(C.zoneAu(z,10,10),1);assert.equal(C.zoneAu(z,90,90),2);assert.equal(C.zoneAu(z,50,50),0,'dans la porte : aucune zone');
+ assert.equal(C.zoneAu(z,50,10),0,'dans le mur : aucune zone');assert.equal(C.zoneAu(z,-5,200),1,'hors de la carte, la case la plus proche');
+ assert.deepEqual([...z.tailles].map(n=>n>0),[false,true,true]);
+ const ouvert=C.calculeZones([{anneaux:[[[49,0],[51,0],[51,40],[49,40]]]}],[],100,50);
+ assert.equal(ouvert.compte,1);assert.equal(C.zoneAu(ouvert,10,10),C.zoneAu(ouvert,90,90),'un mur qui ne ferme rien ne partage rien');
+ // Un trou dans la matière est une zone à part ; une miette de mur ne compte pas.
+ const creux={anneaux:[[[10,10],[90,10],[90,90],[10,90]],[[40,40],[60,40],[60,60],[40,60]]]};
+ const zc=C.calculeZones([creux],[],100,50);
+ assert.equal(zc.compte,2);assert.equal(C.zoneAu(zc,50,50),2,'le trou');assert.equal(C.zoneAu(zc,5,5),1,'le tour');assert.equal(C.zoneAu(zc,20,20),0);
+ const miette=C.calculeZones([{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[50,50],[52,50],[52,52],[50,52]]]}],[],100,50);
+ assert.equal(miette.compte,0,'une case ou deux ne font pas une zone');
+ assert.equal(C.calculeZones([],[],10,5).compte,1);assert.equal(C.zoneAu(null,1,1),0);
+ assert.ok(cartes.includes("const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');")&&cartes.includes("fogBar.append(fogReset,fogAll,eyeBtn,zonesBtn,lockBtn);")
+  &&cartes.includes("function zonesDe(m){if(!m)return null;")&&cartes.includes("zonesCache={cle,zones:calculeZones(matiereDe(m),portes,cols,rows)}}")
+  &&cartes.includes("function zoneDe(a){const m=currentMap();return m&&a?zoneAu(zonesDe(m),a.x,a.y):0}")&&cartes.includes("function memeZone(a,b){")
+  &&cartes.includes("if(!zonesVisibles||!m||view!=='mj'){cv.style.display='none';noms.hidden=true;return}")
+  &&cartes.includes("zonesBtn.hidden=!m;zonesBtn.classList.toggle('on',zonesVisibles);")&&feuille.includes('#map-zones,#map-zones-noms{position:absolute;inset:0;'),'les zones se voient d’un bouton, et se retiennent');}
+/* Maj + clic dans la liste : tout ce qui va de l'actif à la ligne cliquée, bornes comprises. */
+assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&selected!==null&&selected!==i&&markRange(i))return;onGesture(gestureOf(e),i)};")
+ &&page.includes("function markRange(i){const lignes=[...document.querySelectorAll('#actors .actor[data-index]')].map(b=>Number(b.dataset.index));")
+ &&page.includes(" marked=new Set(plage);render();return true}"),'la plage de sélection');
+console.log('1289 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

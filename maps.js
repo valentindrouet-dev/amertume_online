@@ -348,7 +348,7 @@ function svgPorte(d,ratio,cls){if(!(Number(d.a)||0))return svgRect(d,cls);
  el.setAttribute('points',doorPolygon(d,ratio).map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));
  if(cls)el.setAttribute('class',cls);return el}
 function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=currentMap();
- svg.replaceChildren();portes.replaceChildren();applyMapRatio();renderFog();leverVoile();refreshGmBar();
+ svg.replaceChildren();portes.replaceChildren();applyMapRatio();renderFog();renderZones();leverVoile();refreshGmBar();
  // .hidden n'existe pas sur un élément SVG : le masquage passe par une classe.
  $('map').classList.toggle('has-map',!!m);if(!m)return;
  if(m.start&&view==='mj')svg.append(svgRect(m.start,'startzone'));
@@ -1138,7 +1138,43 @@ const lockBtn=icone('token-lock','🔓','Figer les déplacements des joueurs');
 /* L'œil de la troupe : le MJ voit la carte comme ses joueurs — brouillard noir, socles
    qu'ils ne voient pas absents — sans quitter sa vue. La liste, elle, reste la sienne. */
 const eyeBtn=icone('troupe-eye','🎭','Voir la carte comme la troupe');
-fogBar.append(fogReset,fogAll,eyeBtn,lockBtn);document.querySelector('.mapbar .zoom-bar').after(fogBar);
+/* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
+   en est une. Un bouton les montre au MJ, chacune de sa couleur et de son numéro. */
+const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');
+fogBar.append(fogReset,fogAll,eyeBtn,zonesBtn,lockBtn);document.querySelector('.mapbar .zoom-bar').after(fogBar);
+const zonesCanvas=document.createElement('canvas');zonesCanvas.id='map-zones';zonesCanvas.setAttribute('aria-hidden','true');
+const zonesNoms=document.createElement('div');zonesNoms.id='map-zones-noms';zonesNoms.setAttribute('aria-hidden','true');
+$('fog').before(zonesCanvas,zonesNoms);
+let zonesVisibles=false,zonesCache={cle:'',zones:null};
+const ZONES_COLS=320;
+zonesBtn.onclick=()=>{zonesVisibles=!zonesVisibles;refreshGmBar();renderZones()};
+// Les zones d'une carte, gardées tant que sa géométrie ne bouge pas — portes comprises.
+function zonesDe(m){if(!m)return null;const ratio=Math.max(.05,Number(m.ratio)||16/9),cle=m.id+'|'+geometryKey(m)+'|'+ratio.toFixed(4);
+ if(zonesCache.cle!==cle){const cols=ZONES_COLS,rows=Math.max(16,Math.round(cols/ratio));
+  const portes=(m.doors||[]).map(d=>doorPolygon(d,ratio)).filter(Boolean);
+  zonesCache={cle,zones:calculeZones(matiereDe(m),portes,cols,rows)}}
+ return zonesCache.zones}
+// La zone où se tient un combattant sur la carte ouverte : 0 sans carte, ou dans un mur.
+function zoneDe(a){const m=currentMap();return m&&a?zoneAu(zonesDe(m),a.x,a.y):0}
+function memeZone(a,b){const za=zoneDe(a);return za>0&&za===zoneDe(b)}
+const TEINTES_ZONE=[[200,70],[30,80],[120,55],[280,60],[350,70],[60,75],[170,55],[320,55],[90,60],[240,65],[15,65],[150,50]];
+function hslVersRgb(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+ return [Math.round(255*f(0)),Math.round(255*f(8)),Math.round(255*f(4))]}
+/* Les zones peintes : une toile à la grille du calcul, étirée sur la carte, une teinte par
+   zone ; et son numéro, au barycentre de ses cases, dans un calque HTML pour rester net. */
+function renderZones(){const cv=$('map-zones'),noms=$('map-zones-noms');if(!cv||!noms)return;const m=currentMap();
+ if(!zonesVisibles||!m||view!=='mj'){cv.style.display='none';noms.hidden=true;return}
+ const z=zonesDe(m);if(!z||!z.compte){cv.style.display='none';noms.hidden=true;return}
+ cv.style.display='';noms.hidden=false;
+ const W=z.cols,H=z.rows;if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+ const ctx=cv.getContext('2d'),img=ctx.createImageData(W,H),px=img.data,sx=new Float64Array(z.compte+1),sy=new Float64Array(z.compte+1),nb=new Int32Array(z.compte+1);
+ for(let k=0;k<W*H;k++){const n=z.zone[k];if(!n)continue;const [h,s]=TEINTES_ZONE[(n-1)%TEINTES_ZONE.length],[r,g,b]=hslVersRgb(h,s,55);
+  const o=k*4;px[o]=r;px[o+1]=g;px[o+2]=b;px[o+3]=110;const i=k%W;sx[n]+=i+.5;sy[n]+=(k-i)/W+.5;nb[n]++}
+ ctx.putImageData(img,0,0);
+ noms.replaceChildren();
+ for(let n=1;n<=z.compte;n++){if(!nb[n])continue;const e=document.createElement('span');e.textContent=String(n);
+  const [h,s]=TEINTES_ZONE[(n-1)%TEINTES_ZONE.length];e.style.setProperty('--z','hsl('+h+' '+s+'% 38%)');
+  e.style.left=(sx[n]/nb[n]/W*100)+'%';e.style.top=(sy[n]/nb[n]/H*100)+'%';noms.append(e)}}
 eyeBtn.onclick=()=>{vueTroupe=!vueTroupe;fogKey='';render()};
 fogReset.onclick=()=>resetFog(false);
 fogAll.onclick=()=>{const m=currentMap();if(!m)return;
@@ -1156,6 +1192,7 @@ function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  if(titre)titre.textContent=m&&m.name?m.name:'Carte tactique';
  fogBar.hidden=!mj;fogReset.hidden=fogAll.hidden=!m;
  fogAll.classList.toggle('on',!!(m&&m.fogOff));eyeBtn.hidden=!m;eyeBtn.classList.toggle('on',vueTroupe);
+ zonesBtn.hidden=!m;zonesBtn.classList.toggle('on',zonesVisibles);zonesBtn.title=zonesVisibles?'Cacher les zones de la carte':'Voir les zones de la carte';
  fogAll.title=m&&m.fogOff?'Rétablir le brouillard':'Tout révéler';
  /* Changer de carte en pleine partie appartient au MJ : la liste et son bouton suivent
     donc la vue, et non le seul fait qu'il existe des cartes. Ils étaient montés une fois
