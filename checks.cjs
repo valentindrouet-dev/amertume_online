@@ -2115,7 +2115,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.ok(fief.includes('function rendEtiquetteDeplacable(e,b,boite,opts){')&&fief.includes("const c=b.etiquette||centroide(b.zone);if(!c)return;")
   &&fief.includes("if(opts.deplace||opts.clic)rendEtiquetteDeplacable(e,b,etiquettes,opts);")
   &&fief.includes("...(domOutil==='select'?{deplace:(b,pt)=>{pushDomUndo();b.etiquette=pt;renderDomaineEditeur();sauveDomaine()},")
-  &&fief.includes("deplace:(b,pt)=>{b.etiquette=pt;renderDomaine();sauveDomaine()},clic:b=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()}});")
+  &&fief.includes("  clic:b=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()}});")&&!fief.includes("b.etiquette=pt;renderDomaine()")
   &&fief.includes('<button id="dom-contours" title="Montrer ou cacher le contour des bâtiments">▦ Contours</button>')&&fief.includes("plan.classList.toggle('sans-contours',!domContours);")
   &&feuille.includes('#dom-plan.sans-contours .dom-zone{stroke:transparent;fill:transparent}')&&feuille.includes('.dom-etiquette.deplacable{pointer-events:auto;cursor:grab;'),'le nom d’un bâtiment se glisse, les contours sur un bouton');
  assert.ok(src.includes("function armoryRow(a,i){const carte=document.createElement('div');carte.className='cat-carte';")
@@ -2195,7 +2195,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&fief.includes("$('dom-canvas').classList.toggle('sans-contours',!domContours);$('dom-contours-editeur').classList.toggle('on',domContours);")
   &&feuille.includes('#dom-contours.on,#dom-contours-editeur.on{')&&feuille.includes('#dom-canvas.sans-contours .dom-zone:not(.sel){stroke:transparent;fill:transparent}'),'un seul réglage de contours, deux boutons');
  assert.ok(fief.includes("window.addEventListener('pointermove',suit);window.addEventListener('pointerup',lache);window.addEventListener('pointercancel',lache)}}")
-  &&fief.includes("const suit=m=>{if(m.pointerId!==id)return;"),'le glisser du nom écoute la fenêtre');
+  &&fief.includes("const suit=m=>{if(m.pointerId!==id||!opts.deplace)return;")&&fief.includes("e.classList.add(opts.deplace?'deplacable':'cliquable');")
+  &&feuille.includes('.dom-etiquette.cliquable{pointer-events:auto;cursor:pointer;'),'le glisser du nom écoute la fenêtre, et ne vaut que dans l’éditeur');
 }
 /* v0.257 — La colonne des bâtiments du Domaine : le nom et l'étape, l'état dessous, rien d'autre. */
 {const fief=fs.readFileSync('domaine.js','utf8');

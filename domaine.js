@@ -44,16 +44,17 @@ function dessineDomaine(canvas,vue,redessine){const d=domaine,c=d.carte,ctx=canv
  return true}
 /* Les zones par-dessus l'image : un polygone par bâtiment, teinté de son étape, et son
    nom au centre. Le tracé en cours, s'il y en a un, en pointillé. */
-/* Le nom d'un bâtiment se glisse là où on le veut : il reste à ce point, et non plus au
-   centre de la zone. « deplace » reçoit le bâtiment et le point où on l'a lâché ; un clic
-   sans mouvement va à « clic ». */
-function rendEtiquetteDeplacable(e,b,boite,opts){e.classList.add('deplacable');
+/* Le nom d'un bâtiment se glisse là où on le veut — dans l'éditeur de carte seulement :
+   il reste à ce point, et non plus au centre de la zone. « deplace » reçoit le bâtiment et
+   le point où on l'a lâché ; sans « deplace », le nom ne bouge pas et n'est qu'un bouton.
+   Un clic sans mouvement va à « clic ». */
+function rendEtiquetteDeplacable(e,b,boite,opts){e.classList.add(opts.deplace?'deplacable':'cliquable');
  e.onpointerdown=ev=>{if(ev.button!==0)return;ev.stopPropagation();ev.preventDefault();
   const r=boite.getBoundingClientRect(),depart={x:ev.clientX,y:ev.clientY},id=ev.pointerId;let bouge=false,pt=null;
   const pos=m=>({x:Math.max(0,Math.min(100,100*(m.clientX-r.left)/r.width)),y:Math.max(0,Math.min(100,100*(m.clientY-r.top)/r.height))});
   /* Le geste s'écoute sur la fenêtre, pas sur l'étiquette : il se poursuit même si la
      capture du pointeur est refusée, ou si la souris file hors du nom en chemin. */
-  const suit=m=>{if(m.pointerId!==id)return;if(!bouge&&Math.hypot(m.clientX-depart.x,m.clientY-depart.y)<4)return;bouge=true;pt=pos(m);e.style.left=pt.x+'%';e.style.top=pt.y+'%'};
+  const suit=m=>{if(m.pointerId!==id||!opts.deplace)return;if(!bouge&&Math.hypot(m.clientX-depart.x,m.clientY-depart.y)<4)return;bouge=true;pt=pos(m);e.style.left=pt.x+'%';e.style.top=pt.y+'%'};
   const lache=m=>{if(m&&m.pointerId!==id)return;window.removeEventListener('pointermove',suit);window.removeEventListener('pointerup',lache);window.removeEventListener('pointercancel',lache);
    try{e.releasePointerCapture(id)}catch(_){}
    if(bouge&&pt&&opts.deplace)opts.deplace(b,[pt.x,pt.y]);else if(!bouge&&opts.clic)opts.clic(b)};
@@ -316,8 +317,9 @@ function renderDomaine(){const d=domaine;
  $('dom-plan-vide').hidden=!vide;plan.classList.toggle('no-image',vide);
  const sel=d.batiments.findIndex(b=>b.id===domPageSel);
  plan.classList.toggle('sans-contours',!domContours);$('dom-contours').classList.toggle('on',domContours);
+ // Sur l'onglet, le nom ne se déplace pas : il choisit le bâtiment, c'est tout.
  dessineZonesDom($('dom-plan-zones'),$('dom-plan-etiquettes'),{sel:sel>=0?sel:null,jeu:true,
-  deplace:(b,pt)=>{b.etiquette=pt;renderDomaine();sauveDomaine()},clic:b=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()}});
+  clic:b=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()}});
  renderDomBats();renderDomFiche();renderDomFinances();renderDomPnj();renderDomAventuriers()}
 $('dom-plan-zones').addEventListener('click',e=>{const z=e.target.closest('[data-bat]');if(!z)return;
  const b=domaine.batiments[Number(z.dataset.bat)];domPageSel=b&&domPageSel!==b.id?b.id:null;renderDomaine()});
