@@ -1558,7 +1558,7 @@ assert.ok(src.includes("const libelle=at.gear?'Attaque':(at.name||'Attaque');")&
 /* L'Onde d'un camp lève les états avec les blessures, et prend aussi celui qui n'a rien perdu
    mais porte une affliction — empoisonné au complet, il restait sur le carreau. */
 assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&(a.hp<a.max||statesOf(a).length));")
- &&page.includes("soignes.forEach(a=>{if(a.hp<a.max)rendus++;a.hp=a.max;setState(a,'Coma',false);a.usages={};")
+ &&page.includes("soignes.forEach(a=>{if(a.hp<a.max)rendus++;a.hp=a.max;setState(a,'Coma',false);")&&page.includes("if(typeof reposer==='function')reposer(a,'long');else a.usages={};   // l'Onde vaut un repos long")
  &&page.includes("' remis d’aplomb'+(rendus?' : PV au complet':'')+(leves?(rendus?', ':' : ')+'états levés':'')+'.'")
  &&!page.includes('const blesses=actors.filter'),'l’Onde du camp lève les états, même sans blessure');
 /* La jauge de PV est un fil, et le même pour tous les socles — l'actif n'y fait rien. */
@@ -1672,7 +1672,10 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
    réglages, une phrase — et trois manières d'en user. */
 {const codes=C.OBJETS_CODES;
  assert.equal(Object.keys(codes).sort().join(),'etat,invulnerabilite,soin');
- assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','jour']));
+ assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','court','jour']));
+ assert.equal(JSON.stringify(C.USAGES_LIMITES),JSON.stringify(['court','jour']));
+ assert.equal(C.usageLimite('court'),true);assert.equal(C.usageLimite('conso'),false);
+ assert.equal(C.NOM_USAGE('court'),'Une fois entre deux repos courts');
  assert.equal(C.NOM_USAGE('jour'),'Une fois par jour');assert.equal(C.NOM_USAGE('bidon'),'À volonté');
  // Chaque effet se dit en une phrase, réglages en gras, écrite par le moteur.
  assert.ok(C.phraseObjet('soin',{quantite:2,forme:'des'}).includes('<b>2d6</b> PV'));
@@ -1706,13 +1709,13 @@ assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function 
  &&src.includes("o.effet=OBJETS_CODES[o.effet]?o.effet:'';")&&src.includes("o.usage=usageObjet(o);o.consumable=o.usage==='conso'});")
  &&src.includes("+sel('Usage','usage',usageObjet(a),USAGES_OBJET)+'</div>'")&&src.includes('function dessineReglagesObjet()')
  &&src.includes("a.params=a.effet?paramsObjet({effet:a.effet,params:lireReglagesObjet()}):{};")&&!src.includes(">Consommable</label>')")
- &&src.includes('function usageEpuise(a,o)')&&src.includes("function objetDisponible(a,o){return usageObjet(o)!=='jour'||!usageEpuise(a,o)}")
- &&src.includes('function appliquerEffetObjet(a,o)')&&src.includes("if(usage==='jour'){a.usages={...(a.usages||{}),[o.id]:true}}")
+ &&src.includes('function usageEpuise(a,o)')&&src.includes("function objetDisponible(a,o){return !usageLimite(usageObjet(o))||!usageEpuise(a,o)}")
+ &&src.includes('function appliquerEffetObjet(a,o)')&&src.includes("if(usageLimite(usage)){a.usages={...(a.usages||{}),[o.id]:usage}}")
  &&src.includes("if(usage==='conso')retirerInventaire(a,o);")&&src.includes('if(objetCode(o)){appliquerEffetObjet(a,o);return}')
  &&src.includes("a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};")
  &&page.includes('function desRecus(b,dice)')&&page.includes('const {gardes:dice,ecartes}=desRecus(b,tous);')
  &&page.includes('const suite=ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
- &&page.includes("a.immunites={etats:[],des:[]};a.usages={};")&&page.includes("setState(a,'Coma',false);a.usages={};")
+ &&page.includes("a.immunites={etats:[],des:[]};if(typeof reposer==='function')reposer(a,'long');")&&src.includes('function reposer(a,type=')
  &&feuille.includes('.gear-detail .gear-effet{font-weight:600}'),'les effets d’équipement sont câblés');
 /* Les emplacements du corps : deux mains, un torse, un dos, une tête, trois anneaux, une
    amulette, des bottes. Une cape et une armure se portent ensemble ; deux armures, jamais. */
@@ -1754,4 +1757,18 @@ assert.ok(src.includes("a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a
  &&src.includes("el.className='btn-action choix-attaque btn-objet teinte-propre';")&&src.includes("el.style.setProperty('--fond',b.teinte);")
  &&src.includes("boite.hidden=!liste.length&&!talents.length&&!objets.length;")
  &&!src.includes('a.armorId=')&&!src.includes('draft.armorId'),'les emplacements du corps et les boutons d’objets');
-console.log('1122 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Un usage compté porte son chrono, en haut à droite de son bouton : il dit que la charge se
+   rend au repos, et le MJ la rend — ou la reprend — d'un clic. Les joueurs, non : leur bouton
+   épuisé est désactivé, et rien dedans ne se clique. */
+assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='mj'||!a||!o||!usageEpuise(a,o))return false;")
+ &&src.includes('function prendreUsage(a,o){')&&src.includes("if(view!=='mj'||!a||!o||!usageLimite(usageObjet(o))||usageEpuise(a,o))return false;")
+ &&src.includes("function reposer(a,type='long'){")&&src.includes("if(type==='long'||quoi==='court')rendues.push(id);else garde[id]=quoi});")
+ &&src.includes("if(b.limite){const chrono=document.createElement('span');chrono.className='chrono'+(b.epuise?' vide':'');")
+ &&src.includes("if(view==='mj'){chrono.setAttribute('role','button');chrono.tabIndex=0;")
+ &&src.includes("const a2=b.acteur;")&&src.includes("if(b.epuise?rendreUsage(a2,b.objet):prendreUsage(a2,b.objet)){")
+ &&src.includes("acteur:a,agir:()=>utiliserObjet(a,o)})});")
+ &&feuille.includes('.btn-objet .chrono{position:absolute;top:3px;right:5px;')&&feuille.includes('.btn-objet .chrono.vide{opacity:.45;filter:grayscale(1)}')
+ /* Le bouton d'un joueur est désactivé, celui du MJ seulement pâli : c'est ce qui laisse le
+    chrono cliquable pour l'un et muet pour l'autre. */
+ &&page.includes("function inerte(b,off){if(view==='mj'){b.disabled=false;b.classList.toggle('inerte',!!off);"),'le chrono rend sa charge, pour le MJ seul');
+console.log('1134 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

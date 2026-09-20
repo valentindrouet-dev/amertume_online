@@ -98,13 +98,13 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
  (a.inventaire||[]).forEach(id=>{if(vus.has(id))return;vus.add(id);
   const o=objetDe(id),code=objetCode(o);if(!o||!code)return;
   const dispo=objetDisponible(a,o),usage=usageObjet(o);
-  const reste=usage==='jour'?(dispo?' 1/1':' 0/1'):'';
+  const reste=usageLimite(usage)?(dispo?' 1/1':' 0/1'):'';
   out.push({objet:o,texte:o.name+reste,
    teinte:TEINTE_OBJET[itemColumn(o)]||TEINTE_OBJET.object,
-   peut:dispo,
+   peut:dispo,limite:usageLimite(usage),epuise:!dispo,
    titre:dispo?o.name+' — '+NOM_USAGE(usage)+' · '+code.phrase(paramsObjet(o)).replace(/<[^>]*>/g,'')
     :o.name+' a déjà servi aujourd’hui : il faut une nuit de repos.',
-   agir:()=>utiliserObjet(a,o)})});
+   acteur:a,agir:()=>utiliserObjet(a,o)})});
  return out}
 function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Plusieurs combattants pris : la carte des Actions ne propose rien.
@@ -140,6 +140,22 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   const nom=document.createElement('span');nom.className='nom';nom.textContent=b.texte;
   el.append(nom);el.classList.add('sans-des');
   inerte(el,!b.peut);el.title=b.titre;el.setAttribute('aria-label',b.texte+' — '+b.titre);
+  /* Un usage compté porte son chrono, en haut à droite : il dit que la charge se rend au
+     repos, et le MJ la rend d'un clic — les joueurs, non, leur bouton est désactivé. */
+  if(b.limite){const chrono=document.createElement('span');chrono.className='chrono'+(b.epuise?' vide':'');
+   chrono.textContent='⏱';
+   chrono.title=view==='mj'
+    ?(b.epuise?'Recharger '+b.objet.name+' — MJ':b.objet.name+' : charge intacte. Clic : la reprendre — MJ')
+    :NOM_USAGE(usageObjet(b.objet));
+   if(view==='mj'){chrono.setAttribute('role','button');chrono.tabIndex=0;
+    const basculer=e=>{e.stopPropagation();e.preventDefault();
+     const a2=b.acteur;
+     if(b.epuise?rendreUsage(a2,b.objet):prendreUsage(a2,b.objet)){
+      log('MJ : '+b.objet.name+(b.epuise?' rechargé':' marqué employé')+' pour '+a2.name+'.',{local:true});
+      render();scheduleSave()}};
+    chrono.onclick=basculer;
+    chrono.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')basculer(e)}}
+   el.append(chrono)}
   el.onclick=()=>{if(estInerte(el))return;b.agir()};boite.append(el)});
  if(!liste.length)return;
  const retenu=Math.trunc(a.activeAttack)||0;
@@ -685,11 +701,11 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  const code=objetCode(o);
  if(code){const p=document.createElement('p');p.className='gear-effet';
   p.innerHTML=code.phrase(paramsObjet(o));d.append(p);
-  ligne('Usage : '+NOM_USAGE(usageObjet(o))+(usageObjet(o)==='jour'&&a&&usageEpuise(a,o)?' — déjà employé':''))}
+  ligne('Usage : '+NOM_USAGE(usageObjet(o))+(usageLimite(usageObjet(o))&&a&&usageEpuise(a,o)?' — déjà employé':''))}
  /* Un objet s'emploie à la table de jeu ; un équipement qui porte un effet aussi — la page
     Aventuriers, elle, ne fait que ranger l'inventaire. */
  if(a&&enJeu&&(col==='object'||code)){const b=document.createElement('button');b.type='button';b.className='gear-utiliser';b.textContent='Utiliser';
-  if(code&&!objetDisponible(a,o)){b.disabled=true;b.title='Déjà employé : il faut une nuit de repos.'}
+  if(code&&!objetDisponible(a,o)){b.disabled=true;b.title='Déjà employé : il faut un repos pour le recharger.'}
   b.onclick=e=>{e.stopPropagation();utiliserObjet(a,o)};d.append(b)}
  return d}
 /* Utiliser un objet : on désigne d'abord la cible — un combattant, ou l'endroit visé pour
@@ -698,7 +714,21 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
 /* Une fois par jour : la charge est retenue sur le porteur, objet par objet, et revient
    avec le repos — le retour au tour 1 d'une rencontre, ou l'Onde qui remet un camp d'aplomb. */
 function usageEpuise(a,o){return !!(a&&o&&a.usages&&a.usages[o.id])}
-function objetDisponible(a,o){return usageObjet(o)!=='jour'||!usageEpuise(a,o)}
+function objetDisponible(a,o){return !usageLimite(usageObjet(o))||!usageEpuise(a,o)}
+/* Rendre sa charge à un objet : le MJ le fait d'un clic sur le chrono, quel que soit le
+   repos dont elle dépendait. */
+function rendreUsage(a,o){if(view!=='mj'||!a||!o||!usageEpuise(a,o))return false;
+ const u={...(a.usages||{})};delete u[o.id];a.usages=u;return true}
+// L'envers : le MJ marque la charge employée sans que l'objet agisse.
+function prendreUsage(a,o){if(view!=='mj'||!a||!o||!usageLimite(usageObjet(o))||usageEpuise(a,o))return false;
+ a.usages={...(a.usages||{}),[o.id]:usageObjet(o)};return true}
+/* Un repos rend les charges : le court ne rend que les siennes, le long rend tout. C'est
+   par là que passera le repos court quand il arrivera. */
+function reposer(a,type='long'){if(!a||!a.usages)return 0;
+ const garde={},rendues=[];
+ Object.entries(a.usages).forEach(([id,quoi])=>{
+  if(type==='long'||quoi==='court')rendues.push(id);else garde[id]=quoi});
+ a.usages=garde;return rendues.length}
 /* Un objet dont le moteur connaît l'effet agit sur son porteur : rien à viser, le geste est
    pour soi. Le reste — les objets purement décrits — se vise comme avant. */
 function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
@@ -721,7 +751,7 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
   else dit='insensible '+(des?'aux dés ':'à ')+nom+(neuf?'':' — déjà');
   if(neuf&&!des&&hasState(a,valeur)){setState(a,valeur,false);dit+=', et '+valeur+' se dissipe'}}
  // La charge du jour est prise, le consommable quitte l'inventaire.
- if(usage==='jour'){a.usages={...(a.usages||{}),[o.id]:true}}
+ if(usageLimite(usage)){a.usages={...(a.usages||{}),[o.id]:usage}}
  if(usage==='conso')retirerInventaire(a,o);
  log(a.name+' emploie '+o.name+(dit?' : '+dit:'')+'.',{ton:'talent'});
  if(typeof annonceFlottante==='function')annonceFlottante('◈ '+o.name+(dit?' · '+dit:''));
