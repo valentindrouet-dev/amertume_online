@@ -1300,9 +1300,9 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  &&!src.includes("openPicker(a,'talents')")&&src.includes("const arbresDialog=dialog('arbres','Arbres de talents','<p class=\"muted\" id=\"arbres-note\"></p><div id=\"arbres-corps\"></div>');")
  &&src.includes('function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;')&&src.includes("const classe=classeDuHeros(a),toutes=talentFamilies();")
  &&src.includes("if(view==='mj'){let acquis=false;troupe.forEach(a=>{if(assureMaitrises(a))acquis=true});if(acquis)scheduleSave()}")
- &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):''});")&&src.includes("+sel('Spécialisation','voie',t.voie||'',optionsVoie(famille,t.voie||''))")
+ &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):'';")&&src.includes("+sel('Spécialisation','voie',t.voie||'',optionsVoie(famille,t.voie||''))")
  &&src.includes("if(voie&&!connues.includes(voie)&&connues.length>=VOIES_MAX){alert(")&&src.includes('t.voie=voie;if(voie)enregistreVoie(t.famille,voie);')&&!src.includes("v.className='tag voie';v.textContent=t.voie;")
- &&src.includes("const verrou=!a||acquis?'':(libre?'':verrouColonne(a.talents,col.racines,t))||manqueTalent(a.talents,t,catalog.talents);")
+ &&src.includes("const verrou=!a||acquis?'':(libre?'':verrouEtages(a.talents,etages,t))||manqueTalent(a.talents,t,catalog.talents);")
  &&src.includes("n.title=t.name+' — Maîtrise de classe, acquise avec la classe.';")
  &&feuille.includes('#arbres{width:min(1180px,96vw)}')&&feuille.includes('.arbre-noeud::before{content:\'\';display:block;width:3px;height:18px;')&&feuille.includes('.arbre-noeud.premier::before,.arbre-maitrises .arbre-noeud::before{display:none}')
  &&feuille.includes('.arbre-titre{width:100%;')&&feuille.includes('clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),50% 100%,0 calc(100% - 8px))}')
@@ -1411,7 +1411,7 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
  &&src.includes("if(typeof arbresDialog!=='undefined'&&arbresDialog.open)renderArbres()});")&&src.includes('function placerTalent(id,dest)')
  &&src.includes("if(!p||p===t||descendDe(p,t))return false}")&&src.includes("el.addEventListener('dragstart',e=>{arbreGlisse=t.id;el.classList.add('tire');corps.classList.add('glisse');")
  &&src.includes("if(!id)return;if(placerTalent(id,dest))arbreChange();else note(")&&src.includes("glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,prerequis:t.id});")
- &&src.includes("sous.append(entre({famille:col.famille,voie:col.voie,prerequis:t.id,avant:e.t.id}),branche(e,col,libre,false));")
+ &&src.includes("if(mj)pile.append(entre({famille:c.famille,voie:c.voie,avant:e.t.id}));")
  &&src.includes("cible(h,{famille:c.famille,voie:c.voie});")&&src.includes("champVif(nomVoie,()=>c.voie,v=>{if(nommerVoie(c.famille,c.rang,v))arbreChange();")&&src.includes("nomVoie.classList.toggle('vierge',!c.voie);")&&feuille.includes('.arbre-titre .arbre-voie.vierge{')&&src.includes("if(nommerVoie(c.famille,c.rang,''))arbreChange()});")
  &&src.includes("plus.onclick=()=>openTalent(null,renderArbres,{famille:c.famille,voie:c.voie});col.append(plus)}")
  &&src.includes("{famille:talentFamily(t),voie:t.voie||'',prerequis:t.id,level:Math.min(20,(t.level||1)+1)})));")
@@ -1581,13 +1581,13 @@ assert.ok(page.includes('.token .pv{position:absolute;left:2%;right:2%;bottom:10
 /* L'arbre d'une classe s'ouvre depuis l'onglet Talents, par le rouage posé contre son nom :
    sans combattant, nul n'y porte rien, le clic sur un talent le corrige, et la Provocation
    ne pose plus de bandeau en travers de la carte. */
-assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null;')
+assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null,arbresVueJoueur=false;')
  &&src.includes("function openArbresClasse(famille){if(view!=='mj')return;arbresActeur=null;arbresClasse=famille||GENERIQUES;")
  &&src.includes("function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();")
  &&src.includes("const classe=a?classeDuHeros(a):arbresClasse;")&&src.includes("const porte=t=>!!a&&a.talents.includes(t.id);")
- &&src.includes("el.onclick=()=>{if(!a){openTalent(catalog.talents.indexOf(t),renderArbres);return}")
+ &&src.includes("el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}")
  &&src.includes("const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);")
- &&src.includes("arbresDialog.addEventListener('close',()=>{arbresActeur=null;arbresClasse=null});")
+ &&src.includes("arbresDialog.addEventListener('close',()=>{if(arbresDialog.open)return;arbresActeur=null;arbresClasse=null;arbresVueJoueur=false});")
  &&src.includes("rouage.textContent='⚙';rouage.title='Arbre de talents — '+famille;")
  &&src.includes("rouage.onclick=e=>{e.stopPropagation();openArbresClasse(famille)};h.append(rouage);")
  /* Le nom de la classe ouvre le même arbre, un clic hors de la fenêtre la referme, et ni
@@ -1887,4 +1887,67 @@ assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x
  &&src.includes("const premierAutre=boite.querySelector('.btn-talent,.btn-objet');")&&!src.includes("boite.querySelector('.btn-talent');")
  &&page.includes("const tenus=talentsCodes(a),affine=tenus.find(x=>x.code.cle==='orbesfeu');")
  &&page.includes("const logo=(code.cle==='orbes'&&affine&&affine.talent.logo)||talent.logo||'';")&&page.includes('return {talent,code,params,rangee,logo,'),'vignettes, bulles, objets, attaque première, logo des orbes');
-console.log('1211 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les étages d'une colonne : l'épine des centraux, et sous chacun deux places en diagonale
+   qu'un talent de branche occupe ; les chemins se ferment et s'ouvrent, et l'on ne marche
+   que sur les chemins ouverts. Un talent de branche sans central reprend l'épine. */
+{const morceau=(debut,fin)=>{const i=src.indexOf(debut);return src.slice(i,src.indexOf(fin,i))};
+ const ctx={catalog:{classes:[],voies:{Mystique:['Pyromane']},cheminsCaches:{},talents:[
+   {id:'o',name:'Orbes de Feu',famille:'Mystique',type:'act',level:1,voie:'Pyromane'},
+   {id:'b',name:'Brisefeu',famille:'Mystique',type:'ame',level:2,voie:'Pyromane',prerequis:'o'},
+   {id:'g',name:'Braise',famille:'Mystique',type:'pass',level:2,voie:'Pyromane',prerequis:'o',branche:'g'},
+   {id:'d',name:'Cendre',famille:'Mystique',type:'pass',level:2,voie:'Pyromane',prerequis:'o',branche:'d'},
+   {id:'x',name:'Orphelin',famille:'Mystique',type:'pass',level:2,voie:'Pyromane',prerequis:'zz',branche:'g'},
+   {id:'f',name:'Fournaise',famille:'Mystique',type:'act',level:3,voie:'Pyromane'}]},
+  cleClasse:C.cleClasse,ordonneTalents:C.ordonneTalents,talentCode:C.talentCode,manqueTalent:C.manqueTalent,talentsDependants:C.talentsDependants,VOIES_MAX:3,SEGMENTS:['c','g','gc','d','dc']};
+ vm.createContext(ctx);
+ vm.runInContext(morceau('const TALENT_TYPES=','function talent(id)')+morceau('function talentFamilies()',"// L'encre d'une classe")
+  +morceau('function descendDe(','function openTalent(')+morceau('const AUTRE_VOIE=','const arbresDialog='),ctx);
+ const col=ctx.colonnesArbre('Mystique')[0];let et=ctx.etagesArbre(col);
+ assert.equal(JSON.stringify(et.map(e=>[e.t.id,e.g&&e.g.id,e.d&&e.d.id,e.suivant&&e.suivant.id])),JSON.stringify([['o','g','d','b'],['b',null,null,'x'],['x',null,null,'f'],['f',null,null,null]]),'l’épine, ses diagonales, et l’orphelin remis sur l’épine');
+ assert.equal(JSON.stringify(et.map(e=>e.rang)),'[0,1,2,3]');
+ const [o,b,g,d,x]=['o','b','g','d','x'].map(id=>ctx.catalog.talents.find(t=>t.id===id));
+ // Le premier central est libre ; une diagonale attend son central ; le suivant, un chemin ouvert.
+ assert.equal(ctx.verrouEtages([],et,o),'');assert.equal(ctx.verrouEtages([],et,g),'Orbes de Feu');assert.equal(ctx.verrouEtages([],et,d),'Orbes de Feu');
+ assert.equal(ctx.verrouEtages([],et,b),'Orbes de Feu ou Braise ou Cendre');
+ assert.equal(ctx.verrouEtages(['o'],et,g),'');assert.equal(ctx.verrouEtages(['o'],et,b),'');
+ assert.equal(ctx.verrouEtages(['g'],et,b),'','par la diagonale gauche, sans le central');
+ // Fermer le chemin droit : il faut passer par une diagonale ; fermer les retours : plus de passage.
+ assert.equal(ctx.cheminCache('o','c'),false);assert.equal(ctx.basculeChemin('o','c'),true);assert.equal(ctx.cheminCache('o','c'),true);
+ assert.equal(ctx.verrouEtages(['o'],et,b),'Braise ou Cendre');assert.equal(ctx.verrouEtages(['o','g'],et,b),'');
+ assert.equal(ctx.basculeChemin('o','gc'),true);assert.equal(ctx.verrouEtages(['o','g'],et,b),'Cendre');
+ assert.equal(ctx.basculeChemin('o','dc'),true);assert.equal(ctx.verrouEtages(['o','g','d'],et,b),'un chemin ouvert jusqu’à lui');
+ assert.equal(ctx.basculeChemin('o','g'),true);assert.equal(ctx.verrouEtages(['o'],et,g),'un chemin ouvert jusqu’à lui');
+ assert.equal(JSON.stringify(ctx.catalog.cheminsCaches),JSON.stringify({o:['c','gc','dc','g']}));
+ assert.equal(ctx.basculeChemin('o','c'),true);assert.equal(ctx.verrouEtages(['o'],et,b),'','rouvert');
+ assert.equal(ctx.basculeChemin('o','zzz'),false);assert.equal(ctx.basculeChemin('','c'),false);
+ ['gc','dc','g'].forEach(seg=>ctx.basculeChemin('o',seg));assert.equal(JSON.stringify(ctx.catalog.cheminsCaches),'{}','tout rouvert : plus rien de noté');
+ // La chute : oublier un central emporte tout ce qui est sous lui, diagonales comprises ; une diagonale tombe seule.
+ assert.equal(JSON.stringify(ctx.chuteDe(et,o).map(t=>t.id)),JSON.stringify(['o','g','d','b','x','f']));
+ assert.equal(JSON.stringify(ctx.chuteDe(et,x).map(t=>t.id)),JSON.stringify(['x','f']));
+ assert.equal(JSON.stringify(ctx.chuteDe(et,g).map(t=>t.id)),'["g"]');
+ // Placer en diagonale, puis sur l'épine : la branche suit la destination.
+ assert.equal(ctx.placerTalent('f',{famille:'Mystique',voie:'Pyromane',prerequis:'b',branche:'d'}),true);
+ et=ctx.etagesArbre(ctx.colonnesArbre('Mystique')[0]);
+ assert.equal(JSON.stringify(et.map(e=>[e.t.id,e.g&&e.g.id,e.d&&e.d.id])),JSON.stringify([['o','g','d'],['b',null,'f'],['x',null,null]]));
+ assert.equal(ctx.placerTalent('f',{famille:'Mystique',voie:'Pyromane',prerequis:'b'}),true);
+ assert.equal(ctx.catalog.talents.find(t=>t.id==='f').branche,'','déposé sur un central : sur l’épine');
+ assert.equal(JSON.stringify(ctx.etagesArbre(ctx.colonnesArbre('Mystique')[0]).map(e=>e.t.id)),JSON.stringify(['o','b','f','x']));}
+assert.ok(src.includes("const SEGMENTS=['c','g','gc','d','dc'];")&&src.includes("t.branche=t.branche==='g'||t.branche==='d'?t.branche:''});")
+ &&src.includes("const segs=[...new Set(l.filter(x=>SEGMENTS.includes(x)))];if(segs.length)c.cheminsCaches[id]=segs});")
+ &&src.includes("+sel('Place dans l’arbre','branche',t.branche||'',[['','Sur l’épine — talent central'],['g','Diagonale gauche, sous le prérequis'],['d','Diagonale droite, sous le prérequis']])")
+ &&src.includes(" t.branche=f.branche&&(f.branche.value==='g'||f.branche.value==='d')?f.branche.value:'';")
+ &&src.includes(" t.branche=dest.branche==='g'||dest.branche==='d'?dest.branche:'';"),'la place d’un talent dans l’arbre : au formulaire, au dépôt, au chargement');
+/* Les chemins se tracent en SVG d'un rond à l'autre, se ferment d'un clic pour le MJ, ne se
+   dessinent pas fermés pour la troupe ; la vue joueur ôte les outils au MJ le temps de regarder. */
+assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');if(!corps||!arbresDialog.open)return;')
+ &&src.includes("if(B){const cache=cheminCache(e.t.id,'c');if(mj||!cache)trait(H,B,'c',e.t.id,cache,false,!cache&&pris(e.t,e.suivant))}")
+ &&src.includes("g.onclick=e=>{e.stopPropagation();if(basculeChemin(id,seg))arbreChange()}}")
+ &&src.includes("const a=arbresActeur,mj=view==='mj'&&!arbresVueJoueur;")&&src.includes("else if(view!=='mj'){arbresDialog.close();return}")
+ &&src.includes("arbresVue.onclick=()=>{arbresVueJoueur=!arbresVueJoueur;noteArbres('');renderArbres()};")
+ &&src.includes("if(mj||e.suivant||e.g||e.d){const inter=document.createElement('div');inter.className='arbre-etage inter'+(!e.g&&!e.d?' vide':'');")
+ &&src.includes("const place=(col,e,seg)=>{const p=document.createElement('div');p.className='arbre-place';\n  if(!mj)return p;")
+ &&src.includes(" requestAnimationFrame(traceChemins)}")
+ &&feuille.includes('.arbre-chemins{position:absolute;inset:0;')&&feuille.includes('.arbre-chemins .chemin.cache .trait{stroke-dasharray:5 7;opacity:.3}')
+ &&feuille.includes('.arbre-col.editable .arbre-chemins .chemin{pointer-events:stroke;cursor:pointer}')&&feuille.includes('.arbre-etages .arbre-noeud::before{display:none}')
+ &&feuille.includes('.arbre-place:empty{visibility:hidden}')&&feuille.includes('.arbres-vue.on{'),'les chemins tracés, fermés d’un clic, et la vue joueur');
+console.log('1247 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

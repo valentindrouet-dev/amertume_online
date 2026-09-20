@@ -779,6 +779,38 @@ button.choix-attaque.sans-des{grid-auto-rows:1fr}
 .best-att-tete .att-logo.vide{border:1px dashed var(--line-strong);color:var(--muted);font:700 13px system-ui}
 /* Une colonne pas encore baptisée : son intitulé s'efface un peu, pour inviter au clic. */
 .arbre-titre .arbre-voie.vierge{opacity:.72;font-style:italic}
+/* ---------- Les étages et les chemins ---------- */
+/* Une colonne en étages : l'épine au centre, les diagonales à gauche et à droite. Les
+   chemins se tracent en SVG par-dessus, d'un rond à l'autre, sous les nœuds. */
+.arbre-col{position:relative;min-width:250px;max-width:340px;flex-basis:250px}
+.arbre-chemins{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:0}
+.arbre-etages{position:relative;z-index:1;display:flex;flex-direction:column;width:100%;align-items:stretch}
+.arbre-etage{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:start;width:100%}
+.arbre-etage.central>.arbre-noeud{grid-column:2}
+.arbre-etage.inter{min-height:34px;margin:10px 0}
+.arbre-etage.inter.vide{min-height:26px}
+.arbre-etages .arbre-noeud::before{display:none}
+.arbre-etages .arbre-noeud{padding:0 2px}
+.arbre-etages .arbre-noeud.diag .arbre-rond{width:50px;height:50px;font-size:21px}
+.arbre-etages .arbre-noeud.diag .arbre-nom{font-size:12px}
+.arbre-etages .arbre-entre{align-self:center}
+/* La place vide d'une diagonale : un rond en pointillé, un « + » ; elle reçoit un talent
+   qu'on y dépose, ou en crée un d'un clic. Hors édition, elle n'est qu'un vide. */
+.arbre-place{justify-self:center;width:34px;height:34px;border-radius:50%;border:2px dashed var(--line-strong);display:grid;place-items:center;color:var(--muted);font:700 18px/1 system-ui;cursor:pointer;background:var(--panel-2);box-shadow:0 0 0 3px var(--panel-2);opacity:.75}
+.arbre-place:empty{visibility:hidden}
+.arbre-place:hover,.arbre-place:focus{opacity:1;color:var(--accent);border-color:var(--accent)}
+.arbre-place.survol{opacity:1;border-style:solid;border-color:var(--green);box-shadow:0 0 0 3px var(--panel-2),0 0 0 6px var(--green)}
+.arbre-chemins .chemin .trait{stroke:var(--line-strong);stroke-width:3;stroke-linecap:round;fill:none}
+.arbre-chemins .chemin .zone{stroke:transparent;stroke-width:16;stroke-linecap:round}
+.arbre-chemins .chemin.pris .trait{stroke:var(--green)}
+.arbre-chemins .chemin.vide .trait{stroke-dasharray:2 6;opacity:.55}
+.arbre-chemins .chemin.cache .trait{stroke-dasharray:5 7;opacity:.3}
+.arbre-col.editable .arbre-chemins .chemin{pointer-events:stroke;cursor:pointer}
+.arbre-col.editable .arbre-chemins .chemin:hover .trait{stroke:var(--accent);opacity:1}
+/* La vue joueur, à côté du titre : un œil pour regarder, un crayon pour reprendre. */
+.arbres-vue{margin-left:auto;padding:5px 12px;border-radius:8px;font:600 13px system-ui;white-space:nowrap}
+.arbres-vue.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+
 /* La phrase que le moteur appliquera, sous la description d'un objet : en retrait léger,
    comme dans la banque des effets. */
 .gear-detail .gear-effet{font-weight:600}
