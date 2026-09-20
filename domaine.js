@@ -10,7 +10,7 @@ let domaine=normaliseDomaine(null);
 const snapshotSansDomaine=snapshot;snapshot=function(){return Object.assign(snapshotSansDomaine(),{domaine})};
 const appliquerSansDomaine=appliquerSauvegarde;appliquerSauvegarde=function(s){appliquerSansDomaine(s);domaine=normaliseDomaine(s&&s.domaine);domSel=null;domPageSel=null};
 function sauveDomaine(){scheduleSave()}
-const TEINTES_ETAPE=['#b9a48a','#c9953f','#7faddc','#8bbd9c'];
+const TEINTES_ETAPE=['#b9a48a','#c9953f','#7faddc','#8bbd9c','#d9532b','#6e6a66'];
 const batimentDom=id=>domaine.batiments.find(b=>b.id===id)||null;
 function nomLieu(lieu){if(lieu==='aventure')return 'En aventure';if(lieu==='absent')return 'Absent';
  const b=lieu?batimentDom(lieu):null;return b?b.nom:'Au domaine'}
@@ -36,7 +36,7 @@ function dessineDomaine(canvas,vue,redessine){const d=domaine,c=d.carte,ctx=canv
  if(vue>=0){const im=charge(vue);if(im)ctx.drawImage(im,0,0,W,H);return !!c.calques[vue]}
  const fond=calqueDisponible(c.calques,0);if(fond<0)return false;
  const imFond=charge(fond);if(imFond)ctx.drawImage(imFond,0,0,W,H);
- d.batiments.forEach(b=>{if(!b.zone)return;const k=calqueDisponible(c.calques,b.etape);if(k<0||k===fond)return;
+ d.batiments.forEach(b=>{if(!b.zone)return;const k=calqueDuBatiment(c.calques,b);if(k<0||k===fond)return;
   const im=charge(k);if(!im)return;
   ctx.save();ctx.beginPath();b.zone.forEach(([x,y],i)=>ctx[i?'lineTo':'moveTo'](x/100*W,y/100*H));ctx.closePath();ctx.clip();
   ctx.drawImage(im,0,0,W,H);ctx.restore()});
@@ -47,12 +47,12 @@ function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildre
  const ns='http://www.w3.org/2000/svg';
  d.batiments.forEach((b,i)=>{if(!b.zone)return;
   const p=document.createElementNS(ns,'polygon');p.setAttribute('points',b.zone.map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));
-  p.setAttribute('class','dom-zone e'+b.etape+(opts.sel===i?' sel':''));p.dataset.bat=String(i);
-  const t=document.createElementNS(ns,'title');t.textContent=b.nom+' — '+NOM_ETAPE(b.etape);p.append(t);svg.append(p);
+  p.setAttribute('class','dom-zone e'+b.etape+(b.etat?' etat-'+b.etat:'')+(opts.sel===i?' sel':''));p.dataset.bat=String(i);
+  const t=document.createElementNS(ns,'title');t.textContent=b.nom+' — '+NOM_ETAPE(b.etape)+(b.etat?' · '+NOM_ETAT_BATIMENT(b.etat):'');p.append(t);svg.append(p);
   const c=centroide(b.zone);if(!c)return;
-  const e=document.createElement('span');e.className='dom-etiquette e'+b.etape+(opts.sel===i?' sel':'');
+  const e=document.createElement('span');e.className='dom-etiquette e'+b.etape+(b.etat?' etat-'+b.etat:'')+(opts.sel===i?' sel':'');
   e.style.left=c[0]+'%';e.style.top=c[1]+'%';
-  const nom=document.createElement('b');nom.textContent=b.nom;const et=document.createElement('small');et.textContent=NOM_ETAPE(b.etape);
+  const nom=document.createElement('b');nom.textContent=b.nom;const et=document.createElement('small');et.textContent=b.etat?NOM_ETAT_BATIMENT(b.etat):NOM_ETAPE(b.etape);
   e.append(nom,et);etiquettes.append(e)});
  if(opts.trace&&opts.trace.pts.length){const pts=opts.trace.pts;
   const f=document.createElementNS(ns,pts.length>2?'polygon':'polyline');
@@ -70,10 +70,10 @@ domEditeur.innerHTML=
  +'<button id="dom-ouvrir" class="primary">Ouvrir le Domaine</button></div>'
  +'<input type="file" id="dom-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="dom-calques"><span class="muted">Calques</span>'
- +ETAPES_DOMAINE.map(([k,nom],i)=>'<span class="dom-calque"><button id="dom-calque-'+i+'" data-calque="'+i+'" title="Charger l’image du village à l’étape « '+nom+' »">'+nom+'</button>'
+ +CALQUES_DOMAINE.map(([k,nom],i)=>'<span class="dom-calque'+(i>=4?' dom-calque-etat':'')+'"><button id="dom-calque-'+i+'" data-calque="'+i+'" title="Charger l’image du village '+(i>=4?'« '+nom+' » — un état, pas une étape':'à l’étape « '+nom+' »')+'">'+nom+'</button>'
   +'<button id="dom-calque-x-'+i+'" data-retire="'+i+'" class="dom-calque-x" title="Retirer ce calque" hidden>×</button></span>').join('')
  +'<span class="bar-sep"></span><label class="dom-vue">Vue <select id="dom-vue"><option value="-1">Composée — chaque bâtiment à son étape</option>'
- +ETAPES_DOMAINE.map(([k,nom],i)=>'<option value="'+i+'">Calque '+nom+' entier</option>').join('')+'</select></label></div>'
+ +CALQUES_DOMAINE.map(([k,nom],i)=>'<option value="'+i+'">Calque '+nom+' entier</option>').join('')+'</select></label></div>'
  +'<div class="tool-bar" id="dom-outils"><button data-outil="select">Sélection</button><button data-outil="zone">Tracer un bâtiment</button>'
  +'<span class="bar-sep"></span><button id="dom-undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="dom-redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="dom-zoom-out" aria-label="Dézoomer">−</button><span id="dom-zoom-label" class="muted">100 %</span>'
@@ -85,7 +85,7 @@ domProps.innerHTML='<h2>Bâtiments</h2><p class="muted">Clique un bâtiment pour
  +'<div id="dom-liste"></div><div class="side-actions"><button id="dom-bat-add">+ Bâtiment</button></div>'
  +'<div class="divider"></div><h2>Bâtiment choisi</h2><div id="dom-sel-boite"><p class="muted">Aucun bâtiment choisi.</p></div>'
  +'<div class="divider"></div><h2>Légende</h2><ul class="legend">'
- +ETAPES_DOMAINE.map(([k,nom],i)=>'<li><i class="sw-etape" style="--t:'+TEINTES_ETAPE[i]+'"></i>'+nom+'</li>').join('')
+ +CALQUES_DOMAINE.map(([k,nom],i)=>'<li><i class="sw-etape" style="--t:'+TEINTES_ETAPE[i]+'"></i>'+nom+(i>=4?' — un état, pas une étape':'')+'</li>').join('')
  +'<li><i class="sw-cut"></i>Tracé en cours — Entrée ferme, Échap abandonne</li></ul>'
  +'<p class="muted">Les quatre calques doivent avoir le même cadrage : la même vue du village, à chaque étape. Le premier chargé fixe le cadre.</p>';
 mapsPage.append(domEditeur,domProps);
@@ -151,7 +151,7 @@ $('dom-wrap').addEventListener('wheel',e=>{const r=$('dom-canvas').getBoundingCl
 const domAuZoom=v=>v/Math.max(1,domZoom);
 function renderDomaineEditeur(){if(!domaineEdite)return;const d=domaine;
  $('dom-nom').value=d.nom;$('dom-vue').value=String(domVue);
- [0,1,2,3].forEach(i=>{const on=!!d.carte.calques[i];$('dom-calque-'+i).classList.toggle('on',on);$('dom-calque-x-'+i).hidden=!on});
+ CALQUES_DOMAINE.forEach((_,i)=>{const on=!!d.carte.calques[i];$('dom-calque-'+i).classList.toggle('on',on);$('dom-calque-x-'+i).hidden=!on});
  document.querySelectorAll('#dom-outils [data-outil]').forEach(b=>b.classList.toggle('on',b.dataset.outil===domOutil));
  $('dom-hint').textContent=d.carte.calques.some(Boolean)?DOM_HINTS[domOutil]||'':'Commence par charger le calque « Friche » : l’image du village avant toute construction. Puis les trois autres, au même cadrage.';
  $('dom-undo').disabled=!domUndo.length;$('dom-redo').disabled=!domRedo.length;
@@ -168,7 +168,7 @@ function renderDomZones(){dessineZonesDom($('dom-zones'),$('dom-etiquettes'),{se
 function renderDomListe(){const boite=$('dom-liste');boite.replaceChildren();
  domaine.batiments.forEach((b,i)=>{const row=document.createElement('button');row.className='dom-ligne e'+b.etape+(domSel===i?' current':'');
   const nom=document.createElement('strong');nom.textContent=b.nom;
-  const det=document.createElement('small');det.textContent=NOM_ETAPE(b.etape)+(b.zone?' · tracé':' · sans zone');
+  const det=document.createElement('small');det.textContent=NOM_ETAPE(b.etape)+(b.etat?' · '+NOM_ETAT_BATIMENT(b.etat).toLowerCase():'')+(b.zone?' · tracé':' · sans zone');
   row.append(nom,det);row.onclick=()=>{domSel=i;domTrace=null;renderDomaineEditeur()};boite.append(row)})}
 function renderDomSel(){const boite=$('dom-sel-boite');boite.replaceChildren();const b=domSel!==null?domaine.batiments[domSel]:null;
  if(!b){const p=document.createElement('p');p.className='muted';p.textContent='Aucun bâtiment choisi.';boite.append(p);return}
@@ -177,6 +177,10 @@ function renderDomSel(){const boite=$('dom-sel-boite');boite.replaceChildren();c
  const etape=document.createElement('select');etape.setAttribute('aria-label','Étape');
  ETAPES_DOMAINE.forEach(([k,n],i)=>etape.add(new Option(n,String(i))));etape.value=String(b.etape);
  etape.onchange=()=>{pushDomUndo();b.etape=Number(etape.value);renderDomaineEditeur();sauveDomaine()};
+ // L'état : intact, en feu, en ruines — il ne se construit pas, il arrive.
+ const etat=document.createElement('select');etat.setAttribute('aria-label','État');
+ ETATS_BATIMENT.forEach(([k,n])=>etat.add(new Option(n,k)));etat.value=b.etat||'';
+ etat.onchange=()=>{pushDomUndo();b.etat=etat.value==='feu'||etat.value==='ruine'?etat.value:'';renderDomaineEditeur();sauveDomaine()};
  const tracer=document.createElement('button');tracer.textContent=b.zone?'Retracer la zone':'Tracer la zone';
  tracer.onclick=()=>{domOutil='zone';domTrace=null;renderDomaineEditeur()};
  const actions=document.createElement('div');actions.className='side-actions';actions.append(tracer);
@@ -188,7 +192,8 @@ function renderDomSel(){const boite=$('dom-sel-boite');boite.replaceChildren();c
  actions.append(suppr);
  const l1=document.createElement('label');l1.textContent='Nom';l1.append(nom);
  const l2=document.createElement('label');l2.textContent='Étape';l2.append(etape);
- boite.append(l1,l2,actions)}
+ const l3=document.createElement('label');l3.textContent='État';l3.append(etat);
+ boite.append(l1,l2,l3,actions)}
 $('dom-bat-add').onclick=()=>{pushDomUndo();const b=nouveauBatiment('Bâtiment '+(domaine.batiments.length+1));domaine.batiments.push(b);
  domSel=domaine.batiments.length-1;renderDomaineEditeur();sauveDomaine()};
 /* ---------- Le tracé ---------- */
@@ -270,6 +275,7 @@ function renderDomBats(){const boite=$('dom-bats');boite.replaceChildren();
   const tete=document.createElement('div');tete.className='dom-bat-tete';
   const nom=document.createElement('strong');nom.textContent=b.nom;
   const et=document.createElement('span');et.className='dom-etape';et.textContent=NOM_ETAPE(b.etape);tete.append(nom,et);
+  if(b.etat){const x=document.createElement('span');x.className='dom-etat etat-'+b.etat;x.textContent=NOM_ETAT_BATIMENT(b.etat);tete.append(x)}
   row.append(tete);
   const effet=(b.effets[b.etape]||'').trim();
   if(effet){const p=document.createElement('p');p.className='dom-effet';p.textContent=effet;row.append(p)}
@@ -291,7 +297,11 @@ function renderDomFiche(){const boite=$('dom-fiche');boite.replaceChildren();con
  const et=document.createElement('span');et.className='dom-etape e'+b.etape;et.textContent=NOM_ETAPE(b.etape);
  const recul=document.createElement('button');recul.textContent='↩ Étape précédente';recul.title='Corriger : revenir à l’étape d’avant, sans remboursement';recul.disabled=b.etape===0;
  recul.onclick=()=>{if(reculerEtape(b)){renderDomaine();sauveDomaine()}};
- tete.append(nom,et,boutonConstruire(b),recul);boite.append(tete);
+ // L'état du bâtiment : intact, en feu, en ruines — la carte le montre s'il a son calque.
+ const etat=document.createElement('select');etat.className='dom-etat-choix';etat.setAttribute('aria-label','État du bâtiment');
+ ETATS_BATIMENT.forEach(([k,n])=>etat.add(new Option(n,k)));etat.value=b.etat||'';
+ etat.onchange=()=>{b.etat=etat.value==='feu'||etat.value==='ruine'?etat.value:'';renderDomaine();sauveDomaine()};
+ tete.append(nom,et,etat,boutonConstruire(b),recul);boite.append(tete);
  const grille=document.createElement('div');grille.className='dom-couts';
  [1,2,3].forEach(e=>{const l=document.createElement('label');l.textContent='Coût — '+NOM_ETAPE(e);
   const inp=document.createElement('input');inp.type='number';inp.min='0';inp.step='1';inp.value=String(b.couts[e-1]);

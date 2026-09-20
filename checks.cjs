@@ -1811,7 +1811,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
  assert.deepEqual(C.ETAPES_DOMAINE.map(e=>e[1]),['Friche','Fondations','Construction','Construit']);
  assert.equal(D.batiments.length,13);assert.equal(D.batiments[0].nom,'Étables');
  assert.ok(D.batiments.every(b=>b.etape===0&&b.zone===null&&b.couts.length===3&&b.effets.length===4&&b.id));
- assert.equal(D.finances.tresor,0);assert.deepEqual(D.finances.journal,[]);assert.deepEqual(D.carte.calques,[null,null,null,null]);
+ assert.equal(D.finances.tresor,0);assert.deepEqual(D.finances.journal,[]);assert.deepEqual(D.carte.calques,[null,null,null,null,null,null]);
  assert.equal(D.carte.ratio,16/9);assert.deepEqual(D.pnj,[]);assert.equal(D.nom,'Le Domaine');assert.equal(D.monnaie,'or');
  // Un domaine abîmé se relit borné : étapes dans [0,3], zones valides ou rien, journal court.
  const G=C.normaliseDomaine({nom:42,batiments:[{nom:'Forge',etape:7,zone:[[0,0],[200,-5],[10,10]],couts:['a',5,-3]},{etape:-2,zone:[[0,0],[1,1]]},null],
@@ -1819,7 +1819,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
   pnj:[{nom:'Brenn',statut:'roi'},{statut:'visiteur'}],aventuriers:{h1:{lieu:'x',notes:'n'}}});
  assert.equal(G.nom,'42');assert.equal(G.batiments.length,2);assert.equal(G.batiments[0].etape,3);assert.deepEqual(G.batiments[0].zone,[[0,0],[100,0],[10,10]]);
  assert.deepEqual(G.batiments[0].couts,[0,5,0]);assert.equal(G.batiments[1].etape,0);assert.equal(G.batiments[1].zone,null);assert.equal(G.batiments[1].nom,'Bâtiment');
- assert.deepEqual(G.carte.calques,['a',null,null,null]);assert.equal(G.carte.ratio,16/9);assert.equal(G.finances.tresor,12);assert.equal(G.finances.journal.length,200);
+ assert.deepEqual(G.carte.calques,['a',null,null,null,null,null]);assert.equal(G.carte.ratio,16/9);assert.equal(G.finances.tresor,12);assert.equal(G.finances.journal.length,200);
  assert.equal(G.pnj[0].statut,'habitant');assert.equal(G.pnj[1].statut,'visiteur');assert.equal(G.pnj[1].nom,'Inconnu');assert.deepEqual(G.aventuriers.h1,{lieu:'x',notes:'n'});
  // Construire : le trésor paie, le journal note, l'étape avance ; sans le sou, rien — sauf forcé.
  const b=D.batiments.find(x=>x.nom==='Forge');b.couts=[100,200,300];D.finances.tresor=150;
@@ -1855,14 +1855,14 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
   &&cartes.includes('<button data-page="domaine">Domaine</button>')&&cartes.includes("else if(p==='domaine')renderDomaine();")
   &&cartes.includes("if(typeof domaineEdite!=='undefined'&&domaineEdite){renderMapList();renderDomaineEditeur()}")
   &&cartes.includes("const editeDomaine=()=>typeof domaineEdite!=='undefined'&&domaineEdite;")
-  &&(cartes.match(/\|\|editeDomaine\(\)/g)||[]).length===3,'l’onglet Domaine, MJ seul, et l’éditeur de combat cède ses touches');
+  &&(cartes.match(/\|\|editeDomaine\(\)/g)||[]).length===4,'l’onglet Domaine, MJ seul, et l’éditeur de combat cède ses touches');
  assert.ok(fief.includes('let domaine=normaliseDomaine(null);')
   &&fief.includes('snapshot=function(){return Object.assign(snapshotSansDomaine(),{domaine})};')
   &&fief.includes('appliquerSauvegarde=function(s){appliquerSansDomaine(s);domaine=normaliseDomaine(s&&s.domaine);')
   &&src.includes("if(s.domaine!=null&&(typeof s.domaine!=='object'||Array.isArray(s.domaine)))return 'Le domaine de la sauvegarde est illisible.';")
   &&!/\bdomaine\b/.test(partage)&&!/\bdomaine\b/.test(vivant),'le domaine voyage dans la sauvegarde, et nulle part ailleurs');
  assert.ok(fief.includes('function dessineDomaine(canvas,vue,redessine)')&&fief.includes('const fond=calqueDisponible(c.calques,0);if(fond<0)return false;')
-  &&fief.includes("ctx.closePath();ctx.clip();")&&fief.includes('const k=calqueDisponible(c.calques,b.etape);if(k<0||k===fond)return;')
+  &&fief.includes("ctx.closePath();ctx.clip();")&&fief.includes('const k=calqueDuBatiment(c.calques,b);if(k<0||k===fond)return;')
   &&fief.includes("if(vue>=0){const im=charge(vue);if(im)ctx.drawImage(im,0,0,W,H);return !!c.calques[vue]}"),'le village composé : chaque bâtiment découpé dans le calque de son étape');
  assert.ok(fief.includes('renderMapList=function(){renderMapListSansDomaine();')&&fief.includes('mapsPage.append(domEditeur,domProps);')
   &&fief.includes('function entreDomaine(){domaineEdite=true;mapsPage.classList.add(\'mode-domaine\');')
@@ -2004,7 +2004,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  assert.equal(miette.compte,0,'une case ou deux ne font pas une zone');
  assert.equal(C.calculeZones([],[],10,5).compte,1);assert.equal(C.zoneAu(null,1,1),0);
  assert.ok(cartes.includes("const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');")&&cartes.includes("fogBar.append(fogReset,fogAll,eyeBtn,zonesBtn,lockBtn);")
-  &&cartes.includes("function zonesDe(m){if(!m)return null;")&&cartes.includes("zonesCache={cle,zones:calculeZones(matiereDe(m),portes,cols,rows)}}")
+  &&cartes.includes("function zonesDe(m){if(!m)return null;")&&cartes.includes("zonesCache={cle,zones:calculeZones(matiereDe(m),portes,cols,rows,10,m.zonesCoupures,m.zonesLiens)}}")
   &&cartes.includes("function zoneDe(a){const m=currentMap();return m&&a?zoneAu(zonesDe(m),a.x,a.y):0}")&&cartes.includes("function memeZone(a,b){")
   &&cartes.includes("if(!zonesVisibles||!m||view!=='mj'){cv.style.display='none';noms.hidden=true;return}")
   &&cartes.includes("zonesBtn.hidden=!m;zonesBtn.classList.toggle('on',zonesVisibles);")&&feuille.includes('#map-zones,#map-zones-noms{position:absolute;inset:0;'),'les zones se voient d’un bouton, et se retiennent');}
@@ -2057,4 +2057,46 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
   &&src.includes("['main','Main gauche',mains[1]||null],['torse','Torse',seul('torse')],['main','Main droite',mains[0]||null],")
   &&feuille.includes('.corps{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));')&&feuille.includes('.corps .place.bottes{grid-column:2}')
   &&feuille.includes('.corps .gear-carre.deux-mains{opacity:.45;pointer-events:none}')&&feuille.includes('.sac.survol{'),'le corps et le sac, et le glisser-déposer');}
-console.log('1329 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Les coupures et les liens du MJ : une coupure est un trait d'une case qui sépare — un
+   seuil, une arche — sans rien bloquer d'autre ; un lien fond deux zones en une. Les deux
+   voyagent avec la carte, bornés. */
+{const troue={anneaux:[[[49,0],[51,0],[51,40],[49,40]]]},mur={anneaux:[[[49,0],[51,0],[51,100],[49,100]]]};
+ assert.equal(C.calculeZones([troue],[],320,180).compte,1,'un mur qui ne ferme rien');
+ const zc=C.calculeZones([troue],[],320,180,10,[{x1:50,y1:40,x2:50,y2:100}],[]);
+ assert.equal(zc.compte,2,'la coupure au seuil sépare');assert.notEqual(C.zoneAu(zc,10,10),C.zoneAu(zc,90,90));
+ const zd=C.calculeZones([],[],320,180,10,[{x1:0,y1:0,x2:100,y2:100}],[]);
+ assert.equal(zd.compte,2,'une coupure en diagonale sépare aussi : l’inondation ne passe pas entre deux cases en coin');
+ const zl=C.calculeZones([mur],[[[49,40],[51,40],[51,60],[49,60]]],320,180,10,[],[{x1:10,y1:10,x2:90,y2:90}]);
+ assert.equal(zl.compte,1,'le lien fond les deux salles');assert.equal(C.zoneAu(zl,10,10),C.zoneAu(zl,90,90));
+ assert.equal(C.calculeZones([mur],[[[49,40],[51,40],[51,60],[49,60]]],320,180,10,[],[{x1:10,y1:10,x2:50,y2:50}]).compte,2,'un lien depuis une porte ne lie rien');
+ assert.deepEqual(C.cleanSegments([{x1:-5,y1:200,x2:'3',y2:'x'},null,'z']),[{x1:0,y1:100,x2:3,y2:0}]);
+ assert.equal(C.cleanSegments(Array.from({length:300},()=>({x1:1,y1:1,x2:2,y2:2}))).length,200);
+ const nettoyee=C.cleanMap({name:'z',zonesCoupures:[{x1:1,y1:1,x2:2,y2:2}],zonesLiens:'nope'});
+ assert.deepEqual(nettoyee.zonesCoupures,[{x1:1,y1:1,x2:2,y2:2}]);assert.deepEqual(nettoyee.zonesLiens,[]);
+ assert.ok(cartes.includes("KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coupure:'Séparation de zones',lien:'Regroupement de zones'}")
+  &&cartes.includes('<button data-tool="zones">Zones</button><select id="zones-mode"')&&cartes.includes(" $('zones-mode').hidden=mapTool!=='zones';zoneTrait=zoneVise=null;")
+  &&cartes.includes(" m.zonesCoupures??=[];m.zonesLiens??=[];")&&cartes.includes(' dessineTraits();dessineZonesEditeur();')
+  &&cartes.includes("if(d.kind==='coupure')return (m.zonesCoupures||[])[d.i];if(d.kind==='lien')return (m.zonesLiens||[])[d.i];")
+  &&cartes.includes("else if(d.kind==='coupure')m.zonesCoupures.splice(d.i,1);else if(d.kind==='lien')m.zonesLiens.splice(d.i,1);")
+  &&cartes.includes('function dessineZonesEditeur(){')&&cartes.includes('function segmentSous(p){')&&cartes.includes('function clicZones(p){')
+  &&cartes.includes("if(mapTool==='zones'&&e.button===0){clicZones(p);e.preventDefault();return}")
+  &&cartes.includes("if(mode==='regrouper'){const z=zonesDe(m),a=zoneAu(z,seg.x1,seg.y1),b=zoneAu(z,seg.x2,seg.y2);if(!a||!b||a===b){renderCanvas();return}")
+  &&cartes.includes("if(mapTool==='zones'&&zoneTrait&&!mapDrag){zoneVise=pct(e);dessineZonesEditeur();return}")
+  &&cartes.includes("e.preventDefault();zoneTrait=zoneVise=null;dessineZonesEditeur()});")
+  &&cartes.includes('function peindreZones(cv,noms,z){if(!z)return;')&&cartes.includes("c.append(cv,noms);peindreZones(cv,noms,z);")
+  &&feuille.includes('.calque-zones .coupure{stroke:#e04a2f;')&&feuille.includes('.calque-zones .lien{stroke:#2f8a63;')&&feuille.includes('#map-tools [data-tool=zones]{'),'l’outil Zones : voir, séparer, regrouper, choisir, effacer');}
+/* Le domaine : deux calques de plus — En feu, Ruines — qui ne se construisent pas, et un état
+   par bâtiment qui dit lequel le découpe. */
+{const d=C.normaliseDomaine({batiments:[{nom:'Forge',etape:2,etat:'feu'},{nom:'Temple',etat:'zzz'},{nom:'Tour',etape:1,etat:'ruine'}]});
+ assert.equal(C.CALQUES_DOMAINE.length,6);assert.deepEqual(C.CALQUES_DOMAINE.slice(4).map(c=>c[0]),['feu','ruine']);assert.equal(d.carte.calques.length,6);
+ assert.deepEqual(d.batiments.map(b=>b.etat),['feu','','ruine']);assert.equal(C.nouveauBatiment('x').etat,'');
+ assert.equal(C.calqueDuBatiment([null,'a',null,null,'F','R'],d.batiments[0]),4,'en feu, le calque du feu');
+ assert.equal(C.calqueDuBatiment([null,'a',null,null,null,'R'],d.batiments[0]),1,'sans calque du feu, celui de l’étape — le plus proche en dessous');
+ assert.equal(C.calqueDuBatiment(['a',null,null,null,'F','R'],d.batiments[2]),5);assert.equal(C.calqueDuBatiment(['a',null,null,null,'F','R'],d.batiments[1]),0);
+ assert.equal(C.calqueDisponible(['a',null,null,null,'F','R'],3),0,'le fond ne prend jamais un état pour une étape');
+ assert.equal(C.NOM_ETAT_BATIMENT('feu'),'En feu');assert.equal(C.NOM_ETAT_BATIMENT(''),'Intact');
+ const fief=fs.readFileSync('domaine.js','utf8');
+ assert.ok(fief.includes("+CALQUES_DOMAINE.map(([k,nom],i)=>'<span class=\"dom-calque'+(i>=4?' dom-calque-etat':'')+'\">")&&fief.includes(" CALQUES_DOMAINE.forEach((_,i)=>{const on=!!d.carte.calques[i];")
+  &&fief.includes("const etat=document.createElement('select');etat.className='dom-etat-choix';")&&fief.includes(" tete.append(nom,et,etat,boutonConstruire(b),recul);boite.append(tete);")
+  &&fief.includes("if(b.etat){const x=document.createElement('span');x.className='dom-etat etat-'+b.etat;")&&feuille.includes('.dom-zone.etat-feu{--t:#d9532b}'),'En feu et Ruines : les calques, l’état sur la fiche et la carte');}
+console.log('1354 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

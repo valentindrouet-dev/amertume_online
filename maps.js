@@ -9,7 +9,7 @@ const nsSVG='http://www.w3.org/2000/svg';
 // Grille du brouillard : des cellules carrées et fines, pour un bord net qui suit les murs.
 const FOG_COLS=640;let fogVis=null,fogSeen=null,fogSeenSrc=null,fogKey='',fogDim=null,fogMem=null,fogDirty=true;
 function fogDims(m){const r=(m&&m.ratio)||16/9,w=FOG_COLS,h=Math.max(32,Math.round(w/r));return{w,h,n:w*h}}
-const KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet'};
+const KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coupure:'Séparation de zones',lien:'Regroupement de zones'};
 function currentMap(){return maps.find(m=>m.id===currentMapId)||null}
 // L'éditeur et la table étirent l'image de la même façon ; encore faut-il que le cadre
 // ait le bon rapport. On le relit sur l'image pour les cartes d'avant son enregistrement.
@@ -552,6 +552,7 @@ mapsPage.innerHTML=
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="objet">+ Objet</button>'
+ +'<button data-tool="zones">Zones</button><select id="zones-mode" aria-label="Outil de zones" hidden><option value="voir">Voir les zones</option><option value="separer">Séparer — un trait</option><option value="regrouper">Regrouper — deux clics</option></select>'
  +'<span class="bar-sep"></span><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
  +'<button id="czoom-in" aria-label="Zoomer">+</button><button id="czoom-reset">Ajuster</button></div>'
@@ -592,6 +593,9 @@ document.addEventListener('keydown',e=>{if(!document.body.classList.contains('pa
 document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps')||editeDomaine()||!lasso)return;
  if(e.key==='Enter'){e.preventDefault();applyLasso()}
  else if(e.key==='Escape'){e.preventDefault();if(!annulerTrait()){lasso=null;renderCanvas()}}});
+// Échap abandonne un trait ou un lien de zones en cours.
+document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps')||editeDomaine()||!zoneTrait||e.key!=='Escape')return;
+ e.preventDefault();zoneTrait=zoneVise=null;dessineZonesEditeur()});
 document.addEventListener('keydown',e=>{if(!document.body.classList.contains('page-maps')||editeDomaine())return;
  if(e.key!=='Delete'&&e.key!=='Backspace')return;
  if(e.target.closest('input,textarea,select'))return;
@@ -609,6 +613,8 @@ function supprimeSelection(){const m=mapDraft;if(!m||!mapSel)return false;
 function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,matiere:[],doors:[],start:null,foes:[],objets:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
 function ensure(m){m.doors??=[];m.foes??=[];m.ratio??=16/9;
+ // Les zones séparées ou regroupées par le MJ : nées en v0.252.
+ m.zonesCoupures??=[];m.zonesLiens??=[];
  // Les objets sont nés en v0.144 ; chacun porte un identifiant, la table s'y réfère.
  m.objets??=[];m.objets.forEach(o=>{o.id||=crypto.randomUUID();o.test??={comp:3,reussites:1};o.items??=[]});
  m.echelle??={x:8,y:8,t:SOCLE_DEFAUT};
@@ -652,6 +658,7 @@ $('map-image-clear').onclick=()=>{if(mapDraft){pushUndo();mapDraft.image=null;re
 $('map-play').onclick=()=>{if(mapDraft)openBattleMap(mapDraft.id)};
 document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(mapTool!=='lasso')lasso=null;
  $('pinceau-taille').hidden=mapTool!=='pinceau'&&mapTool!=='gomme';
+ $('zones-mode').hidden=mapTool!=='zones';zoneTrait=zoneVise=null;
  // Changer d'outil abandonne le tracé en cours : on ne finit pas un trait à la truelle.
  if(mapTool!=='ligne')traitDepart=traitVise=null;
  renderCanvas()});
@@ -699,7 +706,8 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  pinceau:'Glisse pour peindre de la matière à main levée, comme au feutre. Le trait se fond dans les zones qu’il touche. Sa grosseur se choisit à côté, en fraction de socle : elle suit donc l’échelle de la carte.',
  gomme:'Glisse pour gratter la matière, comme à la gomme. Ce qui est verrouillé résiste. Sa grosseur se choisit à côté.',
  foe:'Clique pour poser l’adversaire choisi à droite de la barre. Pour le rendre invisible, donne-lui l’état Invisible en jeu.',
- objet:'Clique pour poser un objet ou un mécanisme : coffre, levier, trésor. Sa fiche s’ouvre aussitôt — nom, taille, description, objets à prendre, et s’il est caché, le test qui le découvre. Double-clic sur un objet posé pour le modifier.'};
+ objet:'Clique pour poser un objet ou un mécanisme : coffre, levier, trésor. Sa fiche s’ouvre aussitôt — nom, taille, description, objets à prendre, et s’il est caché, le test qui le découvre. Double-clic sur un objet posé pour le modifier.',
+ zones:'Les zones : toute étendue close par la matière et les portes en est une, chacune de sa couleur. « Séparer » : deux clics tracent un trait qui coupe une zone en deux — un seuil, une arche — sans rien bloquer d’autre. « Regrouper » : un clic dans chaque zone les fond en une. Clique un trait ou un lien pour le choisir, Suppr l’efface, Échap abandonne un tracé.'};
 // Le plan de travail adopte le rapport de la carte et occupe la place disponible.
 function sizeCanvas(){const c=$('map-canvas'),w=document.querySelector('.canvas-wrap');
  const ratio=(mapDraft&&mapDraft.ratio)||16/9,dispoW=w.clientWidth||600,dispoH=w.clientHeight||400;
@@ -736,7 +744,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  m.objets.forEach((o,i)=>c.append(objetEl(i,o)));
  // Le socle témoin par-dessus tout le reste : c'est lui qu'on vient comparer.
  const jauge=echelleEl();if(jauge)c.append(jauge);
- dessineTraits();
+ dessineTraits();dessineZonesEditeur();
  // La zone choisie, éclairée d'un bloc, et sa boîte de manœuvre par-dessus.
  const masse=polygoneSel();
  if(masse){c.append(svgSelection(masse));const boite=boiteSelection(masse);if(boite)c.append(boite)}
@@ -746,7 +754,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
  if(porte){$('door-key').checked=!!porte.keyLocked;$('door-secret').checked=!!porte.secret}
  const verrou=masse?!!masse.verrou:!!(cible&&cible.locked);
- $('shape-delete').hidden=!mapSel||verrou;$('shape-lock').hidden=!mapSel;
+ $('shape-delete').hidden=!mapSel||verrou;$('shape-lock').hidden=!mapSel||mapSel.kind==='coupure'||mapSel.kind==='lien';
  if(mapSel)$('shape-lock').textContent=verrou?'🔓 Déverrouiller':'🔒 Verrouiller';
  /* Une masse ne s'annonce pas en morceaux : elle est « la zone de blocage », qu'elle soit
     née d'un rectangle, d'un coup de pinceau ou de vingt gestes mêlés. */
@@ -872,10 +880,56 @@ function applyLasso(){const brut=lasso&&lasso.pts;lasso=null;
  pushUndo();retireMatiere(mapDraft,encreDroite([brut])[0]);mapSel=null;
  matiereChangee()}
 function shapeAt(d){const m=mapDraft;if(!m)return null;if(d.kind==='cut'||d.kind==='bloc')return cutRect;
+ if(d.kind==='coupure')return (m.zonesCoupures||[])[d.i];if(d.kind==='lien')return (m.zonesLiens||[])[d.i];
  return d.kind==='start'?m.start:(d.kind==='door'?m.doors:d.kind==='objet'?m.objets:m.foes)[d.i]}
 function removeShape(d){const m=mapDraft;
  if(d.kind==='start')m.start=null;
+ else if(d.kind==='coupure')m.zonesCoupures.splice(d.i,1);else if(d.kind==='lien')m.zonesLiens.splice(d.i,1);
  else (d.kind==='door'?m.doors:d.kind==='objet'?m.objets:m.foes).splice(d.i,1)}
+/* ---------- L'outil Zones ----------
+   Les zones se voient sur le plan de travail, chacune de sa couleur et de son numéro. Le MJ
+   les sépare d'un trait — deux clics, comme une ligne de blocage — ou les regroupe d'un
+   lien — un clic dans chaque zone. Un trait ou un lien se choisit d'un clic et s'efface
+   par Suppr. Ce sont les mêmes zones que la table calcule. */
+let zoneTrait=null,zoneVise=null;
+const zonesMode=()=>$('zones-mode')?$('zones-mode').value:'voir';
+function dessineZonesEditeur(){const c=$('map-canvas'),m=mapDraft;if(!c||!m)return;
+ c.querySelectorAll('.zones-apercu,.zones-noms,.calque-zones').forEach(e=>e.remove());
+ if(mapTool!=='zones')return;
+ const z=zonesDe(m);
+ const cv=document.createElement('canvas');cv.className='zones-apercu';const noms=document.createElement('div');noms.className='zones-noms';
+ c.append(cv,noms);peindreZones(cv,noms,z);
+ const svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','calque-zones');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
+ const trait=(seg,classe,i)=>{const l=document.createElementNS(nsSVG,'line');l.setAttribute('x1',seg.x1);l.setAttribute('y1',seg.y1);l.setAttribute('x2',seg.x2);l.setAttribute('y2',seg.y2);
+  l.setAttribute('class',classe+(i!==undefined&&mapSel&&mapSel.kind===classe&&mapSel.i===i?' selected':''));svg.append(l);return l};
+ const bout=(x,y,classe)=>{const o=document.createElementNS(nsSVG,'path');o.setAttribute('class',classe);o.setAttribute('d','M'+x+' '+y+'L'+x+' '+y);svg.append(o)};
+ (m.zonesCoupures||[]).forEach((s,i)=>trait(s,'coupure',i));
+ (m.zonesLiens||[]).forEach((s,i)=>{trait(s,'lien',i);bout(s.x1,s.y1,'lien-bout');bout(s.x2,s.y2,'lien-bout')});
+ // Le tracé en cours, en pointillé, jusqu'au curseur.
+ if(zoneTrait&&zoneVise)trait({x1:zoneTrait.x,y1:zoneTrait.y,x2:zoneVise.x,y2:zoneVise.y},zonesMode()==='regrouper'?'lien apercu':'coupure apercu');
+ if(zoneTrait)bout(zoneTrait.x,zoneTrait.y,zonesMode()==='regrouper'?'lien-bout':'coupure-bout');
+ c.append(svg)}
+// Le trait ou le lien le plus proche du point, à portée de clic : {kind,i}, ou rien.
+function segmentSous(p){const m=mapDraft;if(!m)return null;const r=Math.max(.05,Number(m.ratio)||16/9),seuil=auZoom(1.4);let meilleur=null,dist=seuil;
+ const test=(l,kind)=>l.forEach((s,i)=>{const c=closestOnSegment([p.x*r,p.y],[s.x1*r,s.y1],[s.x2*r,s.y2]);const d=Math.hypot(p.x*r-c[0],p.y-c[1]);if(d<dist){dist=d;meilleur={kind,i}}});
+ test(m.zonesCoupures||[],'coupure');test(m.zonesLiens||[],'lien');return meilleur}
+/* Un clic de l'outil Zones : un trait ou un lien sous le curseur se choisit ; sinon, en
+   mode Séparer ou Regrouper, le premier clic pose l'origine et le second achève. */
+function clicZones(p){const m=mapDraft,mode=zonesMode();
+ if(!zoneTrait){const sous=segmentSous(p);if(sous){mapSel=sous;renderCanvas();return}}
+ if(mode==='voir'){mapSel=null;renderCanvas();return}
+ /* Une coupure s'aimante : à un angle de la matière à portée — le pied d'un mur —, et au
+    bord de la carte quand on en est tout près. Un trait qui s'arrête à un cheveu du bord
+    laisserait passer l'inondation par ce cheveu. */
+ if(mode==='separer'){const bout=boutAimante(p,m.ratio);if(bout)p={x:bout.x,y:bout.y};
+  p={x:p.x<1.5?0:p.x>98.5?100:p.x,y:p.y<1.5?0:p.y>98.5?100:p.y}}
+ if(!zoneTrait){if(mode==='regrouper'&&!zoneAu(zonesDe(m),p.x,p.y))return;zoneTrait={x:p.x,y:p.y};zoneVise={x:p.x,y:p.y};mapSel=null;renderCanvas();return}
+ const seg={x1:zoneTrait.x,y1:zoneTrait.y,x2:p.x,y2:p.y};zoneTrait=zoneVise=null;
+ const r=Math.max(.05,Number(m.ratio)||16/9);if(Math.hypot((seg.x2-seg.x1)*r,seg.y2-seg.y1)<auZoom(.6)){renderCanvas();return}
+ if(mode==='regrouper'){const z=zonesDe(m),a=zoneAu(z,seg.x1,seg.y1),b=zoneAu(z,seg.x2,seg.y2);if(!a||!b||a===b){renderCanvas();return}
+  pushUndo();m.zonesLiens.push(seg);mapSel={kind:'lien',i:m.zonesLiens.length-1}}
+ else{pushUndo();m.zonesCoupures.push(seg);mapSel={kind:'coupure',i:m.zonesCoupures.length-1}}
+ matiereChangee()}
 
 /* ---------- Recalage des cartes tracées avant la v0.23 ---------- */
 // L'éditeur d'alors logeait l'image dans un cadre 16/9 : tout le tracé s'en trouvait
@@ -912,6 +966,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapDrag={mode:e.target.dataset.echelleGrip?'echelle-taille':'echelle',from:p,orig:{...mapDraft.echelle}};
   $('map-canvas').setPointerCapture(e.pointerId);e.preventDefault();return}
  const dessous=sous?{kind:sous.dataset.kind,i:Number(sous.dataset.i)}:null;
+ if(mapTool==='zones'&&e.button===0){clicZones(p);e.preventDefault();return}
  // Avec l'outil Sélection, ou sur une poignée, on manipule la forme visée.
 
  /* Une zone de blocage : celle sous le curseur avec l'outil Sélection, ou celle dont on
@@ -981,6 +1036,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  else if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
  mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
 $('map-canvas').addEventListener('pointermove',e=>{
+ if(mapTool==='zones'&&zoneTrait&&!mapDrag){zoneVise=pct(e);dessineZonesEditeur();return}
  if(traitDepart&&!mapDrag){traitVise=viseTrait(pct(e),e.metaKey||e.ctrlKey,mapDraft&&mapDraft.ratio);
   dessineTraits();return}
  if(!mapDrag)return;const p=pct(e),d=mapDrag;
@@ -1149,10 +1205,11 @@ let zonesVisibles=false,zonesCache={cle:'',zones:null};
 const ZONES_COLS=320;
 zonesBtn.onclick=()=>{zonesVisibles=!zonesVisibles;refreshGmBar();renderZones()};
 // Les zones d'une carte, gardées tant que sa géométrie ne bouge pas — portes comprises.
-function zonesDe(m){if(!m)return null;const ratio=Math.max(.05,Number(m.ratio)||16/9),cle=m.id+'|'+geometryKey(m)+'|'+ratio.toFixed(4);
+function zonesDe(m){if(!m)return null;const ratio=Math.max(.05,Number(m.ratio)||16/9);
+ const cle=m.id+'|'+geometryKey(m)+'|'+ratio.toFixed(4)+'|'+JSON.stringify(m.zonesCoupures||[])+'|'+JSON.stringify(m.zonesLiens||[]);
  if(zonesCache.cle!==cle){const cols=ZONES_COLS,rows=Math.max(16,Math.round(cols/ratio));
   const portes=(m.doors||[]).map(d=>doorPolygon(d,ratio)).filter(Boolean);
-  zonesCache={cle,zones:calculeZones(matiereDe(m),portes,cols,rows)}}
+  zonesCache={cle,zones:calculeZones(matiereDe(m),portes,cols,rows,10,m.zonesCoupures,m.zonesLiens)}}
  return zonesCache.zones}
 // La zone où se tient un combattant sur la carte ouverte : 0 sans carte, ou dans un mur.
 function zoneDe(a){const m=currentMap();return m&&a?zoneAu(zonesDe(m),a.x,a.y):0}
@@ -1165,7 +1222,9 @@ function hslVersRgb(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1
 function renderZones(){const cv=$('map-zones'),noms=$('map-zones-noms');if(!cv||!noms)return;const m=currentMap();
  if(!zonesVisibles||!m||view!=='mj'){cv.style.display='none';noms.hidden=true;return}
  const z=zonesDe(m);if(!z||!z.compte){cv.style.display='none';noms.hidden=true;return}
- cv.style.display='';noms.hidden=false;
+ cv.style.display='';noms.hidden=false;peindreZones(cv,noms,z)}
+// La même peinture pour la table et pour l'éditeur : la toile à la grille du calcul, les numéros à part.
+function peindreZones(cv,noms,z){if(!z)return;
  const W=z.cols,H=z.rows;if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
  const ctx=cv.getContext('2d'),img=ctx.createImageData(W,H),px=img.data,sx=new Float64Array(z.compte+1),sy=new Float64Array(z.compte+1),nb=new Int32Array(z.compte+1);
  for(let k=0;k<W*H;k++){const n=z.zone[k];if(!n)continue;const [h,s]=TEINTES_ZONE[(n-1)%TEINTES_ZONE.length],[r,g,b]=hslVersRgb(h,s,55);

@@ -341,6 +341,8 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
   foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
    hidden:!!(f&&f.hidden),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
   objets:(Array.isArray(m&&m.objets)?m.objets:[]).slice(0,200).map(cleanObjet),
+  // Les zones que le MJ a séparées ou regroupées voyagent avec la carte.
+  zonesCoupures:cleanSegments(m&&m.zonesCoupures),zonesLiens:cleanSegments(m&&m.zonesLiens),
   // Le socle témoin voyage avec la carte : c'est lui qui dit à quelle échelle elle est tracée.
   echelle:{x:borne(m&&m.echelle&&m.echelle.x),y:borne(m&&m.echelle&&m.echelle.y),
    t:Math.max(.6,Math.min(40,Number(m&&m.echelle&&m.echelle.t)||100*46/810))}}}
@@ -1251,9 +1253,22 @@ function rempliAnneaux(grid,cols,rows,anneaux,valeur){
   xs.sort((u,v)=>u-v);
   for(let t=0;t+1<xs.length;t+=2){const i0=Math.max(0,Math.ceil(xs[t]/100*cols-.5)),i1=Math.min(cols-1,Math.floor(xs[t+1]/100*cols-.5));
    for(let i=i0;i<=i1;i++)grid[j*cols+i]=valeur}}}
-function calculeZones(polys,portes,cols,rows,miette=10){const n=cols*rows,bouche=new Uint8Array(n);
+/* Les coupures et les liens du MJ. Une coupure est un trait fin qui sépare — une porte
+   ouverte, un seuil, une arche — sans rien bloquer d'autre ; un lien est une paire de
+   points dont les zones n'en font qu'une. Les deux se disent en pour cent de carte. */
+function cleanSegments(l){return (Array.isArray(l)?l:[]).filter(s=>s&&typeof s==='object').slice(0,200)
+ .map(s=>({x1:borne(s.x1,0,100),y1:borne(s.y1,0,100),x2:borne(s.x2,0,100),y2:borne(s.y2,0,100)}))}
+/* Une coupure se trace cellule par cellule le long de son trait : une ligne d'une case,
+   continue en diagonale, que l'inondation — qui ne va que de case en case voisine — ne
+   franchit pas. Plus fine qu'une porte, elle ne bouche jamais rien qu'elle-même. */
+function traceCoupure(bouche,cols,rows,s){const x1=s.x1/100*cols,y1=s.y1/100*rows,x2=s.x2/100*cols,y2=s.y2/100*rows;
+ const n=Math.max(1,Math.ceil(Math.max(Math.abs(x2-x1),Math.abs(y2-y1))*2.5));
+ for(let k=0;k<=n;k++){const t=k/n,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;
+  const i=Math.max(0,Math.min(cols-1,Math.floor(x))),j=Math.max(0,Math.min(rows-1,Math.floor(y)));bouche[j*cols+i]=1}}
+function calculeZones(polys,portes,cols,rows,miette=10,coupures,liens){const n=cols*rows,bouche=new Uint8Array(n);
  (polys||[]).forEach(p=>{if(p&&p.anneaux)rempliAnneaux(bouche,cols,rows,p.anneaux,1)});
  (portes||[]).forEach(q=>{if(q&&q.length>=3)rempliAnneaux(bouche,cols,rows,[q],1)});
+ cleanSegments(coupures).forEach(c=>traceCoupure(bouche,cols,rows,c));
  const zone=new Int16Array(n),tailles=[0],pile=new Int32Array(n);let compte=0;
  for(let s=0;s<n;s++){if(bouche[s]||zone[s])continue;
   compte++;let haut=0,taille=0;pile[haut++]=s;zone[s]=compte;
@@ -1261,9 +1276,15 @@ function calculeZones(polys,portes,cols,rows,miette=10){const n=cols*rows,bouche
    const voisins=[i>0?k-1:-1,i<cols-1?k+1:-1,j>0?k-cols:-1,j<rows-1?k+cols:-1];
    for(const v of voisins)if(v>=0&&!bouche[v]&&!zone[v]){zone[v]=compte;pile[haut++]=v}}
   tailles.push(taille)}
+ // Les liens : deux zones liées n'en font qu'une — la racine de chaque famille garde le numéro.
+ const racine=new Int32Array(compte+1);for(let z=0;z<=compte;z++)racine[z]=z;
+ const trouve=z=>{while(racine[z]!==z){racine[z]=racine[racine[z]];z=racine[z]}return z};
+ const brut={cols,rows,zone};
+ cleanSegments(liens).forEach(l=>{const a=zoneAu(brut,l.x1,l.y1),b=zoneAu(brut,l.x2,l.y2);if(a>0&&b>0){const ra=trouve(a),rb=trouve(b);if(ra!==rb)racine[Math.max(ra,rb)]=Math.min(ra,rb)}});
+ const fusion=new Array(compte+1).fill(0);for(let z=1;z<=compte;z++)fusion[trouve(z)]+=tailles[z];
  // Les miettes s'effacent, et les numéros se resserrent, dans l'ordre de lecture.
  const renum=new Int16Array(compte+1),finales=[0];let m=0;
- for(let z=1;z<=compte;z++){renum[z]=tailles[z]>=miette?++m:0;if(renum[z])finales.push(tailles[z])}
+ for(let z=1;z<=compte;z++){const r=trouve(z);if(r!==z){renum[z]=renum[r];continue}renum[z]=fusion[z]>=miette?++m:0;if(renum[z])finales.push(fusion[z])}
  for(let s=0;s<n;s++)zone[s]=renum[zone[s]];
  return {cols,rows,zone,compte:m,tailles:finales}}
 // La zone sous un point de la carte, en pour cent : 0 dans un mur, une porte, ou une miette.
@@ -1272,6 +1293,12 @@ function zoneAu(z,x,y){if(!z)return 0;
  return z.zone[j*z.cols+i]}
 const ETAPES_DOMAINE=[['friche','Friche'],['fondation','Fondations'],['construction','Construction'],['construit','Construit']];
 const NOM_ETAPE=i=>(ETAPES_DOMAINE[i]||ETAPES_DOMAINE[0])[1];
+/* Les calques de la carte : les quatre étapes, puis deux états qui ne se construisent pas —
+   le village en feu, le village en ruines. Un bâtiment en feu ou en ruines se découpe dans
+   le calque de son état, s'il est chargé ; sinon dans celui de son étape. */
+const CALQUES_DOMAINE=[...ETAPES_DOMAINE,['feu','En feu'],['ruine','Ruines']];
+const ETATS_BATIMENT=[['','Intact'],['feu','En feu'],['ruine','En ruines']];
+const NOM_ETAT_BATIMENT=e=>(ETATS_BATIMENT.find(([k])=>k===e)||ETATS_BATIMENT[0])[1];
 const BATIMENTS_DEFAUT=['Étables','Auberge','Magasin','Tour de Mystique','Temple','Bibliothèque','Forge','Tannerie','Taverne','Baraquements','Entrepôts','Laboratoire','Cartographe'];
 const STATUTS_PNJ=[['habitant','Habitant'],['visiteur','Visiteur']];
 function idDomaine(){return typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'d'+Math.random().toString(36).slice(2)}
@@ -1280,9 +1307,10 @@ function zoneValide(z){if(!Array.isArray(z)||z.length<3)return null;
  const pts=z.filter(p=>Array.isArray(p)&&p.length>=2&&Number.isFinite(Number(p[0]))&&Number.isFinite(Number(p[1])))
   .map(p=>[borne(p[0],0,100),borne(p[1],0,100)]);
  return pts.length>=3?pts.slice(0,400):null}
-function nouveauBatiment(nom,id){return {id:id||idDomaine(),nom:String(nom||'Bâtiment').slice(0,60),etape:0,zone:null,couts:[0,0,0],effets:['','','',''],notes:''}}
+function nouveauBatiment(nom,id){return {id:id||idDomaine(),nom:String(nom||'Bâtiment').slice(0,60),etape:0,etat:'',zone:null,couts:[0,0,0],effets:['','','',''],notes:''}}
 function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
  n.etape=Math.max(0,Math.min(3,Math.trunc(Number(b&&b.etape))||0));
+ n.etat=b&&(b.etat==='feu'||b.etat==='ruine')?b.etat:'';
  n.zone=zoneValide(b&&b.zone);
  n.couts=[0,1,2].map(i=>Math.max(0,Math.trunc(Number(b&&b.couts&&b.couts[i]))||0));
  n.effets=[0,1,2,3].map(i=>String(b&&b.effets&&b.effets[i]||'').slice(0,600));
@@ -1292,7 +1320,7 @@ function normalisePnj(p){return {id:p&&p.id||idDomaine(),nom:String(p&&p.nom||'I
 /* Le domaine relu au travers de sa déclaration, comme tout ce que le moteur enregistre :
    un domaine absent naît avec ses treize bâtiments en friche et un trésor vide. */
 function normaliseDomaine(d){d=d&&typeof d==='object'&&!Array.isArray(d)?d:{};
- const calques=[0,1,2,3].map(i=>{const c=d.carte&&Array.isArray(d.carte.calques)?d.carte.calques[i]:null;return typeof c==='string'&&c?c:null});
+ const calques=CALQUES_DOMAINE.map((_,i)=>{const c=d.carte&&Array.isArray(d.carte.calques)?d.carte.calques[i]:null;return typeof c==='string'&&c?c:null});
  const ratio=Number(d.carte&&d.carte.ratio);
  const batiments=Array.isArray(d.batiments)?d.batiments.filter(Boolean).slice(0,80).map(normaliseBatiment):BATIMENTS_DEFAUT.map(n=>nouveauBatiment(n));
  const ids=new Set();batiments.forEach(b=>{if(ids.has(b.id))b.id=idDomaine();ids.add(b.id)});
@@ -1326,6 +1354,10 @@ function calqueDisponible(calques,etape){const c=calques||[],e=Math.max(0,Math.m
  for(let i=e;i>=0;i--)if(c[i])return i;
  for(let i=e+1;i<4;i++)if(c[i])return i;
  return -1}
+// Le calque où se découpe un bâtiment : celui de son état s'il est chargé, sinon celui de son étape.
+function calqueDuBatiment(calques,b){const c=calques||[];
+ if(b&&b.etat==='feu'&&c[4])return 4;if(b&&b.etat==='ruine'&&c[5])return 5;
+ return calqueDisponible(c,b&&b.etape)}
 // Le centre d'une zone, là où son nom s'écrit : le barycentre de sa surface.
 function centroide(zone){const z=zoneValide(zone);if(!z)return null;
  let a=0,cx=0,cy=0;
@@ -1345,6 +1377,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  return z.map(([x,y])=>[x+dx,y+dy])}
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
+ CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};

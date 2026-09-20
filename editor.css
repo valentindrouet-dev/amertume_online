@@ -926,7 +926,19 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 /* ---------- Les zones de la carte ---------- */
 #map-zones,#map-zones-noms{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
 #map-zones{opacity:.9}#map-zones-noms[hidden]{display:none}
-#map-zones-noms span{position:absolute;transform:translate(-50%,-50%);font:800 12px/1 system-ui;color:#fff;background:var(--z,#334);border:2px solid #fff9;border-radius:12px;padding:3px 8px;box-shadow:0 1px 4px #0008}
+#map-zones-noms span,.zones-noms span{position:absolute;transform:translate(-50%,-50%);font:800 12px/1 system-ui;color:#fff;background:var(--z,#334);border:2px solid #fff9;border-radius:12px;padding:3px 8px;box-shadow:0 1px 4px #0008}
+/* L'outil Zones de l'éditeur : la même peinture, et par-dessus les traits qui séparent et les liens qui regroupent. */
+.zones-apercu{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.9}
+.zones-noms{position:absolute;inset:0;pointer-events:none;z-index:2}
+#map-canvas .zones-noms span{font-size:calc(12px / var(--z));padding:calc(3px / var(--z)) calc(8px / var(--z))}
+.calque-zones{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible}
+.calque-zones .coupure{stroke:#e04a2f;stroke-width:3;stroke-dasharray:9 5;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.calque-zones .lien{stroke:#2f8a63;stroke-width:3;stroke-dasharray:2 6;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.calque-zones .coupure.selected,.calque-zones .lien.selected{stroke-width:5;stroke-dasharray:none;filter:drop-shadow(0 0 4px #fff)}
+.calque-zones .apercu{opacity:.6}
+.calque-zones .lien-bout,.calque-zones .coupure-bout{stroke-width:11;stroke-linecap:round;vector-effect:non-scaling-stroke;fill:none}
+.calque-zones .lien-bout{stroke:#2f8a63}.calque-zones .coupure-bout{stroke:#e04a2f}
+#map-tools [data-tool=zones]{border-color:#2f8a63;color:#2f8a63}#map-tools [data-tool=zones].on{background:#2f8a63;border-color:#2f8a63;color:#fff}
 /* Un nœud de bonus dans l'arbre : un rond ambré à la valeur, la caractéristique en nom. */
 .arbre-noeud.bonus{--teinte:#b8862b}
 .arbre-noeud.bonus .arbre-rond{width:46px;height:46px;font:800 17px system-ui;letter-spacing:-.5px;border-style:double;border-width:4px}
@@ -971,3 +983,11 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .corps.survol{background:color-mix(in srgb,var(--green) 12%,transparent);border-color:var(--green)}
 .sac.survol{outline:2px dashed var(--green);outline-offset:4px;border-radius:8px}
 .sac{min-height:24px}
+
+/* Un bâtiment en feu ou en ruines : sa zone et son étiquette le disent. */
+.dom-zone.etat-feu{--t:#d9532b}.dom-zone.etat-ruine{--t:#6e6a66}
+.dom-etiquette.etat-feu small{color:#ffb39a}.dom-etiquette.etat-ruine small{color:#cfcac4}
+.dom-etat{font:700 10px system-ui;letter-spacing:1px;text-transform:uppercase;border-radius:9px;padding:1px 7px;color:#fff;background:#6e6a66}
+.dom-etat.etat-feu{background:#d9532b}
+.dom-etat-choix{width:auto;margin:0;padding:4px 8px;font-size:13px}
+#dom-calques .dom-calque-etat button:first-child{border-style:dashed}
