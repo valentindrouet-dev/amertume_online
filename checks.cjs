@@ -2053,7 +2053,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.ok(src.includes('function corpsEtSac(a){')&&src.includes(" c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),titreTal,talentPills(a));return c}")
   &&src.includes("function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){")&&src.includes("const p=carreDeFiche(a,o,n,tout,portes,peutEquiper);")
   &&src.includes("  recoit(corps,(o,g)=>!g.porte&&equiperPiece(a,o));\n  recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}")
-  &&src.includes("if(corps!==undefined&&equipable){p.draggable=true;")&&src.includes("const SILHOUETTE='<svg class=\"silhouette\"")
+  &&src.includes("if(corps!==undefined&&equipable){p.draggable=true;")&&src.includes("const SILHOUETTE='<img class=\"silhouette\" src=\"'+imgUrl('PERSO.png')+'\"")&&feuille.includes('.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);object-fit:cover;')
   &&src.includes("['main','Main gauche',mains[1]||null],['torse','Torse',seul('torse')],['main','Main droite',mains[0]||null],")
   &&feuille.includes('.corps{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));')&&feuille.includes('.corps .place.bottes{grid-column:2}')
   &&feuille.includes('.corps .gear-carre.deux-mains{opacity:.45;pointer-events:none}')&&feuille.includes('.sac.survol{'),'le corps et le sac, et le glisser-déposer');}

@@ -973,7 +973,7 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
    haut ; les mains de part et d'autre du torse ; les trois anneaux ; les bottes. */
 .corps-sac{display:flex;flex-direction:column;gap:8px;margin:2px 0 4px}
 .corps{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 6px;padding:8px 4px 6px;border-radius:12px;background:color-mix(in srgb,var(--ink) 4%,transparent);border:1px solid var(--line)}
-.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);fill:var(--ink);opacity:.06;pointer-events:none}
+.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);object-fit:cover;object-position:center;opacity:.75;pointer-events:none;user-select:none}body.sombre .corps .silhouette{opacity:.3}
 .corps .place{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:86px;border-radius:9px}
 .corps .place.bottes{grid-column:2}
 .corps .nom-place{font:600 9px system-ui;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);white-space:nowrap}

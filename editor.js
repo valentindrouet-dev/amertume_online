@@ -872,7 +872,9 @@ function reposerPiece(a,o){if(!a||!o)return false;
  if(emplacementDe(o)==='shield'){if(a.shieldId!==o.id)return false;a.shieldId='';return true}
  a.armures=armuresDe(a);const i=a.armures.lastIndexOf(o.id);if(i<0)return false;a.armures.splice(i,1);return true}
 // Le corps, stylisé : un pâle bonhomme derrière les emplacements.
-const SILHOUETTE='<svg class="silhouette" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><circle cx="50" cy="17" r="13"/><path d="M34 36h32c9 0 14 6 15 14l6 44h-10l-4-30v92H62V96h-8v60H43V64l-4 30H29l6-44c1-8 6-14 15-14z"/></svg>';
+/* Derrière les emplacements, la silhouette d'aventurier peinte par le MJ (img/PERSO.png), en
+   filigrane : elle situe les pièces sur le corps sans jamais gêner le geste. */
+const SILHOUETTE='<img class="silhouette" src="'+imgUrl('PERSO.png')+'" alt="" aria-hidden="true" draggable="false">';
 /* La page Aventuriers montre le corps de l'aventurier — tête, torse, dos, mains, anneaux,
    amulette, bottes — et ce qu'il y porte ; le sac, dessous, tient le reste. On glisse une
    pièce du sac sur le corps pour l'équiper à sa place, une pièce du corps sur le sac pour
