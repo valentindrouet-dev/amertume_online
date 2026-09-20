@@ -2023,7 +2023,7 @@ const ETATS_INFLIGES=()=>STATES.filter(e=>e!=='Aucun'&&e!=='Coma');
 /* Les logos d'équipement : les fichiers img/weapon_*.png, sans leur extension. Le site
    est servi tel quel, sans liste de dossier : un logo ajouté dans img/ se déclare ici —
    node checks.cjs le réclame. L'intitulé du menu vient du nom du fichier. */
-const LOGOS_EQUIPEMENT=['weapon_arbalete','weapon_arc','weapon_armure','weapon_bouclier','weapon_epee','weapon_hache','weapon_lance'];
+const LOGOS_EQUIPEMENT=['weapon_arbalete','weapon_arc','weapon_armure','weapon_bouclier','weapon_cape','weapon_cape_elfique','weapon_cape_magique','weapon_epee','weapon_hache','weapon_lance'];
 /* Les logos d'objets, de même : les img/item_*.png. Munitions, objets et divers y puisent ;
    armes et armures gardent les leurs. */
 const LOGOS_OBJET=['item_healpotion'];
