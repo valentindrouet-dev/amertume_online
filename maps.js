@@ -499,9 +499,9 @@ tabs.innerHTML='<button data-page="table" class="on">Table de jeu</button><butto
 document.querySelector('.view-controls').before(tabs);
 const PAGES=['table','maps','domaine','heroes','talents','armory','bestiary','settings'];
 // Les Paramètres sont un réglage d'appareil, pas du contenu de partie : ils restent ouverts aux joueurs.
-/* La troupe a ses propres pages : ses fiches, et le bestiaire de ce qu'elle a analysé.
-   Tout ce qui s'y modifie reste au MJ — voir « vue-joueur » dans editor.css. */
-const PAGES_LIBRES=['table','heroes','bestiary','settings'];
+/* La troupe a ses propres pages : ses fiches, le bestiaire de ce qu'elle a analysé, et le
+   domaine, en lecture. Tout ce qui s'y modifie reste au MJ — voir « vue-joueur » dans editor.css. */
+const PAGES_LIBRES=['table','domaine','heroes','bestiary','settings'];
 const tabsMJ=[...tabs.querySelectorAll('button')].filter(b=>!PAGES_LIBRES.includes(b.dataset.page));
 /* L'onglet ouvert est un réglage d'appareil, comme le thème : recharger en plein
    travail au bestiaire doit y ramener, pas rejeter sur la table de jeu. Il ne voyage

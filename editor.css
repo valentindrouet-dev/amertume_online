@@ -873,6 +873,17 @@ button.choix-attaque.sans-des{grid-auto-rows:1fr}
 #dom-sel-boite input,#dom-sel-boite select{width:100%;margin-top:4px}
 #dom-sel-boite .side-actions{margin-top:4px}
 button.dom-danger{color:#b03828;border-color:#b0382866}button.dom-danger:hover{border-color:#b03828}
+/* La fiche lue par les joueurs : rien à saisir. Le jeton d'un aventurier n'est pas une prise chez eux. */
+.dom-fiche-nom-lu{font:700 20px 'Killam',Georgia,serif;margin:0;flex:1 1 200px}.dom-couts-lus{margin:6px 0 4px;font-size:12.5px}
+.dom-effets-lus{display:flex;flex-direction:column;gap:4px;margin:6px 0}.dom-effet-lu{margin:0;font-size:13px;line-height:1.4;border-left:3px solid var(--t,var(--line));padding-left:8px}
+.dom-effet-lu.e0{--t:#b9a48a}.dom-effet-lu.e1{--t:#c9953f}.dom-effet-lu.e2{--t:#7faddc}.dom-effet-lu.e3{--t:#8bbd9c}.dom-effet-lu.actuelle{font-weight:700}
+.dom-av-lieu{font-size:13px;color:var(--muted)}div.dom-pnj{cursor:default}body.vue-joueur .dom-etiquette .jeton-rond.mini{cursor:default}
+/* Les campagnes, dans les Paramètres : une ligne par campagne, la campagne ouverte en évidence. */
+.campagne-liste{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.campagne-ligne{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2)}
+.campagne-ligne.ouverte{border-color:var(--accent);background:var(--sel-fond)}
+.campagne-ligne .campagne-texte{flex:1 1 220px;min-width:0}.campagne-ligne strong{display:block;font-size:14px}.campagne-ligne small{color:var(--muted);font-size:11.5px}
+.campagne-ligne .campagne-outils{display:flex;gap:4px;flex-wrap:wrap}.campagne-ligne .campagne-outils button{padding:4px 9px;font-size:12.5px;margin:0}
 /* L'onglet : la liste des bâtiments à gauche, la carte et la fiche au centre, la gestion à droite. */
 #domaine-page{display:none}
 body.page-domaine #domaine-page{display:grid;grid-template-columns:260px minmax(0,1fr) 320px;gap:16px;padding:16px 28px 26px;align-items:start}

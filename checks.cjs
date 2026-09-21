@@ -1489,7 +1489,7 @@ assert.ok(src.includes("const sansEffet=t=>typeof manqueTalent==='function'?manq
 assert.ok(src.includes('function acteurCourant(a){if(!a||actors.includes(a))return a;return actors.find(x=>x&&x.id===a.id)||a}')
  &&src.includes('function peutVoirArbres(a){a=acteurCourant(a);return !!a&&(view===\'mj\'||(a.hero&&actors.indexOf(a)===owner))}')
  &&src.includes(' if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);')
- &&fs.readFileSync('shared.js','utf8').includes("if(typeof renderCatalogPages==='function')renderCatalogPages()}")
+ &&fs.readFileSync('shared.js','utf8').includes("if(typeof renderCatalogPages==='function')renderCatalogPages();")
  &&src.includes('function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;')
  &&src.includes("if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}")
  &&src.includes("const mien=view==='mj'||actors.indexOf(a)===owner;")
@@ -1860,7 +1860,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
   &&fief.includes('snapshot=function(){return Object.assign(snapshotSansDomaine(),{domaine})};')
   &&fief.includes('appliquerSauvegarde=function(s){appliquerSansDomaine(s);domaine=normaliseDomaine(s&&s.domaine);')
   &&src.includes("if(s.domaine!=null&&(typeof s.domaine!=='object'||Array.isArray(s.domaine)))return 'Le domaine de la sauvegarde est illisible.';")
-  &&!/\bdomaine\b/.test(partage)&&!/\bdomaine\b/.test(vivant),'le domaine voyage dans la sauvegarde, et nulle part ailleurs');
+  &&/domaine:typeof domaine!=='undefined'/.test(partage)&&!/\bdomaine\b/.test(vivant),'le domaine voyage dans la sauvegarde et le contenu publié, jamais par la table');
  assert.ok(fief.includes('function dessineDomaine(canvas,vue,redessine)')&&fief.includes('const fond=calqueDisponible(c.calques,0);if(fond<0)return false;')
   &&fief.includes("ctx.closePath();ctx.clip();")&&fief.includes('const k=calqueDuBatiment(c.calques,b);if(k<0||k===fond)return;')
   &&fief.includes("if(vue>=0){const im=charge(vue);if(im)ctx.drawImage(im,0,0,W,H);return !!c.calques[vue]}"),'le village composé : chaque bâtiment découpé dans le calque de son étape');
@@ -2216,10 +2216,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    sous le lieu d'un aventurier ; sans bâtiment choisi, la fiche disparaît. */
 {const fief=fs.readFileSync('domaine.js','utf8');
  assert.ok(fief.includes("if(opts.jeu){const presents=actors.filter(a=>a.hero&&(domaine.aventuriers[a.id]||{}).lieu===b.id);")
-  &&fief.includes("presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name+' — glisser vers un autre bâtiment construit';")
+  &&fief.includes("presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name+(mjDom()?' — glisser vers un autre bâtiment construit':'');")
   &&feuille.includes('.dom-etiquette-jetons{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;'),'les jetons des présents sous le nom, sur le plan, sans le soulever');
  assert.ok(fief.includes(" boite.hidden=!b;if(!b)return;")&&!fief.includes('Choisis un bâtiment, dans la liste ou sur la carte')
-  &&fief.includes("  row.append(tete,lieu);boite.append(row)})}")&&!fief.includes("notes.placeholder='Note'"),'fiche muette sans bâtiment, lieu sans note');
+  &&fief.includes("if(mjDom())row.append(tete,lieu);")&&fief.includes("  boite.append(row)})}")&&!fief.includes("notes.placeholder='Note'"),'fiche muette sans bâtiment, lieu sans note');
 }
 /* v0.262 — Seuls les bâtiments construits accueillent un aventurier ; si l'étape recule, il en sort. */
 {const fief=fs.readFileSync('domaine.js','utf8');
@@ -2228,7 +2228,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  vm.runInContext(fief.slice(fief.indexOf('const batimentConstruit='),fief.indexOf('function nomLieu(')),ctxE);
  assert.equal(ctxE.evacueNonConstruits(),1);
  assert.deepEqual(Object.values(ctxE.domaine.aventuriers).map(v=>v.lieu),['','y','aventure','','perdu']);
- assert.ok(fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave()}")&&fief.includes("function renderDomaine(){const d=domaine;evacueNonConstruits();")
+ assert.ok(fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave();")&&fief.includes("function renderDomaine(){const d=domaine,mj=mjDom();vueDomaine=view;if(mj)evacueNonConstruits();")
   &&fief.includes("...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),")&&fief.includes("batimentConstruit(batimentDom(v.lieu))))?v.lieu:'';"),'la liste des lieux ne propose que le construit');
 }
 /* v0.263 — Le jeton d'un aventurier se glisse vers un bâtiment construit ; les jetons sont moitié plus
@@ -2246,4 +2246,34 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.logo='';t.effects=''}")
   &&feuille.includes('.talent-cache{display:none!important}'),'l’éditeur devient éditeur de bonus');
 }
-console.log('1412 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.264 — Le domaine part avec le contenu publié et se lit chez les joueurs, sans édition ; les
+   campagnes s'enregistrent dans l'appli : troupe, adversaires, domaine, scène, progression des cartes. */
+{const fief=fs.readFileSync('domaine.js','utf8'),camp=fs.readFileSync('campagnes.js','utf8'),partage=fs.readFileSync('shared.js','utf8');
+ assert.ok(cartes.includes("const PAGES_LIBRES=['table','domaine','heroes','bestiary','settings'];")
+  &&partage.includes(",locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:structuredClone(catalog),")
+  &&partage.includes("if(remote.domaine&&typeof normaliseDomaine==='function'){domaine=normaliseDomaine(remote.domaine);domSel=null;domPageSel=null}")
+  &&fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}"),'le domaine voyage avec le contenu publié');
+ assert.ok(fief.includes("const mjDom=()=>typeof view==='undefined'||view==='mj';")&&fief.includes("['dom-editer','dom-export','dom-import'].forEach(id=>$(id).hidden=!mj);")
+  &&fief.includes("if(!mjDom()){renderDomFicheLue(boite,b);return}")&&fief.includes("function renderDomFicheLue(boite,b){")&&!fief.includes("renderDomFicheLue(boite,b){")===false
+  &&fief.includes("if(ev.button!==0||!mjDom())return;")&&fief.includes(" tresor.append(val);if(mjDom())tresor.append(monnaie);")&&fief.includes("if(mjDom())boite.append(form);")
+  &&fief.includes("const row=document.createElement(mjDom()?'button':'div');")&&fief.includes("if(mjDom())row.append(tete,lieu);else{const ou=document.createElement('span');ou.className='dom-av-lieu';ou.textContent=nomLieu(v.lieu);")
+  &&fief.includes("if(document.body.classList.contains('page-domaine')&&vueDomaine!==view)renderDomaine()};"),'les joueurs lisent le domaine sans rien y changer');
+ assert.ok(page.includes('<script src="./campagnes.js?v=')&&camp.includes("localStorage.setItem('amertume-campagne',id)")
+  &&camp.includes("renderSettings=function(){renderSettingsSansCampagnes();$('bloc-campagnes').hidden=view!=='mj';renderCampagnes()};")
+  &&camp.includes("document.addEventListener('amertume-partie-chargee',chargeCampagnes);")&&feuille.includes('.campagne-ligne.ouverte{'),'les campagnes ont leur bloc, au MJ');
+ const ctxC={};vm.createContext(ctxC);
+ vm.runInContext(camp.slice(camp.indexOf('function etatCartes('),camp.indexOf('function partieCourante('))+camp.slice(camp.indexOf('function resumePartie('),camp.indexOf('/* Ouvrir :')),ctxC);
+ const cartes2=[{id:'a',fog:'0011',seen:'01',fogOff:true,doors:[{open:true},{open:false}]},{id:'b',doors:[{open:true}]}];
+ const etat=ctxC.etatCartes(cartes2);
+ assert.deepEqual(JSON.parse(JSON.stringify(etat)),{a:{fog:'0011',seen:'01',fogOff:true,portes:[true,false]},b:{fog:null,seen:null,fogOff:false,portes:[true]}});
+ const neuves=[{id:'a',fog:'zzzz',doors:[{open:false},{open:true}]},{id:'b',fog:'11',doors:[{open:false}]},{id:'c',doors:[]}];
+ ctxC.poseEtatCartes(neuves,etat);
+ assert.equal(neuves[0].fog+'/'+neuves[0].seen+'/'+neuves[0].fogOff+'/'+neuves[0].doors.map(d=>d.open).join(','),'0011/01/true/true,false');
+ assert.equal(('fog' in neuves[1])+'/'+neuves[1].doors[0].open,'false/true','une carte sans brouillard dans la campagne repart sans brouillard');
+ assert.equal(neuves[2].fog,undefined,'une carte inconnue de la campagne ne change pas');
+ assert.equal(ctxC.resumePartie({actors:[{hero:true},{hero:true},{hero:false}],domaine:{nom:'Val'},round:4}),'2 aventuriers · 1 adversaire · Val · tour 4');
+ assert.equal(ctxC.resumePartie({}),'0 aventurier · tour 1');
+ assert.equal(ctxC.verifieCampagne({genre:'campagne',partie:{actors:[{name:'Éla'}]}}),'');
+ assert.match(ctxC.verifieCampagne({genre:'domaine',domaine:{}}),/pas une campagne/);assert.match(ctxC.verifieCampagne({genre:'campagne',partie:{actors:[{}]}}),/troupe lisible/);
+}
+console.log('1424 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
