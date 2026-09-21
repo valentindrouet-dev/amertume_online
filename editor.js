@@ -954,6 +954,10 @@ const GENERIQUES='Génériques';
 const AUTRE_CLASSE='__autre';
 const talentFamily=t=>(t&&t.famille||'').trim()||GENERIQUES;
 function talent(id){return (catalog.talents||[]).find(t=>t&&t.id===id)}
+/* Un bonus de caractéristique n'est pas un talent : un nœud d'arbre qu'on débloque en
+   descendant, et rien de plus. Il vit dans le catalogue des talents — même rangement, même
+   arbre — mais ne paraît jamais parmi eux : ni fiche, ni onglet, ni sélecteur. */
+const estBonus=t=>!!t&&t.effet==='bonus';
 // « compact » : sur une fiche, la vignette ne dit que le nom — la nature et le niveau
 // encombraient une colonne étroite, et le dépliant les redit.
 function talentPill(t,compact){const [cle,court,nom]=talentType(t);
@@ -1371,7 +1375,8 @@ function renderBiblioObjets(){const boite=$('biblio-objets');if(!boite)return;
 function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
  /* Rangés par type — Action, Réaction, Passif, Critique, Maîtrise, Amélioration — puis
     par nom : on lit la bibliothèque comme on lit un arbre de talents. */
- const codes=Object.values(TALENTS_CODES).map(c=>{
+ // Le bonus de caractéristique n'est pas une mécanique de talent : il a son propre éditeur.
+ const codes=Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>{
   const k=TALENT_TYPES.findIndex(t=>t[0]===(c.type||'act'));
   return [c,k<0?TALENT_TYPES.length:k]})
   .sort((u,v)=>u[1]-v[1]||String(u[0].nom).localeCompare(String(v[0].nom),'fr'))
@@ -1411,7 +1416,7 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
  const tri=$('talent-sort').value;
  const visibles=sel.value?[sel.value]:familles;
  for(const famille of visibles){
-  const liste=(catalog.talents||[]).map((t,i)=>[t,i]).filter(([t])=>talentFamily(t)===famille
+  const liste=(catalog.talents||[]).map((t,i)=>[t,i]).filter(([t])=>!estBonus(t)&&talentFamily(t)===famille
    &&(!q||t.name.toLowerCase().includes(q)||(t.effects||'').toLowerCase().includes(q)));
   liste.sort((a,b)=>tri==='nom'?a[0].name.localeCompare(b[0].name,'fr')
    :tri==='niveau-'?(b[0].level||1)-(a[0].level||1)||a[0].name.localeCompare(b[0].name,'fr')
@@ -1486,7 +1491,14 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   ...actors.filter(a=>a.hero).map(a=>(a.role||'').split('·')[0].trim()).filter(Boolean),
   talentFamily(t)])];
  const famille=talentFamily(t);
- $('talent-fields').innerHTML='<div class="edit-grid quatre">'
+ /* Talent ou bonus de caractéristique : deux natures, un seul dialogue. Le bonus n'a ni nom,
+    ni type, ni logo, ni mécanique à choisir — une caractéristique, une valeur, sa place dans
+    l'arbre. Les champs qui ne le concernent pas se retirent quand on le choisit. */
+ const bonus=estBonus(t),pb=paramsTalent({effet:'bonus',params:t.params||{}}),optBonus=cle=>(TALENTS_CODES.bonus.params.find(p=>p.cle===cle)||{}).options||[];
+ $('talent-fields').innerHTML='<div class="nature-choix" role="radiogroup" aria-label="Nature">'
+  +'<label><input type="radio" name="nature" value="talent"'+(bonus?'':' checked')+'> Talent</label>'
+  +'<label><input type="radio" name="nature" value="bonus"'+(bonus?' checked':'')+'> Bonus de caractéristique</label></div>'
+  +'<div class="edit-grid quatre">'
   +field('Nom','name',t.name,'text','required maxlength="120"')
   /* Un vrai menu, et non plus une liste de suggestions : un datalist ne propose que ce
      qui ressemble à ce qui est déjà écrit, et le champ arrivant rempli de « Génériques »,
@@ -1512,14 +1524,33 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
      lui-même, ni ce qui repose déjà sur lui — sans quoi l'arbre se mordrait la queue. */
   +sel('Prérequis — talent à posséder d’abord','prerequis',t.prerequis||'',[['','— aucun —'],
    ...(catalog.talents||[]).filter(x=>x&&x.id!==t.id&&!descendDe(x,t)).map(x=>[x.id,talentFamily(x)+' · '+x.name+' (niv. '+(x.level||1)+')'])])
-  +'<label>Effet<textarea name="effects" rows="3" maxlength="600">'+esc(t.effects||'')+'</textarea></label>'
+  +'<div class="t-seul"><label>Effet<textarea name="effects" rows="3" maxlength="600">'+esc(t.effects||'')+'</textarea></label>'
   /* Le texte ci-dessus se lit à la table ; celui-ci agit. On choisit l'effet dans la liste
      de ce que le moteur sait faire, puis on en règle les valeurs — plus besoin que le nom
      du talent tombe juste. */
   +'<h2 class="sous-titre">Effet appliqué par le moteur</h2>'
-  +sel('Mécanique','effet',t.effet||'',[['','— Aucun : talent descriptif —'],
-   ...Object.values(TALENTS_CODES).map(c=>[c.cle,libelleTalent(c.cle)])])
-  +'<div id="talent-reglages"></div>';
+  +sel('Mécanique','effet',bonus?'':(t.effet||''),[['','— Aucun : talent descriptif —'],
+   ...Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>[c.cle,libelleTalent(c.cle)])])
+  +'<div id="talent-reglages"></div></div>'
+  // Le bonus : une caractéristique, une valeur — et la compétence, si c'est là qu'il va.
+  +'<div class="b-seul"><h2 class="sous-titre">Le bonus</h2><div class="edit-grid">'
+  +sel('Caractéristique','b_carac',pb.carac,optBonus('carac'))
+  +field('Valeur','b_valeur',pb.valeur,'number','min="1" max="20"')
+  +sel('Compétence','b_comp',pb.comp,optBonus('comp'))+'</div>'
+  +'<p class="muted" id="bonus-apercu"></p></div>';
+ /* Ce qui n'est que talent — nom, type, logo, rangée, effet, mécanique — se retire en mode
+    bonus, et ce qui n'est que bonus se retire en mode talent : retiré, et non caché, pour
+    qu'un champ requis absent ne bloque pas l'enregistrement. */
+ const champs=$('talent-form').elements;
+ ['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});
+ const apercuBonus=()=>{const comp=champs.b_carac.value==='comp';const lc=champs.b_comp.closest('label');if(lc)lc.classList.toggle('talent-cache',!comp);
+  $('bonus-apercu').textContent='Dans l’arbre : '+libelleBonus({carac:champs.b_carac.value,valeur:num(champs.b_valeur.value,1,20),comp:champs.b_comp.value})};
+ const poseNature=()=>{const b=champs.nature.value==='bonus';
+  $('talent-fields').querySelectorAll('.t-seul').forEach(el=>{el.classList.toggle('talent-cache',b);el.querySelectorAll('input,select,textarea').forEach(c=>c.disabled=b)});
+  $('talent-fields').querySelectorAll('.b-seul').forEach(el=>{el.classList.toggle('talent-cache',!b);el.querySelectorAll('input,select,textarea').forEach(c=>c.disabled=!b)});
+  talentDialog.querySelector('.dialog-head h2').textContent=b?'Bonus de caractéristique':'Talent';apercuBonus()};
+ [...champs.nature].forEach(r=>r.onchange=poseNature);champs.b_carac.onchange=apercuBonus;champs.b_valeur.oninput=apercuBonus;champs.b_comp.onchange=apercuBonus;
+ poseNature();
  /* « Autre classe… » ouvre le champ libre et lui donne la main ; revenir sur une classe
     connue le referme, et ce qui y était tapé ne compte plus. */
  const fam=$('talent-form').elements.famille,voie=$('talent-form').elements.voie;
@@ -1560,8 +1591,12 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.logo=f.logo&&LOGOS_TALENT.includes(f.logo.value)?f.logo.value:'';
  t.rangee=f.rangee&&['attaques','reactions','aucune'].includes(f.rangee.value)?f.rangee.value:'';
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
- t.effet=TALENTS_CODES[f.effet.value]?f.effet.value:'';
+ t.effet=TALENTS_CODES[f.effet.value]&&f.effet.value!=='bonus'?f.effet.value:'';
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent()}):{};
+ /* Un bonus de caractéristique : sa caractéristique et sa valeur font tout — le nom s'écrit
+    seul, la nature est passive, rien à la table, pas de logo. */
+ if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});
+  t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.logo='';t.effects=''}
  if(talentIndex===null)catalog.talents.push(t);else catalog.talents[talentIndex]=t;
  talentDialog.close();renderCatalogPages();render();scheduleSave();
  const rappel=talentApres;talentApres=null;if(rappel)rappel(t)};
@@ -2261,7 +2296,7 @@ function renderTalentPicker(){const boite=$('talent-picker');if(!boite)return;bo
  draft.talents??=[];
  let montres=0;
  for(const famille of draftFamilies()){
-  const liste=(catalog.talents||[]).filter(t=>talentFamily(t)===famille
+  const liste=(catalog.talents||[]).filter(t=>!estBonus(t)&&talentFamily(t)===famille
    &&(!q||t.name.toLowerCase().includes(q)||(t.effects||'').toLowerCase().includes(q)))
    .sort((a,b)=>(a.level||1)-(b.level||1)||a.name.localeCompare(b.name,'fr'));
   if(!liste.length)continue;

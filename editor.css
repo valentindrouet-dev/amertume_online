@@ -305,6 +305,9 @@ button.btn-analyse[hidden]{display:none}.attack-card .attack-info,.attack-card .
 .ico:hover{background:var(--hover);color:var(--ink)}
 /* Un « + » discret dans le titre d'une rubrique : créer sans quitter la fiche. */
 .sous-titre{display:flex;align-items:center;gap:8px}
+/* Talent ou bonus : le choix en tête du dialogue ; ce qui ne concerne pas la nature choisie se retire. */
+.nature-choix{display:flex;gap:18px;margin:0 0 12px;font-size:14px}.nature-choix label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:600;white-space:nowrap}
+.talent-cache{display:none!important}#bonus-apercu{margin:6px 0 0;font-weight:700}
 .ico.plus{font:700 16px system-ui;color:var(--accent);border:1px solid var(--line);padding:1px 8px 3px}
 .ico.plus:hover{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .ico.danger:hover{background:#5c2b26;color:#ffd9d2}
@@ -1012,7 +1015,10 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .dom-etiquette.deplacable:active{cursor:grabbing}
 .dom-etiquette.cliquable{pointer-events:auto;cursor:pointer;user-select:none}
 .dom-etiquette.sel b{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
-/* Les jetons des aventuriers présents, en rang sous le nom du bâtiment — accrochés dessous, hors du cadre du nom, qui ne bouge pas d'un pixel quand ils arrivent. */.dom-etiquette-jetons{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;gap:3px;margin-top:2px;pointer-events:none}.dom-etiquette .jeton-rond.mini{width:24px;height:24px;font-size:12px;border:2px solid #fff;box-shadow:0 1px 3px #000a}
+/* Les jetons des aventuriers présents, en rang sous le nom du bâtiment — accrochés dessous, hors du cadre du nom, qui ne bouge pas d'un pixel quand ils arrivent. */.dom-etiquette-jetons{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;gap:3px;margin-top:2px;pointer-events:none}/* Moitié plus grands qu'un mini ordinaire, et glissables d'un bâtiment à l'autre. */.dom-etiquette .jeton-rond.mini{width:36px;height:36px;font-size:18px;border:2px solid #fff;box-shadow:0 1px 3px #000a;pointer-events:auto;cursor:grab;touch-action:none;user-select:none}
+.dom-etiquette .jeton-rond.mini.tire{opacity:.35}
+/* Le temps du geste, les bâtiments construits s'allument — même contours cachés — et celui qu'on survole davantage. */
+#dom-plan.glisse-jeton .dom-zone.construit{stroke:#8bbd9c;fill:#8bbd9c22}#dom-plan.glisse-jeton .dom-zone.construit.vise{stroke:#fff;fill:#8bbd9c66}
 #dom-plan.sans-contours .dom-zone{stroke:transparent;fill:transparent}
 #dom-plan.sans-contours .dom-zone:hover{fill:#ffffff14}
 #dom-contours.on,#dom-contours-editeur.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}

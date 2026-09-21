@@ -2216,7 +2216,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    sous le lieu d'un aventurier ; sans bâtiment choisi, la fiche disparaît. */
 {const fief=fs.readFileSync('domaine.js','utf8');
  assert.ok(fief.includes("if(opts.jeu){const presents=actors.filter(a=>a.hero&&(domaine.aventuriers[a.id]||{}).lieu===b.id);")
-  &&fief.includes("presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name;j.append(t)});e.append(j)}}")
+  &&fief.includes("presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name+' — glisser vers un autre bâtiment construit';")
   &&feuille.includes('.dom-etiquette-jetons{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;'),'les jetons des présents sous le nom, sur le plan, sans le soulever');
  assert.ok(fief.includes(" boite.hidden=!b;if(!b)return;")&&!fief.includes('Choisis un bâtiment, dans la liste ou sur la carte')
   &&fief.includes("  row.append(tete,lieu);boite.append(row)})}")&&!fief.includes("notes.placeholder='Note'"),'fiche muette sans bâtiment, lieu sans note');
@@ -2231,4 +2231,19 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave()}")&&fief.includes("function renderDomaine(){const d=domaine;evacueNonConstruits();")
   &&fief.includes("...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),")&&fief.includes("batimentConstruit(batimentDom(v.lieu))))?v.lieu:'';"),'la liste des lieux ne propose que le construit');
 }
-console.log('1409 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.263 — Le jeton d'un aventurier se glisse vers un bâtiment construit ; les jetons sont moitié plus
+   grands ; un bonus de caractéristique n'est pas un talent, et a son propre éditeur. */
+{const fief=fs.readFileSync('domaine.js','utf8');
+ assert.ok(fief.includes("function glisseJetonAventurier(ev,a,t){")&&fief.includes("const cibleSous=m=>{const i=batimentSous(domaine,pos(m));const b=i>=0?domaine.batiments[i]:null;return batimentConstruit(b)?b:null};")
+  &&fief.includes("if(b&&v.lieu!==b.id){v.lieu=b.id;renderDomaine();sauveDomaine()}};")&&fief.includes("t.onpointerdown=ev=>glisseJetonAventurier(ev,a,t);")
+  &&fief.includes("+(batimentConstruit(b)?' construit':'')")&&feuille.includes('.dom-etiquette .jeton-rond.mini{width:36px;height:36px;font-size:18px;')
+  &&feuille.includes('#dom-plan.glisse-jeton .dom-zone.construit{'),'le jeton se glisse vers un bâtiment construit, en grand');
+ assert.ok(src.includes("const estBonus=t=>!!t&&t.effet==='bonus';")&&src.includes("filter(([t])=>!estBonus(t)&&talentFamily(t)===famille")
+  &&src.includes(".filter(t=>!estBonus(t)&&talentFamily(t)===famille")&&src.includes("const codes=Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>{")
+  &&src.includes("...Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>[c.cle,libelleTalent(c.cle)])])"),'un bonus ne paraît ni dans l’onglet, ni dans le sélecteur, ni dans la bibliothèque');
+ assert.ok(src.includes('<label><input type="radio" name="nature" value="bonus"')&&src.includes("['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});")
+  &&src.includes("if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});")
+  &&src.includes("t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.logo='';t.effects=''}")
+  &&feuille.includes('.talent-cache{display:none!important}'),'l’éditeur devient éditeur de bonus');
+}
+console.log('1412 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

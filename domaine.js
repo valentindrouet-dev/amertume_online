@@ -70,7 +70,7 @@ function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildre
  const ns='http://www.w3.org/2000/svg';
  d.batiments.forEach((b,i)=>{if(!b.zone)return;
   const p=document.createElementNS(ns,'polygon');p.setAttribute('points',b.zone.map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));
-  p.setAttribute('class','dom-zone e'+b.etape+(b.etat?' etat-'+b.etat:'')+(opts.sel===i?' sel':''));p.dataset.bat=String(i);
+  p.setAttribute('class','dom-zone e'+b.etape+(b.etat?' etat-'+b.etat:'')+(batimentConstruit(b)?' construit':'')+(opts.sel===i?' sel':''));p.dataset.bat=String(i);
   const t=document.createElementNS(ns,'title');t.textContent=b.nom+' — '+NOM_ETAPE(b.etape)+(b.etat?' · '+NOM_ETAT_BATIMENT(b.etat):'');p.append(t);svg.append(p);
   const c=b.etiquette||centroide(b.zone);if(!c)return;
   const e=document.createElement('span');e.className='dom-etiquette e'+b.etape+(b.etat?' etat-'+b.etat:'')+(opts.sel===i?' sel':'');
@@ -85,11 +85,34 @@ function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildre
   // Sur le plan, les aventuriers qui s'y trouvent : leur jeton sous le nom du bâtiment.
   if(opts.jeu){const presents=actors.filter(a=>a.hero&&(domaine.aventuriers[a.id]||{}).lieu===b.id);
    if(presents.length){const j=document.createElement('div');j.className='dom-etiquette-jetons';
-    presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name;j.append(t)});e.append(j)}}
+    presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name+' — glisser vers un autre bâtiment construit';t.onpointerdown=ev=>glisseJetonAventurier(ev,a,t);j.append(t)});e.append(j)}}
   if(opts.deplace||opts.clic)rendEtiquetteDeplacable(e,b,etiquettes,opts);etiquettes.append(e)});
  if(opts.trace&&opts.trace.pts.length){const pts=opts.trace.pts;
   const f=document.createElementNS(ns,pts.length>2?'polygon':'polyline');
   f.setAttribute('points',pts.map(q=>q.join(',')).join(' '));f.setAttribute('class','dom-trace');svg.append(f)}}
+
+/* Le jeton d'un aventurier se glisse d'un bâtiment à un autre, sur le plan : lâché n'importe
+   où sur la zone d'un bâtiment construit, il y est rattaché aussitôt. Lâché ailleurs, il
+   revient d'où il vient. Un fantôme suit le doigt ; les bâtiments qui l'accueilleraient
+   s'allument le temps du geste, celui qu'on survole plus fort. */
+function glisseJetonAventurier(ev,a,t){if(ev.button!==0)return;ev.stopPropagation();ev.preventDefault();
+ const plan=$('dom-plan'),id=ev.pointerId,depart={x:ev.clientX,y:ev.clientY};let fantome=null;
+ const pos=m=>{const r=plan.getBoundingClientRect();return [100*(m.clientX-r.left)/r.width,100*(m.clientY-r.top)/r.height]};
+ const cibleSous=m=>{const i=batimentSous(domaine,pos(m));const b=i>=0?domaine.batiments[i]:null;return batimentConstruit(b)?b:null};
+ const allume=b=>{plan.querySelectorAll('.dom-zone.vise').forEach(z=>z.classList.remove('vise'));
+  if(b){const z=plan.querySelector('.dom-zone[data-bat="'+domaine.batiments.indexOf(b)+'"]');if(z)z.classList.add('vise')}};
+ const suit=m=>{if(m.pointerId!==id)return;
+  if(!fantome){if(Math.hypot(m.clientX-depart.x,m.clientY-depart.y)<4)return;
+   fantome=jetonRond(a.image,a.name,'fantome-pose');document.body.append(fantome);plan.classList.add('glisse-jeton');t.classList.add('tire')}
+  fantome.style.left=m.clientX+'px';fantome.style.top=m.clientY+'px';const b=cibleSous(m);fantome.classList.toggle('hors',!b);allume(b)};
+ const lache=m=>{if(m&&m.pointerId!==id)return;window.removeEventListener('pointermove',suit);window.removeEventListener('pointerup',lache);window.removeEventListener('pointercancel',lache);
+  try{t.releasePointerCapture(id)}catch(_){}
+  if(!fantome)return;fantome.remove();plan.classList.remove('glisse-jeton');t.classList.remove('tire');allume(null);
+  const b=m&&m.type==='pointerup'?cibleSous(m):null;
+  const v=domaine.aventuriers[a.id]||(domaine.aventuriers[a.id]={lieu:'',notes:''});
+  if(b&&v.lieu!==b.id){v.lieu=b.id;renderDomaine();sauveDomaine()}};
+ try{t.setPointerCapture(id)}catch(_){}
+ window.addEventListener('pointermove',suit);window.addEventListener('pointerup',lache);window.addEventListener('pointercancel',lache)}
 
 /* ---------- L'éditeur, dans l'onglet Cartes ---------- */
 /* La carte du domaine n'est pas une carte de combat : ni matière, ni porte, ni socle. Elle
