@@ -1184,7 +1184,7 @@ assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidd
  &&feuille.includes('.cat-pill .coche-modele{flex:none;width:16px;height:16px;')&&page.includes("if(rangeOf(a)!=='distance'&&typeof volBalayage==='function'){"),'équipement vide masqué, coche dans la vignette, balayage au contact');
 /* La barre de PV d'un token est pleine, entamée ou non — c'est sa hauteur qui dit l'actif ;
    sur la piste des dés, le lanceur à gauche et, au bout de chaque ligne, qui reçoit. */
-assert.ok(page.includes('margin-bottom:3px;height:3.2px;border-radius:999px;background:#211f1b;border:1px solid #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
+assert.ok(page.includes('height:3.2px;border-radius:999px;background:#211f1b;border:1px solid #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
  &&page.includes("const de=from||(lignes.find(l=>l.de)||{}).de||null;")&&page.includes("const cible=recoit(l),tc=lignes.length>1?petit:Math.max(petit,taille);if(cible)visage(cible,tc,bordD+10+tc/2,cy)")
  &&page.includes('.board-token{position:absolute;transform:translate(-50%,-50%);border-radius:50%;'),'barre de PV égale, visages sur la piste');
 /* Plus de chip Niveau sur la fiche de table ; le balayage est une déchirure dentelée de 90° ; la coche du
@@ -1449,7 +1449,7 @@ assert.ok(page.includes('function attack(opts={})')&&page.includes('if(opts.vise
  &&page.includes('function attaqueEtat(a,p,talent)')&&page.includes("const survit=p.condition==='survit',gagne=survit?tues.length<vises.length:tues.length>0;")
  &&page.includes('const issue=infligeEtat(a,p.etat);')&&page.includes('function cibleProvocation(a)')&&page.includes('function rapprocher(b,a)')
  &&page.includes('const arret=Math.max(tokenOf(a)/2+tokenOf(b)/2,contactRadius(tokenOf(a))+tokenOf(b)/2-3);')&&page.includes('if(d<=arret)return false;')
- &&page.includes("if(el){el.classList.add('glisse');el.style.left=b.x+'%';el.style.top=b.y+'%'}")&&page.includes('function provocation(a,p,talent)')
+ &&page.includes("if(el){el.classList.add('glisse');el.style.left=b.x+'%';el.style.top=b.y+'%';suitLaJauge(el)}")&&page.includes('function provocation(a,p,talent)')
  &&page.includes("poseCibles(a,[j]);if(venu)afterMove(b);")&&page.includes("attack({vises:[j]});scheduleSave()},venu?220:0);")
  &&page.includes('attaqueetat:{fn:attaqueEtat,')&&page.includes('provocation:{fn:provocation,')&&page.includes("peut:a=>!hasState(a,'Au sol')&&cibleProvocation(a)!==null,"),'Attaque État et Provocation câblés à la table');
 /* Un talent nommé comme sa mécanique la reçoit, que son nom en donne la clé ou l'intitulé :
@@ -1576,7 +1576,7 @@ assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&(a.hp<a
  &&page.includes("' remis d’aplomb'+(rendus?' : PV au complet':'')+(leves?(rendus?', ':' : ')+'états levés':'')+'.'")
  &&!page.includes('const blesses=actors.filter'),'l’Onde du camp lève les états, même sans blessure');
 /* La jauge de PV est un fil, et le même pour tous les socles — l'actif n'y fait rien. */
-assert.ok(page.includes('.token .pv{position:absolute;left:2%;right:2%;bottom:100%;margin-bottom:3px;height:3.2px;')
+assert.ok(page.includes('#pv-layer .pv{position:absolute;transform:translate(-50%,-100%);margin-top:calc(var(--token) / -2 - 4px);width:calc(var(--token) * .96);height:3.2px;')
  &&!page.includes('.token.selected .pv'),'la jauge est fine et pareille pour tous');
 /* L'arbre d'une classe s'ouvre depuis l'onglet Talents, par le rouage posé contre son nom :
    sans combattant, nul n'y porte rien, le clic sur un talent le corrige, et la Provocation
@@ -2309,10 +2309,19 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  // Sans zones sur la carte, seule l'arrivée au contact se paie.
  ctxR.zonesDe=()=>({compte:0});const g={x:20,y:50,credit:0};const r7=ctxR.regleMouvement(g);g.x=55;assert.equal(ctxR.appliqueRegleMouvement(g,r7),true);g.x=80;ctxR.appliqueRegleMouvement(g,r7);
  assert.equal(ctxR.soldeRegleMouvement(g,r7),0);assert.equal(g.x,55,'sans point, pas d’arrêt au contact — mais la zone ne compte pas');ctxR.zonesDe=()=>({compte:2});
- assert.ok(page.includes("const regle=enCombat()&&lot0.length===1?regleMouvement(a):null;")&&page.includes("if(regle&&regle.credit<=0&&view!=='mj'){floatNumber(a,'Plus de Mouvement','nul');log(a.name+' n’a plus de point de Mouvement ce tour.',{local:true});return}")
+ assert.ok(page.includes("const regle=enCombat()&&lot0.length===1?regleMouvement(a):null;")&&!page.includes("regle.credit<=0&&view!=='mj'")
   &&page.includes("else{moveActor(a,q.x,q.y,view==='mj',enMain);if(drag.regle)appliqueRegleMouvement(a,drag.regle)}")
   &&page.includes("const cout=regle?soldeRegleMouvement(a,regle):null;")&&page.includes("if(regle){if(cout>0)depensePoint(a,'mouvement',cout)}")&&!page.includes("$('move').checked=true;render()"),'le geste suit la règle, du départ au lâcher');
  assert.ok(cartes.includes("function porteurDePorte(d){")&&cartes.includes("const qui=typeof enCombat==='function'&&enCombat()?porteurDePorte(d):null;")
   &&cartes.includes("if(qui){if(pointsRestants(qui,'mouvement')<=0){log(qui.name+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});")&&cartes.includes("    depensePoint(qui,'mouvement')}\n   d.open=!d.open;"),'une porte coûte un point en combat, rien en exploration');
 }
-console.log('1455 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.267 — Sans point de Mouvement, le socle bouge encore dans sa zone (et y subit l'opportunité) ;
+   les jauges de PV ont leur couche, au-dessus de tous les socles. */
+{assert.ok(page.includes("function couchePV(){let c=$('pv-layer');if(!c){c=document.createElement('div');c.id='pv-layer';$('map-view').append(c)}return c}")
+  &&page.includes("function suitLaJauge(el){const j=el&&el._pv;if(!j)return;j.style.left=el.style.left;j.style.top=el.style.top;")
+  &&page.includes(" t._pv=jauge;couchePV().append(jauge);")&&page.includes("document.querySelectorAll('.token').forEach(t=>t.remove());couchePV().replaceChildren();")
+  &&page.includes("el.style.top=actors[k].y+'%';suitLaJauge(el)}});")&&page.includes("el.style.top=b.y+'%';suitLaJauge(el)}")
+  &&page.includes("#pv-layer{position:absolute;inset:0;z-index:3;pointer-events:none}")&&page.includes("#pv-layer .pv.enemy i{background:")&&!page.includes('.token .pv{'),'les jauges au-dessus de tous les socles, et qui suivent');
+ assert.ok(!page.includes("regle.credit<=0&&view!=='mj'")&&page.includes("const regle=enCombat()?regleMouvement(a):null;\n  moveActor(a,a.x+dirs[e.key][0],a.y+dirs[e.key][1]);"),'sans point, le socle bouge encore dans sa zone');
+}
+console.log('1457 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
