@@ -2277,8 +2277,9 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.match(ctxC.verifieCampagne({genre:'domaine',domaine:{}}),/pas une campagne/);assert.match(ctxC.verifieCampagne({genre:'campagne',partie:{actors:[{}]}}),/troupe lisible/);
 }
 /* v0.265 — Le mouvement en combat se paie en zones : un point par zone franchie (une porte est
-   une zone), un de plus pour s'arrêter au contact d'un adversaire nouveau ; le socle reste au
-   bord sans point, recule s'il ne peut pas payer le contact ; une porte coûte un point en combat. */
+   une zone), ou un point pour s'arrêter au contact d'un adversaire nouveau — sans cumul, le plus
+   grand des deux ; le socle reste au bord sans point, recule s'il ne peut pas payer le contact ;
+   une porte coûte un point en combat. */
 {const regle=page.slice(page.indexOf('function regleMouvement(a)'),page.indexOf('function contactsDe(a)'));
  const ctxR={zones:{},contacts:{},notes:[],journal:[],performance:{now:()=>1e6},currentMap:()=>({id:'c'}),zonesDe:()=>({compte:2}),
   pointsRestants:a=>a.credit,zoneDe:a=>ctxR.zones[Math.round(a.x)+','+Math.round(a.y)]||0,contactsDe:a=>ctxR.contacts[Math.round(a.x)+','+Math.round(a.y)]||[],
@@ -2291,11 +2292,14 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  a.x=50;ctxR.appliqueRegleMouvement(a,r);assert.equal(r.depense,0,'la porte — zone 0 — ne compte pas encore');
  a.x=55;ctxR.appliqueRegleMouvement(a,r);assert.equal(r.depense+'/'+r.zone,'1/2','franchir la zone 2 coûte un point');
  a.x=45;assert.equal(ctxR.appliqueRegleMouvement(a,r),false);assert.equal(a.x,55,'sans point, on reste au bord');assert.equal(ctxR.notes.length,1);
- a.x=75;ctxR.appliqueRegleMouvement(a,r);assert.equal(r.ok.x+'/'+r.okCout,'55/1','au contact, la dernière position payable reste 55');
- assert.equal(ctxR.soldeRegleMouvement(a,r),1);assert.equal(a.x,55,'lâché au contact sans point : le socle recule');assert.equal(ctxR.journal.length,1);
- // Avec deux points : la zone puis le contact, et le solde vaut deux.
+ a.x=75;ctxR.appliqueRegleMouvement(a,r);assert.equal(r.ok.x+'/'+r.okCout,'75/1','entrer dans la pièce et y tomber au contact : la zone seule se paie');
+ assert.equal(ctxR.soldeRegleMouvement(a,r),1);assert.equal(a.x,75,'le socle reste où on l’a lâché');assert.equal(ctxR.journal.length,0);
+ // Avec deux points : la zone puis le contact ne se cumulent pas — un seul point.
  const b={x:20,y:50,credit:2};const r2=ctxR.regleMouvement(b);b.x=55;ctxR.appliqueRegleMouvement(b,r2);b.x=80;ctxR.appliqueRegleMouvement(b,r2);
- assert.equal(r2.ok.x+'/'+r2.okCout,'80/2');assert.equal(ctxR.soldeRegleMouvement(b,r2),2);assert.equal(b.x,80);
+ assert.equal(r2.ok.x+'/'+r2.okCout,'80/1');assert.equal(ctxR.soldeRegleMouvement(b,r2),1);assert.equal(b.x,80);
+ // Dans sa zone, sans point : s'arrêter au contact se refuse, et le socle recule.
+ const h={x:60,y:50,credit:0};const r8=ctxR.regleMouvement(h);h.x=65;ctxR.appliqueRegleMouvement(h,r8);h.x=80;ctxR.appliqueRegleMouvement(h,r8);
+ assert.equal(r8.ok.x,65);assert.equal(ctxR.soldeRegleMouvement(h,r8),0);assert.equal(h.x,65);assert.equal(ctxR.journal.length,1);
  // Déjà au contact au départ : y rester ne coûte rien ; retraverser deux fois coûte deux.
  const c={x:80,y:50,credit:2};const r3=ctxR.regleMouvement(c);c.x=75;ctxR.appliqueRegleMouvement(c,r3);assert.equal(ctxR.soldeRegleMouvement(c,r3),0);
  const d={x:55,y:50,credit:2};const r4=ctxR.regleMouvement(d);d.x=45;ctxR.appliqueRegleMouvement(d,r4);d.x=55;ctxR.appliqueRegleMouvement(d,r4);assert.equal(r4.depense,2,'aller et revenir : deux zones franchies');
@@ -2311,4 +2315,4 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(cartes.includes("function porteurDePorte(d){")&&cartes.includes("const qui=typeof enCombat==='function'&&enCombat()?porteurDePorte(d):null;")
   &&cartes.includes("if(qui){if(pointsRestants(qui,'mouvement')<=0){log(qui.name+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});")&&cartes.includes("    depensePoint(qui,'mouvement')}\n   d.open=!d.open;"),'une porte coûte un point en combat, rien en exploration');
 }
-console.log('1451 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1455 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
