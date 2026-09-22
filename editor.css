@@ -804,9 +804,11 @@ button.choix-attaque.sans-des{grid-auto-rows:1fr}
 .arbre-place:empty{visibility:hidden}
 .arbre-place:hover,.arbre-place:focus{opacity:1;color:var(--accent);border-color:var(--accent)}
 .arbre-place.survol{opacity:1;border-style:solid;border-color:var(--green);box-shadow:0 0 0 3px var(--panel-2),0 0 0 6px var(--green)}
-.arbre-chemins .chemin .trait{stroke:var(--line-strong);stroke-width:3;stroke-linecap:round;fill:none}
+/* Un chemin qui n'est pas encore actif — un bout au moins non appris — se lit en pointillés ; appris des deux côtés, il est plein et vert. Sans combattant, l'arbre est un plan : tout est plein. */
+.arbre-chemins .chemin .trait{stroke:var(--line-strong);stroke-width:3;stroke-linecap:round;fill:none;stroke-dasharray:3 7;opacity:.75}
+.arbre-col.sans-acteur .arbre-chemins .chemin:not(.vide):not(.cache) .trait{stroke-dasharray:none;opacity:1}
 .arbre-chemins .chemin .zone{stroke:transparent;stroke-width:16;stroke-linecap:round}
-.arbre-chemins .chemin.pris .trait{stroke:var(--green)}
+.arbre-chemins .chemin.pris .trait{stroke:var(--green);stroke-dasharray:none;opacity:1}
 .arbre-chemins .chemin.vide .trait{stroke-dasharray:2 6;opacity:.55}
 .arbre-chemins .chemin.cache .trait{stroke-dasharray:5 7;opacity:.3}
 .arbre-col.editable .arbre-chemins .chemin{pointer-events:stroke;cursor:pointer}
@@ -959,7 +961,8 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .zones-noms span.editable{pointer-events:auto;cursor:text}.zones-noms span.editable:hover{filter:brightness(1.15);outline:2px solid #fff}
 .zone-nom-champ{width:6.5em;margin:0;padding:1px 4px;font:800 12px/1 system-ui;text-align:center;border-radius:6px;border:1px solid #fff;background:#fff;color:#222}
 /* Un nœud de bonus dans l'arbre : un rond ambré à la valeur, la caractéristique en nom. */
-.arbre-noeud.bonus{--teinte:#b8862b}
+/* Les bonus prennent la couleur de leur caractéristique, celle des tuiles de la fiche. */
+.arbre-noeud.bonus{--teinte:#b8862b}.arbre-noeud.bonus-vie{--teinte:rgb(122,92,184)}.arbre-noeud.bonus-endu{--teinte:rgb(44,140,133)}.arbre-noeud.bonus-pv{--teinte:rgb(47,122,91)}.arbre-noeud.bonus-def{--teinte:rgb(96,110,118)}.arbre-noeud.bonus-dmg{--teinte:rgb(180,72,58)}
 .arbre-noeud.bonus .arbre-rond{width:46px;height:46px;font:800 17px system-ui;letter-spacing:-.5px;border-style:double;border-width:4px}
 .arbre-noeud.bonus .arbre-nom{font:700 12px system-ui;letter-spacing:1px;text-transform:uppercase}
 

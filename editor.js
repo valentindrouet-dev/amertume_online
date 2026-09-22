@@ -1890,10 +1890,6 @@ function verrouEtages(portes,etages,t){const a=id=>(portes||[]).includes(id);
 function chuteDe(etages,t){const i=etages.findIndex(e=>e.t===t);
  return i<0?[t]:etages.slice(i).flatMap(e=>[e.t,e.g,e.d].filter(Boolean))}
 const GLYPHES_TALENT={act:'⚔',reac:'↩',pass:'◆',crit:'✸',mait:'★',ame:'⇧'};
-const NOTE_ARBRES='Clique un talent pour l’apprendre — de haut en bas dans chaque spécialisation — ou pour l’oublier.';
-const EDITION_ARBRES='Glisse un talent sur un autre pour l’y suspendre, sur une place en diagonale pour l’y ranger, sur un bandeau pour l’y verser, entre deux pour l’insérer ; ✎ le corrige, ⊕ en crée un dessous, + en crée un en diagonale. Clique un chemin pour le fermer ou l’ouvrir.';
-const NOTE_ARBRES_MJ=NOTE_ARBRES+' '+EDITION_ARBRES;
-const NOTE_ARBRES_CLASSE='L’arbre de la classe, sans personne à équiper : clique un talent pour le corriger. '+EDITION_ARBRES;
 const arbresDialog=dialog('arbres','Arbres de talents','<p class="muted" id="arbres-note"></p><div id="arbres-corps"></div>');
 /* L'arbre s'ouvre de deux façons : sur la fiche d'un combattant — il y choisit ses talents —
    ou depuis l'onglet Talents, pour une classe seule, que le MJ y bâtit sans personne à
@@ -1912,8 +1908,9 @@ if(typeof ResizeObserver==='function')new ResizeObserver(()=>traceChemins()).obs
 /* Un clic hors de la fenêtre la referme, comme le ✕ : la cible du clic est le dialogue
    lui-même quand il tombe sur le fond, jamais quand il tombe sur son contenu. */
 arbresDialog.addEventListener('click',e=>{if(e.target===arbresDialog)arbresDialog.close()});
-function noteArbres(texte){$('arbres-note').textContent=texte
- ||(!arbresActeur?NOTE_ARBRES_CLASSE:view==='mj'&&!arbresVueJoueur?NOTE_ARBRES_MJ:NOTE_ARBRES)}
+/* Plus de mode d'emploi au-dessus des arbres, ni chez le MJ ni chez les joueurs : la note
+   ne sert plus qu'aux refus et aux rappels du moment, et s'efface sinon. */
+function noteArbres(texte){const n=$('arbres-note');n.textContent=texte||'';n.hidden=!texte}
 /* La fiche d'un combattant telle qu'elle est maintenant : les fiches se remplacent en
    bloc quand la scène publiée ou la table arrive, et une page dessinée avant tenait
    l'ancienne — le rouage d'un joueur restait muet, sa fiche n'étant plus « la sienne ». */
@@ -1941,7 +1938,6 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     colonnes, et la longue notice d'édition prenait la moitié de la fenêtre. */
  const titre=arbresDialog.querySelector('h2');
  titre.textContent='Arbres de talents — '+(a?a.name:classe);titre.hidden=!a;
- $('arbres-note').hidden=!a;
  const note=noteArbres;
  // Sans combattant, nul ne porte rien : l'arbre se lit comme un plan, et se corrige.
  const porte=t=>!!a&&a.talents.includes(t.id);
@@ -1978,7 +1974,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const niv=document.createElement('span');niv.className='arbre-niv';niv.textContent='Niv. '+(t.level||1);
   /* Un nœud de bonus n'est pas un talent : son rond dit la valeur, son nom la caractéristique,
      et le nom qu'on lui a donné passe dessous. */
-  if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus');
+  if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));
    rond.textContent='+'+Math.max(1,(p&&p.valeur)|0);nom.textContent=libelleBonus(p,true).replace(/^\+\d+ /,'');
    niv.textContent=t.name&&t.name!==libelleBonus(p,true)&&t.name!=='Nouveau talent'?t.name:'Niv. '+(t.level||1)}
   b.append(rond,nom,niv);
@@ -2090,12 +2086,18 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
   svg.setAttribute('viewBox','0 0 '+Math.max(1,R.width)+' '+Math.max(1,R.height));svg.replaceChildren();
   const elDe=id=>col.querySelector('.arbre-noeud[data-id="'+id+'"]');
   const placeDe=(id,seg)=>col.querySelector('.arbre-place[data-sous="'+id+'"][data-place="'+seg+'"]');
-  const centre=el=>{const r=(el.querySelector('.arbre-rond')||el).getBoundingClientRect();return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top}};
+  // Le centre d'un bouton, et son rayon — anneau compris — pour que le trait s'arrête à son bord.
+  const centre=el=>{const r=(el.querySelector('.arbre-rond')||el).getBoundingClientRect();return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top,r:r.width/2+5}};
+  // Sans combattant, l'arbre se lit comme un plan : ses traits restent pleins.
+  col.classList.toggle('sans-acteur',!a);
   const pris=(x,y)=>!!a&&!!x&&!!y&&a.talents.includes(x.id)&&a.talents.includes(y.id);
   const trait=(p,q,seg,id,cache,vide,marche)=>{const g=document.createElementNS(ns,'g');
    g.setAttribute('class','chemin '+seg+(cache?' cache':'')+(vide?' vide':'')+(marche?' pris':''));
    const l=document.createElementNS(ns,'line'),z=document.createElementNS(ns,'line');
-   [l,z].forEach(x=>{x.setAttribute('x1',p.x);x.setAttribute('y1',p.y);x.setAttribute('x2',q.x);x.setAttribute('y2',q.y)});
+   // Le trait ne traverse jamais un bouton : il ne vit qu'entre deux, d'un bord à l'autre.
+   const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,rp=Math.min(p.r||0,d/2),rq=Math.min(q.r||0,d/2);
+   const P={x:p.x+ux*rp,y:p.y+uy*rp},Q={x:q.x-ux*rq,y:q.y-uy*rq};
+   [l,z].forEach(x=>{x.setAttribute('x1',P.x.toFixed(1));x.setAttribute('y1',P.y.toFixed(1));x.setAttribute('x2',Q.x.toFixed(1));x.setAttribute('y2',Q.y.toFixed(1))});
    z.setAttribute('class','zone');l.setAttribute('class','trait');g.append(z,l);
    if(mj){const t=document.createElementNS(ns,'title');t.textContent=cache?'Chemin fermé — cliquer pour l’ouvrir':'Chemin ouvert — cliquer pour le fermer';g.append(t);
     g.onclick=e=>{e.stopPropagation();if(basculeChemin(id,seg))arbreChange()}}

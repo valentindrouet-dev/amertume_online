@@ -1108,10 +1108,12 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
    fil principal est pris (dés, rendu complet, état reçu). Plus de left/top dans les images clés. */
 {const orbe=page.slice(page.indexOf('function volOrbe('),page.indexOf('function deplacement(')),fleche=page.slice(page.indexOf('function volFleche('),page.indexOf('function volBalayage('));
  const balayage=page.slice(page.indexOf('function volBalayage('),page.indexOf('function floatNumber('));
- assert.ok(!/\{[^}]*\bleft:/.test(balayage.slice(balayage.indexOf('el.animate')))&&balayage.includes('duree=calme?1:320')&&fleche.includes('duree=calme?1:650'),'balayage et souffle : compositeur, rythme fixé');
- assert.ok(!/\{[^}]*\bleft:/.test(orbe.slice(orbe.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(fleche.slice(fleche.indexOf('el.animate'))),'pas de left/top animé');
- assert.ok(page.includes('function deplacement(couche,de,vers)')&&orbe.includes("transform:'translate('+arrivee+') scale(1)'")&&fleche.includes("transform:'translate('+arrivee+')'+tourne")
-  &&page.includes('.orbe-vol{position:absolute;will-change:transform,opacity;')&&page.includes('.souffle-vol{position:absolute;will-change:transform,opacity;')&&page.includes('.balayage-vol{position:absolute;will-change:transform,opacity;')&&!page.includes('fleche-vol'),'le vol est porté par le compositeur');}
+ assert.ok(!/\{[^}]*\bleft:/.test(balayage.slice(balayage.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(orbe.slice(orbe.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(fleche.slice(fleche.indexOf('el.animate'))),'pas de left/top animé');
+ assert.ok(page.includes('function choc(couche,cible,delai){')&&fleche.includes("{duration:240,easing:'linear',fill:'forwards'}")&&fleche.includes('return choc(couche,vers,240)}')
+  &&balayage.includes("{duration:260,easing:'ease-out',fill:'both'}")&&balayage.includes('return Math.max(260,choc(couche,vers,120))}')
+  &&page.includes('function deplacement(couche,de,vers)')&&orbe.includes("transform:'translate('+arrivee+') scale(1)'")&&fleche.includes("transform:'translate('+arrivee+')'+tourne")
+  &&page.includes('.orbe-vol{position:absolute;will-change:transform,opacity;')&&page.includes('.coup-trait,.tir-trait,.choc{position:absolute;pointer-events:none;z-index:5;will-change:transform,opacity}')
+  &&!page.includes('souffle-vol')&&!page.includes('balayage-vol')&&!page.includes('fleche-vol'),'coups et tirs : un trait, un choc, toujours le même rythme, portés par le compositeur');}
 /* Contacts : tous les rayons (aventuriers et adversaires révélés) quand il est actif, la seule
    sélection sinon ; un joueur inspecte n'importe quel combattant — fiche selon ce qu'il en sait,
    aura — sans le contrôler, et ses cases d'activation restent celles de son actif ; les
@@ -1120,7 +1122,7 @@ assert.ok(page.includes('id="portees">◎ Contacts<')&&page.includes("let portee
 assert.ok(page.includes('let inspecteId=null;')&&page.includes("if(!controlled(i)){const a=actors[i];inspecteId=a&&inspecteId!==a.id?a.id:null;render();return}")&&!page.includes('Sélectionne ton aventurier, puis cible')
  &&page.includes("const k=view!=='mj'&&inspecteIndex()>=0?inspecteIndex():selected,a=actors[k];")&&page.includes("  $(id).checked=!!s&&pointsRestants(s,quoi)<=0;")
  &&page.includes('#sheet.secret :is(#sheet-chips,#stats,#hpbar,#bloc-gear,#bloc-talents,#skills,.divider){display:none}')&&page.includes("a.id===inspecteId?'inspecte ':''"),'un joueur inspecte sans contrôler');
-assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:650}')&&page.includes('Math.max(16,tokenOf(vers)*.7)')&&page.includes('const long=Math.max(40,tokenOf(vers)*1.7),haut=Math.max(12,tokenOf(vers)*.5);'),'projectiles plus lents et plus visibles');
+assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:650}')&&page.includes('Math.max(16,tokenOf(vers)*.7)')&&page.includes("el.style.width=Math.max(22,tokenOf(vers)*.8)+'px';"),'projectiles plus lents et plus visibles');
 /* Dégâts d'opportunité étendus : traverser une zone de contact pendant un glissement compte comme
    s'y arrêter puis en sortir ; tirer ou lancer un orbe au contact déclenche l'occasion de tous les
    adversaires au contact, après les dégâts du tir — un adversaire tué ou entravé ne frappe pas. */
@@ -1190,7 +1192,7 @@ assert.ok(page.includes('height:3.2px;border-radius:999px;background:#211f1b;bor
 /* Plus de chip Niveau sur la fiche de table ; le balayage est une déchirure dentelée de 90° ; la coche du
    bestiaire suit le nom ; l'équipement se lit en carrés — logo dessus, dés dessous — dont la description
    prend toute la ligne. */
-assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('clip-path:polygon(')&&page.includes("r(-45)+' scale(.8)'")&&page.includes("r(45)+' scale(1.05)'")&&page.includes('tokenOf(de)*1.6)')
+assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('.choc{border-radius:50%;border:3px solid #fff;')&&page.includes("scaleX(1.1)'}")&&page.includes('tokenOf(vers)*1.7)')
  &&src.includes('function gearCarre(o,n,portes)')&&src.includes('function gearDetail(o,a,enJeu)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');")&&!src.includes("out.className='gear-pills'")
  &&feuille.includes('.gear-grille{display:flex;flex-wrap:wrap;gap:6px;')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:auto;min-width:69px;min-height:69px;flex-direction:column;')&&feuille.includes('.gear-detail.large{flex-basis:100%;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');")&&!src.includes('ligne(o.notes)')&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
 /* Invocation et Régénération : deux mécaniques d'adversaire câblées — la pose au clic, les soins au
@@ -1594,8 +1596,8 @@ assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null
     l'intitulé ni la notice d'édition ne paraissent sur l'arbre d'une classe. */
  &&src.includes("h.onclick=()=>openArbresClasse(famille)}")
  &&src.includes("arbresDialog.addEventListener('click',e=>{if(e.target===arbresDialog)arbresDialog.close()});")
- &&src.includes("titre.textContent='Arbres de talents — '+(a?a.name:classe);titre.hidden=!a;")&&src.includes("$('arbres-note').hidden=!a;")
- &&src.includes('const NOTE_ARBRES_CLASSE=')&&feuille.includes('.arbre-noeud.modele{cursor:pointer}')
+ &&src.includes("titre.textContent='Arbres de talents — '+(a?a.name:classe);titre.hidden=!a;")&&!src.includes("$('arbres-note').hidden=!a;")&&src.includes("function noteArbres(texte){const n=$('arbres-note');n.textContent=texte||'';n.hidden=!texte}")
+ &&!src.includes('NOTE_ARBRES')&&feuille.includes('.arbre-noeud.modele{cursor:pointer}')
  &&feuille.includes('.cat-col>h3 .ico.plus.rouage{')
  &&!page.includes("annonceFlottante('📣 '"),'l’arbre d’une classe s’ouvre depuis l’onglet Talents');
 /* Trois mécaniques de plus : Ignition charge un allié désigné d'un orbe, Invulnérable refuse
@@ -1985,7 +1987,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
   &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','auraPv'];")
-  &&src.includes("const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus');")
+  &&src.includes("const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")
   &&src.includes(" ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));")&&src.includes("  if(!competenceDe(a,k))return;")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
    en est une ; les miettes ne comptent pas ; le MJ les voit d'un bouton. */
@@ -2324,4 +2326,14 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("#pv-layer{position:absolute;inset:0;z-index:3;pointer-events:none}")&&page.includes("#pv-layer .pv.enemy i{background:")&&!page.includes('.token .pv{'),'les jauges au-dessus de tous les socles, et qui suivent');
  assert.ok(!page.includes("regle.credit<=0&&view!=='mj'")&&page.includes("const regle=enCombat()?regleMouvement(a):null;\n  moveActor(a,a.x+dirs[e.key][0],a.y+dirs[e.key][1]);"),'sans point, le socle bouge encore dans sa zone');
 }
-console.log('1457 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.268 — Les chemins de l'arbre s'arrêtent au bord des boutons, en pointillés tant qu'ils ne sont pas
+   actifs ; les bonus prennent la couleur de leur caractéristique ; plus de mode d'emploi au-dessus. */
+{assert.ok(src.includes("return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top,r:r.width/2+5}};")&&src.includes("col.classList.toggle('sans-acteur',!a);")
+  &&src.includes("const P={x:p.x+ux*rp,y:p.y+uy*rp},Q={x:q.x-ux*rq,y:q.y-uy*rq};")
+  &&feuille.includes(".arbre-chemins .chemin .trait{stroke:var(--line-strong);stroke-width:3;stroke-linecap:round;fill:none;stroke-dasharray:3 7;opacity:.75}")
+  &&feuille.includes(".arbre-col.sans-acteur .arbre-chemins .chemin:not(.vide):not(.cache) .trait{stroke-dasharray:none;opacity:1}")
+  &&feuille.includes(".arbre-chemins .chemin.pris .trait{stroke:var(--green);stroke-dasharray:none;opacity:1}"),'les chemins : entre les boutons, pointillés tant qu’inactifs');
+ assert.ok(src.includes("b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")&&feuille.includes(".arbre-noeud.bonus-vie{--teinte:rgb(122,92,184)}")&&feuille.includes(".arbre-noeud.bonus-dmg{--teinte:rgb(180,72,58)}"),'les bonus aux couleurs de la fiche');
+ assert.ok(!src.includes("||(!arbresActeur?NOTE_ARBRES_CLASSE:view==='mj'&&!arbresVueJoueur?NOTE_ARBRES_MJ:NOTE_ARBRES)}"),'plus de mode d’emploi au-dessus des arbres');
+}
+console.log('1459 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
