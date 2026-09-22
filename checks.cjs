@@ -1034,7 +1034,7 @@ assert.ok(src.includes("a.hero?tete:")&&src.includes("cle.startsWith(cleClasse(f
  const des=[[3,0],[6,1],[6,0]],s=C2.mauvaisSort(des,()=>2);
  assert.deepEqual([s.index,s.avant,s.apres],[1,6,2]);assert.equal(des[1][0],2);assert.equal(des[1][1],1);   // Le premier des meilleurs, sa couleur gardée.
  assert.equal(C2.mauvaisSort([],()=>2),null);}
-assert.ok(page.includes('function degatsOpportunite')&&page.includes("croises.forEach(([k,set])=>degatsOpportunite(actors[k],[...set]));")&&page.includes("const avant=contactsDe(a);moveActor("),'les dégâts d’opportunité se jugent au lâcher et au clavier');
+assert.ok(page.includes('function degatsOpportunite')&&page.includes("croises.forEach(([k,set])=>degatsOpportunite(actors[k],[...set]));")&&page.includes("const avant=contactsDe(a);"),'les dégâts d’opportunité se jugent au lâcher et au clavier');
 assert.ok(page.includes("porteEffet(talentsCodes(a),'insaisissable')")&&page.includes("porteEffet(talentsCodes(b),'mauvaissort')?mauvaisSort(dice,d6):null"),'Insaisissable et Mauvais Sort câblés');
 // Le journal ne dit ni la fiche enregistrée, ni les créatures mises à jour, ni la carte ouverte.
 assert.ok(!src.includes('Fiche enregistrée')&&!src.includes('mise(s) à jour')&&!cartes.includes('» ouverte : '),'le journal se tait sur l’intendance');
@@ -1553,7 +1553,7 @@ assert.ok(page.includes('function soclesOccupes(a,size,ignorer,adverses)')
  &&page.includes('if(barrent.length&&(dansUnSocle(suivant,barrent,r)||segmentCoupeSocles(last,suivant,barrent,r)))break;')
  &&page.includes('if(tiennent.length)last=poserHorsDesSocles(last,tiennent,polys,r);')
  &&page.includes("const enMain=new Set(lot.map(k=>actors[k]&&actors[k].id).filter(Boolean));")
- &&page.includes("moveActor(o,o.x+dx,o.y+dy,view==='mj',enMain)})}")&&page.includes("else moveActor(a,q.x,q.y,view==='mj',enMain);")
+ &&page.includes("moveActor(o,o.x+dx,o.y+dy,view==='mj',enMain)})}")&&page.includes("else{moveActor(a,q.x,q.y,view==='mj',enMain);")
  &&page.includes("const [x,y]=ecarteDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,false),tokenOf(a)/2);"),'les socles tiennent la place sur la table');
 /* La fiche en jeu : plus de barre sous les PV, l'équipement ouvert d'office et les talents
    repliés ; l'attaque d'équipement s'appelle « Attaque » ; un talent qui frappe porte les dés,
@@ -2276,4 +2276,39 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxC.verifieCampagne({genre:'campagne',partie:{actors:[{name:'Éla'}]}}),'');
  assert.match(ctxC.verifieCampagne({genre:'domaine',domaine:{}}),/pas une campagne/);assert.match(ctxC.verifieCampagne({genre:'campagne',partie:{actors:[{}]}}),/troupe lisible/);
 }
-console.log('1424 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.265 — Le mouvement en combat se paie en zones : un point par zone franchie (une porte est
+   une zone), un de plus pour s'arrêter au contact d'un adversaire nouveau ; le socle reste au
+   bord sans point, recule s'il ne peut pas payer le contact ; une porte coûte un point en combat. */
+{const regle=page.slice(page.indexOf('function regleMouvement(a)'),page.indexOf('function contactsDe(a)'));
+ const ctxR={zones:{},contacts:{},notes:[],journal:[],performance:{now:()=>1e6},currentMap:()=>({id:'c'}),zonesDe:()=>({compte:2}),
+  pointsRestants:a=>a.credit,zoneDe:a=>ctxR.zones[Math.round(a.x)+','+Math.round(a.y)]||0,contactsDe:a=>ctxR.contacts[Math.round(a.x)+','+Math.round(a.y)]||[],
+  floatNumber:(a,t)=>ctxR.notes.push(t),log:t=>ctxR.journal.push(t)};vm.createContext(ctxR);vm.runInContext(regle,ctxR);
+ // Deux zones : x<50 en zone 1, x>50 en zone 2 ; un adversaire « O » au contact en (80,50).
+ for(let x=0;x<=100;x+=5)ctxR.zones[x+',50']=x<50?1:x>50?2:0;ctxR.contacts['80,50']=['O'];ctxR.contacts['75,50']=['O'];
+ const a={x:20,y:50,credit:1};const r=ctxR.regleMouvement(a);
+ assert.equal(r.credit+'/'+r.zone+'/'+r.depense,'1/1/0');
+ a.x=40;assert.equal(ctxR.appliqueRegleMouvement(a,r),true);assert.equal(r.depense,0,'dans sa zone, rien ne se paie');
+ a.x=50;ctxR.appliqueRegleMouvement(a,r);assert.equal(r.depense,0,'la porte — zone 0 — ne compte pas encore');
+ a.x=55;ctxR.appliqueRegleMouvement(a,r);assert.equal(r.depense+'/'+r.zone,'1/2','franchir la zone 2 coûte un point');
+ a.x=45;assert.equal(ctxR.appliqueRegleMouvement(a,r),false);assert.equal(a.x,55,'sans point, on reste au bord');assert.equal(ctxR.notes.length,1);
+ a.x=75;ctxR.appliqueRegleMouvement(a,r);assert.equal(r.ok.x+'/'+r.okCout,'55/1','au contact, la dernière position payable reste 55');
+ assert.equal(ctxR.soldeRegleMouvement(a,r),1);assert.equal(a.x,55,'lâché au contact sans point : le socle recule');assert.equal(ctxR.journal.length,1);
+ // Avec deux points : la zone puis le contact, et le solde vaut deux.
+ const b={x:20,y:50,credit:2};const r2=ctxR.regleMouvement(b);b.x=55;ctxR.appliqueRegleMouvement(b,r2);b.x=80;ctxR.appliqueRegleMouvement(b,r2);
+ assert.equal(r2.ok.x+'/'+r2.okCout,'80/2');assert.equal(ctxR.soldeRegleMouvement(b,r2),2);assert.equal(b.x,80);
+ // Déjà au contact au départ : y rester ne coûte rien ; retraverser deux fois coûte deux.
+ const c={x:80,y:50,credit:2};const r3=ctxR.regleMouvement(c);c.x=75;ctxR.appliqueRegleMouvement(c,r3);assert.equal(ctxR.soldeRegleMouvement(c,r3),0);
+ const d={x:55,y:50,credit:2};const r4=ctxR.regleMouvement(d);d.x=45;ctxR.appliqueRegleMouvement(d,r4);d.x=55;ctxR.appliqueRegleMouvement(d,r4);assert.equal(r4.depense,2,'aller et revenir : deux zones franchies');
+ // Lâché dans l'embrasure : le socle revient dans sa zone. Parti d'une embrasure : la première zone est gratuite.
+ const e={x:40,y:50,credit:1};const r5=ctxR.regleMouvement(e);e.x=50;ctxR.appliqueRegleMouvement(e,r5);assert.equal(ctxR.soldeRegleMouvement(e,r5),0);assert.equal(e.x,40);
+ const f={x:50,y:50,credit:0};const r6=ctxR.regleMouvement(f);assert.equal(r6.zone,0);f.x=55;assert.equal(ctxR.appliqueRegleMouvement(f,r6),true);assert.equal(r6.depense+'/'+r6.zone,'0/2');
+ // Sans zones sur la carte, seule l'arrivée au contact se paie.
+ ctxR.zonesDe=()=>({compte:0});const g={x:20,y:50,credit:0};const r7=ctxR.regleMouvement(g);g.x=55;assert.equal(ctxR.appliqueRegleMouvement(g,r7),true);g.x=80;ctxR.appliqueRegleMouvement(g,r7);
+ assert.equal(ctxR.soldeRegleMouvement(g,r7),0);assert.equal(g.x,55,'sans point, pas d’arrêt au contact — mais la zone ne compte pas');ctxR.zonesDe=()=>({compte:2});
+ assert.ok(page.includes("const regle=enCombat()&&lot0.length===1?regleMouvement(a):null;")&&page.includes("if(regle&&regle.credit<=0&&view!=='mj'){floatNumber(a,'Plus de Mouvement','nul');log(a.name+' n’a plus de point de Mouvement ce tour.',{local:true});return}")
+  &&page.includes("else{moveActor(a,q.x,q.y,view==='mj',enMain);if(drag.regle)appliqueRegleMouvement(a,drag.regle)}")
+  &&page.includes("const cout=regle?soldeRegleMouvement(a,regle):null;")&&page.includes("if(regle){if(cout>0)depensePoint(a,'mouvement',cout)}")&&!page.includes("$('move').checked=true;render()"),'le geste suit la règle, du départ au lâcher');
+ assert.ok(cartes.includes("function porteurDePorte(d){")&&cartes.includes("const qui=typeof enCombat==='function'&&enCombat()?porteurDePorte(d):null;")
+  &&cartes.includes("if(qui){if(pointsRestants(qui,'mouvement')<=0){log(qui.name+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});")&&cartes.includes("    depensePoint(qui,'mouvement')}\n   d.open=!d.open;"),'une porte coûte un point en combat, rien en exploration');
+}
+console.log('1451 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

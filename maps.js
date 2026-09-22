@@ -339,6 +339,11 @@ function svgPath(contours,cls,wrap){const svg=document.createElementNS(nsSVG,'sv
  el.setAttribute('fill-rule','evenodd');if(cls)el.setAttribute('class',cls);
  svg.append(el);return svg}
 // Le joueur ne manœuvre une porte qu'au contact : elle doit mordre son rayon.
+/* Qui manœuvre la porte : chez un joueur, son aventurier ; chez le MJ, le combattant choisi
+   s'il est à portée — sinon personne, et la porte s'ouvre d'elle-même, gratuitement. */
+function porteurDePorte(d){const size=mapSize(),m=currentMap();if(!size.width)return null;
+ const a=view==='mj'?(selected!==null?actors[selected]:null):actors[owner];
+ return a&&alive(a)&&polyInReach(a,doorPolygon(d,m&&m.ratio),size,tokenPx())?a:null}
 function doorInReach(d){if(view==='mj')return true;
  const a=actors[owner],size=mapSize(),m=currentMap();
  return !!(a&&a.hero&&alive(a)&&size.width&&polyInReach(a,doorPolygon(d,m&&m.ratio),size,tokenPx()))}
@@ -447,6 +452,12 @@ function renderPortes(){const portes=$('map-doors'),m=currentMap();portes.replac
     ?'Rien ici qu’un mur : ce passage n’existe pas pour la troupe.'
     :'Cette porte est verrouillée : seul le MJ peut l’ouvrir.');return}
    if(!doorInReach(d)){log('Trop loin de la porte : approche ton aventurier pour la manœuvrer.',{local:true});return}
+   /* En combat, ouvrir ou fermer coûte un point de Mouvement à qui manœuvre ; sans point,
+      la porte ne bouge pas. En exploration, c'est gratuit. */
+   const qui=typeof enCombat==='function'&&enCombat()?porteurDePorte(d):null;
+   if(qui){if(pointsRestants(qui,'mouvement')<=0){log(qui.name+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});
+     if(typeof floatNumber==='function')floatNumber(qui,'Plus de Mouvement','nul');return}
+    depensePoint(qui,'mouvement')}
    d.open=!d.open;
    render();scheduleSave()};
   portes.append(el)})}
