@@ -267,7 +267,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  {const ma=src.match(/const LOGOS_ATTAQUE=(\[[^\]]*\]);/);assert.ok(ma,'LOGOS_ATTAQUE introuvable');
   const attaques=fs.readdirSync('img').filter(f=>/^attack_.*\.png$/i.test(f)).map(f=>f.replace(/\.png$/i,'')).sort();
   assert.deepEqual(JSON.parse(ma[1].replace(/'/g,'"')).sort(),attaques,'LOGOS_ATTAQUE doit lister img/attack_*.png : '+attaques.join(', '));
-  assert.ok(src.includes('const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET];')
+  assert.ok(src.includes('const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_ETATS,...LOGOS_DIVERS];')
    &&src.includes('function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}')
    &&src.includes("(at.logos||[]).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
    &&src.includes("choixVif(icone,(at.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])],")
@@ -1305,7 +1305,7 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):'';")&&src.includes("+sel('Spécialisation','voie',t.voie||'',optionsVoie(famille,t.voie||''))")
  &&src.includes("if(voie&&!connues.includes(voie)&&connues.length>=VOIES_MAX){alert(")&&src.includes('t.voie=voie;if(voie)enregistreVoie(t.famille,voie);')&&!src.includes("v.className='tag voie';v.textContent=t.voie;")
  &&src.includes("const verrou=!a||acquis?'':(libre?'':verrouEtages(a.talents,etages,t))||manqueTalent(a.talents,t,catalog.talents);")
- &&src.includes("n.title=t.name+' — Maîtrise de classe, acquise avec la classe.';")
+ &&src.includes("n.noteBulle='Maîtrise de classe, acquise avec la classe.';")
  &&feuille.includes('#arbres{width:min(1180px,96vw)}')&&feuille.includes('.arbre-noeud::before{content:\'\';display:block;width:3px;height:18px;')&&feuille.includes('.arbre-noeud.premier::before,.arbre-maitrises .arbre-noeud::before{display:none}')
  &&feuille.includes('.arbre-titre{width:100%;')&&feuille.includes('clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),50% 100%,0 calc(100% - 8px))}')
  &&feuille.includes('.arbre-noeud.acquis .arbre-rond::after{content:\'✓\';')&&feuille.includes('.arbre-noeud.verrou{opacity:.45;cursor:not-allowed}')
@@ -2516,4 +2516,20 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const C=require('./combat.js');
  assert.deepEqual(C.cartouchesValides({titre:[20,10],gens:[70,80]}),{nom:[20,8.4],sous:[20,12.7],habitants:[70,78.4],visiteurs:[70,81.6]},'les deux blocs d’avant se défont en quatre');
  assert.deepEqual(C.cartouchesValides({titre:[20,10],nom:[5,5]}).nom,[5,5],'une place posée l’emporte sur l’ancien bloc');}
-console.log('1538 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.280 — L'arbre de talents décrit un talent au survol, dans la bulle de la fiche ; le logo d'un
+   talent se choisit parmi toutes les images du dossier, rangées par famille. */
+{const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ // Les images sans préfixe sont toutes déclarées, extension comprise.
+ const lire=nom=>JSON.parse(src.match(new RegExp('const '+nom+'=(\\[[^\\]]*\\]);'))[1].replace(/'/g,'"'));
+ const ext=l=>l==='DEGATS'?'.webp':'.png';
+ const autres=fs.readdirSync('img').filter(f=>/\.(png|webp)$/i.test(f)&&!/^(weapon|spell|item|attack)_/.test(f)).sort();
+ assert.deepEqual([...lire('LOGOS_ETATS'),...lire('LOGOS_DIVERS')].map(l=>l+ext(l)).sort(),autres,'LOGOS_ETATS et LOGOS_DIVERS doivent lister les autres images : '+autres.join(', '));
+ assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("im.src=imgUrl(fichierLogo(l));")
+  &&src.includes("function logoTalent(t,cls){return logoImage(t&&t.logo,LOGOS_TOUS,cls)}")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
+  &&src.includes(" t.logo=f.logo&&LOGOS_TOUS.includes(f.logo.value)?f.logo.value:'';")
+  &&src.includes("const FAMILLES_LOGOS=[['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
+ const ctxL={};vm.createContext(ctxL);vm.runInContext(src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
+ assert.deepEqual(['BLINDAGE INITIAL','SAIGNEE','DEF 3','weapon_cape_elfique','DEGATS'].map(ctxL.nomLogo),['Blindage initial','Saignée','DEF 3','Cape elfique','Dégâts']);
+ assert.ok(src.includes("surveille(b,()=>ouvrirBulle(b,bulleNoeud(t,verrou,b.noteBulle),'bulle-talent'));")&&!src.includes("b.title=t.name+' — '+[talentType(t)[2]")
+  &&src.includes("(ancre.closest('dialog[open]')||document.body).append(bulleEl);")&&feuille.includes(".talent-bulle-nom b{font:700 14px 'Killam'"),'l’arbre décrit ses talents au survol, dans sa fenêtre');}
+console.log('1542 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

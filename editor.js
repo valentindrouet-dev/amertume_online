@@ -748,7 +748,9 @@ function placerBulle(){if(!bulleEl||!bulleAncre)return;
 function ancreVisible(el){return !!el&&el.isConnected&&!!el.offsetParent}
 function ouvrirBulle(ancre,contenu,classe){retireBulle();if(!ancreVisible(ancre)||!contenu)return null;
  bulleEl=document.createElement('div');bulleEl.className='bulle'+(classe?' '+classe:'');
- bulleEl.append(contenu);document.body.append(bulleEl);bulleAncre=ancre;
+ /* Une vignette dans une fenêtre ouverte — l'arbre de talents — y pose sa bulle : posée
+    sur la page, elle passerait sous la fenêtre. */
+ bulleEl.append(contenu);(ancre.closest('dialog[open]')||document.body).append(bulleEl);bulleAncre=ancre;
  // Seule une bulle épinglée reçoit la souris : la quitter, alors, la referme.
  bulleEl.addEventListener('pointerleave',()=>{if(bulleEpinglee)fermerBulle()});
  placerBulle();
@@ -1688,7 +1690,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +sel('Place dans l’arbre','branche',t.branche||'',[['','Sur l’épine — talent central'],['g','Diagonale gauche, sous le prérequis'],['d','Diagonale droite, sous le prérequis']])
   +sel('Type','type',t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]))
   +(NIVEAUX_TALENTS?field('Niveau','level',t.level||1,'number','min="1" max="20"'):'<input type="hidden" name="level" value="'+(Number(t.level)||1)+'">')
-  +sel('Logo','logo',t.logo||'',[['','— aucun —'],...LOGOS_TALENT.map(l=>[l,nomLogo(l)])])
+  +selLogos('Logo','logo',t.logo||'')
   /* Où le bouton du talent se tient à la table : avec les attaques, en grand ; sur la
      ligne des réactions, dessous ; ou nulle part — un passif se lit sur la fiche. */
   +sel('Rangée à la table','rangee',t.rangee||'',[['','Selon le type'],['attaques','Attaques — grand bouton à deux lignes'],
@@ -1744,7 +1746,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  // L'aperçu du logo, à côté de son menu, comme pour un objet.
  const menuLogo=$('talent-form').elements.logo;
  const apercu=document.createElement('img');apercu.className='logo-equip apercu';apercu.alt='';
- const montre=()=>{const l=menuLogo.value;apercu.hidden=!l;if(l)apercu.src=imgUrl(l+'.png')};
+ const montre=()=>{const l=menuLogo.value;apercu.hidden=!l;if(l)apercu.src=imgUrl(fichierLogo(l))};
  menuLogo.parentNode.append(apercu);montre();menuLogo.onchange=montre;
  dessineReglagesTalent();
  $('delete-talent').hidden=i===null;talentDialog.showModal()}
@@ -1763,7 +1765,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
  t.prerequis=f.prerequis&&f.prerequis.value&&f.prerequis.value!==t.id&&(catalog.talents||[]).some(x=>x&&x.id===f.prerequis.value)?f.prerequis.value:'';
  t.branche=f.branche&&(f.branche.value==='g'||f.branche.value==='d')?f.branche.value:'';
- t.logo=f.logo&&LOGOS_TALENT.includes(f.logo.value)?f.logo.value:'';
+ t.logo=f.logo&&LOGOS_TOUS.includes(f.logo.value)?f.logo.value:'';
  t.rangee=f.rangee&&['attaques','reactions','aucune'].includes(f.rangee.value)?f.rangee.value:'';
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
  t.effet=TALENTS_CODES[f.effet.value]&&f.effet.value!=='bonus'?f.effet.value:'';
@@ -2132,6 +2134,8 @@ function openArbresClasse(famille){if(view!=='mj')return;arbresActeur=null;arbre
 // Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
 function arbreChange(){noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
 function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();
+ // Un nœud redessiné emporte sa bulle : elle ne reste pas accrochée à l'ancien.
+ bulleOrpheline();
  if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);
  // En vue joueur, le MJ perd ses outils le temps de regarder : l'arbre se lit comme chez la troupe.
  const a=arbresActeur,mj=view==='mj'&&!arbresVueJoueur;
@@ -2162,7 +2166,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  /* Le glisser-déposer du MJ : la source est le talent tiré, la cible dit où il va — sous
     un talent, en dernier d'un bandeau, ou avant un frère. */
  const glissable=(el,t)=>{if(!mj)return;el.draggable=true;
-  el.addEventListener('dragstart',e=>{arbreGlisse=t.id;el.classList.add('tire');corps.classList.add('glisse');
+  el.addEventListener('dragstart',e=>{arbreGlisse=t.id;el.classList.add('tire');corps.classList.add('glisse');fermerBulle();
    try{e.dataTransfer.setData('text/plain',t.id);e.dataTransfer.effectAllowed='move'}catch(_){}});
   el.addEventListener('dragend',()=>{arbreGlisse=null;el.classList.remove('tire');corps.classList.remove('glisse')})};
  const cible=(el,dest)=>{if(!mj)return;
@@ -2171,6 +2175,17 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('survol');const id=arbreGlisse;arbreGlisse=null;corps.classList.remove('glisse');
    if(!id)return;if(placerTalent(id,dest))arbreChange();else note('Ce talent ne peut pas aller là : il se retrouverait sous lui-même.')})};
  const entre=dest=>{const z=document.createElement('div');z.className='arbre-entre';cible(z,dest);return z};
+ /* La bulle d'un nœud : son nom et sa nature, ce qu'il fait, ce qu'il requiert, et s'il est
+    sous clé. Un bonus dit sa valeur ; il n'a pas d'effet à préciser. */
+ const bulleNoeud=(t,verrou,note)=>{const bonus=t.effet==='bonus';
+  const d=bonus?document.createElement('div'):talentDetail(t,false);if(bonus)d.className='talent-detail t-'+talentType(t)[0];d.classList.add('large');
+  const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
+  nom.textContent=bonus?libelleBonus(paramsTalent(t)):t.name;
+  const nat=document.createElement('small');nat.textContent=bonus?'Bonus':talentType(t)[2];tete.append(nom,nat);d.prepend(tete);
+  if(bonus&&t.effects){const p=document.createElement('p');p.textContent=t.effects;d.append(p)}
+  if(note){const p=document.createElement('p');p.className='muted';p.textContent=note;d.append(p)}
+  if(verrou){const p=document.createElement('p');p.className='talent-bulle-cle';p.textContent='🔒 Sous clé : apprends d’abord « '+verrou+' ».';d.append(p)}
+  return d};
  // Un nœud de l'arbre : le rond au logo — ou au glyphe de sa nature — le nom, le niveau.
  const noeud=(t,etat,verrou)=>{const b=document.createElement('div');b.tabIndex=0;b.setAttribute('role','button');
   b.className='arbre-noeud t-'+talentType(t)[0]+(etat?' '+etat:'');b.dataset.id=t.id;
@@ -2185,7 +2200,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    niv.textContent=t.name&&t.name!==libelleBonus(p,true)&&t.name!=='Nouveau talent'?t.name:(NIVEAUX_TALENTS?'Niv. '+(t.level||1):'')}
   niv.hidden=!niv.textContent;
   b.append(rond,nom,niv);
-  b.title=t.name+' — '+[talentType(t)[2],t.effects].filter(Boolean).join(' · ')+(verrou?' — sous clé : requiert '+verrou:'');
+  // Au survol, la bulle de description, comme sur la fiche ; « b.noteBulle » s'y ajoute.
+  b.setAttribute('aria-label',t.name+' — '+[talentType(t)[2],t.effects].filter(Boolean).join(' · ')+(verrou?' — sous clé : requiert '+verrou:''));
   b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}};
   // Les outils du MJ, au survol : corriger le talent, en suspendre un nouveau dessous.
   if(mj){const outils=document.createElement('span');outils.className='arbre-outils';
@@ -2193,6 +2209,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if(t.type!=='mait')outils.append(ico('⊕','Créer un talent sous '+t.name,()=>openTalent(null,renderArbres,
     {famille:talentFamily(t),voie:t.voie||'',prerequis:t.id,level:Math.min(20,(t.level||1)+1)})));
    b.append(outils)}
+  surveille(b,()=>ouvrirBulle(b,bulleNoeud(t,verrou,b.noteBulle),'bulle-talent'));
   return b};
  // La tête : la classe, et ses maîtrises, acquises d'office.
  const tete=document.createElement('div');tete.className='arbres-tete';
@@ -2203,7 +2220,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const maitrises=maitrisesDe(classe);
  if(maitrises.length){const bande=document.createElement('div');bande.className='arbre-maitrises';
   maitrises.forEach(t=>{const n=noeud(t,a?'acquis auto':'modele');
-   n.title=t.name+' — Maîtrise de classe, acquise avec la classe.';
+   n.noteBulle='Maîtrise de classe, acquise avec la classe.';
    if(!a)n.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres);
    bande.append(n)});
   tete.append(bande)}
@@ -2652,8 +2669,24 @@ const LOGOS_TALENT=['spell_orbes','spell_orbes_feu','spell_orbes_foudre','spell_
    puise — mais elle peut prendre n'importe quelle icône du dossier : griffes, arme, sort ou
    objet, c'est au MJ de dire ce que la bête brandit. */
 const LOGOS_ATTAQUE=['attack_griffes'];
-const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET];
-const nomLogo=l=>{const n=String(l||'').replace(/^(weapon|spell|item|attack)_/,'').replace(/[_-]+/g,' ');return n?n[0].toUpperCase()+n.slice(1):''};
+/* Les autres images du dossier, de même : les icônes d'états, puis le reste — écus de DEF,
+   dégâts, vie, personnage. Un talent ou une attaque spéciale peut les prendre pour logo.
+   Leur fichier garde son nom en capitales ; DEGATS seul est en .webp. */
+const LOGOS_ETATS=['AU SOL','AVEUGLE','BLINDAGE INITIAL','CIBLAGE','FAILLE','FEU','FOUDRE','GEL','ONDE','POISON','SAIGNEE'];
+const LOGOS_DIVERS=['DEF 0','DEF 1','DEF 2','DEF 3','DEF 4','DEF 5','DEF 6','DEF VIDE','DEGATS','PERSO','VIE'];
+const EXTENSIONS_LOGO={DEGATS:'.webp'};
+const fichierLogo=l=>l+(EXTENSIONS_LOGO[l]||'.png');
+const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_ETATS,...LOGOS_DIVERS];
+// Toutes les images, rangées par famille : le menu de logo d'un talent les propose ainsi.
+const FAMILLES_LOGOS=[['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];
+const NOMS_LOGOS={SAIGNEE:'Saignée',DEGATS:'Dégâts'};
+// Le nom d'un logo : son fichier sans préfixe ; un nom en capitales se lit en minuscules, sauf DEF.
+const nomLogo=l=>{if(NOMS_LOGOS[l])return NOMS_LOGOS[l];let n=String(l||'').replace(/^(weapon|spell|item|attack)_/,'').replace(/[_-]+/g,' ');
+ if(n===n.toUpperCase()&&!/^DEF\b/.test(n))n=n.toLowerCase();return n?n[0].toUpperCase()+n.slice(1):''};
+// Un menu de logos en familles : un groupe par famille, « — aucun — » en tête.
+function selLogos(label,key,value){return '<label>'+label+'<select name="'+key+'"><option value="">— aucun —</option>'
+ +FAMILLES_LOGOS.filter(([,l])=>l.length).map(([f,l])=>'<optgroup label="'+esc(f)+'">'+l.map(v=>'<option value="'+esc(v)+'"'+(v===value?' selected':'')+'>'+esc(nomLogo(v))+'</option>').join('')+'</optgroup>').join('')
+ +'</select></label>'}
 // Le menu de logos d'un objet dépend de sa catégorie : une arme ou une armure choisit parmi
 // les weapon_*, une munition parmi les deux (le carquois de flèches est un weapon_*), tout
 // le reste parmi les item_*.
@@ -2661,9 +2694,10 @@ function logosItem(o){const c=o&&o.category;return c==='weapon'||c==='armor'?LOG
 /* Un logo devant un nom : un jeton, ou rien. Un logo inconnu du dossier ne se dessine
    pas — un objet importé d'ailleurs n'affiche pas une image cassée. */
 function logoImage(l,liste,cls){if(!l||!liste.includes(l))return null;
- const im=document.createElement('img');im.className='logo-equip'+(cls?' '+cls:'');im.src=imgUrl(l+'.png');im.alt='';im.draggable=false;return im}
+ const im=document.createElement('img');im.className='logo-equip'+(cls?' '+cls:'');im.src=imgUrl(fichierLogo(l));im.alt='';im.draggable=false;return im}
 function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)}
-function logoTalent(t,cls){return logoImage(t&&t.logo,LOGOS_TALENT,cls)}
+// Le logo d'un talent : n'importe quelle image du dossier.
+function logoTalent(t,cls){return logoImage(t&&t.logo,LOGOS_TOUS,cls)}
 // Le logo d'une attaque : n'importe quelle icône du dossier, sans distinction de famille.
 function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['armor','Armure'],
