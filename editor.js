@@ -1080,27 +1080,40 @@ function lisMotCle(ligne){const s=String(ligne||'').trim();const m=s.match(/^(.+
  if(m){const c=m[2].startsWith('#')?m[2]:COULEURS_MOTS[m[2].toLowerCase()];if(c)return {mot:m[1].trim(),couleur:c}}
  return {mot:s,couleur:''}}
 let motsClesCache=null;
+/* Le motif d'un mot clé : chaque mot prend son pluriel (« attaque » → « attaques », « feu » →
+   « feux »), les mots se séparent de n'importe quel blanc ; « insensible », il se lit en
+   majuscules comme en minuscules. Ceux du jeu gardent leurs graphies — « Vie » et non « la
+   vie » —, ceux du MJ se lisent quelle que soit la casse. */
+function motifMotCle(mot,insensible){const q=x=>x.replace(/[.*+?^${}()|[\]\\\/-]/g,'\\$&');
+ return String(mot).trim().split(/\s+/).map(w=>{const c=[...w].map(ch=>{const lo=ch.toLowerCase(),up=ch.toUpperCase();
+   return insensible&&lo!==up?'['+q(lo)+q(up)+']':q(ch)}).join('');
+  return /[sxz]$/i.test(w)?c:c+'(?:[sxSX])?'}).join('\\s+')}
 function motsCles(){const perso=(catalog&&catalog.motsCles)||[],cle=perso.join('\u0001');
  if(motsClesCache&&motsClesCache.cle===cle)return motsClesCache;
- const table=new Map(),ajoute=(formes,couleur)=>formes.forEach(f=>{if(f&&!table.has(f))table.set(f,couleur)});
+ const entrees=[],vus=new Set();
+ const ajoute=(formes,couleur,insensible)=>formes.forEach(f=>{if(!f)return;const motif=motifMotCle(f,insensible);if(vus.has(motif))return;vus.add(motif);entrees.push({mot:f,motif,couleur,re:new RegExp('^(?:'+motif+')$','u')})});
  // Ceux du MJ qui ont une couleur passent d'abord : ils l'emportent sur ceux du jeu. Sans couleur, un mot du jeu garde la sienne.
- const formes=mot=>[mot,mot.toLowerCase(),mot[0].toUpperCase()+mot.slice(1),mot.toUpperCase()];
- const lus=perso.map(lisMotCle).filter(x=>x.mot);lus.filter(x=>x.couleur).forEach(x=>ajoute(formes(x.mot),x.couleur));
+ const lus=perso.map(lisMotCle).filter(x=>x.mot);lus.filter(x=>x.couleur).forEach(x=>ajoute([x.mot],x.couleur,true));
  const rgb=k=>typeof STAT_TINTS!=='undefined'&&STAT_TINTS[k]?'rgb('+STAT_TINTS[k]+')':'';
  ajoute(['PV max','PV'],rgb('pv'));ajoute(['DEF','Défense'],rgb('def'));ajoute(['Endurance','ENDU','Endu'],rgb('endu'));
- ajoute(['Vie','VIE'],rgb('vie'));ajoute(['Dégâts','dégâts','DÉGÂTS','Dégât','dégât'],rgb('dmg'));ajoute(['XP'],rgb('xp'));
+ ajoute(['Vie','VIE'],rgb('vie'));ajoute(['Dégât','dégât','DÉGÂT'],rgb('dmg'));ajoute(['XP'],rgb('xp'));
  ETATS_JEU.forEach(x=>ajoute([x,x.toUpperCase()],TEINTE_ETAT_MOT[x]||'#a2691f'));
- ajoute(['Actions','Action','Mouvements','Mouvement','Réactions','Réaction','Objet','Passif','Critiques','Critique','Maîtrise','Amélioration'],'');
- lus.filter(x=>!x.couleur).forEach(x=>ajoute(formes(x.mot),'var(--accent)'));
- const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
- const alts=[...table.keys()].sort((x,y)=>y.length-x.length).map(esc).join('|');
- const rx=new RegExp('\\*\\*([^*\\n]+)\\*\\*|(^|[^\\p{L}\\p{N}])('+alts+'|\\d*d\\d+(?:\\s*[+−-]\\s*\\d+)?|[+−]\\d+)(?![\\p{L}\\p{N}])','gu');
- return motsClesCache={cle,table,rx}}
-function texteEnrichi(el,texte){texte=String(texte||'');el.replaceChildren();const {rx,table}=motsCles();rx.lastIndex=0;let last=0,m;
+ ajoute(['Action','Mouvement','Réaction','Objet','Passif','Critique','Maîtrise','Amélioration'],'');
+ lus.filter(x=>!x.couleur).forEach(x=>ajoute([x.mot],'var(--accent)',true));
+ // Les expressions longues d'abord : « Attaque critique » avant « Attaque ».
+ entrees.sort((x,y)=>y.mot.length-x.mot.length);
+ const rx=new RegExp('\\*\\*([^*\\n]+)\\*\\*|(^|[^\\p{L}\\p{N}])(?:'+entrees.map(x=>'('+x.motif+')').join('|')+'|(\\d*d\\d+(?:\\s*[+−-]\\s*\\d+)?|[+−]\\d+))(?![\\p{L}\\p{N}])','gu');
+ // La couleur d'un texte trouvé : celle de la première entrée qui le reconnaît.
+ const couleur=texte=>{const x=entrees.find(x=>x.re.test(texte));return x?x.couleur:''};
+ return motsClesCache={cle,entrees,rx,couleur}}
+function texteEnrichi(el,texte){texte=String(texte||'');el.replaceChildren();const {rx,entrees}=motsCles();rx.lastIndex=0;let last=0,m;
  const gras=(mot,couleur)=>{const b=document.createElement('b');b.className='mot-cle';b.textContent=mot;if(couleur)b.style.color=couleur;el.append(b)};
  while((m=rx.exec(texte))){
   if(m[1]!==undefined){if(m.index>last)el.append(texte.slice(last,m.index));gras(m[1],'');last=rx.lastIndex;continue}
-  const debut=m.index+m[2].length;if(debut>last)el.append(texte.slice(last,debut));gras(m[3],table.get(m[3])||'');last=rx.lastIndex}
+  const debut=m.index+m[2].length;if(debut>last)el.append(texte.slice(last,debut));
+  // Le groupe qui a pris : une entrée (sa couleur), ou la formule de dés (en gras seul).
+  let k=3;while(k<3+entrees.length&&m[k]===undefined)k++;
+  gras(m[k]!==undefined?m[k]:m[3+entrees.length],k<3+entrees.length?entrees[k-3].couleur:'');last=rx.lastIndex}
  if(last<texte.length)el.append(texte.slice(last));return el}
 function talentDetail(t,vif){const d=document.createElement('div');d.className='talent-detail t-'+talentType(t)[0];
  const ligne=(texte,html)=>{if(!texte)return null;const p=document.createElement('p');
@@ -1113,7 +1126,6 @@ function talentDetail(t,vif){const d=document.createElement('div');d.className='
  ligne(t.notes);
  const socle=nomPrerequis(t,catalog.talents),branches=talentsDependants(t,catalog.talents);
  if(socle)ligne('↳ Requiert : '+socle);
- if(branches.length)ligne('Débloque : '+branches.map(x=>x.name).join(', '));
  return d}
 /* La vignette et son dépliant, l'un sous l'autre, de la même largeur : le bloc prend la
    largeur de la vignette, et le dépliant s'y range sans l'élargir. Un clic ouvre, un

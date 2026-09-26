@@ -2415,7 +2415,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes("'<input type=\"hidden\" name=\"level\" value=\"'"),'les niveaux de talent se cachent, le câblage reste');
  const ctxK={catalog:{motsCles:['Allié : vert','Feu : orange','Ennemi = #123456','Sans couleur','Gel']},STAT_TINTS:{pv:'1,2,3',dmg:'4,5,6',def:'0,0,0',endu:'0,0,0',vie:'0,0,0',xp:'0,0,0'},ETATS_JEU:gearApi.ETATS_JEU};
  vm.createContext(ctxK);vm.runInContext(src.slice(src.indexOf('const TEINTE_ETAT_MOT='),src.indexOf('function texteEnrichi(')),ctxK);
- const t=ctxK.motsCles().table;
+ const t={get:x=>ctxK.motsCles().couleur(x)};
  assert.equal([t.get('Allié'),t.get('Feu'),t.get('Ennemi'),t.get('Sans couleur'),t.get('Gel')].join('|'),'#2f7a4b|#c2692a|#123456|var(--accent)|#2f8fae','la couleur des mots clés : nommée, en code, ou celle du thème ; un mot du jeu se recolore, ou garde la sienne sans couleur');}
 /* v0.272 — Une arme sans nombre de mains en tient une ; les munitions ont leur emplacement, sous la
    main droite, et donnent aux armes à distance un dé et un état ; la pastille de classe se présente
@@ -2439,4 +2439,14 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("const ouvre=()=>{if(typeof peutVoirArbres==='function'&&peutVoirArbres(a))openArbres(a);else if(view==='mj')openArbresClasse(nomCl)};")
   &&src.includes("k.textContent='Bonus de PV max';")&&!src.includes('armory-official')
   &&feuille.includes('.calcul-bulle{display:flex;flex-direction:column;gap:3px;min-width:220px;font-size:13px;background:var(--panel);'),'la pastille de classe, la bulle lisible, plus de Catalogue officiel');}
-console.log('1497 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.273 — Les mots clés prennent leur pluriel, et ceux du MJ se lisent quelle que soit la casse ;
+   la description d'un talent ne dit plus ce qu'il débloque. */
+{const ctxP={catalog:{motsCles:['Attaque : rouge','Attaque critique : violet','Allié']},STAT_TINTS:{pv:'1,2,3',dmg:'4,5,6',def:'0,0,0',endu:'0,0,0',vie:'0,0,0',xp:'0,0,0'},ETATS_JEU:gearApi.ETATS_JEU,
+  document:{createElement:()=>({className:'',textContent:'',style:{color:''}})}};vm.createContext(ctxP);
+ vm.runInContext(src.slice(src.indexOf('const TEINTE_ETAT_MOT='),src.indexOf('function talentDetail(t,vif)')),ctxP);
+ const el={k:[],replaceChildren(){this.k=[]},append(...x){this.k.push(...x.map(y=>typeof y==='string'?y:'['+y.textContent+(y.style.color?'|'+y.style.color:'')+']'))}};
+ ctxP.texteEnrichi(el,'Deux attaques, une Attaque critique, des attaques critiques, ATTAQUE ; les alliés gagnent 2 Dégâts et des Actions ; la vie reste.');
+ assert.equal(el.k.join(''),'Deux [attaques|#b8352f], une [Attaque critique|#7a5cb8], des [attaques critiques|#7a5cb8], [ATTAQUE|#b8352f] ; les [alliés|var(--accent)] gagnent 2 [Dégâts|rgb(4,5,6)] et des [Actions] ; la vie reste.');
+ ctxP.texteEnrichi(el,'Feux et Gels : 1d6+2, +3.');assert.equal(el.k.join(''),'[Feux|#c2503a] et [Gels|#2f8fae] : [1d6+2], [+3].');
+ assert.ok(!src.includes("ligne('Débloque : '"),'plus de « Débloque » dans la description d’un talent');}
+console.log('1500 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
