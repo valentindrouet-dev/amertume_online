@@ -795,7 +795,8 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // La rareté, puis ce que la pièce confère, une ligne par bonus.
  if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));
  normaliseBonusEquip(o.bonus).forEach(b=>ligne(libelleBonus(b),'gear-bonus'));
- if(col==='armor')ligne('DEF '+(o.def||0)+' · '+NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase());
+ // La DEF, comme sur le carré : seulement si la pièce en donne, ou si c'est un torse ou un bouclier.
+ if(col==='armor'){if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))ligne('DEF '+(o.def||0)+' · '+NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase())}
  else if(col!=='object')ligne((o.hands===2?'2 mains':'1 main')+(col==='ranged'?' · à distance':' · au contact'));
  if(o.category==='ammo'){const k=keys.indexOf(o.munDe);ligne('Munition : '+(k>=0?'+1 dé '+types[k]:'aucun dé')+' aux armes à distance portées');ligne(o.etat?'Leur tir inflige : '+o.etat:'')}
  else if(o.etat)ligne('Inflige : '+o.etat);
@@ -807,8 +808,8 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  const code=objetCode(o);
  if(code){const p=document.createElement('p');p.className='gear-effet';
   p.innerHTML=phraseDeObjet(o);d.append(p);
-  if(modeObjet(o)==='passif')ligne('Passif : agit tant que la pièce est portée','gear-passif');
-  else ligne('Usage : '+NOM_USAGE(usageObjet(o))+(usageLimite(usageObjet(o))&&a&&usageEpuise(a,o)?' — déjà employé':''))}
+  // Un effet passif se dit dans sa phrase (« tant qu'il porte la pièce ») : pas de ligne de plus.
+  if(modeObjet(o)!=='passif')ligne('Usage : '+NOM_USAGE(usageObjet(o))+(usageLimite(usageObjet(o))&&a&&usageEpuise(a,o)?' — déjà employé':''))}
  /* Un objet s'emploie à la table de jeu ; un équipement qui porte un effet aussi — la page
     Aventuriers, elle, ne fait que ranger l'inventaire. */
  /* Plus de bouton dans la bulle — elle s'efface quand la souris la quitte : un objet
@@ -1871,15 +1872,28 @@ function retirerInventaire(a,o){if(!a||!o)return;a.inventaire??=[];const i=a.inv
   if(!reste&&a.shieldId===o.id)a.shieldId=''}
  else if(o.category==='ammo'&&!reste&&a.munitionId===o.id)a.munitionId='';
  syncEquipped(a)}
+/* Dans l'inventaire à remplir, chaque pièce est une icône : le carré de l'armurerie, son nom
+   dessous. Un clic en ajoute un exemplaire ; ce que l'aventurier possède déjà porte sa coche
+   verte, son nombre s'il en a plusieurs, et un « − » pour en retirer un. */
+function carteAjout(a,o,clic){const n=(a.inventaire||[]).filter(x=>x===o.id).length;
+ const carte=document.createElement('div');carte.className='cat-carte pick-carte'+(n?' possede':'');
+ const p=gearCarre(o,n,0);p.classList.remove('dispo');p.classList.toggle('porte',n>0);
+ if(!p.querySelector('.marque-porte')){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
+ p.title=o.name+(n?' — '+n+' dans l’inventaire ; un clic en ajoute un':' — un clic l’ajoute à l’inventaire');p.setAttribute('aria-label',p.title);
+ p.onclick=()=>clic(o);p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();clic(o)}};
+ const nom=document.createElement('span');nom.className='nom-carte';nom.textContent=o.name;carte.append(p,nom);
+ if(n){const moins=document.createElement('button');moins.type='button';moins.className='pick-moins';moins.textContent='−';
+  moins.title='Retirer un exemplaire de '+o.name;moins.setAttribute('aria-label',moins.title);
+  moins.onclick=e=>{e.stopPropagation();clic(o,true)};carte.append(moins)}
+ return carte}
 const pickerDialog=dialog('picker','Équiper','<p class="muted" id="picker-note"></p>'
  +'<input id="picker-search" placeholder="Rechercher…" aria-label="Rechercher">'
  +'<div id="picker-body"></div>');
 let pickerActeur=null,pickerMode='gear',pickerApres=null;
 function openPicker(a,mode,apres){if(view!=='mj')return;pickerActeur=a;pickerMode=mode;pickerApres=apres||null;
  pickerDialog.querySelector('h2').textContent=(mode==='gear'?'Inventaire de ':'Talents de ')+a.name;
- $('picker-note').textContent=mode==='gear'
-  ?'Clique un objet pour l’ajouter à l’inventaire — encore une fois pour un second exemplaire — et « − » pour en retirer un. Ce qui est porté se choisit sur la fiche, en cliquant les carrés : deux mains au plus, une armure.'
-  :'Clique un talent pour l’apprendre ou l’oublier.';
+ // L'inventaire se remplit d'icônes, sans mode d'emploi ; les talents gardent leur note.
+ $('picker-note').textContent=mode==='gear'?'':'Clique un talent pour l’apprendre ou l’oublier.';$('picker-note').hidden=mode==='gear';
  $('picker-search').value='';$('picker-search').oninput=renderPicker;
  renderPicker();pickerDialog.showModal()}
 function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)return;corps.replaceChildren();
@@ -1890,6 +1904,8 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   const compte=document.createElement('span');compte.className='compte';
   compte.textContent=liste.filter(porte).length+' / '+liste.length;
   h.append(compte);bloc.append(h);
+  if(pickerMode==='gear'){const grille=document.createElement('div');grille.className='pick-grille';
+   liste.forEach(o=>grille.append(carteAjout(a,o,clic)));bloc.append(grille);corps.append(bloc);return}
   liste.forEach(o=>{const rang=document.createElement('button');rang.className='pick-ligne'+(porte(o)?' porte':'');
    rang.append(pastille(o));
    const etat=document.createElement('span');etat.className='pick-etat';

@@ -928,7 +928,8 @@ body.page-domaine .intro,body.page-domaine .mj-tools,body.page-domaine main.layo
 #dom-plan .dom-zone{pointer-events:auto}
 #dom-bats{display:flex;flex-direction:column;gap:8px}
 .dom-bat{border:1px solid var(--line);border-left:4px solid var(--t,var(--line));border-radius:9px;padding:8px 10px 9px;background:var(--panel-2);cursor:pointer;display:flex;flex-direction:column;gap:5px}
-.dom-bat:hover{border-color:var(--accent)}.dom-bat.sel{border-color:var(--accent);background:var(--sel-fond)}
+.dom-bat:hover{border-color:var(--accent)}.dom-bat.sel{border-color:var(--accent);border-left-color:var(--t,var(--accent));background:var(--sel-fond);box-shadow:0 0 0 1px var(--accent),0 3px 10px #9c631c2e}
+.dom-bat.sel .dom-bat-tete strong{color:var(--accent)}
 .dom-bat.e0{--t:#b9a48a}.dom-bat.e1{--t:#c9953f}.dom-bat.e2{--t:#7faddc}.dom-bat.e3{--t:#8bbd9c}
 .dom-bat-tete{display:flex;align-items:center;justify-content:space-between;gap:6px 8px;flex-wrap:wrap}.dom-bat-tete strong{font-size:14px}
 .dom-etape{font:600 10px system-ui;letter-spacing:1.5px;text-transform:uppercase;color:var(--t,var(--muted));white-space:nowrap}
@@ -964,6 +965,13 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .dom-aventurier{display:flex;flex-direction:column;gap:5px;padding:8px 0;border-bottom:1px solid var(--line)}
 .dom-av-tete{display:flex;align-items:center;gap:8px}.dom-av-tete strong{font-size:14px}
 .dom-aventurier select,.dom-aventurier input{width:100%;margin:0}
+/* Chez les joueurs, la troupe sur deux colonnes, chacun centré : jeton, nom, lieu. Un dernier seul se centre sur la largeur. */
+#dom-aventuriers.en-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#dom-aventuriers.en-grille .dom-aventurier{align-items:center;text-align:center;gap:3px;padding:10px 6px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+#dom-aventuriers.en-grille .dom-av-tete{flex-direction:column;gap:6px}#dom-aventuriers.en-grille .dom-av-tete strong{overflow-wrap:anywhere}
+#dom-aventuriers.en-grille .jeton-rond.mini{width:46px;height:46px;font-size:20px}
+#dom-aventuriers.en-grille .dom-aventurier:last-child:nth-child(odd){grid-column:1/-1;justify-self:center;width:calc(50% - 4px)}
+#dom-aventuriers.en-grille>p{grid-column:1/-1}
 @media(max-width:1150px){body.page-domaine #domaine-page{grid-template-columns:1fr;padding:14px}#domaine-page .dom-col{position:static;max-height:none}.dom-effets{grid-template-columns:1fr}}
 
 /* ---------- Les zones de la carte ---------- */
@@ -1046,7 +1054,12 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .cat-col.armurerie-grille{display:flex;flex-wrap:wrap;gap:10px 8px;align-items:flex-start}
 .cat-col.armurerie-grille h3{flex-basis:100%}
 .cat-carte{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;width:84px}
-.cat-carte .nom-carte{font:600 11px/1.2 system-ui;text-align:center;color:var(--ink);max-width:84px;overflow-wrap:anywhere}
+.cat-carte .nom-carte{font:600 11px/1.2 system-ui;text-align:center;color:var(--ink);max-width:84px;overflow-wrap:anywhere;min-height:2.4em;display:flex;align-items:center;justify-content:center}
+/* L'inventaire à remplir, en icônes : les carrés de l'armurerie, coche verte pour ce qu'on possède, « − » pour en retirer un. */
+.pick-grille{display:flex;flex-wrap:wrap;gap:12px 8px;padding-top:4px}
+.pick-carte .cat-pill.gear-carre{box-sizing:border-box}
+.pick-carte .pick-moins{position:absolute;top:-7px;right:1px;width:20px;height:20px;padding:0;margin:0;border-radius:50%;border:2px solid var(--panel-2);background:#c0392b;color:#fff;font:700 13px/1 system-ui;display:grid;place-items:center;cursor:pointer;z-index:1}
+.pick-carte .pick-moins:hover{background:#a02c20}
 .cat-carte .cat-tools{position:absolute;top:-9px;right:-2px;gap:1px;opacity:0;transition:opacity .12s;z-index:1}
 .cat-carte:hover .cat-tools,.cat-carte:focus-within .cat-tools{opacity:1}
 .cat-carte .cat-tools .ico{padding:1px 5px;font-size:12px;background:var(--panel);border:1px solid var(--line);border-radius:6px}
@@ -1061,6 +1074,22 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 #dom-plan.glisse-jeton .dom-zone.construit{stroke:#8bbd9c;fill:#8bbd9c22}#dom-plan.glisse-jeton .dom-zone.construit.vise{stroke:#fff;fill:#8bbd9c66}
 #dom-plan.sans-contours .dom-zone{stroke:transparent;fill:transparent}
 #dom-plan.sans-contours .dom-zone:hover{fill:#ffffff14}
+/* Le bâtiment choisi s'allume sur le plan, contours cachés ou non : un liseré doré, et le reste de la carte un peu dans l'ombre. */
+#dom-plan .dom-voile{fill:#0b0804;fill-opacity:.34;pointer-events:none}
+#dom-plan .dom-zone.sel,#dom-plan.sans-contours .dom-zone.sel{stroke:#ffe39a;stroke-width:3;fill:#ffe39a1c}
+#dom-plan-etiquettes .dom-etiquette.sel b{color:#ffe39a}
+/* Les inscriptions de la carte, à l'encre sur ses parchemins, en Killam : elles grandissent avec la carte (unités de conteneur). */
+#dom-plan,#dom-canvas{container-type:inline-size}
+.dom-cartouche{position:absolute;transform:translate(-50%,-50%);text-align:center;white-space:nowrap;color:#3a2614;text-shadow:0 0 .15em #f7ecd2,0 0 .4em #f7ecd2b0;pointer-events:none;user-select:none}
+.dom-cartouche b{display:block;font:700 3.1cqw/1.05 'Killam',Georgia,serif;letter-spacing:.02em}
+.dom-cartouche small{display:block;font:700 1.45cqw/1.2 'Killam',Georgia,serif;letter-spacing:.2em;text-transform:uppercase;color:#5a3d22;margin-top:.15em}
+.dom-cartouche.c-gens b,.dom-cartouche.c-gens small{font:700 1.5cqw/1.3 'Killam',Georgia,serif;letter-spacing:.03em;text-transform:none;color:#3a2614;margin:0}
+.dom-cartouche.deplacable{pointer-events:auto;cursor:grab;touch-action:none}.dom-cartouche.deplacable:active{cursor:grabbing}
+.no-image .dom-cartouche{display:none}
+/* Au journal du MJ, en retrait : les étapes qu'il a posées lui-même, que les joueurs ne lisent pas. */
+.dom-journal li.du-mj{opacity:.55;font-style:italic}
+/* Chez les joueurs, une friche ne se choisit pas. */
+#dom-plan .dom-zone.inerte{pointer-events:none}
 #dom-contours.on,#dom-contours-editeur.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 /* Dans l'éditeur aussi, sur le même réglage ; le bâtiment choisi garde son contour : on le retouche. */
 #dom-canvas.sans-contours .dom-zone:not(.sel){stroke:transparent;fill:transparent}

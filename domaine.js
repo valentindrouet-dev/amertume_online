@@ -25,6 +25,8 @@ const batimentDom=id=>domaine.batiments.find(b=>b.id===id)||null;
 /* Un aventurier ne loge que dans un bâtiment construit : si l'étape recule, il en sort
    aussitôt et se retrouve simplement au domaine. Renvoie le nombre d'évacués. */
 const batimentConstruit=b=>!!b&&b.etape>=ETAPES_DOMAINE.length-1;
+// Les joueurs ne voient que ce qui est sorti de terre : une friche n'a ni ligne ni fiche chez eux.
+const batimentChoisissable=b=>!!b&&(mjDom()||b.etape>0);
 function evacueNonConstruits(){let n=0;Object.values(domaine.aventuriers).forEach(v=>{if(!v||!v.lieu)return;
  const b=batimentDom(v.lieu);if(b&&!batimentConstruit(b)){v.lieu='';n++}});return n}
 function nomLieu(lieu){if(lieu==='aventure')return 'En aventure';if(lieu==='absent')return 'Absent';
@@ -78,7 +80,8 @@ function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildre
  const ns='http://www.w3.org/2000/svg';
  d.batiments.forEach((b,i)=>{if(!b.zone)return;
   const p=document.createElementNS(ns,'polygon');p.setAttribute('points',b.zone.map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));
-  p.setAttribute('class','dom-zone e'+b.etape+(b.etat?' etat-'+b.etat:'')+(batimentConstruit(b)?' construit':'')+(opts.sel===i?' sel':''));p.dataset.bat=String(i);
+  const inerte=!!(opts.inerte&&opts.inerte(b));
+  p.setAttribute('class','dom-zone e'+b.etape+(b.etat?' etat-'+b.etat:'')+(batimentConstruit(b)?' construit':'')+(opts.sel===i?' sel':'')+(inerte?' inerte':''));p.dataset.bat=String(i);
   const t=document.createElementNS(ns,'title');t.textContent=b.nom+' — '+NOM_ETAPE(b.etape)+(b.etat?' · '+NOM_ETAT_BATIMENT(b.etat):'');p.append(t);svg.append(p);
   const c=b.etiquette||centroide(b.zone);if(!c)return;
   const e=document.createElement('span');e.className='dom-etiquette e'+b.etape+(b.etat?' etat-'+b.etat:'')+(opts.sel===i?' sel':'');
@@ -94,10 +97,31 @@ function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildre
   if(opts.jeu){const presents=actors.filter(a=>a.hero&&(domaine.aventuriers[a.id]||{}).lieu===b.id);
    if(presents.length){const j=document.createElement('div');j.className='dom-etiquette-jetons';
     presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name+(mjDom()?' — glisser vers un autre bâtiment construit':'');t.onpointerdown=ev=>glisseJetonAventurier(ev,a,t);j.append(t)});e.append(j)}}
-  if(opts.deplace||opts.clic)rendEtiquetteDeplacable(e,b,etiquettes,opts);etiquettes.append(e)});
+  if(opts.deplace||opts.clic&&!inerte)rendEtiquetteDeplacable(e,b,etiquettes,opts);etiquettes.append(e)});
+ dessineCartouches(etiquettes,opts);
+ /* Sur le plan du Domaine, le bâtiment choisi s'allume : le reste de la carte s'assombrit
+    un peu autour de lui, contours cachés ou non. Le voile passe sous les zones et laisse
+    passer les clics. */
+ const choisi=opts.jeu&&opts.sel!==null&&opts.sel!==undefined?d.batiments[opts.sel]:null;
+ if(choisi&&choisi.zone){const v=document.createElementNS(ns,'path');v.setAttribute('class','dom-voile');v.setAttribute('fill-rule','evenodd');
+  v.setAttribute('d','M0,0H100V100H0Z M'+choisi.zone.map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' L')+'Z');svg.prepend(v)}
  if(opts.trace&&opts.trace.pts.length){const pts=opts.trace.pts;
   const f=document.createElementNS(ns,pts.length>2?'polygon':'polyline');
   f.setAttribute('points',pts.map(q=>q.join(',')).join(' '));f.setAttribute('class','dom-trace');svg.append(f)}}
+
+/* Les inscriptions de la carte, à l'encre sur ses parchemins : en haut, le nom du domaine sur
+   deux lignes — « Lamuline (Domaine) » s'écrit Lamuline, puis Domaine — ; en bas, qui y vit
+   et qui y passe, les vrais nombres. Elles se glissent dans l'éditeur de carte seulement. */
+function nomEnDeux(nom){nom=String(nom||'').trim();const m=nom.match(/^(.*\S)\s*\((.+)\)$/);
+ return m?[m[1],m[2].trim()]:[nom,/domaine/i.test(nom)?'':'Domaine']}
+function dessineCartouches(etiquettes,opts){const d=domaine,compte=k=>d.pnj.filter(p=>p.statut===k).length;
+ const accorde=(n,mot)=>n+' '+mot+(n>1?'s':'');
+ [['titre',nomEnDeux(d.nom)],['gens',[accorde(compte('habitant'),'habitant'),accorde(compte('visiteur'),'visiteur')]]].forEach(([k,lignes])=>{
+  const pt=d.carte.cartouches[k];if(!pt)return;
+  const e=document.createElement('span');e.className='dom-cartouche c-'+k;e.style.left=pt[0]+'%';e.style.top=pt[1]+'%';
+  lignes.forEach((t,i)=>{if(!t)return;const l=document.createElement(i?'small':'b');l.textContent=t;e.append(l)});
+  if(opts.deplaceCartouche){rendEtiquetteDeplacable(e,k,etiquettes,{deplace:opts.deplaceCartouche});e.title='Glisser pour déplacer l’inscription'}
+  etiquettes.append(e)})}
 
 /* Le jeton d'un aventurier se glisse d'un bâtiment à un autre, sur le plan : lâché n'importe
    où sur la zone d'un bâtiment construit, il y est rattaché aussitôt. Lâché ailleurs, il
@@ -169,10 +193,10 @@ const renderMapListSansDomaine=renderMapList;renderMapList=function(){renderMapL
  const det=document.createElement('small');const n=domaine.carte.calques.filter(Boolean).length,z=domaine.batiments.filter(x=>x.zone).length;
  det.textContent=n+' calque'+(n>1?'s':'')+' · '+z+' bâtiment'+(z>1?'s':'')+' tracé'+(z>1?'s':'');
  b.append(nom,det);b.onclick=entreDomaine;liste.prepend(b)};
-function pushDomUndo(){domUndo.push({batiments:structuredClone(domaine.batiments),calques:[...domaine.carte.calques],ratio:domaine.carte.ratio});
+function pushDomUndo(){domUndo.push(domEtat());
  if(domUndo.length>40)domUndo.shift();domRedo.length=0}
-function domEtat(){return {batiments:structuredClone(domaine.batiments),calques:[...domaine.carte.calques],ratio:domaine.carte.ratio}}
-function poseDomEtat(e){domaine.batiments=e.batiments;domaine.carte.calques=e.calques;domaine.carte.ratio=e.ratio;
+function domEtat(){return {batiments:structuredClone(domaine.batiments),calques:[...domaine.carte.calques],ratio:domaine.carte.ratio,cartouches:structuredClone(domaine.carte.cartouches)}}
+function poseDomEtat(e){domaine.batiments=e.batiments;domaine.carte.calques=e.calques;domaine.carte.ratio=e.ratio;domaine.carte.cartouches=cartouchesValides(e.cartouches);
  if(domSel!==null&&!domaine.batiments[domSel])domSel=null;renderDomaineEditeur();sauveDomaine()}
 function domAnnule(){if(!domUndo.length)return;domRedo.push(domEtat());poseDomEtat(domUndo.pop())}
 function domRetablit(){if(!domRedo.length)return;domUndo.push(domEtat());poseDomEtat(domRedo.pop())}
@@ -227,7 +251,8 @@ function renderDomaineEditeur(){if(!domaineEdite)return;const d=domaine;
  renderDomZones();renderDomListe();renderDomSel()}
 // Les zones et les sommets se redessinent seuls pendant un geste : l'image, elle, ne bouge pas.
 function renderDomZones(){dessineZonesDom($('dom-zones'),$('dom-etiquettes'),{sel:domSel,trace:domTrace,
-  ...(domOutil==='select'?{deplace:(b,pt)=>{pushDomUndo();b.etiquette=pt;renderDomaineEditeur();sauveDomaine()},clic:b=>{domSel=domaine.batiments.indexOf(b);renderDomaineEditeur()}}:{})});
+  ...(domOutil==='select'?{deplace:(b,pt)=>{pushDomUndo();b.etiquette=pt;renderDomaineEditeur();sauveDomaine()},clic:b=>{domSel=domaine.batiments.indexOf(b);renderDomaineEditeur()},
+   deplaceCartouche:(k,pt)=>{pushDomUndo();domaine.carte.cartouches[k]=pt;renderDomaineEditeur();sauveDomaine()}}:{})});
  const boite=$('dom-sommets');boite.replaceChildren();const b=domSel!==null?domaine.batiments[domSel]:null;
  if(!b||!b.zone||domOutil!=='select')return;
  b.zone.forEach(([x,y],i)=>{const s=document.createElement('span');s.className='dom-sommet';s.dataset.sommet=String(i);
@@ -348,20 +373,21 @@ function basculeContours(){domContours=!domContours;
 $('dom-contours').onclick=basculeContours;$('dom-contours-editeur').onclick=basculeContours;
 function renderDomaine(){const d=domaine,mj=mjDom();vueDomaine=view;if(mj)evacueNonConstruits();
  // Les joueurs lisent le domaine ; ce qui le modifie — carte, export, import — reste au MJ.
- ['dom-editer','dom-export','dom-import'].forEach(id=>$(id).hidden=!mj);
+ ['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);
  $('dom-titre').textContent=d.nom;$('dom-tresor-tete').textContent='Trésor : '+montantLisible(d.finances.tresor);
- if(domPageSel!==null&&!batimentDom(domPageSel))domPageSel=null;
+ if(domPageSel!==null&&!batimentChoisissable(batimentDom(domPageSel)))domPageSel=null;
  const plan=$('dom-plan');plan.style.setProperty('--ratio',String(d.carte.ratio||16/9));
  const vide=!dessineDomaine($('dom-plan-fond'),-1,()=>{if(document.body.classList.contains('page-domaine'))dessineDomaine($('dom-plan-fond'),-1)});
  $('dom-plan-vide').hidden=!vide;plan.classList.toggle('no-image',vide);
  const sel=d.batiments.findIndex(b=>b.id===domPageSel);
- plan.classList.toggle('sans-contours',!domContours);$('dom-contours').classList.toggle('on',domContours);
+ // Les contours sont un outil du MJ : chez les joueurs, la carte se lit toujours sans traits.
+ plan.classList.toggle('sans-contours',!(mj&&domContours));$('dom-contours').classList.toggle('on',domContours);
  // Sur l'onglet, le nom ne se déplace pas : il choisit le bâtiment, c'est tout.
- dessineZonesDom($('dom-plan-zones'),$('dom-plan-etiquettes'),{sel:sel>=0?sel:null,jeu:true,
+ dessineZonesDom($('dom-plan-zones'),$('dom-plan-etiquettes'),{sel:sel>=0?sel:null,jeu:true,inerte:b=>!batimentChoisissable(b),
   clic:b=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()}});
  renderDomBats();renderDomFiche();renderDomFinances();renderDomPnj();renderDomAventuriers()}
 $('dom-plan-zones').addEventListener('click',e=>{const z=e.target.closest('[data-bat]');if(!z)return;
- const b=domaine.batiments[Number(z.dataset.bat)];domPageSel=b&&domPageSel!==b.id?b.id:null;renderDomaine()});
+ const b=domaine.batiments[Number(z.dataset.bat)];if(b&&!batimentChoisissable(b))return;domPageSel=b&&domPageSel!==b.id?b.id:null;renderDomaine()});
 // Construire : d'un clic, si le trésor y suffit ; sinon le MJ confirme, et le trésor plonge.
 function construireDom(b){const p=peutConstruire(domaine,b);if(p.fini)return;
  if(!p.ok&&!confirm('Le trésor ne suffit pas : il manque '+montantLisible(p.manque)+'. Construire quand même ? Le trésor passera en dessous de zéro.'))return;
@@ -369,12 +395,13 @@ function construireDom(b){const p=peutConstruire(domaine,b);if(p.fini)return;
 function boutonConstruire(b){const p=peutConstruire(domaine,b),btn=document.createElement('button');btn.className='dom-construire';
  if(p.fini){btn.textContent='Construit';btn.disabled=true;return btn}
  const e=prochaineEtape(b);btn.textContent='Construire → '+NOM_ETAPE(e)+(p.cout?' · '+montantLisible(p.cout):' · gratuit');
- btn.classList.toggle('manque',!p.ok);btn.title=p.ok?'Le trésor paie l’étape suivante':'Il manque '+montantLisible(p.manque);
+ btn.classList.toggle('manque',!p.ok);btn.title=(p.ok?'Les joueurs bâtissent : le trésor paie l’étape suivante':'Il manque '+montantLisible(p.manque))+' — la ligne du journal leur est visible';
  btn.onclick=ev=>{ev.stopPropagation();construireDom(b)};return btn}
 /* La colonne des bâtiments ne dit que l'essentiel : le nom et l'étape sur une ligne, et,
    dessous, l'état particulier s'il y en a un. Effets, présents et construction sont sur la fiche. */
 function renderDomBats(){const boite=$('dom-bats');boite.replaceChildren();
- domaine.batiments.forEach(b=>{const row=document.createElement('div');row.className='dom-bat e'+b.etape+(domPageSel===b.id?' sel':'');row.setAttribute('role','button');row.tabIndex=0;
+ const liste=domaine.batiments.filter(batimentChoisissable);
+ liste.forEach(b=>{const row=document.createElement('div');row.className='dom-bat e'+b.etape+(domPageSel===b.id?' sel':'');row.setAttribute('role','button');row.tabIndex=0;
   const tete=document.createElement('div');tete.className='dom-bat-tete';
   const nom=document.createElement('strong');nom.textContent=b.nom;
   const et=document.createElement('span');et.className='dom-etape';et.textContent=NOM_ETAPE(b.etape);tete.append(nom,et);row.append(tete);
@@ -382,7 +409,7 @@ function renderDomBats(){const boite=$('dom-bats');boite.replaceChildren();
   const choisir=()=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()};
   row.onclick=choisir;row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choisir()}};
   boite.append(row)});
- if(!domaine.batiments.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun bâtiment. Ajoute-les dans l’éditeur de la carte.';boite.append(p)}}
+ if(!liste.length){const p=document.createElement('p');p.className='muted';p.textContent=mjDom()?'Aucun bâtiment. Ajoute-les dans l’éditeur de la carte.':'Aucun bâtiment n’est encore sorti de terre.';boite.append(p)}}
 /* La fiche du bâtiment choisi : son nom, son étape, ce qu'elle coûte, ce qu'elle confère
    — un effet passif par étape, en toutes lettres pour l'instant —, et qui s'y trouve. */
 function renderDomFiche(){const boite=$('dom-fiche');boite.replaceChildren();const b=batimentDom(domPageSel);
@@ -395,11 +422,15 @@ function renderDomFiche(){const boite=$('dom-fiche');boite.replaceChildren();con
  const et=document.createElement('span');et.className='dom-etape e'+b.etape;et.textContent=NOM_ETAPE(b.etape);
  const recul=document.createElement('button');recul.textContent='↩ Étape précédente';recul.title='Corriger : revenir à l’étape d’avant, sans remboursement';recul.disabled=b.etape===0;
  recul.onclick=()=>{if(reculerEtape(b)){renderDomaine();sauveDomaine()}};
+ // Poser l'étape suivante de sa main : sans payer, et sans ligne au journal des joueurs.
+ const avance=document.createElement('button');avance.textContent='Étape suivante ↪';avance.className='dom-avance';
+ avance.title='Le MJ pose l’étape suivante : rien n’est payé, et les joueurs n’en voient rien au journal';avance.disabled=b.etape>=ETAPES_DOMAINE.length-1;
+ avance.onclick=()=>{if(avancerEtape(b)){renderDomaine();sauveDomaine()}};
  // L'état du bâtiment : intact, en feu, en ruines, hanté, abandonné, envahi — la carte le montre s'il a son calque.
  const etat=document.createElement('select');etat.className='dom-etat-choix';etat.setAttribute('aria-label','État du bâtiment');
  ETATS_BATIMENT.forEach(([k,n])=>etat.add(new Option(n,k)));etat.value=b.etat||'';
  etat.onchange=()=>{b.etat=etatBatimentValide(etat.value);renderDomaine();sauveDomaine()};
- tete.append(nom,et,etat,boutonConstruire(b),recul);boite.append(tete);
+ tete.append(nom,et,etat,boutonConstruire(b),recul,avance);boite.append(tete);
  const grille=document.createElement('div');grille.className='dom-couts';
  [1,2,3].forEach(e=>{const l=document.createElement('label');l.textContent='Coût — '+NOM_ETAPE(e);
   const inp=document.createElement('input');inp.type='number';inp.min='0';inp.step='1';inp.value=String(b.couts[e-1]);
@@ -426,8 +457,10 @@ function renderDomFicheLue(boite,b){const tete=document.createElement('div');tet
  const et=document.createElement('span');et.className='dom-etape e'+b.etape;et.textContent=NOM_ETAPE(b.etape);tete.append(nom,et);
  if(b.etat){const x=document.createElement('span');x.className='dom-etat etat-'+b.etat;x.textContent=NOM_ETAT_BATIMENT(b.etat);tete.append(x)}
  boite.append(tete);
- const couts=document.createElement('p');couts.className='muted dom-couts-lus';
- couts.textContent='Coût des étapes : '+[1,2,3].map(e=>NOM_ETAPE(e)+' '+(b.couts[e-1]?montantLisible(b.couts[e-1]):'gratuit')).join(' · ');boite.append(couts);
+ // Ce qui reste à bâtir, et son prix ; les étapes passées se lisent sur le cartouche.
+ const reste=[1,2,3].filter(e=>e>b.etape);
+ if(reste.length){const couts=document.createElement('p');couts.className='muted dom-couts-lus';
+  couts.textContent='Reste à bâtir : '+reste.map(e=>NOM_ETAPE(e)+' '+(b.couts[e-1]?montantLisible(b.couts[e-1]):'gratuit')).join(' · ');boite.append(couts)}
  const effets=document.createElement('div');effets.className='dom-effets-lus';
  ETAPES_DOMAINE.forEach(([k,n],i)=>{const texte=(b.effets[i]||'').trim();if(!texte)return;
   const p=document.createElement('p');p.className='dom-effet-lu e'+i+(i===b.etape?' actuelle':'');
@@ -454,12 +487,15 @@ function renderDomFinances(){const boite=$('dom-finances');boite.replaceChildren
  plus.onclick=()=>bouge(1);moins.onclick=()=>bouge(-1);form.onsubmit=e=>{e.preventDefault();bouge(1)};
  form.append(montant,libelle,plus,moins);if(mjDom())boite.append(form);
  const liste=document.createElement('ul');liste.className='dom-journal';
- [...f.journal].reverse().slice(0,25).forEach(e=>{const li=document.createElement('li');
+ // Les joueurs ne lisent pas les étapes que le MJ a posées ; le MJ les voit, en retrait.
+ const lignes=mjDom()?f.journal:f.journal.filter(ligneDesJoueurs);
+ [...lignes].reverse().slice(0,25).forEach(e=>{const li=document.createElement('li');
+  if(e.par==='mj'){li.className='du-mj';li.title='Posée par le MJ : les joueurs ne voient pas cette ligne'}
   const date=document.createElement('small');date.textContent=e.t?new Date(e.t).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}):'';
   const lib=document.createElement('span');lib.textContent=e.libelle;
   const m=document.createElement('b');m.className=e.montant<0?'dette':'gain';m.textContent=(e.montant>0?'+':'')+montantLisible(e.montant);
   li.append(date,lib,m);liste.append(li)});
- if(!f.journal.length){const li=document.createElement('li');li.className='muted';li.textContent='Aucun mouvement.';liste.append(li)}
+ if(!lignes.length){const li=document.createElement('li');li.className='muted';li.textContent='Aucun mouvement.';liste.append(li)}
  boite.append(liste)}
 /* ---------- Les habitants et les visiteurs ---------- */
 const pnjDialog=dialog('dom-pnj-editor','Personnage','<form id="dom-pnj-form"><div id="dom-pnj-fields"></div><div class="form-actions"><button type="button" id="dom-pnj-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
@@ -492,6 +528,8 @@ function renderDomPnj(){const boite=$('dom-pnj');boite.replaceChildren();
 /* ---------- Les aventuriers ---------- */
 // La troupe, telle qu'elle est sur la table : où chacun se trouve au domaine, et une note.
 function renderDomAventuriers(){const boite=$('dom-aventuriers');boite.replaceChildren();
+ // Chez les joueurs, la troupe se range sur deux colonnes, chacun centré : jeton, nom, lieu.
+ boite.classList.toggle('en-grille',!mjDom());
  const troupe=actors.filter(a=>a.hero);
  if(!troupe.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun aventurier dans la partie.';boite.append(p);return}
  troupe.forEach(a=>{const v=domaine.aventuriers[a.id]||(domaine.aventuriers[a.id]={lieu:'',notes:''});

@@ -2099,7 +2099,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.equal(C.NOM_ETAT_BATIMENT('feu'),'En feu');assert.equal(C.NOM_ETAT_BATIMENT(''),'Intact');
  const fief=fs.readFileSync('domaine.js','utf8');
  assert.ok(fief.includes("+CALQUES_DOMAINE.map(([k,nom],i)=>'<span class=\"dom-calque'+(i>=4?' dom-calque-etat':'')+'\">")&&fief.includes(" CALQUES_DOMAINE.forEach((_,i)=>{const on=!!d.carte.calques[i];")
-  &&fief.includes("const etat=document.createElement('select');etat.className='dom-etat-choix';")&&fief.includes(" tete.append(nom,et,etat,boutonConstruire(b),recul);boite.append(tete);")
+  &&fief.includes("const etat=document.createElement('select');etat.className='dom-etat-choix';")&&fief.includes(" tete.append(nom,et,etat,boutonConstruire(b),recul,avance);boite.append(tete);")
   &&fief.includes("if(b.etat){const x=document.createElement('span');x.className='dom-etat etat-'+b.etat;")&&feuille.includes('.dom-zone.etat-feu{--t:#d9532b}'),'En feu et Ruines : les calques, l’état sur la fiche et la carte');}
 /* Les zones se renomment d'un clic sur leur numéro, dans l'éditeur ; le nom tient par un point
    de la zone et voyage avec la carte. Le nom d'un bâtiment du domaine se glisse où l'on veut ;
@@ -2115,10 +2115,10 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
   &&cartes.includes("peindreZones(cv,noms,z,nomsDesZones(m,z))}")&&cartes.includes("const zonesMode=()=>mapTool==='separer'?'separer':mapTool==='regrouper'?'regrouper':'voir';")
   &&feuille.includes('.zones-noms span.editable{pointer-events:auto;cursor:text}'),'les zones se renomment, et les trois outils sont des boutons');
  assert.ok(fief.includes('function rendEtiquetteDeplacable(e,b,boite,opts){')&&fief.includes("const c=b.etiquette||centroide(b.zone);if(!c)return;")
-  &&fief.includes("if(opts.deplace||opts.clic)rendEtiquetteDeplacable(e,b,etiquettes,opts);")
+  &&fief.includes("if(opts.deplace||opts.clic&&!inerte)rendEtiquetteDeplacable(e,b,etiquettes,opts);")
   &&fief.includes("...(domOutil==='select'?{deplace:(b,pt)=>{pushDomUndo();b.etiquette=pt;renderDomaineEditeur();sauveDomaine()},")
   &&fief.includes("  clic:b=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()}});")&&!fief.includes("b.etiquette=pt;renderDomaine()")
-  &&fief.includes('<button id="dom-contours" title="Montrer ou cacher le contour des bâtiments">▦ Contours</button>')&&fief.includes("plan.classList.toggle('sans-contours',!domContours);")
+  &&fief.includes('<button id="dom-contours" title="Montrer ou cacher le contour des bâtiments">▦ Contours</button>')&&fief.includes("plan.classList.toggle('sans-contours',!(mj&&domContours));")
   &&feuille.includes('#dom-plan.sans-contours .dom-zone{stroke:transparent;fill:transparent}')&&feuille.includes('.dom-etiquette.deplacable{pointer-events:auto;cursor:grab;'),'le nom d’un bâtiment se glisse, les contours sur un bouton');
  assert.ok(src.includes("function armoryRow(a,i){const carte=document.createElement('div');carte.className='cat-carte';")
   &&src.includes(" const p=gearCarre(a,1,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();")
@@ -2255,7 +2255,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&partage.includes(",locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:structuredClone(catalog),")
   &&partage.includes("if(remote.domaine&&typeof normaliseDomaine==='function'){domaine=normaliseDomaine(remote.domaine);domSel=null;domPageSel=null}")
   &&fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}"),'le domaine voyage avec le contenu publié');
- assert.ok(fief.includes("const mjDom=()=>typeof view==='undefined'||view==='mj';")&&fief.includes("['dom-editer','dom-export','dom-import'].forEach(id=>$(id).hidden=!mj);")
+ assert.ok(fief.includes("const mjDom=()=>typeof view==='undefined'||view==='mj';")&&fief.includes("['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);")
   &&fief.includes("if(!mjDom()){renderDomFicheLue(boite,b);return}")&&fief.includes("function renderDomFicheLue(boite,b){")&&!fief.includes("renderDomFicheLue(boite,b){")===false
   &&fief.includes("if(ev.button!==0||!mjDom())return;")&&fief.includes(" tresor.append(val);if(mjDom())tresor.append(monnaie);")&&fief.includes("if(mjDom())boite.append(form);")
   &&fief.includes("const row=document.createElement(mjDom()?'button':'div');")&&fief.includes("if(mjDom())row.append(tete,lieu);else{const ou=document.createElement('span');ou.className='dom-av-lieu';ou.textContent=nomLieu(v.lieu);")
@@ -2477,4 +2477,38 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&feuille.includes('.effet-pastille.barre::after{')&&feuille.includes('.cat-pill .effet-pastille .etat-inflige img{position:absolute;inset:0;width:100%;height:100%;'),'l’écu à zéro disparaît des bijoux, l’effet se montre, barré s’il protège');}
 /* v0.276 — Les chemins de l'arbre ne se lisent plus à travers le nom des talents. */
 {assert.ok(feuille.includes('.arbre-etages .arbre-nom,.arbre-etages .arbre-niv{background:var(--panel-2);padding:1px 6px;border-radius:6px;')&&feuille.includes('.arbre-etages{position:relative;z-index:1;'),'le nom masque le chemin qui passe dessous');}
-console.log('1513 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.278 — Le domaine chez les joueurs : sans friches ni contours, la troupe sur deux colonnes, le
+   bâtiment choisi allumé, le journal sans les étapes que le MJ a posées. Les inscriptions de la
+   carte ; l'infobulle des bijoux allégée ; l'inventaire se remplit d'icônes. */
+{const C=require('./combat.js'),fief=fs.readFileSync('domaine.js','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ // Une construction payée par les joueurs se lit ; une étape posée par le MJ ne se lit pas ; l'ancien journal se trie.
+ const D=C.normaliseDomaine({finances:{journal:[{t:1,libelle:'Construction — Cartographe : Fondations',montant:0},{t:2,libelle:'Construction — Forge : Fondations',montant:-50},{t:3,libelle:'Butin',montant:0},{t:4,libelle:'x',montant:0,par:'joueurs'},{t:5,libelle:'y',montant:3,par:'bidule'}]}});
+ assert.deepEqual(D.finances.journal.map(e=>e.par||''),['mj','','','joueurs',''],'une construction gratuite d’avant est l’œuvre du MJ');
+ assert.deepEqual(D.finances.journal.filter(C.ligneDesJoueurs).map(e=>e.t),[2,3,4,5]);
+ const b=D.batiments[0];b.couts=[0,0,0];assert.equal(C.construire(D,b),true);assert.equal(D.finances.journal.at(-1).par,'joueurs','bâtir, c’est les joueurs — même gratuit');
+ assert.equal(C.normaliseDomaine(structuredClone(D)).finances.journal.at(-1).par,'joueurs','le relu ne le reprend pas au MJ');
+ const n=D.finances.journal.length;assert.equal(C.avancerEtape(b),true);assert.equal(b.etape,2);assert.equal(D.finances.journal.length,n,'le MJ pose une étape sans ligne');
+ b.etape=3;assert.equal(C.avancerEtape(b),false);assert.equal(C.avancerEtape(null),false);
+ // Les inscriptions : par défaut sur les parchemins, bornées, gardées au relu.
+ assert.deepEqual(C.normaliseDomaine(null).carte.cartouches,{titre:[13,8.5],gens:[79,92.5]});
+ assert.deepEqual(C.cartouchesValides({titre:[120,-4],gens:'x'}),{titre:[100,0],gens:[79,92.5]});
+ assert.deepEqual(C.normaliseDomaine({carte:{cartouches:{titre:[20,10]}}}).carte.cartouches.titre,[20,10]);
+ const ctxN={};vm.createContext(ctxN);vm.runInContext(fief.slice(fief.indexOf('function nomEnDeux('),fief.indexOf('function dessineCartouches(')),ctxN);
+ assert.deepEqual([...ctxN.nomEnDeux('Lamuline (Domaine)')],['Lamuline','Domaine']);assert.deepEqual([...ctxN.nomEnDeux('Lamuline')],['Lamuline','Domaine']);
+ assert.deepEqual([...ctxN.nomEnDeux('Le Domaine')],['Le Domaine','']);
+ assert.ok(fief.includes("const batimentChoisissable=b=>!!b&&(mjDom()||b.etape>0);")&&fief.includes(" const liste=domaine.batiments.filter(batimentChoisissable);")
+  &&fief.includes("{sel:sel>=0?sel:null,jeu:true,inerte:b=>!batimentChoisissable(b),")&&fief.includes("if(b&&!batimentChoisissable(b))return;")
+  &&fief.includes("['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);")&&fief.includes("plan.classList.toggle('sans-contours',!(mj&&domContours));")
+  &&fief.includes("boite.classList.toggle('en-grille',!mjDom());")&&feuille.includes('#dom-aventuriers.en-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));'),'les joueurs : pas de friche, pas de contours, la troupe en deux colonnes');
+ assert.ok(fief.includes("v.setAttribute('d','M0,0H100V100H0Z M'+choisi.zone.map(")&&feuille.includes('#dom-plan .dom-zone.sel,#dom-plan.sans-contours .dom-zone.sel{stroke:#ffe39a;')
+  &&feuille.includes('.dom-bat.sel{border-color:var(--accent);border-left-color:var(--t,var(--accent));'),'le bâtiment choisi s’allume, sur le plan et dans la liste');
+ assert.ok(fief.includes("const lignes=mjDom()?f.journal:f.journal.filter(ligneDesJoueurs);")&&fief.includes("avance.onclick=()=>{if(avancerEtape(b)){renderDomaine();sauveDomaine()}};")
+  &&fief.includes(" const reste=[1,2,3].filter(e=>e>b.etape);")&&!fief.includes("'Coût des étapes : '"),'le journal des joueurs sans les étapes du MJ');
+ assert.ok(fief.includes(" dessineCartouches(etiquettes,opts);")&&fief.includes("deplaceCartouche:(k,pt)=>{pushDomUndo();domaine.carte.cartouches[k]=pt;renderDomaineEditeur();sauveDomaine()}")
+  &&fief.includes("accorde(compte('habitant'),'habitant'),accorde(compte('visiteur'),'visiteur')")&&feuille.includes("#dom-plan,#dom-canvas{container-type:inline-size}")
+  &&feuille.includes(".dom-cartouche b{display:block;font:700 3.1cqw/1.05 'Killam',Georgia,serif;"),'les inscriptions de la carte, en Killam, glissées dans l’éditeur');
+ assert.ok(!src.includes("'Passif : agit tant que la pièce est portée'")&&src.includes("if(col==='armor'){if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))ligne('DEF '")
+  &&feuille.includes('.cat-carte .nom-carte{font:600 11px/1.2 system-ui;text-align:center;color:var(--ink);max-width:84px;overflow-wrap:anywhere;min-height:2.4em;display:flex;align-items:center;justify-content:center}'),'l’infobulle des bijoux allégée, les noms centrés');
+ assert.ok(src.includes("function carteAjout(a,o,clic){")&&src.includes("liste.forEach(o=>grille.append(carteAjout(a,o,clic)));")&&!src.includes('Clique un objet pour l’ajouter')
+  &&src.includes("$('picker-note').hidden=mode==='gear';"),'l’inventaire se remplit d’icônes, sans mode d’emploi');}
+console.log('1535 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

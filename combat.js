@@ -1366,6 +1366,11 @@ function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
  n.notes=String(b&&b.notes||'').slice(0,2000);return n}
 function normalisePnj(p){return {id:p&&p.id||idDomaine(),nom:String(p&&p.nom||'Inconnu').slice(0,60),role:String(p&&p.role||'').slice(0,80),
  statut:p&&p.statut==='visiteur'?'visiteur':'habitant',batiment:String(p&&p.batiment||'').slice(0,60),notes:String(p&&p.notes||'').slice(0,2000)}}
+/* Les inscriptions de la carte, sur ses parchemins : le nom du domaine en haut à gauche, qui
+   y vit et qui y passe en bas à droite. Le MJ les pose où il veut, en pourcentage de la carte. */
+const CARTOUCHES_DOMAINE={titre:[13,8.5],gens:[79,92.5]};
+function cartouchesValides(c){const o={};Object.keys(CARTOUCHES_DOMAINE).forEach(k=>{const p=c&&c[k];
+ o[k]=Array.isArray(p)&&p.length>=2&&Number.isFinite(Number(p[0]))&&Number.isFinite(Number(p[1]))?[borne(p[0],0,100),borne(p[1],0,100)]:[...CARTOUCHES_DOMAINE[k]]});return o}
 /* Le domaine relu au travers de sa déclaration, comme tout ce que le moteur enregistre :
    un domaine absent naît avec ses treize bâtiments en friche et un trésor vide. */
 function normaliseDomaine(d){d=d&&typeof d==='object'&&!Array.isArray(d)?d:{};
@@ -1373,12 +1378,17 @@ function normaliseDomaine(d){d=d&&typeof d==='object'&&!Array.isArray(d)?d:{};
  const ratio=Number(d.carte&&d.carte.ratio);
  const batiments=Array.isArray(d.batiments)?d.batiments.filter(Boolean).slice(0,80).map(normaliseBatiment):BATIMENTS_DEFAUT.map(n=>nouveauBatiment(n));
  const ids=new Set();batiments.forEach(b=>{if(ids.has(b.id))b.id=idDomaine();ids.add(b.id)});
+ /* Une ligne dit qui l'a faite : « joueurs » pour une étape qu'ils ont bâtie, « mj » pour
+    une étape que le MJ a posée de sa main. Une ligne d'avant cette distinction se reconnaît :
+    une construction qui n'a rien coûté au trésor n'était pas l'œuvre des joueurs. */
  const journal=(d.finances&&Array.isArray(d.finances.journal)?d.finances.journal:[]).filter(e=>e&&typeof e==='object').slice(-200)
-  .map(e=>({t:Number(e.t)||0,libelle:String(e.libelle||'').slice(0,120),montant:Math.trunc(Number(e.montant))||0}));
+  .map(e=>{const libelle=String(e.libelle||'').slice(0,120),montant=Math.trunc(Number(e.montant))||0;
+   const par=e.par==='joueurs'||e.par==='mj'?e.par:/^Construction — /.test(libelle)&&montant===0?'mj':'';
+   return Object.assign({t:Number(e.t)||0,libelle,montant},par?{par}:{})});
  const aventuriers={};if(d.aventuriers&&typeof d.aventuriers==='object')Object.keys(d.aventuriers).slice(0,100).forEach(k=>{const v=d.aventuriers[k]||{};
   aventuriers[k]={lieu:String(v.lieu||'').slice(0,60),notes:String(v.notes||'').slice(0,1000)}});
  return {nom:String(d.nom||'Le Domaine').slice(0,80),monnaie:String(d.monnaie||'or').slice(0,20),
-  carte:{calques,ratio:ratio>0?ratio:16/9},batiments,
+  carte:{calques,ratio:ratio>0?ratio:16/9,cartouches:cartouchesValides(d.carte&&d.carte.cartouches)},batiments,
   finances:{tresor:Math.trunc(Number(d.finances&&d.finances.tresor))||0,journal},
   pnj:(Array.isArray(d.pnj)?d.pnj:[]).filter(Boolean).slice(0,300).map(normalisePnj),aventuriers}}
 // Le coût pour atteindre une étape : les fondations, la construction, le bâti.
@@ -1390,12 +1400,17 @@ function mouvementFinance(d,montant,libelle){const m=Math.trunc(Number(montant))
  d.finances.tresor+=m;const e={t:Date.now(),libelle:String(libelle||'').slice(0,120),montant:m};
  d.finances.journal.push(e);if(d.finances.journal.length>200)d.finances.journal.splice(0,d.finances.journal.length-200);return e}
 /* Construire : le trésor paie l'étape, le journal la note, l'étape avance. Sans le sou,
-   rien ne se fait — sauf si le MJ force, et le trésor passe alors en dessous de zéro. */
+   rien ne se fait — sauf si le MJ force, et le trésor passe alors en dessous de zéro.
+   C'est l'œuvre des joueurs : la ligne le dit, et ils la lisent. */
 function construire(d,b,force){const e=prochaineEtape(b);if(e===null)return false;
  const cout=coutEtape(b,e);if(cout>d.finances.tresor&&!force)return false;
- mouvementFinance(d,-cout,'Construction — '+b.nom+' : '+NOM_ETAPE(e));b.etape=e;return true}
-// Défaire une étape ne rembourse rien : c'est une correction, le trésor se règle à part.
+ const l=mouvementFinance(d,-cout,'Construction — '+b.nom+' : '+NOM_ETAPE(e));if(l)l.par='joueurs';b.etape=e;return true}
+/* Défaire ou imposer une étape ne coûte ni ne rembourse rien : c'est la main du MJ, qui
+   corrige ou raconte — le trésor se règle à part, et le journal n'en dit rien. */
 function reculerEtape(b){if(!b||b.etape<=0)return false;b.etape-=1;return true}
+function avancerEtape(b){if(!b||b.etape>=ETAPES_DOMAINE.length-1)return false;b.etape+=1;return true}
+// Ce que les joueurs lisent du journal : tout, sauf les étapes que le MJ a posées lui-même.
+const ligneDesJoueurs=e=>!!e&&e.par!=='mj';
 /* Le calque qui montre une étape : le sien s'il est chargé, sinon le plus proche en
    dessous — un bâtiment en construction sur un village sans calque de construction se
    montre en fondations —, sinon le plus proche au-dessus. Aucun calque : -1. */
@@ -1430,7 +1445,7 @@ const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatie
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
- ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
+ ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);
