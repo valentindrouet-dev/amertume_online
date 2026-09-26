@@ -1285,12 +1285,12 @@ assert.ok(src.includes('function gearPills(a,tout=true)')&&page.includes('gearPi
  &&!src.includes('inventairesOuverts')&&!src.includes('gear-sac')&&!feuille.includes('gear-sac'),'fiche en jeu : porté et objets, coche ronde, objet utilisable');
 /* Les mains se remplacent au lieu de refuser ; en jeu, pas de sac à déplier, le clic ouvre la
    description, et un objet se vise avant de s'employer, à la table de jeu seulement. */
-assert.ok(src.includes('function libereMains(a,besoin)')&&src.includes('else{libereMains(a,weaponHands(o));a.weapons=[...(a.weapons||[]),o.id]}}')&&src.includes('else{libereMains(a,1);a.shieldId=o.id}}')
+assert.ok(src.includes('function libereMains(a,besoin)')&&src.includes('  else prendArme(a,o)}')&&src.includes('  else prendBouclier(a,o)}')
  &&src.includes('function gearDetail(o,a,enJeu)')&&src.includes("if(a&&enJeu&&(col==='object'||code)){const b=document.createElement('button')")&&src.includes('function appliquerObjet(a,o,vise,q)')
  &&src.includes("viserCible('◈ '+o.name+' — clique le combattant ou l’endroit visé',")&&src.includes("const equipable=(o.category==='weapon'||o.category==='armor')&&tout&&peutEquiper;")
  &&src.includes('toggleEquip(a,o);ouvrir();')&&page.includes('function viserCible(annonce,fn,refus)')&&page.includes("viserCible('✦ Clique sur la carte pour poser '+m.name,"),'mains remplacées, objet visé, description à l’équipement');
 {const t={mainsPrises:null},src2=src.slice(src.indexOf('function libereMains(a,besoin)'),src.indexOf('/* Équiper depuis l’inventaire'));
- assert.ok(src2.includes('while(mainsPrises(a)+besoin>2)')&&src2.includes('if(a.weapons.length)a.weapons.shift();')&&src2.includes("else if(a.shieldId)a.shieldId='';"),'les mains se libèrent du plus ancien');}
+ assert.ok(src2.includes('while(mainsPrises(a)+besoin>2)')&&src2.includes('if(a.weapons.length){a.weapons.shift();n++}')&&src2.includes("else if(a.shieldId){a.shieldId='';n++}"),'les mains se libèrent du plus ancien');}
 /* Une seule description ouverte à la fois, celle du dernier carré cliqué, et plus de liseré brun
    autour du carré ouvert : rien ne laisse croire qu'il est encore porté. */
 assert.ok(src.includes('let gearOuvert=null;')&&!src.includes('gearOuverts')&&src.includes('const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert||BULLES;')
@@ -2054,9 +2054,9 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.equal(ctx.equiperPiece(a,{id:'zz',category:'object'}),false);assert.equal(ctx.reposerPiece(a,null),false);
  assert.ok(src.includes('function corpsEtSac(a){')&&src.includes(" c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),titreTal,talentPills(a));return c}")
   &&src.includes("function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){")&&src.includes("const p=carreDeFiche(a,o,n,tout,portes,peutEquiper);")
-  &&src.includes("  recoit(corps,(o,g)=>!g.porte&&equiperPiece(a,o));\n  recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}")
+  &&src.includes("return main?equiperDansMain(a,o,main):equiperPiece(a,o)});\n  recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}")
   &&src.includes("if(corps!==undefined&&equipable){p.draggable=true;")&&src.includes("const SILHOUETTE='<img class=\"silhouette\" src=\"'+imgUrl('PERSO.png')+'\"")&&feuille.includes('.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);object-fit:contain;object-position:center;')
-  &&src.includes("['main','Main gauche',mains[1]||null],['torse','Torse',seul('torse')],['main','Main droite',mains[0]||null],")
+  &&src.includes("['main','Main droite',droite],['torse','Torse',seul('torse')],['main','Main gauche',gauche],")
   &&feuille.includes('.corps{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));')&&feuille.includes('.corps .place.bottes{grid-column:2}')
   &&feuille.includes('.corps .gear-carre.deux-mains{opacity:.45;pointer-events:none}')&&feuille.includes('.sac.survol{'),'le corps et le sac, et le glisser-déposer');}
 /* Les coupures et les liens du MJ : une coupure est un trait d'une case qui sépare — un
@@ -2352,4 +2352,38 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes(":a.reposPris?'Repos déjà pris : il reviendra à la fin du prochain combat.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposPris=true;")
   &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris'];"),'le Repos court');
 }
-console.log('1464 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
+   une arme prise remplace celle de la main droite ; lâchée sur une main, elle prend cette main.
+   Le sac a sa croix de retrait ; les descriptions de talents ont leurs mots clés ; le journal
+   numérote aussi ceux qui viennent de paraître, et qui frappe sans avoir été vu se révèle. */
+{const I={e:{id:'e',category:'weapon',hands:1},d:{id:'d',category:'weapon',hands:1},h:{id:'h',category:'weapon',hands:2},b:{id:'b',category:'armor',slot:'shield'},b2:{id:'b2',category:'armor',slot:'shield'}};
+ const ctxM={objetDe:id=>I[id]||null,weaponHands:gearApi.weaponHands,emplacementDe:gearApi.emplacementDe,gearCount:(a,id)=>(a.weapons||[]).filter(x=>x===id).length,armuresDe:gearApi.armuresDe,catalog:{items:Object.values(I)},placesLibres:()=>1};
+ vm.createContext(ctxM);
+ vm.runInContext(src.slice(src.indexOf('function mainsPrises(a)'),src.indexOf('/* Faire de la place à un emplacement'))+src.slice(src.indexOf('function equiperPiece(a,o)'),src.indexOf('function reposerPiece(a,o)')),ctxM);
+ const h=(w,s)=>({inventaire:['e','d','h','b','b2','e'],weapons:[...w],shieldId:s||''}),dit=a=>a.weapons.join('+')+'/'+(a.shieldId||'-');
+ let a=h(['e'],'b');ctxM.prendArme(a,I.d);assert.equal(dit(a),'d/b','épée et bouclier, on prend la dague : elle remplace l’épée, le bouclier reste');
+ a=h(['e'],'b');ctxM.prendArme(a,I.h);assert.equal(dit(a),'h/-','une arme à deux mains vide les deux mains');
+ a=h(['e','d']);ctxM.prendBouclier(a,I.b);assert.equal(dit(a),'e/b','le bouclier chasse la seconde arme, pas la première');
+ a=h(['e'],'b');ctxM.prendBouclier(a,I.b2);assert.equal(dit(a),'e/b2','un bouclier remplace l’autre');
+ a=h(['e']);ctxM.prendArme(a,I.d);assert.equal(dit(a),'e+d/-','une main libre : la seconde arme va à gauche');
+ a=h([],'b');ctxM.prendArme(a,I.e);assert.equal(dit(a),'e/b','main droite vide : l’arme y va');
+ a=h(['e'],'b');ctxM.equiperDansMain(a,I.d,'gauche');assert.equal(dit(a),'e+d/-','lâchée sur la main gauche, la dague chasse le bouclier');
+ a=h(['e','d']);ctxM.equiperDansMain(a,I.e,'droite');assert.equal(dit(a),'e+d/-','lâchée sur la main droite, elle remplace la première arme');
+ a=h(['h']);ctxM.equiperDansMain(a,I.d,'gauche');assert.equal(dit(a),'d/-','une arme à deux mains cède les deux');}
+{assert.ok(src.includes("const droite=armes[0]||null,gauche=droite&&weaponHands(droite)===2?{deux:droite}:(bouclier||armes[1]||null);")
+  &&src.includes("if(cle==='main')pl.dataset.main=k===3?'droite':'gauche';")&&src.includes("g.cible=e.target&&e.target.closest?e.target.closest('.place'):null;"),'le schéma : main droite à gauche de l’image, dépôt ciblé');
+ assert.ok(src.includes("x.className='retirer-sac';x.textContent='✕';")&&src.includes("if(!ok)return;retirerInventaire(a,o);")
+  &&feuille.includes('.sac .gear-carre:hover .retirer-sac,.sac .gear-carre:focus-within .retirer-sac{opacity:1;'),'la croix de retrait du sac');
+ const ctxK={catalog:{motsCles:['Allié']},STAT_TINTS:{pv:'1,2,3',dmg:'4,5,6',def:'0,0,0',endu:'0,0,0',vie:'0,0,0',xp:'0,0,0'},ETATS_JEU:gearApi.ETATS_JEU,
+  document:{createElement:()=>({className:'',textContent:'',style:{color:''}})}};vm.createContext(ctxK);
+ vm.runInContext(src.slice(src.indexOf('const TEINTE_ETAT_MOT='),src.indexOf('function talentDetail(t,vif)')),ctxK);
+ const el={k:[],replaceChildren(){this.k=[]},append(...x){this.k.push(...x.map(y=>typeof y==='string'?y:'['+y.textContent+']'))}};
+ ctxK.texteEnrichi(el,'Un Allié gagne +2 Dégâts et Feu : 1d6+2 PV, une Action ; **enfin**, la vie.');
+ assert.equal(el.k.join(''),'Un [Allié] gagne [+2] [Dégâts] et [Feu] : [1d6+2] [PV], une [Action] ; [enfin], la vie.');
+ assert.ok(src.includes("if(effet&&t.effects)texteEnrichi(effet,t.effects);")&&src.includes('<button id="talent-mots"')
+  &&src.includes("c.motsCles=[...new Set((Array.isArray(c.motsCles)?c.motsCles:[])")&&feuille.includes('.mot-cle{font-weight:700}'),'les mots clés des talents');
+ assert.ok(page.includes("function reveleAttaquant(a){if(!a||a.hero||a.vu||!a.id||!actors.includes(a)||a.hidden||hasState(a,'Invisible'))return;")
+  &&page.includes("function logAttaque(a,b,logo,corps,detail,suite){reveleAttaquant(a);")&&page.includes("log(reveles.map(nomNum).join(', ')")
+  &&page.includes(" // Les numéros se lisent après la révélation : ceux qui viennent de paraître en ont un.\n const numeros=nameNumbers();"),'le journal numérote ceux qui viennent de paraître');
+}
+console.log('1478 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

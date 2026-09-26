@@ -276,7 +276,12 @@ button.btn-reaction{--fond:#9b7ad4}
    Analysé ou inerte, il garde cette teinte — jamais une autre. */
 button.btn-analyse,button.btn-analyse.on{--fond:#e0a04a;color:#fff;background-image:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.07))}
 button.btn-analyse[hidden]{display:none}
-/* Repos court : vert, texte blanc ; grisé en combat et une fois pris. */button.btn-repos{--fond:#4f9a5a;color:#fff}button.btn-repos[hidden]{display:none}.attack-card .attack-info,.attack-card .summary,.attack-card #attack-help{margin:0;font-size:13px}
+/* Repos court : vert, texte blanc ; grisé en combat et une fois pris. */button.btn-repos{--fond:#4f9a5a;color:#fff}button.btn-repos[hidden]{display:none}
+/* Retirer un objet du sac : une petite croix rouge, au coin, qui ne paraît qu'au survol. */
+.sac .gear-carre{position:relative}.sac .retirer-sac{position:absolute;top:-7px;right:-7px;width:20px;height:20px;padding:0;margin:0;border-radius:50%;border:2px solid var(--panel);background:#c0392b;color:#fff;font:700 11px/1 system-ui;display:grid;place-items:center;opacity:0;transform:scale(.8);transition:opacity .12s,transform .12s;z-index:3;cursor:pointer;box-shadow:0 1px 3px #0006}
+.sac .gear-carre:hover .retirer-sac,.sac .gear-carre:focus-within .retirer-sac{opacity:1;transform:scale(1)}.sac .retirer-sac:hover{background:#a02c20}
+/* Les mots clés des descriptions : en gras, à leur couleur. */
+.mot-cle{font-weight:700}#mots-apercu span{color:var(--ink)}.attack-card .attack-info,.attack-card .summary,.attack-card #attack-help{margin:0;font-size:13px}
 /* Les cibles à portée, cliquables : plus besoin de viser sur la carte pour en changer. */
 .targets{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:34px}
 .cible{display:flex;align-items:center;gap:7px;padding:4px 11px 4px 4px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2);font:700 13px 'Killam',Georgia,serif;color:var(--ink);max-width:100%}

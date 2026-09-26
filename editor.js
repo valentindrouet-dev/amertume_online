@@ -25,6 +25,8 @@ const VOIES_MAX=3;
 const SEGMENTS=['c','g','gc','d','dc'];
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
+ // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
+ c.motsCles=[...new Set((Array.isArray(c.motsCles)?c.motsCles:[]).map(m=>String(m||'').trim().slice(0,40)).filter(Boolean))].slice(0,200);
  /* Les spécialisations de chaque classe, dans l'ordre du MJ : des noms, trois au plus par
     classe, sans doublon. Une voie qu'un talent nomme sans y figurer s'y lit quand même. */
  const voies=c.voies&&typeof c.voies==='object'&&!Array.isArray(c.voies)?c.voies:{};
@@ -271,7 +273,7 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
 const talentsPage=document.createElement('main');talentsPage.id='talents-page';
 talentsPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Talents</h2><div class="cat-actions">'
- +'<button id="talent-add" class="primary">+ Nouveau talent</button></div></header>'
+ +'<button id="talent-mots" title="Les mots mis en valeur dans les descriptions de talents">Mots clés</button><button id="talent-add" class="primary">+ Nouveau talent</button></div></header>'
  
  +'<div class="cat-filters"><input id="talent-search" placeholder="Rechercher…" aria-label="Rechercher un talent">'
  +'<select id="talent-family" aria-label="Classe"></select>'
@@ -860,12 +862,24 @@ function placeDe(o){return o.category==='weapon'||emplacementDe(o)==='shield'?'m
 /* Équiper une pièce de plus, ou en reposer une : les deux moitiés du basculement, pour le
    glisser-déposer qui sait où il va. */
 function equiperPiece(a,o){if(!a||!o)return false;const dans=(a.inventaire||[]).filter(x=>x===o.id).length;
- if(o.category==='weapon'){if(gearCount(a,o.id)>=dans)return false;libereMains(a,weaponHands(o));a.weapons=[...(a.weapons||[]),o.id];return true}
+ if(o.category==='weapon'){if(gearCount(a,o.id)>=dans)return false;prendArme(a,o);return true}
  if(o.category!=='armor')return false;
- if(emplacementDe(o)==='shield'){if(a.shieldId===o.id)return false;libereMains(a,1);a.shieldId=o.id;return true}
+ if(emplacementDe(o)==='shield'){if(a.shieldId===o.id)return false;prendBouclier(a,o);return true}
  const slot=emplacementDe(o);a.armures=armuresDe(a);
  if(a.armures.filter(x=>x===o.id).length>=dans)return false;
  libereEmplacement(a,slot,1);a.armures.push(o.id);return true}
+/* Lâcher une pièce sur une main précise : elle y va, et chasse ce que cette main tenait. Une
+   arme lâchée sur la main gauche y tient la seconde place ; un bouclier va toujours à gauche. */
+function equiperDansMain(a,o,cote){if(!a||!o)return false;const dans=(a.inventaire||[]).filter(x=>x===o.id).length;
+ if(o.category==='armor'&&emplacementDe(o)==='shield')return equiperPiece(a,o);
+ if(o.category!=='weapon'||gearCount(a,o.id)>=dans)return false;
+ if(weaponHands(o)===2)return equiperPiece(a,o);
+ a.weapons??=[];
+ if(a.weapons[0]&&weaponHands(objetDe(a.weapons[0]))===2)a.weapons=[];
+ if(cote==='gauche'){a.shieldId='';if(a.weapons.length>1)a.weapons.pop();a.weapons=[...a.weapons,o.id]}
+ else{if(a.weapons.length)a.weapons.shift();a.weapons=[o.id,...a.weapons];
+  while(mainsPrises(a)>2){if(a.weapons.length>1)a.weapons.pop();else if(a.shieldId)a.shieldId='';else break}}
+ return true}
 function reposerPiece(a,o){if(!a||!o)return false;
  if(o.category==='weapon'){const i=(a.weapons||[]).lastIndexOf(o.id);if(i<0)return false;a.weapons.splice(i,1);return true}
  if(o.category!=='armor')return false;
@@ -886,15 +900,17 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  const comptes=new Map();possede.map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
  const portes=o=>o.category==='weapon'?gearCount(a,o.id):o.id===a.shieldId?1:armuresDe(a).filter(x=>x===o.id).length;
  const corps=document.createElement('div');corps.className='corps';corps.innerHTML=SILHOUETTE;
- // Les mains : les armes dans l'ordre, puis le bouclier ; une arme à deux mains tient les deux.
- const mains=[];(a.weapons||[]).map(objetDe).filter(Boolean).forEach(o=>{mains.push(o);if(weaponHands(o)===2)mains.push({deux:o})});
- if(a.shieldId){const s=objetDe(a.shieldId);if(s)mains.push(s)}
+ /* Les mains, vues de face : la main droite de l'aventurier est à gauche de l'image. Elle tient
+    la première arme — la main de base. La gauche tient le bouclier, ou la seconde arme ; une
+    arme à deux mains tient les deux. */
+ const armes=(a.weapons||[]).map(objetDe).filter(Boolean),bouclier=a.shieldId?objetDe(a.shieldId):null;
+ const droite=armes[0]||null,gauche=droite&&weaponHands(droite)===2?{deux:droite}:(bouclier||armes[1]||null);
  const anneaux=portesA(a,'anneau',catalog.items).map(objetDe).filter(Boolean);
  const seul=slot=>{const id=portesA(a,slot,catalog.items)[0];return id?objetDe(id):null};
  const places=[['dos','Dos',seul('dos')],['tete','Tête',seul('tete')],['amulette','Amulette',seul('amulette')],
-  ['main','Main gauche',mains[1]||null],['torse','Torse',seul('torse')],['main','Main droite',mains[0]||null],
+  ['main','Main droite',droite],['torse','Torse',seul('torse')],['main','Main gauche',gauche],
   ['anneau','Anneau',anneaux[0]||null],['anneau','Anneau',anneaux[1]||null],['anneau','Anneau',anneaux[2]||null],['bottes','Bottes',seul('bottes')]];
- places.forEach(([cle,nom,o],k)=>{const pl=document.createElement('div');pl.className='place p-'+cle+(k===9?' bottes':'');pl.dataset.place=cle;
+ places.forEach(([cle,nom,o],k)=>{const pl=document.createElement('div');pl.className='place p-'+cle+(k===9?' bottes':'');pl.dataset.place=cle;if(cle==='main')pl.dataset.main=k===3?'droite':'gauche';
   const l=document.createElement('span');l.className='nom-place';l.textContent=nom;pl.append(l);
   if(o&&o.deux){const p=gearCarre(o.deux,1,1);p.classList.add('deux-mains');p.removeAttribute('title');p.setAttribute('aria-label',o.deux.name+' — à deux mains');pl.append(p)}
   else if(o)pl.append(carreDeFiche(a,o,1,true,portes,peutEquiper,true));
@@ -907,16 +923,28 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  let rien=true;
  [...comptes.entries()].forEach(([o,n])=>{const equipement=o.category==='weapon'||o.category==='armor';
   const reste=equipement?n-portes(o):n;if(reste<=0)return;rien=false;
-  const p=carreDeFiche(a,o,reste,true,()=>0,peutEquiper,equipement?false:undefined);sac.append(p)});
+  const p=carreDeFiche(a,o,reste,true,()=>0,peutEquiper,equipement?false:undefined);
+  /* Au survol, une petite croix rouge retire un exemplaire de l'inventaire — après confirmation.
+     Ce qui est porté ne bouge pas : on retire un exemplaire du sac. */
+  if(peutEquiper){const x=document.createElement('button');x.type='button';x.className='retirer-sac';x.textContent='✕';
+   x.title='Retirer '+o.name+' de l’inventaire';x.setAttribute('aria-label',x.title);x.draggable=false;
+   x.onclick=async ev=>{ev.stopPropagation();ev.preventDefault();fermerBulle();
+    const ok=typeof demander==='function'?await demander('Retirer « '+o.name+' » de l’inventaire de '+a.name+' ?'+(reste>1?' Un exemplaire sur '+reste+'.':''),'Retirer'):confirm('Retirer « '+o.name+' » ?');
+    if(!ok)return;retirerInventaire(a,o);log(nomNum(a)+' se défait de '+o.name+'.',{local:true});
+    render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+   x.onpointerdown=ev=>ev.stopPropagation();p.append(x)}
+  sac.append(p)});
  if(rien){const v=document.createElement('span');v.className='muted';v.textContent='Rien dans le sac.';sac.append(v)}
  out.append(sac);
  /* Le dépôt : sur le corps, la pièce s'équipe à sa place ; sur le sac, elle se repose. */
  if(peutEquiper){const redessine=()=>{render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
   const recoit=(el,fn)=>{el.addEventListener('dragover',e=>{if(!gearGlisse)return;e.preventDefault();el.classList.add('survol');try{e.dataTransfer.dropEffect='move'}catch(_){}});
    el.addEventListener('dragleave',()=>el.classList.remove('survol'));
-   el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('survol');const g=gearGlisse;gearGlisse=null;if(!g)return;
+   el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('survol');const g=gearGlisse;gearGlisse=null;if(!g)return;g.cible=e.target&&e.target.closest?e.target.closest('.place'):null;
     const o=objetDe(g.id);if(o&&fn(o,g))redessine()})};
-  recoit(corps,(o,g)=>!g.porte&&equiperPiece(a,o));
+  recoit(corps,(o,g)=>{if(g.porte)return false;
+   // Lâchée sur une main, la pièce prend cette main-là ; ailleurs sur le corps, sa place d'usage.
+   const main=g.cible&&g.cible.dataset&&g.cible.dataset.main;return main?equiperDansMain(a,o,main):equiperPiece(a,o)});
   recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}
  bulleOrpheline();return out}
 /* Les carrés d'une fiche. En jeu (« tout » faux), on ne voit que ce qui est porté, plus les
@@ -979,13 +1007,38 @@ function talentPill(t,compact){const [cle,court,nom]=talentType(t);
 /* Ce que dit un talent, sous sa vignette : sa nature, la phrase que le moteur appliquera
    — réglages en gras — ou le texte libre de la fiche, les notes, et l'arbre (requiert,
    débloque). Pas de « appris par » : la vignette est sur la fiche de qui l'a appris. */
+/* Les mots clés des descriptions. Le jeu en connaît : caractéristiques (à leurs couleurs de
+   fiche), états (à leurs teintes), points et natures (en gras), formules de dés et bonus
+   chiffrés (« 1d6+2 », « +3 »). Le MJ en ajoute dans l'onglet Talents ; « **ainsi** » force
+   le gras. Le texte se découpe autour d'eux, sans jamais passer par du HTML. */
+const TEINTE_ETAT_MOT={Feu:'#c2503a',Gel:'#2f8fae',Foudre:'#3a6fc2',Poison:'#5d8a2e','Saignée':'#b8352f',Onde:'#3577b8',Invisible:'#6a5fb0',Faille:'#a0408f'};
+let motsClesCache=null;
+function motsCles(){const perso=(catalog&&catalog.motsCles)||[],cle=perso.join('\u0001');
+ if(motsClesCache&&motsClesCache.cle===cle)return motsClesCache;
+ const table=new Map(),ajoute=(formes,couleur)=>formes.forEach(f=>{if(f&&!table.has(f))table.set(f,couleur)});
+ const rgb=k=>typeof STAT_TINTS!=='undefined'&&STAT_TINTS[k]?'rgb('+STAT_TINTS[k]+')':'';
+ ajoute(['PV max','PV'],rgb('pv'));ajoute(['DEF','Défense'],rgb('def'));ajoute(['Endurance','ENDU','Endu'],rgb('endu'));
+ ajoute(['Vie','VIE'],rgb('vie'));ajoute(['Dégâts','dégâts','DÉGÂTS','Dégât','dégât'],rgb('dmg'));ajoute(['XP'],rgb('xp'));
+ ETATS_JEU.forEach(x=>ajoute([x,x.toUpperCase()],TEINTE_ETAT_MOT[x]||'#a2691f'));
+ ajoute(['Actions','Action','Mouvements','Mouvement','Réactions','Réaction','Objet','Passif','Critiques','Critique','Maîtrise','Amélioration'],'');
+ perso.forEach(m=>{const s=String(m||'').trim();if(!s)return;ajoute([s,s.toLowerCase(),s[0].toUpperCase()+s.slice(1),s.toUpperCase()],'var(--accent)')});
+ const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+ const alts=[...table.keys()].sort((x,y)=>y.length-x.length).map(esc).join('|');
+ const rx=new RegExp('\\*\\*([^*\\n]+)\\*\\*|(^|[^\\p{L}\\p{N}])('+alts+'|\\d*d\\d+(?:\\s*[+−-]\\s*\\d+)?|[+−]\\d+)(?![\\p{L}\\p{N}])','gu');
+ return motsClesCache={cle,table,rx}}
+function texteEnrichi(el,texte){texte=String(texte||'');el.replaceChildren();const {rx,table}=motsCles();rx.lastIndex=0;let last=0,m;
+ const gras=(mot,couleur)=>{const b=document.createElement('b');b.className='mot-cle';b.textContent=mot;if(couleur)b.style.color=couleur;el.append(b)};
+ while((m=rx.exec(texte))){
+  if(m[1]!==undefined){if(m.index>last)el.append(texte.slice(last,m.index));gras(m[1],'');last=rx.lastIndex;continue}
+  const debut=m.index+m[2].length;if(debut>last)el.append(texte.slice(last,debut));gras(m[3],table.get(m[3])||'');last=rx.lastIndex}
+ if(last<texte.length)el.append(texte.slice(last));return el}
 function talentDetail(t,vif){const d=document.createElement('div');d.className='talent-detail t-'+talentType(t)[0];
  const ligne=(texte,html)=>{if(!texte)return null;const p=document.createElement('p');
   if(html)p.innerHTML=texte;else p.textContent=texte;d.append(p);return p};
  /* Ni nature, ni niveau, ni classe — la vignette les dit — ni la phrase du moteur : la
     bibliothèque des effets la garde. Ici, seul le texte que le MJ a écrit, et il se
     corrige là où on le lit, dans l'onglet Talents. */
- const effet=ligne(t.effects||'Effet à préciser.');
+ const effet=ligne(t.effects||'Effet à préciser.');if(effet&&t.effects)texteEnrichi(effet,t.effects);
  if(vif&&effet)champVif(effet,()=>t.effects||'',v=>{t.effects=String(v).trim().slice(0,600);talentCorrige()},'Corriger l’effet — ⌘ Entrée valide','zone');
  ligne(t.notes);
  const socle=nomPrerequis(t,catalog.talents),branches=talentsDependants(t,catalog.talents);
@@ -1446,6 +1499,16 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
 $('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalents;
 $('talent-sort').onchange=renderTalents;
 $('talent-add').onclick=()=>openTalent(null);
+const motsDialog=dialog('mots-cles','Mots clés des talents','<form id="mots-form"><p class="muted">Dans les descriptions de talents, le jeu met déjà en valeur les caractéristiques (PV, DEF, Endurance, Vie, Dégâts), les états (Feu, Gel, Poison…), les points et natures (Action, Mouvement, Réaction, Passif…), les formules de dés et les bonus chiffrés. Ajoute ici les tiens, un par ligne : ils s’écriront en gras, à la couleur du thème. Dans un texte, <b>**ainsi**</b> force le gras.</p>'
+ +'<label>Tes mots clés<textarea name="mots" rows="8" maxlength="4000" placeholder="Allié\nAdversaire\nau contact"></textarea></label><p class="muted" id="mots-apercu"></p><div class="form-actions"><button class="primary">Enregistrer</button></div></form>');
+function apercuMots(){const t=$('mots-form').elements.mots.value.split('\n').map(x=>x.trim()).filter(Boolean);
+ const ex='Inflige +2 Dégâts et Feu à un Allié au contact : 1d6+ENDU PV, une Action.';const p=$('mots-apercu');const ancien=catalog.motsCles;catalog.motsCles=t;
+ p.replaceChildren('Aperçu : ');const s=document.createElement('span');texteEnrichi(s,ex);p.append(s);catalog.motsCles=ancien}
+$('talent-mots').onclick=()=>{if(view!=='mj')return;$('mots-form').elements.mots.value=(catalog.motsCles||[]).join('\n');apercuMots();motsDialog.showModal()};
+$('mots-form').elements.mots.oninput=apercuMots;
+$('mots-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
+ catalog.motsCles=[...new Set($('mots-form').elements.mots.value.split('\n').map(x=>x.trim().slice(0,40)).filter(Boolean))].slice(0,200);
+ motsDialog.close();renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
 const talentDialog=dialog('talent-editor','Talent','<form id="talent-form"><div id="talent-fields"></div><div class="form-actions"><button type="button" id="delete-talent">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
 let talentIndex=null,talentApres=null,talentDraft={effet:'',params:{}};
 /* Fermé sans enregistrer, le dialogue ne doit rien rappeler : sinon une création faite
@@ -1636,11 +1699,24 @@ function mainsPrises(a){const armes=(a.weapons||[]).map(objetDe).filter(Boolean)
 /* Faire la place qu'il faut : on repose, du plus ancien au plus récent, ce qui occupe les
    mains jusqu'à loger ce qu'on prend. C'est la règle de l'armure, étendue aux mains :
    cliquer une arme ou un bouclier remplace, jamais ne refuse. */
-function libereMains(a,besoin){a.weapons??=[];
+/* La main droite est la main de base : une arme qu'on prend y va, et prend la place de ce
+   qu'elle tenait. Une arme à deux mains vide les deux. Un bouclier va à la main gauche, et
+   en chasse la seconde arme. Rend le nombre de pièces reposées. */
+function libereMains(a,besoin){a.weapons??=[];let n=0;
  while(mainsPrises(a)+besoin>2){
-  if(a.weapons.length)a.weapons.shift();
-  else if(a.shieldId)a.shieldId='';
+  if(a.weapons.length){a.weapons.shift();n++}
+  else if(a.shieldId){a.shieldId='';n++}
+  else break}
+ return n}
+function libereMainGauche(a){a.weapons??=[];
+ while(mainsPrises(a)+1>2){
+  if(a.weapons.length>1)a.weapons.pop();
+  else if(a.weapons.length)a.weapons.shift();
   else break}}
+// Prendre une arme en main : à droite si une place s'y libère, sinon à gauche, main droite occupée.
+function prendArme(a,o){const retires=libereMains(a,weaponHands(o));
+ a.weapons=retires>0||!(a.weapons||[]).length?[o.id,...(a.weapons||[])]:[...a.weapons,o.id]}
+function prendBouclier(a,o){a.shieldId='';libereMainGauche(a);a.shieldId=o.id}
 /* Équiper depuis l'inventaire, d'un clic sur le carré : une arme prend la place qu'il
    faut — un second clic prend un second exemplaire s'il est possédé et qu'une main reste,
    sinon repose tout ; un bouclier prend une main ; une armure se porte ou se repose. Ce
@@ -1657,10 +1733,10 @@ function toggleEquip(a,o){if(!a||!o)return 'Rien à équiper.';
  if(o.category==='weapon'){const n=gearCount(a,o.id);
   if(n>0&&n<dans&&mainsPrises(a)+weaponHands(o)<=2)a.weapons=[...(a.weapons||[]),o.id];
   else if(n>0)a.weapons=(a.weapons||[]).filter(x=>x!==o.id);
-  else{libereMains(a,weaponHands(o));a.weapons=[...(a.weapons||[]),o.id]}}
+  else prendArme(a,o)}
  else if(o.category==='armor'&&emplacementDe(o)==='shield'){
   if(a.shieldId===o.id)a.shieldId='';
-  else{libereMains(a,1);a.shieldId=o.id}}
+  else prendBouclier(a,o)}
  /* Une pièce d'équipement va à son emplacement, qui a ses places : trois anneaux, un
     torse, un dos… Plein, c'est la plus ancienne pièce qui cède la sienne, comme les mains. */
  else if(o.category==='armor'){const slot=emplacementDe(o);
