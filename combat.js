@@ -961,7 +961,9 @@ const OBJETS_CODES={
  /* État : le porteur gagne l'affection réglée — un Blindage, une Onde, ce que le MJ veut. */
  etat:{cle:'etat',nom:'État',aide:'Le porteur reçoit l’état réglé.',
   params:[{cle:'etat',nom:'État obtenu',type:'choix',defaut:'Blindage',options:ETATS_JEU.map(e=>[e,e])}],
-  phrase(p){return 'Le porteur obtient <b>'+((p&&p.etat)||'Blindage')+'</b>.'}},
+  phrase(p){return 'Le porteur obtient <b>'+((p&&p.etat)||'Blindage')+'</b>.'},
+  // Passif : l'état est donné quand la pièce se porte, et repris quand elle s'ôte.
+  passif(p){return 'Tant qu’il porte la pièce, le porteur a <b>'+((p&&p.etat)||'Blindage')+'</b>.'}},
  /* Invulnérabilité : le porteur ne craint plus, jusqu'à la fin de la rencontre, soit une
     affection, soit une couleur de dés — ceux-là ne l'entament plus. */
  invulnerabilite:{cle:'invulnerabilite',nom:'Invulnérabilité',
@@ -973,7 +975,26 @@ const OBJETS_CODES={
   phrase(p){const quoi=(p&&p.contre)==='des'
     ?'aux dés <b>'+((DES_ORBE.find(([k])=>k===(p&&p.des))||DES_ORBE[2])[1])+'s</b>'
     :'à <b>'+((p&&p.etat)||'Feu')+'</b>';
-   return 'Jusqu’à la fin de la rencontre, le porteur est <b>insensible</b> '+quoi+'.'}}};
+   return 'Jusqu’à la fin de la rencontre, le porteur est <b>insensible</b> '+quoi+'.'},
+  passif(p){const quoi=(p&&p.contre)==='des'
+    ?'aux dés <b>'+((DES_ORBE.find(([k])=>k===(p&&p.des))||DES_ORBE[2])[1])+'s</b>'
+    :'à <b>'+((p&&p.etat)||'Feu')+'</b>';
+   return 'Tant qu’il porte la pièce, le porteur est <b>insensible</b> '+quoi+'.'}}};
+/* Actif ou passif : une pièce d'équipement — arme, armure, munition — dont l'effet le permet
+   peut agir d'elle-même, en permanence tant qu'elle est portée, sans bouton en combat. Un
+   objet consommable reste actif : il s'emploie. */
+const EQUIPEMENTS=['weapon','armor','ammo'];
+function modeObjet(o){const code=objetCode(o);
+ return o&&o.mode==='passif'&&code&&typeof code.passif==='function'&&EQUIPEMENTS.includes(o.category)?'passif':'actif'}
+function phraseDeObjet(o){const code=objetCode(o);if(!code)return '';const p=paramsObjet(o);
+ return modeObjet(o)==='passif'?code.passif(p):code.phrase(p)}
+// Ce que confèrent les pièces portées à effet passif : des états refusés, des dés écartés, des états donnés.
+function passifsPortes(a,items){const out={etats:[],des:[],donnes:[]};if(!a)return out;
+ const ids=[...(a.weapons||[]),...armuresDe(a),a.shieldId,a.munitionId].filter(Boolean);
+ gearOf([...new Set(ids)],items).forEach(o=>{if(modeObjet(o)!=='passif')return;const code=objetCode(o),p=paramsObjet(o);
+  if(code.cle==='invulnerabilite'){if(p.contre==='des'){if(!out.des.includes(p.des))out.des.push(p.des)}else if(!out.etats.includes(p.etat))out.etats.push(p.etat)}
+  else if(code.cle==='etat'&&p.etat&&!out.donnes.includes(p.etat))out.donnes.push(p.etat)});
+ return out}
 function objetCode(o){return o&&OBJETS_CODES[o.effet]||null}
 // Les réglages d'un objet, relus au travers de la déclaration de son effet : rien d'illisible n'entre.
 function paramsObjet(o){const code=objetCode(o);if(!code)return null;
@@ -1410,6 +1431,6 @@ const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatie
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
- DICE_KEYS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

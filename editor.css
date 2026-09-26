@@ -294,7 +294,13 @@ button.btn-analyse[hidden]{display:none}
 /* Le dernier anneau se centre sous la main gauche : la marge droite du groupe vaut une demi-colonne moins un demi-carré. */
 .corps-sac.glisse-munitions .place.p-munitions .vide,.corps-sac.glisse-munitions .place.p-munitions .gear-carre{outline:2px solid var(--green);outline-offset:2px}.calcul-ligne{display:flex;justify-content:space-between;gap:14px}
 .calcul-ligne.tete{font-weight:700;border-bottom:1px solid var(--line);padding-bottom:3px;margin-bottom:2px}.calcul-ligne.total{border-top:1px solid var(--line);padding-top:3px;margin-top:2px;font-weight:700}
-.gear-astuce{margin:6px 0 0;font:600 12px system-ui;color:var(--muted)}.attack-card .attack-info,.attack-card .summary,.attack-card #attack-help{margin:0;font-size:13px}
+.gear-astuce{margin:6px 0 0;font:600 12px system-ui;color:var(--muted)}.gear-passif{font-weight:700;color:#2f7a4b}
+/* Sous le logo d'une pièce : l'écu de DEF et l'icône de son effet, côte à côte ; barrée, elle dit une insensibilité. */
+.gear-bas{display:flex;align-items:center;justify-content:center;gap:4px}
+.effet-pastille{position:relative;display:inline-block;flex:none;width:21px;height:21px}.effet-pastille .etat-inflige,.effet-pastille .die-sq{position:absolute;inset:0;display:block;width:21px;height:21px;box-sizing:border-box;overflow:hidden}
+.cat-pill .effet-pastille .etat-inflige img{position:absolute;inset:0;width:100%;height:100%;max-width:none;margin:0;object-fit:contain;display:block}
+.effet-pastille .etat-inflige.sans-jeton{display:grid;place-items:center;border-radius:50%;background:var(--panel-2);border:1px solid var(--line-strong);font:800 11px/1 system-ui;color:var(--ink)}
+.effet-pastille.barre::after{content:'';position:absolute;z-index:1;left:-3px;right:-3px;top:50%;height:3px;margin-top:-1.5px;background:#c0392b;border-radius:2px;transform:rotate(-40deg);box-shadow:0 0 0 1px #fffc}.attack-card .attack-info,.attack-card .summary,.attack-card #attack-help{margin:0;font-size:13px}
 /* Les cibles à portée, cliquables : plus besoin de viser sur la carte pour en changer. */
 .targets{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:34px}
 .cible{display:flex;align-items:center;gap:7px;padding:4px 11px 4px 4px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2);font:700 13px 'Killam',Georgia,serif;color:var(--ink);max-width:100%}

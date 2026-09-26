@@ -113,6 +113,8 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
  const vus=new Set(),out=[];
  (a.inventaire||[]).forEach(id=>{if(vus.has(id))return;vus.add(id);
   const o=objetDe(id),code=objetCode(o);if(!o||!code)return;
+  // Une pièce à effet passif agit d'elle-même : pas de bouton.
+  if(modeObjet(o)==='passif')return;
   const dispo=objetDisponible(a,o),usage=usageObjet(o),p=paramsObjet(o);
   /* Le bouton dit ce que l'objet prodigue — Invisibilité, Soin, Invulnérabilité — plutôt
      que son nom : c'est l'effet qu'on choisit. Un usage compté s'écrit dessous : 1 / jour,
@@ -759,12 +761,26 @@ function ouvrirBulle(ancre,contenu,classe){retireBulle();if(!ancreVisible(ancre)
    objet, dont les carrés se décalaient sans qu'on y touche. */
 let gearOuvert=null;
 const cleGear=(a,o)=>(a&&a.id||'?')+'|'+(o&&o.id||'?');
+/* L'icône de l'effet d'une pièce : l'état qu'elle donne ; barré, l'état ou la couleur de dés
+   dont elle rend insensible. */
+function pastilleEffet(o){const code=objetCode(o);if(!code)return null;const p=paramsObjet(o)||{};let el=null,titre='';
+ if(code.cle==='invulnerabilite'){if(p.contre==='des'){const k=keys.indexOf(p.des);if(k<0)return null;el=document.createElement('i');el.className='die-sq';el.style.setProperty('--face',dieFace(k));titre='Insensible aux dés '+types[k]}
+  else{el=etatPastille(p.etat);titre='Insensible à '+p.etat}}
+ else if(code.cle==='etat'){el=etatPastille(p.etat);titre='Donne '+p.etat}
+ if(!el)return null;el.removeAttribute('title');el.removeAttribute('aria-label');
+ const w=document.createElement('span');w.className='effet-pastille'+(code.cle==='invulnerabilite'?' barre':'');w.title=titre;w.setAttribute('role','img');w.setAttribute('aria-label',titre);w.append(el);return w}
 function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
  const logo=logoEquipement(o);
  if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':'⚔';p.append(g)}
- if(col==='armor')p.append(shieldBadge(o.def||0));
+ /* Sous le logo d'une pièce d'équipement : sa DEF — seulement si elle en donne, ou si c'est une
+    armure de corps ou un bouclier —, puis l'icône de son effet : l'état qu'elle rend, barré
+    quand elle en protège. Un anneau sans DEF ne porte plus d'écu à zéro. */
+ if(col==='armor'){const bas=document.createElement('span');bas.className='gear-bas';
+  if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))bas.append(shieldBadge(o.def||0));
+  const eff=pastilleEffet(o);if(eff)bas.append(eff);
+  if(bas.children.length)p.append(bas)}
  else if(col!=='object')p.append(dicePips(o.dice,o.etat,col==='ranged'));
  // Une munition montre ce qu'elle ajoute : son dé, son état.
  else if(o.category==='ammo'&&(o.munDe||o.etat))p.append(dicePips(o.munDe?{[o.munDe]:1}:{},o.etat));
@@ -790,8 +806,9 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
     recopiée ici, et l'usage dit si l'objet se garde, se défausse ou attend le lendemain. */
  const code=objetCode(o);
  if(code){const p=document.createElement('p');p.className='gear-effet';
-  p.innerHTML=code.phrase(paramsObjet(o));d.append(p);
-  ligne('Usage : '+NOM_USAGE(usageObjet(o))+(usageLimite(usageObjet(o))&&a&&usageEpuise(a,o)?' — déjà employé':''))}
+  p.innerHTML=phraseDeObjet(o);d.append(p);
+  if(modeObjet(o)==='passif')ligne('Passif : agit tant que la pièce est portée','gear-passif');
+  else ligne('Usage : '+NOM_USAGE(usageObjet(o))+(usageLimite(usageObjet(o))&&a&&usageEpuise(a,o)?' — déjà employé':''))}
  /* Un objet s'emploie à la table de jeu ; un équipement qui porte un effet aussi — la page
     Aventuriers, elle, ne fait que ranger l'inventaire. */
  /* Plus de bouton dans la bulle — elle s'efface quand la souris la quitte : un objet
@@ -2643,6 +2660,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
     n'est plus une case à part, c'est l'un des trois usages. */
  if(f.effet)a.effet=OBJETS_CODES[f.effet.value]?f.effet.value:'';
  if(f.usage)a.usage=USAGES_OBJET.some(([k])=>k===f.usage.value)?f.usage.value:'libre';
+ if(f.mode)a.mode=f.mode.value==='passif'?'passif':'actif';
  a.params=a.effet?paramsObjet({effet:a.effet,params:lireReglagesObjet()}):{};
  a.consumable=usageObjet(a)==='conso';
  if(f.logo)a.logo=logosItem(a).includes(f.logo.value)?f.logo.value:'';
@@ -2701,7 +2719,10 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +'<h2 class="sous-titre">Effet appliqué par le moteur</h2>'
   +'<div class="edit-grid">'
   +sel('Effet','effet',a.effet||'',[['','— Aucun : objet descriptif —'],...Object.values(OBJETS_CODES).map(c=>[c.cle,c.nom])])
-  +sel('Usage','usage',usageObjet(a),USAGES_OBJET)+'</div>'
+  +sel('Usage','usage',usageObjet(a),USAGES_OBJET)
+  /* Actif ou passif : pour une pièce d'équipement dont l'effet le permet. Passif, l'effet
+     agit en permanence tant que la pièce est portée, sans bouton en combat. */
+  +(EQUIPEMENTS.includes(a.category)?sel('Mode','mode',a.mode==='passif'?'passif':'actif',[['actif','Actif — un bouton en combat'],['passif','Passif — permanent tant que porté']]):'')+'</div>'
   +'<div id="objet-reglages"></div>'
   /* Ce que la pièce confère à qui la porte : une ligne par bonus, cumulables, qu'on ajoute
      et retire ici et qu'on relit sur sa fiche. */
@@ -2713,8 +2734,14 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
  /* Les réglages de l'effet sont dessinés d'après sa déclaration : ajouter un effet au
     moteur suffit à lui donner son formulaire. */
  const menuEffet=$('item-form').elements.effet;
- menuEffet.onchange=()=>{itemDraft=itemDepuisForm(itemDraft);itemDraft.effet=menuEffet.value;itemDraft.params={};dessineReglagesObjet()};
- dessineReglagesObjet();
+ // Le mode ne se propose qu'à un effet qui sait être passif ; passif, l'usage ne compte plus.
+ const majMode=()=>{const f=$('item-form').elements,code=OBJETS_CODES[f.effet.value];
+  if(f.mode){const l=f.mode.closest('label');l.hidden=!(code&&typeof code.passif==='function')}
+  const passif=f.mode&&!f.mode.closest('label').hidden&&f.mode.value==='passif';
+  if(f.usage)f.usage.closest('label').hidden=!!passif};
+ menuEffet.onchange=()=>{itemDraft=itemDepuisForm(itemDraft);itemDraft.effet=menuEffet.value;itemDraft.params={};dessineReglagesObjet();majMode()};
+ if($('item-form').elements.mode)$('item-form').elements.mode.onchange=majMode;
+ dessineReglagesObjet();majMode();
  /* L'aperçu du logo, à côté de son menu : on voit ce qu'on choisit. */
  const menuLogo=$('item-form').elements.logo;
  const apercu=document.createElement('img');apercu.className='logo-equip apercu';apercu.alt='';

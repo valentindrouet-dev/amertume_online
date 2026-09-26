@@ -1659,7 +1659,7 @@ assert.ok(page.includes('function pastillesPoints(a)')&&page.includes("const act
 assert.ok(page.includes('function alliePourIgnition(a)')&&page.includes("const j=ciblesDe(a).find(k=>vus.includes(k)&&actors[k]&&actors[k].hero===a.hero&&actors[k]!==a);")
  &&page.includes('if(allie!==null){const feu=etat||\'Feu\';')&&page.includes("const poser=()=>{b.ignition=feu;floatNumber(b,'✦ '+feu,'gain');")
  &&page.includes("const charge=(rangeOf(a)==='distance'?'':a.ignition)||'';")&&page.includes("if(charge)a.ignition=''}")
- &&page.includes('const infligeEtatBrut=infligeEtat;')&&page.includes("if(etatRefuse(talentsCodes(a),etat)||immuniseEtat(a,etat))return 'immunise';")
+ &&page.includes('const infligeEtatBrut=infligeEtat;')&&page.includes("if(etatRefuse(talentsCodes(a),etat)||immuniseEtat(a,etat)||passifsPortes(a,items()).etats.includes(etat))return 'immunise';")
  &&page.includes('const ouverte=briseLaGarde(talentsCodes(a),b);')&&page.includes("const def=hasState(b,'Au sol')||ouverte?0:defOf(b);")
  &&page.includes("(ouverte?' Brise : la DEF ne compte pas.':'')")&&page.includes("(immunises.length?' Invulnérable : '+immunises.join(', ')+' sans effet.':'')"),'Ignition, Invulnérable et Brise câblés');
 /* Les descriptions d'objet et de talent sortent du flux : une bulle se pose au-dessus de la
@@ -1738,7 +1738,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
 assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function renderArmory(){renderBiblioObjets();")
  &&src.includes('📖 Banque des effets d’équipement')&&src.includes("const porteurs=(catalog.items||[]).filter(o=>o&&o.effet===c.cle).map(o=>o.name);")
  &&src.includes("o.effet=OBJETS_CODES[o.effet]?o.effet:'';")&&src.includes("o.usage=usageObjet(o);o.consumable=o.usage==='conso'});")
- &&src.includes("+sel('Usage','usage',usageObjet(a),USAGES_OBJET)+'</div>'")&&src.includes('function dessineReglagesObjet()')
+ &&src.includes("+sel('Usage','usage',usageObjet(a),USAGES_OBJET)")&&src.includes('function dessineReglagesObjet()')
  &&src.includes("a.params=a.effet?paramsObjet({effet:a.effet,params:lireReglagesObjet()}):{};")&&!src.includes(">Consommable</label>')")
  &&src.includes('function usageEpuise(a,o)')&&src.includes("function objetDisponible(a,o){return !usageLimite(usageObjet(o))||!usageEpuise(a,o)}")
  &&src.includes('function appliquerEffetObjet(a,o)')&&src.includes("if(usageLimite(usage)){a.usages={...(a.usages||{}),[o.id]:usage}}")
@@ -1986,7 +1986,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&src.includes("const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
-  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','comaVie'];")
+  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','comaVie','etatsPassifs'];")
   &&src.includes("const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")
   &&src.includes(" ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));")&&src.includes("  if(!competenceDe(a,k))return;")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
@@ -2346,11 +2346,11 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  vm.runInContext(page.slice(page.indexOf('function nomNum(o)'),page.indexOf('/* Ce qu\'on a le droit de lire d\'un combattant')),ctxN);
  assert.equal(ctxN.actors.map(ctxN.nomNum).join('|'),'Ulfgar|Gobelin 1|Gobelin 2|Ogre');assert.equal(ctxN.nomNum({name:'Inconnu'}),'Inconnu');
  assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||view!=='mj'")&&page.includes("if(adversairesDebout()>0){combatEngage=true;return}")
-  &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" comaAventuriers();finDeCombatAuto();")
+  &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")
   &&page.includes("if(finit)actors.forEach(a=>{if(a.hero)a.reposPris=false});"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos" id="repos" hidden>⛺ Repos court</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
   &&page.includes(":a.reposPris?'Repos déjà pris : il reviendra à la fin du prochain combat.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposPris=true;")
-  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie'];"),'le Repos court');
+  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs'];"),'le Repos court');
 }
 /* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
    une arme prise remplace celle de la main droite ; lâchée sur une main, elle prend cette main.
@@ -2399,7 +2399,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  ctxC.comaAventuriers();assert.equal(h.vie,4,'la même chute ne coûte qu’une VIE');
  ctxC.reveilDuComa(h);assert.equal(h.hp+'/'+h.comaVie+'/'+h.reposPris,'8/false/true','à la fin du combat : 1d6 + Endu, repos pris');
  enC=false;h.hp=0;h.states=['Coma'];ctxC.comaAventuriers();assert.equal(h.vie,4,'hors combat, rien ne se perd');
- assert.ok(page.includes(" comaAventuriers();finDeCombatAuto();")&&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur()))actors.forEach(reveilDuComa);"),'le coma se compte au rendu et se relève à la fin du combat');}
+ assert.ok(page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")&&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur()))actors.forEach(reveilDuComa);"),'le coma se compte au rendu et se relève à la fin du combat');}
 {assert.ok(src.includes("['pv','PV max',a.max],['def','DEF',defOf(a),true],")&&src.includes("tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg']],c);")
   &&src.includes("calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));")&&src.includes(" ecrire('.stat-tile.t-pv strong',a.max);")
   &&feuille.includes('.calcul-ligne.total{'),'PV max et leur calcul, Dégâts détaillés');
@@ -2452,4 +2452,27 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.274 — Le dernier anneau se centre sous la main gauche ; la munition portée remplit la place vide du dé de l'arme à distance. */
 {assert.ok(src.includes("function remplitMunition(p,a,o){")&&src.includes(" if(portes(o))remplitMunition(p,a,o);")&&src.includes("const p=remplitMunition(gearCarre(o.deux,1,1),a,o.deux);")
   &&src.includes("place.classList.remove('die-munition');place.classList.add('die-charge');place.style.setProperty('--face',dieFace(k));"),'la munition remplit la place vide');}
-console.log('1501 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.275 — Une pièce d'équipement à effet peut être passive : elle agit tant qu'elle est portée, sans bouton. */
+{const items=[{id:'an',name:'Anneau d’Argent',category:'armor',slot:'anneau',effet:'invulnerabilite',mode:'passif',params:{contre:'etat',etat:'Gel'}},
+  {id:'bo',name:'Bouclier béni',category:'armor',slot:'shield',effet:'invulnerabilite',mode:'passif',params:{contre:'des',des:'red'}},
+  {id:'ca',name:'Cape',category:'armor',slot:'dos',effet:'etat',mode:'passif',params:{etat:'Invisible'}},
+  {id:'po',name:'Potion',category:'object',effet:'soin',mode:'passif',params:{}},
+  {id:'ac',name:'Anneau actif',category:'armor',slot:'anneau',effet:'invulnerabilite',params:{contre:'etat',etat:'Feu'}}];
+ assert.equal(gearApi.modeObjet(items[0]),'passif');assert.equal(gearApi.modeObjet(items[3]),'actif','un consommable, ou un effet sans passif, reste actif');assert.equal(gearApi.modeObjet(items[4]),'actif');
+ assert.match(gearApi.phraseDeObjet(items[0]),/Tant qu’il porte la pièce, le porteur est <b>insensible<\/b> à <b>Gel<\/b>/);
+ const h={armures:['an','ca','ac'],shieldId:'bo'};const pp=gearApi.passifsPortes(h,items);
+ assert.equal(JSON.stringify(pp),JSON.stringify({etats:['Gel'],des:['red'],donnes:['Invisible']}),'ce que confèrent les pièces portées');
+ assert.equal(JSON.stringify(gearApi.passifsPortes({armures:[]},items)),JSON.stringify({etats:[],des:[],donnes:[]}),'rangée dans le sac, la pièce ne fait rien');
+ const eff=page.slice(page.indexOf('function effetsPassifs(){'),page.indexOf('/* Le combat finit de lui-même'));const journal=[];
+ const ctxE={loading:false,items:()=>items,passifsPortes:gearApi.passifsPortes,hasState:(a,e)=>(a.states||[]).includes(e),setState:(a,e,on)=>{a.states=(a.states||[]).filter(x=>x!==e);if(on)a.states.push(e)},log:t=>journal.push(t),nomNum:a=>a.name,actors:[]};
+ vm.createContext(ctxE);vm.runInContext(eff,ctxE);const b={name:'Thorik',armures:['an','ca'],states:['Gel']};ctxE.actors.push(b);
+ ctxE.effetsPassifs();assert.equal(b.states.join(',')+'|'+b.etatsPassifs.join(','),'Invisible|Invisible','le Gel se dissipe, la cape donne Invisible');
+ b.states=[];ctxE.effetsPassifs();assert.equal(b.states.join(','),'','un état donné et perdu ne revient pas tant qu’on garde la pièce');
+ b.states=['Invisible'];b.armures=['an'];ctxE.effetsPassifs();assert.equal(b.states.join(',')+'|'+b.etatsPassifs.join(','),'|','ôtée, la cape reprend son état');
+ assert.ok(src.includes("if(modeObjet(o)==='passif')return;")&&src.includes("p.innerHTML=phraseDeObjet(o);d.append(p);")&&src.includes("if(f.mode)a.mode=f.mode.value==='passif'?'passif':'actif';")
+  &&src.includes("[['actif','Actif — un bouton en combat'],['passif','Passif — permanent tant que porté']]")&&page.includes("const gardes=[],ecartes=[],portes=passifsPortes(b,items()).des;"),'le passif : pas de bouton, sa phrase, son réglage, les dés écartés');}
+/* v0.275 (suite) — Un écu de DEF seulement pour ce qui en donne, ou une armure de corps, ou un bouclier ; l'icône de l'effet, barrée pour une insensibilité. */
+{assert.ok(src.includes("if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))bas.append(shieldBadge(o.def||0));")
+  &&src.includes("const eff=pastilleEffet(o);if(eff)bas.append(eff);")&&src.includes("w.className='effet-pastille'+(code.cle==='invulnerabilite'?' barre':'');")
+  &&feuille.includes('.effet-pastille.barre::after{')&&feuille.includes('.cat-pill .effet-pastille .etat-inflige img{position:absolute;inset:0;width:100%;height:100%;'),'l’écu à zéro disparaît des bijoux, l’effet se montre, barré s’il protège');}
+console.log('1512 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
