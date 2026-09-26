@@ -281,7 +281,12 @@ button.btn-analyse[hidden]{display:none}
 .sac .gear-carre{position:relative}.sac .retirer-sac{position:absolute;top:-7px;right:-7px;width:20px;height:20px;padding:0;margin:0;border-radius:50%;border:2px solid var(--panel);background:#c0392b;color:#fff;font:700 11px/1 system-ui;display:grid;place-items:center;opacity:0;transform:scale(.8);transition:opacity .12s,transform .12s;z-index:3;cursor:pointer;box-shadow:0 1px 3px #0006}
 .sac .gear-carre:hover .retirer-sac,.sac .gear-carre:focus-within .retirer-sac{opacity:1;transform:scale(1)}.sac .retirer-sac:hover{background:#a02c20}
 /* Les mots clés des descriptions : en gras, à leur couleur. */
-.mot-cle{font-weight:700}#mots-apercu span{color:var(--ink)}.attack-card .attack-info,.attack-card .summary,.attack-card #attack-help{margin:0;font-size:13px}
+.mot-cle{font-weight:700}#mots-apercu span{color:var(--ink)}
+.palette-mots{display:flex;flex-wrap:wrap;gap:6px}.pastille-mot{padding:2px 10px;margin:0;border:1.5px solid;border-radius:999px;background:var(--panel);font:700 12px system-ui;cursor:pointer}
+/* Le calcul d'un chiffre de fiche, au survol : une ligne par part, le total en bas. */
+.calcul-bulle{display:flex;flex-direction:column;gap:3px;min-width:220px;font-size:13px}.calcul-ligne{display:flex;justify-content:space-between;gap:14px}
+.calcul-ligne.tete{font-weight:700;border-bottom:1px solid var(--line);padding-bottom:3px;margin-bottom:2px}.calcul-ligne.total{border-top:1px solid var(--line);padding-top:3px;margin-top:2px;font-weight:700}
+.gear-astuce{margin:6px 0 0;font:600 12px system-ui;color:var(--muted)}.attack-card .attack-info,.attack-card .summary,.attack-card #attack-help{margin:0;font-size:13px}
 /* Les cibles à portée, cliquables : plus besoin de viser sur la carte pour en changer. */
 .targets{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:34px}
 .cible{display:flex;align-items:center;gap:7px;padding:4px 11px 4px 4px;border:1px solid var(--line);border-radius:999px;background:var(--panel-2);font:700 13px 'Killam',Georgia,serif;color:var(--ink);max-width:100%}

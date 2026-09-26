@@ -26,7 +26,7 @@ const SEGMENTS=['c','g','gc','d','dc'];
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
- c.motsCles=[...new Set((Array.isArray(c.motsCles)?c.motsCles:[]).map(m=>String(m||'').trim().slice(0,40)).filter(Boolean))].slice(0,200);
+ c.motsCles=[...new Set((Array.isArray(c.motsCles)?c.motsCles:[]).map(m=>String(m||'').trim().slice(0,60)).filter(Boolean))].slice(0,200);
  /* Les spécialisations de chaque classe, dans l'ordre du MJ : des noms, trois au plus par
     classe, sans doublon. Une voie qu'un talent nomme sans y figurer s'y lit quand même. */
  const voies=c.voies&&typeof c.voies==='object'&&!Array.isArray(c.voies)?c.voies:{};
@@ -277,7 +277,7 @@ talentsPage.innerHTML='<section class="cat-panel panel">'
  
  +'<div class="cat-filters"><input id="talent-search" placeholder="Rechercher…" aria-label="Rechercher un talent">'
  +'<select id="talent-family" aria-label="Classe"></select>'
- +'<select id="talent-sort" aria-label="Tri"><option value="niveau">Tri : niveau ↑</option>'
+ +'<select id="talent-sort" aria-label="Tri" hidden><option value="niveau">Tri : niveau ↑</option>'
  +'<option value="niveau-">Tri : niveau ↓</option><option value="nom">Tri : nom</option></select></div>'
  /* La bibliothèque des effets : ce que le moteur sait faire, replié par défaut. On y lit
     ce qu'un effet fait et les réglages qu'il demande, avant d'aller créer le talent qui
@@ -450,7 +450,7 @@ function majFiche(carte,a){if(!carte)return;
  const ecrire=(sel,texte)=>{const n=carte.querySelector(sel);if(n)n.textContent=texte};
  ecrire('.stat-tile.t-vie strong',vieAffichee(a));ecrire('.stat-tile.t-vie small','MAX '+(a.vieMax??a.vie));
  ecrire('.stat-tile.t-endu strong',enduAffichee(a));
- ecrire('.stat-tile.t-pv strong',a.hp);ecrire('.stat-tile.t-pv small','MAX '+a.max);
+ ecrire('.stat-tile.t-pv strong',a.max);
  ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));ecrire('.stat-tile.t-xp strong',a.xp||0);
  ecrire('.chip-niveau','Niveau '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
  majEcu(carte.querySelector('.stat-tile.t-def .ecu'),defOf(a));
@@ -460,6 +460,27 @@ function majFiche(carte,a){if(!carte)return;
 /* Rendre modifiables les tuiles d'une rangée : la grosse valeur, et le plafond
    écrit en petit dessous quand il y en a un. La DEF fait exception dès qu'une
    armure la commande — elle se change alors dans l'équipement, pas ici. */
+/* Le détail d'un chiffre de fiche, en lignes : chacune dit une part, la dernière le total. */
+function detailPvMax(a){const b=bonusDe(a,catalog.talents,catalog.items);
+ const vieB=Math.max(1,Math.trunc(Number(a.vie))||1),enduB=Math.max(1,Math.trunc(Number(a.endu))||1),vie=vieB+b.vie,endu=enduB+b.endu;
+ const c=classeDe(catalog.classes,a.role),classe=(c&&Number(c.pv))||0,espece=pvEspece(a.race),aura=Number(a.auraPv)||0;
+ const l=[['PV max','= Endu × Vie + Classe'],['Endurance',endu+(b.endu?' ('+enduB+' + '+b.endu+' de bonus)':'')],['Vie',vie+(b.vie?' ('+vieB+' + '+b.vie+' de bonus)':'')],
+  ['Endu × Vie',endu+' × '+vie+' = '+endu*vie]];
+ l.push(['Classe'+(c&&c.name?' ('+c.name+')':''),(classe>=0?'+ ':'− ')+Math.abs(classe)]);
+ if(espece)l.push(['Espèce ('+a.race+')',(espece>=0?'+ ':'− ')+Math.abs(espece)]);
+ if(b.pv)l.push(['Bonus de talents et d’équipement','+ '+b.pv]);
+ if(aura)l.push(['Meneur allié','+ '+aura]);
+ l.push(['Total',String(a.max)]);return l}
+function detailDegats(a){const b=bonusDe(a,catalog.talents,catalog.items),bt=bonusDe(a,catalog.talents,null),aura=typeof auraMeneur==='function'?auraMeneur(a,'dmg'):0;
+ const l=[['Dégâts','= fiche + bonus'],['Fiche (saisie)',String(Number(a.dmg)||0)]];
+ if(bt.dmg)l.push(['Talents','+ '+bt.dmg]);if(b.dmg-bt.dmg)l.push(['Équipement','+ '+(b.dmg-bt.dmg)]);if(aura)l.push(['Meneur allié','+ '+aura]);
+ l.push(['Total','+'+degatsDe(a)]);return l}
+function calculAuSurvol(tuile,lignes){if(!tuile)return;
+ const montre=()=>{const d=document.createElement('div');d.className='calcul-bulle';
+  lignes().forEach(([k,v],i,t)=>{const r=document.createElement('div');r.className='calcul-ligne'+(i===0?' tete':i===t.length-1?' total':'');
+   const a=document.createElement('span');a.textContent=k;const b=document.createElement('b');b.textContent=v;r.append(a,b);d.append(r)});
+  ouvrirBulle(tuile,d,'bulle-calcul')};
+ if(BULLES)surveille(tuile,montre);else tuile.title=lignes().map(([k,v])=>k+' '+v).join('\n')}
 function tuilesVives(a,tuiles,cles,carte){
  tuiles.forEach((tuile,i)=>{const [cle,plafond]=cles[i]||[];if(!cle)return;
   const gros=tuile.querySelector('strong'),ecu=tuile.querySelector('.ecu'),
@@ -521,10 +542,12 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // valeur en gros, une teinte par caractéristique, l'écu pour la DEF.
  const chiffres=document.createElement('div');chiffres.className='stat-row';
  const tuiles=[['vie','Vie',vieAffichee(a),false,a.vieMax??a.vie],['endu','Endu',enduAffichee(a)],
-  ['pv','PV',a.hp,false,a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+'+degatsDe(a)]]
+  ['pv','PV max',a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+'+degatsDe(a)]]
   .map(t=>statTile(...t));
- // Le MJ corrige un chiffre là où il le lit ; la fiche complète reste pour le reste.
- tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],['hp','max'],['def'],['dmg']],c);
+ // Le MJ corrige un chiffre là où il le lit ; les PV max se calculent, ils ne se saisissent pas.
+ tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg']],c);
+ // Au survol, le calcul : d'où viennent les PV max, et les Dégâts.
+ calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));
  chiffres.append(...tuiles);
  /* La fiche ne montre que ce que l'aventurier sait faire : une compétence à zéro
     n'apprend rien à personne et prenait une case pour rien. Le « + » ouvre la liste
@@ -752,9 +775,10 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
   ligne('Usage : '+NOM_USAGE(usageObjet(o))+(usageLimite(usageObjet(o))&&a&&usageEpuise(a,o)?' — déjà employé':''))}
  /* Un objet s'emploie à la table de jeu ; un équipement qui porte un effet aussi — la page
     Aventuriers, elle, ne fait que ranger l'inventaire. */
- if(a&&enJeu&&(col==='object'||code)){const b=document.createElement('button');b.type='button';b.className='gear-utiliser';b.textContent='Utiliser';
-  if(code&&!objetDisponible(a,o)){b.disabled=true;b.title='Déjà employé : il faut un repos pour le recharger.'}
-  b.onclick=e=>{e.stopPropagation();utiliserObjet(a,o)};d.append(b)}
+ /* Plus de bouton dans la bulle — elle s'efface quand la souris la quitte : un objet
+    s'utilise d'un clic sur son carré, en jeu comme sur la fiche. */
+ if(a&&col==='object'&&actors.includes(a)){const p=document.createElement('p');p.className='gear-astuce';
+  p.textContent=code&&!objetDisponible(a,o)?'Déjà employé : il faut un repos pour le recharger.':'Clique l’objet pour l’utiliser.';d.append(p)}
  return d}
 /* Utiliser un objet : on désigne d'abord la cible — un combattant, ou l'endroit visé pour
    ce qui frappe une zone —, puis l'effet se joue. Le journal et une annonce au-dessus de
@@ -805,6 +829,13 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
  if(typeof annonceFlottante==='function')annonceFlottante('◈ '+o.name+(dit?' · '+dit:''));
  render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();
  document.dispatchEvent(new Event('amertume-content-changed'))}
+/* Sur la table, l'objet se vise sur la carte ; ailleurs — l'onglet Aventuriers, sans carte —
+   il s'emploie sur son porteur, à moins qu'il n'inflige un état : celui-là ramène à la table
+   pour y viser sa cible. */
+function employerDepuisFiche(a,o){const surTable=typeof PAGES==='undefined'||!PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x));
+ if(surTable||objetCode(o)){utiliserObjet(a,o);return}
+ if(o.etat&&typeof showPage==='function'){showPage('table');utiliserObjet(a,o);return}
+ appliquerObjet(a,o,a,null)}
 function utiliserObjet(a,o){if(!a||!o)return;
  // Un objet qui porte un effet du moteur agit sur son porteur : il n'y a rien à désigner.
  if(objetCode(o)){appliquerEffetObjet(a,o);return}
@@ -840,7 +871,10 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
  const ouvrir=()=>{gearOuvert=cle;talentOuvert=null};
  const basculer=()=>{gearOuvert=ouvert?null:cle;if(BULLES&&ouvert)fermerBulle();redessine()};
  const equipable=(o.category==='weapon'||o.category==='armor')&&tout&&peutEquiper;
+ // Un objet d'un combattant en scène s'utilise d'un clic, pour son joueur ou le MJ.
+ const utilisable=o.category!=='weapon'&&o.category!=='armor'&&peutEquiper&&actors.includes(a);
  const agir=e=>{e.stopPropagation();
+  if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}
   /* Au survol, la description se montre seule. En jeu, le clic l'épingle — le temps
      d'aller y chercher « Utiliser » ; ailleurs, il ne sert plus qu'à équiper. */
   if(!equipable){if(BULLES){if(!tout)basculeEpingle(p,montre)}else basculer();return}
@@ -988,6 +1022,9 @@ function talent(id){return (catalog.talents||[]).find(t=>t&&t.id===id)}
 const estBonus=t=>!!t&&t.effet==='bonus';
 // « compact » : sur une fiche, la vignette ne dit que le nom — la nature et le niveau
 // encombraient une colonne étroite, et le dépliant les redit.
+/* Les niveaux de talent ne se montrent plus : ni sur les vignettes, ni dans l'arbre, ni au
+   formulaire. Ils restent enregistrés et câblés ; les rallumer, c'est passer ceci à vrai. */
+const NIVEAUX_TALENTS=false;
 function talentPill(t,compact){const [cle,court,nom]=talentType(t);
  const p=document.createElement('span');p.className='cat-pill t-'+cle;
  const logo=logoTalent(t);if(logo)p.append(logo);
@@ -996,7 +1033,7 @@ function talentPill(t,compact){const [cle,court,nom]=talentType(t);
  const socle=nomPrerequis(t,catalog.talents);
  if(!compact){const b=document.createElement('span');b.className='t-badge';b.textContent=court;b.title=nom;
   const niv=document.createElement('span');niv.className='tag';niv.textContent='Niv. '+(t.level||1);
-  p.append(b,niv);
+  p.append(b);if(NIVEAUX_TALENTS)p.append(niv);
   // La spécialisation ne s'écrit pas sur la vignette : l'arbre la montre, le formulaire la règle.
   // Une amélioration dit sur quoi elle repose : on le lit sans ouvrir la fiche.
   if(socle){const s=document.createElement('span');s.className='tag prereq';s.textContent='↳ '+socle;
@@ -1012,16 +1049,25 @@ function talentPill(t,compact){const [cle,court,nom]=talentType(t);
    chiffrés (« 1d6+2 », « +3 »). Le MJ en ajoute dans l'onglet Talents ; « **ainsi** » force
    le gras. Le texte se découpe autour d'eux, sans jamais passer par du HTML. */
 const TEINTE_ETAT_MOT={Feu:'#c2503a',Gel:'#2f8fae',Foudre:'#3a6fc2',Poison:'#5d8a2e','Saignée':'#b8352f',Onde:'#3577b8',Invisible:'#6a5fb0',Faille:'#a0408f'};
+/* La couleur d'un mot clé du MJ : « Allié : vert », « Allié = #2f8a63 », ou rien — la
+   couleur du thème. Un mot du jeu redéclaré prend la couleur qu'on lui donne. */
+const COULEURS_MOTS={rouge:'#b8352f',orange:'#c2692a',or:'#9d7b1e',jaune:'#b39222',vert:'#2f7a4b',turquoise:'#2c8c85',bleu:'#3a6fc2',violet:'#7a5cb8',rose:'#b04a8a',brun:'#8a5a2b',gris:'#6e6a66',noir:'#2a2622'};
+function lisMotCle(ligne){const s=String(ligne||'').trim();const m=s.match(/^(.+?)\s*[:=]\s*(#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?|[a-zA-Zéè]+)\s*$/);
+ if(m){const c=m[2].startsWith('#')?m[2]:COULEURS_MOTS[m[2].toLowerCase()];if(c)return {mot:m[1].trim(),couleur:c}}
+ return {mot:s,couleur:''}}
 let motsClesCache=null;
 function motsCles(){const perso=(catalog&&catalog.motsCles)||[],cle=perso.join('\u0001');
  if(motsClesCache&&motsClesCache.cle===cle)return motsClesCache;
  const table=new Map(),ajoute=(formes,couleur)=>formes.forEach(f=>{if(f&&!table.has(f))table.set(f,couleur)});
+ // Ceux du MJ qui ont une couleur passent d'abord : ils l'emportent sur ceux du jeu. Sans couleur, un mot du jeu garde la sienne.
+ const formes=mot=>[mot,mot.toLowerCase(),mot[0].toUpperCase()+mot.slice(1),mot.toUpperCase()];
+ const lus=perso.map(lisMotCle).filter(x=>x.mot);lus.filter(x=>x.couleur).forEach(x=>ajoute(formes(x.mot),x.couleur));
  const rgb=k=>typeof STAT_TINTS!=='undefined'&&STAT_TINTS[k]?'rgb('+STAT_TINTS[k]+')':'';
  ajoute(['PV max','PV'],rgb('pv'));ajoute(['DEF','Défense'],rgb('def'));ajoute(['Endurance','ENDU','Endu'],rgb('endu'));
  ajoute(['Vie','VIE'],rgb('vie'));ajoute(['Dégâts','dégâts','DÉGÂTS','Dégât','dégât'],rgb('dmg'));ajoute(['XP'],rgb('xp'));
  ETATS_JEU.forEach(x=>ajoute([x,x.toUpperCase()],TEINTE_ETAT_MOT[x]||'#a2691f'));
  ajoute(['Actions','Action','Mouvements','Mouvement','Réactions','Réaction','Objet','Passif','Critiques','Critique','Maîtrise','Amélioration'],'');
- perso.forEach(m=>{const s=String(m||'').trim();if(!s)return;ajoute([s,s.toLowerCase(),s[0].toUpperCase()+s.slice(1),s.toUpperCase()],'var(--accent)')});
+ lus.filter(x=>!x.couleur).forEach(x=>ajoute(formes(x.mot),'var(--accent)'));
  const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
  const alts=[...table.keys()].sort((x,y)=>y.length-x.length).map(esc).join('|');
  const rx=new RegExp('\\*\\*([^*\\n]+)\\*\\*|(^|[^\\p{L}\\p{N}])('+alts+'|\\d*d\\d+(?:\\s*[+−-]\\s*\\d+)?|[+−]\\d+)(?![\\p{L}\\p{N}])','gu');
@@ -1066,7 +1112,8 @@ function talentBloc(t,vif,compact){const bloc=document.createElement('span');blo
   if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};
  if(vif){champVif(pill.querySelector('.nom'),()=>t.name,v=>{const n=String(v).trim().slice(0,120);if(n){t.name=n;talentCorrige()}},'Renommer ce talent','texte');
   choixVif(pill.querySelector('.t-badge'),()=>t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]),v=>{t.type=v;talentCorrige()},'Changer le type');
-  champVif([...pill.querySelectorAll('.tag')].find(x=>x.textContent.startsWith('Niv.')),()=>t.level||1,v=>{t.level=num(v,1,20);talentCorrige()},'Changer le niveau (1 à 20)','texte')}
+  const tagNiv=[...pill.querySelectorAll('.tag')].find(x=>x.textContent.startsWith('Niv.'));
+  if(tagNiv)champVif(tagNiv,()=>t.level||1,v=>{t.level=num(v,1,20);talentCorrige()},'Changer le niveau (1 à 20)','texte')}
  bloc.append(pill,detail);return bloc}
 /* Les talents d'une fiche : une grille de deux colonnes, dans l'ordre où ils sont appris —
    le premier à gauche, le deuxième à droite. Le dépliant d'un talent s'étale sous les deux
@@ -1499,15 +1546,19 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
 $('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalents;
 $('talent-sort').onchange=renderTalents;
 $('talent-add').onclick=()=>openTalent(null);
-const motsDialog=dialog('mots-cles','Mots clés des talents','<form id="mots-form"><p class="muted">Dans les descriptions de talents, le jeu met déjà en valeur les caractéristiques (PV, DEF, Endurance, Vie, Dégâts), les états (Feu, Gel, Poison…), les points et natures (Action, Mouvement, Réaction, Passif…), les formules de dés et les bonus chiffrés. Ajoute ici les tiens, un par ligne : ils s’écriront en gras, à la couleur du thème. Dans un texte, <b>**ainsi**</b> force le gras.</p>'
- +'<label>Tes mots clés<textarea name="mots" rows="8" maxlength="4000" placeholder="Allié\nAdversaire\nau contact"></textarea></label><p class="muted" id="mots-apercu"></p><div class="form-actions"><button class="primary">Enregistrer</button></div></form>');
+const motsDialog=dialog('mots-cles','Mots clés des talents','<form id="mots-form"><p class="muted">Dans les descriptions de talents, le jeu met déjà en valeur les caractéristiques (PV, DEF, Endurance, Vie, Dégâts), les états (Feu, Gel, Poison…), les points et natures (Action, Mouvement, Réaction, Passif…), les formules de dés et les bonus chiffrés. Ajoute ici les tiens, un par ligne, et donne-leur une couleur après deux-points : <b>Allié : vert</b>, ou un code : <b>Allié : #2f8a63</b>. Sans couleur, celle du thème. Un mot du jeu redéclaré avec une couleur prend la tienne (<b>Feu : orange</b>). Dans un texte, <b>**ainsi**</b> force le gras.</p><p class="palette-mots" id="palette-mots"></p>'
+ +'<label>Tes mots clés<textarea name="mots" rows="8" maxlength="6000" placeholder="Allié : vert\nAdversaire : rouge\nau contact"></textarea></label><p class="muted" id="mots-apercu"></p><div class="form-actions"><button class="primary">Enregistrer</button></div></form>');
 function apercuMots(){const t=$('mots-form').elements.mots.value.split('\n').map(x=>x.trim()).filter(Boolean);
- const ex='Inflige +2 Dégâts et Feu à un Allié au contact : 1d6+ENDU PV, une Action.';const p=$('mots-apercu');const ancien=catalog.motsCles;catalog.motsCles=t;
+ const ex='Inflige +2 Dégâts et Feu à un Allié au contact : 1d6+ENDU PV, une Action.'+(t.length?' — '+t.map(l=>lisMotCle(l).mot).filter(Boolean).slice(0,6).join(', '):'');const p=$('mots-apercu');const ancien=catalog.motsCles;catalog.motsCles=t;
  p.replaceChildren('Aperçu : ');const s=document.createElement('span');texteEnrichi(s,ex);p.append(s);catalog.motsCles=ancien}
+// La palette : un clic sur une couleur l'ajoute à la ligne où se trouve le curseur.
+{const pal=$('palette-mots');Object.entries(COULEURS_MOTS).forEach(([nom,c])=>{const b=document.createElement('button');b.type='button';b.className='pastille-mot';b.textContent=nom;b.style.color=c;b.style.borderColor=c;
+ b.onclick=()=>{const ta=$('mots-form').elements.mots,v=ta.value,pos=ta.selectionStart??v.length,debut=v.lastIndexOf('\n',pos-1)+1,finL=v.indexOf('\n',pos),fin=finL<0?v.length:finL;
+  const ligne=v.slice(debut,fin).replace(/\s*[:=]\s*\S+\s*$/,'').trim();if(!ligne)return;ta.value=v.slice(0,debut)+ligne+' : '+nom+v.slice(fin);apercuMots();ta.focus()};pal.append(b)})}
 $('talent-mots').onclick=()=>{if(view!=='mj')return;$('mots-form').elements.mots.value=(catalog.motsCles||[]).join('\n');apercuMots();motsDialog.showModal()};
 $('mots-form').elements.mots.oninput=apercuMots;
 $('mots-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
- catalog.motsCles=[...new Set($('mots-form').elements.mots.value.split('\n').map(x=>x.trim().slice(0,40)).filter(Boolean))].slice(0,200);
+ catalog.motsCles=[...new Set($('mots-form').elements.mots.value.split('\n').map(x=>x.trim().slice(0,60)).filter(Boolean))].slice(0,200);
  motsDialog.close();renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
 const talentDialog=dialog('talent-editor','Talent','<form id="talent-form"><div id="talent-fields"></div><div class="form-actions"><button type="button" id="delete-talent">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
 let talentIndex=null,talentApres=null,talentDraft={effet:'',params:{}};
@@ -1575,7 +1626,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
      droite —, d'où un chemin redescend vers le central suivant. */
   +sel('Place dans l’arbre','branche',t.branche||'',[['','Sur l’épine — talent central'],['g','Diagonale gauche, sous le prérequis'],['d','Diagonale droite, sous le prérequis']])
   +sel('Type','type',t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]))
-  +field('Niveau','level',t.level||1,'number','min="1" max="20"')
+  +(NIVEAUX_TALENTS?field('Niveau','level',t.level||1,'number','min="1" max="20"'):'<input type="hidden" name="level" value="'+(Number(t.level)||1)+'">')
   +sel('Logo','logo',t.logo||'',[['','— aucun —'],...LOGOS_TALENT.map(l=>[l,nomLogo(l)])])
   /* Où le bouton du talent se tient à la table : avec les attaques, en grand ; sur la
      ligne des réactions, dessous ; ou nulle part — un passif se lit sur la fiche. */
@@ -1586,7 +1637,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   /* Le prérequis : un autre talent du catalogue, qu'il faudra posséder d'abord. Ni
      lui-même, ni ce qui repose déjà sur lui — sans quoi l'arbre se mordrait la queue. */
   +sel('Prérequis — talent à posséder d’abord','prerequis',t.prerequis||'',[['','— aucun —'],
-   ...(catalog.talents||[]).filter(x=>x&&x.id!==t.id&&!descendDe(x,t)).map(x=>[x.id,talentFamily(x)+' · '+x.name+' (niv. '+(x.level||1)+')'])])
+   ...(catalog.talents||[]).filter(x=>x&&x.id!==t.id&&!descendDe(x,t)).map(x=>[x.id,talentFamily(x)+' · '+x.name+(NIVEAUX_TALENTS?' (niv. '+(x.level||1)+')':'')])])
   +'<div class="t-seul"><label>Effet<textarea name="effects" rows="3" maxlength="600">'+esc(t.effects||'')+'</textarea></label>'
   /* Le texte ci-dessus se lit à la table ; celui-ci agit. On choisit l'effet dans la liste
      de ce que le moteur sait faire, puis on en règle les valeurs — plus besoin que le nom
@@ -2047,12 +2098,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const rond=document.createElement('span');rond.className='arbre-rond';
   const logo=logoTalent(t);if(logo)rond.append(logo);else rond.textContent=GLYPHES_TALENT[t.type]||'✦';
   const nom=document.createElement('span');nom.className='arbre-nom';nom.textContent=t.name;
-  const niv=document.createElement('span');niv.className='arbre-niv';niv.textContent='Niv. '+(t.level||1);
+  const niv=document.createElement('span');niv.className='arbre-niv';niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';
   /* Un nœud de bonus n'est pas un talent : son rond dit la valeur, son nom la caractéristique,
      et le nom qu'on lui a donné passe dessous. */
   if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));
    rond.textContent='+'+Math.max(1,(p&&p.valeur)|0);nom.textContent=libelleBonus(p,true).replace(/^\+\d+ /,'');
-   niv.textContent=t.name&&t.name!==libelleBonus(p,true)&&t.name!=='Nouveau talent'?t.name:'Niv. '+(t.level||1)}
+   niv.textContent=t.name&&t.name!==libelleBonus(p,true)&&t.name!=='Nouveau talent'?t.name:(NIVEAUX_TALENTS?'Niv. '+(t.level||1):'')}
+  niv.hidden=!niv.textContent;
   b.append(rond,nom,niv);
   b.title=t.name+' — '+[talentType(t)[2],t.effects].filter(Boolean).join(' · ')+(verrou?' — sous clé : requiert '+verrou:'');
   b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}};
@@ -2391,7 +2443,7 @@ function renderTalentPicker(){const boite=$('talent-picker');if(!boite)return;bo
     :draft.talents.filter(x=>x!==t.id);renderTalentPicker()};
    const n=document.createElement('span');n.className='nom';n.textContent=t.name;
    const b=document.createElement('span');b.className='t-badge';b.textContent=court;
-   const niv=document.createElement('span');niv.className='tag';niv.textContent='Niv. '+(t.level||1);
+   const niv=document.createElement('span');niv.className='tag';niv.textContent='Niv. '+(t.level||1);niv.hidden=!NIVEAUX_TALENTS;
    l.append(c,n,b,niv);l.title=t.effects||t.name;bloc.append(l)});
   boite.append(bloc)}
  if(!montres){const v=document.createElement('p');v.className='muted';

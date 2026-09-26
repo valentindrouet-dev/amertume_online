@@ -1279,14 +1279,14 @@ assert.ok(src.includes("const vraieFamille=f=>!!f&&f!=='Adversaire';")&&src.incl
    aussi un modèle du bestiaire, et un refus dit combien de mains manquent. */
 assert.ok(src.includes('function gearPills(a,tout=true)')&&page.includes('gearPills(a,false)')&&src.includes("const armurerie=tous.filter(([o])=>o.category==='weapon'||o.category==='armor');")&&src.includes("const equipement=armurerie.filter(([o])=>tout||portes(o));")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,'Objets');")&&!src.includes("chev.title='Détail'")&&!src.includes("p.querySelector('.chev').onclick=deplie;")
- &&src.includes('function utiliserObjet(a,o)')&&src.includes("b.className='gear-utiliser'")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
+ &&src.includes('function utiliserObjet(a,o)')&&src.includes("p.textContent=code&&!objetDisponible(a,o)?'Déjà employé : il faut un repos pour le recharger.':'Clique l’objet pour l’utiliser.';")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&feuille.includes('.cat-pill.gear-carre .marque-porte{display:none;position:absolute;top:-6px;left:-6px;')&&feuille.includes('.gear-detail.k-object.consommable{background:#d9e7cd;')
  &&page.includes("const nbGear=(a.weapons||[]).length+armuresDe(a).length+(a.shieldId?1:0)+(a.inventaire||[])")
  &&!src.includes('inventairesOuverts')&&!src.includes('gear-sac')&&!feuille.includes('gear-sac'),'fiche en jeu : porté et objets, coche ronde, objet utilisable');
 /* Les mains se remplacent au lieu de refuser ; en jeu, pas de sac à déplier, le clic ouvre la
    description, et un objet se vise avant de s'employer, à la table de jeu seulement. */
 assert.ok(src.includes('function libereMains(a,besoin)')&&src.includes('  else prendArme(a,o)}')&&src.includes('  else prendBouclier(a,o)}')
- &&src.includes('function gearDetail(o,a,enJeu)')&&src.includes("if(a&&enJeu&&(col==='object'||code)){const b=document.createElement('button')")&&src.includes('function appliquerObjet(a,o,vise,q)')
+ &&src.includes('function gearDetail(o,a,enJeu)')&&src.includes("if(a&&col==='object'&&actors.includes(a)){const p=document.createElement('p');p.className='gear-astuce';")&&src.includes('function appliquerObjet(a,o,vise,q)')
  &&src.includes("viserCible('◈ '+o.name+' — clique le combattant ou l’endroit visé',")&&src.includes("const equipable=(o.category==='weapon'||o.category==='armor')&&tout&&peutEquiper;")
  &&src.includes('toggleEquip(a,o);ouvrir();')&&page.includes('function viserCible(annonce,fn,refus)')&&page.includes("viserCible('✦ Clique sur la carte pour poser '+m.name,"),'mains remplacées, objet visé, description à l’équipement');
 {const t={mainsPrises:null},src2=src.slice(src.indexOf('function libereMains(a,besoin)'),src.indexOf('/* Équiper depuis l’inventaire'));
@@ -1986,7 +1986,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&src.includes("const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
-  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','auraPv','reposPris'];")
+  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','auraPv','reposPris','comaVie'];")
   &&src.includes("const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")
   &&src.includes(" ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));")&&src.includes("  if(!competenceDe(a,k))return;")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
@@ -2346,11 +2346,11 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  vm.runInContext(page.slice(page.indexOf('function nomNum(o)'),page.indexOf('/* Ce qu\'on a le droit de lire d\'un combattant')),ctxN);
  assert.equal(ctxN.actors.map(ctxN.nomNum).join('|'),'Ulfgar|Gobelin 1|Gobelin 2|Ogre');assert.equal(ctxN.nomNum({name:'Inconnu'}),'Inconnu');
  assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||view!=='mj'")&&page.includes("if(adversairesDebout()>0){combatEngage=true;return}")
-  &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" finDeCombatAuto();")
+  &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" comaAventuriers();finDeCombatAuto();")
   &&page.includes("if(finit)actors.forEach(a=>{if(a.hero)a.reposPris=false});"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos" id="repos" hidden>⛺ Repos court</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
   &&page.includes(":a.reposPris?'Repos déjà pris : il reviendra à la fin du prochain combat.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposPris=true;")
-  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris'];"),'le Repos court');
+  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie'];"),'le Repos court');
 }
 /* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
    une arme prise remplace celle de la main droite ; lâchée sur une main, elle prend cette main.
@@ -2386,4 +2386,35 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("function logAttaque(a,b,logo,corps,detail,suite){reveleAttaquant(a);")&&page.includes("log(reveles.map(nomNum).join(', ')")
   &&page.includes(" // Les numéros se lisent après la révélation : ceux qui viennent de paraître en ont un.\n const numeros=nameNumbers();"),'le journal numérote ceux qui viennent de paraître');
 }
-console.log('1478 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.271 — Le coma d'un aventurier coûte une VIE et se relève à la fin du combat ; l'onglet Aventuriers
+   montre les PV max et leur calcul ; un objet s'utilise d'un clic ; les niveaux de talent se cachent ;
+   les mots clés du MJ ont leur couleur. */
+{const coma=page.slice(page.indexOf('function comaAventuriers(){'),page.indexOf('/* Le combat finit de lui-même'));
+ const journal=[],flot=[];let enC=true;
+ const ctxC={enCombat:()=>enC,loading:false,hasState:(a,e)=>(a.states||[]).includes(e),recalculerPV:a=>{a.max=a.vie*a.endu},floatNumber:(a,t)=>flot.push(t),log:t=>journal.push(t),nomNum:a=>a.name,scheduleSave:()=>{},
+  d6:()=>4,enduAffichee:a=>a.endu,applyHeal:(a,n)=>{const g=Math.min(a.max-a.hp,n);a.hp+=g;if(a.hp>0)a.states=(a.states||[]).filter(e=>e!=='Coma');return g},actors:[]};
+ vm.createContext(ctxC);vm.runInContext(coma,ctxC);
+ const h={name:'Ulfgar',hero:true,hp:0,vie:5,endu:4,max:20,states:['Coma']};ctxC.actors.push(h,{name:'Gobelin',hero:false,hp:0,states:['Coma']});
+ ctxC.comaAventuriers();assert.equal(h.vie+'/'+h.max+'/'+h.comaVie,'4/16/true','tombé : une VIE en moins, PV max recalculés');
+ ctxC.comaAventuriers();assert.equal(h.vie,4,'la même chute ne coûte qu’une VIE');
+ ctxC.reveilDuComa(h);assert.equal(h.hp+'/'+h.comaVie+'/'+h.reposPris,'8/false/true','à la fin du combat : 1d6 + Endu, repos pris');
+ enC=false;h.hp=0;h.states=['Coma'];ctxC.comaAventuriers();assert.equal(h.vie,4,'hors combat, rien ne se perd');
+ assert.ok(page.includes(" comaAventuriers();finDeCombatAuto();")&&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur()))actors.forEach(reveilDuComa);"),'le coma se compte au rendu et se relève à la fin du combat');}
+{assert.ok(src.includes("['pv','PV max',a.max],['def','DEF',defOf(a),true],")&&src.includes("tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg']],c);")
+  &&src.includes("calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));")&&src.includes(" ecrire('.stat-tile.t-pv strong',a.max);")
+  &&feuille.includes('.calcul-ligne.total{'),'PV max et leur calcul, Dégâts détaillés');
+ const ctxD={catalog:{talents:[],items:[],classes:[{name:'Gardien',pv:2}]},bonusDe:()=>({pv:0,vie:0,endu:0,dmg:2,def:0,skills:[]}),classeDe:(cl,r)=>cl.find(c=>c.name===r),pvEspece:()=>0,auraMeneur:()=>0,degatsDe:a=>a.dmg+2};
+ vm.createContext(ctxD);vm.runInContext(src.slice(src.indexOf('function detailPvMax(a)'),src.indexOf('function calculAuSurvol(')),ctxD);
+ const pv=ctxD.detailPvMax({vie:5,endu:4,role:'Gardien',max:22});
+ assert.equal(JSON.stringify(pv.slice(3)),JSON.stringify([['Endu × Vie','4 × 5 = 20'],['Classe (Gardien)','+ 2'],['Total','22']]));
+ ctxD.bonusDe=(a,t,i)=>i===null?{dmg:2}:{dmg:2};const dg=ctxD.detailDegats({dmg:0});
+ assert.equal(JSON.stringify(dg.map(x=>x[0])),JSON.stringify(['Dégâts','Fiche (saisie)','Talents','Total']),'les +2 viennent d’un talent, la fiche dit 0');}
+{assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&peutEquiper&&actors.includes(a);")
+  &&src.includes("if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}")&&src.includes("function employerDepuisFiche(a,o){")&&!src.includes("b.className='gear-utiliser'"),'un objet s’utilise d’un clic');
+ assert.ok(src.includes("const NIVEAUX_TALENTS=false;")&&src.includes("p.append(b);if(NIVEAUX_TALENTS)p.append(niv);")&&src.includes('<select id="talent-sort" aria-label="Tri" hidden>')
+  &&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes("'<input type=\"hidden\" name=\"level\" value=\"'"),'les niveaux de talent se cachent, le câblage reste');
+ const ctxK={catalog:{motsCles:['Allié : vert','Feu : orange','Ennemi = #123456','Sans couleur','Gel']},STAT_TINTS:{pv:'1,2,3',dmg:'4,5,6',def:'0,0,0',endu:'0,0,0',vie:'0,0,0',xp:'0,0,0'},ETATS_JEU:gearApi.ETATS_JEU};
+ vm.createContext(ctxK);vm.runInContext(src.slice(src.indexOf('const TEINTE_ETAT_MOT='),src.indexOf('function texteEnrichi(')),ctxK);
+ const t=ctxK.motsCles().table;
+ assert.equal([t.get('Allié'),t.get('Feu'),t.get('Ennemi'),t.get('Sans couleur'),t.get('Gel')].join('|'),'#2f7a4b|#c2692a|#123456|var(--accent)|#2f8fae','la couleur des mots clés : nommée, en code, ou celle du thème ; un mot du jeu se recolore, ou garde la sienne sans couleur');}
+console.log('1489 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
