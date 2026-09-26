@@ -2626,9 +2626,9 @@ const ETATS_INFLIGES=()=>STATES.filter(e=>e!=='Aucun'&&e!=='Coma');
 /* Les logos d'équipement : les fichiers img/weapon_*.png, sans leur extension. Le site
    est servi tel quel, sans liste de dossier : un logo ajouté dans img/ se déclare ici —
    node checks.cjs le réclame. L'intitulé du menu vient du nom du fichier. */
-const LOGOS_EQUIPEMENT=['weapon_anneau_argent','weapon_anneau_bronze','weapon_arbalete','weapon_arc','weapon_armure','weapon_bouclier','weapon_cape','weapon_cape_elfique','weapon_cape_magique','weapon_epee','weapon_hache','weapon_lance'];
-/* Les logos d'objets, de même : les img/item_*.png. Munitions, objets et divers y puisent ;
-   armes et armures gardent les leurs. */
+const LOGOS_EQUIPEMENT=['weapon_anneau_argent','weapon_anneau_bronze','weapon_anneau_or','weapon_arbalete','weapon_arc','weapon_armure','weapon_bouclier','weapon_cape','weapon_cape_elfique','weapon_cape_magique','weapon_cotte','weapon_cuir','weapon_epee','weapon_fleches','weapon_hache','weapon_lance'];
+/* Les logos d'objets, de même : les img/item_*.png. Objets et divers y puisent, les
+   munitions aussi ; armes et armures gardent les leurs. */
 const LOGOS_OBJET=['item_healpotion'];
 // Les logos de talents, de même : les img/spell_*.png.
 const LOGOS_TALENT=['spell_orbes','spell_orbes_feu','spell_orbes_foudre','spell_orbes_gel'];
@@ -2639,8 +2639,9 @@ const LOGOS_ATTAQUE=['attack_griffes'];
 const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET];
 const nomLogo=l=>{const n=String(l||'').replace(/^(weapon|spell|item|attack)_/,'').replace(/[_-]+/g,' ');return n?n[0].toUpperCase()+n.slice(1):''};
 // Le menu de logos d'un objet dépend de sa catégorie : une arme ou une armure choisit parmi
-// les weapon_*, tout le reste parmi les item_*.
-function logosItem(o){const c=o&&o.category;return c==='weapon'||c==='armor'?LOGOS_EQUIPEMENT:LOGOS_OBJET}
+// les weapon_*, une munition parmi les deux (le carquois de flèches est un weapon_*), tout
+// le reste parmi les item_*.
+function logosItem(o){const c=o&&o.category;return c==='weapon'||c==='armor'?LOGOS_EQUIPEMENT:c==='ammo'?[...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:LOGOS_OBJET}
 /* Un logo devant un nom : un jeton, ou rien. Un logo inconnu du dossier ne se dessine
    pas — un objet importé d'ailleurs n'affiche pas une image cassée. */
 function logoImage(l,liste,cls){if(!l||!liste.includes(l))return null;
