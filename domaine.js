@@ -115,12 +115,12 @@ function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildre
 function nomEnDeux(nom){nom=String(nom||'').trim();const m=nom.match(/^(.*\S)\s*\((.+)\)$/);
  return m?[m[1],m[2].trim()]:[nom,/domaine/i.test(nom)?'':'Domaine']}
 function dessineCartouches(etiquettes,opts){const d=domaine,compte=k=>d.pnj.filter(p=>p.statut===k).length;
- const accorde=(n,mot)=>n+' '+mot+(n>1?'s':'');
- [['titre',nomEnDeux(d.nom)],['gens',[accorde(compte('habitant'),'habitant'),accorde(compte('visiteur'),'visiteur')]]].forEach(([k,lignes])=>{
-  const pt=d.carte.cartouches[k];if(!pt)return;
-  const e=document.createElement('span');e.className='dom-cartouche c-'+k;e.style.left=pt[0]+'%';e.style.top=pt[1]+'%';
-  lignes.forEach((t,i)=>{if(!t)return;const l=document.createElement(i?'small':'b');l.textContent=t;e.append(l)});
-  if(opts.deplaceCartouche){rendEtiquetteDeplacable(e,k,etiquettes,{deplace:opts.deplaceCartouche});e.title='Glisser pour déplacer l’inscription'}
+ const accorde=(n,mot)=>n+' '+mot+(n>1?'s':''),[nom,sous]=nomEnDeux(d.nom);
+ // Quatre textes décorrélés : chacun sa place, chacun se glisse seul.
+ const textes={nom,sous,habitants:accorde(compte('habitant'),'habitant'),visiteurs:accorde(compte('visiteur'),'visiteur')};
+ Object.keys(textes).forEach(k=>{const pt=d.carte.cartouches[k],t=textes[k];if(!pt||!t)return;
+  const e=document.createElement('span');e.className='dom-cartouche c-'+k;e.style.left=pt[0]+'%';e.style.top=pt[1]+'%';e.textContent=t;
+  if(opts.deplaceCartouche){rendEtiquetteDeplacable(e,k,etiquettes,{deplace:opts.deplaceCartouche});e.title='Glisser pour déplacer ce texte'}
   etiquettes.append(e)})}
 
 /* Le jeton d'un aventurier se glisse d'un bâtiment à un autre, sur le plan : lâché n'importe

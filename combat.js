@@ -1366,11 +1366,15 @@ function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
  n.notes=String(b&&b.notes||'').slice(0,2000);return n}
 function normalisePnj(p){return {id:p&&p.id||idDomaine(),nom:String(p&&p.nom||'Inconnu').slice(0,60),role:String(p&&p.role||'').slice(0,80),
  statut:p&&p.statut==='visiteur'?'visiteur':'habitant',batiment:String(p&&p.batiment||'').slice(0,60),notes:String(p&&p.notes||'').slice(0,2000)}}
-/* Les inscriptions de la carte, sur ses parchemins : le nom du domaine en haut à gauche, qui
-   y vit et qui y passe en bas à droite. Le MJ les pose où il veut, en pourcentage de la carte. */
-const CARTOUCHES_DOMAINE={titre:[13,8.5],gens:[79,92.5]};
-function cartouchesValides(c){const o={};Object.keys(CARTOUCHES_DOMAINE).forEach(k=>{const p=c&&c[k];
- o[k]=Array.isArray(p)&&p.length>=2&&Number.isFinite(Number(p[0]))&&Number.isFinite(Number(p[1]))?[borne(p[0],0,100),borne(p[1],0,100)]:[...CARTOUCHES_DOMAINE[k]]});return o}
+/* Les inscriptions de la carte, sur ses parchemins : quatre textes, chacun à sa place — le nom
+   du domaine et sa qualité en haut à gauche, les habitants et les visiteurs en bas à droite.
+   Le MJ les pose où il veut, en pourcentage de la carte. Les deux blocs d'avant (titre, gens)
+   se défont en deux lignes chacun, là où elles s'écrivaient. */
+const CARTOUCHES_DOMAINE={nom:[13,6.9],sous:[13,11.2],habitants:[79,90.9],visiteurs:[79,94.1]};
+const pointCarte=p=>Array.isArray(p)&&p.length>=2&&Number.isFinite(Number(p[0]))&&Number.isFinite(Number(p[1]))?[borne(p[0],0,100),borne(p[1],0,100)]:null;
+function cartouchesValides(c){c=c&&typeof c==='object'?c:{};const titre=pointCarte(c.titre),gens=pointCarte(c.gens);
+ const avant={nom:titre&&[titre[0],titre[1]-1.6],sous:titre&&[titre[0],titre[1]+2.7],habitants:gens&&[gens[0],gens[1]-1.6],visiteurs:gens&&[gens[0],gens[1]+1.6]};
+ const o={};Object.keys(CARTOUCHES_DOMAINE).forEach(k=>{o[k]=pointCarte(c[k])||pointCarte(avant[k])||[...CARTOUCHES_DOMAINE[k]]});return o}
 /* Le domaine relu au travers de sa déclaration, comme tout ce que le moteur enregistre :
    un domaine absent naît avec ses treize bâtiments en friche et un trésor vide. */
 function normaliseDomaine(d){d=d&&typeof d==='object'&&!Array.isArray(d)?d:{};

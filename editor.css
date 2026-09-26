@@ -1081,9 +1081,9 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 /* Les inscriptions de la carte, à l'encre sur ses parchemins, en Killam : elles grandissent avec la carte (unités de conteneur). */
 #dom-plan,#dom-canvas{container-type:inline-size}
 .dom-cartouche{position:absolute;transform:translate(-50%,-50%);text-align:center;white-space:nowrap;color:#3a2614;text-shadow:0 0 .15em #f7ecd2,0 0 .4em #f7ecd2b0;pointer-events:none;user-select:none}
-.dom-cartouche b{display:block;font:700 3.1cqw/1.05 'Killam',Georgia,serif;letter-spacing:.02em}
-.dom-cartouche small{display:block;font:700 1.45cqw/1.2 'Killam',Georgia,serif;letter-spacing:.2em;text-transform:uppercase;color:#5a3d22;margin-top:.15em}
-.dom-cartouche.c-gens b,.dom-cartouche.c-gens small{font:700 1.5cqw/1.3 'Killam',Georgia,serif;letter-spacing:.03em;text-transform:none;color:#3a2614;margin:0}
+.dom-cartouche.c-nom{font:700 3.1cqw/1.05 'Killam',Georgia,serif;letter-spacing:.02em}
+.dom-cartouche.c-sous{font:700 1.45cqw/1.2 'Killam',Georgia,serif;letter-spacing:.2em;text-transform:uppercase;color:#5a3d22}
+.dom-cartouche.c-habitants,.dom-cartouche.c-visiteurs{font:700 1.5cqw/1.3 'Killam',Georgia,serif;letter-spacing:.03em}
 .dom-cartouche.deplacable{pointer-events:auto;cursor:grab;touch-action:none}.dom-cartouche.deplacable:active{cursor:grabbing}
 .no-image .dom-cartouche{display:none}
 /* Au journal du MJ, en retrait : les étapes qu'il a posées lui-même, que les joueurs ne lisent pas. */

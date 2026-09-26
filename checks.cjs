@@ -2490,9 +2490,9 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const n=D.finances.journal.length;assert.equal(C.avancerEtape(b),true);assert.equal(b.etape,2);assert.equal(D.finances.journal.length,n,'le MJ pose une étape sans ligne');
  b.etape=3;assert.equal(C.avancerEtape(b),false);assert.equal(C.avancerEtape(null),false);
  // Les inscriptions : par défaut sur les parchemins, bornées, gardées au relu.
- assert.deepEqual(C.normaliseDomaine(null).carte.cartouches,{titre:[13,8.5],gens:[79,92.5]});
- assert.deepEqual(C.cartouchesValides({titre:[120,-4],gens:'x'}),{titre:[100,0],gens:[79,92.5]});
- assert.deepEqual(C.normaliseDomaine({carte:{cartouches:{titre:[20,10]}}}).carte.cartouches.titre,[20,10]);
+ assert.deepEqual(C.normaliseDomaine(null).carte.cartouches,{nom:[13,6.9],sous:[13,11.2],habitants:[79,90.9],visiteurs:[79,94.1]});
+ assert.deepEqual(C.cartouchesValides({nom:[120,-4],sous:'x'}).nom,[100,0]);assert.deepEqual(C.cartouchesValides({sous:'x'}).sous,[13,11.2]);
+ assert.deepEqual(C.normaliseDomaine({carte:{cartouches:{habitants:[20,10]}}}).carte.cartouches.habitants,[20,10]);
  const ctxN={};vm.createContext(ctxN);vm.runInContext(fief.slice(fief.indexOf('function nomEnDeux('),fief.indexOf('function dessineCartouches(')),ctxN);
  assert.deepEqual([...ctxN.nomEnDeux('Lamuline (Domaine)')],['Lamuline','Domaine']);assert.deepEqual([...ctxN.nomEnDeux('Lamuline')],['Lamuline','Domaine']);
  assert.deepEqual([...ctxN.nomEnDeux('Le Domaine')],['Le Domaine','']);
@@ -2505,10 +2505,15 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fief.includes("const lignes=mjDom()?f.journal:f.journal.filter(ligneDesJoueurs);")&&fief.includes("avance.onclick=()=>{if(avancerEtape(b)){renderDomaine();sauveDomaine()}};")
   &&fief.includes(" const reste=[1,2,3].filter(e=>e>b.etape);")&&!fief.includes("'Coût des étapes : '"),'le journal des joueurs sans les étapes du MJ');
  assert.ok(fief.includes(" dessineCartouches(etiquettes,opts);")&&fief.includes("deplaceCartouche:(k,pt)=>{pushDomUndo();domaine.carte.cartouches[k]=pt;renderDomaineEditeur();sauveDomaine()}")
-  &&fief.includes("accorde(compte('habitant'),'habitant'),accorde(compte('visiteur'),'visiteur')")&&feuille.includes("#dom-plan,#dom-canvas{container-type:inline-size}")
-  &&feuille.includes(".dom-cartouche b{display:block;font:700 3.1cqw/1.05 'Killam',Georgia,serif;"),'les inscriptions de la carte, en Killam, glissées dans l’éditeur');
+  &&fief.includes("habitants:accorde(compte('habitant'),'habitant'),visiteurs:accorde(compte('visiteur'),'visiteur')};")&&feuille.includes("#dom-plan,#dom-canvas{container-type:inline-size}")
+  &&feuille.includes(".dom-cartouche.c-nom{font:700 3.1cqw/1.05 'Killam',Georgia,serif;"),'les inscriptions de la carte, en Killam, glissées dans l’éditeur');
  assert.ok(!src.includes("'Passif : agit tant que la pièce est portée'")&&src.includes("if(col==='armor'){if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))ligne('DEF '")
   &&feuille.includes('.cat-carte .nom-carte{font:600 11px/1.2 system-ui;text-align:center;color:var(--ink);max-width:84px;overflow-wrap:anywhere;min-height:2.4em;display:flex;align-items:center;justify-content:center}'),'l’infobulle des bijoux allégée, les noms centrés');
  assert.ok(src.includes("function carteAjout(a,o,clic){")&&src.includes("liste.forEach(o=>grille.append(carteAjout(a,o,clic)));")&&!src.includes('Clique un objet pour l’ajouter')
   &&src.includes("$('picker-note').hidden=mode==='gear';"),'l’inventaire se remplit d’icônes, sans mode d’emploi');}
-console.log('1535 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.279 — Les inscriptions se décorrèlent : nom, qualité, habitants, visiteurs — quatre textes,
+   chacun sa place. Les deux blocs d'avant se défont là où leurs lignes s'écrivaient. */
+{const C=require('./combat.js');
+ assert.deepEqual(C.cartouchesValides({titre:[20,10],gens:[70,80]}),{nom:[20,8.4],sous:[20,12.7],habitants:[70,78.4],visiteurs:[70,81.6]},'les deux blocs d’avant se défont en quatre');
+ assert.deepEqual(C.cartouchesValides({titre:[20,10],nom:[5,5]}).nom,[5,5],'une place posée l’emporte sur l’ancien bloc');}
+console.log('1538 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
