@@ -110,7 +110,11 @@ function equippedDef(actor,items){const worn=gearOf(actor&&[...armuresDe(actor),
    à une main se tiennent ensemble et n'en font qu'une, dés cumulés — et deux exemplaires
    du même modèle cumulent aussi les leurs (v0.69). Une arme à distance se tient toujours
    à deux mains : rapière et arc court sont deux boutons, l'un au contact, l'autre au loin. */
-function weaponHands(w){return w&&w.ranged===true?2:(Number(w&&w.hands)===1?1:2)}
+/* Une arme à distance se tient à deux mains ; une arme de contact à une main, sauf si sa fiche
+   dit deux. Sans précision, une main — comme l'affichent le formulaire et la bulle : l'écart
+   faisait passer pour une arme à deux mains une épée qu'on lisait « 1 main », et elle chassait
+   le bouclier. */
+function weaponHands(w){return w&&w.ranged===true?2:(Number(w&&w.hands)===2?2:1)}
 function poolOfWeapons(armes){const dice={};
  DICE_KEYS.forEach(k=>dice[k]=Math.min(12,armes.reduce((somme,w)=>somme+(Number(w.dice&&w.dice[k])||0),0)));
  return dice}
@@ -125,9 +129,15 @@ function gearAttacks(actor,items){
     nom les énumère, et les logos sont ceux des armes du lot qui en ont un — deux au plus,
     que le bouton croise. Contact et distance ne se cumulent pas : une épée et un arc font
     deux boutons, le contact d'abord. */
+ /* La munition portée sert les armes à distance : un dé de plus, de sa couleur, et l'état
+    qu'elle inflige. Le contact n'en a que faire. */
+ const mun=actor&&actor.munitionId?gearOf([actor.munitionId],items).find(m=>m.category==='ammo')||null:null;
  const attaque=(lot,range)=>{const groupes=new Map();lot.forEach(w=>groupes.set(w,(groupes.get(w)||0)+1));
-  return {name:[...groupes].map(([w,n])=>w.name+(n>1?' ×'+n:'')).join(' + '),dice:poolOfWeapons(lot),range,
-   targets:'one',useOwnDamage:true,effects:{},etats:etatsDArmes(lot),logos:lot.filter(w=>w.logo).map(w=>String(w.logo)).slice(0,2),gear:true}};
+  const tire=range==='distance'&&mun,dice=poolOfWeapons(lot);
+  if(tire&&DICE_KEYS.includes(mun.munDe))dice[mun.munDe]=Math.min(12,(dice[mun.munDe]||0)+1);
+  const etats=[...new Set([...etatsDArmes(lot),...(tire&&mun.etat?[mun.etat]:[])])];
+  return {name:[...groupes].map(([w,n])=>w.name+(n>1?' ×'+n:'')).join(' + ')+(tire?' · '+mun.name:''),dice,range,
+   targets:'one',useOwnDamage:true,effects:{},etats,logos:lot.filter(w=>w.logo).map(w=>String(w.logo)).slice(0,2),gear:true,munition:tire?mun.id:null}};
  const contact=armes.filter(w=>w.ranged!==true),distance=armes.filter(w=>w.ranged===true);
  const sorties=[];if(contact.length)sorties.push(attaque(contact,'contact'));if(distance.length)sorties.push(attaque(distance,'distance'));
  return sorties}

@@ -57,7 +57,7 @@ assert.deepEqual(gearApi.attackChoices({weapons:['rap','dag'],attacks:[]},PANOPL
 assert.equal(gearApi.gearAttacks({weapons:['hache','hache']},PANOPLIE)[0].dice.black,6); // Deux exemplaires cumulent.
 assert.equal(gearApi.weaponHands({ranged:true,hands:1}),2);  // Une arme à distance tient toujours à deux mains.
 assert.equal(gearApi.weaponHands({hands:1}),1);
-assert.equal(gearApi.weaponHands({}),2);                     // Sans précision, deux mains : c'est le cas courant.
+assert.equal(gearApi.weaponHands({}),1);                     // Sans précision, une main — comme l'affichent le formulaire et la bulle.
 // Un passage secret : un mur pour la troupe tant qu'il est clos, une porte une fois ouvert.
 assert.equal(gearApi.doorHiddenFrom({secret:true,open:false},false),true);
 assert.equal(gearApi.doorHiddenFrom({secret:true,open:false},true),false);   // Le MJ le voit toujours.
@@ -1264,7 +1264,7 @@ assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.fi
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
- &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armures','shieldId','auraPv',")&&page.includes("const nbGear=(a.weapons||[]).length+armuresDe(a).length+(a.shieldId?1:0)+(a.inventaire||[])")
+ &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armures','shieldId','munitionId','auraPv',")&&page.includes("const nbGear=(a.weapons||[]).length+armuresDe(a).length+(a.shieldId?1:0)+(a.inventaire||[])")
  &&feuille.includes('.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}')&&feuille.includes('.cat-pill.gear-carre.dispo{opacity:.55}')&&feuille.includes('.gear-rangee-titre{flex-basis:100%;')
  &&feuille.includes('.best-attaque{background:#cfdcea;border:1px solid #00000026;border-left:4px solid #4f7fb5;border-radius:9px;'),'inventaire, équipement et attaques spéciales');
 /* Fiche d'un modèle : plus de cartouche « Adversaire », le type porte sa couleur comme tout le bloc,
@@ -1287,7 +1287,7 @@ assert.ok(src.includes('function gearPills(a,tout=true)')&&page.includes('gearPi
    description, et un objet se vise avant de s'employer, à la table de jeu seulement. */
 assert.ok(src.includes('function libereMains(a,besoin)')&&src.includes('  else prendArme(a,o)}')&&src.includes('  else prendBouclier(a,o)}')
  &&src.includes('function gearDetail(o,a,enJeu)')&&src.includes("if(a&&col==='object'&&actors.includes(a)){const p=document.createElement('p');p.className='gear-astuce';")&&src.includes('function appliquerObjet(a,o,vise,q)')
- &&src.includes("viserCible('◈ '+o.name+' — clique le combattant ou l’endroit visé',")&&src.includes("const equipable=(o.category==='weapon'||o.category==='armor')&&tout&&peutEquiper;")
+ &&src.includes("viserCible('◈ '+o.name+' — clique le combattant ou l’endroit visé',")&&src.includes("const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper;")
  &&src.includes('toggleEquip(a,o);ouvrir();')&&page.includes('function viserCible(annonce,fn,refus)')&&page.includes("viserCible('✦ Clique sur la carte pour poser '+m.name,"),'mains remplacées, objet visé, description à l’équipement');
 {const t={mainsPrises:null},src2=src.slice(src.indexOf('function libereMains(a,besoin)'),src.indexOf('/* Équiper depuis l’inventaire'));
  assert.ok(src2.includes('while(mainsPrises(a)+besoin>2)')&&src2.includes('if(a.weapons.length){a.weapons.shift();n++}')&&src2.includes("else if(a.shieldId){a.shieldId='';n++}"),'les mains se libèrent du plus ancien');}
@@ -1986,7 +1986,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&src.includes("const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
-  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','auraPv','reposPris','comaVie'];")
+  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','comaVie'];")
   &&src.includes("const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")
   &&src.includes(" ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));")&&src.includes("  if(!competenceDe(a,k))return;")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
@@ -2409,7 +2409,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(JSON.stringify(pv.slice(3)),JSON.stringify([['Endu × Vie','4 × 5 = 20'],['Classe (Gardien)','+ 2'],['Total','22']]));
  ctxD.bonusDe=(a,t,i)=>i===null?{dmg:2}:{dmg:2};const dg=ctxD.detailDegats({dmg:0});
  assert.equal(JSON.stringify(dg.map(x=>x[0])),JSON.stringify(['Dégâts','Fiche (saisie)','Talents','Total']),'les +2 viennent d’un talent, la fiche dit 0');}
-{assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&peutEquiper&&actors.includes(a);")
+{assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&peutEquiper&&actors.includes(a);")
   &&src.includes("if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}")&&src.includes("function employerDepuisFiche(a,o){")&&!src.includes("b.className='gear-utiliser'"),'un objet s’utilise d’un clic');
  assert.ok(src.includes("const NIVEAUX_TALENTS=false;")&&src.includes("p.append(b);if(NIVEAUX_TALENTS)p.append(niv);")&&src.includes('<select id="talent-sort" aria-label="Tri" hidden>')
   &&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes("'<input type=\"hidden\" name=\"level\" value=\"'"),'les niveaux de talent se cachent, le câblage reste');
@@ -2417,4 +2417,26 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  vm.createContext(ctxK);vm.runInContext(src.slice(src.indexOf('const TEINTE_ETAT_MOT='),src.indexOf('function texteEnrichi(')),ctxK);
  const t=ctxK.motsCles().table;
  assert.equal([t.get('Allié'),t.get('Feu'),t.get('Ennemi'),t.get('Sans couleur'),t.get('Gel')].join('|'),'#2f7a4b|#c2692a|#123456|var(--accent)|#2f8fae','la couleur des mots clés : nommée, en code, ou celle du thème ; un mot du jeu se recolore, ou garde la sienne sans couleur');}
-console.log('1489 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.272 — Une arme sans nombre de mains en tient une ; les munitions ont leur emplacement, sous la
+   main droite, et donnent aux armes à distance un dé et un état ; la pastille de classe se présente
+   au survol et ouvre l'arbre au clic ; le Catalogue officiel quitte l'armurerie. */
+{const I={e:{id:'e',category:'weapon'},b:{id:'b',category:'armor',slot:'shield'}};
+ const ctxM={objetDe:id=>I[id]||null,weaponHands:gearApi.weaponHands,emplacementDe:gearApi.emplacementDe,gearCount:(a,id)=>(a.weapons||[]).filter(x=>x===id).length,armuresDe:gearApi.armuresDe,catalog:{items:Object.values(I)},placesLibres:()=>1};
+ vm.createContext(ctxM);vm.runInContext(src.slice(src.indexOf('function mainsPrises(a)'),src.indexOf('/* Faire de la place à un emplacement')),ctxM);
+ const a={inventaire:['e','e','b'],weapons:['e'],shieldId:'b'};ctxM.prendArme(a,I.e);assert.equal(a.weapons.join('+')+'/'+a.shieldId,'e/b','une arme sans nombre de mains ne chasse plus le bouclier');}
+{const items=[{id:'arc',name:'Arc',category:'weapon',ranged:true,hands:2,dice:{white:1,bone:1}},{id:'ep',name:'Épée',category:'weapon',hands:1,dice:{white:2}},
+  {id:'fl',name:'Flèches de feu',category:'ammo',munDe:'red',etat:'Feu'}];
+ const h={weapons:['arc'],munitionId:'fl'};const tir=gearApi.gearAttacks(h,items)[0];
+ assert.equal(tir.dice.red+'/'+tir.dice.white+'/'+tir.dice.bone+'/'+tir.etats.join(',')+'/'+tir.munition,'1/1/1/Feu/fl','la munition : un dé rouge et Feu au tir');
+ assert.match(tir.name,/Arc · Flèches de feu/);
+ const cac=gearApi.gearAttacks({weapons:['ep'],munitionId:'fl'},items)[0];assert.equal(cac.dice.red+'/'+cac.etats.length+'/'+cac.munition,'0/0/null','le contact n’en a que faire');
+ assert.equal(gearApi.gearAttacks({weapons:['arc']},items)[0].dice.red,0,'sans munition, rien de plus');}
+{assert.ok(src.includes("if(place&&n0>=1&&n0<=2){const v=document.createElement('i');v.className='die-sq die-munition';")&&src.includes("p.append(dicePips(o.dice,o.etat,col==='ranged'));")
+  &&feuille.includes('.die-sq.die-munition{background:none;border:1.5px dashed var(--line-strong);'),'le dé vide des armes à distance');
+ assert.ok(src.includes("['munitions','Munitions',munition],['anneau','Anneau',anneaux[0]||null],")&&src.includes("if(cle==='anneau'){groupeAnneaux.append(pl);")
+  &&src.includes("else if(o.category==='ammo')a.munitionId=a.munitionId===o.id?'':o.id;")&&src.includes("sel('Dé ajouté aux armes à distance','munDe',")
+  &&feuille.includes('.corps .anneaux-groupe{grid-column:2 / 4;display:flex;justify-content:flex-end;')&&vivant.includes("'shieldId','munitionId',"),'l’emplacement des munitions');
+ assert.ok(src.includes("const ouvre=()=>{if(typeof peutVoirArbres==='function'&&peutVoirArbres(a))openArbres(a);else if(view==='mj')openArbresClasse(nomCl)};")
+  &&src.includes("k.textContent='Bonus de PV max';")&&!src.includes('armory-official')
+  &&feuille.includes('.calcul-bulle{display:flex;flex-direction:column;gap:3px;min-width:220px;font-size:13px;background:var(--panel);'),'la pastille de classe, la bulle lisible, plus de Catalogue officiel');}
+console.log('1497 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

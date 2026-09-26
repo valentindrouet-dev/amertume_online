@@ -12,7 +12,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
+function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
  a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};
  a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};
  a.checks=Array.isArray(a.checks)?POINTS_CLES.map((q,i)=>Math.max(0,Math.min(pointsMax(a,q),a.checks[i]===true?1:Math.trunc(Number(a.checks[i]))||0))):[0,0,0];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
@@ -224,7 +224,7 @@ const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-for
 const armoryPage=document.createElement('main');armoryPage.id='armory-page';
 armoryPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Armurerie</h2><div class="cat-actions">'
- +'<button id="armory-official">Catalogue officiel</button><button id="armory-add" class="primary">+ Ajouter</button></div></header>'
+ +'<button id="armory-add" class="primary">+ Ajouter</button></div></header>'
  
  +'<div class="cat-filters"><input id="armory-search" placeholder="Rechercher…" aria-label="Rechercher un objet">'
  +'<select id="armory-cat" aria-label="Catégorie"><option value="">Toutes catégories</option>'
@@ -514,6 +514,19 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const classe=document.createElement('span');classe.className='sheet-class';
  classe.textContent=(a.role||'Aventurier').split('·')[0].trim().toUpperCase();
  classe.style.color=classe.style.borderColor=teinte;
+ /* Au survol, la classe se présente : son nom, ce qu'elle apporte aux PV, sa description. Au
+    clic, son arbre de talents s'ouvre — celui de l'aventurier, ou celui de la classe pour le MJ. */
+ {const cl=classeDe(catalog.classes,a.role),nomCl=cl&&cl.name||(a.role||'Aventurier').split('·')[0].trim();
+  classe.classList.add('cliquable');classe.setAttribute('role','button');classe.tabIndex=0;classe.setAttribute('aria-label','Arbre de talents de '+nomCl);
+  const ouvre=()=>{if(typeof peutVoirArbres==='function'&&peutVoirArbres(a))openArbres(a);else if(view==='mj')openArbresClasse(nomCl)};
+  classe.onclick=ev=>{ev.stopPropagation();fermerBulle();ouvre()};classe.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();ouvre()}};
+  const montre=()=>{const d=document.createElement('div');d.className='calcul-bulle classe-bulle';
+   const t=document.createElement('div');t.className='calcul-ligne tete';const n=document.createElement('span');n.textContent=nomCl;n.style.color=teinte;t.append(n);d.append(t);
+   const pv=cl?Number(cl.pv)||0:0;const l=document.createElement('div');l.className='calcul-ligne';const k=document.createElement('span');k.textContent='Bonus de PV max';const v=document.createElement('b');v.textContent=(pv>=0?'+ ':'− ')+Math.abs(pv);l.append(k,v);d.append(l);
+   const texte=cl&&(cl.description||cl.notes);if(texte){const p=document.createElement('p');p.className='classe-texte';p.textContent=texte;d.append(p)}
+   const aide=document.createElement('p');aide.className='classe-aide';aide.textContent='Clique pour ouvrir l’arbre de talents.';d.append(aide);
+   ouvrirBulle(classe,d,'bulle-calcul')};
+  if(BULLES)surveille(classe,montre);else classe.title=nomCl+' — bonus de PV max '+(cl?cl.pv:0)}
  const outils=document.createElement('span');outils.className='cat-tools';
  const ico=(g,t,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=g;
   b.title=t;b.setAttribute('aria-label',t+' '+a.name);b.onclick=fn;return b};
@@ -636,11 +649,14 @@ function etatPastille(etat){if(!etat)return null;
  if(nom){const im=document.createElement('img');im.src=imgUrl(nom+'.png');im.alt='';im.draggable=false;s.append(im)}
  else{s.classList.add('sans-jeton');s.textContent=etat[0]}
  return s}
-function dicePips(dice,etat){const out=document.createElement('span');out.className='pips';
- const e=etatPastille(etat);if(e)out.append(e);
+/* « place » : une arme à distance qui n'a qu'un ou deux dés montre, tout à droite, un dé vide
+   de même taille — la place qu'une munition peut remplir. */
+function dicePips(dice,etat,place){const out=document.createElement('span');out.className='pips';
+ const e=etatPastille(etat);if(e)out.append(e);let n0=0;
  DIE_ORDER.forEach(c=>{for(let n=0;n<(dice&&dice[keys[c]]||0);n++){
-  const d=document.createElement('i');d.className='die-sq';
+  const d=document.createElement('i');d.className='die-sq';n0++;
   d.style.setProperty('--face',dieFace(c));d.title=types[c];out.append(d)}});
+ if(place&&n0>=1&&n0<=2){const v=document.createElement('i');v.className='die-sq die-munition';v.title='Place d’une munition';out.append(v)}
  return out}
 function itemColumn(a){return a.category==='armor'?'armor'
  :a.category==='weapon'?(a.ranged?'ranged':'melee'):'object'}
@@ -743,13 +759,15 @@ function ouvrirBulle(ancre,contenu,classe){retireBulle();if(!ancreVisible(ancre)
    objet, dont les carrés se décalaient sans qu'on y touche. */
 let gearOuvert=null;
 const cleGear=(a,o)=>(a&&a.id||'?')+'|'+(o&&o.id||'?');
-function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor';
+function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
  const logo=logoEquipement(o);
  if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':'⚔';p.append(g)}
  if(col==='armor')p.append(shieldBadge(o.def||0));
- else if(col!=='object')p.append(dicePips(o.dice,o.etat));
+ else if(col!=='object')p.append(dicePips(o.dice,o.etat,col==='ranged'));
+ // Une munition montre ce qu'elle ajoute : son dé, son état.
+ else if(o.category==='ammo'&&(o.munDe||o.etat))p.append(dicePips(o.munDe?{[o.munDe]:1}:{},o.etat));
  if(n>1){const x=document.createElement('span');x.className='exemplaires';x.textContent=(portes>1?portes+'/':'×')+n;p.append(x)}
  p.title=o.name+(portes?' — porté':'');p.setAttribute('aria-label',p.title);
  return p}
@@ -763,7 +781,8 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  normaliseBonusEquip(o.bonus).forEach(b=>ligne(libelleBonus(b),'gear-bonus'));
  if(col==='armor')ligne('DEF '+(o.def||0)+' · '+NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase());
  else if(col!=='object')ligne((o.hands===2?'2 mains':'1 main')+(col==='ranged'?' · à distance':' · au contact'));
- if(o.etat)ligne('Inflige : '+o.etat);
+ if(o.category==='ammo'){const k=keys.indexOf(o.munDe);ligne('Munition : '+(k>=0?'+1 dé '+types[k]:'aucun dé')+' aux armes à distance portées');ligne(o.etat?'Leur tir inflige : '+o.etat:'')}
+ else if(o.etat)ligne('Inflige : '+o.etat);
  /* Un objet dit ce qu'il fait et s'utilise d'un bouton : l'effet part au journal de la
     table, et un consommable quitte l'inventaire. Le moteur ne devine rien de plus. */
  if(col==='object')ligne(o.effects||o.notes||'Effet à préciser dans l’armurerie.');
@@ -870,9 +889,9 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
  // Une seule description à la fois : ouvrir celle d'un objet referme celle d'un talent.
  const ouvrir=()=>{gearOuvert=cle;talentOuvert=null};
  const basculer=()=>{gearOuvert=ouvert?null:cle;if(BULLES&&ouvert)fermerBulle();redessine()};
- const equipable=(o.category==='weapon'||o.category==='armor')&&tout&&peutEquiper;
- // Un objet d'un combattant en scène s'utilise d'un clic, pour son joueur ou le MJ.
- const utilisable=o.category!=='weapon'&&o.category!=='armor'&&peutEquiper&&actors.includes(a);
+ const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper;
+ // Un objet d'un combattant en scène s'utilise d'un clic, pour son joueur ou le MJ ; une munition se porte.
+ const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&peutEquiper&&actors.includes(a);
  const agir=e=>{e.stopPropagation();
   if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}
   /* Au survol, la description se montre seule. En jeu, le clic l'épingle — le temps
@@ -892,10 +911,11 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
  p.detailPlie=detail;return p}
 let gearGlisse=null;
 // L'emplacement où va une pièce : ses mains pour une arme ou un bouclier, le sien pour une armure.
-function placeDe(o){return o.category==='weapon'||emplacementDe(o)==='shield'?'main':emplacementDe(o)}
+function placeDe(o){return o.category==='ammo'?'munitions':o.category==='weapon'||emplacementDe(o)==='shield'?'main':emplacementDe(o)}
 /* Équiper une pièce de plus, ou en reposer une : les deux moitiés du basculement, pour le
    glisser-déposer qui sait où il va. */
 function equiperPiece(a,o){if(!a||!o)return false;const dans=(a.inventaire||[]).filter(x=>x===o.id).length;
+ if(o.category==='ammo'){if(!dans||a.munitionId===o.id)return false;a.munitionId=o.id;syncEquipped(a);return true}
  if(o.category==='weapon'){if(gearCount(a,o.id)>=dans)return false;prendArme(a,o);return true}
  if(o.category!=='armor')return false;
  if(emplacementDe(o)==='shield'){if(a.shieldId===o.id)return false;prendBouclier(a,o);return true}
@@ -915,6 +935,7 @@ function equiperDansMain(a,o,cote){if(!a||!o)return false;const dans=(a.inventai
   while(mainsPrises(a)>2){if(a.weapons.length>1)a.weapons.pop();else if(a.shieldId)a.shieldId='';else break}}
  return true}
 function reposerPiece(a,o){if(!a||!o)return false;
+ if(o.category==='ammo'){if(a.munitionId!==o.id)return false;a.munitionId='';syncEquipped(a);return true}
  if(o.category==='weapon'){const i=(a.weapons||[]).lastIndexOf(o.id);if(i<0)return false;a.weapons.splice(i,1);return true}
  if(o.category!=='armor')return false;
  if(emplacementDe(o)==='shield'){if(a.shieldId!==o.id)return false;a.shieldId='';return true}
@@ -932,7 +953,7 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);
  const possede=(a.inventaire&&a.inventaire.length)?a.inventaire:[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean);
  const comptes=new Map();possede.map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
- const portes=o=>o.category==='weapon'?gearCount(a,o.id):o.id===a.shieldId?1:armuresDe(a).filter(x=>x===o.id).length;
+ const portes=o=>o.category==='weapon'?gearCount(a,o.id):o.category==='ammo'?(o.id===a.munitionId?1:0):o.id===a.shieldId?1:armuresDe(a).filter(x=>x===o.id).length;
  const corps=document.createElement('div');corps.className='corps';corps.innerHTML=SILHOUETTE;
  /* Les mains, vues de face : la main droite de l'aventurier est à gauche de l'image. Elle tient
     la première arme — la main de base. La gauche tient le bouclier, ou la seconde arme ; une
@@ -941,21 +962,24 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  const droite=armes[0]||null,gauche=droite&&weaponHands(droite)===2?{deux:droite}:(bouclier||armes[1]||null);
  const anneaux=portesA(a,'anneau',catalog.items).map(objetDe).filter(Boolean);
  const seul=slot=>{const id=portesA(a,slot,catalog.items)[0];return id?objetDe(id):null};
+ /* Sous la main droite, les munitions ; les trois anneaux se serrent à droite de la même rangée. */
+ const munition=a.munitionId?objetDe(a.munitionId):null;
  const places=[['dos','Dos',seul('dos')],['tete','Tête',seul('tete')],['amulette','Amulette',seul('amulette')],
   ['main','Main droite',droite],['torse','Torse',seul('torse')],['main','Main gauche',gauche],
-  ['anneau','Anneau',anneaux[0]||null],['anneau','Anneau',anneaux[1]||null],['anneau','Anneau',anneaux[2]||null],['bottes','Bottes',seul('bottes')]];
- places.forEach(([cle,nom,o],k)=>{const pl=document.createElement('div');pl.className='place p-'+cle+(k===9?' bottes':'');pl.dataset.place=cle;if(cle==='main')pl.dataset.main=k===3?'droite':'gauche';
+  ['munitions','Munitions',munition],['anneau','Anneau',anneaux[0]||null],['anneau','Anneau',anneaux[1]||null],['anneau','Anneau',anneaux[2]||null],['bottes','Bottes',seul('bottes')]];
+ const groupeAnneaux=document.createElement('div');groupeAnneaux.className='anneaux-groupe';
+ places.forEach(([cle,nom,o],k)=>{const pl=document.createElement('div');pl.className='place p-'+cle+(cle==='bottes'?' bottes':'');pl.dataset.place=cle;if(cle==='main')pl.dataset.main=k===3?'droite':'gauche';
   const l=document.createElement('span');l.className='nom-place';l.textContent=nom;pl.append(l);
   if(o&&o.deux){const p=gearCarre(o.deux,1,1);p.classList.add('deux-mains');p.removeAttribute('title');p.setAttribute('aria-label',o.deux.name+' — à deux mains');pl.append(p)}
   else if(o)pl.append(carreDeFiche(a,o,1,true,portes,peutEquiper,true));
   else{const v=document.createElement('span');v.className='vide';v.textContent='·';pl.append(v)}
-  corps.append(pl)});
+  if(cle==='anneau'){groupeAnneaux.append(pl);if(!groupeAnneaux.isConnected)corps.append(groupeAnneaux)}else corps.append(pl)});
  out.append(corps);
  // Le sac : ce qui n'est pas porté, puis les objets.
  const sac=document.createElement('div');sac.className='sac gear-grille';
  const titre=document.createElement('span');titre.className='gear-rangee-titre';titre.textContent='Inventaire';sac.append(titre);
  let rien=true;
- [...comptes.entries()].forEach(([o,n])=>{const equipement=o.category==='weapon'||o.category==='armor';
+ [...comptes.entries()].forEach(([o,n])=>{const equipement=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
   const reste=equipement?n-portes(o):n;if(reste<=0)return;rien=false;
   const p=carreDeFiche(a,o,reste,true,()=>0,peutEquiper,equipement?false:undefined);
   /* Au survol, une petite croix rouge retire un exemplaire de l'inventaire — après confirmation.
@@ -1788,6 +1812,8 @@ function toggleEquip(a,o){if(!a||!o)return 'Rien à équiper.';
  else if(o.category==='armor'&&emplacementDe(o)==='shield'){
   if(a.shieldId===o.id)a.shieldId='';
   else prendBouclier(a,o)}
+ // Une munition se porte ou se repose ; une autre prend sa place.
+ else if(o.category==='ammo')a.munitionId=a.munitionId===o.id?'':o.id;
  /* Une pièce d'équipement va à son emplacement, qui a ses places : trois anneaux, un
     torse, un dos… Plein, c'est la plus ancienne pièce qui cède la sienne, comme les mains. */
  else if(o.category==='armor'){const slot=emplacementDe(o);
@@ -1807,6 +1833,7 @@ function retirerInventaire(a,o){if(!a||!o)return;a.inventaire??=[];const i=a.inv
  else if(o.category==='armor'){a.armures=armuresDe(a);
   while(a.armures.filter(x=>x===o.id).length>reste){const k=a.armures.lastIndexOf(o.id);a.armures.splice(k,1)}
   if(!reste&&a.shieldId===o.id)a.shieldId=''}
+ else if(o.category==='ammo'&&!reste&&a.munitionId===o.id)a.munitionId='';
  syncEquipped(a)}
 const pickerDialog=dialog('picker','Équiper','<p class="muted" id="picker-note"></p>'
  +'<input id="picker-search" placeholder="Rechercher…" aria-label="Rechercher">'
@@ -2279,12 +2306,6 @@ function noterReglage(texte){const n=$('raccourcis-erreur');if(!n)return;
 function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();renderBestiary()}
 $('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;
 $('armory-add').onclick=()=>openItem(null);
-$('armory-official').onclick=()=>{
- if(!confirm('Réinstaller le catalogue officiel d’amertume_rpg ? Les objets que tu as ajoutés sont conservés, les objets officiels reprennent leurs valeurs d’origine.'))return;
- const officiels=AMERTUME_CATALOG.items.filter(o=>o.official);
- const gardes=catalog.items.filter(a=>!officiels.some(o=>o.name===a.name));
- catalog.items=[...structuredClone(officiels),...gardes];
- renderArmory();scheduleSave();log('Catalogue officiel réinstallé.')};
 $('bestiary-search').oninput=renderBestiary;$('bestiary-family').onchange=renderBestiary;
 $('bestiary-sort').onchange=renderBestiary;
 // Depuis le bestiaire, un nouveau monstre est un modèle : il s'y range, sans entrer en scène.
@@ -2611,6 +2632,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  for(const k of ['qty','price','hands','def'])if(f[k])a[k]=num(f[k].value,0,999999);
  // « consommable » n'a plus de case : c'est l'usage qui le dit, plus haut.
  for(const k of ['usesAmmo'])if(f[k])a[k]=f[k].checked;
+ if(f.munDe)a.munDe=keys.includes(f.munDe.value)?f.munDe.value:'';
  if(f.itemdie0)a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));
  return a}
 /* Une arme ne porte pas de DEF, une armure pas de dés : le formulaire ne montre que les
@@ -2650,6 +2672,10 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +(arme?'<p class="etiquette">Dés de l’arme</p>'+poolFields(poolFrom(a.dice),'itemdie')
    +sel('État infligé','etat',a.etat||'',[['','—'],...ETATS_INFLIGES().map(e=>[e,e])]):'')
   +(arme&&a.ranged?'<label class="field-check"><input name="usesAmmo" type="checkbox" '+(a.usesAmmo?'checked':'')+'>Munitions nécessaires</label>':'')
+  /* Une munition portée donne aux armes à distance un dé de plus, de sa couleur, et l'état
+     qu'elle inflige — l'un, l'autre, ou les deux. */
+  +(a.category==='ammo'?'<div class="edit-grid">'+sel('Dé ajouté aux armes à distance','munDe',a.munDe||'',[['','— aucun —'],...keys.map((k,i)=>[k,types[i]]).filter(([k])=>k!=='green')])
+   +sel('État infligé par le tir','etat',a.etat||'',[['','—'],...ETATS_INFLIGES().map(x=>[x,x])])+'</div>':'')
   +'<label>Notes<textarea name="notes">'+esc(a.notes||'')+'</textarea></label>'
   /* Ce que l'objet fait quand on s'en sert, et comment on en use : la même grammaire que
      les talents — on choisit l'effet, puis on le règle. */
