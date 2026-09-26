@@ -877,7 +877,14 @@ function appliquerObjet(a,o,vise,q){
    en jeu, le clic sur un objet l'épingle — le temps d'aller y chercher « Utiliser » ;
    là où tout l'inventaire est offert, le clic équipe une arme, une armure, un bouclier —
    en remplaçant ce qu'il faut. « porte » : ce qui est déjà porté, pour la coche. */
+/* Une arme à distance portée, munition en place : la place vide de son dé prend le dé de la
+   munition — ce que le tir lancera vraiment. */
+function remplitMunition(p,a,o){if(!p||!a||!a.munitionId||!o||o.category!=='weapon'||o.ranged!==true)return p;
+ const mun=objetDe(a.munitionId),k=mun&&mun.category==='ammo'?keys.indexOf(mun.munDe):-1,place=p.querySelector('.die-munition');
+ if(place&&k>=0){place.classList.remove('die-munition');place.classList.add('die-charge');place.style.setProperty('--face',dieFace(k));place.title=types[k]+' — '+mun.name}
+ return p}
 function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n,portes(o)),detail=gearDetail(o,a,!tout);
+ if(portes(o))remplitMunition(p,a,o);
  const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert||BULLES;
  const montre=()=>{gearOuvert=cle;talentOuvert=null;
   const d=gearDetail(o,a,!tout);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')};
@@ -970,7 +977,7 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  const groupeAnneaux=document.createElement('div');groupeAnneaux.className='anneaux-groupe';
  places.forEach(([cle,nom,o],k)=>{const pl=document.createElement('div');pl.className='place p-'+cle+(cle==='bottes'?' bottes':'');pl.dataset.place=cle;if(cle==='main')pl.dataset.main=k===3?'droite':'gauche';
   const l=document.createElement('span');l.className='nom-place';l.textContent=nom;pl.append(l);
-  if(o&&o.deux){const p=gearCarre(o.deux,1,1);p.classList.add('deux-mains');p.removeAttribute('title');p.setAttribute('aria-label',o.deux.name+' — à deux mains');pl.append(p)}
+  if(o&&o.deux){const p=remplitMunition(gearCarre(o.deux,1,1),a,o.deux);p.classList.add('deux-mains');p.removeAttribute('title');p.setAttribute('aria-label',o.deux.name+' — à deux mains');pl.append(p)}
   else if(o)pl.append(carreDeFiche(a,o,1,true,portes,peutEquiper,true));
   else{const v=document.createElement('span');v.className='vide';v.textContent='·';pl.append(v)}
   if(cle==='anneau'){groupeAnneaux.append(pl);if(!groupeAnneaux.isConnected)corps.append(groupeAnneaux)}else corps.append(pl)});

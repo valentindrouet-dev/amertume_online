@@ -290,7 +290,8 @@ button.btn-analyse[hidden]{display:none}
 /* La place d'une munition, sur le carré d'une arme à distance : un dé vide, en pointillés. */
 .die-sq.die-munition{background:none;border:1.5px dashed var(--line-strong);border-radius:5px;box-sizing:border-box;opacity:.85}
 /* Sous la main droite, les munitions ; les anneaux serrés à droite, sur les deux autres colonnes. */
-.corps .anneaux-groupe{grid-column:2 / 4;display:flex;justify-content:flex-end;gap:4px}.corps .anneaux-groupe .place{flex:0 0 auto;min-width:74px}
+.corps .anneaux-groupe{grid-column:2 / 4;display:flex;justify-content:flex-end;gap:4px;box-sizing:border-box;padding-right:max(0px,calc((100% - 6px) / 4 - 34.5px))}.corps .anneaux-groupe .place{flex:0 0 auto;min-width:69px}
+/* Le dernier anneau se centre sous la main gauche : la marge droite du groupe vaut une demi-colonne moins un demi-carré. */
 .corps-sac.glisse-munitions .place.p-munitions .vide,.corps-sac.glisse-munitions .place.p-munitions .gear-carre{outline:2px solid var(--green);outline-offset:2px}.calcul-ligne{display:flex;justify-content:space-between;gap:14px}
 .calcul-ligne.tete{font-weight:700;border-bottom:1px solid var(--line);padding-bottom:3px;margin-bottom:2px}.calcul-ligne.total{border-top:1px solid var(--line);padding-top:3px;margin-top:2px;font-weight:700}
 .gear-astuce{margin:6px 0 0;font:600 12px system-ui;color:var(--muted)}.attack-card .attack-info,.attack-card .summary,.attack-card #attack-help{margin:0;font-size:13px}

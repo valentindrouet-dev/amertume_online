@@ -2435,7 +2435,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&feuille.includes('.die-sq.die-munition{background:none;border:1.5px dashed var(--line-strong);'),'le dé vide des armes à distance');
  assert.ok(src.includes("['munitions','Munitions',munition],['anneau','Anneau',anneaux[0]||null],")&&src.includes("if(cle==='anneau'){groupeAnneaux.append(pl);")
   &&src.includes("else if(o.category==='ammo')a.munitionId=a.munitionId===o.id?'':o.id;")&&src.includes("sel('Dé ajouté aux armes à distance','munDe',")
-  &&feuille.includes('.corps .anneaux-groupe{grid-column:2 / 4;display:flex;justify-content:flex-end;')&&vivant.includes("'shieldId','munitionId',"),'l’emplacement des munitions');
+  &&feuille.includes('.corps .anneaux-groupe{grid-column:2 / 4;display:flex;justify-content:flex-end;gap:4px;box-sizing:border-box;padding-right:max(0px,calc((100% - 6px) / 4 - 34.5px))}')&&vivant.includes("'shieldId','munitionId',"),'l’emplacement des munitions');
  assert.ok(src.includes("const ouvre=()=>{if(typeof peutVoirArbres==='function'&&peutVoirArbres(a))openArbres(a);else if(view==='mj')openArbresClasse(nomCl)};")
   &&src.includes("k.textContent='Bonus de PV max';")&&!src.includes('armory-official')
   &&feuille.includes('.calcul-bulle{display:flex;flex-direction:column;gap:3px;min-width:220px;font-size:13px;background:var(--panel);'),'la pastille de classe, la bulle lisible, plus de Catalogue officiel');}
@@ -2449,4 +2449,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(el.k.join(''),'Deux [attaques|#b8352f], une [Attaque critique|#7a5cb8], des [attaques critiques|#7a5cb8], [ATTAQUE|#b8352f] ; les [alliés|var(--accent)] gagnent 2 [Dégâts|rgb(4,5,6)] et des [Actions] ; la vie reste.');
  ctxP.texteEnrichi(el,'Feux et Gels : 1d6+2, +3.');assert.equal(el.k.join(''),'[Feux|#c2503a] et [Gels|#2f8fae] : [1d6+2], [+3].');
  assert.ok(!src.includes("ligne('Débloque : '"),'plus de « Débloque » dans la description d’un talent');}
-console.log('1500 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.274 — Le dernier anneau se centre sous la main gauche ; la munition portée remplit la place vide du dé de l'arme à distance. */
+{assert.ok(src.includes("function remplitMunition(p,a,o){")&&src.includes(" if(portes(o))remplitMunition(p,a,o);")&&src.includes("const p=remplitMunition(gearCarre(o.deux,1,1),a,o.deux);")
+  &&src.includes("place.classList.remove('die-munition');place.classList.add('die-charge');place.style.setProperty('--face',dieFace(k));"),'la munition remplit la place vide');}
+console.log('1501 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
