@@ -391,16 +391,16 @@ function prendreObjet(a,o,it){const k=(o.items||[]).indexOf(it.id);if(k<0)return
  else if(it.category==='armor'){if(!a.armorId){a.armorId=it.id;ou='sur le dos'}else{noteInventaire(a,it.name);ou='à l’inventaire'}}
  else{noteInventaire(a,it.name);ou='à l’inventaire'}
  o.items.splice(k,1);if(typeof syncEquipped==='function')syncEquipped(a);
- log(a.name+' prend '+it.name+' — '+o.nom+' — '+ou+'.',{ton:'carte'});
+ log(nomNum(a)+' prend '+it.name+' — '+o.nom+' — '+ou+'.',{ton:'carte'});
  render();saveMaps()}
 function prendreTresor(a,o){if(!o.tresor)return;noteInventaire(a,o.tresor);
- log(a.name+' ramasse '+o.tresor+' — '+o.nom+'.',{ton:'carte'});o.tresor='';render();saveMaps()}
+ log(nomNum(a)+' ramasse '+o.tresor+' — '+o.nom+'.',{ton:'carte'});o.tresor='';render();saveMaps()}
 /* Le test de découverte : l'aventurier choisi lance sa compétence ; assez de réussites,
    et l'objet paraît à toute la table. Les dés roulent sur le plateau comme pour un test. */
 function testerObjet(a,o){const jet=skillRoll(a.skills[o.test.comp]||0,d6);
  rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,a);
  const trouve=jet.reussites>=o.test.reussites;
- log(a.name+' · '+skillNames[o.test.comp]+' : '+jet.reussites+' réussite(s) sur '+o.test.reussites+' — '
+ log(nomNum(a)+' · '+skillNames[o.test.comp]+' : '+jet.reussites+' réussite(s) sur '+o.test.reussites+' — '
   +(trouve?'découvre '+o.nom+' !':'ne trouve rien.'),{dice:true});
  if(trouve){o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Découvert !','nul');render();saveMaps()}
  return trouve}
@@ -455,7 +455,7 @@ function renderPortes(){const portes=$('map-doors'),m=currentMap();portes.replac
    /* En combat, ouvrir ou fermer coûte un point de Mouvement à qui manœuvre ; sans point,
       la porte ne bouge pas. En exploration, c'est gratuit. */
    const qui=typeof enCombat==='function'&&enCombat()?porteurDePorte(d):null;
-   if(qui){if(pointsRestants(qui,'mouvement')<=0){log(qui.name+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});
+   if(qui){if(pointsRestants(qui,'mouvement')<=0){log(nomNum(qui)+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});
      if(typeof floatNumber==='function')floatNumber(qui,'Plus de Mouvement','nul');return}
     depensePoint(qui,'mouvement')}
    d.open=!d.open;

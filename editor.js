@@ -781,7 +781,7 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
  if(!objetDisponible(a,o)){log(o.name+' a déjà servi aujourd’hui : il faut une nuit de repos.',{local:true});return}
  const p=paramsObjet(o),usage=usageObjet(o);let dit='';
  if(code.cle==='soin'){
-  if(a.hp>=a.max){log(a.name+' est déjà au complet : '+o.name+' reste en réserve.',{local:true});return}
+  if(a.hp>=a.max){log(nomNum(a)+' est déjà au complet : '+o.name+' reste en réserve.',{local:true});return}
   const {total,jets}=montantRegeneration(a,p,d6),gagne=applyHeal(a,total);
   if(jets.length&&typeof rollOnBoard==='function')rollOnBoard(jets.map(v=>[v,4]),a,a);
   if(typeof floatNumber==='function')floatNumber(a,'+'+gagne,'gain');
@@ -799,7 +799,7 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
  // La charge du jour est prise, le consommable quitte l'inventaire.
  if(usageLimite(usage)){a.usages={...(a.usages||{}),[o.id]:usage}}
  if(usage==='conso')retirerInventaire(a,o);
- log(a.name+' emploie '+o.name+(dit?' : '+dit:'')+'.',{ton:'talent'});
+ log(nomNum(a)+' emploie '+o.name+(dit?' : '+dit:'')+'.',{ton:'talent'});
  if(typeof annonceFlottante==='function')annonceFlottante('◈ '+o.name+(dit?' · '+dit:''));
  render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();
  document.dispatchEvent(new Event('amertume-content-changed'))}
@@ -813,7 +813,7 @@ function appliquerObjet(a,o,vise,q){
  const dit=(o.effects||o.notes||'').trim();
  const ou=vise?(vise===a?'lui-même':vise.name):'la zone visée';
  if(vise&&o.etat&&typeof infligeEtat==='function')infligeEtat(vise,o.etat);
- log(a.name+' utilise '+o.name+' sur '+ou+(dit?' : '+dit:'.'),{ton:'talent'});
+ log(nomNum(a)+' utilise '+o.name+' sur '+ou+(dit?' : '+dit:'.'),{ton:'talent'});
  if(typeof annonceFlottante==='function')annonceFlottante('◈ '+o.name+' → '+ou+(dit?' · '+dit:''));
  if(o.consumable)retirerInventaire(a,o);
  render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();

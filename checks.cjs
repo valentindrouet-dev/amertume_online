@@ -991,7 +991,7 @@ assert.ok(page.includes("t.dataset.id=a.id")&&page.includes(".token.glisse{trans
 assert.ok(page.includes("addEventListener('touchmove'")&&page.includes("mapPanX+=c.x-doigts.x"),'deux doigts font glisser la carte');
 /* Le point d'Action chez le joueur, les orbes gratuits, l'orbe qui vole. */
 assert.ok(/orbes:\{[^}]*gratuit:true/.test(fs.readFileSync('combat.js','utf8')),'les orbes se disent gratuits');
-assert.ok(page.includes("if(actionPrise(a)){log(a.name+' a déjà dépensé son Action ce tour.'")&&page.includes("if(actionPrise(a))return 'Action déjà dépensée ce tour.';"),'l’Action prise ferme la rangée');
+assert.ok(page.includes("if(actionPrise(a)){log(nomNum(a)+' a déjà dépensé son Action ce tour.'")&&page.includes("if(actionPrise(a))return 'Action déjà dépensée ce tour.';"),'l’Action prise ferme la rangée');
 assert.ok(page.includes('function volOrbe(')&&vivant.includes("rec.genre==='effet'"),'l’orbe vole ici et en face');
 assert.ok(vivant.includes("if(!estMJ()&&CHAMPS_ACTEUR_MJ.includes(k))return;")&&vivant.includes('aRepousser.push([id,k])'),'« vu » n’appartient qu’au MJ');
 /* Les invités ne dirigent pas, la carte reste voilée jusqu'au brouillard, le journal a ses tons. */
@@ -1014,7 +1014,7 @@ assert.ok(page.includes('function volFleche(')&&vivant.includes("rec.effet==='fl
  &&page.includes('function volBalayage(')&&vivant.includes("rec.effet==='balayage'")&&page.includes("diffuserEffet('balayage',a,actors[j],null)"),'le souffle et le balayage jouent ici et en face');
 assert.ok(page.includes("if(duree>0)setTimeout(()=>{poser();render();")&&page.includes("setTimeout(()=>{tirEnVol=false;frapper();scheduleSave()},duree)"),'les dégâts attendent le vol');
 assert.ok(cartes.includes("icone('troupe-eye'")&&cartes.includes('function oeilJoueur')&&cartes.includes("inconnu=oeilJoueur()?255:110"),'l’œil de la troupe');
-assert.ok(!page.includes('Bienvenue dans Amertume')&&!cartes.includes("(d.secret?'Passage secret ':'Porte ')")&&page.includes(" garde '+o.name+' : Blindage.'")&&page.includes("' 🔍 '+o.name+' :\\n'"),'le journal s’épure');
+assert.ok(!page.includes('Bienvenue dans Amertume')&&!cartes.includes("(d.secret?'Passage secret ':'Porte ')")&&page.includes(" garde '+nomNum(o)+' : Blindage.'")&&page.includes("' 🔍 '+nomNum(o)+' :\\n'"),'le journal s’épure');
 assert.ok(!src.includes("loin.textContent=' ⤳'")&&page.includes('.actor.enemy.k-alpha:not(.selected){background:#efdcc2}')&&page.includes("r.damage+' Dégâts'+(poses.length?' + '+poses.join(' + '):'')+'.'"),'boutons et vignettes');
 /* Le tour 1 à l'ouverture d'une carte, les numéros à la révélation, les adversaires cachés repliés, l'Onde et les talents en colonnes. */
 assert.ok(page.includes('function remiseAuTourUn')&&cartes.includes("if(typeof remiseAuTourUn==='function')remiseAuTourUn();"),'ouvrir une carte revient au tour 1');
@@ -1106,14 +1106,14 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
  const carte=structuredClone(base);carte.maps[0].doors[0].x=9;assert.notEqual(texteStable(carte),texteStable(base));}
 /* Les projectiles volent sur transform et opacity seulement : le compositeur les mène même quand le
    fil principal est pris (dés, rendu complet, état reçu). Plus de left/top dans les images clés. */
-{const orbe=page.slice(page.indexOf('function volOrbe('),page.indexOf('function deplacement(')),fleche=page.slice(page.indexOf('function volFleche('),page.indexOf('function volBalayage('));
- const balayage=page.slice(page.indexOf('function volBalayage('),page.indexOf('function floatNumber('));
+{const orbe=page.slice(page.indexOf('function volOrbe('),page.indexOf('function deplacement(')),fleche=page.slice(page.indexOf('function volFleche('),page.indexOf('function floatNumber('));
+ const balayage=page.slice(page.indexOf('function volBalayage('),page.indexOf('function volFleche('));
  assert.ok(!/\{[^}]*\bleft:/.test(balayage.slice(balayage.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(orbe.slice(orbe.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(fleche.slice(fleche.indexOf('el.animate'))),'pas de left/top animé');
- assert.ok(page.includes('function choc(couche,cible,delai){')&&fleche.includes("{duration:240,easing:'linear',fill:'forwards'}")&&fleche.includes('return choc(couche,vers,240)}')
-  &&balayage.includes("{duration:260,easing:'ease-out',fill:'both'}")&&balayage.includes('return Math.max(260,choc(couche,vers,120))}')
-  &&page.includes('function deplacement(couche,de,vers)')&&orbe.includes("transform:'translate('+arrivee+') scale(1)'")&&fleche.includes("transform:'translate('+arrivee+')'+tourne")
-  &&page.includes('.orbe-vol{position:absolute;will-change:transform,opacity;')&&page.includes('.coup-trait,.tir-trait,.choc{position:absolute;pointer-events:none;z-index:5;will-change:transform,opacity}')
-  &&!page.includes('souffle-vol')&&!page.includes('balayage-vol')&&!page.includes('fleche-vol'),'coups et tirs : un trait, un choc, toujours le même rythme, portés par le compositeur');}
+ assert.ok(page.includes('function etincelles(couche,cible,delai){')&&balayage.includes("const lame='M8,76 Q44,6 94,20 Q48,28 8,76 Z'")&&balayage.includes('etincelles(couche,vers,110);\n return 170}')
+  &&fleche.includes('<path class="pointe" d="M80,2 L100,8 L80,14 L84,8 Z"/>')&&fleche.includes('etincelles(couche,vers,vol);\n return vol+30}')
+  &&page.includes('function deplacement(couche,de,vers)')&&orbe.includes("transform:'translate('+arrivee+') scale(1)'")
+  &&page.includes('.orbe-vol{position:absolute;will-change:transform,opacity;')&&page.includes('.vfx{position:absolute;pointer-events:none;z-index:5;will-change:transform,opacity;transform:translate(-50%,-50%)}')
+  &&!page.includes('function choc(')&&!page.includes('coup-trait')&&!page.includes('souffle-vol')&&!page.includes('balayage-vol'),'taillade, flèche et étincelles, portées par le compositeur');}
 /* Contacts : tous les rayons (aventuriers et adversaires révélés) quand il est actif, la seule
    sélection sinon ; un joueur inspecte n'importe quel combattant — fiche selon ce qu'il en sait,
    aura — sans le contrôler, et ses cases d'activation restent celles de son actif ; les
@@ -1122,7 +1122,7 @@ assert.ok(page.includes('id="portees">◎ Contacts<')&&page.includes("let portee
 assert.ok(page.includes('let inspecteId=null;')&&page.includes("if(!controlled(i)){const a=actors[i];inspecteId=a&&inspecteId!==a.id?a.id:null;render();return}")&&!page.includes('Sélectionne ton aventurier, puis cible')
  &&page.includes("const k=view!=='mj'&&inspecteIndex()>=0?inspecteIndex():selected,a=actors[k];")&&page.includes("  $(id).checked=!!s&&pointsRestants(s,quoi)<=0;")
  &&page.includes('#sheet.secret :is(#sheet-chips,#stats,#hpbar,#bloc-gear,#bloc-talents,#skills,.divider){display:none}')&&page.includes("a.id===inspecteId?'inspecte ':''"),'un joueur inspecte sans contrôler');
-assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:650}')&&page.includes('Math.max(16,tokenOf(vers)*.7)')&&page.includes("el.style.width=Math.max(22,tokenOf(vers)*.8)+'px';"),'projectiles plus lents et plus visibles');
+assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:650}')&&page.includes('Math.max(16,tokenOf(vers)*.7)')&&page.includes("const long=Math.max(34,Math.min(70,tokenOf(vers)*1.15)),haut=long*.16;"),'projectiles plus lents et plus visibles');
 /* Dégâts d'opportunité étendus : traverser une zone de contact pendant un glissement compte comme
    s'y arrêter puis en sortir ; tirer ou lancer un orbe au contact déclenche l'occasion de tous les
    adversaires au contact, après les dégâts du tir — un adversaire tué ou entravé ne frappe pas. */
@@ -1192,7 +1192,7 @@ assert.ok(page.includes('height:3.2px;border-radius:999px;background:#211f1b;bor
 /* Plus de chip Niveau sur la fiche de table ; le balayage est une déchirure dentelée de 90° ; la coche du
    bestiaire suit le nom ; l'équipement se lit en carrés — logo dessus, dés dessous — dont la description
    prend toute la ligne. */
-assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('.choc{border-radius:50%;border:3px solid #fff;')&&page.includes("scaleX(1.1)'}")&&page.includes('tokenOf(vers)*1.7)')
+assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('.vfx-taillade .lame{fill:#fffaf0}')&&page.includes('const id=\'vfx-m\'+(++vfxN),t=Math.max(56,tokenOf(vers)*2.1);')
  &&src.includes('function gearCarre(o,n,portes)')&&src.includes('function gearDetail(o,a,enJeu)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');")&&!src.includes("out.className='gear-pills'")
  &&feuille.includes('.gear-grille{display:flex;flex-wrap:wrap;gap:6px;')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:auto;min-width:69px;min-height:69px;flex-direction:column;')&&feuille.includes('.gear-detail.large{flex-basis:100%;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');")&&!src.includes('ligne(o.notes)')&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
 /* Invocation et Régénération : deux mécaniques d'adversaire câblées — la pose au clic, les soins au
@@ -1264,7 +1264,7 @@ assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.fi
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
- &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armures','shieldId','auraPv'];")&&page.includes("const nbGear=(a.weapons||[]).length+armuresDe(a).length+(a.shieldId?1:0)+(a.inventaire||[])")
+ &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armures','shieldId','auraPv',")&&page.includes("const nbGear=(a.weapons||[]).length+armuresDe(a).length+(a.shieldId?1:0)+(a.inventaire||[])")
  &&feuille.includes('.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}')&&feuille.includes('.cat-pill.gear-carre.dispo{opacity:.55}')&&feuille.includes('.gear-rangee-titre{flex-basis:100%;')
  &&feuille.includes('.best-attaque{background:#cfdcea;border:1px solid #00000026;border-left:4px solid #4f7fb5;border-radius:9px;'),'inventaire, équipement et attaques spéciales');
 /* Fiche d'un modèle : plus de cartouche « Adversaire », le type porte sa couleur comme tout le bloc,
@@ -1443,7 +1443,7 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
 assert.ok(page.includes('const croises=new Set(contactsDe(b)),depart={x:b.x,y:b.y};')
  &&page.includes('if(venu)ramasseContacts(b,croises,depart,mapSize(),walls());')
  &&page.includes('if(venu)degatsOpportunite(b,[...croises]);')
- &&page.includes("if(!alive(b)){log(b.name+' tombe en chemin : le coup ne part pas.',{ton:'degats'});")
+ &&page.includes("if(!alive(b)){log(nomNum(b)+' tombe en chemin : le coup ne part pas.',{ton:'degats'});")
  &&page.includes("if(pointsRestants(a,'action')>0){depensePoint(a,'action');afterAction(a)}"),'la Provocation paie ses dégâts d’opportunité');
 assert.ok(page.includes('function attack(opts={})')&&page.includes('if(opts.vises){vises=ciblesAtteignables(a,opts.vises,portee);')
  &&page.includes("depensePoint(a,'action');afterAction(a);render();return}}")&&page.includes('const vivants=vises.filter(j=>alive(actors[j]));')
@@ -1986,7 +1986,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&src.includes("const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
-  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','auraPv'];")
+  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','auraPv','reposPris'];")
   &&src.includes("const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")
   &&src.includes(" ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));")&&src.includes("  if(!competenceDe(a,k))return;")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
@@ -2283,7 +2283,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    grand des deux ; le socle reste au bord sans point, recule s'il ne peut pas payer le contact ;
    une porte coûte un point en combat. */
 {const regle=page.slice(page.indexOf('function regleMouvement(a)'),page.indexOf('function contactsDe(a)'));
- const ctxR={zones:{},contacts:{},notes:[],journal:[],performance:{now:()=>1e6},currentMap:()=>({id:'c'}),zonesDe:()=>({compte:2}),
+ const ctxR={zones:{},contacts:{},notes:[],journal:[],performance:{now:()=>1e6},nomNum:a=>a.name,currentMap:()=>({id:'c'}),zonesDe:()=>({compte:2}),
   pointsRestants:a=>a.credit,zoneDe:a=>ctxR.zones[Math.round(a.x)+','+Math.round(a.y)]||0,contactsDe:a=>ctxR.contacts[Math.round(a.x)+','+Math.round(a.y)]||[],
   floatNumber:(a,t)=>ctxR.notes.push(t),log:t=>ctxR.journal.push(t)};vm.createContext(ctxR);vm.runInContext(regle,ctxR);
  // Deux zones : x<50 en zone 1, x>50 en zone 2 ; un adversaire « O » au contact en (80,50).
@@ -2315,7 +2315,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("else{moveActor(a,q.x,q.y,view==='mj',enMain);if(drag.regle)appliqueRegleMouvement(a,drag.regle)}")
   &&page.includes("const cout=regle?soldeRegleMouvement(a,regle):null;")&&page.includes("if(regle){if(cout>0)depensePoint(a,'mouvement',cout)}")&&!page.includes("$('move').checked=true;render()"),'le geste suit la règle, du départ au lâcher');
  assert.ok(cartes.includes("function porteurDePorte(d){")&&cartes.includes("const qui=typeof enCombat==='function'&&enCombat()?porteurDePorte(d):null;")
-  &&cartes.includes("if(qui){if(pointsRestants(qui,'mouvement')<=0){log(qui.name+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});")&&cartes.includes("    depensePoint(qui,'mouvement')}\n   d.open=!d.open;"),'une porte coûte un point en combat, rien en exploration');
+  &&cartes.includes("if(qui){if(pointsRestants(qui,'mouvement')<=0){log(nomNum(qui)+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});")&&cartes.includes("    depensePoint(qui,'mouvement')}\n   d.open=!d.open;"),'une porte coûte un point en combat, rien en exploration');
 }
 /* v0.267 — Sans point de Mouvement, le socle bouge encore dans sa zone (et y subit l'opportunité) ;
    les jauges de PV ont leur couche, au-dessus de tous les socles. */
@@ -2336,4 +2336,20 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")&&feuille.includes(".arbre-noeud.bonus-vie{--teinte:rgb(122,92,184)}")&&feuille.includes(".arbre-noeud.bonus-dmg{--teinte:rgb(180,72,58)}"),'les bonus aux couleurs de la fiche');
  assert.ok(!src.includes("||(!arbresActeur?NOTE_ARBRES_CLASSE:view==='mj'&&!arbresVueJoueur?NOTE_ARBRES_MJ:NOTE_ARBRES)}"),'plus de mode d’emploi au-dessus des arbres');
 }
-console.log('1459 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.269 — Le journal numérote les homonymes ; le combat finit seul quand plus un adversaire révélé
+   ne tient debout ; le Repos court soigne 1d6 + Endu hors combat, une fois entre deux combats. */
+{assert.ok(page.includes("function nomNum(o){if(!o)return '';const r=o.id?nameNumbers().get(o.id):null;return String(o.name||'?')+(r?' '+r:'')}")
+  &&page.includes("s.textContent=nomNum(o);s.style.color=actorTint(o);return s};")&&page.includes("const who=parNom.get(m[0]);")
+  &&page.includes("return nomNum(c)+' −'+degats+(c.hp===0?' (coma)':'')}")&&page.includes("log(nomNum(a)+' invoque '+nomNum(c)+'.',{ton:'talent'});"),'le journal écrit « Gobelin 2 »');
+ // nomNum en machine virtuelle : deux Gobelins révélés portent leur numéro, un nom unique n'en porte pas.
+ const ctxN={actors:[{id:'h',name:'Ulfgar',hero:true},{id:'g1',name:'Gobelin',vu:true,numero:1},{id:'g2',name:'Gobelin',vu:true,numero:2},{id:'o',name:'Ogre',vu:true,numero:1}]};vm.createContext(ctxN);
+ vm.runInContext(page.slice(page.indexOf('function nomNum(o)'),page.indexOf('/* Ce qu\'on a le droit de lire d\'un combattant')),ctxN);
+ assert.equal(ctxN.actors.map(ctxN.nomNum).join('|'),'Ulfgar|Gobelin 1|Gobelin 2|Ogre');assert.equal(ctxN.nomNum({name:'Inconnu'}),'Inconnu');
+ assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||view!=='mj'")&&page.includes("if(adversairesDebout()>0){combatEngage=true;return}")
+  &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" finDeCombatAuto();")
+  &&page.includes("if(finit)actors.forEach(a=>{if(a.hero)a.reposPris=false});"),'le combat finit seul, et rend le repos');
+ assert.ok(page.includes('<button class="btn-action btn-repos" id="repos" hidden>⛺ Repos court</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
+  &&page.includes(":a.reposPris?'Repos déjà pris : il reviendra à la fin du prochain combat.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposPris=true;")
+  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris'];"),'le Repos court');
+}
+console.log('1464 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
