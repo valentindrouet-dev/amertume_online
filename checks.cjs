@@ -2475,4 +2475,6 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {assert.ok(src.includes("if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))bas.append(shieldBadge(o.def||0));")
   &&src.includes("const eff=pastilleEffet(o);if(eff)bas.append(eff);")&&src.includes("w.className='effet-pastille'+(code.cle==='invulnerabilite'?' barre':'');")
   &&feuille.includes('.effet-pastille.barre::after{')&&feuille.includes('.cat-pill .effet-pastille .etat-inflige img{position:absolute;inset:0;width:100%;height:100%;'),'l’écu à zéro disparaît des bijoux, l’effet se montre, barré s’il protège');}
-console.log('1512 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.276 — Les chemins de l'arbre ne se lisent plus à travers le nom des talents. */
+{assert.ok(feuille.includes('.arbre-etages .arbre-nom,.arbre-etages .arbre-niv{background:var(--panel-2);padding:1px 6px;border-radius:6px;')&&feuille.includes('.arbre-etages{position:relative;z-index:1;'),'le nom masque le chemin qui passe dessous');}
+console.log('1513 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

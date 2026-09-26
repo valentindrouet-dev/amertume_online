@@ -820,6 +820,7 @@ button.choix-attaque.sans-des{grid-auto-rows:1fr}
 .arbre-etage.inter.vide{min-height:26px}
 .arbre-etages .arbre-noeud::before{display:none}
 .arbre-etages .arbre-noeud{padding:0 2px}
+/* Le nom et la ligne sous un bouton portent le fond de la colonne : un chemin qui passe dessous s'y cache, la lecture reste nette. */.arbre-etages .arbre-nom,.arbre-etages .arbre-niv{background:var(--panel-2);padding:1px 6px;border-radius:6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .arbre-etages .arbre-noeud.diag .arbre-rond{width:50px;height:50px;font-size:21px}
 .arbre-etages .arbre-noeud.diag .arbre-nom{font-size:12px}
 .arbre-etages .arbre-entre{align-self:center}
