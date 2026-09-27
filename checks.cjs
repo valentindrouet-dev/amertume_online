@@ -1412,7 +1412,7 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
  &&src.includes('function openTalent(i=null,apres=null,defauts=null)')&&src.includes(",...(defauts||{})}:catalog.talents[i];")
  &&src.includes("if(typeof arbresDialog!=='undefined'&&arbresDialog.open)renderArbres()});")&&src.includes('function placerTalent(id,dest)')
  &&src.includes("if(!p||p===t||descendDe(p,t))return false}")&&src.includes("el.addEventListener('dragstart',e=>{arbreGlisse=t.id;el.classList.add('tire');corps.classList.add('glisse');")
- &&src.includes("if(!id)return;if(placerTalent(id,dest))arbreChange();else note(")&&src.includes("glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,prerequis:t.id});")
+ &&src.includes("if(placerTalent(id,dest))arbreChange();else note(")&&src.includes("glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,prerequis:t.id});")
  &&src.includes("if(mj)pile.append(entre({famille:c.famille,voie:c.voie,avant:e.t.id}));")
  &&src.includes("cible(h,{famille:c.famille,voie:c.voie});")&&src.includes("champVif(nomVoie,()=>c.voie,v=>{if(nommerVoie(c.famille,c.rang,v))arbreChange();")&&src.includes("nomVoie.classList.toggle('vierge',!c.voie);")&&feuille.includes('.arbre-titre .arbre-voie.vierge{')&&src.includes("if(nommerVoie(c.famille,c.rang,''))arbreChange()});")
  &&src.includes("plus.onclick=()=>openTalent(null,renderArbres,{famille:c.famille,voie:c.voie});col.append(plus)}")
@@ -2701,7 +2701,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    Plus de fusion ni de phrase d'aperçu. Seule une classe du jeu a un arbre : ni les adversaires,
    ni les génériques. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("if(!a){const x=ico('🗑','Supprimer '+vu(t).name,()=>supprimeTalent(t,vu(t).name));x.classList.add('danger');outils.append(x)}")
+ assert.ok(src.includes("if(!a&&t.horsArbre){const x=ico('🗑','Supprimer définitivement '+vu(t).name,()=>supprimeTalent(t,vu(t).name));x.classList.add('danger');outils.append(x)}")
   &&src.includes("async function supprimeTalent(t,nom){")&&src.includes("(catalog.talents||[]).forEach(x=>{if(x&&x.prerequis===t.id)x.prerequis=t.prerequis||''});"),'le talent se supprime depuis l’arbre, ses suivants remontent');
  assert.ok(!src.includes('fusionElementaire')&&!src.includes('Aperçu de l’arbre sous chaque élément'),'ni fusion, ni phrase d’aperçu');
  assert.ok(src.includes("function aUnArbre(f){return !!f&&f!==GENERIQUES&&(catalog.classes||[]).some(c=>c&&c.name===f)}")&&src.includes("if(view==='mj'&&aUnArbre(famille)){const rouage=")
@@ -2727,4 +2727,20 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(cartes2.includes("Array.isArray(o.actors)&&Array.isArray(o.maps)?o.maps.filter(m=>m&&typeof m==='object'):null;")&&cartes2.includes("Ce fichier est un export du domaine : reprends-le dans l’onglet Domaine")
   &&cartes2.includes('Le domaine n’y est pas : il s’exporte depuis son onglet, et la partie entière depuis les Paramètres.'),'l’import des cartes reconnaît les autres fichiers');
  assert.ok(cartes2.includes("Array.isArray(o.actors)?'Ce fichier est une sauvegarde globale de la partie, sans carte à importer ici."),'une sauvegarde globale sans carte le dit');}
-console.log('1655 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.293 — Retirer un talent de l'arbre ne l'efface plus : il reste au catalogue, dans la
+   réserve sous l'arbre, d'où il se replace d'un glisser. La suppression définitive se fait
+   depuis la réserve. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ const ctxR={view:'mj',catalog:{talents:[{id:'a',name:'A'},{id:'b',name:'B',prerequis:'a'},{id:'c',name:'C',prerequis:'b'},{id:'g',name:'G',prerequis:'b',branche:'g'},{id:'g2',name:'G2',prerequis:'a',branche:'g'},{id:'d',name:'D',prerequis:'b',branche:'d'}]}};
+ vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('function retireDeLArbre('),src.indexOf('// La suppression définitive, depuis la réserve seulement')),ctxR);
+ const T=id=>ctxR.catalog.talents.find(t=>t.id===id);
+ assert.equal(ctxR.retireDeLArbre(T('b')),true);
+ assert.ok(T('b').horsArbre===true&&T('b').prerequis===''&&ctxR.catalog.talents.length===6,'le talent retiré reste au catalogue');
+ assert.ok(T('c').prerequis==='a'&&!T('c').branche&&T('g').prerequis==='a'&&T('g').branche===''&&T('d').prerequis==='a'&&T('d').branche==='d','ses suivants remontent ; une diagonale déjà prise rejoint l’épine');
+ assert.equal(ctxR.retireDeLArbre(T('b')),false,'un talent déjà retiré ne se retire pas deux fois');
+ assert.ok(src.includes("function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&t.type!=='mait'&&!t.horsArbre);")
+  &&src.includes("t.type==='mait'&&!t.horsArbre&&talentFamily(t)===classe")&&src.includes("t.prerequis=dest.prerequis||'';delete t.horsArbre;"),'hors de l’arbre, il n’y paraît plus ; replacé, il y revient');
+ assert.ok(src.includes("if(!a&&!t.horsArbre)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue'")
+  &&src.includes("if(dest.horsArbre){if(retireDeLArbre(talent(id)))arbreChange();return}")&&src.includes("res.append(rang);cible(res,{horsArbre:true});corps.append(res)}")
+  &&src.includes("const texte='Supprimer définitivement « '")&&src.includes("h.className='cat-hors';h.textContent='hors de l’arbre';")&&css.includes('.arbre-reserve{'),'la réserve sous l’arbre, et la suppression définitive depuis elle seule');}
+console.log('1661 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
