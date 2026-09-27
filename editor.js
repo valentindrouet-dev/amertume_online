@@ -3239,7 +3239,30 @@ function noterSauvegarde(texte,souci){saveLabel.textContent=texte;
  saveLabel.classList.toggle('form-error',!!souci);
  if(souci&&texte!==dernierSouci){dernierSouci=texte;log(texte,{local:true})}
  if(!souci)dernierSouci=''}
-function saveNow(){if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}try{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(snapshot(),'session');tx.oncomplete=()=>noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur');tx.onerror=()=>noterSauvegarde('Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.',true)}catch(e){noterSauvegarde('Impossible d’enregistrer : '+e.message,true)}}
+/* ---------- Plusieurs fenêtres, une seule partie ---------- */
+/* Deux fenêtres de l'app sur le même appareil partagent la même partie enregistrée. Celle qui
+   dormait garde en mémoire un état ancien : si elle enregistrait, elle écraserait le travail
+   fait dans l'autre — c'est ainsi qu'un domaine entier peut disparaître. Chaque enregistrement
+   laisse donc sa marque ; une fenêtre qui voit la marque d'une autre n'enregistre plus rien.
+   Revenue au premier plan, elle relit la partie enregistrée ; restée visible à côté, elle
+   demande laquelle garder. */
+const MON_ONGLET=crypto.randomUUID();let ongletPerime=false;
+function marqueSession(){try{localStorage.setItem('amertume-session-marque',JSON.stringify({onglet:MON_ONGLET,t:Date.now()}))}catch(e){}}
+const bandeauFenetres=document.createElement('div');bandeauFenetres.id='bandeau-fenetres';bandeauFenetres.hidden=true;bandeauFenetres.setAttribute('role','alert');
+bandeauFenetres.innerHTML='<span>Une autre fenêtre d’Amertume a enregistré la partie. Celle-ci n’enregistre plus rien, pour ne pas l’écraser.</span>'
+ +'<button type="button" id="fenetre-relire" class="primary">Relire la partie enregistrée</button><button type="button" id="fenetre-garder">Garder cette fenêtre</button>';
+document.body.append(bandeauFenetres);
+function relireSession(){if(!db)return;try{const get=db.transaction('state').objectStore('state').get('session');
+ get.onsuccess=()=>{const s=get.result;if(!s||verifieSauvegarde(s))return;
+  try{appliquerSauvegarde(s);ongletPerime=false;bandeauFenetres.hidden=true;if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();
+   noterSauvegarde('Partie relue : une autre fenêtre l’avait modifiée.',false)}catch(e){noterSauvegarde('Partie enregistrée illisible : '+e.message,true)}}}catch(e){}}
+window.addEventListener('storage',e=>{if(e.key!=='amertume-session-marque'||!e.newValue)return;let m=null;try{m=JSON.parse(e.newValue)}catch(_){}
+ if(!m||m.onglet===MON_ONGLET)return;ongletPerime=true;clearTimeout(saveTimer);if(document.visibilityState==='visible')bandeauFenetres.hidden=false});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ongletPerime)relireSession()});
+$('fenetre-relire').onclick=relireSession;
+$('fenetre-garder').onclick=()=>{ongletPerime=false;bandeauFenetres.hidden=true;saveNow()};
+function saveNow(){if(ongletPerime){if(document.visibilityState==='visible')bandeauFenetres.hidden=false;return}
+ if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}marqueSession();try{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(snapshot(),'session');tx.oncomplete=()=>noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur');tx.onerror=()=>noterSauvegarde('Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.',true)}catch(e){noterSauvegarde('Impossible d’enregistrer : '+e.message,true)}}
 document.addEventListener('change',scheduleSave);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!loading)saveNow()});
 /* Safari iOS laisse parfois une ouverture d'IndexedDB sans réponse. On réessaie une fois,
    puis la scène s'ouvre quand même ; si la sauvegarde répond plus tard, elle se pose

@@ -9,7 +9,42 @@
 let domaine=normaliseDomaine(null);
 // La sauvegarde l'emporte et le rend, sans que l'éditeur de partie ait à le connaître.
 const snapshotSansDomaine=snapshot;snapshot=function(){return Object.assign(snapshotSansDomaine(),{domaine})};
-const appliquerSansDomaine=appliquerSauvegarde;appliquerSauvegarde=function(s){appliquerSansDomaine(s);domaine=normaliseDomaine(s&&s.domaine);domSel=null;domPageSel=null};
+/* Un domaine vide — une sauvegarde ou une campagne d'avant le domaine, une scène publiée trop
+   ancienne — n'efface jamais un domaine qui a du contenu : il reste en place. */
+const appliquerSansDomaine=appliquerSauvegarde;appliquerSauvegarde=function(s){appliquerSansDomaine(s);const d=normaliseDomaine(s&&s.domaine);
+ if(poidsDomaine(d)>0||poidsDomaine(domaine)===0)domaine=d;domSel=null;domPageSel=null};
+/* Ce qu'un domaine a de précieux : ses calques d'abord, puis ses zones, ses étapes, son nom, son
+   monde. Zéro, c'est le domaine d'origine, vierge. */
+function poidsDomaine(d){if(!d||!d.carte||!Array.isArray(d.batiments))return 0;
+ return d.carte.calques.filter(Boolean).length*100+d.batiments.filter(b=>b.zone).length*5+d.batiments.filter(b=>b.etape>0||b.etat).length*2
+  +(d.nom!=='Le Domaine'?1:0)+(d.pnj||[]).length+((d.finances&&d.finances.journal)||[]).length+(d.finances&&d.finances.tresor?1:0)}
+/* ---------- Le domaine de secours ---------- */
+/* À chaque enregistrement, un domaine qui a du contenu se garde aussi à part, sous
+   « domaine:secours », sur cet appareil. Un domaine vide ne l'écrase jamais : si la partie perd
+   son domaine — une autre fenêtre restée ouverte, une sauvegarde trop ancienne —, le dernier
+   domaine digne de ce nom reste, et l'onglet Domaine propose de le reprendre. */
+let secoursDomaine=null,signatureSecours='';
+const signatureDomaine=d=>[d.nom,d.carte.calques.map(c=>c?c.length:0).join('.'),JSON.stringify(d.batiments).length,JSON.stringify(d.finances).length,(d.pnj||[]).length,JSON.stringify(d.ressources||{}).length].join('|');
+const saveNowSansSecours=saveNow;saveNow=function(){saveNowSansSecours();gardeSecoursDomaine()};
+function gardeSecoursDomaine(){if(typeof db==='undefined'||!db||(typeof ongletPerime!=='undefined'&&ongletPerime)||poidsDomaine(domaine)<=0)return;
+ const sig=signatureDomaine(domaine);if(sig===signatureSecours)return;
+ try{const rec={t:Date.now(),domaine:structuredClone(domaine)},tx=db.transaction('state','readwrite');tx.objectStore('state').put(rec,'domaine:secours');
+  tx.oncomplete=()=>{signatureSecours=sig;secoursDomaine=rec}}catch(e){}}
+// Au chargement : le secours est lu ; s'il est plus riche que le domaine de la partie, on le dit.
+document.addEventListener('amertume-partie-chargee',()=>{if(typeof db==='undefined'||!db)return;
+ try{const r=db.transaction('state').objectStore('state').get('domaine:secours');
+  r.onsuccess=()=>{const rec=r.result;if(!rec||!rec.domaine)return;rec.domaine=normaliseDomaine(rec.domaine);secoursDomaine=rec;
+   if(poidsDomaine(rec.domaine)>poidsDomaine(domaine)){log('Un domaine plus complet est gardé sur cet appareil : l’onglet Domaine propose de le reprendre.',{local:true});
+    if(document.body.classList.contains('page-domaine'))renderDomaine()}}}catch(e){}});
+function bandeauSecours(){const boite=$('dom-secours');if(!boite)return;boite.replaceChildren();
+ const rec=secoursDomaine;boite.hidden=!(mjDom()&&rec&&poidsDomaine(rec.domaine)>poidsDomaine(domaine));if(boite.hidden)return;
+ const d=rec.domaine,n=d.carte.calques.filter(Boolean).length,z=d.batiments.filter(b=>b.zone).length;
+ const p=document.createElement('p');p.textContent='Un domaine plus complet est gardé sur cet appareil depuis le '+new Date(rec.t).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+  +' : « '+d.nom+' » — '+n+' calque'+(n>1?'s':'')+', '+z+' bâtiment'+(z>1?'s':'')+' tracé'+(z>1?'s':'')+'.';
+ const b=document.createElement('button');b.className='primary';b.textContent='⟲ Reprendre ce domaine';
+ b.onclick=()=>{if(!confirm('Reprendre « '+d.nom+' » à la place du domaine actuel « '+domaine.nom+' » ?'))return;
+  domaine=normaliseDomaine(structuredClone(d));domSel=null;domPageSel=null;imagesDom.clear();renderDomaine();renderMapList();sauveDomaine();log('Domaine repris depuis le secours : '+d.nom+'.',{local:true})};
+ boite.append(p,b)}
 /* Avant chaque sauvegarde, personne ne reste dans un bâtiment qui n'est plus construit ; et
    le contenu publié suit, pour que les joueurs voient le domaine tel qu'il est. */
 function sauveDomaine(){evacueNonConstruits();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
@@ -350,6 +385,7 @@ domainePage.innerHTML=
  +'<section class="panel dom-centre"><header class="dom-tete"><h2 id="dom-titre"></h2>'
  +'<span class="dom-tresor" id="dom-tresor-tete"></span><span class="dom-actions"><button id="dom-contours" title="Montrer ou cacher le contour des bâtiments">▦ Contours</button><button id="dom-editer">✎ Modifier la carte</button>'
  +'<button id="dom-export" title="Télécharger le domaine — carte, bâtiments, finances, habitants — dans un fichier .json">⇩ Exporter</button><button id="dom-import" title="Reprendre un domaine exporté, à la place de celui-ci">⇧ Importer</button><input type="file" id="dom-json" accept="application/json,.json" hidden></span></header>'
+ +'<div class="dom-secours" id="dom-secours" hidden></div>'
  +'<div class="dom-carte-wrap"><div id="dom-plan"><canvas id="dom-plan-fond"></canvas><svg id="dom-plan-zones" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>'
  +'<div id="dom-plan-etiquettes"></div><p class="muted dom-plan-vide" id="dom-plan-vide" hidden>Aucune carte du domaine. Dessine-la dans l’onglet Cartes : des calques — un par étape, un par état.</p></div></div>'
  +'<div id="dom-fiche"></div></section>'
@@ -370,7 +406,8 @@ function exporterDomaine(){const texte=JSON.stringify({app:'amertume_online',gen
  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
  log('Domaine exporté : '+a.download+' ('+tailleLisible(texte.length)+').',{local:true})}
 function lireFichierDomaine(texte){let o;try{o=JSON.parse(texte)}catch(e){throw Error('Ce fichier n’est pas du JSON.')}
- const d=o&&typeof o==='object'&&!Array.isArray(o)?(o.genre==='domaine'||o.domaine?o.domaine:Array.isArray(o.batiments)?o:null):null;
+ // Un export du domaine, une sauvegarde globale, une campagne : chacun porte un domaine.
+ const d=o&&typeof o==='object'&&!Array.isArray(o)?(o.genre==='domaine'||o.domaine?o.domaine:o.genre==='campagne'&&o.partie&&o.partie.domaine?o.partie.domaine:Array.isArray(o.batiments)?o:null):null;
  if(!d||typeof d!=='object'||Array.isArray(d)||!Array.isArray(d.batiments))throw Error('Ce fichier n’est pas un domaine d’Amertume Online.');
  return normaliseDomaine(d)}
 function importerDomaine(f){const lecteur=new FileReader();lecteur.onerror=()=>alert('Lecture du fichier impossible.');
@@ -388,6 +425,7 @@ function basculeContours(){domContours=!domContours;
  if(document.body.classList.contains('page-domaine'))renderDomaine();else if(domaineEdite)renderDomaineEditeur()}
 $('dom-contours').onclick=basculeContours;$('dom-contours-editeur').onclick=basculeContours;
 function renderDomaine(leger){const d=domaine,mj=mjDom();vueDomaine=view;if(mj&&evacueNonConstruits())scheduleSave();
+ bandeauSecours();
  // Les joueurs lisent le domaine ; ce qui le modifie — carte, export, import — reste au MJ.
  ['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);
  $('dom-titre').textContent=d.nom;$('dom-tresor-tete').textContent='Trésor : '+montantLisible(d.finances.tresor);

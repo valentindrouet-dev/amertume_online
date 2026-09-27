@@ -550,7 +550,7 @@ mapsPage.innerHTML=
  '<aside class="maps-side panel"><h2>Cartes</h2><div id="map-list"></div>'
  +'<div class="side-actions"><button id="map-new" class="primary">+ Nouvelle carte</button><button id="map-copy">Dupliquer</button><button id="map-del">Supprimer</button></div>'
  +'<div class="divider"></div><h2>Sauvegarde</h2>'
- +'<p class="muted">Un fichier qui contient toutes tes cartes : zones, portes, découpes, zone de départ, adversaires, objets et image de fond. À garder de côté, et à réimporter si la partie saute.</p>'
+ +'<p class="muted">Un fichier qui contient toutes tes cartes : zones, portes, découpes, zone de départ, adversaires, objets et image de fond. Le domaine n’y est pas : il s’exporte depuis son onglet, et la partie entière depuis les Paramètres.</p>'
  +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
  +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
  +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label>'
@@ -652,7 +652,15 @@ $('map-json').onchange=()=>{const f=$('map-json').files[0];$('map-json').value='
  const lecteur=new FileReader();
  lecteur.onerror=()=>alert('Lecture du fichier impossible.');
  lecteur.onload=()=>{let entrantes;
-  try{entrantes=readMapsFile(String(lecteur.result))}catch(e){alert(e.message);return}
+  /* Un autre fichier d'Amertume se reconnaît : une sauvegarde globale donne ses cartes, si on
+     le veut ; un domaine ou une campagne disent où ils se reprennent. */
+  try{entrantes=readMapsFile(String(lecteur.result))}catch(e){let o=null;try{o=JSON.parse(String(lecteur.result))}catch(_){}
+   const cartes=o&&typeof o==='object'&&Array.isArray(o.actors)&&Array.isArray(o.maps)?o.maps.filter(m=>m&&typeof m==='object'):null;
+   if(cartes&&cartes.length){if(!confirm('Ce fichier est une sauvegarde globale de la partie, pas un export de cartes.\nImporter ses '+cartes.length+' carte(s) ici, à côté des tiennes ?\nLe domaine et le reste de la partie se reprennent dans Paramètres → Sauvegarde globale.'))return;
+    entrantes=cartes.slice(0,60).map(cleanMap)}
+   else{alert(o&&typeof o==='object'&&Array.isArray(o.actors)?'Ce fichier est une sauvegarde globale de la partie, sans carte à importer ici.\nLe domaine et le reste de la partie se reprennent dans Paramètres → Sauvegarde globale.'
+    :o&&o.genre==='domaine'?'Ce fichier est un export du domaine : reprends-le dans l’onglet Domaine, bouton « Importer ».'
+    :o&&o.genre==='campagne'?'Ce fichier est une campagne : reprends-la dans Paramètres → Campagnes.':e.message);return}}
   entrantes.forEach(m=>{m.id=crypto.randomUUID();m.name+=' (importée)';maps.push(m)});
   mapDraft=maps[maps.length-1];mapSel=null;undoStack=[];redoStack=[];
   measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas();saveMaps();

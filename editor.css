@@ -1183,3 +1183,11 @@ table.gemmes.nue thead th{text-align:center}
 .elements-dit{margin:0;font-size:12.5px}
 .arbre-outils .ico.danger:hover{border-color:#b03828;color:#b03828}
 .accolades-aide{font-size:12px;margin:2px 0 8px}
+
+/* Une autre fenêtre a enregistré la partie : un bandeau en haut, qui ne se rate pas. */
+#bandeau-fenetres{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:min(760px,94vw);padding:10px 14px;border-radius:12px;background:#7a2e1d;color:#fff;box-shadow:0 8px 26px #0006;font-size:14px}
+#bandeau-fenetres span{flex:1 1 280px}#bandeau-fenetres button{margin:0}
+#bandeau-fenetres button:not(.primary){background:transparent;color:#fff;border-color:#ffffff80}
+/* Le domaine de secours, proposé en tête de l'onglet quand il est plus complet que l'actuel. */
+.dom-secours{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 10px;padding:10px 14px;border:1px solid #c9953f;border-radius:10px;background:#c9953f1c}
+.dom-secours p{margin:0;flex:1 1 280px;font-size:13.5px}.dom-secours button{margin:0}

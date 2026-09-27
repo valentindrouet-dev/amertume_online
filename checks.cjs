@@ -1860,7 +1860,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
   &&(cartes.match(/\|\|editeDomaine\(\)/g)||[]).length===4,'l’onglet Domaine, MJ seul, et l’éditeur de combat cède ses touches');
  assert.ok(fief.includes('let domaine=normaliseDomaine(null);')
   &&fief.includes('snapshot=function(){return Object.assign(snapshotSansDomaine(),{domaine})};')
-  &&fief.includes('appliquerSauvegarde=function(s){appliquerSansDomaine(s);domaine=normaliseDomaine(s&&s.domaine);')
+  &&fief.includes('appliquerSauvegarde=function(s){appliquerSansDomaine(s);const d=normaliseDomaine(s&&s.domaine);')
   &&src.includes("if(s.domaine!=null&&(typeof s.domaine!=='object'||Array.isArray(s.domaine)))return 'Le domaine de la sauvegarde est illisible.';")
   &&/domaine:typeof domaine!=='undefined'/.test(partage)&&!/\bdomaine\b/.test(vivant),'le domaine voyage dans la sauvegarde et le contenu publié, jamais par la table');
  assert.ok(fief.includes('function dessineDomaine(canvas,vue,redessine)')&&fief.includes('const fond=calqueDisponible(c.calques,0);if(fond<0)return false;')
@@ -2256,7 +2256,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const fief=fs.readFileSync('domaine.js','utf8'),camp=fs.readFileSync('campagnes.js','utf8'),partage=fs.readFileSync('shared.js','utf8');
  assert.ok(cartes.includes("const PAGES_LIBRES=['table','domaine','heroes','bestiary','settings'];")
   &&partage.includes(",locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:structuredClone(catalog),")
-  &&partage.includes("if(remote.domaine&&typeof normaliseDomaine==='function'){domaine=normaliseDomaine(remote.domaine);domSel=null;domPageSel=null}")
+  &&partage.includes("if(remote.domaine&&typeof normaliseDomaine==='function'){const d=normaliseDomaine(remote.domaine);if(typeof poidsDomaine!=='function'||poidsDomaine(d)>0||poidsDomaine(domaine)===0)domaine=d;domSel=null;domPageSel=null}")
   &&fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}"),'le domaine voyage avec le contenu publié');
  assert.ok(fief.includes("const mjDom=()=>typeof view==='undefined'||view==='mj';")&&fief.includes("['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);")
   &&fief.includes("if(!mjDom()){renderDomFicheLue(boite,b);return}")&&fief.includes("function renderDomFicheLue(boite,b){")&&!fief.includes("renderDomFicheLue(boite,b){")===false
@@ -2709,4 +2709,22 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const ctxA={GENERIQUES:'Génériques',catalog:{classes:[{name:'Mystique'},{name:'Gardien'}]}};vm.createContext(ctxA);
  const deb=src.indexOf('function aUnArbre(');vm.runInContext(src.slice(deb,src.indexOf('\n',deb)),ctxA);
  assert.deepEqual(['Mystique','Gardien','Génériques','Gobelins','',undefined].map(x=>ctxA.aUnArbre(x)),[true,true,false,false,false,false]);}
-console.log('1647 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.292 — Le domaine ne se perd plus. Une fenêtre qui voit une autre enregistrer n'enregistre
+   plus rien ; un domaine vide n'en efface pas un plein ; un domaine qui a du contenu se garde aussi
+   en secours, que l'onglet propose de reprendre. L'import des cartes reconnaît les autres fichiers. */
+{const fief=fs.readFileSync('domaine.js','utf8'),src=fs.readFileSync('editor.js','utf8'),cartes2=fs.readFileSync('maps.js','utf8');
+ const C=require('./combat.js');
+ const ctxP={};vm.createContext(ctxP);vm.runInContext(fief.slice(fief.indexOf('function poidsDomaine('),fief.indexOf('/* ---------- Le domaine de secours')),ctxP);
+ const vierge=C.normaliseDomaine(null);assert.equal(ctxP.poidsDomaine(vierge),0,'le domaine d’origine ne pèse rien');
+ assert.ok(ctxP.poidsDomaine(C.normaliseDomaine({nom:'Lamuline',carte:{calques:['x']},batiments:[{nom:'T',etape:3,zone:[[0,0],[1,0],[1,1]]}]}))>100,'des calques, des zones : un domaine précieux');
+ assert.ok(ctxP.poidsDomaine(C.normaliseDomaine({nom:'Lamuline'}))>0&&ctxP.poidsDomaine(null)===0);
+ assert.ok(fief.includes(" if(poidsDomaine(d)>0||poidsDomaine(domaine)===0)domaine=d;domSel=null;domPageSel=null};")&&fs.readFileSync('shared.js','utf8').includes("poidsDomaine(d)>0||poidsDomaine(domaine)===0)domaine=d;"),'un domaine vide n’efface pas un domaine plein');
+ assert.ok(fief.includes("const saveNowSansSecours=saveNow;saveNow=function(){saveNowSansSecours();gardeSecoursDomaine()};")&&fief.includes("tx.objectStore('state').put(rec,'domaine:secours');")
+  &&fief.includes("||poidsDomaine(domaine)<=0)return;")&&fief.includes("b.textContent='⟲ Reprendre ce domaine';")
+  &&fief.includes("o.genre==='campagne'&&o.partie&&o.partie.domaine?o.partie.domaine:"),'le domaine de secours, et l’import depuis une campagne');
+ assert.ok(src.includes("function saveNow(){if(ongletPerime){")&&src.includes("marqueSession();try{const tx=db.transaction('state','readwrite');")
+  &&src.includes("window.addEventListener('storage',e=>{if(e.key!=='amertume-session-marque'||!e.newValue)return;")&&src.includes("if(document.visibilityState==='visible'&&ongletPerime)relireSession()"),'une fenêtre périmée n’écrase plus la partie');
+ assert.ok(cartes2.includes("Array.isArray(o.actors)&&Array.isArray(o.maps)?o.maps.filter(m=>m&&typeof m==='object'):null;")&&cartes2.includes("Ce fichier est un export du domaine : reprends-le dans l’onglet Domaine")
+  &&cartes2.includes('Le domaine n’y est pas : il s’exporte depuis son onglet, et la partie entière depuis les Paramètres.'),'l’import des cartes reconnaît les autres fichiers');
+ assert.ok(cartes2.includes("Array.isArray(o.actors)?'Ce fichier est une sauvegarde globale de la partie, sans carte à importer ici."),'une sauvegarde globale sans carte le dit');}
+console.log('1655 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
