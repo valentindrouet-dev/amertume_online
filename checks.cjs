@@ -187,7 +187,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  assert.deepEqual(paramsTalent({effet:'orbesfeu'}),{etat:'Feu'});
  assert.deepEqual(paramsTalent({effet:'orbesfeu',params:{etat:'Gel'}}),{etat:'Gel'});
  assert.deepEqual(paramsTalent({effet:'orbesfeu',params:{etat:'Coma'}}),{etat:'Feu'});
- assert.match(phraseTalent('orbesfeu'),/infligent <b>Feu<\/b> en plus/);
+ assert.match(phraseTalent('orbesfeu'),/infligent <b>Feu<\/b> sur <b>6\+<\/b> en plus/);
  assert.equal(etatDesOrbes([...tenus,{code:TALENTS_CODES.orbesfeu,params:{etat:'Gel'}}]),'Gel');}
 /* Les prérequis : par la fiche (« prerequis ») ou par la mécanique (« requiert »). Aucune
    mécanique livrée n'impose plus de socle — le MJ le nomme lui-même, talent par talent —
@@ -1413,7 +1413,7 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
  &&src.includes("if(placerTalent(id,dest))arbreChange();else note(")&&src.includes("glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,prerequis:t.id});")
  &&src.includes("if(mj)pile.append(entre({famille:c.famille,voie:c.voie,avant:e.t.id}));")
  &&src.includes("cible(h,{famille:c.famille,voie:c.voie});")&&src.includes("champVif(nomVoie,()=>c.voie,v=>{if(nommerVoie(c.famille,c.rang,v))arbreChange();")&&src.includes("nomVoie.classList.toggle('vierge',!c.voie);")&&feuille.includes('.arbre-titre .arbre-voie.vierge{')&&src.includes("if(nommerVoie(c.famille,c.rang,''))arbreChange()});")
- &&src.includes("plus.onclick=()=>openTalent(null,renderArbres,{famille:c.famille,voie:c.voie});col.append(plus)}")
+ &&src.includes("plus.onclick=()=>ajouterDansArbre({famille:c.famille,voie:c.voie});col.append(plus)}")
  &&src.includes("{famille:talentFamily(t),voie:t.voie||'',prerequis:t.id,level:Math.min(20,(t.level||1)+1)})));")
  &&src.includes("plus.onclick=()=>openTalent(null,renderArbres,{famille:classe,type:'mait',name:'Maîtrise'});tete.append(plus)}}")
  /* Trois colonnes, toujours : plus de colonne « + Spécialisation », et les génériques ont leur
@@ -2743,7 +2743,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue'")
   &&!src.includes('arbre-reserve')&&!src.includes('cat-hors')&&!css.includes('.arbre-reserve')&&!src.includes('dest.horsArbre'),'plus de réserve, plus de mention');
  assert.ok(!src.includes("f.branche.value==='hors'")
-  &&src.includes("if(t.horsArbre!==true)delete t.horsArbre;")&&src.includes("Pour l’y remettre : « ↩ Remettre dans l’arbre », en haut.'"),'le formulaire retire et replace');}
+  &&src.includes("if(t.horsArbre!==true)delete t.horsArbre;")&&src.includes("Pour l’y remettre : « + Talent », ou un « + » de l’arbre.'"),'le formulaire retire et replace');}
 /* v0.295 — L'éditeur de talents en boîtes colorées, sans spécialisation, place ni prérequis :
    l'arbre assemble. Les effets câblés se lisent et se réorganisent par palier (les volets de
    Brise), les réglages communs s'écrivent une fois, l'état d'un talent élémentaire suit le
@@ -2772,5 +2772,21 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){")&&src.includes(" const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note});")
   &&src.includes("if(BULLES)surveille(pill,()=>{const d=bulleTalent(t);ouvrirBulle(pill,d,")
   &&src.includes("m.innerHTML=t.elementaire===true&&!tp.elementVu?enElementDuMystique(ph,tp.params&&tp.params.etat):ph;")&&src.includes("if(elem)h=enElementDuMystique(h,vals[n].etat);"),'la bulle au survol, dans l’onglet Talents aussi ; l’élément du Mystique sans élément');
- assert.ok(src.includes("m.add(new Option('↩ Remettre dans l’arbre…',''));")&&src.includes("if(!t||!placerTalent(t.id,{famille:classe,voie:''}))return;"),'un talent retiré revient depuis la tête de l’arbre');}
-console.log('1674 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+ assert.ok(!src.includes('↩ Remettre dans l’arbre'),'le menu de tête a laissé la place aux « + »');}
+/* v0.296 — Les orbes élémentaires par palier : l'état sur 6+, puis à chaque touche, puis en
+   deux crans, trois volets que le MJ réorganise. Dans l'arbre, les « + » proposent un talent
+   neuf ou un talent du catalogue, retiré de l'arbre, générique ou d'une autre classe. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
+ const O=(palier,etat='Feu',volets)=>[{code:C.TALENTS_CODES.orbesfeu,params:{etat},talent:{palier,effet:'orbesfeu',volets}}];
+ assert.deepEqual(C.etatOrbeAuPalier(O(undefined)),{etat:'Feu',six:true,crans:1},'palier 1 : l’état sur 6+');
+ assert.deepEqual(C.etatOrbeAuPalier(O(2)),{etat:'Feu',six:false,crans:1},'palier 2 : à chaque touche');
+ assert.deepEqual(C.etatOrbeAuPalier(O(3)),{etat:'Feu',six:false,crans:2},'palier 3 : deux crans');
+ assert.equal(C.etatOrbeAuPalier(O(3,'Gel')).crans,1,'le Gel ne s’empile pas : un cran');
+ assert.equal(C.etatOrbeAuPalier(O(1,'Feu',{six:0,touche:2,deux:3})),null,'réorganisé : rien au palier 1');
+ assert.deepEqual([1,2,3].map(n=>C.ditEtatOrbe(C.etatOrbeAuPalier(O(n)))),['Feu sur 6+','Feu à la touche','Feu 2 à la touche']);
+ assert.ok(page.includes("if(pouvoir&&(!pouvoir.six||r.dice.some(([v])=>v>=6))){const e=pouvoir.etat,issue=infligeEtat(b,e);")
+  &&page.includes("else if(issue===true){if(pouvoir.crans>1)ajouteEtat(b,e,pouvoir.crans-1);pose=' + '+e+(pouvoir.crans>1?' '+pouvoir.crans:'')}}"),'la table pose l’état selon le palier');
+ assert.ok(src.includes("function ajouterDansArbre(dest){")&&src.includes("neuf.textContent='✚ Créer un nouveau talent';")
+  &&src.includes("const g=rang(t)===0?'Retirés de cet arbre':talentFamily(t);")&&src.includes("if(f!==dest.famille&&!t.horsArbre)retireDeLArbre(t);")
+  &&src.includes("p.onclick=()=>ajouterDansArbre({famille:col.famille,voie:col.voie,prerequis:e.t.id,branche:seg,")&&fs.readFileSync('editor.css','utf8').includes('.arbre-choix-liste{'),'les « + » de l’arbre prennent aussi un talent existant');}
+console.log('1682 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

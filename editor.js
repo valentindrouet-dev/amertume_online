@@ -2305,6 +2305,35 @@ function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arb
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
 function arbreChange(){noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
+/* Ajouter à l'arbre : un talent neuf, ou l'un de ceux qui existent déjà. D'abord ceux de la
+   classe retirés de l'arbre, puis les génériques, puis ceux des autres classes. Choisi, il
+   vient à la place désignée et prend la classe de l'arbre ; celui qui quitte l'arbre d'une
+   autre classe le dit d'abord, et ce qui pendait sous lui y remonte. Ni les maîtrises, ni ce
+   qui mettrait l'arbre sous lui-même. */
+const choixArbreDialog=dialog('arbre-choix','Ajouter à l’arbre','<input id="arbre-choix-filtre" placeholder="Chercher un talent…" aria-label="Chercher un talent"><div id="arbre-choix-liste" class="arbre-choix-liste"></div>');
+let choixArbreDest=null;
+function ajouterDansArbre(dest){if(view!=='mj'||!dest)return;choixArbreDest=dest;$('arbre-choix-filtre').value='';dessineChoixArbre();choixArbreDialog.showModal();$('arbre-choix-filtre').focus()}
+function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-liste');if(!dest||!boite)return;boite.replaceChildren();
+ const q=cleTalent($('arbre-choix-filtre').value),sous=dest.prerequis?talent(dest.prerequis):null;
+ const neuf=document.createElement('button');neuf.type='button';neuf.className='arbre-choix-neuf';neuf.textContent='✚ Créer un nouveau talent';
+ neuf.onclick=()=>{choixArbreDialog.close();openTalent(null,renderArbres,{...dest})};boite.append(neuf);
+ const rang=t=>talentFamily(t)===dest.famille?0:talentFamily(t)===GENERIQUES?1:2;
+ const libres=(catalog.talents||[]).filter(t=>t&&t.type!=='mait'&&!(talentFamily(t)===dest.famille&&!t.horsArbre)
+  &&!(sous&&(sous===t||descendDe(sous,t)))&&(!q||cleTalent(t.name).includes(q)))
+  .sort((x,y)=>rang(x)-rang(y)||talentFamily(x).localeCompare(talentFamily(y),'fr')||nomEnClair(x.name).localeCompare(nomEnClair(y.name),'fr'));
+ let groupe=null;
+ libres.forEach(t=>{const g=rang(t)===0?'Retirés de cet arbre':talentFamily(t);
+  if(g!==groupe){groupe=g;const h=document.createElement('h3');h.className='arbre-choix-groupe';h.textContent=g;boite.append(h)}
+  const b=document.createElement('button');b.type='button';b.className='arbre-choix-talent';b.append(talentPill(t,true));b.onclick=()=>prendreDansArbre(t);boite.append(b)});
+ if(!libres.length){const v=document.createElement('p');v.className='muted';v.textContent=q?'Aucun talent de ce nom.':'Tous les talents du catalogue sont déjà dans cet arbre.';boite.append(v)}}
+$('arbre-choix-filtre').oninput=dessineChoixArbre;
+async function prendreDansArbre(t){const dest=choixArbreDest;if(!t||!dest)return;const f=talentFamily(t),nom=nomEnClair(t.name);
+ if(f!==dest.famille&&aUnArbre(f)&&!t.horsArbre&&typeof demander==='function'
+  &&!await demander('« '+nom+' » est dans l’arbre de '+f+' : il le quitte pour celui de '+dest.famille+'.','Déplacer'))return;
+ choixArbreDialog.close();
+ if(f!==dest.famille&&!t.horsArbre)retireDeLArbre(t);
+ if(!placerTalent(t.id,dest)){noteArbres('« '+nom+' » ne peut pas aller là : il se retrouverait sous lui-même.');return}
+ arbreChange();noteArbres('« '+nom+' » rejoint l’arbre de '+dest.famille+'.')}
 /* ---------- L'élément du Mystique ---------- */
 const VERROU_ELEMENT='l’élément du Mystique';
 let elementApercu='feu';
@@ -2444,11 +2473,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   // Les outils du MJ, au survol : corriger le talent, en suspendre un nouveau dessous.
   if(mj){const outils=document.createElement('span');outils.className='arbre-outils';
    outils.append(ico('✎','Corriger '+t.name,()=>openTalent(catalog.talents.indexOf(t),renderArbres)));
-   if(t.type!=='mait')outils.append(ico('⊕','Créer un talent sous '+t.name,()=>openTalent(null,renderArbres,
+   if(t.type!=='mait')outils.append(ico('⊕','Ajouter un talent sous '+t.name,()=>ajouterDansArbre(
     {famille:talentFamily(t),voie:t.voie||'',prerequis:t.id,level:Math.min(20,(t.level||1)+1)})));
    // Sur le plan de la classe, ✕ retire le talent de l'arbre, sans l'effacer du catalogue.
    if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue',()=>{const nom=vu(t).name;
-    if(retireDeLArbre(t)){arbreChange();noteArbres('« '+nom+' » est retiré de l’arbre et reste dans l’onglet Talents. Pour l’y remettre : « ↩ Remettre dans l’arbre », en haut.')}}));
+    if(retireDeLArbre(t)){arbreChange();noteArbres('« '+nom+' » est retiré de l’arbre et reste dans l’onglet Talents. Pour l’y remettre : « + Talent », ou un « + » de l’arbre.')}}));
    b.append(outils)}
   surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
   return b};
@@ -2461,14 +2490,6 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // Ce que l'arbre a coûté : les paliers acquis, au prix de chacun — dès qu'un prix est fixé.
  // L'élément du Mystique, au-dessus de l'arbre : le MJ le choisit, le joueur le lit.
  if(elementaire)tete.append(choixElement(a,classe));
- /* Un talent retiré de l'arbre y revient d'ici : il se range en bas du tronc commun, et se
-    glisse ensuite à sa place. Le menu n'est là que s'il y en a. */
- if(mj&&!a&&classe){const hors=(catalog.talents||[]).filter(t=>t&&t.horsArbre&&talentFamily(t)===classe);
-  if(hors.length){const m=document.createElement('select');m.className='arbre-remettre';m.setAttribute('aria-label','Remettre dans l’arbre un talent retiré');
-   m.add(new Option('↩ Remettre dans l’arbre…',''));hors.forEach(t=>m.add(new Option(nomEnClair(t.name),t.id)));
-   m.onchange=()=>{const t=talent(m.value);if(!t||!placerTalent(t.id,{famille:classe,voie:''}))return;
-    arbreChange();noteArbres('« '+nomEnClair(t.name)+' » est de retour, en bas du tronc commun : glisse-le à sa place.')};
-   tete.append(m)}}
  if(a){const pt=ptDepenses(a,catalog.talents);if(pt){const s=document.createElement('p');s.className='arbres-pt';s.textContent=pt+' PT dépensé'+(pt>1?'s':'');tete.append(s)}}
  const maitrises=maitrisesDe(classe);
  if(maitrises.length){const bande=document.createElement('div');bande.className='arbre-maitrises';
@@ -2511,8 +2532,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const place=(col,e,seg)=>{const p=document.createElement('div');p.className='arbre-place';
   if(!mj)return p;
   p.dataset.sous=e.t.id;p.dataset.place=seg;p.setAttribute('role','button');p.tabIndex=0;p.textContent='+';
-  p.title='Créer un talent en diagonale '+(seg==='g'?'gauche':'droite')+' sous '+e.t.name;
-  p.onclick=()=>openTalent(null,renderArbres,{famille:col.famille,voie:col.voie,prerequis:e.t.id,branche:seg,level:Math.min(20,(e.t.level||1)+1)});
+  p.title='Ajouter un talent en diagonale '+(seg==='g'?'gauche':'droite')+' sous '+e.t.name;
+  p.onclick=()=>ajouterDansArbre({famille:col.famille,voie:col.voie,prerequis:e.t.id,branche:seg,level:Math.min(20,(e.t.level||1)+1)});
   p.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();p.click()}};
   cible(p,{famille:col.famille,voie:col.voie,prerequis:e.t.id,branche:seg});return p};
  /* Une colonne : le bandeau — renommable, dissoluble —, puis les étages : chaque central sur
@@ -2550,8 +2571,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(mj)pile.append(entre({famille:c.famille,voie:c.voie}));
   col.append(pile);
   if(mj){const plus=document.createElement('button');plus.type='button';plus.className='arbre-ajout';plus.textContent='+ Talent';
-   plus.title='Créer un talent central dans '+c.titre;
-   plus.onclick=()=>openTalent(null,renderArbres,{famille:c.famille,voie:c.voie});col.append(plus)}
+   plus.title='Ajouter un talent central dans '+c.titre+' : un nouveau, ou un talent qui existe déjà';
+   plus.onclick=()=>ajouterDansArbre({famille:c.famille,voie:c.voie});col.append(plus)}
   return col};
  /* Les colonnes : les trois de la classe, ni plus ni moins. Les génériques ont leur propre
     arbre — on l'ouvre par son rouage, dans l'onglet Talents — et n'encombrent plus celui

@@ -1210,7 +1210,15 @@ body.sombre .paliers-table thead th.p2,body.sombre .paliers-table thead th.p3{co
 .paliers-table tr.moteur td{padding:6px 8px;border-radius:8px;background:color-mix(in srgb,#3a6fc2 8%,var(--field));font-size:12.5px;line-height:1.4;vertical-align:top}
 /* Une accolade dans un nom, sans porteur pour la remplir : une petite pastille. */
 .accolade{display:inline-block;margin:0 1px;padding:0 5px;border-radius:6px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);font-size:.85em;font-style:italic;font-weight:600;vertical-align:1px}
-.arbre-remettre{margin-top:8px;font-size:13px;max-width:100%}
+/* Ajouter à l'arbre : la recherche, un talent neuf, puis ceux du catalogue par classe. */
+#arbre-choix{width:min(520px,calc(100vw - 32px))}
+#arbre-choix-filtre{width:100%;box-sizing:border-box;margin-bottom:10px}
+.arbre-choix-liste{display:flex;flex-direction:column;gap:6px;max-height:min(60vh,520px);overflow:auto;padding-right:4px}
+.arbre-choix-neuf{align-self:flex-start;padding:7px 12px;border:1px dashed var(--accent);border-radius:8px;background:transparent;color:var(--accent);font:600 14px system-ui;cursor:pointer}
+.arbre-choix-groupe{margin:10px 0 2px;font:700 11px system-ui;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
+.arbre-choix-talent{display:flex;padding:0;border:0;background:transparent;cursor:pointer;text-align:left}
+.arbre-choix-talent .cat-pill{width:100%}
+.arbre-choix-talent:hover .cat-pill,.arbre-choix-talent:focus-visible .cat-pill{outline:2px solid var(--accent);outline-offset:1px}
 
 /* Une autre fenêtre a enregistré la partie : un bandeau en haut, qui ne se rate pas. */
 #bandeau-fenetres{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:min(760px,94vw);padding:10px 14px;border-radius:12px;background:#7a2e1d;color:#fff;box-shadow:0 8px 26px #0006;font-size:14px}

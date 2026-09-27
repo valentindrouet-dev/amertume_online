@@ -813,11 +813,17 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
     +' qui lance'+(n>1?'nt':'')+' <b>'+d+' dé'+(d>1?'s':'')+' '+nom+(d>1?'s':'')+'</b>'+(n>1?' chacun':'')+'.'}},
  /* Orbes de feu : une amélioration. Elle ne lance rien elle-même : elle change ce que les
     orbes du porteur emportent, et l'état se règle, Feu par défaut. Le moteur n'exige plus
-    d'Orbes mystiques au-dessus : c'est le MJ qui nomme le prérequis, talent par talent. */
+    d'Orbes mystiques au-dessus : c'est le MJ qui nomme le prérequis, talent par talent.
+    Trois volets, chacun au palier que le MJ choisit : l'état sur un 6 (palier 1), puis à
+    chaque touche (2), puis en deux crans (3). */
  orbesfeu:{cle:'orbesfeu',nom:'Orbes de feu',type:'ame',
-  aide:'Les orbes du porteur infligent un état en plus de leurs dégâts.',
+  aide:'Les orbes du porteur infligent un état en plus de leurs dégâts : sur un 6, puis à chaque touche, puis en deux crans, chacun au palier choisi.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
-  phrase(p){return 'Les orbes du porteur infligent <b>'+((p&&p.etat)||'Feu')+'</b> en plus de leurs dégâts.'}},
+  volets:[{cle:'six',nom:'Inflige l’état sur 6+',palier:1},{cle:'touche',nom:'Inflige l’état à chaque touche',palier:2},
+   {cle:'deux',nom:'Inflige l’état en deux crans',palier:3}],
+  phrase(p,palier,v){const e=(p&&p.etat)||'Feu',n=Math.max(1,Math.trunc(Number(palier))||1),ouvert=k=>!!v&&v[k]>0&&n>=v[k];
+   if(!ouvert('six')&&!ouvert('touche'))return 'Les orbes du porteur n’infligent encore <b>aucun état</b> à ce palier.';
+   return 'Les orbes du porteur infligent <b>'+e+(ouvert('deux')&&cumulable(e)?' 2':'')+'</b>'+(ouvert('touche')?'':' sur <b>6+</b>')+' en plus de leurs dégâts.'}},
  /* Débordement : un passif. Le coup qui achève un adversaire ne s'arrête pas à lui — ce
     qu'il n'a pas pu encaisser passe à un autre adversaire à portée de l'attaque. */
  debordement:{cle:'debordement',nom:'Débordement',type:'pass',
@@ -1042,6 +1048,17 @@ function desOrbe(portes){const t=(portes||[]).filter(t=>t&&t.code&&t.code.cle===
  return {n:Math.max(1,Math.trunc(t.params&&t.params.des)||1),couleur,nom:DES_ORBE.find(([k])=>k===couleur)[1]}}
 function etatDesOrbes(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle==='orbesfeu');
  return t?String(t.params&&t.params.etat||'Feu'):''}
+/* L'état des orbes au palier tenu : ce qu'il faut pour qu'il prenne — un 6 parmi les dés, ou
+   la seule touche — et combien de crans il pose. Null tant qu'aucun volet ne l'ouvre. Deux
+   crans ne valent que pour un état qui s'empile. */
+function etatOrbeAuPalier(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle==='orbesfeu');if(!t)return null;
+ const n=Math.max(1,Math.min(PALIERS_MAX,Math.trunc(Number(t.talent&&t.talent.palier))||1));
+ const v=voletsDe({...(t.talent||{}),effet:'orbesfeu'}),ouvert=k=>v[k]>0&&n>=v[k];
+ if(!ouvert('six')&&!ouvert('touche'))return null;
+ const etat=String(t.params&&t.params.etat||'Feu');
+ return {etat,six:!ouvert('touche'),crans:ouvert('deux')&&cumulable(etat)?2:1}}
+// Ce que l'état des orbes demande, en une ligne : « Feu sur 6+ », « Feu à la touche », « Feu 2 à la touche ».
+const ditEtatOrbe=o=>o?o.etat+(o.crans>1?' '+o.crans:'')+(o.six?' sur 6+':' à la touche'):'';
 /* Une affection que le porteur ne subit jamais : Invulnérable la refuse avant qu'elle ne
    se pose, d'où qu'elle vienne. */
 function etatRefuse(portes,etat){if(!etat)return false;
@@ -1588,6 +1605,6 @@ const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatie
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
- DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,briseContre,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,ptDepenses,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,ptDepenses,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);
