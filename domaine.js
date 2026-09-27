@@ -17,8 +17,14 @@ function sauveDomaine(){evacueNonConstruits();scheduleSave();document.dispatchEv
    pendant qu'il est ouvert le redessine. */
 let vueDomaine=null;
 const mjDom=()=>typeof view==='undefined'||view==='mj';
+/* Ce que la table change — un joueur qui se déplace, un achat — se relit sur l'onglet, sans
+   redessiner le fond de carte, et jamais sous les doigts de qui est en train d'écrire. */
 const renderSansVueDomaine=render;render=function(){renderSansVueDomaine();
- if(document.body.classList.contains('page-domaine')&&vueDomaine!==view)renderDomaine()};
+ if(!document.body.classList.contains('page-domaine'))return;
+ if(vueDomaine!==view){renderDomaine();return}
+ const f=document.activeElement;if(f&&f.closest&&f.closest('#domaine-page')&&/^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName))return;
+ if(typeof champsOuverts!=='undefined'&&champsOuverts>0)return;
+ renderDomaine(true)};
 const TEINTES_ETAPE=['#b9a48a','#c9953f','#7faddc','#8bbd9c','#d9532b','#6e6a66','#9b7fd4','#a89f8f','#7d9b3c'];
 const etatBatimentValide=v=>v&&ETATS_BATIMENT.some(([k])=>k===v)?v:'';
 const batimentDom=id=>domaine.batiments.find(b=>b.id===id)||null;
@@ -27,8 +33,18 @@ const batimentDom=id=>domaine.batiments.find(b=>b.id===id)||null;
 const batimentConstruit=b=>!!b&&b.etape>=ETAPES_DOMAINE.length-1;
 // Les joueurs ne voient que ce qui est sorti de terre : une friche n'a ni ligne ni fiche chez eux.
 const batimentChoisissable=b=>!!b&&(mjDom()||b.etape>0);
-function evacueNonConstruits(){let n=0;Object.values(domaine.aventuriers).forEach(v=>{if(!v||!v.lieu)return;
- const b=batimentDom(v.lieu);if(b&&!batimentConstruit(b)){v.lieu='';n++}});return n}
+/* Où se trouve un aventurier au domaine : sur sa fiche, pour que son joueur l'y déplace lui-même
+   — la table en ligne porte les champs des aventuriers, pas le domaine. Une fiche d'avant
+   lit encore le domaine, jusqu'à son premier déplacement. */
+const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');
+function poseLieu(a,lieu){if(a)a.lieuDomaine=String(lieu||'').slice(0,60)}
+function evacueNonConstruits(){let n=0;actors.forEach(a=>{if(!a.hero)return;const l=lieuDe(a);if(!l||l==='aventure'||l==='absent')return;
+ if(!batimentConstruit(batimentDom(l))){poseLieu(a,'');n++}});return n}
+/* Qui agit pour un aventurier : le MJ, pour tous ; en ligne, le joueur assis à sa place ;
+   sur un seul appareil, celui de « Mon aventurier ». */
+function agitPour(a){if(!a)return false;if(mjDom())return true;
+ if(typeof enLigne!=='undefined'&&enLigne)return typeof monSiege!=='undefined'&&monSiege===a.id;
+ return actors.indexOf(a)===owner}
 function nomLieu(lieu){if(lieu==='aventure')return 'En aventure';if(lieu==='absent')return 'Absent';
  const b=lieu?batimentDom(lieu):null;return b?b.nom:'Au domaine'}
 function montantLisible(n){const s=Math.abs(n).toLocaleString('fr-FR');return (n<0?'−':'')+s+' '+domaine.monnaie}
@@ -94,9 +110,9 @@ function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildre
   const sous=b.etat?NOM_ETAT_BATIMENT(b.etat):friche||fini?'':NOM_ETAPE(b.etape);
   if(sous){const et=document.createElement('small');et.textContent=sous;e.append(et)}
   // Sur le plan, les aventuriers qui s'y trouvent : leur jeton sous le nom du bâtiment.
-  if(opts.jeu){const presents=actors.filter(a=>a.hero&&(domaine.aventuriers[a.id]||{}).lieu===b.id);
+  if(opts.jeu){const presents=actors.filter(a=>a.hero&&lieuDe(a)===b.id);
    if(presents.length){const j=document.createElement('div');j.className='dom-etiquette-jetons';
-    presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name+(mjDom()?' — glisser vers un autre bâtiment construit':'');t.onpointerdown=ev=>glisseJetonAventurier(ev,a,t);j.append(t)});e.append(j)}}
+    presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name+(agitPour(a)?' — glisser vers un autre bâtiment construit':'');if(agitPour(a))t.classList.add('a-moi');t.onpointerdown=ev=>glisseJetonAventurier(ev,a,t);j.append(t)});e.append(j)}}
   if(opts.deplace||opts.clic&&!inerte)rendEtiquetteDeplacable(e,b,etiquettes,opts);etiquettes.append(e)});
  dessineCartouches(etiquettes,opts);
  /* Sur le plan du Domaine, le bâtiment choisi s'allume : le reste de la carte s'assombrit
@@ -127,7 +143,7 @@ function dessineCartouches(etiquettes,opts){const d=domaine,compte=k=>d.pnj.filt
    où sur la zone d'un bâtiment construit, il y est rattaché aussitôt. Lâché ailleurs, il
    revient d'où il vient. Un fantôme suit le doigt ; les bâtiments qui l'accueilleraient
    s'allument le temps du geste, celui qu'on survole plus fort. */
-function glisseJetonAventurier(ev,a,t){if(ev.button!==0||!mjDom())return;ev.stopPropagation();ev.preventDefault();
+function glisseJetonAventurier(ev,a,t){if(ev.button!==0||!agitPour(a))return;ev.stopPropagation();ev.preventDefault();
  const plan=$('dom-plan'),id=ev.pointerId,depart={x:ev.clientX,y:ev.clientY};let fantome=null;
  const pos=m=>{const r=plan.getBoundingClientRect();return [100*(m.clientX-r.left)/r.width,100*(m.clientY-r.top)/r.height]};
  const cibleSous=m=>{const i=batimentSous(domaine,pos(m));const b=i>=0?domaine.batiments[i]:null;return batimentConstruit(b)?b:null};
@@ -141,8 +157,7 @@ function glisseJetonAventurier(ev,a,t){if(ev.button!==0||!mjDom())return;ev.stop
   try{t.releasePointerCapture(id)}catch(_){}
   if(!fantome)return;fantome.remove();plan.classList.remove('glisse-jeton');t.classList.remove('tire');allume(null);
   const b=m&&m.type==='pointerup'?cibleSous(m):null;
-  const v=domaine.aventuriers[a.id]||(domaine.aventuriers[a.id]={lieu:'',notes:''});
-  if(b&&v.lieu!==b.id){v.lieu=b.id;renderDomaine();sauveDomaine()}};
+  if(b&&lieuDe(a)!==b.id)deplaceAventurier(a,b)};
  try{t.setPointerCapture(id)}catch(_){}
  window.addEventListener('pointermove',suit);window.addEventListener('pointerup',lache);window.addEventListener('pointercancel',lache)}
 
@@ -372,13 +387,14 @@ let domContours=false;
 function basculeContours(){domContours=!domContours;
  if(document.body.classList.contains('page-domaine'))renderDomaine();else if(domaineEdite)renderDomaineEditeur()}
 $('dom-contours').onclick=basculeContours;$('dom-contours-editeur').onclick=basculeContours;
-function renderDomaine(){const d=domaine,mj=mjDom();vueDomaine=view;if(mj)evacueNonConstruits();
+function renderDomaine(leger){const d=domaine,mj=mjDom();vueDomaine=view;if(mj&&evacueNonConstruits())scheduleSave();
  // Les joueurs lisent le domaine ; ce qui le modifie — carte, export, import — reste au MJ.
  ['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);
  $('dom-titre').textContent=d.nom;$('dom-tresor-tete').textContent='Trésor : '+montantLisible(d.finances.tresor);
  if(domPageSel!==null&&!batimentChoisissable(batimentDom(domPageSel)))domPageSel=null;
  const plan=$('dom-plan');plan.style.setProperty('--ratio',String(d.carte.ratio||16/9));
- const vide=!dessineDomaine($('dom-plan-fond'),-1,()=>{if(document.body.classList.contains('page-domaine'))dessineDomaine($('dom-plan-fond'),-1)});
+ // Relu à la volée, l'onglet garde son fond : il ne change qu'avec le domaine lui-même.
+ const vide=leger?plan.classList.contains('no-image'):!dessineDomaine($('dom-plan-fond'),-1,()=>{if(document.body.classList.contains('page-domaine'))dessineDomaine($('dom-plan-fond'),-1)});
  $('dom-plan-vide').hidden=!vide;plan.classList.toggle('no-image',vide);
  const sel=d.batiments.findIndex(b=>b.id===domPageSel);
  // Les contours sont un outil du MJ : chez les joueurs, la carte se lit toujours sans traits.
@@ -431,7 +447,11 @@ function renderDomFiche(){const boite=$('dom-fiche');boite.replaceChildren();con
  const etat=document.createElement('select');etat.className='dom-etat-choix';etat.setAttribute('aria-label','État du bâtiment');
  ETATS_BATIMENT.forEach(([k,n])=>etat.add(new Option(n,k)));etat.value=b.etat||'';
  etat.onchange=()=>{b.etat=etatBatimentValide(etat.value);renderDomaine();sauveDomaine()};
- tete.append(nom,et,etat,boutonConstruire(b),recul,avance);boite.append(tete);
+ // Sa fonction : ce qu'il fait pour la troupe, construit et intact.
+ const fonc=document.createElement('select');fonc.className='dom-etat-choix dom-fonction-choix';fonc.setAttribute('aria-label','Fonction du bâtiment');
+ FONCTIONS_BATIMENT.forEach(([k,n])=>fonc.add(new Option(n,k)));fonc.value=b.fonction||'';
+ fonc.onchange=()=>{b.fonction=FONCTIONS_BATIMENT.some(([k])=>k===fonc.value)?fonc.value:'';renderDomaine();sauveDomaine()};
+ tete.append(nom,et,etat,fonc,boutonConstruire(b),recul,avance);boite.append(tete);
  const grille=document.createElement('div');grille.className='dom-couts';
  [1,2,3].forEach(e=>{const l=document.createElement('label');l.textContent='Coût — '+NOM_ETAPE(e);
   const inp=document.createElement('input');inp.type='number';inp.min='0';inp.step='1';inp.value=String(b.couts[e-1]);
@@ -448,9 +468,10 @@ function renderDomFiche(){const boite=$('dom-fiche');boite.replaceChildren();con
  const ta=document.createElement('textarea');ta.rows=3;ta.maxLength=2000;ta.value=b.notes;ta.placeholder='Intrigues, secrets, ce qui s’y trame…';
  ta.onchange=()=>{b.notes=ta.value.slice(0,2000);sauveDomaine()};notes.append(ta);boite.append(notes);
  const qui=document.createElement('p');qui.className='muted dom-qui';
- const pnj=pnjDuBatiment(domaine,b.id).map(p=>p.nom),av=actors.filter(a=>a.hero&&(domaine.aventuriers[a.id]||{}).lieu===b.id).map(a=>a.name);
- qui.textContent=(pnj.length?'Présents : '+pnj.join(', '):'Personne n’y vit ni n’y passe.')+(av.length?' · Aventuriers : '+av.join(', '):'');
- boite.append(qui)}
+ // Les aventuriers présents se lisent sur leurs boutons, dessous.
+ const pnj=pnjDuBatiment(domaine,b.id).map(p=>p.nom);
+ qui.textContent=pnj.length?'Présents : '+pnj.join(', '):'Personne n’y vit ni n’y passe.';
+ boite.append(qui);finFiche(boite,b)}
 /* La fiche telle que la lisent les joueurs : le nom, l'étape, l'état, ce que coûtent les
    étapes, ce que confère chacune, qui s'y trouve — rien à corriger, et pas les notes du MJ. */
 function renderDomFicheLue(boite,b){const tete=document.createElement('div');tete.className='dom-fiche-tete';
@@ -468,9 +489,88 @@ function renderDomFicheLue(boite,b){const tete=document.createElement('div');tet
   const t=document.createElement('b');t.textContent=n+(i===b.etape?' — en cours':'')+' : ';p.append(t,texte);effets.append(p)});
  if(effets.children.length)boite.append(effets);
  const qui=document.createElement('p');qui.className='muted dom-qui';
- const pnj=pnjDuBatiment(domaine,b.id).map(p=>p.nom),av=actors.filter(a=>a.hero&&(domaine.aventuriers[a.id]||{}).lieu===b.id).map(a=>a.name);
- qui.textContent=(pnj.length?'Présents : '+pnj.join(', '):'Personne n’y vit ni n’y passe.')+(av.length?' · Aventuriers : '+av.join(', '):'');
- boite.append(qui)}
+ // Les aventuriers présents se lisent sur leurs boutons, dessous.
+ const pnj=pnjDuBatiment(domaine,b.id).map(p=>p.nom);
+ qui.textContent=pnj.length?'Présents : '+pnj.join(', '):'Personne n’y vit ni n’y passe.';
+ boite.append(qui);finFiche(boite,b)}
+/* ---------- Se déplacer, et ce que fait le bâtiment ---------- */
+// Au bas de la fiche : un bouton par aventurier pour s'y rendre, puis la fonction du bâtiment.
+function finFiche(boite,b){const dep=blocDeplacements(b);if(dep)boite.append(dep);const f=blocFonction(b);if(f)boite.append(f)}
+function deplaceAventurier(a,b){if(!agitPour(a)||!batimentConstruit(b)||lieuDe(a)===b.id)return;
+ poseLieu(a,b.id);renderDomaine(true);render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+/* Chaque bâtiment construit a un bouton par aventurier : « S'y déplacer », ou « Ici » pour qui
+   s'y trouve déjà. Le joueur déplace le sien ; le MJ, tout le monde. */
+function blocDeplacements(b){const troupe=actors.filter(a=>a.hero);if(!troupe.length||!batimentConstruit(b))return null;
+ const out=document.createElement('div');out.className='dom-deplacements';
+ troupe.forEach(a=>{const ici=lieuDe(a)===b.id,moi=agitPour(a);
+  const btn=document.createElement('button');btn.type='button';btn.className='dom-deplace'+(ici?' ici':'');
+  const nom=document.createElement('span');nom.className='dom-deplace-nom';nom.textContent=a.name;
+  const quoi=document.createElement('small');quoi.textContent=ici?'Ici':'S’y déplacer';
+  btn.append(jetonRond(a.image,a.name,'mini'),nom,quoi);btn.disabled=ici||!moi;
+  btn.title=ici?a.name+' est ici.':moi?'Déplacer '+a.name+' : '+b.nom:'Seul le joueur de '+a.name+' le déplace.';
+  btn.onclick=()=>deplaceAventurier(a,b);out.append(btn)});
+ return out}
+/* La fonction du bâtiment : ouverte s'il est construit et intact, fermée sinon — et la fiche
+   dit pourquoi. */
+function blocFonction(b){if(!b.fonction)return null;const out=document.createElement('section');out.className='dom-fonction f-'+b.fonction;
+ const h=document.createElement('h3');h.className='reglage-titre';h.textContent=NOM_FONCTION(b.fonction);out.append(h);
+ if(!fonctionActive(b)){const p=document.createElement('p');p.className='muted dom-fonction-arret';
+  p.textContent='Fermé : '+(batimentConstruit(b)?'le bâtiment est '+NOM_ETAT_BATIMENT(b.etat).toLowerCase()+'.':'le bâtiment n’est pas construit.');out.append(p);return out}
+ if(b.fonction==='magasin')blocMagasin(out,b);
+ return out}
+/* ---------- Le magasin ---------- */
+/* On y achète ce que l'armurerie met en vente, au prix de l'armurerie ; on y revend son
+   équipement à la moitié de ce prix, arrondie en dessous. Il faut s'y trouver : l'acheteur
+   est un aventurier présent — le sien pour un joueur, au choix pour le MJ. */
+let clientMagasin=null;
+function blocMagasin(out,b){const presents=actors.filter(a=>a.hero&&lieuDe(a)===b.id),clients=presents.filter(agitPour);
+ const client=clients.find(a=>a.id===clientMagasin)||clients[0]||null;
+ const tete=document.createElement('div');tete.className='dom-magasin-client';
+ if(client){
+  if(clients.length>1){const choix=document.createElement('select');choix.setAttribute('aria-label','Qui achète ou vend');
+   clients.forEach(a=>choix.add(new Option(a.name,a.id)));choix.value=client.id;choix.onchange=()=>{clientMagasin=choix.value;renderDomaine(true)};tete.append(choix)}
+  else{const n=document.createElement('strong');n.textContent=client.name;tete.append(jetonRond(client.image,client.name,'mini'),n)}
+  tete.append(ligneOr(orDe(client),null))}
+ else{const p=document.createElement('p');p.className='muted';
+  p.textContent=presents.length?'Seul le joueur d’un aventurier présent achète et vend ici.':'Personne au magasin : déplace un aventurier ici pour acheter ou vendre.';tete.append(p)}
+ out.append(tete);
+ const titre=t=>{const h=document.createElement('h4');h.className='dom-magasin-titre';h.textContent=t;return h};
+ // Ce qui est en vente : les pièces de l'armurerie cochées « Magasin », rangées comme elle.
+ const rang=o=>['melee','ranged','armor','object'].indexOf(itemColumn(o));
+ const enVente=(catalog.items||[]).filter(o=>o&&o.magasin===true).sort((x,y)=>rang(x)-rang(y)||x.name.localeCompare(y.name,'fr'));
+ out.append(titre('Acheter'));
+ if(!enVente.length){const p=document.createElement('p');p.className='muted';p.textContent=mjDom()?'Rien en vente : coche « Magasin » sur des objets de l’armurerie.':'Rien en vente pour l’instant.';out.append(p)}
+ else{const g=document.createElement('div');g.className='dom-articles';
+  enVente.forEach(o=>{const p=client?peutAcheter(client,o):null;
+   g.append(carteMagasin(o,1,prixAchat(o),!!p&&p.ok,!client?'Il faut être au magasin pour acheter.':p.ok?'Acheter '+o.name+' pour '+prixAchat(o)+' or':'Il manque '+p.manque+' or.',()=>acheterPour(client,o),'achat'))});
+  out.append(g)}
+ if(!client)return;
+ // Ce que l'acheteur peut revendre : son inventaire, une carte par pièce, le nombre s'il en a plusieurs.
+ const comptes=new Map();(client.inventaire||[]).forEach(id=>{const o=(catalog.items||[]).find(x=>x&&x.id===id);if(o)comptes.set(o,(comptes.get(o)||0)+1)});
+ out.append(titre('Vendre — '+TAUX_VENTE+' % du prix'));
+ if(!comptes.size){const p=document.createElement('p');p.className='muted';p.textContent=client.name+' n’a rien à vendre.';out.append(p);return}
+ const g=document.createElement('div');g.className='dom-articles';
+ [...comptes.entries()].sort(([x],[y])=>rang(x)-rang(y)||x.name.localeCompare(y.name,'fr'))
+  .forEach(([o,n])=>g.append(carteMagasin(o,n,prixVente(o),true,'Vendre '+o.name+' pour '+prixVente(o)+' or',()=>vendrePour(client,o),'vente')));
+ out.append(g)}
+// Une pièce au magasin : le carré de l'armurerie, sa description au survol, son nom, et le prix sur le bouton.
+function carteMagasin(o,n,prix,actif,titre,faire,sens){const carte=document.createElement('div');carte.className='cat-carte dom-article '+sens;
+ const p=gearCarre(o,n,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();
+ p.removeAttribute('title');p.setAttribute('aria-label',o.name);
+ if(BULLES)surveille(p,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});
+ const nom=document.createElement('span');nom.className='nom-carte';nom.textContent=o.name;
+ const btn=document.createElement('button');btn.type='button';btn.className='dom-achat';btn.textContent=prix?prix.toLocaleString('fr-FR')+' or':'Gratuit';
+ btn.disabled=!actif;btn.title=titre;btn.setAttribute('aria-label',titre);btn.onclick=faire;
+ carte.append(p,nom,btn);return carte}
+function apresMagasin(){renderDomaine(true);render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+function acheterPour(a,o){const p=peutAcheter(a,o),ici=batimentDom(lieuDe(a));if(!p.ok||!agitPour(a)||!ici||ici.fonction!=='magasin'||!fonctionActive(ici))return;
+ ajouteOr(a,-p.prix);ajouterInventaire(a,o);log(nomNum(a)+' achète '+o.name+' au magasin'+(p.prix?' pour '+p.prix+' or':'')+'.');apresMagasin()}
+async function vendrePour(a,o){if(!agitPour(a)||!(a.inventaire||[]).includes(o.id))return;const v=prixVente(o);
+ const porte=[...(a.weapons||[]),...(a.armures||[]),a.shieldId,a.munitionId].includes(o.id);
+ const texte='Vendre « '+o.name+' »'+(porte?', que '+a.name+' porte,':'')+' pour '+v+' or ?';
+ const ok=typeof demander==='function'?await demander(texte,'Vendre'):confirm(texte);
+ if(!ok||!(a.inventaire||[]).includes(o.id))return;
+ retirerInventaire(a,o);ajouteOr(a,v);log(nomNum(a)+' vend '+o.name+' au magasin'+(v?' pour '+v+' or':'')+'.');apresMagasin()}
 /* ---------- Les finances ---------- */
 function renderDomFinances(){const boite=$('dom-finances');boite.replaceChildren();const f=domaine.finances;
  const tresor=document.createElement('div');tresor.className='dom-tresor-ligne';
@@ -547,16 +647,16 @@ function renderDomAventuriers(){const boite=$('dom-aventuriers');boite.replaceCh
  boite.classList.toggle('en-grille',!mjDom());
  const troupe=actors.filter(a=>a.hero);
  if(!troupe.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun aventurier dans la partie.';boite.append(p);return}
- troupe.forEach(a=>{const v=domaine.aventuriers[a.id]||(domaine.aventuriers[a.id]={lieu:'',notes:''});
+ troupe.forEach(a=>{const ou=lieuDe(a);
   const row=document.createElement('div');row.className='dom-aventurier';
   const tete=document.createElement('div');tete.className='dom-av-tete';
   const nom=document.createElement('strong');nom.textContent=a.name;tete.append(jetonRond(a.image,a.name,'mini'),nom);
   const lieu=document.createElement('select');lieu.setAttribute('aria-label','Où est '+a.name);
   // Seuls les bâtiments construits accueillent quelqu'un.
   [['','Au domaine'],...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),['aventure','En aventure'],['absent','Absent']].forEach(([k,n])=>lieu.add(new Option(n,k)));
-  lieu.value=(v.lieu&&(v.lieu==='aventure'||v.lieu==='absent'||batimentConstruit(batimentDom(v.lieu))))?v.lieu:'';
-  lieu.onchange=()=>{v.lieu=lieu.value;renderDomaine();sauveDomaine()};
+  lieu.value=(ou&&(ou==='aventure'||ou==='absent'||batimentConstruit(batimentDom(ou))))?ou:'';
+  lieu.onchange=()=>{poseLieu(a,lieu.value);renderDomaine(true);render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
   // La note de l'aventurier reste dans les données et l'export ; elle ne s'affiche plus ici.
   // Les joueurs lisent où est chacun ; le MJ le choisit.
-  if(mjDom())row.append(tete,lieu);else{const ou=document.createElement('span');ou.className='dom-av-lieu';ou.textContent=nomLieu(v.lieu);row.append(tete,ou)}
+  if(mjDom())row.append(tete,lieu);else{const l=document.createElement('span');l.className='dom-av-lieu';l.textContent=nomLieu(ou);row.append(tete,l)}
   boite.append(row)})}

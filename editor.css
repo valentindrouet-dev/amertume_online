@@ -1122,3 +1122,20 @@ i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #00
 .materiau{display:flex;justify-content:space-between;align-items:baseline;gap:4px;padding:3px 7px;border:1px solid var(--line);border-radius:7px;background:var(--panel-2);font-size:12.5px;min-width:0}
 .materiau span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.materiau b{font:700 14px 'Killam',Georgia,serif}.materiau.zero{opacity:.55}
 .materiau .champ-vif{width:3.5em;padding:0 3px;font-size:12px;margin:0}
+
+/* Les boutons « S'y déplacer » : un par aventurier, son jeton, son nom ; celui qui est déjà là se lit « Ici ». */
+.dom-deplacements{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.dom-deplace{display:flex;align-items:center;gap:7px;padding:4px 11px 4px 5px;border-radius:20px;font-size:13px;margin:0}
+.dom-deplace .dom-deplace-nom{font-weight:700}.dom-deplace small{color:var(--muted);font-size:11px}
+.dom-deplace.ici{border-color:var(--green);background:#3d7a5b17}.dom-deplace.ici small{color:var(--green);font-weight:700}
+.dom-deplace:disabled{cursor:default}.dom-deplace:disabled:not(.ici){opacity:.5}.dom-deplace.ici:disabled{opacity:1}
+.dom-etiquette .jeton-rond.mini.a-moi{cursor:grab}
+/* La fonction du bâtiment, sous sa fiche ; fermée, elle dit pourquoi. Le magasin : l'acheteur et son or, puis ce qui se vend et ce qui se revend. */
+.dom-fonction{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
+.dom-fonction-arret{font-style:italic}
+.dom-magasin-client{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 6px}.dom-magasin-client .richesse-or{margin:0}.dom-magasin-client select{width:auto;margin:0}
+.dom-magasin-titre{margin:8px 0 6px;font:600 11px system-ui;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.dom-articles{display:flex;flex-wrap:wrap;gap:12px 8px;margin:0 0 6px}
+.dom-article .dom-achat{margin:2px 0 0;padding:3px 8px;min-width:64px;border-radius:8px;font:700 12px system-ui;color:#fff;background:#a0761a;border:1px solid #8a6512}
+.dom-article.vente .dom-achat{background:var(--green);border-color:var(--green)}
+.dom-article .dom-achat:disabled{background:var(--disabled);border-color:var(--disabled);color:var(--disabled-ink);cursor:default}

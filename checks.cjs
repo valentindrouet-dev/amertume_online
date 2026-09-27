@@ -2099,7 +2099,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.equal(C.NOM_ETAT_BATIMENT('feu'),'En feu');assert.equal(C.NOM_ETAT_BATIMENT(''),'Intact');
  const fief=fs.readFileSync('domaine.js','utf8');
  assert.ok(fief.includes("+CALQUES_DOMAINE.map(([k,nom],i)=>'<span class=\"dom-calque'+(i>=4?' dom-calque-etat':'')+'\">")&&fief.includes(" CALQUES_DOMAINE.forEach((_,i)=>{const on=!!d.carte.calques[i];")
-  &&fief.includes("const etat=document.createElement('select');etat.className='dom-etat-choix';")&&fief.includes(" tete.append(nom,et,etat,boutonConstruire(b),recul,avance);boite.append(tete);")
+  &&fief.includes("const etat=document.createElement('select');etat.className='dom-etat-choix';")&&fief.includes(" tete.append(nom,et,etat,fonc,boutonConstruire(b),recul,avance);boite.append(tete);")
   &&fief.includes("if(b.etat){const x=document.createElement('span');x.className='dom-etat etat-'+b.etat;")&&feuille.includes('.dom-zone.etat-feu{--t:#d9532b}'),'En feu et Ruines : les calques, l’état sur la fiche et la carte');}
 /* Les zones se renomment d'un clic sur leur numéro, dans l'éditeur ; le nom tient par un point
    de la zone et voyage avec la carte. Le nom d'un bâtiment du domaine se glisse où l'on veut ;
@@ -2217,27 +2217,30 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.260 — Sur le plan, le jeton des aventuriers présents sous le nom du bâtiment ; plus de note
    sous le lieu d'un aventurier ; sans bâtiment choisi, la fiche disparaît. */
 {const fief=fs.readFileSync('domaine.js','utf8');
- assert.ok(fief.includes("if(opts.jeu){const presents=actors.filter(a=>a.hero&&(domaine.aventuriers[a.id]||{}).lieu===b.id);")
-  &&fief.includes("presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name+(mjDom()?' — glisser vers un autre bâtiment construit':'');")
+ assert.ok(fief.includes("if(opts.jeu){const presents=actors.filter(a=>a.hero&&lieuDe(a)===b.id);")
+  &&fief.includes("presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name+(agitPour(a)?' — glisser vers un autre bâtiment construit':'');")
   &&feuille.includes('.dom-etiquette-jetons{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;'),'les jetons des présents sous le nom, sur le plan, sans le soulever');
  assert.ok(fief.includes(" boite.hidden=!b;if(!b)return;")&&!fief.includes('Choisis un bâtiment, dans la liste ou sur la carte')
   &&fief.includes("if(mjDom())row.append(tete,lieu);")&&fief.includes("  boite.append(row)})}")&&!fief.includes("notes.placeholder='Note'"),'fiche muette sans bâtiment, lieu sans note');
 }
 /* v0.262 — Seuls les bâtiments construits accueillent un aventurier ; si l'étape recule, il en sort. */
 {const fief=fs.readFileSync('domaine.js','utf8');
- const ctxE={domaine:{aventuriers:{a:{lieu:'x',notes:''},b:{lieu:'y',notes:''},c:{lieu:'aventure',notes:''},d:{lieu:'',notes:''},e:{lieu:'perdu',notes:''}},batiments:[{id:'x',etape:2},{id:'y',etape:3}]},ETAPES_DOMAINE:C.ETAPES_DOMAINE};
+ // v0.284 : le lieu est sur la fiche de l'aventurier ; une fiche d'avant lit encore le domaine.
+ const ctxE={domaine:{aventuriers:{e:{lieu:'x',notes:''}},batiments:[{id:'x',etape:2},{id:'y',etape:3}]},ETAPES_DOMAINE:C.ETAPES_DOMAINE,mjDom:()=>true,owner:0,
+  actors:[{id:'a',hero:true,lieuDomaine:'x'},{id:'b',hero:true,lieuDomaine:'y'},{id:'c',hero:true,lieuDomaine:'aventure'},{id:'d',hero:true,lieuDomaine:''},{id:'e',hero:true},{id:'f',hero:true,lieuDomaine:'perdu'},{id:'m',lieuDomaine:'x'}]};
  ctxE.batimentDom=id=>ctxE.domaine.batiments.find(b=>b.id===id)||null;vm.createContext(ctxE);
- vm.runInContext(fief.slice(fief.indexOf('const batimentConstruit='),fief.indexOf('function nomLieu(')),ctxE);
- assert.equal(ctxE.evacueNonConstruits(),1);
- assert.deepEqual(Object.values(ctxE.domaine.aventuriers).map(v=>v.lieu),['','y','aventure','','perdu']);
- assert.ok(fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave();")&&fief.includes("function renderDomaine(){const d=domaine,mj=mjDom();vueDomaine=view;if(mj)evacueNonConstruits();")
-  &&fief.includes("...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),")&&fief.includes("batimentConstruit(batimentDom(v.lieu))))?v.lieu:'';"),'la liste des lieux ne propose que le construit');
+ vm.runInContext(fief.slice(fief.indexOf('const batimentConstruit='),fief.indexOf('function nomLieu('))+';this.lieuDe=lieuDe;',ctxE);
+ assert.equal(ctxE.lieuDe(ctxE.actors[4]),'x','une fiche d’avant lit le domaine');
+ assert.equal(ctxE.evacueNonConstruits(),3);
+ assert.deepEqual(ctxE.actors.map(a=>ctxE.lieuDe(a)),['','y','aventure','','','','x'],'hors d’un bâtiment non construit, ou disparu ; un adversaire n’a pas de lieu');
+ assert.ok(fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave();")&&fief.includes("function renderDomaine(leger){const d=domaine,mj=mjDom();vueDomaine=view;if(mj&&evacueNonConstruits())scheduleSave();")
+  &&fief.includes("...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),")&&fief.includes("batimentConstruit(batimentDom(ou))))?ou:'';"),'la liste des lieux ne propose que le construit');
 }
 /* v0.263 — Le jeton d'un aventurier se glisse vers un bâtiment construit ; les jetons sont moitié plus
    grands ; un bonus de caractéristique n'est pas un talent, et a son propre éditeur. */
 {const fief=fs.readFileSync('domaine.js','utf8');
  assert.ok(fief.includes("function glisseJetonAventurier(ev,a,t){")&&fief.includes("const cibleSous=m=>{const i=batimentSous(domaine,pos(m));const b=i>=0?domaine.batiments[i]:null;return batimentConstruit(b)?b:null};")
-  &&fief.includes("if(b&&v.lieu!==b.id){v.lieu=b.id;renderDomaine();sauveDomaine()}};")&&fief.includes("t.onpointerdown=ev=>glisseJetonAventurier(ev,a,t);")
+  &&fief.includes("if(b&&lieuDe(a)!==b.id)deplaceAventurier(a,b)};")&&fief.includes("t.onpointerdown=ev=>glisseJetonAventurier(ev,a,t);")
   &&fief.includes("+(batimentConstruit(b)?' construit':'')")&&feuille.includes('.dom-etiquette .jeton-rond.mini{width:36px;height:36px;font-size:18px;')
   &&feuille.includes('#dom-plan.glisse-jeton .dom-zone.construit{'),'le jeton se glisse vers un bâtiment construit, en grand');
  assert.ok(src.includes("const estBonus=t=>!!t&&t.effet==='bonus';")&&src.includes("filter(([t])=>!estBonus(t)&&talentFamily(t)===famille")
@@ -2257,9 +2260,9 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}"),'le domaine voyage avec le contenu publié');
  assert.ok(fief.includes("const mjDom=()=>typeof view==='undefined'||view==='mj';")&&fief.includes("['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);")
   &&fief.includes("if(!mjDom()){renderDomFicheLue(boite,b);return}")&&fief.includes("function renderDomFicheLue(boite,b){")&&!fief.includes("renderDomFicheLue(boite,b){")===false
-  &&fief.includes("if(ev.button!==0||!mjDom())return;")&&fief.includes(" tresor.append(val);if(mjDom())tresor.append(monnaie);")&&fief.includes("if(mjDom())boite.append(form);")
-  &&fief.includes("const row=document.createElement(mjDom()?'button':'div');")&&fief.includes("if(mjDom())row.append(tete,lieu);else{const ou=document.createElement('span');ou.className='dom-av-lieu';ou.textContent=nomLieu(v.lieu);")
-  &&fief.includes("if(document.body.classList.contains('page-domaine')&&vueDomaine!==view)renderDomaine()};"),'les joueurs lisent le domaine sans rien y changer');
+  &&fief.includes("if(ev.button!==0||!agitPour(a))return;")&&fief.includes(" tresor.append(val);if(mjDom())tresor.append(monnaie);")&&fief.includes("if(mjDom())boite.append(form);")
+  &&fief.includes("const row=document.createElement(mjDom()?'button':'div');")&&fief.includes("if(mjDom())row.append(tete,lieu);else{const l=document.createElement('span');l.className='dom-av-lieu';l.textContent=nomLieu(ou);")
+  &&fief.includes(" if(vueDomaine!==view){renderDomaine();return}")&&fief.includes(" renderDomaine(true)};"),'les joueurs lisent le domaine sans rien y changer');
  assert.ok(page.includes('<script src="./campagnes.js?v=')&&camp.includes("localStorage.setItem('amertume-campagne',id)")
   &&camp.includes("renderSettings=function(){renderSettingsSansCampagnes();$('bloc-campagnes').hidden=view!=='mj';renderCampagnes()};")
   &&camp.includes("document.addEventListener('amertume-partie-chargee',chargeCampagnes);")&&feuille.includes('.campagne-ligne.ouverte{'),'les campagnes ont leur bloc, au MJ');
@@ -2350,7 +2353,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("if(finit)actors.forEach(a=>{if(a.hero)a.reposPris=false});"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos" id="repos" hidden>⛺ Repos court</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
   &&page.includes(":a.reposPris?'Repos déjà pris : il reviendra à la fin du prochain combat.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposPris=true;")
-  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses'];"),'le Repos court');
+  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine'];"),'le Repos court');
 }
 /* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
    une arme prise remplace celle de la main droite ; lâchée sur une main, elle prend cette main.
@@ -2563,11 +2566,35 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.normaliseDomaine(null).ressources,{});
  assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
  assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
-  &&src.includes("const RESSOURCES=[...MATERIAUX].sort((x,y)=>x.localeCompare(y,'fr'));")&&vivant.includes("'etatsPassifs','richesses'];"),'les richesses se relisent et voyagent en direct');
+  &&src.includes("const RESSOURCES=[...MATERIAUX].sort((x,y)=>x.localeCompare(y,'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine'];"),'les richesses se relisent et voyagent en direct');
  assert.ok(src.includes("function grilleGemmes(compte,poser,qui){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
   &&fief.includes("function renderDomRessources(){")&&fief.includes("const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;")
   &&fief.includes("MATERIAUX.filter(m=>m!=='Or').forEach(m=>{"),'les compteurs : sur la carte de l’aventurier, au domaine');
  const ctxP={lisCompte:C.lisCompte};vm.createContext(ctxP);vm.runInContext(src.slice(src.indexOf('function poseCompte('),src.indexOf('// Les richesses d\'un aventurier, sur sa carte')),ctxP);
  const compte={or:4};assert.equal(ctxP.poseCompte(compte,'or','12'),12);ctxP.poseCompte(compte,'eclat-rubis','0');ctxP.poseCompte(compte,'or','');
  assert.deepEqual({...compte},{},'un compte à zéro disparaît');}
-console.log('1566 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.284 — Les bâtiments servent construits et intacts. Le lieu d'un aventurier est sur sa fiche :
+   son joueur l'y déplace, « S'y déplacer ». Le Magasin vend ce que l'armurerie coche « Magasin »,
+   et rachète à 50 % du prix, arrondi en dessous, avec l'or de l'aventurier présent. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),fief=fs.readFileSync('domaine.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ const B=(etape,etat,fonction)=>({etape,etat,fonction});
+ assert.equal(C.fonctionActive(B(3,'','magasin')),true);
+ assert.deepEqual([B(2,'','magasin'),B(0,'','magasin'),B(3,'feu','magasin'),B(3,'abandonne','magasin'),B(3,'',''),null].map(C.fonctionActive),[false,false,false,false,false,false],'construit et intact, sinon rien');
+ assert.equal(C.fonctionParNom('Magasin'),'magasin');assert.equal(C.fonctionParNom('Forge'),'');
+ const D=C.normaliseDomaine({batiments:[{nom:'Magasin'},{nom:'Magasin',fonction:''},{nom:'Échoppe',fonction:'magasin'},{nom:'X',fonction:'bidule'}]});
+ assert.deepEqual(D.batiments.map(b=>b.fonction),['magasin','','magasin',''],'un Magasin d’avant le devient une fois ; ensuite le MJ choisit');
+ assert.equal(C.normaliseDomaine(null).batiments.find(b=>b.nom==='Magasin').fonction,'magasin');
+ assert.deepEqual([7,10,1,0,'x',99].map(p=>C.prixVente({price:p})),[3,5,0,0,0,49],'la moitié, arrondie en dessous');assert.equal(C.prixVente({price:10},75),7);
+ const a={richesses:{or:20}};assert.deepEqual(C.peutAcheter(a,{price:15,magasin:true}),{ok:true,prix:15,manque:0,enVente:true});
+ assert.deepEqual(C.peutAcheter(a,{price:25,magasin:true}),{ok:false,prix:25,manque:5,enVente:true});assert.equal(C.peutAcheter(a,{price:5}).ok,false,'hors magasin, pas d’achat');
+ assert.equal(C.ajouteOr(a,-15),5);assert.equal(C.ajouteOr(a,-9),0);assert.deepEqual(a.richesses,{},'l’or ne descend pas sous zéro, et un compte nul disparaît');assert.equal(C.ajouteOr(a,3),3);
+ assert.ok(vivant.includes("'richesses','lieuDomaine'];")&&fief.includes("const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');")
+  &&fief.includes("if(typeof enLigne!=='undefined'&&enLigne)return typeof monSiege!=='undefined'&&monSiege===a.id;"),'le lieu voyage avec l’aventurier, et son joueur seul le déplace');
+ assert.ok(fief.includes("function blocDeplacements(b){const troupe=actors.filter(a=>a.hero);if(!troupe.length||!batimentConstruit(b))return null;")
+  &&fief.includes("quoi.textContent=ici?'Ici':'S’y déplacer';")&&fief.includes("function finFiche(boite,b){")&&(fief.match(/boite\.append\(qui\);finFiche\(boite,b\)\}/g)||[]).length===2,'un bouton par aventurier, sur chaque fiche');
+ assert.ok(fief.includes("if(!fonctionActive(b)){")&&fief.includes("if(b.fonction==='magasin')blocMagasin(out,b);")
+  &&fief.includes("const enVente=(catalog.items||[]).filter(o=>o&&o.magasin===true)")&&fief.includes("ici.fonction!=='magasin'||!fonctionActive(ici))return;")
+  &&fief.includes("ajouteOr(a,-p.prix);ajouterInventaire(a,o);")&&fief.includes("retirerInventaire(a,o);ajouteOr(a,v);"),'le magasin : présent, construit, intact');
+ assert.ok(src.includes("o.magasin=o.magasin===true;")&&src.includes("<input name=\"magasin\" type=\"checkbox\" '+(a.magasin===true?'checked':'')+'>Magasin — achetable au magasin du domaine</label>'")
+  &&src.includes(" if(f.magasin)a.magasin=f.magasin.checked;"),'la case Magasin de l’armurerie');}
+console.log('1586 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

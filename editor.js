@@ -70,7 +70,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // Sa rareté, et ses bonus, relus au travers de leur déclaration.
   o.rarete=rareteDe(o);o.bonus=normaliseBonusEquip(o.bonus);
   o.usage=usageObjet(o);o.consumable=o.usage==='conso';
-  o.ressource1=ressourceValide(o.ressource1);o.ressource2=ressourceValide(o.ressource2);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
+  o.magasin=o.magasin===true;o.ressource1=ressourceValide(o.ressource1);o.ressource2=ressourceValide(o.ressource2);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??=''});
  return c}
@@ -2758,6 +2758,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  for(const k of ['usesAmmo'])if(f[k])a[k]=f[k].checked;
  if(f.munDe)a.munDe=keys.includes(f.munDe.value)?f.munDe.value:'';
  for(const k of ['ressource1','ressource2'])if(f[k])a[k]=ressourceValide(f[k].value);
+ if(f.magasin)a.magasin=f.magasin.checked;
  if(f.itemdie0)a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));
  return a}
 /* Une arme ne porte pas de DEF, une armure pas de dés : le formulaire ne montre que les
@@ -2799,6 +2800,8 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])
   +sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])
   +'</div>'
+  // En vente au magasin du domaine, au prix ci-dessus.
+  +'<label class="field-check"><input name="magasin" type="checkbox" '+(a.magasin===true?'checked':'')+'>Magasin — achetable au magasin du domaine</label>'
   +(arme?'<p class="etiquette">Dés de l’arme</p>'+poolFields(poolFrom(a.dice),'itemdie')
    +sel('État infligé','etat',a.etat||'',[['','—'],...ETATS_INFLIGES().map(e=>[e,e])]):'')
   +(arme&&a.ranged?'<label class="field-check"><input name="usesAmmo" type="checkbox" '+(a.usesAmmo?'checked':'')+'>Munitions nécessaires</label>':'')
@@ -2858,7 +2861,7 @@ function lireBonusItem(){const f=$('item-form').elements,out=[];
  for(let i=0;f['bonus_carac_'+i];i++)out.push({carac:f['bonus_carac_'+i].value,valeur:f['bonus_valeur_'+i].value,comp:f['bonus_comp_'+i].value});
  return normaliseBonusEquip(out)}
 function openItem(i=null,apres=null){itemIndex=i;itemApres=apres;
- itemDraft=i===null?{name:'Nouvel objet',category:'weapon',ranged:false,hands:1,qty:1,price:0,ressource1:'',ressource2:'',def:0,slot:'torse',dice:{},traits:[]}
+ itemDraft=i===null?{name:'Nouvel objet',category:'weapon',ranged:false,hands:1,qty:1,price:0,ressource1:'',ressource2:'',magasin:false,def:0,slot:'torse',dice:{},traits:[]}
   :structuredClone(catalog.items[i]);
  dessineItem();$('delete-item').hidden=i===null;itemDialog.showModal()}
 $('item-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;

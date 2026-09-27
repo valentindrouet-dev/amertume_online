@@ -1354,10 +1354,20 @@ function zoneValide(z){if(!Array.isArray(z)||z.length<3)return null;
  const pts=z.filter(p=>Array.isArray(p)&&p.length>=2&&Number.isFinite(Number(p[0]))&&Number.isFinite(Number(p[1])))
   .map(p=>[borne(p[0],0,100),borne(p[1],0,100)]);
  return pts.length>=3?pts.slice(0,400):null}
-function nouveauBatiment(nom,id){return {id:id||idDomaine(),nom:String(nom||'Bâtiment').slice(0,60),etape:0,etat:'',zone:null,etiquette:null,couts:[0,0,0],effets:['','','',''],notes:''}}
+/* Ce qu'un bâtiment fait pour la troupe. Il ne le fait que construit et intact : toute autre
+   étape, tout autre état, et sa fonction s'arrête. Un bâtiment d'avant les fonctions qui
+   s'appelle Magasin devient le magasin, une fois ; ensuite c'est le MJ qui choisit. */
+const FONCTIONS_BATIMENT=[['','Aucune fonction'],['magasin','Magasin']];
+const NOM_FONCTION=f=>(FONCTIONS_BATIMENT.find(([k])=>k===f)||FONCTIONS_BATIMENT[0])[1];
+const fonctionActive=b=>!!b&&!!b.fonction&&b.etape>=ETAPES_DOMAINE.length-1&&!b.etat;
+function nouveauBatiment(nom,id){nom=String(nom||'Bâtiment').slice(0,60);
+ return {id:id||idDomaine(),nom,etape:0,etat:'',fonction:fonctionParNom(nom),zone:null,etiquette:null,couts:[0,0,0],effets:['','','',''],notes:''}}
+function fonctionParNom(nom){const n=String(nom||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+ return FONCTIONS_BATIMENT.some(([k])=>k&&k===n)?n:''}
 function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
  n.etape=Math.max(0,Math.min(3,Math.trunc(Number(b&&b.etape))||0));
  n.etat=b&&typeof b.etat==='string'&&b.etat&&ETATS_BATIMENT.some(([k])=>k===b.etat)?b.etat:'';
+ n.fonction=b&&typeof b.fonction==='string'?(FONCTIONS_BATIMENT.some(([k])=>k===b.fonction)?b.fonction:''):fonctionParNom(n.nom);
  n.zone=zoneValide(b&&b.zone);
  // Où s'écrit son nom : là où le MJ l'a posé, sinon au centre de sa zone.
  const et=b&&b.etiquette;n.etiquette=Array.isArray(et)&&et.length>=2&&Number.isFinite(Number(et[0]))&&Number.isFinite(Number(et[1]))?[borne(et[0],0,100),borne(et[1],0,100)]:null;
@@ -1384,6 +1394,18 @@ const CLES_RICHESSES=['or',...CLES_GEMMES];
 const CLES_RESSOURCES_DOMAINE=[...MATERIAUX.filter(m=>m!=='Or').map(cleRessource),...CLES_GEMMES];
 const lisCompte=v=>Math.max(0,Math.min(999999,Math.trunc(Number(String(v??'').replace(/[\s\u202f\u00a0]/g,'')))||0));
 function normaliseCompte(c,cles){const o={};if(c&&typeof c==='object'&&!Array.isArray(c))cles.forEach(k=>{const n=lisCompte(c[k]);if(n)o[k]=n});return o}
+/* ---------- Le magasin ---------- */
+/* On y achète au prix de l'armurerie ce qu'elle met en vente ; on y revend à la moitié de ce
+   prix, arrondie en dessous — d'autres taux viendront. L'or est celui de l'aventurier. */
+const TAUX_VENTE=50;
+const prixAchat=o=>Math.max(0,Math.trunc(Number(o&&o.price))||0);
+const prixVente=(o,taux=TAUX_VENTE)=>Math.floor(prixAchat(o)*Math.max(0,Number(taux)||0)/100);
+const orDe=a=>(a&&a.richesses&&Math.max(0,Math.trunc(Number(a.richesses.or))||0))||0;
+// L'or d'un aventurier bouge ; il ne descend jamais sous zéro, et un compte nul disparaît.
+function ajouteOr(a,delta){if(!a)return 0;const n=Math.max(0,orDe(a)+(Math.trunc(Number(delta))||0));
+ a.richesses={...(a.richesses||{})};if(n)a.richesses.or=n;else delete a.richesses.or;return n}
+function peutAcheter(a,o){const prix=prixAchat(o),or=orDe(a),enVente=!!o&&o.magasin===true;
+ return {ok:!!a&&enVente&&or>=prix,prix,manque:Math.max(0,prix-or),enVente}}
 /* Les inscriptions de la carte, sur ses parchemins : quatre textes, chacun à sa place — le nom
    du domaine et sa qualité en haut à gauche, les habitants et les visiteurs en bas à droite.
    Le MJ les pose où il veut, en pourcentage de la carte. Les deux blocs d'avant (titre, gens)
@@ -1468,7 +1490,7 @@ const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatie
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
- ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,cleGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
+ ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,cleGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);
