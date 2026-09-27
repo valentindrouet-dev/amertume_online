@@ -1737,7 +1737,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
    formulaire, le bouton qui l'emploie, la charge du jour et les dés écartés. */
 assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function renderArmory(){renderBiblioObjets();")
  &&src.includes('📖 Banque des effets d’équipement')&&src.includes("const porteurs=(catalog.items||[]).filter(o=>o&&o.effet===c.cle).map(o=>o.name);")
- &&src.includes("o.effet=OBJETS_CODES[o.effet]?o.effet:'';")&&src.includes("o.usage=usageObjet(o);o.consumable=o.usage==='conso'});")
+ &&src.includes("o.effet=OBJETS_CODES[o.effet]?o.effet:'';")&&src.includes("o.usage=usageObjet(o);o.consumable=o.usage==='conso';")
  &&src.includes("+sel('Usage','usage',usageObjet(a),USAGES_OBJET)")&&src.includes('function dessineReglagesObjet()')
  &&src.includes("a.params=a.effet?paramsObjet({effet:a.effet,params:lireReglagesObjet()}):{};")&&!src.includes(">Consommable</label>')")
  &&src.includes('function usageEpuise(a,o)')&&src.includes("function objetDisponible(a,o){return !usageLimite(usageObjet(o))||!usageEpuise(a,o)}")
@@ -2532,4 +2532,16 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['BLINDAGE INITIAL','SAIGNEE','DEF 3','weapon_cape_elfique','DEGATS'].map(ctxL.nomLogo),['Blindage initial','Saignée','DEF 3','Cape elfique','Dégâts']);
  assert.ok(src.includes("surveille(b,()=>ouvrirBulle(b,bulleNoeud(t,verrou,b.noteBulle),'bulle-talent'));")&&!src.includes("b.title=t.name+' — '+[talentType(t)[2]")
   &&src.includes("(ancre.closest('dialog[open]')||document.body).append(bulleEl);")&&feuille.includes(".talent-bulle-nom b{font:700 14px 'Killam'"),'l’arbre décrit ses talents au survol, dans sa fenêtre');}
-console.log('1542 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.281 — La bulle d'un nœud de l'arbre n'écrit jamais la nature du talent. Chaque objet porte
+   deux ressources et un prix en or, saisis à l'armurerie et lus nulle part ailleurs. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("  tete.append(nom);d.prepend(tete);")&&!src.includes("nat.textContent=bonus?'Bonus':talentType(t)[2]"),'la bulle de l’arbre tait la nature du talent');
+ const ctxR={};vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('const RESSOURCES='),src.indexOf('function normalizeCatalog('))+';this.RESSOURCES=RESSOURCES;this.ressourceValide=ressourceValide;',ctxR);
+ assert.deepEqual([...ctxR.RESSOURCES],['Acier','Argent','Bois','Bronze','Corde','Cuir','Diamant','Or','Pierre','Verre'],'les ressources, par ordre alphabétique');
+ assert.equal(ctxR.ressourceValide('Bois'),'Bois');assert.equal(ctxR.ressourceValide('Mithril'),'');
+ assert.ok(src.includes("o.ressource1=ressourceValide(o.ressource1);o.ressource2=ressourceValide(o.ressource2);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))")
+  &&src.includes("+field('Prix (or)','price',a.price||0,'number','min=\"0\" max=\"999999\" step=\"1\"')")
+  &&src.includes("+sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])")
+  &&src.includes("+sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])")
+  &&src.includes(" for(const k of ['ressource1','ressource2'])if(f[k])a[k]=ressourceValide(f[k].value);"),'ressources et prix au formulaire de l’objet');}
+console.log('1547 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

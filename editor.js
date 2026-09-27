@@ -24,6 +24,10 @@ const VOIES_MAX=3;
    gauche et son retour, vers la diagonale droite et son retour. */
 const SEGMENTS=['c','g','gc','d','dc'];
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
+/* Les ressources dont une pièce est faite — deux au plus — et son prix, en or : saisis à
+   l'armurerie, lus nulle part ailleurs pour l'instant. Le menu les range par ordre alphabétique. */
+const RESSOURCES=['Pierre','Cuir','Bois','Acier','Or','Argent','Bronze','Diamant','Verre','Corde'].sort((x,y)=>x.localeCompare(y,'fr'));
+const ressourceValide=r=>RESSOURCES.includes(r)?r:'';
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
  c.motsCles=[...new Set((Array.isArray(c.motsCles)?c.motsCles:[]).map(m=>String(m||'').trim().slice(0,60)).filter(Boolean))].slice(0,200);
@@ -65,7 +69,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   o.params=o.effet?paramsObjet(o):{};
   // Sa rareté, et ses bonus, relus au travers de leur déclaration.
   o.rarete=rareteDe(o);o.bonus=normaliseBonusEquip(o.bonus);
-  o.usage=usageObjet(o);o.consumable=o.usage==='conso'});
+  o.usage=usageObjet(o);o.consumable=o.usage==='conso';
+  o.ressource1=ressourceValide(o.ressource1);o.ressource2=ressourceValide(o.ressource2);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??=''});
  return c}
@@ -2175,13 +2180,14 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('survol');const id=arbreGlisse;arbreGlisse=null;corps.classList.remove('glisse');
    if(!id)return;if(placerTalent(id,dest))arbreChange();else note('Ce talent ne peut pas aller là : il se retrouverait sous lui-même.')})};
  const entre=dest=>{const z=document.createElement('div');z.className='arbre-entre';cible(z,dest);return z};
- /* La bulle d'un nœud : son nom et sa nature, ce qu'il fait, ce qu'il requiert, et s'il est
+ /* La bulle d'un nœud : son nom, ce qu'il fait, ce qu'il requiert, et s'il est
     sous clé. Un bonus dit sa valeur ; il n'a pas d'effet à préciser. */
  const bulleNoeud=(t,verrou,note)=>{const bonus=t.effet==='bonus';
   const d=bonus?document.createElement('div'):talentDetail(t,false);if(bonus)d.className='talent-detail t-'+talentType(t)[0];d.classList.add('large');
   const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
   nom.textContent=bonus?libelleBonus(paramsTalent(t)):t.name;
-  const nat=document.createElement('small');nat.textContent=bonus?'Bonus':talentType(t)[2];tete.append(nom,nat);d.prepend(tete);
+  // Jamais la nature du talent : la bulle ne l'écrit nulle part.
+  tete.append(nom);d.prepend(tete);
   if(bonus&&t.effects){const p=document.createElement('p');p.textContent=t.effects;d.append(p)}
   if(note){const p=document.createElement('p');p.className='muted';p.textContent=note;d.append(p)}
   if(verrou){const p=document.createElement('p');p.className='talent-bulle-cle';p.textContent='🔒 Sous clé : apprends d’abord « '+verrou+' ».';d.append(p)}
@@ -2721,6 +2727,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  // « consommable » n'a plus de case : c'est l'usage qui le dit, plus haut.
  for(const k of ['usesAmmo'])if(f[k])a[k]=f[k].checked;
  if(f.munDe)a.munDe=keys.includes(f.munDe.value)?f.munDe.value:'';
+ for(const k of ['ressource1','ressource2'])if(f[k])a[k]=ressourceValide(f[k].value);
  if(f.itemdie0)a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));
  return a}
 /* Une arme ne porte pas de DEF, une armure pas de dés : le formulaire ne montre que les
@@ -2751,7 +2758,9 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +sel('Catégorie','category',cat,ITEM_CATS)
   +sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])])
   +sel('Rareté','rarete',rareteDe(a),RARETES)
-  +field('Prix','price',a.price||0,'number','min="0" max="999999"')
+  +field('Prix (or)','price',a.price||0,'number','min="0" max="999999" step="1"')
+  +sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])
+  +sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])
   +(arme?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="99"')
    +sel('Emplacement','slot',emplacementDe(a),[...EMPLACEMENTS.map(([k,n,p])=>[k,n+(p>1?' ('+p+')':'')]),['shield','Bouclier — une main']]):'')
@@ -2816,7 +2825,7 @@ function lireBonusItem(){const f=$('item-form').elements,out=[];
  for(let i=0;f['bonus_carac_'+i];i++)out.push({carac:f['bonus_carac_'+i].value,valeur:f['bonus_valeur_'+i].value,comp:f['bonus_comp_'+i].value});
  return normaliseBonusEquip(out)}
 function openItem(i=null,apres=null){itemIndex=i;itemApres=apres;
- itemDraft=i===null?{name:'Nouvel objet',category:'weapon',ranged:false,hands:1,qty:1,price:0,def:0,slot:'torse',dice:{},traits:[]}
+ itemDraft=i===null?{name:'Nouvel objet',category:'weapon',ranged:false,hands:1,qty:1,price:0,ressource1:'',ressource2:'',def:0,slot:'torse',dice:{},traits:[]}
   :structuredClone(catalog.items[i]);
  dessineItem();$('delete-item').hidden=i===null;itemDialog.showModal()}
 $('item-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
