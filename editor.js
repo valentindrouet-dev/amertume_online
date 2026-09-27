@@ -514,14 +514,8 @@ function ligneOr(n,poser,qui){const l=document.createElement('div');l.className=
  const piece=document.createElement('i');piece.className='piece';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');
  const unite=document.createElement('span');unite.textContent='or';l.append(piece,v,unite);
  if(poser)champVif(v,()=>n,t=>poser('or',t),'Or'+(qui?' — '+qui:''),'petit');return l}
-/* « possedees » : sur la carte d'un aventurier, seulement les variétés et les tailles qu'il a,
-   sans cases autour des nombres — rien du tout s'il n'a aucune gemme. */
-function grilleGemmes(compte,poser,qui,opts){const possedees=!!(opts&&opts.possedees);
- const a=(ta,v)=>(compte[cleGemme(ta,v,false)]||0)+(GEMMES_ETEINTES?(compte[cleGemme(ta,v,true)]||0):0);
- const tailles=possedees?TAILLES_GEMMES.filter(([ta])=>VARIETES_GEMMES.some(([v])=>a(ta,v))):TAILLES_GEMMES;
- const varietes=possedees?VARIETES_GEMMES.filter(([v])=>TAILLES_GEMMES.some(([ta])=>a(ta,v))):VARIETES_GEMMES;
- if(!tailles.length||!varietes.length)return null;
- const t=document.createElement('table');t.className='gemmes'+(possedees?' nue':'');
+function grilleGemmes(compte,poser,qui){const tailles=TAILLES_GEMMES,varietes=VARIETES_GEMMES;
+ const t=document.createElement('table');t.className='gemmes';
  // Une ligne par variété, de la moins chère à la plus chère ; une colonne par taille.
  const tete=t.createTHead().insertRow();tete.append(document.createElement('td'));
  tailles.forEach(([,nt])=>{const th=document.createElement('th');th.scope='col';th.textContent=nt;tete.append(th)});
@@ -531,8 +525,6 @@ function grilleGemmes(compte,poser,qui,opts){const possedees=!!(opts&&opts.posse
   const th=document.createElement('th');th.scope='row';
   const nom=document.createElement('span');nom.textContent=nv;th.append(iconeDeGemme('brome',v,false),nom);r.append(th);
   tailles.forEach(([ta])=>{const td=r.insertCell();
-   // Sans cases, une taille qu'il n'a pas dans cette variété reste vide.
-   if(possedees&&!a(ta,v))return;
    // Les éteintes ne se montrent que si elles sont de retour.
    [false,...(GEMMES_ETEINTES?[true]:[])].forEach(eteinte=>{const k=cleGemme(ta,v,eteinte),n=compte[k]||0,nom=nomGemme(ta,v,eteinte);
     const el=document.createElement(eteinte?'small':'b');el.className=(eteinte?'gem-eteinte':'gem-vive')+(n?'':' zero');
@@ -547,6 +539,19 @@ function grilleGemmes(compte,poser,qui,opts){const possedees=!!(opts&&opts.posse
  const total=valeurGemmes(compte);
  if(total){const c=t.createCaption();c.textContent='Valeur des gemmes'+(GEMMES_ETEINTES?' allumées':'')+' : '+total.toLocaleString('fr-FR')+' or'}
  return t}
+/* Les gemmes d'un aventurier, sur une ligne : celles qu'il a, une icône et un nombre chacune,
+   dans l'ordre des tailles (Brisures, Éclats, Brômes) puis des variétés, de la citrine au
+   diamant. Ni tableau, ni valeur en or ; rien du tout s'il n'en a aucune. Le MJ corrige un
+   nombre d'un clic. */
+function ligneGemmes(compte,poser,qui){const l=document.createElement('div');l.className='gemmes-ligne';
+ TAILLES_GEMMES.forEach(([ta])=>VARIETES_GEMMES.forEach(([v])=>[false,...(GEMMES_ETEINTES?[true]:[])].forEach(eteinte=>{
+  const k=cleGemme(ta,v,eteinte),n=compte[k]||0;if(!n)return;const nom=nomGemme(ta,v,eteinte);
+  const el=document.createElement('span');el.className='gem-vive g-'+v+(eteinte?' gem-eteinte':'');
+  const b=document.createElement('b');b.textContent=n;el.append(iconeDeGemme(ta,v,eteinte),b);
+  el.title=nom;el.setAttribute('aria-label',nom+' : '+n);
+  if(poser)champVif(b,()=>compte[k]||0,val=>poser(k,val),nom+(qui?' — '+qui:''),'petit');
+  l.append(el)})));
+ return l.childElementCount?l:null}
 /* L'icône d'une gemme, si son image est dans le dossier ; sinon le losange de sa couleur.
    Éteinte, elle passe au gris. */
 function iconeDeGemme(taille,variete,eteinte){const l=iconeGemme(taille,variete);
@@ -559,7 +564,7 @@ function blocRichesses(a){const out=document.createElement('div');out.className=
  a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);
  const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));
   rendrePlusTard();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}:null;
- const g=grilleGemmes(a.richesses,poser,a.name,{possedees:true});
+ const g=ligneGemmes(a.richesses,poser,a.name);
  out.append(ligneOr(a.richesses.or||0,poser,a.name));if(g)out.append(g);return out}
 /* Le « + » des richesses, au MJ : ajouter — ou retirer — de l'or ou des gemmes à un aventurier.
    Le menu dit ce qu'il a déjà de chaque. */
@@ -1266,7 +1271,7 @@ function talentPills(a){const out=document.createElement('div');out.className='t
  for(let i=0;i<liste.length;i+=2){const rangee=liste.slice(i,i+2),details=[];
   // Chaque talent tel que le porte cet aventurier : à son élément, s'il en a un.
   rangee.forEach(t=>{const tv=talentPourElement(t,elementDe(a)),pill=talentPill(tv,true);pill.classList.add('cliquable');
-   if(paliersDe(t)>1&&palierDe(a,t))pill.querySelector('.nom').append(palierRomain(palierDe(a,t)));
+   if(palierDe(a,t)>1)pill.querySelector('.nom').append(palierRomain(palierDe(a,t)));
    const manque=sansEffet(t);
    // Le chevron ne dépliait que l'ancien dépliant : sous la bulle, rien à déplier.
    if(!BULLES){const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev)}
@@ -2208,8 +2213,8 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){const bonus=t.effe
  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
  if(bonus)nom.textContent=libelleBonus(paramsTalent(t));else nomAccolades(nom,vu(t).name);
- // Tenu, le talent dit son palier après son nom : « Attaque Blindée II ».
- if(!bonus&&a&&paliersDe(t)>1&&palierDe(a,t))nom.append(palierRomain(palierDe(a,t)));
+ // Tenu au palier 2 ou 3, le talent le dit après son nom : « Attaque Blindée II ».
+ if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));
  // Jamais la nature du talent : la bulle ne l'écrit nulle part.
  tete.append(nom);d.append(tete);
  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};

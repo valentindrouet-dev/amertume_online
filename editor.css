@@ -1182,9 +1182,6 @@ i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #00
 .paliers-table input,.paliers-table select,.paliers-table textarea{width:100%;box-sizing:border-box;margin:0}
 .paliers-table textarea{resize:vertical;min-height:5.5em}
 /* Sur la carte d'un aventurier, les gemmes sans cases : seulement ce qu'il possède. */
-table.gemmes.nue{width:auto;table-layout:auto;margin:0}
-table.gemmes.nue td{background:none;border:0;padding:1px 10px 1px 4px;min-width:3.4em}
-table.gemmes.nue thead th{text-align:center}
 /* L'élément du Mystique, au-dessus de son arbre : trois boutons, celui de l'aventurier allumé. */
 .elements-bloc{display:flex;flex-direction:column;align-items:center;gap:4px;margin:6px 0 2px}
 .elements-choix{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
@@ -1245,3 +1242,10 @@ body.sombre .paliers-table thead th.p2,body.sombre .paliers-table thead th.p3{co
 .palier-romain{margin-left:.3em;font-family:'Killam',Georgia,serif;font-weight:700;letter-spacing:.03em}
 /* Les trois logos d'un talent élémentaire, un par élément, chacun avec son aperçu. */
 .logos-elements{margin-top:8px}.logos-elements label{position:relative}
+/* Les gemmes d'un aventurier, en ligne : une icône et son nombre, à la Killam. */
+.gemmes-ligne{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;margin-top:4px}
+.gemmes-ligne .gem-vive{display:inline-flex;align-items:center;gap:3px}
+.gemmes-ligne b{font:700 15px/1.1 'Killam',Georgia,serif;color:var(--ink)}
+.gemmes-ligne .gem-eteinte{opacity:.6}
+.gemmes-ligne .gem-ico{flex:none;width:22px;height:22px;object-fit:contain;filter:drop-shadow(0 1px 1px #0005)}
+.gemmes-ligne .gem-eteinte .gem-ico{filter:grayscale(1) brightness(.8)}

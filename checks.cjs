@@ -2563,7 +2563,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
  assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
   &&src.includes("const RESSOURCES=[...MATERIAUX].sort((x,y)=>x.localeCompare(y,'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element'];"),'les richesses se relisent et voyagent en direct');
- assert.ok(src.includes("function grilleGemmes(compte,poser,qui,opts){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
+ assert.ok(src.includes("function grilleGemmes(compte,poser,qui){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
   &&fief.includes("function renderDomRessources(){")&&fief.includes("const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;")
   &&fief.includes("MATERIAUX.filter(m=>m!=='Or').forEach(m=>{"),'les compteurs : sur la carte de l’aventurier, au domaine');
  const ctxP={lisCompte:C.lisCompte};vm.createContext(ctxP);vm.runInContext(src.slice(src.indexOf('function poseCompte('),src.indexOf('// Les richesses d\'un aventurier, sur sa carte')),ctxP);
@@ -2690,9 +2690,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes(".filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
   &&src.includes("name=\"elementaire\"")&&src.includes("rangee.forEach(t=>{const tv=talentPourElement(t,elementDe(a)),pill=talentPill(tv,true);"),'l’arbre, la fiche et l’éditeur suivent l’élément');
  assert.ok(src.includes(".filter(r=>ELEMENTS.every(e=>LOGOS_TOUS.includes(r+'_'+e.logo))).map(r=>r+'_{logo}');")&&page.includes("const teinte=etat||(elementDe(a)||{}).etat||'';"),'le logo et l’orbe suivent l’élément ; les dés restent les leurs');
- assert.ok(src.includes("const tailles=possedees?TAILLES_GEMMES.filter(([ta])=>VARIETES_GEMMES.some(([v])=>a(ta,v))):TAILLES_GEMMES;")&&src.includes("if(!tailles.length||!varietes.length)return null;")
-  &&src.includes("const g=grilleGemmes(a.richesses,poser,a.name,{possedees:true});")&&src.includes("function openRichesses(a){if(view!=='mj'||!a)return;")
-  &&src.includes("poseCompte(a.richesses,k,(a.richesses[k]||0)+signe*n);")&&fs.readFileSync('editor.css','utf8').includes('table.gemmes.nue td{background:none;border:0;'),'les gemmes possédées, sans cases, et le « + » du MJ');}
+ /* v0.301 : sur la carte d'un aventurier, ses gemmes en ligne, sans tableau ni valeur en or. */
+ assert.ok(src.includes("function ligneGemmes(compte,poser,qui){const l=document.createElement('div');l.className='gemmes-ligne';")&&src.includes("return l.childElementCount?l:null}")
+  &&src.includes("const g=ligneGemmes(a.richesses,poser,a.name);")&&!src.includes('possedees')&&src.includes("function openRichesses(a){if(view!=='mj'||!a)return;")
+  &&src.includes("poseCompte(a.richesses,k,(a.richesses[k]||0)+signe*n);")&&fs.readFileSync('editor.css','utf8').includes('.gemmes-ligne{display:flex;flex-wrap:wrap;'),'les gemmes possédées en ligne, et le « + » du MJ');}
 /* v0.291 — Un talent se supprime depuis le plan de l'arbre ; ce qui pendait sous lui remonte.
    Plus de fusion ni de phrase d'aperçu. Seule une classe du jeu a un arbre : ni les adversaires,
    ni les génériques. */
@@ -2807,10 +2808,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.299 — Le palier d'un talent tenu, en chiffre romain à la Killam après son nom : dans le
    titre de sa bulle, sur la fiche, sur les boutons de la table. */
 {const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(page.includes("const ROMAINS_PALIER=['','I','II','III'];")&&page.includes("function nomAvecPalier(texte,nom,palier){")
+ assert.ok(page.includes("const ROMAINS_PALIER=['','','II','III'];")&&page.includes("function nomAvecPalier(texte,nom,palier){")
   &&page.includes("if(nom&&texte.startsWith(nom))s.append(nom,palierRomain(palier),texte.slice(nom.length));else s.append(texte,palierRomain(palier));")
-  &&page.includes("palier:paliersDe(talent)>1?(talent.palier||1):0,")&&page.includes("geste(nomAvecPalier(b.texte,b.talent.name,b.palier),"),'le chiffre du palier sur les boutons de la table');
- assert.ok(src.includes("if(!bonus&&a&&paliersDe(t)>1&&palierDe(a,t))nom.append(palierRomain(palierDe(a,t)));")&&src.includes("if(paliersDe(t)>1&&palierDe(a,t))pill.querySelector('.nom').append(palierRomain(palierDe(a,t)));")
+  &&page.includes("palier:paliersDe(talent)>1&&talent.palier>1?talent.palier:0,")&&page.includes("geste(nomAvecPalier(b.texte,b.talent.name,b.palier),"),'le chiffre du palier sur les boutons de la table');
+ assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("if(palierDe(a,t)>1)pill.querySelector('.nom').append(palierRomain(palierDe(a,t)));")
   &&src.includes("const nom=nomAvecPalier(t.texte,t.talent.name,t.palier);nom.className='nom';")&&css.includes(".palier-romain{margin-left:.3em;font-family:'Killam',Georgia,serif;"),'dans la bulle et sur la fiche, en Killam');}
 /* v0.300 — Un talent élémentaire choisit un logo par élément ; sans logo propre, l'ancien
    logo suit l'élément comme avant. */
