@@ -270,9 +270,9 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
   assert.ok(src.includes('const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_ETATS,...LOGOS_DIVERS];')
    &&src.includes('function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}')
    &&src.includes("(at.logos||[]).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
-   &&src.includes("+sel('État infligé','ax'+i,a.etat||'',CHOIX_ETAT)+sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])])")
+   &&src.includes("+sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])])+'</div>'")
    &&src.includes("logos:LOGOS_TOUS.includes(f['ai'+i].value)?[f['ai'+i].value]:[],")
-   &&src.includes("etat:CHOIX_ETAT.some(([k])=>k&&k===f['ax'+i].value)?f['ax'+i].value:'',")
+   &&src.includes("...(etats=>({etats,etat:etats[0]||''}))([...$('actor-form').querySelectorAll('input[name=\"ax'+i+'\"]:checked')].map(x=>x.value).filter(e=>ETATS_JEU.includes(e))),")
    &&fs.readFileSync('editor.css','utf8').includes('.best-att-tete .etat-inflige{margin-left:auto}')
    &&src.includes("replace(/^(weapon|spell|item|attack)_/,'')")
    &&fs.readFileSync('editor.css','utf8').includes('.best-att-tete .att-logo{'),'une attaque spéciale choisit son icône parmi toutes celles du dossier');}
@@ -1601,7 +1601,7 @@ assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null
    socle : le MJ nomme le prérequis dans le talent qu'il écrit. */
 {const ig=C.TALENTS_CODES.ignition,inv=C.TALENTS_CODES.invulnerable,br=C.TALENTS_CODES.brise;
  assert.ok(ig&&ig.type==='ame'&&ig.requiert===undefined&&!ig.params.length,'Ignition ne se règle pas, et ne s’impose pas de socle');
- assert.ok(inv&&inv.type==='ame'&&inv.params[0].cle==='etat'&&br&&br.type==='ame'&&br.params[0].cle==='etat','Invulnérable et Brise se règlent sur un état');
+ assert.ok(inv&&inv.type==='ame'&&inv.params.map(p=>p.cle).join()==='contre,etat,des'&&br&&br.type==='ame'&&br.params[0].cle==='etat','Invulnérable (un état ou une couleur de dés) et Brise se règlent sur un état');
  assert.ok(C.phraseTalent('ignition',{}).includes('<b>allié désigné</b>')&&C.phraseTalent('invulnerable',{etat:'Poison'}).includes('<b>jamais Poison</b>')
   &&C.phraseTalent('brise',{etat:'Gel'}).includes('<b>ignorent sa DEF</b>'),'chacune se dit en une phrase');
  assert.equal(C.effetParNom('Ignition'),'ignition');
@@ -2469,10 +2469,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  b.states=[];ctxE.effetsPassifs();assert.equal(b.states.join(','),'','un état donné et perdu ne revient pas tant qu’on garde la pièce');
  b.states=['Invisible'];b.armures=['an'];ctxE.effetsPassifs();assert.equal(b.states.join(',')+'|'+b.etatsPassifs.join(','),'|','ôtée, la cape reprend son état');
  assert.ok(src.includes("if(modeObjet(o)==='passif')return;")&&src.includes("p.innerHTML=phraseDeObjet(o);d.append(p);")&&src.includes("if(f.mode)a.mode=f.mode.value==='passif'?'passif':'actif';")
-  &&src.includes("[['actif','Actif — un bouton en combat'],['passif','Passif — permanent tant que porté']]")&&page.includes("const gardes=[],ecartes=[],portes=passifsPortes(b,items()).des;"),'le passif : pas de bouton, sa phrase, son réglage, les dés écartés');}
+  &&src.includes("[['actif','Actif — un bouton en combat'],['passif','Passif — permanent tant que porté']]")&&page.includes("const gardes=[],ecartes=[],portes=[...passifsPortes(b,items()).des,...desRefuses(talentsCodes(b))];"),'le passif : pas de bouton, sa phrase, son réglage, les dés écartés');}
 /* v0.275 (suite) — Un écu de DEF seulement pour ce qui en donne, ou une armure de corps, ou un bouclier ; l'icône de l'effet, barrée pour une insensibilité. */
 {assert.ok(src.includes("if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))bas.append(shieldBadge(o.def||0));")
-  &&src.includes("const eff=pastilleEffet(o);if(eff)bas.append(eff);")&&src.includes("w.className='effet-pastille'+(code.cle==='invulnerabilite'?' barre':'');")
+  &&src.includes("const eff=pastilleEffet(o);if(eff)bas.append(eff);")&&src.includes("if(code.cle==='invulnerabilite')return pastilleInsensible(p);")
   &&feuille.includes('.effet-pastille.barre::after{')&&feuille.includes('.cat-pill .effet-pastille .etat-inflige img{position:absolute;inset:0;width:100%;height:100%;'),'l’écu à zéro disparaît des bijoux, l’effet se montre, barré s’il protège');}
 /* v0.276 — Les chemins de l'arbre ne se lisent plus à travers le nom des talents. */
 {assert.ok(feuille.includes('.arbre-etages .arbre-nom,.arbre-etages .arbre-niv{background:var(--panel-2);padding:1px 6px;border-radius:6px;')&&feuille.includes('.arbre-etages{position:relative;z-index:1;'),'le nom masque le chemin qui passe dessous');}
@@ -2524,7 +2524,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const autres=fs.readdirSync('img').filter(f=>/\.(png|webp)$/i.test(f)&&!/^(weapon|spell|item|attack|ressource)_/.test(f)).sort();
  assert.deepEqual([...lire('LOGOS_ETATS'),...lire('LOGOS_DIVERS')].map(l=>l+ext(l)).sort(),autres,'LOGOS_ETATS et LOGOS_DIVERS doivent lister les autres images : '+autres.join(', '));
  assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("im.src=imgUrl(fichierLogo(l));")
-  &&src.includes("function logoTalent(t,cls){return logoImage(t&&t.logo,LOGOS_TOUS,cls)}")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
+  &&src.includes("return logoImage(t&&t.logo,LOGOS_TOUS,cls)}")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
   &&src.includes(" t.logo=f.logo&&(LOGOS_TOUS.includes(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';")
   &&src.includes("const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
  const ctxL={};vm.createContext(ctxL);vm.runInContext(src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
@@ -2822,4 +2822,29 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("$('logos-elements').hidden=!oui;menuLogo.closest('label').hidden=oui;")
   &&src.includes("if(Object.keys(logos).length){t.logos=logos;t.logo=logos[ELEMENTS.find(e=>logos[e.cle]).cle]}else delete t.logos;")
   &&src.includes("function selLogos(label,key,value,sansElementaires){")&&src.includes("ELEMENTS.forEach(e=>{const v=t.logos[e.cle];if(typeof v==='string'&&v&&v.length<=100)o[e.cle]=v});"),'trois menus de logo, un par élément, enregistrés et relus');}
-console.log('1693 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.302 — Invulnérable refuse un état ou une couleur de dés, et prend pour logo, tout seul,
+   le jeton de l'état ou le dé barré de rouge, comme les anneaux de l'armurerie. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ const inv=(p)=>[{code:C.TALENTS_CODES.invulnerable,params:p}];
+ assert.deepEqual(C.desRefuses(inv({contre:'des',des:'black'})),['black'],'insensible aux dés Mortels');
+ assert.ok(!C.etatRefuse(inv({contre:'des',etat:'Feu'}),'Feu')&&C.etatRefuse(inv({contre:'etat',etat:'Feu'}),'Feu')&&C.etatRefuse(inv({etat:'Gel'}),'Gel')&&!C.desRefuses(inv({etat:'Gel'})).length,'un état, ou des dés, jamais les deux');
+ assert.ok(C.phraseTalent('invulnerable',{contre:'des',des:'red'}).includes('<b>insensible aux dés Lourds</b>'));
+ assert.ok(src.includes("function logoTalent(t,cls){if(t&&t.effet==='invulnerable'){const w=pastilleInsensible(paramsTalent(t));if(w){w.classList.add('logo-auto');")
+  &&src.includes("function pastilleInsensible(p){let el=null,titre='';")&&src.includes("logo=logoTalent({...vu,logo:remplaceElement(vu.logo||'',ELEMENTS[0])});")
+  &&css.includes('.arbre-rond .effet-pastille.logo-auto{width:58%;height:58%}'),'le logo automatique, barré de rouge');}
+/* v0.303 — Une attaque spéciale inflige autant d'états qu'on en coche ; l'état unique
+   d'avant se lit toujours, et les modèles posés sur une carte gardent la liste. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8');
+ assert.deepEqual(C.cleanMonster({name:'X',attacks:[{name:'A',etats:['Feu','Poison','Coma','Feu']},{name:'B',etat:'Gel'},{name:'C'}]}).attacks.map(a=>[a.etat,a.etats]),
+  [['Feu',['Feu','Poison']],['Gel',['Gel']],[undefined,undefined]],'la liste gardée, les inconnus et les doublons écartés');
+ assert.deepEqual(C.attackChoices({attacks:[{name:'A',etats:['Feu','Poison'],etat:'Feu'},{name:'B',etat:'Gel'}]},[]).map(a=>a.etats),[['Feu','Poison'],['Gel']],'la table pose tous les états');
+ assert.ok(src.includes("+ETATS_JEU.map(e=>'<label class=\"etat-case\"><input type=\"checkbox\" name=\"ax'+i+'\" value=\"'+esc(e)+'\"'+(etatsAttaque(a).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'")
+  &&src.includes("const etatsAttaque=a=>Array.isArray(a&&a.etats)?a.etats:(a&&a.etat?[a.etat]:[]);"),'des cases, une par état');}
+/* v0.304 — La bulle d'un modèle montre ses attaques : états infligés, dés, bonus de dégâts ;
+   sans arme ni attaque spéciale, ses propres dés. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("const choix=attackChoices(m,catalog.items||[]),attaques=choix.length?choix:propres;")
+  &&src.includes("[...(at.etats||[])].reverse().forEach(e=>{const p=etatPastille(e);if(p)pips.prepend(p)});")
+  &&src.includes("const bas=desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0)),pips=bas.querySelector('.pips');")
+  &&!src.includes("ligne('Attaques spéciales : '"),'les attaques de la bulle, avec dés et états');}
+console.log('1701 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

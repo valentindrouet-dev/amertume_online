@@ -848,12 +848,17 @@ let gearOuvert=null;
 const cleGear=(a,o)=>(a&&a.id||'?')+'|'+(o&&o.id||'?');
 /* L'icône de l'effet d'une pièce : l'état qu'elle donne ; barré, l'état ou la couleur de dés
    dont elle rend insensible. */
-function pastilleEffet(o){const code=objetCode(o);if(!code)return null;const p=paramsObjet(o)||{};let el=null,titre='';
- if(code.cle==='invulnerabilite'){if(p.contre==='des'){const k=keys.indexOf(p.des);if(k<0)return null;el=document.createElement('i');el.className='die-sq';el.style.setProperty('--face',dieFace(k));titre='Insensible aux dés '+types[k]}
-  else{el=etatPastille(p.etat);titre='Insensible à '+p.etat}}
- else if(code.cle==='etat'){el=etatPastille(p.etat);titre='Donne '+p.etat}
+function pastilleEffet(o){const code=objetCode(o);if(!code)return null;const p=paramsObjet(o)||{};
+ if(code.cle==='invulnerabilite')return pastilleInsensible(p);
+ if(code.cle!=='etat')return null;const el=etatPastille(p.etat);if(!el)return null;el.removeAttribute('title');el.removeAttribute('aria-label');
+ const w=document.createElement('span');w.className='effet-pastille';w.title='Donne '+p.etat;w.setAttribute('role','img');w.setAttribute('aria-label',w.title);w.append(el);return w}
+/* L'insensibilité en image : le jeton de l'état, ou le dé de la couleur, barré de rouge. Un
+   objet d'Invulnérabilité la porte sous son logo ; un talent Invulnérable en fait son logo. */
+function pastilleInsensible(p){let el=null,titre='';
+ if(p&&p.contre==='des'){const k=keys.indexOf(p.des);if(k<0)return null;el=document.createElement('i');el.className='die-sq';el.style.setProperty('--face',dieFace(k));titre='Insensible aux dés '+types[k]}
+ else{el=etatPastille(p&&p.etat);titre='Insensible à '+(p&&p.etat)}
  if(!el)return null;el.removeAttribute('title');el.removeAttribute('aria-label');
- const w=document.createElement('span');w.className='effet-pastille'+(code.cle==='invulnerabilite'?' barre':'');w.title=titre;w.setAttribute('role','img');w.setAttribute('aria-label',titre);w.append(el);return w}
+ const w=document.createElement('span');w.className='effet-pastille barre';w.title=titre;w.setAttribute('role','img');w.setAttribute('aria-label',titre);w.append(el);return w}
 function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
@@ -1378,8 +1383,20 @@ function bulleModele(m){const d=document.createElement('div');d.className='cat-d
  const defPortee=equippedDef(m,catalog.items),chiffres=document.createElement('div');chiffres.className='stat-row';
  [['pv','PV',m.pv||0],['def','DEF',defPortee===null?(m.def||0):defPortee,true],['dmg','Dég.','+'+(m.damage||0)],['xp','XP',m.xp||0]].forEach(x=>chiffres.append(statTile(...x)));
  d.append(chiffres);
- const attaques=(m.attacks||[]).map(a=>a&&a.name).filter(Boolean),talents=(m.talents||[]).map(talent).filter(Boolean).map(t=>nomEnClair(t.name));
- if(attaques.length)ligne('Attaques spéciales : '+attaques.join(', '));
+ /* Ses attaques, celles de son équipement comme ses attaques spéciales : le logo, le nom, puis
+    les états qu'elles infligent, les dés et le bonus de dégâts, comme sur un bouton de table. */
+ // Sans arme ni attaque spéciale, il frappe de ses propres dés.
+ const propres=m.dice&&Object.values(m.dice).some(n=>n>0)?[{name:'Attaque',dice:m.dice,range:'contact',useOwnDamage:true}]:[];
+ const choix=attackChoices(m,catalog.items||[]),attaques=choix.length?choix:propres;
+ if(attaques.length){const liste=document.createElement('div');liste.className='bulle-attaques';
+  attaques.forEach(at=>{const l=document.createElement('div');l.className='bulle-attaque';
+   (at.logos||[]).slice(0,2).forEach(x=>{const im=logoAttaque(x,'mini');if(im)l.append(im)});
+   const n=document.createElement('span');n.className='bulle-att-nom';n.textContent=(at.gear?'Attaque':(at.name||'Attaque'))+(at.range==='distance'?' · distance':'');
+   const bas=desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0)),pips=bas.querySelector('.pips');
+   [...(at.etats||[])].reverse().forEach(e=>{const p=etatPastille(e);if(p)pips.prepend(p)});
+   l.append(n,bas);liste.append(l)});
+  d.append(liste)}
+ const talents=(m.talents||[]).map(talent).filter(Boolean).map(t=>nomEnClair(t.name));
  if(talents.length)ligne('Talents : '+talents.join(', '));
  return d}
 /* Un modèle est « analysé » dès qu'une des créatures posées qui en descend l'a été :
@@ -1429,7 +1446,7 @@ function teinteClasse(nom){const c=classeDe(catalog.classes,nom);return c&&c.tin
 function talentRow(t,i){const carte=document.createElement('div');carte.className='cat-carte';
  const [cle,court,nature]=talentType(t),mj=view==='mj';
  const p=document.createElement('span');p.className='cat-pill gear-carre talent-carre t-'+cle;p.setAttribute('role','button');p.tabIndex=0;
- const vu=t.elementaire===true?talentPourElement(t,ELEMENTS[0]):t,logo=logoTalent({logo:remplaceElement(vu.logo||'',ELEMENTS[0])});
+ const vu=t.elementaire===true?talentPourElement(t,ELEMENTS[0]):t,logo=logoTalent({...vu,logo:remplaceElement(vu.logo||'',ELEMENTS[0])});
  if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=GLYPHES_TALENT[t.type]||'✦';p.append(g)}
  const b=document.createElement('span');b.className='t-badge';b.textContent=court;p.append(b);
  p.setAttribute('aria-label',(mj?'Modifier ':'')+nomEnClair(t.name)+', '+nature);
@@ -1599,6 +1616,8 @@ function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)retu
     qu'au-dessus d'un talent portant celle-là. */
  const exige=$('talent-exige');if(exige)exige.innerHTML=code&&code.requiert&&TALENTS_CODES[code.requiert]
   ?'<p class="muted exige">↳ Amélioration : ne s’apprend qu’au-dessus d’un talent portant la mécanique « '+esc(TALENTS_CODES[code.requiert].nom)+' ».</p>':'';
+ // Invulnérable prend son logo tout seul : l'état ou le dé qu'il refuse, barré de rouge.
+ if(exige&&code&&code.cle==='invulnerable')exige.innerHTML+='<p class="muted exige">Logo automatique : l’état ou le dé refusé, barré de rouge.</p>';
  const vals=reglagesPaliers(code,d);
  const champ=(p,nom,v,lab)=>{const aria=' aria-label="'+esc(lab)+'"';
   if(p.type==='nombre')return '<input type="number" name="'+nom+'" value="'+esc(String(v))+'" min="'+p.min+'" max="'+p.max+'"'+aria+'>';
@@ -2614,10 +2633,16 @@ function refreshEquip(){const f=$('actor-form').elements;if(!f||!$('equip-summar
    :porte?'DEF : '+num(f.def.value,0,99)+' à lui, plus '+porte+' d’équipement, soit '+d+'.'
    :'DEF : la sienne, sans équipement pour l’augmenter.')}
 function renderAttacks(){if(!$('attack-edit-list'))return;$('attack-edit-list').innerHTML=attackDraft.map((a,i)=>'<div class="attack-card" data-attack="'+i+'"><div class="edit-grid">'+field('Nom','an'+i,a.name,'text','required maxlength="100"')+sel('Portée','ar'+i,a.range,[['contact','Contact'],['distance','Distance']])+sel('Cibles','at'+i,a.targets,[['one','Unique'],['all','Multiples (manuel)']])
-  // L'état qu'elle inflige et son icône, sur le bouton de la table et au journal.
-  +sel('État infligé','ax'+i,a.etat||'',CHOIX_ETAT)+sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])])+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('');habilleDes($('attack-edit-list'));document.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
+  // Son icône, sur le bouton de la table et au journal.
+  +sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])])+'</div>'
+  // Les états qu'elle inflige : autant qu'on en coche, tous posés à la touche.
+  +'<div class="etats-attaque" role="group" aria-label="États infligés"><span class="etats-titre">États infligés</span>'
+  +ETATS_JEU.map(e=>'<label class="etat-case"><input type="checkbox" name="ax'+i+'" value="'+esc(e)+'"'+(etatsAttaque(a).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('');habilleDes($('attack-edit-list'));document.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
+// Les états d'une attaque spéciale : la liste, ou l'état unique d'avant.
+const etatsAttaque=a=>Array.isArray(a&&a.etats)?a.etats:(a&&a.etat?[a.etat]:[]);
 function readAttacks(){const f=$('actor-form').elements;if(!f.an0&&attackDraft.length)return;attackDraft=attackDraft.map((a,i)=>({...a,name:f['an'+i].value.trim()||'Attaque',range:f['ar'+i].value,targets:f['at'+i].value,useOwnDamage:f['ab'+i].checked,effectText:f['ae'+i].value,
-  etat:CHOIX_ETAT.some(([k])=>k&&k===f['ax'+i].value)?f['ax'+i].value:'',logos:LOGOS_TOUS.includes(f['ai'+i].value)?[f['ai'+i].value]:[],dice:diceFrom(keys.map((_,c)=>num(f['ad'+i+'_'+c].value,0,12)))}))}
+  ...(etats=>({etats,etat:etats[0]||''}))([...$('actor-form').querySelectorAll('input[name="ax'+i+'"]:checked')].map(x=>x.value).filter(e=>ETATS_JEU.includes(e))),
+  logos:LOGOS_TOUS.includes(f['ai'+i].value)?[f['ai'+i].value]:[],dice:diceFrom(keys.map((_,c)=>num(f['ad'+i+'_'+c].value,0,12)))}))}
 /* Les états de la fiche : la même grille de jetons que le clic droit sur le socle, pour
    qu'on reconnaisse le geste. Ils vivent sur le brouillon jusqu'à l'enregistrement. */
 function renderStatePicker(){const boite=$('state-picker');if(!boite)return;
@@ -2840,7 +2865,10 @@ function logoImage(l,liste,cls){if(!l||!liste.includes(l))return null;
  const im=document.createElement('img');im.className='logo-equip'+(cls?' '+cls:'');im.src=imgUrl(fichierLogo(l));im.alt='';im.draggable=false;return im}
 function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)}
 // Le logo d'un talent : n'importe quelle image du dossier.
-function logoTalent(t,cls){return logoImage(t&&t.logo,LOGOS_TOUS,cls)}
+/* Un talent Invulnérable n'a pas à choisir son logo : c'est l'état ou le dé qu'il refuse,
+   barré de rouge, à son élément s'il en suit un. */
+function logoTalent(t,cls){if(t&&t.effet==='invulnerable'){const w=pastilleInsensible(paramsTalent(t));if(w){w.classList.add('logo-auto');if(cls)w.classList.add(cls);return w}}
+ return logoImage(t&&t.logo,LOGOS_TOUS,cls)}
 // Le logo d'une attaque : n'importe quelle icône du dossier, sans distinction de famille.
 function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['armor','Armure'],
