@@ -1384,7 +1384,15 @@ function normalisePnj(p){return {id:p&&p.id||idDomaine(),nom:String(p&&p.nom||'I
 const MATERIAUX=['Acier','Argent','Bois','Bronze','Corde','Cuir','Diamant','Or','Pierre','Verre'];
 const cleRessource=n=>String(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-');
 const TAILLES_GEMMES=[['brisure','Brisures','Brisure'],['eclat','Éclats','Éclat'],['brome','Brômes','Brôme']];
-const VARIETES_GEMMES=[['rubis','Rubis'],['diamant','Diamant'],['emeraude','Émeraude'],['saphir','Saphir']];
+// Les variétés, de la moins chère à la plus chère.
+const VARIETES_GEMMES=[['citrine','Citrine'],['emeraude','Émeraude'],['saphir','Saphir'],['rubis','Rubis'],['diamant','Diamant']];
+/* Ce que vaut une gemme allumée, en or, par taille et par variété. Une gemme éteinte n'a pas
+   encore de prix : elle ne compte pas dans la valeur d'une bourse. */
+const VALEURS_GEMMES={brisure:{citrine:5,emeraude:10,saphir:15,rubis:20,diamant:50},
+ eclat:{citrine:25,emeraude:50,saphir:75,rubis:100,diamant:250},
+ brome:{citrine:50,emeraude:100,saphir:150,rubis:200,diamant:500}};
+const valeurGemme=(taille,variete,eteinte)=>eteinte?0:((VALEURS_GEMMES[taille]||{})[variete]||0);
+function valeurGemmes(compte){let n=0;if(compte)TAILLES_GEMMES.forEach(([t])=>VARIETES_GEMMES.forEach(([v])=>{n+=(Number(compte[cleGemme(t,v,false)])||0)*valeurGemme(t,v,false)}));return n}
 const cleGemme=(taille,variete,eteinte)=>taille+'-'+variete+(eteinte?'-eteinte':'');
 function nomGemme(taille,variete,eteinte){const t=(TAILLES_GEMMES.find(([k])=>k===taille)||[])[1]||'',v=((VARIETES_GEMMES.find(([k])=>k===variete)||[])[1]||'').toLowerCase();
  return t+(/^[aeiouéèêh]/i.test(v)?' d’':' de ')+v+(eteinte?', éteintes':'')}
@@ -1490,7 +1498,7 @@ const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatie
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
- ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,cleGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
+ ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

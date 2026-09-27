@@ -2555,11 +2555,11 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    et les matériaux. Le domaine tient ses matériaux et ses gemmes — son or est son trésor — ; un
    aventurier porte son or et ses gemmes. Le MJ corrige d'un clic, la troupe lit en direct. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),fief=fs.readFileSync('domaine.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
- assert.equal(C.CLES_GEMMES.length,24,'3 tailles × 4 variétés × allumée ou éteinte');
+ assert.equal(C.CLES_GEMMES.length,30,'3 tailles × 5 variétés × allumée ou éteinte');
  assert.ok(C.CLES_GEMMES.includes('brome-saphir-eteinte')&&C.CLES_GEMMES.includes('brisure-rubis'));
- assert.deepEqual(C.CLES_RICHESSES.slice(0,2),['or','brisure-rubis']);
+ assert.deepEqual(C.CLES_RICHESSES.slice(0,2),['or','brisure-citrine']);
  assert.ok(!C.CLES_RESSOURCES_DOMAINE.includes('or')&&C.CLES_RESSOURCES_DOMAINE.includes('acier')&&C.CLES_RESSOURCES_DOMAINE.includes('eclat-diamant-eteinte'),'l’or du domaine est son trésor');
- assert.equal(C.CLES_RESSOURCES_DOMAINE.length,33);
+ assert.equal(C.CLES_RESSOURCES_DOMAINE.length,39);
  assert.equal(C.nomGemme('eclat','emeraude',true),'Éclats d’émeraude, éteintes');assert.equal(C.nomGemme('brome','rubis',false),'Brômes de rubis');
  assert.equal(C.lisCompte('1 200'),1200);assert.equal(C.lisCompte('-3'),0);assert.equal(C.lisCompte('abc'),0);assert.equal(C.lisCompte(5e9),999999);
  assert.deepEqual(C.normaliseCompte({or:'5',x:3,'eclat-rubis':-2,'brisure-saphir':0,'brome-diamant-eteinte':2.7},C.CLES_RICHESSES),{or:5,'brome-diamant-eteinte':2});
@@ -2597,4 +2597,14 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&fief.includes("ajouteOr(a,-p.prix);ajouterInventaire(a,o);")&&fief.includes("retirerInventaire(a,o);ajouteOr(a,v);"),'le magasin : présent, construit, intact');
  assert.ok(src.includes("o.magasin=o.magasin===true;")&&src.includes("<input name=\"magasin\" type=\"checkbox\" '+(a.magasin===true?'checked':'')+'>Magasin — achetable au magasin du domaine</label>'")
   &&src.includes(" if(f.magasin)a.magasin=f.magasin.checked;"),'la case Magasin de l’armurerie');}
-console.log('1586 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.285 — La Citrine, cinquième variété ; les gemmes ont un prix, par taille et par variété ;
+   la grille se lit par variété, de la moins chère à la plus chère. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8');
+ assert.deepEqual(C.VARIETES_GEMMES.map(([k])=>k),['citrine','emeraude','saphir','rubis','diamant']);
+ assert.deepEqual(C.TAILLES_GEMMES.map(([t])=>C.VARIETES_GEMMES.map(([v])=>C.valeurGemme(t,v,false))),[[5,10,15,20,50],[25,50,75,100,250],[50,100,150,200,500]],'les prix de Valentin');
+ assert.equal(C.valeurGemme('eclat','rubis',true),0,'une éteinte n’a pas de prix');
+ assert.equal(C.valeurGemmes({or:999,'brisure-citrine':2,'eclat-rubis':1,'brome-diamant':1,'brome-diamant-eteinte':4}),610);
+ assert.equal(C.nomGemme('brisure','citrine',false),'Brisures de citrine');
+ assert.ok(src.includes("VARIETES_GEMMES.forEach(([v,nv])=>{const r=corps.insertRow();r.className='g-'+v;")&&src.includes("if(total){const c=t.createCaption();c.textContent='Valeur des gemmes allumées : '")
+  &&fs.readFileSync('editor.css','utf8').includes('.g-citrine{--g:#e2b12a}'),'la grille par variété, et sa valeur');}
+console.log('1592 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

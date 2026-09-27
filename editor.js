@@ -516,18 +516,25 @@ function ligneOr(n,poser,qui){const l=document.createElement('div');l.className=
  const unite=document.createElement('span');unite.textContent='or';l.append(piece,v,unite);
  if(poser)champVif(v,()=>n,t=>poser('or',t),'Or'+(qui?' — '+qui:''),'petit');return l}
 function grilleGemmes(compte,poser,qui){const t=document.createElement('table');t.className='gemmes';
+ // Une ligne par variété, de la moins chère à la plus chère ; une colonne par taille.
  const tete=t.createTHead().insertRow();tete.append(document.createElement('td'));
- VARIETES_GEMMES.forEach(([v,n])=>{const th=document.createElement('th');th.className='g-'+v;th.scope='col';
-  const pierre=document.createElement('i');pierre.className='gemme';const nom=document.createElement('span');nom.textContent=n;th.append(pierre,nom);tete.append(th)});
+ TAILLES_GEMMES.forEach(([,nt])=>{const th=document.createElement('th');th.scope='col';th.textContent=nt;tete.append(th)});
  const corps=t.createTBody();
- TAILLES_GEMMES.forEach(([ta,nt])=>{const r=corps.insertRow();const th=document.createElement('th');th.scope='row';th.textContent=nt;r.append(th);
-  VARIETES_GEMMES.forEach(([v])=>{const td=r.insertCell();td.className='g-'+v;
+ VARIETES_GEMMES.forEach(([v,nv])=>{const r=corps.insertRow();r.className='g-'+v;
+  const th=document.createElement('th');th.scope='row';const pierre=document.createElement('i');pierre.className='gemme';
+  const nom=document.createElement('span');nom.textContent=nv;th.append(pierre,nom);r.append(th);
+  TAILLES_GEMMES.forEach(([ta])=>{const td=r.insertCell();
    [false,true].forEach(eteinte=>{const k=cleGemme(ta,v,eteinte),n=compte[k]||0,nom=nomGemme(ta,v,eteinte);
     const el=document.createElement(eteinte?'small':'b');el.className=(eteinte?'gem-eteinte':'gem-vive')+(n?'':' zero');
     if(eteinte){const g=document.createElement('i');g.className='gemme eteinte';el.append(g,' '+n)}else el.textContent=String(n);
-    el.setAttribute('aria-label',nom+' : '+n);el.title=nom;
-    if(poser)champVif(el,()=>compte[k]||0,val=>poser(k,val),nom+(qui?' — '+qui:''),'petit');
+    // Au survol : la gemme, et ce qu'elle vaut pièce, allumée.
+    const titre=nom+(eteinte?'':' — '+valeurGemme(ta,v,false)+' or pièce');
+    el.setAttribute('aria-label',titre+' : '+n);el.title=titre;
+    if(poser)champVif(el,()=>compte[k]||0,val=>poser(k,val),titre+(qui?' — '+qui:''),'petit');
     td.append(el)})})});
+ // Dessous, ce que valent les gemmes allumées, ensemble.
+ const total=valeurGemmes(compte);
+ if(total){const c=t.createCaption();c.textContent='Valeur des gemmes allumées : '+total.toLocaleString('fr-FR')+' or'}
  return t}
 // Poser un compte : un entier positif, ou rien — un compte à zéro disparaît.
 function poseCompte(compte,k,v){const n=lisCompte(v);if(n)compte[k]=n;else delete compte[k];return n}

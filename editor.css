@@ -1107,16 +1107,18 @@ table.gemmes{width:100%;border-collapse:separate;border-spacing:3px;table-layout
 table.gemmes th{font:600 10px system-ui;letter-spacing:.6px;color:var(--muted);text-align:center;padding:1px 0;text-transform:uppercase}
 table.gemmes thead th{text-transform:none;letter-spacing:0;font-size:9.5px;font-weight:500}
 table.gemmes thead th span{display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-table.gemmes tbody th{text-align:left;width:4.4em;text-transform:none;letter-spacing:0;font-size:10.5px}
+table.gemmes tbody th{text-align:left;text-transform:none;letter-spacing:0;font-size:10.5px;white-space:nowrap}
+table.gemmes tbody th .gemme{margin:0 7px 0 2px;vertical-align:1px}
+table.gemmes caption{caption-side:bottom;text-align:right;font-size:11.5px;color:var(--muted);padding:3px 3px 0}
 table.gemmes td{background:var(--panel-2);border:1px solid var(--line);border-top:2px solid var(--g);border-radius:7px;text-align:center;padding:3px 2px 2px;line-height:1.1}
-table.gemmes thead td{background:none;border:0}
+table.gemmes thead td{background:none;border:0;width:5.3em}/* En disposition fixe, la première ligne donne les largeurs : la colonne des noms se règle ici. */
 table.gemmes .gem-vive{display:block;font:700 15px/1.1 'Killam',Georgia,serif;color:var(--ink)}
 table.gemmes .gem-eteinte{display:flex;align-items:center;justify-content:center;gap:3px;font-size:10.5px;color:var(--muted)}
 table.gemmes .zero{opacity:.38}table.gemmes .modifiable{cursor:pointer}
 table.gemmes .champ-vif{width:100%;box-sizing:border-box;padding:1px 2px;font-size:12px;text-align:center;margin:0}
 i.gemme{display:inline-block;width:9px;height:9px;transform:rotate(45deg);border-radius:2px;background:var(--g);box-shadow:0 0 0 1px #0000002e inset,0 0 5px var(--g)}
 i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #0000002e inset}
-.g-rubis{--g:#c8283c}.g-diamant{--g:#a9cfe4}.g-emeraude{--g:#2f9e5a}.g-saphir{--g:#2d5fc4}
+.g-citrine{--g:#e2b12a}.g-rubis{--g:#c8283c}.g-diamant{--g:#a9cfe4}.g-emeraude{--g:#2f9e5a}.g-saphir{--g:#2d5fc4}
 .richesses{margin-bottom:6px}
 .materiaux{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:8px}
 .materiau{display:flex;justify-content:space-between;align-items:baseline;gap:4px;padding:3px 7px;border:1px solid var(--line);border-radius:7px;background:var(--panel-2);font-size:12.5px;min-width:0}
