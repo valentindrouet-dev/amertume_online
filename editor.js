@@ -2277,17 +2277,18 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   tete.append(nom);d.append(tete);
   const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
   if(bonus){if(t.effects)ligne(t.effects);if(coutPalier(t,1))ligne('Coût : '+coutPalier(t,1)+' PT','muted')}
-  else{/* Les paliers, côte à côte : celui qu'on tient et le suivant, pour voir ce qui change ;
-      rien d'appris, le premier ; sans porteur — le plan du MJ —, les trois. */
+  else{/* Les paliers : rien d'appris — ou sur le plan du MJ —, le premier seul ; un palier tenu,
+      lui puis le suivant, une flèche entre les deux, pour voir ce qui change ; le dernier, seul. */
    const k=a?palierDe(a,t):0,max=paliersDe(t);
-   const montres=!a?[1,2,3].slice(0,max):k===0?[1]:k>=max?[k]:[k,k+1];
+   const montres=!a||k===0?[1]:k>=max?[k]:[k,k+1];
    const g=document.createElement('div');g.className='paliers-bulle n'+montres.length;
-   montres.forEach(n=>{const tp=talentAuPalier(t,n),col=document.createElement('div');col.className='palier-col'+(a?(n<=k?' acquis':' suivant'):'');
+   montres.forEach((n,i)=>{if(i){const f=document.createElement('span');f.className='palier-fleche';f.textContent='→';f.setAttribute('aria-hidden','true');g.append(f)}
+    const tp=talentAuPalier(t,n),col=document.createElement('div');col.className='palier-col'+(a?(n<=k?' acquis':' suivant'):'');
     const h=document.createElement('p');h.className='palier-tete';const c=coutPalier(t,n);
     h.textContent='Palier '+n+(a?(n<=k?' · acquis':' · suivant'):'')+(c?' · '+c+' PT':'');col.append(h);
     const e=document.createElement('p');e.className='palier-effet';e.textContent=tp.effects||'Effet à préciser.';if(tp.effects)texteEnrichi(e,tp.effects);col.append(e);
     // Ce que le moteur en fera, à ce palier : ses réglages en toutes lettres.
-    if(t.effet&&TALENTS_CODES[t.effet]){const m=document.createElement('p');m.className='palier-moteur';m.innerHTML=phraseTalent(t.effet,tp.params);col.append(m)}
+    if(t.effet&&TALENTS_CODES[t.effet]){const m=document.createElement('p');m.className='palier-moteur';m.innerHTML=phraseTalent(t.effet,tp.params,n);col.append(m)}
     g.append(col)});
    d.append(g);
    const socle=nomPrerequis(t,catalog.talents);if(socle)ligne('↳ Requiert : '+socle)}

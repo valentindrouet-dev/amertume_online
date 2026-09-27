@@ -1154,7 +1154,8 @@ i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #00
 .arbres-pt{margin:2px 0 0;font:600 11px system-ui;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);text-align:center}
 /* La bulle compare : le palier tenu et le suivant, côte à côte — ou les trois, sur le plan du MJ. */
 .bulle.large-paliers{max-width:min(580px,94vw)}
-.paliers-bulle{display:grid;gap:12px;margin-top:6px}.paliers-bulle.n2{grid-template-columns:1fr 1fr}.paliers-bulle.n3{grid-template-columns:1fr 1fr 1fr}
+.paliers-bulle{display:grid;gap:10px;margin-top:6px}.paliers-bulle.n2{grid-template-columns:1fr auto 1fr}
+.palier-fleche{align-self:center;font:700 20px/1 system-ui;color:#c9953f}
 .palier-col{border-top:2px solid var(--line);padding-top:5px;min-width:0}
 .palier-col.acquis{border-top-color:var(--green)}.palier-col.suivant{border-top-color:#c9953f}
 .talent-detail .palier-tete{font:700 10.5px system-ui;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:0 0 4px}

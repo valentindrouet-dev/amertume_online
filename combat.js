@@ -922,12 +922,18 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Amélioration : le porteur ne subit jamais l’état réglé.',
   params:[{cle:'etat',nom:'État jamais subi',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Le porteur ne subit <b>jamais '+((p&&p.etat)||'Feu')+'</b>.'}},
- /* Brise : une amélioration. Contre une cible qui porte l'affection réglée, les attaques du
-    porteur passent la garde : la DEF ne compte plus. */
+ /* Brise : une amélioration à trois paliers, cumulés, contre une cible qui porte l'affection
+    réglée. Palier 1, les attaques du porteur passent la garde : la DEF ne compte plus.
+    Palier 2, après l'attaque, la cible perd de la DEF pour de bon. Palier 3, les dégâts
+    doublent. */
  brise:{cle:'brise',nom:'Brise',type:'ame',
-  aide:'Amélioration : les attaques du porteur ignorent la DEF des cibles portant l’état réglé.',
-  params:[{cle:'etat',nom:'État qui ouvre la garde',type:'choix',defaut:'Gel',options:ETATS_JEU.map(e=>[e,e])}],
-  phrase(p){return 'Les attaques du porteur <b>ignorent la DEF</b> des cibles qui portent <b>'+((p&&p.etat)||'Gel')+'</b>.'}},
+  aide:'Amélioration à trois paliers, contre les cibles portant l’état réglé : ignorer leur DEF, puis leur en retirer pour de bon, puis doubler les dégâts.',
+  params:[{cle:'etat',nom:'État qui ouvre la garde',type:'choix',defaut:'Gel',options:ETATS_JEU.map(e=>[e,e])},
+   {cle:'perte',nom:'DEF retirée après l’attaque (dès le palier 2)',type:'nombre',defaut:1,min:1,max:6}],
+  phrase(p,palier){const e=(p&&p.etat)||'Gel',n=Math.max(1,Math.trunc(Number(palier))||1),perte=Math.max(1,(p&&p.perte)|0);
+   return 'Contre une cible qui porte <b>'+e+'</b>, les attaques du porteur <b>ignorent sa DEF</b>'
+    +(n>=2?(n>=3?', ':' et ')+'lui <b>retirent '+perte+' DEF</b> pour de bon après l’attaque':'')
+    +(n>=3?' et font <b>le double de dégâts</b>':'')+'.'}},
  /* Solidité : une amélioration. La DEF du porteur retranche aussi les dés Lourds — le rouge,
     qui l'ignore chez tout autre. Le Mortel, noir, passe toujours en entier. */
  solidite:{cle:'solidite',nom:'Solidité',type:'ame',
@@ -1038,8 +1044,14 @@ function etatDesOrbes(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle
 function etatRefuse(portes,etat){if(!etat)return false;
  return (portes||[]).some(t=>t&&t.code&&t.code.cle==='invulnerable'&&String(t.params&&t.params.etat||'Feu')===etat)}
 /* Brise : contre une cible qui porte l'affection réglée, la DEF ne compte plus. */
-function briseLaGarde(portes,cible){
- return (portes||[]).some(t=>t&&t.code&&t.code.cle==='brise'&&hasState(cible,String(t.params&&t.params.etat||'Gel')))}
+/* Brise contre une cible : le plus haut palier dont l'état est sur elle, et ce qu'il fait —
+   la DEF ignorée (1), la DEF retirée après l'attaque (2), les dégâts doublés (3), cumulés. */
+function briseContre(portes,cible){let palier=0,perte=0,etat='';
+ (portes||[]).forEach(t=>{if(!t||!t.code||t.code.cle!=='brise')return;const e=String(t.params&&t.params.etat||'Gel');if(!hasState(cible,e))return;
+  const n=Math.max(1,Math.min(PALIERS_MAX,Math.trunc(Number(t.talent&&t.talent.palier))||1));
+  if(n>palier){palier=n;etat=e;perte=Math.max(1,Math.trunc(Number(t.params&&t.params.perte))||1)}});
+ return {palier,etat,ignore:palier>=1,perte:palier>=2?perte:0,double:palier>=3}}
+function briseLaGarde(portes,cible){return briseContre(portes,cible).ignore}
 /* ---------- Les points d'activation ----------
    Ce qu'un combattant peut dépenser dans son tour : une Action, un Mouvement et un Objet
    d'ordinaire. Des talents en donneront davantage ; le jeu est prêt à les compter, jusqu'à
@@ -1207,9 +1219,10 @@ function paramsTalent(t){const code=talentCode(t);if(!code)return null;
  const out={};(code.params||[]).forEach(p=>out[p.cle]=reglageTalent(code,t&&t.params,p.cle));return out}
 /* La phrase d'un effet, réglages relus au travers de leur déclaration. Sans réglages
    donnés, ce sont les valeurs par défaut : c'est ce que montre la bibliothèque. */
-function phraseTalent(cle,params){const code=TALENTS_CODES[cle];
+// « palier » : pour un effet qui change avec lui — Brise —, la phrase de ce palier-là.
+function phraseTalent(cle,params,palier){const code=TALENTS_CODES[cle];
  if(!code||typeof code.phrase!=='function')return code&&code.aide||'';
- return code.phrase(paramsTalent({effet:cle,params}))}
+ return code.phrase(paramsTalent({effet:cle,params}),palier)}
 /* La même phrase, dépouillée de son gras : une option de menu déroulant ne porte que du
    texte. « Lamevent : En terminant un mouvement, le porteur inflige… » se lit alors d'un
    trait dans la liste, sans qu'il faille la choisir pour savoir ce qu'elle fait. */
@@ -1530,6 +1543,6 @@ const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatie
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
- DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,paliersDe,coutPalier,talentAuPalier,palierDe,talentsAuPalier,ptDepenses,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,briseContre,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,paliersDe,coutPalier,talentAuPalier,palierDe,talentsAuPalier,ptDepenses,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);
