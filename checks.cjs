@@ -1302,8 +1302,8 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  &&!src.includes("openPicker(a,'talents')")&&src.includes("const arbresDialog=dialog('arbres','Arbres de talents','<p class=\"muted\" id=\"arbres-note\"></p><div id=\"arbres-corps\"></div>');")
  &&src.includes('function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;')&&src.includes("const classe=classeDuHeros(a),toutes=talentFamilies();")
  &&src.includes("if(view==='mj'){let acquis=false;troupe.forEach(a=>{if(assureMaitrises(a))acquis=true});if(acquis)scheduleSave()}")
- &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):'';")&&src.includes("+sel('Spécialisation','voie',t.voie||'',optionsVoie(famille,t.voie||''))")
- &&src.includes("if(voie&&!connues.includes(voie)&&connues.length>=VOIES_MAX){alert(")&&src.includes('t.voie=voie;if(voie)enregistreVoie(t.famille,voie);')&&!src.includes("v.className='tag voie';v.textContent=t.voie;")
+ &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):'';")&&!src.includes("+sel('Spécialisation','voie'")
+ &&src.includes("else if(talentFamily(avant)!==talentFamily(t)){t.voie='';t.prerequis='';t.branche=''}")&&src.includes("if(!avant){const d=talentDefauts||{};t.voie=d.voie||'';t.prerequis=d.prerequis||'';")&&!src.includes("v.className='tag voie';v.textContent=t.voie;")
  &&src.includes("const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouEtages(a.talents,etages,t))||manqueTalent(a.talents,t,catalog.talents);")
  &&src.includes("n.noteBulle='Maîtrise de classe, acquise avec la classe.';")
  &&feuille.includes('#arbres{width:min(1180px,96vw)}')&&feuille.includes('.arbre-noeud::before{content:\'\';display:block;width:3px;height:18px;')&&feuille.includes('.arbre-noeud.premier::before,.arbre-maitrises .arbre-noeud::before{display:none}')
@@ -1323,7 +1323,7 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
   cleClasse:C.cleClasse,ordonneTalents:C.ordonneTalents,talentCode:C.talentCode,manqueTalent:C.manqueTalent,talentsDependants:C.talentsDependants,VOIES_MAX:3};
  vm.createContext(ctx);
  vm.runInContext(morceau('const TALENT_TYPES=','function talent(id)')+morceau('function talentFamilies()',"// L'encre d'une classe")
-  +morceau('function descendDe(','function openTalent(')+morceau('const AUTRE_VOIE=','const arbresDialog='),ctx);
+  +morceau('function descendDe(','function openTalent(')+morceau('/* Une classe a toujours ses trois colonnes','const arbresDialog='),ctx);
  // Trois voies au plus, dans l'ordre du catalogue ; la quatrième n'existe pas pour l'arbre.
  // Trois rangs, toujours : nommés, ou vides en attendant qu'on les baptise.
  assert.equal(JSON.stringify(ctx.voiesDe('Gardien')),JSON.stringify(['Rempart','Assaut','Serment']));
@@ -1331,8 +1331,6 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  assert.equal(JSON.stringify(ctx.voiesNommees('Mystique')),'[]');
  assert.equal(ctx.rangDAccueil('Mystique'),0,'sans nom, le premier rang accueille les sans-voie');
  assert.equal(ctx.rangDAccueil('Gardien'),0,'tous nommés : les orphelins reviennent au premier');
- assert.equal(JSON.stringify(ctx.optionsVoie('Gardien','')),JSON.stringify([['','— tronc commun —'],['Rempart','Rempart'],['Assaut','Assaut'],['Serment','Serment']]),'plus de place : pas de nouvelle voie');
- assert.equal(ctx.optionsVoie('Mystique','').length,2,'le tronc commun et une nouvelle voie');
  // Une Gardienne trouve la colonne Gardien ; sans classe, pas de colonne.
  assert.equal(ctx.classeDuHeros({role:'Gardienne · niveau 2'}),'Gardien');
  assert.equal(ctx.classeDuHeros({role:'Gardien'}),'Gardien');
@@ -1903,7 +1901,7 @@ assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x
   cleClasse:C.cleClasse,ordonneTalents:C.ordonneTalents,talentCode:C.talentCode,manqueTalent:C.manqueTalent,talentsDependants:C.talentsDependants,VOIES_MAX:3,SEGMENTS:['c','g','gc','d','dc']};
  vm.createContext(ctx);
  vm.runInContext(morceau('const TALENT_TYPES=','function talent(id)')+morceau('function talentFamilies()',"// L'encre d'une classe")
-  +morceau('function descendDe(','function openTalent(')+morceau('const AUTRE_VOIE=','const arbresDialog='),ctx);
+  +morceau('function descendDe(','function openTalent(')+morceau('/* Une classe a toujours ses trois colonnes','const arbresDialog='),ctx);
  const col=ctx.colonnesArbre('Mystique')[0];let et=ctx.etagesArbre(col);
  assert.equal(JSON.stringify(et.map(e=>[e.t.id,e.g&&e.g.id,e.d&&e.d.id,e.suivant&&e.suivant.id])),JSON.stringify([['o','g','d','b'],['b',null,null,'x'],['x',null,null,'f'],['f',null,null,null]]),'l’épine, ses diagonales, et l’orphelin remis sur l’épine');
  assert.equal(JSON.stringify(et.map(e=>e.rang)),'[0,1,2,3]');
@@ -1936,8 +1934,8 @@ assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x
  assert.equal(JSON.stringify(ctx.etagesArbre(ctx.colonnesArbre('Mystique')[0]).map(e=>e.t.id)),JSON.stringify(['o','b','f','x']));}
 assert.ok(src.includes("const SEGMENTS=['c','g','gc','d','dc'];")&&src.includes("t.branche=t.branche==='g'||t.branche==='d'?t.branche:'';")
  &&src.includes("const segs=[...new Set(l.filter(x=>SEGMENTS.includes(x)))];if(segs.length)c.cheminsCaches[id]=segs});")
- &&src.includes("+sel('Place dans l’arbre','branche',t.horsArbre?'hors':t.branche||'',[['','Sur l’épine — talent central'],['g','Diagonale gauche, sous le prérequis'],['d','Diagonale droite, sous le prérequis'],['hors','Hors de l’arbre — il reste au catalogue']])")
- &&src.includes(" t.branche=f.branche&&(f.branche.value==='g'||f.branche.value==='d')?f.branche.value:'';")
+ &&!src.includes("+sel('Place dans l’arbre','branche'")
+ &&src.includes("t.branche=d.branche==='g'||d.branche==='d'?d.branche:''")
  &&src.includes(" t.branche=dest.branche==='g'||dest.branche==='d'?dest.branche:'';"),'la place d’un talent dans l’arbre : au formulaire, au dépôt, au chargement');
 /* Les chemins se tracent en SVG d'un rond à l'autre, se ferment d'un clic pour le MJ, ne se
    dessinent pas fermés pour la troupe ; la vue joueur ôte les outils au MJ le temps de regarder. */
@@ -2538,7 +2536,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.281 — La bulle d'un nœud de l'arbre n'écrit jamais la nature du talent. Chaque objet porte
    deux ressources et un prix en or, saisis à l'armurerie et lus nulle part ailleurs. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("  tete.append(nom);d.append(tete);")&&!src.includes("nat.textContent=bonus?'Bonus':talentType(t)[2]"),'la bulle de l’arbre tait la nature du talent');
+ assert.ok(src.includes(" tete.append(nom);d.append(tete);")&&!src.includes("nat.textContent=bonus?'Bonus':talentType(t)[2]"),'la bulle de l’arbre tait la nature du talent');
  const ctxR={MATERIAUX:[...require('./combat.js').MATERIAUX]};vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('const RESSOURCES='),src.indexOf('function normalizeCatalog('))+';this.RESSOURCES=RESSOURCES;this.ressourceValide=ressourceValide;',ctxR);
  assert.deepEqual([...ctxR.RESSOURCES],['Acier','Argent','Bois','Bronze','Corde','Cuir','Diamant','Or','Pierre','Verre'],'les ressources, par ordre alphabétique');
  assert.equal(ctxR.ressourceValide('Bois'),'Bois');assert.equal(ctxR.ressourceValide('Mithril'),'');
@@ -2645,11 +2643,11 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fs.readFileSync('combat.js','utf8').includes("function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)")
   &&page.includes("function talentsCodes(a){return talentsAuPalier(a,typeof catalog!=='undefined'?catalog.talents:[])")&&vivant.includes("'lieuDomaine','paliersTalents','defBrisee','element'];"),'la table et les bonus jouent le palier ; il voyage en direct');
  assert.ok(src.includes("a.paliersTalents=normalisePaliersActeur(a);")&&src.includes(" c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(99,coutPalier(t,n)));"),'paliers relus, au catalogue et sur la fiche');
- assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("<th scope=\"row\">Coût (PT)</th>")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")
+ assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("+ligne('Coût (PT)',")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")
   &&src.includes(" t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")
-  &&src.includes("t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={};delete t.elementaire}")&&feuille.includes('.paliers-table{'),'l’éditeur : une colonne par palier, le coût en PT');
+  &&src.includes("t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={};delete t.elementaire;delete t.volets}")&&feuille.includes('.paliers-table{'),'l’éditeur : une colonne par palier, le coût en PT');
  assert.ok(src.includes("if(max>1){pts=document.createElement('span');pts.className='arbre-paliers';")&&src.includes("poserPalier(t,k+1);note('')}")
-  &&src.includes("const montres=!a||k===0?[1]:k>=max?[k]:[k,k+1];")&&src.includes("m.innerHTML=phraseTalent(t.effet,tp.params,n);")
+  &&src.includes("const montres=!a||k===0?[1]:k>=max?[k]:[k,k+1];")&&src.includes("const ph=phraseTalent(t.effet,tp.params,n,voletsDe(t));")
   &&src.includes("a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);")&&feuille.includes('.arbre-paliers i.on{')&&feuille.includes('.paliers-bulle.n2{grid-template-columns:1fr auto 1fr}'),'l’arbre : points, clic, « − », bulle comparée');}
 /* v0.289 — Brise en trois paliers cumulés, contre une cible qui porte l'état : la DEF ignorée,
    puis retirée pour de bon après l'attaque, puis les dégâts doublés. La bulle de l'arbre montre
@@ -2686,7 +2684,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual([g.name,g.effects,g.logo,g.params.etat,g.paliers[2].params.etat,g.paliers[2].params.perte],['Briseglace','Contre Gel','spell_orbes_gel','Gel','Gel',2],'élémentaire : mots, logo et état suivent');
  const libre={...t,elementaire:undefined};assert.equal(C.talentPourElement(libre,G).params.etat,'Feu','sans la case, l’état réglé reste');
  const neutre={id:'x',name:'Forge',params:{etat:'Feu'}};assert.equal(C.talentPourElement(neutre,G),neutre);assert.equal(C.estElementaire(neutre),false);assert.equal(C.estElementaire(libre),true);
- assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefoudre','Foudre',2]],'la table joue l’élément, puis le palier');
+ assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefoudre','Foudre',1]],'la table joue l’élément, puis le palier ; la DEF retirée, réglage commun, reste celle du palier 1');
  assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element'];")&&vivant.includes("'defBrisee','element'];")
   &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
  assert.ok(src.includes("function choixElement(a,classe){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
@@ -2744,6 +2742,35 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
     dans l'arbre par son formulaire, « Place dans l'arbre ». */
  assert.ok(src.includes("if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue'")
   &&!src.includes('arbre-reserve')&&!src.includes('cat-hors')&&!css.includes('.arbre-reserve')&&!src.includes('dest.horsArbre'),'plus de réserve, plus de mention');
- assert.ok(src.includes("if(f.branche&&f.branche.value==='hors'){if(!t.horsArbre)retireDeLArbre(t)}else delete t.horsArbre;")
-  &&src.includes("if(t.horsArbre!==true)delete t.horsArbre});")&&src.includes("Pour l’y remettre : ✎, puis « Place dans l’arbre ».'"),'le formulaire retire et replace');}
-console.log('1662 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+ assert.ok(!src.includes("f.branche.value==='hors'")
+  &&src.includes("if(t.horsArbre!==true)delete t.horsArbre;")&&src.includes("Pour l’y remettre : « ↩ Remettre dans l’arbre », en haut.'"),'le formulaire retire et replace');}
+/* v0.295 — L'éditeur de talents en boîtes colorées, sans spécialisation, place ni prérequis :
+   l'arbre assemble. Les effets câblés se lisent et se réorganisent par palier (les volets de
+   Brise), les réglages communs s'écrivent une fois, l'état d'un talent élémentaire suit le
+   Mystique. Les accolades valent dans le nom, casse et accents indifférents. La bulle d'un
+   talent s'ouvre au survol dans l'onglet Talents, MJ compris. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.deepEqual(C.voletsDe({effet:'brise'}),{ignore:1,perte:2,double:3},'les volets de Brise, à leurs paliers d’origine');
+ assert.deepEqual(C.voletsDe({effet:'brise',volets:{ignore:2,perte:0,double:1}}),{ignore:2,perte:0,double:1},'le MJ les réorganise, 0 pour jamais');
+ const R=(palier,volets)=>({code:C.TALENTS_CODES.brise,params:{etat:'Feu',perte:3},talent:{palier,effet:'brise',volets}});
+ assert.deepEqual(C.briseContre([R(1,{ignore:2,perte:0,double:1})],{states:['Feu']}),{palier:1,etat:'Feu',ignore:false,perte:0,double:true},'palier 1 réorganisé : le double, sans la garde');
+ assert.deepEqual(C.briseContre([R(2,{ignore:2,perte:0,double:1})],{states:['Feu']}),{palier:2,etat:'Feu',ignore:true,perte:0,double:true},'palier 2 : la garde s’ouvre, la DEF n’est jamais retirée');
+ assert.ok(C.phraseTalent('brise',{etat:'Feu'},1,{ignore:2,perte:0,double:0}).includes('rien encore à ce palier')&&C.phraseTalent('brise',{etat:'Feu'},2,{ignore:2,perte:0,double:0}).includes('<b>ignorent sa DEF</b>.'),'la phrase suit les volets ouverts');
+ const G=C.ELEMENTS[1];
+ assert.deepEqual(['{Élément}','{MOT}','{Mot}','Brise{mot}','spell_{LOGO}','{Etat}'].map(x=>C.remplaceElement(x,G)),['Gel','GLACE','Glace','Briseglace','spell_gel','Gel'],'casse et accents indifférents');
+ assert.ok(C.aDesAccolades('Invulnérable : {Élément}')&&C.estElementaire({name:'Brise{ÉLÉMENT}'}),'une accolade en capitales compte');
+ assert.equal(C.talentAuPalier({effet:'brise',params:{etat:'Feu',perte:2},paliers:{3:{params:{etat:'Gel',perte:5}}}},3).params.etat,'Feu','un réglage commun reste celui du palier 1');
+ assert.ok(!src.includes("'Prérequis — talent à posséder d’abord'")&&!src.includes("'Spécialisation','voie'")&&!src.includes("function optionsVoie(")&&!src.includes('voie-autre'),'ni spécialisation, ni place, ni prérequis au formulaire');
+ assert.ok(src.includes('<section class="talent-boite b-identite"><h2 class="sous-titre">Identité</h2>')&&src.includes('<section class="talent-boite b-moteur t-seul"><h2 class="sous-titre">Mécanique du moteur</h2>')
+  &&src.includes('<section class="talent-boite b-paliers t-seul"><h2 class="sous-titre">Paliers — coût, texte et effets câblés</h2>')&&src.includes('<section class="talent-boite b-bonus b-seul">')
+  &&css.includes('.talent-boite{--boite:#9d7b1e;')&&css.includes('.talent-boite.b-moteur{--boite:#3a6fc2}'),'quatre boîtes, chacune sa couleur');
+ assert.ok(src.includes("d.volets={...d.volets,[c]:k===n?0:n};dessineReglagesTalent()")&&src.includes("params.filter(p=>reglageCommun(p)&&!p.volet).forEach(p=>{")
+  &&src.includes("const cell=elem&&p.cle==='etat'?'<span class=\"suit-element\">L’élément du Mystique : Feu, Gel ou Foudre</span>")&&src.includes("function phrasesPaliers(){")
+  &&src.includes("t.volets=voletsDe({effet:t.effet,volets:talentDraft.volets})")&&src.includes("...communsDe(t.effet,t.params)")&&css.includes('.volet-case.ici{'),'les volets par palier, les réglages communs, la phrase du moteur');
+ assert.ok(src.includes("function nomAccolades(el,texte){")&&src.includes("n.className='nom';nomAccolades(n,t.name);")&&src.includes("nom.className='arbre-nom';nomAccolades(nom,tv.name);")
+  &&src.includes("p.textContent='Selon l’élément : '+ELEMENTS.map(e=>remplaceElement(v,e)).join(' · ')")&&css.includes('.accolade{'),'les accolades du nom, en pastille ou remplies');
+ assert.ok(src.includes("function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){")&&src.includes(" const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note});")
+  &&src.includes("if(BULLES)surveille(pill,()=>{const d=bulleTalent(t);ouvrirBulle(pill,d,")
+  &&src.includes("m.innerHTML=t.elementaire===true&&!tp.elementVu?enElementDuMystique(ph,tp.params&&tp.params.etat):ph;")&&src.includes("if(elem)h=enElementDuMystique(h,vals[n].etat);"),'la bulle au survol, dans l’onglet Talents aussi ; l’élément du Mystique sans élément');
+ assert.ok(src.includes("m.add(new Option('↩ Remettre dans l’arbre…',''));")&&src.includes("if(!t||!placerTalent(t.id,{famille:classe,voie:''}))return;"),'un talent retiré revient depuis la tête de l’arbre');}
+console.log('1674 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

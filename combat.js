@@ -922,18 +922,21 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Amélioration : le porteur ne subit jamais l’état réglé.',
   params:[{cle:'etat',nom:'État jamais subi',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Le porteur ne subit <b>jamais '+((p&&p.etat)||'Feu')+'</b>.'}},
- /* Brise : une amélioration à trois paliers, cumulés, contre une cible qui porte l'affection
-    réglée. Palier 1, les attaques du porteur passent la garde : la DEF ne compte plus.
-    Palier 2, après l'attaque, la cible perd de la DEF pour de bon. Palier 3, les dégâts
-    doublent. */
+ /* Brise : une amélioration contre une cible qui porte l'affection réglée, en trois volets —
+    ignorer sa DEF, lui en retirer pour de bon après l'attaque, doubler les dégâts. Chacun
+    s'ouvre au palier que le MJ choisit (1, 2 et 3 d'ordinaire) et le reste aux suivants. */
  brise:{cle:'brise',nom:'Brise',type:'ame',
-  aide:'Amélioration à trois paliers, contre les cibles portant l’état réglé : ignorer leur DEF, puis leur en retirer pour de bon, puis doubler les dégâts.',
+  aide:'Amélioration contre les cibles portant l’état réglé : ignorer leur DEF, leur en retirer pour de bon, doubler les dégâts, chacun au palier choisi.',
   params:[{cle:'etat',nom:'État qui ouvre la garde',type:'choix',defaut:'Gel',options:ETATS_JEU.map(e=>[e,e])},
-   {cle:'perte',nom:'DEF retirée après l’attaque (dès le palier 2)',type:'nombre',defaut:1,min:1,max:6}],
-  phrase(p,palier){const e=(p&&p.etat)||'Gel',n=Math.max(1,Math.trunc(Number(palier))||1),perte=Math.max(1,(p&&p.perte)|0);
-   return 'Contre une cible qui porte <b>'+e+'</b>, les attaques du porteur <b>ignorent sa DEF</b>'
-    +(n>=2?(n>=3?', ':' et ')+'lui <b>retirent '+perte+' DEF</b> pour de bon après l’attaque':'')
-    +(n>=3?' et font <b>le double de dégâts</b>':'')+'.'}},
+   {cle:'perte',nom:'DEF retirée',type:'nombre',defaut:1,min:1,max:6,volet:'perte'}],
+  volets:[{cle:'ignore',nom:'Ignore la DEF de la cible',palier:1},{cle:'perte',nom:'Lui retire de la DEF pour de bon après l’attaque',palier:2},
+   {cle:'double',nom:'Double les dégâts',palier:3}],
+  phrase(p,palier,v){const e=(p&&p.etat)||'Gel',n=Math.max(1,Math.trunc(Number(palier))||1),perte=Math.max(1,(p&&p.perte)|0);
+   const ouvert=k=>!!v&&v[k]>0&&n>=v[k];
+   const faits=[ouvert('ignore')?'<b>ignorent sa DEF</b>':'',ouvert('perte')?'lui <b>retirent '+perte+' DEF</b> pour de bon après l’attaque':'',
+    ouvert('double')?'font <b>le double de dégâts</b>':''].filter(Boolean);
+   if(!faits.length)return 'Contre une cible qui porte <b>'+e+'</b> : rien encore à ce palier.';
+   return 'Contre une cible qui porte <b>'+e+'</b>, les attaques du porteur '+(faits.length>1?faits.slice(0,-1).join(', ')+' et '+faits[faits.length-1]:faits[0])+'.'}},
  /* Solidité : une amélioration. La DEF du porteur retranche aussi les dés Lourds — le rouge,
     qui l'ignore chez tout autre. Le Mortel, noir, passe toujours en entier. */
  solidite:{cle:'solidite',nom:'Solidité',type:'ame',
@@ -1043,14 +1046,16 @@ function etatDesOrbes(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle
    se pose, d'où qu'elle vienne. */
 function etatRefuse(portes,etat){if(!etat)return false;
  return (portes||[]).some(t=>t&&t.code&&t.code.cle==='invulnerable'&&String(t.params&&t.params.etat||'Feu')===etat)}
-/* Brise : contre une cible qui porte l'affection réglée, la DEF ne compte plus. */
-/* Brise contre une cible : le plus haut palier dont l'état est sur elle, et ce qu'il fait —
-   la DEF ignorée (1), la DEF retirée après l'attaque (2), les dégâts doublés (3), cumulés. */
-function briseContre(portes,cible){let palier=0,perte=0,etat='';
+/* Brise contre une cible : pour chaque Brise dont l'état est sur elle, les volets que son
+   palier a ouverts — la DEF ignorée, la DEF retirée après l'attaque, les dégâts doublés. */
+function briseContre(portes,cible){let palier=0,perte=0,etat='',ignore=false,double=false;
  (portes||[]).forEach(t=>{if(!t||!t.code||t.code.cle!=='brise')return;const e=String(t.params&&t.params.etat||'Gel');if(!hasState(cible,e))return;
   const n=Math.max(1,Math.min(PALIERS_MAX,Math.trunc(Number(t.talent&&t.talent.palier))||1));
-  if(n>palier){palier=n;etat=e;perte=Math.max(1,Math.trunc(Number(t.params&&t.params.perte))||1)}});
- return {palier,etat,ignore:palier>=1,perte:palier>=2?perte:0,double:palier>=3}}
+  const v=voletsDe({...(t.talent||{}),effet:'brise'}),ouvert=k=>v[k]>0&&n>=v[k];
+  if(n>palier){palier=n;etat=e}
+  if(ouvert('ignore'))ignore=true;if(ouvert('double'))double=true;
+  if(ouvert('perte'))perte=Math.max(perte,Math.max(1,Math.trunc(Number(t.params&&t.params.perte))||1))});
+ return {palier,etat,ignore,perte,double}}
 function briseLaGarde(portes,cible){return briseContre(portes,cible).ignore}
 /* ---------- Les points d'activation ----------
    Ce qu'un combattant peut dépenser dans son tour : une Action, un Mouvement et un Objet
@@ -1125,6 +1130,9 @@ function talentAuPalier(t,n){if(!t)return t;n=Math.max(1,Math.min(paliersDe(t),M
  for(let i=2;i<=n;i++){const p=t.paliers&&t.paliers[i];if(!p||typeof p!=='object')continue;
   if(p.params&&typeof p.params==='object'&&Object.keys(p.params).length)params=p.params;
   if(typeof p.effects==='string'&&p.effects.trim())effects=p.effects}
+ // Les réglages communs restent ceux du palier 1, quoi qu'un palier plus haut ait gardé.
+ const code=talentCode(t);if(params!==t.params&&code&&t.params&&typeof t.params==='object'){const c={};
+  (code.params||[]).forEach(p=>{if(reglageCommun(p)&&p.cle in t.params)c[p.cle]=t.params[p.cle]});params={...params,...c}}
  return n===1?t:{...t,params,effects,palier:n}}
 function palierDe(a,t){if(!a||!t||!(a.talents||[]).includes(t.id))return 0;
  const n=Math.trunc(Number((a.paliersTalents||{})[t.id]))||1;return Math.max(1,Math.min(paliersDe(t),n))}
@@ -1138,10 +1146,17 @@ const ELEMENTS=[{cle:'feu',nom:'Feu',etat:'Feu',mot:'feu',logo:'feu'},{cle:'gel'
 const CLASSES_ELEMENTAIRES=['mystique'];
 const classeElementaire=c=>CLASSES_ELEMENTAIRES.includes(cleTalent(c));
 const elementDe=a=>ELEMENTS.find(e=>e.cle===(a&&a.element))||null;
-const ACCOLADES=/\{(élément|element|état|etat|mot|Mot|logo)\}/g;
-const aDesAccolades=s=>typeof s==='string'&&/\{(élément|element|état|etat|mot|Mot|logo)\}/.test(s);
+/* {élément}, {Élément}, {ELEMENT}, {etat}… : la casse et les accents ne comptent pas. Une
+   accolade en capitale donne sa capitale, tout en capitales donne des capitales ; {logo},
+   un nom de fichier, reste en minuscules. */
+const ACCOLADES=/\{(élément|element|état|etat|mot|logo)\}/giu;
+const aDesAccolades=s=>typeof s==='string'&&/\{(élément|element|état|etat|mot|logo)\}/iu.test(s.normalize('NFC'));
+const sorteAccolade=k=>{const b=k.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return b==='element'?'element':b==='etat'?'etat':b};
+function casseAccolade(k,mot){if(k.length>1&&k===k.toUpperCase())return mot.toUpperCase();
+ return k[0]!==k[0].toLowerCase()?mot[0].toUpperCase()+mot.slice(1):mot}
 function remplaceElement(texte,e){if(!e||!aDesAccolades(texte))return texte;
- return texte.replace(ACCOLADES,(m,k)=>k==='mot'?e.mot:k==='Mot'?e.mot[0].toUpperCase()+e.mot.slice(1):k==='logo'?e.logo:e.nom)}
+ return texte.normalize('NFC').replace(ACCOLADES,(m,k)=>{const s=sorteAccolade(k);
+  return s==='logo'?e.logo:s==='mot'?casseAccolade(k,e.mot):k.length>1&&k===k.toUpperCase()?e.nom.toUpperCase():e.nom})}
 // Un talent qui suit l'élément : coché élémentaire, ou écrit avec des accolades.
 const estElementaire=t=>!!t&&(t.elementaire===true||[t.name,t.effects,t.logo,...Object.values(t.paliers||{}).map(p=>p&&p.effects)].some(aDesAccolades));
 // Le talent tel que le voit et le joue un porteur de cet élément : ses mots remplis, son état réglé sur l'élément.
@@ -1216,6 +1231,14 @@ function classeDe(classes,role){const k=cleClasse(role);
 /* Un talent dit quel effet il porte, et non plus son seul nom : le nom est au joueur, la
    mécanique au moteur, et deux talents peuvent porter le même effet réglé autrement. */
 function talentCode(t){return t&&TALENTS_CODES[t.effet]||null}
+/* Les volets d'un effet à plusieurs facettes (Brise) et le palier qui ouvre chacun : celui
+   que le MJ a choisi, sinon celui de la déclaration ; 0, jamais. */
+function voletsDe(t){const code=talentCode(t),out={};if(!code||!Array.isArray(code.volets))return out;
+ const src=t&&t.volets&&typeof t.volets==='object'?t.volets:{};
+ code.volets.forEach(v=>{const n=Math.trunc(Number(src[v.cle]));out[v.cle]=v.cle in src&&n>=0&&n<=PALIERS_MAX?n:v.palier});return out}
+/* Un réglage commun vaut pour les trois paliers : l'état d'un talent, ou le chiffre d'un volet.
+   Il s'écrit une fois, au palier 1. */
+const reglageCommun=p=>!!p&&(p.cle==='etat'||!!p.commun||!!p.volet);
 /* La valeur d'un réglage, bornée par sa déclaration. Un talent enregistré avant qu'un
    réglage n'existe, ou avec une valeur hors bornes, reçoit celle par défaut : le moteur
    ne se fie jamais à ce qui est écrit dans le catalogue. */
@@ -1241,9 +1264,10 @@ function paramsTalent(t){const code=talentCode(t);if(!code)return null;
 /* La phrase d'un effet, réglages relus au travers de leur déclaration. Sans réglages
    donnés, ce sont les valeurs par défaut : c'est ce que montre la bibliothèque. */
 // « palier » : pour un effet qui change avec lui — Brise —, la phrase de ce palier-là.
-function phraseTalent(cle,params,palier){const code=TALENTS_CODES[cle];
+// « volets » : ceux que le talent a ouverts, et à quel palier ; sans eux, ceux de la déclaration.
+function phraseTalent(cle,params,palier,volets){const code=TALENTS_CODES[cle];
  if(!code||typeof code.phrase!=='function')return code&&code.aide||'';
- return code.phrase(paramsTalent({effet:cle,params}),palier)}
+ return code.phrase(paramsTalent({effet:cle,params}),palier,volets||voletsDe({effet:cle}))}
 /* La même phrase, dépouillée de son gras : une option de menu déroulant ne porte que du
    texte. « Lamevent : En terminant un mouvement, le porteur inflige… » se lit alors d'un
    trait dans la liste, sans qu'il faille la choisir pour savoir ce qu'elle fait. */
@@ -1564,6 +1588,6 @@ const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatie
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
- DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,briseContre,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,estElementaire,talentPourElement,palierDe,talentsAuPalier,ptDepenses,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,briseContre,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,ptDepenses,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

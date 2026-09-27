@@ -625,7 +625,7 @@ button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,2
 .pick-ligne.verrou{opacity:.55}
 .pick-ligne.verrou .pick-etat{font-size:13px}
 .effet-fiche .prereq{display:block;margin-top:2px;font:600 12px system-ui;color:#3f7d5e}
-#talent-reglages .exige{margin:4px 0 8px;color:#3f7d5e}
+#talent-exige .exige{margin:4px 0 2px;color:#3f7d5e}
 
 /* ---------- Le dépliant d'un talent ---------- */
 /* Vignette et dépliant, l'un sous l'autre, de la même largeur : le dépliant a une largeur
@@ -1183,6 +1183,34 @@ table.gemmes.nue thead th{text-align:center}
 .elements-dit{margin:0;font-size:12.5px}
 .arbre-outils .ico.danger:hover{border-color:#b03828;color:#b03828}
 .accolades-aide{font-size:12px;margin:2px 0 8px}
+/* L'éditeur de talents, en boîtes : l'identité en or, la mécanique en bleu, les paliers en
+   violet, le bonus en vert. Chaque boîte a son filet de couleur et son titre à l'encre. */
+.talent-boite{--boite:#9d7b1e;margin:0 0 12px;padding:8px 14px 12px;border:1px solid color-mix(in srgb,var(--boite) 30%,var(--line));border-left:4px solid var(--boite);
+ border-radius:10px;background:color-mix(in srgb,var(--boite) 6%,var(--panel))}
+.talent-boite>.sous-titre{margin:2px 0 8px;color:var(--boite);font-size:17px}
+.talent-boite.b-moteur{--boite:#3a6fc2}.talent-boite.b-paliers{--boite:#7a5cb8}.talent-boite.b-bonus{--boite:#2f7a4b}
+body.sombre .talent-boite{--boite:#d8b35a}body.sombre .talent-boite.b-moteur{--boite:#7fa6e6}
+body.sombre .talent-boite.b-paliers{--boite:#b39ce6}body.sombre .talent-boite.b-bonus{--boite:#7cc49b}
+.nom-apercu{margin:6px 0 0;font-size:13px;color:var(--boite)}
+/* Les paliers : un en-tête teinté par palier, la séparation des effets câblés, les volets en
+   cases à cocher d'un clic, et la phrase du moteur sur un fond pâle. */
+.paliers-table thead th{padding:4px 8px;border-radius:6px;color:var(--boite);background:color-mix(in srgb,var(--boite) 20%,var(--panel))}
+.paliers-table thead th.p2{color:#fff;background:color-mix(in srgb,var(--boite) 65%,var(--panel))}
+.paliers-table thead th.p3{color:#fff;background:var(--boite)}
+body.sombre .paliers-table thead th.p2,body.sombre .paliers-table thead th.p3{color:#1a1420}
+.paliers-table tr.paliers-sep th{padding:10px 0 2px;border-bottom:1px solid color-mix(in srgb,var(--boite) 40%,var(--line));color:var(--boite);
+ font:700 11px system-ui;letter-spacing:1.2px;text-transform:uppercase;text-align:left}
+.volet-case{width:100%;padding:6px 4px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;color:var(--muted);font:600 12px system-ui;cursor:pointer}
+.volet-case.on{border-style:solid;border-color:color-mix(in srgb,var(--boite) 60%,var(--line));background:color-mix(in srgb,var(--boite) 14%,transparent);color:var(--ink)}
+.volet-case.ici{border-color:var(--boite);background:color-mix(in srgb,var(--boite) 26%,transparent)}
+.volet-case:hover{border-color:var(--boite)}
+.volet-reglage{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;font-weight:500}
+.volet-reglage input{width:4.5em!important}
+.suit-element{display:inline-block;padding:6px 10px;border-radius:8px;background:color-mix(in srgb,var(--boite) 12%,transparent);font-size:13px;font-style:italic}
+.paliers-table tr.moteur td{padding:6px 8px;border-radius:8px;background:color-mix(in srgb,#3a6fc2 8%,var(--field));font-size:12.5px;line-height:1.4;vertical-align:top}
+/* Une accolade dans un nom, sans porteur pour la remplir : une petite pastille. */
+.accolade{display:inline-block;margin:0 1px;padding:0 5px;border-radius:6px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);font-size:.85em;font-style:italic;font-weight:600;vertical-align:1px}
+.arbre-remettre{margin-top:8px;font-size:13px;max-width:100%}
 
 /* Une autre fenêtre a enregistré la partie : un bandeau en haut, qui ne se rate pas. */
 #bandeau-fenetres{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:min(760px,94vw);padding:10px 14px;border-radius:12px;background:#7a2e1d;color:#fff;box-shadow:0 8px 26px #0006;font-size:14px}
