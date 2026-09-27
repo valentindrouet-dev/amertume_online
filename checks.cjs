@@ -1934,9 +1934,9 @@ assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x
  assert.equal(ctx.placerTalent('f',{famille:'Mystique',voie:'Pyromane',prerequis:'b'}),true);
  assert.equal(ctx.catalog.talents.find(t=>t.id==='f').branche,'','déposé sur un central : sur l’épine');
  assert.equal(JSON.stringify(ctx.etagesArbre(ctx.colonnesArbre('Mystique')[0]).map(e=>e.t.id)),JSON.stringify(['o','b','f','x']));}
-assert.ok(src.includes("const SEGMENTS=['c','g','gc','d','dc'];")&&src.includes("t.branche=t.branche==='g'||t.branche==='d'?t.branche:''});")
+assert.ok(src.includes("const SEGMENTS=['c','g','gc','d','dc'];")&&src.includes("t.branche=t.branche==='g'||t.branche==='d'?t.branche:'';")
  &&src.includes("const segs=[...new Set(l.filter(x=>SEGMENTS.includes(x)))];if(segs.length)c.cheminsCaches[id]=segs});")
- &&src.includes("+sel('Place dans l’arbre','branche',t.branche||'',[['','Sur l’épine — talent central'],['g','Diagonale gauche, sous le prérequis'],['d','Diagonale droite, sous le prérequis']])")
+ &&src.includes("+sel('Place dans l’arbre','branche',t.horsArbre?'hors':t.branche||'',[['','Sur l’épine — talent central'],['g','Diagonale gauche, sous le prérequis'],['d','Diagonale droite, sous le prérequis'],['hors','Hors de l’arbre — il reste au catalogue']])")
  &&src.includes(" t.branche=f.branche&&(f.branche.value==='g'||f.branche.value==='d')?f.branche.value:'';")
  &&src.includes(" t.branche=dest.branche==='g'||dest.branche==='d'?dest.branche:'';"),'la place d’un talent dans l’arbre : au formulaire, au dépôt, au chargement');
 /* Les chemins se tracent en SVG d'un rond à l'autre, se ferment d'un clic pour le MJ, ne se
@@ -2701,8 +2701,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    Plus de fusion ni de phrase d'aperçu. Seule une classe du jeu a un arbre : ni les adversaires,
    ni les génériques. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("if(!a&&t.horsArbre){const x=ico('🗑','Supprimer définitivement '+vu(t).name,()=>supprimeTalent(t,vu(t).name));x.classList.add('danger');outils.append(x)}")
-  &&src.includes("async function supprimeTalent(t,nom){")&&src.includes("(catalog.talents||[]).forEach(x=>{if(x&&x.prerequis===t.id)x.prerequis=t.prerequis||''});"),'le talent se supprime depuis l’arbre, ses suivants remontent');
+ assert.ok(src.includes("function retireDeLArbre(t){")&&src.includes("liste.forEach(x=>{if(!x||x===t||x.prerequis!==t.id)return;x.prerequis=t.prerequis||'';")
+  &&!src.includes('async function supprimeTalent('),'le talent se retire de l’arbre, sans s’effacer ; ses suivants remontent');
  assert.ok(!src.includes('fusionElementaire')&&!src.includes('Aperçu de l’arbre sous chaque élément'),'ni fusion, ni phrase d’aperçu');
  assert.ok(src.includes("function aUnArbre(f){return !!f&&f!==GENERIQUES&&(catalog.classes||[]).some(c=>c&&c.name===f)}")&&src.includes("if(view==='mj'&&aUnArbre(famille)){const rouage=")
   &&src.includes("function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&"),'un arbre pour les classes seules');
@@ -2732,7 +2732,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    depuis la réserve. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  const ctxR={view:'mj',catalog:{talents:[{id:'a',name:'A'},{id:'b',name:'B',prerequis:'a'},{id:'c',name:'C',prerequis:'b'},{id:'g',name:'G',prerequis:'b',branche:'g'},{id:'g2',name:'G2',prerequis:'a',branche:'g'},{id:'d',name:'D',prerequis:'b',branche:'d'}]}};
- vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('function retireDeLArbre('),src.indexOf('// La suppression définitive, depuis la réserve seulement')),ctxR);
+ vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('function retireDeLArbre('),src.indexOf('function renderArbres(){')),ctxR);
  const T=id=>ctxR.catalog.talents.find(t=>t.id===id);
  assert.equal(ctxR.retireDeLArbre(T('b')),true);
  assert.ok(T('b').horsArbre===true&&T('b').prerequis===''&&ctxR.catalog.talents.length===6,'le talent retiré reste au catalogue');
@@ -2740,7 +2740,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxR.retireDeLArbre(T('b')),false,'un talent déjà retiré ne se retire pas deux fois');
  assert.ok(src.includes("function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&t.type!=='mait'&&!t.horsArbre);")
   &&src.includes("t.type==='mait'&&!t.horsArbre&&talentFamily(t)===classe")&&src.includes("t.prerequis=dest.prerequis||'';delete t.horsArbre;"),'hors de l’arbre, il n’y paraît plus ; replacé, il y revient');
- assert.ok(src.includes("if(!a&&!t.horsArbre)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue'")
-  &&src.includes("if(dest.horsArbre){if(retireDeLArbre(talent(id)))arbreChange();return}")&&src.includes("res.append(rang);cible(res,{horsArbre:true});corps.append(res)}")
-  &&src.includes("const texte='Supprimer définitivement « '")&&src.includes("h.className='cat-hors';h.textContent='hors de l’arbre';")&&css.includes('.arbre-reserve{'),'la réserve sous l’arbre, et la suppression définitive depuis elle seule');}
-console.log('1661 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+ /* v0.294 — Ni réserve sous l'arbre, ni mention au catalogue : un talent retiré se remet
+    dans l'arbre par son formulaire, « Place dans l'arbre ». */
+ assert.ok(src.includes("if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue'")
+  &&!src.includes('arbre-reserve')&&!src.includes('cat-hors')&&!css.includes('.arbre-reserve')&&!src.includes('dest.horsArbre'),'plus de réserve, plus de mention');
+ assert.ok(src.includes("if(f.branche&&f.branche.value==='hors'){if(!t.horsArbre)retireDeLArbre(t)}else delete t.horsArbre;")
+  &&src.includes("if(t.horsArbre!==true)delete t.horsArbre});")&&src.includes("Pour l’y remettre : ✎, puis « Place dans l’arbre ».'"),'le formulaire retire et replace');}
+console.log('1662 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

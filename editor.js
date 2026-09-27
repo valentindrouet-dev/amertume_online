@@ -50,7 +50,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // La spécialisation d'un talent : la voie de l'arbre où il se range, ou rien.
   t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):'';
   // Sa place dans l'arbre : sur l'épine, ou en diagonale — à gauche, à droite — sous son prérequis.
-  t.branche=t.branche==='g'||t.branche==='d'?t.branche:''});
+  t.branche=t.branche==='g'||t.branche==='d'?t.branche:'';
+  // Retiré de l'arbre, il reste au catalogue.
+  if(t.horsArbre!==true)delete t.horsArbre});
  /* Les chemins fermés de l'arbre, par talent central : ceux qu'on ne dessine ni ne marche.
     Un chemin d'un talent disparu, ou d'un segment inconnu, s'oublie. */
  const caches=c.cheminsCaches&&typeof c.cheminsCaches==='object'&&!Array.isArray(c.cheminsCaches)?c.cheminsCaches:{};
@@ -1601,7 +1603,6 @@ function talentRow(t,i){const rang=document.createElement('div');rang.className=
   ico('⧉','Dupliquer',()=>{const copie=structuredClone(t);copie.id=crypto.randomUUID();
    copie.name=t.name+' (copie)';catalog.talents.splice(i+1,0,copie);renderCatalogPages();scheduleSave()}),
   suppr);
- if(t.horsArbre){const h=document.createElement('span');h.className='cat-hors';h.textContent='hors de l’arbre';h.title='Retiré de l’arbre de '+talentFamily(t)+' : il se replace depuis la réserve, sous l’arbre.';outils.prepend(h)}
  const entree=document.createElement('div');entree.className='cat-entry';
  rang.append(bloc,outils);entree.append(rang);return entree}
 /* Ce que le moteur sait appliquer, tel qu'il le déclare : le nom de la mécanique, ce
@@ -1794,7 +1795,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +sel('Spécialisation','voie',t.voie||'',optionsVoie(famille,t.voie||''))
   /* Sa place dans l'arbre : sur l'épine, ou en diagonale sous son prérequis — à gauche ou à
      droite —, d'où un chemin redescend vers le central suivant. */
-  +sel('Place dans l’arbre','branche',t.branche||'',[['','Sur l’épine — talent central'],['g','Diagonale gauche, sous le prérequis'],['d','Diagonale droite, sous le prérequis']])
+  +sel('Place dans l’arbre','branche',t.horsArbre?'hors':t.branche||'',[['','Sur l’épine — talent central'],['g','Diagonale gauche, sous le prérequis'],['d','Diagonale droite, sous le prérequis'],['hors','Hors de l’arbre — il reste au catalogue']])
   +sel('Type','type',t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]))
   +(NIVEAUX_TALENTS?field('Niveau','level',t.level||1,'number','min="1" max="20"'):'<input type="hidden" name="level" value="'+(Number(t.level)||1)+'">')
   +selLogos('Logo','logo',t.logo||'')
@@ -1876,6 +1877,8 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
  t.prerequis=f.prerequis&&f.prerequis.value&&f.prerequis.value!==t.id&&(catalog.talents||[]).some(x=>x&&x.id===f.prerequis.value)?f.prerequis.value:'';
  t.branche=f.branche&&(f.branche.value==='g'||f.branche.value==='d')?f.branche.value:'';
+ // Hors de l'arbre : ce qui en dépendait remonte ; une autre place l'y remet.
+ if(f.branche&&f.branche.value==='hors'){if(!t.horsArbre)retireDeLArbre(t)}else delete t.horsArbre;
  t.logo=f.logo&&(LOGOS_TOUS.includes(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';
  t.rangee=f.rangee&&['attaques','reactions','aucune'].includes(f.rangee.value)?f.rangee.value:'';
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
@@ -2279,23 +2282,14 @@ function choixElement(a,classe){const out=document.createElement('div');out.clas
    qui l'avaient le perdent, palier compris, et ce qui pendait sous lui remonte à sa place, sous
    son propre prérequis, plutôt que de se retrouver sans attache. */
 // « nom » : le talent tel que l'arbre le montre — accolades remplies.
-/* Retirer un talent de l'arbre ne l'efface pas : il garde sa classe et reste au catalogue,
-   rangé dans la réserve sous l'arbre, d'où il se replace d'un glisser. Ceux qui en
-   dépendaient remontent à sa place ; les aventuriers qui l'ont appris le gardent. */
+/* Retirer un talent de l'arbre ne l'efface pas : il garde sa classe et reste au catalogue ;
+   son formulaire le replace, par « Place dans l'arbre ». Ceux qui en dépendaient remontent à
+   sa place ; les aventuriers qui l'ont appris le gardent. */
 function retireDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;const liste=catalog.talents||[];
  liste.forEach(x=>{if(!x||x===t||x.prerequis!==t.id)return;x.prerequis=t.prerequis||'';
   // Une diagonale remontée garde son côté s'il est libre au-dessus ; sinon, elle rejoint l'épine.
   if(x.branche&&(!x.prerequis||liste.some(y=>y&&y!==x&&y!==t&&!y.horsArbre&&y.prerequis===x.prerequis&&y.branche===x.branche)))x.branche=''});
  t.horsArbre=true;t.prerequis='';t.branche='';return true}
-// La suppression définitive, depuis la réserve seulement : le talent quitte le catalogue.
-async function supprimeTalent(t,nom){if(view!=='mj'||!t)return;
- const pris=actors.filter(a=>(a.talents||[]).includes(t.id)).length,dessous=(catalog.talents||[]).filter(x=>x&&x.prerequis===t.id).length;
- const texte='Supprimer définitivement « '+(nom||t.name)+' » du catalogue ?'+(pris?' '+pris+' aventurier'+(pris>1?'s':'')+' le perdr'+(pris>1?'ont':'a')+'.':'')+(dessous?' Les talents qui en dépendaient remontent à sa place.':'');
- const ok=typeof demander==='function'?await demander(texte,'Supprimer'):confirm(texte);if(!ok)return;
- (catalog.talents||[]).forEach(x=>{if(x&&x.prerequis===t.id)x.prerequis=t.prerequis||''});
- [...actors,...(catalog.monsters||[])].forEach(a=>{if(Array.isArray(a.talents)){a.talents=a.talents.filter(x=>x!==t.id);a.paliersTalents=normalisePaliersActeur(a)}});
- catalog.talents=(catalog.talents||[]).filter(x=>x!==t);
- fermerBulle();renderArbres();renderCatalogPages();if(typeof renderHeroes==='function')renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();
  // Un nœud redessiné emporte sa bulle : elle ne reste pas accrochée à l'ancien.
  bulleOrpheline();
@@ -2347,8 +2341,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   el.addEventListener('dragover',e=>{if(!arbreGlisse)return;e.preventDefault();el.classList.add('survol');try{e.dataTransfer.dropEffect='move'}catch(_){}});
   el.addEventListener('dragleave',()=>el.classList.remove('survol'));
   el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('survol');const id=arbreGlisse;arbreGlisse=null;corps.classList.remove('glisse');
-   if(!id)return;if(dest.horsArbre){if(retireDeLArbre(talent(id)))arbreChange();return}
-   if(placerTalent(id,dest))arbreChange();else note('Ce talent ne peut pas aller là : il se retrouverait sous lui-même.')})};
+   if(!id)return;if(placerTalent(id,dest))arbreChange();else note('Ce talent ne peut pas aller là : il se retrouverait sous lui-même.')})};
  const entre=dest=>{const z=document.createElement('div');z.className='arbre-entre';cible(z,dest);return z};
  /* La bulle d'un nœud : son nom, ce qu'il fait, ce qu'il requiert, et s'il est
     sous clé. Un bonus dit sa valeur ; il n'a pas d'effet à préciser. */
@@ -2402,13 +2395,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   // Les outils du MJ, au survol : corriger le talent, en suspendre un nouveau dessous.
   if(mj){const outils=document.createElement('span');outils.className='arbre-outils';
    outils.append(ico('✎','Corriger '+t.name,()=>openTalent(catalog.talents.indexOf(t),renderArbres)));
-   if(t.type!=='mait'&&!t.horsArbre)outils.append(ico('⊕','Créer un talent sous '+t.name,()=>openTalent(null,renderArbres,
+   if(t.type!=='mait')outils.append(ico('⊕','Créer un talent sous '+t.name,()=>openTalent(null,renderArbres,
     {famille:talentFamily(t),voie:t.voie||'',prerequis:t.id,level:Math.min(20,(t.level||1)+1)})));
-   /* Sur le plan de la classe, ✕ retire le talent de l'arbre, sans rien effacer ; dans la
-      réserve, 🗑 le supprime pour de bon, après confirmation. */
-   if(!a&&!t.horsArbre)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue',()=>{const nom=vu(t).name;
-    if(retireDeLArbre(t)){arbreChange();noteArbres('« '+nom+' » est retiré de l’arbre. Il reste au catalogue, dans la réserve sous l’arbre : glisse-le dans une colonne pour l’y remettre.')}}));
-   if(!a&&t.horsArbre){const x=ico('🗑','Supprimer définitivement '+vu(t).name,()=>supprimeTalent(t,vu(t).name));x.classList.add('danger');outils.append(x)}
+   // Sur le plan de la classe, ✕ retire le talent de l'arbre, sans l'effacer du catalogue.
+   if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue',()=>{const nom=vu(t).name;
+    if(retireDeLArbre(t)){arbreChange();noteArbres('« '+nom+' » est retiré de l’arbre et reste dans l’onglet Talents. Pour l’y remettre : ✎, puis « Place dans l’arbre ».')}}));
    b.append(outils)}
   surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
   return b};
@@ -2513,17 +2504,6 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     retirent. Le plan du MJ les garde, pour y créer des talents ; les autres classes ne changent pas. */
  (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));
  corps.append(grille);
- /* La réserve : les talents de la classe retirés de l'arbre. Ils attendent là, toujours au
-    catalogue, qu'on les glisse de nouveau dans une colonne ; on y dépose aussi un talent de
-    l'arbre pour l'en retirer. La troupe ne la voit pas. */
- if(mj&&!a&&classe){const hors=(catalog.talents||[]).filter(t=>t&&t.horsArbre&&talentFamily(t)===classe);
-  const res=document.createElement('div');res.className='arbre-reserve';
-  const h=document.createElement('h4');h.className='arbre-titre';h.textContent='Hors de l’arbre';res.append(h);
-  const rang=document.createElement('div');rang.className='arbre-reserve-liste';
-  if(!hors.length){const v=document.createElement('span');v.className='muted';v.textContent='Glisse ici un talent pour le retirer de l’arbre sans l’effacer.';rang.append(v)}
-  hors.forEach(t=>{const n=noeud(t,'modele');n.noteBulle='Hors de l’arbre : glisse-le dans une colonne pour l’y remettre.';
-   n.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres);glissable(n,t);rang.append(n)});
-  res.append(rang);cible(res,{horsArbre:true});corps.append(res)}
  // Les chemins attendent que la fenêtre soit ouverte et la colonne mesurée.
  requestAnimationFrame(traceChemins)}
 /* Les chemins d'une colonne, tracés d'un rond à l'autre : droit vers le central suivant,
