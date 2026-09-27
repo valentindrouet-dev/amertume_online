@@ -2544,4 +2544,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("+sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])")
   &&src.includes("+sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])")
   &&src.includes(" for(const k of ['ressource1','ressource2'])if(f[k])a[k]=ressourceValide(f[k].value);"),'ressources et prix au formulaire de l’objet');}
-console.log('1547 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.282 — Au formulaire d'un objet, Mains revient sur la ligne de la rareté ; prix et ressources ont la leur. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("  +sel('Rareté','rarete',rareteDe(a),RARETES)\n  +(arme?sel('Mains','hands',")&&src.includes("  +'<div class=\"edit-grid prix-ressources\">'\n  +field('Prix (or)','price',")
+  &&fs.readFileSync('editor.css','utf8').includes('.edit-grid.prix-ressources{margin-top:12px}'),'prix et ressources sur une ligne, Mains avec la rareté');}
+console.log('1548 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

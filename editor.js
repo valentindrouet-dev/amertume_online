@@ -2758,13 +2758,16 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +sel('Catégorie','category',cat,ITEM_CATS)
   +sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])])
   +sel('Rareté','rarete',rareteDe(a),RARETES)
-  +field('Prix (or)','price',a.price||0,'number','min="0" max="999999" step="1"')
-  +sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])
-  +sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])
   +(arme?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="99"')
    +sel('Emplacement','slot',emplacementDe(a),[...EMPLACEMENTS.map(([k,n,p])=>[k,n+(p>1?' ('+p+')':'')]),['shield','Bouclier — une main']]):'')
   +(arme||armure?'':field('Quantité','qty',a.qty||1,'number','min="1" max="9999"'))
+  +'</div>'
+  // Le prix et les deux ressources, ensemble sur leur ligne.
+  +'<div class="edit-grid prix-ressources">'
+  +field('Prix (or)','price',a.price||0,'number','min="0" max="999999" step="1"')
+  +sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])
+  +sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])
   +'</div>'
   +(arme?'<p class="etiquette">Dés de l’arme</p>'+poolFields(poolFrom(a.dice),'itemdie')
    +sel('État infligé','etat',a.etat||'',[['','—'],...ETATS_INFLIGES().map(e=>[e,e])]):'')
