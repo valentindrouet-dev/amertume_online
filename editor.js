@@ -162,7 +162,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   if(t.teinte){b.style.setProperty('--fond',t.teinte);b.classList.add('teinte-propre')}
   const im=logoTalent({logo:t.logo},'bouton');
   if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);b.classList.add('avec-logo');b.append(logos)}
-  const nom=document.createElement('span');nom.className='nom';nom.textContent=t.texte;
+  const nom=nomAvecPalier(t.texte,t.talent.name,t.palier);nom.className='nom';
   // Les dés qu'il lance sur la seconde ligne ; sans dés, le nom seul — rien d'autre à dire.
   b.append(nom);
   /* Un talent qui frappe se lit comme une attaque : son nom, puis les dés qu'il lance, le
@@ -1262,6 +1262,7 @@ function talentPills(a){const out=document.createElement('div');out.className='t
  for(let i=0;i<liste.length;i+=2){const rangee=liste.slice(i,i+2),details=[];
   // Chaque talent tel que le porte cet aventurier : à son élément, s'il en a un.
   rangee.forEach(t=>{const tv=talentPourElement(t,elementDe(a)),pill=talentPill(tv,true);pill.classList.add('cliquable');
+   if(paliersDe(t)>1&&palierDe(a,t))pill.querySelector('.nom').append(palierRomain(palierDe(a,t)));
    const manque=sansEffet(t);
    // Le chevron ne dépliait que l'ancien dépliant : sous la bulle, rien à déplier.
    if(!BULLES){const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev)}
@@ -2185,6 +2186,8 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){const bonus=t.effe
  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
  if(bonus)nom.textContent=libelleBonus(paramsTalent(t));else nomAccolades(nom,vu(t).name);
+ // Tenu, le talent dit son palier après son nom : « Attaque Blindée II ».
+ if(!bonus&&a&&paliersDe(t)>1&&palierDe(a,t))nom.append(palierRomain(palierDe(a,t)));
  // Jamais la nature du talent : la bulle ne l'écrit nulle part.
  tete.append(nom);d.append(tete);
  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};

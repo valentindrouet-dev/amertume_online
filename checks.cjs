@@ -2804,4 +2804,12 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("p.className='cat-pill gear-carre talent-carre t-'+cle;")&&src.includes("if(mj){p.onclick=()=>openTalent(i);")&&src.includes("bloc.className='cat-col armurerie-grille'+(famille===GENERIQUES?' c-generique':'');")
   &&src.includes("bloc.className='cat-col armurerie-grille c-'+key;")&&src.includes("if(BULLES)surveille(p,()=>ouvrirBulle(p,bulleModele(m),'bulle-modele'));")&&src.includes("function bulleModele(m){")&&css.includes('.cat-pill.gear-carre.talent-carre{border-left:none}'),'talents et bestiaire en carrés');
  assert.ok(!src.includes('function talentBloc(')&&!src.includes('bestiaireOuverts')&&!src.includes('talentCorrige'),'plus de dépliant au clic');}
-console.log('1689 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.299 — Le palier d'un talent tenu, en chiffre romain à la Killam après son nom : dans le
+   titre de sa bulle, sur la fiche, sur les boutons de la table. */
+{const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(page.includes("const ROMAINS_PALIER=['','I','II','III'];")&&page.includes("function nomAvecPalier(texte,nom,palier){")
+  &&page.includes("if(nom&&texte.startsWith(nom))s.append(nom,palierRomain(palier),texte.slice(nom.length));else s.append(texte,palierRomain(palier));")
+  &&page.includes("palier:paliersDe(talent)>1?(talent.palier||1):0,")&&page.includes("geste(nomAvecPalier(b.texte,b.talent.name,b.palier),"),'le chiffre du palier sur les boutons de la table');
+ assert.ok(src.includes("if(!bonus&&a&&paliersDe(t)>1&&palierDe(a,t))nom.append(palierRomain(palierDe(a,t)));")&&src.includes("if(paliersDe(t)>1&&palierDe(a,t))pill.querySelector('.nom').append(palierRomain(palierDe(a,t)));")
+  &&src.includes("const nom=nomAvecPalier(t.texte,t.talent.name,t.palier);nom.className='nom';")&&css.includes(".palier-romain{margin-left:.3em;font-family:'Killam',Georgia,serif;"),'dans la bulle et sur la fiche, en Killam');}
+console.log('1691 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
