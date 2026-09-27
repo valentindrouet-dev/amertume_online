@@ -521,12 +521,14 @@ function grilleGemmes(compte,poser,qui){const t=document.createElement('table');
  TAILLES_GEMMES.forEach(([,nt])=>{const th=document.createElement('th');th.scope='col';th.textContent=nt;tete.append(th)});
  const corps=t.createTBody();
  VARIETES_GEMMES.forEach(([v,nv])=>{const r=corps.insertRow();r.className='g-'+v;
-  const th=document.createElement('th');th.scope='row';const pierre=document.createElement('i');pierre.className='gemme';
-  const nom=document.createElement('span');nom.textContent=nv;th.append(pierre,nom);r.append(th);
+  // En tête de ligne, la variété : sa plus grande gemme, et son nom.
+  const th=document.createElement('th');th.scope='row';
+  const nom=document.createElement('span');nom.textContent=nv;th.append(iconeDeGemme('brome',v,false),nom);r.append(th);
   TAILLES_GEMMES.forEach(([ta])=>{const td=r.insertCell();
    [false,true].forEach(eteinte=>{const k=cleGemme(ta,v,eteinte),n=compte[k]||0,nom=nomGemme(ta,v,eteinte);
     const el=document.createElement(eteinte?'small':'b');el.className=(eteinte?'gem-eteinte':'gem-vive')+(n?'':' zero');
-    if(eteinte){const g=document.createElement('i');g.className='gemme eteinte';el.append(g,' '+n)}else el.textContent=String(n);
+    // Chaque compte a l'icône de sa gemme ; éteinte, elle est grise.
+    el.append(iconeDeGemme(ta,v,eteinte),(eteinte?' ':'')+n);
     // Au survol : la gemme, et ce qu'elle vaut pièce, allumée.
     const titre=nom+(eteinte?'':' — '+valeurGemme(ta,v,false)+' or pièce');
     el.setAttribute('aria-label',titre+' : '+n);el.title=titre;
@@ -536,6 +538,11 @@ function grilleGemmes(compte,poser,qui){const t=document.createElement('table');
  const total=valeurGemmes(compte);
  if(total){const c=t.createCaption();c.textContent='Valeur des gemmes allumées : '+total.toLocaleString('fr-FR')+' or'}
  return t}
+/* L'icône d'une gemme, si son image est dans le dossier ; sinon le losange de sa couleur.
+   Éteinte, elle passe au gris. */
+function iconeDeGemme(taille,variete,eteinte){const l=iconeGemme(taille,variete);
+ if(!LOGOS_RESSOURCES.includes(l)){const i=document.createElement('i');i.className='gemme'+(eteinte?' eteinte':'');return i}
+ const im=document.createElement('img');im.className='gem-ico'+(eteinte?' eteinte':'');im.src=imgUrl(fichierLogo(l));im.alt='';im.draggable=false;return im}
 // Poser un compte : un entier positif, ou rien — un compte à zéro disparaît.
 function poseCompte(compte,k,v){const n=lisCompte(v);if(n)compte[k]=n;else delete compte[k];return n}
 // Les richesses d'un aventurier, sur sa carte : le MJ les corrige, la troupe les lit.
@@ -2719,12 +2726,21 @@ const LOGOS_ETATS=['AU SOL','AVEUGLE','BLINDAGE INITIAL','CIBLAGE','FAILLE','FEU
 const LOGOS_DIVERS=['DEF 0','DEF 1','DEF 2','DEF 3','DEF 4','DEF 5','DEF 6','DEF VIDE','DEGATS','PERSO','VIE'];
 const EXTENSIONS_LOGO={DEGATS:'.webp'};
 const fichierLogo=l=>l+(EXTENSIONS_LOGO[l]||'.png');
-const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_ETATS,...LOGOS_DIVERS];
+/* Les icônes des ressources, de même : les img/ressource_*.png — les gemmes, cinq variétés en
+   trois tailles. La grille des gemmes y puise ; un talent peut les prendre pour logo. */
+const LOGOS_RESSOURCES=['ressource_brisure_citrine','ressource_brisure_diamant','ressource_brisure_emeraude','ressource_brisure_rubis','ressource_brisure_saphir',
+ 'ressource_eclat_citrine','ressource_eclat_diamant','ressource_eclat_emeraude','ressource_eclat_rubis','ressource_eclat_saphir',
+ 'ressource_gemme_citrine','ressource_gemme_diamant','ressource_gemme_emeraude','ressource_gemme_rubis','ressource_gemme_saphir'];
+const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_ETATS,...LOGOS_DIVERS];
 // Toutes les images, rangées par famille : le menu de logo d'un talent les propose ainsi.
-const FAMILLES_LOGOS=[['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];
+const FAMILLES_LOGOS=[['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];
 const NOMS_LOGOS={SAIGNEE:'Saignée',DEGATS:'Dégâts'};
 // Le nom d'un logo : son fichier sans préfixe ; un nom en capitales se lit en minuscules, sauf DEF.
-const nomLogo=l=>{if(NOMS_LOGOS[l])return NOMS_LOGOS[l];let n=String(l||'').replace(/^(weapon|spell|item|attack)_/,'').replace(/[_-]+/g,' ');
+const nomLogo=l=>{if(NOMS_LOGOS[l])return NOMS_LOGOS[l];
+ // Une gemme se nomme comme dans sa grille : « Éclat de rubis ».
+ const g=/^ressource_([a-z]+)_([a-z]+)$/.exec(String(l||''));
+ if(g&&typeof TAILLES_GEMMES!=='undefined'){const t=TAILLES_GEMMES.find(([k])=>(FICHIERS_TAILLES[k]||k)===g[1]),v=VARIETES_GEMMES.find(([k])=>k===g[2]);
+  if(t&&v)return t[2]+(/^[aeiouéèêh]/i.test(v[1])?' d’':' de ')+v[1].toLowerCase()}let n=String(l||'').replace(/^(weapon|spell|item|attack)_/,'').replace(/[_-]+/g,' ');
  if(n===n.toUpperCase()&&!/^DEF\b/.test(n))n=n.toLowerCase();return n?n[0].toUpperCase()+n.slice(1):''};
 // Un menu de logos en familles : un groupe par famille, « — aucun — » en tête.
 function selLogos(label,key,value){return '<label>'+label+'<select name="'+key+'"><option value="">— aucun —</option>'

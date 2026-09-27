@@ -267,7 +267,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  {const ma=src.match(/const LOGOS_ATTAQUE=(\[[^\]]*\]);/);assert.ok(ma,'LOGOS_ATTAQUE introuvable');
   const attaques=fs.readdirSync('img').filter(f=>/^attack_.*\.png$/i.test(f)).map(f=>f.replace(/\.png$/i,'')).sort();
   assert.deepEqual(JSON.parse(ma[1].replace(/'/g,'"')).sort(),attaques,'LOGOS_ATTAQUE doit lister img/attack_*.png : '+attaques.join(', '));
-  assert.ok(src.includes('const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_ETATS,...LOGOS_DIVERS];')
+  assert.ok(src.includes('const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_ETATS,...LOGOS_DIVERS];')
    &&src.includes('function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}')
    &&src.includes("(at.logos||[]).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
    &&src.includes("choixVif(icone,(at.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])],")
@@ -2525,12 +2525,12 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  // Les images sans préfixe sont toutes déclarées, extension comprise.
  const lire=nom=>JSON.parse(src.match(new RegExp('const '+nom+'=(\\[[^\\]]*\\]);'))[1].replace(/'/g,'"'));
  const ext=l=>l==='DEGATS'?'.webp':'.png';
- const autres=fs.readdirSync('img').filter(f=>/\.(png|webp)$/i.test(f)&&!/^(weapon|spell|item|attack)_/.test(f)).sort();
+ const autres=fs.readdirSync('img').filter(f=>/\.(png|webp)$/i.test(f)&&!/^(weapon|spell|item|attack|ressource)_/.test(f)).sort();
  assert.deepEqual([...lire('LOGOS_ETATS'),...lire('LOGOS_DIVERS')].map(l=>l+ext(l)).sort(),autres,'LOGOS_ETATS et LOGOS_DIVERS doivent lister les autres images : '+autres.join(', '));
  assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("im.src=imgUrl(fichierLogo(l));")
   &&src.includes("function logoTalent(t,cls){return logoImage(t&&t.logo,LOGOS_TOUS,cls)}")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
   &&src.includes(" t.logo=f.logo&&LOGOS_TOUS.includes(f.logo.value)?f.logo.value:'';")
-  &&src.includes("const FAMILLES_LOGOS=[['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
+  &&src.includes("const FAMILLES_LOGOS=[['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
  const ctxL={};vm.createContext(ctxL);vm.runInContext(src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
  assert.deepEqual(['BLINDAGE INITIAL','SAIGNEE','DEF 3','weapon_cape_elfique','DEGATS'].map(ctxL.nomLogo),['Blindage initial','Saignée','DEF 3','Cape elfique','Dégâts']);
  assert.ok(src.includes("surveille(b,()=>ouvrirBulle(b,bulleNoeud(t,verrou,b.noteBulle),'bulle-talent'));")&&!src.includes("b.title=t.name+' — '+[talentType(t)[2]")
@@ -2607,4 +2607,18 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(C.nomGemme('brisure','citrine',false),'Brisures de citrine');
  assert.ok(src.includes("VARIETES_GEMMES.forEach(([v,nv])=>{const r=corps.insertRow();r.className='g-'+v;")&&src.includes("if(total){const c=t.createCaption();c.textContent='Valeur des gemmes allumées : '")
   &&fs.readFileSync('editor.css','utf8').includes('.g-citrine{--g:#e2b12a}'),'la grille par variété, et sa valeur');}
-console.log('1592 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.286 — Les icônes des gemmes : img/ressource_<taille>_<variété>.png, déclarées comme les autres
+   logos, dans chaque case de la grille et en tête de chaque variété ; grises pour les éteintes. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8');
+ const declares=JSON.parse(src.match(/const LOGOS_RESSOURCES=(\[[^\]]*\]);/)[1].replace(/'/g,'"')).sort();
+ const fichiers=fs.readdirSync('img').filter(f=>/^ressource_.*\.png$/.test(f)).map(f=>f.replace(/\.png$/,'')).sort();
+ assert.deepEqual(declares,fichiers,'LOGOS_RESSOURCES doit lister img/ressource_*.png : '+fichiers.join(', '));
+ const attendues=C.TAILLES_GEMMES.flatMap(([t])=>C.VARIETES_GEMMES.map(([v])=>C.iconeGemme(t,v))).sort();
+ assert.deepEqual(attendues,fichiers.filter(f=>/^ressource_(brisure|eclat|gemme)_/.test(f)),'chaque gemme a son icône, et chaque icône sa gemme');
+ assert.equal(C.iconeGemme('brome','rubis'),'ressource_gemme_rubis');
+ const ctxL={TAILLES_GEMMES:C.TAILLES_GEMMES,VARIETES_GEMMES:C.VARIETES_GEMMES,FICHIERS_TAILLES:C.FICHIERS_TAILLES};vm.createContext(ctxL);
+ vm.runInContext(src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
+ assert.deepEqual(['ressource_eclat_rubis','ressource_gemme_emeraude','ressource_brisure_citrine'].map(ctxL.nomLogo),['Éclat de rubis','Brôme d’émeraude','Brisure de citrine']);
+ assert.ok(src.includes("el.append(iconeDeGemme(ta,v,eteinte),(eteinte?' ':'')+n);")&&src.includes("th.append(iconeDeGemme('brome',v,false),nom);")
+  &&fs.readFileSync('editor.css','utf8').includes('table.gemmes .gem-eteinte .gem-ico{width:11px;height:11px;filter:grayscale(1)'),'les icônes dans la grille, grises pour les éteintes');}
+console.log('1597 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

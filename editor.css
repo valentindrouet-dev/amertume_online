@@ -1112,7 +1112,11 @@ table.gemmes tbody th .gemme{margin:0 7px 0 2px;vertical-align:1px}
 table.gemmes caption{caption-side:bottom;text-align:right;font-size:11.5px;color:var(--muted);padding:3px 3px 0}
 table.gemmes td{background:var(--panel-2);border:1px solid var(--line);border-top:2px solid var(--g);border-radius:7px;text-align:center;padding:3px 2px 2px;line-height:1.1}
 table.gemmes thead td{background:none;border:0;width:5.3em}/* En disposition fixe, la première ligne donne les largeurs : la colonne des noms se règle ici. */
-table.gemmes .gem-vive{display:block;font:700 15px/1.1 'Killam',Georgia,serif;color:var(--ink)}
+table.gemmes .gem-vive{display:flex;align-items:center;justify-content:center;gap:4px;font:700 15px/1.1 'Killam',Georgia,serif;color:var(--ink)}
+/* Les icônes des gemmes : pleine taille pour les allumées, petites et grises pour les éteintes. */
+table.gemmes .gem-ico{flex:none;width:19px;height:19px;object-fit:contain;filter:drop-shadow(0 1px 1px #0005)}
+table.gemmes .gem-eteinte .gem-ico{width:11px;height:11px;filter:grayscale(1) brightness(.8);opacity:.85}
+table.gemmes tbody th .gem-ico{width:17px;height:17px;margin:0 6px 0 0;vertical-align:-4px}
 table.gemmes .gem-eteinte{display:flex;align-items:center;justify-content:center;gap:3px;font-size:10.5px;color:var(--muted)}
 table.gemmes .zero{opacity:.38}table.gemmes .modifiable{cursor:pointer}
 table.gemmes .champ-vif{width:100%;box-sizing:border-box;padding:1px 2px;font-size:12px;text-align:center;margin:0}
