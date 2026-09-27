@@ -1489,7 +1489,7 @@ assert.ok(src.includes("const sansEffet=t=>typeof manqueTalent==='function'?manq
    d'une page dessinée avant tenait l'ancienne, et restait muet chez un joueur. La fiche se
    retrouve par son identifiant. */
 assert.ok(src.includes('function acteurCourant(a){if(!a||actors.includes(a))return a;return actors.find(x=>x&&x.id===a.id)||a}')
- &&src.includes('function peutVoirArbres(a){a=acteurCourant(a);return !!a&&(view===\'mj\'||(a.hero&&actors.indexOf(a)===owner))}')
+ &&src.includes('function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&(view===\'mj\'||actors.indexOf(a)===owner)}')
  &&src.includes(' if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);')
  &&fs.readFileSync('shared.js','utf8').includes("if(typeof renderCatalogPages==='function')renderCatalogPages();")
  &&src.includes('function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;')
@@ -1584,7 +1584,7 @@ assert.ok(page.includes('#pv-layer .pv{position:absolute;transform:translate(-50
    sans combattant, nul n'y porte rien, le clic sur un talent le corrige, et la Provocation
    ne pose plus de bandeau en travers de la carte. */
 assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null,arbresVueJoueur=false;')
- &&src.includes("function openArbresClasse(famille){if(view!=='mj')return;arbresActeur=null;arbresClasse=famille||GENERIQUES;")
+ &&src.includes("function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arbresActeur=null;arbresClasse=famille||GENERIQUES;")
  &&src.includes("function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();")
  &&src.includes("const classe=a?classeDuHeros(a):arbresClasse;")&&src.includes("const porte=t=>!!a&&a.talents.includes(t.id);")
  &&src.includes("el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}")
@@ -2691,10 +2691,22 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
  assert.ok(src.includes("function choixElement(a,classe){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
   &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tv=vu(t),logo=logoTalent(tv);")&&src.includes("const tp=talentAuPalier(vu(t),n),col=")
-  &&src.includes("function fusionElementaire(classe){")&&src.includes(".filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")&&src.includes("const e0=base.element,accolade=s=>typeof s==='string'?s.split(e0.nom).join('{élément}').split(e0.mot).join('{mot}'):s;")
+  &&src.includes(".filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
   &&src.includes("name=\"elementaire\"")&&src.includes("rangee.forEach(t=>{const tv=talentPourElement(t,elementDe(a)),pill=talentPill(tv,true);"),'l’arbre, la fiche et l’éditeur suivent l’élément');
  assert.ok(src.includes(".filter(r=>ELEMENTS.every(e=>LOGOS_TOUS.includes(r+'_'+e.logo))).map(r=>r+'_{logo}');")&&page.includes("const teinte=etat||(elementDe(a)||{}).etat||'';"),'le logo et l’orbe suivent l’élément ; les dés restent les leurs');
  assert.ok(src.includes("const tailles=possedees?TAILLES_GEMMES.filter(([ta])=>VARIETES_GEMMES.some(([v])=>a(ta,v))):TAILLES_GEMMES;")&&src.includes("if(!tailles.length||!varietes.length)return null;")
   &&src.includes("const g=grilleGemmes(a.richesses,poser,a.name,{possedees:true});")&&src.includes("function openRichesses(a){if(view!=='mj'||!a)return;")
   &&src.includes("poseCompte(a.richesses,k,(a.richesses[k]||0)+signe*n);")&&fs.readFileSync('editor.css','utf8').includes('table.gemmes.nue td{background:none;border:0;'),'les gemmes possédées, sans cases, et le « + » du MJ');}
-console.log('1643 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.291 — Un talent se supprime depuis le plan de l'arbre ; ce qui pendait sous lui remonte.
+   Plus de fusion ni de phrase d'aperçu. Seule une classe du jeu a un arbre : ni les adversaires,
+   ni les génériques. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("if(!a){const x=ico('🗑','Supprimer '+vu(t).name,()=>supprimeTalent(t,vu(t).name));x.classList.add('danger');outils.append(x)}")
+  &&src.includes("async function supprimeTalent(t,nom){")&&src.includes("(catalog.talents||[]).forEach(x=>{if(x&&x.prerequis===t.id)x.prerequis=t.prerequis||''});"),'le talent se supprime depuis l’arbre, ses suivants remontent');
+ assert.ok(!src.includes('fusionElementaire')&&!src.includes('Aperçu de l’arbre sous chaque élément'),'ni fusion, ni phrase d’aperçu');
+ assert.ok(src.includes("function aUnArbre(f){return !!f&&f!==GENERIQUES&&(catalog.classes||[]).some(c=>c&&c.name===f)}")&&src.includes("if(view==='mj'&&aUnArbre(famille)){const rouage=")
+  &&src.includes("function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&"),'un arbre pour les classes seules');
+ const ctxA={GENERIQUES:'Génériques',catalog:{classes:[{name:'Mystique'},{name:'Gardien'}]}};vm.createContext(ctxA);
+ const deb=src.indexOf('function aUnArbre(');vm.runInContext(src.slice(deb,src.indexOf('\n',deb)),ctxA);
+ assert.deepEqual(['Mystique','Gardien','Génériques','Gobelins','',undefined].map(x=>ctxA.aUnArbre(x)),[true,true,false,false,false,false]);}
+console.log('1647 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

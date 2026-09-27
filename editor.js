@@ -1680,7 +1680,7 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
   const encre=teinteClasse(famille);if(encre)h.style.color=encre;
   /* Le même rouage que sur une fiche, à côté du nom de la classe : l'arbre s'ouvre là où
      l'on range ses talents, sans passer par un aventurier. */
-  if(view==='mj'){const rouage=document.createElement('button');rouage.type='button';rouage.className='ico plus rouage';
+  if(view==='mj'&&aUnArbre(famille)){const rouage=document.createElement('button');rouage.type='button';rouage.className='ico plus rouage';
    rouage.textContent='⚙';rouage.title='Arbre de talents — '+famille;
    rouage.setAttribute('aria-label','Ouvrir l’arbre de talents de '+famille);
    rouage.onclick=e=>{e.stopPropagation();openArbresClasse(famille)};h.append(rouage);
@@ -2244,21 +2244,23 @@ function noteArbres(texte){const n=$('arbres-note');n.textContent=texte||'';n.hi
    l'ancienne — le rouage d'un joueur restait muet, sa fiche n'étant plus « la sienne ». */
 function acteurCourant(a){if(!a||actors.includes(a))return a;return actors.find(x=>x&&x.id===a.id)||a}
 // Le MJ ouvre l'arbre de n'importe quelle fiche ; un joueur, celui de son aventurier.
-function peutVoirArbres(a){a=acteurCourant(a);return !!a&&(view==='mj'||(a.hero&&actors.indexOf(a)===owner))}
+// Seul un aventurier a un arbre : un adversaire prend ses talents dans une liste.
+function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&(view==='mj'||actors.indexOf(a)===owner)}
+// Seule une classe du jeu a un arbre : ni les génériques, ni les familles d'adversaires.
+function aUnArbre(f){return !!f&&f!==GENERIQUES&&(catalog.classes||[]).some(c=>c&&c.name===f)}
 function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;
  if(assureMaitrises(a))scheduleSave();
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // L'arbre d'une classe, sans combattant : le MJ le bâtit, personne n'y apprend rien.
-function openArbresClasse(famille){if(view!=='mj')return;arbresActeur=null;arbresClasse=famille||GENERIQUES;
+function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arbresActeur=null;arbresClasse=famille||GENERIQUES;
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
 function arbreChange(){noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
 /* ---------- L'élément du Mystique ---------- */
-const VERROU_ELEMENT='l’élément du Mystique',VOIE_ELEMENTAIRE='Élémentaire';
+const VERROU_ELEMENT='l’élément du Mystique';
 let elementApercu='feu';
 /* Le choix de l'élément : Feu, Gel, Foudre. Pour un Mystique, le MJ seul le fixe — le joueur voit
-   le sien. Sur le plan de la classe, le MJ regarde l'arbre sous chaque élément ; il peut aussi y
-   fusionner des colonnes élémentaires en une seule. */
+   le sien. Sur le plan de la classe, le MJ regarde l'arbre sous chaque élément. */
 function choixElement(a,classe){const out=document.createElement('div');out.className='elements-choix';out.setAttribute('role','radiogroup');out.setAttribute('aria-label','Élément');
  const actuel=a?elementDe(a):ELEMENTS.find(e=>e.cle===elementApercu),peut=view==='mj';
  ELEMENTS.forEach(e=>{const b=document.createElement('button');b.type='button';const on=!!actuel&&actuel.cle===e.cle;
@@ -2269,65 +2271,21 @@ function choixElement(a,classe){const out=document.createElement('div');out.clas
   else{b.title='Aperçu : l’arbre sous l’élément '+e.nom;b.onclick=()=>{elementApercu=e.cle;renderArbres()}}
   out.append(b)});
  const bloc=document.createElement('div');bloc.className='elements-bloc';bloc.append(out);
- const dit=a?(elementDe(a)?'':peut?'Choisis l’élément de '+a.name+' : ses talents élémentaires l’attendent.':'Le MJ choisit l’élément : les talents élémentaires l’attendent.'):'Aperçu de l’arbre sous chaque élément.';
+ const dit=a&&!elementDe(a)?(peut?'Choisis l’élément de '+a.name+' : ses talents élémentaires l’attendent.':'Le MJ choisit l’élément : les talents élémentaires l’attendent.'):'';
  if(dit){const p=document.createElement('p');p.className='muted elements-dit';p.textContent=dit;bloc.append(p)}
- // Sur le plan du MJ : fusionner des colonnes élémentaires — une par élément — en « Élémentaire ».
- if(!a&&peut&&colonnesElementaires(classe).length>=2){const f=document.createElement('button');f.type='button';f.className='arbre-ajout elements-fusion';
-  f.textContent='⇄ Fusionner les colonnes élémentaires en « '+VOIE_ELEMENTAIRE+' »';
-  f.onclick=async()=>{const cols=colonnesElementaires(classe);
-   const texte='Fusionner '+cols.map(c=>'« '+c.voie+' »').join(', ')+' en une seule colonne « '+VOIE_ELEMENTAIRE+' » ? La colonne du Feu sert de base, écrite avec des accolades ; les talents des autres colonnes sont retirés, et ce que les aventuriers y avaient appris passe au talent de même place.';
-   const ok=typeof demander==='function'?await demander(texte,'Fusionner'):confirm(texte);
-   if(!ok)return;const r=fusionElementaire(classe);
-   if(!r.ok){alert(r.raison);return}
-   renderArbres();renderCatalogPages();if(typeof renderHeroes==='function')renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));
-   const n=$('arbres-note');if(n)n.textContent=r.fusionnes+' talents fusionnés dans « '+VOIE_ELEMENTAIRE+' »'+(r.restes?' ; '+r.restes+' sans équivalent, laissés dans leur colonne':'')+'. Relis les textes : un mot de feu que les accolades ne disent pas — « brûle » — reste à adapter.'};
-  bloc.append(f)}
  return bloc}
-// L'élément d'un talent : son état réglé, sinon un mot de son nom ou de son logo.
-function elementDuTalent(t){const p=t&&t.params||{};const e=ELEMENTS.find(x=>p.etat===x.etat);if(e)return e;
- const n=cleTalent((t&&t.name||'')+' '+(t&&t.logo||''));return ELEMENTS.find(x=>n.includes(x.cle)||n.includes(cleTalent(x.mot)))||null}
-/* Les colonnes élémentaires d'une classe : une par élément, reconnue à ce que disent le plus
-   ses talents. La colonne déjà fusionnée n'en est pas une. */
-function colonnesElementaires(classe){const dans=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&t.type!=='mait'&&t.voie&&t.voie!==VOIE_ELEMENTAIRE);
- const vues=new Set(),out=[];
- [...new Set(dans.map(t=>t.voie))].forEach(v=>{const liste=dans.filter(t=>t.voie===v),c={};liste.forEach(t=>{const e=elementDuTalent(t);if(e)c[e.cle]=(c[e.cle]||0)+1});
-  const cle=Object.keys(c).sort((x,y)=>c[y]-c[x])[0];if(cle&&!vues.has(cle)){vues.add(cle);out.push({voie:v,liste,element:ELEMENTS.find(e=>e.cle===cle)})}});
- return out}
-/* Fusionner : la colonne du Feu (ou la première) devient « Élémentaire » — ses mots de l'élément
-   passent en accolades, son logo suit l'élément, ses talents à état réglé sont cochés
-   élémentaires. Chaque talent des autres colonnes rejoint celui de même place — même chemin
-   depuis la racine, même branche — : il se retire, les aventuriers qui l'avaient le gardent
-   sous sa nouvelle forme, palier compris, et un Mystique sans élément prend celui de la colonne
-   où il avait le plus appris. Un talent sans équivalent reste où il est. */
-function fusionElementaire(classe){const cols=colonnesElementaires(classe);
- if(cols.length<2)return {ok:false,raison:'Il faut au moins deux colonnes élémentaires — une par élément — pour les fusionner.'};
- const base=cols.find(c=>c.element.cle==='feu')||cols[0];
- const place=(t,liste,vus=new Set())=>{if(vus.has(t.id))return '?';vus.add(t.id);const parent=liste.find(x=>x.id===t.prerequis);
-  const freres=liste.filter(x=>(x.prerequis||'')===(t.prerequis||'')&&(x.branche||'')===(t.branche||''));
-  return (parent?place(parent,liste,vus)+'/':'')+(t.branche||'c')+freres.indexOf(t)};
- const parPlace=c=>{const m=new Map();c.liste.forEach(t=>m.set(place(t,c.liste),t));return m};
- const cible=parPlace(base),vers=new Map();let restes=0;
- cols.filter(c=>c!==base).forEach(c=>parPlace(c).forEach((t,k)=>{const b=cible.get(k);if(b)vers.set(t.id,b.id);else restes++}));
- const e0=base.element,accolade=s=>typeof s==='string'?s.split(e0.nom).join('{élément}').split(e0.mot).join('{mot}'):s;
- base.liste.forEach(t=>{t.name=accolade(t.name);t.effects=accolade(t.effects);
-  Object.values(t.paliers||{}).forEach(p=>{if(p&&typeof p==='object')p.effects=accolade(p.effects)});
-  if(t.logo&&t.logo.endsWith('_'+e0.logo)){const racine=t.logo.slice(0,-e0.logo.length-1);if(LOGOS_ELEMENTAIRES.includes(racine+'_{logo}'))t.logo=racine+'_{logo}'}
-  const code=TALENTS_CODES[t.effet];if(code&&(code.params||[]).some(p=>p.cle==='etat'))t.elementaire=true;
-  t.voie=VOIE_ELEMENTAIRE});
- // Ceux qui avaient appris ailleurs : le talent de même place, au plus haut palier des deux.
- const suivre=a=>{if(!a||!Array.isArray(a.talents))return;const compte={};
-  cols.forEach(c=>{const n=c.liste.filter(t=>a.talents.includes(t.id)).length;if(n)compte[c.element.cle]=(compte[c.element.cle]||0)+n});
-  const paliers={...(a.paliersTalents||{})},garde=[];
-  a.talents.forEach(id=>{const v=vers.get(id)||id;if(!garde.includes(v))garde.push(v);if(vers.has(id)&&paliers[id]){paliers[v]=Math.max(paliers[v]||1,paliers[id]);delete paliers[id]}});
-  a.talents=garde;a.paliersTalents=paliers;a.paliersTalents=normalisePaliersActeur(a);
-  if(a.hero&&!elementDe(a)&&classeElementaire(classeDuHeros(a))){const cle=Object.keys(compte).sort((x,y)=>compte[y]-compte[x])[0];if(cle)a.element=cle}};
- actors.forEach(suivre);(catalog.monsters||[]).forEach(suivre);
- catalog.talents=(catalog.talents||[]).filter(t=>t&&!vers.has(t.id));
- catalog.talents.forEach(t=>{if(vers.has(t.prerequis))t.prerequis=vers.get(t.prerequis)});
- // Les spécialisations : « Élémentaire » en tête, puis celles qui restent.
- const restantes=[...new Set(catalog.talents.filter(t=>t&&talentFamily(t)===classe&&t.voie).map(t=>t.voie))];
- catalog.voies={...(catalog.voies||{}),[classe]:[VOIE_ELEMENTAIRE,...restantes.filter(v=>v!==VOIE_ELEMENTAIRE)].slice(0,VOIES_MAX)};
- return {ok:true,fusionnes:vers.size,restes}}
+/* Supprimer un talent de l'arbre — donc du catalogue —, après confirmation : les aventuriers
+   qui l'avaient le perdent, palier compris, et ce qui pendait sous lui remonte à sa place, sous
+   son propre prérequis, plutôt que de se retrouver sans attache. */
+// « nom » : le talent tel que l'arbre le montre — accolades remplies.
+async function supprimeTalent(t,nom){if(view!=='mj'||!t)return;
+ const pris=actors.filter(a=>(a.talents||[]).includes(t.id)).length,dessous=(catalog.talents||[]).filter(x=>x&&x.prerequis===t.id).length;
+ const texte='Supprimer « '+(nom||t.name)+' » du catalogue ?'+(pris?' '+pris+' aventurier'+(pris>1?'s':'')+' le perdr'+(pris>1?'ont':'a')+'.':'')+(dessous?' Les talents qui en dépendaient remontent à sa place.':'');
+ const ok=typeof demander==='function'?await demander(texte,'Supprimer'):confirm(texte);if(!ok)return;
+ (catalog.talents||[]).forEach(x=>{if(x&&x.prerequis===t.id)x.prerequis=t.prerequis||''});
+ [...actors,...(catalog.monsters||[])].forEach(a=>{if(Array.isArray(a.talents)){a.talents=a.talents.filter(x=>x!==t.id);a.paliersTalents=normalisePaliersActeur(a)}});
+ catalog.talents=(catalog.talents||[]).filter(x=>x!==t);
+ fermerBulle();renderArbres();renderCatalogPages();if(typeof renderHeroes==='function')renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();
  // Un nœud redessiné emporte sa bulle : elle ne reste pas accrochée à l'ancien.
  bulleOrpheline();
@@ -2435,6 +2393,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    outils.append(ico('✎','Corriger '+t.name,()=>openTalent(catalog.talents.indexOf(t),renderArbres)));
    if(t.type!=='mait')outils.append(ico('⊕','Créer un talent sous '+t.name,()=>openTalent(null,renderArbres,
     {famille:talentFamily(t),voie:t.voie||'',prerequis:t.id,level:Math.min(20,(t.level||1)+1)})));
+   // Sur le plan de la classe, le talent se supprime d'ici même.
+   if(!a){const x=ico('🗑','Supprimer '+vu(t).name,()=>supprimeTalent(t,vu(t).name));x.classList.add('danger');outils.append(x)}
    b.append(outils)}
   surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
   return b};

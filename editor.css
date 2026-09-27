@@ -1180,5 +1180,6 @@ table.gemmes.nue thead th{text-align:center}
 .element-bouton.on{border-color:var(--el);color:var(--el);background:color-mix(in srgb,var(--el) 14%,transparent);box-shadow:0 0 0 1px var(--el) inset}
 .el-feu{--el:#d9532b}.el-gel{--el:#2f8fae}.el-foudre{--el:#b38a0a}
 .element-bouton:disabled{cursor:default;opacity:.45}.element-bouton.on:disabled{opacity:1}
-.elements-dit{margin:0;font-size:12.5px}.elements-fusion{margin-top:4px}
+.elements-dit{margin:0;font-size:12.5px}
+.arbre-outils .ico.danger:hover{border-color:#b03828;color:#b03828}
 .accolades-aide{font-size:12px;margin:2px 0 8px}
