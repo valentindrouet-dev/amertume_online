@@ -1243,3 +1243,5 @@ body.sombre .paliers-table thead th.p2,body.sombre .paliers-table thead th.p3{co
 .nom-carte .accolade{white-space:nowrap}
 /* Le palier d'un talent tenu, en chiffre romain après son nom, dans la police Killam. */
 .palier-romain{margin-left:.3em;font-family:'Killam',Georgia,serif;font-weight:700;letter-spacing:.03em}
+/* Les trois logos d'un talent élémentaire, un par élément, chacun avec son aperçu. */
+.logos-elements{margin-top:8px}.logos-elements label{position:relative}

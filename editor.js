@@ -53,6 +53,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   t.branche=t.branche==='g'||t.branche==='d'?t.branche:'';
   // Retiré de l'arbre, il reste au catalogue.
   if(t.horsArbre!==true)delete t.horsArbre;
+  // Les logos par élément : un nom de fichier par élément connu, rien d'autre.
+  if(t.logos&&typeof t.logos==='object'&&!Array.isArray(t.logos)){const o={};
+   ELEMENTS.forEach(e=>{const v=t.logos[e.cle];if(typeof v==='string'&&v&&v.length<=100)o[e.cle]=v});if(Object.keys(o).length)t.logos=o;else delete t.logos}
+  else delete t.logos;
   // Les volets : un palier de 0 (jamais) à 3 par volet nommé.
   if(t.volets&&typeof t.volets==='object'&&!Array.isArray(t.volets)){const o={};
    Object.entries(t.volets).slice(0,12).forEach(([k,v])=>{const n=Math.trunc(Number(v));if(/^[a-z]{1,20}$/.test(k)&&n>=0&&n<=3)o[k]=n});t.volets=o}
@@ -1420,7 +1424,7 @@ function teinteClasse(nom){const c=classeDe(catalog.classes,nom);return c&&c.tin
 function talentRow(t,i){const carte=document.createElement('div');carte.className='cat-carte';
  const [cle,court,nature]=talentType(t),mj=view==='mj';
  const p=document.createElement('span');p.className='cat-pill gear-carre talent-carre t-'+cle;p.setAttribute('role','button');p.tabIndex=0;
- const logo=logoTalent({logo:remplaceElement(t.logo||'',ELEMENTS[0])});
+ const vu=t.elementaire===true?talentPourElement(t,ELEMENTS[0]):t,logo=logoTalent({logo:remplaceElement(vu.logo||'',ELEMENTS[0])});
  if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=GLYPHES_TALENT[t.type]||'✦';p.append(g)}
  const b=document.createElement('span');b.className='t-badge';b.textContent=court;p.append(b);
  p.setAttribute('aria-label',(mj?'Modifier ':'')+nomEnClair(t.name)+', '+nature);
@@ -1672,6 +1676,9 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +sel('Rangée à la table','rangee',t.rangee||'',[['','Selon le type'],['attaques','Attaques — grand bouton à deux lignes'],
    ['reactions','Réactions — la ligne dessous'],['aucune','Aucune — passifs et améliorations, sur la fiche seulement']])+'</div>'
   +'<div id="famille-autre" hidden><label>Nom de la nouvelle classe<input name="familleLibre" maxlength="60" value=""></label></div>'
+  /* Un talent élémentaire choisit un logo par élément : ils remplacent le logo unique, et
+     paraissent quand la case « Élémentaire » est cochée. */
+  +'<div class="edit-grid logos-elements t-seul" id="logos-elements" hidden>'+ELEMENTS.map(e=>selLogos('Logo · '+e.nom,'logo_'+e.cle,(t.logos||{})[e.cle]||'',true)).join('')+'</div>'
   // Un nom à accolades se lit ici sous chaque élément.
   +'<p class="nom-apercu" id="nom-apercu" hidden></p></section>'
   /* La spécialisation, la place dans l'arbre et le prérequis ne se règlent pas ici : c'est
@@ -1716,7 +1723,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  const menu=$('talent-form').elements.effet;
  menu.onchange=()=>{lisBrouillonTalent();talentDraft.effet=menu.value;dessineReglagesTalent()};
  // Élémentaire : l'état se retire des réglages, et l'aperçu du moteur dit « l'élément du Mystique ».
- if(champs.elementaire)champs.elementaire.onchange=()=>{lisBrouillonTalent();dessineReglagesTalent()};
+ if(champs.elementaire)champs.elementaire.onchange=()=>{lisBrouillonTalent();dessineReglagesTalent();poseLogosElements()};
  // Le nom à accolades, sous chaque élément.
  const nomApercu=()=>{const v=champs.name.value,p=$('nom-apercu'),oui=aDesAccolades(v);p.hidden=!oui;
   if(oui)p.textContent='Selon l’élément : '+ELEMENTS.map(e=>remplaceElement(v,e)).join(' · ')};
@@ -1726,6 +1733,17 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  const apercu=document.createElement('img');apercu.className='logo-equip apercu';apercu.alt='';
  const montre=()=>{const l=remplaceElement(menuLogo.value,ELEMENTS[0]);apercu.hidden=!l;if(l)apercu.src=imgUrl(fichierLogo(l))};
  menuLogo.parentNode.append(apercu);montre();menuLogo.onchange=montre;
+ /* Élémentaire, le logo unique cède la place aux trois de ses éléments, chacun avec son
+    aperçu. Vides à l'ouverture, ils reprennent ce que le logo unique donnait déjà pour
+    chaque élément : on ne part pas de rien. */
+ const apercus=ELEMENTS.map(e=>{const m=champs['logo_'+e.cle],im=document.createElement('img');im.className='logo-equip apercu';im.alt='';
+  const voir=()=>{im.hidden=!m.value;if(m.value)im.src=imgUrl(fichierLogo(m.value))};m.parentNode.append(im);m.onchange=voir;return voir});
+ const poseLogosElements=()=>{const oui=!!(champs.elementaire&&champs.elementaire.checked);
+  $('logos-elements').hidden=!oui;menuLogo.closest('label').hidden=oui;
+  if(oui)ELEMENTS.forEach((e,k)=>{const m=champs['logo_'+e.cle];if(m.value)return;
+   const vu=talentPourElement({name:'',logo:menuLogo.value,elementaire:true},e).logo;if(LOGOS_TOUS.includes(vu))m.value=vu;apercus[k]()});
+  apercus.forEach(v=>v())};
+ poseLogosElements();
  dessineReglagesTalent();
  $('delete-talent').hidden=i===null;talentDialog.showModal()}
 $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
@@ -1741,6 +1759,10 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.type=f.type.value;t.level=num(f.level.value,1,20);
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
  t.logo=f.logo&&(LOGOS_TOUS.includes(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';
+ /* Élémentaire : un logo par élément ; le premier donné sert aussi de logo unique, là où
+    aucun élément n'est encore choisi. Sans la case, ils s'effacent. */
+ const logos={};if(f.elementaire&&f.elementaire.checked)ELEMENTS.forEach(e=>{const v=f['logo_'+e.cle]&&f['logo_'+e.cle].value;if(LOGOS_TOUS.includes(v))logos[e.cle]=v});
+ if(Object.keys(logos).length){t.logos=logos;t.logo=logos[ELEMENTS.find(e=>logos[e.cle]).cle]}else delete t.logos;
  t.rangee=f.rangee&&['attaques','reactions','aucune'].includes(f.rangee.value)?f.rangee.value:'';
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
  t.effet=TALENTS_CODES[f.effet.value]&&f.effet.value!=='bonus'?f.effet.value:'';
@@ -2800,8 +2822,8 @@ const nomLogo=l=>{if(NOMS_LOGOS[l])return NOMS_LOGOS[l];
   if(t&&v)return t[2]+(/^[aeiouéèêh]/i.test(v[1])?' d’':' de ')+v[1].toLowerCase()}let n=String(l||'').replace(/^(weapon|spell|item|attack)_/,'').replace(/[_-]+/g,' ');
  if(n===n.toUpperCase()&&!/^DEF\b/.test(n))n=n.toLowerCase();return n?n[0].toUpperCase()+n.slice(1):''};
 // Un menu de logos en familles : un groupe par famille, « — aucun — » en tête.
-function selLogos(label,key,value){return '<label>'+label+'<select name="'+key+'"><option value="">— aucun —</option>'
- +FAMILLES_LOGOS.filter(([,l])=>l.length).map(([f,l])=>'<optgroup label="'+esc(f)+'">'+l.map(v=>'<option value="'+esc(v)+'"'+(v===value?' selected':'')+'>'+esc(nomLogo(v))+'</option>').join('')+'</optgroup>').join('')
+function selLogos(label,key,value,sansElementaires){return '<label>'+label+'<select name="'+key+'"><option value="">— aucun —</option>'
+ +FAMILLES_LOGOS.filter(([,l])=>l.length&&!(sansElementaires&&l===LOGOS_ELEMENTAIRES)).map(([f,l])=>'<optgroup label="'+esc(f)+'">'+l.map(v=>'<option value="'+esc(v)+'"'+(v===value?' selected':'')+'>'+esc(nomLogo(v))+'</option>').join('')+'</optgroup>').join('')
  +'</select></label>'}
 // Le menu de logos d'un objet dépend de sa catégorie : une arme ou une armure choisit parmi
 // les weapon_*, une munition parmi les deux (le carquois de flèches est un weapon_*), tout

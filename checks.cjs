@@ -2812,4 +2812,13 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("palier:paliersDe(talent)>1?(talent.palier||1):0,")&&page.includes("geste(nomAvecPalier(b.texte,b.talent.name,b.palier),"),'le chiffre du palier sur les boutons de la table');
  assert.ok(src.includes("if(!bonus&&a&&paliersDe(t)>1&&palierDe(a,t))nom.append(palierRomain(palierDe(a,t)));")&&src.includes("if(paliersDe(t)>1&&palierDe(a,t))pill.querySelector('.nom').append(palierRomain(palierDe(a,t)));")
   &&src.includes("const nom=nomAvecPalier(t.texte,t.talent.name,t.palier);nom.className='nom';")&&css.includes(".palier-romain{margin-left:.3em;font-family:'Killam',Georgia,serif;"),'dans la bulle et sur la fiche, en Killam');}
-console.log('1691 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.300 — Un talent élémentaire choisit un logo par élément ; sans logo propre, l'ancien
+   logo suit l'élément comme avant. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8');
+ const t={name:'Orbes de {élément}',elementaire:true,logo:'spell_orbes_feu',logos:{feu:'a_feu',gel:'b_glace'}};
+ assert.deepEqual(C.ELEMENTS.map(e=>C.talentPourElement(t,e).logo),['a_feu','b_glace','spell_orbes_foudre'],'le logo de l’élément, sinon celui qui suit');
+ assert.ok(src.includes("+'<div class=\"edit-grid logos-elements t-seul\" id=\"logos-elements\" hidden>'+ELEMENTS.map(e=>selLogos('Logo · '+e.nom,'logo_'+e.cle,(t.logos||{})[e.cle]||'',true)).join('')+'</div>'")
+  &&src.includes("$('logos-elements').hidden=!oui;menuLogo.closest('label').hidden=oui;")
+  &&src.includes("if(Object.keys(logos).length){t.logos=logos;t.logo=logos[ELEMENTS.find(e=>logos[e.cle]).cle]}else delete t.logos;")
+  &&src.includes("function selLogos(label,key,value,sansElementaires){")&&src.includes("ELEMENTS.forEach(e=>{const v=t.logos[e.cle];if(typeof v==='string'&&v&&v.length<=100)o[e.cle]=v});"),'trois menus de logo, un par élément, enregistrés et relus');}
+console.log('1693 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

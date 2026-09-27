@@ -1187,10 +1187,11 @@ const estElementaire=t=>!!t&&(t.elementaire===true||[t.name,t.effects,t.logo,...
 function talentPourElement(t,e){if(!t||!e||!estElementaire(t))return t;
  const etat=p=>t.elementaire===true&&p&&typeof p==='object'&&'etat' in p?{...p,etat:e.etat}:p;
  const pal={};Object.entries(t.paliers||{}).forEach(([n,p])=>{if(p&&typeof p==='object')pal[n]={...p,effects:remplaceElement(p.effects,e),...(p.params?{params:etat(p.params)}:{})}});
- /* Le logo suit aussi : {logo} se remplit, et un logo choisi à un élément fixe (…_feu, …_gel,
-    …_foudre) passe à celui du porteur. */
+ /* Le logo suit aussi : celui que le MJ a choisi pour cet élément, s'il y en a un ; sinon {logo}
+    se remplit, et un logo choisi à un élément fixe (…_feu, …_gel, …_foudre) passe à celui du porteur. */
+ const propre=t.logos&&typeof t.logos==='object'&&typeof t.logos[e.cle]==='string'?t.logos[e.cle]:'';
  const logo=remplaceElement(t.logo,e),suffixe=new RegExp('_('+ELEMENTS.map(x=>x.logo).join('|')+')$');
- return {...t,name:remplaceElement(t.name,e),effects:remplaceElement(t.effects,e),logo:typeof logo==='string'?logo.replace(suffixe,'_'+e.logo):logo,params:etat(t.params),paliers:pal,elementVu:e.cle}}
+ return {...t,name:remplaceElement(t.name,e),effects:remplaceElement(t.effects,e),logo:propre||(typeof logo==='string'?logo.replace(suffixe,'_'+e.logo):logo),params:etat(t.params),paliers:pal,elementVu:e.cle}}
 // Les talents d'un combattant, chacun tel qu'il joue : à son élément, puis à son palier.
 function talentsAuPalier(a,talents){const e=elementDe(a);return talentsTenus(a&&a.talents,talents).map(t=>talentAuPalier(talentPourElement(t,e),palierDe(a,t)))}
 // Ce qu'a coûté l'arbre d'un aventurier : chaque palier acquis, au prix que le talent en demande.
