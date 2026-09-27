@@ -1007,7 +1007,7 @@ assert.ok(page.includes(".eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title
 /* Le journal se vide et s'écrit ; les lignes ne disent plus « Coma » mais 💀 ; la fiche tient dans sa colonne. */
 assert.ok(page.includes('id="journal-chat"')&&page.includes('function logChat(')&&vivant.includes("rec.effet==='vider'&&duMJ"),'le journal s’écrit et se vide');
 assert.ok(!page.includes("' Coma.'")&&page.includes("' 💀'")&&!page.includes('Les dés ne passent pas la DEF'),'💀 et rien de plus');
-assert.ok(src.includes('function talentPill(t,compact)')&&src.includes("talentPill(t,true)")&&feuille.includes('.talent-grille .cat-pill{'),'les talents de la fiche sont compacts');
+assert.ok(src.includes('function talentPill(t,compact)')&&src.includes("talentPill(tv,true)")&&feuille.includes('.talent-grille .cat-pill{'),'les talents de la fiche sont compacts');
 assert.ok(page.includes('minmax(0,1fr) 340px')&&page.includes('minmax(0,1fr) 380px'),'la colonne de droite s’élargit');
 /* L'orbe et la flèche volent avant que les dégâts tombent ; l'œil de la troupe ; le journal épuré. */
 assert.ok(page.includes('function volFleche(')&&vivant.includes("rec.effet==='fleche'")&&page.includes("diffuserEffet('fleche',a,actors[j],null)")
@@ -1304,7 +1304,7 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  &&src.includes("if(view==='mj'){let acquis=false;troupe.forEach(a=>{if(assureMaitrises(a))acquis=true});if(acquis)scheduleSave()}")
  &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):'';")&&src.includes("+sel('Spécialisation','voie',t.voie||'',optionsVoie(famille,t.voie||''))")
  &&src.includes("if(voie&&!connues.includes(voie)&&connues.length>=VOIES_MAX){alert(")&&src.includes('t.voie=voie;if(voie)enregistreVoie(t.famille,voie);')&&!src.includes("v.className='tag voie';v.textContent=t.voie;")
- &&src.includes("const verrou=!a||acquis?'':(libre?'':verrouEtages(a.talents,etages,t))||manqueTalent(a.talents,t,catalog.talents);")
+ &&src.includes("const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouEtages(a.talents,etages,t))||manqueTalent(a.talents,t,catalog.talents);")
  &&src.includes("n.noteBulle='Maîtrise de classe, acquise avec la classe.';")
  &&feuille.includes('#arbres{width:min(1180px,96vw)}')&&feuille.includes('.arbre-noeud::before{content:\'\';display:block;width:3px;height:18px;')&&feuille.includes('.arbre-noeud.premier::before,.arbre-maitrises .arbre-noeud::before{display:none}')
  &&feuille.includes('.arbre-titre{width:100%;')&&feuille.includes('clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),50% 100%,0 calc(100% - 8px))}')
@@ -1421,7 +1421,7 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
  /* Trois colonnes, toujours : plus de colonne « + Spécialisation », et les génériques ont leur
     propre arbre au lieu d'encombrer celui d'une classe. */
  &&!src.includes('+ Spécialisation')&&!src.includes('arbre-col nouvelle')
- &&src.includes(" (classe?colonnesArbre(classe):[]).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
+ &&src.includes(" (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
  &&!src.includes("grille.append(colonne(colonneArbre(GENERIQUES,GENERIQUES,")
  &&src.includes("const oublier=(t,racines)=>{")&&src.includes("const chute=racines.includes(t)?racines.slice(racines.indexOf(t)):[t];")
  &&feuille.includes('.glisse .arbre-entre{height:12px;margin:3px 0;border:1px dashed var(--line-strong)}')&&feuille.includes('.arbre-enfants{display:flex;justify-content:center;align-items:flex-start;width:100%}')
@@ -1470,7 +1470,7 @@ assert.equal(C.effetParNom(''),'');
 assert.equal(C.etatDesOrbes([{code:C.TALENTS_CODES.orbesfeu,params:{etat:'Feu'}}]),'Feu');
 assert.ok(page.includes('function volOrbe(de,vers,couleur,etat)')&&page.includes("const el=document.createElement('span');el.className='orbe-vol'+(etat==='Feu'?' feu':'');")
  &&page.includes("el.style.setProperty('--orbe',TEINTE_ORBE[etat]||'#9b7ad4');")&&page.includes("const TEINTE_ORBE={Feu:'#ff6a2c',")
- &&page.includes('const duree=volOrbe(a,b,des.couleur,etat);')&&page.includes("diffuserEffet('orbe',a,b,des.couleur+(etat?'|'+etat:''));")
+ &&page.includes('const duree=volOrbe(a,b,des.couleur,teinte);')&&page.includes("diffuserEffet('orbe',a,b,des.couleur+(teinte?'|'+teinte:''));")
  &&vivant.includes("const [couleur,etat]=(typeof rec.logo==='string'?rec.logo:'').split('|');")
  &&page.includes('.orbe-vol.feu::after{content:')&&page.includes('@keyframes flamme{'),'l’orbe porte son état, et le feu flambe');
 /* La description d'un équipement s'ouvre sur la fiche où l'on a cliqué, et nulle part ailleurs :
@@ -2052,7 +2052,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.equal(ctx.reposerPiece(a,items[3]),true);assert.equal(a.armures.filter(x=>x==='r').length,2);
  assert.equal(ctx.equiperPiece(a,items[4]),true);assert.equal(ctx.reposerPiece(a,items[4]),true);assert.equal(ctx.reposerPiece(a,items[4]),false);
  assert.equal(ctx.equiperPiece(a,{id:'zz',category:'object'}),false);assert.equal(ctx.reposerPiece(a,null),false);
- assert.ok(src.includes('function corpsEtSac(a){')&&src.includes(" c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),sousTitre('Richesses'),blocRichesses(a),titreTal,talentPills(a));return c}")
+ assert.ok(src.includes('function corpsEtSac(a){')&&src.includes(" c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a),titreTal,talentPills(a));return c}")
   &&src.includes("function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){")&&src.includes("const p=carreDeFiche(a,o,n,tout,portes,peutEquiper);")
   &&src.includes("return main?equiperDansMain(a,o,main):equiperPiece(a,o)});\n  recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}")
   &&src.includes("if(corps!==undefined&&equipable){p.draggable=true;")&&src.includes("const SILHOUETTE='<img class=\"silhouette\" src=\"'+imgUrl('PERSO.png')+'\"")&&feuille.includes('.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);object-fit:contain;object-position:center;')
@@ -2353,7 +2353,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("if(finit)actors.forEach(a=>{if(a.hero)a.reposPris=false});"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos" id="repos" hidden>⛺ Repos court</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
   &&page.includes(":a.reposPris?'Repos déjà pris : il reviendra à la fin du prochain combat.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposPris=true;")
-  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee'];"),'le Repos court');
+  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element'];"),'le Repos court');
 }
 /* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
    une arme prise remplace celle de la main droite ; lâchée sur une main, elle prend cette main.
@@ -2529,8 +2529,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual([...lire('LOGOS_ETATS'),...lire('LOGOS_DIVERS')].map(l=>l+ext(l)).sort(),autres,'LOGOS_ETATS et LOGOS_DIVERS doivent lister les autres images : '+autres.join(', '));
  assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("im.src=imgUrl(fichierLogo(l));")
   &&src.includes("function logoTalent(t,cls){return logoImage(t&&t.logo,LOGOS_TOUS,cls)}")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
-  &&src.includes(" t.logo=f.logo&&LOGOS_TOUS.includes(f.logo.value)?f.logo.value:'';")
-  &&src.includes("const FAMILLES_LOGOS=[['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
+  &&src.includes(" t.logo=f.logo&&(LOGOS_TOUS.includes(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';")
+  &&src.includes("const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
  const ctxL={};vm.createContext(ctxL);vm.runInContext(src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
  assert.deepEqual(['BLINDAGE INITIAL','SAIGNEE','DEF 3','weapon_cape_elfique','DEGATS'].map(ctxL.nomLogo),['Blindage initial','Saignée','DEF 3','Cape elfique','Dégâts']);
  assert.ok(src.includes("surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'")&&!src.includes("b.title=t.name+' — '+[talentType(t)[2]")
@@ -2566,8 +2566,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.normaliseDomaine(null).ressources,{});
  assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
  assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
-  &&src.includes("const RESSOURCES=[...MATERIAUX].sort((x,y)=>x.localeCompare(y,'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee'];"),'les richesses se relisent et voyagent en direct');
- assert.ok(src.includes("function grilleGemmes(compte,poser,qui){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
+  &&src.includes("const RESSOURCES=[...MATERIAUX].sort((x,y)=>x.localeCompare(y,'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element'];"),'les richesses se relisent et voyagent en direct');
+ assert.ok(src.includes("function grilleGemmes(compte,poser,qui,opts){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
   &&fief.includes("function renderDomRessources(){")&&fief.includes("const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;")
   &&fief.includes("MATERIAUX.filter(m=>m!=='Or').forEach(m=>{"),'les compteurs : sur la carte de l’aventurier, au domaine');
  const ctxP={lisCompte:C.lisCompte};vm.createContext(ctxP);vm.runInContext(src.slice(src.indexOf('function poseCompte('),src.indexOf('// Les richesses d\'un aventurier, sur sa carte')),ctxP);
@@ -2588,7 +2588,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const a={richesses:{or:20}};assert.deepEqual(C.peutAcheter(a,{price:15,magasin:true}),{ok:true,prix:15,manque:0,enVente:true});
  assert.deepEqual(C.peutAcheter(a,{price:25,magasin:true}),{ok:false,prix:25,manque:5,enVente:true});assert.equal(C.peutAcheter(a,{price:5}).ok,false,'hors magasin, pas d’achat');
  assert.equal(C.ajouteOr(a,-15),5);assert.equal(C.ajouteOr(a,-9),0);assert.deepEqual(a.richesses,{},'l’or ne descend pas sous zéro, et un compte nul disparaît');assert.equal(C.ajouteOr(a,3),3);
- assert.ok(vivant.includes("'richesses','lieuDomaine','paliersTalents','defBrisee'];")&&fief.includes("const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');")
+ assert.ok(vivant.includes("'richesses','lieuDomaine','paliersTalents','defBrisee','element'];")&&fief.includes("const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');")
   &&fief.includes("if(typeof enLigne!=='undefined'&&enLigne)return typeof monSiege!=='undefined'&&monSiege===a.id;"),'le lieu voyage avec l’aventurier, et son joueur seul le déplace');
  assert.ok(fief.includes("function blocDeplacements(b){const troupe=actors.filter(a=>a.hero);if(!troupe.length||!batimentConstruit(b))return null;")
   &&fief.includes("quoi.textContent=ici?'Ici':'S’y déplacer';")&&fief.includes("function finFiche(boite,b){")&&(fief.match(/boite\.append\(qui\);finFiche\(boite,b\)\}/g)||[]).length===2,'un bouton par aventurier, sur chaque fiche');
@@ -2605,7 +2605,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(C.valeurGemme('eclat','rubis',true),0,'une éteinte n’a pas de prix');
  assert.equal(C.valeurGemmes({or:999,'brisure-citrine':2,'eclat-rubis':1,'brome-diamant':1,'brome-diamant-eteinte':4}),610);
  assert.equal(C.nomGemme('brisure','citrine',false),'Brisures de citrine');
- assert.ok(src.includes("VARIETES_GEMMES.forEach(([v,nv])=>{const r=corps.insertRow();r.className='g-'+v;")&&src.includes("if(total){const c=t.createCaption();c.textContent='Valeur des gemmes'+(GEMMES_ETEINTES?' allumées':'')+' : '")
+ assert.ok(src.includes("varietes.forEach(([v,nv])=>{const r=corps.insertRow();r.className='g-'+v;")&&src.includes("if(total){const c=t.createCaption();c.textContent='Valeur des gemmes'+(GEMMES_ETEINTES?' allumées':'')+' : '")
   &&fs.readFileSync('editor.css','utf8').includes('.g-citrine{--g:#e2b12a}'),'la grille par variété, et sa valeur');}
 /* v0.286 — Les icônes des gemmes : img/ressource_<taille>_<variété>.png, déclarées comme les autres
    logos, dans chaque case de la grille et en tête de chaque variété ; grises pour les éteintes. */
@@ -2643,11 +2643,11 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[2],'le moteur joue le palier tenu');
  assert.deepEqual(C.normalisePaliersActeur({talents:['o','p'],paliersTalents:{o:3,p:1,q:2,r:'x'}}),{o:3},'un palier 1 ne s’écrit pas ; un talent oublié perd le sien');
  assert.ok(fs.readFileSync('combat.js','utf8').includes("function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)")
-  &&page.includes("function talentsCodes(a){return talentsAuPalier(a,typeof catalog!=='undefined'?catalog.talents:[])")&&vivant.includes("'lieuDomaine','paliersTalents','defBrisee'];"),'la table et les bonus jouent le palier ; il voyage en direct');
+  &&page.includes("function talentsCodes(a){return talentsAuPalier(a,typeof catalog!=='undefined'?catalog.talents:[])")&&vivant.includes("'lieuDomaine','paliersTalents','defBrisee','element'];"),'la table et les bonus jouent le palier ; il voyage en direct');
  assert.ok(src.includes("a.paliersTalents=normalisePaliersActeur(a);")&&src.includes(" c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(99,coutPalier(t,n)));"),'paliers relus, au catalogue et sur la fiche');
  assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("<th scope=\"row\">Coût (PT)</th>")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")
   &&src.includes(" t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")
-  &&src.includes("t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={}}")&&feuille.includes('.paliers-table{'),'l’éditeur : une colonne par palier, le coût en PT');
+  &&src.includes("t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={};delete t.elementaire}")&&feuille.includes('.paliers-table{'),'l’éditeur : une colonne par palier, le coût en PT');
  assert.ok(src.includes("if(max>1){pts=document.createElement('span');pts.className='arbre-paliers';")&&src.includes("poserPalier(t,k+1);note('')}")
   &&src.includes("const montres=!a||k===0?[1]:k>=max?[k]:[k,k+1];")&&src.includes("m.innerHTML=phraseTalent(t.effet,tp.params,n);")
   &&src.includes("a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);")&&feuille.includes('.arbre-paliers i.on{')&&feuille.includes('.paliers-bulle.n2{grid-template-columns:1fr auto 1fr}'),'l’arbre : points, clic, « − », bulle comparée');}
@@ -2667,7 +2667,34 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes(" const double=brise.double&&!r.failed,total=double?r.damage*2:r.damage;")
   &&page.includes("const brisee=brise.perte&&!r.failed?brise.perte:0;if(brisee)b.defBrisee=(Math.trunc(Number(b.defBrisee))||0)+brisee;")
   &&page.includes("reduction:r.reduction,double,total},suite);")&&page.includes("if(detail.double)plus('× 2 — Brise','double');")
-  &&vivant.includes("reduction:detail.reduction||0,double:!!detail.double,total:detail.total||0}")&&vivant.includes("'paliersTalents','defBrisee'];"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
+  &&vivant.includes("reduction:detail.reduction||0,double:!!detail.double,total:detail.total||0}")&&vivant.includes("'paliersTalents','defBrisee','element'];"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
  assert.ok(src.includes("montres.forEach((n,i)=>{if(i){const f=document.createElement('span');f.className='palier-fleche';f.textContent='→';")
   &&fs.readFileSync('editor.css','utf8').includes('.palier-fleche{'),'la flèche entre le palier tenu et le suivant');}
-console.log('1628 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.290 — Le Mystique choisit un élément — Feu, Gel, Foudre —, au MJ de le fixer. Ses talents
+   élémentaires s'écrivent une fois, avec des accolades ; leur état suit l'élément ; la colonne
+   « Élémentaire » peut naître de la fusion des trois colonnes d'avant. Les gemmes d'un aventurier
+   ne montrent que ce qu'il a, sans cases ; le « + » du MJ lui ajoute or et gemmes. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ assert.deepEqual(C.ELEMENTS.map(e=>[e.cle,e.etat,e.mot,e.logo]),[['feu','Feu','feu','feu'],['gel','Gel','glace','gel'],['foudre','Foudre','foudre','foudre']]);
+ assert.equal(C.classeElementaire('Mystique'),true);assert.equal(C.classeElementaire('Gardien'),false);
+ const [F,G,Z]=C.ELEMENTS;
+ assert.deepEqual([F,G,Z].map(e=>C.remplaceElement('Brise{mot} · {Mot} · {élément} · {element} · {état} · spell_orbes_{logo}',e)),
+  ['Brisefeu · Feu · Feu · Feu · Feu · spell_orbes_feu','Briseglace · Glace · Gel · Gel · Gel · spell_orbes_gel','Brisefoudre · Foudre · Foudre · Foudre · Foudre · spell_orbes_foudre']);
+ assert.equal(C.remplaceElement('Brise{mot}',null),'Brise{mot}');
+ const t={id:'b',name:'Brise{mot}',effet:'brise',elementaire:true,params:{etat:'Feu',perte:1},effects:'Contre {état}',logo:'spell_orbes_{logo}',paliers:{2:{effects:'',params:{etat:'Feu',perte:2}}}};
+ const g=C.talentPourElement(t,G);
+ assert.deepEqual([g.name,g.effects,g.logo,g.params.etat,g.paliers[2].params.etat,g.paliers[2].params.perte],['Briseglace','Contre Gel','spell_orbes_gel','Gel','Gel',2],'élémentaire : mots, logo et état suivent');
+ const libre={...t,elementaire:undefined};assert.equal(C.talentPourElement(libre,G).params.etat,'Feu','sans la case, l’état réglé reste');
+ const neutre={id:'x',name:'Forge',params:{etat:'Feu'}};assert.equal(C.talentPourElement(neutre,G),neutre);assert.equal(C.estElementaire(neutre),false);assert.equal(C.estElementaire(libre),true);
+ assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefoudre','Foudre',2]],'la table joue l’élément, puis le palier');
+ assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element'];")&&vivant.includes("'defBrisee','element'];")
+  &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
+ assert.ok(src.includes("function choixElement(a,classe){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
+  &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tv=vu(t),logo=logoTalent(tv);")&&src.includes("const tp=talentAuPalier(vu(t),n),col=")
+  &&src.includes("function fusionElementaire(classe){")&&src.includes(".filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")&&src.includes("const e0=base.element,accolade=s=>typeof s==='string'?s.split(e0.nom).join('{élément}').split(e0.mot).join('{mot}'):s;")
+  &&src.includes("name=\"elementaire\"")&&src.includes("rangee.forEach(t=>{const tv=talentPourElement(t,elementDe(a)),pill=talentPill(tv,true);"),'l’arbre, la fiche et l’éditeur suivent l’élément');
+ assert.ok(src.includes(".filter(r=>ELEMENTS.every(e=>LOGOS_TOUS.includes(r+'_'+e.logo))).map(r=>r+'_{logo}');")&&page.includes("const teinte=etat||(elementDe(a)||{}).etat||'';"),'le logo et l’orbe suivent l’élément ; les dés restent les leurs');
+ assert.ok(src.includes("const tailles=possedees?TAILLES_GEMMES.filter(([ta])=>VARIETES_GEMMES.some(([v])=>a(ta,v))):TAILLES_GEMMES;")&&src.includes("if(!tailles.length||!varietes.length)return null;")
+  &&src.includes("const g=grilleGemmes(a.richesses,poser,a.name,{possedees:true});")&&src.includes("function openRichesses(a){if(view!=='mj'||!a)return;")
+  &&src.includes("poseCompte(a.richesses,k,(a.richesses[k]||0)+signe*n);")&&fs.readFileSync('editor.css','utf8').includes('table.gemmes.nue td{background:none;border:0;'),'les gemmes possédées, sans cases, et le « + » du MJ');}
+console.log('1643 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

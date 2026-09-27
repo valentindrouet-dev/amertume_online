@@ -1128,8 +1128,29 @@ function talentAuPalier(t,n){if(!t)return t;n=Math.max(1,Math.min(paliersDe(t),M
  return n===1?t:{...t,params,effects,palier:n}}
 function palierDe(a,t){if(!a||!t||!(a.talents||[]).includes(t.id))return 0;
  const n=Math.trunc(Number((a.paliersTalents||{})[t.id]))||1;return Math.max(1,Math.min(paliersDe(t),n))}
-// Les talents d'un combattant, chacun tel qu'il joue à son palier.
-function talentsAuPalier(a,talents){return talentsTenus(a&&a.talents,talents).map(t=>talentAuPalier(t,palierDe(a,t)))}
+/* ---------- Les éléments du Mystique ---------- */
+/* Un Mystique choisit un élément — Feu, Gel ou Foudre — et ses talents élémentaires le suivent.
+   Un talent s'écrit une fois, avec des accolades que l'élément remplit : {élément} Feu, Gel,
+   Foudre ; {mot} feu, glace, foudre — Brise{mot} fait Brisefeu, Briseglace, Brisefoudre ;
+   {Mot} la même chose, capitale en tête ; {logo} feu, gel, foudre, pour spell_orbes_{logo}.
+   Un talent coché « élémentaire » voit en plus son état réglé suivre celui de l'élément. */
+const ELEMENTS=[{cle:'feu',nom:'Feu',etat:'Feu',mot:'feu',logo:'feu'},{cle:'gel',nom:'Gel',etat:'Gel',mot:'glace',logo:'gel'},{cle:'foudre',nom:'Foudre',etat:'Foudre',mot:'foudre',logo:'foudre'}];
+const CLASSES_ELEMENTAIRES=['mystique'];
+const classeElementaire=c=>CLASSES_ELEMENTAIRES.includes(cleTalent(c));
+const elementDe=a=>ELEMENTS.find(e=>e.cle===(a&&a.element))||null;
+const ACCOLADES=/\{(élément|element|état|etat|mot|Mot|logo)\}/g;
+const aDesAccolades=s=>typeof s==='string'&&/\{(élément|element|état|etat|mot|Mot|logo)\}/.test(s);
+function remplaceElement(texte,e){if(!e||!aDesAccolades(texte))return texte;
+ return texte.replace(ACCOLADES,(m,k)=>k==='mot'?e.mot:k==='Mot'?e.mot[0].toUpperCase()+e.mot.slice(1):k==='logo'?e.logo:e.nom)}
+// Un talent qui suit l'élément : coché élémentaire, ou écrit avec des accolades.
+const estElementaire=t=>!!t&&(t.elementaire===true||[t.name,t.effects,t.logo,...Object.values(t.paliers||{}).map(p=>p&&p.effects)].some(aDesAccolades));
+// Le talent tel que le voit et le joue un porteur de cet élément : ses mots remplis, son état réglé sur l'élément.
+function talentPourElement(t,e){if(!t||!e||!estElementaire(t))return t;
+ const etat=p=>t.elementaire===true&&p&&typeof p==='object'&&'etat' in p?{...p,etat:e.etat}:p;
+ const pal={};Object.entries(t.paliers||{}).forEach(([n,p])=>{if(p&&typeof p==='object')pal[n]={...p,effects:remplaceElement(p.effects,e),...(p.params?{params:etat(p.params)}:{})}});
+ return {...t,name:remplaceElement(t.name,e),effects:remplaceElement(t.effects,e),logo:remplaceElement(t.logo,e),params:etat(t.params),paliers:pal,elementVu:e.cle}}
+// Les talents d'un combattant, chacun tel qu'il joue : à son élément, puis à son palier.
+function talentsAuPalier(a,talents){const e=elementDe(a);return talentsTenus(a&&a.talents,talents).map(t=>talentAuPalier(talentPourElement(t,e),palierDe(a,t)))}
 // Ce qu'a coûté l'arbre d'un aventurier : chaque palier acquis, au prix que le talent en demande.
 function ptDepenses(a,talents){return talentsTenus(a&&a.talents,talents).reduce((s,t)=>{let n=0;for(let i=1;i<=palierDe(a,t);i++)n+=coutPalier(t,i);return s+n},0)}
 // Les paliers retenus : un entier de 2 au plafond, pour un talent appris ; le reste s'efface.
@@ -1543,6 +1564,6 @@ const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatie
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
- DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,briseContre,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,paliersDe,coutPalier,talentAuPalier,palierDe,talentsAuPalier,ptDepenses,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,briseContre,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,estElementaire,talentPourElement,palierDe,talentsAuPalier,ptDepenses,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

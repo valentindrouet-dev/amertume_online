@@ -1168,3 +1168,17 @@ i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #00
 .paliers-table tbody th{font-size:13px;font-weight:500;color:var(--muted);text-align:left;vertical-align:top;padding-top:7px}
 .paliers-table input,.paliers-table select,.paliers-table textarea{width:100%;box-sizing:border-box;margin:0}
 .paliers-table textarea{resize:vertical;min-height:5.5em}
+/* Sur la carte d'un aventurier, les gemmes sans cases : seulement ce qu'il possède. */
+table.gemmes.nue{width:auto;table-layout:auto;margin:0}
+table.gemmes.nue td{background:none;border:0;padding:1px 10px 1px 4px;min-width:3.4em}
+table.gemmes.nue thead th{text-align:center}
+/* L'élément du Mystique, au-dessus de son arbre : trois boutons, celui de l'aventurier allumé. */
+.elements-bloc{display:flex;flex-direction:column;align-items:center;gap:4px;margin:6px 0 2px}
+.elements-choix{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.element-bouton{display:flex;align-items:center;gap:6px;padding:4px 13px 4px 6px;border-radius:18px;font:700 12px system-ui;letter-spacing:1.5px;text-transform:uppercase;margin:0}
+.element-bouton .element-ico{width:22px;height:22px;margin:0}
+.element-bouton.on{border-color:var(--el);color:var(--el);background:color-mix(in srgb,var(--el) 14%,transparent);box-shadow:0 0 0 1px var(--el) inset}
+.el-feu{--el:#d9532b}.el-gel{--el:#2f8fae}.el-foudre{--el:#b38a0a}
+.element-bouton:disabled{cursor:default;opacity:.45}.element-bouton.on:disabled{opacity:1}
+.elements-dit{margin:0;font-size:12.5px}.elements-fusion{margin-top:4px}
+.accolades-aide{font-size:12px;margin:2px 0 8px}

@@ -12,7 +12,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.paliersTalents=normalisePaliersActeur(a);a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
+function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.paliersTalents=normalisePaliersActeur(a);if(a.element!==undefined&&!elementDe(a))delete a.element;a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
  a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};
  a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};
  a.checks=Array.isArray(a.checks)?POINTS_CLES.map((q,i)=>Math.max(0,Math.min(pointsMax(a,q),a.checks[i]===true?1:Math.trunc(Number(a.checks[i]))||0))):[0,0,0];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
@@ -523,16 +523,25 @@ function ligneOr(n,poser,qui){const l=document.createElement('div');l.className=
  const piece=document.createElement('i');piece.className='piece';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');
  const unite=document.createElement('span');unite.textContent='or';l.append(piece,v,unite);
  if(poser)champVif(v,()=>n,t=>poser('or',t),'Or'+(qui?' — '+qui:''),'petit');return l}
-function grilleGemmes(compte,poser,qui){const t=document.createElement('table');t.className='gemmes';
+/* « possedees » : sur la carte d'un aventurier, seulement les variétés et les tailles qu'il a,
+   sans cases autour des nombres — rien du tout s'il n'a aucune gemme. */
+function grilleGemmes(compte,poser,qui,opts){const possedees=!!(opts&&opts.possedees);
+ const a=(ta,v)=>(compte[cleGemme(ta,v,false)]||0)+(GEMMES_ETEINTES?(compte[cleGemme(ta,v,true)]||0):0);
+ const tailles=possedees?TAILLES_GEMMES.filter(([ta])=>VARIETES_GEMMES.some(([v])=>a(ta,v))):TAILLES_GEMMES;
+ const varietes=possedees?VARIETES_GEMMES.filter(([v])=>TAILLES_GEMMES.some(([ta])=>a(ta,v))):VARIETES_GEMMES;
+ if(!tailles.length||!varietes.length)return null;
+ const t=document.createElement('table');t.className='gemmes'+(possedees?' nue':'');
  // Une ligne par variété, de la moins chère à la plus chère ; une colonne par taille.
  const tete=t.createTHead().insertRow();tete.append(document.createElement('td'));
- TAILLES_GEMMES.forEach(([,nt])=>{const th=document.createElement('th');th.scope='col';th.textContent=nt;tete.append(th)});
+ tailles.forEach(([,nt])=>{const th=document.createElement('th');th.scope='col';th.textContent=nt;tete.append(th)});
  const corps=t.createTBody();
- VARIETES_GEMMES.forEach(([v,nv])=>{const r=corps.insertRow();r.className='g-'+v;
+ varietes.forEach(([v,nv])=>{const r=corps.insertRow();r.className='g-'+v;
   // En tête de ligne, la variété : sa plus grande gemme, et son nom.
   const th=document.createElement('th');th.scope='row';
   const nom=document.createElement('span');nom.textContent=nv;th.append(iconeDeGemme('brome',v,false),nom);r.append(th);
-  TAILLES_GEMMES.forEach(([ta])=>{const td=r.insertCell();
+  tailles.forEach(([ta])=>{const td=r.insertCell();
+   // Sans cases, une taille qu'il n'a pas dans cette variété reste vide.
+   if(possedees&&!a(ta,v))return;
    // Les éteintes ne se montrent que si elles sont de retour.
    [false,...(GEMMES_ETEINTES?[true]:[])].forEach(eteinte=>{const k=cleGemme(ta,v,eteinte),n=compte[k]||0,nom=nomGemme(ta,v,eteinte);
     const el=document.createElement(eteinte?'small':'b');el.className=(eteinte?'gem-eteinte':'gem-vive')+(n?'':' zero');
@@ -559,7 +568,27 @@ function blocRichesses(a){const out=document.createElement('div');out.className=
  a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);
  const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));
   rendrePlusTard();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}:null;
- out.append(ligneOr(a.richesses.or||0,poser,a.name),grilleGemmes(a.richesses,poser,a.name));return out}
+ const g=grilleGemmes(a.richesses,poser,a.name,{possedees:true});
+ out.append(ligneOr(a.richesses.or||0,poser,a.name));if(g)out.append(g);return out}
+/* Le « + » des richesses, au MJ : ajouter — ou retirer — de l'or ou des gemmes à un aventurier.
+   Le menu dit ce qu'il a déjà de chaque. */
+const richessesDialog=dialog('richesses-ajout','Richesses','<form id="richesses-form"><div class="edit-grid"><label>Quoi<select name="quoi" id="richesses-quoi"></select></label>'
+ +'<label>Quantité<input name="n" type="number" min="1" max="999999" step="1" value="1" required></label></div>'
+ +'<div class="form-actions"><button type="button" id="richesses-retirer">Retirer</button><button class="primary">Ajouter</button></div></form>');
+let richessesActeur=null;
+function openRichesses(a){if(view!=='mj'||!a)return;richessesActeur=a;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);
+ richessesDialog.querySelector('h2').textContent='Richesses de '+a.name;
+ const menu=$('richesses-quoi'),avant=menu.value;menu.replaceChildren();
+ const opt=(k,t)=>new Option(t+((a.richesses[k]||0)?' — '+(a.richesses[k]).toLocaleString('fr-FR'):''),k);
+ menu.add(opt('or','Or'));
+ TAILLES_GEMMES.forEach(([ta,nt])=>{const g=document.createElement('optgroup');g.label=nt;VARIETES_GEMMES.forEach(([v])=>g.append(opt(cleGemme(ta,v,false),nomGemme(ta,v,false))));menu.append(g)});
+ if(avant&&CLES_RICHESSES.includes(avant))menu.value=avant;
+ $('richesses-form').elements.n.value='1';richessesDialog.showModal()}
+function bougeRichesse(signe){const a=richessesActeur,f=$('richesses-form').elements;if(!a)return;
+ const k=f.quoi.value,n=lisCompte(f.n.value);if(!n||!CLES_RICHESSES.includes(k))return;
+ poseCompte(a.richesses,k,(a.richesses[k]||0)+signe*n);richessesDialog.close();
+ if(typeof renderHeroes==='function')renderHeroes();rendrePlusTard();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+$('richesses-form').onsubmit=e=>{e.preventDefault();bougeRichesse(1)};$('richesses-retirer').onclick=()=>bougeRichesse(-1);
 function heroCard(a,i){const c=document.createElement('article');c.className='hero-card';
  const tete=document.createElement('div');tete.className='hero-head';
  const jeton=document.createElement('span');jeton.className='avatar';
@@ -653,7 +682,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const titreKit=sousTitre('Équipement','Inventaire de '+a.name,view!=='mj'?null:()=>openPicker(a,'gear'));
  // Le rouage ouvre les arbres de la classe : les talents s'y choisissent de haut en bas.
  const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');
- c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),sousTitre('Richesses'),blocRichesses(a),titreTal,talentPills(a));return c}
+ c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a),titreTal,talentPills(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
  const troupe=actors.filter(a=>a.hero);
@@ -1247,12 +1276,13 @@ function talentPills(a){const out=document.createElement('div');out.className='t
     l'œuvre. Il porte désormais sa marque, et son dépliant dit ce qu'il attend. */
  const sansEffet=t=>typeof manqueTalent==='function'?manqueTalent(a.talents||[],t,catalog.talents):'';
  for(let i=0;i<liste.length;i+=2){const rangee=liste.slice(i,i+2),details=[];
-  rangee.forEach(t=>{const pill=talentPill(t,true);pill.classList.add('cliquable');
+  // Chaque talent tel que le porte cet aventurier : à son élément, s'il en a un.
+  rangee.forEach(t=>{const tv=talentPourElement(t,elementDe(a)),pill=talentPill(tv,true);pill.classList.add('cliquable');
    const manque=sansEffet(t);
    // Le chevron ne dépliait que l'ancien dépliant : sous la bulle, rien à déplier.
    if(!BULLES){const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev)}
    // La description, au palier que tient l'aventurier.
-   const k=palierDe(a,t),detail=talentDetail(talentAuPalier(t,k||1),false);detail.classList.add('large');
+   const k=palierDe(a,t),detail=talentDetail(talentAuPalier(tv,k||1),false);detail.classList.add('large');
    if(k>1){const pp=document.createElement('p');pp.className='palier-dit';pp.textContent='Palier '+k;detail.prepend(pp)}
    if(manque){pill.classList.add('sans-effet');
     const m=document.createElement('span');m.className='t-sans-effet';m.textContent='⚠';
@@ -1782,6 +1812,10 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<div class="t-seul"><h2 class="sous-titre">Effet appliqué par le moteur</h2>'
   +sel('Mécanique','effet',bonus?'':(t.effet||''),[['','— Aucun : talent descriptif —'],
    ...Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>[c.cle,libelleTalent(c.cle)])])
+  /* Élémentaire : pour le Mystique, l'état réglé suit l'élément choisi ; les accolades, elles,
+     se remplissent dans le nom, les textes et le logo de tout talent. */
+  +'<label class="field-check"><input type="checkbox" name="elementaire" '+(t.elementaire===true?'checked':'')+'>Élémentaire — l’état réglé suit l’élément du Mystique</label>'
+  +'<p class="muted accolades-aide">Accolades : {élément} Feu · Gel · Foudre — {mot} feu · glace · foudre, {Mot} avec la capitale — {logo} feu · gel · foudre. « Brise{mot} » fait Brisefeu, Briseglace, Brisefoudre.</p>'
   +'<h2 class="sous-titre">Paliers — coût, texte et réglages</h2>'
   +'<div id="talent-reglages"></div></div>'
   // Le bonus : une caractéristique, une valeur — et la compétence, si c'est là qu'il va.
@@ -1822,7 +1856,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  // L'aperçu du logo, à côté de son menu, comme pour un objet.
  const menuLogo=$('talent-form').elements.logo;
  const apercu=document.createElement('img');apercu.className='logo-equip apercu';apercu.alt='';
- const montre=()=>{const l=menuLogo.value;apercu.hidden=!l;if(l)apercu.src=imgUrl(fichierLogo(l))};
+ const montre=()=>{const l=remplaceElement(menuLogo.value,ELEMENTS[0]);apercu.hidden=!l;if(l)apercu.src=imgUrl(fichierLogo(l))};
  menuLogo.parentNode.append(apercu);montre();menuLogo.onchange=montre;
  dessineReglagesTalent();
  $('delete-talent').hidden=i===null;talentDialog.showModal()}
@@ -1841,10 +1875,11 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
  t.prerequis=f.prerequis&&f.prerequis.value&&f.prerequis.value!==t.id&&(catalog.talents||[]).some(x=>x&&x.id===f.prerequis.value)?f.prerequis.value:'';
  t.branche=f.branche&&(f.branche.value==='g'||f.branche.value==='d')?f.branche.value:'';
- t.logo=f.logo&&LOGOS_TOUS.includes(f.logo.value)?f.logo.value:'';
+ t.logo=f.logo&&(LOGOS_TOUS.includes(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';
  t.rangee=f.rangee&&['attaques','reactions','aucune'].includes(f.rangee.value)?f.rangee.value:'';
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
  t.effet=TALENTS_CODES[f.effet.value]&&f.effet.value!=='bonus'?f.effet.value:'';
+ if(f.elementaire&&f.elementaire.checked)t.elementaire=true;else delete t.elementaire;
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p_')}):{};
  /* Les paliers : leur coût ; pour le 2 et le 3, leur texte s'il en a un, leurs réglages s'ils
     diffèrent de ceux d'en dessous — sinon ils en héritent, et suivront s'ils changent. */
@@ -1858,7 +1893,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
     seul, la nature est passive, rien à la table, pas de logo. */
  if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});
   t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.logo='';t.effects='';
-  t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={}}
+  t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={};delete t.elementaire}
  if(talentIndex===null)catalog.talents.push(t);else catalog.talents[talentIndex]=t;
  talentDialog.close();renderCatalogPages();render();scheduleSave();
  const rappel=talentApres;talentApres=null;if(rappel)rappel(t)};
@@ -2218,6 +2253,81 @@ function openArbresClasse(famille){if(view!=='mj')return;arbresActeur=null;arbre
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
 function arbreChange(){noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
+/* ---------- L'élément du Mystique ---------- */
+const VERROU_ELEMENT='l’élément du Mystique',VOIE_ELEMENTAIRE='Élémentaire';
+let elementApercu='feu';
+/* Le choix de l'élément : Feu, Gel, Foudre. Pour un Mystique, le MJ seul le fixe — le joueur voit
+   le sien. Sur le plan de la classe, le MJ regarde l'arbre sous chaque élément ; il peut aussi y
+   fusionner des colonnes élémentaires en une seule. */
+function choixElement(a,classe){const out=document.createElement('div');out.className='elements-choix';out.setAttribute('role','radiogroup');out.setAttribute('aria-label','Élément');
+ const actuel=a?elementDe(a):ELEMENTS.find(e=>e.cle===elementApercu),peut=view==='mj';
+ ELEMENTS.forEach(e=>{const b=document.createElement('button');b.type='button';const on=!!actuel&&actuel.cle===e.cle;
+  b.className='element-bouton el-'+e.cle+(on?' on':'');b.setAttribute('role','radio');b.setAttribute('aria-checked',String(on));
+  const ic=logoImage('spell_orbes_'+e.logo,LOGOS_TOUS,'element-ico');if(ic)b.append(ic);b.append(e.nom);
+  if(a){b.disabled=!peut;b.title=peut?(on?a.name+' est Mystique de '+e.nom:'Faire de '+a.name+' un Mystique de '+e.nom):'Seul le MJ choisit l’élément';
+   b.onclick=()=>{if(!peut||on)return;a.element=e.cle;renderArbres();if(typeof renderHeroes==='function')renderHeroes();render();scheduleSave()}}
+  else{b.title='Aperçu : l’arbre sous l’élément '+e.nom;b.onclick=()=>{elementApercu=e.cle;renderArbres()}}
+  out.append(b)});
+ const bloc=document.createElement('div');bloc.className='elements-bloc';bloc.append(out);
+ const dit=a?(elementDe(a)?'':peut?'Choisis l’élément de '+a.name+' : ses talents élémentaires l’attendent.':'Le MJ choisit l’élément : les talents élémentaires l’attendent.'):'Aperçu de l’arbre sous chaque élément.';
+ if(dit){const p=document.createElement('p');p.className='muted elements-dit';p.textContent=dit;bloc.append(p)}
+ // Sur le plan du MJ : fusionner des colonnes élémentaires — une par élément — en « Élémentaire ».
+ if(!a&&peut&&colonnesElementaires(classe).length>=2){const f=document.createElement('button');f.type='button';f.className='arbre-ajout elements-fusion';
+  f.textContent='⇄ Fusionner les colonnes élémentaires en « '+VOIE_ELEMENTAIRE+' »';
+  f.onclick=async()=>{const cols=colonnesElementaires(classe);
+   const texte='Fusionner '+cols.map(c=>'« '+c.voie+' »').join(', ')+' en une seule colonne « '+VOIE_ELEMENTAIRE+' » ? La colonne du Feu sert de base, écrite avec des accolades ; les talents des autres colonnes sont retirés, et ce que les aventuriers y avaient appris passe au talent de même place.';
+   const ok=typeof demander==='function'?await demander(texte,'Fusionner'):confirm(texte);
+   if(!ok)return;const r=fusionElementaire(classe);
+   if(!r.ok){alert(r.raison);return}
+   renderArbres();renderCatalogPages();if(typeof renderHeroes==='function')renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));
+   const n=$('arbres-note');if(n)n.textContent=r.fusionnes+' talents fusionnés dans « '+VOIE_ELEMENTAIRE+' »'+(r.restes?' ; '+r.restes+' sans équivalent, laissés dans leur colonne':'')+'. Relis les textes : un mot de feu que les accolades ne disent pas — « brûle » — reste à adapter.'};
+  bloc.append(f)}
+ return bloc}
+// L'élément d'un talent : son état réglé, sinon un mot de son nom ou de son logo.
+function elementDuTalent(t){const p=t&&t.params||{};const e=ELEMENTS.find(x=>p.etat===x.etat);if(e)return e;
+ const n=cleTalent((t&&t.name||'')+' '+(t&&t.logo||''));return ELEMENTS.find(x=>n.includes(x.cle)||n.includes(cleTalent(x.mot)))||null}
+/* Les colonnes élémentaires d'une classe : une par élément, reconnue à ce que disent le plus
+   ses talents. La colonne déjà fusionnée n'en est pas une. */
+function colonnesElementaires(classe){const dans=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&t.type!=='mait'&&t.voie&&t.voie!==VOIE_ELEMENTAIRE);
+ const vues=new Set(),out=[];
+ [...new Set(dans.map(t=>t.voie))].forEach(v=>{const liste=dans.filter(t=>t.voie===v),c={};liste.forEach(t=>{const e=elementDuTalent(t);if(e)c[e.cle]=(c[e.cle]||0)+1});
+  const cle=Object.keys(c).sort((x,y)=>c[y]-c[x])[0];if(cle&&!vues.has(cle)){vues.add(cle);out.push({voie:v,liste,element:ELEMENTS.find(e=>e.cle===cle)})}});
+ return out}
+/* Fusionner : la colonne du Feu (ou la première) devient « Élémentaire » — ses mots de l'élément
+   passent en accolades, son logo suit l'élément, ses talents à état réglé sont cochés
+   élémentaires. Chaque talent des autres colonnes rejoint celui de même place — même chemin
+   depuis la racine, même branche — : il se retire, les aventuriers qui l'avaient le gardent
+   sous sa nouvelle forme, palier compris, et un Mystique sans élément prend celui de la colonne
+   où il avait le plus appris. Un talent sans équivalent reste où il est. */
+function fusionElementaire(classe){const cols=colonnesElementaires(classe);
+ if(cols.length<2)return {ok:false,raison:'Il faut au moins deux colonnes élémentaires — une par élément — pour les fusionner.'};
+ const base=cols.find(c=>c.element.cle==='feu')||cols[0];
+ const place=(t,liste,vus=new Set())=>{if(vus.has(t.id))return '?';vus.add(t.id);const parent=liste.find(x=>x.id===t.prerequis);
+  const freres=liste.filter(x=>(x.prerequis||'')===(t.prerequis||'')&&(x.branche||'')===(t.branche||''));
+  return (parent?place(parent,liste,vus)+'/':'')+(t.branche||'c')+freres.indexOf(t)};
+ const parPlace=c=>{const m=new Map();c.liste.forEach(t=>m.set(place(t,c.liste),t));return m};
+ const cible=parPlace(base),vers=new Map();let restes=0;
+ cols.filter(c=>c!==base).forEach(c=>parPlace(c).forEach((t,k)=>{const b=cible.get(k);if(b)vers.set(t.id,b.id);else restes++}));
+ const e0=base.element,accolade=s=>typeof s==='string'?s.split(e0.nom).join('{élément}').split(e0.mot).join('{mot}'):s;
+ base.liste.forEach(t=>{t.name=accolade(t.name);t.effects=accolade(t.effects);
+  Object.values(t.paliers||{}).forEach(p=>{if(p&&typeof p==='object')p.effects=accolade(p.effects)});
+  if(t.logo&&t.logo.endsWith('_'+e0.logo)){const racine=t.logo.slice(0,-e0.logo.length-1);if(LOGOS_ELEMENTAIRES.includes(racine+'_{logo}'))t.logo=racine+'_{logo}'}
+  const code=TALENTS_CODES[t.effet];if(code&&(code.params||[]).some(p=>p.cle==='etat'))t.elementaire=true;
+  t.voie=VOIE_ELEMENTAIRE});
+ // Ceux qui avaient appris ailleurs : le talent de même place, au plus haut palier des deux.
+ const suivre=a=>{if(!a||!Array.isArray(a.talents))return;const compte={};
+  cols.forEach(c=>{const n=c.liste.filter(t=>a.talents.includes(t.id)).length;if(n)compte[c.element.cle]=(compte[c.element.cle]||0)+n});
+  const paliers={...(a.paliersTalents||{})},garde=[];
+  a.talents.forEach(id=>{const v=vers.get(id)||id;if(!garde.includes(v))garde.push(v);if(vers.has(id)&&paliers[id]){paliers[v]=Math.max(paliers[v]||1,paliers[id]);delete paliers[id]}});
+  a.talents=garde;a.paliersTalents=paliers;a.paliersTalents=normalisePaliersActeur(a);
+  if(a.hero&&!elementDe(a)&&classeElementaire(classeDuHeros(a))){const cle=Object.keys(compte).sort((x,y)=>compte[y]-compte[x])[0];if(cle)a.element=cle}};
+ actors.forEach(suivre);(catalog.monsters||[]).forEach(suivre);
+ catalog.talents=(catalog.talents||[]).filter(t=>t&&!vers.has(t.id));
+ catalog.talents.forEach(t=>{if(vers.has(t.prerequis))t.prerequis=vers.get(t.prerequis)});
+ // Les spécialisations : « Élémentaire » en tête, puis celles qui restent.
+ const restantes=[...new Set(catalog.talents.filter(t=>t&&talentFamily(t)===classe&&t.voie).map(t=>t.voie))];
+ catalog.voies={...(catalog.voies||{}),[classe]:[VOIE_ELEMENTAIRE,...restantes.filter(v=>v!==VOIE_ELEMENTAIRE)].slice(0,VOIES_MAX)};
+ return {ok:true,fusionnes:vers.size,restes}}
 function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();
  // Un nœud redessiné emporte sa bulle : elle ne reste pas accrochée à l'ancien.
  bulleOrpheline();
@@ -2229,6 +2339,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(assureMaitrises(a))scheduleSave()}
  else if(view!=='mj'){arbresDialog.close();return}
  const classe=a?classeDuHeros(a):arbresClasse;
+ /* L'élément qui habille l'arbre : celui du Mystique ; sur le plan du MJ, celui qu'il regarde ;
+    pas encore choisi, le premier, en aperçu. Un talent élémentaire attend, lui, que le MJ choisisse. */
+ const elementaire=classeElementaire(classe),elemVu=elementaire?(a&&elementDe(a))||ELEMENTS.find(e=>e.cle===elementApercu)||ELEMENTS[0]:null;
+ const vu=t=>talentPourElement(t,elemVu),sansElement=!!a&&elementaire&&!elementDe(a);
  /* L'arbre d'une classe se passe d'intitulé : son nom est écrit en grand au-dessus des
     colonnes, et la longue notice d'édition prenait la moitié de la fenêtre. */
  const titre=arbresDialog.querySelector('h2');
@@ -2272,7 +2386,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const bulleNoeud=(t,verrou,note)=>{const bonus=t.effet==='bonus';
   const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
   const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
-  nom.textContent=bonus?libelleBonus(paramsTalent(t)):t.name;
+  nom.textContent=bonus?libelleBonus(paramsTalent(t)):vu(t).name;
   // Jamais la nature du talent : la bulle ne l'écrit nulle part.
   tete.append(nom);d.append(tete);
   const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
@@ -2283,7 +2397,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const montres=!a||k===0?[1]:k>=max?[k]:[k,k+1];
    const g=document.createElement('div');g.className='paliers-bulle n'+montres.length;
    montres.forEach((n,i)=>{if(i){const f=document.createElement('span');f.className='palier-fleche';f.textContent='→';f.setAttribute('aria-hidden','true');g.append(f)}
-    const tp=talentAuPalier(t,n),col=document.createElement('div');col.className='palier-col'+(a?(n<=k?' acquis':' suivant'):'');
+    const tp=talentAuPalier(vu(t),n),col=document.createElement('div');col.className='palier-col'+(a?(n<=k?' acquis':' suivant'):'');
     const h=document.createElement('p');h.className='palier-tete';const c=coutPalier(t,n);
     h.textContent='Palier '+n+(a?(n<=k?' · acquis':' · suivant'):'')+(c?' · '+c+' PT':'');col.append(h);
     const e=document.createElement('p');e.className='palier-effet';e.textContent=tp.effects||'Effet à préciser.';if(tp.effects)texteEnrichi(e,tp.effects);col.append(e);
@@ -2299,8 +2413,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const noeud=(t,etat,verrou)=>{const b=document.createElement('div');b.tabIndex=0;b.setAttribute('role','button');
   b.className='arbre-noeud t-'+talentType(t)[0]+(etat?' '+etat:'');b.dataset.id=t.id;
   const rond=document.createElement('span');rond.className='arbre-rond';
-  const logo=logoTalent(t);if(logo)rond.append(logo);else rond.textContent=GLYPHES_TALENT[t.type]||'✦';
-  const nom=document.createElement('span');nom.className='arbre-nom';nom.textContent=t.name;
+  const tv=vu(t),logo=logoTalent(tv);if(logo)rond.append(logo);else rond.textContent=GLYPHES_TALENT[t.type]||'✦';
+  const nom=document.createElement('span');nom.className='arbre-nom';nom.textContent=tv.name;
   const niv=document.createElement('span');niv.className='arbre-niv';niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';
   /* Un nœud de bonus n'est pas un talent : son rond dit la valeur, son nom la caractéristique,
      et le nom qu'on lui a donné passe dessous. */
@@ -2314,7 +2428,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    for(let n=1;n<=max;n++){const i=document.createElement('i');if(n<=k)i.className='on';pts.append(i)}}
   b.append(rond,...(pts?[pts]:[]),nom,niv);
   // Au survol, la bulle de description, comme sur la fiche ; « b.noteBulle » s'y ajoute.
-  b.setAttribute('aria-label',t.name+(k?' — palier '+k+' sur '+max:'')+' — '+[talentType(t)[2],t.effects].filter(Boolean).join(' · ')+(verrou?' — sous clé : requiert '+verrou:''));
+  b.setAttribute('aria-label',tv.name+(k?' — palier '+k+' sur '+max:'')+' — '+[talentType(t)[2],tv.effects].filter(Boolean).join(' · ')+(verrou?' — sous clé : requiert '+verrou:''));
   b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}};
   // Les outils du MJ, au survol : corriger le talent, en suspendre un nouveau dessous.
   if(mj){const outils=document.createElement('span');outils.className='arbre-outils';
@@ -2331,6 +2445,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  else corps.style.removeProperty('--encre');
  tete.append(nomClasse);
  // Ce que l'arbre a coûté : les paliers acquis, au prix de chacun — dès qu'un prix est fixé.
+ // L'élément du Mystique, au-dessus de l'arbre : le MJ le choisit, le joueur le lit.
+ if(elementaire)tete.append(choixElement(a,classe));
  if(a){const pt=ptDepenses(a,catalog.talents);if(pt){const s=document.createElement('p');s.className='arbres-pt';s.textContent=pt+' PT dépensé'+(pt>1?'s':'');tete.append(s)}}
  const maitrises=maitrisesDe(classe);
  if(maitrises.length){const bande=document.createElement('div');bande.className='arbre-maitrises';
@@ -2354,10 +2470,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     dessus ; en diagonale, son central et sa branche ; partout, son prérequis. Le tronc libre
     n'enchaîne rien. Sans porteur, le clic ouvre le talent : c'est le plan qu'on corrige. */
  const noeudArbre=(t,col,etages,libre,diag)=>{const acquis=porte(t);
-  const verrou=!a||acquis?'':(libre?'':verrouEtages(a.talents,etages,t))||manqueTalent(a.talents,t,catalog.talents);
+  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouEtages(a.talents,etages,t))||manqueTalent(a.talents,t,catalog.talents);
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);if(diag)el.classList.add('diag');
   el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
-   if(verrou){note('« '+t.name+' » exige d’abord « '+verrou+' ».');return}
+   if(verrou){note(verrou===VERROU_ELEMENT?'Le MJ choisit d’abord l’élément du Mystique, au-dessus de l’arbre.':'« '+vu(t).name+' » exige d’abord « '+verrou+' ».');return}
    // Tenu, un clic le monte d'un palier ; au dernier, le « − » seul le fait redescendre.
    if(acquis){const k=palierDe(a,t);if(k>=paliersDe(t)){note('« '+t.name+' » est à son dernier palier.');return}
     poserPalier(t,k+1);note('')}
@@ -2419,7 +2535,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     arbre — on l'ouvre par son rouage, dans l'onglet Talents — et n'encombrent plus celui
     d'une classe. */
  const grille=document.createElement('div');grille.className='arbres-cols';
- (classe?colonnesArbre(classe):[]).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));
+ /* Un Mystique n'a qu'une colonne à lui, « Élémentaire » : dans son arbre, les colonnes vides se
+    retirent. Le plan du MJ les garde, pour y créer des talents ; les autres classes ne changent pas. */
+ (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));
  corps.append(grille);
  // Les chemins attendent que la fenêtre soit ouverte et la colonne mesurée.
  requestAnimationFrame(traceChemins)}
@@ -2806,11 +2924,16 @@ const LOGOS_RESSOURCES=['ressource_brisure_citrine','ressource_brisure_diamant',
  'ressource_eclat_citrine','ressource_eclat_diamant','ressource_eclat_emeraude','ressource_eclat_rubis','ressource_eclat_saphir',
  'ressource_gemme_citrine','ressource_gemme_diamant','ressource_gemme_emeraude','ressource_gemme_rubis','ressource_gemme_saphir'];
 const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_ETATS,...LOGOS_DIVERS];
+/* Les logos qui suivent l'élément : une image par élément sous une même racine — spell_orbes_feu,
+   _gel, _foudre — se proposent comme spell_orbes_{logo}, que le talent élémentaire remplit. */
+const LOGOS_ELEMENTAIRES=[...new Set(LOGOS_TOUS.filter(l=>l.endsWith('_'+ELEMENTS[0].logo)).map(l=>l.slice(0,-ELEMENTS[0].logo.length-1)))]
+ .filter(r=>ELEMENTS.every(e=>LOGOS_TOUS.includes(r+'_'+e.logo))).map(r=>r+'_{logo}');
 // Toutes les images, rangées par famille : le menu de logo d'un talent les propose ainsi.
-const FAMILLES_LOGOS=[['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];
+const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];
 const NOMS_LOGOS={SAIGNEE:'Saignée',DEGATS:'Dégâts'};
 // Le nom d'un logo : son fichier sans préfixe ; un nom en capitales se lit en minuscules, sauf DEF.
 const nomLogo=l=>{if(NOMS_LOGOS[l])return NOMS_LOGOS[l];
+ if(String(l||'').includes('{logo}'))return nomLogo(String(l).replace('{logo}','x')).replace(/ x$/,'')+' de l’élément';
  // Une gemme se nomme comme dans sa grille : « Éclat de rubis ».
  const g=/^ressource_([a-z]+)_([a-z]+)$/.exec(String(l||''));
  if(g&&typeof TAILLES_GEMMES!=='undefined'){const t=TAILLES_GEMMES.find(([k])=>(FICHIERS_TAILLES[k]||k)===g[1]),v=VARIETES_GEMMES.find(([k])=>k===g[2]);

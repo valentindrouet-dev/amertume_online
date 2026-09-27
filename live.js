@@ -20,10 +20,11 @@
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv',
- 'revealed','hidden','vu','numero','orbes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee'];
+ 'revealed','hidden','vu','numero','orbes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
-const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero'];
+// L'élément d'un Mystique est au MJ : un joueur ne le pousse pas.
+const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element'];
 const TABLE_CLE='amertume-table';
 let tableId=null,salleRef=null,siegesRef=null,enLigne=false,appliquantDistant=false;
 let dernierPousse=null,poussePret=false,pousseTimer=null,docPrecedent=null,renduDiffere=null,dernierRefus='';
