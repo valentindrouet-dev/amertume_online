@@ -2386,9 +2386,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){const bonus=t.effe
    const h=document.createElement('p');h.className='palier-tete';const c=coutPalier(t,n);
    h.textContent='Palier '+n+(a?(n<=k?' · acquis':' · suivant'):'')+(c?' · '+c+' PT':'');col.append(h);
    const e=document.createElement('p');e.className='palier-effet';e.textContent=tp.effects||'Effet à préciser.';if(tp.effects)texteEnrichi(e,tp.effects);col.append(e);
-   // Ce que le moteur en fera, à ce palier : ses réglages en toutes lettres.
-   if(t.effet&&TALENTS_CODES[t.effet]){const m=document.createElement('p');m.className='palier-moteur';const ph=phraseTalent(t.effet,tp.params,n,voletsDe(t));
-    m.innerHTML=t.elementaire===true&&!tp.elementVu?enElementDuMystique(ph,tp.params&&tp.params.etat):ph;col.append(m)}
+   // Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.
    g.append(col)});
   d.append(g);
   const socle=nomPrerequis(t,catalog.talents);if(socle)ligne('↳ Requiert : '+socle)}

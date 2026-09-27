@@ -1159,7 +1159,7 @@ i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #00
 .palier-col{border-top:2px solid var(--line);padding-top:5px;min-width:0}
 .palier-col.acquis{border-top-color:var(--green)}.palier-col.suivant{border-top-color:#c9953f}
 .talent-detail .palier-tete{font:700 10.5px system-ui;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
-.talent-detail .palier-effet{margin:0;font-size:13px;line-height:1.4}.talent-detail .palier-moteur{margin:5px 0 0;font-size:11.5px;line-height:1.35;color:var(--muted)}
+.talent-detail .palier-effet{margin:0;font-size:13px;line-height:1.4}
 .talent-detail .palier-dit{font:700 10.5px system-ui;letter-spacing:.8px;text-transform:uppercase;color:var(--green)}
 /* L'éditeur de talent : une colonne par palier — coût, texte, puis chaque réglage. */
 .paliers-table{width:calc(100% + 12px);border-collapse:separate;border-spacing:6px;table-layout:fixed;margin:0 -6px}

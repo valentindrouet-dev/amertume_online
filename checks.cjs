@@ -2647,7 +2647,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes(" t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")
   &&src.includes("t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={};delete t.elementaire;delete t.volets}")&&feuille.includes('.paliers-table{'),'l’éditeur : une colonne par palier, le coût en PT');
  assert.ok(src.includes("if(max>1){pts=document.createElement('span');pts.className='arbre-paliers';")&&src.includes("poserPalier(t,k+1);note('')}")
-  &&src.includes("const montres=!a||k===0?[1]:k>=max?[k]:[k,k+1];")&&src.includes("const ph=phraseTalent(t.effet,tp.params,n,voletsDe(t));")
+  &&src.includes("const montres=!a||k===0?[1]:k>=max?[k]:[k,k+1];")&&src.includes("// Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.")
   &&src.includes("a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);")&&feuille.includes('.arbre-paliers i.on{')&&feuille.includes('.paliers-bulle.n2{grid-template-columns:1fr auto 1fr}'),'l’arbre : points, clic, « − », bulle comparée');}
 /* v0.289 — Brise en trois paliers cumulés, contre une cible qui porte l'état : la DEF ignorée,
    puis retirée pour de bon après l'attaque, puis les dégâts doublés. La bulle de l'arbre montre
@@ -2771,7 +2771,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("p.textContent='Selon l’élément : '+ELEMENTS.map(e=>remplaceElement(v,e)).join(' · ')")&&css.includes('.accolade{'),'les accolades du nom, en pastille ou remplies');
  assert.ok(src.includes("function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){")&&src.includes(" const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note});")
   &&src.includes("if(BULLES)surveille(pill,()=>{const d=bulleTalent(t);ouvrirBulle(pill,d,")
-  &&src.includes("m.innerHTML=t.elementaire===true&&!tp.elementVu?enElementDuMystique(ph,tp.params&&tp.params.etat):ph;")&&src.includes("if(elem)h=enElementDuMystique(h,vals[n].etat);"),'la bulle au survol, dans l’onglet Talents aussi ; l’élément du Mystique sans élément');
+  &&!src.includes("m.className='palier-moteur'")&&src.includes("if(elem)h=enElementDuMystique(h,vals[n].etat);"),'la bulle au survol, dans l’onglet Talents aussi ; l’élément du Mystique sans élément');
  assert.ok(!src.includes('↩ Remettre dans l’arbre'),'le menu de tête a laissé la place aux « + »');}
 /* v0.296 — Les orbes élémentaires par palier : l'état sur 6+, puis à chaque touche, puis en
    deux crans, trois volets que le MJ réorganise. Dans l'arbre, les « + » proposent un talent
