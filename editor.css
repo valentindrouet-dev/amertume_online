@@ -1145,3 +1145,25 @@ i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #00
 .dom-article .dom-achat{margin:2px 0 0;padding:3px 8px;min-width:64px;border-radius:8px;font:700 12px system-ui;color:#fff;background:#a0761a;border:1px solid #8a6512}
 .dom-article.vente .dom-achat{background:var(--green);border-color:var(--green)}
 .dom-article .dom-achat:disabled{background:var(--disabled);border-color:var(--disabled);color:var(--disabled-ink);cursor:default}
+
+/* Les paliers d'un talent, sous son icône dans l'arbre : un point par palier, allumés pour ceux qu'on tient. Le fond cache les chemins. */
+.arbre-paliers{display:flex;gap:4px;justify-content:center;width:max-content;margin:3px auto 0;padding:2px 5px;border-radius:6px;background:var(--panel-2);position:relative;z-index:1}
+.arbre-paliers i{width:8px;height:8px;border-radius:50%;border:1.5px solid #9a8f80;box-sizing:border-box}
+.arbre-paliers i.on{background:var(--encre,#6c4fb0);border-color:var(--encre,#6c4fb0);box-shadow:0 0 5px var(--encre,#6c4fb0)}
+.arbre-outils .palier-moins{font-weight:700}
+.arbres-pt{margin:2px 0 0;font:600 11px system-ui;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);text-align:center}
+/* La bulle compare : le palier tenu et le suivant, côte à côte — ou les trois, sur le plan du MJ. */
+.bulle.large-paliers{max-width:min(580px,94vw)}
+.paliers-bulle{display:grid;gap:12px;margin-top:6px}.paliers-bulle.n2{grid-template-columns:1fr 1fr}.paliers-bulle.n3{grid-template-columns:1fr 1fr 1fr}
+.palier-col{border-top:2px solid var(--line);padding-top:5px;min-width:0}
+.palier-col.acquis{border-top-color:var(--green)}.palier-col.suivant{border-top-color:#c9953f}
+.talent-detail .palier-tete{font:700 10.5px system-ui;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+.talent-detail .palier-effet{margin:0;font-size:13px;line-height:1.4}.talent-detail .palier-moteur{margin:5px 0 0;font-size:11.5px;line-height:1.35;color:var(--muted)}
+.talent-detail .palier-dit{font:700 10.5px system-ui;letter-spacing:.8px;text-transform:uppercase;color:var(--green)}
+/* L'éditeur de talent : une colonne par palier — coût, texte, puis chaque réglage. */
+.paliers-table{width:calc(100% + 12px);border-collapse:separate;border-spacing:6px;table-layout:fixed;margin:0 -6px}
+.paliers-table thead td{width:8.5em}
+.paliers-table thead th{font:600 11px system-ui;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);text-align:left}
+.paliers-table tbody th{font-size:13px;font-weight:500;color:var(--muted);text-align:left;vertical-align:top;padding-top:7px}
+.paliers-table input,.paliers-table select,.paliers-table textarea{width:100%;box-sizing:border-box;margin:0}
+.paliers-table textarea{resize:vertical;min-height:5.5em}

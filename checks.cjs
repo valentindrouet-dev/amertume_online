@@ -1213,7 +1213,7 @@ assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('.vfx-t
  assert.ok(phraseTalent('invocation',{modele:''}).includes('un combattant du bestiaire'));}
 assert.ok(page.includes('function invocation(a,p,talent)')&&page.includes('function annulerPlacement()')&&page.includes('function regenerer(a,quand)')&&page.includes('applyDamage=function(a,montant)')
  &&page.includes("actors.forEach(o=>regenerer(o,'fin'));round++;")&&page.includes("if(actors.filter(o=>regenerer(o,'debut')).length)render()")&&page.includes('.placement #map{cursor:crosshair}')
- &&src.includes("p.type==='modele'?sel(p.nom,'p_'+p.cle,vals[p.cle],[['','— choisir un adversaire —'],...(catalog.monsters||[]).map(m=>[m.id,m.name])])")&&src.includes('function nomModele(id)')
+ &&src.includes("const opts=p.type==='modele'?[['','— choisir un adversaire —'],...(catalog.monsters||[]).map(m=>[m.id,m.name])]:(p.options||[]);")&&src.includes('function nomModele(id)')
  &&src.includes("if(logos.childElementCount>1)logos.classList.add('croises');")&&feuille.includes('button.choix-attaque .logos.croises .logo-equip:first-child{transform:scaleX(-1)'),'Invocation, Régénération, logos croisés');
 /* Inventaire et équipement : tout ce qu'on possède d'un côté, ce qu'on porte de l'autre — deux mains au
    plus, une armure — et l'équipement fait toujours partie de l'inventaire. Les carrés s'élargissent
@@ -2248,7 +2248,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("...Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>[c.cle,libelleTalent(c.cle)])])"),'un bonus ne paraît ni dans l’onglet, ni dans le sélecteur, ni dans la bibliothèque');
  assert.ok(src.includes('<label><input type="radio" name="nature" value="bonus"')&&src.includes("['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});")
   &&src.includes("if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});")
-  &&src.includes("t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.logo='';t.effects=''}")
+  &&src.includes("t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.logo='';t.effects='';")
   &&feuille.includes('.talent-cache{display:none!important}'),'l’éditeur devient éditeur de bonus');
 }
 /* v0.264 — Le domaine part avec le contenu publié et se lit chez les joueurs, sans édition ; les
@@ -2353,7 +2353,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("if(finit)actors.forEach(a=>{if(a.hero)a.reposPris=false});"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos" id="repos" hidden>⛺ Repos court</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
   &&page.includes(":a.reposPris?'Repos déjà pris : il reviendra à la fin du prochain combat.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposPris=true;")
-  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine'];"),'le Repos court');
+  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents'];"),'le Repos court');
 }
 /* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
    une arme prise remplace celle de la main droite ; lâchée sur une main, elle prend cette main.
@@ -2533,12 +2533,12 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("const FAMILLES_LOGOS=[['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
  const ctxL={};vm.createContext(ctxL);vm.runInContext(src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
  assert.deepEqual(['BLINDAGE INITIAL','SAIGNEE','DEF 3','weapon_cape_elfique','DEGATS'].map(ctxL.nomLogo),['Blindage initial','Saignée','DEF 3','Cape elfique','Dégâts']);
- assert.ok(src.includes("surveille(b,()=>ouvrirBulle(b,bulleNoeud(t,verrou,b.noteBulle),'bulle-talent'));")&&!src.includes("b.title=t.name+' — '+[talentType(t)[2]")
+ assert.ok(src.includes("surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'")&&!src.includes("b.title=t.name+' — '+[talentType(t)[2]")
   &&src.includes("(ancre.closest('dialog[open]')||document.body).append(bulleEl);")&&feuille.includes(".talent-bulle-nom b{font:700 14px 'Killam'"),'l’arbre décrit ses talents au survol, dans sa fenêtre');}
 /* v0.281 — La bulle d'un nœud de l'arbre n'écrit jamais la nature du talent. Chaque objet porte
    deux ressources et un prix en or, saisis à l'armurerie et lus nulle part ailleurs. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("  tete.append(nom);d.prepend(tete);")&&!src.includes("nat.textContent=bonus?'Bonus':talentType(t)[2]"),'la bulle de l’arbre tait la nature du talent');
+ assert.ok(src.includes("  tete.append(nom);d.append(tete);")&&!src.includes("nat.textContent=bonus?'Bonus':talentType(t)[2]"),'la bulle de l’arbre tait la nature du talent');
  const ctxR={MATERIAUX:[...require('./combat.js').MATERIAUX]};vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('const RESSOURCES='),src.indexOf('function normalizeCatalog('))+';this.RESSOURCES=RESSOURCES;this.ressourceValide=ressourceValide;',ctxR);
  assert.deepEqual([...ctxR.RESSOURCES],['Acier','Argent','Bois','Bronze','Corde','Cuir','Diamant','Or','Pierre','Verre'],'les ressources, par ordre alphabétique');
  assert.equal(ctxR.ressourceValide('Bois'),'Bois');assert.equal(ctxR.ressourceValide('Mithril'),'');
@@ -2566,7 +2566,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.normaliseDomaine(null).ressources,{});
  assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
  assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
-  &&src.includes("const RESSOURCES=[...MATERIAUX].sort((x,y)=>x.localeCompare(y,'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine'];"),'les richesses se relisent et voyagent en direct');
+  &&src.includes("const RESSOURCES=[...MATERIAUX].sort((x,y)=>x.localeCompare(y,'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents'];"),'les richesses se relisent et voyagent en direct');
  assert.ok(src.includes("function grilleGemmes(compte,poser,qui){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
   &&fief.includes("function renderDomRessources(){")&&fief.includes("const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;")
   &&fief.includes("MATERIAUX.filter(m=>m!=='Or').forEach(m=>{"),'les compteurs : sur la carte de l’aventurier, au domaine');
@@ -2588,7 +2588,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const a={richesses:{or:20}};assert.deepEqual(C.peutAcheter(a,{price:15,magasin:true}),{ok:true,prix:15,manque:0,enVente:true});
  assert.deepEqual(C.peutAcheter(a,{price:25,magasin:true}),{ok:false,prix:25,manque:5,enVente:true});assert.equal(C.peutAcheter(a,{price:5}).ok,false,'hors magasin, pas d’achat');
  assert.equal(C.ajouteOr(a,-15),5);assert.equal(C.ajouteOr(a,-9),0);assert.deepEqual(a.richesses,{},'l’or ne descend pas sous zéro, et un compte nul disparaît');assert.equal(C.ajouteOr(a,3),3);
- assert.ok(vivant.includes("'richesses','lieuDomaine'];")&&fief.includes("const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');")
+ assert.ok(vivant.includes("'richesses','lieuDomaine','paliersTalents'];")&&fief.includes("const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');")
   &&fief.includes("if(typeof enLigne!=='undefined'&&enLigne)return typeof monSiege!=='undefined'&&monSiege===a.id;"),'le lieu voyage avec l’aventurier, et son joueur seul le déplace');
  assert.ok(fief.includes("function blocDeplacements(b){const troupe=actors.filter(a=>a.hero);if(!troupe.length||!batimentConstruit(b))return null;")
   &&fief.includes("quoi.textContent=ici?'Ici':'S’y déplacer';")&&fief.includes("function finFiche(boite,b){")&&(fief.match(/boite\.append\(qui\);finFiche\(boite,b\)\}/g)||[]).length===2,'un bouton par aventurier, sur chaque fiche');
@@ -2627,4 +2627,28 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(C.GEMMES_ETEINTES,false);
  assert.deepEqual(C.normaliseDomaine({ressources:{'eclat-rubis':3,'eclat-rubis-eteinte':2}}).ressources,{'eclat-rubis':3},'les éteintes quittent aussi la réserve du domaine');
  assert.ok(src.includes("[false,...(GEMMES_ETEINTES?[true]:[])].forEach(eteinte=>{"),'la grille sans leur ligne');}
-console.log('1600 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.288 — Les paliers : trois par talent, un pour un bonus. Le palier 1 est le talent ; les
+   suivants gardent ce qu'ils ne redisent pas. Chaque palier a son coût en PT. L'arbre montre
+   trois points sous l'icône, un clic monte d'un palier, « − » redescend ; la bulle compare le
+   palier tenu au suivant ; l'éditeur a une colonne par palier. Le moteur joue le palier tenu. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ const t={id:'o',effet:'orbes',params:{orbes:1},effects:'Un orbe',couts:[1,2,'x'],paliers:{2:{params:{orbes:2},effects:''},3:{effects:'Trois orbes'}}};
+ assert.equal(C.paliersDe(t),3);assert.equal(C.paliersDe({effet:'bonus'}),1);
+ assert.equal(C.talentAuPalier(t,1),t,'le palier 1 est le talent lui-même');
+ assert.deepEqual([2,3].map(n=>{const x=C.talentAuPalier(t,n);return [x.params.orbes,x.effects,x.palier]}),[[2,'Un orbe',2],[2,'Trois orbes',3]],'ce qu’un palier ne redit pas, il le garde');
+ assert.equal(C.talentAuPalier(t,9).palier,3);assert.equal(C.talentAuPalier({effet:'bonus',params:{}},3).palier,undefined,'un bonus reste à son palier unique');
+ const a={talents:['o'],paliersTalents:{o:2}};
+ assert.equal(C.palierDe(a,t),2);assert.equal(C.palierDe({talents:['o']},t),1);assert.equal(C.palierDe({talents:[]},t),0);assert.equal(C.palierDe({talents:['o'],paliersTalents:{o:7}},t),3);
+ assert.deepEqual([1,2,3].map(n=>C.coutPalier(t,n)),[1,2,0]);assert.equal(C.ptDepenses(a,[t]),3);assert.equal(C.ptDepenses({talents:['o'],paliersTalents:{o:3}},[t]),3);
+ assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[2],'le moteur joue le palier tenu');
+ assert.deepEqual(C.normalisePaliersActeur({talents:['o','p'],paliersTalents:{o:3,p:1,q:2,r:'x'}}),{o:3},'un palier 1 ne s’écrit pas ; un talent oublié perd le sien');
+ assert.ok(fs.readFileSync('combat.js','utf8').includes("function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)")
+  &&page.includes("function talentsCodes(a){return talentsAuPalier(a,typeof catalog!=='undefined'?catalog.talents:[])")&&vivant.includes("'lieuDomaine','paliersTalents'];"),'la table et les bonus jouent le palier ; il voyage en direct');
+ assert.ok(src.includes("a.paliersTalents=normalisePaliersActeur(a);")&&src.includes(" c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(99,coutPalier(t,n)));"),'paliers relus, au catalogue et sur la fiche');
+ assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("<th scope=\"row\">Coût (PT)</th>")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")
+  &&src.includes(" t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")
+  &&src.includes("t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={}}")&&feuille.includes('.paliers-table{'),'l’éditeur : une colonne par palier, le coût en PT');
+ assert.ok(src.includes("if(max>1){pts=document.createElement('span');pts.className='arbre-paliers';")&&src.includes("poserPalier(t,k+1);note('')}")
+  &&src.includes("const montres=!a?[1,2,3].slice(0,max):k===0?[1]:k>=max?[k]:[k,k+1];")&&src.includes("m.innerHTML=phraseTalent(t.effet,tp.params);")
+  &&src.includes("a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);")&&feuille.includes('.arbre-paliers i.on{')&&feuille.includes('.paliers-bulle.n2{grid-template-columns:1fr 1fr}'),'l’arbre : points, clic, « − », bulle comparée');}
+console.log('1619 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

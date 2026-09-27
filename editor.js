@@ -12,7 +12,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
+function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.paliersTalents=normalisePaliersActeur(a);a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
  a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};
  a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};
  a.checks=Array.isArray(a.checks)?POINTS_CLES.map((q,i)=>Math.max(0,Math.min(pointsMax(a,q),a.checks[i]===true?1:Math.trunc(Number(a.checks[i]))||0))):[0,0,0];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
@@ -60,6 +60,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
     la colonne ne disparaît pas quand on en sort le dernier talent. */
  c.talents.forEach(t=>{if(!t||!t.voie)return;const f=(t.famille||'').trim()||'Génériques',l=c.voies[f]||[];
   if(!l.includes(t.voie)&&l.length<VOIES_MAX)c.voies[f]=[...l,t.voie]});
+ /* Les paliers d'un talent : un coût en PT par palier, 0 tant que le MJ n'en décide pas ; et pour
+    les paliers 2 et 3, leur texte et leurs réglages quand ils diffèrent — relus au travers de la
+    mécanique. Un bonus n'a qu'un palier. */
+ c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(99,coutPalier(t,n)));
+  const pal={};if(t.effet!=='bonus')[2,3].forEach(n=>{const q=t.paliers&&t.paliers[n];if(!q||typeof q!=='object')return;
+   const e=String(q.effects||'').slice(0,600),r=t.effet&&q.params&&typeof q.params==='object'&&Object.keys(q.params).length?paramsTalent({effet:t.effet,params:q.params}):null;
+   if(e.trim()||r)pal[n]={effects:e,...(r?{params:r}:{})}});
+  t.paliers=pal});
  /* Un objet porte un effet du moteur, ses réglages et sa manière d'en user. Un objet
     d'avant les effets n'en a pas, et son ancienne case « consommable » devient son usage. */
  c.items.forEach(o=>{if(!o)return;
@@ -1243,7 +1251,9 @@ function talentPills(a){const out=document.createElement('div');out.className='t
    const manque=sansEffet(t);
    // Le chevron ne dépliait que l'ancien dépliant : sous la bulle, rien à déplier.
    if(!BULLES){const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev)}
-   const detail=talentDetail(t,false);detail.classList.add('large');
+   // La description, au palier que tient l'aventurier.
+   const k=palierDe(a,t),detail=talentDetail(talentAuPalier(t,k||1),false);detail.classList.add('large');
+   if(k>1){const pp=document.createElement('p');pp.className='palier-dit';pp.textContent='Palier '+k;detail.prepend(pp)}
    if(manque){pill.classList.add('sans-effet');
     const m=document.createElement('span');m.className='t-sans-effet';m.textContent='⚠';
     m.title='Sans effet : « '+t.name+' » requiert « '+manque+' », que '+a.name+' n’a pas.';pill.append(m);
@@ -1682,23 +1692,39 @@ talentDialog.addEventListener('close',()=>{talentApres=null;
  if(typeof arbresDialog!=='undefined'&&arbresDialog.open)renderArbres()});
 /* Les réglages d'un effet sont dessinés d'après sa déclaration : ajouter un effet au
    moteur suffit à lui donner son formulaire, sans toucher à celui-ci. */
-function lireReglagesTalent(){const f=$('talent-form').elements,out={};
- for(const el of f)if(el.name&&el.name.startsWith('p_'))out[el.name.slice(2)]=el.value;
+// Les réglages d'un palier : « p_ » pour le premier, « p2_ » et « p3_ » pour les suivants.
+function lireReglagesTalent(prefixe='p_'){const f=$('talent-form').elements,out={};
+ for(const el of f)if(el.name&&el.name.startsWith(prefixe))out[el.name.slice(prefixe.length)]=el.value;
  return out}
+// Ce que le formulaire tient des paliers, relu avant de le redessiner : rien de tapé ne se perd.
+function lisBrouillonTalent(){const f=$('talent-form').elements;if(!f.c_1)return;
+ talentDraft.effects=f.effects?f.effects.value:talentDraft.effects;
+ talentDraft.couts=[1,2,3].map(n=>num(f['c_'+n].value,0,99));
+ talentDraft.params=lireReglagesTalent('p_');
+ [2,3].forEach(n=>{talentDraft.paliers[n]={effects:f['pe_'+n]?f['pe_'+n].value:'',params:lireReglagesTalent('p'+n+'_')}})}
+/* Les paliers, en trois colonnes : le coût en PT, le texte, puis chaque réglage de la mécanique.
+   Le palier 1 est le talent lui-même ; un texte laissé vide reprend celui d'en dessous, et les
+   réglages s'y présentent déjà — il n'y a qu'à changer ce qui évolue. */
 function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)return;
- const code=TALENTS_CODES[$('talent-form').elements.effet.value]||null;
- if(!code){boite.replaceChildren();return}
- const vals=paramsTalent({effet:code.cle,params:talentDraft.params});
+ const code=TALENTS_CODES[$('talent-form').elements.effet.value]||null,d=talentDraft;
  /* Une mécanique qui en exige une autre le dit ici, sous le menu : le talent ne pourra
     s'apprendre qu'au-dessus d'un talent portant celle-là. */
- const exige=code.requiert&&TALENTS_CODES[code.requiert]
+ const exige=code&&code.requiert&&TALENTS_CODES[code.requiert]
   ?'<p class="muted exige">↳ Amélioration : ne s’apprend qu’au-dessus d’un talent portant la mécanique « '+esc(TALENTS_CODES[code.requiert].nom)+' ».</p>':'';
- boite.innerHTML=exige+'<div class="edit-grid">'
-  +(code.params||[]).map(p=>p.type==='nombre'
-   ?field(p.nom,'p_'+p.cle,vals[p.cle],'number','min="'+p.min+'" max="'+p.max+'"')
-   // Un modèle du bestiaire : le menu se remplit des adversaires créés.
-   :p.type==='modele'?sel(p.nom,'p_'+p.cle,vals[p.cle],[['','— choisir un adversaire —'],...(catalog.monsters||[]).map(m=>[m.id,m.name])])
-   :sel(p.nom,'p_'+p.cle,vals[p.cle],p.options)).join('')+'</div>'}
+ const vals=[];[1,2,3].forEach(n=>{const propres=n===1?d.params:(d.paliers[n]&&d.paliers[n].params);
+  vals[n]=code?paramsTalent({effet:code.cle,params:propres&&Object.keys(propres).length?propres:(n===1?{}:vals[n-1])}):null});
+ const cellule=(p,n)=>{const nom=(n===1?'p_':'p'+n+'_')+p.cle,v=vals[n][p.cle],lab=' aria-label="'+esc(p.nom+' — palier '+n)+'"';
+  if(p.type==='nombre')return '<input type="number" name="'+nom+'" value="'+esc(String(v))+'" min="'+p.min+'" max="'+p.max+'"'+lab+'>';
+  // Un modèle du bestiaire : le menu se remplit des adversaires créés.
+  const opts=p.type==='modele'?[['','— choisir un adversaire —'],...(catalog.monsters||[]).map(m=>[m.id,m.name])]:(p.options||[]);
+  return '<select name="'+nom+'"'+lab+'>'+opts.map(([k,t])=>'<option value="'+esc(String(k))+'"'+(String(k)===String(v)?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select>'};
+ const texte=n=>n===1?'<textarea name="effects" rows="4" maxlength="600" aria-label="Effet — palier 1">'+esc(d.effects||'')+'</textarea>'
+  :'<textarea name="pe_'+n+'" rows="4" maxlength="600" placeholder="Comme le palier '+(n-1)+'" aria-label="Effet — palier '+n+'">'+esc((d.paliers[n]&&d.paliers[n].effects)||'')+'</textarea>';
+ boite.innerHTML=exige+'<table class="paliers-table"><thead><tr><td></td><th scope="col">Palier 1</th><th scope="col">Palier 2</th><th scope="col">Palier 3</th></tr></thead><tbody>'
+  +'<tr><th scope="row">Coût (PT)</th>'+[1,2,3].map(n=>'<td><input type="number" name="c_'+n+'" min="0" max="99" step="1" value="'+(d.couts[n-1]||0)+'" aria-label="Coût en PT — palier '+n+'"></td>').join('')+'</tr>'
+  +'<tr><th scope="row">Effet</th>'+[1,2,3].map(n=>'<td>'+texte(n)+'</td>').join('')+'</tr>'
+  +(code?(code.params||[]).map(p=>'<tr><th scope="row">'+esc(p.nom)+'</th>'+[1,2,3].map(n=>'<td>'+cellule(p,n)+'</td>').join('')+'</tr>').join(''):'')
+  +'</tbody></table>'}
 // Le nom d'un modèle du bestiaire, pour les phrases du moteur qui ne le connaissent pas.
 function nomModele(id){const m=(catalog.monsters||[]).find(x=>x&&x.id===id);return m?m.name:''}
 /* Vrai si x repose, de près ou de loin, sur t : par la fiche ou par la mécanique. */
@@ -1711,7 +1737,7 @@ function descendDe(x,t,vus=new Set()){if(!x||!t||vus.has(t.id))return false;vus.
 function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talentIndex=i;talentApres=apres;
  const t=i===null?{name:'Nouveau talent',famille:GENERIQUES,type:'act',level:1,effect:'',effets:'',effects:'',notes:'',effet:'',params:{},...(defauts||{})}:catalog.talents[i];
  if(i!==null&&!t)return;
- talentDraft={effet:t.effet||'',params:{...(t.params||{})}};
+ talentDraft={effet:t.effet||'',params:{...(t.params||{})},effects:t.effects||'',couts:[1,2,3].map(n=>coutPalier(t,n)),paliers:structuredClone(t.paliers||{})};
  /* Les classes offertes : celles du jeu, celles déjà portées par un talent, et celles que
     la troupe s'est données. La classe du talent ouvert y figure toujours, fût-elle inédite. */
  const familles=[...new Set([GENERIQUES,...talentFamilies(),
@@ -1751,19 +1777,19 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
      lui-même, ni ce qui repose déjà sur lui — sans quoi l'arbre se mordrait la queue. */
   +sel('Prérequis — talent à posséder d’abord','prerequis',t.prerequis||'',[['','— aucun —'],
    ...(catalog.talents||[]).filter(x=>x&&x.id!==t.id&&!descendDe(x,t)).map(x=>[x.id,talentFamily(x)+' · '+x.name+(NIVEAUX_TALENTS?' (niv. '+(x.level||1)+')':'')])])
-  +'<div class="t-seul"><label>Effet<textarea name="effects" rows="3" maxlength="600">'+esc(t.effects||'')+'</textarea></label>'
-  /* Le texte ci-dessus se lit à la table ; celui-ci agit. On choisit l'effet dans la liste
-     de ce que le moteur sait faire, puis on en règle les valeurs — plus besoin que le nom
-     du talent tombe juste. */
-  +'<h2 class="sous-titre">Effet appliqué par le moteur</h2>'
+  /* On choisit l'effet dans la liste de ce que le moteur sait faire ; puis, palier par palier,
+     le texte qui se lit à la table, les valeurs qui agissent, et ce que coûte le palier. */
+  +'<div class="t-seul"><h2 class="sous-titre">Effet appliqué par le moteur</h2>'
   +sel('Mécanique','effet',bonus?'':(t.effet||''),[['','— Aucun : talent descriptif —'],
    ...Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>[c.cle,libelleTalent(c.cle)])])
+  +'<h2 class="sous-titre">Paliers — coût, texte et réglages</h2>'
   +'<div id="talent-reglages"></div></div>'
   // Le bonus : une caractéristique, une valeur — et la compétence, si c'est là qu'il va.
   +'<div class="b-seul"><h2 class="sous-titre">Le bonus</h2><div class="edit-grid">'
   +sel('Caractéristique','b_carac',pb.carac,optBonus('carac'))
   +field('Valeur','b_valeur',pb.valeur,'number','min="1" max="20"')
-  +sel('Compétence','b_comp',pb.comp,optBonus('comp'))+'</div>'
+  +sel('Compétence','b_comp',pb.comp,optBonus('comp'))
+  +field('Coût (PT)','b_cout',coutPalier(t,1),'number','min="0" max="99" step="1"')+'</div>'
   +'<p class="muted" id="bonus-apercu"></p></div>';
  /* Ce qui n'est que talent — nom, type, logo, rangée, effet, mécanique — se retire en mode
     bonus, et ce qui n'est que bonus se retire en mode talent : retiré, et non caché, pour
@@ -1792,7 +1818,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  voie.onchange=()=>{const autre=voie.value===AUTRE_VOIE;$('voie-autre').hidden=!autre;
   if(autre){const champ=$('talent-form').elements.voieLibre;champ.value='';champ.focus()}};
  const menu=$('talent-form').elements.effet;
- menu.onchange=()=>{talentDraft.params=lireReglagesTalent();talentDraft.effet=menu.value;dessineReglagesTalent()};
+ menu.onchange=()=>{lisBrouillonTalent();talentDraft.effet=menu.value;dessineReglagesTalent()};
  // L'aperçu du logo, à côté de son menu, comme pour un objet.
  const menuLogo=$('talent-form').elements.logo;
  const apercu=document.createElement('img');apercu.className='logo-equip apercu';apercu.alt='';
@@ -1819,11 +1845,20 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.rangee=f.rangee&&['attaques','reactions','aucune'].includes(f.rangee.value)?f.rangee.value:'';
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
  t.effet=TALENTS_CODES[f.effet.value]&&f.effet.value!=='bonus'?f.effet.value:'';
- t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent()}):{};
+ t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p_')}):{};
+ /* Les paliers : leur coût ; pour le 2 et le 3, leur texte s'il en a un, leurs réglages s'ils
+    diffèrent de ceux d'en dessous — sinon ils en héritent, et suivront s'ils changent. */
+ t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);
+ t.paliers={};{let avant=t.params;
+  [2,3].forEach(n=>{const e=f['pe_'+n]?f['pe_'+n].value.trim().slice(0,600):'';
+   const q=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p'+n+'_')}):null;
+   const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);
+   if(e||propres)t.paliers[n]={effects:e,...(propres?{params:q}:{})};if(q)avant=q})}
  /* Un bonus de caractéristique : sa caractéristique et sa valeur font tout — le nom s'écrit
     seul, la nature est passive, rien à la table, pas de logo. */
  if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});
-  t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.logo='';t.effects=''}
+  t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.logo='';t.effects='';
+  t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={}}
  if(talentIndex===null)catalog.talents.push(t);else catalog.talents[talentIndex]=t;
  talentDialog.close();renderCatalogPages();render();scheduleSave();
  const rappel=talentApres;talentApres=null;if(rappel)rappel(t)};
@@ -2206,10 +2241,17 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const majTable=()=>{renderArbres();renderHeroes();render();scheduleSave()};
  /* Oublier une racine fait tomber les racines du dessous, et tout ce qui reposait sur
     elles ; du bas vers le haut, pour que chaque retrait n'emporte que le sien. */
+ // Le palier tenu d'un talent : 1 ne s'écrit pas, c'est d'avoir appris.
+ const poserPalier=(t,n)=>{a.paliersTalents={...(a.paliersTalents||{})};if(n>1)a.paliersTalents[t.id]=Math.min(paliersDe(t),n);else delete a.paliersTalents[t.id]};
+ // « − » sur un nœud tenu : le palier d'en dessous ; au premier, l'oubli — sauf « fixe » (une maîtrise).
+ const boutonMoins=(el,t,descendre,fixe)=>{const k=palierDe(a,t);if(fixe&&k<=1)return;
+  const m=ico('−',k>1?'Redescendre '+t.name+' au palier '+(k-1):'Oublier '+t.name,descendre);m.classList.add('palier-moins');m.removeAttribute('title');
+  let outils=el.querySelector('.arbre-outils');if(!outils){outils=document.createElement('span');outils.className='arbre-outils';el.append(outils)}outils.prepend(m);
+  el.oncontextmenu=e=>{e.preventDefault();descendre()}};
  const oublier=(t,racines)=>{const avant=a.talents;let reste=avant;
   const chute=racines.includes(t)?racines.slice(racines.indexOf(t)):[t];
   [...chute].reverse().forEach(x=>{reste=talentsSans(reste,x.id,catalog.talents).liste});
-  a.talents=reste;
+  a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);
   return avant.filter(id=>id!==t.id&&!reste.includes(id)).map(id=>{const x=talent(id);return x?x.name:''}).filter(Boolean)};
  const ico=(g,titre,fn)=>{const b=document.createElement('button');b.type='button';b.className='ico';b.textContent=g;
   b.title=titre;b.setAttribute('aria-label',titre);b.draggable=false;b.onclick=e=>{e.stopPropagation();fn()};return b};
@@ -2228,14 +2270,29 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  /* La bulle d'un nœud : son nom, ce qu'il fait, ce qu'il requiert, et s'il est
     sous clé. Un bonus dit sa valeur ; il n'a pas d'effet à préciser. */
  const bulleNoeud=(t,verrou,note)=>{const bonus=t.effet==='bonus';
-  const d=bonus?document.createElement('div'):talentDetail(t,false);if(bonus)d.className='talent-detail t-'+talentType(t)[0];d.classList.add('large');
+  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
   const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
   nom.textContent=bonus?libelleBonus(paramsTalent(t)):t.name;
   // Jamais la nature du talent : la bulle ne l'écrit nulle part.
-  tete.append(nom);d.prepend(tete);
-  if(bonus&&t.effects){const p=document.createElement('p');p.textContent=t.effects;d.append(p)}
-  if(note){const p=document.createElement('p');p.className='muted';p.textContent=note;d.append(p)}
-  if(verrou){const p=document.createElement('p');p.className='talent-bulle-cle';p.textContent='🔒 Sous clé : apprends d’abord « '+verrou+' ».';d.append(p)}
+  tete.append(nom);d.append(tete);
+  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
+  if(bonus){if(t.effects)ligne(t.effects);if(coutPalier(t,1))ligne('Coût : '+coutPalier(t,1)+' PT','muted')}
+  else{/* Les paliers, côte à côte : celui qu'on tient et le suivant, pour voir ce qui change ;
+      rien d'appris, le premier ; sans porteur — le plan du MJ —, les trois. */
+   const k=a?palierDe(a,t):0,max=paliersDe(t);
+   const montres=!a?[1,2,3].slice(0,max):k===0?[1]:k>=max?[k]:[k,k+1];
+   const g=document.createElement('div');g.className='paliers-bulle n'+montres.length;
+   montres.forEach(n=>{const tp=talentAuPalier(t,n),col=document.createElement('div');col.className='palier-col'+(a?(n<=k?' acquis':' suivant'):'');
+    const h=document.createElement('p');h.className='palier-tete';const c=coutPalier(t,n);
+    h.textContent='Palier '+n+(a?(n<=k?' · acquis':' · suivant'):'')+(c?' · '+c+' PT':'');col.append(h);
+    const e=document.createElement('p');e.className='palier-effet';e.textContent=tp.effects||'Effet à préciser.';if(tp.effects)texteEnrichi(e,tp.effects);col.append(e);
+    // Ce que le moteur en fera, à ce palier : ses réglages en toutes lettres.
+    if(t.effet&&TALENTS_CODES[t.effet]){const m=document.createElement('p');m.className='palier-moteur';m.innerHTML=phraseTalent(t.effet,tp.params);col.append(m)}
+    g.append(col)});
+   d.append(g);
+   const socle=nomPrerequis(t,catalog.talents);if(socle)ligne('↳ Requiert : '+socle)}
+  if(note)ligne(note,'muted');
+  if(verrou)ligne('🔒 Sous clé : apprends d’abord « '+verrou+' ».','talent-bulle-cle');
   return d};
  // Un nœud de l'arbre : le rond au logo — ou au glyphe de sa nature — le nom, le niveau.
  const noeud=(t,etat,verrou)=>{const b=document.createElement('div');b.tabIndex=0;b.setAttribute('role','button');
@@ -2250,9 +2307,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    rond.textContent='+'+Math.max(1,(p&&p.valeur)|0);nom.textContent=libelleBonus(p,true).replace(/^\+\d+ /,'');
    niv.textContent=t.name&&t.name!==libelleBonus(p,true)&&t.name!=='Nouveau talent'?t.name:(NIVEAUX_TALENTS?'Niv. '+(t.level||1):'')}
   niv.hidden=!niv.textContent;
-  b.append(rond,nom,niv);
+  // Sous l'icône, un point par palier : ceux qu'on tient s'allument.
+  const max=paliersDe(t),k=a?palierDe(a,t):0;let pts=null;
+  if(max>1){pts=document.createElement('span');pts.className='arbre-paliers';
+   for(let n=1;n<=max;n++){const i=document.createElement('i');if(n<=k)i.className='on';pts.append(i)}}
+  b.append(rond,...(pts?[pts]:[]),nom,niv);
   // Au survol, la bulle de description, comme sur la fiche ; « b.noteBulle » s'y ajoute.
-  b.setAttribute('aria-label',t.name+' — '+[talentType(t)[2],t.effects].filter(Boolean).join(' · ')+(verrou?' — sous clé : requiert '+verrou:''));
+  b.setAttribute('aria-label',t.name+(k?' — palier '+k+' sur '+max:'')+' — '+[talentType(t)[2],t.effects].filter(Boolean).join(' · ')+(verrou?' — sous clé : requiert '+verrou:''));
   b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}};
   // Les outils du MJ, au survol : corriger le talent, en suspendre un nouveau dessous.
   if(mj){const outils=document.createElement('span');outils.className='arbre-outils';
@@ -2260,7 +2321,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if(t.type!=='mait')outils.append(ico('⊕','Créer un talent sous '+t.name,()=>openTalent(null,renderArbres,
     {famille:talentFamily(t),voie:t.voie||'',prerequis:t.id,level:Math.min(20,(t.level||1)+1)})));
    b.append(outils)}
-  surveille(b,()=>ouvrirBulle(b,bulleNoeud(t,verrou,b.noteBulle),'bulle-talent'));
+  surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
   return b};
  // La tête : la classe, et ses maîtrises, acquises d'office.
  const tete=document.createElement('div');tete.className='arbres-tete';
@@ -2268,9 +2329,15 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const encre=classe?teinteClasse(classe):'';if(encre){nomClasse.style.color=encre;corps.style.setProperty('--encre',encre)}
  else corps.style.removeProperty('--encre');
  tete.append(nomClasse);
+ // Ce que l'arbre a coûté : les paliers acquis, au prix de chacun — dès qu'un prix est fixé.
+ if(a){const pt=ptDepenses(a,catalog.talents);if(pt){const s=document.createElement('p');s.className='arbres-pt';s.textContent=pt+' PT dépensé'+(pt>1?'s':'');tete.append(s)}}
  const maitrises=maitrisesDe(classe);
  if(maitrises.length){const bande=document.createElement('div');bande.className='arbre-maitrises';
   maitrises.forEach(t=>{const n=noeud(t,a?'acquis auto':'modele');
+   /* Une maîtrise vient avec la classe, au palier 1 : un clic la monte, « − » la redescend,
+      mais jamais sous le premier palier. */
+   if(a){n.onclick=()=>{const k=palierDe(a,t);if(k>=paliersDe(t)){note('« '+t.name+' » est à son dernier palier.');return}poserPalier(t,k+1);note('');majTable()};
+    boutonMoins(n,t,()=>{const k=palierDe(a,t);if(k>1){poserPalier(t,k-1);note('');majTable()}},true)}
    n.noteBulle='Maîtrise de classe, acquise avec la classe.';
    if(!a)n.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres);
    bande.append(n)});
@@ -2290,10 +2357,15 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);if(diag)el.classList.add('diag');
   el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
    if(verrou){note('« '+t.name+' » exige d’abord « '+verrou+' ».');return}
-   if(acquis){const tombes=oublier(t,libre?[]:chuteDe(etages,t));
-    note(tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'')}
+   // Tenu, un clic le monte d'un palier ; au dernier, le « − » seul le fait redescendre.
+   if(acquis){const k=palierDe(a,t);if(k>=paliersDe(t)){note('« '+t.name+' » est à son dernier palier.');return}
+    poserPalier(t,k+1);note('')}
    else{a.talents=[...a.talents,t.id];note('')}
    majTable()};
+  // Redescendre : un palier de moins ; au premier, le talent s'oublie — et ce qui reposait dessus.
+  if(a&&acquis)boutonMoins(el,t,()=>{const k=palierDe(a,t);if(k>1){poserPalier(t,k-1);note('');majTable();return}
+   const tombes=oublier(t,libre?[]:chuteDe(etages,t));
+   note(tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'');majTable()});
   glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,prerequis:t.id});
   return el};
  // La place vide d'une diagonale : le MJ y crée un talent, ou y dépose celui qu'il tire.
