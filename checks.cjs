@@ -2555,14 +2555,14 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    et les matériaux. Le domaine tient ses matériaux et ses gemmes — son or est son trésor — ; un
    aventurier porte son or et ses gemmes. Le MJ corrige d'un clic, la troupe lit en direct. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),fief=fs.readFileSync('domaine.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
- assert.equal(C.CLES_GEMMES.length,30,'3 tailles × 5 variétés × allumée ou éteinte');
- assert.ok(C.CLES_GEMMES.includes('brome-saphir-eteinte')&&C.CLES_GEMMES.includes('brisure-rubis'));
+ assert.equal(C.CLES_GEMMES.length,15,'3 tailles × 5 variétés — les éteintes en sommeil');
+ assert.ok(C.CLES_GEMMES.includes('brome-saphir')&&C.CLES_GEMMES.includes('brisure-rubis')&&!C.CLES_GEMMES.some(k=>k.endsWith('-eteinte')));
  assert.deepEqual(C.CLES_RICHESSES.slice(0,2),['or','brisure-citrine']);
- assert.ok(!C.CLES_RESSOURCES_DOMAINE.includes('or')&&C.CLES_RESSOURCES_DOMAINE.includes('acier')&&C.CLES_RESSOURCES_DOMAINE.includes('eclat-diamant-eteinte'),'l’or du domaine est son trésor');
- assert.equal(C.CLES_RESSOURCES_DOMAINE.length,39);
+ assert.ok(!C.CLES_RESSOURCES_DOMAINE.includes('or')&&C.CLES_RESSOURCES_DOMAINE.includes('acier')&&C.CLES_RESSOURCES_DOMAINE.includes('eclat-diamant'),'l’or du domaine est son trésor');
+ assert.equal(C.CLES_RESSOURCES_DOMAINE.length,24);
  assert.equal(C.nomGemme('eclat','emeraude',true),'Éclats d’émeraude, éteintes');assert.equal(C.nomGemme('brome','rubis',false),'Brômes de rubis');
  assert.equal(C.lisCompte('1 200'),1200);assert.equal(C.lisCompte('-3'),0);assert.equal(C.lisCompte('abc'),0);assert.equal(C.lisCompte(5e9),999999);
- assert.deepEqual(C.normaliseCompte({or:'5',x:3,'eclat-rubis':-2,'brisure-saphir':0,'brome-diamant-eteinte':2.7},C.CLES_RICHESSES),{or:5,'brome-diamant-eteinte':2});
+ assert.deepEqual(C.normaliseCompte({or:'5',x:3,'eclat-rubis':-2,'brisure-saphir':0,'brome-diamant':2.7,'brome-diamant-eteinte':4},C.CLES_RICHESSES),{or:5,'brome-diamant':2},'une éteinte quitte la bourse');
  assert.deepEqual(C.normaliseDomaine(null).ressources,{});
  assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
  assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
@@ -2605,7 +2605,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(C.valeurGemme('eclat','rubis',true),0,'une éteinte n’a pas de prix');
  assert.equal(C.valeurGemmes({or:999,'brisure-citrine':2,'eclat-rubis':1,'brome-diamant':1,'brome-diamant-eteinte':4}),610);
  assert.equal(C.nomGemme('brisure','citrine',false),'Brisures de citrine');
- assert.ok(src.includes("VARIETES_GEMMES.forEach(([v,nv])=>{const r=corps.insertRow();r.className='g-'+v;")&&src.includes("if(total){const c=t.createCaption();c.textContent='Valeur des gemmes allumées : '")
+ assert.ok(src.includes("VARIETES_GEMMES.forEach(([v,nv])=>{const r=corps.insertRow();r.className='g-'+v;")&&src.includes("if(total){const c=t.createCaption();c.textContent='Valeur des gemmes'+(GEMMES_ETEINTES?' allumées':'')+' : '")
   &&fs.readFileSync('editor.css','utf8').includes('.g-citrine{--g:#e2b12a}'),'la grille par variété, et sa valeur');}
 /* v0.286 — Les icônes des gemmes : img/ressource_<taille>_<variété>.png, déclarées comme les autres
    logos, dans chaque case de la grille et en tête de chaque variété ; grises pour les éteintes. */
@@ -2621,4 +2621,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['ressource_eclat_rubis','ressource_gemme_emeraude','ressource_brisure_citrine'].map(ctxL.nomLogo),['Éclat de rubis','Brôme d’émeraude','Brisure de citrine']);
  assert.ok(src.includes("el.append(iconeDeGemme(ta,v,eteinte),(eteinte?' ':'')+n);")&&src.includes("th.append(iconeDeGemme('brome',v,false),nom);")
   &&fs.readFileSync('editor.css','utf8').includes('table.gemmes .gem-eteinte .gem-ico{width:11px;height:11px;filter:grayscale(1)'),'les icônes dans la grille, grises pour les éteintes');}
-console.log('1597 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.287 — Les gemmes éteintes sont en sommeil : une gemme se dépense tout entière. Elles quittent
+   les comptes, la grille n'a plus leur ligne ; un drapeau les ramènerait partout. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8');
+ assert.equal(C.GEMMES_ETEINTES,false);
+ assert.deepEqual(C.normaliseDomaine({ressources:{'eclat-rubis':3,'eclat-rubis-eteinte':2}}).ressources,{'eclat-rubis':3},'les éteintes quittent aussi la réserve du domaine');
+ assert.ok(src.includes("[false,...(GEMMES_ETEINTES?[true]:[])].forEach(eteinte=>{"),'la grille sans leur ligne');}
+console.log('1600 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

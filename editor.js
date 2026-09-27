@@ -525,7 +525,8 @@ function grilleGemmes(compte,poser,qui){const t=document.createElement('table');
   const th=document.createElement('th');th.scope='row';
   const nom=document.createElement('span');nom.textContent=nv;th.append(iconeDeGemme('brome',v,false),nom);r.append(th);
   TAILLES_GEMMES.forEach(([ta])=>{const td=r.insertCell();
-   [false,true].forEach(eteinte=>{const k=cleGemme(ta,v,eteinte),n=compte[k]||0,nom=nomGemme(ta,v,eteinte);
+   // Les éteintes ne se montrent que si elles sont de retour.
+   [false,...(GEMMES_ETEINTES?[true]:[])].forEach(eteinte=>{const k=cleGemme(ta,v,eteinte),n=compte[k]||0,nom=nomGemme(ta,v,eteinte);
     const el=document.createElement(eteinte?'small':'b');el.className=(eteinte?'gem-eteinte':'gem-vive')+(n?'':' zero');
     // Chaque compte a l'icône de sa gemme ; éteinte, elle est grise.
     el.append(iconeDeGemme(ta,v,eteinte),(eteinte?' ':'')+n);
@@ -536,7 +537,7 @@ function grilleGemmes(compte,poser,qui){const t=document.createElement('table');
     td.append(el)})})});
  // Dessous, ce que valent les gemmes allumées, ensemble.
  const total=valeurGemmes(compte);
- if(total){const c=t.createCaption();c.textContent='Valeur des gemmes allumées : '+total.toLocaleString('fr-FR')+' or'}
+ if(total){const c=t.createCaption();c.textContent='Valeur des gemmes'+(GEMMES_ETEINTES?' allumées':'')+' : '+total.toLocaleString('fr-FR')+' or'}
  return t}
 /* L'icône d'une gemme, si son image est dans le dossier ; sinon le losange de sa couleur.
    Éteinte, elle passe au gris. */
