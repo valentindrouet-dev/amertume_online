@@ -1366,6 +1366,24 @@ function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
  n.notes=String(b&&b.notes||'').slice(0,2000);return n}
 function normalisePnj(p){return {id:p&&p.id||idDomaine(),nom:String(p&&p.nom||'Inconnu').slice(0,60),role:String(p&&p.role||'').slice(0,80),
  statut:p&&p.statut==='visiteur'?'visiteur':'habitant',batiment:String(p&&p.batiment||'').slice(0,60),notes:String(p&&p.notes||'').slice(0,2000)}}
+/* ---------- Les ressources ---------- */
+/* L'or, les gemmes et les matériaux. Les matériaux sont aussi ceux dont une pièce d'équipement
+   est faite ; l'or du domaine est son trésor. Une gemme a une taille — Brisure, Éclat,
+   Brôme —, une variété — Rubis, Diamant, Émeraude, Saphir — et peut être éteinte : sa
+   flamme vidée, elle se recharge. Un compte ne garde que ce qui n'est pas nul. */
+const MATERIAUX=['Acier','Argent','Bois','Bronze','Corde','Cuir','Diamant','Or','Pierre','Verre'];
+const cleRessource=n=>String(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+const TAILLES_GEMMES=[['brisure','Brisures','Brisure'],['eclat','Éclats','Éclat'],['brome','Brômes','Brôme']];
+const VARIETES_GEMMES=[['rubis','Rubis'],['diamant','Diamant'],['emeraude','Émeraude'],['saphir','Saphir']];
+const cleGemme=(taille,variete,eteinte)=>taille+'-'+variete+(eteinte?'-eteinte':'');
+function nomGemme(taille,variete,eteinte){const t=(TAILLES_GEMMES.find(([k])=>k===taille)||[])[1]||'',v=((VARIETES_GEMMES.find(([k])=>k===variete)||[])[1]||'').toLowerCase();
+ return t+(/^[aeiouéèêh]/i.test(v)?' d’':' de ')+v+(eteinte?', éteintes':'')}
+const CLES_GEMMES=TAILLES_GEMMES.flatMap(([t])=>VARIETES_GEMMES.flatMap(([v])=>[cleGemme(t,v,false),cleGemme(t,v,true)]));
+// Ce que porte un aventurier : son or et ses gemmes. Ce que stocke le domaine : ses matériaux et ses gemmes.
+const CLES_RICHESSES=['or',...CLES_GEMMES];
+const CLES_RESSOURCES_DOMAINE=[...MATERIAUX.filter(m=>m!=='Or').map(cleRessource),...CLES_GEMMES];
+const lisCompte=v=>Math.max(0,Math.min(999999,Math.trunc(Number(String(v??'').replace(/[\s\u202f\u00a0]/g,'')))||0));
+function normaliseCompte(c,cles){const o={};if(c&&typeof c==='object'&&!Array.isArray(c))cles.forEach(k=>{const n=lisCompte(c[k]);if(n)o[k]=n});return o}
 /* Les inscriptions de la carte, sur ses parchemins : quatre textes, chacun à sa place — le nom
    du domaine et sa qualité en haut à gauche, les habitants et les visiteurs en bas à droite.
    Le MJ les pose où il veut, en pourcentage de la carte. Les deux blocs d'avant (titre, gens)
@@ -1394,7 +1412,8 @@ function normaliseDomaine(d){d=d&&typeof d==='object'&&!Array.isArray(d)?d:{};
  return {nom:String(d.nom||'Le Domaine').slice(0,80),monnaie:String(d.monnaie||'or').slice(0,20),
   carte:{calques,ratio:ratio>0?ratio:16/9,cartouches:cartouchesValides(d.carte&&d.carte.cartouches)},batiments,
   finances:{tresor:Math.trunc(Number(d.finances&&d.finances.tresor))||0,journal},
-  pnj:(Array.isArray(d.pnj)?d.pnj:[]).filter(Boolean).slice(0,300).map(normalisePnj),aventuriers}}
+  pnj:(Array.isArray(d.pnj)?d.pnj:[]).filter(Boolean).slice(0,300).map(normalisePnj),aventuriers,
+  ressources:normaliseCompte(d.ressources,CLES_RESSOURCES_DOMAINE)}}
 // Le coût pour atteindre une étape : les fondations, la construction, le bâti.
 function coutEtape(b,etape){return etape>=1&&etape<=3?Math.max(0,Math.trunc(Number((b&&b.couts||[])[etape-1]))||0):0}
 function prochaineEtape(b){return b&&b.etape<3?b.etape+1:null}
@@ -1449,7 +1468,7 @@ const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatie
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
- ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
+ ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,cleGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

@@ -12,7 +12,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
+function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
  a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};
  a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};
  a.checks=Array.isArray(a.checks)?POINTS_CLES.map((q,i)=>Math.max(0,Math.min(pointsMax(a,q),a.checks[i]===true?1:Math.trunc(Number(a.checks[i]))||0))):[0,0,0];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
@@ -26,7 +26,7 @@ const SEGMENTS=['c','g','gc','d','dc'];
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 /* Les ressources dont une pièce est faite — deux au plus — et son prix, en or : saisis à
    l'armurerie, lus nulle part ailleurs pour l'instant. Le menu les range par ordre alphabétique. */
-const RESSOURCES=['Pierre','Cuir','Bois','Acier','Or','Argent','Bronze','Diamant','Verre','Corde'].sort((x,y)=>x.localeCompare(y,'fr'));
+const RESSOURCES=[...MATERIAUX].sort((x,y)=>x.localeCompare(y,'fr'));
 const ressourceValide=r=>RESSOURCES.includes(r)?r:'';
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
@@ -507,6 +507,36 @@ function tuilesVives(a,tuiles,cles,carte){
    garde l'ancien, devenu orphelin. Le rang se relit donc au clic, et une carte périmée
    redessine la page au lieu d'ouvrir un index qui n'existe plus. */
 function heroRank(a){const i=actors.indexOf(a);if(i<0)renderHeroes();return i}
+/* ---------- Les richesses : l'or et les gemmes ---------- */
+/* L'or en tête, d'une pièce ; les gemmes en grille — une ligne par taille, une colonne par
+   variété —, les allumées en gros et, dessous, les éteintes. « poser(clé, texte) » rend le
+   compte modifiable d'un clic, au MJ ; sans lui, on lit. */
+function ligneOr(n,poser,qui){const l=document.createElement('div');l.className='richesse-or'+(n?'':' zero');
+ const piece=document.createElement('i');piece.className='piece';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');
+ const unite=document.createElement('span');unite.textContent='or';l.append(piece,v,unite);
+ if(poser)champVif(v,()=>n,t=>poser('or',t),'Or'+(qui?' — '+qui:''),'petit');return l}
+function grilleGemmes(compte,poser,qui){const t=document.createElement('table');t.className='gemmes';
+ const tete=t.createTHead().insertRow();tete.append(document.createElement('td'));
+ VARIETES_GEMMES.forEach(([v,n])=>{const th=document.createElement('th');th.className='g-'+v;th.scope='col';
+  const pierre=document.createElement('i');pierre.className='gemme';const nom=document.createElement('span');nom.textContent=n;th.append(pierre,nom);tete.append(th)});
+ const corps=t.createTBody();
+ TAILLES_GEMMES.forEach(([ta,nt])=>{const r=corps.insertRow();const th=document.createElement('th');th.scope='row';th.textContent=nt;r.append(th);
+  VARIETES_GEMMES.forEach(([v])=>{const td=r.insertCell();td.className='g-'+v;
+   [false,true].forEach(eteinte=>{const k=cleGemme(ta,v,eteinte),n=compte[k]||0,nom=nomGemme(ta,v,eteinte);
+    const el=document.createElement(eteinte?'small':'b');el.className=(eteinte?'gem-eteinte':'gem-vive')+(n?'':' zero');
+    if(eteinte){const g=document.createElement('i');g.className='gemme eteinte';el.append(g,' '+n)}else el.textContent=String(n);
+    el.setAttribute('aria-label',nom+' : '+n);el.title=nom;
+    if(poser)champVif(el,()=>compte[k]||0,val=>poser(k,val),nom+(qui?' — '+qui:''),'petit');
+    td.append(el)})})});
+ return t}
+// Poser un compte : un entier positif, ou rien — un compte à zéro disparaît.
+function poseCompte(compte,k,v){const n=lisCompte(v);if(n)compte[k]=n;else delete compte[k];return n}
+// Les richesses d'un aventurier, sur sa carte : le MJ les corrige, la troupe les lit.
+function blocRichesses(a){const out=document.createElement('div');out.className='richesses';
+ a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);
+ const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));
+  rendrePlusTard();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}:null;
+ out.append(ligneOr(a.richesses.or||0,poser,a.name),grilleGemmes(a.richesses,poser,a.name));return out}
 function heroCard(a,i){const c=document.createElement('article');c.className='hero-card';
  const tete=document.createElement('div');tete.className='hero-head';
  const jeton=document.createElement('span');jeton.className='avatar';
@@ -600,7 +630,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const titreKit=sousTitre('Équipement','Inventaire de '+a.name,view!=='mj'?null:()=>openPicker(a,'gear'));
  // Le rouage ouvre les arbres de la classe : les talents s'y choisissent de haut en bas.
  const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');
- c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),titreTal,talentPills(a));return c}
+ c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),sousTitre('Richesses'),blocRichesses(a),titreTal,talentPills(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
  const troupe=actors.filter(a=>a.hero);

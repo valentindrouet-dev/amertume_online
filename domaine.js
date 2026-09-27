@@ -339,6 +339,7 @@ domainePage.innerHTML=
  +'<div id="dom-plan-etiquettes"></div><p class="muted dom-plan-vide" id="dom-plan-vide" hidden>Aucune carte du domaine. Dessine-la dans l’onglet Cartes : des calques — un par étape, un par état.</p></div></div>'
  +'<div id="dom-fiche"></div></section>'
  +'<aside class="panel dom-col" id="dom-col-gestion"><h2>Finances</h2><div id="dom-finances"></div>'
+ +'<div class="divider"></div><h2>Ressources</h2><div id="dom-ressources"></div>'
  +'<div class="divider"></div><h2>Habitants et visiteurs</h2><div id="dom-pnj"></div>'
  +'<div class="divider"></div><h2>Aventuriers</h2><div id="dom-aventuriers"></div></aside>';
 document.querySelector('main.layout').after(domainePage);
@@ -385,7 +386,7 @@ function renderDomaine(){const d=domaine,mj=mjDom();vueDomaine=view;if(mj)evacue
  // Sur l'onglet, le nom ne se déplace pas : il choisit le bâtiment, c'est tout.
  dessineZonesDom($('dom-plan-zones'),$('dom-plan-etiquettes'),{sel:sel>=0?sel:null,jeu:true,inerte:b=>!batimentChoisissable(b),
   clic:b=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()}});
- renderDomBats();renderDomFiche();renderDomFinances();renderDomPnj();renderDomAventuriers()}
+ renderDomBats();renderDomFiche();renderDomFinances();renderDomRessources();renderDomPnj();renderDomAventuriers()}
 $('dom-plan-zones').addEventListener('click',e=>{const z=e.target.closest('[data-bat]');if(!z)return;
  const b=domaine.batiments[Number(z.dataset.bat)];if(b&&!batimentChoisissable(b))return;domPageSel=b&&domPageSel!==b.id?b.id:null;renderDomaine()});
 // Construire : d'un clic, si le trésor y suffit ; sinon le MJ confirme, et le trésor plonge.
@@ -497,6 +498,20 @@ function renderDomFinances(){const boite=$('dom-finances');boite.replaceChildren
   li.append(date,lib,m);liste.append(li)});
  if(!lignes.length){const li=document.createElement('li');li.className='muted';li.textContent='Aucun mouvement.';liste.append(li)}
  boite.append(liste)}
+/* ---------- Les ressources ---------- */
+/* Ce que le domaine a en réserve : ses matériaux, puis ses gemmes — son or est son trésor.
+   Le MJ corrige un compte d'un clic ; les joueurs lisent. */
+function renderDomRessources(){const boite=$('dom-ressources');if(!boite)return;boite.replaceChildren();
+ const r=domaine.ressources||(domaine.ressources={}),mj=mjDom();
+ const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;
+ const titre=t=>{const h=document.createElement('h3');h.className='reglage-titre';h.textContent=t;return h};
+ const mats=document.createElement('div');mats.className='materiaux';
+ MATERIAUX.filter(m=>m!=='Or').forEach(m=>{const k=cleRessource(m),n=r[k]||0;
+  const chip=document.createElement('span');chip.className='materiau'+(n?'':' zero');
+  const nom=document.createElement('span');nom.textContent=m;const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');
+  if(poser)champVif(v,()=>r[k]||0,t=>poser(k,t),m+' — réserve du domaine','petit');
+  chip.append(nom,v);mats.append(chip)});
+ boite.append(titre('Matériaux'),mats,titre('Gemmes'),grilleGemmes(r,poser,'réserve du domaine'))}
 /* ---------- Les habitants et les visiteurs ---------- */
 const pnjDialog=dialog('dom-pnj-editor','Personnage','<form id="dom-pnj-form"><div id="dom-pnj-fields"></div><div class="form-actions"><button type="button" id="dom-pnj-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
 function openPnj(id){const p=id?domaine.pnj.find(x=>x.id===id):null;

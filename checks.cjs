@@ -2052,7 +2052,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.equal(ctx.reposerPiece(a,items[3]),true);assert.equal(a.armures.filter(x=>x==='r').length,2);
  assert.equal(ctx.equiperPiece(a,items[4]),true);assert.equal(ctx.reposerPiece(a,items[4]),true);assert.equal(ctx.reposerPiece(a,items[4]),false);
  assert.equal(ctx.equiperPiece(a,{id:'zz',category:'object'}),false);assert.equal(ctx.reposerPiece(a,null),false);
- assert.ok(src.includes('function corpsEtSac(a){')&&src.includes(" c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),titreTal,talentPills(a));return c}")
+ assert.ok(src.includes('function corpsEtSac(a){')&&src.includes(" c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),sousTitre('Richesses'),blocRichesses(a),titreTal,talentPills(a));return c}")
   &&src.includes("function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){")&&src.includes("const p=carreDeFiche(a,o,n,tout,portes,peutEquiper);")
   &&src.includes("return main?equiperDansMain(a,o,main):equiperPiece(a,o)});\n  recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}")
   &&src.includes("if(corps!==undefined&&equipable){p.draggable=true;")&&src.includes("const SILHOUETTE='<img class=\"silhouette\" src=\"'+imgUrl('PERSO.png')+'\"")&&feuille.includes('.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);object-fit:contain;object-position:center;')
@@ -2350,7 +2350,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("if(finit)actors.forEach(a=>{if(a.hero)a.reposPris=false});"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos" id="repos" hidden>⛺ Repos court</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
   &&page.includes(":a.reposPris?'Repos déjà pris : il reviendra à la fin du prochain combat.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposPris=true;")
-  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs'];"),'le Repos court');
+  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses'];"),'le Repos court');
 }
 /* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
    une arme prise remplace celle de la main droite ; lâchée sur une main, elle prend cette main.
@@ -2536,7 +2536,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    deux ressources et un prix en or, saisis à l'armurerie et lus nulle part ailleurs. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("  tete.append(nom);d.prepend(tete);")&&!src.includes("nat.textContent=bonus?'Bonus':talentType(t)[2]"),'la bulle de l’arbre tait la nature du talent');
- const ctxR={};vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('const RESSOURCES='),src.indexOf('function normalizeCatalog('))+';this.RESSOURCES=RESSOURCES;this.ressourceValide=ressourceValide;',ctxR);
+ const ctxR={MATERIAUX:[...require('./combat.js').MATERIAUX]};vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('const RESSOURCES='),src.indexOf('function normalizeCatalog('))+';this.RESSOURCES=RESSOURCES;this.ressourceValide=ressourceValide;',ctxR);
  assert.deepEqual([...ctxR.RESSOURCES],['Acier','Argent','Bois','Bronze','Corde','Cuir','Diamant','Or','Pierre','Verre'],'les ressources, par ordre alphabétique');
  assert.equal(ctxR.ressourceValide('Bois'),'Bois');assert.equal(ctxR.ressourceValide('Mithril'),'');
  assert.ok(src.includes("o.ressource1=ressourceValide(o.ressource1);o.ressource2=ressourceValide(o.ressource2);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))")
@@ -2548,4 +2548,26 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("  +sel('Rareté','rarete',rareteDe(a),RARETES)\n  +(arme?sel('Mains','hands',")&&src.includes("  +'<div class=\"edit-grid prix-ressources\">'\n  +field('Prix (or)','price',")
   &&fs.readFileSync('editor.css','utf8').includes('.edit-grid.prix-ressources{margin-top:12px}'),'prix et ressources sur une ligne, Mains avec la rareté');}
-console.log('1548 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.283 — Les ressources : l'or, les gemmes (trois tailles, quatre variétés, allumées ou éteintes)
+   et les matériaux. Le domaine tient ses matériaux et ses gemmes — son or est son trésor — ; un
+   aventurier porte son or et ses gemmes. Le MJ corrige d'un clic, la troupe lit en direct. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),fief=fs.readFileSync('domaine.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ assert.equal(C.CLES_GEMMES.length,24,'3 tailles × 4 variétés × allumée ou éteinte');
+ assert.ok(C.CLES_GEMMES.includes('brome-saphir-eteinte')&&C.CLES_GEMMES.includes('brisure-rubis'));
+ assert.deepEqual(C.CLES_RICHESSES.slice(0,2),['or','brisure-rubis']);
+ assert.ok(!C.CLES_RESSOURCES_DOMAINE.includes('or')&&C.CLES_RESSOURCES_DOMAINE.includes('acier')&&C.CLES_RESSOURCES_DOMAINE.includes('eclat-diamant-eteinte'),'l’or du domaine est son trésor');
+ assert.equal(C.CLES_RESSOURCES_DOMAINE.length,33);
+ assert.equal(C.nomGemme('eclat','emeraude',true),'Éclats d’émeraude, éteintes');assert.equal(C.nomGemme('brome','rubis',false),'Brômes de rubis');
+ assert.equal(C.lisCompte('1 200'),1200);assert.equal(C.lisCompte('-3'),0);assert.equal(C.lisCompte('abc'),0);assert.equal(C.lisCompte(5e9),999999);
+ assert.deepEqual(C.normaliseCompte({or:'5',x:3,'eclat-rubis':-2,'brisure-saphir':0,'brome-diamant-eteinte':2.7},C.CLES_RICHESSES),{or:5,'brome-diamant-eteinte':2});
+ assert.deepEqual(C.normaliseDomaine(null).ressources,{});
+ assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
+ assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
+  &&src.includes("const RESSOURCES=[...MATERIAUX].sort((x,y)=>x.localeCompare(y,'fr'));")&&vivant.includes("'etatsPassifs','richesses'];"),'les richesses se relisent et voyagent en direct');
+ assert.ok(src.includes("function grilleGemmes(compte,poser,qui){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
+  &&fief.includes("function renderDomRessources(){")&&fief.includes("const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;")
+  &&fief.includes("MATERIAUX.filter(m=>m!=='Or').forEach(m=>{"),'les compteurs : sur la carte de l’aventurier, au domaine');
+ const ctxP={lisCompte:C.lisCompte};vm.createContext(ctxP);vm.runInContext(src.slice(src.indexOf('function poseCompte('),src.indexOf('// Les richesses d\'un aventurier, sur sa carte')),ctxP);
+ const compte={or:4};assert.equal(ctxP.poseCompte(compte,'or','12'),12);ctxP.poseCompte(compte,'eclat-rubis','0');ctxP.poseCompte(compte,'or','');
+ assert.deepEqual({...compte},{},'un compte à zéro disparaît');}
+console.log('1566 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
