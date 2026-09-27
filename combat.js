@@ -893,15 +893,21 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  /* Meneur : un passif. Le porteur augmente les dégâts, la DEF ou — temporairement — les
     PV max d'un, deux ou tous ses alliés au contact ou dans sa ligne de vue : les plus
     proches d'abord. C'est la table qui sait qui est où ; le moteur ne fait que choisir. */
+ /* Meneur : un passif. Le porteur augmente les dégâts, la DEF ou les PV max de ses alliés :
+    le plus proche, les deux plus proches ou tous, au contact, en vue ou n'importe où ; d'un
+    nombre fixe, ou de son propre bonus (ses dégâts, sa DEF). Chaque palier a ses réglages. */
  meneur:{cle:'meneur',nom:'Meneur',type:'pass',
-  aide:'Passif : le porteur augmente les dégâts, la DEF ou les PV max — temporairement — d’un, deux ou tous ses alliés au contact ou dans sa ligne de vue.',
+  aide:'Passif : le porteur augmente les dégâts, la DEF ou les PV max, temporairement, de son allié le plus proche, de deux ou de tous ses alliés, au contact, en vue ou n’importe où ; d’un nombre fixe, ou de son propre bonus.',
   params:[{cle:'quoi',nom:'Ce qu’il augmente',type:'choix',defaut:'dmg',options:[['dmg','les dégâts'],['def','la DEF'],['pv','les PV max, temporairement']]},
-   {cle:'valeur',nom:'De combien',type:'nombre',defaut:1,min:1,max:20},
-   {cle:'combien',nom:'Pour',type:'choix',defaut:'un',options:[['un','un allié'],['deux','deux alliés'],['tous','tous les alliés']]},
-   {cle:'portee',nom:'Qui se trouve',type:'choix',defaut:'contact',options:[['contact','au contact'],['vue','dans la ligne de vue']]}],
-  phrase(p){const q={dmg:'les dégâts',def:'la DEF',pv:'les PV max temporaires'}[p&&p.quoi]||'les dégâts';
-   const c={un:'un allié',deux:'deux alliés',tous:'tous les alliés'}[p&&p.combien]||'un allié';
-   return 'Vous augmentez <b>'+q+'</b> de <b>'+Math.max(1,(p&&p.valeur)|0)+'</b> pour <b>'+c+'</b> <b>'+((p&&p.portee)==='vue'?'dans votre ligne de vue':'au contact')+'</b>.'}},
+   {cle:'base',nom:'De combien',type:'choix',defaut:'fixe',options:[['fixe','un nombre fixe'],['porteur','le bonus du porteur : ses dégâts, sa DEF']]},
+   {cle:'valeur',nom:'Nombre fixe',type:'nombre',defaut:1,min:1,max:20},
+   {cle:'combien',nom:'Pour',type:'choix',defaut:'un',options:[['un','l’allié le plus proche'],['deux','les deux alliés les plus proches'],['tous','tous les alliés']]},
+   {cle:'portee',nom:'Qui se trouve',type:'choix',defaut:'contact',options:[['contact','au contact'],['vue','dans la ligne de vue'],['partout','n’importe où']]}],
+  phrase(p){const quoi=(p&&p.quoi)||'dmg',q={dmg:'les dégâts',def:'la DEF',pv:'les PV max temporaires'}[quoi]||'les dégâts';
+   const qui={un:'votre allié le plus proche',deux:'vos deux alliés les plus proches',tous:'tous vos alliés'}[p&&p.combien]||'votre allié le plus proche';
+   const ou={vue:' dans votre ligne de vue',partout:''}[p&&p.portee]??' au contact';
+   const de=bonusDuMeneur(p)?(quoi==='def'?'votre DEF':'vos dégâts'):'+'+Math.max(1,(p&&p.valeur)|0);
+   return 'Vous augmentez <b>'+q+'</b> de <b>'+qui+ou+'</b> de <b>'+de+'</b>.'}},
  /* Bonus de caractéristique : un nœud d'arbre qui n'est pas un talent. Appris, il ajoute
     à la fiche : des PV max, de l'Endurance, de la Vie, des dégâts, ou un point à une
     compétence. La fiche garde ses valeurs propres ; le bonus s'ajoute à la lecture. */
@@ -1166,13 +1172,14 @@ const elementDe=a=>ELEMENTS.find(e=>e.cle===(a&&a.element))||null;
 /* {élément}, {Élément}, {ELEMENT}, {etat}… : la casse et les accents ne comptent pas. Une
    accolade en capitale donne sa capitale, tout en capitales donne des capitales ; {logo},
    un nom de fichier, reste en minuscules. */
-const ACCOLADES=/\{(élément|element|état|etat|mot|logo)\}/giu;
-const aDesAccolades=s=>typeof s==='string'&&/\{(élément|element|état|etat|mot|logo)\}/iu.test(s.normalize('NFC'));
-const sorteAccolade=k=>{const b=k.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return b==='element'?'element':b==='etat'?'etat':b};
+const ACCOLADES=/\{(\p{L}{3,12})\}/gu;
+// La sorte d'une accolade, accents et casse ôtés : {élémént} vaut {élément} ; une inconnue, rien.
+const sorteAccolade=k=>{const b=String(k).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return ['element','etat','mot','logo'].includes(b)?b:''};
+const aDesAccolades=s=>typeof s==='string'&&[...s.normalize('NFC').matchAll(new RegExp(ACCOLADES.source,'gu'))].some(m=>sorteAccolade(m[1]));
 function casseAccolade(k,mot){if(k.length>1&&k===k.toUpperCase())return mot.toUpperCase();
  return k[0]!==k[0].toLowerCase()?mot[0].toUpperCase()+mot.slice(1):mot}
 function remplaceElement(texte,e){if(!e||!aDesAccolades(texte))return texte;
- return texte.normalize('NFC').replace(ACCOLADES,(m,k)=>{const s=sorteAccolade(k);
+ return texte.normalize('NFC').replace(ACCOLADES,(m,k)=>{const s=sorteAccolade(k);if(!s)return m;
   return s==='logo'?e.logo:s==='mot'?casseAccolade(k,e.mot):k.length>1&&k===k.toUpperCase()?e.nom.toUpperCase():e.nom})}
 // Un talent qui suit l'élément : coché élémentaire, ou écrit avec des accolades.
 const estElementaire=t=>!!t&&(t.elementaire===true||[t.name,t.effects,t.logo,...Object.values(t.paliers||{}).map(p=>p&&p.effects)].some(aDesAccolades));
@@ -1180,7 +1187,10 @@ const estElementaire=t=>!!t&&(t.elementaire===true||[t.name,t.effects,t.logo,...
 function talentPourElement(t,e){if(!t||!e||!estElementaire(t))return t;
  const etat=p=>t.elementaire===true&&p&&typeof p==='object'&&'etat' in p?{...p,etat:e.etat}:p;
  const pal={};Object.entries(t.paliers||{}).forEach(([n,p])=>{if(p&&typeof p==='object')pal[n]={...p,effects:remplaceElement(p.effects,e),...(p.params?{params:etat(p.params)}:{})}});
- return {...t,name:remplaceElement(t.name,e),effects:remplaceElement(t.effects,e),logo:remplaceElement(t.logo,e),params:etat(t.params),paliers:pal,elementVu:e.cle}}
+ /* Le logo suit aussi : {logo} se remplit, et un logo choisi à un élément fixe (…_feu, …_gel,
+    …_foudre) passe à celui du porteur. */
+ const logo=remplaceElement(t.logo,e),suffixe=new RegExp('_('+ELEMENTS.map(x=>x.logo).join('|')+')$');
+ return {...t,name:remplaceElement(t.name,e),effects:remplaceElement(t.effects,e),logo:typeof logo==='string'?logo.replace(suffixe,'_'+e.logo):logo,params:etat(t.params),paliers:pal,elementVu:e.cle}}
 // Les talents d'un combattant, chacun tel qu'il joue : à son élément, puis à son palier.
 function talentsAuPalier(a,talents){const e=elementDe(a);return talentsTenus(a&&a.talents,talents).map(t=>talentAuPalier(talentPourElement(t,e),palierDe(a,t)))}
 // Ce qu'a coûté l'arbre d'un aventurier : chaque palier acquis, au prix que le talent en demande.
@@ -1377,6 +1387,8 @@ function vieDe(a,talents,items){return (Math.trunc(Number(a&&a.vie))||0)+(talent
 function enduDe(a,talents,items){return (Math.trunc(Number(a&&a.endu))||0)+(talents||items?bonusDe(a,talents,items).endu:0)}
 /* Les élus d'un Meneur : parmi les alliés à sa portée, les plus proches — un, deux, ou
    tous. « candidats » : des {a,dist}, la table les a déjà triés par portée. */
+// Le Meneur donne-t-il son propre bonus plutôt qu'un nombre fixe ? Les PV max n'en ont pas : le nombre fixe vaut.
+const bonusDuMeneur=p=>!!p&&p.base==='porteur'&&(p.quoi||'dmg')!=='pv';
 function elusMeneur(p,candidats){const c=p&&p.combien,n=c==='tous'?Infinity:c==='deux'?2:1;
  const tries=[...(candidats||[])].sort((u,v)=>u.dist-v.dist);
  return (n===Infinity?tries:tries.slice(0,n)).map(x=>x.a)}
@@ -1603,7 +1615,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
 const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
- COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
+ COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,ptDepenses,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);

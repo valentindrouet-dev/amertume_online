@@ -398,25 +398,6 @@ function basculeVive(noeud,poser,titre){if(view!=='mj')return;
  noeud.onclick=e=>{e.preventDefault();e.stopPropagation();poser()};
  noeud.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();poser()}};
  return noeud}
-/* Le portrait d'un modèle, cliquable : on change l'illustration là où on la regarde,
-   sans passer par la fiche complète. Un portrait déjà posé se retire par sa croix. */
-function jetonVif(m,poser){const boite=document.createElement('div');boite.className='jeton-boite';
- if(view!=='mj')return boite;
- const j=jetonRond(m.image,m.name,'grand');boite.append(j);
- if(view!=='mj')return boite;
- const fichier=document.createElement('input');fichier.type='file';fichier.hidden=true;
- fichier.accept='image/png,image/jpeg,image/webp';
- fichier.onchange=()=>{const f=fichier.files[0];fichier.value='';
-  if(f)openImage(f,'token',url=>{m.image=url;poser()})};
- j.classList.add('modifiable');j.tabIndex=0;
- j.title=m.image?'Changer l’illustration de '+m.name:'Ajouter une illustration à '+m.name;
- j.setAttribute('role','button');j.setAttribute('aria-label',j.title);
- const ouvrir=e=>{e.stopPropagation();fichier.click()};
- j.onclick=ouvrir;
- j.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fichier.click()}};
- const legende=document.createElement('span');legende.className='jeton-legende';
- legende.textContent=m.image?'Changer':'Ajouter';boite.append(legende);
- boite.append(fichier);return boite}
 /* Le portrait d'un combattant, rond comme sur la carte : petit sur une languette
    pour le reconnaître d'un coup d'œil, grand dans la fiche dépliée. */
 function jetonRond(image,nom,taille){const j=document.createElement('span');
@@ -1175,11 +1156,11 @@ const libelleAccolade=k=>sorteAccolade(k)==='logo'?'logo':'élément';
 function nomAccolades(el,texte){texte=String(texte||'');el.replaceChildren();
  if(!aDesAccolades(texte)){el.textContent=texte;return el}
  const rx=new RegExp(ACCOLADES.source,'giu');let last=0,m;texte=texte.normalize('NFC');
- while((m=rx.exec(texte))){if(m.index>last)el.append(texte.slice(last,m.index));
+ while((m=rx.exec(texte))){if(!sorteAccolade(m[1]))continue;if(m.index>last)el.append(texte.slice(last,m.index));
   const k=document.createElement('span');k.className='accolade';k.textContent=libelleAccolade(m[1]);el.append(k);last=rx.lastIndex}
  if(last<texte.length)el.append(texte.slice(last));return el}
 // Le même nom en texte seul, pour un menu : les accolades entre chevrons.
-const nomEnClair=texte=>String(texte||'').normalize('NFC').replace(new RegExp(ACCOLADES.source,'giu'),(m,k)=>'‹'+libelleAccolade(k)+'›');
+const nomEnClair=texte=>String(texte||'').normalize('NFC').replace(new RegExp(ACCOLADES.source,'giu'),(m,k)=>sorteAccolade(k)?'‹'+libelleAccolade(k)+'›':m);
 /* Un talent élémentaire sans élément pour le remplir : sa phrase dit « l'élément du Mystique »
    là où son état s'écrirait. */
 function enElementDuMystique(html,etat){if(!etat)return html;
@@ -1250,14 +1231,12 @@ function texteEnrichi(el,texte){texte=String(texte||'');el.replaceChildren();con
   let k=3;while(k<3+entrees.length&&m[k]===undefined)k++;
   gras(m[k]!==undefined?m[k]:m[3+entrees.length],k<3+entrees.length?entrees[k-3].couleur:'');last=rx.lastIndex}
  if(last<texte.length)el.append(texte.slice(last));return el}
-function talentDetail(t,vif){const d=document.createElement('div');d.className='talent-detail t-'+talentType(t)[0];
+function talentDetail(t){const d=document.createElement('div');d.className='talent-detail t-'+talentType(t)[0];
  const ligne=(texte,html)=>{if(!texte)return null;const p=document.createElement('p');
   if(html)p.innerHTML=texte;else p.textContent=texte;d.append(p);return p};
  /* Ni nature, ni niveau, ni classe — la vignette les dit — ni la phrase du moteur : la
-    bibliothèque des effets la garde. Ici, seul le texte que le MJ a écrit, et il se
-    corrige là où on le lit, dans l'onglet Talents. */
+    bibliothèque des effets la garde. Ici, seul le texte que le MJ a écrit. */
  const effet=ligne(t.effects||'Effet à préciser.');if(effet&&t.effects)texteEnrichi(effet,t.effects);
- if(vif&&effet)champVif(effet,()=>t.effects||'',v=>{t.effects=String(v).trim().slice(0,600);talentCorrige()},'Corriger l’effet — ⌘ Entrée valide','zone');
  ligne(t.notes);
  const socle=nomPrerequis(t,catalog.talents),branches=talentsDependants(t,catalog.talents);
  if(socle)ligne('↳ Requiert : '+socle);
@@ -1270,24 +1249,6 @@ function talentDetail(t,vif){const d=document.createElement('div');d.className='
 const talentsOuverts=new Set();
 // Avec les bulles, une seule description à la fois : la fiche et le talent qu'on regarde.
 let talentOuvert=null;
-function talentCorrige(){renderCatalogPages();render();scheduleSave()}
-/* « vif » : dans l'onglet Talents, le MJ corrige le nom, le type, le niveau et l'effet là
-   où il les lit — comme sur une fiche d'aventurier. La mécanique du moteur et les
-   réglages passent toujours par le crayon. */
-function talentBloc(t,vif,compact){const bloc=document.createElement('span');bloc.className='talent-bloc';
- const pill=talentPill(t,compact);pill.classList.add('cliquable');
- const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev);
- const detail=talentDetail(t,vif);
- const ouvert=talentsOuverts.has(t.id);detail.hidden=!ouvert;pill.classList.toggle('ouvert',ouvert);
- pill.onclick=e=>{e.stopPropagation();const o=detail.hidden;detail.hidden=!o;pill.classList.toggle('ouvert',o);
-  if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};
- // Au survol, la bulle de l'arbre, en MJ comme pour la troupe ; le clic garde son dépliant.
- if(BULLES)surveille(pill,()=>{const d=bulleTalent(t);ouvrirBulle(pill,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
- if(vif){champVif(pill.querySelector('.nom'),()=>t.name,v=>{const n=String(v).trim().slice(0,120);if(n){t.name=n;talentCorrige()}},'Renommer ce talent','texte');
-  choixVif(pill.querySelector('.t-badge'),()=>t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]),v=>{t.type=v;talentCorrige()},'Changer le type');
-  const tagNiv=[...pill.querySelectorAll('.tag')].find(x=>x.textContent.startsWith('Niv.'));
-  if(tagNiv)champVif(tagNiv,()=>t.level||1,v=>{t.level=num(v,1,20);talentCorrige()},'Changer le niveau (1 à 20)','texte')}
- bloc.append(pill,detail);return bloc}
 /* Les talents d'une fiche : une grille de deux colonnes, dans l'ordre où ils sont appris —
    le premier à gauche, le deuxième à droite. Le dépliant d'un talent s'étale sous les deux
    vignettes de sa rangée : moins haut, et la rangée suivante ne se décale pas de travers. */
@@ -1305,7 +1266,7 @@ function talentPills(a){const out=document.createElement('div');out.className='t
    // Le chevron ne dépliait que l'ancien dépliant : sous la bulle, rien à déplier.
    if(!BULLES){const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev)}
    // La description, au palier que tient l'aventurier.
-   const k=palierDe(a,t),detail=talentDetail(talentAuPalier(tv,k||1),false);detail.classList.add('large');
+   const k=palierDe(a,t),detail=talentDetail(talentAuPalier(tv,k||1));detail.classList.add('large');
    if(k>1){const pp=document.createElement('p');pp.className='palier-dit';pp.textContent='Palier '+k;detail.prepend(pp)}
    if(manque){pill.classList.add('sans-effet');
     const m=document.createElement('span');m.className='t-sans-effet';m.textContent='⚠';
@@ -1363,201 +1324,31 @@ function renderArmory(){renderBiblioObjets();const cols=$('armory-cols');if(!col
 // modèles ne paraissaient donc nulle part.
 const BEST_COLS=[['standard','Sbires'],['alpha','Élites'],['solitaire','Solitaires'],['boss','Boss']];
 function danger(m){return (Number(m.xp)||0)*100+(Number(m.pv)||0)}
-/* Quelles languettes du bestiaire sont dépliées. Un modèle importé peut n'avoir
-   pas d'identifiant : son nom sert alors de clé, faute de mieux. */
-const bestiaireOuverts=new Set();
-function cleModele(m){return m&&(m.id||'nom:'+m.name)}
 const MENACE_NOMS={closest:'Plus proche',pvLow:'PV bas',pvHigh:'PV haut',defLow:'DEF basse'};
 const SOCLE_NOMS={small:'Petit socle',medium:'Socle moyen',large:'Grand socle',huge:'Socle énorme'};
-/* Le classement des languettes attend qu'on ait fini de taper : reclasser une liste
-   au milieu d'une saisie déplacerait sous les doigts la valeur qu'on visait ensuite. */
-let reclassement=null;
-function reclasserPlusTard(){clearTimeout(reclassement);
- reclassement=setTimeout(function encore(){
-  if(champsOuverts){reclassement=setTimeout(encore,220);return}
-  renderCatalogPages()},320)}
-/* Enregistrer un modèle corrigé. « refaire » distingue les deux façons de le changer :
-   un clic (un dé retiré, un choix pris) peut refaire la fiche, puisque le clic a déjà
-   été délivré ; une saisie validée, elle, doit se contenter de réécrire les chiffres
-   sur place, sans quoi le clic suivant tomberait dans le vide. */
-function poserModele(m,f,refaire){const suivis=syncFromTemplate(m);
- if(refaire&&f)f.replaceChildren(...monsterSheet(m).childNodes);
- else majModele(f,m);
- reclasserPlusTard();render();scheduleSave();
- document.dispatchEvent(new Event('amertume-content-changed'))}
-/* Les chiffres d'un modèle réécrits là où ils sont, la languette comprise. */
-function majModele(f,m){if(!f)return;
- const ecrire=(sel,texte)=>{const n=f.querySelector(sel);if(n)n.textContent=texte};
- ecrire('.best-ident h4',m.name);
- ecrire('.stat-tile.t-pv strong',m.pv||0);
- ecrire('.stat-tile.t-dmg strong','+'+(m.damage||0));
- ecrire('.stat-tile.t-xp strong',m.xp||0);
- majEcu(f.querySelector('.stat-tile.t-def .ecu'),m.def||0);
- const entree=f.closest('.cat-entry'),languette=entree&&entree.querySelector('.cat-pill .nom');
- if(languette)languette.textContent=m.name}
-/* Les dés d'une attaque, réglés au doigt : cliquer un dé le retire, le « + » en
-   propose un de chaque couleur. Douze par couleur au plus, comme au formulaire. */
-function desVifs(at,poser){const out=document.createElement('span');out.className='pips';
- DIE_ORDER.forEach(c=>{for(let n=0;n<(at.dice&&at.dice[keys[c]]||0);n++){
-  const d=document.createElement('button');d.className='die-sq';
-  d.style.setProperty('--face',dieFace(c));
-  d.title=types[c]+' · cliquer pour retirer ce dé';d.setAttribute('aria-label',d.title);
-  if(view==='mj')d.onclick=e=>{e.stopPropagation();
-   at.dice[keys[c]]=Math.max(0,(at.dice[keys[c]]||0)-1);poser()};
-  else d.disabled=true;
-  out.append(d)}});
- if(view!=='mj')return out;
- const plus=document.createElement('button');plus.className='die-ajout';plus.textContent='+';
- plus.title='Ajouter un dé';plus.setAttribute('aria-label','Ajouter un dé');
- plus.onclick=e=>{e.stopPropagation();
-  const menu=document.createElement('select');menu.className='champ-vif choix';
-  menu.setAttribute('aria-label','Couleur du dé à ajouter');
-  menu.add(new Option('Ajouter…',''));DIE_ORDER.forEach(c=>menu.add(new Option(types[c],String(c))));
-  plus.replaceWith(menu);menu.focus();
-  let clos=false;
-  const fermer=garder=>{if(clos)return;clos=true;
-   if(menu.parentNode)menu.replaceWith(plus);
-   if(garder&&menu.value!==''){const c=Number(menu.value);
-    at.dice[keys[c]]=Math.min(12,(at.dice[keys[c]]||0)+1);poser()}};
-  menu.onchange=()=>fermer(true);menu.onblur=()=>fermer(false);
-  menu.onkeydown=e=>{e.stopPropagation();if(e.key==='Escape'){e.preventDefault();fermer(false)}}};
- out.append(plus);return out}
-/* Une attaque du modèle : son nom, ses dés, sa portée et ses cibles. Tout se
-   corrige sur place ; ce qui reste manuel en jeu est écrit sous la ligne. */
-function attaqueVive(m,at,poser,poserTexte){const l=document.createElement('div');l.className='best-attaque';
- const tete=document.createElement('div');tete.className='best-att-tete';
- const nom=document.createElement('b');nom.textContent=at.name||'Attaque';
- champVif(nom,()=>at.name||'',v=>{const t=String(v).trim().slice(0,100);
-  if(t&&t!==at.name){at.name=t;nom.textContent=t;poserTexte()}},'Renommer cette attaque','texte');
- /* L'état que l'attaque inflige se lit devant son nom, comme sur une arme : un jeton, ou
-    un rond vide qui invite à en choisir un. Clic : le menu des états. Rien d'autre sur la
-    ligne — nom, dés, et c'est tout. Portée, cibles et bonus gardent leur valeur enregistrée
-    mais ne se règlent plus ici. */
- const etat=etatPastille(at.etat)||(()=>{const s=document.createElement('span');s.className='etat-inflige sans-jeton vide';
-  s.textContent='+';s.title='Choisir l’état infligé';return s})();
- choixVif(etat,at.etat||'',CHOIX_ETAT,v=>{at.etat=v;poser()},'État infligé par l’attaque');
-/* L'icône de l'attaque, devant son état : un jeton, ou un rond vide qui invite à en choisir
-    un. Elle se retrouve sur le bouton d'action à la table et dans le journal. */
- const icone=document.createElement('span');icone.className='att-logo';
- const dessineIcone=()=>{icone.replaceChildren();
-  const im=logoAttaque((at.logos||[])[0],'bouton');
-  if(im)icone.append(im);else{icone.textContent='◇';icone.classList.add('vide')}
-  icone.classList.toggle('vide',!im)};
- dessineIcone();
- choixVif(icone,(at.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])],
-  v=>{at.logos=v?[v]:[];dessineIcone();poser()},'Icône de l’attaque');
- /* Comme une arme à l'armurerie : le logo à gauche du nom, puis, tout à droite, l'état
-    infligé juste avant les dés de dégâts. */
- tete.append(icone,nom,etat,desVifs(at,poser));
- const retirer=document.createElement('button');retirer.className='ico danger';retirer.textContent='✕';
- retirer.title='Retirer cette attaque';retirer.setAttribute('aria-label','Retirer l’attaque '+(at.name||''));
- retirer.onclick=e=>{e.stopPropagation();
-  // Un adversaire peut se retrouver sans aucune attaque : on le laisse faire.
-  m.attacks.splice(m.attacks.indexOf(at),1);poser()};
- if(view==='mj')tete.append(retirer);
- l.append(tete);return l}
-/* La fiche d'un modèle, dépliée sous sa languette : le portrait en grand, tous les
-   chiffres, les attaques. Le MJ corrige chaque valeur là où il la lit ; les copies
-   déjà posées sur la table suivent le plafond de PV, comme depuis la v0.54. */
-function monsterSheet(m){const f=document.createElement('div');f.className='best-fiche';
- const poser=()=>poserModele(m,f,true),poserTexte=()=>poserModele(m,f,false);
- const tete=document.createElement('div');tete.className='best-tete';
- tete.append(jetonVif(m,poser));
- const ident=document.createElement('div');ident.className='best-ident';
- const nom=document.createElement('h4');nom.textContent=m.name;
- champVif(nom,()=>m.name,v=>{const t=String(v).trim().slice(0,120);
-  if(t&&t!==m.name){m.name=t;poserTexte()}},'Renommer ce modèle','texte');
- /* « Adversaire » ne dit rien de plus que la page : une famille par défaut, ou vide, ne
-    prend pas de cartouche. Une vraie famille — Gobelins, Morts-vivants — le garde. */
- const vraieFamille=f=>!!f&&f!=='Adversaire';
- const famille=document.createElement('span');famille.className='chip';
- famille.textContent=m.family||'Sans famille';famille.hidden=!vraieFamille(m.family);
- champVif(famille,()=>m.family||'',v=>{m.family=String(v).trim().slice(0,60);
-  famille.textContent=m.family||'Sans famille';famille.hidden=!vraieFamille(m.family);poserTexte()},'Modifier la famille','texte');
- const rangee=document.createElement('div');rangee.className='chips';
- // Le cartouche du type porte la couleur du type, comme la vignette de la liste.
- const chipType=Object.assign(document.createElement('span'),
-  {className:'chip chip-type k-'+(m.type||'standard'),textContent:TYPE_NOMS[m.type]||'Standard'});
- rangee.append(famille,
-  choixVif(chipType,m.type||'standard',
-   Object.entries(TYPE_NOMS),v=>{m.type=v;poser()},'Type d’adversaire'),
-  /* Le ciblage, comme Rapide et Esquive, est mis de côté chez les adversaires : ni
-     pastille, ni case, tant qu'aucune IA ne les fait agir. Les valeurs sont conservées. */
-  choixVif(Object.assign(document.createElement('span'),
-   {className:'chip',textContent:SOCLE_NOMS[m.socle]||'Socle moyen'}),m.socle||'medium',
-   Object.entries(SOCLE_NOMS),v=>{m.socle=v;poser()},'Taille du socle'));
- ident.append(nom,rangee);tete.append(ident);
- // Les mêmes tuiles qu'en jeu : un modèle se lit comme la créature qu'il deviendra.
- const chiffres=document.createElement('div');chiffres.className='stat-row';
- // Une armure portée dicte la DEF : la tuile la montre et ne se corrige plus à la main.
- const defPortee=equippedDef(m,catalog.items);
- const tuiles=[['pv','PV',m.pv||0],['def','DEF',defPortee===null?(m.def||0):defPortee,true],
-  ['dmg','Dég.','+'+(m.damage||0)],['xp','XP',m.xp||0]].map(t=>statTile(...t));
- [['pv'],['def'],['damage'],['xp']].forEach(([cle],k)=>{
-  if(cle==='def'&&defPortee!==null){tuiles[k].title='DEF donnée par l’armure portée.';return}
-  const cible=tuiles[k].querySelector('.ecu')||tuiles[k].querySelector('strong');
-  if(cible)champVif(cible,()=>m[cle]||0,v=>{const avant=m[cle];writeStat(m,cle,v);
-   if(m[cle]!==avant)poserTexte()},'Modifier '+cle.toUpperCase()+' de '+m.name)});
- chiffres.append(...tuiles);
- const titreAtt=document.createElement('h5');titreAtt.textContent='Attaques spéciales';
- if(view==='mj'){const ajout=document.createElement('button');ajout.className='ico plus';
-  ajout.textContent='+';ajout.title='Ajouter une attaque';
-  ajout.setAttribute('aria-label','Ajouter une attaque à '+m.name);
-  ajout.onclick=e=>{e.stopPropagation();m.attacks=[...(m.attacks||[]),
-   {name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',
-    useOwnDamage:true,effects:{}}];poser()};
-  titreAtt.append(ajout)}
- const listeAtt=document.createElement('div');listeAtt.className='best-attaques';
- (m.attacks||[]).forEach(at=>listeAtt.append(attaqueVive(m,at,poser,poserTexte)));
- /* Un adversaire s'équipe comme un aventurier, et ce qu'il porte lui donne une attaque
-    de plus. Le modèle transporte donc son équipement, et les créatures posées le reçoivent. */
- const titreKit=document.createElement('h5');titreKit.textContent='Équipement';
- if(view==='mj'){const plus=document.createElement('button');plus.className='ico plus';
-  plus.textContent='+';plus.title='Inventaire de '+m.name;
-  plus.setAttribute('aria-label','Inventaire de '+m.name);
-  plus.onclick=e=>{e.stopPropagation();openPicker(m,'gear',()=>poserModele(m,f,true))};
-  titreKit.append(plus)}
- /* Sans rien à porter, la rubrique disparaît tout entière : la fiche remonte d'autant. */
- const aDuKit=!!((m.inventaire||[]).length||(m.weapons||[]).length||armuresDe(m).length||m.shieldId);
- const kit=aDuKit?gearPills(m):document.createElement('span');
- if(!aDuKit){titreKit.hidden=true;kit.hidden=true}
- /* Un adversaire porte des talents comme un aventurier : sa fiche les montre, et le « + »
-    ouvre la même liste que pour la troupe. */
- const titreTal=document.createElement('h5');titreTal.textContent='Talents';
- if(view==='mj'){const plus=document.createElement('button');plus.className='ico plus';
-  plus.textContent='+';plus.title='Donner un talent à '+m.name;
-  plus.setAttribute('aria-label','Donner un talent à '+m.name);
-  plus.onclick=ev=>{ev.stopPropagation();openPicker(m,'talents',()=>poserModele(m,f,true))};
-  titreTal.append(plus)}
- const tal=talentPills(m);
- f.append(tete,chiffres,titreAtt,listeAtt,titreKit,kit,titreTal,tal);
- return f}
-function bestiaryRow(m,i){const rang=document.createElement('div');rang.className='cat-row';
- const pill=document.createElement('button');pill.className='cat-pill k-'+(m.type||'standard');
- const nom=document.createElement('span');nom.className='nom';nom.textContent=m.name;
- const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';
- pill.append(jetonRond(m.image,m.name,'mini'),nom,chev);
- // Corriger une valeur redessine la page : la languette ouverte doit le rester.
- const detail=document.createElement('div');detail.className='cat-detail k-'+(m.type||'standard');
- detail.hidden=!bestiaireOuverts.has(cleModele(m));
- pill.classList.toggle('ouvert',!detail.hidden);
- if(!detail.hidden)detail.append(monsterSheet(m));
- pill.onclick=()=>{const ouvrir=detail.hidden;
-  if(ouvrir)bestiaireOuverts.add(cleModele(m));else bestiaireOuverts.delete(cleModele(m));
-  detail.hidden=!ouvrir;pill.classList.toggle('ouvert',ouvrir);
-  if(ouvrir&&!detail.querySelector('.best-fiche'))detail.prepend(monsterSheet(m))};
- const outils=document.createElement('span');outils.className='cat-tools';
- const ico=(glyphe,titre,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=glyphe;
-  b.title=titre;b.setAttribute('aria-label',titre+' '+m.name);b.onclick=fn;return b};
- /* La coche dit que la troupe a percé l'espèce. Le MJ la lève d'un clic : les créatures
-    de ce modèle redeviennent des inconnues sur tous les écrans. */
- /* Elle se pose dans la vignette, juste à droite du nom : la vignette ne change pas de taille. */
- if(view==='mj'&&modeleAnalyse(m)){const coche=document.createElement('span');coche.className='coche-modele';coche.textContent='✓';
-  coche.setAttribute('role','button');coche.tabIndex=0;coche.title='Analysé par la troupe — cliquer pour le lui reprendre';coche.setAttribute('aria-label',coche.title+' '+m.name);
+/* Un modèle du bestiaire, comme une pièce de l'armurerie : un carré à la couleur de son type,
+   son jeton, ses PV et sa DEF, le nom dessous. Le survol montre sa fiche, le clic du MJ
+   ouvre son formulaire. La coche verte dit que la troupe l'a analysé : un clic la lève. */
+function bestiaryRow(m,i){const carte=document.createElement('div');carte.className='cat-carte';const mj=view==='mj';
+ const p=document.createElement('span');p.className='cat-pill gear-carre best-carre k-'+(m.type||'standard');p.setAttribute('role','button');p.tabIndex=0;
+ p.append(jetonRond(m.image,m.name,'carre'));
+ const defPortee=equippedDef(m,catalog.items),bas=document.createElement('span');bas.className='gear-bas';
+ const pv=document.createElement('span');pv.className='best-pv';pv.textContent=(m.pv||0)+' PV';
+ bas.append(pv,shieldBadge(defPortee===null?(m.def||0):defPortee));p.append(bas);
+ p.setAttribute('aria-label',(mj?'Modifier ':'')+m.name);
+ if(BULLES)surveille(p,()=>ouvrirBulle(p,bulleModele(m),'bulle-modele'));
+ if(mj){p.onclick=()=>openActor(null,false,i);p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openActor(null,false,i)}}}
+ if(mj&&modeleAnalyse(m)){const coche=document.createElement('span');coche.className='coche-modele';coche.textContent='✓';
+  coche.setAttribute('role','button');coche.tabIndex=0;coche.setAttribute('aria-label','Analysé par la troupe : cliquer pour le lui reprendre, '+m.name);
   const lever=e=>{e.stopPropagation();e.preventDefault();const n=oublierAnalyse(m);if(!n)return;
    log(m.name+' n’est plus analysé'+(n>1?' ('+n+' créatures)':'')+'.');
    renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
-  coche.onclick=lever;coche.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')lever(e)};nom.after(coche)}
+  coche.onclick=lever;coche.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')lever(e)};p.append(coche)}
+ const nom=document.createElement('span');nom.className='nom-carte';nom.textContent=m.name;
+ carte.append(p,nom);if(!mj)return carte;
+ const outils=document.createElement('span');outils.className='cat-tools';
+ const ico=(glyphe,titre,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=glyphe;
+  b.title=titre;b.setAttribute('aria-label',titre+' '+m.name);b.onclick=fn;return b};
  const suppr=ico('✕','Supprimer',()=>{
   if(!confirm('Supprimer « '+m.name+' » du bestiaire ? Les copies déjà sur la carte sont conservées.'))return;
   catalog.monsters.splice(i,1);renderCatalogPages();scheduleSave()});
@@ -1566,8 +1357,21 @@ function bestiaryRow(m,i){const rang=document.createElement('div');rang.classNam
   ico('⧉','Dupliquer',()=>{const copie=structuredClone(m);copie.id=crypto.randomUUID();
    copie.name=m.name+' (copie)';catalog.monsters.splice(i+1,0,copie);renderCatalogPages();scheduleSave()}),
   suppr);
- const bloc=document.createElement('div');bloc.className='cat-entry';
- rang.append(pill,outils);bloc.append(rang,detail);return bloc}
+ carte.append(outils);return carte}
+/* La bulle d'un modèle : son nom, son type et sa famille, ses chiffres en tuiles comme en
+   jeu, puis les noms de ses attaques spéciales et de ses talents. Rien à corriger ici : le
+   formulaire s'ouvre d'un clic. */
+function bulleModele(m){const d=document.createElement('div');d.className='cat-detail bulle-modele-corps k-'+(m.type||'standard');
+ const ligne=(texte,cls)=>{if(!texte)return;const p=document.createElement('p');if(cls)p.className=cls;p.textContent=texte;d.append(p)};
+ ligne(m.name,'best-bulle-nom');
+ ligne([TYPE_NOMS[m.type]||'Standard',m.family&&m.family!=='Adversaire'?m.family:'',SOCLE_NOMS[m.socle]||'Socle moyen'].filter(Boolean).join(' · '),'muted');
+ const defPortee=equippedDef(m,catalog.items),chiffres=document.createElement('div');chiffres.className='stat-row';
+ [['pv','PV',m.pv||0],['def','DEF',defPortee===null?(m.def||0):defPortee,true],['dmg','Dég.','+'+(m.damage||0)],['xp','XP',m.xp||0]].forEach(x=>chiffres.append(statTile(...x)));
+ d.append(chiffres);
+ const attaques=(m.attacks||[]).map(a=>a&&a.name).filter(Boolean),talents=(m.talents||[]).map(talent).filter(Boolean).map(t=>nomEnClair(t.name));
+ if(attaques.length)ligne('Attaques spéciales : '+attaques.join(', '));
+ if(talents.length)ligne('Talents : '+talents.join(', '));
+ return d}
 /* Un modèle est « analysé » dès qu'une des créatures posées qui en descend l'a été :
    c'est l'espèce que la troupe a percée, pas l'individu. */
 function modeleAnalyse(m){return actors.some(a=>!a.hero&&a.revealed
@@ -1591,7 +1395,7 @@ function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.rep
    &&(!troupeSeule||modeleAnalyse(m)));
   liste.sort((a,b)=>tri==='nom'?a[0].name.localeCompare(b[0].name)
    :tri==='danger-'?danger(a[0])-danger(b[0]):danger(b[0])-danger(a[0]));
-  const bloc=document.createElement('div');bloc.className='cat-col c-'+key;
+  const bloc=document.createElement('div');bloc.className='cat-col armurerie-grille c-'+key;
   const h=document.createElement('h3');h.textContent=titre;
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
   h.append(compte);bloc.append(h);
@@ -1608,15 +1412,27 @@ function talentFamilies(){
  return [...classes,GENERIQUES,...autres]}
 // L'encre d'une classe, pour un intitulé de colonne ou une languette.
 function teinteClasse(nom){const c=classeDe(catalog.classes,nom);return c&&c.tint||''}
-function talentRow(t,i){const rang=document.createElement('div');rang.className='cat-row';
- // Le même dépliant qu'ailleurs, sous la vignette — corrigeable ici — les outils à droite.
- const bloc=talentBloc(t,view==='mj'),pill=bloc.querySelector('.cat-pill');
+/* Un talent au catalogue, comme une pièce de l'armurerie : un carré à la couleur de sa nature,
+   son logo (ou le glyphe de sa nature) et son abrégé, le nom dessous. Le survol ouvre la
+   bulle, le clic du MJ le formulaire ; plus de dépliant, la bulle suffit. Un logo qui suit
+   l'élément se montre au premier. */
+function talentRow(t,i){const carte=document.createElement('div');carte.className='cat-carte';
+ const [cle,court,nature]=talentType(t),mj=view==='mj';
+ const p=document.createElement('span');p.className='cat-pill gear-carre talent-carre t-'+cle;p.setAttribute('role','button');p.tabIndex=0;
+ const logo=logoTalent({logo:remplaceElement(t.logo||'',ELEMENTS[0])});
+ if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=GLYPHES_TALENT[t.type]||'✦';p.append(g)}
+ const b=document.createElement('span');b.className='t-badge';b.textContent=court;p.append(b);
+ p.setAttribute('aria-label',(mj?'Modifier ':'')+nomEnClair(t.name)+', '+nature);
+ if(BULLES)surveille(p,()=>{const d=bulleTalent(t);ouvrirBulle(p,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
+ if(mj){p.onclick=()=>openTalent(i);p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openTalent(i)}}}
+ const nom=document.createElement('span');nom.className='nom-carte';nomAccolades(nom,t.name);
+ carte.append(p,nom);if(!mj)return carte;
  const outils=document.createElement('span');outils.className='cat-tools';
  const ico=(glyphe,titre,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=glyphe;
-  b.title=titre;b.setAttribute('aria-label',titre+' '+t.name);b.onclick=fn;return b};
+  b.title=titre;b.setAttribute('aria-label',titre+' '+nomEnClair(t.name));b.onclick=fn;return b};
  const suppr=ico('✕','Supprimer',()=>{
   const pris=actors.filter(a=>(a.talents||[]).includes(t.id)).length;
-  if(!confirm('Supprimer « '+t.name+' » ?'+(pris?' Il est appris par '+pris+' aventurier(s), qui le perdront.':'')))return;
+  if(!confirm('Supprimer « '+nomEnClair(t.name)+' » ?'+(pris?' Il est appris par '+pris+' aventurier(s), qui le perdront.':'')))return;
   actors.forEach(a=>{if(a.talents)a.talents=a.talents.filter(x=>x!==t.id)});
   catalog.talents.splice(i,1);renderCatalogPages();render();scheduleSave()});
  suppr.classList.add('danger');
@@ -1624,8 +1440,7 @@ function talentRow(t,i){const rang=document.createElement('div');rang.className=
   ico('⧉','Dupliquer',()=>{const copie=structuredClone(t);copie.id=crypto.randomUUID();
    copie.name=t.name+' (copie)';catalog.talents.splice(i+1,0,copie);renderCatalogPages();scheduleSave()}),
   suppr);
- const entree=document.createElement('div');entree.className='cat-entry';
- rang.append(bloc,outils);entree.append(rang);return entree}
+ carte.append(outils);return carte}
 /* Ce que le moteur sait appliquer, tel qu'il le déclare : le nom de la mécanique, ce
    qu'elle fait, et les réglages qu'elle attend avec leurs bornes. Rien n'est écrit ici en
    double — tout vient de la déclaration, donc la liste ne peut pas mentir. */
@@ -1697,7 +1512,7 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
   liste.sort((a,b)=>tri==='nom'?a[0].name.localeCompare(b[0].name,'fr')
    :tri==='niveau-'?(b[0].level||1)-(a[0].level||1)||a[0].name.localeCompare(b[0].name,'fr')
    :(a[0].level||1)-(b[0].level||1)||a[0].name.localeCompare(b[0].name,'fr'));
-  const bloc=document.createElement('div');bloc.className='cat-col'+(famille===GENERIQUES?' c-generique':'');
+  const bloc=document.createElement('div');bloc.className='cat-col armurerie-grille'+(famille===GENERIQUES?' c-generique':'');
   const h=document.createElement('h3');h.textContent=famille;
   // Seule l'encre distingue une classe : les bandeaux restent sans fond, comme partout.
   const encre=teinteClasse(famille);if(encre)h.style.color=encre;
@@ -1712,11 +1527,9 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
    h.onclick=()=>openArbresClasse(famille)}
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
   h.append(compte);bloc.append(h);
-  /* Une amélioration se range sous son prérequis, en retrait : la colonne se lit comme
-     l'arbre qu'elle est. Un prérequis d'une autre classe laisse le talent à la racine. */
+  // Une amélioration suit son prérequis : la colonne garde l'ordre de l'arbre, en carrés.
   const place=new Map(liste.map(([t,i])=>[t.id,i]));
-  ordonneTalents(liste.map(([t])=>t),catalog.talents).forEach(([t,prof])=>{
-   const rang=talentRow(t,place.get(t.id));if(prof)rang.classList.add('sous-talent');bloc.append(rang)});
+  ordonneTalents(liste.map(([t])=>t),catalog.talents).forEach(([t])=>bloc.append(talentRow(t,place.get(t.id))));
   cols.append(bloc)}
 }
 $('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalents;
@@ -2770,8 +2583,11 @@ function refreshEquip(){const f=$('actor-form').elements;if(!f||!$('equip-summar
   +' '+(heros?'DEF de l’équipement : '+d+', champ verrouillé.'
    :porte?'DEF : '+num(f.def.value,0,99)+' à lui, plus '+porte+' d’équipement, soit '+d+'.'
    :'DEF : la sienne, sans équipement pour l’augmenter.')}
-function renderAttacks(){if(!$('attack-edit-list'))return;$('attack-edit-list').innerHTML=attackDraft.map((a,i)=>'<div class="attack-card" data-attack="'+i+'"><div class="edit-grid">'+field('Nom','an'+i,a.name,'text','required maxlength="100"')+sel('Portée','ar'+i,a.range,[['contact','Contact'],['distance','Distance']])+sel('Cibles','at'+i,a.targets,[['one','Unique'],['all','Multiples (manuel)']])+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('');habilleDes($('attack-edit-list'));document.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
-function readAttacks(){const f=$('actor-form').elements;if(!f.an0&&attackDraft.length)return;attackDraft=attackDraft.map((a,i)=>({...a,name:f['an'+i].value.trim()||'Attaque',range:f['ar'+i].value,targets:f['at'+i].value,useOwnDamage:f['ab'+i].checked,effectText:f['ae'+i].value,dice:diceFrom(keys.map((_,c)=>num(f['ad'+i+'_'+c].value,0,12)))}))}
+function renderAttacks(){if(!$('attack-edit-list'))return;$('attack-edit-list').innerHTML=attackDraft.map((a,i)=>'<div class="attack-card" data-attack="'+i+'"><div class="edit-grid">'+field('Nom','an'+i,a.name,'text','required maxlength="100"')+sel('Portée','ar'+i,a.range,[['contact','Contact'],['distance','Distance']])+sel('Cibles','at'+i,a.targets,[['one','Unique'],['all','Multiples (manuel)']])
+  // L'état qu'elle inflige et son icône, sur le bouton de la table et au journal.
+  +sel('État infligé','ax'+i,a.etat||'',CHOIX_ETAT)+sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])])+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('');habilleDes($('attack-edit-list'));document.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
+function readAttacks(){const f=$('actor-form').elements;if(!f.an0&&attackDraft.length)return;attackDraft=attackDraft.map((a,i)=>({...a,name:f['an'+i].value.trim()||'Attaque',range:f['ar'+i].value,targets:f['at'+i].value,useOwnDamage:f['ab'+i].checked,effectText:f['ae'+i].value,
+  etat:CHOIX_ETAT.some(([k])=>k&&k===f['ax'+i].value)?f['ax'+i].value:'',logos:LOGOS_TOUS.includes(f['ai'+i].value)?[f['ai'+i].value]:[],dice:diceFrom(keys.map((_,c)=>num(f['ad'+i+'_'+c].value,0,12)))}))}
 /* Les états de la fiche : la même grille de jetons que le clic droit sur le socle, pour
    qu'on reconnaisse le geste. Ils vivent sur le brouillon jusqu'à l'enregistrement. */
 function renderStatePicker(){const boite=$('state-picker');if(!boite)return;

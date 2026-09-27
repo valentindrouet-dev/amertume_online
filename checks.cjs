@@ -270,9 +270,9 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
   assert.ok(src.includes('const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_ETATS,...LOGOS_DIVERS];')
    &&src.includes('function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}')
    &&src.includes("(at.logos||[]).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
-   &&src.includes("choixVif(icone,(at.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])],")
-   &&src.includes("v=>{at.logos=v?[v]:[];dessineIcone();poser()},'Icône de l’attaque');")
-   &&src.includes(' tete.append(icone,nom,etat,desVifs(at,poser));')
+   &&src.includes("+sel('État infligé','ax'+i,a.etat||'',CHOIX_ETAT)+sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])])")
+   &&src.includes("logos:LOGOS_TOUS.includes(f['ai'+i].value)?[f['ai'+i].value]:[],")
+   &&src.includes("etat:CHOIX_ETAT.some(([k])=>k&&k===f['ax'+i].value)?f['ax'+i].value:'',")
    &&fs.readFileSync('editor.css','utf8').includes('.best-att-tete .etat-inflige{margin-left:auto}')
    &&src.includes("replace(/^(weapon|spell|item|attack)_/,'')")
    &&fs.readFileSync('editor.css','utf8').includes('.best-att-tete .att-logo{'),'une attaque spéciale choisit son icône parmi toutes celles du dossier');}
@@ -1182,7 +1182,7 @@ assert.ok(!page.includes('id="heal-foes"')&&!src.includes("$('heal-foes')")&&!pa
 /* Sans équipement, pas de rubrique Équipement sur la fiche de table ; la coche d'un modèle analysé se pose
    dans la vignette, à gauche du nom ; les projectiles sont un souffle (650 ms) et le coup au contact un
    balayage d'air (320 ms), le coup tombant au bout du geste. */
-assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidden=!nbGear;")&&src.includes("coche.className='coche-modele'")&&src.includes('nom.after(coche)')&&!src.includes("coche.classList.add('coche-analyse')")
+assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidden=!nbGear;")&&src.includes("coche.className='coche-modele'")&&src.includes("coche.onclick=lever;coche.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')lever(e)};p.append(coche)}")&&!src.includes("coche.classList.add('coche-analyse')")
  &&feuille.includes('.cat-pill .coche-modele{flex:none;width:16px;height:16px;')&&page.includes("if(rangeOf(a)!=='distance'&&typeof volBalayage==='function'){"),'équipement vide masqué, coche dans la vignette, balayage au contact');
 /* La barre de PV d'un token est pleine, entamée ou non — c'est sa hauteur qui dit l'actif ;
    sur la piste des dés, le lanceur à gauche et, au bout de chaque ligne, qui reçoit. */
@@ -1269,11 +1269,9 @@ assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.fi
  &&feuille.includes('.best-attaque{background:#cfdcea;border:1px solid #00000026;border-left:4px solid #4f7fb5;border-radius:9px;'),'inventaire, équipement et attaques spéciales');
 /* Fiche d'un modèle : plus de cartouche « Adversaire », le type porte sa couleur comme tout le bloc,
    pas de rubrique Équipement quand il n'y a rien, ni Notes, ni pose depuis la fiche. */
-assert.ok(src.includes("const vraieFamille=f=>!!f&&f!=='Adversaire';")&&src.includes("famille.hidden=!vraieFamille(m.family);")
- &&src.includes("{className:'chip chip-type k-'+(m.type||'standard'),textContent:TYPE_NOMS[m.type]||'Standard'}")
- &&src.includes("detail.className='cat-detail k-'+(m.type||'standard');")&&src.includes('const aDuKit=!!((m.inventaire||[]).length')&&src.includes("if(!aDuKit){titreKit.hidden=true;kit.hidden=true}")
- &&src.includes('f.append(tete,chiffres,titreAtt,listeAtt,titreKit,kit,titreTal,tal);')&&!src.includes("titreNotes")&&!src.includes('best-notes')&&!src.includes("pose-nombre")&&!src.includes('Ajouter à la carte')
- &&feuille.includes('.cat-detail.k-solitaire,.chip.chip-type.k-solitaire{background:#e8d3cb}')&&feuille.includes('.chip.chip-type{color:var(--ink);border-color:#00000026}'),'la fiche d’un modèle est sobre et teintée');
+assert.ok(src.includes("d.className='cat-detail bulle-modele-corps k-'+(m.type||'standard');")&&src.includes("ligne([TYPE_NOMS[m.type]||'Standard',m.family&&m.family!=='Adversaire'?m.family:'',")
+ &&!src.includes('function monsterSheet(')&&!src.includes('best-notes')&&!src.includes("pose-nombre")&&!src.includes('Ajouter à la carte')
+ &&feuille.includes('.cat-detail.k-solitaire,.chip.chip-type.k-solitaire{background:#e8d3cb}')&&feuille.includes('.chip.chip-type{color:var(--ink);border-color:#00000026}'),'la bulle d’un modèle est sobre et teintée');
 /* En jeu, la fiche ne montre que le porté et les objets ; la coche est un rond à cheval sur l'angle ;
    plus de chevron ni de titre « Équipement » en double ; un objet se lit et s'utilise ; le MJ équipe
    aussi un modèle du bestiaire, et un refus dit combien de mains manquent. */
@@ -1968,16 +1966,16 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  assert.match(C.phraseTalent('bonus',{carac:'endu',valeur:2}),/<b>\+2 Endurance<\/b>/);}
 /* Meneur : un passif qui augmente les dégâts, la DEF ou les PV max temporaires des alliés
    les plus proches à portée — un, deux ou tous. Le moteur choisit ; la table mesure. */
-{const m=C.TALENTS_CODES.meneur;assert.ok(m&&m.type==='pass'&&m.params.map(p=>p.cle).join()==='quoi,valeur,combien,portee');
- assert.match(C.phraseTalent('meneur',{quoi:'def',valeur:2,combien:'tous',portee:'vue'}),/<b>la DEF<\/b> de <b>2<\/b> pour <b>tous les alliés<\/b> <b>dans votre ligne de vue<\/b>/);
- assert.match(C.phraseTalent('meneur',{}),/<b>les dégâts<\/b> de <b>1<\/b> pour <b>un allié<\/b> <b>au contact<\/b>/);
+{const m=C.TALENTS_CODES.meneur;assert.ok(m&&m.type==='pass'&&m.params.map(p=>p.cle).join()==='quoi,base,valeur,combien,portee');
+ assert.match(C.phraseTalent('meneur',{quoi:'def',valeur:2,combien:'tous',portee:'vue'}),/<b>la DEF<\/b> de <b>tous vos alliés dans votre ligne de vue<\/b> de <b>\+2<\/b>/);
+ assert.match(C.phraseTalent('meneur',{}),/<b>les dégâts<\/b> de <b>votre allié le plus proche au contact<\/b> de <b>\+1<\/b>/);
  assert.deepEqual(C.elusMeneur({combien:'deux'},[{a:'c',dist:3},{a:'a',dist:1},{a:'b',dist:2}]),['a','b']);
  assert.deepEqual(C.elusMeneur({combien:'un'},[{a:'c',dist:3},{a:'a',dist:1}]),['a']);
  assert.equal(C.elusMeneur({combien:'tous'},[{a:'c',dist:3},{a:'a',dist:1}]).length,2);assert.deepEqual(C.elusMeneur({},[]),[]);
  assert.ok(page.includes("function defOf(a){const d=defenseOf(a,items())+bonusFiche(a).def+auraMeneur(a,'def');return a&&a.defBrisee>0?Math.max(0,d-a.defBrisee):d}")&&page.includes("function degatsDe(a){return (Number(a&&a.dmg)||0)+bonusFiche(a).dmg+auraMeneur(a,'dmg')}")
   &&page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
-  &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=Math.max(1,params.valeur|0)})});")
+  &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")
   &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")
   &&page.includes(" const jet=skillRoll(competenceDe(a,i),d6);")&&page.includes("useOwnDamage===false?0:degatsDe(a);")
   &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")&&page.includes("const n=degatsDe(e);applyDamage(a,n);")
@@ -2377,7 +2375,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&feuille.includes('.sac .gear-carre:hover .retirer-sac,.sac .gear-carre:focus-within .retirer-sac{opacity:1;'),'la croix de retrait du sac');
  const ctxK={catalog:{motsCles:['Allié']},STAT_TINTS:{pv:'1,2,3',dmg:'4,5,6',def:'0,0,0',endu:'0,0,0',vie:'0,0,0',xp:'0,0,0'},ETATS_JEU:gearApi.ETATS_JEU,
   document:{createElement:()=>({className:'',textContent:'',style:{color:''}})}};vm.createContext(ctxK);
- vm.runInContext(src.slice(src.indexOf('const TEINTE_ETAT_MOT='),src.indexOf('function talentDetail(t,vif)')),ctxK);
+ vm.runInContext(src.slice(src.indexOf('const TEINTE_ETAT_MOT='),src.indexOf('function talentDetail(t)')),ctxK);
  const el={k:[],replaceChildren(){this.k=[]},append(...x){this.k.push(...x.map(y=>typeof y==='string'?y:'['+y.textContent+']'))}};
  ctxK.texteEnrichi(el,'Un Allié gagne +2 Dégâts et Feu : 1d6+2 PV, une Action ; **enfin**, la vie.');
  assert.equal(el.k.join(''),'Un [Allié] gagne [+2] [Dégâts] et [Feu] : [1d6+2] [PV], une [Action] ; [enfin], la vie.');
@@ -2444,7 +2442,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    la description d'un talent ne dit plus ce qu'il débloque. */
 {const ctxP={catalog:{motsCles:['Attaque : rouge','Attaque critique : violet','Allié']},STAT_TINTS:{pv:'1,2,3',dmg:'4,5,6',def:'0,0,0',endu:'0,0,0',vie:'0,0,0',xp:'0,0,0'},ETATS_JEU:gearApi.ETATS_JEU,
   document:{createElement:()=>({className:'',textContent:'',style:{color:''}})}};vm.createContext(ctxP);
- vm.runInContext(src.slice(src.indexOf('const TEINTE_ETAT_MOT='),src.indexOf('function talentDetail(t,vif)')),ctxP);
+ vm.runInContext(src.slice(src.indexOf('const TEINTE_ETAT_MOT='),src.indexOf('function talentDetail(t)')),ctxP);
  const el={k:[],replaceChildren(){this.k=[]},append(...x){this.k.push(...x.map(y=>typeof y==='string'?y:'['+y.textContent+(y.style.color?'|'+y.style.color:'')+']'))}};
  ctxP.texteEnrichi(el,'Deux attaques, une Attaque critique, des attaques critiques, ATTAQUE ; les alliés gagnent 2 Dégâts et des Actions ; la vie reste.');
  assert.equal(el.k.join(''),'Deux [attaques|#b8352f], une [Attaque critique|#7a5cb8], des [attaques critiques|#7a5cb8], [ATTAQUE|#b8352f] ; les [alliés|var(--accent)] gagnent 2 [Dégâts|rgb(4,5,6)] et des [Actions] ; la vie reste.');
@@ -2770,7 +2768,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function nomAccolades(el,texte){")&&src.includes("n.className='nom';nomAccolades(n,t.name);")&&src.includes("nom.className='arbre-nom';nomAccolades(nom,tv.name);")
   &&src.includes("p.textContent='Selon l’élément : '+ELEMENTS.map(e=>remplaceElement(v,e)).join(' · ')")&&css.includes('.accolade{'),'les accolades du nom, en pastille ou remplies');
  assert.ok(src.includes("function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){")&&src.includes(" const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note});")
-  &&src.includes("if(BULLES)surveille(pill,()=>{const d=bulleTalent(t);ouvrirBulle(pill,d,")
+  &&src.includes("if(BULLES)surveille(p,()=>{const d=bulleTalent(t);ouvrirBulle(p,d,")
   &&!src.includes("m.className='palier-moteur'")&&src.includes("if(elem)h=enElementDuMystique(h,vals[n].etat);"),'la bulle au survol, dans l’onglet Talents aussi ; l’élément du Mystique sans élément');
  assert.ok(!src.includes('↩ Remettre dans l’arbre'),'le menu de tête a laissé la place aux « + »');}
 /* v0.296 — Les orbes élémentaires par palier : l'état sur 6+, puis à chaque touche, puis en
@@ -2789,4 +2787,21 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function ajouterDansArbre(dest){")&&src.includes("neuf.textContent='✚ Créer un nouveau talent';")
   &&src.includes("const g=rang(t)===0?'Retirés de cet arbre':talentFamily(t);")&&src.includes("if(f!==dest.famille&&!t.horsArbre)retireDeLArbre(t);")
   &&src.includes("p.onclick=()=>ajouterDansArbre({famille:col.famille,voie:col.voie,prerequis:e.t.id,branche:seg,")&&fs.readFileSync('editor.css','utf8').includes('.arbre-choix-liste{'),'les « + » de l’arbre prennent aussi un talent existant');}
-console.log('1682 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.298 — Meneur câblé sur ses textes : l'allié le plus proche, où qu'il soit, d'un nombre
+   fixe ou du bonus propre du porteur ; tous les alliés au contact. Les accolades se lisent
+   même mal accentuées, et un logo à élément fixe suit celui du porteur. Talents et bestiaire
+   en carrés, comme l'armurerie : la bulle au survol, plus de dépliant. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
+ const sans=h=>h.replace(/<\/?b>/g,'');
+ assert.deepEqual([{base:'fixe',valeur:1,combien:'un',portee:'partout'},{base:'porteur',combien:'un',portee:'partout'},{base:'porteur',combien:'tous',portee:'contact'}].map(p=>sans(C.phraseTalent('meneur',p))),
+  ['Vous augmentez les dégâts de votre allié le plus proche de +1.','Vous augmentez les dégâts de votre allié le plus proche de vos dégâts.','Vous augmentez les dégâts de tous vos alliés au contact de vos dégâts.'],'les trois paliers de Meneur, tels qu’écrits');
+ assert.ok(C.bonusDuMeneur({base:'porteur'})&&C.bonusDuMeneur({base:'porteur',quoi:'def'})&&!C.bonusDuMeneur({base:'porteur',quoi:'pv'})&&!C.bonusDuMeneur({}),'le bonus propre, sauf pour les PV');
+ assert.ok(page.includes("function aPorteeMeneur(m,o,portee,size,murs){if(portee==='partout')return true;")&&page.includes("function propreBonusMeneur(m,quoi){const f=bonusFiche(m);")
+  &&page.includes(":(Number(m.dmg)||0)+f.dmg;"),'n’importe où, et le bonus propre sans les autres meneurs');
+ const G=C.ELEMENTS[1];
+ assert.deepEqual((({name,logo,effects})=>[name,logo,effects])(C.talentPourElement({name:'Orbes de {élémént}',logo:'spell_orbes_feu',effects:'{Élement} et {truc}'},G)),['Orbes de Gel','spell_orbes_gel','Gel et {truc}'],'accents indifférents, accolade inconnue intacte, logo qui suit');
+ assert.ok(!C.aDesAccolades('Le {truc}')&&C.aDesAccolades('{ETAT}'),'une accolade inconnue ne rend pas élémentaire');
+ assert.ok(src.includes("p.className='cat-pill gear-carre talent-carre t-'+cle;")&&src.includes("if(mj){p.onclick=()=>openTalent(i);")&&src.includes("bloc.className='cat-col armurerie-grille'+(famille===GENERIQUES?' c-generique':'');")
+  &&src.includes("bloc.className='cat-col armurerie-grille c-'+key;")&&src.includes("if(BULLES)surveille(p,()=>ouvrirBulle(p,bulleModele(m),'bulle-modele'));")&&src.includes("function bulleModele(m){")&&css.includes('.cat-pill.gear-carre.talent-carre{border-left:none}'),'talents et bestiaire en carrés');
+ assert.ok(!src.includes('function talentBloc(')&&!src.includes('bestiaireOuverts')&&!src.includes('talentCorrige'),'plus de dépliant au clic');}
+console.log('1689 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
