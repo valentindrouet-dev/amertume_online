@@ -1349,3 +1349,22 @@ body.page-icones .intro,body.page-icones .mj-tools,body.page-icones main.layout,
 .grille-logo img{width:44px;height:44px;object-fit:contain}
 .grille-logo span{max-width:100%;overflow-wrap:anywhere;text-align:center}
 .grille-logo:hover{border-color:var(--accent)}.grille-logo.on{border-color:var(--green);background:var(--sel)}
+/* ---------- L'Armurerie en masse : un tableau, une ligne par pièce ---------- */
+#armory-masse.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#armory-cols.en-masse{display:block}
+.masse-cadre{overflow:auto;max-height:72vh;border:1px solid var(--line);border-radius:9px}
+.masse-table{width:100%;border-collapse:collapse;font:13px system-ui}
+.masse-table th,.masse-table td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;white-space:nowrap}
+.masse-table thead th{position:sticky;top:0;z-index:2;background:var(--panel);font:600 11px system-ui;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
+.masse-table .masse-tous th,.masse-table .masse-tous td{position:sticky;top:29px;z-index:2;background:var(--panel-2);border-bottom:2px solid var(--line-strong,#a99a83)}
+.masse-table .masse-tous th{font:600 11px system-ui;letter-spacing:0;text-transform:none;color:var(--ink)}
+.masse-table input,.masse-table select{margin:0;padding:3px 6px;font:13px system-ui;width:auto}
+.masse-table input[type=number]{width:84px}.masse-table input[type=checkbox]{width:auto;accent-color:var(--green)}
+.masse-table select{max-width:150px}
+.masse-op{display:flex;gap:4px;align-items:center}.masse-op select{width:46px}.masse-op input{width:70px!important}
+.masse-op button{width:auto;margin:0;padding:3px 8px;font-size:12px}
+.masse-nom{display:flex;align-items:center;gap:6px}.masse-nom input{width:190px}.masse-nom .logo-equip{width:26px;height:26px}
+.masse-nom .ico{padding:1px 6px;font-size:12px}
+.masse-table td.masse-sans{color:var(--muted);text-align:center}
+.masse-table tbody tr.r-rare th{box-shadow:inset 3px 0 #4d7fb0}.masse-table tbody tr.r-mystique th{box-shadow:inset 3px 0 #7a5fc0}.masse-table tbody tr.r-epique th{box-shadow:inset 3px 0 #c26a2f}
+.masse-table tbody tr:hover{background:var(--hover)}

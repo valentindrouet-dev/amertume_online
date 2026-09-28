@@ -248,15 +248,20 @@ const cover=document.createElement('div');cover.id='busy-cover';cover.textConten
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
 const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-form"><div id="actor-fields"></div><p class="form-error" id="actor-error" role="alert"></p><div class="form-actions"><button type="button" id="delete-actor">Retirer de la scène</button><button type="button" id="save-template">Enregistrer au bestiaire</button><button type="submit" class="primary">Enregistrer la fiche</button></div></form>');
 /* ---------- Pages Armurerie et Bestiaire ---------- */
+// Les tris de l'Armurerie, déclarés avant sa page, qui en fait son menu (voir trieObjets).
+const TRIS_ARMURERIE=[['','Ordre de création'],['nom','Nom (A → Z)'],['rarete','Rareté'],['prix','Prix croissant'],['prix-','Prix décroissant'],
+ ['emplacement','Emplacement'],['mains','Nombre de mains'],['def','DEF'],['des','Dés d’attaque']];
 const armoryPage=document.createElement('main');armoryPage.id='armory-page';
 armoryPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Armurerie</h2><div class="cat-actions">'
+ +'<button id="armory-masse" type="button" aria-pressed="false" title="Modifier prix, raretés, ressources… de toutes les pièces affichées">✎ Modifier en masse</button>'
  +'<button id="armory-add" class="primary">+ Ajouter</button></div></header>'
  
  +'<div class="cat-filters"><input id="armory-search" placeholder="Rechercher…" aria-label="Rechercher un objet">'
  +'<select id="armory-cat" aria-label="Catégorie"><option value="">Toutes catégories</option>'
  +'<option value="melee">Armes de mêlée</option><option value="ranged">Armes à distance</option>'
- +'<option value="armor">Armures</option><option value="object">Objets</option></select></div>'
+ +'<option value="armor">Armures</option><option value="object">Objets</option></select>'
+ +'<select id="armory-sort" aria-label="Trier">'+TRIS_ARMURERIE.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('')+'</select></div>'
  /* La banque des effets d'équipement, comme celle des talents : ce que le moteur sait
     faire quand on se sert d'un objet, replié par défaut. */
  +'<details class="bloc-replie biblio"><summary><span class="bloc-titre">📖 Banque des effets d’équipement</span>'
@@ -1310,6 +1315,82 @@ function talentPills(a){const out=document.createElement('div');out.className='t
   surveille(pill,montre);out.append(carte)});
  bulleOrpheline();return out}
 const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets']];
+/* ---------- Trier l'Armurerie, et la modifier en masse ----------
+   Le tri vaut dans chaque colonne, et dans le tableau du mode en masse. Sans tri choisi, l'ordre
+   de création. */
+const RANG_EMPLACEMENT=o=>o.category==='weapon'?0:o.category==='ammo'?1:o.category==='armor'?(emplacementDe(o)==='shield'?2:3+EMPLACEMENTS.findIndex(([k])=>k===emplacementDe(o))):20;
+const totalDes=o=>Object.values(o.dice||{}).reduce((s,n)=>s+(Number(n)||0),0);
+function trieObjets(liste,tri){const nom=(x,y)=>x[0].name.localeCompare(y[0].name,'fr');
+ const par={nom,
+  rarete:(x,y)=>RARETES.findIndex(([k])=>k===rareteDe(x[0]))-RARETES.findIndex(([k])=>k===rareteDe(y[0]))||nom(x,y),
+  prix:(x,y)=>(x[0].price||0)-(y[0].price||0)||nom(x,y),'prix-':(x,y)=>(y[0].price||0)-(x[0].price||0)||nom(x,y),
+  emplacement:(x,y)=>RANG_EMPLACEMENT(x[0])-RANG_EMPLACEMENT(y[0])||nom(x,y),
+  mains:(x,y)=>(x[0].category==='weapon'?weaponHands(x[0]):0)-(y[0].category==='weapon'?weaponHands(y[0]):0)||nom(x,y),
+  def:(x,y)=>(Number(x[0].def)||0)-(Number(y[0].def)||0)||nom(x,y),des:(x,y)=>totalDes(x[0])-totalDes(y[0])||nom(x,y)}[tri];
+ return par?[...liste].sort(par):liste}
+/* Le mode en masse : toutes les pièces affichées — recherche, catégorie et tri compris — en un
+   tableau, une ligne chacune, chaque valeur modifiable sur place. En tête de colonne, de quoi
+   la changer pour toutes d'un coup : fixer, multiplier ou ajouter un prix, une DEF ; choisir une
+   rareté, une ressource, des mains ; mettre en vente au magasin ou l'en retirer. */
+let armoryMasse=false;
+function tableMasse(boite,liste){
+ const sauve=()=>{scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+ const arme=o=>o.category==='weapon',armure=o=>o.category==='armor';
+ const options=(l,v)=>l.map(([k,n])=>'<option value="'+esc(String(k))+'"'+(String(k)===String(v)?' selected':'')+'>'+esc(n)+'</option>').join('');
+ const RESS=[['','— aucune —'],...RESSOURCES.map(r=>[r,r])],MAINS=[[1,'1 main'],[2,'2 mains']];
+ /* Les colonnes : ce qu'on y lit, ce qu'on y écrit, et à qui elles s'appliquent. */
+ const COLS=[
+  {cle:'rarete',nom:'Rareté',type:'choix',opts:RARETES,lit:o=>rareteDe(o),ecrit:(o,v)=>{o.rarete=rareteDe({rarete:v})}},
+  {cle:'price',nom:'Prix (or)',type:'nombre',max:999999,lit:o=>o.price||0,ecrit:(o,v)=>{o.price=Math.max(0,Math.min(999999,Math.round(v)))}},
+  {cle:'ressource1',nom:'Ressource 1',type:'choix',opts:RESS,lit:o=>ressourceValide(o.ressource1),ecrit:(o,v)=>{o.ressource1=ressourceValide(v)}},
+  {cle:'ressource2',nom:'Ressource 2',type:'choix',opts:RESS,lit:o=>ressourceValide(o.ressource2),ecrit:(o,v)=>{o.ressource2=ressourceValide(v)}},
+  {cle:'magasin',nom:'Magasin',type:'case',lit:o=>o.magasin===true,ecrit:(o,v)=>{o.magasin=!!v}},
+  {cle:'hands',nom:'Mains',type:'choix',opts:MAINS,pour:o=>arme(o)&&!o.ranged,lit:o=>weaponHands(o),ecrit:(o,v)=>{o.hands=Number(v)===2?2:1}},
+  {cle:'def',nom:'DEF',type:'nombre',max:99,pour:armure,lit:o=>Number(o.def)||0,ecrit:(o,v)=>{o.def=Math.max(0,Math.min(99,Math.round(v)))}}];
+ const vaut=(c,o)=>!c.pour||c.pour(o);
+ const t=document.createElement('table');t.className='masse-table';
+ const thead=document.createElement('thead'),tete=document.createElement('tr'),tous=document.createElement('tr');tous.className='masse-tous';
+ tete.innerHTML='<th scope="col">Pièce</th>'+COLS.map(c=>'<th scope="col">'+esc(c.nom)+'</th>').join('');
+ const th0=document.createElement('th');th0.scope='row';th0.textContent='Pour les '+liste.length+' pièces affichées';tous.append(th0);
+ /* Changer une colonne pour toutes : une seule question avant, puis toutes les lignes suivent. */
+ const pourTous=(c,fn,dit)=>{const cibles=liste.map(([o])=>o).filter(o=>vaut(c,o));if(!cibles.length)return;
+  if(!confirm(dit+' — '+cibles.length+' pièce'+(cibles.length>1?'s':'')+' ?'))return;
+  cibles.forEach(fn);sauve();renderArmory()};
+ COLS.forEach(c=>{const td=document.createElement('td');
+  if(c.type==='nombre'){const op=document.createElement('select');op.setAttribute('aria-label',c.nom+' : opération');op.innerHTML='<option value="=">=</option><option value="x">×</option><option value="+">+</option>';
+   const n=document.createElement('input');n.type='number';n.step='any';n.placeholder=c.cle==='price'?'or':'';n.setAttribute('aria-label',c.nom+' : valeur pour toutes');
+   const ok=document.createElement('button');ok.type='button';ok.textContent='OK';ok.title='Appliquer à toutes les pièces affichées';
+   ok.onclick=()=>{const v=Number(n.value);if(n.value===''||!Number.isFinite(v))return;const o2=op.value;
+    pourTous(c,o=>c.ecrit(o,o2==='x'?c.lit(o)*v:o2==='+'?c.lit(o)+v:v),c.nom+(o2==='x'?' multiplié par ':o2==='+'?(v<0?' diminué de ':' augmenté de '):' fixé à ')+Math.abs(o2==='+'?v:v)+(o2==='x'?'':c.cle==='price'?' or':''))};
+   const g=document.createElement('span');g.className='masse-op';g.append(op,n,ok);td.append(g)}
+  else if(c.type==='choix'){const s=document.createElement('select');s.setAttribute('aria-label',c.nom+' pour toutes');
+   s.innerHTML='<option value="\u0001">Pour toutes…</option>'+options(c.opts,'\u0001');
+   s.onchange=()=>{const v=s.value;if(v==='\u0001')return;const nomV=(c.opts.find(([k])=>String(k)===v)||[])[1]||v;s.value='\u0001';pourTous(c,o=>c.ecrit(o,v),c.nom+' : '+nomV)};td.append(s)}
+  else{const oui=document.createElement('button');oui.type='button';oui.textContent='Tout ✓';oui.onclick=()=>pourTous(c,o=>c.ecrit(o,true),'Mettre en vente au magasin');
+   const non=document.createElement('button');non.type='button';non.textContent='Aucun';non.onclick=()=>pourTous(c,o=>c.ecrit(o,false),'Retirer du magasin');
+   const g=document.createElement('span');g.className='masse-op';g.append(oui,non);td.append(g)}
+  tous.append(td)});
+ thead.append(tete,tous);t.append(thead);
+ const corps=document.createElement('tbody');
+ liste.forEach(([o,i])=>{const tr=document.createElement('tr');tr.className='r-'+rareteDe(o);
+  const th=document.createElement('th');th.scope='row';const nom=document.createElement('span');nom.className='masse-nom';
+  const logo=logoEquipement(o);if(logo)nom.append(logo);
+  const n=document.createElement('input');n.value=o.name;n.maxLength=120;n.setAttribute('aria-label','Nom');
+  n.onchange=()=>{const v=n.value.trim();if(!v){n.value=o.name;return}o.name=v.slice(0,120);sauve()};
+  const ouvre=document.createElement('button');ouvre.type='button';ouvre.className='ico';ouvre.textContent='✎';ouvre.title='Ouvrir la fiche de '+o.name;ouvre.onclick=()=>openItem(i);
+  nom.append(n,ouvre);th.append(nom);tr.append(th);
+  COLS.forEach(c=>{const td=document.createElement('td');if(!vaut(c,o)){td.className='masse-sans';td.textContent='—';tr.append(td);return}
+   let el;
+   if(c.type==='nombre'){el=document.createElement('input');el.type='number';el.min='0';el.max=String(c.max);el.step='1';el.value=c.lit(o);
+    el.onchange=()=>{c.ecrit(o,Number(el.value)||0);el.value=c.lit(o);sauve()}}
+   else if(c.type==='choix'){el=document.createElement('select');el.innerHTML=options(c.opts,c.lit(o));
+    el.onchange=()=>{c.ecrit(o,el.value);if(c.cle==='rarete')tr.className='r-'+rareteDe(o);sauve()}}
+   else{el=document.createElement('input');el.type='checkbox';el.checked=c.lit(o);el.onchange=()=>{c.ecrit(o,el.checked);sauve()}}
+   el.setAttribute('aria-label',c.nom+' — '+o.name);td.append(el);tr.append(td)});
+  corps.append(tr)});
+ t.append(corps);
+ if(!liste.length){const v=document.createElement('p');v.className='muted';v.textContent='Aucune pièce ne correspond.';boite.append(v);return}
+ const cadre=document.createElement('div');cadre.className='masse-cadre';cadre.append(t);boite.append(cadre)}
 /* Une pièce de l'armurerie : le même carré qu'à la table et sur le corps de l'aventurier,
    teinté de sa rareté, son nom dessous, sa description en bulle au survol. Le clic ouvre
    le formulaire ; ✎ et ⧉ paraissent au survol. */
@@ -1329,11 +1410,14 @@ function armoryRow(a,i){const carte=document.createElement('div');carte.classNam
   catalog.items.splice(i+1,0,copie);renderCatalogPages();scheduleSave()};
  outils.append(crayon,double);carte.append(p,nom,outils);return carte}
 function renderArmory(){renderBiblioObjets();const cols=$('armory-cols');if(!cols)return;cols.replaceChildren();
- const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value;
+ const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value,tri=$('armory-sort').value;
+ const masse=armoryMasse&&view==='mj';$('armory-masse').setAttribute('aria-pressed',String(masse));$('armory-masse').classList.toggle('on',masse);
+ cols.classList.toggle('en-masse',masse);
+ const visibles=key=>trieObjets(catalog.items.map((a,i)=>[a,i]).filter(([a])=>itemColumn(a)===key&&(!q||a.name.toLowerCase().includes(q))),tri);
+ if(masse){tableMasse(cols,ARMORY_COLS.filter(([k])=>!choisie||choisie===k).flatMap(([k])=>visibles(k)));bulleOrpheline();return}
  for(const [key,titre] of ARMORY_COLS){
   if(choisie&&choisie!==key)continue;
-  const liste=catalog.items.map((a,i)=>[a,i]).filter(([a])=>itemColumn(a)===key
-   &&(!q||a.name.toLowerCase().includes(q)));
+  const liste=visibles(key);
   const bloc=document.createElement('div');bloc.className='cat-col armurerie-grille';
   const h=document.createElement('h3');h.textContent=titre;
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
@@ -2568,7 +2652,8 @@ function noterReglage(texte){const n=$('raccourcis-erreur');if(!n)return;
  n.textContent='✓ '+texte;n.classList.add('ok');clearTimeout(reglageTimer);
  reglageTimer=setTimeout(()=>{n.textContent='';n.classList.remove('ok')},3200)}
 function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();renderBestiary()}
-$('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;
+$('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;$('armory-sort').onchange=renderArmory;
+$('armory-masse').onclick=()=>{armoryMasse=!armoryMasse;renderArmory()};
 $('armory-add').onclick=()=>openItem(null);
 $('bestiary-search').oninput=renderBestiary;$('bestiary-family').onchange=renderBestiary;
 $('bestiary-sort').onchange=renderBestiary;
