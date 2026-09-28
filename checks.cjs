@@ -2878,4 +2878,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("function canMove(i){return controlled(i)&&(view===\"mj\"||(!tokensLocked&&!hasState(actors[i],'Gel')))}")
   &&page.includes("log(nomNum(a)+' se relève : Mouvement dépensé, Action encore disponible.',{ton:'etat'});render();scheduleSave()},'btn-action');")
   &&css.includes('button.choix-attaque.sans-des.avec-logo .nom{grid-row:1/3;align-self:center}'),'Au sol rampe, Se relever en bouton d’action, nom centré');}
-console.log('1708 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.309 — Une tuile de talent n'écrit plus sa nature sous son logo. */
+{const src=fs.readFileSync('editor.js','utf8');const tuile=src.slice(src.indexOf('function talentRow('),src.indexOf('function talentRow(')+1500);
+ assert.ok(!tuile.includes("b.className='t-badge'")&&tuile.includes("const [cle,,nature]=talentType(t),mj=view==='mj';")&&!fs.readFileSync('editor.css','utf8').includes('.talent-carre .t-badge'),'pas d’abrégé sous le logo');}
+console.log('1709 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

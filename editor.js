@@ -1440,16 +1440,15 @@ function talentFamilies(){
 // L'encre d'une classe, pour un intitulé de colonne ou une languette.
 function teinteClasse(nom){const c=classeDe(catalog.classes,nom);return c&&c.tint||''}
 /* Un talent au catalogue, comme une pièce de l'armurerie : un carré à la couleur de sa nature,
-   son logo (ou le glyphe de sa nature) et son abrégé, le nom dessous. Le survol ouvre la
+   son logo (ou le glyphe de sa nature), le nom dessous ; la nature ne s'écrit pas. Le survol ouvre la
    bulle, le clic du MJ le formulaire ; plus de dépliant, la bulle suffit. Un logo qui suit
    l'élément se montre au premier. */
 function talentRow(t,i,elem){const carte=document.createElement('div');carte.className='cat-carte';
- const [cle,court,nature]=talentType(t),mj=view==='mj';
+ const [cle,,nature]=talentType(t),mj=view==='mj';
  const p=document.createElement('span');p.className='cat-pill gear-carre talent-carre t-'+cle;p.setAttribute('role','button');p.tabIndex=0;
  // Sous l'élément de la colonne, s'il y en a un ; un talent élémentaire ailleurs, sous le premier.
  const sous=elem||(t.elementaire===true?ELEMENTS[0]:null),vu=sous?talentPourElement(t,sous):t,logo=logoTalent({...vu,logo:remplaceElement(vu.logo||'',sous||ELEMENTS[0])});
  if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=GLYPHES_TALENT[t.type]||'✦';p.append(g)}
- const b=document.createElement('span');b.className='t-badge';b.textContent=court;p.append(b);
  p.setAttribute('aria-label',(mj?'Modifier ':'')+nomEnClair(vu.name)+', '+nature);
  if(BULLES)surveille(p,()=>{const d=bulleTalent(t,{vu:x=>sous?talentPourElement(x,sous):x});ouvrirBulle(p,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
  if(mj){p.onclick=()=>openTalent(i);p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openTalent(i)}}}

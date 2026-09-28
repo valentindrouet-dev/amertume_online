@@ -1071,10 +1071,9 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .cat-carte:hover .cat-tools,.cat-carte:focus-within .cat-tools{opacity:1}
 .cat-carte .cat-tools .ico{padding:1px 5px;font-size:12px;background:var(--panel);border:1px solid var(--line);border-radius:6px}
 /* Les talents et le bestiaire en carrés, comme l'armurerie : la couleur de la nature (ou du
-   type d'adversaire) sur tout le carré, sans liseré ; l'abrégé du talent sous son logo ; le
-   jeton d'un adversaire, ses PV et sa DEF dessous ; la coche d'analyse dans le coin. */
+   type d'adversaire) sur tout le carré, sans liseré ; le jeton d'un adversaire, ses PV et sa
+   DEF dessous ; la coche d'analyse dans le coin. */
 .cat-pill.gear-carre.talent-carre{border-left:none}
-.cat-pill.gear-carre.talent-carre .t-badge{padding:1px 5px;font-size:9px}
 .cat-pill.gear-carre.best-carre{gap:3px}
 .best-carre .jeton-rond.carre{width:38px;height:38px;font-size:17px}
 .best-carre .gear-bas{display:flex;align-items:center;gap:4px}
