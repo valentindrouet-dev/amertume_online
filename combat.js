@@ -1492,7 +1492,7 @@ function zoneValide(z){if(!Array.isArray(z)||z.length<3)return null;
 /* Ce qu'un bâtiment fait pour la troupe. Il ne le fait que construit et intact : toute autre
    étape, tout autre état, et sa fonction s'arrête. Un bâtiment d'avant les fonctions qui
    s'appelle Magasin devient le magasin, une fois ; ensuite c'est le MJ qui choisit. */
-const FONCTIONS_BATIMENT=[['','Aucune fonction'],['magasin','Magasin']];
+const FONCTIONS_BATIMENT=[['','Aucune fonction'],['magasin','Magasin'],['tannerie','Tannerie']];
 const NOM_FONCTION=f=>(FONCTIONS_BATIMENT.find(([k])=>k===f)||FONCTIONS_BATIMENT[0])[1];
 const fonctionActive=b=>!!b&&!!b.fonction&&b.etape>=ETAPES_DOMAINE.length-1&&!b.etat;
 function nouveauBatiment(nom,id){nom=String(nom||'Bâtiment').slice(0,60);
@@ -1586,7 +1586,37 @@ function normaliseDomaine(d){d=d&&typeof d==='object'&&!Array.isArray(d)?d:{};
   carte:{calques,ratio:ratio>0?ratio:16/9,cartouches:cartouchesValides(d.carte&&d.carte.cartouches)},batiments,
   finances:{tresor:Math.trunc(Number(d.finances&&d.finances.tresor))||0,journal},
   pnj:(Array.isArray(d.pnj)?d.pnj:[]).filter(Boolean).slice(0,300).map(normalisePnj),aventuriers,
-  ressources:normaliseReserve(d.ressources)}}
+  ressources:normaliseReserve(d.ressources),fonctionsVues:fonctionsPosees(d,batiments),
+  // Les dépôts des joueurs déjà versés à la réserve : chacun ne compte qu'une fois.
+  depotsVus:(Array.isArray(d.depotsVus)?d.depotsVus:[]).filter(x=>typeof x==='string'&&ID_DEPOT.test(x)).slice(-500)}}
+/* Une fonction nouvelle se pose d'elle-même, une seule fois, sur le bâtiment sans fonction qui
+   porte son nom — la Tannerie devient la tannerie ; ensuite, c'est le MJ qui choisit. */
+function fonctionsPosees(d,batiments){const vues=Array.isArray(d.fonctionsVues)?d.fonctionsVues.filter(f=>typeof f==='string'):['magasin'];
+ FONCTIONS_BATIMENT.forEach(([f])=>{if(!f||vues.includes(f))return;batiments.forEach(b=>{if(!b.fonction&&fonctionParNom(b.nom)===f)b.fonction=f});vues.push(f)});
+ return vues.slice(0,40)}
+/* ---------- La tannerie ----------
+   Les restes pris aux adversaires s'y vendent à leur valeur, ou s'y changent en ressources pour
+   la réserve du domaine ; le tanneur y vend ses produits, et les fabrique avec la réserve,
+   d'après leur recette. Ce qui va à la réserve ou en sort passe par un dépôt, quand c'est un
+   joueur qui agit : le domaine est au MJ, dont l'appareil verse chaque dépôt une seule fois. */
+const ID_DEPOT=/^[A-Za-z0-9_-]{1,60}$/;
+const lisQte=(v,max=99)=>Math.max(1,Math.min(max,Math.trunc(Number(v))||1));
+// Une recette : des ressources connues et leur quantité, une ligne par ressource, six au plus.
+function normaliseRecette(l,cles){const out=[];(Array.isArray(l)?l:[]).forEach(x=>{if(!x||typeof x!=='object')return;const k=String(x.cle||'');
+ if(!CLE_MATERIAU.test(k)||(cles&&!cles.has(k)))return;const q=lisQte(x.qte),deja=out.find(y=>y.cle===k);if(deja)deja.qte=Math.min(99,deja.qte+q);else if(out.length<6)out.push({cle:k,qte:q})});return out}
+// Ce qu'un reste donne, converti : ses deux ressources, chacune à son rendement.
+function rendementReste(o){const d={};if(!o||o.category!=='restes')return d;
+ [[o.ressource1,o.rendement1],[o.ressource2,o.rendement2]].forEach(([k,q])=>{if(k&&CLE_MATERIAU.test(k))d[k]=(d[k]||0)+lisQte(q)});return d}
+const recetteDelta=o=>Object.fromEntries(normaliseRecette(o&&o.recette).map(r=>[r.cle,-r.qte]));
+// Une réserve qui bouge : jamais sous zéro, un compte nul disparaît.
+function appliqueDelta(reserve,delta){Object.entries(delta||{}).forEach(([k,v])=>{if(!CLE_MATERIAU.test(k)||k==='or')return;
+ const n=Math.max(0,Math.min(999999,(Number(reserve[k])||0)+(Math.trunc(Number(v))||0)));if(n)reserve[k]=n;else delete reserve[k]});return reserve}
+// Ce qui manque à une réserve pour une recette : [clé, quantité manquante].
+const manqueRecette=(reserve,o)=>normaliseRecette(o&&o.recette).map(r=>[r.cle,Math.max(0,r.qte-(Number(reserve&&reserve[r.cle])||0))]).filter(([,n])=>n>0);
+// Les dépôts d'un aventurier : identifiés, datés, bornés ; les soixante derniers.
+function normaliseDepots(l){return (Array.isArray(l)?l:[]).filter(e=>e&&typeof e==='object'&&typeof e.id==='string'&&ID_DEPOT.test(e.id)).slice(-60).map(e=>{const delta={};
+ if(e.delta&&typeof e.delta==='object')Object.keys(e.delta).slice(0,12).forEach(k=>{const v=Math.max(-999999,Math.min(999999,Math.trunc(Number(e.delta[k]))||0));if(v&&CLE_MATERIAU.test(k)&&k!=='or')delta[k]=v});
+ return {id:e.id,t:Number(e.t)||0,delta}}).filter(e=>Object.keys(e.delta).length)}
 /* La réserve du domaine : ses matériaux — ceux du catalogue, que le MJ crée et renomme ; leur clé,
    elle, ne change jamais — et ses gemmes. Une clé bien formée passe, sauf l'or (le trésor) et une
    gemme hors des comptes. */
@@ -1644,7 +1674,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,

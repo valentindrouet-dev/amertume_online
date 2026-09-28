@@ -12,7 +12,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.paliersTalents=normalisePaliersActeur(a);if(a.element!==undefined&&!elementDe(a))delete a.element;a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
+function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots=normaliseDepots(a.depots);a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.paliersTalents=normalisePaliersActeur(a);if(a.element!==undefined&&!elementDe(a))delete a.element;a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
  a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};
  a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};
  a.checks=Array.isArray(a.checks)?POINTS_CLES.map((q,i)=>Math.max(0,Math.min(pointsMax(a,q),a.checks[i]===true?1:Math.trunc(Number(a.checks[i]))||0))):[0,0,0];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
@@ -57,8 +57,8 @@ function migreRessources(c){
    dégâts, chaque point de DEF, la deuxième main, l'état infligé, l'effet, chaque bonus, les
    ressources dont elle est faite ; la rareté multiplie ensuite le tout. L'Armurerie en tire un
    prix suggéré, à côté du prix de chaque pièce : une aide, jamais imposée. */
-const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['treasure','Trésor']];
-const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,ressource:0,treasure:0},
+const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
+const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,ressource:0,restes:0,treasure:0},
  des:{white:5,bone:8,red:15,blue:20,green:10,black:30,yellow:25},def:20,deuxMains:5,etat:15,
  bonus:{pv:10,endu:25,vie:25,def:20,dmg:30,comp:15},ressources:100,rarete:{commun:100,rare:150,mystique:200,epique:300,ressource:100}};
 const EFFET_PRIX_DEFAUT=25;
@@ -79,8 +79,8 @@ function prixSuggere(o,g){g=normaliseGuidePrix(g||(typeof catalog!=='undefined'&
  const def=Math.max(0,Math.trunc(Number(o.def))||0);if(o.category==='armor'&&def)ajoute(def+' DEF',def*g.def);
  const code=objetCode(o);if(code)ajoute('Effet '+code.nom,g.effets[code.cle]||0);
  normaliseBonusEquip(o.bonus).forEach(b=>ajoute('+'+b.valeur+' '+((CARACS_EQUIP.find(([k])=>k===b.carac)||[])[1]||b.carac),b.valeur*(g.bonus[b.carac]||0)));
- if(o.category!=='ressource')[o.ressource1,o.ressource2].forEach(k=>{const r=k&&ressourcesJeu().find(x=>x.cle===k);
-  if(r&&r.piece)ajoute(r.nom,Math.round((Number(r.piece.price)||0)*g.ressources/100))});
+ if(o.category!=='ressource')[[o.ressource1,o.rendement1],[o.ressource2,o.rendement2]].forEach(([k,q])=>{const r=k&&ressourcesJeu().find(x=>x.cle===k),n=o.category==='restes'?lisQte(q):1;
+  if(r&&r.piece)ajoute((n>1?n+' ':'')+r.nom,Math.round((Number(r.piece.price)||0)*n*g.ressources/100))});
  const somme=lignes.reduce((t,[,v])=>t+v,0),rar=rareteDe(o),pct=g.rarete[rar]??100;
  return {total:Math.max(0,Math.min(999999,Math.round(somme*pct/100))),lignes,rarete:pct!==100?[NOM_RARETE(rar),pct]:null}}
 const detailPrix=s=>(s.lignes.length?s.lignes.map(([n,v])=>n+' : '+v.toLocaleString('fr-FR')).join('\n'):'Rien que le guide ne chiffre')
@@ -162,9 +162,12 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // Sa rareté, et ses bonus, relus au travers de leur déclaration.
   o.rarete=rareteDe(o);o.bonus=normaliseBonusEquip(o.bonus);
   // Une ressource n'a ni effet, ni usage, ni bonus : elle se stocke et se vend.
-  if(o.category==='ressource'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}
+  if(o.category==='ressource'||o.category==='restes'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}
   o.usage=usageObjet(o);o.consumable=o.usage==='conso';
-  o.magasin=o.magasin===true;if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
+  o.magasin=o.magasin===true;if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}
+  // Un reste donne ses ressources à son rendement ; une pièce du tanneur a sa recette.
+  if(o.category==='restes'){o.rendement1=lisQte(o.rendement1);o.rendement2=lisQte(o.rendement2)}
+  o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??=''});
  return c}
@@ -334,7 +337,7 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="cat-filters"><input id="armory-search" placeholder="Rechercher…" aria-label="Rechercher un objet">'
  +'<select id="armory-cat" aria-label="Catégorie"><option value="">Toutes catégories</option>'
  +'<option value="melee">Armes de mêlée</option><option value="ranged">Armes à distance</option>'
- +'<option value="armor">Armures</option><option value="object">Objets</option><option value="ressource">Ressources</option><option value="treasure">Trésors</option></select>'
+ +'<option value="armor">Armures</option><option value="object">Objets</option><option value="ressource">Ressources</option><option value="restes">Restes</option><option value="treasure">Trésors</option></select>'
  +'<select id="armory-sort" aria-label="Trier">'+TRIS_ARMURERIE.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('')+'</select></div>'
  /* La banque des effets d'équipement, comme celle des talents : ce que le moteur sait
     faire quand on se sert d'un objet, replié par défaut. */
@@ -826,7 +829,7 @@ function dicePips(dice,etat,place){const out=document.createElement('span');out.
   d.style.setProperty('--face',dieFace(c));d.title=types[c];out.append(d)}});
  if(place&&n0>=1&&n0<=2){const v=document.createElement('i');v.className='die-sq die-munition';v.title='Place d’une munition';out.append(v)}
  return out}
-function itemColumn(a){return a.category==='ressource'?'ressource':a.category==='treasure'?'treasure':a.category==='armor'?'armor'
+function itemColumn(a){return a.category==='restes'?'restes':a.category==='ressource'?'ressource':a.category==='treasure'?'treasure':a.category==='armor'?'armor'
  :a.category==='weapon'?(a.ranged?'ranged':'melee'):'object'}
 /* La même pastille qu'à l'armurerie, mais posée : sur une fiche on lit son équipement,
    on ne le modifie pas d'un clic. Les dés de l'arme, la DEF de l'armure, l'effet d'un objet. */
@@ -946,7 +949,7 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
  const logo=logoEquipement(o);
- if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='treasure'?'💎':col==='ressource'?'⛏':'⚔';p.append(g)}
+ if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='treasure'?'💎':col==='ressource'?'⛏':col==='restes'?'🦴':'⚔';p.append(g)}
  /* Sous le logo d'une pièce d'équipement : sa DEF — seulement si elle en donne, ou si c'est une
     armure de corps ou un bouclier —, puis l'icône de son effet : l'état qu'elle rend, barré
     quand elle en protège. Un anneau sans DEF ne porte plus d'écu à zéro. */
@@ -970,7 +973,9 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  normaliseBonusEquip(o.bonus).forEach(b=>ligne(libelleBonus(b),'gear-bonus'));
  // La DEF, comme sur le carré : seulement si la pièce en donne, ou si c'est un torse ou un bouclier.
  if(col==='armor'){if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))ligne('DEF '+(o.def||0)+' · '+NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase())}
- else if(col!=='object')ligne((o.hands===2?'2 mains':'1 main')+(col==='ranged'?' · à distance':' · au contact'));
+ else if(col==='melee'||col==='ranged')ligne((o.hands===2?'2 mains':'1 main')+(col==='ranged'?' · à distance':' · au contact'));
+ if(col==='restes'){const r=rendementReste(o);ligne(Object.keys(r).length?'Se convertit en : '+texteRessources(r):'Ne se convertit en rien.');ligne('Valeur : '+(o.price||0).toLocaleString('fr-FR')+' or','gear-valeur')}
+ if(o.tanneur&&o.recette&&o.recette.length)ligne('Tannerie : '+texteRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte]))),'gear-recette');
  if(o.category==='ammo'){const k=keys.indexOf(o.munDe);ligne('Munition : '+(k>=0?'+1 dé '+types[k]:'aucun dé')+' aux armes à distance portées');ligne(o.etat?'Leur tir inflige : '+o.etat:'')}
  else if(o.etat)ligne('Inflige : '+o.etat);
  /* Un objet dit ce qu'il fait et s'utilise d'un bouton : l'effet part au journal de la
@@ -1090,7 +1095,7 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
  const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper;
  // Un objet d'un combattant en scène s'utilise d'un clic, pour son joueur ou le MJ ; une munition se porte.
  // Un trésor se garde et se vend ; il ne s'utilise pas : un clic montre sa description.
- const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&peutEquiper&&actors.includes(a);
+ const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&peutEquiper&&actors.includes(a);
  const agir=e=>{e.stopPropagation();
   if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}
   /* Au survol, la description se montre seule. En jeu, le clic l'épingle — le temps
@@ -1393,7 +1398,7 @@ function talentPills(a){const out=document.createElement('div');out.className='t
  bulleOrpheline();return out}
 // Les Trésors : trésors et objets rares, qui se gardent, se montrent et se vendent, sans s'utiliser.
 // Quatre colonnes par rangée : les Ressources et les Trésors passent en dessous.
-const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets'],['ressource','Ressources'],['treasure','Trésors']];
+const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets'],['ressource','Ressources'],['restes','Restes'],['treasure','Trésors']];
 /* ---------- Trier l'Armurerie, et la modifier en masse ----------
    Le tri vaut dans chaque colonne, et dans le tableau du mode en masse. Sans tri choisi, l'ordre
    de création. */
@@ -1418,7 +1423,7 @@ let armoryMasse=false,armoryNeuf=null,masseTri=null;
 let masseAnnule=null;
 /* Créer une pièce sans quitter le tableau : sa catégorie, puis une ligne neuve, son nom prêt à
    écrire. La catégorie proposée est celle qu'on filtre. */
-const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['treasure','Trésor']];
+const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
 function barreMasse(boite,choisie){const barre=document.createElement('div');barre.className='masse-barre';
  const cat=document.createElement('select');cat.setAttribute('aria-label','Catégorie de la nouvelle pièce');
  cat.innerHTML=CATS_NEUVES.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('');cat.value=CATS_NEUVES.some(([k])=>k===choisie)?choisie:'object';
@@ -1456,7 +1461,8 @@ function tableMasse(boite,liste){
   {cle:'price',nom:'Prix (or)',type:'nombre',max:999999,pour:faite,lit:o=>o.price||0,ecrit:(o,v)=>{o.price=Math.max(0,Math.min(999999,Math.round(v)))}},
   {cle:'ressource1',nom:'Ressource 1',type:'choix',opts:RESS,pour:faite,tri:o=>nomRess(o.ressource1),lit:o=>ressourceValide(o.ressource1),ecrit:(o,v)=>{o.ressource1=ressourceValide(v)}},
   {cle:'ressource2',nom:'Ressource 2',type:'choix',opts:RESS,pour:faite,tri:o=>nomRess(o.ressource2),lit:o=>ressourceValide(o.ressource2),ecrit:(o,v)=>{o.ressource2=ressourceValide(v)}},
-  {cle:'magasin',nom:'Magasin',type:'case',lit:o=>o.magasin===true,ecrit:(o,v)=>{o.magasin=!!v}},
+  {cle:'magasin',nom:'Magasin',type:'case',dits:['Mettre en vente au magasin','Retirer du magasin'],lit:o=>o.magasin===true,ecrit:(o,v)=>{o.magasin=!!v}},
+  {cle:'tanneur',nom:'Tanneur',type:'case',pour:o=>o.category!=='ressource'&&o.category!=='restes',dits:['Rendre vendu et fabriqué par le tanneur','Retirer de la tannerie'],lit:o=>o.tanneur===true,ecrit:(o,v)=>{o.tanneur=!!v}},
   {cle:'hands',nom:'Mains',type:'choix',opts:MAINS,pour:o=>arme(o)&&!o.ranged,lit:o=>weaponHands(o),ecrit:(o,v)=>{o.hands=Number(v)===2?2:1}}];
  const vaut=(c,o)=>!c.pour||c.pour(o);
  /* Trié par une colonne : les pièces qu'elle ne concerne pas, ou vides, restent en bas ; à valeur
@@ -1495,8 +1501,8 @@ function tableMasse(boite,liste){
    s.innerHTML='<option value="\u0001">Pour toutes…</option>'+options(c.opts,'\u0001');
    s.onchange=()=>{const v=s.value;if(v==='\u0001')return;const nomV=(c.opts.find(([k])=>String(k)===v)||[])[1]||v;s.value='\u0001';pourTous(c,o=>c.ecrit(o,v),c.nom+' : '+nomV)};td.append(s)}
   else if(c.type==='vue'){}
-  else{const oui=document.createElement('button');oui.type='button';oui.textContent='Tout ✓';oui.onclick=()=>pourTous(c,o=>c.ecrit(o,true),'Mettre en vente au magasin');
-   const non=document.createElement('button');non.type='button';non.textContent='Aucun';non.onclick=()=>pourTous(c,o=>c.ecrit(o,false),'Retirer du magasin');
+  else{const oui=document.createElement('button');oui.type='button';oui.textContent='Tout ✓';oui.onclick=()=>pourTous(c,o=>c.ecrit(o,true),c.dits[0]);
+   const non=document.createElement('button');non.type='button';non.textContent='Aucun';non.onclick=()=>pourTous(c,o=>c.ecrit(o,false),c.dits[1]);
    const g=document.createElement('span');g.className='masse-op';g.append(oui,non);td.append(g)}
   tous.append(td)});
  thead.append(tete,tous);t.append(thead);
@@ -2233,8 +2239,9 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   groupe('Armes à distance',filtre(o=>o.category==='weapon'&&o.ranged),porte,gearPill,clic);
   groupe('Armures',filtre(o=>o.category==='armor'&&o.slot!=='shield'),porte,gearPill,clic);
   groupe('Boucliers',filtre(o=>o.category==='armor'&&o.slot==='shield'),porte,gearPill,clic);
-  groupe('Objets',filtre(o=>o.category!=='weapon'&&o.category!=='armor'&&o.category!=='treasure'&&o.category!=='ressource'),porte,gearPill,clic);
+  groupe('Objets',filtre(o=>o.category!=='weapon'&&o.category!=='armor'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'),porte,gearPill,clic);
   groupe('Ressources',filtre(o=>o.category==='ressource'),porte,gearPill,clic);
+  groupe('Restes',filtre(o=>o.category==='restes'),porte,gearPill,clic);
   groupe('Trésors',filtre(o=>o.category==='treasure'),porte,gearPill,clic);
   if(!corps.childElementCount){const v=document.createElement('p');v.className='muted';
    v.textContent=q?'Aucun objet de ce nom.':'L’armurerie est vide : crée un objet dans l’onglet Armurerie.';
@@ -3220,7 +3227,7 @@ function selLogos(label,key,value,sansElementaires){const familles=[...famillesP
 // Les icônes des dossiers viennent en tête : ce sont les nouvelles qu'on cherche.
 function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches(''),...iconesPlanches('talents'),...LOGOS_DOSSIERS.equipement];
  // Un trésor peut prendre toute image : un objet, une gemme, une pièce d'équipement.
- const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];
+ const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];
  // Le logo en place reste offert, même si la liste des dossiers n'est pas venue.
  return o&&estLogoDossier(o.logo)&&!l.includes(o.logo)?[o.logo,...l]:l}
 /* Un logo devant un nom : un jeton, ou rien. Un logo inconnu du dossier ne se dessine
@@ -3280,7 +3287,7 @@ function logoTalent(t,cls){if(t&&t.effet==='invulnerable'){const w=pastilleInsen
 // Le logo d'une attaque : n'importe quelle icône du dossier, sans distinction de famille.
 function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['armor','Armure'],
- ['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['treasure','Trésor'],['misc','Divers']];
+ ['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor'],['misc','Divers']];
 /* Ce que le formulaire affiche à l'instant, relu tel quel. Les champs absents ne sont pas
    lus : la valeur déjà enregistrée reste en place au lieu d'être remise à zéro. */
 function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
@@ -3304,6 +3311,9 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  // Une ressource neuve reçoit sa clé, qui ne changera plus, même si on la renomme.
  if(a.category==='ressource'&&!(typeof a.cle==='string'&&CLE_MATERIAU.test(a.cle)))a.cle=cleLibre(a.name,new Set(ressourcesJeu().map(r=>r.cle)));
  if(f.magasin)a.magasin=f.magasin.checked;
+ if(f.tanneur)a.tanneur=f.tanneur.checked;
+ if($('recette-lignes'))a.recette=lireRecette();
+ for(const k of ['rendement1','rendement2'])if(f[k])a[k]=lisQte(f[k].value);
  if(f.itemdie0)a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));
  return a}
 /* Une arme ne porte pas de DEF, une armure pas de dés : le formulaire ne montre que les
@@ -3342,13 +3352,20 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   // Le prix et les deux ressources, ensemble sur leur ligne.
   +'<div class="edit-grid prix-ressources">'
   +(a.category==='ressource'?'<p class="valeur-guide">Valeur : <b>'+(a.price||0).toLocaleString('fr-FR')+' or</b> — elle se règle dans le Guide des prix de l’Armurerie.</p>'
-   :field('Prix (or)','price',a.price||0,'number','min="0" max="999999" step="1"'))
-  // Une ressource n'est pas faite d'autres ressources.
-  +(a.category==='ressource'?'':sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...listeRessources()])
+   :field(a.category==='restes'?'Valeur (or)':'Prix (or)','price',a.price||0,'number','min="0" max="999999" step="1"'))
+  // Une ressource n'est pas faite d'autres ressources ; un reste, lui, en donne, chacune à son rendement.
+  +(a.category==='ressource'?'':a.category==='restes'
+   ?sel('Donne','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...listeRessources()])+field('Quantité','rendement1',lisQte(a.rendement1),'number','min="1" max="99"')
+    +sel('Et','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...listeRessources()])+field('Quantité','rendement2',lisQte(a.rendement2),'number','min="1" max="99"')
+   :sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...listeRessources()])
    +sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...listeRessources()]))
   +'</div>'
   // En vente au magasin du domaine, au prix ci-dessus.
   +'<label class="field-check"><input name="magasin" type="checkbox" '+(a.magasin===true?'checked':'')+'>Magasin — achetable au magasin du domaine</label>'
+  /* Le tanneur la vend, et la fabrique d'après sa recette, avec la réserve du domaine. */
+  +(a.category==='ressource'||a.category==='restes'?'':'<label class="field-check"><input name="tanneur" type="checkbox" '+(a.tanneur===true?'checked':'')+'>Tanneur — vendu et fabriqué à la tannerie</label>'
+   +'<div id="item-recette"'+(a.tanneur===true?'':' hidden')+'><p class="etiquette">Recette du tanneur, prise dans la réserve du domaine</p><div id="recette-lignes"></div>'
+   +'<button type="button" id="recette-add" class="arbre-ajout">+ Ingrédient</button></div>')
   +(arme?'<p class="etiquette">Dés de l’arme</p>'+poolFields(poolFrom(a.dice),'itemdie')
    +sel('État infligé','etat',a.etat||'',[['','—'],...ETATS_INFLIGES().map(e=>[e,e])]):'')
   +(arme&&a.ranged?'<label class="field-check"><input name="usesAmmo" type="checkbox" '+(a.usesAmmo?'checked':'')+'>Munitions nécessaires</label>':'')
@@ -3360,7 +3377,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   /* Ce que l'objet fait quand on s'en sert, et comment on en use : la même grammaire que
      les talents — on choisit l'effet, puis on le règle. */
   // Une ressource n'a ni effet, ni usage, ni bonus : le formulaire s'arrête là.
-  +(a.category==='ressource'?'':''
+  +(a.category==='ressource'||a.category==='restes'?'':''
   +'<h2 class="sous-titre">Effet appliqué par le moteur</h2>'
   +'<div class="edit-grid">'
   +sel('Effet','effet',a.effet||'',[['','— Aucun : objet descriptif —'],...Object.values(OBJETS_CODES).map(c=>[c.cle,c.nom])])
@@ -3376,6 +3393,11 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
  habilleDes($('item-fields'));
  dessineBonusItem();
  ['ressource1','ressource2'].forEach(k=>{const s=$('item-form').elements[k];if(s)menuIcones(s,iconeRessource)});
+ // La recette du tanneur : visible quand la coche l'est.
+ dessineRecette();
+ if($('item-form').elements.tanneur)$('item-form').elements.tanneur.onchange=e=>{$('item-recette').hidden=!e.target.checked};
+ if($('recette-add'))$('recette-add').onclick=()=>{itemDraft=itemDepuisForm(itemDraft);const prises=new Set(itemDraft.recette.map(r=>r.cle)),libre=listeRessources().find(([k])=>!prises.has(k));
+  if(!libre)return;itemDraft.recette=[...itemDraft.recette,{cle:libre[0],qte:1}];dessineRecette()};
  /* À droite du prix : celui que suggère le guide, recalculé à chaque saisie du formulaire. */
  if($('item-form').elements.price){const f=$('item-form').elements,b=boutonSuggestion(),maj=()=>{try{majSuggestion(b,itemDepuisForm({...itemDraft}),num(f.price.value,0,999999))}catch(e){}};
   const ligne=document.createElement('span');ligne.className='prix-ligne';f.price.before(ligne);ligne.append(f.price,b);b.onclick=()=>{f.price.value=b.dataset.total||'0';maj()};
@@ -3412,6 +3434,23 @@ function dessineBonusItem(){const boite=$('item-bonus');if(!boite)return;boite.r
   const plus=document.createElement('span');plus.className='bonus-plus';plus.textContent='+';
   l.append(plus,val,carac,comp,x);boite.append(l)});
  if(!boite.childElementCount){const v=document.createElement('p');v.className='muted';v.textContent='Aucun bonus : la pièce ne confère rien de plus que ses dés ou sa DEF.';boite.append(v)}}
+/* Les lignes de la recette : une quantité, une ressource (icône comprise), un ✕ pour la retirer.
+   Elles se lisent avec le reste du formulaire. */
+function dessineRecette(){const boite=$('recette-lignes');if(!boite)return;boite.replaceChildren();
+ const l=normaliseRecette(itemDraft.recette,new Set(ressourcesJeu().map(r=>r.cle)));
+ l.forEach((r,i)=>{const ligne=document.createElement('div');ligne.className='recette-ligne';
+  const q=document.createElement('input');q.type='number';q.name='recette_qte_'+i;q.min='1';q.max='99';q.value=String(r.qte);q.setAttribute('aria-label','Quantité');
+  const fois=document.createElement('span');fois.className='recette-fois';fois.textContent='×';
+  const s=document.createElement('select');s.name='recette_cle_'+i;s.setAttribute('aria-label','Ressource');listeRessources().forEach(([k,n])=>s.add(new Option(n,k)));s.value=r.cle;
+  const x=document.createElement('button');x.type='button';x.className='ico';x.textContent='✕';x.title='Retirer cet ingrédient';x.setAttribute('aria-label',x.title);
+  x.onclick=()=>{itemDraft=itemDepuisForm(itemDraft);itemDraft.recette.splice(i,1);dessineRecette()};
+  ligne.append(q,fois,s,x);boite.append(ligne);menuIcones(s,iconeRessource)});
+ if(!l.length){const v=document.createElement('p');v.className='muted';v.textContent='Aucun ingrédient : ajoute ce que le tanneur prend dans la réserve.';boite.append(v)}}
+function lireRecette(){const f=$('item-form').elements,out=[];
+ for(let i=0;f['recette_cle_'+i];i++)out.push({cle:f['recette_cle_'+i].value,qte:f['recette_qte_'+i].value});
+ return normaliseRecette(out,new Set(ressourcesJeu().map(r=>r.cle)))}
+// « 2 Cuir, 1 Tissu » : un ensemble de ressources, par leur nom.
+const texteRessources=d=>Object.entries(d).map(([k,n])=>Math.abs(n)+' '+((ressourcesJeu().find(r=>r.cle===k)||{}).nom||k)).join(', ');
 function lireBonusItem(){const f=$('item-form').elements,out=[];
  for(let i=0;f['bonus_carac_'+i];i++)out.push({carac:f['bonus_carac_'+i].value,valeur:f['bonus_valeur_'+i].value,comp:f['bonus_comp_'+i].value});
  return normaliseBonusEquip(out)}

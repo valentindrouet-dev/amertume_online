@@ -211,7 +211,12 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .cat-pill.k-armor{background:#cfe0ea}
 .cat-pill.k-object{background:#e6d9bd}
 .cat-pill.k-treasure{background:#f0e0bd}
-.cat-pill.k-ressource{background:#efe2cc}
+.cat-pill.k-ressource{background:#efe2cc}.cat-pill.k-restes{background:#e8d8cd}
+.gear-detail.k-restes{background:#efe3da;border-left-color:#9a6a52}.bulle:has(.k-restes){--bulle-bord:#efe3da}
+/* La recette du tanneur, au formulaire d'une pièce : une ligne par ingrédient. */
+#item-recette{margin:4px 0 8px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px}
+.recette-ligne{display:flex;align-items:center;gap:8px;margin:4px 0}.recette-ligne input[type=number]{width:4.5em!important;margin:0!important}
+.recette-ligne .menu-icones{flex:1;max-width:260px}.recette-ligne .menu-icones-bouton{margin:0}.recette-fois{color:var(--muted)}
 /* Le guide des prix : des groupes de champs en grille ; le prix suggéré, à droite de chaque prix. */
 #guide-prix{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;padding:10px 0 4px}
 .guide-groupe{border:1px solid var(--line);border-radius:9px;padding:8px 10px 10px;margin:0;background:var(--panel);min-width:0}
@@ -1234,6 +1239,10 @@ i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #00
 .dom-article .cat-pill.gear-carre.a-cliquer:hover{transform:translateY(-2px);box-shadow:0 3px 8px #6b4a0c33}
 .dom-article.vente .cat-pill.gear-carre.a-cliquer:hover{box-shadow:0 3px 8px #2f6b3a33}
 .dom-article .cat-pill.gear-carre.indispo{opacity:.45;cursor:not-allowed;filter:grayscale(.4)}
+.dom-article .dom-recette{display:flex;flex-wrap:wrap;justify-content:center;gap:3px 6px;margin-top:2px;font:600 12px system-ui}
+.puce-res{display:inline-flex;align-items:center;gap:2px;padding:1px 5px 1px 2px;border-radius:999px;background:#efe2cc;color:#5b4428}
+.puce-res img{width:16px;height:16px;object-fit:contain}.puce-res.manque{background:#f3d3cc;color:#9b2c1c}
+.dom-article.conversion .cat-pill.gear-carre.a-cliquer:hover{box-shadow:0 3px 8px #5b442833}
 .bulle-action{margin:8px 0 0;padding-top:6px;border-top:1px solid #00000018;font:600 12px system-ui;color:#6b4a0c}.bulle-action.non{color:var(--muted)}
 
 /* Les paliers d'un talent, sous son icône dans l'arbre : un point par palier, allumés pour ceux qu'on tient. Le fond cache les chemins. */

@@ -431,7 +431,7 @@ let domContours=false;
 function basculeContours(){domContours=!domContours;
  if(document.body.classList.contains('page-domaine'))renderDomaine();else if(domaineEdite)renderDomaineEditeur()}
 $('dom-contours').onclick=basculeContours;$('dom-contours-editeur').onclick=basculeContours;
-function renderDomaine(leger){const d=domaine,mj=mjDom();vueDomaine=view;if(mj&&evacueNonConstruits())scheduleSave();
+function renderDomaine(leger){const d=domaine,mj=mjDom();vueDomaine=view;if(mj&&evacueNonConstruits())scheduleSave();if(mj)recueilleDepots(false);
  bandeauSecours();
  // Les joueurs lisent le domaine ; ce qui le modifie — carte, export, import — reste au MJ.
  ['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);
@@ -562,26 +562,31 @@ function blocFonction(b){if(!b.fonction)return null;const out=document.createEle
  if(!fonctionActive(b)){const p=document.createElement('p');p.className='muted dom-fonction-arret';
   p.textContent='Fermé : '+(batimentConstruit(b)?'le bâtiment est '+NOM_ETAT_BATIMENT(b.etat).toLowerCase()+'.':'le bâtiment n’est pas construit.');out.append(p);return out}
  if(b.fonction==='magasin')blocMagasin(out,b);
+ if(b.fonction==='tannerie')blocTannerie(out,b);
  return out}
 /* ---------- Le magasin ---------- */
 /* On y achète ce que l'armurerie met en vente, au prix de l'armurerie ; on y revend son
    équipement à la moitié de ce prix, arrondie en dessous. Il faut s'y trouver : l'acheteur
    est un aventurier présent — le sien pour un joueur, au choix pour le MJ. */
 let clientMagasin=null;
-function blocMagasin(out,b){const presents=actors.filter(a=>a.hero&&lieuDe(a)===b.id),clients=presents.filter(agitPour);
+// Qui agit ici : un aventurier présent — le sien pour un joueur, au choix pour le MJ —, et son or.
+function enteteClient(out,b,ici){const presents=actors.filter(a=>a.hero&&lieuDe(a)===b.id),clients=presents.filter(agitPour);
  const client=clients.find(a=>a.id===clientMagasin)||clients[0]||null;
  const tete=document.createElement('div');tete.className='dom-magasin-client';
  if(client){
-  if(clients.length>1){const choix=document.createElement('select');choix.setAttribute('aria-label','Qui achète ou vend');
+  if(clients.length>1){const choix=document.createElement('select');choix.setAttribute('aria-label','Qui agit ici');
    clients.forEach(a=>choix.add(new Option(a.name,a.id)));choix.value=client.id;choix.onchange=()=>{clientMagasin=choix.value;renderDomaine(true)};tete.append(choix)}
   else{const n=document.createElement('strong');n.textContent=client.name;tete.append(jetonRond(client.image,client.name,'mini'),n)}
   tete.append(ligneOr(orDe(client),null))}
  else{const p=document.createElement('p');p.className='muted';
-  p.textContent=presents.length?'Seul le joueur d’un aventurier présent achète et vend ici.':'Personne au magasin : déplace un aventurier ici pour acheter ou vendre.';tete.append(p)}
- out.append(tete);
- const titre=t=>{const h=document.createElement('h4');h.className='dom-magasin-titre';h.textContent=t;return h};
+  p.textContent=presents.length?'Seul le joueur d’un aventurier présent agit ici.':'Personne '+ici+' : déplace un aventurier ici.';tete.append(p)}
+ out.append(tete);return client}
+const titreFonction=t=>{const h=document.createElement('h4');h.className='dom-magasin-titre';h.textContent=t;return h};
+const texteFonction=(out,t)=>{const p=document.createElement('p');p.className='muted';p.textContent=t;out.append(p)};
+function blocMagasin(out,b){const client=enteteClient(out,b,'au magasin');
+ const titre=titreFonction;
  // Ce qui est en vente : les pièces de l'armurerie cochées « Magasin », rangées comme elle.
- const rang=o=>['melee','ranged','armor','object','ressource','treasure'].indexOf(itemColumn(o));
+ const rang=o=>['melee','ranged','armor','object','ressource','restes','treasure'].indexOf(itemColumn(o));
  const enVente=(catalog.items||[]).filter(o=>o&&o.magasin===true).sort((x,y)=>rang(x)-rang(y)||x.name.localeCompare(y.name,'fr'));
  out.append(titre('Acheter'));
  if(!enVente.length){const p=document.createElement('p');p.className='muted';p.textContent=mjDom()?'Rien en vente : coche « Magasin » sur des objets de l’armurerie.':'Rien en vente pour l’instant.';out.append(p)}
@@ -602,16 +607,16 @@ function blocMagasin(out,b){const presents=actors.filter(a=>a.hero&&lieuDe(a)===
    un rond doré en haut à droite du carré — d'achat ou de revente — et le bouton qui agit. */
 /* Un article : un clic sur l'objet l'achète ou le vend ; hors de portée, il pâlit. Ce qu'un clic
    ferait se lit au bas de sa bulle. */
-function carteMagasin(o,n,prix,actif,titre,faire,sens){const carte=document.createElement('div');carte.className='cat-carte dom-article '+sens;
+function carteMagasin(o,n,prix,actif,titre,faire,sens,sous){const carte=document.createElement('div');carte.className='cat-carte dom-article '+sens;
  const p=gearCarre(o,n,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();
  p.removeAttribute('title');p.setAttribute('aria-label',titre);p.classList.add(actif?'a-cliquer':'indispo');p.setAttribute('aria-disabled',String(!actif));
  const agit=e=>{e.preventDefault();if(actif)faire()};p.onclick=agit;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')agit(e)};
  if(BULLES)surveille(p,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');
   const a=document.createElement('p');a.className='bulle-action'+(actif?'':' non');a.textContent=actif?'Clic : '+titre.charAt(0).toLowerCase()+titre.slice(1)+'.':titre;d.append(a);ouvrirBulle(p,d,'bulle-gear')});
  const nom=document.createElement('span');nom.className='nom-carte';nom.textContent=o.name;
- const piece=document.createElement('span');piece.className='dom-prix';piece.textContent=prix?prix.toLocaleString('fr-FR'):'0';
- piece.title=(sens==='vente'?'Revente : ':'Prix : ')+(prix?prix.toLocaleString('fr-FR')+' or':'gratuit');p.append(piece);
-  carte.append(p,nom);return carte}
+ if(prix!==null){const piece=document.createElement('span');piece.className='dom-prix';piece.textContent=prix?prix.toLocaleString('fr-FR'):'0';
+  piece.title=(sens==='vente'?'Revente : ':'Prix : ')+(prix?prix.toLocaleString('fr-FR')+' or':'gratuit');p.append(piece)}
+ carte.append(p,nom);if(sous)carte.append(sous);return carte}
 function apresMagasin(){renderDomaine(true);render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 function acheterPour(a,o){const p=peutAcheter(a,o),ici=batimentDom(lieuDe(a));if(!p.ok||!agitPour(a)||!ici||ici.fonction!=='magasin'||!fonctionActive(ici))return;
  ajouteOr(a,-p.prix);ajouterInventaire(a,o);log(nomNum(a)+' achète '+o.name+' au magasin'+(p.prix?' pour '+p.prix+' or':'')+'.');apresMagasin()}
@@ -621,6 +626,67 @@ async function vendrePour(a,o){if(!agitPour(a)||!(a.inventaire||[]).includes(o.i
  const ok=typeof demander==='function'?await demander(texte,'Vendre'):confirm(texte);
  if(!ok||!(a.inventaire||[]).includes(o.id))return;
  retirerInventaire(a,o);ajouteOr(a,v);log(nomNum(a)+' vend '+o.name+' au magasin'+(v?' pour '+v+' or':'')+'.');apresMagasin()}
+/* ---------- La tannerie ---------- */
+/* On y vend les restes pris aux adversaires, à leur valeur, ou on les change en ressources pour la
+   réserve du domaine ; on y achète les produits du tanneur — les pièces cochées « Tanneur » —, ou
+   on les fait fabriquer avec la réserve, d'après leur recette. */
+function blocTannerie(out,b){const client=enteteClient(out,b,'à la tannerie');const titre=titreFonction;
+ const rang=o=>['melee','ranged','armor','object','ressource','restes','treasure'].indexOf(itemColumn(o));
+ const produits=(catalog.items||[]).filter(o=>o&&o.tanneur===true).sort((x,y)=>rang(x)-rang(y)||x.name.localeCompare(y.name,'fr'));
+ out.append(titre('Acheter'));
+ if(!produits.length)texteFonction(out,mjDom()?'Rien à vendre : coche « Tanneur » sur des pièces de l’armurerie.':'Le tanneur n’a rien à vendre pour l’instant.');
+ else{const g=document.createElement('div');g.className='dom-articles';
+  produits.forEach(o=>{const prix=prixAchat(o),ok=!!client&&orDe(client)>=prix;
+   g.append(carteMagasin(o,1,prix,ok,!client?'Il faut être à la tannerie pour acheter.':ok?'Acheter '+o.name+' pour '+prix+' or':'Il manque '+(prix-orDe(client))+' or.',()=>acheterTannerie(client,o),'achat'))});
+  out.append(g)}
+ // Fabriquer : la recette se prend dans la réserve du domaine.
+ const fabricables=produits.filter(o=>o.recette&&o.recette.length);
+ if(fabricables.length){out.append(titre('Fabriquer, avec la réserve du domaine'));const reserve=reserveVue(),g=document.createElement('div');g.className='dom-articles';
+  fabricables.forEach(o=>{const manque=manqueRecette(reserve,o),ok=!!client&&!manque.length;
+   g.append(carteMagasin(o,1,null,ok,!client?'Il faut être à la tannerie pour faire fabriquer.':ok?'Fabriquer '+o.name+' : '+texteRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte])))
+    :'Il manque '+texteRessources(Object.fromEntries(manque))+' dans la réserve.',()=>fabriquerTannerie(client,o),'fabrique',puceRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte])),manque)))});
+  out.append(g)}
+ if(!client)return;
+ // Les restes de l'aventurier : à vendre, ou à convertir.
+ const restes=new Map();(client.inventaire||[]).forEach(id=>{const o=(catalog.items||[]).find(x=>x&&x.id===id);if(o&&o.category==='restes')restes.set(o,(restes.get(o)||0)+1)});
+ const tries=[...restes.entries()].sort(([x],[y])=>x.name.localeCompare(y.name,'fr'));
+ out.append(titre('Vendre des restes, à leur valeur'));
+ if(!tries.length){texteFonction(out,client.name+' n’a pas de restes.');return}
+ const gv=document.createElement('div');gv.className='dom-articles';
+ tries.forEach(([o,n])=>gv.append(carteMagasin(o,n,prixAchat(o),true,'Vendre '+o.name+' pour '+prixAchat(o)+' or',()=>vendreReste(client,o),'vente')));out.append(gv);
+ const convertibles=tries.filter(([o])=>Object.keys(rendementReste(o)).length);
+ if(!convertibles.length)return;
+ out.append(titre('Convertir en ressources, pour la réserve'));const gc=document.createElement('div');gc.className='dom-articles';
+ convertibles.forEach(([o,n])=>{const r=rendementReste(o);gc.append(carteMagasin(o,n,null,true,'Convertir '+o.name+' en '+texteRessources(r),()=>convertirReste(client,o),'conversion',puceRessources(r)))});
+ out.append(gc)}
+// Sous une carte : les ressources en jeu, icône et quantité ; celles qui manquent, en rouge.
+function puceRessources(d,manque=[]){const w=document.createElement('span');w.className='dom-recette';
+ Object.entries(d).forEach(([k,n])=>{const p=document.createElement('span');p.className='puce-res'+(manque.some(([m])=>m===k)?' manque':'');
+  const nom=(ressourcesJeu().find(r=>r.cle===k)||{}).nom||k,ic=iconeRessource(k);p.title=n+' '+nom;
+  if(ic)p.append(ic);const t=document.createElement('span');t.textContent=ic?String(n):n+' '+nom;p.append(t);w.append(p)});return w}
+// L'aventurier est-il à une tannerie ouverte, et est-ce à son joueur d'agir ?
+function aLaTannerie(a){const ici=a&&batimentDom(lieuDe(a));return !!a&&agitPour(a)&&!!ici&&ici.fonction==='tannerie'&&fonctionActive(ici)}
+/* Ce qui va à la réserve ou en sort. Le MJ l'y verse lui-même ; un joueur le dépose sur son
+   aventurier, et l'appareil du MJ le versera une fois, en le recevant. */
+function versDomaine(a,delta){if(mjDom()){appliqueDelta(domaine.ressources||(domaine.ressources={}),delta);sauveDomaine();return}
+ const vus=new Set(domaine.depotsVus||[]);a.depots=[...normaliseDepots(a.depots).filter(e=>!vus.has(e.id)),{id:idDomaine(),t:Date.now(),delta}].slice(-60)}
+// La réserve telle qu'on la voit : celle du domaine, plus les dépôts pas encore versés.
+function reserveVue(){const r={...(domaine.ressources||{})},vus=new Set(domaine.depotsVus||[]);
+ actors.filter(a=>a.hero).forEach(a=>normaliseDepots(a.depots).forEach(e=>{if(!vus.has(e.id))appliqueDelta(r,e.delta)}));return r}
+// Chez le MJ : chaque dépôt reçu d'un joueur est versé à la réserve, une seule fois.
+function recueilleDepots(redessine=true){if(!mjDom())return false;const vus=new Set(domaine.depotsVus||[]);let n=0;
+ actors.filter(a=>a.hero).forEach(a=>normaliseDepots(a.depots).forEach(e=>{if(vus.has(e.id))return;appliqueDelta(domaine.ressources||(domaine.ressources={}),e.delta);vus.add(e.id);n++}));
+ if(!n)return false;domaine.depotsVus=[...vus].slice(-500);sauveDomaine();if(redessine&&document.body.classList.contains('page-domaine'))renderDomaine(true);return true}
+function acheterTannerie(a,o){const prix=prixAchat(o);if(!aLaTannerie(a)||o.tanneur!==true||orDe(a)<prix)return;
+ ajouteOr(a,-prix);ajouterInventaire(a,o);log(nomNum(a)+' achète '+o.name+' à la tannerie'+(prix?' pour '+prix+' or':'')+'.');apresMagasin()}
+function fabriquerTannerie(a,o){if(!aLaTannerie(a)||o.tanneur!==true||!o.recette||!o.recette.length||manqueRecette(reserveVue(),o).length)return;
+ versDomaine(a,recetteDelta(o));ajouterInventaire(a,o);log(nomNum(a)+' fait fabriquer '+o.name+' à la tannerie, avec '+texteRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte])))+' de la réserve.');apresMagasin()}
+function vendreReste(a,o){if(!aLaTannerie(a)||o.category!=='restes'||!(a.inventaire||[]).includes(o.id))return;const v=prixAchat(o);
+ retirerInventaire(a,o);ajouteOr(a,v);log(nomNum(a)+' vend '+o.name+' à la tannerie'+(v?' pour '+v+' or':'')+'.');apresMagasin()}
+function convertirReste(a,o){const r=rendementReste(o);if(!aLaTannerie(a)||!Object.keys(r).length||!(a.inventaire||[]).includes(o.id))return;
+ retirerInventaire(a,o);versDomaine(a,r);log(nomNum(a)+' fait convertir '+o.name+' à la tannerie : '+texteRessources(r)+' pour la réserve du domaine.');apresMagasin()}
+// Au chargement, et chaque fois que l'onglet se redessine chez le MJ, les dépôts en attente sont versés.
+document.addEventListener('amertume-partie-chargee',()=>recueilleDepots());
 /* ---------- Les finances ---------- */
 function renderDomFinances(){const boite=$('dom-finances');boite.replaceChildren();const f=domaine.finances;
  const tresor=document.createElement('div');tresor.className='dom-tresor-ligne';
@@ -652,7 +718,8 @@ function renderDomFinances(){const boite=$('dom-finances');boite.replaceChildren
 /* Ce que le domaine a en réserve : ses matériaux, puis ses gemmes — son or est son trésor.
    Le MJ corrige un compte d'un clic ; les joueurs lisent. */
 function renderDomRessources(){const boite=$('dom-ressources');if(!boite)return;boite.replaceChildren();
- const r=domaine.ressources||(domaine.ressources={}),mj=mjDom();
+ // Chez un joueur, la réserve compte aussi les dépôts que le MJ n'a pas encore versés.
+ const mj=mjDom(),r=mj?(domaine.ressources||(domaine.ressources={})):reserveVue();
  const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;
  const titre=t=>{const h=document.createElement('h3');h.className='reglage-titre';h.textContent=t;return h};
  const mats=document.createElement('div');mats.className='materiaux';

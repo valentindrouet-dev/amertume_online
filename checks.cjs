@@ -260,7 +260,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  const mo=src.match(/const LOGOS_OBJET=(\[[^\]]*\]);/);assert.ok(mo,'LOGOS_OBJET introuvable');
  const objets=fs.readdirSync('img').filter(f=>/^item_.*\.png$/.test(f)).map(f=>f.replace(/\.png$/,'')).sort();
  assert.deepEqual(JSON.parse(mo[1].replace(/'/g,'"')).sort(),objets,'LOGOS_OBJET doit lister img/item_*.png : '+objets.join(', '));
- assert.ok(src.includes("const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];")
+ assert.ok(src.includes("const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];")
   &&src.includes("...logosItem(a).map(l=>[l,nomLogo(l)])")&&src.includes("a.logo=logosItem(a).includes(f.logo.value)||estLogoDossier(f.logo.value)?f.logo.value:''")
   &&src.includes("logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET,...LOGOS_RESSOURCES],cls)")&&src.includes("replace(/^(weapon|spell|item|attack)_/,'')"),'les objets choisissent parmi les item_*');
  // Les logos de talents déclarés sont exactement les spell_*.png du dossier.
@@ -2355,7 +2355,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("if(finit)actors.forEach(a=>{if(a.hero)a.reposPris=false});"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos" id="repos" hidden>⛺ Repos court</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
   &&page.includes(":a.reposPris?'Repos déjà pris : il reviendra à la fin du prochain combat.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposPris=true;")
-  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element'];"),'le Repos court');
+  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots'];"),'le Repos court');
 }
 /* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
    une arme prise remplace celle de la main droite ; lâchée sur une main, elle prend cette main.
@@ -2414,7 +2414,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(JSON.stringify(pv.slice(3)),JSON.stringify([['Endu × Vie','4 × 5 = 20'],['Classe (Gardien)','+ 2'],['Total','22']]));
  ctxD.bonusDe=(a,t,i)=>i===null?{dmg:2}:{dmg:2};const dg=ctxD.detailDegats({dmg:0});
  assert.equal(JSON.stringify(dg.map(x=>x[0])),JSON.stringify(['Dégâts','Fiche (saisie)','Talents','Total']),'les +2 viennent d’un talent, la fiche dit 0');}
-{assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&peutEquiper&&actors.includes(a);")
+{assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&peutEquiper&&actors.includes(a);")
   &&src.includes("if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}")&&src.includes("function employerDepuisFiche(a,o){")&&!src.includes("b.className='gear-utiliser'"),'un objet s’utilise d’un clic');
  assert.ok(src.includes("const NIVEAUX_TALENTS=false;")&&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes('<select id="talent-sort" aria-label="Tri" hidden>')
   &&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes("'<input type=\"hidden\" name=\"level\" value=\"'"),'les niveaux de talent se cachent, le câblage reste');
@@ -2561,9 +2561,9 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  cat.items=cat.items.filter(o=>o.category!=='ressource');ctxR.migreRessources(cat);
  assert.ok(!cat.items.some(o=>o.category==='ressource')&&cat.items[0].ressource1==='','supprimées, elles ne reviennent pas ; l’épée n’en cite plus');
  const neuf={items:[]};ctxR.migreRessources(neuf);assert.equal(neuf.items.length,11);assert.ok(neuf.items.some(o=>o.id==='ressource-fer'&&o.cle==='fer'&&o.name==='Fer'));
- assert.ok(src.includes("if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))")
-  &&src.includes(":field('Prix (or)','price',a.price||0,'number','min=\"0\" max=\"999999\" step=\"1\"'))")
-  &&src.includes("+(a.category==='ressource'?'':sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...listeRessources()])")
+ assert.ok(src.includes("if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}")&&src.includes("o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))")
+  &&src.includes(":field(a.category==='restes'?'Valeur (or)':'Prix (or)','price',a.price||0,'number','min=\"0\" max=\"999999\" step=\"1\"'))")
+  &&src.includes(":sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...listeRessources()])")
   &&src.includes("+sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...listeRessources()]))")
   &&src.includes(" for(const k of ['ressource1','ressource2'])if(f[k])a[k]=ressourceValide(f[k].value);")
   &&src.includes("if(a.category==='ressource'&&!(typeof a.cle==='string'&&CLE_MATERIAU.test(a.cle)))a.cle=cleLibre(a.name,new Set(ressourcesJeu().map(r=>r.cle)));"),'ressources et prix au formulaire de l’objet');}
@@ -2585,8 +2585,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.normaliseCompte({or:'5',x:3,'eclat-rubis':-2,'brisure-saphir':0,'brome-diamant':2.7,'brome-diamant-eteinte':4},C.CLES_RICHESSES),{or:5,'brome-diamant':2},'une éteinte quitte la bourse');
  assert.deepEqual(C.normaliseDomaine(null).ressources,{});
  assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
- assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
-  &&src.includes("const listeRessources=()=>ressourcesJeu().map(r=>[r.cle,r.nom]).sort((x,y)=>x[1].localeCompare(y[1],'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element'];"),'les richesses se relisent et voyagent en direct');
+ assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots=normaliseDepots(a.depots);a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
+  &&src.includes("const listeRessources=()=>ressourcesJeu().map(r=>[r.cle,r.nom]).sort((x,y)=>x[1].localeCompare(y[1],'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots'];"),'les richesses se relisent et voyagent en direct');
  assert.ok(src.includes("function grilleGemmes(compte,poser,qui){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
   &&fief.includes("function renderDomRessources(){")&&fief.includes("const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;")
   &&fief.includes("ressourcesJeu().filter(x=>x.cle!=='or').forEach(({cle:k,nom:m,piece})=>{"),'les compteurs : sur la carte de l’aventurier, au domaine');
@@ -2608,7 +2608,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const a={richesses:{or:20}};assert.deepEqual(C.peutAcheter(a,{price:15,magasin:true}),{ok:true,prix:15,manque:0,enVente:true});
  assert.deepEqual(C.peutAcheter(a,{price:25,magasin:true}),{ok:false,prix:25,manque:5,enVente:true});assert.equal(C.peutAcheter(a,{price:5}).ok,false,'hors magasin, pas d’achat');
  assert.equal(C.ajouteOr(a,-15),5);assert.equal(C.ajouteOr(a,-9),0);assert.deepEqual(a.richesses,{},'l’or ne descend pas sous zéro, et un compte nul disparaît');assert.equal(C.ajouteOr(a,3),3);
- assert.ok(vivant.includes("'richesses','lieuDomaine','paliersTalents','defBrisee','element'];")&&fief.includes("const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');")
+ assert.ok(vivant.includes("'richesses','lieuDomaine','paliersTalents','defBrisee','element','depots'];")&&fief.includes("const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');")
   &&fief.includes("if(typeof enLigne!=='undefined'&&enLigne)return typeof monSiege!=='undefined'&&monSiege===a.id;"),'le lieu voyage avec l’aventurier, et son joueur seul le déplace');
  assert.ok(fief.includes("function blocDeplacements(b){const troupe=actors.filter(a=>a.hero);if(!troupe.length||!batimentConstruit(b))return null;")
   &&fief.includes("quoi.textContent=ici?'Ici':'S’y déplacer';")&&fief.includes("function finFiche(boite,b){")&&(fief.match(/boite\.append\(qui\);finFiche\(boite,b\)\}/g)||[]).length===2,'un bouton par aventurier, sur chaque fiche');
@@ -2663,7 +2663,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[2],'le moteur joue le palier tenu');
  assert.deepEqual(C.normalisePaliersActeur({talents:['o','p'],paliersTalents:{o:3,p:1,q:2,r:'x'}}),{o:3},'un palier 1 ne s’écrit pas ; un talent oublié perd le sien');
  assert.ok(fs.readFileSync('combat.js','utf8').includes("function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)")
-  &&page.includes("function talentsCodes(a){return talentsAuPalier(a,typeof catalog!=='undefined'?catalog.talents:[])")&&vivant.includes("'lieuDomaine','paliersTalents','defBrisee','element'];"),'la table et les bonus jouent le palier ; il voyage en direct');
+  &&page.includes("function talentsCodes(a){return talentsAuPalier(a,typeof catalog!=='undefined'?catalog.talents:[])")&&vivant.includes("'lieuDomaine','paliersTalents','defBrisee','element','depots'];"),'la table et les bonus jouent le palier ; il voyage en direct');
  assert.ok(src.includes("a.paliersTalents=normalisePaliersActeur(a);")&&src.includes(" c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(99,coutPalier(t,n)));"),'paliers relus, au catalogue et sur la fiche');
  assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("+ligne('Coût (PT)',")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")
   &&src.includes(" t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")
@@ -2687,7 +2687,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes(" const double=brise.double&&!r.failed,total=double?r.damage*2:r.damage;")
   &&page.includes("const brisee=brise.perte&&!r.failed?brise.perte:0;if(brisee)b.defBrisee=(Math.trunc(Number(b.defBrisee))||0)+brisee;")
   &&page.includes("reduction:r.reduction,double,total},suite);")&&page.includes("if(detail.double)plus('× 2 — Brise','double');")
-  &&vivant.includes("reduction:detail.reduction||0,double:!!detail.double,total:detail.total||0}")&&vivant.includes("'paliersTalents','defBrisee','element'];"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
+  &&vivant.includes("reduction:detail.reduction||0,double:!!detail.double,total:detail.total||0}")&&vivant.includes("'paliersTalents','defBrisee','element','depots'];"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
  assert.ok(src.includes("g.className='paliers-bulle liste';")
   &&fs.readFileSync('editor.css','utf8').includes('.paliers-bulle.liste .palier-num{')&&!fs.readFileSync('editor.css','utf8').includes('.paliers-bulle.liste .palier-col'),'v0.324 : les paliers d’un talent appris en liste, I, II, III');}
 /* v0.290 — Le Mystique choisit un élément — Feu, Gel, Foudre —, au MJ de le fixer. Ses talents
@@ -2707,7 +2707,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const libre={...t,elementaire:undefined};assert.equal(C.talentPourElement(libre,G).params.etat,'Feu','sans la case, l’état réglé reste');
  const neutre={id:'x',name:'Forge',params:{etat:'Feu'}};assert.equal(C.talentPourElement(neutre,G),neutre);assert.equal(C.estElementaire(neutre),false);assert.equal(C.estElementaire(libre),true);
  assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefoudre','Foudre',1]],'la table joue l’élément, puis le palier ; la DEF retirée, réglage commun, reste celle du palier 1');
- assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element'];")&&vivant.includes("'defBrisee','element'];")
+ assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element'];")&&vivant.includes("'defBrisee','element','depots'];")
   &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
  assert.ok(src.includes("function choixElement(a,classe,rendre){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
   &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tv=vu(t),logo=logoTalent(tv);")&&src.includes("const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n)")
@@ -2965,10 +2965,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("const ligne=document.createElement('span');ligne.className='prix-ligne';f.price.before(ligne);ligne.append(f.price,b);")&&css.includes('.prix-suggere{'),'le prix suggéré, en masse et au formulaire');
  // Les ressources : leur rareté à elles, ni effet, ni usage, ni bonus.
  assert.equal(C.rareteDe({category:'ressource',rarete:'epique'}),'ressource');assert.equal(C.rareteDe({category:'object',rarete:'ressource'}),'commun');assert.equal(C.NOM_RARETE('ressource'),'Ressource');
- assert.ok(src.includes("if(o.category==='ressource'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}")&&src.includes("  +(a.category==='ressource'?'':''\n  +'<h2 class=\"sous-titre\">Effet appliqué par le moteur</h2>'")
+ assert.ok(src.includes("if(o.category==='ressource'||o.category==='restes'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}")&&src.includes("  +(a.category==='ressource'||a.category==='restes'?'':''\n  +'<h2 class=\"sous-titre\">Effet appliqué par le moteur</h2>'")
   &&src.includes("{cle:'rarete',nom:'Rareté',type:'choix',opts:RARETES,pour:faite,")&&css.includes('.cat-pill.r-ressource{background:#efe2cc;'),'une ressource : ni effet, ni usage, ni bonus ; sa rareté brun clair');
  // Le magasin : l'objet se clique, plus de bouton.
- assert.ok(fief.includes("const agit=e=>{e.preventDefault();if(actif)faire()};p.onclick=agit;")&&fief.includes(" carte.append(p,nom);return carte}")&&!fief.includes("btn.className='dom-achat'"),'acheter ou vendre d’un clic sur l’objet');
+ assert.ok(fief.includes("const agit=e=>{e.preventDefault();if(actif)faire()};p.onclick=agit;")&&fief.includes(" carte.append(p,nom);if(sous)carte.append(sous);return carte}")&&!fief.includes("btn.className='dom-achat'"),'acheter ou vendre d’un clic sur l’objet');
  // Les grandes images : envoyées à part, relues et vérifiées.
  assert.ok(part.includes("const envoi=await envoieImages(value);const packed=SharedData.pack(envoi.value);")&&part.includes("const data=await rechargeImages(SharedData.validate(SharedData.unpack(chunks,m.bytes)),gen);")
   &&part.includes("if(!SharedData.estImage(url)||await empreinte(url)!==h)throw Error('Image publiée invalide.');")&&part.includes("indexedDB.open('amertume-images',1)"),'les grandes images voyagent à part');}
@@ -2990,4 +2990,26 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function menuIcones(sel,icone){")&&src.includes("sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}))")
   &&src.includes("if(c.cle==='ressource1'||c.cle==='ressource2')menuIcones(el,iconeRessource)")&&src.includes("['ressource1','ressource2'].forEach(k=>{const s=$('item-form').elements[k];if(s)menuIcones(s,iconeRessource)});")
   &&css.includes('.menu-icones-natif{display:none!important}')&&css.includes('.menu-icones-liste{position:fixed;'),'les ressources, icône comprise, dans leurs menus');}
-console.log('1748 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.334 — La tannerie : les Restes, la coche Tanneur et sa recette, la fonction de bâtiment, et
+   les dépôts des joueurs versés à la réserve une seule fois par le MJ. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),fief=fs.readFileSync('domaine.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ const J=x=>JSON.stringify(x);
+ assert.equal(J(C.rendementReste({category:'restes',ressource1:'cuir',rendement1:3,ressource2:'tissu',rendement2:0})),J({cuir:3,tissu:1}),'un reste donne ses ressources à son rendement');
+ assert.equal(J(C.rendementReste({category:'object',ressource1:'cuir'})),J({}));
+ assert.equal(J(C.normaliseRecette([{cle:'cuir',qte:2},{cle:'cuir',qte:1},{cle:'Mauvais',qte:1},{cle:'mithril',qte:1},{cle:'fer',qte:500}],new Set(['cuir','fer']))),J([{cle:'cuir',qte:3},{cle:'fer',qte:99}]),'une recette : ressources connues, une ligne chacune, bornée');
+ assert.equal(J(C.appliqueDelta({cuir:2},{cuir:-5,fer:3,or:9})),J({fer:3}),'la réserve ne descend jamais sous zéro, et n’a pas d’or');
+ assert.equal(J(C.manqueRecette({cuir:1},{recette:[{cle:'cuir',qte:3},{cle:'fer',qte:1}]})),J([['cuir',2],['fer',1]]));
+ assert.equal(J(C.recetteDelta({recette:[{cle:'cuir',qte:2}]})),J({cuir:-2}));
+ assert.equal(C.normaliseDepots([{id:'a',delta:{cuir:3,or:5}},{id:'mauvais id!',delta:{cuir:1}},{id:'b',delta:{}},{id:'c',delta:{fer:-2}}]).map(e=>e.id+J(e.delta)).join(' '),'a{"cuir":3} c{"fer":-2}','un dépôt identifié, sans or, jamais vide');
+ const d=C.normaliseDomaine({batiments:[{nom:'Tannerie',fonction:''},{nom:'Magasin',fonction:''}]});
+ assert.equal(d.batiments.map(b=>b.fonction).join(','),'tannerie,','la Tannerie devient la tannerie, une fois');
+ d.batiments[0].fonction='';assert.equal(C.normaliseDomaine(d).batiments[0].fonction,'','ensuite, le MJ choisit');
+ assert.equal(J(C.normaliseDomaine({depotsVus:['a','mauvais id!','b']}).depotsVus),J(['a','b']));
+ assert.ok(src.includes("function itemColumn(a){return a.category==='restes'?'restes':")&&src.includes("['ressource','Ressources'],['restes','Restes'],['treasure','Trésors']];")
+  &&src.includes("o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);")
+  &&src.includes("?sel('Donne','ressource1',ressourceValide(a.ressource1),")&&src.includes("function dessineRecette(){")&&src.includes("if($('recette-lignes'))a.recette=lireRecette();")
+  &&src.includes("{cle:'tanneur',nom:'Tanneur',type:'case',")&&src.includes("groupe('Restes',filtre(o=>o.category==='restes'),porte,gearPill,clic);"),'les Restes et la recette du tanneur, à l’Armurerie');
+ assert.ok(fief.includes("if(b.fonction==='tannerie')blocTannerie(out,b);")&&fief.includes("function versDomaine(a,delta){if(mjDom()){appliqueDelta(")
+  &&fief.includes("function recueilleDepots(redessine=true){if(!mjDom())return false;")&&fief.includes("const mj=mjDom(),r=mj?(domaine.ressources||(domaine.ressources={})):reserveVue();")
+  &&vivant.includes("function appliquerSalle(d,complet){appliquerSalleSeule(d,complet);if(d&&estMJ()&&typeof recueilleDepots==='function')recueilleDepots()}"),'la tannerie, et les dépôts versés par le MJ');}
+console.log('1749 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

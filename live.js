@@ -20,7 +20,7 @@
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv',
- 'revealed','hidden','vu','numero','orbes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element'];
+ 'revealed','hidden','vu','numero','orbes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
 // L'élément d'un Mystique est au MJ : un joueur ne le pousse pas.
@@ -152,7 +152,10 @@ function instancierActeur(id,e){
 let applicationTimer=null;
 function programmerApplication(){if(applicationTimer)return;
  applicationTimer=setTimeout(()=>{applicationTimer=null;if(dernierDoc){appliquerSalle(dernierDoc);majTable()}},40)}
-function appliquerSalle(d,complet){if(!d)return;
+/* Chez le MJ, ce que les joueurs ont déposé sur leur aventurier pour la réserve — une conversion
+   à la tannerie, une fabrication — y est versé dès réception, une seule fois (recueilleDepots). */
+function appliquerSalle(d,complet){appliquerSalleSeule(d,complet);if(d&&estMJ()&&typeof recueilleDepots==='function')recueilleDepots()}
+function appliquerSalleSeule(d,complet){if(!d)return;
  /* Seules des positions ont bougé, ou un socle est sous le doigt ici : les socles glissent,
     le rendu complet attend la fin du geste. */
  const enGeste=!!window.socleEnMain;
