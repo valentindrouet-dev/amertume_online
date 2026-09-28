@@ -15,8 +15,16 @@ const estIconePlanche=l=>/^planches\/[^/#?"'<>&\\]+\.(png|webp)#[1-9]\d{0,3}$/i.
 const PLANCHES_FICHIERS=[];
 function planchesDuCatalogue(){return typeof catalog!=='undefined'&&Array.isArray(catalog.planches)?catalog.planches:[]}
 function plancheDe(fichier){return planchesDuCatalogue().find(p=>p&&p.fichier===fichier)||null}
-// « planches/runes_02.webp » se lit « Runes 02 ».
-function nomPlanche(f){const n=String(f||'').replace(/^planches\//,'').replace(/\.[a-z]+$/i,'').replace(/[_-]+/g,' ').trim();return n?n[0].toUpperCase()+n.slice(1):'Planche'}
+/* Le nom d'une planche : celui que le MJ lui a donné dans l'onglet Icônes, sinon celui de son
+   fichier, « planches/runes_02.webp » se lisant « Runes 02 ». Le fichier ne change pas : le
+   site ne peut pas renommer ce qui est sur GitHub, et les logos déjà choisis restent valides. */
+function nomPlanche(f){const donne=typeof catalog!=='undefined'&&catalog.nomsPlanches&&catalog.nomsPlanches[f];if(donne)return donne;
+ const n=String(f||'').replace(/^planches\//,'').replace(/\.[a-z]+$/i,'').replace(/[_-]+/g,' ').trim();return n?n[0].toUpperCase()+n.slice(1):'Planche'}
+function normaliseNomsPlanches(o){const out={};if(!o||typeof o!=='object'||Array.isArray(o))return out;
+ Object.entries(o).slice(0,500).forEach(([f,n])=>{if(estFichierPlanche(f)&&typeof n==='string'&&n.trim())out[f]=n.trim().slice(0,40)});return out}
+function renommePlanche(f){const n=prompt('Nom de la planche « '+nomPlanche(f)+' » :',nomPlanche(f));if(n===null)return;
+ catalog.nomsPlanches={...(catalog.nomsPlanches||{})};if(n.trim())catalog.nomsPlanches[f]=n.trim().slice(0,40);else delete catalog.nomsPlanches[f];
+ sauveIcones();renderIcones()}
 function iconeDe(id){const m=/^(.*)#(\d+)$/.exec(String(id||''));if(!m)return null;const p=plancheDe(m[1]),n=+m[2];
  return p&&p.cases[n-1]?{planche:p,n,cas:p.cases[n-1],info:p.icones[n-1]||{nom:'',cat:''}}:null}
 // Le nom d'une icône : celui que le MJ lui a donné, sinon sa planche et son numéro.
@@ -85,8 +93,10 @@ function taches({W,H,A}){const lab=new Int32Array(W*H),comps=[],pile=[];
    d'icône ; celles qui ont la taille courante donnent leurs centres, qui se rangent en
    colonnes et en lignes. Deux icônes qui se touchent font une tache trop grande : elle ne
    vote pas. Une étincelle détachée, trop petite, non plus. */
-function detecteGrille(al){const comps=al.taches||(al.taches=taches(al)),{W,H}=al;
- const gros=comps.filter(k=>k.c>=30);if(!gros.length)return null;
+/* Les taches votent une fois séparées : des icônes aux contours soudés, rongées puis
+   rendues à elles-mêmes, votent chacune pour sa ligne et sa colonne. */
+function detecteGrille(al){const {W,H}=al,comps=proprietaires(al).objets.filter(o=>!o.absorbe);
+ const gros=comps.filter(k=>k.c>=15);if(!gros.length)return null;
  const taille=k=>Math.max(k.x1-k.x0,k.y1-k.y0),tailles=gros.map(taille).sort((a,b)=>a-b),med=tailles[tailles.length>>1];
  const vote=gros.filter(k=>taille(k)>=med*.5&&taille(k)<=med*1.25);
  const cxk=k=>(k.x0+k.x1)/2,cyk=k=>(k.y0+k.y1)/2;
@@ -153,6 +163,28 @@ function separe({W,A},k,n,med,lab){for(const seuil of [80,128,176,224]){const vu
    morceaux.push(m)}
   const vrais=morceaux.filter(m=>m.c>=30);
   if(vrais.length>=2&&vrais.every(m=>Math.max(m.x1-m.x0,m.y1-m.y0)<=med*1.25))return vrais}
+ return erode({W},k,n,med,lab)}
+/* Des icônes dont les contours opaques se touchent ne se séparent pas par la transparence : on
+   ronge alors la tache depuis ses bords, de plus en plus, jusqu'à ce que les ponts fins entre
+   icônes cèdent. Chaque cœur restant est une icône ; ce qu'on a rongé lui revient ensuite, de
+   proche en proche. */
+function erode({W},k,n,med,lab){const w=k.x1-k.x0+1,h=k.y1-k.y0+1,D=new Uint16Array(w*h);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++)D[y*w+x]=lab[(k.y0+y)*W+k.x0+x]===n?60000:0;
+ // La distance au bord le plus proche, en deux passes, diagonales comprises.
+ const v=(x,y)=>x<0||y<0||x>=w||y>=h?0:D[y*w+x];
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;if(D[i])D[i]=Math.min(D[i],v(x-1,y)+1,v(x,y-1)+1,v(x-1,y-1)+1,v(x+1,y-1)+1)}
+ for(let y=h-1;y>=0;y--)for(let x=w-1;x>=0;x--){const i=y*w+x;if(D[i])D[i]=Math.min(D[i],v(x+1,y)+1,v(x,y+1)+1,v(x+1,y+1)+1,v(x-1,y+1)+1)}
+ for(const r of [2,3,4,6,8,11,15]){const vu=new Uint8Array(w*h),morceaux=[];
+  for(let s=0;s<w*h;s++){if(D[s]<=r||vu[s])continue;
+   const m={x0:w,y0:h,x1:-1,y1:-1,c:0,pixels:[]},pile=[s];vu[s]=1;
+   while(pile.length){const p=pile.pop(),x=p%w,y=(p-x)/w;m.c++;m.pixels.push((k.y0+y)*W+k.x0+x);
+    if(x<m.x0)m.x0=x;if(x>m.x1)m.x1=x;if(y<m.y0)m.y0=y;if(y>m.y1)m.y1=y;
+    for(const q of [x>0?p-1:-1,x<w-1?p+1:-1,y>0?p-w:-1,y<h-1?p+w:-1])if(q>=0&&!vu[q]&&D[q]>r){vu[q]=1;pile.push(q)}}
+   morceaux.push(m)}
+  const vrais=morceaux.filter(m=>m.c>=15);
+  if(vrais.length>=2&&vrais.every(m=>Math.max(m.x1-m.x0,m.y1-m.y0)+2*r<=med*1.25))
+   // Le cadre d'un cœur, rendu à la taille de son icône et replacé sur la planche.
+   return vrais.map(m=>({...m,x0:k.x0+Math.max(0,m.x0-r),y0:k.y0+Math.max(0,m.y0-r),x1:k.x0+Math.min(w-1,m.x1+r),y1:k.y0+Math.min(h-1,m.y1+r)}))}
  return null}
 /* Chaque case de la grille, resserrée sur les icônes dont le centre y tombe, halo compris ; elle
    ne mord pas plus d'un huitième sur ses voisines. Deux icônes restées soudées, faute de se
@@ -196,7 +228,7 @@ const PLANCHES_SHA={};
 const versionPlanche=f=>PLANCHES_SHA[f]?String(PLANCHES_SHA[f]).slice(0,12):'v'+(typeof IMG_V!=='undefined'?IMG_V:'');
 const urlPlanche=f=>PLANCHES_SHA[f]?'./img/'+f.split('/').map(encodeURIComponent).join('/')+'?s='+versionPlanche(f):imgUrl(f);
 // La façon de découper compte aussi : une découpe améliorée refait les icônes gardées.
-const DECOUPE_V='d2',cleIcone=(id,i)=>i.planche.fichier+'|'+versionPlanche(i.planche.fichier)+'|'+DECOUPE_V+'|'+i.cas.join(',');
+const DECOUPE_V='d3',cleIcone=(id,i)=>i.planche.fichier+'|'+versionPlanche(i.planche.fichier)+'|'+DECOUPE_V+'|'+i.cas.join(',');
 function urlIconePrete(id){const i=iconeDe(id);return (i&&URLS_PRETES.get(cleIcone(id,i)))||ICONES_PUBLIEES.get(id)||''}
 function urlIcone(id){const i=iconeDe(id);if(!i)return Promise.reject(new Error('Icône inconnue : '+id));
  const cle=cleIcone(id,i);if(URLS_PRETES.has(cle))return Promise.resolve(URLS_PRETES.get(cle));
@@ -276,7 +308,8 @@ function sauveIcones(){if(typeof scheduleSave==='function')scheduleSave();docume
    les noms se lisant sans rien télécharger. */
 const PLANCHES_OUVERTES=new Set();
 function renderIcones(){const boite=$('icones-planches');if(!boite)return;boite.replaceChildren();
- const fichiers=[...new Set([...PLANCHES_FICHIERS,...planchesDuCatalogue().map(p=>p.fichier)])].sort((a,b)=>a.localeCompare(b,'fr'));
+ // Dans l'ordre de leurs noms, les numéros comptés comme des nombres : Talents 9, puis Talents 10.
+ const fichiers=[...new Set([...PLANCHES_FICHIERS,...planchesDuCatalogue().map(p=>p.fichier)])].sort((a,b)=>nomPlanche(a).localeCompare(nomPlanche(b),'fr',{numeric:true}));
  if(!fichiers.length){const v=document.createElement('p');v.className='muted';
   v.textContent='Aucune planche pour l’instant. Dépose un fichier dans img/planches sur GitHub, puis reviens ici : il paraîtra en quelques minutes.';
   boite.append(v);return}
@@ -296,7 +329,11 @@ function blocPlanche(f){const p=plancheDe(f),bloc=document.createElement('detail
  compte.textContent=!p?'à découper':filtre?vues.length+' / '+p.cases.length+' icônes':p.cases.length+' icônes';
  const ranges=p?p.icones.filter(i=>i.cat).length:0,noms=p?p.icones.filter(i=>i.nom).length:0;
  const etat=document.createElement('span');etat.className='planche-etat muted';if(p)etat.textContent=noms+' nommées · '+ranges+' rangées';
- tete.append(h,compte,etat);bloc.append(tete);
+ // Renommer sans ouvrir ni fermer la planche.
+ const renomme=document.createElement('button');renomme.type='button';renomme.className='planche-renomme';renomme.textContent='✎';
+ renomme.title='Renommer la planche';renomme.setAttribute('aria-label','Renommer la planche '+nomPlanche(f));
+ renomme.onclick=e=>{e.preventDefault();e.stopPropagation();renommePlanche(f)};
+ tete.append(h,renomme,compte,etat);bloc.append(tete);
  if(bloc.open)remplitPlanche(bloc,f);
  return bloc}
 // Le contenu d'une planche ouverte : ses outils, puis ses icônes.

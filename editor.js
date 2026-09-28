@@ -30,7 +30,7 @@ const RESSOURCES=[...MATERIAUX].sort((x,y)=>x.localeCompare(y,'fr'));
 const ressourceValide=r=>RESSOURCES.includes(r)?r:'';
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les planches d'icônes découpées, leurs noms et catégories (planches.js).
- c.planches=normalisePlanches(c.planches);
+ c.planches=normalisePlanches(c.planches);c.nomsPlanches=normaliseNomsPlanches(c.nomsPlanches);
  // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
  c.motsCles=[...new Set((Array.isArray(c.motsCles)?c.motsCles:[]).map(m=>String(m||'').trim().slice(0,60)).filter(Boolean))].slice(0,200);
  /* Les spécialisations de chaque classe, dans l'ordre du MJ : des noms, trois au plus par
