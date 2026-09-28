@@ -2847,15 +2847,19 @@ const logosDesDossiers=()=>DOSSIERS_LOGOS.flatMap(([d])=>LOGOS_DOSSIERS[d]);
 function depotPages(){const m=/^([a-z0-9-]+)\.github\.io$/i.exec(location.hostname),r=location.pathname.split('/').filter(Boolean)[0];return m&&r?m[1]+'/'+r:''}
 // La liste gardée porte toujours son nom d'origine ; elle couvre désormais tous les dossiers.
 async function chargeDossiersLogos(){const depot=depotPages();if(!depot)return;
- const CLE='amertume-dossier-talents',pose=l=>{DOSSIERS_LOGOS.forEach(([d])=>LOGOS_DOSSIERS[d].splice(0,Infinity,...l.filter(x=>estLogoDossier(x)&&x.startsWith(d+'/'))));
-  // Les planches d'icônes de img/planches, que l'onglet Icônes découpe.
-  PLANCHES_FICHIERS.splice(0,Infinity,...l.filter(estFichierPlanche));if(document.body.classList.contains('page-icones'))renderIcones()};
+ const CLE='amertume-dossier-talents',pose=(l,shas)=>{DOSSIERS_LOGOS.forEach(([d])=>LOGOS_DOSSIERS[d].splice(0,Infinity,...l.filter(x=>estLogoDossier(x)&&x.startsWith(d+'/'))));
+  /* Les planches d'icônes de img/planches, que l'onglet Icônes découpe, et l'empreinte de
+     chacune : c'est elle qui dit quand une planche a changé, pas la version du site. */
+  PLANCHES_FICHIERS.splice(0,Infinity,...l.filter(estFichierPlanche));
+  if(shas&&typeof shas==='object')Object.entries(shas).forEach(([f,s])=>{if(estFichierPlanche(f)&&typeof s==='string')PLANCHES_SHA[f]=s});
+  if(document.body.classList.contains('page-icones'))renderIcones()};
  let cache=null;try{cache=JSON.parse(localStorage.getItem(CLE)||'null')}catch(e){}
- if(cache&&Array.isArray(cache.liste)){pose(cache.liste);if(Date.now()-cache.t<120000)return}
+ if(cache&&Array.isArray(cache.liste)){pose(cache.liste,cache.shas);if(Date.now()-cache.t<120000)return}
  try{const r=await fetch('https://api.github.com/repos/'+depot+'/git/trees/main?recursive=1',{headers:{Accept:'application/vnd.github+json'}});if(!r.ok)return;
-  const liste=((await r.json()).tree||[]).filter(f=>f&&f.type==='blob'&&String(f.path).startsWith('img/')).map(f=>String(f.path).slice(4))
-   .filter(x=>estLogoDossier(x)||estFichierPlanche(x)).sort((a,b)=>a.localeCompare(b,'fr'));
-  pose(liste);try{localStorage.setItem(CLE,JSON.stringify({t:Date.now(),liste}))}catch(e){}}catch(e){}}
+  const arbre=((await r.json()).tree||[]).filter(f=>f&&f.type==='blob'&&String(f.path).startsWith('img/'));
+  const liste=arbre.map(f=>String(f.path).slice(4)).filter(x=>estLogoDossier(x)||estFichierPlanche(x)).sort((a,b)=>a.localeCompare(b,'fr'));
+  const shas=Object.fromEntries(arbre.map(f=>[String(f.path).slice(4),String(f.sha||'')]).filter(([x,s])=>s&&estFichierPlanche(x)));
+  pose(liste,shas);try{localStorage.setItem(CLE,JSON.stringify({t:Date.now(),liste,shas}))}catch(e){}}catch(e){}}
 chargeDossiersLogos();
 const fichierLogo=l=>estLogoDossier(l)?l:l+(EXTENSIONS_LOGO[l]||'.png');
 // Un logo qu'un talent ou une attaque peut porter : une image déclarée, ou une icône d'un dossier.

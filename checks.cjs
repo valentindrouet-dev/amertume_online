@@ -2892,7 +2892,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(!fs.existsSync('img/objets')&&!fs.existsSync('img/attaques'),'ni dossier objets, ni dossier attaques');
  assert.ok(src.includes("const familles=[...famillesPlanches(),...FAMILLES_LOGOS],garde=value&&!familles.some(([,l])=>l.includes(value));")&&src.includes("return o&&estLogoDossier(o.logo)&&!l.includes(o.logo)?[o.logo,...l]:l}")
   &&src.includes("function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches(''),...iconesPlanches('talents'),...LOGOS_DOSSIERS.equipement];")
-  &&src.includes(".filter(f=>f&&f.type==='blob'&&String(f.path).startsWith('img/')).map(f=>String(f.path).slice(4))"),'chaque menu prend son dossier, et garde le logo en place');}
+  &&src.includes(".filter(f=>f&&f.type==='blob'&&String(f.path).startsWith('img/'));")&&src.includes("const liste=arbre.map(f=>String(f.path).slice(4))"),'chaque menu prend son dossier, et garde le logo en place');}
 /* v0.312 — L'aperçu du logo dans le formulaire de l'Armurerie ajoutait « .png » au nom : une
    icône de img/equipement, qui porte déjà son extension, devenait « x.png.png », introuvable.
    Aucune adresse d'image de logo ne se bâtit plus en ajoutant « .png » à la main. */

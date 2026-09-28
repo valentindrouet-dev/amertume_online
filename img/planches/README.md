@@ -3,7 +3,9 @@
 Dépose ici tes planches : des icônes rangées en lignes et en colonnes, sur **fond transparent**,
 en PNG ou WebP.
 
-- Nom de fichier sans accent ni espace : `sorts_feu.webp`, `armes_01.png`.
+- Le nom du fichier est libre, espaces compris : `Sorts de feu.webp`, `armes_01.png`. Seuls
+  les guillemets, les chevrons, `#`, `?` et `&` sont refusés.
+- Préfère le WebP au PNG : trois fois plus léger pour le même rendu.
 - Le nombre de lignes et de colonnes peut changer d'une planche à l'autre : la grille se lit
   toute seule dans la transparence.
 - La planche paraît dans l'onglet **Icônes** une à deux minutes après l'envoi, en rechargeant
