@@ -914,8 +914,8 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
     à la fiche : des PV max, de l'Endurance, de la Vie, des dégâts, ou un point à une
     compétence. La fiche garde ses valeurs propres ; le bonus s'ajoute à la lecture. */
  bonus:{cle:'bonus',nom:'Bonus de caractéristique',type:'pass',
-  aide:'Un nœud d’arbre qui n’est pas un talent : +x PV max, Endurance, Vie, Dégâts, ou un point à une compétence.',
-  params:[{cle:'carac',nom:'Caractéristique',type:'choix',defaut:'pv',options:[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],['comp','Compétence']]},
+  aide:'Un nœud d’arbre qui n’est pas un talent : +x PV max, Endurance, Vie, Dégâts, Orbes mystiques, ou un point à une compétence.',
+  params:[{cle:'carac',nom:'Caractéristique',type:'choix',defaut:'pv',options:[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],['orbe','Orbe mystique'],['comp','Compétence']]},
    {cle:'valeur',nom:'Bonus',type:'nombre',defaut:1,min:1,max:20},
    {cle:'comp',nom:'Compétence',type:'choix',defaut:'0',options:COMPETENCES.map((n,i)=>[String(i),n])}],
   phrase(p){return '<b>'+libelleBonus(p)+'</b>.'}},
@@ -1060,8 +1060,11 @@ function porteEffet(portes,cle){return (portes||[]).some(t=>t&&t.code&&t.code.cl
 /* Ce que les orbes d'un porteur valent, d'après ce qu'il tient : combien par activation,
    quels dégâts, et l'état que l'amélioration y ajoute. Plusieurs talents d'orbes ne se
    cumulent pas : le plus généreux fait foi. */
-function orbesPermis(portes){return (portes||[]).filter(t=>t&&t.code&&t.code.cle==='orbes')
- .reduce((n,t)=>Math.max(n,Math.trunc(t.params&&t.params.orbes)||0),0)}
+/* Les nœuds « +1 Orbe mystique » de l'arbre s'y ajoutent, autant qu'on en a appris ; sans
+   talent d'orbes, ils ne donnent rien : il n'y a pas d'orbe à lancer. */
+function orbesPermis(portes){const base=(portes||[]).filter(t=>t&&t.code&&t.code.cle==='orbes')
+ .reduce((n,t)=>Math.max(n,Math.trunc(t.params&&t.params.orbes)||0),0);if(!base)return 0;
+ return base+(portes||[]).filter(t=>t&&t.code&&t.code.cle==='bonus'&&t.params&&t.params.carac==='orbe').reduce((n,t)=>n+Math.max(1,Math.trunc(t.params.valeur)||1),0)}
 /* Les dés d'un orbe : le talent le plus généreux en dés fait foi, avec sa couleur. */
 function desOrbe(portes){const t=(portes||[]).filter(t=>t&&t.code&&t.code.cle==='orbes')
  .sort((u,v)=>(Math.trunc(v.params&&v.params.des)||0)-(Math.trunc(u.params&&u.params.des)||0))[0];
@@ -1367,10 +1370,12 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
    la table ni vers les joueurs : le domaine reste sur l'appareil du MJ.
    ==================================================================================== */
 /* ---------- Les compétences et les bonus de caractéristique ---------- */
-const NOM_CARAC={pv:'PV max',endu:'Endurance',vie:'Vie',def:'DEF',dmg:'Dégâts'},NOM_CARAC_COURT={pv:'PV',endu:'Endu',vie:'Vie',def:'DEF',dmg:'Dég.'};
+const NOM_CARAC={pv:'PV max',endu:'Endurance',vie:'Vie',def:'DEF',dmg:'Dégâts',orbe:'Orbe mystique'},NOM_CARAC_COURT={pv:'PV',endu:'Endu',vie:'Vie',def:'DEF',dmg:'Dég.',orbe:'Orbe'};
 // « +2 PV max », « +1 Force » — ou, en court pour un nœud d'arbre, « +2 PV ».
 function libelleBonus(p,court){const n=Math.max(1,(p&&p.valeur)|0),c=p&&p.carac;
  if(c==='comp')return '+'+n+' '+(COMPETENCES[Number(p&&p.comp)||0]||COMPETENCES[0]);
+ // « +2 Orbes mystiques », « +2 Orbes » : le pluriel dès deux.
+ if(c==='orbe')return '+'+n+' '+(court?(n>1?'Orbes':'Orbe'):(n>1?'Orbes mystiques':'Orbe mystique'));
  return '+'+n+' '+((court?NOM_CARAC_COURT:NOM_CARAC)[c]||(court?'PV':'PV max'))}
 // Un compte de bonus, vide : par caractéristique, et par compétence.
 function bonusVide(){return {pv:0,endu:0,vie:0,def:0,dmg:0,skills:COMPETENCES.map(()=>0)}}

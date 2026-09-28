@@ -1477,7 +1477,7 @@ assert.ok(src.includes("const cleGear=(a,o)=>(a&&a.id||'?')+'|'+(o&&o.id||'?');"
 /* Un talent appris dont le socle manque ne fait rien : la fiche le dit, au lieu de le taire. */
 assert.ok(src.includes("const sansEffet=t=>typeof manqueTalent==='function'?manqueTalent(a.talents||[],t,catalog.talents):'';")
  &&src.includes("if(manque){pill.classList.add('sans-effet');")&&src.includes("m.className='t-sans-effet';m.textContent='⚠';")
- &&src.includes("dit.textContent='⚠ Sans effet : requiert « '+manque+' », que '+a.name+' n’a pas appris.';detail.prepend(dit)}")
+ &&src.includes("dit.textContent='⚠ Sans effet : requiert « '+manque+' », que '+a.name+' n’a pas appris.';detail.firstChild.after(dit)}")
  &&feuille.includes('.cat-pill.sans-effet{filter:saturate(.4)}')&&feuille.includes('.talent-detail .sans-effet-dit{font-weight:700;color:#b03828}'),'un talent sans effet le dit');
 /* Le joueur ouvre les arbres de son aventurier, sans les outils du MJ ; les « + » du MJ ne
    paraissent plus chez lui, et son choix de talents part à la table avec sa fiche. */
@@ -2645,7 +2645,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes(" t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")
   &&src.includes("t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={};delete t.elementaire;delete t.volets}")&&feuille.includes('.paliers-table{'),'l’éditeur : une colonne par palier, le coût en PT');
  assert.ok(src.includes("if(max>1){pts=document.createElement('span');pts.className='arbre-paliers';")&&src.includes("poserPalier(t,k+1);note('')}")
-  &&src.includes("const montres=!a||k===0?[1]:k>=max?[k]:[k,k+1];")&&src.includes("// Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.")
+  &&src.includes("const montres=a&&k>0?Array.from({length:max},(_,i)=>i+1):[1];")&&src.includes("// Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.")
   &&src.includes("a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);")&&feuille.includes('.arbre-paliers i.on{')&&feuille.includes('.paliers-bulle.n2{grid-template-columns:1fr auto 1fr}'),'l’arbre : points, clic, « − », bulle comparée');}
 /* v0.289 — Brise en trois paliers cumulés, contre une cible qui porte l'état : la DEF ignorée,
    puis retirée pour de bon après l'attaque, puis les dégâts doublés. La bulle de l'arbre montre
@@ -2664,8 +2664,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("const brisee=brise.perte&&!r.failed?brise.perte:0;if(brisee)b.defBrisee=(Math.trunc(Number(b.defBrisee))||0)+brisee;")
   &&page.includes("reduction:r.reduction,double,total},suite);")&&page.includes("if(detail.double)plus('× 2 — Brise','double');")
   &&vivant.includes("reduction:detail.reduction||0,double:!!detail.double,total:detail.total||0}")&&vivant.includes("'paliersTalents','defBrisee','element'];"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
- assert.ok(src.includes("montres.forEach((n,i)=>{if(i){const f=document.createElement('span');f.className='palier-fleche';f.textContent='→';")
-  &&fs.readFileSync('editor.css','utf8').includes('.palier-fleche{'),'la flèche entre le palier tenu et le suivant');}
+ assert.ok(src.includes("g.className='paliers-bulle liste';")
+  &&fs.readFileSync('editor.css','utf8').includes('.paliers-bulle.liste .palier-col.acquis{'),'v0.324 : les paliers d’un talent appris en liste, I, II, III');}
 /* v0.290 — Le Mystique choisit un élément — Feu, Gel, Foudre —, au MJ de le fixer. Ses talents
    élémentaires s'écrivent une fois, avec des accolades ; leur état suit l'élément ; la colonne
    « Élémentaire » peut naître de la fusion des trois colonnes d'avant. Les gemmes d'un aventurier
@@ -2766,7 +2766,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("d.volets={...d.volets,[c]:k===n?0:n};dessineReglagesTalent()")&&src.includes("params.filter(p=>reglageCommun(p)&&!p.volet).forEach(p=>{")
   &&src.includes("const cell=elem&&p.cle==='etat'?'<span class=\"suit-element\">L’élément du Mystique : Feu, Gel ou Foudre</span>")&&src.includes("function phrasesPaliers(){")
   &&src.includes("t.volets=voletsDe({effet:t.effet,volets:talentDraft.volets})")&&src.includes("...communsDe(t.effet,t.params)")&&css.includes('.volet-case.ici{'),'les volets par palier, les réglages communs, la phrase du moteur');
- assert.ok(src.includes("function nomAccolades(el,texte){")&&src.includes("nom.className='nom-carte';nomAccolades(nom,t.name);")&&src.includes("nom.className='arbre-nom';nomAccolades(nom,tv.name);")
+ assert.ok(src.includes("function nomAccolades(el,texte){")&&src.includes("nom.className='nom-carte';nomAccolades(nom,vu.name);")&&!src.includes("nom.className='arbre-nom'")
   &&src.includes("p.textContent='Selon l’élément : '+ELEMENTS.map(e=>remplaceElement(v,e)).join(' · ')")&&css.includes('.accolade{'),'les accolades du nom, en pastille ou remplies');
  assert.ok(src.includes("function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){")&&src.includes(" const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note});")
   &&src.includes("if(BULLES)surveille(p,()=>{const d=bulleTalent(t,{vu:x=>sous?talentPourElement(x,sous):x});ouvrirBulle(p,d,")
@@ -2811,7 +2811,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("const ROMAINS_PALIER=['','','II','III'];")&&page.includes("function nomAvecPalier(texte,nom,palier){")
   &&page.includes("if(nom&&texte.startsWith(nom))s.append(nom,palierRomain(palier),texte.slice(nom.length));else s.append(texte,palierRomain(palier));")
   &&page.includes("palier:paliersDe(talent)>1&&talent.palier>1?talent.palier:0,")&&page.includes("geste(nomAvecPalier(b.texte,b.talent.name,b.palier),"),'le chiffre du palier sur les boutons de la table');
- assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("if(k>1)carte.querySelector('.nom-texte').append(palierRomain(k));")
+ assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("carte.append(talentRond(t,logo));return carte}")&&!src.includes('nom-texte')
   &&src.includes("const nom=nomAvecPalier(t.texte,t.talent.name,t.palier);nom.className='nom';")&&css.includes(".palier-romain{margin-left:.3em;font:inherit;"),'dans la bulle et sur la fiche, dans la police du nom');}
 /* v0.300 — Un talent élémentaire choisit un logo par élément ; sans logo propre, l'ancien
    logo suit l'élément comme avant. */

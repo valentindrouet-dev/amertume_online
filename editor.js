@@ -1255,18 +1255,14 @@ function talentPills(a){const out=document.createElement('div');out.className='t
   // Chaque talent tel que le porte cet aventurier : à son élément, s'il en a un.
   const tv=talentPourElement(t,elementDe(a)),carte=talentCarte(tv),pill=carte.firstChild;
   pill.classList.add('cliquable');pill.tabIndex=0;pill.setAttribute('aria-label',nomEnClair(tv.name)+(k>1?', palier '+k:''));
-  if(k>1)carte.querySelector('.nom-texte').append(palierRomain(k));
-  // La description, au palier que tient l'aventurier.
-  const detail=talentDetail(talentAuPalier(tv,k||1));detail.classList.add('large');
-  // En tête, le nom et son palier : « Orbes de Feu III », jamais « Palier 3 ».
-  const tete=document.createElement('p');tete.className='talent-bulle-nom';const b=document.createElement('b');nomAccolades(b,tv.name);
-  if(k>1)b.append(palierRomain(k));tete.append(b);detail.prepend(tete);
+  // La bulle de l'arbre : le nom, puis ses paliers en liste, I, II, III.
+  const detail=bulleTalent(t,{a,vu:x=>talentPourElement(x,elementDe(a))});
   const manque=sansEffet(t);
   if(manque){pill.classList.add('sans-effet');
    const m=document.createElement('span');m.className='t-sans-effet';m.textContent='⚠';
    m.title='Sans effet : « '+t.name+' » requiert « '+manque+' », que '+a.name+' n’a pas.';pill.append(m);
    const dit=document.createElement('p');dit.className='sans-effet-dit';
-   dit.textContent='⚠ Sans effet : requiert « '+manque+' », que '+a.name+' n’a pas appris.';detail.prepend(dit)}
+   dit.textContent='⚠ Sans effet : requiert « '+manque+' », que '+a.name+' n’a pas appris.';detail.firstChild.after(dit)}
   const cle=(a.id||'?')+'|'+t.id;
   const montre=()=>{talentOuvert=cle;gearOuvert=null;const d=detail.cloneNode(true);d.hidden=false;ouvrirBulle(pill,d,'bulle-talent')};
   if(talentOuvert===cle)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});
@@ -1415,12 +1411,10 @@ function talentRond(t,logo){const p=document.createElement('span');p.className='
 // La bulle d'un talent sur son rond, élargie quand elle montre plusieurs paliers.
 function bulleTalentSur(ancre,t,o){const d=bulleTalent(t,o);
  return ouvrirBulle(ancre,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))}
-// Le rond et son nom dessous, comme une pièce de l'armurerie.
-/* Le nom tient dans un seul bloc de texte : le chiffre du palier s'y ajoute à la suite, et passe
-   à la ligne avec lui au lieu de se ranger à côté comme une colonne. */
+/* Un talent hors de l'onglet Talents : son rond, sans nom dessous. La bulle le nomme au survol,
+   et le lecteur d'écran par l'étiquette que chaque appelant pose sur le rond. */
 function talentCarte(t,logo){const carte=document.createElement('div');carte.className='cat-carte talent-carte';
- const nom=document.createElement('span');nom.className='nom-carte';const texte=document.createElement('span');texte.className='nom-texte';
- nomAccolades(texte,t.name);nom.append(texte);carte.append(talentRond(t,logo),nom);return carte}
+ carte.append(talentRond(t,logo));return carte}
 /* Un talent au catalogue, comme une pièce de l'armurerie : un carré à la couleur de sa nature,
    son logo (ou le glyphe de sa nature), le nom dessous ; la nature ne s'écrit pas. Le survol ouvre la
    bulle, le clic du MJ le formulaire ; plus de dépliant, la bulle suffit. Un logo qui suit
@@ -1971,7 +1965,8 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   const classe=classeDuHeros(a),toutes=talentFamilies();
   const tete=[GENERIQUES,...(classe?[classe]:[])];
   for(const famille of (a.hero?tete:[...tete,...toutes.filter(f=>!tete.includes(f))]))
-   groupe(famille,ordonneTalents((catalog.talents||[]).filter(t=>talentFamily(t)===famille
+   // Un bonus de caractéristique n'est pas un talent : il ne s'apprend que dans l'arbre.
+   groupe(famille,ordonneTalents((catalog.talents||[]).filter(t=>!estBonus(t)&&talentFamily(t)===famille
     &&(!q||t.name.toLowerCase().includes(q)||(t.effects||'').toLowerCase().includes(q)))
     .sort((x,y)=>(x.level||1)-(y.level||1)||x.name.localeCompare(y.name,'fr')),catalog.talents)
     .map(([t])=>t),porte,pastille,clic);
@@ -2177,7 +2172,8 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
  const neuf=document.createElement('button');neuf.type='button';neuf.className='arbre-choix-neuf';neuf.textContent='✚ Créer un nouveau talent';
  neuf.onclick=()=>{choixArbreDialog.close();openTalent(null,renderArbres,{...dest})};boite.append(neuf);
  const rang=t=>talentFamily(t)===dest.famille?0:talentFamily(t)===GENERIQUES?1:2;
- const libres=(catalog.talents||[]).filter(t=>t&&t.type!=='mait'&&!(talentFamily(t)===dest.famille&&!t.horsArbre)
+ // Un bonus ne passe pas d'un arbre à l'autre : seul celui retiré de cet arbre-ci peut y revenir.
+ const libres=(catalog.talents||[]).filter(t=>t&&t.type!=='mait'&&!(talentFamily(t)===dest.famille&&!t.horsArbre)&&!(estBonus(t)&&talentFamily(t)!==dest.famille)
   &&!(sous&&(sous===t||descendDe(sous,t)))&&(!q||cleTalent(t.name).includes(q)))
   .sort((x,y)=>rang(x)-rang(y)||talentFamily(x).localeCompare(talentFamily(y),'fr')||nomEnClair(x.name).localeCompare(nomEnClair(y.name),'fr'));
  let groupe=null,grille=null;
@@ -2186,7 +2182,7 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
    grille=document.createElement('div');grille.className='pick-grille';boite.append(h,grille)}
   // Le rond et son nom, en un seul bouton ; la bulle du talent au survol.
   const b=document.createElement('button');b.type='button';b.className='cat-carte talent-carte arbre-choix-talent';
-  const nom=document.createElement('span');nom.className='nom-carte';nomAccolades(nom,t.name);b.append(talentRond(t),nom);
+  b.append(talentRond(t));
   b.setAttribute('aria-label','Placer '+nomEnClair(t.name)+' ici');
   if(BULLES)surveille(b,()=>bulleTalentSur(b.firstChild,t));
   b.onclick=()=>prendreDansArbre(t);grille.append(b)});
@@ -2242,19 +2238,18 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){const bonus=t.effe
  tete.append(nom);d.append(tete);
  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
  if(bonus){if(t.effects)ligne(t.effects);if(coutPalier(t,1))ligne('Coût : '+coutPalier(t,1)+' PT','muted')}
- else{/* Les paliers : rien d'appris — ou sur le plan du MJ —, le premier seul ; un palier tenu,
-     lui puis le suivant, une flèche entre les deux, pour voir ce qui change ; le dernier, seul. */
+ else{/* Les paliers : un talent appris les montre tous, l'un sous l'autre, I, II, III — ceux
+     qu'il tient en vert, les autres pâlis ; pas encore appris, ou sur le plan du MJ, le premier
+     seul. Pas de « Palier 1 · suivant » : le chiffre suffit, et le coût le suit s'il y en a un. */
   const k=a?palierDe(a,t):0,max=paliersDe(t);
-  const montres=!a||k===0?[1]:k>=max?[k]:[k,k+1];
-  const g=document.createElement('div');g.className='paliers-bulle n'+montres.length;
-  montres.forEach((n,i)=>{if(i){const f=document.createElement('span');f.className='palier-fleche';f.textContent='→';f.setAttribute('aria-hidden','true');g.append(f)}
-   const tp=talentAuPalier(vu(t),n),col=document.createElement('div');col.className='palier-col'+(a?(n<=k?' acquis':' suivant'):'');
-   /* Pas de « Palier 1 · suivant » : le nom porte déjà son chiffre. Deux paliers côte à côte
-      se distinguent par le leur seul, I, II ou III ; le coût suit, s'il y en a un. */
-   const c=coutPalier(t,n),deux=montres.length>1;
-   if(deux||c){const h=document.createElement('p');h.className='palier-tete'+(deux?' romain':'');
-    if(deux){const r=document.createElement('span');r.className='palier-num';r.textContent=CHIFFRES_PALIER[n]||String(n);h.append(r)}
-    if(c)h.append((deux?' · ':'')+c+' PT');col.append(h)}
+  const montres=a&&k>0?Array.from({length:max},(_,i)=>i+1):[1];
+  const g=document.createElement('div');g.className='paliers-bulle liste';
+  montres.forEach(n=>{
+   const tp=talentAuPalier(vu(t),n),col=document.createElement('div');col.className='palier-col'+(a&&k>0?(n<=k?' acquis':' suivant'):'');
+   const c=coutPalier(t,n),numero=montres.length>1;
+   if(numero||c){const h=document.createElement('p');h.className='palier-tete'+(numero?' romain':'');
+    if(numero){const r=document.createElement('span');r.className='palier-num';r.textContent=CHIFFRES_PALIER[n]||String(n);h.append(r)}
+    if(c)h.append((numero?' · ':'')+c+' PT');col.append(h)}
    const e=document.createElement('p');e.className='palier-effet';e.textContent=tp.effects||'Effet à préciser.';if(tp.effects)texteEnrichi(e,tp.effects);col.append(e);
    // Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.
    g.append(col)});
@@ -2322,18 +2317,21 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   b.className='arbre-noeud t-'+talentType(t)[0]+(etat?' '+etat:'');b.dataset.id=t.id;
   const rond=document.createElement('span');rond.className='arbre-rond';
   const tv=vu(t),logo=logoTalent(tv);if(logo)rond.append(logo);else rond.textContent=GLYPHES_TALENT[t.type]||'✦';
-  const nom=document.createElement('span');nom.className='arbre-nom';nomAccolades(nom,tv.name);
+  /* Pas de nom sous le rond : un nom long passait à la ligne et faisait descendre tout l'arbre
+     en dessous. La bulle le dit au survol, le lecteur d'écran par l'étiquette du nœud. */
   const niv=document.createElement('span');niv.className='arbre-niv';niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';
-  /* Un nœud de bonus n'est pas un talent : son rond dit la valeur, son nom la caractéristique.
-     Son nom complet (« +2 Endurance ») redisait les deux : il ne s'écrit plus dessous. */
+  /* Un nœud de bonus n'est pas un talent : son rond dit la valeur et, dessous en petit, la
+     caractéristique (« +2 », « ENDU »), une compétence en quatre lettres. */
   if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));
-   rond.textContent='+'+Math.max(1,(p&&p.valeur)|0);nom.textContent=libelleBonus(p,true).replace(/^\+\d+ /,'')}
+   const v=document.createElement('b');v.textContent='+'+Math.max(1,(p&&p.valeur)|0);
+   let c=libelleBonus(p,true).replace(/^\+\d+ /,'');if(p&&p.carac==='comp')c=c.slice(0,4);
+   const q=document.createElement('small');q.textContent=c;rond.replaceChildren(v,q)}
   niv.hidden=!niv.textContent;
   // Sous l'icône, un point par palier : ceux qu'on tient s'allument.
   const max=paliersDe(t),k=a?palierDe(a,t):0;let pts=null;
   if(max>1){pts=document.createElement('span');pts.className='arbre-paliers';
    for(let n=1;n<=max;n++){const i=document.createElement('i');if(n<=k)i.className='on';pts.append(i)}}
-  b.append(rond,...(pts?[pts]:[]),nom,niv);
+  b.append(rond,...(pts?[pts]:[]),niv);
   // Au survol, la bulle de description, comme sur la fiche ; « b.noteBulle » s'y ajoute.
   b.setAttribute('aria-label',tv.name+(k?' — palier '+k+' sur '+max:'')+' — '+[talentType(t)[2],tv.effects].filter(Boolean).join(' · ')+(verrou?' — sous clé : requiert '+verrou:''));
   b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}};

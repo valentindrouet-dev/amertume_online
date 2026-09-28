@@ -1009,7 +1009,13 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 /* Un nœud de bonus dans l'arbre : un rond ambré à la valeur, la caractéristique en nom. */
 /* Les bonus prennent la couleur de leur caractéristique, celle des tuiles de la fiche. */
 .arbre-noeud.bonus{--teinte:#b8862b}.arbre-noeud.bonus-vie{--teinte:rgb(122,92,184)}.arbre-noeud.bonus-endu{--teinte:rgb(44,140,133)}.arbre-noeud.bonus-pv{--teinte:rgb(47,122,91)}.arbre-noeud.bonus-def{--teinte:rgb(96,110,118)}.arbre-noeud.bonus-dmg{--teinte:rgb(180,72,58)}
-.arbre-noeud.bonus .arbre-rond{width:46px;height:46px;font:800 17px system-ui;letter-spacing:-.5px;border-style:double;border-width:4px}
+.arbre-noeud.bonus .arbre-rond{width:50px;height:50px;font:800 17px system-ui;letter-spacing:-.5px;border-style:double;border-width:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+/* La valeur, et sous elle la caractéristique en petit : le nom n'est plus écrit sous le rond. */
+.arbre-noeud.bonus .arbre-rond b{font:800 16px/1 system-ui}
+.arbre-noeud.bonus .arbre-rond small{font:800 8.5px/1.1 system-ui;letter-spacing:.4px;text-transform:uppercase;opacity:.9}
+.arbre-noeud.bonus-orbe{--teinte:#8a63c9}
+/* Sur un petit rond de bonus, la coche d'acquis se pose plus en dehors : elle mordait sur la valeur. */
+.arbre-noeud.bonus.acquis .arbre-rond::after{top:-10px;right:-12px;width:16px;height:16px;font-size:11px;line-height:16px}
 .arbre-noeud.bonus .arbre-nom{font:700 12px system-ui;letter-spacing:1px;text-transform:uppercase}
 
 /* ---------- Les raretés ---------- */
@@ -1091,7 +1097,8 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 /* Le cadenas d'un talent qui attend son socle, là où se pose la coche d'un talent appris. */
 .pick-carte.verrou{opacity:.55}.pick-carte.verrou .talent-carre{cursor:not-allowed}
 .pick-carte.verrou .marque-porte{display:block;background:var(--panel);color:var(--ink);font-size:8px}
-.talent-carte .nom-carte .palier-romain{white-space:nowrap}
+/* Hors de l'onglet Talents, un talent n'est que son rond. */
+.cat-carte.talent-carte{width:auto}
 .talent-detail .palier-tete.romain{text-transform:none;letter-spacing:0;color:var(--muted)}
 .talent-detail .palier-tete.romain .palier-num{font:700 14px 'Killam',Georgia,serif;color:var(--ink)}
 .talent-detail>.talent-bulle-nom{margin-bottom:6px}
@@ -1189,6 +1196,12 @@ i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #00
 /* La bulle compare : le palier tenu et le suivant, côte à côte — ou les trois, sur le plan du MJ. */
 .bulle.large-paliers{max-width:min(580px,94vw)}
 .paliers-bulle{display:grid;gap:10px;margin-top:6px}.paliers-bulle.n2{grid-template-columns:1fr auto 1fr}
+/* Les paliers d'un talent appris, l'un sous l'autre : un filet à gauche, vert pour ceux qu'il tient. */
+.paliers-bulle.liste{gap:7px}
+.paliers-bulle.liste .palier-col{border-top:0;border-left:3px solid var(--line);padding:1px 0 1px 9px}
+.paliers-bulle.liste .palier-col.acquis{border-left-color:var(--green)}
+.paliers-bulle.liste .palier-col.suivant{border-left-color:#c9953f;opacity:.72}
+.paliers-bulle.liste .palier-tete{margin-bottom:2px}
 .palier-fleche{align-self:center;font:700 20px/1 system-ui;color:#c9953f}
 .palier-col{border-top:2px solid var(--line);padding-top:5px;min-width:0}
 .palier-col.acquis{border-top-color:var(--green)}.palier-col.suivant{border-top-color:#c9953f}
