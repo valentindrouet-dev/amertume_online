@@ -52,6 +52,44 @@ function migreRessources(c){
  const parNom=new Map(res.map(o=>[String(o.name||'').trim().toLowerCase(),o.cle]));
  c.items.forEach(o=>{if(!o||o.category==='ressource')return;
   ['ressource1','ressource2'].forEach(k=>{const v=o[k];if(v&&!vues.has(v))o[k]=parNom.get(String(v).trim().toLowerCase())||''})})}
+/* ---------- Le guide des prix ----------
+   Le MJ y fixe ce que vaut chaque élément d'une pièce : une base selon sa catégorie, chaque dé de
+   dégâts, chaque point de DEF, la deuxième main, l'état infligé, l'effet, chaque bonus, les
+   ressources dont elle est faite ; la rareté multiplie ensuite le tout. L'Armurerie en tire un
+   prix suggéré, à côté du prix de chaque pièce : une aide, jamais imposée. */
+const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['treasure','Trésor']];
+const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,ressource:0,treasure:0},
+ des:{white:5,bone:8,red:15,blue:20,green:10,black:30,yellow:25},def:20,deuxMains:5,etat:15,
+ bonus:{pv:10,endu:25,vie:25,def:20,dmg:30,comp:15},ressources:100,rarete:{commun:100,rare:150,mystique:200,epique:300,ressource:100}};
+const EFFET_PRIX_DEFAUT=25;
+function normaliseGuidePrix(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:{};const D=GUIDE_PRIX_DEFAUT;
+ const n=(v,d,max=99999)=>{const x=v===''||v===null||v===undefined?NaN:Math.round(Number(v));return Number.isFinite(x)?Math.max(0,Math.min(max,x)):d};
+ const table=(src,def,max)=>Object.fromEntries(Object.entries(def).map(([k,d])=>[k,n(src&&typeof src==='object'?src[k]:undefined,d,max)]));
+ return {base:table(g.base,D.base),des:table(g.des,D.des),def:n(g.def,D.def),deuxMains:n(g.deuxMains,D.deuxMains),etat:n(g.etat,D.etat),
+  effets:table(g.effets,Object.fromEntries(Object.keys(OBJETS_CODES).map(k=>[k,EFFET_PRIX_DEFAUT]))),bonus:table(g.bonus,D.bonus),
+  ressources:n(g.ressources,D.ressources,1000),rarete:table(g.rarete,D.rarete,1000)}}
+/* Le prix qu'une pièce vaudrait selon le guide, et le détail du calcul. Les ressources comptent
+   pour leur valeur, celle que porte leur pièce à l'Armurerie. */
+function prixSuggere(o,g){g=normaliseGuidePrix(g||(typeof catalog!=='undefined'&&catalog?catalog.guidePrix:null));const lignes=[],ajoute=(nom,v)=>{if(v)lignes.push([nom,v])};
+ const col=itemColumn(o),cat=CATS_PRIX.find(([k])=>k===col);ajoute('Base, '+(cat?cat[1]:'pièce').toLowerCase(),g.base[col]||0);
+ if(o.category==='weapon'){keys.forEach((k,i)=>{const nb=Math.max(0,Math.trunc(Number(o.dice&&o.dice[k]))||0);if(nb)ajoute(nb+' dé'+(nb>1?'s':'')+' '+types[i],nb*(g.des[k]||0))});
+  if(!o.ranged&&weaponHands(o)===2)ajoute('Deux mains',g.deuxMains)}
+ if(o.category==='ammo'&&keys.includes(o.munDe))ajoute('Dé '+types[keys.indexOf(o.munDe)],g.des[o.munDe]||0);
+ if((o.category==='weapon'||o.category==='ammo')&&o.etat)ajoute('Inflige '+o.etat,g.etat);
+ const def=Math.max(0,Math.trunc(Number(o.def))||0);if(o.category==='armor'&&def)ajoute(def+' DEF',def*g.def);
+ const code=objetCode(o);if(code)ajoute('Effet '+code.nom,g.effets[code.cle]||0);
+ normaliseBonusEquip(o.bonus).forEach(b=>ajoute('+'+b.valeur+' '+((CARACS_EQUIP.find(([k])=>k===b.carac)||[])[1]||b.carac),b.valeur*(g.bonus[b.carac]||0)));
+ if(o.category!=='ressource')[o.ressource1,o.ressource2].forEach(k=>{const r=k&&ressourcesJeu().find(x=>x.cle===k);
+  if(r&&r.piece)ajoute(r.nom,Math.round((Number(r.piece.price)||0)*g.ressources/100))});
+ const somme=lignes.reduce((t,[,v])=>t+v,0),rar=rareteDe(o),pct=g.rarete[rar]??100;
+ return {total:Math.max(0,Math.min(999999,Math.round(somme*pct/100))),lignes,rarete:pct!==100?[NOM_RARETE(rar),pct]:null}}
+const detailPrix=s=>(s.lignes.length?s.lignes.map(([n,v])=>n+' : '+v.toLocaleString('fr-FR')).join('\n'):'Rien que le guide ne chiffre')
+ +(s.rarete?'\n'+s.rarete[0]+' : × '+(s.rarete[1]/100).toLocaleString('fr-FR'):'')+'\n= '+s.total.toLocaleString('fr-FR')+' or';
+// À côté d'un prix : la suggestion ; un clic la pose.
+function boutonSuggestion(){const b=document.createElement('button');b.type='button';b.className='prix-suggere';return b}
+function majSuggestion(b,o,prix){const s=prixSuggere(o),egal=s.total===prix;b.classList.toggle('egal',egal);b.dataset.total=String(s.total);
+ b.textContent='≈ '+s.total.toLocaleString('fr-FR');b.title='Prix suggéré par le guide\n'+detailPrix(s)+(egal?'':'\nCliquer pour l’appliquer.');
+ b.setAttribute('aria-label','Prix suggéré : '+s.total+' or'+(egal?'':', cliquer pour l’appliquer'));return s.total}
 // Au chargement : une clé bien formée et un nom court, l'une et l'autre uniques ; rien, les ressources de départ.
 function normaliseRessources(l){if(!Array.isArray(l)||!l.length)return structuredClone(RESSOURCES_DEFAUT);
  const cles=new Set(),noms=new Set(),out=[];
@@ -61,6 +99,8 @@ function normaliseRessources(l){if(!Array.isArray(l)||!l.length)return structure
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les ressources d'abord : les pièces se relisent au travers d'elles, plus bas.
  migreRessources(c);const clesR=new Set(c.items.filter(o=>o&&o.category==='ressource').map(o=>o.cle)),resV=r=>clesR.has(r)?r:'';
+ // Le guide des prix, réglé par le MJ dans l'Armurerie.
+ c.guidePrix=normaliseGuidePrix(c.guidePrix);
  // Les planches d'icônes découpées, leurs noms et catégories (planches.js).
  c.planches=normalisePlanches(c.planches);c.nomsPlanches=normaliseNomsPlanches(c.nomsPlanches);
  // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
@@ -121,6 +161,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   o.params=o.effet?paramsObjet(o):{};
   // Sa rareté, et ses bonus, relus au travers de leur déclaration.
   o.rarete=rareteDe(o);o.bonus=normaliseBonusEquip(o.bonus);
+  // Une ressource n'a ni effet, ni usage, ni bonus : elle se stocke et se vend.
+  if(o.category==='ressource'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}
   o.usage=usageObjet(o);o.consumable=o.usage==='conso';
   o.magasin=o.magasin===true;if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
@@ -298,6 +340,8 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
     faire quand on se sert d'un objet, replié par défaut. */
  +'<details class="bloc-replie biblio"><summary><span class="bloc-titre">📖 Banque des effets d’équipement</span>'
  +'<span class="compte" id="biblio-objets-compte"></span></summary><div id="biblio-objets"></div></details>'
+ /* Le guide des prix : ce que vaut chaque élément d'une pièce ; le prix suggéré en découle. */
+ +'<details class="bloc-replie biblio" id="bloc-guide-prix"><summary><span class="bloc-titre">💰 Guide des prix</span></summary><div id="guide-prix"></div></details>'
  +'<div class="cat-cols" id="armory-cols"></div></section>';
 const heroesPage=document.createElement('main');heroesPage.id='heroes-page';
 heroesPage.innerHTML='<section class="cat-panel panel">'
@@ -1395,7 +1439,7 @@ function tableMasse(boite,liste){
    const pe=pastilleEffet(o);if(pe)s.append(pe);
    const txt=[phraseDeObjet(o).replace(/<[^>]+>/g,''),...normaliseBonusEquip(o.bonus).map(b=>'+'+b.valeur+' '+(b.carac==='comp'?(COMPETENCES[Number(b.comp)]||''):(NOM_CARAC[b.carac]||b.carac)))].filter(Boolean).join(' · ');
    const t=document.createElement('span');t.textContent=txt||o.etat||'';s.append(t);s.title=txt;return s}},
-  {cle:'rarete',nom:'Rareté',type:'choix',opts:RARETES,lit:o=>rareteDe(o),ecrit:(o,v)=>{o.rarete=rareteDe({rarete:v})}},
+  {cle:'rarete',nom:'Rareté',type:'choix',opts:RARETES,pour:faite,lit:o=>rareteDe(o),ecrit:(o,v)=>{o.rarete=rareteDe({rarete:v})}},
   {cle:'price',nom:'Prix (or)',type:'nombre',max:999999,lit:o=>o.price||0,ecrit:(o,v)=>{o.price=Math.max(0,Math.min(999999,Math.round(v)))}},
   {cle:'ressource1',nom:'Ressource 1',type:'choix',opts:RESS,pour:faite,lit:o=>ressourceValide(o.ressource1),ecrit:(o,v)=>{o.ressource1=ressourceValide(v)}},
   {cle:'ressource2',nom:'Ressource 2',type:'choix',opts:RESS,pour:faite,lit:o=>ressourceValide(o.ressource2),ecrit:(o,v)=>{o.ressource2=ressourceValide(v)}},
@@ -1416,7 +1460,11 @@ function tableMasse(boite,liste){
    const ok=document.createElement('button');ok.type='button';ok.textContent='OK';ok.title='Appliquer à toutes les pièces affichées';
    ok.onclick=()=>{const v=Number(n.value);if(n.value===''||!Number.isFinite(v))return;const o2=op.value;
     pourTous(c,o=>c.ecrit(o,o2==='x'?c.lit(o)*v:o2==='+'?c.lit(o)+v:v),c.nom+(o2==='x'?' multiplié par ':o2==='+'?(v<0?' diminué de ':' augmenté de '):' fixé à ')+Math.abs(o2==='+'?v:v)+(o2==='x'?'':c.cle==='price'?' or':''))};
-   const g=document.createElement('span');g.className='masse-op';g.append(op,n,ok);td.append(g)}
+   const g=document.createElement('span');g.className='masse-op';g.append(op,n,ok);
+   // Le prix : chaque pièce prend celui que le guide lui suggère.
+   if(c.cle==='price'){const sug=document.createElement('button');sug.type='button';sug.className='prix-suggere';sug.textContent='≈ Guide';
+    sug.title='Donner à chaque pièce affichée le prix suggéré par le guide';sug.onclick=()=>pourTous(c,o=>c.ecrit(o,prixSuggere(o).total),'Prix suggérés par le guide');g.append(sug)}
+   td.append(g)}
   else if(c.type==='choix'){const s=document.createElement('select');s.setAttribute('aria-label',c.nom+' pour toutes');
    s.innerHTML='<option value="\u0001">Pour toutes…</option>'+options(c.opts,'\u0001');
    s.onchange=()=>{const v=s.value;if(v==='\u0001')return;const nomV=(c.opts.find(([k])=>String(k)===v)||[])[1]||v;s.value='\u0001';pourTous(c,o=>c.ecrit(o,v),c.nom+' : '+nomV)};td.append(s)}
@@ -1442,11 +1490,16 @@ function tableMasse(boite,liste){
   n.onchange=()=>{const v=n.value.trim();if(!v){n.value=o.name;return}o.name=v.slice(0,120);sauve()};
   const ouvre=document.createElement('button');ouvre.type='button';ouvre.className='ico';ouvre.textContent='✎';ouvre.title='Ouvrir la fiche de '+o.name;ouvre.onclick=()=>openItem(i);
   nom.append(n,ouvre);th.append(nom);tr.append(th);
+  const majLigne=[];tr.addEventListener('change',()=>majLigne.forEach(f=>f()));
   COLS.forEach(c=>{const td=document.createElement('td');if(!vaut(c,o)){td.className='masse-sans';td.textContent='—';tr.append(td);return}
    if(c.type==='vue'){td.className='masse-vue';td.append(c.montre(o));tr.append(td);return}
    let el;
    if(c.type==='nombre'){el=document.createElement('input');el.type='number';el.min='0';el.max=String(c.max);el.step='1';el.value=c.lit(o);
-    el.onchange=()=>{c.ecrit(o,Number(el.value)||0);el.value=c.lit(o);sauve()}}
+    el.onchange=()=>{c.ecrit(o,Number(el.value)||0);el.value=c.lit(o);sauve()}
+    /* À droite du prix : celui que suggère le guide, suivi à chaque changement de la ligne. */
+    if(c.cle==='price'){const b=boutonSuggestion(),maj=()=>majSuggestion(b,o,c.lit(o));maj();majLigne.push(maj);
+     b.onclick=()=>{c.ecrit(o,Number(b.dataset.total)||0);el.value=c.lit(o);maj();sauve()};
+     el.setAttribute('aria-label',c.nom+' — '+o.name);const w=document.createElement('span');w.className='masse-prix';w.append(el,b);td.append(w);tr.append(td);return}}
    else if(c.type==='choix'){el=document.createElement('select');el.innerHTML=options(c.opts,c.lit(o));
     el.onchange=()=>{c.ecrit(o,el.value);if(c.cle==='rarete')tr.className='r-'+rareteDe(o);sauve()}}
    else{el=document.createElement('input');el.type='checkbox';el.checked=c.lit(o);el.onchange=()=>{c.ecrit(o,el.checked);sauve()}}
@@ -1475,7 +1528,37 @@ function armoryRow(a,i){const carte=document.createElement('div');carte.classNam
  double.onclick=()=>{const copie=structuredClone(a);copie.id=crypto.randomUUID();copie.name=a.name+' (copie)';
   catalog.items.splice(i+1,0,copie);renderCatalogPages();scheduleSave()};
  outils.append(crayon,double);carte.append(p,nom,outils);return carte}
-function renderArmory(){renderBiblioObjets();const cols=$('armory-cols');if(!cols)return;cols.replaceChildren();
+/* Le guide des prix, dans l'Armurerie : des groupes de champs, chacun enregistré dès qu'il
+   change ; les prix suggérés suivent. Les valeurs des ressources sont celles de leurs pièces. */
+function renderGuidePrix(){const boite=$('guide-prix'),bloc=$('bloc-guide-prix');if(!boite||!bloc)return;bloc.hidden=view!=='mj';
+ if(bloc.hidden||boite.contains(document.activeElement))return;boite.replaceChildren();
+ const g=catalog.guidePrix=normaliseGuidePrix(catalog.guidePrix);
+ const change=()=>{scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));if(armoryMasse)renderArmory()};
+ const groupe=(titre,aide)=>{const f=document.createElement('fieldset');f.className='guide-groupe';const l=document.createElement('legend');l.textContent=titre;f.append(l);
+  if(aide){const p=document.createElement('p');p.className='muted';p.textContent=aide;f.append(p)}boite.append(f);return f};
+ const champ=(f,nom,lit,ecrit,unite='or',orne)=>{const l=document.createElement('label');l.className='guide-ligne';
+  const t=document.createElement('span');t.className='guide-nom';if(orne)t.append(orne);t.append(nom);
+  const i=document.createElement('input');i.type='number';i.min='0';i.step='1';i.value=lit();i.setAttribute('aria-label',nom+' ('+unite+')');
+  i.onchange=()=>{ecrit(i.value);catalog.guidePrix=normaliseGuidePrix(catalog.guidePrix);i.value=lit();change()};
+  const u=document.createElement('small');u.textContent=unite;l.append(t,i,u);f.append(l)};
+ const G=()=>catalog.guidePrix;
+ const fb=groupe('Base','Ce que vaut une pièce de la catégorie, avant le reste.');
+ CATS_PRIX.forEach(([k,n])=>champ(fb,n,()=>G().base[k],v=>{G().base[k]=v}));
+ const fd=groupe('Dés de dégâts','Par dé, sur une arme ; le dé qu’une munition ajoute compte aussi.');
+ keys.forEach((k,i)=>champ(fd,types[i],()=>G().des[k],v=>{G().des[k]=v},'or',dicePips({[k]:1})));
+ const fa=groupe('Défense et armes');
+ champ(fa,'Par point de DEF',()=>G().def,v=>{G().def=v});champ(fa,'Deux mains',()=>G().deuxMains,v=>{G().deuxMains=v});
+ champ(fa,'État infligé',()=>G().etat,v=>{G().etat=v});
+ const fe=groupe('Effets','L’effet appliqué par le moteur.');
+ Object.values(OBJETS_CODES).forEach(c=>champ(fe,c.nom,()=>G().effets[c.cle],v=>{G().effets[c.cle]=v}));
+ const fx=groupe('Bonus','Par +1 de caractéristique.');
+ CARACS_EQUIP.forEach(([k,n])=>champ(fx,n,()=>G().bonus[k],v=>{G().bonus[k]=v}));
+ const fr=groupe('Ressources','La valeur de chaque ressource, celle de sa pièce ; une pièce en compte la part choisie.');
+ champ(fr,'Part comptée',()=>G().ressources,v=>{G().ressources=v},'%');
+ ressourcesJeu().filter(r=>r.piece).sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(r=>champ(fr,r.nom,()=>r.piece.price||0,v=>{r.piece.price=Math.max(0,Math.min(999999,Math.round(Number(v))||0))},'or',logoEquipement(r.piece,'guide-logo')||undefined));
+ const fq=groupe('Rareté','Multiplie le total : 100 % le laisse tel quel.');
+ [...RARETES,['ressource','Ressource']].forEach(([k,n])=>champ(fq,n,()=>G().rarete[k],v=>{G().rarete[k]=v},'%'));}
+function renderArmory(){renderBiblioObjets();renderGuidePrix();const cols=$('armory-cols');if(!cols)return;cols.replaceChildren();
  const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value,tri=$('armory-sort').value;
  const masse=armoryMasse&&view==='mj';$('armory-masse').setAttribute('aria-pressed',String(masse));$('armory-masse').classList.toggle('on',masse);
  cols.classList.toggle('en-masse',masse);
@@ -3184,7 +3267,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +field('Nom','name',a.name,'text','required maxlength="120"')
   +sel('Catégorie','category',cat,ITEM_CATS)
   +selGrille(sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])]))
-  +sel('Rareté','rarete',rareteDe(a),RARETES)
+  +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))
   +(arme?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="99"')
    +sel('Emplacement','slot',emplacementDe(a),[...EMPLACEMENTS.map(([k,n,p])=>[k,n+(p>1?' ('+p+')':'')]),['shield','Bouclier — une main']]):'')
@@ -3209,6 +3292,8 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +'<label>Notes<textarea name="notes">'+esc(a.notes||'')+'</textarea></label>'
   /* Ce que l'objet fait quand on s'en sert, et comment on en use : la même grammaire que
      les talents — on choisit l'effet, puis on le règle. */
+  // Une ressource n'a ni effet, ni usage, ni bonus : le formulaire s'arrête là.
+  +(a.category==='ressource'?'':''
   +'<h2 class="sous-titre">Effet appliqué par le moteur</h2>'
   +'<div class="edit-grid">'
   +sel('Effet','effet',a.effet||'',[['','— Aucun : objet descriptif —'],...Object.values(OBJETS_CODES).map(c=>[c.cle,c.nom])])
@@ -3220,19 +3305,23 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   /* Ce que la pièce confère à qui la porte : une ligne par bonus, cumulables, qu'on ajoute
      et retire ici et qu'on relit sur sa fiche. */
   +'<h2 class="sous-titre">Bonus de caractéristiques</h2><div id="item-bonus"></div>'
-  +'<button type="button" id="item-bonus-add" class="arbre-ajout">+ Bonus</button>';
+  +'<button type="button" id="item-bonus-add" class="arbre-ajout">+ Bonus</button>');
  habilleDes($('item-fields'));
  dessineBonusItem();
- $('item-bonus-add').onclick=()=>{itemDraft=itemDepuisForm(itemDraft);itemDraft.bonus=[...normaliseBonusEquip(itemDraft.bonus),{carac:'pv',valeur:1,comp:'0'}];dessineBonusItem()};
+ /* À droite du prix : celui que suggère le guide, recalculé à chaque saisie du formulaire. */
+ {const f=$('item-form').elements,b=boutonSuggestion(),maj=()=>{try{majSuggestion(b,itemDepuisForm({...itemDraft}),num(f.price.value,0,999999))}catch(e){}};
+  const ligne=document.createElement('span');ligne.className='prix-ligne';f.price.before(ligne);ligne.append(f.price,b);b.onclick=()=>{f.price.value=b.dataset.total||'0';maj()};
+  $('item-form').oninput=maj;maj()}
+ if($('item-bonus-add'))$('item-bonus-add').onclick=()=>{itemDraft=itemDepuisForm(itemDraft);itemDraft.bonus=[...normaliseBonusEquip(itemDraft.bonus),{carac:'pv',valeur:1,comp:'0'}];dessineBonusItem()};
  /* Les réglages de l'effet sont dessinés d'après sa déclaration : ajouter un effet au
     moteur suffit à lui donner son formulaire. */
  const menuEffet=$('item-form').elements.effet;
  // Le mode ne se propose qu'à un effet qui sait être passif ; passif, l'usage ne compte plus.
- const majMode=()=>{const f=$('item-form').elements,code=OBJETS_CODES[f.effet.value];
+ const majMode=()=>{const f=$('item-form').elements;if(!f.effet)return;const code=OBJETS_CODES[f.effet.value];
   if(f.mode){const l=f.mode.closest('label');l.hidden=!(code&&typeof code.passif==='function')}
   const passif=f.mode&&!f.mode.closest('label').hidden&&f.mode.value==='passif';
   if(f.usage)f.usage.closest('label').hidden=!!passif};
- menuEffet.onchange=()=>{itemDraft=itemDepuisForm(itemDraft);itemDraft.effet=menuEffet.value;itemDraft.params={};dessineReglagesObjet();majMode()};
+ if(menuEffet)menuEffet.onchange=()=>{itemDraft=itemDepuisForm(itemDraft);itemDraft.effet=menuEffet.value;itemDraft.params={};dessineReglagesObjet();majMode()};
  if($('item-form').elements.mode)$('item-form').elements.mode.onchange=majMode;
  dessineReglagesObjet();majMode();
  /* L'aperçu du logo, à côté de son menu : on voit ce qu'on choisit. */

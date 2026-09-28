@@ -211,7 +211,20 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .cat-pill.k-armor{background:#cfe0ea}
 .cat-pill.k-object{background:#e6d9bd}
 .cat-pill.k-treasure{background:#f0e0bd}
-.cat-pill.k-ressource{background:#ddd5c6}
+.cat-pill.k-ressource{background:#efe2cc}
+/* Le guide des prix : des groupes de champs en grille ; le prix suggéré, à droite de chaque prix. */
+#guide-prix{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;padding:10px 0 4px}
+.guide-groupe{border:1px solid var(--line);border-radius:9px;padding:8px 10px 10px;margin:0;background:var(--panel);min-width:0}
+.guide-groupe legend{font:700 12px/1 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);padding:0 5px}
+.guide-groupe>p.muted{margin:2px 0 6px;font-size:12px}
+.guide-ligne{display:grid;grid-template-columns:minmax(0,1fr) 5.2em 2em;align-items:center;gap:6px;margin:3px 0;font-size:13px}
+.guide-ligne input{width:100%;margin:0;padding:3px 5px;text-align:right}.guide-ligne small{color:var(--muted)}
+.guide-nom{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.guide-nom .pips{flex:none}.guide-nom .guide-logo{width:20px;height:20px;object-fit:contain;flex:none}
+.prix-suggere{padding:2px 8px;border-radius:999px;border:1px solid #d4b35a;background:#f7e7b4;color:#6b4a0c;font:600 12px/1.4 system-ui,sans-serif;white-space:nowrap;cursor:pointer}
+.prix-suggere:hover{background:#f2d98a}.prix-suggere.egal{background:transparent;border-color:var(--line);color:var(--muted);cursor:default}
+.masse-prix{display:flex;align-items:center;gap:6px}.masse-prix input{width:6.5em}
+.prix-ligne{display:flex;align-items:center;gap:8px}.prix-ligne input{flex:1;min-width:0}
 /* L'Armurerie : quatre colonnes par rangée, les Ressources et les Trésors en dessous. */
 #armory-cols{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:1150px){#armory-cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -814,7 +827,7 @@ button.choix-attaque.sans-des.avec-logo .nom{grid-row:1/3;align-self:center}
 /* La flèche prend la couleur du fond qu'elle touche : chaque nature a la sienne. */
 .bulle:has(.k-melee){--bulle-bord:#e6dccb}.bulle:has(.k-ranged){--bulle-bord:#dfe6d2}
 .bulle:has(.k-armor){--bulle-bord:#d9dde3}.bulle:has(.k-object){--bulle-bord:#e6d9bd}.bulle:has(.k-treasure){--bulle-bord:#f0e0bd}
-.gear-detail.k-treasure{background:#f0e0bd;border-left-color:#c99a3c}.gear-detail.k-ressource{background:#ddd5c6;border-left-color:#8a7a5a}.bulle:has(.k-ressource){--bulle-bord:#ddd5c6}
+.gear-detail.k-treasure{background:#f0e0bd;border-left-color:#c99a3c}.gear-detail.k-ressource{background:#f1e6d4;border-left-color:#9a7448}.bulle:has(.k-ressource){--bulle-bord:#f1e6d4}
 .bulle:has(.k-object.consommable){--bulle-bord:#d9e7cd}
 .bulle:has(.t-act){--bulle-bord:#cfdcea}.bulle:has(.t-reac){--bulle-bord:#ddd3ea}
 .bulle:has(.t-pass){--bulle-bord:#dcd8cf}.bulle:has(.t-crit){--bulle-bord:#eccfd0}
@@ -1031,13 +1044,15 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .cat-pill.r-rare{background:#cfe0f5;border-color:#4d7fb055}
 .cat-pill.r-mystique{background:#e3d6f2;border-color:#7a5fc055}
 .cat-pill.r-epique{background:#f5dcc0;border-color:#c26a2f55}
+/* Une ressource : sa rareté à elle, d'un brun très clair. */
+.cat-pill.r-ressource{background:#efe2cc;border-color:#9a744855}.cat-pill.gear-carre.r-ressource{box-shadow:0 0 0 1px #b8946455 inset}
 .cat-pill.gear-carre.r-rare{box-shadow:0 0 0 1px #4d7fb0 inset}.cat-pill.gear-carre.r-mystique{box-shadow:0 0 0 1px #7a5fc0 inset}.cat-pill.gear-carre.r-epique{box-shadow:0 0 0 1px #c26a2f inset}
 .cat-pill.gear-carre.porte.r-rare,.cat-pill.gear-carre.porte.r-mystique,.cat-pill.gear-carre.porte.r-epique{box-shadow:0 0 0 1px var(--green) inset}
 .gear-detail.r-commun{background:#e2ded7;border-left-color:#7d7a74}.gear-detail.r-rare{background:#d9e6f5;border-left-color:#4d7fb0}
-.gear-detail.r-mystique{background:#e6dcf2;border-left-color:#7a5fc0}.gear-detail.r-epique{background:#f5e0cc;border-left-color:#c26a2f}
-.bulle:has(.r-commun){--bulle-bord:#e2ded7}.bulle:has(.r-rare){--bulle-bord:#d9e6f5}.bulle:has(.r-mystique){--bulle-bord:#e6dcf2}.bulle:has(.r-epique){--bulle-bord:#f5e0cc}
+.gear-detail.r-mystique{background:#e6dcf2;border-left-color:#7a5fc0}.gear-detail.r-epique{background:#f5e0cc;border-left-color:#c26a2f}.gear-detail.r-ressource{background:#f1e6d4;border-left-color:#9a7448}
+.bulle:has(.r-commun){--bulle-bord:#e2ded7}.bulle:has(.r-rare){--bulle-bord:#d9e6f5}.bulle:has(.r-mystique){--bulle-bord:#e6dcf2}.bulle:has(.r-epique){--bulle-bord:#f5e0cc}.bulle:has(.r-ressource){--bulle-bord:#f1e6d4}
 .gear-detail .gear-rarete{font:600 11px system-ui;letter-spacing:2px;text-transform:uppercase}
-.gear-detail .gear-rarete.r-rare{color:#4d7fb0}.gear-detail .gear-rarete.r-mystique{color:#7a5fc0}.gear-detail .gear-rarete.r-epique{color:#c26a2f}
+.gear-detail .gear-rarete.r-rare{color:#4d7fb0}.gear-detail .gear-rarete.r-mystique{color:#7a5fc0}.gear-detail .gear-rarete.r-epique{color:#c26a2f}.gear-detail .gear-rarete.r-ressource{color:#8a6536}
 .gear-detail .gear-bonus{font-weight:700;color:#2f6d3a}
 /* Les lignes de bonus du formulaire d'objet. */
 .bonus-ligne{display:flex;align-items:center;gap:6px;margin:4px 0}.bonus-ligne .bonus-plus{font:800 16px system-ui;color:var(--muted)}
@@ -1197,9 +1212,12 @@ i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #00
 .dom-magasin-client{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 6px}.dom-magasin-client .richesse-or{margin:0}.dom-magasin-client select{width:auto;margin:0}
 .dom-magasin-titre{margin:8px 0 6px;font:600 11px system-ui;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
 .dom-articles{display:flex;flex-wrap:wrap;gap:12px 8px;margin:0 0 6px}
-.dom-article .dom-achat{margin:2px 0 0;padding:3px 8px;min-width:64px;border-radius:8px;font:700 12px system-ui;color:#fff;background:#a0761a;border:1px solid #8a6512}
-.dom-article.vente .dom-achat{background:var(--green);border-color:var(--green)}
-.dom-article .dom-achat:disabled{background:var(--disabled);border-color:var(--disabled);color:var(--disabled-ink);cursor:default}
+/* Un clic sur l'article l'achète ou le vend ; hors de portée, il pâlit. */
+.dom-article .cat-pill.gear-carre.a-cliquer{cursor:pointer;transition:transform .1s}
+.dom-article .cat-pill.gear-carre.a-cliquer:hover{transform:translateY(-2px);box-shadow:0 3px 8px #6b4a0c33}
+.dom-article.vente .cat-pill.gear-carre.a-cliquer:hover{box-shadow:0 3px 8px #2f6b3a33}
+.dom-article .cat-pill.gear-carre.indispo{opacity:.45;cursor:not-allowed;filter:grayscale(.4)}
+.bulle-action{margin:8px 0 0;padding-top:6px;border-top:1px solid #00000018;font:600 12px system-ui;color:#6b4a0c}.bulle-action.non{color:var(--muted)}
 
 /* Les paliers d'un talent, sous son icône dans l'arbre : un point par palier, allumés pour ceux qu'on tient. Le fond cache les chemins. */
 .arbre-paliers{display:flex;gap:4px;justify-content:center;width:max-content;margin:3px auto 0;padding:2px 5px;border-radius:6px;background:var(--panel-2);position:relative;z-index:1}
@@ -1379,7 +1397,7 @@ body.page-icones .intro,body.page-icones .mj-tools,body.page-icones main.layout,
 .masse-table td.masse-sans{color:var(--muted);text-align:center}
 /* Toute la ligne à la couleur pastel de sa rareté, celle des bulles. */
 .masse-table tbody tr.r-commun{background:#e2ded7}.masse-table tbody tr.r-rare{background:#d9e6f5}
-.masse-table tbody tr.r-mystique{background:#e6dcf2}.masse-table tbody tr.r-epique{background:#f5e0cc}
+.masse-table tbody tr.r-mystique{background:#e6dcf2}.masse-table tbody tr.r-epique{background:#f5e0cc}.masse-table tbody tr.r-ressource{background:#f1e6d4}
 .masse-table tbody tr:hover{filter:brightness(1.03)}.masse-table tbody tr.neuve{outline:2px solid var(--accent);outline-offset:-2px}
 .masse-table tbody th,.masse-table tbody td{color:#2a2118}
 .masse-barre{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin:0 0 10px}.masse-barre select,.masse-barre button{width:auto;margin:0}

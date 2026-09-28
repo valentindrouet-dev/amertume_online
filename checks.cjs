@@ -2029,7 +2029,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.deepEqual(C.bonusDe(a,[],it),{pv:6,endu:1,vie:1,def:2,dmg:2,skills:[0,0,0,1,0,0,0,0]});
  assert.deepEqual(C.bonusDe(a,[]),C.bonusVide(),'sans équipement passé, les talents seuls — ici aucun');
  assert.equal(C.libelleBonus({carac:'def',valeur:1}),'+1 DEF');
- assert.ok(src.includes("o.rarete=rareteDe(o);o.bonus=normaliseBonusEquip(o.bonus);")&&src.includes("+sel('Rareté','rarete',rareteDe(a),RARETES)")
+ assert.ok(src.includes("o.rarete=rareteDe(o);o.bonus=normaliseBonusEquip(o.bonus);")&&src.includes("+(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))")
   &&src.includes("if(f.rarete)a.rarete=rareteDe({rarete:f.rarete.value});")&&src.includes(" if($('item-bonus'))a.bonus=lireBonusItem();")
   &&src.includes('function dessineBonusItem(){')&&src.includes('function lireBonusItem(){')&&src.includes("teinte:TEINTE_RARETE[rareteDe(o)]||TEINTE_OBJET.object,")
   &&src.includes("p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+")&&src.includes("p.className='cat-pill k-'+col+' r-'+rareteDe(o)+")
@@ -2569,7 +2569,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("if(a.category==='ressource'&&!(typeof a.cle==='string'&&CLE_MATERIAU.test(a.cle)))a.cle=cleLibre(a.name,new Set(ressourcesJeu().map(r=>r.cle)));"),'ressources et prix au formulaire de l’objet');}
 /* v0.282 — Au formulaire d'un objet, Mains revient sur la ligne de la rareté ; prix et ressources ont la leur. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("  +sel('Rareté','rarete',rareteDe(a),RARETES)\n  +(arme?sel('Mains','hands',")&&src.includes("  +'<div class=\"edit-grid prix-ressources\">'\n  +field(a.category==='ressource'?'Valeur (or)':'Prix (or)','price',")
+ assert.ok(src.includes("  +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))\n  +(arme?sel('Mains','hands',")&&src.includes("  +'<div class=\"edit-grid prix-ressources\">'\n  +field(a.category==='ressource'?'Valeur (or)':'Prix (or)','price',")
   &&fs.readFileSync('editor.css','utf8').includes('.edit-grid.prix-ressources{margin-top:12px}'),'prix et ressources sur une ligne, Mains avec la rareté');}
 /* v0.283 — Les ressources : l'or, les gemmes (trois tailles, quatre variétés, allumées ou éteintes)
    et les matériaux. Le domaine tient ses matériaux et ses gemmes — son or est son trésor — ; un
@@ -2944,4 +2944,32 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(!src.includes("ligne('↳ Requiert : '+socle)")&&src.includes("function arbreChange(){accordeArbres();")&&src.includes("catalog=normalizeCatalog(s.catalog);accordeArbres();")
   &&!src.includes("niv.textContent=t.name&&t.name!==libelleBonus(p,true)"),'plus de Requiert, plus de doublon sous un bonus');
  assert.ok(css.includes('.arbre-noeud.t-act:not(.bonus) .arbre-rond{background:#cfdcea}')&&css.includes('.arbre-noeud.t-ame:not(.bonus) .arbre-rond{background:#d3e5cd}'),'le rond a le fond de sa nature');}
-console.log('1723 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.330 — Le guide des prix, le prix suggéré ; les ressources sans effet ni rareté choisie ; le
+   magasin d'un clic ; les grandes images publiées à part. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),fief=fs.readFileSync('domaine.js','utf8'),part=fs.readFileSync('shared.js','utf8'),C=require('./combat.js');
+ const ctxG={OBJETS_CODES:{soin:{cle:'soin',nom:'Soin'},etat:{cle:'etat',nom:'État'}},keys:['white','bone','red','blue','green','black','yellow'],types:['Simple','Léger','Lourd','Mystique','Soin','Mortel','Phase','Faille'],
+  itemColumn:o=>o.category==='weapon'?(o.ranged?'ranged':'melee'):o.category,weaponHands:o=>o.ranged?2:(o.hands===2?2:1),objetCode:o=>o&&({soin:{cle:'soin',nom:'Soin'}})[o.effet]||null,
+  normaliseBonusEquip:l=>l||[],CARACS_EQUIP:[['pv','PV max'],['def','DEF']],rareteDe:o=>o.category==='ressource'?'ressource':o.rarete||'commun',NOM_RARETE:r=>({rare:'Rare',ressource:'Ressource'})[r]||'Commun',
+  ressourcesJeu:()=>[{cle:'fer',nom:'Fer',piece:{price:8}},{cle:'cuir',nom:'Cuir',piece:{price:4}}]};vm.createContext(ctxG);
+ vm.runInContext(src.slice(src.indexOf('const CATS_PRIX='),src.indexOf('// À côté d\'un prix : la suggestion'))+';this.normaliseGuidePrix=normaliseGuidePrix;this.prixSuggere=prixSuggere;this.detailPrix=detailPrix;',ctxG);
+ const g=ctxG.normaliseGuidePrix({des:{red:'12',white:-3,blue:'x'},def:25.4,rarete:{rare:200,epique:5000},effets:{soin:40}});
+ assert.equal(JSON.stringify([g.des.red,g.des.white,g.des.blue,g.def,g.rarete.rare,g.rarete.epique,g.effets.soin,g.effets.etat,g.rarete.ressource]),JSON.stringify([12,0,20,25,200,1000,40,25,100]),'le guide se relit : bornes, défauts, un prix par effet');
+ const epee={category:'weapon',hands:2,dice:{white:2,red:1},etat:'Feu',ressource1:'fer',ressource2:'cuir',rarete:'rare',effet:'soin',bonus:[{carac:'pv',valeur:2}]};
+ const sp=ctxG.prixSuggere(epee,g);
+ // base 5 + 2 blancs 0 + 1 rouge 12 + deux mains 5 + Feu 15 + Soin 40 + 2 PV 20 + Fer 8 + Cuir 4 = 109, × 2 (rare) = 218
+ assert.equal(sp.total,218,'la somme, multipliée par la rareté');assert.ok(ctxG.detailPrix(sp).includes('1 dé Lourd : 12')&&ctxG.detailPrix(sp).includes('Rare : × 2')&&ctxG.detailPrix(sp).endsWith('= 218 or'));
+ assert.equal(ctxG.prixSuggere({category:'armor',def:3,rarete:'commun'},g).total,10+75,'une armure : sa base et sa DEF');
+ assert.equal(ctxG.prixSuggere({category:'ressource',ressource1:'fer'},g).total,0,'une ressource ne compte pas d’autres ressources');
+ assert.ok(src.includes(" c.guidePrix=normaliseGuidePrix(c.guidePrix);")&&src.includes("function renderGuidePrix(){")&&src.includes("function renderArmory(){renderBiblioObjets();renderGuidePrix();")
+  &&src.includes("if(c.cle==='price'){const b=boutonSuggestion(),maj=()=>majSuggestion(b,o,c.lit(o));maj();majLigne.push(maj);")&&src.includes("sug.onclick=()=>pourTous(c,o=>c.ecrit(o,prixSuggere(o).total),'Prix suggérés par le guide')")
+  &&src.includes("const ligne=document.createElement('span');ligne.className='prix-ligne';f.price.before(ligne);ligne.append(f.price,b);")&&css.includes('.prix-suggere{'),'le prix suggéré, en masse et au formulaire');
+ // Les ressources : leur rareté à elles, ni effet, ni usage, ni bonus.
+ assert.equal(C.rareteDe({category:'ressource',rarete:'epique'}),'ressource');assert.equal(C.rareteDe({category:'object',rarete:'ressource'}),'commun');assert.equal(C.NOM_RARETE('ressource'),'Ressource');
+ assert.ok(src.includes("if(o.category==='ressource'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}")&&src.includes("  +(a.category==='ressource'?'':''\n  +'<h2 class=\"sous-titre\">Effet appliqué par le moteur</h2>'")
+  &&src.includes("{cle:'rarete',nom:'Rareté',type:'choix',opts:RARETES,pour:faite,")&&css.includes('.cat-pill.r-ressource{background:#efe2cc;'),'une ressource : ni effet, ni usage, ni bonus ; sa rareté brun clair');
+ // Le magasin : l'objet se clique, plus de bouton.
+ assert.ok(fief.includes("const agit=e=>{e.preventDefault();if(actif)faire()};p.onclick=agit;")&&fief.includes(" carte.append(p,nom);return carte}")&&!fief.includes("btn.className='dom-achat'"),'acheter ou vendre d’un clic sur l’objet');
+ // Les grandes images : envoyées à part, relues et vérifiées.
+ assert.ok(part.includes("const envoi=await envoieImages(value);const packed=SharedData.pack(envoi.value);")&&part.includes("const data=await rechargeImages(SharedData.validate(SharedData.unpack(chunks,m.bytes)),gen);")
+  &&part.includes("if(!SharedData.estImage(url)||await empreinte(url)!==h)throw Error('Image publiée invalide.');")&&part.includes("indexedDB.open('amertume-images',1)"),'les grandes images voyagent à part');}
+console.log('1745 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -1,9 +1,10 @@
 (function(root){
  const MAX=16*1024*1024,PART=196608;
- function pack(value){const text=JSON.stringify(value);if(text.length>MAX)throw Error('Contenu trop volumineux pour le partage : limite de 16 Mo.');const bytes=new TextEncoder().encode(text);if(bytes.length>MAX)throw Error('Contenu trop volumineux pour le partage : limite de 16 Mo.');const chunks=[];for(let i=0;i<bytes.length;i+=PART){const part=bytes.subarray(i,i+PART);let str='';for(let j=0;j<part.length;j+=8192)str+=String.fromCharCode(...part.subarray(j,j+8192));chunks.push(btoa(str))}return {chunks,bytes:bytes.length}}
+ const trop=n=>Error('Contenu trop volumineux pour le partage : '+(Math.ceil(n/104857.6)/10).toFixed(1).replace('.',',')+' Mo, pour une limite de 16 Mo.');
+ function pack(value){const text=JSON.stringify(value);if(text.length>MAX)throw trop(text.length);const bytes=new TextEncoder().encode(text);if(bytes.length>MAX)throw trop(bytes.length);const chunks=[];for(let i=0;i<bytes.length;i+=PART){const part=bytes.subarray(i,i+PART);let str='';for(let j=0;j<part.length;j+=8192)str+=String.fromCharCode(...part.subarray(j,j+8192));chunks.push(btoa(str))}return {chunks,bytes:bytes.length}}
  function unpack(chunks,bytes){if(!Number.isInteger(bytes)||bytes<1||bytes>MAX||chunks.length>86)throw Error('Publication invalide.');const out=new Uint8Array(bytes);let at=0;for(const c of chunks){if(typeof c!=='string'||c.length>262144)throw Error('Bloc invalide.');const str=atob(c);if(at+str.length>bytes)throw Error('Taille invalide.');for(let i=0;i<str.length;i++)out[at++]=str.charCodeAt(i)}if(at!==bytes)throw Error('Publication incomplète.');return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(out))}
  function validate(s){if(!s||s.schema!==1||!Array.isArray(s.actors)||!s.actors.length||s.actors.length>500||!s.actors.some(a=>a.hero===true)||!s.catalog||!Array.isArray(s.catalog.items)||!Array.isArray(s.catalog.monsters)||(s.catalog.talents!==undefined&&(!Array.isArray(s.catalog.talents)||s.catalog.talents.length>2000)))throw Error('Format de contenu incompatible.');
- const visit=v=>{if(v===null||v===undefined)return;if(typeof v==='number'&&!Number.isFinite(v))throw Error('Valeur invalide.');if(typeof v==='object')for(const [k,val]of Object.entries(v)){if(['__proto__','constructor','prototype'].includes(k))throw Error('Clé interdite.');if(k==='id'&&typeof val==='string'&&!/^[A-Za-z0-9_-]{1,100}$/.test(val))throw Error('Identifiant invalide.');if(['image','mapImage'].includes(k)&&val!==null&&val!==''&&(typeof val!=='string'||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(val)))throw Error('Image publiée invalide.');visit(val)}};visit(s);
+ const visit=v=>{if(v===null||v===undefined)return;if(typeof v==='number'&&!Number.isFinite(v))throw Error('Valeur invalide.');if(typeof v==='object')for(const [k,val]of Object.entries(v)){if(['__proto__','constructor','prototype'].includes(k))throw Error('Clé interdite.');if(k==='id'&&typeof val==='string'&&!/^[A-Za-z0-9_-]{1,100}$/.test(val))throw Error('Identifiant invalide.');if(['image','mapImage'].includes(k)&&val!==null&&val!==''&&(typeof val!=='string'||!estImage(val)&&!lisRef(val)))throw Error('Image publiée invalide.');visit(val)}};visit(s);
  if(s.maps!==undefined){if(!Array.isArray(s.maps)||s.maps.length>60)throw Error('Cartes publiées invalides.');
   for(const m of s.maps){if(!m||typeof m.name!=='string'||!Array.isArray(m.walls||[])||!Array.isArray(m.doors||[])||!Array.isArray(m.foes||[]))throw Error('Carte publiée invalide.');
    for(const r of [...(m.walls||[]),...(m.visions||[]),...(m.doors||[]),...(m.start?[m.start]:[])])if(!r||!['x','y','w','h'].every(k=>Number.isFinite(r[k])&&r[k]>=-1&&r[k]<=101))throw Error('Zone de carte invalide.');
@@ -15,5 +16,20 @@
  for(const a of s.actors){if(typeof a.name!=='string'||typeof a.hero!=='boolean'||!Array.isArray(a.pool)||a.pool.length!==7||!a.pool.every(v=>Number.isInteger(v)&&v>=0&&v<=12)||!Array.isArray(a.skills)||a.skills.length!==8||!a.skills.every(v=>Number.isFinite(v)&&v>=0&&v<=30)||(a.states!==undefined&&(!Array.isArray(a.states)||a.states.length>40||!a.states.every(e=>typeof e==='string'&&e.length<=40))))throw Error('Fiche publiée invalide.');for(const k of ['hp','max','def','dmg','x','y'])if(!Number.isFinite(a[k])||a[k]<0)throw Error('Caractéristique invalide.');if(a.max<1||a.hp>a.max)throw Error('PV invalides.')}
  return s;
  }
- const api={pack,unpack,validate,MAX};if(typeof module!=='undefined')module.exports=api;else root.SharedData=api;
+ /* Les grandes images voyagent à part, sous l'empreinte de leur contenu (shared.js) : la
+    publication n'en garde qu'une référence, « amertume-image:<empreinte>:<nombre de morceaux> ».
+    Ces outils trouvent les unes et les autres et les remplacent, sans toucher au reste. */
+ const SEUIL_IMAGE=32768,PART_IMAGE=262144;
+ const estImage=v=>typeof v==='string'&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(v);
+ const estGrandeImage=v=>typeof v==='string'&&v.length>SEUIL_IMAGE&&v.startsWith('data:image/')&&estImage(v);
+ const refImage=(h,parts)=>'amertume-image:'+h+':'+parts;
+ function lisRef(r){const m=typeof r==='string'&&r.length<100?/^amertume-image:([0-9a-f]{64}):([1-9][0-9]{0,3})$/.exec(r):null;return m?{h:m[1],parts:Number(m[2])}:null}
+ // Une copie du contenu, chaque texte passé à f ; les clés dangereuses ne passent pas.
+ function parcours(v,f){if(typeof v==='string')return f(v);if(Array.isArray(v))return v.map(x=>parcours(x,f));
+  if(v&&typeof v==='object'){const o={};for(const k of Object.keys(v))if(!['__proto__','constructor','prototype'].includes(k))o[k]=parcours(v[k],f);return o}return v}
+ function releve(value,test){const s=new Set();parcours(value,v=>{if(test(v))s.add(v);return v});return s}
+ const grandesImages=value=>releve(value,estGrandeImage);
+ const refsImages=value=>releve(value,v=>!!lisRef(v));
+ const remplace=(value,table)=>parcours(value,v=>table.has(v)?table.get(v):v);
+ const api={pack,unpack,validate,MAX,SEUIL_IMAGE,PART_IMAGE,estImage,refImage,lisRef,grandesImages,refsImages,remplace};if(typeof module!=='undefined')module.exports=api;else root.SharedData=api;
 })(globalThis);

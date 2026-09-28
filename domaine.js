@@ -600,16 +600,18 @@ function blocMagasin(out,b){const presents=actors.filter(a=>a.hero&&lieuDe(a)===
  out.append(g)}
 /* Une pièce au magasin : le carré de l'armurerie, sa description au survol, son nom, le prix dans
    un rond doré en haut à droite du carré — d'achat ou de revente — et le bouton qui agit. */
+/* Un article : un clic sur l'objet l'achète ou le vend ; hors de portée, il pâlit. Ce qu'un clic
+   ferait se lit au bas de sa bulle. */
 function carteMagasin(o,n,prix,actif,titre,faire,sens){const carte=document.createElement('div');carte.className='cat-carte dom-article '+sens;
  const p=gearCarre(o,n,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();
- p.removeAttribute('title');p.setAttribute('aria-label',o.name);
- if(BULLES)surveille(p,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});
+ p.removeAttribute('title');p.setAttribute('aria-label',titre);p.classList.add(actif?'a-cliquer':'indispo');p.setAttribute('aria-disabled',String(!actif));
+ const agit=e=>{e.preventDefault();if(actif)faire()};p.onclick=agit;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')agit(e)};
+ if(BULLES)surveille(p,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');
+  const a=document.createElement('p');a.className='bulle-action'+(actif?'':' non');a.textContent=actif?'Clic : '+titre.charAt(0).toLowerCase()+titre.slice(1)+'.':titre;d.append(a);ouvrirBulle(p,d,'bulle-gear')});
  const nom=document.createElement('span');nom.className='nom-carte';nom.textContent=o.name;
  const piece=document.createElement('span');piece.className='dom-prix';piece.textContent=prix?prix.toLocaleString('fr-FR'):'0';
  piece.title=(sens==='vente'?'Revente : ':'Prix : ')+(prix?prix.toLocaleString('fr-FR')+' or':'gratuit');p.append(piece);
- const btn=document.createElement('button');btn.type='button';btn.className='dom-achat';btn.textContent=sens==='vente'?'Vendre':'Acheter';
- btn.disabled=!actif;btn.title=titre;btn.setAttribute('aria-label',titre);btn.onclick=faire;
- carte.append(p,nom,btn);return carte}
+  carte.append(p,nom);return carte}
 function apresMagasin(){renderDomaine(true);render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 function acheterPour(a,o){const p=peutAcheter(a,o),ici=batimentDom(lieuDe(a));if(!p.ok||!agitPour(a)||!ici||ici.fonction!=='magasin'||!fonctionActive(ici))return;
  ajouteOr(a,-p.prix);ajouterInventaire(a,o);log(nomNum(a)+' achète '+o.name+' au magasin'+(p.prix?' pour '+p.prix+' or':'')+'.');apresMagasin()}

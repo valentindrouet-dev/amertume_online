@@ -1390,8 +1390,9 @@ function bonusTalents(portes){const out=bonusVide();
    Une pièce a une rareté — commune, rare, mystique, épique — qui la teinte, et peut
    conférer des bonus, une ligne chacun, qui jouent tant qu'elle est portée et se cumulent. */
 const RARETES=[['commun','Commun'],['rare','Rare'],['mystique','Mystique'],['epique','Épique']];
-function rareteDe(o){const r=o&&o.rarete;return RARETES.some(([k])=>k===r)?r:'commun'}
-const NOM_RARETE=r=>(RARETES.find(([k])=>k===r)||RARETES[0])[1];
+// Une ressource a sa rareté à elle, « Ressource », qu'on ne choisit pas.
+function rareteDe(o){if(o&&o.category==='ressource')return 'ressource';const r=o&&o.rarete;return RARETES.some(([k])=>k===r)?r:'commun'}
+const NOM_RARETE=r=>r==='ressource'?'Ressource':(RARETES.find(([k])=>k===r)||RARETES[0])[1];
 const CARACS_EQUIP=[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['def','DEF'],['dmg','Dégâts'],['comp','Compétence']];
 function normaliseBonusEquip(l){return (Array.isArray(l)?l:[]).filter(b=>b&&typeof b==='object').slice(0,12).map(b=>({
  carac:CARACS_EQUIP.some(([k])=>k===b.carac)?b.carac:'pv',valeur:Math.max(1,Math.min(99,Math.trunc(Number(b.valeur))||1)),
