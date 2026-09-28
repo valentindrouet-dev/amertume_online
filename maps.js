@@ -505,10 +505,10 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
 const tabs=document.createElement('nav');tabs.className='tabs';
 tabs.innerHTML='<button data-page="table" class="on">Table de jeu</button><button data-page="maps">Cartes</button>'
  +'<button data-page="domaine">Domaine</button><button data-page="heroes">Aventuriers</button><button data-page="talents">Talents</button>'
- +'<button data-page="armory">Armurerie</button><button data-page="bestiary">Bestiaire</button>'
+ +'<button data-page="armory">Armurerie</button><button data-page="bestiary">Bestiaire</button><button data-page="icones">Icônes</button>'
  +'<button data-page="settings">Paramètres</button>';
 document.querySelector('.view-controls').before(tabs);
-const PAGES=['table','maps','domaine','heroes','talents','armory','bestiary','settings'];
+const PAGES=['table','maps','domaine','heroes','talents','armory','bestiary','icones','settings'];
 // Les Paramètres sont un réglage d'appareil, pas du contenu de partie : ils restent ouverts aux joueurs.
 /* La troupe a ses propres pages : ses fiches, le bestiaire de ce qu'elle a analysé, et le
    domaine, en lecture. Tout ce qui s'y modifie reste au MJ — voir « vue-joueur » dans editor.css. */
@@ -538,6 +538,7 @@ function showPage(p,retenir=true){if(!PAGES_LIBRES.includes(p)&&view!=='mj')retu
  else if(p==='talents')renderTalents();
  else if(p==='armory')renderArmory();
  else if(p==='bestiary')renderBestiary();
+ else if(p==='icones')renderIcones();
  else if(p==='settings')renderSettings();
  // De retour sur la table, tout est remesuré : la carte était masquée, donc sans largeur,
  // et les socles comme le brouillard se calculent sur cette largeur.

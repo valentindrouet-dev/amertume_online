@@ -270,7 +270,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
   assert.ok(src.includes('const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_ETATS,...LOGOS_DIVERS];')
    &&src.includes('function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}')
    &&src.includes("(at.logos||[]).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
-   &&src.includes("...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])])+'</div>'")
+   &&src.includes("...iconesPlanches(),...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])]))+'</div>'")
    &&src.includes("logos:logoValide(f['ai'+i].value)?[f['ai'+i].value]:[],")
    &&src.includes("...(etats=>({etats,etat:etats[0]||''}))([...$('actor-form').querySelectorAll('input[name=\"ax'+i+'\"]:checked')].map(x=>x.value).filter(e=>ETATS_JEU.includes(e))),")
    &&fs.readFileSync('editor.css','utf8').includes('.best-att-tete .etat-inflige{margin-left:auto}')
@@ -1849,7 +1849,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
    la sauvegarde qui l'emporte. Le domaine ne se publie pas et ne va pas à la table. */
 {const fief=fs.readFileSync('domaine.js','utf8'),partage=fs.readFileSync('shared.js','utf8');
  assert.ok(page.includes('<script src="./maps.js?v=')&&/maps\.js\?v=[\d.]+"><\/script><script src="\.\/domaine\.js\?v=/.test(page),'domaine.js se charge après maps.js');
- assert.ok(cartes.includes("const PAGES=['table','maps','domaine','heroes','talents','armory','bestiary','settings'];")
+ assert.ok(cartes.includes("const PAGES=['table','maps','domaine','heroes','talents','armory','bestiary','icones','settings'];")
   &&cartes.includes('<button data-page="domaine">Domaine</button>')&&cartes.includes("else if(p==='domaine')renderDomaine();")
   &&cartes.includes("if(typeof domaineEdite!=='undefined'&&domaineEdite){renderMapList();renderDomaineEditeur()}")
   &&cartes.includes("const editeDomaine=()=>typeof domaineEdite!=='undefined'&&domaineEdite;")
@@ -2523,11 +2523,11 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const ext=l=>l==='DEGATS'?'.webp':'.png';
  const autres=fs.readdirSync('img').filter(f=>/\.(png|webp)$/i.test(f)&&!/^(weapon|spell|item|attack|ressource)_/.test(f)).sort();
  assert.deepEqual([...lire('LOGOS_ETATS'),...lire('LOGOS_DIVERS')].map(l=>l+ext(l)).sort(),autres,'LOGOS_ETATS et LOGOS_DIVERS doivent lister les autres images : '+autres.join(', '));
- assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("function poseLogo(im,l){im.onerror=null;im.src=imgUrl(fichierLogo(l));")
+ assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("function poseLogo(im,l){im.onerror=null;if(estIconePlanche(l)){poseIcone(im,l);return}im.src=imgUrl(fichierLogo(l));")
   &&src.includes("return logoImage(t&&t.logo,LOGOS_TOUS,cls)}")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
   &&src.includes(" t.logo=f.logo&&(logoValide(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';")
   &&src.includes("const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],...DOSSIERS_LOGOS.map(([d,nom])=>[nom,LOGOS_DOSSIERS[d]]),['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
- const ctxL={};vm.createContext(ctxL);vm.runInContext(src.match(/const estLogoDossier=[^\n]*/)[0]+'\n'+src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
+ const ctxL={};vm.createContext(ctxL);vm.runInContext(fs.readFileSync('planches.js','utf8').match(/const estIconePlanche=[^\n]*/)[0]+'\n'+src.match(/const estLogoDossier=[^\n]*/)[0]+'\n'+src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
  assert.deepEqual(['BLINDAGE INITIAL','SAIGNEE','DEF 3','weapon_cape_elfique','DEGATS','weapon_cuir_epais','talents/brise_glace.png'].map(ctxL.nomLogo),['Blindage initial','Saignée','DEF 3','Cape elfique','Dégâts','Cuir épais','Brise glace']);
  assert.ok(src.includes("surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'")&&!src.includes("b.title=t.name+' — '+[talentType(t)[2]")
   &&src.includes("(ancre.closest('dialog[open]')||document.body).append(bulleEl);")&&feuille.includes(".talent-bulle-nom b{font:700 14px 'Killam'"),'l’arbre décrit ses talents au survol, dans sa fenêtre');}
@@ -2613,7 +2613,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(attendues,fichiers.filter(f=>/^ressource_(brisure|eclat|gemme)_/.test(f)),'chaque gemme a son icône, et chaque icône sa gemme');
  assert.equal(C.iconeGemme('brome','rubis'),'ressource_gemme_rubis');
  const ctxL={TAILLES_GEMMES:C.TAILLES_GEMMES,VARIETES_GEMMES:C.VARIETES_GEMMES,FICHIERS_TAILLES:C.FICHIERS_TAILLES};vm.createContext(ctxL);
- vm.runInContext(src.match(/const estLogoDossier=[^\n]*/)[0]+'\n'+src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
+ vm.runInContext(fs.readFileSync('planches.js','utf8').match(/const estIconePlanche=[^\n]*/)[0]+'\n'+src.match(/const estLogoDossier=[^\n]*/)[0]+'\n'+src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
  assert.deepEqual(['ressource_eclat_rubis','ressource_gemme_emeraude','ressource_brisure_citrine'].map(ctxL.nomLogo),['Éclat de rubis','Brôme d’émeraude','Brisure de citrine']);
  assert.ok(src.includes("el.append(iconeDeGemme(ta,v,eteinte),(eteinte?' ':'')+n);")&&src.includes("th.append(iconeDeGemme('brome',v,false),nom);")
   &&fs.readFileSync('editor.css','utf8').includes('table.gemmes .gem-eteinte .gem-ico{width:11px;height:11px;filter:grayscale(1)'),'les icônes dans la grille, grises pour les éteintes');}
@@ -2851,7 +2851,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    talent (la liste vient de GitHub, le dépôt étant public). Un chemin à dossier s'encode
    morceau par morceau, et le suffixe d'élément se remplace aussi devant une extension. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
- const ctxD={};vm.createContext(ctxD);vm.runInContext(src.match(/const estLogoDossier=[^\n]*/)[0]+';this.estLogoDossier=estLogoDossier;',ctxD);
+ const ctxD={};vm.createContext(ctxD);vm.runInContext(fs.readFileSync('planches.js','utf8').match(/const estIconePlanche=[^\n]*/)[0]+'\n'+src.match(/const estLogoDossier=[^\n]*/)[0]+';this.estLogoDossier=estLogoDossier;',ctxD);
  assert.deepEqual(['talents/brise_glace.png','talents/orbe.webp','talents/a b.png','talents/../x.png','spell_orbes','talents/x.gif'].map(ctxD.estLogoDossier),[true,true,false,false,false,false],'une icône du dossier : un nom sûr et une image, rien au-dessus');
  assert.ok(fs.existsSync('img/talents/README.md')&&src.includes("fetch('https://api.github.com/repos/'+depot+'/git/trees/main?recursive=1'")&&src.includes("const fichierLogo=l=>estLogoDossier(l)?l:l+(EXTENSIONS_LOGO[l]||'.png');")
   &&src.includes("function logoImage(l,liste,cls){if(!l||!(liste.includes(l)||estLogoDossier(l)))return null;")&&page.includes("function imgUrl(nom){return './img/'+String(nom).split('/').map(encodeURIComponent).join('/')+'?v='+IMG_V}"),'le dossier des talents, lu sur GitHub, servi morceau par morceau');
@@ -2887,11 +2887,11 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const motif=src.match(/const estLogoDossier=l=>\/\^\(([a-z|]+)\)/)[1].split('|');
  assert.deepEqual(motif,dossiers,'le motif des logos de dossier suit la liste des dossiers');
  dossiers.forEach(d=>assert.ok(fs.existsSync('img/'+d+'/README.md'),'img/'+d+' a sa notice'));
- const ctxD={};vm.createContext(ctxD);vm.runInContext(src.match(/const estLogoDossier=[^\n]*/)[0]+';this.e=estLogoDossier;',ctxD);
+ const ctxD={};vm.createContext(ctxD);vm.runInContext(fs.readFileSync('planches.js','utf8').match(/const estIconePlanche=[^\n]*/)[0]+'\n'+src.match(/const estLogoDossier=[^\n]*/)[0]+';this.e=estLogoDossier;',ctxD);
  assert.deepEqual(['equipement/hache_runes.png','objets/potion.webp','attaques/morsure.png','talents/x.png','autre/x.png','equipement/a/b.png'].map(ctxD.e),[true,false,false,true,false,false],'v0.311 : les deux dossiers, talents et équipement, rien d’autre');
  assert.ok(!fs.existsSync('img/objets')&&!fs.existsSync('img/attaques'),'ni dossier objets, ni dossier attaques');
- assert.ok(src.includes("const garde=value&&!FAMILLES_LOGOS.some(([,l])=>l.includes(value));")&&src.includes("return o&&estLogoDossier(o.logo)&&!l.includes(o.logo)?[o.logo,...l]:l}")
-  &&src.includes("function logosItem(o){const c=o&&o.category,d=LOGOS_DOSSIERS.equipement;")
+ assert.ok(src.includes("const familles=[...famillesPlanches(),...FAMILLES_LOGOS],garde=value&&!familles.some(([,l])=>l.includes(value));")&&src.includes("return o&&estLogoDossier(o.logo)&&!l.includes(o.logo)?[o.logo,...l]:l}")
+  &&src.includes("function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches(''),...iconesPlanches('talents'),...LOGOS_DOSSIERS.equipement];")
   &&src.includes(".filter(f=>f&&f.type==='blob'&&String(f.path).startsWith('img/')).map(f=>String(f.path).slice(4))"),'chaque menu prend son dossier, et garde le logo en place');}
 /* v0.312 — L'aperçu du logo dans le formulaire de l'Armurerie ajoutait « .png » au nom : une
    icône de img/equipement, qui porte déjà son extension, devenait « x.png.png », introuvable.

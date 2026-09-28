@@ -29,6 +29,8 @@ const SEGMENTS=['c','g','gc','d','dc'];
 const RESSOURCES=[...MATERIAUX].sort((x,y)=>x.localeCompare(y,'fr'));
 const ressourceValide=r=>RESSOURCES.includes(r)?r:'';
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
+ // Les planches d'icônes découpées, leurs noms et catégories (planches.js).
+ c.planches=normalisePlanches(c.planches);
  // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
  c.motsCles=[...new Set((Array.isArray(c.motsCles)?c.motsCles:[]).map(m=>String(m||'').trim().slice(0,60)).filter(Boolean))].slice(0,200);
  /* Les spécialisations de chaque classe, dans l'ordre du MJ : des noms, trois au plus par
@@ -2523,6 +2525,8 @@ const itemDialog=dialog('item-editor','Objet','<form id="item-form"><div id="ite
 itemDialog.addEventListener('close',()=>{itemApres=null});
 const imgDialog=dialog('image-editor','Optimiser l’image','<div class="edit-grid"><label>Taille maximale<select id="image-size"></select></label><label>Qualité WebP<input id="image-quality" type="range" min="70" max="100" value="90"><span id="quality-label">90 %</span></label><div><button id="image-recalc">Refaire l’aperçu</button></div></div><div id="token-frame" hidden><p>Cadrage du socle</p><div class="cadre-rond"><canvas id="token-canvas" width="220" height="220" aria-label="Aperçu du socle"></canvas></div><div class="cadre-reglages"><label>Zoom<input id="token-zoom" type="range" min="40" max="320" value="100"></label><span id="token-zoom-label">100 %</span><button type="button" id="token-center">Recentrer</button></div><p class="muted">Glisse l’image dans le rond pour la déplacer ; la molette zoome. La copie optimisée se refait toute seule après chaque réglage.</p></div><div class="image-comparison"><div><p>Original</p><img id="image-before" alt="Image originale"><p class="muted" id="before-info"></p></div><div><p>Copie optimisée</p><img id="image-after" alt="Image optimisée"><p class="muted" id="after-info"></p></div></div><p class="form-error" id="image-error" role="alert"></p><p class="muted">Proportions et transparence conservées. L’original n’est pas modifié. PNG de secours si WebP indisponible.</p><div class="form-actions"><button id="image-cancel">Annuler</button><button class="primary" id="image-accept" disabled>Utiliser cette image</button></div>');
 function field(label,key,value,type='text',extra=''){return '<label>'+label+'<input name="'+key+'" type="'+type+'" value="'+esc(value)+'" '+extra+'></label>'}
+// Un menu de logos garde son menu, et gagne à côté la grille pour choisir à l'œil (planches.js).
+const selGrille=h=>h.replace('<select','<span class="logo-ligne"><select').replace('</select></label>','</select>'+BOUTON_GRILLE+'</span></label>');
 function sel(label,key,value,opts){return '<label>'+label+'<select name="'+key+'">'+opts.map(([v,t])=>'<option value="'+v+'" '+(String(value)===String(v)?'selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label>'}
 /* Le choix des dés se fait au doigt : une pastille par couleur, teintée comme le dé
    lui-même, avec un moins et un plus de part et d'autre du compte. Le champ de saisie
@@ -2629,7 +2633,7 @@ function refreshEquip(){const f=$('actor-form').elements;if(!f||!$('equip-summar
    :'DEF : la sienne, sans équipement pour l’augmenter.')}
 function renderAttacks(){if(!$('attack-edit-list'))return;$('attack-edit-list').innerHTML=attackDraft.map((a,i)=>'<div class="attack-card" data-attack="'+i+'"><div class="edit-grid">'+field('Nom','an'+i,a.name,'text','required maxlength="100"')+sel('Portée','ar'+i,a.range,[['contact','Contact'],['distance','Distance']])+sel('Cibles','at'+i,a.targets,[['one','Unique'],['all','Multiples (manuel)']])
   // Son icône, sur le bouton de la table et au journal.
-  +sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...[...new Set([...(estLogoDossier((a.logos||[])[0])?[a.logos[0]]:[]),...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])])+'</div>'
+  +selGrille(sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...[...new Set([...(estLogoDossier((a.logos||[])[0])?[a.logos[0]]:[]),...iconesPlanches(),...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])]))+'</div>'
   // Les états qu'elle inflige : autant qu'on en coche, tous posés à la touche.
   +'<div class="etats-attaque" role="group" aria-label="États infligés"><span class="etats-titre">États infligés</span>'
   +ETATS_JEU.map(e=>'<label class="etat-case"><input type="checkbox" name="ax'+i+'" value="'+esc(e)+'"'+(etatsAttaque(a).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('');habilleDes($('attack-edit-list'));document.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
@@ -2835,19 +2839,22 @@ const EXTENSIONS_LOGO={DEGATS:'.webp'};
    chemin suffit. Le logo porte son dossier et son extension : « equipement/hache_runes.png ». */
 const DOSSIERS_LOGOS=[['talents','Dossier talents'],['equipement','Dossier équipement']];
 const LOGOS_DOSSIERS=Object.fromEntries(DOSSIERS_LOGOS.map(([d])=>[d,[]]));
-const estLogoDossier=l=>/^(talents|equipement)\/[A-Za-z0-9_.-]+\.(png|webp|jpe?g)$/i.test(String(l||''));
+// Une icône découpée dans une planche vaut un logo de dossier : « planches/x.webp#7 ».
+const estLogoDossier=l=>/^(talents|equipement)\/[A-Za-z0-9_.-]+\.(png|webp|jpe?g)$/i.test(String(l||''))||estIconePlanche(l);
 // Toutes les icônes des dossiers, dans l'ordre des dossiers.
 const logosDesDossiers=()=>DOSSIERS_LOGOS.flatMap(([d])=>LOGOS_DOSSIERS[d]);
 // Le dépôt d'où le site est servi : « compte.github.io/depot/ » donne « compte/depot ».
 function depotPages(){const m=/^([a-z0-9-]+)\.github\.io$/i.exec(location.hostname),r=location.pathname.split('/').filter(Boolean)[0];return m&&r?m[1]+'/'+r:''}
 // La liste gardée porte toujours son nom d'origine ; elle couvre désormais tous les dossiers.
 async function chargeDossiersLogos(){const depot=depotPages();if(!depot)return;
- const CLE='amertume-dossier-talents',pose=l=>DOSSIERS_LOGOS.forEach(([d])=>LOGOS_DOSSIERS[d].splice(0,Infinity,...l.filter(x=>estLogoDossier(x)&&x.startsWith(d+'/'))));
+ const CLE='amertume-dossier-talents',pose=l=>{DOSSIERS_LOGOS.forEach(([d])=>LOGOS_DOSSIERS[d].splice(0,Infinity,...l.filter(x=>estLogoDossier(x)&&x.startsWith(d+'/'))));
+  // Les planches d'icônes de img/planches, que l'onglet Icônes découpe.
+  PLANCHES_FICHIERS.splice(0,Infinity,...l.filter(estFichierPlanche));if(document.body.classList.contains('page-icones'))renderIcones()};
  let cache=null;try{cache=JSON.parse(localStorage.getItem(CLE)||'null')}catch(e){}
  if(cache&&Array.isArray(cache.liste)){pose(cache.liste);if(Date.now()-cache.t<120000)return}
  try{const r=await fetch('https://api.github.com/repos/'+depot+'/git/trees/main?recursive=1',{headers:{Accept:'application/vnd.github+json'}});if(!r.ok)return;
   const liste=((await r.json()).tree||[]).filter(f=>f&&f.type==='blob'&&String(f.path).startsWith('img/')).map(f=>String(f.path).slice(4))
-   .filter(estLogoDossier).sort((a,b)=>a.localeCompare(b,'fr'));
+   .filter(x=>estLogoDossier(x)||estFichierPlanche(x)).sort((a,b)=>a.localeCompare(b,'fr'));
   pose(liste);try{localStorage.setItem(CLE,JSON.stringify({t:Date.now(),liste}))}catch(e){}}catch(e){}}
 chargeDossiersLogos();
 const fichierLogo=l=>estLogoDossier(l)?l:l+(EXTENSIONS_LOGO[l]||'.png');
@@ -2868,6 +2875,8 @@ const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES
 const NOMS_LOGOS={SAIGNEE:'Saignée',DEGATS:'Dégâts',weapon_cuir_epais:'Cuir épais'};
 // Le nom d'un logo : son fichier sans préfixe ; un nom en capitales se lit en minuscules, sauf DEF.
 const nomLogo=l=>{if(NOMS_LOGOS[l])return NOMS_LOGOS[l];
+ // Une icône de planche porte le nom que le MJ lui a donné dans l'onglet Icônes.
+ if(estIconePlanche(l))return nomIcone(l);
  // Une icône du dossier des talents se nomme par son fichier : « talents/brise_glace.png », « Brise glace ».
  if(estLogoDossier(l))return nomLogo(String(l).replace(/^[a-z]+\//i,'').replace(/\.[a-z]+$/i,''));
  if(String(l||'').includes('{logo}'))return nomLogo(String(l).replace('{logo}','x')).replace(/ x$/,'')+' de l’élément';
@@ -2877,17 +2886,18 @@ const nomLogo=l=>{if(NOMS_LOGOS[l])return NOMS_LOGOS[l];
   if(t&&v)return t[2]+(/^[aeiouéèêh]/i.test(v[1])?' d’':' de ')+v[1].toLowerCase()}let n=String(l||'').replace(/^(weapon|spell|item|attack)_/,'').replace(/[_-]+/g,' ');
  if(n===n.toUpperCase()&&!/^DEF\b/.test(n))n=n.toLowerCase();return n?n[0].toUpperCase()+n.slice(1):''};
 // Un menu de logos en familles : un groupe par famille, « — aucun — » en tête.
-function selLogos(label,key,value,sansElementaires){const garde=value&&!FAMILLES_LOGOS.some(([,l])=>l.includes(value));
- return '<label>'+label+'<select name="'+key+'"><option value="">— aucun —</option>'
+// Les icônes de planches en tête, par catégorie : ce sont les nouvelles qu'on cherche.
+function selLogos(label,key,value,sansElementaires){const familles=[...famillesPlanches(),...FAMILLES_LOGOS],garde=value&&!familles.some(([,l])=>l.includes(value));
+ return '<label>'+label+'<span class="logo-ligne"><select name="'+key+'"><option value="">— aucun —</option>'
  // Un logo choisi que les menus ne proposent pas (liste pas encore venue) reste en tête : l'enregistrer ne l'efface pas.
  +(garde?'<option value="'+esc(value)+'" selected>'+esc(nomLogo(value))+'</option>':'')
- +FAMILLES_LOGOS.filter(([,l])=>l.length&&!(sansElementaires&&l===LOGOS_ELEMENTAIRES)).map(([f,l])=>'<optgroup label="'+esc(f)+'">'+l.map(v=>'<option value="'+esc(v)+'"'+(v===value?' selected':'')+'>'+esc(nomLogo(v))+'</option>').join('')+'</optgroup>').join('')
- +'</select></label>'}
+ +familles.filter(([,l])=>l.length&&!(sansElementaires&&l===LOGOS_ELEMENTAIRES)).map(([f,l])=>'<optgroup label="'+esc(f)+'">'+l.map(v=>'<option value="'+esc(v)+'"'+(v===value?' selected':'')+'>'+esc(nomLogo(v))+'</option>').join('')+'</optgroup>').join('')
+ +'</select>'+BOUTON_GRILLE+'</span></label>'}
 // Le menu de logos d'un objet dépend de sa catégorie : une arme ou une armure choisit parmi
 // les weapon_*, une munition parmi les deux (le carquois de flèches est un weapon_*), tout
 // le reste parmi les item_*.
 // Les icônes des dossiers viennent en tête : ce sont les nouvelles qu'on cherche.
-function logosItem(o){const c=o&&o.category,d=LOGOS_DOSSIERS.equipement;
+function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches(''),...iconesPlanches('talents'),...LOGOS_DOSSIERS.equipement];
  const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:[...d,...LOGOS_OBJET];
  // Le logo en place reste offert, même si la liste des dossiers n'est pas venue.
  return o&&estLogoDossier(o.logo)&&!l.includes(o.logo)?[o.logo,...l]:l}
@@ -2898,7 +2908,7 @@ function logoImage(l,liste,cls){if(!l||!(liste.includes(l)||estLogoDossier(l)))r
 /* Poser l'image d'un logo. Une icône du dossier des talents peut être listée par GitHub avant
    que le site ne l'ait publiée : la première réponse est alors « introuvable ». L'image se
    reprend aussitôt au dépôt lui-même, où elle est dès l'envoi. */
-function poseLogo(im,l){im.onerror=null;im.src=imgUrl(fichierLogo(l));const depot=estLogoDossier(l)?depotPages():'';
+function poseLogo(im,l){im.onerror=null;if(estIconePlanche(l)){poseIcone(im,l);return}im.src=imgUrl(fichierLogo(l));const depot=estLogoDossier(l)?depotPages():'';
  if(depot)im.onerror=()=>{im.onerror=null;im.src='https://raw.githubusercontent.com/'+depot+'/main/img/'+l.split('/').map(encodeURIComponent).join('/')}}
 function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)}
 // Le logo d'un talent : n'importe quelle image du dossier.
@@ -2959,7 +2969,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
  $('item-fields').innerHTML='<div class="edit-grid">'
   +field('Nom','name',a.name,'text','required maxlength="120"')
   +sel('Catégorie','category',cat,ITEM_CATS)
-  +sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])])
+  +selGrille(sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])]))
   +sel('Rareté','rarete',rareteDe(a),RARETES)
   +(arme?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="99"')
