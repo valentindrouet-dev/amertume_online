@@ -1411,7 +1411,9 @@ function trieObjets(liste,tri){const nom=(x,y)=>x[0].name.localeCompare(y[0].nam
    tableau, une ligne chacune, chaque valeur modifiable sur place. En tête de colonne, de quoi
    la changer pour toutes d'un coup : fixer, multiplier ou ajouter un prix, une DEF ; choisir une
    rareté, une ressource, des mains ; mettre en vente au magasin ou l'en retirer. */
-let armoryMasse=false,armoryNeuf=null;
+/* Le tri du tableau : null, c'est l'ordre de l'Armurerie — armes de mêlée, à distance, armures,
+   objets, ressources, trésors ; sinon une colonne et un sens, choisis d'un clic sur son en-tête. */
+let armoryMasse=false,armoryNeuf=null,masseTri=null;
 /* Créer une pièce sans quitter le tableau : sa catégorie, puis une ligne neuve, son nom prêt à
    écrire. La catégorie proposée est celle qu'on filtre. */
 const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['treasure','Trésor']];
@@ -1422,33 +1424,49 @@ function barreMasse(boite,choisie){const barre=document.createElement('div');bar
  b.onclick=()=>{const c=cat.value,o={id:crypto.randomUUID(),name:'Nouvelle pièce',category:c==='melee'||c==='ranged'?'weapon':c,ranged:c==='ranged',hands:c==='ranged'?2:1,
    qty:1,price:0,ressource1:'',ressource2:'',magasin:false,def:0,slot:'torse',dice:{},traits:[]};
   catalog.items.push(o);normalizeCatalog(catalog);armoryNeuf=o.id;scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderArmory()};
- barre.append(cat,b);boite.append(barre)}
+ const std=document.createElement('button');std.type='button';std.className='masse-standard';std.textContent='↺ Tri standard';std.disabled=!masseTri;
+ std.title='Revenir à l’ordre de l’Armurerie : armes de mêlée, armes à distance, armures, objets, ressources, trésors';std.onclick=()=>{masseTri=null;renderArmory()};
+ barre.append(std,cat,b);boite.append(barre)}
 function tableMasse(boite,liste){
  const sauve=()=>{scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
  const arme=o=>o.category==='weapon',armure=o=>o.category==='armor';
  const options=(l,v)=>l.map(([k,n])=>'<option value="'+esc(String(k))+'"'+(String(k)===String(v)?' selected':'')+'>'+esc(n)+'</option>').join('');
  const RESS=[['','— aucune —'],...listeRessources()],MAINS=[[1,'1 main'],[2,'2 mains']],faite=o=>o.category!=='ressource';
+ const nomRess=k=>(RESS.find(([c])=>c&&c===k)||[])[1]||null;
  /* Les colonnes : ce qu'on y lit, ce qu'on y écrit, et à qui elles s'appliquent. */
  /* Ce qu'on lit d'abord : les dés, la DEF, l'effet ; puis ce qu'on règle. */
  const COLS=[
   // À lire seulement : les dés d'une arme (ou ce qu'une munition ajoute), et ce que la pièce fait.
-  {cle:'des',nom:'Dés',type:'vue',pour:o=>arme(o)||(o.category==='ammo'&&!!(o.munDe||o.etat)),
+  {cle:'des',nom:'Dés',type:'vue',pour:o=>arme(o)||(o.category==='ammo'&&!!(o.munDe||o.etat)),tri:o=>arme(o)?totalDes(o):o.munDe?1:0,
    montre:o=>arme(o)?dicePips(o.dice,o.etat,!!o.ranged):dicePips(o.munDe?{[o.munDe]:1}:{},o.etat)},
   {cle:'def',nom:'DEF',type:'nombre',max:99,pour:armure,lit:o=>Number(o.def)||0,ecrit:(o,v)=>{o.def=Math.max(0,Math.min(99,Math.round(v)))}},
-  {cle:'effet',nom:'Effet',type:'vue',pour:o=>!!(objetCode(o)||(o.bonus&&o.bonus.length)||(!arme(o)&&o.etat)),montre:o=>{const s=document.createElement('span');s.className='masse-effet';
+  {cle:'effet',nom:'Effet',type:'vue',pour:o=>!!(objetCode(o)||(o.bonus&&o.bonus.length)||(!arme(o)&&o.etat)),tri:o=>(objetCode(o)||{}).nom||(o.bonus&&o.bonus.length?'Bonus':o.etat||''),montre:o=>{const s=document.createElement('span');s.className='masse-effet';
    const pe=pastilleEffet(o);if(pe)s.append(pe);
    const txt=[phraseDeObjet(o).replace(/<[^>]+>/g,''),...normaliseBonusEquip(o.bonus).map(b=>'+'+b.valeur+' '+(b.carac==='comp'?(COMPETENCES[Number(b.comp)]||''):(NOM_CARAC[b.carac]||b.carac)))].filter(Boolean).join(' · ');
    const t=document.createElement('span');t.textContent=txt||o.etat||'';s.append(t);s.title=txt;return s}},
-  {cle:'rarete',nom:'Rareté',type:'choix',opts:RARETES,pour:faite,lit:o=>rareteDe(o),ecrit:(o,v)=>{o.rarete=rareteDe({rarete:v})}},
+  {cle:'rarete',nom:'Rareté',type:'choix',opts:RARETES,pour:faite,tri:o=>RARETES.findIndex(([k])=>k===rareteDe(o)),lit:o=>rareteDe(o),ecrit:(o,v)=>{o.rarete=rareteDe({rarete:v})}},
   {cle:'price',nom:'Prix (or)',type:'nombre',max:999999,lit:o=>o.price||0,ecrit:(o,v)=>{o.price=Math.max(0,Math.min(999999,Math.round(v)))}},
-  {cle:'ressource1',nom:'Ressource 1',type:'choix',opts:RESS,pour:faite,lit:o=>ressourceValide(o.ressource1),ecrit:(o,v)=>{o.ressource1=ressourceValide(v)}},
-  {cle:'ressource2',nom:'Ressource 2',type:'choix',opts:RESS,pour:faite,lit:o=>ressourceValide(o.ressource2),ecrit:(o,v)=>{o.ressource2=ressourceValide(v)}},
+  {cle:'ressource1',nom:'Ressource 1',type:'choix',opts:RESS,pour:faite,tri:o=>nomRess(o.ressource1),lit:o=>ressourceValide(o.ressource1),ecrit:(o,v)=>{o.ressource1=ressourceValide(v)}},
+  {cle:'ressource2',nom:'Ressource 2',type:'choix',opts:RESS,pour:faite,tri:o=>nomRess(o.ressource2),lit:o=>ressourceValide(o.ressource2),ecrit:(o,v)=>{o.ressource2=ressourceValide(v)}},
   {cle:'magasin',nom:'Magasin',type:'case',lit:o=>o.magasin===true,ecrit:(o,v)=>{o.magasin=!!v}},
   {cle:'hands',nom:'Mains',type:'choix',opts:MAINS,pour:o=>arme(o)&&!o.ranged,lit:o=>weaponHands(o),ecrit:(o,v)=>{o.hands=Number(v)===2?2:1}}];
  const vaut=(c,o)=>!c.pour||c.pour(o);
+ /* Trié par une colonne : les pièces qu'elle ne concerne pas, ou vides, restent en bas ; à valeur
+    égale, l'ordre de l'Armurerie. */
+ const colTri=masseTri&&(masseTri.cle==='piece'?{tri:o=>o.name}:COLS.find(c=>c.cle===masseTri.cle));
+ if(colTri){const v=o=>{if(!vaut(colTri,o))return null;const x=(colTri.tri||colTri.lit)(o);return x===''||x===null||x===undefined?null:typeof x==='boolean'?Number(x):x};
+  const cmp=(a,b)=>typeof a==='number'&&typeof b==='number'?a-b:String(a).localeCompare(String(b),'fr',{numeric:true});
+  liste=liste.map((x,i)=>[x,v(x[0]),i]).sort((A,B)=>(A[1]===null)-(B[1]===null)||(A[1]===null?0:cmp(A[1],B[1])*masseTri.sens)||A[2]-B[2]).map(x=>x[0])}
  const t=document.createElement('table');t.className='masse-table';
  const thead=document.createElement('thead'),tete=document.createElement('tr'),tous=document.createElement('tr');tous.className='masse-tous';
- tete.innerHTML='<th scope="col">Pièce</th>'+COLS.map(c=>'<th scope="col">'+esc(c.nom)+'</th>').join('');
+ // Un clic sur un en-tête trie par sa colonne ; un second clic inverse le sens.
+ const enTete=(cle,nom)=>{const th=document.createElement('th');th.scope='col';const actif=!!(masseTri&&masseTri.cle===cle);
+  th.setAttribute('aria-sort',actif?(masseTri.sens>0?'ascending':'descending'):'none');
+  const b=document.createElement('button');b.type='button';b.className='masse-tri';b.textContent=nom;
+  const fl=document.createElement('span');fl.className='masse-fleche';fl.textContent=actif?(masseTri.sens>0?'▲':'▼'):'⇅';b.append(fl);
+  b.title='Trier par '+nom.toLowerCase()+(actif?' — cliquer pour inverser':'');
+  b.onclick=()=>{masseTri=actif?{cle,sens:-masseTri.sens}:{cle,sens:1};renderArmory()};th.append(b);return th};
+ tete.append(enTete('piece','Pièce'),...COLS.map(c=>enTete(c.cle,c.nom)));
  const th0=document.createElement('th');th0.scope='row';th0.textContent='Pour les '+liste.length+' pièces affichées';tous.append(th0);
  /* Changer une colonne pour toutes : une seule question avant, puis toutes les lignes suivent. */
  const pourTous=(c,fn,dit)=>{const cibles=liste.map(([o])=>o).filter(o=>vaut(c,o));if(!cibles.length)return;

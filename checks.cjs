@@ -2972,4 +2972,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  // Les grandes images : envoyées à part, relues et vérifiées.
  assert.ok(part.includes("const envoi=await envoieImages(value);const packed=SharedData.pack(envoi.value);")&&part.includes("const data=await rechargeImages(SharedData.validate(SharedData.unpack(chunks,m.bytes)),gen);")
   &&part.includes("if(!SharedData.estImage(url)||await empreinte(url)!==h)throw Error('Image publiée invalide.');")&&part.includes("indexedDB.open('amertume-images',1)"),'les grandes images voyagent à part');}
-console.log('1745 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.331 — Modifier en masse : un clic sur un en-tête trie, un second inverse ; le tri standard
+   revient à l'ordre de l'Armurerie. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("let armoryMasse=false,armoryNeuf=null,masseTri=null;")&&src.includes("std.onclick=()=>{masseTri=null;renderArmory()};")
+  &&src.includes("b.onclick=()=>{masseTri=actif?{cle,sens:-masseTri.sens}:{cle,sens:1};renderArmory()};")&&src.includes("tete.append(enTete('piece','Pièce'),...COLS.map(c=>enTete(c.cle,c.nom)));")
+  &&src.includes("sort((A,B)=>(A[1]===null)-(B[1]===null)||(A[1]===null?0:cmp(A[1],B[1])*masseTri.sens)||A[2]-B[2])"),'le tableau se trie par colonne, et revient au tri standard');}
+console.log('1746 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
