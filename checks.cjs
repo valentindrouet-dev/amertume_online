@@ -2895,4 +2895,9 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("const garde=value&&!FAMILLES_LOGOS.some(([,l])=>l.includes(value));")&&src.includes("return o&&estLogoDossier(o.logo)&&!l.includes(o.logo)?[o.logo,...l]:l}")
   &&src.includes("function logosItem(o){const c=o&&o.category,d=LOGOS_DOSSIERS.equipement;")
   &&src.includes(".filter(f=>f&&f.type==='blob'&&String(f.path).startsWith('img/')).map(f=>String(f.path).slice(4))"),'chaque menu prend son dossier, et garde le logo en place');}
-console.log('1715 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.312 — L'aperçu du logo dans le formulaire de l'Armurerie ajoutait « .png » au nom : une
+   icône de img/equipement, qui porte déjà son extension, devenait « x.png.png », introuvable.
+   Aucune adresse d'image de logo ne se bâtit plus en ajoutant « .png » à la main. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("const montre=()=>{const l=menuLogo.value;apercu.hidden=!l;if(l)poseLogo(apercu,l)};")&&!/imgUrl\(l\+'\.png'\)/.test(src),'l’aperçu de l’Armurerie garde l’extension');}
+console.log('1716 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

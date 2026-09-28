@@ -3021,7 +3021,8 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
  /* L'aperçu du logo, à côté de son menu : on voit ce qu'on choisit. */
  const menuLogo=$('item-form').elements.logo;
  const apercu=document.createElement('img');apercu.className='logo-equip apercu';apercu.alt='';
- const montre=()=>{const l=menuLogo.value;apercu.hidden=!l;if(l)apercu.src=imgUrl(l+'.png')};
+ // L'aperçu passe par poseLogo : une icône de dossier porte déjà son extension (« .png.png » sinon).
+ const montre=()=>{const l=menuLogo.value;apercu.hidden=!l;if(l)poseLogo(apercu,l)};
  menuLogo.parentNode.append(apercu);montre();menuLogo.onchange=montre;
  $('item-form').elements.category.onchange=()=>{itemDraft=itemDepuisForm(itemDraft);dessineItem()}}
 /* Les lignes de bonus du formulaire : caractéristique, valeur, et la compétence quand c'en
