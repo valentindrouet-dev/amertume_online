@@ -1089,7 +1089,11 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
   const l=document.createElement('span');l.className='nom-place';l.textContent=nom;pl.append(l);
   if(o&&o.deux){const p=remplitMunition(gearCarre(o.deux,1,1),a,o.deux);p.classList.add('deux-mains');p.removeAttribute('title');p.setAttribute('aria-label',o.deux.name+' — à deux mains');pl.append(p)}
   else if(o)pl.append(carreDeFiche(a,o,1,true,portes,peutEquiper,true));
-  else{const v=document.createElement('span');v.className='vide';v.textContent='·';pl.append(v)}
+  else{const v=document.createElement('span');v.className='vide';v.textContent='·';pl.append(v);
+   // Un emplacement vide s'équipe d'un clic : ce qui lui va, du sac d'abord, puis de l'Armurerie.
+   if(peutEquiper){const cote=cle==='main'?(k===3?'droite':'gauche'):'';v.textContent='+';v.classList.add('equipable');
+    v.setAttribute('role','button');v.tabIndex=0;v.title='Équiper : '+nom;v.setAttribute('aria-label','Équiper '+nom+' de '+a.name);
+    const ouvre=()=>choisirPourPlace(a,cle,cote,nom);v.onclick=ouvre;v.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ouvre()}}}}
   if(cle==='anneau'){groupeAnneaux.append(pl);if(!groupeAnneaux.isConnected)corps.append(groupeAnneaux)}else corps.append(pl)});
  out.append(corps);
  // Le sac : ce qui n'est pas porté, puis les objets.
@@ -1122,6 +1126,43 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
    const main=g.cible&&g.cible.dataset&&g.cible.dataset.main;return main?equiperDansMain(a,o,main):equiperPiece(a,o)});
   recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}
  bulleOrpheline();return out}
+/* Équiper un emplacement vide. Ce qui lui va : une arme pour la main droite ; une arme à une
+   main ou un bouclier pour la gauche ; des munitions ; sinon une armure de cet emplacement. Le
+   sac vient d'abord ; le MJ puise aussi dans l'Armurerie, et la pièce choisie entre alors dans
+   l'inventaire avant d'être portée. Un joueur n'équipe que ce qu'il a. */
+function vaA(o,cle,cote){if(!o)return false;
+ if(cle==='main')return o.category==='weapon'?(cote!=='gauche'||weaponHands(o)===1):cote==='gauche'&&o.category==='armor'&&emplacementDe(o)==='shield';
+ if(cle==='munitions')return o.category==='ammo';
+ return o.category==='armor'&&emplacementDe(o)===cle}
+let placeDialog=null;
+function choisirPourPlace(a,cle,cote,nom){fermerBulle();
+ if(!placeDialog){placeDialog=dialog('place-equiper','Équiper','<input id="place-recherche" placeholder="Rechercher…" aria-label="Rechercher une pièce"><div id="place-corps"></div>');
+  $('place-recherche').oninput=()=>placeDialog.dessine&&placeDialog.dessine()}
+ placeDialog.querySelector('h2').textContent='Équiper — '+nom;
+ const mj=view==='mj';
+ const dans=o=>(a.inventaire||[]).filter(x=>x===o.id).length,libres=o=>dans(o)-(o.category==='weapon'?gearCount(a,o.id):o.category==='ammo'?(a.munitionId===o.id?1:0):o.id===a.shieldId?1:armuresDe(a).filter(x=>x===o.id).length);
+ const prend=(o,nouveau)=>{if(nouveau)ajouterInventaire(a,o);
+  const ok=cle==='main'?equiperDansMain(a,o,cote):equiperPiece(a,o);
+  if(!ok&&nouveau)retirerInventaire(a,o);
+  placeDialog.close();
+  if(ok)log(nomNum(a)+(nouveau?' reçoit et équipe ':' équipe ')+o.name+'.',{local:true});
+  render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+ placeDialog.dessine=()=>{const corps=$('place-corps');corps.replaceChildren();const q=cleTalent($('place-recherche').value);
+  const va=(catalog.items||[]).filter(o=>vaA(o,cle,cote)&&(!q||cleTalent(o.name).includes(q))).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
+  const groupe=(titre,liste,nouveau)=>{if(!liste.length)return;const h=document.createElement('h3');h.className='arbre-choix-groupe';h.textContent=titre;
+   const g=document.createElement('div');g.className='pick-grille';
+   liste.forEach(o=>{const carte=document.createElement('div');carte.className='cat-carte pick-carte';
+    const p=gearCarre(o,1,0);p.classList.remove('dispo');const m=p.querySelector('.marque-porte');if(m)m.remove();
+    p.setAttribute('role','button');p.tabIndex=0;p.removeAttribute('title');p.setAttribute('aria-label',(nouveau?'Ajouter et équiper ':'Équiper ')+o.name);
+    if(BULLES)surveille(p,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});
+    p.onclick=()=>prend(o,nouveau);p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();prend(o,nouveau)}};
+    const n=document.createElement('span');n.className='nom-carte';n.textContent=o.name;carte.append(p,n);g.append(carte)});
+   corps.append(h,g)};
+  groupe('Dans le sac',va.filter(o=>libres(o)>0),false);
+  if(mj)groupe('Armurerie',va,true);
+  if(!corps.childElementCount){const v=document.createElement('p');v.className='muted';
+   v.textContent=q?'Aucune pièce de ce nom.':mj?'L’Armurerie n’a rien pour cet emplacement : crée la pièce dans l’onglet Armurerie.':'Rien dans le sac ne va à cet emplacement.';corps.append(v)}};
+ $('place-recherche').value='';placeDialog.dessine();placeDialog.showModal();$('place-recherche').focus()}
 /* Les carrés d'une fiche. En jeu (« tout » faux), on ne voit que ce qui est porté, plus les
    objets, qui servent pendant la partie ; ailleurs — bestiaire — tout l'inventaire, pour
    composer ce qu'on emporte. Un clic équipe ou repose une arme, une armure, un bouclier ;

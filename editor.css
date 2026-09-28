@@ -1047,6 +1047,10 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .corps .place.bottes{grid-column:2}
 .corps .nom-place{font:600 9px system-ui;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
 .corps .vide{width:69px;height:69px;box-sizing:border-box;border:2px dashed var(--line-strong);border-radius:9px;display:grid;place-items:center;color:var(--muted);opacity:.55;font-size:18px}
+/* Un emplacement vide qu'on peut remplir : un « + », qui s'allume au survol. */
+.corps .vide.equipable{cursor:pointer;font:600 22px/1 system-ui;transition:opacity .12s,border-color .12s,color .12s}
+.corps .vide.equipable:hover,.corps .vide.equipable:focus-visible{opacity:1;border-color:var(--accent);color:var(--accent);outline:none}
+#place-equiper{width:min(620px,94vw)}#place-corps{max-height:min(60vh,520px);overflow:auto;margin-top:8px}
 .corps .gear-carre.deux-mains{opacity:.45;pointer-events:none}
 .corps .gear-carre.tire,.sac .gear-carre.tire{opacity:.35}
 /* Pendant le glisser, la place qui attend la pièce s'allume ; sur le corps ou sur le sac, le dépôt se voit. */
