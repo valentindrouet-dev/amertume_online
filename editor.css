@@ -403,7 +403,7 @@ button.btn-analyse[hidden]{display:none}
 .gear-detail p{margin:0 0 5px}.gear-detail p:last-child{margin-bottom:0}.gear-detail .gear-nom{font:700 14px 'Killam',Georgia,serif;letter-spacing:.2px}
 /* Deux colonnes : les armes à gauche, l'armure et le bouclier à droite, empilés. */
 /* La pastille réduite de moitié : plus basse, plus petite, ses dés et son écu avec elle. */
-.cat-pill.mini{padding:7px 10px;gap:7px;font-size:14px;border-radius:8px;min-height:38px}/* Les talents d'une fiche : une colonne, la vignette entière, sans nature ni niveau. *//* La grille des talents d'une fiche : deux colonnes, et un dépliant qui prend toute la largeur de sa rangée. */.talent-grille{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 4px;align-items:start}.talent-grille .cat-pill{width:100%;padding:7px 10px;font-size:14px;min-height:38px;cursor:pointer;box-sizing:border-box}.talent-grille .cat-pill.ouvert{border-bottom-left-radius:9px;border-bottom-right-radius:9px}.talent-detail.large{grid-column:1/-1;padding:9px 12px;border-radius:8px;font:13px/1.45 system-ui;color:#2a2118;margin-top:-2px}
+.cat-pill.mini{padding:7px 10px;gap:7px;font-size:14px;border-radius:8px;min-height:38px}/* Les talents d'une fiche : une colonne, la vignette entière, sans nature ni niveau. *//* La grille des talents d'une fiche : deux colonnes, et un dépliant qui prend toute la largeur de sa rangée. *//* Les talents d'une fiche : des ronds nommés, rangés comme l'équipement. */.talent-grille{display:flex;flex-wrap:wrap;gap:8px 2px;margin:2px 0 4px;align-items:flex-start}.talent-grille .cat-pill{cursor:pointer}.talent-detail.large{grid-column:1/-1;padding:9px 12px;border-radius:8px;font:13px/1.45 system-ui;color:#2a2118;margin-top:-2px}
 .cat-pill.mini .pips{gap:2px}
 .cat-pill.mini .die-sq,.cat-pill.mini .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}
 .cat-pill.mini .ecu{width:15px;height:18px}.cat-pill.mini .ecu b{font-size:9px}
@@ -758,8 +758,8 @@ button.choix-attaque.sans-des.avec-logo .nom{grid-row:1/3;align-self:center}
 .arbre-col.nouvelle .arbre-ajout{margin:0}
 .arbre-col.nouvelle .champ-vif{width:85%;box-sizing:border-box}
 .arbres-tete .arbre-ajout{margin-top:0}
-.arbre-rond{position:relative;display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:var(--panel);border:3px solid var(--teinte);box-shadow:0 0 0 3px var(--panel),0 2px 6px #0004;font-size:24px;line-height:1;color:var(--teinte)}
-.arbre-rond img{width:64%;height:64%;object-fit:contain}
+.arbre-rond{position:relative;display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:var(--panel);border:3px solid var(--teinte);box-shadow:0 0 0 3px var(--panel),0 2px 6px #0004;font-size:30px;line-height:1;color:var(--teinte)}
+.arbre-rond img{width:80%;height:80%;object-fit:contain}
 .arbre-nom{max-width:100%;text-align:center;line-height:1.2}
 .arbre-niv{font:600 11px system-ui;color:var(--muted)}
 .arbre-noeud.t-act{--teinte:#4f7fb5}.arbre-noeud.t-reac{--teinte:#8b6bb5}.arbre-noeud.t-pass{--teinte:#8a8474}
@@ -833,7 +833,7 @@ button.choix-attaque.sans-des.avec-logo .nom{grid-row:1/3;align-self:center}
 .arbre-etages .arbre-noeud::before{display:none}
 .arbre-etages .arbre-noeud{padding:0 2px}
 /* Le nom et la ligne sous un bouton portent le fond de la colonne : un chemin qui passe dessous s'y cache, la lecture reste nette. */.arbre-etages .arbre-nom,.arbre-etages .arbre-niv{background:var(--panel-2);padding:1px 6px;border-radius:6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
-.arbre-etages .arbre-noeud.diag .arbre-rond{width:50px;height:50px;font-size:21px}
+.arbre-etages .arbre-noeud.diag .arbre-rond{width:50px;height:50px;font-size:26px}
 .arbre-etages .arbre-noeud.diag .arbre-nom{font-size:12px}
 .arbre-etages .arbre-entre{align-self:center}
 /* La place vide d'une diagonale : un rond en pointillé, un « + » ; elle reçoit un talent
@@ -1078,8 +1078,20 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 /* Les talents et le bestiaire en carrés, comme l'armurerie : la couleur de la nature (ou du
    type d'adversaire) sur tout le carré, sans liseré ; le jeton d'un adversaire, ses PV et sa
    DEF dessous ; la coche d'analyse dans le coin. */
-/* Un talent se range en rond, une pièce d'équipement en carré : on ne confond pas les deux. */
-.cat-pill.gear-carre.talent-carre{border-left:none;width:69px;height:69px;min-width:0;min-height:0;padding:0;border-radius:50%}
+/* Un talent se range en rond, une pièce d'équipement en carré : on ne confond pas les deux.
+   Un contour appuyé à la teinte de sa nature, et le logo qui remplit le rond. */
+.cat-pill.gear-carre.talent-carre{border:3px solid var(--teinte,#8a8474);width:69px;height:69px;min-width:0;min-height:0;padding:0;border-radius:50%}
+.talent-carre.t-act{--teinte:#4f7fb5}.talent-carre.t-reac{--teinte:#8b6bb5}.talent-carre.t-pass{--teinte:#8a8474}
+.talent-carre.t-crit{--teinte:#b5525a}.talent-carre.t-mait{--teinte:#c99a3c}.talent-carre.t-ame{--teinte:#5e9a5b}
+.cat-pill.gear-carre.talent-carre .logo-equip{width:52px;height:52px}
+.cat-pill.gear-carre.talent-carre .glyphe{font-size:34px;color:var(--teinte)}
+.cat-pill.gear-carre.talent-carre .effet-pastille.logo-auto{width:46px;height:46px}
+/* Un talent sans effet faute de son socle : l'alerte à cheval sur le rond. */
+.talent-carre .t-sans-effet{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--panel);box-shadow:0 1px 3px #0004;display:grid;place-items:center;font-size:11px}
+/* Le cadenas d'un talent qui attend son socle, là où se pose la coche d'un talent appris. */
+.pick-carte.verrou{opacity:.55}.pick-carte.verrou .talent-carre{cursor:not-allowed}
+.pick-carte.verrou .marque-porte{display:block;background:var(--panel);color:var(--ink);font-size:8px}
+.talent-carte .nom-carte .palier-romain{white-space:nowrap}
 .cat-pill.gear-carre.best-carre{gap:3px}
 .best-carre .jeton-rond.carre{width:38px;height:38px;font-size:17px}
 .best-carre .gear-bas{display:flex;align-items:center;gap:4px}
@@ -1233,9 +1245,8 @@ body.sombre .paliers-table thead th.p2,body.sombre .paliers-table thead th.p3{co
 .arbre-choix-liste{display:flex;flex-direction:column;gap:6px;max-height:min(60vh,520px);overflow:auto;padding-right:4px}
 .arbre-choix-neuf{align-self:flex-start;padding:7px 12px;border:1px dashed var(--accent);border-radius:8px;background:transparent;color:var(--accent);font:600 14px system-ui;cursor:pointer}
 .arbre-choix-groupe{margin:10px 0 2px;font:700 11px system-ui;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
-.arbre-choix-talent{display:flex;padding:0;border:0;background:transparent;cursor:pointer;text-align:left}
-.arbre-choix-talent .cat-pill{width:100%}
-.arbre-choix-talent:hover .cat-pill,.arbre-choix-talent:focus-visible .cat-pill{outline:2px solid var(--accent);outline-offset:1px}
+.arbre-choix-talent{width:84px;margin:0;padding:0;border:0;background:transparent;cursor:pointer;color:inherit}
+.arbre-choix-talent:hover .cat-pill,.arbre-choix-talent:focus-visible .cat-pill{outline:2px solid var(--accent);outline-offset:2px}
 
 /* Une autre fenêtre a enregistré la partie : un bandeau en haut, qui ne se rate pas. */
 #bandeau-fenetres{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:min(760px,94vw);padding:10px 14px;border-radius:12px;background:#7a2e1d;color:#fff;box-shadow:0 8px 26px #0006;font-size:14px}
@@ -1261,7 +1272,7 @@ body.sombre .paliers-table thead th.p2,body.sombre .paliers-table thead th.p3{co
 .effet-pastille.logo-auto{width:22px;height:22px}
 .effet-pastille.logo-auto .etat-inflige,.effet-pastille.logo-auto .die-sq{width:100%;height:100%}
 .effet-pastille.logo-auto .etat-inflige img{position:absolute;inset:0;width:100%;height:100%;max-width:none;margin:0;object-fit:contain}
-.arbre-rond .effet-pastille.logo-auto{width:58%;height:58%}
+.arbre-rond .effet-pastille.logo-auto{width:72%;height:72%}
 .cat-pill.gear-carre .effet-pastille.logo-auto{width:34px;height:34px}
 .arbre-rond .effet-pastille.logo-auto.barre::after,.cat-pill.gear-carre .effet-pastille.logo-auto.barre::after{height:4px;margin-top:-2px}
 /* Les états d'une attaque spéciale : des cases, autant qu'on veut. */

@@ -1179,22 +1179,6 @@ const nomEnClair=texte=>String(texte||'').normalize('NFC').replace(new RegExp(AC
    là où son état s'écrirait. */
 function enElementDuMystique(html,etat){if(!etat)return html;
  return html.replace(new RegExp('(?<![\\p{L}])'+String(etat).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?![\\p{L}])','gu'),'l’élément du Mystique')}
-function talentPill(t,compact){const [cle,court,nom]=talentType(t);
- const p=document.createElement('span');p.className='cat-pill t-'+cle;
- const logo=logoTalent(t);if(logo)p.append(logo);
- const n=document.createElement('span');n.className='nom';nomAccolades(n,t.name);
- p.append(n);
- const socle=nomPrerequis(t,catalog.talents);
- if(!compact){const b=document.createElement('span');b.className='t-badge';b.textContent=court;b.title=nom;
-  const niv=document.createElement('span');niv.className='tag';niv.textContent='Niv. '+(t.level||1);
-  p.append(b);if(NIVEAUX_TALENTS)p.append(niv);
-  // La spécialisation ne s'écrit pas sur la vignette : l'arbre la montre, le formulaire la règle.
-  // Une amélioration dit sur quoi elle repose : on le lit sans ouvrir la fiche.
-  if(socle){const s=document.createElement('span');s.className='tag prereq';s.textContent='↳ '+socle;
-   s.title='Requiert : '+socle;p.append(s)}}
- const info=[talentFamily(t),nom,t.effects,t.notes,socle?'Requiert : '+socle:''].filter(Boolean).join(' · ');
- p.title=t.name+' — '+info;
- return p}
 /* Ce que dit un talent, sous sa vignette : sa nature, la phrase que le moteur appliquera
    — réglages en gras — ou le texte libre de la fiche, les notes, et l'arbre (requiert,
    débloque). Pas de « appris par » : la vignette est sur la fiche de qui l'a appris. */
@@ -1253,53 +1237,36 @@ function talentDetail(t){const d=document.createElement('div');d.className='tale
  const effet=ligne(t.effects||'Effet à préciser.');if(effet&&t.effects)texteEnrichi(effet,t.effects);
  ligne(t.notes);
  return d}
-/* La vignette et son dépliant, l'un sous l'autre, de la même largeur : le bloc prend la
-   largeur de la vignette, et le dépliant s'y range sans l'élargir. Un clic ouvre, un
-   autre referme. Le sélecteur n'en veut pas — sa ligne entière est déjà un bouton. */
-/* Les dépliants ouverts survivent au rendu : corriger un talent redessine l'onglet, et
-   le dépliant qu'on corrigeait doit rester ouvert. */
-const talentsOuverts=new Set();
-// Avec les bulles, une seule description à la fois : la fiche et le talent qu'on regarde.
+// Une seule description à la fois : la fiche et le talent qu'on regarde.
 let talentOuvert=null;
-/* Les talents d'une fiche : une grille de deux colonnes, dans l'ordre où ils sont appris —
-   le premier à gauche, le deuxième à droite. Le dépliant d'un talent s'étale sous les deux
-   vignettes de sa rangée : moins haut, et la rangée suivante ne se décale pas de travers. */
+/* Les talents d'une fiche, en ronds, dans l'ordre où ils sont appris : le logo dans le rond,
+   le nom dessous, suivi du palier en chiffre romain. La description paraît en bulle au
+   survol, au palier que tient l'aventurier. */
 function talentPills(a){const out=document.createElement('div');out.className='talent-grille';
  // Un nœud de bonus n'est pas un talent : la fiche le porte dans ses chiffres, pas ici.
  const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');
  if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
  /* Un talent appris dont le socle manque ne fait rien : il se taisait, et on le croyait à
-    l'œuvre. Il porte désormais sa marque, et son dépliant dit ce qu'il attend. */
+    l'œuvre. Il porte désormais sa marque, et sa bulle dit ce qu'il attend. */
  const sansEffet=t=>typeof manqueTalent==='function'?manqueTalent(a.talents||[],t,catalog.talents):'';
- for(let i=0;i<liste.length;i+=2){const rangee=liste.slice(i,i+2),details=[];
+ liste.forEach(t=>{const k=palierDe(a,t);
   // Chaque talent tel que le porte cet aventurier : à son élément, s'il en a un.
-  rangee.forEach(t=>{const tv=talentPourElement(t,elementDe(a)),pill=talentPill(tv,true);pill.classList.add('cliquable');
-   if(palierDe(a,t)>1)pill.querySelector('.nom').append(palierRomain(palierDe(a,t)));
-   const manque=sansEffet(t);
-   // Le chevron ne dépliait que l'ancien dépliant : sous la bulle, rien à déplier.
-   if(!BULLES){const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev)}
-   // La description, au palier que tient l'aventurier.
-   const k=palierDe(a,t),detail=talentDetail(talentAuPalier(tv,k||1));detail.classList.add('large');
-   if(k>1){const pp=document.createElement('p');pp.className='palier-dit';pp.textContent='Palier '+k;detail.prepend(pp)}
-   if(manque){pill.classList.add('sans-effet');
-    const m=document.createElement('span');m.className='t-sans-effet';m.textContent='⚠';
-    m.title='Sans effet : « '+t.name+' » requiert « '+manque+' », que '+a.name+' n’a pas.';pill.append(m);
-    pill.title+=' — sans effet : requiert '+manque;
-    const dit=document.createElement('p');dit.className='sans-effet-dit';
-    dit.textContent='⚠ Sans effet : requiert « '+manque+' », que '+a.name+' n’a pas appris.';detail.prepend(dit)}
-   const cle=(a.id||'?')+'|'+t.id,ouvert=BULLES?talentOuvert===cle:talentsOuverts.has(t.id);
-   detail.hidden=!ouvert||BULLES;pill.classList.toggle('ouvert',ouvert);
-   const montre=()=>{talentOuvert=cle;gearOuvert=null;
-    const d=detail.cloneNode(true);d.hidden=false;ouvrirBulle(pill,d,'bulle-talent')};
-   if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});
-   if(BULLES)surveille(pill,montre);
-   pill.onclick=e=>{e.stopPropagation();
-    if(BULLES)return;   // au survol, la description se montre seule
-    const o=detail.hidden;detail.hidden=!o;pill.classList.toggle('ouvert',o);
-    if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};
-   out.append(pill);if(!BULLES)details.push(detail)});
-  if(rangee.length===1){const vide=document.createElement('span');vide.className='vide';out.append(vide)}
-  details.forEach(d=>out.append(d))}
+  const tv=talentPourElement(t,elementDe(a)),carte=talentCarte(tv),pill=carte.firstChild;
+  pill.classList.add('cliquable');pill.tabIndex=0;pill.setAttribute('aria-label',nomEnClair(tv.name)+(k>1?', palier '+k:''));
+  if(k>1)carte.lastChild.append(palierRomain(k));
+  // La description, au palier que tient l'aventurier.
+  const detail=talentDetail(talentAuPalier(tv,k||1));detail.classList.add('large');
+  if(k>1){const pp=document.createElement('p');pp.className='palier-dit';pp.textContent='Palier '+k;detail.prepend(pp)}
+  const manque=sansEffet(t);
+  if(manque){pill.classList.add('sans-effet');
+   const m=document.createElement('span');m.className='t-sans-effet';m.textContent='⚠';
+   m.title='Sans effet : « '+t.name+' » requiert « '+manque+' », que '+a.name+' n’a pas.';pill.append(m);
+   const dit=document.createElement('p');dit.className='sans-effet-dit';
+   dit.textContent='⚠ Sans effet : requiert « '+manque+' », que '+a.name+' n’a pas appris.';detail.prepend(dit)}
+  const cle=(a.id||'?')+'|'+t.id;
+  const montre=()=>{talentOuvert=cle;gearOuvert=null;const d=detail.cloneNode(true);d.hidden=false;ouvrirBulle(pill,d,'bulle-talent')};
+  if(talentOuvert===cle)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});
+  surveille(pill,montre);out.append(carte)});
  bulleOrpheline();return out}
 const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets']];
 /* Une pièce de l'armurerie : le même carré qu'à la table et sur le corps de l'aventurier,
@@ -1437,16 +1404,29 @@ function talentFamilies(){
  return [...classes,GENERIQUES,...autres]}
 // L'encre d'une classe, pour un intitulé de colonne ou une languette.
 function teinteClasse(nom){const c=classeDe(catalog.classes,nom);return c&&c.tint||''}
+/* Un talent se montre en rond, partout : bibliothèque, fiche, table, choix. La couleur de sa
+   nature, un contour appuyé à sa teinte, et son logo (ou le glyphe de sa nature) qui remplit
+   le rond. Le logo peut venir tout fait, à l'élément d'une colonne par exemple. */
+function talentRond(t,logo){const p=document.createElement('span');p.className='cat-pill gear-carre talent-carre t-'+talentType(t)[0];
+ const l=logo===undefined?logoTalent(t):logo;
+ if(l)p.append(l);else{const g=document.createElement('span');g.className='glyphe';g.textContent=GLYPHES_TALENT[t.type]||'✦';p.append(g)}
+ return p}
+// La bulle d'un talent sur son rond, élargie quand elle montre plusieurs paliers.
+function bulleTalentSur(ancre,t,o){const d=bulleTalent(t,o);
+ return ouvrirBulle(ancre,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))}
+// Le rond et son nom dessous, comme une pièce de l'armurerie.
+function talentCarte(t,logo){const carte=document.createElement('div');carte.className='cat-carte talent-carte';
+ const nom=document.createElement('span');nom.className='nom-carte';nomAccolades(nom,t.name);
+ carte.append(talentRond(t,logo),nom);return carte}
 /* Un talent au catalogue, comme une pièce de l'armurerie : un carré à la couleur de sa nature,
    son logo (ou le glyphe de sa nature), le nom dessous ; la nature ne s'écrit pas. Le survol ouvre la
    bulle, le clic du MJ le formulaire ; plus de dépliant, la bulle suffit. Un logo qui suit
    l'élément se montre au premier. */
 function talentRow(t,i,elem){const carte=document.createElement('div');carte.className='cat-carte';
- const [cle,,nature]=talentType(t),mj=view==='mj';
- const p=document.createElement('span');p.className='cat-pill gear-carre talent-carre t-'+cle;p.setAttribute('role','button');p.tabIndex=0;
+ const nature=talentType(t)[2],mj=view==='mj';
  // Sous l'élément de la colonne, s'il y en a un ; un talent élémentaire ailleurs, sous le premier.
- const sous=elem||(t.elementaire===true?ELEMENTS[0]:null),vu=sous?talentPourElement(t,sous):t,logo=logoTalent({...vu,logo:remplaceElement(vu.logo||'',sous||ELEMENTS[0])});
- if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=GLYPHES_TALENT[t.type]||'✦';p.append(g)}
+ const sous=elem||(t.elementaire===true?ELEMENTS[0]:null),vu=sous?talentPourElement(t,sous):t;
+ const p=talentRond(t,logoTalent({...vu,logo:remplaceElement(vu.logo||'',sous||ELEMENTS[0])}));p.setAttribute('role','button');p.tabIndex=0;
  p.setAttribute('aria-label',(mj?'Modifier ':'')+nomEnClair(vu.name)+', '+nature);
  if(BULLES)surveille(p,()=>{const d=bulleTalent(t,{vu:x=>sous?talentPourElement(x,sous):x});ouvrirBulle(p,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
  if(mj){p.onclick=()=>openTalent(i);p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openTalent(i)}}}
@@ -1942,19 +1922,9 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   const compte=document.createElement('span');compte.className='compte';
   compte.textContent=liste.filter(porte).length+' / '+liste.length;
   h.append(compte);bloc.append(h);
-  if(pickerMode==='gear'){const grille=document.createElement('div');grille.className='pick-grille';
-   liste.forEach(o=>grille.append(carteAjout(a,o,clic)));bloc.append(grille);corps.append(bloc);return}
-  liste.forEach(o=>{const rang=document.createElement('button');rang.className='pick-ligne'+(porte(o)?' porte':'');
-   rang.append(pastille(o));
-   const etat=document.createElement('span');etat.className='pick-etat';
-   // Possédé en plusieurs exemplaires, l'inventaire le dit : « ×2 ».
-   const n=pickerMode==='gear'?(a.inventaire||[]).filter(x=>x===o.id).length:0;
-   const cle=rang.querySelector('.cat-pill.verrou');if(cle)rang.classList.add('verrou');
-   etat.textContent=n>1?'×'+n:porte(o)?'✓':cle?'🔒':'+';rang.append(etat);
-   if(pickerMode==='gear'&&n){const moins=document.createElement('span');moins.className='pick-moins';moins.textContent='−';moins.title='Retirer un exemplaire';
-    moins.setAttribute('role','button');moins.onclick=e=>{e.stopPropagation();clic(o,true)};rang.append(moins)}
-   rang.onclick=()=>clic(o);bloc.append(rang)});
-  corps.append(bloc)};
+  // Une grille, comme l'armurerie : des carrés pour l'équipement, des ronds pour les talents.
+  const grille=document.createElement('div');grille.className='pick-grille';
+  liste.forEach(o=>grille.append(pickerMode==='gear'?carteAjout(a,o,clic):pastille(o)));bloc.append(grille);corps.append(bloc)};
  if(pickerMode==='gear'){
   const porte=o=>(a.inventaire||[]).includes(o.id);
   const clic=(o,retirer)=>{if(retirer)retirerInventaire(a,o);else ajouterInventaire(a,o);
@@ -1983,9 +1953,16 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
    else{a.talents=[...a.talents,t.id];$('picker-note').textContent='Clique un talent pour l’apprendre ou l’oublier.'}
    renderPicker();
    if(pickerApres)pickerApres();else{renderHeroes();render();scheduleSave()}};
-  const prof=new Map();
-  const pastille=t=>{const p=talentPill(t);if(prof.get(t.id))p.classList.add('sous-talent');
-   const m=manque(t);if(m){p.classList.add('verrou');p.title+=' — sous clé : requiert '+m}return p};
+  /* Un talent du sélecteur : son rond, la coche verte s'il est appris, le cadenas s'il attend
+     encore son socle ; sa bulle au survol, et un clic l'apprend ou l'oublie. */
+  const pastille=t=>{const carte=talentCarte(t),p=carte.firstChild,m=manque(t),pris=porte(t);
+   carte.classList.add('pick-carte');carte.classList.toggle('verrou',!!m);p.classList.toggle('porte',pris);
+   const marque=document.createElement('span');marque.className='marque-porte';marque.textContent=m?'🔒':'✓';p.append(marque);
+   p.setAttribute('role','button');p.tabIndex=0;
+   p.setAttribute('aria-label',nomEnClair(t.name)+(m?' — sous clé : requiert '+m:pris?' — appris ; un clic l’oublie':' — un clic l’apprend'));
+   if(BULLES)surveille(p,()=>bulleTalentSur(p,t));
+   p.onclick=()=>clic(t);p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();clic(t)}};
+   return carte};
   /* Un aventurier n'a que les génériques et les talents de sa classe ; un adversaire
      voit toutes les familles. La classe se reconnaît à sa clé (Gardien, Gardienne…). */
   const classe=classeDuHeros(a),toutes=talentFamilies();
@@ -1994,7 +1971,7 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
    groupe(famille,ordonneTalents((catalog.talents||[]).filter(t=>talentFamily(t)===famille
     &&(!q||t.name.toLowerCase().includes(q)||(t.effects||'').toLowerCase().includes(q)))
     .sort((x,y)=>(x.level||1)-(y.level||1)||x.name.localeCompare(y.name,'fr')),catalog.talents)
-    .map(([t,p])=>{prof.set(t.id,p);return t}),porte,pastille,clic);
+    .map(([t])=>t),porte,pastille,clic);
   if(!corps.childElementCount){const v=document.createElement('p');v.className='muted';
    v.textContent=q?'Aucun talent de ce nom.':'Aucun talent au catalogue : crée-en un dans l’onglet Talents.';
    corps.append(v)}}}
@@ -2200,10 +2177,16 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
  const libres=(catalog.talents||[]).filter(t=>t&&t.type!=='mait'&&!(talentFamily(t)===dest.famille&&!t.horsArbre)
   &&!(sous&&(sous===t||descendDe(sous,t)))&&(!q||cleTalent(t.name).includes(q)))
   .sort((x,y)=>rang(x)-rang(y)||talentFamily(x).localeCompare(talentFamily(y),'fr')||nomEnClair(x.name).localeCompare(nomEnClair(y.name),'fr'));
- let groupe=null;
+ let groupe=null,grille=null;
  libres.forEach(t=>{const g=rang(t)===0?'Retirés de cet arbre':talentFamily(t);
-  if(g!==groupe){groupe=g;const h=document.createElement('h3');h.className='arbre-choix-groupe';h.textContent=g;boite.append(h)}
-  const b=document.createElement('button');b.type='button';b.className='arbre-choix-talent';b.append(talentPill(t,true));b.onclick=()=>prendreDansArbre(t);boite.append(b)});
+  if(g!==groupe){groupe=g;const h=document.createElement('h3');h.className='arbre-choix-groupe';h.textContent=g;
+   grille=document.createElement('div');grille.className='pick-grille';boite.append(h,grille)}
+  // Le rond et son nom, en un seul bouton ; la bulle du talent au survol.
+  const b=document.createElement('button');b.type='button';b.className='cat-carte talent-carte arbre-choix-talent';
+  const nom=document.createElement('span');nom.className='nom-carte';nomAccolades(nom,t.name);b.append(talentRond(t),nom);
+  b.setAttribute('aria-label','Placer '+nomEnClair(t.name)+' ici');
+  if(BULLES)surveille(b,()=>bulleTalentSur(b.firstChild,t));
+  b.onclick=()=>prendreDansArbre(t);grille.append(b)});
  if(!libres.length){const v=document.createElement('p');v.className='muted';v.textContent=q?'Aucun talent de ce nom.':'Tous les talents du catalogue sont déjà dans cet arbre.';boite.append(v)}}
 $('arbre-choix-filtre').oninput=dessineChoixArbre;
 async function prendreDansArbre(t){const dest=choixArbreDest;if(!t||!dest)return;const f=talentFamily(t),nom=nomEnClair(t.name);
@@ -2695,16 +2678,17 @@ function renderTalentPicker(){const boite=$('talent-picker');if(!boite)return;bo
   const compte=document.createElement('span');compte.className='compte';
   compte.textContent=liste.filter(t=>draft.talents.includes(t.id)).length+' / '+liste.length;
   h.append(compte);bloc.append(h);
-  liste.forEach(t=>{const [cle,court]=talentType(t);
-   const l=document.createElement('label');l.className='pick-talent t-'+cle;
-   const c=document.createElement('input');c.type='checkbox';c.checked=draft.talents.includes(t.id);
-   c.onchange=()=>{draft.talents=c.checked?[...new Set([...draft.talents,t.id])]
-    :draft.talents.filter(x=>x!==t.id);renderTalentPicker()};
-   const n=document.createElement('span');n.className='nom';n.textContent=t.name;
-   const b=document.createElement('span');b.className='t-badge';b.textContent=court;
-   const niv=document.createElement('span');niv.className='tag';niv.textContent='Niv. '+(t.level||1);niv.hidden=!NIVEAUX_TALENTS;
-   l.append(c,n,b,niv);l.title=t.effects||t.name;bloc.append(l)});
-  boite.append(bloc)}
+  // Des ronds, comme partout : la coche verte sur ce que la fiche porte, un clic l'ôte ou l'ajoute.
+  const grille=document.createElement('div');grille.className='pick-grille';
+  liste.forEach(t=>{const pris=draft.talents.includes(t.id),carte=talentCarte(t),p=carte.firstChild;
+   carte.classList.add('pick-carte');p.classList.toggle('porte',pris);
+   const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m);
+   p.setAttribute('role','checkbox');p.setAttribute('aria-checked',String(pris));p.setAttribute('aria-label',nomEnClair(t.name));p.tabIndex=0;
+   if(BULLES)surveille(p,()=>bulleTalentSur(p,t));
+   const bascule=()=>{draft.talents=pris?draft.talents.filter(x=>x!==t.id):[...new Set([...draft.talents,t.id])];renderTalentPicker()};
+   p.onclick=bascule;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bascule()}};
+   grille.append(carte)});
+  bloc.append(grille);boite.append(bloc)}
  if(!montres){const v=document.createElement('p');v.className='muted';
   v.textContent=(catalog.talents||[]).length?'Aucun talent ne correspond à ce filtre.'
    :'Aucun talent au catalogue. Va dans l’onglet Talents pour en créer.';

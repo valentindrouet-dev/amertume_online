@@ -1007,7 +1007,7 @@ assert.ok(page.includes(".eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title
 /* Le journal se vide et s'écrit ; les lignes ne disent plus « Coma » mais 💀 ; la fiche tient dans sa colonne. */
 assert.ok(page.includes('id="journal-chat"')&&page.includes('function logChat(')&&vivant.includes("rec.effet==='vider'&&duMJ"),'le journal s’écrit et se vide');
 assert.ok(!page.includes("' Coma.'")&&page.includes("' 💀'")&&!page.includes('Les dés ne passent pas la DEF'),'💀 et rien de plus');
-assert.ok(src.includes('function talentPill(t,compact)')&&src.includes("talentPill(tv,true)")&&feuille.includes('.talent-grille .cat-pill{'),'les talents de la fiche sont compacts');
+assert.ok(src.includes('function talentCarte(t,logo){')&&src.includes("carte=talentCarte(tv),pill=carte.firstChild;")&&feuille.includes('.talent-grille .cat-pill{'),'les talents de la fiche sont compacts');
 assert.ok(page.includes('minmax(0,1fr) 340px')&&page.includes('minmax(0,1fr) 380px'),'la colonne de droite s’élargit');
 /* L'orbe et la flèche volent avant que les dégâts tombent ; l'œil de la troupe ; le journal épuré. */
 assert.ok(page.includes('function volFleche(')&&vivant.includes("rec.effet==='fleche'")&&page.includes("diffuserEffet('fleche',a,actors[j],null)")
@@ -1557,7 +1557,7 @@ assert.ok(page.includes('function soclesOccupes(a,size,ignorer,adverses)')
    repliés ; l'attaque d'équipement s'appelle « Attaque » ; un talent qui frappe porte les dés,
    le bonus et son jeton, comme une attaque ; l'Onde du camp lève les états comme le bouton Soin. */
 assert.ok(page.includes('<span class="lifebar-text" id="hp"></span></div><div class="bloc-fixe" id="bloc-gear"><div class="bloc-tete"><span class="bloc-titre">Équipement</span><span class="compte" id="gear-compte"></span></div><div id="gear"></div></div>')
- &&!page.includes('<details class="bloc-replie" id="bloc-gear">')&&page.includes('<details class="bloc-replie" id="bloc-talents">')
+ &&!page.includes('<details class="bloc-replie" id="bloc-gear">')&&page.includes('<details class="bloc-replie" id="bloc-talents" open>')
  &&feuille.includes('.bloc-replie,.bloc-fixe{margin:6px 0}')&&feuille.includes(".bloc-replie .bloc-titre,.bloc-fixe .bloc-titre{font:700 15px 'Killam'")
  &&(page.match(/class="divider"/g)||[]).length===2,'fiche en jeu : équipement ouvert, pas de barre sous les PV');
 assert.ok(src.includes("const libelle=at.gear?'Attaque':(at.name||'Attaque');")&&src.includes("nom.textContent=libelle;")
@@ -1682,19 +1682,17 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
  &&src.includes("rangees(equipement,'');rangees(objets,'Objets');bulleOrpheline();")&&src.includes(' bulleOrpheline();return out}')
  &&src.includes("if(!equipable){if(BULLES){if(!tout)basculeEpingle(p,montre)}else basculer();return}")
  // Le chevron des vignettes de talent d'une fiche ne dépliait que l'ancien dépliant.
- &&src.includes("if(!BULLES){const chev=document.createElement('span');chev.className='chev';chev.textContent='⌄';pill.append(chev)}")
- &&src.includes('if(BULLES)surveille(pill,montre);')
- &&src.includes('    if(BULLES)return;   // au survol, la description se montre seule')
+ &&!src.includes("chev.textContent='⌄'")&&src.includes('surveille(pill,montre);out.append(carte)});')
  &&src.includes('function fermerBulle()')&&src.includes("document.addEventListener('pointerdown',bulleDehors,true);")
  &&src.includes("document.addEventListener('keydown',bulleEchap,true);")&&src.includes(" e.preventDefault();e.stopPropagation();fermerBulle()}")&&src.includes("window.addEventListener('scroll',fermerBulle,true);window.addEventListener('resize',fermerBulle)")
  &&src.includes("if(!bulleAncre.isConnected||(!r.width&&!r.height)){fermerBulle();return}")&&src.includes("function ancreVisible(el){return !!el&&el.isConnected&&!!el.offsetParent}")&&src.includes('const dessous=r.top-b.height-12<marge;')
  &&src.includes("bulleEl.style.setProperty('--fleche',")
  // Les deux chemins cohabitent : la bulle, et le dépliant d'avant si l'on repasse BULLES à faux.
  &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&gearOuvert===cle&&ancreVisible(p))reposeBulle(montre)});")
- &&src.includes("out.append(p);if(!BULLES)details.push(p.detailPlie)});")&&src.includes("out.append(pill);if(!BULLES)details.push(detail)});")
- &&src.includes('let talentOuvert=null;')&&src.includes("const cle=(a.id||'?')+'|'+t.id,ouvert=BULLES?talentOuvert===cle:talentsOuverts.has(t.id);")
- &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});")
- &&src.includes("if(o)talentsOuverts.add(t.id);else talentsOuverts.delete(t.id)};")
+ &&src.includes("out.append(p);if(!BULLES)details.push(p.detailPlie)});")&&src.includes("surveille(pill,montre);out.append(carte)});")
+ &&src.includes('let talentOuvert=null;')&&src.includes("const cle=(a.id||'?')+'|'+t.id;")
+ &&src.includes("if(talentOuvert===cle)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});")
+ &&!src.includes('talentsOuverts')
  &&feuille.includes('.bulle{position:fixed;z-index:60;')&&feuille.includes(".bulle::after{content:'';position:absolute;left:var(--fleche,50%);")
  &&feuille.includes('.bulle.dessous::after{'),'la description se pose en bulle, le dépliant reste sous BULLES');
 /* Les effets d'équipement : une banque déclarée comme celle des talents — une clé, des
@@ -2412,7 +2410,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(JSON.stringify(dg.map(x=>x[0])),JSON.stringify(['Dégâts','Fiche (saisie)','Talents','Total']),'les +2 viennent d’un talent, la fiche dit 0');}
 {assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&peutEquiper&&actors.includes(a);")
   &&src.includes("if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}")&&src.includes("function employerDepuisFiche(a,o){")&&!src.includes("b.className='gear-utiliser'"),'un objet s’utilise d’un clic');
- assert.ok(src.includes("const NIVEAUX_TALENTS=false;")&&src.includes("p.append(b);if(NIVEAUX_TALENTS)p.append(niv);")&&src.includes('<select id="talent-sort" aria-label="Tri" hidden>')
+ assert.ok(src.includes("const NIVEAUX_TALENTS=false;")&&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes('<select id="talent-sort" aria-label="Tri" hidden>')
   &&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes("'<input type=\"hidden\" name=\"level\" value=\"'"),'les niveaux de talent se cachent, le câblage reste');
  const ctxK={catalog:{motsCles:['Allié : vert','Feu : orange','Ennemi = #123456','Sans couleur','Gel']},STAT_TINTS:{pv:'1,2,3',dmg:'4,5,6',def:'0,0,0',endu:'0,0,0',vie:'0,0,0',xp:'0,0,0'},ETATS_JEU:gearApi.ETATS_JEU};
  vm.createContext(ctxK);vm.runInContext(src.slice(src.indexOf('const TEINTE_ETAT_MOT='),src.indexOf('function texteEnrichi(')),ctxK);
@@ -2510,7 +2508,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&feuille.includes(".dom-cartouche.c-nom{font:700 3.1cqw/1.05 'Killam',Georgia,serif;"),'les inscriptions de la carte, en Killam, glissées dans l’éditeur');
  assert.ok(!src.includes("'Passif : agit tant que la pièce est portée'")&&src.includes("if(col==='armor'){if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))ligne('DEF '")
   &&feuille.includes('.cat-carte .nom-carte{font:600 11px/1.2 system-ui;text-align:center;color:var(--ink);max-width:84px;overflow-wrap:anywhere;min-height:2.4em;display:flex;align-items:center;justify-content:center}'),'l’infobulle des bijoux allégée, les noms centrés');
- assert.ok(src.includes("function carteAjout(a,o,clic){")&&src.includes("liste.forEach(o=>grille.append(carteAjout(a,o,clic)));")&&!src.includes('Clique un objet pour l’ajouter')
+ assert.ok(src.includes("function carteAjout(a,o,clic){")&&src.includes("liste.forEach(o=>grille.append(pickerMode==='gear'?carteAjout(a,o,clic):pastille(o)));")&&!src.includes('Clique un objet pour l’ajouter')
   &&src.includes("$('picker-note').hidden=mode==='gear';"),'l’inventaire se remplit d’icônes, sans mode d’emploi');}
 /* v0.279 — Les inscriptions se décorrèlent : nom, qualité, habitants, visiteurs — quatre textes,
    chacun sa place. Les deux blocs d'avant se défont là où leurs lignes s'écrivaient. */
@@ -2690,7 +2688,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function choixElement(a,classe,rendre){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
   &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tv=vu(t),logo=logoTalent(tv);")&&src.includes("const tp=talentAuPalier(vu(t),n),col=")
   &&src.includes(".filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
-  &&src.includes("name=\"elementaire\"")&&src.includes("rangee.forEach(t=>{const tv=talentPourElement(t,elementDe(a)),pill=talentPill(tv,true);"),'l’arbre, la fiche et l’éditeur suivent l’élément');
+  &&src.includes("name=\"elementaire\"")&&src.includes("const tv=talentPourElement(t,elementDe(a)),carte=talentCarte(tv),pill=carte.firstChild;"),'l’arbre, la fiche et l’éditeur suivent l’élément');
  assert.ok(src.includes(".filter(r=>ELEMENTS.every(e=>LOGOS_TOUS.includes(r+'_'+e.logo))).map(r=>r+'_{logo}');")&&page.includes("const teinte=etat||(elementDe(a)||{}).etat||'';"),'le logo et l’orbe suivent l’élément ; les dés restent les leurs');
  /* v0.301 : sur la carte d'un aventurier, ses gemmes en ligne, sans tableau ni valeur en or. */
  assert.ok(src.includes("function ligneGemmes(compte,poser,qui){const l=document.createElement('div');l.className='gemmes-ligne';")&&src.includes("return l.childElementCount?l:null}")
@@ -2768,7 +2766,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("d.volets={...d.volets,[c]:k===n?0:n};dessineReglagesTalent()")&&src.includes("params.filter(p=>reglageCommun(p)&&!p.volet).forEach(p=>{")
   &&src.includes("const cell=elem&&p.cle==='etat'?'<span class=\"suit-element\">L’élément du Mystique : Feu, Gel ou Foudre</span>")&&src.includes("function phrasesPaliers(){")
   &&src.includes("t.volets=voletsDe({effet:t.effet,volets:talentDraft.volets})")&&src.includes("...communsDe(t.effet,t.params)")&&css.includes('.volet-case.ici{'),'les volets par palier, les réglages communs, la phrase du moteur');
- assert.ok(src.includes("function nomAccolades(el,texte){")&&src.includes("n.className='nom';nomAccolades(n,t.name);")&&src.includes("nom.className='arbre-nom';nomAccolades(nom,tv.name);")
+ assert.ok(src.includes("function nomAccolades(el,texte){")&&src.includes("nom.className='nom-carte';nomAccolades(nom,t.name);")&&src.includes("nom.className='arbre-nom';nomAccolades(nom,tv.name);")
   &&src.includes("p.textContent='Selon l’élément : '+ELEMENTS.map(e=>remplaceElement(v,e)).join(' · ')")&&css.includes('.accolade{'),'les accolades du nom, en pastille ou remplies');
  assert.ok(src.includes("function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){")&&src.includes(" const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note});")
   &&src.includes("if(BULLES)surveille(p,()=>{const d=bulleTalent(t,{vu:x=>sous?talentPourElement(x,sous):x});ouvrirBulle(p,d,")
@@ -2804,8 +2802,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const G=C.ELEMENTS[1];
  assert.deepEqual((({name,logo,effects})=>[name,logo,effects])(C.talentPourElement({name:'Orbes de {élémént}',logo:'spell_orbes_feu',effects:'{Élement} et {truc}'},G)),['Orbes de Gel','spell_orbes_gel','Gel et {truc}'],'accents indifférents, accolade inconnue intacte, logo qui suit');
  assert.ok(!C.aDesAccolades('Le {truc}')&&C.aDesAccolades('{ETAT}'),'une accolade inconnue ne rend pas élémentaire');
- assert.ok(src.includes("p.className='cat-pill gear-carre talent-carre t-'+cle;")&&src.includes("if(mj){p.onclick=()=>openTalent(i);")&&src.includes("bloc.className='cat-col armurerie-grille'+(famille===GENERIQUES?' c-generique':'');")
-  &&src.includes("bloc.className='cat-col armurerie-grille c-'+key;")&&src.includes("if(BULLES)surveille(p,()=>ouvrirBulle(p,bulleModele(m),'bulle-modele'));")&&src.includes("function bulleModele(m){")&&css.includes('.cat-pill.gear-carre.talent-carre{border-left:none;width:69px;height:69px;min-width:0;min-height:0;padding:0;border-radius:50%}'),'talents et bestiaire en carrés');
+ assert.ok(src.includes("p.className='cat-pill gear-carre talent-carre t-'+talentType(t)[0];")&&src.includes("if(mj){p.onclick=()=>openTalent(i);")&&src.includes("bloc.className='cat-col armurerie-grille'+(famille===GENERIQUES?' c-generique':'');")
+  &&src.includes("bloc.className='cat-col armurerie-grille c-'+key;")&&src.includes("if(BULLES)surveille(p,()=>ouvrirBulle(p,bulleModele(m),'bulle-modele'));")&&src.includes("function bulleModele(m){")&&css.includes('.cat-pill.gear-carre.talent-carre{border:3px solid var(--teinte,#8a8474);width:69px;height:69px;min-width:0;min-height:0;padding:0;border-radius:50%}'),'talents et bestiaire en carrés');
  assert.ok(!src.includes('function talentBloc(')&&!src.includes('bestiaireOuverts')&&!src.includes('talentCorrige'),'plus de dépliant au clic');}
 /* v0.299 — Le palier d'un talent tenu, en chiffre romain à la Killam après son nom : dans le
    titre de sa bulle, sur la fiche, sur les boutons de la table. */
@@ -2813,7 +2811,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("const ROMAINS_PALIER=['','','II','III'];")&&page.includes("function nomAvecPalier(texte,nom,palier){")
   &&page.includes("if(nom&&texte.startsWith(nom))s.append(nom,palierRomain(palier),texte.slice(nom.length));else s.append(texte,palierRomain(palier));")
   &&page.includes("palier:paliersDe(talent)>1&&talent.palier>1?talent.palier:0,")&&page.includes("geste(nomAvecPalier(b.texte,b.talent.name,b.palier),"),'le chiffre du palier sur les boutons de la table');
- assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("if(palierDe(a,t)>1)pill.querySelector('.nom').append(palierRomain(palierDe(a,t)));")
+ assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("if(k>1)carte.lastChild.append(palierRomain(k));")
   &&src.includes("const nom=nomAvecPalier(t.texte,t.talent.name,t.palier);nom.className='nom';")&&css.includes(".palier-romain{margin-left:.3em;font-family:'Killam',Georgia,serif;"),'dans la bulle et sur la fiche, en Killam');}
 /* v0.300 — Un talent élémentaire choisit un logo par élément ; sans logo propre, l'ancien
    logo suit l'élément comme avant. */
@@ -2832,8 +2830,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(!C.etatRefuse(inv({contre:'des',etat:'Feu'}),'Feu')&&C.etatRefuse(inv({contre:'etat',etat:'Feu'}),'Feu')&&C.etatRefuse(inv({etat:'Gel'}),'Gel')&&!C.desRefuses(inv({etat:'Gel'})).length,'un état, ou des dés, jamais les deux');
  assert.ok(C.phraseTalent('invulnerable',{contre:'des',des:'red'}).includes('<b>insensible aux dés Lourds</b>'));
  assert.ok(src.includes("function logoTalent(t,cls){if(t&&t.effet==='invulnerable'){const w=pastilleInsensible(paramsTalent(t));if(w){w.classList.add('logo-auto');")
-  &&src.includes("function pastilleInsensible(p){let el=null,titre='';")&&src.includes("logo=logoTalent({...vu,logo:remplaceElement(vu.logo||'',sous||ELEMENTS[0])});")
-  &&css.includes('.arbre-rond .effet-pastille.logo-auto{width:58%;height:58%}'),'le logo automatique, barré de rouge');}
+  &&src.includes("function pastilleInsensible(p){let el=null,titre='';")&&src.includes("const p=talentRond(t,logoTalent({...vu,logo:remplaceElement(vu.logo||'',sous||ELEMENTS[0])}));")
+  &&css.includes('.arbre-rond .effet-pastille.logo-auto{width:72%;height:72%}'),'le logo automatique, barré de rouge');}
 /* v0.303 — Une attaque spéciale inflige autant d'états qu'on en coche ; l'état unique
    d'avant se lit toujours, et les modèles posés sur une carte gardent la liste. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8');
@@ -2879,8 +2877,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("log(nomNum(a)+' se relève : Mouvement dépensé, Action encore disponible.',{ton:'etat'});render();scheduleSave()},'btn-action');")
   &&css.includes('button.choix-attaque.sans-des.avec-logo .nom{grid-row:1/3;align-self:center}'),'Au sol rampe, Se relever en bouton d’action, nom centré');}
 /* v0.309 — Une tuile de talent n'écrit plus sa nature sous son logo. */
-{const src=fs.readFileSync('editor.js','utf8');const tuile=src.slice(src.indexOf('function talentRow('),src.indexOf('function talentRow(')+1500);
- assert.ok(!tuile.includes("b.className='t-badge'")&&tuile.includes("const [cle,,nature]=talentType(t),mj=view==='mj';")&&!fs.readFileSync('editor.css','utf8').includes('.talent-carre .t-badge'),'pas d’abrégé sous le logo');}
+{const src=fs.readFileSync('editor.js','utf8');const tuile=src.slice(src.indexOf('function talentRow('),src.indexOf('\nfunction ',src.indexOf('function talentRow(')+10));
+ assert.ok(!tuile.includes("b.className='t-badge'")&&tuile.includes("const nature=talentType(t)[2],mj=view==='mj';")&&!fs.readFileSync('editor.css','utf8').includes('.talent-carre .t-badge'),'pas d’abrégé sous le logo');}
 /* v0.310 — Quatre dossiers d'icônes se câblent seuls : talents, équipement, objets, attaques.
    Une seule demande à GitHub les liste tous ; un logo déjà choisi reste offert dans son menu,
    même si la liste n'est pas venue, et l'enregistrer ne l'efface pas. */
