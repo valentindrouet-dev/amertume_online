@@ -2872,4 +2872,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("if(elem){const c=choixElement(null,famille,renderTalents);c.classList.add('compact');h.append(c)}")
   &&src.includes("bloc.append(talentRow(t,place.get(t.id),elem))")&&src.includes("nom.className='nom-carte';nomAccolades(nom,vu.name);")
   &&src.includes("b.onclick=ev=>{ev.stopPropagation();elementApercu=e.cle;(rendre||renderArbres)()}")&&css.includes('.cat-col h3 .elements-bloc.compact{'),'Feu, Gel, Foudre dans la barre du Mystique');}
-console.log('1707 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.308 — Au sol ne cloue plus sur place (le Gel, si) ; « Se relever » prend l'allure des
+   boutons d'action ; le nom d'un talent sans dés se centre en hauteur contre son logo. */
+{const page=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(page.includes("function canMove(i){return controlled(i)&&(view===\"mj\"||(!tokensLocked&&!hasState(actors[i],'Gel')))}")
+  &&page.includes("log(nomNum(a)+' se relève : Mouvement dépensé, Action encore disponible.',{ton:'etat'});render();scheduleSave()},'btn-action');")
+  &&css.includes('button.choix-attaque.sans-des.avec-logo .nom{grid-row:1/3;align-self:center}'),'Au sol rampe, Se relever en bouton d’action, nom centré');}
+console.log('1708 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

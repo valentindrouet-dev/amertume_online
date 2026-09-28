@@ -704,6 +704,8 @@ button.choix-attaque .logos.croises{position:relative;width:38px;height:38px;dis
 #talent-form label:has(> select[name=logo]) select{flex:1;min-width:120px}
 /* Un talent sans dés tient sur une ligne : son nom, centré sur la hauteur du bouton. */
 button.choix-attaque.sans-des{grid-auto-rows:1fr}
+/* Sans dés, le nom d'un talent se centre en hauteur contre son logo, qui tient les deux rangées. */
+button.choix-attaque.sans-des.avec-logo .nom{grid-row:1/3;align-self:center}
 
 /* Quatre aventuriers par ligne au plus, puis trois, deux, un selon la largeur. */
 @media(max-width:1500px){.hero-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
