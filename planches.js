@@ -85,26 +85,68 @@ function grilleUniforme({W,H,A},lignes,colonnes){let x0=W,y0=H,x1=-1,y1=-1;
  for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(A[y*W+x]>SEUIL_ALPHA){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
  if(x1<0)return null;const pas=(a,b,n)=>Array.from({length:n+1},(_,i)=>a+(b-a)*i/n);
  return {lignes,colonnes,bx:pas(x0,x1+1,colonnes),by:pas(y0,y1+1,lignes)}}
-/* Chaque case de la grille, resserrée sur les taches dont le centre y tombe : l'éclat d'une
-   icône voisine qui déborde lui appartient, et reste chez elle. Un liseré de deux pixels garde
-   le halo, et la case ne mord pas plus d'un huitième sur ses voisines. Une case presque vide,
-   au bout d'une dernière ligne incomplète, n'est pas une icône. */
-function casesDe(al,bx,by){const {W,H}=al,comps=al.taches||(al.taches=taches(al)),cases=[];
+/* Qui possède chaque pixel de la planche. Les taches se lisent au seuil ordinaire ; une tache
+   trop grande, deux icônes qui se touchent, se relit à des seuils plus hauts jusqu'à se séparer
+   en morceaux de la taille courante. Puis chaque pixel, halo, ombre et éclats compris, revient
+   de proche en proche à l'icône la plus proche. Une icône découpée ne montrera que ses pixels :
+   le bord d'une voisine qui déborde dans son cadre s'efface. */
+function proprietaires(al){if(al.proprio)return al.proprio;
+ const {W,H,A}=al,base=al.taches||(al.taches=taches(al)),lab=base.lab,N=W*H;
+ const tailleK=k=>Math.max(k.x1-k.x0,k.y1-k.y0),gros=base.filter(k=>k.c>=30);
+ const med=gros.length?gros.map(tailleK).sort((a,b)=>a-b)[gros.length>>1]:0;
+ const own=new Int32Array(N),objets=[],idDe=new Int32Array(base.length+1);
+ const nouvel=(k,trop)=>{objets.push({x0:k.x0,y0:k.y0,x1:k.x1,y1:k.y1,c:k.c,gros:!!trop,hx0:W,hy0:H,hx1:-1,hy1:-1});return objets.length};
+ base.forEach((k,i)=>{const n=i+1;if(k.c<30)return;
+  if(tailleK(k)>med*1.25){const sep=separe(al,k,n,med,lab);
+   if(sep){sep.forEach(m=>{const id=nouvel(m);m.pixels.forEach(p=>{own[p]=id})});idDe[n]=-1;return}}
+  idDe[n]=nouvel(k,tailleK(k)>med*1.25)});
+ for(let p=0;p<N;p++){const n=lab[p];if(n&&idDe[n]>0)own[p]=idDe[n]}
+ // De proche en proche : chaque pixel encore sans maître prend celui du voisin atteint le premier.
+ const file=new Int32Array(N);let debut=0,fin=0;for(let p=0;p<N;p++)if(own[p])file[fin++]=p;
+ while(debut<fin){const p=file[debut++],o=own[p],x=p%W;
+  if(x>0&&!own[p-1]){own[p-1]=o;file[fin++]=p-1}
+  if(x<W-1&&!own[p+1]){own[p+1]=o;file[fin++]=p+1}
+  if(p>=W&&!own[p-W]){own[p-W]=o;file[fin++]=p-W}
+  if(p+W<N&&!own[p+W]){own[p+W]=o;file[fin++]=p+W}}
+ // Le halo de chaque icône : tout ce qu'elle possède d'à peine visible autour d'elle.
+ for(let p=0;p<N;p++){const o=own[p];if(!o||A[p]<=8)continue;const b=objets[o-1],x=p%W,y=(p-x)/W;
+  if(x<b.hx0)b.hx0=x;if(x>b.hx1)b.hx1=x;if(y<b.hy0)b.hy0=y;if(y>b.hy1)b.hy1=y}
+ return al.proprio={own,objets,med}}
+// Une tache trop grande, relue à des seuils plus hauts : ses morceaux, s'ils ont tous la taille courante.
+function separe({W,A},k,n,med,lab){for(const seuil of [80,128,176,224]){const vu=new Set(),morceaux=[];
+  for(let y=k.y0;y<=k.y1;y++)for(let x=k.x0;x<=k.x1;x++){const s=y*W+x;if(lab[s]!==n||A[s]<=seuil||vu.has(s))continue;
+   const m={x0:x,y0:y,x1:x,y1:y,c:0,pixels:[]},pile=[s];vu.add(s);
+   while(pile.length){const p=pile.pop(),px=p%W,py=(p-px)/W;m.c++;m.pixels.push(p);
+    if(px<m.x0)m.x0=px;if(px>m.x1)m.x1=px;if(py<m.y0)m.y0=py;if(py>m.y1)m.y1=py;
+    for(const q of [px>k.x0?p-1:-1,px<k.x1?p+1:-1,py>k.y0?p-W:-1,py<k.y1?p+W:-1])
+     if(q>=0&&lab[q]===n&&A[q]>seuil&&!vu.has(q)){vu.add(q);pile.push(q)}}
+   morceaux.push(m)}
+  const vrais=morceaux.filter(m=>m.c>=30);
+  if(vrais.length>=2&&vrais.every(m=>Math.max(m.x1-m.x0,m.y1-m.y0)<=med*1.25))return vrais}
+ return null}
+/* Chaque case de la grille, resserrée sur les icônes dont le centre y tombe, halo compris ; elle
+   ne mord pas plus d'un huitième sur ses voisines. Deux icônes restées soudées, faute de se
+   séparer, se partagent à la frontière des cases. Une case presque vide, au bout d'une dernière
+   ligne incomplète, n'est pas une icône. */
+function casesDe(al,bx,by){const {W,H}=al,{objets}=proprietaires(al),cases=[];
  for(let r=0;r<by.length-1;r++)for(let c=0;c<bx.length-1;c++){
   const X0=bx[c],X1=bx[c+1],Y0=by[r],Y1=by[r+1],mx=(X1-X0)/8,my=(Y1-Y0)/8;
   let x0=W,y0=H,x1=-1,y1=-1,n=0;
   const prend=(a,b,c,d,nb)=>{n+=nb;if(a<x0)x0=a;if(c>x1)x1=c;if(b<y0)y0=b;if(d>y1)y1=d};
-  comps.forEach(k=>{
-   /* Deux icônes qui se touchent font une seule tache, plus grande qu'une case : chaque case
-      qu'elle couvre en prend sa part, à son propre cadre. */
-   if(k.x1-k.x0>(X1-X0)*1.25||k.y1-k.y0>(Y1-Y0)*1.25){const a=Math.max(k.x0,X0),b=Math.max(k.y0,Y0),c=Math.min(k.x1,X1-1),d=Math.min(k.y1,Y1-1);
-    if(c>a&&d>b)prend(a,b,c,d,k.c*(c-a)*(d-b)/Math.max(1,(k.x1-k.x0)*(k.y1-k.y0)));return}
-   const cx=(k.x0+k.x1)/2,cy=(k.y0+k.y1)/2;if(cx<X0||cx>=X1||cy<Y0||cy>=Y1)return;prend(k.x0,k.y0,k.x1,k.y1,k.c)});
+  objets.forEach(o=>{
+   if(o.gros){const a=Math.max(o.x0,X0),b=Math.max(o.y0,Y0),c=Math.min(o.x1,X1-1),d=Math.min(o.y1,Y1-1);
+    if(c>a&&d>b)prend(a,b,c,d,o.c*(c-a)*(d-b)/Math.max(1,(o.x1-o.x0)*(o.y1-o.y0)));return}
+   const cx=(o.x0+o.x1)/2,cy=(o.y0+o.y1)/2;if(cx<X0||cx>=X1||cy<Y0||cy>=Y1)return;
+   prend(Math.min(o.x0,o.hx0),Math.min(o.y0,o.hy0),Math.max(o.x1,o.hx1),Math.max(o.y1,o.hy1),o.c)});
   if(x1<0||n<(X1-X0)*(Y1-Y0)*.02)continue;
-  x0=Math.max(0,Math.floor(X0-mx),x0-2);y0=Math.max(0,Math.floor(Y0-my),y0-2);
-  x1=Math.min(W-1,Math.ceil(X1+mx),x1+2);y1=Math.min(H-1,Math.ceil(Y1+my),y1+2);
+  x0=Math.max(0,Math.floor(X0-mx),x0);y0=Math.max(0,Math.floor(Y0-my),y0);
+  x1=Math.min(W-1,Math.ceil(X1+mx),x1);y1=Math.min(H-1,Math.ceil(Y1+my),y1);
   cases.push([x0/W,y0/H,(x1-x0+1)/W,(y1-y0+1)/H])}
  return cases}
+// La transparence d'une planche, lue une fois par image.
+const PLANCHES_ALPHA=new Map();
+function alphaPlanche(fichier,img){let al=PLANCHES_ALPHA.get(fichier);
+ if(!al||al.img!==img){al=lisAlpha(img);al.img=img;PLANCHES_ALPHA.set(fichier,al)}return al}
 
 /* ---------- Montrer une icône ---------- */
 /* L'icône se découpe dans sa planche à la première demande, et l'adresse obtenue se garde :
@@ -118,20 +160,20 @@ function urlIcone(id){const i=iconeDe(id);if(!i)return Promise.reject(new Error(
   const [x,y,w,h]=i.cas,W=img.naturalWidth,H=img.naturalHeight;
   const sx=Math.round(x*W),sy=Math.round(y*H),sw=Math.max(1,Math.round(w*W)),sh=Math.max(1,Math.round(h*H));
   const c=document.createElement('canvas');c.width=sw;c.height=sh;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,sx,sy,sw,sh,0,0,sw,sh);
-  try{const d=g.getImageData(0,0,sw,sh);if(nettoieBords(d))g.putImageData(d,0,0)}catch(e){}
+  try{gardeSesPixels(g,alphaPlanche(i.planche.fichier,img),sx,sy,sw,sh)}catch(e){}
   c.toBlob(b=>{if(!b){ko(new Error('Découpe impossible'));return}const u=URL.createObjectURL(b);URLS_PRETES.set(cle,u);ok(u)},'image/png')}));
  pr.catch(()=>URLS_ICONES.delete(cle));URLS_ICONES.set(cle,pr);return pr}
-/* Le cadre d'une icône peut mordre sur sa voisine : ses éclats, petites taches collées au bord,
-   s'effacent, halo compris. L'icône elle-même, de loin la plus grande tache, reste entière. */
-function nettoieBords(d){const W=d.width,H=d.height,px=d.data,A=new Uint8Array(W*H);for(let i=0;i<W*H;i++)A[i]=px[i*4+3];
- const comps=taches({W,H,A});if(comps.length<2)return false;const max=Math.max(...comps.map(k=>k.c));
- const eclats=comps.filter(k=>k.c<max*.12&&(k.x0===0||k.y0===0||k.x1===W-1||k.y1===H-1));if(!eclats.length)return false;
- eclats.forEach(k=>{const x0=Math.max(0,k.x0-2),y0=Math.max(0,k.y0-2),x1=Math.min(W-1,k.x1+2),y1=Math.min(H-1,k.y1+2);
-  const n=comps.indexOf(k)+1;
-  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const i=y*W+x;
-   // L'éclat lui-même et son halo, jamais un pixel d'une autre tache.
-   if(comps.lab[i]===n||(!comps.lab[i]&&A[i]<=SEUIL_ALPHA))px[i*4+3]=0}});
- return true}
+/* Le cadre d'une icône peut mordre sur ses voisines : il ne garde que les pixels des icônes dont
+   le centre y tombe, et efface le reste, halo et ombre des voisines compris. Deux icônes restées
+   soudées se gardent ensemble. Un cadre où aucune icône n'a son centre reste tel quel. */
+function gardeSesPixels(g,al,sx,sy,sw,sh){const {own,objets}=proprietaires(al),garde=new Set();
+ objets.forEach((o,k)=>{const cx=(o.x0+o.x1)/2,cy=(o.y0+o.y1)/2;
+  if(o.gros?o.x1>=sx&&o.x0<sx+sw&&o.y1>=sy&&o.y0<sy+sh:cx>=sx&&cx<sx+sw&&cy>=sy&&cy<sy+sh)garde.add(k+1)});
+ if(!garde.size)return;
+ const d=g.getImageData(0,0,sw,sh),px=d.data;let efface=false;
+ for(let y=0;y<sh;y++){const ligne=(sy+y)*al.W+sx;
+  for(let x=0;x<sw;x++){const o=own[ligne+x];if(o&&!garde.has(o)&&px[(y*sw+x)*4+3]){px[(y*sw+x)*4+3]=0;efface=true}}}
+ if(efface)g.putImageData(d,0,0)}
 // Poser une icône de planche dans une image : tout de suite si elle est prête, sinon dès qu'elle l'est.
 function poseIcone(im,id){const u=urlIconePrete(id);if(u){im.src=u;return}
  im.removeAttribute('src');urlIcone(id).then(v=>{im.src=v}).catch(()=>{})}
@@ -197,7 +239,7 @@ function blocPlanche(f){const p=plancheDe(f),bloc=document.createElement('sectio
 /* Découper une planche : la grille lue dans la transparence, ou celle qu'on impose. Les noms
    et catégories déjà donnés restent attachés aux numéros. */
 async function decouper(f,lignes,colonnes){let al;
- try{al=lisAlpha(await chargePlanche(f))}catch(e){alert('Impossible de lire la planche « '+nomPlanche(f)+' ».');return}
+ try{al=alphaPlanche(f,await chargePlanche(f))}catch(e){alert('Impossible de lire la planche « '+nomPlanche(f)+' ».');return}
  const g=lignes&&colonnes?grilleUniforme(al,Math.max(1,Math.min(60,lignes|0)),Math.max(1,Math.min(60,colonnes|0))):detecteGrille(al);
  if(!g){alert('Aucune icône trouvée : la planche a-t-elle bien un fond transparent ?');return}
  const cases=casesDe(al,g.bx,g.by),avant=plancheDe(f);
