@@ -963,7 +963,17 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  provocation:{cle:'provocation',nom:'Provocation',type:'act',bouton:'📣 Provocation',attaque:true,
   aide:'Action : un adversaire en vue s’avance jusqu’au porteur, qui l’attaque aussitôt.',
   params:[],
-  phrase(){return 'Un adversaire <b>en ligne de vue</b> doit faire un mouvement vers le porteur — l’adversaire visé, sinon le premier en vue — puis le porteur effectue <b>une attaque</b> contre lui.'}}};
+  phrase(){return 'Un adversaire <b>en ligne de vue</b> doit faire un mouvement vers le porteur — l’adversaire visé, sinon le premier en vue — puis le porteur effectue <b>une attaque</b> contre lui.'}},
+ /* Poussée : une action. Le porteur effectue une attaque, puis repousse la cible hors de sa
+    zone de contact. Deux volets, chacun au palier que le MJ choisit : deux fois plus loin que
+    la zone (palier 2 d'ordinaire), et tous les adversaires au contact (palier 3). */
+ poussee:{cle:'poussee',nom:'Poussée',type:'act',bouton:'💥 Poussée',attaque:true,monstre:true,
+  aide:'Action : le porteur attaque, puis repousse la cible hors de sa zone de contact ; deux fois plus loin, puis tous les adversaires au contact, aux paliers suivants.',
+  params:[],
+  volets:[{cle:'loin',nom:'Repousse à deux fois la zone de contact',palier:2},{cle:'tous',nom:'Repousse tous les adversaires au contact',palier:3}],
+  phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),ouvert=k=>!!v&&v[k]>0&&n>=v[k];
+   return 'Le porteur effectue <b>une attaque</b>, puis repousse '+(ouvert('tous')?'<b>tous les adversaires à son contact</b>':'<b>la cible</b>')
+    +(ouvert('loin')?' à <b>deux fois sa zone de contact</b>.':' <b>hors de sa zone de contact</b>.')}}};
 /* ---------- Les effets d'équipement ----------
    Ce qu'un objet sait faire quand on s'en sert : même grammaire que les talents — une clé,
    des réglages, une phrase que le moteur écrit lui-même — et trois manières d'en user.
