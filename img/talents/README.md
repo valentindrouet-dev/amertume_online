@@ -8,3 +8,6 @@ Dépose ici les icônes de talents : PNG, WebP ou JPEG, carrées de préférence
 - Le nom affiché vient du fichier : `brise_glace.png` devient « Brise glace ».
 - Pour un talent élémentaire, un fichier en `_feu`, `_gel` ou `_foudre` suit l'élément du
   Mystique, comme les autres logos.
+
+Les autres dossiers d'icônes marchent de même : `img/equipement` (Armurerie, armes et armures),
+`img/objets` (Armurerie, objets) et `img/attaques` (attaques spéciales des adversaires).

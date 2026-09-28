@@ -260,8 +260,8 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  const mo=src.match(/const LOGOS_OBJET=(\[[^\]]*\]);/);assert.ok(mo,'LOGOS_OBJET introuvable');
  const objets=fs.readdirSync('img').filter(f=>/^item_.*\.png$/.test(f)).map(f=>f.replace(/\.png$/,'')).sort();
  assert.deepEqual(JSON.parse(mo[1].replace(/'/g,'"')).sort(),objets,'LOGOS_OBJET doit lister img/item_*.png : '+objets.join(', '));
- assert.ok(src.includes("function logosItem(o){const c=o&&o.category;return c==='weapon'||c==='armor'?LOGOS_EQUIPEMENT:c==='ammo'?[...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:LOGOS_OBJET}")
-  &&src.includes("...logosItem(a).map(l=>[l,nomLogo(l)])")&&src.includes("a.logo=logosItem(a).includes(f.logo.value)?f.logo.value:''")
+ assert.ok(src.includes("const l=c==='weapon'||c==='armor'?eq:c==='ammo'?[...eq,...ob]:ob;")
+  &&src.includes("...logosItem(a).map(l=>[l,nomLogo(l)])")&&src.includes("a.logo=logosItem(a).includes(f.logo.value)||estLogoDossier(f.logo.value)?f.logo.value:''")
   &&src.includes("logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)")&&src.includes("replace(/^(weapon|spell|item|attack)_/,'')"),'les objets choisissent parmi les item_*');
  // Les logos de talents déclarés sont exactement les spell_*.png du dossier.
  {const ma=src.match(/const LOGOS_ATTAQUE=(\[[^\]]*\]);/);assert.ok(ma,'LOGOS_ATTAQUE introuvable');
@@ -270,8 +270,8 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
   assert.ok(src.includes('const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_ETATS,...LOGOS_DIVERS];')
    &&src.includes('function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}')
    &&src.includes("(at.logos||[]).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
-   &&src.includes("+sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...LOGOS_TOUS.map(l=>[l,nomLogo(l)])])+'</div>'")
-   &&src.includes("logos:LOGOS_TOUS.includes(f['ai'+i].value)?[f['ai'+i].value]:[],")
+   &&src.includes("...LOGOS_DOSSIERS.attaques,...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])])+'</div>'")
+   &&src.includes("logos:logoValide(f['ai'+i].value)?[f['ai'+i].value]:[],")
    &&src.includes("...(etats=>({etats,etat:etats[0]||''}))([...$('actor-form').querySelectorAll('input[name=\"ax'+i+'\"]:checked')].map(x=>x.value).filter(e=>ETATS_JEU.includes(e))),")
    &&fs.readFileSync('editor.css','utf8').includes('.best-att-tete .etat-inflige{margin-left:auto}')
    &&src.includes("replace(/^(weapon|spell|item|attack)_/,'')")
@@ -2528,7 +2528,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("function poseLogo(im,l){im.onerror=null;im.src=imgUrl(fichierLogo(l));")
   &&src.includes("return logoImage(t&&t.logo,LOGOS_TOUS,cls)}")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
   &&src.includes(" t.logo=f.logo&&(logoValide(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';")
-  &&src.includes("const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],['Dossier talents',LOGOS_DOSSIER_TALENTS],['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
+  &&src.includes("const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],...DOSSIERS_LOGOS.map(([d,nom])=>[nom,LOGOS_DOSSIERS[d]]),['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
  const ctxL={};vm.createContext(ctxL);vm.runInContext(src.match(/const estLogoDossier=[^\n]*/)[0]+'\n'+src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
  assert.deepEqual(['BLINDAGE INITIAL','SAIGNEE','DEF 3','weapon_cape_elfique','DEGATS','weapon_cuir_epais','talents/brise_glace.png'].map(ctxL.nomLogo),['Blindage initial','Saignée','DEF 3','Cape elfique','Dégâts','Cuir épais','Brise glace']);
  assert.ok(src.includes("surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'")&&!src.includes("b.title=t.name+' — '+[talentType(t)[2]")
@@ -2855,7 +2855,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
  const ctxD={};vm.createContext(ctxD);vm.runInContext(src.match(/const estLogoDossier=[^\n]*/)[0]+';this.estLogoDossier=estLogoDossier;',ctxD);
  assert.deepEqual(['talents/brise_glace.png','talents/orbe.webp','talents/a b.png','talents/../x.png','spell_orbes','talents/x.gif'].map(ctxD.estLogoDossier),[true,true,false,false,false,false],'une icône du dossier : un nom sûr et une image, rien au-dessus');
- assert.ok(fs.existsSync('img/talents/README.md')&&src.includes("fetch('https://api.github.com/repos/'+depot+'/contents/img/talents?ref=main'")&&src.includes("const fichierLogo=l=>estLogoDossier(l)?l:l+(EXTENSIONS_LOGO[l]||'.png');")
+ assert.ok(fs.existsSync('img/talents/README.md')&&src.includes("fetch('https://api.github.com/repos/'+depot+'/git/trees/main?recursive=1'")&&src.includes("const fichierLogo=l=>estLogoDossier(l)?l:l+(EXTENSIONS_LOGO[l]||'.png');")
   &&src.includes("function logoImage(l,liste,cls){if(!l||!(liste.includes(l)||estLogoDossier(l)))return null;")&&page.includes("function imgUrl(nom){return './img/'+String(nom).split('/').map(encodeURIComponent).join('/')+'?v='+IMG_V}"),'le dossier des talents, lu sur GitHub, servi morceau par morceau');
  assert.equal(C.talentPourElement({name:'x',elementaire:true,logo:'talents/orbe_feu.png'},C.ELEMENTS[1]).logo,'talents/orbe_gel.png','le suffixe d’élément devant l’extension');
  assert.ok(fs.existsSync('img/weapon_cuir_epais.png'),'le cuir épais, câblé');}
@@ -2881,4 +2881,17 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.309 — Une tuile de talent n'écrit plus sa nature sous son logo. */
 {const src=fs.readFileSync('editor.js','utf8');const tuile=src.slice(src.indexOf('function talentRow('),src.indexOf('function talentRow(')+1500);
  assert.ok(!tuile.includes("b.className='t-badge'")&&tuile.includes("const [cle,,nature]=talentType(t),mj=view==='mj';")&&!fs.readFileSync('editor.css','utf8').includes('.talent-carre .t-badge'),'pas d’abrégé sous le logo');}
-console.log('1709 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.310 — Quatre dossiers d'icônes se câblent seuls : talents, équipement, objets, attaques.
+   Une seule demande à GitHub les liste tous ; un logo déjà choisi reste offert dans son menu,
+   même si la liste n'est pas venue, et l'enregistrer ne l'efface pas. */
+{const src=fs.readFileSync('editor.js','utf8');
+ const dossiers=[...src.match(/const DOSSIERS_LOGOS=(\[[^\n]*\]);/)[1].matchAll(/\['([a-z]+)','/g)].map(m=>m[1]);
+ const motif=src.match(/const estLogoDossier=l=>\/\^\(([a-z|]+)\)/)[1].split('|');
+ assert.deepEqual(motif,dossiers,'le motif des logos de dossier suit la liste des dossiers');
+ dossiers.forEach(d=>assert.ok(fs.existsSync('img/'+d+'/README.md'),'img/'+d+' a sa notice'));
+ const ctxD={};vm.createContext(ctxD);vm.runInContext(src.match(/const estLogoDossier=[^\n]*/)[0]+';this.e=estLogoDossier;',ctxD);
+ assert.deepEqual(['equipement/hache_runes.png','objets/potion.webp','attaques/morsure.png','talents/x.png','autre/x.png','equipement/a/b.png'].map(ctxD.e),[true,true,true,true,false,false],'les quatre dossiers, rien d’autre');
+ assert.ok(src.includes("const garde=value&&!FAMILLES_LOGOS.some(([,l])=>l.includes(value));")&&src.includes("return o&&estLogoDossier(o.logo)&&!l.includes(o.logo)?[o.logo,...l]:l}")
+  &&src.includes("eq=[...LOGOS_DOSSIERS.equipement,...LOGOS_EQUIPEMENT],ob=[...LOGOS_DOSSIERS.objets,...LOGOS_OBJET];")
+  &&src.includes(".filter(f=>f&&f.type==='blob'&&String(f.path).startsWith('img/')).map(f=>String(f.path).slice(4))"),'chaque menu prend son dossier, et garde le logo en place');}
+console.log('1716 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
