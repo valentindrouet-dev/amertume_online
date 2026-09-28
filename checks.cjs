@@ -1186,7 +1186,7 @@ assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidd
  &&feuille.includes('.cat-pill .coche-modele{flex:none;width:16px;height:16px;')&&page.includes("if(rangeOf(a)!=='distance'&&typeof volBalayage==='function'){"),'équipement vide masqué, coche dans la vignette, balayage au contact');
 /* La barre de PV d'un token est pleine, entamée ou non — c'est sa hauteur qui dit l'actif ;
    sur la piste des dés, le lanceur à gauche et, au bout de chaque ligne, qui reçoit. */
-assert.ok(page.includes('height:3.2px;border-radius:999px;background:#211f1b;border:1px solid #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
+assert.ok(page.includes('height:4px;border-radius:999px;background:#211f1b;border:0;box-shadow:0 0 0 1px #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
  &&page.includes("const de=from||(lignes.find(l=>l.de)||{}).de||null;")&&page.includes("const cible=recoit(l),tc=lignes.length>1?petit:Math.max(petit,taille);if(cible)visage(cible,tc,bordD+10+tc/2,cy)")
  &&page.includes('.board-token{position:absolute;transform:translate(-50%,-50%);border-radius:50%;'),'barre de PV égale, visages sur la piste');
 /* Plus de chip Niveau sur la fiche de table ; le balayage est une déchirure dentelée de 90° ; la coche du
@@ -1574,7 +1574,9 @@ assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&(a.hp<a
  &&page.includes("' remis d’aplomb'+(rendus?' : PV au complet':'')+(leves?(rendus?', ':' : ')+'états levés':'')+'.'")
  &&!page.includes('const blesses=actors.filter'),'l’Onde du camp lève les états, même sans blessure');
 /* La jauge de PV est un fil, et le même pour tous les socles — l'actif n'y fait rien. */
-assert.ok(page.includes('#pv-layer .pv{position:absolute;transform:translate(-50%,-100%);margin-top:calc(var(--token) / -2 - 4px);width:calc(var(--token) * .96);height:3.2px;')
+/* v0.306 : sans bordure qui mange la hauteur — le liseré passe en ombre —, le rempli occupe
+   les 4 px du fil et ne s'arrondit plus à rien. */
+assert.ok(page.includes('#pv-layer .pv{position:absolute;transform:translate(-50%,-100%);margin-top:calc(var(--token) / -2 - 4px);width:calc(var(--token) * .96);height:4px;')
  &&!page.includes('.token.selected .pv'),'la jauge est fine et pareille pour tous');
 /* L'arbre d'une classe s'ouvre depuis l'onglet Talents, par le rouage posé contre son nom :
    sans combattant, nul n'y porte rien, le clic sur un talent le corrige, et la Provocation
@@ -2523,7 +2525,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const ext=l=>l==='DEGATS'?'.webp':'.png';
  const autres=fs.readdirSync('img').filter(f=>/\.(png|webp)$/i.test(f)&&!/^(weapon|spell|item|attack|ressource)_/.test(f)).sort();
  assert.deepEqual([...lire('LOGOS_ETATS'),...lire('LOGOS_DIVERS')].map(l=>l+ext(l)).sort(),autres,'LOGOS_ETATS et LOGOS_DIVERS doivent lister les autres images : '+autres.join(', '));
- assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("im.src=imgUrl(fichierLogo(l));")
+ assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("function poseLogo(im,l){im.onerror=null;im.src=imgUrl(fichierLogo(l));")
   &&src.includes("return logoImage(t&&t.logo,LOGOS_TOUS,cls)}")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
   &&src.includes(" t.logo=f.logo&&(logoValide(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';")
   &&src.includes("const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],['Dossier talents',LOGOS_DOSSIER_TALENTS],['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
@@ -2857,4 +2859,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("function logoImage(l,liste,cls){if(!l||!(liste.includes(l)||estLogoDossier(l)))return null;")&&page.includes("function imgUrl(nom){return './img/'+String(nom).split('/').map(encodeURIComponent).join('/')+'?v='+IMG_V}"),'le dossier des talents, lu sur GitHub, servi morceau par morceau');
  assert.equal(C.talentPourElement({name:'x',elementaire:true,logo:'talents/orbe_feu.png'},C.ELEMENTS[1]).logo,'talents/orbe_gel.png','le suffixe d’élément devant l’extension');
  assert.ok(fs.existsSync('img/weapon_cuir_epais.png'),'le cuir épais, câblé');}
-console.log('1705 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.306 — Une icône du dossier des talents que le site n'a pas encore publiée se reprend
+   au dépôt, où elle est dès l'envoi ; les aperçus du formulaire passent par là aussi. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("if(depot)im.onerror=()=>{im.onerror=null;im.src='https://raw.githubusercontent.com/'+depot+'/main/img/'+l.split('/').map(encodeURIComponent).join('/')}}")
+  &&src.includes("apercu.hidden=!l;if(l)poseLogo(apercu,l)};")&&src.includes("im.hidden=!m.value;if(m.value)poseLogo(im,m.value)};")
+  &&src.includes("im.className='logo-equip'+(cls?' '+cls:'');poseLogo(im,l);"),'le secours des icônes pas encore publiées');}
+console.log('1706 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

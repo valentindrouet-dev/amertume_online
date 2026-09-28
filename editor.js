@@ -1755,13 +1755,13 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  // L'aperçu du logo, à côté de son menu, comme pour un objet.
  const menuLogo=$('talent-form').elements.logo;
  const apercu=document.createElement('img');apercu.className='logo-equip apercu';apercu.alt='';
- const montre=()=>{const l=remplaceElement(menuLogo.value,ELEMENTS[0]);apercu.hidden=!l;if(l)apercu.src=imgUrl(fichierLogo(l))};
+ const montre=()=>{const l=remplaceElement(menuLogo.value,ELEMENTS[0]);apercu.hidden=!l;if(l)poseLogo(apercu,l)};
  menuLogo.parentNode.append(apercu);montre();menuLogo.onchange=montre;
  /* Élémentaire, le logo unique cède la place aux trois de ses éléments, chacun avec son
     aperçu. Vides à l'ouverture, ils reprennent ce que le logo unique donnait déjà pour
     chaque élément : on ne part pas de rien. */
  const apercus=ELEMENTS.map(e=>{const m=champs['logo_'+e.cle],im=document.createElement('img');im.className='logo-equip apercu';im.alt='';
-  const voir=()=>{im.hidden=!m.value;if(m.value)im.src=imgUrl(fichierLogo(m.value))};m.parentNode.append(im);m.onchange=voir;return voir});
+  const voir=()=>{im.hidden=!m.value;if(m.value)poseLogo(im,m.value)};m.parentNode.append(im);m.onchange=voir;return voir});
  const poseLogosElements=()=>{const oui=!!(champs.elementaire&&champs.elementaire.checked);
   $('logos-elements').hidden=!oui;menuLogo.closest('label').hidden=oui;
   if(oui)ELEMENTS.forEach((e,k)=>{const m=champs['logo_'+e.cle];if(m.value)return;
@@ -2883,7 +2883,12 @@ function logosItem(o){const c=o&&o.category;return c==='weapon'||c==='armor'?LOG
 /* Un logo devant un nom : un jeton, ou rien. Un logo inconnu du dossier ne se dessine
    pas — un objet importé d'ailleurs n'affiche pas une image cassée. */
 function logoImage(l,liste,cls){if(!l||!(liste.includes(l)||estLogoDossier(l)))return null;
- const im=document.createElement('img');im.className='logo-equip'+(cls?' '+cls:'');im.src=imgUrl(fichierLogo(l));im.alt='';im.draggable=false;return im}
+ const im=document.createElement('img');im.className='logo-equip'+(cls?' '+cls:'');poseLogo(im,l);im.alt='';im.draggable=false;return im}
+/* Poser l'image d'un logo. Une icône du dossier des talents peut être listée par GitHub avant
+   que le site ne l'ait publiée : la première réponse est alors « introuvable ». L'image se
+   reprend aussitôt au dépôt lui-même, où elle est dès l'envoi. */
+function poseLogo(im,l){im.onerror=null;im.src=imgUrl(fichierLogo(l));const depot=estLogoDossier(l)?depotPages():'';
+ if(depot)im.onerror=()=>{im.onerror=null;im.src='https://raw.githubusercontent.com/'+depot+'/main/img/'+l.split('/').map(encodeURIComponent).join('/')}}
 function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)}
 // Le logo d'un talent : n'importe quelle image du dossier.
 /* Un talent Invulnérable n'a pas à choisir son logo : c'est l'état ou le dé qu'il refuse,
