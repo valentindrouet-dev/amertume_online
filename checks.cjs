@@ -2984,4 +2984,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("{cle:'price',nom:'Prix (or)',type:'nombre',max:999999,pour:faite,lit:o=>o.price||0,")&&src.includes("const pourTous=(c,fn,dit)=>{const cibles=liste.map(([o])=>o).filter(o=>vaut(c,o));")
   &&src.includes("masseAnnule={dit,avant:cibles.map(o=>structuredClone(o))};cibles.forEach(fn);")&&src.includes("u.textContent='↶ Annuler : '+masseAnnule.dit;")
   &&src.includes("CATS_PRIX.filter(([k])=>k!=='ressource').forEach(")&&src.includes(" if($('item-form').elements.price){const f=$('item-form').elements,b=boutonSuggestion(),maj="),'le prix d’une ressource ne se règle qu’au guide ; l’opération pour toutes s’annule');}
-console.log('1747 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.333 — Les menus des ressources montrent l'icône de chacune, devant son nom : le select reste,
+   caché, et garde la valeur ; un bouton et une liste à icônes le pilotent. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("function menuIcones(sel,icone){")&&src.includes("sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}))")
+  &&src.includes("if(c.cle==='ressource1'||c.cle==='ressource2')menuIcones(el,iconeRessource)")&&src.includes("['ressource1','ressource2'].forEach(k=>{const s=$('item-form').elements[k];if(s)menuIcones(s,iconeRessource)});")
+  &&css.includes('.menu-icones-natif{display:none!important}')&&css.includes('.menu-icones-liste{position:fixed;'),'les ressources, icône comprise, dans leurs menus');}
+console.log('1748 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

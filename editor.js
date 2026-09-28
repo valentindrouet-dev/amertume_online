@@ -1529,7 +1529,9 @@ function tableMasse(boite,liste){
    else if(c.type==='choix'){el=document.createElement('select');el.innerHTML=options(c.opts,c.lit(o));
     el.onchange=()=>{c.ecrit(o,el.value);if(c.cle==='rarete')tr.className='r-'+rareteDe(o);sauve()}}
    else{el=document.createElement('input');el.type='checkbox';el.checked=c.lit(o);el.onchange=()=>{c.ecrit(o,el.checked);sauve()}}
-   el.setAttribute('aria-label',c.nom+' — '+o.name);td.append(el);tr.append(td)});
+   el.setAttribute('aria-label',c.nom+' — '+o.name);td.append(el);tr.append(td);
+   // Les ressources : leur icône devant leur nom.
+   if(c.cle==='ressource1'||c.cle==='ressource2')menuIcones(el,iconeRessource)});
   if(o.id===armoryNeuf){tr.classList.add('neuve');requestAnimationFrame(()=>{tr.scrollIntoView({block:'nearest'});n.focus();n.select()});armoryNeuf=null}
   corps.append(tr)});
  t.append(corps);
@@ -3230,6 +3232,44 @@ function logoImage(l,liste,cls){if(!l||!(liste.includes(l)||estLogoDossier(l)))r
    reprend aussitôt au dépôt lui-même, où elle est dès l'envoi. */
 function poseLogo(im,l){im.onerror=null;if(estIconePlanche(l)){poseIcone(im,l);return}im.src=imgUrl(fichierLogo(l));const depot=estLogoDossier(l)?depotPages():'';
  if(depot)im.onerror=()=>{im.onerror=null;im.src='https://raw.githubusercontent.com/'+depot+'/main/img/'+l.split('/').map(encodeURIComponent).join('/')}}
+/* ---------- Un menu à icônes ----------
+   Un <select> ne montre pas d'image. Celui-ci reste en place, caché, et garde la valeur : le
+   formulaire et le tableau le lisent comme avant. Devant lui, un bouton montre l'option choisie
+   avec son icône et ouvre la liste, icônes comprises ; choisir met le select à jour et signale
+   le changement, comme s'il avait servi lui-même. Flèches, Entrée et Échap au clavier. */
+function menuIcones(sel,icone){
+ const w=document.createElement('span');w.className='menu-icones';sel.before(w);w.append(sel);sel.classList.add('menu-icones-natif');sel.tabIndex=-1;
+ const b=document.createElement('button');b.type='button';b.className='menu-icones-bouton';b.setAttribute('aria-haspopup','listbox');b.setAttribute('aria-expanded','false');
+ const etiquette=sel.getAttribute('aria-label')||(sel.closest('label')&&sel.closest('label').firstChild.textContent.trim())||'';
+ const contenu=(o,el)=>{el.replaceChildren();const s=document.createElement('span');s.className='menu-icones-ico';const i=o.value?icone(o.value):null;if(i)s.append(i);
+  const t=document.createElement('span');t.className='menu-icones-texte';t.textContent=o.textContent;el.append(s,t)};
+ const maj=()=>{const o=sel.options[sel.selectedIndex];if(o)contenu(o,b);b.setAttribute('aria-label',etiquette+(o?' : '+o.textContent:''))};
+ let liste=null;
+ const ferme=()=>{if(!liste)return;liste.remove();liste=null;b.setAttribute('aria-expanded','false');
+  document.removeEventListener('pointerdown',dehors,true);removeEventListener('scroll',defile,true);removeEventListener('resize',ferme)};
+ const dehors=e=>{if(liste&&!liste.contains(e.target)&&!b.contains(e.target))ferme()};
+ const defile=e=>{if(liste&&!liste.contains(e.target))ferme()};
+ const choisit=v=>{ferme();b.focus({preventScroll:true});if(sel.value===v)return;sel.value=v;
+  sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}))};
+ const ouvre=()=>{if(liste){ferme();return}liste=document.createElement('div');liste.className='menu-icones-liste';liste.setAttribute('role','listbox');liste.setAttribute('aria-label',etiquette);
+  [...sel.options].forEach(o=>{const it=document.createElement('div');it.className='menu-icones-option'+(o.selected?' choisie':'');it.setAttribute('role','option');
+   it.setAttribute('aria-selected',String(o.selected));it.tabIndex=-1;it.dataset.v=o.value;contenu(o,it);it.onclick=()=>choisit(o.value);liste.append(it)});
+  liste.onkeydown=e=>{const l=[...liste.children],i=l.indexOf(document.activeElement);
+   if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();l[Math.max(0,Math.min(l.length-1,i+(e.key==='ArrowDown'?1:-1)))].focus()}
+   else if(e.key==='Enter'||e.key===' '){e.preventDefault();if(i>=0)choisit(l[i].dataset.v)}
+   else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();ferme();b.focus()}
+   else if(e.key==='Tab')ferme()};
+  (b.closest('dialog[open]')||document.body).append(liste);
+  // Sous le bouton, ou au-dessus s'il manque la place ; jamais hors de l'écran.
+  const r=b.getBoundingClientRect(),h=Math.min(liste.scrollHeight,320),bas=innerHeight-r.bottom-8;
+  liste.style.minWidth=r.width+'px';liste.style.maxHeight=h+'px';liste.style.left=Math.max(4,Math.min(r.left,innerWidth-liste.offsetWidth-4))+'px';
+  liste.style.top=(bas>=h||bas>=r.top?r.bottom+3:r.top-3-h)+'px';
+  b.setAttribute('aria-expanded','true');const c=liste.querySelector('.choisie')||liste.firstChild;if(c){c.focus({preventScroll:true});c.scrollIntoView({block:'nearest'})}
+  document.addEventListener('pointerdown',dehors,true);addEventListener('scroll',defile,true);addEventListener('resize',ferme)};
+ b.onclick=ouvre;b.onkeydown=e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!liste)ouvre()}};
+ sel.addEventListener('change',maj);maj();w.append(b);return w}
+// L'icône d'une ressource, par sa clé : celle de sa pièce à l'Armurerie.
+function iconeRessource(k){const r=ressourcesJeu().find(x=>x.cle===k);return r&&r.piece?logoEquipement(r.piece,'menu-icones-img'):null}
 // Une ressource ou un trésor peut prendre une gemme, un éclat : ces logos-là s'affichent aussi.
 function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET,...LOGOS_RESSOURCES],cls)}
 // Le logo d'un talent : n'importe quelle image du dossier.
@@ -3335,6 +3375,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +'<button type="button" id="item-bonus-add" class="arbre-ajout">+ Bonus</button>');
  habilleDes($('item-fields'));
  dessineBonusItem();
+ ['ressource1','ressource2'].forEach(k=>{const s=$('item-form').elements[k];if(s)menuIcones(s,iconeRessource)});
  /* À droite du prix : celui que suggère le guide, recalculé à chaque saisie du formulaire. */
  if($('item-form').elements.price){const f=$('item-form').elements,b=boutonSuggestion(),maj=()=>{try{majSuggestion(b,itemDepuisForm({...itemDraft}),num(f.price.value,0,999999))}catch(e){}};
   const ligne=document.createElement('span');ligne.className='prix-ligne';f.price.before(ligne);ligne.append(f.price,b);b.onclick=()=>{f.price.value=b.dataset.total||'0';maj()};
