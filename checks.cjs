@@ -260,7 +260,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  const mo=src.match(/const LOGOS_OBJET=(\[[^\]]*\]);/);assert.ok(mo,'LOGOS_OBJET introuvable');
  const objets=fs.readdirSync('img').filter(f=>/^item_.*\.png$/.test(f)).map(f=>f.replace(/\.png$/,'')).sort();
  assert.deepEqual(JSON.parse(mo[1].replace(/'/g,'"')).sort(),objets,'LOGOS_OBJET doit lister img/item_*.png : '+objets.join(', '));
- assert.ok(src.includes("const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:[...d,...LOGOS_OBJET];")
+ assert.ok(src.includes("const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];")
   &&src.includes("...logosItem(a).map(l=>[l,nomLogo(l)])")&&src.includes("a.logo=logosItem(a).includes(f.logo.value)||estLogoDossier(f.logo.value)?f.logo.value:''")
   &&src.includes("logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)")&&src.includes("replace(/^(weapon|spell|item|attack)_/,'')"),'les objets choisissent parmi les item_*');
  // Les logos de talents déclarés sont exactement les spell_*.png du dossier.
@@ -2408,7 +2408,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(JSON.stringify(pv.slice(3)),JSON.stringify([['Endu × Vie','4 × 5 = 20'],['Classe (Gardien)','+ 2'],['Total','22']]));
  ctxD.bonusDe=(a,t,i)=>i===null?{dmg:2}:{dmg:2};const dg=ctxD.detailDegats({dmg:0});
  assert.equal(JSON.stringify(dg.map(x=>x[0])),JSON.stringify(['Dégâts','Fiche (saisie)','Talents','Total']),'les +2 viennent d’un talent, la fiche dit 0');}
-{assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&peutEquiper&&actors.includes(a);")
+{assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&peutEquiper&&actors.includes(a);")
   &&src.includes("if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}")&&src.includes("function employerDepuisFiche(a,o){")&&!src.includes("b.className='gear-utiliser'"),'un objet s’utilise d’un clic');
  assert.ok(src.includes("const NIVEAUX_TALENTS=false;")&&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes('<select id="talent-sort" aria-label="Tri" hidden>')
   &&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes("'<input type=\"hidden\" name=\"level\" value=\"'"),'les niveaux de talent se cachent, le câblage reste');
@@ -2535,13 +2535,16 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    deux ressources et un prix en or, saisis à l'armurerie et lus nulle part ailleurs. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes(" tete.append(nom);d.append(tete);")&&!src.includes("nat.textContent=bonus?'Bonus':talentType(t)[2]"),'la bulle de l’arbre tait la nature du talent');
- const ctxR={MATERIAUX:[...require('./combat.js').MATERIAUX]};vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('const RESSOURCES='),src.indexOf('function normalizeCatalog('))+';this.RESSOURCES=RESSOURCES;this.ressourceValide=ressourceValide;',ctxR);
- assert.deepEqual([...ctxR.RESSOURCES],['Acier','Argent','Bois','Bronze','Corde','Cuir','Diamant','Or','Pierre','Verre'],'les ressources, par ordre alphabétique');
+ const CR=require('./combat.js'),ctxR={MATERIAUX:[...CR.MATERIAUX],cleRessource:CR.cleRessource,CLE_MATERIAU:CR.CLE_MATERIAU,structuredClone};vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('const RESSOURCES_DEFAUT='),src.indexOf('function normalizeCatalog('))+';this.nomsRessources=nomsRessources;this.ressourceValide=ressourceValide;this.normaliseRessources=normaliseRessources;',ctxR);
+ assert.deepEqual([...ctxR.nomsRessources()],['Acier','Argent','Bois','Bronze','Corde','Cuir','Diamant','Fer','Or','Pierre','Verre'],'les ressources, par ordre alphabétique, Fer compris');
+ assert.deepEqual([...ctxR.normaliseRessources([{cle:'fer',nom:'Fer noir'},{cle:'fer',nom:'Doublon'},{cle:'Mauvaise clé',nom:'X'},{cle:'mithril',nom:'fer noir'}]).map(r=>r.cle+'='+r.nom)],['fer=Fer noir'],'une clé et un nom uniques, une clé bien formée');
+ assert.equal(ctxR.normaliseRessources(undefined).length,11);
+ assert.deepEqual(CR.normaliseReserve({acier:3,or:5,mithril:2,'eclat-rubis':1,'eclat-rubis-eteinte':4,'Mauvais':1}),{acier:3,mithril:2,'eclat-rubis':1},'la réserve garde les matériaux créés, jamais l’or');
  assert.equal(ctxR.ressourceValide('Bois'),'Bois');assert.equal(ctxR.ressourceValide('Mithril'),'');
- assert.ok(src.includes("o.ressource1=ressourceValide(o.ressource1);o.ressource2=ressourceValide(o.ressource2);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))")
+ assert.ok(src.includes("o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))")
   &&src.includes("+field('Prix (or)','price',a.price||0,'number','min=\"0\" max=\"999999\" step=\"1\"')")
-  &&src.includes("+sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])")
-  &&src.includes("+sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...RESSOURCES.map(r=>[r,r])])")
+  &&src.includes("+sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...nomsRessources().map(r=>[r,r])])")
+  &&src.includes("+sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...nomsRessources().map(r=>[r,r])])")
   &&src.includes(" for(const k of ['ressource1','ressource2'])if(f[k])a[k]=ressourceValide(f[k].value);"),'ressources et prix au formulaire de l’objet');}
 /* v0.282 — Au formulaire d'un objet, Mains revient sur la ligne de la rareté ; prix et ressources ont la leur. */
 {const src=fs.readFileSync('editor.js','utf8');
@@ -2555,17 +2558,17 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(C.CLES_GEMMES.includes('brome-saphir')&&C.CLES_GEMMES.includes('brisure-rubis')&&!C.CLES_GEMMES.some(k=>k.endsWith('-eteinte')));
  assert.deepEqual(C.CLES_RICHESSES.slice(0,2),['or','brisure-citrine']);
  assert.ok(!C.CLES_RESSOURCES_DOMAINE.includes('or')&&C.CLES_RESSOURCES_DOMAINE.includes('acier')&&C.CLES_RESSOURCES_DOMAINE.includes('eclat-diamant'),'l’or du domaine est son trésor');
- assert.equal(C.CLES_RESSOURCES_DOMAINE.length,24);
+ assert.equal(C.CLES_RESSOURCES_DOMAINE.length,25);
  assert.equal(C.nomGemme('eclat','emeraude',true),'Éclats d’émeraude, éteintes');assert.equal(C.nomGemme('brome','rubis',false),'Brômes de rubis');
  assert.equal(C.lisCompte('1 200'),1200);assert.equal(C.lisCompte('-3'),0);assert.equal(C.lisCompte('abc'),0);assert.equal(C.lisCompte(5e9),999999);
  assert.deepEqual(C.normaliseCompte({or:'5',x:3,'eclat-rubis':-2,'brisure-saphir':0,'brome-diamant':2.7,'brome-diamant-eteinte':4},C.CLES_RICHESSES),{or:5,'brome-diamant':2},'une éteinte quitte la bourse');
  assert.deepEqual(C.normaliseDomaine(null).ressources,{});
  assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
  assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
-  &&src.includes("const RESSOURCES=[...MATERIAUX].sort((x,y)=>x.localeCompare(y,'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element'];"),'les richesses se relisent et voyagent en direct');
+  &&src.includes("const nomsRessources=()=>ressourcesJeu().map(r=>r.nom).sort((x,y)=>x.localeCompare(y,'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element'];"),'les richesses se relisent et voyagent en direct');
  assert.ok(src.includes("function grilleGemmes(compte,poser,qui){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
   &&fief.includes("function renderDomRessources(){")&&fief.includes("const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;")
-  &&fief.includes("MATERIAUX.filter(m=>m!=='Or').forEach(m=>{"),'les compteurs : sur la carte de l’aventurier, au domaine');
+  &&fief.includes("ressourcesJeu().filter(x=>x.cle!=='or').forEach(({cle:k,nom:m})=>{"),'les compteurs : sur la carte de l’aventurier, au domaine');
  const ctxP={lisCompte:C.lisCompte};vm.createContext(ctxP);vm.runInContext(src.slice(src.indexOf('function poseCompte('),src.indexOf('// Les richesses d\'un aventurier, sur sa carte')),ctxP);
  const compte={or:4};assert.equal(ctxP.poseCompte(compte,'or','12'),12);ctxP.poseCompte(compte,'eclat-rubis','0');ctxP.poseCompte(compte,'or','');
  assert.deepEqual({...compte},{},'un compte à zéro disparaît');}

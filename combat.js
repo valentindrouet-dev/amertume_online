@@ -1515,7 +1515,8 @@ function normalisePnj(p){return {id:p&&p.id||idDomaine(),nom:String(p&&p.nom||'I
    est faite ; l'or du domaine est son trésor. Une gemme a une taille — Brisure, Éclat,
    Brôme —, une variété — Rubis, Diamant, Émeraude, Saphir — et peut être éteinte : sa
    flamme vidée, elle se recharge. Un compte ne garde que ce qui n'est pas nul. */
-const MATERIAUX=['Acier','Argent','Bois','Bronze','Corde','Cuir','Diamant','Or','Pierre','Verre'];
+// Les matériaux de départ ; le MJ en crée d'autres et les renomme dans l'Armurerie (catalog.ressources).
+const MATERIAUX=['Acier','Argent','Bois','Bronze','Corde','Cuir','Diamant','Fer','Or','Pierre','Verre'];
 const cleRessource=n=>String(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-');
 const TAILLES_GEMMES=[['brisure','Brisures','Brisure'],['eclat','Éclats','Éclat'],['brome','Brômes','Brôme']];
 // Les variétés, de la moins chère à la plus chère.
@@ -1584,7 +1585,14 @@ function normaliseDomaine(d){d=d&&typeof d==='object'&&!Array.isArray(d)?d:{};
   carte:{calques,ratio:ratio>0?ratio:16/9,cartouches:cartouchesValides(d.carte&&d.carte.cartouches)},batiments,
   finances:{tresor:Math.trunc(Number(d.finances&&d.finances.tresor))||0,journal},
   pnj:(Array.isArray(d.pnj)?d.pnj:[]).filter(Boolean).slice(0,300).map(normalisePnj),aventuriers,
-  ressources:normaliseCompte(d.ressources,CLES_RESSOURCES_DOMAINE)}}
+  ressources:normaliseReserve(d.ressources)}}
+/* La réserve du domaine : ses matériaux — ceux du catalogue, que le MJ crée et renomme ; leur clé,
+   elle, ne change jamais — et ses gemmes. Une clé bien formée passe, sauf l'or (le trésor) et une
+   gemme hors des comptes. */
+const CLE_MATERIAU=/^[a-z0-9][a-z0-9-]{0,39}$/;
+function normaliseReserve(c){const o={};if(!c||typeof c!=='object'||Array.isArray(c))return o;
+ Object.keys(c).slice(0,300).forEach(k=>{if(k==='or'||!CLE_MATERIAU.test(k))return;
+  if(TAILLES_GEMMES.some(([t])=>k.startsWith(t+'-'))&&!CLES_GEMMES.includes(k))return;const n=lisCompte(c[k]);if(n)o[k]=n});return o}
 // Le coût pour atteindre une étape : les fondations, la construction, le bâti.
 function coutEtape(b,etape){return etape>=1&&etape<=3?Math.max(0,Math.trunc(Number((b&&b.couts||[])[etape-1]))||0):0}
 function prochaineEtape(b){return b&&b.etape<3?b.etape+1:null}
@@ -1635,7 +1643,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,

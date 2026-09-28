@@ -574,7 +574,7 @@ function blocMagasin(out,b){const presents=actors.filter(a=>a.hero&&lieuDe(a)===
  out.append(tete);
  const titre=t=>{const h=document.createElement('h4');h.className='dom-magasin-titre';h.textContent=t;return h};
  // Ce qui est en vente : les pièces de l'armurerie cochées « Magasin », rangées comme elle.
- const rang=o=>['melee','ranged','armor','object'].indexOf(itemColumn(o));
+ const rang=o=>['melee','ranged','armor','object','treasure'].indexOf(itemColumn(o));
  const enVente=(catalog.items||[]).filter(o=>o&&o.magasin===true).sort((x,y)=>rang(x)-rang(y)||x.name.localeCompare(y.name,'fr'));
  out.append(titre('Acheter'));
  if(!enVente.length){const p=document.createElement('p');p.className='muted';p.textContent=mjDom()?'Rien en vente : coche « Magasin » sur des objets de l’armurerie.':'Rien en vente pour l’instant.';out.append(p)}
@@ -591,13 +591,16 @@ function blocMagasin(out,b){const presents=actors.filter(a=>a.hero&&lieuDe(a)===
  [...comptes.entries()].sort(([x],[y])=>rang(x)-rang(y)||x.name.localeCompare(y.name,'fr'))
   .forEach(([o,n])=>g.append(carteMagasin(o,n,prixVente(o),true,'Vendre '+o.name+' pour '+prixVente(o)+' or',()=>vendrePour(client,o),'vente')));
  out.append(g)}
-// Une pièce au magasin : le carré de l'armurerie, sa description au survol, son nom, et le prix sur le bouton.
+/* Une pièce au magasin : le carré de l'armurerie, sa description au survol, son nom, le prix dans
+   un rond doré en haut à droite du carré — d'achat ou de revente — et le bouton qui agit. */
 function carteMagasin(o,n,prix,actif,titre,faire,sens){const carte=document.createElement('div');carte.className='cat-carte dom-article '+sens;
  const p=gearCarre(o,n,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();
  p.removeAttribute('title');p.setAttribute('aria-label',o.name);
  if(BULLES)surveille(p,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});
  const nom=document.createElement('span');nom.className='nom-carte';nom.textContent=o.name;
- const btn=document.createElement('button');btn.type='button';btn.className='dom-achat';btn.textContent=prix?prix.toLocaleString('fr-FR')+' or':'Gratuit';
+ const piece=document.createElement('span');piece.className='dom-prix';piece.textContent=prix?prix.toLocaleString('fr-FR'):'0';
+ piece.title=(sens==='vente'?'Revente : ':'Prix : ')+(prix?prix.toLocaleString('fr-FR')+' or':'gratuit');p.append(piece);
+ const btn=document.createElement('button');btn.type='button';btn.className='dom-achat';btn.textContent=sens==='vente'?'Vendre':'Acheter';
  btn.disabled=!actif;btn.title=titre;btn.setAttribute('aria-label',titre);btn.onclick=faire;
  carte.append(p,nom,btn);return carte}
 function apresMagasin(){renderDomaine(true);render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
@@ -644,7 +647,8 @@ function renderDomRessources(){const boite=$('dom-ressources');if(!boite)return;
  const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;
  const titre=t=>{const h=document.createElement('h3');h.className='reglage-titre';h.textContent=t;return h};
  const mats=document.createElement('div');mats.className='materiaux';
- MATERIAUX.filter(m=>m!=='Or').forEach(m=>{const k=cleRessource(m),n=r[k]||0;
+ // Les ressources du catalogue, sous leur clé fixe : les renommer ne vide pas la réserve.
+ ressourcesJeu().filter(x=>x.cle!=='or').forEach(({cle:k,nom:m})=>{const n=r[k]||0;
   const chip=document.createElement('span');chip.className='materiau'+(n?'':' zero');
   const nom=document.createElement('span');nom.textContent=m;const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');
   if(poser)champVif(v,()=>r[k]||0,t=>poser(k,t),m+' — réserve du domaine','petit');
