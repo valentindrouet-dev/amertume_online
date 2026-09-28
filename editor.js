@@ -26,13 +26,32 @@ const SEGMENTS=['c','g','gc','d','dc'];
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 /* Les ressources dont une pièce est faite — deux au plus — et son prix, en or : saisis à
    l'armurerie, lus nulle part ailleurs pour l'instant. Le menu les range par ordre alphabétique. */
-/* Les ressources dont une pièce est faite, et que le domaine stocke : au catalogue, et le MJ les
-   édite dans l'Armurerie. Chacune a une clé, fixe — c'est sous elle que le domaine compte sa
-   réserve —, et un nom, qu'on peut changer : les pièces qui la citent suivent. */
+/* Les ressources dont une pièce est faite, et que le domaine stocke, sont des pièces de l'Armurerie
+   (catégorie « ressource ») : un nom, une valeur en or, une icône, une rareté. Chacune garde une clé
+   fixe : le domaine compte sa réserve sous elle, et les pièces qui en sont faites la citent par
+   elle — la renommer ne défait donc rien. */
 const RESSOURCES_DEFAUT=MATERIAUX.map(n=>({cle:cleRessource(n),nom:n}));
-function ressourcesJeu(){return typeof catalog!=='undefined'&&catalog&&Array.isArray(catalog.ressources)&&catalog.ressources.length?catalog.ressources:RESSOURCES_DEFAUT}
-const nomsRessources=()=>ressourcesJeu().map(r=>r.nom).sort((x,y)=>x.localeCompare(y,'fr'));
-const ressourceValide=r=>nomsRessources().includes(r)?r:'';
+function ressourcesJeu(){const l=typeof catalog!=='undefined'&&catalog&&Array.isArray(catalog.items)?catalog.items.filter(o=>o&&o.category==='ressource'&&o.cle):[];
+ return l.length?l.map(o=>({cle:o.cle,nom:o.name,piece:o})):RESSOURCES_DEFAUT}
+// Pour un menu : [clé, nom], dans l'ordre des noms.
+const listeRessources=()=>ressourcesJeu().map(r=>[r.cle,r.nom]).sort((x,y)=>x[1].localeCompare(y[1],'fr'));
+const ressourceValide=k=>ressourcesJeu().some(r=>r.cle===k)?k:'';
+// Une clé libre, tirée d'un nom : jamais celle d'une autre ressource.
+function cleLibre(nom,prises){const base=cleRessource(nom||'').replace(/^-+|-+$/g,'').slice(0,34)||'ressource';let k=base,i=2;
+ while(prises.has(k))k=base+'-'+i++;return k}
+/* Les ressources au catalogue. La première fois, elles deviennent des pièces : celles d'avant
+   (liste de la v0.328), sinon celles de départ, Fer compris. Chacune reçoit sa clé ; les pièces
+   qui citaient une ressource par son nom la citent désormais par sa clé. */
+function migreRessources(c){
+ if(!c.items.some(o=>o&&o.category==='ressource')&&!c.ressourcesPosees){
+  const src=Array.isArray(c.ressources)&&c.ressources.length?normaliseRessources(c.ressources):structuredClone(RESSOURCES_DEFAUT);
+  src.forEach(r=>c.items.push({id:'ressource-'+r.cle,name:r.nom,category:'ressource',cle:r.cle,price:0,qty:1,logo:'',rarete:'commun',magasin:false}))}
+ c.ressourcesPosees=true;delete c.ressources;
+ const res=c.items.filter(o=>o&&o.category==='ressource'),vues=new Set();
+ res.forEach(o=>{const k=typeof o.cle==='string'&&CLE_MATERIAU.test(o.cle)&&!vues.has(o.cle)?o.cle:cleLibre(o.name,vues);o.cle=k;vues.add(k)});
+ const parNom=new Map(res.map(o=>[String(o.name||'').trim().toLowerCase(),o.cle]));
+ c.items.forEach(o=>{if(!o||o.category==='ressource')return;
+  ['ressource1','ressource2'].forEach(k=>{const v=o[k];if(v&&!vues.has(v))o[k]=parNom.get(String(v).trim().toLowerCase())||''})})}
 // Au chargement : une clé bien formée et un nom court, l'une et l'autre uniques ; rien, les ressources de départ.
 function normaliseRessources(l){if(!Array.isArray(l)||!l.length)return structuredClone(RESSOURCES_DEFAUT);
  const cles=new Set(),noms=new Set(),out=[];
@@ -41,7 +60,7 @@ function normaliseRessources(l){if(!Array.isArray(l)||!l.length)return structure
  return out.length?out:structuredClone(RESSOURCES_DEFAUT)}
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les ressources d'abord : les pièces se relisent au travers d'elles, plus bas.
- c.ressources=normaliseRessources(c.ressources);const nomsR=new Set(c.ressources.map(r=>r.nom)),resV=r=>nomsR.has(r)?r:'';
+ migreRessources(c);const clesR=new Set(c.items.filter(o=>o&&o.category==='ressource').map(o=>o.cle)),resV=r=>clesR.has(r)?r:'';
  // Les planches d'icônes découpées, leurs noms et catégories (planches.js).
  c.planches=normalisePlanches(c.planches);c.nomsPlanches=normaliseNomsPlanches(c.nomsPlanches);
  // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
@@ -103,7 +122,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // Sa rareté, et ses bonus, relus au travers de leur déclaration.
   o.rarete=rareteDe(o);o.bonus=normaliseBonusEquip(o.bonus);
   o.usage=usageObjet(o);o.consumable=o.usage==='conso';
-  o.magasin=o.magasin===true;o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
+  o.magasin=o.magasin===true;if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??=''});
  return c}
@@ -273,15 +292,12 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="cat-filters"><input id="armory-search" placeholder="Rechercher…" aria-label="Rechercher un objet">'
  +'<select id="armory-cat" aria-label="Catégorie"><option value="">Toutes catégories</option>'
  +'<option value="melee">Armes de mêlée</option><option value="ranged">Armes à distance</option>'
- +'<option value="armor">Armures</option><option value="object">Objets</option><option value="treasure">Trésors</option></select>'
+ +'<option value="armor">Armures</option><option value="object">Objets</option><option value="ressource">Ressources</option><option value="treasure">Trésors</option></select>'
  +'<select id="armory-sort" aria-label="Trier">'+TRIS_ARMURERIE.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('')+'</select></div>'
  /* La banque des effets d'équipement, comme celle des talents : ce que le moteur sait
     faire quand on se sert d'un objet, replié par défaut. */
  +'<details class="bloc-replie biblio"><summary><span class="bloc-titre">📖 Banque des effets d’équipement</span>'
  +'<span class="compte" id="biblio-objets-compte"></span></summary><div id="biblio-objets"></div></details>'
- // Les ressources dont les pièces sont faites et que le domaine stocke : les créer, les renommer.
- +'<details class="bloc-replie biblio" id="bloc-ressources"><summary><span class="bloc-titre">⛏ Ressources</span>'
- +'<span class="compte" id="ressources-compte"></span></summary><div id="ressources-edit"></div></details>'
  +'<div class="cat-cols" id="armory-cols"></div></section>';
 const heroesPage=document.createElement('main');heroesPage.id='heroes-page';
 heroesPage.innerHTML='<section class="cat-panel panel">'
@@ -766,7 +782,7 @@ function dicePips(dice,etat,place){const out=document.createElement('span');out.
   d.style.setProperty('--face',dieFace(c));d.title=types[c];out.append(d)}});
  if(place&&n0>=1&&n0<=2){const v=document.createElement('i');v.className='die-sq die-munition';v.title='Place d’une munition';out.append(v)}
  return out}
-function itemColumn(a){return a.category==='treasure'?'treasure':a.category==='armor'?'armor'
+function itemColumn(a){return a.category==='ressource'?'ressource':a.category==='treasure'?'treasure':a.category==='armor'?'armor'
  :a.category==='weapon'?(a.ranged?'ranged':'melee'):'object'}
 /* La même pastille qu'à l'armurerie, mais posée : sur une fiche on lit son équipement,
    on ne le modifie pas d'un clic. Les dés de l'arme, la DEF de l'armure, l'effet d'un objet. */
@@ -886,7 +902,7 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
  const logo=logoEquipement(o);
- if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='treasure'?'💎':'⚔';p.append(g)}
+ if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='treasure'?'💎':col==='ressource'?'⛏':'⚔';p.append(g)}
  /* Sous le logo d'une pièce d'équipement : sa DEF — seulement si elle en donne, ou si c'est une
     armure de corps ou un bouclier —, puis l'icône de son effet : l'état qu'elle rend, barré
     quand elle en protège. Un anneau sans DEF ne porte plus d'écu à zéro. */
@@ -1030,7 +1046,7 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
  const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper;
  // Un objet d'un combattant en scène s'utilise d'un clic, pour son joueur ou le MJ ; une munition se porte.
  // Un trésor se garde et se vend ; il ne s'utilise pas : un clic montre sa description.
- const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&peutEquiper&&actors.includes(a);
+ const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&peutEquiper&&actors.includes(a);
  const agir=e=>{e.stopPropagation();
   if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}
   /* Au survol, la description se montre seule. En jeu, le clic l'épingle — le temps
@@ -1332,7 +1348,8 @@ function talentPills(a){const out=document.createElement('div');out.className='t
   surveille(pill,montre);out.append(carte)});
  bulleOrpheline();return out}
 // Les Trésors : trésors et objets rares, qui se gardent, se montrent et se vendent, sans s'utiliser.
-const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets'],['treasure','Trésors']];
+// Quatre colonnes par rangée : les Ressources et les Trésors passent en dessous.
+const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets'],['ressource','Ressources'],['treasure','Trésors']];
 /* ---------- Trier l'Armurerie, et la modifier en masse ----------
    Le tri vaut dans chaque colonne, et dans le tableau du mode en masse. Sans tri choisi, l'ordre
    de création. */
@@ -1353,7 +1370,7 @@ function trieObjets(liste,tri){const nom=(x,y)=>x[0].name.localeCompare(y[0].nam
 let armoryMasse=false,armoryNeuf=null;
 /* Créer une pièce sans quitter le tableau : sa catégorie, puis une ligne neuve, son nom prêt à
    écrire. La catégorie proposée est celle qu'on filtre. */
-const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['treasure','Trésor']];
+const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['treasure','Trésor']];
 function barreMasse(boite,choisie){const barre=document.createElement('div');barre.className='masse-barre';
  const cat=document.createElement('select');cat.setAttribute('aria-label','Catégorie de la nouvelle pièce');
  cat.innerHTML=CATS_NEUVES.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('');cat.value=CATS_NEUVES.some(([k])=>k===choisie)?choisie:'object';
@@ -1366,23 +1383,24 @@ function tableMasse(boite,liste){
  const sauve=()=>{scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
  const arme=o=>o.category==='weapon',armure=o=>o.category==='armor';
  const options=(l,v)=>l.map(([k,n])=>'<option value="'+esc(String(k))+'"'+(String(k)===String(v)?' selected':'')+'>'+esc(n)+'</option>').join('');
- const RESS=[['','— aucune —'],...nomsRessources().map(r=>[r,r])],MAINS=[[1,'1 main'],[2,'2 mains']];
+ const RESS=[['','— aucune —'],...listeRessources()],MAINS=[[1,'1 main'],[2,'2 mains']],faite=o=>o.category!=='ressource';
  /* Les colonnes : ce qu'on y lit, ce qu'on y écrit, et à qui elles s'appliquent. */
+ /* Ce qu'on lit d'abord : les dés, la DEF, l'effet ; puis ce qu'on règle. */
  const COLS=[
-  {cle:'rarete',nom:'Rareté',type:'choix',opts:RARETES,lit:o=>rareteDe(o),ecrit:(o,v)=>{o.rarete=rareteDe({rarete:v})}},
-  {cle:'price',nom:'Prix (or)',type:'nombre',max:999999,lit:o=>o.price||0,ecrit:(o,v)=>{o.price=Math.max(0,Math.min(999999,Math.round(v)))}},
-  {cle:'ressource1',nom:'Ressource 1',type:'choix',opts:RESS,lit:o=>ressourceValide(o.ressource1),ecrit:(o,v)=>{o.ressource1=ressourceValide(v)}},
-  {cle:'ressource2',nom:'Ressource 2',type:'choix',opts:RESS,lit:o=>ressourceValide(o.ressource2),ecrit:(o,v)=>{o.ressource2=ressourceValide(v)}},
-  {cle:'magasin',nom:'Magasin',type:'case',lit:o=>o.magasin===true,ecrit:(o,v)=>{o.magasin=!!v}},
-  {cle:'hands',nom:'Mains',type:'choix',opts:MAINS,pour:o=>arme(o)&&!o.ranged,lit:o=>weaponHands(o),ecrit:(o,v)=>{o.hands=Number(v)===2?2:1}},
-  {cle:'def',nom:'DEF',type:'nombre',max:99,pour:armure,lit:o=>Number(o.def)||0,ecrit:(o,v)=>{o.def=Math.max(0,Math.min(99,Math.round(v)))}},
   // À lire seulement : les dés d'une arme (ou ce qu'une munition ajoute), et ce que la pièce fait.
   {cle:'des',nom:'Dés',type:'vue',pour:o=>arme(o)||(o.category==='ammo'&&!!(o.munDe||o.etat)),
    montre:o=>arme(o)?dicePips(o.dice,o.etat,!!o.ranged):dicePips(o.munDe?{[o.munDe]:1}:{},o.etat)},
+  {cle:'def',nom:'DEF',type:'nombre',max:99,pour:armure,lit:o=>Number(o.def)||0,ecrit:(o,v)=>{o.def=Math.max(0,Math.min(99,Math.round(v)))}},
   {cle:'effet',nom:'Effet',type:'vue',pour:o=>!!(objetCode(o)||(o.bonus&&o.bonus.length)||(!arme(o)&&o.etat)),montre:o=>{const s=document.createElement('span');s.className='masse-effet';
    const pe=pastilleEffet(o);if(pe)s.append(pe);
    const txt=[phraseDeObjet(o).replace(/<[^>]+>/g,''),...normaliseBonusEquip(o.bonus).map(b=>'+'+b.valeur+' '+(b.carac==='comp'?(COMPETENCES[Number(b.comp)]||''):(NOM_CARAC[b.carac]||b.carac)))].filter(Boolean).join(' · ');
-   const t=document.createElement('span');t.textContent=txt||o.etat||'';s.append(t);s.title=txt;return s}}];
+   const t=document.createElement('span');t.textContent=txt||o.etat||'';s.append(t);s.title=txt;return s}},
+  {cle:'rarete',nom:'Rareté',type:'choix',opts:RARETES,lit:o=>rareteDe(o),ecrit:(o,v)=>{o.rarete=rareteDe({rarete:v})}},
+  {cle:'price',nom:'Prix (or)',type:'nombre',max:999999,lit:o=>o.price||0,ecrit:(o,v)=>{o.price=Math.max(0,Math.min(999999,Math.round(v)))}},
+  {cle:'ressource1',nom:'Ressource 1',type:'choix',opts:RESS,pour:faite,lit:o=>ressourceValide(o.ressource1),ecrit:(o,v)=>{o.ressource1=ressourceValide(v)}},
+  {cle:'ressource2',nom:'Ressource 2',type:'choix',opts:RESS,pour:faite,lit:o=>ressourceValide(o.ressource2),ecrit:(o,v)=>{o.ressource2=ressourceValide(v)}},
+  {cle:'magasin',nom:'Magasin',type:'case',lit:o=>o.magasin===true,ecrit:(o,v)=>{o.magasin=!!v}},
+  {cle:'hands',nom:'Mains',type:'choix',opts:MAINS,pour:o=>arme(o)&&!o.ranged,lit:o=>weaponHands(o),ecrit:(o,v)=>{o.hands=Number(v)===2?2:1}}];
  const vaut=(c,o)=>!c.pour||c.pour(o);
  const t=document.createElement('table');t.className='masse-table';
  const thead=document.createElement('thead'),tete=document.createElement('tr'),tous=document.createElement('tr');tous.className='masse-tous';
@@ -1457,46 +1475,7 @@ function armoryRow(a,i){const carte=document.createElement('div');carte.classNam
  double.onclick=()=>{const copie=structuredClone(a);copie.id=crypto.randomUUID();copie.name=a.name+' (copie)';
   catalog.items.splice(i+1,0,copie);renderCatalogPages();scheduleSave()};
  outils.append(crayon,double);carte.append(p,nom,outils);return carte}
-/* ---------- Les ressources, éditées dans l'Armurerie ----------
-   Chaque ligne : le nom, modifiable — les pièces qui la citent suivent, la réserve du domaine
-   aussi puisqu'elle compte sous la clé, qui ne change pas —, ce qui l'emploie, et ✕. L'or reste :
-   c'est aussi le trésor du domaine. */
-function renderRessources(){const boite=$('ressources-edit');if(!boite)return;boite.replaceChildren();
- if(!Array.isArray(catalog.ressources)||!catalog.ressources.length)catalog.ressources=normaliseRessources(catalog.ressources);
- const liste=catalog.ressources,reserve=typeof domaine!=='undefined'&&domaine&&domaine.ressources||{};
- $('ressources-compte').textContent=liste.length;
- const sauve=()=>{scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
- const pieces=r=>(catalog.items||[]).filter(o=>o&&(o.ressource1===r.nom||o.ressource2===r.nom)).length;
- const grille=document.createElement('div');grille.className='ressources-grille';
- [...liste].sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(r=>{const ligne=document.createElement('div');ligne.className='ressource-ligne';
-  const n=document.createElement('input');n.value=r.nom;n.maxLength=30;n.setAttribute('aria-label','Nom de la ressource '+r.nom);
-  n.onchange=()=>{const v=n.value.trim().slice(0,30);
-   if(!v||v===r.nom){n.value=r.nom;return}
-   if(liste.some(x=>x!==r&&x.nom.toLowerCase()===v.toLowerCase())){alert('Une ressource s’appelle déjà « '+v+' ».');n.value=r.nom;return}
-   const avant=r.nom;r.nom=v;(catalog.items||[]).forEach(o=>{if(o.ressource1===avant)o.ressource1=v;if(o.ressource2===avant)o.ressource2=v});
-   sauve();renderArmory();if(typeof renderDomaine==='function'&&document.body.classList.contains('page-domaine'))renderDomaine()};
-  const k=pieces(r),stock=r.cle==='or'?0:(Number(reserve[r.cle])||0);
-  const info=document.createElement('span');info.className='muted ressource-info';
-  info.textContent=[k?k+' pièce'+(k>1?'s':''):'',stock?stock.toLocaleString('fr-FR')+' au domaine':'',r.cle==='or'?'trésor du domaine':''].filter(Boolean).join(' · ')||'inutilisée';
-  ligne.append(n,info);
-  if(r.cle!=='or'){const x=document.createElement('button');x.type='button';x.className='ico danger';x.textContent='✕';x.title='Supprimer '+r.nom;x.setAttribute('aria-label',x.title);
-   x.onclick=()=>{if(!confirm('Supprimer la ressource « '+r.nom+' » ?'+(k?' '+k+' pièce'+(k>1?'s la citent et ne la citeront':' la cite et ne la citera')+' plus.':'')+(stock?' Le domaine perd ses '+stock+' en réserve.':'')))return;
-    catalog.ressources=liste.filter(x=>x!==r);(catalog.items||[]).forEach(o=>{if(o.ressource1===r.nom)o.ressource1='';if(o.ressource2===r.nom)o.ressource2=''});
-    if(stock&&typeof domaine!=='undefined'){delete domaine.ressources[r.cle];if(typeof sauveDomaine==='function')sauveDomaine()}
-    sauve();renderArmory()};ligne.append(x)}
-  grille.append(ligne)});
- // Une ressource nouvelle : son nom ; sa clé en découle, une fois pour toutes.
- const ajout=document.createElement('form');ajout.className='ressource-ajout';
- const champ=document.createElement('input');champ.placeholder='Nouvelle ressource…';champ.maxLength=30;champ.setAttribute('aria-label','Nom de la nouvelle ressource');
- const ok=document.createElement('button');ok.className='primary';ok.textContent='+ Ajouter';
- ajout.onsubmit=e=>{e.preventDefault();const v=champ.value.trim().slice(0,30);if(!v)return;
-  if(liste.some(x=>x.nom.toLowerCase()===v.toLowerCase())){alert('Une ressource s’appelle déjà « '+v+' ».');return}
-  let base=cleRessource(v).replace(/^-+|-+$/g,'').slice(0,34)||'ressource',cle=base,i=2;
-  while(liste.some(x=>x.cle===cle)||cle==='or')cle=base+'-'+i++;
-  liste.push({cle,nom:v});sauve();renderArmory();const c=$('ressources-edit');if(c)c.querySelector('.ressource-ajout input')?.focus()};
- ajout.append(champ,ok);
- boite.append(grille,ajout)}
-function renderArmory(){renderBiblioObjets();renderRessources();const cols=$('armory-cols');if(!cols)return;cols.replaceChildren();
+function renderArmory(){renderBiblioObjets();const cols=$('armory-cols');if(!cols)return;cols.replaceChildren();
  const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value,tri=$('armory-sort').value;
  const masse=armoryMasse&&view==='mj';$('armory-masse').setAttribute('aria-pressed',String(masse));$('armory-masse').classList.toggle('on',masse);
  cols.classList.toggle('en-masse',masse);
@@ -2143,7 +2122,8 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   groupe('Armes à distance',filtre(o=>o.category==='weapon'&&o.ranged),porte,gearPill,clic);
   groupe('Armures',filtre(o=>o.category==='armor'&&o.slot!=='shield'),porte,gearPill,clic);
   groupe('Boucliers',filtre(o=>o.category==='armor'&&o.slot==='shield'),porte,gearPill,clic);
-  groupe('Objets',filtre(o=>o.category!=='weapon'&&o.category!=='armor'&&o.category!=='treasure'),porte,gearPill,clic);
+  groupe('Objets',filtre(o=>o.category!=='weapon'&&o.category!=='armor'&&o.category!=='treasure'&&o.category!=='ressource'),porte,gearPill,clic);
+  groupe('Ressources',filtre(o=>o.category==='ressource'),porte,gearPill,clic);
   groupe('Trésors',filtre(o=>o.category==='treasure'),porte,gearPill,clic);
   if(!corps.childElementCount){const v=document.createElement('p');v.className='muted';
    v.textContent=q?'Aucun objet de ce nom.':'L’armurerie est vide : crée un objet dans l’onglet Armurerie.';
@@ -3129,7 +3109,7 @@ function selLogos(label,key,value,sansElementaires){const familles=[...famillesP
 // Les icônes des dossiers viennent en tête : ce sont les nouvelles qu'on cherche.
 function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches(''),...iconesPlanches('talents'),...LOGOS_DOSSIERS.equipement];
  // Un trésor peut prendre toute image : un objet, une gemme, une pièce d'équipement.
- const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];
+ const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];
  // Le logo en place reste offert, même si la liste des dossiers n'est pas venue.
  return o&&estLogoDossier(o.logo)&&!l.includes(o.logo)?[o.logo,...l]:l}
 /* Un logo devant un nom : un jeton, ou rien. Un logo inconnu du dossier ne se dessine
@@ -3141,7 +3121,8 @@ function logoImage(l,liste,cls){if(!l||!(liste.includes(l)||estLogoDossier(l)))r
    reprend aussitôt au dépôt lui-même, où elle est dès l'envoi. */
 function poseLogo(im,l){im.onerror=null;if(estIconePlanche(l)){poseIcone(im,l);return}im.src=imgUrl(fichierLogo(l));const depot=estLogoDossier(l)?depotPages():'';
  if(depot)im.onerror=()=>{im.onerror=null;im.src='https://raw.githubusercontent.com/'+depot+'/main/img/'+l.split('/').map(encodeURIComponent).join('/')}}
-function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)}
+// Une ressource ou un trésor peut prendre une gemme, un éclat : ces logos-là s'affichent aussi.
+function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET,...LOGOS_RESSOURCES],cls)}
 // Le logo d'un talent : n'importe quelle image du dossier.
 /* Un talent Invulnérable n'a pas à choisir son logo : c'est l'état ou le dé qu'il refuse,
    barré de rouge, à son élément s'il en suit un. */
@@ -3150,7 +3131,7 @@ function logoTalent(t,cls){if(t&&t.effet==='invulnerable'){const w=pastilleInsen
 // Le logo d'une attaque : n'importe quelle icône du dossier, sans distinction de famille.
 function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['armor','Armure'],
- ['ammo','Munition'],['object','Objet'],['treasure','Trésor'],['misc','Divers']];
+ ['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['treasure','Trésor'],['misc','Divers']];
 /* Ce que le formulaire affiche à l'instant, relu tel quel. Les champs absents ne sont pas
    lus : la valeur déjà enregistrée reste en place au lieu d'être remise à zéro. */
 function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
@@ -3171,6 +3152,8 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  for(const k of ['usesAmmo'])if(f[k])a[k]=f[k].checked;
  if(f.munDe)a.munDe=keys.includes(f.munDe.value)?f.munDe.value:'';
  for(const k of ['ressource1','ressource2'])if(f[k])a[k]=ressourceValide(f[k].value);
+ // Une ressource neuve reçoit sa clé, qui ne changera plus, même si on la renomme.
+ if(a.category==='ressource'&&!(typeof a.cle==='string'&&CLE_MATERIAU.test(a.cle)))a.cle=cleLibre(a.name,new Set(ressourcesJeu().map(r=>r.cle)));
  if(f.magasin)a.magasin=f.magasin.checked;
  if(f.itemdie0)a.dice=diceFrom(keys.map((_,i)=>num(f['itemdie'+i].value,0,12)));
  return a}
@@ -3209,9 +3192,10 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +'</div>'
   // Le prix et les deux ressources, ensemble sur leur ligne.
   +'<div class="edit-grid prix-ressources">'
-  +field('Prix (or)','price',a.price||0,'number','min="0" max="999999" step="1"')
-  +sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...nomsRessources().map(r=>[r,r])])
-  +sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...nomsRessources().map(r=>[r,r])])
+  +field(a.category==='ressource'?'Valeur (or)':'Prix (or)','price',a.price||0,'number','min="0" max="999999" step="1"')
+  // Une ressource n'est pas faite d'autres ressources.
+  +(a.category==='ressource'?'':sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...listeRessources()])
+   +sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...listeRessources()]))
   +'</div>'
   // En vente au magasin du domaine, au prix ci-dessus.
   +'<label class="field-check"><input name="magasin" type="checkbox" '+(a.magasin===true?'checked':'')+'>Magasin — achetable au magasin du domaine</label>'
@@ -3495,14 +3479,28 @@ window.addEventListener('storage',e=>{if(e.key!=='amertume-session-marque'||!e.n
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ongletPerime)relireSession()});
 $('fenetre-relire').onclick=relireSession;
 $('fenetre-garder').onclick=()=>{ongletPerime=false;bandeauFenetres.hidden=true;saveNow()};
+/* Un enregistrement n'efface jamais un domaine qui a du contenu. Si la partie en mémoire n'en a
+   pas — le script du domaine absent ou en erreur, le temps qu'une mise à jour du site arrive en
+   entier —, le domaine déjà enregistré est gardé tel quel. */
+function domaineRempli(d){try{return !!d&&typeof d==='object'&&(typeof poidsDomaine==='function'?poidsDomaine(d)>0
+ :!!(d.carte&&Array.isArray(d.carte.calques)&&d.carte.calques.some(Boolean)||Array.isArray(d.batiments)&&d.batiments.some(b=>b&&b.zone)))}catch(e){return false}}
 function saveNow(){if(ongletPerime){if(document.visibilityState==='visible')bandeauFenetres.hidden=false;return}
- if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}marqueSession();try{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(snapshot(),'session');tx.oncomplete=()=>noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur');tx.onerror=()=>noterSauvegarde('Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.',true)}catch(e){noterSauvegarde('Impossible d’enregistrer : '+e.message,true)}}
+ if(db&&!sessionLue){noterSauvegarde('La partie enregistrée n’est pas encore lue : rien n’est écrit par-dessus.',true);return}
+ if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}marqueSession();try{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),s=snapshot();
+  if(domaineRempli(s.domaine))st.put(s,'session');
+  // Sans domaine en mémoire, celui déjà enregistré reste : relu et remis dans la même écriture.
+  else{const g=st.get('session');g.onsuccess=()=>{const avant=g.result;if(avant&&domaineRempli(avant.domaine))s.domaine=avant.domaine;st.put(s,'session')}}
+  tx.oncomplete=()=>noterSauvegarde('Enregistré sur cet appareil · pas de synchronisation multijoueur');tx.onerror=()=>noterSauvegarde('Échec de sauvegarde (stockage plein ou bloqué). La session reste ouverte.',true)}catch(e){noterSauvegarde('Impossible d’enregistrer : '+e.message,true)}}
 document.addEventListener('change',scheduleSave);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!loading)saveNow()});
 /* Safari iOS laisse parfois une ouverture d'IndexedDB sans réponse. On réessaie une fois,
    puis la scène s'ouvre quand même ; si la sauvegarde répond plus tard, elle se pose
    (sauf chez un invité en table, dont la partie vient du MJ). Une sauvegarde illisible
    ne bloque plus rien : elle se dit au journal. */
 let sessionRepondue=false;
+/* Tant que la partie enregistrée n'a pas été lue, rien ne s'écrit par-dessus : une scène ouverte
+   sans elle — l'appareil tardait à répondre — n'effacerait pas le domaine ou les fiches qu'elle
+   porte, à la première modification ou au premier changement d'onglet. */
+let sessionLue=false;
 function loadSession(){
  const poser=s=>{try{if(verifieSauvegarde(s))return;
    if(!loading){const invite=typeof auth!=='undefined'&&auth&&auth.currentUser&&auth.currentUser.isAnonymous;if(invite)return}
@@ -3513,8 +3511,8 @@ function loadSession(){
  const ouvrir=()=>{try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');
    req.onerror=()=>{sessionRepondue=true;finish()};req.onblocked=()=>finish();
    req.onsuccess=()=>{if(sessionRepondue){req.result.close();return}sessionRepondue=true;db=req.result;
-    const get=db.transaction('state').objectStore('state').get('session');get.onerror=finish;
-    get.onsuccess=()=>{poser(get.result);finish()}}}
+    const get=db.transaction('state').objectStore('state').get('session');get.onerror=()=>{sessionLue=true;finish()};
+    get.onsuccess=()=>{sessionLue=true;poser(get.result);finish()}}}
   catch(e){sessionRepondue=true;finish()}};
  ouvrir();
  setTimeout(()=>{if(!sessionRepondue)ouvrir()},3000);

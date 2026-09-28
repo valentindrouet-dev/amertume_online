@@ -211,6 +211,10 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .cat-pill.k-armor{background:#cfe0ea}
 .cat-pill.k-object{background:#e6d9bd}
 .cat-pill.k-treasure{background:#f0e0bd}
+.cat-pill.k-ressource{background:#ddd5c6}
+/* L'Armurerie : quatre colonnes par rangée, les Ressources et les Trésors en dessous. */
+#armory-cols{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1150px){#armory-cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .cat-pill.k-object.consommable{background:#d9e7cd}
 .cat-pill.k-standard{background:#dcd8cf}
 .cat-pill.k-alpha{background:#efdcc2}
@@ -810,7 +814,7 @@ button.choix-attaque.sans-des.avec-logo .nom{grid-row:1/3;align-self:center}
 /* La flèche prend la couleur du fond qu'elle touche : chaque nature a la sienne. */
 .bulle:has(.k-melee){--bulle-bord:#e6dccb}.bulle:has(.k-ranged){--bulle-bord:#dfe6d2}
 .bulle:has(.k-armor){--bulle-bord:#d9dde3}.bulle:has(.k-object){--bulle-bord:#e6d9bd}.bulle:has(.k-treasure){--bulle-bord:#f0e0bd}
-.gear-detail.k-treasure{background:#f0e0bd;border-left-color:#c99a3c}
+.gear-detail.k-treasure{background:#f0e0bd;border-left-color:#c99a3c}.gear-detail.k-ressource{background:#ddd5c6;border-left-color:#8a7a5a}.bulle:has(.k-ressource){--bulle-bord:#ddd5c6}
 .bulle:has(.k-object.consommable){--bulle-bord:#d9e7cd}
 .bulle:has(.t-act){--bulle-bord:#cfdcea}.bulle:has(.t-reac){--bulle-bord:#ddd3ea}
 .bulle:has(.t-pass){--bulle-bord:#dcd8cf}.bulle:has(.t-crit){--bulle-bord:#eccfd0}
@@ -1127,8 +1131,11 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 #dom-plan.sans-contours .dom-zone{stroke:transparent;fill:transparent}
 #dom-plan.sans-contours .dom-zone:hover{fill:#ffffff14}
 /* Le bâtiment choisi s'allume sur le plan, contours cachés ou non : un liseré doré, et le reste de la carte un peu dans l'ombre. */
-#dom-plan .dom-voile{fill:#0b0804;fill-opacity:.34;pointer-events:none}
-#dom-plan .dom-zone.sel,#dom-plan.sans-contours .dom-zone.sel{stroke:#ffe39a;stroke-width:3;fill:#ffe39a1c}
+/* Le bâtiment choisi : sa zone brille, sans trait ; la carte autour reste telle quelle. */
+#dom-plan .dom-lueur{fill:#fff0b8;fill-opacity:.42;pointer-events:none;animation:dom-lueur 2.6s ease-in-out infinite}
+@keyframes dom-lueur{50%{fill-opacity:.26}}
+@media(prefers-reduced-motion:reduce){#dom-plan .dom-lueur{animation:none}}
+#dom-plan .dom-zone.sel,#dom-plan.sans-contours .dom-zone.sel{stroke:transparent;fill:transparent}
 #dom-plan-etiquettes .dom-etiquette.sel b{color:#ffe39a}
 /* Les inscriptions de la carte, à l'encre sur ses parchemins, en Killam : elles grandissent avec la carte (unités de conteneur). */
 #dom-plan,#dom-canvas{container-type:inline-size}
@@ -1174,6 +1181,7 @@ i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #00
 .materiaux{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:8px}
 .materiau{display:flex;justify-content:space-between;align-items:baseline;gap:4px;padding:3px 7px;border:1px solid var(--line);border-radius:7px;background:var(--panel-2);font-size:12.5px;min-width:0}
 .materiau span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.materiau b{font:700 14px 'Killam',Georgia,serif}.materiau.zero{opacity:.55}
+.materiau .materiau-logo{width:20px;height:20px;object-fit:contain;flex:none;align-self:center}.materiau .materiau-logo+span{flex:1}
 .materiau .champ-vif{width:3.5em;padding:0 3px;font-size:12px;margin:0}
 
 /* Les boutons « S'y déplacer » : un par aventurier, son jeton, son nom ; celui qui est déjà là se lit « Ici ». */

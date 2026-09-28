@@ -260,9 +260,9 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  const mo=src.match(/const LOGOS_OBJET=(\[[^\]]*\]);/);assert.ok(mo,'LOGOS_OBJET introuvable');
  const objets=fs.readdirSync('img').filter(f=>/^item_.*\.png$/.test(f)).map(f=>f.replace(/\.png$/,'')).sort();
  assert.deepEqual(JSON.parse(mo[1].replace(/'/g,'"')).sort(),objets,'LOGOS_OBJET doit lister img/item_*.png : '+objets.join(', '));
- assert.ok(src.includes("const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];")
+ assert.ok(src.includes("const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];")
   &&src.includes("...logosItem(a).map(l=>[l,nomLogo(l)])")&&src.includes("a.logo=logosItem(a).includes(f.logo.value)||estLogoDossier(f.logo.value)?f.logo.value:''")
-  &&src.includes("logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)")&&src.includes("replace(/^(weapon|spell|item|attack)_/,'')"),'les objets choisissent parmi les item_*');
+  &&src.includes("logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET,...LOGOS_RESSOURCES],cls)")&&src.includes("replace(/^(weapon|spell|item|attack)_/,'')"),'les objets choisissent parmi les item_*');
  // Les logos de talents déclarés sont exactement les spell_*.png du dossier.
  {const ma=src.match(/const LOGOS_ATTAQUE=(\[[^\]]*\]);/);assert.ok(ma,'LOGOS_ATTAQUE introuvable');
   const attaques=fs.readdirSync('img').filter(f=>/^attack_.*\.png$/i.test(f)).map(f=>f.replace(/\.png$/i,'')).sort();
@@ -952,7 +952,13 @@ assert.equal(sauve.tailleLisible(3*1048576),'3,0 Mo');
 // Les Paramètres portent les deux gestes, et l'import ne prend que du JSON.
 ['id="export-tout"','id="import-tout"','id="import-fichier"','accept=".json,application/json"','id="import-erreur"'].forEach(m=>assert.ok(src.includes(m),'Paramètres sans '+m));
 // La sauvegarde locale et le fichier passent par la même vérification et la même pose.
-assert.ok(src.includes('get.onsuccess=()=>{poser(get.result);finish()}')&&src.includes('if(verifieSauvegarde(s))return;'));
+assert.ok(src.includes('get.onsuccess=()=>{sessionLue=true;poser(get.result);finish()}')&&src.includes("if(db&&!sessionLue){")&&src.includes('if(verifieSauvegarde(s))return;'));
+/* v0.329 — Un enregistrement sans domaine en mémoire garde celui déjà enregistré. */
+{const ctxS={};vm.createContext(ctxS);vm.runInContext(src.match(/function domaineRempli\(d\)\{[\s\S]*?catch\(e\)\{return false\}\}/)[0]+';this.domaineRempli=domaineRempli;',ctxS);
+ assert.equal(ctxS.domaineRempli(undefined),false);assert.equal(ctxS.domaineRempli({carte:{calques:[null,null]},batiments:[{nom:'Forge',zone:null}]}),false);
+ assert.equal(ctxS.domaineRempli({carte:{calques:['data:image/png;base64,x']},batiments:[]}),true);assert.equal(ctxS.domaineRempli({carte:{calques:[]},batiments:[{zone:[[1,1],[2,2],[3,1]]}]}),true);
+ assert.equal(ctxS.domaineRempli({carte:{get calques(){throw Error('x')}}}),false,'un domaine illisible ne bloque pas l’enregistrement');
+ assert.ok(src.includes("if(domaineRempli(s.domaine))st.put(s,'session');")&&src.includes("else{const g=st.get('session');g.onsuccess=()=>{const avant=g.result;if(avant&&domaineRempli(avant.domaine))s.domaine=avant.domaine;st.put(s,'session')}}"),'le domaine enregistré survit à une sauvegarde qui n’en a pas');}
 /* La table en ligne : ce que le joueur voit quand ça coince, et l'ordre des choses. */
 const vivant=fs.readFileSync('live.js','utf8');
 assert.ok(vivant.indexOf('onAuthStateChanged(u=>{off();r(u)})')<vivant.indexOf('await auth.signInAnonymously()'),'l’identité mémorisée revient avant toute connexion anonyme');
@@ -2408,7 +2414,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(JSON.stringify(pv.slice(3)),JSON.stringify([['Endu × Vie','4 × 5 = 20'],['Classe (Gardien)','+ 2'],['Total','22']]));
  ctxD.bonusDe=(a,t,i)=>i===null?{dmg:2}:{dmg:2};const dg=ctxD.detailDegats({dmg:0});
  assert.equal(JSON.stringify(dg.map(x=>x[0])),JSON.stringify(['Dégâts','Fiche (saisie)','Talents','Total']),'les +2 viennent d’un talent, la fiche dit 0');}
-{assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&peutEquiper&&actors.includes(a);")
+{assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&peutEquiper&&actors.includes(a);")
   &&src.includes("if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}")&&src.includes("function employerDepuisFiche(a,o){")&&!src.includes("b.className='gear-utiliser'"),'un objet s’utilise d’un clic');
  assert.ok(src.includes("const NIVEAUX_TALENTS=false;")&&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes('<select id="talent-sort" aria-label="Tri" hidden>')
   &&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes("'<input type=\"hidden\" name=\"level\" value=\"'"),'les niveaux de talent se cachent, le câblage reste');
@@ -2499,7 +2505,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&fief.includes("{sel:sel>=0?sel:null,jeu:true,inerte:b=>!batimentChoisissable(b),")&&fief.includes("if(b&&!batimentChoisissable(b))return;")
   &&fief.includes("['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);")&&fief.includes("plan.classList.toggle('sans-contours',!(mj&&domContours));")
   &&fief.includes("boite.classList.toggle('en-grille',!mjDom());")&&feuille.includes('#dom-aventuriers.en-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));'),'les joueurs : pas de friche, pas de contours, la troupe en deux colonnes');
- assert.ok(fief.includes("v.setAttribute('d','M0,0H100V100H0Z M'+choisi.zone.map(")&&feuille.includes('#dom-plan .dom-zone.sel,#dom-plan.sans-contours .dom-zone.sel{stroke:#ffe39a;')
+ assert.ok(fief.includes("v.setAttribute('class','dom-lueur');v.setAttribute('filter','url(#dom-lueur-flou)');")&&!fief.includes('dom-voile')&&feuille.includes('#dom-plan .dom-zone.sel,#dom-plan.sans-contours .dom-zone.sel{stroke:transparent;fill:transparent}')
   &&feuille.includes('.dom-bat.sel{border-color:var(--accent);border-left-color:var(--t,var(--accent));'),'le bâtiment choisi s’allume, sur le plan et dans la liste');
  assert.ok(fief.includes("const lignes=mjDom()?f.journal:f.journal.filter(ligneDesJoueurs);")&&fief.includes("avance.onclick=()=>{if(avancerEtape(b)){renderDomaine();sauveDomaine()}};")
   &&fief.includes(" const reste=[1,2,3].filter(e=>e>b.etape);")&&!fief.includes("'Coût des étapes : '"),'le journal des joueurs sans les étapes du MJ');
@@ -2535,20 +2541,35 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    deux ressources et un prix en or, saisis à l'armurerie et lus nulle part ailleurs. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes(" tete.append(nom);d.append(tete);")&&!src.includes("nat.textContent=bonus?'Bonus':talentType(t)[2]"),'la bulle de l’arbre tait la nature du talent');
- const CR=require('./combat.js'),ctxR={MATERIAUX:[...CR.MATERIAUX],cleRessource:CR.cleRessource,CLE_MATERIAU:CR.CLE_MATERIAU,structuredClone};vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('const RESSOURCES_DEFAUT='),src.indexOf('function normalizeCatalog('))+';this.nomsRessources=nomsRessources;this.ressourceValide=ressourceValide;this.normaliseRessources=normaliseRessources;',ctxR);
- assert.deepEqual([...ctxR.nomsRessources()],['Acier','Argent','Bois','Bronze','Corde','Cuir','Diamant','Fer','Or','Pierre','Verre'],'les ressources, par ordre alphabétique, Fer compris');
+ const CR=require('./combat.js'),ctxR={MATERIAUX:[...CR.MATERIAUX],cleRessource:CR.cleRessource,CLE_MATERIAU:CR.CLE_MATERIAU,structuredClone};vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('const RESSOURCES_DEFAUT='),src.indexOf('function normalizeCatalog('))+';this.listeRessources=listeRessources;this.ressourceValide=ressourceValide;this.normaliseRessources=normaliseRessources;this.migreRessources=migreRessources;',ctxR);
+ const J=x=>JSON.stringify(x);
+ assert.equal(J(ctxR.listeRessources().map(r=>r[1])),J(['Acier','Argent','Bois','Bronze','Corde','Cuir','Diamant','Fer','Or','Pierre','Verre']),'les ressources, par ordre alphabétique, Fer compris');
  assert.deepEqual([...ctxR.normaliseRessources([{cle:'fer',nom:'Fer noir'},{cle:'fer',nom:'Doublon'},{cle:'Mauvaise clé',nom:'X'},{cle:'mithril',nom:'fer noir'}]).map(r=>r.cle+'='+r.nom)],['fer=Fer noir'],'une clé et un nom uniques, une clé bien formée');
  assert.equal(ctxR.normaliseRessources(undefined).length,11);
  assert.deepEqual(CR.normaliseReserve({acier:3,or:5,mithril:2,'eclat-rubis':1,'eclat-rubis-eteinte':4,'Mauvais':1}),{acier:3,mithril:2,'eclat-rubis':1},'la réserve garde les matériaux créés, jamais l’or');
- assert.equal(ctxR.ressourceValide('Bois'),'Bois');assert.equal(ctxR.ressourceValide('Mithril'),'');
- assert.ok(src.includes("o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))")
-  &&src.includes("+field('Prix (or)','price',a.price||0,'number','min=\"0\" max=\"999999\" step=\"1\"')")
-  &&src.includes("+sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...nomsRessources().map(r=>[r,r])])")
-  &&src.includes("+sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...nomsRessources().map(r=>[r,r])])")
-  &&src.includes(" for(const k of ['ressource1','ressource2'])if(f[k])a[k]=ressourceValide(f[k].value);"),'ressources et prix au formulaire de l’objet');}
+ /* v0.329 — Les ressources deviennent des pièces de l'Armurerie, sous leur clé ; les pièces qui en
+    sont faites passent du nom à la clé. Les renommer ne défait rien ; les supprimer toutes ne les
+    fait pas revenir. */
+ const cat={items:[{id:'a',name:'Épée',category:'weapon',ressource1:'Fer',ressource2:'bois'}],ressources:[{cle:'fer',nom:'Fer'},{cle:'bois',nom:'Bois'},{cle:'mithril',nom:'Mithril'}]};
+ ctxR.migreRessources(cat);ctxR.catalog=cat;
+ assert.equal(J(cat.items.filter(o=>o.category==='ressource').map(o=>o.id+'|'+o.cle+'|'+o.name)),J(['ressource-fer|fer|Fer','ressource-bois|bois|Bois','ressource-mithril|mithril|Mithril']));
+ assert.equal(cat.items[0].ressource1+'/'+cat.items[0].ressource2,'fer/bois','l’épée cite ses ressources par leur clé');
+ assert.ok(cat.ressourcesPosees===true&&!('ressources' in cat));
+ cat.items[1].name='Fer noir';ctxR.migreRessources(cat);assert.equal(cat.items[0].ressource1,'fer','renommée, la ressource reste celle de l’épée');
+ assert.equal(ctxR.ressourceValide('fer'),'fer');assert.equal(ctxR.ressourceValide('Mithril'),'');
+ cat.items.push({id:'z',name:'Fer',category:'ressource',cle:'fer'});ctxR.migreRessources(cat);assert.equal(cat.items.at(-1).cle,'fer-2','deux ressources, deux clés');
+ cat.items=cat.items.filter(o=>o.category!=='ressource');ctxR.migreRessources(cat);
+ assert.ok(!cat.items.some(o=>o.category==='ressource')&&cat.items[0].ressource1==='','supprimées, elles ne reviennent pas ; l’épée n’en cite plus');
+ const neuf={items:[]};ctxR.migreRessources(neuf);assert.equal(neuf.items.length,11);assert.ok(neuf.items.some(o=>o.id==='ressource-fer'&&o.cle==='fer'&&o.name==='Fer'));
+ assert.ok(src.includes("if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))")
+  &&src.includes("+field(a.category==='ressource'?'Valeur (or)':'Prix (or)','price',a.price||0,'number','min=\"0\" max=\"999999\" step=\"1\"')")
+  &&src.includes("+(a.category==='ressource'?'':sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...listeRessources()])")
+  &&src.includes("+sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...listeRessources()]))")
+  &&src.includes(" for(const k of ['ressource1','ressource2'])if(f[k])a[k]=ressourceValide(f[k].value);")
+  &&src.includes("if(a.category==='ressource'&&!(typeof a.cle==='string'&&CLE_MATERIAU.test(a.cle)))a.cle=cleLibre(a.name,new Set(ressourcesJeu().map(r=>r.cle)));"),'ressources et prix au formulaire de l’objet');}
 /* v0.282 — Au formulaire d'un objet, Mains revient sur la ligne de la rareté ; prix et ressources ont la leur. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("  +sel('Rareté','rarete',rareteDe(a),RARETES)\n  +(arme?sel('Mains','hands',")&&src.includes("  +'<div class=\"edit-grid prix-ressources\">'\n  +field('Prix (or)','price',")
+ assert.ok(src.includes("  +sel('Rareté','rarete',rareteDe(a),RARETES)\n  +(arme?sel('Mains','hands',")&&src.includes("  +'<div class=\"edit-grid prix-ressources\">'\n  +field(a.category==='ressource'?'Valeur (or)':'Prix (or)','price',")
   &&fs.readFileSync('editor.css','utf8').includes('.edit-grid.prix-ressources{margin-top:12px}'),'prix et ressources sur une ligne, Mains avec la rareté');}
 /* v0.283 — Les ressources : l'or, les gemmes (trois tailles, quatre variétés, allumées ou éteintes)
    et les matériaux. Le domaine tient ses matériaux et ses gemmes — son or est son trésor — ; un
@@ -2565,10 +2586,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.normaliseDomaine(null).ressources,{});
  assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
  assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
-  &&src.includes("const nomsRessources=()=>ressourcesJeu().map(r=>r.nom).sort((x,y)=>x.localeCompare(y,'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element'];"),'les richesses se relisent et voyagent en direct');
+  &&src.includes("const listeRessources=()=>ressourcesJeu().map(r=>[r.cle,r.nom]).sort((x,y)=>x[1].localeCompare(y[1],'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element'];"),'les richesses se relisent et voyagent en direct');
  assert.ok(src.includes("function grilleGemmes(compte,poser,qui){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
   &&fief.includes("function renderDomRessources(){")&&fief.includes("const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;")
-  &&fief.includes("ressourcesJeu().filter(x=>x.cle!=='or').forEach(({cle:k,nom:m})=>{"),'les compteurs : sur la carte de l’aventurier, au domaine');
+  &&fief.includes("ressourcesJeu().filter(x=>x.cle!=='or').forEach(({cle:k,nom:m,piece})=>{"),'les compteurs : sur la carte de l’aventurier, au domaine');
  const ctxP={lisCompte:C.lisCompte};vm.createContext(ctxP);vm.runInContext(src.slice(src.indexOf('function poseCompte('),src.indexOf('// Les richesses d\'un aventurier, sur sa carte')),ctxP);
  const compte={or:4};assert.equal(ctxP.poseCompte(compte,'or','12'),12);ctxP.poseCompte(compte,'eclat-rubis','0');ctxP.poseCompte(compte,'or','');
  assert.deepEqual({...compte},{},'un compte à zéro disparaît');}
@@ -2722,7 +2743,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fief.includes("const saveNowSansSecours=saveNow;saveNow=function(){saveNowSansSecours();gardeSecoursDomaine()};")&&fief.includes("tx.objectStore('state').put(rec,'domaine:secours');")
   &&fief.includes("||poidsDomaine(domaine)<=0)return;")&&fief.includes("b.textContent='⟲ Reprendre ce domaine';")
   &&fief.includes("o.genre==='campagne'&&o.partie&&o.partie.domaine?o.partie.domaine:"),'le domaine de secours, et l’import depuis une campagne');
- assert.ok(src.includes("function saveNow(){if(ongletPerime){")&&src.includes("marqueSession();try{const tx=db.transaction('state','readwrite');")
+ assert.ok(src.includes("function saveNow(){if(ongletPerime){")&&src.includes("marqueSession();try{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),s=snapshot();")
   &&src.includes("window.addEventListener('storage',e=>{if(e.key!=='amertume-session-marque'||!e.newValue)return;")&&src.includes("if(document.visibilityState==='visible'&&ongletPerime)relireSession()"),'une fenêtre périmée n’écrase plus la partie');
  assert.ok(cartes2.includes("Array.isArray(o.actors)&&Array.isArray(o.maps)?o.maps.filter(m=>m&&typeof m==='object'):null;")&&cartes2.includes("Ce fichier est un export du domaine : reprends-le dans l’onglet Domaine")
   &&cartes2.includes('Le domaine n’y est pas : il s’exporte depuis son onglet, et la partie entière depuis les Paramètres.'),'l’import des cartes reconnaît les autres fichiers');

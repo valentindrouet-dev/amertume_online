@@ -34,6 +34,11 @@ function gardeSecoursDomaine(){if(typeof db==='undefined'||!db||(typeof ongletPe
 document.addEventListener('amertume-partie-chargee',()=>{if(typeof db==='undefined'||!db)return;
  try{const r=db.transaction('state').objectStore('state').get('domaine:secours');
   r.onsuccess=()=>{const rec=r.result;if(!rec||!rec.domaine)return;rec.domaine=normaliseDomaine(rec.domaine);secoursDomaine=rec;
+   /* La partie est revenue sans domaine alors que cet appareil en garde un : c'est une perte, pas
+      un choix — rien dans l'application ne vide un domaine. Il revient de lui-même. */
+   if(poidsDomaine(domaine)===0&&poidsDomaine(rec.domaine)>0){domaine=normaliseDomaine(structuredClone(rec.domaine));domSel=null;domPageSel=null;imagesDom.clear();
+    log('Domaine « '+domaine.nom+' » repris automatiquement : la partie l’avait perdu, cet appareil le gardait.',{local:true});
+    sauveDomaine();if(document.body.classList.contains('page-domaine'))renderDomaine();return}
    if(poidsDomaine(rec.domaine)>poidsDomaine(domaine)){log('Un domaine plus complet est gardé sur cet appareil : l’onglet Domaine propose de le reprendre.',{local:true});
     if(document.body.classList.contains('page-domaine'))renderDomaine()}}}catch(e){}});
 function bandeauSecours(){const boite=$('dom-secours');if(!boite)return;boite.replaceChildren();
@@ -150,12 +155,14 @@ function dessineZonesDom(svg,etiquettes,opts){const d=domaine;svg.replaceChildre
     presents.forEach(a=>{const t=jetonRond(a.image,a.name,'mini');t.title=a.name+(agitPour(a)?' — glisser vers un autre bâtiment construit':'');if(agitPour(a))t.classList.add('a-moi');t.onpointerdown=ev=>glisseJetonAventurier(ev,a,t);j.append(t)});e.append(j)}}
   if(opts.deplace||opts.clic&&!inerte)rendEtiquetteDeplacable(e,b,etiquettes,opts);etiquettes.append(e)});
  dessineCartouches(etiquettes,opts);
- /* Sur le plan du Domaine, le bâtiment choisi s'allume : le reste de la carte s'assombrit
-    un peu autour de lui, contours cachés ou non. Le voile passe sous les zones et laisse
-    passer les clics. */
+ /* Sur le plan du Domaine, le bâtiment choisi brille : sa zone s'éclaire d'une lueur aux bords
+    fondus, sans trait de contour, et le reste de la carte ne change pas. La lueur passe sous les
+    zones et laisse passer les clics. */
  const choisi=opts.jeu&&opts.sel!==null&&opts.sel!==undefined?d.batiments[opts.sel]:null;
- if(choisi&&choisi.zone){const v=document.createElementNS(ns,'path');v.setAttribute('class','dom-voile');v.setAttribute('fill-rule','evenodd');
-  v.setAttribute('d','M0,0H100V100H0Z M'+choisi.zone.map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' L')+'Z');svg.prepend(v)}
+ if(choisi&&choisi.zone){const defs=document.createElementNS(ns,'defs');
+  defs.innerHTML='<filter id="dom-lueur-flou" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="0.7"/></filter>';
+  const v=document.createElementNS(ns,'polygon');v.setAttribute('class','dom-lueur');v.setAttribute('filter','url(#dom-lueur-flou)');
+  v.setAttribute('points',choisi.zone.map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));svg.prepend(defs,v)}
  if(opts.trace&&opts.trace.pts.length){const pts=opts.trace.pts;
   const f=document.createElementNS(ns,pts.length>2?'polygon':'polyline');
   f.setAttribute('points',pts.map(q=>q.join(',')).join(' '));f.setAttribute('class','dom-trace');svg.append(f)}}
@@ -574,7 +581,7 @@ function blocMagasin(out,b){const presents=actors.filter(a=>a.hero&&lieuDe(a)===
  out.append(tete);
  const titre=t=>{const h=document.createElement('h4');h.className='dom-magasin-titre';h.textContent=t;return h};
  // Ce qui est en vente : les pièces de l'armurerie cochées « Magasin », rangées comme elle.
- const rang=o=>['melee','ranged','armor','object','treasure'].indexOf(itemColumn(o));
+ const rang=o=>['melee','ranged','armor','object','ressource','treasure'].indexOf(itemColumn(o));
  const enVente=(catalog.items||[]).filter(o=>o&&o.magasin===true).sort((x,y)=>rang(x)-rang(y)||x.name.localeCompare(y.name,'fr'));
  out.append(titre('Acheter'));
  if(!enVente.length){const p=document.createElement('p');p.className='muted';p.textContent=mjDom()?'Rien en vente : coche « Magasin » sur des objets de l’armurerie.':'Rien en vente pour l’instant.';out.append(p)}
@@ -648,10 +655,12 @@ function renderDomRessources(){const boite=$('dom-ressources');if(!boite)return;
  const titre=t=>{const h=document.createElement('h3');h.className='reglage-titre';h.textContent=t;return h};
  const mats=document.createElement('div');mats.className='materiaux';
  // Les ressources du catalogue, sous leur clé fixe : les renommer ne vide pas la réserve.
- ressourcesJeu().filter(x=>x.cle!=='or').forEach(({cle:k,nom:m})=>{const n=r[k]||0;
+ ressourcesJeu().filter(x=>x.cle!=='or').forEach(({cle:k,nom:m,piece})=>{const n=r[k]||0;
   const chip=document.createElement('span');chip.className='materiau'+(n?'':' zero');
   const nom=document.createElement('span');nom.textContent=m;const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');
   if(poser)champVif(v,()=>r[k]||0,t=>poser(k,t),m+' — réserve du domaine','petit');
+  // L'icône choisie pour elle dans l'Armurerie, devant son nom.
+  const lg=piece&&logoEquipement(piece,'materiau-logo');if(lg)chip.append(lg);
   chip.append(nom,v);mats.append(chip)});
  boite.append(titre('Matériaux'),mats,titre('Gemmes'),grilleGemmes(r,poser,'réserve du domaine'))}
 /* ---------- Les habitants et les visiteurs ---------- */
