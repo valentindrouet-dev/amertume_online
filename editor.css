@@ -1092,6 +1092,9 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .pick-carte.verrou{opacity:.55}.pick-carte.verrou .talent-carre{cursor:not-allowed}
 .pick-carte.verrou .marque-porte{display:block;background:var(--panel);color:var(--ink);font-size:8px}
 .talent-carte .nom-carte .palier-romain{white-space:nowrap}
+.talent-detail .palier-tete.romain{text-transform:none;letter-spacing:0;color:var(--muted)}
+.talent-detail .palier-tete.romain .palier-num{font:700 14px 'Killam',Georgia,serif;color:var(--ink)}
+.talent-detail>.talent-bulle-nom{margin-bottom:6px}
 .cat-pill.gear-carre.best-carre{--type:#8d9794;width:69px;height:69px;min-width:0;min-height:0;padding:0;border-radius:50%;border:3px solid var(--type)}
 .best-carre.k-alpha{--type:#c9953f}.best-carre.k-solitaire{--type:#c8523f}.best-carre.k-boss{--type:#9b6fb5}
 .best-carre .jeton-rond.plein{width:100%;height:100%;border:0;font-size:28px}
@@ -1256,7 +1259,8 @@ body.sombre .paliers-table thead th.p2,body.sombre .paliers-table thead th.p3{co
 .dom-secours p{margin:0;flex:1 1 280px;font-size:13.5px}.dom-secours button{margin:0}
 .nom-carte .accolade{white-space:nowrap}
 /* Le palier d'un talent tenu, en chiffre romain après son nom, dans la police Killam. */
-.palier-romain{margin-left:.3em;font-family:'Killam',Georgia,serif;font-weight:700;letter-spacing:.03em}
+/* Le chiffre du palier, dans la police du nom qu'il suit. */
+.palier-romain{margin-left:.3em;font:inherit;letter-spacing:.03em}
 /* Les trois logos d'un talent élémentaire, un par élément, chacun avec son aperçu. */
 .logos-elements{margin-top:8px}.logos-elements label{position:relative}
 /* Les gemmes d'un aventurier, en ligne : une icône et son nombre, à la Killam. */

@@ -1255,10 +1255,12 @@ function talentPills(a){const out=document.createElement('div');out.className='t
   // Chaque talent tel que le porte cet aventurier : à son élément, s'il en a un.
   const tv=talentPourElement(t,elementDe(a)),carte=talentCarte(tv),pill=carte.firstChild;
   pill.classList.add('cliquable');pill.tabIndex=0;pill.setAttribute('aria-label',nomEnClair(tv.name)+(k>1?', palier '+k:''));
-  if(k>1)carte.lastChild.append(palierRomain(k));
+  if(k>1)carte.querySelector('.nom-texte').append(palierRomain(k));
   // La description, au palier que tient l'aventurier.
   const detail=talentDetail(talentAuPalier(tv,k||1));detail.classList.add('large');
-  if(k>1){const pp=document.createElement('p');pp.className='palier-dit';pp.textContent='Palier '+k;detail.prepend(pp)}
+  // En tête, le nom et son palier : « Orbes de Feu III », jamais « Palier 3 ».
+  const tete=document.createElement('p');tete.className='talent-bulle-nom';const b=document.createElement('b');nomAccolades(b,tv.name);
+  if(k>1)b.append(palierRomain(k));tete.append(b);detail.prepend(tete);
   const manque=sansEffet(t);
   if(manque){pill.classList.add('sans-effet');
    const m=document.createElement('span');m.className='t-sans-effet';m.textContent='⚠';
@@ -1414,9 +1416,11 @@ function talentRond(t,logo){const p=document.createElement('span');p.className='
 function bulleTalentSur(ancre,t,o){const d=bulleTalent(t,o);
  return ouvrirBulle(ancre,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))}
 // Le rond et son nom dessous, comme une pièce de l'armurerie.
+/* Le nom tient dans un seul bloc de texte : le chiffre du palier s'y ajoute à la suite, et passe
+   à la ligne avec lui au lieu de se ranger à côté comme une colonne. */
 function talentCarte(t,logo){const carte=document.createElement('div');carte.className='cat-carte talent-carte';
- const nom=document.createElement('span');nom.className='nom-carte';nomAccolades(nom,t.name);
- carte.append(talentRond(t,logo),nom);return carte}
+ const nom=document.createElement('span');nom.className='nom-carte';const texte=document.createElement('span');texte.className='nom-texte';
+ nomAccolades(texte,t.name);nom.append(texte);carte.append(talentRond(t,logo),nom);return carte}
 /* Un talent au catalogue, comme une pièce de l'armurerie : un carré à la couleur de sa nature,
    son logo (ou le glyphe de sa nature), le nom dessous ; la nature ne s'écrit pas. Le survol ouvre la
    bulle, le clic du MJ le formulaire ; plus de dépliant, la bulle suffit. Un logo qui suit
@@ -2226,6 +2230,8 @@ function retireDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;
   est sous clé. Un bonus dit sa valeur ; il n'a pas d'effet à préciser. « a » : celui qui le
   porte, s'il y en a un ; « vu » : le talent tel que cet arbre le montre (à son élément). Sans
   porteur ni élément, un nom à accolades les montre en creux. */
+// Le chiffre d'un palier dans une comparaison, où le premier aussi doit se nommer.
+const CHIFFRES_PALIER=['','I','II','III'];
 function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){const bonus=t.effet==='bonus';
  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
@@ -2243,8 +2249,12 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){const bonus=t.effe
   const g=document.createElement('div');g.className='paliers-bulle n'+montres.length;
   montres.forEach((n,i)=>{if(i){const f=document.createElement('span');f.className='palier-fleche';f.textContent='→';f.setAttribute('aria-hidden','true');g.append(f)}
    const tp=talentAuPalier(vu(t),n),col=document.createElement('div');col.className='palier-col'+(a?(n<=k?' acquis':' suivant'):'');
-   const h=document.createElement('p');h.className='palier-tete';const c=coutPalier(t,n);
-   h.textContent='Palier '+n+(a?(n<=k?' · acquis':' · suivant'):'')+(c?' · '+c+' PT':'');col.append(h);
+   /* Pas de « Palier 1 · suivant » : le nom porte déjà son chiffre. Deux paliers côte à côte
+      se distinguent par le leur seul, I, II ou III ; le coût suit, s'il y en a un. */
+   const c=coutPalier(t,n),deux=montres.length>1;
+   if(deux||c){const h=document.createElement('p');h.className='palier-tete'+(deux?' romain':'');
+    if(deux){const r=document.createElement('span');r.className='palier-num';r.textContent=CHIFFRES_PALIER[n]||String(n);h.append(r)}
+    if(c)h.append((deux?' · ':'')+c+' PT');col.append(h)}
    const e=document.createElement('p');e.className='palier-effet';e.textContent=tp.effects||'Effet à préciser.';if(tp.effects)texteEnrichi(e,tp.effects);col.append(e);
    // Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.
    g.append(col)});

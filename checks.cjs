@@ -2811,8 +2811,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("const ROMAINS_PALIER=['','','II','III'];")&&page.includes("function nomAvecPalier(texte,nom,palier){")
   &&page.includes("if(nom&&texte.startsWith(nom))s.append(nom,palierRomain(palier),texte.slice(nom.length));else s.append(texte,palierRomain(palier));")
   &&page.includes("palier:paliersDe(talent)>1&&talent.palier>1?talent.palier:0,")&&page.includes("geste(nomAvecPalier(b.texte,b.talent.name,b.palier),"),'le chiffre du palier sur les boutons de la table');
- assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("if(k>1)carte.lastChild.append(palierRomain(k));")
-  &&src.includes("const nom=nomAvecPalier(t.texte,t.talent.name,t.palier);nom.className='nom';")&&css.includes(".palier-romain{margin-left:.3em;font-family:'Killam',Georgia,serif;"),'dans la bulle et sur la fiche, en Killam');}
+ assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("if(k>1)carte.querySelector('.nom-texte').append(palierRomain(k));")
+  &&src.includes("const nom=nomAvecPalier(t.texte,t.talent.name,t.palier);nom.className='nom';")&&css.includes(".palier-romain{margin-left:.3em;font:inherit;"),'dans la bulle et sur la fiche, dans la police du nom');}
 /* v0.300 — Un talent élémentaire choisit un logo par élément ; sans logo propre, l'ancien
    logo suit l'élément comme avant. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8');
