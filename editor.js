@@ -1414,6 +1414,8 @@ function trieObjets(liste,tri){const nom=(x,y)=>x[0].name.localeCompare(y[0].nam
 /* Le tri du tableau : null, c'est l'ordre de l'Armurerie — armes de mêlée, à distance, armures,
    objets, ressources, trésors ; sinon une colonne et un sens, choisis d'un clic sur son en-tête. */
 let armoryMasse=false,armoryNeuf=null,masseTri=null;
+// La dernière opération « pour toutes » : les pièces telles qu'elles étaient, pour l'annuler.
+let masseAnnule=null;
 /* Créer une pièce sans quitter le tableau : sa catégorie, puis une ligne neuve, son nom prêt à
    écrire. La catégorie proposée est celle qu'on filtre. */
 const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['treasure','Trésor']];
@@ -1426,7 +1428,12 @@ function barreMasse(boite,choisie){const barre=document.createElement('div');bar
   catalog.items.push(o);normalizeCatalog(catalog);armoryNeuf=o.id;scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderArmory()};
  const std=document.createElement('button');std.type='button';std.className='masse-standard';std.textContent='↺ Tri standard';std.disabled=!masseTri;
  std.title='Revenir à l’ordre de l’Armurerie : armes de mêlée, armes à distance, armures, objets, ressources, trésors';std.onclick=()=>{masseTri=null;renderArmory()};
- barre.append(std,cat,b);boite.append(barre)}
+ barre.append(std);
+ if(masseAnnule){const u=document.createElement('button');u.type='button';u.className='masse-annule';u.textContent='↶ Annuler : '+masseAnnule.dit;
+  u.title='Remettre les '+masseAnnule.avant.length+' pièces telles qu’elles étaient avant cette opération';
+  u.onclick=()=>{const m=masseAnnule;masseAnnule=null;m.avant.forEach(v=>{const i=catalog.items.findIndex(o=>o.id===v.id);if(i>=0)catalog.items[i]=v});
+   normalizeCatalog(catalog);scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderArmory()};barre.append(u)}
+ barre.append(cat,b);boite.append(barre)}
 function tableMasse(boite,liste){
  const sauve=()=>{scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
  const arme=o=>o.category==='weapon',armure=o=>o.category==='armor';
@@ -1445,7 +1452,8 @@ function tableMasse(boite,liste){
    const txt=[phraseDeObjet(o).replace(/<[^>]+>/g,''),...normaliseBonusEquip(o.bonus).map(b=>'+'+b.valeur+' '+(b.carac==='comp'?(COMPETENCES[Number(b.comp)]||''):(NOM_CARAC[b.carac]||b.carac)))].filter(Boolean).join(' · ');
    const t=document.createElement('span');t.textContent=txt||o.etat||'';s.append(t);s.title=txt;return s}},
   {cle:'rarete',nom:'Rareté',type:'choix',opts:RARETES,pour:faite,tri:o=>RARETES.findIndex(([k])=>k===rareteDe(o)),lit:o=>rareteDe(o),ecrit:(o,v)=>{o.rarete=rareteDe({rarete:v})}},
-  {cle:'price',nom:'Prix (or)',type:'nombre',max:999999,lit:o=>o.price||0,ecrit:(o,v)=>{o.price=Math.max(0,Math.min(999999,Math.round(v)))}},
+  // La valeur d'une ressource ne se règle qu'au guide des prix : ni la ligne, ni « pour toutes » n'y touchent.
+  {cle:'price',nom:'Prix (or)',type:'nombre',max:999999,pour:faite,lit:o=>o.price||0,ecrit:(o,v)=>{o.price=Math.max(0,Math.min(999999,Math.round(v)))}},
   {cle:'ressource1',nom:'Ressource 1',type:'choix',opts:RESS,pour:faite,tri:o=>nomRess(o.ressource1),lit:o=>ressourceValide(o.ressource1),ecrit:(o,v)=>{o.ressource1=ressourceValide(v)}},
   {cle:'ressource2',nom:'Ressource 2',type:'choix',opts:RESS,pour:faite,tri:o=>nomRess(o.ressource2),lit:o=>ressourceValide(o.ressource2),ecrit:(o,v)=>{o.ressource2=ressourceValide(v)}},
   {cle:'magasin',nom:'Magasin',type:'case',lit:o=>o.magasin===true,ecrit:(o,v)=>{o.magasin=!!v}},
@@ -1471,7 +1479,7 @@ function tableMasse(boite,liste){
  /* Changer une colonne pour toutes : une seule question avant, puis toutes les lignes suivent. */
  const pourTous=(c,fn,dit)=>{const cibles=liste.map(([o])=>o).filter(o=>vaut(c,o));if(!cibles.length)return;
   if(!confirm(dit+' — '+cibles.length+' pièce'+(cibles.length>1?'s':'')+' ?'))return;
-  cibles.forEach(fn);sauve();renderArmory()};
+  masseAnnule={dit,avant:cibles.map(o=>structuredClone(o))};cibles.forEach(fn);sauve();renderArmory()};
  COLS.forEach(c=>{const td=document.createElement('td');
   if(c.type==='nombre'){const op=document.createElement('select');op.setAttribute('aria-label',c.nom+' : opération');op.innerHTML='<option value="=">=</option><option value="x">×</option><option value="+">+</option>';
    const n=document.createElement('input');n.type='number';n.step='any';n.placeholder=c.cle==='price'?'or':'';n.setAttribute('aria-label',c.nom+' : valeur pour toutes');
@@ -1561,7 +1569,7 @@ function renderGuidePrix(){const boite=$('guide-prix'),bloc=$('bloc-guide-prix')
   const u=document.createElement('small');u.textContent=unite;l.append(t,i,u);f.append(l)};
  const G=()=>catalog.guidePrix;
  const fb=groupe('Base','Ce que vaut une pièce de la catégorie, avant le reste.');
- CATS_PRIX.forEach(([k,n])=>champ(fb,n,()=>G().base[k],v=>{G().base[k]=v}));
+ CATS_PRIX.filter(([k])=>k!=='ressource').forEach(([k,n])=>champ(fb,n,()=>G().base[k],v=>{G().base[k]=v}));
  const fd=groupe('Dés de dégâts','Par dé, sur une arme ; le dé qu’une munition ajoute compte aussi.');
  keys.forEach((k,i)=>champ(fd,types[i],()=>G().des[k],v=>{G().des[k]=v},'or',dicePips({[k]:1})));
  const fa=groupe('Défense et armes');
@@ -1571,11 +1579,11 @@ function renderGuidePrix(){const boite=$('guide-prix'),bloc=$('bloc-guide-prix')
  Object.values(OBJETS_CODES).forEach(c=>champ(fe,c.nom,()=>G().effets[c.cle],v=>{G().effets[c.cle]=v}));
  const fx=groupe('Bonus','Par +1 de caractéristique.');
  CARACS_EQUIP.forEach(([k,n])=>champ(fx,n,()=>G().bonus[k],v=>{G().bonus[k]=v}));
- const fr=groupe('Ressources','La valeur de chaque ressource, celle de sa pièce ; une pièce en compte la part choisie.');
+ const fr=groupe('Ressources','La valeur de chaque ressource se règle ici, et seulement ici ; une pièce faite de ressources en compte la part choisie.');
  champ(fr,'Part comptée',()=>G().ressources,v=>{G().ressources=v},'%');
  ressourcesJeu().filter(r=>r.piece).sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(r=>champ(fr,r.nom,()=>r.piece.price||0,v=>{r.piece.price=Math.max(0,Math.min(999999,Math.round(Number(v))||0))},'or',logoEquipement(r.piece,'guide-logo')||undefined));
  const fq=groupe('Rareté','Multiplie le total : 100 % le laisse tel quel.');
- [...RARETES,['ressource','Ressource']].forEach(([k,n])=>champ(fq,n,()=>G().rarete[k],v=>{G().rarete[k]=v},'%'));}
+ RARETES.forEach(([k,n])=>champ(fq,n,()=>G().rarete[k],v=>{G().rarete[k]=v},'%'));}
 function renderArmory(){renderBiblioObjets();renderGuidePrix();const cols=$('armory-cols');if(!cols)return;cols.replaceChildren();
  const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value,tri=$('armory-sort').value;
  const masse=armoryMasse&&view==='mj';$('armory-masse').setAttribute('aria-pressed',String(masse));$('armory-masse').classList.toggle('on',masse);
@@ -3293,7 +3301,8 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +'</div>'
   // Le prix et les deux ressources, ensemble sur leur ligne.
   +'<div class="edit-grid prix-ressources">'
-  +field(a.category==='ressource'?'Valeur (or)':'Prix (or)','price',a.price||0,'number','min="0" max="999999" step="1"')
+  +(a.category==='ressource'?'<p class="valeur-guide">Valeur : <b>'+(a.price||0).toLocaleString('fr-FR')+' or</b> — elle se règle dans le Guide des prix de l’Armurerie.</p>'
+   :field('Prix (or)','price',a.price||0,'number','min="0" max="999999" step="1"'))
   // Une ressource n'est pas faite d'autres ressources.
   +(a.category==='ressource'?'':sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...listeRessources()])
    +sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...listeRessources()]))
@@ -3327,7 +3336,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
  habilleDes($('item-fields'));
  dessineBonusItem();
  /* À droite du prix : celui que suggère le guide, recalculé à chaque saisie du formulaire. */
- {const f=$('item-form').elements,b=boutonSuggestion(),maj=()=>{try{majSuggestion(b,itemDepuisForm({...itemDraft}),num(f.price.value,0,999999))}catch(e){}};
+ if($('item-form').elements.price){const f=$('item-form').elements,b=boutonSuggestion(),maj=()=>{try{majSuggestion(b,itemDepuisForm({...itemDraft}),num(f.price.value,0,999999))}catch(e){}};
   const ligne=document.createElement('span');ligne.className='prix-ligne';f.price.before(ligne);ligne.append(f.price,b);b.onclick=()=>{f.price.value=b.dataset.total||'0';maj()};
   $('item-form').oninput=maj;maj()}
  if($('item-bonus-add'))$('item-bonus-add').onclick=()=>{itemDraft=itemDepuisForm(itemDraft);itemDraft.bonus=[...normaliseBonusEquip(itemDraft.bonus),{carac:'pv',valeur:1,comp:'0'}];dessineBonusItem()};

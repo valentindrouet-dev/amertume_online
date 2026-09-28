@@ -2562,14 +2562,14 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(!cat.items.some(o=>o.category==='ressource')&&cat.items[0].ressource1==='','supprimées, elles ne reviennent pas ; l’épée n’en cite plus');
  const neuf={items:[]};ctxR.migreRessources(neuf);assert.equal(neuf.items.length,11);assert.ok(neuf.items.some(o=>o.id==='ressource-fer'&&o.cle==='fer'&&o.name==='Fer'));
  assert.ok(src.includes("if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))")
-  &&src.includes("+field(a.category==='ressource'?'Valeur (or)':'Prix (or)','price',a.price||0,'number','min=\"0\" max=\"999999\" step=\"1\"')")
+  &&src.includes(":field('Prix (or)','price',a.price||0,'number','min=\"0\" max=\"999999\" step=\"1\"'))")
   &&src.includes("+(a.category==='ressource'?'':sel('Ressource 1','ressource1',ressourceValide(a.ressource1),[['','— aucune —'],...listeRessources()])")
   &&src.includes("+sel('Ressource 2','ressource2',ressourceValide(a.ressource2),[['','— aucune —'],...listeRessources()]))")
   &&src.includes(" for(const k of ['ressource1','ressource2'])if(f[k])a[k]=ressourceValide(f[k].value);")
   &&src.includes("if(a.category==='ressource'&&!(typeof a.cle==='string'&&CLE_MATERIAU.test(a.cle)))a.cle=cleLibre(a.name,new Set(ressourcesJeu().map(r=>r.cle)));"),'ressources et prix au formulaire de l’objet');}
 /* v0.282 — Au formulaire d'un objet, Mains revient sur la ligne de la rareté ; prix et ressources ont la leur. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("  +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))\n  +(arme?sel('Mains','hands',")&&src.includes("  +'<div class=\"edit-grid prix-ressources\">'\n  +field(a.category==='ressource'?'Valeur (or)':'Prix (or)','price',")
+ assert.ok(src.includes("  +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))\n  +(arme?sel('Mains','hands',")&&src.includes("  +'<div class=\"edit-grid prix-ressources\">'\n  +(a.category==='ressource'?'<p class=\"valeur-guide\">Valeur : <b>'")
   &&fs.readFileSync('editor.css','utf8').includes('.edit-grid.prix-ressources{margin-top:12px}'),'prix et ressources sur une ligne, Mains avec la rareté');}
 /* v0.283 — Les ressources : l'or, les gemmes (trois tailles, quatre variétés, allumées ou éteintes)
    et les matériaux. Le domaine tient ses matériaux et ses gemmes — son or est son trésor — ; un
@@ -2978,4 +2978,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("let armoryMasse=false,armoryNeuf=null,masseTri=null;")&&src.includes("std.onclick=()=>{masseTri=null;renderArmory()};")
   &&src.includes("b.onclick=()=>{masseTri=actif?{cle,sens:-masseTri.sens}:{cle,sens:1};renderArmory()};")&&src.includes("tete.append(enTete('piece','Pièce'),...COLS.map(c=>enTete(c.cle,c.nom)));")
   &&src.includes("sort((A,B)=>(A[1]===null)-(B[1]===null)||(A[1]===null?0:cmp(A[1],B[1])*masseTri.sens)||A[2]-B[2])"),'le tableau se trie par colonne, et revient au tri standard');}
-console.log('1746 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.332 — La valeur d'une ressource ne se règle qu'au guide des prix : le mode en masse n'y
+   touche plus, ni ligne par ligne, ni pour toutes ; une opération pour toutes s'annule. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("{cle:'price',nom:'Prix (or)',type:'nombre',max:999999,pour:faite,lit:o=>o.price||0,")&&src.includes("const pourTous=(c,fn,dit)=>{const cibles=liste.map(([o])=>o).filter(o=>vaut(c,o));")
+  &&src.includes("masseAnnule={dit,avant:cibles.map(o=>structuredClone(o))};cibles.forEach(fn);")&&src.includes("u.textContent='↶ Annuler : '+masseAnnule.dit;")
+  &&src.includes("CATS_PRIX.filter(([k])=>k!=='ressource').forEach(")&&src.includes(" if($('item-form').elements.price){const f=$('item-form').elements,b=boutonSuggestion(),maj="),'le prix d’une ressource ne se règle qu’au guide ; l’opération pour toutes s’annule');}
+console.log('1747 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

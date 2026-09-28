@@ -224,7 +224,9 @@ body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.l
 .prix-suggere{padding:2px 8px;border-radius:999px;border:1px solid #d4b35a;background:#f7e7b4;color:#6b4a0c;font:600 12px/1.4 system-ui,sans-serif;white-space:nowrap;cursor:pointer}
 .prix-suggere:hover{background:#f2d98a}.prix-suggere.egal{background:transparent;border-color:var(--line);color:var(--muted);cursor:default}
 .masse-prix{display:flex;align-items:center;gap:6px}.masse-prix input{width:6.5em}
-.prix-ligne{display:flex;align-items:center;gap:8px}.prix-ligne input{flex:1;min-width:0}
+.prix-ligne{display:flex;align-items:center;gap:8px}
+.valeur-guide{margin:22px 0 0;color:var(--muted)}.valeur-guide b{color:var(--ink,inherit)}
+.masse-barre .masse-annule{border-color:var(--accent);color:var(--accent)}.prix-ligne input{flex:1;min-width:0}
 /* L'Armurerie : quatre colonnes par rangée, les Ressources et les Trésors en dessous. */
 #armory-cols{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:1150px){#armory-cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
