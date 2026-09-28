@@ -1443,16 +1443,17 @@ function teinteClasse(nom){const c=classeDe(catalog.classes,nom);return c&&c.tin
    son logo (ou le glyphe de sa nature) et son abrégé, le nom dessous. Le survol ouvre la
    bulle, le clic du MJ le formulaire ; plus de dépliant, la bulle suffit. Un logo qui suit
    l'élément se montre au premier. */
-function talentRow(t,i){const carte=document.createElement('div');carte.className='cat-carte';
+function talentRow(t,i,elem){const carte=document.createElement('div');carte.className='cat-carte';
  const [cle,court,nature]=talentType(t),mj=view==='mj';
  const p=document.createElement('span');p.className='cat-pill gear-carre talent-carre t-'+cle;p.setAttribute('role','button');p.tabIndex=0;
- const vu=t.elementaire===true?talentPourElement(t,ELEMENTS[0]):t,logo=logoTalent({...vu,logo:remplaceElement(vu.logo||'',ELEMENTS[0])});
+ // Sous l'élément de la colonne, s'il y en a un ; un talent élémentaire ailleurs, sous le premier.
+ const sous=elem||(t.elementaire===true?ELEMENTS[0]:null),vu=sous?talentPourElement(t,sous):t,logo=logoTalent({...vu,logo:remplaceElement(vu.logo||'',sous||ELEMENTS[0])});
  if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=GLYPHES_TALENT[t.type]||'✦';p.append(g)}
  const b=document.createElement('span');b.className='t-badge';b.textContent=court;p.append(b);
- p.setAttribute('aria-label',(mj?'Modifier ':'')+nomEnClair(t.name)+', '+nature);
- if(BULLES)surveille(p,()=>{const d=bulleTalent(t);ouvrirBulle(p,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
+ p.setAttribute('aria-label',(mj?'Modifier ':'')+nomEnClair(vu.name)+', '+nature);
+ if(BULLES)surveille(p,()=>{const d=bulleTalent(t,{vu:x=>sous?talentPourElement(x,sous):x});ouvrirBulle(p,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
  if(mj){p.onclick=()=>openTalent(i);p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openTalent(i)}}}
- const nom=document.createElement('span');nom.className='nom-carte';nomAccolades(nom,t.name);
+ const nom=document.createElement('span');nom.className='nom-carte';nomAccolades(nom,vu.name);
  carte.append(p,nom);if(!mj)return carte;
  const outils=document.createElement('span');outils.className='cat-tools';
  const ico=(glyphe,titre,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=glyphe;
@@ -1552,11 +1553,15 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
    // Le nom de la classe ouvre le même arbre : on clique où l'on regarde.
    h.classList.add('cliquable');h.title='Ouvrir l’arbre de talents de '+famille;
    h.onclick=()=>openArbresClasse(famille)}
+  /* Une classe élémentaire (le Mystique) a Feu, Gel et Foudre dans sa barre : ses talents se
+     montrent sous l'élément choisi, noms, logos et états remplis — le même aperçu que son arbre. */
+  const elem=classeElementaire(famille)?(ELEMENTS.find(e=>e.cle===elementApercu)||ELEMENTS[0]):null;
+  if(elem){const c=choixElement(null,famille,renderTalents);c.classList.add('compact');h.append(c)}
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
   h.append(compte);bloc.append(h);
   // Une amélioration suit son prérequis : la colonne garde l'ordre de l'arbre, en carrés.
   const place=new Map(liste.map(([t,i])=>[t.id,i]));
-  ordonneTalents(liste.map(([t])=>t),catalog.talents).forEach(([t])=>bloc.append(talentRow(t,place.get(t.id))));
+  ordonneTalents(liste.map(([t])=>t),catalog.talents).forEach(([t])=>bloc.append(talentRow(t,place.get(t.id),elem)));
   cols.append(bloc)}
 }
 $('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalents;
@@ -2199,14 +2204,14 @@ const VERROU_ELEMENT='l’élément du Mystique';
 let elementApercu='feu';
 /* Le choix de l'élément : Feu, Gel, Foudre. Pour un Mystique, le MJ seul le fixe — le joueur voit
    le sien. Sur le plan de la classe, le MJ regarde l'arbre sous chaque élément. */
-function choixElement(a,classe){const out=document.createElement('div');out.className='elements-choix';out.setAttribute('role','radiogroup');out.setAttribute('aria-label','Élément');
+function choixElement(a,classe,rendre){const out=document.createElement('div');out.className='elements-choix';out.setAttribute('role','radiogroup');out.setAttribute('aria-label','Élément');
  const actuel=a?elementDe(a):ELEMENTS.find(e=>e.cle===elementApercu),peut=view==='mj';
  ELEMENTS.forEach(e=>{const b=document.createElement('button');b.type='button';const on=!!actuel&&actuel.cle===e.cle;
   b.className='element-bouton el-'+e.cle+(on?' on':'');b.setAttribute('role','radio');b.setAttribute('aria-checked',String(on));
   const ic=logoImage('spell_orbes_'+e.logo,LOGOS_TOUS,'element-ico');if(ic)b.append(ic);b.append(e.nom);
   if(a){b.disabled=!peut;b.title=peut?(on?a.name+' est Mystique de '+e.nom:'Faire de '+a.name+' un Mystique de '+e.nom):'Seul le MJ choisit l’élément';
    b.onclick=()=>{if(!peut||on)return;a.element=e.cle;renderArbres();if(typeof renderHeroes==='function')renderHeroes();render();scheduleSave()}}
-  else{b.title='Aperçu : l’arbre sous l’élément '+e.nom;b.onclick=()=>{elementApercu=e.cle;renderArbres()}}
+  else{b.title='Aperçu : les talents sous l’élément '+e.nom;b.onclick=ev=>{ev.stopPropagation();elementApercu=e.cle;(rendre||renderArbres)()}}
   out.append(b)});
  const bloc=document.createElement('div');bloc.className='elements-bloc';bloc.append(out);
  const dit=a&&!elementDe(a)?(peut?'Choisis l’élément de '+a.name+' : ses talents élémentaires l’attendent.':'Le MJ choisit l’élément : les talents élémentaires l’attendent.'):'';

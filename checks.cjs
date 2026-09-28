@@ -2687,7 +2687,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefoudre','Foudre',1]],'la table joue l’élément, puis le palier ; la DEF retirée, réglage commun, reste celle du palier 1');
  assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element'];")&&vivant.includes("'defBrisee','element'];")
   &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
- assert.ok(src.includes("function choixElement(a,classe){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
+ assert.ok(src.includes("function choixElement(a,classe,rendre){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
   &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tv=vu(t),logo=logoTalent(tv);")&&src.includes("const tp=talentAuPalier(vu(t),n),col=")
   &&src.includes(".filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
   &&src.includes("name=\"elementaire\"")&&src.includes("rangee.forEach(t=>{const tv=talentPourElement(t,elementDe(a)),pill=talentPill(tv,true);"),'l’arbre, la fiche et l’éditeur suivent l’élément');
@@ -2771,7 +2771,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function nomAccolades(el,texte){")&&src.includes("n.className='nom';nomAccolades(n,t.name);")&&src.includes("nom.className='arbre-nom';nomAccolades(nom,tv.name);")
   &&src.includes("p.textContent='Selon l’élément : '+ELEMENTS.map(e=>remplaceElement(v,e)).join(' · ')")&&css.includes('.accolade{'),'les accolades du nom, en pastille ou remplies');
  assert.ok(src.includes("function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){")&&src.includes(" const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note});")
-  &&src.includes("if(BULLES)surveille(p,()=>{const d=bulleTalent(t);ouvrirBulle(p,d,")
+  &&src.includes("if(BULLES)surveille(p,()=>{const d=bulleTalent(t,{vu:x=>sous?talentPourElement(x,sous):x});ouvrirBulle(p,d,")
   &&!src.includes("m.className='palier-moteur'")&&src.includes("if(elem)h=enElementDuMystique(h,vals[n].etat);"),'la bulle au survol, dans l’onglet Talents aussi ; l’élément du Mystique sans élément');
  assert.ok(!src.includes('↩ Remettre dans l’arbre'),'le menu de tête a laissé la place aux « + »');}
 /* v0.296 — Les orbes élémentaires par palier : l'état sur 6+, puis à chaque touche, puis en
@@ -2832,7 +2832,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(!C.etatRefuse(inv({contre:'des',etat:'Feu'}),'Feu')&&C.etatRefuse(inv({contre:'etat',etat:'Feu'}),'Feu')&&C.etatRefuse(inv({etat:'Gel'}),'Gel')&&!C.desRefuses(inv({etat:'Gel'})).length,'un état, ou des dés, jamais les deux');
  assert.ok(C.phraseTalent('invulnerable',{contre:'des',des:'red'}).includes('<b>insensible aux dés Lourds</b>'));
  assert.ok(src.includes("function logoTalent(t,cls){if(t&&t.effet==='invulnerable'){const w=pastilleInsensible(paramsTalent(t));if(w){w.classList.add('logo-auto');")
-  &&src.includes("function pastilleInsensible(p){let el=null,titre='';")&&src.includes("logo=logoTalent({...vu,logo:remplaceElement(vu.logo||'',ELEMENTS[0])});")
+  &&src.includes("function pastilleInsensible(p){let el=null,titre='';")&&src.includes("logo=logoTalent({...vu,logo:remplaceElement(vu.logo||'',sous||ELEMENTS[0])});")
   &&css.includes('.arbre-rond .effet-pastille.logo-auto{width:58%;height:58%}'),'le logo automatique, barré de rouge');}
 /* v0.303 — Une attaque spéciale inflige autant d'états qu'on en coche ; l'état unique
    d'avant se lit toujours, et les modèles posés sur une carte gardent la liste. */
@@ -2865,4 +2865,11 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("if(depot)im.onerror=()=>{im.onerror=null;im.src='https://raw.githubusercontent.com/'+depot+'/main/img/'+l.split('/').map(encodeURIComponent).join('/')}}")
   &&src.includes("apercu.hidden=!l;if(l)poseLogo(apercu,l)};")&&src.includes("im.hidden=!m.value;if(m.value)poseLogo(im,m.value)};")
   &&src.includes("im.className='logo-equip'+(cls?' '+cls:'');poseLogo(im,l);"),'le secours des icônes pas encore publiées');}
-console.log('1706 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.307 — La colonne du Mystique, dans l'onglet Talents : Feu, Gel, Foudre dans sa barre, et
+   ses talents montrés sous l'élément choisi, sans pastille d'accolade. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("const elem=classeElementaire(famille)?(ELEMENTS.find(e=>e.cle===elementApercu)||ELEMENTS[0]):null;")
+  &&src.includes("if(elem){const c=choixElement(null,famille,renderTalents);c.classList.add('compact');h.append(c)}")
+  &&src.includes("bloc.append(talentRow(t,place.get(t.id),elem))")&&src.includes("nom.className='nom-carte';nomAccolades(nom,vu.name);")
+  &&src.includes("b.onclick=ev=>{ev.stopPropagation();elementApercu=e.cle;(rendre||renderArbres)()}")&&css.includes('.cat-col h3 .elements-bloc.compact{'),'Feu, Gel, Foudre dans la barre du Mystique');}
+console.log('1707 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

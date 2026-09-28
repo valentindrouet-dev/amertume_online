@@ -1272,3 +1272,8 @@ body.sombre .paliers-table thead th.p2,body.sombre .paliers-table thead th.p3{co
 .bulle-attaque .des-bonus{display:inline-flex;align-items:center;gap:5px;margin-left:auto}
 .bulle-attaque .pips{display:inline-flex;align-items:center;gap:2px}
 .bulle-attaque .bonus{font:700 14px 'Killam',Georgia,serif}.bulle-attaque .dmg-ico{width:16px;height:16px}
+/* Feu, Gel, Foudre dans la barre d'une colonne de talents : les mêmes boutons que l'arbre, en petit. */
+.cat-col h3 .elements-bloc.compact{margin:0 0 0 4px;flex-direction:row}
+.cat-col h3 .elements-bloc.compact .elements-choix{gap:4px;flex-wrap:nowrap}
+.cat-col h3 .elements-bloc.compact .element-bouton{padding:1px 8px 1px 3px;gap:3px;font:700 9.5px system-ui;letter-spacing:.8px;border-radius:12px}
+.cat-col h3 .elements-bloc.compact .element-ico{width:15px;height:15px}
