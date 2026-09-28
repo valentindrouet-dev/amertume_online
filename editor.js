@@ -1306,15 +1306,12 @@ const BEST_COLS=[['standard','Sbires'],['alpha','Élites'],['solitaire','Solitai
 function danger(m){return (Number(m.xp)||0)*100+(Number(m.pv)||0)}
 const MENACE_NOMS={closest:'Plus proche',pvLow:'PV bas',pvHigh:'PV haut',defLow:'DEF basse'};
 const SOCLE_NOMS={small:'Petit socle',medium:'Socle moyen',large:'Grand socle',huge:'Socle énorme'};
-/* Un modèle du bestiaire, comme une pièce de l'armurerie : un carré à la couleur de son type,
-   son jeton, ses PV et sa DEF, le nom dessous. Le survol montre sa fiche, le clic du MJ
+/* Un modèle du bestiaire en rond, comme un talent : son jeton tout simplement, cerclé de la
+   couleur de son type, le nom dessous ; ses PV et sa DEF sont dans la bulle. Le survol montre sa fiche, le clic du MJ
    ouvre son formulaire. La coche verte dit que la troupe l'a analysé : un clic la lève. */
 function bestiaryRow(m,i){const carte=document.createElement('div');carte.className='cat-carte';const mj=view==='mj';
  const p=document.createElement('span');p.className='cat-pill gear-carre best-carre k-'+(m.type||'standard');p.setAttribute('role','button');p.tabIndex=0;
- p.append(jetonRond(m.image,m.name,'carre'));
- const defPortee=equippedDef(m,catalog.items),bas=document.createElement('span');bas.className='gear-bas';
- const pv=document.createElement('span');pv.className='best-pv';pv.textContent=(m.pv||0)+' PV';
- bas.append(pv,shieldBadge(defPortee===null?(m.def||0):defPortee));p.append(bas);
+ p.append(jetonRond(m.image,m.name,'plein'));
  p.setAttribute('aria-label',(mj?'Modifier ':'')+m.name);
  if(BULLES)surveille(p,()=>ouvrirBulle(p,bulleModele(m),'bulle-modele'));
  if(mj){p.onclick=()=>openActor(null,false,i);p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openActor(null,false,i)}}}
