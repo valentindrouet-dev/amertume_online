@@ -1,8 +1,10 @@
-# Icônes d'équipement : armes, armures, boucliers, anneaux, capes
+# Icônes d'équipement
 
-Dépose ici tes icônes : PNG, WebP ou JPEG, carrées de préférence.
+Dépose ici les icônes de tout ce que range l'Armurerie : armes, armures, boucliers, anneaux,
+capes, munitions, potions et autres objets. PNG, WebP ou JPEG, carrées de préférence.
 
 - Nom de fichier sans accent ni espace : `hache_runes.png`, `potion_bleue.png`.
-- Elles paraissent seules dans le menu **Logo** d'une arme, d'une armure ou d'une munition, dans l'Armurerie, en tête de liste,
-  une à deux minutes après l'envoi, en rechargeant la page.
+- Elles paraissent seules en tête du menu **Logo** de l'Armurerie, quelle que soit la
+  catégorie, une à deux minutes après l'envoi, en rechargeant la page.
+- Les attaques spéciales des adversaires et les talents peuvent aussi les prendre.
 - Le nom affiché vient du fichier : `hache_runes.png` devient « Hache runes ».

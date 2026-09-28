@@ -2638,7 +2638,7 @@ function refreshEquip(){const f=$('actor-form').elements;if(!f||!$('equip-summar
    :'DEF : la sienne, sans équipement pour l’augmenter.')}
 function renderAttacks(){if(!$('attack-edit-list'))return;$('attack-edit-list').innerHTML=attackDraft.map((a,i)=>'<div class="attack-card" data-attack="'+i+'"><div class="edit-grid">'+field('Nom','an'+i,a.name,'text','required maxlength="100"')+sel('Portée','ar'+i,a.range,[['contact','Contact'],['distance','Distance']])+sel('Cibles','at'+i,a.targets,[['one','Unique'],['all','Multiples (manuel)']])
   // Son icône, sur le bouton de la table et au journal.
-  +sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...[...new Set([...(estLogoDossier((a.logos||[])[0])?[a.logos[0]]:[]),...LOGOS_DOSSIERS.attaques,...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])])+'</div>'
+  +sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...[...new Set([...(estLogoDossier((a.logos||[])[0])?[a.logos[0]]:[]),...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])])+'</div>'
   // Les états qu'elle inflige : autant qu'on en coche, tous posés à la touche.
   +'<div class="etats-attaque" role="group" aria-label="États infligés"><span class="etats-titre">États infligés</span>'
   +ETATS_JEU.map(e=>'<label class="etat-case"><input type="checkbox" name="ax'+i+'" value="'+esc(e)+'"'+(etatsAttaque(a).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('');habilleDes($('attack-edit-list'));document.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
@@ -2834,15 +2834,16 @@ const LOGOS_ETATS=['AU SOL','AVEUGLE','BLINDAGE INITIAL','CIBLAGE','FAILLE','FEU
 const LOGOS_DIVERS=['DEF 0','DEF 1','DEF 2','DEF 3','DEF 4','DEF 5','DEF 6','DEF VIDE','DEGATS','PERSO','VIE'];
 const EXTENSIONS_LOGO={DEGATS:'.webp'};
 /* Les dossiers d'icônes : on y dépose des images, et elles paraissent seules dans le bon menu,
-   sans rien déclarer — img/talents pour les logos de talents, img/equipement pour les armes et
-   armures, img/objets pour les objets, img/attaques pour les attaques spéciales. Le site,
+   sans rien déclarer — img/talents pour les logos de talents, img/equipement pour tout ce que
+   l'Armurerie range (armes, armures, munitions, objets). Les attaques spéciales et les talents
+   peuvent aussi prendre les unes comme les autres. Le site,
    statique, ne sait pas lister un dossier : il demande à GitHub (le dépôt est public) la liste
    de tout img/ d'un seul coup, et la garde deux minutes. En local, ou si GitHub ne répond pas,
    les menus restent sans elles et rien ne casse ; un logo déjà choisi s'affiche quand même, son
    chemin suffit. Le logo porte son dossier et son extension : « equipement/hache_runes.png ». */
-const DOSSIERS_LOGOS=[['talents','Dossier talents'],['equipement','Dossier équipement'],['objets','Dossier objets'],['attaques','Dossier attaques']];
+const DOSSIERS_LOGOS=[['talents','Dossier talents'],['equipement','Dossier équipement']];
 const LOGOS_DOSSIERS=Object.fromEntries(DOSSIERS_LOGOS.map(([d])=>[d,[]]));
-const estLogoDossier=l=>/^(talents|equipement|objets|attaques)\/[A-Za-z0-9_.-]+\.(png|webp|jpe?g)$/i.test(String(l||''));
+const estLogoDossier=l=>/^(talents|equipement)\/[A-Za-z0-9_.-]+\.(png|webp|jpe?g)$/i.test(String(l||''));
 // Toutes les icônes des dossiers, dans l'ordre des dossiers.
 const logosDesDossiers=()=>DOSSIERS_LOGOS.flatMap(([d])=>LOGOS_DOSSIERS[d]);
 // Le dépôt d'où le site est servi : « compte.github.io/depot/ » donne « compte/depot ».
@@ -2894,8 +2895,8 @@ function selLogos(label,key,value,sansElementaires){const garde=value&&!FAMILLES
 // les weapon_*, une munition parmi les deux (le carquois de flèches est un weapon_*), tout
 // le reste parmi les item_*.
 // Les icônes des dossiers viennent en tête : ce sont les nouvelles qu'on cherche.
-function logosItem(o){const c=o&&o.category,eq=[...LOGOS_DOSSIERS.equipement,...LOGOS_EQUIPEMENT],ob=[...LOGOS_DOSSIERS.objets,...LOGOS_OBJET];
- const l=c==='weapon'||c==='armor'?eq:c==='ammo'?[...eq,...ob]:ob;
+function logosItem(o){const c=o&&o.category,d=LOGOS_DOSSIERS.equipement;
+ const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:[...d,...LOGOS_OBJET];
  // Le logo en place reste offert, même si la liste des dossiers n'est pas venue.
  return o&&estLogoDossier(o.logo)&&!l.includes(o.logo)?[o.logo,...l]:l}
 /* Un logo devant un nom : un jeton, ou rien. Un logo inconnu du dossier ne se dessine
