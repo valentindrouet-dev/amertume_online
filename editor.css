@@ -1196,12 +1196,11 @@ i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #00
 /* La bulle compare : le palier tenu et le suivant, côte à côte — ou les trois, sur le plan du MJ. */
 .bulle.large-paliers{max-width:min(580px,94vw)}
 .paliers-bulle{display:grid;gap:10px;margin-top:6px}.paliers-bulle.n2{grid-template-columns:1fr auto 1fr}
-/* Les paliers d'un talent appris, l'un sous l'autre : un filet à gauche, vert pour ceux qu'il tient. */
-.paliers-bulle.liste{gap:7px}
-.paliers-bulle.liste .palier-col{border-top:0;border-left:3px solid var(--line);padding:1px 0 1px 9px}
-.paliers-bulle.liste .palier-col.acquis{border-left-color:var(--green)}
-.paliers-bulle.liste .palier-col.suivant{border-left-color:#c9953f;opacity:.72}
-.paliers-bulle.liste .palier-tete{margin-bottom:2px}
+/* Les paliers, un par ligne, sans filet : le chiffre en tête de sa ligne, dans la police du nom, et le coût à sa suite. */
+.paliers-bulle.liste{gap:6px}
+.paliers-bulle.liste .palier-effet{margin:0}
+.paliers-bulle.liste .palier-num{font:700 14px 'Killam',Georgia,serif;color:var(--ink);margin-right:2px}
+.paliers-bulle.liste .palier-cout{font:700 10.5px system-ui;letter-spacing:.4px;color:var(--muted)}
 .palier-fleche{align-self:center;font:700 20px/1 system-ui;color:#c9953f}
 .palier-col{border-top:2px solid var(--line);padding-top:5px;min-width:0}
 .palier-col.acquis{border-top-color:var(--green)}.palier-col.suivant{border-top-color:#c9953f}

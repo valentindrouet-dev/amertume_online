@@ -2238,21 +2238,25 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){const bonus=t.effe
  tete.append(nom);d.append(tete);
  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
  if(bonus){if(t.effects)ligne(t.effects);if(coutPalier(t,1))ligne('Coût : '+coutPalier(t,1)+' PT','muted')}
- else{/* Les paliers : un talent appris les montre tous, l'un sous l'autre, I, II, III — ceux
-     qu'il tient en vert, les autres pâlis ; pas encore appris, ou sur le plan du MJ, le premier
-     seul. Pas de « Palier 1 · suivant » : le chiffre suffit, et le coût le suit s'il y en a un. */
+ else{/* Les paliers, un par ligne, le chiffre en tête de sa ligne : « I Vous effectuez… ».
+     Un aventurier ne voit que ceux qu'il a débloqués ; s'il n'a pas le talent, le premier, celui
+     qu'il apprendrait. Sans aventurier — l'onglet Talents, le plan d'une classe — rien à
+     débloquer : tous. Pas de « Palier 1 · suivant » ; le coût suit le chiffre s'il y en a un. */
   const k=a?palierDe(a,t):0,max=paliersDe(t);
-  const montres=a&&k>0?Array.from({length:max},(_,i)=>i+1):[1];
+  /* Un palier qui n'apporte rien — le même texte que le précédent, sans coût — ne se répète
+     pas : un talent sans paliers écrits se lit en une ligne, sans chiffre. */
+  const texteDe=n=>talentAuPalier(vu(t),n).effects||'';
+  const jusque=!a?max:k>0?k:1;
+  const montres=Array.from({length:jusque},(_,i)=>i+1).filter(n=>n===1||coutPalier(t,n)>0||texteDe(n)!==texteDe(n-1));
   const g=document.createElement('div');g.className='paliers-bulle liste';
   montres.forEach(n=>{
-   const tp=talentAuPalier(vu(t),n),col=document.createElement('div');col.className='palier-col'+(a&&k>0?(n<=k?' acquis':' suivant'):'');
-   const c=coutPalier(t,n),numero=montres.length>1;
-   if(numero||c){const h=document.createElement('p');h.className='palier-tete'+(numero?' romain':'');
-    if(numero){const r=document.createElement('span');r.className='palier-num';r.textContent=CHIFFRES_PALIER[n]||String(n);h.append(r)}
-    if(c)h.append((numero?' · ':'')+c+' PT');col.append(h)}
-   const e=document.createElement('p');e.className='palier-effet';e.textContent=tp.effects||'Effet à préciser.';if(tp.effects)texteEnrichi(e,tp.effects);col.append(e);
+   const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n),numero=montres.length>1;
+   const e=document.createElement('p');e.className='palier-effet';e.textContent=tp.effects||'Effet à préciser.';if(tp.effects)texteEnrichi(e,tp.effects);
    // Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.
-   g.append(col)});
+   const tete=[];
+   if(numero){const r=document.createElement('span');r.className='palier-num';r.textContent=CHIFFRES_PALIER[n]||String(n);tete.push(r)}
+   if(c){const pt=document.createElement('span');pt.className='palier-cout';pt.textContent=c+' PT';tete.push(pt)}
+   e.prepend(...tete.flatMap(x=>[x,' ']));g.append(e)});
   d.append(g);
   }
  if(note)ligne(note,'muted');
