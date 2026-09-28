@@ -764,6 +764,11 @@ button.choix-attaque.sans-des.avec-logo .nom{grid-row:1/3;align-self:center}
 .arbre-niv{font:600 11px system-ui;color:var(--muted)}
 .arbre-noeud.t-act{--teinte:#4f7fb5}.arbre-noeud.t-reac{--teinte:#8b6bb5}.arbre-noeud.t-pass{--teinte:#8a8474}
 .arbre-noeud.t-crit{--teinte:#b5525a}.arbre-noeud.t-mait{--teinte:#c99a3c}.arbre-noeud.t-ame{--teinte:#5e9a5b}
+/* Le fond du rond d'un talent, celui de sa tuile dans l'onglet Talents : on reconnaît la nature
+   d'un coup d'œil, d'une page à l'autre. Les nœuds de bonus gardent le leur. */
+.arbre-noeud.t-act:not(.bonus) .arbre-rond{background:#cfdcea}.arbre-noeud.t-reac:not(.bonus) .arbre-rond{background:#ddd3ea}
+.arbre-noeud.t-pass:not(.bonus) .arbre-rond{background:#dcd8cf}.arbre-noeud.t-crit:not(.bonus) .arbre-rond{background:#eccfd0}
+.arbre-noeud.t-mait:not(.bonus) .arbre-rond{background:#f0e0bd}.arbre-noeud.t-ame:not(.bonus) .arbre-rond{background:#d3e5cd}
 .arbre-noeud.acquis .arbre-rond{box-shadow:0 0 0 3px var(--panel),0 0 0 5px var(--teinte),0 2px 8px #0005}
 .arbre-noeud.acquis .arbre-rond::after{content:'✓';position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--green);color:#fff;font:700 12px/18px system-ui;text-align:center;border:2px solid var(--panel)}
 .arbre-noeud.acquis .arbre-nom{color:var(--teinte)}
@@ -1073,7 +1078,8 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 /* Les talents et le bestiaire en carrés, comme l'armurerie : la couleur de la nature (ou du
    type d'adversaire) sur tout le carré, sans liseré ; le jeton d'un adversaire, ses PV et sa
    DEF dessous ; la coche d'analyse dans le coin. */
-.cat-pill.gear-carre.talent-carre{border-left:none}
+/* Un talent se range en rond, une pièce d'équipement en carré : on ne confond pas les deux. */
+.cat-pill.gear-carre.talent-carre{border-left:none;width:69px;height:69px;min-width:0;min-height:0;padding:0;border-radius:50%}
 .cat-pill.gear-carre.best-carre{gap:3px}
 .best-carre .jeton-rond.carre{width:38px;height:38px;font-size:17px}
 .best-carre .gear-bas{display:flex;align-items:center;gap:4px}

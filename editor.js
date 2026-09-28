@@ -1252,8 +1252,6 @@ function talentDetail(t){const d=document.createElement('div');d.className='tale
     bibliothèque des effets la garde. Ici, seul le texte que le MJ a écrit. */
  const effet=ligne(t.effects||'Effet à préciser.');if(effet&&t.effects)texteEnrichi(effet,t.effects);
  ligne(t.notes);
- const socle=nomPrerequis(t,catalog.talents),branches=talentsDependants(t,catalog.talents);
- if(socle)ligne('↳ Requiert : '+socle);
  return d}
 /* La vignette et son dépliant, l'un sous l'autre, de la même largeur : le bloc prend la
    largeur de la vignette, et le dépliant s'y range sans l'élargir. Un clic ouvre, un
@@ -2072,6 +2070,16 @@ function colonneArbre(titre,famille,voie,liste,rang){const arbre=foretArbre(list
 /* Les colonnes d'une classe : trois, toujours, nommées ou non. Celle qui accueille les
    talents sans voie s'appelle « Tronc commun » tant qu'elle n'a pas de nom ; les autres
    attendent le leur. Les maîtrises n'y sont pas : elles trônent au-dessus. */
+/* L'arbre fait foi : dans une colonne, un talent ne requiert que ce qui pend au-dessus de lui,
+   ou une maîtrise de sa classe. Un prérequis resté d'ailleurs — une autre colonne, une autre
+   classe, un talent retiré de l'arbre — ne se voyait pas et verrouillait pourtant le talent :
+   il s'efface, avec la diagonale qui allait avec. Vrai si quelque chose a changé. */
+function accordeArbres(){let change=false;
+ (catalog.classes||[]).map(c=>c&&c.name).filter(n=>n&&n!==GENERIQUES).forEach(classe=>{
+  const maitrises=new Set(maitrisesDe(classe).map(t=>t.id));
+  colonnesArbre(classe).forEach(col=>{const ids=new Set(col.liste.map(t=>t.id));
+   col.liste.forEach(t=>{if(t.prerequis&&!ids.has(t.prerequis)&&!maitrises.has(t.prerequis)){t.prerequis='';t.branche='';change=true}})})});
+ return change}
 function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&t.type!=='mait'&&!t.horsArbre);
  const voies=voiesDe(classe),nommees=voies.filter(Boolean),accueil=rangDAccueil(classe);
  return voies.map((v,i)=>{
@@ -2087,10 +2095,17 @@ function verrouColonne(portes,racines,t){const i=racines.indexOf(t);
 /* Placer un talent dans l'arbre : sa classe, sa voie, ce qu'il requiert, et sa place parmi
    ses frères — avant celui qu'on désigne, sinon en dernier. Jamais sous lui-même ni sous ce
    qui repose déjà sur lui : l'arbre ne se mord pas la queue. */
+/* Ceux qui pendaient sous un talent qui s'en va remontent à sa place, sous son propre prérequis ;
+   une diagonale garde son côté s'il est libre au-dessus, sinon elle rejoint l'épine. */
+function remonteEnfants(t){const liste=catalog.talents||[];
+ liste.forEach(x=>{if(!x||x===t||x.prerequis!==t.id)return;x.prerequis=t.prerequis||'';
+  if(x.branche&&(!x.prerequis||liste.some(y=>y&&y!==x&&y!==t&&!y.horsArbre&&y.prerequis===x.prerequis&&y.branche===x.branche)))x.branche=''})}
 function placerTalent(id,dest){const liste=catalog.talents||[],i=liste.findIndex(t=>t&&t.id===id);if(i<0)return false;
  const t=liste[i];
  if(dest.prerequis){const p=liste.find(x=>x&&x.id===dest.prerequis);if(!p||p===t||descendDe(p,t))return false}
  if(dest.avant===t.id)return false;
+ // Vers une autre colonne, il part seul : ses suivants restent dans la leur, raccrochés au-dessus.
+ if(talentFamily(t)!==(dest.famille||GENERIQUES)||(t.voie||'')!==(dest.voie||''))remonteEnfants(t);
  t.famille=dest.famille||GENERIQUES;t.voie=dest.voie||'';t.prerequis=dest.prerequis||'';delete t.horsArbre;
  t.branche=dest.branche==='g'||dest.branche==='d'?dest.branche:'';
  liste.splice(i,1);
@@ -2168,7 +2183,7 @@ function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresAct
 function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arbresActeur=null;arbresClasse=famille||GENERIQUES;
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
-function arbreChange(){noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
+function arbreChange(){accordeArbres();noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
 /* Ajouter à l'arbre : un talent neuf, ou l'un de ceux qui existent déjà. D'abord ceux de la
    classe retirés de l'arbre, puis les génériques, puis ceux des autres classes. Choisi, il
    vient à la place désignée et prend la classe de l'arbre ; celui qui quitte l'arbre d'une
@@ -2223,11 +2238,8 @@ function choixElement(a,classe,rendre){const out=document.createElement('div');o
 /* Retirer un talent de l'arbre ne l'efface pas : il garde sa classe et reste au catalogue ;
    son formulaire le replace, par « Place dans l'arbre ». Ceux qui en dépendaient remontent à
    sa place ; les aventuriers qui l'ont appris le gardent. */
-function retireDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;const liste=catalog.talents||[];
- liste.forEach(x=>{if(!x||x===t||x.prerequis!==t.id)return;x.prerequis=t.prerequis||'';
-  // Une diagonale remontée garde son côté s'il est libre au-dessus ; sinon, elle rejoint l'épine.
-  if(x.branche&&(!x.prerequis||liste.some(y=>y&&y!==x&&y!==t&&!y.horsArbre&&y.prerequis===x.prerequis&&y.branche===x.branche)))x.branche=''});
- t.horsArbre=true;t.prerequis='';t.branche='';return true}
+function retireDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;
+ remonteEnfants(t);t.horsArbre=true;t.prerequis='';t.branche='';return true}
 /* La bulle d'un talent : son nom, ce qu'il fait palier par palier, ce qu'il requiert, et s'il
   est sous clé. Un bonus dit sa valeur ; il n'a pas d'effet à préciser. « a » : celui qui le
   porte, s'il y en a un ; « vu » : le talent tel que cet arbre le montre (à son élément). Sans
@@ -2255,7 +2267,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){const bonus=t.effe
    // Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.
    g.append(col)});
   d.append(g);
-  const socle=nomPrerequis(t,catalog.talents);if(socle)ligne('↳ Requiert : '+socle)}
+  }
  if(note)ligne(note,'muted');
  if(verrou)ligne('🔒 Sous clé : apprends d’abord « '+verrou+' ».','talent-bulle-cle');
  return d}
@@ -2320,11 +2332,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const tv=vu(t),logo=logoTalent(tv);if(logo)rond.append(logo);else rond.textContent=GLYPHES_TALENT[t.type]||'✦';
   const nom=document.createElement('span');nom.className='arbre-nom';nomAccolades(nom,tv.name);
   const niv=document.createElement('span');niv.className='arbre-niv';niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';
-  /* Un nœud de bonus n'est pas un talent : son rond dit la valeur, son nom la caractéristique,
-     et le nom qu'on lui a donné passe dessous. */
+  /* Un nœud de bonus n'est pas un talent : son rond dit la valeur, son nom la caractéristique.
+     Son nom complet (« +2 Endurance ») redisait les deux : il ne s'écrit plus dessous. */
   if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));
-   rond.textContent='+'+Math.max(1,(p&&p.valeur)|0);nom.textContent=libelleBonus(p,true).replace(/^\+\d+ /,'');
-   niv.textContent=t.name&&t.name!==libelleBonus(p,true)&&t.name!=='Nouveau talent'?t.name:(NIVEAUX_TALENTS?'Niv. '+(t.level||1):'')}
+   rond.textContent='+'+Math.max(1,(p&&p.valeur)|0);nom.textContent=libelleBonus(p,true).replace(/^\+\d+ /,'')}
   niv.hidden=!niv.textContent;
   // Sous l'icône, un point par palier : ceux qu'on tient s'allument.
   const max=paliersDe(t),k=a?palierDe(a,t):0;let pts=null;
@@ -3213,7 +3224,7 @@ function verifieSauvegarde(s){if(!s||typeof s!=='object'||Array.isArray(s))retur
 function resumeSauvegarde(s){const n=(x,un,des)=>x+' '+(x>1?des:un);const c=s.catalog||{},l=k=>Array.isArray(c[k])?c[k].length:0;
  return [n(s.actors.filter(a=>a&&a.hero).length,'aventurier','aventuriers'),n(s.actors.filter(a=>a&&!a.hero).length,'adversaire','adversaires'),
   n(Array.isArray(s.maps)?s.maps.length:0,'carte','cartes'),n(l('monsters'),'modèle','modèles'),n(l('items'),'équipement','équipements'),n(l('talents'),'talent','talents')].join(', ')}
-function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(normalizeActor));idsUniques(actors);catalog=normalizeCatalog(s.catalog);
+function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(normalizeActor));idsUniques(actors);catalog=normalizeCatalog(s.catalog);accordeArbres();
  round=Number.isInteger(s.round)&&s.round>0?s.round:1;mode=s.mode==='exploration'?'exploration':'combat';
  owner=Number.isInteger(s.owner)&&actors[s.owner]?s.owner:Math.max(0,actors.findIndex(a=>a.hero));
  selected=Number.isInteger(s.selected)&&actors[s.selected]?s.selected:(s.selected===null?null:owner);

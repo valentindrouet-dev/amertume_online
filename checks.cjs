@@ -2731,7 +2731,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    depuis la réserve. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  const ctxR={view:'mj',catalog:{talents:[{id:'a',name:'A'},{id:'b',name:'B',prerequis:'a'},{id:'c',name:'C',prerequis:'b'},{id:'g',name:'G',prerequis:'b',branche:'g'},{id:'g2',name:'G2',prerequis:'a',branche:'g'},{id:'d',name:'D',prerequis:'b',branche:'d'}]}};
- vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('function retireDeLArbre('),src.indexOf('function renderArbres(){')),ctxR);
+ vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('function remonteEnfants('),src.indexOf('function placerTalent('))+src.slice(src.indexOf('function retireDeLArbre('),src.indexOf('function renderArbres(){')),ctxR);
  const T=id=>ctxR.catalog.talents.find(t=>t.id===id);
  assert.equal(ctxR.retireDeLArbre(T('b')),true);
  assert.ok(T('b').horsArbre===true&&T('b').prerequis===''&&ctxR.catalog.talents.length===6,'le talent retiré reste au catalogue');
@@ -2805,7 +2805,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual((({name,logo,effects})=>[name,logo,effects])(C.talentPourElement({name:'Orbes de {élémént}',logo:'spell_orbes_feu',effects:'{Élement} et {truc}'},G)),['Orbes de Gel','spell_orbes_gel','Gel et {truc}'],'accents indifférents, accolade inconnue intacte, logo qui suit');
  assert.ok(!C.aDesAccolades('Le {truc}')&&C.aDesAccolades('{ETAT}'),'une accolade inconnue ne rend pas élémentaire');
  assert.ok(src.includes("p.className='cat-pill gear-carre talent-carre t-'+cle;")&&src.includes("if(mj){p.onclick=()=>openTalent(i);")&&src.includes("bloc.className='cat-col armurerie-grille'+(famille===GENERIQUES?' c-generique':'');")
-  &&src.includes("bloc.className='cat-col armurerie-grille c-'+key;")&&src.includes("if(BULLES)surveille(p,()=>ouvrirBulle(p,bulleModele(m),'bulle-modele'));")&&src.includes("function bulleModele(m){")&&css.includes('.cat-pill.gear-carre.talent-carre{border-left:none}'),'talents et bestiaire en carrés');
+  &&src.includes("bloc.className='cat-col armurerie-grille c-'+key;")&&src.includes("if(BULLES)surveille(p,()=>ouvrirBulle(p,bulleModele(m),'bulle-modele'));")&&src.includes("function bulleModele(m){")&&css.includes('.cat-pill.gear-carre.talent-carre{border-left:none;width:69px;height:69px;min-width:0;min-height:0;padding:0;border-radius:50%}'),'talents et bestiaire en carrés');
  assert.ok(!src.includes('function talentBloc(')&&!src.includes('bestiaireOuverts')&&!src.includes('talentCorrige'),'plus de dépliant au clic');}
 /* v0.299 — Le palier d'un talent tenu, en chiffre romain à la Killam après son nom : dans le
    titre de sa bulle, sur la fiche, sur les boutons de la table. */
@@ -2900,4 +2900,26 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    Aucune adresse d'image de logo ne se bâtit plus en ajoutant « .png » à la main. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("const montre=()=>{const l=menuLogo.value;apercu.hidden=!l;if(l)poseLogo(apercu,l)};")&&!/imgUrl\(l\+'\.png'\)/.test(src),'l’aperçu de l’Armurerie garde l’extension');}
-console.log('1716 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.313 — L'arbre fait foi : un prérequis qu'il ne montre pas (une autre colonne, une autre
+   classe) s'efface, et un talent déplacé vers une autre colonne laisse ses suivants raccrochés
+   au-dessus. Plus de « Requiert » dans les bulles ; un nœud de bonus ne redit pas son nom ;
+   les ronds de l'arbre prennent le fond de leur nature ; les talents du catalogue sont ronds. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),C=require('./combat.js');
+ const morceau=(a,b)=>src.slice(src.indexOf(a),src.indexOf(b));
+ const ctxA={GENERIQUES:'Génériques',VOIES_MAX:3,talentFamily:t=>(t&&t.famille||'').trim()||'Génériques',cleClasse:C.cleClasse,talentCode:C.talentCode,talentsDependants:C.talentsDependants,
+  catalog:{classes:[{name:'Gardien'}],voies:{Gardien:['Rempart','Assaut','']},talents:[
+   {id:'m',name:'Gardien',famille:'Gardien',type:'mait'},{id:'r',name:'Rempart',famille:'Gardien',type:'pass',voie:'Rempart'},
+   {id:'p',name:'Provocation',famille:'Gardien',type:'act',voie:'Assaut',prerequis:'r'},{id:'s',name:'Sous Rempart',famille:'Gardien',type:'act',voie:'Rempart',prerequis:'r',branche:'g'},
+   {id:'o',name:'Sous la maîtrise',famille:'Gardien',type:'act',voie:'Assaut',prerequis:'m'},{id:'x',name:'Ailleurs',famille:'Mage',type:'act',prerequis:'r'}]}};
+ vm.createContext(ctxA);vm.runInContext(morceau('function descendDe(','function openTalent(')+morceau('/* Une classe a toujours ses trois colonnes','const arbresDialog='),ctxA);
+ const T=id=>ctxA.catalog.talents.find(t=>t.id===id);
+ assert.equal(ctxA.accordeArbres(),true);
+ assert.deepEqual(['p','s','o','x'].map(id=>T(id).prerequis),['','r','m','r'],'Provocation ne requiert plus Rempart d’une autre colonne ; le reste tient');
+ assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ ctxA.catalog.talents.push({id:'q',name:'Sous Provocation',famille:'Gardien',type:'act',voie:'Assaut',prerequis:'p',branche:'d'});
+ assert.equal(ctxA.placerTalent('p',{famille:'Gardien',voie:'Rempart',prerequis:'r'}),true);
+ assert.deepEqual([T('p').prerequis,T('q').prerequis,T('q').branche],['r','',''],'déplacé vers une autre colonne, il part seul : son suivant reste, raccroché au-dessus');
+ assert.ok(!src.includes("ligne('↳ Requiert : '+socle)")&&src.includes("function arbreChange(){accordeArbres();")&&src.includes("catalog=normalizeCatalog(s.catalog);accordeArbres();")
+  &&!src.includes("niv.textContent=t.name&&t.name!==libelleBonus(p,true)"),'plus de Requiert, plus de doublon sous un bonus');
+ assert.ok(css.includes('.arbre-noeud.t-act:not(.bonus) .arbre-rond{background:#cfdcea}')&&css.includes('.arbre-noeud.t-ame:not(.bonus) .arbre-rond{background:#d3e5cd}'),'le rond a le fond de sa nature');}
+console.log('1723 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
