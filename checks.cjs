@@ -3032,4 +3032,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("function mouvementEpuise(a){return enCombat()&&!!a&&pointsRestants(a,'mouvement')<=0}"),'boutons de camp, cinq cibles, jauges pâles, Analyser au Mouvement');
  assert.ok(carto.includes("if(deux||mapTool==='objet'){mapSel=dessous;renderCanvas();openObjet(dessous.i);e.preventDefault();return}}")&&!carto.includes("det.textContent=matiereDe(m).length")
   &&feuille.includes('.map-row.live{background:#dcebd9;'),'un objet posé se rouvre ; la liste des cartes au nom seul');}
-console.log('1750 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.336 — Les planches Restes 1 et Restes 2 ; pour l'icône d'un reste, elles passent en tête du
+   menu et de la grille, chacune sous son nom. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(fs.existsSync('img/planches/restes_1.webp')&&fs.existsSync('img/planches/restes_2.webp'),'les deux planches de restes sont au dépôt');
+ assert.ok(src.includes("function planchesRestes(){")&&src.includes("if(o&&o.category==='restes')planchesRestes().forEach(")
+  &&src.includes("+selGrille(a.category==='restes'?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):")&&src.includes("groupesLogosItem(o).filter(([,l])=>l.length).map("),'les planches de restes en tête pour un reste');}
+console.log('1751 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

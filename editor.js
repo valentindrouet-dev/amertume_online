@@ -1502,9 +1502,8 @@ function tableMasse(boite,liste){
      catégorie peut porter, icônes des planches comprises. */
   const ico=document.createElement('button');ico.type='button';ico.className='masse-logo';ico.title='Changer l’icône de '+o.name;ico.setAttribute('aria-label',ico.title);
   const pose=()=>{ico.replaceChildren(logoEquipement(o)||Object.assign(document.createElement('span'),{className:'glyphe',textContent:'＋'}))};pose();
-  ico.onclick=()=>{const s=document.createElement('select'),l=logosItem(o),planches=l.filter(estIconePlanche),autres=l.filter(x=>!estIconePlanche(x));
-   s.innerHTML='<option value="">— aucune —</option>'+(planches.length?'<optgroup label="Icônes des planches">'+options(planches.map(x=>[x,nomLogo(x)]),o.logo||'')+'</optgroup>':'')
-    +'<optgroup label="Logos">'+options(autres.map(x=>[x,nomLogo(x)]),o.logo||'')+'</optgroup>';s.value=o.logo||'';
+  ico.onclick=()=>{const s=document.createElement('select');
+   s.innerHTML='<option value="">— aucune —</option>'+groupesLogosItem(o).filter(([,l])=>l.length).map(([t,l])=>'<optgroup label="'+esc(t)+'">'+options(l.map(x=>[x,nomLogo(x)]),o.logo||'')+'</optgroup>').join('');s.value=o.logo||'';
    s.onchange=()=>{o.logo=s.value;pose();sauve()};ouvreGrilleLogos(s)};
   nom.append(ico);
   const n=document.createElement('input');n.value=o.name;n.maxLength=120;n.setAttribute('aria-label','Nom');
@@ -2840,6 +2839,9 @@ const imgDialog=dialog('image-editor','Optimiser l’image','<div class="edit-gr
 function field(label,key,value,type='text',extra=''){return '<label>'+label+'<input name="'+key+'" type="'+type+'" value="'+esc(value)+'" '+extra+'></label>'}
 // Un menu de logos garde son menu, et gagne à côté la grille pour choisir à l'œil (planches.js).
 const selGrille=h=>h.replace('<select','<span class="logo-ligne"><select').replace('</select></label>','</select>'+BOUTON_GRILLE+'</span></label>');
+// Un menu en groupes : une option vide, puis un groupe par titre ; la grille les montre dans cet ordre.
+function selGroupes(label,key,value,groupes){const opt=v=>'<option value="'+esc(v)+'"'+(String(value)===String(v)?' selected':'')+'>'+esc(v?nomLogo(v):'— aucun —')+'</option>';
+ return '<label>'+label+'<select name="'+key+'">'+opt('')+groupes.map(([t,l])=>'<optgroup label="'+esc(t)+'">'+l.map(opt).join('')+'</optgroup>').join('')+'</select></label>'}
 function sel(label,key,value,opts){return '<label>'+label+'<select name="'+key+'">'+opts.map(([v,t])=>'<option value="'+v+'" '+(String(value)===String(v)?'selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label>'}
 /* Le choix des dés se fait au doigt : une pastille par couleur, teintée comme le dé
    lui-même, avec un moins et un plus de part et d'autre du compte. Le champ de saisie
@@ -3214,6 +3216,17 @@ function selLogos(label,key,value,sansElementaires){const familles=[...famillesP
 // les weapon_*, une munition parmi les deux (le carquois de flèches est un weapon_*), tout
 // le reste parmi les item_*.
 // Les icônes des dossiers viennent en tête : ce sont les nouvelles qu'on cherche.
+/* Les planches de restes — « Restes 1 », « Restes 2 »… par leur nom ou leur fichier —, dans
+   l'ordre de leurs noms. Pour l'icône d'un reste, elles passent en tête du menu et de la grille,
+   chacune sous son nom : c'est là qu'on cherche. */
+function planchesRestes(){return planchesDuCatalogue().map(p=>p.fichier).filter(f=>/restes/i.test(nomPlanche(f))||/restes/i.test(f))
+ .sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))}
+// Les groupes du menu des logos d'une pièce : [titre, logos]. Un reste commence par ses planches.
+function groupesLogosItem(o){const l=logosItem(o),vus=new Set(),groupes=[];
+ if(o&&o.category==='restes')planchesRestes().forEach(f=>{const ids=iconesPlanches().filter(id=>id.startsWith(f+'#'));ids.forEach(i=>vus.add(i));if(ids.length)groupes.push([nomPlanche(f),ids])});
+ const reste=l.filter(x=>!vus.has(x)),planches=reste.filter(estIconePlanche),autres=reste.filter(x=>!estIconePlanche(x));
+ if(planches.length)groupes.push([groupes.length?'Autres icônes des planches':'Icônes des planches',planches]);
+ groupes.push(['Logos',autres]);return groupes}
 function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches(''),...iconesPlanches('talents'),...LOGOS_DOSSIERS.equipement];
  // Un trésor peut prendre toute image : un objet, une gemme, une pièce d'équipement.
  const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];
@@ -3331,7 +3344,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
  $('item-fields').innerHTML='<div class="edit-grid">'
   +field('Nom','name',a.name,'text','required maxlength="120"')
   +sel('Catégorie','category',cat,ITEM_CATS)
-  +selGrille(sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])]))
+  +selGrille(a.category==='restes'?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])]))
   +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))
   +(arme?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="99"')
