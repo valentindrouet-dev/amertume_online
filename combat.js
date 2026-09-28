@@ -1197,8 +1197,8 @@ function talentPourElement(t,e){if(!t||!e||!estElementaire(t))return t;
  /* Le logo suit aussi : celui que le MJ a choisi pour cet élément, s'il y en a un ; sinon {logo}
     se remplit, et un logo choisi à un élément fixe (…_feu, …_gel, …_foudre) passe à celui du porteur. */
  const propre=t.logos&&typeof t.logos==='object'&&typeof t.logos[e.cle]==='string'?t.logos[e.cle]:'';
- const logo=remplaceElement(t.logo,e),suffixe=new RegExp('_('+ELEMENTS.map(x=>x.logo).join('|')+')$');
- return {...t,name:remplaceElement(t.name,e),effects:remplaceElement(t.effects,e),logo:propre||(typeof logo==='string'?logo.replace(suffixe,'_'+e.logo):logo),params:etat(t.params),paliers:pal,elementVu:e.cle}}
+ const logo=remplaceElement(t.logo,e),suffixe=new RegExp('_('+ELEMENTS.map(x=>x.logo).join('|')+')(\\.[a-z0-9]+)?$','i');
+ return {...t,name:remplaceElement(t.name,e),effects:remplaceElement(t.effects,e),logo:propre||(typeof logo==='string'?logo.replace(suffixe,(m,x,ext)=>'_'+e.logo+(ext||'')):logo),params:etat(t.params),paliers:pal,elementVu:e.cle}}
 // Les talents d'un combattant, chacun tel qu'il joue : à son élément, puis à son palier.
 function talentsAuPalier(a,talents){const e=elementDe(a);return talentsTenus(a&&a.talents,talents).map(t=>talentAuPalier(talentPourElement(t,e),palierDe(a,t)))}
 // Ce qu'a coûté l'arbre d'un aventurier : chaque palier acquis, au prix que le talent en demande.

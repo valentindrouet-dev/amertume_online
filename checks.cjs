@@ -2525,10 +2525,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual([...lire('LOGOS_ETATS'),...lire('LOGOS_DIVERS')].map(l=>l+ext(l)).sort(),autres,'LOGOS_ETATS et LOGOS_DIVERS doivent lister les autres images : '+autres.join(', '));
  assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("im.src=imgUrl(fichierLogo(l));")
   &&src.includes("return logoImage(t&&t.logo,LOGOS_TOUS,cls)}")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
-  &&src.includes(" t.logo=f.logo&&(LOGOS_TOUS.includes(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';")
-  &&src.includes("const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
- const ctxL={};vm.createContext(ctxL);vm.runInContext(src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
- assert.deepEqual(['BLINDAGE INITIAL','SAIGNEE','DEF 3','weapon_cape_elfique','DEGATS'].map(ctxL.nomLogo),['Blindage initial','Saignée','DEF 3','Cape elfique','Dégâts']);
+  &&src.includes(" t.logo=f.logo&&(logoValide(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';")
+  &&src.includes("const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],['Dossier talents',LOGOS_DOSSIER_TALENTS],['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
+ const ctxL={};vm.createContext(ctxL);vm.runInContext(src.match(/const estLogoDossier=[^\n]*/)[0]+'\n'+src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
+ assert.deepEqual(['BLINDAGE INITIAL','SAIGNEE','DEF 3','weapon_cape_elfique','DEGATS','weapon_cuir_epais','talents/brise_glace.png'].map(ctxL.nomLogo),['Blindage initial','Saignée','DEF 3','Cape elfique','Dégâts','Cuir épais','Brise glace']);
  assert.ok(src.includes("surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'")&&!src.includes("b.title=t.name+' — '+[talentType(t)[2]")
   &&src.includes("(ancre.closest('dialog[open]')||document.body).append(bulleEl);")&&feuille.includes(".talent-bulle-nom b{font:700 14px 'Killam'"),'l’arbre décrit ses talents au survol, dans sa fenêtre');}
 /* v0.281 — La bulle d'un nœud de l'arbre n'écrit jamais la nature du talent. Chaque objet porte
@@ -2613,7 +2613,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(attendues,fichiers.filter(f=>/^ressource_(brisure|eclat|gemme)_/.test(f)),'chaque gemme a son icône, et chaque icône sa gemme');
  assert.equal(C.iconeGemme('brome','rubis'),'ressource_gemme_rubis');
  const ctxL={TAILLES_GEMMES:C.TAILLES_GEMMES,VARIETES_GEMMES:C.VARIETES_GEMMES,FICHIERS_TAILLES:C.FICHIERS_TAILLES};vm.createContext(ctxL);
- vm.runInContext(src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
+ vm.runInContext(src.match(/const estLogoDossier=[^\n]*/)[0]+'\n'+src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
  assert.deepEqual(['ressource_eclat_rubis','ressource_gemme_emeraude','ressource_brisure_citrine'].map(ctxL.nomLogo),['Éclat de rubis','Brôme d’émeraude','Brisure de citrine']);
  assert.ok(src.includes("el.append(iconeDeGemme(ta,v,eteinte),(eteinte?' ':'')+n);")&&src.includes("th.append(iconeDeGemme('brome',v,false),nom);")
   &&fs.readFileSync('editor.css','utf8').includes('table.gemmes .gem-eteinte .gem-ico{width:11px;height:11px;filter:grayscale(1)'),'les icônes dans la grille, grises pour les éteintes');}
@@ -2847,4 +2847,14 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("[...(at.etats||[])].reverse().forEach(e=>{const p=etatPastille(e);if(p)pips.prepend(p)});")
   &&src.includes("const bas=desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0)),pips=bas.querySelector('.pips');")
   &&!src.includes("ligne('Attaques spéciales : '"),'les attaques de la bulle, avec dés et états');}
-console.log('1701 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.305 — Le dossier img/talents : ses icônes paraissent seules dans le menu Logo d'un
+   talent (la liste vient de GitHub, le dépôt étant public). Un chemin à dossier s'encode
+   morceau par morceau, et le suffixe d'élément se remplace aussi devant une extension. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
+ const ctxD={};vm.createContext(ctxD);vm.runInContext(src.match(/const estLogoDossier=[^\n]*/)[0]+';this.estLogoDossier=estLogoDossier;',ctxD);
+ assert.deepEqual(['talents/brise_glace.png','talents/orbe.webp','talents/a b.png','talents/../x.png','spell_orbes','talents/x.gif'].map(ctxD.estLogoDossier),[true,true,false,false,false,false],'une icône du dossier : un nom sûr et une image, rien au-dessus');
+ assert.ok(fs.existsSync('img/talents/README.md')&&src.includes("fetch('https://api.github.com/repos/'+depot+'/contents/img/talents?ref=main'")&&src.includes("const fichierLogo=l=>estLogoDossier(l)?l:l+(EXTENSIONS_LOGO[l]||'.png');")
+  &&src.includes("function logoImage(l,liste,cls){if(!l||!(liste.includes(l)||estLogoDossier(l)))return null;")&&page.includes("function imgUrl(nom){return './img/'+String(nom).split('/').map(encodeURIComponent).join('/')+'?v='+IMG_V}"),'le dossier des talents, lu sur GitHub, servi morceau par morceau');
+ assert.equal(C.talentPourElement({name:'x',elementaire:true,logo:'talents/orbe_feu.png'},C.ELEMENTS[1]).logo,'talents/orbe_gel.png','le suffixe d’élément devant l’extension');
+ assert.ok(fs.existsSync('img/weapon_cuir_epais.png'),'le cuir épais, câblé');}
+console.log('1705 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

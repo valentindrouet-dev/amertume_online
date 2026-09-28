@@ -1765,7 +1765,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  const poseLogosElements=()=>{const oui=!!(champs.elementaire&&champs.elementaire.checked);
   $('logos-elements').hidden=!oui;menuLogo.closest('label').hidden=oui;
   if(oui)ELEMENTS.forEach((e,k)=>{const m=champs['logo_'+e.cle];if(m.value)return;
-   const vu=talentPourElement({name:'',logo:menuLogo.value,elementaire:true},e).logo;if(LOGOS_TOUS.includes(vu))m.value=vu;apercus[k]()});
+   const vu=talentPourElement({name:'',logo:menuLogo.value,elementaire:true},e).logo;if(logoValide(vu))m.value=vu;apercus[k]()});
   apercus.forEach(v=>v())};
  poseLogosElements();
  dessineReglagesTalent();
@@ -1782,10 +1782,10 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  else if(talentFamily(avant)!==talentFamily(t)){t.voie='';t.prerequis='';t.branche=''}
  t.type=f.type.value;t.level=num(f.level.value,1,20);
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
- t.logo=f.logo&&(LOGOS_TOUS.includes(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';
+ t.logo=f.logo&&(logoValide(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';
  /* Élémentaire : un logo par élément ; le premier donné sert aussi de logo unique, là où
     aucun élément n'est encore choisi. Sans la case, ils s'effacent. */
- const logos={};if(f.elementaire&&f.elementaire.checked)ELEMENTS.forEach(e=>{const v=f['logo_'+e.cle]&&f['logo_'+e.cle].value;if(LOGOS_TOUS.includes(v))logos[e.cle]=v});
+ const logos={};if(f.elementaire&&f.elementaire.checked)ELEMENTS.forEach(e=>{const v=f['logo_'+e.cle]&&f['logo_'+e.cle].value;if(logoValide(v))logos[e.cle]=v});
  if(Object.keys(logos).length){t.logos=logos;t.logo=logos[ELEMENTS.find(e=>logos[e.cle]).cle]}else delete t.logos;
  t.rangee=f.rangee&&['attaques','reactions','aucune'].includes(f.rangee.value)?f.rangee.value:'';
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
@@ -2813,7 +2813,7 @@ const ETATS_INFLIGES=()=>STATES.filter(e=>e!=='Aucun'&&e!=='Coma');
 /* Les logos d'équipement : les fichiers img/weapon_*.png, sans leur extension. Le site
    est servi tel quel, sans liste de dossier : un logo ajouté dans img/ se déclare ici —
    node checks.cjs le réclame. L'intitulé du menu vient du nom du fichier. */
-const LOGOS_EQUIPEMENT=['weapon_anneau_argent','weapon_anneau_bronze','weapon_anneau_or','weapon_arbalete','weapon_arc','weapon_armure','weapon_bouclier','weapon_cape','weapon_cape_elfique','weapon_cape_magique','weapon_cotte','weapon_cuir','weapon_epee','weapon_fleches','weapon_hache','weapon_lance'];
+const LOGOS_EQUIPEMENT=['weapon_anneau_argent','weapon_anneau_bronze','weapon_anneau_or','weapon_arbalete','weapon_arc','weapon_armure','weapon_bouclier','weapon_cape','weapon_cape_elfique','weapon_cape_magique','weapon_cotte','weapon_cuir','weapon_cuir_epais','weapon_epee','weapon_fleches','weapon_hache','weapon_lance'];
 /* Les logos d'objets, de même : les img/item_*.png. Objets et divers y puisent, les
    munitions aussi ; armes et armures gardent les leurs. */
 const LOGOS_OBJET=['item_healpotion'];
@@ -2829,7 +2829,26 @@ const LOGOS_ATTAQUE=['attack_griffes'];
 const LOGOS_ETATS=['AU SOL','AVEUGLE','BLINDAGE INITIAL','CIBLAGE','FAILLE','FEU','FOUDRE','GEL','ONDE','POISON','SAIGNEE'];
 const LOGOS_DIVERS=['DEF 0','DEF 1','DEF 2','DEF 3','DEF 4','DEF 5','DEF 6','DEF VIDE','DEGATS','PERSO','VIE'];
 const EXTENSIONS_LOGO={DEGATS:'.webp'};
-const fichierLogo=l=>l+(EXTENSIONS_LOGO[l]||'.png');
+/* Le dossier img/talents : on y dépose des icônes de talents, et elles paraissent seules dans
+   le menu Logo d'un talent, sans rien déclarer. Le site, statique, ne sait pas lister un
+   dossier : il en demande la liste à GitHub (le dépôt est public) et la garde deux minutes.
+   En local, ou si GitHub ne répond pas, le menu reste sans elles et rien ne casse ; un logo
+   déjà choisi s'affiche quand même, son chemin suffit. Le logo porte son extension. */
+const LOGOS_DOSSIER_TALENTS=[];
+const estLogoDossier=l=>/^talents\/[A-Za-z0-9_.-]+\.(png|webp|jpe?g)$/i.test(String(l||''));
+// Le dépôt d'où le site est servi : « compte.github.io/depot/ » donne « compte/depot ».
+function depotPages(){const m=/^([a-z0-9-]+)\.github\.io$/i.exec(location.hostname),r=location.pathname.split('/').filter(Boolean)[0];return m&&r?m[1]+'/'+r:''}
+async function chargeDossierTalents(){const depot=depotPages();if(!depot)return;
+ const CLE='amertume-dossier-talents',pose=l=>LOGOS_DOSSIER_TALENTS.splice(0,Infinity,...l.filter(estLogoDossier));
+ let cache=null;try{cache=JSON.parse(localStorage.getItem(CLE)||'null')}catch(e){}
+ if(cache&&Array.isArray(cache.liste)){pose(cache.liste);if(Date.now()-cache.t<120000)return}
+ try{const r=await fetch('https://api.github.com/repos/'+depot+'/contents/img/talents?ref=main',{headers:{Accept:'application/vnd.github+json'}});if(!r.ok)return;
+  const liste=(await r.json()).filter(f=>f&&f.type==='file').map(f=>'talents/'+f.name).filter(estLogoDossier).sort((a,b)=>a.localeCompare(b,'fr'));
+  pose(liste);try{localStorage.setItem(CLE,JSON.stringify({t:Date.now(),liste}))}catch(e){}}catch(e){}}
+chargeDossierTalents();
+const fichierLogo=l=>estLogoDossier(l)?l:l+(EXTENSIONS_LOGO[l]||'.png');
+// Un logo qu'un talent peut porter : une image déclarée, ou une icône du dossier img/talents.
+const logoValide=l=>LOGOS_TOUS.includes(l)||estLogoDossier(l);
 /* Les icônes des ressources, de même : les img/ressource_*.png — les gemmes, cinq variétés en
    trois tailles. La grille des gemmes y puise ; un talent peut les prendre pour logo. */
 const LOGOS_RESSOURCES=['ressource_brisure_citrine','ressource_brisure_diamant','ressource_brisure_emeraude','ressource_brisure_rubis','ressource_brisure_saphir',
@@ -2841,10 +2860,12 @@ const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_
 const LOGOS_ELEMENTAIRES=[...new Set(LOGOS_TOUS.filter(l=>l.endsWith('_'+ELEMENTS[0].logo)).map(l=>l.slice(0,-ELEMENTS[0].logo.length-1)))]
  .filter(r=>ELEMENTS.every(e=>LOGOS_TOUS.includes(r+'_'+e.logo))).map(r=>r+'_{logo}');
 // Toutes les images, rangées par famille : le menu de logo d'un talent les propose ainsi.
-const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];
-const NOMS_LOGOS={SAIGNEE:'Saignée',DEGATS:'Dégâts'};
+const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],['Dossier talents',LOGOS_DOSSIER_TALENTS],['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];
+const NOMS_LOGOS={SAIGNEE:'Saignée',DEGATS:'Dégâts',weapon_cuir_epais:'Cuir épais'};
 // Le nom d'un logo : son fichier sans préfixe ; un nom en capitales se lit en minuscules, sauf DEF.
 const nomLogo=l=>{if(NOMS_LOGOS[l])return NOMS_LOGOS[l];
+ // Une icône du dossier des talents se nomme par son fichier : « talents/brise_glace.png », « Brise glace ».
+ if(estLogoDossier(l))return nomLogo(String(l).slice(8).replace(/\.[a-z]+$/i,''));
  if(String(l||'').includes('{logo}'))return nomLogo(String(l).replace('{logo}','x')).replace(/ x$/,'')+' de l’élément';
  // Une gemme se nomme comme dans sa grille : « Éclat de rubis ».
  const g=/^ressource_([a-z]+)_([a-z]+)$/.exec(String(l||''));
@@ -2861,7 +2882,7 @@ function selLogos(label,key,value,sansElementaires){return '<label>'+label+'<sel
 function logosItem(o){const c=o&&o.category;return c==='weapon'||c==='armor'?LOGOS_EQUIPEMENT:c==='ammo'?[...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:LOGOS_OBJET}
 /* Un logo devant un nom : un jeton, ou rien. Un logo inconnu du dossier ne se dessine
    pas — un objet importé d'ailleurs n'affiche pas une image cassée. */
-function logoImage(l,liste,cls){if(!l||!liste.includes(l))return null;
+function logoImage(l,liste,cls){if(!l||!(liste.includes(l)||estLogoDossier(l)))return null;
  const im=document.createElement('img');im.className='logo-equip'+(cls?' '+cls:'');im.src=imgUrl(fichierLogo(l));im.alt='';im.draggable=false;return im}
 function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,...LOGOS_OBJET],cls)}
 // Le logo d'un talent : n'importe quelle image du dossier.
