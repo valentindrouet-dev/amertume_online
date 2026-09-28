@@ -1040,14 +1040,14 @@ assert.ok(src.includes("a.hero?tete:")&&src.includes("cle.startsWith(cleClasse(f
  const des=[[3,0],[6,1],[6,0]],s=C2.mauvaisSort(des,()=>2);
  assert.deepEqual([s.index,s.avant,s.apres],[1,6,2]);assert.equal(des[1][0],2);assert.equal(des[1][1],1);   // Le premier des meilleurs, sa couleur gardée.
  assert.equal(C2.mauvaisSort([],()=>2),null);}
-assert.ok(page.includes('function degatsOpportunite')&&page.includes("croises.forEach(([k,set])=>degatsOpportunite(actors[k],[...set]));")&&page.includes("const avant=contactsDe(a);"),'les dégâts d’opportunité se jugent au lâcher et au clavier');
+assert.ok(page.includes('function degatsOpportunite')&&page.includes("croises.forEach(([k,set],n)=>{const o=actors[k],d=departs[n];if(o&&d&&Math.hypot(o.x-d.x,o.y-d.y)<.05)return;degatsOpportunite(o,[...set])});")&&page.includes("const avant=contactsDe(a);"),'les dégâts d’opportunité se jugent au lâcher et au clavier');
 assert.ok(page.includes("porteEffet(talentsCodes(a),'insaisissable')")&&page.includes("porteEffet(talentsCodes(b),'mauvaissort')?mauvaisSort(dice,d6):null"),'Insaisissable et Mauvais Sort câblés');
 // Le journal ne dit ni la fiche enregistrée, ni les créatures mises à jour, ni la carte ouverte.
 assert.ok(!src.includes('Fiche enregistrée')&&!src.includes('mise(s) à jour')&&!cartes.includes('» ouverte : '),'le journal se tait sur l’intendance');
 /* Un changement local gardé part au prochain envoi ; le MJ réinitialise d'un clic droit ; pastilles à droite. */
 assert.ok(vivant.includes("gardes.push([id,k,structuredClone(e[k])])")&&vivant.includes("gardes.forEach(([id,k,v])=>{if(base.actors[id])base.actors[id][k]=v})"),'un changement local gardé part');
 assert.ok(page.includes('function inerte(')&&page.includes('function reinitialiser(')&&src.includes('inerte(b,!!refus)')&&src.includes('inerte(b,!t.peut)')&&page.includes('inerte(rev,!!refus)'),'le clic droit du MJ réinitialise');
-assert.ok(page.includes('.pastilles{position:absolute;right:8px')&&page.includes('.actor-nom strong{overflow:hidden;text-overflow:ellipsis')&&feuille.includes('button.btn-analyse,button.btn-analyse.on{--fond:#e0a04a;color:#fff;background-image:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.07))}')&&!feuille.includes('#8264bb')&&page.includes('function mouvementPris(')&&page.includes(":mouvementPris(a)?'Mouvement déjà dépensé ce tour")&&page.includes('body.vue-joueur .turn-head{margin-bottom:0}'),'pastilles à droite, nom coupé, Analyser teal, tour compact');
+assert.ok(page.includes('.pastilles{position:absolute;right:8px')&&page.includes('.actor-nom strong{overflow:hidden;text-overflow:ellipsis')&&feuille.includes('button.btn-analyse,button.btn-analyse.on{--fond:#e0a04a;color:#fff;background-image:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.07))}')&&!feuille.includes('#8264bb')&&page.includes('function mouvementPris(')&&page.includes(":mouvementEpuise(a)?'Plus de point de Mouvement : analyser en coûte un.")&&page.includes('body.vue-joueur .turn-head{margin-bottom:0}'),'pastilles à droite, nom coupé, Analyser teal, tour compact');
 /* Vie ou Endurance corrigée sur une fiche : les PV maximum suivent (Vie × Endu + bonus), sans
    dépasser leurs bornes ni laisser les PV du moment au-dessus ; le sélecteur Analyser n'est pas
    « button button » ; chaque effet déjà porté par un talent du catalogue arbore sa coche verte. */
@@ -1184,7 +1184,7 @@ assert.ok(page.includes('function demander(texte,ok)')&&!page.includes("confirm(
 assert.ok(!page.includes('Cible alliée : aucun coup ne part sur un allié.')&&page.includes("const vises=ciblesDe(a).filter(j=>actors[j]&&alive(actors[j])&&actors[j].hero!==a.hero);\n if(ciblesAtteignables(a,vises,portee).length||cibleAutomatique(a,portee).length)return '';"),'un allié désigné ne bloque pas l’attaque');
 /* L'Onde de chaque camp, à gauche du « + » : Aventuriers ou Adversaires à 100 % ; l'ancien bouton a disparu. */
 assert.ok(!page.includes('id="heal-foes"')&&!src.includes("$('heal-foes')")&&!page.includes("$('heal-foes')")&&page.includes('function remettreCamp(hero)')&&page.includes("b.className='ajout-camp soin-camp'")
- &&page.includes("groupe('Aventuriers',troupe,AJOUT_CAMP.hero,soinCamp().hero)")&&page.includes("if(mj&&soin){soin.hidden=false;h.append(soin)}")&&page.includes('.ajout-camp.soin-camp{margin-left:auto}.ajout-camp.soin-camp+.ajout-camp{margin-left:0}'),'l’Onde de chaque camp remplace Adversaires à 100 %');
+ &&page.includes("groupe('Aventuriers',troupe,AJOUT_CAMP.hero,soinCamp().hero,soinCamp().repos)")&&page.includes("if(mj&&soin){soin.hidden=false;h.append(soin)}")&&page.includes('.ajout-camp.soin-camp{margin-left:auto}.ajout-camp.soin-camp+.ajout-camp{margin-left:0}'),'l’Onde de chaque camp remplace Adversaires à 100 %');
 /* Sans équipement, pas de rubrique Équipement sur la fiche de table ; la coche d'un modèle analysé se pose
    dans la vignette, à gauche du nom ; les projectiles sont un souffle (650 ms) et le coup au contact un
    balayage d'air (320 ms), le coup tombant au bout du geste. */
@@ -1192,7 +1192,7 @@ assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidd
  &&feuille.includes('.cat-pill .coche-modele{flex:none;width:16px;height:16px;')&&page.includes("if(rangeOf(a)!=='distance'&&typeof volBalayage==='function'){"),'équipement vide masqué, coche dans la vignette, balayage au contact');
 /* La barre de PV d'un token est pleine, entamée ou non — c'est sa hauteur qui dit l'actif ;
    sur la piste des dés, le lanceur à gauche et, au bout de chaque ligne, qui reçoit. */
-assert.ok(page.includes('height:4px;border-radius:999px;background:#211f1b;border:0;box-shadow:0 0 0 1px #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
+assert.ok(page.includes('height:3.2px;border-radius:999px;background:#211f1b;border:0;box-shadow:0 0 0 1px #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
  &&page.includes("const de=from||(lignes.find(l=>l.de)||{}).de||null;")&&page.includes("const cible=recoit(l),tc=lignes.length>1?petit:Math.max(petit,taille);if(cible)visage(cible,tc,bordD+10+tc/2,cy)")
  &&page.includes('.board-token{position:absolute;transform:translate(-50%,-50%);border-radius:50%;'),'barre de PV égale, visages sur la piste');
 /* Plus de chip Niveau sur la fiche de table ; le balayage est une déchirure dentelée de 90° ; la coche du
@@ -1452,7 +1452,7 @@ assert.ok(page.includes('function attack(opts={})')&&page.includes('if(opts.vise
  &&page.includes('if(opts.apres)opts.apres({vises,partis,tues:vivants.filter(j=>!alive(actors[j]))});')
  &&page.includes('function attaqueEtat(a,p,talent)')&&page.includes("const survit=p.condition==='survit',gagne=survit?tues.length<vises.length:tues.length>0;")
  &&page.includes('const issue=infligeEtat(a,p.etat);')&&page.includes('function cibleProvocation(a)')&&page.includes('function rapprocher(b,a)')
- &&page.includes('const arret=Math.max(tokenOf(a)/2+tokenOf(b)/2,contactRadius(tokenOf(a))+tokenOf(b)/2-3);')&&page.includes('if(d<=arret)return false;')
+ &&page.includes('const arret=tokenOf(a)/2+tokenOf(b)/2+1;')&&page.includes('if(d<=arret+1)return false;')
  &&page.includes("if(el){el.classList.add('glisse');el.style.left=b.x+'%';el.style.top=b.y+'%';suitLaJauge(el)}")&&page.includes('function provocation(a,p,talent)')
  &&page.includes("poseCibles(a,[j]);if(venu)afterMove(b);")&&page.includes("attack({vises:[j]});scheduleSave()},venu?220:0);")
  &&page.includes('attaqueetat:{fn:attaqueEtat,')&&page.includes('provocation:{fn:provocation,')&&page.includes("peut:a=>!hasState(a,'Au sol')&&cibleProvocation(a)!==null,"),'Attaque État et Provocation câblés à la table');
@@ -1549,16 +1549,16 @@ assert.ok(!page.includes('Personne à portée de contact.')&&!page.includes("'Ho
 assert.ok(page.includes('function soclesOccupes(a,size,ignorer,adverses)')
  &&page.includes('return actors.filter(o=>o!==a&&alive(o)&&!(ignorer&&ignorer.has(o.id))')&&page.includes("&&(!adverses||o.hero!==a.hero))")
  &&page.includes('function settleActor(a,ignorer)')&&page.includes(' const [x,y]=alive(a)\n  ?poserHorsDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,false),polys,r)\n  :slideOutOfWalls(px(a.x,a.y),polys,r);')
- &&page.includes('function moveActor(a,xp,yp,libre,ignorer)')
- &&page.includes(' const barrent=(alive(a)?soclesOccupes(a,size,ignorer,true):[])\n  .filter(c=>Math.hypot(start[0]-c.x,start[1]-c.y)>=r+c.r-.5);')&&page.includes('const tiennent=alive(a)?soclesOccupes(a,size,ignorer,false):[];')
+ &&page.includes('function moveActor(a,xp,yp,libre,ignorer,traverse)')
+ &&page.includes(' const barrent=(alive(a)?soclesOccupes(a,size,ignorer,true):[])\n  .filter(c=>Math.hypot(start[0]-c.x,start[1]-c.y)>=r+c.r-.5);')&&page.includes('const tiennent=alive(a)&&!traverse?soclesOccupes(a,size,ignorer,false):[];')
  /* L'adversaire barre : on s'arrête devant lui, on ne glisse pas sur son flanc. Les murs,
     eux, se longent toujours — c'est ce qui assure le passage des portes. */
  &&!page.includes('ecarteDesSocles(suivant,barrent,r)')&&page.includes(' if(segmentHitsPolys(last,suivant,polys))break;')
  &&page.includes('if(barrent.length&&(dansUnSocle(suivant,barrent,r)||segmentCoupeSocles(last,suivant,barrent,r)))break;')
  &&page.includes('if(tiennent.length)last=poserHorsDesSocles(last,tiennent,polys,r);')
  &&page.includes("const enMain=new Set(lot.map(k=>actors[k]&&actors[k].id).filter(Boolean));")
- &&page.includes("moveActor(o,o.x+dx,o.y+dy,view==='mj',enMain)})}")&&page.includes("else{moveActor(a,q.x,q.y,view==='mj',enMain);")
- &&page.includes("const [x,y]=ecarteDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,false),tokenOf(a)/2);"),'les socles tiennent la place sur la table');
+ &&page.includes("moveActor(o,o.x+dx,o.y+dy,view==='mj',enMain,true)})}")&&page.includes("else{moveActor(a,q.x,q.y,view==='mj',enMain,true);")
+ &&page.includes("const [x,y]=ecarteDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,!!traverse),tokenOf(a)/2);"),'les socles tiennent la place sur la table ; pendant le geste, les siens se traversent');
 /* La fiche en jeu : plus de barre sous les PV, l'équipement ouvert d'office et les talents
    repliés ; l'attaque d'équipement s'appelle « Attaque » ; un talent qui frappe porte les dés,
    le bonus et son jeton, comme une attaque ; l'Onde du camp lève les états comme le bouton Soin. */
@@ -1567,7 +1567,7 @@ assert.ok(page.includes('<span class="lifebar-text" id="hp"></span></div><div cl
  &&feuille.includes('.bloc-replie,.bloc-fixe{margin:6px 0}')&&feuille.includes(".bloc-replie .bloc-titre,.bloc-fixe .bloc-titre{font:700 15px 'Killam'")
  &&(page.match(/class="divider"/g)||[]).length===2,'fiche en jeu : équipement ouvert, pas de barre sous les PV');
 assert.ok(src.includes("const libelle=at.gear?'Attaque':(at.name||'Attaque');")&&src.includes("nom.textContent=libelle;")
- &&src.includes('function desEtBonus(dice,bonus)')&&src.includes('b.append(nom,desEtBonus(at.dice,bonus));')
+ &&src.includes('function desEtBonus(dice,bonus,toujours)')&&src.includes('b.append(nom,desEtBonus(at.dice,bonus,at.useOwnDamage!==false));')
  &&src.includes('if(t.des)b.append(desEtBonus(t.des,t.bonus||0));')
  &&page.includes('des:eff.des?eff.des(a,params):code.attaque?activeAttack(a).dice:null,')
  &&page.includes("bonus:code.attaque&&!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false?degatsDe(a):0,")
@@ -1582,7 +1582,7 @@ assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&(a.hp<a
 /* La jauge de PV est un fil, et le même pour tous les socles — l'actif n'y fait rien. */
 /* v0.306 : sans bordure qui mange la hauteur — le liseré passe en ombre —, le rempli occupe
    les 4 px du fil et ne s'arrondit plus à rien. */
-assert.ok(page.includes('#pv-layer .pv{position:absolute;transform:translate(-50%,-100%);margin-top:calc(var(--token) / -2 - 4px);width:calc(var(--token) * .96);height:4px;')
+assert.ok(page.includes('#pv-layer .pv{position:absolute;transform:translate(-50%,-100%);margin-top:calc(var(--token) / -2 - 1.5px);width:calc(var(--token) * .96);height:3.2px;')
  &&!page.includes('.token.selected .pv'),'la jauge est fine et pareille pour tous');
 /* L'arbre d'une classe s'ouvre depuis l'onglet Talents, par le rouage posé contre son nom :
    sans combattant, nul n'y porte rien, le clic sur un talent le corrige, et la Provocation
@@ -1787,8 +1787,8 @@ assert.ok(src.includes("a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a
  &&src.includes("+sel('Emplacement','slot',emplacementDe(a),[...EMPLACEMENTS.map(([k,n,p])=>[k,n+(p>1?' ('+p+')':'')]),['shield','Bouclier — une main']]):'')")
  &&src.includes('const TEINTE_OBJET={melee:')&&src.includes('function boutonsObjets(a)')
  &&src.includes("const o=objetDe(id),code=objetCode(o);if(!o||!code)return;")
- &&src.includes("el.className='btn-action choix-attaque btn-objet teinte-propre';")&&src.includes("el.style.setProperty('--fond',b.teinte);")
- &&src.includes("boite.hidden=!liste.length&&!talents.length&&!objets.length;")
+ &&!src.includes("el.className='btn-action choix-attaque btn-objet teinte-propre';")
+ &&src.includes("boite.hidden=!liste.length&&!talents.length;")
  &&!src.includes('a.armorId=')&&!src.includes('draft.armorId'),'les emplacements du corps et les boutons d’objets');
 /* Un usage compté porte son chrono, en pastille à cheval sur le coin haut droit de son
    bouton : il dit que la charge se rend au repos, et le MJ la rend — ou la reprend — d'un
@@ -1796,9 +1796,7 @@ assert.ok(src.includes("a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a
 assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='mj'||!a||!o||!usageEpuise(a,o))return false;")
  &&src.includes('function prendreUsage(a,o){')&&src.includes("if(view!=='mj'||!a||!o||!usageLimite(usageObjet(o))||usageEpuise(a,o))return false;")
  &&src.includes("function reposer(a,type='long'){")&&src.includes("if(type==='long'||quoi==='court')rendues.push(id);else garde[id]=quoi});")
- &&src.includes("if(b.limite){const chrono=document.createElement('span');chrono.className='chrono'+(b.epuise?' vide':'');")
- &&src.includes("if(view==='mj'){chrono.setAttribute('role','button');chrono.tabIndex=0;")
- &&src.includes("const a2=b.acteur;")&&src.includes("if(b.epuise?rendreUsage(a2,b.objet):prendreUsage(a2,b.objet)){")
+ &&!src.includes("(a?boutonsObjets(a):[]).forEach(")
  &&src.includes("acteur:a,agir:()=>utiliserObjet(a,o)})});")
  &&feuille.includes('.btn-objet .chrono{position:absolute;top:-6px;right:-6px;z-index:2;width:19px;height:19px;')
  &&feuille.includes('border:2px solid var(--panel);box-shadow:0 1px 3px #0005;pointer-events:auto}')
@@ -1886,7 +1884,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
 assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x.title)return;")&&src.includes("if(!x.getAttribute('aria-label'))x.setAttribute('aria-label',x.title);x.removeAttribute('title')});")
  &&src.includes("const texte=code.cle==='etat'?(p&&p.etat)||code.nom:code.nom;")
  &&src.includes("const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':'repos'):'';")
- &&src.includes("if(b.compte){const c=document.createElement('span');c.className='compte';c.textContent=b.compte;el.append(c)}")
+ &&src.includes("boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;")
  &&!src.includes("' 1/1'")&&feuille.includes('button.choix-attaque .compte{')
  &&src.includes("const premierAutre=boite.querySelector('.btn-talent,.btn-objet');")&&!src.includes("boite.querySelector('.btn-talent');")
  &&page.includes("const tenus=talentsCodes(a),affine=tenus.find(x=>x.code.cle==='orbesfeu');")
@@ -1988,7 +1986,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&src.includes("const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
-  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','comaVie','etatsPassifs','defBrisee'];")
+  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee'];")
   &&src.includes("const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")
   &&src.includes(" ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));")&&src.includes("  if(!competenceDe(a,k))return;")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
@@ -2317,7 +2315,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  ctxR.zonesDe=()=>({compte:0});const g={x:20,y:50,credit:0};const r7=ctxR.regleMouvement(g);g.x=55;assert.equal(ctxR.appliqueRegleMouvement(g,r7),true);g.x=80;ctxR.appliqueRegleMouvement(g,r7);
  assert.equal(ctxR.soldeRegleMouvement(g,r7),0);assert.equal(g.x,55,'sans point, pas d’arrêt au contact — mais la zone ne compte pas');ctxR.zonesDe=()=>({compte:2});
  assert.ok(page.includes("const regle=enCombat()&&lot0.length===1?regleMouvement(a):null;")&&!page.includes("regle.credit<=0&&view!=='mj'")
-  &&page.includes("else{moveActor(a,q.x,q.y,view==='mj',enMain);if(drag.regle)appliqueRegleMouvement(a,drag.regle)}")
+  &&page.includes("else{moveActor(a,q.x,q.y,view==='mj',enMain,true);if(drag.regle)appliqueRegleMouvement(a,drag.regle)}")
   &&page.includes("const cout=regle?soldeRegleMouvement(a,regle):null;")&&page.includes("if(regle){if(cout>0)depensePoint(a,'mouvement',cout)}")&&!page.includes("$('move').checked=true;render()"),'le geste suit la règle, du départ au lâcher');
  assert.ok(cartes.includes("function porteurDePorte(d){")&&cartes.includes("const qui=typeof enCombat==='function'&&enCombat()?porteurDePorte(d):null;")
   &&cartes.includes("if(qui){if(pointsRestants(qui,'mouvement')<=0){log(nomNum(qui)+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});")&&cartes.includes("    depensePoint(qui,'mouvement')}\n   d.open=!d.open;"),'une porte coûte un point en combat, rien en exploration');
@@ -2329,7 +2327,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes(" t._pv=jauge;couchePV().append(jauge);")&&page.includes("document.querySelectorAll('.token').forEach(t=>t.remove());couchePV().replaceChildren();")
   &&page.includes("el.style.top=actors[k].y+'%';suitLaJauge(el)}});")&&page.includes("el.style.top=b.y+'%';suitLaJauge(el)}")
   &&page.includes("#pv-layer{position:absolute;inset:0;z-index:3;pointer-events:none}")&&page.includes("#pv-layer .pv.enemy i{background:")&&!page.includes('.token .pv{'),'les jauges au-dessus de tous les socles, et qui suivent');
- assert.ok(!page.includes("regle.credit<=0&&view!=='mj'")&&page.includes("const regle=enCombat()?regleMouvement(a):null;\n  moveActor(a,a.x+dirs[e.key][0],a.y+dirs[e.key][1]);"),'sans point, le socle bouge encore dans sa zone');
+ /* v0.335 — Sans point de Mouvement, le socle est verrouillé : il ne bouge pas, le dit, et
+    n'offre aucune occasion puisqu'il ne s'est pas déplacé. */
+ assert.ok(page.includes("const bloque=!!regle&&regle.credit<=0;")&&page.includes("if(drag.bloque){drag.moved=true;if(!drag.dit){drag.dit=true;floatNumber(a,'Plus de Mouvement','nul')}return}")
+  &&page.includes("  if(bloque){if(moved)skipClick=true;return}")&&page.includes("if(regle&&regle.credit<=0){floatNumber(a,'Plus de Mouvement','nul');return}"),'sans point, le socle est verrouillé');
 }
 /* v0.268 — Les chemins de l'arbre s'arrêtent au bord des boutons, en pointillés tant qu'ils ne sont pas
    actifs ; les bonus prennent la couleur de leur caractéristique ; plus de mode d'emploi au-dessus. */
@@ -2352,10 +2353,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxN.actors.map(ctxN.nomNum).join('|'),'Ulfgar|Gobelin 1|Gobelin 2|Ogre');assert.equal(ctxN.nomNum({name:'Inconnu'}),'Inconnu');
  assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||view!=='mj'")&&page.includes("if(adversairesDebout()>0){combatEngage=true;return}")
   &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")
-  &&page.includes("if(finit)actors.forEach(a=>{if(a.hero)a.reposPris=false});"),'le combat finit seul, et rend le repos');
+  &&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos" id="repos" hidden>⛺ Repos court</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
-  &&page.includes(":a.reposPris?'Repos déjà pris : il reviendra à la fin du prochain combat.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposPris=true;")
-  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots'];"),'le Repos court');
+  &&page.includes(":reposRestants(a)<=0?'Plus de repos court ('+reposMax(a)+' pris) : un repos long, ou la carte rechargée, les rend.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);")
+  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte'];"),'le Repos court');
 }
 /* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
    une arme prise remplace celle de la main droite ; lâchée sur une main, elle prend cette main.
@@ -2397,14 +2398,14 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const coma=page.slice(page.indexOf('function comaAventuriers(){'),page.indexOf('/* Le combat finit de lui-même'));
  const journal=[],flot=[];let enC=true;
  const ctxC={enCombat:()=>enC,loading:false,hasState:(a,e)=>(a.states||[]).includes(e),recalculerPV:a=>{a.max=a.vie*a.endu},floatNumber:(a,t)=>flot.push(t),log:t=>journal.push(t),nomNum:a=>a.name,scheduleSave:()=>{},
-  d6:()=>4,enduAffichee:a=>a.endu,applyHeal:(a,n)=>{const g=Math.min(a.max-a.hp,n);a.hp+=g;if(a.hp>0)a.states=(a.states||[]).filter(e=>e!=='Coma');return g},actors:[]};
+  d6:()=>4,enduAffichee:a=>a.endu,reposMax:a=>Math.max(1,Math.trunc(Number(a.level))||1),poseCibles:()=>{},applyHeal:(a,n)=>{const g=Math.min(a.max-a.hp,n);a.hp+=g;if(a.hp>0)a.states=(a.states||[]).filter(e=>e!=='Coma');return g},actors:[]};
  vm.createContext(ctxC);vm.runInContext(coma,ctxC);
  const h={name:'Ulfgar',hero:true,hp:0,vie:5,endu:4,max:20,states:['Coma']};ctxC.actors.push(h,{name:'Gobelin',hero:false,hp:0,states:['Coma']});
  ctxC.comaAventuriers();assert.equal(h.vie+'/'+h.max+'/'+h.comaVie,'4/16/true','tombé : une VIE en moins, PV max recalculés');
  ctxC.comaAventuriers();assert.equal(h.vie,4,'la même chute ne coûte qu’une VIE');
- ctxC.reveilDuComa(h);assert.equal(h.hp+'/'+h.comaVie+'/'+h.reposPris,'8/false/true','à la fin du combat : 1d6 + Endu, repos pris');
+ ctxC.reveilDuComa(h);assert.equal(h.hp+'/'+h.comaVie+'/'+h.reposCourts,'8/false/1','à la fin du combat : 1d6 + Endu, un repos court pris');
  enC=false;h.hp=0;h.states=['Coma'];ctxC.comaAventuriers();assert.equal(h.vie,4,'hors combat, rien ne se perd');
- assert.ok(page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")&&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur()))actors.forEach(reveilDuComa);"),'le coma se compte au rendu et se relève à la fin du combat');}
+ assert.ok(page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")&&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le coma se compte au rendu et se relève à la fin du combat');}
 {assert.ok(src.includes("['pv','PV max',a.max],['def','DEF',defOf(a),true],")&&src.includes("tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg']],c);")
   &&src.includes("calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));")&&src.includes(" ecrire('.stat-tile.t-pv strong',a.max);")
   &&feuille.includes('.calcul-ligne.total{'),'PV max et leur calcul, Dégâts détaillés');
@@ -2585,8 +2586,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.normaliseCompte({or:'5',x:3,'eclat-rubis':-2,'brisure-saphir':0,'brome-diamant':2.7,'brome-diamant-eteinte':4},C.CLES_RICHESSES),{or:5,'brome-diamant':2},'une éteinte quitte la bourse');
  assert.deepEqual(C.normaliseDomaine(null).ressources,{});
  assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
- assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots=normaliseDepots(a.depots);a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
-  &&src.includes("const listeRessources=()=>ressourcesJeu().map(r=>[r.cle,r.nom]).sort((x,y)=>x[1].localeCompare(y[1],'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots'];"),'les richesses se relisent et voyagent en direct');
+ assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots=normaliseDepots(a.depots);")&&src.includes("delete a.reposPris;a.horsCarte=a.horsCarte===true;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
+  &&src.includes("const listeRessources=()=>ressourcesJeu().map(r=>[r.cle,r.nom]).sort((x,y)=>x[1].localeCompare(y[1],'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte'];"),'les richesses se relisent et voyagent en direct');
  assert.ok(src.includes("function grilleGemmes(compte,poser,qui){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
   &&fief.includes("function renderDomRessources(){")&&fief.includes("const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;")
   &&fief.includes("ressourcesJeu().filter(x=>x.cle!=='or').forEach(({cle:k,nom:m,piece})=>{"),'les compteurs : sur la carte de l’aventurier, au domaine');
@@ -2608,7 +2609,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const a={richesses:{or:20}};assert.deepEqual(C.peutAcheter(a,{price:15,magasin:true}),{ok:true,prix:15,manque:0,enVente:true});
  assert.deepEqual(C.peutAcheter(a,{price:25,magasin:true}),{ok:false,prix:25,manque:5,enVente:true});assert.equal(C.peutAcheter(a,{price:5}).ok,false,'hors magasin, pas d’achat');
  assert.equal(C.ajouteOr(a,-15),5);assert.equal(C.ajouteOr(a,-9),0);assert.deepEqual(a.richesses,{},'l’or ne descend pas sous zéro, et un compte nul disparaît');assert.equal(C.ajouteOr(a,3),3);
- assert.ok(vivant.includes("'richesses','lieuDomaine','paliersTalents','defBrisee','element','depots'];")&&fief.includes("const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');")
+ assert.ok(vivant.includes("'richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte'];")&&fief.includes("const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');")
   &&fief.includes("if(typeof enLigne!=='undefined'&&enLigne)return typeof monSiege!=='undefined'&&monSiege===a.id;"),'le lieu voyage avec l’aventurier, et son joueur seul le déplace');
  assert.ok(fief.includes("function blocDeplacements(b){const troupe=actors.filter(a=>a.hero);if(!troupe.length||!batimentConstruit(b))return null;")
   &&fief.includes("quoi.textContent=ici?'Ici':'S’y déplacer';")&&fief.includes("function finFiche(boite,b){")&&(fief.match(/boite\.append\(qui\);finFiche\(boite,b\)\}/g)||[]).length===2,'un bouton par aventurier, sur chaque fiche');
@@ -2663,7 +2664,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[2],'le moteur joue le palier tenu');
  assert.deepEqual(C.normalisePaliersActeur({talents:['o','p'],paliersTalents:{o:3,p:1,q:2,r:'x'}}),{o:3},'un palier 1 ne s’écrit pas ; un talent oublié perd le sien');
  assert.ok(fs.readFileSync('combat.js','utf8').includes("function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)")
-  &&page.includes("function talentsCodes(a){return talentsAuPalier(a,typeof catalog!=='undefined'?catalog.talents:[])")&&vivant.includes("'lieuDomaine','paliersTalents','defBrisee','element','depots'];"),'la table et les bonus jouent le palier ; il voyage en direct');
+  &&page.includes("function talentsCodes(a){return talentsAuPalier(a,typeof catalog!=='undefined'?catalog.talents:[])")&&vivant.includes("'lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte'];"),'la table et les bonus jouent le palier ; il voyage en direct');
  assert.ok(src.includes("a.paliersTalents=normalisePaliersActeur(a);")&&src.includes(" c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(99,coutPalier(t,n)));"),'paliers relus, au catalogue et sur la fiche');
  assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("+ligne('Coût (PT)',")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")
   &&src.includes(" t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")
@@ -2687,7 +2688,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes(" const double=brise.double&&!r.failed,total=double?r.damage*2:r.damage;")
   &&page.includes("const brisee=brise.perte&&!r.failed?brise.perte:0;if(brisee)b.defBrisee=(Math.trunc(Number(b.defBrisee))||0)+brisee;")
   &&page.includes("reduction:r.reduction,double,total},suite);")&&page.includes("if(detail.double)plus('× 2 — Brise','double');")
-  &&vivant.includes("reduction:detail.reduction||0,double:!!detail.double,total:detail.total||0}")&&vivant.includes("'paliersTalents','defBrisee','element','depots'];"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
+  &&vivant.includes("reduction:detail.reduction||0,double:!!detail.double,total:detail.total||0}")&&vivant.includes("'paliersTalents','defBrisee','element','depots','reposCourts','horsCarte'];"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
  assert.ok(src.includes("g.className='paliers-bulle liste';")
   &&fs.readFileSync('editor.css','utf8').includes('.paliers-bulle.liste .palier-num{')&&!fs.readFileSync('editor.css','utf8').includes('.paliers-bulle.liste .palier-col'),'v0.324 : les paliers d’un talent appris en liste, I, II, III');}
 /* v0.290 — Le Mystique choisit un élément — Feu, Gel, Foudre —, au MJ de le fixer. Ses talents
@@ -2707,7 +2708,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const libre={...t,elementaire:undefined};assert.equal(C.talentPourElement(libre,G).params.etat,'Feu','sans la case, l’état réglé reste');
  const neutre={id:'x',name:'Forge',params:{etat:'Feu'}};assert.equal(C.talentPourElement(neutre,G),neutre);assert.equal(C.estElementaire(neutre),false);assert.equal(C.estElementaire(libre),true);
  assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefoudre','Foudre',1]],'la table joue l’élément, puis le palier ; la DEF retirée, réglage commun, reste celle du palier 1');
- assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element'];")&&vivant.includes("'defBrisee','element','depots'];")
+ assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element'];")&&vivant.includes("'defBrisee','element','depots','reposCourts','horsCarte'];")
   &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
  assert.ok(src.includes("function choixElement(a,classe,rendre){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
   &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tv=vu(t),logo=logoTalent(tv);")&&src.includes("const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n)")
@@ -3012,4 +3013,23 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fief.includes("if(b.fonction==='tannerie')blocTannerie(out,b);")&&fief.includes("function versDomaine(a,delta){if(mjDom()){appliqueDelta(")
   &&fief.includes("function recueilleDepots(redessine=true){if(!mjDom())return false;")&&fief.includes("const mj=mjDom(),r=mj?(domaine.ressources||(domaine.ressources={})):reserveVue();")
   &&vivant.includes("function appliquerSalle(d,complet){appliquerSalleSeule(d,complet);if(d&&estMJ()&&typeof recueilleDepots==='function')recueilleDepots()}"),'la tannerie, et les dépôts versés par le MJ');}
-console.log('1749 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.335 — Un lot de table : repos courts au niveau, repos long, 0 VIE hors de la carte, états
+   effacés sauf le Blindage, Lamevent au contact rejoint, Provocation socle à socle, Orbes sans
+   dégâts, vaincus retirés, cinq cibles, et la liste des cartes au nom seul. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ const ctxR={statesOf:a=>a.states||[],setState:(a,e,p)=>{a.states=(a.states||[]).filter(x=>x!==e);if(p)a.states.push(e)}};vm.createContext(ctxR);
+ vm.runInContext(page.match(/function leveEtats\(a\)\{[^\n]*\n[^\n]*/)[0]+'\n'+page.match(/function reposMax\(a\)[^\n]*/)[0]+'\n'+page.match(/function reposRestants\(a\)[^\n]*/)[0],ctxR);
+ const h={states:['Feu','Blindage','Poison','Coma','Invisible'],etatsPassifs:['Invisible']};
+ assert.equal(ctxR.leveEtats(h).join(','),'Feu,Poison','tout s’en va, sauf le Blindage, le coma et ce qu’une pièce portée donne');assert.equal(h.states.join(','),'Blindage,Coma,Invisible');
+ assert.equal(ctxR.reposMax({level:3}),3);assert.equal(ctxR.reposMax({}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:2}),1);assert.equal(ctxR.reposRestants({level:2,reposCourts:5}),0);
+ assert.ok(page.includes("if(a.vie<=0){a.horsCarte=true;a.lieuDomaine='';poseCibles(a,[]);")&&page.includes("+(a.hero&&a.horsCarte?' hors-carte':'');")&&page.includes('.token.hors-carte{display:none}')
+  &&src.includes("function reposLong(){if(view!=='mj')return;")&&src.includes("$('hero-repos-long').onclick=reposLong;")&&carto.includes("heros.forEach(a=>{a.reposCourts=0});"),'0 VIE : hors de la carte jusqu’au repos long ; repos courts rendus à la carte rechargée');
+ assert.ok(page.includes("function noteContactsDepart(a){if(!a||!enCombat())return;")&&page.includes("const contacts=adversairesAuContact(a).filter(([b])=>!avant||!avant.has(b.id));")
+  &&page.includes("const arret=tokenOf(a)/2+tokenOf(b)/2+1;")&&page.includes("function cheminVersContact(b,a,size){")
+  &&page.includes("if(!r.hit||!r.damage){floatNumber(b,'0','nul');let pose0='',suite0='';"),'Lamevent, Provocation et Orbes');
+ assert.ok(page.includes("function retirerVaincus(){if(view!=='mj')return;")&&page.includes("function reposCourtTous(){if(view!=='mj')return;")
+  &&page.includes("const rangs=[...toutes.slice(0,5),...toutes.slice(5).filter(j=>visees.includes(j))];")&&page.includes("#pv-layer .pv.dead{opacity:.45;filter:grayscale(1)}")
+  &&page.includes("function mouvementEpuise(a){return enCombat()&&!!a&&pointsRestants(a,'mouvement')<=0}"),'boutons de camp, cinq cibles, jauges pâles, Analyser au Mouvement');
+ assert.ok(carto.includes("if(deux||mapTool==='objet'){mapSel=dessous;renderCanvas();openObjet(dessous.i);e.preventDefault();return}}")&&!carto.includes("det.textContent=matiereDe(m).length")
+  &&feuille.includes('.map-row.live{background:#dcebd9;'),'un objet posé se rouvre ; la liste des cartes au nom seul');}
+console.log('1750 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

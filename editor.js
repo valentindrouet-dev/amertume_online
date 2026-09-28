@@ -12,7 +12,8 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots=normaliseDepots(a.depots);a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.paliersTalents=normalisePaliersActeur(a);if(a.element!==undefined&&!elementDe(a))delete a.element;a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
+function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots=normaliseDepots(a.depots);
+ if(a.reposCourts===undefined&&a.reposPris)a.reposCourts=1;a.reposCourts=Math.max(0,Math.trunc(Number(a.reposCourts))||0);delete a.reposPris;a.horsCarte=a.horsCarte===true;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.paliersTalents=normalisePaliersActeur(a);if(a.element!==undefined&&!elementDe(a))delete a.element;a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
  a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};
  a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};
  a.checks=Array.isArray(a.checks)?POINTS_CLES.map((q,i)=>Math.max(0,Math.min(pointsMax(a,q),a.checks[i]===true?1:Math.trunc(Number(a.checks[i]))||0))):[0,0,0];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
@@ -198,9 +199,9 @@ const note=document.createElement('p');note.id='actor-notes';note.className='mut
    clique celle qui part. Le bouton retenu est plein, les autres sont dessinés. */
 /* Les dés d'une attaque et, s'il y a lieu, le bonus de dégâts avec son jeton : la même
    seconde ligne pour l'attaque d'une arme et pour le talent qui frappe. */
-function desEtBonus(dice,bonus){const bas=document.createElement('span');bas.className='des-bonus';
+function desEtBonus(dice,bonus,toujours){const bas=document.createElement('span');bas.className='des-bonus';
  bas.append(dicePips(dice));
- if(bonus){const plus=document.createElement('b');plus.className='bonus';plus.textContent='+'+bonus;
+ if(bonus||toujours){const plus=document.createElement('b');plus.className='bonus';plus.textContent='+'+bonus;
   // Le jeton des dégâts, après la valeur : on lit « +2 » et l'on voit de quoi il s'agit.
   const ico=document.createElement('img');ico.className='dmg-ico';ico.src=imgUrl('DEGATS.webp');ico.alt='dégâts';ico.draggable=false;
   bas.append(plus,ico)}
@@ -239,8 +240,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
     nature du talent. Leur couleur est celle du type, sauf teinte propre. */
  const talents=a&&typeof boutonsTalents==='function'?boutonsTalents(a).filter(b=>b.rangee==='attaques'):[];
  // Même seule, une attaque se montre : on lit ce qui part avant de frapper.
- const objets=a&&typeof boutonsObjets==='function'?boutonsObjets(a):[];
- boite.replaceChildren();boite.hidden=!liste.length&&!talents.length&&!objets.length;
+ // Les objets ne s'y montrent plus : on les emploie d'un clic dans l'inventaire de la fiche.
+ boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;
  talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque';
   if(t.teinte){b.style.setProperty('--fond',t.teinte);b.classList.add('teinte-propre')}
   const im=logoTalent({logo:t.logo},'bouton');
@@ -254,36 +255,6 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   else b.classList.add('sans-des');
   inerte(b,!t.peut);b.title=t.titre;b.setAttribute('aria-label',t.texte+' — '+t.titre);
   b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(b)});
- /* Les objets qui agissent viennent après les talents : mêmes grands boutons, l'encre de
-    leur famille, et le logo de l'objet à gauche. */
- (a?boutonsObjets(a):[]).forEach(b=>{const el=document.createElement('button');
-  el.className='btn-action choix-attaque btn-objet teinte-propre';
-  el.style.setProperty('--fond',b.teinte);
-  const im=logoEquipement({logo:b.objet.logo},'bouton');
-  if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);el.classList.add('avec-logo');el.append(logos)}
-  const nom=document.createElement('span');nom.className='nom';nom.textContent=b.texte;
-  el.append(nom);
-  // Le compte des usages sur la seconde ligne ; sans compte, le nom seul.
-  if(b.compte){const c=document.createElement('span');c.className='compte';c.textContent=b.compte;el.append(c)}
-  else el.classList.add('sans-des');
-  inerte(el,!b.peut);el.title=b.titre;el.setAttribute('aria-label',b.objet.name+' : '+b.texte+(b.compte?' ('+b.compte+')':'')+' — '+b.titre);
-  /* Un usage compté porte son chrono, en haut à droite : il dit que la charge se rend au
-     repos, et le MJ la rend d'un clic — les joueurs, non, leur bouton est désactivé. */
-  if(b.limite){const chrono=document.createElement('span');chrono.className='chrono'+(b.epuise?' vide':'');
-   chrono.textContent='⏱';
-   chrono.title=view==='mj'
-    ?(b.epuise?'Recharger '+b.objet.name+' — MJ':b.objet.name+' : charge intacte. Clic : la reprendre — MJ')
-    :NOM_USAGE(usageObjet(b.objet));
-   if(view==='mj'){chrono.setAttribute('role','button');chrono.tabIndex=0;
-    const basculer=e=>{e.stopPropagation();e.preventDefault();
-     const a2=b.acteur;
-     if(b.epuise?rendreUsage(a2,b.objet):prendreUsage(a2,b.objet)){
-      log('MJ : '+b.objet.name+(b.epuise?' rechargé':' marqué employé')+' pour '+a2.name+'.',{local:true});
-      render();scheduleSave()}};
-    chrono.onclick=basculer;
-    chrono.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')basculer(e)}}
-   el.append(chrono)}
-  el.onclick=()=>{if(estInerte(el))return;b.agir()};boite.append(el)});
  if(!liste.length)return;
  const retenu=Math.trunc(a.activeAttack)||0;
  liste.forEach((at,i)=>{const b=document.createElement('button');
@@ -304,7 +275,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
      attaque en voyant tout ce qu'elle lance. Affaibli ou une attaque « dés seuls » n'ont
      pas de bonus, et n'en écrivent pas. */
   const bonus=hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
-  b.append(nom,desEtBonus(at.dice,bonus));
+  b.append(nom,desEtBonus(at.dice,bonus,at.useOwnDamage!==false));
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
   inerte(b,!!refus);
   // Le clic droit du MJ rend l'Action et pose la flèche en vol.
@@ -349,6 +320,7 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
 const heroesPage=document.createElement('main');heroesPage.id='heroes-page';
 heroesPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Aventuriers</h2><div class="cat-actions">'
+ +'<button id="hero-repos-long" type="button" title="VIE et PV au maximum, repos courts et charges rendus, états levés sauf le Blindage ; ceux retournés au domaine reviennent">🌙 Repos long</button>'
  +'<button id="hero-add" class="primary">+ Nouvel aventurier</button></div></header>'
  // Le mode d'emploi n'a plus à occuper le haut de la page : les infobulles le disent
  // au survol de chaque valeur, et le champ de recherche ne sert qu'à une grande troupe.
@@ -778,6 +750,7 @@ function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.rep
   v.textContent=q?'Aucun aventurier de ce nom.':'Aucun aventurier dans la troupe.';grille.append(v)}}
 $('hero-search').oninput=renderHeroes;
 $('hero-add').onclick=()=>openActor(null,true);
+$('hero-repos-long').onclick=reposLong;
 /* Une pastille par dé de la réserve, dans l’ordre officiel d’affichage : noir, rouge,
    bleu, vert, jaune, blanc, os. Le Mortel porte un liseré clair, et Lourd, Mystique et
    Mortel une pastille centrale claire — leur face est trop sombre pour l’inverse.
@@ -1011,6 +984,22 @@ function prendreUsage(a,o){if(view!=='mj'||!a||!o||!usageLimite(usageObjet(o))||
  a.usages={...(a.usages||{}),[o.id]:usageObjet(o)};return true}
 /* Un repos rend les charges : le court ne rend que les siennes, le long rend tout. C'est
    par là que passera le repos court quand il arrivera. */
+/* Le repos long, pour toute la troupe, depuis l'onglet Aventuriers : chacun retrouve toutes ses
+   VIE et ses PV, ses repos courts et les charges de ses objets ; les états s'en vont, sauf le
+   Blindage. Qui était retourné au domaine, faute de VIE, revient sur la carte. */
+function reposLong(){if(view!=='mj')return;const troupe=actors.filter(a=>a&&a.hero);if(!troupe.length)return;
+ if(typeof enCombat==='function'&&enCombat()){alert('Pas de repos long en plein combat.');return}
+ if(!confirm('Repos long pour toute la troupe ?\nVIE et PV au maximum, repos courts et charges rendus, états levés sauf le Blindage.'))return;
+ const revenus=[];
+ troupe.forEach(a=>{if(Number.isFinite(Number(a.vieMax)))a.vie=Number(a.vieMax);if(typeof recalculerPV==='function')recalculerPV(a);
+  setState(a,'Coma',false);a.hp=a.max;a.comaVie=false;a.reposCourts=0;reposer(a,'long');if(typeof leveEtats==='function')leveEtats(a);
+  if(a.horsCarte){a.horsCarte=false;revenus.push(a)}});
+ // Qui revient se pose dans la zone de départ de la carte ouverte.
+ const m=typeof currentMap==='function'?currentMap():null;
+ if(revenus.length&&m&&m.start&&typeof spreadInZone==='function')spreadInZone(revenus.length,m.start).forEach((p,i)=>moveActor(revenus[i],p.x,p.y,true));
+ log('🌙 Repos long : '+troupe.map(a=>a.name).join(', ')+' retrouvent VIE, PV, repos courts et charges.'
+  +(revenus.length?' '+revenus.map(a=>a.name).join(', ')+(revenus.length>1?' reviennent':' revient')+' sur la carte.':''),{ton:'soin'});
+ renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 function reposer(a,type='long'){if(!a||!a.usages)return 0;
  const garde={},rendues=[];
  Object.entries(a.usages).forEach(([id,quoi])=>{

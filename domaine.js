@@ -247,9 +247,9 @@ const renderMapListSansDomaine=renderMapList;renderMapList=function(){renderMapL
  liste.querySelectorAll('.map-row').forEach(b=>{const f=b.onclick;b.onclick=()=>{quitteDomaine();f()};if(domaineEdite)b.classList.remove('current')});
  const b=document.createElement('button');b.className='map-row dom-row'+(domaineEdite?' current':'');
  const nom=document.createElement('strong');nom.textContent='🏰 '+domaine.nom;
- const det=document.createElement('small');const n=domaine.carte.calques.filter(Boolean).length,z=domaine.batiments.filter(x=>x.zone).length;
- det.textContent=n+' calque'+(n>1?'s':'')+' · '+z+' bâtiment'+(z>1?'s':'')+' tracé'+(z>1?'s':'');
- b.append(nom,det);b.onclick=entreDomaine;liste.prepend(b)};
+ const n=domaine.carte.calques.filter(Boolean).length,z=domaine.batiments.filter(x=>x.zone).length;
+ b.title=domaine.nom+'\n'+n+' calque'+(n>1?'s':'')+' · '+z+' bâtiment'+(z>1?'s':'')+' tracé'+(z>1?'s':'');
+ b.append(nom);b.onclick=entreDomaine;liste.prepend(b)};
 function pushDomUndo(){domUndo.push(domEtat());
  if(domUndo.length>40)domUndo.shift();domRedo.length=0}
 function domEtat(){return {batiments:structuredClone(domaine.batiments),calques:[...domaine.carte.calques],ratio:domaine.carte.ratio,cartouches:structuredClone(domaine.carte.cartouches)}}

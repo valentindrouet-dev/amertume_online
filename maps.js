@@ -476,6 +476,8 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  currentMapId=id;mapImage=m.image||null;measureRatio(m,render);
  $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);
  const heros=actors.filter(a=>a.hero);
+ // Une carte rechargée rend à chacun ses repos courts.
+ heros.forEach(a=>{a.reposCourts=0});
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...heros);
@@ -683,12 +685,13 @@ document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{ma
  if(mapTool!=='ligne')traitDepart=traitVise=null;
  renderCanvas()});
 
+/* La liste des cartes : le nom seul, sur une ligne ; en vert, celle qui est chargée sur la table.
+   Le détail — zones, portes, adversaires, objets — se lit au survol. */
 function renderMapList(){$('map-list').replaceChildren(...maps.map(m=>{const b=document.createElement('button');
  b.className='map-row'+(m===mapDraft?' current':'')+(m.id===currentMapId?' live':'');
- const nom=document.createElement('strong');nom.textContent=m.name;
- const det=document.createElement('small');ensure(m);
- det.textContent=matiereDe(m).length+' zone(s) · '+m.doors.length+' porte(s) · '+m.foes.length+' adversaire(s)'+((m.objets||[]).length?' · '+m.objets.length+' objet(s)':'');
- b.append(nom,det);b.onclick=()=>{mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()};return b}));
+ const nom=document.createElement('strong');nom.textContent=m.name;ensure(m);
+ b.title=m.name+(m.id===currentMapId?' — chargée sur la table':'')+'\n'+matiereDe(m).length+' zone(s) · '+m.doors.length+' porte(s) · '+m.foes.length+' adversaire(s)'+((m.objets||[]).length?' · '+m.objets.length+' objet(s)':'');
+ b.append(nom);b.onclick=()=>{mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()};return b}));
  if(mapDraft)$('map-name').value=mapDraft.name;
  $('map-foe-tpl').replaceChildren();catalog.monsters.forEach((m,i)=>$('map-foe-tpl').add(new Option(m.name,String(i))))}
 
@@ -816,6 +819,7 @@ function boiteSelection(p){const b=boitePolygone(p);if(!b)return null;
  return el}
 /* Un objet sur le plan de travail : un socle rond, comme un adversaire, à la taille qu'il
    aura en partie ; caché, il se dessine en pointillé. */
+let clicObjet=null;
 function objetEl(i,o){const el=document.createElement('div');
  el.className='shape objet'+(o.visible?'':' cache')+(o.locked?' locked':'')+(mapSel&&mapSel.kind==='objet'&&mapSel.i===i?' selected':'');
  const t=Math.max(10,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100*(SOCLE_TAILLES[o.taille]||1));
@@ -1005,6 +1009,12 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapDrag={mode:e.target.dataset.echelleGrip?'echelle-taille':'echelle',from:p,orig:{...mapDraft.echelle}};
   $('map-canvas').setPointerCapture(e.pointerId);e.preventDefault();return}
  const dessous=sous?{kind:sous.dataset.kind,i:Number(sous.dataset.i)}:null;
+ /* Un objet déjà posé se rouvre : un clic dessus avec l'outil Objet, qui en posait un autre par
+    mégarde ; deux clics rapprochés avec la Sélection. Le plan se redessine à chaque clic, le
+    double clic du navigateur n'arrivait donc jamais jusqu'à lui. */
+ if(dessous&&dessous.kind==='objet'&&e.button===0&&mapDraft.objets&&mapDraft.objets[dessous.i]){const t=performance.now(),deux=clicObjet&&clicObjet.i===dessous.i&&t-clicObjet.t<450;
+  clicObjet=deux?null:{i:dessous.i,t};
+  if(deux||mapTool==='objet'){mapSel=dessous;renderCanvas();openObjet(dessous.i);e.preventDefault();return}}
  if(enZones()&&e.button===0){clicZones(p);e.preventDefault();return}
  // Avec l'outil Sélection, ou sur une poignée, on manipule la forme visée.
 

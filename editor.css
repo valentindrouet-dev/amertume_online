@@ -1,6 +1,6 @@
 /* Pages ouvertes à la troupe : elle lit, elle ne corrige rien et ne pose rien.
    Les valeurs cliquables sont déjà muettes pour elle (voir champVif dans editor.js). */
-body.vue-joueur .cat-tools,body.vue-joueur .pose-nombre,body.vue-joueur #hero-add,
+body.vue-joueur .cat-tools,body.vue-joueur .pose-nombre,body.vue-joueur #hero-add,body.vue-joueur #hero-repos-long,
 body.vue-joueur #bestiary-add,body.vue-joueur .cat-actions{display:none!important}
 /* La coche d'un modèle analysé, dans sa vignette : un petit rond vert devant le nom. */.cat-pill .coche-modele{flex:none;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font:700 11px/1 system-ui;color:#fff;background:var(--green);cursor:pointer}.cat-pill .coche-modele:hover{filter:brightness(1.1)}
 /* La table en ligne : son lien se lit d'un coup d'oeil et se copie d'un clic. */
@@ -117,11 +117,12 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .grip.nw{left:calc(-5px / var(--z));top:calc(-5px / var(--z));cursor:nwse-resize}.grip.ne{right:calc(-5px / var(--z));top:calc(-5px / var(--z));cursor:nesw-resize}
 .grip.sw{left:calc(-5px / var(--z));bottom:calc(-5px / var(--z));cursor:nesw-resize}.grip.se{right:calc(-5px / var(--z));bottom:calc(-5px / var(--z));cursor:nwse-resize}
 #map-list{max-height:min(46vh,420px);overflow:auto;margin-bottom:12px}
-.map-row{display:block;width:100%;text-align:left;margin:6px 0;padding:9px 11px;border-radius:8px}
-.map-row strong{display:block;font-size:14px}
-.map-row small{color:var(--muted);font-size:11px}
+/* Une carte, une ligne : son nom seul ; en vert, celle qui est chargée sur la table. */
+.map-row{display:block;width:100%;text-align:left;margin:3px 0;padding:5px 10px;border-radius:7px}
+.map-row strong{display:block;font-size:13.5px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .map-row.current{border-color:var(--accent);background:var(--sel-fond)}
-.map-row.live strong::after{content:" ●";color:var(--green)}
+.map-row.live{background:#dcebd9;border-color:#6f9e76}.map-row.live strong{color:#2f5e38}
+.map-row.live.current{background:#cfe4cb;border-color:var(--accent)}
 .side-actions{display:flex;flex-direction:column;gap:7px}
 .maps-props label{display:flex;gap:8px;align-items:center;font-size:14px;margin:10px 0}
 .maps-props label input{width:auto}
