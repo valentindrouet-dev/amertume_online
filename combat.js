@@ -348,6 +348,8 @@ function cleanObjet(o){const t=o&&o.test||{};
  return {id:texte(o&&o.id,40),nom:texte(o&&o.nom,60)||'Objet',desc:texte(o&&o.desc,600),
   x:borne(o&&o.x,0,100),y:borne(o&&o.y,0,100),taille:TAILLES_OBJET.includes(o&&o.taille)?o.taille:'medium',
   visible:!(o&&o.visible===false),
+  // Récupéré par un aventurier : il reste hors de la carte jusqu'à ce qu'elle soit rechargée sur la table.
+  ...(o&&o.pris===true?{pris:true}:{}),
   items:(Array.isArray(o&&o.items)?o.items:[]).filter(x=>typeof x==='string').slice(0,20).map(x=>texte(x,60)).filter(Boolean),
   tresor:texte(o&&o.tresor,200),
   test:{comp:Math.max(0,Math.min(7,Math.trunc(Number(t.comp))||0)),

@@ -1657,7 +1657,8 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 
 /* Les zones fouillées par la Perception, sur la carte : un disque pointillé ambré par test. */
 #fouilles-layer{position:absolute;inset:0;z-index:2;pointer-events:none}
-#fouilles-layer .fouille{position:absolute;border-radius:50%;border:2px dashed #d9a13b;background:#e8b64a2e;box-sizing:border-box}
+#fouilles-layer svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#fouilles-layer .fouille{fill:#e8b64a2e;stroke:#d9a13b;stroke-width:2;stroke-dasharray:7 5;vector-effect:non-scaling-stroke}
 /* La Perception dans une zone déjà fouillée : son rond se grise. */
 #skills .fouillee{filter:grayscale(1);opacity:.45;cursor:not-allowed}
 
@@ -1668,3 +1669,11 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .token.objet.r-mystique,.shape.objet.r-mystique{background:#e3d6f2}
 .token.objet.r-epique,.shape.objet.r-epique{background:#f5dcc0}
 .token.objet.r-ressource,.shape.objet.r-ressource{background:#efe2cc}
+
+/* La bulle d'un objet de la carte : sa pièce comme à l'Armurerie, puis sa description. */
+.bulle-objet-carte{display:flex;flex-direction:column;gap:6px}
+.bulle .objet-desc-bulle{margin:6px 0 0;white-space:pre-line;font-style:italic}
+/* Le menu du MJ sur un objet de la carte : révéler, cacher, donner. */
+.menu-objet{position:fixed;z-index:70;display:flex;flex-direction:column;gap:4px;min-width:190px;padding:8px;border-radius:9px;background:var(--panel);border:1px solid var(--line);box-shadow:0 8px 22px #0005}
+.menu-objet-titre{margin:0 2px 3px;font:700 13px system-ui;color:var(--ink)}
+.menu-objet button{text-align:left}

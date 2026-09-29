@@ -73,7 +73,8 @@ function etatVivant(){const out={actors:{}};
  /* Les portes, puis — à leur suite, dans le même tableau — la visibilité des objets de la carte :
     un objet découvert paraît chez tous, sans clé de plus dans la salle. Un appareil plus ancien
     ne lit que les portes et ignore la suite. */
- out.doors=m?[...(m.doors||[]).map(d=>!!d.open),...(m.objets||[]).map(o=>!!o.visible)]:[];
+ // Un objet : 0 caché, 1 visible, 2 récupéré.
+ out.doors=m?[...(m.doors||[]).map(d=>!!d.open),...(m.objets||[]).map(o=>o.pris?2:o.visible?1:0)]:[];
  out.fogOff=!!(m&&m.fogOff);
  out.fogReset=typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false};
  /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
@@ -211,7 +212,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   if(!estMJ())for(let i=actors.length-1;i>=0;i--)if(!vus.has(actors[i].id))actors.splice(i,1);
   const m=typeof currentMap==='function'?currentMap():null;
   if(m&&Array.isArray(d.doors)){(m.doors||[]).forEach((p,i)=>{if(typeof d.doors[i]==='boolean')p.open=d.doors[i]});
-   const n=(m.doors||[]).length;(m.objets||[]).forEach((o,k)=>{if(typeof d.doors[n+k]==='boolean')o.visible=d.doors[n+k]})}
+   const n=(m.doors||[]).length;(m.objets||[]).forEach((o,k)=>{const v=d.doors[n+k];
+    if(typeof v==='boolean'){o.visible=v;delete o.pris}else if(v===0||v===1||v===2){o.visible=v>=1;if(v===2)o.pris=true;else delete o.pris}})}
   if(selected!==null&&!actors[selected])selected=null;
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
   if(typeof marked!=='undefined')marked=new Set([...marked].filter(id=>actors.some(a=>a.id===id)));
