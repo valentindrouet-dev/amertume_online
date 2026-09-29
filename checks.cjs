@@ -3116,7 +3116,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin)});equipeAdversaire(a);")
   &&src.includes(" if(!a.hero){equipeAdversaire(a);a.butin=normaliseButin(a.butin,a.inventaire)}")
   &&src.includes("const CATS_INV_ADV=[['armes','Armes',")&&src.includes("if(!draft.hero){inventaireAdversaire(boite,draft,refreshEquip);return}"),'inventaire d’adversaire : familles, pioche, butin, tout porté');
- assert.ok(src.includes("r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;")&&css.includes('.bulle-modele .stat-tile strong{font-size:16px;margin-top:2px}')
+ assert.ok(src.includes("r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;")&&css.includes('.bulle-modele .stat-tile strong{font-size:22px;line-height:1.05;margin-top:1px}')
   &&css.includes('.cat-pill.gear-carre.talent-carre.mini{width:28px;height:28px;'),'la bulle : petites tuiles, talents en petits ronds');
  assert.ok(src.includes('<button id="bestiary-masse" type="button" aria-pressed="false"')&&src.includes("function tableMasseBestiaire(boite,liste){")
   &&src.includes("if(masse){barreMasseBestiaire(cols);tableMasseBestiaire(cols,tous);bulleOrpheline()}}")&&src.includes("if(masseTriBest)o.masseBest=masseTriBest;")
@@ -3133,10 +3133,17 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("const dessine=()=>choixTalents(boite,m,filtre.value,")&&src.includes("form.onchange=()=>{lis();fini()};")
   &&src.includes("function lisAttaques(form,liste){const f=form.elements;")&&src.includes("function htmlAttaques(liste){return liste.map((a,i)=>"),'attaques, talents et inventaire au tableau en masse');
  assert.ok(!src.includes("ligne([TYPE_NOMS[m.type]||'Standard'"),'la bulle sans type, famille ni socle');}
+/* v0.345 — Dans la bulle d'un modèle, PV, dégâts et XP en plus gros sans grandir les tuiles ; son
+   inventaire en petits carrés sous ses talents. Au tableau en masse, le jeton montre la bulle au
+   survol et change d'image au clic. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("if(comptes.size){const rang=document.createElement('div');rang.className='bulle-inventaire';")&&src.includes("c.append(logoEquipement(o)||glyphePiece(itemColumn(o)));")
+  &&src.includes(" if(logo)p.append(logo);else p.append(glyphePiece(col));")
+  &&src.includes("surveille(jeton,()=>ouvrirBulle(jeton,bulleModele(m),'bulle-modele'));")&&src.includes("openImage(x,'token',url=>{m.image=url;pose();sauveBestiaire([m])})")&&css.includes('.inv-mini{position:relative;flex:none;width:26px;height:26px;'),'l’inventaire dans la bulle ; au tableau en masse, la bulle au survol du jeton et son image au clic');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1778 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1779 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

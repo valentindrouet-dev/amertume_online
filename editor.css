@@ -1196,10 +1196,16 @@ body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-
 .bulle-modele .stat-row{grid-template-columns:repeat(4,1fr);gap:4px;margin:6px 0}
 .bulle-modele .stat-tile{padding:3px 2px;border-radius:7px}
 .bulle-modele .stat-tile span{font-size:8px;letter-spacing:.5px}
-.bulle-modele .stat-tile strong{font-size:16px;margin-top:2px}
+/* PV, dégâts et XP en plus gros, dans la même tuile : la DEF, avec son écu, en fixe la hauteur. */
+.bulle-modele .stat-tile strong{font-size:22px;line-height:1.05;margin-top:1px}
 .bulle-modele .stat-tile.t-dmg strong{letter-spacing:2px;padding-left:2px}
 .bulle-modele .stat-tile .ecu{width:20px;height:24px;margin:2px auto 0}.bulle-modele .stat-tile .ecu b{font-size:11px}
 .bulle-talents{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.bulle-inventaire{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.inv-mini{position:relative;flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:6px;background:#e2ded7;border:1px solid #00000024}
+.inv-mini .logo-equip{width:20px;height:20px;margin:0}.inv-mini .glyphe{font-size:13px;line-height:1}
+.inv-mini.r-rare{background:#d9e6f5}.inv-mini.r-mystique{background:#e6dcf2}.inv-mini.r-epique{background:#f5e0cc}.inv-mini.r-ressource{background:#efe2cc}
+.inv-mini-n{position:absolute;right:-4px;bottom:-5px;padding:0 2px;border-radius:5px;background:var(--panel);font:700 9px/1.2 system-ui;color:var(--ink);box-shadow:0 0 0 1px #00000022}
 .cat-pill.gear-carre.talent-carre.mini{width:28px;height:28px;border-width:2px;cursor:default}
 .cat-pill.gear-carre.talent-carre.mini .logo-equip{width:19px;height:19px}
 .cat-pill.gear-carre.talent-carre.mini .glyphe{font-size:14px}
@@ -1458,7 +1464,7 @@ body.page-icones .intro,body.page-icones .mj-tools,body.page-icones main.layout,
 #bestiary-cols.en-masse{display:block}
 .masse-table tbody tr.b-standard{background:#e2ded7}.masse-table tbody tr.b-alpha{background:#f3e7cf}
 .masse-table tbody tr.b-solitaire{background:#f3dcd5}.masse-table tbody tr.b-boss{background:#e8def2}
-.masse-nom .jeton-rond.mini{flex:none}.masse-texte input{width:120px!important}.masse-bestiaire td input:not([type]){width:130px}
+.masse-nom .jeton-rond.mini{flex:none}.masse-jeton{flex:none;width:auto;margin:0;padding:0;border:0;border-radius:50%;background:none;cursor:pointer}.masse-jeton:hover .jeton-rond{box-shadow:0 0 0 2px var(--accent)}.masse-texte input{width:120px!important}.masse-bestiaire td input:not([type]){width:130px}
 .masse-porte{margin-left:6px;font:600 11px system-ui;color:#6b5d4b}
 /* Attaques, talents et inventaire : un aperçu cliquable, qui ouvre leur panneau. */
 .masse-panneau-bouton{display:flex;align-items:center;gap:3px;min-height:30px;max-width:230px;padding:2px 6px;margin:0;border:1px dashed #00000033;border-radius:8px;background:#ffffff66;cursor:pointer;font:12px system-ui;color:#2a2118;overflow:hidden;width:auto}

@@ -936,11 +936,13 @@ function pastilleInsensible(p){let el=null,titre='';
  else{el=etatPastille(p&&p.etat);titre='Insensible à '+(p&&p.etat)}
  if(!el)return null;el.removeAttribute('title');el.removeAttribute('aria-label');
  const w=document.createElement('span');w.className='effet-pastille barre';w.title=titre;w.setAttribute('role','img');w.setAttribute('aria-label',titre);w.append(el);return w}
+// Une pièce sans logo : le glyphe de sa colonne.
+function glyphePiece(col){const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='treasure'?'💎':col==='ressource'?'⛏':col==='restes'?'🦴':'⚔';return g}
 function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
  const logo=logoEquipement(o);
- if(logo)p.append(logo);else{const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='treasure'?'💎':col==='ressource'?'⛏':col==='restes'?'🦴':'⚔';p.append(g)}
+ if(logo)p.append(logo);else p.append(glyphePiece(col));
  /* Sous le logo d'une pièce d'équipement : sa DEF — seulement si elle en donne, ou si c'est une
     armure de corps ou un bouclier —, puis l'icône de son effet : l'état qu'elle rend, barré
     quand elle en protège. Un anneau sans DEF ne porte plus d'écu à zéro. */
@@ -1663,8 +1665,8 @@ function bestiaryRow(m,i){const carte=document.createElement('div');carte.classN
    copie.name=m.name+' (copie)';catalog.monsters.splice(i+1,0,copie);renderCatalogPages();scheduleSave()}),
   suppr);
  carte.append(outils);return carte}
-/* La bulle d'un modèle : son nom seul, ses chiffres en petites tuiles, puis ses attaques et ses
-   talents en petits ronds. Type, famille et socle se lisent ailleurs. Rien à corriger ici : le
+/* La bulle d'un modèle : son nom seul, ses chiffres en petites tuiles, puis ses attaques, ses
+   talents en petits ronds et son inventaire en petits carrés. Type, famille et socle se lisent ailleurs. Rien à corriger ici : le
    formulaire s'ouvre d'un clic. */
 function bulleModele(m){const d=document.createElement('div');d.className='cat-detail bulle-modele-corps k-'+(m.type||'standard');
  const ligne=(texte,cls)=>{if(!texte)return;const p=document.createElement('p');if(cls)p.className=cls;p.textContent=texte;d.append(p)};
@@ -1691,6 +1693,13 @@ function bulleModele(m){const d=document.createElement('div');d.className='cat-d
  const talents=(m.talents||[]).map(talent).filter(Boolean);
  if(talents.length){const rang=document.createElement('div');rang.className='bulle-talents';
   talents.forEach(t=>{const r=talentRond(t);r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;r.setAttribute('aria-label',n);rang.append(r)});
+  d.append(rang)}
+ // Son inventaire dessous, en petits carrés aussi : l'icône, le nombre d'exemplaires ; le nom au survol.
+ const comptes=new Map();(m.inventaire||[]).map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
+ if(comptes.size){const rang=document.createElement('div');rang.className='bulle-inventaire';
+  comptes.forEach((n,o)=>{const c=document.createElement('span');c.className='inv-mini r-'+rareteDe(o);c.title=o.name+(n>1?' ×'+n:'');c.setAttribute('aria-label',c.title);
+   c.append(logoEquipement(o)||glyphePiece(itemColumn(o)));
+   if(n>1){const x=document.createElement('span');x.className='inv-mini-n';x.textContent='×'+n;c.append(x)}rang.append(c)});
   d.append(rang)}
  return d}
 /* Un modèle est « analysé » dès qu'une des créatures posées qui en descend l'a été :
@@ -1835,7 +1844,13 @@ function tableMasseBestiaire(boite,liste){
  const corps=document.createElement('tbody');
  liste.forEach(([m,i])=>{const tr=document.createElement('tr');tr.className='b-'+(m.type||'standard');
   const th=document.createElement('th');th.scope='row';const nom=document.createElement('span');nom.className='masse-nom';
-  const jeton=jetonRond(m.image,m.name,'mini');
+  /* Son jeton : au survol, sa bulle, comme au Bestiaire ; un clic change son image, comme le
+     logo d'une pièce dans le tableau de l'Armurerie. */
+  const jeton=document.createElement('button');jeton.type='button';jeton.className='masse-jeton';jeton.title='Changer l’image de '+m.name;jeton.setAttribute('aria-label',jeton.title);
+  const pose=()=>jeton.replaceChildren(jetonRond(m.image,m.name,'mini'));pose();
+  surveille(jeton,()=>ouvrirBulle(jeton,bulleModele(m),'bulle-modele'));
+  jeton.onclick=()=>{fermerBulle();const f=document.createElement('input');f.type='file';f.accept='image/png,image/jpeg,image/webp';
+   f.onchange=()=>{const x=f.files[0];if(x)openImage(x,'token',url=>{m.image=url;pose();sauveBestiaire([m])})};f.click()};
   const n=document.createElement('input');n.value=m.name;n.maxLength=120;n.setAttribute('aria-label','Nom');
   n.onchange=()=>{const v=n.value.trim();if(!v){n.value=m.name;return}m.name=v.slice(0,120);sauveBestiaire([m])};
   const ouvre=document.createElement('button');ouvre.type='button';ouvre.className='ico';ouvre.textContent='✎';ouvre.title='Ouvrir la fiche de '+m.name;ouvre.onclick=()=>openActor(null,false,i);
