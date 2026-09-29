@@ -19,8 +19,8 @@ function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots
  a.checks=Array.isArray(a.checks)?POINTS_CLES.map((q,i)=>Math.max(0,Math.min(pointsMax(a,q),a.checks[i]===true?1:Math.trunc(Number(a.checks[i]))||0))):[0,0,0];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
  // L'état Gardé n'existe plus depuis la v0.164 : Gardien pose Blindage.
  a.states=a.states.filter(s=>s!=='Gardé');return a}
-// Trois spécialisations par classe, pas une de plus : les trois branches de l'arbre.
-const VOIES_MAX=3;
+// Deux spécialisations par classe, pour l'instant : les deux branches de l'arbre.
+const VOIES_MAX=2;
 /* Les cinq chemins d'un étage de l'arbre : droit vers le central suivant, vers la diagonale
    gauche et son retour, vers la diagonale droite et son retour. */
 const SEGMENTS=['c','g','gc','d','dc'];
@@ -112,7 +112,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);
  // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
  c.motsCles=[...new Set((Array.isArray(c.motsCles)?c.motsCles:[]).map(m=>String(m||'').trim().slice(0,60)).filter(Boolean))].slice(0,200);
- /* Les spécialisations de chaque classe, dans l'ordre du MJ : des noms, trois au plus par
+ /* Les spécialisations de chaque classe, dans l'ordre du MJ : des noms, deux au plus par
     classe, sans doublon. Une voie qu'un talent nomme sans y figurer s'y lit quand même. */
  const voies=c.voies&&typeof c.voies==='object'&&!Array.isArray(c.voies)?c.voies:{};
  c.voies={};Object.entries(voies).forEach(([f,l])=>{if(!Array.isArray(l))return;
@@ -537,7 +537,7 @@ function majFiche(carte,a){if(!carte)return;
  ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));ecrire('.stat-tile.t-xp strong',a.xp||0);
  ecrire('.chip-niveau','Niveau '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
  majEcu(carte.querySelector('.stat-tile.t-def .ecu'),defOf(a));
- carte.querySelectorAll('.comp-rond').forEach((r,k)=>{const v=r.querySelector('.comp-val');if(v){v.textContent=valeurCompetence(a,k);v.classList.toggle('dore',valeurCompetence(a,k)>1)}
+ carte.querySelectorAll('.comp-rond').forEach((r,k)=>{const v=r.querySelector('.comp-val');if(v){v.textContent=valeurCompetence(a,k);v.classList.toggle('haute',valeurCompetence(a,k)>1)}
   r.setAttribute('aria-label',skillNames[k]+' '+valeurCompetence(a,k))})}
 /* Rendre modifiables les tuiles d'une rangée : la grosse valeur, et le plafond
    écrit en petit dessous quand il y en a un. La DEF fait exception dès qu'une
@@ -755,7 +755,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const titreKit=sousTitre('Équipement','Inventaire de '+a.name,view!=='mj'?null:()=>openPicker(a,'gear'));
  // Le rouage ouvre les arbres de la classe : les talents s'y choisissent de haut en bas.
  const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');
- c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a),titreTal,talentPills(a));return c}
+ // Les talents juste sous les compétences : ce qu'il sait faire se lit d'un bloc.
+ c.append(tete,puces,chiffres,titreComp,comps,titreTal,talentPills(a),titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
  const troupe=actors.filter(a=>a.hero);
@@ -785,7 +786,7 @@ function rondCompetence(a,k,clic){const r=document.createElement(clic?'button':'
  r.style.setProperty('--tint',SKILL_TINTS[k]);const l=iconesCompetences()[k],ico=l?logoCompetence(k):null;
  if(ico){r.append(ico);teinteLogoSur(r,ico,l)}
  else{const g=document.createElement('span');g.className='comp-lettre';g.textContent=skillNames[k].slice(0,2);r.append(g)}
- const v=document.createElement('span');v.className='comp-val'+(valeurCompetence(a,k)>1?' dore':'');v.textContent=valeurCompetence(a,k);r.append(v);
+ const v=document.createElement('span');v.className='comp-val'+(valeurCompetence(a,k)>1?' haute':'');v.textContent=valeurCompetence(a,k);r.append(v);
  r.setAttribute('aria-label',skillNames[k]+' '+valeurCompetence(a,k));
  // Sa bulle au survol : le nom, la valeur du moment.
  surveille(r,()=>{const d=document.createElement('div');d.className='cat-detail bulle-comp-corps';d.style.setProperty('--tint',r.style.getPropertyValue('--tint'));
@@ -2602,14 +2603,14 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
    corps.append(v)}}}
 /* ---------- Arbres de talents ---------- */
 /* Une classe se lit comme un arbre : sa maîtrise en tête, acquise avec la classe, puis une
-   colonne par spécialisation — trois au plus — dont les racines se prennent de haut en bas ;
+   colonne par spécialisation — deux au plus — dont les racines se prennent de haut en bas ;
    sous un talent pendent des sous-branches, les talents qui le requièrent. Les talents sans
    voie forment le tronc commun ; les génériques, une colonne à part, se choisissent
    librement. Le MJ bâtit l'arbre ici même : il nomme une voie, la renomme, la dissout ;
    il glisse un talent sur un autre pour l'y suspendre, sur un bandeau pour l'y ranger, entre
    deux pour l'insérer ; il crée un talent depuis une colonne ou sous un talent. Comment les
    points de talent débloquent les rangs viendra ensuite. */
-/* Une classe a toujours ses trois colonnes, nommées ou non : un arbre se lit d'un coup
+/* Une classe a toujours toutes ses colonnes, nommées ou non : un arbre se lit d'un coup
    d'œil, et l'on ne compte pas les cases vides. Chaque rang porte un nom — ou rien tant que
    le MJ ne l'a pas baptisé. Un catalogue d'avant les voies nommées donne les siennes par
    les talents qui les portent. */
@@ -2669,7 +2670,7 @@ function foretArbre(liste){const ids=new Set(liste.map(t=>t.id)),vus=new Set();
 const aplatit=n=>[n.t,...n.enfants.flatMap(aplatit)];
 function colonneArbre(titre,famille,voie,liste,rang){const arbre=foretArbre(liste);
  return {titre,famille,voie,rang,arbre,racines:arbre.map(n=>n.t),liste:arbre.flatMap(aplatit)}}
-/* Les colonnes d'une classe : trois, toujours, nommées ou non. Celle qui accueille les
+/* Les colonnes d'une classe : deux, toujours, nommées ou non. Celle qui accueille les
    talents sans voie s'appelle « Tronc commun » tant qu'elle n'a pas de nom ; les autres
    attendent le leur. Les maîtrises n'y sont pas : elles trônent au-dessus. */
 /* L'arbre fait foi : dans une colonne, un talent ne requiert que ce qui pend au-dessus de lui,
@@ -3070,7 +3071,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    plus.title='Ajouter un talent central dans '+c.titre+' : un nouveau, ou un talent qui existe déjà';
    plus.onclick=()=>ajouterDansArbre({famille:c.famille,voie:c.voie});col.append(plus)}
   return col};
- /* Les colonnes : les trois de la classe, ni plus ni moins. Les génériques ont leur propre
+ /* Les colonnes : les deux de la classe, ni plus ni moins. Les génériques ont leur propre
     arbre — on l'ouvre par son rouage, dans l'onglet Talents — et n'encombrent plus celui
     d'une classe. */
  const grille=document.createElement('div');grille.className='arbres-cols';

@@ -1330,7 +1330,7 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
   cleClasse:C.cleClasse,ordonneTalents:C.ordonneTalents,talentCode:C.talentCode,manqueTalent:C.manqueTalent,talentsDependants:C.talentsDependants,VOIES_MAX:3};
  vm.createContext(ctx);
  vm.runInContext(morceau('const TALENT_TYPES=','function talent(id)')+morceau('function talentFamilies()',"// L'encre d'une classe")
-  +morceau('function descendDe(','function openTalent(')+morceau('/* Une classe a toujours ses trois colonnes','const arbresDialog='),ctx);
+  +morceau('function descendDe(','function openTalent(')+morceau('/* Une classe a toujours toutes ses colonnes','const arbresDialog='),ctx);
  // Trois voies au plus, dans l'ordre du catalogue ; la quatrième n'existe pas pour l'arbre.
  // Trois rangs, toujours : nommés, ou vides en attendant qu'on les baptise.
  assert.equal(JSON.stringify(ctx.voiesDe('Gardien')),JSON.stringify(['Rempart','Assaut','Serment']));
@@ -1412,7 +1412,7 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  assert.equal(ctx.foretArbre([{id:'p',prerequis:'q'},{id:'q',prerequis:'p'}]).length,1);}
 /* L'arbre s'édite en place : les voies vivent au catalogue, un talent créé depuis l'arbre arrive
    déjà rangé, le formulaire refermé redessine l'arbre, et le glisser-déposer place les talents. */
-assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.isArray(c.voies)?c.voies:{};")&&src.includes('const VOIES_MAX=3;')
+assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.isArray(c.voies)?c.voies:{};")&&src.includes('const VOIES_MAX=2;')
  &&src.includes("if(!l.includes(t.voie)&&l.length<VOIES_MAX)c.voies[f]=[...l,t.voie]});")&&src.includes('function descendDe(x,t,vus=new Set()){if(!x||!t||vus.has(t.id))return false;vus.add(t.id);')
  &&src.includes('function openTalent(i=null,apres=null,defauts=null)')&&src.includes(",...(defauts||{})}:catalog.talents[i];")
  &&src.includes("if(typeof arbresDialog!=='undefined'&&arbresDialog.open)renderArbres()});")&&src.includes('function placerTalent(id,dest)')
@@ -1906,7 +1906,7 @@ assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x
   cleClasse:C.cleClasse,ordonneTalents:C.ordonneTalents,talentCode:C.talentCode,manqueTalent:C.manqueTalent,talentsDependants:C.talentsDependants,VOIES_MAX:3,SEGMENTS:['c','g','gc','d','dc']};
  vm.createContext(ctx);
  vm.runInContext(morceau('const TALENT_TYPES=','function talent(id)')+morceau('function talentFamilies()',"// L'encre d'une classe")
-  +morceau('function descendDe(','function openTalent(')+morceau('/* Une classe a toujours ses trois colonnes','const arbresDialog='),ctx);
+  +morceau('function descendDe(','function openTalent(')+morceau('/* Une classe a toujours toutes ses colonnes','const arbresDialog='),ctx);
  const col=ctx.colonnesArbre('Mystique')[0];let et=ctx.etagesArbre(col);
  assert.equal(JSON.stringify(et.map(e=>[e.t.id,e.g&&e.g.id,e.d&&e.d.id,e.suivant&&e.suivant.id])),JSON.stringify([['o','g','d','b'],['b',null,null,'x'],['x',null,null,'f'],['f',null,null,null]]),'l’épine, ses diagonales, et l’orphelin remis sur l’épine');
  assert.equal(JSON.stringify(et.map(e=>e.rang)),'[0,1,2,3]');
@@ -2055,7 +2055,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.equal(ctx.reposerPiece(a,items[3]),true);assert.equal(a.armures.filter(x=>x==='r').length,2);
  assert.equal(ctx.equiperPiece(a,items[4]),true);assert.equal(ctx.reposerPiece(a,items[4]),true);assert.equal(ctx.reposerPiece(a,items[4]),false);
  assert.equal(ctx.equiperPiece(a,{id:'zz',category:'object'}),false);assert.equal(ctx.reposerPiece(a,null),false);
- assert.ok(src.includes('function corpsEtSac(a){')&&src.includes(" c.append(tete,puces,chiffres,titreComp,comps,titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a),titreTal,talentPills(a));return c}")
+ assert.ok(src.includes('function corpsEtSac(a){')&&src.includes(" c.append(tete,puces,chiffres,titreComp,comps,titreTal,talentPills(a),titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a));return c}")
   &&src.includes("function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){")&&src.includes("const p=carreDeFiche(a,o,n,tout,portes,peutEquiper);")
   &&src.includes("return main?equiperDansMain(a,o,main):equiperPiece(a,o)});\n  recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}")
   &&src.includes("if(corps!==undefined&&equipable){p.draggable=true;")&&src.includes("const SILHOUETTE='<img class=\"silhouette\" src=\"'+imgUrl('PERSO.png')+'\"")&&feuille.includes('.corps .silhouette{position:absolute;inset:6px 0 4px;width:100%;height:calc(100% - 10px);object-fit:contain;object-position:center;')
@@ -2937,7 +2937,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    {id:'m',name:'Gardien',famille:'Gardien',type:'mait'},{id:'r',name:'Rempart',famille:'Gardien',type:'pass',voie:'Rempart'},
    {id:'p',name:'Provocation',famille:'Gardien',type:'act',voie:'Assaut',prerequis:'r'},{id:'s',name:'Sous Rempart',famille:'Gardien',type:'act',voie:'Rempart',prerequis:'r',branche:'g'},
    {id:'o',name:'Sous la maîtrise',famille:'Gardien',type:'act',voie:'Assaut',prerequis:'m'},{id:'x',name:'Ailleurs',famille:'Mage',type:'act',prerequis:'r'}]}};
- vm.createContext(ctxA);vm.runInContext(morceau('function descendDe(','function openTalent(')+morceau('/* Une classe a toujours ses trois colonnes','const arbresDialog='),ctxA);
+ vm.createContext(ctxA);vm.runInContext(morceau('function descendDe(','function openTalent(')+morceau('/* Une classe a toujours toutes ses colonnes','const arbresDialog='),ctxA);
  const T=id=>ctxA.catalog.talents.find(t=>t.id===id);
  assert.equal(ctxA.accordeArbres(),true);
  assert.deepEqual(['p','s','o','x'].map(id=>T(id).prerequis),['','r','m','r'],'Provocation ne requiert plus Rempart d’une autre colonne ; le reste tient');
@@ -3206,7 +3206,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    autant de dés. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("function rondCompetence(a,k,clic){")&&src.includes("function teinteDominante(im){")&&src.includes("r.style.setProperty('--tint',SKILL_TINTS[k]);")
-  &&css.includes('.comp-val{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);box-sizing:border-box;width:21px;height:21px;border-radius:50%;')&&css.includes('border:2.5px solid rgb(var(--tint));'),'les ronds des compétences');
+  &&css.includes('.comp-val{position:absolute;left:50%;bottom:-12px;transform:translateX(-50%);box-sizing:border-box;width:21px;height:21px;border-radius:50%;')&&css.includes('border:2.5px solid rgb(var(--tint));'),'les ronds des compétences');
  const ctxV={bonusFiche:()=>({skills:[0,2,0,0,0,0,0,0]})};vm.createContext(ctxV);
  vm.runInContext(page.slice(page.indexOf('function competenceDe(a,k)'),page.indexOf('function vieAffichee(a)'))+';this.v=valeurCompetence;',ctxV);
  assert.equal(ctxV.v({skills:[0,0,0,0,0,0,0,0]},0),1,'sans rien, une compétence vaut 1');
@@ -3216,8 +3216,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    la bulle de la compétence au survol, son nom et sa valeur. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("r.onclick=()=>change(1);r.oncontextmenu=e=>{e.preventDefault();change(-1)};")&&src.includes("a.skills[k]=readStat('skill',avant+pas,avant);")
-  &&src.includes("v.className='comp-val'+(valeurCompetence(a,k)>1?' dore':'');")&&src.includes("val.textContent='Valeur : '+valeurCompetence(a,k);")
-  &&css.includes('.comp-val.dore{color:#b8860b;'),'régler les compétences au clic, chiffre doré, bulle au survol');}
+  &&src.includes("v.className='comp-val'+(valeurCompetence(a,k)>1?' haute':'');")&&src.includes("val.textContent='Valeur : '+valeurCompetence(a,k);")
+  &&css.includes('.comp-val.haute{color:#2f7d45;'),'régler les compétences au clic, chiffre vert, bulle au survol');}
 /* v0.355 — La fiche de la table ne montre plus l'équipement porté, seulement les objets de combat ;
    dans la barre d'action, attaques et talents ont le bouton d'une ligne des réactions, dés dessous. */
 {const src=fs.readFileSync('editor.js','utf8'),C=require('./combat.js');
@@ -3229,10 +3229,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.equal(ctxO.f({category:'weapon',effet}),false,'une arme, même à effet, n’en est pas');
  assert.ok(page.includes("$('gear').replaceChildren(typeof gearPills==='function'?gearPills(a,false,true):")&&src.includes("const equipement=combat?[]:armurerie.filter(([o])=>tout||portes(o));")
   &&src.includes("const carte=(b,des,talent)=>{const c=document.createElement('div');c.className='attaque-carte'+(talent?' de-talent':'');"),'objets de combat, boutons d’attaque d’une ligne');}
+/* v0.356 — La bulle de valeur plus bas, verte au-dessus de 1 ; les talents sous les compétences ;
+   plus de double trait au-dessus des fiches ; deux arbres par classe au lieu de trois. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes('const VOIES_MAX=2;')&&css.includes('#heroes-page .cat-head{border-bottom:0;padding-bottom:6px}')&&css.includes('.comp-val.haute{color:#2f7d45;'),'deux arbres, un seul trait, le vert');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1804 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1805 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

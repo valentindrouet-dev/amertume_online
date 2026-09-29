@@ -185,6 +185,9 @@ body.page-armory .intro,body.page-armory .mj-tools,body.page-armory main.layout,
 body.page-bestiary .intro,body.page-bestiary .mj-tools,body.page-bestiary main.layout,body.page-bestiary #save-status,body.page-bestiary footer{display:none!important}
 .cat-panel{padding:20px 22px 24px}
 .cat-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+/* Au-dessus des fiches d'aventuriers, le trait de l'en-tête doublait le bord haut des fiches, collé
+   dessous : l'en-tête s'en passe, et les fiches prennent un peu d'air. */
+#heroes-page .cat-head{border-bottom:0;padding-bottom:6px}
 .cat-head h2{margin:0;flex:1}
 .cat-actions{display:flex;gap:8px}
 .cat-filters{display:flex;gap:10px;margin:12px 0 18px;flex-wrap:wrap}
@@ -406,7 +409,7 @@ button.btn-analyse[hidden]{display:none}
 /* L'icône d'une compétence devant son nom, sur toutes les fiches. */
 /* Les compétences en ronds : le logo, le bord et le fond à sa couleur dominante, la valeur en
    pastille à cheval sur le bas du rond ; le nom au survol. Les huit tiennent sur une ligne. */
-.comp-ronds{display:flex;flex-wrap:wrap;justify-content:space-between;gap:14px 6px;margin:4px 0 14px}
+.comp-ronds{display:flex;flex-wrap:wrap;justify-content:space-between;gap:18px 6px;margin:4px 0 18px}
 .comp-carte{display:flex;flex-direction:column;align-items:center;min-width:0}
 .comp-rond{position:relative;flex:none;box-sizing:border-box;width:44px;height:44px;margin:0;padding:0;border-radius:50%;display:grid;place-items:center;
  border:2.5px solid rgb(var(--tint));background:radial-gradient(circle at 50% 38%,rgba(var(--tint),.08),rgba(var(--tint),.3));color:rgb(var(--tint));cursor:default}
@@ -414,10 +417,10 @@ button.comp-rond{cursor:pointer}button.comp-rond:hover{background:rgba(var(--tin
 .comp-rond .logo-equip.skill-ico{width:30px;height:30px;margin:0}
 .comp-lettre{font:700 14px 'Killam',Georgia,serif}
 /* La valeur : une bulle ronde, à cheval sur le bord bas du rond, qu'elle touche toujours. Au-dessus
-   de 1, le chiffre est doré. */
-.comp-val{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);box-sizing:border-box;width:21px;height:21px;border-radius:50%;display:grid;place-items:center;
+   de 1, le chiffre est vert. */
+.comp-val{position:absolute;left:50%;bottom:-12px;transform:translateX(-50%);box-sizing:border-box;width:21px;height:21px;border-radius:50%;display:grid;place-items:center;
  background:var(--panel);border:1.5px solid rgb(var(--tint));color:var(--ink);font:800 11.5px/1 system-ui;letter-spacing:-.3px;z-index:2}
-.comp-val.dore{color:#b8860b;border-color:#c99a2e;background:#fff8e1}
+.comp-val.haute{color:#2f7d45;border-color:#4f9a5a;background:#e8f4e6}
 .comp-rond.reglable{cursor:pointer;user-select:none}.comp-rond.reglable:hover{background:rgba(var(--tint),.36)}
 .bulle.bulle-comp{width:auto;min-width:0}.bulle-comp .cat-detail.bulle-comp-corps{margin:0;gap:2px;border-color:rgba(var(--tint),.55);background:linear-gradient(rgba(var(--tint),.12),rgba(var(--tint),.12)),var(--panel)}.bulle-comp-corps p{margin:0}.bulle-comp-nom{font:600 15px Georgia,serif;color:rgb(var(--tint))}.bulle-comp-val{font:600 13px system-ui;color:var(--ink)}
 .hero-card .skill-chip:hover{background:rgba(var(--tint),.13)}
