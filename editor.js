@@ -244,29 +244,30 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Plusieurs combattants pris : la carte des Actions ne propose rien.
  if(marked.size>1){boite.replaceChildren();boite.hidden=true;return}
  const a=actors[selected],liste=a?attackChoices(a,catalog.items):[];
- /* Les talents de la rangée des attaques se dessinent à leur suite. Attaques et talents ont
-    tous le même bouton que les réactions : le logo à gauche, le nom, sur une ligne, à la couleur
-    de chacun ; les dés qu'ils lancent et le bonus de dégâts se lisent dessous. */
+ /* Les talents de la rangée des attaques se dessinent à leur suite. Attaques et talents sont des
+    ronds, comme les talents d'une fiche : le logo au milieu, la couleur de l'action au bord et dans
+    le fond ; le nom et ce qu'il fait dans la bulle, au survol ; les dés et le bonus dessous. */
  // Un bouton et, dessous, ses dés : la carte d'une attaque dans la rangée.
  const carte=(b,des,talent)=>{const c=document.createElement('div');c.className='attaque-carte'+(talent?' de-talent':'');c.append(b);if(des)c.append(des);return c};
  const talents=a&&typeof boutonsTalents==='function'?boutonsTalents(a).filter(b=>b.rangee==='attaques'):[];
  // Même seule, une attaque se montre : on lit ce qui part avant de frapper.
  // Les objets ne s'y montrent plus : on les emploie d'un clic dans l'inventaire de la fiche.
  boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;
- talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque';
+ talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque rond';
   if(t.teinte){b.style.setProperty('--fond',t.teinte);b.classList.add('teinte-propre')}
   const im=logoTalent({logo:t.logo},'bouton');
   if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);b.classList.add('avec-logo');b.append(logos)}
-  const nom=nomAvecPalier(t.texte,t.talent.name,t.palier);nom.className='nom';
-  b.append(nom);
+  else b.append(Object.assign(document.createElement('span'),{className:'glyphe',textContent:GLYPHES_TALENT[t.talent.type]||'✦'}));
   /* Un talent qui frappe se lit comme une attaque : dessous, les dés qu'il lance, le bonus de
      dégâts et son jeton. Un talent sans dés n'a que son bouton. */
-  inerte(b,!t.peut);b.title=t.titre;b.setAttribute('aria-label',t.texte+' — '+t.titre);
+  inerte(b,!t.peut);b.setAttribute('aria-label',t.texte+' — '+t.titre);
+  // Sa bulle : celle du talent, et ce qui l'empêche s'il ne peut pas partir.
+  surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre}));
   b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0):null,true))});
  if(!liste.length)return;
  const retenu=Math.trunc(a.activeAttack)||0;
  liste.forEach((at,i)=>{const b=document.createElement('button');
-  b.className='btn-action choix-attaque'+(i===(retenu<liste.length?retenu:0)?' on':'');
+  b.className='btn-action choix-attaque rond'+(i===(retenu<liste.length?retenu:0)?' on':'');
   /* Le logo de l'arme à gauche, sur les deux lignes de hauteur ; à sa droite, le nom puis
      les dés — chacun sur sa ligne. Sans logo, les deux lignes occupent tout le bouton. */
   const logos=document.createElement('span');logos.className='logos';
@@ -274,17 +275,18 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   // Deux armes : les logos l'un sur l'autre, celui de derrière en miroir — croisés.
   if(logos.childElementCount>1)logos.classList.add('croises');
   if(logos.childElementCount){b.classList.add('avec-logo');b.append(logos)}
+  else b.append(Object.assign(document.createElement('span'),{className:'glyphe',textContent:at.range==='distance'?'🏹':'⚔'}));
   /* Une attaque d'équipement s'appelle « Attaque » : les armes se lisent à leurs logos et
      à leurs dés, et leurs noms bout à bout débordaient du bouton. Une attaque de fiche —
      l'Attaque Blindée d'un adversaire — garde le nom qu'on lui a donné. Chez un adversaire,
      chaque arme est une variante à elle seule : son bouton porte son nom. */
   const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');
-  const nom=document.createElement('span');nom.className='nom';nom.textContent=libelle;
+  const nom=document.createElement('p');nom.className='gear-nom';nom.textContent=libelle;
   /* Le nom sur le bouton ; dessous, les dés et le bonus de dégâts — on choisit son attaque en
      voyant tout ce qu'elle lance. Affaibli ou une attaque « dés seuls » n'ont pas de bonus, et
      n'en écrivent pas. */
   const bonus=hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
-  b.append(nom);const c=carte(b,desEtBonus(at.dice,bonus,at.useOwnDamage!==false),false);
+  const c=carte(b,desEtBonus(at.dice,bonus,at.useOwnDamage!==false),false);
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
   inerte(b,!!refus);
   // Le clic droit du MJ rend l'Action et pose la flèche en vol.
@@ -293,6 +295,9 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
    +' · '+(at.range==='distance'?'à distance':'au contact')
    +(at.targets==='all'?' · toutes cibles':''));
   b.setAttribute('aria-label',libelle+(at.gear&&at.name?' ('+at.name+')':'')+' — '+b.title);
+  // Sa bulle : le nom, puis ce qu'elle fait — ou ce qui l'empêche.
+  const dit=b.title;b.removeAttribute('title');
+  surveille(b,()=>{const d=document.createElement('div');d.className='cat-detail bulle-attaque-corps';const q=document.createElement('p');q.className='muted';q.textContent=dit;d.append(nom.cloneNode(true),q);ouvrirBulle(b,d,'bulle-gear')});
   /* Le bouton n'arme plus l'attaque : il la porte. On retient laquelle est partie —
      la réserve affichée la suit — puis le coup part aussitôt. */
   b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;

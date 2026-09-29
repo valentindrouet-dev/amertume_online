@@ -1569,8 +1569,8 @@ assert.ok(page.includes('<span class="lifebar-text" id="hp"></span></div><div cl
  &&!page.includes('<details class="bloc-replie" id="bloc-gear">')&&page.includes('<details class="bloc-replie" id="bloc-talents" open>')
  &&feuille.includes('.bloc-replie,.bloc-fixe{margin:6px 0}')&&feuille.includes(".bloc-replie .bloc-titre,.bloc-fixe .bloc-titre{font:700 15px 'Killam'")
  &&(page.match(/class="divider"/g)||[]).length===2,'fiche en jeu : équipement ouvert, pas de barre sous les PV');
-assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');")&&src.includes("nom.textContent=libelle;")
- &&src.includes('function desEtBonus(dice,bonus,toujours)')&&src.includes('b.append(nom);const c=carte(b,desEtBonus(at.dice,bonus,at.useOwnDamage!==false),false);')
+assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');")&&src.includes("nom.className='gear-nom';nom.textContent=libelle;")
+ &&src.includes('function desEtBonus(dice,bonus,toujours)')&&src.includes('const c=carte(b,desEtBonus(at.dice,bonus,at.useOwnDamage!==false),false);')
  &&src.includes('boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0):null,true))')
  &&page.includes('des:eff.des?eff.des(a,params):code.attaque?activeAttack(a).dice:null,')
  &&page.includes("bonus:code.attaque&&!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false?degatsDe(a):0,")
@@ -2840,8 +2840,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("const ROMAINS_PALIER=['','','II','III'];")&&page.includes("function nomAvecPalier(texte,nom,palier){")
   &&page.includes("if(nom&&texte.startsWith(nom))s.append(nom,palierRomain(palier),texte.slice(nom.length));else s.append(texte,palierRomain(palier));")
   &&page.includes("palier:paliersDe(talent)>1&&talent.palier>1?talent.palier:0,")&&page.includes("geste(nomAvecPalier(b.texte,b.talent.name,b.palier),"),'le chiffre du palier sur les boutons de la table');
- assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("carte.append(talentRond(t,logo),n);return carte}")&&fs.readFileSync('editor.css','utf8').includes('.talent-carte .nom-rond,.sac-carte .nom-sac{display:none}')&&!src.includes('nom-texte')
-  &&src.includes("const nom=nomAvecPalier(t.texte,t.talent.name,t.palier);nom.className='nom';")&&css.includes(".palier-romain{margin-left:.3em;font:inherit;"),'dans la bulle et sur la fiche, dans la police du nom');}
+ assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("carte.append(talentRond(t,logo),n);return carte}")&&fs.readFileSync('editor.css','utf8').includes('.cat-carte.talent-carte .nom-carte.nom-rond,.sac-carte .nom-sac{display:none}')&&!src.includes('nom-texte')
+  &&src.includes("surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre}));")&&css.includes(".palier-romain{margin-left:.3em;font:inherit;"),'dans la bulle et sur la fiche, dans la police du nom');}
 /* v0.300 — Un talent élémentaire choisit un logo par élément ; sans logo propre, l'ancien
    logo suit l'élément comme avant. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8');
@@ -3250,10 +3250,17 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.equal(ctxB.droitPermis({g:1,d:1}),false);assert.equal(ctxB.droitPermis({g:1,d:null}),true);assert.equal(ctxB.droitPermis({}),true);
  assert.ok(src.includes("reste=sansBonusOrphelins(reste);")&&src.includes("const el=t?noeudBonusChemin(t,c,e,seg,ferme):mj?placeBonusChemin(c,e,seg):null;")
   &&src.includes("&&!t.horsArbre&&!lisChemin(t));")&&src.includes("if(d.chemin)t.chemin=d.chemin}")&&src.includes("if(t.effet!=='bonus')delete t.chemin;"),'les bonus de chemin');}
+/* v0.358 — Dans la barre d'action, attaques et talents d'attaque sont des ronds, comme les talents
+   d'une fiche, à la couleur de l'action ; le nom dans la bulle, les dés dessous. Sur la table, plus
+   de nom sous les ronds de talents. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("b.className=t.classe+' choix-attaque rond';")&&src.includes("b.className='btn-action choix-attaque rond'+(i===(retenu<liste.length?retenu:0)?' on':'');")
+  &&css.includes('button.choix-attaque.rond,button.choix-attaque.rond.inerte{width:58px;height:58px;')&&css.includes('border:3px solid var(--fond);')
+  &&css.includes('.cat-carte.talent-carte .nom-carte.nom-rond,.sac-carte .nom-sac{display:none}'),'les attaques en ronds, pas de nom sur la table');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1815 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1816 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
