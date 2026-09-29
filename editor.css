@@ -433,16 +433,25 @@ button.btn-analyse[hidden]{display:none}
 .inv-ligne button{flex:none;padding:4px 9px;font:600 12px system-ui;border-radius:8px}.inv-ligne .inv-equiper.on{color:var(--green);border-color:var(--green)}
 .inv-ajout{align-items:end}.inv-ajout button{height:34px}
 /* L'inventaire d'un adversaire : les familles à allumer, un filtre, puis les pièces ; un clic en ajoute une. */
-.inv-choix{margin:8px 0}.inv-cats{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:6px}
+.inv-cats{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:4px 0 6px}
 .inv-cat{padding:4px 11px;border-radius:999px;font:600 12px system-ui;background:var(--panel);color:var(--muted)}
 .inv-cat.on{background:var(--ink);border-color:var(--ink);color:var(--panel)}
 .inv-filtre{flex:1;min-width:120px;max-width:220px;padding:4px 8px;font-size:13px}
-.inv-grille{display:flex;flex-wrap:wrap;gap:5px;max-height:220px;overflow:auto;padding:2px}
-.inv-grille .cat-pill.inv-pioche{flex:0 1 auto;max-width:220px;cursor:pointer;padding:4px 8px;min-height:30px;font-size:13px}
-.inv-grille .cat-pill.inv-pioche:hover{filter:brightness(.95);box-shadow:0 0 0 1px var(--ink) inset}
-.inv-grille .cat-pill.inv-pioche .logo-equip{width:22px;height:22px}
-.inv-ligne .inv-butin{flex:none;display:flex;align-items:center;gap:4px;font:600 12px system-ui;color:var(--muted)}
-.inv-ligne .inv-butin input{width:58px;padding:3px 5px;font-size:13px}
+/* Ce qu'il possède, puis la pioche : de petits carrés, comme un inventaire ; le nom dans la bulle. */
+.inv-possede{display:flex;flex-wrap:wrap;gap:10px 8px;margin:4px 0 12px;align-items:flex-start}
+.inv-adv-carte{display:flex;flex-direction:column;align-items:center;gap:3px}
+.inv-grille{display:flex;flex-wrap:wrap;gap:6px;max-height:236px;overflow:auto;padding:7px 4px 4px}
+.cat-pill.gear-carre.petit{width:auto;min-width:52px;min-height:52px;height:52px;padding:3px 4px;gap:2px;border-radius:9px}
+.cat-pill.gear-carre.petit .logo-equip{width:28px;height:28px}.cat-pill.gear-carre.petit .glyphe{font-size:19px}
+.cat-pill.gear-carre.petit .die-sq,.cat-pill.gear-carre.petit .pips .etat-inflige{flex-basis:12px;width:12px;height:12px}
+.cat-pill.gear-carre.petit .ecu{width:12px;height:14px}.cat-pill.gear-carre.petit .ecu b{font-size:7px}
+.cat-pill.gear-carre.petit .exemplaires{top:1px;right:3px;font-size:9px}
+.cat-pill.gear-carre.inv-pioche:hover{box-shadow:0 0 0 2px var(--ink) inset}
+.inv-adv .gear-carre{position:relative}
+.inv-adv .retirer-sac{position:absolute;top:-7px;right:-7px;width:18px;height:18px;padding:0;margin:0;border-radius:50%;border:2px solid var(--panel);background:#c0392b;color:#fff;font:700 10px/1 system-ui;display:grid;place-items:center;opacity:0;transform:scale(.8);transition:opacity .12s,transform .12s;z-index:3;cursor:pointer;box-shadow:0 1px 3px #0006}
+.inv-adv .gear-carre:hover .retirer-sac,.inv-adv .gear-carre:focus-within .retirer-sac{opacity:1;transform:scale(1)}.inv-adv .retirer-sac:hover{background:#a02c20}
+.inv-adv-carte .inv-butin{display:flex;align-items:center;gap:2px;font:600 10px system-ui;color:var(--muted)}
+.inv-adv-carte .inv-butin input{width:46px;padding:1px 3px;margin:0;font-size:11px;text-align:right}
 .pick-moins{margin-left:6px;padding:0 7px;border:1px solid var(--line);border-radius:8px;font:700 13px system-ui;cursor:pointer}
 /* Le dépliant d'un équipement : la même boîte que celui d'un talent, teintée par sa famille. */
 .gear-detail.large{flex-basis:100%;padding:9px 12px;border-radius:8px;font:13px/1.45 system-ui;color:#2a2118;margin-top:-2px;background:#dcd8cf;border-left:4px solid #8a8474}
@@ -1451,6 +1460,15 @@ body.page-icones .intro,body.page-icones .mj-tools,body.page-icones main.layout,
 .masse-table tbody tr.b-solitaire{background:#f3dcd5}.masse-table tbody tr.b-boss{background:#e8def2}
 .masse-nom .jeton-rond.mini{flex:none}.masse-texte input{width:120px!important}.masse-bestiaire td input:not([type]){width:130px}
 .masse-porte{margin-left:6px;font:600 11px system-ui;color:#6b5d4b}
+/* Attaques, talents et inventaire : un aperçu cliquable, qui ouvre leur panneau. */
+.masse-panneau-bouton{display:flex;align-items:center;gap:3px;min-height:30px;max-width:230px;padding:2px 6px;margin:0;border:1px dashed #00000033;border-radius:8px;background:#ffffff66;cursor:pointer;font:12px system-ui;color:#2a2118;overflow:hidden;width:auto}
+.masse-panneau-bouton:hover{border-color:var(--accent)}
+.masse-attaques-noms{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px}
+.masse-panneau-bouton .cat-pill.gear-carre.talent-carre.mini{width:24px;height:24px}
+.masse-inv{display:inline-flex;align-items:center}.masse-inv .logo-equip{width:22px;height:22px;margin:0}.masse-inv .glyphe{font-size:14px}
+.masse-inv-n{font:700 9px system-ui;color:#6b5d4b}.masse-plus{font:700 11px system-ui;color:#6b5d4b}.masse-vide{color:#6b5d4b;font-size:14px}
+.masse-panneau-form .talent-picker{max-height:60dvh;overflow:auto;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--panel-2)}
+.masse-panneau-filtre{width:100%;margin:0 0 8px}
 .masse-cadre{overflow:auto;max-height:72vh;border:1px solid var(--line);border-radius:9px}
 .masse-table{width:100%;border-collapse:separate;border-spacing:0;font:13px system-ui}
 .masse-table th,.masse-table td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;white-space:nowrap}

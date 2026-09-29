@@ -1663,13 +1663,12 @@ function bestiaryRow(m,i){const carte=document.createElement('div');carte.classN
    copie.name=m.name+' (copie)';catalog.monsters.splice(i+1,0,copie);renderCatalogPages();scheduleSave()}),
   suppr);
  carte.append(outils);return carte}
-/* La bulle d'un modèle : son nom, son type et sa famille, ses chiffres en petites tuiles, puis
-   ses attaques et ses talents en petits ronds. Rien à corriger ici : le
+/* La bulle d'un modèle : son nom seul, ses chiffres en petites tuiles, puis ses attaques et ses
+   talents en petits ronds. Type, famille et socle se lisent ailleurs. Rien à corriger ici : le
    formulaire s'ouvre d'un clic. */
 function bulleModele(m){const d=document.createElement('div');d.className='cat-detail bulle-modele-corps k-'+(m.type||'standard');
  const ligne=(texte,cls)=>{if(!texte)return;const p=document.createElement('p');if(cls)p.className=cls;p.textContent=texte;d.append(p)};
  ligne(m.name,'best-bulle-nom');
- ligne([TYPE_NOMS[m.type]||'Standard',m.family&&m.family!=='Adversaire'?m.family:'',SOCLE_NOMS[m.socle]||'Socle moyen'].filter(Boolean).join(' · '),'muted');
  // Il porte tout ce qu'il possède, même un modèle enregistré avant ce choix.
  const eq=equipeAdversaire({...m,hero:false,inventaire:[...(m.inventaire||[])]});
  const defPortee=equippedDef(eq,catalog.items),chiffres=document.createElement('div');chiffres.className='stat-row';
@@ -1747,6 +1746,40 @@ function barreMasseBestiaire(boite){const barre=document.createElement('div');ba
  b.onclick=()=>{const m={...toMonster(baseActor(false)),name:'Nouvel adversaire',family:'',type:'standard',socle:'medium',menace:'closest',xp:0};
   catalog.monsters.push(m);bestiaireNeuf=m.id;sauveBestiaire([]);renderCatalogPages()};
  barre.append(b);boite.append(barre)}
+/* Le panneau du tableau en masse : l'inventaire, les attaques spéciales ou les talents d'un modèle,
+   les mêmes qu'au formulaire, modifiés sur le modèle lui-même. Chaque changement s'enregistre, les
+   créatures posées suivent, et la case du tableau se redessine. */
+const panneauMasse=dialog('masse-panneau','Adversaire','<form id="masse-panneau-form" class="masse-panneau-form"><div id="masse-panneau-corps"></div></form>');
+$('masse-panneau-form').onsubmit=e=>e.preventDefault();
+const NOMS_PANNEAU={inventaire:'Inventaire',attaques:'Attaques spéciales',talents:'Talents'};
+function ouvrePanneauMasse(m,quoi,apres){const corps=$('masse-panneau-corps'),form=$('masse-panneau-form');corps.replaceChildren();form.onchange=null;
+ panneauMasse.querySelector('.dialog-head h2').textContent=m.name+' · '+NOMS_PANNEAU[quoi];
+ const fini=()=>{sauveBestiaire([m]);apres()};
+ if(quoi==='inventaire')inventaireAdversaire(corps,m,()=>{equipeAdversaire(m);m.butin=normaliseButin(m.butin,m.inventaire);fini()});
+ else if(quoi==='talents'){const filtre=document.createElement('input');filtre.type='search';filtre.className='masse-panneau-filtre';filtre.placeholder='Filtrer les talents';filtre.setAttribute('aria-label','Filtrer les talents');
+  const boite=document.createElement('div');boite.className='talent-picker';const toutes=talentFamilies(),tete=m.family&&toutes.includes(m.family)?[m.family]:[];
+  const dessine=()=>choixTalents(boite,m,filtre.value,[...tete,...toutes.filter(f=>!tete.includes(f))],fini);filtre.oninput=dessine;corps.append(filtre,boite);dessine()}
+ else{const liste=document.createElement('div');liste.className='masse-attaques';
+  const lis=()=>{if((m.attacks||[]).length&&form.elements.an0)m.attacks=lisAttaques(form,m.attacks)};
+  const dessine=()=>{liste.innerHTML=htmlAttaques(m.attacks||[]);habilleDes(liste);
+   liste.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{lis();m.attacks.splice(Number(b.dataset.removeAttack),1);dessine();fini()})};
+  const plus=document.createElement('button');plus.type='button';plus.textContent='+ Attaque';
+  plus.onclick=()=>{lis();(m.attacks??=[]).push({name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',useOwnDamage:true,effects:{}});dessine();fini()};
+  form.onchange=()=>{lis();fini()};corps.append(liste,plus);dessine()}
+ panneauMasse.showModal()}
+/* Une case à panneau : ce qu'elle contient en un coup d'œil — les noms des attaques, les ronds des
+   talents, les icônes de l'inventaire —, et un clic l'ouvre. */
+function cellulePanneau(m,quoi,apres){const b=document.createElement('button');b.type='button';b.className='masse-panneau-bouton';
+ b.title='Modifier : '+NOMS_PANNEAU[quoi].toLowerCase()+' de '+m.name;b.setAttribute('aria-label',b.title);
+ const dessine=()=>{b.replaceChildren();const plus=n=>{if(n>0){const x=document.createElement('span');x.className='masse-plus';x.textContent='+'+n;b.append(x)}};
+  if(quoi==='attaques'){const noms=(m.attacks||[]).map(a=>a&&a.name).filter(Boolean);if(noms.length){const t=document.createElement('span');t.className='masse-attaques-noms';t.textContent=noms.join(' · ');b.append(t)}}
+  else if(quoi==='talents'){const l=(m.talents||[]).map(talent).filter(Boolean);l.slice(0,6).forEach(t=>{const r=talentRond(t);r.classList.add('mini');b.append(r)});plus(l.length-6)}
+  else{const comptes=new Map();(m.inventaire||[]).map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
+   [...comptes].slice(0,6).forEach(([o,n])=>{const w=document.createElement('span');w.className='masse-inv';
+    w.append(logoEquipement(o)||Object.assign(document.createElement('span'),{className:'glyphe',textContent:'◈'}));
+    if(n>1){const x=document.createElement('span');x.className='masse-inv-n';x.textContent='×'+n;w.append(x)}b.append(w)});plus(comptes.size-6)}
+  if(!b.childElementCount){const v=document.createElement('span');v.className='masse-vide';v.textContent='＋';b.append(v)}};
+ dessine();b.onclick=()=>ouvrePanneauMasse(m,quoi,()=>{dessine();apres()});return b}
 function tableMasseBestiaire(boite,liste){
  const options=(l,v)=>l.map(([k,n])=>'<option value="'+esc(String(k))+'"'+(String(k)===String(v)?' selected':'')+'>'+esc(n)+'</option>').join('');
  const entier=(min,max)=>v=>Math.max(min,Math.min(max,Math.round(Number(v)||0)));
@@ -1759,6 +1792,10 @@ function tableMasseBestiaire(boite,liste){
   {cle:'def',nom:'DEF',type:'nombre',max:99,lit:m=>Number(m.def)||0,ecrit:(m,v)=>{m.def=entier(0,99)(v)}},
   {cle:'damage',nom:'Dégâts',type:'nombre',max:999,lit:m=>Number(m.damage)||0,ecrit:(m,v)=>{m.damage=entier(0,999)(v)}},
   {cle:'xp',nom:'XP',type:'nombre',max:999999,lit:m=>Number(m.xp)||0,ecrit:(m,v)=>{m.xp=entier(0,999999)(v)}},
+  // Attaques spéciales, talents et inventaire : un aperçu, et un clic ouvre leur panneau.
+  {cle:'attaques',nom:'Attaques',type:'panneau',tri:m=>(m.attacks||[]).length},
+  {cle:'talents',nom:'Talents',type:'panneau',tri:m=>(m.talents||[]).length},
+  {cle:'inventaire',nom:'Inventaire',type:'panneau',tri:m=>(m.inventaire||[]).length},
   {cle:'socle',nom:'Socle',type:'choix',opts:SOCLES_ADVERSAIRE,lit:m=>m.socle||'medium',ecrit:(m,v)=>{m.socle=dans(SOCLES_ADVERSAIRE,v,'medium')},tri:m=>SOCLES_ADVERSAIRE.findIndex(([k])=>k===(m.socle||'medium'))},
   {cle:'menace',nom:'Menace',type:'choix',opts:MENACES,lit:m=>m.menace||'closest',ecrit:(m,v)=>{m.menace=dans(MENACES,v,'closest')},tri:m=>MENACE_NOMS[m.menace||'closest']||''}];
  const colTri=masseTriBest&&(masseTriBest.cle==='nom'?{tri:m=>m.name}:COLS.find(c=>c.cle===masseTriBest.cle));
@@ -1789,6 +1826,7 @@ function tableMasseBestiaire(boite,liste){
   else if(c.type==='choix'){const sel=document.createElement('select');sel.setAttribute('aria-label',c.nom+' pour tous');
    sel.innerHTML='<option value="\u0001">Pour tous…</option>'+options(c.opts,'\u0001');
    sel.onchange=()=>{const v=sel.value;if(v==='\u0001')return;const nomV=(c.opts.find(([k])=>String(k)===v)||[])[1]||v;sel.value='\u0001';pourTous(m=>c.ecrit(m,v),c.nom+' : '+nomV)};td.append(sel)}
+  else if(c.type==='panneau'){}
   else{const n=document.createElement('input');n.setAttribute('aria-label',c.nom+' pour tous');n.maxLength=60;
    const ok=document.createElement('button');ok.type='button';ok.textContent='OK';ok.onclick=()=>pourTous(m=>c.ecrit(m,n.value),c.nom+' : '+(n.value.trim()||'aucune'));
    const g=document.createElement('span');g.className='masse-op masse-texte';g.append(n,ok);td.append(g)}
@@ -1802,7 +1840,9 @@ function tableMasseBestiaire(boite,liste){
   n.onchange=()=>{const v=n.value.trim();if(!v){n.value=m.name;return}m.name=v.slice(0,120);sauveBestiaire([m])};
   const ouvre=document.createElement('button');ouvre.type='button';ouvre.className='ico';ouvre.textContent='✎';ouvre.title='Ouvrir la fiche de '+m.name;ouvre.onclick=()=>openActor(null,false,i);
   nom.append(jeton,n,ouvre);th.append(nom);tr.append(th);
+  const majLigne=[];
   COLS.forEach(c=>{const td=document.createElement('td');let el;
+   if(c.type==='panneau'){td.className='masse-vue';td.append(cellulePanneau(m,c.cle,()=>majLigne.forEach(f=>f())));tr.append(td);return}
    if(c.type==='nombre'){el=document.createElement('input');el.type='number';el.min='0';el.max=String(c.max);el.step='1';el.value=c.lit(m);
     el.onchange=()=>{c.ecrit(m,Number(el.value)||0);el.value=c.lit(m);sauveBestiaire([m])}}
    else if(c.type==='choix'){el=document.createElement('select');el.innerHTML=options(c.opts,c.lit(m));
@@ -1810,8 +1850,9 @@ function tableMasseBestiaire(boite,liste){
    else{el=document.createElement('input');el.value=c.lit(m);el.maxLength=60;el.onchange=()=>{c.ecrit(m,el.value);el.value=c.lit(m);sauveBestiaire([m])}}
    el.setAttribute('aria-label',c.nom+' — '+m.name);td.append(el);tr.append(td);
    // Une armure qu'il possède décide de sa DEF en jeu : on le lit à côté de son chiffre à lui.
-   if(c.cle==='def'){const porte=equippedDef(equipeAdversaire({...m,hero:false,inventaire:[...(m.inventaire||[])]}),catalog.items);
-    if(porte!==null){const x=document.createElement('span');x.className='masse-porte';x.textContent='armure : '+porte;x.title='En jeu, sa DEF est celle de ce qu’il porte : '+porte;td.append(x)}}});
+   if(c.cle==='def'){const x=document.createElement('span');x.className='masse-porte';td.append(x);
+    const maj=()=>{const porte=equippedDef(equipeAdversaire({...m,hero:false,inventaire:[...(m.inventaire||[])]}),catalog.items);
+     x.hidden=porte===null;x.textContent=porte===null?'':'armure : '+porte;x.title=porte===null?'':'En jeu, sa DEF est celle de ce qu’il porte : '+porte};maj();majLigne.push(maj)}});
   if(m.id===bestiaireNeuf){tr.classList.add('neuve');requestAnimationFrame(()=>{tr.scrollIntoView({block:'nearest'});n.focus();n.select()});bestiaireNeuf=null}
   corps.append(tr)});
  t.append(corps);const cadre=document.createElement('div');cadre.className='masse-cadre';cadre.append(t);boite.append(cadre)}
@@ -2268,24 +2309,45 @@ function normaliseButin(b,inventaire){const out={};if(!b||typeof b!=='object'||A
 const CATS_INV_ADV=[['armes','Armes',o=>o.category==='weapon'||o.category==='ammo'],['armures','Armures',o=>o.category==='armor'],
  ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource'].includes(o.category)],['restes','Restes',o=>o.category==='restes'],['ressources','Ressources',o=>o.category==='ressource']];
 let catsInvAdv=new Set(['armes','armures']),filtreInvAdv='';
-function dessineChoixInventaire(){const boite=$('inv-choix');if(!boite||!draft||draft.hero)return;boite.replaceChildren();
+/* L'inventaire d'un adversaire, au formulaire comme dans le tableau en masse, en petits carrés
+   comme ceux d'un inventaire : ce qu'il possède, le nombre d'exemplaires, la croix pour en retirer
+   un et la chance de butin dessous ; puis la pioche : les familles à allumer, un filtre, et
+   l'Armurerie en petits carrés, dont un clic ajoute un exemplaire. Le nom se lit dans la bulle.
+   « apres » suit chaque changement ; la pioche ne se redessine pas, elle garde sa place. */
+function carreInventaire(o,n){const p=gearCarre(o,n,0);p.classList.remove('dispo');p.classList.add('petit');const m=p.querySelector('.marque-porte');if(m)m.remove();
+ if(BULLES)surveille(p,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});return p}
+function inventaireAdversaire(boite,cible,apres){boite.replaceChildren();boite.classList.add('inv-adv');
+ const possede=document.createElement('div');possede.className='inv-possede';
+ const compte=id=>(cible.inventaire||[]).filter(x=>x===id).length;
+ const majPossede=()=>{possede.replaceChildren();const comptes=new Map();(cible.inventaire||[]).map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
+  if(!comptes.size){const v=document.createElement('p');v.className='muted';v.textContent='Inventaire vide : allume une famille ci-dessous, puis clique une pièce.';possede.append(v);return}
+  comptes.forEach((n,o)=>{const w=document.createElement('div');w.className='inv-adv-carte';const p=carreInventaire(o,n);
+   const x=document.createElement('button');x.type='button';x.className='retirer-sac';x.textContent='✕';x.title='Retirer un exemplaire de '+o.name;x.setAttribute('aria-label',x.title);
+   x.onclick=e=>{e.stopPropagation();e.preventDefault();fermerBulle();retirerInventaire(cible,o);if(!compte(o.id)&&cible.butin)delete cible.butin[o.id];change()};p.append(x);
+   // Un adversaire n'équipe rien, il porte tout : sous chaque pièce, la chance qu'elle tombe en butin.
+   const l=document.createElement('label');l.className='inv-butin';l.title='Butin : chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte';
+   const c=document.createElement('input');c.type='number';c.min='0';c.max='100';c.step='5';c.value=String((cible.butin||{})[o.id]||0);c.setAttribute('aria-label','Butin de '+o.name+', en pour cent');
+   c.onchange=()=>{cible.butin={...(cible.butin||{})};const v=lisPourcent(c.value);c.value=String(v);if(v)cible.butin[o.id]=v;else delete cible.butin[o.id];apres()};
+   l.append(c,'%');w.append(p,l);possede.append(w)})};
  const barre=document.createElement('div');barre.className='inv-cats';
- CATS_INV_ADV.forEach(([k,nom])=>{const b=document.createElement('button');b.type='button';const on=catsInvAdv.has(k);
-  b.className='inv-cat'+(on?' on':'');b.textContent=nom;b.setAttribute('aria-pressed',String(on));
-  b.onclick=()=>{if(catsInvAdv.has(k))catsInvAdv.delete(k);else catsInvAdv.add(k);dessineChoixInventaire()};barre.append(b)});
  const filtre=document.createElement('input');filtre.type='search';filtre.className='inv-filtre';filtre.placeholder='Filtrer';filtre.value=filtreInvAdv;filtre.setAttribute('aria-label','Filtrer les pièces');
- const grille=document.createElement('div');grille.className='inv-grille';
- const remplit=()=>{grille.replaceChildren();const q=filtreInvAdv.trim().toLowerCase(),tests=CATS_INV_ADV.filter(([k])=>catsInvAdv.has(k)).map(([,,t])=>t);
+ const grille=document.createElement('div');grille.className='inv-grille';const carres=new Map();
+ const majComptes=()=>carres.forEach((p,o)=>{const n=compte(o.id);let x=p.querySelector('.exemplaires');
+  if(!n){if(x)x.remove();return}if(!x){x=document.createElement('span');x.className='exemplaires';p.append(x)}x.textContent='×'+n});
+ const remplit=()=>{grille.replaceChildren();carres.clear();const q=filtreInvAdv.trim().toLowerCase(),tests=CATS_INV_ADV.filter(([k])=>catsInvAdv.has(k)).map(([,,t])=>t);
   const ordre=o=>{const i=CATS_INV_ADV.findIndex(([,,t])=>t(o));return i<0?9:i};
   const liste=(catalog.items||[]).filter(o=>o&&tests.some(t=>t(o))&&(!q||String(o.name||'').toLowerCase().includes(q)))
    .sort((x,y)=>ordre(x)-ordre(y)||String(x.name).localeCompare(String(y.name),'fr'));
   if(!liste.length){const v=document.createElement('p');v.className='muted';v.textContent=tests.length?'Aucune pièce ici.':'Allume une famille ci-dessus.';grille.append(v);return}
-  liste.forEach(o=>{const p=gearPill(o);p.classList.add('mini','inv-pioche');p.setAttribute('role','button');p.tabIndex=0;p.title='Ajouter '+o.name;
-   const n=(draft.inventaire||[]).filter(x=>x===o.id).length;if(n){const x=document.createElement('span');x.className='tag exemplaires';x.textContent='×'+n;p.append(x)}
-   const ajoute=()=>{ajouterInventaire(draft,o);dessineInventaire();refreshEquip();remplit()};
-   p.onclick=ajoute;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ajoute()}};grille.append(p)})};
+  liste.forEach(o=>{const p=carreInventaire(o,compte(o.id));p.classList.add('inv-pioche');p.title='Ajouter '+o.name;p.setAttribute('aria-label',p.title);
+   const ajoute=()=>{ajouterInventaire(cible,o);change()};
+   p.onclick=ajoute;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ajoute()}};carres.set(o,p);grille.append(p)})};
+ CATS_INV_ADV.forEach(([k,nom])=>{const b=document.createElement('button');b.type='button';const on=()=>catsInvAdv.has(k);
+  const pose=()=>{b.className='inv-cat'+(on()?' on':'');b.setAttribute('aria-pressed',String(on()))};b.textContent=nom;pose();
+  b.onclick=()=>{if(on())catsInvAdv.delete(k);else catsInvAdv.add(k);pose();remplit()};barre.append(b)});
  filtre.oninput=()=>{filtreInvAdv=filtre.value;remplit()};
- barre.append(filtre);boite.append(barre,grille);remplit()}
+ const change=()=>{majPossede();majComptes();apres()};
+ barre.append(filtre);boite.append(possede,barre,grille);majPossede();remplit()}
 /* Ce que l'adversaire tire de son inventaire, en une phrase : ses attaques d'armes, sa DEF. Le
    champ DEF se tait quand une armure décide, comme à l'ouverture, et rend son chiffre sinon. */
 function resumeAdversaire(){const a=equipeAdversaire({...draft,hero:false,inventaire:[...(draft.inventaire||[])]}),f=$('actor-form').elements;
@@ -3076,7 +3138,7 @@ function renderActorForm(){const a=draft;const weaponOptions=[['','Aucune'],...c
 $('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role,'text',a.hero?'list="classes-jeu" maxlength="120"':'')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum','max',a.max,'number','min="1" max="99999" required'+(a.hero?' readonly':''))+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="99"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"')+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+field('Espèce','race',a.race,'text','maxlength="40"'):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any"')+field('Endurance','endu',a.endu,'number','min="1" max="999"')+field('Bonus PV (classe + espèce)','pvBonus',a.pvBonus,'number','min="-9999" max="9999" readonly')+field('Niveau','level',a.level,'number','min="1" max="7"'):'')+'</div>'
   +(a.hero?'<datalist id="classes-jeu">'+(catalog.classes||[]).map(c=>'<option value="'+esc(c.name)+'">').join('')+'</datalist>'
    +'<p class="muted">Classes du jeu : '+(catalog.classes||[]).map(c=>esc(c.name)+' (PV +'+(c.pv||0)+')').join(' · ')+'.</p>':'')
-  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']]):'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'')+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Inventaire<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div id="inventaire-edit"></div>'+(a.hero?'<div class="edit-grid inv-ajout">'+sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())+'<button type="button" id="inv-ajouter">Ajouter</button></div>':'<div id="inv-choix" class="inv-choix"></div>')+'<p class="muted" id="equip-summary"></p><p class="muted">'+(a.hero?'L’inventaire dit tout ce que le combattant possède ; l’équipement, ce qu’il porte — deux mains au plus : une arme à une main et un bouclier, deux armes à une main, ou une arme à deux mains — et une armure. Les dés de l’attaque et la DEF découlent de ce qui est porté ; les objets restent dans l’inventaire.':'Un adversaire porte toujours tout ce qu’il possède, sans compter ses mains : chaque arme est une variante, son bouton en combat, et la meilleure pièce de chaque emplacement fait sa DEF. Le butin est la chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte.')+'</p>'+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
+  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']]):'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'')+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Inventaire<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div id="inventaire-edit"></div>'+(a.hero?'<div class="edit-grid inv-ajout">'+sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())+'<button type="button" id="inv-ajouter">Ajouter</button></div>':'')+'<p class="muted" id="equip-summary"></p><p class="muted">'+(a.hero?'L’inventaire dit tout ce que le combattant possède ; l’équipement, ce qu’il porte — deux mains au plus : une arme à une main et un bouclier, deux armes à une main, ou une arme à deux mains — et une armure. Les dés de l’attaque et la DEF découlent de ce qui est porté ; les objets restent dans l’inventaire.':'Un adversaire porte toujours tout ce qu’il possède, sans compter ses mains : chaque arme est une variante, son bouton en combat, et la meilleure pièce de chaque emplacement fait sa DEF. Le butin est la chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte.')+'</p>'+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
 /* Un adversaire qui porte une armure tire sa DEF d'elle seule : le champ se tait et
    montre ce que l'armure donne. Son chiffre propre reste dessous — readActor ne lit pas
    un champ éteint — et revient tel quel si l'armure s'en va. */
@@ -3100,7 +3162,7 @@ if($('talent-filter')){$('talent-filter').oninput=renderTalentPicker;renderTalen
 // Créé depuis la fiche, l'objet se pose dans le premier emplacement libre qui lui convient.
 $('add-gear').onclick=()=>openItem(null,o=>{ajouterInventaire(draft,o);dessineInventaire();refreshEquip()});
 if($('inv-ajouter'))$('inv-ajouter').onclick=()=>{const o=objetDe($('actor-form').elements.inv_ajout.value);if(!o)return;ajouterInventaire(draft,o);dessineInventaire();refreshEquip()};
-dessineChoixInventaire();dessineInventaire();refreshEquip();
+dessineInventaire();refreshEquip();
 renderAttacks()}
 // Aperçu vivant de l'équipement : dés cumulés, portée et DEF verrouillée par l'armure.
 /* Le menu d'ajout : toute l'armurerie, rangée par famille. */
@@ -3109,23 +3171,19 @@ function inventaireOptions(){const nomCat=o=>o.category==='weapon'?(o.ranged?'à
  return [['','— choisir —'],...[...(catalog.items||[])].sort((x,y)=>ordre(x)-ordre(y)||x.name.localeCompare(y.name,'fr')).map(o=>[o.id,o.name+' · '+nomCat(o)])]}
 /* L'inventaire du formulaire : une ligne par objet possédé, son compte, « Équiper » ou
    « Porté » pour l'équipement, « − » pour en retirer un exemplaire. */
-function dessineInventaire(){const boite=$('inventaire-edit');if(!boite||!draft)return;boite.replaceChildren();
+function dessineInventaire(){const boite=$('inventaire-edit');if(!boite||!draft)return;
+ if(!draft.hero){inventaireAdversaire(boite,draft,refreshEquip);return}boite.replaceChildren();
  const comptes=new Map();(draft.inventaire||[]).map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
  if(!comptes.size){const v=document.createElement('p');v.className='muted';v.textContent='Inventaire vide.';boite.append(v);return}
  comptes.forEach((n,o)=>{const ligne=document.createElement('div');ligne.className='inv-ligne';
   const p=gearPill(o);p.classList.add('mini');ligne.append(p);
   if(n>1){const x=document.createElement('span');x.className='tag exemplaires';x.textContent='×'+n;ligne.append(x)}
-  const equipable=draft.hero&&(o.category==='weapon'||o.category==='armor');
-  // Un adversaire n'équipe rien, il porte tout : à la place, la chance que la pièce tombe en butin.
-  if(!draft.hero){const l=document.createElement('label');l.className='inv-butin';l.title='Chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte';
-   const c=document.createElement('input');c.type='number';c.min='0';c.max='100';c.step='5';c.value=String((draft.butin||{})[o.id]||0);c.setAttribute('aria-label','Butin de '+o.name+', en pour cent');
-   c.oninput=()=>{draft.butin={...(draft.butin||{})};const v=lisPourcent(c.value);if(v)draft.butin[o.id]=v;else delete draft.butin[o.id]};
-   l.append('Butin ',c,' %');ligne.append(l)}
+  const equipable=o.category==='weapon'||o.category==='armor';
   if(equipable){const portes=o.category==='weapon'?gearCount(draft,o.id):o.id===draft.shieldId?1:armuresDe(draft).filter(x=>x===o.id).length;
    const b=document.createElement('button');b.type='button';b.className='inv-equiper'+(portes?' on':'');b.textContent=portes?'Porté'+(portes>1?' ×'+portes:''):'Équiper';
    b.onclick=()=>{const souci=toggleEquip(draft,o);$('equip-summary').textContent=souci||'';dessineInventaire();refreshEquip()};ligne.append(b)}
   const moins=document.createElement('button');moins.type='button';moins.className='inv-retirer';moins.textContent='−';moins.title='Retirer un exemplaire';
-  moins.onclick=()=>{retirerInventaire(draft,o);if(!draft.hero&&!(draft.inventaire||[]).includes(o.id)&&draft.butin)delete draft.butin[o.id];dessineInventaire();refreshEquip()};ligne.append(moins);
+  moins.onclick=()=>{retirerInventaire(draft,o);dessineInventaire();refreshEquip()};ligne.append(moins);
   boite.append(ligne)})}
 function refreshEquip(){const f=$('actor-form').elements;if(!f||!$('equip-summary'))return;if(draft&&!draft.hero){$('equip-summary').textContent=resumeAdversaire();return}const ids=[...(draft&&draft.weapons||[])];
  const armes=ids.map(id=>catalog.items.find(w=>w.id===id)).filter(Boolean);
@@ -3150,16 +3208,21 @@ function refreshEquip(){const f=$('actor-form').elements;if(!f||!$('equip-summar
   +' '+(heros?'DEF de l’équipement : '+d+', champ verrouillé.'
    :porte?'DEF : '+num(f.def.value,0,99)+' à lui, plus '+porte+' d’équipement, soit '+d+'.'
    :'DEF : la sienne, sans équipement pour l’augmenter.')}
-function renderAttacks(){if(!$('attack-edit-list'))return;$('attack-edit-list').innerHTML=attackDraft.map((a,i)=>'<div class="attack-card" data-attack="'+i+'"><div class="edit-grid">'+field('Nom','an'+i,a.name,'text','required maxlength="100"')+sel('Portée','ar'+i,a.range,[['contact','Contact'],['distance','Distance']])+sel('Cibles','at'+i,a.targets,[['one','Unique'],['all','Multiples (manuel)']])
+/* Les cartes des attaques spéciales, au formulaire comme dans le tableau en masse : leur HTML, puis
+   leur lecture dans le formulaire qui les porte. */
+function renderAttacks(){const boite=$('attack-edit-list');if(!boite)return;boite.innerHTML=htmlAttaques(attackDraft);habilleDes(boite);
+ boite.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
+function htmlAttaques(liste){return liste.map((a,i)=>'<div class="attack-card" data-attack="'+i+'"><div class="edit-grid">'+field('Nom','an'+i,a.name,'text','required maxlength="100"')+sel('Portée','ar'+i,a.range,[['contact','Contact'],['distance','Distance']])+sel('Cibles','at'+i,a.targets,[['one','Unique'],['all','Multiples (manuel)']])
   // Son icône, sur le bouton de la table et au journal.
   +selGrille(sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...[...new Set([...(estLogoDossier((a.logos||[])[0])?[a.logos[0]]:[]),...iconesPlanches(),...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])]))+'</div>'
   // Les états qu'elle inflige : autant qu'on en coche, tous posés à la touche.
   +'<div class="etats-attaque" role="group" aria-label="États infligés"><span class="etats-titre">États infligés</span>'
-  +ETATS_JEU.map(e=>'<label class="etat-case"><input type="checkbox" name="ax'+i+'" value="'+esc(e)+'"'+(etatsAttaque(a).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('');habilleDes($('attack-edit-list'));document.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
+  +ETATS_JEU.map(e=>'<label class="etat-case"><input type="checkbox" name="ax'+i+'" value="'+esc(e)+'"'+(etatsAttaque(a).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('')}
 // Les états d'une attaque spéciale : la liste, ou l'état unique d'avant.
 const etatsAttaque=a=>Array.isArray(a&&a.etats)?a.etats:(a&&a.etat?[a.etat]:[]);
-function readAttacks(){const f=$('actor-form').elements;if(!f.an0&&attackDraft.length)return;attackDraft=attackDraft.map((a,i)=>({...a,name:f['an'+i].value.trim()||'Attaque',range:f['ar'+i].value,targets:f['at'+i].value,useOwnDamage:f['ab'+i].checked,effectText:f['ae'+i].value,
-  ...(etats=>({etats,etat:etats[0]||''}))([...$('actor-form').querySelectorAll('input[name="ax'+i+'"]:checked')].map(x=>x.value).filter(e=>ETATS_JEU.includes(e))),
+function readAttacks(){const f=$('actor-form').elements;if(!f.an0&&attackDraft.length)return;attackDraft=lisAttaques($('actor-form'),attackDraft)}
+function lisAttaques(form,liste){const f=form.elements;return liste.map((a,i)=>({...a,name:f['an'+i].value.trim()||'Attaque',range:f['ar'+i].value,targets:f['at'+i].value,useOwnDamage:f['ab'+i].checked,effectText:f['ae'+i].value,
+  ...(etats=>({etats,etat:etats[0]||''}))([...form.querySelectorAll('input[name="ax'+i+'"]:checked')].map(x=>x.value).filter(e=>ETATS_JEU.includes(e))),
   logos:logoValide(f['ai'+i].value)?[f['ai'+i].value]:[],dice:diceFrom(keys.map((_,c)=>num(f['ad'+i+'_'+c].value,0,12)))}))}
 /* Les états de la fiche : la même grille de jetons que le clic droit sur le socle, pour
    qu'on reconnaisse le geste. Ils vivent sur le brouillon jusqu'à l'enregistrement. */
@@ -3183,11 +3246,14 @@ function draftFamilies(){const sienne=(draft.role||'').split('·')[0].trim();
  const toutes=talentFamilies();
  const tete=sienne&&toutes.includes(sienne)?[sienne]:[];
  return [...tete,...toutes.filter(f=>!tete.includes(f))]}
-function renderTalentPicker(){const boite=$('talent-picker');if(!boite)return;boite.replaceChildren();
- const q=($('talent-filter')?.value||'').trim().toLowerCase();
- draft.talents??=[];
+function renderTalentPicker(){const boite=$('talent-picker');if(!boite)return;choixTalents(boite,draft,$('talent-filter')?.value||'',draftFamilies())}
+/* Le choix des talents, au formulaire comme dans le tableau en masse : des ronds par famille, la
+   coche verte sur ce que porte la cible, un clic l'ôte ou l'ajoute ; « apres » suit chaque clic. */
+function choixTalents(boite,cible,filtre,familles,apres){boite.replaceChildren();
+ const q=(filtre||'').trim().toLowerCase();
+ cible.talents??=[];
  let montres=0;
- for(const famille of draftFamilies()){
+ for(const famille of familles){
   const liste=(catalog.talents||[]).filter(t=>!estBonus(t)&&talentFamily(t)===famille
    &&(!q||t.name.toLowerCase().includes(q)||(t.effects||'').toLowerCase().includes(q)))
    .sort((a,b)=>(a.level||1)-(b.level||1)||a.name.localeCompare(b.name,'fr'));
@@ -3196,16 +3262,16 @@ function renderTalentPicker(){const boite=$('talent-picker');if(!boite)return;bo
   const bloc=document.createElement('div');bloc.className='pick-famille';
   const h=document.createElement('h3');h.textContent=famille;
   const compte=document.createElement('span');compte.className='compte';
-  compte.textContent=liste.filter(t=>draft.talents.includes(t.id)).length+' / '+liste.length;
+  compte.textContent=liste.filter(t=>cible.talents.includes(t.id)).length+' / '+liste.length;
   h.append(compte);bloc.append(h);
   // Des ronds, comme partout : la coche verte sur ce que la fiche porte, un clic l'ôte ou l'ajoute.
   const grille=document.createElement('div');grille.className='pick-grille';
-  liste.forEach(t=>{const pris=draft.talents.includes(t.id),carte=talentCarte(t),p=carte.firstChild;
+  liste.forEach(t=>{const pris=cible.talents.includes(t.id),carte=talentCarte(t),p=carte.firstChild;
    carte.classList.add('pick-carte');p.classList.toggle('porte',pris);
    const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m);
    p.setAttribute('role','checkbox');p.setAttribute('aria-checked',String(pris));p.setAttribute('aria-label',nomEnClair(t.name));p.tabIndex=0;
    if(BULLES)surveille(p,()=>bulleTalentSur(p,t));
-   const bascule=()=>{draft.talents=pris?draft.talents.filter(x=>x!==t.id):[...new Set([...draft.talents,t.id])];renderTalentPicker()};
+   const bascule=()=>{cible.talents=pris?cible.talents.filter(x=>x!==t.id):[...new Set([...cible.talents,t.id])];fermerBulle();choixTalents(boite,cible,filtre,familles,apres);if(apres)apres()};
    p.onclick=bascule;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bascule()}};
    grille.append(carte)});
   bloc.append(grille);boite.append(bloc)}

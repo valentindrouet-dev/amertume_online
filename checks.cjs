@@ -275,7 +275,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
    &&src.includes("(at.logos||[]).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
    &&src.includes("...iconesPlanches(),...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])]))+'</div>'")
    &&src.includes("logos:logoValide(f['ai'+i].value)?[f['ai'+i].value]:[],")
-   &&src.includes("...(etats=>({etats,etat:etats[0]||''}))([...$('actor-form').querySelectorAll('input[name=\"ax'+i+'\"]:checked')].map(x=>x.value).filter(e=>ETATS_JEU.includes(e))),")
+   &&src.includes("...(etats=>({etats,etat:etats[0]||''}))([...form.querySelectorAll('input[name=\"ax'+i+'\"]:checked')].map(x=>x.value).filter(e=>ETATS_JEU.includes(e))),")
    &&fs.readFileSync('editor.css','utf8').includes('.best-att-tete .etat-inflige{margin-left:auto}')
    &&src.includes("replace(/^(weapon|spell|item|attack)_/,'')")
    &&fs.readFileSync('editor.css','utf8').includes('.best-att-tete .att-logo{'),'une attaque spéciale choisit son icône parmi toutes celles du dossier');}
@@ -1278,7 +1278,7 @@ assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.fi
  &&feuille.includes('.best-attaque{background:#cfdcea;border:1px solid #00000026;border-left:4px solid #4f7fb5;border-radius:9px;'),'inventaire, équipement et attaques spéciales');
 /* Fiche d'un modèle : plus de cartouche « Adversaire », le type porte sa couleur comme tout le bloc,
    pas de rubrique Équipement quand il n'y a rien, ni Notes, ni pose depuis la fiche. */
-assert.ok(src.includes("d.className='cat-detail bulle-modele-corps k-'+(m.type||'standard');")&&src.includes("ligne([TYPE_NOMS[m.type]||'Standard',m.family&&m.family!=='Adversaire'?m.family:'',")
+assert.ok(src.includes("d.className='cat-detail bulle-modele-corps k-'+(m.type||'standard');")&&!src.includes("ligne([TYPE_NOMS[m.type]||'Standard',m.family&&m.family!=='Adversaire'?m.family:'',")
  &&!src.includes('function monsterSheet(')&&!src.includes('best-notes')&&!src.includes("pose-nombre")&&!src.includes('Ajouter à la carte')
  &&feuille.includes('.cat-detail.k-solitaire,.chip.chip-type.k-solitaire{background:#e8d3cb}')&&feuille.includes('.chip.chip-type{color:var(--ink);border-color:#00000026}'),'la bulle d’un modèle est sobre et teintée');
 /* En jeu, la fiche ne montre que le porté et les objets ; la coche est un rond à cheval sur l'angle ;
@@ -3114,17 +3114,29 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  ctxB.journal.length=0;ctxB.butinDesRetires([{name:'Rat',hero:false,x:0,y:0,inventaire:['m'],butin:{m:40}}],()=>0.4);
  assert.equal(ctxB.journal.length,0,'40 % : un tirage à 40 ne tombe pas');
  assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin)});equipeAdversaire(a);")
-  &&src.includes(" if(!a.hero){equipeAdversaire(a);a.butin=normaliseButin(a.butin,a.inventaire)}")&&src.includes("const equipable=draft.hero&&(o.category==='weapon'||o.category==='armor');")
-  &&src.includes("const CATS_INV_ADV=[['armes','Armes',")&&src.includes("dessineChoixInventaire();dessineInventaire();refreshEquip();"),'inventaire d’adversaire : familles, pioche, butin, tout porté');
+  &&src.includes(" if(!a.hero){equipeAdversaire(a);a.butin=normaliseButin(a.butin,a.inventaire)}")
+  &&src.includes("const CATS_INV_ADV=[['armes','Armes',")&&src.includes("if(!draft.hero){inventaireAdversaire(boite,draft,refreshEquip);return}"),'inventaire d’adversaire : familles, pioche, butin, tout porté');
  assert.ok(src.includes("r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;")&&css.includes('.bulle-modele .stat-tile strong{font-size:16px;margin-top:2px}')
   &&css.includes('.cat-pill.gear-carre.talent-carre.mini{width:28px;height:28px;'),'la bulle : petites tuiles, talents en petits ronds');
  assert.ok(src.includes('<button id="bestiary-masse" type="button" aria-pressed="false"')&&src.includes("function tableMasseBestiaire(boite,liste){")
   &&src.includes("if(masse){barreMasseBestiaire(cols);tableMasseBestiaire(cols,tous);bulleOrpheline()}}")&&src.includes("if(masseTriBest)o.masseBest=masseTriBest;")
   &&css.includes('#bestiary-cols.en-masse{display:block}'),'le Bestiaire en masse');}
+/* v0.344 — L'inventaire d'un adversaire en petits carrés, pioche comprise ; le Bestiaire en masse
+   modifie aussi ses attaques spéciales, ses talents et son inventaire, dans un panneau ; la bulle
+   d'un modèle n'écrit plus type, famille et socle sous son nom. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("function inventaireAdversaire(boite,cible,apres){")&&src.includes("const p=gearCarre(o,n,0);p.classList.remove('dispo');p.classList.add('petit');")
+  &&src.includes("liste.forEach(o=>{const p=carreInventaire(o,compte(o.id));p.classList.add('inv-pioche');")&&!src.includes("p.classList.add('mini','inv-pioche')")
+  &&css.includes('.cat-pill.gear-carre.petit{width:auto;min-width:52px;min-height:52px;height:52px;'),'des petits carrés, plus de languettes');
+ assert.ok(src.includes("{cle:'attaques',nom:'Attaques',type:'panneau',")&&src.includes("{cle:'talents',nom:'Talents',type:'panneau',")&&src.includes("{cle:'inventaire',nom:'Inventaire',type:'panneau',")
+  &&src.includes("if(quoi==='inventaire')inventaireAdversaire(corps,m,()=>{equipeAdversaire(m);m.butin=normaliseButin(m.butin,m.inventaire);fini()});")
+  &&src.includes("const dessine=()=>choixTalents(boite,m,filtre.value,")&&src.includes("form.onchange=()=>{lis();fini()};")
+  &&src.includes("function lisAttaques(form,liste){const f=form.elements;")&&src.includes("function htmlAttaques(liste){return liste.map((a,i)=>"),'attaques, talents et inventaire au tableau en masse');
+ assert.ok(!src.includes("ligne([TYPE_NOMS[m.type]||'Standard'"),'la bulle sans type, famille ni socle');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1775 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1778 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
