@@ -432,6 +432,17 @@ button.btn-analyse[hidden]{display:none}
 .inv-ligne{display:flex;align-items:center;gap:8px;margin:4px 0}.inv-ligne .cat-pill{flex:1;min-width:0}
 .inv-ligne button{flex:none;padding:4px 9px;font:600 12px system-ui;border-radius:8px}.inv-ligne .inv-equiper.on{color:var(--green);border-color:var(--green)}
 .inv-ajout{align-items:end}.inv-ajout button{height:34px}
+/* L'inventaire d'un adversaire : les familles à allumer, un filtre, puis les pièces ; un clic en ajoute une. */
+.inv-choix{margin:8px 0}.inv-cats{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:6px}
+.inv-cat{padding:4px 11px;border-radius:999px;font:600 12px system-ui;background:var(--panel);color:var(--muted)}
+.inv-cat.on{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+.inv-filtre{flex:1;min-width:120px;max-width:220px;padding:4px 8px;font-size:13px}
+.inv-grille{display:flex;flex-wrap:wrap;gap:5px;max-height:220px;overflow:auto;padding:2px}
+.inv-grille .cat-pill.inv-pioche{flex:0 1 auto;max-width:220px;cursor:pointer;padding:4px 8px;min-height:30px;font-size:13px}
+.inv-grille .cat-pill.inv-pioche:hover{filter:brightness(.95);box-shadow:0 0 0 1px var(--ink) inset}
+.inv-grille .cat-pill.inv-pioche .logo-equip{width:22px;height:22px}
+.inv-ligne .inv-butin{flex:none;display:flex;align-items:center;gap:4px;font:600 12px system-ui;color:var(--muted)}
+.inv-ligne .inv-butin input{width:58px;padding:3px 5px;font-size:13px}
 .pick-moins{margin-left:6px;padding:0 7px;border:1px solid var(--line);border-radius:8px;font:700 13px system-ui;cursor:pointer}
 /* Le dépliant d'un équipement : la même boîte que celui d'un talent, teintée par sa famille. */
 .gear-detail.large{flex-basis:100%;padding:9px 12px;border-radius:8px;font:13px/1.45 system-ui;color:#2a2118;margin-top:-2px;background:#dcd8cf;border-left:4px solid #8a8474}
@@ -1172,6 +1183,18 @@ body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-
 .bulle.bulle-modele{width:min(340px,92vw)}.bulle-modele .cat-detail{margin:0;width:100%;box-sizing:border-box}
 .bulle-modele .best-bulle-nom{margin:0;font:600 16px Georgia,serif;color:var(--ink)}.bulle-modele p{margin:0}
 .bulle-modele .stat-row{width:100%}
+/* Dans la bulle d'un modèle, des tuiles resserrées : la bulle se lit d'un coup d'œil. */
+.bulle-modele .stat-row{grid-template-columns:repeat(4,1fr);gap:4px;margin:6px 0}
+.bulle-modele .stat-tile{padding:3px 2px;border-radius:7px}
+.bulle-modele .stat-tile span{font-size:8px;letter-spacing:.5px}
+.bulle-modele .stat-tile strong{font-size:16px;margin-top:2px}
+.bulle-modele .stat-tile.t-dmg strong{letter-spacing:2px;padding-left:2px}
+.bulle-modele .stat-tile .ecu{width:20px;height:24px;margin:2px auto 0}.bulle-modele .stat-tile .ecu b{font-size:11px}
+.bulle-talents{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.cat-pill.gear-carre.talent-carre.mini{width:28px;height:28px;border-width:2px;cursor:default}
+.cat-pill.gear-carre.talent-carre.mini .logo-equip{width:19px;height:19px}
+.cat-pill.gear-carre.talent-carre.mini .glyphe{font-size:14px}
+.cat-pill.gear-carre.talent-carre.mini .effet-pastille.logo-auto{width:17px;height:17px}
 /* Le nom d'un bâtiment se glisse ; les contours ne se montrent que sur demande. */
 .dom-etiquette.deplacable{pointer-events:auto;cursor:grab;user-select:none;touch-action:none}
 .dom-etiquette.deplacable:active{cursor:grabbing}
@@ -1422,6 +1445,12 @@ body.page-icones .intro,body.page-icones .mj-tools,body.page-icones main.layout,
 /* ---------- L'Armurerie en masse : un tableau, une ligne par pièce ---------- */
 #armory-masse.on{background:var(--accent);border-color:var(--accent);color:#fff}
 #armory-cols.en-masse{display:block}
+/* Le Bestiaire en masse : le même tableau, teinté du type de chaque adversaire, son jeton devant son nom. */
+#bestiary-cols.en-masse{display:block}
+.masse-table tbody tr.b-standard{background:#e2ded7}.masse-table tbody tr.b-alpha{background:#f3e7cf}
+.masse-table tbody tr.b-solitaire{background:#f3dcd5}.masse-table tbody tr.b-boss{background:#e8def2}
+.masse-nom .jeton-rond.mini{flex:none}.masse-texte input{width:120px!important}.masse-bestiaire td input:not([type]){width:130px}
+.masse-porte{margin-left:6px;font:600 11px system-ui;color:#6b5d4b}
 .masse-cadre{overflow:auto;max-height:72vh;border:1px solid var(--line);border-radius:9px}
 .masse-table{width:100%;border-collapse:separate;border-spacing:0;font:13px system-ui}
 .masse-table th,.masse-table td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;white-space:nowrap}

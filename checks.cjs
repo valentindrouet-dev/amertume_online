@@ -39,7 +39,9 @@ assert.equal(gearApi.defenseOf({hero:false,def:5,armures:['a']},[{id:'a',def:0}]
 // elle vient en tête, si bien qu'une fiche d'avant ce choix retrouve son arme.
 const ARSENAL=[{id:'e',name:'Épée',category:'weapon',hands:1,dice:{white:2,red:1}},{id:'d',name:'Dague',category:'weapon',hands:1,dice:{bone:1}},{id:'ar',name:'Armure',category:'armor',def:3}];
 const bete={hero:false,def:4,weapons:['e','e'],armures:['ar'],attacks:[{name:'Griffes',dice:{white:1}},{name:'Souffle',dice:{red:2}}]};
-assert.deepEqual(gearApi.attackChoices(bete,ARSENAL).map(x=>x.name),['Épée ×2','Griffes','Souffle']);
+assert.deepEqual(gearApi.attackChoices(bete,ARSENAL).map(x=>x.name),['Épée','Griffes','Souffle']);   // Un adversaire : une arme en double ne frappe pas deux fois.
+assert.deepEqual(gearApi.attackChoices({...bete,weapons:['e','d']},ARSENAL).map(x=>x.name),['Épée','Dague','Griffes','Souffle']);   // Chaque arme, sa variante.
+assert.deepEqual(gearApi.attackChoices({...bete,hero:true,weapons:['e','d']},ARSENAL).map(x=>x.name),['Épée + Dague','Griffes','Souffle']);   // Un aventurier les tient ensemble.
 // Les armes d'une même portée font une seule attaque, dés cumulés ; contact et distance
 // ne se cumulent pas — la rapière et l'arc font deux boutons, le contact d'abord.
 const PANOPLIE=[{id:'rap',name:'Rapière',category:'weapon',hands:1,dice:{white:2}},
@@ -68,10 +70,11 @@ assert.equal(gearApi.doorLockedFor({secret:true,open:false},true),false);
 assert.equal(gearApi.doorLockedFor({secret:true,open:true},false),false);    // Ouvert, chacun le referme.
 assert.equal(gearApi.doorLockedFor({keyLocked:true},false),true);
 assert.equal(gearApi.doorLockedFor({},false),false);
-assert.equal(gearApi.chosenAttack(bete,ARSENAL).name,'Épée ×2');          // Sans choix, l'arme décide.
-assert.equal(gearApi.chosenAttack(bete,ARSENAL).dice.white,4);            // Deux exemplaires cumulent.
+assert.equal(gearApi.chosenAttack(bete,ARSENAL).name,'Épée');             // Sans choix, l'arme décide.
+assert.equal(gearApi.chosenAttack(bete,ARSENAL).dice.white,2);            // Chez un adversaire, le double ne cumule pas.
+assert.equal(gearApi.chosenAttack({...bete,hero:true},ARSENAL).dice.white,4);   // Chez un aventurier, deux exemplaires cumulent.
 assert.equal(gearApi.chosenAttack({...bete,activeAttack:2},ARSENAL).name,'Souffle');
-assert.equal(gearApi.chosenAttack({...bete,activeAttack:9},ARSENAL).name,'Épée ×2'); // Choix caduc : la première.
+assert.equal(gearApi.chosenAttack({...bete,activeAttack:9},ARSENAL).name,'Épée'); // Choix caduc : la première.
 assert.equal(gearApi.gearAttacks({weapons:['e','d']},ARSENAL)[0].name,'Épée + Dague');
 assert.deepEqual(gearApi.gearAttacks({weapons:['ar']},ARSENAL),[]);       // Une armure n'est pas une attaque.
 assert.deepEqual(gearApi.gearAttacks({weapons:[]},ARSENAL),[]);
@@ -1266,7 +1269,7 @@ assert.equal(t.toggleEquip(a,o('ar')),null);assert.equal(JSON.stringify(a.armure
  assert.ok(/pas dans l’inventaire/.test(t.toggleEquip({inventaire:[],weapons:[]},o('e'))));
  a.weapons=[];t.toggleEquip(a,o('e'));t.retirerInventaire(a,o('e'));t.retirerInventaire(a,o('e'));assert.equal(JSON.stringify(a.weapons),JSON.stringify([]));assert.ok(!a.inventaire.includes('e'));   // Retirer le dernier exemplaire le repose.
  const b={weapons:['h'],armures:['ar'],shieldId:'',inventaire:[]};t.completerInventaire(b);assert.equal(JSON.stringify(b.inventaire),JSON.stringify(['h','ar']));}
-assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])]}}")&&src.includes("inventaire:[...(m.inventaire||[])]});completerInventaire(a);")
+assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire)}}")&&src.includes("inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin)});equipeAdversaire(a);")
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
@@ -1566,7 +1569,7 @@ assert.ok(page.includes('<span class="lifebar-text" id="hp"></span></div><div cl
  &&!page.includes('<details class="bloc-replie" id="bloc-gear">')&&page.includes('<details class="bloc-replie" id="bloc-talents" open>')
  &&feuille.includes('.bloc-replie,.bloc-fixe{margin:6px 0}')&&feuille.includes(".bloc-replie .bloc-titre,.bloc-fixe .bloc-titre{font:700 15px 'Killam'")
  &&(page.match(/class="divider"/g)||[]).length===2,'fiche en jeu : équipement ouvert, pas de barre sous les PV');
-assert.ok(src.includes("const libelle=at.gear?'Attaque':(at.name||'Attaque');")&&src.includes("nom.textContent=libelle;")
+assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');")&&src.includes("nom.textContent=libelle;")
  &&src.includes('function desEtBonus(dice,bonus,toujours)')&&src.includes('b.append(nom,desEtBonus(at.dice,bonus,at.useOwnDamage!==false));')
  &&src.includes('if(t.des)b.append(desEtBonus(t.des,t.bonus||0));')
  &&page.includes('des:eff.des?eff.des(a,params):code.attaque?activeAttack(a).dice:null,')
@@ -2356,7 +2359,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos" id="repos" hidden>⛺ Repos court</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
   &&page.includes(":reposRestants(a)<=0?'Plus de repos court ('+reposMax(a)+' pris) : un repos long, ou la carte rechargée, les rend.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);")
-  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte'];"),'le Repos court');
+  &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','butin'];"),'le Repos court');
 }
 /* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
    une arme prise remplace celle de la main droite ; lâchée sur une main, elle prend cette main.
@@ -2587,7 +2590,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.normaliseDomaine(null).ressources,{});
  assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
  assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots=normaliseDepots(a.depots);")&&src.includes("delete a.reposPris;a.horsCarte=a.horsCarte===true;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
-  &&src.includes("const listeRessources=()=>ressourcesJeu().map(r=>[r.cle,r.nom]).sort((x,y)=>x[1].localeCompare(y[1],'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte'];"),'les richesses se relisent et voyagent en direct');
+  &&src.includes("const listeRessources=()=>ressourcesJeu().map(r=>[r.cle,r.nom]).sort((x,y)=>x[1].localeCompare(y[1],'fr'));")&&vivant.includes("'etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','butin'];"),'les richesses se relisent et voyagent en direct');
  assert.ok(src.includes("function grilleGemmes(compte,poser,qui){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
   &&fief.includes("function renderDomRessources(){")&&fief.includes("const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;")
   &&fief.includes("ressourcesJeu().filter(x=>x.cle!=='or').forEach(({cle:k,nom:m,piece})=>{"),'les compteurs : sur la carte de l’aventurier, au domaine');
@@ -2609,7 +2612,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const a={richesses:{or:20}};assert.deepEqual(C.peutAcheter(a,{price:15,magasin:true}),{ok:true,prix:15,manque:0,enVente:true});
  assert.deepEqual(C.peutAcheter(a,{price:25,magasin:true}),{ok:false,prix:25,manque:5,enVente:true});assert.equal(C.peutAcheter(a,{price:5}).ok,false,'hors magasin, pas d’achat');
  assert.equal(C.ajouteOr(a,-15),5);assert.equal(C.ajouteOr(a,-9),0);assert.deepEqual(a.richesses,{},'l’or ne descend pas sous zéro, et un compte nul disparaît');assert.equal(C.ajouteOr(a,3),3);
- assert.ok(vivant.includes("'richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte'];")&&fief.includes("const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');")
+ assert.ok(vivant.includes("'richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','butin'];")&&fief.includes("const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');")
   &&fief.includes("if(typeof enLigne!=='undefined'&&enLigne)return typeof monSiege!=='undefined'&&monSiege===a.id;"),'le lieu voyage avec l’aventurier, et son joueur seul le déplace');
  assert.ok(fief.includes("function blocDeplacements(b){const troupe=actors.filter(a=>a.hero);if(!troupe.length||!batimentConstruit(b))return null;")
   &&fief.includes("quoi.textContent=ici?'Ici':'S’y déplacer';")&&fief.includes("function finFiche(boite,b){")&&(fief.match(/boite\.append\(qui\);finFiche\(boite,b\)\}/g)||[]).length===2,'un bouton par aventurier, sur chaque fiche');
@@ -2664,7 +2667,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[2],'le moteur joue le palier tenu');
  assert.deepEqual(C.normalisePaliersActeur({talents:['o','p'],paliersTalents:{o:3,p:1,q:2,r:'x'}}),{o:3},'un palier 1 ne s’écrit pas ; un talent oublié perd le sien');
  assert.ok(fs.readFileSync('combat.js','utf8').includes("function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)")
-  &&page.includes("function talentsCodes(a){return talentsAuPalier(a,typeof catalog!=='undefined'?catalog.talents:[])")&&vivant.includes("'lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte'];"),'la table et les bonus jouent le palier ; il voyage en direct');
+  &&page.includes("function talentsCodes(a){return talentsAuPalier(a,typeof catalog!=='undefined'?catalog.talents:[])")&&vivant.includes("'lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','butin'];"),'la table et les bonus jouent le palier ; il voyage en direct');
  assert.ok(src.includes("a.paliersTalents=normalisePaliersActeur(a);")&&src.includes(" c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(99,coutPalier(t,n)));"),'paliers relus, au catalogue et sur la fiche');
  assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("+ligne('Coût (PT)',")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")
   &&src.includes(" t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")
@@ -2688,7 +2691,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes(" const double=brise.double&&!r.failed,total=double?r.damage*2:r.damage;")
   &&page.includes("const brisee=brise.perte&&!r.failed?brise.perte:0;if(brisee)b.defBrisee=(Math.trunc(Number(b.defBrisee))||0)+brisee;")
   &&page.includes("reduction:r.reduction,double,total},suite);")&&page.includes("if(detail.double)plus('× 2 — Brise','double');")
-  &&vivant.includes("reduction:detail.reduction||0,double:!!detail.double,total:detail.total||0}")&&vivant.includes("'paliersTalents','defBrisee','element','depots','reposCourts','horsCarte'];"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
+  &&vivant.includes("reduction:detail.reduction||0,double:!!detail.double,total:detail.total||0}")&&vivant.includes("'paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','butin'];"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
  assert.ok(src.includes("g.className='paliers-bulle liste';")
   &&fs.readFileSync('editor.css','utf8').includes('.paliers-bulle.liste .palier-num{')&&!fs.readFileSync('editor.css','utf8').includes('.paliers-bulle.liste .palier-col'),'v0.324 : les paliers d’un talent appris en liste, I, II, III');}
 /* v0.290 — Le Mystique choisit un élément — Feu, Gel, Foudre —, au MJ de le fixer. Ses talents
@@ -2708,7 +2711,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const libre={...t,elementaire:undefined};assert.equal(C.talentPourElement(libre,G).params.etat,'Feu','sans la case, l’état réglé reste');
  const neutre={id:'x',name:'Forge',params:{etat:'Feu'}};assert.equal(C.talentPourElement(neutre,G),neutre);assert.equal(C.estElementaire(neutre),false);assert.equal(C.estElementaire(libre),true);
  assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefoudre','Foudre',1]],'la table joue l’élément, puis le palier ; la DEF retirée, réglage commun, reste celle du palier 1');
- assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element'];")&&vivant.includes("'defBrisee','element','depots','reposCourts','horsCarte'];")
+ assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element'];")&&vivant.includes("'defBrisee','element','depots','reposCourts','horsCarte','butin'];")
   &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
  assert.ok(src.includes("function choixElement(a,classe,rendre){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
   &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tv=vu(t),logo=logoTalent(tv);")&&src.includes("const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n)")
@@ -2868,7 +2871,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.304 — La bulle d'un modèle montre ses attaques : états infligés, dés, bonus de dégâts ;
    sans arme ni attaque spéciale, ses propres dés. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("const choix=attackChoices(m,catalog.items||[]),attaques=choix.length?choix:propres;")
+ assert.ok(src.includes("const choix=attackChoices(eq,catalog.items||[]),attaques=choix.length?choix:propres;")
   &&src.includes("[...(at.etats||[])].reverse().forEach(e=>{const p=etatPastille(e);if(p)pips.prepend(p)});")
   &&src.includes("const bas=desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0)),pips=bas.querySelector('.pips');")
   &&!src.includes("ligne('Attaques spéciales : '"),'les attaques de la bulle, avec dés et états');}
@@ -3083,10 +3086,45 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(noms({category:'armor'}),'Armures 1, Armures 2, Armes 06','une armure : les Armures, puis Armes 06, une seule fois');
  assert.equal(noms({category:'restes'}),'Restes 1','un reste : les Restes seulement');
  assert.equal(noms({category:'object'}),'','un objet : aucune planche en tête');}
+/* v0.343 — Un adversaire porte tout ce qu'il possède : chaque arme, sa variante ; la meilleure pièce
+   de chaque emplacement. Un % de butin par pièce ; retiré de la carte, ce qui tombe va à l'aventurier
+   le plus proche. La bulle d'un modèle : petites tuiles, talents en petits ronds. Le Bestiaire en masse. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),C=require('./combat.js');
+ const items=[{id:'m',name:'Massue',category:'weapon',hands:2},{id:'g',name:'Griffes',category:'weapon'},{id:'p',name:'Peau',category:'armor',slot:'torse',def:2},
+  {id:'c',name:'Cuir',category:'armor',slot:'torse',def:3},{id:'b1',name:'Rondache',category:'armor',slot:'shield',def:1},{id:'b2',name:'Pavois',category:'armor',slot:'shield',def:2},
+  {id:'f',name:'Flèches',category:'ammo'},{id:'r',name:'Peau de troll',category:'restes'}];
+ const ctxE={EMPLACEMENTS:C.EMPLACEMENTS,emplacementDe:C.emplacementDe};vm.createContext(ctxE);
+ vm.runInContext(src.slice(src.indexOf('function equipementAdversaire('),src.indexOf('// Ce qu\'il portait avant ce choix'))+';this.equipementAdversaire=equipementAdversaire;',ctxE);
+ const eq=ctxE.equipementAdversaire({inventaire:['m','g','m','p','c','b1','b2','f','r','inconnu']},items);
+ assert.equal(JSON.stringify({...eq}),JSON.stringify({weapons:['m','g'],armures:['c'],shieldId:'b2',munitionId:'f'}),'toutes ses armes, le meilleur torse, le meilleur bouclier, sa munition');
+ assert.deepEqual(C.attackChoices({hero:false,...eq,attacks:[]},items).map(x=>x.name),['Massue','Griffes'],'deux armes, deux variantes');
+ assert.equal(C.defenseOf({hero:false,def:5,...eq},items),5,'DEF : Cuir 3 et Pavois 2, pas les pièces en double');
+ const ctxB={actors:[],log:t=>ctxB.journal.push(t),journal:[],document:{dispatchEvent(){}},Event:class{},objetDe:id=>items.find(o=>o.id===id)||null,
+  ajouterInventaire:(a,o)=>{a.inventaire??=[];a.inventaire.push(o.id)}};vm.createContext(ctxB);
+ vm.runInContext(src.slice(src.indexOf('const lisPourcent='),src.indexOf('/* Les familles où l\'on puise'))+src.slice(src.indexOf('function butinDesRetires('),src.indexOf('/* Rejouer la même rencontre'))
+  +';this.normaliseButin=normaliseButin;this.butinDesRetires=butinDesRetires;',ctxB);
+ assert.equal(JSON.stringify(ctxB.normaliseButin({m:'150',g:0,p:-4,r:33.4,z:50},['m','g','p','r'])),JSON.stringify({m:100,r:33}),'bornée à 0-100, zéro ne s\'écrit pas, pièce possédée seulement');
+ const pres={name:'Brom',hero:true,x:10,y:10,hp:5},loin={name:'Ysa',hero:true,x:60,y:10,hp:5},mort={name:'Kel',hero:true,x:11,y:10,hp:0},dehors={name:'Tam',hero:true,x:10,y:11,hp:5,horsCarte:true};
+ ctxB.actors.push(pres,loin,mort,dehors);
+ const troll={name:'Troll',hero:false,x:12,y:10,inventaire:['m','r','r','p'],butin:{m:100,r:100,p:0}};
+ let n=0;ctxB.butinDesRetires([troll],()=>(n++%2)*0.5);
+ assert.deepEqual(pres.inventaire,['m','r','r'],'le plus proche des vivants sur la carte ramasse ce qui tombe');
+ assert.ok(!loin.inventaire&&!mort.inventaire&&!dehors.inventaire,'ni le lointain, ni le tombé, ni l’absent');
+ assert.equal(ctxB.journal[0],'Brom ramasse Massue, Peau de troll ×2 (Troll).','une ligne au journal');
+ ctxB.journal.length=0;ctxB.butinDesRetires([{name:'Rat',hero:false,x:0,y:0,inventaire:['m'],butin:{m:40}}],()=>0.4);
+ assert.equal(ctxB.journal.length,0,'40 % : un tirage à 40 ne tombe pas');
+ assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin)});equipeAdversaire(a);")
+  &&src.includes(" if(!a.hero){equipeAdversaire(a);a.butin=normaliseButin(a.butin,a.inventaire)}")&&src.includes("const equipable=draft.hero&&(o.category==='weapon'||o.category==='armor');")
+  &&src.includes("const CATS_INV_ADV=[['armes','Armes',")&&src.includes("dessineChoixInventaire();dessineInventaire();refreshEquip();"),'inventaire d’adversaire : familles, pioche, butin, tout porté');
+ assert.ok(src.includes("r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;")&&css.includes('.bulle-modele .stat-tile strong{font-size:16px;margin-top:2px}')
+  &&css.includes('.cat-pill.gear-carre.talent-carre.mini{width:28px;height:28px;'),'la bulle : petites tuiles, talents en petits ronds');
+ assert.ok(src.includes('<button id="bestiary-masse" type="button" aria-pressed="false"')&&src.includes("function tableMasseBestiaire(boite,liste){")
+  &&src.includes("if(masse){barreMasseBestiaire(cols);tableMasseBestiaire(cols,tous);bulleOrpheline()}}")&&src.includes("if(masseTriBest)o.masseBest=masseTriBest;")
+  &&css.includes('#bestiary-cols.en-masse{display:block}'),'le Bestiaire en masse');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1762 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1775 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

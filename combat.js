@@ -139,6 +139,9 @@ function gearAttacks(actor,items){
   return {name:[...groupes].map(([w,n])=>w.name+(n>1?' ×'+n:'')).join(' + ')+(tire?' · '+mun.name:''),dice,range,
    targets:'one',useOwnDamage:true,effects:{},etats,logos:lot.filter(w=>w.logo).map(w=>String(w.logo)).slice(0,2),gear:true,munition:tire?mun.id:null}};
  const contact=armes.filter(w=>w.ranged!==true),distance=armes.filter(w=>w.ranged===true);
+ /* Un adversaire porte tout ce qu'il possède, sans compter ses mains : chaque arme est une
+    variante, son bouton à elle, et une arme en double ne frappe pas deux fois. */
+ if(actor&&actor.hero===false)return [...new Set(contact)].map(w=>attaque([w],'contact')).concat([...new Set(distance)].map(w=>attaque([w],'distance')));
  const sorties=[];if(contact.length)sorties.push(attaque(contact,'contact'));if(distance.length)sorties.push(attaque(distance,'distance'));
  return sorties}
 /* Une attaque de fiche — l'attaque spéciale d'un adversaire — peut poser une affliction,
