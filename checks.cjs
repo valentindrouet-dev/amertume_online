@@ -1979,7 +1979,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  assert.deepEqual(C.elusMeneur({combien:'deux'},[{a:'c',dist:3},{a:'a',dist:1},{a:'b',dist:2}]),['a','b']);
  assert.deepEqual(C.elusMeneur({combien:'un'},[{a:'c',dist:3},{a:'a',dist:1}]),['a']);
  assert.equal(C.elusMeneur({combien:'tous'},[{a:'c',dist:3},{a:'a',dist:1}]).length,2);assert.deepEqual(C.elusMeneur({},[]),[]);
- assert.ok(page.includes("function defOf(a){const d=defenseOf(a,items())+bonusFiche(a).def+auraMeneur(a,'def');return a&&a.defBrisee>0?Math.max(0,d-a.defBrisee):d}")&&page.includes("function degatsDe(a){return (Number(a&&a.dmg)||0)+bonusFiche(a).dmg+auraMeneur(a,'dmg')}")
+ assert.ok(page.includes("function defOf(a){const d=defenseOf(a,items())+bonusFiche(a).def+auraMeneur(a,'def');return a&&a.defBrisee>0?Math.max(0,d-a.defBrisee):d}")&&page.includes("function degatsDe(a){const bonus=(Number(a&&a.dmg)||0)+bonusFiche(a).dmg+auraMeneur(a,'dmg');return meuteActive(a)?bonus*2:bonus}")
   &&page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")
@@ -3159,10 +3159,25 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  ctxJ.decorate(li,'Éla ramasse Rapière ×2, Dent de Gobelin ×3 (Gobelin).');
  const vus=li.kids.map(x=>typeof x==='string'?x:(x.className||'?')+'['+x.kids.filter(y=>typeof y==='string').join('')+x.textContent+']');
  assert.equal(vus.join(''),'j-name[Éla] ramasse j-objet r-commun[Rapière ×2], j-objet r-commun[Dent de Gobelin ×3] (j-name[Gobelin]).','les pièces en pastilles, leur nombre avec elles');}
+/* v0.347 — Meute, passif d'adversaire : un allié dans sa zone de contact, et le porteur double son
+   bonus de dégâts. */
+{const C=require('./combat.js'),m=C.TALENTS_CODES.meute;
+ assert.ok(m&&m.type==='pass'&&m.monstre===true&&!m.params.length&&/double son bonus de dégâts/.test(m.phrase({})),'Meute déclarée, passif d’adversaire');
+ const ctxM={actors:[],talentsCodes:a=>(a.meute?[{code:{cle:'meute'},params:{}}]:[]),mapSize:()=>({width:800,height:600}),walls:()=>[],tokenOf:()=>40,alive:a=>a.hp>0,
+  inContact:(a,o)=>Math.hypot(a.x-o.x,a.y-o.y)<=5,wallsBetween:(a,o)=>!!o.derriere,bonusFiche:()=>({dmg:1}),auraMeneur:()=>0};vm.createContext(ctxM);
+ vm.runInContext(page.slice(page.indexOf('function degatsDe(a)'),page.indexOf('function competenceDe(a,k)'))+';this.degatsDe=degatsDe;',ctxM);
+ const loup={name:'Loup',hero:false,meute:true,dmg:2,hp:5,x:0,y:0},frere={name:'Loup 2',hero:false,dmg:2,hp:5,x:3,y:0},heros={name:'Éla',hero:true,hp:5,x:1,y:0};
+ ctxM.actors.push(loup,heros);assert.equal(ctxM.degatsDe(loup),3,'seul, ou un adversaire au contact : 2 + 1');
+ ctxM.actors.push(frere);assert.equal(ctxM.degatsDe(loup),6,'un allié au contact : le bonus double');
+ assert.equal(ctxM.degatsDe(frere),3,'l’allié sans Meute ne double rien');
+ frere.hp=0;assert.equal(ctxM.degatsDe(loup),3,'un allié à terre ne compte pas');frere.hp=5;
+ frere.x=9;assert.equal(ctxM.degatsDe(loup),3,'hors de la zone de contact, rien');frere.x=3;
+ frere.derriere=true;assert.equal(ctxM.degatsDe(loup),3,'un mur entre eux, rien');
+ assert.ok(fs.readFileSync('editor.js','utf8').includes("l.push(['Meute (allié au contact)','× 2']);"),'le détail des dégâts le dit');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1782 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1790 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

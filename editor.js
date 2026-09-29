@@ -556,6 +556,7 @@ function detailPvMax(a){const b=bonusDe(a,catalog.talents,catalog.items);
 function detailDegats(a){const b=bonusDe(a,catalog.talents,catalog.items),bt=bonusDe(a,catalog.talents,null),aura=typeof auraMeneur==='function'?auraMeneur(a,'dmg'):0;
  const l=[['Dégâts','= fiche + bonus'],['Fiche (saisie)',String(Number(a.dmg)||0)]];
  if(bt.dmg)l.push(['Talents','+ '+bt.dmg]);if(b.dmg-bt.dmg)l.push(['Équipement','+ '+(b.dmg-bt.dmg)]);if(aura)l.push(['Meneur allié','+ '+aura]);
+ if(typeof meuteActive==='function'&&meuteActive(a))l.push(['Meute (allié au contact)','× 2']);
  l.push(['Total','+'+degatsDe(a)]);return l}
 function calculAuSurvol(tuile,lignes){if(!tuile)return;
  const montre=()=>{const d=document.createElement('div');d.className='calcul-bulle';

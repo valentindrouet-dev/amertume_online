@@ -859,6 +859,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Passif : le porteur ignore les Dégâts d’Opportunité quand il effectue un mouvement.',
   params:[],
   phrase(){return 'Le porteur <b>ignore les Dégâts d’Opportunité</b> en effectuant un mouvement.'}},
+ /* Meute : un passif d'adversaire, la bête qui chasse en groupe. Un allié dans sa zone de
+    contact, et le porteur double son bonus de dégâts ; la table mesure qui touche qui. */
+ meute:{cle:'meute',nom:'Meute',type:'pass',monstre:true,
+  aide:'Passif : si un allié est dans sa zone de contact, le porteur double son bonus de dégâts.',
+  params:[],
+  phrase(){return 'Si un <b>allié</b> est dans sa zone de contact, le porteur <b>double son bonus de dégâts</b>.'}},
  /* Invocation : un adversaire en appelle un autre du bestiaire, posé sur la carte là où le
     MJ clique. Le modèle se choisit à la création du talent ; son nom se lit par la page,
     qui seule connaît le bestiaire. */
