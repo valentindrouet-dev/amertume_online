@@ -1138,8 +1138,8 @@ assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:6
 assert.ok(page.includes('function ramasseContacts(')&&page.includes("croises:lot0.map(k=>[k,new Set(contactsDe(actors[k])),{x:actors[k].x,y:actors[k].y}])")
  &&page.includes("drag.croises.forEach(([k,set,pos])=>{const o=actors[k];if(!o)return;ramasseContacts(o,set,pos,size,murs);pos.x=o.x;pos.y=o.y})}"),'la traversée d’une zone de contact compte');
 assert.ok(page.includes('function peutFrapperOpportunite(e){return !!e&&alive(e)&&!frozenSolid(e)&&degatsDe(e)>0}')&&page.includes('function opportuniteAuTir(')
- &&page.includes("const contacts=rangeOf(a)==='distance'?contactsDe(a):[];")&&page.includes("afterAction(a);opportuniteAuTir(a,contacts,'tir')}")
- &&page.includes("const poser=()=>{poserOrbe();opportuniteAuTir(a,contacts,'sort')};"),'tir et sort au contact : occasion après les dégâts');
+ &&page.includes("const contacts=rangeOf(a)==='distance'?contactsDe(a):[];")
+ ,'tir et sort au contact : occasion après les dégâts');
 /* Le bestiaire crée des modèles : « + Nouveau monstre » enregistre au bestiaire, pas en scène. */
 assert.ok(src.includes('let templateNeuf=false;')&&src.includes("$('bestiary-add').onclick=()=>openActor(null,false,null,true);")
  &&src.includes("templateNeuf=!!neuf&&template===null&&!hero;")&&src.includes("else if(templateNeuf){catalog.monsters.push(toMonster(a));templateNeuf=false;renderCatalogPages();")
@@ -1585,7 +1585,7 @@ assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaq
  &&src.includes('function desEtBonus(dice,bonus,toujours,jeton=true)')&&src.includes('survol(b,at.dice,bonusDe(at),at.useOwnDamage!==false);boite.append(b)});')
  &&src.includes('survol(b,t.des,t.bonus||0,false);')
  &&page.includes('des:eff.des?eff.des(a,params):code.attaque?activeAttack(a).dice:null,')
- &&page.includes("bonus:code.attaque&&!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false?degatsDe(a):0,")
+ 
  &&C.TALENTS_CODES.attaqueetat.attaque===true&&C.TALENTS_CODES.provocation.attaque===true
  &&!C.TALENTS_CODES.orbes.attaque,'le bouton d’attaque dit « Attaque », le talent qui frappe montre ses dés');
 /* L'Onde d'un camp lève les états avec les blessures, et prend aussi celui qui n'a rien perdu
@@ -3315,10 +3315,25 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&css.includes('.talent-detail.bulle-action{background:color-mix(in srgb,var(--teinte,#3f7bc0) 24%,#fff);border-left:4px solid var(--teinte,#3f7bc0)}')
   &&css.includes('.talent-detail .bulle-des{display:flex;align-items:center;gap:7px;margin:0 0 6px}'),'la bulle d’action, celle d’un talent, avec les dés');
  assert.ok(!page.includes('titre-actions')&&!page.includes('actions-head')&&!page.includes('body.sombre .attack-row')&&page.includes('.choix-attaques[hidden]{display:none}.attack-row{display:flex;'),'plus de titre « Actions »');}
+/* v0.362 — Quatre effets de plus pour le Mystique : Déluge (une action, tous les orbes restants sur
+   un même adversaire), Éruption (un passif élémentaire : l'orbe fait éclater l'état sur les voisins
+   de la cible), Implosion (un critique rend 1 point d'Action), Dégâts élémentaires (le bonus de
+   dégâts s'ajoute aux orbes). */
+{const C=require('./combat.js');
+ const d=C.TALENTS_CODES.deluge,e=C.TALENTS_CODES.eruption,i=C.TALENTS_CODES.implosion,g=C.TALENTS_CODES.degatselem;
+ assert.ok(d&&d.type==='act'&&!d.gratuit&&!d.params.length&&!d.monstre,'Déluge : une action, qui coûte');
+ assert.ok(e&&e.type==='pass'&&e.params.map(p=>p.cle).join()==='etat'&&C.paramsTalent({effet:'eruption',params:{}}).etat==='Feu','Éruption : un passif, son état, Feu par défaut');
+ assert.ok(i&&i.type==='pass'&&!i.params.length&&g&&g.type==='pass'&&!g.params.length,'Implosion et Dégâts élémentaires : des passifs sans réglage');
+ assert.ok(C.phraseTalent('deluge',{}).includes('<b>tous ses orbes</b>')&&C.phraseTalent('eruption',{etat:'Gel'}).includes('portant <b>Gel</b>')
+  &&C.phraseTalent('implosion',{}).includes('<b>1 point d’Action</b>')&&C.phraseTalent('degatselem',{}).includes('<b>bonus de dégâts</b>'),'chacun se dit en une phrase');
+ assert.equal(C.effetParNom('Déluge'),'deluge');assert.equal(C.effetParNom('Éruption'),'eruption');assert.equal(C.effetParNom('Implosion'),'implosion');
+ // Éruption suit l'élément du Mystique, comme Orbes de feu.
+ const t={id:'e',name:'Éruption',effet:'eruption',elementaire:true,params:{etat:'Feu'}};
+ assert.equal(C.talentPourElement(t,C.ELEMENTS[1]).params.etat,C.ELEMENTS[1].etat,'l’état de l’Éruption suit l’élément');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1847 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1855 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

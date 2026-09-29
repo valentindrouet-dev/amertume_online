@@ -941,6 +941,28 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Un orbe lancé sur un allié désigné charge sa prochaine attaque au contact, au lieu de blesser.',
   params:[],
   phrase(){return 'Un orbe lancé sur un <b>allié désigné</b> ne lui fait aucun mal : sa <b>prochaine attaque au contact</b> inflige l’affection des orbes du porteur.'}},
+ /* Déluge : une action. Le porteur lance d'un coup tous les orbes qu'il lui reste ce tour, sur
+    un même adversaire — contrairement aux orbes lancés un à un, qui sont gratuits. */
+ deluge:{cle:'deluge',nom:'Déluge',type:'act',bouton:'✦ Déluge',
+  aide:'Action : le porteur lance tous ses orbes restants ensemble, contre un même adversaire.',
+  params:[],
+  phrase(){return 'Le porteur lance <b>tous ses orbes</b> ensemble contre <b>un même adversaire</b>.'}},
+ /* Éruption : un passif. Un orbe lancé sur un adversaire qui porte déjà l'état réglé le fait
+    éclater : tous les adversaires à son contact reçoivent l'état. Suit l'élément du Mystique. */
+ eruption:{cle:'eruption',nom:'Éruption',type:'pass',
+  aide:'Passif : un orbe lancé sur un adversaire qui porte déjà l’état réglé l’inflige à tous les adversaires à son contact.',
+  params:[{cle:'etat',nom:'État qui éclate',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
+  phrase(p){const e=(p&&p.etat)||'Feu';return 'Si le porteur lance un orbe contre un adversaire portant <b>'+e+'</b>, tous les adversaires <b>à son contact</b> subissent <b>'+e+'</b>.'}},
+ /* Implosion : un passif. Un critique rend au porteur le point d'Action qu'il vient de dépenser. */
+ implosion:{cle:'implosion',nom:'Implosion',type:'pass',
+  aide:'Passif : après un critique, le porteur gagne 1 point d’Action.',
+  params:[],
+  phrase(){return 'Après avoir réalisé un <b>critique</b>, le porteur gagne <b>1 point d’Action</b>.'}},
+ /* Dégâts élémentaires : un passif. Les orbes du porteur ajoutent son bonus de dégâts. */
+ degatselem:{cle:'degatselem',nom:'Dégâts élémentaires',type:'pass',
+  aide:'Passif : le porteur ajoute son bonus de dégâts à ses orbes.',
+  params:[],
+  phrase(){return 'Le porteur ajoute son <b>bonus de dégâts</b> à ses <b>orbes</b>.'}},
  /* Invulnérable : une amélioration. L'affection réglée ne prend jamais sur le porteur, d'où
     qu'elle vienne — arme, orbe, objet ou main du MJ par un effet. */
  invulnerable:{cle:'invulnerable',nom:'Invulnérable',type:'ame',
