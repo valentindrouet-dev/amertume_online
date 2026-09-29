@@ -300,7 +300,9 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
 /* La bulle d'un bouton de la barre d'action : celle d'un talent — son fond teinté, son bord, son nom
    en Killam — à la couleur du bouton. Une attaque y montre ses dés et son bonus de dégâts ; ce qui
    l'empêche se lit en dernier, en retrait. */
-function bulleAction(b,{nom,dit='',note='',des=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action';
+// Un bouton grisé l'est jusque dans sa bulle : sa teinte, son titre, ses mots colorés, ses logos.
+const boutonGrise=b=>!!b&&(b.disabled||b.classList.contains('inerte'));
+function bulleAction(b,{nom,dit='',note='',des=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
  const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=nom;tete.append(n);d.append(tete);
  if(des){des.classList.add('bulle-des');d.append(des)}
@@ -1010,7 +1012,7 @@ function bulleOrpheline(){if(BULLES)requestAnimationFrame(()=>{if(bulleEl&&bulle
    face — ne la ferait pas renaître sur la dernière vignette survolée. */
 function fermerBulle(){retireBulle();if(BULLES){gearOuvert=null;talentOuvert=null}}
 // Ôter la bulle sans rien oublier de ce qui est ouvert : c'est ainsi qu'elle se remplace.
-function retireBulle(){bulleEpinglee=false;if(!bulleEl)return;bulleEl.remove();bulleEl=null;bulleAncre=null;
+function retireBulle(){bulleEpinglee=false;if(!bulleEl)return;bulleEl.remove();bulleEl=null;bulleAncre=null;bulleRetiree=performance.now();
  document.removeEventListener('pointerdown',bulleDehors,true);
  document.removeEventListener('keydown',bulleEchap,true);
  window.removeEventListener('scroll',fermerBulle,true);window.removeEventListener('resize',fermerBulle)}
@@ -1035,8 +1037,11 @@ function placerBulle(){if(!bulleEl||!bulleAncre)return;
  bulleEl.style.setProperty('--fleche',Math.max(14,Math.min(b.width-14,r.left+r.width/2-gauche))+'px')}
 // « ancre » doit être visible : une vignette d'une page repliée n'ouvre pas de bulle.
 function ancreVisible(el){return !!el&&el.isConnected&&!!el.offsetParent}
-function ouvrirBulle(ancre,contenu,classe){retireBulle();if(!ancreVisible(ancre)||!contenu)return null;
- bulleEl=document.createElement('div');bulleEl.className='bulle'+(classe?' '+classe:'');
+/* Une bulle qui se rouvre aussitôt — le clic a redessiné la barre, la souris n'a pas bougé — ne
+   rejoue pas son entrée : elle glissait de quatre pixels, et semblait sauter sous le doigt. */
+let bulleRetiree=0;
+function ouvrirBulle(ancre,contenu,classe){const suite=!!bulleEl||performance.now()-bulleRetiree<400;retireBulle();if(!ancreVisible(ancre)||!contenu)return null;
+ bulleEl=document.createElement('div');bulleEl.className='bulle'+(classe?' '+classe:'')+(suite?' sans-entree':'');
  /* Une vignette dans une fenêtre ouverte — l'arbre de talents — y pose sa bulle : posée
     sur la page, elle passerait sous la fenêtre. */
  bulleEl.append(contenu);(ancre.closest('dialog[open]')||document.body).append(bulleEl);bulleAncre=ancre;
@@ -2043,7 +2048,7 @@ function talentRond(t,logo){const p=document.createElement('span');p.className='
  if(l)p.append(l);else{const g=document.createElement('span');g.className='glyphe';g.textContent=GLYPHES_TALENT[t.type]||'✦';p.append(g)}
  return p}
 // La bulle d'un talent sur son rond, élargie quand elle montre plusieurs paliers.
-function bulleTalentSur(ancre,t,o){const d=bulleTalent(t,o);
+function bulleTalentSur(ancre,t,o){const d=bulleTalent(t,o);if(boutonGrise(ancre))d.classList.add('grisee');
  return ouvrirBulle(ancre,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))}
 /* Un talent hors de l'onglet Talents : son rond, sans nom dessous. La bulle le nomme au survol,
    et le lecteur d'écran par l'étiquette que chaque appelant pose sur le rond. Sur la page des
@@ -3635,8 +3640,9 @@ function butinDesRetires(partants,tirage=Math.random){const heros=actors.filter(
   const loin=h=>taille&&taille.width>0?tokenDistance(f,h,taille):Math.hypot((h.x||0)-(f.x||0),(h.y||0)-(f.y||0));
   const h=parmi.reduce((m,x)=>loin(x)<loin(m)?x:m);
   (f.inventaire||[]).forEach(id=>{const o=objetDe(id);if(!o||!chances[id]||tirage()*100>=chances[id])return;
-   ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set()});const g=gains.get(h);g.objets.set(o.name,(g.objets.get(o.name)||0)+1);g.de.add(f.name)})});
- gains.forEach((g,h)=>log(h.name+' ramasse '+[...g.objets].map(([n,k])=>n+(k>1?' ×'+k:'')).join(', ')+' ('+[...g.de].join(', ')+').',{ton:'butin'}));
+   ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set()});const g=gains.get(h);g.objets.set(o.id,(g.objets.get(o.id)||0)+1);g.de.add(f.name)})});
+ // Chaque pièce part au journal sous son identifiant, « ⟦id⟧ » : le journal y pose son logo, et sa bulle.
+ gains.forEach((g,h)=>log(h.name+' trouve '+[...g.objets].map(([id,k])=>'⟦'+id+'⟧'+(k>1?' ×'+k:'')).join(' ')+' ('+[...g.de].join(', ')+').',{ton:'butin'}));
  if(gains.size)document.dispatchEvent(new Event('amertume-content-changed'))}
 /* Rejouer la même rencontre : les adversaires repartent intacts, la troupe garde ses
    blessures — c'est le combat qu'on recommence, pas la partie. */

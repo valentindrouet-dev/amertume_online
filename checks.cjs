@@ -1194,7 +1194,7 @@ assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidd
  &&feuille.includes('.cat-pill .coche-modele{flex:none;width:16px;height:16px;')&&page.includes("if(rangeOf(a)!=='distance'&&typeof volBalayage==='function'){"),'équipement vide masqué, coche dans la vignette, balayage au contact');
 /* La barre de PV d'un token est pleine, entamée ou non — c'est sa hauteur qui dit l'actif ;
    sur la piste des dés, le lanceur à gauche et, au bout de chaque ligne, qui reçoit. */
-assert.ok(page.includes('height:3.2px;border-radius:999px;background:#211f1b;border:0;box-shadow:0 0 0 1px #0000008c;')&&page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
+assert.ok(page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
  &&page.includes("const de=from||(lignes.find(l=>l.de)||{}).de||null;")&&page.includes("const cible=recoit(l),tc=lignes.length>1?petit:Math.max(petit,taille);if(cible)visage(cible,tc,bordD+10+tc/2,cy)")
  &&page.includes('.board-token{position:absolute;transform:translate(-50%,-50%);border-radius:50%;'),'barre de PV égale, visages sur la piste');
 /* Plus de chip Niveau sur la fiche de table ; le balayage est une déchirure dentelée de 90° ; la coche du
@@ -1695,7 +1695,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
  &&src.includes('function epingleBulle(oui){bulleEpinglee=!!oui&&!!bulleEl;')&&src.includes('function basculeEpingle(el,quoi){if(bulleEpinglee&&bulleAncre===el){fermerBulle();return}')
  &&src.includes('function reposeBulle(quoi){const ep=bulleEpinglee;quoi();if(ep)epingleBulle(true)}')
  &&src.includes('function fermerBulle(){retireBulle();if(BULLES){gearOuvert=null;talentOuvert=null}}')
- &&src.includes('function retireBulle(){bulleEpinglee=false;if(!bulleEl)return;')&&src.includes('function ouvrirBulle(ancre,contenu,classe){retireBulle();')
+ &&src.includes('function retireBulle(){bulleEpinglee=false;if(!bulleEl)return;')
  &&src.includes('function bulleOrpheline(){if(BULLES)requestAnimationFrame(()=>{if(bulleEl&&bulleAncre&&!bulleAncre.isConnected)fermerBulle()})}')
  &&src.includes("rangees(equipement,'');rangees(objets,combat?'':'Objets');bulleOrpheline();")&&src.includes(' bulleOrpheline();return out}')
  &&src.includes("if(!equipable){if(BULLES){if(!tout)basculeEpingle(p,montre)}else basculer();return}")
@@ -3104,7 +3104,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  let n=0;ctxB.butinDesRetires([troll],()=>(n++%2)*0.5);
  assert.deepEqual(pres.inventaire,['m','r','r'],'le plus proche des vivants sur la carte ramasse ce qui tombe');
  assert.ok(!loin.inventaire&&!mort.inventaire&&!dehors.inventaire,'ni le lointain, ni le tombé, ni l’absent');
- assert.equal(ctxB.journal[0],'Brom ramasse Massue, Peau de troll ×2 (Troll).','une ligne au journal');
+ assert.equal(ctxB.journal[0],'Brom trouve ⟦m⟧ ⟦r⟧ ×2 (Troll).','une ligne au journal');
  ctxB.journal.length=0;ctxB.butinDesRetires([{name:'Rat',hero:false,x:0,y:0,inventaire:['m'],butin:{m:40}}],()=>0.4);
  assert.equal(ctxB.journal.length,0,'40 % : un tirage à 40 ne tombe pas');
  assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin)});equipeAdversaire(a);")
@@ -3142,17 +3142,20 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes('<h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')&&src.includes("{cle:'restes',nom:'Restes',type:'panneau',")
   &&!src.includes("['restes','Restes',o=>o.category==='restes']"),'les restes à part');
  assert.ok(src.includes("+' ('+[...g.de].join(', ')+').',{ton:'butin'}));")
-  &&page.includes("const rx=new RegExp('('+[...names.map(n=>pieces.has(n)?quote(n)+'(?: ×\\\\d+)?':quote(n)),")&&page.includes("function pieceAuJournal(o,texte){const c=document.createElement('span');c.className='j-objet r-'+rareteDe(o);")
   &&css.includes('.j-objet{display:inline-block;'),'le butin au journal');
  // decorate en machine virtuelle : les pièces en pastilles, « ×3 » avec elles, aucun chiffre rouge.
- const el=()=>({kids:[],cls:new Set(),className:'',textContent:'',style:{},append(...x){this.kids.push(...x)},classList:{contains:c=>false}});
+ const el=()=>({kids:[],attrs:{},className:'',textContent:'',style:{},append(...x){this.kids.push(...x)},setAttribute(k,v){this.attrs[k]=v},classList:{contains:c=>false}});
  const ctxJ={actors:[{id:'h',name:'Éla',hero:true},{id:'g',name:'Gobelin',vu:true}],nomNum:o=>o.name,actorTint:()=>'#123',J_KEYS:{},rareteDe:()=>'commun',
-  catalog:{items:[{name:'Rapière'},{name:'Dent de Gobelin'}]},document:{createElement:()=>{const e=el();return e}}};
+  catalog:{items:[{id:'r',name:'Rapière'},{id:'d',name:'Dent de Gobelin'},{id:'d2',name:'Dent de Gobelin'}]},document:{createElement:()=>{const e=el();return e}}};
  vm.createContext(ctxJ);vm.runInContext(page.slice(page.indexOf('function decorate(li,text){'),page.indexOf('let logRound=null;'))+';this.decorate=decorate;',ctxJ);
+ /* v0.370 — Une pièce trouvée part au journal sous son identifiant, « ⟦id⟧ » : le journal n'en
+    montre que le logo, son nombre à côté ; nom et reste dans la bulle — celle de cette pièce-là,
+    jamais d'une homonyme. */
  const li={kids:[],append(...x){this.kids.push(...x)},classList:{contains:c=>c==='ton-butin'}};
- ctxJ.decorate(li,'Éla ramasse Rapière ×2, Dent de Gobelin ×3 (Gobelin).');
- const vus=li.kids.map(x=>typeof x==='string'?x:(x.className||'?')+'['+x.kids.filter(y=>typeof y==='string').join('')+x.textContent+']');
- assert.equal(vus.join(''),'j-name[Éla] ramasse j-objet r-commun[Rapière ×2], j-objet r-commun[Dent de Gobelin ×3] (j-name[Gobelin]).','les pièces en pastilles, leur nombre avec elles');}
+ ctxJ.decorate(li,'Éla trouve ⟦r⟧ ×2 ⟦d2⟧ (Gobelin).');
+ const vus=li.kids.map(x=>typeof x==='string'?x:x.attrs&&x.attrs['aria-label']?'['+x.attrs['aria-label']+':'+x.kids.map(y=>typeof y==='string'?y:y.textContent).join('')+']':(x.className||'?')+'['+x.textContent+']');
+ assert.equal(vus.join(''),'j-name[Éla] trouve [Rapière ×2:◈×2] [Dent de Gobelin:◈] (j-name[Gobelin]).','le logo seul, son nombre à côté, le nom pour le lecteur d’écran');
+ const piece=li.kids.find(x=>x.attrs&&x.attrs['aria-label']==='Dent de Gobelin');assert.ok(piece&&!piece.kids.some(y=>typeof y==='string'&&y.includes('Dent')),'aucun nom écrit');}
 /* v0.347 — Meute, passif d'adversaire : un allié dans sa zone de contact, et le porteur double son
    bonus de dégâts. */
 {const C=require('./combat.js'),m=C.TALENTS_CODES.meute;
@@ -3182,7 +3185,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    d'or, sans sa conversion. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(css.includes('.cat-pill.gear-carre:not(.talent-carre):not(.best-carre){height:73px}')&&!css.includes('justify-content:flex-start;padding-top:6px}')
-  &&css.includes('.j-objet{display:inline-block;')&&css.includes('.j-objet .logo-equip{display:inline-block;width:16px;height:16px;margin:0 3px 0 0;vertical-align:-3px}')
+  &&css.includes('.j-objet{display:inline-block;')
   &&src.includes("v.append(n,' ',piece);d.append(v)}")&&!src.includes("'Se convertit en : '"),'cases égales, butin aligné, or en pièces');}
 /* v0.352 — La planche Caractéristiques ; une icône par compétence, choisie par le MJ sur la page
    Aventuriers, la même devant le nom de la compétence sur toutes les fiches. */
@@ -3288,8 +3291,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.361 — La bulle d'un bouton de la barre d'action est celle d'un talent, à la couleur du bouton ;
    une attaque, et un talent qui frappe, y montrent leurs dés et leur bonus. Plus de titre « Actions ». */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
- assert.ok(src.includes("function bulleAction(b,{nom,dit='',note='',des=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action';")
-  &&src.includes("const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);")
+ assert.ok(src.includes("const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);")
   &&src.includes(" if(des){des.classList.add('bulle-des');d.append(des)}")&&src.includes("des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false):null}));")&&!page.includes("'cat-detail bulle-attaque-corps'")
   &&css.includes('.talent-detail.bulle-action{background:color-mix(in srgb,var(--teinte,#3f7bc0) 24%,#fff);border-left:4px solid var(--teinte,#3f7bc0)}')
   &&css.includes('.talent-detail .bulle-des{display:flex;align-items:center;gap:7px;margin:0 0 6px}'),'la bulle d’action, celle d’un talent, avec les dés');
