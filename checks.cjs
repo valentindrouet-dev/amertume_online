@@ -3051,7 +3051,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    Bestiaire et aux Aventuriers, montre ou cache les noms sous les cartes ; son choix vaut partout. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("const ORDRE_TYPES_TALENTS=['mait','act','reac','crit','pass','ame'];")&&src.includes("ORDRE_TYPES_TALENTS.forEach(k=>{const lot=ordre.filter(([t])=>talentType(t)[0]===k);if(!lot.length)return;")
-  &&css.includes('.talent-rangee{flex-basis:100%;display:flex;flex-wrap:wrap;'),'une rangée par type de talent');
+  &&css.includes('.talent-rangee{flex-basis:100%;display:flex;flex-wrap:wrap;')&&css.includes('.talent-rangee .cat-carte{width:auto;min-width:0}'),'une rangée par type de talent');
  assert.ok(src.includes("let nomsCaches=false;try{nomsCaches=localStorage.getItem('amertume-noms')==='0'}catch(e){}")&&src.includes("[armoryPage,talentsPage,bestiaryPage,heroesPage].forEach(p=>{const a=p.querySelector('.cat-actions');if(a)a.prepend(boutonNoms())});")
   &&css.includes('body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-carte{display:none}'),'un bouton Noms commun aux quatre pages');}
 /* v0.339 — Les planches Armures 1 à 5, en tête pour l'icône d'une armure ; les Restes en tête aussi
