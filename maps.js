@@ -375,12 +375,17 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
   // Pour la troupe, un objet dans le noir n'existe pas : il faut le voir, ou l'avoir vu.
   if(oeilJoueur()&&!(seenAt(o.x,o.y)||partySees({x:o.x,y:o.y,socle:'medium'})))return;
   const t=document.createElement('button');t.className='token objet'+(o.visible?'':' cache');
-  t.textContent=(o.nom||'?')[0].toUpperCase();t.style.left=o.x+'%';t.style.top=o.y+'%';
+  poseLogoObjet(t,o);t.style.left=o.x+'%';t.style.top=o.y+'%';
   t.style.setProperty('--token',tokenPx()*(SOCLE_TAILLES[o.taille]||1)+'px');
   t.title=o.nom+(o.visible?'':' · caché — '+skillNames[o.test.comp]+' × '+o.test.reussites);
   t.setAttribute('aria-label',t.title);
   t.onclick=e=>{e.stopPropagation();openObjetTable(i)};
   vue.append(t)})}
+/* Le jeton d'un objet porte l'icône de la première pièce qu'il contient — celle choisie en premier
+   dans sa fiche ; sans pièce à icône, son initiale. */
+function poseLogoObjet(el,o){let im=null;
+ for(const id of o.items||[]){const it=(catalog.items||[]).find(x=>x&&x.id===id);im=it&&typeof logoEquipement==='function'?logoEquipement(it):null;if(im)break}
+ if(im){im.classList.add('logo-objet');el.replaceChildren(im);el.classList.add('avec-logo')}else el.textContent=(o.nom||'?')[0].toUpperCase()}
 function objetAPortee(a,o){const size=mapSize();if(!a||!size.width)return false;
  return inContact(a,o,size,tokenOf(a),tokenPx()*(SOCLE_TAILLES[o.taille]||1))&&!wallsBetween(a,o,walls())}
 function noteInventaire(a,texte){a.notes=(a.notes?a.notes.replace(/\s+$/,'')+'\n':'')+'• '+texte}
@@ -835,7 +840,7 @@ function objetEl(i,o){const el=document.createElement('div');
  const t=Math.max(10,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100*(SOCLE_TAILLES[o.taille]||1));
  el.style.width=el.style.height=t+'px';el.style.margin=(-t/2)+'px 0 0 '+(-t/2)+'px';el.style.fontSize=(t*.47)+'px';
  el.style.left=o.x+'%';el.style.top=o.y+'%';el.dataset.kind='objet';el.dataset.i=i;
- el.textContent=(o.nom||'?')[0].toUpperCase();el.title=o.nom+(o.visible?'':' · caché')+' — double-clic pour modifier';
+ poseLogoObjet(el,o);el.title=o.nom+(o.visible?'':' · caché')+' — double-clic pour modifier';
  el.ondblclick=e=>{e.stopPropagation();openObjet(i)};
  return el}
 function foeEl(i,f){const el=document.createElement('div');
@@ -1182,16 +1187,22 @@ function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!==
   +field('Réussites nécessaires','reussites',o.test.reussites,'number','min="1" max="9"')
   +field('Trésor — en toutes lettres','tresor',o.tresor||'','text','maxlength="200"')+'</div>'
   +'<h2 class="sous-titre">Objets à prendre</h2><input id="objet-filtre" placeholder="Filtrer l’armurerie…" aria-label="Filtrer l’armurerie"><div id="objet-liste" class="objet-liste"></div>'
-  +'<p class="muted">Ce qui est coché attend dans l’objet : un aventurier au contact le prend d’un clic. Une arme va en main si une main est libre, une armure sur le dos si rien n’y est, le reste à l’inventaire.</p>';
+  +'<p class="muted">Ce qui est choisi, d’un clic, attend dans l’objet ; la première pièce choisie donne son icône au jeton. Un aventurier au contact la prend d’un clic. Une arme va en main si une main est libre, une armure sur le dos si rien n’y est, le reste à l’inventaire.</p>';
  const pris=new Set(o.items||[]);
  const liste=()=>{const q=($('objet-filtre').value||'').trim().toLowerCase(),boite=$('objet-liste');boite.replaceChildren();
   [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets']].forEach(([cat,titre])=>{
    const lot=(catalog.items||[]).filter(it=>it&&it.category===cat&&(!q||it.name.toLowerCase().includes(q)));
    if(!lot.length)return;const h=document.createElement('h3');h.textContent=titre;boite.append(h);
-   lot.forEach(it=>{const l=document.createElement('label');l.className='objet-choix';
-    const c=document.createElement('input');c.type='checkbox';c.checked=pris.has(it.id);
-    c.onchange=()=>{if(c.checked)pris.add(it.id);else pris.delete(it.id)};
-    l.append(c,gearPill(it));boite.append(l)})})};
+   /* De petits carrés, comme l'inventaire d'un aventurier : l'icône seule, la bulle au survol ; un
+      clic prend la pièce, un autre la repose. */
+   const rang=document.createElement('div');rang.className='objet-rang';
+   lot.forEach(it=>{const p=gearCarre(it,1,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();
+    const maj=()=>{p.classList.toggle('pris',pris.has(it.id));p.setAttribute('aria-pressed',String(pris.has(it.id)))};
+    const bascule=()=>{if(pris.has(it.id))pris.delete(it.id);else pris.add(it.id);maj()};
+    p.setAttribute('aria-label',it.name);p.onclick=bascule;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bascule()}};maj();
+    if(typeof surveille==='function')surveille(p,()=>{const d=gearDetail(it,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});
+    rang.append(p)});
+   boite.append(rang)})};
  $('objet-filtre').oninput=liste;liste();
  $('objet-form').onsubmit=e=>{e.preventDefault();const f=$('objet-form').elements;pushUndo();
   o.nom=f.nom.value.trim().slice(0,60)||'Objet';o.taille=f.taille.value;o.visible=f.visible.value==='1';

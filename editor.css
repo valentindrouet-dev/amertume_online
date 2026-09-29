@@ -1638,3 +1638,19 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* La bulle d'un objet a le contour de celle d'un talent : un liseré fin, la barre de couleur à
    gauche, la même ombre. Sans épaisseur écrite, le trait prenait 3 px sombres par défaut. */
 .bulle .gear-detail.large{border-top:1px solid #00000026;border-right:1px solid #00000026;border-bottom:1px solid #00000026;box-shadow:0 2px 5px #0000002e}
+
+/* L'éditeur d'objet de la carte : les pièces en petits carrés, comme l'inventaire d'un aventurier. */
+.objet-rang{display:flex;flex-wrap:wrap;gap:7px;padding:2px}
+.objet-rang .cat-pill.gear-carre,.objet-rang .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){position:relative;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+ width:36px;min-width:36px;height:36px;min-height:36px;padding:2px;gap:0;border-radius:8px;cursor:pointer}
+.objet-rang .cat-pill.gear-carre .logo-equip,.objet-rang .cat-pill.gear-carre .glyphe{width:26px;height:26px;margin:0;flex:none}
+.objet-rang .cat-pill.gear-carre .glyphe{display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1}
+.objet-rang .cat-pill.gear-carre .gear-bas,.objet-rang .cat-pill.gear-carre .pips{display:none}
+.objet-rang .cat-pill.gear-carre.pris{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
+.objet-rang .cat-pill.gear-carre.pris::after{content:'✓';position:absolute;top:-7px;right:-7px;width:15px;height:15px;border-radius:50%;background:var(--accent);color:var(--on-accent,#fff);font:700 10px/15px system-ui;text-align:center}
+/* Le jeton d'un objet sur la carte : l'icône de sa première pièce. */
+.token.objet.avec-logo .logo-objet,.shape.objet.avec-logo .logo-objet{width:74%;height:74%;margin:auto;object-fit:contain;pointer-events:none}
+.shape.objet.avec-logo{display:grid;place-items:center}
+
+/* Sans cible, la rangée des cibles ne prend aucune place : les actions montent au haut du bloc. */
+.targets:not(:has(button)){display:none}

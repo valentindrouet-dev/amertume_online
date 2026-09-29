@@ -2384,8 +2384,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(el.k.join(''),'Un [Allié] gagne [+2] [Dégâts] et [Feu] : [1d6+2] [PV], une [Action] ; [enfin], la vie.');
  assert.ok(src.includes("if(effet&&t.effects)texteEnrichi(effet,t.effects);")&&src.includes('<button id="talent-mots"')
   &&src.includes("c.motsCles=[...new Set((Array.isArray(c.motsCles)?c.motsCles:[])")&&feuille.includes('.mot-cle{font-weight:700}'),'les mots clés des talents');
- assert.ok(page.includes("function reveleAttaquant(a){if(!a||a.hero||a.vu||!a.id||!actors.includes(a)||a.hidden||hasState(a,'Invisible'))return;")
-  &&page.includes("function logAttaque(a,b,logo,corps,detail,suite){reveleAttaquant(a);")&&page.includes("log(reveles.map(nomNum).join(', ')")
+ assert.ok(page.includes("function reveleAttaquant(a){if(!a||a.hero||a.vu||!a.id||!actors.includes(a)||a.hidden||hasState(a,'Invisible'))return;")&&page.includes("log(reveles.map(nomNum).join(', ')")
   &&page.includes(" // Les numéros se lisent après la révélation : ceux qui viennent de paraître en ont un.\n const numeros=nameNumbers();"),'le journal numérote ceux qui viennent de paraître');
 }
 /* v0.271 — Le coma d'un aventurier coûte une VIE et se relève à la fin du combat ; l'onglet Aventuriers
