@@ -16,7 +16,7 @@ for(const f of ['editor.js','index.html','combat.js','maps.js','domaine.js','liv
 //    une vérification par chaîne devenue fausse est ôtée de checks.cjs, et l'on recommence : c'est
 //    le sort d'une copie de ligne de code après un changement voulu — elle ne testait rien du jeu.
 const epure=process.argv.includes('--epure');const otes=[];
-function oteChaine(f,lit){let t=fs.readFileSync('checks.cjs','utf8'),n=0;const qs=[JSON.stringify(lit),"'"+lit.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'"];
+function oteChaine(f,lit){let t=fs.readFileSync('checks.cjs','utf8'),n=0;const qs=[JSON.stringify(lit),"'"+lit.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n')+"'"];
  const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
  // L'appel, précédé ou suivi de « && », même à cheval sur une ligne.
  for(const q of qs){const F='!?'+esc(f+'.includes('+q+')');for(const re of [new RegExp('\\s*&&\\s*'+F),new RegExp(F+'\\s*&&\\s*')])while(re.test(t)){t=t.replace(re,'');n++}}

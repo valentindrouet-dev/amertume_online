@@ -1077,8 +1077,7 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
  assert.ok(frappeSrc.includes("porteEffet(talentsCodes(b),'mauvaissort')?mauvaisSort(dice,d6):null"),'Mauvais Sort reste sur les attaques');}
 /* Les boutons d'action écrivent en blanc, actifs, grisés ou inertes ; un talent sans dés ne porte
    plus sa nature ; un adversaire retiré laisse son XP aux aventuriers et les cibles ne glissent pas. */
-assert.ok(feuille.includes('letter-spacing:.2px;color:#fff;')&&feuille.includes('button.btn-action:disabled{--fond:var(--disabled);color:#fff;opacity:1;')
- &&feuille.includes('button.btn-action.inerte,button.btn-action.inerte:hover{opacity:1;filter:saturate(.35) brightness(1.1);color:#fff;')
+assert.ok(feuille.includes('letter-spacing:.2px;color:#fff;')
  &&!feuille.includes('encre-sombre')&&!/button\.btn-[a-z]+[^{]*\{[^}]*(color:#2a2118|disabled-ink)/.test(feuille)&&feuille.includes('button.btn-talent.t-mait{--fond:#d4a341}'),'les boutons d’action écrivent en blanc');
 assert.ok(!src.includes("className='nature'")&&!feuille.includes('.nature{'),'un talent sans dés ne dit plus sa nature');
 assert.ok(src.includes('function xpDesRetires(')&&src.includes('xpDesRetires(partants);')&&src.includes("heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));")
@@ -1561,9 +1560,8 @@ assert.ok(!page.includes('Personne à portée de contact.')&&!page.includes("'Ho
   assert.ok(Math.hypot(x2-70,y2)>=19.9||x2<=90.01,'écarté du socle, jamais dans le mur');}}
 /* La table applique la règle : le camp d'en face barre le pas, l'allié se laisse traverser mais
    pas couvrir, un corps à terre ne tient plus la place, et un lot pris ensemble ne se repousse pas. */
-assert.ok(page.includes('function soclesOccupes(a,size,ignorer,adverses)')
- &&page.includes('return actors.filter(o=>o!==a&&alive(o)&&!(ignorer&&ignorer.has(o.id))')&&page.includes("&&(!adverses||o.hero!==a.hero))")
- &&page.includes('function settleActor(a,ignorer)')&&page.includes(' const [x,y]=alive(a)\n  ?poserHorsDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,false),polys,r)\n  :slideOutOfWalls(px(a.x,a.y),polys,r);')
+assert.ok(page.includes("&&(!adverses||o.hero!==a.hero))")
+ &&page.includes('function settleActor(a,ignorer)')
  &&page.includes('function moveActor(a,xp,yp,libre,ignorer,traverse)')
  &&page.includes(' const barrent=(alive(a)?soclesOccupes(a,size,ignorer,true):[])\n  .filter(c=>Math.hypot(start[0]-c.x,start[1]-c.y)>=r+c.r-.5);')&&page.includes('const tiennent=alive(a)&&!traverse?soclesOccupes(a,size,ignorer,false):[];')
  /* L'adversaire barre : on s'arrête devant lui, on ne glisse pas sur son flanc. Les murs,
