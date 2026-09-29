@@ -2984,7 +2984,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("{cle:'price',nom:'Prix (or)',type:'nombre',max:999999,pour:faite,lit:o=>o.price||0,")&&src.includes("const pourTous=(c,fn,dit)=>{const cibles=liste.map(([o])=>o).filter(o=>vaut(c,o));")
   &&src.includes("masseAnnule={dit,avant:cibles.map(o=>structuredClone(o))};cibles.forEach(fn);")&&src.includes("u.textContent='↶ Annuler : '+masseAnnule.dit;")
-  &&src.includes("CATS_PRIX.filter(([k])=>k!=='ressource').forEach(")&&src.includes(" if($('item-form').elements.price){const f=$('item-form').elements,b=boutonSuggestion(),maj="),'le prix d’une ressource ne se règle qu’au guide ; l’opération pour toutes s’annule');}
+  &&src.includes("CATS_PRIX.filter(([k])=>k!=='ressource'&&k!=='restes').forEach(")&&src.includes(" if($('item-form').elements.price){const f=$('item-form').elements,b=boutonSuggestion(),maj="),'le prix d’une ressource ne se règle qu’au guide ; l’opération pour toutes s’annule');}
 /* v0.333 — Les menus des ressources montrent l'icône de chacune, devant son nom : le select reste,
    caché, et garde la valeur ; un bouton et une liste à icônes le pilotent. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
@@ -3036,8 +3036,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    menu et de la grille, chacune sous son nom. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(fs.existsSync('img/planches/restes_1.webp')&&fs.existsSync('img/planches/restes_2.webp'),'les deux planches de restes sont au dépôt');
- assert.ok(src.includes("function planchesRestes(){")&&src.includes("if(o&&o.category==='restes')planchesRestes().forEach(")
-  &&src.includes("+selGrille(a.category==='restes'?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):")&&src.includes("groupesLogosItem(o).filter(([,l])=>l.length).map("),'les planches de restes en tête pour un reste');}
+ assert.ok(src.includes("const PLANCHES_EN_TETE={restes:/restes/i,ressource:/restes/i,armor:/armures/i};")&&src.includes(" planchesEnTete(o).forEach(f=>{")
+  &&src.includes("+selGrille(planchesEnTete(a).length?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):")&&src.includes("groupesLogosItem(o).filter(([,l])=>l.length).map("),'les planches de restes en tête pour un reste');}
 /* v0.337 — Un « + » à l'en-tête de chaque colonne de l'Armurerie ouvre l'éditeur sur une pièce
    neuve de cette catégorie. La famille de talents « Génériques » disparaît : un talent resté sans
    classe se range sous « Sans classe », qui ne paraît que s'il en reste un. */
@@ -3054,10 +3054,22 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&css.includes('.talent-rangee{flex-basis:100%;display:flex;flex-wrap:wrap;'),'une rangée par type de talent');
  assert.ok(src.includes("let nomsCaches=false;try{nomsCaches=localStorage.getItem('amertume-noms')==='0'}catch(e){}")&&src.includes("[armoryPage,talentsPage,bestiaryPage,heroesPage].forEach(p=>{const a=p.querySelector('.cat-actions');if(a)a.prepend(boutonNoms())});")
   &&css.includes('body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-carte{display:none}'),'un bouton Noms commun aux quatre pages');}
+/* v0.339 — Les planches Armures 1 à 5, en tête pour l'icône d'une armure ; les Restes en tête aussi
+   pour une ressource. Un reste vaut 25 % de ce que ses composants rapportent, arrondi en dessous. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok([1,2,3,4,5].every(i=>fs.existsSync('img/planches/armures_'+i+'.webp')),'les cinq planches Armures sont au dépôt');
+ const ctxP={OBJETS_CODES:{},keys:['white'],types:['Simple'],itemColumn:o=>o.category,weaponHands:()=>1,objetCode:()=>null,normaliseBonusEquip:l=>l||[],CARACS_EQUIP:[],
+  rareteDe:o=>o.rarete||'commun',NOM_RARETE:r=>r,lisQte:v=>Math.max(1,Math.min(99,Math.trunc(Number(v))||1)),
+  ressourcesJeu:()=>[{cle:'cuir',nom:'Cuir',piece:{price:4}},{cle:'corde',nom:'Corde',piece:{price:2}}]};vm.createContext(ctxP);
+ vm.runInContext(src.slice(src.indexOf('const CATS_PRIX='),src.indexOf('// À côté d\'un prix : la suggestion'))+';this.prixSuggere=prixSuggere;this.normaliseGuidePrix=normaliseGuidePrix;',ctxP);
+ const peau={category:'restes',ressource1:'cuir',rendement1:3,ressource2:'corde',rendement2:1,rarete:'rare'};
+ assert.equal(ctxP.prixSuggere(peau,ctxP.normaliseGuidePrix({})).total,3,'3 Cuir à 4 + 1 Corde à 2 = 14 ; 25 %, arrondi en dessous : 3 — ni base, ni rareté');
+ assert.equal(ctxP.prixSuggere(peau,ctxP.normaliseGuidePrix({restes:50})).total,7,'la part se règle au guide');
+ assert.ok(src.includes("const PLANCHES_EN_TETE={restes:/restes/i,ressource:/restes/i,armor:/armures/i};")&&src.includes(" champ(fr,'Un reste vaut',()=>G().restes,v=>{G().restes=v},'%');"),'les planches en tête selon la catégorie ; la part des restes au guide');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1754 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1755 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

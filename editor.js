@@ -60,7 +60,7 @@ function migreRessources(c){
    prix suggéré, à côté du prix de chaque pièce : une aide, jamais imposée. */
 const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
 const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,ressource:0,restes:0,treasure:0},
- des:{white:5,bone:8,red:15,blue:20,green:10,black:30,yellow:25},def:20,deuxMains:5,etat:15,
+ des:{white:5,bone:8,red:15,blue:20,green:10,black:30,yellow:25},def:20,deuxMains:5,etat:15,restes:25,
  bonus:{pv:10,endu:25,vie:25,def:20,dmg:30,comp:15},ressources:100,rarete:{commun:100,rare:150,mystique:200,epique:300,ressource:100}};
 const EFFET_PRIX_DEFAUT=25;
 function normaliseGuidePrix(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:{};const D=GUIDE_PRIX_DEFAUT;
@@ -68,10 +68,15 @@ function normaliseGuidePrix(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:{};
  const table=(src,def,max)=>Object.fromEntries(Object.entries(def).map(([k,d])=>[k,n(src&&typeof src==='object'?src[k]:undefined,d,max)]));
  return {base:table(g.base,D.base),des:table(g.des,D.des),def:n(g.def,D.def),deuxMains:n(g.deuxMains,D.deuxMains),etat:n(g.etat,D.etat),
   effets:table(g.effets,Object.fromEntries(Object.keys(OBJETS_CODES).map(k=>[k,EFFET_PRIX_DEFAUT]))),bonus:table(g.bonus,D.bonus),
-  ressources:n(g.ressources,D.ressources,1000),rarete:table(g.rarete,D.rarete,1000)}}
+  ressources:n(g.ressources,D.ressources,1000),restes:n(g.restes,D.restes,100),rarete:table(g.rarete,D.rarete,1000)}}
 /* Le prix qu'une pièce vaudrait selon le guide, et le détail du calcul. Les ressources comptent
    pour leur valeur, celle que porte leur pièce à l'Armurerie. */
 function prixSuggere(o,g){g=normaliseGuidePrix(g||(typeof catalog!=='undefined'&&catalog?catalog.guidePrix:null));const lignes=[],ajoute=(nom,v)=>{if(v)lignes.push([nom,v])};
+ /* Un reste vaut une part de ce que ses composants rapportent, bien extraits — 25 % par défaut —,
+    arrondie en dessous ; ni base, ni rareté. */
+ if(o&&o.category==='restes'){let v=0;[[o.ressource1,o.rendement1],[o.ressource2,o.rendement2]].forEach(([k,q])=>{const r=k&&ressourcesJeu().find(x=>x.cle===k),n=lisQte(q);
+   if(r&&r.piece){const p=(Number(r.piece.price)||0)*n;v+=p;ajoute((n>1?n+' ':'')+r.nom,p)}});
+  return {total:Math.max(0,Math.floor(v*g.restes/100)),lignes,rarete:null,part:g.restes}}
  const col=itemColumn(o),cat=CATS_PRIX.find(([k])=>k===col);ajoute('Base, '+(cat?cat[1]:'pièce').toLowerCase(),g.base[col]||0);
  if(o.category==='weapon'){keys.forEach((k,i)=>{const nb=Math.max(0,Math.trunc(Number(o.dice&&o.dice[k]))||0);if(nb)ajoute(nb+' dé'+(nb>1?'s':'')+' '+types[i],nb*(g.des[k]||0))});
   if(!o.ranged&&weaponHands(o)===2)ajoute('Deux mains',g.deuxMains)}
@@ -85,7 +90,7 @@ function prixSuggere(o,g){g=normaliseGuidePrix(g||(typeof catalog!=='undefined'&
  const somme=lignes.reduce((t,[,v])=>t+v,0),rar=rareteDe(o),pct=g.rarete[rar]??100;
  return {total:Math.max(0,Math.min(999999,Math.round(somme*pct/100))),lignes,rarete:pct!==100?[NOM_RARETE(rar),pct]:null}}
 const detailPrix=s=>(s.lignes.length?s.lignes.map(([n,v])=>n+' : '+v.toLocaleString('fr-FR')).join('\n'):'Rien que le guide ne chiffre')
- +(s.rarete?'\n'+s.rarete[0]+' : × '+(s.rarete[1]/100).toLocaleString('fr-FR'):'')+'\n= '+s.total.toLocaleString('fr-FR')+' or';
+ +(s.rarete?'\n'+s.rarete[0]+' : × '+(s.rarete[1]/100).toLocaleString('fr-FR'):'')+(s.part!==undefined?'\n'+s.part+' % des composants, arrondi en dessous':'')+'\n= '+s.total.toLocaleString('fr-FR')+' or';
 // À côté d'un prix : la suggestion ; un clic la pose.
 function boutonSuggestion(){const b=document.createElement('button');b.type='button';b.className='prix-suggere';return b}
 function majSuggestion(b,o,prix){const s=prixSuggere(o),egal=s.total===prix;b.classList.toggle('egal',egal);b.dataset.total=String(s.total);
@@ -1584,7 +1589,7 @@ function renderGuidePrix(){const boite=$('guide-prix'),bloc=$('bloc-guide-prix')
   const u=document.createElement('small');u.textContent=unite;l.append(t,i,u);f.append(l)};
  const G=()=>catalog.guidePrix;
  const fb=groupe('Base','Ce que vaut une pièce de la catégorie, avant le reste.');
- CATS_PRIX.filter(([k])=>k!=='ressource').forEach(([k,n])=>champ(fb,n,()=>G().base[k],v=>{G().base[k]=v}));
+ CATS_PRIX.filter(([k])=>k!=='ressource'&&k!=='restes').forEach(([k,n])=>champ(fb,n,()=>G().base[k],v=>{G().base[k]=v}));
  const fd=groupe('Dés de dégâts','Par dé, sur une arme ; le dé qu’une munition ajoute compte aussi.');
  keys.forEach((k,i)=>champ(fd,types[i],()=>G().des[k],v=>{G().des[k]=v},'or',dicePips({[k]:1})));
  const fa=groupe('Défense et armes');
@@ -1596,6 +1601,8 @@ function renderGuidePrix(){const boite=$('guide-prix'),bloc=$('bloc-guide-prix')
  CARACS_EQUIP.forEach(([k,n])=>champ(fx,n,()=>G().bonus[k],v=>{G().bonus[k]=v}));
  const fr=groupe('Ressources','La valeur de chaque ressource se règle ici, et seulement ici ; une pièce faite de ressources en compte la part choisie.');
  champ(fr,'Part comptée',()=>G().ressources,v=>{G().ressources=v},'%');
+ // Un reste vaut cette part de ce que ses composants rapportent.
+ champ(fr,'Un reste vaut',()=>G().restes,v=>{G().restes=v},'%');
  ressourcesJeu().filter(r=>r.piece).sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(r=>champ(fr,r.nom,()=>r.piece.price||0,v=>{r.piece.price=Math.max(0,Math.min(999999,Math.round(Number(v))||0))},'or',logoEquipement(r.piece,'guide-logo')||undefined));
  const fq=groupe('Rareté','Multiplie le total : 100 % le laisse tel quel.');
  RARETES.forEach(([k,n])=>champ(fq,n,()=>G().rarete[k],v=>{G().rarete[k]=v},'%'));}
@@ -3250,14 +3257,16 @@ function selLogos(label,key,value,sansElementaires){const familles=[...famillesP
 // les weapon_*, une munition parmi les deux (le carquois de flèches est un weapon_*), tout
 // le reste parmi les item_*.
 // Les icônes des dossiers viennent en tête : ce sont les nouvelles qu'on cherche.
-/* Les planches de restes — « Restes 1 », « Restes 2 »… par leur nom ou leur fichier —, dans
-   l'ordre de leurs noms. Pour l'icône d'un reste, elles passent en tête du menu et de la grille,
-   chacune sous son nom : c'est là qu'on cherche. */
-function planchesRestes(){return planchesDuCatalogue().map(p=>p.fichier).filter(f=>/restes/i.test(nomPlanche(f))||/restes/i.test(f))
- .sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))}
-// Les groupes du menu des logos d'une pièce : [titre, logos]. Un reste commence par ses planches.
+/* Les planches qui passent en tête du menu et de la grille des logos, selon la catégorie de la
+   pièce — par leur nom ou leur fichier, dans l'ordre de leurs noms, chacune sous son nom : les
+   Restes pour un reste et pour une ressource (peaux, os, écailles…), les Armures pour une armure. */
+const PLANCHES_EN_TETE={restes:/restes/i,ressource:/restes/i,armor:/armures/i};
+function planchesEnTete(o){const re=PLANCHES_EN_TETE[o&&o.category];if(!re)return [];
+ return planchesDuCatalogue().map(p=>p.fichier).filter(f=>re.test(nomPlanche(f))||re.test(f))
+  .sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))}
+// Les groupes du menu des logos d'une pièce : [titre, logos]. Ses planches en tête, s'il en a.
 function groupesLogosItem(o){const l=logosItem(o),vus=new Set(),groupes=[];
- if(o&&o.category==='restes')planchesRestes().forEach(f=>{const ids=iconesPlanches().filter(id=>id.startsWith(f+'#'));ids.forEach(i=>vus.add(i));if(ids.length)groupes.push([nomPlanche(f),ids])});
+ planchesEnTete(o).forEach(f=>{const ids=iconesPlanches().filter(id=>id.startsWith(f+'#'));ids.forEach(i=>vus.add(i));if(ids.length)groupes.push([nomPlanche(f),ids])});
  const reste=l.filter(x=>!vus.has(x)),planches=reste.filter(estIconePlanche),autres=reste.filter(x=>!estIconePlanche(x));
  if(planches.length)groupes.push([groupes.length?'Autres icônes des planches':'Icônes des planches',planches]);
  groupes.push(['Logos',autres]);return groupes}
@@ -3378,7 +3387,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
  $('item-fields').innerHTML='<div class="edit-grid">'
   +field('Nom','name',a.name,'text','required maxlength="120"')
   +sel('Catégorie','category',cat,ITEM_CATS)
-  +selGrille(a.category==='restes'?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])]))
+  +selGrille(planchesEnTete(a).length?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])]))
   +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))
   +(arme?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="99"')
