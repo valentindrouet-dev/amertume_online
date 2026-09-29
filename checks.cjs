@@ -2976,8 +2976,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.331 — Modifier en masse : un clic sur un en-tête trie, un second inverse ; le tri standard
    revient à l'ordre de l'Armurerie. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("let armoryMasse=false,armoryNeuf=null,masseTri=null;")&&src.includes("std.onclick=()=>{masseTri=null;renderArmory()};")
-  &&src.includes("b.onclick=()=>{masseTri=actif?{cle,sens:-masseTri.sens}:{cle,sens:1};renderArmory()};")&&src.includes("tete.append(enTete('piece','Pièce'),...COLS.map(c=>enTete(c.cle,c.nom)));")
+ assert.ok(src.includes("let armoryMasse=false,armoryNeuf=null,masseTri=null;")&&src.includes("std.onclick=()=>{masseTri=null;gardeTris();renderArmory()};")
+  &&src.includes("b.onclick=()=>{masseTri=actif?{cle,sens:-masseTri.sens}:{cle,sens:1};gardeTris();renderArmory()};")&&src.includes("tete.append(enTete('piece','Pièce'),...COLS.map(c=>enTete(c.cle,c.nom)));")
   &&src.includes("sort((A,B)=>(A[1]===null)-(B[1]===null)||(A[1]===null?0:cmp(A[1],B[1])*masseTri.sens)||A[2]-B[2])"),'le tableau se trie par colonne, et revient au tri standard');}
 /* v0.332 — La valeur d'une ressource ne se règle qu'au guide des prix : le mode en masse n'y
    touche plus, ni ligne par ligne, ni pour toutes ; une opération pour toutes s'annule. */
@@ -3066,10 +3066,14 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxP.prixSuggere(peau,ctxP.normaliseGuidePrix({})).total,3,'3 Cuir à 4 + 1 Corde à 2 = 14 ; 25 %, arrondi en dessous : 3 — ni base, ni rareté');
  assert.equal(ctxP.prixSuggere(peau,ctxP.normaliseGuidePrix({restes:50})).total,7,'la part se règle au guide');
  assert.ok(src.includes("const PLANCHES_EN_TETE={restes:/restes/i,ressource:/restes/i,armor:/armures/i};")&&src.includes(" champ(fr,'Un reste vaut',()=>G().restes,v=>{G().restes=v},'%');"),'les planches en tête selon la catégorie ; la part des restes au guide');}
+/* v0.340 — Les tris restent d'une session à l'autre ; plus de pointillés entre les rangées de talents. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("const TRIS_GARDES=[['armory-sort','armurerie'],['bestiary-sort','bestiaire'],['talent-sort','talents']];")&&src.includes("localStorage.setItem('amertume-tris',JSON.stringify(o))")
+  &&!css.includes('.talent-rangee+.talent-rangee{border-top'),'les tris gardés, les rangées sans trait');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1755 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1756 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

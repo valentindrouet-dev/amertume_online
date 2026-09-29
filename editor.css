@@ -1123,7 +1123,6 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .cat-col.armurerie-grille h3{flex-basis:100%}
 /* Les talents d'une classe, une rangée par type ; chaque rangée revient à la ligne. */
 .talent-rangee{flex-basis:100%;display:flex;flex-wrap:wrap;gap:10px 8px;align-items:flex-start}
-.talent-rangee+.talent-rangee{border-top:1px dashed var(--line);padding-top:8px}
 /* « Noms » : sans eux, les cartes ne gardent que leur image. */
 body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-carte{display:none}
 .bouton-noms.on{border-color:var(--accent);color:var(--accent)}

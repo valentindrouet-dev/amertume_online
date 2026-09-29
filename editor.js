@@ -1445,7 +1445,7 @@ function barreMasse(boite,choisie){const barre=document.createElement('div');bar
    qty:1,price:0,ressource1:'',ressource2:'',magasin:false,def:0,slot:'torse',dice:{},traits:[]};
   catalog.items.push(o);normalizeCatalog(catalog);armoryNeuf=o.id;scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderArmory()};
  const std=document.createElement('button');std.type='button';std.className='masse-standard';std.textContent='↺ Tri standard';std.disabled=!masseTri;
- std.title='Revenir à l’ordre de l’Armurerie : armes de mêlée, armes à distance, armures, objets, ressources, trésors';std.onclick=()=>{masseTri=null;renderArmory()};
+ std.title='Revenir à l’ordre de l’Armurerie : armes de mêlée, armes à distance, armures, objets, ressources, trésors';std.onclick=()=>{masseTri=null;gardeTris();renderArmory()};
  barre.append(std);
  if(masseAnnule){const u=document.createElement('button');u.type='button';u.className='masse-annule';u.textContent='↶ Annuler : '+masseAnnule.dit;
   u.title='Remettre les '+masseAnnule.avant.length+' pièces telles qu’elles étaient avant cette opération';
@@ -1492,7 +1492,7 @@ function tableMasse(boite,liste){
   const b=document.createElement('button');b.type='button';b.className='masse-tri';b.textContent=nom;
   const fl=document.createElement('span');fl.className='masse-fleche';fl.textContent=actif?(masseTri.sens>0?'▲':'▼'):'⇅';b.append(fl);
   b.title='Trier par '+nom.toLowerCase()+(actif?' — cliquer pour inverser':'');
-  b.onclick=()=>{masseTri=actif?{cle,sens:-masseTri.sens}:{cle,sens:1};renderArmory()};th.append(b);return th};
+  b.onclick=()=>{masseTri=actif?{cle,sens:-masseTri.sens}:{cle,sens:1};gardeTris();renderArmory()};th.append(b);return th};
  tete.append(enTete('piece','Pièce'),...COLS.map(c=>enTete(c.cle,c.nom)));
  const th0=document.createElement('th');th0.scope='row';th0.textContent='Pour les '+liste.length+' pièces affichées';tous.append(th0);
  /* Changer une colonne pour toutes : une seule question avant, puis toutes les lignes suivent. */
@@ -2872,6 +2872,15 @@ $('armory-masse').onclick=()=>{armoryMasse=!armoryMasse;renderArmory()};
 $('armory-add').onclick=()=>openItem(null);
 $('bestiary-search').oninput=renderBestiary;$('bestiary-family').onchange=renderBestiary;
 $('bestiary-sort').onchange=renderBestiary;
+/* Les tris choisis restent d'une session à l'autre, sur l'appareil — le rechargement qui suit une
+   mise à jour les remettait à zéro : Armurerie, Bestiaire, Talents, et le tri par colonne du
+   tableau de Modifier en masse. */
+const TRIS_GARDES=[['armory-sort','armurerie'],['bestiary-sort','bestiaire'],['talent-sort','talents']];
+function gardeTris(){try{const o={};TRIS_GARDES.forEach(([id,k])=>{const s=$(id);if(s)o[k]=s.value});if(masseTri)o.masse=masseTri;
+ localStorage.setItem('amertume-tris',JSON.stringify(o))}catch(e){}}
+{let o={};try{o=JSON.parse(localStorage.getItem('amertume-tris')||'{}')||{}}catch(e){}
+ TRIS_GARDES.forEach(([id,k])=>{const s=$(id);if(s&&typeof o[k]==='string'&&[...s.options].some(x=>x.value===o[k]))s.value=o[k];if(s)s.addEventListener('change',gardeTris)});
+ if(o.masse&&typeof o.masse.cle==='string'&&(o.masse.sens===1||o.masse.sens===-1))masseTri={cle:o.masse.cle,sens:o.masse.sens}}
 // Depuis le bestiaire, un nouveau monstre est un modèle : il s'y range, sans entrer en scène.
 $('bestiary-add').onclick=()=>openActor(null,false,null,true);
 const itemDialog=dialog('item-editor','Objet','<form id="item-form"><div id="item-fields"></div><div class="form-actions"><button type="button" id="delete-item">Supprimer du catalogue</button><button class="primary">Enregistrer</button></div></form>');
