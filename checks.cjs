@@ -1913,8 +1913,9 @@ assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x
  const [o,b,g,d,x]=['o','b','g','d','x'].map(id=>ctx.catalog.talents.find(t=>t.id===id));
  // Le premier central est libre ; une diagonale attend son central ; le suivant, un chemin ouvert.
  assert.equal(ctx.verrouEtages([],et,o),'');assert.equal(ctx.verrouEtages([],et,g),'Orbes de Feu');assert.equal(ctx.verrouEtages([],et,d),'Orbes de Feu');
- assert.equal(ctx.verrouEtages([],et,b),'Orbes de Feu ou Braise ou Cendre');
- assert.equal(ctx.verrouEtages(['o'],et,g),'');assert.equal(ctx.verrouEtages(['o'],et,b),'');
+ // Deux diagonales, deux chemins : plus de chemin droit, le suivant se prend par l'une d'elles.
+ assert.equal(ctx.verrouEtages([],et,b),'Braise ou Cendre');
+ assert.equal(ctx.verrouEtages(['o'],et,g),'');assert.equal(ctx.verrouEtages(['o'],et,b),'Braise ou Cendre');
  assert.equal(ctx.verrouEtages(['g'],et,b),'','par la diagonale gauche, sans le central');
  // Fermer le chemin droit : il faut passer par une diagonale ; fermer les retours : plus de passage.
  assert.equal(ctx.cheminCache('o','c'),false);assert.equal(ctx.basculeChemin('o','c'),true);assert.equal(ctx.cheminCache('o','c'),true);
@@ -1923,7 +1924,7 @@ assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x
  assert.equal(ctx.basculeChemin('o','dc'),true);assert.equal(ctx.verrouEtages(['o','g','d'],et,b),'un chemin ouvert jusqu’à lui');
  assert.equal(ctx.basculeChemin('o','g'),true);assert.equal(ctx.verrouEtages(['o'],et,g),'un chemin ouvert jusqu’à lui');
  assert.equal(JSON.stringify(ctx.catalog.cheminsCaches),JSON.stringify({o:['c','gc','dc','g']}));
- assert.equal(ctx.basculeChemin('o','c'),true);assert.equal(ctx.verrouEtages(['o'],et,b),'','rouvert');
+ assert.equal(ctx.basculeChemin('o','c'),true);assert.equal(ctx.verrouEtages(['o'],et,b),'un chemin ouvert jusqu’à lui','le droit rouvert ne sert pas : deux diagonales, deux chemins, et leurs retours sont fermés');
  assert.equal(ctx.basculeChemin('o','zzz'),false);assert.equal(ctx.basculeChemin('','c'),false);
  ['gc','dc','g'].forEach(seg=>ctx.basculeChemin('o',seg));assert.equal(JSON.stringify(ctx.catalog.cheminsCaches),'{}','tout rouvert : plus rien de noté');
  // La chute : oublier un central emporte tout ce qui est sous lui, diagonales comprises ; une diagonale tombe seule.
@@ -1945,7 +1946,7 @@ assert.ok(src.includes("const SEGMENTS=['c','g','gc','d','dc'];")&&src.includes(
 /* Les chemins se tracent en SVG d'un rond à l'autre, se ferment d'un clic pour le MJ, ne se
    dessinent pas fermés pour la troupe ; la vue joueur ôte les outils au MJ le temps de regarder. */
 assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');if(!corps||!arbresDialog.open)return;')
- &&src.includes("if(B){const cache=cheminCache(e.t.id,'c');if(mj||!cache)trait(H,B,'c',e.t.id,cache,false,!cache&&pris(e.t,e.suivant))}")
+ &&src.includes("if(B&&droitPermis(e)){const cache=cheminCache(e.t.id,'c');if(mj||!cache)trait(H,B,'c',e.t.id,cache,false,!cache&&pris(e.t,e.suivant));milieu(e.t.id,'c',H,B)}")
  &&src.includes("g.onclick=e=>{e.stopPropagation();if(basculeChemin(id,seg))arbreChange()}}")
  &&src.includes("const a=arbresActeur,mj=view==='mj'&&!arbresVueJoueur;")&&src.includes("else if(view!=='mj'){arbresDialog.close();return}")
  &&src.includes("arbresVue.onclick=()=>{arbresVueJoueur=!arbresVueJoueur;noteArbres('');renderArbres()};")
@@ -2763,7 +2764,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(T('b').horsArbre===true&&T('b').prerequis===''&&ctxR.catalog.talents.length===6,'le talent retiré reste au catalogue');
  assert.ok(T('c').prerequis==='a'&&!T('c').branche&&T('g').prerequis==='a'&&T('g').branche===''&&T('d').prerequis==='a'&&T('d').branche==='d','ses suivants remontent ; une diagonale déjà prise rejoint l’épine');
  assert.equal(ctxR.retireDeLArbre(T('b')),false,'un talent déjà retiré ne se retire pas deux fois');
- assert.ok(src.includes("function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&t.type!=='mait'&&!t.horsArbre);")
+ assert.ok(src.includes("function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&t.type!=='mait'&&!t.horsArbre&&!lisChemin(t));")
   &&src.includes("t.type==='mait'&&!t.horsArbre&&talentFamily(t)===classe")&&src.includes("t.prerequis=dest.prerequis||'';delete t.horsArbre;"),'hors de l’arbre, il n’y paraît plus ; replacé, il y revient');
  /* v0.294 — Ni réserve sous l'arbre, ni mention au catalogue : un talent retiré se remet
     dans l'arbre par son formulaire, « Place dans l'arbre ». */
@@ -3233,10 +3234,26 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    plus de double trait au-dessus des fiches ; deux arbres par classe au lieu de trois. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes('const VOIES_MAX=2;')&&css.includes('#heroes-page .cat-head{border-bottom:0;padding-bottom:6px}')&&css.includes('.comp-val.haute{color:#2f7d45;'),'deux arbres, un seul trait, le vert');}
+/* v0.357 — Les bonus de caractéristique se posent au milieu des chemins de l'arbre : optionnels,
+   à leur prix, activables dès que le talent d'où part le chemin est pris ; ils tombent avec lui.
+   Un talent central n'ouvre que deux chemins : avec ses deux diagonales, plus de chemin droit. */
+{const src=fs.readFileSync('editor.js','utf8');
+ const T=[{id:'o',name:'Orbes',famille:'M'},{id:'g',name:'Braise',famille:'M',prerequis:'o',branche:'g'},{id:'d',name:'Cendre',famille:'M',prerequis:'o',branche:'d'},
+  {id:'b1',name:'+1 PV',effet:'bonus',famille:'M',chemin:'o|g'},{id:'b2',name:'+1 DEF',effet:'bonus',famille:'M',chemin:'o|gc'},{id:'b3',name:'+2 PV',effet:'bonus',famille:'M'}];
+ const ctxB={catalog:{talents:T},estBonus:t=>!!t&&t.effet==='bonus'};vm.createContext(ctxB);
+ vm.runInContext(src.slice(src.indexOf('const cleChemin='),src.indexOf('function colonnesArbre('))+src.slice(src.indexOf('// Le bonus posé sur un chemin, s'),src.indexOf('// Oublier un central fait tomber'))
+  +';this.lisChemin=lisChemin;this.droitPermis=droitPermis;this.bonusDuChemin=bonusDuChemin;this.departChemin=departChemin;this.sansBonusOrphelins=sansBonusOrphelins;',ctxB);
+ assert.equal(JSON.stringify(ctxB.lisChemin(T[3])),JSON.stringify({id:'o',seg:'g'}));assert.equal(ctxB.lisChemin(T[5]),null,'un bonus de nœud n’est pas sur un chemin');
+ assert.equal(ctxB.bonusDuChemin('o','gc').id,'b2');assert.equal(ctxB.bonusDuChemin('o','d'),null);
+ assert.equal(ctxB.departChemin(T[3]).id,'o','de la diagonale : le central');assert.equal(ctxB.departChemin(T[4]).id,'g','du retour : la diagonale');
+ assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['o','b1','b2','b3'])),JSON.stringify(['o','b1','b3']),'sans la diagonale, son retour tombe ; un bonus de nœud reste');
+ assert.equal(ctxB.droitPermis({g:1,d:1}),false);assert.equal(ctxB.droitPermis({g:1,d:null}),true);assert.equal(ctxB.droitPermis({}),true);
+ assert.ok(src.includes("reste=sansBonusOrphelins(reste);")&&src.includes("const el=t?noeudBonusChemin(t,c,e,seg,ferme):mj?placeBonusChemin(c,e,seg):null;")
+  &&src.includes("&&!t.horsArbre&&!lisChemin(t));")&&src.includes("if(d.chemin)t.chemin=d.chemin}")&&src.includes("if(t.effet!=='bonus')delete t.chemin;"),'les bonus de chemin');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1805 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1815 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -933,6 +933,18 @@ button.choix-attaque .logos.croises{position:relative;width:30px;height:30px;dis
 .arbre-chemins .chemin.pris .trait{stroke:var(--green);stroke-dasharray:none;opacity:1}
 .arbre-chemins .chemin.vide .trait{stroke-dasharray:2 6;opacity:.55}
 .arbre-chemins .chemin.cache .trait{stroke-dasharray:5 7;opacity:.3}
+/* Les bonus de chemin : un petit rond posé au milieu du trait, au-dessus de lui. Chez le MJ, la
+   place d'un bonus à venir, un « + » pointillé qui paraît au survol de la colonne. */
+.arbre-col>.arbre-noeud.sur-chemin,.arbre-col>.arbre-bonus-place{position:absolute;z-index:2;transform:translate(-50%,-50%);margin:0}
+.arbre-col>.arbre-noeud.sur-chemin[hidden],.arbre-col>.arbre-bonus-place[hidden]{display:none}
+.arbre-col>.arbre-noeud.sur-chemin{width:auto;padding:0;gap:0}.arbre-noeud.sur-chemin::before{display:none}
+.arbre-noeud.sur-chemin .arbre-outils{top:-26px;right:auto;left:50%;transform:translateX(-50%)}
+.arbre-noeud.bonus.sur-chemin .arbre-rond{width:32px;height:32px;border-width:3px;box-shadow:0 0 0 2px var(--panel),0 1px 4px #0004}
+.arbre-noeud.bonus.sur-chemin .arbre-rond b{font:800 11px/1 system-ui}.arbre-noeud.bonus.sur-chemin .arbre-rond small{font:800 6px/1.05 system-ui;letter-spacing:.2px}
+.arbre-noeud.bonus.sur-chemin.acquis .arbre-rond{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--teinte),0 1px 5px #0005}
+.arbre-noeud.bonus.sur-chemin .arbre-paliers,.arbre-noeud.bonus.sur-chemin .arbre-niv{display:none}
+.arbre-bonus-place{width:22px;height:22px;padding:0;border-radius:50%;border:1.5px dashed var(--line-strong);background:var(--panel);color:var(--muted);font:700 13px/1 system-ui;opacity:0;transition:opacity .12s;cursor:pointer}
+.arbre-col.editable:hover .arbre-bonus-place,.arbre-bonus-place:focus{opacity:.85}.arbre-bonus-place:hover{border-color:var(--accent);color:var(--accent)}
 .arbre-col.editable .arbre-chemins .chemin{pointer-events:stroke;cursor:pointer}
 .arbre-col.editable .arbre-chemins .chemin:hover .trait{stroke:var(--accent);opacity:1}
 /* La vue joueur, à côté du titre : un œil pour regarder, un crayon pour reprendre. */

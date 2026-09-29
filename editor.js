@@ -142,6 +142,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(t.volets&&typeof t.volets==='object'&&!Array.isArray(t.volets)){const o={};
    Object.entries(t.volets).slice(0,12).forEach(([k,v])=>{const n=Math.trunc(Number(v));if(/^[a-z]{1,20}$/.test(k)&&n>=0&&n<=3)o[k]=n});t.volets=o}
   else delete t.volets});
+ // Le chemin d'un bonus : un bonus seulement, d'un central qui existe, sur un segment connu.
+ c.talents.forEach(t=>{if(!t||t.chemin===undefined)return;const m=/^(.+)\|(c|g|gc|d|dc)$/.exec(String(t.chemin||''));
+  if(t.effet!=='bonus'||!m||!c.talents.some(x=>x&&x.id===m[1]))delete t.chemin});
  /* Les chemins fermés de l'arbre, par talent central : ceux qu'on ne dessine ni ne marche.
     Un chemin d'un talent disparu, ou d'un segment inconnu, s'oublie. */
  const caches=c.cheminsCaches&&typeof c.cheminsCaches==='object'&&!Array.isArray(c.cheminsCaches)?c.cheminsCaches:{};
@@ -2310,7 +2313,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.famille=(f.famille.value===AUTRE_CLASSE?f.familleLibre.value:f.famille.value).trim()||GENERIQUES;
  /* La voie, le prérequis et la place viennent de l'arbre : ceux qu'il a donnés à un talent
     créé chez lui, ceux qu'il tient déjà sinon. Changer de classe les remet à zéro. */
- if(!avant){const d=talentDefauts||{};t.voie=d.voie||'';t.prerequis=d.prerequis||'';t.branche=d.branche==='g'||d.branche==='d'?d.branche:''}
+ if(!avant){const d=talentDefauts||{};t.voie=d.voie||'';t.prerequis=d.prerequis||'';t.branche=d.branche==='g'||d.branche==='d'?d.branche:'';if(d.chemin)t.chemin=d.chemin}
  else if(talentFamily(avant)!==talentFamily(t)){t.voie='';t.prerequis='';t.branche=''}
  t.type=f.type.value;t.level=num(f.level.value,1,20);
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
@@ -2340,6 +2343,8 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});
   t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.logo='';t.effects='';
   t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={};delete t.elementaire;delete t.volets}
+ // Seul un bonus se pose sur un chemin : redevenu talent, il le quitte.
+ if(t.effet!=='bonus')delete t.chemin;
  if(talentIndex===null)catalog.talents.push(t);else catalog.talents[talentIndex]=t;
  talentDialog.close();renderCatalogPages();render();scheduleSave();
  const rappel=talentApres;talentApres=null;if(rappel)rappel(t)};
@@ -2683,7 +2688,16 @@ function accordeArbres(){let change=false;
   colonnesArbre(classe).forEach(col=>{const ids=new Set(col.liste.map(t=>t.id));
    col.liste.forEach(t=>{if(t.prerequis&&!ids.has(t.prerequis)&&!maitrises.has(t.prerequis)){t.prerequis='';t.branche='';change=true}})})});
  return change}
-function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&t.type!=='mait'&&!t.horsArbre);
+/* Un bonus de caractéristique peut se poser au milieu d'un chemin plutôt que sur un nœud : il se
+   range par le central de son étage et le segment qu'il occupe, « id|g ». Ce n'est pas un nœud de
+   colonne. Le talent d'où part le chemin l'ouvre : pris, le bonus devient activable, à son prix
+   en PT ; rien ne l'exige pour passer. */
+const cleChemin=(id,seg)=>id+'|'+seg;
+function lisChemin(t){const m=/^(.+)\|(c|g|gc|d|dc)$/.exec(String(t&&t.chemin||''));return m?{id:m[1],seg:m[2]}:null}
+/* Un talent ouvre deux chemins, pas plus : un central qui porte ses deux diagonales n'a plus de
+   chemin droit vers le suivant ; avec une seule, ou aucune, le droit demeure. */
+const droitPermis=e=>!(e&&e.g&&e.d);
+function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&t.type!=='mait'&&!t.horsArbre&&!lisChemin(t));
  const voies=voiesDe(classe),nommees=voies.filter(Boolean),accueil=rangDAccueil(classe);
  return voies.map((v,i)=>{
   /* Le rang d'accueil prend les siens et les sans-voie : quand les trois portent un nom,
@@ -2739,12 +2753,21 @@ function verrouEtages(portes,etages,t){const a=id=>(portes||[]).includes(id);
   if(e.g===t||e.d===t){const seg=e.g===t?'g':'d';
    if(cheminCache(e.t.id,seg))return 'un chemin ouvert jusqu’à lui';return a(e.t.id)?'':e.t.name}
   if(e.t===t){if(i===0)return '';const h=etages[i-1],voies=[];
-   if(!cheminCache(h.t.id,'c'))voies.push(h.t);
+   if(droitPermis(h)&&!cheminCache(h.t.id,'c'))voies.push(h.t);
    if(h.g&&!cheminCache(h.t.id,'gc'))voies.push(h.g);
    if(h.d&&!cheminCache(h.t.id,'dc'))voies.push(h.d);
    if(!voies.length)return 'un chemin ouvert jusqu’à lui';
    return voies.some(x=>a(x.id))?'':voies.map(x=>x.name).join(' ou ')}}
  return ''}
+// Le bonus posé sur un chemin, s'il y en a un.
+function bonusDuChemin(id,seg){return (catalog.talents||[]).find(t=>t&&estBonus(t)&&t.chemin===cleChemin(id,seg))||null}
+// Le talent d'où part le chemin d'un bonus : le central, ou la diagonale pour un retour.
+function departChemin(t){const c=lisChemin(t);if(!c)return null;
+ if(c.seg==='gc'||c.seg==='dc'){const cote=c.seg[0];return (catalog.talents||[]).find(x=>x&&x.prerequis===c.id&&x.branche===cote&&!x.horsArbre&&!lisChemin(x))||null}
+ return (catalog.talents||[]).find(x=>x&&x.id===c.id)||null}
+// Un bonus de chemin dont le départ n'est plus tenu tombe avec lui.
+function sansBonusOrphelins(liste){const tient=new Set(liste||[]);
+ return (liste||[]).filter(id=>{const t=(catalog.talents||[]).find(x=>x&&x.id===id);if(!t||!lisChemin(t))return true;const d=departChemin(t);return !!d&&tient.has(d.id)})}
 // Oublier un central fait tomber tout ce qui est sous lui, diagonales comprises ; une diagonale ne tombe que seule.
 function chuteDe(etages,t){const i=etages.findIndex(e=>e.t===t);
  return i<0?[t]:etages.slice(i).flatMap(e=>[e.t,e.g,e.d].filter(Boolean))}
@@ -2927,6 +2950,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const oublier=(t,racines)=>{const avant=a.talents;let reste=avant;
   const chute=racines.includes(t)?racines.slice(racines.indexOf(t)):[t];
   [...chute].reverse().forEach(x=>{reste=talentsSans(reste,x.id,catalog.talents).liste});
+  reste=sansBonusOrphelins(reste);
   a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);
   return avant.filter(id=>id!==t.id&&!reste.includes(id)).map(id=>{const x=talent(id);return x?x.name:''}).filter(Boolean)};
  const ico=(g,titre,fn)=>{const b=document.createElement('button');b.type='button';b.className='ico';b.textContent=g;
@@ -3025,6 +3049,28 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    note(tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'');majTable()});
   glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,prerequis:t.id});
   return el};
+ /* Un bonus posé sur un chemin : petit, au milieu du trait. Activable dès que le talent d'où part
+    le chemin est pris, et s'il est ouvert ; un clic l'active, à son prix ; « − » ou le clic droit
+    le rend. Sur le plan, le MJ le corrige ou l'ôte. */
+ const noeudBonusChemin=(t,c,e,seg,ferme)=>{const depart=seg==='gc'?e.g:seg==='dc'?e.d:e.t,acquis=porte(t);
+  const verrou=!a||acquis?'':ferme?'un chemin ouvert jusqu’à lui':porte(depart)?'':depart.name;
+  const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);el.classList.add('sur-chemin');
+  el.noteBulle=a?(acquis?'Bonus activé.':verrou?'S’active une fois « '+verrou+' » pris.':'Bonus optionnel : un clic l’active, à son prix.'):'Bonus posé sur le chemin, optionnel pour la troupe.';
+  const outils=el.querySelector('.arbre-outils');
+  if(outils)outils.replaceChildren(ico('✎','Corriger ce bonus',()=>openTalent(catalog.talents.indexOf(t),renderArbres)),
+   ico('✕','Ôter ce bonus du chemin',()=>{if(!confirm('Ôter le bonus « '+t.name+' » de ce chemin ?'))return;
+    const i=catalog.talents.indexOf(t);if(i>=0)catalog.talents.splice(i,1);actors.forEach(x=>{if(x.talents)x.talents=x.talents.filter(id=>id!==t.id)});arbreChange()}));
+  el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
+   if(verrou){note(verrou==='un chemin ouvert jusqu’à lui'?'Ce chemin est fermé.':'Ce bonus s’active une fois « '+verrou+' » pris.');return}
+   if(acquis){note('Bonus déjà activé : « − » ou le clic droit le rend.');return}
+   a.talents=[...a.talents,t.id];note('');majTable()};
+  if(a&&acquis)boutonMoins(el,t,()=>{a.talents=a.talents.filter(x=>x!==t.id);a.paliersTalents=normalisePaliersActeur(a);note('');majTable()});
+  return el};
+ // La place d'un bonus sur un chemin, chez le MJ : un « + » qui crée un bonus de caractéristique là.
+ const placeBonusChemin=(c,e,seg)=>{const p=document.createElement('button');p.type='button';p.className='arbre-bonus-place';p.textContent='+';
+  p.title='Poser un bonus de caractéristique sur ce chemin';p.setAttribute('aria-label',p.title);
+  p.onclick=ev=>{ev.stopPropagation();openTalent(null,()=>arbreChange(),{famille:c.famille,voie:c.voie,type:'pass',effet:'bonus',params:{carac:'pv',valeur:1},couts:[1,0,0],chemin:cleChemin(e.t.id,seg)})};
+  return p};
  // La place vide d'une diagonale : le MJ y crée un talent, ou y dépose celui qu'il tire.
  const place=(col,e,seg)=>{const p=document.createElement('div');p.className='arbre-place';
   if(!mj)return p;
@@ -3067,6 +3113,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     pile.append(inter)}});
   if(mj)pile.append(entre({famille:c.famille,voie:c.voie}));
   col.append(pile);
+  /* Les bonus de chemin : un petit rond au milieu de chaque chemin qui relie deux talents ; chez le
+     MJ, une place « + » là où il n'y en a pas. traceChemins les pose une fois la colonne mesurée. */
+  col.bonusChemins=[];
+  etages.forEach(e=>{[['c',e.suivant&&droitPermis(e)],['g',e.g],['d',e.d],['gc',e.g&&e.suivant],['dc',e.d&&e.suivant]].forEach(([seg,existe])=>{if(!existe)return;
+   const ferme=cheminCache(e.t.id,seg),t=bonusDuChemin(e.t.id,seg);if(ferme&&!mj)return;
+   const el=t?noeudBonusChemin(t,c,e,seg,ferme):mj?placeBonusChemin(c,e,seg):null;
+   if(el){el.hidden=true;col.append(el);col.bonusChemins.push({el,id:e.t.id,seg})}})});
   if(mj){const plus=document.createElement('button');plus.type='button';plus.className='arbre-ajout';plus.textContent='+ Talent';
    plus.title='Ajouter un talent central dans '+c.titre+' : un nouveau, ou un talent qui existe déjà';
    plus.onclick=()=>ajouterDansArbre({famille:c.famille,voie:c.voie});col.append(plus)}
@@ -3097,6 +3150,8 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
   // Sans combattant, l'arbre se lit comme un plan : ses traits restent pleins.
   col.classList.toggle('sans-acteur',!a);
   const pris=(x,y)=>!!a&&!!x&&!!y&&a.talents.includes(x.id)&&a.talents.includes(y.id);
+  // Le milieu de chaque chemin tracé, là où se pose son bonus.
+  const milieux={},milieu=(id,seg,p,q)=>{milieux[cleChemin(id,seg)]={x:(p.x+q.x)/2,y:(p.y+q.y)/2}};
   const trait=(p,q,seg,id,cache,vide,marche)=>{const g=document.createElementNS(ns,'g');
    g.setAttribute('class','chemin '+seg+(cache?' cache':'')+(vide?' vide':'')+(marche?' pris':''));
    const l=document.createElementNS(ns,'line'),z=document.createElementNS(ns,'line');
@@ -3110,11 +3165,13 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
    svg.append(g)};
   etages.forEach(e=>{const haut=elDe(e.t.id);if(!haut)return;const H=centre(haut);
    const bas=e.suivant?elDe(e.suivant.id):null,B=bas?centre(bas):null;
-   if(B){const cache=cheminCache(e.t.id,'c');if(mj||!cache)trait(H,B,'c',e.t.id,cache,false,!cache&&pris(e.t,e.suivant))}
+   if(B&&droitPermis(e)){const cache=cheminCache(e.t.id,'c');if(mj||!cache)trait(H,B,'c',e.t.id,cache,false,!cache&&pris(e.t,e.suivant));milieu(e.t.id,'c',H,B)}
    [['g','gc',e.g],['d','dc',e.d]].forEach(([seg,retour,t])=>{const el=t?elDe(t.id):placeDe(e.t.id,seg);if(!el)return;
     const M=centre(el),cache=cheminCache(e.t.id,seg),cacheRetour=cheminCache(e.t.id,retour);
-    if(mj||!cache)trait(H,M,seg,e.t.id,cache,!t,!cache&&pris(e.t,t));
-    if(B&&(mj||!cacheRetour))trait(M,B,retour,e.t.id,cacheRetour,!t,!cacheRetour&&pris(t,e.suivant))})})})}
+    if(mj||!cache)trait(H,M,seg,e.t.id,cache,!t,!cache&&pris(e.t,t));if(t)milieu(e.t.id,seg,H,M);
+    if(B&&(mj||!cacheRetour))trait(M,B,retour,e.t.id,cacheRetour,!t,!cacheRetour&&pris(t,e.suivant));if(t&&B)milieu(e.t.id,retour,M,B)})});
+  // Chaque bonus de chemin au milieu de son trait ; un chemin qui ne se dessine plus le cache.
+  (col.bonusChemins||[]).forEach(({el,id,seg})=>{const m=milieux[cleChemin(id,seg)];el.hidden=!m;if(m){el.style.left=m.x.toFixed(1)+'px';el.style.top=m.y.toFixed(1)+'px'}})})}
 /* Les réglages de l'appareil : le thème et les touches de la carte. Rien n'est enregistré
    dans la partie — c'est le navigateur qui s'en souvient, pour ce poste seulement. */
 function renderSettings(){const boite=$('raccourcis');if(!boite)return;
