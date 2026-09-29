@@ -586,6 +586,8 @@ button.choix-attaque .nom{display:block;white-space:nowrap}
 button.btn-action.rond,button.btn-action.rond.inerte{position:relative;width:58px;height:58px;min-width:0;padding:0;border-radius:50%;display:grid;place-items:center;margin:0 0 3px;letter-spacing:0;font-size:26px;line-height:1}
 .etat-actions button.btn-action.rond,.attack-row button.btn-action.rond{padding:0}
 button.btn-action.rond.on,button.btn-action.rond.on:hover:not(:disabled){box-shadow:var(--relief)}
+/* Un rond ne se soulève ni ne s'enfonce : sa bulle, posée sur lui, resterait sinon en l'air. */
+button.btn-action.rond:hover:not(:disabled),button.btn-action.rond:active:not(:disabled){transform:none}
 button.btn-action.rond .logos{margin:0;display:grid;place-items:center}
 button.btn-action.rond .logo-equip,.etat-actions button.btn-action.rond .logo-equip{width:38px;height:38px;margin:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
 button.btn-action.rond .glyphe{font-size:26px;line-height:1}
@@ -601,6 +603,16 @@ button.btn-action.rond .glyphe{font-size:26px;line-height:1}
 .des-combattant .pips{display:flex;gap:4px}
 .des-combattant .die-sq,.des-combattant .pips .etat-inflige{flex:0 0 24px;width:24px;height:24px}
 .des-combattant .bonus{font:800 18px/1 system-ui;color:#c4533d}
+.des-combattant .des-armes{display:inline-flex;align-items:center;gap:2px;margin-right:8px}
+.des-combattant .des-armes .logo-equip{width:28px;height:28px;margin:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+/* Les cibles : les socles seuls, les adversaires dans une boîte rouge, les alliés dans une verte. */
+.cibles-groupe{display:flex;align-items:center;gap:5px;padding:3px 6px;border-radius:999px;border:1px solid}
+.cibles-groupe.adverses{border-color:#c2604f;background:#c2604f22}.cibles-groupe.allies{border-color:#5f9b74;background:#5f9b7422}
+.targets .cible,.targets .cible:hover,.targets .cible.adverse{position:relative;padding:0;border:0;background:transparent;border-radius:50%;gap:0}
+.targets .cible .rond{width:32px;height:32px;border-width:2px;font-size:15px;background:var(--panel)}
+.targets .cible:hover .rond{transform:scale(1.08)}
+.targets .cible.on .rond{box-shadow:0 0 0 2px var(--panel),0 0 0 4px #5f9b74}.targets .cible.adverse.on .rond{box-shadow:0 0 0 2px var(--panel),0 0 0 4px #c2604f}
+.targets .cible .num{position:absolute;right:-5px;bottom:-4px;background:var(--panel)}
 /* Ce qu'il reste d'un geste compté — les repos courts — en pastille au bas du disque. */
 button.btn-action.rond .compte-rond{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);min-width:24px;padding:2px 5px;border-radius:9px;
  background:var(--panel);color:var(--ink);border:2px solid var(--fond);font:800 11px/1 system-ui;text-shadow:none;white-space:nowrap}

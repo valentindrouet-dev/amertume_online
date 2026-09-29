@@ -3,7 +3,7 @@
 <style>
 /* Killam Bold, fournie par Valentin, pour les chiffres des caractéristiques. Sous-ensemble
    latin en WOFF2 : 48 Ko au lieu des 188 Ko du TTF d'origine, qui reste dans fonts/. */
-@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.362') format('woff2');
+@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.363') format('woff2');
  font-weight:700;font-style:normal;font-display:swap}
 
 /* Deux palettes, un seul jeu de règles : tout le décor passe par ces jetons, si bien
@@ -114,17 +114,17 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 .floater{position:absolute;transform:translate(-50%,-50%);font:800 22px 'Killam',Georgia,serif;white-space:nowrap;text-shadow:0 2px 4px #000000b3,0 0 2px #0009}
 .floater.perte{color:#f0705a}.floater.gain{color:#8fd77e}.floater.nul{color:#e7d9b8}.board-die{position:absolute;display:grid;place-items:center;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:11px;font:800 20px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -3px 5px #00000026,0 7px 16px #000000a6;will-change:transform}.board-die.dark{color:#f4f6f2}.journal-title{font:600 13px system-ui;letter-spacing:3px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px}.journal{max-height:330px;display:flex;flex-direction:column;gap:9px;padding-right:4px}.journal li{border:0;padding:0}/* Les colonnes se calent sur la colonne centrale : la droite prend sa hauteur exacte et le journal y prend ce que la fiche lui laisse ; à gauche, les points de vie descendent au bas. */.stack.right.calee{min-height:0}.stack.right.calee>.panel{flex:none}.stack.right.calee>.panel:last-child{flex:1 1 0;min-height:150px;display:flex;flex-direction:column;box-sizing:border-box}.stack.right.calee .journal{flex:1;min-height:0;max-height:none}.stack.right.calee .journal-title,.stack.right.calee .journal-chat{flex:none}/* Un seul lettrage pour les titres de blocs : petites capitales espacées, sans Killam. */.eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title,.panel>h2,#carte-titre{font:600 13px/1.25 system-ui,-apple-system,'Segoe UI',sans-serif;letter-spacing:2.5px;text-transform:uppercase}/* Actions et Dés partent de la même ligne : la carte des actions perd sa marge de rangée. *//* Le bloc Actions a une hauteur fixe, vide ou garni : la carte, calée dessus, ne bouge jamais ; un contenu plus haut défile à l'intérieur. */.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}.attack-card.vide #reveal,.attack-card.vide #attack-choices{display:none}#pv-panel.vide .hp-buttons button{opacity:.45;pointer-events:none}#sheet.vide #hpbar,#sheet.vide #bloc-gear,#sheet.vide .divider{display:none}#sheet.vide .sheet-head{min-height:34px}/* La fiche prend la hauteur de ce qu'elle montre — talents et équipement dépliés compris — et le journal, calé dessous, prend tout le reste. */#sheet{min-height:0}.j-entry{font-size:14px;line-height:1.45;color:var(--ink);white-space:pre-line}/* La flèche en vol : un trait sombre à pointe claire, tourné vers sa cible. *//* Le souffle d'un tir : une rafale claire et étirée, deux filets d'air par-dessus. *//* Les coups, lisibles et toujours les mêmes : au contact, un trait de balayage fend l'air sur la cible, puis un choc — un anneau qui s'élargit ; à distance, un projectile file en ligne droite du tireur à la cible, puis le même choc. Blanc cerné de sombre : visible sur toute carte. Chaque geste dure le même temps, au même rythme. */.vfx{position:absolute;pointer-events:none;z-index:5;will-change:transform,opacity;transform:translate(-50%,-50%)}.vfx svg{display:block;width:100%;height:100%;overflow:visible}.vfx-taillade{transform:translate(-50%,-50%) rotate(var(--rot,0deg))}.vfx-taillade .revele{fill:none;stroke:#fff;stroke-width:34;stroke-linecap:round}.vfx-taillade .lame{fill:#fffaf0}.vfx-taillade .lame-halo{fill:#f3c86a;stroke:#f3c86a;stroke-width:5;stroke-linejoin:round;opacity:.85}.vfx-taillade svg{filter:drop-shadow(0 0 1.5px #000c) drop-shadow(0 0 6px #ffcf6acc)}.vfx-etincelles .gerbe{stroke:#fff6dc;stroke-width:4.5;stroke-linecap:round}.vfx-etincelles svg{filter:drop-shadow(0 0 1px #000d) drop-shadow(0 0 4px #ffc85acc)}.vfx-fleche{transform:none}.vfx-fleche .hampe-ombre{stroke:#000a;stroke-width:5;fill:none}.vfx-fleche .hampe{stroke:#f1e4c8;stroke-width:2.6;fill:none}.vfx-fleche .plume{fill:#b8452e;stroke:#0009;stroke-width:1}.vfx-fleche .pointe{fill:#e9eef2;stroke:#000b;stroke-width:1.2}.vfx-fleche svg{filter:drop-shadow(0 0 3px #fff8)}/* Le balayage d'un coup au contact : un arc d'air, clair au bord, qui tourne autour de l'attaquant. *//* La parole : le socle de qui parle, puis ses mots. */.j-chat{display:flex;align-items:flex-start;gap:8px;border:1px solid color-mix(in srgb,var(--ink) 14%,transparent);background:color-mix(in srgb,var(--ink) 4%,transparent);border-radius:7px;padding:4px 8px;margin:2px 0}.j-avatar{flex:none;width:24px;height:24px;border-radius:50%;overflow:hidden;background:#d9cfbd;color:#2a2118;display:grid;place-items:center;font:700 12px 'Killam',Georgia,serif}.j-avatar img{width:100%;height:100%;object-fit:cover;display:block}.j-avatar.mj{background:var(--accent);color:#fff}.j-corps{min-width:0}.j-texte{white-space:pre-wrap;overflow-wrap:anywhere}.journal-vider{margin-left:auto;font:600 11px system-ui;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}.journal-vider:hover{color:var(--ink);border-color:var(--ink)}.journal-chat{display:flex;gap:6px;margin-top:8px;flex:none}.journal-chat input{flex:1;min-width:0;font:14px system-ui;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}.journal-chat button{flex:none;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--accent);cursor:pointer;font-size:14px}/* Un cartouche léger, de la couleur de l'action : bleu pour un coup, violet pour un talent, une analyse ou un orbe, vert pour un soin, rouge pour une perte, ambre pour un état, or pour une révélation, brun pour la carte. */.j-entry.ton{--ton:#3f7bc0;border:1px solid color-mix(in srgb,var(--ton) 30%,transparent);background:color-mix(in srgb,var(--ton) 7%,transparent);border-radius:7px;padding:3px 8px;margin:2px 0}.j-entry.ton-attaque{--ton:#3f7bc0}.j-entry.ton-talent{--ton:#8a63c9}.j-entry.ton-soin{--ton:#2f8a63}.j-entry.ton-degats{--ton:#b8483a}.j-entry.ton-etat{--ton:#a2691f}.j-entry.ton-reveal{--ton:#9d7b1e}.j-entry.ton-carte{--ton:#8a6d3b}.ton-butin{--ton:#a8832c}.j-turn{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:5px 0 1px}.j-turn::before,.j-turn::after{content:"";flex:1;height:1px;background:var(--line)}.j-name{font-weight:700}.j-key{font-weight:700}.j-num{font-weight:800;color:#b4553a}.j-dice{opacity:.7}/* La ligne d'attaque : le logo de l'arme entre les deux noms, les dégâts cliquables, le détail des dés dessous. */.j-attaque .logo-equip{width:20px;height:20px;vertical-align:-5px;margin:0 1px;filter:drop-shadow(0 1px 1px #0006)}.j-degats{font-weight:800;color:#b4553a}.j-degats.cliquable{cursor:pointer;border-bottom:1px dashed currentColor}.j-degats.cliquable:hover,.j-degats.ouvert{color:#d0644a}.j-detail{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:6px}.j-de{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;font:800 12px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -2px 3px #00000026,0 2px 4px #0000005e}.j-de.dark{color:#f4f6f2}.j-de.barre{opacity:.35;filter:grayscale(1);box-shadow:none}.j-de.relance{margin-left:8px}.j-plus{font:600 12px system-ui;color:var(--muted)}.j-plus.total{font-weight:800;color:var(--ink)}.j-badge{display:inline-block;background:#8d3b32;color:#ffe6df;border-radius:5px;padding:1px 7px;font-weight:700;font-size:12px}
 /* Le socle qui arrive du réseau glisse jusqu'à sa place. */.token.glisse{transition:left .18s linear,top .18s linear}/* L'orbe en vol : une bille lumineuse de la couleur de ses dés. */.orbe-vol{position:absolute;will-change:transform,opacity;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;background:radial-gradient(circle at 35% 35%,#fff9,var(--orbe) 55%,transparent 72%);box-shadow:0 0 14px 5px var(--orbe),0 0 44px 16px color-mix(in srgb,var(--orbe) 55%,transparent)}/* L'orbe de feu : un cœur blanc, une écorce d'ambre et une flamme qui bat autour. Seuls
-   transform et opacity s'animent — le compositeur mène le vol sans le fil principal. */.orbe-vol.feu{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}.orbe-vol.feu::after{content:'';position:absolute;inset:-22%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 50% 66%,#ffb14ab3,#ff5a1e4d 45%,transparent 72%);animation:flamme .26s ease-in-out infinite alternate}@keyframes flamme{from{transform:scale(.86) rotate(-9deg);opacity:.7}to{transform:scale(1.2) rotate(10deg);opacity:1}}@media(prefers-reduced-motion:reduce){.orbe-vol.feu::after{animation:none}}/* Un envoi refusé se voit sur le bouton de la table. */#open-live[data-souci]{color:#b8483a;border-color:#b8483a}</style><link rel="stylesheet" href="./editor.css?v=0.362"></head><body>
-<header><div class="brand"><span class="brand-ligne"><span class="brand-nom">Amertüme</span><span class="ver">v0.362</span></span><span class="brand-online">ONLINE</span></div><div class="view-controls"><label for="view">Vue</label><select id="view"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select></div></header>
+   transform et opacity s'animent — le compositeur mène le vol sans le fil principal. */.orbe-vol.feu{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}.orbe-vol.feu::after{content:'';position:absolute;inset:-22%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 50% 66%,#ffb14ab3,#ff5a1e4d 45%,transparent 72%);animation:flamme .26s ease-in-out infinite alternate}@keyframes flamme{from{transform:scale(.86) rotate(-9deg);opacity:.7}to{transform:scale(1.2) rotate(10deg);opacity:1}}@media(prefers-reduced-motion:reduce){.orbe-vol.feu::after{animation:none}}/* Un envoi refusé se voit sur le bouton de la table. */#open-live[data-souci]{color:#b8483a;border-color:#b8483a}</style><link rel="stylesheet" href="./editor.css?v=0.363"></head><body>
+<header><div class="brand"><span class="brand-ligne"><span class="brand-nom">Amertüme</span><span class="ver">v0.363</span></span><span class="brand-online">ONLINE</span></div><div class="view-controls"><label for="view">Vue</label><select id="view"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select></div></header>
 <div class="intro" hidden><h1>Les ruines du passage</h1></div>
 <main class="layout"><aside class="stack left"><section class="panel"><div class="turn-head"><div class="eyebrow" id="titre-tour">Tour de combat</div><div class="turn" id="round">01</div></div><div id="bloc-activation" hidden><h2>Activation</h2><div class="checks"><label><input type="checkbox" id="action"> Action</label><label><input type="checkbox" id="move"> Mvt / Analyse</label><label><input type="checkbox" id="item"> Objet</label></div><div class="divider"></div></div><div class="turn-actions"><button class="full" id="next">Tour suivant →</button><button id="reset-round" title="Revenir au tour 1 : activations, cibles, états et analyses remis à zéro, adversaires à nouveau inconnus" aria-label="Réinitialiser le tour de combat">↺</button></div><div class="side-actions"><button id="start-combat" class="primary" hidden>⚔ Début du combat</button><button id="end-combat" hidden>Fin du combat</button></div></section><section class="panel pv-panel" id="pv-panel" hidden><div class="eyebrow">Points de vie</div><div class="hp-buttons" id="hp-buttons"></div></section><section class="panel"><h2>COMBATTANTS</h2><div id="actors"></div><button type="button" class="ajout-camp" id="new-hero" title="Ajouter un aventurier à la scène" aria-label="Ajouter un aventurier à la scène" hidden>+</button><button type="button" class="ajout-camp" id="new-monster" title="Ajouter un adversaire à la scène" aria-label="Ajouter un adversaire à la scène" hidden>+</button></section></aside>
 <div class="stack"><section class="panel map-panel"><div class="mapbar"><div class="mapbar-h1"><strong id="carte-titre">CARTE TACTIQUE</strong><button class="icon-btn toggle-portees" id="portees">◎ Contacts</button><div class="zoom-bar"><button id="zoom-out" aria-label="Dézoomer">−</button><span id="zoom-label">100 %</span><button id="zoom-in" aria-label="Zoomer">+</button><button id="zoom-reset">Ajuster</button></div></div><div class="mapbar-h2" hidden><label class="file"><button id="upload">Importer une carte</button><input class="sr" type="file" id="mapfile" accept="image/png,image/jpeg,image/webp"></label><button class="icon-btn" id="reset-map" title="Retirer la carte de fond" aria-label="Retirer la carte de fond">🗑</button></div></div><div class="map" id="map" aria-label="Carte tactique. Déplacez les tokens par glissement ou avec les flèches du clavier."><div id="map-view"><svg class="plan" viewBox="0 0 800 480" preserveAspectRatio="none" aria-hidden="true"><g class="walls" fill="#172326" stroke="#57635c" stroke-width="3"></g><g fill="#9da797" font-family="system-ui" font-size="12" letter-spacing="4"><text x="305" y="130">COUR INTÉRIEURE</text><text x="318" y="462">ENTRÉE SUD</text></g></svg><svg id="map-shapes" aria-hidden="true"></svg><canvas id="fog" aria-hidden="true"></canvas><svg id="map-doors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><div id="contact-ring" hidden></div><svg id="aim" aria-hidden="true"><defs><marker id="shot-ok" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#3f7bc0"/></marker><marker id="shot-no" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#e0483c"/></marker><marker id="shot-done" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#8b969b"/></marker></defs><path id="aim-arrow" class="aim-fleche"/></svg><div id="marquee" hidden aria-hidden="true"></div><div id="floaters" aria-hidden="true"></div></div></div></section>
-<div class="actions-rangee"><section class="panel attack-card"><p class="attack-info" id="multi-note" hidden>Plusieurs combattants sélectionnés.</p><div class="targets" id="targets"></div><div class="choix-attaques" id="attack-choices"></div><div class="attack-row" id="attack-row"><button class="btn-action btn-analyse rond" id="reveal" hidden>🔍</button><button class="btn-action btn-repos rond" id="repos" hidden>⛺</button><div class="etat-actions" id="etat-actions"></div></div><p class="attack-info" id="target-info" aria-live="polite"></p></section><section class="panel piste-des" id="piste-des"><div class="eyebrow">Dés</div><div class="des-combattant" id="des-combattant" hidden></div><div id="dice-tray" aria-hidden="true"></div></section></div></div>
+<div class="actions-rangee"><section class="panel attack-card"><p class="attack-info" id="multi-note" hidden>Plusieurs combattants sélectionnés.</p><div class="targets" id="targets"></div><div class="choix-attaques" id="attack-choices"></div><div class="attack-row" id="attack-row"><button class="btn-action btn-analyse rond" id="reveal" hidden>🔍</button><button class="btn-action btn-repos rond" id="repos" hidden>⛺</button><div class="etat-actions" id="etat-actions"></div></div><p class="attack-info" id="target-info" aria-live="polite"></p></section><section class="panel piste-des" id="piste-des"><div class="eyebrow">Dégâts</div><div class="des-combattant" id="des-combattant" hidden></div><div id="dice-tray" aria-hidden="true"></div></section></div></div>
 <aside class="stack right"><section class="panel sheet" id="sheet"><div class="sheet-head"><h1 id="name"></h1><span class="sheet-class" id="kind"></span></div><p class="muted" id="class"></p><div class="chips" id="sheet-chips"></div><div class="stat-row" id="stats"></div><div class="lifebar big" id="hpbar"><span class="lifebar-fill" id="hpfill"></span><span class="lifebar-text" id="hp"></span></div><div class="bloc-fixe" id="bloc-gear"><div class="bloc-tete"><span class="bloc-titre">Objets</span><span class="compte" id="gear-compte"></span></div><div id="gear"></div></div><details class="bloc-replie" id="bloc-talents" open><summary><span class="bloc-titre">Talents</span><span class="compte" id="talents-compte"></span></summary><div id="sheet-talents"></div></details><div class="divider" hidden></div><h2 hidden>Compétences</h2><div class="skills" id="skills" hidden></div><p class="muted" hidden>Clique pour un test : 4+ = réussite, 6 = réussite et relance.</p></section><section class="panel"><h2 class="journal-title"><span aria-hidden="true">📜</span> Journal de combat<button type="button" id="journal-vider" class="journal-vider" hidden title="Vider le journal, ici et chez les joueurs de la table">Vider</button></h2><ol class="journal" id="journal" aria-live="polite"></ol><form id="journal-chat" class="journal-chat" autocomplete="off"><input id="journal-texte" maxlength="300" placeholder="Dire quelque chose…" aria-label="Écrire au journal"><button type="submit" title="Envoyer">➤</button></form></section></aside></main>
 <div id="state-menu" role="menu" aria-label="États" hidden></div>
 
-<script src="./polygon-clipping.umd.min.js?v=0.362"></script>
-<script src="./combat.js?v=0.362"></script>
+<script src="./polygon-clipping.umd.min.js?v=0.363"></script>
+<script src="./combat.js?v=0.363"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -354,7 +354,7 @@ function cibleAutomatique(a,portee){
    Chaîne vide = le coup part. */
 /* Chez un joueur, l'Action se dépense : un coup ou un talent d'attaque, et la rangée se
    grise jusqu'au tour suivant — en combat comme en exploration, un point dépensé est
-   dépensé. Le MJ n'est pas tenu ; les orbes sont gratuits. */
+   dépensé, chez le MJ comme chez les joueurs ; les orbes sont gratuits. */
 /* Une bille par point qui reste — Action en bleu, Mouvement en ambre — et rien du tout
    quand il n'en reste plus. Hors combat, le Mouvement ne se compte pas. */
 function pastillesPoints(a){if(!a)return '';
@@ -362,10 +362,10 @@ function pastillesPoints(a){if(!a)return '';
  const act=alive(a)?pointsRestants(a,'action'):0;
  const mvt=alive(a)&&enCombat()?pointsRestants(a,'mouvement'):0;
  return bille('action',act)+bille('mvt',mvt)}
-function actionPrise(a){return view!=='mj'&&!!a&&pointsRestants(a,'action')<=0}
-/* Se déplacer ou analyser : c'est le même point de Mouvement. Un joueur qui a bougé ne
-   peut plus analyser ce tour ; le MJ n'est pas tenu. */
-function mouvementPris(a){return view!=='mj'&&enCombat()&&!!a&&pointsRestants(a,'mouvement')<=0}
+function actionPrise(a){return !!a&&pointsRestants(a,'action')<=0}
+/* Se déplacer ou analyser : c'est le même point de Mouvement. Qui a bougé ne peut plus
+   analyser ce tour, MJ compris. */
+function mouvementPris(a){return enCombat()&&!!a&&pointsRestants(a,'mouvement')<=0}
 /* Analyser coûte le point de Mouvement, à tous, MJ compris : sans lui, pas d'analyse ; faite
    avant de bouger, l'analyse le prend, et le socle ne bouge plus ce tour. */
 function mouvementEpuise(a){return enCombat()&&!!a&&pointsRestants(a,'mouvement')<=0}
@@ -755,7 +755,8 @@ function logAttaque(a,b,logo,corps,detail,suite){reveleAttaquant(a);const j=$('j
  if(logo&&typeof logoEquipement==='function'){const im=logoEquipement({logo},'journal')||logoTalent({logo},'journal');if(im)li.append(' ',im)}
  li.append(' ',nom(b),' : ');
  const deg=document.createElement('span');deg.className='j-degats'+(detail?' cliquable':'');deg.textContent=corps;li.append(deg);
- if(suite)decorate(li,suite);
+ // Chaque phrase de la suite sur sa ligne, dans le même bloc : Rempart, Garde, Débordement se lisent l'un sous l'autre.
+ if(suite)phrasesAuJournal(li,suite);
  if(detail){const d=document.createElement('div');d.className='j-detail';d.hidden=true;
   const origine=detail.origine&&detail.origine<detail.dice.length?detail.origine:detail.dice.length,compte={};
   detail.dice.slice(0,origine).forEach(([v])=>compte[v]=(compte[v]||0)+1);
@@ -781,10 +782,17 @@ function logAttaque(a,b,logo,corps,detail,suite){reveleAttaquant(a);const j=$('j
   li.append(d)}
  poseAuJournal(j,li)}
 const TONS=['attaque','talent','soin','degats','etat','reveal','carte','butin'];
+function phrasesAuJournal(li,texte){String(texte).trim().split(/(?<=[.!?])\s+(?=\S)/).forEach(ph=>{li.append(document.createElement('br'));decorate(li,ph)})}
+/* Un talent au journal se lit à son logo, pas à son nom : « Éla · [logo] : 2 orbes sur Sentinelle. »
+   Le talent se retrouve par le nom que le MJ lui a donné, sinon par le nom de son effet. */
+function talentDuNom(nom){const T=(typeof catalog!=='undefined'&&catalog.talents)||[],clair=t=>typeof nomEnClair==='function'?nomEnClair(t.name):t.name;
+ return T.find(t=>t&&clair(t)===nom)||T.find(t=>t&&t.effet&&TALENTS_CODES[t.effet]&&TALENTS_CODES[t.effet].nom===nom)||null}
 function log(text,meta){const j=$('journal');separateurTour(j);
  const li=ligneJournal();
  if(meta&&TONS.includes(meta.ton))li.classList.add('ton','ton-'+meta.ton);
- decorate(li,String(text));
+ const m=meta&&meta.ton==='talent'&&typeof logoTalent==='function'?/^(.*?) · ([^:]+?) : ([\s\S]*)$/.exec(String(text)):null,t=m?talentDuNom(m[2]):null,im=t?logoTalent(t,'journal'):null;
+ if(im){decorate(li,m[1]+' · ');im.title=m[2];li.append(im);decorate(li,' : '+m[3])}
+ else decorate(li,String(text));
  if(meta&&meta.dice){const d=document.createElement('span');d.className='j-dice';d.textContent=' 🎲';li.append(d)}
  if(meta&&meta.badge){const b=document.createElement('span');b.className='j-badge';b.textContent=meta.badge;li.append(' ',b)}
  j.append(li);while(j.children.length>60)j.firstChild.remove();j.scrollTop=j.scrollHeight}
@@ -909,13 +917,13 @@ function render(){
  t.onpointerdown=e=>{const geste=gestureOf(e);
   if(geste&&geste!=='select'){e.preventDefault();skipClick=true;onGesture(geste,i);return}
   if(!geste)return;if(e.button!==0||!canMove(i)||(!alive(a)&&view!=='mj'))return;const lot0=marked.size>1&&isMarked(a)?markedIndexes():[i];
-  /* En combat, un socle seul suit la règle du mouvement. Sans point, il bouge encore dans
-     sa zone — et y subit les dégâts d'opportunité s'il quitte un contact — mais n'en sort
-     pas et ne s'arrête pas au contact. Un lot se déplace hors règle. */
+  /* En combat, un socle seul suit la règle du mouvement. Sans point de Mouvement, il bouge
+     encore dans sa zone — et y subit les dégâts d'opportunité s'il quitte un contact — mais
+     n'en sort pas. Un lot se déplace hors règle. */
   const regle=enCombat()&&lot0.length===1?regleMouvement(a):null;
-  /* Plus un point de Mouvement : le socle est verrouillé. Il ne bouge pas d'un pixel, et le
-     dit au premier geste ; ne s'étant pas déplacé, il n'offre aucune occasion. */
-  const bloque=!!regle&&regle.credit<=0;
+  /* Plus de point de Mouvement ni d'Action : le socle est verrouillé. Il ne bouge pas d'un
+     pixel, et le dit au premier geste ; ne s'étant pas déplacé, il n'offre aucune occasion. */
+  const bloque=!!regle&&regle.fini;
   // Ceux qu'il touche avant son premier mouvement du tour : Lamevent ne frappe que les autres.
   if(regle&&!bloque)noteContactsDepart(a);
   if(pickNow(i))skipClick=true;const p0=mapPct(e);
@@ -962,9 +970,9 @@ function render(){
  t.onclick=e=>{if(skipClick){skipClick=false;return}if(e.detail>=2)return;onGesture(gestureOf(e),i)};
  t.ondblclick=e=>{e.preventDefault();approcherToken(a)};
  t.onkeydown=e=>{const dirs={ArrowLeft:[-2,0],ArrowRight:[2,0],ArrowUp:[0,-3],ArrowDown:[0,3]};if(!dirs[e.key]||!canMove(i)||(!alive(a)&&view!=='mj'))return;e.preventDefault();saveChecks();savePool();selected=i;const avant=contactsDe(a);
-  // Au clavier, la même règle qu'à la main : un pas qui change de zone ou arrive au contact se paie, et se refuse sans point.
+  // Au clavier, la même règle qu'à la main : un pas qui change de zone se paie, et se refuse sans point.
   const regle=enCombat()?regleMouvement(a):null;
-  if(regle&&regle.credit<=0){floatNumber(a,'Plus de Mouvement','nul');return}
+  if(regle&&regle.fini){floatNumber(a,'Plus de Mouvement','nul');return}
   if(regle)noteContactsDepart(a);
   moveActor(a,a.x+dirs[e.key][0],a.y+dirs[e.key][1]);
   if(regle){if(!appliqueRegleMouvement(a,regle)){render();return}const cout=soldeRegleMouvement(a,regle);if(cout>0)depensePoint(a,'mouvement',cout)}
@@ -1033,21 +1041,18 @@ if(typeof ResizeObserver==='function'&&$('map'))new ResizeObserver(majTailleSocl
    coup. Il inflige son bonus de dégâts, sans DEF et sans dés. Insaisissable l'ignore ;
    hors combat, personne ne frappe. On compare qui touchait le socle avant et après le
    mouvement : chaque adversaire quitté frappe une fois. */
-/* La règle du mouvement en combat. Un point de Mouvement par zone franchie — le passage
-   d'une porte est une zone à part entière — ou un point pour s'arrêter au contact d'un
-   adversaire qu'on ne touchait pas au départ. Les deux ne se cumulent pas : entrer dans
-   une pièce où l'on tombe au contact coûte la zone, pas la zone et le contact ; un
-   déplacement coûte le plus grand des deux. Le socle se déplace à volonté tant que la
-   main ne l'a pas lâché ; sans point pour une zone de plus, il reste au bord — et sans
-   aucun point, il bouge encore dans sa zone, sans en sortir ni s'arrêter au contact. L'embrasure d'une porte n'est d'aucune zone : on la traverse, on ne s'y
-   arrête pas — lâché là, le socle revient dans sa zone. Une carte sans zones ne compte que
-   le contact. « r » est le compte du geste : le crédit du départ, ce qui est dépensé, la
-   zone courante, les contacts du départ, la dernière position dans le budget des zones
-   (« dedans ») et la dernière position que le contact laisse payable (« ok »), avec son coût. */
+/* La règle du mouvement en combat. Dans sa zone, le socle se déplace à volonté. Franchir une
+   zone — le passage d'une porte en est une à part entière — coûte un point de Mouvement ; sans
+   point pour une zone de plus, il reste au bord. Dans la zone d'arrivée, il bouge encore autant
+   qu'il veut, quitte à subir au lâcher les dégâts d'opportunité des contacts adverses qu'il a
+   traversés. Le dernier point d'Action et le dernier point de Mouvement dépensés, le mouvement
+   est terminé : « Plus de Mouvement ». L'embrasure d'une porte n'est d'aucune zone : on la
+   traverse, on ne s'y arrête pas — lâché là, le socle revient dans sa zone. « r » est le compte
+   du geste : le crédit du départ, ce qui est dépensé, la zone courante, et la dernière position
+   dans le budget des zones (« dedans »). */
 function regleMouvement(a){const m=typeof currentMap==='function'?currentMap():null,zs=m&&typeof zonesDe==='function'?zonesDe(m):null;
- return {credit:pointsRestants(a,'mouvement'),depense:0,zonee:!!(zs&&zs.compte>0),zone:zoneDe(a),contacts:new Set(contactsDe(a)),
-  dedans:{x:a.x,y:a.y},ok:{x:a.x,y:a.y},okCout:0,refuse:0}}
-function arriveeAuContact(a,r){return contactsDe(a).some(o=>!r.contacts.has(o))?1:0}
+ return {credit:pointsRestants(a,'mouvement'),fini:pointsRestants(a,'mouvement')<=0&&pointsRestants(a,'action')<=0,
+  depense:0,zonee:!!(zs&&zs.compte>0),zone:zoneDe(a),dedans:{x:a.x,y:a.y},refuse:0}}
 function appliqueRegleMouvement(a,r){
  if(r.zonee){const z=zoneDe(a);
   if(z===0)return true;   // dans l'embrasure : ni zone, ni position retenue
@@ -1055,17 +1060,11 @@ function appliqueRegleMouvement(a,r){
    else if(r.depense+1>r.credit){a.x=r.dedans.x;a.y=r.dedans.y;
     if(performance.now()-r.refuse>900){r.refuse=performance.now();floatNumber(a,'Plus de Mouvement','nul')}return false}
    else{r.depense++;r.zone=z}}}
- r.dedans={x:a.x,y:a.y};
- const cout=Math.max(r.depense,arriveeAuContact(a,r));
- if(cout<=r.credit){r.ok={x:a.x,y:a.y};r.okCout=cout}return true}
-/* Au lâcher : ce que le geste coûte, et où le socle se pose. Trop cher pour le contact, ou
-   lâché dans une embrasure, il recule à la dernière position payable. Renvoie le coût. */
-function soldeRegleMouvement(a,r){let cout=Math.max(r.depense,arriveeAuContact(a,r));
- const embrasure=r.zonee&&zoneDe(a)===0;
- if(embrasure||cout>r.credit){a.x=r.ok.x;a.y=r.ok.y;cout=r.okCout;
-  if(embrasure)log(nomNum(a)+' ne s’arrête pas dans l’embrasure : le socle revient dans sa zone.',{local:true});
-  else{floatNumber(a,'Plus de Mouvement','nul');log(nomNum(a)+' ne peut pas s’arrêter là : plus de point de Mouvement pour le contact.',{local:true})}}
- return Math.max(0,Math.min(r.credit,cout))}
+ r.dedans={x:a.x,y:a.y};return true}
+// Au lâcher : ce que le geste coûte — ses zones — et où le socle se pose ; lâché dans une embrasure, il revient dans sa zone.
+function soldeRegleMouvement(a,r){if(r.zonee&&zoneDe(a)===0){a.x=r.dedans.x;a.y=r.dedans.y;
+  log(nomNum(a)+' ne s’arrête pas dans l’embrasure : le socle revient dans sa zone.',{local:true})}
+ return Math.max(0,Math.min(r.credit,r.depense))}
 function contactsDe(a){return adversairesAuContact(a).map(([o])=>o)}
 /* Ce qu'un socle touche le long de son trajet : à chaque pas du geste, les contacts de
    chaque point entre la position d'avant et la nouvelle, par quarts de socle, pour qu'un
@@ -1634,8 +1633,8 @@ function poseRond(b,centre,nom,dit,compte,bulle){b.classList.add('rond');b.datas
  // La bulle vient d'editor.js, chargé après le premier rendu : jusque-là, l'infobulle du système.
  if(typeof surveille!=='function'){b.title=nom+(dit?' — '+dit:'');return}
  b.removeAttribute('title');if(b.bulleRond)return;b.bulleRond=true;
- // Sa bulle, celle d'un talent, à la couleur du bouton (editor.js).
- surveille(b,bulle||(()=>bulleAction(b,{nom:b.dataset.nom,dit:b.dataset.dit})))}
+ // Sa bulle, celle d'un talent, à la couleur du bouton (editor.js) : son nom, rien de plus.
+ surveille(b,bulle||(()=>bulleAction(b,{nom:b.dataset.nom})))}
 ['attack-choices','etat-actions'].forEach(id=>$(id).addEventListener('contextmenu',e=>{const b=e.target.closest('button');
  if(view!=='mj'||!b||typeof b.reinit!=='function')return;e.preventDefault();reinitialiser(b)}));
 function renderStateActions(a){const boite=$('etat-actions');boite.replaceChildren();
@@ -1659,7 +1658,7 @@ function renderStateActions(a){const boite=$('etat-actions');boite.replaceChildr
     à la couleur du type ; leur bulle est celle du talent, avec ce qui l'empêche s'il ne peut pas
     partir. Les réactions sont montées avec les attaques, en gros ronds. */
  boutonsTalents(a).filter(b=>b.rangee!=='aucune'&&b.talent.type==='mait').forEach(t=>{let b=null;
-  const bulle=()=>{if(b&&typeof bulleTalentSur==='function')bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre})};
+  const bulle=()=>{if(b&&typeof bulleTalentSur==='function')bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a))})};
   geste(String(t.texte||t.talent.name),typeof GLYPHES_TALENT!=='undefined'&&GLYPHES_TALENT[t.talent.type]||'✦',t.titre,t.peut,t.agir,t.classe,t.logo,t.teinte,t.reinit,bulle);
   b=$('etat-actions').lastElementChild})}
 // Les six natures de talent, pour teinter leur bouton comme leur vignette.
@@ -1719,22 +1718,25 @@ function renderTargets(){const boite=$('targets'),a=actors[selected];boite.repla
  const rangs=[...toutes.slice(0,5),...toutes.slice(5).filter(j=>visees.includes(j))];
  // Aucun visé : la ligne reste vide. Le bouton d'attaque dit déjà ce qui manque, à sa façon.
  if(!rangs.length)return;
- rangs.forEach(j=>{const o=actors[j];
+ /* Chaque cible n'est que son socle — son image, ou l'initiale de son nom — avec son numéro
+    s'il en a un ; le nom se lit au survol. Les adversaires d'abord, dans une boîte rouge, puis
+    les alliés dans une boîte verte. */
+ const bouton=j=>{const o=actors[j];
   const b=document.createElement('button');
   b.className='cible'+(o.hero===a.hero?'':' adverse')+(visees.includes(j)?' on':'');
   const rond=document.createElement('span');rond.className='rond';
   if(o.image){const im=document.createElement('img');im.src=o.image;im.alt='';rond.append(im)}
   else rond.textContent=o.name[0];
-  const nom=document.createElement('span');nom.className='nom';nom.textContent=o.name;
-  b.append(rond,nom);
+  b.append(rond);
   // Deux cibles du même nom se départagent ici comme ailleurs.
   const rang=numeros.get(o.id);
   if(rang){const n=document.createElement('span');n.className='num';n.textContent=rang;b.append(n)}
   const lu=hpKnown(o);
-  b.title=(o.hero===a.hero?'Allié':'Adversaire')+' · '+(lu?o.hp+' / '+o.max+' PV':'en combat')
-   +(visees.includes(j)?' · cible actuelle':' · clic pour cibler');
-  b.onclick=()=>setTarget(j);
-  boite.append(b)})}
+  b.title=nomNum(o)+' · '+(o.hero===a.hero?'Allié':'Adversaire')+' · '+(lu?o.hp+' / '+o.max+' PV':'en combat')
+   +(visees.includes(j)?' · cible actuelle':' · clic pour cibler');b.setAttribute('aria-label',b.title);
+  b.onclick=()=>setTarget(j);return b};
+ const groupe=(liste,classe)=>{if(!liste.length)return;const g=document.createElement('div');g.className='cibles-groupe '+classe;liste.forEach(j=>g.append(bouton(j)));boite.append(g)};
+ groupe(rangs.filter(j=>actors[j].hero!==a.hero),'adverses');groupe(rangs.filter(j=>actors[j].hero===a.hero),'allies')}
 /* Le tour appelle la suite dès que plus un seul combattant debout ne garde son Action —
    c'est-à-dire dès qu'aucune pastille bleue ne reste allumée dans la liste. */
 function tourEpuise(){const debout=actors.filter(alive);
@@ -1896,7 +1898,7 @@ function saveChecks(){const a=actors[selected];if(!a)return;
 const SKILL_TINTS=['47,138,99','168,105,31','122,92,184','157,123,30','176,88,54','101,120,111','53,119,184','44,140,133'];
 const STAT_TINTS={vie:'122,92,184',endu:'44,140,133',pv:'47,122,91',def:'96,110,118',dmg:'180,72,58',xp:'157,123,30'};
 const TYPE_NOMS={standard:'Standard',solitaire:'Solitaire',alpha:'Élite',boss:'Boss'};
-const IMG_V='0.362';
+const IMG_V='0.363';
 function imgUrl(nom){return './img/'+String(nom).split('/').map(encodeURIComponent).join('/')+'?v='+IMG_V}
 /* Les états et leur jeton, tels qu'ils sont peints sur la table. « Aucun » n'en a pas —
    c'est l'absence d'état — ni « Coma », que la barre de vie dit déjà, ni « Affaibli »,
@@ -2514,7 +2516,7 @@ $('hp-buttons').replaceChildren(...PV_BOUTONS.map(({texte,classe,titre,ecart,pur
    if(purge&&statesOf(o).length){o.states=[];o.bleed=0;o.cumuls={};
     log(nomNum(o)+' · États levés.',{ton:'etat'});bouge=true}});
   if(bouge)render()};
- return b}));$('next').onclick=()=>{if(view!=='mj')return;savePool();burnAll();actors.forEach(o=>regenerer(o,'fin'));round++;actors.forEach(a=>{a.checks=[0,0,0];a.orbes=0});$('round').textContent=String(round).padStart(2,'0');render();log('Début du tour '+round+'. Activations réinitialisées.');if(actors.filter(o=>regenerer(o,'debut')).length)render()};$('upload').onclick=()=>$('mapfile').click();$('mapfile').onchange=()=>{const f=$('mapfile').files[0];if(!f)return;if(!['image/png','image/jpeg','image/webp'].includes(f.type)){log('Carte non chargée : utilise une image PNG, JPEG ou WebP.');return}if(mapUrl)URL.revokeObjectURL(mapUrl);mapUrl=URL.createObjectURL(f);$('map-view').style.backgroundImage='url("'+mapUrl+'")';$('map').classList.add('custom');log('Carte importée sur cet appareil. Le plan et ses murs sont masqués : plus d’obstacle défini.');};
+ return b}));$('next').onclick=()=>{if(view!=='mj')return;savePool();burnAll();actors.forEach(o=>regenerer(o,'fin'));round++;actors.forEach(a=>{a.checks=[0,0,0];a.orbes=0});$('round').textContent=String(round).padStart(2,'0');render();log('Début du tour '+round+'. Activations réinitialisées.');annonceFlottante('Tour '+round);if(actors.filter(o=>regenerer(o,'debut')).length)render()};$('upload').onclick=()=>$('mapfile').click();$('mapfile').onchange=()=>{const f=$('mapfile').files[0];if(!f)return;if(!['image/png','image/jpeg','image/webp'].includes(f.type)){log('Carte non chargée : utilise une image PNG, JPEG ou WebP.');return}if(mapUrl)URL.revokeObjectURL(mapUrl);mapUrl=URL.createObjectURL(f);$('map-view').style.backgroundImage='url("'+mapUrl+'")';$('map').classList.add('custom');log('Carte importée sur cet appareil. Le plan et ses murs sont masqués : plus d’obstacle défini.');};
 /* Le thème vit dans le navigateur, pas dans la partie : chacun lit comme il veut. */
 /* Les gestes de la carte et la touche qui les commande. « Aucune » veut dire le clic nu ;
    c'est ce que porte la sélection par défaut. Deux gestes ne peuvent pas partager la même
@@ -2649,5 +2651,5 @@ $('portees').onclick=()=>{porteesOn=!porteesOn;
 majPortees();
 window.addEventListener('resize',()=>{updateRing();showAim();renderCombat()});
 render();
-</script><script src="./catalog.js?v=0.362"></script><script src="./planches-calcul.js?v=0.362"></script><script src="./planches.js?v=0.362"></script><script src="./editor.js?v=0.362"></script><script src="./maps.js?v=0.362"></script><script src="./domaine.js?v=0.362"></script><script src="./campagnes.js?v=0.362"></script><script src="./firebase-config.js?v=0.362"></script><script src="./shared-data.js?v=0.362"></script><script src="./shared.js?v=0.362"></script>
-<script src="./live.js?v=0.362"></script></body></html>
+</script><script src="./catalog.js?v=0.363"></script><script src="./planches-calcul.js?v=0.363"></script><script src="./planches.js?v=0.363"></script><script src="./editor.js?v=0.363"></script><script src="./maps.js?v=0.363"></script><script src="./domaine.js?v=0.363"></script><script src="./campagnes.js?v=0.363"></script><script src="./firebase-config.js?v=0.363"></script><script src="./shared-data.js?v=0.363"></script><script src="./shared.js?v=0.363"></script>
+<script src="./live.js?v=0.363"></script></body></html>

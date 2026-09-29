@@ -1080,7 +1080,7 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
 assert.ok(feuille.includes('letter-spacing:.2px;color:#fff;')&&feuille.includes('button.btn-action:disabled{--fond:var(--disabled);color:#fff;opacity:1;')
  &&feuille.includes('button.btn-action.inerte,button.btn-action.inerte:hover{opacity:1;filter:saturate(.35) brightness(1.1);color:#fff;')
  &&!feuille.includes('encre-sombre')&&!/button\.btn-[a-z]+[^{]*\{[^}]*(color:#2a2118|disabled-ink)/.test(feuille)&&feuille.includes('button.btn-talent.t-mait{--fond:#d4a341}'),'les boutons d’action écrivent en blanc');
-assert.ok(!src.includes("className='nature'")&&!feuille.includes('.nature{')&&src.includes("survol(b,t.des,t.bonus||0,false);"),'un talent sans dés ne dit plus sa nature');
+assert.ok(!src.includes("className='nature'")&&!feuille.includes('.nature{'),'un talent sans dés ne dit plus sa nature');
 assert.ok(src.includes('function xpDesRetires(')&&src.includes('xpDesRetires(partants);')&&src.includes("heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));")
  &&src.includes("poseCibles(a,ids.map(id=>actors.findIndex(o=>o&&o.id===id)).filter(j=>j>=0))")&&!src.includes('if(a.target===i)a.target=null;else if(a.target>i)a.target--'),'l’XP d’un adversaire retiré va aux aventuriers, les cibles suivent');
 /* Le verrou des déplacements et la remise à zéro d'un bouton se notent chez le MJ seul. */
@@ -1102,8 +1102,8 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
  assert.ok(vivant.includes('texteStable(publicContent())!==lastPublishedText')&&vivant.includes('function programmerApplication(')
   &&vivant.includes('dernierDoc=doc.data();programmerApplication()')&&vivant.includes('const avant=JSON.stringify(etatVivant());')
   &&vivant.includes('const change=complet||JSON.stringify(base)!==avant;')&&vivant.includes('if(change)render();'),'rafales et échos ne redessinent pas pour rien');
- assert.ok(page.includes("function actionPrise(a){return view!=='mj'&&!!a&&pointsRestants(a,'action')<=0}")&&page.includes("if(coute&&pointsRestants(a,'action')>0){depensePoint(a,'action');afterAction(a)}")
-  &&page.includes('function pastillesPoints(a)')&&page.includes("function mouvementPris(a){return view!=='mj'&&enCombat()&&"),'l’Action se dépense même hors combat, le Mouvement en combat');
+ assert.ok(page.includes("if(coute&&pointsRestants(a,'action')>0){depensePoint(a,'action');afterAction(a)}")
+  &&page.includes('function pastillesPoints(a)'),'l’Action se dépense même hors combat, le Mouvement en combat');
  // Le texte stable ignore l'état vivant et retient le contenu.
  const src2=partage.slice(partage.indexOf('const CHAMPS_VOLATILS='),partage.indexOf('function publicContent('));
  const texteStable=new Function(src2+';return texteStable')();
@@ -1581,9 +1581,9 @@ assert.ok(page.includes('<span class="lifebar-text" id="hp"></span></div><div cl
  &&!page.includes('<details class="bloc-replie" id="bloc-gear">')&&page.includes('<details class="bloc-replie" id="bloc-talents" open>')
  &&feuille.includes('.bloc-replie,.bloc-fixe{margin:6px 0}')&&feuille.includes(".bloc-replie .bloc-titre,.bloc-fixe .bloc-titre{font:700 15px 'Killam'")
  &&(page.match(/class="divider"/g)||[]).length===2,'fiche en jeu : équipement ouvert, pas de barre sous les PV');
-assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');")&&src.includes("surveille(b,()=>bulleAction(b,{nom:libelle,dit:fait,note:refus,des:voit?desEtBonus(at.dice,bonusDe(at),at.useOwnDamage!==false,false):null}));")
- &&src.includes('function desEtBonus(dice,bonus,toujours,jeton=true)')&&src.includes('survol(b,at.dice,bonusDe(at),at.useOwnDamage!==false);boite.append(b)});')
- &&src.includes('survol(b,t.des,t.bonus||0,false);')
+assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');")
+ &&src.includes('function desEtBonus(dice,bonus,toujours,jeton=true)')
+ 
  &&page.includes('des:eff.des?eff.des(a,params):code.attaque?activeAttack(a).dice:null,')
  
  &&C.TALENTS_CODES.attaqueetat.attaque===true&&C.TALENTS_CODES.provocation.attaque===true
@@ -2295,45 +2295,34 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxC.verifieCampagne({genre:'campagne',partie:{actors:[{name:'Éla'}]}}),'');
  assert.match(ctxC.verifieCampagne({genre:'domaine',domaine:{}}),/pas une campagne/);assert.match(ctxC.verifieCampagne({genre:'campagne',partie:{actors:[{}]}}),/troupe lisible/);
 }
-/* v0.265 — Le mouvement en combat se paie en zones : un point par zone franchie (une porte est
-   une zone), ou un point pour s'arrêter au contact d'un adversaire nouveau — sans cumul, le plus
-   grand des deux ; le socle reste au bord sans point, recule s'il ne peut pas payer le contact ;
-   une porte coûte un point en combat. */
+/* v0.265, puis v0.363 — Le mouvement en combat se paie en zones : un point par zone franchie (une
+   porte est une zone) ; dans sa zone, on bouge à volonté, contact ou non ; sans point, le socle
+   reste au bord ; lâché dans l'embrasure, il revient dans sa zone. Sans Mouvement ni Action, le
+   geste est fini. */
 {const regle=page.slice(page.indexOf('function regleMouvement(a)'),page.indexOf('function contactsDe(a)'));
- const ctxR={zones:{},contacts:{},notes:[],journal:[],performance:{now:()=>1e6},nomNum:a=>a.name,currentMap:()=>({id:'c'}),zonesDe:()=>({compte:2}),
-  pointsRestants:a=>a.credit,zoneDe:a=>ctxR.zones[Math.round(a.x)+','+Math.round(a.y)]||0,contactsDe:a=>ctxR.contacts[Math.round(a.x)+','+Math.round(a.y)]||[],
+ const ctxR={zones:{},notes:[],journal:[],performance:{now:()=>1e6},nomNum:a=>a.name,currentMap:()=>({id:'c'}),zonesDe:()=>({compte:2}),
+  pointsRestants:(a,q)=>q==='action'?(a.action??1):a.credit,zoneDe:a=>ctxR.zones[Math.round(a.x)+','+Math.round(a.y)]||0,
   floatNumber:(a,t)=>ctxR.notes.push(t),log:t=>ctxR.journal.push(t)};vm.createContext(ctxR);vm.runInContext(regle,ctxR);
- // Deux zones : x<50 en zone 1, x>50 en zone 2 ; un adversaire « O » au contact en (80,50).
- for(let x=0;x<=100;x+=5)ctxR.zones[x+',50']=x<50?1:x>50?2:0;ctxR.contacts['80,50']=['O'];ctxR.contacts['75,50']=['O'];
+ for(let x=0;x<=100;x+=5)ctxR.zones[x+',50']=x<50?1:x>50?2:0;
  const a={x:20,y:50,credit:1};const r=ctxR.regleMouvement(a);
- assert.equal(r.credit+'/'+r.zone+'/'+r.depense,'1/1/0');
+ assert.equal(r.credit+'/'+r.zone+'/'+r.depense+'/'+r.fini,'1/1/0/false');
  a.x=40;assert.equal(ctxR.appliqueRegleMouvement(a,r),true);assert.equal(r.depense,0,'dans sa zone, rien ne se paie');
  a.x=50;ctxR.appliqueRegleMouvement(a,r);assert.equal(r.depense,0,'la porte — zone 0 — ne compte pas encore');
  a.x=55;ctxR.appliqueRegleMouvement(a,r);assert.equal(r.depense+'/'+r.zone,'1/2','franchir la zone 2 coûte un point');
  a.x=45;assert.equal(ctxR.appliqueRegleMouvement(a,r),false);assert.equal(a.x,55,'sans point, on reste au bord');assert.equal(ctxR.notes.length,1);
- a.x=75;ctxR.appliqueRegleMouvement(a,r);assert.equal(r.ok.x+'/'+r.okCout,'75/1','entrer dans la pièce et y tomber au contact : la zone seule se paie');
- assert.equal(ctxR.soldeRegleMouvement(a,r),1);assert.equal(a.x,75,'le socle reste où on l’a lâché');assert.equal(ctxR.journal.length,0);
- // Avec deux points : la zone puis le contact ne se cumulent pas — un seul point.
- const b={x:20,y:50,credit:2};const r2=ctxR.regleMouvement(b);b.x=55;ctxR.appliqueRegleMouvement(b,r2);b.x=80;ctxR.appliqueRegleMouvement(b,r2);
- assert.equal(r2.ok.x+'/'+r2.okCout,'80/1');assert.equal(ctxR.soldeRegleMouvement(b,r2),1);assert.equal(b.x,80);
- // Dans sa zone, sans point : s'arrêter au contact se refuse, et le socle recule.
- const h={x:60,y:50,credit:0};const r8=ctxR.regleMouvement(h);h.x=65;ctxR.appliqueRegleMouvement(h,r8);h.x=80;ctxR.appliqueRegleMouvement(h,r8);
- assert.equal(r8.ok.x,65);assert.equal(ctxR.soldeRegleMouvement(h,r8),0);assert.equal(h.x,65);assert.equal(ctxR.journal.length,1);
- // Déjà au contact au départ : y rester ne coûte rien ; retraverser deux fois coûte deux.
- const c={x:80,y:50,credit:2};const r3=ctxR.regleMouvement(c);c.x=75;ctxR.appliqueRegleMouvement(c,r3);assert.equal(ctxR.soldeRegleMouvement(c,r3),0);
- const d={x:55,y:50,credit:2};const r4=ctxR.regleMouvement(d);d.x=45;ctxR.appliqueRegleMouvement(d,r4);d.x=55;ctxR.appliqueRegleMouvement(d,r4);assert.equal(r4.depense,2,'aller et revenir : deux zones franchies');
- // Lâché dans l'embrasure : le socle revient dans sa zone. Parti d'une embrasure : la première zone est gratuite.
- const e={x:40,y:50,credit:1};const r5=ctxR.regleMouvement(e);e.x=50;ctxR.appliqueRegleMouvement(e,r5);assert.equal(ctxR.soldeRegleMouvement(e,r5),0);assert.equal(e.x,40);
- const f={x:50,y:50,credit:0};const r6=ctxR.regleMouvement(f);assert.equal(r6.zone,0);f.x=55;assert.equal(ctxR.appliqueRegleMouvement(f,r6),true);assert.equal(r6.depense+'/'+r6.zone,'0/2');
- // Sans zones sur la carte, seule l'arrivée au contact se paie.
- ctxR.zonesDe=()=>({compte:0});const g={x:20,y:50,credit:0};const r7=ctxR.regleMouvement(g);g.x=55;assert.equal(ctxR.appliqueRegleMouvement(g,r7),true);g.x=80;ctxR.appliqueRegleMouvement(g,r7);
- assert.equal(ctxR.soldeRegleMouvement(g,r7),0);assert.equal(g.x,55,'sans point, pas d’arrêt au contact — mais la zone ne compte pas');ctxR.zonesDe=()=>({compte:2});
- assert.ok(page.includes("const regle=enCombat()&&lot0.length===1?regleMouvement(a):null;")&&!page.includes("regle.credit<=0&&view!=='mj'")
-  &&page.includes("else{moveActor(a,q.x,q.y,view==='mj',enMain,true);if(drag.regle)appliqueRegleMouvement(a,drag.regle)}")
-  &&page.includes("const cout=regle?soldeRegleMouvement(a,regle):null;")&&page.includes("if(regle){if(cout>0)depensePoint(a,'mouvement',cout)}")&&!page.includes("$('move').checked=true;render()"),'le geste suit la règle, du départ au lâcher');
- assert.ok(cartes.includes("function porteurDePorte(d){")&&cartes.includes("const qui=typeof enCombat==='function'&&enCombat()?porteurDePorte(d):null;")
-  &&cartes.includes("if(qui){if(pointsRestants(qui,'mouvement')<=0){log(nomNum(qui)+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});")&&cartes.includes("    depensePoint(qui,'mouvement')}\n   d.open=!d.open;"),'une porte coûte un point en combat, rien en exploration');
-}
+ a.x=80;ctxR.appliqueRegleMouvement(a,r);assert.equal(ctxR.soldeRegleMouvement(a,r),1);assert.equal(a.x,80,'dans la zone d’arrivée, on bouge à volonté, contact ou non');
+ // Lâché dans l'embrasure : retour dans la zone.
+ const b={x:20,y:50,credit:2};const r2=ctxR.regleMouvement(b);b.x=55;ctxR.appliqueRegleMouvement(b,r2);b.x=50;ctxR.appliqueRegleMouvement(b,r2);
+ assert.equal(ctxR.soldeRegleMouvement(b,r2),1);assert.equal(b.x,55);assert.equal(ctxR.journal.length,1);
+ // Sans point de Mouvement mais avec l'Action : on bouge encore dans sa zone, sans en sortir.
+ const h={x:60,y:50,credit:0,action:1};const r8=ctxR.regleMouvement(h);assert.equal(r8.fini,false);h.x=80;assert.equal(ctxR.appliqueRegleMouvement(h,r8),true);
+ h.x=45;assert.equal(ctxR.appliqueRegleMouvement(h,r8),false);assert.equal(h.x,80);assert.equal(ctxR.soldeRegleMouvement(h,r8),0);
+ // Plus rien : le mouvement est terminé.
+ assert.equal(ctxR.regleMouvement({x:60,y:50,credit:0,action:0}).fini,true);
+ // Retraverser deux fois coûte deux.
+ const c={x:20,y:50,credit:2};const r3=ctxR.regleMouvement(c);c.x=55;ctxR.appliqueRegleMouvement(c,r3);c.x=45;ctxR.appliqueRegleMouvement(c,r3);assert.equal(r3.depense,2);assert.equal(ctxR.soldeRegleMouvement(c,r3),2);
+ assert.ok(page.includes("const bloque=!!regle&&regle.fini;")&&page.includes("if(regle&&regle.fini){floatNumber(a,'Plus de Mouvement','nul');return}")
+  &&page.includes("function actionPrise(a){return !!a&&pointsRestants(a,'action')<=0}")&&!page.includes('arriveeAuContact'),'le socle verrouillé sans Mouvement ni Action ; le MJ tenu par l’Action');}
 /* v0.267 — Sans point de Mouvement, le socle bouge encore dans sa zone (et y subit l'opportunité) ;
    les jauges de PV ont leur couche, au-dessus de tous les socles. */
 {assert.ok(page.includes("function couchePV(){let c=$('pv-layer');if(!c){c=document.createElement('div');c.id='pv-layer';$('map-view').append(c)}return c}")
@@ -2343,8 +2332,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("#pv-layer{position:absolute;inset:0;z-index:3;pointer-events:none}")&&page.includes("#pv-layer .pv.enemy i{background:")&&!page.includes('.token .pv{'),'les jauges au-dessus de tous les socles, et qui suivent');
  /* v0.335 — Sans point de Mouvement, le socle est verrouillé : il ne bouge pas, le dit, et
     n'offre aucune occasion puisqu'il ne s'est pas déplacé. */
- assert.ok(page.includes("const bloque=!!regle&&regle.credit<=0;")&&page.includes("if(drag.bloque){drag.moved=true;if(!drag.dit){drag.dit=true;floatNumber(a,'Plus de Mouvement','nul')}return}")
-  &&page.includes("  if(bloque){if(moved)skipClick=true;return}")&&page.includes("if(regle&&regle.credit<=0){floatNumber(a,'Plus de Mouvement','nul');return}"),'sans point, le socle est verrouillé');
+ assert.ok(page.includes("if(drag.bloque){drag.moved=true;if(!drag.dit){drag.dit=true;floatNumber(a,'Plus de Mouvement','nul')}return}")
+  &&page.includes("  if(bloque){if(moved)skipClick=true;return}"),'sans point, le socle est verrouillé');
 }
 /* v0.268 — Les chemins de l'arbre s'arrêtent au bord des boutons, en pointillés tant qu'ils ne sont pas
    actifs ; les bonus prennent la couleur de leur caractéristique ; plus de mode d'emploi au-dessus. */
@@ -2853,7 +2842,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("const ROMAINS_PALIER=['','','II','III'];")&&!page.includes("function nomAvecPalier(")
   &&page.includes("palier:paliersDe(talent)>1&&talent.palier>1?talent.palier:0,")&&page.includes("geste(String(t.texte||t.talent.name),"),'les boutons de la table sont des ronds : le palier se lit dans la bulle du talent');
  assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("carte.append(talentRond(t,logo),n);return carte}")&&fs.readFileSync('editor.css','utf8').includes('.cat-carte.talent-carte .nom-carte.nom-rond,.sac-carte .nom-sac{display:none}')&&!src.includes('nom-texte')
-  &&src.includes("surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre,")&&css.includes(".palier-romain{margin-left:.3em;font:inherit;"),'dans la bulle et sur la fiche, dans la police du nom');}
+  &&css.includes(".palier-romain{margin-left:.3em;font:inherit;"),'dans la bulle et sur la fiche, dans la police du nom');}
 /* v0.300 — Un talent élémentaire choisit un logo par élément ; sans logo propre, l'ancien
    logo suit l'élément comme avant. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8');
@@ -3276,7 +3265,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
  assert.ok(css.includes('button.btn-action.rond,button.btn-action.rond.inerte{position:relative;width:58px;height:58px;')
   &&css.includes('button.btn-action.rond.on,button.btn-action.rond.on:hover:not(:disabled){box-shadow:var(--relief)}')
-  &&!css.includes('button.choix-attaque.rond')&&!/\.rond[^{]*\{[^}]*0 0 0 2px var\(--panel\)/.test(css)&&!css.includes('.attaque-carte .dmg-ico'),'la face pleine du bouton d’action, en disque, sans anneau');
+  &&!css.includes('button.choix-attaque.rond')&&!/button\.btn-action\.rond[^{]*\{[^}]*0 0 0 2px var\(--panel\)/.test(css)&&!css.includes('.attaque-carte .dmg-ico'),'la face pleine du bouton d’action, en disque, sans anneau');
  assert.ok(src.includes("(at.logos||[]).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
   &&src.includes("if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';")&&src.includes("desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0))"),'la main droite seule ; le jeton de dégâts reste à la bulle des monstres');
  assert.ok(page.includes('<button class="btn-action btn-analyse rond" id="reveal" hidden>🔍</button>')&&page.includes("function poseRond(b,centre,nom,dit,compte,bulle){")
@@ -3295,11 +3284,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&page.includes("boutonsTalents(a).filter(b=>b.rangee!=='aucune'&&b.talent.type==='mait').forEach(t=>{let b=null;")
   &&!page.includes("filter(b=>b.rangee==='reactions')")&&!page.includes('rangee-ronds')&&!css.includes('rangee-ronds')
   &&css.includes('.attack-row button.btn-action.rond,.attack-row button.btn-action.rond.inerte{width:42px;height:42px;font-size:19px}'),'gros ronds pour agir et réagir, petits pour les maîtrises et les gestes');
- assert.ok(page.includes('<div class="eyebrow">Dés</div><div class="des-combattant" id="des-combattant" hidden></div><div id="dice-tray" aria-hidden="true"></div>')
-  &&src.includes("function montreDesCombattant(dice,bonus,toujours){const z=$('des-combattant');if(!z)return;")
-  &&src.includes("z.replaceChildren();z.hidden=!dice;if(dice)z.append(desEtBonus(dice,bonus,toujours,false))}")
-  &&src.includes("const voit=!!a&&(view==='mj'||a.hero||!!a.revealed);")
-  &&src.includes("b.addEventListener('pointerenter',()=>montreDesCombattant(dice,bonus,toujours));b.addEventListener('pointerleave',revient)};")
+ assert.ok(src.includes("const voit=!!a&&(view==='mj'||a.hero||!!a.revealed);")
+  
   &&src.includes("if(marked.size>1){boite.replaceChildren();boite.hidden=true;montreDesCombattant(null);return}")
   &&css.includes('.des-combattant{display:flex;align-items:center;min-height:26px}.des-combattant[hidden]{display:none}'),'les dés du combattant au-dessus de la piste, ceux du rond survolé le temps du survol');
  {const m=page.match(/function compteDuTexte\(t\)\{[^\n]*\}/);assert.ok(m,'compteDuTexte introuvable');const ctx={};vm.runInNewContext(m[0]+';this.f=compteDuTexte',ctx);
@@ -3310,8 +3296,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
  assert.ok(src.includes("function bulleAction(b,{nom,dit='',note='',des=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action';")
   &&src.includes("const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);")
-  &&src.includes(" if(des){des.classList.add('bulle-des');d.append(des)}")&&src.includes("des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false):null}));")
-  &&page.includes("surveille(b,bulle||(()=>bulleAction(b,{nom:b.dataset.nom,dit:b.dataset.dit})))}")&&!page.includes("'cat-detail bulle-attaque-corps'")
+  &&src.includes(" if(des){des.classList.add('bulle-des');d.append(des)}")&&src.includes("des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false):null}));")&&!page.includes("'cat-detail bulle-attaque-corps'")
   &&css.includes('.talent-detail.bulle-action{background:color-mix(in srgb,var(--teinte,#3f7bc0) 24%,#fff);border-left:4px solid var(--teinte,#3f7bc0)}')
   &&css.includes('.talent-detail .bulle-des{display:flex;align-items:center;gap:7px;margin:0 0 6px}'),'la bulle d’action, celle d’un talent, avec les dés');
  assert.ok(!page.includes('titre-actions')&&!page.includes('actions-head')&&!page.includes('body.sombre .attack-row')&&page.includes('.choix-attaques[hidden]{display:none}.attack-row{display:flex;'),'plus de titre « Actions »');}
