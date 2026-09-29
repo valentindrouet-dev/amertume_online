@@ -1222,6 +1222,26 @@ body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-
 /* Sur les fiches, les noms sous l'inventaire et les talents ne paraissent que sur la page des
    Aventuriers, et seulement quand « Noms » est allumé ; ailleurs, l'image seule. */
 .sac-carte{display:flex;flex-direction:column;align-items:center;gap:3px}
+/* Le sac en trois lignes — équipement, objets, ressources et restes — de petites icônes seules :
+   ni dés, ni DEF, ni nom ; le nombre d'exemplaires reste, la bulle au survol dit le reste. */
+.sac .sac-ligne{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:5px;min-height:0}
+.sac .sac-ligne-titre{flex-basis:100%;font:600 9.5px system-ui;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:2px 0 -1px}
+.sac .cat-pill.gear-carre,.sac .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:36px;min-width:36px;height:36px;min-height:36px;padding:2px;gap:0;border-radius:8px;justify-content:center}
+.sac .cat-pill.gear-carre,.sac .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){display:inline-flex;flex-direction:column;align-items:center}
+.sac .cat-pill.gear-carre .logo-equip,.sac .cat-pill.gear-carre .glyphe{width:26px;height:26px;margin:0;flex:none}
+.sac .cat-pill.gear-carre .glyphe{display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1}
+.sac .cat-pill.gear-carre .gear-bas,.sac .cat-pill.gear-carre .pips,.sac .cat-pill.gear-carre .marque-porte{display:none}
+.sac .cat-pill.gear-carre .exemplaires{position:absolute;top:auto;right:-6px;bottom:-6px;left:auto;width:auto;min-width:0;height:auto;min-height:0;padding:0 3px;
+ font:700 9px/13px system-ui;color:var(--ink);border-radius:6px;background:var(--panel);border:1px solid var(--line)}
+#heroes-page .sac .sac-carte .nom-sac,.sac .sac-carte .nom-sac{display:none}
+.sac .retirer-sac{width:16px;height:16px;top:-6px;right:-6px;font-size:9px}
+/* Les talents d'une fiche d'aventurier : six par ligne sur toute la largeur, dans une boîte claire. */
+.hero-card .talent-grille{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));justify-items:center;align-items:start;gap:10px 4px;
+ padding:10px 8px;margin:2px 0 6px;border-radius:12px;background:color-mix(in srgb,var(--panel) 55%,#fff);border:1px solid var(--line)}
+.hero-card .talent-grille .cat-carte.talent-carte{width:100%;min-width:0;align-items:center}
+.hero-card .talent-grille .cat-pill.gear-carre.talent-carre{width:100%;max-width:62px;height:auto;aspect-ratio:1}
+.hero-card .talent-grille .cat-pill.gear-carre.talent-carre .logo-equip{width:66%;height:66%}
+.hero-card .talent-grille>.muted{grid-column:1/-1;justify-self:start}
 /* Sous un rond de talent, pas de nom — sur la table comme ailleurs ; la page Aventuriers seule le montre, « Noms » allumé. */
 .cat-carte.talent-carte .nom-carte.nom-rond,.sac-carte .nom-sac{display:none}
 #heroes-page .talent-carte .nom-rond,#heroes-page .sac-carte .nom-sac{display:flex;max-width:72px;min-height:0;font:600 10.5px/1.15 system-ui;text-align:center;justify-content:center;color:var(--ink);overflow-wrap:break-word}

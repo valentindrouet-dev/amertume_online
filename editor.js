@@ -1331,6 +1331,13 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  if(view==='mj'){const plus=document.createElement('button');plus.type='button';plus.className='ico plus';plus.textContent='+';
   plus.title='Ajouter à l’inventaire de '+a.name;plus.setAttribute('aria-label',plus.title);plus.onclick=()=>openPicker(a,'gear');titre.append(plus)}
  let rien=true;
+ /* Trois lignes, d'elles-mêmes : l'équipement — armes, armures, munitions —, les objets, puis les
+    ressources et les restes. Chaque pièce n'y montre que son icône, en petit ; sa bulle dit tout. */
+ const LIGNES_SAC=[['equipement','Équipement',o=>['weapon','armor','ammo'].includes(o.category)],['objets','Objets',o=>!['weapon','armor','ammo','ressource','restes'].includes(o.category)],
+  ['matieres','Ressources et restes',o=>['ressource','restes'].includes(o.category)]];
+ const lignes=new Map(LIGNES_SAC.map(([k,nom])=>{const l=document.createElement('div');l.className='sac-ligne sac-'+k;
+  const t=document.createElement('span');t.className='sac-ligne-titre';t.textContent=nom;l.append(t);return [k,l]}));
+ const ligneDe=o=>lignes.get((LIGNES_SAC.find(([,,f])=>f(o))||LIGNES_SAC[1])[0]);
  [...comptes.entries()].forEach(([o,n])=>{const equipement=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
   const reste=equipement?n-portes(o):n;if(reste<=0)return;rien=false;
   const p=carreDeFiche(a,o,reste,true,()=>0,peutEquiper,equipement?false:undefined);
@@ -1345,7 +1352,8 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
    x.onpointerdown=ev=>ev.stopPropagation();p.append(x)}
   // Son nom dessous, sur la page des Aventuriers, quand le bouton « Noms » est allumé.
   const w=document.createElement('div');w.className='sac-carte';const nomSac=document.createElement('span');nomSac.className='nom-carte nom-sac';nomSac.textContent=o.name;
-  w.append(p,nomSac);sac.append(w)});
+  w.append(p,nomSac);ligneDe(o).append(w)});
+ lignes.forEach(l=>{if(l.childElementCount>1)sac.append(l)});
  if(rien){const v=document.createElement('span');v.className='muted';v.textContent='Rien dans le sac.';sac.append(v)}
  out.append(sac);
  /* Le dépôt : sur le corps, la pièce s'équipe à sa place ; sur le sac, elle se repose. */
