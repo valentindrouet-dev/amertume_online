@@ -3127,7 +3127,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("function inventaireAdversaire(boite,cible,apres,genre){")&&src.includes("const p=gearCarre(o,n,0);p.classList.remove('dispo');p.classList.add('petit');")
   &&src.includes("liste.forEach(o=>{const p=carreInventaire(o,compte(o.id));p.classList.add('inv-pioche');")&&!src.includes("p.classList.add('mini','inv-pioche')")
-  &&css.includes('.cat-pill.gear-carre.petit{width:auto;min-width:52px;min-height:52px;height:52px;'),'des petits carrés, plus de languettes');
+  &&css.includes('.cat-pill.gear-carre.petit:not(.talent-carre):not(.best-carre){width:auto;min-width:52px;min-height:52px;height:52px;'),'des petits carrés, plus de languettes');
  assert.ok(src.includes("{cle:'attaques',nom:'Attaques',type:'panneau',")&&src.includes("{cle:'talents',nom:'Talents',type:'panneau',")&&src.includes("{cle:'inventaire',nom:'Inventaire',type:'panneau',")
   &&src.includes("if(quoi==='inventaire'||quoi==='restes')inventaireAdversaire(corps,m,()=>{equipeAdversaire(m);m.butin=normaliseButin(m.butin,m.inventaire);fini()},quoi);")
   &&src.includes("const dessine=()=>choixTalents(boite,m,filtre.value,")&&src.includes("form.onchange=()=>{lis();fini()};")
@@ -3149,7 +3149,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&!src.includes("['restes','Restes',o=>o.category==='restes']"),'les restes à part');
  assert.ok(src.includes("+' ('+[...g.de].join(', ')+').',{ton:'butin'}));")&&page.includes("const TONS=['attaque','talent','soin','degats','etat','reveal','carte','butin'];")
   &&page.includes("const rx=new RegExp('('+[...names.map(n=>pieces.has(n)?quote(n)+'(?: ×\\\\d+)?':quote(n)),")&&page.includes("function pieceAuJournal(o,texte){const c=document.createElement('span');c.className='j-objet r-'+rareteDe(o);")
-  &&css.includes('.j-objet{display:inline-flex;'),'le butin au journal');
+  &&css.includes('.j-objet{display:inline-block;'),'le butin au journal');
  // decorate en machine virtuelle : les pièces en pastilles, « ×3 » avec elles, aucun chiffre rouge.
  const el=()=>({kids:[],cls:new Set(),className:'',textContent:'',style:{},append(...x){this.kids.push(...x)},classList:{contains:c=>false}});
  const ctxJ={actors:[{id:'h',name:'Éla',hero:true},{id:'g',name:'Gobelin',vu:true}],nomNum:o=>o.name,actorTint:()=>'#123',J_KEYS:{},rareteDe:()=>'commun',
@@ -3183,10 +3183,16 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    la ligne, et les billes d'Action et de Mouvement ont une taille paire, sans rétrécir. */
 assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing:border-box;width:20px;height:20px;')
  &&page.includes('.pastilles .pt{display:block;flex:none;width:8px;height:8px;border-radius:50%;'),'des ronds qui restent ronds');
+/* v0.350 — Les cases d'équipement toutes à la même hauteur, le logo au même endroit ; les pièces du
+   butin sur la ligne du journal ; la valeur d'un reste en pièces d'or, sans sa conversion. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(css.includes('.cat-pill.gear-carre:not(.talent-carre):not(.best-carre){height:73px;justify-content:flex-start;padding-top:6px}')
+  &&css.includes('.j-objet{display:inline-block;')&&css.includes('.j-objet .logo-equip{display:inline-block;width:16px;height:16px;margin:0 3px 0 0;vertical-align:-3px}')
+  &&src.includes("v.append(n,' × ',piece);d.append(v)}")&&!src.includes("'Se convertit en : '"),'cases égales, butin aligné, or en pièces');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1792 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1793 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

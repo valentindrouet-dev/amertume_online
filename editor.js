@@ -968,7 +968,9 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // La DEF, comme sur le carré : seulement si la pièce en donne, ou si c'est un torse ou un bouclier.
  if(col==='armor'){if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))ligne('DEF '+(o.def||0)+' · '+NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase())}
  else if(col==='melee'||col==='ranged')ligne((o.hands===2?'2 mains':'1 main')+(col==='ranged'?' · à distance':' · au contact'));
- if(col==='restes'){const r=rendementReste(o);ligne(Object.keys(r).length?'Se convertit en : '+texteRessources(r):'Ne se convertit en rien.');ligne('Valeur : '+(o.price||0).toLocaleString('fr-FR')+' or','gear-valeur')}
+ // Un reste : sa valeur en pièces d'or, « 7 × » et la pièce ; sa conversion ne s'y lit plus.
+ if(col==='restes'){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
+  const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' × ',piece);d.append(v)}
  if(o.tanneur&&o.recette&&o.recette.length)ligne('Tannerie : '+texteRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte]))),'gear-recette');
  if(o.category==='ammo'){const k=keys.indexOf(o.munDe);ligne('Munition : '+(k>=0?'+1 dé '+types[k]:'aucun dé')+' aux armes à distance portées');ligne(o.etat?'Leur tir inflige : '+o.etat:'')}
  else if(o.etat)ligne('Inflige : '+o.etat);
