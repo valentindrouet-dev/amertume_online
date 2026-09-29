@@ -538,9 +538,8 @@ function majFiche(carte,a){if(!carte)return;
  ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));ecrire('.stat-tile.t-xp strong',a.xp||0);
  ecrire('.chip-niveau','Niveau '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
  majEcu(carte.querySelector('.stat-tile.t-def .ecu'),defOf(a));
- carte.querySelectorAll('.skill-chip').forEach((puce,k)=>{
-  const b=puce.querySelector('b');if(b)b.textContent='+'+competenceDe(a,k);
-  puce.classList.toggle('zero',!competenceDe(a,k))})}
+ carte.querySelectorAll('.comp-rond').forEach((r,k)=>{const v=r.querySelector('.comp-val');if(v)v.textContent=valeurCompetence(a,k);
+  r.setAttribute('aria-label',skillNames[k]+' '+valeurCompetence(a,k))})}
 /* Rendre modifiables les tuiles d'une rangée : la grosse valeur, et le plafond
    écrit en petit dessous quand il y en a un. La DEF fait exception dès qu'une
    armure la commande — elle se change alors dans l'équipement, pas ici. */
@@ -735,24 +734,22 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const mien=view==='mj'||actors.indexOf(a)===owner;
  const titreComp=sousTitre('Compétences','Ajouter un point de compétence à '+a.name,view!=='mj'?null:ev=>{
   ev.stopPropagation();
-  choixMenu(ev.currentTarget,skillNames.map((n,k)=>[String(k),n+' +'+a.skills[k]]),v=>{
+  choixMenu(ev.currentTarget,skillNames.map((n,k)=>[String(k),n+' '+valeurCompetence(a,k)]),v=>{
    const k=Number(v);if(!(k>=0&&k<skillNames.length))return;
    a.skills[k]=readStat('skill',a.skills[k]+1,a.skills[k]);
    majFiche(c,a);rendrePlusTard();scheduleSave();
    document.dispatchEvent(new Event('amertume-content-changed'))})});
- const comps=document.createElement('div');comps.className='skills';
- skillNames.forEach((n,k)=>{
-  // Un point appris dans l'arbre compte : la puce paraît, la valeur le porte, et le clic corrige la fiche.
-  if(!competenceDe(a,k))return;
-  const puce=document.createElement('span');puce.className='skill-chip'+(competenceDe(a,k)?'':' zero');
-  puce.style.setProperty('--tint',SKILL_TINTS[k]);
-  const l=nomCompetence(k);
-  const v=document.createElement('b');v.textContent='+'+competenceDe(a,k);
-  champVif(v,()=>a.skills[k],brut=>{const avant=a.skills[k];
-   a.skills[k]=readStat('skill',brut,avant);
+ /* Les huit compétences, toujours toutes, sur une ligne : un rond à leur logo, teinté de sa couleur,
+    la valeur en pastille au bas — 1, plus ce que l'aventurier y a gagné ; le nom au survol. Le MJ
+    corrige la valeur d'un clic. */
+ const comps=document.createElement('div');comps.className='comp-ronds';
+ skillNames.forEach((n,k)=>{const carte=document.createElement('div');carte.className='comp-carte';
+  const r=rondCompetence(a,k),v=r.querySelector('.comp-val');
+  champVif(v,()=>valeurCompetence(a,k),brut=>{const avant=a.skills[k],autres=valeurCompetence(a,k)-1-(Number(avant)||0);
+   a.skills[k]=readStat('skill',Math.max(1,Math.trunc(Number(brut))||1)-1-autres,avant);
    if(a.skills[k]!==avant){majFiche(c,a);rendrePlusTard();scheduleSave();
     document.dispatchEvent(new Event('amertume-content-changed'))}},'Modifier '+n+' de '+a.name,'petit');
-  puce.append(l,v);comps.append(puce)});
+  carte.append(r);comps.append(carte)});
 
  const titreKit=sousTitre('Équipement','Inventaire de '+a.name,view!=='mj'?null:()=>openPicker(a,'gear'));
  // Le rouage ouvre les arbres de la classe : les talents s'y choisissent de haut en bas.
@@ -780,8 +777,31 @@ $('hero-icones-comp').onclick=()=>openIconesCompetences();
 function normaliseIconesCompetences(l){return COMPETENCES.map((_,k)=>{const v=Array.isArray(l)?l[k]:'';return typeof v==='string'&&v.length<=200&&!/["'<>&\\]/.test(v)?v:''})}
 function iconesCompetences(){return normaliseIconesCompetences(typeof catalog!=='undefined'&&catalog?catalog.iconesCompetences:null)}
 function logoCompetence(k){const l=iconesCompetences()[k];return l?logoAttaque(l,'skill-ico'):null}
-// Le nom d'une compétence sur une puce, son icône devant.
-function nomCompetence(k){const s=document.createElement('span');s.className='skill-nom';const ico=logoCompetence(k);if(ico)s.append(ico);s.append(skillNames[k]);return s}
+/* Le rond d'une compétence : son logo, ou ses deux premières lettres ; le bord et le fond à la
+   couleur dominante du logo, celle de la compétence à défaut ; la valeur en pastille au bas. Un
+   bouton quand un clic le lance. */
+function rondCompetence(a,k,clic){const r=document.createElement(clic?'button':'span');r.className='comp-rond';if(clic)r.type='button';
+ r.style.setProperty('--tint',SKILL_TINTS[k]);const l=iconesCompetences()[k],ico=l?logoCompetence(k):null;
+ if(ico){r.append(ico);teinteLogoSur(r,ico,l)}
+ else{const g=document.createElement('span');g.className='comp-lettre';g.textContent=skillNames[k].slice(0,2);r.append(g)}
+ const v=document.createElement('span');v.className='comp-val';v.textContent=valeurCompetence(a,k);r.append(v);
+ r.title=skillNames[k];r.setAttribute('aria-label',skillNames[k]+' '+valeurCompetence(a,k));return r}
+/* La couleur dominante d'un logo, « r,g,b » : la teinte la plus présente parmi ses pixels colorés,
+   contours sombres, reflets clairs et gris écartés ; la moyenne de tout à défaut. Mémorisée par
+   logo. Une image d'ailleurs qui refuse d'être lue garde la couleur donnée. */
+const TEINTES_LOGOS=new Map();
+function teinteDominante(im){try{const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d',{willReadFrequently:true});
+ x.drawImage(im,0,0,32,32);const d=x.getImageData(0,0,32,32).data,bacs=Array.from({length:12},()=>({p:0,r:0,g:0,b:0})),tous={n:0,r:0,g:0,b:0};
+ for(let i=0;i<d.length;i+=4){if(d[i+3]<128)continue;const r=d[i],g=d[i+1],b=d[i+2];tous.n++;tous.r+=r;tous.g+=g;tous.b+=b;
+  const R=r/255,G=g/255,B=b/255,max=Math.max(R,G,B),min=Math.min(R,G,B),l=(max+min)/2,e=max-min,sat=e?e/(1-Math.abs(2*l-1)):0;
+  if(l<.15||l>.9||sat<.25)continue;const h=((max===R?((G-B)/e)%6:max===G?(B-R)/e+2:(R-G)/e+4)*60+360)%360,bac=bacs[Math.floor(h/30)%12];
+  bac.p+=sat;bac.r+=r*sat;bac.g+=g*sat;bac.b+=b*sat}
+ const top=bacs.reduce((m,y)=>y.p>m.p?y:m);const moy=top.p>0?[top.r/top.p,top.g/top.p,top.b/top.p]:tous.n?[tous.r/tous.n,tous.g/tous.n,tous.b/tous.n]:null;
+ return moy?moy.map(Math.round).join(','):null}catch(e){return null}}
+function teinteLogoSur(el,im,cle){const pose=t=>{if(t)el.style.setProperty('--tint',t)};
+ if(TEINTES_LOGOS.has(cle)){pose(TEINTES_LOGOS.get(cle));return}
+ const lis=()=>{if(TEINTES_LOGOS.has(cle)){pose(TEINTES_LOGOS.get(cle));return}if(!im.naturalWidth)return;const t=teinteDominante(im);if(t){TEINTES_LOGOS.set(cle,t);pose(t)}};
+ if(im.complete&&im.naturalWidth)lis();im.addEventListener('load',lis)}
 function groupesLogosCompetence(){const vus=new Set(),groupes=[];
  planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract/i.test(nomPlanche(f))||/caract/i.test(f)).sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))
   .forEach(f=>{const ids=iconesPlanches().filter(id=>id.startsWith(f+'#'));ids.forEach(i=>vus.add(i));if(ids.length)groupes.push([nomPlanche(f),ids])});

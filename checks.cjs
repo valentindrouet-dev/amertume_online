@@ -1984,14 +1984,14 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")
   &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")
-  &&page.includes(" const jet=skillRoll(competenceDe(a,i),d6);")&&page.includes("useOwnDamage===false?0:degatsDe(a);")
+  &&page.includes(" const jet=skillRoll(valeurCompetence(a,i),d6);")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")&&page.includes("useOwnDamage===false?0:degatsDe(a);")
   &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")&&page.includes("const n=degatsDe(e);applyDamage(a,n);")
   &&src.includes("const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
   &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee'];")
   &&src.includes("const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")
-  &&src.includes(" ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));")&&src.includes("  if(!competenceDe(a,k))return;")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
+  &&src.includes(" ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));")&&src.includes("  const r=rondCompetence(a,k),v=r.querySelector('.comp-val');")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
    en est une ; les miettes ne comptent pas ; le MJ les voit d'un bouton. */
 {const mur={anneaux:[[[49,0],[51,0],[51,100],[49,100]]]};
@@ -3199,12 +3199,22 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.deepEqual([...ctxC.n(['planches/caracteristiques_1.webp#4',7,'a"b'])],['planches/caracteristiques_1.webp#4','','',...Array(C.COMPETENCES.length-3).fill('')],'une icône par compétence, rien d’autre');
  assert.equal(ctxC.n(null).length,C.COMPETENCES.length,'autant de places que de compétences');
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
-  &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract/i.test(nomPlanche(f))||/caract/i.test(f))")&&src.includes("  const l=nomCompetence(k);")
-  &&page.includes("const n=typeof nomCompetence==='function'?nomCompetence(i):"),'les icônes des compétences sur les fiches');}
+  &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract/i.test(nomPlanche(f))||/caract/i.test(f))")
+  &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.353 — Les huit compétences en ronds sous « Compétences » : le logo, teinté de sa couleur
+   dominante, la valeur en pastille au bas — 1, plus ce que l'aventurier y a gagné ; le test lance
+   autant de dés. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("function rondCompetence(a,k,clic){")&&src.includes("function teinteDominante(im){")&&src.includes("r.style.setProperty('--tint',SKILL_TINTS[k]);")
+  &&css.includes('.comp-val{position:absolute;left:50%;bottom:0;transform:translate(-50%,55%);')&&css.includes('border:2.5px solid rgb(var(--tint));'),'les ronds des compétences');
+ const ctxV={bonusFiche:()=>({skills:[0,2,0,0,0,0,0,0]})};vm.createContext(ctxV);
+ vm.runInContext(page.slice(page.indexOf('function competenceDe(a,k)'),page.indexOf('function vieAffichee(a)'))+';this.v=valeurCompetence;',ctxV);
+ assert.equal(ctxV.v({skills:[0,0,0,0,0,0,0,0]},0),1,'sans rien, une compétence vaut 1');
+ assert.equal(ctxV.v({skills:[0,1,0,0,0,0,0,0]},1),4,'1 + 1 point + 2 de bonus');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1796 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1799 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -404,7 +404,18 @@ button.btn-analyse[hidden]{display:none}
 /* Les compétences sont ici affichées, pas jouées : pas de curseur ni de survol de bouton. */
 .hero-card .skill-chip{cursor:default}
 /* L'icône d'une compétence devant son nom, sur toutes les fiches. */
-.skill-nom{display:inline-flex;align-items:center;gap:5px;min-width:0}.skill-chip .logo-equip.skill-ico{flex:none;width:20px;height:20px;margin:0}
+/* Les compétences en ronds : le logo, le bord et le fond à sa couleur dominante, la valeur en
+   pastille à cheval sur le bas du rond ; le nom au survol. Les huit tiennent sur une ligne. */
+.comp-ronds{display:flex;flex-wrap:wrap;justify-content:space-between;gap:14px 6px;margin:4px 0 16px}
+.comp-carte{display:flex;flex-direction:column;align-items:center;min-width:0}
+.comp-rond{position:relative;flex:none;box-sizing:border-box;width:44px;height:44px;margin:0;padding:0;border-radius:50%;display:grid;place-items:center;
+ border:2.5px solid rgb(var(--tint));background:radial-gradient(circle at 50% 38%,rgba(var(--tint),.08),rgba(var(--tint),.3));color:rgb(var(--tint));cursor:default}
+button.comp-rond{cursor:pointer}button.comp-rond:hover{background:rgba(var(--tint),.36)}
+.comp-rond .logo-equip.skill-ico{width:30px;height:30px;margin:0}
+.comp-lettre{font:700 14px 'Killam',Georgia,serif}
+.comp-val{position:absolute;left:50%;bottom:0;transform:translate(-50%,55%);box-sizing:border-box;min-width:19px;height:19px;padding:0 5px;border-radius:10px;
+ background:var(--panel);border:1.5px solid rgb(var(--tint));color:var(--ink);font:800 11.5px/16px system-ui;text-align:center;z-index:2}
+.comp-rond .champ-vif{position:absolute;left:50%;bottom:0;transform:translate(-50%,55%);width:44px;margin:0;z-index:3}
 .hero-card .skill-chip:hover{background:rgba(var(--tint),.13)}
 .hero-card .sheet-class{align-self:center}
 .hero-kit{margin:0;font-size:13px}
