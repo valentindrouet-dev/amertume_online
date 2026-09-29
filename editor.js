@@ -1760,11 +1760,11 @@ function barreMasseBestiaire(boite){const barre=document.createElement('div');ba
    créatures posées suivent, et la case du tableau se redessine. */
 const panneauMasse=dialog('masse-panneau','Adversaire','<form id="masse-panneau-form" class="masse-panneau-form"><div id="masse-panneau-corps"></div></form>');
 $('masse-panneau-form').onsubmit=e=>e.preventDefault();
-const NOMS_PANNEAU={inventaire:'Inventaire',attaques:'Attaques spéciales',talents:'Talents'};
+const NOMS_PANNEAU={inventaire:'Inventaire',restes:'Restes',attaques:'Attaques spéciales',talents:'Talents'};
 function ouvrePanneauMasse(m,quoi,apres){const corps=$('masse-panneau-corps'),form=$('masse-panneau-form');corps.replaceChildren();form.onchange=null;
  panneauMasse.querySelector('.dialog-head h2').textContent=m.name+' · '+NOMS_PANNEAU[quoi];
  const fini=()=>{sauveBestiaire([m]);apres()};
- if(quoi==='inventaire')inventaireAdversaire(corps,m,()=>{equipeAdversaire(m);m.butin=normaliseButin(m.butin,m.inventaire);fini()});
+ if(quoi==='inventaire'||quoi==='restes')inventaireAdversaire(corps,m,()=>{equipeAdversaire(m);m.butin=normaliseButin(m.butin,m.inventaire);fini()},quoi);
  else if(quoi==='talents'){const filtre=document.createElement('input');filtre.type='search';filtre.className='masse-panneau-filtre';filtre.placeholder='Filtrer les talents';filtre.setAttribute('aria-label','Filtrer les talents');
   const boite=document.createElement('div');boite.className='talent-picker';const toutes=talentFamilies(),tete=m.family&&toutes.includes(m.family)?[m.family]:[];
   const dessine=()=>choixTalents(boite,m,filtre.value,[...tete,...toutes.filter(f=>!tete.includes(f))],fini);filtre.oninput=dessine;corps.append(filtre,boite);dessine()}
@@ -1777,13 +1777,13 @@ function ouvrePanneauMasse(m,quoi,apres){const corps=$('masse-panneau-corps'),fo
   form.onchange=()=>{lis();fini()};corps.append(liste,plus);dessine()}
  panneauMasse.showModal()}
 /* Une case à panneau : ce qu'elle contient en un coup d'œil — les noms des attaques, les ronds des
-   talents, les icônes de l'inventaire —, et un clic l'ouvre. */
+   talents, les icônes de l'inventaire ou des restes —, et un clic l'ouvre. */
 function cellulePanneau(m,quoi,apres){const b=document.createElement('button');b.type='button';b.className='masse-panneau-bouton';
  b.title='Modifier : '+NOMS_PANNEAU[quoi].toLowerCase()+' de '+m.name;b.setAttribute('aria-label',b.title);
  const dessine=()=>{b.replaceChildren();const plus=n=>{if(n>0){const x=document.createElement('span');x.className='masse-plus';x.textContent='+'+n;b.append(x)}};
   if(quoi==='attaques'){const noms=(m.attacks||[]).map(a=>a&&a.name).filter(Boolean);if(noms.length){const t=document.createElement('span');t.className='masse-attaques-noms';t.textContent=noms.join(' · ');b.append(t)}}
   else if(quoi==='talents'){const l=(m.talents||[]).map(talent).filter(Boolean);l.slice(0,6).forEach(t=>{const r=talentRond(t);r.classList.add('mini');b.append(r)});plus(l.length-6)}
-  else{const comptes=new Map();(m.inventaire||[]).map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
+  else{const comptes=new Map();(m.inventaire||[]).map(objetDe).filter(o=>o&&estReste(o)===(quoi==='restes')).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
    [...comptes].slice(0,6).forEach(([o,n])=>{const w=document.createElement('span');w.className='masse-inv';
     w.append(logoEquipement(o)||Object.assign(document.createElement('span'),{className:'glyphe',textContent:'◈'}));
     if(n>1){const x=document.createElement('span');x.className='masse-inv-n';x.textContent='×'+n;w.append(x)}b.append(w)});plus(comptes.size-6)}
@@ -1804,7 +1804,8 @@ function tableMasseBestiaire(boite,liste){
   // Attaques spéciales, talents et inventaire : un aperçu, et un clic ouvre leur panneau.
   {cle:'attaques',nom:'Attaques',type:'panneau',tri:m=>(m.attacks||[]).length},
   {cle:'talents',nom:'Talents',type:'panneau',tri:m=>(m.talents||[]).length},
-  {cle:'inventaire',nom:'Inventaire',type:'panneau',tri:m=>(m.inventaire||[]).length},
+  {cle:'inventaire',nom:'Inventaire',type:'panneau',tri:m=>(m.inventaire||[]).filter(id=>!estReste(objetDe(id))).length},
+  {cle:'restes',nom:'Restes',type:'panneau',tri:m=>(m.inventaire||[]).filter(id=>estReste(objetDe(id))).length},
   {cle:'socle',nom:'Socle',type:'choix',opts:SOCLES_ADVERSAIRE,lit:m=>m.socle||'medium',ecrit:(m,v)=>{m.socle=dans(SOCLES_ADVERSAIRE,v,'medium')},tri:m=>SOCLES_ADVERSAIRE.findIndex(([k])=>k===(m.socle||'medium'))},
   {cle:'menace',nom:'Menace',type:'choix',opts:MENACES,lit:m=>m.menace||'closest',ecrit:(m,v)=>{m.menace=dans(MENACES,v,'closest')},tri:m=>MENACE_NOMS[m.menace||'closest']||''}];
  const colTri=masseTriBest&&(masseTriBest.cle==='nom'?{tri:m=>m.name}:COLS.find(c=>c.cle===masseTriBest.cle));
@@ -2320,22 +2321,25 @@ const lisPourcent=v=>Math.max(0,Math.min(100,Math.round(Number(v))||0));
 function normaliseButin(b,inventaire){const out={};if(!b||typeof b!=='object'||Array.isArray(b))return out;
  Object.entries(b).slice(0,200).forEach(([id,v])=>{const n=lisPourcent(v);if(n&&typeof id==='string'&&(!inventaire||inventaire.includes(id)))out[id]=n});return out}
 /* Les familles où l'on puise l'inventaire d'un adversaire : on en allume plusieurs, et un clic sur
-   une pièce l'ajoute. Munitions avec les armes, trésors avec les objets. */
+   une pièce l'ajoute. Munitions avec les armes, trésors avec les objets. Les restes ont leur champ
+   à eux, au formulaire comme dans le tableau en masse. */
 const CATS_INV_ADV=[['armes','Armes',o=>o.category==='weapon'||o.category==='ammo'],['armures','Armures',o=>o.category==='armor'],
- ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource'].includes(o.category)],['restes','Restes',o=>o.category==='restes'],['ressources','Ressources',o=>o.category==='ressource']];
-let catsInvAdv=new Set(['armes','armures']),filtreInvAdv='';
+ ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource'].includes(o.category)],['ressources','Ressources',o=>o.category==='ressource']];
+const estReste=o=>!!o&&o.category==='restes';
+let catsInvAdv=new Set(['armes','armures']),filtreInvAdv='',filtreRestes='';
 /* L'inventaire d'un adversaire, au formulaire comme dans le tableau en masse, en petits carrés
    comme ceux d'un inventaire : ce qu'il possède, le nombre d'exemplaires, la croix pour en retirer
    un et la chance de butin dessous ; puis la pioche : les familles à allumer, un filtre, et
    l'Armurerie en petits carrés, dont un clic ajoute un exemplaire. Le nom se lit dans la bulle.
-   « apres » suit chaque changement ; la pioche ne se redessine pas, elle garde sa place. */
+   « apres » suit chaque changement ; la pioche ne se redessine pas, elle garde sa place. Le genre
+   « restes » ne montre et ne propose que des restes, sans familles à allumer. */
 function carreInventaire(o,n){const p=gearCarre(o,n,0);p.classList.remove('dispo');p.classList.add('petit');const m=p.querySelector('.marque-porte');if(m)m.remove();
  if(BULLES)surveille(p,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});return p}
-function inventaireAdversaire(boite,cible,apres){boite.replaceChildren();boite.classList.add('inv-adv');
+function inventaireAdversaire(boite,cible,apres,genre){boite.replaceChildren();boite.classList.add('inv-adv');const restes=genre==='restes',dugenre=o=>estReste(o)===restes;
  const possede=document.createElement('div');possede.className='inv-possede';
  const compte=id=>(cible.inventaire||[]).filter(x=>x===id).length;
- const majPossede=()=>{possede.replaceChildren();const comptes=new Map();(cible.inventaire||[]).map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
-  if(!comptes.size){const v=document.createElement('p');v.className='muted';v.textContent='Inventaire vide : allume une famille ci-dessous, puis clique une pièce.';possede.append(v);return}
+ const majPossede=()=>{possede.replaceChildren();const comptes=new Map();(cible.inventaire||[]).map(objetDe).filter(o=>o&&dugenre(o)).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
+  if(!comptes.size){const v=document.createElement('p');v.className='muted';v.textContent=restes?'Aucun reste : clique un reste ci-dessous.':'Inventaire vide : allume une famille ci-dessous, puis clique une pièce.';possede.append(v);return}
   comptes.forEach((n,o)=>{const w=document.createElement('div');w.className='inv-adv-carte';const p=carreInventaire(o,n);
    const x=document.createElement('button');x.type='button';x.className='retirer-sac';x.textContent='✕';x.title='Retirer un exemplaire de '+o.name;x.setAttribute('aria-label',x.title);
    x.onclick=e=>{e.stopPropagation();e.preventDefault();fermerBulle();retirerInventaire(cible,o);if(!compte(o.id)&&cible.butin)delete cible.butin[o.id];change()};p.append(x);
@@ -2345,22 +2349,22 @@ function inventaireAdversaire(boite,cible,apres){boite.replaceChildren();boite.c
    c.onchange=()=>{cible.butin={...(cible.butin||{})};const v=lisPourcent(c.value);c.value=String(v);if(v)cible.butin[o.id]=v;else delete cible.butin[o.id];apres()};
    l.append(c,'%');w.append(p,l);possede.append(w)})};
  const barre=document.createElement('div');barre.className='inv-cats';
- const filtre=document.createElement('input');filtre.type='search';filtre.className='inv-filtre';filtre.placeholder='Filtrer';filtre.value=filtreInvAdv;filtre.setAttribute('aria-label','Filtrer les pièces');
+ const filtre=document.createElement('input');filtre.type='search';filtre.className='inv-filtre';filtre.placeholder=restes?'Filtrer les restes':'Filtrer';filtre.value=restes?filtreRestes:filtreInvAdv;filtre.setAttribute('aria-label',restes?'Filtrer les restes':'Filtrer les pièces');
  const grille=document.createElement('div');grille.className='inv-grille';const carres=new Map();
  const majComptes=()=>carres.forEach((p,o)=>{const n=compte(o.id);let x=p.querySelector('.exemplaires');
   if(!n){if(x)x.remove();return}if(!x){x=document.createElement('span');x.className='exemplaires';p.append(x)}x.textContent='×'+n});
- const remplit=()=>{grille.replaceChildren();carres.clear();const q=filtreInvAdv.trim().toLowerCase(),tests=CATS_INV_ADV.filter(([k])=>catsInvAdv.has(k)).map(([,,t])=>t);
+ const remplit=()=>{grille.replaceChildren();carres.clear();const q=(restes?filtreRestes:filtreInvAdv).trim().toLowerCase(),tests=restes?[estReste]:CATS_INV_ADV.filter(([k])=>catsInvAdv.has(k)).map(([,,t])=>t);
   const ordre=o=>{const i=CATS_INV_ADV.findIndex(([,,t])=>t(o));return i<0?9:i};
   const liste=(catalog.items||[]).filter(o=>o&&tests.some(t=>t(o))&&(!q||String(o.name||'').toLowerCase().includes(q)))
    .sort((x,y)=>ordre(x)-ordre(y)||String(x.name).localeCompare(String(y.name),'fr'));
-  if(!liste.length){const v=document.createElement('p');v.className='muted';v.textContent=tests.length?'Aucune pièce ici.':'Allume une famille ci-dessus.';grille.append(v);return}
+  if(!liste.length){const v=document.createElement('p');v.className='muted';v.textContent=restes?'Aucun reste à l’Armurerie.':tests.length?'Aucune pièce ici.':'Allume une famille ci-dessus.';grille.append(v);return}
   liste.forEach(o=>{const p=carreInventaire(o,compte(o.id));p.classList.add('inv-pioche');p.title='Ajouter '+o.name;p.setAttribute('aria-label',p.title);
    const ajoute=()=>{ajouterInventaire(cible,o);change()};
    p.onclick=ajoute;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ajoute()}};carres.set(o,p);grille.append(p)})};
- CATS_INV_ADV.forEach(([k,nom])=>{const b=document.createElement('button');b.type='button';const on=()=>catsInvAdv.has(k);
+ if(!restes)CATS_INV_ADV.forEach(([k,nom])=>{const b=document.createElement('button');b.type='button';const on=()=>catsInvAdv.has(k);
   const pose=()=>{b.className='inv-cat'+(on()?' on':'');b.setAttribute('aria-pressed',String(on()))};b.textContent=nom;pose();
   b.onclick=()=>{if(on())catsInvAdv.delete(k);else catsInvAdv.add(k);pose();remplit()};barre.append(b)});
- filtre.oninput=()=>{filtreInvAdv=filtre.value;remplit()};
+ filtre.oninput=()=>{if(restes)filtreRestes=filtre.value;else filtreInvAdv=filtre.value;remplit()};
  const change=()=>{majPossede();majComptes();apres()};
  barre.append(filtre);boite.append(possede,barre,grille);majPossede();remplit()}
 /* Ce que l'adversaire tire de son inventaire, en une phrase : ses attaques d'armes, sa DEF. Le
@@ -3153,7 +3157,7 @@ function renderActorForm(){const a=draft;const weaponOptions=[['','Aucune'],...c
 $('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role,'text',a.hero?'list="classes-jeu" maxlength="120"':'')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum','max',a.max,'number','min="1" max="99999" required'+(a.hero?' readonly':''))+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="99"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"')+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+field('Espèce','race',a.race,'text','maxlength="40"'):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any"')+field('Endurance','endu',a.endu,'number','min="1" max="999"')+field('Bonus PV (classe + espèce)','pvBonus',a.pvBonus,'number','min="-9999" max="9999" readonly')+field('Niveau','level',a.level,'number','min="1" max="7"'):'')+'</div>'
   +(a.hero?'<datalist id="classes-jeu">'+(catalog.classes||[]).map(c=>'<option value="'+esc(c.name)+'">').join('')+'</datalist>'
    +'<p class="muted">Classes du jeu : '+(catalog.classes||[]).map(c=>esc(c.name)+' (PV +'+(c.pv||0)+')').join(' · ')+'.</p>':'')
-  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']]):'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'')+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Inventaire<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div id="inventaire-edit"></div>'+(a.hero?'<div class="edit-grid inv-ajout">'+sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())+'<button type="button" id="inv-ajouter">Ajouter</button></div>':'')+'<p class="muted" id="equip-summary"></p><p class="muted">'+(a.hero?'L’inventaire dit tout ce que le combattant possède ; l’équipement, ce qu’il porte — deux mains au plus : une arme à une main et un bouclier, deux armes à une main, ou une arme à deux mains — et une armure. Les dés de l’attaque et la DEF découlent de ce qui est porté ; les objets restent dans l’inventaire.':'Un adversaire porte toujours tout ce qu’il possède, sans compter ses mains : chaque arme est une variante, son bouton en combat, et la meilleure pièce de chaque emplacement fait sa DEF. Le butin est la chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte.')+'</p>'+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
+  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']]):'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'')+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Inventaire<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div id="inventaire-edit"></div>'+(a.hero?'<div class="edit-grid inv-ajout">'+sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())+'<button type="button" id="inv-ajouter">Ajouter</button></div>':'')+'<p class="muted" id="equip-summary"></p><p class="muted">'+(a.hero?'L’inventaire dit tout ce que le combattant possède ; l’équipement, ce qu’il porte — deux mains au plus : une arme à une main et un bouclier, deux armes à une main, ou une arme à deux mains — et une armure. Les dés de l’attaque et la DEF découlent de ce qui est porté ; les objets restent dans l’inventaire.':'Un adversaire porte toujours tout ce qu’il possède, sans compter ses mains : chaque arme est une variante, son bouton en combat, et la meilleure pièce de chaque emplacement fait sa DEF. Le butin est la chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte.')+'</p>'+(a.hero?'':'<div class="divider"></div><h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
 /* Un adversaire qui porte une armure tire sa DEF d'elle seule : le champ se tait et
    montre ce que l'armure donne. Son chiffre propre reste dessous — readActor ne lit pas
    un champ éteint — et revient tel quel si l'armure s'en va. */
@@ -3187,7 +3191,7 @@ function inventaireOptions(){const nomCat=o=>o.category==='weapon'?(o.ranged?'à
 /* L'inventaire du formulaire : une ligne par objet possédé, son compte, « Équiper » ou
    « Porté » pour l'équipement, « − » pour en retirer un exemplaire. */
 function dessineInventaire(){const boite=$('inventaire-edit');if(!boite||!draft)return;
- if(!draft.hero){inventaireAdversaire(boite,draft,refreshEquip);return}boite.replaceChildren();
+ if(!draft.hero){inventaireAdversaire(boite,draft,refreshEquip);if($('restes-edit'))inventaireAdversaire($('restes-edit'),draft,refreshEquip,'restes');return}boite.replaceChildren();
  const comptes=new Map();(draft.inventaire||[]).map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
  if(!comptes.size){const v=document.createElement('p');v.className='muted';v.textContent='Inventaire vide.';boite.append(v);return}
  comptes.forEach((n,o)=>{const ligne=document.createElement('div');ligne.className='inv-ligne';
@@ -3407,7 +3411,7 @@ function butinDesRetires(partants,tirage=Math.random){const heros=actors.filter(
   const h=parmi.reduce((m,x)=>loin(x)<loin(m)?x:m);
   (f.inventaire||[]).forEach(id=>{const o=objetDe(id);if(!o||!chances[id]||tirage()*100>=chances[id])return;
    ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set()});const g=gains.get(h);g.objets.set(o.name,(g.objets.get(o.name)||0)+1);g.de.add(f.name)})});
- gains.forEach((g,h)=>log(h.name+' ramasse '+[...g.objets].map(([n,k])=>n+(k>1?' ×'+k:'')).join(', ')+' ('+[...g.de].join(', ')+').'));
+ gains.forEach((g,h)=>log(h.name+' ramasse '+[...g.objets].map(([n,k])=>n+(k>1?' ×'+k:'')).join(', ')+' ('+[...g.de].join(', ')+').',{ton:'butin'}));
  if(gains.size)document.dispatchEvent(new Event('amertume-content-changed'))}
 /* Rejouer la même rencontre : les adversaires repartent intacts, la troupe garde ses
    blessures — c'est le combat qu'on recommence, pas la partie. */

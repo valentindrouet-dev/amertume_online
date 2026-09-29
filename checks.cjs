@@ -3115,7 +3115,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxB.journal.length,0,'40 % : un tirage à 40 ne tombe pas');
  assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin)});equipeAdversaire(a);")
   &&src.includes(" if(!a.hero){equipeAdversaire(a);a.butin=normaliseButin(a.butin,a.inventaire)}")
-  &&src.includes("const CATS_INV_ADV=[['armes','Armes',")&&src.includes("if(!draft.hero){inventaireAdversaire(boite,draft,refreshEquip);return}"),'inventaire d’adversaire : familles, pioche, butin, tout porté');
+  &&src.includes("const CATS_INV_ADV=[['armes','Armes',")&&src.includes("if(!draft.hero){inventaireAdversaire(boite,draft,refreshEquip);if($('restes-edit'))inventaireAdversaire($('restes-edit'),draft,refreshEquip,'restes');return}"),'inventaire d’adversaire : familles, pioche, butin, tout porté');
  assert.ok(src.includes("r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;")&&css.includes('.bulle-modele .stat-tile strong{font-size:22px;line-height:1.05;margin-top:1px}')
   &&css.includes('.cat-pill.gear-carre.talent-carre.mini{width:28px;height:28px;'),'la bulle : petites tuiles, talents en petits ronds');
  assert.ok(src.includes('<button id="bestiary-masse" type="button" aria-pressed="false"')&&src.includes("function tableMasseBestiaire(boite,liste){")
@@ -3125,11 +3125,11 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    modifie aussi ses attaques spéciales, ses talents et son inventaire, dans un panneau ; la bulle
    d'un modèle n'écrit plus type, famille et socle sous son nom. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("function inventaireAdversaire(boite,cible,apres){")&&src.includes("const p=gearCarre(o,n,0);p.classList.remove('dispo');p.classList.add('petit');")
+ assert.ok(src.includes("function inventaireAdversaire(boite,cible,apres,genre){")&&src.includes("const p=gearCarre(o,n,0);p.classList.remove('dispo');p.classList.add('petit');")
   &&src.includes("liste.forEach(o=>{const p=carreInventaire(o,compte(o.id));p.classList.add('inv-pioche');")&&!src.includes("p.classList.add('mini','inv-pioche')")
   &&css.includes('.cat-pill.gear-carre.petit{width:auto;min-width:52px;min-height:52px;height:52px;'),'des petits carrés, plus de languettes');
  assert.ok(src.includes("{cle:'attaques',nom:'Attaques',type:'panneau',")&&src.includes("{cle:'talents',nom:'Talents',type:'panneau',")&&src.includes("{cle:'inventaire',nom:'Inventaire',type:'panneau',")
-  &&src.includes("if(quoi==='inventaire')inventaireAdversaire(corps,m,()=>{equipeAdversaire(m);m.butin=normaliseButin(m.butin,m.inventaire);fini()});")
+  &&src.includes("if(quoi==='inventaire'||quoi==='restes')inventaireAdversaire(corps,m,()=>{equipeAdversaire(m);m.butin=normaliseButin(m.butin,m.inventaire);fini()},quoi);")
   &&src.includes("const dessine=()=>choixTalents(boite,m,filtre.value,")&&src.includes("form.onchange=()=>{lis();fini()};")
   &&src.includes("function lisAttaques(form,liste){const f=form.elements;")&&src.includes("function htmlAttaques(liste){return liste.map((a,i)=>"),'attaques, talents et inventaire au tableau en masse');
  assert.ok(!src.includes("ligne([TYPE_NOMS[m.type]||'Standard'"),'la bulle sans type, famille ni socle');}
@@ -3140,10 +3140,29 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("if(comptes.size){const rang=document.createElement('div');rang.className='bulle-inventaire';")&&src.includes("c.append(logoEquipement(o)||glyphePiece(itemColumn(o)));")
   &&src.includes(" if(logo)p.append(logo);else p.append(glyphePiece(col));")
   &&src.includes("surveille(jeton,()=>ouvrirBulle(jeton,bulleModele(m),'bulle-modele'));")&&src.includes("openImage(x,'token',url=>{m.image=url;pose();sauveBestiaire([m])})")&&css.includes('.inv-mini{position:relative;flex:none;width:26px;height:26px;'),'l’inventaire dans la bulle ; au tableau en masse, la bulle au survol du jeton et son image au clic');}
+/* v0.346 — Les restes d'un adversaire ont leur champ à eux, au formulaire comme dans le tableau en
+   masse. Au journal, une ligne de butin surligne ses pièces comme de l'équipement, leur nombre avec
+   elles et pas en rouge, la bulle au survol. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("function inventaireAdversaire(boite,cible,apres,genre){boite.replaceChildren();boite.classList.add('inv-adv');const restes=genre==='restes',dugenre=o=>estReste(o)===restes;")
+  &&src.includes('<h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')&&src.includes("{cle:'restes',nom:'Restes',type:'panneau',")
+  &&!src.includes("['restes','Restes',o=>o.category==='restes']"),'les restes à part');
+ assert.ok(src.includes("+' ('+[...g.de].join(', ')+').',{ton:'butin'}));")&&page.includes("const TONS=['attaque','talent','soin','degats','etat','reveal','carte','butin'];")
+  &&page.includes("const rx=new RegExp('('+[...names.map(n=>pieces.has(n)?quote(n)+'(?: ×\\\\d+)?':quote(n)),")&&page.includes("function pieceAuJournal(o,texte){const c=document.createElement('span');c.className='j-objet r-'+rareteDe(o);")
+  &&css.includes('.j-objet{display:inline-flex;'),'le butin au journal');
+ // decorate en machine virtuelle : les pièces en pastilles, « ×3 » avec elles, aucun chiffre rouge.
+ const el=()=>({kids:[],cls:new Set(),className:'',textContent:'',style:{},append(...x){this.kids.push(...x)},classList:{contains:c=>false}});
+ const ctxJ={actors:[{id:'h',name:'Éla',hero:true},{id:'g',name:'Gobelin',vu:true}],nomNum:o=>o.name,actorTint:()=>'#123',J_KEYS:{},rareteDe:()=>'commun',
+  catalog:{items:[{name:'Rapière'},{name:'Dent de Gobelin'}]},document:{createElement:()=>{const e=el();return e}}};
+ vm.createContext(ctxJ);vm.runInContext(page.slice(page.indexOf('function decorate(li,text){'),page.indexOf('let logRound=null;'))+';this.decorate=decorate;',ctxJ);
+ const li={kids:[],append(...x){this.kids.push(...x)},classList:{contains:c=>c==='ton-butin'}};
+ ctxJ.decorate(li,'Éla ramasse Rapière ×2, Dent de Gobelin ×3 (Gobelin).');
+ const vus=li.kids.map(x=>typeof x==='string'?x:(x.className||'?')+'['+x.kids.filter(y=>typeof y==='string').join('')+x.textContent+']');
+ assert.equal(vus.join(''),'j-name[Éla] ramasse j-objet r-commun[Rapière ×2], j-objet r-commun[Dent de Gobelin ×3] (j-name[Gobelin]).','les pièces en pastilles, leur nombre avec elles');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1779 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1782 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

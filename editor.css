@@ -1202,6 +1202,10 @@ body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-
 .bulle-modele .stat-tile .ecu{width:20px;height:24px;margin:2px auto 0}.bulle-modele .stat-tile .ecu b{font-size:11px}
 .bulle-talents{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .bulle-inventaire{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+/* Une pièce au journal, surlignée comme à l'Armurerie : la teinte de sa rareté, son logo, son nom. */
+.j-objet{display:inline-flex;align-items:center;gap:3px;padding:0 6px 0 4px;border-radius:6px;background:#e2ded7;border:1px solid #00000024;color:#2a2118;font-weight:700;line-height:1.35;vertical-align:1px;cursor:default}
+.j-objet .logo-equip{width:16px;height:16px;margin:0}
+.j-objet.r-rare{background:#d9e6f5}.j-objet.r-mystique{background:#e6dcf2}.j-objet.r-epique{background:#f5e0cc}.j-objet.r-ressource{background:#efe2cc}
 .inv-mini{position:relative;flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:6px;background:#e2ded7;border:1px solid #00000024}
 .inv-mini .logo-equip{width:20px;height:20px;margin:0}.inv-mini .glyphe{font-size:13px;line-height:1}
 .inv-mini.r-rare{background:#d9e6f5}.inv-mini.r-mystique{background:#e6dcf2}.inv-mini.r-epique{background:#f5e0cc}.inv-mini.r-ressource{background:#efe2cc}
