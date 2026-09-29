@@ -241,9 +241,11 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Plusieurs combattants pris : la carte des Actions ne propose rien.
  if(marked.size>1){boite.replaceChildren();boite.hidden=true;return}
  const a=actors[selected],liste=a?attackChoices(a,catalog.items):[];
- /* Les talents de la rangée des attaques se dessinent à leur suite, en grands boutons à
-    deux lignes : le logo à gauche, le nom, puis les dés qu'ils lancent — ou, sans dés, la
-    nature du talent. Leur couleur est celle du type, sauf teinte propre. */
+ /* Les talents de la rangée des attaques se dessinent à leur suite. Attaques et talents ont
+    tous le même bouton que les réactions : le logo à gauche, le nom, sur une ligne, à la couleur
+    de chacun ; les dés qu'ils lancent et le bonus de dégâts se lisent dessous. */
+ // Un bouton et, dessous, ses dés : la carte d'une attaque dans la rangée.
+ const carte=(b,des,talent)=>{const c=document.createElement('div');c.className='attaque-carte'+(talent?' de-talent':'');c.append(b);if(des)c.append(des);return c};
  const talents=a&&typeof boutonsTalents==='function'?boutonsTalents(a).filter(b=>b.rangee==='attaques'):[];
  // Même seule, une attaque se montre : on lit ce qui part avant de frapper.
  // Les objets ne s'y montrent plus : on les emploie d'un clic dans l'inventaire de la fiche.
@@ -253,14 +255,11 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   const im=logoTalent({logo:t.logo},'bouton');
   if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);b.classList.add('avec-logo');b.append(logos)}
   const nom=nomAvecPalier(t.texte,t.talent.name,t.palier);nom.className='nom';
-  // Les dés qu'il lance sur la seconde ligne ; sans dés, le nom seul — rien d'autre à dire.
   b.append(nom);
-  /* Un talent qui frappe se lit comme une attaque : son nom, puis les dés qu'il lance, le
-     bonus de dégâts et son jeton. Un talent sans dés garde le nom seul. */
-  if(t.des)b.append(desEtBonus(t.des,t.bonus||0));
-  else b.classList.add('sans-des');
+  /* Un talent qui frappe se lit comme une attaque : dessous, les dés qu'il lance, le bonus de
+     dégâts et son jeton. Un talent sans dés n'a que son bouton. */
   inerte(b,!t.peut);b.title=t.titre;b.setAttribute('aria-label',t.texte+' — '+t.titre);
-  b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(b)});
+  b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0):null,true))});
  if(!liste.length)return;
  const retenu=Math.trunc(a.activeAttack)||0;
  liste.forEach((at,i)=>{const b=document.createElement('button');
@@ -278,11 +277,11 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
      chaque arme est une variante à elle seule : son bouton porte son nom. */
   const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');
   const nom=document.createElement('span');nom.className='nom';nom.textContent=libelle;
-  /* Deux lignes, centrées : le nom, puis les dés et le bonus de dégâts — on choisit son
-     attaque en voyant tout ce qu'elle lance. Affaibli ou une attaque « dés seuls » n'ont
-     pas de bonus, et n'en écrivent pas. */
+  /* Le nom sur le bouton ; dessous, les dés et le bonus de dégâts — on choisit son attaque en
+     voyant tout ce qu'elle lance. Affaibli ou une attaque « dés seuls » n'ont pas de bonus, et
+     n'en écrivent pas. */
   const bonus=hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
-  b.append(nom,desEtBonus(at.dice,bonus,at.useOwnDamage!==false));
+  b.append(nom);const c=carte(b,desEtBonus(at.dice,bonus,at.useOwnDamage!==false),false);
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
   inerte(b,!!refus);
   // Le clic droit du MJ rend l'Action et pose la flèche en vol.
@@ -296,9 +295,9 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;
    boite.querySelectorAll('.choix-attaque:not(.btn-talent)').forEach((x,k)=>x.classList.toggle('on',k===i));
    attack();scheduleSave()};
-  // Les attaques d'abord, toujours : les talents et les objets viennent à leur suite.
-  const premierAutre=boite.querySelector('.btn-talent,.btn-objet');
-  if(premierAutre)boite.insertBefore(b,premierAutre);else boite.append(b)})}
+  // Les attaques d'abord, toujours : les talents viennent à leur suite.
+  const premierAutre=boite.querySelector('.attaque-carte.de-talent');
+  if(premierAutre)boite.insertBefore(c,premierAutre);else boite.append(c)})}
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
 const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-form"><div id="actor-fields"></div><p class="form-error" id="actor-error" role="alert"></p><div class="form-actions"><button type="button" id="delete-actor">Retirer de la scène</button><button type="button" id="save-template">Enregistrer au bestiaire</button><button type="submit" class="primary">Enregistrer la fiche</button></div></form>');
@@ -1320,7 +1319,10 @@ function choisirPourPlace(a,cle,cote,nom){fermerBulle();
    objets, qui servent pendant la partie ; ailleurs — bestiaire — tout l'inventaire, pour
    composer ce qu'on emporte. Un clic équipe ou repose une arme, une armure, un bouclier ;
    sur un objet, il ouvre sa description et son bouton Utiliser. */
-function gearPills(a,tout=true){const out=document.createElement('div');out.className='gear-grille';
+/* Un objet de combat : ni arme, ni armure, ni munition, mais une pièce dont le moteur connaît
+   l'effet — une potion, une bombe. C'est tout ce que montre la fiche de la table. */
+const objetDeCombat=o=>!!o&&!EQUIPEMENTS.includes(o.category)&&!!objetCode(o);
+function gearPills(a,tout=true,combat=false){const out=document.createElement('div');out.className='gear-grille';
  const possede=(a.inventaire&&a.inventaire.length)?a.inventaire:[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean);
  const comptes=new Map();possede.map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
  const portes=o=>o.category==='weapon'?gearCount(a,o.id):o.id===a.shieldId?1:armuresDe(a).filter(x=>x===o.id).length;
@@ -1329,9 +1331,10 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
     bouton du bout déplie le reste du sac — c'est ainsi qu'on change d'arme en pleine
     partie, joueur comme MJ. Ailleurs, tout l'inventaire est là d'emblée. */
  const armurerie=tous.filter(([o])=>o.category==='weapon'||o.category==='armor');
- const equipement=armurerie.filter(([o])=>tout||portes(o));
- const objets=tous.filter(([o])=>o.category!=='weapon'&&o.category!=='armor');
- if(!equipement.length&&!objets.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun équipement';out.append(v);return out}
+ // À la table, rien de ce qui est porté : les seuls objets qui servent en combat.
+ const equipement=combat?[]:armurerie.filter(([o])=>tout||portes(o));
+ const objets=tous.filter(([o])=>o.category!=='weapon'&&o.category!=='armor'&&(!combat||objetDeCombat(o)));
+ if(!equipement.length&&!objets.length){const v=document.createElement('span');v.className='muted';v.textContent=combat?'Aucun objet de combat':'Aucun équipement';out.append(v);return out}
  const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);
  const PAR_LIGNE=6;
  const rangees=(liste,titre)=>{if(!liste.length)return;
@@ -1340,7 +1343,7 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
    rangee.forEach(([o,n])=>{const p=carreDeFiche(a,o,n,tout,portes,peutEquiper);
     out.append(p);if(!BULLES)details.push(p.detailPlie)});
    details.forEach(d=>d&&out.append(d))}};
- rangees(equipement,'');rangees(objets,'Objets');bulleOrpheline();
+ rangees(equipement,'');rangees(objets,combat?'':'Objets');bulleOrpheline();
  return out}
 /* Talents : six natures, chacune sa couleur et son abrégé, comme dans le jeu de table. */
 const TALENT_TYPES=[['act','ACT','Action'],['reac','REAC','Réaction'],['pass','PASS','Passif'],

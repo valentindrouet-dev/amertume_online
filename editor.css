@@ -571,20 +571,18 @@ button.comp-rond{cursor:pointer}button.comp-rond:hover{background:rgba(var(--tin
    plein des Actions et leur hauteur ; celui qui vient de partir garde un liseré clair,
    car c'est sa réserve que la carte affiche. Ce qui empêche de frapper grise le bouton
    et en dit la raison au survol. */
-button.choix-attaque{height:auto;min-width:118px;display:inline-grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:auto;align-items:center;justify-items:center;row-gap:5px;padding:8px 16px 7px;
- font:800 13px/1 system-ui;letter-spacing:0;border-radius:10px;text-align:center}
-/* Avec un logo : deux colonnes, le logo à gauche sur les deux lignes, le texte à droite. */
-button.choix-attaque.avec-logo{grid-template-columns:auto minmax(0,1fr);column-gap:10px;padding-left:12px}
-button.choix-attaque.avec-logo .logos{grid-column:1;grid-row:1/3;display:flex;gap:4px;align-items:center}
-button.choix-attaque.avec-logo .nom,button.choix-attaque.avec-logo .des-bonus,button.choix-attaque.avec-logo .compte{grid-column:2}
-button.choix-attaque .compte{font:700 11px system-ui;letter-spacing:.5px;opacity:.85}
-button.choix-attaque .nom{display:block}
-button.choix-attaque .des-bonus{display:inline-flex;align-items:center;gap:5px}
-button.choix-attaque .bonus{font:800 13px/1 system-ui;margin-left:2px}
-button.choix-attaque .dmg-ico{width:18px;height:18px;object-fit:contain;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
-button.choix-attaque .pips{display:flex;gap:3px}
-button.choix-attaque .die-sq,button.choix-attaque .pips .etat-inflige{flex:0 0 17px;width:17px;height:17px}
-button.choix-attaque .loin{font-size:15px;line-height:1;opacity:.9}
+/* Le bouton d'une attaque : celui des réactions, une ligne, le logo à gauche puis le nom, à la
+   couleur de chacun. Ses dés et son bonus de dégâts se lisent dessous, sur la carte. */
+button.choix-attaque{min-width:0;letter-spacing:0}
+button.choix-attaque .logos{display:inline-flex;align-items:center;margin:-4px 7px -4px -8px}
+button.choix-attaque .nom{display:block;white-space:nowrap}
+.attaque-carte{display:flex;flex-direction:column;align-items:center;gap:5px}
+.attaque-carte .des-bonus{display:inline-flex;align-items:center;gap:5px;color:var(--ink)}
+.attaque-carte .bonus{font:800 13px/1 system-ui;margin-left:2px}
+.attaque-carte .dmg-ico{width:18px;height:18px;object-fit:contain;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.attaque-carte .pips{display:flex;gap:3px}
+.attaque-carte .die-sq,.attaque-carte .pips .etat-inflige{flex:0 0 17px;width:17px;height:17px}
+.attaque-carte:has(> button.inerte) .des-bonus{opacity:.55}
 button.choix-attaque.on{box-shadow:var(--relief),0 0 0 2px rgba(255,255,255,.75)}
 button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -3px 0 rgba(0,0,0,.2),0 4px 0 var(--bord),0 9px 16px rgba(0,0,0,.32),0 0 0 2px rgba(255,255,255,.75)}
 /* ---------- Corriger une valeur là où elle est lue ---------- */
@@ -774,9 +772,9 @@ button.btn-talent.t-ame{--fond:#5e9a5b}
 /* Le logo d'un équipement, devant son nom : sur les vignettes, dans le bouton d'attaque. */
 .logo-equip{flex:none;width:22px;height:22px;object-fit:contain;display:inline-block;vertical-align:middle;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
 .cat-pill .logo-equip{margin-right:-2px}
-button.choix-attaque .logo-equip{width:38px;height:38px;margin:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
 /* Deux armes équipées : les deux logos centrés l'un sur l'autre, celui de derrière retourné, comme deux lames croisées. */
-button.choix-attaque .logos.croises{position:relative;width:38px;height:38px;display:block}button.choix-attaque .logos.croises .logo-equip{position:absolute;left:0;top:0}button.choix-attaque .logos.croises .logo-equip:first-child{transform:scaleX(-1);opacity:.92;z-index:0}button.choix-attaque .logos.croises .logo-equip:last-child{z-index:1}
+button.choix-attaque .logos.croises{position:relative;width:30px;height:30px;display:block}button.choix-attaque .logos.croises .logo-equip{position:absolute;left:0;top:0}button.choix-attaque .logos.croises .logo-equip:first-child{transform:scaleX(-1);opacity:.92;z-index:0}button.choix-attaque .logos.croises .logo-equip:last-child{z-index:1}
 .logo-equip.apercu{width:28px;height:28px;margin:6px 0 0 8px}
 #item-form label:has(> select[name=logo]){display:flex;flex-wrap:wrap;align-items:center}
 #item-form label:has(> select[name=logo]) select{flex:1;min-width:120px}
@@ -785,9 +783,7 @@ button.choix-attaque .logos.croises{position:relative;width:38px;height:38px;dis
 #talent-form label:has(> select[name=logo]){display:flex;flex-wrap:wrap;align-items:center}
 #talent-form label:has(> select[name=logo]) select{flex:1;min-width:120px}
 /* Un talent sans dés tient sur une ligne : son nom, centré sur la hauteur du bouton. */
-button.choix-attaque.sans-des{grid-auto-rows:1fr}
 /* Sans dés, le nom d'un talent se centre en hauteur contre son logo, qui tient les deux rangées. */
-button.choix-attaque.sans-des.avec-logo .nom{grid-row:1/3;align-self:center}
 
 /* Quatre aventuriers par ligne au plus, puis trois, deux, un selon la largeur. */
 @media(max-width:1500px){.hero-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}

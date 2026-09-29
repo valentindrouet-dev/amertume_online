@@ -1080,7 +1080,7 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
 assert.ok(feuille.includes('letter-spacing:.2px;color:#fff;')&&feuille.includes('button.btn-action:disabled{--fond:var(--disabled);color:#fff;opacity:1;')
  &&feuille.includes('button.btn-action.inerte,button.btn-action.inerte:hover{opacity:1;filter:saturate(.35) brightness(1.1);color:#fff;')
  &&!feuille.includes('encre-sombre')&&!/button\.btn-[a-z]+[^{]*\{[^}]*(color:#2a2118|disabled-ink)/.test(feuille)&&feuille.includes('button.btn-talent.t-mait{--fond:#d4a341}'),'les boutons d’action écrivent en blanc');
-assert.ok(!src.includes("className='nature'")&&!feuille.includes('.nature{')&&src.includes("else b.classList.add('sans-des');"),'un talent sans dés ne dit plus sa nature');
+assert.ok(!src.includes("className='nature'")&&!feuille.includes('.nature{')&&src.includes("boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0):null,true))"),'un talent sans dés ne dit plus sa nature');
 assert.ok(src.includes('function xpDesRetires(')&&src.includes('xpDesRetires(partants);')&&src.includes("heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));")
  &&src.includes("poseCibles(a,ids.map(id=>actors.findIndex(o=>o&&o.id===id)).filter(j=>j>=0))")&&!src.includes('if(a.target===i)a.target=null;else if(a.target>i)a.target--'),'l’XP d’un adversaire retiré va aux aventuriers, les cibles suivent');
 /* Le verrou des déplacements et la remise à zéro d'un bouton se notent chez le MJ seul. */
@@ -1271,9 +1271,9 @@ assert.equal(t.toggleEquip(a,o('ar')),null);assert.equal(JSON.stringify(a.armure
  const b={weapons:['h'],armures:['ar'],shieldId:'',inventaire:[]};t.completerInventaire(b);assert.equal(JSON.stringify(b.inventaire),JSON.stringify(['h','ar']));}
 assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire)}}")&&src.includes("inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin)});equipeAdversaire(a);")
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
- &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
+ &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,combat?'':'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
- &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armures','shieldId','munitionId','auraPv',")&&page.includes("const nbGear=(a.weapons||[]).length+armuresDe(a).length+(a.shieldId?1:0)+(a.inventaire||[])")
+ &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armures','shieldId','munitionId','auraPv',")&&page.includes("const nbGear=typeof objetDeCombat==='function'?(a.inventaire||[]).filter(id=>objetDeCombat((catalog.items||[]).find(x=>x.id===id))).length:0;")
  &&feuille.includes('.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}')&&feuille.includes('.cat-pill.gear-carre.dispo{opacity:.55}')&&feuille.includes('.gear-rangee-titre{flex-basis:100%;')
  &&feuille.includes('.best-attaque{background:#cfdcea;border:1px solid #00000026;border-left:4px solid #4f7fb5;border-radius:9px;'),'inventaire, équipement et attaques spéciales');
 /* Fiche d'un modèle : plus de cartouche « Adversaire », le type porte sa couleur comme tout le bloc,
@@ -1284,11 +1284,11 @@ assert.ok(src.includes("d.className='cat-detail bulle-modele-corps k-'+(m.type||
 /* En jeu, la fiche ne montre que le porté et les objets ; la coche est un rond à cheval sur l'angle ;
    plus de chevron ni de titre « Équipement » en double ; un objet se lit et s'utilise ; le MJ équipe
    aussi un modèle du bestiaire, et un refus dit combien de mains manquent. */
-assert.ok(src.includes('function gearPills(a,tout=true)')&&page.includes('gearPills(a,false)')&&src.includes("const armurerie=tous.filter(([o])=>o.category==='weapon'||o.category==='armor');")&&src.includes("const equipement=armurerie.filter(([o])=>tout||portes(o));")
- &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,'Objets');")&&!src.includes("chev.title='Détail'")&&!src.includes("p.querySelector('.chev').onclick=deplie;")
+assert.ok(src.includes('function gearPills(a,tout=true,combat=false)')&&page.includes('gearPills(a,false,true)')&&src.includes("const armurerie=tous.filter(([o])=>o.category==='weapon'||o.category==='armor');")&&src.includes("const equipement=combat?[]:armurerie.filter(([o])=>tout||portes(o));")
+ &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,combat?'':'Objets');")&&!src.includes("chev.title='Détail'")&&!src.includes("p.querySelector('.chev').onclick=deplie;")
  &&src.includes('function utiliserObjet(a,o)')&&src.includes("p.textContent=code&&!objetDisponible(a,o)?'Déjà employé : il faut un repos pour le recharger.':'Clique l’objet pour l’utiliser.';")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&feuille.includes('.cat-pill.gear-carre .marque-porte{display:none;position:absolute;top:-6px;left:-6px;')&&feuille.includes('.gear-detail.k-object.consommable{background:#d9e7cd;')
- &&page.includes("const nbGear=(a.weapons||[]).length+armuresDe(a).length+(a.shieldId?1:0)+(a.inventaire||[])")
+ &&page.includes("const nbGear=typeof objetDeCombat==='function'?(a.inventaire||[]).filter(id=>objetDeCombat((catalog.items||[]).find(x=>x.id===id))).length:0;")
  &&!src.includes('inventairesOuverts')&&!src.includes('gear-sac')&&!feuille.includes('gear-sac'),'fiche en jeu : porté et objets, coche ronde, objet utilisable');
 /* Les mains se remplacent au lieu de refuser ; en jeu, pas de sac à déplier, le clic ouvre la
    description, et un objet se vise avant de s'employer, à la table de jeu seulement. */
@@ -1565,13 +1565,13 @@ assert.ok(page.includes('function soclesOccupes(a,size,ignorer,adverses)')
 /* La fiche en jeu : plus de barre sous les PV, l'équipement ouvert d'office et les talents
    repliés ; l'attaque d'équipement s'appelle « Attaque » ; un talent qui frappe porte les dés,
    le bonus et son jeton, comme une attaque ; l'Onde du camp lève les états comme le bouton Soin. */
-assert.ok(page.includes('<span class="lifebar-text" id="hp"></span></div><div class="bloc-fixe" id="bloc-gear"><div class="bloc-tete"><span class="bloc-titre">Équipement</span><span class="compte" id="gear-compte"></span></div><div id="gear"></div></div>')
+assert.ok(page.includes('<span class="lifebar-text" id="hp"></span></div><div class="bloc-fixe" id="bloc-gear"><div class="bloc-tete"><span class="bloc-titre">Objets</span><span class="compte" id="gear-compte"></span></div><div id="gear"></div></div>')
  &&!page.includes('<details class="bloc-replie" id="bloc-gear">')&&page.includes('<details class="bloc-replie" id="bloc-talents" open>')
  &&feuille.includes('.bloc-replie,.bloc-fixe{margin:6px 0}')&&feuille.includes(".bloc-replie .bloc-titre,.bloc-fixe .bloc-titre{font:700 15px 'Killam'")
  &&(page.match(/class="divider"/g)||[]).length===2,'fiche en jeu : équipement ouvert, pas de barre sous les PV');
 assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');")&&src.includes("nom.textContent=libelle;")
- &&src.includes('function desEtBonus(dice,bonus,toujours)')&&src.includes('b.append(nom,desEtBonus(at.dice,bonus,at.useOwnDamage!==false));')
- &&src.includes('if(t.des)b.append(desEtBonus(t.des,t.bonus||0));')
+ &&src.includes('function desEtBonus(dice,bonus,toujours)')&&src.includes('b.append(nom);const c=carte(b,desEtBonus(at.dice,bonus,at.useOwnDamage!==false),false);')
+ &&src.includes('boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0):null,true))')
  &&page.includes('des:eff.des?eff.des(a,params):code.attaque?activeAttack(a).dice:null,')
  &&page.includes("bonus:code.attaque&&!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false?degatsDe(a):0,")
  &&C.TALENTS_CODES.attaqueetat.attaque===true&&C.TALENTS_CODES.provocation.attaque===true
@@ -1688,7 +1688,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
  &&src.includes('function fermerBulle(){retireBulle();if(BULLES){gearOuvert=null;talentOuvert=null}}')
  &&src.includes('function retireBulle(){bulleEpinglee=false;if(!bulleEl)return;')&&src.includes('function ouvrirBulle(ancre,contenu,classe){retireBulle();')
  &&src.includes('function bulleOrpheline(){if(BULLES)requestAnimationFrame(()=>{if(bulleEl&&bulleAncre&&!bulleAncre.isConnected)fermerBulle()})}')
- &&src.includes("rangees(equipement,'');rangees(objets,'Objets');bulleOrpheline();")&&src.includes(' bulleOrpheline();return out}')
+ &&src.includes("rangees(equipement,'');rangees(objets,combat?'':'Objets');bulleOrpheline();")&&src.includes(' bulleOrpheline();return out}')
  &&src.includes("if(!equipable){if(BULLES){if(!tout)basculeEpingle(p,montre)}else basculer();return}")
  // Le chevron des vignettes de talent d'une fiche ne dépliait que l'ancien dépliant.
  &&!src.includes("chev.textContent='⌄'")&&src.includes('surveille(pill,montre);out.append(carte)});')
@@ -1888,8 +1888,8 @@ assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x
  &&src.includes("const texte=code.cle==='etat'?(p&&p.etat)||code.nom:code.nom;")
  &&src.includes("const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':'repos'):'';")
  &&src.includes("boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;")
- &&!src.includes("' 1/1'")&&feuille.includes('button.choix-attaque .compte{')
- &&src.includes("const premierAutre=boite.querySelector('.btn-talent,.btn-objet');")&&!src.includes("boite.querySelector('.btn-talent');")
+ &&!src.includes("' 1/1'")&&feuille.includes('.attaque-carte{display:flex;flex-direction:column;align-items:center;gap:5px}')
+ &&src.includes("const premierAutre=boite.querySelector('.attaque-carte.de-talent');")&&!src.includes("boite.querySelector('.btn-talent');")
  &&page.includes("const tenus=talentsCodes(a),affine=tenus.find(x=>x.code.cle==='orbesfeu');")
  &&page.includes("const logo=(code.cle==='orbes'&&affine&&affine.talent.logo)||talent.logo||'';")&&page.includes('return {talent,code,params,rangee,logo,'),'vignettes, bulles, objets, attaque première, logo des orbes');
 /* Les étages d'une colonne : l'épine des centraux, et sous chacun deux places en diagonale
@@ -2903,7 +2903,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const page=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(page.includes("function canMove(i){return controlled(i)&&(view===\"mj\"||(!tokensLocked&&!hasState(actors[i],'Gel')))}")
   &&page.includes("log(nomNum(a)+' se relève : Mouvement dépensé, Action encore disponible.',{ton:'etat'});render();scheduleSave()},'btn-action');")
-  &&css.includes('button.choix-attaque.sans-des.avec-logo .nom{grid-row:1/3;align-self:center}'),'Au sol rampe, Se relever en bouton d’action, nom centré');}
+  &&css.includes('button.choix-attaque .nom{display:block;white-space:nowrap}'),'Au sol rampe, Se relever en bouton d’action, nom centré');}
 /* v0.309 — Une tuile de talent n'écrit plus sa nature sous son logo. */
 {const src=fs.readFileSync('editor.js','utf8');const tuile=src.slice(src.indexOf('function talentRow('),src.indexOf('\nfunction ',src.indexOf('function talentRow(')+10));
  assert.ok(!tuile.includes("b.className='t-badge'")&&tuile.includes("const nature=talentType(t)[2],mj=view==='mj';")&&!fs.readFileSync('editor.css','utf8').includes('.talent-carre .t-badge'),'pas d’abrégé sous le logo');}
@@ -3218,10 +3218,21 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("r.onclick=()=>change(1);r.oncontextmenu=e=>{e.preventDefault();change(-1)};")&&src.includes("a.skills[k]=readStat('skill',avant+pas,avant);")
   &&src.includes("v.className='comp-val'+(valeurCompetence(a,k)>1?' dore':'');")&&src.includes("val.textContent='Valeur : '+valeurCompetence(a,k);")
   &&css.includes('.comp-val.dore{color:#b8860b;'),'régler les compétences au clic, chiffre doré, bulle au survol');}
+/* v0.355 — La fiche de la table ne montre plus l'équipement porté, seulement les objets de combat ;
+   dans la barre d'action, attaques et talents ont le bouton d'une ligne des réactions, dés dessous. */
+{const src=fs.readFileSync('editor.js','utf8'),C=require('./combat.js');
+ const ctxO={EQUIPEMENTS:C.EQUIPEMENTS,objetCode:C.objetCode};vm.createContext(ctxO);vm.runInContext(src.slice(src.indexOf('const objetDeCombat='),src.indexOf('function gearPills('))+';this.f=objetDeCombat;',ctxO);
+ const effet=Object.keys(C.OBJETS_CODES||{})[0];
+ assert.ok(effet,'au moins un effet d’objet connu');
+ assert.equal(ctxO.f({category:'object',effet}),true,'une potion à effet sert en combat');
+ assert.equal(ctxO.f({category:'object'}),false,'un objet sans effet ne sert pas');
+ assert.equal(ctxO.f({category:'weapon',effet}),false,'une arme, même à effet, n’en est pas');
+ assert.ok(page.includes("$('gear').replaceChildren(typeof gearPills==='function'?gearPills(a,false,true):")&&src.includes("const equipement=combat?[]:armurerie.filter(([o])=>tout||portes(o));")
+  &&src.includes("const carte=(b,des,talent)=>{const c=document.createElement('div');c.className='attaque-carte'+(talent?' de-talent':'');"),'objets de combat, boutons d’attaque d’une ligne');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1800 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1804 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
