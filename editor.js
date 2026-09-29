@@ -309,6 +309,8 @@ function bulleAction(b,{nom,dit='',note='',des=null}){const d=document.createEle
  if(dit){const p=document.createElement('p');p.className='palier-effet';p.textContent=dit;d.append(p)}
  if(note&&note!==dit){const p=document.createElement('p');p.className='muted';p.textContent=note;d.append(p)}
  return ouvrirBulle(b,d,'bulle-talent')}
+// Le logo de l'arme en main droite : un bouton de talent sans icône prend celui-là.
+function logoArmeEquipee(a){const at=a&&typeof activeAttack==='function'?activeAttack(a):null,l=at&&(at.logos||[])[0];return l?logoAttaque(l,'bouton'):null}
 function montreDesCombattant(dice,bonus,toujours,logos){const z=$('des-combattant');if(!z)return;
  z.replaceChildren();z.hidden=!dice;if(!dice)return;
  // Devant les dés, les armes qui les lancent — ou le logo du talent qui frappe.
@@ -371,7 +373,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Les talents à leur suite : ceux d'action, puis les réactions.
  talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque rond';
   if(t.teinte){b.style.setProperty('--fond',t.teinte);b.classList.add('teinte-propre')}
-  const im=logoTalent({logo:t.logo},'bouton');
+  const im=(t.logo?logoTalent({logo:t.logo},'bouton'):null)||logoArmeEquipee(a);
   if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);b.classList.add('avec-logo');b.append(logos)}
   else b.append(Object.assign(document.createElement('span'),{className:'glyphe',textContent:GLYPHES_TALENT[t.talent.type]||'✦'}));
   // Ce qui reste d'un talent compté, en pastille au bas du rond.
@@ -1088,7 +1090,8 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
  else if(col==='melee'||col==='ranged')p.append(dicePips(o.dice,o.etat,col==='ranged'));
  // Une munition montre ce qu'elle ajoute : son dé, son état.
  else if(o.category==='ammo'&&(o.munDe||o.etat))p.append(dicePips(o.munDe?{[o.munDe]:1}:{},o.etat));
- if(n>1){const x=document.createElement('span');x.className='exemplaires';x.textContent=(portes>1?portes+'/':'×')+n;p.append(x)}
+ // Plusieurs exemplaires : leur nombre seul, « 3 », sans signe devant.
+ if(n>1){const x=document.createElement('span');x.className='exemplaires';x.textContent=(portes>1?portes+'/':'')+n;p.append(x)}
  p.title=o.name+(portes?' — porté':'');p.setAttribute('aria-label',p.title);
  return p}
 /* Le dépliant ne dit que l'essentiel : le nom, les mains et la portée d'une arme — les dés

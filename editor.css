@@ -615,7 +615,7 @@ button.btn-action.rond .glyphe{font-size:26px;line-height:1}
 .targets .cible .rond{width:32px;height:32px;border-width:2px;font-size:15px;background:var(--panel)}
 .targets .cible:hover .rond{transform:scale(1.08)}
 .targets .cible.on .rond{box-shadow:0 0 0 2px var(--panel),0 0 0 4px #5f9b74}.targets .cible.adverse.on .rond{box-shadow:0 0 0 2px var(--panel),0 0 0 4px #c2604f}
-.targets .cible .num{position:absolute;right:-5px;bottom:-4px;background:var(--panel)}
+.targets .cible .num{position:absolute;left:-5px;top:-4px;background:var(--panel)}
 /* Ce qu'il reste d'un geste compté — les repos courts — en pastille au bas du disque. */
 button.btn-action.rond .compte-rond{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);min-width:24px;padding:2px 5px;border-radius:9px;
  background:var(--panel);color:var(--ink);border:2px solid var(--fond);font:800 11px/1 system-ui;text-shadow:none;white-space:nowrap}
@@ -1237,7 +1237,7 @@ body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-
 .sac .retirer-sac{width:16px;height:16px;top:-6px;right:-6px;font-size:9px}
 /* Les talents d'une fiche d'aventurier : six par ligne sur toute la largeur, dans une boîte claire. */
 .hero-card .talent-grille{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));justify-items:center;align-items:start;gap:10px 4px;
- padding:10px 8px;margin:2px 0 6px;border-radius:12px;background:color-mix(in srgb,var(--panel) 55%,#fff);border:1px solid var(--line)}
+ padding:10px 8px;margin:2px 0 6px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line)}
 .hero-card .talent-grille .cat-carte.talent-carte{width:100%;min-width:0;align-items:center}
 .hero-card .talent-grille .cat-pill.gear-carre.talent-carre{width:100%;max-width:62px;height:auto;aspect-ratio:1}
 .hero-card .talent-grille .cat-pill.gear-carre.talent-carre .logo-equip{width:66%;height:66%}
