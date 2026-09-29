@@ -1677,3 +1677,9 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .menu-objet{position:fixed;z-index:70;display:flex;flex-direction:column;gap:4px;min-width:190px;padding:8px;border-radius:9px;background:var(--panel);border:1px solid var(--line);box-shadow:0 8px 22px #0005}
 .menu-objet-titre{margin:0 2px 3px;font:700 13px system-ui;color:var(--ink)}
 .menu-objet button{text-align:left}
+
+/* Les réussites d'une fouille, au centre de sa zone : rouge à zéro, vert dès une. */
+#fouilles-layer .fouille-n{position:absolute;transform:translate(-50%,-50%);font:700 22px/1 'Killam',Georgia,serif;
+ text-shadow:0 0 3px #fff,0 0 3px #fff,0 1px 2px #fff;pointer-events:none}
+#fouilles-layer .fouille-n.ratee{color:#c0392b}
+#fouilles-layer .fouille-n.reussie{color:#2f8a4a}

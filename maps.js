@@ -462,8 +462,9 @@ function zoneFouillee(a){return zonePerception(a).part<PART_MINIMALE}
 // Un objet se trouve si une part de son socle tombe dans ce que le test fouille vraiment.
 function dansFouilleNeuve(o,nouvelle){const size=mapSize(),W=size.width,H=size.height;if(!W||!nouvelle||!nouvelle.length)return false;
  const D=disquePx(o.x,o.y,tokenPx()*(SOCLE_TAILLES[o.taille]||1)/2,W,H);try{return aireMulti(Clipper.intersection(D,nouvelle))>.5}catch(e){return false}}
-function noteFouille(a){const size=mapSize();if(!a||!size.width)return;
- a.fouilles=[...(a.fouilles||[]),{m:typeof currentMapId!=='undefined'?currentMapId||'':'',x:+a.x.toFixed(2),y:+a.y.toFixed(2),r:+(contactRadius(tokenOf(a))/size.width).toFixed(4)}].slice(-200);
+// Une fouille retient aussi ses réussites (« n ») : le chiffre se lit au centre de sa zone.
+function noteFouille(a,reussites){const size=mapSize();if(!a||!size.width)return;
+ a.fouilles=[...(a.fouilles||[]),{m:typeof currentMapId!=='undefined'?currentMapId||'':'',x:+a.x.toFixed(2),y:+a.y.toFixed(2),r:+(contactRadius(tokenOf(a))/size.width).toFixed(4),n:Math.max(0,Math.trunc(Number(reussites))||0)}].slice(-200);
  renderFouilles()}
 let fouillesOn=false;try{fouillesOn=localStorage.getItem('amertume-fouilles')==='1'}catch(e){}
 function renderFouilles(){const vue=$('map-view');if(!vue)return;let c=$('fouilles-layer');
@@ -476,7 +477,10 @@ function renderFouilles(){const vue=$('map-view');if(!vue)return;let c=$('fouill
  const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg'),p=document.createElementNS(NS,'path');
  svg.setAttribute('viewBox','0 0 '+size.width+' '+size.height);svg.setAttribute('preserveAspectRatio','none');
  p.setAttribute('d',U.map(poly=>poly.map(r=>'M'+r.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L')+'Z').join('')).join(''));
- p.setAttribute('fill-rule','evenodd');p.setAttribute('class','fouille');svg.append(p);c.append(svg)}
+ p.setAttribute('fill-rule','evenodd');p.setAttribute('class','fouille');svg.append(p);c.append(svg);
+ // Au centre de chaque fouille, ses réussites en Killam : rouge à zéro, vert dès une.
+ fouillesCarte().forEach(f=>{if(!Number.isInteger(f.n))return;const n=document.createElement('span');n.className='fouille-n'+(f.n>0?' reussie':' ratee');
+  n.textContent=f.n;n.style.left=f.x+'%';n.style.top=f.y+'%';c.append(n)})}
 if($('fouilles-vue')){$('fouilles-vue').onclick=()=>{fouillesOn=!fouillesOn;try{localStorage.setItem('amertume-fouilles',fouillesOn?'1':'0')}catch(e){}renderFouilles()};
  $('fouilles-vue').oncontextmenu=e=>{if(view!=='mj')return;e.preventDefault();const id=typeof currentMapId!=='undefined'?currentMapId||'':'';
   if(!fouillesCarte().length||!confirm('Effacer les zones fouillées de cette carte ? La Perception pourra y être retentée.'))return;
