@@ -2836,7 +2836,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("const ROMAINS_PALIER=['','','II','III'];")&&page.includes("function nomAvecPalier(texte,nom,palier){")
   &&page.includes("if(nom&&texte.startsWith(nom))s.append(nom,palierRomain(palier),texte.slice(nom.length));else s.append(texte,palierRomain(palier));")
   &&page.includes("palier:paliersDe(talent)>1&&talent.palier>1?talent.palier:0,")&&page.includes("geste(nomAvecPalier(b.texte,b.talent.name,b.palier),"),'le chiffre du palier sur les boutons de la table');
- assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("carte.append(talentRond(t,logo));return carte}")&&!src.includes('nom-texte')
+ assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("carte.append(talentRond(t,logo),n);return carte}")&&fs.readFileSync('editor.css','utf8').includes('.talent-carte .nom-rond,.sac-carte .nom-sac{display:none}')&&!src.includes('nom-texte')
   &&src.includes("const nom=nomAvecPalier(t.texte,t.talent.name,t.palier);nom.className='nom';")&&css.includes(".palier-romain{margin-left:.3em;font:inherit;"),'dans la bulle et sur la fiche, dans la police du nom');}
 /* v0.300 — Un talent élémentaire choisit un logo par élément ; sans logo propre, l'ancien
    logo suit l'élément comme avant. */
@@ -2893,7 +2893,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("const elem=classeElementaire(famille)?(ELEMENTS.find(e=>e.cle===elementApercu)||ELEMENTS[0]):null;")
   &&src.includes("if(elem){const c=choixElement(null,famille,renderTalents);c.classList.add('compact');h.append(c)}")
-  &&src.includes("bloc.append(talentRow(t,place.get(t.id),elem))")&&src.includes("nom.className='nom-carte';nomAccolades(nom,vu.name);")
+  &&src.includes("lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)))")&&src.includes("nom.className='nom-carte';nomAccolades(nom,vu.name);")
   &&src.includes("b.onclick=ev=>{ev.stopPropagation();elementApercu=e.cle;(rendre||renderArbres)()}")&&css.includes('.cat-col h3 .elements-bloc.compact{'),'Feu, Gel, Foudre dans la barre du Mystique');}
 /* v0.308 — Au sol ne cloue plus sur place (le Gel, si) ; « Se relever » prend l'allure des
    boutons d'action ; le nom d'un talent sans dés se centre en hauteur contre son logo. */
@@ -3046,4 +3046,18 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("const PIECE_NEUVE={melee:{category:'weapon',ranged:false,hands:1,"),'le + de chaque colonne de l’Armurerie');
  assert.ok(src.includes("return [...classes,...autres,...(orphelins?[GENERIQUES]:[])]}")&&src.includes("const nomFamille=f=>f===GENERIQUES?'Sans classe':f;")
   &&src.includes("  const tete=classe?[classe]:[];")&&src.includes(" const tete=sienne&&toutes.includes(sienne)?[sienne]:[];")&&!src.includes("famille:GENERIQUES,type:'act'"),'plus de famille Génériques');}
-console.log('1752 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.338 — L'onglet Talents range chaque classe en rangées, une par type : Maîtrise, Actions,
+   Réactions, Passifs, Améliorations. Un bouton « Noms », commun à l'Armurerie, aux Talents, au
+   Bestiaire et aux Aventuriers, montre ou cache les noms sous les cartes ; son choix vaut partout. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("const ORDRE_TYPES_TALENTS=['mait','act','reac','crit','pass','ame'];")&&src.includes("ORDRE_TYPES_TALENTS.forEach(k=>{const lot=ordre.filter(([t])=>talentType(t)[0]===k);if(!lot.length)return;")
+  &&css.includes('.talent-rangee{flex-basis:100%;display:flex;flex-wrap:wrap;'),'une rangée par type de talent');
+ assert.ok(src.includes("let nomsCaches=false;try{nomsCaches=localStorage.getItem('amertume-noms')==='0'}catch(e){}")&&src.includes("[armoryPage,talentsPage,bestiaryPage,heroesPage].forEach(p=>{const a=p.querySelector('.cat-actions');if(a)a.prepend(boutonNoms())});")
+  &&css.includes('body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-carte{display:none}'),'un bouton Noms commun aux quatre pages');}
+/* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
+   voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
+{for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
+  try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
+ const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+ blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
+console.log('1754 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

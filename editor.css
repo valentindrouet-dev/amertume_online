@@ -1121,6 +1121,17 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 /* ---------- L'armurerie en carrés ---------- */
 .cat-col.armurerie-grille{display:flex;flex-wrap:wrap;gap:10px 8px;align-items:flex-start}
 .cat-col.armurerie-grille h3{flex-basis:100%}
+/* Les talents d'une classe, une rangée par type ; chaque rangée revient à la ligne. */
+.talent-rangee{flex-basis:100%;display:flex;flex-wrap:wrap;gap:10px 8px;align-items:flex-start}
+.talent-rangee+.talent-rangee{border-top:1px dashed var(--line);padding-top:8px}
+/* « Noms » : sans eux, les cartes ne gardent que leur image. */
+body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-carte{display:none}
+.bouton-noms.on{border-color:var(--accent);color:var(--accent)}
+/* Sur les fiches, les noms sous l'inventaire et les talents ne paraissent que sur la page des
+   Aventuriers, et seulement quand « Noms » est allumé ; ailleurs, l'image seule. */
+.sac-carte{display:flex;flex-direction:column;align-items:center;gap:3px}
+.talent-carte .nom-rond,.sac-carte .nom-sac{display:none}
+#heroes-page .talent-carte .nom-rond,#heroes-page .sac-carte .nom-sac{display:flex;max-width:72px;min-height:0;font:600 10.5px/1.15 system-ui;text-align:center;justify-content:center;color:var(--ink);overflow-wrap:break-word}
 .cat-carte{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;width:84px}
 .cat-carte .nom-carte{font:600 11px/1.2 system-ui;text-align:center;color:var(--ink);max-width:84px;overflow-wrap:anywhere;min-height:2.4em;display:flex;align-items:center;justify-content:center}
 /* L'inventaire à remplir, en icônes : les carrés de l'armurerie, coche verte pour ce qu'on possède, « − » pour en retirer un. */

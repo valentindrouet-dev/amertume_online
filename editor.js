@@ -368,6 +368,15 @@ talentsPage.innerHTML='<section class="cat-panel panel">'
  +'<details class="bloc-replie biblio"><summary><span class="bloc-titre">📖 Bibliothèque des effets</span>'
  +'<span class="compte" id="biblio-compte"></span></summary><div id="biblio-effets"></div></details>'
  +'<div class="cat-cols" id="talent-cols"></div></section>';
+/* Les noms sous les cartes — talents, pièces, équipement, adversaires — se montrent ou se cachent
+   d'un seul bouton « Noms », le même sur l'Armurerie, les Talents, le Bestiaire et les
+   Aventuriers : l'un bascule, tous suivent. Le choix vaut pour l'appareil. */
+let nomsCaches=false;try{nomsCaches=localStorage.getItem('amertume-noms')==='0'}catch(e){}
+function majNoms(){document.body.classList.toggle('sans-noms',nomsCaches);
+ document.querySelectorAll('.bouton-noms').forEach(b=>{b.setAttribute('aria-pressed',String(!nomsCaches));b.classList.toggle('on',!nomsCaches);
+  b.title=nomsCaches?'Afficher les noms sous les talents, pièces et adversaires':'Cacher les noms sous les talents, pièces et adversaires'})}
+function boutonNoms(){const b=document.createElement('button');b.type='button';b.className='bouton-noms';b.textContent='🏷 Noms';
+ b.onclick=()=>{nomsCaches=!nomsCaches;try{localStorage.setItem('amertume-noms',nomsCaches?'0':'1')}catch(e){}majNoms()};return b}
 const bestiaryPage=document.createElement('main');bestiaryPage.id='bestiary-page';
 bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Bestiaire</h2><div class="cat-actions">'
@@ -378,7 +387,9 @@ bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<select id="bestiary-sort" aria-label="Tri"><option value="danger">Tri : danger ↓</option>'
  +'<option value="danger-">Tri : danger ↑</option><option value="nom">Tri : nom</option></select></div>'
  +'<div class="cat-cols" id="bestiary-cols"></div></section>';
-document.querySelector('main.layout').after(heroesPage,talentsPage,armoryPage,bestiaryPage,settingsPage);
+// Le bouton « Noms » en tête des actions de chaque page qui montre des cartes.
+[armoryPage,talentsPage,bestiaryPage,heroesPage].forEach(p=>{const a=p.querySelector('.cat-actions');if(a)a.prepend(boutonNoms())});
+document.querySelector('main.layout').after(heroesPage,talentsPage,armoryPage,bestiaryPage,settingsPage);majNoms();
 /* Un sous-titre de carte, avec son « + » : équiper ou attribuer sans ouvrir la fiche. */
 /* Un menu déroulant posé à côté d'un bouton, le temps d'un choix. choixVif remplace le
    nœud qu'il décore ; ici il n'y a rien à remplacer, seulement une liste à offrir. */
@@ -1188,7 +1199,9 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
     if(!ok)return;retirerInventaire(a,o);log(nomNum(a)+' se défait de '+o.name+'.',{local:true});
     render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
    x.onpointerdown=ev=>ev.stopPropagation();p.append(x)}
-  sac.append(p)});
+  // Son nom dessous, sur la page des Aventuriers, quand le bouton « Noms » est allumé.
+  const w=document.createElement('div');w.className='sac-carte';const nomSac=document.createElement('span');nomSac.className='nom-carte nom-sac';nomSac.textContent=o.name;
+  w.append(p,nomSac);sac.append(w)});
  if(rien){const v=document.createElement('span');v.className='muted';v.textContent='Rien dans le sac.';sac.append(v)}
  out.append(sac);
  /* Le dépôt : sur le corps, la pièce s'équipe à sa place ; sur le sac, elle se repose. */
@@ -1269,6 +1282,8 @@ function gearPills(a,tout=true){const out=document.createElement('div');out.clas
 const TALENT_TYPES=[['act','ACT','Action'],['reac','REAC','Réaction'],['pass','PASS','Passif'],
  ['crit','CRIT','Critique'],['mait','MAIT','Maîtrise'],['ame','AME','Amélioration']];
 const talentType=t=>TALENT_TYPES.find(x=>x[0]===(t&&t.type))||TALENT_TYPES[0];
+// L'ordre des rangées de l'onglet Talents : Maîtrise, Actions, Réactions, (Critiques), Passifs, Améliorations.
+const ORDRE_TYPES_TALENTS=['mait','act','reac','crit','pass','ame'];
 const GENERIQUES='Génériques';
 // La valeur qui n'est pas une classe mais une invitation à en nommer une.
 const AUTRE_CLASSE='__autre';
@@ -1720,9 +1735,11 @@ function talentRond(t,logo){const p=document.createElement('span');p.className='
 function bulleTalentSur(ancre,t,o){const d=bulleTalent(t,o);
  return ouvrirBulle(ancre,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))}
 /* Un talent hors de l'onglet Talents : son rond, sans nom dessous. La bulle le nomme au survol,
-   et le lecteur d'écran par l'étiquette que chaque appelant pose sur le rond. */
+   et le lecteur d'écran par l'étiquette que chaque appelant pose sur le rond. Sur la page des
+   Aventuriers seulement, le nom se montre quand le bouton « Noms » est allumé. */
 function talentCarte(t,logo){const carte=document.createElement('div');carte.className='cat-carte talent-carte';
- carte.append(talentRond(t,logo));return carte}
+ const n=document.createElement('span');n.className='nom-carte nom-rond';nomAccolades(n,t.name);
+ carte.append(talentRond(t,logo),n);return carte}
 /* Un talent au catalogue, comme une pièce de l'armurerie : un carré à la couleur de sa nature,
    son logo (ou le glyphe de sa nature), le nom dessous ; la nature ne s'écrit pas. Le survol ouvre la
    bulle, le clic du MJ le formulaire ; plus de dépliant, la bulle suffit. Un logo qui suit
@@ -1841,9 +1858,12 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
   if(elem){const c=choixElement(null,famille,renderTalents);c.classList.add('compact');h.append(c)}
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
   h.append(compte);bloc.append(h);
-  // Une amélioration suit son prérequis : la colonne garde l'ordre de l'arbre, en carrés.
-  const place=new Map(liste.map(([t,i])=>[t.id,i]));
-  ordonneTalents(liste.map(([t])=>t),catalog.talents).forEach(([t])=>bloc.append(talentRow(t,place.get(t.id),elem)));
+  /* Une rangée par type, dans cet ordre : Maîtrise, Actions, Réactions, Passifs, Améliorations
+     — chacune revient à la ligne. Dans une rangée, l'ordre de l'arbre. */
+  const place=new Map(liste.map(([t,i])=>[t.id,i])),ordre=ordonneTalents(liste.map(([t])=>t),catalog.talents);
+  ORDRE_TYPES_TALENTS.forEach(k=>{const lot=ordre.filter(([t])=>talentType(t)[0]===k);if(!lot.length)return;
+   const r=document.createElement('div');r.className='talent-rangee t-'+k;r.setAttribute('aria-label',talentType({type:k})[2]);
+   lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));bloc.append(r)});
   cols.append(bloc)}
 }
 $('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalents;
