@@ -574,12 +574,11 @@ button.comp-rond{cursor:pointer}button.comp-rond:hover{background:rgba(var(--tin
    plein des Actions et leur hauteur ; celui qui vient de partir garde un liseré clair,
    car c'est sa réserve que la carte affiche. Ce qui empêche de frapper grise le bouton
    et en dit la raison au survol. */
-/* Le bouton d'une attaque : celui des réactions, une ligne, le logo à gauche puis le nom, à la
-   couleur de chacun. Ses dés et son bonus de dégâts se lisent dessous, sur la carte. */
+/* Le bouton d'une attaque, à la couleur de chacun. Ses dés et son bonus de dégâts se lisent
+   au-dessus de la piste, dans le bloc Dés. */
 button.choix-attaque{min-width:0;letter-spacing:0}
 button.choix-attaque .logos{display:inline-flex;align-items:center;margin:-4px 7px -4px -8px}
 button.choix-attaque .nom{display:block;white-space:nowrap}
-.attaque-carte{display:flex;flex-direction:column;align-items:center;gap:5px}
 /* Les boutons d'action en ronds, de la taille des talents d'une fiche : la face du bouton d'action,
    pleine à sa couleur, son reflet et sa tranche, en disque ; le logo au milieu, le nom dans la
    bulle. Un seul contour, celui du disque : pas d'anneau autour. Attaques, talents, Analyser,
@@ -590,18 +589,21 @@ button.btn-action.rond.on,button.btn-action.rond.on:hover:not(:disabled){box-sha
 button.btn-action.rond .logos{margin:0;display:grid;place-items:center}
 button.btn-action.rond .logo-equip,.etat-actions button.btn-action.rond .logo-equip{width:38px;height:38px;margin:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
 button.btn-action.rond .glyphe{font-size:26px;line-height:1}
-/* Tous les ronds sur une ligne : les attaques et leurs dés, puis, un peu à l'écart, Analyser, le
-   Repos court et les réactions. Le bloc Actions garde sa hauteur, sans défiler. */
-.rangee-ronds{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px 18px}
-.rangee-ronds>.choix-attaques{margin-bottom:0}
+/* Deux lignes : en gros ronds les attaques, les actions et les réactions ; en petits ronds, dessous,
+   les maîtrises, Analyser, le Repos court, le Dégel, se relever. */
+.attack-row button.btn-action.rond,.attack-row button.btn-action.rond.inerte{width:42px;height:42px;font-size:19px}
+.attack-row button.btn-action.rond .logo-equip{width:28px;height:28px}
+.attack-row button.btn-action.rond .glyphe{font-size:19px}
+.attack-row button.btn-action.rond .compte-rond{bottom:-6px;min-width:20px;padding:1px 4px;font-size:9px;border-width:1.5px}
+/* Au-dessus de la piste, les dés de dégâts et le bonus du combattant pris. */
+.des-combattant{display:flex;align-items:center;min-height:26px}.des-combattant[hidden]{display:none}
+.des-combattant .des-bonus{display:inline-flex;align-items:center;gap:8px}
+.des-combattant .pips{display:flex;gap:4px}
+.des-combattant .die-sq,.des-combattant .pips .etat-inflige{flex:0 0 24px;width:24px;height:24px}
+.des-combattant .bonus{font:800 18px/1 system-ui;color:#c4533d}
 /* Ce qu'il reste d'un geste compté — les repos courts — en pastille au bas du disque. */
 button.btn-action.rond .compte-rond{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);min-width:24px;padding:2px 5px;border-radius:9px;
  background:var(--panel);color:var(--ink);border:2px solid var(--fond);font:800 11px/1 system-ui;text-shadow:none;white-space:nowrap}
-.attaque-carte .des-bonus{display:inline-flex;align-items:center;gap:5px;color:var(--ink)}
-.attaque-carte .bonus{font:800 13px/1 system-ui;margin-left:2px}
-.attaque-carte .pips{display:flex;gap:3px}
-.attaque-carte .die-sq,.attaque-carte .pips .etat-inflige{flex:0 0 17px;width:17px;height:17px}
-.attaque-carte:has(> button.inerte) .des-bonus{opacity:.55}
 button.choix-attaque.on{box-shadow:var(--relief),0 0 0 2px rgba(255,255,255,.75)}
 button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -3px 0 rgba(0,0,0,.2),0 4px 0 var(--bord),0 9px 16px rgba(0,0,0,.32),0 0 0 2px rgba(255,255,255,.75)}
 /* ---------- Corriger une valeur là où elle est lue ---------- */

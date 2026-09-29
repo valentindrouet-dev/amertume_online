@@ -1080,7 +1080,7 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
 assert.ok(feuille.includes('letter-spacing:.2px;color:#fff;')&&feuille.includes('button.btn-action:disabled{--fond:var(--disabled);color:#fff;opacity:1;')
  &&feuille.includes('button.btn-action.inerte,button.btn-action.inerte:hover{opacity:1;filter:saturate(.35) brightness(1.1);color:#fff;')
  &&!feuille.includes('encre-sombre')&&!/button\.btn-[a-z]+[^{]*\{[^}]*(color:#2a2118|disabled-ink)/.test(feuille)&&feuille.includes('button.btn-talent.t-mait{--fond:#d4a341}'),'les boutons d’action écrivent en blanc');
-assert.ok(!src.includes("className='nature'")&&!feuille.includes('.nature{')&&src.includes("boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0,false,false):null,true))"),'un talent sans dés ne dit plus sa nature');
+assert.ok(!src.includes("className='nature'")&&!feuille.includes('.nature{')&&src.includes("survol(b,t.des,t.bonus||0,false);"),'un talent sans dés ne dit plus sa nature');
 assert.ok(src.includes('function xpDesRetires(')&&src.includes('xpDesRetires(partants);')&&src.includes("heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));")
  &&src.includes("poseCibles(a,ids.map(id=>actors.findIndex(o=>o&&o.id===id)).filter(j=>j>=0))")&&!src.includes('if(a.target===i)a.target=null;else if(a.target>i)a.target--'),'l’XP d’un adversaire retiré va aux aventuriers, les cibles suivent');
 /* Le verrou des déplacements et la remise à zéro d'un bouton se notent chez le MJ seul. */
@@ -1570,8 +1570,8 @@ assert.ok(page.includes('<span class="lifebar-text" id="hp"></span></div><div cl
  &&feuille.includes('.bloc-replie,.bloc-fixe{margin:6px 0}')&&feuille.includes(".bloc-replie .bloc-titre,.bloc-fixe .bloc-titre{font:700 15px 'Killam'")
  &&(page.match(/class="divider"/g)||[]).length===2,'fiche en jeu : équipement ouvert, pas de barre sous les PV');
 assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');")&&src.includes("nom.className='gear-nom';nom.textContent=libelle;")
- &&src.includes('function desEtBonus(dice,bonus,toujours,jeton=true)')&&src.includes('const c=carte(b,desEtBonus(at.dice,bonus,at.useOwnDamage!==false,false),false);')
- &&src.includes('boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0,false,false):null,true))')
+ &&src.includes('function desEtBonus(dice,bonus,toujours,jeton=true)')&&src.includes('survol(b,at.dice,bonusDe(at),at.useOwnDamage!==false);boite.append(b)});')
+ &&src.includes('survol(b,t.des,t.bonus||0,false);')
  &&page.includes('des:eff.des?eff.des(a,params):code.attaque?activeAttack(a).dice:null,')
  &&page.includes("bonus:code.attaque&&!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false?degatsDe(a):0,")
  &&C.TALENTS_CODES.attaqueetat.attaque===true&&C.TALENTS_CODES.provocation.attaque===true
@@ -1887,9 +1887,9 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
 assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x.title)return;")&&src.includes("if(!x.getAttribute('aria-label'))x.setAttribute('aria-label',x.title);x.removeAttribute('title')});")
  &&src.includes("const texte=code.cle==='etat'?(p&&p.etat)||code.nom:code.nom;")
  &&src.includes("const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':'repos'):'';")
- &&src.includes("boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;")
- &&!src.includes("' 1/1'")&&feuille.includes('.attaque-carte{display:flex;flex-direction:column;align-items:center;gap:5px}')
- &&src.includes("const premierAutre=boite.querySelector('.attaque-carte.de-talent');")&&!src.includes("boite.querySelector('.btn-talent');")
+ &&src.includes("boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;revient();")
+ &&!src.includes("' 1/1'")&&!feuille.includes('.attaque-carte')
+ &&src.includes("// Les talents à leur suite : ceux d'action, puis les réactions.")&&!src.includes("boite.querySelector('.btn-talent');")
  &&page.includes("const tenus=talentsCodes(a),affine=tenus.find(x=>x.code.cle==='orbesfeu');")
  &&page.includes("const logo=(code.cle==='orbes'&&affine&&affine.talent.logo)||talent.logo||'';")&&page.includes('return {talent,code,params,rangee,logo,'),'vignettes, bulles, objets, attaque première, logo des orbes');
 /* Les étages d'une colonne : l'épine des centraux, et sous chacun deux places en diagonale
@@ -3237,7 +3237,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.equal(ctxO.f({category:'object'}),false,'un objet sans effet ne sert pas');
  assert.equal(ctxO.f({category:'weapon',effet}),false,'une arme, même à effet, n’en est pas');
  assert.ok(page.includes("$('gear').replaceChildren(typeof gearPills==='function'?gearPills(a,false,true):")&&src.includes("const equipement=combat?[]:armurerie.filter(([o])=>tout||portes(o));")
-  &&src.includes("const carte=(b,des,talent)=>{const c=document.createElement('div');c.className='attaque-carte'+(talent?' de-talent':'');"),'objets de combat, boutons d’attaque d’une ligne');}
+  &&!src.includes("c.className='attaque-carte'"),'objets de combat, boutons d’attaque d’une ligne');}
 /* v0.356 — La bulle de valeur plus bas, verte au-dessus de 1 ; les talents sous les compétences ;
    plus de double trait au-dessus des fiches ; deux arbres par classe au lieu de trois. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
@@ -3276,15 +3276,34 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&src.includes("if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';")&&src.includes("desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0))"),'la main droite seule ; le jeton de dégâts reste à la bulle des monstres');
  assert.ok(page.includes('<button class="btn-action btn-analyse rond" id="reveal" hidden>🔍</button>')&&page.includes("function poseRond(b,centre,nom,dit,compte,bulle){")
   &&page.includes("poseRond(rev,'🔍',dejà?'Analysé':'Analyser',")&&page.includes("poseRond(repos,'⛺','Repos court '+reposRestants(a)+'/'+reposMax(a),")
-  &&page.includes("poseRond(b,im||glyphe,nom,titre,'',bulle);")&&page.includes("geste('Dégel','❄',")&&page.includes("geste('Se relever','⤴',")
+  &&page.includes("poseRond(b,im||glyphe,nom,titre,compteDuTexte(nom),bulle);")&&page.includes("geste('Dégel','❄',")&&page.includes("geste('Se relever','⤴',")
   &&page.includes("(b.dataset.nom||b.textContent)")&&!page.includes("rev.textContent=")&&!page.includes("repos.textContent="),'Analyser, Repos court, gestes et réactions en ronds, nommés dans la bulle');
  assert.ok(src.includes("const titreComp=sousTitre('Compétences');")&&src.includes("const titreKit=sousTitre('Équipement');")
   &&src.includes("plus.title='Ajouter à l’inventaire de '+a.name;plus.setAttribute('aria-label',plus.title);plus.onclick=()=>openPicker(a,'gear');titre.append(plus)}")
   &&!src.includes("'Ajouter un point de compétence à '"),'le « + » quitte Compétences et Équipement pour l’Inventaire');}
+/* v0.360 — Deux lignes d'Actions : en gros ronds les attaques, les actions et les réactions ; en petits,
+   dessous, les maîtrises, Analyser, le Repos court. Les dés de dégâts et le bonus du combattant pris
+   passent au-dessus de la piste, dans le bloc Dés ; un rond qui frappe y montre les siens au survol. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
+ assert.ok(src.includes("boutonsTalents(a).filter(b=>b.rangee!=='aucune'&&b.talent.type!=='mait'):[];")
+  &&src.includes("const talents=[...gros.filter(b=>b.rangee==='attaques'),...gros.filter(b=>b.rangee==='reactions')];")
+  &&page.includes("boutonsTalents(a).filter(b=>b.rangee!=='aucune'&&b.talent.type==='mait').forEach(t=>{let b=null;")
+  &&!page.includes("filter(b=>b.rangee==='reactions')")&&!page.includes('rangee-ronds')&&!css.includes('rangee-ronds')
+  &&css.includes('.attack-row button.btn-action.rond,.attack-row button.btn-action.rond.inerte{width:42px;height:42px;font-size:19px}'),'gros ronds pour agir et réagir, petits pour les maîtrises et les gestes');
+ assert.ok(page.includes('<div class="eyebrow">Dés</div><div class="des-combattant" id="des-combattant" hidden></div><div id="dice-tray" aria-hidden="true"></div>')
+  &&src.includes("function montreDesCombattant(dice,bonus,toujours){const z=$('des-combattant');if(!z)return;")
+  &&src.includes("z.replaceChildren();z.hidden=!dice;if(dice)z.append(desEtBonus(dice,bonus,toujours,false))}")
+  &&src.includes("const voit=!!a&&(view==='mj'||a.hero||!!a.revealed);")
+  &&src.includes("b.addEventListener('pointerenter',()=>montreDesCombattant(dice,bonus,toujours));b.addEventListener('pointerleave',revient)};")
+  &&src.includes("if(marked.size>1){boite.replaceChildren();boite.hidden=true;montreDesCombattant(null);return}")
+  &&css.includes('.des-combattant{display:flex;align-items:center;min-height:26px}.des-combattant[hidden]{display:none}'),'les dés du combattant au-dessus de la piste, ceux du rond survolé le temps du survol');
+ {const m=page.match(/function compteDuTexte\(t\)\{[^\n]*\}/);assert.ok(m,'compteDuTexte introuvable');const ctx={};vm.runInNewContext(m[0]+';this.f=compteDuTexte',ctx);
+  assert.equal(ctx.f('Orbes mystiques 1/1'),'1/1');assert.equal(ctx.f('Garde 2 / 3'),'2/3');assert.equal(ctx.f('Riposte'),'');assert.equal(ctx.f(null),'');}
+ assert.ok(page.includes("poseRond(b,im||glyphe,nom,titre,compteDuTexte(nom),bulle);")&&src.includes("const compte=typeof compteDuTexte==='function'?compteDuTexte(t.texte):'';"),'le compte d’un talent en pastille sur son rond');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1832 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1839 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -213,7 +213,7 @@ const note=document.createElement('p');note.id='actor-notes';note.className='mut
 function desEtBonus(dice,bonus,toujours,jeton=true){const bas=document.createElement('span');bas.className='des-bonus';
  bas.append(dicePips(dice));
  if(bonus||toujours){const plus=document.createElement('b');plus.className='bonus';plus.textContent='+'+bonus;bas.append(plus);
-  // Le jeton des dégâts, après la valeur, dans la bulle des monstres ; la barre d'action s'en passe.
+  // Le jeton des dégâts, après la valeur, dans la bulle des monstres ; le bloc Dés s'en passe.
   if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';ico.src=imgUrl('DEGATS.webp');ico.alt='dégâts';ico.draggable=false;bas.append(ico)}}
  return bas}
 /* Les objets qui agissent : chaque pièce portée ou rangée dont le moteur connaît l'effet
@@ -241,32 +241,31 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
     :o.name+' a déjà servi aujourd’hui : il faut une nuit de repos.',
    acteur:a,agir:()=>utiliserObjet(a,o)})});
  return out}
+/* Au-dessus de la piste, les dés de dégâts et le bonus du combattant pris : ceux de l'attaque
+   retenue. Survoler un rond qui frappe y montre les siens, le temps du survol. Affaibli ou une
+   attaque « dés seuls » n'ont pas de bonus. */
+function montreDesCombattant(dice,bonus,toujours){const z=$('des-combattant');if(!z)return;
+ z.replaceChildren();z.hidden=!dice;if(dice)z.append(desEtBonus(dice,bonus,toujours,false))}
 function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Plusieurs combattants pris : la carte des Actions ne propose rien.
- if(marked.size>1){boite.replaceChildren();boite.hidden=true;return}
+ if(marked.size>1){boite.replaceChildren();boite.hidden=true;montreDesCombattant(null);return}
  const a=actors[selected],liste=a?attackChoices(a,catalog.items):[];
- /* Les talents de la rangée des attaques se dessinent à leur suite. Attaques et talents sont des
-    ronds, comme les talents d'une fiche : le logo au milieu, pleins à la couleur de l'action ;
-    le nom et ce qu'il fait dans la bulle, au survol ; les dés et le bonus dessous. */
- // Un bouton et, dessous, ses dés : la carte d'une attaque dans la rangée.
- const carte=(b,des,talent)=>{const c=document.createElement('div');c.className='attaque-carte'+(talent?' de-talent':'');c.append(b);if(des)c.append(des);return c};
- const talents=a&&typeof boutonsTalents==='function'?boutonsTalents(a).filter(b=>b.rangee==='attaques'):[];
+ /* La première ligne des Actions, en gros ronds : ce qui prend l'Action ou y répond — les
+    attaques, les talents d'action, puis les réactions. Les maîtrises vont en petit sur la ligne
+    du dessous, avec Analyser et le Repos court. Chaque rond : le logo au milieu, plein à la
+    couleur de l'action ; le nom et ce qu'il fait dans la bulle, au survol. */
+ const gros=a&&typeof boutonsTalents==='function'?boutonsTalents(a).filter(b=>b.rangee!=='aucune'&&b.talent.type!=='mait'):[];
+ const talents=[...gros.filter(b=>b.rangee==='attaques'),...gros.filter(b=>b.rangee==='reactions')];
+ const bonusDe=at=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
+ const retenu=Math.trunc(a&&a.activeAttack)||0,actuelle=liste.length?liste[retenu<liste.length?retenu:0]:null;
+ // Un adversaire qu'on n'a pas analysé garde ses dés pour lui, chez les joueurs.
+ const voit=!!a&&(view==='mj'||a.hero||!!a.revealed);
+ const revient=()=>montreDesCombattant(voit&&actuelle?actuelle.dice:null,bonusDe(actuelle),!!actuelle&&actuelle.useOwnDamage!==false);
+ const survol=(b,dice,bonus,toujours)=>{if(!voit||!dice)return;
+  b.addEventListener('pointerenter',()=>montreDesCombattant(dice,bonus,toujours));b.addEventListener('pointerleave',revient)};
  // Même seule, une attaque se montre : on lit ce qui part avant de frapper.
  // Les objets ne s'y montrent plus : on les emploie d'un clic dans l'inventaire de la fiche.
- boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;
- talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque rond';
-  if(t.teinte){b.style.setProperty('--fond',t.teinte);b.classList.add('teinte-propre')}
-  const im=logoTalent({logo:t.logo},'bouton');
-  if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);b.classList.add('avec-logo');b.append(logos)}
-  else b.append(Object.assign(document.createElement('span'),{className:'glyphe',textContent:GLYPHES_TALENT[t.talent.type]||'✦'}));
-  /* Un talent qui frappe se lit comme une attaque : dessous, les dés qu'il lance, le bonus de
-     dégâts et son jeton. Un talent sans dés n'a que son bouton. */
-  inerte(b,!t.peut);b.setAttribute('aria-label',t.texte+' — '+t.titre);
-  // Sa bulle : celle du talent, et ce qui l'empêche s'il ne peut pas partir.
-  surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre}));
-  b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0,false,false):null,true))});
- if(!liste.length)return;
- const retenu=Math.trunc(a.activeAttack)||0;
+ boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;revient();
  liste.forEach((at,i)=>{const b=document.createElement('button');
   b.className='btn-action choix-attaque rond'+(i===(retenu<liste.length?retenu:0)?' on':'');
   // Au milieu du rond, le logo de la seule arme de la main droite : la première ; deux armes n'en montrent qu'un.
@@ -280,11 +279,6 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
      chaque arme est une variante à elle seule : son bouton porte son nom. */
   const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');
   const nom=document.createElement('p');nom.className='gear-nom';nom.textContent=libelle;
-  /* Le nom sur le bouton ; dessous, les dés et le bonus de dégâts — on choisit son attaque en
-     voyant tout ce qu'elle lance. Affaibli ou une attaque « dés seuls » n'ont pas de bonus, et
-     n'en écrivent pas. */
-  const bonus=hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
-  const c=carte(b,desEtBonus(at.dice,bonus,at.useOwnDamage!==false,false),false);
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
   inerte(b,!!refus);
   // Le clic droit du MJ rend l'Action et pose la flèche en vol.
@@ -297,13 +291,26 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   const dit=b.title;b.removeAttribute('title');
   surveille(b,()=>{const d=document.createElement('div');d.className='cat-detail bulle-attaque-corps';const q=document.createElement('p');q.className='muted';q.textContent=dit;d.append(nom.cloneNode(true),q);ouvrirBulle(b,d,'bulle-gear')});
   /* Le bouton n'arme plus l'attaque : il la porte. On retient laquelle est partie —
-     la réserve affichée la suit — puis le coup part aussitôt. */
+     les dés affichés la suivent — puis le coup part aussitôt. */
   b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;
    boite.querySelectorAll('.choix-attaque:not(.btn-talent)').forEach((x,k)=>x.classList.toggle('on',k===i));
    attack();scheduleSave()};
-  // Les attaques d'abord, toujours : les talents viennent à leur suite.
-  const premierAutre=boite.querySelector('.attaque-carte.de-talent');
-  if(premierAutre)boite.insertBefore(c,premierAutre);else boite.append(c)})}
+  survol(b,at.dice,bonusDe(at),at.useOwnDamage!==false);boite.append(b)});
+ // Les talents à leur suite : ceux d'action, puis les réactions.
+ talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque rond';
+  if(t.teinte){b.style.setProperty('--fond',t.teinte);b.classList.add('teinte-propre')}
+  const im=logoTalent({logo:t.logo},'bouton');
+  if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);b.classList.add('avec-logo');b.append(logos)}
+  else b.append(Object.assign(document.createElement('span'),{className:'glyphe',textContent:GLYPHES_TALENT[t.talent.type]||'✦'}));
+  // Ce qui reste d'un talent compté, en pastille au bas du rond.
+  const compte=typeof compteDuTexte==='function'?compteDuTexte(t.texte):'';
+  if(compte)b.append(Object.assign(document.createElement('span'),{className:'compte-rond',textContent:compte}));
+  inerte(b,!t.peut);b.setAttribute('aria-label',t.texte+' — '+t.titre);
+  // Sa bulle : celle du talent, et ce qui l'empêche s'il ne peut pas partir.
+  surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre}));
+  // Un talent qui frappe montre ses dés au-dessus de la piste, au survol, comme une attaque.
+  survol(b,t.des,t.bonus||0,false);
+  b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(b)})}
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
 const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-form"><div id="actor-fields"></div><p class="form-error" id="actor-error" role="alert"></p><div class="form-actions"><button type="button" id="delete-actor">Retirer de la scène</button><button type="button" id="save-template">Enregistrer au bestiaire</button><button type="submit" class="primary">Enregistrer la fiche</button></div></form>');
