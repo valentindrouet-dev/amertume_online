@@ -437,7 +437,7 @@ function poseLogoObjet(el,o){let im=null,piece=null;const pieces=(o.items||[]).m
    s'effacent quand la carte est rechargée sur la table. Le bouton « Fouilles » montre leur somme. */
 const PERCEPTION=3,PART_MINIMALE=.02;
 function fouillesCarte(){const id=typeof currentMapId!=='undefined'?currentMapId||'':'';
- return actors.filter(a=>a&&a.hero).flatMap(a=>(a.fouilles||[]).filter(f=>f&&(f.m||'')===id))}
+ return actors.filter(a=>a&&a.hero).flatMap(a=>(a.fouilles||[]).filter(f=>f&&(f.m||'')===id).map(f=>({...f,par:a})))}
 // Les aires, en pixels carrés : un anneau au lacet, un multipolygone trous déduits.
 const aireAnneau=r=>{let s=0;for(let i=0,n=r.length;i<n;i++){const p=r[i],q=r[(i+1)%n];s+=p[0]*q[1]-q[0]*p[1]}return Math.abs(s)/2};
 const aireMulti=mp=>(mp||[]).reduce((t,p)=>t+(p&&p.length?aireAnneau(p[0])-p.slice(1).reduce((h,r)=>h+aireAnneau(r),0):0),0);
@@ -480,7 +480,12 @@ function renderFouilles(){const vue=$('map-view');if(!vue)return;let c=$('fouill
  p.setAttribute('fill-rule','evenodd');p.setAttribute('class','fouille');svg.append(p);c.append(svg);
  // Au centre de chaque fouille, ses réussites en Killam : rouge à zéro, vert dès une.
  fouillesCarte().forEach(f=>{if(!Number.isInteger(f.n))return;const n=document.createElement('span');n.className='fouille-n'+(f.n>0?' reussie':' ratee');
-  n.textContent=f.n;n.style.left=f.x+'%';n.style.top=f.y+'%';c.append(n)})}
+  n.textContent=f.n;n.style.left=f.x+'%';n.style.top=f.y+'%';n.setAttribute('aria-label',f.n+' réussite'+(f.n>1?'s':'')+' — '+f.par.name);
+  // Au survol du chiffre, l'icône de l'aventurier qui a fouillé.
+  if(typeof surveille==='function')surveille(n,()=>{const d=document.createElement('div');d.className='fouilleur';
+   if(f.par.image){const im=document.createElement('img');im.src=f.par.image;im.alt='';d.append(im)}else d.textContent=(f.par.name||'?')[0].toUpperCase();
+   ouvrirBulle(n,d,'bulle-fouilleur')});
+  c.append(n)})}
 if($('fouilles-vue')){$('fouilles-vue').onclick=()=>{fouillesOn=!fouillesOn;try{localStorage.setItem('amertume-fouilles',fouillesOn?'1':'0')}catch(e){}renderFouilles()};
  $('fouilles-vue').oncontextmenu=e=>{if(view!=='mj')return;e.preventDefault();const id=typeof currentMapId!=='undefined'?currentMapId||'':'';
   if(!fouillesCarte().length||!confirm('Effacer les zones fouillées de cette carte ? La Perception pourra y être retentée.'))return;

@@ -1680,6 +1680,10 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 
 /* Les réussites d'une fouille, au centre de sa zone : rouge à zéro, vert dès une. */
 #fouilles-layer .fouille-n{position:absolute;transform:translate(-50%,-50%);font:700 22px/1 'Killam',Georgia,serif;
- text-shadow:0 0 3px #fff,0 0 3px #fff,0 1px 2px #fff;pointer-events:none}
+ text-shadow:0 0 3px #fff,0 0 3px #fff,0 1px 2px #fff;pointer-events:auto;cursor:default}
+/* Au survol d'un chiffre de fouille : l'icône de l'aventurier qui a fouillé. */
+.bulle.bulle-fouilleur{width:auto;min-width:0}
+.fouilleur{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;overflow:hidden;background:#2f5d50;color:#f6efe0;font:700 22px 'Killam',Georgia,serif;border:2px solid var(--panel);box-shadow:0 0 0 2px #d9a13b}
+.fouilleur img{width:100%;height:100%;object-fit:cover;display:block}
 #fouilles-layer .fouille-n.ratee{color:#c0392b}
 #fouilles-layer .fouille-n.reussie{color:#2f8a4a}
