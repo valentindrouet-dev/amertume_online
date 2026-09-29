@@ -109,6 +109,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  c.guidePrix=normaliseGuidePrix(c.guidePrix);
  // Les planches d'icônes découpées, leurs noms et catégories (planches.js).
  c.planches=normalisePlanches(c.planches);c.nomsPlanches=normaliseNomsPlanches(c.nomsPlanches);
+ c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);
  // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
  c.motsCles=[...new Set((Array.isArray(c.motsCles)?c.motsCles:[]).map(m=>String(m||'').trim().slice(0,60)).filter(Boolean))].slice(0,200);
  /* Les spécialisations de chaque classe, dans l'ordre du MJ : des noms, trois au plus par
@@ -327,6 +328,7 @@ const heroesPage=document.createElement('main');heroesPage.id='heroes-page';
 heroesPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Aventuriers</h2><div class="cat-actions">'
  +'<button id="hero-repos-long" type="button" title="VIE et PV au maximum, repos courts et charges rendus, états levés sauf le Blindage ; ceux retournés au domaine reviennent">🌙 Repos long</button>'
+ +'<button id="hero-icones-comp" type="button" title="Choisir l’icône de chaque compétence, la même sur toutes les fiches">🖼 Icônes des compétences</button>'
  +'<button id="hero-add" class="primary">+ Nouvel aventurier</button></div></header>'
  // Le mode d'emploi n'a plus à occuper le haut de la page : les infobulles le disent
  // au survol de chaque valeur, et le champ de recherche ne sert qu'à une grande troupe.
@@ -744,7 +746,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   if(!competenceDe(a,k))return;
   const puce=document.createElement('span');puce.className='skill-chip'+(competenceDe(a,k)?'':' zero');
   puce.style.setProperty('--tint',SKILL_TINTS[k]);
-  const l=document.createElement('span');l.textContent=n;
+  const l=nomCompetence(k);
   const v=document.createElement('b');v.textContent='+'+competenceDe(a,k);
   champVif(v,()=>a.skills[k],brut=>{const avant=a.skills[k];
    a.skills[k]=readStat('skill',brut,avant);
@@ -770,6 +772,28 @@ function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.rep
 $('hero-search').oninput=renderHeroes;
 $('hero-add').onclick=()=>openActor(null,true);
 $('hero-repos-long').onclick=reposLong;
+$('hero-icones-comp').onclick=()=>openIconesCompetences();
+/* ---------- Une icône par compétence ----------
+   La même sur toutes les fiches d'aventuriers, devant le nom de la compétence. Le MJ les choisit
+   dans une fenêtre de la page Aventuriers, parmi les logos et les icônes des planches, celles de
+   la planche Caractéristiques en tête. Elles voyagent avec le contenu publié. */
+function normaliseIconesCompetences(l){return COMPETENCES.map((_,k)=>{const v=Array.isArray(l)?l[k]:'';return typeof v==='string'&&v.length<=200&&!/["'<>&\\]/.test(v)?v:''})}
+function iconesCompetences(){return normaliseIconesCompetences(typeof catalog!=='undefined'&&catalog?catalog.iconesCompetences:null)}
+function logoCompetence(k){const l=iconesCompetences()[k];return l?logoAttaque(l,'skill-ico'):null}
+// Le nom d'une compétence sur une puce, son icône devant.
+function nomCompetence(k){const s=document.createElement('span');s.className='skill-nom';const ico=logoCompetence(k);if(ico)s.append(ico);s.append(skillNames[k]);return s}
+function groupesLogosCompetence(){const vus=new Set(),groupes=[];
+ planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract/i.test(nomPlanche(f))||/caract/i.test(f)).sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))
+  .forEach(f=>{const ids=iconesPlanches().filter(id=>id.startsWith(f+'#'));ids.forEach(i=>vus.add(i));if(ids.length)groupes.push([nomPlanche(f),ids])});
+ [...famillesPlanches(),...FAMILLES_LOGOS].forEach(([t,l])=>{const reste=l.filter(x=>!vus.has(x));if(reste.length)groupes.push([t,reste])});return groupes}
+const competencesDialog=dialog('competences-icones','Icônes des compétences','<form id="competences-icones-form"><p class="muted">Une icône par compétence, devant son nom sur toutes les fiches d’aventuriers.</p><div id="competences-icones-corps" class="edit-grid"></div></form>');
+$('competences-icones-form').onsubmit=e=>e.preventDefault();
+function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences(),groupes=groupesLogosCompetence();
+ $('competences-icones-corps').innerHTML=skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('');
+ $('competences-icones-form').onchange=e=>{const m=/^comp(\d+)$/.exec(e.target&&e.target.name||'');if(!m)return;
+  const icones=iconesCompetences();icones[+m[1]]=e.target.value;catalog.iconesCompetences=normaliseIconesCompetences(icones);
+  scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderHeroes();render()};
+ competencesDialog.showModal()}
 /* Une pastille par dé de la réserve, dans l’ordre officiel d’affichage : noir, rouge,
    bleu, vert, jaune, blanc, os. Le Mortel porte un liseré clair, et Lourd, Mystique et
    Mortel une pastille centrale claire — leur face est trop sombre pour l’inverse.

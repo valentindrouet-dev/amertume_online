@@ -403,6 +403,8 @@ button.btn-analyse[hidden]{display:none}
 .hero-card .stat-row{margin:10px 0 4px}
 /* Les compétences sont ici affichées, pas jouées : pas de curseur ni de survol de bouton. */
 .hero-card .skill-chip{cursor:default}
+/* L'icône d'une compétence devant son nom, sur toutes les fiches. */
+.skill-nom{display:inline-flex;align-items:center;gap:5px;min-width:0}.skill-chip .logo-equip.skill-ico{flex:none;width:20px;height:20px;margin:0}
 .hero-card .skill-chip:hover{background:rgba(var(--tint),.13)}
 .hero-card .sheet-class{align-self:center}
 .hero-kit{margin:0;font-size:13px}

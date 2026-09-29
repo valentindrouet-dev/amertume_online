@@ -3190,10 +3190,21 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(css.includes('.cat-pill.gear-carre:not(.talent-carre):not(.best-carre){height:73px}')&&!css.includes('justify-content:flex-start;padding-top:6px}')
   &&css.includes('.j-objet{display:inline-block;')&&css.includes('.j-objet .logo-equip{display:inline-block;width:16px;height:16px;margin:0 3px 0 0;vertical-align:-3px}')
   &&src.includes("v.append(n,' ',piece);d.append(v)}")&&!src.includes("'Se convertit en : '"),'cases égales, butin aligné, or en pièces');}
+/* v0.352 — La planche Caractéristiques ; une icône par compétence, choisie par le MJ sur la page
+   Aventuriers, la même devant le nom de la compétence sur toutes les fiches. */
+{const src=fs.readFileSync('editor.js','utf8'),C=require('./combat.js');
+ assert.ok(fs.existsSync('img/planches/caracteristiques_1.webp'),'la planche Caractéristiques est au dépôt');
+ const ctxC={COMPETENCES:C.COMPETENCES};vm.createContext(ctxC);
+ vm.runInContext(src.slice(src.indexOf('function normaliseIconesCompetences('),src.indexOf('function iconesCompetences()'))+';this.n=normaliseIconesCompetences;',ctxC);
+ assert.deepEqual([...ctxC.n(['planches/caracteristiques_1.webp#4',7,'a"b'])],['planches/caracteristiques_1.webp#4','','',...Array(C.COMPETENCES.length-3).fill('')],'une icône par compétence, rien d’autre');
+ assert.equal(ctxC.n(null).length,C.COMPETENCES.length,'autant de places que de compétences');
+ assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
+  &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract/i.test(nomPlanche(f))||/caract/i.test(f))")&&src.includes("  const l=nomCompetence(k);")
+  &&page.includes("const n=typeof nomCompetence==='function'?nomCompetence(i):"),'les icônes des compétences sur les fiches');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1793 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1796 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
