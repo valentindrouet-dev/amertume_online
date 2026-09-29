@@ -373,8 +373,11 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
  vue.querySelectorAll('.token.objet').forEach(t=>t.remove());if(!m||enCombat())return;
  (m.objets||[]).forEach((o,i)=>{if(o.pris||(!o.visible&&view!=='mj'))return;
   // Pour la troupe, un objet dans le noir n'existe pas : il faut le voir, ou l'avoir vu.
-  if(oeilJoueur()&&!(seenAt(o.x,o.y)||partySees({x:o.x,y:o.y,socle:'medium'})))return;
-  const t=document.createElement('button');t.className='token objet'+(o.visible?'':' cache');
+  const vuTroupe=seenAt(o.x,o.y)||partySees({x:o.x,y:o.y,socle:'medium'});
+  if(oeilJoueur()&&!vuTroupe)return;
+  /* Chez le MJ, un objet se voile comme un adversaire : caché par lui, pâli et cerclé de violet ;
+     dans une salle que la troupe n'a pas encore vue, pâli et cerclé de tirets. */
+  const t=document.createElement('button');t.className='token objet'+(!o.visible?' cachemj':!vuTroupe?' veiled':'');
   poseLogoObjet(t,o);t.style.left=o.x+'%';t.style.top=o.y+'%';
   t.style.setProperty('--token',tokenPx()*(SOCLE_TAILLES[o.taille]||1)+'px');
   t.title=o.nom+(o.visible?'':' · caché — '+skillNames[o.test.comp]+' × '+o.test.reussites);

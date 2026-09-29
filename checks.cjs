@@ -1031,7 +1031,7 @@ assert.ok(page.includes('function prochainNumero')&&page.includes("a.vu=true;if(
 assert.ok(page.includes("groupeReplie('Adversaires cachés',cachees)")&&page.includes('let cachesOuverts=false;'),'les adversaires cachés se replient');
 assert.ok(page.includes("imgUrl('ONDE.png')")&&src.includes("out.className='talent-grille'")&&feuille.includes('.talent-detail.large{grid-column:1/-1'),'l’Onde et les deux colonnes de talents');
 /* La troupe ne voit ni porte de côté ni objet dans le noir ; la barre de la carte se vide ; qui parle. */
-assert.ok(cartes.includes('function doorFaces')&&cartes.includes("const t=1-r/L;return rayonContre(")&&cartes.includes("if(oeilJoueur()&&!(seenAt(o.x,o.y)"),'portes et objets ne se devinent plus');
+assert.ok(cartes.includes('function doorFaces')&&cartes.includes("const t=1-r/L;return rayonContre(")&&cartes.includes("if(oeilJoueur()&&!vuTroupe)return;"),'portes et objets ne se devinent plus');
 assert.ok(!cartes.includes("before(mapPick,mapOpen)")&&page.includes('<div class="mapbar-h2" hidden>')&&!src.includes("' de la scène.'"),'la barre de la carte se vide');
 assert.ok(page.includes("const a=selected!==null?actors[selected]:null;return a?a:{name:'MJ',mj:true}"),'le socle sélectionné parle, sinon le MJ');
 /* Le zoom reste net, les points de vie précèdent les combattants, le sélecteur de talents se limite à la classe. */
