@@ -3036,7 +3036,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    menu et de la grille, chacune sous son nom. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(fs.existsSync('img/planches/restes_1.webp')&&fs.existsSync('img/planches/restes_2.webp'),'les deux planches de restes sont au dépôt');
- assert.ok(src.includes("const PLANCHES_EN_TETE={restes:/restes/i,ressource:/restes/i,armor:/armures/i};")&&src.includes(" planchesEnTete(o).forEach(f=>{")
+ assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i]};")&&src.includes(" planchesEnTete(o).forEach(f=>{")
   &&src.includes("+selGrille(planchesEnTete(a).length?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):")&&src.includes("groupesLogosItem(o).filter(([,l])=>l.length).map("),'les planches de restes en tête pour un reste');}
 /* v0.337 — Un « + » à l'en-tête de chaque colonne de l'Armurerie ouvre l'éditeur sur une pièce
    neuve de cette catégorie. La famille de talents « Génériques » disparaît : un talent resté sans
@@ -3065,15 +3065,28 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const peau={category:'restes',ressource1:'cuir',rendement1:3,ressource2:'corde',rendement2:1,rarete:'rare'};
  assert.equal(ctxP.prixSuggere(peau,ctxP.normaliseGuidePrix({})).total,3,'3 Cuir à 4 + 1 Corde à 2 = 14 ; 25 %, arrondi en dessous : 3 — ni base, ni rareté');
  assert.equal(ctxP.prixSuggere(peau,ctxP.normaliseGuidePrix({restes:50})).total,7,'la part se règle au guide');
- assert.ok(src.includes("const PLANCHES_EN_TETE={restes:/restes/i,ressource:/restes/i,armor:/armures/i};")&&src.includes(" champ(fr,'Un reste vaut',()=>G().restes,v=>{G().restes=v},'%');"),'les planches en tête selon la catégorie ; la part des restes au guide');}
+ assert.ok(src.includes("const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\\b/i]};")&&src.includes(" champ(fr,'Un reste vaut',()=>G().restes,v=>{G().restes=v},'%');"),'les planches en tête selon la catégorie ; la part des restes au guide');}
 /* v0.340 — Les tris restent d'une session à l'autre ; plus de pointillés entre les rangées de talents. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("const TRIS_GARDES=[['armory-sort','armurerie'],['bestiary-sort','bestiaire'],['talent-sort','talents']];")&&src.includes("localStorage.setItem('amertume-tris',JSON.stringify(o))")
   &&!css.includes('.talent-rangee+.talent-rangee{border-top'),'les tris gardés, les rangées sans trait');}
+/* v0.342 — Les planches Armes 02 à 06, en tête pour l'icône d'une arme ou d'une munition. Armes 06
+   porte aussi des armures : pour une armure, elle suit les planches Armures. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok([2,3,4,5,6].every(i=>fs.existsSync('img/planches/armes_0'+i+'.webp')),'les cinq planches Armes sont au dépôt');
+ const fichiers=['planches/armures_2.webp','planches/armes_06.webp','planches/restes_1.webp','planches/armes_02.webp','planches/armurerie_01.webp','planches/armures_1.webp','planches/armes_03.webp'];
+ const ctxA={planchesDuCatalogue:()=>fichiers.map(fichier=>({fichier})),nomPlanche:f=>{const n=f.replace(/^planches\//,'').replace(/\.[a-z]+$/i,'').replace(/[_-]+/g,' ');return n[0].toUpperCase()+n.slice(1)}};vm.createContext(ctxA);
+ vm.runInContext(src.slice(src.indexOf('const PLANCHES_EN_TETE='),src.indexOf('// Les groupes du menu des logos d\'une pièce'))+';this.planchesEnTete=planchesEnTete;',ctxA);
+ const noms=o=>ctxA.planchesEnTete(o).map(f=>ctxA.nomPlanche(f)).join(', ');
+ assert.equal(noms({category:'weapon'}),'Armes 02, Armes 03, Armes 06','une arme : les planches Armes, dans l’ordre, sans Armures ni Armurerie');
+ assert.equal(noms({category:'ammo'}),'Armes 02, Armes 03, Armes 06','une munition : les planches Armes aussi');
+ assert.equal(noms({category:'armor'}),'Armures 1, Armures 2, Armes 06','une armure : les Armures, puis Armes 06, une seule fois');
+ assert.equal(noms({category:'restes'}),'Restes 1','un reste : les Restes seulement');
+ assert.equal(noms({category:'object'}),'','un objet : aucune planche en tête');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1756 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1762 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

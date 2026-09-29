@@ -3267,12 +3267,14 @@ function selLogos(label,key,value,sansElementaires){const familles=[...famillesP
 // le reste parmi les item_*.
 // Les icônes des dossiers viennent en tête : ce sont les nouvelles qu'on cherche.
 /* Les planches qui passent en tête du menu et de la grille des logos, selon la catégorie de la
-   pièce — par leur nom ou leur fichier, dans l'ordre de leurs noms, chacune sous son nom : les
-   Restes pour un reste et pour une ressource (peaux, os, écailles…), les Armures pour une armure. */
-const PLANCHES_EN_TETE={restes:/restes/i,ressource:/restes/i,armor:/armures/i};
-function planchesEnTete(o){const re=PLANCHES_EN_TETE[o&&o.category];if(!re)return [];
- return planchesDuCatalogue().map(p=>p.fichier).filter(f=>re.test(nomPlanche(f))||re.test(f))
-  .sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))}
+   pièce — par leur nom ou leur fichier, chacune sous son nom : les Restes pour un reste et pour
+   une ressource (peaux, os, écailles…), les Armes pour une arme ou une munition, les Armures pour
+   une armure, puis Armes 06, qui en porte aussi. Les motifs se suivent dans l'ordre donné ; sous
+   un même motif, les planches dans l'ordre de leurs noms. */
+const PLANCHES_EN_TETE={restes:[/restes/i],ressource:[/restes/i],weapon:[/armes/i],ammo:[/armes/i],armor:[/armures/i,/armes[ _-]*0*6\b/i]};
+function planchesEnTete(o){const motifs=PLANCHES_EN_TETE[o&&o.category];if(!motifs)return [];const fichiers=planchesDuCatalogue().map(p=>p.fichier),vues=new Set();
+ return motifs.flatMap(re=>{const l=fichiers.filter(f=>!vues.has(f)&&(re.test(nomPlanche(f))||re.test(f)))
+  .sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}));l.forEach(f=>vues.add(f));return l})}
 // Les groupes du menu des logos d'une pièce : [titre, logos]. Ses planches en tête, s'il en a.
 function groupesLogosItem(o){const l=logosItem(o),vus=new Set(),groupes=[];
  planchesEnTete(o).forEach(f=>{const ids=iconesPlanches().filter(id=>id.startsWith(f+'#'));ids.forEach(i=>vus.add(i));if(ids.length)groupes.push([nomPlanche(f),ids])});
