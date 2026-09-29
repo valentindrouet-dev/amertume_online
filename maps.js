@@ -367,8 +367,10 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
    la description, et un aventurier au contact y prend ce qui s'y trouve. Caché, seul le
    MJ le voit — en pointillé — jusqu'à ce qu'un test le découvre. Le brouillard ne le
    cache pas : c'est la description qui dit s'il est dans un recoin. */
+/* En combat, les objets s'effacent de la carte, pour tous : ils reviennent en exploration. Ils ne
+   coupent jamais la vue. */
 function renderObjets(){const vue=$('map-view'),m=currentMap();
- vue.querySelectorAll('.token.objet').forEach(t=>t.remove());if(!m)return;
+ vue.querySelectorAll('.token.objet').forEach(t=>t.remove());if(!m||enCombat())return;
  (m.objets||[]).forEach((o,i)=>{if(!o.visible&&view!=='mj')return;
   // Pour la troupe, un objet dans le noir n'existe pas : il faut le voir, ou l'avoir vu.
   if(oeilJoueur()&&!(seenAt(o.x,o.y)||partySees({x:o.x,y:o.y,socle:'medium'})))return;
@@ -404,6 +406,14 @@ function testerObjet(a,o){const jet=skillRoll(a.skills[o.test.comp]||0,d6);
   +(trouve?'découvre '+o.nom+' !':'ne trouve rien.'),{dice:true});
  if(trouve){o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Découvert !','nul');render();saveMaps()}
  return trouve}
+/* Un test de compétence lancé depuis la fiche cherche aussi : chaque objet caché que l'aventurier
+   a en vue — aucun mur entre eux —, découvert par cette compétence, la Perception d'ordinaire, et
+   avec assez de réussites, paraît à toute la table. */
+function objetsDecouverts(a,comp,reussites){const m=currentMap();if(!a||!a.hero||!m)return [];
+ const murs=walls(),trouves=(m.objets||[]).filter(o=>!o.visible&&o.test&&o.test.comp===comp&&reussites>=o.test.reussites&&!wallsBetween(a,o,murs));
+ trouves.forEach(o=>{o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Découvert !','nul')});
+ if(trouves.length){log(nomNum(a)+' découvre '+trouves.map(o=>o.nom).join(', ')+' !',{ton:'carte'});render();saveMaps();scheduleSave()}
+ return trouves}
 const objetVue=dialog('objet-vue','Objet','<div id="objet-corps"></div>');
 function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o||(!o.visible&&view!=='mj'))return;
  objetVue.querySelector('h2').textContent=(o.visible?'':'◌ ')+o.nom;
