@@ -608,7 +608,7 @@ function poserCarac(a,cle,brut,carte){const avant=a[cle];writeStat(a,cle,brut);
  document.dispatchEvent(new Event('amertume-content-changed'))}
 /* L'écu de DEF redessiné sans être remplacé : même élément, autre image. */
 function majEcu(ecu,valeur){if(!ecu)return;
- const im=ecu.querySelector('img');if(im)im.src=ecuDef(valeur);
+ const im=ecu.querySelector('img');if(im){im.src=ecuDef(valeur);delete im.dataset.px}
  ecu.setAttribute('aria-label','DEF '+valeur);
  // L'écu est dessiné, chiffre compris : plus de texte posé dessus.
  const b=ecu.querySelector('b');if(b)b.remove()}
@@ -2272,7 +2272,8 @@ function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)retu
  const texte=n=>n===1?'<textarea name="effects" rows="4" maxlength="600" aria-label="Texte de l’effet — palier 1">'+esc(d.effects||'')+'</textarea>'
   :'<textarea name="pe_'+n+'" rows="4" maxlength="600" placeholder="Comme le palier '+(n-1)+'" aria-label="Texte de l’effet — palier '+n+'">'+esc((d.paliers[n]&&d.paliers[n].effects)||'')+'</textarea>';
  const ligne=(tete,cellules,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+tete+'</th>'+cellules+'</tr>';
- let html='<table class="paliers-table"><thead><tr><td></td>'+[1,2,3].map(n=>'<th scope="col" class="p'+n+'">Palier '+n+'</th>').join('')+'</tr></thead><tbody>'
+ // Paliers en sommeil : la seule colonne du palier 1 se montre ; les autres restent dans le formulaire, rien ne s'y perd.
+ let html='<table class="paliers-table'+(PALIERS.actifs?'':' un-palier')+'"><thead><tr><td></td>'+[1,2,3].map(n=>'<th scope="col" class="p'+n+'">Palier '+n+'</th>').join('')+'</tr></thead><tbody>'
   +ligne('Coût (PT)',[1,2,3].map(n=>'<td><input type="number" name="c_'+n+'" min="0" max="99" step="1" value="'+(d.couts[n-1]||0)+'" aria-label="Coût en PT — palier '+n+'"></td>').join(''))
   +ligne('Texte de l’effet',[1,2,3].map(n=>'<td>'+texte(n)+'</td>').join(''));
  if(code){const params=code.params||[],volets=Array.isArray(code.volets)?code.volets:[],ouverts=voletsDe({effet:code.cle,volets:d.volets});
@@ -2359,7 +2360,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<label class="field-check"><input type="checkbox" name="elementaire" '+(t.elementaire===true?'checked':'')+'>Élémentaire — l’état réglé suit l’élément du Mystique</label>'
   +'<p class="muted accolades-aide">Accolades, dans le nom, les textes et le logo : {élément} Feu · Gel · Foudre — {mot} feu · glace · foudre, {Mot} avec la capitale — {logo} feu · gel · foudre. « Brise{mot} » fait Brisefeu, Briseglace, Brisefoudre.</p>'
   +'<div id="talent-exige"></div></section>'
-  +'<section class="talent-boite b-paliers t-seul"><h2 class="sous-titre">Paliers — coût, texte et effets câblés</h2>'
+  +'<section class="talent-boite b-paliers t-seul"><h2 class="sous-titre">'+(PALIERS.actifs?'Paliers — coût, texte et effets câblés':'Coût, texte et effets câblés')+'</h2>'
   +'<div id="talent-reglages"></div></section>'
   // Le bonus : une caractéristique, une valeur — et la compétence, si c'est là qu'il va.
   +'<section class="talent-boite b-bonus b-seul"><h2 class="sous-titre">Le bonus</h2><div class="edit-grid">'
@@ -3143,7 +3144,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
    if(verrou){note(verrou===VERROU_ELEMENT?'Le MJ choisit d’abord l’élément du Mystique, au-dessus de l’arbre.':'« '+vu(t).name+' » exige d’abord « '+verrou+' ».');return}
    // Tenu, un clic le monte d'un palier ; au dernier, le « − » seul le fait redescendre.
-   if(acquis){const k=palierDe(a,t);if(k>=paliersDe(t)){note('« '+t.name+' » est à son dernier palier.');return}
+   if(acquis){const k=palierDe(a,t);if(k>=paliersDe(t)){note(PALIERS.actifs?'« '+t.name+' » est à son dernier palier.':'« '+t.name+' » est déjà appris.');return}
     poserPalier(t,k+1);note('')}
    else{a.talents=[...a.talents,t.id];note('')}
    majTable()};

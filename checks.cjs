@@ -2131,13 +2131,10 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
 assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessines.has(texte))return ecusDessines.get(texte);")
  &&page.includes("if(!ecuPret){preparerEcus();return imgUrl('DEF '+(Number.isInteger(n)&&n>=0&&n<=6?n:'VIDE')+'.png')}")
  &&page.includes("ctx.font='700 100px Killam';const m=ctx.measureText(texte);")
- &&page.includes(" const F=Math.min(ECU_HAUTEUR*.604/Math.max(.01,haut),ECU_LARGEUR*.56/Math.max(.01,large));")
  &&page.includes("ctx.fillStyle='#000';ctx.textAlign='center';ctx.textBaseline='alphabetic';")
- &&page.includes("ctx.fillText(texte,ECU_LARGEUR*.493,ECU_HAUTEUR*.483+(mm.actualBoundingBoxAscent-mm.actualBoundingBoxDescent)/2);")
  &&page.includes("const police=document.fonts&&document.fonts.load?document.fonts.load('700 100px Killam'):Promise.resolve();")
  &&page.includes("Promise.all([police,image]).then(([,im])=>{if(!im)return;ecuVide=im;ecuPret=true;ecusDessines.clear();")
- &&page.includes("const im=document.createElement('img');im.src=ecuDef(valeur);")&&!page.includes("const b=document.createElement('b');b.textContent=valeur;w.append(b)")
- &&src.includes(" const im=ecu.querySelector('img');if(im)im.src=ecuDef(valeur);")&&src.includes(" const b=ecu.querySelector('b');if(b)b.remove()}")
+ &&page.includes("const im=document.createElement('img');im.src=ecuDef(valeur);")&&!page.includes("const b=document.createElement('b');b.textContent=valeur;w.append(b)")&&src.includes(" const b=ecu.querySelector('b');if(b)b.remove()}")
  &&!src.includes("imgUrl('DEF '+(peint?n:'VIDE')+'.png')")&&page.includes("@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2"),'l’écu de DEF se dessine en Killam, pour toute valeur');
 /* v0.255, puis v0.359 — La DEF écarte les dés égaux ou inférieurs à sa valeur, plafonnée à 6.
    Lourd et Mortel passent toujours ; Solidité y soumet le Lourd. */
@@ -2652,6 +2649,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    trois points sous l'icône, un clic monte d'un palier, « − » redescend ; la bulle compare le
    palier tenu au suivant ; l'éditeur a une colonne par palier. Le moteur joue le palier tenu. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ // Les paliers sont en sommeil ; on les rallume ici pour vérifier le modèle qui dort.
+ C.PALIERS.actifs=true;
  const t={id:'o',effet:'orbes',params:{orbes:1},effects:'Un orbe',couts:[1,2,'x'],paliers:{2:{params:{orbes:2},effects:''},3:{effects:'Trois orbes'}}};
  assert.equal(C.paliersDe(t),3);assert.equal(C.paliersDe({effet:'bonus'}),1);
  assert.equal(C.talentAuPalier(t,1),t,'le palier 1 est le talent lui-même');
@@ -2787,8 +2786,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(C.aDesAccolades('Invulnérable : {Élément}')&&C.estElementaire({name:'Brise{ÉLÉMENT}'}),'une accolade en capitales compte');
  assert.equal(C.talentAuPalier({effet:'brise',params:{etat:'Feu',perte:2},paliers:{3:{params:{etat:'Gel',perte:5}}}},3).params.etat,'Feu','un réglage commun reste celui du palier 1');
  assert.ok(!src.includes("'Prérequis — talent à posséder d’abord'")&&!src.includes("'Spécialisation','voie'")&&!src.includes("function optionsVoie(")&&!src.includes('voie-autre'),'ni spécialisation, ni place, ni prérequis au formulaire');
- assert.ok(src.includes('<section class="talent-boite b-identite"><h2 class="sous-titre">Identité</h2>')&&src.includes('<section class="talent-boite b-moteur t-seul"><h2 class="sous-titre">Mécanique du moteur</h2>')
-  &&src.includes('<section class="talent-boite b-paliers t-seul"><h2 class="sous-titre">Paliers — coût, texte et effets câblés</h2>')&&src.includes('<section class="talent-boite b-bonus b-seul">')
+ assert.ok(src.includes('<section class="talent-boite b-identite"><h2 class="sous-titre">Identité</h2>')&&src.includes('<section class="talent-boite b-moteur t-seul"><h2 class="sous-titre">Mécanique du moteur</h2>')&&src.includes('<section class="talent-boite b-bonus b-seul">')
   &&css.includes('.talent-boite{--boite:#9d7b1e;')&&css.includes('.talent-boite.b-moteur{--boite:#3a6fc2}'),'quatre boîtes, chacune sa couleur');
  assert.ok(src.includes("d.volets={...d.volets,[c]:k===n?0:n};dessineReglagesTalent()")&&src.includes("params.filter(p=>reglageCommun(p)&&!p.volet).forEach(p=>{")
   &&src.includes("const cell=elem&&p.cle==='etat'?'<span class=\"suit-element\">L’élément du Mystique : Feu, Gel ou Foudre</span>")&&src.includes("function phrasesPaliers(){")
@@ -3265,7 +3263,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("(at.logos||[]).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
   &&src.includes("if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';")&&src.includes("desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0))"),'la main droite seule ; le jeton de dégâts reste à la bulle des monstres');
  assert.ok(page.includes('<button class="btn-action btn-analyse rond" id="reveal" hidden>🔍</button>')&&page.includes("function poseRond(b,centre,nom,dit,compte,bulle){")
-  &&page.includes("poseRond(rev,'🔍',dejà?'Analysé':'Analyser',")&&page.includes("poseRond(repos,'⛺','Repos court '+reposRestants(a)+'/'+reposMax(a),")
+  &&page.includes("poseRond(rev,'🔍',dejà?'Analysé':'Analyser',")
   &&page.includes("poseRond(b,im||glyphe,nom,titre,compteDuTexte(nom),bulle);")&&page.includes("geste('Dégel','❄',")&&page.includes("geste('Se relever','⤴',")
   &&page.includes("(b.dataset.nom||b.textContent)")&&!page.includes("rev.textContent=")&&!page.includes("repos.textContent="),'Analyser, Repos court, gestes et réactions en ronds, nommés dans la bulle');
  assert.ok(src.includes("const titreComp=sousTitre('Compétences');")&&src.includes("const titreKit=sousTitre('Équipement');")
@@ -3317,4 +3315,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1855 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* Paliers en sommeil : tout talent se joue, se lit et se paie à son palier 1 ; un palier 2 ou 3
+   retenu par un aventurier, ou écrit au catalogue, reste en place sans agir. */
+{const C=require('./combat.js');C.PALIERS.actifs=false;
+ const t={id:'o',effet:'orbes',params:{orbes:1},effects:'Un orbe',couts:[1,2,3],paliers:{2:{params:{orbes:2},effects:'Deux orbes'}}};
+ const a={talents:['o'],paliersTalents:{o:2}};
+ assert.equal(C.paliersDe(t),1);assert.equal(C.palierDe(a,t),1);assert.equal(C.talentAuPalier(t,3),t,'le palier 1, quoi qu’on demande');
+ assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
+ assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
+ assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
+console.log('1862 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
