@@ -1009,7 +1009,7 @@ const cartes=fs.readFileSync('maps.js','utf8');
 assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false;")&&cartes.includes('renderFog();renderZones();leverVoile();')&&page.includes('#voile-attente{'),'la carte se voile jusqu’au brouillard');
 assert.ok(page.includes(".j-entry.ton-talent{")&&page.includes("li.classList.add('j-attaque','ton',/^spell_/.test(logo||'')?'ton-talent':'ton-attaque')"),'le journal a ses tons');
 // Le journal se cale sur le bas de la carte, et se libère sur une colonne.
-assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderMapLayer();calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
+assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderFouilles();calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
 assert.ok(cartes.includes("moveActor(heros[i],p.x,p.y,true)"),'l’ouverture d’une carte place librement');
 assert.ok(feuille.includes('repeat(4,minmax(0,1fr))')&&feuille.includes("@media(max-width:1150px){.hero-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}"),'quatre aventuriers par ligne');
 assert.ok(page.includes(".eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title,.panel>h2,#carte-titre{font:600 13px")&&!page.includes('titre-actions')&&feuille.includes(".bloc-titre,.bloc-replie .bloc-titre{font:600 13px")&&page.includes('.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}'),'un seul lettrage de titres');
@@ -3019,7 +3019,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxR.leveEtats(h).join(','),'Feu,Poison','tout s’en va, sauf le Blindage, le coma et ce qu’une pièce portée donne');assert.equal(h.states.join(','),'Blindage,Coma,Invisible');
  assert.equal(ctxR.reposMax({level:3}),3);assert.equal(ctxR.reposMax({}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:2}),1);assert.equal(ctxR.reposRestants({level:2,reposCourts:5}),0);
  assert.ok(page.includes("if(a.vie<=0){a.horsCarte=true;a.lieuDomaine='';poseCibles(a,[]);")
-  &&src.includes("function reposLong(){if(view!=='mj')return;")&&src.includes("$('hero-repos-long').onclick=reposLong;")&&carto.includes("heros.forEach(a=>{a.reposCourts=0});"),'0 VIE : hors de la carte jusqu’au repos long ; repos courts rendus à la carte rechargée');
+  &&src.includes("function reposLong(){if(view!=='mj')return;")&&src.includes("$('hero-repos-long').onclick=reposLong;")&&carto.includes("heros.forEach(a=>{a.reposCourts=0;"),'0 VIE : hors de la carte jusqu’au repos long ; repos courts rendus à la carte rechargée');
  assert.ok(page.includes("function noteContactsDepart(a){if(!a||!enCombat())return;")&&page.includes("const contacts=adversairesAuContact(a).filter(([b])=>!avant||!avant.has(b.id));")
   &&page.includes("const arret=tokenOf(a)/2+tokenOf(b)/2+1;")&&page.includes("function cheminVersContact(b,a,size){")
   &&page.includes("if(!r.hit||!r.damage){floatNumber(b,'0','nul');let pose0='',suite0='';"),'Lamevent, Provocation et Orbes');

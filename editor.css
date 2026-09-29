@@ -1654,3 +1654,9 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 
 /* Sans cible, la rangée des cibles ne prend aucune place : les actions montent au haut du bloc. */
 .targets:not(:has(button)){display:none}
+
+/* Les zones fouillées par la Perception, sur la carte : un disque pointillé ambré par test. */
+#fouilles-layer{position:absolute;inset:0;z-index:2;pointer-events:none}
+#fouilles-layer .fouille{position:absolute;border-radius:50%;border:2px dashed #d9a13b;background:#e8b64a2e;box-sizing:border-box}
+/* La Perception dans une zone déjà fouillée : son rond se grise. */
+#skills .fouillee{filter:grayscale(1);opacity:.45;cursor:not-allowed}

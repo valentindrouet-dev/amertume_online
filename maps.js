@@ -386,20 +386,44 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
 function poseLogoObjet(el,o){let im=null;
  for(const id of o.items||[]){const it=(catalog.items||[]).find(x=>x&&x.id===id);im=it&&typeof logoEquipement==='function'?logoEquipement(it):null;if(im)break}
  if(im){im.classList.add('logo-objet');el.replaceChildren(im);el.classList.add('avec-logo')}else el.textContent=(o.nom||'?')[0].toUpperCase()}
+/* ---------- Les fouilles ----------
+   Un test de Perception fouille toute la zone de contact de l'aventurier, et une zone fouillée ne
+   se fouille plus, que le test ait réussi ou non : pas de tests à la chaîne au même endroit. Chaque
+   aventurier garde ses fouilles (« fouilles » : la carte, le centre, le rayon en part de la largeur
+   de la carte) ; toute la table les partage. Un aventurier dont le centre tombe dans une zone déjà
+   fouillée ne peut pas refaire de test de Perception. Le bouton « Fouilles » les montre sur la carte. */
+const PERCEPTION=3;
+function fouillesCarte(){const id=typeof currentMapId!=='undefined'?currentMapId||'':'';
+ return actors.filter(a=>a&&a.hero).flatMap(a=>(a.fouilles||[]).filter(f=>f&&(f.m||'')===id))}
+function zoneFouillee(a){const size=mapSize();if(!a||!size.width)return false;
+ return fouillesCarte().some(f=>Math.hypot((a.x-f.x)/100*size.width,(a.y-f.y)/100*size.height)<=f.r*size.width)}
+function noteFouille(a){const size=mapSize();if(!a||!size.width)return;
+ a.fouilles=[...(a.fouilles||[]),{m:typeof currentMapId!=='undefined'?currentMapId||'':'',x:+a.x.toFixed(2),y:+a.y.toFixed(2),r:+(contactRadius(tokenOf(a))/size.width).toFixed(4)}].slice(-200);
+ renderFouilles()}
+let fouillesOn=false;try{fouillesOn=localStorage.getItem('amertume-fouilles')==='1'}catch(e){}
+function renderFouilles(){const vue=$('map-view');if(!vue)return;let c=$('fouilles-layer');
+ if(!c){c=document.createElement('div');c.id='fouilles-layer';vue.append(c)}
+ c.replaceChildren();c.hidden=!fouillesOn;const b=$('fouilles-vue');
+ if(b){b.classList.toggle('on',fouillesOn);b.setAttribute('aria-pressed',String(fouillesOn));
+  b.title=(fouillesOn?'Masquer':'Afficher')+' les zones où un test de Perception a déjà été fait'+(view==='mj'?' — clic droit : les effacer sur cette carte':'');b.setAttribute('aria-label',b.title)}
+ if(!fouillesOn)return;const W=$('map').clientWidth||mapSize().width;
+ fouillesCarte().forEach(f=>{const r=f.r*W,d=document.createElement('div');d.className='fouille';
+  d.style.left=f.x+'%';d.style.top=f.y+'%';d.style.width=d.style.height=2*r+'px';d.style.margin=(-r)+'px 0 0 '+(-r)+'px';c.append(d)})}
+if($('fouilles-vue')){$('fouilles-vue').onclick=()=>{fouillesOn=!fouillesOn;try{localStorage.setItem('amertume-fouilles',fouillesOn?'1':'0')}catch(e){}renderFouilles()};
+ $('fouilles-vue').oncontextmenu=e=>{if(view!=='mj')return;e.preventDefault();const id=typeof currentMapId!=='undefined'?currentMapId||'':'';
+  if(!fouillesCarte().length||!confirm('Effacer les zones fouillées de cette carte ? La Perception pourra y être retentée.'))return;
+  actors.forEach(a=>{if(a&&a.hero&&a.fouilles)a.fouilles=a.fouilles.filter(f=>f&&(f.m||'')!==id)});render();scheduleSave()}}
 function objetAPortee(a,o){const size=mapSize();if(!a||!size.width)return false;
  return inContact(a,o,size,tokenOf(a),tokenPx()*(SOCLE_TAILLES[o.taille]||1))&&!wallsBetween(a,o,walls())}
 function noteInventaire(a,texte){a.notes=(a.notes?a.notes.replace(/\s+$/,'')+'\n':'')+'• '+texte}
 /* Prendre : une arme va en main si une main est libre, une armure sur le dos ou au bras si
    la place est vide ; sinon, et pour tout le reste, une ligne à l'inventaire. */
 function prendreObjet(a,o,it){const k=(o.items||[]).indexOf(it.id);if(k<0)return;
- let ou;a.weapons??=[];
- if(it.category==='weapon'){if(a.weapons.length<2){a.weapons.push(it.id);ou='en main'}else{noteInventaire(a,it.name);ou='à l’inventaire, les mains étant prises'}}
- else if(it.category==='armor'&&it.slot==='shield'){if(!a.shieldId){a.shieldId=it.id;ou='au bras'}else{noteInventaire(a,it.name);ou='à l’inventaire'}}
- else if(it.category==='armor'){if(!a.armorId){a.armorId=it.id;ou='sur le dos'}else{noteInventaire(a,it.name);ou='à l’inventaire'}}
- else{noteInventaire(a,it.name);ou='à l’inventaire'}
- o.items.splice(k,1);if(typeof syncEquipped==='function')syncEquipped(a);
- log(nomNum(a)+' prend '+it.name+' — '+o.nom+' — '+ou+'.',{ton:'carte'});
- render();saveMaps()}
+ // Toute pièce prise va à l'inventaire de l'aventurier : on l'équipe ensuite sur sa fiche.
+ if(typeof ajouterInventaire==='function')ajouterInventaire(a,it);else noteInventaire(a,it.name);
+ o.items.splice(k,1);
+ log(nomNum(a)+' prend '+it.name+' — '+o.nom+' — à l’inventaire.',{ton:'carte'});
+ render();saveMaps();scheduleSave()}
 function prendreTresor(a,o){if(!o.tresor)return;noteInventaire(a,o.tresor);
  log(nomNum(a)+' ramasse '+o.tresor+' — '+o.nom+'.',{ton:'carte'});o.tresor='';render();saveMaps()}
 /* Le test de découverte : l'aventurier choisi lance sa compétence ; assez de réussites,
@@ -411,11 +435,11 @@ function testerObjet(a,o){const jet=skillRoll(a.skills[o.test.comp]||0,d6);
   +(trouve?'découvre '+o.nom+' !':'ne trouve rien.'),{dice:true});
  if(trouve){o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Découvert !','nul');render();saveMaps()}
  return trouve}
-/* Un test de compétence lancé depuis la fiche cherche aussi : chaque objet caché que l'aventurier
-   a en vue — aucun mur entre eux —, découvert par cette compétence, la Perception d'ordinaire, et
-   avec assez de réussites, paraît à toute la table. */
+/* Un test de compétence lancé depuis la fiche cherche aussi, dans la zone de contact de
+   l'aventurier : chaque objet caché qui s'y trouve — aucun mur entre eux —, découvert par cette
+   compétence, la Perception d'ordinaire, et avec assez de réussites, paraît à toute la table. */
 function objetsDecouverts(a,comp,reussites){const m=currentMap();if(!a||!a.hero||!m)return [];
- const murs=walls(),trouves=(m.objets||[]).filter(o=>!o.visible&&o.test&&o.test.comp===comp&&reussites>=o.test.reussites&&!wallsBetween(a,o,murs));
+ const trouves=(m.objets||[]).filter(o=>!o.visible&&o.test&&o.test.comp===comp&&reussites>=o.test.reussites&&objetAPortee(a,o));
  trouves.forEach(o=>{o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Découvert !','nul')});
  if(trouves.length){log(nomNum(a)+' découvre '+trouves.map(o=>o.nom).join(', ')+' !',{ton:'carte'});render();saveMaps();scheduleSave()}
  return trouves}
@@ -492,7 +516,8 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);
  const heros=actors.filter(a=>a.hero);
  // Une carte rechargée rend à chacun ses repos courts.
- heros.forEach(a=>{a.reposCourts=0});
+ // Une carte rechargée rend aussi ses zones à fouiller : les tests de Perception y repartent de zéro.
+ heros.forEach(a=>{a.reposCourts=0;a.fouilles=(a.fouilles||[]).filter(f=>f&&f.m!==id)});
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...heros);
@@ -1187,10 +1212,10 @@ function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!==
   +field('Réussites nécessaires','reussites',o.test.reussites,'number','min="1" max="9"')
   +field('Trésor — en toutes lettres','tresor',o.tresor||'','text','maxlength="200"')+'</div>'
   +'<h2 class="sous-titre">Objets à prendre</h2><input id="objet-filtre" placeholder="Filtrer l’armurerie…" aria-label="Filtrer l’armurerie"><div id="objet-liste" class="objet-liste"></div>'
-  +'<p class="muted">Ce qui est choisi, d’un clic, attend dans l’objet ; la première pièce choisie donne son icône au jeton. Un aventurier au contact la prend d’un clic. Une arme va en main si une main est libre, une armure sur le dos si rien n’y est, le reste à l’inventaire.</p>';
+  +'<p class="muted">Ce qui est choisi, d’un clic, attend dans l’objet ; la première pièce choisie donne son icône au jeton. Un aventurier au contact la prend d’un clic : elle va dans son inventaire.</p>';
  const pris=new Set(o.items||[]);
  const liste=()=>{const q=($('objet-filtre').value||'').trim().toLowerCase(),boite=$('objet-liste');boite.replaceChildren();
-  [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets']].forEach(([cat,titre])=>{
+  [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets'],['treasure','Trésors'],['ressource','Ressources'],['restes','Restes']].forEach(([cat,titre])=>{
    const lot=(catalog.items||[]).filter(it=>it&&it.category===cat&&(!q||it.name.toLowerCase().includes(q)));
    if(!lot.length)return;const h=document.createElement('h3');h.textContent=titre;boite.append(h);
    /* De petits carrés, comme l'inventaire d'un aventurier : l'icône seule, la bulle au survol ; un
@@ -1343,7 +1368,7 @@ function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new E
 const renderBeforeMaps=render;render=function(){
  // Une autre carte, ou un voile qui change : elle se couvre jusqu'à la prochaine peinture.
  if(cleVoile()!==cartePeinte)voileAttente.hidden=false;
- applyMapRatio();computeFog();renderBeforeMaps();renderMapLayer();calerColonnes();
+ applyMapRatio();computeFog();renderBeforeMaps();renderMapLayer();renderFouilles();calerColonnes();
  tabsMJ.forEach(b=>b.hidden=view!=='mj');
  document.body.classList.toggle('vue-joueur',view!=='mj');
  if(view!=='mj'&&PAGES.some(x=>!PAGES_LIBRES.includes(x)&&document.body.classList.contains('page-'+x)))showPage('table',false)};
