@@ -8,7 +8,7 @@ const c={window:{}};vm.runInNewContext(fs.readFileSync('catalog.js','utf8'),c);c
  assert.ok(k.id)});
 assert.equal(new Set(cat.classes.map(k=>k.id)).size,4);
 assert.equal(cat.items.filter(i=>i.category==='weapon').length,14);assert.equal(cat.items.filter(i=>i.category==='armor').length,5);assert.equal(cat.monsters.length,4);assert.equal(cat.monsters.find(m=>m.name==='Mystique déchu').attacks[0].dice.blue,2);
-const {resolveAttack:r}=require('./combat.js');assert.equal(r({dice:[[5,0]],def:3,dmg:0,roll:()=>2}).damage,2); // La DEF retranche : 5−3.
+const {resolveAttack:r}=require('./combat.js');assert.equal(r({dice:[[5,0]],def:3,dmg:0,roll:()=>2}).damage,5); // Le 5 passe la DEF 3.
 /* L'os qui double s'en va avant tout : ni critique, ni échec, ni dégâts avec lui. */
 assert.equal(r({dice:[[6,0],[6,1]],def:0,dmg:0,roll:()=>2}).critical,false);      // 6 blanc + 6 os : pas de critique.
 assert.equal(r({dice:[[6,0],[6,1]],def:0,dmg:0,roll:()=>2}).damage,6);            // Le seul 6 blanc compte.
@@ -17,12 +17,12 @@ assert.equal(r({dice:[[6,0],[6,0],[6,1]],def:0,dmg:0,roll:()=>2}).damage,14);   
 assert.equal(r({dice:[[1,0],[1,1]],def:0,dmg:0,roll:()=>2}).failed,false);        // 1 blanc + 1 os : l'os parti, pas de double 1.
 assert.equal(r({dice:[[3,1],[3,1]],def:0,dmg:0,roll:()=>2}).damage,0);            // Deux os qui doublent : plus rien.
 assert.equal(r({dice:[[4,0],[4,1]],def:0,dmg:0,roll:()=>2,doublesCritiques:true}).critical,false); // Destructeur non plus.
-assert.equal(r({dice:[[3,1],[6,0],[6,0]],def:0,dmg:0,roll:()=>3}).damage,18);     // La relance à 3 ne retire pas l'os 3 : 3 + 6 + 6 + 3.assert.equal(r({dice:[[5,0]],def:3,dmg:8,roll:()=>2}).damage,10);assert.equal(r({dice:[[1,0],[1,2]],def:0,dmg:8,roll:()=>2}).damage,0);
+assert.equal(r({dice:[[3,1],[6,0],[6,0]],def:0,dmg:0,roll:()=>3}).damage,18);     // La relance à 3 ne retire pas l'os 3 : 3 + 6 + 6 + 3.assert.equal(r({dice:[[5,0]],def:3,dmg:8,roll:()=>2}).damage,13);assert.equal(r({dice:[[1,0],[1,2]],def:0,dmg:8,roll:()=>2}).damage,0);
 // Test de lecture des champs du formulaire sans navigateur.
 const read=editor.slice(editor.indexOf('function readActor()'),editor.indexOf('function toMonster'));
 const values={name:'<Éla>',role:'Gardienne',notes:'texte',state:'Aucun',socle:'medium',sexe:'Femme',race:'Humaine',hp:'99',max:'20',def:'7',dmg:'8',xp:'50',vie:'5',vieMax:'6',endu:'4',pvBonus:'0',level:'3',weapon1:'w',weapon2:'',armor:'a',shield:''};const elements=Object.fromEntries(Object.entries(values).map(([k,value])=>[k,{value}]));elements.rapide={checked:true};elements.esquive={checked:false};for(let i=0;i<8;i++)elements['skill'+i]={value:'4'};
 const gearApi=require('./combat.js');
-const lire=(inventaire,brouillon={hero:true})=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],skillNames:Array(8).fill(''),templateIndex:null,draft:brouillon,attackDraft:[{dice:{white:2}}],readAttacks(){},$:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,armuresDe:gearApi.armuresDe,emplacementDe:gearApi.emplacementDe,placesLibres:gearApi.placesLibres,placesEmplacement:gearApi.placesEmplacement,EMPLACEMENTS:gearApi.EMPLACEMENTS,portesA:gearApi.portesA,defenseOf:gearApi.defenseOf,chosenAttack:gearApi.chosenAttack,statesOf:gearApi.statesOf,setState:gearApi.setState,catalog:{items:inventaire}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result};
+const lire=(inventaire,brouillon={hero:true})=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],skillNames:Array(8).fill(''),templateIndex:null,draft:brouillon,attackDraft:[{dice:{white:2}}],readAttacks(){},$:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,armuresDe:gearApi.armuresDe,emplacementDe:gearApi.emplacementDe,placesLibres:gearApi.placesLibres,placesEmplacement:gearApi.placesEmplacement,EMPLACEMENTS:gearApi.EMPLACEMENTS,portesA:gearApi.portesA,defenseOf:gearApi.defenseOf,chosenAttack:gearApi.chosenAttack,statesOf:gearApi.statesOf,setState:gearApi.setState,defPlafonnee:gearApi.defPlafonnee,catalog:{items:inventaire}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result};
 const nu=lire([]);assert.equal(nu.sexe,'Femme');assert.equal(nu.race,'Humaine');assert.equal(nu.vieMax,6);assert.equal(nu.hp,20);assert.equal(nu.def,0);   // Aventurier sans armure ni bouclier : DEF nulle, la saisie ne compte pas.
 // La DEF d'un aventurier est dérivée, celle d'un adversaire lui appartient.
 assert.equal(gearApi.defenseOf({hero:true,def:9},[]),0);
@@ -272,7 +272,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
   assert.deepEqual(JSON.parse(ma[1].replace(/'/g,'"')).sort(),attaques,'LOGOS_ATTAQUE doit lister img/attack_*.png : '+attaques.join(', '));
   assert.ok(src.includes('const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_ETATS,...LOGOS_DIVERS];')
    &&src.includes('function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}')
-   &&src.includes("(at.logos||[]).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
+   &&src.includes("(at.logos||[]).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
    &&src.includes("...iconesPlanches(),...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])]))+'</div>'")
    &&src.includes("logos:logoValide(f['ai'+i].value)?[f['ai'+i].value]:[],")
    &&src.includes("...(etats=>({etats,etat:etats[0]||''}))([...form.querySelectorAll('input[name=\"ax'+i+'\"]:checked')].map(x=>x.value).filter(e=>ETATS_JEU.includes(e))),")
@@ -754,7 +754,7 @@ assert.ok(Math.abs(uncontain([{x:0,y:0}],cadre,image)[0].x+marge/ech)<1e-6);
 const avecTalents=(brouillon,rayon)=>{const t={structuredClone,keys:['white','bone','red','blue','green','black','yellow'],
  skillNames:Array(8).fill(''),templateIndex:null,draft:{hero:true,talents:brouillon},attackDraft:[{dice:{white:2}}],readAttacks(){},
  $:()=>({elements}),num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Number(v)||0)),
- poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,armuresDe:gearApi.armuresDe,emplacementDe:gearApi.emplacementDe,placesLibres:gearApi.placesLibres,placesEmplacement:gearApi.placesEmplacement,EMPLACEMENTS:gearApi.EMPLACEMENTS,portesA:gearApi.portesA,defenseOf:gearApi.defenseOf,chosenAttack:gearApi.chosenAttack,statesOf:gearApi.statesOf,setState:gearApi.setState,
+ poolFrom:d=>[d.white||0,0,0,0,0,0,0],equippedPool:gearApi.equippedPool,equippedDef:gearApi.equippedDef,armuresDe:gearApi.armuresDe,emplacementDe:gearApi.emplacementDe,placesLibres:gearApi.placesLibres,placesEmplacement:gearApi.placesEmplacement,EMPLACEMENTS:gearApi.EMPLACEMENTS,portesA:gearApi.portesA,defenseOf:gearApi.defenseOf,chosenAttack:gearApi.chosenAttack,statesOf:gearApi.statesOf,setState:gearApi.setState,defPlafonnee:gearApi.defPlafonnee,
  catalog:{items:[],talents:rayon}};vm.createContext(t);vm.runInContext(read+';result=readActor()',t);return t.result.talents.join(',')};
 const rayon=[{id:'t1'},{id:'t2'}];
 assert.equal(avecTalents(['t1','t2'],rayon),'t1,t2');       // Les deux existent : les deux restent.
@@ -849,7 +849,7 @@ assert.equal(r({dice:[[5,0]],def:0,dmg:0,faille:true,roll:rose(2)}).damage,5); /
 assert.equal(r({dice:[[5,0]],def:0,dmg:2,bleed:3,roll:()=>2}).damage,10);
 assert.equal(r({dice:[[5,0]],def:0,dmg:2,bleed:3,roll:()=>2}).bleed,3);
 assert.equal(r({dice:[[1,0],[1,0]],def:0,dmg:2,bleed:3,roll:()=>2}).damage,0);
-assert.equal(r({dice:[[2,0]],def:5,dmg:2,bleed:3,roll:()=>2}).damage,2); // 2+2+3−5 : bonus et saignée sont des dégâts subis, la DEF les retranche aussi.
+assert.equal(r({dice:[[2,0]],def:5,dmg:2,bleed:3,roll:()=>2}).damage,0); // Aucun dé ne passe la DEF.
 assert.equal(r({dice:[[5,0]],def:0,dmg:0,bleed:-4,roll:()=>2}).damage,5); // Une saignée négative ne soigne pas.
 // Cumul de saignée, purge par l'Onde, dégâts et soins d'effet.
 const {bleedOf,addBleed,ondeCures,applyDamage,applyHeal,frozenSolid,blinded}=require('./combat.js');
@@ -897,7 +897,7 @@ const {readStat,writeStat}=require('./combat.js');
 assert.equal(readStat('def','5',2),5);
 assert.equal(readStat('def','',2),2);                          // Champ vidé : la valeur d'avant tient.
 assert.equal(readStat('def','abc',2),2);                       // Illisible : rien ne bouge.
-assert.equal(readStat('def','900',2),99);                      // Au-delà de la borne : on s'y arrête.
+assert.equal(readStat('def','900',2),6);                       // Au-delà de la borne, 6 pour la DEF : on s'y arrête.
 assert.equal(readStat('def','-4',2),0);
 assert.equal(readStat('vie','7,5',1),7.5);                     // La virgule vaut le point.
 assert.equal(readStat('endu','3.9',1),3);                      // Une endurance ne se coupe pas en quatre.
@@ -1080,7 +1080,7 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
 assert.ok(feuille.includes('letter-spacing:.2px;color:#fff;')&&feuille.includes('button.btn-action:disabled{--fond:var(--disabled);color:#fff;opacity:1;')
  &&feuille.includes('button.btn-action.inerte,button.btn-action.inerte:hover{opacity:1;filter:saturate(.35) brightness(1.1);color:#fff;')
  &&!feuille.includes('encre-sombre')&&!/button\.btn-[a-z]+[^{]*\{[^}]*(color:#2a2118|disabled-ink)/.test(feuille)&&feuille.includes('button.btn-talent.t-mait{--fond:#d4a341}'),'les boutons d’action écrivent en blanc');
-assert.ok(!src.includes("className='nature'")&&!feuille.includes('.nature{')&&src.includes("boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0):null,true))"),'un talent sans dés ne dit plus sa nature');
+assert.ok(!src.includes("className='nature'")&&!feuille.includes('.nature{')&&src.includes("boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0,false,false):null,true))"),'un talent sans dés ne dit plus sa nature');
 assert.ok(src.includes('function xpDesRetires(')&&src.includes('xpDesRetires(partants);')&&src.includes("heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));")
  &&src.includes("poseCibles(a,ids.map(id=>actors.findIndex(o=>o&&o.id===id)).filter(j=>j>=0))")&&!src.includes('if(a.target===i)a.target=null;else if(a.target>i)a.target--'),'l’XP d’un adversaire retiré va aux aventuriers, les cibles suivent');
 /* Le verrou des déplacements et la remise à zéro d'un bouton se notent chez le MJ seul. */
@@ -1223,7 +1223,7 @@ assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('.vfx-t
 assert.ok(page.includes('function invocation(a,p,talent)')&&page.includes('function annulerPlacement()')&&page.includes('function regenerer(a,quand)')&&page.includes('applyDamage=function(a,montant)')
  &&page.includes("actors.forEach(o=>regenerer(o,'fin'));round++;")&&page.includes("if(actors.filter(o=>regenerer(o,'debut')).length)render()")&&page.includes('.placement #map{cursor:crosshair}')
  &&src.includes("const opts=p.type==='modele'?[['','— choisir un adversaire —'],...(catalog.monsters||[]).map(m=>[m.id,m.name])]:(p.options||[]);")&&src.includes('function nomModele(id)')
- &&src.includes("if(logos.childElementCount>1)logos.classList.add('croises');")&&feuille.includes('button.choix-attaque .logos.croises .logo-equip:first-child{transform:scaleX(-1)'),'Invocation, Régénération, logos croisés');
+ &&!src.includes("logos.classList.add('croises')")&&!feuille.includes('.logos.croises'),'Invocation, Régénération ; plus de logos croisés : le rond ne montre que la main droite');
 /* Inventaire et équipement : tout ce qu'on possède d'un côté, ce qu'on porte de l'autre — deux mains au
    plus, une armure — et l'équipement fait toujours partie de l'inventaire. Les carrés s'élargissent
    avec leurs icônes, jamais sur deux lignes. Les attaques spéciales du bestiaire prennent l'allure
@@ -1501,7 +1501,7 @@ assert.ok(src.includes('function acteurCourant(a){if(!a||actors.includes(a))retu
  &&src.includes("if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}")
  &&src.includes("const mien=view==='mj'||actors.indexOf(a)===owner;")
  &&src.includes("const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');")
- &&src.includes("const titreKit=sousTitre('Équipement','Inventaire de '+a.name,view!=='mj'?null:()=>openPicker(a,'gear'));")
+ &&src.includes("const titreKit=sousTitre('Équipement');")
  &&src.includes("function sousTitre(texte,titre,fn,glyphe='+'){")&&src.includes(' if(!fn)return h;')
  &&vivant.includes("'inventaire','talents','states'"),'le joueur choisit ses talents dans l’arbre');
 /* Le bestiaire gouverne la table sur-le-champ : les créatures en scène et la copie des cartes. */
@@ -1570,8 +1570,8 @@ assert.ok(page.includes('<span class="lifebar-text" id="hp"></span></div><div cl
  &&feuille.includes('.bloc-replie,.bloc-fixe{margin:6px 0}')&&feuille.includes(".bloc-replie .bloc-titre,.bloc-fixe .bloc-titre{font:700 15px 'Killam'")
  &&(page.match(/class="divider"/g)||[]).length===2,'fiche en jeu : équipement ouvert, pas de barre sous les PV');
 assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');")&&src.includes("nom.className='gear-nom';nom.textContent=libelle;")
- &&src.includes('function desEtBonus(dice,bonus,toujours)')&&src.includes('const c=carte(b,desEtBonus(at.dice,bonus,at.useOwnDamage!==false),false);')
- &&src.includes('boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0):null,true))')
+ &&src.includes('function desEtBonus(dice,bonus,toujours,jeton=true)')&&src.includes('const c=carte(b,desEtBonus(at.dice,bonus,at.useOwnDamage!==false,false),false);')
+ &&src.includes('boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0,false,false):null,true))')
  &&page.includes('des:eff.des?eff.des(a,params):code.attaque?activeAttack(a).dice:null,')
  &&page.includes("bonus:code.attaque&&!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false?degatsDe(a):0,")
  &&C.TALENTS_CODES.attaqueetat.attaque===true&&C.TALENTS_CODES.provocation.attaque===true
@@ -1980,7 +1980,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  assert.deepEqual(C.elusMeneur({combien:'deux'},[{a:'c',dist:3},{a:'a',dist:1},{a:'b',dist:2}]),['a','b']);
  assert.deepEqual(C.elusMeneur({combien:'un'},[{a:'c',dist:3},{a:'a',dist:1}]),['a']);
  assert.equal(C.elusMeneur({combien:'tous'},[{a:'c',dist:3},{a:'a',dist:1}]).length,2);assert.deepEqual(C.elusMeneur({},[]),[]);
- assert.ok(page.includes("function defOf(a){const d=defenseOf(a,items())+bonusFiche(a).def+auraMeneur(a,'def');return a&&a.defBrisee>0?Math.max(0,d-a.defBrisee):d}")&&page.includes("function degatsDe(a){const bonus=(Number(a&&a.dmg)||0)+bonusFiche(a).dmg+auraMeneur(a,'dmg');return meuteActive(a)?bonus*2:bonus}")
+ assert.ok(page.includes("function defOf(a){const d=defenseOf(a,items())+bonusFiche(a).def+auraMeneur(a,'def');return defPlafonnee(a&&a.defBrisee>0?d-a.defBrisee:d)}")&&page.includes("function degatsDe(a){const bonus=(Number(a&&a.dmg)||0)+bonusFiche(a).dmg+auraMeneur(a,'dmg');return meuteActive(a)?bonus*2:bonus}")
   &&page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")
@@ -2142,36 +2142,45 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  &&page.includes("const im=document.createElement('img');im.src=ecuDef(valeur);")&&!page.includes("const b=document.createElement('b');b.textContent=valeur;w.append(b)")
  &&src.includes(" const im=ecu.querySelector('img');if(im)im.src=ecuDef(valeur);")&&src.includes(" const b=ecu.querySelector('b');if(b)b.remove()}")
  &&!src.includes("imgUrl('DEF '+(peint?n:'VIDE')+'.png')")&&page.includes("@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2"),'l’écu de DEF se dessine en Killam, pour toute valeur');
-/* v0.255 — La DEF retranche au lieu d'écarter : tous les dés passent, les dégâts subis baissent
-   de sa valeur. Lourd et Mortel l'ignorent ; Solidité y soumet le Lourd. */
+/* v0.255, puis v0.359 — La DEF écarte les dés égaux ou inférieurs à sa valeur, plafonnée à 6.
+   Lourd et Mortel passent toujours ; Solidité y soumet le Lourd. */
 {const r=C.resolveAttack,j=()=>2;
- assert.equal(r({dice:[[2,0],[3,0]],def:4,dmg:0,roll:j}).damage,1);                 // 2+3−4.
- const rien=r({dice:[[2,0]],def:4,dmg:0,roll:j});
- assert.equal(rien.damage,0);assert.equal(rien.reduction,2);assert.equal(rien.hit,true); // Jamais sous zéro ; le dé est passé.
- assert.equal(r({dice:[[5,2]],def:4,dmg:0,roll:j}).damage,5);                       // Le Lourd ignore la DEF.
- assert.equal(r({dice:[[5,5]],def:4,dmg:0,roll:j}).damage,5);                       // Le Mortel aussi.
- assert.equal(r({dice:[[5,2],[3,0]],def:4,dmg:0,roll:j}).damage,5);                 // 5 en entier, 3−4 à zéro.
- assert.equal(r({dice:[[5,2],[3,0]],def:4,dmg:0,roll:j}).reduction,3);              // La DEF ne retranche que ce qu'elle peut.
- assert.equal(r({dice:[[5,2]],def:4,dmg:0,roll:j,solidite:true}).damage,1);         // Solidité : le Lourd réduit.
- assert.equal(r({dice:[[5,5]],def:4,dmg:0,roll:j,solidite:true}).damage,5);         // Le Mortel, jamais.
- assert.equal(r({dice:[[3,0]],def:4,dmg:2,bleed:1,roll:j}).damage,2);               // 3+2+1−4 : bonus et saignée sont subis.
- assert.equal(r({dice:[[4,3],[4,3]],def:5,dmg:0,roll:j}).damage,11);                // Doubles mystiques ×2 : 16−5.
- assert.equal(r({dice:[[3,6]],def:2,dmg:0,round:3,roll:j}).damage,7);               // Phase ×3 au tour 3 : 9−2.
- assert.equal(r({dice:[[1,0],[1,0]],def:4,dmg:0,roll:j}).reduction,0);              // L'échec ne retranche rien.
+ assert.equal(r({dice:[[2,0],[5,0]],def:4,dmg:0,roll:j}).damage,5);                 // Le 2 écarté, le 5 passe.
+ assert.equal(r({dice:[[4,0]],def:4,dmg:0,roll:j}).damage,0);                       // Égal à la DEF : écarté.
+ const rien=r({dice:[[2,0]],def:4,dmg:3,bleed:2,roll:j});
+ assert.equal(rien.damage,0);assert.equal(rien.hit,false);assert.equal(rien.reduction,undefined); // Aucun dé : ni bonus, ni saignée.
+ assert.equal(r({dice:[[3,0]],def:2,dmg:2,bleed:1,roll:j}).damage,6);               // 3 passe : bonus et saignée s'ajoutent.
+ assert.equal(r({dice:[[5,2]],def:6,dmg:0,roll:j}).damage,5);                       // Le Lourd ignore la DEF.
+ assert.equal(r({dice:[[1,5]],def:6,dmg:0,roll:j}).damage,1);                       // Le Mortel aussi.
+ assert.equal(r({dice:[[5,2]],def:5,dmg:0,roll:j,solidite:true}).damage,0);         // Solidité : le Lourd est écarté.
+ assert.equal(r({dice:[[6,2]],def:5,dmg:0,roll:j,solidite:true}).damage,6);         // Il passe s'il la dépasse.
+ assert.equal(r({dice:[[5,5]],def:6,dmg:0,roll:j,solidite:true}).damage,5);         // Le Mortel, jamais écarté.
+ assert.equal(r({dice:[[4,3],[4,3]],def:3,dmg:0,roll:j}).damage,16);                // Doubles mystiques ×2 : ils passent 3.
+ assert.equal(r({dice:[[3,6]],def:2,dmg:0,round:3,roll:j}).damage,9);               // Phase ×3 au tour 3, sur sa face naturelle.
+ assert.equal(r({dice:[[3,6]],def:3,dmg:0,round:3,roll:j}).damage,0);               // Face 3 contre DEF 3 : écartée.
+ assert.equal(r({dice:[[6,0]],def:9,dmg:0,roll:()=>1}).damage,0);                   // DEF 9 lue 6 : le 6 ne passe pas.
+ assert.equal(C.DEF_MAX,6);assert.equal(C.defPlafonnee(9),6);assert.equal(C.defPlafonnee(-2),0);assert.equal(C.defPlafonnee('x'),0);
+ assert.equal(C.passeDef([6,0],6),false);assert.equal(C.passeDef([6,2],6),true);assert.equal(C.passeDef([6,2],6,true),false);assert.equal(C.passeDef([2,5],6,true),true);
+ assert.equal(C.readStat('def','12',2),6);assert.equal(C.cleanMonster({name:'X',def:9}).def,6);
  assert.equal(r({dice:[[3,1],[3,1]],def:2,dmg:5,roll:j}).damage,0);                 // Plus un dé : ni bonus, ni DEF.
  const s=C.TALENTS_CODES.solidite;
  assert.ok(s&&s.type==='ame'&&!s.params.length&&s.requiert===undefined,'Solidité : une amélioration libre');
- assert.match(C.phraseTalent('solidite',{}),/<b>dés de dégâts mortels<\/b> \(rouges\)/);
+ assert.match(C.phraseTalent('solidite',{}),/écarte aussi les <b>dés de dégâts mortels<\/b> \(rouges\)/);
  assert.equal(C.effetParNom('Solidité'),'solidite');
  assert.ok(C.porteEffet([{code:s,params:{}}],'solidite'));
  assert.ok(page.includes("const solide=porteEffet(talentsCodes(b),'solidite');")&&page.includes("doublesCritiques:destructeur,solidite:solide})")
   &&page.includes("const defCible=hasState(b,'Au sol')?0:defOf(b),solide=porteEffet(talentsCodes(b),'solidite');")&&page.includes("bleed:bleedOf(b),solidite:solide})}catch(e){return e.message}")
-  &&page.includes(":l.reduction&&(c===5||(c===2&&!l.solidite))?' — ignore la DEF':'');"),'attaque et orbe demandent Solidité à la cible, et la piste le sait');
- assert.ok(page.includes("poseJet({dice:r.dice,origine:dice.length,faille:r.failleFace,def,bonus:r.failed||blocked?0:bonus,reduction:r.failed||blocked?0:r.reduction,solidite:solide},a,b);")
-  &&page.includes("if(l.reduction){const d=document.createElement('span');d.className='board-def';")
-  &&page.includes("im.src=ecuDef(l.def);")&&!page.includes('ne passe pas la DEF')&&!page.includes("im.className='rate'"),'la piste montre l’écu qui retranche, plus de dé barré par la DEF');
- assert.ok(page.includes("if(detail.reduction)plus('− '+detail.reduction+' de DEF','def');")&&page.includes('.j-plus.def{')
-  &&vivant.includes('reduction:detail.reduction||0')&&vivant.includes('reduction:r.reduction'),'le journal dit la DEF retranchée, ici et en table');
+  &&page.includes("const passe=d=>l.def===undefined||l.def===null||d[1]>6||passeDef(d,l.def,!!l.solidite);"),'attaque et orbe demandent Solidité à la cible, et la piste le sait');
+ assert.ok(page.includes("poseJet({dice:r.dice,origine:dice.length,faille:r.failleFace,def,bonus:r.failed||blocked||!r.hit?0:bonus,solidite:solide},a,b);")
+  &&page.includes("im.className='rate';im.src=imgUrl('DEF VIDE.png');")&&page.includes(".board-die .rate{")&&page.includes("if(calme){marque();return}")
+  &&!page.includes('board-def')&&!page.includes('reduction'),'la piste barre d’un écu vide les dés qui ne passent pas la DEF, plus de « − DEF »');
+ assert.ok(page.includes("const arrete=!barre&&defJ!==null&&!passeDef([v,c],defJ,!!detail.solidite);")&&!page.includes('.j-plus.def{')
+  &&page.includes("bonus:r.hit?bonus:0,saignee:r.bleed,faille:r.failleFace,def,solidite:solide,double,total}")
+  &&vivant.includes('def:Number.isInteger(detail.def)?detail.def:null,solidite:!!detail.solidite')&&vivant.includes('def:Number.isInteger(r.def)?r.def:null,solidite:!!r.solidite')
+  &&!vivant.includes('reduction'),'le journal barre les dés écartés par la DEF, ici et en table');
+ assert.ok(page.includes("return defPlafonnee(a&&a.defBrisee>0?d-a.defBrisee:d)}")&&src.includes("[...c.items,...c.monsters].forEach(o=>{if(o&&Number(o.def)>DEF_MAX)o.def=DEF_MAX});")
+  &&src.includes("{cle:'def',nom:'DEF',type:'nombre',max:DEF_MAX,pour:armure,")&&src.includes("ecrit:(m,v)=>{m.def=entier(0,DEF_MAX)(v)}}")
+  &&src.includes("field('DEF','def',a.def||0,'number','min=\"0\" max=\"'+DEF_MAX+'\"')")&&src.includes("num(f[k].value,0,k==='def'?DEF_MAX:999999)"),'la DEF plafonne à 6 partout');
 }
 /* v0.256 — Trois états de plus (hanté, abandonné, envahi), chacun avec son calque ; le domaine
    s'exporte et se reprend à part ; les contours ont un bouton dans l'éditeur, lié à celui de
@@ -2358,7 +2367,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||view!=='mj'")&&page.includes("if(adversairesDebout()>0){combatEngage=true;return}")
   &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")
   &&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le combat finit seul, et rend le repos');
- assert.ok(page.includes('<button class="btn-action btn-repos" id="repos" hidden>⛺ Repos court</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
+ assert.ok(page.includes('<button class="btn-action btn-repos rond" id="repos" hidden>⛺</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
   &&page.includes(":reposRestants(a)<=0?'Plus de repos court ('+reposMax(a)+' pris) : un repos long, ou la carte rechargée, les rend.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);")
   &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}')&&vivant.includes("'notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','butin'];"),'le Repos court');
 }
@@ -2691,8 +2700,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(!ph(1).includes('retirent')&&ph(2).includes('<b>retirent 2 DEF</b>')&&!ph(2).includes('double')&&ph(3).includes('<b>le double de dégâts</b>'),'la phrase suit le palier');
  assert.ok(page.includes(" const double=brise.double&&!r.failed,total=double?r.damage*2:r.damage;")
   &&page.includes("const brisee=brise.perte&&!r.failed?brise.perte:0;if(brisee)b.defBrisee=(Math.trunc(Number(b.defBrisee))||0)+brisee;")
-  &&page.includes("reduction:r.reduction,double,total},suite);")&&page.includes("if(detail.double)plus('× 2 — Brise','double');")
-  &&vivant.includes("reduction:detail.reduction||0,double:!!detail.double,total:detail.total||0}")&&vivant.includes("'paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','butin'];"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
+  &&page.includes("def,solidite:solide,double,total},suite);")&&page.includes("if(detail.double)plus('× 2 — Brise','double');")
+  &&vivant.includes("solidite:!!detail.solidite,double:!!detail.double,total:detail.total||0}")&&vivant.includes("'paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','butin'];"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
  assert.ok(src.includes("g.className='paliers-bulle liste';")
   &&fs.readFileSync('editor.css','utf8').includes('.paliers-bulle.liste .palier-num{')&&!fs.readFileSync('editor.css','utf8').includes('.paliers-bulle.liste .palier-col'),'v0.324 : les paliers d’un talent appris en liste, I, II, III');}
 /* v0.290 — Le Mystique choisit un élément — Feu, Gel, Foudre —, au MJ de le fixer. Ses talents
@@ -2837,9 +2846,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.299 — Le palier d'un talent tenu, en chiffre romain à la Killam après son nom : dans le
    titre de sa bulle, sur la fiche, sur les boutons de la table. */
 {const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(page.includes("const ROMAINS_PALIER=['','','II','III'];")&&page.includes("function nomAvecPalier(texte,nom,palier){")
-  &&page.includes("if(nom&&texte.startsWith(nom))s.append(nom,palierRomain(palier),texte.slice(nom.length));else s.append(texte,palierRomain(palier));")
-  &&page.includes("palier:paliersDe(talent)>1&&talent.palier>1?talent.palier:0,")&&page.includes("geste(nomAvecPalier(b.texte,b.talent.name,b.palier),"),'le chiffre du palier sur les boutons de la table');
+ assert.ok(page.includes("const ROMAINS_PALIER=['','','II','III'];")&&!page.includes("function nomAvecPalier(")
+  &&page.includes("palier:paliersDe(talent)>1&&talent.palier>1?talent.palier:0,")&&page.includes("geste(String(t.texte||t.talent.name),"),'les boutons de la table sont des ronds : le palier se lit dans la bulle du talent');
  assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("carte.append(talentRond(t,logo),n);return carte}")&&fs.readFileSync('editor.css','utf8').includes('.cat-carte.talent-carte .nom-carte.nom-rond,.sac-carte .nom-sac{display:none}')&&!src.includes('nom-texte')
   &&src.includes("surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre}));")&&css.includes(".palier-romain{margin-left:.3em;font:inherit;"),'dans la bulle et sur la fiche, dans la police du nom');}
 /* v0.300 — Un talent élémentaire choisit un logo par élément ; sans logo propre, l'ancien
@@ -3255,12 +3263,28 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    de nom sous les ronds de talents. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("b.className=t.classe+' choix-attaque rond';")&&src.includes("b.className='btn-action choix-attaque rond'+(i===(retenu<liste.length?retenu:0)?' on':'');")
-  &&css.includes('button.choix-attaque.rond,button.choix-attaque.rond.inerte{width:58px;height:58px;')&&css.includes('border:3px solid var(--fond);')
   &&css.includes('.cat-carte.talent-carte .nom-carte.nom-rond,.sac-carte .nom-sac{display:none}'),'les attaques en ronds, pas de nom sur la table');}
+/* v0.359 — Les ronds de la barre d'action gardent la face pleine du bouton d'action, sans anneau ;
+   Analyser, Repos court, Dégel, Se relever et les réactions en ronds aussi. Le rond d'attaque ne
+   montre que l'arme de la main droite, et plus de jeton de dégâts après le bonus. Sur la fiche,
+   plus de « + » aux Compétences ni à l'Équipement ; il passe à l'Inventaire. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
+ assert.ok(css.includes('button.btn-action.rond,button.btn-action.rond.inerte{position:relative;width:58px;height:58px;')
+  &&css.includes('button.btn-action.rond.on,button.btn-action.rond.on:hover:not(:disabled){box-shadow:var(--relief)}')
+  &&!css.includes('button.choix-attaque.rond')&&!/\.rond[^{]*\{[^}]*0 0 0 2px var\(--panel\)/.test(css)&&!css.includes('.attaque-carte .dmg-ico'),'la face pleine du bouton d’action, en disque, sans anneau');
+ assert.ok(src.includes("(at.logos||[]).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
+  &&src.includes("if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';")&&src.includes("desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0))"),'la main droite seule ; le jeton de dégâts reste à la bulle des monstres');
+ assert.ok(page.includes('<button class="btn-action btn-analyse rond" id="reveal" hidden>🔍</button>')&&page.includes("function poseRond(b,centre,nom,dit,compte,bulle){")
+  &&page.includes("poseRond(rev,'🔍',dejà?'Analysé':'Analyser',")&&page.includes("poseRond(repos,'⛺','Repos court '+reposRestants(a)+'/'+reposMax(a),")
+  &&page.includes("poseRond(b,im||glyphe,nom,titre,'',bulle);")&&page.includes("geste('Dégel','❄',")&&page.includes("geste('Se relever','⤴',")
+  &&page.includes("(b.dataset.nom||b.textContent)")&&!page.includes("rev.textContent=")&&!page.includes("repos.textContent="),'Analyser, Repos court, gestes et réactions en ronds, nommés dans la bulle');
+ assert.ok(src.includes("const titreComp=sousTitre('Compétences');")&&src.includes("const titreKit=sousTitre('Équipement');")
+  &&src.includes("plus.title='Ajouter à l’inventaire de '+a.name;plus.setAttribute('aria-label',plus.title);plus.onclick=()=>openPicker(a,'gear');titre.append(plus)}")
+  &&!src.includes("'Ajouter un point de compétence à '"),'le « + » quitte Compétences et Équipement pour l’Inventaire');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1816 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1832 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -580,19 +580,25 @@ button.choix-attaque{min-width:0;letter-spacing:0}
 button.choix-attaque .logos{display:inline-flex;align-items:center;margin:-4px 7px -4px -8px}
 button.choix-attaque .nom{display:block;white-space:nowrap}
 .attaque-carte{display:flex;flex-direction:column;align-items:center;gap:5px}
-/* Les attaques en ronds, comme les talents d'une fiche : le logo au milieu, la couleur de l'action
-   au bord et dans le fond ; le nom dans la bulle ; celle qui vient de partir, cerclée. */
-button.choix-attaque.rond,button.choix-attaque.rond.inerte{width:58px;height:58px;min-width:0;padding:0;border-radius:50%;display:grid;place-items:center;margin:0;
- background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--fond) 12%,#fff),color-mix(in srgb,var(--fond) 40%,#fff));
- border:3px solid var(--fond);box-shadow:0 0 0 2px var(--panel),0 2px 6px rgba(0,0,0,.25);color:var(--fond);text-shadow:none}
-button.choix-attaque.rond:hover:not(:disabled):not(.inerte){transform:translateY(-1px) scale(1.05);box-shadow:0 0 0 2px var(--panel),0 4px 10px rgba(0,0,0,.3)}
-button.choix-attaque.rond.on,button.choix-attaque.rond.on:hover:not(:disabled){box-shadow:0 0 0 2px var(--panel),0 0 0 5px var(--fond),0 2px 8px rgba(0,0,0,.3)}
-button.choix-attaque.rond .logos{margin:0}
-button.choix-attaque.rond .logo-equip,button.choix-attaque.rond .logos.croises{width:38px;height:38px}
-button.choix-attaque.rond .glyphe{font-size:26px;line-height:1}
+/* Les boutons d'action en ronds, de la taille des talents d'une fiche : la face du bouton d'action,
+   pleine à sa couleur, son reflet et sa tranche, en disque ; le logo au milieu, le nom dans la
+   bulle. Un seul contour, celui du disque : pas d'anneau autour. Attaques, talents, Analyser,
+   Repos court, réactions : tous. */
+button.btn-action.rond,button.btn-action.rond.inerte{position:relative;width:58px;height:58px;min-width:0;padding:0;border-radius:50%;display:grid;place-items:center;margin:0 0 3px;letter-spacing:0;font-size:26px;line-height:1}
+.etat-actions button.btn-action.rond,.attack-row button.btn-action.rond{padding:0}
+button.btn-action.rond.on,button.btn-action.rond.on:hover:not(:disabled){box-shadow:var(--relief)}
+button.btn-action.rond .logos{margin:0;display:grid;place-items:center}
+button.btn-action.rond .logo-equip,.etat-actions button.btn-action.rond .logo-equip{width:38px;height:38px;margin:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+button.btn-action.rond .glyphe{font-size:26px;line-height:1}
+/* Tous les ronds sur une ligne : les attaques et leurs dés, puis, un peu à l'écart, Analyser, le
+   Repos court et les réactions. Le bloc Actions garde sa hauteur, sans défiler. */
+.rangee-ronds{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px 18px}
+.rangee-ronds>.choix-attaques{margin-bottom:0}
+/* Ce qu'il reste d'un geste compté — les repos courts — en pastille au bas du disque. */
+button.btn-action.rond .compte-rond{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);min-width:24px;padding:2px 5px;border-radius:9px;
+ background:var(--panel);color:var(--ink);border:2px solid var(--fond);font:800 11px/1 system-ui;text-shadow:none;white-space:nowrap}
 .attaque-carte .des-bonus{display:inline-flex;align-items:center;gap:5px;color:var(--ink)}
 .attaque-carte .bonus{font:800 13px/1 system-ui;margin-left:2px}
-.attaque-carte .dmg-ico{width:18px;height:18px;object-fit:contain;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
 .attaque-carte .pips{display:flex;gap:3px}
 .attaque-carte .die-sq,.attaque-carte .pips .etat-inflige{flex:0 0 17px;width:17px;height:17px}
 .attaque-carte:has(> button.inerte) .des-bonus{opacity:.55}
@@ -786,8 +792,6 @@ button.btn-talent.t-ame{--fond:#5e9a5b}
 .logo-equip{flex:none;width:22px;height:22px;object-fit:contain;display:inline-block;vertical-align:middle;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
 .cat-pill .logo-equip{margin-right:-2px}
 button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
-/* Deux armes équipées : les deux logos centrés l'un sur l'autre, celui de derrière retourné, comme deux lames croisées. */
-button.choix-attaque .logos.croises{position:relative;width:30px;height:30px;display:block}button.choix-attaque .logos.croises .logo-equip{position:absolute;left:0;top:0}button.choix-attaque .logos.croises .logo-equip:first-child{transform:scaleX(-1);opacity:.92;z-index:0}button.choix-attaque .logos.croises .logo-equip:last-child{z-index:1}
 .logo-equip.apercu{width:28px;height:28px;margin:6px 0 0 8px}
 #item-form label:has(> select[name=logo]){display:flex;flex-wrap:wrap;align-items:center}
 #item-form label:has(> select[name=logo]) select{flex:1;min-width:120px}

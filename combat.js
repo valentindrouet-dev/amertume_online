@@ -14,22 +14,24 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,b
     un 6 blanc ne font donc pas de critique — l'os est parti avant qu'on les compte. */
  const faces0={};all.forEach(([v])=>faces0[v]=(faces0[v]||0)+1);
  const vifs=all.filter(([v,c])=>!(c===1&&faces0[v]>1));
- if(vifs.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,reduction:0,damage:0,failed:true,critical:false};
+ if(vifs.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false};
  const faces={};vifs.forEach(([v])=>faces[v]=(faces[v]||0)+1);
  const critical=faces[6]>=2||(doublesCritiques&&Object.keys(faces).some(v=>Number(v)!==1&&faces[v]>=2));
  if(critical){if(!vifs.some(([,c])=>c===criticalColor))throw Error('Couleur critique absente');let v;let count=0;do{v=roll();all.push([v,criticalColor]);vifs.push([v,criticalColor]);if(++count>=100&&v===6)throw Error('Limite de relances atteinte, attaque non appliquée');}while(v===6)}
  const failleFace=faille?roll():null;
  const kept=vifs.filter(([v])=>v!==failleFace);const remaining={};kept.forEach(([v])=>remaining[v]=(remaining[v]||0)+1);
- /* La DEF n'écarte plus aucun dé : tous passent, et les dégâts subis — dés, bonus et
-    saignée ensemble — baissent de sa valeur, jamais sous zéro. Le Lourd (rouge) et le
-    Mortel (noir) l'ignorent et s'appliquent en entier ; sous Solidité, le Lourd la subit. */
- let brut=0,fixe=0,hit=false;
- kept.forEach(([v,c])=>{hit=true;const d=v*(c===3&&remaining[v]>1?2:c===6?Math.min(3,Math.max(1,round)):1);
-  if(c===5||(c===2&&!solidite))fixe+=d;else brut+=d});
+ /* La DEF écarte les dés : un dé dont la face est égale ou inférieure à sa valeur ne compte
+    pas. Le Lourd (rouge) et le Mortel (noir) passent toujours ; sous Solidité, le Lourd la
+    subit comme les autres. Sans un dé qui passe, pas de coup : ni bonus, ni saignée. */
+ const seuil=defPlafonnee(def);let damage=0,hit=false;
+ kept.forEach(d=>{if(!passeDef(d,seuil,solidite))return;const [v,c]=d;hit=true;damage+=v*(c===3&&remaining[v]>1?2:c===6?Math.min(3,Math.max(1,round)):1)});
  const saignee=hit?Math.max(0,Math.trunc(bleed)||0):0;
- const subi=brut+(hit?dmg:0)+saignee,reduction=Math.min(subi,Math.max(0,Math.trunc(def)||0));
- return {dice:all,failleFace,bleed:saignee,reduction,damage:subi-reduction+fixe,failed:false,critical,hit};
+ return {dice:all,failleFace,bleed:saignee,damage:damage+(hit?dmg:0)+saignee,failed:false,critical,hit};
 }
+/* La DEF va de 0 à 6 : à 6, plus aucune face ne la passe, seuls le Lourd et le Mortel. */
+const DEF_MAX=6;
+function defPlafonnee(def){return Math.max(0,Math.min(DEF_MAX,Math.trunc(Number(def))||0))}
+function passeDef([v,c],def,solidite=false){return c===5||(c===2&&!solidite)||v>defPlafonnee(def)}
 /* Portée : le rayon de contact vaut 3 tailles de token en diamètre. Les positions
    sont en pourcentage de la carte, converties en pixels avec sa taille affichée. */
 function mapPoint(a,size){return [a.x/100*size.width,a.y/100*size.height]}
@@ -321,7 +323,7 @@ function cleanMonster(t){const dés={};
   return o});
  return {name:texte(t&&t.name,120)||'Adversaire',type:['standard','solitaire','boss'].includes(t&&t.type)?t.type:'standard',
   socle:texte(t&&t.socle,20)||'medium',family:texte(t&&t.family,60),
-  pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,99)),
+  pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,DEF_MAX)),
   damage:Math.round(borne(t&&t.damage,0,999)),xp:Math.round(borne(t&&t.xp,0,9999)),
   menace:texte(t&&t.menace,30)||'closest',esquive:!!(t&&t.esquive),rapide:!!(t&&t.rapide),
   /* Un adversaire peut n'avoir aucune attaque : c'est au maître du jeu d'en décider, et
@@ -963,12 +965,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
     ouvert('double')?'font <b>le double de dégâts</b>':''].filter(Boolean);
    if(!faits.length)return 'Contre une cible qui porte <b>'+e+'</b> : rien encore à ce palier.';
    return 'Contre une cible qui porte <b>'+e+'</b>, les attaques du porteur '+(faits.length>1?faits.slice(0,-1).join(', ')+' et '+faits[faits.length-1]:faits[0])+'.'}},
- /* Solidité : une amélioration. La DEF du porteur retranche aussi les dés Lourds — le rouge,
+ /* Solidité : une amélioration. La DEF du porteur écarte aussi les dés Lourds — le rouge,
     qui l'ignore chez tout autre. Le Mortel, noir, passe toujours en entier. */
  solidite:{cle:'solidite',nom:'Solidité',type:'ame',
-  aide:'Amélioration : la DEF du porteur réduit aussi les dés rouges (Lourds), qui d’ordinaire l’ignorent.',
+  aide:'Amélioration : la DEF du porteur écarte aussi les dés rouges (Lourds), qui d’ordinaire l’ignorent.',
   params:[],
-  phrase(){return 'La DEF du porteur réduit aussi les <b>dés de dégâts mortels</b> (rouges).'}},
+  phrase(){return 'La DEF du porteur écarte aussi les <b>dés de dégâts mortels</b> (rouges).'}},
  provocation:{cle:'provocation',nom:'Provocation',type:'act',bouton:'📣 Provocation',attaque:true,
   aide:'Action : un adversaire en vue s’avance jusqu’au porteur, qui l’attaque aussitôt.',
   params:[],
@@ -1344,7 +1346,7 @@ function applyHeal(a,montant){const gagne=Math.min(Math.max(0,a.max-a.hp),Math.m
    Une saisie vide, illisible ou d'un autre monde ne détruit rien : elle revient à
    la valeur d'avant, ou s'arrête à la borne. La virgule vaut le point : on tape
    comme on écrit. */
-const STAT_LIMITS={hp:[0,99999],max:[1,99999],def:[0,99],dmg:[0,999],xp:[0,999999],
+const STAT_LIMITS={hp:[0,99999],max:[1,99999],def:[0,6],dmg:[0,999],xp:[0,999999],
  level:[1,7],endu:[1,999],pvBonus:[-9999,9999],skill:[0,30],
  vie:[0,999,true],vieMax:[1,999,true],
  pv:[1,99999],damage:[0,999]};   // pv et damage : les noms du bestiaire.
@@ -1683,7 +1685,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={DEF_MAX,defPlafonnee,passeDef,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,

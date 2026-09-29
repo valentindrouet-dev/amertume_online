@@ -110,6 +110,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les planches d'icônes découpées, leurs noms et catégories (planches.js).
  c.planches=normalisePlanches(c.planches);c.nomsPlanches=normaliseNomsPlanches(c.nomsPlanches);
  c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);
+ // La DEF ne dépasse jamais 6 : une pièce ou un adversaire notés plus haut y reviennent.
+ [...c.items,...c.monsters].forEach(o=>{if(o&&Number(o.def)>DEF_MAX)o.def=DEF_MAX});
  // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
  c.motsCles=[...new Set((Array.isArray(c.motsCles)?c.motsCles:[]).map(m=>String(m||'').trim().slice(0,60)).filter(Boolean))].slice(0,200);
  /* Les spécialisations de chaque classe, dans l'ordre du MJ : des noms, deux au plus par
@@ -208,12 +210,11 @@ const note=document.createElement('p');note.id='actor-notes';note.className='mut
    clique celle qui part. Le bouton retenu est plein, les autres sont dessinés. */
 /* Les dés d'une attaque et, s'il y a lieu, le bonus de dégâts avec son jeton : la même
    seconde ligne pour l'attaque d'une arme et pour le talent qui frappe. */
-function desEtBonus(dice,bonus,toujours){const bas=document.createElement('span');bas.className='des-bonus';
+function desEtBonus(dice,bonus,toujours,jeton=true){const bas=document.createElement('span');bas.className='des-bonus';
  bas.append(dicePips(dice));
- if(bonus||toujours){const plus=document.createElement('b');plus.className='bonus';plus.textContent='+'+bonus;
-  // Le jeton des dégâts, après la valeur : on lit « +2 » et l'on voit de quoi il s'agit.
-  const ico=document.createElement('img');ico.className='dmg-ico';ico.src=imgUrl('DEGATS.webp');ico.alt='dégâts';ico.draggable=false;
-  bas.append(plus,ico)}
+ if(bonus||toujours){const plus=document.createElement('b');plus.className='bonus';plus.textContent='+'+bonus;bas.append(plus);
+  // Le jeton des dégâts, après la valeur, dans la bulle des monstres ; la barre d'action s'en passe.
+  if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';ico.src=imgUrl('DEGATS.webp');ico.alt='dégâts';ico.draggable=false;bas.append(ico)}}
  return bas}
 /* Les objets qui agissent : chaque pièce portée ou rangée dont le moteur connaît l'effet
    offre son bouton dans la rangée des Actions, à l'encre de sa famille — brun pour une arme,
@@ -245,8 +246,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  if(marked.size>1){boite.replaceChildren();boite.hidden=true;return}
  const a=actors[selected],liste=a?attackChoices(a,catalog.items):[];
  /* Les talents de la rangée des attaques se dessinent à leur suite. Attaques et talents sont des
-    ronds, comme les talents d'une fiche : le logo au milieu, la couleur de l'action au bord et dans
-    le fond ; le nom et ce qu'il fait dans la bulle, au survol ; les dés et le bonus dessous. */
+    ronds, comme les talents d'une fiche : le logo au milieu, pleins à la couleur de l'action ;
+    le nom et ce qu'il fait dans la bulle, au survol ; les dés et le bonus dessous. */
  // Un bouton et, dessous, ses dés : la carte d'une attaque dans la rangée.
  const carte=(b,des,talent)=>{const c=document.createElement('div');c.className='attaque-carte'+(talent?' de-talent':'');c.append(b);if(des)c.append(des);return c};
  const talents=a&&typeof boutonsTalents==='function'?boutonsTalents(a).filter(b=>b.rangee==='attaques'):[];
@@ -263,17 +264,14 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   inerte(b,!t.peut);b.setAttribute('aria-label',t.texte+' — '+t.titre);
   // Sa bulle : celle du talent, et ce qui l'empêche s'il ne peut pas partir.
   surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre}));
-  b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0):null,true))});
+  b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(carte(b,t.des?desEtBonus(t.des,t.bonus||0,false,false):null,true))});
  if(!liste.length)return;
  const retenu=Math.trunc(a.activeAttack)||0;
  liste.forEach((at,i)=>{const b=document.createElement('button');
   b.className='btn-action choix-attaque rond'+(i===(retenu<liste.length?retenu:0)?' on':'');
-  /* Le logo de l'arme à gauche, sur les deux lignes de hauteur ; à sa droite, le nom puis
-     les dés — chacun sur sa ligne. Sans logo, les deux lignes occupent tout le bouton. */
+  // Au milieu du rond, le logo de la seule arme de la main droite : la première ; deux armes n'en montrent qu'un.
   const logos=document.createElement('span');logos.className='logos';
-  (at.logos||[]).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});
-  // Deux armes : les logos l'un sur l'autre, celui de derrière en miroir — croisés.
-  if(logos.childElementCount>1)logos.classList.add('croises');
+  (at.logos||[]).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});
   if(logos.childElementCount){b.classList.add('avec-logo');b.append(logos)}
   else b.append(Object.assign(document.createElement('span'),{className:'glyphe',textContent:at.range==='distance'?'🏹':'⚔'}));
   /* Une attaque d'équipement s'appelle « Attaque » : les armes se lisent à leurs logos et
@@ -286,7 +284,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
      voyant tout ce qu'elle lance. Affaibli ou une attaque « dés seuls » n'ont pas de bonus, et
      n'en écrivent pas. */
   const bonus=hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
-  const c=carte(b,desEtBonus(at.dice,bonus,at.useOwnDamage!==false),false);
+  const c=carte(b,desEtBonus(at.dice,bonus,at.useOwnDamage!==false,false),false);
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
   inerte(b,!!refus);
   // Le clic droit du MJ rend l'Action et pose la flèche en vol.
@@ -732,20 +730,11 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // Au survol, le calcul : d'où viennent les PV max, et les Dégâts.
  calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));
  chiffres.append(...tuiles);
- /* La fiche ne montre que ce que l'aventurier sait faire : une compétence à zéro
-    n'apprend rien à personne et prenait une case pour rien. Le « + » ouvre la liste
-    entière et donne un point à celle qu'on choisit — c'est ainsi qu'une compétence
-    inédite paraît. */
  /* Un joueur lit les fiches de la troupe, mais ne tient d'outils que sur la sienne : les
     « + » sont au MJ, et le rouage des arbres s'ouvre pour son propre aventurier. */
  const mien=view==='mj'||actors.indexOf(a)===owner;
- const titreComp=sousTitre('Compétences','Ajouter un point de compétence à '+a.name,view!=='mj'?null:ev=>{
-  ev.stopPropagation();
-  choixMenu(ev.currentTarget,skillNames.map((n,k)=>[String(k),n+' '+valeurCompetence(a,k)]),v=>{
-   const k=Number(v);if(!(k>=0&&k<skillNames.length))return;
-   a.skills[k]=readStat('skill',a.skills[k]+1,a.skills[k]);
-   majFiche(c,a);rendrePlusTard();scheduleSave();
-   document.dispatchEvent(new Event('amertume-content-changed'))})});
+ // Pas de « + » : le MJ augmente une compétence d'un clic sur son rond.
+ const titreComp=sousTitre('Compétences');
  /* Les huit compétences, toujours toutes, sur une ligne : un rond à leur logo, teinté de sa couleur,
     la valeur en bulle au bas — 1, plus ce que l'aventurier y a gagné ; sa bulle au survol. Chez le
     MJ, un clic gauche l'augmente d'un point, un clic droit la baisse d'un, jamais sous 1 : ce que
@@ -760,7 +749,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
    r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '||e.key==='+'){e.preventDefault();change(1)}else if(e.key==='-'||e.key==='Backspace'){e.preventDefault();change(-1)}}}
   carte.append(r);comps.append(carte)});
 
- const titreKit=sousTitre('Équipement','Inventaire de '+a.name,view!=='mj'?null:()=>openPicker(a,'gear'));
+ // L'équipement s'ajoute par les « + » de ses places vides ; celui de l'Armurerie est sur l'Inventaire.
+ const titreKit=sousTitre('Équipement');
  // Le rouage ouvre les arbres de la classe : les talents s'y choisissent de haut en bas.
  const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');
  // Les talents juste sous les compétences : ce qu'il sait faire se lit d'un bloc.
@@ -1258,6 +1248,9 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  // Le sac : ce qui n'est pas porté, puis les objets.
  const sac=document.createElement('div');sac.className='sac gear-grille';
  const titre=document.createElement('span');titre.className='gear-rangee-titre';titre.textContent='Inventaire';sac.append(titre);
+ // Le MJ y ajoute une pièce de l'Armurerie.
+ if(view==='mj'){const plus=document.createElement('button');plus.type='button';plus.className='ico plus';plus.textContent='+';
+  plus.title='Ajouter à l’inventaire de '+a.name;plus.setAttribute('aria-label',plus.title);plus.onclick=()=>openPicker(a,'gear');titre.append(plus)}
  let rien=true;
  [...comptes.entries()].forEach(([o,n])=>{const equipement=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
   const reste=equipement?n-portes(o):n;if(reste<=0)return;rien=false;
@@ -1535,7 +1528,7 @@ function tableMasse(boite,liste){
   // À lire seulement : les dés d'une arme (ou ce qu'une munition ajoute), et ce que la pièce fait.
   {cle:'des',nom:'Dés',type:'vue',pour:o=>arme(o)||(o.category==='ammo'&&!!(o.munDe||o.etat)),tri:o=>arme(o)?totalDes(o):o.munDe?1:0,
    montre:o=>arme(o)?dicePips(o.dice,o.etat,!!o.ranged):dicePips(o.munDe?{[o.munDe]:1}:{},o.etat)},
-  {cle:'def',nom:'DEF',type:'nombre',max:99,pour:armure,lit:o=>Number(o.def)||0,ecrit:(o,v)=>{o.def=Math.max(0,Math.min(99,Math.round(v)))}},
+  {cle:'def',nom:'DEF',type:'nombre',max:DEF_MAX,pour:armure,lit:o=>Number(o.def)||0,ecrit:(o,v)=>{o.def=defPlafonnee(Math.round(v))}},
   {cle:'effet',nom:'Effet',type:'vue',pour:o=>!!(objetCode(o)||(o.bonus&&o.bonus.length)||(!arme(o)&&o.etat)),tri:o=>(objetCode(o)||{}).nom||(o.bonus&&o.bonus.length?'Bonus':o.etat||''),montre:o=>{const s=document.createElement('span');s.className='masse-effet';
    const pe=pastilleEffet(o);if(pe)s.append(pe);
    const txt=[phraseDeObjet(o).replace(/<[^>]+>/g,''),...normaliseBonusEquip(o.bonus).map(b=>'+'+b.valeur+' '+(b.carac==='comp'?(COMPETENCES[Number(b.comp)]||''):(NOM_CARAC[b.carac]||b.carac)))].filter(Boolean).join(' · ');
@@ -1742,7 +1735,7 @@ function bulleModele(m){const d=document.createElement('div');d.className='cat-d
  // Il porte tout ce qu'il possède, même un modèle enregistré avant ce choix.
  const eq=equipeAdversaire({...m,hero:false,inventaire:[...(m.inventaire||[])]});
  const defPortee=equippedDef(eq,catalog.items),chiffres=document.createElement('div');chiffres.className='stat-row';
- [['pv','PV',m.pv||0],['def','DEF',defPortee===null?(m.def||0):defPortee,true],['dmg','Dég.','+'+(m.damage||0)],['xp','XP',m.xp||0]].forEach(x=>chiffres.append(statTile(...x)));
+ [['pv','PV',m.pv||0],['def','DEF',defPlafonnee(defPortee===null?m.def:defPortee),true],['dmg','Dég.','+'+(m.damage||0)],['xp','XP',m.xp||0]].forEach(x=>chiffres.append(statTile(...x)));
  d.append(chiffres);
  /* Ses attaques, celles de son équipement comme ses attaques spéciales : le logo, le nom, puis
     les états qu'elles infligent, les dés et le bonus de dégâts, comme sur un bouton de table. */
@@ -1866,7 +1859,7 @@ function tableMasseBestiaire(boite,liste){
   {cle:'family',nom:'Famille',type:'texte',lit:m=>m.family||'',ecrit:(m,v)=>{m.family=String(v||'').trim().slice(0,60)}},
   {cle:'pv',nom:'PV',type:'nombre',max:99999,lit:m=>Number(m.pv)||0,ecrit:(m,v)=>{m.pv=entier(1,99999)(v)}},
   // Sa DEF à lui : une armure qu'il possède décide à sa place, comme au formulaire.
-  {cle:'def',nom:'DEF',type:'nombre',max:99,lit:m=>Number(m.def)||0,ecrit:(m,v)=>{m.def=entier(0,99)(v)}},
+  {cle:'def',nom:'DEF',type:'nombre',max:DEF_MAX,lit:m=>Number(m.def)||0,ecrit:(m,v)=>{m.def=entier(0,DEF_MAX)(v)}},
   {cle:'damage',nom:'Dégâts',type:'nombre',max:999,lit:m=>Number(m.damage)||0,ecrit:(m,v)=>{m.damage=entier(0,999)(v)}},
   {cle:'xp',nom:'XP',type:'nombre',max:999999,lit:m=>Number(m.xp)||0,ecrit:(m,v)=>{m.xp=entier(0,999999)(v)}},
   // Attaques spéciales, talents et inventaire : un aperçu, et un clic ouvre leur panneau.
@@ -3276,7 +3269,7 @@ function fromMonster(m){const a=baseActor(false);Object.assign(a,{template:m.id,
 function openActor(index=null,hero=true,template=null,neuf=false){if(view!=='mj')return;
  if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;templateNeuf=!!neuf&&template===null&&!hero;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero||templateNeuf;renderActorForm();actorDialog.showModal()}
 function renderActorForm(){const a=draft;const weaponOptions=[['','Aucune'],...catalog.items.filter(w=>w.category==='weapon').map(w=>[w.id,w.name])];const armorOptions=slot=>[['','Aucune'],...catalog.items.filter(w=>w.category==='armor'&&w.slot===slot).map(w=>[w.id,w.name])];
-$('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role,'text',a.hero?'list="classes-jeu" maxlength="120"':'')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum','max',a.max,'number','min="1" max="99999" required'+(a.hero?' readonly':''))+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="99"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"')+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+field('Espèce','race',a.race,'text','maxlength="40"'):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any"')+field('Endurance','endu',a.endu,'number','min="1" max="999"')+field('Bonus PV (classe + espèce)','pvBonus',a.pvBonus,'number','min="-9999" max="9999" readonly')+field('Niveau','level',a.level,'number','min="1" max="7"'):'')+'</div>'
+$('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role,'text',a.hero?'list="classes-jeu" maxlength="120"':'')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum','max',a.max,'number','min="1" max="99999" required'+(a.hero?' readonly':''))+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="'+DEF_MAX+'"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"')+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+field('Espèce','race',a.race,'text','maxlength="40"'):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any"')+field('Endurance','endu',a.endu,'number','min="1" max="999"')+field('Bonus PV (classe + espèce)','pvBonus',a.pvBonus,'number','min="-9999" max="9999" readonly')+field('Niveau','level',a.level,'number','min="1" max="7"'):'')+'</div>'
   +(a.hero?'<datalist id="classes-jeu">'+(catalog.classes||[]).map(c=>'<option value="'+esc(c.name)+'">').join('')+'</datalist>'
    +'<p class="muted">Classes du jeu : '+(catalog.classes||[]).map(c=>esc(c.name)+' (PV +'+(c.pv||0)+')').join(' · ')+'.</p>':'')
   +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']]):'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'')+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Inventaire<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div id="inventaire-edit"></div>'+(a.hero?'<div class="edit-grid inv-ajout">'+sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())+'<button type="button" id="inv-ajouter">Ajouter</button></div>':'')+'<p class="muted" id="equip-summary"></p><p class="muted">'+(a.hero?'L’inventaire dit tout ce que le combattant possède ; l’équipement, ce qu’il porte — deux mains au plus : une arme à une main et un bouclier, deux armes à une main, ou une arme à deux mains — et une armure. Les dés de l’attaque et la DEF découlent de ce qui est porté ; les objets restent dans l’inventaire.':'Un adversaire porte toujours tout ce qu’il possède, sans compter ses mains : chaque arme est une variante, son bouton en combat, et la meilleure pièce de chaque emplacement fait sa DEF. Le butin est la chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte.')+'</p>'+(a.hero?'':'<div class="divider"></div><h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
@@ -3424,7 +3417,7 @@ function choixTalents(boite,cible,filtre,familles,apres){boite.replaceChildren()
    perdrait ce qui y est saisi et pas encore enregistré. Le choix courant est conservé,
    et un objet tout neuf va se poser dans le premier emplacement libre qui l'accepte. */
 function readActor(){const f=$('actor-form').elements;readAttacks();const a=structuredClone(draft);for(const k of ['name','role','notes','socle'])a[k]=f[k].value.trim();a.states=[...statesOf(draft)];for(const k of ['sexe','race'])if(f[k])a[k]=f[k].value.trim();
- for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k]&&!f[k].disabled)a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?999999:99999);a.max=Math.max(1,a.max);if(templateIndex!==null)a.hp=a.max;a.hp=Math.min(a.hp,a.max);setState(a,'Coma',!a.hp);if(!a.hero){a.type=f.type.value;if(f.menace)a.menace=f.menace.value}// Sans cases à l'écran (adversaires), les valeurs enregistrées sont conservées telles quelles.
+ for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k]&&!f[k].disabled)a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?999999:99999);a.max=Math.max(1,a.max);if(Number.isFinite(a.def))a.def=defPlafonnee(a.def);if(templateIndex!==null)a.hp=a.max;a.hp=Math.min(a.hp,a.max);setState(a,'Coma',!a.hp);if(!a.hero){a.type=f.type.value;if(f.menace)a.menace=f.menace.value}// Sans cases à l'écran (adversaires), les valeurs enregistrées sont conservées telles quelles.
  if(f.rapide)a.rapide=f.rapide.checked;if(f.esquive)a.esquive=f.esquive.checked;if(f.skill0)a.skills=skillNames.map((_,i)=>num(f['skill'+i].value,0,30));// Un adversaire n'a pas de rayon d'armurerie dans son formulaire : ce qu'il porte reste tel quel.
  // L'inventaire et l'équipement viennent du brouillon, où le formulaire les a composés ; ce qui n'est plus au catalogue s'efface.
  a.inventaire=(Array.isArray(a.inventaire)?a.inventaire:[]).filter(id=>catalog.items.some(o=>o.id===id));a.weapons=(a.weapons||[]).filter(id=>catalog.items.some(o=>o.id===id));
@@ -3733,7 +3726,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  if(f.logo)a.logo=logosItem(a).includes(f.logo.value)||estLogoDossier(f.logo.value)?f.logo.value:'';
  if(f.rarete)a.rarete=rareteDe({rarete:f.rarete.value});
  if($('item-bonus'))a.bonus=lireBonusItem();
- for(const k of ['qty','price','hands','def'])if(f[k])a[k]=num(f[k].value,0,999999);
+ for(const k of ['qty','price','hands','def'])if(f[k])a[k]=num(f[k].value,0,k==='def'?DEF_MAX:999999);
  // « consommable » n'a plus de case : c'est l'usage qui le dit, plus haut.
  for(const k of ['usesAmmo'])if(f[k])a[k]=f[k].checked;
  if(f.munDe)a.munDe=keys.includes(f.munDe.value)?f.munDe.value:'';
@@ -3775,7 +3768,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +selGrille(planchesEnTete(a).length?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])]))
   +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))
   +(arme?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
-  +(armure?field('DEF','def',a.def||0,'number','min="0" max="99"')
+  +(armure?field('DEF','def',a.def||0,'number','min="0" max="'+DEF_MAX+'"')
    +sel('Emplacement','slot',emplacementDe(a),[...EMPLACEMENTS.map(([k,n,p])=>[k,n+(p>1?' ('+p+')':'')]),['shield','Bouclier — une main']]):'')
   +(arme||armure?'':field('Quantité','qty',a.qty||1,'number','min="1" max="9999"'))
   +'</div>'
