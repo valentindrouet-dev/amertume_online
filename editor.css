@@ -829,6 +829,8 @@ button.choix-attaque.sans-des.avec-logo .nom{grid-row:1/3;align-self:center}
 .arbre-noeud.modele{cursor:pointer}
 .arbre-noeud.modele .arbre-rond{border-style:dashed}
 .cat-col>h3 .ico.plus.rouage{margin-left:2px;font-weight:400;font-size:14px;padding:0 5px 1px}
+/* Le « + » d'une colonne de l'Armurerie, après son compte. */
+.cat-col>h3 .ico.plus.cat-ajout{margin-left:2px;padding:0 6px;font:700 13px/1.3 system-ui;letter-spacing:0}
 /* La bulle flottante : la description d'un objet ou d'un talent, posée au-dessus de sa
    vignette, hors du flux — rien ne s'écarte pour lui faire place. Sa flèche vise la
    vignette ; sous elle quand la place manque au-dessus. */

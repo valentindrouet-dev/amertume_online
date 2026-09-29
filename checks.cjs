@@ -3038,4 +3038,12 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fs.existsSync('img/planches/restes_1.webp')&&fs.existsSync('img/planches/restes_2.webp'),'les deux planches de restes sont au dépôt');
  assert.ok(src.includes("function planchesRestes(){")&&src.includes("if(o&&o.category==='restes')planchesRestes().forEach(")
   &&src.includes("+selGrille(a.category==='restes'?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):")&&src.includes("groupesLogosItem(o).filter(([,l])=>l.length).map("),'les planches de restes en tête pour un reste');}
-console.log('1751 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+/* v0.337 — Un « + » à l'en-tête de chaque colonne de l'Armurerie ouvre l'éditeur sur une pièce
+   neuve de cette catégorie. La famille de talents « Génériques » disparaît : un talent resté sans
+   classe se range sous « Sans classe », qui ne paraît que s'il en reste un. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("function openItem(i=null,apres=null,defauts=null){")&&src.includes("plus.onclick=e=>{e.stopPropagation();openItem(null,null,PIECE_NEUVE[key])};h.append(plus)}")
+  &&src.includes("const PIECE_NEUVE={melee:{category:'weapon',ranged:false,hands:1,"),'le + de chaque colonne de l’Armurerie');
+ assert.ok(src.includes("return [...classes,...autres,...(orphelins?[GENERIQUES]:[])]}")&&src.includes("const nomFamille=f=>f===GENERIQUES?'Sans classe':f;")
+  &&src.includes("  const tete=classe?[classe]:[];")&&src.includes(" const tete=sienne&&toutes.includes(sienne)?[sienne]:[];")&&!src.includes("famille:GENERIQUES,type:'act'"),'plus de famille Génériques');}
+console.log('1752 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

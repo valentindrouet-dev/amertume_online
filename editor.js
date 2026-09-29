@@ -1412,6 +1412,10 @@ let armoryMasse=false,armoryNeuf=null,masseTri=null;
 let masseAnnule=null;
 /* Créer une pièce sans quitter le tableau : sa catégorie, puis une ligne neuve, son nom prêt à
    écrire. La catégorie proposée est celle qu'on filtre. */
+// Une pièce neuve, par colonne de l'Armurerie : sa catégorie, sa portée, ses mains.
+const PIECE_NEUVE={melee:{category:'weapon',ranged:false,hands:1,name:'Nouvelle arme'},ranged:{category:'weapon',ranged:true,hands:2,name:'Nouvelle arme à distance'},
+ armor:{category:'armor',name:'Nouvelle armure'},object:{category:'object',name:'Nouvel objet'},ressource:{category:'ressource',name:'Nouvelle ressource'},
+ restes:{category:'restes',name:'Nouveaux restes'},treasure:{category:'treasure',name:'Nouveau trésor'}};
 const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
 function barreMasse(boite,choisie){const barre=document.createElement('div');barre.className='masse-barre';
  const cat=document.createElement('select');cat.setAttribute('aria-label','Catégorie de la nouvelle pièce');
@@ -1592,7 +1596,11 @@ function renderArmory(){renderBiblioObjets();renderGuidePrix();const cols=$('arm
   const bloc=document.createElement('div');bloc.className='cat-col armurerie-grille';
   const h=document.createElement('h3');h.textContent=titre;
   const compte=document.createElement('span');compte.className='compte';compte.textContent=liste.length;
-  h.append(compte);bloc.append(h);
+  h.append(compte);
+  // Le « + » de la colonne ouvre l'éditeur sur une pièce neuve de cette catégorie.
+  if(view==='mj'){const plus=document.createElement('button');plus.type='button';plus.className='ico plus cat-ajout';plus.textContent='+';
+   plus.title='Ajouter : '+titre.toLowerCase();plus.setAttribute('aria-label',plus.title);plus.onclick=e=>{e.stopPropagation();openItem(null,null,PIECE_NEUVE[key])};h.append(plus)}
+  bloc.append(h);
   liste.forEach(([a,i])=>bloc.append(armoryRow(a,i)));
   cols.append(bloc)}
  bulleOrpheline()}
@@ -1690,11 +1698,15 @@ function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.rep
    talents, la souche commune d'abord et les branches ensuite. */
 function talentFamilies(){
  /* Les classes du jeu d'abord, dans l'ordre alphabétique — chacune a sa colonne même
-    vide — puis les Génériques, puis les familles d'adversaires. */
+    vide — puis les familles d'adversaires. Il n'y a plus de famille « Génériques » : un talent
+    resté sans classe se range sous « Sans classe », qui ne paraît que s'il en reste un. */
  const classes=[...new Set((catalog.classes||[]).map(c=>c&&c.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
  const autres=[...new Set((catalog.talents||[]).map(talentFamily))]
   .filter(f=>f!==GENERIQUES&&!classes.includes(f)).sort((a,b)=>a.localeCompare(b,'fr'));
- return [...classes,GENERIQUES,...autres]}
+ const orphelins=(catalog.talents||[]).some(t=>t&&t.effet!=='bonus'&&talentFamily(t)===GENERIQUES);
+ return [...classes,...autres,...(orphelins?[GENERIQUES]:[])]}
+// Le nom qu'on lit : « Sans classe » pour ce qui était la famille Génériques.
+const nomFamille=f=>f===GENERIQUES?'Sans classe':f;
 // L'encre d'une classe, pour un intitulé de colonne ou une languette.
 function teinteClasse(nom){const c=classeDe(catalog.classes,nom);return c&&c.tint||''}
 /* Un talent se montre en rond, partout : bibliothèque, fiche, table, choix. La couleur de sa
@@ -1800,7 +1812,7 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
  const q=($('talent-search').value||'').trim().toLowerCase();
  const familles=talentFamilies(),sel=$('talent-family'),avant=sel.value;
  sel.replaceChildren(new Option('Toutes classes',''));
- familles.forEach(f=>sel.add(new Option(f,f)));
+ familles.forEach(f=>sel.add(new Option(nomFamille(f),f)));
  sel.value=familles.includes(avant)?avant:'';
  const tri=$('talent-sort').value;
  const visibles=sel.value?[sel.value]:familles;
@@ -1811,7 +1823,7 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
    :tri==='niveau-'?(b[0].level||1)-(a[0].level||1)||a[0].name.localeCompare(b[0].name,'fr')
    :(a[0].level||1)-(b[0].level||1)||a[0].name.localeCompare(b[0].name,'fr'));
   const bloc=document.createElement('div');bloc.className='cat-col armurerie-grille'+(famille===GENERIQUES?' c-generique':'');
-  const h=document.createElement('h3');h.textContent=famille;
+  const h=document.createElement('h3');h.textContent=nomFamille(famille);
   // Seule l'encre distingue une classe : les bandeaux restent sans fond, comme partout.
   const encre=teinteClasse(famille);if(encre)h.style.color=encre;
   /* Le même rouage que sur une fiche, à côté du nom de la classe : l'arbre s'ouvre là où
@@ -1942,14 +1954,16 @@ function descendDe(x,t,vus=new Set()){if(!x||!t||vus.has(t.id))return false;vus.
 /* « defauts » : ce que l'arbre sait déjà d'un talent qu'on y crée — sa classe, sa voie, le
    talent dont il pendra, sa nature — pour ne pas le redire au formulaire. */
 function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talentIndex=i;talentApres=apres;
- const t=i===null?{name:'Nouveau talent',famille:GENERIQUES,type:'act',level:1,effect:'',effets:'',effects:'',notes:'',effet:'',params:{},...(defauts||{})}:catalog.talents[i];
+ // Un talent neuf prend la classe qu'on lui donne, sinon la première du jeu.
+ const premiere=[...(catalog.classes||[])].map(c=>c&&c.name).filter(Boolean).sort((x,y)=>x.localeCompare(y,'fr'))[0]||'';
+ const t=i===null?{name:'Nouveau talent',famille:premiere,type:'act',level:1,effect:'',effets:'',effects:'',notes:'',effet:'',params:{},...(defauts||{})}:catalog.talents[i];
  if(i!==null&&!t)return;
  talentDraft={effet:t.effet||'',params:{...(t.params||{})},effects:t.effects||'',couts:[1,2,3].map(n=>coutPalier(t,n)),paliers:structuredClone(t.paliers||{}),volets:{...(t.volets||{})}};
  // Ce que l'arbre sait d'un talent qu'on y crée : sa voie, son prérequis, sa place.
  talentDefauts=i===null?(defauts||{}):null;
  /* Les classes offertes : celles du jeu, celles déjà portées par un talent, et celles que
     la troupe s'est données. La classe du talent ouvert y figure toujours, fût-elle inédite. */
- const familles=[...new Set([GENERIQUES,...talentFamilies(),
+ const familles=[...new Set([...talentFamilies().filter(f=>f!==GENERIQUES),
   ...actors.filter(a=>a.hero).map(a=>(a.role||'').split('·')[0].trim()).filter(Boolean),
   talentFamily(t)])];
  const famille=talentFamily(t);
@@ -1966,7 +1980,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
      qui ressemble à ce qui est déjà écrit, et le champ arrivant rempli de « Génériques »,
      il n'offrait que « Génériques ». Une classe inédite reste possible, par la dernière
      entrée du menu, qui ouvre un champ libre. */
-  +sel('Classe','famille',famille,[...familles.map(f=>[f,f]),[AUTRE_CLASSE,'✎ Autre classe…']])
+  +sel('Classe','famille',famille,[...familles.filter(f=>f!==GENERIQUES).map(f=>[f,f]),...(famille===GENERIQUES?[[GENERIQUES,'— sans classe —']]:[]),[AUTRE_CLASSE,'✎ Autre classe…']])
   +sel('Type','type',t.type||'act',TALENT_TYPES.map(([k,,nom])=>[k,nom]))
   +(NIVEAUX_TALENTS?field('Niveau','level',t.level||1,'number','min="1" max="20"'):'<input type="hidden" name="level" value="'+(Number(t.level)||1)+'">')
   +selLogos('Logo','logo',t.logo||'')
@@ -2262,7 +2276,7 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   /* Un aventurier n'a que les génériques et les talents de sa classe ; un adversaire
      voit toutes les familles. La classe se reconnaît à sa clé (Gardien, Gardienne…). */
   const classe=classeDuHeros(a),toutes=talentFamilies();
-  const tete=[GENERIQUES,...(classe?[classe]:[])];
+  const tete=classe?[classe]:[];
   for(const famille of (a.hero?tete:[...tete,...toutes.filter(f=>!tete.includes(f))]))
    // Un bonus de caractéristique n'est pas un talent : il ne s'apprend que dans l'arbre.
    groupe(famille,ordonneTalents((catalog.talents||[]).filter(t=>!estBonus(t)&&talentFamily(t)===famille
@@ -2977,7 +2991,7 @@ function renderStatePicker(){const boite=$('state-picker');if(!boite)return;
    sur le brouillon, pas dans le DOM : filtrer la liste ne perd donc rien. */
 function draftFamilies(){const sienne=(draft.role||'').split('·')[0].trim();
  const toutes=talentFamilies();
- const tete=[GENERIQUES,...(sienne&&toutes.includes(sienne)?[sienne]:[])];
+ const tete=sienne&&toutes.includes(sienne)?[sienne]:[];
  return [...tete,...toutes.filter(f=>!tete.includes(f))]}
 function renderTalentPicker(){const boite=$('talent-picker');if(!boite)return;boite.replaceChildren();
  const q=($('talent-filter')?.value||'').trim().toLowerCase();
@@ -3456,8 +3470,9 @@ const texteRessources=d=>Object.entries(d).map(([k,n])=>Math.abs(n)+' '+((ressou
 function lireBonusItem(){const f=$('item-form').elements,out=[];
  for(let i=0;f['bonus_carac_'+i];i++)out.push({carac:f['bonus_carac_'+i].value,valeur:f['bonus_valeur_'+i].value,comp:f['bonus_comp_'+i].value});
  return normaliseBonusEquip(out)}
-function openItem(i=null,apres=null){itemIndex=i;itemApres=apres;
- itemDraft=i===null?{name:'Nouvel objet',category:'weapon',ranged:false,hands:1,qty:1,price:0,ressource1:'',ressource2:'',magasin:false,def:0,slot:'torse',dice:{},traits:[]}
+// « defauts » : ce qu'on sait déjà d'une pièce qu'on crée — sa catégorie, prise à l'en-tête de sa colonne.
+function openItem(i=null,apres=null,defauts=null){itemIndex=i;itemApres=apres;
+ itemDraft=i===null?{name:'Nouvel objet',category:'weapon',ranged:false,hands:1,qty:1,price:0,ressource1:'',ressource2:'',magasin:false,def:0,slot:'torse',dice:{},traits:[],...(defauts||{})}
   :structuredClone(catalog.items[i]);
  dessineItem();$('delete-item').hidden=i===null;itemDialog.showModal()}
 $('item-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
