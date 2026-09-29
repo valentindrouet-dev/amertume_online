@@ -538,7 +538,7 @@ function majFiche(carte,a){if(!carte)return;
  ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));ecrire('.stat-tile.t-xp strong',a.xp||0);
  ecrire('.chip-niveau','Niveau '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
  majEcu(carte.querySelector('.stat-tile.t-def .ecu'),defOf(a));
- carte.querySelectorAll('.comp-rond').forEach((r,k)=>{const v=r.querySelector('.comp-val');if(v)v.textContent=valeurCompetence(a,k);
+ carte.querySelectorAll('.comp-rond').forEach((r,k)=>{const v=r.querySelector('.comp-val');if(v){v.textContent=valeurCompetence(a,k);v.classList.toggle('dore',valeurCompetence(a,k)>1)}
   r.setAttribute('aria-label',skillNames[k]+' '+valeurCompetence(a,k))})}
 /* Rendre modifiables les tuiles d'une rangée : la grosse valeur, et le plafond
    écrit en petit dessous quand il y en a un. La DEF fait exception dès qu'une
@@ -740,15 +740,17 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
    majFiche(c,a);rendrePlusTard();scheduleSave();
    document.dispatchEvent(new Event('amertume-content-changed'))})});
  /* Les huit compétences, toujours toutes, sur une ligne : un rond à leur logo, teinté de sa couleur,
-    la valeur en pastille au bas — 1, plus ce que l'aventurier y a gagné ; le nom au survol. Le MJ
-    corrige la valeur d'un clic. */
+    la valeur en bulle au bas — 1, plus ce que l'aventurier y a gagné ; sa bulle au survol. Chez le
+    MJ, un clic gauche l'augmente d'un point, un clic droit la baisse d'un, jamais sous 1 : ce que
+    donnent talents et équipement ne se retire pas d'ici. */
  const comps=document.createElement('div');comps.className='comp-ronds';
  skillNames.forEach((n,k)=>{const carte=document.createElement('div');carte.className='comp-carte';
-  const r=rondCompetence(a,k),v=r.querySelector('.comp-val');
-  champVif(v,()=>valeurCompetence(a,k),brut=>{const avant=a.skills[k],autres=valeurCompetence(a,k)-1-(Number(avant)||0);
-   a.skills[k]=readStat('skill',Math.max(1,Math.trunc(Number(brut))||1)-1-autres,avant);
-   if(a.skills[k]!==avant){majFiche(c,a);rendrePlusTard();scheduleSave();
-    document.dispatchEvent(new Event('amertume-content-changed'))}},'Modifier '+n+' de '+a.name,'petit');
+  const r=rondCompetence(a,k);
+  if(view==='mj'){r.classList.add('reglable');r.setAttribute('role','button');r.tabIndex=0;
+   const change=pas=>{const avant=Number(a.skills[k])||0;a.skills[k]=readStat('skill',avant+pas,avant);if(a.skills[k]===avant)return;
+    fermerBulle();majFiche(c,a);rendrePlusTard();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+   r.onclick=()=>change(1);r.oncontextmenu=e=>{e.preventDefault();change(-1)};
+   r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '||e.key==='+'){e.preventDefault();change(1)}else if(e.key==='-'||e.key==='Backspace'){e.preventDefault();change(-1)}}}
   carte.append(r);comps.append(carte)});
 
  const titreKit=sousTitre('Équipement','Inventaire de '+a.name,view!=='mj'?null:()=>openPicker(a,'gear'));
@@ -784,8 +786,13 @@ function rondCompetence(a,k,clic){const r=document.createElement(clic?'button':'
  r.style.setProperty('--tint',SKILL_TINTS[k]);const l=iconesCompetences()[k],ico=l?logoCompetence(k):null;
  if(ico){r.append(ico);teinteLogoSur(r,ico,l)}
  else{const g=document.createElement('span');g.className='comp-lettre';g.textContent=skillNames[k].slice(0,2);r.append(g)}
- const v=document.createElement('span');v.className='comp-val';v.textContent=valeurCompetence(a,k);r.append(v);
- r.title=skillNames[k];r.setAttribute('aria-label',skillNames[k]+' '+valeurCompetence(a,k));return r}
+ const v=document.createElement('span');v.className='comp-val'+(valeurCompetence(a,k)>1?' dore':'');v.textContent=valeurCompetence(a,k);r.append(v);
+ r.setAttribute('aria-label',skillNames[k]+' '+valeurCompetence(a,k));
+ // Sa bulle au survol : le nom, la valeur du moment.
+ surveille(r,()=>{const d=document.createElement('div');d.className='cat-detail bulle-comp-corps';d.style.setProperty('--tint',r.style.getPropertyValue('--tint'));
+  const nom=document.createElement('p');nom.className='bulle-comp-nom';nom.textContent=skillNames[k];
+  const val=document.createElement('p');val.className='bulle-comp-val';val.textContent='Valeur : '+valeurCompetence(a,k);d.append(nom,val);ouvrirBulle(r,d,'bulle-comp')});
+ return r}
 /* La couleur dominante d'un logo, « r,g,b » : la teinte la plus présente parmi ses pixels colorés,
    contours sombres, reflets clairs et gris écartés ; la moyenne de tout à défaut. Mémorisée par
    logo. Une image d'ailleurs qui refuse d'être lue garde la couleur donnée. */

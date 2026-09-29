@@ -1991,7 +1991,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
   &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee'];")
   &&src.includes("const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")
-  &&src.includes(" ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));")&&src.includes("  const r=rondCompetence(a,k),v=r.querySelector('.comp-val');")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
+  &&src.includes(" ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));")&&src.includes("  const r=rondCompetence(a,k);")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
    en est une ; les miettes ne comptent pas ; le MJ les voit d'un bouton. */
 {const mur={anneaux:[[[49,0],[51,0],[51,100],[49,100]]]};
@@ -3206,15 +3206,22 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    autant de dés. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("function rondCompetence(a,k,clic){")&&src.includes("function teinteDominante(im){")&&src.includes("r.style.setProperty('--tint',SKILL_TINTS[k]);")
-  &&css.includes('.comp-val{position:absolute;left:50%;bottom:0;transform:translate(-50%,55%);')&&css.includes('border:2.5px solid rgb(var(--tint));'),'les ronds des compétences');
+  &&css.includes('.comp-val{position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);box-sizing:border-box;width:21px;height:21px;border-radius:50%;')&&css.includes('border:2.5px solid rgb(var(--tint));'),'les ronds des compétences');
  const ctxV={bonusFiche:()=>({skills:[0,2,0,0,0,0,0,0]})};vm.createContext(ctxV);
  vm.runInContext(page.slice(page.indexOf('function competenceDe(a,k)'),page.indexOf('function vieAffichee(a)'))+';this.v=valeurCompetence;',ctxV);
  assert.equal(ctxV.v({skills:[0,0,0,0,0,0,0,0]},0),1,'sans rien, une compétence vaut 1');
  assert.equal(ctxV.v({skills:[0,1,0,0,0,0,0,0]},1),4,'1 + 1 point + 2 de bonus');}
+/* v0.354 — Chez le MJ, un clic gauche sur une compétence l'augmente, un clic droit la baisse, jamais
+   sous 1 ; au-dessus de 1, le chiffre doré ; la valeur en bulle ronde qui touche le bord du rond ;
+   la bulle de la compétence au survol, son nom et sa valeur. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("r.onclick=()=>change(1);r.oncontextmenu=e=>{e.preventDefault();change(-1)};")&&src.includes("a.skills[k]=readStat('skill',avant+pas,avant);")
+  &&src.includes("v.className='comp-val'+(valeurCompetence(a,k)>1?' dore':'');")&&src.includes("val.textContent='Valeur : '+valeurCompetence(a,k);")
+  &&css.includes('.comp-val.dore{color:#b8860b;'),'régler les compétences au clic, chiffre doré, bulle au survol');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1799 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1800 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
