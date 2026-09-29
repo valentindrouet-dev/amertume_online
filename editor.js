@@ -156,6 +156,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les planches d'icônes découpées, leurs noms et catégories (planches.js).
  c.planches=normalisePlanches(c.planches);c.nomsPlanches=normaliseNomsPlanches(c.nomsPlanches);
  c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);
+ // La classe où le MJ range chaque effet de talent, pour la bibliothèque : un nom par effet connu.
+ const ce=c.classesEffets&&typeof c.classesEffets==='object'&&!Array.isArray(c.classesEffets)?c.classesEffets:{};
+ c.classesEffets={};Object.entries(ce).forEach(([k,v])=>{if(TALENTS_CODES[k]&&typeof v==='string'&&v.trim())c.classesEffets[k]=v.trim().slice(0,60)});
  // La DEF ne dépasse jamais 6 : une pièce ou un adversaire notés plus haut y reviennent.
  [...c.items,...c.monsters].forEach(o=>{if(o&&Number(o.def)>DEF_MAX)o.def=DEF_MAX});
  // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
@@ -2090,9 +2093,18 @@ function renderBiblioObjets(){const boite=$('biblio-objets');if(!boite)return;
  const note=document.createElement('p');note.className='muted';
  note.textContent='Chaque objet dit ensuite comment on s’en sert : '+USAGES_OBJET.map(([,n])=>n.toLowerCase()).join(', ')+'.';
  boite.append(note)}
+/* La classe d'un effet dans la bibliothèque : celle que le MJ lui a donnée ; sinon celle qu'on
+   devine — les orbes au Mystique, la garde au Gardien — si la classe existe ; sinon les
+   génériques, ou les adversaires pour un effet de monstre. */
+const CLASSES_EFFETS_DEVINEES={orbes:'Mystique',orbesfeu:'Mystique',ignition:'Mystique',deluge:'Mystique',eruption:'Mystique',implosion:'Mystique',degatselem:'Mystique',
+ gardien:'Gardien',rempart:'Gardien',provocation:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',lamevent:'Lamevent'};
+const ADVERSAIRES='Adversaires';
+function classeEffet(c){const choisie=(catalog.classesEffets||{})[c.cle];if(choisie)return choisie;
+ const devinee=CLASSES_EFFETS_DEVINEES[c.cle];if(devinee&&(catalog.classes||[]).some(k=>k&&k.name===devinee))return devinee;
+ return c.monstre?ADVERSAIRES:GENERIQUES}
 function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
- /* Rangés par type — Action, Réaction, Passif, Critique, Maîtrise, Amélioration — puis
-    par nom : on lit la bibliothèque comme on lit un arbre de talents. */
+ /* Rangés par classe — celles du jeu, puis les génériques, puis les adversaires — et dans chacune
+    par type puis par nom : on lit la bibliothèque comme on lit un arbre de talents. */
  // Le bonus de caractéristique n'est pas une mécanique de talent : il a son propre éditeur.
  const codes=Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>{
   const k=TALENT_TYPES.findIndex(t=>t[0]===(c.type||'act'));
@@ -2102,9 +2114,17 @@ function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
  const compte=$('biblio-compte');
  if(compte)compte.textContent=codes.length;
  boite.replaceChildren();
- /* Une ligne par effet : son nom, puis la phrase que le moteur appliquera, réglages en
-    gras. La phrase vient du moteur lui-même, jamais recopiée ici. */
- codes.forEach(c=>{const bloc=document.createElement('div');bloc.className='effet-fiche';
+ const classes=(catalog.classes||[]).map(k=>k&&k.name).filter(n=>n&&n!==GENERIQUES),rangs=[...classes,GENERIQUES,ADVERSAIRES];
+ const groupes=new Map();codes.forEach(c=>{const k=classeEffet(c);if(!groupes.has(k))groupes.set(k,[]);groupes.get(k).push(c)});
+ [...rangs,...[...groupes.keys()].filter(k=>!rangs.includes(k))].forEach(k=>{const liste=groupes.get(k);if(!liste)return;
+  const h=document.createElement('h3');h.className='biblio-groupe';h.textContent=k;const encre=typeof teinteClasse==='function'?teinteClasse(k):'';if(encre)h.style.color=encre;boite.append(h);
+  liste.forEach(c=>boite.append(ficheEffet(c,k,rangs)))});
+ if(!codes.length){const v=document.createElement('p');v.className='muted';
+  v.textContent='Aucun effet câblé pour l’instant.';boite.append(v)}}
+/* Une ligne par effet : son nom, puis la phrase que le moteur appliquera, réglages en gras — la
+   phrase vient du moteur lui-même, jamais recopiée ici — et, à droite, la classe où le ranger. Un
+   clic sur la ligne ouvre la création d'un talent qui porte cet effet. */
+function ficheEffet(c,classe,rangs){const bloc=document.createElement('div');bloc.className='effet-fiche';{
   /* Une coche verte devant l'effet déjà porté par au moins un talent du catalogue : on voit
      d'un coup d'œil ce qui reste à câbler. Les talents porteurs se lisent au survol. */
   const porteurs=(catalog.talents||[]).filter(t=>t&&t.effet===c.cle).map(t=>t.name);
@@ -2122,9 +2142,19 @@ function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
   // Une amélioration nomme la mécanique qu'elle exige : on sait où la ranger.
   if(c.requiert&&TALENTS_CODES[c.requiert]){const r=document.createElement('span');r.className='prereq';
    r.textContent='↳ requiert '+TALENTS_CODES[c.requiert].nom;bloc.append(r)}
-  boite.append(bloc)});
- if(!codes.length){const v=document.createElement('p');v.className='muted';
-  v.textContent='Aucun effet câblé pour l’instant.';boite.append(v)}}
+  if(view==='mj'){
+   // La classe de l'effet se choisit ici ; un effet d'adversaire peut rejoindre une classe, et l'inverse.
+   const sel=document.createElement('select');sel.className='classe-effet';sel.title='Classe où ranger cet effet';sel.setAttribute('aria-label','Classe de l’effet '+c.nom);
+   rangs.forEach(r=>sel.add(new Option(r,r)));sel.value=classe;
+   sel.onclick=e=>e.stopPropagation();sel.onkeydown=e=>e.stopPropagation();
+   sel.onchange=()=>{catalog.classesEffets={...(catalog.classesEffets||{}),[c.cle]:sel.value};scheduleSave();renderBiblioEffets();document.dispatchEvent(new Event('amertume-content-changed'))};
+   bloc.prepend(sel);
+   // Le clic crée le talent : l'effet déjà choisi, ses réglages à leur valeur de départ, sa nature, sa classe.
+   bloc.classList.add('cliquable');bloc.tabIndex=0;bloc.setAttribute('role','button');bloc.title='Créer un talent avec l’effet '+c.nom;
+   const cree=()=>openTalent(null,renderTalents,{name:c.nom,type:TALENT_TYPES.some(t=>t[0]===c.type)?c.type:'act',effet:c.cle,params:paramsTalent({effet:c.cle,params:{}}),
+    ...(classe!==ADVERSAIRES&&classe!==GENERIQUES?{famille:classe}:classe===GENERIQUES?{famille:''}:{})});
+   bloc.onclick=cree;bloc.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cree()}}}
+  return bloc}}
 function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!cols)return;cols.replaceChildren();
  const q=($('talent-search').value||'').trim().toLowerCase();
  const familles=talentFamilies(),sel=$('talent-family'),avant=sel.value;
