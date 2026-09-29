@@ -410,6 +410,9 @@ button.btn-analyse[hidden]{display:none}
 /* Les compétences en ronds : le logo, le bord et le fond à sa couleur dominante, la valeur en
    pastille à cheval sur le bas du rond ; le nom au survol. Les huit tiennent sur une ligne. */
 .comp-ronds{display:flex;flex-wrap:wrap;justify-content:space-between;gap:18px 6px;margin:4px 0 18px}
+/* Sur la fiche de la table, plus étroite, les huit tiennent sur une ligne, un peu réduits. */
+#sheet #skills.comp-ronds{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));justify-items:center;gap:0;margin:12px 0 18px;zoom:.84}
+#sheet #skills.comp-ronds[hidden]{display:none}
 .comp-carte{display:flex;flex-direction:column;align-items:center;min-width:0}
 .comp-rond{position:relative;flex:none;box-sizing:border-box;width:44px;height:44px;margin:0;padding:0;border-radius:50%;display:grid;place-items:center;
  border:2.5px solid rgb(var(--tint));background:radial-gradient(circle at 50% 38%,rgba(var(--tint),.08),rgba(var(--tint),.3));color:rgb(var(--tint));cursor:default}

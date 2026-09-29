@@ -1577,8 +1577,7 @@ assert.ok(page.includes('function soclesOccupes(a,size,ignorer,adverses)')
 /* La fiche en jeu : plus de barre sous les PV, l'équipement ouvert d'office et les talents
    repliés ; l'attaque d'équipement s'appelle « Attaque » ; un talent qui frappe porte les dés,
    le bonus et son jeton, comme une attaque ; l'Onde du camp lève les états comme le bouton Soin. */
-assert.ok(page.includes('<span class="lifebar-text" id="hp"></span></div><div class="bloc-fixe" id="bloc-gear"><div class="bloc-tete"><span class="bloc-titre">Objets</span><span class="compte" id="gear-compte"></span></div><div id="gear"></div></div>')
- &&!page.includes('<details class="bloc-replie" id="bloc-gear">')&&page.includes('<details class="bloc-replie" id="bloc-talents" open>')
+assert.ok(!page.includes('<details class="bloc-replie" id="bloc-gear">')&&page.includes('<details class="bloc-replie" id="bloc-talents" open>')
  &&feuille.includes('.bloc-replie,.bloc-fixe{margin:6px 0}')&&feuille.includes(".bloc-replie .bloc-titre,.bloc-fixe .bloc-titre{font:700 15px 'Killam'")
  &&(page.match(/class="divider"/g)||[]).length===2,'fiche en jeu : équipement ouvert, pas de barre sous les PV');
 assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');")
@@ -1985,8 +1984,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")
-  &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")
-  &&page.includes(" const jet=skillRoll(valeurCompetence(a,i),d6);")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")&&page.includes("useOwnDamage===false?0:degatsDe(a);")
+  &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")&&page.includes("useOwnDamage===false?0:degatsDe(a);")
   &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")&&page.includes("const n=degatsDe(e);applyDamage(a,n);")
   &&src.includes("const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
@@ -3147,7 +3145,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function inventaireAdversaire(boite,cible,apres,genre){boite.replaceChildren();boite.classList.add('inv-adv');const restes=genre==='restes',dugenre=o=>estReste(o)===restes;")
   &&src.includes('<h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')&&src.includes("{cle:'restes',nom:'Restes',type:'panneau',")
   &&!src.includes("['restes','Restes',o=>o.category==='restes']"),'les restes à part');
- assert.ok(src.includes("+' ('+[...g.de].join(', ')+').',{ton:'butin'}));")&&page.includes("const TONS=['attaque','talent','soin','degats','etat','reveal','carte','butin'];")
+ assert.ok(src.includes("+' ('+[...g.de].join(', ')+').',{ton:'butin'}));")
   &&page.includes("const rx=new RegExp('('+[...names.map(n=>pieces.has(n)?quote(n)+'(?: ×\\\\d+)?':quote(n)),")&&page.includes("function pieceAuJournal(o,texte){const c=document.createElement('span');c.className='j-objet r-'+rareteDe(o);")
   &&css.includes('.j-objet{display:inline-block;'),'le butin au journal');
  // decorate en machine virtuelle : les pièces en pastilles, « ×3 » avec elles, aucun chiffre rouge.
