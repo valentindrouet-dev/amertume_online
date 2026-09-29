@@ -1635,3 +1635,6 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .talent-detail.grisee *{color:inherit!important}
 .talent-detail.grisee>.talent-bulle-nom b{color:#7d786e!important}
 .talent-detail.grisee img,.talent-detail.grisee .die-sq,.talent-detail.grisee i{filter:grayscale(1)}
+/* La bulle d'un objet a le contour de celle d'un talent : un liseré fin, la barre de couleur à
+   gauche, la même ombre. Sans épaisseur écrite, le trait prenait 3 px sombres par défaut. */
+.bulle .gear-detail.large{border-top:1px solid #00000026;border-right:1px solid #00000026;border-bottom:1px solid #00000026;box-shadow:0 2px 5px #0000002e}
