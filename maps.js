@@ -383,8 +383,10 @@ function renderObjets(){const vue=$('map-view'),m=currentMap();
   vue.append(t)})}
 /* Le jeton d'un objet porte l'icône de la première pièce qu'il contient — celle choisie en premier
    dans sa fiche ; sans pièce à icône, son initiale. */
-function poseLogoObjet(el,o){let im=null;
- for(const id of o.items||[]){const it=(catalog.items||[]).find(x=>x&&x.id===id);im=it&&typeof logoEquipement==='function'?logoEquipement(it):null;if(im)break}
+function poseLogoObjet(el,o){let im=null,piece=null;const pieces=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
+ for(const it of pieces){im=typeof logoEquipement==='function'?logoEquipement(it):null;if(im){piece=it;break}}
+ // Le fond du jeton : celui du carré de cette pièce, à la couleur de sa rareté.
+ piece=piece||pieces[0];if(piece&&typeof rareteDe==='function')el.classList.add('piece','r-'+rareteDe(piece));
  if(im){im.classList.add('logo-objet');el.replaceChildren(im);el.classList.add('avec-logo')}else el.textContent=(o.nom||'?')[0].toUpperCase()}
 /* ---------- Les fouilles ----------
    Un test de Perception fouille toute la zone de contact de l'aventurier, et une zone fouillée ne

@@ -1660,3 +1660,11 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 #fouilles-layer .fouille{position:absolute;border-radius:50%;border:2px dashed #d9a13b;background:#e8b64a2e;box-sizing:border-box}
 /* La Perception dans une zone déjà fouillée : son rond se grise. */
 #skills .fouillee{filter:grayscale(1);opacity:.45;cursor:not-allowed}
+
+/* Un objet de la carte qui contient une pièce prend le fond du carré de cette pièce : la couleur de sa rareté. */
+.token.objet.piece,.shape.objet.piece{color:#2a2118}
+.token.objet.r-commun,.shape.objet.r-commun{background:#dedad3}
+.token.objet.r-rare,.shape.objet.r-rare{background:#cfe0f5}
+.token.objet.r-mystique,.shape.objet.r-mystique{background:#e3d6f2}
+.token.objet.r-epique,.shape.objet.r-epique{background:#f5dcc0}
+.token.objet.r-ressource,.shape.objet.r-ressource{background:#efe2cc}
