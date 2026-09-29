@@ -747,6 +747,13 @@ button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,2
 .talent-detail.t-crit{background:#eccfd0;border-left:4px solid #b5525a}
 .talent-detail.t-mait{background:#f0e0bd;border-left:4px solid #c99a3c}
 .talent-detail.t-ame{background:#d3e5cd;border-left:4px solid #5e9a5b}
+/* La bulle d'un bouton de la barre d'action : celle d'un talent, à la couleur du bouton. */
+.talent-detail.bulle-action{background:color-mix(in srgb,var(--teinte,#3f7bc0) 24%,#fff);border-left:4px solid var(--teinte,#3f7bc0)}
+/* Les dés et le bonus de dégâts d'une attaque, sous le nom de sa bulle. */
+.talent-detail .bulle-des{display:flex;align-items:center;gap:7px;margin:0 0 6px}
+.talent-detail .bulle-des .pips{display:flex;gap:3px}
+.talent-detail .bulle-des .die-sq,.talent-detail .bulle-des .pips .etat-inflige{flex:0 0 20px;width:20px;height:20px}
+.talent-detail .bulle-des .bonus{font:800 14px/1 system-ui;color:#b04a35}
 /* L'attaque spéciale d'un monstre : l'état infligé devant le nom, les dés au bout. */
 .best-att-tete .etat-inflige{flex:none;width:24px;height:24px;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .best-att-tete .etat-inflige img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
@@ -817,25 +824,12 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 #arbres-corps{max-height:min(74vh,760px);overflow:auto;padding:4px 2px}
 .arbres-tete{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:16px}
 .arbres-classe{margin:0;font:700 22px 'Killam',Georgia,serif;letter-spacing:3px;text-transform:uppercase;color:var(--encre,var(--ink))}
-.arbre-maitrises{display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
-.arbre-maitrises .arbre-noeud{width:auto;min-width:120px}
 .arbres-cols{display:flex;gap:16px;align-items:stretch;justify-content:center;flex-wrap:wrap}
 .arbre-col{flex:1 1 150px;min-width:150px;max-width:230px;display:flex;flex-direction:column;align-items:center;padding:0 0 16px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line)}
 .arbre-col.libre{border-style:dashed;--encre:#7a6d5c}
 .arbre-col>.muted{font-size:13px;margin-top:8px}
 .arbre-titre{width:100%;box-sizing:border-box;margin:0 0 12px;padding:9px 10px 14px;text-align:center;font:700 12px system-ui;letter-spacing:2px;text-transform:uppercase;color:#fff;background:var(--encre,#6b5d4b);border-radius:11px 11px 0 0;clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),50% 100%,0 calc(100% - 8px))}
 .arbre-noeud{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;box-sizing:border-box;padding:0 8px;border:0;background:transparent;color:var(--ink);cursor:pointer;font:600 13px system-ui;position:relative;user-select:none}
-/* Le fil : chaque talent le tient au-dessus de lui, sauf la première racine d'une colonne et les maîtrises. */
-.arbre-noeud::before{content:'';display:block;width:3px;height:18px;border-radius:2px;background:var(--line-strong);margin:2px 0}
-.arbre-noeud.premier::before,.arbre-maitrises .arbre-noeud::before{display:none}
-.arbre-branche{display:flex;flex-direction:column;align-items:center;width:100%;min-width:0}
-/* Les sous-branches : en rangée sous leur talent, chacune sa part de la colonne. */
-.arbre-enfants{display:flex;justify-content:center;align-items:flex-start;width:100%}
-.arbre-enfants>.arbre-branche{flex:1 1 0}
-/* Les zones d'insertion ne paraissent que pendant un glissement, entre deux frères et au bas d'une colonne. */
-.arbre-entre{height:0;width:70%;box-sizing:border-box;border-radius:6px;transition:height .1s,margin .1s}
-.glisse .arbre-entre{height:12px;margin:3px 0;border:1px dashed var(--line-strong)}
-.arbre-entre.survol{background:var(--sel);border-color:var(--green)}
 .arbre-noeud.tire{opacity:.4}
 .arbre-noeud.survol .arbre-rond{box-shadow:0 0 0 3px var(--panel),0 0 0 6px var(--green)}
 .arbre-titre.survol{filter:brightness(1.25)}
@@ -920,40 +914,44 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 .best-att-tete .att-logo.vide{border:1px dashed var(--line-strong);color:var(--muted);font:700 13px system-ui}
 /* Une colonne pas encore baptisée : son intitulé s'efface un peu, pour inviter au clic. */
 .arbre-titre .arbre-voie.vierge{opacity:.72;font-style:italic}
-/* ---------- Les étages et les chemins ---------- */
-/* Une colonne en étages : l'épine au centre, les diagonales à gauche et à droite. Les
-   chemins se tracent en SVG par-dessus, d'un rond à l'autre, sous les nœuds. */
-.arbre-col{position:relative;min-width:250px;max-width:340px;flex-basis:250px}
+/* ---------- La grille et ses lignes ----------
+   Une colonne tient une grille, une case par talent, qui grandit avec ce qu'on y pose ; les lignes
+   se tracent en SVG dessous, d'un rond à l'autre. La grille laisse passer le pointeur entre ses
+   cases : le MJ clique une ligne pour l'effacer. */
+.arbre-col{position:relative;min-width:250px;max-width:none;flex:0 0 auto}
 .arbre-chemins{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:0}
-.arbre-etages{position:relative;z-index:1;display:flex;flex-direction:column;width:100%;align-items:stretch}
-.arbre-etage{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:start;width:100%}
-.arbre-etage.central>.arbre-noeud{grid-column:2}
-.arbre-etage.inter{min-height:34px;margin:10px 0}
-.arbre-etage.inter.vide{min-height:26px}
-.arbre-etages .arbre-noeud::before{display:none}
-.arbre-etages .arbre-noeud{padding:0 2px}
-/* Le nom et la ligne sous un bouton portent le fond de la colonne : un chemin qui passe dessous s'y cache, la lecture reste nette. */.arbre-etages .arbre-nom,.arbre-etages .arbre-niv{background:var(--panel-2);padding:1px 6px;border-radius:6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
-.arbre-etages .arbre-noeud.diag .arbre-rond{width:50px;height:50px;font-size:26px}
-.arbre-etages .arbre-noeud.diag .arbre-nom{font-size:12px}
-.arbre-etages .arbre-entre{align-self:center}
-/* La place vide d'une diagonale : un rond en pointillé, un « + » ; elle reçoit un talent
-   qu'on y dépose, ou en crée un d'un clic. Hors édition, elle n'est qu'un vide. */
+.arbre-grille{--case-l:74px;--case-h:88px;position:relative;z-index:1;display:grid;column-gap:30px;row-gap:30px;justify-content:center;padding:4px 14px;pointer-events:none}
+.arbre-grille>*{pointer-events:auto}
+.arbre-grille>.arbre-noeud{width:var(--case-l);padding:0;justify-self:center;align-self:start}
+/* Le niveau sous un bouton porte le fond de la colonne : une ligne qui passe dessous s'y cache. */
+.arbre-grille .arbre-niv{background:var(--panel-2);padding:1px 6px;border-radius:6px}
+.arbre-grille>.arbre-place{align-self:start;margin-top:12px;opacity:.4;transition:opacity .12s}
+/* Les cases où l'arbre peut grandir restent discrètes : elles se montrent quand on survole la colonne, ou pendant un glissement. */
+.arbre-col.editable:hover .arbre-grille>.arbre-place,.glisse .arbre-grille>.arbre-place{opacity:.8}
+.arbre-grille>.arbre-place:hover,.arbre-grille>.arbre-place:focus,.arbre-grille>.arbre-place.survol{opacity:1}
+/* Le talent d'où part la ligne que le MJ trace : cerclé de l'accent. */
+.arbre-noeud.relie-source .arbre-rond{box-shadow:0 0 0 3px var(--panel),0 0 0 6px var(--accent)}
+/* Une case vide où l'arbre peut grandir : un rond en pointillé, un « + » ; elle reçoit un talent
+   qu'on y dépose, ou en crée un d'un clic. Seul le MJ la voit. */
 .arbre-place{justify-self:center;width:34px;height:34px;border-radius:50%;border:2px dashed var(--line-strong);display:grid;place-items:center;color:var(--muted);font:700 18px/1 system-ui;cursor:pointer;background:var(--panel-2);box-shadow:0 0 0 3px var(--panel-2);opacity:.75}
 .arbre-place:empty{visibility:hidden}
 .arbre-place:hover,.arbre-place:focus{opacity:1;color:var(--accent);border-color:var(--accent)}
 .arbre-place.survol{opacity:1;border-style:solid;border-color:var(--green);box-shadow:0 0 0 3px var(--panel-2),0 0 0 6px var(--green)}
-/* Un chemin qui n'est pas encore actif — un bout au moins non appris — se lit en pointillés ; appris des deux côtés, il est plein et vert. Sans combattant, l'arbre est un plan : tout est plein. */
+/* Une ligne dont un bout au moins n'est pas appris se lit en pointillés ; apprise des deux côtés, elle est pleine et verte. Sans combattant, l'arbre est un plan : tout est plein. */
 .arbre-chemins .chemin .trait{stroke:var(--line-strong);stroke-width:3;stroke-linecap:round;fill:none;stroke-dasharray:3 7;opacity:.75}
-.arbre-col.sans-acteur .arbre-chemins .chemin:not(.vide):not(.cache) .trait{stroke-dasharray:none;opacity:1}
+.arbre-col.sans-acteur .arbre-chemins .chemin .trait{stroke-dasharray:none;opacity:1}
 .arbre-chemins .chemin .zone{stroke:transparent;stroke-width:16;stroke-linecap:round}
 .arbre-chemins .chemin.pris .trait{stroke:var(--green);stroke-dasharray:none;opacity:1}
-.arbre-chemins .chemin.vide .trait{stroke-dasharray:2 6;opacity:.55}
-.arbre-chemins .chemin.cache .trait{stroke-dasharray:5 7;opacity:.3}
+/* La pointe d'une ligne qui ne descend pas : à son arrivée, de la couleur du trait. */
+.arbre-chemins .chemin .pointe{fill:var(--line-strong);opacity:.75}
+.arbre-col.sans-acteur .arbre-chemins .chemin .pointe,.arbre-chemins .chemin.pris .pointe{opacity:1}
+.arbre-chemins .chemin.pris .pointe{fill:var(--green)}
+.arbre-col.editable .arbre-chemins .chemin:hover .pointe{fill:var(--accent);opacity:1}
 /* Les bonus de chemin : un petit rond posé au milieu du trait, au-dessus de lui. Chez le MJ, la
    place d'un bonus à venir, un « + » pointillé qui paraît au survol de la colonne. */
 .arbre-col>.arbre-noeud.sur-chemin,.arbre-col>.arbre-bonus-place{position:absolute;z-index:2;transform:translate(-50%,-50%);margin:0}
 .arbre-col>.arbre-noeud.sur-chemin[hidden],.arbre-col>.arbre-bonus-place[hidden]{display:none}
-.arbre-col>.arbre-noeud.sur-chemin{width:auto;padding:0;gap:0}.arbre-noeud.sur-chemin::before{display:none}
+.arbre-col>.arbre-noeud.sur-chemin{width:auto;padding:0;gap:0}
 .arbre-noeud.sur-chemin .arbre-outils{top:-26px;right:auto;left:50%;transform:translateX(-50%)}
 .arbre-noeud.bonus.sur-chemin .arbre-rond{width:32px;height:32px;border-width:3px;box-shadow:0 0 0 2px var(--panel),0 1px 4px #0004}
 .arbre-noeud.bonus.sur-chemin .arbre-rond b{font:800 11px/1 system-ui}.arbre-noeud.bonus.sur-chemin .arbre-rond small{font:800 6px/1.05 system-ui;letter-spacing:.2px}

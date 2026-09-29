@@ -21,9 +21,8 @@ function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots
  a.states=a.states.filter(s=>s!=='Gardé');return a}
 // Deux spécialisations par classe, pour l'instant : les deux branches de l'arbre.
 const VOIES_MAX=2;
-/* Les cinq chemins d'un étage de l'arbre : droit vers le central suivant, vers la diagonale
-   gauche et son retour, vers la diagonale droite et son retour. */
-const SEGMENTS=['c','g','gc','d','dc'];
+// De chaque talent d'un arbre partent deux lignes au plus, vers deux autres talents.
+const LIENS_MAX=2;
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 /* Les ressources dont une pièce est faite — deux au plus — et son prix, en or : saisis à
    l'armurerie, lus nulle part ailleurs pour l'instant. Le menu les range par ordre alphabétique. */
@@ -102,6 +101,53 @@ function normaliseRessources(l){if(!Array.isArray(l)||!l.length)return structure
  l.slice(0,100).forEach(r=>{if(!r||typeof r!=='object')return;const cle=String(r.cle||''),nom=String(r.nom||'').trim().slice(0,30);
   if(!CLE_MATERIAU.test(cle)||!nom||cles.has(cle)||noms.has(nom.toLowerCase()))return;cles.add(cle);noms.add(nom.toLowerCase());out.push({cle,nom})});
  return out.length?out:structuredClone(RESSOURCES_DEFAUT)}
+/* Les arbres d'avant tenaient en étages : une épine de talents centraux, sous chacun une diagonale à
+   gauche et à droite, et cinq chemins par étage — droit, vers chaque diagonale, et le retour de
+   chacune vers le central suivant — que le MJ pouvait fermer. Ils passent sur la grille libre : le
+   central au milieu, ses diagonales de part et d'autre juste dessous ; chaque chemin ouvert devient
+   une ligne, et le bonus posé dessus la suit. Les maîtrises ne viennent plus avec la classe : elles
+   quittent l'arbre et attendent que le MJ les y place. Vrai si quelque chose a changé. */
+function migreArbres(c){const T=(c.talents||[]).filter(Boolean),fam=t=>(t.famille||'').trim()||'Génériques';
+ const classes=new Set((c.classes||[]).map(k=>k&&k.name).filter(n=>n&&n!=='Génériques'));
+ const caches=c.cheminsCaches&&typeof c.cheminsCaches==='object'&&!Array.isArray(c.cheminsCaches)?c.cheminsCaches:{};
+ const cache=(id,seg)=>Array.isArray(caches[id])&&caches[id].includes(seg);
+ const ancien=t=>{const m=/^(.+)\|(c|g|gc|d|dc)$/.exec(String(t&&t.chemin||''));return m?{id:m[1],seg:m[2]}:null};
+ const aCase=t=>!!t.pos&&Number.isInteger(t.pos.x)&&Number.isInteger(t.pos.y);
+ let change=false;
+ classes.forEach(f=>{const brut=[...((c.voies||{})[f]||[])];T.forEach(t=>{if(fam(t)===f&&t.voie&&!brut.includes(t.voie))brut.push(t.voie)});
+  const voies=brut.slice(0,VOIES_MAX);while(voies.length<VOIES_MAX)voies.push('');
+  const nommees=voies.filter(Boolean),accueil=Math.max(0,voies.indexOf(''));
+  voies.forEach((v,i)=>{const liste=T.filter(t=>fam(t)===f&&!t.horsArbre&&t.type!=='mait'&&!ancien(t)&&((v&&t.voie===v)||(i===accueil&&!nommees.includes(t.voie||''))));
+   if(!liste.length||liste.some(aCase))return;change=true;
+   // L'ordre de l'ancien arbre : chaque racine, puis ce qui pend sous elle.
+   const ids=new Set(liste.map(t=>t.id)),vus=new Set(),ordre=[];
+   const pose=t=>{if(vus.has(t.id))return;vus.add(t.id);ordre.push(t);liste.filter(x=>x.prerequis===t.id&&x.id!==t.id).forEach(pose)};
+   liste.filter(t=>!t.prerequis||t.prerequis===t.id||!ids.has(t.prerequis)).forEach(pose);liste.forEach(pose);
+   const centraux=ordre.filter(t=>!t.branche||!ordre.some(x=>x.id===t.prerequis&&!x.branche&&x!==t));
+   const etages=centraux.map((t,k)=>{const dessous=ordre.filter(x=>x.branche&&x.prerequis===t.id&&!centraux.includes(x));
+    return {t,g:dessous.find(x=>x.branche==='g')||null,d:dessous.find(x=>x.branche==='d')||null,suivant:centraux[k+1]||null}});
+   liste.forEach(t=>{delete t.liens;delete t.pos});
+   let y=0;etages.forEach(e=>{e.t.pos={x:1,y};if(e.g)e.g.pos={x:0,y:y+1};if(e.d)e.d.pos={x:2,y:y+1};y+=e.g||e.d?2:1});
+   const lien=(de,vers)=>{if(de&&vers&&(de.liens||[]).length<LIENS_MAX)de.liens=[...(de.liens||[]),vers.id]};
+   etages.forEach(e=>{const n=e.suivant;
+    if(e.g&&!cache(e.t.id,'g'))lien(e.t,e.g);if(e.d&&!cache(e.t.id,'d'))lien(e.t,e.d);
+    if(n&&!(e.g&&e.d)&&!cache(e.t.id,'c'))lien(e.t,n);
+    if(n&&e.g&&!cache(e.t.id,'gc'))lien(e.g,n);if(n&&e.d&&!cache(e.t.id,'dc'))lien(e.d,n)});
+   // Ce que l'ancien arbre ne montrait pas — une seconde diagonale du même côté — se range en bas.
+   let k=0;liste.forEach(t=>{if(!t.pos){t.pos={x:k%3,y:y+Math.floor(k/3)};k++}});
+   // Le bonus d'un chemin suit sa ligne ; celle qui n'existe plus le renvoie au catalogue.
+   const bout={c:e=>[e.t,e.suivant],g:e=>[e.t,e.g],d:e=>[e.t,e.d],gc:e=>[e.g,e.suivant],dc:e=>[e.d,e.suivant]};
+   T.forEach(b=>{const m=ancien(b);const e=m&&etages.find(x=>x.t.id===m.id);if(!e)return;const [de,vers]=bout[m.seg](e);
+    if(de&&vers&&(de.liens||[]).includes(vers.id))b.chemin=de.id+'>'+vers.id;else{delete b.chemin;b.horsArbre=true}});
+   // La structure est dans les lignes, désormais : l'ancien prérequis de place s'efface.
+   liste.forEach(t=>{t.prerequis='';delete t.branche})})});
+ // Un bonus dont le chemin n'a trouvé aucun étage quitte l'arbre.
+ T.forEach(b=>{if(ancien(b)){delete b.chemin;b.horsArbre=true;change=true}});
+ /* Une fois, au passage à l'arbre libre : les maîtrises quittent l'arbre, où elles trônaient au-dessus
+    des colonnes. Une maîtrise créée ensuite s'y range comme tout talent. */
+ if(c.arbresLibres!==1){T.forEach(t=>{if(t.type==='mait'&&classes.has(fam(t))&&!t.horsArbre&&!aCase(t)){t.horsArbre=true;t.prerequis=''}});c.arbresLibres=1;change=true}
+ if(c.cheminsCaches!==undefined){delete c.cheminsCaches;change=true}
+ return change}
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les ressources d'abord : les pièces se relisent au travers d'elles, plus bas.
  migreRessources(c);const clesR=new Set(c.items.filter(o=>o&&o.category==='ressource').map(o=>o.cle)),resV=r=>clesR.has(r)?r:'';
@@ -132,7 +178,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(!t.prerequis||t.prerequis===t.id||!c.talents.some(x=>x&&x.id===t.prerequis))t.prerequis='';
   // La spécialisation d'un talent : la voie de l'arbre où il se range, ou rien.
   t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):'';
-  // Sa place dans l'arbre : sur l'épine, ou en diagonale — à gauche, à droite — sous son prérequis.
+  // L'ancienne place dans l'arbre, sur l'épine ou en diagonale : lue une fois par migreArbres, plus bas.
   t.branche=t.branche==='g'||t.branche==='d'?t.branche:'';
   // Retiré de l'arbre, il reste au catalogue.
   if(t.horsArbre!==true)delete t.horsArbre;
@@ -144,14 +190,18 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(t.volets&&typeof t.volets==='object'&&!Array.isArray(t.volets)){const o={};
    Object.entries(t.volets).slice(0,12).forEach(([k,v])=>{const n=Math.trunc(Number(v));if(/^[a-z]{1,20}$/.test(k)&&n>=0&&n<=3)o[k]=n});t.volets=o}
   else delete t.volets});
- // Le chemin d'un bonus : un bonus seulement, d'un central qui existe, sur un segment connu.
- c.talents.forEach(t=>{if(!t||t.chemin===undefined)return;const m=/^(.+)\|(c|g|gc|d|dc)$/.exec(String(t.chemin||''));
-  if(t.effet!=='bonus'||!m||!c.talents.some(x=>x&&x.id===m[1]))delete t.chemin});
- /* Les chemins fermés de l'arbre, par talent central : ceux qu'on ne dessine ni ne marche.
-    Un chemin d'un talent disparu, ou d'un segment inconnu, s'oublie. */
- const caches=c.cheminsCaches&&typeof c.cheminsCaches==='object'&&!Array.isArray(c.cheminsCaches)?c.cheminsCaches:{};
- c.cheminsCaches={};Object.entries(caches).forEach(([id,l])=>{if(!Array.isArray(l)||!c.talents.some(t=>t&&t.id===id))return;
-  const segs=[...new Set(l.filter(x=>SEGMENTS.includes(x)))];if(segs.length)c.cheminsCaches[id]=segs});
+ /* Les arbres d'avant, en épine et diagonales, passent sur la grille : une fois, là où aucun talent
+    n'a encore de case. Leurs chemins fermés deviennent des lignes absentes. */
+ migreArbres(c);
+ c.talents.forEach(t=>{if(!t)return;
+  // Sa case dans la grille de son arbre, et les deux lignes au plus qui en partent, vers des talents qui existent.
+  const p=t.pos;if(p&&typeof p==='object'&&Number.isInteger(p.x)&&Number.isInteger(p.y)&&Math.abs(p.x)<=60&&Math.abs(p.y)<=120)t.pos={x:p.x,y:p.y};else delete t.pos;
+  const l=Array.isArray(t.liens)?[...new Set(t.liens.filter(id=>typeof id==='string'&&id!==t.id&&c.talents.some(x=>x&&x.id===id)))].slice(0,LIENS_MAX):[];
+  if(l.length)t.liens=l;else delete t.liens;delete t.branche});
+ /* Le chemin d'un bonus : une ligne qui existe, « de>vers ». Sans elle, le bonus quitte l'arbre et
+    reste au catalogue, prêt à reprendre place. */
+ c.talents.forEach(t=>{if(!t||t.chemin===undefined)return;const m=/^([^>]+)>([^>]+)$/.exec(String(t.chemin||''));
+  if(t.effet!=='bonus'||!m||!c.talents.some(x=>x&&x.id===m[1]&&(x.liens||[]).includes(m[2]))){delete t.chemin;if(t.effet==='bonus')t.horsArbre=true}});
  /* Une voie qu'un talent porte sans qu'elle soit nommée entre dans la liste de sa classe :
     la colonne ne disparaît pas quand on en sort le dernier talent. */
  c.talents.forEach(t=>{if(!t||!t.voie)return;const f=(t.famille||'').trim()||'Génériques',l=c.voies[f]||[];
@@ -244,6 +294,16 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
 /* Au-dessus de la piste, les dés de dégâts et le bonus du combattant pris : ceux de l'attaque
    retenue. Survoler un rond qui frappe y montre les siens, le temps du survol. Affaibli ou une
    attaque « dés seuls » n'ont pas de bonus. */
+/* La bulle d'un bouton de la barre d'action : celle d'un talent — son fond teinté, son bord, son nom
+   en Killam — à la couleur du bouton. Une attaque y montre ses dés et son bonus de dégâts ; ce qui
+   l'empêche se lit en dernier, en retrait. */
+function bulleAction(b,{nom,dit='',note='',des=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action';
+ const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);
+ const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=nom;tete.append(n);d.append(tete);
+ if(des){des.classList.add('bulle-des');d.append(des)}
+ if(dit){const p=document.createElement('p');p.className='palier-effet';p.textContent=dit;d.append(p)}
+ if(note&&note!==dit){const p=document.createElement('p');p.className='muted';p.textContent=note;d.append(p)}
+ return ouvrirBulle(b,d,'bulle-talent')}
 function montreDesCombattant(dice,bonus,toujours){const z=$('des-combattant');if(!z)return;
  z.replaceChildren();z.hidden=!dice;if(dice)z.append(desEtBonus(dice,bonus,toujours,false))}
 function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
@@ -278,18 +338,15 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
      l'Attaque Blindée d'un adversaire — garde le nom qu'on lui a donné. Chez un adversaire,
      chaque arme est une variante à elle seule : son bouton porte son nom. */
   const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');
-  const nom=document.createElement('p');nom.className='gear-nom';nom.textContent=libelle;
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
   inerte(b,!!refus);
   // Le clic droit du MJ rend l'Action et pose la flèche en vol.
   b.reinit=()=>{rendPoint(a,'action');if(typeof tirEnVol!=='undefined')tirEnVol=false};
-  b.title=refus||((at.gear&&at.name?at.name+' — ':'')+'Frapper : '+(at.gear?'attaque avec l’équipement':'attaque de fiche')
-   +' · '+(at.range==='distance'?'à distance':'au contact')
-   +(at.targets==='all'?' · toutes cibles':''));
-  b.setAttribute('aria-label',libelle+(at.gear&&at.name?' ('+at.name+')':'')+' — '+b.title);
-  // Sa bulle : le nom, puis ce qu'elle fait — ou ce qui l'empêche.
-  const dit=b.title;b.removeAttribute('title');
-  surveille(b,()=>{const d=document.createElement('div');d.className='cat-detail bulle-attaque-corps';const q=document.createElement('p');q.className='muted';q.textContent=dit;d.append(nom.cloneNode(true),q);ouvrirBulle(b,d,'bulle-gear')});
+  const fait=(at.gear&&at.name?at.name+' — ':'')+'Frapper : '+(at.gear?'attaque avec l’équipement':'attaque de fiche')
+   +' · '+(at.range==='distance'?'à distance':'au contact')+(at.targets==='all'?' · toutes cibles':'');
+  b.setAttribute('aria-label',libelle+(at.gear&&at.name?' ('+at.name+')':'')+' — '+(refus||fait));
+  // Sa bulle, celle d'un talent : le nom, les dés et le bonus de dégâts, ce qu'elle fait — et ce qui l'empêche.
+  surveille(b,()=>bulleAction(b,{nom:libelle,dit:fait,note:refus,des:voit?desEtBonus(at.dice,bonusDe(at),at.useOwnDamage!==false,false):null}));
   /* Le bouton n'arme plus l'attaque : il la porte. On retient laquelle est partie —
      les dés affichés la suivent — puis le coup part aussitôt. */
   b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;
@@ -306,9 +363,11 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   const compte=typeof compteDuTexte==='function'?compteDuTexte(t.texte):'';
   if(compte)b.append(Object.assign(document.createElement('span'),{className:'compte-rond',textContent:compte}));
   inerte(b,!t.peut);b.setAttribute('aria-label',t.texte+' — '+t.titre);
-  // Sa bulle : celle du talent, et ce qui l'empêche s'il ne peut pas partir.
-  surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre}));
-  // Un talent qui frappe montre ses dés au-dessus de la piste, au survol, comme une attaque.
+  /* Sa bulle : celle du talent, et ce qui l'empêche s'il ne peut pas partir ; un talent qui frappe
+     y montre ses dés et son bonus, sous son nom, comme une attaque. */
+  surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre,
+   des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false):null}));
+  // Un talent qui frappe montre aussi ses dés au-dessus de la piste, au survol.
   survol(b,t.des,t.bonus||0,false);
   b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(b)})}
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
@@ -766,7 +825,6 @@ function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.rep
  const q=($('hero-search').value||'').trim().toLowerCase();
  const troupe=actors.filter(a=>a.hero);
  // La maîtrise d'une classe s'acquiert avec la classe : on la pose avant de dessiner.
- if(view==='mj'){let acquis=false;troupe.forEach(a=>{if(assureMaitrises(a))acquis=true});if(acquis)scheduleSave()}
  // Chercher dans quatre fiches n'a pas de sens : le champ ne paraît qu'à partir de neuf.
  $('hero-filtres').hidden=troupe.length<9&&!q;
  const heros=troupe.filter(a=>!q||a.name.toLowerCase().includes(q));
@@ -2197,11 +2255,6 @@ function phrasesPaliers(){const f=$('talent-form').elements,code=TALENTS_CODES[f
   td.innerHTML=h})}
 // Le nom d'un modèle du bestiaire, pour les phrases du moteur qui ne le connaissent pas.
 function nomModele(id){const m=(catalog.monsters||[]).find(x=>x&&x.id===id);return m?m.name:''}
-/* Vrai si x repose, de près ou de loin, sur t : par la fiche ou par la mécanique. */
-/* Le garde-fou marque les ancêtres parcourus — t — et non le candidat x : marquer x coupait la
-   descente au premier étage, et un cycle à trois talents passait. */
-function descendDe(x,t,vus=new Set()){if(!x||!t||vus.has(t.id))return false;vus.add(t.id);
- return talentsDependants(t,catalog.talents).some(d=>d.id===x.id||descendDe(x,d,vus))}
 /* « defauts » : ce que l'arbre sait déjà d'un talent qu'on y crée — sa classe, sa voie, le
    talent dont il pendra, sa nature — pour ne pas le redire au formulaire. */
 function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talentIndex=i;talentApres=apres;
@@ -2318,8 +2371,10 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.famille=(f.famille.value===AUTRE_CLASSE?f.familleLibre.value:f.famille.value).trim()||GENERIQUES;
  /* La voie, le prérequis et la place viennent de l'arbre : ceux qu'il a donnés à un talent
     créé chez lui, ceux qu'il tient déjà sinon. Changer de classe les remet à zéro. */
- if(!avant){const d=talentDefauts||{};t.voie=d.voie||'';t.prerequis=d.prerequis||'';t.branche=d.branche==='g'||d.branche==='d'?d.branche:'';if(d.chemin)t.chemin=d.chemin}
- else if(talentFamily(avant)!==talentFamily(t)){t.voie='';t.prerequis='';t.branche=''}
+ if(!avant){const d=talentDefauts||{};t.voie=d.voie||'';t.prerequis='';if(d.chemin)t.chemin=d.chemin;
+  if(d.pos&&Number.isInteger(d.pos.x)&&Number.isInteger(d.pos.y))t.pos={x:d.pos.x,y:d.pos.y}}
+ // D'une classe à l'autre, il quitte sa case et ses lignes ; l'arbre de la nouvelle lui en donne une.
+ else if(talentFamily(avant)!==talentFamily(t)){t.voie='';t.prerequis='';delete t.pos;delete t.liens}
  t.type=f.type.value;t.level=num(f.level.value,1,20);
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
  t.logo=f.logo&&(logoValide(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';
@@ -2351,6 +2406,9 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  // Seul un bonus se pose sur un chemin : redevenu talent, il le quitte.
  if(t.effet!=='bonus')delete t.chemin;
  if(talentIndex===null)catalog.talents.push(t);else catalog.talents[talentIndex]=t;
+ // Créé depuis une case de l'arbre : la ligne qui y mène part du talent voisin, s'il en a encore une.
+ if(!avant&&talentDefauts&&talentDefauts.de){const de=talent(talentDefauts.de);
+  if(de&&de!==t&&!liensDe(de).includes(t.id)&&liensDe(de).length<LIENS_MAX)de.liens=[...liensDe(de),t.id]}
  talentDialog.close();renderCatalogPages();render();scheduleSave();
  const rappel=talentApres;talentApres=null;if(rappel)rappel(t)};
 $('delete-talent').onclick=()=>{if(talentIndex===null)return;
@@ -2612,14 +2670,12 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
    v.textContent=q?'Aucun talent de ce nom.':'Aucun talent au catalogue : crée-en un dans l’onglet Talents.';
    corps.append(v)}}}
 /* ---------- Arbres de talents ---------- */
-/* Une classe se lit comme un arbre : sa maîtrise en tête, acquise avec la classe, puis une
-   colonne par spécialisation — deux au plus — dont les racines se prennent de haut en bas ;
-   sous un talent pendent des sous-branches, les talents qui le requièrent. Les talents sans
-   voie forment le tronc commun ; les génériques, une colonne à part, se choisissent
-   librement. Le MJ bâtit l'arbre ici même : il nomme une voie, la renomme, la dissout ;
-   il glisse un talent sur un autre pour l'y suspendre, sur un bandeau pour l'y ranger, entre
-   deux pour l'insérer ; il crée un talent depuis une colonne ou sous un talent. Comment les
-   points de talent débloquent les rangs viendra ensuite. */
+/* Une classe se lit comme deux arbres, une colonne par spécialisation. Chaque talent y tient sa case
+   et fait partir deux lignes au plus vers d'autres talents — dessous, en diagonale, à gauche, à
+   droite — et l'arbre grandit avec ce qu'on y pose. Un talent sans ligne qui mène à lui est un
+   départ ; les autres s'ouvrent par une ligne depuis un talent tenu. Les maîtrises sont des talents
+   comme les autres. Le MJ bâtit l'arbre ici même : il nomme une voie, la renomme, la dissout ; il
+   crée ou place un talent dans une case vide, le glisse ailleurs, trace et efface les lignes. */
 /* Une classe a toujours toutes ses colonnes, nommées ou non : un arbre se lit d'un coup
    d'œil, et l'on ne compte pas les cases vides. Chaque rang porte un nom — ou rien tant que
    le MJ ne l'a pas baptisé. Un catalogue d'avant les voies nommées donne les siennes par
@@ -2642,8 +2698,7 @@ function nommerVoie(famille,rang,nom){nom=String(nom||'').trim().slice(0,60);
  if(nom&&voies.some((v,i)=>v===nom&&i!==rang))return false;
  const accueil=rangDAccueil(famille);
  catalog.voies||={};catalog.voies[famille]=voies.map((v,i)=>i===rang?nom:v);
- // Une maîtrise trône au-dessus des colonnes : elle n'a que faire d'une voie.
- (catalog.talents||[]).forEach(t=>{if(!t||talentFamily(t)!==famille||t.type==='mait')return;
+ (catalog.talents||[]).forEach(t=>{if(!t||talentFamily(t)!==famille)return;
   const sansVoie=!t.voie||!voies.filter(Boolean).includes(t.voie);
   if(avant&&t.voie===avant)t.voie=nom;
   else if(!avant&&sansVoie&&rang===accueil)t.voie=nom});
@@ -2663,125 +2718,114 @@ function dissoudreVoie(famille,nom){const i=voiesDe(famille).indexOf(nom);
 function classeDuHeros(a){const sienne=(a&&a.role||'').split('·')[0].trim(),toutes=talentFamilies();
  const cle=typeof cleClasse==='function'?cleClasse(sienne):'';
  return sienne?toutes.find(f=>f===sienne)||toutes.find(f=>cle&&cleClasse(f)===cle)||toutes.find(f=>cle&&cle.startsWith(cleClasse(f)))||null:null}
-// Les maîtrises d'une classe : ses talents de type Maîtrise, quelle que soit leur voie.
-function maitrisesDe(classe){return classe?(catalog.talents||[]).filter(t=>t&&t.type==='mait'&&!t.horsArbre&&talentFamily(t)===classe):[]}
-// La maîtrise vient avec la classe : un aventurier qui ne l'a pas la reçoit. Vrai si la fiche a changé.
-function assureMaitrises(a){if(!a||!a.hero)return false;a.talents??=[];let change=false;
- maitrisesDe(classeDuHeros(a)).forEach(t=>{if(!a.talents.includes(t.id)){a.talents.push(t.id);change=true}});
- return change}
-/* Une colonne en forêt : les racines — sans prérequis dans la colonne — dans l'ordre du
-   catalogue, qui est celui du MJ, et sous chacune les talents qui la requièrent. */
-function foretArbre(liste){const ids=new Set(liste.map(t=>t.id)),vus=new Set();
- const noeud=t=>{if(vus.has(t.id))return null;vus.add(t.id);
-  return {t,enfants:liste.filter(x=>x.prerequis===t.id&&x.id!==t.id).map(noeud).filter(Boolean)}};
- const racines=liste.filter(t=>!t.prerequis||t.prerequis===t.id||!ids.has(t.prerequis)).map(noeud).filter(Boolean);
- liste.forEach(t=>{if(!vus.has(t.id)){const n=noeud(t);if(n)racines.push(n)}});   // un cycle, faute de racine, sort quand même
- return racines}
-const aplatit=n=>[n.t,...n.enfants.flatMap(aplatit)];
-function colonneArbre(titre,famille,voie,liste,rang){const arbre=foretArbre(liste);
- return {titre,famille,voie,rang,arbre,racines:arbre.map(n=>n.t),liste:arbre.flatMap(aplatit)}}
-/* Les colonnes d'une classe : deux, toujours, nommées ou non. Celle qui accueille les
-   talents sans voie s'appelle « Tronc commun » tant qu'elle n'a pas de nom ; les autres
-   attendent le leur. Les maîtrises n'y sont pas : elles trônent au-dessus. */
-/* L'arbre fait foi : dans une colonne, un talent ne requiert que ce qui pend au-dessus de lui,
-   ou une maîtrise de sa classe. Un prérequis resté d'ailleurs — une autre colonne, une autre
-   classe, un talent retiré de l'arbre — ne se voyait pas et verrouillait pourtant le talent :
-   il s'efface, avec la diagonale qui allait avec. Vrai si quelque chose a changé. */
+/* ---------- L'arbre libre ----------
+   Chaque talent d'un arbre tient une case de la grille de sa colonne — « pos », {x, y} — et fait
+   partir au plus deux lignes, « liens », vers deux talents du même arbre : dessous, en diagonale,
+   à gauche, à droite, où qu'ils soient. La grille grandit avec ce qu'on y pose. Les maîtrises sont
+   des talents comme les autres : elles s'y placent et s'y apprennent. */
+function posDe(t){const p=t&&t.pos;return p&&Number.isInteger(p.x)&&Number.isInteger(p.y)?p:null}
+const liensDe=t=>Array.isArray(t&&t.liens)?t.liens:[];
+// Ceux d'une liste d'où part une ligne vers ce talent.
+function entreesDe(liste,t){return (liste||[]).filter(x=>x&&t&&x!==t&&liensDe(x).includes(t.id))}
+/* Ce qu'attend un talent : rien s'il n'a aucune ligne qui mène à lui — c'est un départ — ou si l'un
+   de ceux d'où part une ligne vers lui est tenu. Sinon leurs noms. */
+function verrouArbre(portes,liste,t){const e=entreesDe(liste,t);if(!e.length)return '';
+ return e.some(x=>(portes||[]).includes(x.id))?'':e.map(x=>x.name).join(' ou ')}
+/* Ce qu'on atteint en suivant les lignes de talent tenu en talent tenu, depuis les départs : les
+   talents tenus sans ligne tenue qui mène à eux. « sans » : le même chemin, ce talent-là oublié. */
+function atteintsDepuis(portes,liste,sans){const tous=portes||[],tient=new Set(tous.filter(id=>id!==sans));
+ const par=new Map((liste||[]).map(t=>[t.id,t])),vus=new Set();
+ const file=(liste||[]).filter(t=>tous.includes(t.id)&&!entreesDe(liste,t).some(x=>tous.includes(x.id))&&tient.has(t.id));
+ while(file.length){const t=file.shift();if(vus.has(t.id))continue;vus.add(t.id);
+  liensDe(t).forEach(id=>{const x=par.get(id);if(x&&tient.has(id)&&!vus.has(id))file.push(x)})}
+ return vus}
+/* Oublier un talent fait tomber ce qu'on n'atteignait plus que par lui. Un talent tenu hors des lignes
+   — donné par le MJ — ne tombe pas pour autant. */
+function chuteArbre(portes,liste,t){const avant=atteintsDepuis(portes,liste,null),apres=atteintsDepuis(portes,liste,t.id);
+ return (liste||[]).filter(x=>x!==t&&avant.has(x.id)&&!apres.has(x.id))}
+// La case libre la plus proche sous un talent — dessous, puis en diagonale ; sans talent, sous l'arbre.
+function caseLibre(liste,depuis){const prise=(x,y)=>(liste||[]).some(t=>{const p=posDe(t);return !!p&&p.x===x&&p.y===y});
+ const p=posDe(depuis);
+ if(p)for(let dy=1;dy<120;dy++)for(const dx of [0,-1,1,-2,2])if(!prise(p.x+dx,p.y+dy))return {x:p.x+dx,y:p.y+dy};
+ const ps=(liste||[]).map(posDe).filter(Boolean);if(!ps.length)return {x:0,y:0};
+ const xs=ps.map(q=>q.x);return {x:Math.round((Math.min(...xs)+Math.max(...xs))/2),y:Math.max(...ps.map(q=>q.y))+1}}
+/* Tracer une ligne de « de » vers « vers », ou l'effacer si elle existe : « ajoute », « retire »,
+   « plein » quand deux lignes en partent déjà, « rien » sinon. Le bonus posé sur une ligne effacée
+   quitte l'arbre et reste au catalogue. */
+function basculeLien(de,vers){if(!de||!vers||de===vers)return 'rien';
+ if(liensDe(de).includes(vers.id)){de.liens=liensDe(de).filter(x=>x!==vers.id);if(!de.liens.length)delete de.liens;
+  const b=bonusDuChemin(de.id,vers.id);if(b){delete b.chemin;b.horsArbre=true}return 'retire'}
+ if(liensDe(de).length>=LIENS_MAX)return 'plein';
+ de.liens=[...liensDe(de),vers.id];return 'ajoute'}
+/* Les colonnes d'une classe : deux, toujours, nommées ou non. Celle qui accueille les talents sans
+   voie s'appelle « Tronc commun » tant qu'elle n'a pas de nom ; les autres attendent le leur. */
+function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!lisChemin(t));
+ const voies=voiesDe(classe),nommees=voies.filter(Boolean),accueil=rangDAccueil(classe);
+ // Dans une colonne, de haut en bas puis de gauche à droite ; qui n'a pas encore de case, en dernier.
+ const rang=t=>{const p=posDe(t);return p?[p.y,p.x]:[1e9,0]};
+ return voies.map((v,i)=>{
+  /* Le rang d'accueil prend les siens et les sans-voie : quand les deux portent un nom, un talent
+     sans voie s'y range quand même plutôt que de disparaître de l'arbre. */
+  const liste=talents.filter(t=>(v&&t.voie===v)||(i===accueil&&!nommees.includes(t.voie||'')))
+   .map((t,k)=>[t,k]).sort(([x,i1],[y,i2])=>rang(x)[0]-rang(y)[0]||rang(x)[1]-rang(y)[1]||i1-i2).map(([t])=>t);
+  return {titre:v||(i===accueil?'Tronc commun':'Spécialisation '+(i+1)),famille:classe,voie:v,rang:i,liste}})}
+// La colonne où se range un talent de cette classe et de cette voie.
+function colonneDe(famille,voie){const cols=colonnesArbre(famille);return cols.find(c=>c.voie&&c.voie===voie)||cols[rangDAccueil(famille)]||null}
+/* L'arbre fait foi : une ligne ne mène qu'à un talent de sa colonne, deux au plus ; chaque talent a
+   sa case, une seule — qui n'en a pas en reçoit une libre sous l'arbre ; un bonus suit sa ligne ou
+   quitte l'arbre. Vrai si quelque chose a changé. */
 function accordeArbres(){let change=false;
  (catalog.classes||[]).map(c=>c&&c.name).filter(n=>n&&n!==GENERIQUES).forEach(classe=>{
-  const maitrises=new Set(maitrisesDe(classe).map(t=>t.id));
-  colonnesArbre(classe).forEach(col=>{const ids=new Set(col.liste.map(t=>t.id));
-   col.liste.forEach(t=>{if(t.prerequis&&!ids.has(t.prerequis)&&!maitrises.has(t.prerequis)){t.prerequis='';t.branche='';change=true}})})});
+  colonnesArbre(classe).forEach(col=>{const ids=new Set(col.liste.map(t=>t.id)),posees=[];
+   col.liste.forEach(t=>{const l=liensDe(t),bon=[...new Set(l.filter(id=>ids.has(id)&&id!==t.id))].slice(0,LIENS_MAX);
+    if(bon.length!==l.length||bon.some((id,k)=>id!==l[k])){if(bon.length)t.liens=bon;else delete t.liens;change=true}
+    const p=posDe(t);if(p&&!posees.some(q=>{const r=posDe(q);return r.x===p.x&&r.y===p.y})){posees.push(t);return}
+    t.pos=caseLibre(posees,null);posees.push(t);change=true})})});
+ (catalog.talents||[]).forEach(t=>{if(t&&lisChemin(t)&&!departChemin(t)){delete t.chemin;t.horsArbre=true;change=true}});
  return change}
-/* Un bonus de caractéristique peut se poser au milieu d'un chemin plutôt que sur un nœud : il se
-   range par le central de son étage et le segment qu'il occupe, « id|g ». Ce n'est pas un nœud de
-   colonne. Le talent d'où part le chemin l'ouvre : pris, le bonus devient activable, à son prix
-   en PT ; rien ne l'exige pour passer. */
-const cleChemin=(id,seg)=>id+'|'+seg;
-function lisChemin(t){const m=/^(.+)\|(c|g|gc|d|dc)$/.exec(String(t&&t.chemin||''));return m?{id:m[1],seg:m[2]}:null}
-/* Un talent ouvre deux chemins, pas plus : un central qui porte ses deux diagonales n'a plus de
-   chemin droit vers le suivant ; avec une seule, ou aucune, le droit demeure. */
-const droitPermis=e=>!(e&&e.g&&e.d);
-function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&t.type!=='mait'&&!t.horsArbre&&!lisChemin(t));
- const voies=voiesDe(classe),nommees=voies.filter(Boolean),accueil=rangDAccueil(classe);
- return voies.map((v,i)=>{
-  /* Le rang d'accueil prend les siens et les sans-voie : quand les trois portent un nom,
-     un talent sans voie s'y range quand même plutôt que de disparaître de l'arbre. */
-  const liste=talents.filter(t=>(v&&t.voie===v)||(i===accueil&&!nommees.includes(t.voie||'')));
-  const titre=v||(i===accueil?'Tronc commun':'Spécialisation '+(i+1));
-  return colonneArbre(titre,classe,v,liste,i)})}
-/* De haut en bas : une racine ne s'apprend qu'une fois la racine du dessus apprise ; un
-   talent suspendu attend son prérequis, ce que dit déjà le catalogue. */
-function verrouColonne(portes,racines,t){const i=racines.indexOf(t);
- return i>0&&!(portes||[]).includes(racines[i-1].id)?racines[i-1].name:''}
-/* Placer un talent dans l'arbre : sa classe, sa voie, ce qu'il requiert, et sa place parmi
-   ses frères — avant celui qu'on désigne, sinon en dernier. Jamais sous lui-même ni sous ce
-   qui repose déjà sur lui : l'arbre ne se mord pas la queue. */
-/* Ceux qui pendaient sous un talent qui s'en va remontent à sa place, sous son propre prérequis ;
-   une diagonale garde son côté s'il est libre au-dessus, sinon elle rejoint l'épine. */
-function remonteEnfants(t){const liste=catalog.talents||[];
- liste.forEach(x=>{if(!x||x===t||x.prerequis!==t.id)return;x.prerequis=t.prerequis||'';
-  if(x.branche&&(!x.prerequis||liste.some(y=>y&&y!==x&&y!==t&&!y.horsArbre&&y.prerequis===x.prerequis&&y.branche===x.branche)))x.branche=''})}
-function placerTalent(id,dest){const liste=catalog.talents||[],i=liste.findIndex(t=>t&&t.id===id);if(i<0)return false;
- const t=liste[i];
- if(dest.prerequis){const p=liste.find(x=>x&&x.id===dest.prerequis);if(!p||p===t||descendDe(p,t))return false}
- if(dest.avant===t.id)return false;
- // Vers une autre colonne, il part seul : ses suivants restent dans la leur, raccrochés au-dessus.
- if(talentFamily(t)!==(dest.famille||GENERIQUES)||(t.voie||'')!==(dest.voie||''))remonteEnfants(t);
- t.famille=dest.famille||GENERIQUES;t.voie=dest.voie||'';t.prerequis=dest.prerequis||'';delete t.horsArbre;
- t.branche=dest.branche==='g'||dest.branche==='d'?dest.branche:'';
- liste.splice(i,1);
- const k=dest.avant?liste.findIndex(x=>x&&x.id===dest.avant):-1;
- if(k>=0)liste.splice(k,0,t);else liste.push(t);
- return true}
-/* ---------- Les étages d'une colonne ----------
-   L'épine : les talents centraux, dans l'ordre de l'arbre. Sous chaque central, un étage
-   intermédiaire — une place en diagonale à gauche, une à droite — que tient un talent de
-   branche « g » ou « d » suspendu à ce central. On descend tout droit, ou par une
-   diagonale, d'où un chemin redescend vers le central suivant. Un talent de branche dont
-   le central n'est pas dans la colonne reprend l'épine : rien ne se perd. */
-function etagesArbre(col){const liste=col.liste||[];
- const centraux=liste.filter(t=>!t.branche||!liste.some(x=>x.id===t.prerequis&&!x.branche&&x!==t));
- return centraux.map((t,i)=>{const dessous=liste.filter(x=>x.branche&&x.prerequis===t.id&&!centraux.includes(x));
-  return {t,rang:i,g:dessous.find(x=>x.branche==='g')||null,d:dessous.find(x=>x.branche==='d')||null,suivant:centraux[i+1]||null}})}
-// Un chemin fermé ne se dessine ni ne se marche : le MJ le ferme ou l'ouvre d'un clic.
-function cheminCache(id,seg){const l=(catalog.cheminsCaches||{})[id];return Array.isArray(l)&&l.includes(seg)}
-function basculeChemin(id,seg){if(!id||!SEGMENTS.includes(seg))return false;
- catalog.cheminsCaches||={};const l=catalog.cheminsCaches[id]||[];
- const apres=l.includes(seg)?l.filter(x=>x!==seg):[...l,seg];
- if(apres.length)catalog.cheminsCaches[id]=apres;else delete catalog.cheminsCaches[id];return true}
-/* Ce qu'un nœud attend, par les chemins ouverts : une diagonale, son central et sa branche
-   ouverte ; un central, le central du dessus par le chemin droit, ou une diagonale du dessus
-   par son retour. Le premier central est libre. Le nom de ce qui manque, ou rien. */
-function verrouEtages(portes,etages,t){const a=id=>(portes||[]).includes(id);
- for(let i=0;i<etages.length;i++){const e=etages[i];
-  if(e.g===t||e.d===t){const seg=e.g===t?'g':'d';
-   if(cheminCache(e.t.id,seg))return 'un chemin ouvert jusqu’à lui';return a(e.t.id)?'':e.t.name}
-  if(e.t===t){if(i===0)return '';const h=etages[i-1],voies=[];
-   if(droitPermis(h)&&!cheminCache(h.t.id,'c'))voies.push(h.t);
-   if(h.g&&!cheminCache(h.t.id,'gc'))voies.push(h.g);
-   if(h.d&&!cheminCache(h.t.id,'dc'))voies.push(h.d);
-   if(!voies.length)return 'un chemin ouvert jusqu’à lui';
-   return voies.some(x=>a(x.id))?'':voies.map(x=>x.name).join(' ou ')}}
- return ''}
-// Le bonus posé sur un chemin, s'il y en a un.
-function bonusDuChemin(id,seg){return (catalog.talents||[]).find(t=>t&&estBonus(t)&&t.chemin===cleChemin(id,seg))||null}
-// Le talent d'où part le chemin d'un bonus : le central, ou la diagonale pour un retour.
-function departChemin(t){const c=lisChemin(t);if(!c)return null;
- if(c.seg==='gc'||c.seg==='dc'){const cote=c.seg[0];return (catalog.talents||[]).find(x=>x&&x.prerequis===c.id&&x.branche===cote&&!x.horsArbre&&!lisChemin(x))||null}
- return (catalog.talents||[]).find(x=>x&&x.id===c.id)||null}
-// Un bonus de chemin dont le départ n'est plus tenu tombe avec lui.
+/* Un bonus de caractéristique peut se poser au milieu d'une ligne plutôt que sur une case : il se
+   range par les deux talents qu'elle relie, « de>vers ». Ce n'est pas un nœud de colonne. Le talent
+   d'où part la ligne l'ouvre : pris, le bonus devient activable, à son prix en PT ; rien ne l'exige
+   pour passer. */
+const cleChemin=(de,vers)=>de+'>'+vers;
+function lisChemin(t){const m=/^([^>]+)>([^>]+)$/.exec(String(t&&t.chemin||''));return m?{de:m[1],vers:m[2]}:null}
+// Le bonus posé sur une ligne, s'il y en a un.
+function bonusDuChemin(de,vers){return (catalog.talents||[]).find(t=>t&&estBonus(t)&&t.chemin===cleChemin(de,vers))||null}
+// Le talent d'où part la ligne d'un bonus, tant que la ligne existe.
+function departChemin(t){const c=lisChemin(t);if(!c)return null;const d=(catalog.talents||[]).find(x=>x&&x.id===c.de);
+ return d&&liensDe(d).includes(c.vers)?d:null}
+// Un bonus de ligne dont le départ n'est plus tenu tombe avec lui.
 function sansBonusOrphelins(liste){const tient=new Set(liste||[]);
  return (liste||[]).filter(id=>{const t=(catalog.talents||[]).find(x=>x&&x.id===id);if(!t||!lisChemin(t))return true;const d=departChemin(t);return !!d&&tient.has(d.id)})}
-// Oublier un central fait tomber tout ce qui est sous lui, diagonales comprises ; une diagonale ne tombe que seule.
-function chuteDe(etages,t){const i=etages.findIndex(e=>e.t===t);
- return i<0?[t]:etages.slice(i).flatMap(e=>[e.t,e.g,e.d].filter(Boolean))}
+/* Placer un talent dans un arbre : sa classe, sa voie, sa case — celle qu'on désigne ; prise, les deux
+   talents échangent leurs places — et la ligne qui y mène depuis « de », s'il reste de quoi. Venu
+   d'ailleurs, il y laisse ses lignes. */
+function detacheDeLArbre(t){const liste=catalog.talents||[];
+ liste.forEach(x=>{if(x&&x!==t&&liensDe(x).includes(t.id)){x.liens=liensDe(x).filter(id=>id!==t.id);if(!x.liens.length)delete x.liens}});
+ liste.forEach(b=>{const c=b&&lisChemin(b);if(c&&(c.de===t.id||c.vers===t.id)){delete b.chemin;b.horsArbre=true}});
+ delete t.liens;delete t.pos}
+function placerTalent(id,dest){const t=(catalog.talents||[]).find(x=>x&&x.id===id);if(!t||!dest)return false;
+ const famille=dest.famille||GENERIQUES,voie=dest.voie||'';
+ const ailleurs=!!t.horsArbre||talentFamily(t)!==famille||(t.voie||'')!==voie;
+ const avant=ailleurs?null:posDe(t);
+ if(ailleurs)detacheDeLArbre(t);
+ t.famille=famille;t.voie=voie;t.prerequis='';delete t.horsArbre;delete t.branche;
+ const col=((colonneDe(famille,voie)||{}).liste||[]).filter(x=>x!==t);
+ const voulue=dest.pos&&Number.isInteger(dest.pos.x)&&Number.isInteger(dest.pos.y)?{x:dest.pos.x,y:dest.pos.y}:null;
+ if(voulue){const occ=col.find(x=>{const p=posDe(x);return !!p&&p.x===voulue.x&&p.y===voulue.y});
+  if(occ)occ.pos=avant?{...avant}:caseLibre(col.filter(x=>x!==occ),occ)}
+ const de=dest.de?(catalog.talents||[]).find(x=>x&&x.id===dest.de):null;
+ t.pos=voulue||caseLibre(col,de);
+ if(de&&de!==t&&!liensDe(de).includes(t.id)&&liensDe(de).length<LIENS_MAX)de.liens=[...liensDe(de),t.id];
+ return true}
 const GLYPHES_TALENT={act:'⚔',reac:'↩',pass:'◆',crit:'✸',mait:'★',ame:'⇧'};
 const arbresDialog=dialog('arbres','Arbres de talents','<p class="muted" id="arbres-note"></p><div id="arbres-corps"></div>');
 /* L'arbre s'ouvre de deux façons : sur la fiche d'un combattant — il y choisit ses talents —
    ou depuis l'onglet Talents, pour une classe seule, que le MJ y bâtit sans personne à
    équiper. « arbresClasse » porte ce second cas. */
 let arbresActeur=null,arbresClasse=null,arbreGlisse=null,arbresVueJoueur=false;
+// Le talent d'où part la ligne que le MJ est en train de tracer.
+let lienDepuis=null;
 /* La vue joueur : le MJ regarde l'arbre comme la troupe le lira — sans outils, sans places
    vides, sans chemins fermés — et revient à l'édition d'un clic. */
 const arbresVue=document.createElement('button');arbresVue.type='button';arbresVue.id='arbres-vue';arbresVue.className='arbres-vue';
@@ -2789,7 +2833,9 @@ arbresDialog.querySelector('.dialog-head').insertBefore(arbresVue,arbresDialog.q
 arbresVue.onclick=()=>{arbresVueJoueur=!arbresVueJoueur;noteArbres('');renderArbres()};
 // Refermé, l'arbre ne retient ni fiche ni classe ni vue : la prochaine ouverture repart de zéro.
 // L'événement arrive après coup : un arbre rouvert entre-temps garde ce qu'on vient de lui donner.
-arbresDialog.addEventListener('close',()=>{if(arbresDialog.open)return;arbresActeur=null;arbresClasse=null;arbresVueJoueur=false});
+arbresDialog.addEventListener('close',()=>{if(arbresDialog.open)return;arbresActeur=null;arbresClasse=null;arbresVueJoueur=false;lienDepuis=null});
+// Échap, en plein tracé d'une ligne, y renonce sans refermer l'arbre.
+arbresDialog.addEventListener('cancel',e=>{if(!lienDepuis)return;e.preventDefault();lienDepuis=null;noteArbres('');renderArbres()});
 // Les chemins se mesurent sur l'écran : la fenêtre qui change de taille les retrace.
 if(typeof ResizeObserver==='function')new ResizeObserver(()=>traceChemins()).observe($('arbres-corps'));
 /* Un clic hors de la fenêtre la referme, comme le ✕ : la cible du clic est le dialogue
@@ -2808,29 +2854,30 @@ function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&(view==='mj'
 // Seule une classe du jeu a un arbre : ni les génériques, ni les familles d'adversaires.
 function aUnArbre(f){return !!f&&f!==GENERIQUES&&(catalog.classes||[]).some(c=>c&&c.name===f)}
 function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;
- if(assureMaitrises(a))scheduleSave();
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // L'arbre d'une classe, sans combattant : le MJ le bâtit, personne n'y apprend rien.
 function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arbresActeur=null;arbresClasse=famille||GENERIQUES;
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
 function arbreChange(){accordeArbres();noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
-/* Ajouter à l'arbre : un talent neuf, ou l'un de ceux qui existent déjà. D'abord ceux de la
-   classe retirés de l'arbre, puis les génériques, puis ceux des autres classes. Choisi, il
-   vient à la place désignée et prend la classe de l'arbre ; celui qui quitte l'arbre d'une
-   autre classe le dit d'abord, et ce qui pendait sous lui y remonte. Ni les maîtrises, ni ce
-   qui mettrait l'arbre sous lui-même. */
+/* Ajouter à l'arbre : un talent neuf, ou l'un de ceux qui existent déjà — maîtrises comprises. D'abord
+   ceux de la classe retirés de l'arbre, puis les génériques, puis ceux des autres classes. Choisi,
+   il vient à la case désignée, relié depuis son voisin, et prend la classe de l'arbre ; celui qui
+   quitte l'arbre d'une autre classe le dit d'abord, et y laisse ses lignes. */
 const choixArbreDialog=dialog('arbre-choix','Ajouter à l’arbre','<input id="arbre-choix-filtre" placeholder="Chercher un talent…" aria-label="Chercher un talent"><div id="arbre-choix-liste" class="arbre-choix-liste"></div>');
 let choixArbreDest=null;
-function ajouterDansArbre(dest){if(view!=='mj'||!dest)return;choixArbreDest=dest;$('arbre-choix-filtre').value='';dessineChoixArbre();choixArbreDialog.showModal();$('arbre-choix-filtre').focus()}
+function ajouterDansArbre(dest){if(view!=='mj'||!dest)return;
+ // Sous un talent (⊕) : la case libre juste sous lui, connue avant même de choisir quoi y mettre.
+ if(!dest.pos&&dest.de){const de=talent(dest.de),col=colonneDe(dest.famille||GENERIQUES,dest.voie||'');if(de&&col)dest={...dest,pos:caseLibre(col.liste,de)}}
+ choixArbreDest=dest;$('arbre-choix-filtre').value='';dessineChoixArbre();choixArbreDialog.showModal();$('arbre-choix-filtre').focus()}
 function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-liste');if(!dest||!boite)return;boite.replaceChildren();
- const q=cleTalent($('arbre-choix-filtre').value),sous=dest.prerequis?talent(dest.prerequis):null;
+ const q=cleTalent($('arbre-choix-filtre').value);
  const neuf=document.createElement('button');neuf.type='button';neuf.className='arbre-choix-neuf';neuf.textContent='✚ Créer un nouveau talent';
  neuf.onclick=()=>{choixArbreDialog.close();openTalent(null,renderArbres,{...dest})};boite.append(neuf);
  const rang=t=>talentFamily(t)===dest.famille?0:talentFamily(t)===GENERIQUES?1:2;
  // Un bonus ne passe pas d'un arbre à l'autre : seul celui retiré de cet arbre-ci peut y revenir.
- const libres=(catalog.talents||[]).filter(t=>t&&t.type!=='mait'&&!(talentFamily(t)===dest.famille&&!t.horsArbre)&&!(estBonus(t)&&talentFamily(t)!==dest.famille)
-  &&!(sous&&(sous===t||descendDe(sous,t)))&&(!q||cleTalent(t.name).includes(q)))
+ const libres=(catalog.talents||[]).filter(t=>t&&!(talentFamily(t)===dest.famille&&!t.horsArbre)&&!(estBonus(t)&&talentFamily(t)!==dest.famille)
+  &&(!q||cleTalent(t.name).includes(q)))
   .sort((x,y)=>rang(x)-rang(y)||talentFamily(x).localeCompare(talentFamily(y),'fr')||nomEnClair(x.name).localeCompare(nomEnClair(y.name),'fr'));
  let groupe=null,grille=null;
  libres.forEach(t=>{const g=rang(t)===0?'Retirés de cet arbre':talentFamily(t);
@@ -2849,7 +2896,7 @@ async function prendreDansArbre(t){const dest=choixArbreDest;if(!t||!dest)return
   &&!await demander('« '+nom+' » est dans l’arbre de '+f+' : il le quitte pour celui de '+dest.famille+'.','Déplacer'))return;
  choixArbreDialog.close();
  if(f!==dest.famille&&!t.horsArbre)retireDeLArbre(t);
- if(!placerTalent(t.id,dest)){noteArbres('« '+nom+' » ne peut pas aller là : il se retrouverait sous lui-même.');return}
+ if(!placerTalent(t.id,dest))return;
  arbreChange();noteArbres('« '+nom+' » rejoint l’arbre de '+dest.famille+'.')}
 /* ---------- L'élément du Mystique ---------- */
 const VERROU_ELEMENT='l’élément du Mystique';
@@ -2877,14 +2924,14 @@ function choixElement(a,classe,rendre){const out=document.createElement('div');o
    son formulaire le replace, par « Place dans l'arbre ». Ceux qui en dépendaient remontent à
    sa place ; les aventuriers qui l'ont appris le gardent. */
 function retireDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;
- remonteEnfants(t);t.horsArbre=true;t.prerequis='';t.branche='';return true}
+ detacheDeLArbre(t);t.horsArbre=true;t.prerequis='';return true}
 /* La bulle d'un talent : son nom, ce qu'il fait palier par palier, ce qu'il requiert, et s'il
   est sous clé. Un bonus dit sa valeur ; il n'a pas d'effet à préciser. « a » : celui qui le
   porte, s'il y en a un ; « vu » : le talent tel que cet arbre le montre (à son élément). Sans
   porteur ni élément, un nom à accolades les montre en creux. */
 // Le chiffre d'un palier dans une comparaison, où le premier aussi doit se nommer.
 const CHIFFRES_PALIER=['','I','II','III'];
-function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){const bonus=t.effet==='bonus';
+function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null}={}){const bonus=t.effet==='bonus';
  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
  if(bonus)nom.textContent=libelleBonus(paramsTalent(t));else nomAccolades(nom,vu(t).name);
@@ -2892,6 +2939,8 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note=''}={}){const bonus=t.effe
  if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));
  // Jamais la nature du talent : la bulle ne l'écrit nulle part.
  tete.append(nom);d.append(tete);
+ // Un talent qui frappe, dans la barre d'action : ses dés et son bonus de dégâts sous son nom.
+ if(des){des.classList.add('bulle-des');d.append(des)}
  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
  if(bonus){if(t.effects)ligne(t.effects);if(coutPalier(t,1))ligne('Coût : '+coutPalier(t,1)+' PT','muted')}
  else{/* Les paliers, un par ligne, le chiffre en tête de sa ligne : « I Vous effectuez… ».
@@ -2925,9 +2974,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // En vue joueur, le MJ perd ses outils le temps de regarder : l'arbre se lit comme chez la troupe.
  const a=arbresActeur,mj=view==='mj'&&!arbresVueJoueur;
  arbresVue.hidden=view!=='mj';arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
- if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}
-  if(assureMaitrises(a))scheduleSave()}
+ if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}}
  else if(view!=='mj'){arbresDialog.close();return}
+ // Chez le MJ, l'arbre s'accorde avant de se dessiner : chaque talent a sa case, chaque ligne son but.
+ if(view==='mj'&&accordeArbres())scheduleSave();
+ // Une ligne en cours de tracé n'a de sens que dans l'édition.
+ if(!(view==='mj'&&!arbresVueJoueur))lienDepuis=null;
  const classe=a?classeDuHeros(a):arbresClasse;
  /* L'élément qui habille l'arbre : celui du Mystique ; sur le plan du MJ, celui qu'il regarde ;
     pas encore choisi, le premier, en aperçu. Un talent élémentaire attend, lui, que le MJ choisisse. */
@@ -2947,21 +2999,22 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     elles ; du bas vers le haut, pour que chaque retrait n'emporte que le sien. */
  // Le palier tenu d'un talent : 1 ne s'écrit pas, c'est d'avoir appris.
  const poserPalier=(t,n)=>{a.paliersTalents={...(a.paliersTalents||{})};if(n>1)a.paliersTalents[t.id]=Math.min(paliersDe(t),n);else delete a.paliersTalents[t.id]};
- // « − » sur un nœud tenu : le palier d'en dessous ; au premier, l'oubli — sauf « fixe » (une maîtrise).
- const boutonMoins=(el,t,descendre,fixe)=>{const k=palierDe(a,t);if(fixe&&k<=1)return;
+ // « − » sur un nœud tenu : le palier d'en dessous ; au premier, l'oubli.
+ const boutonMoins=(el,t,descendre)=>{const k=palierDe(a,t);
   const m=ico('−',k>1?'Redescendre '+t.name+' au palier '+(k-1):'Oublier '+t.name,descendre);m.classList.add('palier-moins');m.removeAttribute('title');
   let outils=el.querySelector('.arbre-outils');if(!outils){outils=document.createElement('span');outils.className='arbre-outils';el.append(outils)}outils.prepend(m);
   el.oncontextmenu=e=>{e.preventDefault();descendre()}};
- const oublier=(t,racines)=>{const avant=a.talents;let reste=avant;
-  const chute=racines.includes(t)?racines.slice(racines.indexOf(t)):[t];
+ const oublier=(t,liste)=>{const avant=a.talents;let reste=avant;
+  // Ce qu'on n'atteignait plus que par lui tombe avec lui, du plus loin au plus proche.
+  const chute=[t,...(liste?chuteArbre(avant,liste,t):[])];
   [...chute].reverse().forEach(x=>{reste=talentsSans(reste,x.id,catalog.talents).liste});
   reste=sansBonusOrphelins(reste);
   a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);
   return avant.filter(id=>id!==t.id&&!reste.includes(id)).map(id=>{const x=talent(id);return x?x.name:''}).filter(Boolean)};
  const ico=(g,titre,fn)=>{const b=document.createElement('button');b.type='button';b.className='ico';b.textContent=g;
   b.title=titre;b.setAttribute('aria-label',titre);b.draggable=false;b.onclick=e=>{e.stopPropagation();fn()};return b};
- /* Le glisser-déposer du MJ : la source est le talent tiré, la cible dit où il va — sous
-    un talent, en dernier d'un bandeau, ou avant un frère. */
+ /* Le glisser-déposer du MJ : la source est le talent tiré, la cible dit où il va — une case vide, la
+    case d'un autre talent (ils échangent), ou le bandeau d'une colonne. Ses lignes le suivent. */
  const glissable=(el,t)=>{if(!mj)return;el.draggable=true;
   el.addEventListener('dragstart',e=>{arbreGlisse=t.id;el.classList.add('tire');corps.classList.add('glisse');fermerBulle();
    try{e.dataTransfer.setData('text/plain',t.id);e.dataTransfer.effectAllowed='move'}catch(_){}});
@@ -2970,8 +3023,15 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   el.addEventListener('dragover',e=>{if(!arbreGlisse)return;e.preventDefault();el.classList.add('survol');try{e.dataTransfer.dropEffect='move'}catch(_){}});
   el.addEventListener('dragleave',()=>el.classList.remove('survol'));
   el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('survol');const id=arbreGlisse;arbreGlisse=null;corps.classList.remove('glisse');
-   if(!id)return;if(placerTalent(id,dest))arbreChange();else note('Ce talent ne peut pas aller là : il se retrouverait sous lui-même.')})};
- const entre=dest=>{const z=document.createElement('div');z.className='arbre-entre';cible(z,dest);return z};
+   if(!id||id===dest.soi)return;if(placerTalent(id,dest))arbreChange()})};
+ /* Le tracé d'une ligne, chez le MJ : le talent d'où elle part est pris ; le clic suivant, sur un autre
+    talent de la même colonne, la trace — ou l'efface si elle existe. Deux lignes au plus. */
+ const relie=(t,col)=>{const de=talent(lienDepuis);lienDepuis=null;
+  if(!de||de===t){renderArbres();return}
+  if(!col.liste.includes(de)){note('Une ligne relie deux talents de la même colonne.');renderArbres();return}
+  const r=basculeLien(de,t);
+  if(r==='plein'){note('Deux lignes partent déjà de « '+vu(de).name+' » : efface l’une d’elles d’abord.');renderArbres();return}
+  arbreChange();note(r==='retire'?'Ligne effacée.':'')};
  const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note});
  // Un nœud de l'arbre : le rond au logo — ou au glyphe de sa nature — le nom, le niveau.
  const noeud=(t,etat,verrou)=>{const b=document.createElement('div');b.tabIndex=0;b.setAttribute('role','button');
@@ -2999,94 +3059,87 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   // Les outils du MJ, au survol : corriger le talent, en suspendre un nouveau dessous.
   if(mj){const outils=document.createElement('span');outils.className='arbre-outils';
    outils.append(ico('✎','Corriger '+t.name,()=>openTalent(catalog.talents.indexOf(t),renderArbres)));
-   if(t.type!=='mait')outils.append(ico('⊕','Ajouter un talent sous '+t.name,()=>ajouterDansArbre(
-    {famille:talentFamily(t),voie:t.voie||'',prerequis:t.id,level:Math.min(20,(t.level||1)+1)})));
+   // ⊕ : un talent neuf dans la case libre sous lui, relié par une ligne ; ⤳ : une ligne vers un autre.
+   outils.append(ico('⊕','Ajouter un talent sous '+t.name+', relié par une ligne',()=>ajouterDansArbre(
+    {famille:talentFamily(t),voie:t.voie||'',de:t.id,level:Math.min(20,(t.level||1)+1)})));
+   outils.append(ico('⤳','Tracer une ligne depuis '+t.name+' vers un autre talent, ou effacer l’une des siennes',()=>{
+    lienDepuis=lienDepuis===t.id?null:t.id;renderArbres();
+    if(lienDepuis)note('Clique le talent vers lequel part la ligne de « '+vu(t).name+' », ou une case vide pour y en créer un. Recliquer une ligne existante l’efface. Échap pour renoncer.')}));
    // Sur le plan de la classe, ✕ retire le talent de l'arbre, sans l'effacer du catalogue.
    if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue',()=>{const nom=vu(t).name;
     if(retireDeLArbre(t)){arbreChange();noteArbres('« '+nom+' » est retiré de l’arbre et reste dans l’onglet Talents. Pour l’y remettre : « + Talent », ou un « + » de l’arbre.')}}));
    b.append(outils)}
   surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
   return b};
- // La tête : la classe, et ses maîtrises, acquises d'office.
+ // La tête : la classe, l'élément du Mystique, ce que l'arbre a coûté.
  const tete=document.createElement('div');tete.className='arbres-tete';
  const nomClasse=document.createElement('h3');nomClasse.className='arbres-classe';nomClasse.textContent=classe||'Sans classe';
  const encre=classe?teinteClasse(classe):'';if(encre){nomClasse.style.color=encre;corps.style.setProperty('--encre',encre)}
  else corps.style.removeProperty('--encre');
  tete.append(nomClasse);
- // Ce que l'arbre a coûté : les paliers acquis, au prix de chacun — dès qu'un prix est fixé.
  // L'élément du Mystique, au-dessus de l'arbre : le MJ le choisit, le joueur le lit.
  if(elementaire)tete.append(choixElement(a,classe));
+ // Ce que l'arbre a coûté : les paliers acquis, au prix de chacun — dès qu'un prix est fixé.
  if(a){const pt=ptDepenses(a,catalog.talents);if(pt){const s=document.createElement('p');s.className='arbres-pt';s.textContent=pt+' PT dépensé'+(pt>1?'s':'');tete.append(s)}}
- const maitrises=maitrisesDe(classe);
- if(maitrises.length){const bande=document.createElement('div');bande.className='arbre-maitrises';
-  maitrises.forEach(t=>{const n=noeud(t,a?'acquis auto':'modele');
-   /* Une maîtrise vient avec la classe, au palier 1 : un clic la monte, « − » la redescend,
-      mais jamais sous le premier palier. */
-   if(a){n.onclick=()=>{const k=palierDe(a,t);if(k>=paliersDe(t)){note('« '+t.name+' » est à son dernier palier.');return}poserPalier(t,k+1);note('');majTable()};
-    boutonMoins(n,t,()=>{const k=palierDe(a,t);if(k>1){poserPalier(t,k-1);note('');majTable()}},true)}
-   n.noteBulle='Maîtrise de classe, acquise avec la classe.';
-   if(!a)n.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres);
-   bande.append(n)});
-  tete.append(bande)}
- else{const v=document.createElement('p');v.className='muted';
-  v.textContent=classe?'Aucune maîtrise pour '+classe+'.':'Donne une classe à '+a.name+' pour lui ouvrir un arbre.';   // eslint-disable-line
-  tete.append(v);
-  if(mj&&classe){const plus=document.createElement('button');plus.type='button';plus.className='arbre-ajout';plus.textContent='+ Maîtrise';
-   plus.title='Créer la maîtrise de '+classe+' : elle vient avec la classe';
-   plus.onclick=()=>openTalent(null,renderArbres,{famille:classe,type:'mait',name:'Maîtrise'});tete.append(plus)}}
+ if(!classe){const v=document.createElement('p');v.className='muted';v.textContent='Donne une classe à '+a.name+' pour lui ouvrir un arbre.';tete.append(v)}
  corps.append(tete);
- /* Un nœud de l'arbre, et ce qu'il attend : sur l'épine, un chemin ouvert depuis l'étage du
-    dessus ; en diagonale, son central et sa branche ; partout, son prérequis. Le tronc libre
-    n'enchaîne rien. Sans porteur, le clic ouvre le talent : c'est le plan qu'on corrige. */
- const noeudArbre=(t,col,etages,libre,diag)=>{const acquis=porte(t);
-  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouEtages(a.talents,etages,t))||manqueTalent(a.talents,t,catalog.talents);
-  const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);if(diag)el.classList.add('diag');
-  el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
+ /* Un nœud de l'arbre, et ce qu'il attend : une ligne depuis un talent tenu, sauf s'il n'en a aucune
+    qui mène à lui ; et partout, ce que son effet réclame. Le tronc libre n'enchaîne rien. Sans
+    porteur, le clic ouvre le talent : c'est le plan qu'on corrige. */
+ const noeudArbre=(t,col,libre)=>{const acquis=porte(t);
+  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t))||manqueTalent(a.talents,t,catalog.talents);
+  const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);
+  if(mj&&lienDepuis===t.id)el.classList.add('relie-source');
+  el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
+   if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
    if(verrou){note(verrou===VERROU_ELEMENT?'Le MJ choisit d’abord l’élément du Mystique, au-dessus de l’arbre.':'« '+vu(t).name+' » exige d’abord « '+verrou+' ».');return}
    // Tenu, un clic le monte d'un palier ; au dernier, le « − » seul le fait redescendre.
    if(acquis){const k=palierDe(a,t);if(k>=paliersDe(t)){note('« '+t.name+' » est à son dernier palier.');return}
     poserPalier(t,k+1);note('')}
    else{a.talents=[...a.talents,t.id];note('')}
    majTable()};
-  // Redescendre : un palier de moins ; au premier, le talent s'oublie — et ce qui reposait dessus.
+  // Redescendre : un palier de moins ; au premier, le talent s'oublie — et ce qu'on n'atteignait que par lui.
   if(a&&acquis)boutonMoins(el,t,()=>{const k=palierDe(a,t);if(k>1){poserPalier(t,k-1);note('');majTable();return}
-   const tombes=oublier(t,libre?[]:chuteDe(etages,t));
+   const tombes=oublier(t,libre?null:col.liste);
    note(tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'');majTable()});
-  glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,prerequis:t.id});
+  glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,pos:posDe(t),soi:t.id});
   return el};
- /* Un bonus posé sur un chemin : petit, au milieu du trait. Activable dès que le talent d'où part
-    le chemin est pris, et s'il est ouvert ; un clic l'active, à son prix ; « − » ou le clic droit
-    le rend. Sur le plan, le MJ le corrige ou l'ôte. */
- const noeudBonusChemin=(t,c,e,seg,ferme)=>{const depart=seg==='gc'?e.g:seg==='dc'?e.d:e.t,acquis=porte(t);
-  const verrou=!a||acquis?'':ferme?'un chemin ouvert jusqu’à lui':porte(depart)?'':depart.name;
+ /* Un bonus posé sur une ligne : petit, au milieu du trait. Activable dès que le talent d'où part
+    la ligne est pris ; un clic l'active, à son prix ; « − » ou le clic droit le rend. Sur le plan,
+    le MJ le corrige ou l'ôte. */
+ const noeudBonusChemin=(t,depart)=>{const acquis=porte(t);
+  const verrou=!a||acquis?'':porte(depart)?'':depart.name;
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);el.classList.add('sur-chemin');
-  el.noteBulle=a?(acquis?'Bonus activé.':verrou?'S’active une fois « '+verrou+' » pris.':'Bonus optionnel : un clic l’active, à son prix.'):'Bonus posé sur le chemin, optionnel pour la troupe.';
+  el.noteBulle=a?(acquis?'Bonus activé.':verrou?'S’active une fois « '+verrou+' » pris.':'Bonus optionnel : un clic l’active, à son prix.'):'Bonus posé sur la ligne, optionnel pour la troupe.';
   const outils=el.querySelector('.arbre-outils');
   if(outils)outils.replaceChildren(ico('✎','Corriger ce bonus',()=>openTalent(catalog.talents.indexOf(t),renderArbres)),
-   ico('✕','Ôter ce bonus du chemin',()=>{if(!confirm('Ôter le bonus « '+t.name+' » de ce chemin ?'))return;
+   ico('✕','Ôter ce bonus de la ligne',()=>{if(!confirm('Ôter le bonus « '+t.name+' » de cette ligne ?'))return;
     const i=catalog.talents.indexOf(t);if(i>=0)catalog.talents.splice(i,1);actors.forEach(x=>{if(x.talents)x.talents=x.talents.filter(id=>id!==t.id)});arbreChange()}));
   el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
-   if(verrou){note(verrou==='un chemin ouvert jusqu’à lui'?'Ce chemin est fermé.':'Ce bonus s’active une fois « '+verrou+' » pris.');return}
+   if(verrou){note('Ce bonus s’active une fois « '+verrou+' » pris.');return}
    if(acquis){note('Bonus déjà activé : « − » ou le clic droit le rend.');return}
    a.talents=[...a.talents,t.id];note('');majTable()};
   if(a&&acquis)boutonMoins(el,t,()=>{a.talents=a.talents.filter(x=>x!==t.id);a.paliersTalents=normalisePaliersActeur(a);note('');majTable()});
   return el};
- // La place d'un bonus sur un chemin, chez le MJ : un « + » qui crée un bonus de caractéristique là.
- const placeBonusChemin=(c,e,seg)=>{const p=document.createElement('button');p.type='button';p.className='arbre-bonus-place';p.textContent='+';
-  p.title='Poser un bonus de caractéristique sur ce chemin';p.setAttribute('aria-label',p.title);
-  p.onclick=ev=>{ev.stopPropagation();openTalent(null,()=>arbreChange(),{famille:c.famille,voie:c.voie,type:'pass',effet:'bonus',params:{carac:'pv',valeur:1},couts:[1,0,0],chemin:cleChemin(e.t.id,seg)})};
+ // La place d'un bonus sur une ligne, chez le MJ : un « + » qui crée un bonus de caractéristique là.
+ const placeBonusChemin=(c,de,vers)=>{const p=document.createElement('button');p.type='button';p.className='arbre-bonus-place';p.textContent='+';
+  p.title='Poser un bonus de caractéristique sur cette ligne';p.setAttribute('aria-label',p.title);
+  p.onclick=ev=>{ev.stopPropagation();openTalent(null,()=>arbreChange(),{famille:c.famille,voie:c.voie,type:'pass',effet:'bonus',params:{carac:'pv',valeur:1},couts:[1,0,0],chemin:cleChemin(de.id,vers.id)})};
   return p};
- // La place vide d'une diagonale : le MJ y crée un talent, ou y dépose celui qu'il tire.
- const place=(col,e,seg)=>{const p=document.createElement('div');p.className='arbre-place';
-  if(!mj)return p;
-  p.dataset.sous=e.t.id;p.dataset.place=seg;p.setAttribute('role','button');p.tabIndex=0;p.textContent='+';
-  p.title='Ajouter un talent en diagonale '+(seg==='g'?'gauche':'droite')+' sous '+e.t.name;
-  p.onclick=()=>ajouterDansArbre({famille:col.famille,voie:col.voie,prerequis:e.t.id,branche:seg,level:Math.min(20,(e.t.level||1)+1)});
+ /* Une case vide où l'arbre peut grandir, chez le MJ : à côté d'un talent, ou sous lui. Le clic y crée
+    un talent — ou y place l'un de ceux qui existent — relié par une ligne depuis le talent voisin qui
+    en a encore une à donner ; en plein tracé, depuis le talent d'où part la ligne. */
+ const place=(col,pl)=>{const p=document.createElement('div');p.className='arbre-place';
+  p.style.gridColumn=String(pl.col);p.style.gridRow=String(pl.lig);
+  p.setAttribute('role','button');p.tabIndex=0;p.textContent='+';
+  p.title=pl.de?'Ajouter un talent ici, relié depuis '+vu(pl.de).name:'Ajouter un talent ici';
+  p.onclick=()=>{const de=lienDepuis?talent(lienDepuis):pl.de;lienDepuis=null;
+   ajouterDansArbre({famille:col.famille,voie:col.voie,pos:{x:pl.x,y:pl.y},de:de&&col.liste.includes(de)&&liensDe(de).length<LIENS_MAX?de.id:'',level:de?Math.min(20,(de.level||1)+1):1})};
   p.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();p.click()}};
-  cible(p,{famille:col.famille,voie:col.voie,prerequis:e.t.id,branche:seg});return p};
- /* Une colonne : le bandeau — renommable, dissoluble —, puis les étages : chaque central sur
-    l'épine, et sous lui l'étage intermédiaire aux deux diagonales. Les chemins se tracent
-    par-dessus, une fois la colonne mesurée. Puis « + Talent », qui allonge l'épine. */
+  cible(p,{famille:col.famille,voie:col.voie,pos:{x:pl.x,y:pl.y}});return p};
+ /* Une colonne : le bandeau — renommable, dissoluble —, puis la grille, où chaque talent tient sa
+    case et d'où partent ses lignes, tracées par-dessus une fois la grille mesurée. Chez le MJ, une
+    marge de cases vides tout autour, là où l'arbre peut grandir ; puis « + Talent », tout en bas. */
  const colonne=(c,libre)=>{const col=document.createElement('div');col.className='arbre-col'+(libre?' libre':'')+(mj?' editable':'');
   const h=document.createElement('h4');h.className='arbre-titre';
   const nomVoie=document.createElement('span');nomVoie.className='arbre-voie';nomVoie.textContent=c.titre;h.append(nomVoie);
@@ -3103,30 +3156,35 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     x.classList.add('voie-x');h.append(x)}}
   col.append(h);
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','arbre-chemins');col.append(svg);
-  const etages=etagesArbre(c);col.etagesArbre={etages,mj,a};
-  if(!etages.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';col.append(v)}
-  const pile=document.createElement('div');pile.className='arbre-etages';
-  etages.forEach(e=>{if(mj)pile.append(entre({famille:c.famille,voie:c.voie,avant:e.t.id}));
-   const central=document.createElement('div');central.className='arbre-etage central';
-   central.append(noeudArbre(e.t,c,etages,libre,false));pile.append(central);
-   /* L'étage intermédiaire : sous chaque central, pour le MJ ; pour la troupe, seulement
-      s'il mène quelque part ou porte déjà une diagonale — une bande vide ne dit rien. */
-   if(mj||e.suivant||e.g||e.d){const inter=document.createElement('div');inter.className='arbre-etage inter'+(!e.g&&!e.d?' vide':'');
-    inter.append(e.g?noeudArbre(e.g,c,etages,libre,true):place(c,e,'g'));
-    const milieu=document.createElement('div');milieu.className='arbre-milieu';inter.append(milieu);
-    inter.append(e.d?noeudArbre(e.d,c,etages,libre,true):place(c,e,'d'));
-    pile.append(inter)}});
-  if(mj)pile.append(entre({famille:c.famille,voie:c.voie}));
-  col.append(pile);
-  /* Les bonus de chemin : un petit rond au milieu de chaque chemin qui relie deux talents ; chez le
-     MJ, une place « + » là où il n'y en a pas. traceChemins les pose une fois la colonne mesurée. */
+  col.arbreInfo={liste:c.liste,mj,a};
+  if(!c.liste.length&&!mj){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';col.append(v)}
+  // Les cases : celle de chacun ; qui n'en a pas encore — chez un joueur — prend la première libre en bas.
+  const cases=new Map(),prises=[];
+  c.liste.forEach(t=>{const p=posDe(t);if(p&&!prises.some(q=>q.x===p.x&&q.y===p.y)){cases.set(t.id,p);prises.push({...p})}});
+  c.liste.forEach(t=>{if(!cases.has(t.id)){const p=caseLibre(prises.map(q=>({pos:q})),null);cases.set(t.id,p);prises.push(p)}});
+  const xs=prises.map(p=>p.x),ys=prises.map(p=>p.y);
+  let x0=xs.length?Math.min(...xs):0,x1=xs.length?Math.max(...xs):0,y0=ys.length?Math.min(...ys):0,y1=ys.length?Math.max(...ys):0;
+  if(mj){x0--;x1++;y1++}
+  const grille=document.createElement('div');grille.className='arbre-grille';
+  grille.style.gridTemplateColumns='repeat('+(x1-x0+1)+',var(--case-l))';grille.style.gridTemplateRows='repeat('+(y1-y0+1)+',var(--case-h))';
+  c.liste.forEach(t=>{const p=cases.get(t.id),el=noeudArbre(t,c,libre);el.style.gridColumn=String(p.x-x0+1);el.style.gridRow=String(p.y-y0+1);grille.append(el)});
+  if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),places=new Map();
+   // Où l'arbre peut grandir : à gauche, à droite, dessous et en diagonale de chaque talent.
+   c.liste.forEach(t=>{const p=cases.get(t.id);[[-1,0],[1,0],[-1,1],[0,1],[1,1]].forEach(([dx,dy])=>{const x=p.x+dx,y=p.y+dy,k=x+','+y;if(occupe.has(k))return;
+    // Le voisin qui la relie : celui du dessus d'abord, puis en diagonale, puis à côté ; qui a encore une ligne à donner.
+    const rang=(dy?(dx?1:0):2)+(liensDe(t).length>=LIENS_MAX?10:0),av=places.get(k);
+    if(!av||rang<av.rang)places.set(k,{x,y,col:x-x0+1,lig:y-y0+1,de:rang<10?t:null,rang})})});
+   if(!c.liste.length)places.set('0,0',{x:0,y:0,col:2,lig:1,de:null,rang:0});
+   places.forEach(pl=>grille.append(place(c,pl)))}
+  col.append(grille);
+  /* Les bonus de ligne : un petit rond au milieu de chaque ligne ; chez le MJ, une place « + » là où
+     il n'y en a pas. traceChemins les pose une fois la grille mesurée. */
   col.bonusChemins=[];
-  etages.forEach(e=>{[['c',e.suivant&&droitPermis(e)],['g',e.g],['d',e.d],['gc',e.g&&e.suivant],['dc',e.d&&e.suivant]].forEach(([seg,existe])=>{if(!existe)return;
-   const ferme=cheminCache(e.t.id,seg),t=bonusDuChemin(e.t.id,seg);if(ferme&&!mj)return;
-   const el=t?noeudBonusChemin(t,c,e,seg,ferme):mj?placeBonusChemin(c,e,seg):null;
-   if(el){el.hidden=true;col.append(el);col.bonusChemins.push({el,id:e.t.id,seg})}})});
+  c.liste.forEach(de=>liensDe(de).forEach(id=>{const vers=c.liste.find(x=>x.id===id);if(!vers)return;
+   const t=bonusDuChemin(de.id,id),el=t?noeudBonusChemin(t,de):mj?placeBonusChemin(c,de,vers):null;
+   if(el){el.hidden=true;col.append(el);col.bonusChemins.push({el,cle:cleChemin(de.id,id)})}}));
   if(mj){const plus=document.createElement('button');plus.type='button';plus.className='arbre-ajout';plus.textContent='+ Talent';
-   plus.title='Ajouter un talent central dans '+c.titre+' : un nouveau, ou un talent qui existe déjà';
+   plus.title='Ajouter un talent sous l’arbre de '+c.titre+' : un nouveau, ou un talent qui existe déjà';
    plus.onclick=()=>ajouterDansArbre({famille:c.famille,voie:c.voie});col.append(plus)}
   return col};
  /* Les colonnes : les deux de la classe, ni plus ni moins. Les génériques ont leur propre
@@ -3137,46 +3195,41 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     retirent. Le plan du MJ les garde, pour y créer des talents ; les autres classes ne changent pas. */
  (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));
  corps.append(grille);
- // Les chemins attendent que la fenêtre soit ouverte et la colonne mesurée.
+ // Les lignes attendent que la fenêtre soit ouverte et la grille mesurée.
  requestAnimationFrame(traceChemins)}
-/* Les chemins d'une colonne, tracés d'un rond à l'autre : droit vers le central suivant,
-   vers chaque diagonale et de là vers le central suivant. Un chemin fermé ne se dessine
-   que pour le MJ, en pointillé pâle ; un chemin vers une place vide, plus pâle encore. Un
-   chemin dont les deux bouts sont appris se colore. Le MJ clique un chemin pour le fermer
-   ou l'ouvrir. */
+/* Les lignes d'une colonne, tracées d'un rond à l'autre, de bord à bord. Une ligne dont les deux
+   bouts sont appris se colore ; sans combattant, l'arbre se lit comme un plan, en traits pleins.
+   Une ligne qui ne descend pas porte sa pointe : on lit d'où elle part. Le MJ clique une ligne pour
+   l'effacer. */
 function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.open)return;
- corps.querySelectorAll('.arbre-col').forEach(col=>{const info=col.etagesArbre,svg=col.querySelector('.arbre-chemins');if(!info||!svg)return;
-  const ns='http://www.w3.org/2000/svg',R=col.getBoundingClientRect(),{etages,mj,a}=info;
+ corps.querySelectorAll('.arbre-col').forEach(col=>{const info=col.arbreInfo,svg=col.querySelector('.arbre-chemins');if(!info||!svg)return;
+  const ns='http://www.w3.org/2000/svg',R=col.getBoundingClientRect(),{liste,mj,a}=info;
   svg.setAttribute('viewBox','0 0 '+Math.max(1,R.width)+' '+Math.max(1,R.height));svg.replaceChildren();
-  const elDe=id=>col.querySelector('.arbre-noeud[data-id="'+id+'"]');
-  const placeDe=(id,seg)=>col.querySelector('.arbre-place[data-sous="'+id+'"][data-place="'+seg+'"]');
+  const elDe=id=>col.querySelector('.arbre-grille>.arbre-noeud[data-id="'+id+'"]');
   // Le centre d'un bouton, et son rayon — anneau compris — pour que le trait s'arrête à son bord.
   const centre=el=>{const r=(el.querySelector('.arbre-rond')||el).getBoundingClientRect();return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top,r:r.width/2+5}};
-  // Sans combattant, l'arbre se lit comme un plan : ses traits restent pleins.
   col.classList.toggle('sans-acteur',!a);
-  const pris=(x,y)=>!!a&&!!x&&!!y&&a.talents.includes(x.id)&&a.talents.includes(y.id);
-  // Le milieu de chaque chemin tracé, là où se pose son bonus.
-  const milieux={},milieu=(id,seg,p,q)=>{milieux[cleChemin(id,seg)]={x:(p.x+q.x)/2,y:(p.y+q.y)/2}};
-  const trait=(p,q,seg,id,cache,vide,marche)=>{const g=document.createElementNS(ns,'g');
-   g.setAttribute('class','chemin '+seg+(cache?' cache':'')+(vide?' vide':'')+(marche?' pris':''));
-   const l=document.createElementNS(ns,'line'),z=document.createElementNS(ns,'line');
+  const pris=(x,y)=>!!a&&a.talents.includes(x.id)&&a.talents.includes(y.id);
+  // Le milieu de chaque ligne tracée, là où se pose son bonus.
+  const milieux={};
+  liste.forEach(de=>liensDe(de).forEach(id=>{const vers=liste.find(x=>x.id===id),A=elDe(de.id),B=vers&&elDe(id);if(!A||!B)return;
+   const p=centre(A),q=centre(B),g=document.createElementNS(ns,'g');
+   g.setAttribute('class','chemin'+(pris(de,vers)?' pris':''));
    // Le trait ne traverse jamais un bouton : il ne vit qu'entre deux, d'un bord à l'autre.
-   const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,rp=Math.min(p.r||0,d/2),rq=Math.min(q.r||0,d/2);
+   const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,rp=Math.min(p.r,d/2),rq=Math.min(q.r,d/2);
    const P={x:p.x+ux*rp,y:p.y+uy*rp},Q={x:q.x-ux*rq,y:q.y-uy*rq};
+   const l=document.createElementNS(ns,'line'),z=document.createElementNS(ns,'line');
    [l,z].forEach(x=>{x.setAttribute('x1',P.x.toFixed(1));x.setAttribute('y1',P.y.toFixed(1));x.setAttribute('x2',Q.x.toFixed(1));x.setAttribute('y2',Q.y.toFixed(1))});
    z.setAttribute('class','zone');l.setAttribute('class','trait');g.append(z,l);
-   if(mj){const t=document.createElementNS(ns,'title');t.textContent=cache?'Chemin fermé — cliquer pour l’ouvrir':'Chemin ouvert — cliquer pour le fermer';g.append(t);
-    g.onclick=e=>{e.stopPropagation();if(basculeChemin(id,seg))arbreChange()}}
-   svg.append(g)};
-  etages.forEach(e=>{const haut=elDe(e.t.id);if(!haut)return;const H=centre(haut);
-   const bas=e.suivant?elDe(e.suivant.id):null,B=bas?centre(bas):null;
-   if(B&&droitPermis(e)){const cache=cheminCache(e.t.id,'c');if(mj||!cache)trait(H,B,'c',e.t.id,cache,false,!cache&&pris(e.t,e.suivant));milieu(e.t.id,'c',H,B)}
-   [['g','gc',e.g],['d','dc',e.d]].forEach(([seg,retour,t])=>{const el=t?elDe(t.id):placeDe(e.t.id,seg);if(!el)return;
-    const M=centre(el),cache=cheminCache(e.t.id,seg),cacheRetour=cheminCache(e.t.id,retour);
-    if(mj||!cache)trait(H,M,seg,e.t.id,cache,!t,!cache&&pris(e.t,t));if(t)milieu(e.t.id,seg,H,M);
-    if(B&&(mj||!cacheRetour))trait(M,B,retour,e.t.id,cacheRetour,!t,!cacheRetour&&pris(t,e.suivant));if(t&&B)milieu(e.t.id,retour,M,B)})});
-  // Chaque bonus de chemin au milieu de son trait ; un chemin qui ne se dessine plus le cache.
-  (col.bonusChemins||[]).forEach(({el,id,seg})=>{const m=milieux[cleChemin(id,seg)];el.hidden=!m;if(m){el.style.left=m.x.toFixed(1)+'px';el.style.top=m.y.toFixed(1)+'px'}})})}
+   // Une ligne qui monte ou court à l'horizontale dit son sens par une pointe, à son arrivée.
+   if(dy<d*.5){const pt=document.createElementNS(ns,'polygon'),bx=Q.x-ux*9,by=Q.y-uy*9;
+    pt.setAttribute('points',[[Q.x,Q.y],[bx-uy*5,by+ux*5],[bx+uy*5,by-ux*5]].map(([x,y])=>x.toFixed(1)+','+y.toFixed(1)).join(' '));
+    pt.setAttribute('class','pointe');g.append(pt)}
+   if(mj){const t=document.createElementNS(ns,'title');t.textContent='Ligne de '+de.name+' vers '+vers.name+' — cliquer pour l’effacer';g.append(t);
+    g.onclick=e=>{e.stopPropagation();if(basculeLien(de,vers)==='retire')arbreChange()}}
+   svg.append(g);milieux[cleChemin(de.id,id)]={x:(P.x+Q.x)/2,y:(P.y+Q.y)/2}}));
+  // Chaque bonus au milieu de sa ligne ; une ligne qui ne se dessine plus le cache.
+  (col.bonusChemins||[]).forEach(({el,cle})=>{const m=milieux[cle];el.hidden=!m;if(m){el.style.left=m.x.toFixed(1)+'px';el.style.top=m.y.toFixed(1)+'px'}})})}
 /* Les réglages de l'appareil : le thème et les touches de la carte. Rien n'est enregistré
    dans la partie — c'est le navigateur qui s'en souvient, pour ce poste seulement. */
 function renderSettings(){const boite=$('raccourcis');if(!boite)return;
