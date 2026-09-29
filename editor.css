@@ -1415,6 +1415,9 @@ body.sombre .paliers-table thead th.p2,body.sombre .paliers-table thead th.p3{co
 /* Les attaques dans la bulle d'un modèle : une ligne chacune, le nom puis les états, les dés
    et le bonus de dégâts. */
 .bulle-attaques{display:flex;flex-direction:column;gap:5px;width:100%}
+/* Dans la bulle d'un modèle, attaques, talents et inventaire se posent chacun sur un bloc à
+   part, plus clair que la teinte de son type. */
+.bulle-modele .bulle-attaques,.bulle-modele .bulle-talents,.bulle-modele .bulle-inventaire{box-sizing:border-box;width:100%;margin:2px 0 0;padding:6px 7px;border-radius:8px;background:#ffffff73;border:1px solid #00000014}
 .bulle-attaque{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .bulle-attaque .logo-equip{width:22px;height:22px}
 .bulle-att-nom{font-weight:600;font-size:13px}

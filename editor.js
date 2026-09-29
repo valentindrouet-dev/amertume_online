@@ -1666,8 +1666,9 @@ function bestiaryRow(m,i){const carte=document.createElement('div');carte.classN
    copie.name=m.name+' (copie)';catalog.monsters.splice(i+1,0,copie);renderCatalogPages();scheduleSave()}),
   suppr);
  carte.append(outils);return carte}
-/* La bulle d'un modèle : son nom seul, ses chiffres en petites tuiles, puis ses attaques, ses
-   talents en petits ronds et son inventaire en petits carrés. Type, famille et socle se lisent ailleurs. Rien à corriger ici : le
+/* La bulle d'un modèle : son nom seul, ses chiffres en petites tuiles, puis trois blocs sur leur
+   fond : ses attaques, sans leur portée, ses talents en petits ronds, son inventaire en petits
+   carrés. Type, famille et socle se lisent ailleurs. Rien à corriger ici : le
    formulaire s'ouvre d'un clic. */
 function bulleModele(m){const d=document.createElement('div');d.className='cat-detail bulle-modele-corps k-'+(m.type||'standard');
  const ligne=(texte,cls)=>{if(!texte)return;const p=document.createElement('p');if(cls)p.className=cls;p.textContent=texte;d.append(p)};
@@ -1685,7 +1686,7 @@ function bulleModele(m){const d=document.createElement('div');d.className='cat-d
  if(attaques.length){const liste=document.createElement('div');liste.className='bulle-attaques';
   attaques.forEach(at=>{const l=document.createElement('div');l.className='bulle-attaque';
    (at.logos||[]).slice(0,2).forEach(x=>{const im=logoAttaque(x,'mini');if(im)l.append(im)});
-   const n=document.createElement('span');n.className='bulle-att-nom';n.textContent=(at.name||'Attaque')+(at.range==='distance'?' · distance':'');
+   const n=document.createElement('span');n.className='bulle-att-nom';n.textContent=at.name||'Attaque';
    const bas=desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0)),pips=bas.querySelector('.pips');
    [...(at.etats||[])].reverse().forEach(e=>{const p=etatPastille(e);if(p)pips.prepend(p)});
    l.append(n,bas);liste.append(l)});

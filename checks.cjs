@@ -3174,10 +3174,15 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  frere.x=9;assert.equal(ctxM.degatsDe(loup),3,'hors de la zone de contact, rien');frere.x=3;
  frere.derriere=true;assert.equal(ctxM.degatsDe(loup),3,'un mur entre eux, rien');
  assert.ok(fs.readFileSync('editor.js','utf8').includes("l.push(['Meute (allié au contact)','× 2']);"),'le détail des dégâts le dit');}
+/* v0.348 — Bulle d'un modèle : ses attaques sans « · distance », et attaques, talents et inventaire
+   chacun sur son bloc. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("n.textContent=at.name||'Attaque';")&&!src.includes("(at.range==='distance'?' · distance':'')")
+  &&css.includes('.bulle-modele .bulle-attaques,.bulle-modele .bulle-talents,.bulle-modele .bulle-inventaire{box-sizing:border-box;width:100%;margin:2px 0 0;padding:6px 7px;border-radius:8px;background:#ffffff73;'),'la bulle en blocs, sans la portée');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
   try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})}catch(e){assert.fail(f+' ne se compile pas : '+e.message)}}
  const page=fs.readFileSync('index.html','utf8'),blocs=[...page.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
  blocs.forEach((js,i)=>{try{new vm.Script(js,{filename:'index.html#'+i})}catch(e){assert.fail('index.html, script '+i+' : '+e.message)}});}
-console.log('1790 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1791 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
