@@ -951,7 +951,8 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
   if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))bas.append(shieldBadge(o.def||0));
   const eff=pastilleEffet(o);if(eff)bas.append(eff);
   if(bas.children.length)p.append(bas)}
- else if(col!=='object')p.append(dicePips(o.dice,o.etat,col==='ranged'));
+ // Les dés d'une arme ; un reste, une ressource ou un trésor n'en ont pas, et rien ne s'ajoute sous leur logo.
+ else if(col==='melee'||col==='ranged')p.append(dicePips(o.dice,o.etat,col==='ranged'));
  // Une munition montre ce qu'elle ajoute : son dé, son état.
  else if(o.category==='ammo'&&(o.munDe||o.etat))p.append(dicePips(o.munDe?{[o.munDe]:1}:{},o.etat));
  if(n>1){const x=document.createElement('span');x.className='exemplaires';x.textContent=(portes>1?portes+'/':'×')+n;p.append(x)}
@@ -968,9 +969,9 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // La DEF, comme sur le carré : seulement si la pièce en donne, ou si c'est un torse ou un bouclier.
  if(col==='armor'){if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))ligne('DEF '+(o.def||0)+' · '+NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase())}
  else if(col==='melee'||col==='ranged')ligne((o.hands===2?'2 mains':'1 main')+(col==='ranged'?' · à distance':' · au contact'));
- // Un reste : sa valeur en pièces d'or, « 7 × » et la pièce ; sa conversion ne s'y lit plus.
+ // Un reste : sa valeur, « 7 » et la pièce d'or ; sa conversion ne s'y lit plus.
  if(col==='restes'){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
-  const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' × ',piece);d.append(v)}
+  const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
  if(o.tanneur&&o.recette&&o.recette.length)ligne('Tannerie : '+texteRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte]))),'gear-recette');
  if(o.category==='ammo'){const k=keys.indexOf(o.munDe);ligne('Munition : '+(k>=0?'+1 dé '+types[k]:'aucun dé')+' aux armes à distance portées');ligne(o.etat?'Leur tir inflige : '+o.etat:'')}
  else if(o.etat)ligne('Inflige : '+o.etat);

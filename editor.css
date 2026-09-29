@@ -416,10 +416,10 @@ button.btn-analyse[hidden]{display:none}
 /* Un tiers plus grand qu'avant : le logo grandit avec le carré, les dés et l'état gardent leur taille. */
 .cat-pill.gear-carre{flex:none;width:auto;min-width:69px;min-height:69px;flex-direction:column;justify-content:center;gap:4px;padding:5px 4px;text-align:center;cursor:pointer;position:relative;box-sizing:border-box}
 .cat-pill.gear-carre .logo-equip{width:38px;height:38px;margin:0}
-/* Toutes les cases d'équipement à la même hauteur, le logo toujours au même endroit, en haut ;
-   dessous, les dés ou l'écu quand la pièce en a. Un objet ou un reste laisse ce bas vide : son
-   logo ne descend plus au milieu de la case. Les ronds des talents et des adversaires, à part. */
-.cat-pill.gear-carre:not(.talent-carre):not(.best-carre){height:73px;justify-content:flex-start;padding-top:6px}
+/* Toutes les cases d'équipement à la même hauteur, celle d'une pièce qui porte ses dés ou son écu
+   sous son logo. Sans rien dessous — un objet, un reste —, le logo se centre dans la case. Les
+   ronds des talents et des adversaires, à part. */
+.cat-pill.gear-carre:not(.talent-carre):not(.best-carre){height:73px}
 .cat-pill.gear-carre .glyphe{font-size:27px;line-height:1}
 .cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}
 .cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}
@@ -445,7 +445,7 @@ button.btn-analyse[hidden]{display:none}
 .inv-possede{display:flex;flex-wrap:wrap;gap:10px 8px;margin:4px 0 12px;align-items:flex-start}
 .inv-adv-carte{display:flex;flex-direction:column;align-items:center;gap:3px}
 .inv-grille{display:flex;flex-wrap:wrap;gap:6px;max-height:236px;overflow:auto;padding:7px 4px 4px}
-.cat-pill.gear-carre.petit:not(.talent-carre):not(.best-carre){width:auto;min-width:52px;min-height:52px;height:52px;padding:4px 4px 3px;gap:2px;border-radius:9px}
+.cat-pill.gear-carre.petit:not(.talent-carre):not(.best-carre){width:auto;min-width:52px;min-height:52px;height:52px;padding:3px 4px;gap:2px;border-radius:9px}
 .cat-pill.gear-carre.petit .logo-equip{width:28px;height:28px}.cat-pill.gear-carre.petit .glyphe{font-size:19px}
 .cat-pill.gear-carre.petit .die-sq,.cat-pill.gear-carre.petit .pips .etat-inflige{flex-basis:12px;width:12px;height:12px}
 .cat-pill.gear-carre.petit .ecu{width:12px;height:14px}.cat-pill.gear-carre.petit .ecu b{font-size:7px}

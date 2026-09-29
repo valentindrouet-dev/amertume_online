@@ -3183,12 +3183,13 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    la ligne, et les billes d'Action et de Mouvement ont une taille paire, sans rétrécir. */
 assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing:border-box;width:20px;height:20px;')
  &&page.includes('.pastilles .pt{display:block;flex:none;width:8px;height:8px;border-radius:50%;'),'des ronds qui restent ronds');
-/* v0.350 — Les cases d'équipement toutes à la même hauteur, le logo au même endroit ; les pièces du
-   butin sur la ligne du journal ; la valeur d'un reste en pièces d'or, sans sa conversion. */
+/* v0.350-351 — Les cases d'équipement toutes à la même hauteur, le logo centré quand rien n'est
+   dessous ; les pièces du butin sur la ligne du journal ; la valeur d'un reste, « 7 » et la pièce
+   d'or, sans sa conversion. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(css.includes('.cat-pill.gear-carre:not(.talent-carre):not(.best-carre){height:73px;justify-content:flex-start;padding-top:6px}')
+ assert.ok(css.includes('.cat-pill.gear-carre:not(.talent-carre):not(.best-carre){height:73px}')&&!css.includes('justify-content:flex-start;padding-top:6px}')
   &&css.includes('.j-objet{display:inline-block;')&&css.includes('.j-objet .logo-equip{display:inline-block;width:16px;height:16px;margin:0 3px 0 0;vertical-align:-3px}')
-  &&src.includes("v.append(n,' × ',piece);d.append(v)}")&&!src.includes("'Se convertit en : '"),'cases égales, butin aligné, or en pièces');}
+  &&src.includes("v.append(n,' ',piece);d.append(v)}")&&!src.includes("'Se convertit en : '"),'cases égales, butin aligné, or en pièces');}
 /* Chaque script du site se compile en entier : un nom déclaré deux fois dans le même bloc ne se
    voit qu'à la compilation du fichier, et bloquait tout le chargement de la page. */
 {for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js']){
