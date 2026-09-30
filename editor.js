@@ -3034,9 +3034,86 @@ let lienDepuis=null;
 const arbresVue=document.createElement('button');arbresVue.type='button';arbresVue.id='arbres-vue';arbresVue.className='arbres-vue';
 arbresDialog.querySelector('.dialog-head').insertBefore(arbresVue,arbresDialog.querySelector('[data-close]'));
 arbresVue.onclick=()=>{arbresVueJoueur=!arbresVueJoueur;noteArbres('');renderArbres()};
+/* Modifier en masse : l'arbre d'une classe en tableau, comme l'Armurerie et le Bestiaire. On n'y voit
+   plus les lignes, mais on y change vite coûts, types et textes : les talents dans l'ordre de l'arbre,
+   chacun suivi de ses bonus et améliorations. */
+let arbresEnMasse=false,masseTriTal=null,masseAnnuleTal=null;
+const arbresMasse=document.createElement('button');arbresMasse.type='button';arbresMasse.id='arbres-masse';arbresMasse.className='arbres-vue';arbresMasse.textContent='✎ Modifier en masse';
+arbresDialog.querySelector('.dialog-head').insertBefore(arbresMasse,arbresVue);
+arbresMasse.onclick=()=>{arbresEnMasse=!arbresEnMasse;masseAnnuleTal=null;renderArbres()};
+function tableMasseTalents(corps,classe){
+ const gros=colonnesArbre(classe).flatMap(c=>c.liste),ids=new Set(gros.map(t=>t.id)),ordreDir=Object.keys(DIRS);
+ const petitsDuTalent=t=>tousTalents().filter(p=>{const c=lisChemin(p);return c&&c.de===t.id}).sort((x,y)=>ordreDir.indexOf(lisChemin(x).dir)-ordreDir.indexOf(lisChemin(y).dir)||lisChemin(x).rang-lisChemin(y).rang);
+ let liste=gros.flatMap(t=>[t,...petitsDuTalent(t)]).filter(Boolean);
+ const nomDe=t=>estBonus(t)?libelleBonus(paramsTalent(t)):t.name||'';
+ const sauve=()=>{renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+ const cout=v=>Math.max(0,Math.min(999999,Math.round(Number(v)||0)));
+ const COLS=[
+  {cle:'type',nom:'Type',type:'choix',opts:TALENT_TYPES.map(([k,,n])=>[k,n]),pour:t=>!estBonus(t),lit:t=>t.type||'act',ecrit:(t,v)=>{if(TALENT_TYPES.some(([k])=>k===v))t.type=v},tri:t=>estBonus(t)?'':talentType(t)[2]},
+  {cle:'cout',nom:'Coût (XP)',type:'nombre',lit:t=>coutPalier(t,1),ecrit:(t,v)=>{const c=[1,2,3].map(n=>coutPalier(t,n));c[0]=cout(v);t.couts=c}},
+  {cle:'meca',nom:'Mécanique',type:'vue',tri:t=>estBonus(t)?'Bonus':(talentCode(t)||{}).nom||'',montre:t=>estBonus(t)?'Bonus':(talentCode(t)||{}).nom||'—'},
+  {cle:'texte',nom:'Texte',type:'texte',pour:t=>!estBonus(t),lit:t=>t.effects||'',ecrit:(t,v)=>{t.effects=String(v||'').trim().slice(0,600)}}];
+ const vaut=(c,t)=>!c.pour||c.pour(t);
+ // Trié, le tableau quitte l'ordre de l'arbre ; « Ordre de l'arbre » y revient.
+ const colTri=masseTriTal&&(masseTriTal.cle==='nom'?{tri:nomDe}:COLS.find(c=>c.cle===masseTriTal.cle));
+ if(colTri){const v=t=>{const x=(colTri.tri||colTri.lit)(t);return x===''||x===null||x===undefined?null:x};
+  const cmp=(a,b)=>typeof a==='number'&&typeof b==='number'?a-b:String(a).localeCompare(String(b),'fr',{numeric:true});
+  liste=liste.map((x,i)=>[x,v(x),i]).sort((A,B)=>(A[1]===null)-(B[1]===null)||(A[1]===null?0:cmp(A[1],B[1])*masseTriTal.sens)||A[2]-B[2]).map(x=>x[0])}
+ const barre=document.createElement('div');barre.className='masse-barre';
+ const std=document.createElement('button');std.type='button';std.className='masse-standard';std.textContent='↺ Ordre de l’arbre';std.disabled=!masseTriTal;
+ std.onclick=()=>{masseTriTal=null;renderArbres()};barre.append(std);
+ if(masseAnnuleTal){const u=document.createElement('button');u.type='button';u.className='masse-annule';u.textContent='↶ Annuler : '+masseAnnuleTal.dit;
+  u.onclick=()=>{const m=masseAnnuleTal;masseAnnuleTal=null;m.avant.forEach(v=>{const i=catalog.talents.findIndex(t=>t.id===v.id);if(i>=0)catalog.talents[i]=v});sauve();renderArbres()};barre.append(u)}
+ corps.append(barre);
+ if(!liste.length){const v=document.createElement('p');v.className='muted';v.textContent='Aucun talent dans cet arbre.';corps.append(v);return}
+ const tb=document.createElement('table');tb.className='masse-table masse-talents';
+ const thead=document.createElement('thead'),tete=document.createElement('tr'),tous=document.createElement('tr');tous.className='masse-tous';
+ const enTete=(cle,nom)=>{const th=document.createElement('th');th.scope='col';const actif=!!(masseTriTal&&masseTriTal.cle===cle);
+  th.setAttribute('aria-sort',actif?(masseTriTal.sens>0?'ascending':'descending'):'none');
+  const b=document.createElement('button');b.type='button';b.className='masse-tri';b.textContent=nom;
+  const fl=document.createElement('span');fl.className='masse-fleche';fl.textContent=actif?(masseTriTal.sens>0?'▲':'▼'):'⇅';b.append(fl);
+  b.onclick=()=>{masseTriTal=actif?{cle,sens:-masseTriTal.sens}:{cle,sens:1};renderArbres()};th.append(b);return th};
+ tete.append(enTete('nom','Talent'),...COLS.map(c=>enTete(c.cle,c.nom)));
+ const th0=document.createElement('th');th0.scope='row';th0.textContent='Pour les '+liste.length+' affichés';tous.append(th0);
+ const pourTous=(c,fn,dit)=>{const cibles=liste.filter(t=>vaut(c,t));if(!cibles.length)return;
+  if(!confirm(dit+' — '+cibles.length+' talent'+(cibles.length>1?'s':'')+' ?'))return;
+  masseAnnuleTal={dit,avant:cibles.map(t=>structuredClone(t))};cibles.forEach(fn);sauve();renderArbres()};
+ COLS.forEach(c=>{const td=document.createElement('td');
+  if(c.type==='nombre'){const op=document.createElement('select');op.setAttribute('aria-label',c.nom+' : opération');op.innerHTML='<option value="=">=</option><option value="x">×</option><option value="+">+</option>';
+   const n=document.createElement('input');n.type='number';n.step='any';n.setAttribute('aria-label',c.nom+' : valeur pour tous');
+   const ok=document.createElement('button');ok.type='button';ok.textContent='OK';
+   ok.onclick=()=>{const v=Number(n.value);if(n.value===''||!Number.isFinite(v))return;const o2=op.value;
+    pourTous(c,t=>c.ecrit(t,o2==='x'?c.lit(t)*v:o2==='+'?c.lit(t)+v:v),c.nom+(o2==='x'?' multiplié par ':o2==='+'?(v<0?' diminué de ':' augmenté de '):' fixé à ')+Math.abs(v))};
+   const g=document.createElement('span');g.className='masse-op';g.append(op,n,ok);td.append(g)}
+  else if(c.type==='choix'){const sel=document.createElement('select');sel.setAttribute('aria-label',c.nom+' pour tous');
+   sel.innerHTML='<option value="\u0001">Pour tous…</option>'+c.opts.map(([k,n])=>'<option value="'+esc(k)+'">'+esc(n)+'</option>').join('');
+   sel.onchange=()=>{const v=sel.value;if(v==='\u0001')return;const nomV=(c.opts.find(([k])=>k===v)||[])[1]||v;sel.value='\u0001';pourTous(c,t=>c.ecrit(t,v),c.nom+' : '+nomV)};td.append(sel)}
+  tous.append(td)});
+ thead.append(tete,tous);tb.append(thead);
+ const tbody=document.createElement('tbody');
+ liste.forEach(t=>{const tr=document.createElement('tr');tr.className=lisChemin(t)?'masse-petit':'masse-gros';
+  const th=document.createElement('th');th.scope='row';const nom=document.createElement('span');nom.className='masse-nom';
+  const r=talentRond(t);r.classList.add('mini');nom.append(r);
+  if(estBonus(t)){const l=document.createElement('span');l.className='masse-nom-fixe';l.textContent=nomDe(t);nom.append(l)}
+  else{const n=document.createElement('input');n.value=t.name||'';n.maxLength=120;n.setAttribute('aria-label','Nom');
+   n.onchange=()=>{const v=n.value.trim();if(!v){n.value=t.name;return}t.name=v.slice(0,120);sauve()};nom.append(n)}
+  const ouvre=document.createElement('button');ouvre.type='button';ouvre.className='ico';ouvre.textContent='✎';ouvre.title='Ouvrir '+nomDe(t);
+  ouvre.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres);nom.append(ouvre);th.append(nom);tr.append(th);
+  COLS.forEach(c=>{const td=document.createElement('td');
+   if(!vaut(c,t)){td.className='masse-sans';td.textContent='—';tr.append(td);return}
+   if(c.type==='vue'){td.className='masse-vue';td.textContent=c.montre(t);tr.append(td);return}
+   let el;
+   if(c.type==='nombre'){el=document.createElement('input');el.type='number';el.min='0';el.max='999999';el.step='1';el.value=c.lit(t);
+    el.onchange=()=>{c.ecrit(t,el.value);el.value=c.lit(t);sauve()}}
+   else if(c.type==='choix'){el=document.createElement('select');el.innerHTML=c.opts.map(([k,n])=>'<option value="'+esc(k)+'"'+(k===c.lit(t)?' selected':'')+'>'+esc(n)+'</option>').join('');
+    el.onchange=()=>{c.ecrit(t,el.value);sauve();renderArbres()}}
+   else{el=document.createElement('input');el.className='masse-texte-long';el.value=c.lit(t);el.maxLength=600;el.onchange=()=>{c.ecrit(t,el.value);sauve()}}
+   el.setAttribute('aria-label',c.nom+' — '+nomDe(t));td.append(el);tr.append(td)});
+  tbody.append(tr)});
+ tb.append(tbody);corps.append(tb)}
 // Refermé, l'arbre ne retient ni fiche ni classe ni vue : la prochaine ouverture repart de zéro.
 // L'événement arrive après coup : un arbre rouvert entre-temps garde ce qu'on vient de lui donner.
-arbresDialog.addEventListener('close',()=>{if(arbresDialog.open)return;arbresActeur=null;arbresClasse=null;arbresVueJoueur=false;lienDepuis=null});
+arbresDialog.addEventListener('close',()=>{if(arbresDialog.open)return;arbresActeur=null;arbresClasse=null;arbresVueJoueur=false;arbresEnMasse=false;masseAnnuleTal=null;lienDepuis=null});
 // Échap, en plein tracé d'une ligne, y renonce sans refermer l'arbre.
 arbresDialog.addEventListener('cancel',e=>{if(!lienDepuis)return;e.preventDefault();lienDepuis=null;noteArbres('');renderArbres()});
 // Les chemins se mesurent sur l'écran : la fenêtre qui change de taille les retrace.
@@ -3151,7 +3228,7 @@ function retireDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;
   porteur ni élément, un nom à accolades les montre en creux. */
 // Le chiffre d'un palier dans une comparaison, où le premier aussi doit se nommer.
 const CHIFFRES_PALIER=['','I','II','III'];
-function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null}={}){const bonus=t.effet==='bonus';
+function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}){const bonus=t.effet==='bonus';
  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
  // Un bonus a la couleur de son rond : rouge pour les dégâts, vert pour les PV…
  if(bonus)d.classList.add('bulle-bonus','bonus-'+((paramsTalent(t)||{}).carac||'pv'));
@@ -3161,10 +3238,12 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null}={}){const bon
  if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));
  // Jamais la nature du talent : la bulle ne l'écrit nulle part.
  tete.append(nom);d.append(tete);
+ // Le prix en XP ne se lit que dans l'arbre : en cartouche, en haut à gauche de la bulle.
+ if(cout&&coutPalier(t,1)){const c=document.createElement('span');c.className='cout-xp';c.textContent=coutPalier(t,1)+' XP';tete.prepend(c)}
  // Un talent qui frappe, dans la barre d'action : ses dés et son bonus de dégâts sous son nom.
  if(des){des.classList.add('bulle-des');d.append(des)}
  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
- if(bonus){if(t.effects)ligne(t.effects);if(coutPalier(t,1))ligne('Coût : '+coutPalier(t,1)+' XP','muted')}
+ if(bonus){if(t.effects)ligne(t.effects)}
  else{/* Les paliers, un par ligne, le chiffre en tête de sa ligne : « I Vous effectuez… ».
      Un aventurier ne voit que ceux qu'il a débloqués ; s'il n'a pas le talent, le premier, celui
      qu'il apprendrait. Sans aventurier — l'onglet Talents, le plan d'une classe — rien à
@@ -3182,7 +3261,6 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null}={}){const bon
    // Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.
    const tete=[];
    if(numero){const r=document.createElement('span');r.className='palier-num';r.textContent=CHIFFRES_PALIER[n]||String(n);tete.push(r)}
-   if(c){const pt=document.createElement('span');pt.className='palier-cout';pt.textContent=c+' XP';tete.push(pt)}
    e.prepend(...tete.flatMap(x=>[x,' ']));g.append(e)});
   d.append(g);
   /* Les améliorations que l'aventurier a activées sur les chemins du talent, chacune à la ligne ;
@@ -3206,7 +3284,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);
  // En vue joueur, le MJ perd ses outils le temps de regarder : l'arbre se lit comme chez la troupe.
  const a=arbresActeur,mj=view==='mj'&&!arbresVueJoueur&&!a;
- arbresVue.hidden=view!=='mj'||!!a;arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
+ arbresVue.hidden=view!=='mj'||!!a||arbresEnMasse;arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
+ arbresMasse.hidden=view!=='mj'||!!a;arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
  if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}}
  else if(view!=='mj'){arbresDialog.close();return}
  // Chez le MJ, l'arbre s'accorde avant de se dessiner : chaque talent a sa case, chaque ligne son but.
@@ -3214,6 +3293,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // Une ligne en cours de tracé n'a de sens que dans l'édition.
  if(!(view==='mj'&&!arbresVueJoueur))lienDepuis=null;
  const classe=a?classeDuHeros(a):arbresClasse;
+ // En masse, l'arbre se lit en tableau : ni colonnes ni lignes.
+ if(arbresEnMasse&&!a&&view==='mj'){tableMasseTalents(corps,classe);return}
  /* L'élément qui habille l'arbre : celui du Mystique ; sur le plan du MJ, celui qu'il regarde ;
     pas encore choisi, le premier, en aperçu. Un talent élémentaire attend, lui, que le MJ choisisse. */
  const elementaire=classeElementaire(classe),elemVu=elementaire?(a&&elementDe(a))||ELEMENTS.find(e=>e.cle===elementApercu)||ELEMENTS[0]:null;
@@ -3260,7 +3341,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const r=basculeLien(de,t);
   if(r==='plein'||r==='loin'||r==='occupe'){renderArbres();return}
   arbreChange()};
- const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note});
+ const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note,cout:true});
  // Un nœud de l'arbre : le rond au logo — ou au glyphe de sa nature — le nom, le niveau.
  const noeud=(t,etat,verrou)=>{const b=document.createElement('div');b.tabIndex=0;b.setAttribute('role','button');
   b.className='arbre-noeud t-'+talentType(t)[0]+(etat?' '+etat:'');b.dataset.id=t.id;
@@ -3296,6 +3377,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue',()=>{const nom=vu(t).name;
     if(retireDeLArbre(t))arbreChange()}));
    b.append(outils)}
+  // Son prix en XP, en cartouche au bas du rond : dans l'arbre seulement.
+  if(coutPalier(t,1)){const k=document.createElement('span');k.className='arbre-cout';k.textContent=coutPalier(t,1)+' XP';b.append(k)}
   surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
   return b};
  // La tête : la classe, l'élément du Mystique, ce que l'arbre a coûté.

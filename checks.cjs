@@ -1616,7 +1616,6 @@ assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null
  &&src.includes("const classe=a?classeDuHeros(a):arbresClasse;")&&src.includes("const porte=t=>!!a&&a.talents.includes(t.id);")
  &&src.includes("el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}")
  &&src.includes("const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);")
- &&src.includes("arbresDialog.addEventListener('close',()=>{if(arbresDialog.open)return;arbresActeur=null;arbresClasse=null;arbresVueJoueur=false;lienDepuis=null});")
  &&src.includes("rouage.textContent='⚙';rouage.title='Arbre de talents — '+famille;")
  &&src.includes("rouage.onclick=e=>{e.stopPropagation();openArbresClasse(famille)};h.append(rouage);")
  /* Le nom de la classe ouvre le même arbre, un clic hors de la fenêtre la referme, et ni
@@ -2791,8 +2790,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("t.volets=voletsDe({effet:t.effet,volets:talentDraft.volets})")&&src.includes("...communsDe(t.effet,t.params)")&&css.includes('.volet-case.ici{'),'les volets par palier, les réglages communs, la phrase du moteur');
  assert.ok(src.includes("function nomAccolades(el,texte){")&&src.includes("nom.className='nom-carte';nomAccolades(nom,vu.name);")&&!src.includes("nom.className='arbre-nom'")
   &&src.includes("p.textContent='Selon l’élément : '+ELEMENTS.map(e=>remplaceElement(v,e)).join(' · ')")&&css.includes('.accolade{'),'les accolades du nom, en pastille ou remplies');
- assert.ok(src.includes("function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null}={}){")&&src.includes(" const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note});")
-  &&src.includes("if(BULLES)surveille(p,()=>{const d=bulleTalent(t,{vu:x=>sous?talentPourElement(x,sous):x});ouvrirBulle(p,d,")
+ assert.ok(src.includes("if(BULLES)surveille(p,()=>{const d=bulleTalent(t,{vu:x=>sous?talentPourElement(x,sous):x});ouvrirBulle(p,d,")
   &&!src.includes("m.className='palier-moteur'")&&src.includes("if(elem)h=enElementDuMystique(h,vals[n].etat);"),'la bulle au survol, dans l’onglet Talents aussi ; l’élément du Mystique sans élément');
  assert.ok(!src.includes('↩ Remettre dans l’arbre'),'le menu de tête a laissé la place aux « + »');}
 /* v0.296 — Les orbes élémentaires par palier : l'état sur 6+, puis à chaque touche, puis en

@@ -1790,3 +1790,13 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* Les dés d'une ligne du journal, en petits carrés. */
 .j-des{display:inline-flex;vertical-align:-3px}
 .j-des .pips{gap:2px}.j-des .die-sq{flex:0 0 15px;width:15px;height:15px}
+/* L'arbre en masse : les petits ronds en retrait sous leur talent. */
+.masse-talents tr.masse-petit>th .masse-nom{padding-left:22px}
+.masse-talents .masse-nom-fixe{font:600 13px system-ui;min-width:140px}
+.masse-talents .masse-texte-long{width:100%;min-width:260px}
+.masse-talents .cat-pill.mini{flex:0 0 auto}
+/* Le prix en XP, dans l'arbre seulement : un cartouche au bas du rond, et en tête de sa bulle. */
+.arbre-plan>.arbre-noeud>.arbre-cout{position:absolute;left:50%;top:100%;transform:translate(-50%,-55%);z-index:3;pointer-events:none;
+ padding:1px 6px;border-radius:9px;border:1px solid var(--line-strong);background:var(--panel);color:var(--ink);font:700 10px/1.3 system-ui;white-space:nowrap;box-shadow:0 1px 3px #0003}
+.arbre-plan>.arbre-noeud.petit>.arbre-cout{font-size:9px;padding:0 5px}
+.talent-bulle-nom .cout-xp{order:-1;padding:1px 7px;border-radius:9px;border:1px solid #00000033;background:#fffaf0;font:700 11px/1.3 system-ui;color:#5a4a36;align-self:center}
