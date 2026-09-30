@@ -917,6 +917,10 @@ assert.equal(readStat('level','9',1),9);assert.equal(readStat('level','25',1),20
  const murs=[{contours:[r(0,40,100,60),r(20,60,60,30)]}];
  const p=visionPolygon({x:50,y:42},murs);assert.equal(pointInPolygon([40,75],p),false,'la salle reste cachée');assert.equal(pointInPolygon([50,20],p),true,'le couloir se voit');
  assert.equal(pointInPolygon([40,75],visionPolygon({x:50,y:75},murs)),true,'dans la salle, on la voit');}
+// Deux améliorations à la suite : la seconde ne remplace la première que si elle le dit ; sinon elles s'additionnent.
+{const {sansAmeliorationsRemplacees}=require('./combat.js');const ch=r=>({de:'t',dir:'se',rang:r});
+ const a1={id:'a1',effet:'x',chemin:ch(1)},a2={id:'a2',effet:'y',chemin:ch(2)},a3={id:'a3',effet:'y',chemin:ch(2),remplacePrecedente:true};
+ assert.deepEqual(sansAmeliorationsRemplacees([a1,a2]).map(t=>t.id),['a1','a2']);assert.deepEqual(sansAmeliorationsRemplacees([a1,a3]).map(t=>t.id),['a3']);}
 // Le niveau d'un aventurier suit son XP, palier par palier.
 {const {niveauDeXp,NIVEAUX_XP,writeStat}=require('./combat.js');assert.equal(NIVEAUX_XP.length,20);
  assert.deepEqual([0,299,300,899,900,2700,6499,6500,64000,354999,355000,999999].map(niveauDeXp),[1,1,2,2,3,4,4,5,10,19,20,20]);

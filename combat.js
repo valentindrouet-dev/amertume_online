@@ -1328,11 +1328,12 @@ function talentPourElement(t,e){if(!t||!e||!estElementaire(t))return t;
  const logo=remplaceElement(t.logo,e),suffixe=new RegExp('_('+ELEMENTS.map(x=>x.logo).join('|')+')(\\.[a-z0-9]+)?$','i');
  return {...t,name:remplaceElement(t.name,e),effects:remplaceElement(t.effects,e),logo:propre||(typeof logo==='string'?logo.replace(suffixe,(m,x,ext)=>'_'+e.logo+(ext||'')):logo),params:etat(t.params),paliers:pal,elementVu:e.cle}}
 // Les talents d'un combattant, chacun tel qu'il joue : à son élément, puis à son palier.
-/* Deux améliorations à la suite sur un même chemin : la seconde prend le pas, son effet remplace
-   celui de la première. Les bonus, eux, s'additionnent. */
+/* Deux améliorations à la suite sur un même chemin : cochée « Remplace le texte de l'amélioration
+   précédente », la seconde est un renforcement — son texte et son effet prennent la place de ceux
+   d'avant. Sinon les deux s'additionnent. Les bonus, eux, s'additionnent toujours. */
 function sansAmeliorationsRemplacees(liste){const L=(liste||[]).filter(Boolean);
  const am=t=>t.effet!=='bonus'&&t.chemin&&typeof t.chemin==='object'&&t.chemin.de;
- return L.filter(t=>!am(t)||!L.some(u=>u!==t&&am(u)&&u.chemin.de===t.chemin.de&&u.chemin.dir===t.chemin.dir&&(Number(u.chemin.rang)||0)>(Number(t.chemin.rang)||0)))}
+ return L.filter(t=>!am(t)||!L.some(u=>u!==t&&am(u)&&u.remplacePrecedente===true&&u.chemin.de===t.chemin.de&&u.chemin.dir===t.chemin.dir&&(Number(u.chemin.rang)||0)>(Number(t.chemin.rang)||0)))}
 function talentsAuPalier(a,talents){const e=elementDe(a);return talentsTenus(a&&a.talents,talents).map(t=>talentAuPalier(talentPourElement(t,e),palierDe(a,t)))}
 // Ce qu'a coûté l'arbre d'un aventurier : chaque palier acquis, au prix que le talent en demande.
 function ptDepenses(a,talents){return talentsTenus(a&&a.talents,talents).reduce((s,t)=>{let n=0;for(let i=1;i<=palierDe(a,t);i++)n+=coutPalier(t,i);return s+n},0)}

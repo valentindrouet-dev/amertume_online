@@ -242,6 +242,12 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  /* Les paliers d'un talent : un coût en PT par palier, 0 tant que le MJ n'en décide pas ; et pour
     les paliers 2 et 3, leur texte et leurs réglages quand ils diffèrent — relus au travers de la
     mécanique. Un bonus n'a qu'un palier. */
+ /* Avant la case « Remplace le texte de l'amélioration précédente », la seconde amélioration d'un
+    chemin remplaçait toujours la première. Une paire de même mécanique — un renforcement — la
+    reçoit cochée, une fois, et garde ainsi son comportement ; le MJ la décoche s'il le veut. */
+ c.talents.forEach(t=>{if(!t||t.type!=='ame'||t.remplacePrecedente!==undefined||!t.chemin||typeof t.chemin!=='object')return;const k=t.chemin;
+  const p=c.talents.find(x=>x&&x!==t&&x.chemin&&x.chemin.de===k.de&&x.chemin.dir===k.dir&&Number(x.chemin.rang)===Number(k.rang)-1);
+  if(p&&p.effet&&p.effet===t.effet)t.remplacePrecedente=true});
  c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(999999,coutPalier(t,n)));
   const pal={};if(t.effet!=='bonus')[2,3].forEach(n=>{const q=t.paliers&&t.paliers[n];if(!q||typeof q!=='object')return;
    const e=String(q.effects||'').slice(0,600),r=t.effet&&q.params&&typeof q.params==='object'&&Object.keys(q.params).length?paramsTalent({effet:t.effet,params:q.params}):null;
@@ -2426,7 +2432,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<div id="talent-exige"></div></section>'
   +'<section class="talent-boite b-paliers t-seul"><h2 class="sous-titre">'+(PALIERS.actifs?'Paliers — coût, texte et effets câblés':'Coût, texte et effets câblés')+'</h2>'
   +'<div id="talent-reglages"></div>'
-  +'<label class="field-check" id="remplace-texte"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceTexte" '+(t.remplaceTexte===true?'checked':'')+'>Remplace le texte du talent</label></section>'
+  +'<label class="field-check" id="remplace-texte"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceTexte" '+(t.remplaceTexte===true?'checked':'')+'>Remplace le texte du talent</label>'
+  +'<label class="field-check" id="remplace-precedente"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplacePrecedente" '+(t.remplacePrecedente===true?'checked':'')+'>Remplace le texte de l’amélioration précédente</label></section>'
   // Le bonus : une caractéristique, une valeur — et la compétence, si c'est là qu'il va.
   +'<section class="talent-boite b-bonus b-seul"><h2 class="sous-titre">Le bonus</h2><div class="edit-grid">'
   +sel('Caractéristique','b_carac',pb.carac,optBonus('carac'))
@@ -2439,7 +2446,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
     qu'un champ requis absent ne bloque pas l'enregistrement. */
  const champs=$('talent-form').elements;
  // « Remplace le logo du talent » ne vaut que pour une amélioration.
- if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame';if($('remplace-texte'))$('remplace-texte').hidden=champs.type.value!=='ame'});
+ if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame';if($('remplace-texte'))$('remplace-texte').hidden=champs.type.value!=='ame';if($('remplace-precedente'))$('remplace-precedente').hidden=champs.type.value!=='ame'});
  ['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});
  const apercuBonus=()=>{const comp=champs.b_carac.value==='comp';const lc=champs.b_comp.closest('label');if(lc)lc.classList.toggle('talent-cache',!comp);
   $('bonus-apercu').textContent='Dans l’arbre : '+libelleBonus({carac:champs.b_carac.value,valeur:num(champs.b_valeur.value,1,20),comp:champs.b_comp.value})};
@@ -2509,6 +2516,8 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  if(t.type==='ame'&&f.remplaceTexte&&f.remplaceTexte.checked){t.remplaceTexte=true;const c=lisChemin(t);
   if(c)catalog.talents.forEach(x=>{const k=x!==t&&lisChemin(x);if(k&&k.de===c.de&&k.dir!==c.dir)delete x.remplaceTexte})}
  else delete t.remplaceTexte;
+ // Écrit oui ou non, jamais absent : la reprise des anciennes paires ne repasse pas sur un choix du MJ.
+ if(t.type==='ame'&&f.remplacePrecedente)t.remplacePrecedente=f.remplacePrecedente.checked;else delete t.remplacePrecedente;
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p_')}):{};
  /* Les paliers : leur coût ; pour le 2 et le 3, leur texte s'il en a un, leurs réglages s'ils
     diffèrent de ceux d'en dessous — sinon ils en héritent, et suivront s'ils changent. */
