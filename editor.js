@@ -3366,15 +3366,18 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   c.liste.forEach(t=>{if(!cases.has(t.id)){const p=caseLibre(prises.map(q=>({pos:q})),null);cases.set(t.id,p);prises.push(p)}});
   /* Les petits ronds, chacun à sa place : depuis le centre de son talent, dans sa direction, une
      demi-case par rang — la même distance en droite ligne et en diagonale, tout autour du talent. */
-  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy);return {x:+(p.x+dx/n*r/2).toFixed(3),y:+(p.y+dy/n*r/2).toFixed(3)}};
+  /* Les petits ronds se serrent contre leur talent : le premier à 0,41 case de son centre, le
+     second 0,29 plus loin, dans toutes les directions. On lit à qui ils sont, et un talent
+     voisin garde de l'air. */
+  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.41+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
   const petits=[];c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
    Object.keys(DIRS).forEach(d=>{if(ch[d].lien)return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
   /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
      talent — jamais au-dessus : l'arbre part d'un talent tout en haut et descend ; sur chaque chemin
      sans ligne, la place du petit rond suivant, sauf au-dessus du talent de départ. */
   const racines=new Set(c.liste.filter(t=>!entreesDe(c.liste,t).length).map(t=>t.id)),places=[];
-  // Une place trop près d'un rond déjà posé ne s'offre pas : un talent à moins d'une demi-case, un petit rond à moins d'un tiers.
-  const libreIci=(x,y)=>!prises.some(q=>Math.hypot(q.x-x,q.y-y)<.45)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.34)&&!places.some(q=>Math.hypot(q.x-x,q.y-y)<.34);
+  // Une place trop près d'un rond déjà posé ne s'offre pas : un talent à moins de 0,36 case, un petit rond à moins de 0,24.
+  const libreIci=(x,y)=>!prises.some(q=>Math.hypot(q.x-x,q.y-y)<.36)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.24)&&!places.some(q=>Math.hypot(q.x-x,q.y-y)<.24);
   if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),vues=new Set();
    c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
     Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if(ch[d].lien)return;
