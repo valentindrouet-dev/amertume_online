@@ -3803,6 +3803,8 @@ function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!f.hero&&(Ma
  const xp=vaincus.reduce((s,f)=>s+Math.trunc(Number(f.xp)),0),heros=actors.filter(a=>a&&a.hero);
  if(!xp||!heros.length)return;
  heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));
+ // La carte retient ce qu'elle a déjà donné : le MJ le lit à côté de son nom.
+ const carte=typeof currentMap==='function'?currentMap():null;if(carte)carte.xpAccordee=(Math.max(0,Math.trunc(Number(carte.xpAccordee))||0))+xp;
  log('+'+xp+' XP pour '+heros.map(h=>h.name).join(', ')+' ('+vaincus.map(f=>f.name).join(', ')+').');
  document.dispatchEvent(new Event('amertume-content-changed'))}
 /* Le butin d'un adversaire retiré de la scène, comme son XP : chaque exemplaire qu'il possède

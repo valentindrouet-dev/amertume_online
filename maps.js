@@ -595,6 +595,8 @@ function modeleActuel(tpl){if(!tpl)return tpl;const liste=catalog.monsters||[];
 function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  if(!confirm('Ouvrir « '+m.name+' » ? Les aventuriers sont regroupés dans la zone de départ et les adversaires de la scène sont remplacés par ceux de la carte.'))return;
  currentMapId=id;mapImage=m.image||null;measureRatio(m,render);
+ // Une carte ouverte repart de zéro XP accordée : la rencontre est à venir.
+ m.xpAccordee=0;
  $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);
  const heros=actors.filter(a=>a.hero);
  // Une carte rechargée rend à chacun ses repos courts.
@@ -620,7 +622,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
     troupe en exploration — le combat commencera de lui-même au premier adversaire révélé. */
  if(typeof remiseAuTourUn==='function')remiseAuTourUn();
  mode='exploration';
- render();actors.forEach(settleActor);   // Personne ne démarre dans un mur.
+ render();actors.forEach(a=>settleActor(a));   // Personne ne démarre dans un mur.
 
  actors.forEach(a=>{a.target=null});
  owner=actors.findIndex(a=>a.hero);selected=Math.max(0,owner);
@@ -680,7 +682,7 @@ mapsPage.innerHTML=
  +'<p class="muted">Un fichier qui contient toutes tes cartes : zones, portes, découpes, zone de départ, adversaires, objets et image de fond. Le domaine n’y est pas : il s’exporte depuis son onglet, et la partie entière depuis les Paramètres.</p>'
  +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
  +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
- +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label>'
+ +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><span class="map-xp" id="map-xp"></span>'
  +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
@@ -909,6 +911,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
     née d'un rectangle, d'un coup de pinceau ou de vingt gestes mêlés. */
  $('shape-label').textContent=mapSel?(porte&&porte.secret?'Passage secret':KINDS[mapSel.kind])
   +(adv?' · '+adv.tpl.name:'')+(obj?' · '+obj.nom+(obj.visible?'':' · caché'):'')+(verrou?' · verrouillée':''):'Aucune sélection.';
+ $('map-xp').textContent=xpDeCarte(m)+' xp';
  $('map-count').textContent=matiereDe(m).length+' zone(s) de blocage, '+m.doors.length+' porte(s), '
   +m.foes.length+' adversaire(s), '+m.objets.length+' objet(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
  $('recal-box').hidden=!recalNeeded();
@@ -1428,11 +1431,17 @@ lockBtn.onclick=()=>{tokensLocked=!tokensLocked;refreshGmBar();render();schedule
  // Une note pour le MJ seul : chez les joueurs, le verrou se voit, il ne s'annonce pas.
  log(tokensLocked?'Déplacements figés : les joueurs ne peuvent plus bouger leurs tokens.':'Déplacements rendus aux joueurs.',{ton:'carte',local:true})};
 // L'état des icônes se lit d'un coup d'œil : voile levé, déplacements gelés.
+// L'XP que rapportent les adversaires posés sur une carte, selon le bestiaire du moment.
+function xpDeCarte(m){return (m&&m.foes||[]).reduce((s,f)=>s+(Math.max(0,Math.trunc(Number((modeleActuel(f.tpl)||f.tpl||{}).xp))||0)),0)}
 function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  // La barre annonce la carte qu'on joue, pas le mot « carte tactique » : c'est la seule
  // trace du nom de la carte depuis que le bandeau de scène a disparu.
  const titre=$('carte-titre');
  if(titre)titre.textContent=m&&m.name?m.name:'Carte tactique';
+ /* Au MJ seul, à côté du nom : l'XP déjà accordée sur cette carte, sur tout ce qu'elle rapporte —
+    l'accordée plus celle des adversaires encore en scène. */
+ if(titre&&mj&&m){const donne=Math.max(0,Math.trunc(Number(m.xpAccordee))||0),reste=actors.filter(a=>a&&!a.hero).reduce((s,a)=>s+(Math.max(0,Math.trunc(Number(a.xp))||0)),0);
+  const x=document.createElement('span');x.className='xp-carte';x.textContent=donne+'/'+(donne+reste)+' xp';titre.append(x)}
  fogBar.hidden=!mj;fogReset.hidden=fogAll.hidden=!m;
  fogAll.classList.toggle('on',!!(m&&m.fogOff));eyeBtn.hidden=!m;eyeBtn.classList.toggle('on',vueTroupe);
  zonesBtn.hidden=!m;zonesBtn.classList.toggle('on',zonesVisibles);zonesBtn.title=zonesVisibles?'Cacher les zones de la carte':'Voir les zones de la carte';
