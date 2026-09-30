@@ -3298,8 +3298,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // Une ligne en cours de tracé n'a de sens que dans l'édition.
  if(!(view==='mj'&&!arbresVueJoueur))lienDepuis=null;
  const classe=a?classeDuHeros(a):arbresClasse;
- // Au MJ seul, hors vue joueur : la somme des coûts en XP de tout ce que porte l'arbre de la classe.
- {const total=view==='mj'&&!arbresVueJoueur&&classe?talentsDeLArbre(classe).reduce((n,t)=>n+coutPalier(t,1),0):0;arbresTotal.hidden=!total;arbresTotal.textContent=total?'Total '+total.toLocaleString('fr-FR')+' XP':''}
+ // Sur l'arbre d'une classe, au MJ seul et hors vue joueur : la somme des coûts en XP de tout ce qu'il porte. L'arbre d'un aventurier ne la montre pas.
+ {const total=!a&&view==='mj'&&!arbresVueJoueur&&classe?talentsDeLArbre(classe).reduce((n,t)=>n+coutPalier(t,1),0):0;arbresTotal.hidden=!total;arbresTotal.textContent=total?'Total '+total.toLocaleString('fr-FR')+' XP':''}
  // En masse, l'arbre se lit en tableau : ni colonnes ni lignes.
  if(arbresEnMasse&&!a&&view==='mj'){tableMasseTalents(corps,classe);return}
  /* L'élément qui habille l'arbre : celui du Mystique ; sur le plan du MJ, celui qu'il regarde ;
