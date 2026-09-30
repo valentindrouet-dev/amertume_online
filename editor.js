@@ -1635,7 +1635,7 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
   // Les améliorations qui jouent : celles qu'une suivante ne remplace pas.
   const ams=sansAmeliorationsRemplacees((a.talents||[]).map(talent).filter(x=>x&&!estBonus(x)&&lisChemin(x)));
   const rang=document.createElement('div');rang.className='talent-ameliorations';
-  ams.forEach(x=>{const xv=talentPourElement(x,elementDe(a)),r=talentRond(xv);r.classList.add('cliquable');r.tabIndex=0;r.setAttribute('aria-label',nomEnClair(xv.name));
+  ams.forEach(x=>{const vuA=y=>talentPourElement(y,elementDe(a)),xv=logoHerite(vuA(x),vuA),r=talentRond(xv);r.classList.add('cliquable');r.tabIndex=0;r.setAttribute('aria-label',nomEnClair(xv.name));
    surveille(r,()=>{const d=bulleTalent(x,{a,vu:y=>talentPourElement(y,elementDe(a)),cout:false});ouvrirBulle(r,d,'bulle-talent')});rang.append(r)});
   /* Les bonus de caractéristique ou de compétence, en petits ronds aussi : les bonus identiques
      s'additionnent en un seul rond, « +2 Endurance » plutôt que deux « +1 ». */
@@ -3400,7 +3400,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const noeud=(t,etat,verrou)=>{const b=document.createElement('div');b.tabIndex=0;b.setAttribute('role','button');
   b.className='arbre-noeud t-'+talentType(t)[0]+(etat?' '+etat:'');b.dataset.id=t.id;
   const rond=document.createElement('span');rond.className='arbre-rond';
-  const tv=vu(t),logo=logoTalent(tv);if(logo)rond.append(logo);else rond.textContent=GLYPHES_TALENT[t.type]||'✦';
+  const tv=logoHerite(vu(t),vu),logo=logoTalent(tv);if(logo)rond.append(logo);else rond.textContent=GLYPHES_TALENT[t.type]||'✦';
   /* Pas de nom sous le rond : un nom long passait à la ligne et faisait descendre tout l'arbre
      en dessous. La bulle le dit au survol, le lecteur d'écran par l'étiquette du nœud. */
   const niv=document.createElement('span');niv.className='arbre-niv';niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';
@@ -4153,7 +4153,11 @@ function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,.
 /* Un talent Invulnérable n'a pas à choisir son logo : c'est l'état ou le dé qu'il refuse,
    barré de rouge, à son élément s'il en suit un. */
 // L'icône choisie par le MJ passe devant ; la pastille « insensible » ne vient qu'à défaut.
-function logoTalent(t,cls){const propre=logoImage(t&&t.logo,LOGOS_TOUS,cls);if(propre)return propre;
+/* Une amélioration sans logo prend celui du talent d'où part son chemin — tel que le voit celui
+   qui regarde (« vu » : l'élément du Mystique). Un bonus garde le sien. */
+function logoHerite(t,vu=x=>x){if(!t||t.logo||estBonus(t)||!lisChemin(t))return t;
+ const d=departChemin(t),l=d&&vu(d).logo;return l?{...t,logo:l}:t}
+function logoTalent(t,cls){t=logoHerite(t);const propre=logoImage(t&&t.logo,LOGOS_TOUS,cls);if(propre)return propre;
  if(t&&t.effet==='invulnerable'){const w=pastilleInsensible(paramsTalent(t));if(w){w.classList.add('logo-auto');if(cls)w.classList.add(cls);return w}}
  return null}
 // Le logo d'une attaque : n'importe quelle icône du dossier, sans distinction de famille.
