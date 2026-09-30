@@ -3356,21 +3356,24 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const cases=new Map(),prises=[];
   c.liste.forEach(t=>{const p=posDe(t);if(p&&!prises.some(q=>q.x===p.x&&q.y===p.y)){cases.set(t.id,p);prises.push({...p})}});
   c.liste.forEach(t=>{if(!cases.has(t.id)){const p=caseLibre(prises.map(q=>({pos:q})),null);cases.set(t.id,p);prises.push(p)}});
-  /* Les petits ronds, chacun à sa place : depuis le centre de son talent, sa direction fois son rang,
-     par demi-cases — le premier à mi-chemin de la case voisine, le second sur elle. */
+  /* Les petits ronds, chacun à sa place : depuis le centre de son talent, dans sa direction, une
+     demi-case par rang — la même distance en droite ligne et en diagonale, tout autour du talent. */
+  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy);return {x:+(p.x+dx/n*r/2).toFixed(3),y:+(p.y+dy/n*r/2).toFixed(3)}};
   const petits=[];c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
-   Object.keys(DIRS).forEach(d=>{if(ch[d].lien)return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,x:p.x+DIRS[d][0]*r/2,y:p.y+DIRS[d][1]*r/2})})})});
+   Object.keys(DIRS).forEach(d=>{if(ch[d].lien)return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
   /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
      talent — jamais au-dessus : l'arbre part d'un talent tout en haut et descend ; sur chaque chemin
      sans ligne, la place du petit rond suivant, sauf au-dessus du talent de départ. */
   const racines=new Set(c.liste.filter(t=>!entreesDe(c.liste,t).length).map(t=>t.id)),places=[];
-  if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),petitsPris=new Set(petits.map(s=>s.x+','+s.y)),vues=new Set();
+  // Une place trop près d'un rond déjà posé ne s'offre pas : un talent à moins d'une demi-case, un petit rond à moins d'un tiers.
+  const libreIci=(x,y)=>!prises.some(q=>Math.hypot(q.x-x,q.y-y)<.45)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.34)&&!places.some(q=>Math.hypot(q.x-x,q.y-y)<.34);
+  if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),vues=new Set();
    c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
     Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if(ch[d].lien)return;
-     if(['e','s','o'].includes(d)&&!ch[d].petits.length){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
+     if(['e','s','o'].includes(d)&&!ch[d].petits.length){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.45)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
      if(dy<0&&racines.has(t.id)&&!ch[d].petits.length)return;
-     const r=ch[d].petits.length+1,x=p.x+dx*r/2,y=p.y+dy*r/2,k='p'+x+','+y;
-     if(!occupe.has(x+','+y)&&!petitsPris.has(x+','+y)&&!vues.has(k)){vues.add(k);places.push({genre:'petit',x,y,de:t,dir:d,rang:r})}})});
+     const r=ch[d].petits.length+1,{x,y}=bout(p,d,r);
+     if(libreIci(x,y))places.push({genre:'petit',x,y,de:t,dir:d,rang:r})})});
    if(!c.liste.length)places.push({genre:'gros',x:0,y:0,de:null})}
   // Le plan tient juste ce qu'il montre, une demi-case de marge : le talent de départ est tout en haut.
   const pts=[...prises,...petits,...places];
@@ -3398,7 +3401,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    dont les deux bouts sont appris se colore ; sans combattant, l'arbre se lit comme un plan, en
    traits pleins. Une ligne entre talents qui ne descend pas porte sa pointe ; le MJ la clique pour
    l'effacer. */
-const CASE_SPHERIER=112;
+const CASE_SPHERIER=170;
 function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.open)return;
  corps.querySelectorAll('.arbre-col').forEach(col=>{const info=col.arbreInfo,svg=col.querySelector('.arbre-chemins');if(!info||!svg)return;
   const ns='http://www.w3.org/2000/svg',R=col.getBoundingClientRect(),{liste,mj,a}=info;

@@ -1749,3 +1749,16 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .des-combattant.avec-orbes .des-bonus{gap:4px}
 .des-combattant.avec-orbes .bonus{font-size:13px}
 .des-combattant.avec-orbes .des-orbes{gap:3px;margin-left:5px;padding-left:5px}
+
+/* Le sphérier à la taille de l'onglet Talents : les talents à 69 px, les petits ronds d'autant plus gros. */
+.arbre-plan>.arbre-noeud:not(.petit) .arbre-rond{width:69px;height:69px}
+.arbre-plan>.arbre-noeud:not(.petit) .arbre-rond img{width:66%;height:66%}
+.arbre-plan>.arbre-noeud.petit .arbre-rond{width:40px;height:40px}
+.arbre-plan>.arbre-place{width:69px;height:69px;font-size:28px}
+.arbre-plan>.arbre-petit-place{width:40px;height:40px;font-size:18px}
+/* Chez un aventurier : un talent qu'il n'a pas pris est un peu transparent, cerclé de pointillés ; pris,
+   il est plein, d'un seul trait de contour, comme tout talent. */
+.arbre-plan>.arbre-noeud:is(.dispo,.verrou) .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus:is(.dispo,.verrou) .arbre-rond{border-style:dashed;opacity:.55;filter:none}
+.arbre-plan>.arbre-noeud.verrou{opacity:1}
+.arbre-plan>.arbre-noeud.acquis .arbre-rond,.arbre-plan>.arbre-noeud.petit.acquis .arbre-rond{border-style:solid;opacity:1;box-shadow:0 2px 6px #0004}
+.arbre-plan>.arbre-noeud.acquis .arbre-rond::after{display:none}
