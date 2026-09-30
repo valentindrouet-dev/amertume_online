@@ -1779,3 +1779,8 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .talent-detail.bulle-bonus.bonus-def{--teinte:rgb(96,110,118)}.talent-detail.bulle-bonus.bonus-dmg{--teinte:rgb(180,72,58)}.talent-detail.bulle-bonus.bonus-orbe{--teinte:#8a63c9}.talent-detail.bulle-bonus.bonus-comp{--teinte:#5a7a6c}
 /* Le détail des dés d'une attaque, au journal : une bulle comme celle des talents. */
 .bulle-detail-degats .j-detail{margin:0;padding:7px 10px;border:1px solid #00000026;border-left:4px solid #b4553a;border-radius:9px;background:#f3e3dc;color:#2a2118;box-shadow:0 2px 5px #0000002e}
+/* Le plan laisse passer la souris jusqu'aux lignes : le MJ les efface d'un clic. Ses ronds et ses places la gardent. */
+.arbre-plan{pointer-events:none}
+.arbre-plan>*{pointer-events:auto}
+/* Un disque opaque sous chaque rond : les lignes ne se voient pas à travers un talent, même pâle ou gris. */
+.arbre-plan>.arbre-noeud::before{content:'';position:absolute;inset:0;border-radius:50%;background:var(--panel-2);z-index:-1}

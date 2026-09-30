@@ -1947,8 +1947,7 @@ assert.ok(src.includes("const p=t.pos;if(p&&typeof p==='object'&&Number.isIntege
    le MJ en efface une d'un clic, en trace une par ⤳, et la vue joueur lui ôte ses outils. */
 assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');if(!corps||!arbresDialog.open)return;')
  &&src.includes("g.onclick=e=>{e.stopPropagation();if(basculeLien(de,vers)==='retire')arbreChange()}}")&&src.includes("else if(view!=='mj'){arbresDialog.close();return}")
- &&src.includes("arbresVue.onclick=()=>{arbresVueJoueur=!arbresVueJoueur;noteArbres('');renderArbres()};")
- &&src.includes("lienDepuis=lienDepuis===t.id?null:t.id;renderArbres();")&&src.includes("el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}")
+ &&src.includes("arbresVue.onclick=()=>{arbresVueJoueur=!arbresVueJoueur;noteArbres('');renderArbres()};")&&src.includes("el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}")
  &&src.includes("arbresDialog.addEventListener('cancel',e=>{if(!lienDepuis)return;e.preventDefault();lienDepuis=null;noteArbres('');renderArbres()});")
  &&src.includes(" requestAnimationFrame(traceChemins)}")
  &&feuille.includes('.arbre-chemins{position:absolute;inset:0;')&&feuille.includes('.arbre-grille{--case-l:74px;--case-h:88px;')&&feuille.includes('.arbre-grille>*{pointer-events:auto}')

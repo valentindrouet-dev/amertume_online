@@ -2893,6 +2893,8 @@ function petitsDe(de,dir){return tousTalents().filter(t=>{const c=lisChemin(t);r
 function cheminsDe(liste,t){const out={},p=posDe(t);
  Object.keys(DIRS).forEach(d=>{out[d]={dir:d,lien:null,petits:petitsDe(t,d)}});
  liensDe(t).forEach(id=>{const v=(liste||[]).find(x=>x&&x.id===id),d=v?dirVers(p,posDe(v)):'';if(d)out[d].lien=v});
+ // Une ligne qui arrive d'un voisin tient aussi le chemin : pas de petit rond posé dessus.
+ (liste||[]).forEach(v=>{if(!v||v===t||!liensDe(v).includes(t.id))return;const d=dirVers(p,posDe(v));if(d&&!out[d].lien)out[d].entrant=v});
  return out}
 // Le talent d'où part le chemin d'un petit rond, tant qu'il est dans un arbre.
 function departChemin(t){const c=lisChemin(t);if(!c)return null;return tousTalents().find(x=>x.id===c.de&&x!==t&&posDe(x)&&!x.horsArbre)||null}
@@ -2935,7 +2937,7 @@ function caseLibre(liste,depuis){const prise=(x,y)=>(liste||[]).some(t=>{const p
 function basculeLien(de,vers){if(!de||!vers||de===vers)return 'rien';
  if(liensDe(de).includes(vers.id)){de.liens=liensDe(de).filter(x=>x!==vers.id);if(!de.liens.length)delete de.liens;return 'retire'}
  const d=dirVers(posDe(de),posDe(vers));if(!d)return 'loin';
- if(petitsDe(de,d).length)return 'occupe';
+ if(petitsDe(de,d).length||petitsDe(vers,dirVers(posDe(vers),posDe(de))).length)return 'occupe';
  if(liensDe(de).length>=LIENS_MAX)return 'plein';
  de.liens=[...liensDe(de),vers.id];return 'ajoute'}
 /* Les colonnes d'une classe : deux, toujours, nommées ou non. Celle qui accueille les talents sans
@@ -3240,11 +3242,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     talent de la même colonne, la trace — ou l'efface si elle existe. Deux lignes au plus. */
  const relie=(t,col)=>{const de=talent(lienDepuis);lienDepuis=null;
   if(!de||de===t){renderArbres();return}
-  if(!col.liste.includes(de)){note('Une ligne relie deux talents de la même colonne.');renderArbres();return}
+  if(!col.liste.includes(de)){renderArbres();return}
   const r=basculeLien(de,t);
-  if(r==='plein'){note('Quatre lignes partent déjà de « '+vu(de).name+' » : efface l’une d’elles d’abord.');renderArbres();return}
-  if(r==='loin'||r==='occupe'){renderArbres();return}
-  arbreChange();note(r==='retire'?'Ligne effacée.':'')};
+  if(r==='plein'||r==='loin'||r==='occupe'){renderArbres();return}
+  arbreChange()};
  const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note});
  // Un nœud de l'arbre : le rond au logo — ou au glyphe de sa nature — le nom, le niveau.
  const noeud=(t,etat,verrou)=>{const b=document.createElement('div');b.tabIndex=0;b.setAttribute('role','button');
@@ -3276,8 +3277,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    outils.append(ico('⊕','Ajouter un talent sous '+t.name+', relié par une ligne',()=>ajouterDansArbre(
     {famille:talentFamily(t),voie:t.voie||'',de:t.id,level:Math.min(20,(t.level||1)+1)})));
    outils.append(ico('⤳','Tracer une ligne depuis '+t.name+' vers un autre talent, ou effacer l’une des siennes',()=>{
-    lienDepuis=lienDepuis===t.id?null:t.id;renderArbres();
-    if(lienDepuis)note('Clique le talent vers lequel part la ligne de « '+vu(t).name+' », ou une case vide pour y en créer un. Recliquer une ligne existante l’efface. Échap pour renoncer.')}));
+    lienDepuis=lienDepuis===t.id?null:t.id;renderArbres()}));
    // Sur le plan de la classe, ✕ retire le talent de l'arbre, sans l'effacer du catalogue.
    if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue',()=>{const nom=vu(t).name;
     if(retireDeLArbre(t))arbreChange()}));
@@ -3386,7 +3386,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const libreIci=(x,y)=>!prises.some(q=>Math.hypot(q.x-x,q.y-y)<.36)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.24)&&!places.some(q=>Math.hypot(q.x-x,q.y-y)<.24);
   if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),vues=new Set();
    c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
-    Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if(ch[d].lien)return;
+    Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if(ch[d].lien||ch[d].entrant)return;
      if(['e','s','o'].includes(d)&&!ch[d].petits.length){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.4)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
      if(dy<0&&racines.has(t.id)&&!ch[d].petits.length)return;
      const r=ch[d].petits.length+1;if(r>PETITS_MAX)return;const {x,y}=bout(p,d,r);
@@ -3439,7 +3439,7 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
    const l=document.createElementNS(ns,'line'),z=document.createElementNS(ns,'line');
    [l,z].forEach(x=>{x.setAttribute('x1',P.x.toFixed(1));x.setAttribute('y1',P.y.toFixed(1));x.setAttribute('x2',Q.x.toFixed(1));x.setAttribute('y2',Q.y.toFixed(1))});
    z.setAttribute('class','zone');l.setAttribute('class','trait');g.append(z,l);
-   if(lien&&dy<d*.5){const pt=document.createElementNS(ns,'polygon'),bx=Q.x-ux*9,by=Q.y-uy*9;
+   if(lien){const pt=document.createElementNS(ns,'polygon'),bx=Q.x-ux*9,by=Q.y-uy*9;
     pt.setAttribute('points',[[Q.x,Q.y],[bx-uy*5,by+ux*5],[bx+uy*5,by-ux*5]].map(([x,y])=>x.toFixed(1)+','+y.toFixed(1)).join(' '));
     pt.setAttribute('class','pointe');g.append(pt)}
    if(mj&&lien){const t=document.createElementNS(ns,'title');t.textContent='Ligne de '+de.name+' vers '+vers.name+' — cliquer pour l’effacer';g.append(t);
