@@ -488,7 +488,7 @@ const heroesPage=document.createElement('main');heroesPage.id='heroes-page';
 heroesPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Aventuriers</h2><div class="cat-actions">'
  +'<button id="hero-repos-long" type="button" title="VIE et PV au maximum, repos courts et charges rendus, états levés sauf le Blindage ; ceux retournés au domaine reviennent">🌙 Repos long</button>'
- +'<button id="hero-icones-comp" type="button" title="Choisir l’icône de chaque compétence, la même sur toutes les fiches">🖼 Icônes des compétences</button>'
+ +'<button id="hero-icones-comp" type="button" title="Choisir l’icône de chaque caractéristique et de chaque compétence, la même sur toutes les fiches">🖼 Icônes des caracs et compétences</button>'
  +'<button id="hero-add" class="primary">+ Nouvel aventurier</button></div></header>'
  // Le mode d'emploi n'a plus à occuper le haut de la page : les infobulles le disent
  // au survol de chaque valeur, et le champ de recherche ne sert qu'à une grande troupe.
@@ -699,7 +699,7 @@ function majFiche(carte,a){if(!carte)return;
  ecrire('.stat-tile.t-pv strong',a.max);
  {const b=carte.querySelector('.hero-pv');if(b)b.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true)}
  ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));ecrire('.stat-tile.t-xp strong',a.xp||0);
- ecrire('.chip-niveau','Niveau '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
+ ecrire('.chip-niveau','Niveau '+a.level);ecrire('.classe-niv',' niv. '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
  majEcu(carte.querySelector('.stat-tile.t-def .ecu'),defOf(a));
  carte.querySelectorAll('.comp-rond').forEach((r,k)=>{const v=r.querySelector('.comp-val');if(v){v.textContent=valeurCompetence(a,k);v.classList.toggle('haute',valeurCompetence(a,k)>1)}
   r.setAttribute('aria-label',skillNames[k]+' '+valeurCompetence(a,k))})}
@@ -839,6 +839,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const teinte=typeof actorTint==='function'?actorTint(a):'#8a7a63';
  const classe=document.createElement('span');classe.className='sheet-class';
  classe.textContent=(a.role||'Aventurier').split('·')[0].trim().toUpperCase();
+ // Le niveau suit la classe : « GARDIEN niv. 3 ».
+ {const niv=document.createElement('span');niv.className='classe-niv';niv.textContent=' niv. '+a.level;classe.append(niv)}
  classe.style.color=classe.style.borderColor=teinte;
  /* Au survol, la classe se présente : son nom, ce qu'elle apporte aux PV, sa description. Au
     clic, son arbre de talents s'ouvre — celui de l'aventurier, ou celui de la classe pour le MJ. */
@@ -875,7 +877,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  if(a.race)marques.push([a.race]);
  // Le niveau et l'expérience sont des chiffres de fiche : ils se corrigent d'un clic.
  // Un aventurier tient son niveau de son XP : seul celui d'un adversaire se corrige à la main.
- marques.push(['Niveau '+a.level,a.hero?'':'level','chip-niveau',a.hero?'':'Modifier le niveau de '+a.name],
+ // Chez un aventurier, le niveau se lit dans sa classe et l'XP avec ses chiffres.
+ if(!a.hero)marques.push(['Niveau '+a.level,'level','chip-niveau','Modifier le niveau de '+a.name],
   [(a.xp||0)+' XP','xp','chip-xp','Modifier l’XP de '+a.name]);
  marques.forEach(([t,cle,marque,titre])=>{const p=document.createElement('span');
   p.className='chip'+(marque?' '+marque:'');p.textContent=t;
@@ -885,14 +888,14 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // valeur en gros, une teinte par caractéristique, l'écu pour la DEF.
  const chiffres=document.createElement('div');chiffres.className='stat-row';
  const tuiles=[['vie','Vie',vieAffichee(a),false,a.vieMax??a.vie],['endu','Endu',enduAffichee(a)],
-  ['pv','PV max',a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+'+degatsDe(a)]]
+  ['pv','PV max',a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+'+degatsDe(a)],['xp','XP',a.xp||0]]
   .map(t=>statTile(...t));
  // Le MJ corrige un chiffre là où il le lit ; les PV max se calculent, ils ne se saisissent pas.
- tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg']],c);
+ tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg'],['xp']],c);
  // Au survol, le calcul : d'où viennent les PV max, et les Dégâts.
  calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));
- // Vie, Endu, PV max et Dégâts se lisent à leur icône, sans grande case ; la DEF garde son écu.
- [['vie',0],['endu',1],['pv',2],['dmg',4]].forEach(([carac,k])=>{const ic=logoBonus({carac});if(!ic)return;ic.classList.add('stat-ico');tuiles[k].prepend(ic);tuiles[k].classList.add('avec-icone')});
+ // Vie, Endu, PV max, Dégâts et XP se lisent à leur icône, la valeur posée au bas ; la DEF garde son écu.
+ [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([carac,k])=>{const ic=logoBonus({carac});if(!ic)return;ic.classList.add('stat-ico');tuiles[k].prepend(ic);tuiles[k].classList.add('avec-icone')});
  chiffres.classList.add('en-icones');chiffres.append(...tuiles);
  // Les PV du moment, en barre, sous les chiffres.
  const barrePv=document.createElement('div');barrePv.className='hero-pv';barrePv.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true);
@@ -981,12 +984,17 @@ function groupesLogosCompetence(){const vus=new Set(),groupes=[];
  planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract/i.test(nomPlanche(f))||/caract/i.test(f)).sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))
   .forEach(f=>{const ids=iconesPlanches().filter(id=>id.startsWith(f+'#'));ids.forEach(i=>vus.add(i));if(ids.length)groupes.push([nomPlanche(f),ids])});
  [...famillesPlanches(),...FAMILLES_LOGOS].forEach(([t,l])=>{const reste=l.filter(x=>!vus.has(x));if(reste.length)groupes.push([t,reste])});return groupes}
-const competencesDialog=dialog('competences-icones','Icônes des compétences','<form id="competences-icones-form"><p class="muted">Une icône par compétence, devant son nom sur toutes les fiches d’aventuriers.</p><div id="competences-icones-corps" class="edit-grid"></div></form>');
+const competencesDialog=dialog('competences-icones','Icônes des caracs et compétences','<form id="competences-icones-form"><p class="muted">Une icône par caractéristique et par compétence, sur toutes les fiches d’aventuriers.</p><div id="competences-icones-corps" class="edit-grid"></div></form>');
+// Les caractéristiques dont l'icône se choisit : celle de leurs bonus, dans l'arbre comme sur la fiche.
+const CARACS_ICONES=[['vie','Vie'],['endu','Endurance'],['pv','PV max'],['dmg','Dégâts'],['xp','XP'],['orbe','Orbe mystique']];
 $('competences-icones-form').onsubmit=e=>e.preventDefault();
 function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences(),groupes=groupesLogosCompetence();
- $('competences-icones-corps').innerHTML=skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('');
- $('competences-icones-form').onchange=e=>{const m=/^comp(\d+)$/.exec(e.target&&e.target.name||'');if(!m)return;
-  const icones=iconesCompetences();icones[+m[1]]=e.target.value;catalog.iconesCompetences=normaliseIconesCompetences(icones);
+ const lb=catalog.logosBonus||{};
+ $('competences-icones-corps').innerHTML='<h3 class="reglage-titre icones-titre">Caractéristiques</h3>'+CARACS_ICONES.map(([k,n])=>selGrille(selGroupes(esc(n),'carac-'+k,lb[k]||'',groupes))).join('')
+  +'<h3 class="reglage-titre icones-titre">Compétences</h3>'+skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('');
+ $('competences-icones-form').onchange=e=>{const nom=e.target&&e.target.name||'',m=/^comp(\d+)$/.exec(nom),c=/^carac-([a-z]+)$/.exec(nom);if(!m&&!c)return;
+  if(m){const icones=iconesCompetences();icones[+m[1]]=e.target.value;catalog.iconesCompetences=normaliseIconesCompetences(icones)}
+  else{const o={...(catalog.logosBonus||{})};if(e.target.value)o[c[1]]=e.target.value;else delete o[c[1]];catalog.logosBonus=o}
   scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderHeroes();render()};
  competencesDialog.showModal()}
 /* Une pastille par dé de la réserve, dans l’ordre officiel d’affichage : noir, rouge,
@@ -3052,7 +3060,7 @@ const peutEtrePetit=t=>!!t&&(estBonus(t)||t.type==='ame');
 /* Le logo d'un bonus de caractéristique, dans son petit rond : un cœur pour les PV, un éclair pour
    l'Endurance, une étoile pour la Vie, l'éclat des dégâts, l'orbe, l'icône d'une compétence — à
    défaut ses deux lettres. Son chiffre en pastille. */
-const SVG_BONUS={pv:'<path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.2 0 3.6 1.2 4.3 2.4.7-1.2 2.1-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z" fill="#c0392b" stroke="#6e1a12" stroke-width="1.2"/>',
+const SVG_BONUS={xp:'<circle cx="12" cy="12" r="10" fill="#d9b45a" stroke="#7a5a12" stroke-width="1.2"/><text x="12" y="15.6" text-anchor="middle" font-size="9.5" font-weight="800" font-family="system-ui,sans-serif" fill="#4a3508">XP</text>',pv:'<path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.2 0 3.6 1.2 4.3 2.4.7-1.2 2.1-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z" fill="#c0392b" stroke="#6e1a12" stroke-width="1.2"/>',
  endu:'<path d="M13.5 2 5 13.2h5.6L9.4 22 19 10.4h-5.8z" fill="#2c8c85" stroke="#12423f" stroke-width="1.2" stroke-linejoin="round"/>',
  vie:'<path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.8l-5.8 3.5 1.6-6.6-5.2-4.4 6.8-.5z" fill="#7a5cb8" stroke="#3b2966" stroke-width="1.2" stroke-linejoin="round"/>'};
 // La clé du logo commun d'un bonus : sa caractéristique, et sa compétence s'il en vise une.
@@ -3067,7 +3075,7 @@ function logoBonus(p){const carac=(p&&p.carac)||'pv';let el=null;
  if(el)el.classList.add('logo-bonus');return el}
 // L'icône choisie par le MJ passe devant ; celle du bonus ne vient qu'à défaut.
 function poseLogoBonus(rond,t){const p=paramsTalent(t),l=(t.logo&&logoTalent(t))||logoBonus(p);if(!l)return;
- const n=document.createElement('b');n.className='bonus-valeur';n.textContent='+'+Math.max(1,(p&&p.valeur)|0);rond.replaceChildren(l,n)}
+ const n=document.createElement('b');n.className='bonus-valeur';n.textContent=(p&&p.carac==='comp'?'':'+')+Math.max(1,(p&&p.valeur)|0);rond.replaceChildren(l,n)}
 // Les petits ronds d'un chemin, du rang 1 au dernier.
 function petitsDe(de,dir){return tousTalents().filter(t=>{const c=lisChemin(t);return !!c&&c.de===de.id&&c.dir===dir}).sort((x,y)=>lisChemin(x).rang-lisChemin(y).rang)}
 // Ce que porte chaque chemin d'un talent : la ligne vers un talent voisin (« lien »), ou ses petits ronds.
@@ -3595,9 +3603,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // L'élément du Mystique, au-dessus de l'arbre : le MJ le choisit, le joueur le lit.
  if(elementaire)tete.append(choixElement(a,classe));
  // L'XP de l'aventurier : ce que l'arbre a coûté, et ce qui reste à dépenser.
- if(a){const pt=ptDepenses(a,catalog.talents),dispo=xpDisponible(a,catalog.talents),s=document.createElement('p');s.className='arbres-pt';
-  // « 100 / 2415 XP disponibles » : ce qui reste à dépenser, sur toute l'XP gagnée.
-  s.textContent=dispo+' / '+Math.max(0,Math.trunc(Number(a.xp))||0)+' XP disponible'+(dispo>1?'s':'');tete.append(s)}
+ /* « 100 / 2415 XP disponibles » : ce qui reste à dépenser, sur toute l'XP gagnée, en barre dorée
+    comme celle des PV — elle se vide à chaque talent pris, se remplit à chaque talent rendu. */
+ if(a){const dispo=xpDisponible(a,catalog.talents),total=Math.max(0,Math.trunc(Number(a.xp))||0),s=document.createElement('div');s.className='arbres-pt';
+  const pct=total?Math.max(0,Math.min(100,Math.round(dispo/total*100))):0,texte=dispo+' / '+total+' XP disponible'+(dispo>1?'s':'');
+  s.innerHTML='<span class="lifebar xp"><span class="lifebar-fill" style="width:'+pct+'%"></span><span class="lifebar-text">'+esc(texte)+'</span></span>';tete.append(s)}
  if(!classe){const v=document.createElement('p');v.className='muted';v.textContent='Donne une classe à '+a.name+' pour lui ouvrir un arbre.';tete.append(v)}
  corps.append(tete);
  /* Un nœud de l'arbre, et ce qu'il attend : une ligne depuis un talent tenu, sauf s'il n'en a aucune

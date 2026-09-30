@@ -2427,7 +2427,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  ctxC.reveilDuComa(h);assert.equal(h.hp+'/'+h.comaVie+'/'+h.reposCourts,'8/false/1','à la fin du combat : 1d6 + Endu, un repos court pris');
  enC=false;h.hp=0;h.states=['Coma'];ctxC.comaAventuriers();assert.equal(h.vie,4,'hors combat, rien ne se perd');
  assert.ok(page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")&&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le coma se compte au rendu et se relève à la fin du combat');}
-{assert.ok(src.includes("['pv','PV max',a.max],['def','DEF',defOf(a),true],")&&src.includes("tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg']],c);")
+{assert.ok(src.includes("['pv','PV max',a.max],['def','DEF',defOf(a),true],")&&src.includes("tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg'],['xp']],c);")
   &&src.includes("calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));")&&src.includes(" ecrire('.stat-tile.t-pv strong',a.max);")
   &&feuille.includes('.calcul-ligne.total{'),'PV max et leur calcul, Dégâts détaillés');
  const ctxD={catalog:{talents:[],items:[],classes:[{name:'Gardien',pv:2}]},bonusDe:()=>({pv:0,vie:0,endu:0,dmg:2,def:0,skills:[]}),classeDe:(cl,r)=>cl.find(c=>c.name===r),pvEspece:()=>0,auraMeneur:()=>0,degatsDe:a=>a.dmg+2};
