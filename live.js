@@ -464,15 +464,13 @@ document.addEventListener('amertume-firebase-prete',async()=>{
  setTimeout(()=>{if(!monSiege&&invite)ouvreTable()},1200)});
 
 /* Un invité joue, il ne dirige pas : ni la vue MJ, ni le choix d'un autre aventurier (son
-   siège est son aventurier), ni le partage, ni le bestiaire. Ce qui est caché ici l'est
-   après chaque rendu, pour que rien ne le rouvre. */
+   siège est son aventurier), ni le partage. Ses onglets sont ceux que le MJ ouvre aux joueurs.
+   Ce qui est caché ici l'est après chaque rendu, pour que rien ne le rouvre. */
 function verrouillerInvite(){const inv=spectateur();
  const cache=(el,oui)=>{if(el)el.hidden=oui};
  cache($('view'),inv);cache(document.querySelector('label[for="view"]'),inv);
  if(inv){cache($('owner'),true);cache($('owner-label'),true)}
- cache($('open-share'),inv);
- const best=typeof tabs!=='undefined'&&tabs?tabs.querySelector('button[data-page="bestiary"]'):null;cache(best,inv);
- if(inv&&document.body.classList.contains('page-bestiary')&&typeof showPage==='function')showPage('table',false)}
+ cache($('open-share'),inv)}
 // Après chaque rendu, ce qui a bougé part sur le réseau — et rien d'autre.
 const renderAvantTable=render;render=function(){
  if(spectateur()&&view!=='player'){view='player';$('view').value='player'}
