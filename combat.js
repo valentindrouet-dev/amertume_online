@@ -1025,11 +1025,11 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   params:[{cle:'etat',nom:'État',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Le porteur <b>ignore les dégâts</b> de <b>'+((p&&p.etat)||'Feu')+'</b>.'}},
  soinetat:{cle:'soinetat',nom:'Dégâts d’état en soin',type:'ame',
-  aide:'Amélioration : les dégâts de l’état que le porteur ignore le soignent.',params:[],
-  phrase(){return 'Les dégâts de l’état que le porteur ignore le <b>soignent</b>.'}},
+  aide:'Amélioration d’Invulnérable : les dégâts de l’état auquel le porteur est insensible le soignent.',params:[],
+  phrase(){return 'Les dégâts de l’état auquel le porteur est <b>insensible</b> le <b>soignent</b>.'}},
  soinetatdouble:{cle:'soinetatdouble',nom:'Dégâts d’état en soin ×2',type:'ame',
-  aide:'Amélioration : les dégâts de l’état que le porteur ignore le soignent deux fois.',params:[],
-  phrase(){return 'Les dégâts de l’état que le porteur ignore le <b>soignent deux fois</b>.'}},
+  aide:'Amélioration d’Invulnérable : les dégâts de l’état auquel le porteur est insensible le soignent deux fois.',params:[],
+  phrase(){return 'Les dégâts de l’état auquel le porteur est <b>insensible</b> le <b>soignent deux fois</b>.'}},
  /* Orbes inratables : une amélioration. Les orbes du porteur ne font jamais d'échec sur un double 1. */
  orbesinratables:{cle:'orbesinratables',nom:'Orbes inratables',type:'ame',
   aide:'Amélioration : les Orbes mystiques du porteur ne peuvent pas produire d’échec (double 1).',
@@ -1118,7 +1118,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
    ne sont liées à aucun talent en particulier restent seules. */
 {const POUR={orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',
- soinetat:'ignoredegats',soinetatdouble:'ignoredegats',corpselem:'invulnerable'};
+ soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{if(TALENTS_CODES[k]&&TALENTS_CODES[p])TALENTS_CODES[k].pour=p})}
 /* ---------- Les effets d'équipement ----------
    Ce qu'un objet sait faire quand on s'en sert : même grammaire que les talents — une clé,

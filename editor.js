@@ -502,7 +502,7 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
 const talentsPage=document.createElement('main');talentsPage.id='talents-page';
 talentsPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Talents</h2><div class="cat-actions">'
- +'<button id="talent-mots" title="Les mots mis en valeur dans les descriptions de talents">Mots clés</button><button id="talent-add" class="primary">+ Nouveau talent</button></div></header>'
+ +'<button id="talent-mots" title="Les mots mis en valeur dans les descriptions de talents">Mots clés</button><button id="talent-sauve" title="Enregistrer dans un fichier tous les talents, leurs arbres et leurs réglages">Sauvegarder les arbres</button><button id="talent-importe" title="Remplacer les talents et les arbres par ceux d’un fichier">Importer les arbres</button><input type="file" id="talent-fichier" accept=".json,application/json" hidden><button id="talent-pdf" title="Tous les talents et leurs arbres, à imprimer ou à enregistrer en PDF">Exporter en PDF</button><button id="talent-add" class="primary">+ Nouveau talent</button></div></header>'
  
  +'<div class="cat-filters"><input id="talent-search" placeholder="Rechercher…" aria-label="Rechercher un talent">'
  +'<select id="talent-family" aria-label="Classe"></select>'
@@ -2314,6 +2314,66 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
 $('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalents;
 $('talent-sort').onchange=renderTalents;
 $('talent-add').onclick=()=>openTalent(null);
+/* ---------- Sauvegarder, importer, imprimer les arbres ----------
+   Un fichier à part pour les talents : tous, arbres compris — places, lignes, chemins, coûts, textes,
+   logos —, avec les noms des colonnes, la classe de chaque mécanique et les mots clés. */
+function sauvegardeTalents(){return {app:'amertume_online',type:'talents',version:1,exporte:new Date().toISOString(),
+ talents:structuredClone(catalog.talents||[]),voies:structuredClone(catalog.voies||{}),classesEffets:structuredClone(catalog.classesEffets||{}),motsCles:[...(catalog.motsCles||[])]}}
+$('talent-sauve').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(sauvegardeTalents(),null,1)],{type:'application/json'}));
+ const a=document.createElement('a');a.href=url;a.download=nomSauvegarde().replace(/^amertume-/,'amertume-talents-');document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)};
+$('talent-importe').onclick=()=>{$('talent-fichier').value='';$('talent-fichier').click()};
+$('talent-fichier').onchange=async()=>{const f=$('talent-fichier').files[0];if(!f)return;let d;
+ try{d=JSON.parse(await f.text())}catch(e){alert('Ce fichier n’est pas une sauvegarde de talents lisible.');return}
+ if(!d||d.app!=='amertume_online'||d.type!=='talents'||!Array.isArray(d.talents)){alert('Ce fichier n’est pas une sauvegarde de talents d’Amertume Online.');return}
+ if(!confirm('Remplacer les '+(catalog.talents||[]).length+' talents actuels par les '+d.talents.length+' du fichier ?'))return;
+ catalog.talents=d.talents;
+ if(d.voies&&typeof d.voies==='object')catalog.voies={...(catalog.voies||{}),...d.voies};
+ if(d.classesEffets&&typeof d.classesEffets==='object')catalog.classesEffets={...(catalog.classesEffets||{}),...d.classesEffets};
+ if(Array.isArray(d.motsCles)&&d.motsCles.length)catalog.motsCles=d.motsCles;
+ normalizeCatalog(catalog);accordeArbres();accordeTalentsHeros();renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+/* L'export PDF : une page par classe, ses colonnes, chaque talent dans l'ordre de l'arbre avec tout ce
+   qui le fait — nature, coût, mécanique et ce qu'elle fait, texte, liens —, puis ses bonus et
+   améliorations en retrait ; enfin ce qui n'est dans aucun arbre. Le navigateur l'imprime, ou
+   l'enregistre en PDF. */
+async function srcLogoPdf(l){if(!l)return '';try{if(typeof estIconePlanche==='function'&&estIconePlanche(l))return urlIconePrete(l)||await urlIcone(l);
+ return new URL(imgUrl(fichierLogo(l)),location.href).href}catch(e){return ''}}
+async function exportePdfTalents(){const e=s=>esc(String(s??''));const T=catalog.talents||[],vus=new Set();
+ const dirNom={n:'haut',ne:'haut-droite',e:'droite',se:'bas-droite',s:'bas',so:'bas-gauche',o:'gauche',no:'haut-gauche'};
+ const fiche=async(t,petit)=>{vus.add(t.id);const bonus=estBonus(t),code=TALENTS_CODES[t.effet],c=coutPalier(t,1),src=await srcLogoPdf(logoHerite(t).logo);
+  const nom=bonus?libelleBonus(paramsTalent(t)):nomEnClair(t.name||'Sans nom');
+  const lignes=[];
+  if(!bonus){lignes.push('<span class="nat">'+e(talentType(t)[2])+'</span>'+(c?' · <b>'+c+' XP</b>':''));
+   if(code)lignes.push('<i>'+e(code.nom)+'</i> : '+phraseTalent(t.effet,paramsTalent(t)));
+   if(t.effects)lignes.push(e(nomEnClair(t.effects)));
+   const op=[t.remplaceLogo&&'remplace le logo du talent',t.remplaceTexte&&'remplace le texte du talent',t.remplacePrecedente&&'remplace l’amélioration précédente',t.elementaire&&'élémentaire'].filter(Boolean);
+   if(op.length)lignes.push('<span class="op">'+e(op.join(' · '))+'</span>')}
+  else if(c)lignes.push('<b>'+c+' XP</b>');
+  const ch=lisChemin(t);if(ch)lignes.push('<span class="op">Chemin '+e(dirNom[ch.dir]||ch.dir)+', rang '+ch.rang+'</span>');
+  const liens=liensDe(t).map(id=>T.find(x=>x.id===id)).filter(Boolean).map(x=>nomEnClair(x.name));if(liens.length)lignes.push('<span class="op">Relié à : '+e(liens.join(', '))+'</span>');
+  return '<div class="t'+(petit?' petit':'')+'">'+(src?'<img src="'+e(src)+'" alt="">':'<span class="vide"></span>')+'<div><div class="nom">'+e(nom)+'</div>'+lignes.map(l=>'<div>'+l+'</div>').join('')+'</div></div>'};
+ const ordreDir=Object.keys(DIRS);
+ const petitsDe2=t=>T.filter(p=>{const k=lisChemin(p);return k&&k.de===t.id}).sort((x,y)=>ordreDir.indexOf(lisChemin(x).dir)-ordreDir.indexOf(lisChemin(y).dir)||lisChemin(x).rang-lisChemin(y).rang);
+ let corps='';
+ const classes=[...(catalog.classes||[]).map(k=>k&&k.name).filter(n=>n&&n!==GENERIQUES),GENERIQUES];
+ for(const classe of classes){const cols=colonnesArbre(classe).filter(c=>c.liste.length);if(!cols.length)continue;
+  corps+='<section><h1 style="color:'+e(teinteClasse(classe)||'#5a4a36')+'">'+e(classe)+'</h1>';
+  for(const col of cols){corps+='<h2>'+e(col.titre)+'</h2>';
+   for(const t of col.liste){corps+=await fiche(t,false);for(const p of petitsDe2(t))corps+=await fiche(p,true)}}
+  corps+='</section>'}
+ const reste=T.filter(t=>t&&!vus.has(t.id)&&!estBonus(t));
+ if(reste.length){corps+='<section><h1>Hors des arbres</h1>';for(const t of reste)corps+=await fiche(t,!!lisChemin(t));corps+='</section>'}
+ const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Arbres de talents — Amertume</title><style>'
+  +'body{font:12px/1.45 Georgia,serif;color:#2a2118;margin:18mm}h1{font-size:22px;margin:0 0 6px;letter-spacing:1px;text-transform:uppercase}'
+  +'h2{font-size:14px;margin:14px 0 6px;padding-bottom:3px;border-bottom:1px solid #d8c9a8;color:#7a5a1a}section{page-break-after:always}section:last-child{page-break-after:auto}'
+  +'.t{display:flex;gap:9px;align-items:flex-start;margin:0 0 8px;break-inside:avoid}.t.petit{margin-left:34px}.t img,.t .vide{width:34px;height:34px;flex:0 0 34px;border-radius:50%;object-fit:contain;background:#f3ead6}'
+  +'.t.petit img,.t.petit .vide{width:24px;height:24px;flex-basis:24px}.nom{font-weight:700;font-size:13px}.nat{text-transform:uppercase;font:700 10px system-ui;letter-spacing:1px;color:#7a6a4a}'
+  +'.op{font-size:10.5px;color:#7a6a4a}.pied{margin-top:8px;font-size:10px;color:#9a8a6a}</style></head><body>'
+  +'<p class="pied">Amertume Online · '+e(new Date().toLocaleString('fr-FR'))+' · '+T.length+' talents</p>'+corps+'</body></html>';
+ const f=document.createElement('iframe');f.setAttribute('aria-hidden','true');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.append(f);
+ f.onload=()=>{const w=f.contentWindow;const imgs=[...w.document.images];
+  Promise.all(imgs.map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r}))).then(()=>{w.focus();w.print();setTimeout(()=>f.remove(),60000)})};
+ f.srcdoc=html}
+$('talent-pdf').onclick=()=>exportePdfTalents();
 const motsDialog=dialog('mots-cles','Mots clés des talents','<form id="mots-form"><p class="muted">Dans les descriptions de talents, le jeu met déjà en valeur les caractéristiques (PV, DEF, Endurance, Vie, Dégâts), les états (Feu, Gel, Poison…), les points et natures (Action, Mouvement, Réaction, Passif…), les formules de dés et les bonus chiffrés. Ajoute ici les tiens, un par ligne, et donne-leur une couleur après deux-points : <b>Allié : vert</b>, ou un code : <b>Allié : #2f8a63</b>. Sans couleur, celle du thème. Un mot du jeu redéclaré avec une couleur prend la tienne (<b>Feu : orange</b>). Dans un texte, <b>**ainsi**</b> force le gras.</p><p class="palette-mots" id="palette-mots"></p>'
  +'<label>Tes mots clés<textarea name="mots" rows="8" maxlength="6000" placeholder="Allié : vert\nAdversaire : rouge\nau contact"></textarea></label><p class="muted" id="mots-apercu"></p><div class="form-actions"><button class="primary">Enregistrer</button></div></form>');
 function apercuMots(){const t=$('mots-form').elements.mots.value.split('\n').map(x=>x.trim()).filter(Boolean);
