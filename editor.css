@@ -847,7 +847,9 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
    porte l'encre de la classe et se termine en pointe, comme une bannière. */
 /* La fenêtre des arbres prend la taille de l'arbre, sans vide autour. */
 #arbres{width:fit-content;max-width:96vw}
-#arbres-corps{max-height:min(74vh,760px);overflow:auto;padding:4px 2px}
+/* L'arbre s'ouvre en entier quand l'écran le permet : la fenêtre seule défile, au-delà. */
+#arbres{max-height:96dvh}
+#arbres-corps{padding:4px 2px}
 .arbres-tete{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:16px}
 .arbres-classe{margin:0;font:700 22px 'Killam',Georgia,serif;letter-spacing:3px;text-transform:uppercase;color:var(--encre,var(--ink))}
 .arbres-cols{display:flex;gap:16px;align-items:stretch;justify-content:center;flex-wrap:wrap}
@@ -1898,5 +1900,19 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .stat-row.en-icones .stat-tile.t-xp strong{color:color-mix(in srgb,#fff 80%,rgb(var(--tint,255,255,255)))}
 /* Fiche d'aventurier : les chiffres et les compétences dans leur cadre, comme les autres sections. */
 .arbres-chiffres{width:min(440px,100%);box-sizing:border-box;margin:0}
-.hero-card .cadre-chiffres,.arbres-tete .cadre-chiffres{padding:8px 6px;border-radius:12px;background:linear-gradient(135deg,color-mix(in srgb,#ec8a3f 21%,transparent),color-mix(in srgb,#d4467c 19%,transparent));border:1px solid color-mix(in srgb,#cf6a5a 50%,transparent)}
+/* Le cadre des chiffres prend la couleur de la classe de l'aventurier. */
+.hero-card .cadre-chiffres,.arbres-tete .cadre-chiffres{padding:8px 6px;border-radius:12px;background:linear-gradient(135deg,color-mix(in srgb,var(--classe,#cf6a5a) 24%,transparent),color-mix(in srgb,var(--classe,#cf6a5a) 9%,transparent));border:1px solid color-mix(in srgb,var(--classe,#cf6a5a) 50%,transparent)}
 .hero-card .comp-ronds.cadre-comps{padding:10px 10px 14px;border-radius:12px;background:linear-gradient(135deg,color-mix(in srgb,#3f9ee0 22%,transparent),color-mix(in srgb,#8a5fd6 22%,transparent));border:1px solid color-mix(in srgb,#6b78c6 50%,transparent)}
+/* La tête des arbres : le nom de la classe au bord du haut, au milieu ; au MJ, entre ses outils. */
+#arbres .dialog-head{position:relative}
+#arbres .dialog-head>.arbres-classe{flex:1;text-align:center;margin:0}
+#arbres.du-heros .dialog-head>.arbres-classe{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;white-space:nowrap}
+#arbres.du-heros .dialog-head #arbres-xp{margin-left:auto}
+#arbres:not(.du-heros) .dialog-head #arbres-xp{margin-left:0}
+.arbre-titre.sans-nom{padding-top:6px;padding-bottom:12px}
+#arbres .dialog-head .arbres-total{order:-1}
+/* En combat, la fiche montre ses talents cinq par ligne, toujours : les ronds se font à la place. */
+#sheet-talents .talent-grille{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));justify-items:center;align-items:start;gap:8px 4px}
+#sheet-talents .talent-grille .cat-carte.talent-carte{width:100%;min-width:0;align-items:center}
+#sheet-talents .talent-grille .cat-pill.gear-carre.talent-carre{width:100%;max-width:58px;min-width:0;height:auto;aspect-ratio:1;box-sizing:border-box}
+#sheet-talents .talent-grille .cat-pill.gear-carre.talent-carre .logo-equip{width:68%;height:68%}

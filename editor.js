@@ -905,7 +905,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));if(a.hero)calculAuSurvol(tuiles[5],()=>detailXp(a));
  // Vie, Endu, PV max, Dégâts et XP se lisent à leur icône, la valeur posée au bas ; la DEF garde son écu.
  [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([carac,k])=>iconeStat(tuiles[k],carac));
- chiffres.classList.add('en-icones','cadre-chiffres');chiffres.append(...tuiles);
+ chiffres.classList.add('en-icones','cadre-chiffres');chiffres.style.setProperty('--classe',teinte);chiffres.append(...tuiles);
  // Les PV du moment, en barre, sous les chiffres.
  const barrePv=document.createElement('div');barrePv.className='hero-pv';barrePv.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true);
  /* Un joueur lit les fiches de la troupe, mais ne tient d'outils que sur la sienne : les
@@ -3527,7 +3527,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  /* L'arbre d'une classe se passe d'intitulé : son nom est écrit en grand au-dessus des
     colonnes, et la longue notice d'édition prenait la moitié de la fenêtre. */
  const titre=arbresDialog.querySelector('h2');
- titre.textContent='Arbres de talents — '+(a?a.name:classe);titre.hidden=true;
+ titre.textContent='Arbres de talents — '+(a?a.name:classe);titre.hidden=true;arbresDialog.classList.toggle('du-heros',!!a);
  const note=noteArbres;
  // Sans combattant, nul ne porte rien : l'arbre se lit comme un plan, et se corrige.
  const porte=t=>!!a&&a.talents.includes(t.id);
@@ -3608,13 +3608,14 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   return b};
  // La tête : la classe, l'élément du Mystique, ce que l'arbre a coûté.
  const tete=document.createElement('div');tete.className='arbres-tete';
+ // Le nom de la classe tout en haut de la fenêtre, dans sa tête, au milieu.
  const nomClasse=document.createElement('h3');nomClasse.className='arbres-classe';nomClasse.textContent=classe||'Sans classe';
  const encre=classe?teinteClasse(classe):'';if(encre){nomClasse.style.color=encre;corps.style.setProperty('--encre',encre)}
  else corps.style.removeProperty('--encre');
- tete.append(nomClasse);
+ {const tetes=arbresDialog.querySelector('.dialog-head');tetes.querySelectorAll('.arbres-classe').forEach(x=>x.remove());tetes.prepend(nomClasse)}
  /* Sous le nom de la classe, les chiffres de l'aventurier, comme sur sa fiche : chaque bonus pris
     ou rendu s'y voit aussitôt. Les PV max se recalculent ici, sans attendre la table. */
- if(a){const r=document.createElement('div');r.className='stat-row en-icones cadre-chiffres arbres-chiffres';
+ if(a){const r=document.createElement('div');r.className='stat-row en-icones cadre-chiffres arbres-chiffres';r.style.setProperty('--classe',typeof actorTint==='function'?actorTint(a):encre||'#8a7a63');
   const pvMax=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+(Number(a.auraPv)||0);
   const t=[['vie','Vie',vieAffichee(a)],['endu','Endu',enduAffichee(a)],['pv','PV max',pvMax],['def','DEF',defOf(a),true],['dmg','Dég.','+ '+degatsDe(a)],['xp','XP',a.xp||0]].map(x=>statTile(...x));
   [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([c,k])=>iconeStat(t[k],c));r.append(...t);tete.append(r)}
@@ -3684,7 +3685,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     MJ, une marge tout autour, là où l'arbre peut grandir ; puis « + Talent », tout en bas. */
  const colonne=(c,libre)=>{const col=document.createElement('div');col.className='arbre-col'+(libre?' libre':'')+(mj?' editable':'');
   const h=document.createElement('h4');h.className='arbre-titre';
-  const nomVoie=document.createElement('span');nomVoie.className='arbre-voie';nomVoie.textContent=c.titre;h.append(nomVoie);
+  // Chez un aventurier, le bandeau de la colonne se passe de son nom.
+  const nomVoie=document.createElement('span');nomVoie.className='arbre-voie';nomVoie.textContent=a?'':c.titre;h.append(nomVoie);if(a)h.classList.add('sans-nom');
   cible(h,{famille:c.famille,voie:c.voie});
   /* Le nom d'une colonne se corrige là où il se lit, nommée ou non : c'est ainsi qu'on
      baptise une spécialisation, et le ✕ lui reprend son nom — ses talents reviennent au
