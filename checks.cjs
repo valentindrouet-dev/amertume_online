@@ -1438,8 +1438,13 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
   assert.equal(JSON.stringify(ctx.chuteArbre(['r','p','q','z','w'],L,t('p')).map(x=>x.id)),'[]','Quartz tient encore Zénith');
   assert.equal(JSON.stringify(ctx.chuteArbre(['r','p','z','w'],L,t('p')).map(x=>x.id)),'["z","w"]','sans Pierre, plus rien ne mène à Zénith');
   assert.equal(JSON.stringify(ctx.chuteArbre(['r','p','q','z','w'],L,t('r')).map(x=>x.id)),'["p","q","z","w"]','la racine emporte tout');
-  assert.equal(JSON.stringify(ctx.chuteArbre(['z','w'],L,t('p')).map(x=>x.id)),'[]','tenus hors des lignes : rien ne tombe');
-  assert.equal(JSON.stringify(ctx.chuteArbre(['z','w'],L,t('z')).map(x=>x.id)),'["w"]','un départ donné par le MJ emporte ce qui pend sous lui');
+  assert.equal(JSON.stringify(ctx.chuteArbre(['z','w'],L,t('p')).map(x=>x.id)),'["z","w"]','sans exception : ce qu’aucun talent tenu ne rattache au départ tombe');
+  // Une ligne n'a pas de sens : tracée du bas vers le haut, elle tient quand même ce qui est dessous.
+  {const R=[{id:'a',name:'Haut',pos:{x:0,y:0},liens:['b']},{id:'b',name:'Milieu',pos:{x:0,y:1}},{id:'c',name:'Bas',pos:{x:0,y:2},liens:['b']},{id:'e',name:'Côté',pos:{x:1,y:1},liens:['b','a']}],u=id=>R.find(x=>x.id===id);
+   assert.equal(JSON.stringify([...ctx.departsDe(R)]),'["a"]','le plus haut du groupe est le départ');
+   assert.equal(ctx.verrouArbre([],R,u('c')),'Milieu');assert.equal(ctx.verrouArbre(['a'],R,u('c')),'Milieu');assert.equal(ctx.verrouArbre(['a','b'],R,u('c')),'');
+   assert.equal(JSON.stringify(ctx.chuteArbre(['a','b','c','e'],R,u('b')).map(x=>x.id)),'["c"]','Milieu oublié, Bas ne tenait que par lui ; Côté tient par Haut');
+   assert.equal(JSON.stringify(ctx.chuteArbre(['a','b','c'],R,u('a')).map(x=>x.id)),'["b","c"]','le départ emporte tout');}
   // La case libre : sous un talent, dessous puis en diagonale ; sans talent, sous l'arbre, au milieu.
   const P=[{pos:{x:0,y:0}},{pos:{x:0,y:1}},{pos:{x:2,y:0}}];
   assert.equal(JSON.stringify(ctx.caseLibre(P,P[0])),'{"x":1,"y":0}');
@@ -3258,7 +3263,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['o','b2','b3'])),JSON.stringify(['o','b3']),'sans le premier, le second tombe ; un bonus hors chemin reste');
  assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['b1','b2'])),'[]','sans le talent, tout le chemin tombe');
  assert.equal(ctxB.basculeLien(T[0],T[2]),'ajoute','Cendre est la case de droite');assert.equal(ctxB.basculeLien(T[2],T[1]),'loin','en diagonale : pas de ligne');
- assert.ok(src.includes("reste=sansBonusOrphelins(reste);")&&src.includes("&&!t.horsArbre&&!lisChemin(t));")&&src.includes("if(d.chemin)t.chemin=d.chemin;"),'les petits ronds');}
+ assert.ok(src.includes("reste=sansChuteArbre(a,sansBonusOrphelins(reste));")&&src.includes("&&!t.horsArbre&&!lisChemin(t));")&&src.includes("if(d.chemin)t.chemin=d.chemin;"),'les petits ronds');}
 /* v0.358 — Dans la barre d'action, attaques et talents d'attaque sont des ronds, comme les talents
    d'une fiche, à la couleur de l'action ; le nom dans la bulle, les dés dessous. Sur la table, plus
    de nom sous les ronds de talents. */

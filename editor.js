@@ -2893,7 +2893,7 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   const manque=t=>porte(t)?'':manqueTalent(a.talents,t,catalog.talents);
   const clic=t=>{const m=manque(t);
    if(m)return;
-   if(porte(t)){const {liste,tombes}=talentsSans(a.talents,t.id,catalog.talents);a.talents=liste;
+   if(porte(t)){const avant=a.talents,liste=sansChuteArbre(a,talentsSans(avant,t.id,catalog.talents).liste),tombes=avant.filter(id=>id!==t.id&&!liste.includes(id)).map(id=>{const x=talentDuCatalogue(catalog.talents,id);return x?x.name:''}).filter(Boolean);a.talents=liste;
     $('picker-note').textContent=tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'Clique un talent pour l’apprendre ou l’oublier.'}
    else{if(coutPalier(t,1)>xpDisponible(a,catalog.talents))return;a.talents=[...a.talents,t.id];$('picker-note').textContent='Clique un talent pour l’apprendre ou l’oublier.'}
    renderPicker();
@@ -2972,13 +2972,18 @@ function dissoudreVoie(famille,nom){const i=voiesDe(famille).indexOf(nom);
    chaque chemin ses petits ronds, rang après rang. Rien d'autre ne reste : ni ce qu'il tenait avant
    le sphérier, ni ce qu'une ligne ne mène plus jusqu'à lui. Sans classe à arbre, rien ne bouge. */
 function talentsDuSpherier(a){const classe=classeDuHeros(a);if(!a||!classe||!aUnArbre(classe))return null;
- const tient=new Set(a.talents||[]),vus=new Set();
- colonnesArbre(classe).forEach(col=>{const par=new Map(col.liste.map(t=>[t.id,t]));
-  const file=col.liste.filter(t=>tient.has(t.id)&&!entreesDe(col.liste,t).length);
-  while(file.length){const t=file.shift();if(vus.has(t.id))continue;vus.add(t.id);
-   liensDe(t).forEach(id=>{const x=par.get(id);if(x&&tient.has(id)&&!vus.has(id))file.push(x)});
-   Object.keys(DIRS).forEach(d=>{for(const p of petitsDe(t,d)){if(!tient.has(p.id))break;vus.add(p.id)}})}});
+ const vus=new Set();colonnesArbre(classe).forEach(col=>atteintsDepuis(a.talents,col.liste,null).forEach(id=>vus.add(id)));
  return (a.talents||[]).filter(id=>vus.has(id))}
+/* Un aventurier qui oublie un talent de son arbre perd tout ce qui en dépendait : talents, bonus et
+   améliorations qu'aucun talent tenu ne rattache plus au départ, et ce qui reposait sur eux, jusqu'à
+   ce que plus rien ne tombe. */
+function sansChuteArbre(a,portes){const classe=classeDuHeros(a);if(!a||!a.hero||!classe||!aUnArbre(classe))return portes;
+ let l=[...(portes||[])];
+ for(;;){const chute=new Set();
+  colonnesArbre(classe).forEach(col=>{const garde=atteintsDepuis(l,col.liste,null);
+   [...col.liste,...col.liste.flatMap(b=>Object.keys(DIRS).flatMap(d=>petitsDe(b,d)))].forEach(x=>{if(l.includes(x.id)&&!garde.has(x.id))chute.add(x.id)})});
+  const n=sansBonusOrphelins(talentsSans(l.filter(id=>!chute.has(id)),null,catalog.talents).liste);
+  if(n.length===l.length)return n;l=n}}
 function accordeTalentsHeros(){let change=false;
  (typeof actors!=='undefined'?actors:[]).forEach(a=>{if(!a||!a.hero)return;const garde=talentsDuSpherier(a);
   if(!garde||garde.length===(a.talents||[]).length)return;a.talents=garde;a.paliersTalents=normalisePaliersActeur(a);change=true});
@@ -3042,28 +3047,45 @@ function departChemin(t){const c=lisChemin(t);if(!c)return null;return tousTalen
 function precedentChemin(t){const c=lisChemin(t),d=departChemin(t);if(!c||!d||c.rang<=1)return null;return petitsDe(d,c.dir).find(x=>lisChemin(x).rang===c.rang-1)||null}
 // Ceux d'une liste d'où part une ligne vers ce talent.
 function entreesDe(liste,t){return (liste||[]).filter(x=>x&&t&&x!==t&&liensDe(x).includes(t.id))}
-/* Ce qu'attend un talent : rien s'il n'a aucune ligne qui mène à lui — c'est un départ — ou si l'un
-   de ceux d'où part une ligne vers lui est tenu ; sinon leurs noms. Un petit rond attend le petit rond
-   d'avant sur son chemin, ou, s'il est le premier, son talent. */
+// Ceux d'une liste reliés à ce talent par une ligne, qu'elle parte de lui ou y mène : une ligne n'a pas de sens.
+function voisinsDe(liste,t){return (liste||[]).filter(x=>x&&t&&x!==t&&(liensDe(x).includes(t.id)||liensDe(t).includes(x.id)))}
+/* Les départs d'une liste : dans chaque groupe de talents reliés, le plus haut — à égalité, celui où
+   aucune ligne n'arrive, sinon tous. Un talent sans ligne est son propre départ. L'arbre part d'en haut
+   et descend, quel que soit le sens où ses lignes ont été tracées. */
+function departsDe(liste){const L=(liste||[]).filter(Boolean),vus=new Set(),departs=new Set(),y=t=>{const p=posDe(t);return p?p.y:Infinity};
+ L.forEach(t=>{if(vus.has(t.id))return;const groupe=[],file=[t];vus.add(t.id);
+  while(file.length){const x=file.shift();groupe.push(x);voisinsDe(L,x).forEach(v=>{if(!vus.has(v.id)){vus.add(v.id);file.push(v)}})}
+  const haut=Math.min(...groupe.map(y)),hauts=groupe.filter(x=>y(x)===haut),libres=hauts.filter(x=>!entreesDe(L,x).length);
+  (libres.length?libres:hauts).forEach(x=>departs.add(x.id))});
+ return departs}
+// La distance de chaque talent à son départ, en lignes.
+function profondeursDe(liste){const L=(liste||[]).filter(Boolean),departs=departsDe(L),d=new Map(),file=L.filter(t=>departs.has(t.id));
+ file.forEach(t=>d.set(t.id,0));
+ while(file.length){const t=file.shift();voisinsDe(L,t).forEach(v=>{if(!d.has(v.id)){d.set(v.id,d.get(t.id)+1);file.push(v)}})}
+ return d}
+/* Ce qu'attend un talent : rien s'il est un départ ; sinon, qu'un talent relié à lui soit tenu — on
+   nomme ceux d'au-dessus. Un petit rond attend le petit rond d'avant sur son chemin, ou, s'il est le
+   premier, son talent. */
 function verrouArbre(portes,liste,t){const tous=portes||[];
  if(lisChemin(t)){const d=departChemin(t);if(!d)return '';const av=precedentChemin(t)||d;return tous.includes(av.id)?'':av.name}
- const e=entreesDe(liste,t);if(!e.length)return '';
- return e.some(x=>tous.includes(x.id))?'':e.map(x=>x.name).join(' ou ')}
-/* Ce qu'on atteint en suivant les lignes de talent tenu en talent tenu, depuis les départs : les
-   talents tenus sans ligne tenue qui mène à eux ; et, de chaque talent atteint, ses petits ronds rang
-   après rang tant qu'ils sont tenus. « sans » : le même chemin, ce talent-là oublié. */
-function atteintsDepuis(portes,liste,sans){const tous=portes||[],tient=new Set(tous.filter(id=>id!==sans));
- const par=new Map((liste||[]).map(t=>[t.id,t])),vus=new Set();
- const file=(liste||[]).filter(t=>tous.includes(t.id)&&!entreesDe(liste,t).some(x=>tous.includes(x.id))&&tient.has(t.id));
+ if(departsDe(liste).has(t.id))return '';
+ const v=voisinsDe(liste,t);if(!v.length||v.some(x=>tous.includes(x.id)))return '';
+ const p=profondeursDe(liste),n=p.get(t.id),haut=v.filter(x=>p.has(x.id)&&p.get(x.id)<n);
+ return (haut.length?haut:v).map(x=>x.name).join(' ou ')}
+/* Ce qu'on tient encore d'une liste : depuis ses départs tenus, de talent tenu en talent tenu le long
+   des lignes ; et, de chaque talent atteint, ses petits ronds rang après rang tant qu'ils sont tenus.
+   « sans » : le même chemin, ce talent-là oublié. */
+function atteintsDepuis(portes,liste,sans){const tient=new Set((portes||[]).filter(id=>id!==sans)),L=(liste||[]).filter(Boolean),departs=departsDe(L),vus=new Set();
+ const file=L.filter(t=>departs.has(t.id)&&tient.has(t.id));
  while(file.length){const t=file.shift();if(vus.has(t.id))continue;vus.add(t.id);
-  liensDe(t).forEach(id=>{const x=par.get(id);if(x&&tient.has(id)&&!vus.has(id))file.push(x)});
+  voisinsDe(L,t).forEach(x=>{if(tient.has(x.id)&&!vus.has(x.id))file.push(x)});
   Object.keys(DIRS).forEach(d=>{for(const p of petitsDe(t,d)){if(!tient.has(p.id))break;vus.add(p.id)}})}
  return vus}
-/* Oublier un talent fait tomber ce qu'on n'atteignait plus que par lui — petits ronds compris. Un
-   talent tenu hors des lignes — donné par le MJ — ne tombe pas pour autant. */
-function chuteArbre(portes,liste,t){const avant=atteintsDepuis(portes,liste,null),apres=atteintsDepuis(portes,liste,t.id);
+/* Oublier un talent fait tomber tout ce qu'on n'atteint plus depuis un départ, petits ronds compris,
+   sans exception. */
+function chuteArbre(portes,liste,t){const apres=atteintsDepuis(portes,liste,t.id),tient=new Set(portes||[]);
  const tout=[...(liste||[]),...(liste||[]).flatMap(b=>Object.keys(DIRS).flatMap(d=>petitsDe(b,d)))];
- return tout.filter(x=>x!==t&&avant.has(x.id)&&!apres.has(x.id))}
+ return tout.filter(x=>x!==t&&tient.has(x.id)&&!apres.has(x.id))}
 // La case libre la plus proche d'un talent — dessous, à droite, à gauche, dessus, puis plus bas ; sans talent, sous l'arbre.
 function caseLibre(liste,depuis){const prise=(x,y)=>(liste||[]).some(t=>{const p=posDe(t);return !!p&&p.x===x&&p.y===y});
  const p=posDe(depuis);
@@ -3464,7 +3486,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   // Ce qu'on n'atteignait plus que par lui tombe avec lui, du plus loin au plus proche.
   const chute=[t,...(liste?chuteArbre(avant,liste,t):[])];
   [...chute].reverse().forEach(x=>{reste=talentsSans(reste,x.id,catalog.talents).liste});
-  reste=sansBonusOrphelins(reste);
+  reste=sansChuteArbre(a,sansBonusOrphelins(reste));
   a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);
   return avant.filter(id=>id!==t.id&&!reste.includes(id)).map(id=>{const x=talent(id);return x?x.name:''}).filter(Boolean)};
  const ico=(g,titre,fn)=>{const b=document.createElement('button');b.type='button';b.className='ico';b.textContent=g;
@@ -3629,7 +3651,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
      talent — jamais au-dessus : l'arbre part d'un talent tout en haut et descend ; sur chaque chemin
      sans ligne, la place du petit rond suivant, sauf au-dessus du talent de départ. */
-  const racines=new Set(c.liste.filter(t=>!entreesDe(c.liste,t).length).map(t=>t.id)),places=[];
+  const racines=departsDe(c.liste),places=[];
   // Une place trop près d'un rond déjà posé ne s'offre pas : un talent à moins de 0,36 case, un petit rond à moins de 0,24.
   const libreIci=(x,y)=>!prises.some(q=>Math.hypot(q.x-x,q.y-y)<.36)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.24)&&!places.some(q=>Math.hypot(q.x-x,q.y-y)<.24);
   if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),vues=new Set();
@@ -3942,7 +3964,7 @@ function choixTalents(boite,cible,filtre,familles,apres){boite.replaceChildren()
    const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m);
    p.setAttribute('role','checkbox');p.setAttribute('aria-checked',String(pris));p.setAttribute('aria-label',nomEnClair(t.name));p.tabIndex=0;
    if(BULLES)surveille(p,()=>bulleTalentSur(p,t));
-   const bascule=()=>{cible.talents=pris?cible.talents.filter(x=>x!==t.id):[...new Set([...cible.talents,t.id])];fermerBulle();choixTalents(boite,cible,filtre,familles,apres);if(apres)apres()};
+   const bascule=()=>{cible.talents=pris?(cible.hero?sansChuteArbre(cible,talentsSans(cible.talents,t.id,catalog.talents).liste):cible.talents.filter(x=>x!==t.id)):[...new Set([...cible.talents,t.id])];fermerBulle();choixTalents(boite,cible,filtre,familles,apres);if(apres)apres()};
    p.onclick=bascule;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bascule()}};
    grille.append(carte)});
   bloc.append(grille);boite.append(bloc)}
