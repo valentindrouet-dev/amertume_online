@@ -1181,19 +1181,28 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
  if(n>1){const x=document.createElement('span');x.className='exemplaires';x.textContent=(portes>1?portes+'/':'')+n;p.append(x)}
  p.title=o.name+(portes?' — porté':'');p.setAttribute('aria-label',p.title);
  return p}
-/* Le dépliant ne dit que l'essentiel : le nom, les mains et la portée d'une arme — les dés
-   sont sur le carré —, la DEF d'une armure, l'état qu'elle inflige s'il y en a un. */
+/* Un bonus en bulle : « + 4 » à l'encre, puis la caractéristique en capitales, à sa couleur —
+   « + 4 ENDU », « + 1 FORCE ». */
+const NOM_BONUS_BULLE={pv:'PV',endu:'ENDU',vie:'VIE',def:'DEF',dmg:'DÉGÂTS'};
+function libelleBonusEl(p){const n=Math.max(1,(p&&p.valeur)|0),c=(p&&p.carac)||'pv',k=Math.max(0,Math.min(7,Number(p&&p.comp)||0));
+ const s=document.createElement('span');s.className='bonus-libelle';
+ const plus=document.createElement('span');plus.className='bonus-plus';plus.textContent='+ '+n;
+ const nom=document.createElement('span');nom.className='bonus-carac';
+ nom.textContent=c==='comp'?String(skillNames[k]||'').toUpperCase():c==='orbe'?(n>1?'ORBES':'ORBE'):(NOM_BONUS_BULLE[c]||'PV');
+ const tint=c==='comp'?SKILL_TINTS[k]:c==='orbe'?'138,99,201':STAT_TINTS[c];if(tint)nom.style.color='rgb('+tint+')';
+ s.append(plus,' ',nom);return s}
+/* Le dépliant ne dit que l'essentiel : le nom, la valeur en or d'une arme — les dés sont sur
+   le carré —, la DEF d'une armure, l'état qu'elle inflige s'il y en a un. */
 function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
  const titre=document.createElement('p');titre.className='gear-nom';titre.textContent=o.name;d.append(titre);
  const ligne=(texte,classe)=>{if(!texte)return;const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p)};
  // La rareté, puis ce que la pièce confère, une ligne par bonus.
  if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));
- normaliseBonusEquip(o.bonus).forEach(b=>ligne(libelleBonus(b),'gear-bonus'));
+ normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});
  // La DEF, comme sur le carré : seulement si la pièce en donne, ou si c'est un torse ou un bouclier.
  if(col==='armor'){if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))ligne('DEF '+(o.def||0)+' · '+NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase())}
- else if(col==='melee'||col==='ranged')ligne((o.hands===2?'2 mains':'1 main')+(col==='ranged'?' · à distance':' · au contact'));
- // Un reste : sa valeur, « 7 » et la pièce d'or ; sa conversion ne s'y lit plus.
- if(col==='restes'){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
+ // Une arme ou un reste : sa valeur, « 7 » et la pièce d'or.
+ if(col==='restes'||col==='melee'||col==='ranged'){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
  if(o.tanneur&&o.recette&&o.recette.length)ligne('Tannerie : '+texteRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte]))),'gear-recette');
  if(o.category==='ammo'){const k=keys.indexOf(o.munDe);ligne('Munition : '+(k>=0?'+1 dé '+types[k]:'aucun dé')+' aux armes à distance portées');ligne(o.etat?'Leur tir inflige : '+o.etat:'')}
@@ -1205,15 +1214,8 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
     recopiée ici, et l'usage dit si l'objet se garde, se défausse ou attend le lendemain. */
  const code=objetCode(o);
  if(code){const p=document.createElement('p');p.className='gear-effet';
-  p.innerHTML=phraseDeObjet(o);d.append(p);
-  // Un effet passif se dit dans sa phrase (« tant qu'il porte la pièce ») : pas de ligne de plus.
-  if(modeObjet(o)!=='passif')ligne('Usage : '+NOM_USAGE(usageObjet(o))+(usageLimite(usageObjet(o))&&a&&usageEpuise(a,o)?' — déjà employé':''))}
- /* Un objet s'emploie à la table de jeu ; un équipement qui porte un effet aussi — la page
-    Aventuriers, elle, ne fait que ranger l'inventaire. */
- /* Plus de bouton dans la bulle — elle s'efface quand la souris la quitte : un objet
-    s'utilise d'un clic sur son carré, en jeu comme sur la fiche. */
- if(a&&col==='object'&&actors.includes(a)){const p=document.createElement('p');p.className='gear-astuce';
-  p.textContent=code&&!objetDisponible(a,o)?'Déjà employé : il faut un repos pour le recharger.':'Clique l’objet pour l’utiliser.';d.append(p)}
+  p.innerHTML=phraseDeObjet(o);d.append(p)}
+ // Ni usage ni mode d'emploi : un objet s'utilise d'un clic sur son carré, en jeu comme sur la fiche.
  return d}
 /* Utiliser un objet : on désigne d'abord la cible — un combattant, ou l'endroit visé pour
    ce qui frappe une zone —, puis l'effet se joue. Le journal et une annonce au-dessus de
@@ -1678,7 +1680,7 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
    const v=document.createElement('b');v.className='bonus-valeur';v.textContent=String(g.p.valeur);r.append(v);
    const nom=libelleBonus(g.p);r.setAttribute('aria-label',nom);
    surveille(r,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+g.p.carac;
-    const tete=document.createElement('p');tete.className='talent-bulle-nom';const b=document.createElement('b');b.textContent=nom;tete.append(b);d.append(tete);ouvrirBulle(r,d,'bulle-talent')});
+    const tete=document.createElement('p');tete.className='talent-bulle-nom';const b=document.createElement('b');b.append(libelleBonusEl(g.p));tete.append(b);d.append(tete);ouvrirBulle(r,d,'bulle-talent')});
    rang.append(r)});
   for(let n=rang.childElementCount;n<Math.max(12,Math.ceil(rang.childElementCount/12)*12);n++)rang.append(vide('amelioration-case-vide'));
   out.append(rang)}
@@ -3433,7 +3435,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}
  // Un bonus a la couleur de son rond : rouge pour les dégâts, vert pour les PV…
  if(bonus)d.classList.add('bulle-bonus','bonus-'+((paramsTalent(t)||{}).carac||'pv'));
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
- if(bonus)nom.textContent=libelleBonus(paramsTalent(t));else nomAccolades(nom,vu(t).name);
+ if(bonus)nom.replaceChildren(libelleBonusEl(paramsTalent(t)));else nomAccolades(nom,vu(t).name);
  // Tenu au palier 2 ou 3, le talent le dit après son nom : « Attaque Blindée II ».
  if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));
  // Jamais la nature du talent : la bulle ne l'écrit nulle part.

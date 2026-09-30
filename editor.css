@@ -1873,3 +1873,5 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .hero-card .stat-row.en-icones .stat-tile .ecu{margin:0 auto}
 .hero-card .hero-pv .lifebar{height:18px;margin-top:6px}
 .hero-card .hero-pv .lifebar-text{font:700 12px/1 system-ui}
+/* « + 4 ENDU » : le « + x » à l'encre, la caractéristique à sa couleur. */
+.bonus-libelle .bonus-plus{color:var(--ink)}.bonus-libelle .bonus-carac{letter-spacing:.5px}

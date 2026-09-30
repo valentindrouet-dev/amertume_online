@@ -1316,14 +1316,14 @@ assert.ok(src.includes("d.className='cat-detail bulle-modele-corps k-'+(m.type||
    aussi un modèle du bestiaire, et un refus dit combien de mains manquent. */
 assert.ok(src.includes('function gearPills(a,tout=true,combat=false)')&&page.includes('gearPills(a,false,true)')&&src.includes("const armurerie=tous.filter(([o])=>o.category==='weapon'||o.category==='armor');")&&src.includes("const equipement=combat?[]:armurerie.filter(([o])=>tout||portes(o));")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,combat?'':'Objets');")&&!src.includes("chev.title='Détail'")&&!src.includes("p.querySelector('.chev').onclick=deplie;")
- &&src.includes('function utiliserObjet(a,o)')&&src.includes("p.textContent=code&&!objetDisponible(a,o)?'Déjà employé : il faut un repos pour le recharger.':'Clique l’objet pour l’utiliser.';")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
+ &&src.includes('function utiliserObjet(a,o)')&&!src.includes("'Clique l’objet pour l’utiliser.'")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&feuille.includes('.cat-pill.gear-carre .marque-porte{display:none;position:absolute;top:-6px;left:-6px;')&&feuille.includes('.gear-detail.k-object.consommable{background:#d9e7cd;')
  &&page.includes("const nbGear=typeof objetDeCombat==='function'?(a.inventaire||[]).filter(id=>objetDeCombat((catalog.items||[]).find(x=>x.id===id))).length:0;")
  &&!src.includes('inventairesOuverts')&&!src.includes('gear-sac')&&!feuille.includes('gear-sac'),'fiche en jeu : porté et objets, coche ronde, objet utilisable');
 /* Les mains se remplacent au lieu de refuser ; en jeu, pas de sac à déplier, le clic ouvre la
    description, et un objet se vise avant de s'employer, à la table de jeu seulement. */
 assert.ok(src.includes('function libereMains(a,besoin)')&&src.includes('  else prendArme(a,o)}')&&src.includes('  else prendBouclier(a,o)}')
- &&src.includes('function gearDetail(o,a,enJeu)')&&src.includes("if(a&&col==='object'&&actors.includes(a)){const p=document.createElement('p');p.className='gear-astuce';")&&src.includes('function appliquerObjet(a,o,vise,q)')
+ &&src.includes('function gearDetail(o,a,enJeu)')&&!src.includes("p.className='gear-astuce';")&&src.includes('function appliquerObjet(a,o,vise,q)')
  &&src.includes("viserCible('◈ '+o.name+' — clique le combattant ou l’endroit visé',")&&src.includes("const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper;")
  &&src.includes('toggleEquip(a,o);ouvrir();')&&page.includes('function viserCible(annonce,fn,refus)')&&page.includes("viserCible('✦ Clique sur la carte pour poser '+m.name,"),'mains remplacées, objet visé, description à l’équipement');
 {const t={mainsPrises:null},src2=src.slice(src.indexOf('function libereMains(a,besoin)'),src.indexOf('/* Équiper depuis l’inventaire'));
@@ -2060,7 +2060,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
   &&src.includes("if(f.rarete)a.rarete=rareteDe({rarete:f.rarete.value});")&&src.includes(" if($('item-bonus'))a.bonus=lireBonusItem();")
   &&src.includes('function dessineBonusItem(){')&&src.includes('function lireBonusItem(){')&&src.includes("teinte:TEINTE_RARETE[rareteDe(o)]||TEINTE_OBJET.object,")
   &&src.includes("p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+")&&src.includes("p.className='cat-pill k-'+col+' r-'+rareteDe(o)+")
-  &&src.includes("if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));")&&src.includes("normaliseBonusEquip(o.bonus).forEach(b=>ligne(libelleBonus(b),'gear-bonus'));")
+  &&src.includes("if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));")&&src.includes("normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});")
   &&page.includes("function bonusFiche(a){return bonusDe(a,typeof catalog!=='undefined'?catalog.talents:[],items())}")
   &&feuille.includes('.cat-pill.r-rare{background:#cfe0f5;')&&feuille.includes('.cat-pill.gear-carre .logo-equip{width:38px;height:38px;margin:0}')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}'),'rareté et bonus : formulaire, carrés, bulle, moteur');}
 /* Le corps de l'aventurier sur sa page : les emplacements et ce qu'ils portent, le sac
@@ -2496,7 +2496,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  ctxE.effetsPassifs();assert.equal(b.states.join(',')+'|'+b.etatsPassifs.join(','),'Invisible|Invisible','le Gel se dissipe, la cape donne Invisible');
  b.states=[];ctxE.effetsPassifs();assert.equal(b.states.join(','),'','un état donné et perdu ne revient pas tant qu’on garde la pièce');
  b.states=['Invisible'];b.armures=['an'];ctxE.effetsPassifs();assert.equal(b.states.join(',')+'|'+b.etatsPassifs.join(','),'|','ôtée, la cape reprend son état');
- assert.ok(src.includes("if(modeObjet(o)==='passif')return;")&&src.includes("p.innerHTML=phraseDeObjet(o);d.append(p);")&&src.includes("if(f.mode)a.mode=f.mode.value==='passif'?'passif':'actif';")
+ assert.ok(src.includes("if(modeObjet(o)==='passif')return;")&&src.includes("p.innerHTML=phraseDeObjet(o);d.append(p)}")&&src.includes("if(f.mode)a.mode=f.mode.value==='passif'?'passif':'actif';")
   &&src.includes("[['actif','Actif — un bouton en combat'],['passif','Passif — permanent tant que porté']]")&&page.includes("const gardes=[],ecartes=[],portes=[...passifsPortes(b,items()).des,...desRefuses(talentsCodes(b))];"),'le passif : pas de bouton, sa phrase, son réglage, les dés écartés');}
 /* v0.275 (suite) — Un écu de DEF seulement pour ce qui en donne, ou une armure de corps, ou un bouclier ; l'icône de l'effet, barrée pour une insensibilité. */
 {assert.ok(src.includes("if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))bas.append(shieldBadge(o.def||0));")
