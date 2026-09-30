@@ -841,7 +841,10 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
    const copie=structuredClone(a);delete copie.id;normalizeActor(copie);
    copie.name=a.name+' (copie)';copie.target=null;copie.checks=[0,0,0];
    actors.push(copie);renderHeroes();render();scheduleSave()}),suppr);
- tete.append(jeton,titre,classe,outils);
+ // Un Mystique porte son élément à côté de sa classe, à la couleur de l'élément.
+ const el=elementDe(a),elem=el?document.createElement('span'):null;
+ if(elem){elem.className='sheet-class sheet-element el-'+el.cle;elem.textContent=el.nom.toUpperCase();elem.style.color=elem.style.borderColor=el.teinte||teinte}
+ tete.append(jeton,titre,classe,...(elem?[elem]:[]),outils);
  const puces=document.createElement('div');puces.className='chips';
  const marques=[];if(a.sexe)marques.push([(a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe]);
  if(a.race)marques.push([a.race]);
@@ -887,8 +890,13 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const titreKit=sousTitre('Équipement');
  // Le rouage ouvre les arbres de la classe : les talents s'y choisissent de haut en bas.
  const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');
+ /* Le mot « Talents », ou n'importe où dans leur bloc hors des talents eux-mêmes : l'arbre s'ouvre. */
+ const blocTal=talentPills(a,true);
+ if(mien){titreTal.classList.add('ouvre-arbre');blocTal.classList.add('ouvre-arbre');
+  titreTal.onclick=e=>{if(e.target.closest('button'))return;fermerBulle();openArbres(a)};
+  blocTal.onclick=e=>{if(e.target.closest('.cat-pill'))return;fermerBulle();openArbres(a)}}
  // Les talents juste sous les compétences : ce qu'il sait faire se lit d'un bloc.
- c.append(tete,puces,chiffres,titreComp,comps,titreTal,talentPills(a),titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a));return c}
+ c.append(tete,puces,chiffres,titreComp,comps,titreTal,blocTal,titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
  const troupe=actors.filter(a=>a.hero);
@@ -1598,9 +1606,11 @@ function talentsDeFiche(a){return (a&&a.talents||[]).map(talent).filter(t=>t&&t.
 function logoRemplace(a,t){if(!a||!t)return '';
  const ams=(a.talents||[]).map(talent).filter(x=>x&&x.remplaceLogo===true&&x.logo&&lisChemin(x)&&lisChemin(x).de===t.id).sort((x,y)=>lisChemin(y).rang-lisChemin(x).rang);
  return ams.length?talentPourElement(ams[0],elementDe(a)).logo||'':''}
-function talentPills(a){const out=document.createElement('div');out.className='talent-grille';
+/* « cases » : la fiche d'aventurier. Six talents par ligne, les places libres en ronds vides ; dessous,
+   les améliorations acquises en petits ronds, douze par ligne — deux sous chaque talent. */
+function talentPills(a,cases){const out=document.createElement('div');out.className='talent-grille'+(cases?' a-cases':'');
  const liste=talentsDeFiche(a);
- if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
+ if(!liste.length&&!cases){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
  /* Un talent appris dont le socle manque ne fait rien : il se taisait, et on le croyait à
     l'œuvre. Il porte désormais sa marque, et sa bulle dit ce qu'il attend. */
  const sansEffet=t=>typeof manqueTalent==='function'?manqueTalent(a.talents||[],t,catalog.talents):'';
@@ -1620,6 +1630,15 @@ function talentPills(a){const out=document.createElement('div');out.className='t
   const montre=()=>{talentOuvert=cle;gearOuvert=null;const d=detail.cloneNode(true);d.hidden=false;ouvrirBulle(pill,d,'bulle-talent')};
   if(talentOuvert===cle)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});
   surveille(pill,montre);out.append(carte)});
+ if(cases){const vide=cls=>{const v=document.createElement('span');v.className=cls;v.setAttribute('aria-hidden','true');return v};
+  for(let n=liste.length;n<Math.max(6,Math.ceil(liste.length/6)*6);n++)out.append(vide('talent-case-vide'));
+  // Les améliorations qui jouent : celles qu'une suivante ne remplace pas.
+  const ams=sansAmeliorationsRemplacees((a.talents||[]).map(talent).filter(x=>x&&!estBonus(x)&&lisChemin(x)));
+  const rang=document.createElement('div');rang.className='talent-ameliorations';
+  ams.forEach(x=>{const xv=talentPourElement(x,elementDe(a)),r=talentRond(xv);r.classList.add('cliquable');r.tabIndex=0;r.setAttribute('aria-label',nomEnClair(xv.name));
+   surveille(r,()=>{const d=bulleTalent(x,{a,vu:y=>talentPourElement(y,elementDe(a)),cout:false});ouvrirBulle(r,d,'bulle-talent')});rang.append(r)});
+  for(let n=ams.length;n<Math.max(12,Math.ceil(ams.length/12)*12);n++)rang.append(vide('amelioration-case-vide'));
+  out.append(rang)}
  bulleOrpheline();return out}
 // Les Trésors : trésors et objets rares, qui se gardent, se montrent et se vendent, sans s'utiliser.
 // Quatre colonnes par rangée : les Ressources et les Trésors passent en dessous.
