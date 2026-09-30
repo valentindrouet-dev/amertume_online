@@ -1030,6 +1030,28 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  soinetatdouble:{cle:'soinetatdouble',nom:'Dégâts d’état en soin ×2',type:'ame',
   aide:'Amélioration : les dégâts de l’état que le porteur ignore, ou auquel il est insensible, le soignent deux fois.',params:[],
   phrase(){return 'Les dégâts de l’état que le porteur <b>ignore</b> le <b>soignent deux fois</b>.'}},
+ /* Améliorations des Orbes, de Déluge et d'Implosion ; la Contagion et les siennes. */
+ orbes2des:{cle:'orbes2des',nom:'Orbes à deux dés',type:'ame',aide:'Amélioration : chaque orbe lance deux dés.',params:[],
+  phrase(){return 'Vos <b>orbes</b> lancent <b>2 dés</b>.'}},
+ orbesrouges:{cle:'orbesrouges',nom:'Orbes lourds',type:'ame',aide:'Amélioration : les orbes lancent des dés rouges (Lourds) au lieu de leurs dés.',params:[],
+  phrase(){return 'Vos <b>orbes</b> lancent des <b>dés rouges</b>.'}},
+ orbescritun:{cle:'orbescritun',nom:'Critique : un orbe rendu',type:'ame',aide:'Amélioration : un critique d’orbe rend un orbe pour le tour.',params:[],
+  phrase(){return 'Un <b>critique</b> de vos orbes vous <b>rend un orbe</b>.'}},
+ orbescrittous:{cle:'orbescrittous',nom:'Critique : tous les orbes rendus',type:'ame',aide:'Amélioration : un critique d’orbe rend tous les orbes du tour.',params:[],
+  phrase(){return 'Un <b>critique</b> de vos orbes vous <b>rend tous vos orbes</b>.'}},
+ delugegratuit:{cle:'delugegratuit',nom:'Déluge gratuit',type:'ame',aide:'Amélioration de Déluge : il ne coûte plus l’Action.',params:[],
+  phrase(){return '<b>Déluge</b> ne coûte plus l’<b>Action</b>.'}},
+ implosionmouvement:{cle:'implosionmouvement',nom:'Implosion de mouvement',type:'ame',aide:'Amélioration d’Implosion : un critique rend aussi 1 point de Mouvement.',params:[],
+  phrase(){return 'Après un <b>critique</b>, le porteur gagne aussi <b>1 point de Mouvement</b>.'}},
+ implosionorbe:{cle:'implosionorbe',nom:'Implosion d’orbe',type:'ame',aide:'Amélioration d’Implosion : un critique rend aussi un orbe pour le tour.',params:[],
+  phrase(){return 'Après un <b>critique</b>, le porteur récupère aussi <b>un orbe</b>.'}},
+ contagion:{cle:'contagion',nom:'Contagion',type:'pass',aide:'Passif : au début de chaque tour, le porteur inflige l’état réglé à un adversaire à son contact.',
+  params:[{cle:'etat',nom:'État',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
+  phrase(p){return 'Au <b>début de chaque tour</b>, le porteur inflige <b>'+((p&&p.etat)||'Feu')+'</b> à <b>un adversaire</b> à son contact.'}},
+ contagioncontact:{cle:'contagioncontact',nom:'Contagion au contact',type:'ame',aide:'Amélioration de Contagion : tous les adversaires au contact la subissent.',params:[],
+  phrase(){return 'La <b>Contagion</b> touche <b>tous les adversaires au contact</b>.'}},
+ contagionvue:{cle:'contagionvue',nom:'Contagion en vue',type:'ame',aide:'Amélioration de Contagion : tous les adversaires visibles la subissent.',params:[],
+  phrase(){return 'La <b>Contagion</b> touche <b>tous les adversaires visibles</b>.'}},
  /* Orbes inratables : une amélioration. Les orbes du porteur ne font jamais d'échec sur un double 1. */
  orbesinratables:{cle:'orbesinratables',nom:'Orbes inratables',type:'ame',
   aide:'Amélioration : les Orbes mystiques du porteur ne peuvent pas produire d’échec (double 1).',
@@ -1116,7 +1138,8 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
     +(ouvert('loin')?' à <b>deux fois sa zone de contact</b>.':' <b>hors de sa zone de contact</b>.')}}};
 /* Chaque amélioration dit le talent qu'elle améliore : la bibliothèque la range dessous. Celles qui
    ne sont liées à aucun talent en particulier restent seules. */
-{const POUR={orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
+{const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
+ contagioncontact:'contagion',contagionvue:'contagion',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',
  soinetat:'ignoredegats',soinetatdouble:'ignoredegats',corpselem:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{if(TALENTS_CODES[k]&&TALENTS_CODES[p])TALENTS_CODES[k].pour=p})}
@@ -1214,8 +1237,10 @@ function orbesPermis(portes){const base=(portes||[]).filter(t=>t&&t.code&&t.code
 /* Les dés d'un orbe : le talent le plus généreux en dés fait foi, avec sa couleur. */
 function desOrbe(portes){const t=(portes||[]).filter(t=>t&&t.code&&t.code.cle==='orbes')
  .sort((u,v)=>(Math.trunc(v.params&&v.params.des)||0)-(Math.trunc(u.params&&u.params.des)||0))[0];
- if(!t)return null;const couleur=DES_ORBE.some(([k])=>k===(t.params&&t.params.couleur))?t.params.couleur:'blue';
- return {n:Math.max(1,Math.trunc(t.params&&t.params.des)||1),couleur,nom:DES_ORBE.find(([k])=>k===couleur)[1]}}
+ if(!t)return null;const a=cle=>(portes||[]).some(x=>x&&x.code&&x.code.cle===cle);
+ // Orbes lourds : des dés rouges ; Orbes à deux dés : deux dés au moins.
+ const couleur=a('orbesrouges')?'red':DES_ORBE.some(([k])=>k===(t.params&&t.params.couleur))?t.params.couleur:'blue';
+ return {n:Math.max(a('orbes2des')?2:1,Math.trunc(t.params&&t.params.des)||1),couleur,nom:DES_ORBE.find(([k])=>k===couleur)[1]}}
 function etatDesOrbes(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle==='orbesfeu');
  return t?String(t.params&&t.params.etat||'Feu'):''}
 /* L'état des orbes au palier tenu : ce qu'il faut pour qu'il prenne — un 6 parmi les dés, ou
