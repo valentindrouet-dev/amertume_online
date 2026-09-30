@@ -1609,7 +1609,9 @@ function logoRemplace(a,t){if(!a||!t)return '';
 /* « cases » : la fiche d'aventurier. Six talents par ligne, les places libres en ronds vides ; dessous,
    les améliorations acquises en petits ronds, douze par ligne — deux sous chaque talent. */
 function talentPills(a,cases){const out=document.createElement('div');out.className='talent-grille'+(cases?' a-cases':'');
- const liste=talentsDeFiche(a);
+ // Sur la fiche, les talents se rangent par nature : Actions, Réactions, Passifs, puis le reste ; l'ordre de l'arbre dans chacune.
+ const ORDRE_FICHE=['act','reac','pass','crit','mait'],rangT=t=>{const i=ORDRE_FICHE.indexOf(talentType(t)[0]);return i<0?ORDRE_FICHE.length:i};
+ const liste=talentsDeFiche(a).map((t,i)=>[t,i]).sort((x,y)=>rangT(x[0])-rangT(y[0])||x[1]-y[1]).map(x=>x[0]);
  if(!liste.length&&!cases){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
  /* Un talent appris dont le socle manque ne fait rien : il se taisait, et on le croyait à
     l'œuvre. Il porte désormais sa marque, et sa bulle dit ce qu'il attend. */
