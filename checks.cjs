@@ -1690,7 +1690,7 @@ assert.ok(page.includes('function pastillesPoints(a)')&&page.includes("const act
 assert.ok(page.includes('function alliePourIgnition(a)')&&page.includes("const j=ciblesDe(a).find(k=>vus.includes(k)&&actors[k]&&actors[k].hero===a.hero&&actors[k]!==a);")
  &&page.includes('if(allie!==null){const feu=etat||\'Feu\';')&&page.includes("const poser=()=>{b.ignition=feu;floatNumber(b,'✦ '+feu,'gain');")
  &&page.includes("const charge=(rangeOf(a)==='distance'?'':a.ignition)||'';")&&page.includes("if(charge)a.ignition=''}")
- &&page.includes('const infligeEtatBrut=infligeEtat;')&&page.includes("if(etatRefuse(talentsCodes(a),etat)||immuniseEtat(a,etat)||passifsPortes(a,items()).etats.includes(etat))return 'immunise';")
+ &&page.includes('const infligeEtatBrut=infligeEtat;')
  &&page.includes('const brise=briseContre(talentsCodes(a),b),ouverte=brise.ignore;')&&page.includes("const def=hasState(b,'Au sol')||ouverte?0:defOf(b);")&&page.includes("(immunises.length?' Invulnérable : '+immunises.join(', ')+' sans effet.':'')"),'Ignition, Invulnérable et Brise câblés');
 /* Les descriptions d'objet et de talent sortent du flux : une bulle se pose au-dessus de la
    vignette cliquée, au lieu d'écarter ses voisines. Le dépliant d'avant reste en place dans
