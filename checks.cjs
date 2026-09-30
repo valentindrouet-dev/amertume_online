@@ -2518,8 +2518,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const ext=l=>l==='DEGATS'?'.webp':'.png';
  const autres=fs.readdirSync('img').filter(f=>/\.(png|webp)$/i.test(f)&&!/^(weapon|spell|item|attack|ressource)_/.test(f)).sort();
  assert.deepEqual([...lire('LOGOS_ETATS'),...lire('LOGOS_DIVERS')].map(l=>l+ext(l)).sort(),autres,'LOGOS_ETATS et LOGOS_DIVERS doivent lister les autres images : '+autres.join(', '));
- assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("function poseLogo(im,l){im.onerror=null;if(estIconePlanche(l)){poseIcone(im,l);return}im.src=imgUrl(fichierLogo(l));")
-  &&src.includes("return logoImage(t&&t.logo,LOGOS_TOUS,cls)}")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
+ assert.ok(src.includes("const EXTENSIONS_LOGO={DEGATS:'.webp'};")&&src.includes("function poseLogo(im,l){im.onerror=null;if(estIconePlanche(l)){poseIcone(im,l);return}im.src=imgUrl(fichierLogo(l));")&&src.includes("  +selLogos('Logo','logo',t.logo||'')")
   &&src.includes(" t.logo=f.logo&&(logoValide(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';")
   &&src.includes("const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],...DOSSIERS_LOGOS.map(([d,nom])=>[nom,LOGOS_DOSSIERS[d]]),['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
  const ctxL={};vm.createContext(ctxL);vm.runInContext(fs.readFileSync('planches.js','utf8').match(/const estIconePlanche=[^\n]*/)[0]+'\n'+src.match(/const estLogoDossier=[^\n]*/)[0]+'\n'+src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
@@ -2842,8 +2841,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.desRefuses(inv({contre:'des',des:'black'})),['black'],'insensible aux dés Mortels');
  assert.ok(!C.etatRefuse(inv({contre:'des',etat:'Feu'}),'Feu')&&C.etatRefuse(inv({contre:'etat',etat:'Feu'}),'Feu')&&C.etatRefuse(inv({etat:'Gel'}),'Gel')&&!C.desRefuses(inv({etat:'Gel'})).length,'un état, ou des dés, jamais les deux');
  assert.ok(C.phraseTalent('invulnerable',{contre:'des',des:'red'}).includes('<b>insensible aux dés Lourds</b>'));
- assert.ok(src.includes("function logoTalent(t,cls){if(t&&t.effet==='invulnerable'){const w=pastilleInsensible(paramsTalent(t));if(w){w.classList.add('logo-auto');")
-  &&src.includes("function pastilleInsensible(p){let el=null,titre='';")&&src.includes("const p=talentRond(t,logoTalent({...vu,logo:remplaceElement(vu.logo||'',sous||ELEMENTS[0])}));")
+ assert.ok(src.includes("function pastilleInsensible(p){let el=null,titre='';")&&src.includes("const p=talentRond(t,logoTalent({...vu,logo:remplaceElement(vu.logo||'',sous||ELEMENTS[0])}));")
   &&css.includes('.arbre-rond .effet-pastille.logo-auto{width:72%;height:72%}'),'le logo automatique, barré de rouge');}
 /* v0.303 — Une attaque spéciale inflige autant d'états qu'on en coche ; l'état unique
    d'avant se lit toujours, et les modèles posés sur une carte gardent la liste. */

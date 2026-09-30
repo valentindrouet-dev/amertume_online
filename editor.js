@@ -3985,8 +3985,10 @@ function logoEquipement(o,cls){return logoImage(o&&o.logo,[...LOGOS_EQUIPEMENT,.
 // Le logo d'un talent : n'importe quelle image du dossier.
 /* Un talent Invulnérable n'a pas à choisir son logo : c'est l'état ou le dé qu'il refuse,
    barré de rouge, à son élément s'il en suit un. */
-function logoTalent(t,cls){if(t&&t.effet==='invulnerable'){const w=pastilleInsensible(paramsTalent(t));if(w){w.classList.add('logo-auto');if(cls)w.classList.add(cls);return w}}
- return logoImage(t&&t.logo,LOGOS_TOUS,cls)}
+// L'icône choisie par le MJ passe devant ; la pastille « insensible » ne vient qu'à défaut.
+function logoTalent(t,cls){const propre=logoImage(t&&t.logo,LOGOS_TOUS,cls);if(propre)return propre;
+ if(t&&t.effet==='invulnerable'){const w=pastilleInsensible(paramsTalent(t));if(w){w.classList.add('logo-auto');if(cls)w.classList.add(cls);return w}}
+ return null}
 // Le logo d'une attaque : n'importe quelle icône du dossier, sans distinction de famille.
 function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['armor','Armure'],
