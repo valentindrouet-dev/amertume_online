@@ -289,8 +289,8 @@ const note=document.createElement('p');note.id='actor-notes';note.className='mut
    clique celle qui part. Le bouton retenu est plein, les autres sont dessinés. */
 /* Les dés d'une attaque et, s'il y a lieu, le bonus de dégâts avec son jeton : la même
    seconde ligne pour l'attaque d'une arme et pour le talent qui frappe. */
-function desEtBonus(dice,bonus,toujours,jeton=true){const bas=document.createElement('span');bas.className='des-bonus';
- bas.append(dicePips(dice));
+function desEtBonus(dice,bonus,toujours,jeton=true,etat=''){const bas=document.createElement('span');bas.className='des-bonus';
+ bas.append(dicePips(dice,etat||''));
  if(bonus||toujours){const plus=document.createElement('b');plus.className='bonus';plus.textContent='+ '+bonus;bas.append(plus);
   // Le jeton des dégâts, après la valeur, dans la bulle des monstres ; le bloc Dés s'en passe.
   if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';ico.src=imgUrl('DEGATS.webp');ico.alt='dégâts';ico.draggable=false;bas.append(ico)}}
@@ -346,12 +346,12 @@ function partOrbes(a){const codes=a&&typeof talentsCodes==='function'?talentsCod
  out.append(dicePips({[d.couleur]:d.n},etatDesOrbes(codes)||''));
  const bonus=typeof bonusOrbes==='function'?bonusOrbes(a):0;if(bonus){const b=document.createElement('b');b.className='bonus';b.textContent='+ '+bonus;out.append(b)}
  return out}
-function montreDesCombattant(dice,bonus,toujours,logos,apres){const z=$('des-combattant');if(!z)return;
+function montreDesCombattant(dice,bonus,toujours,logos,apres,etat){const z=$('des-combattant');if(!z)return;
  z.replaceChildren();z.hidden=!dice&&!apres;z.classList.toggle('avec-orbes',!!apres);if(!dice){if(apres)z.append(apres);return}
  // Devant les dés, les armes qui les lancent — ou le logo du talent qui frappe.
  const armes=document.createElement('span');armes.className='des-armes';
  (logos||[]).forEach(l=>{const im=logoAttaque(l,'des-arme');if(im)armes.append(im)});
- if(armes.childElementCount)z.append(armes);z.append(desEtBonus(dice,bonus,toujours,false));if(apres)z.append(apres)}
+ if(armes.childElementCount)z.append(armes);z.append(desEtBonus(dice,bonus,toujours,false,etat));if(apres)z.append(apres)}
 /* Après un rendu de la barre, le bouton sous le pointeur rouvre sa bulle : un clic redessine les
    ronds, et la bulle ne doit ni s'éclipser ni sauter. */
 const pointeur={x:-1,y:-1};document.addEventListener('pointermove',e=>{pointeur.x=e.clientX;pointeur.y=e.clientY},{passive:true});
@@ -374,8 +374,10 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Un adversaire qu'on n'a pas analysé garde ses dés pour lui, chez les joueurs.
  const voit=!!a&&(view==='mj'||a.hero||!!a.revealed);
  const revient=()=>montreDesCombattant(voit&&actuelle?actuelle.dice:null,bonusDe(actuelle),!!actuelle&&actuelle.useOwnDamage!==false,actuelle?actuelle.logos:null,voit?partOrbes(a):null);
- const survol=(b,dice,bonus,toujours,logos)=>{if(!voit||!dice)return;
-  b.addEventListener('pointerenter',()=>montreDesCombattant(dice,bonus,toujours,logos));b.addEventListener('pointerleave',revient)};
+ const survol=(b,dice,bonus,toujours,logos,etat)=>{if(!voit||!dice)return;
+  b.addEventListener('pointerenter',()=>montreDesCombattant(dice,bonus,toujours,logos,null,etat));b.addEventListener('pointerleave',revient)};
+ // Les dés d'un orbe portent l'état qu'il inflige.
+ const etatOrbes=a&&typeof etatDesOrbes==='function'?etatDesOrbes(talentsCodes(a)):'',orbeux=t=>['orbes','deluge'].includes(t.code.cle);
  // Même seule, une attaque se montre : on lit ce qui part avant de frapper.
  // Les objets ne s'y montrent plus : on les emploie d'un clic dans l'inventaire de la fiche.
  boite.replaceChildren();boite.hidden=!liste.length&&!talents.length;revient();
@@ -419,9 +421,10 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   /* Sa bulle : celle du talent, son texte tel que le MJ l'a écrit ; un talent qui frappe y montre
      ses dés et son bonus, sous son nom, comme une attaque. */
   surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),
-   des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false):null}));
-  // Un talent qui frappe montre aussi ses dés au-dessus de la piste, au survol.
-  survol(b,t.des,t.bonus||0,false,t.logo?[t.logo]:null);
+   des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false,orbeux(t)?etatOrbes:''):null}));
+  /* Un talent qui frappe montre aussi ses dés au-dessus de la piste, au survol. Les Orbes, eux,
+     y sont déjà, à côté de l'arme, qui reste. */
+  if(t.code.cle!=='orbes')survol(b,t.des,t.bonus||0,false,t.logo?[t.logo]:null,orbeux(t)?etatOrbes:'');
   b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;if(t.code.cle==='orbes')boite.prepend(b);else boite.append(b)});
  if(avaitBulle)requestAnimationFrame(rouvreBulleSous)}
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);

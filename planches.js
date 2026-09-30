@@ -311,11 +311,23 @@ function dessineGrilleLogos(){const corps=$('grille-logos-corps'),s=grilleSelect
   im.dataset.logo=String(v).includes('{logo}')&&typeof remplaceElement==='function'?remplaceElement(v,ELEMENTS[0]):v;vueGrille.observe(im);
   const n=document.createElement('span');n.textContent=o.textContent;b.append(im,n);
   b.onclick=()=>{s.value=v;s.dispatchEvent(new Event('change',{bubbles:true}));grilleDialog.close()};montres++;return b};
- const groupe=(titre,options)=>{const t=options.map(tuile).filter(Boolean);if(!t.length)return;
-  if(titre){const h=document.createElement('h3');h.className='grille-logos-titre';h.textContent=titre;corps.append(h)}
-  const g=document.createElement('div');g.className='grille-logos-liste';g.append(...t);corps.append(g)};
- groupe('',[...s.children].filter(x=>x.tagName==='OPTION'));
- [...s.querySelectorAll('optgroup')].forEach(g=>groupe(g.label,[...g.children]));
+ /* Replié, un groupe se déplie d'un clic sur son titre ; une recherche ouvre ceux qui répondent. */
+ const groupe=(titre,options,replie)=>{const t=options.map(tuile).filter(Boolean);if(!t.length)return;
+  const g=document.createElement('div');g.className='grille-logos-liste';g.append(...t);
+  if(!titre){corps.append(g);return}
+  const d=document.createElement('details');d.className='grille-logos-groupe';d.open=!replie||!!q;
+  const h=document.createElement('summary');h.className='grille-logos-titre';h.textContent=titre;d.append(h,g);corps.append(d)};
+ const options=[...s.children].filter(x=>x.tagName==='OPTION'),groupes=[...s.querySelectorAll('optgroup')];
+ /* Le logo d'un talent : les planches de talents d'abord, une par une et dépliées ; tout le
+    reste suit, replié. */
+ if(s.closest('#talent-form')){const planche=o=>{const m=/^(planches\/talents_(\d+)\.(?:png|webp))#(\d+)$/i.exec(o.value);return m?{f:m[1],n:+m[2],i:+m[3]}:null};
+  const vues=new Set(),parPlanche=new Map();
+  groupes.forEach(g=>[...g.children].forEach(o=>{const p=planche(o);if(!p||vues.has(o.value))return;vues.add(o.value);
+   if(!parPlanche.has(p.f))parPlanche.set(p.f,{n:p.n,l:[]});parPlanche.get(p.f).l.push([p.i,o])}));
+  groupe('',options);
+  [...parPlanche.entries()].sort((x,y)=>x[1].n-y[1].n).forEach(([f,p])=>groupe(nomPlanche(f),p.l.sort((x,y)=>x[0]-y[0]).map(x=>x[1]),false));
+  groupes.forEach(g=>groupe(g.label,[...g.children].filter(o=>!vues.has(o.value)),true))}
+ else{groupe('',options);groupes.forEach(g=>groupe(g.label,[...g.children]))}
  if(!montres){const v=document.createElement('p');v.className='muted';v.textContent='Aucun logo de ce nom.';corps.append(v)}}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.grille-logos');if(!b)return;
  e.preventDefault();const s=b.parentNode.querySelector('select');if(s)ouvreGrilleLogos(s)});

@@ -1766,3 +1766,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .arbre-plan>.arbre-noeud.petit .arbre-outils .ico{padding:1px 5px;font-size:11px}
 /* Les dés du Mystique, arme et orbes, tiennent à pleine taille sur une ligne : la colonne des Dégâts s'élargit d'autant, le bloc Actions cède la place. */
 @media(min-width:701px){.actions-rangee{grid-template-columns:minmax(0,2fr) minmax(max-content,1fr)}}
+/* Les dés, les états et le bonus de dégâts dans un même cartouche, au-dessus de la piste. */
+#des-combattant{padding:5px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.grille-logos-groupe>summary{cursor:pointer;list-style-position:inside}
+.grille-logos-groupe>summary:hover{color:var(--ink)}

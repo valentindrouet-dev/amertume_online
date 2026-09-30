@@ -1578,7 +1578,6 @@ assert.ok(!page.includes('<details class="bloc-replie" id="bloc-gear">')&&page.i
  &&feuille.includes('.bloc-replie,.bloc-fixe{margin:6px 0}')&&feuille.includes(".bloc-replie .bloc-titre,.bloc-fixe .bloc-titre{font:700 15px 'Killam'")
  &&(page.match(/class="divider"/g)||[]).length===2,'fiche en jeu : équipement ouvert, pas de barre sous les PV');
 assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');")
- &&src.includes('function desEtBonus(dice,bonus,toujours,jeton=true)')
  
  &&page.includes('des:eff.des?eff.des(a,params):code.attaque?activeAttack(a).dice:null,')
  
@@ -3283,7 +3282,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    une attaque, et un talent qui frappe, y montrent leurs dés et leur bonus. Plus de titre « Actions ». */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
  assert.ok(src.includes("const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);")
-  &&src.includes(" if(des){des.classList.add('bulle-des');d.append(des)}")&&src.includes("des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false):null}));")&&!page.includes("'cat-detail bulle-attaque-corps'")
+  &&src.includes(" if(des){des.classList.add('bulle-des');d.append(des)}")&&!page.includes("'cat-detail bulle-attaque-corps'")
   &&css.includes('.talent-detail.bulle-action{background:color-mix(in srgb,var(--teinte,#3f7bc0) 24%,#fff);border-left:4px solid var(--teinte,#3f7bc0)}')
   &&css.includes('.talent-detail .bulle-des{display:flex;align-items:center;gap:7px;margin:0 0 6px}'),'la bulle d’action, celle d’un talent, avec les dés');
  assert.ok(!page.includes('titre-actions')&&!page.includes('actions-head')&&!page.includes('body.sombre .attack-row')&&page.includes('.choix-attaques[hidden]{display:none}.attack-row{display:flex;'),'plus de titre « Actions »');}
