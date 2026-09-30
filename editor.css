@@ -1724,7 +1724,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .arbre-noeud.petit.bonus .arbre-rond{border-style:solid;border-width:3px;background:var(--panel)}
 .arbre-rond .logo-bonus{width:70%;height:70%;object-fit:contain;display:block}
 .arbre-rond .bonus-lettres{font:800 11px/1 system-ui;color:var(--teinte)}
-.arbre-rond .bonus-valeur{position:absolute;right:-7px;bottom:-5px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;box-sizing:border-box;background:var(--teinte);color:#fff;font:800 9px/15px system-ui;text-align:center;border:1.5px solid var(--panel)}
+.arbre-rond .bonus-valeur{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:15px;height:15px;padding:0 3px;border-radius:8px;box-sizing:border-box;background:var(--teinte);color:#fff;font:800 9px/15px system-ui;text-align:center;border:1.5px solid var(--panel)}
 .arbre-noeud.bonus-comp{--teinte:#5a7a6c}
 /* Les bonus génériques, dans le choix d'un chemin : une rangée de petits ronds. */
 .bonus-generiques{display:flex;flex-wrap:wrap;gap:12px 10px;margin:4px 0 12px}
@@ -1835,7 +1835,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .hero-card .talent-ameliorations .bonus-rond.bonus-pv{--teinte:rgb(47,122,91)}.hero-card .talent-ameliorations .bonus-rond.bonus-dmg{--teinte:rgb(180,72,58)}
 .hero-card .talent-ameliorations .bonus-rond.bonus-orbe{--teinte:#8a63c9}.hero-card .talent-ameliorations .bonus-rond.bonus-comp{--teinte:#5a7a6c}
 .hero-card .talent-ameliorations .bonus-rond svg,.hero-card .talent-ameliorations .bonus-rond img,.hero-card .talent-ameliorations .bonus-rond .bonus-lettres{width:62%;height:62%;font:800 9px/1 system-ui}
-.hero-card .talent-ameliorations .bonus-rond .bonus-valeur{position:absolute;right:-5px;bottom:-4px;min-width:13px;height:13px;padding:0 2px;border-radius:7px;box-sizing:border-box;background:var(--teinte);color:#fff;font:800 8px/13px system-ui;text-align:center}
+.hero-card .talent-ameliorations .bonus-rond .bonus-valeur{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:13px;height:13px;padding:0 2px;border-radius:7px;box-sizing:border-box;background:var(--teinte);color:#fff;font:800 8px/13px system-ui;text-align:center}
 /* Onglet Talents : six talents au plus par ligne dans chaque rangée de type ; les améliorations
    dessous, en petits ronds, douze par ligne. */
 .talent-rangee{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));justify-items:center;align-items:start;gap:10px 6px}
