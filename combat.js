@@ -844,6 +844,13 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   params:[{cle:'mode',nom:'Un critique adverse contre le porteur',type:'choix',defaut:'echec',options:[['echec','devient un échec'],['riposte','lui vaut une attaque gratuite en retour']]}],
   phrase(p){return (p&&p.mode)==='riposte'?'Le porteur effectue <b>une attaque gratuite</b> contre l’adversaire qui réalise <b>un critique</b> contre lui.':'Les <b>attaques critiques</b> adverses contre le porteur deviennent des <b>échecs</b>.'}},
  /* Lamevent élémentaire : une amélioration de Lamevent. Ses dégâts infligent aussi l'état réglé. */
+ /* Corps élémentaire : une amélioration. Qui attaque le porteur au contact en garde l'état —
+    s'il l'a blessé, ou à chaque attaque, même sans le toucher, selon le réglage « Quand ». */
+ corpselem:{cle:'corpselem',nom:'Corps élémentaire',type:'ame',
+  aide:'Les adversaires qui attaquent le porteur au contact subissent un état : s’ils lui infligent des dégâts, ou à chaque attaque, même sans le toucher.',
+  params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])},
+   {cle:'quand',nom:'Quand',type:'choix',defaut:'degats',options:[['degats','S’il vous inflige des dégâts'],['toujours','À chaque attaque, même sans toucher']]}],
+  phrase(p){return 'Les adversaires qui attaquent le porteur au contact subissent <b>'+((p&&p.etat)||'Feu')+'</b>'+(p&&p.quand==='toujours'?', <b>même sans le toucher</b>.':' s’ils lui infligent des <b>dégâts</b>.')}},
  lameventelem:{cle:'lameventelem',nom:'Lamevent élémentaire',type:'ame',
   aide:'Amélioration de Lamevent : ses dégâts infligent aussi l’état réglé.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
