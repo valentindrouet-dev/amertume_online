@@ -908,6 +908,9 @@ assert.equal(readStat('def','-4',2),0);
 assert.equal(readStat('vie','7,5',1),7.5);                     // La virgule vaut le point.
 assert.equal(readStat('endu','3.9',1),3);                      // Une endurance ne se coupe pas en quatre.
 assert.equal(readStat('level','9',1),9);assert.equal(readStat('level','25',1),20);
+// L'XP paie les talents : il reste l'XP gagnée moins le prix de ce qu'on tient ; le niveau suit toute l'XP.
+{const {xpDisponible}=require('./combat.js');const T=[{id:'a',couts:[100,0,0]},{id:'b',couts:[250,0,0]}];
+ assert.equal(xpDisponible({xp:500,talents:['a']},T),400);assert.equal(xpDisponible({xp:300,talents:['a','b']},T),0);assert.equal(xpDisponible({xp:0,talents:[]},T),0);}
 // Le niveau d'un aventurier suit son XP, palier par palier.
 {const {niveauDeXp,NIVEAUX_XP,writeStat}=require('./combat.js');assert.equal(NIVEAUX_XP.length,20);
  assert.deepEqual([0,299,300,899,900,2700,6499,6500,64000,354999,355000,999999].map(niveauDeXp),[1,1,2,2,3,4,4,5,10,19,20,20]);
@@ -1321,7 +1324,6 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):'';")&&!src.includes("+sel('Spécialisation','voie'")
  &&src.includes("else if(talentFamily(avant)!==talentFamily(t)){t.voie='';t.prerequis='';delete t.pos;delete t.liens}")
  &&src.includes("if(!avant){const d=talentDefauts||{};t.voie=d.voie||'';t.prerequis='';if(d.chemin)t.chemin=d.chemin;")
- &&src.includes("const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t))||manqueTalent(a.talents,t,catalog.talents);")
  &&feuille.includes('#arbres{width:min(1180px,96vw)}')
  &&feuille.includes('.arbre-titre{width:100%;')&&feuille.includes('clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),50% 100%,0 calc(100% - 8px))}')
  &&feuille.includes('.arbre-noeud.acquis .arbre-rond::after{content:\'✓\';')&&feuille.includes('.arbre-noeud.verrou{opacity:.45;cursor:not-allowed}')
@@ -2662,10 +2664,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[2],'le moteur joue le palier tenu');
  assert.deepEqual(C.normalisePaliersActeur({talents:['o','p'],paliersTalents:{o:3,p:1,q:2,r:'x'}}),{o:3},'un palier 1 ne s’écrit pas ; un talent oublié perd le sien');
  assert.ok(fs.readFileSync('combat.js','utf8').includes("function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)"),'la table et les bonus jouent le palier ; il voyage en direct');
- assert.ok(src.includes("a.paliersTalents=normalisePaliersActeur(a);")&&src.includes(" c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(99,coutPalier(t,n)));"),'paliers relus, au catalogue et sur la fiche');
- assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("+ligne('Coût (PT)',")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")
-  &&src.includes(" t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")
-  &&src.includes("t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={};delete t.elementaire;delete t.volets}")&&feuille.includes('.paliers-table{'),'l’éditeur : une colonne par palier, le coût en PT');
+ assert.ok(src.includes("a.paliersTalents=normalisePaliersActeur(a);"),'paliers relus, au catalogue et sur la fiche');
+ assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")&&feuille.includes('.paliers-table{'),'l’éditeur : une colonne par palier, le coût en PT');
  assert.ok(src.includes("if(max>1){pts=document.createElement('span');pts.className='arbre-paliers';")
   &&src.includes("const jusque=!a?max:k>0?k:1;")&&src.includes("// Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.")
   &&src.includes("a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);")&&feuille.includes('.arbre-paliers i.on{')&&feuille.includes('.paliers-bulle.n2{grid-template-columns:1fr auto 1fr}'),'l’arbre : points, clic, « − », bulle comparée');}

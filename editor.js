@@ -242,7 +242,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  /* Les paliers d'un talent : un coût en PT par palier, 0 tant que le MJ n'en décide pas ; et pour
     les paliers 2 et 3, leur texte et leurs réglages quand ils diffèrent — relus au travers de la
     mécanique. Un bonus n'a qu'un palier. */
- c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(99,coutPalier(t,n)));
+ c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(999999,coutPalier(t,n)));
   const pal={};if(t.effet!=='bonus')[2,3].forEach(n=>{const q=t.paliers&&t.paliers[n];if(!q||typeof q!=='object')return;
    const e=String(q.effects||'').slice(0,600),r=t.effet&&q.params&&typeof q.params==='object'&&Object.keys(q.params).length?paramsTalent({effet:t.effet,params:q.params}):null;
    if(e.trim()||r)pal[n]={effects:e,...(r?{params:r}:{})}});
@@ -2301,7 +2301,7 @@ function lireReglagesTalent(prefixe='p_'){const f=$('talent-form').elements,out=
 // Ce que le formulaire tient des paliers, relu avant de le redessiner : rien de tapé ne se perd.
 function lisBrouillonTalent(){const f=$('talent-form').elements;if(!f.c_1)return;
  talentDraft.effects=f.effects?f.effects.value:talentDraft.effects;
- talentDraft.couts=[1,2,3].map(n=>num(f['c_'+n].value,0,99));
+ talentDraft.couts=[1,2,3].map(n=>num(f['c_'+n].value,0,999999));
  talentDraft.params=lireReglagesTalent('p_');
  [2,3].forEach(n=>{const q=lireReglagesTalent('p'+n+'_');talentDraft.paliers[n]={effects:f['pe_'+n]?f['pe_'+n].value:'',params:Object.keys(q).length?{...talentDraft.params,...q}:{}}})}
 /* Les réglages communs d'un talent (l'état, le chiffre d'un volet), tels qu'écrits au palier 1. */
@@ -2338,7 +2338,7 @@ function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)retu
  const ligne=(tete,cellules,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+tete+'</th>'+cellules+'</tr>';
  // Paliers en sommeil : la seule colonne du palier 1 se montre ; les autres restent dans le formulaire, rien ne s'y perd.
  let html='<table class="paliers-table'+(PALIERS.actifs?'':' un-palier')+'"><thead><tr><td></td>'+[1,2,3].map(n=>'<th scope="col" class="p'+n+'">Palier '+n+'</th>').join('')+'</tr></thead><tbody>'
-  +ligne('Coût (PT)',[1,2,3].map(n=>'<td><input type="number" name="c_'+n+'" min="0" max="99" step="1" value="'+(d.couts[n-1]||0)+'" aria-label="Coût en PT — palier '+n+'"></td>').join(''))
+  +ligne('Coût (XP)',[1,2,3].map(n=>'<td><input type="number" name="c_'+n+'" min="0" max="999999" step="1" value="'+(d.couts[n-1]||0)+'" aria-label="Coût en XP — palier '+n+'"></td>').join(''))
   +ligne('Texte de l’effet',[1,2,3].map(n=>'<td>'+texte(n)+'</td>').join(''));
  if(code){const params=code.params||[],volets=Array.isArray(code.volets)?code.volets:[],ouverts=voletsDe({effet:code.cle,volets:d.volets});
   html+='<tr class="paliers-sep"><th colspan="4" scope="rowgroup">Effets câblés : '+esc(code.nom)+'</th></tr>';
@@ -2432,7 +2432,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +sel('Caractéristique','b_carac',pb.carac,optBonus('carac'))
   +field('Valeur','b_valeur',pb.valeur,'number','min="1" max="20"')
   +sel('Compétence','b_comp',pb.comp,optBonus('comp'))
-  +field('Coût (PT)','b_cout',coutPalier(t,1),'number','min="0" max="99" step="1"')+'</div>'
+  +field('Coût (XP)','b_cout',coutPalier(t,1),'number','min="0" max="999999" step="1"')+'</div>'
   +'<p class="muted" id="bonus-apercu"></p></section>';
  /* Ce qui n'est que talent — nom, type, logo, rangée, effet, mécanique — se retire en mode
     bonus, et ce qui n'est que bonus se retire en mode talent : retiré, et non caché, pour
@@ -2512,7 +2512,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p_')}):{};
  /* Les paliers : leur coût ; pour le 2 et le 3, leur texte s'il en a un, leurs réglages s'ils
     diffèrent de ceux d'en dessous — sinon ils en héritent, et suivront s'ils changent. */
- t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);
+ t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,999999):0);
  t.paliers={};{let avant=t.params;
   [2,3].forEach(n=>{const e=f['pe_'+n]?f['pe_'+n].value.trim().slice(0,600):'';
    // Les réglages communs ne s'écrivent qu'au palier 1 : les paliers suivants les reprennent.
@@ -2525,7 +2525,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
     seul, la nature est passive, rien à la table, pas de logo. */
  if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});
   t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.logo='';t.effects='';
-  t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={};delete t.elementaire;delete t.volets}
+  t.couts=[num(f.b_cout.value,0,999999),0,0];t.paliers={};delete t.elementaire;delete t.volets}
  // Seul un bonus se pose sur un chemin : redevenu talent, il le quitte.
  if(!(t.effet==='bonus'||t.type==='ame'))delete t.chemin;
  if(talentIndex===null)catalog.talents.push(t);else catalog.talents[talentIndex]=t;
@@ -2766,7 +2766,7 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
    if(m)return;
    if(porte(t)){const {liste,tombes}=talentsSans(a.talents,t.id,catalog.talents);a.talents=liste;
     $('picker-note').textContent=tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'Clique un talent pour l’apprendre ou l’oublier.'}
-   else{a.talents=[...a.talents,t.id];$('picker-note').textContent='Clique un talent pour l’apprendre ou l’oublier.'}
+   else{if(coutPalier(t,1)>xpDisponible(a,catalog.talents))return;a.talents=[...a.talents,t.id];$('picker-note').textContent='Clique un talent pour l’apprendre ou l’oublier.'}
    renderPicker();
    if(pickerApres)pickerApres();else{renderHeroes();render();scheduleSave()}};
   /* Un talent du sélecteur : son rond, la coche verte s'il est appris, le cadenas s'il attend
@@ -3089,10 +3089,10 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
    const params={carac,valeur:1,...(carac==='comp'?{comp:String(k)}:{})},b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud petit bonus bonus-'+carac;
    const r=document.createElement('span');r.className='arbre-rond';b.append(r);poseLogoBonus(r,{effet:'bonus',params});
    b.setAttribute('aria-label','+1 '+nom);b.title='+1 '+nom;
-   b.onclick=()=>{const t={id:crypto.randomUUID(),name:'+1 '+nom,famille:GENERIQUES,voie:'',type:'pass',level:1,effets:'',effects:'',effet:'bonus',params,couts:[1,0,0]};
+   b.onclick=()=>{const t={id:crypto.randomUUID(),name:'+1 '+nom,famille:GENERIQUES,voie:'',type:'pass',level:1,effets:'',effects:'',effet:'bonus',params,couts:[0,0,0]};
     catalog.talents.push(t);choixArbreDialog.close();if(placerTalent(t.id,dest))arbreChange()};
    rang.append(b)});
-  boite.append(h,rang,neuf('✚ Autre bonus',{...dest,type:'pass',effet:'bonus',params:{carac:'orbe',valeur:1},couts:[1,0,0]}),neuf('✚ Nouvelle amélioration',{...dest,type:'ame'}))}
+  boite.append(h,rang,neuf('✚ Autre bonus',{...dest,type:'pass',effet:'bonus',params:{carac:'orbe',valeur:1},couts:[0,0,0]}),neuf('✚ Nouvelle amélioration',{...dest,type:'ame'}))}
  else boite.append(neuf('✚ Créer un nouveau talent',{...dest}));
  const rang=t=>talentFamily(t)===dest.famille?0:talentFamily(t)===GENERIQUES?1:2;
  // Un bonus ne passe pas d'un arbre à l'autre : seul celui retiré de cet arbre-ci peut y revenir.
@@ -3164,7 +3164,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null}={}){const bon
  // Un talent qui frappe, dans la barre d'action : ses dés et son bonus de dégâts sous son nom.
  if(des){des.classList.add('bulle-des');d.append(des)}
  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
- if(bonus){if(t.effects)ligne(t.effects);if(coutPalier(t,1))ligne('Coût : '+coutPalier(t,1)+' PT','muted')}
+ if(bonus){if(t.effects)ligne(t.effects);if(coutPalier(t,1))ligne('Coût : '+coutPalier(t,1)+' XP','muted')}
  else{/* Les paliers, un par ligne, le chiffre en tête de sa ligne : « I Vous effectuez… ».
      Un aventurier ne voit que ceux qu'il a débloqués ; s'il n'a pas le talent, le premier, celui
      qu'il apprendrait. Sans aventurier — l'onglet Talents, le plan d'une classe — rien à
@@ -3182,7 +3182,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null}={}){const bon
    // Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.
    const tete=[];
    if(numero){const r=document.createElement('span');r.className='palier-num';r.textContent=CHIFFRES_PALIER[n]||String(n);tete.push(r)}
-   if(c){const pt=document.createElement('span');pt.className='palier-cout';pt.textContent=c+' PT';tete.push(pt)}
+   if(c){const pt=document.createElement('span');pt.className='palier-cout';pt.textContent=c+' XP';tete.push(pt)}
    e.prepend(...tete.flatMap(x=>[x,' ']));g.append(e)});
   d.append(g);
   /* Les améliorations que l'aventurier a activées sur les chemins du talent, chacune à la ligne ;
@@ -3306,15 +3306,18 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  tete.append(nomClasse);
  // L'élément du Mystique, au-dessus de l'arbre : le MJ le choisit, le joueur le lit.
  if(elementaire)tete.append(choixElement(a,classe));
- // Ce que l'arbre a coûté : les paliers acquis, au prix de chacun — dès qu'un prix est fixé.
- if(a){const pt=ptDepenses(a,catalog.talents);if(pt){const s=document.createElement('p');s.className='arbres-pt';s.textContent=pt+' PT dépensé'+(pt>1?'s':'');tete.append(s)}}
+ // L'XP de l'aventurier : ce que l'arbre a coûté, et ce qui reste à dépenser.
+ if(a){const pt=ptDepenses(a,catalog.talents),dispo=xpDisponible(a,catalog.talents),s=document.createElement('p');s.className='arbres-pt';
+  s.textContent=(pt?pt+' XP dépensé'+(pt>1?'s':'')+' · ':'')+dispo+' XP disponible'+(dispo>1?'s':'');tete.append(s)}
  if(!classe){const v=document.createElement('p');v.className='muted';v.textContent='Donne une classe à '+a.name+' pour lui ouvrir un arbre.';tete.append(v)}
  corps.append(tete);
  /* Un nœud de l'arbre, et ce qu'il attend : une ligne depuis un talent tenu, sauf s'il n'en a aucune
     qui mène à lui ; et partout, ce que son effet réclame. Le tronc libre n'enchaîne rien. Sans
     porteur, le clic ouvre le talent : c'est le plan qu'on corrige. */
+ // Un talent, un bonus ou une amélioration que l'XP restante ne paie pas se grise, comme un prérequis manquant.
+ const trop=t=>a&&coutPalier(t,1)>xpDisponible(a,catalog.talents)?'XP insuffisante':'';
  const noeudArbre=(t,col,libre)=>{const acquis=porte(t);
-  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t))||manqueTalent(a.talents,t,catalog.talents);
+  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t))||manqueTalent(a.talents,t,catalog.talents)||trop(t);
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);
   if(mj&&lienDepuis===t.id)el.classList.add('relie-source');
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
@@ -3332,7 +3335,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     ligne. Il s'ouvre une fois son talent pris — ou le petit rond d'avant, s'il en suit un — ; un clic
     l'active, à son prix ; « − » ou le clic droit le rend. Sur le plan, le MJ le corrige ou l'ôte. */
  const noeudPetit=(t,depart,col,libre)=>{const acquis=porte(t);
-  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||verrouArbre(a.talents,col.liste,t)||manqueTalent(a.talents,t,catalog.talents);
+  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||verrouArbre(a.talents,col.liste,t)||manqueTalent(a.talents,t,catalog.talents)||trop(t);
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);el.classList.add('petit');
   if(estBonus(t))poseLogoBonus(el.querySelector('.arbre-rond'),t);
   const outils=el.querySelector('.arbre-outils');
