@@ -907,7 +907,12 @@ assert.equal(readStat('def','900',2),6);                       // Au-delà de la
 assert.equal(readStat('def','-4',2),0);
 assert.equal(readStat('vie','7,5',1),7.5);                     // La virgule vaut le point.
 assert.equal(readStat('endu','3.9',1),3);                      // Une endurance ne se coupe pas en quatre.
-assert.equal(readStat('level','9',1),7);
+assert.equal(readStat('level','9',1),9);assert.equal(readStat('level','25',1),20);
+// Le niveau d'un aventurier suit son XP, palier par palier.
+{const {niveauDeXp,NIVEAUX_XP,writeStat}=require('./combat.js');assert.equal(NIVEAUX_XP.length,20);
+ assert.deepEqual([0,299,300,899,900,2700,6499,6500,64000,354999,355000,999999].map(niveauDeXp),[1,1,2,2,3,4,4,5,10,19,20,20]);
+ const h={hero:true,xp:0,level:1};writeStat(h,'xp','14000');assert.equal(h.level,6);
+ const m={hero:false,xp:0,level:3};writeStat(m,'xp','900');assert.equal(m.level,3,'un adversaire garde le niveau qu’on lui donne');}
 assert.equal(readStat('inconnue','5',2),2);                    // Une clé qui n'existe pas ne s'invente pas.
 const fiche={hp:20,max:24,vie:8,vieMax:8,dmg:2,states:[]};
 assert.equal(writeStat(fiche,'max','10'),10);assert.equal(fiche.hp,10);   // Le plafond baissé ramène les PV.

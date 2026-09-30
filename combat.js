@@ -1440,7 +1440,7 @@ function applyHeal(a,montant){const gagne=Math.min(Math.max(0,a.max-a.hp),Math.m
    la valeur d'avant, ou s'arrête à la borne. La virgule vaut le point : on tape
    comme on écrit. */
 const STAT_LIMITS={hp:[0,99999],max:[1,99999],def:[0,6],dmg:[0,999],xp:[0,999999],
- level:[1,7],endu:[1,999],pvBonus:[-9999,9999],skill:[0,30],
+ level:[1,20],endu:[1,999],pvBonus:[-9999,9999],skill:[0,30],
  vie:[0,999,true],vieMax:[1,999,true],
  pv:[1,99999],damage:[0,999]};   // pv et damage : les noms du bestiaire.
 function readStat(cle,texte,avant){const bornes=STAT_LIMITS[cle];
@@ -1453,8 +1453,12 @@ function readStat(cle,texte,avant){const bornes=STAT_LIMITS[cle];
 /* Écrire une caractéristique en gardant la fiche cohérente : des PV ne dépassent
    jamais leur plafond, baisser le plafond y ramène les PV, et toucher le fond
    met dans le coma comme n'importe quel coup. */
+/* L'XP à atteindre pour chaque niveau d'aventurier, du 1 au 20 : le niveau suit l'XP, de lui-même. */
+const NIVEAUX_XP=[0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000];
+function niveauDeXp(xp){const n=Math.max(0,Math.trunc(Number(xp))||0);let niv=1;NIVEAUX_XP.forEach((s,i)=>{if(n>=s)niv=i+1});return niv}
 function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
  const v=readStat(cle,texte,a[cle]);a[cle]=v;
+ if(cle==='xp'&&a.hero)a.level=niveauDeXp(a.xp);
  // Un modèle du bestiaire n'a ni PV du moment ni états : sa cohérence s'arrête à ses bornes.
  const combattant=Number.isFinite(a.hp)&&Number.isFinite(a.max);
  if(combattant){if(cle==='max')a.hp=Math.min(a.hp,a.max);
@@ -1781,7 +1785,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
 const api={DEF_MAX,defPlafonnee,passeDef,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
- COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
+ NIVEAUX_XP,niveauDeXp,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,ptDepenses,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
