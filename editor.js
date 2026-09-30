@@ -1637,7 +1637,19 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
   const rang=document.createElement('div');rang.className='talent-ameliorations';
   ams.forEach(x=>{const xv=talentPourElement(x,elementDe(a)),r=talentRond(xv);r.classList.add('cliquable');r.tabIndex=0;r.setAttribute('aria-label',nomEnClair(xv.name));
    surveille(r,()=>{const d=bulleTalent(x,{a,vu:y=>talentPourElement(y,elementDe(a)),cout:false});ouvrirBulle(r,d,'bulle-talent')});rang.append(r)});
-  for(let n=ams.length;n<Math.max(12,Math.ceil(ams.length/12)*12);n++)rang.append(vide('amelioration-case-vide'));
+  /* Les bonus de caractéristique ou de compétence, en petits ronds aussi : les bonus identiques
+     s'additionnent en un seul rond, « +2 Endurance » plutôt que deux « +1 ». */
+  const groupes=new Map();
+  (a.talents||[]).map(talent).filter(x=>x&&estBonus(x)).forEach(x=>{const p=paramsTalent(x)||{},carac=p.carac||'pv',k=carac+(carac==='comp'?':'+p.comp:'');
+   const g=groupes.get(k)||{p:{...p,carac,valeur:0},t:x};g.p.valeur+=Math.max(1,Math.trunc(Number(p.valeur))||1);groupes.set(k,g)});
+  groupes.forEach(g=>{const r=document.createElement('span');r.className='cat-pill gear-carre talent-carre bonus-rond bonus-'+g.p.carac;r.tabIndex=0;
+   const l=(g.t.logo&&logoTalent(g.t))||logoBonus(g.p);if(l)r.append(l);
+   const v=document.createElement('b');v.className='bonus-valeur';v.textContent=String(g.p.valeur);r.append(v);
+   const nom=libelleBonus(g.p);r.setAttribute('aria-label',nom);
+   surveille(r,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+g.p.carac;
+    const tete=document.createElement('p');tete.className='talent-bulle-nom';const b=document.createElement('b');b.textContent=nom;tete.append(b);d.append(tete);ouvrirBulle(r,d,'bulle-talent')});
+   rang.append(r)});
+  for(let n=rang.childElementCount;n<Math.max(12,Math.ceil(rang.childElementCount/12)*12);n++)rang.append(vide('amelioration-case-vide'));
   out.append(rang)}
  bulleOrpheline();return out}
 // Les Trésors : trésors et objets rares, qui se gardent, se montrent et se vendent, sans s'utiliser.
