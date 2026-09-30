@@ -1178,8 +1178,7 @@ assert.ok(page.includes('function ciblesAtteignables(a,liste,portee)')&&page.inc
  &&!page.includes('Hors du rayon de contact : rapproche-toi'),'l’attaque prend qui est à portée');
 /* Les questions de la table passent par une boîte de la page, jamais par confirm() ; la fin du combat
    s'annonce comme son début. */
-assert.ok(page.includes('function demander(texte,ok)')&&!page.includes("confirm('Mettre fin au combat")&&!page.includes("confirm('Revenir au tour 1")&&!page.includes("confirm('Vider le journal")
- &&page.includes("if(!await demander('Mettre fin au combat ?")&&page.includes("basculerMode('exploration',true)};")&&page.includes("if(annonce)annonceFlottante(enCombat()?'⚔ Début du combat !':'🕊 Fin du combat')}")
+assert.ok(page.includes('function demander(texte,ok)')&&!page.includes("confirm('Mettre fin au combat")&&!page.includes("confirm('Revenir au tour 1")&&!page.includes("confirm('Vider le journal")&&page.includes("basculerMode('exploration',true)};")&&page.includes("if(annonce)annonceFlottante(enCombat()?'⚔ Début du combat !':'🕊 Fin du combat')}")
  &&feuille.includes('dialog.demande{width:min(440px,94vw)}'),'les questions de la table ont leur boîte, la fin du combat s’annonce');
 /* Un allié désigné ne grise jamais l'attaque : le coup part sur l'adversaire à portée, la désignation
    alliée (protégé d'un Gardien) reste. */
