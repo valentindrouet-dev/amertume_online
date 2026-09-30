@@ -3305,10 +3305,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);el.classList.add('petit');
   if(estBonus(t))poseLogoBonus(el.querySelector('.arbre-rond'),t);
   const outils=el.querySelector('.arbre-outils');
-  if(outils)outils.replaceChildren(ico('✎','Corriger '+t.name,()=>openTalent(catalog.talents.indexOf(t),renderArbres)),
-   ico('✕',estBonus(t)?'Ôter ce bonus du chemin':'Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue',()=>{
-    if(estBonus(t)){if(!confirm('Ôter le bonus « '+t.name+' » de ce chemin ?'))return;
-     const i=catalog.talents.indexOf(t);if(i>=0)catalog.talents.splice(i,1);actors.forEach(x=>{if(x.talents)x.talents=x.talents.filter(id=>id!==t.id)})}
+  if(outils)outils.replaceChildren(ico('✕',estBonus(t)?'Ôter ce bonus du chemin':'Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue',()=>{
+    if(estBonus(t)){const i=catalog.talents.indexOf(t);if(i>=0)catalog.talents.splice(i,1);actors.forEach(x=>{if(x.talents)x.talents=x.talents.filter(id=>id!==t.id)})}
     else retireDeLArbre(t);arbreChange()}));
   el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
    if(acquis)oublier(t,libre?null:col.liste);else if(!verrou)a.talents=[...a.talents,t.id];else return;
@@ -3376,7 +3374,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if(!c.liste.length)places.push({genre:'gros',x:0,y:0,de:null})}
   // Le plan tient juste ce qu'il montre, une demi-case de marge : le talent de départ est tout en haut.
   const pts=[...prises,...petits,...places];
-  const x0=pts.length?Math.min(...pts.map(q=>q.x)):0,x1=pts.length?Math.max(...pts.map(q=>q.x)):0,y0=pts.length?Math.min(...pts.map(q=>q.y)):0,y1=pts.length?Math.max(...pts.map(q=>q.y)):0;
+  let x0=pts.length?Math.min(...pts.map(q=>q.x)):0,x1=pts.length?Math.max(...pts.map(q=>q.x)):0;const y0=pts.length?Math.min(...pts.map(q=>q.y)):0,y1=pts.length?Math.max(...pts.map(q=>q.y)):0;
+  // Le talent de départ est le centre de l'arbre : le plan s'étend autant de chaque côté de lui.
+  const depart=c.liste.find(t=>racines.has(t.id));
+  if(depart){const rx=cases.get(depart.id).x,e=Math.max(rx-x0,x1-rx);x0=rx-e;x1=rx+e}
   const L=CASE_SPHERIER,plan=document.createElement('div');plan.className='arbre-plan';
   plan.style.width=((x1-x0+1)*L).toFixed(0)+'px';plan.style.height=((y1-y0+1)*L).toFixed(0)+'px';
   const pose=(el,x,y)=>{el.style.left=((x-x0+.5)*L).toFixed(1)+'px';el.style.top=((y-y0+.5)*L).toFixed(1)+'px'};

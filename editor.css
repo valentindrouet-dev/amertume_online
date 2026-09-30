@@ -1772,3 +1772,6 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .arbre-col>.arbre-titre{z-index:2}
 .arbre-col>.arbre-plan{margin-top:-38px}
 .arbre-chemins .entree.pris{stroke:var(--green)}
+/* Sur un petit rond, le ✕ se tient sous lui : la bulle, au-dessus, ne le couvre pas. */
+.arbre-plan>.arbre-noeud.petit .arbre-outils{top:calc(100% + 3px)}
+.arbre-plan>.arbre-noeud.petit .arbre-outils .ico{padding:1px 5px;font-size:11px}
