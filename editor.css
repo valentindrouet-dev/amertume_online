@@ -1896,5 +1896,5 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* Seule l'XP se teinte très légèrement de son icône. */
 .stat-row.en-icones .stat-tile.t-xp strong{color:color-mix(in srgb,#fff 80%,rgb(var(--tint,255,255,255)))}
 /* Fiche d'aventurier : les chiffres et les compétences dans leur cadre, comme les autres sections. */
-.hero-card .cadre-chiffres{padding:8px 6px;border-radius:12px;background:color-mix(in srgb,#5d7a99 9%,transparent);border:1px solid color-mix(in srgb,#5d7a99 32%,transparent)}
-.hero-card .comp-ronds.cadre-comps{padding:10px 10px 14px;border-radius:12px;background:color-mix(in srgb,#4f8a6b 9%,transparent);border:1px solid color-mix(in srgb,#4f8a6b 32%,transparent)}
+.hero-card .cadre-chiffres{padding:8px 6px;border-radius:12px;background:linear-gradient(135deg,color-mix(in srgb,#ec8a3f 21%,transparent),color-mix(in srgb,#d4467c 19%,transparent));border:1px solid color-mix(in srgb,#cf6a5a 50%,transparent)}
+.hero-card .comp-ronds.cadre-comps{padding:10px 10px 14px;border-radius:12px;background:linear-gradient(135deg,color-mix(in srgb,#3f9ee0 22%,transparent),color-mix(in srgb,#8a5fd6 22%,transparent));border:1px solid color-mix(in srgb,#6b78c6 50%,transparent)}
