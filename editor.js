@@ -1564,16 +1564,23 @@ let talentOuvert=null;
 /* Les talents d'une fiche, en ronds, dans l'ordre où ils sont appris : le logo dans le rond,
    le nom dessous, suivi du palier en chiffre romain. La description paraît en bulle au
    survol, au palier que tient l'aventurier. */
+/* Les talents d'une fiche : les gros ronds seuls. Un bonus se lit dans les chiffres, une amélioration
+   dans le talent qu'elle améliore. */
+function talentsDeFiche(a){return (a&&a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus'&&!lisChemin(t)&&t.type!=='ame')}
+/* Une amélioration cochée « remplace le logo » prête le sien au talent d'où part son chemin, partout
+   où le porteur le voit : sa fiche, ses boutons. La plus loin sur le chemin l'emporte. */
+function logoRemplace(a,t){if(!a||!t)return '';
+ const ams=(a.talents||[]).map(talent).filter(x=>x&&x.remplaceLogo===true&&x.logo&&lisChemin(x)&&lisChemin(x).de===t.id).sort((x,y)=>lisChemin(y).rang-lisChemin(x).rang);
+ return ams.length?talentPourElement(ams[0],elementDe(a)).logo||'':''}
 function talentPills(a){const out=document.createElement('div');out.className='talent-grille';
- // Un nœud de bonus n'est pas un talent : la fiche le porte dans ses chiffres, pas ici.
- const liste=(a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus');
+ const liste=talentsDeFiche(a);
  if(!liste.length){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
  /* Un talent appris dont le socle manque ne fait rien : il se taisait, et on le croyait à
     l'œuvre. Il porte désormais sa marque, et sa bulle dit ce qu'il attend. */
  const sansEffet=t=>typeof manqueTalent==='function'?manqueTalent(a.talents||[],t,catalog.talents):'';
  liste.forEach(t=>{const k=palierDe(a,t);
   // Chaque talent tel que le porte cet aventurier : à son élément, s'il en a un.
-  const tv=talentPourElement(t,elementDe(a)),carte=talentCarte(tv),pill=carte.firstChild;
+  const tv0=talentPourElement(t,elementDe(a)),sur=logoRemplace(a,t),tv=sur?{...tv0,logo:sur}:tv0,carte=talentCarte(tv),pill=carte.firstChild;
   pill.classList.add('cliquable');pill.tabIndex=0;pill.setAttribute('aria-label',nomEnClair(tv.name)+(k>1?', palier '+k:''));
   // La bulle de l'arbre : le nom, puis ses paliers en liste, I, II, III.
   const detail=bulleTalent(t,{a,vu:x=>talentPourElement(x,elementDe(a))});
@@ -2390,11 +2397,11 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   /* On choisit l'effet dans la liste de ce que le moteur sait faire ; puis, palier par palier,
      le texte qui se lit à la table, les valeurs qui agissent, et ce que coûte le palier. */
   +'<section class="talent-boite b-moteur t-seul"><h2 class="sous-titre">Mécanique du moteur</h2>'
-  +sel('Mécanique','effet',bonus?'':(t.effet||''),[['','— Aucun : talent descriptif —'],
-   ...Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>[c.cle,libelleTalent(c.cle)])])
+  +selMecanique(bonus?'':(t.effet||''))
   /* Élémentaire : pour le Mystique, l'état réglé suit l'élément choisi ; les accolades, elles,
      se remplissent dans le nom, les textes et le logo de tout talent. */
   +'<label class="field-check"><input type="checkbox" name="elementaire" '+(t.elementaire===true?'checked':'')+'>Élémentaire — l’état réglé suit l’élément du Mystique</label>'
+  +'<label class="field-check" id="remplace-logo"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceLogo" '+(t.remplaceLogo===true?'checked':'')+'>Remplace le logo du talent</label>'
   +'<p class="muted accolades-aide">Accolades, dans le nom, les textes et le logo : {élément} Feu · Gel · Foudre — {mot} feu · glace · foudre, {Mot} avec la capitale — {logo} feu · gel · foudre. « Brise{mot} » fait Brisefeu, Briseglace, Brisefoudre.</p>'
   +'<div id="talent-exige"></div></section>'
   +'<section class="talent-boite b-paliers t-seul"><h2 class="sous-titre">'+(PALIERS.actifs?'Paliers — coût, texte et effets câblés':'Coût, texte et effets câblés')+'</h2>'
@@ -2410,6 +2417,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
     bonus, et ce qui n'est que bonus se retire en mode talent : retiré, et non caché, pour
     qu'un champ requis absent ne bloque pas l'enregistrement. */
  const champs=$('talent-form').elements;
+ // « Remplace le logo du talent » ne vaut que pour une amélioration.
+ if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame'});
  ['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});
  const apercuBonus=()=>{const comp=champs.b_carac.value==='comp';const lc=champs.b_comp.closest('label');if(lc)lc.classList.toggle('talent-cache',!comp);
   $('bonus-apercu').textContent='Dans l’arbre : '+libelleBonus({carac:champs.b_carac.value,valeur:num(champs.b_valeur.value,1,20),comp:champs.b_comp.value})};
@@ -2473,6 +2482,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
  t.effet=TALENTS_CODES[f.effet.value]&&f.effet.value!=='bonus'?f.effet.value:'';
  if(f.elementaire&&f.elementaire.checked)t.elementaire=true;else delete t.elementaire;
+ if(t.type==='ame'&&f.remplaceLogo&&f.remplaceLogo.checked)t.remplaceLogo=true;else delete t.remplaceLogo;
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p_')}):{};
  /* Les paliers : leur coût ; pour le 2 et le 3, leur texte s'il en a un, leurs réglages s'ils
     diffèrent de ceux d'en dessous — sinon ils en héritent, et suivront s'ils changent. */
@@ -3471,6 +3481,14 @@ const selGrille=h=>h.replace('<select','<span class="logo-ligne"><select').repla
 // Un menu en groupes : une option vide, puis un groupe par titre ; la grille les montre dans cet ordre.
 function selGroupes(label,key,value,groupes){const opt=v=>'<option value="'+esc(v)+'"'+(String(value)===String(v)?' selected':'')+'>'+esc(v?nomLogo(v):'— aucun —')+'</option>';
  return '<label>'+label+'<select name="'+key+'">'+opt('')+groupes.map(([t,l])=>'<optgroup label="'+esc(t)+'">'+l.map(opt).join('')+'</optgroup>').join('')+'</select></label>'}
+/* Le menu des mécaniques, rangé par classe comme la bibliothèque des effets : les classes du jeu,
+   puis les génériques, puis les adversaires. */
+function selMecanique(valeur){const classes=(catalog.classes||[]).map(k=>k&&k.name).filter(n=>n&&n!==GENERIQUES),rangs=[...classes,GENERIQUES,ADVERSAIRES];
+ const groupes=new Map();Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').forEach(c=>{const k=classeEffet(c);if(!groupes.has(k))groupes.set(k,[]);groupes.get(k).push(c)});
+ const opt=(v,t)=>'<option value="'+esc(v)+'"'+(String(valeur)===String(v)?' selected':'')+'>'+esc(t)+'</option>';
+ return '<label>Mécanique<select name="effet">'+opt('','— Aucun : talent descriptif —')
+  +[...rangs,...[...groupes.keys()].filter(k=>!rangs.includes(k))].filter(k=>groupes.has(k)).map(k=>'<optgroup label="'+esc(k)+'">'
+   +groupes.get(k).sort((x,y)=>String(x.nom).localeCompare(String(y.nom),'fr')).map(c=>opt(c.cle,libelleTalent(c.cle))).join('')+'</optgroup>').join('')+'</select></label>'}
 function sel(label,key,value,opts){return '<label>'+label+'<select name="'+key+'">'+opts.map(([v,t])=>'<option value="'+v+'" '+(String(value)===String(v)?'selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label>'}
 /* Le choix des dés se fait au doigt : une pastille par couleur, teintée comme le dé
    lui-même, avec un moins et un plus de part et d'autre du compte. Le champ de saisie
