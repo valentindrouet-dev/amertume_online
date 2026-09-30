@@ -1199,20 +1199,17 @@ function libelleBonusEl(p){const n=Math.max(1,(p&&p.valeur)|0),c=(p&&p.carac)||'
  nom.textContent=c==='comp'?String(skillNames[k]||'').toUpperCase():c==='orbe'?(n>1?'ORBES':'ORBE'):(NOM_BONUS_BULLE[c]||'PV');
  const tint=c==='comp'?SKILL_TINTS[k]:c==='orbe'?'138,99,201':STAT_TINTS[c];if(tint)nom.style.color='rgb('+tint+')';
  s.append(plus,' ',nom);return s}
-/* Le dépliant ne dit que l'essentiel : le nom, la valeur en or d'une arme — les dés sont sur
-   le carré —, la DEF d'une armure, l'état qu'elle inflige s'il y en a un. */
+/* Le dépliant ne dit que l'essentiel : le nom, la valeur en or d'une arme ou d'une armure — les
+   dés et la DEF sont sur le carré —, l'état qu'elle inflige s'il y en a un. */
 function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
  const titre=document.createElement('p');titre.className='gear-nom';titre.textContent=o.name;d.append(titre);
  const ligne=(texte,classe)=>{if(!texte)return;const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p)};
  // La rareté, puis ce que la pièce confère, une ligne par bonus.
  if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));
  normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});
- // La DEF, comme sur le carré : seulement si la pièce en donne, ou si c'est un torse ou un bouclier.
- if(col==='armor'){if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))ligne('DEF '+(o.def||0)+' · '+NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase())}
- // Une arme ou un reste : sa valeur, « 7 » et la pièce d'or.
- if(col==='restes'||col==='melee'||col==='ranged'){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
+ // Une arme, une armure ou un reste : sa valeur, « 7 » et la pièce d'or ; la DEF se lit sur le carré.
+ if(col==='restes'||col==='melee'||col==='ranged'||col==='armor'){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
- if(o.tanneur&&o.recette&&o.recette.length)ligne('Tannerie : '+texteRessources(Object.fromEntries(o.recette.map(r=>[r.cle,r.qte]))),'gear-recette');
  if(o.category==='ammo'){const k=keys.indexOf(o.munDe);ligne('Munition : '+(k>=0?'+1 dé '+types[k]:'aucun dé')+' aux armes à distance portées');ligne(o.etat?'Leur tir inflige : '+o.etat:'')}
  else if(o.etat)ligne('Inflige : '+o.etat);
  /* Un objet dit ce qu'il fait et s'utilise d'un bouton : l'effet part au journal de la

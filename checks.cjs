@@ -2534,7 +2534,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fief.includes(" dessineCartouches(etiquettes,opts);")&&fief.includes("deplaceCartouche:(k,pt)=>{pushDomUndo();domaine.carte.cartouches[k]=pt;renderDomaineEditeur();sauveDomaine()}")
   &&fief.includes("habitants:accorde(compte('habitant'),'habitant'),visiteurs:accorde(compte('visiteur'),'visiteur')};")&&feuille.includes("#dom-plan,#dom-canvas{container-type:inline-size}")
   &&feuille.includes(".dom-cartouche.c-nom{font:700 3.1cqw/1.05 'Killam',Georgia,serif;"),'les inscriptions de la carte, en Killam, glissées dans l’éditeur');
- assert.ok(!src.includes("'Passif : agit tant que la pièce est portée'")&&src.includes("if(col==='armor'){if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))ligne('DEF '")
+ assert.ok(!src.includes("'Passif : agit tant que la pièce est portée'")&&!src.includes("ligne('DEF '+(o.def||0)")
   &&feuille.includes('.cat-carte .nom-carte{font:600 11px/1.2 system-ui;text-align:center;color:var(--ink);max-width:84px;overflow-wrap:anywhere;min-height:2.4em;display:flex;align-items:center;justify-content:center}'),'l’infobulle des bijoux allégée, les noms centrés');
  assert.ok(src.includes("function carteAjout(a,o,clic){")&&src.includes("liste.forEach(o=>grille.append(pickerMode==='gear'?carteAjout(a,o,clic):pastille(o)));")&&!src.includes('Clique un objet pour l’ajouter')
   &&src.includes("$('picker-note').hidden=mode==='gear';"),'l’inventaire se remplit d’icônes, sans mode d’emploi');}

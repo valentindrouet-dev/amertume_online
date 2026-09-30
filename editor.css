@@ -1815,7 +1815,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 #arbres .dialog-head #arbres-xp+#arbres-masse{margin-left:6px}
 #arbres .dialog-head #arbres-masse+#arbres-vue{margin-left:6px}
 /* Une ligne venue d'une amélioration : une pastille devant, comme une rune. */
-.palier-effet.amelioration::before{content:'⇧';display:inline-grid;place-items:center;width:14px;height:14px;margin-right:5px;vertical-align:middle;position:relative;top:-1px;
+.palier-effet.amelioration::before,.gear-detail .gear-bonus::before{content:'⇧';display:inline-grid;place-items:center;width:14px;height:14px;margin-right:5px;vertical-align:middle;position:relative;top:-1px;
  border-radius:50%;background:linear-gradient(#f0b33c,#d98a1c);color:#fff;font:800 9px/1 system-ui;box-shadow:0 0 0 1px #8a560f66}
 /* Sous le rond, le prix se montre au survol ; « XP visible » le laisse affiché. */
 .arbre-plan>.arbre-noeud:hover>.arbre-cout,#arbres.xp-visible .arbre-plan>.arbre-noeud>.arbre-cout{opacity:1}
