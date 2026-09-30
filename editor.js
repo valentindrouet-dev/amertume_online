@@ -25,6 +25,8 @@ function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots
 const VOIES_MAX=2;
 // De chaque talent d'un arbre partent deux lignes au plus, vers deux autres talents.
 const LIENS_MAX=4;
+// Sur un chemin, deux petits ronds à la suite, pas davantage.
+const PETITS_MAX=2;
 /* Les huit chemins d'un talent du sphérier : les quatre droits mènent au talent de la case voisine ou à
    de petits ronds, les quatre diagonales à de petits ronds seulement. */
 const DIRS={n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES=['n','e','s','o'];
@@ -3372,9 +3374,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),vues=new Set();
    c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
     Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if(ch[d].lien)return;
-     if(['e','s','o'].includes(d)&&!ch[d].petits.length){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.45)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
+     if(['e','s','o'].includes(d)&&!ch[d].petits.length){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.4)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
      if(dy<0&&racines.has(t.id)&&!ch[d].petits.length)return;
-     const r=ch[d].petits.length+1,{x,y}=bout(p,d,r);
+     const r=ch[d].petits.length+1;if(r>PETITS_MAX)return;const {x,y}=bout(p,d,r);
      if(libreIci(x,y))places.push({genre:'petit',x,y,de:t,dir:d,rang:r})})});
    if(!c.liste.length)places.push({genre:'gros',x:0,y:0,de:null})}
   // Le plan tient juste ce qu'il montre, une demi-case de marge : le talent de départ est tout en haut.
