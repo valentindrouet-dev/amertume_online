@@ -1806,3 +1806,6 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 #arbres .dialog-head .arbres-total{font:700 13px system-ui;color:var(--muted);white-space:nowrap}
 #arbres .dialog-head #arbres-masse{margin-left:auto}
 #arbres .dialog-head #arbres-masse+#arbres-vue{margin-left:6px}
+/* Une ligne venue d'une amélioration : une pastille devant, comme une rune. */
+.palier-effet.amelioration::before{content:'⇧';display:inline-grid;place-items:center;width:14px;height:14px;margin-right:5px;vertical-align:middle;position:relative;top:-1px;
+ border-radius:50%;background:#5e9a5b;color:#fff;font:800 9px/1 system-ui;box-shadow:0 0 0 1px #2f5d2d55}
