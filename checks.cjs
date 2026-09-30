@@ -2287,7 +2287,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.264 — Le domaine part avec le contenu publié et se lit chez les joueurs, sans édition ; les
    campagnes s'enregistrent dans l'appli : troupe, adversaires, domaine, scène, progression des cartes. */
 {const fief=fs.readFileSync('domaine.js','utf8'),camp=fs.readFileSync('campagnes.js','utf8'),partage=fs.readFileSync('shared.js','utf8');
- assert.ok(cartes.includes("const PAGES_LIBRES=['table','domaine','heroes','bestiary','settings'];")
+ assert.ok(fs.readFileSync('editor.js','utf8').includes("const ONGLETS_JOUEURS_DEFAUT=['table','domaine','heroes','bestiary','settings'];")
   &&partage.includes(",locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:structuredClone(catalog),")
   &&partage.includes("if(remote.domaine&&typeof normaliseDomaine==='function'){const d=normaliseDomaine(remote.domaine);if(typeof poidsDomaine!=='function'||poidsDomaine(d)>0||poidsDomaine(domaine)===0)domaine=d;domSel=null;domPageSel=null}")
   &&fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}"),'le domaine voyage avec le contenu publié');

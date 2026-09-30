@@ -517,6 +517,9 @@ button.comp-rond{cursor:pointer}button.comp-rond:hover{background:rgba(var(--tin
 #settings-page .cat-panel{max-width:760px}
 .reglage-titre{margin:0 0 6px;font:600 12px system-ui;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted)}
 .reglage{display:flex;align-items:center;gap:18px;padding:11px 0;border-bottom:1px solid var(--line)}
+.onglets-joueurs{display:flex;flex-wrap:wrap;gap:6px 18px;padding:8px 0}
+.onglets-joueurs label{display:inline-flex;align-items:center;gap:6px;font-size:14px;cursor:pointer}
+.onglets-joueurs input:disabled+*,.onglets-joueurs label:has(input:disabled){opacity:.6;cursor:default}
 .reglage:last-child{border-bottom:0}
 .reglage>div{flex:1;min-width:0}
 .reglage strong{display:block;font-size:15px}
@@ -1724,7 +1727,8 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .arbre-noeud.petit.bonus .arbre-rond{border-style:solid;border-width:3px;background:var(--panel)}
 .arbre-rond .logo-bonus{width:70%;height:70%;object-fit:contain;display:block}
 .arbre-rond .bonus-lettres{font:800 11px/1 system-ui;color:var(--teinte)}
-.arbre-rond .bonus-valeur{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:15px;height:15px;padding:0 3px;border-radius:8px;box-sizing:border-box;background:var(--teinte);color:#fff;font:800 9px/15px system-ui;text-align:center;border:1.5px solid var(--panel)}
+.arbre-rond .bonus-valeur{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font:900 13px/1 system-ui;text-align:center;pointer-events:none;
+ -webkit-text-stroke:3px #1d1a16;paint-order:stroke fill;text-shadow:0 1px 2px #0008}
 .arbre-noeud.bonus-comp{--teinte:#5a7a6c}
 /* Les bonus génériques, dans le choix d'un chemin : une rangée de petits ronds. */
 .bonus-generiques{display:flex;flex-wrap:wrap;gap:12px 10px;margin:4px 0 12px}
@@ -1835,7 +1839,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .hero-card .talent-ameliorations .bonus-rond.bonus-pv{--teinte:rgb(47,122,91)}.hero-card .talent-ameliorations .bonus-rond.bonus-dmg{--teinte:rgb(180,72,58)}
 .hero-card .talent-ameliorations .bonus-rond.bonus-orbe{--teinte:#8a63c9}.hero-card .talent-ameliorations .bonus-rond.bonus-comp{--teinte:#5a7a6c}
 .hero-card .talent-ameliorations .bonus-rond svg,.hero-card .talent-ameliorations .bonus-rond img,.hero-card .talent-ameliorations .bonus-rond .bonus-lettres{width:62%;height:62%;font:800 9px/1 system-ui}
-.hero-card .talent-ameliorations .bonus-rond .bonus-valeur{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:13px;height:13px;padding:0 2px;border-radius:7px;box-sizing:border-box;background:var(--teinte);color:#fff;font:800 8px/13px system-ui;text-align:center}
+.hero-card .talent-ameliorations .bonus-rond .bonus-valeur{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font:900 11px/1 system-ui;text-align:center;pointer-events:none;-webkit-text-stroke:2.5px #1d1a16;paint-order:stroke fill}
 /* Onglet Talents : six talents au plus par ligne dans chaque rangée de type ; les améliorations
    dessous, en petits ronds, douze par ligne. */
 .talent-rangee{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));justify-items:center;align-items:start;gap:10px 6px}

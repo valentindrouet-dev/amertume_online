@@ -176,7 +176,14 @@ function migreArbres(c){const T=(c.talents||[]).filter(Boolean),fam=t=>(t.famill
    delete t.pos;delete t.liens;t.chemin={de:de.id,dir:d,rang:1};change=true});
   c.spherier=1;change=true}
  return change}
+/* Les onglets, et ceux que le MJ ouvre aux joueurs : la Table de jeu toujours, les Cartes jamais. Le
+   choix voyage avec le contenu publié ; sans choix, les onglets d'avant. */
+const ONGLETS=[['table','Table de jeu'],['maps','Cartes'],['domaine','Domaine'],['heroes','Aventuriers'],['talents','Talents'],['armory','Armurerie'],['bestiary','Bestiaire'],['icones','Icônes'],['settings','Paramètres']];
+const ONGLETS_JOUEURS_DEFAUT=['table','domaine','heroes','bestiary','settings'];
+function ongletsJoueurs(){const l=typeof catalog!=='undefined'&&catalog&&Array.isArray(catalog.ongletsJoueurs)?catalog.ongletsJoueurs:ONGLETS_JOUEURS_DEFAUT;
+ return ['table',...ONGLETS.map(([k])=>k).filter(k=>k!=='table'&&k!=='maps'&&l.includes(k))]}
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
+ if(Array.isArray(c.ongletsJoueurs))c.ongletsJoueurs=ONGLETS.map(([k])=>k).filter(k=>k!=='maps'&&(k==='table'||c.ongletsJoueurs.includes(k)));else delete c.ongletsJoueurs;
  // Les ressources d'abord : les pièces se relisent au travers d'elles, plus bas.
  migreRessources(c);const clesR=new Set(c.items.filter(o=>o&&o.category==='ressource').map(o=>o.cle)),resV=r=>clesR.has(r)?r:'';
  // Le guide des prix, réglé par le MJ dans l'Armurerie.
@@ -502,6 +509,7 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<p class="muted">Le titre de la partie et le tour de combat. Ils voyagent avec la scène publiée.</p>'
  +'<div class="reglage"><div><strong id="scene-titre"></strong><p class="muted" id="scene-tour"></p></div>'
  +'<button id="edit-scene">Modifier la scène</button></div></div>'
+ +'<div id="bloc-onglets" hidden><div class="divider"></div><h3 class="reglage-titre">Onglets des joueurs</h3><div id="onglets-joueurs" class="onglets-joueurs"></div></div>'
  +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde</h3>'
  +'<div id="bloc-sauvegarde"></div>'
  +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde globale</h3>'
@@ -3738,6 +3746,13 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
  $('scene-tour').textContent='Tour de combat '+String(round).padStart(2,'0');
  if(saveLabel.parentNode!==$('bloc-sauvegarde'))$('bloc-sauvegarde').append(saveLabel);
  $('reglage-import').hidden=view!=='mj';
+ // Les onglets ouverts aux joueurs : une case par onglet ; la Table cochée, les Cartes non, sans y toucher.
+ $('bloc-onglets').hidden=view!=='mj';
+ {const vus=ongletsJoueurs();$('onglets-joueurs').replaceChildren(...ONGLETS.map(([k,nom])=>{const l=document.createElement('label'),c=document.createElement('input');
+  c.type='checkbox';c.value=k;c.checked=vus.includes(k);c.disabled=k==='table'||k==='maps';
+  c.onchange=()=>{catalog.ongletsJoueurs=[...$('onglets-joueurs').querySelectorAll('input:checked')].map(x=>x.value);normalizeCatalog(catalog);
+   scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));if(typeof majOnglets==='function')majOnglets()};
+  l.append(c,' '+nom);return l}))}
  boite.replaceChildren(...GESTES.map(([cle,nom,aide])=>{
   const ligne=document.createElement('div');ligne.className='reglage';
   const gauche=document.createElement('div');

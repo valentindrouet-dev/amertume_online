@@ -637,11 +637,11 @@ tabs.innerHTML='<button data-page="table" class="on">Table de jeu</button><butto
  +'<button data-page="settings">Paramètres</button>';
 document.querySelector('.view-controls').before(tabs);
 const PAGES=['table','maps','domaine','heroes','talents','armory','bestiary','icones','settings'];
-// Les Paramètres sont un réglage d'appareil, pas du contenu de partie : ils restent ouverts aux joueurs.
-/* La troupe a ses propres pages : ses fiches, le bestiaire de ce qu'elle a analysé, et le
-   domaine, en lecture. Tout ce qui s'y modifie reste au MJ — voir « vue-joueur » dans editor.css. */
-const PAGES_LIBRES=['table','domaine','heroes','bestiary','settings'];
-const tabsMJ=[...tabs.querySelectorAll('button')].filter(b=>!PAGES_LIBRES.includes(b.dataset.page));
+/* La troupe voit les onglets que le MJ lui ouvre dans les Paramètres — ongletsJoueurs() : la Table
+   toujours, les Cartes jamais. Tout ce qui s'y modifie reste au MJ — voir « vue-joueur » dans editor.css. */
+function majOnglets(){const ouverts=ongletsJoueurs();tabs.querySelectorAll('button').forEach(b=>{b.hidden=view!=='mj'&&!ouverts.includes(b.dataset.page)});
+ document.body.classList.toggle('vue-joueur',view!=='mj');
+ if(view!=='mj'&&PAGES.some(x=>!ouverts.includes(x)&&document.body.classList.contains('page-'+x)))showPage('table',false)}
 /* L'onglet ouvert est un réglage d'appareil, comme le thème : recharger en plein
    travail au bestiaire doit y ramener, pas rejeter sur la table de jeu. Il ne voyage
    donc ni dans la sauvegarde de partie, ni dans la publication. */
@@ -650,7 +650,7 @@ function lastPage(){try{const p=localStorage.getItem('amertume-page');
  return PAGES.includes(p)?p:'table'}catch(e){return 'table'}}
 /* « retenir » distingue le choix d'un onglet du repli imposé : passer en vue joueur
    ramène à la table, mais cela ne doit pas effacer l'onglet où le MJ travaillait. */
-function showPage(p,retenir=true){if(!PAGES_LIBRES.includes(p)&&view!=='mj')return;
+function showPage(p,retenir=true){if(!ongletsJoueurs().includes(p)&&view!=='mj')return;
  // Une bulle ouverte appartient à la page qu'on quitte : elle s'en va avec elle.
  if(typeof fermerBulle==='function')fermerBulle();
  if(retenir)rememberPage(p);
@@ -1462,9 +1462,7 @@ const renderBeforeMaps=render;render=function(){
  // Une autre carte, ou un voile qui change : elle se couvre jusqu'à la prochaine peinture.
  if(cleVoile()!==cartePeinte)voileAttente.hidden=false;
  applyMapRatio();computeFog();renderBeforeMaps();renderMapLayer();renderFouilles();calerColonnes();
- tabsMJ.forEach(b=>b.hidden=view!=='mj');
- document.body.classList.toggle('vue-joueur',view!=='mj');
- if(view!=='mj'&&PAGES.some(x=>!PAGES_LIBRES.includes(x)&&document.body.classList.contains('page-'+x)))showPage('table',false)};
+ majOnglets()};
 /* Le journal descend jusqu'au bas de la carte : son panneau est calé dessus à chaque rendu
    et à chaque changement de taille. Sur une seule colonne, il reprend sa hauteur propre. */
 function calerColonnes(){const centre=document.querySelector('.layout>.stack:not(.left):not(.right)'),droite=document.querySelector('.stack.right'),gauche=document.querySelector('.stack.left');
@@ -1485,6 +1483,6 @@ if(typeof ResizeObserver==='function'){const ro=new ResizeObserver(()=>calerColo
 window.addEventListener('resize',()=>{calerColonnes();if(document.body.classList.contains('page-maps'))renderCanvas();
  else{applyMapRatio();applyMapZoom();render()}});
 maps.forEach(ensure);refreshMapPick();renderMapLayer();refreshHistory();renderCatalogPages();
-tabsMJ.forEach(b=>b.hidden=view!=='mj');document.body.classList.toggle('vue-joueur',view!=='mj');
+majOnglets();
 // La page d'avant se rouvre une fois la partie chargée : avant, elle n'a rien à montrer.
 document.addEventListener('amertume-partie-chargee',()=>{refreshMapPick();const p=lastPage();if(p!=='table')showPage(p)});
