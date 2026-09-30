@@ -1916,3 +1916,8 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 #sheet-talents .talent-grille .cat-carte.talent-carte{width:100%;min-width:0;align-items:center}
 #sheet-talents .talent-grille .cat-pill.gear-carre.talent-carre{width:100%;max-width:58px;min-width:0;height:auto;aspect-ratio:1;box-sizing:border-box}
 #sheet-talents .talent-grille .cat-pill.gear-carre.talent-carre .logo-equip{width:68%;height:68%}
+/* Les pages Aventuriers, Talents, Armurerie, Bestiaire et Paramètres : le titre et ses boutons tout
+   en haut, sans vide au-dessus. */
+:is(#heroes-page,#talents-page,#armory-page,#bestiary-page,#settings-page){padding-top:10px}
+:is(#heroes-page,#talents-page,#armory-page,#bestiary-page,#settings-page)>.cat-panel{padding-top:10px}
+.cat-panel>.cat-head{padding-top:0;padding-left:4px;padding-right:4px}
