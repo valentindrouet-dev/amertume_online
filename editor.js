@@ -759,7 +759,8 @@ function heroRank(a){const i=actors.indexOf(a);if(i<0)renderHeroes();return i}
    compte modifiable d'un clic, au MJ ; sans lui, on lit. */
 function ligneOr(n,poser,qui){const l=document.createElement('div');l.className='richesse-or'+(n?'':' zero');
  const piece=document.createElement('i');piece.className='piece';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');
- const unite=document.createElement('span');unite.textContent='or';l.append(piece,v,unite);
+ // La pièce dit que c'est de l'or : la valeur se passe du mot.
+ l.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');l.append(piece,v);
  if(poser)champVif(v,()=>n,t=>poser('or',t),'Or'+(qui?' — '+qui:''),'petit');return l}
 function grilleGemmes(compte,poser,qui){const tailles=TAILLES_GEMMES,varietes=VARIETES_GEMMES;
  const t=document.createElement('table');t.className='gemmes';
@@ -904,7 +905,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));if(a.hero)calculAuSurvol(tuiles[5],()=>detailXp(a));
  // Vie, Endu, PV max, Dégâts et XP se lisent à leur icône, la valeur posée au bas ; la DEF garde son écu.
  [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([carac,k])=>iconeStat(tuiles[k],carac));
- chiffres.classList.add('en-icones');chiffres.append(...tuiles);
+ chiffres.classList.add('en-icones','cadre-chiffres');chiffres.append(...tuiles);
  // Les PV du moment, en barre, sous les chiffres.
  const barrePv=document.createElement('div');barrePv.className='hero-pv';barrePv.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true);
  /* Un joueur lit les fiches de la troupe, mais ne tient d'outils que sur la sienne : les
@@ -916,7 +917,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
     la valeur en bulle au bas — 1, plus ce que l'aventurier y a gagné ; sa bulle au survol. Chez le
     MJ, un clic gauche l'augmente d'un point, un clic droit la baisse d'un, jamais sous 1 : ce que
     donnent talents et équipement ne se retire pas d'ici. */
- const comps=document.createElement('div');comps.className='comp-ronds';
+ const comps=document.createElement('div');comps.className='comp-ronds cadre-comps';
  skillNames.forEach((n,k)=>{const carte=document.createElement('div');carte.className='comp-carte';
   const r=rondCompetence(a,k);
   if(view==='mj'){r.classList.add('reglable');r.setAttribute('role','button');r.tabIndex=0;

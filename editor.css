@@ -1875,7 +1875,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .stat-row.en-icones .stat-tile.avec-icone{display:grid;place-items:center}
 .stat-row.en-icones .stat-tile.avec-icone>*{grid-area:1/1}
 .stat-row.en-icones .stat-ico{display:block;width:44px;height:44px;object-fit:contain}
-.stat-row.en-icones .stat-tile.avec-icone strong{position:relative;z-index:1;margin:0;color:color-mix(in srgb,#fff 80%,rgb(var(--tint,255,255,255)));font:900 27px/1 'Killam',system-ui;letter-spacing:0;padding:0;
+.stat-row.en-icones .stat-tile.avec-icone strong{position:relative;z-index:1;margin:0;color:#fff;font:900 27px/1 'Killam',system-ui;letter-spacing:0;padding:0;
  -webkit-text-stroke:5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
 .stat-row.en-icones .stat-tile.t-xp strong::after{content:'xp';display:block;margin-top:-3px;text-align:center;font-size:13px;line-height:1;-webkit-text-stroke:3.5px #1d1a16}
 .stat-row.en-icones .stat-tile.t-xp strong{transform:translateY(5px)}
@@ -1893,3 +1893,8 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .richesses-titre:not(:first-child){margin-top:8px}
 /* En table de jeu, les talents d'un combattant se lisent à leurs icônes, sans titre au-dessus. */
 #bloc-talents>summary{display:none}
+/* Seule l'XP se teinte très légèrement de son icône. */
+.stat-row.en-icones .stat-tile.t-xp strong{color:color-mix(in srgb,#fff 80%,rgb(var(--tint,255,255,255)))}
+/* Fiche d'aventurier : les chiffres et les compétences dans leur cadre, comme les autres sections. */
+.hero-card .cadre-chiffres{padding:8px 6px;border-radius:12px;background:color-mix(in srgb,#5d7a99 9%,transparent);border:1px solid color-mix(in srgb,#5d7a99 32%,transparent)}
+.hero-card .comp-ronds.cadre-comps{padding:10px 10px 14px;border-radius:12px;background:color-mix(in srgb,#4f8a6b 9%,transparent);border:1px solid color-mix(in srgb,#4f8a6b 32%,transparent)}
