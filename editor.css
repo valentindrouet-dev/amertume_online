@@ -1857,3 +1857,19 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* Renommer un effet : ✎ à côté de son nom, et le champ à sa place. */
 .effet-fiche .renomme-effet{padding:0 5px;font-size:12px;margin:0 6px 0 -2px;opacity:.55}.effet-fiche:hover .renomme-effet{opacity:1}
 .effet-fiche .nom-effet-champ{font:700 13px system-ui;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);width:220px;margin-right:6px}
+/* La fiche d'aventurier : l'inventaire dans son cadre, comme l'équipement ; ce qui s'y range n'est pas grisé. */
+.sac .cat-pill.gear-carre.dispo,.sac .cat-pill.gear-carre.dispo:hover{opacity:1}
+.corps-sac>.sac-titre{display:flex;align-items:center;gap:8px;margin:6px 0 -2px;font:600 10px system-ui;letter-spacing:2px}
+.sac-titre .ico.plus{font:700 14px system-ui;letter-spacing:0;padding:0 7px 2px}
+.corps-sac>.sac{padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--ink) 4%,transparent);border:1px solid var(--line)}
+/* Vie, Endu, PV max, Dégâts : l'icône et la valeur, sans case ; la DEF, son écu. */
+.hero-card .stat-row.en-icones{display:flex;justify-content:space-around;align-items:center;gap:6px;margin:10px 0 2px}
+.hero-card .stat-row.en-icones .stat-tile{background:none;border:0;padding:0;display:grid;grid-template-columns:auto auto;align-items:center;column-gap:6px;overflow:visible}
+.hero-card .stat-row.en-icones .stat-tile>span:not(.stat-ico):not(.ecu){display:none}
+.hero-card .stat-row.en-icones .stat-ico{grid-row:1/span 2;width:30px;height:30px;object-fit:contain}
+.hero-card .stat-row.en-icones .stat-tile strong{margin:0;font-size:22px;text-align:left}
+.hero-card .stat-row.en-icones .stat-tile small{margin:0;text-align:left}
+.hero-card .stat-row.en-icones .stat-tile.t-def{display:block}
+.hero-card .stat-row.en-icones .stat-tile .ecu{margin:0 auto}
+.hero-card .hero-pv .lifebar{height:18px;margin-top:6px}
+.hero-card .hero-pv .lifebar-text{font:700 12px/1 system-ui}

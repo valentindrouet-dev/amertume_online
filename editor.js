@@ -691,11 +691,13 @@ function majEcu(ecu,valeur){if(!ecu)return;
 /* Réécrire les chiffres d'une carte d'aventurier là où ils sont, sans rien remplacer.
    Un chiffre en cours de saisie n'est pas dans la page : le sélecteur ne le trouve
    pas, et il n'est donc pas écrasé sous les doigts. */
+const pvPourcent=a=>Math.max(0,Math.min(100,Math.round((Number(a.hp)||0)/Math.max(1,Number(a.max)||1)*100)));
 function majFiche(carte,a){if(!carte)return;
  const ecrire=(sel,texte)=>{const n=carte.querySelector(sel);if(n)n.textContent=texte};
  ecrire('.stat-tile.t-vie strong',vieAffichee(a));ecrire('.stat-tile.t-vie small','MAX '+(a.vieMax??a.vie));
  ecrire('.stat-tile.t-endu strong',enduAffichee(a));
  ecrire('.stat-tile.t-pv strong',a.max);
+ {const b=carte.querySelector('.hero-pv');if(b)b.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true)}
  ecrire('.stat-tile.t-dmg strong','+'+degatsDe(a));ecrire('.stat-tile.t-xp strong',a.xp||0);
  ecrire('.chip-niveau','Niveau '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
  majEcu(carte.querySelector('.stat-tile.t-def .ecu'),defOf(a));
@@ -889,7 +891,11 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg']],c);
  // Au survol, le calcul : d'où viennent les PV max, et les Dégâts.
  calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));
- chiffres.append(...tuiles);
+ // Vie, Endu, PV max et Dégâts se lisent à leur icône, sans grande case ; la DEF garde son écu.
+ [['vie',0],['endu',1],['pv',2],['dmg',4]].forEach(([carac,k])=>{const ic=logoBonus({carac});if(!ic)return;ic.classList.add('stat-ico');tuiles[k].prepend(ic);tuiles[k].classList.add('avec-icone')});
+ chiffres.classList.add('en-icones');chiffres.append(...tuiles);
+ // Les PV du moment, en barre, sous les chiffres.
+ const barrePv=document.createElement('div');barrePv.className='hero-pv';barrePv.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true);
  /* Un joueur lit les fiches de la troupe, mais ne tient d'outils que sur la sienne : les
     « + » sont au MJ, et le rouage des arbres s'ouvre pour son propre aventurier. */
  const mien=view==='mj'||actors.indexOf(a)===owner;
@@ -919,7 +925,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   titreTal.onclick=e=>{if(e.target.closest('button'))return;fermerBulle();openArbres(a)};
   blocTal.onclick=e=>{if(e.target.closest('.cat-pill'))return;fermerBulle();openArbres(a)}}
  // Les talents juste sous les compétences : ce qu'il sait faire se lit d'un bloc.
- c.append(tete,puces,chiffres,titreComp,comps,titreTal,blocTal,titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a));return c}
+ c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
  const troupe=actors.filter(a=>a.hero);
@@ -1415,7 +1421,7 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  out.append(corps);
  // Le sac : ce qui n'est pas porté, puis les objets.
  const sac=document.createElement('div');sac.className='sac gear-grille';
- const titre=document.createElement('span');titre.className='gear-rangee-titre';titre.textContent='Inventaire';sac.append(titre);
+ const titre=document.createElement('span');titre.className='gear-rangee-titre sac-titre';titre.textContent='Inventaire';
  // Le MJ y ajoute une pièce de l'Armurerie.
  if(view==='mj'){const plus=document.createElement('button');plus.type='button';plus.className='ico plus';plus.textContent='+';
   plus.title='Ajouter à l’inventaire de '+a.name;plus.setAttribute('aria-label',plus.title);plus.onclick=()=>openPicker(a,'gear');titre.append(plus)}
@@ -1444,7 +1450,7 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
   w.append(p,nomSac);ligneDe(o).append(w)});
  lignes.forEach(l=>{if(l.childElementCount>1)sac.append(l)});
  if(rien){const v=document.createElement('span');v.className='muted';v.textContent='Rien dans le sac.';sac.append(v)}
- out.append(sac);
+ out.append(titre,sac);
  /* Le dépôt : sur le corps, la pièce s'équipe à sa place ; sur le sac, elle se repose. */
  if(peutEquiper){const redessine=()=>{render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
   const recoit=(el,fn)=>{el.addEventListener('dragover',e=>{if(!gearGlisse)return;e.preventDefault();el.classList.add('survol');try{e.dataTransfer.dropEffect='move'}catch(_){}});
