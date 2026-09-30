@@ -2877,7 +2877,8 @@ function logoBonus(p){const carac=(p&&p.carac)||'pv';let el=null;
  else if(carac==='comp'){const k=Math.max(0,Math.min(7,Number(p&&p.comp)||0));el=logoCompetence(k);
   if(!el){el=document.createElement('span');el.className='bonus-lettres';el.textContent=skillNames[k].slice(0,2)}}
  if(el)el.classList.add('logo-bonus');return el}
-function poseLogoBonus(rond,t){const p=paramsTalent(t),l=logoBonus(p);if(!l)return;
+// L'icône choisie par le MJ passe devant ; celle du bonus ne vient qu'à défaut.
+function poseLogoBonus(rond,t){const p=paramsTalent(t),l=(t.logo&&logoTalent(t))||logoBonus(p);if(!l)return;
  const n=document.createElement('b');n.className='bonus-valeur';n.textContent=String(Math.max(1,(p&&p.valeur)|0));rond.replaceChildren(l,n)}
 // Les petits ronds d'un chemin, du rang 1 au dernier.
 function petitsDe(de,dir){return tousTalents().filter(t=>{const c=lisChemin(t);return !!c&&c.de===de.id&&c.dir===dir}).sort((x,y)=>lisChemin(x).rang-lisChemin(y).rang)}
