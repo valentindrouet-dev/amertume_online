@@ -897,7 +897,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // Au survol, le calcul : d'où viennent les PV max, et les Dégâts.
  calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));
  // Vie, Endu, PV max, Dégâts et XP se lisent à leur icône, la valeur posée au bas ; la DEF garde son écu.
- [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([carac,k])=>{const ic=logoBonus({carac});if(!ic)return;ic.classList.add('stat-ico');tuiles[k].prepend(ic);tuiles[k].classList.add('avec-icone')});
+ [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([carac,k])=>iconeStat(tuiles[k],carac));
  chiffres.classList.add('en-icones');chiffres.append(...tuiles);
  // Les PV du moment, en barre, sous les chiffres.
  const barrePv=document.createElement('div');barrePv.className='hero-pv';barrePv.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true);
@@ -3064,6 +3064,12 @@ const SVG_BONUS={xp:'<circle cx="12" cy="12" r="10" fill="#d9b45a" stroke="#7a5a
  vie:'<path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.8l-5.8 3.5 1.6-6.6-5.2-4.4 6.8-.5z" fill="#7a5cb8" stroke="#3b2966" stroke-width="1.2" stroke-linejoin="round"/>'};
 // La clé du logo commun d'un bonus : sa caractéristique, et sa compétence s'il en vise une.
 function cleLogoBonus(p){const c=(p&&p.carac)||'pv';return c+(c==='comp'?':'+(p&&p.comp!==undefined?p.comp:'0'):'')}
+/* L'icône d'un chiffre de fiche, devant laquelle il se lit. Sa couleur — celle de l'image choisie,
+   ou celle de l'icône du jeu — teinte très légèrement la valeur. */
+const TEINTES_STATS={pv:'192,57,43',endu:'44,140,133',vie:'122,92,184',dmg:'200,60,90',xp:'190,150,60'};
+function iconeStat(tuile,carac){const ic=logoBonus({carac});if(!tuile||!ic)return;
+ ic.classList.add('stat-ico');tuile.prepend(ic);tuile.classList.add('avec-icone');tuile.style.setProperty('--tint',TEINTES_STATS[carac]||'150,150,150');
+ if(ic.tagName==='IMG')teinteLogoSur(tuile,ic,'stat:'+carac+':'+((catalog.logosBonus||{})[carac]||''))}
 function logoBonus(p){const carac=(p&&p.carac)||'pv';let el=null;
  // Le logo que le MJ a donné à tous les bonus de cette caractéristique passe devant l'icône du jeu.
  const perso=(typeof catalog!=='undefined'&&catalog.logosBonus||{})[cleLogoBonus(p)];if(perso){const im=logoImage(perso,LOGOS_TOUS);if(im)return im}
