@@ -320,12 +320,16 @@ function dessineGrilleLogos(){const corps=$('grille-logos-corps'),s=grilleSelect
  const options=[...s.children].filter(x=>x.tagName==='OPTION'),groupes=[...s.querySelectorAll('optgroup')];
  /* Le logo d'un talent : les planches de talents d'abord, une par une et dépliées ; tout le
     reste suit, replié. */
- if(s.closest('#talent-form')){const planche=o=>{const m=/^(planches\/talents_(\d+)\.(?:png|webp))#(\d+)$/i.exec(o.value);return m?{f:m[1],n:+m[2],i:+m[3]}:null};
+ if(s.closest('#talent-form')){
+  /* Les planches à mettre en tête : celles des talents ; pour le logo d'un bonus, celles des
+     caractéristiques d'abord, puis celles des talents. */
+  const tetes=s.name==='b_logo'?['caracteristiques','talents']:['talents'];
+  const planche=o=>{const m=/^(planches\/([a-z]+)_(\d+)\.(?:png|webp))#(\d+)$/i.exec(o.value);if(!m)return null;const k=tetes.indexOf(m[2].toLowerCase());return k<0?null:{f:m[1],k,n:+m[3],i:+m[4]}};
   const vues=new Set(),parPlanche=new Map();
   groupes.forEach(g=>[...g.children].forEach(o=>{const p=planche(o);if(!p||vues.has(o.value))return;vues.add(o.value);
-   if(!parPlanche.has(p.f))parPlanche.set(p.f,{n:p.n,l:[]});parPlanche.get(p.f).l.push([p.i,o])}));
+   if(!parPlanche.has(p.f))parPlanche.set(p.f,{k:p.k,n:p.n,l:[]});parPlanche.get(p.f).l.push([p.i,o])}));
   groupe('',options);
-  [...parPlanche.entries()].sort((x,y)=>x[1].n-y[1].n).forEach(([f,p])=>groupe(nomPlanche(f),p.l.sort((x,y)=>x[0]-y[0]).map(x=>x[1]),false));
+  [...parPlanche.entries()].sort((x,y)=>x[1].k-y[1].k||x[1].n-y[1].n).forEach(([f,p])=>groupe(nomPlanche(f),p.l.sort((x,y)=>x[0]-y[0]).map(x=>x[1]),false));
   groupes.forEach(g=>groupe(g.label,[...g.children].filter(o=>!vues.has(o.value)),true))}
  else{groupe('',options);groupes.forEach(g=>groupe(g.label,[...g.children]))}
  if(!montres){const v=document.createElement('p');v.className='muted';v.textContent='Aucun logo de ce nom.';corps.append(v)}}
