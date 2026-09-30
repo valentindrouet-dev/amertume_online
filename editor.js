@@ -3823,7 +3823,8 @@ document.addEventListener('click',e=>{const b=e.target.closest('.die-pick [data-
 let editing=null,draft=null,attackDraft=[],templateIndex=null,itemIndex=null,itemApres=null,itemDraft=null;
 // Vrai quand la fiche ouverte crée un modèle du bestiaire, et non un combattant de la scène.
 let templateNeuf=false;
-function baseActor(hero){return normalizeActor({name:hero?'Nouvel aventurier':'Nouveau monstre',hero,role:hero?'Aventurier':'Adversaire',hp:12,max:12,def:2,dmg:2,x:50,y:60,pool:[2,0,0,0,0,0,0],checks:[false,false,false],target:null,skills:Array(8).fill(0)})}
+// Un aventurier commence au niveau 1 avec Vie 3, Endu 2 et Dégâts +0 ; sa classe ajoute ses PV et ses compétences.
+function baseActor(hero){return normalizeActor({name:hero?'Nouvel aventurier':'Nouveau monstre',hero,role:hero?'Aventurier':'Adversaire',...(hero?{hp:6,max:6,vie:3,vieMax:3,endu:2,dmg:0,level:1,xp:0}:{hp:12,max:12,dmg:2}),def:2,x:50,y:60,pool:[2,0,0,0,0,0,0],checks:[false,false,false],target:null,skills:Array(8).fill(0)})}
 function fromMonster(m){const a=baseActor(false);Object.assign(a,{template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,weapons:[...(m.weapons||[])],armures:[...armuresDe(m)],shieldId:m.shieldId||'',inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin)});equipeAdversaire(a);a.activeAttack=0;a.pool=poolOf(a);return a}
 function openActor(index=null,hero=true,template=null,neuf=false){if(view!=='mj')return;
  if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;templateNeuf=!!neuf&&template===null&&!hero;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero||templateNeuf;renderActorForm();actorDialog.showModal()}
@@ -3844,7 +3845,9 @@ $('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,
 if(a.hero){const f=$('actor-form').elements;
  const majPV=()=>{const bonus=bonusPV(catalog.classes,f.role.value,f.race.value);
   f.pvBonus.value=bonus;
-  f.max.value=Math.max(1,num(f.vie.value,1,999)*num(f.endu.value,1,999)+bonus)};
+  // PV pleins, ils suivent le maximum.
+  const plein=f.hp&&num(f.hp.value,0,99999)===num(f.max.value,0,99999);
+  f.max.value=Math.max(1,num(f.vie.value,1,999)*num(f.endu.value,1,999)+bonus);if(plein)f.hp.value=f.max.value};
  ['vie','endu','role','race'].forEach(k=>{if(f[k])f[k].addEventListener('input',majPV)});
  majPV()}
 $('token-upload').onclick=()=>$('token-file').click();$('token-file').onchange=()=>{const f=$('token-file').files[0];if(f)openImage(f,'token',url=>{draft.image=url;$('draft-image').src=url;$('draft-image').hidden=false})};$('token-remove').onclick=()=>{draft.image=null;$('draft-image').hidden=true};if($('add-attack'))$('add-attack').onclick=()=>{readAttacks();attackDraft.push({name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',useOwnDamage:true,effects:{}});renderAttacks()};renderStatePicker();

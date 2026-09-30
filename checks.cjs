@@ -918,6 +918,14 @@ assert.equal(readStat('level','9',1),9);assert.equal(readStat('level','25',1),20
  const p=visionPolygon({x:50,y:42},murs);assert.equal(pointInPolygon([40,75],p),false,'la salle reste cachée');assert.equal(pointInPolygon([50,20],p),true,'le couloir se voit');
  assert.equal(pointInPolygon([40,75],visionPolygon({x:50,y:75},murs)),true,'dans la salle, on la voit');}
 // Deux améliorations à la suite : la seconde ne remplace la première que si elle le dit ; sinon elles s'additionnent.
+// Au niveau 1, chaque classe donne un point dans trois compétences, calculé comme son bonus de PV.
+{const {competencesDeClasse,bonusDe,COMPETENCES}=require('./combat.js');const v=(r,n)=>competencesDeClasse(r)[COMPETENCES.indexOf(n)];
+ assert.deepEqual(['Robustesse','Savoir','Force'].map(n=>v('Gardien',n)),[1,1,1]);assert.equal(v('Gardien','Ruse'),0);
+ assert.deepEqual(['Mysticisme','Savoir','Ruse'].map(n=>v('mystique · Voie du gel',n)),[1,1,1]);
+ assert.deepEqual(['Agilité','Ruse','Perception'].map(n=>v('Lamevent',n)),[1,1,1]);assert.deepEqual(['Force','Robustesse','Technique'].map(n=>v('Destructeur',n)),[1,1,1]);
+ assert.equal(competencesDeClasse('Aventurier').reduce((x,y)=>x+y,0),0);
+ assert.equal(bonusDe({hero:true,role:'Gardien',talents:[]},[],null).skills[COMPETENCES.indexOf('Force')],1,'l’aventurier le reçoit');
+ assert.equal(bonusDe({hero:false,role:'Gardien',talents:[]},[],null).skills[COMPETENCES.indexOf('Force')],0,'pas un adversaire');}
 {const {sansAmeliorationsRemplacees}=require('./combat.js');const ch=r=>({de:'t',dir:'se',rang:r});
  const a1={id:'a1',effet:'x',chemin:ch(1)},a2={id:'a2',effet:'y',chemin:ch(2)},a3={id:'a3',effet:'y',chemin:ch(2),remplacePrecedente:true};
  assert.deepEqual(sansAmeliorationsRemplacees([a1,a2]).map(t=>t.id),['a1','a2']);assert.deepEqual(sansAmeliorationsRemplacees([a1,a3]).map(t=>t.id),['a3']);}
