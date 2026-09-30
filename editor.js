@@ -2747,7 +2747,7 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
      redessinait pas quand on décochait un talent. */
   const manque=t=>porte(t)?'':manqueTalent(a.talents,t,catalog.talents);
   const clic=t=>{const m=manque(t);
-   if(m){$('picker-note').textContent='« '+t.name+' » exige d’abord « '+m+' ».';return}
+   if(m)return;
    if(porte(t)){const {liste,tombes}=talentsSans(a.talents,t.id,catalog.talents);a.talents=liste;
     $('picker-note').textContent=tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'Clique un talent pour l’apprendre ou l’oublier.'}
    else{a.talents=[...a.talents,t.id];$('picker-note').textContent='Clique un talent pour l’apprendre ou l’oublier.'}
@@ -3166,7 +3166,6 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null}={}){const bon
   d.append(g);
   }
  if(note)ligne(note,'muted');
- if(verrou)ligne('🔒 Sous clé : apprends d’abord « '+verrou+' ».','talent-bulle-cle');
  return d}
 function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();
  // Un nœud redessiné emporte sa bulle : elle ne reste pas accrochée à l'ancien.
@@ -3289,7 +3288,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(mj&&lienDepuis===t.id)el.classList.add('relie-source');
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
    if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
-   if(verrou){note(verrou===VERROU_ELEMENT?'Le MJ choisit d’abord l’élément du Mystique, au-dessus de l’arbre.':'« '+vu(t).name+' » exige d’abord « '+verrou+' ».');return}
+   if(verrou)return;
    // Un clic l'active ; tenu, un clic le désactive — et ce qu'on n'atteignait que par lui.
    if(acquis)oublier(t,libre?null:col.liste);else a.talents=[...a.talents,t.id];
    note('');majTable()};
@@ -3426,7 +3425,13 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
     g.onclick=e=>{e.stopPropagation();if(basculeLien(de,vers)==='retire')arbreChange()}}
    svg.append(g)};
   liste.forEach(de=>liensDe(de).forEach(id=>{const vers=liste.find(x=>x.id===id),A=elDe(de.id),B=vers&&elDe(id);if(A&&B)trait(de,vers,A,B,true)}));
-  liste.forEach(de=>Object.keys(DIRS).forEach(d=>{let av=de,A=elDe(de.id);petitsDe(de,d).forEach(s=>{const B=elDe(s.id);if(!A||!B)return;trait(av,s,A,B,false);av=s;A=B})}))})}
+  liste.forEach(de=>Object.keys(DIRS).forEach(d=>{let av=de,A=elDe(de.id);petitsDe(de,d).forEach(s=>{const B=elDe(s.id);if(!A||!B)return;trait(av,s,A,B,false);av=s;A=B})}));
+  // L'entrée de l'arbre : un trait qui part du bandeau de la colonne et descend jusqu'au talent de départ.
+  const titre=col.querySelector('.arbre-titre');
+  col.querySelectorAll('.arbre-plan>.arbre-noeud.racine').forEach(el=>{const c=centre(el);if(!titre)return;
+   const haut=titre.getBoundingClientRect().bottom-R.top-4,l=document.createElementNS(ns,'line');
+   l.setAttribute('x1',c.x.toFixed(1));l.setAttribute('x2',c.x.toFixed(1));l.setAttribute('y1',haut.toFixed(1));l.setAttribute('y2',(c.y-c.r).toFixed(1));
+   l.setAttribute('class','entree');svg.append(l)})})}
 /* Les réglages de l'appareil : le thème et les touches de la carte. Rien n'est enregistré
    dans la partie — c'est le navigateur qui s'en souvient, pour ce poste seulement. */
 function renderSettings(){const boite=$('raccourcis');if(!boite)return;
