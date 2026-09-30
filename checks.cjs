@@ -1342,7 +1342,7 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  &&src.includes("t.voie=typeof t.voie==='string'?t.voie.trim().slice(0,60):'';")&&!src.includes("+sel('Spécialisation','voie'")
  &&src.includes("else if(talentFamily(avant)!==talentFamily(t)){t.voie='';t.prerequis='';delete t.pos;delete t.liens}")
  &&src.includes("if(!avant){const d=talentDefauts||{};t.voie=d.voie||'';t.prerequis='';if(d.chemin)t.chemin=d.chemin;")
- &&feuille.includes('#arbres{width:min(1180px,96vw)}')
+ &&feuille.includes('#arbres{width:fit-content;max-width:96vw}')
  &&feuille.includes('.arbre-titre{width:100%;')&&feuille.includes('clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),50% 100%,0 calc(100% - 8px))}')
  &&feuille.includes('.arbre-noeud.acquis .arbre-rond::after{content:\'✓\';')&&feuille.includes('.arbre-noeud.verrou{opacity:.45;cursor:not-allowed}')
  &&feuille.includes('.hero-sous .ico.plus.rouage{')&&feuille.includes('.cat-pill .tag.voie{'),'arbres de talents : rouage, popup, voie au formulaire, plus de maîtrise d’office');
@@ -1646,7 +1646,7 @@ assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null
     l'intitulé ni la notice d'édition ne paraissent sur l'arbre d'une classe. */
  &&src.includes("h.onclick=()=>openArbresClasse(famille)}")
  &&src.includes("arbresDialog.addEventListener('click',e=>{if(e.target===arbresDialog)arbresDialog.close()});")
- &&src.includes("titre.textContent='Arbres de talents — '+(a?a.name:classe);titre.hidden=!a;")&&!src.includes("$('arbres-note').hidden=!a;")&&src.includes("function noteArbres(texte){const n=$('arbres-note');n.textContent=texte||'';n.hidden=!texte}")
+ &&src.includes("titre.textContent='Arbres de talents — '+(a?a.name:classe);titre.hidden=true;")&&!src.includes("$('arbres-note').hidden=!a;")&&src.includes("function noteArbres(texte){const n=$('arbres-note');n.textContent=texte||'';n.hidden=!texte}")
  &&!src.includes('NOTE_ARBRES')&&feuille.includes('.arbre-noeud.modele{cursor:pointer}')
  &&feuille.includes('.cat-col>h3 .ico.plus.rouage{')
  &&!page.includes("annonceFlottante('📣 '"),'l’arbre d’une classe s’ouvre depuis l’onglet Talents');
