@@ -2425,7 +2425,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<p class="muted accolades-aide">Accolades, dans le nom, les textes et le logo : {élément} Feu · Gel · Foudre — {mot} feu · glace · foudre, {Mot} avec la capitale — {logo} feu · gel · foudre. « Brise{mot} » fait Brisefeu, Briseglace, Brisefoudre.</p>'
   +'<div id="talent-exige"></div></section>'
   +'<section class="talent-boite b-paliers t-seul"><h2 class="sous-titre">'+(PALIERS.actifs?'Paliers — coût, texte et effets câblés':'Coût, texte et effets câblés')+'</h2>'
-  +'<div id="talent-reglages"></div></section>'
+  +'<div id="talent-reglages"></div>'
+  +'<label class="field-check" id="remplace-texte"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceTexte" '+(t.remplaceTexte===true?'checked':'')+'>Remplace le texte du talent</label></section>'
   // Le bonus : une caractéristique, une valeur — et la compétence, si c'est là qu'il va.
   +'<section class="talent-boite b-bonus b-seul"><h2 class="sous-titre">Le bonus</h2><div class="edit-grid">'
   +sel('Caractéristique','b_carac',pb.carac,optBonus('carac'))
@@ -2438,7 +2439,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
     qu'un champ requis absent ne bloque pas l'enregistrement. */
  const champs=$('talent-form').elements;
  // « Remplace le logo du talent » ne vaut que pour une amélioration.
- if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame'});
+ if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame';if($('remplace-texte'))$('remplace-texte').hidden=champs.type.value!=='ame'});
  ['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});
  const apercuBonus=()=>{const comp=champs.b_carac.value==='comp';const lc=champs.b_comp.closest('label');if(lc)lc.classList.toggle('talent-cache',!comp);
   $('bonus-apercu').textContent='Dans l’arbre : '+libelleBonus({carac:champs.b_carac.value,valeur:num(champs.b_valeur.value,1,20),comp:champs.b_comp.value})};
@@ -2503,6 +2504,11 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.effet=TALENTS_CODES[f.effet.value]&&f.effet.value!=='bonus'?f.effet.value:'';
  if(f.elementaire&&f.elementaire.checked)t.elementaire=true;else delete t.elementaire;
  if(t.type==='ame'&&f.remplaceLogo&&f.remplaceLogo.checked)t.remplaceLogo=true;else delete t.remplaceLogo;
+ /* Un talent ne se fait remplacer le texte que par un seul chemin : cocher ici décoche les
+    améliorations des autres chemins du même talent. */
+ if(t.type==='ame'&&f.remplaceTexte&&f.remplaceTexte.checked){t.remplaceTexte=true;const c=lisChemin(t);
+  if(c)catalog.talents.forEach(x=>{const k=x!==t&&lisChemin(x);if(k&&k.de===c.de&&k.dir!==c.dir)delete x.remplaceTexte})}
+ else delete t.remplaceTexte;
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p_')}):{};
  /* Les paliers : leur coût ; pour le 2 et le 3, leur texte s'il en a un, leurs réglages s'ils
     diffèrent de ceux d'en dessous — sinon ils en héritent, et suivront s'ils changent. */
@@ -3181,9 +3187,16 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null}={}){const bon
   d.append(g);
   /* Les améliorations que l'aventurier a activées sur les chemins du talent, chacune à la ligne ;
      de deux à la suite, seule la seconde, qui remplace la première. */
-  if(a&&!lisChemin(t)){const ams=sansAmeliorationsRemplacees((a.talents||[]).map(talent)).filter(x=>x&&!estBonus(x)&&lisChemin(x)&&lisChemin(x).de===t.id)
+  if(a&&!lisChemin(t)){const tenues=(a.talents||[]).map(talent).filter(x=>x&&!estBonus(x)&&lisChemin(x)&&lisChemin(x).de===t.id);
+   const ams=sansAmeliorationsRemplacees(tenues)
     .sort((x,y)=>Object.keys(DIRS).indexOf(lisChemin(x).dir)-Object.keys(DIRS).indexOf(lisChemin(y).dir)||lisChemin(x).rang-lisChemin(y).rang);
-   ams.forEach(x=>{const tx=vu(x).effects||'';if(!tx)return;const e=document.createElement('p');e.className='palier-effet amelioration';texteEnrichi(e,tx);g.append(e)})}
+   const ligneAm=(x,cls)=>{const tx=vu(x).effects||'';if(!tx)return;const e=document.createElement('p');e.className='palier-effet'+(cls?' '+cls:'');texteEnrichi(e,tx);g.append(e)};
+   /* « Remplace le texte du talent » : le texte de base cède la place à celui du chemin qui le
+      dit — un seul chemin par talent. Sur ce chemin, la dernière amélioration tenue fait le texte. */
+   const dirR=Object.keys(DIRS).find(d=>tenues.some(x=>lisChemin(x).dir===d&&x.remplaceTexte===true));
+   const remplace=dirR?ams.find(x=>lisChemin(x).dir===dirR):null;
+   if(remplace){g.replaceChildren();ligneAm(remplace,'')}
+   ams.filter(x=>x!==remplace).forEach(x=>ligneAm(x,'amelioration'))}
   }
  if(note)ligne(note,'muted');
  return d}
