@@ -3040,11 +3040,15 @@ arbresVue.onclick=()=>{arbresVueJoueur=!arbresVueJoueur;noteArbres('');renderArb
 let arbresEnMasse=false,masseTriTal=null,masseAnnuleTal=null;
 const arbresMasse=document.createElement('button');arbresMasse.type='button';arbresMasse.id='arbres-masse';arbresMasse.className='arbres-vue';arbresMasse.textContent='✎ Modifier en masse';
 arbresDialog.querySelector('.dialog-head').insertBefore(arbresMasse,arbresVue);
+const arbresTotal=document.createElement('span');arbresTotal.id='arbres-total';arbresTotal.className='arbres-total';
+arbresDialog.querySelector('.dialog-head').insertBefore(arbresTotal,arbresMasse);
+// Tout ce que porte l'arbre d'une classe : ses talents dans l'ordre, chacun suivi de ses petits ronds.
+function talentsDeLArbre(classe){const ordreDir=Object.keys(DIRS);
+ const petitsDuTalent=t=>tousTalents().filter(p=>{const c=lisChemin(p);return c&&c.de===t.id}).sort((x,y)=>ordreDir.indexOf(lisChemin(x).dir)-ordreDir.indexOf(lisChemin(y).dir)||lisChemin(x).rang-lisChemin(y).rang);
+ return colonnesArbre(classe).flatMap(c=>c.liste).flatMap(t=>[t,...petitsDuTalent(t)]).filter(Boolean)}
 arbresMasse.onclick=()=>{arbresEnMasse=!arbresEnMasse;masseAnnuleTal=null;renderArbres()};
 function tableMasseTalents(corps,classe){
- const gros=colonnesArbre(classe).flatMap(c=>c.liste),ids=new Set(gros.map(t=>t.id)),ordreDir=Object.keys(DIRS);
- const petitsDuTalent=t=>tousTalents().filter(p=>{const c=lisChemin(p);return c&&c.de===t.id}).sort((x,y)=>ordreDir.indexOf(lisChemin(x).dir)-ordreDir.indexOf(lisChemin(y).dir)||lisChemin(x).rang-lisChemin(y).rang);
- let liste=gros.flatMap(t=>[t,...petitsDuTalent(t)]).filter(Boolean);
+ let liste=talentsDeLArbre(classe);
  const nomDe=t=>estBonus(t)?libelleBonus(paramsTalent(t)):t.name||'';
  const sauve=()=>{renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
  const cout=v=>Math.max(0,Math.min(999999,Math.round(Number(v)||0)));
@@ -3239,7 +3243,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}
  // Jamais la nature du talent : la bulle ne l'écrit nulle part.
  tete.append(nom);d.append(tete);
  // Le prix en XP ne se lit que dans l'arbre : en cartouche, en haut à gauche de la bulle.
- if(cout&&coutPalier(t,1)){const c=document.createElement('span');c.className='cout-xp';c.textContent=coutPalier(t,1)+' XP';tete.prepend(c)}
+ if(cout&&coutPalier(t,1)){const c=document.createElement('span');c.className='cout-xp'+(a&&(a.talents||[]).includes(t.id)?' acquis':'');c.textContent=coutPalier(t,1)+' XP';tete.append(c)}
  // Un talent qui frappe, dans la barre d'action : ses dés et son bonus de dégâts sous son nom.
  if(des){des.classList.add('bulle-des');d.append(des)}
  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
@@ -3293,6 +3297,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // Une ligne en cours de tracé n'a de sens que dans l'édition.
  if(!(view==='mj'&&!arbresVueJoueur))lienDepuis=null;
  const classe=a?classeDuHeros(a):arbresClasse;
+ // Chez le MJ, sur l'arbre d'une classe : la somme des coûts en XP de tout ce qu'il porte.
+ {const total=!a&&view==='mj'&&classe?talentsDeLArbre(classe).reduce((n,t)=>n+coutPalier(t,1),0):0;arbresTotal.hidden=!total;arbresTotal.textContent=total?'Total '+total.toLocaleString('fr-FR')+' XP':''}
  // En masse, l'arbre se lit en tableau : ni colonnes ni lignes.
  if(arbresEnMasse&&!a&&view==='mj'){tableMasseTalents(corps,classe);return}
  /* L'élément qui habille l'arbre : celui du Mystique ; sur le plan du MJ, celui qu'il regarde ;
@@ -3378,7 +3384,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     if(retireDeLArbre(t))arbreChange()}));
    b.append(outils)}
   // Son prix en XP, en cartouche au bas du rond : dans l'arbre seulement.
-  if(coutPalier(t,1)){const k=document.createElement('span');k.className='arbre-cout';k.textContent=coutPalier(t,1)+' XP';b.append(k)}
+  if(coutPalier(t,1)&&etat!=='acquis'){const k=document.createElement('span');k.className='arbre-cout';k.textContent=coutPalier(t,1)+' XP';b.append(k)}
   surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
   return b};
  // La tête : la classe, l'élément du Mystique, ce que l'arbre a coûté.

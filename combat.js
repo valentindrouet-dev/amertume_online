@@ -634,8 +634,17 @@ function rayonContre(idx,ox,oy,dx,dy,t,exclues){
 // Un héros poussé dans la matière verrait le noir : les formes qui le contiennent sont ignorées.
 function formesAutour(o,shapes){const ex=new Set();
  (shapes||[]).forEach((s,i)=>{if(shapeContains(s,[o.x,o.y]))ex.add(i)});return ex}
+/* Un observateur dont le centre tombe dans la matière — un socle collé au mur, une zone de départ qui
+   mord sur la pierre — regarde depuis le point libre le plus proche, à trois unités au plus ; sans
+   point libre, il ne voit rien. Écarter la forme entière, comme avant, lui ouvrait d'un coup toutes
+   les salles d'un donjon d'un seul tenant, et révélait chaque adversaire de la carte. */
+function pointLibre(o,shapes){const dedans=p=>(shapes||[]).some(s=>shapeContains(s,p));
+ if(!dedans([o.x,o.y]))return o;
+ for(let r=.25;r<=3;r+=.25)for(let k=0;k<24;k++){const a=k/24*Math.PI*2,p=[o.x+Math.cos(a)*r,o.y+Math.sin(a)*r];if(!dedans(p))return {...o,x:p[0],y:p[1]}}
+ return null}
 function visionPolygon(o,shapes,box){
- const B=box||{x:0,y:0,w:100,h:100},exclues=formesAutour(o,shapes),idx=indexMurs(shapes);
+ const libre=pointLibre(o,shapes);if(!libre)return [[o.x,o.y],[o.x+.01,o.y],[o.x,o.y+.01]];o=libre;
+ const B=box||{x:0,y:0,w:100,h:100},exclues=new Set(),idx=indexMurs(shapes);
  const coins=[[B.x,B.y],[B.x+B.w,B.y],[B.x+B.w,B.y+B.h],[B.x,B.y+B.h]];
  (shapes||[]).forEach((s,i)=>{if(exclues.has(i))return;
   for(const c of contoursOf(s))if(c&&c.length>=3)for(const p of c)coins.push(p)});

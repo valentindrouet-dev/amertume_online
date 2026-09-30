@@ -911,6 +911,12 @@ assert.equal(readStat('level','9',1),9);assert.equal(readStat('level','25',1),20
 // L'XP paie les talents : il reste l'XP gagnée moins le prix de ce qu'on tient ; le niveau suit toute l'XP.
 {const {xpDisponible}=require('./combat.js');const T=[{id:'a',couts:[100,0,0]},{id:'b',couts:[250,0,0]}];
  assert.equal(xpDisponible({xp:500,talents:['a']},T),400);assert.equal(xpDisponible({xp:300,talents:['a','b']},T),0);assert.equal(xpDisponible({xp:0,talents:[]},T),0);}
+/* Un aventurier dont le centre mord sur la matière ne voit pas à travers elle : un donjon d'un seul
+   tenant, ses salles en creux, ne s'ouvre pas d'un coup. Il regarde depuis le point libre le plus proche. */
+{const {visionPolygon,pointInPolygon}=require('./combat.js');const r=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
+ const murs=[{contours:[r(0,40,100,60),r(20,60,60,30)]}];
+ const p=visionPolygon({x:50,y:42},murs);assert.equal(pointInPolygon([40,75],p),false,'la salle reste cachée');assert.equal(pointInPolygon([50,20],p),true,'le couloir se voit');
+ assert.equal(pointInPolygon([40,75],visionPolygon({x:50,y:75},murs)),true,'dans la salle, on la voit');}
 // Le niveau d'un aventurier suit son XP, palier par palier.
 {const {niveauDeXp,NIVEAUX_XP,writeStat}=require('./combat.js');assert.equal(NIVEAUX_XP.length,20);
  assert.deepEqual([0,299,300,899,900,2700,6499,6500,64000,354999,355000,999999].map(niveauDeXp),[1,1,2,2,3,4,4,5,10,19,20,20]);
