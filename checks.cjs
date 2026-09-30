@@ -2269,7 +2269,6 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes(".filter(t=>!estBonus(t)&&talentFamily(t)===famille")&&src.includes("const codes=Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>{"),'un bonus ne paraît ni dans l’onglet, ni dans le sélecteur, ni dans la bibliothèque');
  assert.ok(src.includes('<label><input type="radio" name="nature" value="bonus"')&&src.includes("['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});")
   &&src.includes("if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});")
-  &&src.includes("t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.logo='';t.effects='';")
   &&feuille.includes('.talent-cache{display:none!important}'),'l’éditeur devient éditeur de bonus');
 }
 /* v0.264 — Le domaine part avec le contenu publié et se lit chez les joueurs, sans édition ; les

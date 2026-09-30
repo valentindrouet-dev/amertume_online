@@ -180,6 +180,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // La classe où le MJ range chaque effet de talent, pour la bibliothèque : un nom par effet connu.
  const ce=c.classesEffets&&typeof c.classesEffets==='object'&&!Array.isArray(c.classesEffets)?c.classesEffets:{};
  c.classesEffets={};Object.entries(ce).forEach(([k,v])=>{if(TALENTS_CODES[k]&&typeof v==='string'&&v.trim())c.classesEffets[k]=v.trim().slice(0,60)});
+ // Les logos communs des bonus, par caractéristique : un nom de logo par clé.
+ const lb=c.logosBonus&&typeof c.logosBonus==='object'&&!Array.isArray(c.logosBonus)?c.logosBonus:{};
+ c.logosBonus={};Object.entries(lb).forEach(([k,v])=>{if(/^[a-z]+(:\d+)?$/.test(k)&&typeof v==='string'&&v&&v.length<=120)c.logosBonus[k]=v});
  // Les noms que le MJ a donnés aux effets, dans la bibliothèque : un texte court par effet connu.
  const ne=c.nomsEffets&&typeof c.nomsEffets==='object'&&!Array.isArray(c.nomsEffets)?c.nomsEffets:{};
  c.nomsEffets={};Object.entries(ne).forEach(([k,v])=>{if(TALENTS_CODES[k]&&typeof v==='string'&&v.trim())c.nomsEffets[k]=v.trim().slice(0,60)});
@@ -2329,7 +2332,7 @@ $('talent-add').onclick=()=>openTalent(null);
    Un fichier à part pour les talents : tous, arbres compris — places, lignes, chemins, coûts, textes,
    logos —, avec les noms des colonnes, la classe de chaque mécanique et les mots clés. */
 function sauvegardeTalents(){return {app:'amertume_online',type:'talents',version:1,exporte:new Date().toISOString(),
- talents:structuredClone(catalog.talents||[]),voies:structuredClone(catalog.voies||{}),classesEffets:structuredClone(catalog.classesEffets||{}),nomsEffets:structuredClone(catalog.nomsEffets||{}),motsCles:[...(catalog.motsCles||[])]}}
+ talents:structuredClone(catalog.talents||[]),voies:structuredClone(catalog.voies||{}),classesEffets:structuredClone(catalog.classesEffets||{}),nomsEffets:structuredClone(catalog.nomsEffets||{}),logosBonus:structuredClone(catalog.logosBonus||{}),motsCles:[...(catalog.motsCles||[])]}}
 $('talent-sauve').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(sauvegardeTalents(),null,1)],{type:'application/json'}));
  const a=document.createElement('a');a.href=url;a.download=nomSauvegarde().replace(/^amertume-/,'amertume-talents-');document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)};
 $('talent-importe').onclick=()=>{$('talent-fichier').value='';$('talent-fichier').click()};
@@ -2341,6 +2344,7 @@ $('talent-fichier').onchange=async()=>{const f=$('talent-fichier').files[0];if(!
  if(d.voies&&typeof d.voies==='object')catalog.voies={...(catalog.voies||{}),...d.voies};
  if(d.classesEffets&&typeof d.classesEffets==='object')catalog.classesEffets={...(catalog.classesEffets||{}),...d.classesEffets};
  if(d.nomsEffets&&typeof d.nomsEffets==='object')catalog.nomsEffets={...(catalog.nomsEffets||{}),...d.nomsEffets};
+ if(d.logosBonus&&typeof d.logosBonus==='object')catalog.logosBonus={...(catalog.logosBonus||{}),...d.logosBonus};
  if(Array.isArray(d.motsCles)&&d.motsCles.length)catalog.motsCles=d.motsCles;
  normalizeCatalog(catalog);accordeArbres();accordeTalentsHeros();renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
 /* L'export PDF : une page par classe, ses colonnes, chaque talent dans l'ordre de l'arbre avec tout ce
@@ -2548,7 +2552,10 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +sel('Caractéristique','b_carac',pb.carac,optBonus('carac'))
   +field('Valeur','b_valeur',pb.valeur,'number','min="1" max="20"')
   +sel('Compétence','b_comp',pb.comp,optBonus('comp'))
-  +field('Coût (XP)','b_cout',coutPalier(t,1),'number','min="0" max="999999" step="1"')+'</div>'
+  +field('Coût (XP)','b_cout',coutPalier(t,1),'number','min="0" max="999999" step="1"')
+  // Son logo : le sien, ou celui de tous les bonus de la même caractéristique.
+  +(()=>{const d=(catalog.logosBonus||{})[cleLogoBonus(pb)]||'';return selLogos('Logo','b_logo',t.logo||d)
+   +'<label class="field-check"><input type="checkbox" name="b_logo_tous"'+(!t.logo&&d?' checked':'')+'>Pour tous les bonus de cette caractéristique</label>'})()+'</div>'
   +'<p class="muted" id="bonus-apercu"></p></section>';
  /* Ce qui n'est que talent — nom, type, logo, rangée, effet, mécanique — se retire en mode
     bonus, et ce qui n'est que bonus se retire en mode talent : retiré, et non caché, pour
@@ -2642,7 +2649,11 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  /* Un bonus de caractéristique : sa caractéristique et sa valeur font tout — le nom s'écrit
     seul, la nature est passive, rien à la table, pas de logo. */
  if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});
-  t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.logo='';t.effects='';
+  t.effet='bonus';t.name=libelleBonus(t.params);t.type='pass';t.rangee='aucune';t.effects='';
+  /* Le logo choisi : pour ce bonus seul, ou, la case cochée, pour tous ceux de sa caractéristique
+     — ce bonus suit alors ce choix commun. Aucun : l'icône du jeu. */
+  {const l=f.b_logo&&logoValide(f.b_logo.value)?f.b_logo.value:'',k=cleLogoBonus(t.params);
+   if(f.b_logo_tous&&f.b_logo_tous.checked){const o={...(catalog.logosBonus||{})};if(l)o[k]=l;else delete o[k];catalog.logosBonus=o;t.logo=''}else t.logo=l}
   t.couts=[num(f.b_cout.value,0,999999),0,0];t.paliers={};delete t.elementaire;delete t.volets}
  // Seul un bonus se pose sur un chemin : redevenu talent, il le quitte.
  if(!(t.effet==='bonus'||t.type==='ame'))delete t.chemin;
@@ -3003,7 +3014,11 @@ const peutEtrePetit=t=>!!t&&(estBonus(t)||t.type==='ame');
 const SVG_BONUS={pv:'<path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.2 0 3.6 1.2 4.3 2.4.7-1.2 2.1-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z" fill="#c0392b" stroke="#6e1a12" stroke-width="1.2"/>',
  endu:'<path d="M13.5 2 5 13.2h5.6L9.4 22 19 10.4h-5.8z" fill="#2c8c85" stroke="#12423f" stroke-width="1.2" stroke-linejoin="round"/>',
  vie:'<path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.8l-5.8 3.5 1.6-6.6-5.2-4.4 6.8-.5z" fill="#7a5cb8" stroke="#3b2966" stroke-width="1.2" stroke-linejoin="round"/>'};
+// La clé du logo commun d'un bonus : sa caractéristique, et sa compétence s'il en vise une.
+function cleLogoBonus(p){const c=(p&&p.carac)||'pv';return c+(c==='comp'?':'+(p&&p.comp!==undefined?p.comp:'0'):'')}
 function logoBonus(p){const carac=(p&&p.carac)||'pv';let el=null;
+ // Le logo que le MJ a donné à tous les bonus de cette caractéristique passe devant l'icône du jeu.
+ const perso=(typeof catalog!=='undefined'&&catalog.logosBonus||{})[cleLogoBonus(p)];if(perso){const im=logoImage(perso,LOGOS_TOUS);if(im)return im}
  if(SVG_BONUS[carac]){el=document.createElementNS('http://www.w3.org/2000/svg','svg');el.setAttribute('viewBox','0 0 24 24');el.innerHTML=SVG_BONUS[carac]}
  else if(carac==='dmg'||carac==='orbe'){el=document.createElement('img');el.src=imgUrl(carac==='dmg'?'DEGATS.webp':'spell_orbes.png');el.alt='';el.draggable=false}
  else if(carac==='comp'){const k=Math.max(0,Math.min(7,Number(p&&p.comp)||0));el=logoCompetence(k);
