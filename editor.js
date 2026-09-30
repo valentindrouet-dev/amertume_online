@@ -3396,12 +3396,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const pts=[...prises,...petits,...places];
   let x0=pts.length?Math.min(...pts.map(q=>q.x)):0,x1=pts.length?Math.max(...pts.map(q=>q.x)):0;const y0=pts.length?Math.min(...pts.map(q=>q.y)):0,y1=pts.length?Math.max(...pts.map(q=>q.y)):0;
   // Le talent de départ est le centre de l'arbre : le plan s'étend autant de chaque côté de lui.
-  const depart=c.liste.find(t=>racines.has(t.id));
+  // Le talent de départ : la racine la plus haute. Seul lui reçoit le trait du bandeau ; un talent sans lien n'en a pas.
+  const depart=c.liste.filter(t=>racines.has(t.id)).sort((x,y)=>cases.get(x.id).y-cases.get(y.id).y)[0];
   if(depart){const rx=cases.get(depart.id).x,e=Math.max(rx-x0,x1-rx);x0=rx-e;x1=rx+e}
   const L=CASE_SPHERIER,plan=document.createElement('div');plan.className='arbre-plan';
   plan.style.width=((x1-x0+1)*L).toFixed(0)+'px';plan.style.height=((y1-y0+1)*L).toFixed(0)+'px';
   const pose=(el,x,y)=>{el.style.left=((x-x0+.5)*L).toFixed(1)+'px';el.style.top=((y-y0+.5)*L).toFixed(1)+'px'};
-  c.liste.forEach(t=>{const p=cases.get(t.id),el=noeudArbre(t,c,libre);if(racines.has(t.id))el.classList.add('racine');pose(el,p.x,p.y);plan.append(el)});
+  c.liste.forEach(t=>{const p=cases.get(t.id),el=noeudArbre(t,c,libre);if(t===depart)el.classList.add('racine');pose(el,p.x,p.y);plan.append(el)});
   petits.forEach(s=>{const el=noeudPetit(s.t,s.de,c,libre);pose(el,s.x,s.y);plan.append(el)});
   places.forEach(pl=>{const el=pl.genre==='gros'?place(c,pl):placePetit(c,pl);pose(el,pl.x,pl.y);plan.append(el)});
   col.append(plan);
@@ -3439,9 +3440,6 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
    const l=document.createElementNS(ns,'line'),z=document.createElementNS(ns,'line');
    [l,z].forEach(x=>{x.setAttribute('x1',P.x.toFixed(1));x.setAttribute('y1',P.y.toFixed(1));x.setAttribute('x2',Q.x.toFixed(1));x.setAttribute('y2',Q.y.toFixed(1))});
    z.setAttribute('class','zone');l.setAttribute('class','trait');g.append(z,l);
-   if(lien){const pt=document.createElementNS(ns,'polygon'),bx=Q.x-ux*9,by=Q.y-uy*9;
-    pt.setAttribute('points',[[Q.x,Q.y],[bx-uy*5,by+ux*5],[bx+uy*5,by-ux*5]].map(([x,y])=>x.toFixed(1)+','+y.toFixed(1)).join(' '));
-    pt.setAttribute('class','pointe');g.append(pt)}
    if(mj&&lien){const t=document.createElementNS(ns,'title');t.textContent='Ligne de '+de.name+' vers '+vers.name+' — cliquer pour l’effacer';g.append(t);
     g.onclick=e=>{e.stopPropagation();if(basculeLien(de,vers)==='retire')arbreChange()}}
    svg.append(g)};
