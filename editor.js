@@ -2202,7 +2202,7 @@ function renderBiblioObjets(){const boite=$('biblio-objets');if(!boite)return;
 /* La classe d'un effet dans la bibliothèque : celle que le MJ lui a donnée ; sinon celle qu'on
    devine — les orbes au Mystique, la garde au Gardien — si la classe existe ; sinon les
    génériques, ou les adversaires pour un effet de monstre. */
-const CLASSES_EFFETS_DEVINEES={orbes:'Mystique',orbescritiques:'Mystique',orbesinratables:'Mystique',orbesfeu:'Mystique',corpselem:'Mystique',ignition:'Mystique',deluge:'Mystique',eruption:'Mystique',eruptiondegats:'Mystique',eruptiondouble:'Mystique',implosion:'Mystique',degatselem:'Mystique',
+const CLASSES_EFFETS_DEVINEES={orbes:'Mystique',orbescritiques:'Mystique',orbesinratables:'Mystique',ignoredegats:'Mystique',soinetat:'Mystique',soinetatdouble:'Mystique',orbesfeu:'Mystique',corpselem:'Mystique',ignition:'Mystique',deluge:'Mystique',eruption:'Mystique',eruptiondegats:'Mystique',eruptiondouble:'Mystique',implosion:'Mystique',degatselem:'Mystique',
  gardien:'Gardien',rempart:'Gardien',provocation:'Gardien',provocattaque:'Gardien',provocsol:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',lamevent:'Lamevent',rebond:'Lamevent',revanche:'Lamevent',traction:'Lamevent',rapide:'Lamevent',larcin:'Lamevent',tenailles:'Lamevent',dominateur:'Lamevent',deception:'Lamevent',lameventelem:'Lamevent'};
 const ADVERSAIRES='Adversaires';
 function classeEffet(c){const choisie=(catalog.classesEffets||{})[c.cle];if(choisie)return choisie;

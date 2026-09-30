@@ -1018,6 +1018,18 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   params:[],
   phrase(){return 'Le porteur lance <b>tous ses orbes</b> ensemble contre <b>un même adversaire</b>, en <b>un seul jet</b> de dés commun.'}},
  /* Orbes critiques : une amélioration. Les orbes du porteur peuvent faire des critiques sur un double 6. */
+ /* Les dégâts d'un état — Feu qui brûle, décharge de Foudre, Éruption, Poison : un talent les fait
+    ignorer au porteur ; ses améliorations les changent en soin, puis en soin doublé. */
+ ignoredegats:{cle:'ignoredegats',nom:'Ignore les dégâts d’un état',type:'pass',
+  aide:'Passif : le porteur ne subit pas les dégâts de l’état réglé (Feu qui brûle, décharge de Foudre, Éruption, Poison).',
+  params:[{cle:'etat',nom:'État',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
+  phrase(p){return 'Le porteur <b>ignore les dégâts</b> de <b>'+((p&&p.etat)||'Feu')+'</b>.'}},
+ soinetat:{cle:'soinetat',nom:'Dégâts d’état en soin',type:'ame',
+  aide:'Amélioration : les dégâts de l’état que le porteur ignore le soignent.',params:[],
+  phrase(){return 'Les dégâts de l’état que le porteur ignore le <b>soignent</b>.'}},
+ soinetatdouble:{cle:'soinetatdouble',nom:'Dégâts d’état en soin ×2',type:'ame',
+  aide:'Amélioration : les dégâts de l’état que le porteur ignore le soignent deux fois.',params:[],
+  phrase(){return 'Les dégâts de l’état que le porteur ignore le <b>soignent deux fois</b>.'}},
  /* Orbes inratables : une amélioration. Les orbes du porteur ne font jamais d'échec sur un double 1. */
  orbesinratables:{cle:'orbesinratables',nom:'Orbes inratables',type:'ame',
   aide:'Amélioration : les Orbes mystiques du porteur ne peuvent pas produire d’échec (double 1).',
