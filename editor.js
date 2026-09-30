@@ -207,8 +207,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  /* Les spécialisations de chaque classe, dans l'ordre du MJ : des noms, deux au plus par
     classe, sans doublon. Une voie qu'un talent nomme sans y figurer s'y lit quand même. */
  const voies=c.voies&&typeof c.voies==='object'&&!Array.isArray(c.voies)?c.voies:{};
+ const na=c.nbArbres&&typeof c.nbArbres==='object'&&!Array.isArray(c.nbArbres)?c.nbArbres:{};
+ c.nbArbres={};Object.entries(na).forEach(([f,n])=>{if(n===1&&f&&f.length<=120)c.nbArbres[f]=1});
  c.voies={};Object.entries(voies).forEach(([f,l])=>{if(!Array.isArray(l))return;
-  const noms=[...new Set(l.filter(v=>typeof v==='string').map(v=>v.trim().slice(0,60)).filter(Boolean))].slice(0,VOIES_MAX);
+  const noms=[...new Set(l.filter(v=>typeof v==='string').map(v=>v.trim().slice(0,60)).filter(Boolean))].slice(0,c.nbArbres[f]===1?1:VOIES_MAX);
   if(noms.length)c.voies[f]=noms});
  /* Les classes du jeu viennent avec lui : un catalogue enregistré avant elles les reçoit
     une fois. Ensuite elles lui appartiennent, et le MJ peut les corriger. */
@@ -258,7 +260,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  /* Une voie qu'un talent porte sans qu'elle soit nommée entre dans la liste de sa classe :
     la colonne ne disparaît pas quand on en sort le dernier talent. */
  c.talents.forEach(t=>{if(!t||!t.voie)return;const f=(t.famille||'').trim()||'Génériques',l=c.voies[f]||[];
-  if(!l.includes(t.voie)&&l.length<VOIES_MAX)c.voies[f]=[...l,t.voie]});
+  if(!l.includes(t.voie)&&l.length<(c.nbArbres[f]===1?1:VOIES_MAX))c.voies[f]=[...l,t.voie]});
  /* Les paliers d'un talent : un coût en PT par palier, 0 tant que le MJ n'en décide pas ; et pour
     les paliers 2 et 3, leur texte et leurs réglages quand ils diffèrent — relus au travers de la
     mécanique. Un bonus n'a qu'un palier. */
@@ -2347,7 +2349,7 @@ $('talent-add').onclick=()=>openTalent(null);
    Un fichier à part pour les talents : tous, arbres compris — places, lignes, chemins, coûts, textes,
    logos —, avec les noms des colonnes, la classe de chaque mécanique et les mots clés. */
 function sauvegardeTalents(){return {app:'amertume_online',type:'talents',version:1,exporte:new Date().toISOString(),
- talents:structuredClone(catalog.talents||[]),voies:structuredClone(catalog.voies||{}),classesEffets:structuredClone(catalog.classesEffets||{}),nomsEffets:structuredClone(catalog.nomsEffets||{}),logosBonus:structuredClone(catalog.logosBonus||{}),motsCles:[...(catalog.motsCles||[])]}}
+ talents:structuredClone(catalog.talents||[]),voies:structuredClone(catalog.voies||{}),nbArbres:structuredClone(catalog.nbArbres||{}),classesEffets:structuredClone(catalog.classesEffets||{}),nomsEffets:structuredClone(catalog.nomsEffets||{}),logosBonus:structuredClone(catalog.logosBonus||{}),motsCles:[...(catalog.motsCles||[])]}}
 $('talent-sauve').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(sauvegardeTalents(),null,1)],{type:'application/json'}));
  const a=document.createElement('a');a.href=url;a.download=nomSauvegarde().replace(/^amertume-/,'amertume-talents-');document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)};
 $('talent-importe').onclick=()=>{$('talent-fichier').value='';$('talent-fichier').click()};
@@ -2357,6 +2359,7 @@ $('talent-fichier').onchange=async()=>{const f=$('talent-fichier').files[0];if(!
  if(!confirm('Remplacer les '+(catalog.talents||[]).length+' talents actuels par les '+d.talents.length+' du fichier ?'))return;
  catalog.talents=d.talents;
  if(d.voies&&typeof d.voies==='object')catalog.voies={...(catalog.voies||{}),...d.voies};
+ if(d.nbArbres&&typeof d.nbArbres==='object')catalog.nbArbres={...(catalog.nbArbres||{}),...d.nbArbres};
  if(d.classesEffets&&typeof d.classesEffets==='object')catalog.classesEffets={...(catalog.classesEffets||{}),...d.classesEffets};
  if(d.nomsEffets&&typeof d.nomsEffets==='object')catalog.nomsEffets={...(catalog.nomsEffets||{}),...d.nomsEffets};
  if(d.logosBonus&&typeof d.logosBonus==='object')catalog.logosBonus={...(catalog.logosBonus||{}),...d.logosBonus};
@@ -2947,10 +2950,20 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
    d'œil, et l'on ne compte pas les cases vides. Chaque rang porte un nom — ou rien tant que
    le MJ ne l'a pas baptisé. Un catalogue d'avant les voies nommées donne les siennes par
    les talents qui les portent. */
-function voiesDe(famille){const brut=[...((catalog.voies||{})[famille]||[])].filter(v=>typeof v==='string');
+// Les arbres d'une classe : deux, sauf quand le MJ en a supprimé un.
+function nbArbres(famille){return (catalog.nbArbres||{})[famille]===1?1:VOIES_MAX}
+function voiesDe(famille){const brut=[...((catalog.voies||{})[famille]||[])].filter(v=>typeof v==='string'),n=nbArbres(famille);
  (catalog.talents||[]).forEach(t=>{if(t&&talentFamily(t)===famille&&t.voie&&!brut.includes(t.voie))brut.push(t.voie)});
- const out=brut.slice(0,VOIES_MAX);while(out.length<VOIES_MAX)out.push('');
+ const out=brut.slice(0,n);while(out.length<n)out.push('');
  return out}
+/* Supprimer un arbre d'une classe qui en a deux : ses talents le quittent, sans être effacés du
+   catalogue — leurs petits ronds avec eux —, et la classe n'en garde qu'un, l'autre. */
+function supprimerArbre(famille,rang){if(view!=='mj'||nbArbres(famille)<2)return false;
+ const cols=colonnesArbre(famille),col=cols[rang],reste=cols.find((c,i)=>i!==rang);if(!col||!reste)return false;
+ col.liste.forEach(t=>{retireDeLArbre(t);delete t.voie});
+ if(col.voie)(catalog.talents||[]).forEach(t=>{if(t&&talentFamily(t)===famille&&t.voie===col.voie)delete t.voie});
+ catalog.voies={...(catalog.voies||{}),[famille]:reste.voie?[reste.voie]:[]};
+ catalog.nbArbres={...(catalog.nbArbres||{}),[famille]:1};return true}
 // Les voies qui portent un nom, pour les menus et les comptes.
 function voiesNommees(famille){return voiesDe(famille).filter(Boolean)}
 // Le rang qui accueille les talents sans voie : le premier sans nom, le premier sinon.
@@ -2959,7 +2972,7 @@ function rangDAccueil(famille){const voies=voiesDe(famille),i=voies.indexOf('');
    — ses talents redeviennent sans voie et reviennent au tronc commun. Le rang qui hébergeait
    les sans-voie les emmène avec lui : ils ne disparaissent jamais de l'arbre. */
 function nommerVoie(famille,rang,nom){nom=String(nom||'').trim().slice(0,60);
- if(!famille||!(rang>=0&&rang<VOIES_MAX))return false;
+ if(!famille||!(rang>=0&&rang<nbArbres(famille)))return false;
  const voies=voiesDe(famille),avant=voies[rang];
  if(nom===avant)return false;
  if(nom&&voies.some((v,i)=>v===nom&&i!==rang))return false;
@@ -3643,9 +3656,11 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(mj&&c.rang>=0){nomVoie.classList.toggle('vierge',!c.voie);
    champVif(nomVoie,()=>c.voie,v=>{if(nommerVoie(c.famille,c.rang,v))arbreChange();
     else note('Ce nom de spécialisation est vide, inchangé, ou déjà pris par une autre colonne.')},'Nommer cette colonne','texte');
-   if(c.voie){const x=ico('✕','Effacer le nom « '+c.voie+' » : ses talents rejoignent le tronc commun',async()=>{
-     if(typeof demander==='function'&&!await demander('Effacer la spécialisation « '+c.voie+' » ? Ses talents rejoignent le tronc commun de '+c.famille+'.','Effacer'))return;
-     if(nommerVoie(c.famille,c.rang,''))arbreChange()});
+   // ✕ : supprimer cet arbre, tant que la classe en a deux ; vider son nom l'efface seulement.
+   if(nbArbres(c.famille)>1){const x=ico('✕','Supprimer l’arbre « '+c.titre+' »',async()=>{
+     const n=c.liste.length;
+     if(typeof demander==='function'&&!await demander('Supprimer l’arbre « '+c.titre+' » de '+c.famille+' ? '+(n?(n>1?'Ses '+n+' talents le quittent':'Son talent le quitte')+', sans être effacé'+(n>1?'s':'')+' du catalogue.':'Il est vide.'),'Supprimer'))return;
+     if(supprimerArbre(c.famille,c.rang))arbreChange()});
     x.classList.add('voie-x');h.append(x)}}
   col.append(h);
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','arbre-chemins');col.append(svg);

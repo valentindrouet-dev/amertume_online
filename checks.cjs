@@ -1462,13 +1462,13 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
 /* L'arbre s'édite en place : les voies vivent au catalogue, un talent créé depuis une case arrive
    déjà rangé et relié, le formulaire refermé redessine l'arbre, le glisser-déposer déplace. */
 assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.isArray(c.voies)?c.voies:{};")&&src.includes('const VOIES_MAX=2;')
- &&src.includes("if(!l.includes(t.voie)&&l.length<VOIES_MAX)c.voies[f]=[...l,t.voie]});")&&!src.includes('function descendDe(')
+ &&src.includes("if(!l.includes(t.voie)&&l.length<(c.nbArbres[f]===1?1:VOIES_MAX))c.voies[f]=[...l,t.voie]});")&&!src.includes('function descendDe(')
  &&src.includes('function openTalent(i=null,apres=null,defauts=null)')&&src.includes(",...(defauts||{})}:catalog.talents[i];")
  &&src.includes("if(typeof arbresDialog!=='undefined'&&arbresDialog.open)renderArbres()});")&&src.includes('function placerTalent(id,dest)')
  &&src.includes("el.addEventListener('dragstart',e=>{arbreGlisse=t.id;el.classList.add('tire');corps.classList.add('glisse');")
  &&src.includes("if(!id||id===dest.soi)return;if(placerTalent(id,dest))arbreChange()})};")&&src.includes("glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,pos:posDe(t),soi:t.id});")
  &&src.includes("cible(p,{famille:col.famille,voie:col.voie,pos:{x:pl.x,y:pl.y}});return p};")
- &&src.includes("cible(h,{famille:c.famille,voie:c.voie});")&&src.includes("champVif(nomVoie,()=>c.voie,v=>{if(nommerVoie(c.famille,c.rang,v))arbreChange();")&&src.includes("nomVoie.classList.toggle('vierge',!c.voie);")&&feuille.includes('.arbre-titre .arbre-voie.vierge{')&&src.includes("if(nommerVoie(c.famille,c.rang,''))arbreChange()")
+ &&src.includes("cible(h,{famille:c.famille,voie:c.voie});")&&src.includes("champVif(nomVoie,()=>c.voie,v=>{if(nommerVoie(c.famille,c.rang,v))arbreChange();")&&src.includes("nomVoie.classList.toggle('vierge',!c.voie);")&&feuille.includes('.arbre-titre .arbre-voie.vierge{')&&src.includes("if(supprimerArbre(c.famille,c.rang))arbreChange()")
  &&src.includes("{famille:talentFamily(t),voie:t.voie||'',de:t.id,level:Math.min(20,(t.level||1)+1)})));")
  &&src.includes("if(!avant&&talentDefauts&&talentDefauts.de){const de=talent(talentDefauts.de);")
  &&!src.includes('+ Spécialisation')&&!src.includes('arbre-col nouvelle')
