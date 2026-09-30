@@ -2229,7 +2229,11 @@ function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
   const h=document.createElement('summary');h.className='biblio-groupe';h.textContent=k;const encre=typeof teinteClasse==='function'?teinteClasse(k):'';if(encre)h.style.color=encre;
   const n=document.createElement('span');n.className='biblio-n';n.textContent=liste.length;h.append(n);bloc.append(h);
   bloc.addEventListener('toggle',()=>{if(bloc.open)plis.delete(k);else plis.add(k);try{localStorage.setItem('amertume-biblio-plis',JSON.stringify([...plis]))}catch(e){}});
-  liste.forEach(c=>bloc.append(ficheEffet(c,k,rangs)));boite.append(bloc)});
+  /* Les talents d'abord, chacun suivi, en retrait, des améliorations qui le prolongent ; une
+     amélioration sans talent dans la classe reste à sa place, seule. */
+  const enfants=c=>liste.filter(x=>x.pour===c.cle);
+  liste.filter(c=>!c.pour||!liste.some(p=>p.cle===c.pour)).forEach(c=>{bloc.append(ficheEffet(c,k,rangs));
+   enfants(c).forEach(x=>{const f=ficheEffet(x,k,rangs);f.classList.add('effet-amelioration');bloc.append(f)})});boite.append(bloc)});
  if(!codes.length){const v=document.createElement('p');v.className='muted';
   v.textContent='Aucun effet câblé pour l’instant.';boite.append(v)}}
 /* Une ligne par effet : son nom, puis la phrase que le moteur appliquera, réglages en gras — la

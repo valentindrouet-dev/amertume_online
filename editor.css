@@ -1847,3 +1847,6 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .talent-rangee.t-ame .cat-pill.gear-carre.talent-carre .logo-equip{width:70%;height:70%}
 .talent-rangee.t-ame .cat-pill.gear-carre.talent-carre .glyphe{font-size:15px}
 .talent-rangee.t-ame .nom-carte{display:none}
+/* Bibliothèque des effets : une amélioration en retrait sous son talent, une pastille devant. */
+.effet-fiche.effet-amelioration{margin-left:26px;position:relative}
+.effet-fiche.effet-amelioration::before{content:'⇧';position:absolute;left:-19px;top:10px;display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:#5e9a5b;color:#fff;font:800 9px/1 system-ui}

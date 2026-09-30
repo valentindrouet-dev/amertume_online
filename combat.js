@@ -1114,6 +1114,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),ouvert=k=>!!v&&v[k]>0&&n>=v[k];
    return 'Le porteur effectue <b>une attaque</b>, puis repousse '+(ouvert('tous')?'<b>tous les adversaires à son contact</b>':'<b>la cible</b>')
     +(ouvert('loin')?' à <b>deux fois sa zone de contact</b>.':' <b>hors de sa zone de contact</b>.')}}};
+/* Chaque amélioration dit le talent qu'elle améliore : la bibliothèque la range dessous. Celles qui
+   ne sont liées à aucun talent en particulier restent seules. */
+{const POUR={orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
+ provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',
+ soinetat:'ignoredegats',soinetatdouble:'ignoredegats',corpselem:'invulnerable'};
+ Object.entries(POUR).forEach(([k,p])=>{if(TALENTS_CODES[k]&&TALENTS_CODES[p])TALENTS_CODES[k].pour=p})}
 /* ---------- Les effets d'équipement ----------
    Ce qu'un objet sait faire quand on s'en sert : même grammaire que les talents — une clé,
    des réglages, une phrase que le moteur écrit lui-même — et trois manières d'en user.
