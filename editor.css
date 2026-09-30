@@ -1787,3 +1787,6 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* L'XP d'une carte, au MJ : à côté de son nom sur la table, et dans l'onglet Cartes. */
 #carte-titre .xp-carte{margin-left:10px;font:700 11px system-ui;letter-spacing:.3px;text-transform:none;color:var(--muted)}
 .maps-bar .map-xp{align-self:flex-end;margin-bottom:13px;font:700 12px system-ui;color:var(--muted);white-space:nowrap}
+/* Les dés d'une ligne du journal, en petits carrés. */
+.j-des{display:inline-flex;vertical-align:-3px}
+.j-des .pips{gap:2px}.j-des .die-sq{flex:0 0 15px;width:15px;height:15px}
