@@ -722,6 +722,12 @@ function detailDegats(a){const b=bonusDe(a,catalog.talents,catalog.items),bt=bon
  if(bt.dmg)l.push(['Talents','+ '+bt.dmg]);if(b.dmg-bt.dmg)l.push(['Équipement','+ '+(b.dmg-bt.dmg)]);if(aura)l.push(['Meneur allié','+ '+aura]);
  if(typeof meuteActive==='function'&&meuteActive(a))l.push(['Meute (allié au contact)','× 2']);
  l.push(['Total','+'+degatsDe(a)]);return l}
+// L'XP d'un aventurier au survol : son niveau, le suivant et ce qu'il reste à gagner pour l'atteindre.
+function detailXp(a){const xp=Math.max(0,Math.trunc(Number(a.xp))||0),niv=niveauDeXp(xp),f=n=>n.toLocaleString('fr-FR')+' XP';
+ const l=[['Niveau '+niv,f(xp)]];
+ if(niv>=NIVEAUX_XP.length)l.push(['Niveau maximum','atteint']);
+ else{const s=NIVEAUX_XP[niv];l.push(['Niveau '+(niv+1),'à '+f(s)],['Reste à gagner',f(s-xp)])}
+ return l}
 function calculAuSurvol(tuile,lignes){if(!tuile)return;
  const montre=()=>{const d=document.createElement('div');d.className='calcul-bulle';
   lignes().forEach(([k,v],i,t)=>{const r=document.createElement('div');r.className='calcul-ligne'+(i===0?' tete':i===t.length-1?' total':'');
@@ -895,7 +901,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // Le MJ corrige un chiffre là où il le lit ; les PV max se calculent, ils ne se saisissent pas.
  tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg'],['xp']],c);
  // Au survol, le calcul : d'où viennent les PV max, et les Dégâts.
- calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));
+ calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));if(a.hero)calculAuSurvol(tuiles[5],()=>detailXp(a));
  // Vie, Endu, PV max, Dégâts et XP se lisent à leur icône, la valeur posée au bas ; la DEF garde son écu.
  [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([carac,k])=>iconeStat(tuiles[k],carac));
  chiffres.classList.add('en-icones');chiffres.append(...tuiles);
