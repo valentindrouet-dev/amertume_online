@@ -1326,7 +1326,7 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
    {id:'e',name:'Serment',famille:'Gardien',type:'pass',level:2,voie:'Serment'},
    {id:'f',name:'Foi',famille:'Gardien',type:'pass',level:2,voie:'Quatrième'},
    {id:'g',name:'Vigilance',famille:'',type:'pass',level:1,voie:''}]},
-  cleClasse:C.cleClasse,ordonneTalents:C.ordonneTalents,talentCode:C.talentCode,manqueTalent:C.manqueTalent,talentsDependants:C.talentsDependants,VOIES_MAX:3,LIENS_MAX:2};
+  cleClasse:C.cleClasse,ordonneTalents:C.ordonneTalents,talentCode:C.talentCode,manqueTalent:C.manqueTalent,talentsDependants:C.talentsDependants,VOIES_MAX:3,LIENS_MAX:4,DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES:['n','e','s','o']};
  vm.createContext(ctx);
  vm.runInContext(morceau('const TALENT_TYPES=','function talent(id)')+'const estBonus=t=>!!t&&t.effet===\'bonus\';'+morceau('function talentFamilies()',"// L'encre d'une classe")
   +morceau('/* Une classe a toujours toutes ses colonnes','const arbresDialog='),ctx);
@@ -1364,19 +1364,20 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  assert.equal(ctx.placerTalent('b',{famille:'Gardien',voie:'Rempart',pos:{x:0,y:1}}),true);
  assert.equal(JSON.stringify(T('b').pos)+JSON.stringify(T('c').pos),'{"x":0,"y":1}{"x":1,"y":0}','dans le même arbre, deux talents échangent leurs cases');
  assert.equal(ctx.placerTalent('d',{famille:'Gardien',voie:'Rempart',de:'a'}),true);
- assert.equal(JSON.stringify(T('d').pos),'{"x":-1,"y":1}','sous a, la première case libre : dessous est pris, puis à gauche');
+ assert.equal(JSON.stringify(T('d').pos),'{"x":-1,"y":0}','à côté de a, la première case voisine libre : dessous et à droite sont pris, puis à gauche');
  assert.equal(JSON.stringify(T('a').liens),'["d"]','la ligne part de a');
  assert.equal(ctx.placerTalent('f',{famille:'Gardien',voie:'Rempart',de:'a'}),true);
  assert.equal(ctx.placerTalent('e',{famille:'Gardien',voie:'Rempart',de:'a'}),true);
- assert.equal(JSON.stringify(T('a').liens),'["d","f"]','deux lignes au plus : la troisième ne se trace pas');
- assert.equal(JSON.stringify(ctx.colonnesArbre('Gardien')[0].liste.map(t=>t.id)),JSON.stringify(['a','c','e','d','b','f','m']),'de haut en bas, de gauche à droite ; sans case, en dernier');
+ assert.equal(JSON.stringify(T('a').liens),'["d","f"]','plus de case voisine : le troisième se pose plus bas, sans ligne');
+ assert.equal(JSON.stringify(ctx.colonnesArbre('Gardien')[0].liste.map(t=>t.id)),JSON.stringify(['f','d','a','c','b','e','m']),'de haut en bas, de gauche à droite ; sans case, en dernier');
  assert.equal(ctx.placerTalent('d',{famille:'',voie:''}),true);
  assert.equal(T('d').famille,'Génériques','sans classe, un générique');assert.equal(T('d').pos===undefined||!!T('d').pos,true);
  assert.equal(JSON.stringify(T('a').liens),'["f"]','parti ailleurs, il laisse ses lignes');
  assert.equal(ctx.placerTalent('zzz',{famille:'Gardien'}),false);
- // Tracer, effacer : deux lignes au plus, jamais vers soi.
- assert.equal(ctx.basculeLien(T('a'),T('b')),'ajoute');assert.equal(ctx.basculeLien(T('a'),T('c')),'plein');
- assert.equal(ctx.basculeLien(T('a'),T('b')),'retire');assert.equal(JSON.stringify(T('a').liens),'["f"]');
+ // Tracer, effacer : vers une case voisine droite seulement, jamais vers soi.
+ assert.equal(ctx.basculeLien(T('a'),T('b')),'ajoute');assert.equal(ctx.basculeLien(T('a'),T('c')),'ajoute');
+ assert.equal(ctx.basculeLien(T('a'),T('e')),'loin','deux cases plus bas : pas de ligne');
+ assert.equal(ctx.basculeLien(T('a'),T('b')),'retire');assert.equal(JSON.stringify(T('a').liens),'["f","c"]');
  assert.equal(ctx.basculeLien(T('a'),T('a')),'rien');assert.equal(ctx.basculeLien(null,T('a')),'rien');
  // Les voies nommées : trois par classe, renommées sur leurs talents, dissoutes vers le tronc.
  assert.equal(ctx.enregistreVoie('Mystique','Feu'),true);assert.equal(ctx.enregistreVoie('Mystique','Feu'),true,'déjà là : rien à redire');
@@ -1419,13 +1420,13 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
   assert.equal(JSON.stringify(ctx.chuteArbre(['z','w'],L,t('z')).map(x=>x.id)),'["w"]','un départ donné par le MJ emporte ce qui pend sous lui');
   // La case libre : sous un talent, dessous puis en diagonale ; sans talent, sous l'arbre, au milieu.
   const P=[{pos:{x:0,y:0}},{pos:{x:0,y:1}},{pos:{x:2,y:0}}];
-  assert.equal(JSON.stringify(ctx.caseLibre(P,P[0])),'{"x":-1,"y":1}');
+  assert.equal(JSON.stringify(ctx.caseLibre(P,P[0])),'{"x":1,"y":0}');
   assert.equal(JSON.stringify(ctx.caseLibre(P,P[2])),'{"x":2,"y":1}');
   assert.equal(JSON.stringify(ctx.caseLibre(P,null)),'{"x":1,"y":2}');
   assert.equal(JSON.stringify(ctx.caseLibre([],null)),'{"x":0,"y":0}');}}
 /* L'arbre s'édite en place : les voies vivent au catalogue, un talent créé depuis une case arrive
    déjà rangé et relié, le formulaire refermé redessine l'arbre, le glisser-déposer déplace. */
-assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.isArray(c.voies)?c.voies:{};")&&src.includes('const VOIES_MAX=2;')&&src.includes('const LIENS_MAX=2;')
+assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.isArray(c.voies)?c.voies:{};")&&src.includes('const VOIES_MAX=2;')
  &&src.includes("if(!l.includes(t.voie)&&l.length<VOIES_MAX)c.voies[f]=[...l,t.voie]});")&&!src.includes('function descendDe(')
  &&src.includes('function openTalent(i=null,apres=null,defauts=null)')&&src.includes(",...(defauts||{})}:catalog.talents[i];")
  &&src.includes("if(typeof arbresDialog!=='undefined'&&arbresDialog.open)renderArbres()});")&&src.includes('function placerTalent(id,dest)')
@@ -1906,7 +1907,7 @@ assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x
    le bonus posé dessus la suit, un chemin fermé n'en fait pas. Une fois, les maîtrises quittent
    l'arbre, où elles trônaient : le MJ les y place. */
 {const morceau=(debut,fin)=>{const i=src.indexOf(debut);return src.slice(i,src.indexOf(fin,i))};
- const ctx={VOIES_MAX:2,LIENS_MAX:2};vm.createContext(ctx);vm.runInContext(morceau('function migreArbres(','function normalizeCatalog('),ctx);
+ const ctx={VOIES_MAX:2,LIENS_MAX:4,DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES:['n','e','s','o']};vm.createContext(ctx);vm.runInContext(morceau('function migreArbres(','function normalizeCatalog('),ctx);
  const c={classes:[{name:'Mystique'}],voies:{Mystique:['Pyromane']},cheminsCaches:{o:['dc']},talents:[
    {id:'m',name:'Orbes mystiques',famille:'Mystique',type:'mait',voie:''},
    {id:'o',name:'Orbes de Feu',famille:'Mystique',type:'act',voie:'Pyromane'},
@@ -1922,10 +1923,13 @@ assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x
  assert.equal(ctx.migreArbres(c),true);
  const T=id=>c.talents.find(t=>t.id===id),vu=id=>JSON.stringify(T(id).pos)+JSON.stringify(T(id).liens||[]);
  assert.equal(vu('o'),'{"x":1,"y":0}["g","d"]','deux diagonales : le central n’a plus de ligne droite');
- assert.equal(vu('g'),'{"x":0,"y":1}["b"]');assert.equal(vu('d'),'{"x":2,"y":1}[]','le retour fermé ne fait pas de ligne');
- assert.equal(vu('b'),'{"x":1,"y":2}["x"]');assert.equal(vu('x'),'{"x":1,"y":3}["f"]','l’orphelin reprend l’épine');
+ // Puis le sphérier : l'amélioration reliée depuis Braise devient un petit rond sur un de ses chemins.
+ assert.equal(vu('g'),'{"x":0,"y":1}[]','la ligne vers l’amélioration s’efface : elle est sur un chemin');assert.equal(vu('d'),'{"x":2,"y":1}[]','le retour fermé ne fait pas de ligne');
+ assert.ok(!T('b').pos&&!T('b').liens&&T('b').chemin&&T('b').chemin.de==='g'&&T('b').chemin.rang===1,'l’amélioration, petit rond au rang 1 d’un chemin de Braise');
+ assert.equal(vu('x'),'{"x":1,"y":3}["f"]','l’orphelin reprend l’épine');
  assert.equal(vu('f'),'{"x":1,"y":4}[]');assert.equal(vu('g2'),'{"x":0,"y":5}[]','ce que l’ancien arbre ne montrait pas se range en bas');
- assert.equal(T('k1').chemin,'g>b','le bonus du retour suit sa ligne');
+ assert.equal(JSON.stringify(T('k1').chemin),'{"de":"g","dir":"ne","rang":1}','le bonus de la ligne devient un petit rond sur la première diagonale libre');
+ assert.equal(c.spherier,1);assert.equal(ctx.migreArbres(c),false,'une seconde fois : rien à migrer');
  assert.ok(!T('k2').chemin&&T('k2').horsArbre,'sur un chemin fermé : le bonus quitte l’arbre');
  assert.ok(!T('k3').chemin&&T('k3').horsArbre,'sans étage : aussi');
  assert.ok(T('m').horsArbre&&!T('m').pos,'la maîtrise attend sa place');
@@ -1938,18 +1942,15 @@ assert.ok(src.includes("[el,...el.querySelectorAll('[title]')].forEach(x=>{if(!x
    le bonus d'une ligne disparue quitte l'arbre. */
 assert.ok(src.includes("const p=t.pos;if(p&&typeof p==='object'&&Number.isInteger(p.x)&&Number.isInteger(p.y)&&Math.abs(p.x)<=60&&Math.abs(p.y)<=120)t.pos={x:p.x,y:p.y};else delete t.pos;")
  &&src.includes("const l=Array.isArray(t.liens)?[...new Set(t.liens.filter(id=>typeof id==='string'&&id!==t.id&&c.talents.some(x=>x&&x.id===id)))].slice(0,LIENS_MAX):[];")
- &&src.includes("if(t.effet!=='bonus'||!m||!c.talents.some(x=>x&&x.id===m[1]&&(x.liens||[]).includes(m[2]))){delete t.chemin;if(t.effet==='bonus')t.horsArbre=true}});")
  &&src.includes(' migreArbres(c);')&&!src.includes('SEGMENTS')&&!src.includes("+sel('Place dans l’arbre','branche'"),'la case, les lignes et les bonus, relus au chargement');
 /* Les lignes se tracent en SVG d'un rond à l'autre, avec une pointe quand elles ne descendent pas ;
    le MJ en efface une d'un clic, en trace une par ⤳, et la vue joueur lui ôte ses outils. */
 assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');if(!corps||!arbresDialog.open)return;')
  &&src.includes("g.onclick=e=>{e.stopPropagation();if(basculeLien(de,vers)==='retire')arbreChange()}}")
- &&src.includes("if(dy<d*.5){const pt=document.createElementNS(ns,'polygon'),bx=Q.x-ux*9,by=Q.y-uy*9;")
  &&src.includes("const a=arbresActeur,mj=view==='mj'&&!arbresVueJoueur;")&&src.includes("else if(view!=='mj'){arbresDialog.close();return}")
  &&src.includes("arbresVue.onclick=()=>{arbresVueJoueur=!arbresVueJoueur;noteArbres('');renderArbres()};")
  &&src.includes("lienDepuis=lienDepuis===t.id?null:t.id;renderArbres();")&&src.includes("el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}")
  &&src.includes("arbresDialog.addEventListener('cancel',e=>{if(!lienDepuis)return;e.preventDefault();lienDepuis=null;noteArbres('');renderArbres()});")
- &&src.includes("grille.style.gridTemplateColumns='repeat('+(x1-x0+1)+',var(--case-l))';")&&src.includes("if(mj){x0--;x1++;y1++}")
  &&src.includes(" requestAnimationFrame(traceChemins)}")
  &&feuille.includes('.arbre-chemins{position:absolute;inset:0;')&&feuille.includes('.arbre-grille{--case-l:74px;--case-h:88px;')&&feuille.includes('.arbre-grille>*{pointer-events:auto}')
  &&feuille.includes('.arbre-col.editable .arbre-chemins .chemin{pointer-events:stroke;cursor:pointer}')&&feuille.includes('.arbre-chemins .chemin .pointe{')
@@ -2750,15 +2751,15 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    réserve sous l'arbre, d'où il se replace d'un glisser. La suppression définitive se fait
    depuis la réserve. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
- const ctxR={view:'mj',LIENS_MAX:2,estBonus:t=>!!t&&t.effet==='bonus',catalog:{talents:[{id:'a',name:'A',pos:{x:0,y:0},liens:['b']},{id:'b',name:'B',pos:{x:0,y:1},liens:['c','g']},
-  {id:'c',name:'C',pos:{x:0,y:2}},{id:'g',name:'G',pos:{x:-1,y:2}},{id:'k',name:'+1',effet:'bonus',chemin:'a>b'},{id:'k2',name:'+2',effet:'bonus',chemin:'b>c'}]}};
- vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('function posDe('),src.indexOf('/* Les colonnes d\'une classe : deux, toujours'))+src.slice(src.indexOf('const cleChemin='),src.indexOf('function placerTalent('))
+ const ctxR={view:'mj',LIENS_MAX:4,DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES:['n','e','s','o'],estBonus:t=>!!t&&t.effet==='bonus',catalog:{talents:[{id:'a',name:'A',pos:{x:0,y:0},liens:['b']},{id:'b',name:'B',pos:{x:0,y:1},liens:['c','g']},
+  {id:'c',name:'C',pos:{x:0,y:2}},{id:'g',name:'G',pos:{x:-1,y:2}},{id:'k',name:'+1',effet:'bonus',chemin:{de:'b',dir:'ne',rang:1}},{id:'k2',name:'+2',effet:'bonus',chemin:{de:'b',dir:'ne',rang:2}}]}};
+ vm.createContext(ctxR);vm.runInContext(src.slice(src.indexOf('function posDe('),src.indexOf('/* Les colonnes d\'une classe : deux, toujours'))+src.slice(src.indexOf('// Un petit rond dont le talent, ou le petit rond d\'avant'),src.indexOf('function placerTalent('))
   +src.slice(src.indexOf('function retireDeLArbre('),src.indexOf('function renderArbres(){')),ctxR);
  const T=id=>ctxR.catalog.talents.find(t=>t.id===id);
  assert.equal(ctxR.retireDeLArbre(T('b')),true);
  assert.ok(T('b').horsArbre===true&&T('b').prerequis===''&&!T('b').pos&&!T('b').liens&&ctxR.catalog.talents.length===6,'le talent retiré reste au catalogue, sans case ni ligne');
  assert.ok(!T('a').liens&&T('c').pos&&T('g').pos,'la ligne qui menait à lui s’efface ; ses suivants restent en place, devenus des départs');
- assert.ok(T('k').horsArbre&&!T('k').chemin&&T('k2').horsArbre&&!T('k2').chemin,'les bonus de ses lignes quittent l’arbre');
+ assert.ok(T('k').horsArbre&&!T('k').chemin&&T('k2').horsArbre&&!T('k2').chemin,'les petits ronds de ses chemins quittent l’arbre');
  assert.equal(ctxR.retireDeLArbre(T('b')),false,'un talent déjà retiré ne se retire pas deux fois');
  assert.ok(src.includes("function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!lisChemin(t));")
   &&src.includes(" t.famille=famille;t.voie=voie;t.prerequis='';delete t.horsArbre;delete t.branche;"),'hors de l’arbre, il n’y paraît plus ; replacé, il y revient');
@@ -2809,7 +2810,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual([1,2,3].map(n=>C.ditEtatOrbe(C.etatOrbeAuPalier(O(n)))),['Feu sur 6+','Feu à la touche','Feu 2 à la touche']);
  assert.ok(page.includes("if(pouvoir&&(!pouvoir.six||r.dice.some(([v])=>v>=6))){const e=pouvoir.etat,issue=infligeEtat(b,e);")
   &&page.includes("else if(issue===true){if(pouvoir.crans>1)ajouteEtat(b,e,pouvoir.crans-1);pose=' + '+e+(pouvoir.crans>1?' '+pouvoir.crans:'')}}"),'la table pose l’état selon le palier');
- assert.ok(src.includes("function ajouterDansArbre(dest){")&&src.includes("neuf.textContent='✚ Créer un nouveau talent';")
+ assert.ok(src.includes("function ajouterDansArbre(dest){")
   &&src.includes("const g=rang(t)===0?'Retirés de cet arbre':talentFamily(t);")&&src.includes("if(f!==dest.famille&&!t.horsArbre)retireDeLArbre(t);")
   &&src.includes("ajouterDansArbre({famille:col.famille,voie:col.voie,pos:{x:pl.x,y:pl.y},de:")&&fs.readFileSync('editor.css','utf8').includes('.arbre-choix-liste{'),'les « + » de l’arbre prennent aussi un talent existant');}
 /* v0.298 — Meneur câblé sur ses textes : l'allié le plus proche, où qu'il soit, d'un nombre
@@ -2926,17 +2927,17 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    les ronds de l'arbre prennent le fond de leur nature ; les talents du catalogue sont ronds. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),C=require('./combat.js');
  const morceau=(a,b)=>src.slice(src.indexOf(a),src.indexOf(b));
- const ctxA={GENERIQUES:'Génériques',VOIES_MAX:3,LIENS_MAX:2,estBonus:t=>!!t&&t.effet==='bonus',talentFamily:t=>(t&&t.famille||'').trim()||'Génériques',cleClasse:C.cleClasse,talentCode:C.talentCode,talentsDependants:C.talentsDependants,
+ const ctxA={GENERIQUES:'Génériques',VOIES_MAX:3,LIENS_MAX:4,DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES:['n','e','s','o'],estBonus:t=>!!t&&t.effet==='bonus',talentFamily:t=>(t&&t.famille||'').trim()||'Génériques',cleClasse:C.cleClasse,talentCode:C.talentCode,talentsDependants:C.talentsDependants,
   catalog:{classes:[{name:'Gardien'}],voies:{Gardien:['Rempart','Assaut','']},talents:[
    {id:'m',name:'Gardien',famille:'Gardien',type:'mait',pos:{x:0,y:0}},{id:'r',name:'Rempart',famille:'Gardien',type:'pass',voie:'Rempart',pos:{x:0,y:0},liens:['s','p']},
    {id:'s',name:'Sous Rempart',famille:'Gardien',type:'act',voie:'Rempart',pos:{x:0,y:0}},{id:'p',name:'Provocation',famille:'Gardien',type:'act',voie:'Assaut'},
-   {id:'x',name:'Ailleurs',famille:'Mage',type:'act'},{id:'k',name:'+1',famille:'Gardien',type:'pass',effet:'bonus',chemin:'r>p'}]}};
+   {id:'x',name:'Ailleurs',famille:'Mage',type:'act'},{id:'k',name:'+1',famille:'Gardien',type:'pass',effet:'bonus',chemin:{de:'r',dir:'s',rang:1}}]}};
  vm.createContext(ctxA);vm.runInContext(morceau('/* Une classe a toujours toutes ses colonnes','const arbresDialog='),ctxA);
  const T=id=>ctxA.catalog.talents.find(t=>t.id===id);
  assert.equal(ctxA.accordeArbres(),true);
  assert.equal(JSON.stringify(T('r').liens),'["s"]','une ligne vers une autre colonne s’efface');
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
- assert.ok(T('k').horsArbre&&!T('k').chemin,'le bonus d’une ligne effacée quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
+ assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
  assert.ok(!src.includes("ligne('↳ Requiert : '+socle)")&&src.includes("function arbreChange(){accordeArbres();")&&src.includes("catalog=normalizeCatalog(s.catalog);accordeArbres();")
   &&!src.includes("niv.textContent=t.name&&t.name!==libelleBonus(p,true)"),'plus de Requiert, plus de doublon sous un bonus');
@@ -3233,21 +3234,27 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    optionnels, à leur prix, activables dès que le talent d'où part la ligne est pris ; ils tombent
    avec lui, et quittent l'arbre avec leur ligne. */
 {const src=fs.readFileSync('editor.js','utf8');
- const T=[{id:'o',name:'Orbes',famille:'M',liens:['g','d']},{id:'g',name:'Braise',famille:'M',liens:['x']},{id:'d',name:'Cendre',famille:'M'},{id:'x',name:'Brasier',famille:'M'},
-  {id:'b1',name:'+1 PV',effet:'bonus',famille:'M',chemin:'o>g'},{id:'b2',name:'+1 DEF',effet:'bonus',famille:'M',chemin:'g>x'},{id:'b3',name:'+2 PV',effet:'bonus',famille:'M'},
-  {id:'b4',name:'+1 Vie',effet:'bonus',famille:'M',chemin:'d>x'}];
- const ctxB={catalog:{talents:T},LIENS_MAX:2,estBonus:t=>!!t&&t.effet==='bonus'};vm.createContext(ctxB);
- vm.runInContext(src.slice(src.indexOf('function posDe('),src.indexOf('/* Les colonnes d\'une classe : deux, toujours'))+src.slice(src.indexOf('const cleChemin='),src.indexOf('/* Placer un talent dans un arbre'))
-  +';this.lisChemin=lisChemin;this.bonusDuChemin=bonusDuChemin;this.departChemin=departChemin;this.sansBonusOrphelins=sansBonusOrphelins;this.basculeLien=basculeLien;',ctxB);
- assert.equal(JSON.stringify(ctxB.lisChemin(T[4])),JSON.stringify({de:'o',vers:'g'}));assert.equal(ctxB.lisChemin(T[6]),null,'un bonus de case n’est pas sur une ligne');
- assert.equal(ctxB.lisChemin({chemin:'o|gc'}),null,'l’ancien format ne se lit plus : la migration le convertit');
- assert.equal(ctxB.bonusDuChemin('g','x').id,'b2');assert.equal(ctxB.bonusDuChemin('o','d'),null);
- assert.equal(ctxB.departChemin(T[4]).id,'o');assert.equal(ctxB.departChemin(T[5]).id,'g','la ligne part de la braise');
- assert.equal(ctxB.departChemin(T[7]),null,'sans ligne de Cendre vers Brasier, pas de départ');
- assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['o','b1','b2','b3'])),JSON.stringify(['o','b1','b3']),'sans la braise, le bonus de sa ligne tombe ; un bonus de case reste');
- assert.equal(ctxB.basculeLien(T[1],T[3]),'retire');assert.ok(T[5].horsArbre&&!T[5].chemin,'la ligne effacée : son bonus quitte l’arbre');
- assert.ok(src.includes("reste=sansBonusOrphelins(reste);")&&src.includes("const t=bonusDuChemin(de.id,id),el=t?noeudBonusChemin(t,de):mj?placeBonusChemin(c,de,vers):null;")
-  &&src.includes("&&!t.horsArbre&&!lisChemin(t));")&&src.includes("if(d.chemin)t.chemin=d.chemin;")&&src.includes("if(t.effet!=='bonus')delete t.chemin;"),'les bonus de ligne');}
+ /* v0.381 — Le sphérier : un petit rond — bonus ou amélioration — se pose sur un chemin d'un talent
+    (talent, direction, rang), d'autres le suivent ; chacun attend le précédent, le premier son talent. */
+ const T=[{id:'o',name:'Orbes',famille:'M',pos:{x:0,y:0},liens:['g']},{id:'g',name:'Braise',famille:'M',pos:{x:0,y:1}},{id:'d',name:'Cendre',famille:'M',pos:{x:1,y:0}},
+  {id:'b1',name:'+1 PV',effet:'bonus',famille:'M',chemin:{de:'o',dir:'ne',rang:1}},{id:'b2',name:'+1 DEF',effet:'bonus',famille:'M',chemin:{de:'o',dir:'ne',rang:2}},{id:'b3',name:'+2 PV',effet:'bonus',famille:'M'},
+  {id:'b4',name:'+1 Vie',effet:'bonus',famille:'M',chemin:{de:'zz',dir:'n',rang:1}}];
+ const ctxB={catalog:{talents:T},LIENS_MAX:4,DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES:['n','e','s','o'],estBonus:t=>!!t&&t.effet==='bonus'};vm.createContext(ctxB);
+ vm.runInContext(src.slice(src.indexOf('function posDe('),src.indexOf("/* Les colonnes d'une classe : deux, toujours"))+src.slice(src.indexOf("// Un petit rond dont le talent, ou le petit rond d'avant"),src.indexOf('/* Placer un talent dans un arbre'))
+  +';this.lisChemin=lisChemin;this.petitsDe=petitsDe;this.departChemin=departChemin;this.precedentChemin=precedentChemin;this.sansBonusOrphelins=sansBonusOrphelins;this.basculeLien=basculeLien;this.verrouArbre=verrouArbre;this.cheminsDe=cheminsDe;',ctxB);
+ assert.equal(JSON.stringify(ctxB.lisChemin(T[3])),'{"de":"o","dir":"ne","rang":1}');assert.equal(ctxB.lisChemin(T[5]),null,'un bonus sans chemin n’est sur aucun chemin');
+ assert.equal(ctxB.lisChemin({chemin:'o>g'}),null,'l’ancien format ne se lit plus : la migration le convertit');
+ assert.equal(ctxB.petitsDe(T[0],'ne').map(t=>t.id).join(','),'b1,b2');assert.equal(ctxB.petitsDe(T[0],'s').length,0);
+ assert.equal(ctxB.departChemin(T[3]).id,'o');assert.equal(ctxB.departChemin(T[6]),null,'sans talent au départ, pas de chemin');
+ assert.equal(ctxB.precedentChemin(T[4]).id,'b1');assert.equal(ctxB.precedentChemin(T[3]),null);
+ assert.equal(ctxB.verrouArbre([],T,T[3]),'Orbes');assert.equal(ctxB.verrouArbre(['o'],T,T[3]),'');
+ assert.equal(ctxB.verrouArbre(['o'],T,T[4]),'+1 PV','le second attend le premier');assert.equal(ctxB.verrouArbre(['o','b1'],T,T[4]),'');
+ assert.equal(ctxB.cheminsDe(T,T[0]).s.lien.id,'g','la ligne vers la case du dessous tient le chemin sud');assert.equal(ctxB.cheminsDe(T,T[0]).ne.petits.length,2);
+ assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['o','b1','b2','b3'])),JSON.stringify(['o','b1','b2','b3']));
+ assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['o','b2','b3'])),JSON.stringify(['o','b3']),'sans le premier, le second tombe ; un bonus hors chemin reste');
+ assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['b1','b2'])),'[]','sans le talent, tout le chemin tombe');
+ assert.equal(ctxB.basculeLien(T[0],T[2]),'ajoute','Cendre est la case de droite');assert.equal(ctxB.basculeLien(T[2],T[1]),'loin','en diagonale : pas de ligne');
+ assert.ok(src.includes("reste=sansBonusOrphelins(reste);")&&src.includes("&&!t.horsArbre&&!lisChemin(t));")&&src.includes("if(d.chemin)t.chemin=d.chemin;"),'les petits ronds');}
 /* v0.358 — Dans la barre d'action, attaques et talents d'attaque sont des ronds, comme les talents
    d'une fiche, à la couleur de l'action ; le nom dans la bulle, les dés dessous. Sur la table, plus
    de nom sous les ronds de talents. */

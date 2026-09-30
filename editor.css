@@ -1687,3 +1687,30 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .fouilleur img{width:100%;height:100%;object-fit:cover;display:block}
 #fouilles-layer .fouille-n.ratee{color:#c0392b}
 #fouilles-layer .fouille-n.reussie{color:#2f8a4a}
+
+/* Le sphérier : un plan par colonne, où chaque talent tient sa case et ses petits ronds leurs chemins. */
+.arbre-plan{position:relative;margin:0 auto;z-index:1;min-width:112px;min-height:112px}
+.arbre-plan>.arbre-noeud,.arbre-plan>.arbre-place,.arbre-plan>.arbre-petit-place{position:absolute;transform:translate(-50%,-50%);margin:0;width:auto;padding:0;gap:0}
+.arbre-plan .arbre-niv,.arbre-plan .arbre-paliers{display:none}
+.arbre-plan>.arbre-place{opacity:.32;transition:opacity .12s}
+.arbre-col.editable:hover .arbre-plan>.arbre-place,.glisse .arbre-plan>.arbre-place{opacity:.8}
+.arbre-plan>.arbre-place:hover,.arbre-plan>.arbre-place:focus,.arbre-plan>.arbre-place.survol{opacity:1}
+.arbre-petit-place{width:20px;height:20px;border-radius:50%;border:1.5px dashed var(--line-strong);background:var(--panel);color:var(--muted);font:700 12px/1 system-ui;opacity:0;transition:opacity .12s;cursor:pointer;z-index:2}
+.arbre-col.editable:hover .arbre-petit-place,.arbre-petit-place:focus,.glisse .arbre-petit-place{opacity:.65}
+.arbre-petit-place:hover{border-color:var(--accent);color:var(--accent);opacity:1}
+.arbre-petit-place.survol{opacity:1;border-style:solid;border-color:var(--green);box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--green)}
+.arbre-noeud.petit{z-index:2}
+.arbre-noeud.petit .arbre-rond{width:34px;height:34px;border-width:3px;box-shadow:0 0 0 2px var(--panel),0 1px 4px #0004;font-size:17px}
+.arbre-noeud.petit .arbre-rond img{width:70%;height:70%}
+.arbre-noeud.petit.bonus .arbre-rond b{font:800 11px/1 system-ui}
+.arbre-noeud.petit.bonus .arbre-rond small{font:800 6px/1.05 system-ui;letter-spacing:.2px}
+.arbre-noeud.petit.acquis .arbre-rond{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--teinte),0 1px 5px #0005}
+.arbre-noeud.petit.acquis .arbre-rond::after{top:-8px;right:-9px;width:14px;height:14px;font-size:10px;line-height:14px}
+.arbre-noeud.petit .arbre-outils{top:-26px;right:auto;left:50%;transform:translateX(-50%)}
+.arbre-chemins .chemin.petit .trait{stroke-width:2.5}
+/* La bibliothèque des effets : chaque classe se replie d'un clic sur son titre. */
+.biblio-bloc>summary.biblio-groupe{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+.biblio-bloc>summary.biblio-groupe::-webkit-details-marker{display:none}
+.biblio-bloc>summary.biblio-groupe::before{content:'▸';display:inline-block;font-size:12px;transition:transform .12s;color:var(--muted)}
+.biblio-bloc[open]>summary.biblio-groupe::before{transform:rotate(90deg)}
+.biblio-bloc .biblio-n{font:600 10px system-ui;letter-spacing:0;padding:1px 7px;border-radius:9px;background:var(--hover);color:var(--muted)}
