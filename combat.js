@@ -1068,10 +1068,18 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Amélioration : la DEF du porteur écarte aussi les dés rouges (Lourds), qui d’ordinaire l’ignorent.',
   params:[],
   phrase(){return 'La DEF du porteur écarte aussi les <b>dés de dégâts mortels</b> (rouges).'}},
+ /* Provocation : un adversaire en vue s'avance au contact du porteur, rien de plus. Ses
+    améliorations y ajoutent le coup (Provocation — attaque) et la chute (Provocation — au sol). */
  provocation:{cle:'provocation',nom:'Provocation',type:'act',bouton:'📣 Provocation',attaque:true,
-  aide:'Action : un adversaire en vue s’avance jusqu’au porteur, qui l’attaque aussitôt.',
+  aide:'Action : un adversaire en vue s’avance jusqu’au contact du porteur.',
   params:[],
-  phrase(){return 'Un adversaire <b>en ligne de vue</b> doit faire un mouvement vers le porteur — l’adversaire visé, sinon le premier en vue — puis le porteur effectue <b>une attaque</b> contre lui.'}},
+  phrase(){return 'Un adversaire <b>en ligne de vue</b> doit faire un mouvement vers le porteur — l’adversaire visé, sinon le premier en vue — jusqu’à son <b>contact</b>.'}},
+ provocattaque:{cle:'provocattaque',nom:'Provocation — attaque',type:'ame',
+  aide:'Amélioration de Provocation : le porteur attaque aussitôt l’adversaire provoqué.',params:[],
+  phrase(){return 'Après une <b>Provocation</b>, le porteur effectue <b>une attaque</b> contre l’adversaire provoqué.'}},
+ provocsol:{cle:'provocsol',nom:'Provocation — au sol',type:'ame',
+  aide:'Amélioration de Provocation : l’adversaire provoqué tombe Au sol.',params:[],
+  phrase(){return 'L’adversaire provoqué par une <b>Provocation</b> tombe <b>Au sol</b>.'}},
  /* Poussée : une action. Le porteur effectue une attaque, puis repousse la cible hors de sa
     zone de contact. Deux volets, chacun au palier que le MJ choisit : deux fois plus loin que
     la zone (palier 2 d'ordinaire), et tous les adversaires au contact (palier 3). */

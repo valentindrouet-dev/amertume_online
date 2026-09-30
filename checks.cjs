@@ -1474,7 +1474,8 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
  const d=C.paramsTalent({effet:'attaqueetat',params:{}});assert.equal(d.condition,'tue');assert.equal(d.etat,'');
  assert.ok(C.phraseTalent('attaqueetat',{condition:'survit',etat:'Feu'}).includes('Si <b>la cible n’est pas tuée</b>, il gagne <b>Feu</b>.'));
  assert.ok(C.phraseTalent('attaqueetat',{condition:'tue',etat:'Blindage'}).includes('S’il <b>tue la cible</b>, il gagne <b>Blindage</b>.'));
- assert.ok(C.phraseTalent('provocation',{}).includes('<b>en ligne de vue</b>')&&C.phraseTalent('provocation',{}).includes('<b>une attaque</b> contre lui.'));
+ assert.ok(C.phraseTalent('provocation',{}).includes('<b>en ligne de vue</b>')&&C.phraseTalent('provocation',{}).includes('jusqu’à son <b>contact</b>.'));
+ assert.ok(C.TALENTS_CODES.provocattaque.type==='ame'&&C.TALENTS_CODES.provocsol.type==='ame','les améliorations de Provocation : le coup, la chute');
  assert.equal(C.cleTalent('Attaque État'),'attaqueetat','un talent nommé ainsi trouve son effet');}
 /* Le mouvement forcé d'une Provocation coûte comme un autre : ce que le provoqué quitte le
    frappe, y compris les zones traversées en chemin, et tombé en route il n'y a plus de coup. */
