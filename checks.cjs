@@ -1368,16 +1368,16 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  assert.equal(JSON.stringify(T('a').liens),'["d"]','la ligne part de a');
  assert.equal(ctx.placerTalent('f',{famille:'Gardien',voie:'Rempart',de:'a'}),true);
  assert.equal(ctx.placerTalent('e',{famille:'Gardien',voie:'Rempart',de:'a'}),true);
- assert.equal(JSON.stringify(T('a').liens),'["d","f"]','plus de case voisine : le troisième se pose plus bas, sans ligne');
- assert.equal(JSON.stringify(ctx.colonnesArbre('Gardien')[0].liste.map(t=>t.id)),JSON.stringify(['f','d','a','c','b','e','m']),'de haut en bas, de gauche à droite ; sans case, en dernier');
+ assert.equal(JSON.stringify(T('a').liens),'["d"]','jamais au-dessus : sans case voisine libre, les suivants se posent plus bas, sans ligne');
+ assert.equal(JSON.stringify(ctx.colonnesArbre('Gardien')[0].liste.map(t=>t.id)),JSON.stringify(['d','a','c','b','e','f','m']),'de haut en bas, de gauche à droite ; sans case, en dernier');
  assert.equal(ctx.placerTalent('d',{famille:'',voie:''}),true);
  assert.equal(T('d').famille,'Génériques','sans classe, un générique');assert.equal(T('d').pos===undefined||!!T('d').pos,true);
- assert.equal(JSON.stringify(T('a').liens),'["f"]','parti ailleurs, il laisse ses lignes');
+ assert.equal(T('a').liens,undefined,'parti ailleurs, il laisse ses lignes');
  assert.equal(ctx.placerTalent('zzz',{famille:'Gardien'}),false);
  // Tracer, effacer : vers une case voisine droite seulement, jamais vers soi.
  assert.equal(ctx.basculeLien(T('a'),T('b')),'ajoute');assert.equal(ctx.basculeLien(T('a'),T('c')),'ajoute');
  assert.equal(ctx.basculeLien(T('a'),T('e')),'loin','deux cases plus bas : pas de ligne');
- assert.equal(ctx.basculeLien(T('a'),T('b')),'retire');assert.equal(JSON.stringify(T('a').liens),'["f","c"]');
+ assert.equal(ctx.basculeLien(T('a'),T('b')),'retire');assert.equal(JSON.stringify(T('a').liens),'["c"]');
  assert.equal(ctx.basculeLien(T('a'),T('a')),'rien');assert.equal(ctx.basculeLien(null,T('a')),'rien');
  // Les voies nommées : trois par classe, renommées sur leurs talents, dissoutes vers le tronc.
  assert.equal(ctx.enregistreVoie('Mystique','Feu'),true);assert.equal(ctx.enregistreVoie('Mystique','Feu'),true,'déjà là : rien à redire');
@@ -1434,7 +1434,6 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
  &&src.includes("if(!id||id===dest.soi)return;if(placerTalent(id,dest))arbreChange()})};")&&src.includes("glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,pos:posDe(t),soi:t.id});")
  &&src.includes("cible(p,{famille:col.famille,voie:col.voie,pos:{x:pl.x,y:pl.y}});return p};")
  &&src.includes("cible(h,{famille:c.famille,voie:c.voie});")&&src.includes("champVif(nomVoie,()=>c.voie,v=>{if(nommerVoie(c.famille,c.rang,v))arbreChange();")&&src.includes("nomVoie.classList.toggle('vierge',!c.voie);")&&feuille.includes('.arbre-titre .arbre-voie.vierge{')&&src.includes("if(nommerVoie(c.famille,c.rang,''))arbreChange()")
- &&src.includes("plus.onclick=()=>ajouterDansArbre({famille:c.famille,voie:c.voie});col.append(plus)}")
  &&src.includes("{famille:talentFamily(t),voie:t.voie||'',de:t.id,level:Math.min(20,(t.level||1)+1)})));")
  &&src.includes("if(!avant&&talentDefauts&&talentDefauts.de){const de=talent(talentDefauts.de);")
  &&!src.includes('+ Spécialisation')&&!src.includes('arbre-col nouvelle')
@@ -2765,7 +2764,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue'")
   &&!src.includes('arbre-reserve')&&!src.includes('cat-hors')&&!css.includes('.arbre-reserve')&&!src.includes('dest.horsArbre'),'plus de réserve, plus de mention');
  assert.ok(!src.includes("f.branche.value==='hors'")
-  &&src.includes("if(t.horsArbre!==true)delete t.horsArbre;")&&src.includes("Pour l’y remettre : « + Talent », ou un « + » de l’arbre.'"),'le formulaire retire et replace');}
+  &&src.includes("if(t.horsArbre!==true)delete t.horsArbre;"),'le formulaire retire et replace');}
 /* v0.295 — L'éditeur de talents en boîtes colorées, sans spécialisation, place ni prérequis :
    l'arbre assemble. Les effets câblés se lisent et se réorganisent par palier (les volets de
    Brise), les réglages communs s'écrivent une fois, l'état d'un talent élémentaire suit le
@@ -2807,8 +2806,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual([1,2,3].map(n=>C.ditEtatOrbe(C.etatOrbeAuPalier(O(n)))),['Feu sur 6+','Feu à la touche','Feu 2 à la touche']);
  assert.ok(page.includes("if(pouvoir&&(!pouvoir.six||r.dice.some(([v])=>v>=6))){const e=pouvoir.etat,issue=infligeEtat(b,e);")
   &&page.includes("else if(issue===true){if(pouvoir.crans>1)ajouteEtat(b,e,pouvoir.crans-1);pose=' + '+e+(pouvoir.crans>1?' '+pouvoir.crans:'')}}"),'la table pose l’état selon le palier');
- assert.ok(src.includes("function ajouterDansArbre(dest){")
-  &&src.includes("const g=rang(t)===0?'Retirés de cet arbre':talentFamily(t);")&&src.includes("if(f!==dest.famille&&!t.horsArbre)retireDeLArbre(t);")
+ assert.ok(src.includes("function ajouterDansArbre(dest){")&&src.includes("if(f!==dest.famille&&!t.horsArbre)retireDeLArbre(t);")
   &&src.includes("ajouterDansArbre({famille:col.famille,voie:col.voie,pos:{x:pl.x,y:pl.y},de:")&&fs.readFileSync('editor.css','utf8').includes('.arbre-choix-liste{'),'les « + » de l’arbre prennent aussi un talent existant');}
 /* v0.298 — Meneur câblé sur ses textes : l'allié le plus proche, où qu'il soit, d'un nombre
    fixe ou du bonus propre du porteur ; tous les alliés au contact. Les accolades se lisent

@@ -2827,6 +2827,20 @@ function lisChemin(t){const c=t&&t.chemin;if(!c||typeof c!=='object'||!DIRS[c.di
 const estPetit=t=>!!lisChemin(t);
 // Ce qui peut être un petit rond : un bonus de caractéristique, ou une amélioration.
 const peutEtrePetit=t=>!!t&&(estBonus(t)||t.type==='ame');
+/* Le logo d'un bonus de caractéristique, dans son petit rond : un cœur pour les PV, un éclair pour
+   l'Endurance, une étoile pour la Vie, l'éclat des dégâts, l'orbe, l'icône d'une compétence — à
+   défaut ses deux lettres. Son chiffre en pastille. */
+const SVG_BONUS={pv:'<path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.2 0 3.6 1.2 4.3 2.4.7-1.2 2.1-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z" fill="#c0392b" stroke="#6e1a12" stroke-width="1.2"/>',
+ endu:'<path d="M13.5 2 5 13.2h5.6L9.4 22 19 10.4h-5.8z" fill="#2c8c85" stroke="#12423f" stroke-width="1.2" stroke-linejoin="round"/>',
+ vie:'<path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.8l-5.8 3.5 1.6-6.6-5.2-4.4 6.8-.5z" fill="#7a5cb8" stroke="#3b2966" stroke-width="1.2" stroke-linejoin="round"/>'};
+function logoBonus(p){const carac=(p&&p.carac)||'pv';let el=null;
+ if(SVG_BONUS[carac]){el=document.createElementNS('http://www.w3.org/2000/svg','svg');el.setAttribute('viewBox','0 0 24 24');el.innerHTML=SVG_BONUS[carac]}
+ else if(carac==='dmg'||carac==='orbe'){el=document.createElement('img');el.src=imgUrl(carac==='dmg'?'DEGATS.webp':'spell_orbes.png');el.alt='';el.draggable=false}
+ else if(carac==='comp'){const k=Math.max(0,Math.min(7,Number(p&&p.comp)||0));el=logoCompetence(k);
+  if(!el){el=document.createElement('span');el.className='bonus-lettres';el.textContent=skillNames[k].slice(0,2)}}
+ if(el)el.classList.add('logo-bonus');return el}
+function poseLogoBonus(rond,t){const p=paramsTalent(t),l=logoBonus(p);if(!l)return;
+ const n=document.createElement('b');n.className='bonus-valeur';n.textContent='+'+Math.max(1,(p&&p.valeur)|0);rond.replaceChildren(l,n)}
 // Les petits ronds d'un chemin, du rang 1 au dernier.
 function petitsDe(de,dir){return tousTalents().filter(t=>{const c=lisChemin(t);return !!c&&c.de===de.id&&c.dir===dir}).sort((x,y)=>lisChemin(x).rang-lisChemin(y).rang)}
 // Ce que porte chaque chemin d'un talent : la ligne vers un talent voisin (« lien »), ou ses petits ronds.
@@ -2865,7 +2879,7 @@ function chuteArbre(portes,liste,t){const avant=atteintsDepuis(portes,liste,null
 // La case libre la plus proche d'un talent — dessous, à droite, à gauche, dessus, puis plus bas ; sans talent, sous l'arbre.
 function caseLibre(liste,depuis){const prise=(x,y)=>(liste||[]).some(t=>{const p=posDe(t);return !!p&&p.x===x&&p.y===y});
  const p=posDe(depuis);
- if(p){for(const d of ['s','e','o','n']){const x=p.x+DIRS[d][0],y=p.y+DIRS[d][1];if(!prise(x,y))return {x,y}}
+ if(p){for(const d of ['s','e','o']){const x=p.x+DIRS[d][0],y=p.y+DIRS[d][1];if(!prise(x,y))return {x,y}}
   for(let dy=2;dy<120;dy++)for(const dx of [0,-1,1,-2,2])if(!prise(p.x+dx,p.y+dy))return {x:p.x+dx,y:p.y+dy}}
  const ps=(liste||[]).map(posDe).filter(Boolean);if(!ps.length)return {x:0,y:0};
  const xs=ps.map(q=>q.x);return {x:Math.round((Math.min(...xs)+Math.max(...xs))/2),y:Math.max(...ps.map(q=>q.y))+1}}
@@ -2908,7 +2922,9 @@ function accordeArbres(){let change=false;
     ps.forEach((p,k)=>{if(lisChemin(p).rang!==k+1){p.chemin={...lisChemin(p),rang:k+1};change=true}})})})})});
  tousTalents().forEach(t=>{const c=lisChemin(t);if(!c)return;const d=departChemin(t);
   if(!d||!peutEtrePetit(t)){delete t.chemin;t.horsArbre=true;change=true;return}
-  if(talentFamily(t)!==talentFamily(d)||(t.voie||'')!==(d.voie||'')){t.famille=talentFamily(d);t.voie=d.voie||'';change=true}});
+  // Un bonus est générique, commun à tous les arbres ; une amélioration prend la classe de son talent.
+  const fam=estBonus(t)?GENERIQUES:talentFamily(d),voie=estBonus(t)?'':d.voie||'';
+  if(talentFamily(t)!==fam||(t.voie||'')!==voie){t.famille=fam;t.voie=voie;change=true}});
  return change}
 // Un petit rond dont le talent, ou le petit rond d'avant, n'est plus tenu tombe avec lui.
 function sansBonusOrphelins(liste){let l=[...(liste||[])];
@@ -2930,7 +2946,7 @@ function placerTalent(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||!
   if(!de||de===t||!DIRS[dir]||!posDe(de)||de.horsArbre)return false;
   const col=colonneDe(talentFamily(de),de.voie||'');if(!col||!col.liste.includes(de))return false;
   if(cheminsDe(col.liste,de)[dir].lien)return false;
-  detacheDeLArbre(t);t.famille=talentFamily(de);t.voie=de.voie||'';t.prerequis='';delete t.horsArbre;delete t.branche;
+  detacheDeLArbre(t);t.famille=estBonus(t)?GENERIQUES:talentFamily(de);t.voie=estBonus(t)?'':de.voie||'';t.prerequis='';delete t.horsArbre;delete t.branche;
   const rang=Number.isInteger(dest.chemin.rang)&&dest.chemin.rang>=1?dest.chemin.rang:petitsDe(de,dir).length+1;
   // Un rang déjà pris : les suivants reculent d'un cran.
   petitsDe(de,dir).forEach(p=>{const c=lisChemin(p);if(c.rang>=rang)p.chemin={...c,rang:c.rang+1}});
@@ -3007,7 +3023,19 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
  // Sur un chemin, un petit rond : un bonus de caractéristique, ou une amélioration.
  const petit=!!dest.chemin,neuf=(texte,defauts)=>{const b=document.createElement('button');b.type='button';b.className='arbre-choix-neuf';b.textContent=texte;
   b.onclick=()=>{choixArbreDialog.close();openTalent(null,renderArbres,defauts)};return b};
- if(petit)boite.append(neuf('✚ Bonus de caractéristique',{...dest,type:'pass',effet:'bonus',params:{carac:'pv',valeur:1},couts:[1,0,0]}),neuf('✚ Nouvelle amélioration',{...dest,type:'ame'}));
+ /* Sur un chemin, les bonus génériques, communs à tous les arbres : un bouton chacun, qui le pose
+    aussitôt — PV, Endurance, Vie, Dégâts et chaque compétence. L'orbe, et toute autre valeur,
+    passent par « Autre bonus ». */
+ if(petit){const h=document.createElement('h3');h.className='arbre-choix-groupe';h.textContent='Bonus';
+  const rang=document.createElement('div');rang.className='bonus-generiques';
+  [['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],...skillNames.map((n,k)=>['comp',n,k])].forEach(([carac,nom,k])=>{
+   const params={carac,valeur:1,...(carac==='comp'?{comp:String(k)}:{})},b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud petit bonus bonus-'+carac;
+   const r=document.createElement('span');r.className='arbre-rond';b.append(r);poseLogoBonus(r,{effet:'bonus',params});
+   b.setAttribute('aria-label','+1 '+nom);b.title='+1 '+nom;
+   b.onclick=()=>{const t={id:crypto.randomUUID(),name:'+1 '+nom,famille:GENERIQUES,voie:'',type:'pass',level:1,effets:'',effects:'',effet:'bonus',params,couts:[1,0,0]};
+    catalog.talents.push(t);choixArbreDialog.close();if(placerTalent(t.id,dest))arbreChange()};
+   rang.append(b)});
+  boite.append(h,rang,neuf('✚ Autre bonus',{...dest,type:'pass',effet:'bonus',params:{carac:'orbe',valeur:1},couts:[1,0,0]}),neuf('✚ Nouvelle amélioration',{...dest,type:'ame'}))}
  else boite.append(neuf('✚ Créer un nouveau talent',{...dest}));
  const rang=t=>talentFamily(t)===dest.famille?0:talentFamily(t)===GENERIQUES?1:2;
  // Un bonus ne passe pas d'un arbre à l'autre : seul celui retiré de cet arbre-ci peut y revenir.
@@ -3015,7 +3043,7 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
   &&(petit?peutEtrePetit(t):!estBonus(t))&&(!q||cleTalent(t.name).includes(q)))
   .sort((x,y)=>rang(x)-rang(y)||talentFamily(x).localeCompare(talentFamily(y),'fr')||nomEnClair(x.name).localeCompare(nomEnClair(y.name),'fr'));
  let groupe=null,grille=null;
- libres.forEach(t=>{const g=rang(t)===0?'Retirés de cet arbre':talentFamily(t);
+ libres.forEach(t=>{const g=rang(t)===0?dest.famille:talentFamily(t);
   if(g!==groupe){groupe=g;const h=document.createElement('h3');h.className='arbre-choix-groupe';h.textContent=g;
    grille=document.createElement('div');grille.className='pick-grille';boite.append(h,grille)}
   // Le rond et son nom, en un seul bouton ; la bulle du talent au survol.
@@ -3024,7 +3052,7 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
   b.setAttribute('aria-label','Placer '+nomEnClair(t.name)+' ici');
   if(BULLES)surveille(b,()=>bulleTalentSur(b.firstChild,t));
   b.onclick=()=>prendreDansArbre(t);grille.append(b)});
- if(!libres.length){const v=document.createElement('p');v.className='muted';v.textContent=q?'Aucun talent de ce nom.':'Tous les talents du catalogue sont déjà dans cet arbre.';boite.append(v)}}
+ if(!libres.length&&(q||!petit)){const v=document.createElement('p');v.className='muted';v.textContent=q?'Aucun talent de ce nom.':'Tous les talents du catalogue sont déjà dans cet arbre.';boite.append(v)}}
 $('arbre-choix-filtre').oninput=dessineChoixArbre;
 async function prendreDansArbre(t){const dest=choixArbreDest;if(!t||!dest)return;const f=talentFamily(t),nom=nomEnClair(t.name);
  if(f!==dest.famille&&aUnArbre(f)&&!t.horsArbre&&typeof demander==='function'
@@ -3204,7 +3232,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     if(lienDepuis)note('Clique le talent vers lequel part la ligne de « '+vu(t).name+' », ou une case vide pour y en créer un. Recliquer une ligne existante l’efface. Échap pour renoncer.')}));
    // Sur le plan de la classe, ✕ retire le talent de l'arbre, sans l'effacer du catalogue.
    if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue',()=>{const nom=vu(t).name;
-    if(retireDeLArbre(t)){arbreChange();noteArbres('« '+nom+' » est retiré de l’arbre et reste dans l’onglet Talents. Pour l’y remettre : « + Talent », ou un « + » de l’arbre.')}}));
+    if(retireDeLArbre(t))arbreChange()}));
    b.append(outils)}
   surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
   return b};
@@ -3250,6 +3278,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const noeudPetit=(t,depart,col,libre)=>{const acquis=porte(t);
   const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||verrouArbre(a.talents,col.liste,t)||manqueTalent(a.talents,t,catalog.talents);
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);el.classList.add('petit');
+  if(estBonus(t))poseLogoBonus(el.querySelector('.arbre-rond'),t);
   el.noteBulle=a?(acquis?(estBonus(t)?'Bonus activé.':'Amélioration apprise.'):verrou?'S’ouvre une fois « '+verrou+' » pris.':'Un clic l’active, à son prix.')
    :'Sur le chemin de « '+vu(depart).name+' »'+(lisChemin(t).rang>1?', au rang '+lisChemin(t).rang:'')+'.';
   const outils=el.querySelector('.arbre-outils');
@@ -3309,28 +3338,28 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      par demi-cases — le premier à mi-chemin de la case voisine, le second sur elle. */
   const petits=[];c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
    Object.keys(DIRS).forEach(d=>{if(ch[d].lien)return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,x:p.x+DIRS[d][0]*r/2,y:p.y+DIRS[d][1]*r/2})})})});
-  const xs=[...prises.map(p=>p.x),...petits.map(p=>p.x)],ys=[...prises.map(p=>p.y),...petits.map(p=>p.y)];
-  let x0=xs.length?Math.floor(Math.min(...xs)):0,x1=xs.length?Math.ceil(Math.max(...xs)):0,y0=ys.length?Math.floor(Math.min(...ys)):0,y1=ys.length?Math.ceil(Math.max(...ys)):0;
-  if(mj){x0--;x1++;y0--;y1++}
-  const L=CASE_SPHERIER,plan=document.createElement('div');plan.className='arbre-plan';
-  plan.style.width=(x1-x0+1)*L+'px';plan.style.height=(y1-y0+1)*L+'px';
-  const pose=(el,x,y)=>{el.style.left=((x-x0+.5)*L).toFixed(1)+'px';el.style.top=((y-y0+.5)*L).toFixed(1)+'px'};
-  c.liste.forEach(t=>{const p=cases.get(t.id),el=noeudArbre(t,c,libre);pose(el,p.x,p.y);plan.append(el)});
-  petits.forEach(s=>{const el=noeudPetit(s.t,s.de,c,libre);pose(el,s.x,s.y);plan.append(el)});
-  if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),petitsPris=new Set(petits.map(s=>s.x+','+s.y)),places=new Map();
-   /* Où l'arbre peut grandir : sur chaque chemin droit et libre, la case voisine pour un talent ; sur
-      chaque chemin sans ligne, la place du petit rond suivant. */
+  /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
+     talent — jamais au-dessus : l'arbre part d'un talent tout en haut et descend ; sur chaque chemin
+     sans ligne, la place du petit rond suivant, sauf au-dessus du talent de départ. */
+  const racines=new Set(c.liste.filter(t=>!entreesDe(c.liste,t).length).map(t=>t.id)),places=[];
+  if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),petitsPris=new Set(petits.map(s=>s.x+','+s.y)),vues=new Set();
    c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
     Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if(ch[d].lien)return;
-     if(dirDroite(d)&&!ch[d].petits.length){const x=p.x+dx,y=p.y+dy,k=x+','+y;if(!occupe.has(k)&&!places.has('g'+k))places.set('g'+k,{genre:'gros',x,y,de:t})}
-     const r=ch[d].petits.length+1,x=p.x+dx*r/2,y=p.y+dy*r/2,k=x+','+y;
-     if(!occupe.has(k)&&!petitsPris.has(k)&&!places.has('p'+k))places.set('p'+k,{genre:'petit',x,y,de:t,dir:d,rang:r})})});
-   if(!c.liste.length)places.set('g0,0',{genre:'gros',x:0,y:0,de:null});
-   places.forEach(pl=>{const el=pl.genre==='gros'?place(c,pl):placePetit(c,pl);pose(el,pl.x,pl.y);plan.append(el)})}
+     if(['e','s','o'].includes(d)&&!ch[d].petits.length){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
+     if(dy<0&&racines.has(t.id)&&!ch[d].petits.length)return;
+     const r=ch[d].petits.length+1,x=p.x+dx*r/2,y=p.y+dy*r/2,k='p'+x+','+y;
+     if(!occupe.has(x+','+y)&&!petitsPris.has(x+','+y)&&!vues.has(k)){vues.add(k);places.push({genre:'petit',x,y,de:t,dir:d,rang:r})}})});
+   if(!c.liste.length)places.push({genre:'gros',x:0,y:0,de:null})}
+  // Le plan tient juste ce qu'il montre, une demi-case de marge : le talent de départ est tout en haut.
+  const pts=[...prises,...petits,...places];
+  const x0=pts.length?Math.min(...pts.map(q=>q.x)):0,x1=pts.length?Math.max(...pts.map(q=>q.x)):0,y0=pts.length?Math.min(...pts.map(q=>q.y)):0,y1=pts.length?Math.max(...pts.map(q=>q.y)):0;
+  const L=CASE_SPHERIER,plan=document.createElement('div');plan.className='arbre-plan';
+  plan.style.width=((x1-x0+1)*L).toFixed(0)+'px';plan.style.height=((y1-y0+1)*L).toFixed(0)+'px';
+  const pose=(el,x,y)=>{el.style.left=((x-x0+.5)*L).toFixed(1)+'px';el.style.top=((y-y0+.5)*L).toFixed(1)+'px'};
+  c.liste.forEach(t=>{const p=cases.get(t.id),el=noeudArbre(t,c,libre);if(racines.has(t.id))el.classList.add('racine');pose(el,p.x,p.y);plan.append(el)});
+  petits.forEach(s=>{const el=noeudPetit(s.t,s.de,c,libre);pose(el,s.x,s.y);plan.append(el)});
+  places.forEach(pl=>{const el=pl.genre==='gros'?place(c,pl):placePetit(c,pl);pose(el,pl.x,pl.y);plan.append(el)});
   col.append(plan);
-  if(mj){const plus=document.createElement('button');plus.type='button';plus.className='arbre-ajout';plus.textContent='+ Talent';
-   plus.title='Ajouter un talent sous l’arbre de '+c.titre+' : un nouveau, ou un talent qui existe déjà';
-   plus.onclick=()=>ajouterDansArbre({famille:c.famille,voie:c.voie});col.append(plus)}
   return col};
  /* Les colonnes : les deux de la classe, ni plus ni moins. Les génériques ont leur propre
     arbre — on l'ouvre par son rouage, dans l'onglet Talents — et n'encombrent plus celui

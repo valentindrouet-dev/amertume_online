@@ -1714,3 +1714,19 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .biblio-bloc>summary.biblio-groupe::before{content:'▸';display:inline-block;font-size:12px;transition:transform .12s;color:var(--muted)}
 .biblio-bloc[open]>summary.biblio-groupe::before{transform:rotate(90deg)}
 .biblio-bloc .biblio-n{font:600 10px system-ui;letter-spacing:0;padding:1px 7px;border-radius:9px;background:var(--hover);color:var(--muted)}
+
+/* Les places du sphérier : de vrais ronds, à la taille de ce qui s'y posera. */
+.arbre-plan>.arbre-place{width:58px;height:58px;border-radius:50%;box-sizing:border-box;border:2px dashed var(--line-strong);background:var(--panel-2);display:grid;place-items:center;font:600 24px/1 system-ui;color:var(--muted);box-shadow:none}
+.arbre-plan>.arbre-petit-place{width:34px;height:34px;border-radius:50%;box-sizing:border-box;padding:0;display:grid;place-items:center;font:600 16px/1 system-ui}
+/* Le talent de départ : tout en haut, une entrée au-dessus de lui. */
+.arbre-noeud.racine .arbre-rond::before{content:'';position:absolute;left:50%;bottom:100%;width:3px;height:22px;margin-left:-1.5px;border-radius:2px;background:var(--line-strong)}
+/* Un bonus dans son petit rond : son logo, son chiffre en pastille. */
+.arbre-noeud.petit.bonus .arbre-rond{border-style:solid;border-width:3px;background:var(--panel)}
+.arbre-rond .logo-bonus{width:70%;height:70%;object-fit:contain;display:block}
+.arbre-rond .bonus-lettres{font:800 11px/1 system-ui;color:var(--teinte)}
+.arbre-rond .bonus-valeur{position:absolute;right:-7px;bottom:-5px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;box-sizing:border-box;background:var(--teinte);color:#fff;font:800 9px/15px system-ui;text-align:center;border:1.5px solid var(--panel)}
+.arbre-noeud.bonus-comp{--teinte:#5a7a6c}
+/* Les bonus génériques, dans le choix d'un chemin : une rangée de petits ronds. */
+.bonus-generiques{display:flex;flex-wrap:wrap;gap:12px 10px;margin:4px 0 12px}
+.bonus-generique{width:auto;padding:0;border:0;background:transparent;cursor:pointer}
+.bonus-generique:hover .arbre-rond,.bonus-generique:focus-visible .arbre-rond{transform:scale(1.1);box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
