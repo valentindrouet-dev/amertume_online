@@ -806,7 +806,9 @@ function blocRichesses(a){const out=document.createElement('div');out.className=
  const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));
   rendrePlusTard();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}:null;
  const g=ligneGemmes(a.richesses,poser,a.name);
- out.append(ligneOr(a.richesses.or||0,poser,a.name));if(g)out.append(g);return out}
+ // L'or, puis les gemmes, chacun sous son titre, comme les lignes de l'inventaire.
+ const titre=t=>{const x=document.createElement('span');x.className='richesses-titre';x.textContent=t;return x};
+ out.append(titre('Or'),ligneOr(a.richesses.or||0,poser,a.name));if(g)out.append(titre('Gemmes'),g);return out}
 /* Le « + » des richesses, au MJ : ajouter — ou retirer — de l'or ou des gemmes à un aventurier.
    Le menu dit ce qu'il a déjà de chaque. */
 const richessesDialog=dialog('richesses-ajout','Richesses','<form id="richesses-form"><div class="edit-grid"><label>Quoi<select name="quoi" id="richesses-quoi"></select></label>'

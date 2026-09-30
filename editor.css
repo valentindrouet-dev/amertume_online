@@ -1887,3 +1887,5 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* « + 4 ENDU » : le « + x » à l'encre, la caractéristique à sa couleur. */
 .bonus-libelle .bonus-plus{color:var(--ink)}.bonus-libelle .bonus-carac{letter-spacing:.5px}
 .hero-card .chips:empty{display:none}
+.richesses-titre{display:block;font:600 9.5px system-ui;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:2px 0 4px}
+.richesses-titre:not(:first-child){margin-top:8px}
