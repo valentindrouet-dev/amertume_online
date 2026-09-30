@@ -1850,3 +1850,6 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* Bibliothèque des effets : une amélioration en retrait sous son talent, une pastille devant. */
 .effet-fiche.effet-amelioration{margin-left:26px;position:relative}
 .effet-fiche.effet-amelioration::before{content:'⇧';position:absolute;left:-19px;top:10px;display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:#5e9a5b;color:#fff;font:800 9px/1 system-ui}
+/* Renommer un effet : ✎ à côté de son nom, et le champ à sa place. */
+.effet-fiche .renomme-effet{padding:0 5px;font-size:12px;margin:0 6px 0 -2px;opacity:.55}.effet-fiche:hover .renomme-effet{opacity:1}
+.effet-fiche .nom-effet-champ{font:700 13px system-ui;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);width:220px;margin-right:6px}

@@ -1025,11 +1025,11 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   params:[{cle:'etat',nom:'État',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Le porteur <b>ignore les dégâts</b> de <b>'+((p&&p.etat)||'Feu')+'</b>.'}},
  soinetat:{cle:'soinetat',nom:'Dégâts d’état en soin',type:'ame',
-  aide:'Amélioration d’Invulnérable : les dégâts de l’état auquel le porteur est insensible le soignent.',params:[],
-  phrase(){return 'Les dégâts de l’état auquel le porteur est <b>insensible</b> le <b>soignent</b>.'}},
+  aide:'Amélioration : les dégâts de l’état que le porteur ignore, ou auquel il est insensible, le soignent.',params:[],
+  phrase(){return 'Les dégâts de l’état que le porteur <b>ignore</b> le <b>soignent</b>.'}},
  soinetatdouble:{cle:'soinetatdouble',nom:'Dégâts d’état en soin ×2',type:'ame',
-  aide:'Amélioration d’Invulnérable : les dégâts de l’état auquel le porteur est insensible le soignent deux fois.',params:[],
-  phrase(){return 'Les dégâts de l’état auquel le porteur est <b>insensible</b> le <b>soignent deux fois</b>.'}},
+  aide:'Amélioration : les dégâts de l’état que le porteur ignore, ou auquel il est insensible, le soignent deux fois.',params:[],
+  phrase(){return 'Les dégâts de l’état que le porteur <b>ignore</b> le <b>soignent deux fois</b>.'}},
  /* Orbes inratables : une amélioration. Les orbes du porteur ne font jamais d'échec sur un double 1. */
  orbesinratables:{cle:'orbesinratables',nom:'Orbes inratables',type:'ame',
   aide:'Amélioration : les Orbes mystiques du porteur ne peuvent pas produire d’échec (double 1).',
@@ -1118,7 +1118,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
    ne sont liées à aucun talent en particulier restent seules. */
 {const POUR={orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',
- soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable'};
+ soinetat:'ignoredegats',soinetatdouble:'ignoredegats',corpselem:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{if(TALENTS_CODES[k]&&TALENTS_CODES[p])TALENTS_CODES[k].pour=p})}
 /* ---------- Les effets d'équipement ----------
    Ce qu'un objet sait faire quand on s'en sert : même grammaire que les talents — une clé,
@@ -1482,9 +1482,12 @@ function phraseTalent(cle,params,palier,volets){const code=TALENTS_CODES[cle];
 /* La même phrase, dépouillée de son gras : une option de menu déroulant ne porte que du
    texte. « Lamevent : En terminant un mouvement, le porteur inflige… » se lit alors d'un
    trait dans la liste, sans qu'il faille la choisir pour savoir ce qu'elle fait. */
+/* Le nom d'un effet : celui que le MJ lui a donné dans la bibliothèque, sinon celui du moteur. */
+function nomEffet(c){const k=c&&typeof c==='object'?c.cle:c,code=TALENTS_CODES[k];if(!code)return '';
+ const perso=typeof catalog!=='undefined'&&catalog&&catalog.nomsEffets&&catalog.nomsEffets[k];return typeof perso==='string'&&perso.trim()?perso.trim():code.nom}
 function libelleTalent(cle,params){const code=TALENTS_CODES[cle];if(!code)return '';
- const dit=phraseTalent(cle,params).replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
- return dit?code.nom+' : '+dit:code.nom}
+ const dit=phraseTalent(cle,params).replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim(),nom=nomEffet(cle);
+ return dit?nom+' : '+dit:nom}
 /* L'Onde purge l'affection la plus fraîche — celle qui vient de tomber — et se consume.
    Les états bénéfiques et le coma ne s'en vont jamais ainsi. */
 function ondeCures(a){const l=statesOf(a).filter(e=>!ONDE_EXCLUS.includes(e));return l.length?l[l.length-1]:null}
@@ -1846,6 +1849,6 @@ const api={DEF_MAX,defPlafonnee,passeDef,normaliseRecette,rendementReste,recette
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  NIVEAUX_XP,niveauDeXp,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
- DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,ptDepenses,xpDisponible,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,nomEffet,ciblesPermises,orbesPermis,desOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,ptDepenses,xpDisponible,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

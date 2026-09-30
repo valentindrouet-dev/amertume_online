@@ -180,6 +180,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // La classe où le MJ range chaque effet de talent, pour la bibliothèque : un nom par effet connu.
  const ce=c.classesEffets&&typeof c.classesEffets==='object'&&!Array.isArray(c.classesEffets)?c.classesEffets:{};
  c.classesEffets={};Object.entries(ce).forEach(([k,v])=>{if(TALENTS_CODES[k]&&typeof v==='string'&&v.trim())c.classesEffets[k]=v.trim().slice(0,60)});
+ // Les noms que le MJ a donnés aux effets, dans la bibliothèque : un texte court par effet connu.
+ const ne=c.nomsEffets&&typeof c.nomsEffets==='object'&&!Array.isArray(c.nomsEffets)?c.nomsEffets:{};
+ c.nomsEffets={};Object.entries(ne).forEach(([k,v])=>{if(TALENTS_CODES[k]&&typeof v==='string'&&v.trim())c.nomsEffets[k]=v.trim().slice(0,60)});
  // La DEF ne dépasse jamais 6 : une pièce ou un adversaire notés plus haut y reviennent.
  [...c.items,...c.monsters].forEach(o=>{if(o&&Number(o.def)>DEF_MAX)o.def=DEF_MAX});
  // Les mots clés du MJ : des mots ou expressions, uniques, bornés.
@@ -2251,9 +2254,17 @@ function ficheEffet(c,classe,rangs){const bloc=document.createElement('div');blo
   type.textContent=talentType(c)[1];bloc.append(type);
   const nom=document.createElement('span');nom.className='nom-effet';
   // Un talent de monstre porte sa marque : on ne le cherche pas parmi ceux de la troupe.
-  nom.textContent=(c.monstre?'👹 ':'')+c.nom+' : ';
+  nom.textContent=(c.monstre?'👹 ':'')+nomEffet(c)+' : ';
   const dit=document.createElement('span');dit.innerHTML=phraseTalent(c.cle);
   bloc.append(nom,dit);
+  /* Chez le MJ, ✎ renomme l'effet : le nom tient dans la bibliothèque, le choix de mécanique et le
+     PDF. Vide, il reprend celui du moteur. */
+  if(view==='mj'){const re=document.createElement('button');re.type='button';re.className='ico renomme-effet';re.textContent='✎';re.title='Renommer cet effet';re.setAttribute('aria-label','Renommer l’effet '+nomEffet(c));
+   re.onclick=e=>{e.stopPropagation();const inp=document.createElement('input');inp.className='nom-effet-champ';inp.value=nomEffet(c);inp.maxLength=60;inp.placeholder=c.nom;
+    const fini=garde=>{if(garde){const v=inp.value.trim(),o={...(catalog.nomsEffets||{})};if(v&&v!==c.nom)o[c.cle]=v.slice(0,60);else delete o[c.cle];catalog.nomsEffets=o;scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}renderBiblioEffets()};
+    inp.onclick=ev=>ev.stopPropagation();inp.onkeydown=ev=>{ev.stopPropagation();if(ev.key==='Enter'){ev.preventDefault();fini(true)}else if(ev.key==='Escape'){ev.preventDefault();fini(false)}};inp.onblur=()=>fini(true);
+    nom.replaceWith(inp);re.remove();inp.focus();inp.select()};
+   nom.after(re)}
   // Une amélioration nomme la mécanique qu'elle exige : on sait où la ranger.
   if(c.requiert&&TALENTS_CODES[c.requiert]){const r=document.createElement('span');r.className='prereq';
    r.textContent='↳ requiert '+TALENTS_CODES[c.requiert].nom;bloc.append(r)}
@@ -2318,7 +2329,7 @@ $('talent-add').onclick=()=>openTalent(null);
    Un fichier à part pour les talents : tous, arbres compris — places, lignes, chemins, coûts, textes,
    logos —, avec les noms des colonnes, la classe de chaque mécanique et les mots clés. */
 function sauvegardeTalents(){return {app:'amertume_online',type:'talents',version:1,exporte:new Date().toISOString(),
- talents:structuredClone(catalog.talents||[]),voies:structuredClone(catalog.voies||{}),classesEffets:structuredClone(catalog.classesEffets||{}),motsCles:[...(catalog.motsCles||[])]}}
+ talents:structuredClone(catalog.talents||[]),voies:structuredClone(catalog.voies||{}),classesEffets:structuredClone(catalog.classesEffets||{}),nomsEffets:structuredClone(catalog.nomsEffets||{}),motsCles:[...(catalog.motsCles||[])]}}
 $('talent-sauve').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(sauvegardeTalents(),null,1)],{type:'application/json'}));
  const a=document.createElement('a');a.href=url;a.download=nomSauvegarde().replace(/^amertume-/,'amertume-talents-');document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)};
 $('talent-importe').onclick=()=>{$('talent-fichier').value='';$('talent-fichier').click()};
@@ -2329,6 +2340,7 @@ $('talent-fichier').onchange=async()=>{const f=$('talent-fichier').files[0];if(!
  catalog.talents=d.talents;
  if(d.voies&&typeof d.voies==='object')catalog.voies={...(catalog.voies||{}),...d.voies};
  if(d.classesEffets&&typeof d.classesEffets==='object')catalog.classesEffets={...(catalog.classesEffets||{}),...d.classesEffets};
+ if(d.nomsEffets&&typeof d.nomsEffets==='object')catalog.nomsEffets={...(catalog.nomsEffets||{}),...d.nomsEffets};
  if(Array.isArray(d.motsCles)&&d.motsCles.length)catalog.motsCles=d.motsCles;
  normalizeCatalog(catalog);accordeArbres();accordeTalentsHeros();renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
 /* L'export PDF : une page par classe, ses colonnes, chaque talent dans l'ordre de l'arbre avec tout ce
@@ -2343,7 +2355,7 @@ async function exportePdfTalents(){const e=s=>esc(String(s??''));const T=catalog
   const nom=bonus?libelleBonus(paramsTalent(t)):nomEnClair(t.name||'Sans nom');
   const lignes=[];
   if(!bonus){lignes.push('<span class="nat">'+e(talentType(t)[2])+'</span>'+(c?' · <b>'+c+' XP</b>':''));
-   if(code)lignes.push('<i>'+e(code.nom)+'</i> : '+phraseTalent(t.effet,paramsTalent(t)));
+   if(code)lignes.push('<i>'+e(nomEffet(code))+'</i> : '+phraseTalent(t.effet,paramsTalent(t)));
    if(t.effects)lignes.push(e(nomEnClair(t.effects)));
    const op=[t.remplaceLogo&&'remplace le logo du talent',t.remplaceTexte&&'remplace le texte du talent',t.remplacePrecedente&&'remplace l’amélioration précédente',t.elementaire&&'élémentaire'].filter(Boolean);
    if(op.length)lignes.push('<span class="op">'+e(op.join(' · '))+'</span>')}
@@ -3168,7 +3180,7 @@ function tableMasseTalents(corps,classe){
  const COLS=[
   {cle:'type',nom:'Type',type:'choix',opts:TALENT_TYPES.map(([k,,n])=>[k,n]),pour:t=>!estBonus(t),lit:t=>t.type||'act',ecrit:(t,v)=>{if(TALENT_TYPES.some(([k])=>k===v))t.type=v},tri:t=>estBonus(t)?'':talentType(t)[2]},
   {cle:'cout',nom:'Coût (XP)',type:'nombre',lit:t=>coutPalier(t,1),ecrit:(t,v)=>{const c=[1,2,3].map(n=>coutPalier(t,n));c[0]=cout(v);t.couts=c}},
-  {cle:'meca',nom:'Mécanique',type:'vue',tri:t=>estBonus(t)?'Bonus':(talentCode(t)||{}).nom||'',montre:t=>estBonus(t)?'Bonus':(talentCode(t)||{}).nom||'—'},
+  {cle:'meca',nom:'Mécanique',type:'vue',tri:t=>estBonus(t)?'Bonus':nomEffet(t.effet)||'',montre:t=>estBonus(t)?'Bonus':nomEffet(t.effet)||'—'},
   {cle:'texte',nom:'Texte',type:'texte',pour:t=>!estBonus(t),lit:t=>t.effects||'',ecrit:(t,v)=>{t.effects=String(v||'').trim().slice(0,600)}}];
  const vaut=(c,t)=>!c.pour||c.pour(t);
  // Trié, le tableau quitte l'ordre de l'arbre ; « Ordre de l'arbre » y revient.
