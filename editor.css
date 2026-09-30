@@ -1809,7 +1809,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 #arbres .dialog-head #arbres-masse+#arbres-vue{margin-left:6px}
 /* Une ligne venue d'une amélioration : une pastille devant, comme une rune. */
 .palier-effet.amelioration::before{content:'⇧';display:inline-grid;place-items:center;width:14px;height:14px;margin-right:5px;vertical-align:middle;position:relative;top:-1px;
- border-radius:50%;background:#5e9a5b;color:#fff;font:800 9px/1 system-ui;box-shadow:0 0 0 1px #2f5d2d55}
+ border-radius:50%;background:linear-gradient(#f0b33c,#d98a1c);color:#fff;font:800 9px/1 system-ui;box-shadow:0 0 0 1px #8a560f66}
 /* Sous le rond, le prix se montre au survol ; « XP visible » le laisse affiché. */
 .arbre-plan>.arbre-noeud:hover>.arbre-cout,#arbres.xp-visible .arbre-plan>.arbre-noeud>.arbre-cout{opacity:1}
 /* La fiche d'aventurier : le bloc des talents prend sa propre teinte ; six places par ligne, les libres
@@ -1849,7 +1849,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .talent-rangee.t-ame .nom-carte{display:none}
 /* Bibliothèque des effets : une amélioration en retrait sous son talent, une pastille devant. */
 .effet-fiche.effet-amelioration{margin-left:26px;position:relative}
-.effet-fiche.effet-amelioration::before{content:'⇧';position:absolute;left:-19px;top:10px;display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:#5e9a5b;color:#fff;font:800 9px/1 system-ui}
+.effet-fiche.effet-amelioration::before{content:'⇧';position:absolute;left:-19px;top:10px;display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:linear-gradient(#f0b33c,#d98a1c);color:#fff;font:800 9px/1 system-ui;box-shadow:0 0 0 1px #8a560f66}
 /* Renommer un effet : ✎ à côté de son nom, et le champ à sa place. */
 .effet-fiche .renomme-effet{padding:0 5px;font-size:12px;margin:0 6px 0 -2px;opacity:.55}.effet-fiche:hover .renomme-effet{opacity:1}
 .effet-fiche .nom-effet-champ{font:700 13px system-ui;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);width:220px;margin-right:6px}
