@@ -1770,3 +1770,12 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 #des-combattant{padding:5px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
 .grille-logos-groupe>summary{cursor:pointer;list-style-position:inside}
 .grille-logos-groupe>summary:hover{color:var(--ink)}
+/* Le détail des dégâts du journal, en bulle au survol. */
+.j-degats.cliquable{cursor:help}
+.bulle-detail-degats .j-detail{margin:0}
+/* La bulle d'un bonus prend la teinte de son rond. */
+.talent-detail.bulle-bonus{--teinte:#b8862b;background:color-mix(in srgb,var(--teinte) 20%,#fff8ec);border-left:4px solid var(--teinte)}
+.talent-detail.bulle-bonus.bonus-vie{--teinte:rgb(122,92,184)}.talent-detail.bulle-bonus.bonus-endu{--teinte:rgb(44,140,133)}.talent-detail.bulle-bonus.bonus-pv{--teinte:rgb(47,122,91)}
+.talent-detail.bulle-bonus.bonus-def{--teinte:rgb(96,110,118)}.talent-detail.bulle-bonus.bonus-dmg{--teinte:rgb(180,72,58)}.talent-detail.bulle-bonus.bonus-orbe{--teinte:#8a63c9}.talent-detail.bulle-bonus.bonus-comp{--teinte:#5a7a6c}
+/* Le détail des dés d'une attaque, au journal : une bulle comme celle des talents. */
+.bulle-detail-degats .j-detail{margin:0;padding:7px 10px;border:1px solid #00000026;border-left:4px solid #b4553a;border-radius:9px;background:#f3e3dc;color:#2a2118;box-shadow:0 2px 5px #0000002e}

@@ -877,10 +877,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
     chaque touche (2), puis en deux crans (3). */
  orbesfeu:{cle:'orbesfeu',nom:'Orbes de feu',type:'ame',
   aide:'Les orbes du porteur infligent un état en plus de leurs dégâts : sur un 6, puis à chaque touche, puis en deux crans, chacun au palier choisi.',
-  params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
+  params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])},
+   {cle:'quand',nom:'Quand',type:'choix',defaut:'degats',options:[['degats','S’il inflige des dégâts'],['toujours','Toujours, même sans dégâts']]}],
   volets:[{cle:'six',nom:'Inflige l’état sur 6+',palier:1},{cle:'touche',nom:'Inflige l’état à chaque touche',palier:2},
    {cle:'deux',nom:'Inflige l’état en deux crans',palier:3}],
   phrase(p,palier,v){const e=(p&&p.etat)||'Feu',n=Math.max(1,Math.trunc(Number(palier))||1),ouvert=k=>!!v&&v[k]>0&&n>=v[k];
+   if(!PALIERS.actifs)return 'Les orbes du porteur infligent <b>'+e+'</b> '+(p&&p.quand==='toujours'?'à chaque orbe, <b>même sans dégâts</b>.':'quand ils infligent des <b>dégâts</b>.');
    if(!ouvert('six')&&!ouvert('touche'))return 'Les orbes du porteur n’infligent encore <b>aucun état</b> à ce palier.';
    return 'Les orbes du porteur infligent <b>'+e+(ouvert('deux')&&cumulable(e)?' 2':'')+'</b>'+(ouvert('touche')?'':' sur <b>6+</b>')+' en plus de leurs dégâts.'}},
  /* Débordement : un passif. Le coup qui achève un adversaire ne s'arrête pas à lui — ce
@@ -1166,8 +1168,8 @@ function etatDesOrbes(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle
    la seule touche — et combien de crans il pose. Null tant qu'aucun volet ne l'ouvre. Deux
    crans ne valent que pour un état qui s'empile. */
 function etatOrbeAuPalier(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle==='orbesfeu');if(!t)return null;
- // Paliers en sommeil : l'orbe qui blesse emporte l'état, un cran.
- if(!PALIERS.actifs)return {etat:String(t.params&&t.params.etat||'Feu'),six:false,crans:1,blesse:true};
+ // Paliers en sommeil : l'orbe emporte l'état, un cran ; s'il blesse, ou toujours, selon le réglage « Quand ».
+ if(!PALIERS.actifs)return {etat:String(t.params&&t.params.etat||'Feu'),six:false,crans:1,blesse:!(t.params&&t.params.quand==='toujours')};
  const n=Math.max(1,Math.min(PALIERS_MAX,Math.trunc(Number(t.talent&&t.talent.palier))||1));
  const v=voletsDe({...(t.talent||{}),effet:'orbesfeu'}),ouvert=k=>v[k]>0&&n>=v[k];
  if(!ouvert('six')&&!ouvert('touche'))return null;

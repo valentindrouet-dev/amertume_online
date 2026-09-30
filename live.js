@@ -254,7 +254,8 @@ function diffuser(rec){if(!enLigne||!journalRef||!monUid)return;
   liveStatus('Journal non partagé. '+liveErreur(e))})}
 log=function(text,meta){logLocal(text,meta);if(meta&&meta.local)return;
  diffuser({genre:'texte',texte:String(text).slice(0,400),badge:meta&&meta.badge?String(meta.badge).slice(0,40):null,ton:meta&&meta.ton?String(meta.ton).slice(0,20):null})};
-logAttaque=function(a,b,logo,corps,detail,suite){logAttaqueLocal(a,b,logo,corps,detail,suite);
+// « talent » ne colore que la ligne locale ; elle part sans lui, les règles du journal ne le connaissent pas.
+logAttaque=function(a,b,logo,corps,detail,suite,talent){logAttaqueLocal(a,b,logo,corps,detail,suite,talent);
  const d=detail?{des:codeDes(detail.dice),origine:Number.isInteger(detail.origine)?detail.origine:null,
   faille:Number.isInteger(detail.faille)?detail.faille:null,bonus:detail.bonus||0,saignee:detail.saignee||0,def:Number.isInteger(detail.def)?detail.def:null,solidite:!!detail.solidite,double:!!detail.double,total:detail.total||0}:null;
  diffuser({genre:'attaque',a:fiche(a),b:fiche(b),logo:logo?String(logo).slice(0,40):null,corps:String(corps).slice(0,60),detail:d,suite:suite?String(suite).slice(0,200):null})};

@@ -206,6 +206,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   t.branche=t.branche==='g'||t.branche==='d'?t.branche:'';
   // Retiré de l'arbre, il reste au catalogue.
   if(t.horsArbre!==true)delete t.horsArbre;
+  /* Orbes de feu écrit « toujours » avant que le réglage « Quand » n'existe : il le prend, une
+     fois ; le MJ le change ensuite dans l'éditeur. */
+  if(t.effet==='orbesfeu'&&!(t.params&&typeof t.params==='object'&&'quand' in t.params)&&/toujours/i.test(String(t.effects||'')))
+   t.params={...(t.params&&typeof t.params==='object'?t.params:{}),quand:'toujours'};
   // Les logos par élément : un nom de fichier par élément connu, rien d'autre.
   if(t.logos&&typeof t.logos==='object'&&!Array.isArray(t.logos)){const o={};
    ELEMENTS.forEach(e=>{const v=t.logos[e.cle];if(typeof v==='string'&&v&&v.length<=100)o[e.cle]=v});if(Object.keys(o).length)t.logos=o;else delete t.logos}
@@ -3140,6 +3144,8 @@ function retireDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;
 const CHIFFRES_PALIER=['','I','II','III'];
 function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null}={}){const bonus=t.effet==='bonus';
  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
+ // Un bonus a la couleur de son rond : rouge pour les dégâts, vert pour les PV…
+ if(bonus)d.classList.add('bulle-bonus','bonus-'+((paramsTalent(t)||{}).carac||'pv'));
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
  if(bonus)nom.textContent=libelleBonus(paramsTalent(t));else nomAccolades(nom,vu(t).name);
  // Tenu au palier 2 ou 3, le talent le dit après son nom : « Attaque Blindée II ».

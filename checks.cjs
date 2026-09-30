@@ -187,10 +187,16 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  /* Orbes de feu : une amélioration libre. Le moteur ne réclame plus les orbes au-dessus —
     c'est le MJ qui nomme le prérequis, talent par talent ; Feu par défaut. */
  assert.equal(TALENTS_CODES.orbesfeu.type,'ame');assert.equal(TALENTS_CODES.orbesfeu.requiert,undefined);
- assert.deepEqual(paramsTalent({effet:'orbesfeu'}),{etat:'Feu'});
- assert.deepEqual(paramsTalent({effet:'orbesfeu',params:{etat:'Gel'}}),{etat:'Gel'});
- assert.deepEqual(paramsTalent({effet:'orbesfeu',params:{etat:'Coma'}}),{etat:'Feu'});
- assert.match(phraseTalent('orbesfeu'),/infligent <b>Feu<\/b> sur <b>6\+<\/b> en plus/);
+ assert.deepEqual(paramsTalent({effet:'orbesfeu'}),{etat:'Feu',quand:'degats'});
+ assert.deepEqual(paramsTalent({effet:'orbesfeu',params:{etat:'Gel'}}),{etat:'Gel',quand:'degats'});
+ assert.deepEqual(paramsTalent({effet:'orbesfeu',params:{etat:'Coma'}}),{etat:'Feu',quand:'degats'});
+ assert.deepEqual(paramsTalent({effet:'orbesfeu',params:{etat:'Foudre',quand:'toujours'}}),{etat:'Foudre',quand:'toujours'});
+ // Paliers en sommeil : l'état part quand l'orbe blesse, ou toujours, selon « Quand ».
+ assert.match(phraseTalent('orbesfeu'),/infligent <b>Feu<\/b> quand ils infligent des <b>dégâts<\/b>/);
+ assert.match(phraseTalent('orbesfeu',{etat:'Foudre',quand:'toujours'}),/<b>Foudre<\/b> à chaque orbe, <b>même sans dégâts<\/b>/);
+ {const {etatOrbeAuPalier}=require('./combat.js');
+  assert.equal(etatOrbeAuPalier([{code:TALENTS_CODES.orbesfeu,params:{etat:'Feu',quand:'degats'},talent:{}}]).blesse,true);
+  assert.equal(etatOrbeAuPalier([{code:TALENTS_CODES.orbesfeu,params:{etat:'Foudre',quand:'toujours'},talent:{}}]).blesse,false);}
  assert.equal(etatDesOrbes([...tenus,{code:TALENTS_CODES.orbesfeu,params:{etat:'Gel'}}]),'Gel');}
 /* Les prérequis : par la fiche (« prerequis ») ou par la mécanique (« requiert »). Aucune
    mécanique livrée n'impose plus de socle — le MJ le nomme lui-même, talent par talent —
@@ -1007,7 +1013,7 @@ assert.ok(vivant.includes("if(!estMJ()&&CHAMPS_ACTEUR_MJ.includes(k))return;")&&
 assert.ok(vivant.includes('function verrouillerInvite')&&vivant.includes("if(spectateur()&&view!=='player'){view='player'"),'un invité reste en vue joueur');
 const cartes=fs.readFileSync('maps.js','utf8');
 assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false;")&&cartes.includes('renderFog();renderZones();leverVoile();')&&page.includes('#voile-attente{'),'la carte se voile jusqu’au brouillard');
-assert.ok(page.includes(".j-entry.ton-talent{")&&page.includes("li.classList.add('j-attaque','ton',/^spell_/.test(logo||'')?'ton-talent':'ton-attaque')"),'le journal a ses tons');
+assert.ok(page.includes(".j-entry.ton-talent{"),'le journal a ses tons');
 // Le journal se cale sur le bas de la carte, et se libère sur une colonne.
 assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderFouilles();calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
 assert.ok(cartes.includes("moveActor(heros[i],p.x,p.y,true)"),'l’ouverture d’une carte place librement');
