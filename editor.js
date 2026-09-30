@@ -2137,7 +2137,7 @@ function renderBiblioObjets(){const boite=$('biblio-objets');if(!boite)return;
    devine — les orbes au Mystique, la garde au Gardien — si la classe existe ; sinon les
    génériques, ou les adversaires pour un effet de monstre. */
 const CLASSES_EFFETS_DEVINEES={orbes:'Mystique',orbesfeu:'Mystique',ignition:'Mystique',deluge:'Mystique',eruption:'Mystique',implosion:'Mystique',degatselem:'Mystique',
- gardien:'Gardien',rempart:'Gardien',provocation:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',lamevent:'Lamevent'};
+ gardien:'Gardien',rempart:'Gardien',provocation:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',lamevent:'Lamevent',rebond:'Lamevent',revanche:'Lamevent',traction:'Lamevent',rapide:'Lamevent',larcin:'Lamevent',tenailles:'Lamevent',dominateur:'Lamevent',deception:'Lamevent',lameventelem:'Lamevent'};
 const ADVERSAIRES='Adversaires';
 function classeEffet(c){const choisie=(catalog.classesEffets||{})[c.cle];if(choisie)return choisie;
  const devinee=CLASSES_EFFETS_DEVINEES[c.cle];if(devinee&&(catalog.classes||[]).some(k=>k&&k.name===devinee))return devinee;

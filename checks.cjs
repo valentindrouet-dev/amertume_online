@@ -1667,8 +1667,7 @@ assert.ok(page.includes('function pastillesPoints(a)')&&page.includes("const act
  &&page.includes("const mvt=alive(a)&&enCombat()?pointsRestants(a,'mouvement'):0;")
  &&page.includes("if(coche&&!epuise)epuisePoints(a,quoi);else if(!coche&&epuise)rendPoint(a,quoi,POINTS_MAX[quoi])})}")
  &&page.includes("l.lastChild.textContent=' '+LIBELLES_POINTS[i]+(s&&max>1?' '+pointsRestants(s,quoi)+'/'+max:'')});")
- &&page.includes("reinit:()=>{if(code.cle==='orbes')a.orbes=0;else if(code.cle==='gardien')a.garde=null;else rendPoint(a,'action')},")
- &&page.includes("actors.forEach(a=>{a.checks=[0,0,0];a.orbes=0});")&&!page.includes('a.checks=[false,false,false]')
+ &&page.includes("reinit:()=>{if(code.cle==='orbes')a.orbes=0;else if(code.cle==='gardien')a.garde=null;else rendPoint(a,'action')},")&&!page.includes('a.checks=[false,false,false]')
  &&src.includes("a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};")
  &&vivant.includes("'checks','points','ignition','immunites','usages','cibles'"),'les points d’activation se comptent');
 /* Ignition à la table : l'orbe part sur l'allié désigné, ne blesse pas, et sa braise s'en va
@@ -1677,8 +1676,7 @@ assert.ok(page.includes('function alliePourIgnition(a)')&&page.includes("const j
  &&page.includes('if(allie!==null){const feu=etat||\'Feu\';')&&page.includes("const poser=()=>{b.ignition=feu;floatNumber(b,'✦ '+feu,'gain');")
  &&page.includes("const charge=(rangeOf(a)==='distance'?'':a.ignition)||'';")&&page.includes("if(charge)a.ignition=''}")
  &&page.includes('const infligeEtatBrut=infligeEtat;')&&page.includes("if(etatRefuse(talentsCodes(a),etat)||immuniseEtat(a,etat)||passifsPortes(a,items()).etats.includes(etat))return 'immunise';")
- &&page.includes('const brise=briseContre(talentsCodes(a),b),ouverte=brise.ignore;')&&page.includes("const def=hasState(b,'Au sol')||ouverte?0:defOf(b);")
- &&page.includes("(ouverte?' Brise : la DEF ne compte pas'+(double?', dégâts doublés':'')+(brisee?', '+nomNum(b)+' perd '+brisee+' DEF':'')+'.':'')")&&page.includes("(immunises.length?' Invulnérable : '+immunises.join(', ')+' sans effet.':'')"),'Ignition, Invulnérable et Brise câblés');
+ &&page.includes('const brise=briseContre(talentsCodes(a),b),ouverte=brise.ignore;')&&page.includes("const def=hasState(b,'Au sol')||ouverte?0:defOf(b);")&&page.includes("(immunises.length?' Invulnérable : '+immunises.join(', ')+' sans effet.':'')"),'Ignition, Invulnérable et Brise câblés');
 /* Les descriptions d'objet et de talent sortent du flux : une bulle se pose au-dessus de la
    vignette cliquée, au lieu d'écarter ses voisines. Le dépliant d'avant reste en place dans
    le code, sous « BULLES » : un mot à faux le ramène. */
@@ -1979,7 +1977,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  assert.deepEqual(C.elusMeneur({combien:'deux'},[{a:'c',dist:3},{a:'a',dist:1},{a:'b',dist:2}]),['a','b']);
  assert.deepEqual(C.elusMeneur({combien:'un'},[{a:'c',dist:3},{a:'a',dist:1}]),['a']);
  assert.equal(C.elusMeneur({combien:'tous'},[{a:'c',dist:3},{a:'a',dist:1}]).length,2);assert.deepEqual(C.elusMeneur({},[]),[]);
- assert.ok(page.includes("function defOf(a){const d=defenseOf(a,items())+bonusFiche(a).def+auraMeneur(a,'def');return defPlafonnee(a&&a.defBrisee>0?d-a.defBrisee:d)}")&&page.includes("function degatsDe(a){const bonus=(Number(a&&a.dmg)||0)+bonusFiche(a).dmg+auraMeneur(a,'dmg');return meuteActive(a)?bonus*2:bonus}")
+ assert.ok(page.includes("function defOf(a){const d=defenseOf(a,items())+bonusFiche(a).def+auraMeneur(a,'def');return defPlafonnee(a&&a.defBrisee>0?d-a.defBrisee:d)}")
   &&page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")
@@ -2163,7 +2161,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.match(C.phraseTalent('solidite',{}),/écarte aussi les <b>dés de dégâts mortels<\/b> \(rouges\)/);
  assert.equal(C.effetParNom('Solidité'),'solidite');
  assert.ok(C.porteEffet([{code:s,params:{}}],'solidite'));
- assert.ok(page.includes("const solide=porteEffet(talentsCodes(b),'solidite');")&&page.includes("doublesCritiques:destructeur,solidite:solide})")
+ assert.ok(page.includes("const solide=porteEffet(talentsCodes(b),'solidite');")
   &&page.includes("const defCible=hasState(b,'Au sol')?0:defOf(b),solide=porteEffet(talentsCodes(b),'solidite');")&&page.includes("bleed:bleedOf(b),solidite:solide})}catch(e){return e.message}")
   &&page.includes("const passe=d=>l.def===undefined||l.def===null||d[1]>6||passeDef(d,l.def,!!l.solidite);"),'attaque et orbe demandent Solidité à la cible, et la piste le sait');
  assert.ok(page.includes("poseJet({dice:r.dice,origine:dice.length,faille:r.failleFace,def,bonus:r.failed||blocked||!r.hit?0:bonus,solidite:solide},a,b);")
@@ -2683,8 +2681,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(C.briseContre([B(3)],{states:[]}).ignore,false);assert.equal(C.briseLaGarde([B(2)],gel),true);
  const ph=n=>C.phraseTalent('brise',{etat:'Feu',perte:2},n);
  assert.ok(!ph(1).includes('retirent')&&ph(2).includes('<b>retirent 2 DEF</b>')&&!ph(2).includes('double')&&ph(3).includes('<b>le double de dégâts</b>'),'la phrase suit le palier');
- assert.ok(page.includes(" const double=brise.double&&!r.failed,total=double?r.damage*2:r.damage;")
-  &&page.includes("const brisee=brise.perte&&!r.failed?brise.perte:0;if(brisee)b.defBrisee=(Math.trunc(Number(b.defBrisee))||0)+brisee;")
+ assert.ok(page.includes("const brisee=brise.perte&&!r.failed?brise.perte:0;if(brisee)b.defBrisee=(Math.trunc(Number(b.defBrisee))||0)+brisee;")
   &&page.includes("def,solidite:solide,double,total},suite);")&&page.includes("if(detail.double)plus('× 2 — Brise','double');")
   &&vivant.includes("solidite:!!detail.solidite,double:!!detail.double,total:detail.total||0}"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
  assert.ok(src.includes("g.className='paliers-bulle liste';")

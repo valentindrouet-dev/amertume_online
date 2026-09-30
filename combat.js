@@ -6,7 +6,7 @@
    s'ajoute à tout coup qui passe. */
 /* « doublesCritiques » : Destructeur — n'importe quel double vaut un critique, pas
    seulement deux 6 ; un double 1 reste un échec, il est jugé avant. */
-function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0,doublesCritiques=false,solidite=false}){
+function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0,doublesCritiques=false,solidite=false,sansEchec=false}){
  const all=dice.map(d=>[...d]);
  if(!all.length||all.some(([v,c])=>!Number.isInteger(v)||v<1||v>6||![0,1,2,3,5,6].includes(c)))throw Error('Réserve offensive invalide');
  /* Un dé d'os qui double avec un autre dé lancé s'en va d'abord, avant tout le reste :
@@ -14,7 +14,8 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,b
     un 6 blanc ne font donc pas de critique — l'os est parti avant qu'on les compte. */
  const faces0={};all.forEach(([v])=>faces0[v]=(faces0[v]||0)+1);
  const vifs=all.filter(([v,c])=>!(c===1&&faces0[v]>1));
- if(vifs.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false};
+ // Dominateur : contre un adversaire au sol, le double 1 n'est pas un échec.
+ if(!sansEchec&&vifs.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false};
  const faces={};vifs.forEach(([v])=>faces[v]=(faces[v]||0)+1);
  const critical=faces[6]>=2||(doublesCritiques&&Object.keys(faces).some(v=>Number(v)!==1&&faces[v]>=2));
  if(critical){if(!vifs.some(([,c])=>c===criticalColor))throw Error('Couleur critique absente');let v;let count=0;do{v=roll();all.push([v,criticalColor]);vifs.push([v,criticalColor]);if(++count>=100&&v===6)throw Error('Limite de relances atteinte, attaque non appliquée');}while(v===6)}
@@ -789,6 +790,54 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
    +', <b>sans dégâts</b>.';
   return 'En terminant un mouvement, le porteur inflige son <b>bonus de dégâts'
    +(b?' + '+b:'')+'</b>'+(e?' et <b>'+e+'</b>':'')+' à '+qui+'.'}},
+ /* Rebond : une action. Le porteur attaque ; s'il tue la cible, il gagne 1 point de Mouvement. */
+ rebond:{cle:'rebond',nom:'Rebond',type:'act',bouton:'⚔ Rebond',attaque:true,
+  aide:'Action : le porteur effectue une attaque ; s’il tue la cible, il gagne 1 point de Mouvement.',
+  params:[],phrase(){return 'Le porteur effectue <b>une attaque</b>. S’il <b>tue la cible</b>, il gagne <b>1 point de Mouvement</b>.'}},
+ /* Revanche : une réaction, gratuite. Après l'échec d'un adversaire, le porteur le rejoint au contact
+    d'un Mouvement qui ne coûte rien. */
+ revanche:{cle:'revanche',nom:'Revanche',type:'reac',bouton:'↯ Revanche',gratuit:true,
+  aide:'Réaction : après l’échec d’un adversaire, le porteur effectue un Mouvement gratuit jusqu’à son contact.',
+  params:[],phrase(){return 'Après qu’un adversaire réalise <b>un échec</b>, le porteur effectue <b>un Mouvement gratuit</b> jusqu’à son contact.'}},
+ /* Traction : une réaction, gratuite. Blessé par une attaque à distance, le porteur rejoint le tireur. */
+ traction:{cle:'traction',nom:'Traction',type:'reac',bouton:'⇢ Traction',gratuit:true,
+  aide:'Réaction : après avoir subi les dégâts d’une attaque à distance, le porteur effectue un Mouvement gratuit jusqu’au contact du tireur.',
+  params:[],phrase(){return 'Après avoir subi les dégâts d’une <b>attaque à distance</b>, le porteur effectue <b>un Mouvement gratuit</b> jusqu’au contact de l’adversaire.'}},
+ /* Rapide : un passif. Un point de Mouvement en plus, au premier tour du combat ou à chaque tour. */
+ rapide:{cle:'rapide',nom:'Rapide',type:'pass',
+  aide:'Passif : le porteur gagne 1 point de Mouvement supplémentaire au premier tour de combat, ou au début de chaque tour.',
+  params:[{cle:'quand',nom:'Quand',type:'choix',defaut:'premier',options:[['premier','au premier tour de combat'],['chaque','au début de chaque tour']]}],
+  phrase(p){return 'Le porteur gagne <b>1 point de Mouvement</b> supplémentaire '+((p&&p.quand)==='chaque'?'<b>au début de chaque tour</b>':'<b>au premier tour de combat</b>')+'.'}},
+ /* Larcin : une action. Le porteur attaque, puis un test de Ruse dérobe à la cible ce que ses
+    réussites atteignent — le plus précieux : arme, armure, objet, ressource, ou de l'or. */
+ larcin:{cle:'larcin',nom:'Larcin',type:'act',bouton:'✋ Larcin',attaque:true,
+  aide:'Action : le porteur attaque, puis un test de Ruse automatique dérobe une chose à la cible — de l’or, une ressource, un objet, une armure ou une arme — selon les réussites.',
+  params:[{cle:'or',nom:'Réussites pour de l’or',type:'nombre',defaut:1,min:1,max:9},{cle:'orQte',nom:'Or dérobé',type:'nombre',defaut:5,min:1,max:999},
+   {cle:'ressource',nom:'Réussites pour une ressource',type:'nombre',defaut:2,min:1,max:9},{cle:'objet',nom:'Réussites pour un objet',type:'nombre',defaut:3,min:1,max:9},
+   {cle:'armure',nom:'Réussites pour une armure',type:'nombre',defaut:4,min:1,max:9},{cle:'arme',nom:'Réussites pour une arme',type:'nombre',defaut:5,min:1,max:9}],
+  phrase(p){const n=k=>Math.max(1,(p&&p[k])|0);
+   return 'Le porteur effectue <b>une attaque</b>, puis un <b>test de Ruse</b> pour dérober à la cible : de l’<b>or</b> ('+n('or')+' réussite'+(n('or')>1?'s':'')+', '+Math.max(1,(p&&p.orQte)|0)+' or), une <b>ressource</b> ('+n('ressource')+'), un <b>objet</b> ('+n('objet')+'), une <b>armure</b> ('+n('armure')+') ou une <b>arme</b> ('+n('arme')+') — le plus précieux qu’il atteint.'}},
+ /* Pris en tenailles : une amélioration. Des dégâts en plus par adversaire au contact, au-delà du premier. */
+ tenailles:{cle:'tenailles',nom:'Pris en tenailles',type:'ame',
+  aide:'Amélioration : le porteur augmente son bonus de dégâts pour chaque adversaire au contact au-delà du premier.',
+  params:[{cle:'bonus',nom:'Dégâts par adversaire en plus',type:'nombre',defaut:1,min:1,max:9}],
+  phrase(p){const n=Math.max(1,(p&&p.bonus)|0);return 'Le porteur augmente son bonus de dégâts de <b>+'+n+'</b> par adversaire au contact <b>au-delà du premier</b>.'}},
+ /* Dominateur : un passif. Contre un adversaire au sol, pas d'échec — ou le double des dégâts. */
+ dominateur:{cle:'dominateur',nom:'Dominateur',type:'pass',
+  aide:'Passif : contre un adversaire au sol, le porteur ne fait pas d’échec, ou double ses dégâts.',
+  params:[{cle:'mode',nom:'Contre un adversaire au sol',type:'choix',defaut:'sansechec',options:[['sansechec','le porteur ne fait pas d’échec'],['double','le porteur double ses dégâts']]}],
+  phrase(p){return (p&&p.mode)==='double'?'Le porteur <b>double ses dégâts</b> contre les adversaires <b>au sol</b>.':'Le porteur <b>n’effectue pas d’échec</b> contre les adversaires <b>au sol</b>.'}},
+ /* Déception : un passif. Un critique adverse contre le porteur devient un échec — ou lui vaut une
+    attaque gratuite en retour. */
+ deception:{cle:'deception',nom:'Déception',type:'pass',
+  aide:'Passif : les critiques adverses contre le porteur deviennent des échecs, ou lui valent une attaque gratuite en retour.',
+  params:[{cle:'mode',nom:'Un critique adverse contre le porteur',type:'choix',defaut:'echec',options:[['echec','devient un échec'],['riposte','lui vaut une attaque gratuite en retour']]}],
+  phrase(p){return (p&&p.mode)==='riposte'?'Le porteur effectue <b>une attaque gratuite</b> contre l’adversaire qui réalise <b>un critique</b> contre lui.':'Les <b>attaques critiques</b> adverses contre le porteur deviennent des <b>échecs</b>.'}},
+ /* Lamevent élémentaire : une amélioration de Lamevent. Ses dégâts infligent aussi l'état réglé. */
+ lameventelem:{cle:'lameventelem',nom:'Lamevent élémentaire',type:'ame',
+  aide:'Amélioration de Lamevent : ses dégâts infligent aussi l’état réglé.',
+  params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
+  phrase(p){return 'Le porteur inflige <b>'+((p&&p.etat)||'Feu')+'</b> lorsqu’il inflige les dégâts de <b>Lamevent</b>.'}},
  /* Double attaque : un passif. Il n'ouvre aucun bouton — rien à déclencher — il élargit
     seulement ce qu'une attaque peut viser. Le ciblage accumule alors jusqu'à ce compte,
     et le bouton d'attaque les frappe toutes, chacune avec son propre jet. */
@@ -1142,10 +1191,11 @@ function briseLaGarde(portes,cible){return briseContre(portes,cible).ignore}
    « true » vaut un point dépensé, et tout ce qui lisait « a-t-il joué ? » lit toujours vrai. */
 const POINTS_MAX={action:4,mouvement:3,objet:1};
 const POINTS_CLES=['action','mouvement','objet'];
-// Combien il en a : ce que sa fiche déclare, borné au plafond, un au moins.
+/* Combien il en a : ce que sa fiche déclare, borné au plafond, un au moins. Le Mouvement peut
+   en compter davantage le temps d'un tour (« mvtBonus » : Rapide, Rebond), au-delà du plafond. */
 function pointsMax(a,quoi){const plafond=POINTS_MAX[quoi]||1;
- const v=Math.trunc(Number(a&&a.points&&a.points[quoi]));
- return Math.max(1,Math.min(plafond,Number.isFinite(v)&&v>0?v:1))}
+ const v=Math.trunc(Number(a&&a.points&&a.points[quoi])),bonus=quoi==='mouvement'?Math.max(0,Math.min(9,Math.trunc(Number(a&&a.mvtBonus))||0)):0;
+ return Math.max(1,Math.min(plafond+bonus,(Number.isFinite(v)&&v>0?v:1)+bonus))}
 // Combien il en a dépensés, jamais plus qu'il n'en a.
 function pointsUses(a,quoi){const i=POINTS_CLES.indexOf(quoi);if(i<0)return 0;
  const c=a&&a.checks&&a.checks[i];
