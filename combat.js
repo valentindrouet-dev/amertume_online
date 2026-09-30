@@ -1018,6 +1018,11 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   params:[],
   phrase(){return 'Le porteur lance <b>tous ses orbes</b> ensemble contre <b>un même adversaire</b>, en <b>un seul jet</b> de dés commun.'}},
  /* Orbes critiques : une amélioration. Les orbes du porteur peuvent faire des critiques sur un double 6. */
+ /* Orbes inratables : une amélioration. Les orbes du porteur ne font jamais d'échec sur un double 1. */
+ orbesinratables:{cle:'orbesinratables',nom:'Orbes inratables',type:'ame',
+  aide:'Amélioration : les Orbes mystiques du porteur ne peuvent pas produire d’échec (double 1).',
+  params:[],
+  phrase(){return 'Vos <b>Orbes mystiques</b> ne peuvent pas produire d’<b>échec</b> (double 1).'}},
  orbescritiques:{cle:'orbescritiques',nom:'Orbes critiques',type:'ame',
   aide:'Amélioration : les Orbes mystiques du porteur peuvent produire des critiques (double 6).',
   params:[],
