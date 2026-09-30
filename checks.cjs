@@ -2827,8 +2827,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(C.etatOrbeAuPalier(O(3,'Gel')).crans,1,'le Gel ne s’empile pas : un cran');
  assert.equal(C.etatOrbeAuPalier(O(1,'Feu',{six:0,touche:2,deux:3})),null,'réorganisé : rien au palier 1');
  assert.deepEqual([1,2,3].map(n=>C.ditEtatOrbe(C.etatOrbeAuPalier(O(n)))),['Feu sur 6+','Feu à la touche','Feu 2 à la touche']);
- assert.ok(page.includes("if(pouvoir&&(!pouvoir.six||r.dice.some(([v])=>v>=6))){const e=pouvoir.etat,issue=infligeEtat(b,e);")
-  &&page.includes("else if(issue===true){if(pouvoir.crans>1)ajouteEtat(b,e,pouvoir.crans-1);pose=' + '+e+(pouvoir.crans>1?' '+pouvoir.crans:'')}}"),'la table pose l’état selon le palier');
+ assert.ok(page.includes("const k=pouvoir?crans(pouvoir.six?orbesAvecSix():pouvoir.blesse?orbesTouchant():n):0;")
+  &&page.includes("else if(issue===true){if(k>1)ajouteEtat(b,e,k-1);pose=' + '+e+(k>1?' '+k:'')}}"),'la table pose l’état selon le palier, un cran par orbe du Déluge');
  assert.ok(src.includes("function ajouterDansArbre(dest){")&&src.includes("if(f!==dest.famille&&!t.horsArbre)retireDeLArbre(t);")
   &&src.includes("ajouterDansArbre({famille:col.famille,voie:col.voie,pos:{x:pl.x,y:pl.y},de:")&&fs.readFileSync('editor.css','utf8').includes('.arbre-choix-liste{'),'les « + » de l’arbre prennent aussi un talent existant');}
 /* v0.298 — Meneur câblé sur ses textes : l'allié le plus proche, où qu'il soit, d'un nombre
