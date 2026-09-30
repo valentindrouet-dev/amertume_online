@@ -2876,7 +2876,7 @@ function logoBonus(p){const carac=(p&&p.carac)||'pv';let el=null;
   if(!el){el=document.createElement('span');el.className='bonus-lettres';el.textContent=skillNames[k].slice(0,2)}}
  if(el)el.classList.add('logo-bonus');return el}
 function poseLogoBonus(rond,t){const p=paramsTalent(t),l=logoBonus(p);if(!l)return;
- const n=document.createElement('b');n.className='bonus-valeur';n.textContent='+'+Math.max(1,(p&&p.valeur)|0);rond.replaceChildren(l,n)}
+ const n=document.createElement('b');n.className='bonus-valeur';n.textContent=String(Math.max(1,(p&&p.valeur)|0));rond.replaceChildren(l,n)}
 // Les petits ronds d'un chemin, du rang 1 au dernier.
 function petitsDe(de,dir){return tousTalents().filter(t=>{const c=lisChemin(t);return !!c&&c.de===de.id&&c.dir===dir}).sort((x,y)=>lisChemin(x).rang-lisChemin(y).rang)}
 // Ce que porte chaque chemin d'un talent : la ligne vers un talent voisin (« lien »), ou ses petits ronds.
@@ -3240,7 +3240,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   /* Un nœud de bonus n'est pas un talent : son rond dit la valeur et, dessous en petit, la
      caractéristique (« +2 », « ENDU »), une compétence en quatre lettres. */
   if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));
-   const v=document.createElement('b');v.textContent='+'+Math.max(1,(p&&p.valeur)|0);
+   const v=document.createElement('b');v.textContent=String(Math.max(1,(p&&p.valeur)|0));
    let c=libelleBonus(p,true).replace(/^\+\d+ /,'');if(p&&p.carac==='comp')c=c.slice(0,4);
    const q=document.createElement('small');q.textContent=c;rond.replaceChildren(v,q)}
   niv.hidden=!niv.textContent;
@@ -3429,9 +3429,9 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
   // L'entrée de l'arbre : un trait qui part du bandeau de la colonne et descend jusqu'au talent de départ.
   const titre=col.querySelector('.arbre-titre');
   col.querySelectorAll('.arbre-plan>.arbre-noeud.racine').forEach(el=>{const c=centre(el);if(!titre)return;
-   const haut=titre.getBoundingClientRect().bottom-R.top-4,l=document.createElementNS(ns,'line');
+   const T=titre.getBoundingClientRect(),haut=T.top+T.height/2-R.top,l=document.createElementNS(ns,'line');
    l.setAttribute('x1',c.x.toFixed(1));l.setAttribute('x2',c.x.toFixed(1));l.setAttribute('y1',haut.toFixed(1));l.setAttribute('y2',(c.y-c.r).toFixed(1));
-   l.setAttribute('class','entree');svg.append(l)})})}
+   l.setAttribute('class','entree'+(el.classList.contains('acquis')?' pris':''));svg.append(l)})})}
 /* Les réglages de l'appareil : le thème et les touches de la carte. Rien n'est enregistré
    dans la partie — c'est le navigateur qui s'en souvient, pour ce poste seulement. */
 function renderSettings(){const boite=$('raccourcis');if(!boite)return;
