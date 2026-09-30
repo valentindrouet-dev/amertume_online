@@ -1877,9 +1877,11 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .stat-row.en-icones .stat-ico{display:block;width:44px;height:44px;object-fit:contain}
 .stat-row.en-icones .stat-tile.avec-icone strong{position:relative;z-index:1;margin:0;color:#fff;font:900 27px/1 'Killam',system-ui;letter-spacing:0;padding:0;
  -webkit-text-stroke:5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
-.stat-row.en-icones .stat-tile.t-xp strong::after{content:'xp';font-size:14px;margin-left:1px;-webkit-text-stroke:3.5px #1d1a16}
-.stat-row.en-icones .stat-tile .ecu{margin:0 auto;width:40px;height:48px}
-.stat-row.en-icones .stat-tile .ecu b{font-size:25px}
+.stat-row.en-icones .stat-tile.t-xp strong::after{content:'xp';display:block;margin-top:-3px;text-align:center;font-size:13px;line-height:1;-webkit-text-stroke:3.5px #1d1a16}
+.stat-row.en-icones .stat-tile.t-xp strong{transform:translateY(5px)}
+/* La DEF plus petite : son chiffre de la taille des autres. */
+.stat-row.en-icones .stat-tile .ecu{margin:0 auto;width:34px;height:41px}
+.stat-row.en-icones .stat-tile .ecu b{font-size:20px}
 .sheet-class .classe-niv{text-transform:none;letter-spacing:.5px;font-weight:600}
 .icones-titre{grid-column:1/-1;margin:6px 0 0}
 .hero-card .hero-pv .lifebar{height:18px;margin-top:6px}
