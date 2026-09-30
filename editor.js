@@ -2802,6 +2802,22 @@ function dissoudreVoie(famille,nom){const i=voiesDe(famille).indexOf(nom);
  return i<0?false:nommerVoie(famille,i,'')}
 /* La classe d'un aventurier telle que le catalogue la nomme : par son nom, ou par sa clé —
    une Gardienne trouve la colonne Gardien. */
+/* Ce qu'un aventurier a vraiment activé dans le sphérier de sa classe : depuis chaque talent de
+   départ qu'il tient — un talent sans ligne qui mène à lui —, de ligne tenue en ligne tenue, et sur
+   chaque chemin ses petits ronds, rang après rang. Rien d'autre ne reste : ni ce qu'il tenait avant
+   le sphérier, ni ce qu'une ligne ne mène plus jusqu'à lui. Sans classe à arbre, rien ne bouge. */
+function talentsDuSpherier(a){const classe=classeDuHeros(a);if(!a||!classe||!aUnArbre(classe))return null;
+ const tient=new Set(a.talents||[]),vus=new Set();
+ colonnesArbre(classe).forEach(col=>{const par=new Map(col.liste.map(t=>[t.id,t]));
+  const file=col.liste.filter(t=>tient.has(t.id)&&!entreesDe(col.liste,t).length);
+  while(file.length){const t=file.shift();if(vus.has(t.id))continue;vus.add(t.id);
+   liensDe(t).forEach(id=>{const x=par.get(id);if(x&&tient.has(id)&&!vus.has(id))file.push(x)});
+   Object.keys(DIRS).forEach(d=>{for(const p of petitsDe(t,d)){if(!tient.has(p.id))break;vus.add(p.id)}})}});
+ return (a.talents||[]).filter(id=>vus.has(id))}
+function accordeTalentsHeros(){let change=false;
+ (typeof actors!=='undefined'?actors:[]).forEach(a=>{if(!a||!a.hero)return;const garde=talentsDuSpherier(a);
+  if(!garde||garde.length===(a.talents||[]).length)return;a.talents=garde;a.paliersTalents=normalisePaliersActeur(a);change=true});
+ return change}
 function classeDuHeros(a){const sienne=(a&&a.role||'').split('·')[0].trim(),toutes=talentFamilies();
  const cle=typeof cleClasse==='function'?cleClasse(sienne):'';
  return sienne?toutes.find(f=>f===sienne)||toutes.find(f=>cle&&cleClasse(f)===cle)||toutes.find(f=>cle&&cle.startsWith(cleClasse(f)))||null:null}
@@ -3007,6 +3023,8 @@ function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresAct
 function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arbresActeur=null;arbresClasse=famille||GENERIQUES;
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
+// La partie chargée, chez le MJ : les aventuriers ne gardent que ce qu'ils ont activé dans le sphérier.
+document.addEventListener('amertume-partie-chargee',()=>{if(view==='mj'&&accordeTalentsHeros()){render();scheduleSave()}});
 function arbreChange(){accordeArbres();noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
 /* Ajouter à l'arbre : un talent neuf, ou l'un de ceux qui existent déjà — maîtrises comprises. D'abord
    ceux de la classe retirés de l'arbre, puis les génériques, puis ceux des autres classes. Choisi,
@@ -3135,12 +3153,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  bulleOrpheline();
  if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);
  // En vue joueur, le MJ perd ses outils le temps de regarder : l'arbre se lit comme chez la troupe.
- const a=arbresActeur,mj=view==='mj'&&!arbresVueJoueur;
- arbresVue.hidden=view!=='mj';arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
+ const a=arbresActeur,mj=view==='mj'&&!arbresVueJoueur&&!a;
+ arbresVue.hidden=view!=='mj'||!!a;arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
  if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}}
  else if(view!=='mj'){arbresDialog.close();return}
  // Chez le MJ, l'arbre s'accorde avant de se dessiner : chaque talent a sa case, chaque ligne son but.
- if(view==='mj'&&accordeArbres())scheduleSave();
+ if(view==='mj'&&(accordeArbres()|accordeTalentsHeros()))scheduleSave();
  // Une ligne en cours de tracé n'a de sens que dans l'édition.
  if(!(view==='mj'&&!arbresVueJoueur))lienDepuis=null;
  const classe=a?classeDuHeros(a):arbresClasse;
@@ -3194,8 +3212,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(!col.liste.includes(de)){note('Une ligne relie deux talents de la même colonne.');renderArbres();return}
   const r=basculeLien(de,t);
   if(r==='plein'){note('Quatre lignes partent déjà de « '+vu(de).name+' » : efface l’une d’elles d’abord.');renderArbres();return}
-  if(r==='loin'){note('Une ligne ne relie que deux cases voisines, en droite ligne : place « '+vu(t).name+' » à côté de « '+vu(de).name+' ».');renderArbres();return}
-  if(r==='occupe'){note('Des petits ronds tiennent déjà ce chemin de « '+vu(de).name+' ».');renderArbres();return}
+  if(r==='loin'||r==='occupe'){renderArbres();return}
   arbreChange();note(r==='retire'?'Ligne effacée.':'')};
  const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note});
  // Un nœud de l'arbre : le rond au logo — ou au glyphe de sa nature — le nom, le niveau.
@@ -3279,8 +3296,6 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||verrouArbre(a.talents,col.liste,t)||manqueTalent(a.talents,t,catalog.talents);
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);el.classList.add('petit');
   if(estBonus(t))poseLogoBonus(el.querySelector('.arbre-rond'),t);
-  el.noteBulle=a?(acquis?(estBonus(t)?'Bonus activé.':'Amélioration apprise.'):verrou?'S’ouvre une fois « '+verrou+' » pris.':'Un clic l’active, à son prix.')
-   :'Sur le chemin de « '+vu(depart).name+' »'+(lisChemin(t).rang>1?', au rang '+lisChemin(t).rang:'')+'.';
   const outils=el.querySelector('.arbre-outils');
   if(outils)outils.replaceChildren(ico('✎','Corriger '+t.name,()=>openTalent(catalog.talents.indexOf(t),renderArbres)),
    ico('✕',estBonus(t)?'Ôter ce bonus du chemin':'Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue',()=>{
@@ -3288,8 +3303,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      const i=catalog.talents.indexOf(t);if(i>=0)catalog.talents.splice(i,1);actors.forEach(x=>{if(x.talents)x.talents=x.talents.filter(id=>id!==t.id)})}
     else retireDeLArbre(t);arbreChange()}));
   el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
-   if(verrou){note(verrou===VERROU_ELEMENT?'Le MJ choisit d’abord l’élément du Mystique, au-dessus de l’arbre.':'« '+vu(t).name+' » s’ouvre une fois « '+verrou+' » pris.');return}
-   if(acquis){note('Déjà pris : « − » ou le clic droit le rend.');return}
+   if(verrou||acquis)return;
    a.talents=[...a.talents,t.id];note('');majTable()};
   if(a&&acquis)boutonMoins(el,t,()=>{const tombes=oublier(t,libre?null:col.liste);note(tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'');majTable()});
   glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,chemin:lisChemin(t),soi:t.id});
