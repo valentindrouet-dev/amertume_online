@@ -1738,17 +1738,6 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .des-combattant .des-orbes{margin-left:10px;padding-left:10px}
 /* Avec les orbes, tout se resserre pour tenir sur une ligne ; trop long, la suite passe dessous sans glisser sous le plateau. */
 .des-combattant{flex-shrink:0}
-.des-combattant.avec-orbes .die-sq,.des-combattant.avec-orbes .pips .etat-inflige{flex:0 0 18px;width:18px;height:18px}
-.des-combattant.avec-orbes .pips{gap:3px}
-.des-combattant.avec-orbes .des-bonus{gap:5px}
-.des-combattant.avec-orbes .bonus{font-size:14px}
-.des-combattant.avec-orbes .des-armes{margin-right:4px}
-.des-combattant.avec-orbes .des-armes .logo-equip,.des-combattant.avec-orbes .des-orbes .logo-equip{width:20px;height:20px}
-.des-combattant.avec-orbes .des-orbes{gap:4px;margin-left:6px;padding-left:6px}
-.des-combattant.avec-orbes .die-sq,.des-combattant.avec-orbes .pips .etat-inflige{flex:0 0 17px;width:17px;height:17px}
-.des-combattant.avec-orbes .des-bonus{gap:4px}
-.des-combattant.avec-orbes .bonus{font-size:13px}
-.des-combattant.avec-orbes .des-orbes{gap:3px;margin-left:5px;padding-left:5px}
 
 /* Le sphérier à la taille de l'onglet Talents : les talents à 69 px, les petits ronds d'autant plus gros. */
 .arbre-plan>.arbre-noeud:not(.petit) .arbre-rond{width:69px;height:69px}
@@ -1775,3 +1764,5 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* Sur un petit rond, le ✕ se tient sous lui : la bulle, au-dessus, ne le couvre pas. */
 .arbre-plan>.arbre-noeud.petit .arbre-outils{top:calc(100% + 3px)}
 .arbre-plan>.arbre-noeud.petit .arbre-outils .ico{padding:1px 5px;font-size:11px}
+/* Les dés du Mystique, arme et orbes, tiennent à pleine taille sur une ligne : la colonne des Dégâts s'élargit d'autant, le bloc Actions cède la place. */
+@media(min-width:701px){.actions-rangee{grid-template-columns:minmax(0,2fr) minmax(max-content,1fr)}}

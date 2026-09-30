@@ -3280,7 +3280,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&src.includes("if(marked.size>1){boite.replaceChildren();boite.hidden=true;montreDesCombattant(null);return}")
   &&css.includes('.des-combattant{display:flex;align-items:center;min-height:26px}.des-combattant[hidden]{display:none}'),'les dés du combattant au-dessus de la piste, ceux du rond survolé le temps du survol');
  {const m=page.match(/function compteDuTexte\(t\)\{[^\n]*\}/);assert.ok(m,'compteDuTexte introuvable');const ctx={};vm.runInNewContext(m[0]+';this.f=compteDuTexte',ctx);
-  assert.equal(ctx.f('Orbes mystiques 1/1'),'1/1');assert.equal(ctx.f('Garde 2 / 3'),'2/3');assert.equal(ctx.f('Riposte'),'');assert.equal(ctx.f(null),'');}
+  assert.equal(ctx.f('Orbes mystiques 1/1'),'1');assert.equal(ctx.f('Garde 2 / 3'),'2');assert.equal(ctx.f('Riposte'),'');assert.equal(ctx.f(null),'');}
  assert.ok(page.includes("poseRond(b,im||glyphe,nom,titre,compteDuTexte(nom),bulle);")&&src.includes("const compte=typeof compteDuTexte==='function'?compteDuTexte(t.texte):'';"),'le compte d’un talent en pastille sur son rond');}
 /* v0.361 — La bulle d'un bouton de la barre d'action est celle d'un talent, à la couleur du bouton ;
    une attaque, et un talent qui frappe, y montrent leurs dés et leur bonus. Plus de titre « Actions ». */

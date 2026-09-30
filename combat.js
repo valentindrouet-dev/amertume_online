@@ -1280,7 +1280,7 @@ function palierDe(a,t){if(!a||!t||!(a.talents||[]).includes(t.id))return 0;
    Foudre ; {mot} feu, glace, foudre — Brise{mot} fait Brisefeu, Briseglace, Brisefoudre ;
    {Mot} la même chose, capitale en tête ; {logo} feu, gel, foudre, pour spell_orbes_{logo}.
    Un talent coché « élémentaire » voit en plus son état réglé suivre celui de l'élément. */
-const ELEMENTS=[{cle:'feu',nom:'Feu',etat:'Feu',mot:'feu',logo:'feu'},{cle:'gel',nom:'Gel',etat:'Gel',mot:'glace',logo:'gel'},{cle:'foudre',nom:'Foudre',etat:'Foudre',mot:'foudre',logo:'foudre'}];
+const ELEMENTS=[{cle:'feu',nom:'Feu',etat:'Feu',mot:'feu',logo:'feu',teinte:'#e8842c'},{cle:'gel',nom:'Gel',etat:'Gel',mot:'glace',logo:'gel',teinte:'#8fd0ef'},{cle:'foudre',nom:'Foudre',etat:'Foudre',mot:'foudre',logo:'foudre',teinte:'#e8c230'}];
 const CLASSES_ELEMENTAIRES=['mystique'];
 const classeElementaire=c=>CLASSES_ELEMENTAIRES.includes(cleTalent(c));
 const elementDe=a=>ELEMENTS.find(e=>e.cle===(a&&a.element))||null;
