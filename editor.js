@@ -3397,7 +3397,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  if(elementaire)tete.append(choixElement(a,classe));
  // L'XP de l'aventurier : ce que l'arbre a coûté, et ce qui reste à dépenser.
  if(a){const pt=ptDepenses(a,catalog.talents),dispo=xpDisponible(a,catalog.talents),s=document.createElement('p');s.className='arbres-pt';
-  s.textContent=(pt?pt+' XP dépensé'+(pt>1?'s':'')+' · ':'')+dispo+' XP disponible'+(dispo>1?'s':'');tete.append(s)}
+  // « 100 / 2415 XP disponibles » : ce qui reste à dépenser, sur toute l'XP gagnée.
+  s.textContent=dispo+' / '+Math.max(0,Math.trunc(Number(a.xp))||0)+' XP disponible'+(dispo>1?'s':'');tete.append(s)}
  if(!classe){const v=document.createElement('p');v.className='muted';v.textContent='Donne une classe à '+a.name+' pour lui ouvrir un arbre.';tete.append(v)}
  corps.append(tete);
  /* Un nœud de l'arbre, et ce qu'il attend : une ligne depuis un talent tenu, sauf s'il n'en a aucune
