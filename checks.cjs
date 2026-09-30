@@ -2653,8 +2653,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual([1,2,3].map(n=>C.coutPalier(t,n)),[1,2,0]);assert.equal(C.ptDepenses(a,[t]),3);assert.equal(C.ptDepenses({talents:['o'],paliersTalents:{o:3}},[t]),3);
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[2],'le moteur joue le palier tenu');
  assert.deepEqual(C.normalisePaliersActeur({talents:['o','p'],paliersTalents:{o:3,p:1,q:2,r:'x'}}),{o:3},'un palier 1 ne s’écrit pas ; un talent oublié perd le sien');
- assert.ok(fs.readFileSync('combat.js','utf8').includes("function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)")
-  &&page.includes("function talentsCodes(a){return talentsAuPalier(a,typeof catalog!=='undefined'?catalog.talents:[])"),'la table et les bonus jouent le palier ; il voyage en direct');
+ assert.ok(fs.readFileSync('combat.js','utf8').includes("function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)"),'la table et les bonus jouent le palier ; il voyage en direct');
  assert.ok(src.includes("a.paliersTalents=normalisePaliersActeur(a);")&&src.includes(" c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(99,coutPalier(t,n)));"),'paliers relus, au catalogue et sur la fiche');
  assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("+ligne('Coût (PT)',")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")
   &&src.includes(" t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")

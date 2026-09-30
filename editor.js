@@ -3164,6 +3164,11 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null}={}){const bon
    if(c){const pt=document.createElement('span');pt.className='palier-cout';pt.textContent=c+' PT';tete.push(pt)}
    e.prepend(...tete.flatMap(x=>[x,' ']));g.append(e)});
   d.append(g);
+  /* Les améliorations que l'aventurier a activées sur les chemins du talent, chacune à la ligne ;
+     de deux à la suite, seule la seconde, qui remplace la première. */
+  if(a&&!lisChemin(t)){const ams=sansAmeliorationsRemplacees((a.talents||[]).map(talent)).filter(x=>x&&!estBonus(x)&&lisChemin(x)&&lisChemin(x).de===t.id)
+    .sort((x,y)=>Object.keys(DIRS).indexOf(lisChemin(x).dir)-Object.keys(DIRS).indexOf(lisChemin(y).dir)||lisChemin(x).rang-lisChemin(y).rang);
+   ams.forEach(x=>{const tx=vu(x).effects||'';if(!tx)return;const e=document.createElement('p');e.className='palier-effet amelioration';texteEnrichi(e,tx);g.append(e)})}
   }
  if(note)ligne(note,'muted');
  return d}
