@@ -1866,15 +1866,20 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .sac-titre .ico.plus{font:700 14px system-ui;letter-spacing:0;padding:0 7px 2px}
 .corps-sac>.sac{padding:8px 10px;border-radius:12px;background:color-mix(in srgb,#8a6a44 11%,transparent);border:1px solid color-mix(in srgb,#8a6a44 38%,transparent)}
 .hero-card .richesses{padding:8px 12px;border-radius:12px;background:color-mix(in srgb,#c9a227 12%,transparent);border:1px solid color-mix(in srgb,#c9a227 45%,transparent)}
-/* Vie, Endu, PV max, Dégâts : l'icône et la valeur, sans case ; la DEF, son écu. */
-.hero-card .stat-row.en-icones{display:flex;justify-content:space-around;align-items:center;gap:6px;margin:10px 0 2px}
-.hero-card .stat-row.en-icones .stat-tile{position:relative;background:none;border:0;padding:0 0 6px;overflow:visible}
-.hero-card .stat-row.en-icones .stat-tile>span:not(.stat-ico):not(.ecu),.hero-card .stat-row.en-icones .stat-tile small{display:none}
-.hero-card .stat-row.en-icones .stat-ico{display:block;width:40px;height:40px;object-fit:contain;margin:0 auto}
-/* La valeur devant l'icône, en bas : blanche, cerclée de sombre. */
-.hero-card .stat-row.en-icones .stat-tile.avec-icone strong{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);margin:0;color:#fff;font:900 17px/1 'Killam',system-ui;letter-spacing:0;padding:0;
- -webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
-.hero-card .stat-row.en-icones .stat-tile .ecu{margin:0 auto}
+/* Les chiffres en icônes, sur la fiche d'aventurier comme en combat, sans case ; la DEF, son écu. */
+.stat-row.en-icones{display:flex;justify-content:space-around;align-items:center;gap:8px;margin:10px 0 2px}
+.stat-row.en-icones .stat-tile{position:relative;background:none;border:0;padding:0;overflow:visible;min-width:0}
+.stat-row.en-icones .stat-tile>span:not(.stat-ico):not(.ecu),.stat-row.en-icones .stat-tile small{display:none}
+/* L'icône et, devant elle, au milieu, sa valeur en gros : blanche, cerclée de sombre. La case prend
+   la largeur du plus large des deux : un grand nombre d'XP ne mord pas sur la voisine. */
+.stat-row.en-icones .stat-tile.avec-icone{display:grid;place-items:center}
+.stat-row.en-icones .stat-tile.avec-icone>*{grid-area:1/1}
+.stat-row.en-icones .stat-ico{display:block;width:44px;height:44px;object-fit:contain}
+.stat-row.en-icones .stat-tile.avec-icone strong{position:relative;z-index:1;margin:0;color:#fff;font:900 27px/1 'Killam',system-ui;letter-spacing:0;padding:0;
+ -webkit-text-stroke:5px #1d1a16;paint-order:stroke fill;white-space:nowrap}
+.stat-row.en-icones .stat-tile.t-xp strong::after{content:'xp';font-size:14px;margin-left:1px;-webkit-text-stroke:3.5px #1d1a16}
+.stat-row.en-icones .stat-tile .ecu{margin:0 auto;width:40px;height:48px}
+.stat-row.en-icones .stat-tile .ecu b{font-size:25px}
 .sheet-class .classe-niv{text-transform:none;letter-spacing:.5px;font-weight:600}
 .icones-titre{grid-column:1/-1;margin:6px 0 0}
 .hero-card .hero-pv .lifebar{height:18px;margin-top:6px}
