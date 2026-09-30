@@ -2663,7 +2663,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("+ligne('Coût (PT)',")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")
   &&src.includes(" t.couts=[1,2,3].map(n=>f['c_'+n]?num(f['c_'+n].value,0,99):0);")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")
   &&src.includes("t.couts=[num(f.b_cout.value,0,99),0,0];t.paliers={};delete t.elementaire;delete t.volets}")&&feuille.includes('.paliers-table{'),'l’éditeur : une colonne par palier, le coût en PT');
- assert.ok(src.includes("if(max>1){pts=document.createElement('span');pts.className='arbre-paliers';")&&src.includes("poserPalier(t,k+1);note('')}")
+ assert.ok(src.includes("if(max>1){pts=document.createElement('span');pts.className='arbre-paliers';")
   &&src.includes("const jusque=!a?max:k>0?k:1;")&&src.includes("// Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.")
   &&src.includes("a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);")&&feuille.includes('.arbre-paliers i.on{')&&feuille.includes('.paliers-bulle.n2{grid-template-columns:1fr auto 1fr}'),'l’arbre : points, clic, « − », bulle comparée');}
 /* v0.289 — Brise en trois paliers cumulés, contre une cible qui porte l'état : la DEF ignorée,

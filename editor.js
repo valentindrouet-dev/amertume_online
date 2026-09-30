@@ -3180,11 +3180,6 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     elles ; du bas vers le haut, pour que chaque retrait n'emporte que le sien. */
  // Le palier tenu d'un talent : 1 ne s'écrit pas, c'est d'avoir appris.
  const poserPalier=(t,n)=>{a.paliersTalents={...(a.paliersTalents||{})};if(n>1)a.paliersTalents[t.id]=Math.min(paliersDe(t),n);else delete a.paliersTalents[t.id]};
- // « − » sur un nœud tenu : le palier d'en dessous ; au premier, l'oubli.
- const boutonMoins=(el,t,descendre)=>{const k=palierDe(a,t);
-  const m=ico('−',k>1?'Redescendre '+t.name+' au palier '+(k-1):'Oublier '+t.name,descendre);m.classList.add('palier-moins');m.removeAttribute('title');
-  let outils=el.querySelector('.arbre-outils');if(!outils){outils=document.createElement('span');outils.className='arbre-outils';el.append(outils)}outils.prepend(m);
-  el.oncontextmenu=e=>{e.preventDefault();descendre()}};
  const oublier=(t,liste)=>{const avant=a.talents;let reste=avant;
   // Ce qu'on n'atteignait plus que par lui tombe avec lui, du plus loin au plus proche.
   const chute=[t,...(liste?chuteArbre(avant,liste,t):[])];
@@ -3275,15 +3270,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
    if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
    if(verrou){note(verrou===VERROU_ELEMENT?'Le MJ choisit d’abord l’élément du Mystique, au-dessus de l’arbre.':'« '+vu(t).name+' » exige d’abord « '+verrou+' ».');return}
-   // Tenu, un clic le monte d'un palier ; au dernier, le « − » seul le fait redescendre.
-   if(acquis){const k=palierDe(a,t);if(k>=paliersDe(t)){note(PALIERS.actifs?'« '+t.name+' » est à son dernier palier.':'« '+t.name+' » est déjà appris.');return}
-    poserPalier(t,k+1);note('')}
-   else{a.talents=[...a.talents,t.id];note('')}
-   majTable()};
-  // Redescendre : un palier de moins ; au premier, le talent s'oublie — et ce qu'on n'atteignait que par lui.
-  if(a&&acquis)boutonMoins(el,t,()=>{const k=palierDe(a,t);if(k>1){poserPalier(t,k-1);note('');majTable();return}
-   const tombes=oublier(t,libre?null:col.liste);
-   note(tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'');majTable()});
+   // Un clic l'active ; tenu, un clic le désactive — et ce qu'on n'atteignait que par lui.
+   if(acquis)oublier(t,libre?null:col.liste);else a.talents=[...a.talents,t.id];
+   note('');majTable()};
   glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,pos:posDe(t),soi:t.id});
   return el};
  /* Un bonus posé sur une ligne : petit, au milieu du trait. Activable dès que le talent d'où part
@@ -3303,9 +3292,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      const i=catalog.talents.indexOf(t);if(i>=0)catalog.talents.splice(i,1);actors.forEach(x=>{if(x.talents)x.talents=x.talents.filter(id=>id!==t.id)})}
     else retireDeLArbre(t);arbreChange()}));
   el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
-   if(verrou||acquis)return;
-   a.talents=[...a.talents,t.id];note('');majTable()};
-  if(a&&acquis)boutonMoins(el,t,()=>{const tombes=oublier(t,libre?null:col.liste);note(tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'');majTable()});
+   if(acquis)oublier(t,libre?null:col.liste);else if(!verrou)a.talents=[...a.talents,t.id];else return;
+   note('');majTable()};
   glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,chemin:lisChemin(t),soi:t.id});
   return el};
  /* Une case vide où l'arbre peut grandir, chez le MJ : la case voisine, en droite ligne, d'un talent.
