@@ -335,12 +335,21 @@ function bulleAction(b,{nom,dit='',note='',des=null}){const d=document.createEle
  return ouvrirBulle(b,d,'bulle-talent')}
 // Le logo de l'arme en main droite : un bouton de talent sans icône prend celui-là.
 function logoArmeEquipee(a){const at=a&&typeof activeAttack==='function'?activeAttack(a):null,l=at&&(at.logos||[])[0];return l?logoAttaque(l,'bouton'):null}
-function montreDesCombattant(dice,bonus,toujours,logos){const z=$('des-combattant');if(!z)return;
- z.replaceChildren();z.hidden=!dice;if(!dice)return;
+/* Les orbes d'un Mystique, à droite des dégâts de son arme : le logo des orbes, les dés d'un orbe
+   et l'état qu'il porte, son bonus s'il en a un. */
+function partOrbes(a){const codes=a&&typeof talentsCodes==='function'?talentsCodes(a):[],t=codes.find(x=>x.code.cle==='orbes');if(!t)return null;
+ const d=desOrbe(codes);if(!d)return null;const out=document.createElement('span');out.className='des-orbes';
+ const l=logoRemplace(a,t.talent)||(codes.find(x=>x.code.cle==='orbesfeu')||{talent:{}}).talent.logo||t.talent.logo;
+ const im=l?logoAttaque(l,'des-arme'):null;if(im)out.append(im);
+ out.append(dicePips({[d.couleur]:d.n},etatDesOrbes(codes)||''));
+ const bonus=typeof bonusOrbes==='function'?bonusOrbes(a):0;if(bonus){const b=document.createElement('b');b.className='bonus';b.textContent='+ '+bonus;out.append(b)}
+ return out}
+function montreDesCombattant(dice,bonus,toujours,logos,apres){const z=$('des-combattant');if(!z)return;
+ z.replaceChildren();z.hidden=!dice&&!apres;z.classList.toggle('avec-orbes',!!apres);if(!dice){if(apres)z.append(apres);return}
  // Devant les dés, les armes qui les lancent — ou le logo du talent qui frappe.
  const armes=document.createElement('span');armes.className='des-armes';
  (logos||[]).forEach(l=>{const im=logoAttaque(l,'des-arme');if(im)armes.append(im)});
- if(armes.childElementCount)z.append(armes);z.append(desEtBonus(dice,bonus,toujours,false))}
+ if(armes.childElementCount)z.append(armes);z.append(desEtBonus(dice,bonus,toujours,false));if(apres)z.append(apres)}
 /* Après un rendu de la barre, le bouton sous le pointeur rouvre sa bulle : un clic redessine les
    ronds, et la bulle ne doit ni s'éclipser ni sauter. */
 const pointeur={x:-1,y:-1};document.addEventListener('pointermove',e=>{pointeur.x=e.clientX;pointeur.y=e.clientY},{passive:true});
@@ -355,13 +364,14 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
     attaques, les talents d'action, puis les réactions. Les maîtrises vont en petit sur la ligne
     du dessous, avec Analyser et le Repos court. Chaque rond : le logo au milieu, plein à la
     couleur de l'action ; le nom et ce qu'il fait dans la bulle, au survol. */
- const gros=a&&typeof boutonsTalents==='function'?boutonsTalents(a).filter(b=>b.rangee!=='aucune'&&b.talent.type!=='mait'):[];
+ // Les Orbes mystiques, une maîtrise, prennent la grande ligne, tout à gauche.
+ const gros=a&&typeof boutonsTalents==='function'?boutonsTalents(a).filter(b=>b.rangee!=='aucune'&&(b.talent.type!=='mait'||b.code.cle==='orbes')):[];
  const talents=[...gros.filter(b=>b.rangee==='attaques'),...gros.filter(b=>b.rangee==='reactions')];
  const bonusDe=at=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
  const retenu=Math.trunc(a&&a.activeAttack)||0,actuelle=liste.length?liste[retenu<liste.length?retenu:0]:null;
  // Un adversaire qu'on n'a pas analysé garde ses dés pour lui, chez les joueurs.
  const voit=!!a&&(view==='mj'||a.hero||!!a.revealed);
- const revient=()=>montreDesCombattant(voit&&actuelle?actuelle.dice:null,bonusDe(actuelle),!!actuelle&&actuelle.useOwnDamage!==false,actuelle?actuelle.logos:null);
+ const revient=()=>montreDesCombattant(voit&&actuelle?actuelle.dice:null,bonusDe(actuelle),!!actuelle&&actuelle.useOwnDamage!==false,actuelle?actuelle.logos:null,voit?partOrbes(a):null);
  const survol=(b,dice,bonus,toujours,logos)=>{if(!voit||!dice)return;
   b.addEventListener('pointerenter',()=>montreDesCombattant(dice,bonus,toujours,logos));b.addEventListener('pointerleave',revient)};
  // Même seule, une attaque se montre : on lit ce qui part avant de frapper.
@@ -410,7 +420,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
    des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false):null}));
   // Un talent qui frappe montre aussi ses dés au-dessus de la piste, au survol.
   survol(b,t.des,t.bonus||0,false,t.logo?[t.logo]:null);
-  b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;boite.append(b)});
+  b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;if(t.code.cle==='orbes')boite.prepend(b);else boite.append(b)});
  if(avaitBulle)requestAnimationFrame(rouvreBulleSous)}
 const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
@@ -2143,7 +2153,7 @@ function renderBiblioObjets(){const boite=$('biblio-objets');if(!boite)return;
 /* La classe d'un effet dans la bibliothèque : celle que le MJ lui a donnée ; sinon celle qu'on
    devine — les orbes au Mystique, la garde au Gardien — si la classe existe ; sinon les
    génériques, ou les adversaires pour un effet de monstre. */
-const CLASSES_EFFETS_DEVINEES={orbes:'Mystique',orbesfeu:'Mystique',ignition:'Mystique',deluge:'Mystique',eruption:'Mystique',implosion:'Mystique',degatselem:'Mystique',
+const CLASSES_EFFETS_DEVINEES={orbes:'Mystique',orbescritiques:'Mystique',orbesfeu:'Mystique',ignition:'Mystique',deluge:'Mystique',eruption:'Mystique',implosion:'Mystique',degatselem:'Mystique',
  gardien:'Gardien',rempart:'Gardien',provocation:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',lamevent:'Lamevent',rebond:'Lamevent',revanche:'Lamevent',traction:'Lamevent',rapide:'Lamevent',larcin:'Lamevent',tenailles:'Lamevent',dominateur:'Lamevent',deception:'Lamevent',lameventelem:'Lamevent'};
 const ADVERSAIRES='Adversaires';
 function classeEffet(c){const choisie=(catalog.classesEffets||{})[c.cle];if(choisie)return choisie;

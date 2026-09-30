@@ -6,7 +6,7 @@
    s'ajoute à tout coup qui passe. */
 /* « doublesCritiques » : Destructeur — n'importe quel double vaut un critique, pas
    seulement deux 6 ; un double 1 reste un échec, il est jugé avant. */
-function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0,doublesCritiques=false,solidite=false,sansEchec=false}){
+function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0,doublesCritiques=false,solidite=false,sansEchec=false,sansCritique=false}){
  const all=dice.map(d=>[...d]);
  if(!all.length||all.some(([v,c])=>!Number.isInteger(v)||v<1||v>6||![0,1,2,3,5,6].includes(c)))throw Error('Réserve offensive invalide');
  /* Un dé d'os qui double avec un autre dé lancé s'en va d'abord, avant tout le reste :
@@ -17,7 +17,8 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,b
  // Dominateur : contre un adversaire au sol, le double 1 n'est pas un échec.
  if(!sansEchec&&vifs.filter(([v,c])=>v===1&&c!==5).length>=2)return {dice:all,failleFace:null,bleed:0,damage:0,failed:true,critical:false};
  const faces={};vifs.forEach(([v])=>faces[v]=(faces[v]||0)+1);
- const critical=faces[6]>=2||(doublesCritiques&&Object.keys(faces).some(v=>Number(v)!==1&&faces[v]>=2));
+ // « sansCritique » : un orbe ne fait pas de critique, sauf amélioration (Orbes critiques).
+ const critical=!sansCritique&&(faces[6]>=2||(doublesCritiques&&Object.keys(faces).some(v=>Number(v)!==1&&faces[v]>=2)));
  if(critical){if(!vifs.some(([,c])=>c===criticalColor))throw Error('Couleur critique absente');let v;let count=0;do{v=roll();all.push([v,criticalColor]);vifs.push([v,criticalColor]);if(++count>=100&&v===6)throw Error('Limite de relances atteinte, attaque non appliquée');}while(v===6)}
  const failleFace=faille?roll():null;
  const kept=vifs.filter(([v])=>v!==failleFace);const remaining={};kept.forEach(([v])=>remaining[v]=(remaining[v]||0)+1);
@@ -993,11 +994,16 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   params:[],
   phrase(){return 'Un orbe lancé sur un <b>allié désigné</b> ne lui fait aucun mal : sa <b>prochaine attaque au contact</b> inflige l’affection des orbes du porteur.'}},
  /* Déluge : une action. Le porteur lance d'un coup tous les orbes qu'il lui reste ce tour, sur
-    un même adversaire — contrairement aux orbes lancés un à un, qui sont gratuits. */
+    un même adversaire, en un seul jet commun où tous ses bonus s'appliquent une fois. */
  deluge:{cle:'deluge',nom:'Déluge',type:'act',bouton:'✦ Déluge',
-  aide:'Action : le porteur lance tous ses orbes restants ensemble, contre un même adversaire.',
+  aide:'Action : le porteur lance tous ses orbes restants ensemble, contre un même adversaire, en un seul jet.',
   params:[],
-  phrase(){return 'Le porteur lance <b>tous ses orbes</b> ensemble contre <b>un même adversaire</b>.'}},
+  phrase(){return 'Le porteur lance <b>tous ses orbes</b> ensemble contre <b>un même adversaire</b>, en <b>un seul jet</b> de dés commun.'}},
+ /* Orbes critiques : une amélioration. Les orbes du porteur peuvent faire des critiques sur un double 6. */
+ orbescritiques:{cle:'orbescritiques',nom:'Orbes critiques',type:'ame',
+  aide:'Amélioration : les Orbes mystiques du porteur peuvent produire des critiques (double 6).',
+  params:[],
+  phrase(){return 'Vos <b>Orbes mystiques</b> peuvent produire des <b>critiques</b> (double 6).'}},
  /* Éruption : un passif. Un orbe lancé sur un adversaire qui porte déjà l'état réglé le fait
     éclater : tous les adversaires à son contact reçoivent l'état. Suit l'élément du Mystique. */
  eruption:{cle:'eruption',nom:'Éruption',type:'pass',

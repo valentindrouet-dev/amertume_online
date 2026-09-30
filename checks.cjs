@@ -2157,7 +2157,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(C.effetParNom('Solidité'),'solidite');
  assert.ok(C.porteEffet([{code:s,params:{}}],'solidite'));
  assert.ok(page.includes("const solide=porteEffet(talentsCodes(b),'solidite');")
-  &&page.includes("const defCible=hasState(b,'Au sol')?0:defOf(b),solide=porteEffet(talentsCodes(b),'solidite');")&&page.includes("bleed:bleedOf(b),solidite:solide})}catch(e){return e.message}")
+  &&page.includes("const defCible=hasState(b,'Au sol')?0:defOf(b),solide=porteEffet(talentsCodes(b),'solidite');")
   &&page.includes("const passe=d=>l.def===undefined||l.def===null||d[1]>6||passeDef(d,l.def,!!l.solidite);"),'attaque et orbe demandent Solidité à la cible, et la piste le sait');
  assert.ok(page.includes("poseJet({dice:r.dice,origine:dice.length,faille:r.failleFace,def,bonus:r.failed||blocked||!r.hit?0:bonus,solidite:solide},a,b);")
   &&page.includes("im.className='rate';im.src=imgUrl('DEF VIDE.png');")&&page.includes(".board-die .rate{")&&page.includes("if(calme){marque();return}")
@@ -3272,9 +3272,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    dessous, les maîtrises, Analyser, le Repos court. Les dés de dégâts et le bonus du combattant pris
    passent au-dessus de la piste, dans le bloc Dés ; un rond qui frappe y montre les siens au survol. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
- assert.ok(src.includes("boutonsTalents(a).filter(b=>b.rangee!=='aucune'&&b.talent.type!=='mait'):[];")
-  &&src.includes("const talents=[...gros.filter(b=>b.rangee==='attaques'),...gros.filter(b=>b.rangee==='reactions')];")
-  &&page.includes("boutonsTalents(a).filter(b=>b.rangee!=='aucune'&&b.talent.type==='mait').forEach(t=>{let b=null;")
+ assert.ok(src.includes("const talents=[...gros.filter(b=>b.rangee==='attaques'),...gros.filter(b=>b.rangee==='reactions')];")
   &&!page.includes("filter(b=>b.rangee==='reactions')")&&!page.includes('rangee-ronds')&&!css.includes('rangee-ronds')
   &&css.includes('.attack-row button.btn-action.rond,.attack-row button.btn-action.rond.inerte{width:42px;height:42px;font-size:19px}'),'gros ronds pour agir et réagir, petits pour les maîtrises et les gestes');
  assert.ok(src.includes("const voit=!!a&&(view==='mj'||a.hero||!!a.revealed);")

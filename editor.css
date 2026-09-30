@@ -1730,3 +1730,22 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .bonus-generiques{display:flex;flex-wrap:wrap;gap:12px 10px;margin:4px 0 12px}
 .bonus-generique{width:auto;padding:0;border:0;background:transparent;cursor:pointer}
 .bonus-generique:hover .arbre-rond,.bonus-generique:focus-visible .arbre-rond{transform:scale(1.1);box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
+
+/* Les orbes d'un Mystique, dans le bloc Dégâts, à droite de son arme. */
+.des-combattant .des-orbes{display:inline-flex;align-items:center;gap:6px;margin-left:14px;padding-left:12px;border-left:1px solid var(--line)}
+.des-combattant{flex-wrap:wrap;row-gap:6px}
+.des-combattant .des-bonus,.des-combattant .des-orbes,.des-combattant .pips{flex-wrap:nowrap;white-space:nowrap}
+.des-combattant .des-orbes{margin-left:10px;padding-left:10px}
+/* Avec les orbes, tout se resserre pour tenir sur une ligne ; trop long, la suite passe dessous sans glisser sous le plateau. */
+.des-combattant{flex-shrink:0}
+.des-combattant.avec-orbes .die-sq,.des-combattant.avec-orbes .pips .etat-inflige{flex:0 0 18px;width:18px;height:18px}
+.des-combattant.avec-orbes .pips{gap:3px}
+.des-combattant.avec-orbes .des-bonus{gap:5px}
+.des-combattant.avec-orbes .bonus{font-size:14px}
+.des-combattant.avec-orbes .des-armes{margin-right:4px}
+.des-combattant.avec-orbes .des-armes .logo-equip,.des-combattant.avec-orbes .des-orbes .logo-equip{width:20px;height:20px}
+.des-combattant.avec-orbes .des-orbes{gap:4px;margin-left:6px;padding-left:6px}
+.des-combattant.avec-orbes .die-sq,.des-combattant.avec-orbes .pips .etat-inflige{flex:0 0 17px;width:17px;height:17px}
+.des-combattant.avec-orbes .des-bonus{gap:4px}
+.des-combattant.avec-orbes .bonus{font-size:13px}
+.des-combattant.avec-orbes .des-orbes{gap:3px;margin-left:5px;padding-left:5px}
