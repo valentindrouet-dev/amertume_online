@@ -3040,6 +3040,13 @@ arbresVue.onclick=()=>{arbresVueJoueur=!arbresVueJoueur;noteArbres('');renderArb
 let arbresEnMasse=false,masseTriTal=null,masseAnnuleTal=null;
 const arbresMasse=document.createElement('button');arbresMasse.type='button';arbresMasse.id='arbres-masse';arbresMasse.className='arbres-vue';arbresMasse.textContent='✎ Modifier en masse';
 arbresDialog.querySelector('.dialog-head').insertBefore(arbresMasse,arbresVue);
+/* « XP visible » : le prix sous chaque rond, tout le temps ; sinon au survol seulement. Pour
+   chacun, joueur comme MJ, retenu sur l'appareil. */
+let xpVisible=false;try{xpVisible=localStorage.getItem('amertume-xp-visible')==='1'}catch(e){}
+const arbresXp=document.createElement('button');arbresXp.type='button';arbresXp.id='arbres-xp';arbresXp.className='arbres-vue';arbresXp.textContent='XP visible';
+arbresDialog.querySelector('.dialog-head').insertBefore(arbresXp,arbresMasse);
+const poseXpVisible=()=>{arbresDialog.classList.toggle('xp-visible',xpVisible);arbresXp.classList.toggle('on',xpVisible);arbresXp.setAttribute('aria-pressed',String(xpVisible))};poseXpVisible();
+arbresXp.onclick=()=>{xpVisible=!xpVisible;try{localStorage.setItem('amertume-xp-visible',xpVisible?'1':'0')}catch(e){}poseXpVisible()};
 const arbresTotal=document.createElement('span');arbresTotal.id='arbres-total';arbresTotal.className='arbres-total';
 arbresDialog.querySelector('.dialog-head').insertBefore(arbresTotal,arbresMasse);
 // Tout ce que porte l'arbre d'une classe : ses talents dans l'ordre, chacun suivi de ses petits ronds.
@@ -3290,7 +3297,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // En vue joueur, le MJ perd ses outils le temps de regarder : l'arbre se lit comme chez la troupe.
  const a=arbresActeur,mj=view==='mj'&&!arbresVueJoueur&&!a;
  arbresVue.hidden=view!=='mj'||!!a||arbresEnMasse;arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
- arbresMasse.hidden=view!=='mj'||!!a;arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
+ arbresMasse.hidden=view!=='mj'||!!a;arbresXp.hidden=arbresEnMasse&&!a;arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
  if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}}
  else if(view!=='mj'){arbresDialog.close();return}
  // Chez le MJ, l'arbre s'accorde avant de se dessiner : chaque talent a sa case, chaque ligne son but.
