@@ -1022,12 +1022,19 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Amélioration : les Orbes mystiques du porteur peuvent produire des critiques (double 6).',
   params:[],
   phrase(){return 'Vos <b>Orbes mystiques</b> peuvent produire des <b>critiques</b> (double 6).'}},
- /* Éruption : un passif. Un orbe lancé sur un adversaire qui porte déjà l'état réglé le fait
-    éclater : tous les adversaires à son contact reçoivent l'état. Suit l'élément du Mystique. */
+ /* Éruption : un passif. Un adversaire qui meurt en portant l'état réglé le fait éclater : tous
+    les adversaires à son contact le reçoivent. Suit l'élément du Mystique. Deux améliorations :
+    les dégâts de l'état — un dé par cran — puis ces dégâts doublés. */
  eruption:{cle:'eruption',nom:'Éruption',type:'pass',
-  aide:'Passif : un orbe lancé sur un adversaire qui porte déjà l’état réglé l’inflige à tous les adversaires à son contact.',
+  aide:'Passif : quand un adversaire portant l’état réglé est tué, tous les adversaires à son contact le subissent.',
   params:[{cle:'etat',nom:'État qui éclate',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
-  phrase(p){const e=(p&&p.etat)||'Feu';return 'Si le porteur lance un orbe contre un adversaire portant <b>'+e+'</b>, tous les adversaires <b>à son contact</b> subissent <b>'+e+'</b>.'}},
+  phrase(p){const e=(p&&p.etat)||'Feu';return 'Quand un adversaire portant <b>'+e+'</b> est tué, tous les adversaires <b>à son contact</b> subissent <b>'+e+'</b>.'}},
+ eruptiondegats:{cle:'eruptiondegats',nom:'Éruption — dégâts',type:'ame',
+  aide:'Amélioration d’Éruption : les adversaires touchés subissent aussi les dégâts de l’état du mort, un dé par cran (Feu 4 : 4d6).',params:[],
+  phrase(){return 'L’<b>Éruption</b> inflige aussi les <b>dégâts</b> de l’état du mort : un dé par cran.'}},
+ eruptiondouble:{cle:'eruptiondouble',nom:'Éruption — double',type:'ame',
+  aide:'Amélioration d’Éruption : les dégâts de l’Éruption sont doublés.',params:[],
+  phrase(){return 'Les dégâts de l’<b>Éruption</b> sont <b>doublés</b>.'}},
  /* Implosion : un passif. Un critique rend au porteur le point d'Action qu'il vient de dépenser. */
  implosion:{cle:'implosion',nom:'Implosion',type:'pass',
   aide:'Passif : après un critique, le porteur gagne 1 point d’Action.',
