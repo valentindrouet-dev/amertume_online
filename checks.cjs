@@ -1100,6 +1100,16 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
  assert.ok(src.includes("const table=document.createElement('table');table.className='biblio-table';")&&src.includes("function ligneEffet(c,classe,rangs,parent){")
   &&src.includes("function phraseReglee(c){")&&src.includes("function filtreBiblio(){")&&src.includes('id="biblio-filtre"')&&src.includes("tr.className='effet-ligne t-'+(c.type||'act')+(parent?' ame-de':c.type==='ame'?' ame-libre':'');")
   &&src.includes("localStorage.getItem('amertume-biblio-plis')")&&feuille.includes('.biblio-table tr.ame-de td{')&&feuille.includes('.biblio-table .col-dit b.reglable{'),'la bibliothèque en tableau');}
+/* La conversion des dégâts de D&D 5.5 : l'expression lue — d4 à d12 et un bonus —, sa moyenne, et trois
+   poignées d'Amertüme dont la moyenne, lancée par le moteur, s'en approche ; 2d6 donne 2 dés simples. */
+{assert.deepEqual(C.lireDegatsDnd('2d6+3'),{des:[{n:2,f:6}],bonus:3,moyenne:10,min:5,max:15});
+ assert.equal(C.lireDegatsDnd('d8 + 1d4 - 1').moyenne,6);assert.ok(C.lireDegatsDnd('1d20').erreur,'un d20 ne se convertit pas');assert.ok(C.lireDegatsDnd('abc').erreur);
+ const r=C.conversionDegats('2d6',0);assert.equal(r.propositions.length,3);
+ assert.deepEqual([r.propositions[0].couleur,r.propositions[0].n,r.propositions[0].bonus],['white',2,0],'2d6 : deux dés simples');
+ C.conversionDegats('4d10+5',3).propositions.forEach(p=>assert.ok(Math.abs(p.moyenne-27)<1.5&&p.n<=10,'proche de 27 : '+p.nom));
+ assert.deepEqual(C.moyenneDesAmertume('red',2,3),C.moyenneDesAmertume('red',2,3),'le hasard est semé');
+ assert.ok(src.includes("const conversionDialog=dialog('conversion-des','Conversion des dégâts',")&&src.includes("b.id='conversion-ouvre';b.className='conversion-bouton';b.textContent='🎲';")
+  &&src.includes("$('view').after(b)")&&feuille.includes('.conversion-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));'),'le dé à côté de la vue ouvre la conversion');}
 /* Les petites améliorations de l'onglet Talents et de la fiche d'aventurier gardent leur taille, comme le sphérier
    et le reste de la feuille de style : la bibliothèque ne touche qu'à ses propres règles. */
 assert.ok(feuille.includes('.talent-rangee.t-ame .cat-pill.gear-carre.talent-carre{max-width:34px;border-width:2px}')

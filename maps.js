@@ -639,7 +639,7 @@ document.querySelector('.view-controls').before(tabs);
 const PAGES=['table','maps','domaine','heroes','talents','armory','bestiary','icones','settings'];
 /* La troupe voit les onglets que le MJ lui ouvre dans les Paramètres — ongletsJoueurs() : la Table
    toujours, les Cartes jamais. Tout ce qui s'y modifie reste au MJ — voir « vue-joueur » dans editor.css. */
-function majOnglets(){const ouverts=ongletsJoueurs();tabs.querySelectorAll('button').forEach(b=>{b.hidden=view!=='mj'&&!ouverts.includes(b.dataset.page)});
+function majOnglets(){const ouverts=ongletsJoueurs();{const cv=$('conversion-ouvre');if(cv)cv.hidden=view!=='mj'}tabs.querySelectorAll('button').forEach(b=>{b.hidden=view!=='mj'&&!ouverts.includes(b.dataset.page)});
  document.body.classList.toggle('vue-joueur',view!=='mj');
  if(view!=='mj'&&PAGES.some(x=>!ouverts.includes(x)&&document.body.classList.contains('page-'+x)))showPage('table',false)}
 /* L'onglet ouvert est un réglage d'appareil, comme le thème : recharger en plein

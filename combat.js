@@ -1544,6 +1544,49 @@ function readStat(cle,texte,avant){const bornes=STAT_LIMITS[cle];
    jamais leur plafond, baisser le plafond y ramène les PV, et toucher le fond
    met dans le coma comme n'importe quel coup. */
 /* L'XP à atteindre pour chaque niveau d'aventurier, du 1 au 20 : le niveau suit l'XP, de lui-même. */
+/* ---------- La conversion des dégâts de D&D 5.5 ----------
+   Une expression de D&D — « 2d6+3 », « d8 + 1d4 », des d4 aux d12 et un bonus fixe — se lit en sa
+   moyenne. Les dés d'Amertüme sont tous des d6, mais chaque couleur a sa règle : le Lourd passe la DEF,
+   le Mystique double sur une paire, un double 1 fait échec, un double 6 critique. Leur moyenne n'est
+   donc pas écrite à la main : le moteur lui-même lance les dés, contre la DEF donnée, et la conversion
+   cherche, pour chaque couleur, le nombre de dés et le bonus de dégâts qui s'en approchent le plus. */
+const FACES_DND=[4,6,8,10,12];
+function lireDegatsDnd(texte){const t=String(texte||'').toLowerCase().replace(/\s+/g,'');
+ if(!t)return {erreur:'Entre des dégâts, par exemple 2d6+3.'};
+ const des=[];let bonus=0,lu='';const rx=/([+-]?)(\d*)d(\d+)|([+-]?)(\d+)/g;let m;
+ while((m=rx.exec(t))!==null){lu+=m[0];
+  if(m[3]!==undefined){const f=Number(m[3]),n=m[2]===''?1:Number(m[2]);
+   if(!FACES_DND.includes(f))return {erreur:'Seuls les d4, d6, d8, d10 et d12 se convertissent.'};
+   if(m[1]==='-')return {erreur:'Un dé ne se retranche pas.'};
+   if(n<1||n>40)return {erreur:'Entre 1 et 40 dés de chaque sorte.'};des.push({n,f})}
+  else bonus+=(m[4]==='-'?-1:1)*Number(m[5])}
+ if(lu.replace(/^\+/,'')!==t.replace(/^\+/,'')||!des.length)return {erreur:'Lecture impossible : écris par exemple 2d6+3.'};
+ const moyenne=des.reduce((s,d)=>s+d.n*(d.f+1)/2,0)+bonus;
+ return {des,bonus,moyenne,min:Math.max(0,des.reduce((s,d)=>s+d.n,0)+bonus),max:des.reduce((s,d)=>s+d.n*d.f,0)+bonus}}
+/* La moyenne d'une poignée de dés d'une même couleur, lancée par le moteur contre une DEF : les dégâts
+   des dés, et la part des jets qui touchent — c'est sur eux seuls que le bonus s'ajoute. Le hasard est
+   semé : les mêmes questions donnent les mêmes réponses, sans tremblement à la frappe. */
+function moyenneDesAmertume(couleur,n,def,essais=1600){const c=DICE_KEYS.indexOf(couleur);let graine=97+n*131+c*977+(Number(def)||0)*7919;
+ const d6=()=>{graine=(graine*1103515245+12345)%2147483648;return 1+Math.floor(graine/2147483648*6)};
+ let somme=0,touche=0;
+ for(let i=0;i<essais;i++){const dice=Array.from({length:n},()=>[d6(),c]);
+  const r=resolveAttack({dice,def:Number(def)||0,dmg:0,round:1,criticalColor:c,roll:d6});
+  if(r.hit){touche++;somme+=r.damage}}
+ return {moyenne:somme/essais,touche:touche/essais}}
+// Les trois familles proposées, de la plus simple à la plus puissante.
+const CONVERSION_DES=[['white','Simple','Des dés simples : la DEF écarte leurs faces basses.'],
+ ['red','Lourd','Des dés lourds : ils passent toujours la DEF.'],
+ ['blue','Mystique','Des dés mystiques : une paire double leurs dégâts.']];
+function conversionDegats(texte,def){const dnd=lireDegatsDnd(texte);if(dnd.erreur)return dnd;
+ /* Au-delà de dix dés, deux 1 tombent presque à coup sûr et le jet échoue : les gros dégâts passent
+    par le bonus. Entre deux poignées voisines, la plus courte et le plus petit bonus l'emportent. */
+ const cible=Math.max(0,dnd.moyenne),plafond=Math.max(2,Math.min(10,Math.ceil(cible/2.5)+2)),bonusMax=Math.min(80,Math.ceil(cible)+2);
+ const propositions=CONVERSION_DES.map(([couleur,nom,dit])=>{let mieux=null;
+  for(let n=1;n<=plafond;n++){const s=moyenneDesAmertume(couleur,n,def);
+   for(let b=0;b<=bonusMax;b++){const m=s.moyenne+b*s.touche,score=Math.abs(m-cible)+.1*b+.25*n;
+    if(!mieux||score<mieux.score)mieux={couleur,nom,dit,n,bonus:b,moyenne:m,touche:s.touche,score}}}
+  return mieux});
+ return {...dnd,def:Number(def)||0,propositions}}
 const NIVEAUX_XP=[0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000];
 function niveauDeXp(xp){const n=Math.max(0,Math.trunc(Number(xp))||0);let niv=1;NIVEAUX_XP.forEach((s,i)=>{if(n>=s)niv=i+1});return niv}
 function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
@@ -1878,7 +1921,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={DEF_MAX,defPlafonnee,passeDef,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyenneDesAmertume,CONVERSION_DES,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  NIVEAUX_XP,niveauDeXp,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,

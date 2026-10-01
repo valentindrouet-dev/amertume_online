@@ -993,6 +993,35 @@ function groupesLogosCompetence(){const vus=new Set(),groupes=[];
  planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract/i.test(nomPlanche(f))||/caract/i.test(f)).sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))
   .forEach(f=>{const ids=iconesPlanches().filter(id=>id.startsWith(f+'#'));ids.forEach(i=>vus.add(i));if(ids.length)groupes.push([nomPlanche(f),ids])});
  [...famillesPlanches(),...FAMILLES_LOGOS].forEach(([t,l])=>{const reste=l.filter(x=>!vus.has(x));if(reste.length)groupes.push([t,reste])});return groupes}
+/* ---------- La conversion des dégâts de D&D 5.5 ----------
+   Un dé, en haut à côté de la vue, au MJ : on y écrit des dégâts de D&D — « 2d6+3 » — et la fenêtre
+   propose trois poignées de dés d'Amertüme, simples, lourds ou mystiques, avec leur bonus de dégâts,
+   dont la moyenne, lancée par le moteur contre la DEF choisie, s'en approche le plus. */
+const conversionDialog=dialog('conversion-des','Conversion des dégâts','<form id="conversion-form" class="conversion-form"><div class="conversion-champs">'
+ +'<label>Dégâts D&amp;D 5.5<input id="conversion-dnd" placeholder="2d6+3" autocomplete="off" spellcheck="false"></label>'
+ +'<label>DEF de la cible<select id="conversion-def">'+[0,1,2,3,4,5,6].map(n=>'<option value="'+n+'">'+n+'</option>').join('')+'</select></label></div>'
+ +'<p class="form-error" id="conversion-erreur" role="status" aria-live="polite"></p><div id="conversion-resultat" class="conversion-resultat"></div></form>');
+$('conversion-form').onsubmit=e=>e.preventDefault();
+function renderConversion(){const boite=$('conversion-resultat'),err=$('conversion-erreur');boite.replaceChildren();err.textContent='';
+ const texte=$('conversion-dnd').value;if(!texte.trim())return;
+ const r=conversionDegats(texte,$('conversion-def').value);if(r.erreur){err.textContent=r.erreur;return}
+ const f=n=>(Math.round(n*10)/10).toLocaleString('fr-FR');
+ const dnd=document.createElement('p');dnd.className='conversion-dnd';dnd.innerHTML='<b>'+esc(texte.trim())+'</b> : <b>'+f(r.moyenne)+'</b> dégâts en moyenne, de '+r.min+' à '+r.max;boite.append(dnd);
+ const grille=document.createElement('div');grille.className='conversion-grille';
+ r.propositions.forEach(p=>{const c=document.createElement('div');c.className='conversion-carte de-'+p.couleur;
+  const t=document.createElement('p');t.className='conversion-nom';t.textContent='Dés '+p.nom.toLowerCase()+(p.n>1?'s':'');
+  const des=desEtBonus({[p.couleur]:p.n},p.bonus,false);des.classList.add('conversion-des');
+  const m=document.createElement('p');m.className='conversion-moyenne';m.innerHTML='≈ <b>'+f(p.moyenne)+'</b> dégâts en moyenne<br>touche '+Math.round(p.touche*100)+' %';
+  const dit=document.createElement('p');dit.className='conversion-dit';dit.textContent=p.dit;
+  c.append(t,des,m,dit);grille.append(c)});
+ boite.append(grille)}
+let conversionMinuteur=0;
+const conversionPlusTard=()=>{clearTimeout(conversionMinuteur);conversionMinuteur=setTimeout(renderConversion,180)};
+$('conversion-dnd').oninput=conversionPlusTard;$('conversion-def').onchange=renderConversion;
+{const b=document.createElement('button');b.type='button';b.id='conversion-ouvre';b.className='conversion-bouton';b.textContent='🎲';
+ b.title='Conversion des dégâts';b.setAttribute('aria-label','Conversion des dégâts D&D 5.5 en dés d’Amertüme');
+ b.onclick=()=>{renderConversion();conversionDialog.showModal();$('conversion-dnd').focus();$('conversion-dnd').select()};
+ b.hidden=view!=='mj';$('view').after(b)}
 const competencesDialog=dialog('competences-icones','Icônes des caracs et compétences','<form id="competences-icones-form"><p class="muted">Une icône par caractéristique et par compétence, sur toutes les fiches d’aventuriers.</p><div id="competences-icones-corps" class="edit-grid"></div></form>');
 // Les caractéristiques dont l'icône se choisit : celle de leurs bonus, dans l'arbre comme sur la fiche.
 const CARACS_ICONES=[['vie','Vie'],['endu','Endurance'],['pv','PV max'],['dmg','Dégâts'],['xp','XP'],['orbe','Orbe mystique']];
