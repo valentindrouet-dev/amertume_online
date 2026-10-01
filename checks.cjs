@@ -3028,7 +3028,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("if(db&&!sessionLue){noterSauvegarde('La partie enregistrée n’est pas encore lue : rien n’est écrit par-dessus.',true);return}"),'partie illisible : rien par-dessus');
  /* v0.479 — « Inventaire + » au-dessus du bloc, l'inventaire à hauteur du corps, six icônes par ligne ; l'icône
    portée plus bas, ses dés devant ; anneaux et amulette sans symbole d'effet. */
- assert.ok(feuille.includes('.corps-sac{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);')&&feuille.includes('.corps-sac>.sac .sac-ligne{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));')
+ assert.ok(feuille.includes('.corps-sac{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);')&&feuille.includes('.corps-sac>.sac .sac-ligne{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));')
   &&feuille.includes('.corps-sac>.corps :is(.p-anneau,.p-amulette) .cat-pill.gear-carre .gear-bas{display:none}')&&!src.includes("titre.className='gear-rangee-titre sac-titre'"),'inventaire en haut, six par ligne');
  /* v0.478 — {bleu}, {Mystique}… dans une description : l'icône du dé, sans rendre le talent élémentaire. */
  {const ctxD={};vm.createContext(ctxD);vm.runInContext(src.slice(src.indexOf('const DES_ACCOLADES='),src.indexOf('function deDansTexte('))+';this.deAccolade=deAccolade;',ctxD);
