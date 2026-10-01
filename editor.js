@@ -70,8 +70,8 @@ function migreRessources(c){
    dégâts, chaque point de DEF, la deuxième main, l'état infligé, l'effet, chaque bonus, les
    ressources dont elle est faite ; la rareté multiplie ensuite le tout. L'Armurerie en tire un
    prix suggéré, à côté du prix de chaque pièce : une aide, jamais imposée. */
-const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
-const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,ressource:0,restes:0,treasure:0},
+const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
+const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,cle:0,ressource:0,restes:0,treasure:0},
  des:{white:5,bone:8,red:15,blue:20,green:10,black:30,yellow:25},def:20,deuxMains:5,etat:15,restes:25,
  bonus:{pv:10,endu:25,vie:25,def:20,dmg:30,comp:15},ressources:100,rarete:{commun:100,rare:150,mystique:200,epique:300,ressource:100}};
 const EFFET_PRIX_DEFAUT=25;
@@ -296,8 +296,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   o.params=o.effet?paramsObjet(o):{};
   // Sa rareté, et ses bonus, relus au travers de leur déclaration.
   o.rarete=rareteDe(o);o.bonus=normaliseBonusEquip(o.bonus);
-  // Une ressource n'a ni effet, ni usage, ni bonus : elle se stocke et se vend.
-  if(o.category==='ressource'||o.category==='restes'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}
+  // Une ressource n'a ni effet, ni usage, ni bonus : elle se stocke et se vend. Une clé non plus.
+  if(o.category==='ressource'||o.category==='restes'||o.category==='cle'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}
   o.usage=usageObjet(o);o.consumable=o.usage==='conso';
   o.magasin=o.magasin===true;if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}
   // Un reste donne ses ressources à son rendement ; une pièce du tanneur a sa recette.
@@ -492,7 +492,7 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="cat-filters"><input id="armory-search" placeholder="Rechercher…" aria-label="Rechercher un objet">'
  +'<select id="armory-cat" aria-label="Catégorie"><option value="">Toutes catégories</option>'
  +'<option value="melee">Armes de mêlée</option><option value="ranged">Armes à distance</option>'
- +'<option value="armor">Armures</option><option value="object">Objets</option><option value="ressource">Ressources</option><option value="restes">Restes</option><option value="treasure">Trésors</option></select>'
+ +'<option value="armor">Armures</option><option value="object">Objets</option><option value="cle">Clés</option><option value="ressource">Ressources</option><option value="restes">Restes</option><option value="treasure">Trésors</option></select>'
  +'<select id="armory-sort" aria-label="Trier">'+TRIS_ARMURERIE.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('')+'</select></div>'
  /* La banque des effets d'équipement, comme celle des talents : ce que le moteur sait
     faire quand on se sert d'un objet, replié par défaut. */
@@ -1175,7 +1175,7 @@ function dicePips(dice,etat,place){const out=document.createElement('span');out.
   d.style.setProperty('--face',dieFace(c));d.title=types[c];out.append(d)}});
  if(place&&n0>=1&&n0<=2){const v=document.createElement('i');v.className='die-sq die-munition';v.title='Place d’une munition';out.append(v)}
  return out}
-function itemColumn(a){return a.category==='restes'?'restes':a.category==='ressource'?'ressource':a.category==='treasure'?'treasure':a.category==='armor'?'armor'
+function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'restes':a.category==='ressource'?'ressource':a.category==='treasure'?'treasure':a.category==='armor'?'armor'
  :a.category==='weapon'?(a.ranged?'ranged':'melee'):'object'}
 /* La même pastille qu'à l'armurerie, mais posée : sur une fiche on lit son équipement,
    on ne le modifie pas d'un clic. Les dés de l'arme, la DEF de l'armure, l'effet d'un objet. */
@@ -1295,7 +1295,7 @@ function pastilleInsensible(p){let el=null,titre='';
  if(!el)return null;el.removeAttribute('title');el.removeAttribute('aria-label');
  const w=document.createElement('span');w.className='effet-pastille barre';w.title=titre;w.setAttribute('role','img');w.setAttribute('aria-label',titre);w.append(el);return w}
 // Une pièce sans logo : le glyphe de sa colonne.
-function glyphePiece(col){const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='treasure'?'💎':col==='ressource'?'⛏':col==='restes'?'🦴':'⚔';return g}
+function glyphePiece(col){const g=document.createElement('span');g.className='glyphe';g.textContent=col==='armor'?'🛡':col==='object'?'◈':col==='cle'?'🗝':col==='treasure'?'💎':col==='ressource'?'⛏':col==='restes'?'🦴':'⚔';return g}
 function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
  const p=document.createElement('span');p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'')+(equipable?(portes?' porte':' dispo'):'');p.setAttribute('role','button');p.tabIndex=0;
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
@@ -1476,7 +1476,7 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
  const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper;
  // Un objet d'un combattant en scène s'utilise d'un clic, pour son joueur ou le MJ ; une munition se porte.
  // Un trésor se garde et se vend ; il ne s'utilise pas : un clic montre sa description.
- const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&peutEquiper&&actors.includes(a);
+ const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='cle'&&peutEquiper&&actors.includes(a);
  const agir=e=>{e.stopPropagation();
   if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}
   /* Au survol, la description se montre seule. En jeu, le clic l'épingle — le temps
@@ -1864,7 +1864,7 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
  bulleOrpheline();return out}
 // Les Trésors : trésors et objets rares, qui se gardent, se montrent et se vendent, sans s'utiliser.
 // Quatre colonnes par rangée : les Ressources et les Trésors passent en dessous.
-const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets'],['ressource','Ressources'],['restes','Restes'],['treasure','Trésors']];
+const ARMORY_COLS=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['armor','Armures'],['object','Objets'],['cle','Clés'],['ressource','Ressources'],['restes','Restes'],['treasure','Trésors']];
 /* ---------- Trier l'Armurerie, et la modifier en masse ----------
    Le tri vaut dans chaque colonne, et dans le tableau du mode en masse. Sans tri choisi, l'ordre
    de création. */
@@ -1891,9 +1891,9 @@ let masseAnnule=null;
    écrire. La catégorie proposée est celle qu'on filtre. */
 // Une pièce neuve, par colonne de l'Armurerie : sa catégorie, sa portée, ses mains.
 const PIECE_NEUVE={melee:{category:'weapon',ranged:false,hands:1,name:'Nouvelle arme'},ranged:{category:'weapon',ranged:true,hands:2,name:'Nouvelle arme à distance'},
- armor:{category:'armor',name:'Nouvelle armure'},object:{category:'object',name:'Nouvel objet'},ressource:{category:'ressource',name:'Nouvelle ressource'},
+ armor:{category:'armor',name:'Nouvelle armure'},object:{category:'object',name:'Nouvel objet'},cle:{category:'cle',name:'Nouvelle clé'},ressource:{category:'ressource',name:'Nouvelle ressource'},
  restes:{category:'restes',name:'Nouveaux restes'},treasure:{category:'treasure',name:'Nouveau trésor'}};
-const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
+const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
 function barreMasse(boite,choisie){const barre=document.createElement('div');barre.className='masse-barre';
  const cat=document.createElement('select');cat.setAttribute('aria-label','Catégorie de la nouvelle pièce');
  cat.innerHTML=CATS_NEUVES.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('');cat.value=CATS_NEUVES.some(([k])=>k===choisie)?choisie:'object';
@@ -4326,7 +4326,7 @@ dessineInventaire();refreshEquip();
 renderAttacks()}
 // Aperçu vivant de l'équipement : dés cumulés, portée et DEF verrouillée par l'armure.
 /* Le menu d'ajout : toute l'armurerie, rangée par famille. */
-function inventaireOptions(){const nomCat=o=>o.category==='weapon'?(o.ranged?'à distance':'mêlée'):o.category==='armor'?NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase():'objet';
+function inventaireOptions(){const nomCat=o=>o.category==='weapon'?(o.ranged?'à distance':'mêlée'):o.category==='armor'?NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase():o.category==='cle'?'clé':'objet';
  const ordre=o=>o.category==='weapon'?(o.ranged?1:0):o.category==='armor'?(emplacementDe(o)==='shield'?3:2):4;
  return [['','— choisir —'],...[...(catalog.items||[])].sort((x,y)=>ordre(x)-ordre(y)||x.name.localeCompare(y.name,'fr')).map(o=>[o.id,o.name+' · '+nomCat(o)])]}
 /* L'inventaire du formulaire : une ligne par objet possédé, son compte, « Équiper » ou
@@ -4748,7 +4748,7 @@ function logoTalent(t,cls){t=logoHerite(t);const propre=logoImage(t&&t.logo,LOGO
 // Le logo d'une attaque : n'importe quelle icône du dossier, sans distinction de famille.
 function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}
 const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['armor','Armure'],
- ['ammo','Munition'],['object','Objet'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor'],['misc','Divers']];
+ ['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor'],['misc','Divers']];
 /* Ce que le formulaire affiche à l'instant, relu tel quel. Les champs absents ne sont pas
    lus : la valeur déjà enregistrée reste en place au lieu d'être remise à zéro. */
 function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
@@ -4838,7 +4838,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   /* Ce que l'objet fait quand on s'en sert, et comment on en use : la même grammaire que
      les talents — on choisit l'effet, puis on le règle. */
   // Une ressource n'a ni effet, ni usage, ni bonus : le formulaire s'arrête là.
-  +(a.category==='ressource'||a.category==='restes'?'':''
+  +(a.category==='ressource'||a.category==='restes'||a.category==='cle'?'':''
   +'<h2 class="sous-titre">Effet appliqué par le moteur</h2>'
   +'<div class="edit-grid">'
   +sel('Effet','effet',a.effet||'',[['','— Aucun : objet descriptif —'],...Object.values(OBJETS_CODES).map(c=>[c.cle,c.nom])])

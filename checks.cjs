@@ -2503,7 +2503,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(JSON.stringify(pv.slice(3)),JSON.stringify([['Endu × Vie','4 × 5 = 20'],['Classe (Gardien)','+ 2'],['Total','22']]));
  ctxD.bonusDe=(a,t,i)=>i===null?{dmg:2}:{dmg:2};const dg=ctxD.detailDegats({dmg:0});
  assert.equal(JSON.stringify(dg.map(x=>x[0])),JSON.stringify(['Dégâts','Base','Talents','Total']),'les +2 viennent d’un talent, la base dit 0');}
-{assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&peutEquiper&&actors.includes(a);")
+{assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='cle'&&peutEquiper&&actors.includes(a);")
   &&src.includes("if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}")&&src.includes("function employerDepuisFiche(a,o){")&&!src.includes("b.className='gear-utiliser'"),'un objet s’utilise d’un clic');
  assert.ok(src.includes("const NIVEAUX_TALENTS=false;")&&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes('<select id="talent-sort" aria-label="Tri" hidden>')
   &&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes("'<input type=\"hidden\" name=\"level\" value=\"'"),'les niveaux de talent se cachent, le câblage reste');
@@ -3130,7 +3130,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("const ligne=document.createElement('span');ligne.className='prix-ligne';f.price.before(ligne);ligne.append(f.price,b);")&&css.includes('.prix-suggere{'),'le prix suggéré, en masse et au formulaire');
  // Les ressources : leur rareté à elles, ni effet, ni usage, ni bonus.
  assert.equal(C.rareteDe({category:'ressource',rarete:'epique'}),'ressource');assert.equal(C.rareteDe({category:'object',rarete:'ressource'}),'commun');assert.equal(C.NOM_RARETE('ressource'),'Ressource');
- assert.ok(src.includes("if(o.category==='ressource'||o.category==='restes'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}")&&src.includes("  +(a.category==='ressource'||a.category==='restes'?'':''\n  +'<h2 class=\"sous-titre\">Effet appliqué par le moteur</h2>'")
+ assert.ok(src.includes("if(o.category==='ressource'||o.category==='restes'||o.category==='cle'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}")&&src.includes("  +(a.category==='ressource'||a.category==='restes'||a.category==='cle'?'':''\n  +'<h2 class=\"sous-titre\">Effet appliqué par le moteur</h2>'")
   &&src.includes("{cle:'rarete',nom:'Rareté',type:'choix',opts:RARETES,pour:faite,")&&css.includes('.cat-pill.r-ressource{background:#efe2cc;'),'une ressource : ni effet, ni usage, ni bonus ; sa rareté brun clair');
  // Le magasin : l'objet se clique, plus de bouton.
  assert.ok(fief.includes("const agit=e=>{e.preventDefault();if(actif)faire()};p.onclick=agit;")&&fief.includes(" carte.append(p,nom);if(sous)carte.append(sous);return carte}")&&!fief.includes("btn.className='dom-achat'"),'acheter ou vendre d’un clic sur l’objet');
@@ -3170,7 +3170,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(d.batiments.map(b=>b.fonction).join(','),'tannerie,','la Tannerie devient la tannerie, une fois');
  d.batiments[0].fonction='';assert.equal(C.normaliseDomaine(d).batiments[0].fonction,'','ensuite, le MJ choisit');
  assert.equal(J(C.normaliseDomaine({depotsVus:['a','mauvais id!','b']}).depotsVus),J(['a','b']));
- assert.ok(src.includes("function itemColumn(a){return a.category==='restes'?'restes':")&&src.includes("['ressource','Ressources'],['restes','Restes'],['treasure','Trésors']];")
+ assert.ok(src.includes("function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'restes':")&&src.includes("['ressource','Ressources'],['restes','Restes'],['treasure','Trésors']];")
   &&src.includes("o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);")
   &&src.includes("?sel('Donne','ressource1',ressourceValide(a.ressource1),")&&src.includes("function dessineRecette(){")&&src.includes("if($('recette-lignes'))a.recette=lireRecette();")
   &&src.includes("{cle:'tanneur',nom:'Tanneur',type:'case',")&&src.includes("groupe('Restes',filtre(o=>o.category==='restes'),porte,gearPill,clic);"),'les Restes et la recette du tanneur, à l’Armurerie');
@@ -3365,6 +3365,25 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.504 — En combat, un test de compétence et l'ouverture d'un coffre coûtent l'Action ; coffres fins, ronds ou tournés,
+   dupliqués, piège signalé au MJ, contenu au survol du MJ, invisibles hors de la vue de la troupe ; fiche à cases ; Clés. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),
+  mp=fs.readFileSync('maps.js','utf8'),dom=fs.readFileSync('domaine.js','utf8');
+ const rond=C.coffrePolygon({x:10,y:10,w:10,h:10,rond:true},1),carre=C.coffrePolygon({x:10,y:10,w:10,h:10},1);
+ assert.ok(rond.length===24&&carre.length===4,'un coffre rond est une ellipse, un coffre droit un rectangle');
+ const m=C.cleanMap({id:'m',name:'M',coffres:[{id:'c',x:1,y:1,w:5,h:5,a:30,rond:true,cleId:'k1',items:Array(120).fill('o'),revele:true}],doors:[{x:1,y:1,w:4,h:1,keyLocked:true,cleId:'k1'}]});
+ const c=m.coffres[0];assert.ok(c.a===30&&c.rond===true&&c.cleId==='k1'&&c.items.length===99&&!('revele' in c),'le coffre garde rotation, forme, clé et nombres');
+ assert.equal(m.doors[0].cleId,'k1','une porte garde sa clé');
+ assert.ok(page.includes("$('skills').hidden=!a.hero;")&&page.includes("const enCombatNow=enCombat();if(enCombatNow){if(actionPrise(a))")
+  &&page.includes("depensePoint(a,'action')}")&&page.includes("if(enCombatNow){afterAction(a);render();scheduleSave()}}"),'un test de compétence coûte l’Action en combat');
+ assert.ok(mp.includes("||!payeAction(a))return;")&&mp.includes("if(!parMJ&&!payeAction(h))return;")&&mp.includes("function payeAction(a)"),'tester ou ouvrir un coffre coûte l’Action en combat');
+ assert.ok(mp.includes("if((!mj||oeil)&&(!coffreVisible(c)||!enVue))return;")&&mp.includes("className='coffre-alerte'")&&mp.includes("$('coffre-double').onclick"),'coffres : vue, piège, double');
+ assert.ok(mp.includes("data-si=\"ferme\"")&&mp.includes("b.hidden=!f[b.dataset.si].checked")&&mp.includes("b.oncontextmenu=e=>{e.preventDefault();if(gemmes[k]>1)gemmes[k]--;else delete gemmes[k];maj()}")
+  &&mp.includes("const CATS_COFFRE=")&&mp.includes("className='coffre-contenu-bulle'"),'la fiche du coffre : cases, gemmes, contenu');
+ assert.ok(mp.includes("const aLaCle=(a,id)=>")&&mp.includes("parCle=!mj&&d.keyLocked&&!!d.cleId&&aLaCle(heroActif(),d.cleId)"),'une clé ouvre coffres et portes');
+ assert.ok(src.includes("['object','Objets'],['cle','Clés'],")&&src.includes("cle:{category:'cle',name:'Nouvelle clé'}")&&src.includes("['object','Objet'],['cle','Clé'],")
+  &&dom.includes("'object','cle','ressource'"),'la catégorie Clés à l’Armurerie');
+ assert.ok(css.includes('#map-doors .coffre{fill:rgba(140,72,16,.32);stroke:#9c4f12;stroke-width:1.2;')&&css.includes('.shape.coffre.rond{border-radius:50%}')&&css.includes('#map-doors .coffre.voile{'),'contour fin, rond, voile');}
 /* v0.503 — Barre de PV de la fiche sans animation ; éditeur d'adversaire : attaques spéciales d'abord, ses talents en tête ;
    bibliothèque en colonnes ; six talents d'adversaires : Nuée, Dévorant, Épines, Tourbillon, Péril, Éclaboussure. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');

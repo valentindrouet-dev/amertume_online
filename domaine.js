@@ -586,7 +586,7 @@ const texteFonction=(out,t)=>{const p=document.createElement('p');p.className='m
 function blocMagasin(out,b){const client=enteteClient(out,b,'au magasin');
  const titre=titreFonction;
  // Ce qui est en vente : les pièces de l'armurerie cochées « Magasin », rangées comme elle.
- const rang=o=>['melee','ranged','armor','object','ressource','restes','treasure'].indexOf(itemColumn(o));
+ const rang=o=>['melee','ranged','armor','object','cle','ressource','restes','treasure'].indexOf(itemColumn(o));
  const enVente=(catalog.items||[]).filter(o=>o&&o.magasin===true).sort((x,y)=>rang(x)-rang(y)||x.name.localeCompare(y.name,'fr'));
  out.append(titre('Acheter'));
  if(!enVente.length){const p=document.createElement('p');p.className='muted';p.textContent=mjDom()?'Rien en vente : coche « Magasin » sur des objets de l’armurerie.':'Rien en vente pour l’instant.';out.append(p)}
@@ -631,7 +631,7 @@ async function vendrePour(a,o){if(!agitPour(a)||!(a.inventaire||[]).includes(o.i
    réserve du domaine ; on y achète les produits du tanneur — les pièces cochées « Tanneur » —, ou
    on les fait fabriquer avec la réserve, d'après leur recette. */
 function blocTannerie(out,b){const client=enteteClient(out,b,'à la tannerie');const titre=titreFonction;
- const rang=o=>['melee','ranged','armor','object','ressource','restes','treasure'].indexOf(itemColumn(o));
+ const rang=o=>['melee','ranged','armor','object','cle','ressource','restes','treasure'].indexOf(itemColumn(o));
  const produits=(catalog.items||[]).filter(o=>o&&o.tanneur===true).sort((x,y)=>rang(x)-rang(y)||x.name.localeCompare(y.name,'fr'));
  out.append(titre('Acheter'));
  if(!produits.length)texteFonction(out,mjDom()?'Rien à vendre : coche « Tanneur » sur des pièces de l’armurerie.':'Le tanneur n’a rien à vendre pour l’instant.');

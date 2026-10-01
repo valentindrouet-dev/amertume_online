@@ -309,6 +309,8 @@ function cleanRect(r,porte){if(!r)return null;
  if(!(o.w>0&&o.h>0))return null;
  if(r.locked)o.locked=true;
  if(porte){o.open=false;if(r.keyLocked)o.keyLocked=true;if(r.secret)o.secret=true;
+  // La clé qui l'ouvre, une pièce de l'armurerie de la catégorie Clés.
+  if(r.cleId)o.cleId=texte(r.cleId,60);
   // Les réussites de Perception qu'il faut pour trouver un passage secret.
   if(r.secret&&Number(r.perception)>1)o.perception=Math.min(9,Math.trunc(Number(r.perception)));
   // L'angle d'une porte de biais voyage avec elle ; une porte droite n'en porte pas.
@@ -365,11 +367,12 @@ function cleanObjet(o){const t=o&&o.test||{};
    au contact ; dedans, des pièces de l'armurerie, de l'or et des gemmes. Ce qui lui arrive en partie —
    révélé, déverrouillé, désamorcé, ouvert — ne voyage pas avec la carte. */
 function cleanCoffre(c){const r=cleanRect(c);if(!r)return null;const n=(v,max)=>Math.max(0,Math.min(max,Math.trunc(Number(v))||0));
+ const a=Number(c.a);if(Number.isFinite(a)&&((a%180)+180)%180!==0)r.a=((a%180)+180)%180;if(c.rond===true)r.rond=true;if(c.cleId)r.cleId=texte(c.cleId,60);
  const rich={};if(c.richesses&&typeof c.richesses==='object')CLES_RICHESSES.forEach(k=>{const v=n(c.richesses[k],99999);if(v)rich[k]=v});
  return {...r,id:texte(c.id,40),nom:texte(c.nom,60)||'Coffre',desc:texte(c.desc,600),...(c.cache===true?{cache:true}:{}),
   perception:Math.max(1,n(c.perception,9)),verrou:n(c.verrou,9),piege:n(c.piege,9),degats:n(c.degats,99),
   etats:(Array.isArray(c.etats)?c.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,8),
-  items:(Array.isArray(c.items)?c.items:[]).filter(x=>typeof x==='string').slice(0,30).map(x=>texte(x,60)).filter(Boolean),richesses:rich}}
+  items:(Array.isArray(c.items)?c.items:[]).filter(x=>typeof x==='string').slice(0,99).map(x=>texte(x,60)).filter(Boolean),richesses:rich}}
 function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.image)?m.image:null;
  const ratio=Math.max(.2,Math.min(6,Number(m&&m.ratio)||16/9));
  const matiere=Array.isArray(m&&m.matiere)?cleanMatiere(m.matiere)
@@ -512,6 +515,11 @@ function rectsOverlap(a,b){return a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y
 function doorFrame(d,ratio){const r=Math.max(.05,Number(ratio)||16/9),a=(Number(d&&d.a)||0)*Math.PI/180;
  const ux=Math.cos(a),uy=Math.sin(a);
  return {r,cx:(d.x+d.w/2)*r,cy:d.y+d.h/2,hw:d.w*r/2,hh:d.h/2,ux,uy,vx:-uy,vy:ux}}
+/* La forme d'un coffre, en pour cent de carte : son rectangle, tourné comme une porte, ou l'ellipse qu'il
+   enferme (« rond »), tournée de même — vingt-quatre points, mesurés dans le vrai rapport de la carte. */
+function coffrePolygon(c,ratio){if(!c)return null;if(!c.rond)return doorPolygon(c,ratio);
+ const f=doorFrame(c,ratio),pts=[];for(let i=0;i<24;i++){const t=i/24*Math.PI*2,s=Math.cos(t),u=Math.sin(t);
+  pts.push([(f.cx+s*f.hw*f.ux+u*f.hh*f.vx)/f.r,f.cy+s*f.hw*f.uy+u*f.hh*f.vy])}return pts}
 // Les quatre coins de la porte, en pour cent de carte. Sans angle : ceux de son rectangle.
 function doorPolygon(d,ratio){if(!d)return null;if(!(Number(d.a)||0))return rectPolygon(d);
  const f=doorFrame(d,ratio);
@@ -2054,7 +2062,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  NIVEAUX_XP,niveauDeXp,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
