@@ -2084,7 +2084,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")
   &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")&&page.includes("useOwnDamage===false?0:degatsDe(a);")
-  &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")&&page.includes("const n=degatsDe(e);applyDamage(a,n);")
+  &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")&&page.includes("const n=degatsDe(e),{blinde}=encaisse(a,n);")
   &&src.includes("const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
@@ -2441,7 +2441,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    ne tient debout ; le Repos court soigne 1d6 + Endu hors combat, une fois entre deux combats. */
 {assert.ok(page.includes("function nomNum(o){if(!o)return '';const r=o.id?nameNumbers().get(o.id):null;return String(o.name||'?')+(r?' '+r:'')}")
   &&page.includes("s.textContent=nomNum(o);s.style.color=actorTint(o);return s};")&&page.includes("const who=parNom.get(m[0]);")
-  &&page.includes("return nomNum(c)+' −'+degats+(c.hp===0?' (coma)':'')}")&&page.includes("log(nomNum(a)+' invoque '+nomNum(c)+'.',{ton:'talent'});"),'le journal écrit « Gobelin 2 »');
+  &&page.includes("return nomNum(c)+(blinde?' Blindage':' −'+degats)+(c.hp===0?' (coma)':'')}")&&page.includes("log(nomNum(a)+' invoque '+nomNum(c)+'.',{ton:'talent'});"),'le journal écrit « Gobelin 2 »');
  // nomNum en machine virtuelle : deux Gobelins révélés portent leur numéro, un nom unique n'en porte pas.
  const ctxN={actors:[{id:'h',name:'Ulfgar',hero:true},{id:'g1',name:'Gobelin',vu:true,numero:1},{id:'g2',name:'Gobelin',vu:true,numero:2},{id:'o',name:'Ogre',vu:true,numero:1}]};vm.createContext(ctxN);
  vm.runInContext(page.slice(page.indexOf('function nomNum(o)'),page.indexOf('/* Ce qu\'on a le droit de lire d\'un combattant')),ctxN);
@@ -3371,6 +3371,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.507 — Le Blindage absorbe toute source de dégâts, puis disparaît : opportunité, talents, états, pièges. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),mp=fs.readFileSync('maps.js','utf8');
+ const b={hp:5,max:5,states:['Blindage']};
+ assert.deepEqual([C.applyDamage(b,3),b.hp,b.states.includes('Blindage'),C.applyDamage(b,3),b.hp],[0,5,false,3,2],'le Blindage absorbe une fois, puis disparaît');
+ const c={hp:5,max:5,states:['Blindage']};assert.deepEqual([C.applyDamage(c,0),c.states.includes('Blindage')],[0,true],'zéro dégât ne le consomme pas');
+ assert.ok(page.includes("function encaisse(a,n){const blinde=Math.trunc(n)>0&&hasState(a,'Blindage'),perdu=applyDamage(a,n);")
+  &&(page.match(/encaisse\(/g)||[]).length>=10&&mp.includes("encaisse(o,c.degats)"),'toutes les sources passent par le Blindage');}
 /* v0.506 — Coffres : calque sous le brouillard, sans contour ni anneau au clic ; bulle du MJ en icônes ; un joueur ouvre
    d'un clic ; l'Action payée même quand le MJ ouvre ; le combat part à toute révélation ; prix des ressources ; clés et
    objets propres à un adversaire posé. */

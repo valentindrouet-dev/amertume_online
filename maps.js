@@ -642,7 +642,7 @@ function ouvreCoffreJoueur(c){const a=heroActif();
 function ouvrirCoffre(c,h,parMJ){if(!c||c.ouvert||(coffreVerrouille(c)&&!parMJ))return;if(h&&!payeAction(h))return;
  if(coffreArme(c)){c.desamorce=true;
   const touches=actors.filter(o=>o&&o.hero&&alive(o)&&!o.horsCarte&&dansZoneCoffre(o,c)).map(o=>{const p=[];
-   if(c.degats>0){const n=applyDamage(o,c.degats);floatNumber(o,'−'+n,'perte');p.push(n+' dégât'+(n>1?'s':''))}
+   if(c.degats>0){const {perdu:n,blinde}=encaisse(o,c.degats);p.push(blinde?'Blindage consommé':n+' dégât'+(n>1?'s':''))}
    (c.etats||[]).forEach(e=>{if(infligeEtat(o,e)===true)p.push(e)});return nomNum(o)+(p.length?' : '+p.join(', '):'')});
   log('Piège ! '+c.nom+' se déclenche'+(touches.length?' — '+touches.join(' ; '):'')+'.',{ton:'degats'})}
  c.ouvert=true;c.deverrouille=true;

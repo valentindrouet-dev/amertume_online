@@ -1650,7 +1650,9 @@ function libelleTalent(cle,params){const code=TALENTS_CODES[cle];if(!code)return
    Les états bénéfiques et le coma ne s'en vont jamais ainsi. */
 function ondeCures(a){const l=statesOf(a).filter(e=>!ONDE_EXCLUS.includes(e));return l.length?l[l.length-1]:null}
 /* Les dégâts d'un effet ne se défendent pas : ni DEF, ni blindage, ni saignée. */
-function applyDamage(a,montant){const perdu=Math.min(a.hp,Math.max(0,Math.trunc(montant)||0));
+/* Le Blindage absorbe toute source de dégâts, une fois, puis disparaît : rien n'est perdu. */
+function applyDamage(a,montant){if(Math.trunc(montant)>0&&hasState(a,'Blindage')){setState(a,'Blindage',false);return 0}
+ const perdu=Math.min(a.hp,Math.max(0,Math.trunc(montant)||0));
  a.hp=Math.max(0,a.hp-perdu);if(a.hp===0)setState(a,'Coma',true);return perdu}
 // Un aventurier mort ne se soigne plus, d'aucune façon : seul le MJ le ressuscite.
 function applyHeal(a,montant){if(a&&a.hero===true&&a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0)return 0;const gagne=Math.min(Math.max(0,a.max-a.hp),Math.max(0,Math.trunc(montant)||0));
