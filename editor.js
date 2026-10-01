@@ -3916,7 +3916,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    Object.keys(DIRS).forEach(d=>{if(ch[d].lien)return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
   /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
      talent — jamais au-dessus : l'arbre part d'un talent tout en haut et descend ; sur chaque chemin
-     sans ligne, la place du petit rond suivant, sauf au-dessus du talent de départ. */
+     sans ligne, la place du petit rond suivant, sauf droit au-dessus du talent de départ, où descend
+     le trait du bandeau : en haut à gauche et à droite, il en reçoit comme les autres. */
   const racines=departsDe(c.liste),places=[];
   // Une place trop près d'un rond déjà posé ne s'offre pas : un talent à moins de 0,36 case, un petit rond à moins de 0,24.
   const libreIci=(x,y)=>!prises.some(q=>Math.hypot(q.x-x,q.y-y)<.36)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.24)&&!places.some(q=>Math.hypot(q.x-x,q.y-y)<.24);
@@ -3924,7 +3925,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
     Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if(ch[d].lien||ch[d].entrant)return;
      if(['e','s','o'].includes(d)&&!ch[d].petits.length){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.4)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
-     if(dy<0&&racines.has(t.id)&&!ch[d].petits.length)return;
+     if(d==='n'&&racines.has(t.id)&&!ch[d].petits.length)return;
      const r=ch[d].petits.length+1;if(r>PETITS_MAX)return;const {x,y}=bout(p,d,r);
      if(libreIci(x,y))places.push({genre:'petit',x,y,de:t,dir:d,rang:r})})});
    if(!c.liste.length)places.push({genre:'gros',x:0,y:0,de:null})}

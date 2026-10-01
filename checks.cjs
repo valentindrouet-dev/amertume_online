@@ -3023,6 +3023,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.473 — Le talent de départ reçoit des petits ronds en haut à gauche et à droite ; droit au-dessus, le trait du bandeau. */
+ assert.ok(src.includes("if(d==='n'&&racines.has(t.id)&&!ch[d].petits.length)return;")&&!src.includes("if(dy<0&&racines.has(t.id)&&!ch[d].petits.length)return;"),'le départ a ses places du haut, sauf droit au-dessus');
  /* v0.471 — Une amélioration déplacée à la main sur un autre chemin emmène celles qui la suivaient ; sur
     son propre chemin, elle change de rang sans en perdre. */
  {const L=ctxA.catalog.talents;L.push({id:'a1',name:'A1',famille:'Gardien',voie:'Rempart',type:'ame',chemin:{de:'r',dir:'e',rang:1}},{id:'a2',name:'A2',famille:'Gardien',voie:'Rempart',type:'ame',chemin:{de:'r',dir:'e',rang:2}},
