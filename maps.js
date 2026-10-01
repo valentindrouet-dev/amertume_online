@@ -9,7 +9,7 @@ const nsSVG='http://www.w3.org/2000/svg';
 // Grille du brouillard : des cellules carrées et fines, pour un bord net qui suit les murs.
 const FOG_COLS=640;let fogVis=null,fogSeen=null,fogSeenSrc=null,fogKey='',fogDim=null,fogMem=null,fogDirty=true;
 function fogDims(m){const r=(m&&m.ratio)||16/9,w=FOG_COLS,h=Math.max(32,Math.round(w/r));return{w,h,n:w*h}}
-const KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coupure:'Séparation de zones',lien:'Regroupement de zones'};
+const KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coffre:'Coffre',coupure:'Séparation de zones',lien:'Regroupement de zones'};
 function currentMap(){return maps.find(m=>m.id===currentMapId)||null}
 // L'éditeur et la table étirent l'image de la même façon ; encore faut-il que le cadre
 // ait le bon rapport. On le relit sur l'image pour les cartes d'avant son enregistrement.
@@ -25,7 +25,7 @@ function measureRatio(m,apres){if(!m||!m.image)return;const img=new Image();
 let shapeCache={cle:'',formes:[],murs:null};
 function geometryKey(m){return m.id+'|'+matiereDe(m).map(p=>(p.verrou?'v':'')+p.anneaux.map(r=>
   r.length+':'+r.reduce((t,q)=>t+q[0]*7.31+q[1]*13.07,0).toFixed(4)).join(',')).join(';')
- +'|'+(m.doors||[]).map(d=>d.x+','+d.y+','+d.w+','+d.h+','+(d.a||0)+(d.open?'o':'f')+(d.secret?'s':'')).join(';')}
+ +'|'+(m.doors||[]).map(d=>d.x+','+d.y+','+d.w+','+d.h+','+(d.a||0)+(d.open?'o':'f')+(d.secret?'s':'')+(d.decouvert?'d':'')).join(';')}
 // L'éditeur redessine à chaque geste : son contour est gardé de la même façon.
 let skinCache={cle:'',contours:[]};
 function draftSkin(m){const cle=geometryKey(m);
@@ -361,7 +361,7 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
  // Un passage secret clos ne perce plus la matière : le mur se peint plein pour tout le
  // monde, MJ compris, et c'est le trait violet — lui seul — qui le lui signale.
  if(formes.murs.contours.length)svg.append(svgMatiere([formes.murs.contours],null,'wall-group'));
- renderPortes();renderObjets()}
+ renderPortes();renderCoffres();renderObjets()}
 /* ---------- Les objets à la table ----------
    Un objet visible est un socle comme un autre, doré, que chacun peut ouvrir : on y lit
    la description, et un aventurier au contact y prend ce qui s'y trouve. Caché, seul le
@@ -418,7 +418,7 @@ function echapMenuObjet(e){if(e.key==='Escape')fermeMenuObjet()}
 function menuObjetMJ(o,x,y){fermeMenuObjet();const m=document.createElement('div');m.className='menu-objet';m.setAttribute('role','menu');
  const t=document.createElement('p');t.className='menu-objet-titre';t.textContent=o.nom||'Objet';m.append(t);
  const bouton=(txt,fn)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.textContent=txt;b.onclick=()=>{fermeMenuObjet();fn()};m.append(b)};
- bouton(o.visible?'Cacher à la troupe':'Révéler à la troupe',()=>{o.visible=!o.visible;log(o.nom+(o.visible?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();scheduleSave()});
+ bouton(o.visible?'Cacher à la troupe':'Révéler à la troupe',()=>{o.visible=!o.visible;if(o.visible)floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');log(o.nom+(o.visible?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();scheduleSave()});
  const h=heroLePlusProche(o);if(h)bouton('Donner à '+nomNum(h)+', le plus proche',()=>recupererObjet(h,o));
  document.body.append(m);const r=m.getBoundingClientRect();
  m.style.left=Math.max(6,Math.min(x+8,innerWidth-r.width-6))+'px';m.style.top=Math.max(6,Math.min(y+8,innerHeight-r.height-6))+'px';menuObjet=m;
@@ -513,7 +513,7 @@ function testerObjet(a,o){const jet=skillRoll(a.skills[o.test.comp]||0,d6);
  const trouve=jet.reussites>=o.test.reussites;
  log(nomNum(a)+' · '+skillNames[o.test.comp]+' : '+jet.reussites+' réussite'+(jet.reussites>1?'s':'')+' sur '+o.test.reussites+' ⦃'+jet.des.join(',')+'⦄ — '
   +(trouve?'découvre '+o.nom+' !':'ne trouve rien.'),{dice:true});
- if(trouve){o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Découvert !','nul');render();saveMaps()}
+ if(trouve){o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');render();saveMaps()}
  return trouve}
 /* Un test de compétence lancé depuis la fiche cherche aussi, dans la zone de contact de
    l'aventurier : chaque objet caché qui s'y trouve — aucun mur entre eux —, découvert par cette
@@ -522,9 +522,97 @@ function objetsDecouverts(a,comp,reussites,nouvelle){const m=currentMap();if(!a|
  // La Perception ne cherche que dans la part neuve de la fouille ; une autre compétence, dans tout le contact.
  const murs=walls(),atteint=o=>nouvelle?!wallsBetween(a,o,murs)&&dansFouilleNeuve(o,nouvelle):objetAPortee(a,o);
  const trouves=(m.objets||[]).filter(o=>!o.visible&&o.test&&o.test.comp===comp&&reussites>=o.test.reussites&&atteint(o));
- trouves.forEach(o=>{o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Découvert !','nul')});
- if(trouves.length){log(nomNum(a)+' découvre '+trouves.map(o=>o.nom).join(', ')+' !',{ton:'carte'});render();saveMaps();scheduleSave()}
+ trouves.forEach(o=>{o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul')});
+ /* La Perception trouve aussi les passages secrets et les coffres cachés que sa fouille neuve touche,
+    avec assez de réussites : le passage devient une porte, le coffre paraît. */
+ const noms=trouves.map(o=>o.nom);
+ if(comp===PERCEPTION&&nouvelle){
+  (m.doors||[]).forEach(d=>{if(d.secret&&!d.open&&!d.decouvert&&reussites>=(Number(d.perception)||1)&&formeDansFouille(d,nouvelle)){
+   d.decouvert=true;floatNumber(centreForme(d),'Révélé !','nul');noms.push('un passage secret')}});
+  (m.coffres||[]).forEach(c=>{if(c.cache&&!c.revele&&reussites>=(Number(c.perception)||1)&&formeDansFouille(c,nouvelle)){
+   c.revele=true;floatNumber(centreForme(c),'Révélé !','nul');noms.push(c.nom)}})}
+ if(noms.length){log(nomNum(a)+' découvre '+noms.join(', ')+' !',{ton:'carte'});render();saveMaps();scheduleSave()}
  return trouves}
+// Le centre d'une porte ou d'un coffre, là où s'affiche ce qui lui arrive.
+const centreForme=f=>({x:f.x+f.w/2,y:f.y+f.h/2,socle:'medium'});
+// Une forme rectangulaire — passage, coffre — touchée par la part neuve d'une fouille.
+function formeDansFouille(f,nouvelle){const size=mapSize(),W=size.width,H=size.height,m=currentMap();if(!W||!nouvelle||!nouvelle.length)return false;
+ const P=[[doorPolygon(f,m&&m.ratio).map(([x,y])=>[x/100*W,y/100*H])]];try{return aireMulti(Clipper.intersection(P,nouvelle))>.5}catch(e){return false}}
+/* ---------- Les coffres à la table ----------
+   Un coffre visible se voit comme une porte : un contour épais, brun orangé, et un voile par-dessus la
+   carte. Caché, seul le MJ le voit, en pointillé, jusqu'à ce qu'un test de Perception le révèle. Au
+   contact, un aventurier l'ouvre, le déverrouille ou y cherche un piège, en Ruse ou en Technique. Ouvert,
+   il donne ce qu'il contient et reste là, inerte et pâli, comme un socle à 0 PV. */
+const RUSE=5,TECHNIQUE=7;
+const coffreVisible=c=>!c.cache||!!c.revele,coffreVerrouille=c=>c.verrou>0&&!c.deverrouille,coffreArme=c=>c.piege>0&&!c.desamorce;
+function heroActif(){const a=actors[selected];return a&&a.hero&&controlled(selected)&&alive(a)?a:null}
+function polyCoffre(c){const m=currentMap();return doorPolygon(c,m&&m.ratio)}
+// Au contact : le coffre touche la zone de contact de l'aventurier.
+function coffreAPortee(a,c){const size=mapSize();return !!a&&!!size.width&&polyInReach(a,polyCoffre(c),size,tokenOf(a))}
+// Le piège frappe qui est dans la zone de contact du coffre : celle d'un socle moyen, autour de sa forme.
+function dansZoneCoffre(h,c){const size=mapSize();return !!size.width&&polyInReach(h,polyCoffre(c),size,tokenPx())}
+function renderCoffres(){const calque=$('map-doors'),m=currentMap();if(!m)return;const mj=view==='mj';
+ (m.coffres||[]).forEach(c=>{if(!mj&&(!coffreVisible(c)||!doorSeen(c)))return;
+  const el=svgPorte(c,m.ratio,'coffre'+(c.ouvert?' ouvert':'')+(coffreVisible(c)?'':' cache'));
+  if(!c.ouvert){el.style.pointerEvents='all';
+   // La bulle : son nom et sa description, au survol, quand l'aventurier choisi est au contact.
+   if(typeof surveille==='function')surveille(el,()=>{if(!mj&&!coffreAPortee(heroActif(),c))return;ouvrirBulle(el,bulleCoffre(c),'bulle-gear')});
+   el.onclick=e=>{e.stopPropagation();if(typeof fermerBulle==='function')fermerBulle();menuCoffre(c,e.clientX,e.clientY)}}
+  calque.append(el)})}
+function bulleCoffre(c){const g=document.createElement('div');g.className='gear-detail large';
+ const n=document.createElement('p');n.className='gear-nom';n.textContent=c.nom||'Coffre';g.append(n);
+ if(c.desc){const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=c.desc;g.append(p)}
+ if(view==='mj'){const p=document.createElement('p');p.className='muted objet-cache-bulle';
+  p.textContent=[c.cache&&!c.revele?'Caché : Perception '+(c.perception||1):'',coffreVerrouille(c)?'Verrou '+c.verrou:'',coffreArme(c)?'Piège '+c.piege:''].filter(Boolean).join(' · ');if(p.textContent)g.append(p)}
+ return g}
+// Un petit menu au clic, à la place du pointeur : un titre, des entrées.
+function menuCarte(titre,entrees,x,y){fermeMenuObjet();if(!entrees.length)return;const m=document.createElement('div');m.className='menu-objet';m.setAttribute('role','menu');
+ const t=document.createElement('p');t.className='menu-objet-titre';t.textContent=titre;m.append(t);
+ entrees.forEach(([txt,fn])=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.textContent=txt;b.onclick=()=>{fermeMenuObjet();fn()};m.append(b)});
+ document.body.append(m);const r=m.getBoundingClientRect();
+ m.style.left=Math.max(6,Math.min(x+8,innerWidth-r.width-6))+'px';m.style.top=Math.max(6,Math.min(y+8,innerHeight-r.height-6))+'px';menuObjet=m;
+ setTimeout(()=>{document.addEventListener('pointerdown',dehorsMenuObjet,true);document.addEventListener('keydown',echapMenuObjet,true)})}
+function menuCoffre(c,x,y){const mj=view==='mj',a=heroActif(),proche=!!a&&coffreAPortee(a,c),entrees=[];
+ if(!mj&&!a){log('Sélectionne d’abord ton aventurier.',{local:true});return}
+ if(!mj&&!proche){log('Approche '+a.name+' : il faut être au contact de '+c.nom+'.',{local:true});return}
+ const comps=[[RUSE,'Ruse'],[TECHNIQUE,'Technique']];
+ if(proche){if(!coffreVerrouille(c))entrees.push(['Ouvrir',()=>ouvrirCoffre(c,a,false)]);
+  else comps.forEach(([k,n])=>entrees.push(['Déverrouiller · '+n,()=>testCoffre(a,c,'verrou',k)]));
+  if(!c.desamorce)comps.forEach(([k,n])=>entrees.push(['Chercher un piège · '+n,()=>testCoffre(a,c,'piege',k)]))}
+ if(mj){if(c.cache)entrees.push([c.revele?'Cacher à la troupe':'Révéler à la troupe',()=>{c.revele=!c.revele;if(c.revele)floatNumber(centreForme(c),'Révélé !','nul');
+   log(c.nom+(c.revele?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();scheduleSave()}]);
+  const h=heroLePlusProche(centreForme(c));if(h&&!(proche&&h===a))entrees.push(['Ouvrir pour '+nomNum(h)+', le plus proche',()=>ouvrirCoffre(c,h,true)])}
+ menuCarte(c.nom||'Coffre',entrees,x,y)}
+/* Déverrouiller ou chercher un piège : un test de Ruse ou de Technique, assez de réussites. Quand le
+   verrou et le piège demandent autant de réussites, réussir l'un vient à bout de l'autre ; sinon,
+   chacun le sien. Un piège trouvé est désamorcé. */
+function testCoffre(a,c,quoi,k){if(!a||!c||c.ouvert)return;
+ const jet=skillRoll(valeurCompetence(a,k)-1,d6),n=jet.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
+ let dit;
+ if(quoi==='verrou'){if(coffreVerrouille(c)&&n>=c.verrou){c.deverrouille=true;dit='déverrouille '+c.nom;
+   if(coffreArme(c)&&c.piege===c.verrou){c.desamorce=true;floatNumber(centreForme(c),'Révélé !','nul');dit+=' et désamorce son piège'}}
+  else dit='le verrou résiste'}
+ else if(coffreArme(c)&&n>=c.piege){c.desamorce=true;floatNumber(centreForme(c),'Révélé !','nul');dit='trouve un piège et le désamorce';
+  if(coffreVerrouille(c)&&c.verrou===c.piege){c.deverrouille=true;dit+=', et déverrouille '+c.nom}}
+ else dit='ne trouve aucun piège';
+ log(nomNum(a)+' · '+skillNames[k]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — '+dit+'.',{dice:true,ton:'competence'});
+ render();saveMaps();scheduleSave()}
+/* Ouvrir : un piège encore armé se déclenche sur qui est au contact du coffre, puis le contenu va à qui
+   l'ouvre — ou, quand c'est le MJ, à l'aventurier le plus proche. */
+function ouvrirCoffre(c,h,parMJ){if(!c||c.ouvert||(coffreVerrouille(c)&&!parMJ))return;
+ if(coffreArme(c)){c.desamorce=true;
+  const touches=actors.filter(o=>o&&o.hero&&alive(o)&&!o.horsCarte&&dansZoneCoffre(o,c)).map(o=>{const p=[];
+   if(c.degats>0){const n=applyDamage(o,c.degats);floatNumber(o,'−'+n,'perte');p.push(n+' dégât'+(n>1?'s':''))}
+   (c.etats||[]).forEach(e=>{if(infligeEtat(o,e)===true)p.push(e)});return nomNum(o)+(p.length?' : '+p.join(', '):'')});
+  log('Piège ! '+c.nom+' se déclenche'+(touches.length?' — '+touches.join(' ; '):'')+'.',{ton:'degats'})}
+ c.ouvert=true;c.deverrouille=true;
+ const pieces=(c.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean),rich=c.richesses||{},gains=[];
+ if(h){pieces.forEach(it=>{if(typeof ajouterInventaire==='function')ajouterInventaire(h,it);else noteInventaire(h,it.name);gains.push('⟦'+it.id+'⟧')});
+  if(rich.or>0){ajouteOr(h,rich.or);gains.push(rich.or+' or')}
+  h.richesses={...(h.richesses||{})};CLES_GEMMES.forEach(k=>{const v=Math.trunc(Number(rich[k]))||0;if(v<=0)return;
+   h.richesses[k]=(Math.trunc(Number(h.richesses[k]))||0)+v;const [t,va]=k.split('-');gains.push(v+' '+nomGemme(t,va,false).toLowerCase())})}
+ log((h?nomNum(h)+' ouvre '+c.nom:c.nom+' s’ouvre')+(gains.length?' : '+gains.join(', '):', vide')+'.',{ton:'butin'});
+ render();saveMaps();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 const objetVue=dialog('objet-vue','Objet','<div id="objet-corps"></div>');
 function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o||(!o.visible&&view!=='mj'))return;
  objetVue.querySelector('h2').textContent=(o.visible?'':'◌ ')+o.nom;
@@ -608,7 +696,9 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...heros);
  // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
- (m.doors||[]).forEach(d=>{d.open=false});const grille=fogDims(m);
+ (m.doors||[]).forEach(d=>{d.open=false;delete d.decouvert});const grille=fogDims(m);
+ // Et ses coffres reviennent comme le MJ les a laissés : cachés, verrouillés, piégés, pleins.
+ (m.coffres||[]).forEach(c=>{['revele','deverrouille','desamorce','ouvert'].forEach(k=>delete c[k])});
  m.fog=packMask(new Uint8Array(grille.n),grille.n);delete m.seen;m.fogOff=false;fogSeen=null;fogSeenSrc=null;fogKey='';
  /* L'invisibilité ne se pose plus sur la carte : c'est un état, donné en jeu. Une carte
     tracée avant la v0.82 garde ses invisibles, mais sous forme d'état. */
@@ -617,7 +707,9 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
     même identifiant, ou à défaut du même nom s'il est seul à le porter. La copie ne
     sert plus que si le modèle a disparu. */
  (m.foes||[]).forEach(f=>{const a=fromMonster(modeleActuel(f.tpl));a.x=f.x;a.y=f.y;normalizeActor(a);
-  if(f.hidden)setState(a,'Invisible',true);actors.push(a)});
+  if(f.hidden)setState(a,'Invisible',true);
+  // Caché par le MJ dans l'éditeur : la troupe ne le voit pas tant qu'il ne le révèle pas d'un clic.
+  if(f.cache)a.hidden=true;actors.push(a)});
  /* Une carte qui s'ouvre, c'est une rencontre à venir : tour 1, tout remis à zéro, et la
     troupe en exploration — le combat commencera de lui-même au premier adversaire révélé. */
  if(typeof remiseAuTourUn==='function')remiseAuTourUn();
@@ -691,7 +783,7 @@ mapsPage.innerHTML=
  +'<select id="pinceau-taille" aria-label="Grosseur du pinceau" hidden><option value=".3">Pinceau fin</option><option value=".55" selected>Pinceau moyen</option><option value="1">Pinceau large</option></select>'
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
- +'<button data-tool="objet">+ Objet</button>'
+ +'<button data-tool="objet">+ Objet</button><button data-tool="coffre">Coffre</button>'
  +'<span class="bar-sep"></span><button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>'
  +'<span class="bar-sep"></span><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
@@ -701,6 +793,9 @@ mapsPage.innerHTML=
  +'<button id="shape-lock" hidden>🔒 Verrouiller</button>'
   +'<label id="door-key-label" hidden><input type="checkbox" id="door-key"> Verrouillée — le MJ seul l’ouvre</label>'
   +'<label id="door-secret-label" hidden><input type="checkbox" id="door-secret"> Passage secret — un mur pour la troupe tant qu’il est clos</label>'
+  +'<label id="door-perception-label" hidden>Réussites de Perception pour le trouver <input type="number" id="door-perception" min="1" max="9"></label>'
+  +'<label id="foe-cache-label" hidden><input type="checkbox" id="foe-cache"> Caché — le MJ le révèle d’un clic en jeu</label>'
+  +'<button id="coffre-edit" hidden>✎ Modifier le coffre</button>'
  +'<button id="objet-edit" hidden>✎ Modifier l’objet</button>'
  +'<button id="shape-delete" hidden>Supprimer la forme</button>'+'<div class="divider"></div><h2 id="echelle-titre">Échelle de la carte</h2>'+'<p class="muted" id="echelle-info"></p>'+'<p class="muted">Le socle témoin se promène sur la carte : pose-le contre une porte, un lit, un couloir, et tire son coin jusqu’à ce qu’un combattant y tienne. Il ne paraît jamais en partie.</p>'+'<button id="echelle-reset">Rétablir la mesure d’origine</button>'+'<div class="divider"></div><h2>Légende</h2>'
  +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'+'<li><i class="sw-ligne"></i>Ligne de blocage — la même chose, d’un seul trait fin</li>'
@@ -750,13 +845,15 @@ function supprimeSelection(){const m=mapDraft;if(!m||!mapSel)return false;
  mapSel=null;return true}
 
 /* ---------- Cartes ---------- */
-function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,matiere:[],doors:[],start:null,foes:[],objets:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
+function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,matiere:[],doors:[],start:null,foes:[],objets:[],coffres:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
 function ensure(m){m.doors??=[];m.foes??=[];m.ratio??=16/9;
  // Les zones séparées, regroupées ou nommées par le MJ : nées en v0.252.
  m.zonesCoupures??=[];m.zonesLiens??=[];m.zonesNoms??=[];
  // Les objets sont nés en v0.144 ; chacun porte un identifiant, la table s'y réfère.
  m.objets??=[];m.objets.forEach(o=>{o.id||=crypto.randomUUID();o.test??={comp:3,reussites:1};o.items??=[]});
+ // Les coffres sont nés en v0.502.
+ m.coffres??=[];m.coffres.forEach(c=>{c.id||=crypto.randomUUID();c.items??=[];c.richesses??={};c.etats??=[]});
  m.echelle??={x:8,y:8,t:SOCLE_DEFAUT};
  // Une carte d'avant — rectangles, traits, zones de vision — est fondue en matière exacte.
  matiereDe(m);return m}
@@ -854,6 +951,7 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  start:'Trace la zone où les aventuriers seront regroupés à l’ouverture de la carte. Une seule par carte.',
  pinceau:'Glisse pour peindre de la matière à main levée, comme au feutre. Le trait se fond dans les zones qu’il touche. Sa grosseur se choisit à côté, en fraction de socle : elle suit donc l’échelle de la carte.',
  gomme:'Glisse pour gratter la matière, comme à la gomme. Ce qui est verrouillé résiste. Sa grosseur se choisit à côté.',
+ coffre:'Trace un coffre comme une porte : sa fiche s’ouvre aussitôt — nom, description, caché ou non, verrou, piège et contenu.',
  foe:'Clique pour poser l’adversaire choisi à droite de la barre. Pour le rendre invisible, donne-lui l’état Invisible en jeu.',
  objet:'Clique pour poser un objet ou un mécanisme : coffre, levier, trésor. Sa fiche s’ouvre aussitôt — nom, taille, description, objets à prendre, et s’il est caché, le test qui le découvre. Double-clic sur un objet posé pour le modifier.',
  zones:'Les zones : toute étendue close par la matière et les portes en est une, chacune de sa couleur et de son numéro. Clique un numéro pour le renommer. Clique un trait de séparation ou un lien pour le choisir, Suppr l’efface.',
@@ -876,6 +974,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  if(fixes.length||bouge)c.append(svgMatiere([fixes,bouge?bouge.anneaux:[]],null,'wall-skin'));
  c.style.backgroundImage=m.image?'url("'+m.image+'")':'';c.classList.toggle('no-image',!m.image);
  m.doors.forEach((r,i)=>c.append(shapeEl('door',i,r)));
+ m.coffres.forEach((r,i)=>c.append(shapeEl('coffre',i,r)));
  // L'aperçu du rectangle en cours — bloc ou découpe — tant que la main n'a pas lâché.
  if(cutRect)c.append(shapeEl(cutRect.bloc?'bloc':'cut',0,cutRect));
  if(lasso&&lasso.pts.length){const svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','lasso-layer');
@@ -902,23 +1001,26 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  const cible=mapSel?shapeAt(mapSel):null;
  const adv=mapSel&&mapSel.kind==='foe'?cible:null,porte=mapSel&&mapSel.kind==='door'?cible:null;
  const obj=mapSel&&mapSel.kind==='objet'?cible:null;$('objet-edit').hidden=!obj;
+ const coffre=mapSel&&mapSel.kind==='coffre'?cible:null;$('coffre-edit').hidden=!coffre;
  $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
  if(porte){$('door-key').checked=!!porte.keyLocked;$('door-secret').checked=!!porte.secret}
+ $('door-perception-label').hidden=!(porte&&porte.secret);if(porte&&porte.secret)$('door-perception').value=Number(porte.perception)||1;
+ $('foe-cache-label').hidden=!adv;if(adv)$('foe-cache').checked=adv.cache===true;
  const verrou=masse?!!masse.verrou:!!(cible&&cible.locked);
  $('shape-delete').hidden=!mapSel||verrou;$('shape-lock').hidden=!mapSel||mapSel.kind==='coupure'||mapSel.kind==='lien';
  if(mapSel)$('shape-lock').textContent=verrou?'🔓 Déverrouiller':'🔒 Verrouiller';
  /* Une masse ne s'annonce pas en morceaux : elle est « la zone de blocage », qu'elle soit
     née d'un rectangle, d'un coup de pinceau ou de vingt gestes mêlés. */
  $('shape-label').textContent=mapSel?(porte&&porte.secret?'Passage secret':KINDS[mapSel.kind])
-  +(adv?' · '+adv.tpl.name:'')+(obj?' · '+obj.nom+(obj.visible?'':' · caché'):'')+(verrou?' · verrouillée':''):'Aucune sélection.';
+  +(adv?' · '+adv.tpl.name+(adv.cache?' · caché':''):'')+(obj?' · '+obj.nom+(obj.visible?'':' · caché'):'')+(coffre?' · '+coffre.nom+(coffre.cache?' · caché':''):'')+(verrou?' · verrouillée':''):'Aucune sélection.';
  $('map-xp').textContent=xpDeCarte(m)+' xp';
  $('map-count').textContent=matiereDe(m).length+' zone(s) de blocage, '+m.doors.length+' porte(s), '
-  +m.foes.length+' adversaire(s), '+m.objets.length+' objet(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
+  +m.foes.length+' adversaire(s), '+m.objets.length+' objet(s), '+m.coffres.length+' coffre(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
  $('recal-box').hidden=!recalNeeded();
  refreshHistory()}
 // Portes, zone de départ et aperçus de tracé sont des boîtes ; la matière, elle, est peinte.
 function shapeEl(kind,i,r){const el=document.createElement('div');
- el.className='shape '+kind+(r.locked?' locked':'')+(kind==='door'&&r.keyLocked?' keyed':'')+(kind==='door'&&r.secret?' secret':'')
+ el.className='shape '+kind+(r.locked?' locked':'')+(kind==='door'&&r.keyLocked?' keyed':'')+(kind==='door'&&r.secret?' secret':'')+(kind==='coffre'&&r.cache?' cache':'')
   +(mapSel&&mapSel.kind===kind&&mapSel.i===i?' selected':'');
  el.style.left=r.x+'%';el.style.top=r.y+'%';el.style.width=r.w+'%';el.style.height=r.h+'%';
  // Une porte de biais tourne autour de son centre ; ses coins tournent avec elle et la
@@ -946,7 +1048,7 @@ function boiteSelection(p){const b=boitePolygone(p);if(!b)return null;
  return el}
 /* Un objet sur le plan de travail : un socle rond, comme un adversaire, à la taille qu'il
    aura en partie ; caché, il se dessine en pointillé. */
-let clicObjet=null;
+let clicObjet=null,clicCoffre=null;
 function objetEl(i,o){const el=document.createElement('div');
  el.className='shape objet'+(o.visible?'':' cache')+(o.locked?' locked':'')+(mapSel&&mapSel.kind==='objet'&&mapSel.i===i?' selected':'');
  const t=Math.max(10,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100*(SOCLE_TAILLES[o.taille]||1));
@@ -956,7 +1058,7 @@ function objetEl(i,o){const el=document.createElement('div');
  el.ondblclick=e=>{e.stopPropagation();openObjet(i)};
  return el}
 function foeEl(i,f){const el=document.createElement('div');
- el.className='shape foe'+(f.locked?' locked':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
+ el.className='shape foe'+(f.locked?' locked':'')+(f.cache?' cache':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
  // Même taille relative qu'en partie, socle compris : un petit reste petit, un énorme énorme.
  const t=Math.max(10,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100*socleFacteur(f.tpl));
  el.style.width=el.style.height=t+'px';el.style.margin=(-t/2)+'px 0 0 '+(-t/2)+'px';el.style.fontSize=(t*.47)+'px';
@@ -1034,11 +1136,11 @@ function applyLasso(){const brut=lasso&&lasso.pts;lasso=null;
  matiereChangee()}
 function shapeAt(d){const m=mapDraft;if(!m)return null;if(d.kind==='cut'||d.kind==='bloc')return cutRect;
  if(d.kind==='coupure')return (m.zonesCoupures||[])[d.i];if(d.kind==='lien')return (m.zonesLiens||[])[d.i];
- return d.kind==='start'?m.start:(d.kind==='door'?m.doors:d.kind==='objet'?m.objets:m.foes)[d.i]}
+ return d.kind==='start'?m.start:(d.kind==='door'?m.doors:d.kind==='objet'?m.objets:d.kind==='coffre'?(m.coffres||[]):m.foes)[d.i]}
 function removeShape(d){const m=mapDraft;
  if(d.kind==='start')m.start=null;
  else if(d.kind==='coupure')m.zonesCoupures.splice(d.i,1);else if(d.kind==='lien')m.zonesLiens.splice(d.i,1);
- else (d.kind==='door'?m.doors:d.kind==='objet'?m.objets:m.foes).splice(d.i,1)}
+ else (d.kind==='door'?m.doors:d.kind==='objet'?m.objets:d.kind==='coffre'?m.coffres:m.foes).splice(d.i,1)}
 /* ---------- L'outil Zones ----------
    Les zones se voient sur le plan de travail, chacune de sa couleur et de son numéro. Le MJ
    les sépare d'un trait — deux clics, comme une ligne de blocage — ou les regroupe d'un
@@ -1142,6 +1244,8 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(dessous&&dessous.kind==='objet'&&e.button===0&&mapDraft.objets&&mapDraft.objets[dessous.i]){const t=performance.now(),deux=clicObjet&&clicObjet.i===dessous.i&&t-clicObjet.t<450;
   clicObjet=deux?null:{i:dessous.i,t};
   if(deux||mapTool==='objet'){mapSel=dessous;renderCanvas();openObjet(dessous.i);e.preventDefault();return}}
+ if(dessous&&dessous.kind==='coffre'&&e.button===0&&mapDraft.coffres&&mapDraft.coffres[dessous.i]&&!grip){const t=performance.now(),deux=clicCoffre&&clicCoffre.i===dessous.i&&t-clicCoffre.t<450;
+  clicCoffre=deux?null:{i:dessous.i,t};if(deux){mapSel=dessous;renderCanvas();openCoffre(dessous.i);e.preventDefault();return}}
  if(enZones()&&e.button===0){clicZones(p);e.preventDefault();return}
  // Avec l'outil Sélection, ou sur une poignée, on manipule la forme visée.
 
@@ -1210,6 +1314,8 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   if(mapTool==='secret')rect.secret=true;
   mapDraft.doors.push(rect);mapSel={kind:'door',i:mapDraft.doors.length-1}}
  else if(mapTool==='start'){mapDraft.start=rect;mapSel={kind:'start',i:0}}
+ else if(mapTool==='coffre'){Object.assign(rect,{id:crypto.randomUUID(),nom:'Coffre',desc:'',perception:1,verrou:0,piege:0,degats:0,etats:[],items:[],richesses:{}});
+  mapDraft.coffres.push(rect);mapSel={kind:'coffre',i:mapDraft.coffres.length-1}}
  mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
 $('map-canvas').addEventListener('pointermove',e=>{
  if(enZones()&&zoneTrait&&!mapDrag){zoneVise=pct(e);dessineZonesEditeur();return}
@@ -1281,10 +1387,29 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
   mapSel=i>=0?{kind:'matiere',i}:null;
   matiereChangee();return}
  const cible=d.kind==='foe'||d.kind==='objet'?null:shapeAt(d);
+ // Un coffre tout juste tracé ouvre sa fiche, comme un objet posé.
+ if(cible&&d.mode==='create'&&d.kind==='coffre'&&gesteTrace(cible))setTimeout(()=>openCoffre(d.i));
  if(cible&&!gesteTrace(cible)){removeShape(d);
   // Clic manqué : si une forme était dessous, on la sélectionne et on repasse en Sélection.
   if(d.dessous){mapSel=d.dessous;mapTool='select'}else{mapSel=null;undoStack.pop()}}
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()});
+/* Le choix dans l'armurerie, par familles : de petits carrés, un clic prend la pièce, un autre la repose.
+   « pris » : l'ensemble des identifiants choisis, que le formulaire relit à l'enregistrement. */
+function pickerArmurerie(filtre,boite,pris){const liste=()=>{const q=(filtre.value||'').trim().toLowerCase();boite.replaceChildren();
+  [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets'],['treasure','Trésors'],['ressource','Ressources'],['restes','Restes']].forEach(([cat,titre])=>{
+   const lot=(catalog.items||[]).filter(it=>it&&it.category===cat&&(!q||it.name.toLowerCase().includes(q)));
+   if(!lot.length)return;const h=document.createElement('h3');h.textContent=titre;boite.append(h);
+   /* De petits carrés, comme l'inventaire d'un aventurier : l'icône seule, la bulle au survol ; un
+      clic prend la pièce, un autre la repose. */
+   const rang=document.createElement('div');rang.className='objet-rang';
+   lot.forEach(it=>{const p=gearCarre(it,1,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();
+    const maj=()=>{p.classList.toggle('pris',pris.has(it.id));p.setAttribute('aria-pressed',String(pris.has(it.id)))};
+    const bascule=()=>{if(pris.has(it.id))pris.delete(it.id);else pris.add(it.id);maj()};
+    p.setAttribute('aria-label',it.name);p.onclick=bascule;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bascule()}};maj();
+    if(typeof surveille==='function')surveille(p,()=>{const d=gearDetail(it,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});
+    rang.append(p)});
+   boite.append(rang)})};
+ filtre.oninput=liste;liste()}
 /* ---------- La fiche d'un objet ---------- */
 const objetDialog=dialog('objet-editor','Objet','<form id="objet-form"><div id="objet-fields"></div><div class="form-actions"><button type="button" id="objet-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
 let objetIndex=null;
@@ -1300,22 +1425,7 @@ function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!==
   +field('Trésor — en toutes lettres','tresor',o.tresor||'','text','maxlength="200"')+'</div>'
   +'<h2 class="sous-titre">Objets à prendre</h2><input id="objet-filtre" placeholder="Filtrer l’armurerie…" aria-label="Filtrer l’armurerie"><div id="objet-liste" class="objet-liste"></div>'
   +'<p class="muted">Ce qui est choisi, d’un clic, attend dans l’objet ; la première pièce choisie donne son icône au jeton. Un aventurier au contact la prend d’un clic : elle va dans son inventaire.</p>';
- const pris=new Set(o.items||[]);
- const liste=()=>{const q=($('objet-filtre').value||'').trim().toLowerCase(),boite=$('objet-liste');boite.replaceChildren();
-  [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets'],['treasure','Trésors'],['ressource','Ressources'],['restes','Restes']].forEach(([cat,titre])=>{
-   const lot=(catalog.items||[]).filter(it=>it&&it.category===cat&&(!q||it.name.toLowerCase().includes(q)));
-   if(!lot.length)return;const h=document.createElement('h3');h.textContent=titre;boite.append(h);
-   /* De petits carrés, comme l'inventaire d'un aventurier : l'icône seule, la bulle au survol ; un
-      clic prend la pièce, un autre la repose. */
-   const rang=document.createElement('div');rang.className='objet-rang';
-   lot.forEach(it=>{const p=gearCarre(it,1,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();
-    const maj=()=>{p.classList.toggle('pris',pris.has(it.id));p.setAttribute('aria-pressed',String(pris.has(it.id)))};
-    const bascule=()=>{if(pris.has(it.id))pris.delete(it.id);else pris.add(it.id);maj()};
-    p.setAttribute('aria-label',it.name);p.onclick=bascule;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bascule()}};maj();
-    if(typeof surveille==='function')surveille(p,()=>{const d=gearDetail(it,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});
-    rang.append(p)});
-   boite.append(rang)})};
- $('objet-filtre').oninput=liste;liste();
+ const pris=new Set(o.items||[]);pickerArmurerie($('objet-filtre'),$('objet-liste'),pris);
  $('objet-form').onsubmit=e=>{e.preventDefault();const f=$('objet-form').elements;pushUndo();
   o.nom=f.nom.value.trim().slice(0,60)||'Objet';o.taille=f.taille.value;o.visible=f.visible.value==='1';
   o.desc=f.desc.value.trim().slice(0,600);o.tresor=f.tresor.value.trim().slice(0,200);
@@ -1331,6 +1441,43 @@ $('door-key').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel
  pushUndo();d.keyLocked=$('door-key').checked;renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('door-secret').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
  pushUndo();d.secret=$('door-secret').checked;renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
+// Le nombre de réussites de Perception qu'un passage secret demande pour être trouvé.
+$('door-perception').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
+ pushUndo();d.perception=Math.max(1,Math.min(9,Math.trunc(Number($('door-perception').value))||1));renderCanvas();saveMaps()};
+// Un adversaire caché : la troupe ne le voit pas tant que le MJ ne le révèle pas, d'un clic en jeu.
+$('foe-cache').onchange=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;
+ pushUndo();if($('foe-cache').checked)f.cache=true;else delete f.cache;renderCanvas();saveMaps()};
+$('coffre-edit').onclick=()=>{if(mapSel&&mapSel.kind==='coffre')openCoffre(mapSel.i)};
+/* ---------- La fiche d'un coffre ----------
+   Son nom et la description que la troupe lit au survol ; caché ou non, et les réussites de Perception
+   qui le révèlent ; son verrou et son piège, en réussites de Ruse ou de Technique (0 : sans) ; ce que
+   le piège inflige à qui est au contact ; et ce qu'il contient : des pièces, de l'or, des gemmes. */
+const coffreDialog=dialog('coffre-editor','Coffre','<form id="coffre-form"><div id="coffre-fields"></div><div class="form-actions"><button type="button" id="coffre-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
+function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view!=='mj')return;
+ coffreDialog.querySelector('h2').textContent=c.nom||'Coffre';
+ const nb=(lab,name,v,min,max)=>field(lab,name,v,'number','min="'+min+'" max="'+max+'"'),rich=c.richesses||{};
+ $('coffre-fields').innerHTML='<div class="edit-grid">'+field('Nom','nom',c.nom||'Coffre','text','required maxlength="60"')
+  +sel('Visibilité','cache',c.cache?'1':'0',[['0','Visible'],['1','Caché — un test de Perception le révèle']])
+  +nb('Réussites de Perception pour le trouver','perception',c.perception||1,1,9)+'</div>'
+  +'<label>Description lue par les joueurs<textarea name="desc" rows="3" maxlength="600">'+esc(c.desc||'')+'</textarea></label>'
+  +'<div class="edit-grid">'+nb('Verrou — réussites de Ruse ou Technique, 0 : ouvert','verrou',c.verrou||0,0,9)
+  +nb('Piège — réussites de Ruse ou Technique, 0 : aucun','piege',c.piege||0,0,9)+nb('Dégâts du piège','degats',c.degats||0,0,99)+'</div>'
+  +'<h2 class="sous-titre">États infligés par le piège</h2><div class="coffre-etats">'
+  +ETATS_JEU.map(e=>'<label class="field-check"><input type="checkbox" name="etat" value="'+esc(e)+'"'+((c.etats||[]).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'
+  +'<h2 class="sous-titre">Or et gemmes</h2><div class="edit-grid coffre-richesses">'+nb('Or','or',rich.or||0,0,99999)
+  +CLES_GEMMES.map(k=>{const [t,v]=k.split('-');return nb(nomGemme(t,v,false),'g-'+k,rich[k]||0,0,999)}).join('')+'</div>'
+  +'<h2 class="sous-titre">Objets dans le coffre</h2><input id="coffre-filtre" placeholder="Filtrer l’armurerie…" aria-label="Filtrer l’armurerie"><div id="coffre-liste" class="objet-liste"></div>';
+ const pris=new Set(c.items||[]);pickerArmurerie($('coffre-filtre'),$('coffre-liste'),pris);
+ $('coffre-form').onsubmit=e=>{e.preventDefault();const f=$('coffre-form').elements,n=(v,max)=>Math.max(0,Math.min(max,Math.trunc(Number(v))||0));pushUndo();
+  c.nom=f.nom.value.trim().slice(0,60)||'Coffre';if(f.cache.value==='1')c.cache=true;else delete c.cache;
+  c.perception=Math.max(1,n(f.perception.value,9));c.desc=f.desc.value.trim().slice(0,600);
+  c.verrou=n(f.verrou.value,9);c.piege=n(f.piege.value,9);c.degats=n(f.degats.value,99);
+  c.etats=[...coffreDialog.querySelectorAll('input[name="etat"]:checked')].map(x=>x.value).filter(x=>ETATS_JEU.includes(x));
+  const r={},or=n(f.or.value,99999);if(or)r.or=or;CLES_GEMMES.forEach(k=>{const v=n(f['g-'+k].value,999);if(v)r[k]=v});c.richesses=r;
+  c.items=[...pris];coffreDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+ $('coffre-suppr').onclick=()=>{if(!confirm('Supprimer « '+c.nom+' » ?'))return;pushUndo();
+  m.coffres.splice(i,1);mapSel=null;coffreDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+ coffreDialog.showModal()}
 
 /* ---------- Zoom du plan de travail ---------- */
 function applyCanvasZoom(){const c=$('map-canvas');

@@ -173,8 +173,9 @@ function defenseOf(actor,items){const porte=equippedDef(actor,items);
 /* Un passage secret est un mur pour la troupe tant qu'il est clos : il ne se dessine
    pas et le MJ seul le manœuvre. Ouvert, ce n'est plus qu'une porte — visible de tous
    et refermable par qui l'atteint, comme n'importe quelle autre. */
-function doorHiddenFrom(d,estMJ){return !!(d&&d.secret&&!d.open&&!estMJ)}
-function doorLockedFor(d,estMJ){return !estMJ&&!!(d&&(d.keyLocked||(d.secret&&!d.open)))}
+/* Un passage secret découvert (« decouvert ») par un test de Perception devient une porte comme une autre. */
+function doorHiddenFrom(d,estMJ){return !!(d&&d.secret&&!d.open&&!d.decouvert&&!estMJ)}
+function doorLockedFor(d,estMJ){return !estMJ&&!!(d&&(d.keyLocked||(d.secret&&!d.open&&!d.decouvert)))}
 /* Déplacement : le socle est un disque repoussé hors des murs. Le mouvement restant
    subsiste le long de l'obstacle, ce qui produit le glissement. */
 function closestOnSegment(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],len2=dx*dx+dy*dy;
@@ -308,6 +309,8 @@ function cleanRect(r,porte){if(!r)return null;
  if(!(o.w>0&&o.h>0))return null;
  if(r.locked)o.locked=true;
  if(porte){o.open=false;if(r.keyLocked)o.keyLocked=true;if(r.secret)o.secret=true;
+  // Les réussites de Perception qu'il faut pour trouver un passage secret.
+  if(r.secret&&Number(r.perception)>1)o.perception=Math.min(9,Math.trunc(Number(r.perception)));
   // L'angle d'une porte de biais voyage avec elle ; une porte droite n'en porte pas.
   const a=Number(r.a);if(Number.isFinite(a)&&((a%180)+180)%180!==0)o.a=((a%180)+180)%180}
  return o}
@@ -356,6 +359,17 @@ function cleanObjet(o){const t=o&&o.test||{};
   tresor:texte(o&&o.tresor,200),
   test:{comp:Math.max(0,Math.min(7,Math.trunc(Number(t.comp))||0)),
    reussites:Math.max(1,Math.min(9,Math.trunc(Number(t.reussites))||1))}}}
+/* Un coffre : un rectangle, comme une porte. Son nom et sa description ; caché (« cache »), un test de
+   Perception de tant de réussites le révèle ; verrouillé (« verrou » : réussites de Ruse ou de Technique,
+   0 s'il ne l'est pas) ; piégé (« piege » : de même), le piège infligeant des dégâts et des états à qui est
+   au contact ; dedans, des pièces de l'armurerie, de l'or et des gemmes. Ce qui lui arrive en partie —
+   révélé, déverrouillé, désamorcé, ouvert — ne voyage pas avec la carte. */
+function cleanCoffre(c){const r=cleanRect(c);if(!r)return null;const n=(v,max)=>Math.max(0,Math.min(max,Math.trunc(Number(v))||0));
+ const rich={};if(c.richesses&&typeof c.richesses==='object')CLES_RICHESSES.forEach(k=>{const v=n(c.richesses[k],99999);if(v)rich[k]=v});
+ return {...r,id:texte(c.id,40),nom:texte(c.nom,60)||'Coffre',desc:texte(c.desc,600),...(c.cache===true?{cache:true}:{}),
+  perception:Math.max(1,n(c.perception,9)),verrou:n(c.verrou,9),piege:n(c.piege,9),degats:n(c.degats,99),
+  etats:(Array.isArray(c.etats)?c.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,8),
+  items:(Array.isArray(c.items)?c.items:[]).filter(x=>typeof x==='string').slice(0,30).map(x=>texte(x,60)).filter(Boolean),richesses:rich}}
 function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.image)?m.image:null;
  const ratio=Math.max(.2,Math.min(6,Number(m&&m.ratio)||16/9));
  const matiere=Array.isArray(m&&m.matiere)?cleanMatiere(m.matiere)
@@ -365,7 +379,8 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
   matiere,doors:cleanRects(m&&m.doors,true),
   start:cleanRect(m&&m.start),
   foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
-   hidden:!!(f&&f.hidden),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
+   hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
+  coffres:(Array.isArray(m&&m.coffres)?m.coffres:[]).slice(0,100).map(cleanCoffre).filter(Boolean),
   objets:(Array.isArray(m&&m.objets)?m.objets:[]).slice(0,200).map(cleanObjet),
   // Les zones que le MJ a séparées ou regroupées voyagent avec la carte.
   zonesCoupures:cleanSegments(m&&m.zonesCoupures),zonesLiens:cleanSegments(m&&m.zonesLiens),zonesNoms:cleanEtiquettes(m&&m.zonesNoms),
@@ -487,7 +502,7 @@ function encreDroite(carves,tol){return (carves||[]).map(p=>{
    prolonge donc la porte sur son petit côté, de chaque côté, jusqu'à ce que la matière
    s'arrête — et au plus de sa propre épaisseur : si l'on ne ressort pas dans cette
    limite, c'est un gros bloc et non un mur, on n'y creuse que la porte elle-même. */
-function doorPierces(d){return !!d&&(!d.secret||!!d.open)}
+function doorPierces(d){return !!d&&(!d.secret||!!d.open||!!d.decouvert)}
 function rectsOverlap(a,b){return a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h}
 /* Une porte de biais. Elle garde son rectangle {x,y,w,h} et gagne un angle « a », en
    degrés, qui la tourne autour de son centre — dans le repère de l'écran, sinon elle se

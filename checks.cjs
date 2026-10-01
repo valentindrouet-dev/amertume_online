@@ -2170,7 +2170,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.equal(C.cleanSegments(Array.from({length:300},()=>({x1:1,y1:1,x2:2,y2:2}))).length,200);
  const nettoyee=C.cleanMap({name:'z',zonesCoupures:[{x1:1,y1:1,x2:2,y2:2}],zonesLiens:'nope'});
  assert.deepEqual(nettoyee.zonesCoupures,[{x1:1,y1:1,x2:2,y2:2}]);assert.deepEqual(nettoyee.zonesLiens,[]);
- assert.ok(cartes.includes("KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coupure:'Séparation de zones',lien:'Regroupement de zones'}")
+ assert.ok(cartes.includes("KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coffre:'Coffre',coupure:'Séparation de zones',lien:'Regroupement de zones'}")
   &&cartes.includes('<button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>')&&cartes.includes("const OUTILS_ZONES=['zones','separer','regrouper'];")
   &&cartes.includes(" m.zonesCoupures??=[];m.zonesLiens??=[];")&&cartes.includes(' dessineTraits();dessineZonesEditeur();')
   &&cartes.includes("if(d.kind==='coupure')return (m.zonesCoupures||[])[d.i];if(d.kind==='lien')return (m.zonesLiens||[])[d.i];")
@@ -3365,6 +3365,27 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.502 — Adversaires cachés depuis l'éditeur ; « Révélé ! » à chaque découverte ; passages secrets trouvés par la
+   Perception, au nombre de réussites choisi ; coffres : tracés comme des portes, cachés, verrouillés, piégés, pleins. */
+{const C=require('./combat.js'),carto=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),page=fs.readFileSync('index.html','utf8');
+ assert.equal(C.doorHiddenFrom({secret:true,open:false,decouvert:true},false),false,'un passage découvert se voit');
+ assert.equal(C.doorLockedFor({secret:true,open:false,decouvert:true},false),false,'et s’ouvre comme une porte');
+ assert.equal(C.doorPierces({secret:true,open:false,decouvert:true}),true);assert.equal(C.doorPierces({secret:true,open:false}),false);
+ const m=C.packMaps([{name:'A',doors:[{x:1,y:1,w:5,h:2,secret:true,perception:3,decouvert:true}],foes:[{x:1,y:1,cache:true,tpl:{name:'G'}}],
+  coffres:[{x:10,y:10,w:4,h:3,nom:'Malle',cache:true,perception:2,verrou:2,piege:2,degats:3,etats:['Feu','Rien'],items:['epee'],richesses:{or:12,'brisure-citrine':2,faux:9},ouvert:true,revele:true}]}]).maps[0];
+ assert.equal(m.doors[0].perception,3);assert.ok(!('decouvert' in m.doors[0]),'la découverte reste à la partie');assert.equal(m.foes[0].cache,true);
+ const c=m.coffres[0];assert.deepEqual([c.nom,c.cache,c.perception,c.verrou,c.piege,c.degats,c.etats.join(),c.items.join(),JSON.stringify(c.richesses)],
+  ['Malle',true,2,2,2,3,'Feu','epee','{"or":12,"brisure-citrine":2}'],'le coffre voyage avec la carte');
+ assert.ok(!('ouvert' in c)&&!('revele' in c),'ce qui lui est arrivé en partie, non');
+ assert.ok(carto.includes("if(f.cache)a.hidden=true;actors.push(a)});")&&page.includes("menuCarte(a.name,[['Révéler à la troupe',()=>{a.hidden=false;render();scheduleSave()}]]")
+  &&!carto.includes("'Découvert !'")&&carto.includes("d.decouvert=true;floatNumber(centreForme(d),'Révélé !','nul')")&&carto.includes("c.revele=true;floatNumber(centreForme(c),'Révélé !','nul')")
+  &&carto.includes("if(o.visible)floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');"),'les révélations');
+ assert.ok(vivant.includes("...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0))")&&vivant.includes("else if(v===2||v===3){p.open=v===3;p.decouvert=true}"),'la table partage portes découvertes et coffres');
+ // Les règles du coffre : verrou et piège égaux, l'un défait l'autre ; distincts, chacun le sien.
+ const ctx={Math,c:null};vm.createContext(ctx);vm.runInContext(carto.match(/const coffreVisible=[^\n]*/)[0]+';this.v=coffreVerrouille;this.a=coffreArme;',ctx);
+ assert.equal(ctx.v({verrou:2}),true);assert.equal(ctx.v({verrou:2,deverrouille:true}),false);assert.equal(ctx.v({verrou:0}),false);assert.equal(ctx.a({piege:1}),true);assert.equal(ctx.a({piege:1,desamorce:true}),false);
+ assert.ok(carto.includes("if(coffreArme(c)&&c.piege===c.verrou){c.desamorce=true;")&&carto.includes("if(coffreVerrouille(c)&&c.verrou===c.piege){c.deverrouille=true;")
+  &&carto.includes("function ouvrirCoffre(c,h,parMJ){if(!c||c.ouvert||(coffreVerrouille(c)&&!parMJ))return;")&&carto.includes("dansZoneCoffre(o,c)"),'verrou, piège, ouverture');}
 /* v0.501 — Fiche : « + » serré sur les dégâts, valeurs des bonus du bloc Talents plus grandes ; pastilles d'équipement
    à la couleur de la rareté ; pastilles grises dans une bulle de talent grisée. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');

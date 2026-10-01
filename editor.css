@@ -2087,3 +2087,13 @@ button.btn-action.debut-combat{animation:debut-rayonne 1.1s ease-in-out infinite
 .gear-detail .gear-bonus::before{background:var(--rarete,#7d7a74);box-shadow:0 0 0 1px color-mix(in srgb,var(--rarete,#7d7a74) 60%,#000)}
 /* Une bulle de talent grisée grise aussi ses pastilles. */
 .talent-detail.grisee{--pastille:#8f8a80!important}
+/* Le coffre : un contour épais brun orangé — pas celui des portes — et un voile léger par-dessus la carte.
+   Caché, en pointillé, chez le MJ seul ; ouvert, pâli et inerte, comme un socle à 0 PV. */
+.shape.coffre{border:3px solid #9c4f12;background:rgba(156,79,18,.26);border-radius:3px}
+.shape.coffre.cache{border-style:dashed;opacity:.7}
+.shape.foe.cache{opacity:.55;outline:2px dashed #8e6bb0;outline-offset:2px}
+#map-doors .coffre{fill:rgba(140,72,16,.32);stroke:#9c4f12;stroke-width:4;vector-effect:non-scaling-stroke;cursor:pointer}
+#map-doors .coffre.cache{stroke-dasharray:6 4;opacity:.65}
+#map-doors .coffre.ouvert{fill:none;opacity:.35;cursor:default;pointer-events:none}
+#coffre-editor .coffre-etats{display:flex;flex-wrap:wrap;gap:2px 14px;margin:0 0 6px}
+#coffre-editor .coffre-richesses{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
