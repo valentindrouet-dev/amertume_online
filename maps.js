@@ -561,9 +561,16 @@ function payeAction(a){if(!enCombat()||!a)return true;
 function coffreAPortee(a,c){const size=mapSize();return !!a&&!!size.width&&polyInReach(a,polyCoffre(c),size,tokenOf(a))}
 // Le piège frappe qui est dans la zone de contact du coffre : celle d'un socle moyen, autour de sa forme.
 function dansZoneCoffre(h,c){const size=mapSize();return !!size.width&&polyInReach(h,polyCoffre(c),size,tokenPx())}
+/* Le bouton du MJ : la bulle des coffres au survol, chez lui, allumée ou éteinte. Les joueurs n'en sont pas
+   touchés : ils la lisent, au contact, comme avant. */
+let bullesCoffresMJ=true;try{bullesCoffresMJ=localStorage.getItem('amertume-bulles-coffres')!=='0'}catch(e){}
+function majBoutonCoffres(){const b=$('coffres-bulles');if(!b)return;b.hidden=view!=='mj';b.classList.toggle('on',bullesCoffresMJ);
+ b.setAttribute('aria-pressed',String(bullesCoffresMJ));b.title=(bullesCoffresMJ?'Masquer':'Afficher')+' la bulle des coffres au survol';b.setAttribute('aria-label',b.title)}
+if($('coffres-bulles'))$('coffres-bulles').onclick=()=>{bullesCoffresMJ=!bullesCoffresMJ;try{localStorage.setItem('amertume-bulles-coffres',bullesCoffresMJ?'1':'0')}catch(e){}
+ if(!bullesCoffresMJ&&typeof fermerBulle==='function')fermerBulle();majBoutonCoffres()};
 /* Les coffres ont leur calque, sous le brouillard : hors de la vue de la troupe, il les couvre, et seule leur
    part en vue se découpe. */
-function renderCoffres(){const calque=$('map-coffres'),vue=$('map-view'),m=currentMap();calque.replaceChildren();vue.querySelectorAll('.coffre-alerte').forEach(x=>x.remove());if(!m)return;
+function renderCoffres(){const calque=$('map-coffres'),vue=$('map-view'),m=currentMap();calque.replaceChildren();vue.querySelectorAll('.coffre-alerte').forEach(x=>x.remove());majBoutonCoffres();if(!m)return;
  const mj=view==='mj',oeil=typeof oeilJoueur==='function'&&oeilJoueur();
  (m.coffres||[]).forEach(c=>{const enVue=coffreEnVue(c);
   // La troupe ne voit un coffre que révélé et sous ses yeux ; le MJ voit tout, pâli hors de la vue de la troupe.
@@ -576,7 +583,7 @@ function renderCoffres(){const calque=$('map-coffres'),vue=$('map-view'),m=curre
    w.style.left=(c.x+c.w/2)+'%';w.style.top=(c.y+c.h/2)+'%';vue.append(w)}
   if(!c.ouvert){el.style.pointerEvents='all';
    // La bulle : son nom et sa description, au survol, quand l'aventurier choisi est au contact.
-   if(typeof surveille==='function')surveille(el,()=>{if(!mj&&!coffreAPortee(heroActif(),c))return;ouvrirBulle(el,bulleCoffre(c),'bulle-gear')});
+   if(typeof surveille==='function')surveille(el,()=>{if(mj?!bullesCoffresMJ:!coffreAPortee(heroActif(),c))return;ouvrirBulle(el,bulleCoffre(c),'bulle-gear')});
    // Un clic ne lui donne pas le focus : le navigateur l'entourait d'un anneau.
    el.onmousedown=e=>e.preventDefault();
    // Le MJ choisit dans un menu ; un joueur, lui, tente d'ouvrir, d'un clic.

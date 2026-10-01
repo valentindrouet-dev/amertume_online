@@ -2085,9 +2085,9 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")
   &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")&&page.includes("useOwnDamage===false?0:degatsDe(a);")
   &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")&&page.includes("const n=degatsDe(e),{blinde}=encaisse(a,n);")
-  &&src.includes("const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
+  &&src.includes("const aura=!(typeof spectateur==='function'&&spectateur())&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}")
-  &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
+  &&src.includes("function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
   &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee'];")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")
   &&src.includes(" ecrire('.stat-tile.t-dmg strong','+\\u202F'+degatsDe(a));")&&src.includes("  const r=rondCompetence(a,k);")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
@@ -2446,7 +2446,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const ctxN={actors:[{id:'h',name:'Ulfgar',hero:true},{id:'g1',name:'Gobelin',vu:true,numero:1},{id:'g2',name:'Gobelin',vu:true,numero:2},{id:'o',name:'Ogre',vu:true,numero:1}]};vm.createContext(ctxN);
  vm.runInContext(page.slice(page.indexOf('function nomNum(o)'),page.indexOf('/* Ce qu\'on a le droit de lire d\'un combattant')),ctxN);
  assert.equal(ctxN.actors.map(ctxN.nomNum).join('|'),'Ulfgar|Gobelin 1|Gobelin 2|Ogre');assert.equal(ctxN.nomNum({name:'Inconnu'}),'Inconnu');
- assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||view!=='mj'")&&page.includes("if(adversairesDebout()>0){combatEngage=true;return}")
+ assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||(typeof loading!=='undefined'&&loading)||(typeof spectateur==='function'&&spectateur()))return;")&&page.includes("if(adversairesDebout()>0){combatEngage=true;return}")
   &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")
   &&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos rond" id="repos" hidden>⛺</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
@@ -3268,7 +3268,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(C.defenseOf({hero:false,def:5,...eq},items),5,'DEF : Cuir 3 et Pavois 2, pas les pièces en double');
  const ctxB={actors:[],log:t=>ctxB.journal.push(t),journal:[],document:{dispatchEvent(){}},Event:class{},objetDe:id=>items.find(o=>o.id===id)||null,
   ajouterInventaire:(a,o)=>{a.inventaire??=[];a.inventaire.push(o.id)}};vm.createContext(ctxB);
- vm.runInContext(src.slice(src.indexOf('const lisPourcent='),src.indexOf('/* Les familles où l\'on puise'))+src.slice(src.indexOf('function butinDesRetires('),src.indexOf('/* Rejouer la même rencontre'))
+ vm.runInContext(src.slice(src.indexOf('const lisPourcent='),src.indexOf('/* Les familles où l\'on puise'))+src.slice(src.indexOf('function plurielMot('),src.indexOf('/* Un adversaire retiré de la scène laisse son XP'))+src.slice(src.indexOf('function butinDesRetires('),src.indexOf('/* Rejouer la même rencontre'))
   +';this.normaliseButin=normaliseButin;this.butinDesRetires=butinDesRetires;',ctxB);
  assert.equal(JSON.stringify(ctxB.normaliseButin({m:'150',g:0,p:-4,r:33.4,z:50},['m','g','p','r'])),JSON.stringify({m:100,r:33}),'bornée à 0-100, zéro ne s\'écrit pas, pièce possédée seulement');
  const pres={name:'Brom',hero:true,x:10,y:10,hp:5},loin={name:'Ysa',hero:true,x:60,y:10,hp:5},mort={name:'Kel',hero:true,x:11,y:10,hp:0},dehors={name:'Tam',hero:true,x:10,y:11,hp:5,horsCarte:true};
@@ -3314,7 +3314,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function inventaireAdversaire(boite,cible,apres,genre){boite.replaceChildren();boite.classList.add('inv-adv');const restes=genre==='restes',dugenre=o=>estReste(o)===restes;")
   &&src.includes('<h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')&&src.includes("{cle:'restes',nom:'Restes',type:'panneau',")
   &&!src.includes("['restes','Restes',o=>o.category==='restes']"),'les restes à part');
- assert.ok(src.includes("+' ('+[...g.de].join(', ')+').',{ton:'butin'}));")
+ assert.ok(src.includes("+' ('+listeNombree([...g.de].map(f=>f.name))+').',{ton:'butin'}));")
   &&css.includes('.j-objet{display:inline-block;'),'le butin au journal');
  // decorate en machine virtuelle : les pièces en pastilles, « ×3 » avec elles, aucun chiffre rouge.
  const el=()=>({kids:[],attrs:{},className:'',textContent:'',style:{},append(...x){this.kids.push(...x)},setAttribute(k,v){this.attrs[k]=v},classList:{contains:c=>false}});
@@ -3371,6 +3371,15 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.508 — Bulle des coffres au survol, bouton du MJ ; noms groupés au journal ; touche M de la vue ; la fin du combat
+   et les PV max se jugent quelle que soit la vue de qui tient la partie. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8');
+ const ctx={};vm.createContext(ctx);vm.runInContext(src.slice(src.indexOf('function plurielMot('),src.indexOf('/* Un adversaire retiré de la scène laisse son XP')),ctx);
+ assert.equal(ctx.listeNombree(['Nuée de Rats','Nuée de Rats','Nuée de Rats','Nuée de Rats','Gobelin']),'4 Nuées de Rats, Gobelin');
+ assert.deepEqual(['Rôdeur famélique','Loup-garou','Cheval','Rôdeur des ruines','Souris','Esprit d’ombre'].map(ctx.plurielNom),['Rôdeurs faméliques','Loups-garous','Chevaux','Rôdeurs des ruines','Souris','Esprits d’ombre']);
+ assert.ok(mp.includes("surveille(el,()=>{if(mj?!bullesCoffresMJ:!coffreAPortee(heroActif(),c))return;")&&page.includes('id="coffres-bulles" hidden>'),'la bulle des coffres, au bouton du MJ');
+ assert.ok(page.includes("analyse:'ctrl',vue:'m'};")&&page.includes("e.preventDefault();sel.value=sel.value==='mj'?'player':'mj';sel.onchange()});"),'la touche de la vue');
+ assert.ok(!page.includes("function finDeCombatAuto(){if(!enCombat()||view!=='mj'")&&src.includes("function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;"),'les automatismes ne dépendent plus de la vue');}
 /* v0.507 — Le Blindage absorbe toute source de dégâts, puis disparaît : opportunité, talents, états, pièges. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),mp=fs.readFileSync('maps.js','utf8');
  const b={hp:5,max:5,states:['Blindage']};

@@ -685,13 +685,13 @@ function recalculerPV(a){if(!a||!a.hero)return false;
     temporairement : le plafond redescend quand on s'éloigne, et les PV du moment suivent ;
     en arrivant sous l'aura, ils montent d'autant, une fois. Le MJ calcule l'aura, la
     table la transporte : un joueur relit celle qu'on lui a donnée. */
- const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);
+ const aura=!(typeof spectateur==='function'&&spectateur())&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);
  const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;a.pvBonus=bonusPV(catalog.classes,a.role,a.race);
  const delta=aura-(Number(a.auraPv)||0);a.auraPv=aura;
  if(max===a.max&&!delta)return false;
  writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}
-// À chaque rendu du MJ, les PV max de la troupe se relisent : un nœud appris, un Meneur qui s'approche.
-function synchronisePV(){if(view!=='mj')return false;let change=false;
+// À chaque rendu de qui tient la partie, quelle que soit sa vue, les PV max de la troupe se relisent : un nœud appris, un Meneur qui s'approche.
+function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;let change=false;
  actors.forEach(a=>{if(a&&a.hero&&recalculerPV(a))change=true});return change}
 function poserCarac(a,cle,brut,carte){const avant=a[cle];writeStat(a,cle,brut);
  if(a[cle]===avant)return;
@@ -4215,7 +4215,14 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
    saveShortcuts();renderSettings();
    noterReglage(pris?'Enregistré · « '+pris[1]+' » prend '+(TOUCHES.find(([v])=>v===avant)[1])+' en échange.'
     :'Enregistré sur cet appareil.')};
-  ligne.append(gauche,sel);return ligne}))}
+  ligne.append(gauche,sel);return ligne}));
+ // La touche du clavier qui fait passer de la vue du MJ à celle d'un joueur, et retour.
+ if(view==='mj'){const ligne=document.createElement('div');ligne.className='reglage';const gauche=document.createElement('div');
+  const t=document.createElement('strong');t.textContent='Vue MJ / Joueur';const p=document.createElement('p');p.className='muted';p.textContent='Touche du clavier qui change de vue';gauche.append(t,p);
+  const c=document.createElement('input');c.id='rac-vue';c.maxLength=1;c.size=2;c.value=(raccourcis.vue||'').toUpperCase();c.setAttribute('aria-label','Touche pour changer de vue');
+  c.onchange=()=>{const v=c.value.trim().toLowerCase();if(v&&!/^[a-z0-9]$/.test(v)){c.value=(raccourcis.vue||'').toUpperCase();return}
+   raccourcis.vue=v;saveShortcuts();renderSettings();noterReglage('Enregistré sur cet appareil.')};
+  ligne.append(gauche,c);boite.append(ligne)}}
 $('theme-switch').onclick=toggleTheme;
 $('raccourcis-reset').onclick=()=>{raccourcis={...RACCOURCIS_DEFAUT};saveShortcuts();renderSettings();
  noterReglage('Touches d’origine rétablies et enregistrées.')};
@@ -4546,6 +4553,14 @@ function removeActors(liste,demande){
  marked.clear();
  xpDesRetires(partants);butinDesRetires(partants);
  render();scheduleSave();return null}
+/* Plusieurs adversaires du même nom se disent une fois, après leur nombre : « 4 Nuées de Rats ».
+   Le pluriel prend chaque mot jusqu'au premier « de », « du », « des »… : « Rôdeurs faméliques »,
+   « Nuées de Rats ». */
+function plurielMot(m){return m.split('-').map(x=>!x||/[sxz]$/i.test(x)?x:/(au|eu)$/i.test(x)?x+'x':/al$/i.test(x)?x.slice(0,-2)+'aux':x+'s').join('-')}
+function plurielNom(nom){let fini=false;return String(nom).split(' ').map(m=>{if(fini)return m;
+ if(/^(de|du|des|à|au|aux|en|sans|sous|sur)$/i.test(m)||/^d['’]/i.test(m)){fini=true;return m}return plurielMot(m)}).join(' ')}
+function listeNombree(noms){const n=new Map();noms.forEach(x=>n.set(x,(n.get(x)||0)+1));
+ return [...n].map(([nom,k])=>k>1?k+' '+plurielNom(nom):nom).join(', ')}
 /* Un adversaire retiré de la scène laisse son XP : elle va à chaque aventurier présent
    sur la carte, en entier. Une seule ligne au journal, partagée à la table. */
 function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!f.hero&&(Math.trunc(Number(f.xp))||0)>0);
@@ -4554,7 +4569,7 @@ function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!f.hero&&(Ma
  heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));
  // La carte retient ce qu'elle a déjà donné : le MJ le lit à côté de son nom.
  const carte=typeof currentMap==='function'?currentMap():null;if(carte)carte.xpAccordee=(Math.max(0,Math.trunc(Number(carte.xpAccordee))||0))+xp;
- log('+'+xp+' XP pour '+heros.map(h=>h.name).join(', ')+' ('+vaincus.map(f=>f.name).join(', ')+').');
+ log('+'+xp+' XP pour '+heros.map(h=>h.name).join(', ')+' ('+listeNombree(vaincus.map(f=>f.name))+').');
  document.dispatchEvent(new Event('amertume-content-changed'))}
 /* Le butin d'un adversaire retiré de la scène, comme son XP : chaque exemplaire qu'il possède
    tombe selon sa chance et va dans l'inventaire de l'aventurier le plus proche de son jeton, un
@@ -4565,9 +4580,9 @@ function butinDesRetires(partants,tirage=Math.random){const heros=actors.filter(
   const loin=h=>taille&&taille.width>0?tokenDistance(f,h,taille):Math.hypot((h.x||0)-(f.x||0),(h.y||0)-(f.y||0));
   const h=parmi.reduce((m,x)=>loin(x)<loin(m)?x:m);
   (f.inventaire||[]).forEach(id=>{const o=objetDe(id);if(!o||!chances[id]||tirage()*100>=chances[id])return;
-   ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set()});const g=gains.get(h);g.objets.set(o.id,(g.objets.get(o.id)||0)+1);g.de.add(f.name)})});
+   ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set()});const g=gains.get(h);g.objets.set(o.id,(g.objets.get(o.id)||0)+1);g.de.add(f)})});
  // Chaque pièce part au journal sous son identifiant, « ⟦id⟧ » : le journal y pose son logo, et sa bulle.
- gains.forEach((g,h)=>log(h.name+' trouve '+[...g.objets].map(([id,k])=>'⟦'+id+'⟧'+(k>1?' ×'+k:'')).join(' ')+' ('+[...g.de].join(', ')+').',{ton:'butin'}));
+ gains.forEach((g,h)=>log(h.name+' trouve '+[...g.objets].map(([id,k])=>'⟦'+id+'⟧'+(k>1?' ×'+k:'')).join(' ')+' ('+listeNombree([...g.de].map(f=>f.name))+').',{ton:'butin'}));
  if(gains.size)document.dispatchEvent(new Event('amertume-content-changed'))}
 /* Rejouer la même rencontre : les adversaires repartent intacts, la troupe garde ses
    blessures — c'est le combat qu'on recommence, pas la partie. */
