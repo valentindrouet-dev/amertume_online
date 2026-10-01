@@ -1292,12 +1292,16 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // Au-dessus de sa valeur : les dés d'une arme, et l'état qu'elle inflige ; la DEF d'une armure qui protège.
  if(col==='melee'||col==='ranged'){const p=document.createElement('p');p.className='gear-des';p.append(dicePips(o.dice,o.etat));d.append(p)}
  else if(col==='armor'&&((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))){const p=document.createElement('p');p.className='gear-def';p.append(shieldBadge(o.def||0));d.append(p)}
- // Une arme, une armure ou un reste : sa valeur, « 7 » et la pièce d'or.
- if(col==='restes'||col==='melee'||col==='ranged'||col==='armor'){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
+ // Une munition : le dé qu'elle ajoute, et l'état qu'elle inflige ; à côté, combien l'aventurier en a.
+ if(o.category==='ammo'){const p=document.createElement('p');p.className='gear-des';
+  if(keys.includes(o.munDe))p.append(dicePips({[o.munDe]:1},o.etat));else if(o.etat)p.append(etatPastille(o.etat));
+  if(a){const q=document.createElement('b');q.className='gear-quantite';q.textContent='× '+(a.inventaire||[]).filter(x=>x===o.id).length;p.append(q)}
+  if(p.childNodes.length)d.append(p)}
+ // Une arme, une armure, une munition ou un reste : sa valeur, « 7 » et la pièce d'or.
+ if(col==='restes'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
- if(o.category==='ammo'){const k=keys.indexOf(o.munDe);ligne('Munition : '+(k>=0?'+1 dé '+types[k]:'aucun dé')+' aux armes à distance portées');ligne(o.etat?'Leur tir inflige : '+o.etat:'')}
- // Puis la description du MJ, telle qu'il l'a écrite ; sans elle, rien : aucun texte automatique.
- ligne(o.notes);
+ // Un objet : la description du MJ, telle qu'il l'a écrite ; sans elle, rien. Ailleurs, aucun texte.
+ if(col==='object')ligne(o.notes);
  // Ni usage ni mode d'emploi : un objet s'utilise d'un clic sur son carré, en jeu comme sur la fiche.
  return d}
 /* Utiliser un objet : on désigne d'abord la cible — un combattant, ou l'endroit visé pour
@@ -3061,7 +3065,10 @@ function toggleEquip(a,o){if(!a||!o)return 'Rien à équiper.';
  syncEquipped(a);return null}
 /* Ajouter ou retirer un exemplaire à l'inventaire. Retirer le dernier exemplaire porté
    le repose d'abord. */
-function ajouterInventaire(a,o){if(!a||!o)return;a.inventaire??=[];a.inventaire.push(o.id)}
+// Pas plus de 99 exemplaires d'une même pièce dans un inventaire.
+const INVENTAIRE_MAX=99;
+function inventairePlein(a,o){return !!a&&!!o&&(a.inventaire||[]).filter(x=>x===o.id).length>=INVENTAIRE_MAX}
+function ajouterInventaire(a,o){if(!a||!o)return false;a.inventaire??=[];if(inventairePlein(a,o))return false;a.inventaire.push(o.id);return true}
 function retirerInventaire(a,o){if(!a||!o)return;a.inventaire??=[];const i=a.inventaire.lastIndexOf(o.id);if(i<0)return;
  a.inventaire.splice(i,1);const reste=a.inventaire.filter(x=>x===o.id).length;
  if(o.category==='weapon'){while(gearCount(a,o.id)>reste){const k=(a.weapons||[]).lastIndexOf(o.id);a.weapons.splice(k,1)}}
