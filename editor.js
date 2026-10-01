@@ -3322,11 +3322,20 @@ function placerTalent(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||!
   if(!de||de===t||!DIRS[dir]||!posDe(de)||de.horsArbre)return false;
   const col=colonneDe(talentFamily(de),de.voie||'');if(!col||!col.liste.includes(de))return false;
   if(cheminsDe(col.liste,de)[dir].lien)return false;
-  detacheDeLArbre(t);t.famille=estBonus(t)?GENERIQUES:talentFamily(de);t.voie=estBonus(t)?'':de.voie||'';t.prerequis='';delete t.horsArbre;delete t.branche;
+  // Sur son propre chemin, il change seulement de rang : les autres se rangent autour de lui.
+  const c0=lisChemin(t),d0=c0&&tousTalents().find(x=>x.id===c0.de);
+  if(c0&&c0.de===de.id&&c0.dir===dir){const l=petitsDe(de,dir).filter(p=>p!==t),voulu=Number.isInteger(dest.chemin.rang)?dest.chemin.rang:l.length+1;
+   l.splice(Math.max(0,Math.min(l.length,voulu-1)),0,t);l.forEach((p,i)=>{p.chemin={...lisChemin(p),rang:i+1}});return true}
+  // Ceux qui le suivaient sur son ancien chemin le suivent, dans leur ordre.
+  const suite=c0&&d0?petitsDe(d0,c0.dir).filter(p=>p!==t&&lisChemin(p).rang>c0.rang):[];
+  detacheDeLArbre(t);
+  const range=x=>{x.famille=estBonus(x)?GENERIQUES:talentFamily(de);x.voie=estBonus(x)?'':de.voie||'';delete x.horsArbre;delete x.branche};
+  range(t);t.prerequis='';
   const rang=Number.isInteger(dest.chemin.rang)&&dest.chemin.rang>=1?dest.chemin.rang:petitsDe(de,dir).length+1;
-  // Un rang déjà pris : les suivants reculent d'un cran.
-  petitsDe(de,dir).forEach(p=>{const c=lisChemin(p);if(c.rang>=rang)p.chemin={...c,rang:c.rang+1}});
-  t.chemin={de:de.id,dir,rang};return true}
+  // Un rang déjà pris : les suivants reculent d'autant de crans qu'il en arrive.
+  petitsDe(de,dir).forEach(p=>{const c=lisChemin(p);if(c.rang>=rang)p.chemin={...c,rang:c.rang+1+suite.length}});
+  t.chemin={de:de.id,dir,rang};
+  suite.forEach((p,i)=>{range(p);p.chemin={de:de.id,dir,rang:rang+1+i}});return true}
  if(estBonus(t))return false;
  const famille=dest.famille||GENERIQUES,voie=dest.voie||'';
  const ailleurs=!!t.horsArbre||talentFamily(t)!==famille||(t.voie||'')!==voie||estPetit(t);
@@ -3820,10 +3829,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   c.liste.forEach(t=>{if(!cases.has(t.id)){const p=caseLibre(prises.map(q=>({pos:q})),null);cases.set(t.id,p);prises.push(p)}});
   /* Les petits ronds, chacun à sa place : depuis le centre de son talent, dans sa direction, une
      demi-case par rang — la même distance en droite ligne et en diagonale, tout autour du talent. */
-  /* Les petits ronds se serrent contre leur talent : le premier à 0,41 case de son centre, le
+  /* Les petits ronds se serrent contre leur talent : le premier à 0,37 case de son centre, le
      second 0,29 plus loin, dans toutes les directions. On lit à qui ils sont, et un talent
      voisin garde de l'air. */
-  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.41+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
+  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.37+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
   const petits=[];c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
    Object.keys(DIRS).forEach(d=>{if(ch[d].lien)return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
   /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
@@ -3876,8 +3885,8 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
   const ns='http://www.w3.org/2000/svg',R=col.getBoundingClientRect(),{liste,mj,a}=info;
   svg.setAttribute('viewBox','0 0 '+Math.max(1,R.width)+' '+Math.max(1,R.height));svg.replaceChildren();
   const elDe=id=>col.querySelector('.arbre-plan>.arbre-noeud[data-id="'+id+'"]');
-  // Le centre d'un bouton, et son rayon — anneau compris — pour que le trait s'arrête à son bord.
-  const centre=el=>{const r=(el.querySelector('.arbre-rond')||el).getBoundingClientRect();return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top,r:r.width/2+5}};
+  // Le centre d'un bouton, et son rayon : le trait va jusqu'à son bord et s'y glisse dessous.
+  const centre=el=>{const r=(el.querySelector('.arbre-rond')||el).getBoundingClientRect();return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top,r:r.width/2-2}};
   col.classList.toggle('sans-acteur',!a);
   const pris=(x,y)=>!!a&&a.talents.includes(x.id)&&a.talents.includes(y.id);
   const trait=(de,vers,A,B,lien)=>{const p=centre(A),q=centre(B),g=document.createElementNS(ns,'g');

@@ -1696,7 +1696,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .arbre-noeud.petit.acquis .arbre-rond{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--teinte),0 1px 5px #0005}
 .arbre-noeud.petit.acquis .arbre-rond::after{top:-8px;right:-9px;width:14px;height:14px;font-size:10px;line-height:14px}
 .arbre-noeud.petit .arbre-outils{top:-26px;right:auto;left:50%;transform:translateX(-50%)}
-.arbre-chemins .chemin.petit .trait{stroke-width:2.5}
+.arbre-chemins .chemin.petit .trait{stroke-width:2.5;stroke-dasharray:none}
 
 /* Les places du sphérier : de vrais ronds, à la taille de ce qui s'y posera. */
 .arbre-plan>.arbre-place{width:58px;height:58px;border-radius:50%;box-sizing:border-box;border:2px dashed var(--line-strong);background:var(--panel-2);display:grid;place-items:center;font:600 24px/1 system-ui;color:var(--muted);box-shadow:none}

@@ -2397,13 +2397,14 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("if(drag.bloque){drag.moved=true;if(!drag.dit){drag.dit=true;floatNumber(a,'Plus de Mouvement','nul')}return}")
   &&page.includes("  if(bloque){if(moved)skipClick=true;return}"),'sans point, le socle est verrouillé');
 }
-/* v0.268 — Les chemins de l'arbre s'arrêtent au bord des boutons, en pointillés tant qu'ils ne sont pas
+/* v0.268, puis v0.471 — Les chemins de l'arbre vont jusqu'au bord des boutons, dessous, en pointillés tant qu'ils ne sont pas
    actifs ; les bonus prennent la couleur de leur caractéristique ; plus de mode d'emploi au-dessus. */
-{assert.ok(src.includes("return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top,r:r.width/2+5}};")&&src.includes("col.classList.toggle('sans-acteur',!a);")
+{assert.ok(src.includes("return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top,r:r.width/2-2}};")&&src.includes("col.classList.toggle('sans-acteur',!a);")
   &&src.includes("const P={x:p.x+ux*rp,y:p.y+uy*rp},Q={x:q.x-ux*rq,y:q.y-uy*rq};")
   &&feuille.includes(".arbre-chemins .chemin .trait{stroke:var(--line-strong);stroke-width:3;stroke-linecap:round;fill:none;stroke-dasharray:3 7;opacity:.75}")
   &&feuille.includes(".arbre-col.sans-acteur .arbre-chemins .chemin .trait{stroke-dasharray:none;opacity:1}")
-  &&feuille.includes(".arbre-chemins .chemin.pris .trait{stroke:var(--green);stroke-dasharray:none;opacity:1}"),'les chemins : entre les boutons, pointillés tant qu’inactifs');
+  &&feuille.includes(".arbre-chemins .chemin.pris .trait{stroke:var(--green);stroke-dasharray:none;opacity:1}")
+  &&feuille.includes(".arbre-chemins .chemin.petit .trait{stroke-width:2.5;stroke-dasharray:none}")&&src.includes("k=.37+(r-1)*.29;"),'les chemins : jusqu’aux boutons, pointillés tant qu’inactifs, pleins vers les petits ronds');
  assert.ok(src.includes("b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")&&feuille.includes(".arbre-noeud.bonus-vie{--teinte:rgb(122,92,184)}")&&feuille.includes(".arbre-noeud.bonus-dmg{--teinte:rgb(180,72,58)}"),'les bonus aux couleurs de la fiche');
  assert.ok(!src.includes("||(!arbresActeur?NOTE_ARBRES_CLASSE:view==='mj'&&!arbresVueJoueur?NOTE_ARBRES_MJ:NOTE_ARBRES)}"),'plus de mode d’emploi au-dessus des arbres');
 }
@@ -2999,6 +3000,17 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.471 — Une amélioration déplacée à la main sur un autre chemin emmène celles qui la suivaient ; sur
+    son propre chemin, elle change de rang sans en perdre. */
+ {const L=ctxA.catalog.talents;L.push({id:'a1',name:'A1',famille:'Gardien',voie:'Rempart',type:'ame',chemin:{de:'r',dir:'e',rang:1}},{id:'a2',name:'A2',famille:'Gardien',voie:'Rempart',type:'ame',chemin:{de:'r',dir:'e',rang:2}},
+   {id:'a3',name:'A3',famille:'Gardien',voie:'Rempart',type:'ame',chemin:{de:'r',dir:'e',rang:3}},{id:'b1',name:'B1',famille:'Gardien',voie:'Rempart',type:'ame',chemin:{de:'s',dir:'o',rang:1}});
+  const ch=id=>{const c=T(id).chemin;return c?c.de+'.'+c.dir+'.'+c.rang:'hors'};
+  assert.equal(ctxA.placerTalent('a2',{famille:'Gardien',voie:'Rempart',chemin:{de:'s',dir:'o',rang:1}}),true);
+  assert.deepEqual(['a1','a2','a3','b1'].map(ch),['r.e.1','s.o.1','s.o.2','s.o.3'],'la suivante suit, celle qui était là recule d’autant');
+  assert.ok(!T('a3').horsArbre,'la suivante reste dans l’arbre');
+  assert.equal(ctxA.placerTalent('a2',{famille:'Gardien',voie:'Rempart',chemin:{de:'s',dir:'o',rang:2}}),true);
+  assert.deepEqual(['a2','a3','b1'].map(ch),['s.o.2','s.o.1','s.o.3'],'sur son chemin, elle change de rang sans rien perdre');
+  L.splice(L.length-4,4)}
  assert.ok(!src.includes("ligne('↳ Requiert : '+socle)")&&src.includes("function arbreChange(){accordeArbres();")&&src.includes("catalog=normalizeCatalog(s.catalog);accordeArbres();")
   &&!src.includes("niv.textContent=t.name&&t.name!==libelleBonus(p,true)"),'plus de Requiert, plus de doublon sous un bonus');
  assert.ok(css.includes('.arbre-noeud.t-act:not(.bonus) .arbre-rond{background:#cfdcea}')&&css.includes('.arbre-noeud.t-ame:not(.bonus) .arbre-rond{background:#d3e5cd}'),'le rond a le fond de sa nature');}
