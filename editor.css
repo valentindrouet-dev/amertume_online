@@ -1836,8 +1836,8 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .hero-card .talent-ameliorations .bonus-rond .bonus-valeur{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font:900 11px/1 system-ui;text-align:center;pointer-events:none;-webkit-text-stroke:2.5px #1d1a16;paint-order:stroke fill}
 /* Un bonus dans la barre de talents : comme dans l'arbre, l'icône seule, sans rond ni fond ; la valeur dans
    le coin bas droit, un petit « + » devant, aux mêmes proportions. */
-.talent-ameliorations .cat-pill.gear-carre.talent-carre.bonus-rond{border-color:transparent;background:transparent;box-shadow:none}
-.talent-ameliorations .cat-pill.bonus-rond>:is(svg,img,.bonus-lettres){width:70%;height:70%}
+.talent-ameliorations .cat-pill.gear-carre.talent-carre.bonus-rond{border-color:transparent;border-width:0;background:transparent;box-shadow:none}
+.talent-ameliorations .cat-pill.bonus-rond>:is(svg,img,.bonus-lettres){width:100%;height:100%}
 .talent-ameliorations .cat-pill.bonus-rond .bonus-valeur{left:71%;top:71%;font-size:10.5px;-webkit-text-stroke-width:2.1px}
 .talent-ameliorations .cat-pill.bonus-rond .bonus-valeur::before{content:'+';position:absolute;right:100%;top:50%;transform:translateY(-52%);margin-right:-1px;font-size:7px;-webkit-text-stroke-width:1.4px;letter-spacing:0}
 /* Onglet Talents : six talents au plus par ligne dans chaque rangée de type ; les améliorations

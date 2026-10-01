@@ -3028,7 +3028,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("o.category==='ammo'?(o.id===a.munitionId?(comptes.get(o)||0):0)")&&src.includes("p.append(dicePips(o.dice,o.etat,col==='ranged'));")
   &&src.includes("b.className='bonus';b.textContent='+ '+degatsDe(a);")&&feuille.includes('.gear-detail .gear-def .ecu{width:auto;height:22px;'),'munitions en bloc, bulle d’arme complète, écu non déformé');
  /* v0.486 — Les bonus de la barre de talents comme dans l'arbre : sans rond, la valeur en bas à droite, un petit +. */
- assert.ok(feuille.includes('.talent-ameliorations .cat-pill.gear-carre.talent-carre.bonus-rond{border-color:transparent;background:transparent;box-shadow:none}')
+ assert.ok(feuille.includes('.talent-ameliorations .cat-pill.gear-carre.talent-carre.bonus-rond{border-color:transparent;border-width:0;background:transparent;box-shadow:none}')&&feuille.includes('.talent-ameliorations .cat-pill.bonus-rond>:is(svg,img,.bonus-lettres){width:100%;height:100%}')
   &&feuille.includes(".talent-ameliorations .cat-pill.bonus-rond .bonus-valeur::before{content:'+';"),'bonus de la barre comme dans l’arbre');
  /* v0.485 — Bulles sans texte ajouté : les notes au seul objet ; une munition, son dé, sa quantité et sa valeur ;
    l'écu de DEF à la taille des dés. 99 exemplaires au plus d'une pièce ; chaque tir consomme sa munition. */
