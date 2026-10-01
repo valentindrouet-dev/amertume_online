@@ -971,7 +971,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   carte.append(r);comps.append(carte)});
 
  // L'équipement s'ajoute par les « + » de ses places vides ; celui de l'Armurerie est sur l'Inventaire.
- const titreKit=sousTitre('Équipement');
+ const titreKit=sousTitre('Inventaire','Ajouter à l’inventaire de '+a.name,view==='mj'?()=>openPicker(a,'gear'):null);
  // Le rouage ouvre les arbres de la classe : les talents s'y choisissent de haut en bas.
  const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');
  /* Le mot « Talents », ou n'importe où dans leur bloc hors des talents eux-mêmes : l'arbre s'ouvre. */
@@ -1507,10 +1507,7 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  out.append(corps);
  // Le sac : ce qui n'est pas porté, puis les objets.
  const sac=document.createElement('div');sac.className='sac gear-grille';
- const titre=document.createElement('span');titre.className='gear-rangee-titre sac-titre';titre.textContent='Inventaire';
- // Le MJ y ajoute une pièce de l'Armurerie.
- if(view==='mj'){const plus=document.createElement('button');plus.type='button';plus.className='ico plus';plus.textContent='+';
-  plus.title='Ajouter à l’inventaire de '+a.name;plus.setAttribute('aria-label',plus.title);plus.onclick=()=>openPicker(a,'gear');titre.append(plus)}
+ // Son titre, « Inventaire » et le « + » du MJ, est celui du bloc, au-dessus du corps et du sac.
  let rien=true;
  /* Trois lignes, d'elles-mêmes : l'équipement — armes, armures, munitions —, les objets, puis les
     ressources et les restes. Chaque pièce n'y montre que son icône, en petit ; sa bulle dit tout. */
@@ -1536,7 +1533,7 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
   w.append(p,nomSac);ligneDe(o).append(w)});
  lignes.forEach(l=>{if(l.childElementCount>1)sac.append(l)});
  if(rien){const v=document.createElement('span');v.className='muted';v.textContent='Rien dans le sac.';sac.append(v)}
- out.append(titre,sac);
+ out.append(sac);
  /* Le dépôt : sur le corps, la pièce s'équipe à sa place ; sur le sac, elle se repose. */
  if(peutEquiper){const redessine=()=>{render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
   const recoit=(el,fn)=>{el.addEventListener('dragover',e=>{if(!gearGlisse)return;e.preventDefault();el.classList.add('survol');try{e.dataTransfer.dropEffect='move'}catch(_){}});

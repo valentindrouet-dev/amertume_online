@@ -1614,7 +1614,7 @@ assert.ok(src.includes('function acteurCourant(a){if(!a||actors.includes(a))retu
  &&src.includes("if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}")
  &&src.includes("const mien=view==='mj'||actors.indexOf(a)===owner;")
  &&src.includes("const titreTal=sousTitre('Talents','Arbres de talents de '+a.name,mien?()=>openArbres(a):null,'⚙');")
- &&src.includes("const titreKit=sousTitre('Équipement');")
+ &&src.includes("const titreKit=sousTitre('Inventaire','Ajouter à l’inventaire de '+a.name,view==='mj'?()=>openPicker(a,'gear'):null);")
  &&src.includes("function sousTitre(texte,titre,fn,glyphe='+'){")&&src.includes(' if(!fn)return h;')
  &&vivant.includes("'inventaire','talents','states'"),'le joueur choisit ses talents dans l’arbre');
 /* Le bestiaire gouverne la table sur-le-champ : les créatures en scène et la copie des cartes. */
@@ -3023,13 +3023,17 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.479 — « Inventaire + » au-dessus du bloc, l'inventaire à hauteur du corps, six icônes par ligne ; l'icône
+   portée plus bas, ses dés devant ; anneaux et amulette sans symbole d'effet. */
+ assert.ok(feuille.includes('.corps-sac{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);')&&feuille.includes('.corps-sac>.sac .sac-ligne{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));')
+  &&feuille.includes('.corps-sac>.corps :is(.p-anneau,.p-amulette) .cat-pill.gear-carre .gear-bas{display:none}')&&!src.includes("titre.className='gear-rangee-titre sac-titre'"),'inventaire en haut, six par ligne');
  /* v0.478 — {bleu}, {Mystique}… dans une description : l'icône du dé, sans rendre le talent élémentaire. */
  {const ctxD={};vm.createContext(ctxD);vm.runInContext(src.slice(src.indexOf('const DES_ACCOLADES='),src.indexOf('function iconeDe('))+';this.deAccolade=deAccolade;',ctxD);
   assert.deepEqual(['bleu','Bleu','BLEU','mystique','Léger','os','noir','Phase','constructor','element'].map(ctxD.deAccolade),[3,3,3,3,1,1,5,6,-1,-1],'couleurs et noms de dés, casse et accents ignorés');
   assert.equal(C.aDesAccolades('Lance {bleu} et {rouge}'),false,'un dé n’est pas une accolade d’élément');
   assert.ok(src.includes("el.append(iconeDe(c));")&&src.includes("lignes.push(desEnImages(e(nomEnClair(t.effects))));")&&feuille.includes('.die-sq.de-texte{display:inline-block;'),'le dé dans le texte, à l’écran et au PDF');}
  /* v0.477 — Sur la fiche, l'équipement aux deux tiers, l'inventaire au tiers de droite, à sa taille. */
- assert.ok(feuille.includes('.corps-sac{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);')&&feuille.includes('.corps-sac>.sac{grid-column:2;grid-row:2;')
+ assert.ok(feuille.includes('.corps-sac>.sac{grid-column:2;grid-row:1;')
   &&feuille.includes('.sac .cat-pill.gear-carre,.sac .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:36px;min-width:36px;height:36px;'),'équipement et inventaire côte à côte');
  /* v0.476 — Le trait d'un bonus, plus fin, va sous son icône ; un petit « + » devant sa valeur, sans la déplacer. */
  assert.ok(src.includes("g.setAttribute('class','chemin'+(lien?'':' petit')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':''));")
@@ -3391,8 +3395,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&page.includes("poseRond(rev,'🔍',dejà?'Analysé':'Analyser',")
   &&page.includes("poseRond(b,im||glyphe,nom,titre,compteDuTexte(nom),bulle);")&&page.includes("geste('Dégel','❄',")&&page.includes("geste('Se relever','⤴',")
   &&page.includes("(b.dataset.nom||b.textContent)")&&!page.includes("rev.textContent=")&&!page.includes("repos.textContent="),'Analyser, Repos court, gestes et réactions en ronds, nommés dans la bulle');
- assert.ok(src.includes("const titreComp=sousTitre('Compétences');")&&src.includes("const titreKit=sousTitre('Équipement');")
-  &&src.includes("plus.title='Ajouter à l’inventaire de '+a.name;plus.setAttribute('aria-label',plus.title);plus.onclick=()=>openPicker(a,'gear');titre.append(plus)}")
+ assert.ok(src.includes("const titreComp=sousTitre('Compétences');")&&src.includes("const titreKit=sousTitre('Inventaire','Ajouter à l’inventaire de '+a.name,view==='mj'?()=>openPicker(a,'gear'):null);")
+  &&src.includes("sousTitre('Inventaire','Ajouter à l’inventaire de '+a.name,view==='mj'?()=>openPicker(a,'gear'):null)")
   &&!src.includes("'Ajouter un point de compétence à '"),'le « + » quitte Compétences et Équipement pour l’Inventaire');}
 /* v0.360 — Deux lignes d'Actions : en gros ronds les attaques, les actions et les réactions ; en petits,
    dessous, les maîtrises, Analyser, le Repos court. Les dés de dégâts et le bonus du combattant pris
