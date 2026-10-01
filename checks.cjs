@@ -3023,6 +3023,11 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.478 — {bleu}, {Mystique}… dans une description : l'icône du dé, sans rendre le talent élémentaire. */
+ {const ctxD={};vm.createContext(ctxD);vm.runInContext(src.slice(src.indexOf('const DES_ACCOLADES='),src.indexOf('function iconeDe('))+';this.deAccolade=deAccolade;',ctxD);
+  assert.deepEqual(['bleu','Bleu','BLEU','mystique','Léger','os','noir','Phase','constructor','element'].map(ctxD.deAccolade),[3,3,3,3,1,1,5,6,-1,-1],'couleurs et noms de dés, casse et accents ignorés');
+  assert.equal(C.aDesAccolades('Lance {bleu} et {rouge}'),false,'un dé n’est pas une accolade d’élément');
+  assert.ok(src.includes("el.append(iconeDe(c));")&&src.includes("lignes.push(desEnImages(e(nomEnClair(t.effects))));")&&feuille.includes('.die-sq.de-texte{display:inline-block;'),'le dé dans le texte, à l’écran et au PDF');}
  /* v0.477 — Sur la fiche, l'équipement aux deux tiers, l'inventaire au tiers de droite, à sa taille. */
  assert.ok(feuille.includes('.corps-sac{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);')&&feuille.includes('.corps-sac>.sac{grid-column:2;grid-row:2;')
   &&feuille.includes('.sac .cat-pill.gear-carre,.sac .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:36px;min-width:36px;height:36px;'),'équipement et inventaire côte à côte');
