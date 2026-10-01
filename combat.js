@@ -1045,6 +1045,16 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   phrase(){return 'Après un <b>critique</b>, le porteur gagne aussi <b>1 point de Mouvement</b>.'}},
  implosionorbe:{cle:'implosionorbe',nom:'Implosion d’orbe',court:'orbe rendu',type:'ame',aide:'Amélioration d’Implosion : un critique rend aussi un orbe pour le tour.',params:[],
   phrase(){return 'Après un <b>critique</b>, le porteur récupère aussi <b>un orbe</b>.'}},
+ /* Mitraille : un passif. Chaque orbe lancé en fait partir un autre, sans le compter, sur l'autre adversaire
+    le plus proche ; ses améliorations visent un adversaire de plus, ou lancent un orbe de plus sur chacun. */
+ mitraille:{cle:'mitraille',nom:'Mitraille',type:'pass',aide:'Passif : quand le porteur lance un orbe, il en lance aussi un sur l’autre adversaire le plus proche.',
+  params:[{cle:'cibles',nom:'Autres adversaires',type:'nombre',defaut:1,min:1,max:6},{cle:'orbes',nom:'Orbes par adversaire',type:'nombre',defaut:1,min:1,max:3}],
+  phrase(p){const c=Math.max(1,Math.trunc(p&&p.cibles)||1),o=Math.max(1,Math.trunc(p&&p.orbes)||1);
+   return 'Quand le porteur lance un <b>orbe</b>, il lance automatiquement <b>'+(o>1?o+' orbes':'un orbe')+'</b> sur '+(c>1?'<b>les '+c+' autres adversaires les plus proches</b>':'<b>l’autre adversaire le plus proche</b>')+'.'}},
+ mitraillecibles:{cle:'mitraillecibles',nom:'Mitraille — un adversaire de plus',court:'un adversaire de plus',type:'ame',aide:'Amélioration de Mitraille : elle vise un adversaire de plus.',params:[],
+  phrase(){return 'La <b>Mitraille</b> vise <b>un adversaire de plus</b>.'}},
+ mitrailleorbes:{cle:'mitrailleorbes',nom:'Mitraille — un orbe de plus',court:'un orbe de plus',type:'ame',aide:'Amélioration de Mitraille : un orbe de plus sur chaque adversaire.',params:[],
+  phrase(){return 'La <b>Mitraille</b> lance <b>un orbe de plus</b> sur chaque adversaire.'}},
  contagion:{cle:'contagion',nom:'Contagion',type:'pass',aide:'Passif : au début de chaque tour, le porteur inflige l’état réglé à un adversaire à son contact.',
   params:[{cle:'etat',nom:'État',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Au <b>début de chaque tour</b>, le porteur inflige <b>'+((p&&p.etat)||'Feu')+'</b> à <b>un adversaire</b> à son contact.'}},
@@ -1141,7 +1151,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
- contagioncontact:'contagion',contagionvue:'contagion',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
+ contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',
  soinetat:'ignoredegats',soinetatdouble:'ignoredegats',corpselem:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;

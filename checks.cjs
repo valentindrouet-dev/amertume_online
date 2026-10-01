@@ -3023,6 +3023,12 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.491 — Mitraille : un passif ; chaque orbe lancé en fait partir un autre, gratuit, sur l'autre adversaire le
+   plus proche ; améliorations : un adversaire de plus, un orbe de plus. */
+ {const T=C.TALENTS_CODES;assert.equal(T.mitraille.type,'pass');assert.equal(T.mitraillecibles.pour,'mitraille');assert.equal(T.mitrailleorbes.nom,'Mitraille — un orbe de plus');
+  assert.equal(C.texteBrut(C.phraseTalent('mitraille',{})),'Quand le porteur lance un orbe, il lance automatiquement un orbe sur l’autre adversaire le plus proche.');
+  assert.ok(C.texteBrut(C.phraseTalent('mitraille',{cibles:2,orbes:2})).includes('2 orbes sur les 2 autres adversaires les plus proches'));}
+ assert.ok(page.includes("if(!opts.mitraille&&orbesLances(a)+n>total)")&&page.includes("orbe(a,p,talent,{cible:k,n:m.orbes,mitraille:true,logo:opts.logo})")&&page.includes("function mitrailleDe(a){"),'Mitraille branchée sur le lancer d’orbe');
  /* v0.490 — Les niveaux de l'arbre : posés sur une ligne entre talents, ils ferment le talent d'après tant que
    l'aventurier n'a pas ce niveau. */
  {const ctxN={DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},lisChemin:()=>null,posDe:t=>t&&t.pos||null};vm.createContext(ctxN);
