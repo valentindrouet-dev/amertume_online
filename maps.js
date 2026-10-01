@@ -601,7 +601,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  const heros=actors.filter(a=>a.hero);
  // Une carte rechargée rend à chacun ses repos courts.
  // Une carte rechargée rend aussi ses zones à fouiller : les tests de Perception y repartent de zéro.
- heros.forEach(a=>{a.reposCourts=0;a.fouilles=(a.fouilles||[]).filter(f=>f&&f.m!==id)});
+ heros.forEach(a=>{a.reposCourts=0;a.reposPris=false;a.fouilles=(a.fouilles||[]).filter(f=>f&&f.m!==id)});
  // Et ses objets récupérés reviennent à leur place.
  (m.objets||[]).forEach(o=>{delete o.pris});
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.

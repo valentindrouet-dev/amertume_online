@@ -2444,7 +2444,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")
   &&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos rond" id="repos" hidden>⛺</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
-  &&page.includes(":reposRestants(a)<=0?'Repos court déjà pris : il revient à la fin du prochain combat.'")&&page.includes("actors.forEach(a=>{if(a.hero)a.reposCourts=0})}")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);")
+  &&page.includes(":a.reposPris===true?'Repos court déjà pris : il revient à la fin du prochain combat.'")&&page.includes("actors.forEach(a=>{if(a.hero)a.reposPris=false})}")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);")
   &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}'),'le Repos court');
 }
 /* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
@@ -2673,7 +2673,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.normaliseCompte({or:'5',x:3,'eclat-rubis':-2,'brisure-saphir':0,'brome-diamant':2.7,'brome-diamant-eteinte':4},C.CLES_RICHESSES),{or:5,'brome-diamant':2},'une éteinte quitte la bourse');
  assert.deepEqual(C.normaliseDomaine(null).ressources,{});
  assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
- assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots=normaliseDepots(a.depots);")&&src.includes("delete a.reposPris;a.horsCarte=a.horsCarte===true;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
+ assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots=normaliseDepots(a.depots);")&&src.includes("a.reposPris=a.reposPris===true;a.horsCarte=a.horsCarte===true;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
   &&src.includes("const listeRessources=()=>ressourcesJeu().map(r=>[r.cle,r.nom]).sort((x,y)=>x[1].localeCompare(y[1],'fr'));"),'les richesses se relisent et voyagent en direct');
  assert.ok(src.includes("function grilleGemmes(compte,poser,qui){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
   &&fief.includes("function renderDomRessources(){")&&fief.includes("const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;")
@@ -3185,7 +3185,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  vm.runInContext(page.match(/function leveEtats\(a\)\{[^\n]*\n[^\n]*/)[0]+'\n'+page.match(/function reposMax\(a\)[^\n]*/)[0]+'\n'+page.match(/function reposRestants\(a\)[^\n]*/)[0],ctxR);
  const h={states:['Feu','Blindage','Poison','Coma','Invisible'],etatsPassifs:['Invisible']};
  assert.equal(ctxR.leveEtats(h).join(','),'Feu,Poison','tout s’en va, sauf le Blindage, le coma et ce qu’une pièce portée donne');assert.equal(h.states.join(','),'Blindage,Coma,Invisible');
- assert.equal(ctxR.reposMax({level:3}),1,'un seul repos court entre deux combats, quel que soit le niveau');assert.equal(ctxR.reposMax({}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:0}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:1}),0);
+ assert.equal(ctxR.reposMax({level:3}),3,'un repos court par niveau');assert.equal(ctxR.reposMax({}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:0}),3);assert.equal(ctxR.reposRestants({level:3,reposCourts:1}),2);
  assert.ok(page.includes("if(a.vie<=0){a.horsCarte=true;a.lieuDomaine='';poseCibles(a,[]);")
   &&src.includes("function reposLong(){if(view!=='mj')return;")&&src.includes("$('hero-repos-long').onclick=reposLong;")&&carto.includes("heros.forEach(a=>{a.reposCourts=0;"),'0 VIE : hors de la carte jusqu’au repos long ; repos courts rendus à la carte rechargée');
  assert.ok(page.includes("function noteContactsDepart(a){if(!a||!enCombat())return;")&&page.includes("const contacts=adversairesAuContact(a).filter(([b])=>!avant||!avant.has(b.id));")
@@ -3365,6 +3365,19 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.498 — Un repos court par niveau, le nombre restant sous le bouton (« 2 », pas « 2/2 ») ; un seul entre deux
+   combats, que la fin du combat rouvre. La planche des caractéristiques principales se découpe en cinq. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),calc=fs.readFileSync('planches-calcul.js','utf8');
+ assert.ok(page.includes("function reposMax(a){return Math.max(1,Math.trunc(Number(a&&a.level))||1)}")&&page.includes("a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);a.reposPris=true;")
+  &&page.includes("enCombat()||reposRestants(a)<=0||a.reposPris===true||!alive(a)")&&page.includes("String(reposRestants(a)))}")
+  &&page.includes(":reposRestants(a)<=0?'Plus de repos court : ils reviennent au repos long.'"),'le repos court : la réserve au niveau, un par combat');
+ assert.ok(src.includes("a.reposCourts=0;a.reposPris=false;reposer(a,'long');")&&carto.includes("heros.forEach(a=>{a.reposCourts=0;a.reposPris=false;"),'repos long et carte rechargée rendent tout');
+ assert.ok(fs.existsSync('img/planches/caracteristiques_2.webp')&&calc.includes("votants=gros.filter(k=>k.c>=grosMax*.05);"),'la planche et la taille des icônes sans les éclats');
+ const cc={};vm.createContext(cc);vm.runInContext(calc+';this.d=detecteGrille;this.cs=casesDe;',cc);
+ // Une rangée de trois icônes, dont la dernière éclatée en petits morceaux : trois cases, pas plus.
+ const W=300,H=100,A=new Uint8Array(W*H),carre=(x0,y0,w,h)=>{for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++)A[y*W+x]=255};
+ carre(10,10,80,80);carre(110,10,80,80);carre(220,25,50,50);[[205,12],[275,12],[205,82],[275,82],[240,6],[240,88]].forEach(([x,y])=>carre(x,y,6,6));
+ const g=cc.d({W,H,A});assert.equal(g.lignes+'x'+g.colonnes,'1x3','les éclats ne font pas de cases');assert.equal(cc.cs({W,H,A},g.bx,g.by).length,3);}
 /* v0.497 — Sur la fiche, les icônes de bonus remplissent leur rond comme l'éclat des dégâts ; dans la bulle
    d'un bonus de talent, l'icône vient devant et la compétence s'écrit comme sur la fiche. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');

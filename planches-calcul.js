@@ -63,7 +63,10 @@ function grilleUniforme({W,H,A},lignes,colonnes){let x0=W,y0=H,x1=-1,y1=-1;
 function proprietaires(al){if(al.proprio)return al.proprio;
  const {W,H,A}=al,base=al.taches||(al.taches=taches(al)),lab=base.lab,N=W*H;
  const tailleK=k=>Math.max(k.x1-k.x0,k.y1-k.y0),gros=base.filter(k=>k.c>=30);
- const med=gros.length?gros.map(tailleK).sort((a,b)=>a-b)[gros.length>>1]:0;
+ /* La taille courante d'une icône : la médiane des taches, sans les éclats détachés vingt fois plus
+    petits que la plus grande — les étincelles d'une explosion ne disent pas la taille des icônes. */
+ const grosMax=gros.reduce((m,k)=>Math.max(m,k.c),0),votants=gros.filter(k=>k.c>=grosMax*.05);
+ const med=votants.length?votants.map(tailleK).sort((a,b)=>a-b)[votants.length>>1]:0;
  const own=new Int32Array(N),objets=[],idDe=new Int32Array(base.length+1);
  const nouvel=(k,trop)=>{objets.push({x0:k.x0,y0:k.y0,x1:k.x1,y1:k.y1,c:k.c,gros:!!trop,hx0:W,hy0:H,hx1:-1,hy1:-1});return objets.length};
  const morceaux=[];
