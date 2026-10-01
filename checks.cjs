@@ -1266,7 +1266,7 @@ assert.ok(src.includes("if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES
  assert.ok(tv.includes('if(!m)return false;')&&!tv.includes('fogOff')&&tv.includes('if(!fogTroupe)return false;')&&tv.includes('if(!size.width)return false;'),'seule la vision réelle révèle');}
 /* Le combat commence de lui-même dès qu'un adversaire est révélé — par la vue ou à la main — et
    l'ouverture d'une carte remet la troupe en exploration. */
-assert.ok(page.includes("if(!enCombat()&&view==='mj')setTimeout(()=>{if(!enCombat())basculerMode('combat',true)},0);")&&page.includes("if(a.vu&&!enCombat())basculerMode('combat',true);")
+assert.ok(page.includes("if(!enCombat())setTimeout(()=>{if(!enCombat())basculerMode('combat',true)},0);")&&page.includes("if(a.vu&&!enCombat())basculerMode('combat',true);")
  &&cartes.includes("if(typeof remiseAuTourUn==='function')remiseAuTourUn();\n mode='exploration';"),'le combat commence à la première révélation');
 /* Glisser plusieurs socles ne coûte plus en proportion : obstacles et murs en pixels construits une
    fois par tâche, auras mémorisées par socle, redessin au plus une fois par image, contacts relevés en
@@ -1807,7 +1807,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
  &&!src.includes("chev.textContent='⌄'")&&src.includes('surveille(pill,montre);out.append(carte)});')
  &&src.includes('function fermerBulle()')&&src.includes("document.addEventListener('pointerdown',bulleDehors,true);")
  &&src.includes("document.addEventListener('keydown',bulleEchap,true);")&&src.includes(" e.preventDefault();e.stopPropagation();fermerBulle()}")&&src.includes("window.addEventListener('scroll',fermerBulle,true);window.addEventListener('resize',fermerBulle)")
- &&src.includes("if(!bulleAncre.isConnected||(!r.width&&!r.height)){fermerBulle();return}")&&src.includes("function ancreVisible(el){return !!el&&el.isConnected&&!!el.offsetParent}")&&src.includes('const dessous=r.top-b.height-12<marge;')
+ &&src.includes("if(!bulleAncre.isConnected||(!r.width&&!r.height)){fermerBulle();return}")&&src.includes("function ancreVisible(el){return !!el&&el.isConnected&&(!!el.offsetParent||(el instanceof SVGElement&&el.getClientRects().length>0))}")&&src.includes('const dessous=r.top-b.height-12<marge;')
  &&src.includes("bulleEl.style.setProperty('--fleche',")
  // Les deux chemins cohabitent : la bulle, et le dépliant d'avant si l'on repasse BULLES à faux.
  &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&gearOuvert===cle&&ancreVisible(p))reposeBulle(montre)});")
@@ -3371,6 +3371,17 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.506 — Coffres : calque sous le brouillard, sans contour ni anneau au clic ; bulle du MJ en icônes ; un joueur ouvre
+   d'un clic ; l'Action payée même quand le MJ ouvre ; le combat part à toute révélation ; prix des ressources ; clés et
+   objets propres à un adversaire posé. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ const m=C.cleanMap({id:'m',name:'M',foes:[{x:1,y:1,tpl:{id:'t',name:'Gob',pv:5},inventaire:['k1','k1',3],butin:{k1:150,autre:20}},{x:2,y:2,tpl:{id:'t',name:'Gob',pv:5}}]});
+ assert.deepEqual([m.foes[0].inventaire,m.foes[0].butin,'inventaire' in m.foes[1]],[['k1','k1'],{k1:100},false],'un adversaire posé garde ses objets propres');
+ assert.ok(page.indexOf('<svg id="map-coffres"')>0&&page.indexOf('<svg id="map-coffres"')<page.indexOf('<canvas id="fog"')&&page.includes("e.target.closest('#map-coffres'))return;"),'le calque des coffres sous le brouillard');
+ assert.ok(mp.includes("el.onmousedown=e=>e.preventDefault();")&&mp.includes("if(mj)menuCoffre(c,e.clientX,e.clientY);else ouvreCoffreJoueur(c)}")&&mp.includes("function ouvreCoffreJoueur(c){"),'le clic du joueur ouvre');
+ assert.ok(src.includes("el instanceof SVGElement&&el.getClientRects().length>0")&&src.includes("if(col==='restes'||col==='ressource'||")&&src.includes("['cles','Clés',o=>o.category==='cle']"),'bulle SVG, prix des ressources, clés');
+ assert.ok(src.includes("function ajoutePropres(a,p){")&&src.includes("neuf=ajoutePropres(fromMonster(m),a.propres);")&&mp.includes("a.propres={inventaire:[...f.inventaire],butin:{...(f.butin||{})}};ajoutePropres(a,a.propres)")
+  &&mp.includes("inventaireAdversaire($('foe-objets-corps'),f,()=>saveMaps());"),'objets propres d’un adversaire');}
 /* v0.505 — Nuée : finir son mouvement sur un token, traverser les adversaires ; corriger un modèle ne rend plus
    inconnus les adversaires en jeu, et le combat ne se juge que sur la Table ; un aventurier mort ne se soigne plus. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
@@ -3392,14 +3403,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.equal(m.doors[0].cleId,'k1','une porte garde sa clé');
  assert.ok(page.includes("$('skills').hidden=!a.hero;")&&page.includes("const enCombatNow=enCombat();if(enCombatNow){if(actionPrise(a))")
   &&page.includes("depensePoint(a,'action')}")&&page.includes("if(enCombatNow){afterAction(a);render();scheduleSave()}}"),'un test de compétence coûte l’Action en combat');
- assert.ok(mp.includes("||!payeAction(a))return;")&&mp.includes("if(!parMJ&&!payeAction(h))return;")&&mp.includes("function payeAction(a)"),'tester ou ouvrir un coffre coûte l’Action en combat');
+ assert.ok(mp.includes("||!payeAction(a))return;")&&mp.includes("if(h&&!payeAction(h))return;")&&mp.includes("function payeAction(a)"),'tester ou ouvrir un coffre coûte l’Action en combat');
  assert.ok(mp.includes("if((!mj||oeil)&&(!coffreVisible(c)||!enVue))return;")&&mp.includes("className='coffre-alerte'")&&mp.includes("$('coffre-double').onclick"),'coffres : vue, piège, double');
  assert.ok(mp.includes("data-si=\"ferme\"")&&mp.includes("b.hidden=!f[b.dataset.si].checked")&&mp.includes("b.oncontextmenu=e=>{e.preventDefault();if(gemmes[k]>1)gemmes[k]--;else delete gemmes[k];maj()}")
-  &&mp.includes("const CATS_COFFRE=")&&mp.includes("className='coffre-contenu-bulle'"),'la fiche du coffre : cases, gemmes, contenu');
+  &&mp.includes("const CATS_COFFRE=")&&mp.includes("l.className='coffre-contenu-bulle';comptes.forEach((n,o)=>l.append(carreInventaire(o,n)));"),'la fiche du coffre : cases, gemmes, contenu');
  assert.ok(mp.includes("const aLaCle=(a,id)=>")&&mp.includes("parCle=!mj&&d.keyLocked&&!!d.cleId&&aLaCle(heroActif(),d.cleId)"),'une clé ouvre coffres et portes');
  assert.ok(src.includes("['object','Objets'],['cle','Clés'],")&&src.includes("cle:{category:'cle',name:'Nouvelle clé'}")&&src.includes("['object','Objet'],['cle','Clé'],")
   &&dom.includes("'object','cle','ressource'"),'la catégorie Clés à l’Armurerie');
- assert.ok(css.includes('#map-doors .coffre{fill:rgba(140,72,16,.32);stroke:#9c4f12;stroke-width:1.2;')&&css.includes('.shape.coffre.rond{border-radius:50%}')&&css.includes('#map-doors .coffre.voile{'),'contour fin, rond, voile');}
+ assert.ok(css.includes('#map-coffres .coffre{fill:rgba(140,72,16,.32);stroke:none;')&&css.includes('.shape.coffre.rond{border-radius:50%}')&&css.includes('#map-coffres .coffre.voile{'),'contour fin, rond, voile');}
 /* v0.503 — Barre de PV de la fiche sans animation ; éditeur d'adversaire : attaques spéciales d'abord, ses talents en tête ;
    bibliothèque en colonnes ; six talents d'adversaires : Nuée, Dévorant, Épines, Tourbillon, Péril, Éclaboussure. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');

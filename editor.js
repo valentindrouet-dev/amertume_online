@@ -1260,7 +1260,8 @@ function placerBulle(){if(!bulleEl||!bulleAncre)return;
  bulleEl.classList.toggle('dessous',dessous);
  bulleEl.style.setProperty('--fleche',Math.max(14,Math.min(b.width-14,r.left+r.width/2-gauche))+'px')}
 // « ancre » doit être visible : une vignette d'une page repliée n'ouvre pas de bulle.
-function ancreVisible(el){return !!el&&el.isConnected&&!!el.offsetParent}
+// Un élément SVG de la carte n'a pas de offsetParent : il est visible s'il occupe une place.
+function ancreVisible(el){return !!el&&el.isConnected&&(!!el.offsetParent||(el instanceof SVGElement&&el.getClientRects().length>0))}
 /* Une bulle qui se rouvre aussitôt — le clic a redessiné la barre, la souris n'a pas bougé — ne
    rejoue pas son entrée : elle glissait de quatre pixels, et semblait sauter sous le doigt. */
 let bulleRetiree=0;
@@ -1352,8 +1353,8 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
   if(keys.includes(o.munDe))p.append(dicePips({[o.munDe]:1},o.etat));else if(o.etat)p.append(etatPastille(o.etat));
   if(a){const q=document.createElement('b');q.className='gear-quantite';q.textContent='× '+(a.inventaire||[]).filter(x=>x===o.id).length;p.append(q)}
   if(p.childNodes.length)d.append(p)}
- // Une arme, une armure, une munition ou un reste : sa valeur, « 7 » et la pièce d'or.
- if(col==='restes'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
+ // Une arme, une armure, une munition, une ressource ou un reste : sa valeur, « 7 » et la pièce d'or.
+ if(col==='restes'||col==='ressource'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
  // Un objet : la description du MJ, telle qu'il l'a écrite ; sans elle, rien. Ailleurs, aucun texte.
  if(col==='object')ligne(o.notes);
@@ -3035,7 +3036,7 @@ function normaliseButin(b,inventaire){const out={};if(!b||typeof b!=='object'||A
    une pièce l'ajoute. Munitions avec les armes, trésors avec les objets. Les restes ont leur champ
    à eux, au formulaire comme dans le tableau en masse. */
 const CATS_INV_ADV=[['armes','Armes',o=>o.category==='weapon'||o.category==='ammo'],['armures','Armures',o=>o.category==='armor'],
- ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource'].includes(o.category)],['ressources','Ressources',o=>o.category==='ressource']];
+ ['objets','Objets',o=>!['weapon','ammo','armor','restes','ressource','cle'].includes(o.category)],['cles','Clés',o=>o.category==='cle'],['ressources','Ressources',o=>o.category==='ressource']];
 const estReste=o=>!!o&&o.category==='restes';
 let catsInvAdv=new Set(['armes','armures']),filtreInvAdv='',filtreRestes='';
 /* L'inventaire d'un adversaire, au formulaire comme dans le tableau en masse, en petits carrés
@@ -4484,10 +4485,14 @@ function syncCartes(m){let touches=0;
   if(!f||!f.tpl||f.tpl.id!==m.id)return;f.tpl=structuredClone(m);touches++}));
  if(touches&&typeof saveMaps==='function')saveMaps();
  return touches}
+/* Ce que la carte a donné à cet adversaire-là, et à lui seul : ajouté à ce que porte son modèle, avec la
+   chance que chaque pièce tombe. Les autres adversaires du même modèle n'en ont rien. */
+function ajoutePropres(a,p){if(!a||!p||!Array.isArray(p.inventaire)||!p.inventaire.length)return a;
+ a.inventaire=[...(a.inventaire||[]),...p.inventaire];a.butin={...(a.butin||{}),...(p.butin||{})};return equipeAdversaire(a)}
 function syncFromTemplate(m){let touches=0;syncCartes(m);
  actors.forEach(a=>{if(a.hero)return;
   if(!suitLeModele(a,m))return;a.template=m.id;
-  const plein=a.hp>=a.max,neuf=fromMonster(m);
+  const plein=a.hp>=a.max,neuf=ajoutePropres(fromMonster(m),a.propres);
   /* Le modèle gouverne son profil et l'équipement qui en découle, rien d'autre : révélé, numéro,
      charges, garde, orbes restent ceux de la partie. Sans quoi corriger un modèle, ou seulement
      l'enregistrer, rendait inconnus les adversaires en jeu et le combat prenait fin. Comparer clé

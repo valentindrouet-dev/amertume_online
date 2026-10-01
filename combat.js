@@ -373,6 +373,12 @@ function cleanCoffre(c){const r=cleanRect(c);if(!r)return null;const n=(v,max)=>
   perception:Math.max(1,n(c.perception,9)),verrou:n(c.verrou,9),piege:n(c.piege,9),degats:n(c.degats,99),
   etats:(Array.isArray(c.etats)?c.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,8),
   items:(Array.isArray(c.items)?c.items:[]).filter(x=>typeof x==='string').slice(0,99).map(x=>texte(x,60)).filter(Boolean),richesses:rich}}
+/* Ce qu'un adversaire posé porte en propre, en plus de son modèle — une clé, un message —, et la chance,
+   pièce par pièce, que cela tombe à sa mort. */
+function portePropre(f){const inv=(Array.isArray(f&&f.inventaire)?f.inventaire:[]).filter(x=>typeof x==='string').slice(0,30).map(x=>texte(x,60)).filter(Boolean);
+ if(!inv.length)return {};const butin={};
+ Object.entries(f.butin&&typeof f.butin==='object'?f.butin:{}).forEach(([id,v])=>{const n=Math.max(0,Math.min(100,Math.round(Number(v))||0));if(n&&inv.includes(id))butin[id]=n});
+ return {inventaire:inv,...(Object.keys(butin).length?{butin}:{})}}
 function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.image)?m.image:null;
  const ratio=Math.max(.2,Math.min(6,Number(m&&m.ratio)||16/9));
  const matiere=Array.isArray(m&&m.matiere)?cleanMatiere(m.matiere)
@@ -382,7 +388,7 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
   matiere,doors:cleanRects(m&&m.doors,true),
   start:cleanRect(m&&m.start),
   foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
-   hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
+   hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),...portePropre(f),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
   coffres:(Array.isArray(m&&m.coffres)?m.coffres:[]).slice(0,100).map(cleanCoffre).filter(Boolean),
   objets:(Array.isArray(m&&m.objets)?m.objets:[]).slice(0,200).map(cleanObjet),
   // Les zones que le MJ a séparées ou regroupées voyagent avec la carte.

@@ -561,7 +561,9 @@ function payeAction(a){if(!enCombat()||!a)return true;
 function coffreAPortee(a,c){const size=mapSize();return !!a&&!!size.width&&polyInReach(a,polyCoffre(c),size,tokenOf(a))}
 // Le piège frappe qui est dans la zone de contact du coffre : celle d'un socle moyen, autour de sa forme.
 function dansZoneCoffre(h,c){const size=mapSize();return !!size.width&&polyInReach(h,polyCoffre(c),size,tokenPx())}
-function renderCoffres(){const calque=$('map-doors'),vue=$('map-view'),m=currentMap();vue.querySelectorAll('.coffre-alerte').forEach(x=>x.remove());if(!m)return;
+/* Les coffres ont leur calque, sous le brouillard : hors de la vue de la troupe, il les couvre, et seule leur
+   part en vue se découpe. */
+function renderCoffres(){const calque=$('map-coffres'),vue=$('map-view'),m=currentMap();calque.replaceChildren();vue.querySelectorAll('.coffre-alerte').forEach(x=>x.remove());if(!m)return;
  const mj=view==='mj',oeil=typeof oeilJoueur==='function'&&oeilJoueur();
  (m.coffres||[]).forEach(c=>{const enVue=coffreEnVue(c);
   // La troupe ne voit un coffre que révélé et sous ses yeux ; le MJ voit tout, pâli hors de la vue de la troupe.
@@ -575,19 +577,20 @@ function renderCoffres(){const calque=$('map-doors'),vue=$('map-view'),m=current
   if(!c.ouvert){el.style.pointerEvents='all';
    // La bulle : son nom et sa description, au survol, quand l'aventurier choisi est au contact.
    if(typeof surveille==='function')surveille(el,()=>{if(!mj&&!coffreAPortee(heroActif(),c))return;ouvrirBulle(el,bulleCoffre(c),'bulle-gear')});
-   el.onclick=e=>{e.stopPropagation();if(typeof fermerBulle==='function')fermerBulle();menuCoffre(c,e.clientX,e.clientY)}}
+   // Un clic ne lui donne pas le focus : le navigateur l'entourait d'un anneau.
+   el.onmousedown=e=>e.preventDefault();
+   // Le MJ choisit dans un menu ; un joueur, lui, tente d'ouvrir, d'un clic.
+   el.onclick=e=>{e.stopPropagation();if(typeof fermerBulle==='function')fermerBulle();if(mj)menuCoffre(c,e.clientX,e.clientY);else ouvreCoffreJoueur(c)}}
   calque.append(el)})}
 function bulleCoffre(c){const g=document.createElement('div');g.className='gear-detail large';
  const n=document.createElement('p');n.className='gear-nom';n.textContent=c.nom||'Coffre';g.append(n);
  if(c.desc){const p=document.createElement('p');p.className='objet-desc-bulle';p.textContent=c.desc;g.append(p)}
- // Ce qu'il contient, le MJ seul le lit : chaque pièce et son nombre, l'or, les gemmes.
- if(view==='mj'){const comptes=new Map();(c.items||[]).forEach(id=>comptes.set(id,(comptes.get(id)||0)+1));const r=c.richesses||{},lignes=[];
-  comptes.forEach((k,id)=>{const o=(catalog.items||[]).find(x=>x&&x.id===id);if(o)lignes.push((k>1?k+' × ':'')+o.name)});
-  if(r.or)lignes.push(r.or+' or');CLES_GEMMES.forEach(k=>{if(r[k]>0){const [t,v]=k.split('-');lignes.push(r[k]+' '+nomGemme(t,v,false).toLowerCase())}});
-  if(c.cleId)lignes.push('S’ouvre avec '+nomCle(c.cleId));
-  if(lignes.length){const p=document.createElement('p');p.className='coffre-contenu-bulle';p.textContent=lignes.join(' · ');g.append(p)}}
+ // Ce qu'il contient, le MJ seul le voit : l'icône de chaque pièce et son nombre, l'or, les gemmes.
+ if(view==='mj'){const comptes=new Map();(c.items||[]).forEach(id=>{const o=objetDe(id);if(o)comptes.set(o,(comptes.get(o)||0)+1)});const r=c.richesses||{};
+  const l=document.createElement('div');l.className='coffre-contenu-bulle';comptes.forEach((n,o)=>l.append(carreInventaire(o,n)));
+  if(r.or>0)l.append(ligneOr(r.or,null));const gem=ligneGemmes(r,null);if(gem)l.append(gem);if(l.childElementCount)g.append(l)}
  if(view==='mj'){const p=document.createElement('p');p.className='muted objet-cache-bulle';
-  p.textContent=[c.cache&&!c.revele?'Caché : Perception '+(c.perception||1):'',coffreVerrouille(c)?'Verrou '+c.verrou:'',coffreArme(c)?'Piège '+c.piege:''].filter(Boolean).join(' · ');if(p.textContent)g.append(p)}
+  p.textContent=[c.cache&&!c.revele?'Caché : Perception '+(c.perception||1):'',coffreVerrouille(c)?'Verrou '+c.verrou+(c.cleId?' ou '+nomCle(c.cleId):''):'',coffreArme(c)?'Piège '+c.piege:''].filter(Boolean).join(' · ');if(p.textContent)g.append(p)}
  return g}
 // Un petit menu au clic, à la place du pointeur : un titre, des entrées.
 function menuCarte(titre,entrees,x,y){fermeMenuObjet();if(!entrees.length)return;const m=document.createElement('div');m.className='menu-objet';m.setAttribute('role','menu');
@@ -626,7 +629,17 @@ function testCoffre(a,c,quoi,k){if(!a||!c||c.ouvert||!payeAction(a))return;
  render();saveMaps();scheduleSave()}
 /* Ouvrir : un piège encore armé se déclenche sur qui est au contact du coffre, puis le contenu va à qui
    l'ouvre — ou, quand c'est le MJ, à l'aventurier le plus proche. */
-function ouvrirCoffre(c,h,parMJ){if(!c||c.ouvert||(coffreVerrouille(c)&&!parMJ))return;if(!parMJ&&!payeAction(h))return;
+/* Un joueur clique : son aventurier tente d'ouvrir. Verrouillé, sans la clé, rien ne se passe, sauf la ligne du journal ;
+   avec elle, le verrou cède. Piégé, le piège part. */
+function ouvreCoffreJoueur(c){const a=heroActif();
+ if(!a){log('Sélectionne d’abord ton aventurier.',{local:true});return}
+ if(!coffreAPortee(a,c)){log('Approche '+a.name+' : il faut être au contact de '+c.nom+'.',{local:true});return}
+ if(coffreVerrouille(c)&&!aLaCle(a,c.cleId)){log(nomNum(a)+' tente d’ouvrir '+c.nom+' : verrouillé.',{ton:'carte'});return}
+ if(enCombat()&&pointsRestants(a,'action')<=0){payeAction(a);return}
+ if(coffreVerrouille(c)){c.deverrouille=true;log(nomNum(a)+' déverrouille '+c.nom+' avec '+nomCle(c.cleId)+'.',{ton:'carte'})}
+ ouvrirCoffre(c,a,false)}
+/* En combat, ouvrir coûte l'Action de qui ouvre, que le geste vienne de lui ou du MJ. */
+function ouvrirCoffre(c,h,parMJ){if(!c||c.ouvert||(coffreVerrouille(c)&&!parMJ))return;if(h&&!payeAction(h))return;
  if(coffreArme(c)){c.desamorce=true;
   const touches=actors.filter(o=>o&&o.hero&&alive(o)&&!o.horsCarte&&dansZoneCoffre(o,c)).map(o=>{const p=[];
    if(c.degats>0){const n=applyDamage(o,c.degats);floatNumber(o,'−'+n,'perte');p.push(n+' dégât'+(n>1?'s':''))}
@@ -640,7 +653,7 @@ function ouvrirCoffre(c,h,parMJ){if(!c||c.ouvert||(coffreVerrouille(c)&&!parMJ))
   h.richesses={...(h.richesses||{})};CLES_GEMMES.forEach(k=>{const v=Math.trunc(Number(rich[k]))||0;if(v<=0)return;
    h.richesses[k]=(Math.trunc(Number(h.richesses[k]))||0)+v;const [t,va]=k.split('-');gains.push(v+' '+nomGemme(t,va,false).toLowerCase())})}
  log((h?nomNum(h)+' ouvre '+c.nom:c.nom+' s’ouvre')+(gains.length?' : '+gains.join(', '):', vide')+'.',{ton:'butin'});
- if(h&&!parMJ&&enCombat()&&typeof afterAction==='function')afterAction(h);
+ if(h&&enCombat()&&typeof afterAction==='function')afterAction(h);
  render();saveMaps();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 const objetVue=dialog('objet-vue','Objet','<div id="objet-corps"></div>');
 function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o||(!o.visible&&view!=='mj'))return;
@@ -738,7 +751,10 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
     bestiaire, lui, a pu changer depuis. C'est le bestiaire qui fait foi : le modèle du
     même identifiant, ou à défaut du même nom s'il est seul à le porter. La copie ne
     sert plus que si le modèle a disparu. */
- (m.foes||[]).forEach(f=>{const a=fromMonster(modeleActuel(f.tpl));a.x=f.x;a.y=f.y;normalizeActor(a);
+ (m.foes||[]).forEach(f=>{const a=fromMonster(modeleActuel(f.tpl));a.x=f.x;a.y=f.y;
+  // Ce que la carte lui a donné, à lui seul.
+  if(Array.isArray(f.inventaire)&&f.inventaire.length){a.propres={inventaire:[...f.inventaire],butin:{...(f.butin||{})}};ajoutePropres(a,a.propres)}
+  normalizeActor(a);
   if(f.hidden)setState(a,'Invisible',true);
   // Caché par le MJ dans l'éditeur : la troupe ne le voit pas tant qu'il ne le révèle pas d'un clic.
   if(f.cache)a.hidden=true;actors.push(a)});
@@ -827,6 +843,7 @@ mapsPage.innerHTML=
   +'<label id="door-secret-label" hidden><input type="checkbox" id="door-secret"> Passage secret — un mur pour la troupe tant qu’il est clos</label>'
   +'<label id="door-perception-label" hidden>Réussites de Perception pour le trouver <input type="number" id="door-perception" min="1" max="9"></label>'
   +'<label id="foe-cache-label" hidden><input type="checkbox" id="foe-cache"> Caché — le MJ le révèle d’un clic en jeu</label>'
+  +'<button id="foe-objets" hidden>✎ Objets portés</button>'
   +'<label id="door-cle-label" hidden>Clé qui l’ouvre <select id="door-cle"></select></label>'
   +'<button id="coffre-edit" hidden>✎ Modifier le coffre</button><button id="coffre-double" hidden>⧉ Dupliquer le coffre</button>'
  +'<button id="objet-edit" hidden>✎ Modifier l’objet</button>'
@@ -1040,7 +1057,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
  if(porte){$('door-key').checked=!!porte.keyLocked;$('door-secret').checked=!!porte.secret}
  $('door-perception-label').hidden=!(porte&&porte.secret);if(porte&&porte.secret)$('door-perception').value=Number(porte.perception)||1;
- $('foe-cache-label').hidden=!adv;if(adv)$('foe-cache').checked=adv.cache===true;
+ $('foe-cache-label').hidden=$('foe-objets').hidden=!adv;if(adv)$('foe-cache').checked=adv.cache===true;
  const verrou=masse?!!masse.verrou:!!(cible&&cible.locked);
  $('shape-delete').hidden=!mapSel||verrou;$('shape-lock').hidden=!mapSel||mapSel.kind==='coupure'||mapSel.kind==='lien';
  if(mapSel)$('shape-lock').textContent=verrou?'🔓 Déverrouiller':'🔒 Verrouiller';
@@ -1484,6 +1501,14 @@ $('door-secret').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(map
 $('door-perception').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
  pushUndo();d.perception=Math.max(1,Math.min(9,Math.trunc(Number($('door-perception').value))||1));renderCanvas();saveMaps()};
 // Un adversaire caché : la troupe ne le voit pas tant que le MJ ne le révèle pas, d'un clic en jeu.
+/* Ce que cet adversaire-là porte en plus de son modèle, et la chance que chaque pièce tombe : choisi comme
+   l'inventaire d'un adversaire du bestiaire. Les autres du même modèle n'en ont rien. */
+const foeObjetsDialog=dialog('foe-objets-editor','Objets portés','<div id="foe-objets-corps"></div>');
+$('foe-objets').onclick=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;pushUndo();
+ foeObjetsDialog.querySelector('h2').textContent=(f.tpl&&f.tpl.name)||'Adversaire';f.inventaire??=[];f.butin??={};
+ inventaireAdversaire($('foe-objets-corps'),f,()=>saveMaps());
+ foeObjetsDialog.onclose=()=>{f.butin=normaliseButin(f.butin,f.inventaire);if(!f.inventaire.length){delete f.inventaire;delete f.butin}renderCanvas();saveMaps()};
+ foeObjetsDialog.showModal()};
 $('foe-cache').onchange=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;
  pushUndo();if($('foe-cache').checked)f.cache=true;else delete f.cache;renderCanvas();saveMaps()};
 $('coffre-edit').onclick=()=>{if(mapSel&&mapSel.kind==='coffre')openCoffre(mapSel.i)};
