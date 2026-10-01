@@ -1109,7 +1109,8 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
  assert.ok(r.propositions.some(p=>JSON.stringify(p.des)==='{"white":2}'),'2d6 : deux dés simples parmi les propositions');
  assert.equal(new Set(r.propositions.map(p=>Object.keys(p.des).sort().join('+'))).size,6,'six mélanges différents');
  assert.equal(C.conversionDegats('3d8+4').moyenne,13.5,'un bonus tapé n’entre pas dans la moyenne');
- C.conversionDegats('3d8').propositions.forEach(p=>assert.ok(Math.abs(p.moyenne-13.5)<1&&p.n<=7,'proche de 13,5'));
+ C.conversionDegats('3d8').propositions.forEach(p=>assert.ok(Math.abs(p.moyenne-13.5)<1&&p.n<=5,'proche de 13,5'));
+ ['1d4','8d6','10d6','4d12'].forEach(t=>assert.ok(C.conversionDegats(t).propositions.every(p=>p.n<=5&&Object.values(p.des).reduce((x,y)=>x+y,0)<=5),t+' : cinq dés au plus'));
  assert.ok(C.conversionDegats('3d8').propositions.some(p=>Object.keys(p.des).length>1),'des poignées panachées');
  assert.equal(C.conversionDegats('3d8').def,undefined,'une valeur absolue, sans DEF');
  ['2d6','3d8','6d6','7d6'].forEach(t=>assert.ok(C.conversionDegats(t).propositions.every(p=>!p.des.black),t+' : pas de Mortel sous 25'));
