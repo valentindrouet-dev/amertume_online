@@ -815,11 +815,17 @@ const ctxT={actors:table,num:(v,min=0,max=99999)=>Math.max(min,Math.min(max,Numb
  maps:[{foes:[{tpl:{id:'t1',name:'Sbire',pv:12}},{tpl:{id:'t2',name:'Autre',pv:12}},{}]}],saveMaps:()=>{},
  setState:gearApi.setState,structuredClone,normalizeActor:a=>a,poolFrom:()=>null,
  activeAttack:a=>(a.attacks&&a.attacks[0])||{},
- fromMonster:m=>({hero:false,template:m.id,name:m.name,role:m.family||'Adversaire',
+ profilDuModele:m=>({template:m.id,name:m.name,role:m.family||'Adversaire',
   hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,
-  notes:m.notes||'',attacks:structuredClone(m.attacks||[]),image:m.image||null})};
+  notes:m.notes||'',attacks:structuredClone(m.attacks||[]),image:m.image||null}),
+ equipementAdversaire:()=>({}),
+ // Comme le vrai : un acteur neuf, donc pas encore révélé ni numéroté.
+ fromMonster:m=>({hero:false,vu:false,numero:null,orbes:0,usages:{},...ctxT.profilDuModele(m)})};
 vm.createContext(ctxT);
+// Un adversaire révélé et numéroté le reste quand son modèle est corrigé ou seulement enregistré.
+table[1].vu=true;table[1].numero=3;
 vm.runInContext(bloc+';result=syncFromTemplate({id:"t1",name:"Sbire",pv:20})',ctxT);
+assert.ok(table[1].vu===true&&table[1].numero===3,'révélé et numéro tiennent');
 assert.equal(ctxT.result,5);                                    // Cinq créatures suivies.
 assert.equal(table[0].max,24);                                  // Le héros n'a pas bougé.
 assert.equal(table[1].hp+'/'+table[1].max,'20/20');             // Intact, plein au nouveau plafond.
@@ -1365,7 +1371,7 @@ assert.equal(t.toggleEquip(a,o('ar')),null);assert.equal(JSON.stringify(a.armure
  assert.ok(/pas dans l’inventaire/.test(t.toggleEquip({inventaire:[],weapons:[]},o('e'))));
  a.weapons=[];t.toggleEquip(a,o('e'));t.retirerInventaire(a,o('e'));t.retirerInventaire(a,o('e'));assert.equal(JSON.stringify(a.weapons),JSON.stringify([]));assert.ok(!a.inventaire.includes('e'));   // Retirer le dernier exemplaire le repose.
  const b={weapons:['h'],armures:['ar'],shieldId:'',inventaire:[]};t.completerInventaire(b);assert.equal(JSON.stringify(b.inventaire),JSON.stringify(['h','ar']));}
-assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire)}}")&&src.includes("inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin)});equipeAdversaire(a);")
+assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire)}}")&&src.includes("inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin)}}")
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,combat?'':'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
@@ -1688,7 +1694,7 @@ assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaq
  &&!C.TALENTS_CODES.orbes.attaque,'le bouton d’attaque dit « Attaque », le talent qui frappe montre ses dés');
 /* L'Onde d'un camp lève les états avec les blessures, et prend aussi celui qui n'a rien perdu
    mais porte une affliction — empoisonné au complet, il restait sur le carreau. */
-assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&(a.hp<a.max||statesOf(a).length));")
+assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&!estMort(a)&&(a.hp<a.max||statesOf(a).length));")
  &&page.includes("soignes.forEach(a=>{if(a.hp<a.max)rendus++;a.hp=a.max;setState(a,'Coma',false);")&&page.includes("if(typeof reposer==='function')reposer(a,'long');else a.usages={};   // l'Onde vaut un repos long")
  &&page.includes("' remis d’aplomb'+(rendus?' : PV au complet':'')+(leves?(rendus?', ':' : ')+'états levés':'')+'.'")
  &&!page.includes('const blesses=actors.filter'),'l’Onde du camp lève les états, même sans blessure');
@@ -2080,7 +2086,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")&&page.includes("useOwnDamage===false?0:degatsDe(a);")
   &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")&&page.includes("const n=degatsDe(e);applyDamage(a,n);")
   &&src.includes("const aura=view==='mj'&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
-  &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
+  &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
   &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee'];")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")
   &&src.includes(" ecrire('.stat-tile.t-dmg strong','+\\u202F'+degatsDe(a));")&&src.includes("  const r=rondCompetence(a,k);")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
@@ -3274,7 +3280,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxB.journal[0],'Brom trouve ⟦m⟧ ⟦r⟧ ×2 (Troll).','une ligne au journal');
  ctxB.journal.length=0;ctxB.butinDesRetires([{name:'Rat',hero:false,x:0,y:0,inventaire:['m'],butin:{m:40}}],()=>0.4);
  assert.equal(ctxB.journal.length,0,'40 % : un tirage à 40 ne tombe pas');
- assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin)});equipeAdversaire(a);")
+ assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin)}}\nfunction fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);")
   &&src.includes(" if(!a.hero){equipeAdversaire(a);a.butin=normaliseButin(a.butin,a.inventaire)}")
   &&src.includes("const CATS_INV_ADV=[['armes','Armes',")&&src.includes("if(!draft.hero){inventaireAdversaire(boite,draft,refreshEquip);if($('restes-edit'))inventaireAdversaire($('restes-edit'),draft,refreshEquip,'restes');return}"),'inventaire d’adversaire : familles, pioche, butin, tout porté');
  assert.ok(src.includes("r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;")&&css.includes('.bulle-modele .stat-tile strong{font-size:22px;line-height:1.05;margin-top:1px}')
@@ -3365,6 +3371,16 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.505 — Nuée : finir son mouvement sur un token, traverser les adversaires ; corriger un modèle ne rend plus
+   inconnus les adversaires en jeu, et le combat ne se juge que sur la Table ; un aventurier mort ne se soigne plus. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
+ assert.equal(C.texteBrut(C.phraseTalent('nuee',{})),'Le porteur peut finir son mouvement sur un token et traverser les tokens adverses.');
+ const mort={hero:true,vie:0,hp:0,max:6,states:['Coma']},vif={hero:true,vie:2,hp:1,max:6,states:[]},bete={hero:false,hp:1,max:6,states:[]};
+ assert.deepEqual([C.applyHeal(mort,5),mort.hp,C.applyHeal(vif,3),vif.hp,C.applyHeal(bete,2)],[0,0,3,4,2],'un mort ne gagne aucun PV');
+ assert.ok(src.includes("function profilDuModele(m){return {template:m.id,")&&src.includes("gouverne.forEach(k=>{a[k]=neuf[k]});"),'le modèle ne gouverne que son profil');
+ assert.ok(page.includes("// Ailleurs que sur la Table de jeu, le combat ne se juge pas : il attend qu'on y revienne.\n if([...document.body.classList].some(c=>c.startsWith('page-')))return;"),'pas de fin de combat hors de la Table');
+ assert.ok(page.includes("function hpDe(a,delta){if(delta>0&&estMort(a))return;")&&page.includes("&&!estMort(a)&&(a.hp<a.max||statesOf(a).length))")
+  &&page.includes("function reposCourt(a){if(estMort(a))return;")&&page.includes(":estMort(a)?a.name+' est mort : seul le MJ le ressuscite.'"),'un mort : ni soin, ni repos');}
 /* v0.504 — En combat, un test de compétence et l'ouverture d'un coffre coûtent l'Action ; coffres fins, ronds ou tournés,
    dupliqués, piège signalé au MJ, contenu au survol du MJ, invisibles hors de la vue de la troupe ; fiche à cases ; Clés. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),
@@ -3446,7 +3462,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&page.includes("className:'debut-marque',textContent:'!'")&&src.includes("if(t.rayonne)b.classList.add('debut-combat');")&&src.includes('name="debutCombat"'),'les talents de début de combat');
  assert.ok(page.includes("function estMort(a){return !!a&&a.hero===true&&a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0}")
   &&page.includes("+(estMort(a)?' mort':'')")&&src.includes("if(estMort(a)){c.classList.add('mort');")&&src.includes("function ressusciter(a){if(view!=='mj'||!estMort(a))return;")
-  &&src.includes("if(verrou||(estMort(a)&&view!=='mj'))return;")&&src.includes("  if(estMort(a))return;\n  setState(a,'Coma',false);"),'un aventurier mort');}
+  &&src.includes("if(verrou||(estMort(a)&&view!=='mj'))return;")&&src.includes("troupe.forEach(a=>{if(estMort(a))return;"),'un aventurier mort');}
 /* v0.499 — L'Attaque, talent de base de tout aventurier, en tête de sa fiche ; ce qui l'améliore s'ajoute à sa
    bulle et à celle de la barre d'Actions, une pastille devant, à la couleur foncée de la nature du talent. Tous
    les états s'en vont à la fin d'un combat ; le tour qui commence ne parle plus des activations. */

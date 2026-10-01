@@ -995,8 +995,8 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
    return 'Le porteur se soigne de '+combien+' PV '+quand+'.'+(b?' <b>'+b+'</b> l’en empêche tant qu’il le porte.':'')}},
  /* Nuée : le porteur peut occuper l'espace d'un autre socle, et s'y superposer. */
  nuee:{cle:'nuee',nom:'Nuée',type:'pass',monstre:true,
-  aide:'Passif : le porteur peut occuper l’espace d’un autre socle et s’y superposer.',params:[],
-  phrase(){return 'Le porteur peut <b>occuper l’espace d’un autre socle</b> et s’y superposer.'}},
+  aide:'Passif : le porteur peut finir son mouvement sur un token et traverser les tokens adverses.',params:[],
+  phrase(){return 'Le porteur peut <b>finir son mouvement sur un token</b> et <b>traverser les tokens adverses</b>.'}},
  /* Dévorant : en se déplaçant, le porteur blesse chaque socle adverse qu'il fait entrer dans sa zone
     de contact, même en passant — une fois par socle et par déplacement. */
  devorant:{cle:'devorant',nom:'Dévorant',type:'pass',monstre:true,
@@ -1646,7 +1646,8 @@ function ondeCures(a){const l=statesOf(a).filter(e=>!ONDE_EXCLUS.includes(e));re
 /* Les dégâts d'un effet ne se défendent pas : ni DEF, ni blindage, ni saignée. */
 function applyDamage(a,montant){const perdu=Math.min(a.hp,Math.max(0,Math.trunc(montant)||0));
  a.hp=Math.max(0,a.hp-perdu);if(a.hp===0)setState(a,'Coma',true);return perdu}
-function applyHeal(a,montant){const gagne=Math.min(Math.max(0,a.max-a.hp),Math.max(0,Math.trunc(montant)||0));
+// Un aventurier mort ne se soigne plus, d'aucune façon : seul le MJ le ressuscite.
+function applyHeal(a,montant){if(a&&a.hero===true&&a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0)return 0;const gagne=Math.min(Math.max(0,a.max-a.hp),Math.max(0,Math.trunc(montant)||0));
  a.hp+=gagne;if(a.hp>0)setState(a,'Coma',false);return gagne}
 /* ---------- Caractéristiques corrigées à la main ---------- */
 /* Chaque caractéristique a ses bornes, les mêmes que dans le formulaire de fiche.

@@ -689,7 +689,7 @@ function recalculerPV(a){if(!a||!a.hero)return false;
  const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;a.pvBonus=bonusPV(catalog.classes,a.role,a.race);
  const delta=aura-(Number(a.auraPv)||0);a.auraPv=aura;
  if(max===a.max&&!delta)return false;
- writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}
+ writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}
 // À chaque rendu du MJ, les PV max de la troupe se relisent : un nœud appris, un Meneur qui s'approche.
 function synchronisePV(){if(view!=='mj')return false;let change=false;
  actors.forEach(a=>{if(a&&a.hero&&recalculerPV(a))change=true});return change}
@@ -1382,8 +1382,8 @@ function reposLong(){if(view!=='mj')return;const troupe=actors.filter(a=>a&&a.he
  if(typeof enCombat==='function'&&enCombat()){alert('Pas de repos long en plein combat.');return}
  if(!confirm('Repos long pour toute la troupe ?\nVIE et PV au maximum, repos courts et charges rendus, états levés sauf le Blindage.'))return;
  const revenus=[];
- troupe.forEach(a=>{if(Number.isFinite(Number(a.vieMax)))a.vie=Number(a.vieMax);if(typeof recalculerPV==='function')recalculerPV(a);
-  if(estMort(a))return;
+ troupe.forEach(a=>{if(estMort(a))return;   // Un mort ne se repose plus : seul le MJ le ressuscite.
+  if(Number.isFinite(Number(a.vieMax)))a.vie=Number(a.vieMax);if(typeof recalculerPV==='function')recalculerPV(a);
   setState(a,'Coma',false);a.hp=a.max;a.comaVie=false;a.reposCourts=0;a.reposPris=false;reposer(a,'long');if(typeof leveEtats==='function')leveEtats(a);
   if(a.horsCarte){a.horsCarte=false;revenus.push(a)}});
  // Qui revient se pose dans la zone de départ de la carte ouverte.
@@ -4289,7 +4289,9 @@ let editing=null,draft=null,attackDraft=[],templateIndex=null,itemIndex=null,ite
 let templateNeuf=false;
 // Un aventurier commence au niveau 1 avec Vie 3, Endu 2 et Dégâts +0 ; sa classe ajoute ses PV et ses compétences.
 function baseActor(hero){return normalizeActor({name:hero?'Nouvel aventurier':'Nouveau monstre',hero,role:hero?'Aventurier':'Adversaire',...(hero?{hp:6,max:6,vie:3,vieMax:3,endu:2,dmg:0,level:1,xp:0}:{hp:12,max:12,dmg:2}),def:2,x:50,y:60,pool:[2,0,0,0,0,0,0],checks:[false,false,false],target:null,skills:Array(8).fill(0)})}
-function fromMonster(m){const a=baseActor(false);Object.assign(a,{template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,weapons:[...(m.weapons||[])],armures:[...armuresDe(m)],shieldId:m.shieldId||'',inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin)});equipeAdversaire(a);a.activeAttack=0;a.pool=poolOf(a);return a}
+// Ce que le modèle du bestiaire dit d'une créature, et rien d'autre : le reste est l'état de la partie.
+function profilDuModele(m){return {template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,weapons:[...(m.weapons||[])],armures:[...armuresDe(m)],shieldId:m.shieldId||'',inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin)}}
+function fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);a.activeAttack=0;a.pool=poolOf(a);return a}
 function openActor(index=null,hero=true,template=null,neuf=false){if(view!=='mj')return;
  if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;templateNeuf=!!neuf&&template===null&&!hero;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero||templateNeuf;renderActorForm();actorDialog.showModal()}
 function renderActorForm(){const a=draft;const weaponOptions=[['','Aucune'],...catalog.items.filter(w=>w.category==='weapon').map(w=>[w.id,w.name])];const armorOptions=slot=>[['','Aucune'],...catalog.items.filter(w=>w.category==='armor'&&w.slot===slot).map(w=>[w.id,w.name])];
@@ -4486,12 +4488,14 @@ function syncFromTemplate(m){let touches=0;syncCartes(m);
  actors.forEach(a=>{if(a.hero)return;
   if(!suitLeModele(a,m))return;a.template=m.id;
   const plein=a.hp>=a.max,neuf=fromMonster(m);
-  // Le modèle gouverne exactement ce que « fromMonster » sait produire : comparer clé
-  // par clé, et non deux sérialisations dont l'ordre d'insertion diffère toujours.
-  const pareil=Object.keys(neuf).every(k=>EN_JEU.includes(k)
-   ||JSON.stringify(a[k])===JSON.stringify(neuf[k]));
+  /* Le modèle gouverne son profil et l'équipement qui en découle, rien d'autre : révélé, numéro,
+     charges, garde, orbes restent ceux de la partie. Sans quoi corriger un modèle, ou seulement
+     l'enregistrer, rendait inconnus les adversaires en jeu et le combat prenait fin. Comparer clé
+     par clé, et non deux sérialisations dont l'ordre d'insertion diffère toujours. */
+  const gouverne=[...new Set([...Object.keys(profilDuModele(m)),...Object.keys(equipementAdversaire(neuf,catalog.items)),'pool'])].filter(k=>!EN_JEU.includes(k));
+  const pareil=gouverne.every(k=>JSON.stringify(a[k])===JSON.stringify(neuf[k]));
   if(pareil&&a.max===Math.max(1,num(m.pv,1,99999)))return;
-  Object.keys(neuf).forEach(k=>{if(!EN_JEU.includes(k))a[k]=neuf[k]});
+  gouverne.forEach(k=>{a[k]=neuf[k]});
   a.max=Math.max(1,num(m.pv,1,99999));
   a.hp=plein?a.max:Math.min(a.hp,a.max);
   a.activeAttack=Math.min(a.activeAttack||0,Math.max(0,(a.attacks||[]).length-1));
