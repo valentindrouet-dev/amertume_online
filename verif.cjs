@@ -12,6 +12,13 @@ for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','edi
 for(const f of ['editor.js','index.html','combat.js','maps.js','domaine.js','live.js','shared.js']){const t=fs.readFileSync(f,'utf8'),vus=new Map();
  for(const m of t.matchAll(/^(?:async )?(?:function\*? ([A-Za-z_$][\w$]*)|(?:const|let|class) ([A-Za-z_$][\w$]*))/gm)){const n=m[1]||m[2];
   if(vus.has(n)){console.error('✗ '+f+' : « '+n+' » déclaré deux fois');process.exit(1)}vus.set(n,1)}}
+// 2 bis. Entre les scripts de la page, un même nom déclaré deux fois : le second écrase le premier sans bruit
+//    (une fonction) ou empêche tout le fichier de se charger (const, let). La v0.478 a cassé la table ainsi.
+{const page=fs.readFileSync('index.html','utf8'),vus=new Map();
+ const srcs=[...page.matchAll(/<script src="\.\/([^"?]+)/g)].map(m=>m[1]).filter(f=>!/polygon|firebase/.test(f)).map(f=>[f,fs.readFileSync(f,'utf8')]);
+ const inl=[...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/g)].map((m,i)=>['index.html (script '+(i+1)+')',m[1]]);
+ for(const [f,t] of [...srcs,...inl])for(const m of t.matchAll(/^(?:async )?(?:function\*? ([A-Za-z_$][\w$]*)|(?:const|let|class) ([A-Za-z_$][\w$]*))/gm)){const n=m[1]||m[2];
+  if(vus.has(n)&&vus.get(n)!==f){console.error('✗ « '+n+' » déclaré dans '+vus.get(n)+' et dans '+f);process.exit(1)}vus.set(n,f)}}
 // 3. Les trois jeux de tests ; sur un échec, la ligne et les chaînes manquantes. Avec « --epure »,
 //    une vérification par chaîne devenue fausse est ôtée de checks.cjs, et l'on recommence : c'est
 //    le sort d'une copie de ligne de code après un changement voulu — elle ne testait rien du jeu.

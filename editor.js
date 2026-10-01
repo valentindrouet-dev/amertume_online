@@ -1693,13 +1693,13 @@ function motsCles(){const perso=(catalog&&catalog.motsCles)||[],cle=perso.join('
 const DES_ACCOLADES=new Map([['blanc',0],['simple',0],['os',1],['ivoire',1],['beige',1],['leger',1],['rouge',2],['lourd',2],['bleu',3],['mystique',3],['vert',4],['soin',4],['noir',5],['mortel',5],['jaune',6],['phase',6]]);
 const ACCOLADES_DES=/\{(\p{L}{2,12})\}/gu;
 const deAccolade=k=>{const c=DES_ACCOLADES.get(String(k).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());return c===undefined?-1:c};
-function iconeDe(c){const d=document.createElement('i');d.className='die-sq de-texte';d.style.setProperty('--face',dieFace(c));d.title='Dé '+types[c];d.setAttribute('role','img');d.setAttribute('aria-label','dé '+types[c]);return d}
+function deDansTexte(c){const d=document.createElement('i');d.className='die-sq de-texte';d.style.setProperty('--face',dieFace(c));d.title='Dé '+types[c];d.setAttribute('role','img');d.setAttribute('aria-label','dé '+types[c]);return d}
 // Le même dé dans un texte HTML déjà échappé, pour l'export : une image.
 const desEnImages=html=>String(html||'').replace(new RegExp(ACCOLADES_DES.source,'gu'),(m,k)=>{const c=deAccolade(k);return c<0?m:'<img class="de" src="'+dieFace(c).slice(5,-2)+'" alt="dé '+types[c]+'">'});
 function texteEnrichi(el,texte){texte=String(texte||'');el.replaceChildren();
  // Les dés d'abord ; entre eux, le texte se colore comme avant.
  const rd=new RegExp(ACCOLADES_DES.source,'gu');let fin=0,d;
- while((d=rd.exec(texte))){const c=deAccolade(d[1]);if(c<0)continue;if(d.index>fin)motsDans(el,texte.slice(fin,d.index));el.append(iconeDe(c));fin=rd.lastIndex}
+ while((d=rd.exec(texte))){const c=deAccolade(d[1]);if(c<0)continue;if(d.index>fin)motsDans(el,texte.slice(fin,d.index));el.append(deDansTexte(c));fin=rd.lastIndex}
  if(fin<texte.length)motsDans(el,texte.slice(fin));return el}
 function motsDans(el,texte){const {rx,entrees}=motsCles();rx.lastIndex=0;let last=0,m;
  const gras=(mot,couleur)=>{const b=document.createElement('b');b.className='mot-cle';b.textContent=mot;if(couleur)b.style.color=couleur;el.append(b)};
