@@ -1282,6 +1282,9 @@ function libelleBonusEl(p){const n=Math.max(1,(p&&p.valeur)|0),c=(p&&p.carac)||'
  const nom=document.createElement('span');nom.className='bonus-carac';
  nom.textContent=c==='comp'?String(skillNames[k]||'').toUpperCase():c==='orbe'?(n>1?'ORBES':'ORBE'):(NOM_BONUS_BULLE[c]||'PV');
  const tint=c==='comp'?SKILL_TINTS[k]:c==='orbe'?'138,99,201':STAT_TINTS[c];if(tint)nom.style.color='rgb('+tint+')';
+ // Une compétence prend la couleur de son rond sur la fiche : celle de son logo, la sienne à défaut.
+ if(c==='comp'){nom.classList.add('bonus-comp');nom.style.setProperty('--tint',tint);nom.style.color='rgb(var(--tint))';
+  const l=iconesCompetences()[k],ico=l?logoCompetence(k):null;if(ico)teinteLogoSur(nom,ico,l)}
  s.append(plus,' ',nom);return s}
 /* Le dépliant ne dit que l'essentiel : le nom, la valeur en or d'une arme ou d'une armure — les
    dés et la DEF sont sur le carré —, l'état qu'elle inflige s'il y en a un. */

@@ -3365,6 +3365,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.495 — Le bonus d'une compétence, dans l'arbre comme dans la bulle d'un objet, a la couleur
+   de son rond sur la fiche (la teinte de son logo, la sienne à défaut) ; dans la bulle d'un objet,
+   il s'écrit en Killam. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("if(c==='comp'){nom.classList.add('bonus-comp');nom.style.setProperty('--tint',tint);nom.style.color='rgb(var(--tint))';")
+  &&src.includes("const l=iconesCompetences()[k],ico=l?logoCompetence(k):null;if(ico)teinteLogoSur(nom,ico,l)}"),'la teinte du rond de la fiche');
+ assert.ok(css.includes(".gear-detail .gear-bonus .bonus-comp{font-family:'Killam',Georgia,serif}"),'Killam dans la bulle d’objet');}
 /* v0.494 — La scène de base ne paraît plus au rechargement : le voile de chargement est dans la
    page dès le premier affichage. La planche Compétences est au dépôt et se propose en tête des
    icônes de compétences, comme la planche Caractéristiques. */

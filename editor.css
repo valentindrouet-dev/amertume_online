@@ -1157,6 +1157,8 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 .gear-detail .gear-rarete{font:600 11px system-ui;letter-spacing:2px;text-transform:uppercase}
 .gear-detail .gear-rarete.r-rare{color:#4d7fb0}.gear-detail .gear-rarete.r-mystique{color:#7a5fc0}.gear-detail .gear-rarete.r-epique{color:#c26a2f}.gear-detail .gear-rarete.r-ressource{color:#8a6536}
 .gear-detail .gear-bonus{font-weight:700;color:#2f6d3a}
+/* Dans la bulle d'un objet, la compétence s'écrit en Killam, comme son nom sur la fiche. */
+.gear-detail .gear-bonus .bonus-comp{font-family:'Killam',Georgia,serif}
 /* Les lignes de bonus du formulaire d'objet. */
 .bonus-ligne{display:flex;align-items:center;gap:6px;margin:4px 0}.bonus-ligne .bonus-plus{font:800 16px system-ui;color:var(--muted)}
 .bonus-ligne input{width:64px;margin:0}.bonus-ligne select{width:auto;flex:1;margin:0}.bonus-ligne select[hidden]{display:none}
