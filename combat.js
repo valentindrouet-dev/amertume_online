@@ -1564,29 +1564,38 @@ function lireDegatsDnd(texte){const t=String(texte||'').toLowerCase().replace(/\
  if(lu.replace(/^\+/,'')!==t.replace(/^\+/,'')||!des.length)return {erreur:'Lecture impossible : écris par exemple 2d6+3.'};
  const moyenne=des.reduce((s,d)=>s+d.n*(d.f+1)/2,0)+bonus;
  return {des,bonus,moyenne,min:Math.max(0,des.reduce((s,d)=>s+d.n,0)+bonus),max:des.reduce((s,d)=>s+d.n*d.f,0)+bonus}}
-/* La moyenne d'une poignée de dés d'une même couleur, lancée par le moteur contre une DEF : les dégâts
-   des dés, et la part des jets qui touchent — c'est sur eux seuls que le bonus s'ajoute. Le hasard est
-   semé : les mêmes questions donnent les mêmes réponses, sans tremblement à la frappe. */
-function moyenneDesAmertume(couleur,n,def,essais=1600){const c=DICE_KEYS.indexOf(couleur);let graine=97+n*131+c*977+(Number(def)||0)*7919;
+/* La moyenne d'une poignée de dés, panachée ou non — « {white:2,red:1} » —, lancée par le moteur contre
+   une DEF : les dégâts des dés, et la part des jets qui touchent. Le critique relance la première couleur
+   de la poignée, comme en jeu, le Léger en dernier. Le hasard est semé : les mêmes questions donnent les mêmes réponses. */
+function moyennePoignee(poignee,def,essais=1600){const couleurs=[];DICE_KEYS.forEach((k,c)=>{for(let i=0;i<(Number(poignee&&poignee[k])||0);i++)couleurs.push(c)});
+ if(!couleurs.length)return {moyenne:0,touche:0};
+ let graine=97+(Number(def)||0)*7919;couleurs.forEach((c,i)=>{graine=(graine*31+c*977+i*131)%2147483647});
  const d6=()=>{graine=(graine*1103515245+12345)%2147483648;return 1+Math.floor(graine/2147483648*6)};
- let somme=0,touche=0;
- for(let i=0;i<essais;i++){const dice=Array.from({length:n},()=>[d6(),c]);
-  const r=resolveAttack({dice,def:Number(def)||0,dmg:0,round:1,criticalColor:c,roll:d6});
+ // Un Léger qui double s'efface avant le critique : il ne relance donc que s'il est seul de sa sorte.
+ const autres=couleurs.filter(c=>c!==4&&c!==1),crit=autres.length?Math.min(...autres):1;let somme=0,touche=0;
+ for(let i=0;i<essais;i++){const dice=couleurs.map(c=>[d6(),c]);let r;
+  try{r=resolveAttack({dice,def:Number(def)||0,dmg:0,round:1,criticalColor:crit,roll:d6})}catch(e){continue}
   if(r.hit){touche++;somme+=r.damage}}
  return {moyenne:somme/essais,touche:touche/essais}}
-// Les trois familles proposées, de la plus simple à la plus puissante.
-const CONVERSION_DES=[['white','Dés simples','Des dés simples : la DEF écarte leurs faces basses.'],
- ['red','Dés lourds','Des dés lourds : ils passent toujours la DEF.'],
- ['blue','Dés mystiques','Des dés mystiques : une paire double leurs dégâts.']];
-function conversionDegats(texte,def){const dnd=lireDegatsDnd(texte);if(dnd.erreur)return dnd;
- /* La moyenne des seuls dés. Au-delà de dix dés, deux 1 tombent presque à coup sûr et le jet échoue :
-    la poignée s'arrête là. Entre deux poignées aussi proches, la plus courte l'emporte. */
- const moyenne=dnd.des.reduce((s,d)=>s+d.n*(d.f+1)/2,0),plafond=Math.max(2,Math.min(10,Math.ceil(moyenne/2.5)+2));
- const propositions=CONVERSION_DES.map(([couleur,nom,dit])=>{let mieux=null;
-  for(let n=1;n<=plafond;n++){const s=moyenneDesAmertume(couleur,n,def),score=Math.abs(s.moyenne-moyenne)+.05*n;
-   if(!mieux||score<mieux.score)mieux={couleur,nom,dit,n,moyenne:s.moyenne,touche:s.touche,score}}
-  return mieux});
- return {...dnd,moyenne,min:dnd.des.reduce((s,d)=>s+d.n,0),max:dnd.des.reduce((s,d)=>s+d.n*d.f,0),def:Number(def)||0,propositions}}
+function moyenneDesAmertume(couleur,n,def,essais=1600){return moyennePoignee({[couleur]:n},def,essais)}
+// Les dés que la conversion panache : Simple, Léger, Lourd, Mystique, Mortel — ni le Soin, ni la Phase, qui suit le tour.
+const CONVERSION_COULEURS=['white','bone','red','blue','black'];
+function conversionDegats(texte,def,combien=6){const dnd=lireDegatsDnd(texte);if(dnd.erreur)return dnd;
+ /* La moyenne des seuls dés D&D ; un bonus fixe n'y entre pas. Toutes les poignées panachées jusqu'à sept
+    dés sont lancées une première fois, vite ; les plus proches le sont de nouveau, longuement. On en garde
+    les plus proches, une par mélange de couleurs d'abord, pour que les propositions varient. Au-delà, deux
+    1 tombent trop souvent et le jet échoue. */
+ const moyenne=dnd.des.reduce((s,d)=>s+d.n*(d.f+1)/2,0),maxDes=Math.max(2,Math.min(7,Math.ceil(moyenne/3)+2));
+ const poignees=[],remplis=(k,reste,p)=>{if(k===CONVERSION_COULEURS.length){const n=Object.values(p).reduce((x,y)=>x+y,0);if(n)poignees.push({...p});return}
+  for(let q=0;q<=reste;q++){const c={...p};if(q)c[CONVERSION_COULEURS[k]]=q;remplis(k+1,reste-q,c)}};
+ remplis(0,maxDes,{});
+ const note=(p,essais)=>{const s=moyennePoignee(p,def,essais),n=Object.values(p).reduce((x,y)=>x+y,0);return {des:p,n,moyenne:s.moyenne,touche:s.touche,score:Math.abs(s.moyenne-moyenne)+.05*n}};
+ const tri=(x,y)=>x.score-y.score;
+ const fins=poignees.map(p=>note(p,300)).sort(tri).slice(0,48).map(c=>note(c.des,2400)).sort(tri);
+ const signe=c=>Object.keys(c.des).sort().join('+'),pris=[],vus=new Set();
+ fins.forEach(c=>{if(pris.length<combien&&!vus.has(signe(c))){vus.add(signe(c));pris.push(c)}});
+ fins.forEach(c=>{if(pris.length<combien&&!pris.includes(c))pris.push(c)});
+ return {...dnd,moyenne,min:dnd.des.reduce((s,d)=>s+d.n,0),max:dnd.des.reduce((s,d)=>s+d.n*d.f,0),def:Number(def)||0,propositions:pris.sort(tri)}}
 const NIVEAUX_XP=[0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000];
 function niveauDeXp(xp){const n=Math.max(0,Math.trunc(Number(xp))||0);let niv=1;NIVEAUX_XP.forEach((s,i)=>{if(n>=s)niv=i+1});return niv}
 function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
@@ -1921,7 +1930,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyenneDesAmertume,CONVERSION_DES,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  NIVEAUX_XP,niveauDeXp,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,

@@ -718,10 +718,44 @@ function detailPvMax(a){const b=bonusDe(a,catalog.talents,catalog.items);
  if(aura)l.push(['Meneur allié','+ '+aura]);
  l.push(['Total',String(a.max)]);return l}
 function detailDegats(a){const b=bonusDe(a,catalog.talents,catalog.items),bt=bonusDe(a,catalog.talents,null),aura=typeof auraMeneur==='function'?auraMeneur(a,'dmg'):0;
- const l=[['Dégâts','= fiche + bonus'],['Fiche (saisie)',String(Number(a.dmg)||0)]];
+ const l=[['Dégâts','= base + bonus'],['Base',String(Number(a.dmg)||0)]];
  if(bt.dmg)l.push(['Talents','+ '+bt.dmg]);if(b.dmg-bt.dmg)l.push(['Équipement','+ '+(b.dmg-bt.dmg)]);if(aura)l.push(['Meneur allié','+ '+aura]);
+ {const t=typeof tenailles==='function'?tenailles(a):0;if(t)l.push(['Pris en tenailles','+ '+t])}
  if(typeof meuteActive==='function'&&meuteActive(a))l.push(['Meute (allié au contact)','× 2']);
  l.push(['Total','+'+degatsDe(a)]);return l}
+/* Les bulles des chiffres, au survol de chacun : d'où il vient, ligne par ligne, le total au bas.
+   Talents et équipement se lisent à part : on sait quel nœud de l'arbre ou quelle pièce compte. */
+const partsBonus=(a,cle)=>{const b=bonusDe(a,catalog.talents,catalog.items),bt=bonusDe(a,catalog.talents,null),l=[];
+ if(bt[cle])l.push(['Talents','+ '+bt[cle]]);if(b[cle]-bt[cle])l.push(['Équipement','+ '+(b[cle]-bt[cle])]);return l};
+// La Vie : celle du moment sur la Vie max, d'où vient le maximum, et ce qu'elle pèse dans les PV max.
+function detailVie(a){const b=bonusDe(a,catalog.talents,catalog.items),base=Math.max(0,Math.trunc(Number(a.vieMax??a.vie))||0),max=base+b.vie;
+ const endu=enduAffichee(a),vie=vieAffichee(a),c=classeDe(catalog.classes,a.role),classe=(c&&Number(c.pv))||0,reste=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)-endu*vie;
+ return [['Vie',vie+' / '+max],['Vie max de base',String(base)],...partsBonus(a,'vie'),['PV max','= Endu × Vie + '+(c&&c.name||'classe')+(reste!==classe?' + bonus':'')],
+  ['Endu × Vie',endu+' × '+vie+' = '+endu*vie],[c&&c.name?'Classe ('+c.name+')':'Classe','+ '+classe],...(reste!==classe?[['Autres bonus','+ '+(reste-classe)]]:[]),
+  ['PV max',String(pvMaximum(catalog.classes,a,catalog.talents,catalog.items))]]}
+// L'Endurance : la base, puis ce que donnent les talents et l'équipement.
+function detailEndu(a){const base=Math.max(0,Math.trunc(Number(a.endu))||0);
+ return [['Endurance',String(enduAffichee(a))],['Base',String(base)],...partsBonus(a,'endu'),['Total',String(enduAffichee(a))]]}
+// Les PV : ceux du moment sur le maximum, le calcul du maximum, et le maximum qui joue maintenant, Meneur compris.
+function detailPv(a){const tete=['PV',(Number(a.hp)||0)+' / '+(Number(a.max)||0)];
+ if(!a.hero)return [tete,['PV max',String(Number(a.max)||0)]];
+ const l=detailPvMax(a);l[l.length-1]=['PV max actuels',String(a.max)];return [tete,...l]}
+/* La DEF : chaque pièce portée qui en donne — armures et bouclier —, puis les bonus, le Meneur, ce
+   qu'une Brise a retiré ; un adversaire sans armure garde la DEF de sa fiche. Le plafond se dit s'il mord. */
+function detailDef(a){const l=[['DEF','= armure + bonus']],pieces=[...armuresDe(a),a.shieldId].filter(Boolean).map(id=>(catalog.items||[]).find(o=>o&&o.id===id)).filter(Boolean);
+ pieces.forEach(o=>{const d=Number(o.def)||0;if(d)l.push([(o.id===a.shieldId?'Bouclier':'Armure')+' : '+o.name,'+ '+d])});
+ if(!a.hero&&equippedDef(a,catalog.items)===null)l.push(['Base',String(Number(a.def)||0)]);
+ if(a.hero&&!pieces.some(o=>Number(o.def)))l.push(['Aucune armure','0']);
+ l.push(...partsBonus(a,'def'));
+ const aura=typeof auraMeneur==='function'?auraMeneur(a,'def'):0;if(aura)l.push(['Meneur allié','+ '+aura]);
+ if(a.defBrisee>0)l.push(['Brisée','− '+a.defBrisee]);
+ const brut=defenseOf(a,catalog.items)+bonusDe(a,catalog.talents,catalog.items).def+aura-(a.defBrisee>0?a.defBrisee:0);
+ if(brut>DEF_MAX)l.push(['Plafond','DEF '+DEF_MAX]);
+ l.push(['Total',String(defOf(a))]);return l}
+// Les bulles d'une rangée de chiffres : chaque tuile reçoit la sienne, et l'écu de la DEF perd son ancien titre.
+function bullesChiffres(a,tuiles){const quoi={vie:detailVie,endu:detailEndu,pv:detailPv,def:detailDef,dmg:detailDegats,xp:detailXp};
+ tuiles.forEach(t=>{const cle=[...t.classList].map(c=>/^t-(\w+)$/.exec(c)).filter(Boolean).map(m=>m[1])[0],f=quoi[cle];
+  if(!f||(cle==='xp'&&!a.hero))return;calculAuSurvol(t,()=>f(a));if(BULLES){const e=t.querySelector('.ecu');if(e)e.removeAttribute('title')}})}
 // L'XP d'un aventurier au survol : son niveau, le suivant et ce qu'il reste à gagner pour l'atteindre.
 function detailXp(a){const xp=Math.max(0,Math.trunc(Number(a.xp))||0),niv=niveauDeXp(xp),f=n=>n.toLocaleString('fr-FR')+' XP';
  const l=[['Niveau '+niv,f(xp)]];
@@ -904,7 +938,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // Le MJ corrige un chiffre là où il le lit ; les PV max se calculent, ils ne se saisissent pas.
  tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg'],['xp']],c);
  // Au survol, le calcul : d'où viennent les PV max, et les Dégâts.
- calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));if(a.hero)calculAuSurvol(tuiles[5],()=>detailXp(a));
+ bullesChiffres(a,tuiles);
  // Vie, Endu, PV max, Dégâts et XP se lisent à leur icône, la valeur posée au bas ; la DEF garde son écu.
  [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([carac,k])=>iconeStat(tuiles[k],carac));
  chiffres.classList.add('en-icones','cadre-chiffres');chiffres.style.setProperty('--classe',teinte);chiffres.append(...tuiles);
@@ -997,8 +1031,8 @@ function groupesLogosCompetence(){const vus=new Set(),groupes=[];
  [...famillesPlanches(),...FAMILLES_LOGOS].forEach(([t,l])=>{const reste=l.filter(x=>!vus.has(x));if(reste.length)groupes.push([t,reste])});return groupes}
 /* ---------- La conversion des dégâts de D&D 5.5 ----------
    Un dé, en haut à côté de la vue, au MJ : on y écrit des dés de D&D — « 3d8 » — et la fenêtre propose
-   trois poignées de dés d'Amertüme, simples, lourds ou mystiques, sans bonus de dégâts, dont la moyenne,
-   lancée par le moteur contre la DEF choisie, s'en approche le plus. */
+   six poignées de dés d'Amertüme, panachées, sans bonus de dégâts, dont la moyenne, lancée par le moteur
+   contre la DEF choisie, s'en approche le plus. */
 const conversionDialog=dialog('conversion-des','Conversion des dégâts','<form id="conversion-form" class="conversion-form"><div class="conversion-champs">'
  +'<label>Dégâts D&amp;D 5.5<input id="conversion-dnd" placeholder="3d8" autocomplete="off" spellcheck="false"></label>'
  +'<label>DEF de la cible<select id="conversion-def">'+[0,1,2,3,4,5,6].map(n=>'<option value="'+n+'">'+n+'</option>').join('')+'</select></label></div>'
@@ -1010,12 +1044,10 @@ function renderConversion(){const boite=$('conversion-resultat'),err=$('conversi
  const f=n=>(Math.round(n*10)/10).toLocaleString('fr-FR');
  const dnd=document.createElement('p');dnd.className='conversion-dnd';dnd.innerHTML='<b>'+esc(texte.trim())+'</b> : <b>'+f(r.moyenne)+'</b> dégâts en moyenne, de '+r.min+' à '+r.max;boite.append(dnd);
  const grille=document.createElement('div');grille.className='conversion-grille';
- r.propositions.forEach(p=>{const c=document.createElement('div');c.className='conversion-carte de-'+p.couleur;
-  const t=document.createElement('p');t.className='conversion-nom';t.textContent=p.nom;
-  const des=desEtBonus({[p.couleur]:p.n},0,false);des.classList.add('conversion-des');
+ r.propositions.forEach(p=>{const c=document.createElement('div');c.className='conversion-carte';
+  const des=desEtBonus(p.des,0,false);des.classList.add('conversion-des');
   const m=document.createElement('p');m.className='conversion-moyenne';m.innerHTML='≈ <b>'+f(p.moyenne)+'</b> dégâts en moyenne<br>touche '+Math.round(p.touche*100)+' %';
-  const dit=document.createElement('p');dit.className='conversion-dit';dit.textContent=p.dit;
-  c.append(t,des,m,dit);grille.append(c)});
+  c.append(des,m);grille.append(c)});
  boite.append(grille)}
 let conversionMinuteur=0;
 const conversionPlusTard=()=>{clearTimeout(conversionMinuteur);conversionMinuteur=setTimeout(renderConversion,180)};
@@ -3696,7 +3728,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  if(a){const r=document.createElement('div');r.className='stat-row en-icones cadre-chiffres arbres-chiffres';r.style.setProperty('--classe',typeof actorTint==='function'?actorTint(a):encre||'#8a7a63');
   const pvMax=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+(Number(a.auraPv)||0);
   const t=[['vie','Vie',vieAffichee(a)],['endu','Endu',enduAffichee(a)],['pv','PV max',pvMax],['def','DEF',defOf(a),true],['dmg','Dég.','+ '+degatsDe(a)],['xp','XP',a.xp||0]].map(x=>statTile(...x));
-  [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([c,k])=>iconeStat(t[k],c));r.append(...t);tete.append(r)}
+  [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([c,k])=>iconeStat(t[k],c));bullesChiffres(a,t);r.append(...t);tete.append(r)}
  // L'élément du Mystique, au-dessus de l'arbre : le MJ le choisit, le joueur le lit.
  if(elementaire)tete.append(choixElement(a,classe));
  // L'XP de l'aventurier : ce que l'arbre a coûté, et ce qui reste à dépenser.

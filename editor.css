@@ -1967,7 +1967,6 @@ body.sombre .biblio-table .utilise{background:#1e3a26;color:#9fd3a8}
 .conversion-carte .conversion-des .die-sq{flex:0 0 24px;width:24px;height:24px}
 .conversion-carte .conversion-des .bonus{font-size:18px}
 .conversion-moyenne{margin:0;font-size:13px;line-height:1.4;color:var(--muted)}.conversion-moyenne b{font-size:16px;color:var(--ink)}
-.conversion-dit{margin:0;font-size:11.5px;line-height:1.35;color:var(--muted);font-style:italic}
 @media (max-width:620px){.conversion-grille{grid-template-columns:1fr}}
 /* Au journal, les dés d'un test de compétence : 4+ en vert, en dessous en rouge. */
 .j-test .j-face{font-weight:800}.j-test .j-face.ok{color:#2e8b3e}.j-test .j-face.ko{color:#b8402d}

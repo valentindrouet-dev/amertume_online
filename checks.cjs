@@ -1100,18 +1100,20 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
  assert.ok(src.includes("const table=document.createElement('table');table.className='biblio-table';")&&src.includes("function ligneEffet(c,classe,rangs,parent){")
   &&src.includes("function phraseReglee(c){")&&src.includes("function filtreBiblio(){")&&src.includes('id="biblio-filtre"')&&src.includes("tr.className='effet-ligne t-'+(c.type||'act')+(parent?' ame-de':c.type==='ame'?' ame-libre':'');")
   &&src.includes("localStorage.getItem('amertume-biblio-plis')")&&feuille.includes('.biblio-table tr.ame-de td{')&&feuille.includes('.biblio-table .col-dit b.reglable{'),'la bibliothèque en tableau');}
-/* La conversion des dégâts de D&D 5.5 : l'expression lue — d4 à d12 et un bonus —, sa moyenne, et trois
-   poignées d'Amertüme dont la moyenne, lancée par le moteur, s'en approche ; 2d6 donne 2 dés simples. */
+/* La conversion des dégâts de D&D 5.5 : les dés lus — d4 à d12 —, leur moyenne, et six poignées d'Amertüme
+   panachées, sans bonus, dont la moyenne, lancée par le moteur, s'en approche ; des mélanges différents d'abord. */
 {assert.deepEqual(C.lireDegatsDnd('2d6+3'),{des:[{n:2,f:6}],bonus:3,moyenne:10,min:5,max:15});
  assert.equal(C.lireDegatsDnd('d8 + 1d4 - 1').moyenne,6);assert.ok(C.lireDegatsDnd('1d20').erreur,'un d20 ne se convertit pas');assert.ok(C.lireDegatsDnd('abc').erreur);
- const r=C.conversionDegats('2d6',0);assert.equal(r.propositions.length,3);
- assert.deepEqual([r.propositions[0].couleur,r.propositions[0].n],['white',2],'2d6 : deux dés simples');
- r.propositions.forEach(p=>assert.equal(p.bonus,undefined,'des dés seuls, sans bonus'));
+ const r=C.conversionDegats('2d6',0);assert.equal(r.propositions.length,6);
+ r.propositions.forEach(p=>{assert.ok(Math.abs(p.moyenne-7)<0.6,'proche de 7');assert.equal(p.bonus,undefined,'des dés seuls')});
+ assert.ok(r.propositions.some(p=>JSON.stringify(p.des)==='{"white":2}'),'2d6 : deux dés simples parmi les propositions');
+ assert.equal(new Set(r.propositions.map(p=>Object.keys(p.des).sort().join('+'))).size,6,'six mélanges différents');
  assert.equal(C.conversionDegats('3d8+4',0).moyenne,13.5,'un bonus tapé n’entre pas dans la moyenne');
- C.conversionDegats('3d8',0).propositions.forEach(p=>assert.ok(Math.abs(p.moyenne-13.5)<2&&p.n<=10,'proche de 13,5 : '+p.nom));
- assert.deepEqual(C.moyenneDesAmertume('red',2,3),C.moyenneDesAmertume('red',2,3),'le hasard est semé');
+ C.conversionDegats('3d8',2).propositions.forEach(p=>assert.ok(Math.abs(p.moyenne-13.5)<1&&p.n<=7,'proche de 13,5'));
+ assert.ok(C.conversionDegats('3d8',2).propositions.some(p=>Object.keys(p.des).length>1),'des poignées panachées');
+ assert.deepEqual(C.moyennePoignee({red:2,white:1},3),C.moyennePoignee({red:2,white:1},3),'le hasard est semé');
  assert.ok(src.includes("const conversionDialog=dialog('conversion-des','Conversion des dégâts',")&&src.includes("b.id='conversion-ouvre';b.className='conversion-bouton';b.textContent='🎲';")
-  &&src.includes("$('view').after(b)")&&feuille.includes('.conversion-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));'),'le dé à côté de la vue ouvre la conversion');}
+  &&src.includes("$('view').after(b)")&&!src.includes("conversion-dit")&&feuille.includes('.conversion-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));'),'le dé à côté de la vue ouvre la conversion');}
 /* Un test de compétence tient sur une ligne au journal : la compétence, les réussites, les dés — 4+ en vert, en
    dessous en rouge —, sans « Test de », ni nombre de dés, ni six explosifs. La classe dit aussi ses compétences. */
 assert.ok(page.includes(" log(nomNum(a)+' · '+skillNames[i]+' : '+jet.reussites+' réussite'+(jet.reussites>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄',{dice:true,ton:'competence'});")
@@ -2465,14 +2467,14 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  enC=false;h.hp=0;h.states=['Coma'];ctxC.comaAventuriers();assert.equal(h.vie,4,'hors combat, rien ne se perd');
  assert.ok(page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")&&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le coma se compte au rendu et se relève à la fin du combat');}
 {assert.ok(src.includes("['pv','PV max',a.max],['def','DEF',defOf(a),true],")&&src.includes("tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg'],['xp']],c);")
-  &&src.includes("calculAuSurvol(tuiles[2],()=>detailPvMax(a));calculAuSurvol(tuiles[4],()=>detailDegats(a));")&&src.includes(" ecrire('.stat-tile.t-pv strong',a.max);")
+  &&src.includes(" bullesChiffres(a,tuiles);")&&src.includes("function bullesChiffres(a,tuiles){const quoi={vie:detailVie,endu:detailEndu,pv:detailPv,def:detailDef,dmg:detailDegats,xp:detailXp};")&&page.includes("if(typeof bullesChiffres==='function'&&!secret)bullesChiffres(a,tuiles);")&&src.includes(" ecrire('.stat-tile.t-pv strong',a.max);")
   &&feuille.includes('.calcul-ligne.total{'),'PV max et leur calcul, Dégâts détaillés');
  const ctxD={catalog:{talents:[],items:[],classes:[{name:'Gardien',pv:2}]},bonusDe:()=>({pv:0,vie:0,endu:0,dmg:2,def:0,skills:[]}),classeDe:(cl,r)=>cl.find(c=>c.name===r),pvEspece:()=>0,auraMeneur:()=>0,degatsDe:a=>a.dmg+2};
  vm.createContext(ctxD);vm.runInContext(src.slice(src.indexOf('function detailPvMax(a)'),src.indexOf('function calculAuSurvol(')),ctxD);
  const pv=ctxD.detailPvMax({vie:5,endu:4,role:'Gardien',max:22});
  assert.equal(JSON.stringify(pv.slice(3)),JSON.stringify([['Endu × Vie','4 × 5 = 20'],['Classe (Gardien)','+ 2'],['Total','22']]));
  ctxD.bonusDe=(a,t,i)=>i===null?{dmg:2}:{dmg:2};const dg=ctxD.detailDegats({dmg:0});
- assert.equal(JSON.stringify(dg.map(x=>x[0])),JSON.stringify(['Dégâts','Fiche (saisie)','Talents','Total']),'les +2 viennent d’un talent, la fiche dit 0');}
+ assert.equal(JSON.stringify(dg.map(x=>x[0])),JSON.stringify(['Dégâts','Base','Talents','Total']),'les +2 viennent d’un talent, la base dit 0');}
 {assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&peutEquiper&&actors.includes(a);")
   &&src.includes("if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}")&&src.includes("function employerDepuisFiche(a,o){")&&!src.includes("b.className='gear-utiliser'"),'un objet s’utilise d’un clic');
  assert.ok(src.includes("const NIVEAUX_TALENTS=false;")&&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes('<select id="talent-sort" aria-label="Tri" hidden>')
