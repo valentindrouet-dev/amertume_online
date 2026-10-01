@@ -3023,6 +3023,23 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.492 — Les adversaires IA : trois champs — ciblage, conduite, survie —, l'ordre d'activation, le choix de la
+   cible ; l'ancienne menace se relit ; le bouton au MJ ; le tour part quand les aventuriers ont fini ; les
+   réactions se jouent seules ; une attaque animée ne coûte plus deux Actions. */
+ {assert.deepEqual(C.iaDe({}),{cible:'proche',conduite:'agressif',survie:'kamikaze'});assert.deepEqual(C.iaDe({menace:'pvLow'}).cible,'pvBas','la menace d’avant se relit');
+  assert.equal(C.normaliseIa({menace:'closest'}),null,'au défaut, rien ne se garde');assert.deepEqual(C.normaliseIa({ia:{survie:'fuit25',cible:'zzz'}}),{cible:'proche',conduite:'agressif',survie:'fuit25'});
+  assert.deepEqual(C.cleanMonster({name:'X',ia:{conduite:'furtif'}}).ia,{cible:'proche',conduite:'furtif',survie:'kamikaze'});assert.equal(C.cleanMonster({name:'X'}).ia,undefined);
+  assert.equal(C.seuilFuite('fuit50'),.5);assert.equal(C.seuilFuite('kamikaze'),0);
+  const L=[{id:'b',type:'boss'},{id:'s',type:'standard'},{id:'a',type:'alpha'},{id:'g',type:'standard',t:['gardien']},{id:'o',type:'solitaire'}];
+  assert.deepEqual(C.ordreIA(L,x=>x.t||[]).map(x=>x.id),['g','s','a','o','b'],'sbires, Élites, Solitaires, Boss ; le soutien d’abord');
+  const H=[{a:{id:'h1',hp:10,max:20,level:3,def:2},dist:50},{a:{id:'h2',hp:5,max:30,level:3,def:1},dist:80},{a:{id:'h3',hp:12,max:12,level:1,def:3},dist:20}];
+  assert.deepEqual(['proche','loin','pvBas','pvHaut','fort','faible','defBas'].map(k=>C.choixCibleIA(k,H).id),['h3','h2','h2','h3','h2','h3','h2']);
+  assert.equal(C.choixCibleIA('proche',[]),null);}
+ assert.ok(page.includes('id="ia-adversaires" hidden')&&page.includes("function iaDoitJouer(){return iaActif()&&!iaEnCours&&iaTourJoue!==round&&adversairesIA().length>0}")
+  &&page.includes("$('next').onclick=()=>{if(view!=='mj')return;if(iaDoitJouer()){tourDesAdversaires();return}tourSuivant()};")
+  &&page.includes("const iaActif=()=>view==='mj'&&iaAdversaires&&enCombat()")&&page.includes("if(lost>0&&enCombat())b.frappePar={de:a.id,tour:round};")
+  &&page.includes("o.revanche={de:a.id,tour:round}});reactionsIA()}")&&page.includes("if(partis){if(!actionPriseAuDepart)depensePoint(a,'action');")
+  &&src.includes("sel('Ciblage','ia_cible',iaDe(a).cible,IA_CIBLAGES)")&&src.includes("{cle:'cible',nom:'Ciblage',type:'choix',opts:IA_CIBLAGES,")&&src.includes("title:sceneTitle(),ia:typeof iaAdversaires!=='undefined'&&iaAdversaires===true}}"),'les adversaires IA, câblés');
  /* v0.491 — Mitraille : un passif ; chaque orbe lancé en fait partir un autre, gratuit, sur l'autre adversaire le
    plus proche ; améliorations : un adversaire de plus, un orbe de plus. */
  {const T=C.TALENTS_CODES;assert.equal(T.mitraille.type,'pass');assert.equal(T.mitraillecibles.pour,'mitraille');assert.equal(T.mitrailleorbes.nom,'Mitraille — un orbe de plus');

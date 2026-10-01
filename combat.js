@@ -327,7 +327,7 @@ function cleanMonster(t){const dés={};
   socle:texte(t&&t.socle,20)||'medium',family:texte(t&&t.family,60),
   pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,DEF_MAX)),
   damage:Math.round(borne(t&&t.damage,0,999)),xp:Math.round(borne(t&&t.xp,0,9999)),
-  menace:texte(t&&t.menace,30)||'closest',esquive:!!(t&&t.esquive),rapide:!!(t&&t.rapide),
+  menace:texte(t&&t.menace,30)||'closest',...(normaliseIa(t)?{ia:normaliseIa(t)}:{}),esquive:!!(t&&t.esquive),rapide:!!(t&&t.rapide),
   /* Un adversaire peut n'avoir aucune attaque : c'est au maître du jeu d'en décider, et
      un monstre qui ne frappe pas est un monstre comme un autre. Un modèle d'avant, qui
      portait ses dés à la racine sans liste d'attaques, garde pourtant les siens —
@@ -1656,6 +1656,36 @@ function conversionDegats(texte,combien=6){const dnd=lireDegatsDnd(texte);if(dnd
  const r={moyenne,min:dnd.des.reduce((s,d)=>s+d.n,0),max:dnd.des.reduce((s,d)=>s+d.n*d.f,0),propositions:pris.sort(tri)};
  if(CONVERSIONS_VUES.size>200)CONVERSIONS_VUES.clear();CONVERSIONS_VUES.set(cle,r);
  return {...dnd,...r,propositions:r.propositions.map(p=>({...p,des:{...p.des}}))}}
+/* ---------- L'IA des adversaires ----------
+   Trois champs sur un adversaire (« ia ») : qui il vise, comment il se conduit, quand il fuit. Le moteur
+   ne tient que les clés et les choix purs ; la table (index.html) joue le tour avec ses propres gestes.
+   L'ancienne « menace » du bestiaire se relit comme ciblage. */
+const IA_CIBLAGES=[['proche','Le plus proche'],['loin','Le plus loin'],['pvBas','PV les plus bas'],['pvHaut','PV les plus hauts'],['fort','Le plus fort'],['faible','Le plus faible'],['defBas','DEF la plus basse']];
+const IA_CONDUITES=[['agressif','Agressif'],['protecteur','Protecteur'],['furtif','Furtif']];
+const IA_SURVIES=[['kamikaze','Kamikaze'],['fuit25','Fuit sous 25 % de PV'],['fuit50','Fuit sous 50 % de PV']];
+const IA_DEFAUT={cible:'proche',conduite:'agressif',survie:'kamikaze'};
+const MENACE_VERS_CIBLAGE={closest:'proche',pvLow:'pvBas',pvHigh:'pvHaut',defLow:'defBas'};
+function iaDe(a){const o=a&&a.ia&&typeof a.ia==='object'?a.ia:{},dans=(l,v)=>l.some(([k])=>k===v);
+ return {cible:dans(IA_CIBLAGES,o.cible)?o.cible:MENACE_VERS_CIBLAGE[a&&a.menace]||IA_DEFAUT.cible,
+  conduite:dans(IA_CONDUITES,o.conduite)?o.conduite:IA_DEFAUT.conduite,survie:dans(IA_SURVIES,o.survie)?o.survie:IA_DEFAUT.survie}}
+// Ce qui se garde sur la fiche : rien quand tout est au défaut.
+function normaliseIa(a){const ia=iaDe(a);return Object.keys(IA_DEFAUT).every(k=>ia[k]===IA_DEFAUT[k])?null:ia}
+// Le seuil de fuite, en part des PV max ; zéro pour qui se bat jusqu'au bout.
+function seuilFuite(survie){return survie==='fuit25'?.25:survie==='fuit50'?.5:0}
+/* L'ordre d'activation : les sbires, puis les Élites, les Solitaires, les Boss ; avant tous, ceux dont un
+   talent sert les autres — meneur, gardien, rempart, garde rapprochée, provocation, invocation — pour
+   qu'ils soient en place. « clesDe » : les clés d'effet des talents tenus par un combattant. */
+const TALENTS_SOUTIEN_IA=['meneur','gardien','rempart','garderapprochee','provocation','invocation'];
+function ordreIA(liste,clesDe){const soutien=a=>(clesDe?clesDe(a):[]).some(k=>TALENTS_SOUTIEN_IA.includes(k))?0:1;
+ return (liste||[]).map((a,i)=>[a,i]).sort((u,v)=>soutien(u[0])-soutien(v[0])||rangType(u[0])-rangType(v[0])||u[1]-v[1]).map(([a])=>a)}
+/* La cible, selon le ciblage, parmi des candidats {a, dist, def} : la distance en pixels et la DEF, déjà
+   mesurées par la table. Le plus fort : le niveau le plus haut, puis le plus de PV max. À égalité, le plus
+   proche ; puis l'ordre donné. */
+function choixCibleIA(cle,candidats){const l=(candidats||[]).filter(c=>c&&c.a);if(!l.length)return null;
+ const niveau=c=>Math.max(1,Math.trunc(Number(c.a.level))||1),max=c=>Number(c.a.max)||0,hp=c=>Number(c.a.hp)||0,def=c=>Number(c.def!==undefined?c.def:c.a.def)||0;
+ const cmp={proche:(x,y)=>x.dist-y.dist,loin:(x,y)=>y.dist-x.dist,pvBas:(x,y)=>hp(x)-hp(y),pvHaut:(x,y)=>hp(y)-hp(x),
+  fort:(x,y)=>niveau(y)-niveau(x)||max(y)-max(x),faible:(x,y)=>niveau(x)-niveau(y)||max(x)-max(y),defBas:(x,y)=>def(x)-def(y)}[cle]||((x,y)=>x.dist-y.dist);
+ return l.map((c,i)=>[c,i]).sort((u,v)=>cmp(u[0],v[0])||u[0].dist-v[0].dist||u[1]-v[1])[0][0].a}
 const NIVEAUX_XP=[0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000];
 function niveauDeXp(xp){const n=Math.max(0,Math.trunc(Number(xp))||0);let niv=1;NIVEAUX_XP.forEach((s,i)=>{if(n>=s)niv=i+1});return niv}
 function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
@@ -1990,7 +2020,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={IA_CIBLAGES,IA_CONDUITES,IA_SURVIES,IA_DEFAUT,iaDe,normaliseIa,seuilFuite,ordreIA,choixCibleIA,TALENTS_SOUTIEN_IA,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  NIVEAUX_XP,niveauDeXp,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
