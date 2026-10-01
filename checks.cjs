@@ -1299,7 +1299,7 @@ assert.ok(page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.ver
    prend toute la ligne. */
 assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('.vfx-taillade .lame{fill:#fffaf0}')&&page.includes('const id=\'vfx-m\'+(++vfxN),t=Math.max(56,tokenOf(vers)*2.1);')
  &&src.includes('function gearCarre(o,n,portes)')&&src.includes('function gearDetail(o,a,enJeu)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');")&&!src.includes("out.className='gear-pills'")
- &&feuille.includes('.gear-grille{display:flex;flex-wrap:wrap;gap:6px;')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:auto;min-width:69px;min-height:69px;flex-direction:column;')&&feuille.includes('.gear-detail.large{flex-basis:100%;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');")&&!src.includes('ligne(o.notes)')&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
+ &&feuille.includes('.gear-grille{display:flex;flex-wrap:wrap;gap:6px;')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:auto;min-width:69px;min-height:69px;flex-direction:column;')&&feuille.includes('.gear-detail.large{flex-basis:100%;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');")&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
 /* Invocation et Régénération : deux mécaniques d'adversaire câblées — la pose au clic, les soins au
    tour ou dès le coup reçu, l'état qui les empêche ; le modèle invoqué se choisit au bestiaire. Deux
    armes équipées croisent leurs logos ; la grille d'équipement se serre sur des carrés de 52 px. */
@@ -2563,7 +2563,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  ctxE.effetsPassifs();assert.equal(b.states.join(',')+'|'+b.etatsPassifs.join(','),'Invisible|Invisible','le Gel se dissipe, la cape donne Invisible');
  b.states=[];ctxE.effetsPassifs();assert.equal(b.states.join(','),'','un état donné et perdu ne revient pas tant qu’on garde la pièce');
  b.states=['Invisible'];b.armures=['an'];ctxE.effetsPassifs();assert.equal(b.states.join(',')+'|'+b.etatsPassifs.join(','),'|','ôtée, la cape reprend son état');
- assert.ok(src.includes("if(modeObjet(o)==='passif')return;")&&src.includes("p.innerHTML=phraseDeObjet(o);d.append(p)}")&&src.includes("if(f.mode)a.mode=f.mode.value==='passif'?'passif':'actif';")
+ assert.ok(src.includes("if(modeObjet(o)==='passif')return;")&&src.includes("if(f.mode)a.mode=f.mode.value==='passif'?'passif':'actif';")
   &&src.includes("[['actif','Actif — un bouton en combat'],['passif','Passif — permanent tant que porté']]")&&page.includes("const gardes=[],ecartes=[],portes=[...passifsPortes(b,items()).des,...desRefuses(talentsCodes(b))];"),'le passif : pas de bouton, sa phrase, son réglage, les dés écartés');}
 /* v0.275 (suite) — Un écu de DEF seulement pour ce qui en donne, ou une armure de corps, ou un bouclier ; l'icône de l'effet, barrée pour une insensibilité. */
 {assert.ok(src.includes("if((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))bas.append(shieldBadge(o.def||0));")
@@ -3023,13 +3023,18 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.483 — Bulle d'une pièce : dés ou DEF au-dessus de l'or, puis la description du MJ, rien d'automatique.
+   La Vie et les PV sous leur maximum, légèrement rouges. */
+ assert.ok(src.includes("p.className='gear-des';p.append(dicePips(o.dice,o.etat));")&&src.includes(" ligne(o.notes);\n")&&!src.includes("ligne(o.effects||o.notes||'Effet à préciser dans l’armurerie.')")
+  &&page.includes("const vieEntamee=a=>(Number(a&&a.vie)||0)<(Number(a&&(a.vieMax??a.vie))||0);")&&page.includes("tuiles[0].classList.toggle('sous-max',(Number(a.hp)||0)<(Number(a.max)||0));")
+  &&feuille.includes('.stat-row.en-icones .stat-tile.avec-icone.sous-max strong{color:#ffa69a}'),'bulle d’objet sans texte automatique, Vie et PV entamés en rouge');
  /* v0.481 — Une partie enregistrée qui ne se pose pas n'est jamais écrasée : l'écriture reste bloquée. */
  assert.ok(src.includes("catch(e){sessionLue=false;noterSauvegarde('Partie enregistrée illisible : '+e.message+' Rien n’est écrit par-dessus.',true)}};")
   &&src.includes("if(db&&!sessionLue){noterSauvegarde('La partie enregistrée n’est pas encore lue : rien n’est écrit par-dessus.',true);return}"),'partie illisible : rien par-dessus');
  /* v0.479 — « Inventaire + » au-dessus du bloc, l'inventaire à hauteur du corps, six icônes par ligne ; l'icône
    portée plus bas, ses dés devant ; anneaux et amulette sans symbole d'effet. */
  assert.ok(feuille.includes('.corps-sac{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);')&&feuille.includes('.corps-sac>.sac .sac-ligne{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));')
-  &&feuille.includes('.corps-sac>.corps :is(.p-anneau,.p-amulette) .cat-pill.gear-carre .gear-bas{display:none}')&&!src.includes("titre.className='gear-rangee-titre sac-titre'"),'inventaire en haut, six par ligne');
+  &&feuille.includes('.corps-sac>.corps .cat-pill.gear-carre>:is(.marque-porte,.gear-bas,.pips){display:none}')&&!src.includes("titre.className='gear-rangee-titre sac-titre'"),'inventaire en haut, six par ligne');
  /* v0.478 — {bleu}, {Mystique}… dans une description : l'icône du dé, sans rendre le talent élémentaire. */
  {const ctxD={};vm.createContext(ctxD);vm.runInContext(src.slice(src.indexOf('const DES_ACCOLADES='),src.indexOf('function deDansTexte('))+';this.deAccolade=deAccolade;',ctxD);
   assert.deepEqual(['bleu','Bleu','BLEU','mystique','Léger','os','noir','Phase','constructor','element'].map(ctxD.deAccolade),[3,3,3,3,1,1,5,6,-1,-1],'couleurs et noms de dés, casse et accents ignorés');

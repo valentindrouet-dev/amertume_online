@@ -702,6 +702,7 @@ const pvPourcent=a=>Math.max(0,Math.min(100,Math.round((Number(a.hp)||0)/Math.ma
 function majFiche(carte,a){if(!carte)return;
  const ecrire=(sel,texte)=>{const n=carte.querySelector(sel);if(n)n.textContent=texte};
  ecrire('.stat-tile.t-vie strong',vieAffichee(a));ecrire('.stat-tile.t-vie small','MAX '+(a.vieMax??a.vie));
+ {const t=carte.querySelector('.stat-tile.t-vie');if(t)t.classList.toggle('sous-max',vieEntamee(a))}
  ecrire('.stat-tile.t-endu strong',enduAffichee(a));
  ecrire('.stat-tile.t-pv strong',a.max);
  {const b=carte.querySelector('.hero-pv');if(b)b.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true)}
@@ -942,6 +943,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const tuiles=[['vie','Vie',vieAffichee(a),false,a.vieMax??a.vie],['endu','Endu',enduAffichee(a)],
   ['pv','PV max',a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+ '+degatsDe(a)],['xp','XP',a.xp||0]]
   .map(t=>statTile(...t));
+ // La Vie sous son maximum se teinte de rouge, et redevient blanche au maximum.
+ tuiles[0].classList.toggle('sous-max',vieEntamee(a));
  // Le MJ corrige un chiffre là où il le lit ; les PV max se calculent, ils ne se saisissent pas.
  tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg'],['xp']],c);
  // Au survol, le calcul : d'où viennent les PV max, et les Dégâts.
@@ -1286,19 +1289,15 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // La rareté, puis ce que la pièce confère, une ligne par bonus.
  if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));
  normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});
- // Une arme, une armure ou un reste : sa valeur, « 7 » et la pièce d'or ; la DEF se lit sur le carré.
+ // Au-dessus de sa valeur : les dés d'une arme, et l'état qu'elle inflige ; la DEF d'une armure qui protège.
+ if(col==='melee'||col==='ranged'){const p=document.createElement('p');p.className='gear-des';p.append(dicePips(o.dice,o.etat));d.append(p)}
+ else if(col==='armor'&&((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))){const p=document.createElement('p');p.className='gear-def';p.append(shieldBadge(o.def||0));d.append(p)}
+ // Une arme, une armure ou un reste : sa valeur, « 7 » et la pièce d'or.
  if(col==='restes'||col==='melee'||col==='ranged'||col==='armor'){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
  if(o.category==='ammo'){const k=keys.indexOf(o.munDe);ligne('Munition : '+(k>=0?'+1 dé '+types[k]:'aucun dé')+' aux armes à distance portées');ligne(o.etat?'Leur tir inflige : '+o.etat:'')}
- else if(o.etat)ligne('Inflige : '+o.etat);
- /* Un objet dit ce qu'il fait et s'utilise d'un bouton : l'effet part au journal de la
-    table, et un consommable quitte l'inventaire. Le moteur ne devine rien de plus. */
- if(col==='object')ligne(o.effects||o.notes||'Effet à préciser dans l’armurerie.');
- /* Ce que le moteur en fera, et comment on en use : la phrase vient du moteur, jamais
-    recopiée ici, et l'usage dit si l'objet se garde, se défausse ou attend le lendemain. */
- const code=objetCode(o);
- if(code){const p=document.createElement('p');p.className='gear-effet';
-  p.innerHTML=phraseDeObjet(o);d.append(p)}
+ // Puis la description du MJ, telle qu'il l'a écrite ; sans elle, rien : aucun texte automatique.
+ ligne(o.notes);
  // Ni usage ni mode d'emploi : un objet s'utilise d'un clic sur son carré, en jeu comme sur la fiche.
  return d}
 /* Utiliser un objet : on désigne d'abord la cible — un combattant, ou l'endroit visé pour
@@ -3826,7 +3825,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  if(a){const r=document.createElement('div');r.className='stat-row en-icones cadre-chiffres arbres-chiffres';r.style.setProperty('--classe',typeof actorTint==='function'?actorTint(a):encre||'#8a7a63');
   const pvMax=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+(Number(a.auraPv)||0);
   const t=[['vie','Vie',vieAffichee(a)],['endu','Endu',enduAffichee(a)],['pv','PV max',pvMax],['def','DEF',defOf(a),true],['dmg','Dég.','+ '+degatsDe(a)],['xp','XP',a.xp||0]].map(x=>statTile(...x));
-  [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([c,k])=>iconeStat(t[k],c));bullesChiffres(a,t);r.append(...t);tete.append(r)}
+  [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([c,k])=>iconeStat(t[k],c));t[0].classList.toggle('sous-max',vieEntamee(a));bullesChiffres(a,t);r.append(...t);tete.append(r)}
  // L'élément du Mystique, au-dessus de l'arbre : le MJ le choisit, le joueur le lit.
  if(elementaire)tete.append(choixElement(a,classe));
  // L'XP de l'aventurier : ce que l'arbre a coûté, et ce qui reste à dépenser.

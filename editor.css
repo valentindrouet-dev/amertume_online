@@ -1856,8 +1856,8 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .corps-sac>.sac{grid-column:2;grid-row:1;align-self:stretch;margin:0;padding:6px 6px}
 .corps-sac>.corps .place{min-height:0}
 .corps-sac>.corps .vide{width:50px;height:50px}
-.corps-sac>.corps .cat-pill.gear-carre,.corps-sac>.corps .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){min-width:50px;width:50px;height:54px;min-height:54px;padding:3px;gap:2px}
-.corps-sac>.corps .cat-pill.gear-carre .logo-equip{width:28px;height:28px}
+.corps-sac>.corps .cat-pill.gear-carre,.corps-sac>.corps .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){min-width:50px;width:50px;height:50px;min-height:50px;padding:3px;gap:0}
+.corps-sac>.corps .cat-pill.gear-carre .logo-equip{width:34px;height:34px}
 .corps-sac>.corps :is(.p-anneau,.p-munitions,.p-amulette) .vide{width:34px;height:34px;font-size:15px}
 .corps-sac>.corps :is(.p-anneau,.p-munitions,.p-amulette) .cat-pill.gear-carre,.corps-sac>.corps :is(.p-anneau,.p-munitions,.p-amulette) .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){min-width:34px;width:34px;height:34px;min-height:34px;padding:2px}
 .corps-sac>.corps :is(.p-anneau,.p-munitions,.p-amulette) .cat-pill.gear-carre .logo-equip{width:22px;height:22px}
@@ -1868,10 +1868,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .corps-sac>.corps .nom-place{letter-spacing:.2px;font-size:8px}
 /* Une pièce portée : son icône un peu plus bas, ses dés ou sa DEF légèrement devant elle. Un anneau ou
    une amulette ne montre que son icône. */
-.corps-sac>.corps .cat-pill.gear-carre .logo-equip{margin-top:6px}
-.corps-sac>.corps .cat-pill.gear-carre>:is(.gear-bas,.pips){margin-top:-10px;position:relative;z-index:1}
-.corps-sac>.corps :is(.p-anneau,.p-amulette) .cat-pill.gear-carre .gear-bas{display:none}
-.corps-sac>.corps :is(.p-anneau,.p-amulette,.p-munitions) .cat-pill.gear-carre .logo-equip{margin-top:0}
+.corps-sac>.corps .cat-pill.gear-carre>:is(.marque-porte,.gear-bas,.pips){display:none}
 /* L'inventaire : six icônes par ligne, toujours ; elles gardent leurs 36 pixels tant que la place le permet. */
 .corps-sac>.sac .sac-ligne{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;justify-items:center}
 .corps-sac>.sac .sac-ligne-titre{grid-column:1 / -1;justify-self:start}
@@ -1908,6 +1905,8 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 #bloc-talents>summary{display:none}
 /* Seule l'XP se teinte très légèrement de son icône. */
 .stat-row.en-icones .stat-tile.t-xp strong{color:color-mix(in srgb,#fff 80%,rgb(var(--tint,255,255,255)))}
+/* La Vie ou les PV sous leur maximum : la valeur, légèrement rouge. */
+.stat-row.en-icones .stat-tile.avec-icone.sous-max strong{color:#ffa69a}
 /* Fiche d'aventurier : les chiffres et les compétences dans leur cadre, comme les autres sections. */
 .arbres-chiffres{width:min(440px,100%);box-sizing:border-box;margin:0}
 /* Le cadre des chiffres prend la couleur de la classe de l'aventurier. */
