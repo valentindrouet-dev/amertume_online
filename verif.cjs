@@ -4,7 +4,7 @@
 const fs=require('fs'),{execFileSync}=require('child_process');
 const fichiers={src:'editor.js',page:'index.html',css:'editor.css',feuille:'editor.css',vivant:'live.js',combat:'combat.js',fief:'domaine.js',cartes2:'maps.js',part:'shared.js'};
 // 1. Chaque script compile, l'inline de index.html compris.
-for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js'])
+for(const f of ['combat.js','catalog.js','planches-calcul.js','planches.js','editor.js','maps.js','domaine.js','campagnes.js','shared-data.js','shared.js','live.js','planches-worker.js','ia.js'])
  try{new Function(fs.readFileSync(f,'utf8'))}catch(e){console.error('✗ '+f+' ne compile pas : '+e.message);process.exit(1)}
 {const page=fs.readFileSync('index.html','utf8');let m,re=/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/g,k=0;
  while((m=re.exec(page))){k++;try{new Function(m[1])}catch(e){console.error('✗ index.html, script inline n°'+k+' : '+e.message);process.exit(1)}}}
