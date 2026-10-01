@@ -3193,7 +3193,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxR.leveEtats(h).join(','),'Feu,Poison','tout s’en va, sauf le Blindage, le coma et ce qu’une pièce portée donne');assert.equal(h.states.join(','),'Blindage,Coma,Invisible');
  assert.equal(ctxR.reposMax({level:3}),3,'un repos court par niveau');assert.equal(ctxR.reposMax({}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:0}),3);assert.equal(ctxR.reposRestants({level:3,reposCourts:1}),2);
  assert.ok(page.includes("if(a.vie<=0){poseCibles(a,[]);log(nomNum(a)+' n’a plus de VIE : il est mort.',{ton:'degats'})}")
-  &&src.includes("function reposLong(){if(view!=='mj')return;")&&src.includes("$('hero-repos-long').onclick=reposLong;")&&carto.includes("heros.forEach(a=>{a.reposCourts=0;"),'0 VIE : hors de la carte jusqu’au repos long ; repos courts rendus à la carte rechargée');
+  &&src.includes("function reposLong(){if(view!=='mj')return;")&&src.includes("$('hero-repos-long').onclick=reposLong;")&&carto.includes("heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.reposCourts=0;"),'0 VIE : hors de la carte jusqu’au repos long ; repos courts rendus à la carte rechargée');
  assert.ok(page.includes("function noteContactsDepart(a){if(!a||!enCombat())return;")&&page.includes("const contacts=adversairesAuContact(a).filter(([b])=>!avant||!avant.has(b.id));")
   &&page.includes("const arret=tokenOf(a)/2+tokenOf(b)/2+1;")&&page.includes("function cheminVersContact(b,a,size){")
   &&page.includes("if(!r.hit||!r.damage){floatNumber(b,'0','nul');let pose0='',suite0='';"),'Lamevent, Provocation et Orbes');
@@ -3371,6 +3371,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.510 — Un aventurier ne quitte que la table : sa fiche reste, son token revient ; le supprimer pour de bon se fait à
+   l'onglet Aventuriers, en tapant SUPPRIMER. Sept talents par ligne à l'onglet Talents. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ assert.ok(src.includes("tous.filter(i=>actors[i].hero).forEach(i=>retireDeLaTable(actors[i]));")&&src.includes("function retireDeLaTable(a){")&&src.includes("a.horsCarte=true;a.retire=true;"),'retirer un aventurier ne le supprime pas');
+ assert.ok(src.includes("if(mot.trim()!=='SUPPRIMER')return")&&src.includes("const suppr=ico('✕','Supprimer',()=>{const souci=supprimerAventurier(a);")&&src.includes("actors[editing].hero?supprimerAventurier(actors[editing]):removeActor(editing)"),'supprimer pour de bon : SUPPRIMER, à l’onglet Aventuriers');
+ assert.ok(mp.includes("heros.forEach(a=>{a.horsCarte=false;delete a.retire;")&&src.includes("jeton.onclick=()=>ramenerSurLaTable(a)"),'le token revient : carte rechargée, ou clic à l’onglet Aventuriers');
+ assert.ok(page.includes('function alive(a){return a.hp>0&&!hasState(a,"Coma")&&!a.horsCarte}')&&page.includes("if(!(a.hero&&a.retire))(a.hero?troupe:adverses).push(b);")&&vivant.includes("'horsCarte','retire',"),'hors de la table, il n’y est pas');
+ assert.ok(css.includes('.talent-rangee{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));'),'sept talents par ligne');}
 /* v0.509 — Gerbe de feu quand un piège part ; cadenas sur un coffre trouvé verrouillé ; pièces uniques. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
  const ctx={};vm.createContext(ctx);vm.runInContext(src.slice(src.indexOf('const INVENTAIRE_MAX='),src.indexOf('/* Dans l\'inventaire à remplir'))
@@ -3527,7 +3535,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(page.includes("function reposMax(a){return Math.max(1,Math.trunc(Number(a&&a.level))||1)}")&&page.includes("a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);a.reposPris=true;")
   &&page.includes("enCombat()||reposRestants(a)<=0||a.reposPris===true||!alive(a)")&&page.includes("String(reposRestants(a)))}")
   &&page.includes(":reposRestants(a)<=0?'Plus de repos court : ils reviennent au repos long.'"),'le repos court : la réserve au niveau, un par combat');
- assert.ok(src.includes("a.reposCourts=0;a.reposPris=false;reposer(a,'long');")&&carto.includes("heros.forEach(a=>{a.reposCourts=0;a.reposPris=false;"),'repos long et carte rechargée rendent tout');
+ assert.ok(src.includes("a.reposCourts=0;a.reposPris=false;reposer(a,'long');")&&carto.includes("heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.reposCourts=0;a.reposPris=false;"),'repos long et carte rechargée rendent tout');
  assert.ok(fs.existsSync('img/planches/caracteristiques_2.webp')&&calc.includes("votants=gros.filter(k=>k.c>=grosMax*.05);"),'la planche et la taille des icônes sans les éclats');
  const cc={};vm.createContext(cc);vm.runInContext(calc+';this.d=detecteGrille;this.cs=casesDe;',cc);
  // Une rangée de trois icônes, dont la dernière éclatée en petits morceaux : trois cases, pas plus.

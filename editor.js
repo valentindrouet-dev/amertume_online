@@ -897,6 +897,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const jeton=document.createElement('span');jeton.className='avatar';
  if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';jeton.append(im)}
  else jeton.textContent=(a.name||'?')[0];
+ // Retiré de la table : son token pâlit ; un clic du MJ le ramène dans la zone de départ.
+ if(a.horsCarte){jeton.classList.add('hors-table');if(view==='mj'){jeton.setAttribute('role','button');jeton.tabIndex=0;jeton.onclick=()=>ramenerSurLaTable(a)}}
  const titre=document.createElement('div');titre.className='hero-id';
  const nom=document.createElement('strong');nom.textContent=a.name;
  titre.append(nom);  // La classe est portée par la pastille, le niveau par une puce : pas de troisième copie.
@@ -926,8 +928,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  const outils=document.createElement('span');outils.className='cat-tools';
  const ico=(g,t,fn)=>{const b=document.createElement('button');b.className='ico';b.textContent=g;
   b.title=t;b.setAttribute('aria-label',t+' '+a.name);b.onclick=fn;return b};
- const suppr=ico('✕','Retirer',()=>{const r=heroRank(a);if(r<0)return;
-  const souci=removeActor(r);if(souci)alert(souci);else renderHeroes()});
+ const suppr=ico('✕','Supprimer',()=>{const souci=supprimerAventurier(a);if(souci)alert(souci);else renderHeroes()});
  suppr.classList.add('danger');
  outils.append(ico('✎','Modifier',()=>{const r=heroRank(a);if(r>=0)openActor(r)}),
   ico('⧉','Dupliquer',()=>{if(heroRank(a)<0)return;
@@ -1386,7 +1387,7 @@ function reposLong(){if(view!=='mj')return;const troupe=actors.filter(a=>a&&a.he
  troupe.forEach(a=>{if(estMort(a))return;   // Un mort ne se repose plus : seul le MJ le ressuscite.
   if(Number.isFinite(Number(a.vieMax)))a.vie=Number(a.vieMax);if(typeof recalculerPV==='function')recalculerPV(a);
   setState(a,'Coma',false);a.hp=a.max;a.comaVie=false;a.reposCourts=0;a.reposPris=false;reposer(a,'long');if(typeof leveEtats==='function')leveEtats(a);
-  if(a.horsCarte){a.horsCarte=false;revenus.push(a)}});
+  if(a.horsCarte&&!a.retire){a.horsCarte=false;revenus.push(a)}});
  // Qui revient se pose dans la zone de départ de la carte ouverte.
  const m=typeof currentMap==='function'?currentMap():null;
  if(revenus.length&&m&&m.start&&typeof spreadInZone==='function')spreadInZone(revenus.length,m.start).forEach((p,i)=>moveActor(revenus[i],p.x,p.y,true));
@@ -4539,20 +4540,40 @@ function removeActor(i){return removeActors([i],true)}
    sélection sont recalés ensuite. La troupe garde toujours un aventurier.
    « demande » vaut pour la fiche, où l'on confirme quoi qu'il arrive ; au clavier, seuls
    les aventuriers font surgir l'alerte — perdre un monstre se répare d'un clic, pas une fiche. */
+/* Un aventurier ne quitte jamais que la table : sa fiche reste à l'onglet Aventuriers, rien ne s'en perd.
+   Son token revient dans la zone de départ quand la carte est rouverte depuis Cartes, ou d'un clic sur
+   son token à l'onglet Aventuriers. */
+function retireDeLaTable(a){const j=actors.indexOf(a);if(j<0||!a.hero)return;a.horsCarte=true;a.retire=true;poseCibles(a,[]);
+ actors.forEach(o=>{if(o===a)return;const t=Array.isArray(o.targets)?o.targets:(o.target===null||o.target===undefined?[]:[o.target]);if(t.includes(j))poseCibles(o,t.filter(k=>k!==j))});
+ if(selected===j)selected=null}
+function ramenerSurLaTable(a){if(view!=='mj'||!a||!a.hero||!a.horsCarte)return;a.horsCarte=false;delete a.retire;
+ const m=typeof currentMap==='function'?currentMap():null;
+ if(m&&m.start&&typeof spreadInZone==='function'){const p=spreadInZone(1,m.start)[0];if(p)moveActor(a,p.x,p.y,true)}
+ settleActor(a);renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+/* Supprimer un aventurier pour de bon : à l'onglet Aventuriers seulement, et en tapant SUPPRIMER. */
+function supprimerAventurier(a){if(view!=='mj'||!a||!a.hero)return 'Suppression impossible.';
+ if(actors.filter(x=>x.hero).length<=1)return 'Conserve au moins un aventurier.';
+ const mot=prompt('Supprimer définitivement '+a.name+' et toute sa fiche ?\nTape SUPPRIMER pour confirmer.');
+ if(mot===null)return null;if(mot.trim()!=='SUPPRIMER')return 'Rien n’est supprimé : il fallait taper SUPPRIMER.';
+ const i=actors.indexOf(a);if(i<0)return null;sortDeLaListe([i]);marked.clear();render();scheduleSave();return null}
 function removeActors(liste,demande){
  if(view!=='mj')return 'Retrait impossible.';
- const rangs=[...new Set(liste)].filter(i=>actors[i]).sort((x,y)=>y-x);
- if(!rangs.length)return 'Retrait impossible.';
- const heros=rangs.filter(i=>actors[i].hero).length;
- if(rangs.length>=actors.length||heros>=actors.filter(a=>a.hero).length)
-  return 'Conserve au moins un aventurier dans la scène.';
+ const tous=[...new Set(liste)].filter(i=>actors[i]);
+ if(!tous.length)return 'Retrait impossible.';
+ tous.filter(i=>actors[i].hero).forEach(i=>retireDeLaTable(actors[i]));
+ const rangs=tous.filter(i=>!actors[i].hero).sort((x,y)=>y-x);
+ if(!rangs.length){marked.clear();render();scheduleSave();return null}
  const noms=rangs.map(i=>actors[i].name).reverse();
- if(demande||heros){const quoi=noms.length===1?'Retirer '+noms[0]+' de la scène ?'
+ if(demande){const quoi=noms.length===1?'Retirer '+noms[0]+' de la scène ?'
   :'Retirer '+noms.length+' combattants de la scène ?\n\n'+noms.join(', ');
   if(!confirm(quoi))return null}
- const partants=rangs.map(i=>actors[i]);
- /* Les cibles sont des rangs dans la liste : on les retient par identifiant avant de
-    retirer, et on les repose après — sinon elles glissaient sur d'autres combattants. */
+ const partants=rangs.map(i=>actors[i]);sortDeLaListe(rangs);
+ marked.clear();
+ xpDesRetires(partants);butinDesRetires(partants);
+ render();scheduleSave();return null}
+/* Sortir des combattants de la liste. Les cibles sont des rangs dans la liste : on les retient par
+   identifiant avant de retirer, et on les repose après — sinon elles glissaient sur d'autres combattants. */
+function sortDeLaListe(liste){const rangs=[...new Set(liste)].filter(i=>actors[i]).sort((x,y)=>y-x);
  const visees=actors.map(a=>[a,(Array.isArray(a.targets)?a.targets:(a.target===null||a.target===undefined?[]:[a.target]))
   .map(j=>actors[j]&&actors[j].id).filter(Boolean)]);
  rangs.forEach(i=>{actors.splice(i,1);
@@ -4560,10 +4581,7 @@ function removeActors(liste,demande){
   if(selected!==null&&selected>=i)selected=selected>i?selected-1:null});
  visees.forEach(([a,ids])=>{if(!actors.includes(a))return;
   poseCibles(a,ids.map(id=>actors.findIndex(o=>o&&o.id===id)).filter(j=>j>=0))});
- if(!actors[owner]?.hero)owner=actors.findIndex(a=>a.hero);
- marked.clear();
- xpDesRetires(partants);butinDesRetires(partants);
- render();scheduleSave();return null}
+ if(!actors[owner]?.hero)owner=actors.findIndex(a=>a.hero)}
 /* Plusieurs adversaires du même nom se disent une fois, après leur nombre : « 4 Nuées de Rats ».
    Le pluriel prend chaque mot jusqu'au premier « de », « du », « des »… : « Rôdeurs faméliques »,
    « Nuées de Rats ». */
@@ -4575,7 +4593,7 @@ function listeNombree(noms){const n=new Map();noms.forEach(x=>n.set(x,(n.get(x)|
 /* Un adversaire retiré de la scène laisse son XP : elle va à chaque aventurier présent
    sur la carte, en entier. Une seule ligne au journal, partagée à la table. */
 function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!f.hero&&(Math.trunc(Number(f.xp))||0)>0);
- const xp=vaincus.reduce((s,f)=>s+Math.trunc(Number(f.xp)),0),heros=actors.filter(a=>a&&a.hero);
+ const xp=vaincus.reduce((s,f)=>s+Math.trunc(Number(f.xp)),0),heros=actors.filter(a=>a&&a.hero&&!a.horsCarte);
  if(!xp||!heros.length)return;
  heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));
  // La carte retient ce qu'elle a déjà donné : le MJ le lit à côté de son nom.
@@ -4598,7 +4616,7 @@ function butinDesRetires(partants,tirage=Math.random){const heros=actors.filter(
 /* Rejouer la même rencontre : les adversaires repartent intacts, la troupe garde ses
    blessures — c'est le combat qu'on recommence, pas la partie. */
 $('delete-actor').onclick=()=>{if(editing===null)return;
- const souci=removeActor(editing);
+ const souci=actors[editing]&&actors[editing].hero?supprimerAventurier(actors[editing]):removeActor(editing);
  if(souci){$('actor-error').textContent=souci;return}
  selected=owner;actorDialog.close();renderHeroes();render()};
 /* Les états qu'un coup peut poser. « Aucun » est l'absence d'état : il devient le tiret
