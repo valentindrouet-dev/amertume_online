@@ -1739,8 +1739,9 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* L'entrée de l'arbre, du bandeau au talent de départ : le trait SVG remplace l'ancien bout de trait. */
 .arbre-noeud.racine .arbre-rond::before{display:none}
 .arbre-chemins .entree{stroke:var(--line-strong);stroke-width:3;stroke-linecap:round}
-/* Chez un aventurier : ce qu'il peut prendre est en couleur, ce qui n'est pas encore accessible, en gris. */
-.arbre-plan>.arbre-noeud.verrou .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus.verrou .arbre-rond{filter:grayscale(1)}
+/* Chez un aventurier : ce qu'il peut prendre est en couleur ; ce qui n'est pas encore accessible, ou trop
+   cher, en gris et plus transparent. */
+.arbre-plan>.arbre-noeud.verrou .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus.verrou .arbre-rond{filter:grayscale(1);opacity:.3}
 /* Le bandeau passe au-dessus du trait d'entrée, qui semble ainsi naître sous lui ; le premier talent remonte. */
 .arbre-col>.arbre-titre{z-index:2}
 .arbre-col>.arbre-plan{margin-top:-38px}
