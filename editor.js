@@ -1032,15 +1032,15 @@ function groupesLogosCompetence(){const vus=new Set(),groupes=[];
 /* ---------- La conversion des dégâts de D&D 5.5 ----------
    Un dé, en haut à côté de la vue, au MJ : on y écrit des dés de D&D — « 3d8 » — et la fenêtre propose
    six poignées de dés d'Amertüme, panachées, sans bonus de dégâts, dont la moyenne, lancée par le moteur
-   contre la DEF choisie, s'en approche le plus. */
+   sans DEF, s'en approche le plus. */
 const conversionDialog=dialog('conversion-des','Conversion des dégâts','<form id="conversion-form" class="conversion-form"><div class="conversion-champs">'
  +'<label>Dégâts D&amp;D 5.5<input id="conversion-dnd" placeholder="3d8" autocomplete="off" spellcheck="false"></label>'
- +'<label>DEF de la cible<select id="conversion-def">'+[0,1,2,3,4,5,6].map(n=>'<option value="'+n+'">'+n+'</option>').join('')+'</select></label></div>'
+ +'</div>'
  +'<p class="form-error" id="conversion-erreur" role="status" aria-live="polite"></p><div id="conversion-resultat" class="conversion-resultat"></div></form>');
 $('conversion-form').onsubmit=e=>e.preventDefault();
 function renderConversion(){const boite=$('conversion-resultat'),err=$('conversion-erreur');boite.replaceChildren();err.textContent='';
  const texte=$('conversion-dnd').value;if(!texte.trim())return;
- const r=conversionDegats(texte,$('conversion-def').value);if(r.erreur){err.textContent=r.erreur;return}
+ const r=conversionDegats(texte);if(r.erreur){err.textContent=r.erreur;return}
  const f=n=>(Math.round(n*10)/10).toLocaleString('fr-FR');
  const dnd=document.createElement('p');dnd.className='conversion-dnd';dnd.innerHTML='<b>'+esc(texte.trim())+'</b> : <b>'+f(r.moyenne)+'</b> dégâts en moyenne, de '+r.min+' à '+r.max;boite.append(dnd);
  const grille=document.createElement('div');grille.className='conversion-grille';
@@ -1051,7 +1051,7 @@ function renderConversion(){const boite=$('conversion-resultat'),err=$('conversi
  boite.append(grille)}
 let conversionMinuteur=0;
 const conversionPlusTard=()=>{clearTimeout(conversionMinuteur);conversionMinuteur=setTimeout(renderConversion,180)};
-$('conversion-dnd').oninput=conversionPlusTard;$('conversion-def').onchange=renderConversion;
+$('conversion-dnd').oninput=conversionPlusTard;
 {const b=document.createElement('button');b.type='button';b.id='conversion-ouvre';b.className='conversion-bouton';b.textContent='🎲';
  b.title='Conversion des dégâts';b.setAttribute('aria-label','Conversion des dégâts D&D 5.5 en dés d’Amertüme');
  b.onclick=()=>{renderConversion();conversionDialog.showModal();$('conversion-dnd').focus();$('conversion-dnd').select()};

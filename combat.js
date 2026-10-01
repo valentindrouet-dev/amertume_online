@@ -1580,22 +1580,23 @@ function moyennePoignee(poignee,def,essais=1600){const couleurs=[];DICE_KEYS.for
 function moyenneDesAmertume(couleur,n,def,essais=1600){return moyennePoignee({[couleur]:n},def,essais)}
 // Les dés que la conversion panache : Simple, Léger, Lourd, Mystique, Mortel — ni le Soin, ni la Phase, qui suit le tour.
 const CONVERSION_COULEURS=['white','bone','red','blue','black'];
-function conversionDegats(texte,def,combien=6){const dnd=lireDegatsDnd(texte);if(dnd.erreur)return dnd;
+function conversionDegats(texte,combien=6){const dnd=lireDegatsDnd(texte);if(dnd.erreur)return dnd;
  /* La moyenne des seuls dés D&D ; un bonus fixe n'y entre pas. Toutes les poignées panachées jusqu'à sept
-    dés sont lancées une première fois, vite ; les plus proches le sont de nouveau, longuement. On en garde
+    dés sont lancées une première fois, vite, sans DEF : leur valeur est absolue ; les plus proches le sont de
+    nouveau, longuement. On en garde
     les plus proches, une par mélange de couleurs d'abord, pour que les propositions varient. Au-delà, deux
     1 tombent trop souvent et le jet échoue. */
  const moyenne=dnd.des.reduce((s,d)=>s+d.n*(d.f+1)/2,0),maxDes=Math.max(2,Math.min(7,Math.ceil(moyenne/3)+2));
  const poignees=[],remplis=(k,reste,p)=>{if(k===CONVERSION_COULEURS.length){const n=Object.values(p).reduce((x,y)=>x+y,0);if(n)poignees.push({...p});return}
   for(let q=0;q<=reste;q++){const c={...p};if(q)c[CONVERSION_COULEURS[k]]=q;remplis(k+1,reste-q,c)}};
  remplis(0,maxDes,{});
- const note=(p,essais)=>{const s=moyennePoignee(p,def,essais),n=Object.values(p).reduce((x,y)=>x+y,0);return {des:p,n,moyenne:s.moyenne,touche:s.touche,score:Math.abs(s.moyenne-moyenne)+.05*n}};
+ const note=(p,essais)=>{const s=moyennePoignee(p,0,essais),n=Object.values(p).reduce((x,y)=>x+y,0);return {des:p,n,moyenne:s.moyenne,touche:s.touche,score:Math.abs(s.moyenne-moyenne)+.05*n}};
  const tri=(x,y)=>x.score-y.score;
  const fins=poignees.map(p=>note(p,300)).sort(tri).slice(0,48).map(c=>note(c.des,2400)).sort(tri);
  const signe=c=>Object.keys(c.des).sort().join('+'),pris=[],vus=new Set();
  fins.forEach(c=>{if(pris.length<combien&&!vus.has(signe(c))){vus.add(signe(c));pris.push(c)}});
  fins.forEach(c=>{if(pris.length<combien&&!pris.includes(c))pris.push(c)});
- return {...dnd,moyenne,min:dnd.des.reduce((s,d)=>s+d.n,0),max:dnd.des.reduce((s,d)=>s+d.n*d.f,0),def:Number(def)||0,propositions:pris.sort(tri)}}
+ return {...dnd,moyenne,min:dnd.des.reduce((s,d)=>s+d.n,0),max:dnd.des.reduce((s,d)=>s+d.n*d.f,0),propositions:pris.sort(tri)}}
 const NIVEAUX_XP=[0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000];
 function niveauDeXp(xp){const n=Math.max(0,Math.trunc(Number(xp))||0);let niv=1;NIVEAUX_XP.forEach((s,i)=>{if(n>=s)niv=i+1});return niv}
 function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;

@@ -1949,11 +1949,10 @@ body.sombre .biblio-table .utilise{background:#1e3a26;color:#9fd3a8}
 .biblio-table .nom-effet-champ{font:700 12px system-ui;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);width:100%;box-sizing:border-box}
 @media (max-width:1100px){.biblio-table .col-reglages{display:none}}
 @media (max-width:820px){.biblio-table .col-classe{width:40px}.biblio-table .classe-effet{width:36px}}
-/* La conversion des dégâts : le dé à côté de la vue ; la fenêtre, deux champs puis trois cartes, une par
-   famille de dés, bordées de la couleur de leur dé. */
+/* La conversion des dégâts : le dé à côté de la vue ; la fenêtre, un champ puis six cartes. */
 .conversion-bouton{padding:3px 9px;font-size:17px;line-height:1.2}
 #conversion-des{width:min(720px,94vw)}
-.conversion-champs{display:grid;grid-template-columns:2fr 1fr;gap:12px;align-items:end}
+.conversion-champs{display:grid;grid-template-columns:1fr;gap:12px;align-items:end}
 .conversion-champs input{font:600 16px system-ui;letter-spacing:.5px}
 .conversion-dnd{margin:10px 0 12px;font-size:14px;color:var(--muted)}.conversion-dnd b{color:var(--ink)}
 .conversion-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}

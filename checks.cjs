@@ -1104,16 +1104,17 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
    panachées, sans bonus, dont la moyenne, lancée par le moteur, s'en approche ; des mélanges différents d'abord. */
 {assert.deepEqual(C.lireDegatsDnd('2d6+3'),{des:[{n:2,f:6}],bonus:3,moyenne:10,min:5,max:15});
  assert.equal(C.lireDegatsDnd('d8 + 1d4 - 1').moyenne,6);assert.ok(C.lireDegatsDnd('1d20').erreur,'un d20 ne se convertit pas');assert.ok(C.lireDegatsDnd('abc').erreur);
- const r=C.conversionDegats('2d6',0);assert.equal(r.propositions.length,6);
+ const r=C.conversionDegats('2d6');assert.equal(r.propositions.length,6);
  r.propositions.forEach(p=>{assert.ok(Math.abs(p.moyenne-7)<0.6,'proche de 7');assert.equal(p.bonus,undefined,'des dés seuls')});
  assert.ok(r.propositions.some(p=>JSON.stringify(p.des)==='{"white":2}'),'2d6 : deux dés simples parmi les propositions');
  assert.equal(new Set(r.propositions.map(p=>Object.keys(p.des).sort().join('+'))).size,6,'six mélanges différents');
- assert.equal(C.conversionDegats('3d8+4',0).moyenne,13.5,'un bonus tapé n’entre pas dans la moyenne');
- C.conversionDegats('3d8',2).propositions.forEach(p=>assert.ok(Math.abs(p.moyenne-13.5)<1&&p.n<=7,'proche de 13,5'));
- assert.ok(C.conversionDegats('3d8',2).propositions.some(p=>Object.keys(p.des).length>1),'des poignées panachées');
+ assert.equal(C.conversionDegats('3d8+4').moyenne,13.5,'un bonus tapé n’entre pas dans la moyenne');
+ C.conversionDegats('3d8').propositions.forEach(p=>assert.ok(Math.abs(p.moyenne-13.5)<1&&p.n<=7,'proche de 13,5'));
+ assert.ok(C.conversionDegats('3d8').propositions.some(p=>Object.keys(p.des).length>1),'des poignées panachées');
+ assert.equal(C.conversionDegats('3d8').def,undefined,'une valeur absolue, sans DEF');
  assert.deepEqual(C.moyennePoignee({red:2,white:1},3),C.moyennePoignee({red:2,white:1},3),'le hasard est semé');
  assert.ok(src.includes("const conversionDialog=dialog('conversion-des','Conversion des dégâts',")&&src.includes("b.id='conversion-ouvre';b.className='conversion-bouton';b.textContent='🎲';")
-  &&src.includes("$('view').after(b)")&&!src.includes("conversion-dit")&&feuille.includes('.conversion-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));'),'le dé à côté de la vue ouvre la conversion');}
+  &&src.includes("$('view').after(b)")&&!src.includes("conversion-dit")&&!src.includes("conversion-def")&&feuille.includes('.conversion-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));'),'le dé à côté de la vue ouvre la conversion');}
 /* Un test de compétence tient sur une ligne au journal : la compétence, les réussites, les dés — 4+ en vert, en
    dessous en rouge —, sans « Test de », ni nombre de dés, ni six explosifs. La classe dit aussi ses compétences. */
 assert.ok(page.includes(" log(nomNum(a)+' · '+skillNames[i]+' : '+jet.reussites+' réussite'+(jet.reussites>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄',{dice:true,ton:'competence'});")
