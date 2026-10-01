@@ -3023,6 +3023,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.475 — Un bonus de l'arbre : l'icône et la valeur seules ; la valeur plus petite, dans le coin bas droit. */
+ assert.ok(feuille.includes('.arbre-plan>.arbre-noeud.petit.bonus .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus:is(.acquis,.dispo,.verrou,.modele) .arbre-rond{border-color:transparent;background:transparent;box-shadow:none}')
+  &&feuille.includes('.arbre-plan>.arbre-noeud.petit.bonus .arbre-rond b.bonus-valeur{left:71%;top:71%;font-size:15px;-webkit-text-stroke-width:3px}')
+  &&feuille.includes('.arbre-rond .bonus-valeur,.arbre-noeud.petit.bonus .arbre-rond b.bonus-valeur{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font:900 18px/1 system-ui;'),'bonus de l’arbre sans rond, valeur dans le coin');
  /* v0.474 — Chez un aventurier, un talent inaccessible ou trop cher est plus transparent qu'un talent à prendre. */
  assert.ok(feuille.includes('.arbre-plan>.arbre-noeud.verrou .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus.verrou .arbre-rond{filter:grayscale(1);opacity:.3}')
   &&feuille.includes('.arbre-plan>.arbre-noeud:is(.dispo,.verrou) .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus:is(.dispo,.verrou) .arbre-rond{border-style:dashed;opacity:.55;filter:none}'),'inaccessible : plus transparent');

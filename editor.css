@@ -1742,6 +1742,11 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* Chez un aventurier : ce qu'il peut prendre est en couleur ; ce qui n'est pas encore accessible, ou trop
    cher, en gris et plus transparent. */
 .arbre-plan>.arbre-noeud.verrou .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus.verrou .arbre-rond{filter:grayscale(1);opacity:.3}
+/* Un bonus dans l'arbre : son icône et sa valeur seules, sans rond ni fond ; la valeur, un peu plus petite,
+   dans le coin bas droit de l'icône, sans sortir du petit rond. */
+.arbre-plan>.arbre-noeud.petit.bonus .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus:is(.acquis,.dispo,.verrou,.modele) .arbre-rond{border-color:transparent;background:transparent;box-shadow:none}
+.arbre-plan>.arbre-noeud.petit.bonus.survol .arbre-rond{box-shadow:0 0 0 3px var(--panel),0 0 0 6px var(--green)}
+.arbre-plan>.arbre-noeud.petit.bonus .arbre-rond b.bonus-valeur{left:71%;top:71%;font-size:15px;-webkit-text-stroke-width:3px}
 /* Le bandeau passe au-dessus du trait d'entrée, qui semble ainsi naître sous lui ; le premier talent remonte. */
 .arbre-col>.arbre-titre{z-index:2}
 .arbre-col>.arbre-plan{margin-top:-38px}
