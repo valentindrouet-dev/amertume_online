@@ -3966,11 +3966,15 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
   svg.setAttribute('viewBox','0 0 '+Math.max(1,R.width)+' '+Math.max(1,R.height));svg.replaceChildren();
   const elDe=id=>col.querySelector('.arbre-plan>.arbre-noeud[data-id="'+id+'"]');
   // Le centre d'un bouton, et son rayon : le trait va jusqu'à son bord et s'y glisse dessous.
-  const centre=el=>{const r=(el.querySelector('.arbre-rond')||el).getBoundingClientRect();return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top,r:r.width/2-2}};
+  /* Un bonus n'a plus de rond : son trait passe sous son icône, jusque près de son centre, pour la
+     toucher quelle que soit sa forme. */
+  const estBonusEl=el=>el.classList.contains('petit')&&el.classList.contains('bonus');
+  const centre=el=>{const rond=el.querySelector('.arbre-rond')||el,r=rond.getBoundingClientRect(),ic=estBonusEl(el)&&[...rond.children].find(x=>x.tagName!=='B');
+   const i=ic&&ic.getBoundingClientRect();return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top,r:i&&i.width?Math.min(i.width,i.height)*.22:r.width/2-2}};
   col.classList.toggle('sans-acteur',!a);
   const pris=(x,y)=>!!a&&a.talents.includes(x.id)&&a.talents.includes(y.id);
   const trait=(de,vers,A,B,lien)=>{const p=centre(A),q=centre(B),g=document.createElementNS(ns,'g');
-   g.setAttribute('class','chemin'+(lien?'':' petit')+(pris(de,vers)?' pris':''));
+   g.setAttribute('class','chemin'+(lien?'':' petit')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':''));
    // Le trait ne traverse jamais un bouton : il ne vit qu'entre deux, d'un bord à l'autre.
    const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,rp=Math.min(p.r,d/2),rq=Math.min(q.r,d/2);
    const P={x:p.x+ux*rp,y:p.y+uy*rp},Q={x:q.x-ux*rq,y:q.y-uy*rq};

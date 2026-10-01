@@ -1747,6 +1747,9 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .arbre-plan>.arbre-noeud.petit.bonus .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus:is(.acquis,.dispo,.verrou,.modele) .arbre-rond{border-color:transparent;background:transparent;box-shadow:none}
 .arbre-plan>.arbre-noeud.petit.bonus.survol .arbre-rond{box-shadow:0 0 0 3px var(--panel),0 0 0 6px var(--green)}
 .arbre-plan>.arbre-noeud.petit.bonus .arbre-rond b.bonus-valeur{left:71%;top:71%;font-size:15px;-webkit-text-stroke-width:3px}
+/* Devant la valeur, un petit « + » qui ne la déplace pas ; le trait d'un bonus, plus fin, jusque sous son icône. */
+.arbre-plan>.arbre-noeud.petit.bonus .arbre-rond b.bonus-valeur::before{content:'+';position:absolute;right:100%;top:50%;transform:translateY(-52%);margin-right:-1px;font-size:10px;-webkit-text-stroke-width:2px;letter-spacing:0}
+.arbre-chemins .chemin.bonus .trait{stroke-width:1.5}
 /* Le bandeau passe au-dessus du trait d'entrée, qui semble ainsi naître sous lui ; le premier talent remonte. */
 .arbre-col>.arbre-titre{z-index:2}
 .arbre-col>.arbre-plan{margin-top:-38px}
@@ -1774,6 +1777,8 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .arbre-plan>*{pointer-events:auto}
 /* Un disque opaque sous chaque rond : les lignes ne se voient pas à travers un talent, même pâle ou gris. */
 .arbre-plan>.arbre-noeud::before{content:'';position:absolute;inset:0;border-radius:50%;background:var(--panel-2);z-index:-1}
+/* Un bonus n'a plus de rond : sans disque non plus, son trait le rejoint jusque sous son icône. */
+.arbre-plan>.arbre-noeud.petit.bonus::before{display:none}
 /* L'XP d'une carte, au MJ : à côté de son nom sur la table, et dans l'onglet Cartes. */
 #carte-titre .xp-carte{margin-left:10px;font:700 11px system-ui;letter-spacing:.3px;text-transform:none;color:var(--muted)}
 .maps-bar .map-xp{align-self:flex-end;margin-bottom:13px;font:700 12px system-ui;color:var(--muted);white-space:nowrap}

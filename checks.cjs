@@ -2422,7 +2422,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 }
 /* v0.268, puis v0.471 — Les chemins de l'arbre vont jusqu'au bord des boutons, dessous, en pointillés tant qu'ils ne sont pas
    actifs ; les bonus prennent la couleur de leur caractéristique ; plus de mode d'emploi au-dessus. */
-{assert.ok(src.includes("return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top,r:r.width/2-2}};")&&src.includes("col.classList.toggle('sans-acteur',!a);")
+{assert.ok(src.includes("return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top,r:i&&i.width?Math.min(i.width,i.height)*.22:r.width/2-2}};")&&src.includes("col.classList.toggle('sans-acteur',!a);")
   &&src.includes("const P={x:p.x+ux*rp,y:p.y+uy*rp},Q={x:q.x-ux*rq,y:q.y-uy*rq};")
   &&feuille.includes(".arbre-chemins .chemin .trait{stroke:var(--line-strong);stroke-width:3;stroke-linecap:round;fill:none;stroke-dasharray:3 7;opacity:.75}")
   &&feuille.includes(".arbre-col.sans-acteur .arbre-chemins .chemin .trait{stroke-dasharray:none;opacity:1}")
@@ -3023,6 +3023,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.476 — Le trait d'un bonus, plus fin, va sous son icône ; un petit « + » devant sa valeur, sans la déplacer. */
+ assert.ok(src.includes("g.setAttribute('class','chemin'+(lien?'':' petit')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':''));")
+  &&src.includes("r:i&&i.width?Math.min(i.width,i.height)*.22:r.width/2-2}};")&&feuille.includes('.arbre-chemins .chemin.bonus .trait{stroke-width:1.5}')&&feuille.includes('.arbre-plan>.arbre-noeud.petit.bonus::before{display:none}')
+  &&feuille.includes(".arbre-plan>.arbre-noeud.petit.bonus .arbre-rond b.bonus-valeur::before{content:'+';position:absolute;right:100%;"),'trait fin sous l’icône, petit + devant la valeur');
  /* v0.475 — Un bonus de l'arbre : l'icône et la valeur seules ; la valeur plus petite, dans le coin bas droit. */
  assert.ok(feuille.includes('.arbre-plan>.arbre-noeud.petit.bonus .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus:is(.acquis,.dispo,.verrou,.modele) .arbre-rond{border-color:transparent;background:transparent;box-shadow:none}')
   &&feuille.includes('.arbre-plan>.arbre-noeud.petit.bonus .arbre-rond b.bonus-valeur{left:71%;top:71%;font-size:15px;-webkit-text-stroke-width:3px}')
