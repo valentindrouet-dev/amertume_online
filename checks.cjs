@@ -2444,7 +2444,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")
   &&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos rond" id="repos" hidden>⛺</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
-  &&page.includes(":reposRestants(a)<=0?'Plus de repos court ('+reposMax(a)+' pris) : un repos long, ou la carte rechargée, les rend.'")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);")
+  &&page.includes(":reposRestants(a)<=0?'Repos court déjà pris : il revient à la fin du prochain combat.'")&&page.includes("actors.forEach(a=>{if(a.hero)a.reposCourts=0})}")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);")
   &&feuille.includes('button.btn-repos{--fond:#4f9a5a;color:#fff}'),'le Repos court');
 }
 /* v0.270 — La main droite, à gauche de l'image, tient la première arme ; un bouclier va à gauche ;
@@ -3163,7 +3163,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  vm.runInContext(page.match(/function leveEtats\(a\)\{[^\n]*\n[^\n]*/)[0]+'\n'+page.match(/function reposMax\(a\)[^\n]*/)[0]+'\n'+page.match(/function reposRestants\(a\)[^\n]*/)[0],ctxR);
  const h={states:['Feu','Blindage','Poison','Coma','Invisible'],etatsPassifs:['Invisible']};
  assert.equal(ctxR.leveEtats(h).join(','),'Feu,Poison','tout s’en va, sauf le Blindage, le coma et ce qu’une pièce portée donne');assert.equal(h.states.join(','),'Blindage,Coma,Invisible');
- assert.equal(ctxR.reposMax({level:3}),3);assert.equal(ctxR.reposMax({}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:2}),1);assert.equal(ctxR.reposRestants({level:2,reposCourts:5}),0);
+ assert.equal(ctxR.reposMax({level:3}),1,'un seul repos court entre deux combats, quel que soit le niveau');assert.equal(ctxR.reposMax({}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:0}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:1}),0);
  assert.ok(page.includes("if(a.vie<=0){a.horsCarte=true;a.lieuDomaine='';poseCibles(a,[]);")
   &&src.includes("function reposLong(){if(view!=='mj')return;")&&src.includes("$('hero-repos-long').onclick=reposLong;")&&carto.includes("heros.forEach(a=>{a.reposCourts=0;"),'0 VIE : hors de la carte jusqu’au repos long ; repos courts rendus à la carte rechargée');
  assert.ok(page.includes("function noteContactsDepart(a){if(!a||!enCombat())return;")&&page.includes("const contacts=adversairesAuContact(a).filter(([b])=>!avant||!avant.has(b.id));")
