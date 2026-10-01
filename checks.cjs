@@ -3023,6 +3023,9 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.486 — Les bonus de la barre de talents comme dans l'arbre : sans rond, la valeur en bas à droite, un petit +. */
+ assert.ok(feuille.includes('.talent-ameliorations .cat-pill.gear-carre.talent-carre.bonus-rond{border-color:transparent;background:transparent;box-shadow:none}')
+  &&feuille.includes(".talent-ameliorations .cat-pill.bonus-rond .bonus-valeur::before{content:'+';"),'bonus de la barre comme dans l’arbre');
  /* v0.485 — Bulles sans texte ajouté : les notes au seul objet ; une munition, son dé, sa quantité et sa valeur ;
    l'écu de DEF à la taille des dés. 99 exemplaires au plus d'une pièce ; chaque tir consomme sa munition. */
  {const ctxI={};vm.createContext(ctxI);vm.runInContext(src.slice(src.indexOf('const INVENTAIRE_MAX='),src.indexOf('function retirerInventaire('))+';this.ajouterInventaire=ajouterInventaire;',ctxI);
