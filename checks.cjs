@@ -3023,6 +3023,16 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.490 — Les niveaux de l'arbre : posés sur une ligne entre talents, ils ferment le talent d'après tant que
+   l'aventurier n'a pas ce niveau. */
+ {const ctxN={DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},lisChemin:()=>null,posDe:t=>t&&t.pos||null};vm.createContext(ctxN);
+  vm.runInContext(src.slice(src.indexOf('const liensDe='),src.indexOf('function cheminsDe('))+src.slice(src.indexOf('function entreesDe('),src.indexOf('/* Ce qu\'on tient encore d\'une liste'))+';this.verrouArbre=verrouArbre;this.poseNiveauLien=poseNiveauLien;this.niveauLien=niveauLien;',ctxN);
+  const A={id:'A',name:'A',pos:{x:0,y:0},liens:['B']},B={id:'B',name:'B',pos:{x:0,y:1}},L=[A,B];
+  assert.equal(ctxN.verrouArbre(['A'],L,B,1),'','sans niveau, la ligne mène');
+  ctxN.poseNiveauLien(B,A,3);assert.equal(JSON.stringify(A.niveaux),'{"B":3}','le niveau tient sur le talent d’où part la ligne');assert.equal(ctxN.niveauLien(B,A),3);
+  assert.equal(ctxN.verrouArbre(['A'],L,B,2),'Niveau 3','niveau 2 : fermé');assert.equal(ctxN.verrouArbre(['A'],L,B,3),'','niveau 3 : ouvert');
+  ctxN.poseNiveauLien(A,B,1);assert.equal(A.niveaux,undefined,'sous 2, le niveau s’ôte');}
+ assert.ok(src.includes("(libre?'':verrouArbre(a.talents,col.liste,t,Number(a.level)||1))")&&src.includes("b.className='arbre-niveau'+(n?'':' vide')")&&feuille.includes('.arbre-col>.arbre-niveau{position:absolute;'),'les niveaux de l’arbre');
  /* v0.487 — Munitions équipées toutes ensemble ; bulle d'arme à distance avec sa place de munition et le bonus de
    dégâts du porteur ; l'écu de DEF garde sa forme. */
  assert.ok(src.includes("o.category==='ammo'?(o.id===a.munitionId?(comptes.get(o)||0):0)")&&src.includes("p.append(dicePips(o.dice,o.etat,col==='ranged'));")

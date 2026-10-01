@@ -1752,6 +1752,15 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* Devant la valeur, un petit « + » qui ne la déplace pas ; le trait d'un bonus, plus fin, jusque sous son icône. */
 .arbre-plan>.arbre-noeud.petit.bonus .arbre-rond b.bonus-valeur::before{content:'+';position:absolute;right:100%;top:50%;transform:translateY(-52%);margin-right:-1px;font-size:10px;-webkit-text-stroke-width:2px;letter-spacing:0}
 .arbre-chemins .chemin.bonus .trait{stroke-width:1.5}
+/* Un niveau posé sur une ligne de l'arbre, au milieu : ouvert au niveau atteint, fermé avant. */
+.arbre-col>.arbre-niveau{position:absolute;z-index:3;transform:translate(-50%,-50%);display:inline-flex;align-items:baseline;gap:3px;margin:0;padding:2px 8px;border-radius:10px;
+ border:2px solid #b8862b;background:#f6e7c3;color:#5a3d0c;font:800 13px/1.1 system-ui;white-space:nowrap;box-shadow:0 1px 3px #0003;cursor:default;min-height:0}
+.arbre-col>.arbre-niveau small{font:800 8.5px system-ui;letter-spacing:.8px;text-transform:uppercase}
+.arbre-col>.arbre-niveau.ouvert{border-color:#3f8a4a;background:#dff0da;color:#2e6b38}
+.arbre-col>.arbre-niveau.ferme{filter:grayscale(1);opacity:.55}
+.arbre-col.editable>.arbre-niveau{cursor:pointer}
+.arbre-col.editable>.arbre-niveau.vide{width:22px;height:22px;padding:0;justify-content:center;align-items:center;border:1.5px dashed var(--line-strong);background:var(--panel);color:var(--muted);box-shadow:none;opacity:0;transition:opacity .12s}
+.arbre-col.editable:hover>.arbre-niveau.vide{opacity:.6}.arbre-col.editable>.arbre-niveau.vide:hover,.arbre-col.editable>.arbre-niveau.vide:focus-visible{opacity:1;border-color:var(--accent);color:var(--accent)}
 /* Le bandeau passe au-dessus du trait d'entrée, qui semble ainsi naître sous lui ; le premier talent remonte. */
 .arbre-col>.arbre-titre{z-index:2}
 .arbre-col>.arbre-plan{margin-top:-38px}

@@ -3259,6 +3259,12 @@ function classeDuHeros(a){const sienne=(a&&a.role||'').split('·')[0].trim(),tou
    des talents comme les autres : elles s'y placent et s'y apprennent. */
 function posDe(t){const p=t&&t.pos;return p&&Number.isInteger(p.x)&&Number.isInteger(p.y)?p:null}
 const liensDe=t=>Array.isArray(t&&t.liens)?t.liens:[];
+/* Les niveaux de l'arbre : un niveau posé sur la ligne entre deux talents, gardé sur celui d'où elle part
+   (« niveaux » : talent visé → niveau). Un aventurier ne passe par cette ligne qu'à ce niveau. 0 : aucun. */
+const niveauLien=(x,y)=>!x||!y?0:Math.max(Math.trunc(Number((x.niveaux||{})[y.id]))||0,Math.trunc(Number((y.niveaux||{})[x.id]))||0);
+function poseNiveauLien(de,vers,n){if(!de||!vers)return;
+ [[de,vers],[vers,de]].forEach(([t,u])=>{if(t.niveaux){delete t.niveaux[u.id];if(!Object.keys(t.niveaux).length)delete t.niveaux}});
+ if(n>=2){const src=liensDe(de).includes(vers.id)?de:vers,cible=src===de?vers:de;src.niveaux={...(src.niveaux||{}),[cible.id]:Math.min(20,Math.trunc(n))}}}
 const tousTalents=()=>typeof catalog!=='undefined'&&catalog&&Array.isArray(catalog.talents)?catalog.talents.filter(Boolean):[];
 /* Le sphérier. Un talent est un gros rond sur une case, d'où partent huit chemins. Les quatre droits
    — n, e, s, o — mènent au talent de la case voisine, par une ligne, ou à de petits ronds ; les quatre
@@ -3333,10 +3339,13 @@ function profondeursDe(liste){const L=(liste||[]).filter(Boolean),departs=depart
 /* Ce qu'attend un talent : rien s'il est un départ ; sinon, qu'un talent relié à lui soit tenu — on
    nomme ceux d'au-dessus. Un petit rond attend le petit rond d'avant sur son chemin, ou, s'il est le
    premier, son talent. */
-function verrouArbre(portes,liste,t){const tous=portes||[];
+// « niveau » : celui de l'aventurier ; une ligne qui exige plus ne mène pas encore à ce talent.
+function verrouArbre(portes,liste,t,niveau=Infinity){const tous=portes||[];
  if(lisChemin(t)){const d=departChemin(t);if(!d)return '';const av=precedentChemin(t)||d;return tous.includes(av.id)?'':av.name}
  if(departsDe(liste).has(t.id))return '';
- const v=voisinsDe(liste,t);if(!v.length||v.some(x=>tous.includes(x.id)))return '';
+ const v=voisinsDe(liste,t);if(!v.length)return '';
+ const tenus=v.filter(x=>tous.includes(x.id));if(tenus.some(x=>niveauLien(x,t)<=niveau))return '';
+ if(tenus.length)return 'Niveau '+Math.min(...tenus.map(x=>niveauLien(x,t)));
  const p=profondeursDe(liste),n=p.get(t.id),haut=v.filter(x=>p.has(x.id)&&p.get(x.id)<n);
  return (haut.length?haut:v).map(x=>x.name).join(' ou ')}
 /* Ce qu'on tient encore d'une liste : depuis ses départs tenus, de talent tenu en talent tenu le long
@@ -3392,6 +3401,9 @@ function accordeArbres(){let change=false;
   colonnesArbre(classe).forEach(col=>{const ids=new Set(col.liste.map(t=>t.id)),posees=[];
    col.liste.forEach(t=>{const l=liensDe(t),bon=[...new Set(l.filter(id=>ids.has(id)&&id!==t.id))].slice(0,LIENS_MAX);
     if(bon.length!==l.length||bon.some((id,k)=>id!==l[k])){if(bon.length)t.liens=bon;else delete t.liens;change=true}
+    // Un niveau ne tient que sur une ligne qui existe, de 2 à 20.
+    if(t.niveaux){const nv={};Object.entries(t.niveaux).forEach(([k,n])=>{n=Math.trunc(Number(n));if(liensDe(t).includes(k)&&n>=2&&n<=20)nv[k]=n});
+     if(JSON.stringify(nv)!==JSON.stringify(t.niveaux)){if(Object.keys(nv).length)t.niveaux=nv;else delete t.niveaux;change=true}}
     const p=posDe(t);if(p&&!posees.some(q=>{const r=posDe(q);return r.x===p.x&&r.y===p.y})){posees.push(t);return}
     t.pos=caseLibre(posees,null);posees.push(t);change=true});
    col.liste.forEach(t=>{const ch=cheminsDe(col.liste,t);Object.keys(DIRS).forEach(d=>{const ps=ch[d].petits;if(!ps.length)return;
@@ -3857,7 +3869,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // Un talent, un bonus ou une amélioration que l'XP restante ne paie pas se grise, comme un prérequis manquant.
  const trop=t=>a&&coutPalier(t,1)>xpDisponible(a,catalog.talents)?'XP insuffisante':'';
  const noeudArbre=(t,col,libre)=>{const acquis=porte(t);
-  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t))||manqueTalent(a.talents,t,catalog.talents)||trop(t);
+  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t,Number(a.level)||1))||manqueTalent(a.talents,t,catalog.talents)||trop(t);
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);
   if(mj&&lienDepuis===t.id)el.classList.add('relie-source');
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
@@ -4010,6 +4022,18 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
    svg.append(g)};
   liste.forEach(de=>liensDe(de).forEach(id=>{const vers=liste.find(x=>x.id===id),A=elDe(de.id),B=vers&&elDe(id);if(A&&B)trait(de,vers,A,B,true)}));
   liste.forEach(de=>Object.keys(DIRS).forEach(d=>{let av=de,A=elDe(de.id);petitsDe(de,d).forEach(s=>{const B=elDe(s.id);if(!A||!B)return;trait(av,s,A,B,false);av=s;A=B})}));
+  /* Les niveaux, au milieu des lignes entre talents : « NIV. 3 », ouvert à ce niveau, fermé avant. Chez le MJ,
+     une place sur chaque ligne : le clic pose le niveau 2, puis l'augmente ; le clic droit le baisse, puis l'ôte. */
+  col.querySelectorAll(':scope>.arbre-niveau').forEach(x=>x.remove());
+  liste.forEach(de=>liensDe(de).forEach(id=>{const vers=liste.find(x=>x.id===id),A=elDe(de.id),B=vers&&elDe(id);if(!A||!B)return;
+   const n=niveauLien(de,vers);if(!n&&!mj)return;const p=centre(A),q=centre(B),b=document.createElement(mj?'button':'span');if(mj)b.type='button';
+   b.className='arbre-niveau'+(n?'':' vide')+(a&&n?((Number(a.level)||1)>=n?' ouvert':' ferme'):'');
+   b.style.left=((p.x+q.x)/2).toFixed(1)+'px';b.style.top=((p.y+q.y)/2).toFixed(1)+'px';
+   const v=document.createElement('b');v.textContent=n?String(n):'+';if(n){const c=document.createElement('small');c.textContent='Niv.';b.append(c)}b.append(v);
+   b.setAttribute('aria-label',n?'Niveau '+n:'Poser un niveau sur cette ligne');
+   if(mj){b.onclick=e=>{e.stopPropagation();poseNiveauLien(de,vers,n?n+1:2);arbreChange()};
+    b.oncontextmenu=e=>{e.preventDefault();e.stopPropagation();if(n){poseNiveauLien(de,vers,n-1);arbreChange()}}}
+   col.append(b)}));
   // L'entrée de l'arbre : un trait qui part du bandeau de la colonne et descend jusqu'au talent de départ.
   const titre=col.querySelector('.arbre-titre');
   col.querySelectorAll('.arbre-plan>.arbre-noeud.racine').forEach(el=>{const c=centre(el);if(!titre)return;
