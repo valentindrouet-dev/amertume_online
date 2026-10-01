@@ -1697,6 +1697,140 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .arbre-noeud.petit.acquis .arbre-rond::after{top:-8px;right:-9px;width:14px;height:14px;font-size:10px;line-height:14px}
 .arbre-noeud.petit .arbre-outils{top:-26px;right:auto;left:50%;transform:translateX(-50%)}
 .arbre-chemins .chemin.petit .trait{stroke-width:2.5}
+
+/* Les places du sphérier : de vrais ronds, à la taille de ce qui s'y posera. */
+.arbre-plan>.arbre-place{width:58px;height:58px;border-radius:50%;box-sizing:border-box;border:2px dashed var(--line-strong);background:var(--panel-2);display:grid;place-items:center;font:600 24px/1 system-ui;color:var(--muted);box-shadow:none}
+.arbre-plan>.arbre-petit-place{width:34px;height:34px;border-radius:50%;box-sizing:border-box;padding:0;display:grid;place-items:center;font:600 16px/1 system-ui}
+/* Le talent de départ : tout en haut, une entrée au-dessus de lui. */
+.arbre-noeud.racine .arbre-rond::before{content:'';position:absolute;left:50%;bottom:100%;width:3px;height:22px;margin-left:-1.5px;border-radius:2px;background:var(--line-strong)}
+/* Un bonus dans son petit rond : son logo, son chiffre en pastille. */
+.arbre-noeud.petit.bonus .arbre-rond{border-style:solid;border-width:3px;background:var(--panel)}
+.arbre-rond .logo-bonus{width:70%;height:70%;object-fit:contain;display:block}
+.arbre-rond .bonus-lettres{font:800 11px/1 system-ui;color:var(--teinte)}
+.arbre-rond .bonus-valeur,.arbre-noeud.petit.bonus .arbre-rond b.bonus-valeur{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font:900 18px/1 system-ui;letter-spacing:-1px;white-space:nowrap;text-align:center;pointer-events:none;
+ -webkit-text-stroke:3.5px #1d1a16;paint-order:stroke fill;text-shadow:0 1px 2px #0008}
+.arbre-noeud.bonus-comp{--teinte:#5a7a6c}
+/* Les bonus génériques, dans le choix d'un chemin : une rangée de petits ronds. */
+.bonus-generiques{display:flex;flex-wrap:wrap;gap:12px 10px;margin:4px 0 12px}
+.bonus-generique{width:auto;padding:0;border:0;background:transparent;cursor:pointer}
+.bonus-generique:hover .arbre-rond,.bonus-generique:focus-visible .arbre-rond{transform:scale(1.1);box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
+
+/* Les orbes d'un Mystique, dans le bloc Dégâts, à droite de son arme. */
+.des-combattant .des-orbes{display:inline-flex;align-items:center;gap:6px;margin-left:14px;padding-left:12px;border-left:1px solid var(--line)}
+.des-combattant{flex-wrap:wrap;row-gap:6px}
+.des-combattant .des-bonus,.des-combattant .des-orbes,.des-combattant .pips{flex-wrap:nowrap;white-space:nowrap}
+.des-combattant .des-orbes{margin-left:10px;padding-left:10px}
+/* Avec les orbes, tout se resserre pour tenir sur une ligne ; trop long, la suite passe dessous sans glisser sous le plateau. */
+.des-combattant{flex-shrink:0}
+
+/* Le sphérier à la taille de l'onglet Talents : les talents à 69 px, les petits ronds d'autant plus gros. */
+.arbre-plan>.arbre-noeud:not(.petit) .arbre-rond{width:69px;height:69px}
+.arbre-plan>.arbre-noeud:not(.petit) .arbre-rond img{width:66%;height:66%}
+.arbre-plan>.arbre-noeud.petit .arbre-rond{width:40px;height:40px}
+.arbre-plan>.arbre-place{width:69px;height:69px;font-size:28px}
+.arbre-plan>.arbre-petit-place{width:40px;height:40px;font-size:18px}
+/* Chez un aventurier : un talent qu'il n'a pas pris est un peu transparent, cerclé de pointillés ; pris,
+   il est plein, d'un seul trait de contour, comme tout talent. */
+.arbre-plan>.arbre-noeud:is(.dispo,.verrou) .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus:is(.dispo,.verrou) .arbre-rond{border-style:dashed;opacity:.55;filter:none}
+.arbre-plan>.arbre-noeud.verrou{opacity:1}
+.arbre-plan>.arbre-noeud.acquis .arbre-rond,.arbre-plan>.arbre-noeud.petit.acquis .arbre-rond{border-style:solid;opacity:1;box-shadow:0 2px 6px #0004}
+.arbre-plan>.arbre-noeud.acquis .arbre-rond::after{display:none}
+
+/* L'entrée de l'arbre, du bandeau au talent de départ : le trait SVG remplace l'ancien bout de trait. */
+.arbre-noeud.racine .arbre-rond::before{display:none}
+.arbre-chemins .entree{stroke:var(--line-strong);stroke-width:3;stroke-linecap:round}
+/* Chez un aventurier : ce qu'il peut prendre est en couleur, ce qui n'est pas encore accessible, en gris. */
+.arbre-plan>.arbre-noeud.verrou .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus.verrou .arbre-rond{filter:grayscale(1)}
+/* Le bandeau passe au-dessus du trait d'entrée, qui semble ainsi naître sous lui ; le premier talent remonte. */
+.arbre-col>.arbre-titre{z-index:2}
+.arbre-col>.arbre-plan{margin-top:-38px}
+.arbre-chemins .entree.pris{stroke:var(--green)}
+/* Sur un petit rond, le ✕ se tient sous lui : la bulle, au-dessus, ne le couvre pas. */
+.arbre-plan>.arbre-noeud.petit .arbre-outils{top:calc(100% + 3px)}
+.arbre-plan>.arbre-noeud.petit .arbre-outils .ico{padding:1px 5px;font-size:11px}
+/* Les dés du Mystique, arme et orbes, tiennent à pleine taille sur une ligne : la colonne des Dégâts s'élargit d'autant, le bloc Actions cède la place. */
+@media(min-width:701px){.actions-rangee{grid-template-columns:minmax(0,2fr) minmax(max-content,1fr)}}
+/* Les dés, les états et le bonus de dégâts dans un même cartouche, au-dessus de la piste. */
+#des-combattant{padding:5px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.grille-logos-groupe>summary{cursor:pointer;list-style-position:inside}
+.grille-logos-groupe>summary:hover{color:var(--ink)}
+/* Le détail des dégâts du journal, en bulle au survol. */
+.j-degats.cliquable{cursor:help}
+.bulle-detail-degats .j-detail{margin:0}
+/* La bulle d'un bonus prend la teinte de son rond. */
+.talent-detail.bulle-bonus{--teinte:#b8862b;background:color-mix(in srgb,var(--teinte) 20%,#fff8ec);border-left:4px solid var(--teinte)}
+.talent-detail.bulle-bonus.bonus-vie{--teinte:rgb(122,92,184)}.talent-detail.bulle-bonus.bonus-endu{--teinte:rgb(44,140,133)}.talent-detail.bulle-bonus.bonus-pv{--teinte:rgb(47,122,91)}
+.talent-detail.bulle-bonus.bonus-def{--teinte:rgb(96,110,118)}.talent-detail.bulle-bonus.bonus-dmg{--teinte:rgb(180,72,58)}.talent-detail.bulle-bonus.bonus-orbe{--teinte:#8a63c9}.talent-detail.bulle-bonus.bonus-comp{--teinte:#5a7a6c}
+/* Le détail des dés d'une attaque, au journal : une bulle comme celle des talents. */
+.bulle-detail-degats .j-detail{margin:0;padding:7px 10px;border:1px solid #00000026;border-left:4px solid #b4553a;border-radius:9px;background:#f3e3dc;color:#2a2118;box-shadow:0 2px 5px #0000002e}
+/* Le plan laisse passer la souris jusqu'aux lignes : le MJ les efface d'un clic. Ses ronds et ses places la gardent. */
+.arbre-plan{pointer-events:none}
+.arbre-plan>*{pointer-events:auto}
+/* Un disque opaque sous chaque rond : les lignes ne se voient pas à travers un talent, même pâle ou gris. */
+.arbre-plan>.arbre-noeud::before{content:'';position:absolute;inset:0;border-radius:50%;background:var(--panel-2);z-index:-1}
+/* L'XP d'une carte, au MJ : à côté de son nom sur la table, et dans l'onglet Cartes. */
+#carte-titre .xp-carte{margin-left:10px;font:700 11px system-ui;letter-spacing:.3px;text-transform:none;color:var(--muted)}
+.maps-bar .map-xp{align-self:flex-end;margin-bottom:13px;font:700 12px system-ui;color:var(--muted);white-space:nowrap}
+/* Les dés d'une ligne du journal, en petits carrés. */
+.j-des{display:inline-flex;vertical-align:-3px}
+.j-des .pips{gap:2px}.j-des .die-sq{flex:0 0 15px;width:15px;height:15px}
+/* L'arbre en masse : les petits ronds en retrait sous leur talent. */
+.masse-talents tr.masse-petit>th .masse-nom{padding-left:22px}
+.masse-talents .masse-nom-fixe{font:600 13px system-ui;min-width:140px}
+.masse-talents .masse-texte-long{width:100%;min-width:260px}
+.masse-talents .cat-pill.mini{flex:0 0 auto}
+/* Le prix en XP, dans l'arbre seulement : sous le rond, tant qu'il n'est pas acquis ;
+   en haut à droite de sa bulle, vert une fois acquis. */
+.arbre-plan>.arbre-noeud>.arbre-cout{position:absolute;left:50%;top:100%;transform:translate(-50%,-55%);z-index:3;pointer-events:none;opacity:0;transition:opacity .1s;
+ padding:1px 6px;border-radius:9px;border:1px solid var(--line-strong);background:var(--panel);color:var(--ink);font:700 10px/1.3 system-ui;white-space:nowrap;box-shadow:0 1px 3px #0003}
+.arbre-plan>.arbre-noeud.petit>.arbre-cout{font-size:9px;padding:0 5px}
+.talent-bulle-nom .cout-xp{margin-left:auto;padding:1px 7px;border-radius:9px;border:1px solid #00000033;background:#fffaf0;font:700 11px/1.3 system-ui;color:#5a4a36;align-self:center}
+.talent-bulle-nom .cout-xp.acquis{background:#dff0da;border-color:#3f8a4a;color:#2e6b38}
+/* L'en-tête de l'arbre : le total à gauche, « Modifier en masse » contre « Vue joueur ». */
+#arbres .dialog-head .arbres-total{font:700 13px system-ui;color:var(--muted);white-space:nowrap}
+#arbres .dialog-head #arbres-xp{margin-left:auto}
+#arbres .dialog-head #arbres-xp+#arbres-masse{margin-left:6px}
+#arbres .dialog-head #arbres-masse+#arbres-vue{margin-left:6px}
+/* Une ligne venue d'une amélioration : une pastille devant, comme une rune. */
+.palier-effet.amelioration::before,.gear-detail .gear-bonus::before{content:'⇧';display:inline-grid;place-items:center;width:14px;height:14px;margin-right:5px;vertical-align:middle;position:relative;top:-1px;
+ border-radius:50%;background:linear-gradient(#f0b33c,#d98a1c);color:#fff;font:800 9px/1 system-ui;box-shadow:0 0 0 1px #8a560f66}
+/* Sous le rond, le prix se montre au survol ; « XP visible » le laisse affiché. */
+.arbre-plan>.arbre-noeud:hover>.arbre-cout,#arbres.xp-visible .arbre-plan>.arbre-noeud>.arbre-cout{opacity:1}
+/* La fiche d'aventurier : le bloc des talents prend sa propre teinte ; six places par ligne, les libres
+   en ronds vides ; dessous, douze petites places pour les améliorations, deux sous chaque talent. */
+.hero-card .talent-grille.a-cases{background:#e4dac6;border-color:#cdbf9f;box-shadow:inset 0 1px 3px #0000001a}
+.hero-card .talent-grille .talent-case-vide{width:100%;max-width:62px;aspect-ratio:1;border-radius:50%;border:2px dashed #b9a98a;opacity:.55;box-sizing:border-box}
+.hero-card .talent-grille .talent-ameliorations{grid-column:1/-1;width:100%;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));justify-items:center;gap:6px 2px;
+ padding-top:8px;border-top:1px dashed #cdbf9f}
+.hero-card .talent-ameliorations .cat-pill.gear-carre.talent-carre{width:100%;max-width:28px;height:auto;aspect-ratio:1;border-width:2px}
+.hero-card .talent-ameliorations .cat-pill.gear-carre.talent-carre .logo-equip{width:68%;height:68%}
+.hero-card .talent-ameliorations .cat-pill.gear-carre.talent-carre .glyphe{font-size:13px}
+.hero-card .talent-ameliorations .amelioration-case-vide{width:100%;max-width:28px;aspect-ratio:1;border-radius:50%;border:1.5px dashed #b9a98a;opacity:.5;box-sizing:border-box}
+/* Le mot « Talents » et le bloc ouvrent l'arbre ; l'élément du Mystique contre sa classe. */
+.hero-card .hero-sous.ouvre-arbre,.hero-card .talent-grille.ouvre-arbre{cursor:pointer}
+.hero-card .sheet-element{margin-left:-4px}
+/* Le bloc des talents en doré clair ; les places libres gardent la mise en page sans se dessiner. */
+.hero-card .talent-grille.a-cases{background:linear-gradient(#f6e8bf,#efdca6);border-color:#d8bd72;box-shadow:inset 0 1px 3px #7a5a1a1f}
+.hero-card .talent-grille .talent-case-vide,.hero-card .talent-ameliorations .amelioration-case-vide{border-color:transparent}
+.hero-card .talent-grille .talent-ameliorations{border-top-color:#cfae5e}
+/* Un bonus en petit rond : sa couleur, son logo, son total en pastille. */
+.hero-card .talent-ameliorations .bonus-rond{position:relative;--teinte:#b8862b;border-color:var(--teinte);background:var(--panel)}
+.hero-card .talent-ameliorations .bonus-rond.bonus-vie{--teinte:rgb(122,92,184)}.hero-card .talent-ameliorations .bonus-rond.bonus-endu{--teinte:rgb(44,140,133)}
+.hero-card .talent-ameliorations .bonus-rond.bonus-pv{--teinte:rgb(47,122,91)}.hero-card .talent-ameliorations .bonus-rond.bonus-dmg{--teinte:rgb(180,72,58)}
+.hero-card .talent-ameliorations .bonus-rond.bonus-orbe{--teinte:#8a63c9}.hero-card .talent-ameliorations .bonus-rond.bonus-comp{--teinte:#5a7a6c}
+.hero-card .talent-ameliorations .bonus-rond svg,.hero-card .talent-ameliorations .bonus-rond img,.hero-card .talent-ameliorations .bonus-rond .bonus-lettres{width:62%;height:62%;font:800 9px/1 system-ui}
+.hero-card .talent-ameliorations .bonus-rond .bonus-valeur{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font:900 11px/1 system-ui;text-align:center;pointer-events:none;-webkit-text-stroke:2.5px #1d1a16;paint-order:stroke fill}
+/* Onglet Talents : six talents au plus par ligne dans chaque rangée de type ; les améliorations
+   dessous, en petits ronds, douze par ligne. */
+.talent-rangee{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));justify-items:center;align-items:start;gap:10px 6px}
+.talent-rangee .cat-carte{width:100%;min-width:0;align-items:center}
+.talent-rangee .cat-pill.gear-carre.talent-carre{width:100%;max-width:69px;height:auto;aspect-ratio:1}
+.talent-rangee .cat-pill.gear-carre.talent-carre .logo-equip{width:66%;height:66%}
+.talent-rangee.t-ame{grid-template-columns:repeat(12,minmax(0,1fr));gap:6px 2px;padding-top:8px;border-top:1px dashed var(--line)}
+.talent-rangee.t-ame .cat-pill.gear-carre.talent-carre{max-width:34px;border-width:2px}
+.talent-rangee.t-ame .cat-pill.gear-carre.talent-carre .logo-equip{width:70%;height:70%}
+.talent-rangee.t-ame .cat-pill.gear-carre.talent-carre .glyphe{font-size:15px}
+.talent-rangee.t-ame .nom-carte{display:none}
 /* La fiche d'aventurier : l'inventaire dans son cadre, comme l'équipement ; ce qui s'y range n'est pas grisé. */
 .sac .cat-pill.gear-carre.dispo,.sac .cat-pill.gear-carre.dispo:hover{opacity:1}
 .corps-sac>.sac-titre{display:flex;align-items:center;gap:8px;margin:6px 0 -2px;font:600 10px system-ui;letter-spacing:2px}

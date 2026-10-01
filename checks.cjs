@@ -1100,6 +1100,15 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
  assert.ok(src.includes("const table=document.createElement('table');table.className='biblio-table';")&&src.includes("function ligneEffet(c,classe,rangs,parent){")
   &&src.includes("function phraseReglee(c){")&&src.includes("function filtreBiblio(){")&&src.includes('id="biblio-filtre"')&&src.includes("tr.className='effet-ligne t-'+(c.type||'act')+(parent?' ame-de':c.type==='ame'?' ame-libre':'');")
   &&src.includes("localStorage.getItem('amertume-biblio-plis')")&&feuille.includes('.biblio-table tr.ame-de td{')&&feuille.includes('.biblio-table .col-dit b.reglable{'),'la bibliothèque en tableau');}
+/* Les petites améliorations de l'onglet Talents et de la fiche d'aventurier gardent leur taille, comme le sphérier
+   et le reste de la feuille de style : la bibliothèque ne touche qu'à ses propres règles. */
+assert.ok(feuille.includes('.talent-rangee.t-ame .cat-pill.gear-carre.talent-carre{max-width:34px;border-width:2px}')
+ &&feuille.includes('.talent-rangee.t-ame{grid-template-columns:repeat(12,minmax(0,1fr));')
+ &&feuille.includes('.hero-card .talent-ameliorations .cat-pill.gear-carre.talent-carre{width:100%;max-width:28px;')
+ &&feuille.includes('.hero-card .talent-ameliorations .amelioration-case-vide{width:100%;max-width:28px;')
+ &&feuille.includes('.arbre-plan>.arbre-noeud.petit .arbre-rond{width:40px;height:40px}')
+ &&feuille.includes('.palier-effet.amelioration::before,.gear-detail .gear-bonus::before{')
+ &&feuille.includes('.j-des{display:inline-flex;vertical-align:-3px}'),'les améliorations restent petites, le reste de la feuille intact');
 {const {pvMaximum,writeStat,setState}=C;const cls=[{name:'Gardien',pv:18}];
  const h={hero:true,role:'Gardien',race:'',vie:3,vieMax:4,endu:3,hp:27,max:27,states:[]};
  assert.equal(pvMaximum(cls,h),27);h.endu=2;assert.equal(pvMaximum(cls,h),24);
