@@ -1545,11 +1545,12 @@ function readStat(cle,texte,avant){const bornes=STAT_LIMITS[cle];
    met dans le coma comme n'importe quel coup. */
 /* L'XP à atteindre pour chaque niveau d'aventurier, du 1 au 20 : le niveau suit l'XP, de lui-même. */
 /* ---------- La conversion des dégâts de D&D 5.5 ----------
-   Une expression de D&D — « 2d6+3 », « d8 + 1d4 », des d4 aux d12 et un bonus fixe — se lit en sa
-   moyenne. Les dés d'Amertüme sont tous des d6, mais chaque couleur a sa règle : le Lourd passe la DEF,
-   le Mystique double sur une paire, un double 1 fait échec, un double 6 critique. Leur moyenne n'est
-   donc pas écrite à la main : le moteur lui-même lance les dés, contre la DEF donnée, et la conversion
-   cherche, pour chaque couleur, le nombre de dés et le bonus de dégâts qui s'en approchent le plus. */
+   Des dés de D&D — « 3d8 », « d8 + 1d4 », des d4 aux d12 — se lisent en leur moyenne ; un bonus fixe
+   tapé quand même n'y entre pas : il se garde à part, comme le bonus de dégâts d'Amertüme. Les dés
+   d'Amertüme sont tous des d6, mais chaque couleur a sa règle : le Lourd passe la DEF, le Mystique double
+   sur une paire, un double 1 fait échec, un double 6 critique. Leur moyenne n'est donc pas écrite à la
+   main : le moteur lui-même lance les dés, contre la DEF donnée, et la conversion cherche, pour chaque
+   couleur, le nombre de dés — sans bonus — qui s'en approche le plus. */
 const FACES_DND=[4,6,8,10,12];
 function lireDegatsDnd(texte){const t=String(texte||'').toLowerCase().replace(/\s+/g,'');
  if(!t)return {erreur:'Entre des dégâts, par exemple 2d6+3.'};
@@ -1574,19 +1575,18 @@ function moyenneDesAmertume(couleur,n,def,essais=1600){const c=DICE_KEYS.indexOf
   if(r.hit){touche++;somme+=r.damage}}
  return {moyenne:somme/essais,touche:touche/essais}}
 // Les trois familles proposées, de la plus simple à la plus puissante.
-const CONVERSION_DES=[['white','Simple','Des dés simples : la DEF écarte leurs faces basses.'],
- ['red','Lourd','Des dés lourds : ils passent toujours la DEF.'],
- ['blue','Mystique','Des dés mystiques : une paire double leurs dégâts.']];
+const CONVERSION_DES=[['white','Dés simples','Des dés simples : la DEF écarte leurs faces basses.'],
+ ['red','Dés lourds','Des dés lourds : ils passent toujours la DEF.'],
+ ['blue','Dés mystiques','Des dés mystiques : une paire double leurs dégâts.']];
 function conversionDegats(texte,def){const dnd=lireDegatsDnd(texte);if(dnd.erreur)return dnd;
- /* Au-delà de dix dés, deux 1 tombent presque à coup sûr et le jet échoue : les gros dégâts passent
-    par le bonus. Entre deux poignées voisines, la plus courte et le plus petit bonus l'emportent. */
- const cible=Math.max(0,dnd.moyenne),plafond=Math.max(2,Math.min(10,Math.ceil(cible/2.5)+2)),bonusMax=Math.min(80,Math.ceil(cible)+2);
+ /* La moyenne des seuls dés. Au-delà de dix dés, deux 1 tombent presque à coup sûr et le jet échoue :
+    la poignée s'arrête là. Entre deux poignées aussi proches, la plus courte l'emporte. */
+ const moyenne=dnd.des.reduce((s,d)=>s+d.n*(d.f+1)/2,0),plafond=Math.max(2,Math.min(10,Math.ceil(moyenne/2.5)+2));
  const propositions=CONVERSION_DES.map(([couleur,nom,dit])=>{let mieux=null;
-  for(let n=1;n<=plafond;n++){const s=moyenneDesAmertume(couleur,n,def);
-   for(let b=0;b<=bonusMax;b++){const m=s.moyenne+b*s.touche,score=Math.abs(m-cible)+.1*b+.25*n;
-    if(!mieux||score<mieux.score)mieux={couleur,nom,dit,n,bonus:b,moyenne:m,touche:s.touche,score}}}
+  for(let n=1;n<=plafond;n++){const s=moyenneDesAmertume(couleur,n,def),score=Math.abs(s.moyenne-moyenne)+.05*n;
+   if(!mieux||score<mieux.score)mieux={couleur,nom,dit,n,moyenne:s.moyenne,touche:s.touche,score}}
   return mieux});
- return {...dnd,def:Number(def)||0,propositions}}
+ return {...dnd,moyenne,min:dnd.des.reduce((s,d)=>s+d.n,0),max:dnd.des.reduce((s,d)=>s+d.n*d.f,0),def:Number(def)||0,propositions}}
 const NIVEAUX_XP=[0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000];
 function niveauDeXp(xp){const n=Math.max(0,Math.trunc(Number(xp))||0);let niv=1;NIVEAUX_XP.forEach((s,i)=>{if(n>=s)niv=i+1});return niv}
 function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;

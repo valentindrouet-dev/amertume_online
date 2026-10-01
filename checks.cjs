@@ -1105,8 +1105,10 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
 {assert.deepEqual(C.lireDegatsDnd('2d6+3'),{des:[{n:2,f:6}],bonus:3,moyenne:10,min:5,max:15});
  assert.equal(C.lireDegatsDnd('d8 + 1d4 - 1').moyenne,6);assert.ok(C.lireDegatsDnd('1d20').erreur,'un d20 ne se convertit pas');assert.ok(C.lireDegatsDnd('abc').erreur);
  const r=C.conversionDegats('2d6',0);assert.equal(r.propositions.length,3);
- assert.deepEqual([r.propositions[0].couleur,r.propositions[0].n,r.propositions[0].bonus],['white',2,0],'2d6 : deux dés simples');
- C.conversionDegats('4d10+5',3).propositions.forEach(p=>assert.ok(Math.abs(p.moyenne-27)<1.5&&p.n<=10,'proche de 27 : '+p.nom));
+ assert.deepEqual([r.propositions[0].couleur,r.propositions[0].n],['white',2],'2d6 : deux dés simples');
+ r.propositions.forEach(p=>assert.equal(p.bonus,undefined,'des dés seuls, sans bonus'));
+ assert.equal(C.conversionDegats('3d8+4',0).moyenne,13.5,'un bonus tapé n’entre pas dans la moyenne');
+ C.conversionDegats('3d8',0).propositions.forEach(p=>assert.ok(Math.abs(p.moyenne-13.5)<2&&p.n<=10,'proche de 13,5 : '+p.nom));
  assert.deepEqual(C.moyenneDesAmertume('red',2,3),C.moyenneDesAmertume('red',2,3),'le hasard est semé');
  assert.ok(src.includes("const conversionDialog=dialog('conversion-des','Conversion des dégâts',")&&src.includes("b.id='conversion-ouvre';b.className='conversion-bouton';b.textContent='🎲';")
   &&src.includes("$('view').after(b)")&&feuille.includes('.conversion-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));'),'le dé à côté de la vue ouvre la conversion');}

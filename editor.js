@@ -996,11 +996,11 @@ function groupesLogosCompetence(){const vus=new Set(),groupes=[];
   .forEach(f=>{const ids=iconesPlanches().filter(id=>id.startsWith(f+'#'));ids.forEach(i=>vus.add(i));if(ids.length)groupes.push([nomPlanche(f),ids])});
  [...famillesPlanches(),...FAMILLES_LOGOS].forEach(([t,l])=>{const reste=l.filter(x=>!vus.has(x));if(reste.length)groupes.push([t,reste])});return groupes}
 /* ---------- La conversion des dégâts de D&D 5.5 ----------
-   Un dé, en haut à côté de la vue, au MJ : on y écrit des dégâts de D&D — « 2d6+3 » — et la fenêtre
-   propose trois poignées de dés d'Amertüme, simples, lourds ou mystiques, avec leur bonus de dégâts,
-   dont la moyenne, lancée par le moteur contre la DEF choisie, s'en approche le plus. */
+   Un dé, en haut à côté de la vue, au MJ : on y écrit des dés de D&D — « 3d8 » — et la fenêtre propose
+   trois poignées de dés d'Amertüme, simples, lourds ou mystiques, sans bonus de dégâts, dont la moyenne,
+   lancée par le moteur contre la DEF choisie, s'en approche le plus. */
 const conversionDialog=dialog('conversion-des','Conversion des dégâts','<form id="conversion-form" class="conversion-form"><div class="conversion-champs">'
- +'<label>Dégâts D&amp;D 5.5<input id="conversion-dnd" placeholder="2d6+3" autocomplete="off" spellcheck="false"></label>'
+ +'<label>Dégâts D&amp;D 5.5<input id="conversion-dnd" placeholder="3d8" autocomplete="off" spellcheck="false"></label>'
  +'<label>DEF de la cible<select id="conversion-def">'+[0,1,2,3,4,5,6].map(n=>'<option value="'+n+'">'+n+'</option>').join('')+'</select></label></div>'
  +'<p class="form-error" id="conversion-erreur" role="status" aria-live="polite"></p><div id="conversion-resultat" class="conversion-resultat"></div></form>');
 $('conversion-form').onsubmit=e=>e.preventDefault();
@@ -1011,8 +1011,8 @@ function renderConversion(){const boite=$('conversion-resultat'),err=$('conversi
  const dnd=document.createElement('p');dnd.className='conversion-dnd';dnd.innerHTML='<b>'+esc(texte.trim())+'</b> : <b>'+f(r.moyenne)+'</b> dégâts en moyenne, de '+r.min+' à '+r.max;boite.append(dnd);
  const grille=document.createElement('div');grille.className='conversion-grille';
  r.propositions.forEach(p=>{const c=document.createElement('div');c.className='conversion-carte de-'+p.couleur;
-  const t=document.createElement('p');t.className='conversion-nom';t.textContent='Dés '+p.nom.toLowerCase()+(p.n>1?'s':'');
-  const des=desEtBonus({[p.couleur]:p.n},p.bonus,false);des.classList.add('conversion-des');
+  const t=document.createElement('p');t.className='conversion-nom';t.textContent=p.nom;
+  const des=desEtBonus({[p.couleur]:p.n},0,false);des.classList.add('conversion-des');
   const m=document.createElement('p');m.className='conversion-moyenne';m.innerHTML='≈ <b>'+f(p.moyenne)+'</b> dégâts en moyenne<br>touche '+Math.round(p.touche*100)+' %';
   const dit=document.createElement('p');dit.className='conversion-dit';dit.textContent=p.dit;
   c.append(t,des,m,dit);grille.append(c)});
