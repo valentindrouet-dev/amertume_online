@@ -3182,7 +3182,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    dégâts, vaincus retirés, cinq cibles, et la liste des cartes au nom seul. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  const ctxR={statesOf:a=>a.states||[],setState:(a,e,p)=>{a.states=(a.states||[]).filter(x=>x!==e);if(p)a.states.push(e)}};vm.createContext(ctxR);
- vm.runInContext(page.match(/function leveEtats\(a\)\{[^\n]*\n[^\n]*/)[0]+'\n'+page.match(/function reposMax\(a\)[^\n]*/)[0]+'\n'+page.match(/function reposRestants\(a\)[^\n]*/)[0],ctxR);
+ vm.runInContext(page.match(/function leveEtats\(a,finCombat\)\{[^\n]*\n[^\n]*/)[0]+'\n'+page.match(/function reposMax\(a\)[^\n]*/)[0]+'\n'+page.match(/function reposRestants\(a\)[^\n]*/)[0],ctxR);
  const h={states:['Feu','Blindage','Poison','Coma','Invisible'],etatsPassifs:['Invisible']};
  assert.equal(ctxR.leveEtats(h).join(','),'Feu,Poison','tout s’en va, sauf le Blindage, le coma et ce qu’une pièce portée donne');assert.equal(h.states.join(','),'Blindage,Coma,Invisible');
  assert.equal(ctxR.reposMax({level:3}),3,'un repos court par niveau');assert.equal(ctxR.reposMax({}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:0}),3);assert.equal(ctxR.reposRestants({level:3,reposCourts:1}),2);
@@ -3365,6 +3365,23 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.499 — L'Attaque, talent de base de tout aventurier, en tête de sa fiche ; ce qui l'améliore s'ajoute à sa
+   bulle et à celle de la barre d'Actions, une pastille devant, à la couleur foncée de la nature du talent. Tous
+   les états s'en vont à la fin d'un combat ; le tour qui commence ne parle plus des activations. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ const ctxA={estBonus:t=>!!t&&t.effet==='bonus'};vm.createContext(ctxA);
+ vm.runInContext(src.slice(src.indexOf('const EFFETS_SUR_ATTAQUE='),src.indexOf('function lignesAttaque('))+';this.f=ameliorAttaque;',ctxA);
+ assert.deepEqual([{type:'pass',pourAttaque:true},{type:'ame',effet:'tenailles'},{type:'ame',effet:'tenailles',pourAttaque:false},{type:'act',pourAttaque:true},{type:'pass',effet:'bonus',pourAttaque:true},{type:'pass'}].map(ctxA.f),
+  [true,true,false,false,false,false],'passifs et améliorations cochés, ou câblés sur les attaques');
+ assert.ok(src.includes("const attaque=cases&&a.hero?carteAttaque(a):null;if(attaque)out.append(attaque);")&&src.includes("talentCarte({id:'attaque',name:'Attaque',type:'act'},l?logoAttaque(l):null)")
+  &&src.includes("lignes:voit?lignesAttaque(a):null")&&src.includes("lisChemin(x).de===t.id&&!ameliorAttaque(x));")
+  &&src.includes('name="pourAttaque"')&&src.includes("if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;"),'l’Attaque sur la fiche et ses améliorations');
+ assert.ok(css.includes('.talent-detail .palier-effet.amelioration::before{background:color-mix(in srgb,var(--pastille,var(--teinte,#4f7fb5)) 85%,#000);')&&css.includes('.talent-detail.p-act{--pastille:#4f7fb5}'),'la pastille à la couleur de la nature');
+ const ctxE={statesOf:a=>a.states||[],setState:(a,e,p)=>{a.states=(a.states||[]).filter(x=>x!==e);if(p)a.states.push(e)}};vm.createContext(ctxE);
+ vm.runInContext(page.match(/function leveEtats\(a,finCombat\)\{[^\n]*\n[^\n]*/)[0],ctxE);
+ const h={states:['Feu','Blindage','Coma','Invisible'],etatsPassifs:['Invisible']};
+ assert.equal(ctxE.leveEtats(h,true).join(','),'Feu,Blindage','fin du combat : le Blindage aussi');assert.equal(h.states.join(','),'Coma,Invisible');
+ assert.ok(page.includes("const leves=actors.filter(a=>leveEtats(a,true).length&&(a.hero||a.vu));")&&page.includes("log('Début du tour '+round+'.');")&&!page.includes('Activations réinitialisées'),'fin de combat et début de tour');}
 /* v0.498 — Un repos court par niveau, le nombre restant sous le bouton (« 2 », pas « 2/2 ») ; un seul entre deux
    combats, que la fin du combat rouvre. La planche des caractéristiques principales se découpe en cinq. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),calc=fs.readFileSync('planches-calcul.js','utf8');

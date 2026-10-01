@@ -236,6 +236,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // Retiré de l'arbre, il reste au catalogue.
   if(t.horsArbre!==true)delete t.horsArbre;
   if(t.vide!==true)delete t.vide;
+  if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;
   /* Orbes de feu écrit « toujours » avant que le réglage « Quand » n'existe : il le prend, une
      fois ; le MJ le change ensuite dans l'éditeur. */
   if(t.effet==='orbesfeu'&&!(t.params&&typeof t.params==='object'&&'quand' in t.params)&&/toujours/i.test(String(t.effects||'')))
@@ -368,10 +369,12 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
    l'empêche se lit en dernier, en retrait. */
 // Un bouton grisé l'est jusque dans sa bulle : sa teinte, son titre, ses mots colorés, ses logos.
 const boutonGrise=b=>!!b&&(b.disabled||b.classList.contains('inerte'));
-function bulleAction(b,{nom,dit='',note='',des=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
+function bulleAction(b,{nom,dit='',note='',des=null,lignes=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
  const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=nom;tete.append(n);d.append(tete);
  if(des){des.classList.add('bulle-des');d.append(des)}
+ // Une attaque : ce qui l'améliore, une ligne chacun, la pastille à la couleur des actions.
+ if(lignes&&lignes.length){d.classList.add('p-act');lignesEnPastilles(d,lignes)}
  if(dit){const p=document.createElement('p');p.className='palier-effet';p.textContent=dit;d.append(p)}
  if(note&&note!==dit){const p=document.createElement('p');p.className='muted';p.textContent=note;d.append(p)}
  return ouvrirBulle(b,d,'bulle-talent')}
@@ -441,7 +444,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
    +' · '+(at.range==='distance'?'à distance':'au contact')+(at.targets==='all'?' · toutes cibles':'');
   b.setAttribute('aria-label',libelle+(at.gear&&at.name?' ('+at.name+')':'')+' — '+(refus||fait));
   // Sa bulle, celle d'un talent : le nom, les dés et le bonus de dégâts, rien de plus.
-  surveille(b,()=>bulleAction(b,{nom:libelle,des:voit?desEtBonus(at.dice,bonusDe(at),at.useOwnDamage!==false,false):null}));
+  surveille(b,()=>bulleAction(b,{nom:libelle,des:voit?desEtBonus(at.dice,bonusDe(at),at.useOwnDamage!==false,false):null,lignes:voit?lignesAttaque(a):null}));
   /* Le bouton n'arme plus l'attaque : il la porte. On retient laquelle est partie —
      les dés affichés la suivent — puis le coup part aussitôt. */
   b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;
@@ -1765,6 +1768,25 @@ let talentOuvert=null;
 /* Les talents d'une fiche : les gros ronds seuls. Un bonus se lit dans les chiffres, une amélioration
    dans le talent qu'elle améliore. */
 function talentsDeFiche(a){return (a&&a.talents||[]).map(talent).filter(t=>t&&t.effet!=='bonus'&&!lisChemin(t)&&t.type!=='ame')}
+/* L'Attaque : l'attaque de base de la barre d'Actions, que tout aventurier possède, hors des arbres.
+   L'améliorent les passifs et les améliorations cochés « Améliore l'Attaque » ; sans choix du MJ, ceux
+   dont l'effet câblé joue sur les attaques. Leurs textes s'ajoutent à sa bulle, une pastille devant. */
+const EFFETS_SUR_ATTAQUE=new Set(['tenailles','doubleattaque','brise','dominateur','debordement']);
+const ameliorAttaque=t=>!!t&&!estBonus(t)&&['pass','ame'].includes(t.type)&&(t.pourAttaque===true||(t.pourAttaque!==false&&EFFETS_SUR_ATTAQUE.has(t.effet)));
+function lignesAttaque(a){if(!a)return [];const e=elementDe(a);
+ return sansAmeliorationsRemplacees((a.talents||[]).map(talent).filter(ameliorAttaque)).map(x=>talentAuPalier(talentPourElement(x,e),palierDe(a,x)).effects||'').filter(Boolean)}
+function lignesEnPastilles(d,lignes){(lignes||[]).forEach(tx=>{const e=document.createElement('p');e.className='palier-effet amelioration';texteEnrichi(e,tx);d.append(e)})}
+const bonusAttaque=(a,at)=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
+// Sa bulle, celle de la barre d'Actions : le nom, les dés et le bonus de dégâts, puis ce qui l'améliore.
+function bulleAttaque(a){const at=typeof activeAttack==='function'?activeAttack(a):null,d=document.createElement('div');d.className='talent-detail large t-act';
+ const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent='Attaque';tete.append(n);d.append(tete);
+ if(at&&at.dice){const des=desEtBonus(at.dice,bonusAttaque(a,at),at.useOwnDamage!==false,false);des.classList.add('bulle-des');d.append(des)}
+ lignesEnPastilles(d,lignesAttaque(a));return d}
+// Son rond sur la fiche, au logo de l'arme en main droite, comme dans la barre d'Actions.
+function carteAttaque(a){const at=typeof activeAttack==='function'?activeAttack(a):null,l=at&&(at.logos||[])[0];
+ const carte=talentCarte({id:'attaque',name:'Attaque',type:'act'},l?logoAttaque(l):null),pill=carte.firstChild;
+ pill.classList.add('cliquable','talent-attaque');pill.tabIndex=0;pill.setAttribute('aria-label','Attaque');
+ surveille(pill,()=>ouvrirBulle(pill,bulleAttaque(a),'bulle-talent'));return carte}
 /* Une amélioration cochée « remplace le logo » prête le sien au talent d'où part son chemin, partout
    où le porteur le voit : sa fiche, ses boutons. La plus loin sur le chemin l'emporte. */
 function logoRemplace(a,t){if(!a||!t)return '';
@@ -1780,6 +1802,8 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
  /* Un talent appris dont le socle manque ne fait rien : il se taisait, et on le croyait à
     l'œuvre. Il porte désormais sa marque, et sa bulle dit ce qu'il attend. */
  const sansEffet=t=>typeof manqueTalent==='function'?manqueTalent(a.talents||[],t,catalog.talents):'';
+ // L'Attaque, que tout aventurier possède : la première de ses actions.
+ const attaque=cases&&a.hero?carteAttaque(a):null;if(attaque)out.append(attaque);const nb=liste.length+(attaque?1:0);
  liste.forEach(t=>{const k=palierDe(a,t);
   // Chaque talent tel que le porte cet aventurier : à son élément, s'il en a un.
   const tv0=talentPourElement(t,elementDe(a)),sur=logoRemplace(a,t),tv=sur?{...tv0,logo:sur}:tv0,carte=talentCarte(tv),pill=carte.firstChild;
@@ -1797,7 +1821,7 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
   if(talentOuvert===cle)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});
   surveille(pill,montre);out.append(carte)});
  if(cases){const vide=cls=>{const v=document.createElement('span');v.className=cls;v.setAttribute('aria-hidden','true');return v};
-  for(let n=liste.length;n<Math.max(6,Math.ceil(liste.length/6)*6);n++)out.append(vide('talent-case-vide'));
+  for(let n=nb;n<Math.max(6,Math.ceil(nb/6)*6);n++)out.append(vide('talent-case-vide'));
   // Les améliorations qui jouent : celles qu'une suivante ne remplace pas.
   const ams=sansAmeliorationsRemplacees((a.talents||[]).map(talent).filter(x=>x&&!estBonus(x)&&lisChemin(x)));
   const rang=document.createElement('div');rang.className='talent-ameliorations';
@@ -2824,7 +2848,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<section class="talent-boite b-paliers t-seul"><h2 class="sous-titre">'+(PALIERS.actifs?'Paliers — coût, texte et effets câblés':'Coût, texte et effets câblés')+'</h2>'
   +'<div id="talent-reglages"></div>'
   +'<label class="field-check" id="remplace-texte"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceTexte" '+(t.remplaceTexte===true?'checked':'')+'>Remplace le texte du talent</label>'
-  +'<label class="field-check" id="remplace-precedente"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplacePrecedente" '+(t.remplacePrecedente===true?'checked':'')+'>Remplace le texte de l’amélioration précédente</label></section>'
+  +'<label class="field-check" id="remplace-precedente"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplacePrecedente" '+(t.remplacePrecedente===true?'checked':'')+'>Remplace le texte de l’amélioration précédente</label>'
+  +'<label class="field-check" id="pour-attaque"'+(['pass','ame'].includes(t.type||'act')?'':' hidden')+'><input type="checkbox" name="pourAttaque" '+(ameliorAttaque({...t,type:t.type||'act'})?'checked':'')+'>Améliore l’Attaque</label></section>'
   // Le bonus : une caractéristique, une valeur — et la compétence, si c'est là qu'il va.
   +'<section class="talent-boite b-bonus b-seul"><h2 class="sous-titre">Le bonus</h2><div class="edit-grid">'
   +sel('Caractéristique','b_carac',pb.carac,optBonus('carac'))
@@ -2840,7 +2865,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
     qu'un champ requis absent ne bloque pas l'enregistrement. */
  const champs=$('talent-form').elements;
  // « Remplace le logo du talent » ne vaut que pour une amélioration.
- if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame';if($('remplace-texte'))$('remplace-texte').hidden=champs.type.value!=='ame';if($('remplace-precedente'))$('remplace-precedente').hidden=champs.type.value!=='ame'});
+ if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame';if($('remplace-texte'))$('remplace-texte').hidden=champs.type.value!=='ame';if($('remplace-precedente'))$('remplace-precedente').hidden=champs.type.value!=='ame';if($('pour-attaque'))$('pour-attaque').hidden=!['pass','ame'].includes(champs.type.value)});
  ['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});
  const apercuBonus=()=>{const comp=champs.b_carac.value==='comp';const lc=champs.b_comp.closest('label');if(lc)lc.classList.toggle('talent-cache',!comp);
   $('bonus-apercu').textContent='Dans l’arbre : '+libelleBonus({carac:champs.b_carac.value,valeur:num(champs.b_valeur.value,1,20),comp:champs.b_comp.value})};
@@ -2912,6 +2937,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  else delete t.remplaceTexte;
  // Écrit oui ou non, jamais absent : la reprise des anciennes paires ne repasse pas sur un choix du MJ.
  if(t.type==='ame'&&f.remplacePrecedente)t.remplacePrecedente=f.remplacePrecedente.checked;else delete t.remplacePrecedente;
+ if(['pass','ame'].includes(t.type)&&f.pourAttaque&&t.effet!=='bonus')t.pourAttaque=f.pourAttaque.checked;else delete t.pourAttaque;
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p_')}):{};
  /* Les paliers : leur coût ; pour le 2 et le 3, leur texte s'il en a un, leurs réglages s'ils
     diffèrent de ceux d'en dessous — sinon ils en héritent, et suivront s'ils changent. */
@@ -3796,7 +3822,8 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}
   /* Les améliorations que l'aventurier a activées sur les chemins du talent, chacune à la ligne ;
      de deux à la suite, seule la seconde, qui remplace la première. */
   // Dans l'arbre, chaque rond dit son propre texte : les améliorations ne jouent qu'au dehors.
-  if(a&&!cout&&!lisChemin(t)){const tenues=(a.talents||[]).map(talent).filter(x=>x&&!estBonus(x)&&lisChemin(x)&&lisChemin(x).de===t.id);
+  // Une amélioration de l'Attaque se lit dans la bulle de l'Attaque, pas dans celle du talent qui la porte.
+  if(a&&!cout&&!lisChemin(t)){const tenues=(a.talents||[]).map(talent).filter(x=>x&&!estBonus(x)&&lisChemin(x)&&lisChemin(x).de===t.id&&!ameliorAttaque(x));
    const ams=sansAmeliorationsRemplacees(tenues)
     .sort((x,y)=>Object.keys(DIRS).indexOf(lisChemin(x).dir)-Object.keys(DIRS).indexOf(lisChemin(y).dir)||lisChemin(x).rang-lisChemin(y).rang);
    const ligneAm=(x,cls)=>{const tx=vu(x).effects||'';if(!tx)return;const e=document.createElement('p');e.className='palier-effet'+(cls?' '+cls:'');texteEnrichi(e,tx);g.append(e)};

@@ -2059,3 +2059,7 @@ body.sombre .j-test .j-face.ok{color:#7fd38c}body.sombre .j-test .j-face.ko{colo
 .bonus-libelle .bonus-ico{display:inline-grid;place-items:center;width:22px;height:22px;margin-right:7px;vertical-align:-5px}
 .bonus-libelle .bonus-ico>:is(img,svg,.bonus-lettres){width:100%;height:100%;margin:0}
 .bonus-libelle .bonus-ico .bonus-lettres{display:grid;place-items:center;font:800 10px/1 system-ui}
+/* Dans la bulle d'un talent, la pastille d'une amélioration prend la teinte foncée de sa nature :
+   bleue pour une action, violette pour une réaction. Celle d'une attaque, la teinte des actions. */
+.talent-detail .palier-effet.amelioration::before{background:color-mix(in srgb,var(--pastille,var(--teinte,#4f7fb5)) 85%,#000);box-shadow:0 0 0 1px color-mix(in srgb,var(--pastille,var(--teinte,#4f7fb5)) 55%,#000)}
+.talent-detail.p-act{--pastille:#4f7fb5}
