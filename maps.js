@@ -511,7 +511,7 @@ function prendreTresor(a,o){if(!o.tresor)return;noteInventaire(a,o.tresor);
 function testerObjet(a,o){const jet=skillRoll(a.skills[o.test.comp]||0,d6);
  rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,a);
  const trouve=jet.reussites>=o.test.reussites;
- log(nomNum(a)+' · '+skillNames[o.test.comp]+' : '+jet.reussites+' réussite(s) sur '+o.test.reussites+' — '
+ log(nomNum(a)+' · '+skillNames[o.test.comp]+' : '+jet.reussites+' réussite'+(jet.reussites>1?'s':'')+' sur '+o.test.reussites+' ⦃'+jet.des.join(',')+'⦄ — '
   +(trouve?'découvre '+o.nom+' !':'ne trouve rien.'),{dice:true});
  if(trouve){o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Découvert !','nul');render();saveMaps()}
  return trouve}

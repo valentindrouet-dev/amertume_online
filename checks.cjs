@@ -1110,6 +1110,11 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
  assert.deepEqual(C.moyenneDesAmertume('red',2,3),C.moyenneDesAmertume('red',2,3),'le hasard est semé');
  assert.ok(src.includes("const conversionDialog=dialog('conversion-des','Conversion des dégâts',")&&src.includes("b.id='conversion-ouvre';b.className='conversion-bouton';b.textContent='🎲';")
   &&src.includes("$('view').after(b)")&&feuille.includes('.conversion-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));'),'le dé à côté de la vue ouvre la conversion');}
+/* Un test de compétence tient sur une ligne au journal : la compétence, les réussites, les dés — 4+ en vert, en
+   dessous en rouge —, sans « Test de », ni nombre de dés, ni six explosifs. La classe dit aussi ses compétences. */
+assert.ok(page.includes(" log(nomNum(a)+' · '+skillNames[i]+' : '+jet.reussites+' réussite'+(jet.reussites>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄',{dice:true,ton:'competence'});")
+ &&!page.includes("six explosi")&&page.includes("const faces=/^⦃([0-9,]+)⦄$/.exec(m[0]);")&&feuille.includes('.j-test .j-face.ok{color:#2e8b3e}')
+ &&src.includes("competencesDeClasse(nomCl).forEach((n,i)=>{if(!n)return;")&&src.includes("classe.style.background='color-mix(in srgb,'+teinte+' 16%,transparent)';"),'test de compétence sur une ligne, classe et ses compétences');
 /* Les petites améliorations de l'onglet Talents et de la fiche d'aventurier gardent leur taille, comme le sphérier
    et le reste de la feuille de style : la bibliothèque ne touche qu'à ses propres règles. */
 assert.ok(feuille.includes('.talent-rangee.t-ame .cat-pill.gear-carre.talent-carre{max-width:34px;border-width:2px}')

@@ -850,7 +850,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  classe.textContent=(a.role||'Aventurier').split('·')[0].trim().toUpperCase();
  // Le niveau suit la classe : « GARDIEN niv. 3 ».
  {const niv=document.createElement('span');niv.className='classe-niv';niv.textContent=' niv. '+a.level;classe.append(niv)}
- classe.style.color=classe.style.borderColor=teinte;
+ classe.style.color=classe.style.borderColor=teinte;classe.style.background='color-mix(in srgb,'+teinte+' 16%,transparent)';
  /* Au survol, la classe se présente : son nom, ce qu'elle apporte aux PV, sa description. Au
     clic, son arbre de talents s'ouvre — celui de l'aventurier, ou celui de la classe pour le MJ. */
  {const cl=classeDe(catalog.classes,a.role),nomCl=cl&&cl.name||(a.role||'Aventurier').split('·')[0].trim();
@@ -860,6 +860,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   const montre=()=>{const d=document.createElement('div');d.className='calcul-bulle classe-bulle';
    const t=document.createElement('div');t.className='calcul-ligne tete';const n=document.createElement('span');n.textContent=nomCl;n.style.color=teinte;t.append(n);d.append(t);
    const pv=cl?Number(cl.pv)||0:0;const l=document.createElement('div');l.className='calcul-ligne';const k=document.createElement('span');k.textContent='Bonus de PV max';const v=document.createElement('b');v.textContent=(pv>=0?'+ ':'− ')+Math.abs(pv);l.append(k,v);d.append(l);
+   // Et les compétences qu'elle donne, une ligne chacune.
+   competencesDeClasse(nomCl).forEach((n,i)=>{if(!n)return;const lc=document.createElement('div');lc.className='calcul-ligne';const kc=document.createElement('span');kc.textContent=skillNames[i];const vc=document.createElement('b');vc.textContent='+ '+n;lc.append(kc,vc);d.append(lc)});
    const texte=cl&&(cl.description||cl.notes);if(texte){const p=document.createElement('p');p.className='classe-texte';p.textContent=texte;d.append(p)}
    const aide=document.createElement('p');aide.className='classe-aide';aide.textContent='Clique pour ouvrir l’arbre de talents.';d.append(aide);
    ouvrirBulle(classe,d,'bulle-calcul')};
