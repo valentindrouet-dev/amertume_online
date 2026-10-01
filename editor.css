@@ -1847,6 +1847,23 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .corps-sac>.sac-titre{display:flex;align-items:center;gap:8px;margin:6px 0 -2px;font:600 10px system-ui;letter-spacing:2px}
 .sac-titre .ico.plus{font:700 14px system-ui;letter-spacing:0;padding:0 7px 2px}
 .corps-sac>.sac{padding:8px 10px;border-radius:12px;background:color-mix(in srgb,#8a6a44 11%,transparent);border:1px solid color-mix(in srgb,#8a6a44 38%,transparent)}
+/* Sur la fiche : l'équipement aux deux tiers, l'inventaire au tiers de droite. Les pièces portées un peu
+   plus petites ; anneaux, munitions et amulette plus petits encore. L'inventaire garde sa taille. */
+.corps-sac{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);grid-template-rows:auto 1fr;gap:4px 8px;align-items:start}
+.corps-sac>.corps{grid-column:1;grid-row:1 / 3;padding:6px 2px 4px}
+.corps-sac>.sac-titre{grid-column:2;grid-row:1;margin:0}
+.corps-sac>.sac{grid-column:2;grid-row:2;align-self:stretch;padding:6px 8px}
+.corps-sac>.corps .place{min-height:0}
+.corps-sac>.corps .vide{width:56px;height:56px}
+.corps-sac>.corps .cat-pill.gear-carre,.corps-sac>.corps .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){min-width:56px;width:56px;height:60px;min-height:60px;padding:3px;gap:2px}
+.corps-sac>.corps .cat-pill.gear-carre .logo-equip{width:32px;height:32px}
+.corps-sac>.corps :is(.p-anneau,.p-munitions,.p-amulette) .vide{width:40px;height:40px;font-size:16px}
+.corps-sac>.corps :is(.p-anneau,.p-munitions,.p-amulette) .cat-pill.gear-carre,.corps-sac>.corps :is(.p-anneau,.p-munitions,.p-amulette) .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){min-width:40px;width:40px;height:40px;min-height:40px;padding:2px}
+.corps-sac>.corps :is(.p-anneau,.p-munitions,.p-amulette) .cat-pill.gear-carre .logo-equip{width:26px;height:26px}
+.corps-sac>.corps .anneaux-groupe{padding-right:max(0px,calc((100% - 6px) / 4 - 20px))}
+.corps-sac>.corps .anneaux-groupe .place{min-width:40px}
+.corps-sac>.corps .p-anneau .nom-place{letter-spacing:.2px;font-size:8px}
+.corps-sac>.corps .anneaux-groupe{gap:8px}
 .hero-card .richesses{padding:8px 12px;border-radius:12px;background:color-mix(in srgb,#c9a227 12%,transparent);border:1px solid color-mix(in srgb,#c9a227 45%,transparent)}
 /* Les chiffres en icônes, sur la fiche d'aventurier comme en combat, sans case ; la DEF, son écu. */
 .stat-row.en-icones{display:flex;justify-content:space-around;align-items:center;gap:8px;margin:10px 0 2px}

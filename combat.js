@@ -1622,7 +1622,10 @@ function moyennePoignee(poignee,def,essais=1600){const couleurs=[];DICE_KEYS.for
 function moyenneDesAmertume(couleur,n,def,essais=1600){return moyennePoignee({[couleur]:n},def,essais)}
 // Les dés que la conversion panache : Simple, Léger, Lourd, Mystique, Mortel — ni le Soin, ni la Phase, qui suit le tour.
 const CONVERSION_COULEURS=['white','bone','red','blue','black'];
+// Les propositions d'un jeu de dés, gardées : le hasard est semé, le même jeu donne toujours les mêmes.
+const CONVERSIONS_VUES=new Map();
 function conversionDegats(texte,combien=6){const dnd=lireDegatsDnd(texte);if(dnd.erreur)return dnd;
+ const cle=JSON.stringify(dnd.des)+'|'+combien,vue=CONVERSIONS_VUES.get(cle);if(vue)return {...dnd,...vue,propositions:vue.propositions.map(p=>({...p,des:{...p.des}}))};
  /* La moyenne des seuls dés D&D ; un bonus fixe n'y entre pas. Toutes les poignées panachées jusqu'à cinq
     dés sont lancées une première fois, vite, sans DEF : leur valeur est absolue ; les plus proches le sont de
     nouveau, longuement. Le Mortel n'échoue jamais et ses 1 ne font pas d'échec : il n'entre qu'aux grosses
@@ -1640,7 +1643,9 @@ function conversionDegats(texte,combien=6){const dnd=lireDegatsDnd(texte);if(dnd
  const signe=c=>Object.keys(c.des).sort().join('+'),pris=[],vus=new Set();
  fins.forEach(c=>{if(pris.length<combien&&!vus.has(signe(c))){vus.add(signe(c));pris.push(c)}});
  fins.forEach(c=>{if(pris.length<combien&&!pris.includes(c))pris.push(c)});
- return {...dnd,moyenne,min:dnd.des.reduce((s,d)=>s+d.n,0),max:dnd.des.reduce((s,d)=>s+d.n*d.f,0),propositions:pris.sort(tri)}}
+ const r={moyenne,min:dnd.des.reduce((s,d)=>s+d.n,0),max:dnd.des.reduce((s,d)=>s+d.n*d.f,0),propositions:pris.sort(tri)};
+ if(CONVERSIONS_VUES.size>200)CONVERSIONS_VUES.clear();CONVERSIONS_VUES.set(cle,r);
+ return {...dnd,...r,propositions:r.propositions.map(p=>({...p,des:{...p.des}}))}}
 const NIVEAUX_XP=[0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000];
 function niveauDeXp(xp){const n=Math.max(0,Math.trunc(Number(xp))||0);let niv=1;NIVEAUX_XP.forEach((s,i)=>{if(n>=s)niv=i+1});return niv}
 function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;

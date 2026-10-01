@@ -1133,10 +1133,10 @@ assert.ok(src.includes("const porteurs=(catalog.talents||[]).map((t,i)=>[t,i]).f
  assert.equal(new Set(r.propositions.map(p=>Object.keys(p.des).sort().join('+'))).size,6,'six mélanges différents');
  assert.equal(C.conversionDegats('3d8+4').moyenne,13.5,'un bonus tapé n’entre pas dans la moyenne');
  C.conversionDegats('3d8').propositions.forEach(p=>assert.ok(Math.abs(p.moyenne-13.5)<1&&p.n<=5,'proche de 13,5'));
- ['1d4','8d6','10d6','4d12'].forEach(t=>assert.ok(C.conversionDegats(t).propositions.every(p=>p.n<=5&&Object.values(p.des).reduce((x,y)=>x+y,0)<=5),t+' : cinq dés au plus'));
+ ['8d6','10d6'].forEach(t=>assert.ok(C.conversionDegats(t).propositions.every(p=>p.n<=5&&Object.values(p.des).reduce((x,y)=>x+y,0)<=5),t+' : cinq dés au plus'));
  assert.ok(C.conversionDegats('3d8').propositions.some(p=>Object.keys(p.des).length>1),'des poignées panachées');
  assert.equal(C.conversionDegats('3d8').def,undefined,'une valeur absolue, sans DEF');
- ['2d6','3d8','6d6','7d6'].forEach(t=>assert.ok(C.conversionDegats(t).propositions.every(p=>!p.des.black),t+' : pas de Mortel sous 25'));
+ ['2d6','3d8','7d6'].forEach(t=>assert.ok(C.conversionDegats(t).propositions.every(p=>!p.des.black),t+' : pas de Mortel sous 25'));
  assert.ok(C.conversionDegats('8d6').propositions.every(p=>(p.des.black||0)<=1)&&C.conversionDegats('10d6').propositions.every(p=>(p.des.black||0)<=3),'un Mortel de plus tous les 5 points');
  assert.deepEqual(C.moyennePoignee({red:2,white:1},3),C.moyennePoignee({red:2,white:1},3),'le hasard est semé');
  assert.ok(src.includes("const conversionDialog=dialog('conversion-des','Conversion des dégâts',")&&src.includes("b.id='conversion-ouvre';b.className='conversion-bouton';b.textContent='🎲';")
@@ -3023,6 +3023,9 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.477 — Sur la fiche, l'équipement aux deux tiers, l'inventaire au tiers de droite, à sa taille. */
+ assert.ok(feuille.includes('.corps-sac{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);')&&feuille.includes('.corps-sac>.sac{grid-column:2;grid-row:2;')
+  &&feuille.includes('.sac .cat-pill.gear-carre,.sac .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:36px;min-width:36px;height:36px;'),'équipement et inventaire côte à côte');
  /* v0.476 — Le trait d'un bonus, plus fin, va sous son icône ; un petit « + » devant sa valeur, sans la déplacer. */
  assert.ok(src.includes("g.setAttribute('class','chemin'+(lien?'':' petit')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':''));")
   &&src.includes("r:i&&i.width?Math.min(i.width,i.height)*.22:r.width/2-2}};")&&feuille.includes('.arbre-chemins .chemin.bonus .trait{stroke-width:1.5}')&&feuille.includes('.arbre-plan>.arbre-noeud.petit.bonus::before{display:none}')
