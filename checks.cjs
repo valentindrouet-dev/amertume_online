@@ -3365,6 +3365,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.497 — Sur la fiche, les icônes de bonus remplissent leur rond comme l'éclat des dégâts ; dans la bulle
+   d'un bonus de talent, l'icône vient devant et la compétence s'écrit comme sur la fiche. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(css.includes('.hero-card .talent-ameliorations .cat-pill.gear-carre.talent-carre.bonus-rond>.logo-equip{width:100%;height:100%}')
+  &&src.includes("if(l)r.append(remplitCase(l));")&&src.includes("function remplitCase(el){"),'les icônes de bonus à la même taille');
+ assert.ok(src.includes("nom.textContent=c==='comp'?(talent?String(skillNames[k]||''):String(skillNames[k]||'').toUpperCase())")
+  &&src.includes("libelleBonusEl(paramsTalent(t),{talent:t})")&&src.includes("libelleBonusEl(g.p,{talent:g.t})")
+  &&src.includes("boite.className='bonus-ico';boite.append(remplitCase(ic));s.prepend(boite)")&&css.includes('.bonus-libelle .bonus-ico{'),'la bulle d’un bonus : icône, compétence comme sur la fiche');}
 /* v0.496 — Retirer ou supprimer un talent de l'arbre laisse sa case vide : ses lignes, ses niveaux et ses petits
    ronds restent ; la case se traverse ; un talent posé dessus reprend le tout. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');

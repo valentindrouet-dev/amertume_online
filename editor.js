@@ -1033,6 +1033,26 @@ function teinteDominante(im){try{const c=document.createElement('canvas');c.widt
   bac.p+=sat;bac.r+=r*sat;bac.g+=g*sat;bac.b+=b*sat}
  const top=bacs.reduce((m,y)=>y.p>m.p?y:m);const moy=top.p>0?[top.r/top.p,top.g/top.p,top.b/top.p]:tous.n?[tous.r/tous.n,tous.g/tous.n,tous.b/tous.n]:null;
  return moy?moy.map(Math.round).join(','):null}catch(e){return null}}
+/* Une icône de bonus remplit sa case comme l'éclat des dégâts : sa partie visible, recadrée au
+   centre, tient toute la hauteur ou toute la largeur, quel que soit le vide transparent autour. */
+const CADRES_OPAQUES=new Map();
+function cadreOpaque(im){try{const n=48,c=document.createElement('canvas');c.width=c.height=n;const x=c.getContext('2d',{willReadFrequently:true});
+ const k=Math.min(n/im.naturalWidth,n/im.naturalHeight),w=im.naturalWidth*k,h=im.naturalHeight*k;x.drawImage(im,(n-w)/2,(n-h)/2,w,h);
+ const d=x.getImageData(0,0,n,n).data;let x0=n,y0=n,x1=-1,y1=-1;
+ for(let i=0;i<n*n;i++)if(d[i*4+3]>40){const px=i%n,py=(i-px)/n;if(px<x0)x0=px;if(px>x1)x1=px;if(py<y0)y0=py;if(py>y1)y1=py}
+ return x1<0?null:{x:x0/n,y:y0/n,w:(x1-x0+1)/n,h:(y1-y0+1)/n}}catch(e){return null}}
+// Le cadre d'un dessin du jeu (cœur, éclair, étoile) se mesure une fois, hors de la page.
+function cadreDessin(svg){const cle=svg.innerHTML;if(CADRES_OPAQUES.has(cle))return CADRES_OPAQUES.get(cle);let b=null;
+ try{const t=document.createElementNS('http://www.w3.org/2000/svg','svg');t.setAttribute('style','position:fixed;left:-99px;top:0;width:24px;height:24px;visibility:hidden');
+  t.innerHTML='<g>'+cle+'</g>';document.body.append(t);const r=t.firstChild.getBBox();t.remove();if(r.width&&r.height)b={x:r.x,y:r.y,w:r.width,h:r.height}}catch(e){}
+ CADRES_OPAQUES.set(cle,b);return b}
+function remplitCase(el){if(!el)return el;
+ if(el.tagName==='IMG'){const pose=()=>{const k=el.currentSrc||el.src;if(!k||!el.naturalWidth)return;let c=CADRES_OPAQUES.get(k);if(c===undefined){c=cadreOpaque(el);CADRES_OPAQUES.set(k,c)}
+   if(!c)return;const s=Math.min(3,.98/Math.max(c.w,c.h));el.style.transform='scale('+s.toFixed(3)+') translate('+((.5-c.x-c.w/2)*100).toFixed(1)+'%,'+((.5-c.y-c.h/2)*100).toFixed(1)+'%)'};
+  if(el.complete)pose();el.addEventListener('load',pose)}
+ else if(el.tagName.toLowerCase()==='svg'){const b=cadreDessin(el);if(b){const cote=(Math.max(b.w,b.h)+1.2)/.98,cx=b.x+b.w/2,cy=b.y+b.h/2;
+  el.setAttribute('viewBox',(cx-cote/2).toFixed(2)+' '+(cy-cote/2).toFixed(2)+' '+cote.toFixed(2)+' '+cote.toFixed(2))}}
+ return el}
 function teinteLogoSur(el,im,cle){const pose=t=>{if(t)el.style.setProperty('--tint',t)};
  if(TEINTES_LOGOS.has(cle)){pose(TEINTES_LOGOS.get(cle));return}
  const lis=()=>{if(TEINTES_LOGOS.has(cle)){pose(TEINTES_LOGOS.get(cle));return}if(!im.naturalWidth)return;const t=teinteDominante(im);if(t){TEINTES_LOGOS.set(cle,t);pose(t)}};
@@ -1277,16 +1297,20 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
 /* Un bonus en bulle : « + 4 » à l'encre, puis la caractéristique en capitales, à sa couleur —
    « + 4 ENDU », « + 1 FORCE ». */
 const NOM_BONUS_BULLE={pv:'PV',endu:'ENDU',vie:'VIE',def:'DEF',dmg:'DÉGÂTS'};
-function libelleBonusEl(p){const n=Math.max(1,(p&&p.valeur)|0),c=(p&&p.carac)||'pv',k=Math.max(0,Math.min(7,Number(p&&p.comp)||0));
+/* Dans la bulle d'un bonus de talent (« talent » : le bonus lui-même, ou le premier des bonus
+   additionnés), son icône vient devant, et la compétence s'écrit comme sur la fiche : « Mysticisme ». */
+function libelleBonusEl(p,{talent=null}={}){const n=Math.max(1,(p&&p.valeur)|0),c=(p&&p.carac)||'pv',k=Math.max(0,Math.min(7,Number(p&&p.comp)||0));
  const s=document.createElement('span');s.className='bonus-libelle';
  const plus=document.createElement('span');plus.className='bonus-plus';plus.textContent='+ '+n;
  const nom=document.createElement('span');nom.className='bonus-carac';
- nom.textContent=c==='comp'?String(skillNames[k]||'').toUpperCase():c==='orbe'?(n>1?'ORBES':'ORBE'):(NOM_BONUS_BULLE[c]||'PV');
+ nom.textContent=c==='comp'?(talent?String(skillNames[k]||''):String(skillNames[k]||'').toUpperCase()):c==='orbe'?(n>1?'ORBES':'ORBE'):(NOM_BONUS_BULLE[c]||'PV');
  const tint=c==='comp'?SKILL_TINTS[k]:c==='orbe'?'138,99,201':STAT_TINTS[c];if(tint)nom.style.color='rgb('+tint+')';
  // Une compétence prend la couleur de son rond sur la fiche : celle de son logo, la sienne à défaut.
  if(c==='comp'){nom.classList.add('bonus-comp');nom.style.setProperty('--tint',tint);nom.style.color='rgb(var(--tint))';
   const l=iconesCompetences()[k],ico=l?logoCompetence(k):null;if(ico)teinteLogoSur(nom,ico,l)}
- s.append(plus,' ',nom);return s}
+ s.append(plus,' ',nom);
+ if(talent){const ic=(talent.logo&&logoTalent(talent))||logoBonus(p);if(ic){const boite=document.createElement('span');boite.className='bonus-ico';boite.append(remplitCase(ic));s.prepend(boite)}}
+ return s}
 /* Le dépliant ne dit que l'essentiel : le nom, la valeur en or d'une arme ou d'une armure — les
    dés et la DEF sont sur le carré —, l'état qu'elle inflige s'il y en a un. */
 function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
@@ -1785,11 +1809,11 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
   (a.talents||[]).map(talent).filter(x=>x&&estBonus(x)).forEach(x=>{const p=paramsTalent(x)||{},carac=p.carac||'pv',k=carac+(carac==='comp'?':'+p.comp:'');
    const g=groupes.get(k)||{p:{...p,carac,valeur:0},t:x};g.p.valeur+=Math.max(1,Math.trunc(Number(p.valeur))||1);groupes.set(k,g)});
   groupes.forEach(g=>{const r=document.createElement('span');r.className='cat-pill gear-carre talent-carre bonus-rond bonus-'+g.p.carac;r.tabIndex=0;
-   const l=(g.t.logo&&logoTalent(g.t))||logoBonus(g.p);if(l)r.append(l);
+   const l=(g.t.logo&&logoTalent(g.t))||logoBonus(g.p);if(l)r.append(remplitCase(l));
    const v=document.createElement('b');v.className='bonus-valeur';v.textContent=String(g.p.valeur);r.append(v);
    const nom=libelleBonus(g.p);r.setAttribute('aria-label',nom);
    surveille(r,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+g.p.carac;
-    const tete=document.createElement('p');tete.className='talent-bulle-nom';const b=document.createElement('b');b.append(libelleBonusEl(g.p));tete.append(b);d.append(tete);ouvrirBulle(r,d,'bulle-talent')});
+    const tete=document.createElement('p');tete.className='talent-bulle-nom';const b=document.createElement('b');b.append(libelleBonusEl(g.p,{talent:g.t}));tete.append(b);d.append(tete);ouvrirBulle(r,d,'bulle-talent')});
    rang.append(r)});
   for(let n=rang.childElementCount;n<Math.max(12,Math.ceil(rang.childElementCount/12)*12);n++)rang.append(vide('amelioration-case-vide'));
   out.append(rang)}
@@ -3738,7 +3762,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}
  // Un bonus a la couleur de son rond : rouge pour les dégâts, vert pour les PV…
  if(bonus)d.classList.add('bulle-bonus','bonus-'+((paramsTalent(t)||{}).carac||'pv'));
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
- if(bonus)nom.replaceChildren(libelleBonusEl(paramsTalent(t)));else nomAccolades(nom,vu(t).name);
+ if(bonus)nom.replaceChildren(libelleBonusEl(paramsTalent(t),{talent:t}));else nomAccolades(nom,vu(t).name);
  // Tenu au palier 2 ou 3, le talent le dit après son nom : « Attaque Blindée II ».
  if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));
  // Jamais la nature du talent : la bulle ne l'écrit nulle part.
