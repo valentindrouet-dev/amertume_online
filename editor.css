@@ -457,6 +457,8 @@ button.comp-rond{cursor:pointer}button.comp-rond:hover{background:rgba(var(--tin
 .cat-pill.gear-carre .marque-porte{display:none;position:absolute;top:-6px;left:-6px;width:17px;height:17px;border-radius:50%;
  background:var(--green);color:#fff;border:2px solid var(--panel);box-shadow:0 1px 3px #0004;font:800 10px/13px system-ui;text-align:center}
 .cat-pill.gear-carre.porte .marque-porte{display:block}
+/* Une pièce unique que possède un aventurier : sa coche, à l'Armurerie. */
+.cat-pill.gear-carre.unique-pris .marque-porte{display:block}
 .cat-pill.gear-carre.porte{box-shadow:0 0 0 1px var(--green) inset}
 
 .inv-ligne{display:flex;align-items:center;gap:8px;margin:4px 0}.inv-ligne .cat-pill{flex:1;min-width:0}
@@ -2099,6 +2101,8 @@ button.btn-action.debut-combat{animation:debut-rayonne 1.1s ease-in-out infinite
 #map-coffres .coffre.cache{opacity:.65}
 #map-coffres .coffre.voile{opacity:.35}
 #map-coffres .coffre.ouvert{opacity:.35;cursor:default;pointer-events:none}
+/* Le cadenas d'un coffre trouvé verrouillé : sous le brouillard, au centre du coffre. */
+#map-view .coffre-cadenas{position:absolute;z-index:1;transform:translate(-50%,-50%);pointer-events:none;font-size:calc(var(--token,40px)*.42);line-height:1;filter:drop-shadow(0 1px 2px #000a)}
 /* Le piège encore armé, au MJ seul : un avertissement au centre du coffre. */
 .coffre-alerte{position:absolute;transform:translate(-50%,-50%);z-index:3;pointer-events:none;font-size:15px;line-height:1;color:#f1c40f;text-shadow:0 0 2px #000,0 0 4px #000}
 .shape.coffre .coffre-alerte{left:50%;top:50%}

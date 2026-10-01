@@ -570,7 +570,7 @@ if($('coffres-bulles'))$('coffres-bulles').onclick=()=>{bullesCoffresMJ=!bullesC
  if(!bullesCoffresMJ&&typeof fermerBulle==='function')fermerBulle();majBoutonCoffres()};
 /* Les coffres ont leur calque, sous le brouillard : hors de la vue de la troupe, il les couvre, et seule leur
    part en vue se découpe. */
-function renderCoffres(){const calque=$('map-coffres'),vue=$('map-view'),m=currentMap();calque.replaceChildren();vue.querySelectorAll('.coffre-alerte').forEach(x=>x.remove());majBoutonCoffres();if(!m)return;
+function renderCoffres(){const calque=$('map-coffres'),vue=$('map-view'),m=currentMap();calque.replaceChildren();vue.querySelectorAll('.coffre-alerte,.coffre-cadenas').forEach(x=>x.remove());majBoutonCoffres();if(!m)return;
  const mj=view==='mj',oeil=typeof oeilJoueur==='function'&&oeilJoueur();
  (m.coffres||[]).forEach(c=>{const enVue=coffreEnVue(c);
   // La troupe ne voit un coffre que révélé et sous ses yeux ; le MJ voit tout, pâli hors de la vue de la troupe.
@@ -581,6 +581,10 @@ function renderCoffres(){const calque=$('map-coffres'),vue=$('map-view'),m=curre
   // Piégé et encore armé : l'avertissement, chez le MJ seul.
   if(mj&&!oeil&&coffreArme(c)){const w=document.createElement('span');w.className='coffre-alerte';w.textContent='⚠';w.title='Piégé';
    w.style.left=(c.x+c.w/2)+'%';w.style.top=(c.y+c.h/2)+'%';vue.append(w)}
+  /* Un joueur a trouvé le coffre verrouillé : un cadenas s'y pose, sous le brouillard — hors de la vue de la
+     troupe, on ne le voit pas —, et s'en va quand le coffre s'ouvre. */
+  if(c.tente&&coffreVerrouille(c)&&!c.ouvert){const k=document.createElement('span');k.className='coffre-cadenas';k.textContent='🔒';
+   k.style.left=(c.x+c.w/2)+'%';k.style.top=(c.y+c.h/2)+'%';$('fog').before(k)}
   if(!c.ouvert){el.style.pointerEvents='all';
    // La bulle : son nom et sa description, au survol, quand l'aventurier choisi est au contact.
    if(typeof surveille==='function')surveille(el,()=>{if(mj?!bullesCoffresMJ:!coffreAPortee(heroActif(),c))return;ouvrirBulle(el,bulleCoffre(c),'bulle-gear')});
@@ -641,13 +645,15 @@ function testCoffre(a,c,quoi,k){if(!a||!c||c.ouvert||!payeAction(a))return;
 function ouvreCoffreJoueur(c){const a=heroActif();
  if(!a){log('Sélectionne d’abord ton aventurier.',{local:true});return}
  if(!coffreAPortee(a,c)){log('Approche '+a.name+' : il faut être au contact de '+c.nom+'.',{local:true});return}
- if(coffreVerrouille(c)&&!aLaCle(a,c.cleId)){log(nomNum(a)+' tente d’ouvrir '+c.nom+' : verrouillé.',{ton:'carte'});return}
+ if(coffreVerrouille(c)&&!aLaCle(a,c.cleId)){c.tente=true;log(nomNum(a)+' tente d’ouvrir '+c.nom+' : verrouillé.',{ton:'carte'});render();saveMaps();scheduleSave();return}
  if(enCombat()&&pointsRestants(a,'action')<=0){payeAction(a);return}
  if(coffreVerrouille(c)){c.deverrouille=true;log(nomNum(a)+' déverrouille '+c.nom+' avec '+nomCle(c.cleId)+'.',{ton:'carte'})}
  ouvrirCoffre(c,a,false)}
 /* En combat, ouvrir coûte l'Action de qui ouvre, que le geste vienne de lui ou du MJ. */
 function ouvrirCoffre(c,h,parMJ){if(!c||c.ouvert||(coffreVerrouille(c)&&!parMJ))return;if(h&&!payeAction(h))return;
  if(coffreArme(c)){c.desamorce=true;
+  // Le piège part : une gerbe de feu sur le coffre, ici et sur chaque table.
+  if(typeof explosionPiege==='function'){explosionPiege(centreForme(c));const m=currentMap();if(m&&typeof diffuserEffet==='function')diffuserEffet('piege',h,null,String((m.coffres||[]).indexOf(c)))}
   const touches=actors.filter(o=>o&&o.hero&&alive(o)&&!o.horsCarte&&dansZoneCoffre(o,c)).map(o=>{const p=[];
    if(c.degats>0){const {perdu:n,blinde}=encaisse(o,c.degats);p.push(blinde?'Blindage consommé':n+' dégât'+(n>1?'s':''))}
    (c.etats||[]).forEach(e=>{if(infligeEtat(o,e)===true)p.push(e)});return nomNum(o)+(p.length?' : '+p.join(', '):'')});
@@ -750,7 +756,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
  (m.doors||[]).forEach(d=>{d.open=false;delete d.decouvert});const grille=fogDims(m);
  // Et ses coffres reviennent comme le MJ les a laissés : cachés, verrouillés, piégés, pleins.
- (m.coffres||[]).forEach(c=>{['revele','deverrouille','desamorce','ouvert'].forEach(k=>delete c[k])});
+ (m.coffres||[]).forEach(c=>{['revele','deverrouille','desamorce','ouvert','tente'].forEach(k=>delete c[k])});
  m.fog=packMask(new Uint8Array(grille.n),grille.n);delete m.seen;m.fogOff=false;fogSeen=null;fogSeenSrc=null;fogKey='';
  /* L'invisibilité ne se pose plus sur la carte : c'est un état, donné en jeu. Une carte
     tracée avant la v0.82 garde ses invisibles, mais sous forme d'état. */
@@ -1522,7 +1528,7 @@ $('coffre-edit').onclick=()=>{if(mapSel&&mapSel.kind==='coffre')openCoffre(mapSe
 // Dupliquer : le même coffre, réglages et contenu compris, posé un peu plus loin.
 $('coffre-double').onclick=()=>{const c=mapSel&&mapSel.kind==='coffre'&&shapeAt(mapSel);if(!c)return;pushUndo();
  const copie=structuredClone(c);copie.id=crypto.randomUUID();copie.locked=false;copie.x=Math.min(100-copie.w,copie.x+2);copie.y=Math.min(100-copie.h,copie.y+2);
- ['revele','deverrouille','desamorce','ouvert'].forEach(k=>delete copie[k]);mapDraft.coffres.push(copie);mapSel={kind:'coffre',i:mapDraft.coffres.length-1};
+ ['revele','deverrouille','desamorce','ouvert','tente'].forEach(k=>delete copie[k]);mapDraft.coffres.push(copie);mapSel={kind:'coffre',i:mapDraft.coffres.length-1};
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};
 // Les clés de l'armurerie, en menu ; « aucune » d'abord.
 const clesArmurerie=()=>(catalog.items||[]).filter(o=>o&&o.category==='cle').sort((x,y)=>String(x.name).localeCompare(String(y.name),'fr'));
@@ -1582,7 +1588,7 @@ const CATS_COFFRE=[['armes','Armes',o=>o.category==='weapon'||o.category==='ammo
 let catsCoffre=new Set(['armes','armures','objets']),filtreCoffre='';
 function contenuCoffre(boite,cible){boite.replaceChildren();boite.classList.add('inv-adv');
  const compte=id=>cible.inventaire.filter(x=>x===id).length;
- const ajoute=o=>{if(cible.inventaire.length<99)cible.inventaire.push(o.id);change()};
+ const ajoute=o=>{if(cible.inventaire.length<99&&!(estUnique(o)&&cible.inventaire.includes(o.id)))cible.inventaire.push(o.id);change()};
  const retire=o=>{const k=cible.inventaire.lastIndexOf(o.id);if(k>=0)cible.inventaire.splice(k,1);change()};
  const possede=document.createElement('div');possede.className='inv-possede';
  const majPossede=()=>{possede.replaceChildren();const comptes=new Map();cible.inventaire.map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));

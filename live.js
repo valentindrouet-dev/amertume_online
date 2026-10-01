@@ -74,9 +74,9 @@ function etatVivant(){const out={actors:{}};
     un objet découvert paraît chez tous, sans clé de plus dans la salle. Un appareil plus ancien
     ne lit que les portes et ignore la suite. */
  // Un objet : 0 caché, 1 visible, 2 récupéré. Une porte : ouverte ou non ; passage secret découvert, 2 close, 3 ouverte.
- // Puis les coffres, en drapeaux : 1 révélé, 2 déverrouillé, 4 désamorcé, 8 ouvert.
+ // Puis les coffres, en drapeaux : 1 révélé, 2 déverrouillé, 4 désamorcé, 8 ouvert, 16 tenté verrouillé.
  out.doors=m?[...(m.doors||[]).map(d=>d.decouvert?(d.open?3:2):!!d.open),...(m.objets||[]).map(o=>o.pris?2:o.visible?1:0),
-  ...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0))]:[];
+  ...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0)|(c.tente?16:0))]:[];
  out.fogOff=!!(m&&m.fogOff);
  out.fogReset=typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false};
  /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
@@ -216,8 +216,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   if(m&&Array.isArray(d.doors)){(m.doors||[]).forEach((p,i)=>{const v=d.doors[i];if(typeof v==='boolean'){p.open=v;delete p.decouvert}else if(v===2||v===3){p.open=v===3;p.decouvert=true}});
    const n=(m.doors||[]).length;(m.objets||[]).forEach((o,k)=>{const v=d.doors[n+k];
     if(typeof v==='boolean'){o.visible=v;delete o.pris}else if(v===0||v===1||v===2){o.visible=v>=1;if(v===2)o.pris=true;else delete o.pris}});
-   const n2=n+(m.objets||[]).length;(m.coffres||[]).forEach((c,k)=>{const v=d.doors[n2+k];if(!Number.isInteger(v)||v<0||v>15)return;
-    [['revele',1],['deverrouille',2],['desamorce',4],['ouvert',8]].forEach(([cle,b])=>{if(v&b)c[cle]=true;else delete c[cle]})})}
+   const n2=n+(m.objets||[]).length;(m.coffres||[]).forEach((c,k)=>{const v=d.doors[n2+k];if(!Number.isInteger(v)||v<0||v>31)return;
+    [['revele',1],['deverrouille',2],['desamorce',4],['ouvert',8],['tente',16]].forEach(([cle,b])=>{if(v&b)c[cle]=true;else delete c[cle]})})}
   if(selected!==null&&!actors[selected])selected=null;
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
   if(typeof marked!=='undefined')marked=new Set([...marked].filter(id=>actors.some(a=>a.id===id)));
@@ -282,7 +282,8 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
   else if(rec.effet==='orbe'&&typeof volOrbe==='function'){const [couleur,etat]=(typeof rec.logo==='string'?rec.logo:'').split('|');
    volOrbe(acteurDuJournal(rec.a),acteurDuJournal(rec.b),couleur||'',etat||'')}
   else if(rec.effet==='fleche'&&typeof volFleche==='function')volFleche(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
-  else if(rec.effet==='balayage'&&typeof volBalayage==='function')volBalayage(acteurDuJournal(rec.a),acteurDuJournal(rec.b));return}
+  else if(rec.effet==='balayage'&&typeof volBalayage==='function')volBalayage(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
+  else if(rec.effet==='piege'&&typeof explosionPiege==='function'){const m=typeof currentMap==='function'?currentMap():null,c=m&&(m.coffres||[])[Number(rec.logo)];if(c)explosionPiege(centreForme(c))}return}
  if(rec.genre==='attaque'){const r=rec.detail&&typeof rec.detail==='object'?rec.detail:null;
   const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,def:Number.isInteger(r.def)?r.def:null,solidite:!!r.solidite,double:!!r.double,total:r.total}:null;
   logAttaqueLocal(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'',String(rec.corps||''),d,rec.suite?String(rec.suite):'')}

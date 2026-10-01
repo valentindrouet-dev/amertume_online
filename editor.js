@@ -299,7 +299,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // Une ressource n'a ni effet, ni usage, ni bonus : elle se stocke et se vend. Une clé non plus.
   if(o.category==='ressource'||o.category==='restes'||o.category==='cle'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}
   o.usage=usageObjet(o);o.consumable=o.usage==='conso';
-  o.magasin=o.magasin===true;if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}
+  o.magasin=o.magasin===true;o.unique=estUnique(o);if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}
   // Un reste donne ses ressources à son rendement ; une pièce du tanneur a sa recette.
   if(o.category==='restes'){o.rendement1=lisQte(o.rendement1);o.rendement2=lisQte(o.rendement2)}
   o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
@@ -2019,6 +2019,8 @@ function tableMasse(boite,liste){
    le formulaire ; ✎ et ⧉ paraissent au survol. */
 function armoryRow(a,i){const carte=document.createElement('div');carte.className='cat-carte';
  const p=gearCarre(a,1,0);p.classList.remove('dispo');const coche=p.querySelector('.marque-porte');if(coche)coche.remove();
+ // Unique et dans le sac d'un aventurier : une petite coche.
+ if(porteursUnique(a).length){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.classList.add('unique-pris');p.append(m)}
  p.removeAttribute('title');p.setAttribute('aria-label','Modifier '+a.name);
  if(BULLES)surveille(p,()=>{const d=gearDetail(a,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});
  p.onclick=()=>openItem(i);p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openItem(i)}};
@@ -3157,8 +3159,17 @@ function toggleEquip(a,o){if(!a||!o)return 'Rien à équiper.';
    le repose d'abord. */
 // Pas plus de 99 exemplaires d'une même pièce dans un inventaire.
 const INVENTAIRE_MAX=99;
-function inventairePlein(a,o){return !!a&&!!o&&(a.inventaire||[]).filter(x=>x===o.id).length>=INVENTAIRE_MAX}
-function ajouterInventaire(a,o){if(!a||!o)return false;a.inventaire??=[];if(inventairePlein(a,o))return false;a.inventaire.push(o.id);return true}
+/* Une pièce unique n'existe qu'en un exemplaire chez les aventuriers. Une clé l'est d'office à sa création,
+   le MJ peut la décocher ; toute autre pièce ne l'est que s'il la coche. */
+function estUnique(o){return !!o&&(o.unique===undefined?o.category==='cle':o.unique===true)}
+function porteursUnique(o){return estUnique(o)&&typeof actors!=='undefined'?actors.filter(x=>x&&x.hero&&(x.inventaire||[]).includes(o.id)):[]}
+// Déjà dans le sac d'un autre aventurier : le magasin ne la vend pas une seconde fois.
+function uniqueAilleurs(o,a){return porteursUnique(o).some(x=>x!==a&&x.id!==(a&&a.id))}
+function inventairePlein(a,o){return !!a&&!!o&&(a.inventaire||[]).filter(x=>x===o.id).length>=(estUnique(o)?1:INVENTAIRE_MAX)}
+function ajouterInventaire(a,o){if(!a||!o)return false;a.inventaire??=[];if(inventairePlein(a,o))return false;
+ // Un aventurier prend une pièce unique : elle quitte le sac où elle était, quel qu'il soit sur la table.
+ if(a.hero&&estUnique(o)&&typeof actors!=='undefined')actors.forEach(x=>{if(x&&x!==a&&x.id!==a.id)while((x.inventaire||[]).includes(o.id))retirerInventaire(x,o)});
+ a.inventaire.push(o.id);return true}
 function retirerInventaire(a,o){if(!a||!o)return;a.inventaire??=[];const i=a.inventaire.lastIndexOf(o.id);if(i<0)return;
  a.inventaire.splice(i,1);const reste=a.inventaire.filter(x=>x===o.id).length;
  if(o.category==='weapon'){while(gearCount(a,o.id)>reste){const k=(a.weapons||[]).lastIndexOf(o.id);a.weapons.splice(k,1)}}
@@ -4796,6 +4807,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  // Une ressource neuve reçoit sa clé, qui ne changera plus, même si on la renomme.
  if(a.category==='ressource'&&!(typeof a.cle==='string'&&CLE_MATERIAU.test(a.cle)))a.cle=cleLibre(a.name,new Set(ressourcesJeu().map(r=>r.cle)));
  if(f.magasin)a.magasin=f.magasin.checked;
+ if(f.unique)a.unique=f.unique.checked;
  if(f.tanneur)a.tanneur=f.tanneur.checked;
  if($('recette-lignes'))a.recette=lireRecette();
  for(const k of ['rendement1','rendement2'])if(f[k])a[k]=lisQte(f[k].value);
@@ -4847,6 +4859,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +'</div>'
   // En vente au magasin du domaine, au prix ci-dessus.
   +'<label class="field-check"><input name="magasin" type="checkbox" '+(a.magasin===true?'checked':'')+'>Magasin — achetable au magasin du domaine</label>'
+  +'<label class="field-check"><input name="unique" type="checkbox" '+(estUnique(a)?'checked':'')+'>Unique</label>'
   /* Le tanneur la vend, et la fabrique d'après sa recette, avec la réserve du domaine. */
   +(a.category==='ressource'||a.category==='restes'?'':'<label class="field-check"><input name="tanneur" type="checkbox" '+(a.tanneur===true?'checked':'')+'>Tanneur — vendu et fabriqué à la tannerie</label>'
    +'<div id="item-recette"'+(a.tanneur===true?'':' hidden')+'><p class="etiquette">Recette du tanneur, prise dans la réserve du domaine</p><div id="recette-lignes"></div>'

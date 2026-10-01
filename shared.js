@@ -19,7 +19,7 @@ const CHAMPS_VOLATILS=['x','y','hp','states','bleed','cumuls','checks','target',
 function texteStable(value){const v={...value,round:1,mode:'exploration',locked:false,currentMapId:null,mapImage:null,
   actors:(value.actors||[]).map(a=>{const c={...a};CHAMPS_VOLATILS.forEach(k=>delete c[k]);return c}),
   maps:(value.maps||[]).map(m=>{const c={...m};delete c.fog;delete c.seen;c.doors=(m.doors||[]).map(d=>{const p={...d};delete p.open;delete p.decouvert;return p});
-   c.coffres=(m.coffres||[]).map(x=>{const p={...x};['revele','deverrouille','desamorce','ouvert'].forEach(k=>delete p[k]);return p});return c})};
+   c.coffres=(m.coffres||[]).map(x=>{const p={...x};['revele','deverrouille','desamorce','ouvert','tente'].forEach(k=>delete p[k]);return p});return c})};
  return JSON.stringify(v)}
 function publicContent(){saveChecks();savePool();return {schema:1,title:sceneTitle(),round,mode,mapImage,maps:publicMaps(),currentMapId,locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:structuredClone(catalog),actors:actors.map(a=>({...structuredClone(a),target:null,checks:[false,false,false]}))}}
 /* ---------- Les grandes images, publiées à part ----------

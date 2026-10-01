@@ -3063,7 +3063,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  {const ctxI={};vm.createContext(ctxI);vm.runInContext(src.slice(src.indexOf('const INVENTAIRE_MAX='),src.indexOf('function retirerInventaire('))+';this.ajouterInventaire=ajouterInventaire;',ctxI);
   const a={inventaire:Array(98).fill('f')};assert.equal(ctxI.ajouterInventaire(a,{id:'f'}),true);assert.equal(ctxI.ajouterInventaire(a,{id:'f'}),false);assert.equal(a.inventaire.length,99,'99 au plus');}
  assert.ok(src.includes(" if(col==='object')ligne(o.notes);")&&!src.includes("ligne('Munition : '")&&page.includes("if(munitionTiree&&typeof retirerInventaire==='function'){const o=objetDe(munitionTiree);if(o)retirerInventaire(a,o)}}")
-  &&fs.readFileSync('domaine.js','utf8').includes(" if(inventairePlein(a,o))return;ajouteOr(a,-p.prix);")&&feuille.includes('.gear-detail .gear-def .ecu{width:auto;height:22px;'),'bulles sans texte, munitions comptées, 99 au plus');
+  &&fs.readFileSync('domaine.js','utf8').includes(" if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;ajouteOr(a,-p.prix);")&&feuille.includes('.gear-detail .gear-def .ecu{width:auto;height:22px;'),'bulles sans texte, munitions comptées, 99 au plus');
  /* v0.484 — « XP visible » au MJ seul ; plus d'XP au survol d'un rond ; le cartouche d'XP de la bulle en rouge
    quand l'aventurier n'a pas de quoi payer. */
  assert.ok(src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a);poseXpVisible();")&&src.includes("arbresDialog.classList.toggle('xp-visible',xpVisible&&view==='mj');")
@@ -3371,6 +3371,20 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.509 — Gerbe de feu quand un piège part ; cadenas sur un coffre trouvé verrouillé ; pièces uniques. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ const ctx={};vm.createContext(ctx);vm.runInContext(src.slice(src.indexOf('const INVENTAIRE_MAX='),src.indexOf('/* Dans l\'inventaire à remplir'))
+  +';this.ajouterInventaire=ajouterInventaire;this.estUnique=estUnique;this.syncEquipped=()=>{};this.gearCount=()=>0;this.armuresDe=a=>a.armures||[];',ctx);
+ const cle={id:'k',category:'cle'},libre={id:'k2',category:'cle',unique:false},obj={id:'o',category:'object'};
+ assert.deepEqual([ctx.estUnique(cle),ctx.estUnique(libre),ctx.estUnique(obj),ctx.estUnique({...obj,unique:true})],[true,false,false,true],'une clé est unique d’office, décochable');
+ const A={id:'a',hero:true,inventaire:['k']},B={id:'b',hero:true,inventaire:[]};ctx.actors=[A,B];
+ assert.deepEqual([ctx.ajouterInventaire(A,cle),ctx.ajouterInventaire(B,cle),A.inventaire,B.inventaire],[false,true,[],['k']],'jamais deux, et elle passe au nouveau porteur');
+ assert.deepEqual([ctx.ajouterInventaire(B,libre),ctx.ajouterInventaire(B,libre)],[true,true],'décochée, elle se double');
+ assert.ok(page.includes('function explosionPiege(centre){')&&mp.includes("diffuserEffet('piege',h,null,")&&vivant.includes("rec.effet==='piege'&&typeof explosionPiege==='function'"),'la gerbe du piège, partout');
+ assert.ok(mp.includes("c.tente=true;log(")&&mp.includes("if(c.tente&&coffreVerrouille(c)&&!c.ouvert){")&&mp.includes("$('fog').before(k)")&&vivant.includes("['tente',16]"),'le cadenas, sous le brouillard, partagé');
+ assert.ok(src.includes("p.classList.add('unique-pris')")&&src.includes("'>Unique</label>'"),'la case Unique et la coche de l’Armurerie');
+ // normalizeCatalog la lit au chargement, bien avant sa ligne : une déclaration de fonction, jamais une constante.
+ assert.ok(src.includes('function estUnique(o){')&&!/const estUnique\s*=/.test(src),'estUnique est hissée');}
 /* v0.508 — Bulle des coffres au survol, bouton du MJ ; noms groupés au journal ; touche M de la vue ; la fin du combat
    et les PV max se jugent quelle que soit la vue de qui tient la partie. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8');
@@ -3458,7 +3472,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(carto.includes("if(f.cache)a.hidden=true;actors.push(a)});")&&page.includes("menuCarte(a.name,[['Révéler à la troupe',()=>{a.hidden=false;render();scheduleSave()}]]")
   &&!carto.includes("'Découvert !'")&&carto.includes("d.decouvert=true;floatNumber(centreForme(d),'Révélé !','nul')")&&carto.includes("c.revele=true;floatNumber(centreForme(c),'Révélé !','nul')")
   &&carto.includes("if(o.visible)floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');"),'les révélations');
- assert.ok(vivant.includes("...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0))")&&vivant.includes("else if(v===2||v===3){p.open=v===3;p.decouvert=true}"),'la table partage portes découvertes et coffres');
+ assert.ok(vivant.includes("...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0)|(c.tente?16:0))")&&vivant.includes("else if(v===2||v===3){p.open=v===3;p.decouvert=true}"),'la table partage portes découvertes et coffres');
  // Les règles du coffre : verrou et piège égaux, l'un défait l'autre ; distincts, chacun le sien.
  const ctx={Math,c:null};vm.createContext(ctx);vm.runInContext(carto.match(/const coffreVisible=[^\n]*/)[0]+';this.v=coffreVerrouille;this.a=coffreArme;',ctx);
  assert.equal(ctx.v({verrou:2}),true);assert.equal(ctx.v({verrou:2,deverrouille:true}),false);assert.equal(ctx.v({verrou:0}),false);assert.equal(ctx.a({piege:1}),true);assert.equal(ctx.a({piege:1,desamorce:true}),false);
