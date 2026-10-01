@@ -1290,7 +1290,10 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));
  normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});
  // Au-dessus de sa valeur : les dés d'une arme, et l'état qu'elle inflige ; la DEF d'une armure qui protège.
- if(col==='melee'||col==='ranged'){const p=document.createElement('p');p.className='gear-des';p.append(dicePips(o.dice,o.etat));d.append(p)}
+ // À distance, la place vide d'une munition à droite des dés ; chez son porteur, son bonus de dégâts ensuite.
+ if(col==='melee'||col==='ranged'){const p=document.createElement('p');p.className='gear-des';p.append(dicePips(o.dice,o.etat,col==='ranged'));
+  if(a&&(a.inventaire||[]).includes(o.id)){const b=document.createElement('b');b.className='bonus';b.textContent='+ '+degatsDe(a);p.append(b)}
+  d.append(p)}
  else if(col==='armor'&&((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))){const p=document.createElement('p');p.className='gear-def';p.append(shieldBadge(o.def||0));d.append(p)}
  // Une munition : le dé qu'elle ajoute, et l'état qu'elle inflige ; à côté, combien l'aventurier en a.
  if(o.category==='ammo'){const p=document.createElement('p');p.className='gear-des';
@@ -1482,7 +1485,7 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);
  const possede=(a.inventaire&&a.inventaire.length)?a.inventaire:[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean);
  const comptes=new Map();possede.map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
- const portes=o=>o.category==='weapon'?gearCount(a,o.id):o.category==='ammo'?(o.id===a.munitionId?1:0):o.id===a.shieldId?1:armuresDe(a).filter(x=>x===o.id).length;
+ const portes=o=>o.category==='weapon'?gearCount(a,o.id):o.category==='ammo'?(o.id===a.munitionId?(comptes.get(o)||0):0):o.id===a.shieldId?1:armuresDe(a).filter(x=>x===o.id).length;
  const corps=document.createElement('div');corps.className='corps';corps.innerHTML=SILHOUETTE;
  /* Les mains, vues de face : la main droite de l'aventurier est à gauche de l'image. Elle tient
     la première arme — la main de base. La gauche tient le bouclier, ou la seconde arme ; une
@@ -1500,7 +1503,10 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  places.forEach(([cle,nom,o],k)=>{const pl=document.createElement('div');pl.className='place p-'+cle+(cle==='bottes'?' bottes':'');pl.dataset.place=cle;if(cle==='main')pl.dataset.main=k===3?'droite':'gauche';
   const l=document.createElement('span');l.className='nom-place';l.textContent=nom;pl.append(l);
   if(o&&o.deux){const p=remplitMunition(gearCarre(o.deux,1,1),a,o.deux);p.classList.add('deux-mains');p.removeAttribute('title');p.setAttribute('aria-label',o.deux.name+' — à deux mains');pl.append(p)}
-  else if(o)pl.append(carreDeFiche(a,o,1,true,portes,peutEquiper,true));
+  /* Les munitions portées : toutes celles de ce type, leur nombre en pastille ; déséquipées, toutes
+     retournent à l'inventaire. */
+  else if(o){const n=cle==='munitions'?(comptes.get(o)||1):1,sq=carreDeFiche(a,o,n,true,portes,peutEquiper,true);
+   if(n>1){const x=sq.querySelector('.exemplaires');if(x)x.textContent=String(n)}pl.append(sq)}
   else{const v=document.createElement('span');v.className='vide';v.textContent='·';pl.append(v);
    // Un emplacement vide s'équipe d'un clic : ce qui lui va, du sac d'abord, puis de l'Armurerie.
    if(peutEquiper){const cote=cle==='main'?(k===3?'droite':'gauche'):'';v.textContent='+';v.classList.add('equipable');

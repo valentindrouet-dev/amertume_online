@@ -1915,7 +1915,9 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* La Vie ou les PV sous leur maximum : la valeur, légèrement rouge. */
 .stat-row.en-icones .stat-tile.avec-icone.sous-max strong{color:#ffa69a}
 /* Dans une bulle d'objet : l'écu de DEF à la taille des dés ; la quantité d'une munition à côté de son dé. */
-.gear-detail .gear-def .ecu{width:22px;height:22px;display:inline-block}.gear-detail .gear-def .ecu img{width:100%;height:100%;display:block}
+.gear-detail .gear-def .ecu{width:auto;height:22px;display:inline-block}.gear-detail .gear-def .ecu img{width:auto;height:100%;display:block;object-fit:contain}
+.gear-detail .gear-des .bonus{font:800 13px system-ui;color:var(--red-mat,#b8352f);white-space:nowrap}
+.corps-sac>.corps .cat-pill.gear-carre .exemplaires{position:absolute;top:auto;right:-6px;bottom:-6px;left:auto;padding:0 3px;font:700 9px/13px system-ui;color:var(--ink);border-radius:6px;background:var(--panel);border:1px solid var(--line)}
 .gear-detail .gear-des{display:flex;align-items:center;gap:6px}.gear-detail .gear-quantite{font:700 13px system-ui;color:var(--ink)}
 /* Fiche d'aventurier : les chiffres et les compétences dans leur cadre, comme les autres sections. */
 .arbres-chiffres{width:min(440px,100%);box-sizing:border-box;margin:0}
