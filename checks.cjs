@@ -2083,7 +2083,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0)a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(view!=='mj')return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
   &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee'];")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")
-  &&src.includes(" ecrire('.stat-tile.t-dmg strong','+ '+degatsDe(a));")&&src.includes("  const r=rondCompetence(a,k);")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
+  &&src.includes(" ecrire('.stat-tile.t-dmg strong','+\\u202F'+degatsDe(a));")&&src.includes("  const r=rondCompetence(a,k);")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
    en est une ; les miettes ne comptent pas ; le MJ les voit d'un bouton. */
 {const mur={anneaux:[[[49,0],[51,0],[51,100],[49,100]]]};
@@ -3365,6 +3365,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.501 — Fiche : « + » serré sur les dégâts, valeurs des bonus du bloc Talents plus grandes ; pastilles d'équipement
+   à la couleur de la rareté ; pastilles grises dans une bulle de talent grisée. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("ecrire('.stat-tile.t-dmg strong','+\\u202F'+degatsDe(a));")&&src.includes("['dmg','Dég.','+\\u202F'+degatsDe(a)],['xp','XP',a.xp||0]]\n  .map(t=>statTile(...t));")
+  &&css.includes('.hero-card .talent-ameliorations .cat-pill.bonus-rond .bonus-valeur{left:70%;top:70%;font-size:14px;')
+  &&css.includes('.gear-detail .gear-bonus::before{background:var(--rarete,#7d7a74);')&&css.includes('.talent-detail.grisee{--pastille:#8f8a80!important}'),'les retouches de la fiche et des pastilles');}
 /* v0.500 — Blindage ne s'empile pas ; Gardien pose l'état Gardé, à l'image choisie par le MJ ; les talents de début
    de combat ne servent qu'au premier tour avant que la troupe bouge ou agisse, marqués sur la carte et dans la
    barre ; un aventurier sans VIE est mort : fiche grise, tête de mort, seul le MJ y touche et le ressuscite. */

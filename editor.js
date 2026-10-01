@@ -716,7 +716,8 @@ function majFiche(carte,a){if(!carte)return;
  ecrire('.stat-tile.t-endu strong',enduAffichee(a));
  ecrire('.stat-tile.t-pv strong',a.max);
  {const b=carte.querySelector('.hero-pv');if(b)b.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true)}
- ecrire('.stat-tile.t-dmg strong','+ '+degatsDe(a));ecrire('.stat-tile.t-xp strong',a.xp||0);
+ // Sur la fiche, le « + » serre un peu la valeur des dégâts : une espace fine.
+ ecrire('.stat-tile.t-dmg strong','+\u202F'+degatsDe(a));ecrire('.stat-tile.t-xp strong',a.xp||0);
  ecrire('.chip-niveau','Niveau '+a.level);ecrire('.classe-niv',' niv. '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
  majEcu(carte.querySelector('.stat-tile.t-def .ecu'),defOf(a));
  carte.querySelectorAll('.comp-rond').forEach((r,k)=>{const v=r.querySelector('.comp-val');if(v){v.textContent=valeurCompetence(a,k);v.classList.toggle('haute',valeurCompetence(a,k)>1)}
@@ -955,7 +956,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // valeur en gros, une teinte par caractéristique, l'écu pour la DEF.
  const chiffres=document.createElement('div');chiffres.className='stat-row';
  const tuiles=[['vie','Vie',vieAffichee(a),false,a.vieMax??a.vie],['endu','Endu',enduAffichee(a)],
-  ['pv','PV max',a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+ '+degatsDe(a)],['xp','XP',a.xp||0]]
+  ['pv','PV max',a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+\u202F'+degatsDe(a)],['xp','XP',a.xp||0]]
   .map(t=>statTile(...t));
  // La Vie sous son maximum se teinte de rouge, et redevient blanche au maximum.
  tuiles[0].classList.toggle('sous-max',vieEntamee(a));
