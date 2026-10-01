@@ -1112,6 +1112,8 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
  C.conversionDegats('3d8').propositions.forEach(p=>assert.ok(Math.abs(p.moyenne-13.5)<1&&p.n<=7,'proche de 13,5'));
  assert.ok(C.conversionDegats('3d8').propositions.some(p=>Object.keys(p.des).length>1),'des poignées panachées');
  assert.equal(C.conversionDegats('3d8').def,undefined,'une valeur absolue, sans DEF');
+ ['2d6','3d8','6d6','7d6'].forEach(t=>assert.ok(C.conversionDegats(t).propositions.every(p=>!p.des.black),t+' : pas de Mortel sous 25'));
+ assert.ok(C.conversionDegats('8d6').propositions.every(p=>(p.des.black||0)<=1)&&C.conversionDegats('10d6').propositions.every(p=>(p.des.black||0)<=3),'un Mortel de plus tous les 5 points');
  assert.deepEqual(C.moyennePoignee({red:2,white:1},3),C.moyennePoignee({red:2,white:1},3),'le hasard est semé');
  assert.ok(src.includes("const conversionDialog=dialog('conversion-des','Conversion des dégâts',")&&src.includes("b.id='conversion-ouvre';b.className='conversion-bouton';b.textContent='🎲';")
   &&src.includes("$('view').after(b)")&&!src.includes("conversion-dit")&&!src.includes("conversion-def")&&feuille.includes('.conversion-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));'),'le dé à côté de la vue ouvre la conversion');}

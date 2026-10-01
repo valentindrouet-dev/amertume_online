@@ -1961,6 +1961,7 @@ body.sombre .biblio-table .utilise{background:#1e3a26;color:#9fd3a8}
 .conversion-carte.de-white{--d:#a99f8a}.conversion-carte.de-red{--d:#c0392b}.conversion-carte.de-blue{--d:#3f7bc0}
 .conversion-nom{margin:0;font:700 11px system-ui;letter-spacing:1.6px;text-transform:uppercase;color:color-mix(in srgb,var(--d) 75%,var(--ink))}
 .conversion-carte .conversion-des{display:inline-flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap;min-height:30px}
+.conversion-carte .conversion-des .pips{flex-wrap:nowrap;gap:4px}
 .conversion-carte .conversion-des .bonus{display:inline-flex;align-items:center;white-space:nowrap;margin:0}
 .conversion-carte .conversion-des .dmg-ico{width:26px;height:26px;margin-left:2px;object-fit:contain}
 .conversion-carte .conversion-des .die-sq{flex:0 0 24px;width:24px;height:24px}

@@ -1583,12 +1583,14 @@ const CONVERSION_COULEURS=['white','bone','red','blue','black'];
 function conversionDegats(texte,combien=6){const dnd=lireDegatsDnd(texte);if(dnd.erreur)return dnd;
  /* La moyenne des seuls dés D&D ; un bonus fixe n'y entre pas. Toutes les poignées panachées jusqu'à sept
     dés sont lancées une première fois, vite, sans DEF : leur valeur est absolue ; les plus proches le sont de
-    nouveau, longuement. On en garde
+    nouveau, longuement. Le Mortel n'échoue jamais et ses 1 ne font pas d'échec : il n'entre qu'aux grosses
+    valeurs, à partir de 25 de moyenne, un de plus tous les 5 points. On en garde
     les plus proches, une par mélange de couleurs d'abord, pour que les propositions varient. Au-delà, deux
     1 tombent trop souvent et le jet échoue. */
- const moyenne=dnd.des.reduce((s,d)=>s+d.n*(d.f+1)/2,0),maxDes=Math.max(2,Math.min(7,Math.ceil(moyenne/3)+2));
+ const moyenne=dnd.des.reduce((s,d)=>s+d.n*(d.f+1)/2,0),maxDes=Math.max(2,Math.min(7,Math.ceil(moyenne/3)+2)),maxNoirs=Math.max(0,Math.floor((moyenne-20)/5));
  const poignees=[],remplis=(k,reste,p)=>{if(k===CONVERSION_COULEURS.length){const n=Object.values(p).reduce((x,y)=>x+y,0);if(n)poignees.push({...p});return}
-  for(let q=0;q<=reste;q++){const c={...p};if(q)c[CONVERSION_COULEURS[k]]=q;remplis(k+1,reste-q,c)}};
+  const plafond=CONVERSION_COULEURS[k]==='black'?Math.min(reste,maxNoirs):reste;
+  for(let q=0;q<=plafond;q++){const c={...p};if(q)c[CONVERSION_COULEURS[k]]=q;remplis(k+1,reste-q,c)}};
  remplis(0,maxDes,{});
  const note=(p,essais)=>{const s=moyennePoignee(p,0,essais),n=Object.values(p).reduce((x,y)=>x+y,0);return {des:p,n,moyenne:s.moyenne,touche:s.touche,score:Math.abs(s.moyenne-moyenne)+.05*n}};
  const tri=(x,y)=>x.score-y.score;
