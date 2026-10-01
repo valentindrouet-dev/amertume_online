@@ -2344,8 +2344,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&fief.includes("if(b&&lieuDe(a)!==b.id)deplaceAventurier(a,b)};")&&fief.includes("t.onpointerdown=ev=>glisseJetonAventurier(ev,a,t);")
   &&fief.includes("+(batimentConstruit(b)?' construit':'')")&&feuille.includes('.dom-etiquette .jeton-rond.mini{width:36px;height:36px;font-size:18px;')
   &&feuille.includes('#dom-plan.glisse-jeton .dom-zone.construit{'),'le jeton se glisse vers un bâtiment construit, en grand');
- assert.ok(src.includes("const estBonus=t=>!!t&&t.effet==='bonus';")&&src.includes("filter(([t])=>!estBonus(t)&&talentFamily(t)===famille")
-  &&src.includes(".filter(t=>!estBonus(t)&&talentFamily(t)===famille")&&src.includes("const codes=Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>{"),'un bonus ne paraît ni dans l’onglet, ni dans le sélecteur, ni dans la bibliothèque');
+ assert.ok(src.includes("const estBonus=t=>!!t&&t.effet==='bonus';")&&src.includes("filter(([t])=>!estBonus(t)&&!estVide(t)&&talentFamily(t)===famille")
+  &&src.includes(".filter(t=>!estBonus(t)&&!estVide(t)&&talentFamily(t)===famille")&&src.includes("const codes=Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>{"),'un bonus ne paraît ni dans l’onglet, ni dans le sélecteur, ni dans la bibliothèque');
  assert.ok(src.includes('<label><input type="radio" name="nature" value="bonus"')&&src.includes("['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});")
   &&src.includes("if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});")
   &&feuille.includes('.talent-cache{display:none!important}'),'l’éditeur devient éditeur de bonus');
@@ -2896,7 +2896,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual([1,2,3].map(n=>C.ditEtatOrbe(C.etatOrbeAuPalier(O(n)))),['Feu sur 6+','Feu à la touche','Feu 2 à la touche']);
  assert.ok(page.includes("const k=pouvoir?crans(pouvoir.six?orbesAvecSix():pouvoir.blesse?orbesTouchant():n):0;")
   &&page.includes("else if(issue===true){if(k>1)ajouteEtat(b,e,k-1);pose=' + '+e+(k>1?' '+k:'')}}"),'la table pose l’état selon le palier, un cran par orbe du Déluge');
- assert.ok(src.includes("function ajouterDansArbre(dest){")&&src.includes("if(f!==dest.famille&&!t.horsArbre)retireDeLArbre(t);")
+ assert.ok(src.includes("function ajouterDansArbre(dest){")&&src.includes("if(f!==dest.famille&&!t.horsArbre)videDeLArbre(t);")
   &&src.includes("ajouterDansArbre({famille:col.famille,voie:col.voie,pos:{x:pl.x,y:pl.y},de:")&&fs.readFileSync('editor.css','utf8').includes('.arbre-choix-liste{'),'les « + » de l’arbre prennent aussi un talent existant');}
 /* v0.298 — Meneur câblé sur ses textes : l'allié le plus proche, où qu'il soit, d'un nombre
    fixe ou du bonus propre du porteur ; tous les alliés au contact. Les accolades se lisent
@@ -3365,6 +3365,31 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.496 — Retirer ou supprimer un talent de l'arbre laisse sa case vide : ses lignes, ses niveaux et ses petits
+   ronds restent ; la case se traverse ; un talent posé dessus reprend le tout. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ const T=[{id:'A',name:'A',pos:{x:0,y:0},liens:['B']},{id:'B',name:'B',pos:{x:0,y:1},liens:['C'],niveaux:{C:3}},{id:'C',name:'C',pos:{x:0,y:2}},
+  {id:'k',name:'+1',effet:'bonus',chemin:{de:'B',dir:'ne',rang:1}},{id:'k2',name:'+2',effet:'bonus',chemin:{de:'B',dir:'ne',rang:2}}];
+ let n=0;const ctxV={view:'mj',crypto:{randomUUID:()=>'v'+(++n)},LIENS_MAX:4,DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES:['n','e','s','o'],estBonus:t=>!!t&&t.effet==='bonus',catalog:{talents:T}};
+ vm.createContext(ctxV);vm.runInContext(src.slice(src.indexOf('function posDe('),src.indexOf("/* Les colonnes d'une classe : deux, toujours"))+src.slice(src.indexOf("// Un petit rond dont le talent, ou le petit rond d'avant"),src.indexOf('/* Placer un talent dans un arbre'))
+  +src.slice(src.indexOf('function retireDeLArbre('),src.indexOf('/* La bulle d\'un talent'))+';this.videDeLArbre=videDeLArbre;this.reprendCase=reprendCase;this.laisseCaseVide=laisseCaseVide;this.verrouArbre=verrouArbre;this.atteintsDepuis=atteintsDepuis;',ctxV);
+ const X=id=>ctxV.catalog.talents.find(t=>t.id===id);
+ assert.equal(ctxV.videDeLArbre(X('B')),true);
+ const V=X('v1');
+ assert.ok(V&&V.vide===true&&V.pos.x===0&&V.pos.y===1&&V.liens.join()==='C'&&V.niveaux.C===3,'la case vide garde la place, les lignes et les niveaux');
+ assert.ok(X('B').horsArbre&&!X('B').pos&&!X('B').liens&&X('A').liens.join()==='v1','le talent part ; la ligne qui menait à lui mène à la case');
+ assert.ok(X('k').chemin.de==='v1'&&X('k2').chemin.de==='v1'&&!X('k').horsArbre&&!X('k2').horsArbre,'ses bonus restent sur leur chemin');
+ const L=[X('A'),V,X('C')];
+ assert.equal(ctxV.verrouArbre(['A'],L,X('C'),1),'Niveau 3','la case se traverse, ses niveaux tiennent');assert.equal(ctxV.verrouArbre(['A'],L,X('C'),3),'');
+ assert.ok(ctxV.atteintsDepuis(['A','C'],L,null).has('C'),'ce qu’on tenait au-delà reste tenu');
+ assert.equal(ctxV.verrouArbre(['A'],L,X('k')),'','le bonus de la case s’ouvre depuis un talent tenu');assert.ok(ctxV.verrouArbre([],L,X('k')),'fermé sinon');
+ const D={id:'D',name:'D',pos:{x:0,y:1}};ctxV.catalog.talents.push(D);ctxV.reprendCase(D,V);
+ assert.ok(!X('v1')&&D.liens.join()==='C'&&D.niveaux.C===3&&X('A').liens.join()==='D'&&X('k').chemin.de==='D'&&X('k2').chemin.rang===2,'un talent posé dessus reprend tout');
+ ctxV.laisseCaseVide(X('k'));const P=X('v2');
+ assert.ok(P&&P.vide&&P.chemin.de==='D'&&P.chemin.rang===1&&X('k2').chemin.rang===2,'un bonus ôté laisse aussi sa place');
+ assert.ok(src.includes("if(occ&&estVide(occ)&&ailleurs)reprendCase(t,occ);")&&src.includes("el=estVide(t)?noeudVide(t,c,false):noeudArbre(t,c,libre)")
+  &&src.includes("laisseCaseVide(t);catalog.talents.splice(catalog.talents.indexOf(t),1);talentDialog.close();")&&src.includes("if(t.vide!==true)delete t.vide;")
+  &&css.includes('.arbre-plan>.arbre-noeud.vide .arbre-rond{'),'câblé dans l’arbre, le formulaire et le catalogue');}
 /* v0.495 — Le bonus d'une compétence, dans l'arbre comme dans la bulle d'un objet, a la couleur
    de son rond sur la fiche (la teinte de son logo, la sienne à défaut) ; dans la bulle d'un objet,
    il s'écrit en Killam. */

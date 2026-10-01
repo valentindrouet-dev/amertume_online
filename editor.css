@@ -2046,3 +2046,10 @@ body.sombre .biblio-var{color:#9fd0ec;border-color:#3f7394;background-color:#1b3
 /* Au journal, les dés d'un test de compétence : 4+ en vert, en dessous en rouge. */
 .j-test .j-face{font-weight:800}.j-test .j-face.ok{color:#2e8b3e}.j-test .j-face.ko{color:#b8402d}
 body.sombre .j-test .j-face.ok{color:#7fd38c}body.sombre .j-test .j-face.ko{color:#f0866e}
+/* Une case vide, laissée par un talent retiré : un rond en pointillés à la place du sien, où ses
+   lignes et ses petits ronds tiennent toujours. */
+.arbre-plan>.arbre-noeud.vide .arbre-rond{background:var(--panel-2);border:2px dashed var(--line-strong);box-shadow:none;filter:none;opacity:1;color:var(--muted);font:600 24px/1 system-ui;display:grid;place-items:center}
+.arbre-plan>.arbre-noeud.vide.petit .arbre-rond{border-width:1.5px;font-size:15px}
+.arbre-plan>.arbre-noeud.vide[role=button]{cursor:pointer}
+.arbre-plan>.arbre-noeud.vide[role=button]:is(:hover,:focus) .arbre-rond{border-color:var(--accent);color:var(--accent)}
+.arbre-plan>.arbre-noeud.vide.survol .arbre-rond{border-style:solid;border-color:var(--green)}
