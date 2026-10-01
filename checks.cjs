@@ -3023,6 +3023,9 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.481 — Une partie enregistrée qui ne se pose pas n'est jamais écrasée : l'écriture reste bloquée. */
+ assert.ok(src.includes("catch(e){sessionLue=false;noterSauvegarde('Partie enregistrée illisible : '+e.message+' Rien n’est écrit par-dessus.',true)}};")
+  &&src.includes("if(db&&!sessionLue){noterSauvegarde('La partie enregistrée n’est pas encore lue : rien n’est écrit par-dessus.',true);return}"),'partie illisible : rien par-dessus');
  /* v0.479 — « Inventaire + » au-dessus du bloc, l'inventaire à hauteur du corps, six icônes par ligne ; l'icône
    portée plus bas, ses dés devant ; anneaux et amulette sans symbole d'effet. */
  assert.ok(feuille.includes('.corps-sac{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);')&&feuille.includes('.corps-sac>.sac .sac-ligne{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));')

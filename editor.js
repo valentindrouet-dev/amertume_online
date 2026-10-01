@@ -4986,7 +4986,10 @@ function loadSession(){
    appliquerSauvegarde(s);
    if(!loading){if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();
     if(typeof reappliquerTable==='function')reappliquerTable()}}
-  catch(e){noterSauvegarde('Partie enregistrée illisible : '+e.message,true)}};
+  /* Une partie qui ne se pose pas reste telle qu'elle est enregistrée : rien ne s'écrit par-dessus tant
+     qu'elle n'a pas été lue en entier. Un script en panne ne doit jamais remplacer la partie par le contenu
+     par défaut. */
+  catch(e){sessionLue=false;noterSauvegarde('Partie enregistrée illisible : '+e.message+' Rien n’est écrit par-dessus.',true)}};
  const ouvrir=()=>{try{const req=indexedDB.open('amertume_online_v007',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');
    req.onerror=()=>{sessionRepondue=true;finish()};req.onblocked=()=>finish();
    req.onsuccess=()=>{if(sessionRepondue){req.result.close();return}sessionRepondue=true;db=req.result;
