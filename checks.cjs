@@ -3023,6 +3023,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
  assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
+ /* v0.484 — « XP visible » au MJ seul ; plus d'XP au survol d'un rond ; le cartouche d'XP de la bulle en rouge
+   quand l'aventurier n'a pas de quoi payer. */
+ assert.ok(src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a);poseXpVisible();")&&src.includes("arbresDialog.classList.toggle('xp-visible',xpVisible&&view==='mj');")
+  &&!feuille.includes('.arbre-plan>.arbre-noeud:hover>.arbre-cout')&&feuille.includes('.talent-bulle-nom .cout-xp.trop-cher{')&&src.includes("a&&coutPalier(t,1)>xpDisponible(a,catalog.talents)?' trop-cher':''"),'XP de l’arbre : MJ seul, sans survol, rouge si trop cher');
  /* v0.483 — Bulle d'une pièce : dés ou DEF au-dessus de l'or, puis la description du MJ, rien d'automatique.
    La Vie et les PV sous leur maximum, légèrement rouges. */
  assert.ok(src.includes("p.className='gear-des';p.append(dicePips(o.dice,o.etat));")&&src.includes(" ligne(o.notes);\n")&&!src.includes("ligne(o.effects||o.notes||'Effet à préciser dans l’armurerie.')")
