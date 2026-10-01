@@ -1088,7 +1088,9 @@ assert.ok(page.includes('.pastilles{position:absolute;right:8px')&&page.includes
    « button button » ; chaque effet déjà porté par un talent du catalogue arbore sa coche verte. */
 assert.ok(src.includes('function recalculerPV(')&&src.includes("if(cle==='vie'||cle==='endu')recalculerPV(a);")&&src.includes("writeStat(a,'max',max)"),'les PV max suivent Vie et Endurance');
 assert.ok(!/button\s*\/\*[^*]*\*\/\s*button\.btn-analyse/.test(feuille)&&/\*\/\s*button\.btn-analyse,button\.btn-analyse\.on\{--fond:#e0a04a;color:#fff;/.test(feuille),'le sélecteur Analyser vise bien le bouton');
-assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.includes("u.className='utilise';u.textContent='✓ '+porteurs.length;")&&feuille.includes('.biblio-table .utilise{display:inline-block;'),'compte vert des talents qui portent déjà un effet');
+// v0.472 : la coche verte devient les petits ronds des talents qui portent l'effet, et « + » en crée un.
+assert.ok(src.includes("const porteurs=(catalog.talents||[]).map((t,i)=>[t,i]).filter(([t])=>t&&t.effet===c.cle);")&&src.includes("b.className='biblio-talent';b.append(talentRond(")
+ &&src.includes("plus.className='biblio-plus';plus.textContent='+';")&&!src.includes("u.className='utilise'")&&feuille.includes('.biblio-table .biblio-talent .cat-pill.gear-carre.talent-carre{width:20px;height:20px;'),'les talents qui portent un effet, en petits ronds, et « + »');
 /* La bibliothèque des effets est un tableau : les classes en corps repliables, les améliorations sous leur talent,
    la phrase aux réglages marqués, les réglages en puces, un filtre. Les noms d'amélioration suivent un seul modèle,
    « Talent — court », et leur ancien nom retrouve encore l'effet. */
@@ -1098,8 +1100,29 @@ assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.incl
  assert.equal(C.effetParNom('Orbes à deux dés'),'orbes2des','l’ancien nom retrouve l’effet');assert.equal(C.effetParNom('Orbes mystiques — deux dés'),'orbes2des');
  assert.equal(C.effetParNom('Éruption — double'),'eruptiondouble');assert.equal(C.effetParNom('Attaque État'),'attaqueetat');assert.equal(C.effetParNom('Ignore les dégâts d’un état'),'ignoredegats');
  assert.ok(src.includes("const table=document.createElement('table');table.className='biblio-table';")&&src.includes("function ligneEffet(c,classe,rangs,parent){")
-  &&src.includes("function phraseReglee(c){")&&src.includes("function filtreBiblio(){")&&src.includes('id="biblio-filtre"')&&src.includes("tr.className='effet-ligne t-'+(c.type||'act')+(parent?' ame-de':c.type==='ame'?' ame-libre':'');")
-  &&src.includes("localStorage.getItem('amertume-biblio-plis')")&&feuille.includes('.biblio-table tr.ame-de td{')&&feuille.includes('.biblio-table .col-dit b.reglable{'),'la bibliothèque en tableau');}
+  &&src.includes("function phraseVariables(td,c,params){")&&src.includes("function filtreBiblio(){")&&src.includes('id="biblio-filtre"')&&src.includes("tr.className='effet-ligne t-'+(c.type||'act')+(parent?' ame-de':c.type==='ame'?' ame-libre':'');")
+  &&src.includes("localStorage.getItem('amertume-biblio-plis')")&&feuille.includes('.biblio-table tr.ame-de td{')&&feuille.includes('.biblio-var{appearance:none;'),'la bibliothèque en tableau');
+ /* v0.472 — Sans type ; le nom se renomme d'un clic ; une amélioration ne redit pas son talent ; les parties
+    variables de la phrase sont des menus déroulants ; l'ordre se change à la main, sans toucher aux talents. */
+ assert.ok(!src.includes("type.className='biblio-type'")&&!feuille.includes('.biblio-type{')&&!src.includes("pre.className='nom-parent'")&&src.includes("nom.onclick=e=>{e.stopPropagation();renomme()};")
+  &&src.includes("if(parent){if(!perso&&c.court)texteNom=c.court;")&&src.includes("tr.draggable=true;")&&src.includes("function glisseBiblio(table){"),'la ligne : sans type, nom cliquable, sans le talent racine, déplaçable');
+ {const o=C.variablesPhrase('orbes',{}),v=k=>o.variables.find(x=>x.cle===k);
+  assert.deepEqual(o.variables.map(x=>[x.cle,o.texte.slice(x.de,x.a)]),[['orbes','1'],['des','1'],['couleur','Mystique']],'les orbes : deux nombres et une couleur, à leur place');
+  assert.deepEqual(v('couleur').options.map(x=>x[1]),['Simple','Léger','Lourd','Mystique','Mortel','Phase']);assert.equal(v('orbes').options.length,9);
+  const a=C.variablesPhrase('attaqueetat',{});assert.deepEqual(a.variables.find(x=>x.cle==='condition').options.map(x=>x[1]),['S’il tue la cible','Si la cible n’est pas tuée'],'un choix garde les mots qui changent ensemble');
+  const l=C.variablesPhrase('lamevent',{});assert.deepEqual(l.hors,['bonus','etat','mode'],'un réglage absent de la phrase reste hors du texte');
+  const r=C.variablesPhrase('orbes',{des:3,couleur:'red'});assert.equal(r.texte,C.texteBrut(C.phraseTalent('orbes',{des:3,couleur:'red'})));assert.equal(r.variables.find(x=>x.cle==='des').valeur,3);
+  Object.values(C.TALENTS_CODES).forEach(c=>{const x=C.variablesPhrase(c.cle,{});x.variables.forEach((y,i)=>{assert.ok(y.a>y.de&&(!x.variables[i+1]||x.variables[i+1].de>=y.a),c.cle+' : des parties distinctes');
+   assert.ok(y.options.some(z=>z[0]===y.valeur),c.cle+' : la valeur est parmi les choix')});
+   assert.equal(x.variables.length+x.hors.length,(c.params||[]).length,c.cle+' : chaque réglage, dans le texte ou hors')});}
+ {const ctxB={catalog:{classesEffets:{}}};vm.createContext(ctxB);vm.runInContext(src.slice(src.indexOf('function deplaceEffet('),src.indexOf('/* Le filtre de la bibliothèque'))+';this.deplaceEffet=deplaceEffet;',ctxB);
+  const L=[['a','','M'],['a1','a','M'],['a2','a','M'],['b','','M'],['c','','G']];
+  assert.equal(ctxB.deplaceEffet(L,'a','b',false),true);assert.deepEqual([...ctxB.catalog.ordreEffets],['b','a','a1','a2','c'],'un talent emmène ses améliorations');
+  assert.equal(ctxB.deplaceEffet(L,'a2','a1',true),true);assert.deepEqual([...ctxB.catalog.ordreEffets],['a','a2','a1','b','c'],'une amélioration change de place parmi les siennes');
+  assert.equal(ctxB.deplaceEffet(L,'a','c',true),true);assert.deepEqual([...ctxB.catalog.ordreEffets],['b','a','a1','a2','c']);assert.deepEqual({...ctxB.catalog.classesEffets},{a:'G',a1:'G',a2:'G'},'posé dans une autre classe, il la prend avec les siennes');
+  assert.equal(ctxB.deplaceEffet(L,'a','a1',true),false,'pas dans son propre groupe');}
+ assert.ok(src.includes("c.ordreEffets=[...new Set((Array.isArray(c.ordreEffets)?c.ordreEffets:[]).filter(k=>typeof k==='string'&&TALENTS_CODES[k]))];")
+  &&src.includes("if(v!==undefined&&v!==p.defaut)a[p.cle]=v});")&&src.includes("ordreEffets:[...(catalog.ordreEffets||[])],reglagesEffets:structuredClone(catalog.reglagesEffets||{}),"),'ordre et valeurs de la bibliothèque gardés au catalogue');}
 /* La conversion des dégâts de D&D 5.5 : les dés lus — d4 à d12 —, leur moyenne, et six poignées d'Amertüme
    panachées, sans bonus, dont la moyenne, lancée par le moteur, s'en approche ; des mélanges différents d'abord. */
 {assert.deepEqual(C.lireDegatsDnd('2d6+3'),{des:[{n:2,f:6}],bonus:3,moyenne:10,min:5,max:15});

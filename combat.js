@@ -1507,6 +1507,48 @@ function paramsTalent(t){const code=talentCode(t);if(!code)return null;
 function phraseTalent(cle,params,palier,volets){const code=TALENTS_CODES[cle];
  if(!code||typeof code.phrase!=='function')return code&&code.aide||'';
  return code.phrase(paramsTalent({effet:cle,params}),palier,volets||voletsDe({effet:cle}))}
+/* Les parties variables d'une phrase d'effet, pour la bibliothèque. La phrase est relue avec chaque
+   autre valeur d'un réglage, mot à mot : ce qui change est la partie de ce réglage. Un nombre ne garde
+   que son chiffre ; un choix, les mots qui changent ensemble. Deux réglages ne se partagent pas une
+   partie : le second reste hors du texte. « texte » rend le texte d'une phrase HTML, tel qu'à l'écran. */
+const MOTS_PHRASE=/[\p{L}\p{N}’'\-]+|\s+|[^\p{L}\p{N}\s]/gu;
+function texteBrut(html){return String(html||'').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,'\u00a0').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#0?39;/g,"'").replace(/&amp;/g,'&')}
+function valeursReglage(p,courante){if(!p)return [];if(p.type==='choix')return (p.options||[]).map(([v])=>v);
+ if(p.type!=='nombre')return [];const haut=Math.min(p.max,p.min+19),l=[];for(let n=p.min;n<=haut;n++)l.push(n);
+ [25,30,40,50,75,100,150,200,250,500,999].forEach(n=>{if(n>haut&&n>=p.min&&n<=p.max)l.push(n)});
+ if(Number.isFinite(courante)&&!l.includes(courante))l.push(courante);return l.sort((x,y)=>x-y)}
+function morceauxDiffs(a,b){const n=a.length,m=b.length,L=Array.from({length:n+1},()=>new Uint16Array(m+1));
+ for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)L[i][j]=a[i]===b[j]?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1]);
+ const out=[];let i=0,j=0,h=null;
+ while(i<n||j<m){if(i<n&&j<m&&a[i]===b[j]){if(h){h.be=i;h.ae=j;out.push(h);h=null}i++;j++;continue}
+  if(!h)h={bs:i,as:j};if(j<m&&(i>=n||L[i][j+1]>=L[i+1][j]))j++;else i++}
+ if(h){h.be=i;h.ae=j;out.push(h)}return out}
+// « fin » : un mot ajouté juste à cette limite en fait partie.
+function versAutre(hs,i,fin){let off=0;for(const h of hs){if(h.bs===i&&h.be===i)return fin?h.ae:h.as;if(h.bs>i)break;if(i<h.be)return h.as;off=h.ae-h.be}return i+off}
+function variablesPhrase(cle,params,texte=texteBrut){const code=TALENTS_CODES[cle];if(!code)return {texte:'',variables:[],hors:[]};
+ const reg=paramsTalent({effet:cle,params})||{},base=texte(phraseTalent(cle,reg)),bt=base.match(MOTS_PHRASE)||[];
+ const blanc=t=>/^\s+$/.test(t),pos=[0];bt.forEach(t=>pos.push(pos[pos.length-1]+t.length));
+ const variables=[],hors=[];
+ // Les nombres d'abord : leur chiffre est sûr, un choix qui le recouvre reste hors du texte.
+ [...(code.params||[])].sort((x,y)=>(x.type==='nombre'?0:1)-(y.type==='nombre'?0:1)).forEach(p=>{const cur=reg[p.cle],autres=[];let S=Infinity,E=-1;
+  valeursReglage(p,cur).forEach(v=>{if(v===cur)return;const at=(texte(phraseTalent(cle,{...reg,[p.cle]:v}))).match(MOTS_PHRASE)||[];
+   const hs=morceauxDiffs(bt,at);autres.push([v,at,hs]);
+   const vrais=hs.filter(h=>[...bt.slice(h.bs,h.be),...at.slice(h.as,h.ae)].some(t=>!blanc(t))),plein=h=>h.be>h.bs&&bt.slice(h.bs,h.be).some(t=>!blanc(t));
+   let d,e;
+   // Un nombre ne garde que son chiffre.
+   if(p.type!=='choix'){const h=vrais.find(plein);if(!h)return;d=h.bs;e=h.be}
+   // Un choix garde les mots qui changent ensemble, à deux mots d'écart au plus.
+   else{const tas=[];vrais.forEach(h=>{const t=tas[tas.length-1];if(t&&bt.slice(t.e,h.bs).filter(x=>!blanc(x)).length<=2){t.e=h.be;t.l.push(h)}else tas.push({d:h.bs,e:h.be,l:[h]})});
+    const t=tas.find(x=>x.l.some(plein));if(!t)return;d=t.d;e=t.e}
+   S=Math.min(S,d);E=Math.max(E,e)});
+  while(S<E&&blanc(bt[S]))S++;while(E>S&&blanc(bt[E-1]))E--;
+  if(!(E>S)||variables.some(x=>S<x.fin&&E>x.debut)){hors.push(p.cle);return}
+  const libelle=(at,hs)=>at.slice(versAutre(hs,S),versAutre(hs,E,p.type==='choix')).join('').trim();
+  const options=[[cur,bt.slice(S,E).join('').trim()]];
+  autres.forEach(([v,at,hs])=>{let l=libelle(at,hs);if(!l){const o=(p.options||[]).find(([k])=>k===v);l=String(o?o[1]:v).replace(/^—\s*|\s*—$/g,'')||String(v)}options.push([v,l])});
+  const ordre=valeursReglage(p,cur);options.sort((x,y)=>ordre.indexOf(x[0])-ordre.indexOf(y[0]));
+  variables.push({cle:p.cle,nom:p.nom,debut:S,fin:E,de:pos[S],a:pos[E],valeur:cur,options})});
+ variables.sort((x,y)=>x.de-y.de);hors.sort((x,y)=>code.params.findIndex(p=>p.cle===x)-code.params.findIndex(p=>p.cle===y));return {texte:base,variables,hors}}
 /* La même phrase, dépouillée de son gras : une option de menu déroulant ne porte que du
    texte. « Lamevent : En terminant un mouvement, le porteur inflige… » se lit alors d'un
    trait dans la liste, sans qu'il faille la choisir pour savoir ce qu'elle fait. */
@@ -1933,7 +1975,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  NIVEAUX_XP,niveauDeXp,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,

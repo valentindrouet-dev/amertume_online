@@ -1897,7 +1897,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .biblio-barre input{width:220px;max-width:100%;padding:5px 9px;font-size:13px;border-radius:8px;border:1px solid var(--line);background:var(--field);color:var(--ink)}
 .biblio-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;line-height:1.45;table-layout:fixed}
 .biblio-table thead th{padding:4px 8px 6px;text-align:left;font:600 10px system-ui;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line-strong)}
-.biblio-table .col-type{width:92px}.biblio-table .col-nom{width:200px}.biblio-table .col-reglages{width:230px}.biblio-table .col-classe{width:132px}
+.biblio-table .col-nom{width:230px}.biblio-table .col-reglages{width:230px}.biblio-table .col-classe{width:132px}
 .biblio-table td{padding:6px 8px;vertical-align:top;border-bottom:1px solid var(--line)}
 /* Le bandeau d'une classe : son nom à son encre, le nombre d'effets ; un clic le replie. */
 .biblio-table tr.biblio-groupe th{padding:9px 10px 7px;text-align:left;cursor:pointer;user-select:none;font:700 11px system-ui;letter-spacing:1.6px;text-transform:uppercase;
@@ -1908,35 +1908,47 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .biblio-table .biblio-groupe-nom{margin-right:8px}
 .biblio-table .biblio-n{font:600 10px system-ui;letter-spacing:0;padding:1px 7px;border-radius:9px;background:color-mix(in srgb,var(--encre,#8a7a63) 18%,transparent);color:var(--encre,var(--muted))}
 /* Une ligne cliquable crée le talent ; au survol, elle s'éclaire. */
-.biblio-table tr.effet-ligne.cliquable{cursor:pointer}
-.biblio-table tr.effet-ligne.cliquable:hover td,.biblio-table tr.effet-ligne.cliquable:focus-visible td{background:var(--hover)}
+.biblio-table tr.effet-ligne[draggable=true]{cursor:grab}
+.biblio-table tr.effet-ligne.tire td{opacity:.4}
+.biblio-table tr.effet-ligne.depose-avant td{box-shadow:inset 0 3px 0 var(--accent)}
+.biblio-table tr.effet-ligne.depose-apres td{box-shadow:inset 0 -3px 0 var(--accent)}
 /* Le type, en languette à sa couleur — la même que sur les talents — ; l'amélioration en or orangé. */
-.biblio-type{display:inline-block;min-width:44px;padding:2px 7px;border-radius:6px;text-align:center;font:800 10px/1.5 system-ui;letter-spacing:.9px;color:#fff;background:var(--t,#8a8474);box-shadow:inset 0 -1px 0 #0003}
-tr.t-act .biblio-type{--t:#4f7fb5}tr.t-reac .biblio-type{--t:#8b6bb5}tr.t-pass .biblio-type{--t:#8a8474}tr.t-crit .biblio-type{--t:#b5525a}tr.t-mait .biblio-type{--t:#b8862b}tr.t-ame .biblio-type{--t:#d98a1c}
 .biblio-flags{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
 .biblio-flags .flag{font:600 9.5px system-ui;letter-spacing:.3px;padding:0 5px;border-radius:5px;border:1px solid var(--line);background:var(--panel);color:var(--muted);white-space:nowrap}
 /* Le nom, à l'accent ; une amélioration sous son talent : le talent en petit, ce qu'elle ajoute en gras. */
 .biblio-table .col-nom{overflow-wrap:anywhere}
 .biblio-table .nom-bloc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}
-.biblio-table tr.ame-de .nom-effet{display:inline-grid;line-height:1.2}
 .biblio-table .nom-effet{font:700 12.5px system-ui;letter-spacing:.5px;text-transform:uppercase;color:var(--accent)}
-.biblio-table .nom-effet .nom-parent{display:block;font:600 9.5px system-ui;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
-.biblio-table .nom-effet .nom-court{color:#b8701a}
-body.sombre .biblio-table .nom-effet .nom-court{color:#f0b33c}
+.biblio-table tr.ame-de .nom-effet{color:#b8701a}
+body.sombre .biblio-table tr.ame-de .nom-effet{color:#f0b33c}
+.biblio-table .nom-effet.renommable{cursor:text;border-radius:4px}
+.biblio-table .nom-effet.renommable:hover,.biblio-table .nom-effet.renommable:focus-visible{background:color-mix(in srgb,var(--accent) 12%,transparent);outline:none}
 .biblio-table .ame-pastille{display:inline-grid;place-items:center;flex:none;width:14px;height:14px;border-radius:50%;background:linear-gradient(#f0b33c,#d98a1c);color:#fff;font:800 9px/1 system-ui;box-shadow:0 0 0 1px #8a560f66}
 .biblio-table .marque-monstre{margin-left:5px;font-size:11px}
 /* Le nombre de talents qui portent déjà l'effet, en vert. */
-.biblio-table .utilise{display:inline-block;margin-left:6px;padding:0 6px;border-radius:8px;font:700 10px/1.6 system-ui;background:#dff0da;color:#2e6b38;border:1px solid #3f8a4a66;vertical-align:1px}
-body.sombre .biblio-table .utilise{background:#1e3a26;color:#9fd3a8}
+.biblio-table .biblio-talents{display:inline-flex;flex-wrap:wrap;align-items:center;gap:3px}
+.biblio-table .biblio-talent{padding:0;border:0;background:none;box-shadow:none;cursor:pointer;line-height:0;border-radius:50%}
+.biblio-table .biblio-talent .cat-pill.gear-carre.talent-carre{width:20px;height:20px;border-width:2px;cursor:pointer}
+.biblio-table .biblio-talent .cat-pill.gear-carre.talent-carre .logo-equip{width:72%;height:72%}
+.biblio-table .biblio-talent .cat-pill.gear-carre.talent-carre .glyphe{font-size:10px}
+.biblio-table .biblio-talent:hover .talent-carre,.biblio-table .biblio-talent:focus-visible .talent-carre{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
+.biblio-table .biblio-plus{display:inline-grid;place-items:center;width:20px;height:20px;padding:0;border-radius:50%;border:1.5px dashed var(--line-strong);background:var(--panel);color:var(--muted);font:700 13px/1 system-ui;box-shadow:none;cursor:pointer}
+.biblio-table .biblio-plus:hover,.biblio-table .biblio-plus:focus-visible{border-style:solid;border-color:var(--accent);color:var(--accent)}
 /* L'amélioration d'un talent : en retrait, teintée d'or orangé, un liseré à gauche. */
 .biblio-table tr.ame-de td{background:color-mix(in srgb,#e0962a 9%,transparent)}
-.biblio-table tr.ame-de td.col-type{padding-left:22px;box-shadow:inset 3px 0 0 #d98a1c}
+.biblio-table tr.ame-de td.col-nom{padding-left:22px;box-shadow:inset 3px 0 0 #d98a1c}
 .biblio-table tr.ame-libre td{background:color-mix(in srgb,#e0962a 5%,transparent)}
-.biblio-table tr.ame-libre td.col-type{box-shadow:inset 3px 0 0 #d98a1c88}
-.biblio-table tr.ame-de.cliquable:hover td{background:color-mix(in srgb,#e0962a 18%,var(--hover))}
-/* La phrase : un gras réglable est souligné de pointillés à l'accent, un gras d'appui reste à l'encre. */
+.biblio-table tr.ame-libre td.col-nom{box-shadow:inset 3px 0 0 #d98a1c88}
+/* La phrase : les parties figées à l'encre, gras compris ; les parties variables en menus déroulants,
+   bleus, à la taille du texte et de la largeur de leur valeur. */
 .biblio-table .col-dit b{font-weight:700;color:var(--ink)}
-.biblio-table .col-dit b.reglable{color:var(--accent);text-decoration:underline dotted;text-decoration-color:var(--accent);text-underline-offset:3px;text-decoration-thickness:1.5px}
+.biblio-var{appearance:none;-webkit-appearance:none;display:inline-block;box-sizing:border-box;margin:0 1px;padding:0 15px 0 5px;height:auto;min-height:0;vertical-align:baseline;
+ font:700 13px/1.45 system-ui;color:#1d6489;border:1px solid #8fbbd4;border-radius:5px;cursor:pointer;
+ background:#e4f0f7 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0h8L4 5z' fill='%231d6489'/%3E%3C/svg%3E") no-repeat right 5px center}
+.biblio-var:hover,.biblio-var:focus-visible{border-color:#1d6489;outline:none;background-color:#d6e8f3}
+.biblio-var:disabled{cursor:default;opacity:1}
+body.sombre .biblio-var{color:#9fd0ec;border-color:#3f7394;background-color:#1b3242;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0h8L4 5z' fill='%239fd0ec'/%3E%3C/svg%3E")}
+.reglage-puce .biblio-var{font-size:11.5px;line-height:1.35}
 /* Les réglages, en puces : le nom en petit, la valeur de départ en gras ; un volet porte son palier. */
 .biblio-table .col-reglages .puces{display:flex;flex-wrap:wrap;gap:4px}
 .reglage-puce{display:inline-flex;align-items:baseline;gap:5px;max-width:100%;padding:1px 7px 2px;border-radius:7px;border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 8%,transparent);font-size:11.5px;line-height:1.35}
@@ -1945,7 +1957,6 @@ body.sombre .biblio-table .utilise{background:#1e3a26;color:#9fd3a8}
 .reglage-puce.volet{border-color:color-mix(in srgb,#8b6bb5 55%,transparent);background:color-mix(in srgb,#8b6bb5 9%,transparent)}
 .reglage-puce.volet .rk{font:800 10px 'Killam',Georgia,serif;letter-spacing:1px;color:#8b6bb5}.reglage-puce.volet .rv{font-weight:600;color:var(--ink)}
 .biblio-table .classe-effet{width:100%;padding:2px 4px;font:12px system-ui;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--muted)}
-.biblio-table .renomme-effet{padding:0 5px;font-size:12px;margin-left:4px;opacity:.5}.biblio-table tr:hover .renomme-effet{opacity:1}
 .biblio-table .nom-effet-champ{font:700 12px system-ui;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);width:100%;box-sizing:border-box}
 @media (max-width:1100px){.biblio-table .col-reglages{display:none}}
 @media (max-width:820px){.biblio-table .col-classe{width:40px}.biblio-table .classe-effet{width:36px}}
