@@ -1232,7 +1232,7 @@ assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:6
 /* Dégâts d'opportunité étendus : traverser une zone de contact pendant un glissement compte comme
    s'y arrêter puis en sortir ; tirer ou lancer un orbe au contact déclenche l'occasion de tous les
    adversaires au contact, après les dégâts du tir — un adversaire tué ou entravé ne frappe pas. */
-assert.ok(page.includes('function ramasseContacts(')&&page.includes("croises:lot0.map(k=>[k,new Set(contactsDe(actors[k])),{x:actors[k].x,y:actors[k].y}])")
+assert.ok(page.includes('function ramasseContacts(')&&page.includes("croises:lot0.map(k=>{const s=new Set(contactsDe(actors[k]));return [k,s,{x:actors[k].x,y:actors[k].y},new Set(s)]})")
  &&page.includes("drag.croises.forEach(([k,set,pos])=>{const o=actors[k];if(!o)return;ramasseContacts(o,set,pos,size,murs);pos.x=o.x;pos.y=o.y})}"),'la traversée d’une zone de contact compte');
 assert.ok(page.includes('function peutFrapperOpportunite(e){return !!e&&alive(e)&&!frozenSolid(e)&&degatsDe(e)>0}')&&page.includes('function opportuniteAuTir(')
  &&page.includes("const contacts=rangeOf(a)==='distance'?contactsDe(a):[];")
@@ -1857,7 +1857,7 @@ assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function 
  &&src.includes("if(usage==='conso')retirerInventaire(a,o);")&&src.includes('if(objetCode(o)){appliquerEffetObjet(a,o);return}')
  &&src.includes("a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};")
  &&page.includes('function desRecus(b,dice)')&&page.includes('const {gardes:dice,ecartes}=desRecus(b,tous);')
- &&page.includes('const suite=ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
+ &&page.includes('const suite=perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
  &&page.includes("a.immunites={etats:[],des:[]};if(typeof reposer==='function')reposer(a,'long');")&&src.includes('function reposer(a,type=')
  &&feuille.includes('.gear-detail .gear-effet{font-weight:600}'),'les effets d’équipement sont câblés');
 /* Les emplacements du corps : deux mains, un torse, un dos, une tête, trois anneaux, une
@@ -3209,7 +3209,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function openItem(i=null,apres=null,defauts=null){")&&src.includes("plus.onclick=e=>{e.stopPropagation();openItem(null,null,PIECE_NEUVE[key])};h.append(plus)}")
   &&src.includes("const PIECE_NEUVE={melee:{category:'weapon',ranged:false,hands:1,"),'le + de chaque colonne de l’Armurerie');
  assert.ok(src.includes("return [...classes,...autres,...(orphelins?[GENERIQUES]:[])]}")&&src.includes("const nomFamille=f=>f===GENERIQUES?'Sans classe':f;")
-  &&src.includes("  const tete=classe?[classe]:[];")&&src.includes(" const tete=sienne&&toutes.includes(sienne)?[sienne]:[];")&&!src.includes("famille:GENERIQUES,type:'act'"),'plus de famille Génériques');}
+  &&src.includes("  const tete=classe?[classe]:[];")&&src.includes(" const tete=!draft.hero?[ADVERSAIRES]:sienne&&toutes.includes(sienne)?[sienne]:[];")&&!src.includes("famille:GENERIQUES,type:'act'"),'plus de famille Génériques');}
 /* v0.338 — L'onglet Talents range chaque classe en rangées, une par type : Maîtrise, Actions,
    Réactions, Passifs, Améliorations. Un bouton « Noms », commun à l'Armurerie, aux Talents, au
    Bestiaire et aux Aventuriers, montre ou cache les noms sous les cartes ; son choix vaut partout. */
@@ -3365,6 +3365,22 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.503 — Barre de PV de la fiche sans animation ; éditeur d'adversaire : attaques spéciales d'abord, ses talents en tête ;
+   bibliothèque en colonnes ; six talents d'adversaires : Nuée, Dévorant, Épines, Tourbillon, Péril, Éclaboussure. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ ['nuee','devorant','epines','tourbillon','peril','eclaboussure'].forEach(k=>{const c=C.TALENTS_CODES[k];assert.ok(c&&c.monstre===true&&c.type==='pass',k+' : talent d’adversaire passif')});
+ assert.equal(C.texteBrut(C.phraseTalent('devorant',{montant:'plus',x:2})),'Le porteur inflige son bonus de dégâts + 2 aux socles adverses qu’il fait entrer dans sa zone de contact, même en passant.');
+ assert.equal(C.texteBrut(C.phraseTalent('peril',{effet:'moitie',seuil:25})),'Sous 25 % de ses PV, le porteur divise par deux ses dégâts.');
+ assert.equal(C.texteBrut(C.phraseTalent('eclaboussure',{quoi:'fixe',x:3,cible:'contact',quand:'contact'})),'Quand il subit une attaque au contact, le porteur inflige 3 dégâts à tous les adversaires au contact.');
+ assert.deepEqual(['bonus','plus','double','fixe'].map(m=>C.montantDegats({montant:m,x:2},3)),[3,5,6,2],'les montants réglables');
+ assert.deepEqual([C.degatsPeril(4,{hp:4,max:10},{seuil:50}),C.degatsPeril(5,{hp:4,max:10},{seuil:50,effet:'moitie'}),C.degatsPeril(4,{hp:6,max:10},{seuil:50})],[8,3,4],'Péril sous le seuil seulement');
+ ['devorant','epines','peril','eclaboussure'].forEach(k=>{const v=C.variablesPhrase(k,C.paramsTalent({effet:k,params:{}})),vus=[...v.variables.map(x=>x.cle),...v.hors];
+  C.TALENTS_CODES[k].params.forEach(p=>assert.ok(vus.includes(p.cle),k+' : '+p.cle+' se règle dans la bibliothèque'))});
+ assert.ok(page.includes("if(typeof talentsCodes==='function'&&porteEffet(talentsCodes(a),'nuee'))return [];")&&page.includes("function contactsNouveaux(a,nouveaux){")
+  &&page.includes("contactsNouveaux(o,[...set].filter(x=>!init.has(x)))")&&page.includes("porteEffet(talentsCodes(a),'tourbillon')")
+  &&page.includes("const t=degatsPeril(total,a,peril.params);")&&page.includes("talentsCodes(b).find(x=>x.code.cle==='eclaboussure')"),'les six talents branchés');
+ assert.ok(css.includes('#sheet #hpfill{transition:none}')&&src.includes("[['nom','Effet'],['talents',''],['dit','Ce qu’il fait']")&&src.includes("tdTal.append(l)}")
+  &&src.includes("const tete=!draft.hero?[ADVERSAIRES]:")&&src.indexOf('<h2>Attaques spéciales</h2>')<src.indexOf('sous-titre">Talents<button type="button" id="add-talent"'),'fiche, éditeur, bibliothèque');}
 /* v0.502 — Adversaires cachés depuis l'éditeur ; « Révélé ! » à chaque découverte ; passages secrets trouvés par la
    Perception, au nombre de réussites choisi ; coffres : tracés comme des portes, cachés, verrouillés, piégés, pleins. */
 {const C=require('./combat.js'),carto=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),page=fs.readFileSync('index.html','utf8');

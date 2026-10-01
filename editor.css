@@ -2097,3 +2097,8 @@ button.btn-action.debut-combat{animation:debut-rayonne 1.1s ease-in-out infinite
 #map-doors .coffre.ouvert{fill:none;opacity:.35;cursor:default;pointer-events:none}
 #coffre-editor .coffre-etats{display:flex;flex-wrap:wrap;gap:2px 14px;margin:0 0 6px}
 #coffre-editor .coffre-richesses{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+/* La barre de PV de la fiche, à la table : elle montre la valeur du moment, sans se remplir à nouveau d'un combattant à l'autre. */
+#sheet #hpfill{transition:none}
+/* La bibliothèque en tableau : les noms dans leur colonne, les ronds des talents dans la leur, alignés d'une ligne à l'autre. */
+.biblio-table .col-nom{width:210px}.biblio-table .col-talents{width:150px}
+.biblio-table td.col-talents .biblio-talents{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-height:20px}

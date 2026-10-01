@@ -798,6 +798,18 @@ const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ru
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Gel',
  'Invisible','Onde','Poison','Saignée','Vie','Affaibli'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
+/* Ce que blessent Dévorant, Épines et Éclaboussure : le bonus de dégâts du porteur, ce bonus + x, son double,
+   ou x dégâts tout court. */
+const PARAMS_MONTANT=[{cle:'montant',nom:'Dégâts',type:'choix',defaut:'bonus',options:[['bonus','son bonus de dégâts'],['plus','son bonus de dégâts + x'],['double','le double de son bonus de dégâts'],['fixe','x dégâts']]},
+ {cle:'x',nom:'x',type:'nombre',defaut:1,min:1,max:20}];
+function phraseMontant(p){const x=Math.max(1,Math.min(20,Math.trunc(Number(p&&p.x))||1)),m=(p&&p.montant)||'bonus';
+ return m==='plus'?'<b>son bonus de dégâts + '+x+'</b>':m==='double'?'<b>le double de son bonus de dégâts</b>':m==='fixe'?'<b>'+x+' dégât'+(x>1?'s':'')+'</b>':'<b>son bonus de dégâts</b>'}
+// Le nombre que ces mots valent, le bonus de dégâts du porteur donné.
+function montantDegats(p,bonus){const x=Math.max(1,Math.min(20,Math.trunc(Number(p&&p.x))||1)),b=Math.max(0,Math.trunc(Number(bonus))||0),m=(p&&p.montant)||'bonus';
+ return m==='plus'?b+x:m==='double'?2*b:m==='fixe'?x:b}
+// Péril : les dégâts d'un porteur sous son seuil de PV, doublés ou divisés par deux (arrondis au-dessus).
+function degatsPeril(n,a,p){if(!a||!(Number(a.max)>0))return n;const s=Math.max(5,Math.min(95,Math.trunc(Number(p&&p.seuil))||50));
+ if(Number(a.hp)/Number(a.max)*100>=s)return n;return p&&p.effet==='moitie'?Math.ceil(n/2):n*2}
 /* Les dés qu'un orbe peut lancer : ceux de l'attaque, moins le dé de Soin, qui ne frappe pas. */
 const DES_ORBE=[['white','Simple'],['bone','Léger'],['red','Lourd'],['blue','Mystique'],['black','Mortel'],['yellow','Phase']];
 const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:'⚡ Lamevent',
@@ -973,6 +985,43 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
    const combien=f==='des'?'<b>'+n+'d6</b>':f==='endu'?'<b>'+n+' + Endurance</b>':f==='vie'?'<b>'+n+' + Vie</b>':'<b>'+n+'</b>';
    const quand=m==='immediat'?'<b>dès qu’il est frappé</b>':m==='fin'?'<b>à la fin du tour</b>':'<b>au début du tour</b>';
    return 'Le porteur se soigne de '+combien+' PV '+quand+'.'+(b?' <b>'+b+'</b> l’en empêche tant qu’il le porte.':'')}},
+ /* Nuée : le porteur peut occuper l'espace d'un autre socle, et s'y superposer. */
+ nuee:{cle:'nuee',nom:'Nuée',type:'pass',monstre:true,
+  aide:'Passif : le porteur peut occuper l’espace d’un autre socle et s’y superposer.',params:[],
+  phrase(){return 'Le porteur peut <b>occuper l’espace d’un autre socle</b> et s’y superposer.'}},
+ /* Dévorant : en se déplaçant, le porteur blesse chaque socle adverse qu'il fait entrer dans sa zone
+    de contact, même en passant — une fois par socle et par déplacement. */
+ devorant:{cle:'devorant',nom:'Dévorant',type:'pass',monstre:true,
+  aide:'Passif : le porteur blesse les socles adverses qu’il fait entrer dans sa zone de contact, même en passant.',
+  params:PARAMS_MONTANT,
+  phrase(p){return 'Le porteur inflige '+phraseMontant(p)+' aux socles adverses qu’il fait entrer dans sa zone de contact, <b>même en passant</b>.'}},
+ /* Épines : un socle adverse qui entre dans la zone de contact du porteur en est blessé aussitôt. */
+ epines:{cle:'epines',nom:'Épines',type:'pass',monstre:true,
+  aide:'Passif : un socle adverse qui entre dans la zone de contact du porteur est blessé aussitôt.',
+  params:PARAMS_MONTANT,
+  phrase(p){return 'Quand un socle adverse entre dans sa zone de contact, le porteur lui inflige '+phraseMontant(p)+' <b>aussitôt</b>.'}},
+ /* Tourbillon : l'attaque du porteur frappe tous les adversaires de sa zone de contact. */
+ tourbillon:{cle:'tourbillon',nom:'Tourbillon',type:'pass',monstre:true,
+  aide:'Passif : l’attaque du porteur frappe tous les adversaires de sa zone de contact.',params:[],
+  phrase(){return 'L’attaque du porteur frappe <b>tous les adversaires</b> de sa zone de contact.'}},
+ /* Péril : sous un seuil de ses PV, le porteur double ses dégâts — ou les divise par deux. */
+ peril:{cle:'peril',nom:'Péril',type:'pass',monstre:true,
+  aide:'Passif : sous un seuil de ses PV, le porteur double ses dégâts, ou les divise par deux.',
+  params:[{cle:'effet',nom:'Ses dégâts',type:'choix',defaut:'double',options:[['double','doublés'],['moitie','divisés par deux']]},
+   {cle:'seuil',nom:'Sous',type:'nombre',defaut:50,min:5,max:95,pas:5,unite:'%'}],
+  phrase(p){const s=Math.max(5,Math.min(95,Math.trunc(Number(p&&p.seuil))||50));
+   return 'Sous <b>'+s+' %</b> de ses PV, le porteur '+(p&&p.effet==='moitie'?'<b>divise par deux</b>':'<b>double</b>')+' ses dégâts.'}},
+ /* Éclaboussure : frappé, le porteur rend un état, son bonus de dégâts ou des dégâts fixes — à qui le
+    frappe, ou à tous les adversaires au contact ; à chaque attaque, ou aux attaques au contact seules. */
+ eclaboussure:{cle:'eclaboussure',nom:'Éclaboussure',type:'pass',monstre:true,
+  aide:'Passif : frappé, le porteur inflige un état ou des dégâts à qui le frappe, ou à tous les adversaires au contact.',
+  params:[{cle:'quoi',nom:'Inflige',type:'choix',defaut:'etat',options:[['etat','un état'],...PARAMS_MONTANT[0].options]},
+   {cle:'etat',nom:'État',type:'choix',defaut:'Poison',options:CHOIX_ETAT.slice(1)},PARAMS_MONTANT[1],
+   {cle:'cible',nom:'À',type:'choix',defaut:'attaquant',options:[['attaquant','l’adversaire qui le frappe'],['contact','tous les adversaires au contact']]},
+   {cle:'quand',nom:'Quand il subit',type:'choix',defaut:'toute',options:[['toute','toute attaque'],['contact','une attaque au contact']]}],
+  phrase(p){const quoi=(p&&p.quoi)||'etat';
+   return 'Quand il subit '+(p&&p.quand==='contact'?'<b>une attaque au contact</b>':'<b>toute attaque</b>')+', le porteur inflige '
+    +(quoi==='etat'?'<b>'+((p&&p.etat)||'Poison')+'</b>':phraseMontant({...p,montant:quoi}))+' à '+(p&&p.cible==='contact'?'<b>tous les adversaires au contact</b>':'<b>l’adversaire qui le frappe</b>')+'.'}},
  mauvaissort:{cle:'mauvaissort',nom:'Mauvais Sort',type:'pass',monstre:true,
   aide:'Passif : un combattant qui cible le porteur relance son meilleur dé de dégâts, avant le calcul des dégâts.',
   params:[],
@@ -2005,7 +2054,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  NIVEAUX_XP,niveauDeXp,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
