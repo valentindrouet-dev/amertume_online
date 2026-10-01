@@ -535,7 +535,7 @@ talentsPage.innerHTML='<section class="cat-panel panel">'
     ce qu'un effet fait et les réglages qu'il demande, avant d'aller créer le talent qui
     s'en servira. */
  +'<details class="bloc-replie biblio"><summary><span class="bloc-titre">📖 Bibliothèque des effets</span>'
- +'<span class="compte" id="biblio-compte"></span></summary><div id="biblio-effets"></div></details>'
+ +'<span class="compte" id="biblio-compte"></span></summary><div class="biblio-barre"><input id="biblio-filtre" placeholder="Filtrer…" aria-label="Filtrer les effets"></div><div id="biblio-effets"></div></details>'
  +'<div class="cat-cols" id="talent-cols"></div></section>';
 /* Les noms sous les cartes — talents, pièces, équipement, adversaires — se montrent ou se cachent
    d'un seul bouton « Noms », le même sur l'Armurerie, les Talents, le Bestiaire et les
@@ -2254,8 +2254,10 @@ function classeEffet(c){const choisie=(catalog.classesEffets||{})[c.cle];if(choi
  const devinee=CLASSES_EFFETS_DEVINEES[c.cle];if(devinee&&(catalog.classes||[]).some(k=>k&&k.name===devinee))return devinee;
  return c.monstre?ADVERSAIRES:GENERIQUES}
 function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
- /* Rangés par classe — celles du jeu, puis les génériques, puis les adversaires — et dans chacune
-    par type puis par nom : on lit la bibliothèque comme on lit un arbre de talents. */
+ /* La bibliothèque est un tableau : une ligne par effet, rangée par classe — celles du jeu, puis les
+    génériques, puis les adversaires —, et dans chaque classe par type puis par nom. Chaque talent est
+    suivi des améliorations qui le prolongent, en retrait sous lui ; celles qui prolongent n'importe
+    quel talent ferment la classe. On lit la bibliothèque comme on lit un arbre de talents. */
  // Le bonus de caractéristique n'est pas une mécanique de talent : il a son propre éditeur.
  const codes=Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>{
   const k=TALENT_TYPES.findIndex(t=>t[0]===(c.type||'act'));
@@ -2267,62 +2269,107 @@ function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
  boite.replaceChildren();
  const classes=(catalog.classes||[]).map(k=>k&&k.name).filter(n=>n&&n!==GENERIQUES),rangs=[...classes,GENERIQUES,ADVERSAIRES];
  const groupes=new Map();codes.forEach(c=>{const k=classeEffet(c);if(!groupes.has(k))groupes.set(k,[]);groupes.get(k).push(c)});
- // Chaque classe se replie et se déplie d'un clic sur son titre ; l'appareil retient ce qui est replié.
+ // Chaque classe se replie et se déplie d'un clic sur son bandeau ; l'appareil retient ce qui est replié.
  let plis=new Set();try{plis=new Set(JSON.parse(localStorage.getItem('amertume-biblio-plis')||'[]'))}catch(e){}
+ const table=document.createElement('table');table.className='biblio-table';
+ const tete=table.createTHead().insertRow();
+ [['type','Type'],['nom','Effet'],['dit','Ce qu’il fait'],['reglages','Réglages'],['classe','Classe']].forEach(([k,n])=>{const th=document.createElement('th');th.scope='col';th.className='col-'+k;th.textContent=n;tete.append(th)});
  [...rangs,...[...groupes.keys()].filter(k=>!rangs.includes(k))].forEach(k=>{const liste=groupes.get(k);if(!liste)return;
-  const bloc=document.createElement('details');bloc.className='biblio-bloc';bloc.open=!plis.has(k);
-  const h=document.createElement('summary');h.className='biblio-groupe';h.textContent=k;const encre=typeof teinteClasse==='function'?teinteClasse(k):'';if(encre)h.style.color=encre;
-  const n=document.createElement('span');n.className='biblio-n';n.textContent=liste.length;h.append(n);bloc.append(h);
-  bloc.addEventListener('toggle',()=>{if(bloc.open)plis.delete(k);else plis.add(k);try{localStorage.setItem('amertume-biblio-plis',JSON.stringify([...plis]))}catch(e){}});
-  /* Les talents d'abord, chacun suivi, en retrait, des améliorations qui le prolongent ; une
-     amélioration sans talent dans la classe reste à sa place, seule. */
+  const corps=document.createElement('tbody');corps.className='biblio-bloc'+(plis.has(k)?' replie':'');corps.dataset.classe=k;
+  const encre=typeof teinteClasse==='function'?teinteClasse(k):'';if(encre)corps.style.setProperty('--encre',encre);
+  const rg=corps.insertRow();rg.className='biblio-groupe';const th=document.createElement('th');th.colSpan=5;th.scope='rowgroup';
+  const nom=document.createElement('span');nom.className='biblio-groupe-nom';nom.textContent=k;
+  const n=document.createElement('span');n.className='biblio-n';n.textContent=liste.length;th.append(nom,n);rg.append(th);
+  rg.onclick=()=>{corps.classList.toggle('replie');if(corps.classList.contains('replie'))plis.add(k);else plis.delete(k);
+   try{localStorage.setItem('amertume-biblio-plis',JSON.stringify([...plis]))}catch(e){}};
+  /* Les talents d'abord, chacun suivi de ses améliorations ; une amélioration qui prolonge n'importe
+     quel talent — ou dont le talent est rangé ailleurs — attend la fin de la classe. */
   const enfants=c=>liste.filter(x=>x.pour===c.cle);
-  liste.filter(c=>!c.pour||!liste.some(p=>p.cle===c.pour)).forEach(c=>{bloc.append(ficheEffet(c,k,rangs));
-   enfants(c).forEach(x=>{const f=ficheEffet(x,k,rangs);f.classList.add('effet-amelioration');bloc.append(f)})});boite.append(bloc)});
+  const talents=liste.filter(c=>c.type!=='ame'||(c.pour&&!liste.some(p=>p.cle===c.pour)&&false)),libres=liste.filter(c=>c.type==='ame'&&!(c.pour&&liste.some(p=>p.cle===c.pour)));
+  talents.forEach(c=>{corps.append(ligneEffet(c,k,rangs,null));enfants(c).forEach(x=>corps.append(ligneEffet(x,k,rangs,c)))});
+  libres.forEach(c=>corps.append(ligneEffet(c,k,rangs,null)));
+  table.append(corps)});
+ boite.append(table);
  if(!codes.length){const v=document.createElement('p');v.className='muted';
-  v.textContent='Aucun effet câblé pour l’instant.';boite.append(v)}}
-/* Une ligne par effet : son nom, puis la phrase que le moteur appliquera, réglages en gras — la
-   phrase vient du moteur lui-même, jamais recopiée ici — et, à droite, la classe où le ranger. Un
-   clic sur la ligne ouvre la création d'un talent qui porte cet effet. */
-function ficheEffet(c,classe,rangs){const bloc=document.createElement('div');bloc.className='effet-fiche';{
-  /* Une coche verte devant l'effet déjà porté par au moins un talent du catalogue : on voit
-     d'un coup d'œil ce qui reste à câbler. Les talents porteurs se lisent au survol. */
-  const porteurs=(catalog.talents||[]).filter(t=>t&&t.effet===c.cle).map(t=>t.name);
-  const coche=document.createElement('span');coche.className='utilise';
-  if(porteurs.length){coche.textContent='✅';coche.title='Utilisé par : '+porteurs.join(', ')}
-  bloc.append(coche);
-  // Le type en tête, comme sur une languette de talent : on voit la famille avant le nom.
-  const type=document.createElement('span');type.className='tag type-effet';
-  type.textContent=talentType(c)[1];bloc.append(type);
-  const nom=document.createElement('span');nom.className='nom-effet';
-  // Un talent de monstre porte sa marque : on ne le cherche pas parmi ceux de la troupe.
-  nom.textContent=(c.monstre?'👹 ':'')+nomEffet(c)+' : ';
-  const dit=document.createElement('span');dit.innerHTML=phraseTalent(c.cle);
-  bloc.append(nom,dit);
-  /* Chez le MJ, ✎ renomme l'effet : le nom tient dans la bibliothèque, le choix de mécanique et le
-     PDF. Vide, il reprend celui du moteur. */
-  if(view==='mj'){const re=document.createElement('button');re.type='button';re.className='ico renomme-effet';re.textContent='✎';re.title='Renommer cet effet';re.setAttribute('aria-label','Renommer l’effet '+nomEffet(c));
-   re.onclick=e=>{e.stopPropagation();const inp=document.createElement('input');inp.className='nom-effet-champ';inp.value=nomEffet(c);inp.maxLength=60;inp.placeholder=c.nom;
-    const fini=garde=>{if(garde){const v=inp.value.trim(),o={...(catalog.nomsEffets||{})};if(v&&v!==c.nom)o[c.cle]=v.slice(0,60);else delete o[c.cle];catalog.nomsEffets=o;scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}renderBiblioEffets()};
-    inp.onclick=ev=>ev.stopPropagation();inp.onkeydown=ev=>{ev.stopPropagation();if(ev.key==='Enter'){ev.preventDefault();fini(true)}else if(ev.key==='Escape'){ev.preventDefault();fini(false)}};inp.onblur=()=>fini(true);
-    nom.replaceWith(inp);re.remove();inp.focus();inp.select()};
-   nom.after(re)}
-  // Une amélioration nomme la mécanique qu'elle exige : on sait où la ranger.
-  if(c.requiert&&TALENTS_CODES[c.requiert]){const r=document.createElement('span');r.className='prereq';
-   r.textContent='↳ requiert '+TALENTS_CODES[c.requiert].nom;bloc.append(r)}
-  if(view==='mj'){
-   // La classe de l'effet se choisit ici ; un effet d'adversaire peut rejoindre une classe, et l'inverse.
-   const sel=document.createElement('select');sel.className='classe-effet';sel.title='Classe où ranger cet effet';sel.setAttribute('aria-label','Classe de l’effet '+c.nom);
-   rangs.forEach(r=>sel.add(new Option(r,r)));sel.value=classe;
-   sel.onclick=e=>e.stopPropagation();sel.onkeydown=e=>e.stopPropagation();
-   sel.onchange=()=>{catalog.classesEffets={...(catalog.classesEffets||{}),[c.cle]:sel.value};scheduleSave();renderBiblioEffets();document.dispatchEvent(new Event('amertume-content-changed'))};
-   bloc.prepend(sel);
-   // Le clic crée le talent : l'effet déjà choisi, ses réglages à leur valeur de départ, sa nature, sa classe.
-   bloc.classList.add('cliquable');bloc.tabIndex=0;bloc.setAttribute('role','button');bloc.title='Créer un talent avec l’effet '+c.nom;
-   const cree=()=>openTalent(null,renderTalents,{name:c.nom,type:TALENT_TYPES.some(t=>t[0]===c.type)?c.type:'act',effet:c.cle,params:paramsTalent({effet:c.cle,params:{}}),
-    ...(classe!==ADVERSAIRES&&classe!==GENERIQUES?{famille:classe}:classe===GENERIQUES?{famille:''}:{})});
-   bloc.onclick=cree;bloc.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cree()}}}
-  return bloc}}
+  v.textContent='Aucun effet câblé pour l’instant.';boite.append(v)}
+ filtreBiblio()}
+/* La phrase d'un effet, ses parties réglables marquées : chaque gras qui dit la valeur d'un réglage —
+   l'état, le nombre, l'option choisie — devient une partie modifiable ; les autres gras restent de
+   simples appuis. La phrase vient du moteur, jamais recopiée ici. */
+function phraseReglee(c){let html=phraseTalent(c.cle);const pris=new Set();
+ const cand=(c.params||[]).map(p=>{const d=p.defaut;let textes=[];
+  if(p.type==='choix'){const o=(p.options||[]).find(([v])=>String(v)===String(d));if(o)textes.push(String(o[1]));if(d!==undefined&&d!=='')textes.push(String(d))}
+  else if(p.type==='nombre')textes.push(String(d),'+'+d);
+  return {p,textes:textes.map(t=>t.toLowerCase().trim()).filter(t=>t&&!t.startsWith('—'))}});
+ return html.replace(/<b>([\s\S]*?)<\/b>/g,(m,inner)=>{const t=inner.replace(/<[^>]*>/g,'').toLowerCase().trim();
+  const hit=cand.find(x=>!pris.has(x.p.cle)&&(x.textes.includes(t)
+   ||(x.p.type==='nombre'&&new RegExp('^\\+?'+x.p.defaut+'\\b').test(t))
+   ||(x.p.type==='choix'&&x.textes.some(y=>y.length>2&&(t.includes(y)||y.includes(t))))));
+  if(!hit)return m;pris.add(hit.p.cle);return '<b class="reglable" title="Réglage : '+esc(hit.p.nom)+'">'+inner+'</b>'})}
+// La valeur de départ d'un réglage, en clair : l'option choisie, le nombre, ou rien.
+function valeurReglage(p){if(p.type==='choix'){const o=(p.options||[]).find(([v])=>String(v)===String(p.defaut));const t=o?String(o[1]):String(p.defaut||'');return t.replace(/^—\s*|\s*—$/g,'')||'aucun'}
+ if(p.type==='nombre')return String(p.defaut);return '—'}
+/* Une ligne du tableau : le type, le nom, la phrase, les réglages, la classe. Une amélioration d'un
+   talent se lit sous lui, en retrait, son nom réduit à ce qu'elle ajoute. Un clic sur la ligne crée
+   le talent qui porte cet effet. */
+function ligneEffet(c,classe,rangs,parent){const tr=document.createElement('tr');tr.className='effet-ligne t-'+(c.type||'act')+(parent?' ame-de':c.type==='ame'?' ame-libre':'');
+ tr.dataset.cle=c.cle;
+ // Le type, en languette à sa couleur ; dessous, ce que l'effet emporte : une attaque, ou rien à dépenser.
+ const tdType=tr.insertCell();tdType.className='col-type';
+ const type=document.createElement('span');type.className='biblio-type';type.textContent=talentType(c)[1];type.title=talentType(c)[2];tdType.append(type);
+ if(c.attaque||c.gratuit){const f=document.createElement('span');f.className='biblio-flags';
+  if(c.attaque){const x=document.createElement('span');x.className='flag';x.textContent='⚔ attaque';x.title='Cet effet comprend une attaque';f.append(x)}
+  if(c.gratuit){const x=document.createElement('span');x.className='flag';x.textContent='gratuit';x.title='Ne dépense pas l’Action';f.append(x)}
+  tdType.append(f)}
+ // Le nom : celui que le MJ a donné, sinon « ce qu'elle ajoute » sous son talent, sinon celui du moteur.
+ const tdNom=tr.insertCell();tdNom.className='col-nom';const blocNom=document.createElement('div');blocNom.className='nom-bloc';tdNom.append(blocNom);
+ const renomme=!!((catalog.nomsEffets||{})[c.cle]);
+ const nom=document.createElement('span');nom.className='nom-effet';
+ if(parent&&c.court&&!renomme){const pre=document.createElement('span');pre.className='nom-parent';pre.textContent=nomEffet(parent);const court=document.createElement('span');court.className='nom-court';court.textContent=c.court;nom.append(pre,court)}
+ else nom.textContent=nomEffet(c);
+ if(c.type==='ame'){const fl=document.createElement('span');fl.className='ame-pastille';fl.textContent='⇧';fl.title=parent?'Amélioration de '+nomEffet(parent):'Amélioration de n’importe quel talent';blocNom.append(fl)}
+ blocNom.append(nom);
+ if(c.monstre){const m=document.createElement('span');m.className='marque-monstre';m.textContent='👹';m.title='Effet d’adversaire';blocNom.append(m)}
+ // Les talents du catalogue qui portent déjà cet effet : leur nombre, leurs noms au survol.
+ const porteurs=(catalog.talents||[]).filter(t=>t&&t.effet===c.cle).map(t=>t.name);
+ if(porteurs.length){const u=document.createElement('span');u.className='utilise';u.textContent='✓ '+porteurs.length;u.title='Utilisé par : '+porteurs.join(', ');blocNom.append(u)}
+ /* Chez le MJ, ✎ renomme l'effet : le nom tient dans la bibliothèque, le choix de mécanique et le
+    PDF. Vide, il reprend celui du moteur. */
+ if(view==='mj'){const re=document.createElement('button');re.type='button';re.className='ico renomme-effet';re.textContent='✎';re.title='Renommer cet effet';re.setAttribute('aria-label','Renommer l’effet '+nomEffet(c));
+  re.onclick=e=>{e.stopPropagation();const inp=document.createElement('input');inp.className='nom-effet-champ';inp.value=nomEffet(c);inp.maxLength=60;inp.placeholder=c.nom;
+   const fini=garde=>{if(garde){const v=inp.value.trim(),o={...(catalog.nomsEffets||{})};if(v&&v!==c.nom)o[c.cle]=v.slice(0,60);else delete o[c.cle];catalog.nomsEffets=o;scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}renderBiblioEffets()};
+   inp.onclick=ev=>ev.stopPropagation();inp.onkeydown=ev=>{ev.stopPropagation();if(ev.key==='Enter'){ev.preventDefault();fini(true)}else if(ev.key==='Escape'){ev.preventDefault();fini(false)}};inp.onblur=()=>fini(true);
+   nom.replaceWith(inp);re.remove();inp.focus();inp.select()};
+  blocNom.append(re)}
+ // La phrase du moteur, ses parties réglables marquées.
+ const tdDit=tr.insertCell();tdDit.className='col-dit';tdDit.innerHTML=phraseReglee(c);
+ // Les réglages, un par puce : son nom, sa valeur de départ ; puis les volets qu'un palier ouvre.
+ const tdReg=tr.insertCell();tdReg.className='col-reglages';const puces=document.createElement('div');puces.className='puces';tdReg.append(puces);
+ (c.params||[]).forEach(p=>{const puce=document.createElement('span');puce.className='reglage-puce';
+  const k=document.createElement('span');k.className='rk';k.textContent=p.nom;const v=document.createElement('span');v.className='rv';v.textContent=valeurReglage(p);puce.append(k,v);puces.append(puce)});
+ (c.volets||[]).forEach(vo=>{const puce=document.createElement('span');puce.className='reglage-puce volet';puce.title='Ouvert au palier '+vo.palier;
+  const k=document.createElement('span');k.className='rk';k.textContent=CHIFFRES_PALIER[vo.palier]||String(vo.palier);const v=document.createElement('span');v.className='rv';v.textContent=vo.nom;puce.append(k,v);puces.append(puce)});
+ // La classe de l'effet se choisit ici ; un effet d'adversaire peut rejoindre une classe, et l'inverse.
+ const tdCl=tr.insertCell();tdCl.className='col-classe';
+ if(view==='mj'){const sel=document.createElement('select');sel.className='classe-effet';sel.title='Classe où ranger cet effet';sel.setAttribute('aria-label','Classe de l’effet '+c.nom);
+  rangs.forEach(r=>sel.add(new Option(r,r)));sel.value=classe;
+  sel.onclick=e=>e.stopPropagation();sel.onkeydown=e=>e.stopPropagation();
+  sel.onchange=()=>{catalog.classesEffets={...(catalog.classesEffets||{}),[c.cle]:sel.value};scheduleSave();renderBiblioEffets();document.dispatchEvent(new Event('amertume-content-changed'))};
+  tdCl.append(sel);
+  // Le clic crée le talent : l'effet déjà choisi, ses réglages à leur valeur de départ, sa nature, sa classe.
+  tr.classList.add('cliquable');tr.tabIndex=0;tr.setAttribute('role','button');tr.title='Créer un talent avec l’effet '+nomEffet(c);
+  const cree=()=>openTalent(null,renderTalents,{name:nomEffet(c),type:TALENT_TYPES.some(t=>t[0]===c.type)?c.type:'act',effet:c.cle,params:paramsTalent({effet:c.cle,params:{}}),
+   ...(classe!==ADVERSAIRES&&classe!==GENERIQUES?{famille:classe}:classe===GENERIQUES?{famille:''}:{})});
+  tr.onclick=cree;tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cree()}}}
+ else tdCl.textContent=classe;
+ return tr}
+/* Le filtre de la bibliothèque : les lignes dont le nom, la phrase ou un réglage porte le texte ; une
+   classe sans ligne qui reste se cache, une classe filtrée se déplie. */
+function filtreBiblio(){const champ=$('biblio-filtre'),boite=$('biblio-effets');if(!boite)return;
+ const q=(champ&&champ.value||'').trim().toLowerCase();
+ boite.querySelectorAll('tbody.biblio-bloc').forEach(corps=>{let vus=0;
+  corps.querySelectorAll('tr.effet-ligne').forEach(tr=>{const ok=!q||tr.textContent.toLowerCase().includes(q);tr.hidden=!ok;if(ok)vus++});
+  corps.hidden=!vus;corps.classList.toggle('filtre',!!q)})}
 function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!cols)return;cols.replaceChildren();
  const q=($('talent-search').value||'').trim().toLowerCase();
  const familles=talentFamilies(),sel=$('talent-family'),avant=sel.value;
@@ -2364,7 +2411,7 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
    lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));bloc.append(r)});
   cols.append(bloc)}
 }
-$('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalents;
+$('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalents;if($('biblio-filtre'))$('biblio-filtre').oninput=filtreBiblio;
 $('talent-sort').onchange=renderTalents;
 $('talent-add').onclick=()=>openTalent(null);
 /* ---------- Sauvegarder, importer, imprimer les arbres ----------

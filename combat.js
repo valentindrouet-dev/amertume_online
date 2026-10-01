@@ -770,7 +770,7 @@ function cleTalent(nom){return String(nom||'').normalize('NFD').replace(/[\u0300
    que leurs noms ne donnent pas. Chaîne vide si aucun effet ne répond à ce nom. */
 function effetParNom(nom){const k=cleTalent(nom);if(!k)return '';
  if(TALENTS_CODES[k])return k;
- const c=Object.values(TALENTS_CODES).find(x=>cleTalent(x.nom)===k);return c?c.cle:''}
+ const c=Object.values(TALENTS_CODES).find(x=>cleTalent(x.nom)===k)||Object.values(TALENTS_CODES).find(x=>(x.anciens||[]).some(a=>cleTalent(a)===k));return c?c.cle:''}
 /* Chaque effet sait se dire en une phrase, avec ses parties réglables en gras : c'est
    ainsi qu'on le lit dans la bibliothèque comme sur la fiche du talent, et qu'on voit d'un
    coup ce qu'un réglage change. Le texte est bâti par le moteur, donc il ne peut pas
@@ -846,12 +846,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  /* Lamevent élémentaire : une amélioration de Lamevent. Ses dégâts infligent aussi l'état réglé. */
  /* Corps élémentaire : une amélioration. Qui attaque le porteur au contact en garde l'état —
     s'il l'a blessé, ou à chaque attaque, même sans le toucher, selon le réglage « Quand ». */
- corpselem:{cle:'corpselem',nom:'Corps élémentaire',type:'ame',
+ corpselem:{cle:'corpselem',nom:'Corps élémentaire',court:'Corps élémentaire',type:'ame',
   aide:'Les adversaires qui attaquent le porteur au contact subissent un état : s’ils lui infligent des dégâts, ou à chaque attaque, même sans le toucher.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])},
    {cle:'quand',nom:'Quand',type:'choix',defaut:'degats',options:[['degats','S’il vous inflige des dégâts'],['toujours','À chaque attaque, même sans toucher']]}],
   phrase(p){return 'Les adversaires qui attaquent le porteur au contact subissent <b>'+((p&&p.etat)||'Feu')+'</b>'+(p&&p.quand==='toujours'?', <b>même sans le toucher</b>.':' s’ils lui infligent des <b>dégâts</b>.')}},
- lameventelem:{cle:'lameventelem',nom:'Lamevent élémentaire',type:'ame',
+ lameventelem:{cle:'lameventelem',nom:'Lamevent élémentaire',court:'état infligé',type:'ame',
   aide:'Amélioration de Lamevent : ses dégâts infligent aussi l’état réglé.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Le porteur inflige <b>'+((p&&p.etat)||'Feu')+'</b> lorsqu’il inflige les dégâts de <b>Lamevent</b>.'}},
@@ -891,7 +891,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
     d'Orbes mystiques au-dessus : c'est le MJ qui nomme le prérequis, talent par talent.
     Trois volets, chacun au palier que le MJ choisit : l'état sur un 6 (palier 1), puis à
     chaque touche (2), puis en deux crans (3). */
- orbesfeu:{cle:'orbesfeu',nom:'Orbes de feu',type:'ame',
+ orbesfeu:{cle:'orbesfeu',nom:'Orbes de feu',court:'état infligé',type:'ame',
   aide:'Les orbes du porteur infligent un état en plus de leurs dégâts : sur un 6, puis à chaque touche, puis en deux crans, chacun au palier choisi.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])},
    {cle:'quand',nom:'Quand',type:'choix',defaut:'degats',options:[['degats','S’il inflige des dégâts'],['toujours','Toujours, même sans dégâts']]}],
@@ -965,7 +965,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  /* Attaque État : une action. Le porteur effectue une attaque — celle de son bouton, cibles
     et geste compris — et, selon l'issue, gagne l'état réglé : s'il tue la cible, ou si elle
     en réchappe. C'est le porteur qui reçoit l'état, jamais la cible. */
- attaqueetat:{cle:'attaqueetat',nom:'Attaque État',type:'act',bouton:'⚔ Attaque État',attaque:true,
+ attaqueetat:{cle:'attaqueetat',nom:'Attaque d’état',anciens:['Attaque État'],type:'act',bouton:'⚔ Attaque d’état',attaque:true,
   aide:'Action : le porteur effectue une attaque et, selon son issue, gagne un état.',
   params:[{cle:'condition',nom:'Le porteur gagne l’état si',type:'choix',defaut:'tue',
     options:[['tue','il tue la cible'],['survit','la cible n’est pas tuée']]},
@@ -1007,7 +1007,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
     charge sa prochaine attaque au contact de l'affection que portent les orbes. L'allié doit
     être désigné — on ne brûle pas un camarade par mégarde. Là encore, le prérequis est au
     MJ : le moteur n'impose rien au-dessus. */
- ignition:{cle:'ignition',nom:'Ignition',type:'ame',
+ ignition:{cle:'ignition',nom:'Ignition',court:'Ignition',type:'ame',
   aide:'Un orbe lancé sur un allié désigné charge sa prochaine attaque au contact, au lieu de blesser.',
   params:[],
   phrase(){return 'Un orbe lancé sur un <b>allié désigné</b> ne lui fait aucun mal : sa <b>prochaine attaque au contact</b> inflige l’affection des orbes du porteur.'}},
@@ -1020,44 +1020,44 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  /* Orbes critiques : une amélioration. Les orbes du porteur peuvent faire des critiques sur un double 6. */
  /* Les dégâts d'un état — Feu qui brûle, décharge de Foudre, Éruption, Poison : un talent les fait
     ignorer au porteur ; ses améliorations les changent en soin, puis en soin doublé. */
- ignoredegats:{cle:'ignoredegats',nom:'Ignore les dégâts d’un état',type:'pass',
+ ignoredegats:{cle:'ignoredegats',nom:'Ignore les dégâts',anciens:['Ignore les dégâts d’un état'],type:'pass',
   aide:'Passif : le porteur ne subit pas les dégâts de l’état réglé (Feu qui brûle, décharge de Foudre, Éruption, Poison).',
   params:[{cle:'etat',nom:'État',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Le porteur <b>ignore les dégâts</b> de <b>'+((p&&p.etat)||'Feu')+'</b>.'}},
- soinetat:{cle:'soinetat',nom:'Dégâts d’état en soin',type:'ame',
+ soinetat:{cle:'soinetat',nom:'Dégâts d’état en soin',court:'soin',type:'ame',
   aide:'Amélioration : les dégâts de l’état que le porteur ignore, ou auquel il est insensible, le soignent.',params:[],
   phrase(){return 'Les dégâts de l’état que le porteur <b>ignore</b> le <b>soignent</b>.'}},
- soinetatdouble:{cle:'soinetatdouble',nom:'Dégâts d’état en soin ×2',type:'ame',
+ soinetatdouble:{cle:'soinetatdouble',nom:'Dégâts d’état en soin ×2',court:'soin ×2',type:'ame',
   aide:'Amélioration : les dégâts de l’état que le porteur ignore, ou auquel il est insensible, le soignent deux fois.',params:[],
   phrase(){return 'Les dégâts de l’état que le porteur <b>ignore</b> le <b>soignent deux fois</b>.'}},
  /* Améliorations des Orbes, de Déluge et d'Implosion ; la Contagion et les siennes. */
- orbes2des:{cle:'orbes2des',nom:'Orbes à deux dés',type:'ame',aide:'Amélioration : chaque orbe lance deux dés.',params:[],
+ orbes2des:{cle:'orbes2des',nom:'Orbes à deux dés',court:'deux dés',type:'ame',aide:'Amélioration : chaque orbe lance deux dés.',params:[],
   phrase(){return 'Vos <b>orbes</b> lancent <b>2 dés</b>.'}},
- orbesrouges:{cle:'orbesrouges',nom:'Orbes lourds',type:'ame',aide:'Amélioration : les orbes lancent des dés rouges (Lourds) au lieu de leurs dés.',params:[],
+ orbesrouges:{cle:'orbesrouges',nom:'Orbes lourds',court:'dés lourds',type:'ame',aide:'Amélioration : les orbes lancent des dés rouges (Lourds) au lieu de leurs dés.',params:[],
   phrase(){return 'Vos <b>orbes</b> lancent des <b>dés rouges</b>.'}},
- orbescritun:{cle:'orbescritun',nom:'Critique : un orbe rendu',type:'ame',aide:'Amélioration : un critique d’orbe rend un orbe pour le tour.',params:[],
+ orbescritun:{cle:'orbescritun',nom:'Critique : un orbe rendu',court:'critique : un orbe rendu',type:'ame',aide:'Amélioration : un critique d’orbe rend un orbe pour le tour.',params:[],
   phrase(){return 'Un <b>critique</b> de vos orbes vous <b>rend un orbe</b>.'}},
- orbescrittous:{cle:'orbescrittous',nom:'Critique : tous les orbes rendus',type:'ame',aide:'Amélioration : un critique d’orbe rend tous les orbes du tour.',params:[],
+ orbescrittous:{cle:'orbescrittous',nom:'Critique : tous les orbes rendus',court:'critique : tous les orbes rendus',type:'ame',aide:'Amélioration : un critique d’orbe rend tous les orbes du tour.',params:[],
   phrase(){return 'Un <b>critique</b> de vos orbes vous <b>rend tous vos orbes</b>.'}},
- delugegratuit:{cle:'delugegratuit',nom:'Déluge gratuit',type:'ame',aide:'Amélioration de Déluge : il ne coûte plus l’Action.',params:[],
+ delugegratuit:{cle:'delugegratuit',nom:'Déluge gratuit',court:'gratuit',type:'ame',aide:'Amélioration de Déluge : il ne coûte plus l’Action.',params:[],
   phrase(){return '<b>Déluge</b> ne coûte plus l’<b>Action</b>.'}},
- implosionmouvement:{cle:'implosionmouvement',nom:'Implosion de mouvement',type:'ame',aide:'Amélioration d’Implosion : un critique rend aussi 1 point de Mouvement.',params:[],
+ implosionmouvement:{cle:'implosionmouvement',nom:'Implosion de mouvement',court:'point de Mouvement',type:'ame',aide:'Amélioration d’Implosion : un critique rend aussi 1 point de Mouvement.',params:[],
   phrase(){return 'Après un <b>critique</b>, le porteur gagne aussi <b>1 point de Mouvement</b>.'}},
- implosionorbe:{cle:'implosionorbe',nom:'Implosion d’orbe',type:'ame',aide:'Amélioration d’Implosion : un critique rend aussi un orbe pour le tour.',params:[],
+ implosionorbe:{cle:'implosionorbe',nom:'Implosion d’orbe',court:'orbe rendu',type:'ame',aide:'Amélioration d’Implosion : un critique rend aussi un orbe pour le tour.',params:[],
   phrase(){return 'Après un <b>critique</b>, le porteur récupère aussi <b>un orbe</b>.'}},
  contagion:{cle:'contagion',nom:'Contagion',type:'pass',aide:'Passif : au début de chaque tour, le porteur inflige l’état réglé à un adversaire à son contact.',
   params:[{cle:'etat',nom:'État',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Au <b>début de chaque tour</b>, le porteur inflige <b>'+((p&&p.etat)||'Feu')+'</b> à <b>un adversaire</b> à son contact.'}},
- contagioncontact:{cle:'contagioncontact',nom:'Contagion au contact',type:'ame',aide:'Amélioration de Contagion : tous les adversaires au contact la subissent.',params:[],
+ contagioncontact:{cle:'contagioncontact',nom:'Contagion au contact',court:'au contact',type:'ame',aide:'Amélioration de Contagion : tous les adversaires au contact la subissent.',params:[],
   phrase(){return 'La <b>Contagion</b> touche <b>tous les adversaires au contact</b>.'}},
- contagionvue:{cle:'contagionvue',nom:'Contagion en vue',type:'ame',aide:'Amélioration de Contagion : tous les adversaires visibles la subissent.',params:[],
+ contagionvue:{cle:'contagionvue',nom:'Contagion en vue',court:'en vue',type:'ame',aide:'Amélioration de Contagion : tous les adversaires visibles la subissent.',params:[],
   phrase(){return 'La <b>Contagion</b> touche <b>tous les adversaires visibles</b>.'}},
  /* Orbes inratables : une amélioration. Les orbes du porteur ne font jamais d'échec sur un double 1. */
- orbesinratables:{cle:'orbesinratables',nom:'Orbes inratables',type:'ame',
+ orbesinratables:{cle:'orbesinratables',nom:'Orbes inratables',court:'inratables',type:'ame',
   aide:'Amélioration : les Orbes mystiques du porteur ne peuvent pas produire d’échec (double 1).',
   params:[],
   phrase(){return 'Vos <b>Orbes mystiques</b> ne peuvent pas produire d’<b>échec</b> (double 1).'}},
- orbescritiques:{cle:'orbescritiques',nom:'Orbes critiques',type:'ame',
+ orbescritiques:{cle:'orbescritiques',nom:'Orbes critiques',court:'critiques',type:'ame',
   aide:'Amélioration : les Orbes mystiques du porteur peuvent produire des critiques (double 6).',
   params:[],
   phrase(){return 'Vos <b>Orbes mystiques</b> peuvent produire des <b>critiques</b> (double 6).'}},
@@ -1068,10 +1068,10 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Passif : quand un adversaire portant l’état réglé est tué, tous les adversaires à son contact le subissent.',
   params:[{cle:'etat',nom:'État qui éclate',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){const e=(p&&p.etat)||'Feu';return 'Quand un adversaire portant <b>'+e+'</b> est tué, tous les adversaires <b>à son contact</b> subissent <b>'+e+'</b>.'}},
- eruptiondegats:{cle:'eruptiondegats',nom:'Éruption — dégâts',type:'ame',
+ eruptiondegats:{cle:'eruptiondegats',nom:'Éruption — dégâts',court:'dégâts',type:'ame',
   aide:'Amélioration d’Éruption : les adversaires touchés subissent aussi les dégâts de l’état du mort, un dé par cran (Feu 4 : 4d6).',params:[],
   phrase(){return 'L’<b>Éruption</b> inflige aussi les <b>dégâts</b> de l’état du mort : un dé par cran.'}},
- eruptiondouble:{cle:'eruptiondouble',nom:'Éruption — double',type:'ame',
+ eruptiondouble:{cle:'eruptiondouble',nom:'Éruption — double',court:'dégâts doublés',type:'ame',
   aide:'Amélioration d’Éruption : les dégâts de l’Éruption sont doublés.',params:[],
   phrase(){return 'Les dégâts de l’<b>Éruption</b> sont <b>doublés</b>.'}},
  /* Implosion : un passif. Un critique rend au porteur le point d'Action qu'il vient de dépenser. */
@@ -1120,10 +1120,10 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Action : un adversaire en vue s’avance jusqu’au contact du porteur.',
   params:[],
   phrase(){return 'Un adversaire <b>en ligne de vue</b> doit faire un mouvement vers le porteur — l’adversaire visé, sinon le premier en vue — jusqu’à son <b>contact</b>.'}},
- provocattaque:{cle:'provocattaque',nom:'Provocation — attaque',type:'ame',
+ provocattaque:{cle:'provocattaque',nom:'Provocation — attaque',court:'attaque',type:'ame',
   aide:'Amélioration de Provocation : le porteur attaque aussitôt l’adversaire provoqué.',params:[],
   phrase(){return 'Après une <b>Provocation</b>, le porteur effectue <b>une attaque</b> contre l’adversaire provoqué.'}},
- provocsol:{cle:'provocsol',nom:'Provocation — au sol',type:'ame',
+ provocsol:{cle:'provocsol',nom:'Provocation — au sol',court:'au sol',type:'ame',
   aide:'Amélioration de Provocation : l’adversaire provoqué tombe Au sol.',params:[],
   phrase(){return 'L’adversaire provoqué par une <b>Provocation</b> tombe <b>Au sol</b>.'}},
  /* Poussée : une action. Le porteur effectue une attaque, puis repousse la cible hors de sa
@@ -1136,13 +1136,16 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),ouvert=k=>!!v&&v[k]>0&&n>=v[k];
    return 'Le porteur effectue <b>une attaque</b>, puis repousse '+(ouvert('tous')?'<b>tous les adversaires à son contact</b>':'<b>la cible</b>')
     +(ouvert('loin')?' à <b>deux fois sa zone de contact</b>.':' <b>hors de sa zone de contact</b>.')}}};
-/* Chaque amélioration dit le talent qu'elle améliore : la bibliothèque la range dessous. Celles qui
-   ne sont liées à aucun talent en particulier restent seules. */
+/* Chaque amélioration dit le talent qu'elle améliore : la bibliothèque la range dessous, et son nom
+   s'écrit « Talent — court », d'un seul modèle pour toutes ; l'ancien nom reste connu, pour retrouver
+   l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
+   seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',
  soinetat:'ignoredegats',soinetatdouble:'ignoredegats',corpselem:'invulnerable'};
- Object.entries(POUR).forEach(([k,p])=>{if(TALENTS_CODES[k]&&TALENTS_CODES[p])TALENTS_CODES[k].pour=p})}
+ Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
+  if(c.court){const nom=TALENTS_CODES[p].nom+' — '+c.court;if(nom!==c.nom){c.anciens=[...(c.anciens||[]),c.nom];c.nom=nom}}})}
 /* ---------- Les effets d'équipement ----------
    Ce qu'un objet sait faire quand on s'en sert : même grammaire que les talents — une clé,
    des réglages, une phrase que le moteur écrit lui-même — et trois manières d'en user.

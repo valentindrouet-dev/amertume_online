@@ -1088,7 +1088,18 @@ assert.ok(page.includes('.pastilles{position:absolute;right:8px')&&page.includes
    « button button » ; chaque effet déjà porté par un talent du catalogue arbore sa coche verte. */
 assert.ok(src.includes('function recalculerPV(')&&src.includes("if(cle==='vie'||cle==='endu')recalculerPV(a);")&&src.includes("writeStat(a,'max',max)"),'les PV max suivent Vie et Endurance');
 assert.ok(!/button\s*\/\*[^*]*\*\/\s*button\.btn-analyse/.test(feuille)&&/\*\/\s*button\.btn-analyse,button\.btn-analyse\.on\{--fond:#e0a04a;color:#fff;/.test(feuille),'le sélecteur Analyser vise bien le bouton');
-assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.includes("coche.className='utilise'")&&src.includes("coche.textContent='✅'")&&feuille.includes('.effet-fiche .utilise{display:inline-block;width:18px'),'coche verte sur les effets utilisés');
+assert.ok(src.includes("filter(t=>t&&t.effet===c.cle).map(t=>t.name)")&&src.includes("u.className='utilise';u.textContent='✓ '+porteurs.length;")&&feuille.includes('.biblio-table .utilise{display:inline-block;'),'compte vert des talents qui portent déjà un effet');
+/* La bibliothèque des effets est un tableau : les classes en corps repliables, les améliorations sous leur talent,
+   la phrase aux réglages marqués, les réglages en puces, un filtre. Les noms d'amélioration suivent un seul modèle,
+   « Talent — court », et leur ancien nom retrouve encore l'effet. */
+{const T=C.TALENTS_CODES;
+ Object.values(T).filter(c=>c.pour&&c.court).forEach(c=>assert.equal(c.nom,T[c.pour].nom+' — '+c.court,'nom uniforme : '+c.cle));
+ assert.equal(T.orbes2des.nom,'Orbes mystiques — deux dés');assert.equal(T.eruptiondouble.nom,'Éruption — dégâts doublés');assert.equal(T.ignoredegats.nom,'Ignore les dégâts');
+ assert.equal(C.effetParNom('Orbes à deux dés'),'orbes2des','l’ancien nom retrouve l’effet');assert.equal(C.effetParNom('Orbes mystiques — deux dés'),'orbes2des');
+ assert.equal(C.effetParNom('Éruption — double'),'eruptiondouble');assert.equal(C.effetParNom('Attaque État'),'attaqueetat');assert.equal(C.effetParNom('Ignore les dégâts d’un état'),'ignoredegats');
+ assert.ok(src.includes("const table=document.createElement('table');table.className='biblio-table';")&&src.includes("function ligneEffet(c,classe,rangs,parent){")
+  &&src.includes("function phraseReglee(c){")&&src.includes("function filtreBiblio(){")&&src.includes('id="biblio-filtre"')&&src.includes("tr.className='effet-ligne t-'+(c.type||'act')+(parent?' ame-de':c.type==='ame'?' ame-libre':'');")
+  &&src.includes("localStorage.getItem('amertume-biblio-plis')")&&feuille.includes('.biblio-table tr.ame-de td{')&&feuille.includes('.biblio-table .col-dit b.reglable{'),'la bibliothèque en tableau');}
 {const {pvMaximum,writeStat,setState}=C;const cls=[{name:'Gardien',pv:18}];
  const h={hero:true,role:'Gardien',race:'',vie:3,vieMax:4,endu:3,hp:27,max:27,states:[]};
  assert.equal(pvMaximum(cls,h),27);h.endu=2;assert.equal(pvMaximum(cls,h),24);
