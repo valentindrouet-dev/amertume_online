@@ -3363,8 +3363,20 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.deepEqual([...ctxC.n(['planches/caracteristiques_1.webp#4',7,'a"b'])],['planches/caracteristiques_1.webp#4','','',...Array(C.COMPETENCES.length-3).fill('')],'une icône par compétence, rien d’autre');
  assert.equal(ctxC.n(null).length,C.COMPETENCES.length,'autant de places que de compétences');
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
-  &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract/i.test(nomPlanche(f))||/caract/i.test(f))")
+  &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.494 — La scène de base ne paraît plus au rechargement : le voile de chargement est dans la
+   page dès le premier affichage. La planche Compétences est au dépôt et se propose en tête des
+   icônes de compétences, comme la planche Caractéristiques. */
+{const src=fs.readFileSync('editor.js','utf8'),html=fs.readFileSync('index.html','utf8');
+ assert.ok(/<body><div id="busy-cover">Chargement de la partie enregistrée…<\/div>/.test(html),'le voile est là avant la scène');
+ assert.ok(src.includes("const cover=document.getElementById('busy-cover')||")&&!src.includes("const cover=document.createElement('div');cover.id='busy-cover'"),'editor.js reprend le voile de la page');
+ assert.ok(fs.existsSync('img/planches/competences_1.webp'),'la planche Compétences est au dépôt');
+ const ctxG={catalog:{planches:[{fichier:'planches/competences_1.webp',cases:[[0,0,1,1]],icones:[]},{fichier:'planches/talents_1.webp',cases:[[0,0,1,1]],icones:[]}]},FAMILLES_LOGOS:[]};vm.createContext(ctxG);
+ const pl=fs.readFileSync('planches.js','utf8');
+ vm.runInContext(pl.slice(pl.indexOf('const CATS_ICONES='),pl.indexOf('function normalisePlanches('))+';'+src.slice(src.indexOf('function groupesLogosCompetence('),src.indexOf('/* ---------- La conversion des dégâts'))+';this.g=groupesLogosCompetence;',ctxG);
+ assert.equal(ctxG.g()[0][0],'Competences 1','la planche Compétences en tête des choix');
+ assert.ok(!ctxG.g()[0][1].includes('planches/talents_1.webp#1'),'une autre planche reste à sa place');}
 /* v0.353 — Les huit compétences en ronds sous « Compétences » : le logo, teinté de sa couleur
    dominante, la valeur en pastille au bas — 1, plus ce que l'aventurier y a gagné ; le test lance
    autant de dés. */

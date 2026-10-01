@@ -466,7 +466,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   if(t.code.cle!=='orbes')survol(b,t.des,t.bonus||0,false,t.logo?[t.logo]:null,orbeux(t)?etatOrbes:'');
   b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;if(t.code.cle==='orbes')boite.prepend(b);else boite.append(b)});
  if(avaitBulle)requestAnimationFrame(rouvreBulleSous)}
-const cover=document.createElement('div');cover.id='busy-cover';cover.textContent='Chargement de la partie enregistrée…';document.body.append(cover);
+// Le voile est déjà dans la page dès le premier affichage : la scène de base ne se montre plus avant la partie.
+const cover=document.getElementById('busy-cover')||Object.assign(document.createElement('div'),{id:'busy-cover',textContent:'Chargement de la partie enregistrée…'});document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
 const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-form"><div id="actor-fields"></div><p class="form-error" id="actor-error" role="alert"></p><div class="form-actions"><button type="button" id="delete-actor">Retirer de la scène</button><button type="button" id="save-template">Enregistrer au bestiaire</button><button type="submit" class="primary">Enregistrer la fiche</button></div></form>');
 /* ---------- Pages Armurerie et Bestiaire ---------- */
@@ -1035,8 +1036,9 @@ function teinteLogoSur(el,im,cle){const pose=t=>{if(t)el.style.setProperty('--ti
  if(TEINTES_LOGOS.has(cle)){pose(TEINTES_LOGOS.get(cle));return}
  const lis=()=>{if(TEINTES_LOGOS.has(cle)){pose(TEINTES_LOGOS.get(cle));return}if(!im.naturalWidth)return;const t=teinteDominante(im);if(t){TEINTES_LOGOS.set(cle,t);pose(t)}};
  if(im.complete&&im.naturalWidth)lis();im.addEventListener('load',lis)}
+// Les planches Caractéristiques et Compétences d'abord, puis le reste des icônes.
 function groupesLogosCompetence(){const vus=new Set(),groupes=[];
- planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract/i.test(nomPlanche(f))||/caract/i.test(f)).sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))
+ planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f)).sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))
   .forEach(f=>{const ids=iconesPlanches().filter(id=>id.startsWith(f+'#'));ids.forEach(i=>vus.add(i));if(ids.length)groupes.push([nomPlanche(f),ids])});
  [...famillesPlanches(),...FAMILLES_LOGOS].forEach(([t,l])=>{const reste=l.filter(x=>!vus.has(x));if(reste.length)groupes.push([t,reste])});return groupes}
 /* ---------- La conversion des dégâts de D&D 5.5 ----------
