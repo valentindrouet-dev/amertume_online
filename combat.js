@@ -915,11 +915,11 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   params:[],
   phrase(){return 'Avant qu’un aventurier au contact ne subisse des dégâts, le porteur subit <b>la moitié</b> des dégâts à sa place ; l’aventurier visé subit le reliquat.'}},
  /* Gardien : une maîtrise. Au début du combat, un aventurier allié au contact reçoit
-    Blindage — l'allié ciblé, sinon le plus proche. Une fois par combat. */
+    l'état Gardé — l'allié ciblé, sinon le plus proche. Une fois par combat. */
  gardien:{cle:'gardien',nom:'Gardien',type:'mait',bouton:'🛡 Gardien',
-  aide:'Maîtrise : au début du premier tour de combat, un aventurier allié au contact reçoit Blindage — l’allié ciblé, sinon le plus proche.',
+  aide:'Maîtrise : au début du premier tour de combat, un aventurier allié au contact reçoit l’état Gardé — l’allié ciblé, sinon le plus proche.',
   params:[],
-  phrase(){return 'Au début du premier tour de combat, un aventurier allié <b>au contact</b> reçoit <b>Blindage</b> : l’allié ciblé, sinon le plus proche.'}},
+  phrase(){return 'Au début du premier tour de combat, un aventurier allié <b>au contact</b> reçoit l’état <b>Gardé</b> : l’allié ciblé, sinon le plus proche.'}},
  /* Destructeur : une maîtrise. Avec une arme au contact, tous les doubles sont des
     critiques, pas seulement les 6 ; le double 1 reste ce qu'il est, un échec. Ni les
     armes à distance, ni les orbes, ni les attaques de fiche n'en profitent. */

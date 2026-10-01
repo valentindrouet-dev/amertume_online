@@ -19,8 +19,7 @@ function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots
  a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};
  a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};
  a.checks=Array.isArray(a.checks)?POINTS_CLES.map((q,i)=>Math.max(0,Math.min(pointsMax(a,q),a.checks[i]===true?1:Math.trunc(Number(a.checks[i]))||0))):[0,0,0];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
- // L'état Gardé n'existe plus depuis la v0.164 : Gardien pose Blindage.
- a.states=a.states.filter(s=>s!=='Gardé');baseHeros(a);return a}
+ baseHeros(a);return a}
 /* Un aventurier a Vie 3, Endu 2 et Dégâts +0, quel que soit son niveau : le reste vient de sa classe,
    de ses talents et de son équipement. Une fiche corrigée aux PV pleins le reste. */
 const BASE_HEROS={vieMax:3,endu:2,dmg:0};
@@ -197,6 +196,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les logos communs des bonus, par caractéristique : un nom de logo par clé.
  const lb=c.logosBonus&&typeof c.logosBonus==='object'&&!Array.isArray(c.logosBonus)?c.logosBonus:{};
  c.logosBonus={};Object.entries(lb).forEach(([k,v])=>{if(/^[a-z]+(:\d+)?$/.test(k)&&typeof v==='string'&&v&&v.length<=120)c.logosBonus[k]=v});
+ // L'image qu'un état prend à la place de celle du jeu : Gardé, pour l'heure.
+ {const le=c.logosEtats&&typeof c.logosEtats==='object'&&!Array.isArray(c.logosEtats)?c.logosEtats:{};c.logosEtats={};
+  Object.entries(le).forEach(([k,v])=>{if(STATES.includes(k)&&typeof v==='string'&&v&&v.length<=120)c.logosEtats[k]=v})}
  // Les noms que le MJ a donnés aux effets, dans la bibliothèque : un texte court par effet connu.
  const ne=c.nomsEffets&&typeof c.nomsEffets==='object'&&!Array.isArray(c.nomsEffets)?c.nomsEffets:{};
  c.nomsEffets={};Object.entries(ne).forEach(([k,v])=>{if(TALENTS_CODES[k]&&typeof v==='string'&&v.trim())c.nomsEffets[k]=v.trim().slice(0,60)});
@@ -237,6 +239,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(t.horsArbre!==true)delete t.horsArbre;
   if(t.vide!==true)delete t.vide;
   if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;
+  if(typeof t.debutCombat!=='boolean')delete t.debutCombat;
   /* Orbes de feu écrit « toujours » avant que le réglage « Quand » n'existe : il le prend, une
      fois ; le MJ le change ensuite dans l'éditeur. */
   if(t.effet==='orbesfeu'&&!(t.params&&typeof t.params==='object'&&'quand' in t.params)&&/toujours/i.test(String(t.effects||'')))
@@ -461,6 +464,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   const compte=typeof compteDuTexte==='function'?compteDuTexte(t.texte):'';
   if(compte)b.append(Object.assign(document.createElement('span'),{className:'compte-rond',textContent:compte}));
   inerte(b,!t.peut);b.setAttribute('aria-label',t.texte+' — '+t.titre);
+  // Un talent de début de combat encore à faire rayonne, pour ne pas l'oublier.
+  if(t.rayonne)b.classList.add('debut-combat');
   /* Sa bulle : celle du talent, son texte tel que le MJ l'a écrit ; un talent qui frappe y montre
      ses dés et son bonus, sous son nom, comme une attaque. */
   surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),
@@ -882,6 +887,10 @@ function bougeRichesse(signe){const a=richessesActeur,f=$('richesses-form').elem
  poseCompte(a.richesses,k,(a.richesses[k]||0)+signe*n);richessesDialog.close();
  if(typeof renderHeroes==='function')renderHeroes();rendrePlusTard();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 $('richesses-form').onsubmit=e=>{e.preventDefault();bougeRichesse(1)};$('richesses-retirer').onclick=()=>bougeRichesse(-1);
+// Ressusciter, chez le MJ : une VIE, ses PV au complet, de retour sur la carte, sans état.
+function ressusciter(a){if(view!=='mj'||!estMort(a))return;
+ a.vie=1;a.comaVie=false;a.horsCarte=false;a.states=[];a.cumuls={};a.bleed=0;if(typeof recalculerPV==='function')recalculerPV(a);a.hp=a.max;
+ renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 function heroCard(a,i){const c=document.createElement('article');c.className='hero-card';
  const tete=document.createElement('div');tete.className='hero-head';
  const jeton=document.createElement('span');jeton.className='avatar';
@@ -988,6 +997,12 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   titreTal.onclick=e=>{if(e.target.closest('button'))return;fermerBulle();openArbres(a)};
   blocTal.onclick=e=>{if(e.target.closest('.cat-pill'))return;fermerBulle();openArbres(a)}}
  // Les talents juste sous les compétences : ce qu'il sait faire se lit d'un bloc.
+ /* Mort, faute de VIE : la fiche reste, toute grise, la tête de mort sur son jeton. Le joueur la lit
+    sans plus rien y changer ; le MJ y touche encore, et peut le ressusciter. */
+ if(estMort(a)){c.classList.add('mort');jeton.append(Object.assign(document.createElement('span'),{className:'crane',textContent:'💀'}));
+  if(view==='mj'){const r=document.createElement('button');r.type='button';r.className='ressusciter';r.textContent='Ressusciter';
+   r.onclick=e=>{e.stopPropagation();ressusciter(a)};tete.append(r)}
+  else['click','contextmenu','dragstart','pointerdown','keydown','change','input'].forEach(ev=>c.addEventListener(ev,e=>{if(e.type==='keydown'&&!['Enter',' '].includes(e.key))return;e.stopPropagation();e.preventDefault()},true))}
  c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
@@ -1099,9 +1114,12 @@ $('competences-icones-form').onsubmit=e=>e.preventDefault();
 function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences(),groupes=groupesLogosCompetence();
  const lb=catalog.logosBonus||{};
  $('competences-icones-corps').innerHTML='<h3 class="reglage-titre icones-titre">Caractéristiques</h3>'+CARACS_ICONES.map(([k,n])=>selGrille(selGroupes(esc(n),'carac-'+k,lb[k]||'',groupes))).join('')
-  +'<h3 class="reglage-titre icones-titre">Compétences</h3>'+skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('');
- $('competences-icones-form').onchange=e=>{const nom=e.target&&e.target.name||'',m=/^comp(\d+)$/.exec(nom),c=/^carac-([a-z]+)$/.exec(nom);if(!m&&!c)return;
-  if(m){const icones=iconesCompetences();icones[+m[1]]=e.target.value;catalog.iconesCompetences=normaliseIconesCompetences(icones)}
+  +'<h3 class="reglage-titre icones-titre">Compétences</h3>'+skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('')
+  +'<h3 class="reglage-titre icones-titre">États</h3>'+selGrille(selGroupes('Gardé','etat-garde',(catalog.logosEtats||{})['Gardé']||'',groupes));
+ $('competences-icones-form').onchange=e=>{const nom=e.target&&e.target.name||'',m=/^comp(\d+)$/.exec(nom),c=/^carac-([a-z]+)$/.exec(nom);
+  if(nom==='etat-garde'){const o={...(catalog.logosEtats||{})};if(e.target.value)o['Gardé']=e.target.value;else delete o['Gardé'];catalog.logosEtats=o}
+  else if(!m&&!c)return;
+  else if(m){const icones=iconesCompetences();icones[+m[1]]=e.target.value;catalog.iconesCompetences=normaliseIconesCompetences(icones)}
   else{const o={...(catalog.logosBonus||{})};if(e.target.value)o[c[1]]=e.target.value;else delete o[c[1]];catalog.logosBonus=o}
   scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderHeroes();render()};
  competencesDialog.showModal()}
@@ -1143,8 +1161,8 @@ function poolBadges(pool){const out=document.createElement('span');out.className
 function etatPastille(etat){if(!etat)return null;
  const s=document.createElement('span');s.className='etat-inflige';
  s.title='Inflige '+etat;s.setAttribute('role','img');s.setAttribute('aria-label','Inflige '+etat);
- const nom=STATE_ICONS[etat];
- if(nom){const im=document.createElement('img');im.src=imgUrl(nom+'.png');im.alt='';im.draggable=false;s.append(im)}
+ const im=imageEtat(etat);
+ if(im)s.append(im);
  else{s.classList.add('sans-jeton');s.textContent=etat[0]}
  return s}
 /* « place » : une arme à distance qui n'a qu'un ou deux dés montre, tout à droite, un dé vide
@@ -1364,6 +1382,7 @@ function reposLong(){if(view!=='mj')return;const troupe=actors.filter(a=>a&&a.he
  if(!confirm('Repos long pour toute la troupe ?\nVIE et PV au maximum, repos courts et charges rendus, états levés sauf le Blindage.'))return;
  const revenus=[];
  troupe.forEach(a=>{if(Number.isFinite(Number(a.vieMax)))a.vie=Number(a.vieMax);if(typeof recalculerPV==='function')recalculerPV(a);
+  if(estMort(a))return;
   setState(a,'Coma',false);a.hp=a.max;a.comaVie=false;a.reposCourts=0;a.reposPris=false;reposer(a,'long');if(typeof leveEtats==='function')leveEtats(a);
   if(a.horsCarte){a.horsCarte=false;revenus.push(a)}});
  // Qui revient se pose dans la zone de départ de la carte ouverte.
@@ -2849,6 +2868,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<div id="talent-reglages"></div>'
   +'<label class="field-check" id="remplace-texte"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceTexte" '+(t.remplaceTexte===true?'checked':'')+'>Remplace le texte du talent</label>'
   +'<label class="field-check" id="remplace-precedente"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplacePrecedente" '+(t.remplacePrecedente===true?'checked':'')+'>Remplace le texte de l’amélioration précédente</label>'
+  +'<label class="field-check" id="debut-combat"'+((t.type||'act')==='ame'?' hidden':'')+'><input type="checkbox" name="debutCombat" '+(talentDebut(t)?'checked':'')+'>Début de combat</label>'
   +'<label class="field-check" id="pour-attaque"'+(['pass','ame'].includes(t.type||'act')?'':' hidden')+'><input type="checkbox" name="pourAttaque" '+(ameliorAttaque({...t,type:t.type||'act'})?'checked':'')+'>Améliore l’Attaque</label></section>'
   // Le bonus : une caractéristique, une valeur — et la compétence, si c'est là qu'il va.
   +'<section class="talent-boite b-bonus b-seul"><h2 class="sous-titre">Le bonus</h2><div class="edit-grid">'
@@ -2865,7 +2885,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
     qu'un champ requis absent ne bloque pas l'enregistrement. */
  const champs=$('talent-form').elements;
  // « Remplace le logo du talent » ne vaut que pour une amélioration.
- if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame';if($('remplace-texte'))$('remplace-texte').hidden=champs.type.value!=='ame';if($('remplace-precedente'))$('remplace-precedente').hidden=champs.type.value!=='ame';if($('pour-attaque'))$('pour-attaque').hidden=!['pass','ame'].includes(champs.type.value)});
+ if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame';if($('remplace-texte'))$('remplace-texte').hidden=champs.type.value!=='ame';if($('remplace-precedente'))$('remplace-precedente').hidden=champs.type.value!=='ame';if($('pour-attaque'))$('pour-attaque').hidden=!['pass','ame'].includes(champs.type.value);if($('debut-combat'))$('debut-combat').hidden=champs.type.value==='ame'});
  ['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});
  const apercuBonus=()=>{const comp=champs.b_carac.value==='comp';const lc=champs.b_comp.closest('label');if(lc)lc.classList.toggle('talent-cache',!comp);
   $('bonus-apercu').textContent='Dans l’arbre : '+libelleBonus({carac:champs.b_carac.value,valeur:num(champs.b_valeur.value,1,20),comp:champs.b_comp.value})};
@@ -2938,6 +2958,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  // Écrit oui ou non, jamais absent : la reprise des anciennes paires ne repasse pas sur un choix du MJ.
  if(t.type==='ame'&&f.remplacePrecedente)t.remplacePrecedente=f.remplacePrecedente.checked;else delete t.remplacePrecedente;
  if(['pass','ame'].includes(t.type)&&f.pourAttaque&&t.effet!=='bonus')t.pourAttaque=f.pourAttaque.checked;else delete t.pourAttaque;
+ if(t.type!=='ame'&&f.debutCombat&&t.effet!=='bonus')t.debutCombat=f.debutCombat.checked;else delete t.debutCombat;
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p_')}):{};
  /* Les paliers : leur coût ; pour le 2 et le 3, leur texte s'il en a un, leurs réglages s'ils
     diffèrent de ceux d'en dessous — sinon ils en héritent, et suivront s'ils changent. */
@@ -3975,7 +3996,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(mj&&lienDepuis===t.id)el.classList.add('relie-source');
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
    if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
-   if(verrou)return;
+   if(verrou||(estMort(a)&&view!=='mj'))return;
    // Un clic l'active ; tenu, un clic le désactive — et ce qu'on n'atteignait que par lui.
    if(acquis)oublier(t,libre?null:col.liste);else a.talents=[...a.talents,t.id];
    note('');majTable()};
@@ -3996,6 +4017,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     if(estBonus(t)){laisseCaseVide(t);const i=catalog.talents.indexOf(t);if(i>=0)catalog.talents.splice(i,1);actors.forEach(x=>{if(x.talents)x.talents=x.talents.filter(id=>id!==t.id)})}
     else videDeLArbre(t);arbreChange()}));
   el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
+   if(estMort(a)&&view!=='mj')return;
    if(acquis)oublier(t,libre?null:col.liste);else if(!verrou)a.talents=[...a.talents,t.id];else return;
    note('');majTable()};
   glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,chemin:lisChemin(t),soi:t.id});
@@ -4366,8 +4388,8 @@ function renderStatePicker(){const boite=$('state-picker');if(!boite)return;
  boite.replaceChildren(...STATES.map(etat=>{
   const b=document.createElement('button');b.type='button';b.title=etat;
   b.className=hasState(draft,etat)?'on':'';
-  const nom=STATE_ICONS[etat];
-  if(nom){const im=document.createElement('img');im.src=imgUrl(nom+'.png');im.alt='';b.append(im)}
+  const im=imageEtat(etat);
+  if(im)b.append(im);
   else{const v=document.createElement('span');v.className='vide';v.textContent=etat==='Aucun'?'✕':'•';b.append(v)}
   const l=document.createElement('span');l.textContent=etat;b.append(l);
   b.onclick=()=>{if(etat==='Aucun')draft.states=[];else setState(draft,etat,!hasState(draft,etat));

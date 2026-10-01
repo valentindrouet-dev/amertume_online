@@ -238,7 +238,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
 {const {TALENTS_CODES,paramsTalent,phraseTalent,partDuRempart,porteEffet,ONDE_EXCLUS}=require('./combat.js');
  assert.equal(TALENTS_CODES.debordement.type,'pass');assert.match(phraseTalent('debordement'),/<b>reliquat de dégâts<\/b>/);
  assert.equal(TALENTS_CODES.rempart.type,'pass');assert.match(phraseTalent('rempart'),/<b>la moitié<\/b>/);
- assert.equal(TALENTS_CODES.gardien.type,'mait');assert.match(phraseTalent('gardien'),/<b>au contact<\/b> reçoit <b>Blindage<\/b>/);
+ assert.equal(TALENTS_CODES.gardien.type,'mait');assert.match(phraseTalent('gardien'),/<b>au contact<\/b> reçoit l’état <b>Gardé<\/b>/);
  assert.ok(!TALENTS_CODES.gardienblindage);   // L'amélioration a disparu avec l'état Gardé.
  // La part du rempart : la moitié arrondie au-dessus, rien sur rien.
  assert.equal(partDuRempart(5),3);assert.equal(partDuRempart(4),2);assert.equal(partDuRempart(1),1);assert.equal(partDuRempart(0),0);
@@ -1055,7 +1055,7 @@ assert.ok(page.includes('function volFleche(')&&vivant.includes("rec.effet==='fl
  &&page.includes('function volBalayage(')&&vivant.includes("rec.effet==='balayage'")&&page.includes("diffuserEffet('balayage',a,actors[j],null)"),'le souffle et le balayage jouent ici et en face');
 assert.ok(page.includes("if(duree>0)setTimeout(()=>{poser();render();")&&page.includes("setTimeout(()=>{tirEnVol=false;frapper();scheduleSave()},duree)"),'les dégâts attendent le vol');
 assert.ok(cartes.includes("icone('troupe-eye'")&&cartes.includes('function oeilJoueur')&&cartes.includes("inconnu=oeilJoueur()?255:110"),'l’œil de la troupe');
-assert.ok(!page.includes('Bienvenue dans Amertume')&&!cartes.includes("(d.secret?'Passage secret ':'Porte ')")&&page.includes(" garde '+nomNum(o)+' : Blindage.'")&&page.includes("' 🔍 '+nomNum(o)+' :\\n'"),'le journal s’épure');
+assert.ok(!page.includes('Bienvenue dans Amertume')&&!cartes.includes("(d.secret?'Passage secret ':'Porte ')")&&page.includes(" garde '+nomNum(o)+'.'")&&page.includes("' 🔍 '+nomNum(o)+' :\\n'"),'le journal s’épure');
 assert.ok(!src.includes("loin.textContent=' ⤳'")&&page.includes('.actor.enemy.k-alpha:not(.selected){background:#efdcc2}')&&page.includes("total+' Dégâts'+(poses.length?' + '+poses.join(' + '):'')+'.'"),'boutons et vignettes');
 /* Le tour 1 à l'ouverture d'une carte, les numéros à la révélation, les adversaires cachés repliés, l'Onde et les talents en colonnes. */
 assert.ok(page.includes('function remiseAuTourUn')&&cartes.includes("if(typeof remiseAuTourUn==='function')remiseAuTourUn();"),'ouvrir une carte revient au tour 1');
@@ -3186,7 +3186,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const h={states:['Feu','Blindage','Poison','Coma','Invisible'],etatsPassifs:['Invisible']};
  assert.equal(ctxR.leveEtats(h).join(','),'Feu,Poison','tout s’en va, sauf le Blindage, le coma et ce qu’une pièce portée donne');assert.equal(h.states.join(','),'Blindage,Coma,Invisible');
  assert.equal(ctxR.reposMax({level:3}),3,'un repos court par niveau');assert.equal(ctxR.reposMax({}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:0}),3);assert.equal(ctxR.reposRestants({level:3,reposCourts:1}),2);
- assert.ok(page.includes("if(a.vie<=0){a.horsCarte=true;a.lieuDomaine='';poseCibles(a,[]);")
+ assert.ok(page.includes("if(a.vie<=0){poseCibles(a,[]);log(nomNum(a)+' n’a plus de VIE : il est mort.',{ton:'degats'})}")
   &&src.includes("function reposLong(){if(view!=='mj')return;")&&src.includes("$('hero-repos-long').onclick=reposLong;")&&carto.includes("heros.forEach(a=>{a.reposCourts=0;"),'0 VIE : hors de la carte jusqu’au repos long ; repos courts rendus à la carte rechargée');
  assert.ok(page.includes("function noteContactsDepart(a){if(!a||!enCombat())return;")&&page.includes("const contacts=adversairesAuContact(a).filter(([b])=>!avant||!avant.has(b.id));")
   &&page.includes("const arret=tokenOf(a)/2+tokenOf(b)/2+1;")&&page.includes("function cheminVersContact(b,a,size){")
@@ -3365,6 +3365,26 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.500 — Blindage ne s'empile pas ; Gardien pose l'état Gardé, à l'image choisie par le MJ ; les talents de début
+   de combat ne servent qu'au premier tour avant que la troupe bouge ou agisse, marqués sur la carte et dans la
+   barre ; un aventurier sans VIE est mort : fiche grise, tête de mort, seul le MJ y touche et le ressuscite. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),C=require('./combat.js');
+ const b={states:[]};C.infligeEtat(b,'Blindage');assert.equal(C.infligeEtat(b,'Blindage'),false);C.setState(b,'Blindage',true);assert.equal(b.states.join(),'Blindage','un seul Blindage à la fois');
+ assert.ok(page.includes("setState(o,'Gardé',true);")&&page.includes("'Foudre','Gardé','Gel'")&&!src.includes("a.states=a.states.filter(s=>s!=='Gardé')")
+  &&page.includes("function imageEtat(etat){const choisi=typeof catalog!=='undefined'&&catalog.logosEtats&&catalog.logosEtats[etat];")
+  &&src.includes("selGroupes('Gardé','etat-garde',")&&src.includes("c.logosEtats={};"),'Gardé, et son image au choix');
+ const ctxO={round:1,enCombat:()=>true,actors:[{hero:true,checks:[0,0,0]},{hero:false,checks:[1,0,0]}]};vm.createContext(ctxO);
+ vm.runInContext(page.match(/function ouvertureCombat\(\)[^\n]*/)[0]+'\n'+page.match(/const talentDebut=[^\n]*/)[0]+';this.t=talentDebut;',ctxO);
+ assert.equal(ctxO.ouvertureCombat(),true,'un adversaire qui agit ne ferme rien');
+ ctxO.actors[0].checks=[0,1,0];assert.equal(ctxO.ouvertureCombat(),false,'un aventurier qui bouge ferme le début du combat');
+ ctxO.actors[0].checks=[0,0,0];ctxO.actors[0].orbes=1;assert.equal(ctxO.ouvertureCombat(),false,'un orbe lancé aussi');
+ ctxO.actors[0].orbes=0;ctxO.round=2;assert.equal(ctxO.ouvertureCombat(),false,'passé le premier tour, plus du combat');
+ assert.deepEqual([{effet:'gardien'},{effet:'gardien',debutCombat:false},{debutCombat:true},{}].map(ctxO.t),[true,false,true,false]);
+ assert.ok(page.includes("titre:bloque?'Action déjà dépensée ce tour.':ferme?'Seulement au début du premier tour.'")&&page.includes("peut:libre,rayonne:debut&&libre,")&&page.includes("const coute=rangee==='attaques'&&!code.gratuit&&!debut&&")&&page.includes("if(b&&t.rayonne)b.classList.add('debut-combat')")
+  &&page.includes("className:'debut-marque',textContent:'!'")&&src.includes("if(t.rayonne)b.classList.add('debut-combat');")&&src.includes('name="debutCombat"'),'les talents de début de combat');
+ assert.ok(page.includes("function estMort(a){return !!a&&a.hero===true&&a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0}")
+  &&page.includes("+(estMort(a)?' mort':'')")&&src.includes("if(estMort(a)){c.classList.add('mort');")&&src.includes("function ressusciter(a){if(view!=='mj'||!estMort(a))return;")
+  &&src.includes("if(verrou||(estMort(a)&&view!=='mj'))return;")&&src.includes("  if(estMort(a))return;\n  setState(a,'Coma',false);"),'un aventurier mort');}
 /* v0.499 — L'Attaque, talent de base de tout aventurier, en tête de sa fiche ; ce qui l'améliore s'ajoute à sa
    bulle et à celle de la barre d'Actions, une pastille devant, à la couleur foncée de la nature du talent. Tous
    les états s'en vont à la fin d'un combat ; le tour qui commence ne parle plus des activations. */
