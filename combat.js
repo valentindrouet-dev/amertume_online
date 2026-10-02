@@ -989,6 +989,14 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Maîtrise : le porteur dispose d’un point d’Action, ou d’un point de Mouvement, de plus à chaque tour.',
   params:[{cle:'quoi',nom:'Point',type:'choix',defaut:'action',options:[['action','Action'],['mouvement','Mouvement']]}],
   phrase(p){return 'Le porteur dispose de <b>+1 point '+((p&&p.quoi)==='mouvement'?'de Mouvement':'d’Action')+'</b> à chaque tour.'}},
+ /* Enragement : chaque critique du porteur ajoute à ses dégâts, jusqu'à la fin du combat ; +1, +2 avec son
+    amélioration. Le compte repart de zéro quand le combat finit. */
+ enragement:{cle:'enragement',nom:'Enragement',type:'pass',
+  aide:'Passif : chaque critique réalisé augmente les dégâts du porteur de +1 jusqu’à la fin du combat.',params:[],
+  phrase(){return 'Chaque <b>critique</b> réalisé augmente vos <b>dégâts de +1</b> jusqu’à la fin du combat.'}},
+ enragementplus:{cle:'enragementplus',nom:'Enragement +2',court:'+2',type:'ame',
+  aide:'Amélioration : chaque critique augmente les dégâts de +2 au lieu de +1.',params:[],
+  phrase(){return 'Chaque <b>critique</b> augmente vos <b>dégâts de +2</b> au lieu de +1.'}},
  insaisissable:{cle:'insaisissable',nom:'Insaisissable',type:'pass',
   aide:'Passif : le porteur ignore les Dégâts d’Opportunité quand il effectue un mouvement.',
   params:[],

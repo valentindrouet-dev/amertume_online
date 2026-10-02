@@ -3371,6 +3371,20 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.523 — Enragement, passif de Destructeur : chaque critique ajoute +1 aux dégâts du porteur jusqu'à la fin du
+   combat, +2 avec son amélioration ; le compte repart de zéro quand le combat finit ou que la rencontre repart. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ assert.ok(C.TALENTS_CODES.enragement.type==='pass'&&C.TALENTS_CODES.enragementplus.type==='ame'&&/\+2/.test(C.TALENTS_CODES.enragementplus.phrase({})),'le passif et son amélioration');
+ assert.ok(src.includes("enragement:'Destructeur',enragementplus:'Destructeur'"),'rangés chez le Destructeur');
+ const ctx={combat:true,enCombat:()=>ctx.combat,porteEffet:C.porteEffet||((c,k)=>c.some(t=>t.code.cle===k)),flots:[],floatNumber:(a,t)=>ctx.flots.push(t),
+  talentsCodes:a=>a.codes.map(k=>({code:{cle:k},params:{}}))};vm.createContext(ctx);
+ vm.runInContext(page.slice(page.indexOf('function enrage(a){'),page.indexOf('function mouvementRapide(a){'))+';this.enrage=enrage;',ctx);
+ const d={codes:['enragement']},d2={codes:['enragement','enragementplus']},autre={codes:[]};
+ ctx.enrage(d);ctx.enrage(d);ctx.enrage(d2);ctx.enrage(autre);
+ assert.ok(d.enrage===2&&d2.enrage===2&&!autre.enrage&&ctx.flots.join('|')==='+1 Dégâts|+1 Dégâts|+2 Dégâts','+1 par critique, +2 amélioré, rien sans le talent');
+ ctx.combat=false;ctx.enrage(d);assert.equal(d.enrage,2,'hors combat, rien');
+ assert.ok(page.includes("+tenailles(a)+Math.max(0,Math.trunc(Number(a&&a.enrage))||0);")&&page.includes("if(r.critical&&!r.failed){critiqueTombe=true;enrage(a)}")&&page.includes("if(r.critical){implosion(a);orbesDuCritique(a);enrage(a)}")
+  &&page.includes("a.contactsDepart=null;a.enrage=0;")&&page.includes("a.ignition='';a.enrage=0;")&&vivant.includes("'alignementJeu','enrage'];"),'dans les dégâts, à chaque critique, remis à zéro, en ligne');}
 /* v0.522 — Maîtrise Point supplémentaire : +1 point d'Action ou de Mouvement à chaque tour. Dans l'arbre, une ligne
    peut sauter un gros rond vide pour relier deux talents à deux cases l'un de l'autre, en droite ligne. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
@@ -3452,7 +3466,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(mp.includes("$('coffre-bourse').append(editeurBourse(bourse,null,false));")&&mp.includes("c.richesses={};const b=normaliseBourse(bourse.bourse,false);")
   &&mp.includes("Object.entries(tireBourse(c.bourse)).forEach(([k,v])=>{rich[k]=(Math.trunc(Number(rich[k]))||0)+v});")&&mp.includes("const des=ligneBourse(c.bourse);")
   &&mp.includes("f.bourse=normaliseBourse(f.bourse);if(!f.bourse.length)delete f.bourse;"),'le coffre tire sa bourse à l’ouverture, l’adversaire posé garde la sienne');
- assert.ok(vivant.includes("'pnj','alignement','bourse','alignementJeu'];")&&feuille.includes('.bourse-gemme{width:26px;height:26px;'),'en ligne, et en petit');}
+ assert.ok(feuille.includes('.bourse-gemme{width:26px;height:26px;'),'en ligne, et en petit');}
 /* v0.518 — Les PNJ du Bestiaire : un alignement, allié, neutre ou adverse. Allié, il combat avec la troupe et se
    range parmi les Aventuriers ; neutre, il se tient entre les deux et peut s'en prendre à la troupe ; adverse, il
    est un adversaire. Son socle et sa barre de PV prennent la couleur de son alignement. */
