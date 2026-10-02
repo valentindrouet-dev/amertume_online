@@ -1,6 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
-/* v0.518 — Les camps des PNJ : toute machine virtuelle des contrôles les connaît, comme la page. */
-{const C=require('./combat.js'),cree=vm.createContext.bind(vm);vm.createContext=(o,...r)=>{if(o&&typeof o==='object')for(const k of ['ALIGNEMENTS','alignementDe','campDe','duCoteTroupe','memeCamp','hostiles'])if(!(k in o))o[k]=C[k];return cree(o,...r)}}
+/* v0.518 — Les camps des PNJ, v0.519 la bourse aux dés : toute machine virtuelle des contrôles les connaît, comme la page. */
+{const C=require('./combat.js'),cree=vm.createContext.bind(vm);vm.createContext=(o,...r)=>{if(o&&typeof o==='object')for(const k of ['ALIGNEMENTS','alignementDe','campDe','duCoteTroupe','memeCamp','hostiles','normaliseBourse','tireBourse','phraseRichesses'])if(!(k in o))o[k]=C[k];return cree(o,...r)}}
 const editor=fs.readFileSync('editor.js','utf8');const ctx={};vm.createContext(ctx);vm.runInContext(editor.slice(editor.indexOf('function imageDimensions'),editor.indexOf('let imageJob')),ctx);
 const png=new Uint8Array(24),v=new DataView(png.buffer);v.setUint32(0,0x89504e47);v.setUint32(4,0x0d0a1a0a);v.setUint32(16,4096);v.setUint32(20,2048);assert.equal(ctx.imageDimensions(png).join(','),'4096,2048');
 const jpg=new Uint8Array([255,216,255,192,0,7,8,2,0,4,0,255,217]);assert.equal(ctx.imageDimensions(jpg).join(','),'1024,512');
@@ -1375,7 +1375,7 @@ assert.equal(t.toggleEquip(a,o('ar')),null);assert.equal(JSON.stringify(a.armure
  assert.ok(/pas dans l’inventaire/.test(t.toggleEquip({inventaire:[],weapons:[]},o('e'))));
  a.weapons=[];t.toggleEquip(a,o('e'));t.retirerInventaire(a,o('e'));t.retirerInventaire(a,o('e'));assert.equal(JSON.stringify(a.weapons),JSON.stringify([]));assert.ok(!a.inventaire.includes('e'));   // Retirer le dernier exemplaire le repose.
  const b={weapons:['h'],armures:['ar'],shieldId:'',inventaire:[]};t.completerInventaire(b);assert.equal(JSON.stringify(b.inventaire),JSON.stringify(['h','ar']));}
-assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire),...(a.pnj?{pnj:true,alignement:alignementDe(a)}:{})}}")&&src.includes("inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}")
+assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire),bourse:normaliseBourse(a.bourse),...(a.pnj?{pnj:true,alignement:alignementDe(a)}:{})}}")&&src.includes("inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}")
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,combat?'':'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
@@ -3289,7 +3289,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxB.journal[0],'Brom trouve ⟦m⟧ ⟦r⟧ ×2 (Troll).','une ligne au journal');
  ctxB.journal.length=0;ctxB.butinDesRetires([{name:'Rat',hero:false,x:0,y:0,inventaire:['m'],butin:{m:40}}],()=>0.4);
  assert.equal(ctxB.journal.length,0,'40 % : un tirage à 40 ne tombe pas');
- assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}\nfunction fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);")
+ assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}\nfunction fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);")
   &&src.includes(" if(!a.hero){equipeAdversaire(a);a.butin=normaliseButin(a.butin,a.inventaire)}")
   &&src.includes("const CATS_INV_ADV=[['armes','Armes',")&&src.includes("if(!draft.hero){inventaireAdversaire(boite,draft,refreshEquip);if($('restes-edit'))inventaireAdversaire($('restes-edit'),draft,refreshEquip,'restes');return}"),'inventaire d’adversaire : familles, pioche, butin, tout porté');
  assert.ok(src.includes("r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;")&&css.includes('.bulle-modele .stat-tile strong{font-size:22px;line-height:1.05;margin-top:1px}')
@@ -3380,6 +3380,32 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.519 — L'or et les gemmes d'un adversaire, d'un PNJ ou d'un coffre, tirés aux dés : une bourse de lignes
+   « x d y », avec, pour un adversaire, la chance qu'elle tombe. Tirée au retrait de l'adversaire, ou à
+   l'ouverture du coffre. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.deepEqual(C.normaliseBourse([{k:'or',n:2,f:6,p:150},{k:'eclat-rubis',n:1,f:0},{k:'cuivre',n:1,f:6},{k:'or',n:0,f:6},'x']),[{k:'or',n:2,f:6,p:100},{k:'eclat-rubis',n:1,f:1}],'bornée, clés connues, sans ligne vide');
+ assert.deepEqual(C.normaliseBourse([{k:'or',n:3,f:4,p:20}],false),[{k:'or',n:3,f:4}],'un coffre ne garde pas de chance');
+ let n=0;const seq=[.1,.99,.5,.7,0];assert.deepEqual(C.tireBourse([{k:'or',n:2,f:6,p:50},{k:'eclat-rubis',n:1,f:4,p:50},{k:'brisure-citrine',n:1,f:4}],()=>seq[n++]),{or:10,'brisure-citrine':1},'la chance d’abord, puis chaque dé');
+ assert.deepEqual(C.tireBourse([{k:'or',n:30,f:1}],()=>.99),{or:30},'30d1, trente tout rond');
+ assert.deepEqual(C.phraseRichesses({or:12,'eclat-rubis':1,'brisure-citrine':3}),['12 or','3 brisures de citrine','1 éclat de rubis'],'en mots, au singulier comme au pluriel');
+ const m=C.cleanMap({foes:[{x:1,y:1,bourse:[{k:'or',n:1,f:6,p:40}],tpl:{name:'Gob',bourse:[{k:'or',n:3,f:4,p:20}]}}],coffres:[{x:1,y:1,w:2,h:2,bourse:[{k:'or',n:2,f:6,p:10}]}]});
+ assert.ok(m.foes[0].bourse[0].p===40&&m.foes[0].tpl.bourse[0].n===3&&JSON.stringify(m.coffres[0].bourse)==='[{"k":"or","n":2,"f":6}]','la carte garde les bourses');
+ // Au retrait : la bourse tombe à l'aventurier le plus proche, avec ses pièces, sur la même ligne du journal.
+ const ctx={actors:[],log:t=>ctx.journal.push(t),journal:[],document:{dispatchEvent(){}},Event:class{},objetDe:()=>null,ajouterInventaire(){},ajouteOr:C.ajouteOr};vm.createContext(ctx);
+ vm.runInContext(src.slice(src.indexOf('const lisPourcent='),src.indexOf('/* Les familles où l\'on puise'))+src.slice(src.indexOf('function plurielMot('),src.indexOf('/* Un adversaire retiré de la scène laisse son XP'))+src.slice(src.indexOf('function butinDesRetires('),src.indexOf('/* Rejouer la même rencontre'))+';this.butinDesRetires=butinDesRetires;',ctx);
+ const brom={name:'Brom',hero:true,x:10,y:10,hp:5,richesses:{or:3}};ctx.actors.push(brom,{name:'Ysa',hero:true,x:80,y:10,hp:5});
+ ctx.butinDesRetires([{name:'Gobelin',hero:false,x:12,y:10,bourse:[{k:'or',n:2,f:6,p:100},{k:'eclat-rubis',n:1,f:1,p:100}]}],()=>.5);
+ assert.equal(JSON.stringify(brom.richesses),JSON.stringify({or:11,'eclat-rubis':1}),'8 or et un éclat de rubis');
+ assert.equal(ctx.journal[0],'Brom trouve 8 or, 1 éclat de rubis (Gobelin).');
+ ctx.journal.length=0;ctx.butinDesRetires([{name:'Rat',hero:false,x:12,y:10,bourse:[{k:'or',n:1,f:6,p:30}]}],()=>.5);assert.equal(ctx.journal.length,0,'30 % : un tirage à 50 ne tombe pas');
+ // L'éditeur : dans l'inventaire de tout adversaire, PNJ compris, et au coffre ; le modèle et la carte la portent.
+ assert.ok(src.includes("boite.append(possede,...(restes?[]:[editeurBourse(cible,apres)]),barre,grille);")&&src.includes("function editeurBourse(cible,apres,avecChance=true){")
+  &&src.includes("bourse:normaliseBourse(m.bourse),")&&src.includes("bourse:normaliseBourse(a.bourse),")&&src.includes("if(bourse.length)a.bourse=[...normaliseBourse(a.bourse),...bourse];"),'l’éditeur et le modèle');
+ assert.ok(mp.includes("$('coffre-bourse').append(editeurBourse(bourse,null,false));")&&mp.includes("c.richesses={};const b=normaliseBourse(bourse.bourse,false);")
+  &&mp.includes("Object.entries(tireBourse(c.bourse)).forEach(([k,v])=>{rich[k]=(Math.trunc(Number(rich[k]))||0)+v});")&&mp.includes("const des=ligneBourse(c.bourse);")
+  &&mp.includes("f.bourse=normaliseBourse(f.bourse);if(!f.bourse.length)delete f.bourse;"),'le coffre tire sa bourse à l’ouverture, l’adversaire posé garde la sienne');
+ assert.ok(vivant.includes("'pnj','alignement','bourse'];")&&feuille.includes('.bourse-gemme{width:26px;height:26px;'),'en ligne, et en petit');}
 /* v0.518 — Les PNJ du Bestiaire : un alignement, allié, neutre ou adverse. Allié, il combat avec la troupe et se
    range parmi les Aventuriers ; neutre, il se tient entre les deux et peut s'en prendre à la troupe ; adverse, il
    est un adversaire. Son socle et sa barre de PV prennent la couleur de son alignement. */
@@ -3398,7 +3424,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&ed.includes('<button id="bestiary-pnj">+ Nouveau PNJ</button>')&&ed.includes("$('bestiary-pnj').onclick=()=>openActor(null,false,null,true,true);")
   &&ed.includes("if(templateNeuf&&pnj)Object.assign(draft,{name:'Nouveau PNJ',role:'PNJ',pnj:true,alignement:'neutre'});")
   &&ed.includes("+(a.pnj?sel('Alignement','alignement',alignementDe(a),ALIGNEMENTS):'')"),'la colonne, le bouton et le menu Alignement');
- assert.ok(ed.includes("butin:normaliseButin(m.butin),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}")&&ed.includes("butin:normaliseButin(a.butin,a.inventaire),...(a.pnj?{pnj:true,alignement:alignementDe(a)}:{})}}")
+ assert.ok(ed.includes("butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}")&&ed.includes("butin:normaliseButin(a.butin,a.inventaire),bourse:normaliseBourse(a.bourse),...(a.pnj?{pnj:true,alignement:alignementDe(a)}:{})}}")
   &&ed.includes("'pool','pnj','alignement'])]")&&ed.includes("if(!neuf.pnj){delete a.pnj;delete a.alignement}"),'l’alignement suit le modèle sur la table');
  // Un allié tué ne rapporte pas d'XP ; la troupe lit ses PV.
  assert.ok(ed.includes("const vaincus=partants.filter(f=>f&&!duCoteTroupe(f)&&")&&page.includes("function hpKnown(o){return view==='mj'||!!(o&&(o.hero||duCoteTroupe(o)||o.revealed))}"));
@@ -3502,7 +3528,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(page.indexOf('<svg id="map-coffres"')>0&&page.indexOf('<svg id="map-coffres"')<page.indexOf('<canvas id="fog"')&&page.includes("e.target.closest('#map-coffres'))return;"),'le calque des coffres sous le brouillard');
  assert.ok(mp.includes("el.onmousedown=e=>e.preventDefault();")&&mp.includes("if(mj)menuCoffre(c,e.clientX,e.clientY);else ouvreCoffreJoueur(c)}")&&mp.includes("function ouvreCoffreJoueur(c){"),'le clic du joueur ouvre');
  assert.ok(src.includes("el instanceof SVGElement&&el.getClientRects().length>0")&&src.includes("if(col==='restes'||col==='ressource'||")&&src.includes("['cles','Clés',o=>o.category==='cle']"),'bulle SVG, prix des ressources, clés');
- assert.ok(src.includes("function ajoutePropres(a,p){")&&src.includes("neuf=ajoutePropres(fromMonster(m),a.propres);")&&mp.includes("a.propres={inventaire:[...f.inventaire],butin:{...(f.butin||{})}};ajoutePropres(a,a.propres)")
+ assert.ok(src.includes("function ajoutePropres(a,p){")&&src.includes("neuf=ajoutePropres(fromMonster(m),a.propres);")&&mp.includes("a.propres={inventaire:[...(f.inventaire||[])],butin:{...(f.butin||{})},...(bourse.length?{bourse}:{})};ajoutePropres(a,a.propres)")
   &&mp.includes("inventaireAdversaire($('foe-objets-corps'),f,()=>saveMaps());"),'objets propres d’un adversaire');}
 /* v0.505 — Nuée : finir son mouvement sur un token, traverser les adversaires ; corriger un modèle ne rend plus
    inconnus les adversaires en jeu, et le combat ne se juge que sur la Table ; un aventurier mort ne se soigne plus. */
@@ -3527,7 +3553,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&page.includes("depensePoint(a,'action')}")&&page.includes("if(enCombatNow){afterAction(a);render();scheduleSave()}}"),'un test de compétence coûte l’Action en combat');
  assert.ok(mp.includes("||!payeAction(a))return;")&&mp.includes("if(h&&!payeAction(h))return;")&&mp.includes("function payeAction(a)"),'tester ou ouvrir un coffre coûte l’Action en combat');
  assert.ok(mp.includes("if((!mj||oeil)&&(!coffreVisible(c)||!enVue))return;")&&mp.includes("className='coffre-alerte'")&&mp.includes("$('coffre-double').onclick"),'coffres : vue, piège, double');
- assert.ok(mp.includes("data-si=\"ferme\"")&&mp.includes("b.hidden=!f[b.dataset.si].checked")&&mp.includes("b.oncontextmenu=e=>{e.preventDefault();if(gemmes[k]>1)gemmes[k]--;else delete gemmes[k];maj()}")
+ assert.ok(mp.includes("data-si=\"ferme\"")&&mp.includes("b.hidden=!f[b.dataset.si].checked")&&mp.includes("$('coffre-bourse').append(editeurBourse(bourse,null,false));")
   &&mp.includes("const CATS_COFFRE=")&&mp.includes("l.className='coffre-contenu-bulle';comptes.forEach((n,o)=>l.append(carreInventaire(o,n)));"),'la fiche du coffre : cases, gemmes, contenu');
  assert.ok(mp.includes("const aLaCle=(a,id)=>")&&mp.includes("parCle=!mj&&d.keyLocked&&!!d.cleId&&aLaCle(heroActif(),d.cleId)"),'une clé ouvre coffres et portes');
  assert.ok(src.includes("['object','Objets'],['cle','Clés'],")&&src.includes("cle:{category:'cle',name:'Nouvelle clé'}")&&src.includes("['object','Objet'],['cle','Clé'],")

@@ -337,7 +337,7 @@ function cleanMonster(t){const dés={};
   pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,DEF_MAX)),
   damage:Math.round(borne(t&&t.damage,0,999)),xp:Math.round(borne(t&&t.xp,0,9999)),
   menace:texte(t&&t.menace,30)||'closest',esquive:!!(t&&t.esquive),rapide:!!(t&&t.rapide),
-  ...(t&&t.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:t.alignement})}:{}),
+  ...(t&&t.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:t.alignement})}:{}),...(normaliseBourse(t&&t.bourse).length?{bourse:normaliseBourse(t.bourse)}:{}),
   /* Un adversaire peut n'avoir aucune attaque : c'est au maître du jeu d'en décider, et
      un monstre qui ne frappe pas est un monstre comme un autre. Un modèle d'avant, qui
      portait ses dés à la racine sans liste d'attaques, garde pourtant les siens —
@@ -373,17 +373,17 @@ function cleanObjet(o){const t=o&&o.test||{};
    révélé, déverrouillé, désamorcé, ouvert — ne voyage pas avec la carte. */
 function cleanCoffre(c){const r=cleanRect(c);if(!r)return null;const n=(v,max)=>Math.max(0,Math.min(max,Math.trunc(Number(v))||0));
  const a=Number(c.a);if(Number.isFinite(a)&&((a%180)+180)%180!==0)r.a=((a%180)+180)%180;if(c.rond===true)r.rond=true;if(c.cleId)r.cleId=texte(c.cleId,60);
- const rich={};if(c.richesses&&typeof c.richesses==='object')CLES_RICHESSES.forEach(k=>{const v=n(c.richesses[k],99999);if(v)rich[k]=v});
+ const rich={};if(c.richesses&&typeof c.richesses==='object')CLES_RICHESSES.forEach(k=>{const v=n(c.richesses[k],99999);if(v)rich[k]=v});const bourse=normaliseBourse(c.bourse,false);
  return {...r,id:texte(c.id,40),nom:texte(c.nom,60)||'Coffre',desc:texte(c.desc,600),...(c.cache===true?{cache:true}:{}),
   perception:Math.max(1,n(c.perception,9)),verrou:n(c.verrou,9),piege:n(c.piege,9),degats:n(c.degats,99),
   etats:(Array.isArray(c.etats)?c.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,8),
-  items:(Array.isArray(c.items)?c.items:[]).filter(x=>typeof x==='string').slice(0,99).map(x=>texte(x,60)).filter(Boolean),richesses:rich}}
+  items:(Array.isArray(c.items)?c.items:[]).filter(x=>typeof x==='string').slice(0,99).map(x=>texte(x,60)).filter(Boolean),richesses:rich,...(bourse.length?{bourse}:{})}}
 /* Ce qu'un adversaire posé porte en propre, en plus de son modèle — une clé, un message —, et la chance,
    pièce par pièce, que cela tombe à sa mort. */
 function portePropre(f){const inv=(Array.isArray(f&&f.inventaire)?f.inventaire:[]).filter(x=>typeof x==='string').slice(0,30).map(x=>texte(x,60)).filter(Boolean);
- if(!inv.length)return {};const butin={};
+ const bourse=normaliseBourse(f&&f.bourse);if(!inv.length&&!bourse.length)return {};const butin={};
  Object.entries(f.butin&&typeof f.butin==='object'?f.butin:{}).forEach(([id,v])=>{const n=Math.max(0,Math.min(100,Math.round(Number(v))||0));if(n&&inv.includes(id))butin[id]=n});
- return {inventaire:inv,...(Object.keys(butin).length?{butin}:{})}}
+ return {...(inv.length?{inventaire:inv}:{}),...(Object.keys(butin).length?{butin}:{}),...(bourse.length?{bourse}:{})}}
 function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.image)?m.image:null;
  const ratio=Math.max(.2,Math.min(6,Number(m&&m.ratio)||16/9));
  const matiere=Array.isArray(m&&m.matiere)?cleanMatiere(m.matiere)
@@ -1973,6 +1973,23 @@ const CLES_RICHESSES=['or',...CLES_GEMMES];
 const CLES_RESSOURCES_DOMAINE=[...MATERIAUX.filter(m=>m!=='Or').map(cleRessource),...CLES_GEMMES];
 const lisCompte=v=>Math.max(0,Math.min(999999,Math.trunc(Number(String(v??'').replace(/[\s\u202f\u00a0]/g,'')))||0));
 function normaliseCompte(c,cles){const o={};if(c&&typeof c==='object'&&!Array.isArray(c))cles.forEach(k=>{const n=lisCompte(c[k]);if(n)o[k]=n});return o}
+/* La bourse d'un adversaire ou d'un coffre : de l'or et des gemmes tirés aux dés. Chaque ligne dit quoi
+   (« or » ou une gemme), combien de dés et de combien de faces — 2d6, 1d4, 30d1 pour trente tout rond —
+   et, pour un adversaire, la chance en pour cent qu'elle tombe. On tire quand l'adversaire quitte la carte,
+   ou quand le coffre s'ouvre. Sans chance écrite, la ligne tombe toujours. */
+function normaliseBourse(b,avecChance=true){const ent=(v,min,max)=>Math.max(min,Math.min(max,Math.trunc(Number(v))||0));
+ return (Array.isArray(b)?b:[]).slice(0,20).map(l=>{const k=l&&typeof l.k==='string'?l.k:'';if(!CLES_RICHESSES.includes(k))return null;
+  const n=ent(l.n,0,9999);if(!n)return null;const o={k,n,f:ent(l.f,1,1000)};
+  if(avecChance&&l.p!==undefined&&l.p!==null&&l.p!=='')o.p=ent(l.p,0,100);return o}).filter(Boolean)}
+function tireBourse(b,tirage=Math.random){const out={};
+ normaliseBourse(b).forEach(l=>{if(l.p!==undefined&&tirage()*100>=l.p)return;
+  let s=0;for(let i=0;i<l.n;i++)s+=1+Math.min(l.f-1,Math.floor(tirage()*l.f));out[l.k]=(out[l.k]||0)+s});return out}
+// Des richesses en mots, pour le journal : « 12 or », « 1 éclat de rubis », « 3 brisures de citrine ».
+function phraseRichesses(r){const out=[],or=Math.trunc(Number(r&&r.or))||0;if(or>0)out.push(or+' or');
+ CLES_GEMMES.forEach(k=>{const v=Math.trunc(Number(r&&r[k]))||0;if(v<=0)return;const [t,va]=k.split('-'),tl=TAILLES_GEMMES.find(([x])=>x===t)||[];
+  const vn=((VARIETES_GEMMES.find(([x])=>x===va)||[])[1]||'').toLowerCase();
+  out.push(v+' '+String((v>1?tl[1]:tl[2])||'').toLowerCase()+(/^[aeiouéèêh]/i.test(vn)?' d’':' de ')+vn)});
+ return out}
 /* ---------- Le magasin ---------- */
 /* On y achète au prix de l'armurerie ce qu'elle met en vente ; on y revend à la moitié de ce
    prix, arrondie en dessous — d'autres taux viendront. L'or est celui de l'aventurier. */
@@ -2102,7 +2119,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  NIVEAUX_XP,niveauDeXp,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,

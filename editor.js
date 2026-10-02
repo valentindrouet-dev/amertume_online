@@ -3055,6 +3055,40 @@ let catsInvAdv=new Set(['armes','armures']),filtreInvAdv='',filtreRestes='';
    « restes » ne montre et ne propose que des restes, sans familles à allumer. */
 function carreInventaire(o,n){const p=gearCarre(o,n,0);p.classList.remove('dispo');p.classList.add('petit');const m=p.querySelector('.marque-porte');if(m)m.remove();
  if(BULLES)surveille(p,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});return p}
+/* La bourse d'un adversaire ou d'un coffre, en petites lignes : l'or d'abord, puis une ligne par gemme,
+   « x d y » et, pour un adversaire, la chance en pour cent qu'elle tombe. Le « + » déplie la rangée des
+   gemmes : un clic en ajoute une ligne, la croix la retire. La saisie tient la bourse à jour aussitôt ;
+   « apres » suit chaque valeur arrêtée. */
+function editeurBourse(cible,apres,avecChance=true){const boite=document.createElement('div');boite.className='bourse';
+ const lignes=normaliseBourse(cible.bourse,avecChance),chance=avecChance?{p:100}:{};
+ const or=lignes.find(l=>l.k==='or')||{k:'or',n:0,f:6,...chance};let gemmes=lignes.filter(l=>l.k!=='or');
+ const pose=()=>{cible.bourse=normaliseBourse([or,...gemmes],avecChance)};
+ const nombre=(l,cle,min,max,titre)=>{const c=document.createElement('input');c.type='number';c.min=String(min);c.max=String(max);c.value=String(l[cle]??(cle==='p'?100:min));
+  c.title=titre;c.setAttribute('aria-label',titre);c.className='bourse-'+cle;
+  const lis=()=>Math.max(min,Math.min(max,Math.trunc(Number(c.value))||0));
+  c.oninput=()=>{l[cle]=lis();pose()};c.onchange=()=>{l[cle]=lis();c.value=String(l[cle]);pose();if(apres)apres()};return c};
+ const ligne=(l,icone,nom,retirer)=>{const r=document.createElement('div');r.className='bourse-ligne';r.title=nom;
+  const d=document.createElement('span');d.textContent='d';
+  r.append(icone,nombre(l,'n',0,9999,'Nombre de dés, '+nom),d,nombre(l,'f',1,1000,'Faces de chaque dé, '+nom));
+  if(avecChance)r.append(nombre(l,'p',0,100,'Chance qu’il tombe, en pour cent, '+nom),'%');
+  if(retirer){const x=document.createElement('button');x.type='button';x.className='bourse-retirer';x.textContent='✕';x.title='Retirer : '+nom;x.setAttribute('aria-label',x.title);x.onclick=retirer;r.append(x)}
+  return r};
+ const dessine=()=>{boite.replaceChildren();const piece=document.createElement('i');piece.className='piece-or';boite.append(ligne(or,piece,'Or'));
+  gemmes.forEach(l=>{const [t,v]=l.k.split('-');boite.append(ligne(l,iconeDeGemme(t,v,false),nomGemme(t,v,false),()=>{gemmes=gemmes.filter(x=>x!==l);pose();dessine();if(apres)apres()}))});
+  const plus=document.createElement('button');plus.type='button';plus.className='bourse-plus';plus.textContent='+ Gemme';plus.title='Ajouter une gemme';
+  const rangee=document.createElement('div');rangee.className='bourse-gemmes';rangee.hidden=true;
+  CLES_GEMMES.filter(k=>!gemmes.some(l=>l.k===k)).forEach(k=>{const [t,v]=k.split('-'),b=document.createElement('button');b.type='button';b.className='bourse-gemme';
+   b.title=nomGemme(t,v,false);b.setAttribute('aria-label','Ajouter : '+b.title);b.append(iconeDeGemme(t,v,false));
+   b.onclick=()=>{gemmes.push({k,n:1,f:1,...chance});pose();dessine();if(apres)apres()};rangee.append(b)});
+  plus.onclick=()=>{rangee.hidden=!rangee.hidden};boite.append(plus,rangee)};
+ dessine();return boite}
+/* La bourse en lecture : une pièce ou une gemme, et sa formule, « 2d6 », ou son nombre quand le dé n'a
+   qu'une face ; la chance après, si elle n'est pas entière. */
+function ligneBourse(b){const l=document.createElement('div');l.className='bourse-lue';
+ normaliseBourse(b).forEach(x=>{const e=document.createElement('span');e.className='bourse-lu';
+  const [t,v]=x.k.split('-'),nom=x.k==='or'?'Or':nomGemme(t,v,false),f=x.f>1?x.n+'d'+x.f:String(x.n),c=x.p!==undefined&&x.p<100?' · '+x.p+' %':'';
+  e.append(x.k==='or'?Object.assign(document.createElement('i'),{className:'piece-or'}):iconeDeGemme(t,v,false),f+c);e.title=nom+' : '+f+c;l.append(e)});
+ return l.childElementCount?l:null}
 function inventaireAdversaire(boite,cible,apres,genre){boite.replaceChildren();boite.classList.add('inv-adv');const restes=genre==='restes',dugenre=o=>estReste(o)===restes;
  const possede=document.createElement('div');possede.className='inv-possede';
  const compte=id=>(cible.inventaire||[]).filter(x=>x===id).length;
@@ -3086,7 +3120,7 @@ function inventaireAdversaire(boite,cible,apres,genre){boite.replaceChildren();b
   b.onclick=()=>{if(on())catsInvAdv.delete(k);else catsInvAdv.add(k);pose();remplit()};barre.append(b)});
  filtre.oninput=()=>{if(restes)filtreRestes=filtre.value;else filtreInvAdv=filtre.value;remplit()};
  const change=()=>{majPossede();majComptes();apres()};
- barre.append(filtre);boite.append(possede,barre,grille);majPossede();remplit()}
+ barre.append(filtre);boite.append(possede,...(restes?[]:[editeurBourse(cible,apres)]),barre,grille);majPossede();remplit()}
 /* Ce que l'adversaire tire de son inventaire, en une phrase : ses attaques d'armes, sa DEF. Le
    champ DEF se tait quand une armure décide, comme à l'ouverture, et rend son chiffre sinon. */
 function resumeAdversaire(){const a=equipeAdversaire({...draft,hero:false,inventaire:[...(draft.inventaire||[])]}),f=$('actor-form').elements;
@@ -4316,7 +4350,7 @@ let templateNeuf=false;
 // Un aventurier commence au niveau 1 avec Vie 3, Endu 2 et Dégâts +0 ; sa classe ajoute ses PV et ses compétences.
 function baseActor(hero){return normalizeActor({name:hero?'Nouvel aventurier':'Nouveau monstre',hero,role:hero?'Aventurier':'Adversaire',...(hero?{hp:6,max:6,vie:3,vieMax:3,endu:2,dmg:0,level:1,xp:0}:{hp:12,max:12,dmg:2}),def:2,x:50,y:60,pool:[2,0,0,0,0,0,0],checks:[false,false,false],target:null,skills:Array(8).fill(0)})}
 // Ce que le modèle du bestiaire dit d'une créature, et rien d'autre : le reste est l'état de la partie.
-function profilDuModele(m){return {template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,weapons:[...(m.weapons||[])],armures:[...armuresDe(m)],shieldId:m.shieldId||'',inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}
+function profilDuModele(m){return {template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,weapons:[...(m.weapons||[])],armures:[...armuresDe(m)],shieldId:m.shieldId||'',inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}
 function fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);a.activeAttack=0;a.pool=poolOf(a);return a}
 function openActor(index=null,hero=true,template=null,neuf=false,pnj=false){if(view!=='mj')return;
  if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;templateNeuf=!!neuf&&template===null&&!hero;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);if(templateNeuf&&pnj)Object.assign(draft,{name:'Nouveau PNJ',role:'PNJ',pnj:true,alignement:'neutre'});attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero||templateNeuf;
@@ -4487,7 +4521,7 @@ function readActor(){const f=$('actor-form').elements;readAttacks();const a=stru
  // Un aventurier ne saisit jamais sa DEF : elle vaut son armure plus son bouclier, zéro compris.
  if(a.hero)a.def=defenseOf(a,catalog.items);
  a.pool=poolFrom(chosenAttack(a,catalog.items).dice)||poolFrom(attackDraft[0]?.dice);return a}
-function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,notes:a.notes,talents:[...(a.talents||[])],attacks:structuredClone(a.attacks),image:a.image||null,weapons:[...(a.weapons||[])],armures:[...armuresDe(a)],shieldId:a.shieldId||'',inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire),...(a.pnj?{pnj:true,alignement:alignementDe(a)}:{})}}
+function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,notes:a.notes,talents:[...(a.talents||[])],attacks:structuredClone(a.attacks),image:a.image||null,weapons:[...(a.weapons||[])],armures:[...armuresDe(a)],shieldId:a.shieldId||'',inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire),bourse:normaliseBourse(a.bourse),...(a.pnj?{pnj:true,alignement:alignementDe(a)}:{})}}
 /* Une créature posée sur la table garde le lien vers son modèle : corriger les PV maximum
    au bestiaire corrige ceux qui combattent déjà. Une créature blessée garde sa blessure,
    une créature intacte reste intacte. Les créatures d'avant ce lien sont rattrapées par
@@ -4514,7 +4548,8 @@ function syncCartes(m){let touches=0;
  return touches}
 /* Ce que la carte a donné à cet adversaire-là, et à lui seul : ajouté à ce que porte son modèle, avec la
    chance que chaque pièce tombe. Les autres adversaires du même modèle n'en ont rien. */
-function ajoutePropres(a,p){if(!a||!p||!Array.isArray(p.inventaire)||!p.inventaire.length)return a;
+function ajoutePropres(a,p){if(!a||!p)return a;const bourse=normaliseBourse(p.bourse);if(bourse.length)a.bourse=[...normaliseBourse(a.bourse),...bourse];
+ if(!Array.isArray(p.inventaire)||!p.inventaire.length)return a;
  a.inventaire=[...(a.inventaire||[]),...p.inventaire];a.butin={...(a.butin||{}),...(p.butin||{})};return equipeAdversaire(a)}
 function syncFromTemplate(m){let touches=0;syncCartes(m);
  actors.forEach(a=>{if(a.hero)return;
@@ -4613,13 +4648,16 @@ function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!duCoteTroup
    vivant de préférence, sur la carte. Une ligne au journal par aventurier servi. */
 function butinDesRetires(partants,tirage=Math.random){const heros=actors.filter(h=>h&&h.hero&&!h.horsCarte);if(!heros.length)return;
  const vivants=heros.filter(h=>h.hp>0),parmi=vivants.length?vivants:heros,taille=typeof mapSize==='function'?mapSize():null,gains=new Map();
- partants.forEach(f=>{if(!f||f.hero)return;const chances=normaliseButin(f.butin,f.inventaire);if(!Object.keys(chances).length)return;
+ partants.forEach(f=>{if(!f||f.hero)return;const chances=normaliseButin(f.butin,f.inventaire),tire=tireBourse(f.bourse,tirage);if(!Object.keys(chances).length&&!Object.keys(tire).length)return;
   const loin=h=>taille&&taille.width>0?tokenDistance(f,h,taille):Math.hypot((h.x||0)-(f.x||0),(h.y||0)-(f.y||0));
   const h=parmi.reduce((m,x)=>loin(x)<loin(m)?x:m);
   (f.inventaire||[]).forEach(id=>{const o=objetDe(id);if(!o||!chances[id]||tirage()*100>=chances[id])return;
-   ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set()});const g=gains.get(h);g.objets.set(o.id,(g.objets.get(o.id)||0)+1);g.de.add(f)})});
+   ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{}});const g=gains.get(h);g.objets.set(o.id,(g.objets.get(o.id)||0)+1);g.de.add(f)});
+  // L'or et les gemmes de sa bourse, tirés aux dés : au même aventurier.
+  Object.entries(tire).forEach(([k,v])=>{if(k==='or')ajouteOr(h,v);else{h.richesses={...(h.richesses||{})};h.richesses[k]=(Math.trunc(Number(h.richesses[k]))||0)+v}
+   if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{}});const g=gains.get(h);g.richesses[k]=(g.richesses[k]||0)+v;g.de.add(f)})});
  // Chaque pièce part au journal sous son identifiant, « ⟦id⟧ » : le journal y pose son logo, et sa bulle.
- gains.forEach((g,h)=>log(h.name+' trouve '+[...g.objets].map(([id,k])=>'⟦'+id+'⟧'+(k>1?' ×'+k:'')).join(' ')+' ('+listeNombree([...g.de].map(f=>f.name))+').',{ton:'butin'}));
+ gains.forEach((g,h)=>log(h.name+' trouve '+[[...g.objets].map(([id,k])=>'⟦'+id+'⟧'+(k>1?' ×'+k:'')).join(' '),...phraseRichesses(g.richesses)].filter(Boolean).join(', ')+' ('+listeNombree([...g.de].map(f=>f.name))+').',{ton:'butin'}));
  if(gains.size)document.dispatchEvent(new Event('amertume-content-changed'))}
 /* Rejouer la même rencontre : les adversaires repartent intacts, la troupe garde ses
    blessures — c'est le combat qu'on recommence, pas la partie. */

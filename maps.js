@@ -599,7 +599,7 @@ function bulleCoffre(c){const g=document.createElement('div');g.className='gear-
  // Ce qu'il contient, le MJ seul le voit : l'icône de chaque pièce et son nombre, l'or, les gemmes.
  if(view==='mj'){const comptes=new Map();(c.items||[]).forEach(id=>{const o=objetDe(id);if(o)comptes.set(o,(comptes.get(o)||0)+1)});const r=c.richesses||{};
   const l=document.createElement('div');l.className='coffre-contenu-bulle';comptes.forEach((n,o)=>l.append(carreInventaire(o,n)));
-  if(r.or>0)l.append(ligneOr(r.or,null));const gem=ligneGemmes(r,null);if(gem)l.append(gem);if(l.childElementCount)g.append(l)}
+  if(r.or>0)l.append(ligneOr(r.or,null));const gem=ligneGemmes(r,null);if(gem)l.append(gem);const des=ligneBourse(c.bourse);if(des)l.append(des);if(l.childElementCount)g.append(l)}
  if(view==='mj'){const p=document.createElement('p');p.className='muted objet-cache-bulle';
   p.textContent=[c.cache&&!c.revele?'Caché : Perception '+(c.perception||1):'',coffreVerrouille(c)?'Verrou '+c.verrou+(c.cleId?' ou '+nomCle(c.cleId):''):'',coffreArme(c)?'Piège '+c.piege:''].filter(Boolean).join(' · ');if(p.textContent)g.append(p)}
  return g}
@@ -659,12 +659,13 @@ function ouvrirCoffre(c,h,parMJ){if(!c||c.ouvert||(coffreVerrouille(c)&&!parMJ))
    (c.etats||[]).forEach(e=>{if(infligeEtat(o,e)===true)p.push(e)});return nomNum(o)+(p.length?' : '+p.join(', '):'')});
   log('Piège ! '+c.nom+' se déclenche'+(touches.length?' — '+touches.join(' ; '):'')+'.',{ton:'degats'})}
  c.ouvert=true;c.deverrouille=true;
- const pieces=(c.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean),rich=c.richesses||{},gains=[];
+ const pieces=(c.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean),rich={...(c.richesses||{})},gains=[];
+ Object.entries(tireBourse(c.bourse)).forEach(([k,v])=>{rich[k]=(Math.trunc(Number(rich[k]))||0)+v});
  if(h){const parPiece=new Map();pieces.forEach(it=>{if(typeof ajouterInventaire==='function')ajouterInventaire(h,it);else noteInventaire(h,it.name);parPiece.set(it.id,(parPiece.get(it.id)||0)+1)});
   parPiece.forEach((n,id)=>gains.push((n>1?n+' × ':'')+'⟦'+id+'⟧'));
-  if(rich.or>0){ajouteOr(h,rich.or);gains.push(rich.or+' or')}
-  h.richesses={...(h.richesses||{})};CLES_GEMMES.forEach(k=>{const v=Math.trunc(Number(rich[k]))||0;if(v<=0)return;
-   h.richesses[k]=(Math.trunc(Number(h.richesses[k]))||0)+v;const [t,va]=k.split('-');gains.push(v+' '+nomGemme(t,va,false).toLowerCase())})}
+  if(rich.or>0)ajouteOr(h,rich.or);
+  h.richesses={...(h.richesses||{})};CLES_GEMMES.forEach(k=>{const v=Math.trunc(Number(rich[k]))||0;if(v>0)h.richesses[k]=(Math.trunc(Number(h.richesses[k]))||0)+v});
+  gains.push(...phraseRichesses(rich))}
  log((h?nomNum(h)+' ouvre '+c.nom:c.nom+' s’ouvre')+(gains.length?' : '+gains.join(', '):', vide')+'.',{ton:'butin'});
  if(h&&enCombat()&&typeof afterAction==='function')afterAction(h);
  render();saveMaps();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
@@ -769,7 +770,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
   // Le lien vers sa pose : l'éditeur retrouve ainsi l'adversaire en jeu.
   if(!f.id)f.id=crypto.randomUUID();a.pose=f.id;
   // Ce que la carte lui a donné, à lui seul.
-  if(Array.isArray(f.inventaire)&&f.inventaire.length){a.propres={inventaire:[...f.inventaire],butin:{...(f.butin||{})}};ajoutePropres(a,a.propres)}
+  {const bourse=normaliseBourse(f.bourse);if((Array.isArray(f.inventaire)&&f.inventaire.length)||bourse.length){a.propres={inventaire:[...(f.inventaire||[])],butin:{...(f.butin||{})},...(bourse.length?{bourse}:{})};ajoutePropres(a,a.propres)}}
   normalizeActor(a);
   if(f.hidden)setState(a,'Invisible',true);
   // Caché par le MJ dans l'éditeur : la troupe ne le voit pas tant qu'il ne le révèle pas d'un clic.
@@ -1523,7 +1524,7 @@ const foeObjetsDialog=dialog('foe-objets-editor','Objets portés','<div id="foe-
 $('foe-objets').onclick=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;pushUndo();
  foeObjetsDialog.querySelector('h2').textContent=(f.tpl&&f.tpl.name)||'Adversaire';f.inventaire??=[];f.butin??={};
  inventaireAdversaire($('foe-objets-corps'),f,()=>saveMaps());
- foeObjetsDialog.onclose=()=>{f.butin=normaliseButin(f.butin,f.inventaire);if(!f.inventaire.length){delete f.inventaire;delete f.butin}renderCanvas();saveMaps()};
+ foeObjetsDialog.onclose=()=>{f.butin=normaliseButin(f.butin,f.inventaire);if(!f.inventaire.length){delete f.inventaire;delete f.butin}f.bourse=normaliseBourse(f.bourse);if(!f.bourse.length)delete f.bourse;renderCanvas();saveMaps()};
  foeObjetsDialog.showModal()};
 /* L'adversaire que la table a tiré de cette pose, si la carte y est ouverte : par l'identifiant de la pose,
    à défaut — une table ouverte avant qu'elle n'en ait un — par son modèle et sa place, s'il n'a pas bougé. */
@@ -1564,19 +1565,15 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
   +'<label>Clé qui l’ouvre<select name="cleId"></select></label></div>'
   +'<div class="coffre-si" data-si="piege_on"><div class="edit-grid">'+nb('Réussites de Ruse ou Technique pour le trouver','piege',Math.max(1,c.piege||1),1,9)+nb('Dégâts du piège','degats',c.degats||0,0,99)+'</div>'
   +'<div class="coffre-etats">'+ETATS_JEU.map(e=>'<label class="field-check"><input type="checkbox" name="etat" value="'+esc(e)+'"'+((c.etats||[]).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div></div>'
-  +'<h2 class="sous-titre">Contenu</h2><div class="coffre-tresor">'+nb('Or','or',(c.richesses||{}).or||0,0,99999)+'<div class="coffre-gemmes" id="coffre-gemmes"></div></div>'
+  +'<h2 class="sous-titre">Contenu</h2><div class="coffre-tresor" id="coffre-bourse"></div>'
   +'<div id="coffre-contenu"></div>';
  const f=$('coffre-form').elements;remplitCles(f.cleId,c.cleId||'');
  const montre=()=>coffreDialog.querySelectorAll('.coffre-si').forEach(b=>{b.hidden=!f[b.dataset.si].checked});
  ['cache','ferme','piege_on'].forEach(k=>{f[k].onchange=montre});montre();
- /* Les gemmes, en une ligne de petites icônes : un clic en ajoute une, le clic droit en retire une. */
- const gemmes={};CLES_GEMMES.forEach(k=>{const v=Math.trunc(Number((c.richesses||{})[k]))||0;if(v>0)gemmes[k]=v});
- const ligneG=$('coffre-gemmes');
- CLES_GEMMES.forEach(k=>{const [t,v]=k.split('-'),b=document.createElement('button');b.type='button';b.className='coffre-gemme';b.title=nomGemme(t,v,false);
-  b.append(iconeDeGemme(t,v,false));const n=document.createElement('b');b.append(n);
-  const maj=()=>{n.textContent=gemmes[k]?'×'+gemmes[k]:'';b.classList.toggle('pris',!!gemmes[k])};maj();
-  b.onclick=()=>{gemmes[k]=Math.min(999,(gemmes[k]||0)+1);maj()};
-  b.oncontextmenu=e=>{e.preventDefault();if(gemmes[k]>1)gemmes[k]--;else delete gemmes[k];maj()};ligneG.append(b)});
+ /* L'or et les gemmes, tirés aux dés à l'ouverture : « x d y » par ligne. Ce qu'un coffre d'avant tenait
+    en nombres fixes s'y lit en dés à une face, trente pièces valant 30d1. */
+ const bourse={bourse:[...normaliseBourse(c.bourse,false),...CLES_RICHESSES.filter(k=>(Math.trunc(Number((c.richesses||{})[k]))||0)>0).map(k=>({k,n:Math.min(9999,Math.trunc(Number(c.richesses[k]))),f:1}))]};
+ $('coffre-bourse').append(editeurBourse(bourse,null,false));
  // Les pièces de l'armurerie, choisies comme l'inventaire d'un adversaire : un clic, une de plus ; le clic droit, une de moins.
  const contenu={inventaire:[...(c.items||[])]};contenuCoffre($('coffre-contenu'),contenu);
  $('coffre-form').onsubmit=e=>{e.preventDefault();const n=(v,max)=>Math.max(0,Math.min(max,Math.trunc(Number(v))||0));pushUndo();
@@ -1585,7 +1582,7 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
   c.verrou=f.ferme.checked?Math.max(1,n(f.verrou.value,9)):0;if(f.ferme.checked&&f.cleId.value)c.cleId=f.cleId.value;else delete c.cleId;
   c.piege=f.piege_on.checked?Math.max(1,n(f.piege.value,9)):0;c.degats=c.piege?n(f.degats.value,99):0;
   c.etats=c.piege?[...coffreDialog.querySelectorAll('input[name="etat"]:checked')].map(x=>x.value).filter(x=>ETATS_JEU.includes(x)):[];
-  const r={},or=n(f.or.value,99999);if(or)r.or=or;Object.entries(gemmes).forEach(([k,v])=>{if(v>0)r[k]=v});c.richesses=r;
+  c.richesses={};const b=normaliseBourse(bourse.bourse,false);if(b.length)c.bourse=b;else delete c.bourse;
   c.items=[...contenu.inventaire].slice(0,99);coffreDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  $('coffre-suppr').onclick=()=>{if(!confirm('Supprimer « '+c.nom+' » ?'))return;pushUndo();
   m.coffres.splice(i,1);mapSel=null;coffreDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
