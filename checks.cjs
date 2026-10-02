@@ -1,4 +1,7 @@
-const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');const editor=fs.readFileSync('editor.js','utf8');const ctx={};vm.createContext(ctx);vm.runInContext(editor.slice(editor.indexOf('function imageDimensions'),editor.indexOf('let imageJob')),ctx);
+const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
+/* v0.518 — Les camps des PNJ : toute machine virtuelle des contrôles les connaît, comme la page. */
+{const C=require('./combat.js'),cree=vm.createContext.bind(vm);vm.createContext=(o,...r)=>{if(o&&typeof o==='object')for(const k of ['ALIGNEMENTS','alignementDe','campDe','duCoteTroupe','memeCamp','hostiles'])if(!(k in o))o[k]=C[k];return cree(o,...r)}}
+const editor=fs.readFileSync('editor.js','utf8');const ctx={};vm.createContext(ctx);vm.runInContext(editor.slice(editor.indexOf('function imageDimensions'),editor.indexOf('let imageJob')),ctx);
 const png=new Uint8Array(24),v=new DataView(png.buffer);v.setUint32(0,0x89504e47);v.setUint32(4,0x0d0a1a0a);v.setUint32(16,4096);v.setUint32(20,2048);assert.equal(ctx.imageDimensions(png).join(','),'4096,2048');
 const jpg=new Uint8Array([255,216,255,192,0,7,8,2,0,4,0,255,217]);assert.equal(ctx.imageDimensions(jpg).join(','),'1024,512');
 const webp=new Uint8Array(30);webp.set(Buffer.from('RIFF'));webp.set(Buffer.from('WEBPVP8X'),8);webp[24]=255;webp[25]=1;webp[27]=255;assert.equal(ctx.imageDimensions(webp).join(','),'512,256');assert.throws(()=>ctx.imageDimensions(new Uint8Array(30)));
@@ -958,7 +961,8 @@ const typesAdv=Object.keys(JSON.parse(page.slice(page.indexOf('const TYPE_NOMS='
 const colonnes=[...src.slice(src.indexOf('const BEST_COLS='),src.indexOf(';',src.indexOf('const BEST_COLS=')))
  .matchAll(/\['(\w+)'/g)].map(m=>m[1]);
 assert.equal(typesAdv.length,4);
-assert.deepEqual([...colonnes].sort(),[...typesAdv].sort());
+// Les PNJ ont leur colonne à eux, quel que soit leur type.
+assert.deepEqual([...colonnes].filter(k=>k!=='pnj').sort(),[...typesAdv].sort());
 // Les langue­ttes ont la teinte de leur type, sinon elles sortent blanches.
 const feuille=fs.readFileSync('editor.css','utf8');
 typesAdv.forEach(t=>assert.ok(feuille.includes('.cat-pill.k-'+t+'{'),'languette sans teinte : '+t));
@@ -1174,7 +1178,7 @@ assert.ok(feuille.includes('.talent-rangee.t-ame .cat-pill.gear-carre.talent-car
  assert.ok(vivant.includes('function ciblesIds(')&&vivant.includes('function indicesDesCibles(')&&vivant.includes('e.cibles=ciblesIds(a);')
   &&vivant.includes("const local=k==='cibles'?ciblesIds(a):a[k];")&&vivant.includes("if(k==='cibles'){cibles.push([a,e[k]]);return}")
   &&vivant.includes('cibles.forEach(([a,ids])=>{if(typeof poseCibles===\'function\')poseCibles(a,indicesDesCibles(ids))});'),'les cibles se retraduisent à l’arrivée, une fois la scène en place');
- assert.ok(page.includes("if(cachePour(o,j)&&(view!=='mj'||a.hero))return false;")&&page.includes('function reach(){const a=actors[selected],j=a?ciblesDe(a)[0]:undefined;'),'un aventurier ne vise pas un adversaire caché');
+ assert.ok(page.includes("if(cachePour(o,j)&&(view!=='mj'||duCoteTroupe(a)))return false;")&&page.includes('function reach(){const a=actors[selected],j=a?ciblesDe(a)[0]:undefined;'),'un aventurier ne vise pas un adversaire caché');
  const orbeSrc=page.slice(page.indexOf('function orbe('),page.indexOf('function cibleAlliee('));
  assert.ok(!orbeSrc.includes('mauvaisSort(')&&!orbeSrc.includes('Mauvais Sort :')&&orbeSrc.includes("let suite='',pose='';"),'l’orbe est un talent : pas de Mauvais Sort');
  const frappeSrc=page.slice(page.indexOf('function frappe('),page.indexOf('function frappe(')+1200);
@@ -1266,7 +1270,7 @@ assert.ok(src.includes("if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES
  assert.ok(tv.includes('if(!m)return false;')&&!tv.includes('fogOff')&&tv.includes('if(!fogTroupe)return false;')&&tv.includes('if(!size.width)return false;'),'seule la vision réelle révèle');}
 /* Le combat commence de lui-même dès qu'un adversaire est révélé — par la vue ou à la main — et
    l'ouverture d'une carte remet la troupe en exploration. */
-assert.ok(page.includes("if(!enCombat())setTimeout(()=>{if(!enCombat())basculerMode('combat',true)},0);")&&page.includes("if(a.vu&&!enCombat())basculerMode('combat',true);")
+assert.ok(page.includes("if(!enCombat()&&reveles.some(a=>campDe(a)==='adverse'))setTimeout(()=>{if(!enCombat())basculerMode('combat',true)},0);")&&page.includes("if(a.vu&&!enCombat())basculerMode('combat',true);")
  &&cartes.includes("if(typeof remiseAuTourUn==='function')remiseAuTourUn();\n mode='exploration';"),'le combat commence à la première révélation');
 /* Glisser plusieurs socles ne coûte plus en proportion : obstacles et murs en pixels construits une
    fois par tâche, auras mémorisées par socle, redessin au plus une fois par image, contacts relevés en
@@ -1286,7 +1290,7 @@ assert.ok(page.includes('function demander(texte,ok)')&&!page.includes("confirm(
  &&feuille.includes('dialog.demande{width:min(440px,94vw)}'),'les questions de la table ont leur boîte, la fin du combat s’annonce');
 /* Un allié désigné ne grise jamais l'attaque : le coup part sur l'adversaire à portée, la désignation
    alliée (protégé d'un Gardien) reste. */
-assert.ok(!page.includes('Cible alliée : aucun coup ne part sur un allié.')&&page.includes("const vises=ciblesDe(a).filter(j=>actors[j]&&alive(actors[j])&&actors[j].hero!==a.hero);\n if(ciblesAtteignables(a,vises,portee).length||cibleAutomatique(a,portee).length)return '';"),'un allié désigné ne bloque pas l’attaque');
+assert.ok(!page.includes('Cible alliée : aucun coup ne part sur un allié.')&&page.includes("const vises=ciblesDe(a).filter(j=>actors[j]&&alive(actors[j])&&hostiles(actors[j],a));\n if(ciblesAtteignables(a,vises,portee).length||cibleAutomatique(a,portee).length)return '';"),'un allié désigné ne bloque pas l’attaque');
 /* L'Onde de chaque camp, à gauche du « + » : Aventuriers ou Adversaires à 100 % ; l'ancien bouton a disparu. */
 assert.ok(!page.includes('id="heal-foes"')&&!src.includes("$('heal-foes')")&&!page.includes("$('heal-foes')")&&page.includes('function remettreCamp(hero)')&&page.includes("b.className='ajout-camp soin-camp'")
  &&page.includes("groupe('Aventuriers',troupe,AJOUT_CAMP.hero,soinCamp().hero,soinCamp().repos)")&&page.includes("if(mj&&soin){soin.hidden=false;h.append(soin)}")&&page.includes('.ajout-camp.soin-camp{margin-left:auto}.ajout-camp.soin-camp+.ajout-camp{margin-left:0}'),'l’Onde de chaque camp remplace Adversaires à 100 %');
@@ -1371,7 +1375,7 @@ assert.equal(t.toggleEquip(a,o('ar')),null);assert.equal(JSON.stringify(a.armure
  assert.ok(/pas dans l’inventaire/.test(t.toggleEquip({inventaire:[],weapons:[]},o('e'))));
  a.weapons=[];t.toggleEquip(a,o('e'));t.retirerInventaire(a,o('e'));t.retirerInventaire(a,o('e'));assert.equal(JSON.stringify(a.weapons),JSON.stringify([]));assert.ok(!a.inventaire.includes('e'));   // Retirer le dernier exemplaire le repose.
  const b={weapons:['h'],armures:['ar'],shieldId:'',inventaire:[]};t.completerInventaire(b);assert.equal(JSON.stringify(b.inventaire),JSON.stringify(['h','ar']));}
-assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire)}}")&&src.includes("inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin)}}")
+assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire),...(a.pnj?{pnj:true,alignement:alignementDe(a)}:{})}}")&&src.includes("inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}")
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,combat?'':'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
@@ -1668,7 +1672,7 @@ assert.ok(!page.includes('Personne à portée de contact.')&&!page.includes("'Ho
   assert.ok(Math.hypot(x2-70,y2)>=19.9||x2<=90.01,'écarté du socle, jamais dans le mur');}}
 /* La table applique la règle : le camp d'en face barre le pas, l'allié se laisse traverser mais
    pas couvrir, un corps à terre ne tient plus la place, et un lot pris ensemble ne se repousse pas. */
-assert.ok(page.includes("&&(!adverses||o.hero!==a.hero)")
+assert.ok(page.includes("&&(!adverses||hostiles(o,a))")
  &&page.includes('function settleActor(a,ignorer)')
  &&page.includes('function moveActor(a,xp,yp,libre,ignorer,traverse)')
  &&page.includes(' const barrent=(alive(a)?soclesOccupes(a,size,ignorer,true):[])\n  .filter(c=>Math.hypot(start[0]-c.x,start[1]-c.y)>=r+c.r-.5);')&&page.includes('const tiennent=alive(a)&&!traverse?soclesOccupes(a,size,ignorer,false):[];')
@@ -1694,7 +1698,7 @@ assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaq
  &&!C.TALENTS_CODES.orbes.attaque,'le bouton d’attaque dit « Attaque », le talent qui frappe montre ses dés');
 /* L'Onde d'un camp lève les états avec les blessures, et prend aussi celui qui n'a rien perdu
    mais porte une affliction — empoisonné au complet, il restait sur le carreau. */
-assert.ok(page.includes("const soignes=actors.filter(a=>!!a.hero===hero&&!estMort(a)&&(a.hp<a.max||statesOf(a).length));")
+assert.ok(page.includes("const soignes=actors.filter(a=>(hero?duCoteTroupe(a):campDe(a)==='adverse')&&!estMort(a)&&(a.hp<a.max||statesOf(a).length));")
  &&page.includes("soignes.forEach(a=>{if(a.hp<a.max)rendus++;a.hp=a.max;setState(a,'Coma',false);")&&page.includes("if(typeof reposer==='function')reposer(a,'long');else a.usages={};   // l'Onde vaut un repos long")
  &&page.includes("' remis d’aplomb'+(rendus?' : PV au complet':'')+(leves?(rendus?', ':' : ')+'états levés':'')+'.'")
  &&!page.includes('const blesses=actors.filter'),'l’Onde du camp lève les états, même sans blessure');
@@ -1777,7 +1781,7 @@ assert.ok(page.includes('function pastillesPoints(a)')&&page.includes("const act
  &&vivant.includes("'checks','points','ignition','immunites','usages','cibles'"),'les points d’activation se comptent');
 /* Ignition à la table : l'orbe part sur l'allié désigné, ne blesse pas, et sa braise s'en va
    avec le premier coup au contact. Invulnérable et Brise s'entendent dans le journal. */
-assert.ok(page.includes('function alliePourIgnition(a)')&&page.includes("const j=ciblesDe(a).find(k=>vus.includes(k)&&actors[k]&&actors[k].hero===a.hero&&actors[k]!==a);")
+assert.ok(page.includes('function alliePourIgnition(a)')&&page.includes("const j=ciblesDe(a).find(k=>vus.includes(k)&&actors[k]&&memeCamp(actors[k],a)&&actors[k]!==a);")
  &&page.includes('if(allie!==null){const feu=etat||\'Feu\';')&&page.includes("const poser=()=>{b.ignition=feu;floatNumber(b,'✦ '+feu,'gain');")
  &&page.includes("const charge=(rangeOf(a)==='distance'?'':a.ignition)||'';")&&page.includes("if(charge)a.ignition=''}")
  &&page.includes('const infligeEtatBrut=infligeEtat;')
@@ -2447,7 +2451,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  vm.runInContext(page.slice(page.indexOf('function nomNum(o)'),page.indexOf('/* Ce qu\'on a le droit de lire d\'un combattant')),ctxN);
  assert.equal(ctxN.actors.map(ctxN.nomNum).join('|'),'Ulfgar|Gobelin 1|Gobelin 2|Ogre');assert.equal(ctxN.nomNum({name:'Inconnu'}),'Inconnu');
  assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||(typeof loading!=='undefined'&&loading)||(typeof spectateur==='function'&&spectateur()))return;")&&page.includes("if(adversairesDebout()>0){combatEngage=true;return}")
-  &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" effetsPassifs();comaAventuriers();glissantsReveles();finDeCombatAuto();")
+  &&page.includes("function adversairesDebout(){return actors.filter(a=>campDe(a)==='adverse'&&a.vu&&alive(a)).length}")&&page.includes(" effetsPassifs();comaAventuriers();glissantsReveles();finDeCombatAuto();")
   &&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos rond" id="repos" hidden>⛺</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
   &&page.includes(":a.reposPris===true?'Repos court déjà pris : il revient à la fin du prochain combat.'")&&page.includes("actors.forEach(a=>{if(a.hero)a.reposPris=false})}")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);")
@@ -2799,7 +2803,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const libre={...t,elementaire:undefined};assert.equal(C.talentPourElement(libre,G).params.etat,'Feu','sans la case, l’état réglé reste');
  const neutre={id:'x',name:'Forge',params:{etat:'Feu'}};assert.equal(C.talentPourElement(neutre,G),neutre);assert.equal(C.estElementaire(neutre),false);assert.equal(C.estElementaire(libre),true);
  assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefoudre','Foudre',1]],'la table joue l’élément, puis le palier ; la DEF retirée, réglage commun, reste celle du palier 1');
- assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element'];")
+ assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement'];")
   &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
  assert.ok(src.includes("function choixElement(a,classe,rendre){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
   &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n)")
@@ -3285,7 +3289,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxB.journal[0],'Brom trouve ⟦m⟧ ⟦r⟧ ×2 (Troll).','une ligne au journal');
  ctxB.journal.length=0;ctxB.butinDesRetires([{name:'Rat',hero:false,x:0,y:0,inventaire:['m'],butin:{m:40}}],()=>0.4);
  assert.equal(ctxB.journal.length,0,'40 % : un tirage à 40 ne tombe pas');
- assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin)}}\nfunction fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);")
+ assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}\nfunction fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);")
   &&src.includes(" if(!a.hero){equipeAdversaire(a);a.butin=normaliseButin(a.butin,a.inventaire)}")
   &&src.includes("const CATS_INV_ADV=[['armes','Armes',")&&src.includes("if(!draft.hero){inventaireAdversaire(boite,draft,refreshEquip);if($('restes-edit'))inventaireAdversaire($('restes-edit'),draft,refreshEquip,'restes');return}"),'inventaire d’adversaire : familles, pioche, butin, tout porté');
  assert.ok(src.includes("r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;")&&css.includes('.bulle-modele .stat-tile strong{font-size:22px;line-height:1.05;margin-top:1px}')
@@ -3376,6 +3380,39 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.518 — Les PNJ du Bestiaire : un alignement, allié, neutre ou adverse. Allié, il combat avec la troupe et se
+   range parmi les Aventuriers ; neutre, il se tient entre les deux et peut s'en prendre à la troupe ; adverse, il
+   est un adversaire. Son socle et sa barre de PV prennent la couleur de son alignement. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ const h={hero:true},m={},al={pnj:true,alignement:'allie'},ne={pnj:true,alignement:'neutre'},ad={pnj:true,alignement:'adverse'};
+ assert.deepEqual([h,m,al,ne,ad].map(C.campDe),['troupe','adverse','troupe','neutre','adverse'],'chacun son camp');
+ assert.equal(C.alignementDe({pnj:true}),'neutre','un PNJ sans alignement lu est neutre');
+ assert.equal(C.alignementDe({pnj:true,alignement:'bof'}),'neutre');
+ assert.ok(C.hostiles(h,m)&&C.hostiles(h,ne)&&C.hostiles(h,ad)&&C.hostiles(al,m)&&C.hostiles(al,ne),'la troupe et ses alliés affrontent neutres et adversaires');
+ assert.ok(!C.hostiles(h,al)&&!C.hostiles(ne,m)&&!C.hostiles(ad,m)&&!C.hostiles(m,m),'ni entre alliés, ni entre neutres et adversaires');
+ assert.ok(C.memeCamp(h,al)&&C.memeCamp(ad,m)&&!C.memeCamp(ne,m)&&C.duCoteTroupe(al)&&!C.duCoteTroupe(ne));
+ const t=C.cleanMap({foes:[{x:1,y:1,tpl:{name:'Marchand',pnj:true,alignement:'allie'}},{x:2,y:2,tpl:{name:'Loup'}}]}).foes;
+ assert.ok(t[0].tpl.pnj===true&&t[0].tpl.alignement==='allie'&&!('pnj' in t[1].tpl),'la carte garde l’alignement de son PNJ');
+ // Le Bestiaire : une colonne PNJ, un bouton, l'alignement dans la fiche, porté du modèle à la créature et retour.
+ assert.ok(ed.includes("['boss','Boss'],['pnj','PNJ']];")&&ed.includes("filter(([m])=>(key==='pnj'?!!m.pnj:!m.pnj&&(m.type||'standard')===key)")
+  &&ed.includes('<button id="bestiary-pnj">+ Nouveau PNJ</button>')&&ed.includes("$('bestiary-pnj').onclick=()=>openActor(null,false,null,true,true);")
+  &&ed.includes("if(templateNeuf&&pnj)Object.assign(draft,{name:'Nouveau PNJ',role:'PNJ',pnj:true,alignement:'neutre'});")
+  &&ed.includes("+(a.pnj?sel('Alignement','alignement',alignementDe(a),ALIGNEMENTS):'')"),'la colonne, le bouton et le menu Alignement');
+ assert.ok(ed.includes("butin:normaliseButin(m.butin),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}")&&ed.includes("butin:normaliseButin(a.butin,a.inventaire),...(a.pnj?{pnj:true,alignement:alignementDe(a)}:{})}}")
+  &&ed.includes("'pool','pnj','alignement'])]")&&ed.includes("if(!neuf.pnj){delete a.pnj;delete a.alignement}"),'l’alignement suit le modèle sur la table');
+ // Un allié tué ne rapporte pas d'XP ; la troupe lit ses PV.
+ assert.ok(ed.includes("const vaincus=partants.filter(f=>f&&!duCoteTroupe(f)&&")&&page.includes("function hpKnown(o){return view==='mj'||!!(o&&(o.hero||duCoteTroupe(o)||o.revealed))}"));
+ // La table : trois groupes ; seul un adverse lance le combat et le tient ouvert.
+ assert.ok(page.includes("(duCoteTroupe(a)?troupe:campDe(a)==='neutre'?neutres:adverses).push(b);")&&page.includes("if(neutres.some(b=>!b.hidden))groupe('Neutres',neutres);")
+  &&page.includes("if(!enCombat()&&reveles.some(a=>campDe(a)==='adverse'))")&&page.includes("function adversairesDebout(){return actors.filter(a=>campDe(a)==='adverse'&&a.vu&&alive(a)).length}"),'les groupes et le combat');
+ assert.ok(!/\b\w+(?:\[\w+\])?\.hero(?:!==|===)\w+(?:\[\w+\])?\.hero\b/.test(page),'plus aucun camp lu au seul drapeau d’aventurier');
+ // Les couleurs : socle et barre, liste, fiche et jauge.
+ assert.ok(page.includes(".token.pnj.al-allie{background:#2b4466;border-color:#8fb6e0}")&&page.includes(".token.pnj.al-neutre{background:#5c4a1e;border-color:#dcc074}")
+  &&page.includes("#pv-layer .pv.al-allie i,.lifebar.foe.al-allie .lifebar-fill{")&&page.includes("if(a.pnj)jauge.classList.add('al-'+alignementDe(a));")
+  &&page.includes("lifebar(ratio(a),known?String(a.hp):'',a.hero,a.pnj?alignementDe(a):'')")&&feuille.includes('.best-carre.al-allie{--type:#8fb6e0}'),'les couleurs de l’alignement');
+ // En ligne : l'alignement voyage, et seul le MJ l'écrit.
+ const champs=JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')),mj=JSON.parse(vivant.match(/const CHAMPS_ACTEUR_MJ=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"'));
+ assert.ok(['pnj','alignement'].every(k=>champs.includes(k)&&mj.includes(k)),'pnj et alignement suivent la table, au MJ seul');}
 /* v0.517 — Les mots flottants : un état à la couleur de son icône ; posés ensemble sur un socle, l'un au-dessus de l'autre. */
 {const page=fs.readFileSync('index.html','utf8');
  assert.ok(page.includes("const COULEURS_ETATS={'Poison':'#b968d3','Blindage':'#689fd3','Feu':'#f0903a','Foudre':'#f2d14a','Gel':'#8fd3f7',")
@@ -3401,7 +3438,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');
  const g=C.TALENTS_CODES.glissant;assert.ok(g&&g.monstre===true&&g.type==='pass','Glissant : talent d’adversaire passif');
  assert.equal(C.texteBrut(C.phraseTalent('glissant',{})),'Un adversaire qui finit son mouvement sur le token du porteur subit Au sol. Le porteur est ensuite révélé s’il était caché.');
- assert.ok(page.includes("&&!(o.hero!==a.hero&&typeof talentsCodes==='function'&&porteEffet(talentsCodes(o),'glissant'))")&&page.includes("function glissade(a){")
+ assert.ok(page.includes("&&!(hostiles(o,a)&&typeof talentsCodes==='function'&&porteEffet(talentsCodes(o),'glissant'))")&&page.includes("function glissade(a){")
   &&page.includes("croises.forEach(([k],n)=>{const o=actors[k],d=departs[n];if(o&&d&&Math.hypot(o.x-d.x,o.y-d.y)>=.05){glissade(o);reveleEnBougeant(o)}});")&&page.includes("glissantsReveles();finDeCombatAuto();"),'la glissade, en fin de mouvement');}
 /* v0.512 — Armes de lancer : à distance, une main, sans munition ; lancées, elles passent à la cible ; au contact,
    elles se manient sans donner d'occasion. */
@@ -3424,7 +3461,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("tous.filter(i=>actors[i].hero).forEach(i=>retireDeLaTable(actors[i]));")&&src.includes("function retireDeLaTable(a){")&&src.includes("a.horsCarte=true;a.retire=true;"),'retirer un aventurier ne le supprime pas');
  assert.ok(src.includes("if(mot.trim()!=='SUPPRIMER')return")&&src.includes("const suppr=ico('✕','Supprimer',()=>{const souci=supprimerAventurier(a);")&&src.includes("actors[editing].hero?supprimerAventurier(actors[editing]):removeActor(editing)"),'supprimer pour de bon : SUPPRIMER, à l’onglet Aventuriers');
  assert.ok(mp.includes("heros.forEach(a=>{a.horsCarte=false;delete a.retire;")&&src.includes("jeton.onclick=()=>ramenerSurLaTable(a)"),'le token revient : carte rechargée, ou clic à l’onglet Aventuriers');
- assert.ok(page.includes('function alive(a){return a.hp>0&&!hasState(a,"Coma")&&!a.horsCarte}')&&page.includes("if(!(a.hero&&a.retire))(a.hero?troupe:adverses).push(b);")&&vivant.includes("'horsCarte','retire',"),'hors de la table, il n’y est pas');
+ assert.ok(page.includes('function alive(a){return a.hp>0&&!hasState(a,"Coma")&&!a.horsCarte}')&&page.includes("if(!(a.hero&&a.retire))(duCoteTroupe(a)?troupe:campDe(a)==='neutre'?neutres:adverses).push(b);")&&vivant.includes("'horsCarte','retire',"),'hors de la table, il n’y est pas');
  assert.ok(css.includes('.talent-rangee{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));'),'sept talents par ligne');}
 /* v0.509 — Gerbe de feu quand un piège part ; cadenas sur un coffre trouvé verrouillé ; pièces uniques. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
@@ -3728,7 +3765,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("const talents=[...gros.filter(b=>b.rangee==='attaques'),...gros.filter(b=>b.rangee==='reactions')];")
   &&!page.includes("filter(b=>b.rangee==='reactions')")&&!page.includes('rangee-ronds')&&!css.includes('rangee-ronds')
   &&css.includes('.attack-row button.btn-action.rond,.attack-row button.btn-action.rond.inerte{width:42px;height:42px;font-size:19px}'),'gros ronds pour agir et réagir, petits pour les maîtrises et les gestes');
- assert.ok(src.includes("const voit=!!a&&(view==='mj'||a.hero||!!a.revealed);")
+ assert.ok(src.includes("const voit=!!a&&(view==='mj'||a.hero||duCoteTroupe(a)||!!a.revealed);")
   
   &&src.includes("if(marked.size>1){boite.replaceChildren();boite.hidden=true;montreDesCombattant(null);return}")
   &&css.includes('.des-combattant{display:flex;align-items:center;min-height:26px}.des-combattant[hidden]{display:none}'),'les dés du combattant au-dessus de la piste, ceux du rond survolé le temps du survol');

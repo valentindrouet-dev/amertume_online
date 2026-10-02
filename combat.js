@@ -337,6 +337,7 @@ function cleanMonster(t){const dés={};
   pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,DEF_MAX)),
   damage:Math.round(borne(t&&t.damage,0,999)),xp:Math.round(borne(t&&t.xp,0,9999)),
   menace:texte(t&&t.menace,30)||'closest',esquive:!!(t&&t.esquive),rapide:!!(t&&t.rapide),
+  ...(t&&t.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:t.alignement})}:{}),
   /* Un adversaire peut n'avoir aucune attaque : c'est au maître du jeu d'en décider, et
      un monstre qui ne frappe pas est un monstre comme un autre. Un modèle d'avant, qui
      portait ses dés à la racine sans liste d'attaques, garde pourtant les siens —
@@ -1546,6 +1547,16 @@ function ciblesPermises(portes){let n=1;
    compte pas et le type tranche d'abord. */
 const RANG_TYPE={standard:0,alpha:1,solitaire:2,boss:3};
 function rangType(a){return a&&!a.hero&&RANG_TYPE[a.type]!==undefined?RANG_TYPE[a.type]:0}
+/* Les camps. Un PNJ du Bestiaire a un alignement : allié, il combat avec la troupe ; adverse, avec les
+   adversaires ; neutre, il se tient entre les deux et peut s'en prendre à la troupe, comme un adversaire.
+   Un adversaire ordinaire est adverse, un aventurier est de la troupe. Deux combattants s'affrontent quand
+   l'un est de la troupe et l'autre non. */
+const ALIGNEMENTS=[['allie','Allié'],['neutre','Neutre'],['adverse','Adverse']];
+function alignementDe(a){if(!a||a.hero)return '';if(!a.pnj)return 'adverse';return ['allie','neutre','adverse'].includes(a.alignement)?a.alignement:'neutre'}
+function campDe(a){if(!a)return '';if(a.hero)return 'troupe';const al=alignementDe(a);return al==='allie'?'troupe':al}
+function duCoteTroupe(a){return campDe(a)==='troupe'}
+function memeCamp(a,b){return !!a&&!!b&&campDe(a)===campDe(b)}
+function hostiles(a,b){const x=campDe(a),y=campDe(b);return !!x&&!!y&&x!==y&&(x==='troupe'||y==='troupe')}
 /* Trie des paires [combattant, place dans la liste], depuis un combattant et dans un
    cadre en pixels. On garde la place plutôt que le numéro affiché : c'est elle qui le
    produit, et elle est toujours à portée de main. */
@@ -2091,7 +2102,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  NIVEAUX_XP,niveauDeXp,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,

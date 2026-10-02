@@ -1722,7 +1722,7 @@ lockBtn.onclick=()=>{tokensLocked=!tokensLocked;refreshGmBar();render();schedule
  log(tokensLocked?'Déplacements figés : les joueurs ne peuvent plus bouger leurs tokens.':'Déplacements rendus aux joueurs.',{ton:'carte',local:true})};
 // L'état des icônes se lit d'un coup d'œil : voile levé, déplacements gelés.
 // L'XP que rapportent les adversaires posés sur une carte, selon le bestiaire du moment.
-function xpDeCarte(m){return (m&&m.foes||[]).reduce((s,f)=>s+(Math.max(0,Math.trunc(Number((modeleActuel(f.tpl)||f.tpl||{}).xp))||0)),0)}
+function xpDeCarte(m){return (m&&m.foes||[]).map(f=>modeleActuel(f.tpl)||f.tpl||{}).filter(t=>!duCoteTroupe(t)).reduce((s,t)=>s+(Math.max(0,Math.trunc(Number(t.xp))||0)),0)}
 function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  // La barre annonce la carte qu'on joue, pas le mot « carte tactique » : c'est la seule
  // trace du nom de la carte depuis que le bandeau de scène a disparu.
@@ -1730,7 +1730,7 @@ function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  if(titre)titre.textContent=m&&m.name?m.name:'Carte tactique';
  /* Au MJ seul, à côté du nom : l'XP déjà accordée sur cette carte, sur tout ce qu'elle rapporte —
     l'accordée plus celle des adversaires encore en scène. */
- if(titre&&mj&&m){const donne=Math.max(0,Math.trunc(Number(m.xpAccordee))||0),reste=actors.filter(a=>a&&!a.hero).reduce((s,a)=>s+(Math.max(0,Math.trunc(Number(a.xp))||0)),0);
+ if(titre&&mj&&m){const donne=Math.max(0,Math.trunc(Number(m.xpAccordee))||0),reste=actors.filter(a=>a&&!duCoteTroupe(a)).reduce((s,a)=>s+(Math.max(0,Math.trunc(Number(a.xp))||0)),0);
   const x=document.createElement('span');x.className='xp-carte';x.textContent=donne+'/'+(donne+reste)+' xp';titre.append(x)}
  fogBar.hidden=!mj;fogReset.hidden=fogAll.hidden=!m;
  fogAll.classList.toggle('on',!!(m&&m.fogOff));eyeBtn.hidden=!m;eyeBtn.classList.toggle('on',vueTroupe);
