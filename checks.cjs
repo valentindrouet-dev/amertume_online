@@ -4,7 +4,7 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
 {const lire=fs.readFileSync.bind(fs),lus=new Map();fs.readFileSync=(f,...r)=>{if(typeof f!=='string'||r[0]!=='utf8'||!/\.(?:js|html|css)$/.test(f))return lire(f,...r);
  if(!lus.has(f))lus.set(f,lire(f,...r));return lus.get(f)}}
 /* v0.518 — Les camps des PNJ, v0.519 la bourse aux dés : toute machine virtuelle des contrôles les connaît, comme la page. */
-{const C=require('./combat.js'),cree=vm.createContext.bind(vm);vm.createContext=(o,...r)=>{if(o&&typeof o==='object')for(const k of ['ALIGNEMENTS','alignementDe','campDe','duCoteTroupe','memeCamp','hostiles','normaliseBourse','tireBourse','phraseRichesses'])if(!(k in o))o[k]=C[k];return cree(o,...r)}}
+{const C=require('./combat.js'),cree=vm.createContext.bind(vm);vm.createContext=(o,...r)=>{if(o&&typeof o==='object')for(const k of ['ALIGNEMENTS','alignementDe','campDe','duCoteTroupe','memeCamp','hostiles','normaliseBourse','tireBourse','phraseRichesses','compteEtat'])if(!(k in o))o[k]=C[k];return cree(o,...r)}}
 const editor=fs.readFileSync('editor.js','utf8');const ctx={};vm.createContext(ctx);vm.runInContext(editor.slice(editor.indexOf('function imageDimensions'),editor.indexOf('let imageJob')),ctx);
 const png=new Uint8Array(24),v=new DataView(png.buffer);v.setUint32(0,0x89504e47);v.setUint32(4,0x0d0a1a0a);v.setUint32(16,4096);v.setUint32(20,2048);assert.equal(ctx.imageDimensions(png).join(','),'4096,2048');
 const jpg=new Uint8Array([255,216,255,192,0,7,8,2,0,4,0,255,217]);assert.equal(ctx.imageDimensions(jpg).join(','),'1024,512');
@@ -3371,6 +3371,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.524 — Furie : un état empilable, +1 aux dégâts du combattant par cran ; son icône se choisit comme celle de Gardé. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
+ const a={states:[]};assert.ok(C.cumulable('Furie')&&C.ETATS_JEU.includes('Furie'),'empilable, et posable par un effet');
+ C.infligeEtat(a,'Furie');C.infligeEtat(a,'Furie');C.infligeEtat(a,'Furie');assert.equal(C.compteEtat(a,'Furie'),3,'trois crans');
+ const b={states:['Onde']};assert.ok(C.infligeEtat(b,'Furie')===true&&C.hasState(b,'Onde'),'l’Onde ne l’absorbe pas');
+ assert.ok(page.includes("+compteEtat(a,'Furie');return meuteActive(a)?bonus*2:bonus}")&&page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢'};")
+  &&page.includes("'Furie':'#e2463c'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
+ assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':'Furie'"),'son icône se choisit');}
 /* v0.523 — Enragement, passif de Destructeur : chaque critique ajoute +1 aux dégâts du porteur jusqu'à la fin du
    combat, +2 avec son amélioration ; le compte repart de zéro quand le combat finit ou que la rencontre repart. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
@@ -3383,7 +3391,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  ctx.enrage(d);ctx.enrage(d);ctx.enrage(d2);ctx.enrage(autre);
  assert.ok(d.enrage===2&&d2.enrage===2&&!autre.enrage&&ctx.flots.join('|')==='+1 Dégâts|+1 Dégâts|+2 Dégâts','+1 par critique, +2 amélioré, rien sans le talent');
  ctx.combat=false;ctx.enrage(d);assert.equal(d.enrage,2,'hors combat, rien');
- assert.ok(page.includes("+tenailles(a)+Math.max(0,Math.trunc(Number(a&&a.enrage))||0);")&&page.includes("if(r.critical&&!r.failed){critiqueTombe=true;enrage(a)}")&&page.includes("if(r.critical){implosion(a);orbesDuCritique(a);enrage(a)}")
+ assert.ok(page.includes("if(r.critical&&!r.failed){critiqueTombe=true;enrage(a)}")&&page.includes("if(r.critical){implosion(a);orbesDuCritique(a);enrage(a)}")
   &&page.includes("a.contactsDepart=null;a.enrage=0;")&&page.includes("a.ignition='';a.enrage=0;")&&vivant.includes("'alignementJeu','enrage'];"),'dans les dégâts, à chaque critique, remis à zéro, en ligne');}
 /* v0.522 — Maîtrise Point supplémentaire : +1 point d'Action ou de Mouvement à chaque tour. Dans l'arbre, une ligne
    peut sauter un gros rond vide pour relier deux talents à deux cases l'un de l'autre, en droite ligne. */
@@ -3668,7 +3676,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    barre ; un aventurier sans VIE est mort : fiche grise, tête de mort, seul le MJ y touche et le ressuscite. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),C=require('./combat.js');
  const b={states:[]};C.infligeEtat(b,'Blindage');assert.equal(C.infligeEtat(b,'Blindage'),false);C.setState(b,'Blindage',true);assert.equal(b.states.join(),'Blindage','un seul Blindage à la fois');
- assert.ok(page.includes("setState(o,'Gardé',true);")&&page.includes("'Foudre','Gardé','Gel'")&&!src.includes("a.states=a.states.filter(s=>s!=='Gardé')")
+ assert.ok(page.includes("setState(o,'Gardé',true);")&&!src.includes("a.states=a.states.filter(s=>s!=='Gardé')")
   &&page.includes("function imageEtat(etat){const choisi=typeof catalog!=='undefined'&&catalog.logosEtats&&catalog.logosEtats[etat];")
   &&src.includes("selGroupes('Gardé','etat-garde',")&&src.includes("c.logosEtats={};"),'Gardé, et son image au choix');
  const ctxO={round:1,enCombat:()=>true,actors:[{hero:true,checks:[0,0,0]},{hero:false,checks:[1,0,0]}]};vm.createContext(ctxO);

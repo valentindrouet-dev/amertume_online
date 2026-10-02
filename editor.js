@@ -1122,9 +1122,9 @@ function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences
  const lb=catalog.logosBonus||{};
  $('competences-icones-corps').innerHTML='<h3 class="reglage-titre icones-titre">Caractéristiques</h3>'+CARACS_ICONES.map(([k,n])=>selGrille(selGroupes(esc(n),'carac-'+k,lb[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">Compétences</h3>'+skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('')
-  +'<h3 class="reglage-titre icones-titre">États</h3>'+selGrille(selGroupes('Gardé','etat-garde',(catalog.logosEtats||{})['Gardé']||'',groupes));
+  +'<h3 class="reglage-titre icones-titre">États</h3>'+selGrille(selGroupes('Gardé','etat-garde',(catalog.logosEtats||{})['Gardé']||'',groupes))+selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes));
  $('competences-icones-form').onchange=e=>{const nom=e.target&&e.target.name||'',m=/^comp(\d+)$/.exec(nom),c=/^carac-([a-z]+)$/.exec(nom);
-  if(nom==='etat-garde'){const o={...(catalog.logosEtats||{})};if(e.target.value)o['Gardé']=e.target.value;else delete o['Gardé'];catalog.logosEtats=o}
+  if(nom==='etat-garde'||nom==='etat-furie'){const etat=nom==='etat-garde'?'Gardé':'Furie',o={...(catalog.logosEtats||{})};if(e.target.value)o[etat]=e.target.value;else delete o[etat];catalog.logosEtats=o}
   else if(!m&&!c)return;
   else if(m){const icones=iconesCompetences();icones[+m[1]]=e.target.value;catalog.iconesCompetences=normaliseIconesCompetences(icones)}
   else{const o={...(catalog.logosBonus||{})};if(e.target.value)o[c[1]]=e.target.value;else delete o[c[1]];catalog.logosBonus=o}
@@ -1723,7 +1723,7 @@ function enElementDuMystique(html,etat){if(!etat)return html;
    fiche), états (à leurs teintes), points et natures (en gras), formules de dés et bonus
    chiffrés (« 1d6+2 », « +3 »). Le MJ en ajoute dans l'onglet Talents ; « **ainsi** » force
    le gras. Le texte se découpe autour d'eux, sans jamais passer par du HTML. */
-const TEINTE_ETAT_MOT={Feu:'#c2503a',Gel:'#2f8fae',Foudre:'#3a6fc2',Poison:'#5d8a2e','Saignée':'#b8352f',Onde:'#3577b8',Invisible:'#6a5fb0',Faille:'#a0408f'};
+const TEINTE_ETAT_MOT={Furie:'#c0392b',Feu:'#c2503a',Gel:'#2f8fae',Foudre:'#3a6fc2',Poison:'#5d8a2e','Saignée':'#b8352f',Onde:'#3577b8',Invisible:'#6a5fb0',Faille:'#a0408f'};
 /* La couleur d'un mot clé du MJ : « Allié : vert », « Allié = #2f8a63 », ou rien — la
    couleur du thème. Un mot du jeu redéclaré prend la couleur qu'on lui donne. */
 const COULEURS_MOTS={rouge:'#b8352f',orange:'#c2692a',or:'#9d7b1e',jaune:'#b39222',vert:'#2f7a4b',turquoise:'#2c8c85',bleu:'#3a6fc2',violet:'#7a5cb8',rose:'#b04a8a',brun:'#8a5a2b',gris:'#6e6a66',noir:'#2a2622'};

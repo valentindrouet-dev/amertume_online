@@ -760,15 +760,15 @@ function setState(a,etat,pose){const reste=statesOf(a).filter(x=>x!==etat);
  return a.states}
 /* Les états et ce qu'ils empêchent ou déclenchent. Tout ce qui se calcule vit ici ;
    l'interface ne fait que déclencher au bon moment et raconter. */
-const ONDE_EXCLUS=['Blindage','Invisible','Onde','Vie','Coma'];
+const ONDE_EXCLUS=['Blindage','Invisible','Onde','Vie','Coma','Furie'];
 function frozenSolid(a){return hasState(a,'Gel')||hasState(a,'Au sol')}
 function blinded(a){return hasState(a,'Aveugle')}
-/* Quatre états s'empilent : chaque aggravation vaut un cran, et à zéro l'état s'en va.
+/* Furie s'empile aussi : chaque cran donne +1 aux dégâts du combattant. Quatre autres états s'empilent : chaque aggravation vaut un cran, et à zéro l'état s'en va.
    Leur effet joue autant de fois qu'ils portent de crans — trois crans de Feu, trois dés
    de brûlure. La saignée garde le champ qui était le sien avant les autres : les parties
    déjà enregistrées le portent, et tout ce qui s'appuie dessus continue de le lire. Les
    trois autres logent ensemble dans « cumuls ». */
-const ETATS_CUMULES=['Saignée','Feu','Foudre','Poison'];
+const ETATS_CUMULES=['Saignée','Feu','Foudre','Poison','Furie'];
 function cumulable(etat){return ETATS_CUMULES.includes(etat)}
 function compteEtat(a,etat){if(!hasState(a,etat))return 0;
  if(!cumulable(etat))return 1;
@@ -814,7 +814,7 @@ function effetParNom(nom){const k=cleTalent(nom);if(!k)return '';
    elle y sert le menu du clic droit, qui n'a pas le même office. */
 // Les huit compétences, dans l'ordre des fiches : la table les nomme depuis le moteur.
 const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ruse','Savoir','Technique'];
-const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Gel',
+const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Furie','Gel',
  'Invisible','Onde','Poison','Saignée','Vie','Affaibli'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
 // Les réglages de Dominateur, bornés : l'état visé, x, et les dés de xdx.
