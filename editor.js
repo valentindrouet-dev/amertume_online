@@ -17,7 +17,7 @@ function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots
  a.fouilles=Array.isArray(a.fouilles)?a.fouilles.filter(f=>f&&Number.isFinite(+f.x)&&Number.isFinite(+f.y)&&+f.r>0).slice(-200).map(f=>({m:String(f.m||'').slice(0,80),x:+f.x,y:+f.y,r:Math.min(1,+f.r),...(Number.isInteger(f.n)&&f.n>=0?{n:Math.min(99,f.n)}:{})})):[];
  if(a.reposCourts===undefined&&a.reposPris)a.reposCourts=1;a.reposCourts=Math.max(0,Math.trunc(Number(a.reposCourts))||0);a.reposPris=a.reposPris===true;a.horsCarte=a.horsCarte===true;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.paliersTalents=normalisePaliersActeur(a);if(a.element!==undefined&&!elementDe(a))delete a.element;a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;if(a.hero&&typeof niveauDeXp==='function')a.level=niveauDeXp(a.xp);a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
  a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};
- a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};
+ a.points={action:pointsMax(a,'action',true),mouvement:pointsMax(a,'mouvement',true),objet:pointsMax(a,'objet',true)};
  a.checks=Array.isArray(a.checks)?POINTS_CLES.map((q,i)=>Math.max(0,Math.min(pointsMax(a,q),a.checks[i]===true?1:Math.trunc(Number(a.checks[i]))||0))):[0,0,0];a.bleed??=0;a.cumuls??={};a.revealed??=false;a.vu??=false;a.orbes??=0;a.garde??=null;a.numero??=null;
  baseHeros(a);return a}
 /* Un aventurier a Vie 3, Endu 2 et Dégâts +0, quel que soit son niveau : le reste vient de sa classe,
@@ -3416,6 +3416,12 @@ const tousTalents=()=>typeof catalog!=='undefined'&&catalog&&Array.isArray(catal
 const dirDroite=d=>DIRS_DROITES.includes(d);
 // La direction de la case voisine droite où se trouve q, vue de p ; rien si q n'y est pas.
 function dirVers(p,q){if(!p||!q)return '';return DIRS_DROITES.find(d=>p.x+DIRS[d][0]===q.x&&p.y+DIRS[d][1]===q.y)||''}
+/* La direction d'une ligne entre deux talents : vers la case voisine droite, ou deux cases plus loin dans la
+   même direction quand la case du milieu est libre — la ligne saute alors ce gros rond vide. « liste » : les
+   talents de la colonne, pour savoir la case du milieu libre. */
+function dirLien(p,q,liste){const d=dirVers(p,q);if(d||!p||!q)return d;
+ return DIRS_DROITES.find(k=>p.x+2*DIRS[k][0]===q.x&&p.y+2*DIRS[k][1]===q.y&&!caseTenue(liste,p.x+DIRS[k][0],p.y+DIRS[k][1]))||''}
+function caseTenue(liste,x,y){return (liste||[]).some(t=>{const r=posDe(t);return !!r&&r.x===x&&r.y===y})}
 function lisChemin(t){const c=t&&t.chemin;if(!c||typeof c!=='object'||!DIRS[c.dir]||typeof c.de!=='string')return null;
  const r=Math.trunc(Number(c.rang));return {de:c.de,dir:c.dir,rang:r>=1?r:1}}
 const estPetit=t=>!!lisChemin(t);
@@ -3451,9 +3457,9 @@ function petitsDe(de,dir){return tousTalents().filter(t=>{const c=lisChemin(t);r
 // Ce que porte chaque chemin d'un talent : la ligne vers un talent voisin (« lien »), ou ses petits ronds.
 function cheminsDe(liste,t){const out={},p=posDe(t);
  Object.keys(DIRS).forEach(d=>{out[d]={dir:d,lien:null,petits:petitsDe(t,d)}});
- liensDe(t).forEach(id=>{const v=(liste||[]).find(x=>x&&x.id===id),d=v?dirVers(p,posDe(v)):'';if(d)out[d].lien=v});
+ liensDe(t).forEach(id=>{const v=(liste||[]).find(x=>x&&x.id===id),d=v?dirLien(p,posDe(v),liste):'';if(d)out[d].lien=v});
  // Une ligne qui arrive d'un voisin tient aussi le chemin : pas de petit rond posé dessus.
- (liste||[]).forEach(v=>{if(!v||v===t||!liensDe(v).includes(t.id))return;const d=dirVers(p,posDe(v));if(d&&!out[d].lien)out[d].entrant=v});
+ (liste||[]).forEach(v=>{if(!v||v===t||!liensDe(v).includes(t.id))return;const d=dirLien(p,posDe(v),liste);if(d&&!out[d].lien)out[d].entrant=v});
  return out}
 // Le talent d'où part le chemin d'un petit rond, tant qu'il est dans un arbre.
 function departChemin(t){const c=lisChemin(t);if(!c)return null;return tousTalents().find(x=>x.id===c.de&&x!==t&&posDe(x)&&!x.horsArbre)||null}
@@ -3517,10 +3523,10 @@ function caseLibre(liste,depuis){const prise=(x,y)=>(liste||[]).some(t=>{const p
 /* Tracer une ligne de « de » vers « vers », ou l'effacer si elle existe : « ajoute », « retire » ;
    « loin » quand « vers » n'est pas sur une case voisine droite, « occupe » quand des petits ronds
    tiennent déjà ce chemin, « plein » quand quatre lignes partent déjà, « rien » sinon. */
-function basculeLien(de,vers){if(!de||!vers||de===vers)return 'rien';
+function basculeLien(de,vers,liste){if(!de||!vers||de===vers)return 'rien';
  if(liensDe(de).includes(vers.id)){de.liens=liensDe(de).filter(x=>x!==vers.id);if(!de.liens.length)delete de.liens;return 'retire'}
- const d=dirVers(posDe(de),posDe(vers));if(!d)return 'loin';
- if(petitsDe(de,d).length||petitsDe(vers,dirVers(posDe(vers),posDe(de))).length)return 'occupe';
+ const d=dirLien(posDe(de),posDe(vers),liste);if(!d)return 'loin';
+ if(petitsDe(de,d).length||petitsDe(vers,dirLien(posDe(vers),posDe(de),liste)).length)return 'occupe';
  if(liensDe(de).length>=LIENS_MAX)return 'plein';
  de.liens=[...liensDe(de),vers.id];return 'ajoute'}
 /* Les colonnes d'une classe : deux, toujours, nommées ou non. Celle qui accueille les talents sans
@@ -3978,7 +3984,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const relie=(t,col)=>{const de=talent(lienDepuis);lienDepuis=null;
   if(!de||de===t){renderArbres();return}
   if(!col.liste.includes(de)){renderArbres();return}
-  const r=basculeLien(de,t);
+  const r=basculeLien(de,t,col.liste);
   if(r==='plein'||r==='loin'||r==='occupe'){renderArbres();return}
   arbreChange()};
  const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note,cout:true});
@@ -4152,6 +4158,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   // Une place trop près d'un rond déjà posé ne s'offre pas : un talent à moins de 0,36 case, un petit rond à moins de 0,24.
   const libreIci=(x,y)=>!prises.some(q=>Math.hypot(q.x-x,q.y-y)<.36)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.24)&&!places.some(q=>Math.hypot(q.x-x,q.y-y)<.24);
   if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),vues=new Set();
+   c.liste.forEach(t=>liensDe(t).forEach(id=>{const v=c.liste.find(x=>x.id===id),p=cases.get(t.id),q=v&&cases.get(v.id);if(p&&q&&Math.abs(q.x-p.x)+Math.abs(q.y-p.y)===2&&(p.x===q.x||p.y===q.y))occupe.add((p.x+q.x)/2+','+(p.y+q.y)/2)}));
    c.liste.forEach(t=>{if(estVide(t))return;const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
     Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if(ch[d].lien||ch[d].entrant)return;
      if(['e','s','o'].includes(d)&&!ch[d].petits.length){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.4)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}

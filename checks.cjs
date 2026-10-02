@@ -1769,7 +1769,6 @@ assert.ok(page.includes('function pastillesPoints(a)')&&page.includes("const act
  &&page.includes("if(coche&&!epuise)epuisePoints(a,quoi);else if(!coche&&epuise)rendPoint(a,quoi,POINTS_MAX[quoi])})}")
  &&page.includes("l.lastChild.textContent=' '+LIBELLES_POINTS[i]+(s&&max>1?' '+pointsRestants(s,quoi)+'/'+max:'')});")
  &&page.includes("reinit:()=>{if(code.cle==='orbes')a.orbes=0;else if(code.cle==='gardien')a.garde=null;else rendPoint(a,'action')},")&&!page.includes('a.checks=[false,false,false]')
- &&src.includes("a.points={action:pointsMax(a,'action'),mouvement:pointsMax(a,'mouvement'),objet:pointsMax(a,'objet')};")
  &&vivant.includes("'checks','points','ignition','immunites','usages','cibles'"),'les points d’activation se comptent');
 /* Ignition à la table : l'orbe part sur l'allié désigné, ne blesse pas, et sa braise s'en va
    avec le premier coup au contact. Invulnérable et Brise s'entendent dans le journal. */
@@ -3372,6 +3371,25 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.522 — Maîtrise Point supplémentaire : +1 point d'Action ou de Mouvement à chaque tour. Dans l'arbre, une ligne
+   peut sauter un gros rond vide pour relier deux talents à deux cases l'un de l'autre, en droite ligne. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
+ const k=C.TALENTS_CODES.pointsupp;assert.ok(k&&k.type==='mait'&&/\+1 point d’Action/.test(k.phrase({}))&&/de Mouvement/.test(k.phrase({quoi:'mouvement'})),'la maîtrise déclarée');
+ globalThis.pointsDeTalents=(a,q)=>a.maitrise===q?1:0;
+ const h={points:{action:1,mouvement:1,objet:1},maitrise:'action'};
+ assert.deepEqual([C.pointsMax(h,'action'),C.pointsMax(h,'mouvement'),C.pointsMax(h,'action',true)],[2,1,1],'+1 Action, la fiche garde 1');
+ h.points.action=4;assert.equal(C.pointsMax(h,'action'),5,'au-delà du plafond');delete globalThis.pointsDeTalents;
+ assert.ok(src.includes("a.points={action:pointsMax(a,'action',true),mouvement:pointsMax(a,'mouvement',true),objet:pointsMax(a,'objet',true)};")
+  &&page.includes("function pointsDeTalents(a,quoi){if(!a||typeof talentsCodes!=='function')return 0;return talentsCodes(a).filter(t=>t.code.cle==='pointsupp'"),'la fiche ne garde que sa base');
+ // L'arbre : la ligne qui saute une case vide.
+ const ctx={DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES:['n','e','s','o'],LIENS_MAX:4,petitsDe:()=>[]};vm.createContext(ctx);
+ vm.runInContext(src.slice(src.indexOf('function posDe(t){'),src.indexOf('const liensDe='))+'const liensDe=t=>Array.isArray(t&&t.liens)?t.liens:[];'
+  +src.slice(src.indexOf('function dirVers(p,q){'),src.indexOf('function lisChemin(t){'))+src.slice(src.indexOf('function basculeLien(de,vers,liste){'),src.indexOf('/* Les colonnes d\'une classe'))+';this.basculeLien=basculeLien;this.dirLien=dirLien;',ctx);
+ const haut={id:'h',pos:{x:0,y:0}},bas={id:'b',pos:{x:0,y:2}},loin={id:'l',pos:{x:0,y:3}},biais={id:'d',pos:{x:1,y:2}},liste=[haut,bas,loin,biais];
+ assert.equal(ctx.basculeLien(haut,bas,liste),'ajoute','deux cases plus bas, la case du milieu libre');
+ assert.ok(ctx.basculeLien(haut,loin,liste)==='loin'&&ctx.basculeLien(haut,biais,liste)==='loin','trois cases, ou de biais : non');
+ const milieu={id:'m',pos:{x:0,y:1}};assert.equal(ctx.basculeLien(bas,haut,[...liste,milieu]),'loin','un talent au milieu : la ligne ne saute pas');
+ assert.ok(src.includes("const r=basculeLien(de,t,col.liste);")&&src.includes("occupe.add((p.x+q.x)/2+','+(p.y+q.y)/2)"),'au tracé, et la case sautée ne s’offre plus');}
 /* v0.521 — L'or et les gemmes au tableau en masse du Bestiaire ; un PNJ qui bascule en adverse sous les yeux de
    la troupe est révélé et lance le combat ; la vérification tourne en parallèle. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),verif=require('fs').readFileSync('verif.cjs','utf8');

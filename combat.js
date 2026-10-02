@@ -983,6 +983,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Maîtrise : avec une arme au contact, le porteur réussit un critique sur tous ses doubles, pas seulement les 6.',
   params:[],
   phrase(){return 'Le porteur réalise des <b>critiques sur tous ses doubles</b> avec une <b>arme au contact</b> ; un double 1 reste un échec.'}},
+ /* Point supplémentaire : une maîtrise. Le porteur a un point d'Action, ou de Mouvement, de plus à chaque tour,
+    au-delà du plafond ordinaire ; deux de ces maîtrises en donnent deux. */
+ pointsupp:{cle:'pointsupp',nom:'Point supplémentaire',type:'mait',
+  aide:'Maîtrise : le porteur dispose d’un point d’Action, ou d’un point de Mouvement, de plus à chaque tour.',
+  params:[{cle:'quoi',nom:'Point',type:'choix',defaut:'action',options:[['action','Action'],['mouvement','Mouvement']]}],
+  phrase(p){return 'Le porteur dispose de <b>+1 point '+((p&&p.quoi)==='mouvement'?'de Mouvement':'d’Action')+'</b> à chaque tour.'}},
  insaisissable:{cle:'insaisissable',nom:'Insaisissable',type:'pass',
   aide:'Passif : le porteur ignore les Dégâts d’Opportunité quand il effectue un mouvement.',
   params:[],
@@ -1394,8 +1400,11 @@ const POINTS_MAX={action:4,mouvement:3,objet:1};
 const POINTS_CLES=['action','mouvement','objet'];
 /* Combien il en a : ce que sa fiche déclare, borné au plafond, un au moins. Le Mouvement peut
    en compter davantage le temps d'un tour (« mvtBonus » : Rapide, Rebond), au-delà du plafond. */
-function pointsMax(a,quoi){const plafond=POINTS_MAX[quoi]||1;
- const v=Math.trunc(Number(a&&a.points&&a.points[quoi])),bonus=quoi==='mouvement'?Math.max(0,Math.min(9,Math.trunc(Number(a&&a.mvtBonus))||0)):0;
+/* « base » : ce que la fiche déclare, sans rien de ce que donnent le tour ou les talents — c'est ce que la fiche
+   garde. Le point d'une maîtrise Point supplémentaire s'ajoute, comme Rapide, au-delà du plafond. */
+function pointsMax(a,quoi,base){const plafond=POINTS_MAX[quoi]||1;
+ const v=Math.trunc(Number(a&&a.points&&a.points[quoi])),talents=!base&&typeof pointsDeTalents==='function'?Math.max(0,Math.min(9,pointsDeTalents(a,quoi)|0)):0;
+ const bonus=talents+(!base&&quoi==='mouvement'?Math.max(0,Math.min(9,Math.trunc(Number(a&&a.mvtBonus))||0)):0);
  return Math.max(1,Math.min(plafond+bonus,(Number.isFinite(v)&&v>0?v:1)+bonus))}
 // Combien il en a dépensés, jamais plus qu'il n'en a.
 function pointsUses(a,quoi){const i=POINTS_CLES.indexOf(quoi);if(i<0)return 0;
