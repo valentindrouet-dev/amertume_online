@@ -2984,12 +2984,17 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("if(elem){const c=choixElement(null,famille,renderTalents);c.classList.add('compact');h.append(c)}")
   &&src.includes("lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)))")&&src.includes("nom.className='nom-carte';nomAccolades(nom,vu.name);")
   &&src.includes("b.onclick=ev=>{ev.stopPropagation();elementApercu=e.cle;(rendre||renderArbres)()}")&&css.includes('.cat-col h3 .elements-bloc.compact{'),'Feu, Gel, Foudre dans la barre du Mystique');}
-/* v0.308 — Au sol ne cloue plus sur place (le Gel, si) ; « Se relever » prend l'allure des
-   boutons d'action ; le nom d'un talent sans dés se centre en hauteur contre son logo. */
+/* v0.308 — « Se relever » prend l'allure des boutons d'action ; le nom d'un talent sans dés se centre en
+   hauteur contre son logo. (Au sol verrouille de nouveau le token depuis la v0.514.) */
 {const page=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(page.includes("function canMove(i){return controlled(i)&&(view===\"mj\"||(!tokensLocked&&!hasState(actors[i],'Gel')))}")
-  &&page.includes("log(nomNum(a)+' se relève : Mouvement dépensé, Action encore disponible.',{ton:'etat'});render();scheduleSave()},'btn-action');")
-  &&css.includes('button.choix-attaque .nom{display:block;white-space:nowrap}'),'Au sol rampe, Se relever en bouton d’action, nom centré');}
+ assert.ok(page.includes("log(nomNum(a)+' se relève : Mouvement dépensé, Action encore disponible.',{ton:'etat'});render();scheduleSave()},'btn-action')}")
+  &&css.includes('button.choix-attaque .nom{display:block;white-space:nowrap}'),'Se relever en bouton d’action, nom centré');}
+/* v0.514 — Au sol : le token est verrouillé, MJ compris, jusqu'à ce que le combattant se relève (un Mouvement) ;
+   le bouton Se relever porte l'icône de l'état. */
+{const page=fs.readFileSync('index.html','utf8');
+ assert.ok(page.includes("function canMove(i){return controlled(i)&&!hasState(actors[i],'Au sol')&&(view===\"mj\"||(!tokensLocked&&!hasState(actors[i],'Gel')))}")
+  &&page.includes("const ic=imageEtat('Au sol');if(ic&&ic.tagName==='IMG')ic.className='logo-equip';")
+  &&page.includes("geste('Se relever',ic||'⤴','Remet le combattant debout.',!enCombat()||pointsRestants(a,'mouvement')>0,()=>{"),'Au sol verrouille le token ; Se relever à son icône');}
 /* v0.309 — Une tuile de talent n'écrit plus sa nature sous son logo. */
 {const src=fs.readFileSync('editor.js','utf8');const tuile=src.slice(src.indexOf('function talentRow('),src.indexOf('\nfunction ',src.indexOf('function talentRow(')+10));
  assert.ok(!tuile.includes("b.className='t-badge'")&&tuile.includes("const nature=talentType(t)[2],mj=view==='mj';")&&!fs.readFileSync('editor.css','utf8').includes('.talent-carre .t-badge'),'pas d’abrégé sous le logo');}
@@ -3690,7 +3695,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&src.includes("if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';")&&src.includes("desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0))"),'la main droite seule ; le jeton de dégâts reste à la bulle des monstres');
  assert.ok(page.includes('<button class="btn-action btn-analyse rond" id="reveal" hidden>🔍</button>')&&page.includes("function poseRond(b,centre,nom,dit,compte,bulle){")
   &&page.includes("poseRond(rev,'🔍',dejà?'Analysé':'Analyser',")
-  &&page.includes("poseRond(b,im||glyphe,nom,titre,compteDuTexte(nom),bulle);")&&page.includes("geste('Dégel','❄',")&&page.includes("geste('Se relever','⤴',")
+  &&page.includes("poseRond(b,im||glyphe,nom,titre,compteDuTexte(nom),bulle);")&&page.includes("geste('Dégel','❄',")&&page.includes("geste('Se relever',ic||'⤴',")
   &&page.includes("(b.dataset.nom||b.textContent)")&&!page.includes("rev.textContent=")&&!page.includes("repos.textContent="),'Analyser, Repos court, gestes et réactions en ronds, nommés dans la bulle');
  assert.ok(src.includes("const titreComp=sousTitre('Compétences');")&&src.includes("const titreKit=sousTitre('Inventaire','Ajouter à l’inventaire de '+a.name,view==='mj'?()=>openPicker(a,'gear'):null);")
   &&src.includes("sousTitre('Inventaire','Ajouter à l’inventaire de '+a.name,view==='mj'?()=>openPicker(a,'gear'):null)")
