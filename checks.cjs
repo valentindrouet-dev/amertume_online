@@ -3376,6 +3376,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.517 — Les mots flottants : un état à la couleur de son icône ; posés ensemble sur un socle, l'un au-dessus de l'autre. */
+{const page=fs.readFileSync('index.html','utf8');
+ assert.ok(page.includes("const COULEURS_ETATS={'Poison':'#b968d3','Blindage':'#689fd3','Feu':'#f0903a','Foudre':'#f2d14a','Gel':'#8fd3f7',")
+  &&page.includes("if(etat&&COULEURS_ETATS[etat])el.style.color=COULEURS_ETATS[etat];")
+  &&page.includes("el.style.top='calc('+cible.y+'% - '+(tokenOf(cible)*.62+rang*fs*1.1)+'px)';"),'couleur des états et pile des mots');}
 /* v0.516 — Dominateur, générique : contre les adversaires avec l'état réglé, le double, +x ou +xdx de dégâts, ou pas d'échec. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
  const ph=p=>C.texteBrut(C.phraseTalent('dominateur',p));
