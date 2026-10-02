@@ -1,4 +1,8 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
+/* Chaque source ne se lit qu'une fois : les tests relisaient editor.js, index.html et editor.css des
+   centaines de fois. */
+{const lire=fs.readFileSync.bind(fs),lus=new Map();fs.readFileSync=(f,...r)=>{if(typeof f!=='string'||r[0]!=='utf8'||!/\.(?:js|html|css)$/.test(f))return lire(f,...r);
+ if(!lus.has(f))lus.set(f,lire(f,...r));return lus.get(f)}}
 /* v0.518 — Les camps des PNJ, v0.519 la bourse aux dés : toute machine virtuelle des contrôles les connaît, comme la page. */
 {const C=require('./combat.js'),cree=vm.createContext.bind(vm);vm.createContext=(o,...r)=>{if(o&&typeof o==='object')for(const k of ['ALIGNEMENTS','alignementDe','campDe','duCoteTroupe','memeCamp','hostiles','normaliseBourse','tireBourse','phraseRichesses'])if(!(k in o))o[k]=C[k];return cree(o,...r)}}
 const editor=fs.readFileSync('editor.js','utf8');const ctx={};vm.createContext(ctx);vm.runInContext(editor.slice(editor.indexOf('function imageDimensions'),editor.indexOf('let imageJob')),ctx);
@@ -1137,18 +1141,6 @@ assert.ok(src.includes("const porteurs=(catalog.talents||[]).map((t,i)=>[t,i]).f
    panachées, sans bonus, dont la moyenne, lancée par le moteur, s'en approche ; des mélanges différents d'abord. */
 {assert.deepEqual(C.lireDegatsDnd('2d6+3'),{des:[{n:2,f:6}],bonus:3,moyenne:10,min:5,max:15});
  assert.equal(C.lireDegatsDnd('d8 + 1d4 - 1').moyenne,6);assert.ok(C.lireDegatsDnd('1d20').erreur,'un d20 ne se convertit pas');assert.ok(C.lireDegatsDnd('abc').erreur);
- const r=C.conversionDegats('2d6');assert.equal(r.propositions.length,6);
- r.propositions.forEach(p=>{assert.ok(Math.abs(p.moyenne-7)<0.6,'proche de 7');assert.equal(p.bonus,undefined,'des dés seuls')});
- assert.ok(r.propositions.some(p=>JSON.stringify(p.des)==='{"white":2}'),'2d6 : deux dés simples parmi les propositions');
- assert.equal(new Set(r.propositions.map(p=>Object.keys(p.des).sort().join('+'))).size,6,'six mélanges différents');
- assert.equal(C.conversionDegats('3d8+4').moyenne,13.5,'un bonus tapé n’entre pas dans la moyenne');
- C.conversionDegats('3d8').propositions.forEach(p=>assert.ok(Math.abs(p.moyenne-13.5)<1&&p.n<=5,'proche de 13,5'));
- ['8d6','10d6'].forEach(t=>assert.ok(C.conversionDegats(t).propositions.every(p=>p.n<=5&&Object.values(p.des).reduce((x,y)=>x+y,0)<=5),t+' : cinq dés au plus'));
- assert.ok(C.conversionDegats('3d8').propositions.some(p=>Object.keys(p.des).length>1),'des poignées panachées');
- assert.equal(C.conversionDegats('3d8').def,undefined,'une valeur absolue, sans DEF');
- ['2d6','3d8','7d6'].forEach(t=>assert.ok(C.conversionDegats(t).propositions.every(p=>!p.des.black),t+' : pas de Mortel sous 25'));
- assert.ok(C.conversionDegats('8d6').propositions.every(p=>(p.des.black||0)<=1)&&C.conversionDegats('10d6').propositions.every(p=>(p.des.black||0)<=3),'un Mortel de plus tous les 5 points');
- assert.deepEqual(C.moyennePoignee({red:2,white:1},3),C.moyennePoignee({red:2,white:1},3),'le hasard est semé');
  assert.ok(src.includes("const conversionDialog=dialog('conversion-des','Conversion des dégâts',")&&src.includes("b.id='conversion-ouvre';b.className='conversion-bouton';b.textContent='🎲';")
   &&src.includes("$('view').after(b)")&&!src.includes("conversion-dit")&&!src.includes("conversion-def")&&feuille.includes('.conversion-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));'),'le dé à côté de la vue ouvre la conversion');}
 /* Un test de compétence tient sur une ligne au journal : la compétence, les réussites, les dés — 4+ en vert, en
@@ -3380,6 +3372,23 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.521 — L'or et les gemmes au tableau en masse du Bestiaire ; un PNJ qui bascule en adverse sous les yeux de
+   la troupe est révélé et lance le combat ; la vérification tourne en parallèle. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),verif=require('fs').readFileSync('verif.cjs','utf8');
+ assert.ok(src.includes("{cle:'bourse',nom:'Or et gemmes',type:'panneau',tri:m=>normaliseBourse(m.bourse).length},")&&src.includes("else if(quoi==='bourse')corps.append(editeurBourse(m,fini));")
+  &&src.includes("else if(quoi==='bourse'){const l=ligneBourse(m.bourse);if(l)b.append(l)}")&&src.includes("bourse:'Or et gemmes'"),'la colonne Or et gemmes');
+ assert.ok(page.includes("()=>{a.alignementJeu=k;basculeAdverse(a);render();scheduleSave()}")&&page.includes("function basculeAdverse(a){if(campDe(a)!=='adverse'||!alive(a)||a.hidden||")
+  &&page.includes("floatNumber(a,'Révélé !','nul');log(nomNum(a)+' est révélé.',{ton:'reveal'});\n if(!enCombat())setTimeout(()=>{if(!enCombat())basculerMode('combat',true)},0)}"),'adverse en vue : révélé, et le combat');
+ // Le basculement, joué : en vue il révèle et lance le combat ; hors de vue, rien.
+ const ctx={alive:a=>a.hp>0,hasState:()=>false,prochainNumero:()=>1,nomNum:a=>a.name,flots:[],floatNumber:(a,t)=>ctx.flots.push(t),journal:[],log:t=>ctx.journal.push(t),
+  combat:false,enCombat:()=>ctx.combat,basculerMode:m=>{ctx.combat=m==='combat'},setTimeout:f=>f(),vue:true,troupeVoit:()=>ctx.vue};vm.createContext(ctx);
+ vm.runInContext(page.slice(page.indexOf('function basculeAdverse(a){'),page.indexOf('\n',page.indexOf('if(!enCombat())setTimeout(()=>{if(!enCombat())basculerMode(\'combat\',true)},0)}',page.indexOf('function basculeAdverse(a){'))))+';this.basculeAdverse=basculeAdverse;',ctx);
+ const pnj={name:'Orvel',pnj:true,alignement:'neutre',alignementJeu:'adverse',hp:5};ctx.basculeAdverse(pnj);
+ assert.ok(pnj.vu===true&&ctx.flots[0]==='Révélé !'&&ctx.journal[0]==='Orvel est révélé.'&&ctx.combat,'en vue : Révélé !, et le combat');
+ ctx.flots.length=0;ctx.combat=false;ctx.vue=false;ctx.basculeAdverse({name:'Ysol',pnj:true,alignementJeu:'adverse',hp:5});
+ ctx.basculeAdverse({name:'Mira',pnj:true,alignementJeu:'allie',hp:5});ctx.vue=true;ctx.basculeAdverse({name:'Mira',pnj:true,alignementJeu:'allie',hp:5});
+ assert.ok(!ctx.flots.length&&!ctx.combat,'hors de vue, ou allié : rien');
+ assert.ok(verif.includes("JEUX=['checks.cjs','des-checks.cjs','shared-checks.cjs','id-checks.cjs']")&&verif.includes('await Promise.all(JEUX.map(lance))'),'les jeux de tests en parallèle');}
 /* v0.520 — Cinq jetons par ligne au Bestiaire ; un outil PNJ à l'éditeur de cartes ; un PNJ unique n'existe qu'en un
    exemplaire sur une carte ; et sur la table, le MJ change l'alignement d'un PNJ le temps de la rencontre. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
@@ -3399,8 +3408,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&mp.includes("if(mapTool==='foe'||mapTool==='pnj'){")&&mp.includes("const deja=t.pnj&&t.unique===true?mapDraft.foes.findIndex(f=>f&&f.tpl&&f.tpl.id===t.id):-1;")
   &&mp.includes("if(t&&t.pnj&&t.unique===true){if(uniques.has(t.id))return;uniques.add(t.id)}")&&feuille.includes('.shape.foe.al-allie{'),'l’outil PNJ');
  // La fiche de table : le bouton d'alignement, au MJ ; en ligne, au MJ seul.
- assert.ok(page.includes('<button type="button" class="sheet-class" id="pnj-camp" hidden></button>')&&page.includes("function pnjCamp(a){const b=$('pnj-camp');b.hidden=!(a&&a.pnj&&view==='mj');")
-  &&page.includes("()=>{a.alignementJeu=k;render();scheduleSave()}")&&vivant.includes("'alignementJeu'];")&&/CHAMPS_ACTEUR_MJ=\[[^\]]*'alignementJeu'/.test(vivant),'l’alignement du moment');}
+ assert.ok(page.includes('<button type="button" class="sheet-class" id="pnj-camp" hidden></button>')&&page.includes("function pnjCamp(a){const b=$('pnj-camp');b.hidden=!(a&&a.pnj&&view==='mj');")&&vivant.includes("'alignementJeu'];")&&/CHAMPS_ACTEUR_MJ=\[[^\]]*'alignementJeu'/.test(vivant),'l’alignement du moment');}
 /* v0.519 — L'or et les gemmes d'un adversaire, d'un PNJ ou d'un coffre, tirés aux dés : une bourse de lignes
    « x d y », avec, pour un adversaire, la chance qu'elle tombe. Tirée au retrait de l'adversaire, ou à
    l'ouverture du coffre. */

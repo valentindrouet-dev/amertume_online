@@ -28,16 +28,20 @@ function oteChaine(f,lit){let t=fs.readFileSync('checks.cjs','utf8'),n=0;const q
  // L'appel, précédé ou suivi de « && », même à cheval sur une ligne.
  for(const q of qs){const F='!?'+esc(f+'.includes('+q+')');for(const re of [new RegExp('\\s*&&\\s*'+F),new RegExp(F+'\\s*&&\\s*')])while(re.test(t)){t=t.replace(re,'');n++}}
  if(n)fs.writeFileSync('checks.cjs',t);return n}
-for(let tour=0;tour<40;tour++){let refaire=false;
-for(const f of ['checks.cjs','shared-checks.cjs','id-checks.cjs']){
- try{process.stdout.write(execFileSync('node',[f],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim().split('\n').pop()+'\n')}
- catch(e){const err=String(e.stderr||''),m=/checks\.cjs:(\d+)/.exec(err)||/(?:^|\/)(\w+-checks\.cjs):(\d+)/.exec(err);
+/* Les quatre jeux tournent en même temps : la conversion des dés, la plus longue, ne retient plus les autres.
+   Les résultats se lisent ensuite dans l'ordre, comme avant. */
+const {execFile}=require('child_process'),JEUX=['checks.cjs','des-checks.cjs','shared-checks.cjs','id-checks.cjs'];
+const lance=f=>new Promise(res=>execFile('node',[f],{encoding:'utf8'},(e,out,err)=>res({f,e,out:String(out||''),err:String(err||'')})));
+(async()=>{for(let tour=0;tour<40;tour++){let refaire=false;
+ for(const {f,e,out,err} of await Promise.all(JEUX.map(lance))){
+  if(!e){process.stdout.write(out.trim().split('\n').pop()+'\n');continue}
+  const m=/checks\.cjs:(\d+)/.exec(err)||/(?:^|\/)(\w+-checks\.cjs):(\d+)/.exec(err);
   console.error(err.split('\n').filter(l=>l&&!/^\s+at /.test(l)).slice(0,8).join('\n'));
   if(f==='checks.cjs'&&m){const n=+m[1],L=fs.readFileSync(f,'utf8').split('\n');let i=n-1;while(i>0&&!/^\s*(assert\.|\{assert)/.test(L[i]))i--;
    const bloc=L.slice(i,n+14).join('\n'),re=/(!?)(src|page|css|feuille|vivant|combat|fief|cartes2|part)\.includes\(("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')\)/g;let x;
    while((x=re.exec(bloc))){let lit;try{lit=eval(x[3])}catch(_){continue}const has=fs.readFileSync(fichiers[x[2]],'utf8').includes(lit);
     if((x[1]==='!')===has){if(epure&&oteChaine(x[2],lit)){otes.push(lit.slice(0,120));refaire=true}else console.error('  chaîne '+(x[1]?'présente à tort':'manquante')+' ('+x[2]+') : '+lit.slice(0,220))}}}
-  if(refaire)break;process.exit(1)}}
-if(!refaire)break}
+  if(refaire)break;process.exit(1)}
+ if(!refaire)break}
 if(otes.length)console.log('épuré : '+otes.length+' vérification(s) par chaîne ôtée(s)\n  · '+otes.join('\n  · '));
-console.log('✓ tout passe');
+console.log('✓ tout passe')})();

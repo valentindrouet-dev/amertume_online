@@ -2223,11 +2223,12 @@ function barreMasseBestiaire(boite){const barre=document.createElement('div');ba
    créatures posées suivent, et la case du tableau se redessine. */
 const panneauMasse=dialog('masse-panneau','Adversaire','<form id="masse-panneau-form" class="masse-panneau-form"><div id="masse-panneau-corps"></div></form>');
 $('masse-panneau-form').onsubmit=e=>e.preventDefault();
-const NOMS_PANNEAU={inventaire:'Inventaire',restes:'Restes',attaques:'Attaques spéciales',talents:'Talents'};
+const NOMS_PANNEAU={inventaire:'Inventaire',restes:'Restes',bourse:'Or et gemmes',attaques:'Attaques spéciales',talents:'Talents'};
 function ouvrePanneauMasse(m,quoi,apres){const corps=$('masse-panneau-corps'),form=$('masse-panneau-form');corps.replaceChildren();form.onchange=null;
  panneauMasse.querySelector('.dialog-head h2').textContent=m.name+' · '+NOMS_PANNEAU[quoi];
  const fini=()=>{sauveBestiaire([m]);apres()};
  if(quoi==='inventaire'||quoi==='restes')inventaireAdversaire(corps,m,()=>{equipeAdversaire(m);m.butin=normaliseButin(m.butin,m.inventaire);fini()},quoi);
+ else if(quoi==='bourse')corps.append(editeurBourse(m,fini));
  else if(quoi==='talents'){const filtre=document.createElement('input');filtre.type='search';filtre.className='masse-panneau-filtre';filtre.placeholder='Filtrer les talents';filtre.setAttribute('aria-label','Filtrer les talents');
   const boite=document.createElement('div');boite.className='talent-picker';const toutes=talentFamilies(),tete=m.family&&toutes.includes(m.family)?[m.family]:[];
   const dessine=()=>choixTalents(boite,m,filtre.value,[...tete,...toutes.filter(f=>!tete.includes(f))],fini);filtre.oninput=dessine;corps.append(filtre,boite);dessine()}
@@ -2246,6 +2247,7 @@ function cellulePanneau(m,quoi,apres){const b=document.createElement('button');b
  const dessine=()=>{b.replaceChildren();const plus=n=>{if(n>0){const x=document.createElement('span');x.className='masse-plus';x.textContent='+'+n;b.append(x)}};
   if(quoi==='attaques'){const noms=(m.attacks||[]).map(a=>a&&a.name).filter(Boolean);if(noms.length){const t=document.createElement('span');t.className='masse-attaques-noms';t.textContent=noms.join(' · ');b.append(t)}}
   else if(quoi==='talents'){const l=(m.talents||[]).map(talent).filter(Boolean);l.slice(0,6).forEach(t=>{const r=talentRond(t);r.classList.add('mini');b.append(r)});plus(l.length-6)}
+  else if(quoi==='bourse'){const l=ligneBourse(m.bourse);if(l)b.append(l)}
   else{const comptes=new Map();(m.inventaire||[]).map(objetDe).filter(o=>o&&estReste(o)===(quoi==='restes')).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
    [...comptes].slice(0,6).forEach(([o,n])=>{const w=document.createElement('span');w.className='masse-inv';
     w.append(logoEquipement(o)||Object.assign(document.createElement('span'),{className:'glyphe',textContent:'◈'}));
@@ -2269,6 +2271,8 @@ function tableMasseBestiaire(boite,liste){
   {cle:'talents',nom:'Talents',type:'panneau',tri:m=>(m.talents||[]).length},
   {cle:'inventaire',nom:'Inventaire',type:'panneau',tri:m=>(m.inventaire||[]).filter(id=>!estReste(objetDe(id))).length},
   {cle:'restes',nom:'Restes',type:'panneau',tri:m=>(m.inventaire||[]).filter(id=>estReste(objetDe(id))).length},
+  // L'or et les gemmes de sa bourse, en formules ; un clic ouvre la bourse à modifier.
+  {cle:'bourse',nom:'Or et gemmes',type:'panneau',tri:m=>normaliseBourse(m.bourse).length},
   {cle:'socle',nom:'Socle',type:'choix',opts:SOCLES_ADVERSAIRE,lit:m=>m.socle||'medium',ecrit:(m,v)=>{m.socle=dans(SOCLES_ADVERSAIRE,v,'medium')},tri:m=>SOCLES_ADVERSAIRE.findIndex(([k])=>k===(m.socle||'medium'))},
   {cle:'menace',nom:'Menace',type:'choix',opts:MENACES,lit:m=>m.menace||'closest',ecrit:(m,v)=>{m.menace=dans(MENACES,v,'closest')},tri:m=>MENACE_NOMS[m.menace||'closest']||''}];
  const colTri=masseTriBest&&(masseTriBest.cle==='nom'?{tri:m=>m.name}:COLS.find(c=>c.cle===masseTriBest.cle));
