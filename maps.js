@@ -766,7 +766,9 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
     bestiaire, lui, a pu changer depuis. C'est le bestiaire qui fait foi : le modèle du
     même identifiant, ou à défaut du même nom s'il est seul à le porter. La copie ne
     sert plus que si le modèle a disparu. */
- (m.foes||[]).forEach(f=>{const a=fromMonster(modeleActuel(f.tpl));a.x=f.x;a.y=f.y;
+ const uniques=new Set();
+ (m.foes||[]).forEach(f=>{const t=modeleActuel(f.tpl);if(t&&t.pnj&&t.unique===true){if(uniques.has(t.id))return;uniques.add(t.id)}
+  const a=fromMonster(t);a.x=f.x;a.y=f.y;
   // Le lien vers sa pose : l'éditeur retrouve ainsi l'adversaire en jeu.
   if(!f.id)f.id=crypto.randomUUID();a.pose=f.id;
   // Ce que la carte lui a donné, à lui seul.
@@ -848,6 +850,7 @@ mapsPage.innerHTML=
  +'<select id="pinceau-taille" aria-label="Grosseur du pinceau" hidden><option value=".3">Pinceau fin</option><option value=".55" selected>Pinceau moyen</option><option value="1">Pinceau large</option></select>'
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
+ +'<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl" aria-label="Modèle de PNJ"></select>'
  +'<button data-tool="objet">+ Objet</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button>'
  +'<span class="bar-sep"></span><button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>'
  +'<span class="bar-sep"></span><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
@@ -983,7 +986,8 @@ function renderMapList(){$('map-list').replaceChildren(...maps.map(m=>{const b=d
  b.title=m.name+(m.id===currentMapId?' — chargée sur la table':'')+'\n'+matiereDe(m).length+' zone(s) · '+m.doors.length+' porte(s) · '+m.foes.length+' adversaire(s)'+((m.objets||[]).length?' · '+m.objets.length+' objet(s)':'');
  b.append(nom);b.onclick=()=>{mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()};return b}));
  if(mapDraft)$('map-name').value=mapDraft.name;
- $('map-foe-tpl').replaceChildren();catalog.monsters.forEach((m,i)=>$('map-foe-tpl').add(new Option(m.name,String(i))))}
+ // Deux outils, deux listes : les adversaires d'un côté, les PNJ de l'autre.
+ $('map-foe-tpl').replaceChildren();$('map-pnj-tpl').replaceChildren();catalog.monsters.forEach((m,i)=>$(m.pnj?'map-pnj-tpl':'map-foe-tpl').add(new Option(m.name,String(i))))}
 
 /* Le tracé se fait en deux clics : le premier pose l'origine, le second arrête le trait.
    Maj le contraint aux huit directions, comme dans n'importe quel outil de dessin. */
@@ -1080,7 +1084,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  if(mapSel)$('shape-lock').textContent=verrou?'🔓 Déverrouiller':'🔒 Verrouiller';
  /* Une masse ne s'annonce pas en morceaux : elle est « la zone de blocage », qu'elle soit
     née d'un rectangle, d'un coup de pinceau ou de vingt gestes mêlés. */
- $('shape-label').textContent=mapSel?(porte&&porte.secret?'Passage secret':KINDS[mapSel.kind])
+ $('shape-label').textContent=mapSel?(porte&&porte.secret?'Passage secret':adv&&(modeleActuel(adv.tpl)||adv.tpl).pnj?'PNJ':KINDS[mapSel.kind])
   +(adv?' · '+adv.tpl.name+(adv.cache?' · caché':''):'')+(obj?' · '+obj.nom+(obj.visible?'':' · caché'):'')+(coffre?' · '+coffre.nom+(coffre.cache?' · caché':''):'')+(verrou?' · verrouillée':''):'Aucune sélection.';
  $('map-xp').textContent=xpDeCarte(m)+' xp';
  $('map-count').textContent=matiereDe(m).length+' zone(s) de blocage, '+m.doors.length+' porte(s), '
@@ -1130,7 +1134,8 @@ function objetEl(i,o){const el=document.createElement('div');
  el.ondblclick=e=>{e.stopPropagation();openObjet(i)};
  return el}
 function foeEl(i,f){const el=document.createElement('div');
- el.className='shape foe'+(f.locked?' locked':'')+(f.cache?' cache':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
+ const modele=modeleActuel(f.tpl)||f.tpl||{};
+ el.className='shape foe'+(modele.pnj?' pnj al-'+alignementDe(modele):'')+(f.locked?' locked':'')+(f.cache?' cache':'')+(mapSel&&mapSel.kind==='foe'&&mapSel.i===i?' selected':'');
  // Même taille relative qu'en partie, socle compris : un petit reste petit, un énorme énorme.
  const t=Math.max(10,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100*socleFacteur(f.tpl));
  el.style.width=el.style.height=t+'px';el.style.margin=(-t/2)+'px 0 0 '+(-t/2)+'px';el.style.fontSize=(t*.47)+'px';
@@ -1338,7 +1343,10 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
     centre:{x:cible.x+(cible.w||0)/2,y:cible.y+(cible.h||0)/2}};
    $('map-canvas').setPointerCapture(e.pointerId)}
   renderCanvas();e.preventDefault();return}
- if(mapTool==='foe'){const t=catalog.monsters[Number($('map-foe-tpl').value)];if(!t)return;
+ if(mapTool==='foe'||mapTool==='pnj'){const t=catalog.monsters[Number($(mapTool==='pnj'?'map-pnj-tpl':'map-foe-tpl').value)];if(!t)return;
+  // Un PNJ unique n'a qu'un exemplaire sur une carte : le second clic montre celui qui y est déjà.
+  const deja=t.pnj&&t.unique===true?mapDraft.foes.findIndex(f=>f&&f.tpl&&f.tpl.id===t.id):-1;
+  if(deja>=0){mapSel={kind:'foe',i:deja};renderCanvas();$('shape-label').textContent=t.name+' est unique : il est déjà sur cette carte.';return}
   pushUndo();mapDraft.foes.push({tpl:structuredClone(t),x:p.x,y:p.y,locked:false});
   mapSel={kind:'foe',i:mapDraft.foes.length-1};renderCanvas();saveMaps();return}
  /* Un objet se pose d'un clic et sa fiche s'ouvre aussitôt : on le nomme avant de l'oublier. */

@@ -337,7 +337,7 @@ function cleanMonster(t){const dés={};
   pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,DEF_MAX)),
   damage:Math.round(borne(t&&t.damage,0,999)),xp:Math.round(borne(t&&t.xp,0,9999)),
   menace:texte(t&&t.menace,30)||'closest',esquive:!!(t&&t.esquive),rapide:!!(t&&t.rapide),
-  ...(t&&t.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:t.alignement})}:{}),...(normaliseBourse(t&&t.bourse).length?{bourse:normaliseBourse(t.bourse)}:{}),
+  ...(t&&t.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:t.alignement}),...(t.unique===true?{unique:true}:{})}:{}),...(normaliseBourse(t&&t.bourse).length?{bourse:normaliseBourse(t.bourse)}:{}),
   /* Un adversaire peut n'avoir aucune attaque : c'est au maître du jeu d'en décider, et
      un monstre qui ne frappe pas est un monstre comme un autre. Un modèle d'avant, qui
      portait ses dés à la racine sans liste d'attaques, garde pourtant les siens —
@@ -1552,7 +1552,9 @@ function rangType(a){return a&&!a.hero&&RANG_TYPE[a.type]!==undefined?RANG_TYPE[
    Un adversaire ordinaire est adverse, un aventurier est de la troupe. Deux combattants s'affrontent quand
    l'un est de la troupe et l'autre non. */
 const ALIGNEMENTS=[['allie','Allié'],['neutre','Neutre'],['adverse','Adverse']];
-function alignementDe(a){if(!a||a.hero)return '';if(!a.pnj)return 'adverse';return ['allie','neutre','adverse'].includes(a.alignement)?a.alignement:'neutre'}
+/* Sur la table, le MJ peut changer l'alignement d'un PNJ le temps d'une rencontre (« alignementJeu ») : il
+   l'emporte sur celui du modèle, que le Bestiaire garde intact. */
+function alignementDe(a){if(!a||a.hero)return '';if(!a.pnj)return 'adverse';const al=a.alignementJeu||a.alignement;return ['allie','neutre','adverse'].includes(al)?al:'neutre'}
 function campDe(a){if(!a)return '';if(a.hero)return 'troupe';const al=alignementDe(a);return al==='allie'?'troupe':al}
 function duCoteTroupe(a){return campDe(a)==='troupe'}
 function memeCamp(a,b){return !!a&&!!b&&campDe(a)===campDe(b)}

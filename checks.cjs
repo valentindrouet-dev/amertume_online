@@ -1375,7 +1375,7 @@ assert.equal(t.toggleEquip(a,o('ar')),null);assert.equal(JSON.stringify(a.armure
  assert.ok(/pas dans l’inventaire/.test(t.toggleEquip({inventaire:[],weapons:[]},o('e'))));
  a.weapons=[];t.toggleEquip(a,o('e'));t.retirerInventaire(a,o('e'));t.retirerInventaire(a,o('e'));assert.equal(JSON.stringify(a.weapons),JSON.stringify([]));assert.ok(!a.inventaire.includes('e'));   // Retirer le dernier exemplaire le repose.
  const b={weapons:['h'],armures:['ar'],shieldId:'',inventaire:[]};t.completerInventaire(b);assert.equal(JSON.stringify(b.inventaire),JSON.stringify(['h','ar']));}
-assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire),bourse:normaliseBourse(a.bourse),...(a.pnj?{pnj:true,alignement:alignementDe(a)}:{})}}")&&src.includes("inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}")
+assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire),bourse:normaliseBourse(a.bourse),...(a.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:a.alignement}),...(a.unique===true?{unique:true}:{})}:{})}}")&&src.includes("inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m),...(m.unique===true?{unique:true}:{})}:{})}}")
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,combat?'':'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
@@ -2803,7 +2803,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const libre={...t,elementaire:undefined};assert.equal(C.talentPourElement(libre,G).params.etat,'Feu','sans la case, l’état réglé reste');
  const neutre={id:'x',name:'Forge',params:{etat:'Feu'}};assert.equal(C.talentPourElement(neutre,G),neutre);assert.equal(C.estElementaire(neutre),false);assert.equal(C.estElementaire(libre),true);
  assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefoudre','Foudre',1]],'la table joue l’élément, puis le palier ; la DEF retirée, réglage commun, reste celle du palier 1');
- assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement'];")
+ assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu'];")
   &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
  assert.ok(src.includes("function choixElement(a,classe,rendre){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
   &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n)")
@@ -3289,7 +3289,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxB.journal[0],'Brom trouve ⟦m⟧ ⟦r⟧ ×2 (Troll).','une ligne au journal');
  ctxB.journal.length=0;ctxB.butinDesRetires([{name:'Rat',hero:false,x:0,y:0,inventaire:['m'],butin:{m:40}}],()=>0.4);
  assert.equal(ctxB.journal.length,0,'40 % : un tirage à 40 ne tombe pas');
- assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}\nfunction fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);")
+ assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m),...(m.unique===true?{unique:true}:{})}:{})}}\nfunction fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);")
   &&src.includes(" if(!a.hero){equipeAdversaire(a);a.butin=normaliseButin(a.butin,a.inventaire)}")
   &&src.includes("const CATS_INV_ADV=[['armes','Armes',")&&src.includes("if(!draft.hero){inventaireAdversaire(boite,draft,refreshEquip);if($('restes-edit'))inventaireAdversaire($('restes-edit'),draft,refreshEquip,'restes');return}"),'inventaire d’adversaire : familles, pioche, butin, tout porté');
  assert.ok(src.includes("r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;")&&css.includes('.bulle-modele .stat-tile strong{font-size:22px;line-height:1.05;margin-top:1px}')
@@ -3380,6 +3380,27 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.520 — Cinq jetons par ligne au Bestiaire ; un outil PNJ à l'éditeur de cartes ; un PNJ unique n'existe qu'en un
+   exemplaire sur une carte ; et sur la table, le MJ change l'alignement d'un PNJ le temps de la rencontre. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ const p={pnj:true,alignement:'neutre'};assert.equal(C.campDe(p),'neutre');p.alignementJeu='allie';
+ assert.ok(C.alignementDe(p)==='allie'&&C.campDe(p)==='troupe'&&p.alignement==='neutre','l’alignement du moment l’emporte, le modèle reste');
+ assert.equal(C.alignementDe({pnj:true,alignement:'neutre',alignementJeu:'bof'}),'neutre');
+ const t=C.cleanMap({foes:[{x:1,y:1,tpl:{name:'Garde',pnj:true,alignement:'allie',unique:true}},{x:2,y:2,tpl:{name:'Loup',unique:true}}]}).foes;
+ assert.ok(t[0].tpl.unique===true&&!('unique' in t[1].tpl),'un PNJ seul garde « unique »');
+ // Le Bestiaire : cinq colonnes par catégorie.
+ assert.ok(feuille.includes('#bestiary-cols .cat-col.armurerie-grille{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));')&&feuille.includes('#bestiary-cols .cat-pill.gear-carre.best-carre{width:100%;max-width:69px;height:auto;aspect-ratio:1}'),'cinq jetons par ligne');
+ // La fiche : la case Unique ; le modèle garde l'alignement du Bestiaire, pas celui du moment.
+ assert.ok(src.includes('>Unique</label>\':\'\')')&&src.includes("if(a.pnj&&f.unique){if(f.unique.checked)a.unique=true;else delete a.unique}")
+  &&src.includes("alignement:alignementDe({pnj:true,alignement:a.alignement}),...(a.unique===true?{unique:true}:{})")&&src.includes("'pool','pnj','alignement','unique'])]"),'la case Unique');
+ assert.ok(src.includes("if(m.pnj&&m.unique===true&&actors.some(a=>a&&!a.hero&&a.template===m.id)){")&&src.includes("const n=m.pnj&&m.unique===true?1:"),'sur la table, un seul exemplaire');
+ // L'éditeur de cartes : l'outil PNJ, sa liste, l'unique, la couleur.
+ assert.ok(mp.includes('<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl"')&&mp.includes("catalog.monsters.forEach((m,i)=>$(m.pnj?'map-pnj-tpl':'map-foe-tpl').add(")
+  &&mp.includes("if(mapTool==='foe'||mapTool==='pnj'){")&&mp.includes("const deja=t.pnj&&t.unique===true?mapDraft.foes.findIndex(f=>f&&f.tpl&&f.tpl.id===t.id):-1;")
+  &&mp.includes("if(t&&t.pnj&&t.unique===true){if(uniques.has(t.id))return;uniques.add(t.id)}")&&feuille.includes('.shape.foe.al-allie{'),'l’outil PNJ');
+ // La fiche de table : le bouton d'alignement, au MJ ; en ligne, au MJ seul.
+ assert.ok(page.includes('<button type="button" class="sheet-class" id="pnj-camp" hidden></button>')&&page.includes("function pnjCamp(a){const b=$('pnj-camp');b.hidden=!(a&&a.pnj&&view==='mj');")
+  &&page.includes("()=>{a.alignementJeu=k;render();scheduleSave()}")&&vivant.includes("'alignementJeu'];")&&/CHAMPS_ACTEUR_MJ=\[[^\]]*'alignementJeu'/.test(vivant),'l’alignement du moment');}
 /* v0.519 — L'or et les gemmes d'un adversaire, d'un PNJ ou d'un coffre, tirés aux dés : une bourse de lignes
    « x d y », avec, pour un adversaire, la chance qu'elle tombe. Tirée au retrait de l'adversaire, ou à
    l'ouverture du coffre. */
@@ -3405,7 +3426,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(mp.includes("$('coffre-bourse').append(editeurBourse(bourse,null,false));")&&mp.includes("c.richesses={};const b=normaliseBourse(bourse.bourse,false);")
   &&mp.includes("Object.entries(tireBourse(c.bourse)).forEach(([k,v])=>{rich[k]=(Math.trunc(Number(rich[k]))||0)+v});")&&mp.includes("const des=ligneBourse(c.bourse);")
   &&mp.includes("f.bourse=normaliseBourse(f.bourse);if(!f.bourse.length)delete f.bourse;"),'le coffre tire sa bourse à l’ouverture, l’adversaire posé garde la sienne');
- assert.ok(vivant.includes("'pnj','alignement','bourse'];")&&feuille.includes('.bourse-gemme{width:26px;height:26px;'),'en ligne, et en petit');}
+ assert.ok(vivant.includes("'pnj','alignement','bourse','alignementJeu'];")&&feuille.includes('.bourse-gemme{width:26px;height:26px;'),'en ligne, et en petit');}
 /* v0.518 — Les PNJ du Bestiaire : un alignement, allié, neutre ou adverse. Allié, il combat avec la troupe et se
    range parmi les Aventuriers ; neutre, il se tient entre les deux et peut s'en prendre à la troupe ; adverse, il
    est un adversaire. Son socle et sa barre de PV prennent la couleur de son alignement. */
@@ -3423,9 +3444,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(ed.includes("['boss','Boss'],['pnj','PNJ']];")&&ed.includes("filter(([m])=>(key==='pnj'?!!m.pnj:!m.pnj&&(m.type||'standard')===key)")
   &&ed.includes('<button id="bestiary-pnj">+ Nouveau PNJ</button>')&&ed.includes("$('bestiary-pnj').onclick=()=>openActor(null,false,null,true,true);")
   &&ed.includes("if(templateNeuf&&pnj)Object.assign(draft,{name:'Nouveau PNJ',role:'PNJ',pnj:true,alignement:'neutre'});")
-  &&ed.includes("+(a.pnj?sel('Alignement','alignement',alignementDe(a),ALIGNEMENTS):'')"),'la colonne, le bouton et le menu Alignement');
- assert.ok(ed.includes("butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m)}:{})}}")&&ed.includes("butin:normaliseButin(a.butin,a.inventaire),bourse:normaliseBourse(a.bourse),...(a.pnj?{pnj:true,alignement:alignementDe(a)}:{})}}")
-  &&ed.includes("'pool','pnj','alignement'])]")&&ed.includes("if(!neuf.pnj){delete a.pnj;delete a.alignement}"),'l’alignement suit le modèle sur la table');
+  &&ed.includes("+(a.pnj?sel('Alignement','alignement',alignementDe({pnj:true,alignement:a.alignement}),ALIGNEMENTS)+'<label class=\"field-check\"><input name=\"unique\" type=\"checkbox\" '+(a.unique===true?'checked':'')+'>Unique</label>':'')"),'la colonne, le bouton et le menu Alignement');
+ assert.ok(ed.includes("butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m),...(m.unique===true?{unique:true}:{})}:{})}}")&&ed.includes("butin:normaliseButin(a.butin,a.inventaire),bourse:normaliseBourse(a.bourse),...(a.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:a.alignement}),...(a.unique===true?{unique:true}:{})}:{})}}")
+  &&ed.includes("'pool','pnj','alignement','unique'])]")&&ed.includes("if(!neuf.pnj){delete a.pnj;delete a.alignement}if(!neuf.unique)delete a.unique;"),'l’alignement suit le modèle sur la table');
  // Un allié tué ne rapporte pas d'XP ; la troupe lit ses PV.
  assert.ok(ed.includes("const vaincus=partants.filter(f=>f&&!duCoteTroupe(f)&&")&&page.includes("function hpKnown(o){return view==='mj'||!!(o&&(o.hero||duCoteTroupe(o)||o.revealed))}"));
  // La table : trois groupes ; seul un adverse lance le combat et le tient ouvert.
