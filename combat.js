@@ -816,6 +816,9 @@ const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ru
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Gel',
  'Invisible','Onde','Poison','Saignée','Vie','Affaibli'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
+// Les réglages de Dominateur, bornés : l'état visé, x, et les dés de xdx.
+function dominateurDe(p){const n=(v,a,b,d)=>Math.max(a,Math.min(b,Math.trunc(Number(v))||d));
+ return {mode:(p&&p.mode)||'sansechec',etat:(p&&p.etat)||'Au sol',x:n(p&&p.x,1,20,1),nb:n(p&&p.nb,1,9,1),faces:[4,6,8,10,12,20].includes(Math.trunc(Number(p&&p.faces)))?Math.trunc(Number(p.faces)):6}}
 /* Ce que blessent Dévorant, Épines et Éclaboussure : le bonus de dégâts du porteur, ce bonus + x, son double,
    ou x dégâts tout court. */
 const PARAMS_MONTANT=[{cle:'montant',nom:'Dégâts',type:'choix',defaut:'bonus',options:[['bonus','son bonus de dégâts'],['plus','son bonus de dégâts + x'],['double','le double de son bonus de dégâts'],['fixe','x dégâts']]},
@@ -877,11 +880,18 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Amélioration : le porteur augmente son bonus de dégâts pour chaque adversaire au contact au-delà du premier.',
   params:[{cle:'bonus',nom:'Dégâts par adversaire en plus',type:'nombre',defaut:1,min:1,max:9}],
   phrase(p){const n=Math.max(1,(p&&p.bonus)|0);return 'Le porteur augmente son bonus de dégâts de <b>+'+n+'</b> par adversaire au contact <b>au-delà du premier</b>.'}},
- /* Dominateur : un passif. Contre un adversaire au sol, pas d'échec — ou le double des dégâts. */
+ /* Dominateur : un passif générique. Contre les adversaires qui portent l'état réglé — Au sol d'origine —,
+    le porteur double ses dégâts, les augmente de x ou de xdx, ou ne fait pas d'échec. */
  dominateur:{cle:'dominateur',nom:'Dominateur',type:'pass',
-  aide:'Passif : contre un adversaire au sol, le porteur ne fait pas d’échec, ou double ses dégâts.',
-  params:[{cle:'mode',nom:'Contre un adversaire au sol',type:'choix',defaut:'sansechec',options:[['sansechec','le porteur ne fait pas d’échec'],['double','le porteur double ses dégâts']]}],
-  phrase(p){return (p&&p.mode)==='double'?'Le porteur <b>double ses dégâts</b> contre les adversaires <b>au sol</b>.':'Le porteur <b>n’effectue pas d’échec</b> contre les adversaires <b>au sol</b>.'}},
+  aide:'Passif : contre les adversaires qui portent l’état réglé, le porteur double ses dégâts, les augmente de x ou de xdx, ou ne fait pas d’échec.',
+  params:[{cle:'mode',nom:'Contre eux, le porteur',type:'choix',defaut:'sansechec',options:[['double','double ses dégâts'],['plus','augmente ses dégâts de x'],['des','augmente ses dégâts de xdx'],['sansechec','ne fait pas d’échec']]},
+   {cle:'etat',nom:'Adversaires avec',type:'choix',defaut:'Au sol',options:CHOIX_ETAT.slice(1)},
+   {cle:'x',nom:'x',type:'nombre',defaut:1,min:1,max:20},
+   {cle:'nb',nom:'Nombre de dés',type:'nombre',defaut:1,min:1,max:9},
+   {cle:'faces',nom:'Faces',type:'choix',defaut:'6',options:[['4','d4'],['6','d6'],['8','d8'],['10','d10'],['12','d12'],['20','d20']]}],
+  phrase(p){const m=(p&&p.mode)||'sansechec',e='contre les adversaires avec <b>'+((p&&p.etat)||'Au sol')+'</b>.',d=dominateurDe(p);
+   return m==='double'?'Le porteur <b>double ses dégâts</b> '+e:m==='plus'?'Le porteur augmente ses dégâts de <b>+'+d.x+'</b> '+e
+    :m==='des'?'Le porteur augmente ses dégâts de <b>+'+d.nb+'d'+d.faces+'</b> '+e:'Le porteur <b>n’effectue pas d’échec</b> '+e}},
  /* Déception : un passif. Un critique adverse contre le porteur devient un échec — ou lui vaut une
     attaque gratuite en retour. */
  deception:{cle:'deception',nom:'Déception',type:'pass',
@@ -2081,7 +2091,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  NIVEAUX_XP,niveauDeXp,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,

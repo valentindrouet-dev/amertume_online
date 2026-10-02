@@ -1863,7 +1863,7 @@ assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function 
  &&src.includes("if(usage==='conso')retirerInventaire(a,o);")&&src.includes('if(objetCode(o)){appliquerEffetObjet(a,o);return}')
  &&src.includes("a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};")
  &&page.includes('function desRecus(b,dice)')&&page.includes('const {gardes:dice,ecartes}=desRecus(b,tous);')
- &&page.includes('const suite=perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
+ &&page.includes('const suite=domDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
  &&page.includes("a.immunites={etats:[],des:[]};if(typeof reposer==='function')reposer(a,'long');")&&src.includes('function reposer(a,type=')
  &&feuille.includes('.gear-detail .gear-effet{font-weight:600}'),'les effets d’équipement sont câblés');
 /* Les emplacements du corps : deux mains, un torse, un dos, une tête, trois anneaux, une
@@ -3376,6 +3376,16 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.516 — Dominateur, générique : contre les adversaires avec l'état réglé, le double, +x ou +xdx de dégâts, ou pas d'échec. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
+ const ph=p=>C.texteBrut(C.phraseTalent('dominateur',p));
+ assert.deepEqual([ph({mode:'double',etat:'Feu'}),ph({mode:'plus',etat:'Poison',x:3}),ph({mode:'des',etat:'Saignée',nb:2,faces:'8'}),ph({})],
+  ['Le porteur double ses dégâts contre les adversaires avec Feu.','Le porteur augmente ses dégâts de +3 contre les adversaires avec Poison.',
+   'Le porteur augmente ses dégâts de +2d8 contre les adversaires avec Saignée.','Le porteur n’effectue pas d’échec contre les adversaires avec Au sol.'],'les quatre réglages');
+ assert.deepEqual(C.dominateurDe({x:99,nb:0,faces:'7'}),{mode:'sansechec',etat:'Au sol',x:20,nb:1,faces:6},'bornes');
+ const v=C.variablesPhrase('dominateur',C.paramsTalent({effet:'dominateur',params:{mode:'des'}})),vus=[...v.variables.map(x=>x.cle),...v.hors];
+ C.TALENTS_CODES.dominateur.params.forEach(p=>assert.ok(vus.includes(p.cle),'dominateur : '+p.cle+' se règle dans la bibliothèque'));
+ assert.ok(page.includes("let domDit='';if(domP&&(dom==='plus'||dom==='des')&&!r.failed&&r.hit){")&&!src.includes("dominateur:'Lamevent'"),'câblé à la frappe, rangé aux Génériques');}
 /* v0.515 — Un adversaire caché le reste jusqu'à ce que le MJ le révèle, qu'il frappe, ou qu'il bouge sous les yeux de la
    troupe ; la case Caché de l'éditeur vaut aussitôt pour la carte ouverte. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),mp=fs.readFileSync('maps.js','utf8');
