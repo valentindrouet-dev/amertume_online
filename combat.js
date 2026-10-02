@@ -392,7 +392,7 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
   matiere,doors:cleanRects(m&&m.doors,true),
   start:cleanRect(m&&m.start),
   foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
-   hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),...portePropre(f),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
+   hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),...(f&&typeof f.id==='string'&&f.id?{id:texte(f.id,40)}:{}),...portePropre(f),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
   coffres:(Array.isArray(m&&m.coffres)?m.coffres:[]).slice(0,100).map(cleanCoffre).filter(Boolean),
   objets:(Array.isArray(m&&m.objets)?m.objets:[]).slice(0,200).map(cleanObjet),
   // Les zones que le MJ a séparées ou regroupées voyagent avec la carte.

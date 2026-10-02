@@ -2483,7 +2483,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(el.k.join(''),'Un [Allié] gagne [+2] [Dégâts] et [Feu] : [1d6+2] [PV], une [Action] ; [enfin], la vie.');
  assert.ok(src.includes("if(effet&&t.effects)texteEnrichi(effet,t.effects);")&&src.includes('<button id="talent-mots"')
   &&src.includes("c.motsCles=[...new Set((Array.isArray(c.motsCles)?c.motsCles:[])")&&feuille.includes('.mot-cle{font-weight:700}'),'les mots clés des talents');
- assert.ok(page.includes("function reveleAttaquant(a){if(!a||a.hero||a.vu||!a.id||!actors.includes(a)||a.hidden||hasState(a,'Invisible'))return;")&&page.includes("log(reveles.map(nomNum).join(', ')")
+ assert.ok(page.includes("function reveleAttaquant(a){if(!a||a.hero||!a.id||!actors.includes(a)||hasState(a,'Invisible')||(a.vu&&!a.hidden))return;")&&page.includes("log(reveles.map(nomNum).join(', ')")
   &&page.includes(" // Les numéros se lisent après la révélation : ceux qui viennent de paraître en ont un.\n const numeros=nameNumbers();"),'le journal numérote ceux qui viennent de paraître');
 }
 /* v0.271 — Le coma d'un aventurier coûte une VIE et se relève à la fin du combat ; l'onglet Aventuriers
@@ -3376,12 +3376,18 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.515 — Un adversaire caché le reste jusqu'à ce que le MJ le révèle, qu'il frappe, ou qu'il bouge sous les yeux de la
+   troupe ; la case Caché de l'éditeur vaut aussitôt pour la carte ouverte. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),mp=fs.readFileSync('maps.js','utf8');
+ assert.equal(C.cleanMap({id:'m',name:'M',foes:[{id:'p1',x:1,y:1,tpl:{id:'t',name:'T',pv:3}}]}).foes[0].id,'p1','la pose garde son identifiant');
+ assert.ok(mp.includes("if(!f.id)f.id=crypto.randomUUID();a.pose=f.id;")&&mp.includes("const a=adversaireDeLaTable(mapDraft,f);if(a){a.hidden=f.cache===true;render();scheduleSave()}"),'la case Caché suit sur la table');
+ assert.ok(page.includes("a.hidden=false;a.vu=true;")&&page.includes("function reveleEnBougeant(a){"),'frapper ou bouger en vue le trahit');}
 /* v0.513 — Glissant : qui finit son mouvement sur le token du porteur tombe Au sol, et le porteur caché est révélé. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');
  const g=C.TALENTS_CODES.glissant;assert.ok(g&&g.monstre===true&&g.type==='pass','Glissant : talent d’adversaire passif');
  assert.equal(C.texteBrut(C.phraseTalent('glissant',{})),'Un adversaire qui finit son mouvement sur le token du porteur subit Au sol. Le porteur est ensuite révélé s’il était caché.');
  assert.ok(page.includes("&&!(o.hero!==a.hero&&typeof talentsCodes==='function'&&porteEffet(talentsCodes(o),'glissant'))")&&page.includes("function glissade(a){")
-  &&page.includes("croises.forEach(([k],n)=>{const o=actors[k],d=departs[n];if(o&&d&&Math.hypot(o.x-d.x,o.y-d.y)>=.05)glissade(o)});")&&page.includes("glissantsReveles();finDeCombatAuto();"),'la glissade, en fin de mouvement');}
+  &&page.includes("croises.forEach(([k],n)=>{const o=actors[k],d=departs[n];if(o&&d&&Math.hypot(o.x-d.x,o.y-d.y)>=.05){glissade(o);reveleEnBougeant(o)}});")&&page.includes("glissantsReveles();finDeCombatAuto();"),'la glissade, en fin de mouvement');}
 /* v0.512 — Armes de lancer : à distance, une main, sans munition ; lancées, elles passent à la cible ; au contact,
    elles se manient sans donner d'occasion. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');

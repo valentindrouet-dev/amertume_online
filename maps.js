@@ -766,6 +766,8 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
     même identifiant, ou à défaut du même nom s'il est seul à le porter. La copie ne
     sert plus que si le modèle a disparu. */
  (m.foes||[]).forEach(f=>{const a=fromMonster(modeleActuel(f.tpl));a.x=f.x;a.y=f.y;
+  // Le lien vers sa pose : l'éditeur retrouve ainsi l'adversaire en jeu.
+  if(!f.id)f.id=crypto.randomUUID();a.pose=f.id;
   // Ce que la carte lui a donné, à lui seul.
   if(Array.isArray(f.inventaire)&&f.inventaire.length){a.propres={inventaire:[...f.inventaire],butin:{...(f.butin||{})}};ajoutePropres(a,a.propres)}
   normalizeActor(a);
@@ -1523,8 +1525,16 @@ $('foe-objets').onclick=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel
  inventaireAdversaire($('foe-objets-corps'),f,()=>saveMaps());
  foeObjetsDialog.onclose=()=>{f.butin=normaliseButin(f.butin,f.inventaire);if(!f.inventaire.length){delete f.inventaire;delete f.butin}renderCanvas();saveMaps()};
  foeObjetsDialog.showModal()};
+/* L'adversaire que la table a tiré de cette pose, si la carte y est ouverte : par l'identifiant de la pose,
+   à défaut — une table ouverte avant qu'elle n'en ait un — par son modèle et sa place, s'il n'a pas bougé. */
+function adversaireDeLaTable(m,f){if(!m||!f||m.id!==currentMapId)return null;
+ return actors.find(a=>a&&!a.hero&&f.id&&a.pose===f.id)
+  ||actors.find(a=>a&&!a.hero&&!a.pose&&f.tpl&&a.template===f.tpl.id&&Math.abs(a.x-f.x)<.5&&Math.abs(a.y-f.y)<.5)||null}
 $('foe-cache').onchange=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;
- pushUndo();if($('foe-cache').checked)f.cache=true;else delete f.cache;renderCanvas();saveMaps()};
+ pushUndo();if($('foe-cache').checked)f.cache=true;else delete f.cache;
+ // La carte est ouverte sur la table : l'adversaire posé là suit la case tout de suite, sans rouvrir la carte.
+ const a=adversaireDeLaTable(mapDraft,f);if(a){a.hidden=f.cache===true;render();scheduleSave()}
+ renderCanvas();saveMaps()};
 $('coffre-edit').onclick=()=>{if(mapSel&&mapSel.kind==='coffre')openCoffre(mapSel.i)};
 // Dupliquer : le même coffre, réglages et contenu compris, posé un peu plus loin.
 $('coffre-double').onclick=()=>{const c=mapSel&&mapSel.kind==='coffre'&&shapeAt(mapSel);if(!c)return;pushUndo();
