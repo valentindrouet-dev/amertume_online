@@ -1007,6 +1007,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  nuee:{cle:'nuee',nom:'Nuée',type:'pass',monstre:true,
   aide:'Passif : le porteur peut finir son mouvement sur un token et traverser les tokens adverses.',params:[],
   phrase(){return 'Le porteur peut <b>finir son mouvement sur un token</b> et <b>traverser les tokens adverses</b>.'}},
+ /* Glissant : un adversaire qui finit son mouvement sur le token du porteur — le token, pas sa zone de contact —
+    tombe Au sol, et le porteur, s'il était caché, est révélé. Le porteur ne barre pas le passage à ses
+    adversaires : on peut lui marcher dessus. */
+ glissant:{cle:'glissant',nom:'Glissant',type:'pass',monstre:true,
+  aide:'Passif : un adversaire qui finit son mouvement sur le token du porteur subit Au sol ; le porteur, s’il était caché, est ensuite révélé.',params:[],
+  phrase(){return 'Un adversaire qui finit son mouvement <b>sur le token</b> du porteur subit <b>Au sol</b>. Le porteur est ensuite <b>révélé</b> s’il était caché.'}},
  /* Dévorant : en se déplaçant, le porteur blesse chaque socle adverse qu'il fait entrer dans sa zone
     de contact, même en passant — une fois par socle et par déplacement. */
  devorant:{cle:'devorant',nom:'Dévorant',type:'pass',monstre:true,

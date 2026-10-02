@@ -1668,7 +1668,7 @@ assert.ok(!page.includes('Personne à portée de contact.')&&!page.includes("'Ho
   assert.ok(Math.hypot(x2-70,y2)>=19.9||x2<=90.01,'écarté du socle, jamais dans le mur');}}
 /* La table applique la règle : le camp d'en face barre le pas, l'allié se laisse traverser mais
    pas couvrir, un corps à terre ne tient plus la place, et un lot pris ensemble ne se repousse pas. */
-assert.ok(page.includes("&&(!adverses||o.hero!==a.hero))")
+assert.ok(page.includes("&&(!adverses||o.hero!==a.hero)")
  &&page.includes('function settleActor(a,ignorer)')
  &&page.includes('function moveActor(a,xp,yp,libre,ignorer,traverse)')
  &&page.includes(' const barrent=(alive(a)?soclesOccupes(a,size,ignorer,true):[])\n  .filter(c=>Math.hypot(start[0]-c.x,start[1]-c.y)>=r+c.r-.5);')&&page.includes('const tiennent=alive(a)&&!traverse?soclesOccupes(a,size,ignorer,false):[];')
@@ -2447,7 +2447,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  vm.runInContext(page.slice(page.indexOf('function nomNum(o)'),page.indexOf('/* Ce qu\'on a le droit de lire d\'un combattant')),ctxN);
  assert.equal(ctxN.actors.map(ctxN.nomNum).join('|'),'Ulfgar|Gobelin 1|Gobelin 2|Ogre');assert.equal(ctxN.nomNum({name:'Inconnu'}),'Inconnu');
  assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||(typeof loading!=='undefined'&&loading)||(typeof spectateur==='function'&&spectateur()))return;")&&page.includes("if(adversairesDebout()>0){combatEngage=true;return}")
-  &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")
+  &&page.includes("function adversairesDebout(){return actors.filter(a=>!a.hero&&a.vu&&alive(a)).length}")&&page.includes(" effetsPassifs();comaAventuriers();glissantsReveles();finDeCombatAuto();")
   &&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos rond" id="repos" hidden>⛺</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
   &&page.includes(":a.reposPris===true?'Repos court déjà pris : il revient à la fin du prochain combat.'")&&page.includes("actors.forEach(a=>{if(a.hero)a.reposPris=false})}")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);")
@@ -2499,7 +2499,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  ctxC.comaAventuriers();assert.equal(h.vie,4,'la même chute ne coûte qu’une VIE');
  ctxC.reveilDuComa(h);assert.equal(h.hp+'/'+h.comaVie+'/'+h.reposCourts,'8/false/1','à la fin du combat : 1d6 + Endu, un repos court pris');
  enC=false;h.hp=0;h.states=['Coma'];ctxC.comaAventuriers();assert.equal(h.vie,4,'hors combat, rien ne se perd');
- assert.ok(page.includes(" effetsPassifs();comaAventuriers();finDeCombatAuto();")&&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le coma se compte au rendu et se relève à la fin du combat');}
+ assert.ok(page.includes(" effetsPassifs();comaAventuriers();glissantsReveles();finDeCombatAuto();")&&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le coma se compte au rendu et se relève à la fin du combat');}
 {assert.ok(src.includes("['pv','PV max',a.max],['def','DEF',defOf(a),true],")&&src.includes("tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg'],['xp']],c);")
   &&src.includes(" bullesChiffres(a,tuiles);")&&src.includes("function bullesChiffres(a,tuiles){const quoi={vie:detailVie,endu:detailEndu,pv:detailPv,def:detailDef,dmg:detailDegats,xp:detailXp};")&&page.includes("if(typeof bullesChiffres==='function'&&!secret)bullesChiffres(a,tuiles);")&&src.includes(" ecrire('.stat-tile.t-pv strong',a.max);")
   &&feuille.includes('.calcul-ligne.total{'),'PV max et leur calcul, Dégâts détaillés');
@@ -3371,6 +3371,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.513 — Glissant : qui finit son mouvement sur le token du porteur tombe Au sol, et le porteur caché est révélé. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');
+ const g=C.TALENTS_CODES.glissant;assert.ok(g&&g.monstre===true&&g.type==='pass','Glissant : talent d’adversaire passif');
+ assert.equal(C.texteBrut(C.phraseTalent('glissant',{})),'Un adversaire qui finit son mouvement sur le token du porteur subit Au sol. Le porteur est ensuite révélé s’il était caché.');
+ assert.ok(page.includes("&&!(o.hero!==a.hero&&typeof talentsCodes==='function'&&porteEffet(talentsCodes(o),'glissant'))")&&page.includes("function glissade(a){")
+  &&page.includes("croises.forEach(([k],n)=>{const o=actors[k],d=departs[n];if(o&&d&&Math.hypot(o.x-d.x,o.y-d.y)>=.05)glissade(o)});")&&page.includes("glissantsReveles();finDeCombatAuto();"),'la glissade, en fin de mouvement');}
 /* v0.512 — Armes de lancer : à distance, une main, sans munition ; lancées, elles passent à la cible ; au contact,
    elles se manient sans donner d'occasion. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
