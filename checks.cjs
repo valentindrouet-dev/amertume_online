@@ -3371,6 +3371,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.511 — Fiche d'adversaire : le convertisseur de dés et un second Enregistrer, en haut. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes('<form id="actor-form"><div class="form-actions" id="actor-haut" hidden><button type="button" id="actor-conversion" class="conversion-bouton">🎲</button><button type="submit" class="primary">Enregistrer la fiche</button></div><div id="actor-fields"></div>')
+  &&src.includes("$('actor-haut').hidden=!!draft.hero;")&&src.includes("b.onclick=()=>{renderConversion();conversionDialog.showModal();"),'convertisseur et Enregistrer en haut de la fiche d’adversaire');}
 /* v0.510 — Un aventurier ne quitte que la table : sa fiche reste, son token revient ; le supprimer pour de bon se fait à
    l'onglet Aventuriers, en tapant SUPPRIMER. Sept talents par ligne à l'onglet Talents. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8'),vivant=fs.readFileSync('live.js','utf8');

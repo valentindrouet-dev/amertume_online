@@ -457,6 +457,9 @@ button.comp-rond{cursor:pointer}button.comp-rond:hover{background:rgba(var(--tin
 .cat-pill.gear-carre .marque-porte{display:none;position:absolute;top:-6px;left:-6px;width:17px;height:17px;border-radius:50%;
  background:var(--green);color:#fff;border:2px solid var(--panel);box-shadow:0 1px 3px #0004;font:800 10px/13px system-ui;text-align:center}
 .cat-pill.gear-carre.porte .marque-porte{display:block}
+/* En haut de la fiche d'adversaire : le convertisseur de dés à gauche, Enregistrer à droite. */
+#actor-haut{margin:0 0 12px;justify-content:space-between}
+#actor-haut[hidden]{display:none}
 /* Un aventurier retiré de la table : son token pâlit à l'onglet Aventuriers ; un clic le ramène. */
 .hero-card .avatar.hors-table{filter:grayscale(1);opacity:.45;cursor:pointer}
 /* Une pièce unique que possède un aventurier : sa coche, à l'Armurerie. */
