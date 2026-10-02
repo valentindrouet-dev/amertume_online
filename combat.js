@@ -136,17 +136,21 @@ function gearAttacks(actor,items){
  /* La munition portée sert les armes à distance : un dé de plus, de sa couleur, et l'état
     qu'elle inflige. Le contact n'en a que faire. */
  const mun=actor&&actor.munitionId?gearOf([actor.munitionId],items).find(m=>m.category==='ammo')||null:null;
- const attaque=(lot,range)=>{const groupes=new Map();lot.forEach(w=>groupes.set(w,(groupes.get(w)||0)+1));
-  const tire=range==='distance'&&mun,dice=poolOfWeapons(lot);
+ const attaque=(lot,range,sansMunition)=>{const groupes=new Map();lot.forEach(w=>groupes.set(w,(groupes.get(w)||0)+1));
+  const tire=range==='distance'&&mun&&!sansMunition,dice=poolOfWeapons(lot);
   if(tire&&DICE_KEYS.includes(mun.munDe))dice[mun.munDe]=Math.min(12,(dice[mun.munDe]||0)+1);
   const etats=[...new Set([...etatsDArmes(lot),...(tire&&mun.etat?[mun.etat]:[])])];
   return {name:[...groupes].map(([w,n])=>w.name+(n>1?' ×'+n:'')).join(' + ')+(tire?' · '+mun.name:''),dice,range,
    targets:'one',useOwnDamage:true,effects:{},etats,logos:lot.filter(w=>w.logo).map(w=>String(w.logo)).slice(0,2),gear:true,munition:tire?mun.id:null}};
- const contact=armes.filter(w=>w.ranged!==true),distance=armes.filter(w=>w.ranged===true);
+ const contact=armes.filter(w=>w.ranged!==true),distance=armes.filter(w=>w.ranged===true&&w.lancer!==true);
+ /* Une arme de lancer a son bouton à elle, sans munition : lancée au loin, ou maniée au contact — la table
+    tranche selon la cible. « lancer » dit laquelle part. */
+ const lancers=[...new Set(armes.filter(w=>w.ranged===true&&w.lancer===true))],lance=w=>({...attaque([w],'distance',true),lancer:w.id});
  /* Un adversaire porte tout ce qu'il possède, sans compter ses mains : chaque arme est une
     variante, son bouton à elle, et une arme en double ne frappe pas deux fois. */
- if(actor&&actor.hero===false)return [...new Set(contact)].map(w=>attaque([w],'contact')).concat([...new Set(distance)].map(w=>attaque([w],'distance')));
+ if(actor&&actor.hero===false)return [...new Set(contact)].map(w=>attaque([w],'contact')).concat([...new Set(distance)].map(w=>attaque([w],'distance')),lancers.map(lance));
  const sorties=[];if(contact.length)sorties.push(attaque(contact,'contact'));if(distance.length)sorties.push(attaque(distance,'distance'));
+ lancers.forEach(w=>sorties.push(lance(w)));
  return sorties}
 /* Une attaque de fiche — l'attaque spéciale d'un adversaire — peut poser une affliction,
    tout comme une arme. On lui donne la même forme qu'à une attaque d'équipement, « etats »,

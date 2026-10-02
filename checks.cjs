@@ -2531,7 +2531,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.match(tir.name,/Arc · Flèches de feu/);
  const cac=gearApi.gearAttacks({weapons:['ep'],munitionId:'fl'},items)[0];assert.equal(cac.dice.red+'/'+cac.etats.length+'/'+cac.munition,'0/0/null','le contact n’en a que faire');
  assert.equal(gearApi.gearAttacks({weapons:['arc']},items)[0].dice.red,0,'sans munition, rien de plus');}
-{assert.ok(src.includes("if(place&&n0>=1&&n0<=2){const v=document.createElement('i');v.className='die-sq die-munition';")&&src.includes("p.append(dicePips(o.dice,o.etat,col==='ranged'));")
+{assert.ok(src.includes("if(place&&n0>=1&&n0<=2){const v=document.createElement('i');v.className='die-sq die-munition';")&&src.includes("p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));")
   &&feuille.includes('.die-sq.die-munition{background:none;border:1.5px dashed var(--line-strong);'),'le dé vide des armes à distance');
  assert.ok(src.includes("['munitions','Munitions',munition],['anneau','Anneau',anneaux[0]||null],")&&src.includes("if(cle==='anneau'){groupeAnneaux.append(pl);")
   &&src.includes("else if(o.category==='ammo')a.munitionId=a.munitionId===o.id?'':o.id;")&&src.includes("sel('Dé ajouté aux armes à distance','munDe',")
@@ -2663,7 +2663,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("if(a.category==='ressource'&&!(typeof a.cle==='string'&&CLE_MATERIAU.test(a.cle)))a.cle=cleLibre(a.name,new Set(ressourcesJeu().map(r=>r.cle)));"),'ressources et prix au formulaire de l’objet');}
 /* v0.282 — Au formulaire d'un objet, Mains revient sur la ligne de la rareté ; prix et ressources ont la leur. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("  +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))\n  +(arme?sel('Mains','hands',")&&src.includes("  +'<div class=\"edit-grid prix-ressources\">'\n  +(a.category==='ressource'?'<p class=\"valeur-guide\">Valeur : <b>'")
+ assert.ok(src.includes("  +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))\n  +(arme&&!a.lancer?sel('Mains','hands',")&&src.includes("  +'<div class=\"edit-grid prix-ressources\">'\n  +(a.category==='ressource'?'<p class=\"valeur-guide\">Valeur : <b>'")
   &&fs.readFileSync('editor.css','utf8').includes('.edit-grid.prix-ressources{margin-top:12px}'),'prix et ressources sur une ligne, Mains avec la rareté');}
 /* v0.283 — Les ressources : l'or, les gemmes (trois tailles, quatre variétés, allumées ou éteintes)
    et les matériaux. Le domaine tient ses matériaux et ses gemmes — son or est son trésor — ; un
@@ -3053,7 +3053,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("(libre?'':verrouArbre(a.talents,col.liste,t,Number(a.level)||1))")&&src.includes("b.className='arbre-niveau'+(n?'':' vide')")&&feuille.includes('.arbre-col>.arbre-niveau{position:absolute;'),'les niveaux de l’arbre');
  /* v0.487 — Munitions équipées toutes ensemble ; bulle d'arme à distance avec sa place de munition et le bonus de
    dégâts du porteur ; l'écu de DEF garde sa forme. */
- assert.ok(src.includes("o.category==='ammo'?(o.id===a.munitionId?(comptes.get(o)||0):0)")&&src.includes("p.append(dicePips(o.dice,o.etat,col==='ranged'));")
+ assert.ok(src.includes("o.category==='ammo'?(o.id===a.munitionId?(comptes.get(o)||0):0)")&&src.includes("p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));")
   &&src.includes("b.className='bonus';b.textContent='+ '+degatsDe(a);")&&feuille.includes('.gear-detail .gear-def .ecu{width:auto;height:22px;'),'munitions en bloc, bulle d’arme complète, écu non déformé');
  /* v0.486 — Les bonus de la barre de talents comme dans l'arbre : sans rond, la valeur en bas à droite, un petit +. */
  assert.ok(feuille.includes('.talent-ameliorations .cat-pill.gear-carre.talent-carre.bonus-rond{border-color:transparent;border-width:0;background:transparent;box-shadow:none}')&&feuille.includes('.talent-ameliorations .cat-pill.bonus-rond>:is(svg,img,.bonus-lettres){width:100%;height:100%}')
@@ -3062,7 +3062,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    l'écu de DEF à la taille des dés. 99 exemplaires au plus d'une pièce ; chaque tir consomme sa munition. */
  {const ctxI={};vm.createContext(ctxI);vm.runInContext(src.slice(src.indexOf('const INVENTAIRE_MAX='),src.indexOf('function retirerInventaire('))+';this.ajouterInventaire=ajouterInventaire;',ctxI);
   const a={inventaire:Array(98).fill('f')};assert.equal(ctxI.ajouterInventaire(a,{id:'f'}),true);assert.equal(ctxI.ajouterInventaire(a,{id:'f'}),false);assert.equal(a.inventaire.length,99,'99 au plus');}
- assert.ok(src.includes(" if(col==='object')ligne(o.notes);")&&!src.includes("ligne('Munition : '")&&page.includes("if(munitionTiree&&typeof retirerInventaire==='function'){const o=objetDe(munitionTiree);if(o)retirerInventaire(a,o)}}")
+ assert.ok(src.includes(" if(col==='object')ligne(o.notes);")&&!src.includes("ligne('Munition : '")&&page.includes("if(munitionTiree&&typeof retirerInventaire==='function'){const o=objetDe(munitionTiree);if(o)retirerInventaire(a,o)}")
   &&fs.readFileSync('domaine.js','utf8').includes(" if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;ajouteOr(a,-p.prix);")&&feuille.includes('.gear-detail .gear-def .ecu{width:auto;height:22px;'),'bulles sans texte, munitions comptées, 99 au plus');
  /* v0.484 — « XP visible » au MJ seul ; plus d'XP au survol d'un rond ; le cartouche d'XP de la bulle en rouge
    quand l'aventurier n'a pas de quoi payer. */
@@ -3070,7 +3070,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&!feuille.includes('.arbre-plan>.arbre-noeud:hover>.arbre-cout')&&feuille.includes('.talent-bulle-nom .cout-xp.trop-cher{')&&src.includes("a&&coutPalier(t,1)>xpDisponible(a,catalog.talents)?' trop-cher':''"),'XP de l’arbre : MJ seul, sans survol, rouge si trop cher');
  /* v0.483 — Bulle d'une pièce : dés ou DEF au-dessus de l'or, puis la description du MJ, rien d'automatique.
    La Vie et les PV sous leur maximum, légèrement rouges. */
- assert.ok(src.includes("p.className='gear-des';p.append(dicePips(o.dice,o.etat,col==='ranged'));")&&src.includes(" if(col==='object')ligne(o.notes);")&&!src.includes("ligne(o.effects||o.notes||'Effet à préciser dans l’armurerie.')")
+ assert.ok(src.includes("p.className='gear-des';p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));")&&src.includes(" if(col==='object')ligne(o.notes);")&&!src.includes("ligne(o.effects||o.notes||'Effet à préciser dans l’armurerie.')")
   &&page.includes("const vieEntamee=a=>(Number(a&&a.vie)||0)<(Number(a&&(a.vieMax??a.vie))||0);")&&page.includes("tuiles[0].classList.toggle('sous-max',(Number(a.hp)||0)<(Number(a.max)||0));")
   &&feuille.includes('.stat-row.en-icones .stat-tile.avec-icone.sous-max strong{color:#ffa69a}'),'bulle d’objet sans texte automatique, Vie et PV entamés en rouge');
  /* v0.481 — Une partie enregistrée qui ne se pose pas n'est jamais écrasée : l'écriture reste bloquée. */
@@ -3371,6 +3371,17 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.512 — Armes de lancer : à distance, une main, sans munition ; lancées, elles passent à la cible ; au contact,
+   elles se manient sans donner d'occasion. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
+ const items=[{id:'jav',name:'Javelot',category:'weapon',ranged:true,lancer:true,hands:1,dice:{white:1,red:1}},{id:'epee',name:'Épée',category:'weapon',ranged:false,hands:1,dice:{white:1}},
+  {id:'arc',name:'Arc',category:'weapon',ranged:true,hands:2,dice:{white:2}},{id:'fl',name:'Flèches',category:'ammo',munDe:'red'}];
+ const ch=C.attackChoices({hero:true,weapons:['epee','jav'],munitionId:'fl'},items),j=ch.find(x=>x.lancer==='jav');
+ assert.ok(j&&j.range==='distance'&&j.munition===null&&j.dice.red===1&&ch.find(x=>x.range==='contact').name==='Épée','le javelot : son bouton, à distance, sans munition');
+ assert.ok(C.attackChoices({hero:false,weapons:['jav']},items).some(x=>x.lancer==='jav'),'un adversaire lance aussi');
+ assert.ok(page.includes("const lancer=activeAttack(a).lancer||null,lanceAuContact=!!lancer&&vises.every(j=>contactsDe(a).includes(actors[j]));")
+  &&page.includes("if(o){retirerInventaire(a,o);if(b)ajouterInventaire(b,o)}")&&page.includes("porteeForcee=null;"),'lancée, elle passe à la cible ; au contact, elle reste');
+ assert.ok(src.includes("['lancer','Arme de lancer']")&&src.includes("if(a.lancer){a.hands=1;a.usesAmmo=false}"),'le type Arme de lancer à la fiche');}
 /* v0.511 — Fiche d'adversaire : le convertisseur de dés et un second Enregistrer, en haut. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes('<form id="actor-form"><div class="form-actions" id="actor-haut" hidden><button type="button" id="actor-conversion" class="conversion-bouton">🎲</button><button type="submit" class="primary">Enregistrer la fiche</button></div><div id="actor-fields"></div>')

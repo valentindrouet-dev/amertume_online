@@ -299,7 +299,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // Une ressource n'a ni effet, ni usage, ni bonus : elle se stocke et se vend. Une clé non plus.
   if(o.category==='ressource'||o.category==='restes'||o.category==='cle'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}
   o.usage=usageObjet(o);o.consumable=o.usage==='conso';
-  o.magasin=o.magasin===true;o.unique=estUnique(o);if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}
+  o.magasin=o.magasin===true;o.unique=estUnique(o);
+  // Une arme de lancer : à distance, une main, sans munition.
+  if(o.category==='weapon'&&o.ranged===true&&o.lancer===true){o.hands=1;o.usesAmmo=false}else delete o.lancer;if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}
   // Un reste donne ses ressources à son rendement ; une pièce du tanneur a sa recette.
   if(o.category==='restes'){o.rendement1=lisQte(o.rendement1);o.rendement2=lisQte(o.rendement2)}
   o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
@@ -1314,7 +1316,7 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
   const eff=pastilleEffet(o);if(eff)bas.append(eff);
   if(bas.children.length)p.append(bas)}
  // Les dés d'une arme ; un reste, une ressource ou un trésor n'en ont pas, et rien ne s'ajoute sous leur logo.
- else if(col==='melee'||col==='ranged')p.append(dicePips(o.dice,o.etat,col==='ranged'));
+ else if(col==='melee'||col==='ranged')p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));
  // Une munition montre ce qu'elle ajoute : son dé, son état.
  else if(o.category==='ammo'&&(o.munDe||o.etat))p.append(dicePips(o.munDe?{[o.munDe]:1}:{},o.etat));
  // Plusieurs exemplaires : leur nombre seul, « 3 », sans signe devant.
@@ -1348,7 +1350,7 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});
  // Au-dessus de sa valeur : les dés d'une arme, et l'état qu'elle inflige ; la DEF d'une armure qui protège.
  // À distance, la place vide d'une munition à droite des dés ; chez son porteur, son bonus de dégâts ensuite.
- if(col==='melee'||col==='ranged'){const p=document.createElement('p');p.className='gear-des';p.append(dicePips(o.dice,o.etat,col==='ranged'));
+ if(col==='melee'||col==='ranged'){const p=document.createElement('p');p.className='gear-des';p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));
   if(a&&(a.inventaire||[]).includes(o.id)){const b=document.createElement('b');b.className='bonus';b.textContent='+ '+degatsDe(a);p.append(b)}
   d.append(p)}
  else if(col==='armor'&&((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))){const p=document.createElement('p');p.className='gear-def';p.append(shieldBadge(o.def||0));d.append(p)}
@@ -1898,12 +1900,12 @@ let masseAnnule=null;
 const PIECE_NEUVE={melee:{category:'weapon',ranged:false,hands:1,name:'Nouvelle arme'},ranged:{category:'weapon',ranged:true,hands:2,name:'Nouvelle arme à distance'},
  armor:{category:'armor',name:'Nouvelle armure'},object:{category:'object',name:'Nouvel objet'},cle:{category:'cle',name:'Nouvelle clé'},ressource:{category:'ressource',name:'Nouvelle ressource'},
  restes:{category:'restes',name:'Nouveaux restes'},treasure:{category:'treasure',name:'Nouveau trésor'}};
-const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
+const CATS_NEUVES=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['lancer','Arme de lancer'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
 function barreMasse(boite,choisie){const barre=document.createElement('div');barre.className='masse-barre';
  const cat=document.createElement('select');cat.setAttribute('aria-label','Catégorie de la nouvelle pièce');
  cat.innerHTML=CATS_NEUVES.map(([k,n])=>'<option value="'+k+'">'+n+'</option>').join('');cat.value=CATS_NEUVES.some(([k])=>k===choisie)?choisie:'object';
  const b=document.createElement('button');b.type='button';b.className='primary';b.textContent='+ Nouvelle pièce';
- b.onclick=()=>{const c=cat.value,o={id:crypto.randomUUID(),name:'Nouvelle pièce',category:c==='melee'||c==='ranged'?'weapon':c,ranged:c==='ranged',hands:c==='ranged'?2:1,
+ b.onclick=()=>{const c=cat.value,o={id:crypto.randomUUID(),name:'Nouvelle pièce',category:c==='melee'||c==='ranged'||c==='lancer'?'weapon':c,ranged:c==='ranged'||c==='lancer',...(c==='lancer'?{lancer:true}:{}),hands:c==='ranged'?2:1,
    qty:1,price:0,ressource1:'',ressource2:'',magasin:false,def:0,slot:'torse',dice:{},traits:[]};
   catalog.items.push(o);normalizeCatalog(catalog);armoryNeuf=o.id;scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderArmory()};
  const std=document.createElement('button');std.type='button';std.className='masse-standard';std.textContent='↺ Tri standard';std.disabled=!masseTri;
@@ -4805,12 +4807,14 @@ function logoTalent(t,cls){t=logoHerite(t);const propre=logoImage(t&&t.logo,LOGO
  return null}
 // Le logo d'une attaque : n'importe quelle icône du dossier, sans distinction de famille.
 function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}
-const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['armor','Armure'],
+const ITEM_CATS=[['melee','Arme de contact'],['ranged','Arme à distance'],['lancer','Arme de lancer'],['armor','Armure'],
  ['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor'],['misc','Divers']];
 /* Ce que le formulaire affiche à l'instant, relu tel quel. Les champs absents ne sont pas
    lus : la valeur déjà enregistrée reste en place au lieu d'être remise à zéro. */
 function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
- const c=f.category.value;a.ranged=c==='ranged';a.category=c==='melee'||c==='ranged'?'weapon':c;
+ const c=f.category.value;a.ranged=c==='ranged'||c==='lancer';a.lancer=c==='lancer';a.category=c==='melee'||c==='ranged'||c==='lancer'?'weapon':c;
+ // Une arme de lancer se tient d'une main et n'a pas de munition.
+ if(a.lancer){a.hands=1;a.usesAmmo=false}
  for(const k of ['name','slot','etat','notes'])if(f[k])a[k]=f[k].value.trim();
  /* L'effet, son usage et ses réglages, relus au travers de la déclaration : « consommable »
     n'est plus une case à part, c'est l'un des trois usages. */
@@ -4858,13 +4862,13 @@ function lireReglagesObjet(){const f=$('item-form').elements,out={...(itemDraft.
  for(const el of f)if(el.name&&el.name.startsWith('q_'))out[el.name.slice(2)]=el.value;
  return out}
 function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.category==='armor';
- const cat=arme?(a.ranged?'ranged':'melee'):a.category;
+ const cat=arme?(a.lancer?'lancer':a.ranged?'ranged':'melee'):a.category;
  $('item-fields').innerHTML='<div class="edit-grid">'
   +field('Nom','name',a.name,'text','required maxlength="120"')
   +sel('Catégorie','category',cat,ITEM_CATS)
   +selGrille(planchesEnTete(a).length?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])]))
   +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))
-  +(arme?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
+  +(arme&&!a.lancer?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="'+DEF_MAX+'"')
    +sel('Emplacement','slot',emplacementDe(a),[...EMPLACEMENTS.map(([k,n,p])=>[k,n+(p>1?' ('+p+')':'')]),['shield','Bouclier — une main']]):'')
   +(arme||armure?'':field('Quantité','qty',a.qty||1,'number','min="1" max="9999"'))
@@ -4889,7 +4893,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
    +'<button type="button" id="recette-add" class="arbre-ajout">+ Ingrédient</button></div>')
   +(arme?'<p class="etiquette">Dés de l’arme</p>'+poolFields(poolFrom(a.dice),'itemdie')
    +sel('État infligé','etat',a.etat||'',[['','—'],...ETATS_INFLIGES().map(e=>[e,e])]):'')
-  +(arme&&a.ranged?'<label class="field-check"><input name="usesAmmo" type="checkbox" '+(a.usesAmmo?'checked':'')+'>Munitions nécessaires</label>':'')
+  +(arme&&a.ranged&&!a.lancer?'<label class="field-check"><input name="usesAmmo" type="checkbox" '+(a.usesAmmo?'checked':'')+'>Munitions nécessaires</label>':'')
   /* Une munition portée donne aux armes à distance un dé de plus, de sa couleur, et l'état
      qu'elle inflige — l'un, l'autre, ou les deux. */
   +(a.category==='ammo'?'<div class="edit-grid">'+sel('Dé ajouté aux armes à distance','munDe',a.munDe||'',[['','— aucun —'],...keys.map((k,i)=>[k,types[i]]).filter(([k])=>k!=='green')])
