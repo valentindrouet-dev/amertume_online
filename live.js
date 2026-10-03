@@ -20,7 +20,7 @@
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv',
- 'revealed','hidden','vu','numero','orbes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage'];
+ 'revealed','hidden','vu','numero','orbes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
 // L'élément d'un Mystique est au MJ : un joueur ne le pousse pas.
@@ -257,7 +257,7 @@ function diffuser(rec){if(!enLigne||!journalRef||!monUid)return;
    const sans={...plein};delete sans.ton;return ref.set(sans).catch(e2=>liveStatus('Journal non partagé. '+liveErreur(e2)))}
   liveStatus('Journal non partagé. '+liveErreur(e))})}
 log=function(text,meta){logLocal(text,meta);if(meta&&meta.local)return;
- diffuser({genre:'texte',texte:String(text).slice(0,400),badge:meta&&meta.badge?String(meta.badge).slice(0,40):null,ton:meta&&meta.ton?String(meta.ton).slice(0,20):null})};
+ diffuser({genre:'texte',texte:String(text).slice(0,400),badge:meta&&meta.badge?String(meta.badge).slice(0,40):null,ton:meta&&meta.ton?String(meta.ton).slice(0,20):null,...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})})};
 // « talent » ne colore que la ligne locale ; elle part sans lui, les règles du journal ne le connaissent pas.
 logAttaque=function(a,b,logo,corps,detail,suite,talent){logAttaqueLocal(a,b,logo,corps,detail,suite,talent);
  const d=detail?{des:codeDes(detail.dice),origine:Number.isInteger(detail.origine)?detail.origine:null,
@@ -289,7 +289,7 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
  if(rec.genre==='attaque'){const r=rec.detail&&typeof rec.detail==='object'?rec.detail:null;
   const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,def:Number.isInteger(r.def)?r.def:null,solidite:!!r.solidite,double:!!r.double,total:r.total}:null;
   logAttaqueLocal(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'',String(rec.corps||''),d,rec.suite?String(rec.suite):'')}
- else logLocal(String(rec.texte||''),{badge:rec.badge?String(rec.badge):undefined,ton:typeof rec.ton==='string'?rec.ton:undefined})}
+ else logLocal(String(rec.texte||''),{badge:rec.badge?String(rec.badge):undefined,ton:typeof rec.ton==='string'?rec.ton:undefined,bilan:rec.detail&&typeof rec.detail==='object'&&rec.detail.bilan||undefined})}
 function rejouerJournal(docs){const j=$('journal');if(!j)return;j.replaceChildren();let tour=null;
  docs.forEach(d=>{const rec=d.data();if(!rec||rec.genre==='effet')return;
   if(rec.tour!==tour){tour=rec.tour;const sep=document.createElement('li');sep.className='j-turn';

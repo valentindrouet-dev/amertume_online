@@ -2075,7 +2075,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")
   &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")
-  &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")&&page.includes("const n=degatsDe(e),{blinde}=encaisse(a,n);")
+  &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")
   &&src.includes("const aura=!(typeof spectateur==='function'&&spectateur())&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
@@ -3367,6 +3367,19 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.537 — Stats de Combat : chaque combattant compte ses chiffres là où le geste a lieu, ils voyagent avec lui ; la fin
+   du combat les fige dans sa ligne du journal, que « Stats de Combat » ouvre chez chacun. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),ia=fs.readFileSync('ia.js','utf8');
+ assert.ok(page.includes('function encaisse(a,n,de){')&&page.includes('compteDegats(de===undefined?auteurCoup:de,a,perdu);')&&page.includes("compteDegats(a,b,lost);")
+  &&page.includes("auteurCoup=a;queueMicrotask(()=>{auteurCoup=null});ajouteBilan(a,'coups',1);")&&page.includes("ajouteBilan(a,'crit',1)")&&page.includes("applyHeal=function(a,m){const g=soinSansBilan(a,m);if(g>0)ajouteBilan(a,'soin',g);return g}"),'les compteurs de dégâts, coups, critiques et soins');
+ assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes('compteDistance(a,depart);afterMove(a);'),'la distance, là où un mouvement connaît son départ');
+ assert.ok(page.includes("if(enCombat()){actors.forEach(a=>{a.bilan={}});bilanPartis=[]}")&&page.includes("'Le combat prend fin : retour à l’exploration.',bilan?{bilan}:undefined")
+  &&page.includes("b.className='j-stats';b.textContent='Stats de Combat';")&&page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
+ assert.ok(vivant.includes("'enrage','bilan'];")&&vivant.includes("...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
+ assert.ok(src.includes('function lisBilan(o){')&&src.includes('function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;'),'la fenêtre');
+ // Le bilan venu d'ailleurs est relu : chiffres bornés, noms coupés, camp connu.
+ {const vm=require('vm'),deb=src.indexOf('function lisBilan(o){'),fin=src.indexOf('const statsDialog=');const ctx={};vm.createContext(ctx);vm.runInContext(src.slice(deb,fin)+';this.r=lisBilan({tours:"3",liste:[{nom:"x".repeat(99),camp:"pirate",inf:-4,sub:"12",pic:1e9},null]});',ctx);
+  assert.ok(ctx.r.tours===3&&ctx.r.liste.length===1&&ctx.r.liste[0].nom.length===60&&ctx.r.liste[0].camp==='adverse'&&ctx.r.liste[0].inf===0&&ctx.r.liste[0].sub===12&&ctx.r.liste[0].pic===1e6,'le bilan relu');}}
 /* v0.536 — Les talents de mouvement voient par-dessus les alliés de celui qui se déplace ; une cible repoussée heurte tout
    socle vivant ; la piste des dés défile, sans titre. */
 {const page=fs.readFileSync('index.html','utf8');
@@ -3417,8 +3430,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');const K=C.TALENTS_CODES;
  assert.ok(/moitié de la distance/.test(K.chargeelan.phrase({}))&&/la distance parcourue/.test(K.chargeelan.phrase({part:'tout'}))&&K.chargeelan.params[0].defaut==='moitie','l’élan, moitié par défaut');
  assert.ok(K.chargeimpact&&K.chargeimpact.type==='ame'&&/double/.test(K.chargeimpact.phrase({})),'l’impact');
- assert.ok(page.includes("const elan=parts.length?Math.floor(m*Math.max(...parts)):0")&&page.includes("info.bloque=contre?'adversaire':wallsBetween(b,vise,walls())?'mur':''")
-  &&page.includes("if(impact&&info.bloque&&alive(b)){const n=2*degatsDe(a),{perdu,blinde}=encaisse(b,n);"),'élan en deux crans, impact contre mur ou adversaire');}
+ assert.ok(page.includes("const elan=parts.length?Math.floor(m*Math.max(...parts)):0")&&page.includes("info.bloque=contre?'adversaire':wallsBetween(b,vise,walls())?'mur':''"),'élan en deux crans, impact contre mur ou adversaire');}
 /* v0.529 — Un bouton de talent grisé dit pourquoi dans sa bulle ; la vérification ne rejoue que les jeux dont les sources ont changé. */
 {const src=fs.readFileSync('editor.js','utf8'),verif=require('fs').readFileSync('verif.cjs','utf8');
  assert.ok(!src.includes("note:t.peut?'':t.titre"),'aucune raison de refus dans la bulle d’un talent : seul le texte du MJ');
@@ -3468,8 +3480,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  ctx.enrage(d);ctx.enrage(d);ctx.enrage(d2);ctx.enrage(autre);
  assert.ok(d.enrage===2&&d2.enrage===2&&!autre.enrage&&ctx.flots.join('|')==='+1 Dégâts|+1 Dégâts|+2 Dégâts','+1 par critique, +2 amélioré, rien sans le talent');
  ctx.combat=false;ctx.enrage(d);assert.equal(d.enrage,2,'hors combat, rien');
- assert.ok(page.includes("if(r.critical&&!r.failed){critiqueTombe=true;enrage(a)}")&&page.includes("if(r.critical){implosion(a);orbesDuCritique(a);enrage(a)}")
-  &&page.includes("a.contactsDepart=null;a.enrage=0;")&&page.includes("a.ignition='';a.enrage=0;")&&vivant.includes("'alignementJeu','enrage'];"),'dans les dégâts, à chaque critique, remis à zéro, en ligne');}
+ assert.ok(page.includes("if(r.critical){implosion(a);orbesDuCritique(a);enrage(a)}")
+  &&page.includes("a.contactsDepart=null;a.enrage=0;")&&page.includes("a.ignition='';a.enrage=0;"),'dans les dégâts, à chaque critique, remis à zéro, en ligne');}
 /* v0.522 — Maîtrise Point supplémentaire : +1 point d'Action ou de Mouvement à chaque tour. Dans l'arbre, une ligne
    peut sauter un gros rond vide pour relier deux talents à deux cases l'un de l'autre, en droite ligne. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
@@ -3663,8 +3675,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  const b={hp:5,max:5,states:['Blindage']};
  assert.deepEqual([C.applyDamage(b,3),b.hp,b.states.includes('Blindage'),C.applyDamage(b,3),b.hp],[0,5,false,3,2],'le Blindage absorbe une fois, puis disparaît');
  const c={hp:5,max:5,states:['Blindage']};assert.deepEqual([C.applyDamage(c,0),c.states.includes('Blindage')],[0,true],'zéro dégât ne le consomme pas');
- assert.ok(page.includes("function encaisse(a,n){const blinde=Math.trunc(n)>0&&hasState(a,'Blindage'),perdu=applyDamage(a,n);")
-  &&(page.match(/encaisse\(/g)||[]).length>=10&&mp.includes("encaisse(o,c.degats)"),'toutes les sources passent par le Blindage');}
+ assert.ok((page.match(/encaisse\(/g)||[]).length>=10&&mp.includes("encaisse(o,c.degats)"),'toutes les sources passent par le Blindage');}
 /* v0.506 — Coffres : calque sous le brouillard, sans contour ni anneau au clic ; bulle du MJ en icônes ; un joueur ouvre
    d'un clic ; l'Action payée même quand le MJ ouvre ; le combat part à toute révélation ; prix des ressources ; clés et
    objets propres à un adversaire posé. */

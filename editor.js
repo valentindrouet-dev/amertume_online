@@ -489,6 +489,40 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
 const cover=document.getElementById('busy-cover')||Object.assign(document.createElement('div'),{id:'busy-cover',textContent:'Chargement de la partie enregistrée…'});document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}
 const actorDialog=dialog('actor-editor','Modifier la fiche','<form id="actor-form"><div class="form-actions" id="actor-haut" hidden><button type="button" id="actor-conversion" class="conversion-bouton">🎲</button><button type="submit" class="primary">Enregistrer la fiche</button></div><div id="actor-fields"></div><p class="form-error" id="actor-error" role="alert"></p><div class="form-actions"><button type="button" id="delete-actor">Retirer de la scène</button><button type="button" id="save-template">Enregistrer au bestiaire</button><button type="submit" class="primary">Enregistrer la fiche</button></div></form>');
+/* ---------- Stats de Combat ----------
+   La fenêtre qu'ouvre le lien de fin de combat, au journal : en tête, les tours et les dégâts de chaque camp face à
+   face ; puis les distinctions, chacune à qui en a le plus ; enfin un tableau par camp. Le bilan vient du journal,
+   d'un autre appareil parfois : il est relu, chiffres et noms bornés, avant d'être montré. */
+function lisBilan(o){if(!o||typeof o!=='object'||!Array.isArray(o.liste))return null;const n=v=>Math.max(0,Math.min(1e6,Math.trunc(Number(v))||0));
+ return {tours:n(o.tours),liste:o.liste.slice(0,60).filter(x=>x&&typeof x==='object').map(x=>({id:String(x.id||'').slice(0,80),nom:String(x.nom||'?').slice(0,60),camp:x.camp==='troupe'?'troupe':'adverse',
+  inf:n(x.inf),sub:n(x.sub),soin:n(x.soin),dist:n(x.dist),coups:n(x.coups),crit:n(x.crit),abat:n(x.abat),pic:n(x.pic)}))}}
+const statsDialog=dialog('stats-combat','Stats de Combat','<div id="stats-combat-corps"></div>');
+const DISTINCTIONS=[['inf','⚔','Meilleur combattant','dégâts infligés'],['sub','🩸','Le plus éprouvé','PV perdus'],['soin','✚','Meilleur soigneur','PV soignés'],
+ ['pic','💥','Coup le plus fort','dégâts d’un coup'],['abat','💀','Exécuteur','mis à terre'],['crit','✸','Roi du critique','critiques'],['dist','👣','Le plus mobile','m parcourus']];
+const COLONNES_STATS=[['inf','Infligés'],['sub','Subis'],['soin','Soignés'],['dist','Distance'],['coups','Coups'],['crit','Critiques'],['abat','Mis à terre']];
+function portraitStats(x){const a=actors.find(o=>o&&o.id===x.id),el=document.createElement('span');el.className='stats-portrait '+x.camp;
+ if(a&&a.image){const im=document.createElement('img');im.src=a.image;im.alt='';el.append(im)}else el.textContent=(x.nom||'?').trim().charAt(0).toUpperCase();return el}
+function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps=$('stats-combat-corps');corps.replaceChildren();
+ const somme=(l,k)=>l.reduce((s,x)=>s+x[k],0),troupe=b.liste.filter(x=>x.camp==='troupe'),adv=b.liste.filter(x=>x.camp!=='troupe');
+ const el=(tag,cls,texte)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(texte!==undefined)e.textContent=texte;return e};
+ const score=(cls,valeur,libelle)=>{const d=el('div','stats-score '+cls);d.append(el('b','',String(valeur)),el('span','',libelle));return d};
+ const tete=el('div','stats-tableau');tete.append(score('troupe',somme(troupe,'inf'),'Dégâts des aventuriers'),score('tours',b.tours,b.tours>1?'tours':'tour'),score('adverse',somme(adv,'inf'),'Dégâts des adversaires'));corps.append(tete);
+ const prix=DISTINCTIONS.map(([k,ico,titre,unite])=>{const top=[...b.liste].sort((x,y)=>y[k]-x[k])[0];return top&&top[k]>0?{k,ico,titre,unite,top}:null}).filter(Boolean);
+ if(prix.length){const g=el('div','stats-distinctions');
+  prix.forEach(p=>{const c=el('div','stats-prix '+p.top.camp),t=el('div','stats-prix-texte'),qui=el('span','stats-prix-qui');
+   qui.append(portraitStats(p.top),el('span','',p.top.nom));t.append(el('strong','',p.titre),qui,el('span','stats-prix-val',p.top[p.k]+' '+p.unite));
+   c.append(el('span','stats-medaille',p.ico),t);g.append(c)});corps.append(g)}
+ const maxInf=Math.max(1,...b.liste.map(x=>x.inf)),valeur=(c,v)=>c==='dist'?v+' m':String(v);
+ [['troupe','Aventuriers',troupe],['adverse','Adversaires',adv]].forEach(([k,titre,l])=>{if(!l.length)return;
+  const s=el('section','stats-camp '+k);s.append(el('h3','',titre));const t=el('table','stats-table'),th=t.createTHead().insertRow();
+  ['',...COLONNES_STATS.map(c=>c[1])].forEach(x=>th.append(el('th','',x)));
+  const tb=t.createTBody();[...l].sort((x,y)=>y.inf-x.inf||y.sub-x.sub).forEach(x=>{const r=tb.insertRow(),n=r.insertCell(),nom=el('span','stats-nom');
+   nom.append(portraitStats(x),el('span','',x.nom));n.append(nom);
+   COLONNES_STATS.forEach(([c])=>{const d=r.insertCell();d.className='stats-n '+c+(x[c]?'':' zero');d.textContent=valeur(c,x[c]);
+    if(c==='inf'&&x.inf){const barre=el('i','stats-barre');barre.style.width=Math.round(x.inf/maxInf*100)+'%';d.append(barre)}})});
+  const tf=t.createTFoot().insertRow();tf.insertCell().textContent='Total';COLONNES_STATS.forEach(([c])=>{const d=tf.insertCell();d.className='stats-n';d.textContent=valeur(c,somme(l,c))});
+  s.append(t);corps.append(s)});
+ statsDialog.showModal()}
 /* ---------- Pages Armurerie et Bestiaire ---------- */
 // Les tris de l'Armurerie, déclarés avant sa page, qui en fait son menu (voir trieObjets).
 const TRIS_ARMURERIE=[['','Ordre de création'],['nom','Nom (A → Z)'],['rarete','Rareté'],['prix','Prix croissant'],['prix-','Prix décroissant'],
@@ -4678,6 +4712,8 @@ function supprimerAventurier(a){if(view!=='mj'||!a||!a.hero)return 'Suppression 
 function removeActors(liste,demande){
  if(view!=='mj')return 'Retrait impossible.';
  const tous=[...new Set(liste)].filter(i=>actors[i]);
+ // Retiré en plein combat, il garde sa place au bilan.
+ if(typeof notePartisBilan==='function')notePartisBilan(tous.map(i=>actors[i]));
  if(!tous.length)return 'Retrait impossible.';
  tous.filter(i=>actors[i].hero).forEach(i=>retireDeLaTable(actors[i]));
  const rangs=tous.filter(i=>!actors[i].hero).sort((x,y)=>y-x);
