@@ -3366,6 +3366,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.541 — Stats de Combat : une distinction tient en deux lignes, le nom du combattant en bulle au survol de son token. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(!src.includes("'stats-prix-qui'")&&src.includes("jeton.setAttribute('aria-label',p.top.nom);")&&src.includes("ouvrirBulle(jeton,d,'bulle-talent')"),'le nom au survol du token');}
 /* v0.540 — Le compteur des bonus de l'arbre en icônes chiffrées, deux lignes au plus, le nom en bulle. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("c.className='arbres-bonus-n';boite.className='bonus-ico';if(ic)boite.append(remplitCase(ic));")&&src.includes("ouvrirBulle(c,d,'bulle-talent')")
@@ -3373,7 +3376,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.539 — Stats de Combat : le token du combattant désigné à chaque distinction, l'icône des Dégâts après les dégâts de
    chaque camp, « Mise à Mort » au lieu de « mis à terre ». */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("const jeton=portraitStats(p.top);jeton.classList.add('stats-jeton');c.append(jeton,t);")&&!src.includes("el('span','stats-medaille',p.ico)")
+ assert.ok(!src.includes("el('span','stats-medaille',p.ico)")
   &&src.includes("i.src=imgUrl('DEGATS.webp');i.alt='';i.draggable=false;v.append(' ',i)")&&src.includes("['abat','Mise à Mort']];")&&!src.includes("'mis à terre'"),'tokens, icône des Dégâts, Mise à Mort');}
 /* v0.538 — Bulle d'un bonus « + 2 <icône> Endu » ; sous le total d'XP de l'arbre, ce qu'il donne de chaque caractéristique ;
    un talent posé sur un autre, ou une amélioration sur une autre, échangent leurs places. */

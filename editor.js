@@ -511,9 +511,12 @@ function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps
  const tete=el('div','stats-tableau');tete.append(score('troupe',somme(troupe,'inf'),'Dégâts des aventuriers',true),score('tours',b.tours,b.tours>1?'tours':'tour'),score('adverse',somme(adv,'inf'),'Dégâts des adversaires',true));corps.append(tete);
  const prix=DISTINCTIONS.map(([k,ico,titre,unite])=>{const top=[...b.liste].sort((x,y)=>y[k]-x[k])[0];return top&&top[k]>0?{k,ico,titre,unite,top}:null}).filter(Boolean);
  if(prix.length){const g=el('div','stats-distinctions');
-  prix.forEach(p=>{const c=el('div','stats-prix '+p.top.camp),t=el('div','stats-prix-texte'),qui=el('span','stats-prix-qui');
-   qui.append(portraitStats(p.top),el('span','',p.top.nom));t.append(el('strong','',p.titre),qui,el('span','stats-prix-val',p.top[p.k]+' '+p.unite));
-   const jeton=portraitStats(p.top);jeton.classList.add('stats-jeton');c.append(jeton,t);g.append(c)});corps.append(g)}
+  // Le token dit qui ; son nom paraît en bulle, au survol.
+  prix.forEach(p=>{const c=el('div','stats-prix '+p.top.camp),t=el('div','stats-prix-texte');
+   t.append(el('strong','',p.titre),el('span','stats-prix-val',p.top[p.k]+' '+p.unite));
+   const jeton=portraitStats(p.top);jeton.classList.add('stats-jeton');jeton.setAttribute('aria-label',p.top.nom);
+   surveille(jeton,()=>{const d=el('div','talent-detail large'),n=el('p','talent-bulle-nom');n.append(el('b','',p.top.nom));d.append(n);ouvrirBulle(jeton,d,'bulle-talent')});
+   c.append(jeton,t);g.append(c)});corps.append(g)}
  const maxInf=Math.max(1,...b.liste.map(x=>x.inf)),valeur=(c,v)=>c==='dist'?v+' m':String(v);
  [['troupe','Aventuriers',troupe],['adverse','Adversaires',adv]].forEach(([k,titre,l])=>{if(!l.length)return;
   const s=el('section','stats-camp '+k);s.append(el('h3','',titre));const t=el('table','stats-table'),th=t.createTHead().insertRow();
