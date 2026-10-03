@@ -3371,6 +3371,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.526 — Le chiffre de distance plus petit, et à la couleur du ciblage : bleu clair s'il part, rouge clair s'il est bloqué. */
+{const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("lab.style.fontSize=Math.max(9,tokenPx()*.22).toFixed(1)+'px';\n lab.setAttribute('class','aim-dist on etat-'+etat)}")
+ &&page.includes("#aim .aim-dist.etat-ok{fill:#a9d2f7}#aim .aim-dist.etat-no{fill:#f6a59c}"),'taille et couleur du chiffre');}
 /* v0.525 — L'unité de distance : le diamètre d'un socle moyen vaut 1 m. Sur le trait de ciblage, la distance de centre
    à centre, à une décimale. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');
