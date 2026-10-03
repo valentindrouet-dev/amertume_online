@@ -282,7 +282,9 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
   else if(rec.effet==='orbe'&&typeof volOrbe==='function'){const [couleur,etat]=(typeof rec.logo==='string'?rec.logo:'').split('|');
    volOrbe(acteurDuJournal(rec.a),acteurDuJournal(rec.b),couleur||'',etat||'')}
   else if(rec.effet==='fleche'&&typeof volFleche==='function')volFleche(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
-  else if(rec.effet==='balayage'&&typeof volBalayage==='function')volBalayage(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
+  else if(rec.effet==='balayage'&&typeof coupDeToken==='function')coupDeToken(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
+  else if(rec.effet==='choc'&&typeof chocImpact==='function'){const [x,y]=(typeof rec.logo==='string'?rec.logo:'').split('|').map(Number);
+   chocImpact(acteurDuJournal(rec.a),acteurDuJournal(rec.b),170,Number.isFinite(x)&&Number.isFinite(y)?{x,y}:null)}
   else if(rec.effet==='piege'&&typeof explosionPiege==='function'){const m=typeof currentMap==='function'?currentMap():null,c=m&&(m.coffres||[])[Number(rec.logo)];if(c)explosionPiege(centreForme(c))}return}
  if(rec.genre==='attaque'){const r=rec.detail&&typeof rec.detail==='object'?rec.detail:null;
   const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,def:Number.isInteger(r.def)?r.def:null,solidite:!!r.solidite,double:!!r.double,total:r.total}:null;

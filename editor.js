@@ -1766,12 +1766,31 @@ const deAccolade=k=>{const c=DES_ACCOLADES.get(String(k).normalize('NFD').replac
 function deDansTexte(c){const d=document.createElement('i');d.className='die-sq de-texte';d.style.setProperty('--face',dieFace(c));d.title='Dé '+types[c];d.setAttribute('role','img');d.setAttribute('aria-label','dé '+types[c]);return d}
 // Le même dé dans un texte HTML déjà échappé, pour l'export : une image.
 const desEnImages=html=>String(html||'').replace(new RegExp(ACCOLADES_DES.source,'gu'),(m,k)=>{const c=deAccolade(k);return c<0?m:'<img class="de" src="'+dieFace(c).slice(5,-2)+'" alt="dé '+types[c]+'">'});
-function texteEnrichi(el,texte){texte=String(texte||'');el.replaceChildren();
+function texteEnrichi(el,texte,noms){texte=String(texte||'');el.replaceChildren();
  // Les dés d'abord ; entre eux, le texte se colore comme avant.
  const rd=new RegExp(ACCOLADES_DES.source,'gu');let fin=0,d;
- while((d=rd.exec(texte))){const c=deAccolade(d[1]);if(c<0)continue;if(d.index>fin)motsDans(el,texte.slice(fin,d.index));el.append(deDansTexte(c));fin=rd.lastIndex}
- if(fin<texte.length)motsDans(el,texte.slice(fin));return el}
-function motsDans(el,texte){const {rx,entrees}=motsCles();rx.lastIndex=0;let last=0,m;
+ while((d=rd.exec(texte))){const c=deAccolade(d[1]);if(c<0)continue;if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);el.append(deDansTexte(c));fin=rd.lastIndex}
+ if(fin<texte.length)motsDans(el,texte.slice(fin),noms);return el}
+/* Les talents d'un arbre, dans le texte d'un des siens : leur nom exact, casse ignorée, prend la
+   couleur de sa nature — « Charge » en bleu d'Action dans un talent du Destructeur. */
+const TEINTES_TALENTS={act:'#4f7fb5',reac:'#8b6bb5',pass:'#8a8474',crit:'#b5525a',mait:'#c99a3c',ame:'#5e9a5b'};
+const cleNomTalent=n=>String(n).toLowerCase().replace(/\s+/g,' ');
+function nomsDeLArbre(t){const c=t&&lisChemin(t),fam=talentFamily(c&&talent(c.de)||t),parNom=new Map();
+ const clair=n=>String(n||'').normalize('NFC').replace(new RegExp(ACCOLADES.source,'giu'),(m,k)=>sorteAccolade(k)?libelleAccolade(k):m).trim();
+ (catalog.talents||[]).forEach(x=>{if(!x||estVide(x)||estBonus(x)||talentFamily(x)!==fam)return;
+  const n=clair(x.name);if(n&&!parNom.has(cleNomTalent(n)))parNom.set(cleNomTalent(n),TEINTES_TALENTS[talentType(x)[0]])});
+ if(!parNom.size)return null;
+ const q=x=>x.replace(/[.*+?^${}()|[\]\\\/-]/g,'\\$&').replace(/ /g,'\\s+');
+ const motifs=[...parNom.keys()].sort((x,y)=>y.length-x.length).map(q);
+ // Un passage en **gras** reste entier : il n'est pas coupé par un nom.
+ return {rx:new RegExp('\\*\\*[^*\\n]+\\*\\*|(?<![\\p{L}\\p{N}])(?:'+motifs.join('|')+')(?![\\p{L}\\p{N}])','giu'),couleur:m=>parNom.get(cleNomTalent(m))||''}}
+function motsDans(el,texte,noms){if(!noms)return motsClesDans(el,texte);
+ const rx=noms.rx;rx.lastIndex=0;let last=0,m;
+ while((m=rx.exec(texte))){if(m[0].startsWith('**'))continue;
+  if(m.index>last)motsClesDans(el,texte.slice(last,m.index));
+  const b=document.createElement('b');b.className='mot-cle mot-talent';b.textContent=m[0];b.style.color=noms.couleur(m[0]);el.append(b);last=rx.lastIndex}
+ if(last<texte.length)motsClesDans(el,texte.slice(last));return el}
+function motsClesDans(el,texte){const {rx,entrees}=motsCles();rx.lastIndex=0;let last=0,m;
  const gras=(mot,couleur)=>{const b=document.createElement('b');b.className='mot-cle';b.textContent=mot;if(couleur)b.style.color=couleur;el.append(b)};
  while((m=rx.exec(texte))){
   if(m[1]!==undefined){if(m.index>last)el.append(texte.slice(last,m.index));gras(m[1],'');last=rx.lastIndex;continue}
@@ -3870,7 +3889,7 @@ function retireDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;
   porteur ni élément, un nom à accolades les montre en creux. */
 // Le chiffre d'un palier dans une comparaison, où le premier aussi doit se nommer.
 const CHIFFRES_PALIER=['','I','II','III'];
-function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}){const bonus=t.effet==='bonus';
+function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}){const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);
  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
  // Un bonus a la couleur de son rond : rouge pour les dégâts, vert pour les PV…
  if(bonus)d.classList.add('bulle-bonus','bonus-'+((paramsTalent(t)||{}).carac||'pv'));
@@ -3900,7 +3919,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}
   const g=document.createElement('div');g.className='paliers-bulle liste';
   montres.forEach(n=>{
    const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n),numero=montres.length>1;
-   const e=document.createElement('p');e.className='palier-effet';e.textContent=tp.effects||'Effet à préciser.';if(tp.effects)texteEnrichi(e,tp.effects);
+   const e=document.createElement('p');e.className='palier-effet';e.textContent=tp.effects||'Effet à préciser.';if(tp.effects)texteEnrichi(e,tp.effects,noms);
    // Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.
    const tete=[];
    if(numero){const r=document.createElement('span');r.className='palier-num';r.textContent=CHIFFRES_PALIER[n]||String(n);tete.push(r)}
@@ -3913,7 +3932,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}
   if(a&&!cout&&!lisChemin(t)){const tenues=(a.talents||[]).map(talent).filter(x=>x&&!estBonus(x)&&lisChemin(x)&&lisChemin(x).de===t.id&&!ameliorAttaque(x));
    const ams=sansAmeliorationsRemplacees(tenues)
     .sort((x,y)=>Object.keys(DIRS).indexOf(lisChemin(x).dir)-Object.keys(DIRS).indexOf(lisChemin(y).dir)||lisChemin(x).rang-lisChemin(y).rang);
-   const ligneAm=(x,cls)=>{const tx=vu(x).effects||'';if(!tx)return;const e=document.createElement('p');e.className='palier-effet'+(cls?' '+cls:'');texteEnrichi(e,tx);g.append(e)};
+   const ligneAm=(x,cls)=>{const tx=vu(x).effects||'';if(!tx)return;const e=document.createElement('p');e.className='palier-effet'+(cls?' '+cls:'');texteEnrichi(e,tx,noms);g.append(e)};
    /* « Remplace le texte du talent » : le texte de base cède la place à celui du chemin qui le
       dit — un seul chemin par talent. Sur ce chemin, la dernière amélioration tenue fait le texte. */
    const dirR=Object.keys(DIRS).find(d=>tenues.some(x=>lisChemin(x).dir===d&&x.remplaceTexte===true));

@@ -1065,8 +1065,7 @@ assert.ok(!page.includes("' Coma.'")&&page.includes("' 💀'")&&!page.includes('
 assert.ok(src.includes('function talentCarte(t,logo){')&&src.includes("carte=talentCarte(tv),pill=carte.firstChild;")&&feuille.includes('.talent-grille .cat-pill{'),'les talents de la fiche sont compacts');
 assert.ok(page.includes('minmax(0,1fr) 340px')&&page.includes('minmax(0,1fr) 380px'),'la colonne de droite s’élargit');
 /* L'orbe et la flèche volent avant que les dégâts tombent ; l'œil de la troupe ; le journal épuré. */
-assert.ok(page.includes('function volFleche(')&&vivant.includes("rec.effet==='fleche'")&&page.includes("diffuserEffet('fleche',a,actors[j],null)")
- &&page.includes('function volBalayage(')&&vivant.includes("rec.effet==='balayage'")&&page.includes("diffuserEffet('balayage',a,actors[j],null)"),'le souffle et le balayage jouent ici et en face');
+assert.ok(page.includes('function volFleche(')&&vivant.includes("rec.effet==='fleche'")&&page.includes("diffuserEffet('fleche',a,actors[j],null)")&&vivant.includes("rec.effet==='balayage'")&&page.includes("diffuserEffet('balayage',a,actors[j],null)"),'le souffle et le balayage jouent ici et en face');
 assert.ok(page.includes("if(duree>0)setTimeout(()=>{poser();render();")&&page.includes("setTimeout(()=>{tirEnVol=false;frapper();scheduleSave()},duree)"),'les dégâts attendent le vol');
 assert.ok(cartes.includes("icone('troupe-eye'")&&cartes.includes('function oeilJoueur')&&cartes.includes("inconnu=oeilJoueur()?255:110"),'l’œil de la troupe');
 assert.ok(!page.includes('Bienvenue dans Amertume')&&!cartes.includes("(d.secret?'Passage secret ':'Porte ')")&&page.includes(" garde '+nomNum(o)+'.'")&&page.includes("' 🔍 '+nomNum(o)+' :\\n'"),'le journal s’épure');
@@ -1215,13 +1214,13 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
 /* Les projectiles volent sur transform et opacity seulement : le compositeur les mène même quand le
    fil principal est pris (dés, rendu complet, état reçu). Plus de left/top dans les images clés. */
 {const orbe=page.slice(page.indexOf('function volOrbe('),page.indexOf('function deplacement(')),fleche=page.slice(page.indexOf('function volFleche('),page.indexOf('function floatNumber('));
- const balayage=page.slice(page.indexOf('function volBalayage('),page.indexOf('function volFleche('));
- assert.ok(!/\{[^}]*\bleft:/.test(balayage.slice(balayage.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(orbe.slice(orbe.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(fleche.slice(fleche.indexOf('el.animate'))),'pas de left/top animé');
- assert.ok(page.includes('function etincelles(couche,cible,delai){')&&balayage.includes("const lame='M8,76 Q44,6 94,20 Q48,28 8,76 Z'")&&balayage.includes('etincelles(couche,vers,110);\n return 170}')
+ const coup=page.slice(page.indexOf('function coupDeToken('),page.indexOf('function chocImpact('));
+ assert.ok(!/\{[^}]*\bleft:/.test(coup.slice(coup.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(orbe.slice(orbe.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(fleche.slice(fleche.indexOf('el.animate'))),'pas de left/top animé');
+ assert.ok(page.includes('function etincelles(couche,cible,delai){')&&coup.includes("{translate:'0 0'}")&&coup.includes(' return 110}')
   &&fleche.includes('<path class="pointe" d="M80,2 L100,8 L80,14 L84,8 Z"/>')&&fleche.includes('etincelles(couche,vers,vol);\n return vol+30}')
   &&page.includes('function deplacement(couche,de,vers)')&&orbe.includes("transform:'translate('+arrivee+') scale(1)'")
   &&page.includes('.orbe-vol{position:absolute;will-change:transform,opacity;')&&page.includes('.vfx{position:absolute;pointer-events:none;z-index:5;will-change:transform,opacity;transform:translate(-50%,-50%)}')
-  &&!page.includes('function choc(')&&!page.includes('coup-trait')&&!page.includes('souffle-vol')&&!page.includes('balayage-vol'),'taillade, flèche et étincelles, portées par le compositeur');}
+  &&!page.includes('function choc(')&&!page.includes('coup-trait')&&!page.includes('souffle-vol')&&!page.includes('balayage-vol'),'coup, flèche et étincelles, portés par le compositeur');}
 /* Contacts : tous les rayons (aventuriers et adversaires révélés) quand il est actif, la seule
    sélection sinon ; un joueur inspecte n'importe quel combattant — fiche selon ce qu'il en sait,
    aura — sans le contrôler, et ses cases d'activation restent celles de son actif ; les
@@ -1290,7 +1289,7 @@ assert.ok(!page.includes('id="heal-foes"')&&!src.includes("$('heal-foes')")&&!pa
    dans la vignette, à gauche du nom ; les projectiles sont un souffle (650 ms) et le coup au contact un
    balayage d'air (320 ms), le coup tombant au bout du geste. */
 assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidden=!nbGear;")&&src.includes("coche.className='coche-modele'")&&src.includes("coche.onclick=lever;coche.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')lever(e)};p.append(coche)}")&&!src.includes("coche.classList.add('coche-analyse')")
- &&feuille.includes('.cat-pill .coche-modele{flex:none;width:16px;height:16px;')&&page.includes("if(rangeOf(a)!=='distance'&&typeof volBalayage==='function'){"),'équipement vide masqué, coche dans la vignette, balayage au contact');
+ &&feuille.includes('.cat-pill .coche-modele{flex:none;width:16px;height:16px;'),'équipement vide masqué, coche dans la vignette, balayage au contact');
 /* La barre de PV d'un token est pleine, entamée ou non — c'est sa hauteur qui dit l'actif ;
    sur la piste des dés, le lanceur à gauche et, au bout de chaque ligne, qui reçoit. */
 assert.ok(page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
@@ -1299,7 +1298,7 @@ assert.ok(page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.ver
 /* Plus de chip Niveau sur la fiche de table ; le balayage est une déchirure dentelée de 90° ; la coche du
    bestiaire suit le nom ; l'équipement se lit en carrés — logo dessus, dés dessous — dont la description
    prend toute la ligne. */
-assert.ok(!page.includes("chips.push('Niveau '+a.level)")&&page.includes('.vfx-taillade .lame{fill:#fffaf0}')&&page.includes('const id=\'vfx-m\'+(++vfxN),t=Math.max(56,tokenOf(vers)*2.1);')
+assert.ok(!page.includes("chips.push('Niveau '+a.level)")
  &&src.includes('function gearCarre(o,n,portes)')&&src.includes('function gearDetail(o,a,enJeu)')&&src.includes("out.className='gear-grille'")&&src.includes("d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');")&&!src.includes("out.className='gear-pills'")
  &&feuille.includes('.gear-grille{display:flex;flex-wrap:wrap;gap:6px;')&&feuille.includes('.cat-pill.gear-carre{flex:none;width:auto;min-width:69px;min-height:69px;flex-direction:column;')&&feuille.includes('.gear-detail.large{flex-basis:100%;')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}')&&!feuille.includes('.gear-pills')&&src.includes("d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');")&&src.includes(' const PAR_LIGNE=6;'),'niveau masqué, déchirure, coche après le nom, équipement en carrés');
 /* Invocation et Régénération : deux mécaniques d'adversaire câblées — la pose au clic, les soins au
@@ -3371,6 +3370,23 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.531 — Les noms des talents d'un arbre à la couleur de leur nature dans les bulles des siens ; un adversaire relevé
+   hors combat relance le combat ; des mètres entiers ; le coup du socle au contact ; le choc d'une cible repoussée qui bute ;
+   la poussée de la Charge tenue par toute amélioration de poussée. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ assert.ok(src.includes("const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);")&&src.includes("texteEnrichi(e,tp.effects,noms)")&&src.includes("texteEnrichi(e,tx,noms)"),'les bulles passent les noms de l’arbre');
+ {const vm=require('vm'),deb=src.indexOf('const TEINTES_TALENTS='),fin=src.indexOf('function motsDans(');
+  const T=[{id:'c',name:'Charge',famille:'Destructeur',type:'act'},{id:'e',name:'Enragement',famille:'Destructeur',type:'pass'},{id:'o',name:'Orbe',famille:'Mage',type:'act'}];
+  const ctx={catalog:{talents:T},lisChemin:t=>t.chemin||null,talent:id=>T.find(t=>t.id===id),talentFamily:t=>t.famille||'Génériques',estVide:()=>false,estBonus:()=>false,
+   talentType:t=>[t.type],ACCOLADES:/\{([^}]+)\}/,sorteAccolade:()=>false,libelleAccolade:k=>k};
+  vm.createContext(ctx);vm.runInContext(src.slice(deb,fin)+';this.n=nomsDeLArbre(catalog.talents[1]);',ctx);
+  const vus=[...'Après une CHARGE, l’Orbe, la Chargeuse et **Charge**.'.matchAll(ctx.n.rx)].map(x=>x[0]);
+  assert.ok(JSON.stringify(vus)==='["CHARGE","**Charge**"]'&&ctx.n.couleur('CHARGE')==='#4f7fb5'&&ctx.n.couleur('enragement')==='#8a8474','Charge en bleu d’Action ; ni l’Orbe d’un autre arbre, ni la Chargeuse, ni le gras');}
+ assert.ok(page.includes("if(!enCombat()&&revenus.some(a=>campDe(a)==='adverse'&&a.vu&&!a.hidden&&!a.horsCarte))"),'un adversaire relevé relance le combat');
+ assert.ok(page.includes("function distanceM(a,b){return Math.floor(metres(a,b,mapSize(),tokenPx()))}")&&page.includes("lab.textContent=d+' m';")&&page.includes("m=venu?Math.floor(metres(depart,a,size,tokenPx())):0"),'des mètres entiers, arrondis par défaut');
+ assert.ok(!page.includes('vfx-taillade')&&!page.includes('function volBalayage(')&&vivant.includes("coupDeToken(acteurDuJournal(rec.a),acteurDuJournal(rec.b))"),'le coup du socle remplace la taillade');
+ assert.ok(page.includes("chocImpact(b,a,bouge?170:0)")&&vivant.includes("rec.effet==='choc'"),'le choc d’une cible qui bute, ici et en face');
+ assert.ok(page.includes("repousse=loin||impact||porteEffet(codes,'chargerepousse')"),'toute amélioration de poussée repousse');}
 /* v0.530 — Charge : l'élan en deux crans, la moitié puis toute la distance ; l'impact, double des dégâts d'opportunité
    contre un mur ou un adversaire. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');const K=C.TALENTS_CODES;
@@ -3406,8 +3422,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');
  const size={width:1000,height:500};assert.equal(C.metres({x:10,y:50},{x:40,y:50},size,50),6,'300 px pour un socle de 50 px : 6 m');
  assert.equal(C.metres({x:0,y:0},{x:0,y:20},size,50),2,'en hauteur aussi, de centre à centre');assert.equal(C.metres({x:0,y:0},{x:1,y:1},size,0),0,'sans carte mesurée, 0');
- assert.ok(page.includes("function distanceM(a,b){return metres(a,b,mapSize(),tokenPx())}")&&page.includes("lab.textContent=(Math.round(d*10)/10).toLocaleString('fr-FR')+' m';")
-  &&page.includes("if(k){if(fleche._dist)fleche._dist.remove();fleche.remove()}")&&page.includes("#aim .aim-dist.on{display:block}"),'la distance sur chaque trait, éteinte avec lui');}
+ assert.ok(page.includes("if(k){if(fleche._dist)fleche._dist.remove();fleche.remove()}")&&page.includes("#aim .aim-dist.on{display:block}"),'la distance sur chaque trait, éteinte avec lui');}
 /* v0.524 — Furie : un état empilable, +1 aux dégâts du combattant par cran ; son icône se choisit comme celle de Gardé. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
  const a={states:[]};assert.ok(C.cumulable('Furie')&&C.ETATS_JEU.includes('Furie'),'empilable, et posable par un effet');
