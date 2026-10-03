@@ -1246,7 +1246,7 @@ assert.ok(src.includes('let templateNeuf=false;')&&src.includes("$('bestiary-add
    hauteur de repos pour que la carte calée dessus ne bouge pas au clic. */
 assert.ok(page.includes("pv.hidden=view!=='mj';pv.classList.toggle('vide',!a);")&&page.includes("document.querySelector('.attack-card').classList.toggle('vide',!a);")
  &&!page.includes("document.querySelector('.attack-card').hidden=!a")&&page.includes("$('sheet').hidden=false;$('sheet').classList.toggle('vide',!a);")
- &&page.includes('.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}')&&page.includes('#sheet.vide #hpbar,#sheet.vide #bloc-gear,#sheet.vide .divider{display:none}')&&page.includes('#sheet{min-height:0}')&&page.includes('.piste-des{display:flex;flex-direction:column;gap:8px;height:220px;overflow:hidden}'),'les blocs restent en place, vides');
+ &&page.includes('.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}')&&page.includes('#sheet.vide #hpbar,#sheet.vide #bloc-gear,#sheet.vide .divider{display:none}')&&page.includes('#sheet{min-height:0}'),'les blocs restent en place, vides');
 /* Un talent sans mécanique dont le nom est celui d'une mécanique la reçoit (Double Attaque) ; la ligne
    « Cible : » a disparu ; les blocs vides n'affichent aucun texte. */
 assert.ok(src.includes("if(t&&(t.effet===undefined||t.effet===''||!TALENTS_CODES[t.effet]))t.effet=effetParNom(t.name)});")&&!page.includes("'Cible : '+actors[a.target].name")
@@ -1663,9 +1663,7 @@ assert.ok(!page.includes('Personne à portée de contact.')&&!page.includes("'Ho
 /* La table applique la règle : le camp d'en face barre le pas, l'allié se laisse traverser mais
    pas couvrir, un corps à terre ne tient plus la place, et un lot pris ensemble ne se repousse pas. */
 assert.ok(page.includes("&&(!adverses||hostiles(o,a))")
- &&page.includes('function settleActor(a,ignorer)')
- &&page.includes('function moveActor(a,xp,yp,libre,ignorer,traverse)')
- &&page.includes(' const barrent=(alive(a)?soclesOccupes(a,size,ignorer,true):[])\n  .filter(c=>Math.hypot(start[0]-c.x,start[1]-c.y)>=r+c.r-.5);')&&page.includes('const tiennent=alive(a)&&!traverse?soclesOccupes(a,size,ignorer,false):[];')
+ &&page.includes('function settleActor(a,ignorer)')&&page.includes('const tiennent=alive(a)&&!traverse?soclesOccupes(a,size,ignorer,false):[];')
  /* L'adversaire barre : on s'arrête devant lui, on ne glisse pas sur son flanc. Les murs,
     eux, se longent toujours — c'est ce qui assure le passage des portes. */
  &&!page.includes('ecarteDesSocles(suivant,barrent,r)')&&page.includes(' if(segmentHitsPolys(last,suivant,polys))break;')
@@ -3369,6 +3367,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.536 — Les talents de mouvement voient par-dessus les alliés de celui qui se déplace ; une cible repoussée heurte tout
+   socle vivant ; la piste des dés défile, sans titre. */
+{const page=fs.readFileSync('index.html','utf8');
+ assert.ok(page.includes('function vusPourMouvement(a,provoque){')&&page.includes('function cibleCharge(a){const vues=vusPourMouvement(a,false);')&&page.includes('const vues=vusPourMouvement(a,true);'),'Charge et Provocation voient par-dessus les alliés');
+ assert.ok(page.includes('function moveActor(a,xp,yp,libre,ignorer,traverse,heurte){')&&page.includes('soclesOccupes(a,size,ignorer,!heurte)')&&page.includes('moveActor(b,vise.x,vise.y,false,null,false,true);'),'la poussée heurte tous les socles');
+ assert.ok(!page.includes('<div class="eyebrow">Dégâts</div>')&&page.includes('.piste-des{display:flex;flex-direction:column;gap:8px;height:220px;overflow:hidden auto}')&&page.includes("$('piste-des').scrollTop=0;"),'la piste défile, sans titre');}
 /* v0.535 — Le rond de remplissage de l'arbre : ni talent ni amélioration, une case vide colorée, à l'icône « ? » réglable
    une fois pour toutes ; il tient lignes et petits ronds, un talent posé dessus les reprend, l'onglet Talents l'ignore. */
 {const src=fs.readFileSync('editor.js','utf8');
