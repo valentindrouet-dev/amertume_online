@@ -3410,7 +3410,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&page.includes("if(impact&&info.bloque&&alive(b)){const n=2*degatsDe(a),{perdu,blinde}=encaisse(b,n);"),'élan en deux crans, impact contre mur ou adversaire');}
 /* v0.529 — Un bouton de talent grisé dit pourquoi dans sa bulle ; la vérification ne rejoue que les jeux dont les sources ont changé. */
 {const src=fs.readFileSync('editor.js','utf8'),verif=require('fs').readFileSync('verif.cjs','utf8');
- assert.ok(src.includes("bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre,"),'la raison du refus dans la bulle');
+ assert.ok(!src.includes("note:t.peut?'':t.titre"),'aucune raison de refus dans la bulle d’un talent : seul le texte du MJ');
  assert.ok(verif.includes("CACHE='.git/verif-cache.json'")&&verif.includes("const LIT={'des-checks.cjs':['combat.js']};")&&verif.includes("if(!garde)cache[f]={k,dit}")&&verif.includes("process.argv.includes('--tout')"),'la vérification en cache, par empreinte');}
 /* v0.528 — Le dernier lancer reste sur la piste jusqu'au suivant ; une attaque sans ciblage préalable ne laisse pas de cible ;
    un bouton « Distances » montre ou cache les distances des flèches, pour chacun. */
