@@ -3369,6 +3369,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.535 — Le rond de remplissage de l'arbre : ni talent ni amélioration, une case vide colorée, à l'icône « ? » réglable
+   une fois pour toutes ; il tient lignes et petits ronds, un talent posé dessus les reprend, l'onglet Talents l'ignore. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes('const estRemplissage=t=>estVide(t)&&t.remplissage===true;')&&src.includes('function poseRemplissage(dest,couleur){const v=caseVideA(dest);if(v){v.remplissage=true;v.couleur=couleur;return true}')
+  &&src.includes("COULEURS_REMPLISSAGE.forEach(k=>{const b=document.createElement('button');")&&src.includes("ico('✕','Supprimer ce rond de remplissage',()=>{delete t.remplissage;delete t.couleur;arbreChange()})"),'le rond de remplissage');
+ assert.ok(src.includes("if(t.remplissage!==true||t.vide!==true){delete t.remplissage;delete t.couleur}")&&src.includes("selGroupes('Remplissage','remplissage',catalog.logoRemplissage||'',groupes)")
+  &&src.includes("c.liste.forEach(t=>{if(estVide(t)&&!estRemplissage(t))return;"),'sa couleur, son icône, ses petits ronds');}
 /* v0.533 — Les dés de dégâts au bout de la ligne du titre des bulles, sans retour à la ligne ; la Charge et la Provocation
    ne laissent pas de cible derrière elles ; l'élan du socle au contact, un peu plus ample. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');

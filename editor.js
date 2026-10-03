@@ -196,6 +196,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les logos communs des bonus, par caractéristique : un nom de logo par clé.
  const lb=c.logosBonus&&typeof c.logosBonus==='object'&&!Array.isArray(c.logosBonus)?c.logosBonus:{};
  c.logosBonus={};Object.entries(lb).forEach(([k,v])=>{if(/^[a-z]+(:\d+)?$/.test(k)&&typeof v==='string'&&v&&v.length<=120)c.logosBonus[k]=v});
+ // Le logo commun des ronds de remplissage de l'arbre.
+ if(typeof c.logoRemplissage!=='string'||!c.logoRemplissage||c.logoRemplissage.length>120)delete c.logoRemplissage;
  // L'image qu'un état prend à la place de celle du jeu : Gardé, pour l'heure.
  {const le=c.logosEtats&&typeof c.logosEtats==='object'&&!Array.isArray(c.logosEtats)?c.logosEtats:{};c.logosEtats={};
   Object.entries(le).forEach(([k,v])=>{if(STATES.includes(k)&&typeof v==='string'&&v&&v.length<=120)c.logosEtats[k]=v})}
@@ -238,6 +240,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // Retiré de l'arbre, il reste au catalogue.
   if(t.horsArbre!==true)delete t.horsArbre;
   if(t.vide!==true)delete t.vide;
+  // Un rond de remplissage est une case vide qui a une couleur : celle d'une nature de talent.
+  if(t.remplissage!==true||t.vide!==true){delete t.remplissage;delete t.couleur}
+  else if(!['act','reac','pass','crit','mait','ame'].includes(t.couleur))t.couleur=t.chemin?'ame':'pass';
   if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;
   if(typeof t.debutCombat!=='boolean')delete t.debutCombat;
   /* Orbes de feu écrit « toujours » avant que le réglage « Quand » n'existe : il le prend, une
@@ -1125,9 +1130,11 @@ function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences
  const lb=catalog.logosBonus||{};
  $('competences-icones-corps').innerHTML='<h3 class="reglage-titre icones-titre">Caractéristiques</h3>'+CARACS_ICONES.map(([k,n])=>selGrille(selGroupes(esc(n),'carac-'+k,lb[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">Compétences</h3>'+skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('')
-  +'<h3 class="reglage-titre icones-titre">États</h3>'+selGrille(selGroupes('Gardé','etat-garde',(catalog.logosEtats||{})['Gardé']||'',groupes))+selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes));
+  +'<h3 class="reglage-titre icones-titre">États</h3>'+selGrille(selGroupes('Gardé','etat-garde',(catalog.logosEtats||{})['Gardé']||'',groupes))+selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))
+  +'<h3 class="reglage-titre icones-titre">Arbres de talents</h3>'+selGrille(selGroupes('Remplissage','remplissage',catalog.logoRemplissage||'',groupes));
  $('competences-icones-form').onchange=e=>{const nom=e.target&&e.target.name||'',m=/^comp(\d+)$/.exec(nom),c=/^carac-([a-z]+)$/.exec(nom);
-  if(nom==='etat-garde'||nom==='etat-furie'){const etat=nom==='etat-garde'?'Gardé':'Furie',o={...(catalog.logosEtats||{})};if(e.target.value)o[etat]=e.target.value;else delete o[etat];catalog.logosEtats=o}
+  if(nom==='remplissage'){if(e.target.value)catalog.logoRemplissage=e.target.value;else delete catalog.logoRemplissage;if(arbresDialog.open)renderArbres()}
+  else if(nom==='etat-garde'||nom==='etat-furie'){const etat=nom==='etat-garde'?'Gardé':'Furie',o={...(catalog.logosEtats||{})};if(e.target.value)o[etat]=e.target.value;else delete o[etat];catalog.logosEtats=o}
   else if(!m&&!c)return;
   else if(m){const icones=iconesCompetences();icones[+m[1]]=e.target.value;catalog.iconesCompetences=normaliseIconesCompetences(icones)}
   else{const o={...(catalog.logosBonus||{})};if(e.target.value)o[c[1]]=e.target.value;else delete o[c[1]];catalog.logosBonus=o}
@@ -3422,6 +3429,16 @@ function posDe(t){const p=t&&t.pos;return p&&Number.isInteger(p.x)&&Number.isInt
 const liensDe=t=>Array.isArray(t&&t.liens)?t.liens:[];
 // Une case vide : la place qu'un talent retiré laisse dans l'arbre, avec ses lignes et ses petits ronds.
 const estVide=t=>!!t&&t.vide===true;
+/* Un rond de remplissage : ni talent ni amélioration, une case de l'arbre dessinée d'avance, à la couleur d'une
+   nature. Il tient lignes et petits ronds comme une case vide ; un talent posé dessus les reprend. */
+const estRemplissage=t=>estVide(t)&&t.remplissage===true;
+const COULEURS_REMPLISSAGE=['act','reac','pass','crit','mait','ame'];
+function iconeRemplissage(){const l=typeof catalog!=='undefined'&&catalog.logoRemplissage,im=l&&logoImage(l,LOGOS_TOUS);return im||document.createTextNode('?')}
+// Posé sur une case vide, il la colore ; ailleurs, il prend sa place comme un talent neuf.
+function poseRemplissage(dest,couleur){const v=caseVideA(dest);if(v){v.remplissage=true;v.couleur=couleur;return true}
+ const t={id:crypto.randomUUID(),vide:true,remplissage:true,couleur,name:'',famille:dest.famille||GENERIQUES,voie:dest.voie||'',type:dest.chemin?'ame':'pass',level:1,effet:'',effects:'',couts:[0,0,0]};
+ catalog.talents.push(t);if(placerTalent(t.id,dest))return true;
+ catalog.talents.splice(catalog.talents.indexOf(t),1);return false}
 /* Les niveaux de l'arbre : un niveau posé sur la ligne entre deux talents, gardé sur celui d'où elle part
    (« niveaux » : talent visé → niveau). Un aventurier ne passe par cette ligne qu'à ce niveau. 0 : aucun. */
 const niveauLien=(x,y)=>!x||!y?0:Math.max(Math.trunc(Number((x.niveaux||{})[y.id]))||0,Math.trunc(Number((y.niveaux||{})[x.id]))||0);
@@ -3834,6 +3851,11 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
    rang.append(b)});
   boite.append(h,rang,neuf('✚ Autre bonus',{...dest,type:'pass',effet:'bonus',params:{carac:'orbe',valeur:1},couts:[0,0,0]}),neuf('✚ Nouvelle amélioration',{...dest,type:'ame'}))}
  else boite.append(neuf('✚ Créer un nouveau talent',{...dest}));
+ {const r=document.createElement('div');r.className='bonus-generiques remplissages';
+  COULEURS_REMPLISSAGE.forEach(k=>{const b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud remplissage t-'+k+(petit?' petit':'');
+   const rond=document.createElement('span');rond.className='arbre-rond';rond.append(iconeRemplissage());b.append(rond);b.setAttribute('aria-label','Remplissage');
+   b.onclick=()=>{choixArbreDialog.close();if(poseRemplissage(dest,k))arbreChange()};r.append(b)});
+  boite.append(r)}
  const rang=t=>talentFamily(t)===dest.famille?0:talentFamily(t)===GENERIQUES?1:2;
  // Un bonus ne passe pas d'un arbre à l'autre : seul celui retiré de cet arbre-ci peut y revenir.
  const libres=(catalog.talents||[]).filter(t=>t&&!estVide(t)&&!(talentFamily(t)===dest.famille&&!t.horsArbre)&&!(estBonus(t)&&talentFamily(t)!==dest.famille)
@@ -4111,15 +4133,22 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   return el};
  /* Une case vide, laissée par un talent retiré : ses lignes et ses petits ronds y tiennent. Chez le MJ, le
     clic y pose un talent — sur un chemin, un bonus ou une amélioration — qui reprend le tout ; ✕ l'efface. */
- const noeudVide=(t,col,petit)=>{const el=document.createElement('div');el.className='arbre-noeud vide'+(petit?' petit':'');el.dataset.id=t.id;
-  const rond=document.createElement('span');rond.className='arbre-rond';el.append(rond);if(!mj)return el;
+ /* Un rond de remplissage se montre à tous, à sa couleur et à son icône ; chez le MJ, ◐ change sa couleur, ⤳ trace
+    une ligne depuis lui, ✕ le rend à la case vide — comme un talent qu'on retire —, et il se déplace comme un talent. */
+ const noeudVide=(t,col,petit)=>{const rempli=estRemplissage(t),el=document.createElement('div');el.className='arbre-noeud '+(rempli?'remplissage t-'+t.couleur:'vide')+(petit?' petit':'');el.dataset.id=t.id;
+  const rond=document.createElement('span');rond.className='arbre-rond';el.append(rond);if(rempli)rond.append(iconeRemplissage());if(!mj)return el;
   const dest={famille:col.famille,voie:col.voie,...(petit?{chemin:lisChemin(t)}:{pos:posDe(t)})};
-  el.tabIndex=0;el.setAttribute('role','button');rond.textContent='+';
-  el.title=petit?'Poser un bonus ou une amélioration ici':'Ajouter un talent ici';el.setAttribute('aria-label',el.title);
+  el.tabIndex=0;el.setAttribute('role','button');
+  if(rempli)el.setAttribute('aria-label','Remplissage');
+  else{rond.textContent='+';el.title=petit?'Poser un bonus ou une amélioration ici':'Ajouter un talent ici';el.setAttribute('aria-label',el.title)}
+  if(mj&&lienDepuis===t.id)el.classList.add('relie-source');
   el.onclick=()=>{if(lienDepuis&&!petit){relie(t,col);return}lienDepuis=null;ajouterDansArbre(dest)};
   el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click()}};
   const outils=document.createElement('span');outils.className='arbre-outils';
-  outils.append(ico('✕','Supprimer cette case vide',()=>{const i=catalog.talents.indexOf(t);if(i>=0)catalog.talents.splice(i,1);arbreChange()}));
+  if(rempli){outils.append(ico('◐','Couleur',()=>{t.couleur=COULEURS_REMPLISSAGE[(COULEURS_REMPLISSAGE.indexOf(t.couleur)+1)%COULEURS_REMPLISSAGE.length];arbreChange()}));
+   if(!petit)outils.append(ico('⤳','Tracer une ligne depuis ce rond',()=>{lienDepuis=lienDepuis===t.id?null:t.id;renderArbres()}));
+   outils.append(ico('✕','Supprimer ce rond de remplissage',()=>{delete t.remplissage;delete t.couleur;arbreChange()}));glissable(el,t)}
+  else outils.append(ico('✕','Supprimer cette case vide',()=>{const i=catalog.talents.indexOf(t);if(i>=0)catalog.talents.splice(i,1);arbreChange()}));
   el.append(outils);cible(el,{...dest,soi:t.id});return el};
  /* Une case vide où l'arbre peut grandir, chez le MJ : la case voisine, en droite ligne, d'un talent.
     Le clic y crée un talent — ou y place l'un de ceux qui existent — relié par une ligne depuis ce
@@ -4181,7 +4210,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const libreIci=(x,y)=>!prises.some(q=>Math.hypot(q.x-x,q.y-y)<.36)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.24)&&!places.some(q=>Math.hypot(q.x-x,q.y-y)<.24);
   if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),vues=new Set();
    c.liste.forEach(t=>liensDe(t).forEach(id=>{const v=c.liste.find(x=>x.id===id),p=cases.get(t.id),q=v&&cases.get(v.id);if(p&&q&&Math.abs(q.x-p.x)+Math.abs(q.y-p.y)===2&&(p.x===q.x||p.y===q.y))occupe.add((p.x+q.x)/2+','+(p.y+q.y)/2)}));
-   c.liste.forEach(t=>{if(estVide(t))return;const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
+   c.liste.forEach(t=>{if(estVide(t)&&!estRemplissage(t))return;const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
     Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if(ch[d].lien||ch[d].entrant)return;
      if(['e','s','o'].includes(d)&&!ch[d].petits.length){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.4)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
      if(d==='n'&&racines.has(t.id)&&!ch[d].petits.length)return;
