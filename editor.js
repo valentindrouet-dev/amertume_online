@@ -498,20 +498,22 @@ function lisBilan(o){if(!o||typeof o!=='object'||!Array.isArray(o.liste))return 
   inf:n(x.inf),sub:n(x.sub),soin:n(x.soin),dist:n(x.dist),coups:n(x.coups),crit:n(x.crit),abat:n(x.abat),pic:n(x.pic)}))}}
 const statsDialog=dialog('stats-combat','Stats de Combat','<div id="stats-combat-corps"></div>');
 const DISTINCTIONS=[['inf','⚔','Meilleur combattant','dégâts infligés'],['sub','🩸','Le plus éprouvé','PV perdus'],['soin','✚','Meilleur soigneur','PV soignés'],
- ['pic','💥','Coup le plus fort','dégâts d’un coup'],['abat','💀','Exécuteur','mis à terre'],['crit','✸','Roi du critique','critiques'],['dist','👣','Le plus mobile','m parcourus']];
-const COLONNES_STATS=[['inf','Infligés'],['sub','Subis'],['soin','Soignés'],['dist','Distance'],['coups','Coups'],['crit','Critiques'],['abat','Mis à terre']];
+ ['pic','💥','Coup le plus fort','dégâts d’un coup'],['abat','💀','Exécuteur','Mise à Mort'],['crit','✸','Roi du critique','critiques'],['dist','👣','Le plus mobile','m parcourus']];
+const COLONNES_STATS=[['inf','Infligés'],['sub','Subis'],['soin','Soignés'],['dist','Distance'],['coups','Coups'],['crit','Critiques'],['abat','Mise à Mort']];
 function portraitStats(x){const a=actors.find(o=>o&&o.id===x.id),el=document.createElement('span');el.className='stats-portrait '+x.camp;
  if(a&&a.image){const im=document.createElement('img');im.src=a.image;im.alt='';el.append(im)}else el.textContent=(x.nom||'?').trim().charAt(0).toUpperCase();return el}
 function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;const corps=$('stats-combat-corps');corps.replaceChildren();
  const somme=(l,k)=>l.reduce((s,x)=>s+x[k],0),troupe=b.liste.filter(x=>x.camp==='troupe'),adv=b.liste.filter(x=>x.camp!=='troupe');
  const el=(tag,cls,texte)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(texte!==undefined)e.textContent=texte;return e};
- const score=(cls,valeur,libelle)=>{const d=el('div','stats-score '+cls);d.append(el('b','',String(valeur)),el('span','',libelle));return d};
- const tete=el('div','stats-tableau');tete.append(score('troupe',somme(troupe,'inf'),'Dégâts des aventuriers'),score('tours',b.tours,b.tours>1?'tours':'tour'),score('adverse',somme(adv,'inf'),'Dégâts des adversaires'));corps.append(tete);
+ const score=(cls,valeur,libelle,degats)=>{const d=el('div','stats-score '+cls),v=el('b','',String(valeur));
+  if(degats){const i=document.createElement('img');i.className='stats-degats';i.src=imgUrl('DEGATS.webp');i.alt='';i.draggable=false;v.append(' ',i)}
+  d.append(v,el('span','',libelle));return d};
+ const tete=el('div','stats-tableau');tete.append(score('troupe',somme(troupe,'inf'),'Dégâts des aventuriers',true),score('tours',b.tours,b.tours>1?'tours':'tour'),score('adverse',somme(adv,'inf'),'Dégâts des adversaires',true));corps.append(tete);
  const prix=DISTINCTIONS.map(([k,ico,titre,unite])=>{const top=[...b.liste].sort((x,y)=>y[k]-x[k])[0];return top&&top[k]>0?{k,ico,titre,unite,top}:null}).filter(Boolean);
  if(prix.length){const g=el('div','stats-distinctions');
   prix.forEach(p=>{const c=el('div','stats-prix '+p.top.camp),t=el('div','stats-prix-texte'),qui=el('span','stats-prix-qui');
    qui.append(portraitStats(p.top),el('span','',p.top.nom));t.append(el('strong','',p.titre),qui,el('span','stats-prix-val',p.top[p.k]+' '+p.unite));
-   c.append(el('span','stats-medaille',p.ico),t);g.append(c)});corps.append(g)}
+   const jeton=portraitStats(p.top);jeton.classList.add('stats-jeton');c.append(jeton,t);g.append(c)});corps.append(g)}
  const maxInf=Math.max(1,...b.liste.map(x=>x.inf)),valeur=(c,v)=>c==='dist'?v+' m':String(v);
  [['troupe','Aventuriers',troupe],['adverse','Adversaires',adv]].forEach(([k,titre,l])=>{if(!l.length)return;
   const s=el('section','stats-camp '+k);s.append(el('h3','',titre));const t=el('table','stats-table'),th=t.createTHead().insertRow();
