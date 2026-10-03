@@ -374,10 +374,13 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
    l'empêche se lit en dernier, en retrait. */
 // Un bouton grisé l'est jusque dans sa bulle : sa teinte, son titre, ses mots colorés, ses logos.
 const boutonGrise=b=>!!b&&(b.disabled||b.classList.contains('inerte'));
+/* Les dés de dégâts d'une bulle : sur la ligne du titre, tout à droite. La ligne ne se coupe jamais : trop longue,
+   elle élargit la bulle. */
+function desAuTitre(tete,des){des.classList.add('bulle-des');tete.classList.add('avec-des');tete.append(des)}
 function bulleAction(b,{nom,dit='',note='',des=null,lignes=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
  const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=nom;tete.append(n);d.append(tete);
- if(des){des.classList.add('bulle-des');d.append(des)}
+ if(des)desAuTitre(tete,des);
  // Une attaque : ce qui l'améliore, une ligne chacun, la pastille à la couleur des actions.
  if(lignes&&lignes.length){d.classList.add('p-act');lignesEnPastilles(d,lignes)}
  if(dit){const p=document.createElement('p');p.className='palier-effet';p.textContent=dit;d.append(p)}
@@ -1827,7 +1830,7 @@ const bonusAttaque=(a,at)=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?
 // Sa bulle, celle de la barre d'Actions : le nom, les dés et le bonus de dégâts, puis ce qui l'améliore.
 function bulleAttaque(a){const at=typeof activeAttack==='function'?activeAttack(a):null,d=document.createElement('div');d.className='talent-detail large t-act';
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent='Attaque';tete.append(n);d.append(tete);
- if(at&&at.dice){const des=desEtBonus(at.dice,bonusAttaque(a,at),at.useOwnDamage!==false,false);des.classList.add('bulle-des');d.append(des)}
+ if(at&&at.dice)desAuTitre(tete,desEtBonus(at.dice,bonusAttaque(a,at),at.useOwnDamage!==false,false));
  lignesEnPastilles(d,lignesAttaque(a));return d}
 // Son rond sur la fiche, au logo de l'arme en main droite, comme dans la barre d'Actions.
 function carteAttaque(a){const at=typeof activeAttack==='function'?activeAttack(a):null,l=at&&(at.logos||[])[0];
@@ -3902,8 +3905,8 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}
  // Le prix en XP ne se lit que dans l'arbre : en cartouche, en haut à gauche de la bulle.
  // Rouge si l'aventurier n'a pas l'XP qu'il faut pour le prendre.
  if(cout&&coutPalier(t,1)){const pris=!!a&&(a.talents||[]).includes(t.id),c=document.createElement('span');c.className='cout-xp'+(pris?' acquis':a&&coutPalier(t,1)>xpDisponible(a,catalog.talents)?' trop-cher':'');c.textContent=coutPalier(t,1)+' XP';tete.append(c)}
- // Un talent qui frappe, dans la barre d'action : ses dés et son bonus de dégâts sous son nom.
- if(des){des.classList.add('bulle-des');d.append(des)}
+ // Un talent qui frappe, dans la barre d'action : ses dés et son bonus de dégâts au bout de la ligne de son nom.
+ if(des)desAuTitre(tete,des);
  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
  if(bonus){if(t.effects)ligne(t.effects)}
  else{/* Les paliers, un par ligne, le chiffre en tête de sa ligne : « I Vous effectuez… ».

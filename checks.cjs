@@ -1216,7 +1216,7 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
 {const orbe=page.slice(page.indexOf('function volOrbe('),page.indexOf('function deplacement(')),fleche=page.slice(page.indexOf('function volFleche('),page.indexOf('function floatNumber('));
  const coup=page.slice(page.indexOf('function coupDeToken('),page.indexOf('function chocImpact('));
  assert.ok(!/\{[^}]*\bleft:/.test(coup.slice(coup.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(orbe.slice(orbe.indexOf('el.animate')))&&!/\{[^}]*\bleft:/.test(fleche.slice(fleche.indexOf('el.animate'))),'pas de left/top animé');
- assert.ok(page.includes('function etincelles(couche,cible,delai){')&&coup.includes("{translate:'0 0'}")&&coup.includes(' return 110}')
+ assert.ok(page.includes('function etincelles(couche,cible,delai){')&&coup.includes("{translate:'0 0'}")&&coup.includes(' return 120}')
   &&fleche.includes('<path class="pointe" d="M80,2 L100,8 L80,14 L84,8 Z"/>')&&fleche.includes('etincelles(couche,vers,vol);\n return vol+30}')
   &&page.includes('function deplacement(couche,de,vers)')&&orbe.includes("transform:'translate('+arrivee+') scale(1)'")
   &&page.includes('.orbe-vol{position:absolute;will-change:transform,opacity;')&&page.includes('.vfx{position:absolute;pointer-events:none;z-index:5;will-change:transform,opacity;transform:translate(-50%,-50%)}')
@@ -1570,8 +1570,7 @@ assert.ok(page.includes('function attack(opts={})')&&page.includes('if(opts.vise
  &&page.includes('function attaqueEtat(a,p,talent)')&&page.includes("const survit=p.condition==='survit',gagne=survit?tues.length<vises.length:tues.length>0;")
  &&page.includes('const issue=infligeEtat(a,p.etat);')&&page.includes('function cibleProvocation(a)')&&page.includes('function rapprocher(b,a)')
  &&page.includes('const arret=tokenOf(a)/2+tokenOf(b)/2+1;')&&page.includes('if(d<=arret+1)return false;')
- &&page.includes("if(el){el.classList.add('glisse');el.style.left=b.x+'%';el.style.top=b.y+'%';suitLaJauge(el)}")&&page.includes('function provocation(a,p,talent)')
- &&page.includes("poseCibles(a,[j]);if(venu)afterMove(b);")&&page.includes("attack({vises:[j]});scheduleSave()},venu?220:0);")
+ &&page.includes("if(el){el.classList.add('glisse');el.style.left=b.x+'%';el.style.top=b.y+'%';suitLaJauge(el)}")&&page.includes('function provocation(a,p,talent)')&&page.includes("attack({vises:[j]});scheduleSave()},venu?220:0);")
  &&page.includes('attaqueetat:{fn:attaqueEtat,')&&page.includes('provocation:{fn:provocation,')&&page.includes("peut:a=>!hasState(a,'Au sol')&&cibleProvocation(a)!==null,"),'Attaque État et Provocation câblés à la table');
 /* Un talent nommé comme sa mécanique la reçoit, que son nom en donne la clé ou l'intitulé :
    « Orbes de feu » et « Orbes mystiques » restaient descriptifs, donc muets — les orbes
@@ -3370,6 +3369,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.533 — Les dés de dégâts au bout de la ligne du titre des bulles, sans retour à la ligne ; la Charge et la Provocation
+   ne laissent pas de cible derrière elles ; l'élan du socle au contact, un peu plus ample. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("function desAuTitre(tete,des){des.classList.add('bulle-des');tete.classList.add('avec-des');tete.append(des)}")&&(src.match(/desAuTitre\(tete,/g)||[]).length===4
+  &&feuille.includes('.bulle:has(.talent-bulle-nom.avec-des){min-width:min-content}')&&feuille.includes('.talent-detail .talent-bulle-nom .bulle-des .pips{flex-wrap:nowrap}'),'les dés sur la ligne du titre');
+ const ch=page.slice(page.indexOf('function charge(a,p,talent){'),page.indexOf('const TALENTS_EFFETS={'));
+ assert.ok(!ch.includes('poseCibles('),'ni la Charge ni la Provocation ne désignent leur cible');
+ assert.ok(page.includes("l=tokenOf(de)*.38;")&&page.includes("],300,0);\n return 120}"),'l’élan plus ample');}
 /* v0.532 — Espace retire tous les ciblages de la carte, au MJ, touche réglable ; la sauvegarde globale emporte aussi
    les campagnes, le journal, les réglages de l'appareil et le domaine de secours, et les repose à l'import. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),camp=fs.readFileSync('campagnes.js','utf8'),dom=fs.readFileSync('domaine.js','utf8');
@@ -3929,8 +3936,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.361 — La bulle d'un bouton de la barre d'action est celle d'un talent, à la couleur du bouton ;
    une attaque, et un talent qui frappe, y montrent leurs dés et leur bonus. Plus de titre « Actions ». */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
- assert.ok(src.includes("const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);")
-  &&src.includes(" if(des){des.classList.add('bulle-des');d.append(des)}")&&!page.includes("'cat-detail bulle-attaque-corps'")
+ assert.ok(src.includes("const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);")&&!page.includes("'cat-detail bulle-attaque-corps'")
   &&css.includes('.talent-detail.bulle-action{background:color-mix(in srgb,var(--teinte,#3f7bc0) 24%,#fff);border-left:4px solid var(--teinte,#3f7bc0)}')
   &&css.includes('.talent-detail .bulle-des{display:flex;align-items:center;gap:7px;margin:0 0 6px}'),'la bulle d’action, celle d’un talent, avec les dés');
  assert.ok(!page.includes('titre-actions')&&!page.includes('actions-head')&&!page.includes('body.sombre .attack-row')&&page.includes('.choix-attaques[hidden]{display:none}.attack-row{display:flex;'),'plus de titre « Actions »');}
