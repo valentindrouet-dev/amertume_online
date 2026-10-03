@@ -41,6 +41,15 @@ document.addEventListener('amertume-partie-chargee',()=>{if(typeof db==='undefin
     sauveDomaine();if(document.body.classList.contains('page-domaine'))renderDomaine();return}
    if(poidsDomaine(rec.domaine)>poidsDomaine(domaine)){log('Un domaine plus complet est gardé sur cet appareil : l’onglet Domaine propose de le reprendre.',{local:true});
     if(document.body.classList.contains('page-domaine'))renderDomaine()}}}catch(e){}});
+/* La sauvegarde globale emporte le secours quand il est plus riche que le domaine de la partie ; à l'import,
+   il ne remplace qu'un secours plus pauvre. */
+ANNEXES_SAUVEGARDE.push({nom:'le domaine de secours',
+ lit:()=>secoursDomaine&&poidsDomaine(secoursDomaine.domaine)>poidsDomaine(domaine)?{domaineSecours:structuredClone(secoursDomaine)}:{},
+ pose:s=>{const rec=s.domaineSecours;if(!rec||typeof rec!=='object'||!rec.domaine||typeof db==='undefined'||!db)return;
+  const d=normaliseDomaine(rec.domaine);if(poidsDomaine(d)<=Math.max(poidsDomaine(domaine),secoursDomaine?poidsDomaine(secoursDomaine.domaine):0))return;
+  const r={t:Number(rec.t)||Date.now(),domaine:d};
+  return new Promise((ok,ko)=>{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(r,'domaine:secours');
+   tx.oncomplete=()=>{secoursDomaine=r;ok()};tx.onerror=()=>ko(tx.error)})}});
 function bandeauSecours(){const boite=$('dom-secours');if(!boite)return;boite.replaceChildren();
  const rec=secoursDomaine;boite.hidden=!(mjDom()&&rec&&poidsDomaine(rec.domaine)>poidsDomaine(domaine));if(boite.hidden)return;
  const d=rec.domaine,n=d.carte.calques.filter(Boolean).length,z=d.batiments.filter(b=>b.zone).length;

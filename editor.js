@@ -535,7 +535,7 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde</h3>'
  +'<div id="bloc-sauvegarde"></div>'
  +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde globale</h3>'
- +'<p class="muted">Toute la partie dans un seul fichier : aventuriers, adversaires, bestiaire, armurerie, talents, cartes, domaine et scène en cours. À garder au chaud, au cas où ce navigateur perdrait ses données.</p>'
+ +'<p class="muted">Toute la partie dans un seul fichier : aventuriers, adversaires, bestiaire, armurerie, talents, cartes, domaine, scène en cours, campagnes enregistrées, journal et réglages de l’appareil. À garder au chaud, au cas où ce navigateur perdrait ses données.</p>'
  +'<div class="reglage"><div><strong>Exporter toute la partie</strong><p class="muted">Télécharge un fichier .json sur cet appareil.</p></div>'
  +'<button id="export-tout" class="primary">⇩ Exporter</button></div>'
  +'<div class="reglage" id="reglage-import"><div><strong>Importer une sauvegarde</strong><p class="muted">Remplace la partie de ce navigateur par le fichier choisi. Exporte d’abord la partie actuelle si tu veux la garder.</p></div>'
@@ -4303,7 +4303,21 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
   const t=document.createElement('strong');t.textContent='Vue MJ / Joueur';const p=document.createElement('p');p.className='muted';p.textContent='Touche du clavier qui change de vue';gauche.append(t,p);
   const c=document.createElement('input');c.id='rac-vue';c.maxLength=1;c.size=2;c.value=(raccourcis.vue||'').toUpperCase();c.setAttribute('aria-label','Touche pour changer de vue');
   c.onchange=()=>{const v=c.value.trim().toLowerCase();if(v&&!/^[a-z0-9]$/.test(v)){c.value=(raccourcis.vue||'').toUpperCase();return}
-   raccourcis.vue=v;saveShortcuts();renderSettings();noterReglage('Enregistré sur cet appareil.')};
+   // Une touche déjà prise par « Retirer les ciblages » : les deux l'échangent.
+   const pris=v&&raccourcis.decible===v;if(pris)raccourcis.decible=raccourcis.vue;
+   raccourcis.vue=v;saveShortcuts();renderSettings();noterReglage(pris?'Enregistré · « Retirer les ciblages » prend l’autre touche en échange.':'Enregistré sur cet appareil.')};
+  ligne.append(gauche,c);boite.append(ligne)}
+ /* La touche qui retire tous les ciblages de la carte : on la presse dans le champ — l'espace compris —,
+    Retour arrière ou Suppr la coupe. */
+ if(view==='mj'){const ligne=document.createElement('div');ligne.className='reglage';const gauche=document.createElement('div');
+  const t=document.createElement('strong');t.textContent='Retirer les ciblages';const p=document.createElement('p');p.className='muted';p.textContent='Touche du clavier qui retire tous les ciblages de la carte';gauche.append(t,p);
+  const nom=k=>k==='espace'?'Espace':(k||'').toUpperCase();
+  const c=document.createElement('input');c.id='rac-decible';c.readOnly=true;c.size=6;c.value=nom(raccourcis.decible);c.setAttribute('aria-label','Touche pour retirer tous les ciblages');
+  c.onkeydown=e=>{if(e.key==='Tab'||e.ctrlKey||e.metaKey||e.altKey)return;e.preventDefault();e.stopPropagation();
+   const v=e.key==='Backspace'||e.key==='Delete'?'':e.key===' '?'espace':String(e.key).toLowerCase();
+   if(v&&!/^([a-z0-9]|espace)$/.test(v))return;
+   const pris=v&&raccourcis.vue===v;if(pris)raccourcis.vue=raccourcis.decible==='espace'?'':raccourcis.decible;
+   raccourcis.decible=v;saveShortcuts();renderSettings();noterReglage(pris?'Enregistré · « Vue MJ / Joueur » prend l’autre touche en échange.':'Enregistré sur cet appareil.')};
   ligne.append(gauche,c);boite.append(ligne)}}
 $('theme-switch').onclick=toggleTheme;
 $('raccourcis-reset').onclick=()=>{raccourcis={...RACCOURCIS_DEFAUT};saveShortcuts();renderSettings();
@@ -5223,7 +5237,8 @@ function verifieSauvegarde(s){if(!s||typeof s!=='object'||Array.isArray(s))retur
  return ''}
 function resumeSauvegarde(s){const n=(x,un,des)=>x+' '+(x>1?des:un);const c=s.catalog||{},l=k=>Array.isArray(c[k])?c[k].length:0;
  return [n(s.actors.filter(a=>a&&a.hero).length,'aventurier','aventuriers'),n(s.actors.filter(a=>a&&!a.hero).length,'adversaire','adversaires'),
-  n(Array.isArray(s.maps)?s.maps.length:0,'carte','cartes'),n(l('monsters'),'modèle','modèles'),n(l('items'),'équipement','équipements'),n(l('talents'),'talent','talents')].join(', ')}
+  n(Array.isArray(s.maps)?s.maps.length:0,'carte','cartes'),n(l('monsters'),'modèle','modèles'),n(l('items'),'équipement','équipements'),n(l('talents'),'talent','talents'),
+  ...(Array.isArray(s.campagnes)&&s.campagnes.length?[n(s.campagnes.length,'campagne','campagnes')]:[])].join(', ')}
 function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(normalizeActor));idsUniques(actors);catalog=normalizeCatalog(s.catalog);accordeArbres();
  round=Number.isInteger(s.round)&&s.round>0?s.round:1;mode=s.mode==='exploration'?'exploration':'combat';
  owner=Number.isInteger(s.owner)&&actors[s.owner]?s.owner:Math.max(0,actors.findIndex(a=>a.hero));
@@ -5231,15 +5246,33 @@ function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(no
  mapImage=typeof s.mapImage==='string'&&s.mapImage?s.mapImage:null;maps=Array.isArray(s.maps)?s.maps:[];currentMapId=s.currentMapId||null;sceneTitle(s.title);
  if(typeof tokensLocked!=='undefined'&&typeof s.locked==='boolean')tokensLocked=s.locked;
  $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);$('round').textContent=String(round).padStart(2,'0')}
-function exporterTout(){const texte=JSON.stringify(sauvegardeGlobale());const url=URL.createObjectURL(new Blob([texte],{type:'application/json'}));
+/* Ce qui vit à côté de la partie sur cet appareil part aussi dans le fichier : chaque script y ajoute le sien
+   — le journal et les réglages ici, le domaine de secours, les campagnes — et le repose à l'import. Une annexe
+   illisible n'empêche pas l'export : le journal dit ce qui manque au fichier. */
+const ANNEXES_SAUVEGARDE=[];
+// Les réglages de l'appareil. Ni l'onglet ouvert, ni la table en ligne, ni les marques de fenêtre : ils ne servent qu'ici.
+const REGLAGES_APPAREIL=['amertume-theme','amertume-raccourcis','amertume-portees','amertume-distances','amertume-noms','amertume-tris','amertume-biblio-plis','amertume-xp-visible','amertume-bulles-coffres','amertume-fouilles'];
+ANNEXES_SAUVEGARDE.push({nom:'le journal',
+ lit:()=>{garderJournal();let j=[];try{j=JSON.parse(localStorage.getItem(JOURNAL_CLE)||'[]')}catch(e){}return {journal:Array.isArray(j)?j:[]}},
+ pose:s=>{if(!Array.isArray(s.journal))return;localStorage.setItem(JOURNAL_CLE,JSON.stringify(s.journal));$('journal').replaceChildren();logRound=null;rejouerJournalGarde()}},
+ {nom:'les réglages',
+ lit:()=>{const r={};REGLAGES_APPAREIL.forEach(k=>{const v=localStorage.getItem(k);if(v!==null)r[k]=v});return {reglages:r}},
+ // Un réglage déjà fait sur cet appareil reste le sien : seul ce qui manque revient.
+ pose:s=>{const r=s.reglages;if(!r||typeof r!=='object'||Array.isArray(r))return;
+  REGLAGES_APPAREIL.forEach(k=>{if(typeof r[k]==='string'&&r[k].length<=20000&&localStorage.getItem(k)===null)localStorage.setItem(k,r[k])});
+  loadShortcuts();applyTheme()}});
+async function exporterTout(){const s=sauvegardeGlobale(),manques=[];
+ for(const x of ANNEXES_SAUVEGARDE){try{Object.assign(s,await x.lit())}catch(e){manques.push(x.nom)}}
+ const texte=JSON.stringify(s);const url=URL.createObjectURL(new Blob([texte],{type:'application/json'}));
  const a=document.createElement('a');a.href=url;a.download=nomSauvegarde();document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
- log('Sauvegarde globale exportée : '+a.download+' ('+tailleLisible(texte.length)+').',{local:true})}
+ log('Sauvegarde globale exportée : '+a.download+' ('+tailleLisible(texte.length)+')'+(manques.length?'. Illisible sur cet appareil, absent du fichier : '+manques.join(', ')+'.':'.'),{local:true})}
 function importerTout(fichier){const erreur=$('import-erreur');erreur.textContent='';
- fichier.text().then(texte=>{let s;try{s=JSON.parse(texte)}catch(e){throw Error('ce fichier n’est pas du JSON lisible.')}
+ fichier.text().then(async texte=>{let s;try{s=JSON.parse(texte)}catch(e){throw Error('ce fichier n’est pas du JSON lisible.')}
   const souci=verifieSauvegarde(s);if(souci)throw Error(souci);
   if(!confirm('Remplacer la partie de ce navigateur par « '+fichier.name+' » ?\n'+resumeSauvegarde(s)+'.\nLa partie actuelle sera perdue si elle n’a pas été exportée.'))return;
   appliquerSauvegarde(s);if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();saveNow();
-  log('Sauvegarde importée : '+fichier.name+' — '+resumeSauvegarde(s)+'.',{local:true});document.dispatchEvent(new Event('amertume-content-changed'))})
+  const manques=[];for(const x of ANNEXES_SAUVEGARDE){try{await x.pose(s)}catch(e){manques.push(x.nom)}}
+  log('Sauvegarde importée : '+fichier.name+' — '+resumeSauvegarde(s)+(manques.length?'. Non repris : '+manques.join(', ')+'.':'.'),{local:true});document.dispatchEvent(new Event('amertume-content-changed'))})
  .catch(e=>{erreur.textContent='Import refusé : '+e.message})}
 $('export-tout').onclick=exporterTout;
 $('import-tout').onclick=()=>{if(view!=='mj')return;$('import-fichier').click()};

@@ -128,6 +128,24 @@ function importeCampagne(fichier){if(view!=='mj')return;noteCampagne('');
   campagnes.push({id,nom,cree:rec.cree,modifie:t,resume:resumePartie(o.partie),octets:texte.length});await ecritCampagneCle(CLE_CAMPAGNES,campagnes);
   renderCampagnes();log('Campagne importée : '+nom+' — elle est dans la liste, pas encore ouverte.',{local:true})})
  .catch(e=>noteCampagne('Import refusé : '+(e&&e.message||e)))}
+/* La sauvegarde globale emporte toutes les campagnes de l'appareil, et laquelle est ouverte. À l'import, une
+   campagne manquante s'ajoute ; une campagne déjà là, aussi récente ou plus, reste telle quelle. */
+ANNEXES_SAUVEGARDE.push({nom:'les campagnes',
+ lit:async()=>{if(!db)throw Error('base locale indisponible');const liste=await lireCampagneCle(CLE_CAMPAGNES),out=[];
+  for(const c of Array.isArray(liste)?liste:[]){if(!c||typeof c.id!=='string')continue;const rec=await lireCampagneCle(PREFIXE_CAMPAGNE+c.id);if(rec&&rec.partie)out.push(rec)}
+  return {campagnes:out,campagneOuverte}},
+ pose:async s=>{if(!Array.isArray(s.campagnes))return;if(!db)throw Error('base locale indisponible');let change=false;
+  for(const rec of s.campagnes){if(verifieCampagne(rec)||typeof rec.id!=='string'||!/^[\w-]{1,80}$/.test(rec.id))continue;
+   const c=campagnes.find(x=>x.id===rec.id),t=Number(rec.modifie)||Date.now();if(c&&(c.modifie||0)>=t)continue;
+   const nom=String(rec.nom||'').trim().slice(0,60)||'Campagne';
+   const propre={app:'amertume_online',genre:'campagne',version:1,id:rec.id,nom,cree:Number(rec.cree)||t,modifie:t,partie:rec.partie};
+   await ecritCampagneCle(PREFIXE_CAMPAGNE+rec.id,propre);
+   const entree={id:rec.id,nom,cree:propre.cree,modifie:t,resume:resumePartie(rec.partie),octets:JSON.stringify(propre).length};
+   if(c)Object.assign(c,entree);else campagnes.push(entree);change=true}
+  if(change)await ecritCampagneCle(CLE_CAMPAGNES,campagnes);
+  // La partie importée est celle de la campagne qui était ouverte : le repère la suit.
+  if(s.campagneOuverte===null||typeof s.campagneOuverte==='string')retientCampagne(s.campagneOuverte&&campagnes.some(c=>c.id===s.campagneOuverte)?s.campagneOuverte:null);
+  renderCampagnes()}});
 $('campagne-creer').onclick=creeCampagne;
 $('campagne-nom').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();creeCampagne()}};
 $('campagne-enregistrer').onclick=()=>{const c=campagnes.find(x=>x.id===campagneOuverte);if(c)enregistreCampagne(c.id,c.nom,false)};

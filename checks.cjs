@@ -3370,6 +3370,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.532 — Espace retire tous les ciblages de la carte, au MJ, touche réglable ; la sauvegarde globale emporte aussi
+   les campagnes, le journal, les réglages de l'appareil et le domaine de secours, et les repose à l'import. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),camp=fs.readFileSync('campagnes.js','utf8'),dom=fs.readFileSync('domaine.js','utf8');
+ assert.ok(page.includes("vue:'m',decible:'espace'};")&&page.includes("actors.forEach(a=>poseCibles(a,[]));render();scheduleSave()")&&page.includes("if(view!=='mj'||")&&src.includes("c.id='rac-decible'"),'Espace retire les ciblages, au MJ, réglable');
+ assert.ok(src.includes('async function exporterTout(){')&&src.includes('Object.assign(s,await x.lit())')&&src.includes('await x.pose(s)')
+  &&src.includes("{nom:'le journal',")&&src.includes("{nom:'les réglages',")&&dom.includes("{nom:'le domaine de secours',")&&camp.includes("{nom:'les campagnes',"),'les annexes de la sauvegarde globale');
+ assert.ok(camp.includes('if(c&&(c.modifie||0)>=t)continue;')&&src.includes("localStorage.getItem(k)===null)localStorage.setItem(k,r[k])"),'l’import n’écrase ni une campagne plus récente ni un réglage de l’appareil');}
 /* v0.531 — Les noms des talents d'un arbre à la couleur de leur nature dans les bulles des siens ; un adversaire relevé
    hors combat relance le combat ; des mètres entiers ; le coup du socle au contact ; le choc d'une cible repoussée qui bute ;
    la poussée de la Charge tenue par toute amélioration de poussée. */
@@ -3631,7 +3638,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.equal(ctx.listeNombree(['Nuée de Rats','Nuée de Rats','Nuée de Rats','Nuée de Rats','Gobelin']),'4 Nuées de Rats, Gobelin');
  assert.deepEqual(['Rôdeur famélique','Loup-garou','Cheval','Rôdeur des ruines','Souris','Esprit d’ombre'].map(ctx.plurielNom),['Rôdeurs faméliques','Loups-garous','Chevaux','Rôdeurs des ruines','Souris','Esprits d’ombre']);
  assert.ok(mp.includes("surveille(el,()=>{if(mj?!bullesCoffresMJ:!coffreAPortee(heroActif(),c))return;")&&page.includes('id="coffres-bulles" hidden>'),'la bulle des coffres, au bouton du MJ');
- assert.ok(page.includes("analyse:'ctrl',vue:'m'};")&&page.includes("e.preventDefault();sel.value=sel.value==='mj'?'player':'mj';sel.onchange()});"),'la touche de la vue');
+ assert.ok(page.includes("e.preventDefault();sel.value=sel.value==='mj'?'player':'mj';sel.onchange()});"),'la touche de la vue');
  assert.ok(!page.includes("function finDeCombatAuto(){if(!enCombat()||view!=='mj'")&&src.includes("function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;"),'les automatismes ne dépendent plus de la vue');}
 /* v0.507 — Le Blindage absorbe toute source de dégâts, puis disparaît : opportunité, talents, états, pièges. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),mp=fs.readFileSync('maps.js','utf8');
