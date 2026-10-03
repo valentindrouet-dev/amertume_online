@@ -3371,6 +3371,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.530 — Charge : l'élan en deux crans, la moitié puis toute la distance ; l'impact, double des dégâts d'opportunité
+   contre un mur ou un adversaire. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');const K=C.TALENTS_CODES;
+ assert.ok(/moitié de la distance/.test(K.chargeelan.phrase({}))&&/la distance parcourue/.test(K.chargeelan.phrase({part:'tout'}))&&K.chargeelan.params[0].defaut==='moitie','l’élan, moitié par défaut');
+ assert.ok(K.chargeimpact&&K.chargeimpact.type==='ame'&&/double/.test(K.chargeimpact.phrase({})),'l’impact');
+ assert.ok(page.includes("const elan=parts.length?Math.floor(m*Math.max(...parts)):0")&&page.includes("info.bloque=contre?'adversaire':wallsBetween(b,vise,walls())?'mur':''")
+  &&page.includes("if(impact&&info.bloque&&alive(b)){const n=2*degatsDe(a),{perdu,blinde}=encaisse(b,n);"),'élan en deux crans, impact contre mur ou adversaire');}
 /* v0.529 — Un bouton de talent grisé dit pourquoi dans sa bulle ; la vérification ne rejoue que les jeux dont les sources ont changé. */
 {const src=fs.readFileSync('editor.js','utf8'),verif=require('fs').readFileSync('verif.cjs','utf8');
  assert.ok(src.includes("bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre,"),'la raison du refus dans la bulle');
@@ -3390,8 +3397,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(page.includes("lab.style.fontSize=Math.max(6.3,tokenPx()*.154).toFixed(1)+'px';"),'le chiffre, 30 % plus petit');
  assert.ok(page.includes("if(!opts.sansAction&&actionPrise(a))")&&page.includes("degatsDe(a)+(Math.trunc(Number(opts.bonusEnPlus))||0);")&&page.includes("if(!actionPriseAuDepart&&!opts.sansAction)depensePoint(a,'action');")
   &&page.split("actionPriseAuDepart=true;if(!opts.sansAction)depensePoint(a,'action');").length===3,'l’attaque de la Charge ne prend pas l’Action, et porte son élan');
- assert.ok(page.includes("if(enCombat()){depensePoint(a,'mouvement');if(actors[selected]===a)$('move').checked=pointsRestants(a,'mouvement')<=0}")&&page.includes("const elan=porteEffet(codes,'chargeelan')?Math.floor(m):0")
-  &&page.includes("attack({vises:[j],sansAction:true,bonusEnPlus:elan,")&&page.includes("repousser(b,a,false,loin?m*tokenPx():0)")&&page.includes("de>0?d+de:0)+2;"),'un point de Mouvement, l’élan, la poussée');}
+ assert.ok(page.includes("if(enCombat()){depensePoint(a,'mouvement');if(actors[selected]===a)$('move').checked=pointsRestants(a,'mouvement')<=0}")
+  &&page.includes("attack({vises:[j],sansAction:true,bonusEnPlus:elan,")&&page.includes("de>0?d+de:0)+2;"),'un point de Mouvement, l’élan, la poussée');}
 /* v0.526 — Le chiffre de distance plus petit, et à la couleur du ciblage : bleu clair s'il part, rouge clair s'il est bloqué. */
 {const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("#aim .aim-dist.etat-ok{fill:#a9d2f7}#aim .aim-dist.etat-no{fill:#f6a59c}"),'taille et couleur du chiffre');}
 /* v0.525 — L'unité de distance : le diamètre d'un socle moyen vaut 1 m. Sur le trait de ciblage, la distance de centre
