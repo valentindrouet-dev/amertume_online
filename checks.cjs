@@ -3371,6 +3371,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.528 — Le dernier lancer reste sur la piste jusqu'au suivant ; une attaque sans ciblage préalable ne laisse pas de cible ;
+   un bouton « Distances » montre ou cache les distances des flèches, pour chacun. */
+{const page=fs.readFileSync('index.html','utf8');
+ assert.ok(!page.includes("diceTimer=setTimeout(")&&page.includes("const avant=ciblesDe(a).slice(),designee=avant.includes(i);\n if(!designee)setTarget(i);\n if(ciblesDe(a).includes(i))attack();\n if(!designee){poseCibles(a,avant);render()}}"),'les dés restent, la cible ne reste pas');
+ assert.ok(page.includes('id="distances-vue">📏 Distances</button>')&&page.includes("localStorage.getItem('amertume-distances')!=='0'")&&page.includes("$('aim').classList.toggle('sans-distances',!distancesOn)")
+  &&page.includes("#aim.sans-distances .aim-dist{display:none!important}"),'le bouton des distances');}
 /* v0.527 — Chiffre de distance réduit de 30 %. Charge, action du Destructeur : un mouvement jusqu'au contact puis une
    attaque au contact, pour un seul point de Mouvement ; l'élan en bonus de dégâts ; la cible repoussée hors de la zone,
    puis de la distance parcourue. */
