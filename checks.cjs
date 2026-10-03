@@ -3371,6 +3371,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.525 — L'unité de distance : le diamètre d'un socle moyen vaut 1 m. Sur le trait de ciblage, la distance de centre
+   à centre, à une décimale. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');
+ const size={width:1000,height:500};assert.equal(C.metres({x:10,y:50},{x:40,y:50},size,50),6,'300 px pour un socle de 50 px : 6 m');
+ assert.equal(C.metres({x:0,y:0},{x:0,y:20},size,50),2,'en hauteur aussi, de centre à centre');assert.equal(C.metres({x:0,y:0},{x:1,y:1},size,0),0,'sans carte mesurée, 0');
+ assert.ok(page.includes("function distanceM(a,b){return metres(a,b,mapSize(),tokenPx())}")&&page.includes("lab.textContent=(Math.round(d*10)/10).toLocaleString('fr-FR')+' m';")
+  &&page.includes("if(k){if(fleche._dist)fleche._dist.remove();fleche.remove()}")&&page.includes("#aim .aim-dist.on{display:block}"),'la distance sur chaque trait, éteinte avec lui');}
 /* v0.524 — Furie : un état empilable, +1 aux dégâts du combattant par cran ; son icône se choisit comme celle de Gardé. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
  const a={states:[]};assert.ok(C.cumulable('Furie')&&C.ETATS_JEU.includes('Furie'),'empilable, et posable par un effet');
