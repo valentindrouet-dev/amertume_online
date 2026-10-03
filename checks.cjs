@@ -3366,6 +3366,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.542 — « Fin du combat : Statistiques. » ; plus de « Début du tour » ; pas de séparateur de tour hors combat. */
+{const page=fs.readFileSync('index.html','utf8');
+ assert.ok(page.includes("bilan?'Fin du combat :':'Fin du combat.',bilan?{bilan}:undefined")&&page.includes("b.textContent='Statistiques';")&&page.includes("li.append(' ',b,'.')"),'la fin du combat');
+ assert.ok(!page.includes("log('Début du tour '")&&page.includes("function separateurTour(j){if(rejeuJournal||logRound===round||!enCombat())return;")&&page.includes("bilanPartis=[];logRound=null}"),'les tours au journal');}
 /* v0.541 — Stats de Combat : une distinction tient en deux lignes, le nom du combattant en bulle au survol de son token. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(!src.includes("'stats-prix-qui'")&&src.includes("jeton.setAttribute('aria-label',p.top.nom);")&&src.includes("ouvrirBulle(jeton,d,'bulle-talent')"),'le nom au survol du token');}
@@ -3390,8 +3394,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(page.includes('function encaisse(a,n,de){')&&page.includes('compteDegats(de===undefined?auteurCoup:de,a,perdu);')&&page.includes("compteDegats(a,b,lost);")
   &&page.includes("auteurCoup=a;queueMicrotask(()=>{auteurCoup=null});ajouteBilan(a,'coups',1);")&&page.includes("ajouteBilan(a,'crit',1)")&&page.includes("applyHeal=function(a,m){const g=soinSansBilan(a,m);if(g>0)ajouteBilan(a,'soin',g);return g}"),'les compteurs de dégâts, coups, critiques et soins');
  assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes('compteDistance(a,depart);afterMove(a);'),'la distance, là où un mouvement connaît son départ');
- assert.ok(page.includes("if(enCombat()){actors.forEach(a=>{a.bilan={}});bilanPartis=[]}")&&page.includes("'Le combat prend fin : retour à l’exploration.',bilan?{bilan}:undefined")
-  &&page.includes("b.className='j-stats';b.textContent='Stats de Combat';")&&page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
+ assert.ok(page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
  assert.ok(vivant.includes("'enrage','bilan'];")&&vivant.includes("...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
  assert.ok(src.includes('function lisBilan(o){')&&src.includes('function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;'),'la fenêtre');
  // Le bilan venu d'ailleurs est relu : chiffres bornés, noms coupés, camp connu.
@@ -3812,7 +3815,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  vm.runInContext(page.match(/function leveEtats\(a,finCombat\)\{[^\n]*\n[^\n]*/)[0],ctxE);
  const h={states:['Feu','Blindage','Coma','Invisible'],etatsPassifs:['Invisible']};
  assert.equal(ctxE.leveEtats(h,true).join(','),'Feu,Blindage','fin du combat : le Blindage aussi');assert.equal(h.states.join(','),'Coma,Invisible');
- assert.ok(page.includes("const leves=actors.filter(a=>leveEtats(a,true).length&&(a.hero||a.vu));")&&page.includes("log('Début du tour '+round+'.');")&&!page.includes('Activations réinitialisées'),'fin de combat et début de tour');}
+ assert.ok(page.includes("const leves=actors.filter(a=>leveEtats(a,true).length&&(a.hero||a.vu));")&&!page.includes('Activations réinitialisées'),'fin de combat et début de tour');}
 /* v0.498 — Un repos court par niveau, le nombre restant sous le bouton (« 2 », pas « 2/2 ») ; un seul entre deux
    combats, que la fin du combat rouvre. La planche des caractéristiques principales se découpe en cinq. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),calc=fs.readFileSync('planches-calcul.js','utf8');
