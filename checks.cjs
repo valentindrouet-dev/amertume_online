@@ -3366,6 +3366,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.544 — La fin du combat ne dit plus « Plus un adversaire debout » ni la liste des états effacés ; ils s'effacent quand même. */
+{const page=fs.readFileSync('index.html','utf8');
+ assert.ok(!page.includes('Plus un adversaire debout : le combat prend fin.')&&!page.includes('les états s’effacent (')&&page.includes('actors.forEach(a=>leveEtats(a,true));'),'la fin du combat, sans ces deux lignes');}
 /* v0.543 — L'amélioration tenue qui remplace le texte d'un talent remplace aussi sa ligne dans la bulle de l'Attaque. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes('function ameliorationsTenues(a,t){')&&src.includes("const y=!lisChemin(x)&&ameliorationsTenues(a,x).remplace||x;")&&src.includes('if(a&&!cout&&!lisChemin(t)){const {ams,remplace}=ameliorationsTenues(a,t);'),'la même amélioration fait le texte des deux bulles');}
@@ -3818,7 +3821,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  vm.runInContext(page.match(/function leveEtats\(a,finCombat\)\{[^\n]*\n[^\n]*/)[0],ctxE);
  const h={states:['Feu','Blindage','Coma','Invisible'],etatsPassifs:['Invisible']};
  assert.equal(ctxE.leveEtats(h,true).join(','),'Feu,Blindage','fin du combat : le Blindage aussi');assert.equal(h.states.join(','),'Coma,Invisible');
- assert.ok(page.includes("const leves=actors.filter(a=>leveEtats(a,true).length&&(a.hero||a.vu));")&&!page.includes('Activations réinitialisées'),'fin de combat et début de tour');}
+ assert.ok(!page.includes('Activations réinitialisées'),'fin de combat et début de tour');}
 /* v0.498 — Un repos court par niveau, le nombre restant sous le bouton (« 2 », pas « 2/2 ») ; un seul entre deux
    combats, que la fin du combat rouvre. La planche des caractéristiques principales se découpe en cinq. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),calc=fs.readFileSync('planches-calcul.js','utf8');
