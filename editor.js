@@ -1873,8 +1873,17 @@ function talentsDeFiche(a){return (a&&a.talents||[]).map(talent).filter(t=>t&&t.
    dont l'effet câblé joue sur les attaques. Leurs textes s'ajoutent à sa bulle, une pastille devant. */
 const EFFETS_SUR_ATTAQUE=new Set(['tenailles','doubleattaque','brise','dominateur','debordement']);
 const ameliorAttaque=t=>!!t&&!estBonus(t)&&['pass','ame'].includes(t.type)&&(t.pourAttaque===true||(t.pourAttaque!==false&&EFFETS_SUR_ATTAQUE.has(t.effet)));
+/* Les améliorations qu'un aventurier tient sur les chemins d'un talent, dans l'ordre des chemins ; et celle qui remplace
+   le texte du talent, sur le chemin où l'une est cochée « Remplace le texte du talent ». La bulle du talent et celle de
+   l'Attaque lisent la même. */
+function ameliorationsTenues(a,t){const tenues=(a&&a.talents||[]).map(talent).filter(x=>x&&!estBonus(x)&&lisChemin(x)&&lisChemin(x).de===t.id&&!ameliorAttaque(x));
+ const ams=sansAmeliorationsRemplacees(tenues).sort((x,y)=>Object.keys(DIRS).indexOf(lisChemin(x).dir)-Object.keys(DIRS).indexOf(lisChemin(y).dir)||lisChemin(x).rang-lisChemin(y).rang);
+ const dirR=Object.keys(DIRS).find(d=>tenues.some(x=>lisChemin(x).dir===d&&x.remplaceTexte===true));
+ return {ams,remplace:dirR?ams.find(x=>lisChemin(x).dir===dirR)||null:null}}
+// Un talent qui améliore l'Attaque y parle avec le texte qu'il a dans sa bulle : celui de l'amélioration qui le remplace, s'il y en a une.
 function lignesAttaque(a){if(!a)return [];const e=elementDe(a);
- return sansAmeliorationsRemplacees((a.talents||[]).map(talent).filter(ameliorAttaque)).map(x=>talentAuPalier(talentPourElement(x,e),palierDe(a,x)).effects||'').filter(Boolean)}
+ return sansAmeliorationsRemplacees((a.talents||[]).map(talent).filter(ameliorAttaque)).map(x=>{const y=!lisChemin(x)&&ameliorationsTenues(a,x).remplace||x;
+  return talentAuPalier(talentPourElement(y,e),palierDe(a,y)).effects||''}).filter(Boolean)}
 function lignesEnPastilles(d,lignes){(lignes||[]).forEach(tx=>{const e=document.createElement('p');e.className='palier-effet amelioration';texteEnrichi(e,tx);d.append(e)})}
 const bonusAttaque=(a,at)=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
 // Sa bulle, celle de la barre d'Actions : le nom, les dés et le bonus de dégâts, puis ce qui l'améliore.
@@ -4019,14 +4028,10 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}
      de deux à la suite, seule la seconde, qui remplace la première. */
   // Dans l'arbre, chaque rond dit son propre texte : les améliorations ne jouent qu'au dehors.
   // Une amélioration de l'Attaque se lit dans la bulle de l'Attaque, pas dans celle du talent qui la porte.
-  if(a&&!cout&&!lisChemin(t)){const tenues=(a.talents||[]).map(talent).filter(x=>x&&!estBonus(x)&&lisChemin(x)&&lisChemin(x).de===t.id&&!ameliorAttaque(x));
-   const ams=sansAmeliorationsRemplacees(tenues)
-    .sort((x,y)=>Object.keys(DIRS).indexOf(lisChemin(x).dir)-Object.keys(DIRS).indexOf(lisChemin(y).dir)||lisChemin(x).rang-lisChemin(y).rang);
+  if(a&&!cout&&!lisChemin(t)){const {ams,remplace}=ameliorationsTenues(a,t);
    const ligneAm=(x,cls)=>{const tx=vu(x).effects||'';if(!tx)return;const e=document.createElement('p');e.className='palier-effet'+(cls?' '+cls:'');texteEnrichi(e,tx,noms);g.append(e)};
    /* « Remplace le texte du talent » : le texte de base cède la place à celui du chemin qui le
       dit — un seul chemin par talent. Sur ce chemin, la dernière amélioration tenue fait le texte. */
-   const dirR=Object.keys(DIRS).find(d=>tenues.some(x=>lisChemin(x).dir===d&&x.remplaceTexte===true));
-   const remplace=dirR?ams.find(x=>lisChemin(x).dir===dirR):null;
    if(remplace){g.replaceChildren();ligneAm(remplace,'')}
    ams.filter(x=>x!==remplace).forEach(x=>ligneAm(x,'amelioration'))}
   }

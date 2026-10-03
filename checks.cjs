@@ -3366,6 +3366,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.543 — L'amélioration tenue qui remplace le texte d'un talent remplace aussi sa ligne dans la bulle de l'Attaque. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes('function ameliorationsTenues(a,t){')&&src.includes("const y=!lisChemin(x)&&ameliorationsTenues(a,x).remplace||x;")&&src.includes('if(a&&!cout&&!lisChemin(t)){const {ams,remplace}=ameliorationsTenues(a,t);'),'la même amélioration fait le texte des deux bulles');}
 /* v0.542 — « Fin du combat : Statistiques. » ; plus de « Début du tour » ; pas de séparateur de tour hors combat. */
 {const page=fs.readFileSync('index.html','utf8');
  assert.ok(page.includes("bilan?'Fin du combat :':'Fin du combat.',bilan?{bilan}:undefined")&&page.includes("b.textContent='Statistiques';")&&page.includes("li.append(' ',b,'.')"),'la fin du combat');
