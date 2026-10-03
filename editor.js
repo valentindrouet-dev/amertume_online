@@ -470,7 +470,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   if(t.rayonne)b.classList.add('debut-combat');
   /* Sa bulle : celle du talent, son texte tel que le MJ l'a écrit ; un talent qui frappe y montre
      ses dés et son bonus, sous son nom, comme une attaque. */
-  surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),
+  // Grisé, sa bulle dit pourquoi : le Mouvement dépensé, aucune cible en vue, l'Action déjà prise.
+  surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre,
    des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false,orbeux(t)?etatOrbes:''):null}));
   /* Un talent qui frappe montre aussi ses dés au-dessus de la piste, au survol. Les Orbes, eux,
      y sont déjà, à côté de l'arme, qui reste. */

@@ -3371,6 +3371,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.529 — Un bouton de talent grisé dit pourquoi dans sa bulle ; la vérification ne rejoue que les jeux dont les sources ont changé. */
+{const src=fs.readFileSync('editor.js','utf8'),verif=require('fs').readFileSync('verif.cjs','utf8');
+ assert.ok(src.includes("bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),note:t.peut?'':t.titre,"),'la raison du refus dans la bulle');
+ assert.ok(verif.includes("CACHE='.git/verif-cache.json'")&&verif.includes("const LIT={'des-checks.cjs':['combat.js']};")&&verif.includes("if(!garde)cache[f]={k,dit}")&&verif.includes("process.argv.includes('--tout')"),'la vérification en cache, par empreinte');}
 /* v0.528 — Le dernier lancer reste sur la piste jusqu'au suivant ; une attaque sans ciblage préalable ne laisse pas de cible ;
    un bouton « Distances » montre ou cache les distances des flèches, pour chacun. */
 {const page=fs.readFileSync('index.html','utf8');

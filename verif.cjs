@@ -31,10 +31,20 @@ function oteChaine(f,lit){let t=fs.readFileSync('checks.cjs','utf8'),n=0;const q
 /* Les quatre jeux tournent en même temps : la conversion des dés, la plus longue, ne retient plus les autres.
    Les résultats se lisent ensuite dans l'ordre, comme avant. */
 const {execFile}=require('child_process'),JEUX=['checks.cjs','des-checks.cjs','shared-checks.cjs','id-checks.cjs'];
-const lance=f=>new Promise(res=>execFile('node',[f],{encoding:'utf8'},(e,out,err)=>res({f,e,out:String(out||''),err:String(err||'')})));
+/* Un jeu déjà passé sur les mêmes sources ne se rejoue pas : son empreinte — ce qu'il lit, lui compris — est gardée
+   dans .git, hors du dépôt. La conversion des dés ne lit que le moteur ; les autres, toutes les sources. Une source
+   touchée, et le jeu repart. « --tout » rejoue tout. */
+const crypto=require('crypto'),CACHE='.git/verif-cache.json',SOURCES=['index.html','combat.js','editor.js','maps.js','live.js','shared.js','domaine.js','editor.css','catalog.js','campagnes.js','planches.js','planches-calcul.js','shared-data.js','ia.js','planches-worker.js','firestore-online.rules','verif.cjs'];
+const LIT={'des-checks.cjs':['combat.js']};
+// Les tests regardent aussi quelles images existent : la liste du dossier img entre dans l'empreinte.
+const images=()=>{try{return fs.readdirSync('img',{recursive:true}).map(String).sort().join('|')}catch(_){return ''}};
+const empreinte=f=>{const h=crypto.createHash('sha1');for(const x of [f,...(LIT[f]||SOURCES)])h.update(x+'\0'+(fs.existsSync(x)?fs.readFileSync(x):''));if(!LIT[f])h.update(images());return h.digest('hex')};
+let cache={};try{if(!process.argv.includes('--tout'))cache=JSON.parse(fs.readFileSync(CACHE,'utf8'))}catch(_){}
+const lance=f=>{const k=empreinte(f);if(cache[f]&&cache[f].k===k)return Promise.resolve({f,e:null,out:cache[f].dit+' (déjà vérifié sur ces sources)',err:'',k,garde:true});
+ return new Promise(res=>execFile('node',[f],{encoding:'utf8'},(e,out,err)=>res({f,e,out:String(out||''),err:String(err||''),k})))};
 (async()=>{for(let tour=0;tour<40;tour++){let refaire=false;
- for(const {f,e,out,err} of await Promise.all(JEUX.map(lance))){
-  if(!e){process.stdout.write(out.trim().split('\n').pop()+'\n');continue}
+ for(const {f,e,out,err,k,garde} of await Promise.all(JEUX.map(lance))){
+  if(!e){const dit=out.trim().split('\n').pop();process.stdout.write(dit+'\n');if(!garde)cache[f]={k,dit};continue}
   const m=/checks\.cjs:(\d+)/.exec(err)||/(?:^|\/)(\w+-checks\.cjs):(\d+)/.exec(err);
   console.error(err.split('\n').filter(l=>l&&!/^\s+at /.test(l)).slice(0,8).join('\n'));
   if(f==='checks.cjs'&&m){const n=+m[1],L=fs.readFileSync(f,'utf8').split('\n');let i=n-1;while(i>0&&!/^\s*(assert\.|\{assert)/.test(L[i]))i--;
@@ -44,4 +54,5 @@ const lance=f=>new Promise(res=>execFile('node',[f],{encoding:'utf8'},(e,out,err
   if(refaire)break;process.exit(1)}
  if(!refaire)break}
 if(otes.length)console.log('épuré : '+otes.length+' vérification(s) par chaîne ôtée(s)\n  · '+otes.join('\n  · '));
+try{fs.writeFileSync(CACHE,JSON.stringify(cache))}catch(_){}
 console.log('✓ tout passe')})();
