@@ -3366,6 +3366,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.540 — Le compteur des bonus de l'arbre en icônes chiffrées, deux lignes au plus, le nom en bulle. */
+{const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("c.className='arbres-bonus-n';boite.className='bonus-ico';if(ic)boite.append(remplitCase(ic));")&&src.includes("ouvrirBulle(c,d,'bulle-talent')")
+  &&feuille.includes('#arbres .dialog-head .arbres-bonus{display:flex;flex-wrap:wrap;gap:3px 10px;max-width:230px;'),'le compteur condensé');}
 /* v0.539 — Stats de Combat : le token du combattant désigné à chaque distinction, l'icône des Dégâts après les dégâts de
    chaque camp, « Mise à Mort » au lieu de « mis à terre ». */
 {const src=fs.readFileSync('editor.js','utf8');

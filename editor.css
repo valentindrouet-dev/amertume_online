@@ -1828,7 +1828,11 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .talent-bulle-nom .cout-xp.trop-cher{background:#f8d9d4;border-color:#b8352f;color:#a02c20}
 /* L'en-tête de l'arbre : le total à gauche, « Modifier en masse » contre « Vue joueur ». */
 #arbres .dialog-head .arbres-total{display:flex;flex-direction:column;gap:3px;font:700 13px system-ui;color:var(--muted);white-space:nowrap}
-#arbres .dialog-head .arbres-bonus{display:flex;flex-direction:column;gap:1px;font:600 12px/1.3 system-ui}
+#arbres .dialog-head .arbres-bonus{display:flex;flex-wrap:wrap;gap:3px 10px;max-width:230px;font:800 13px/1 system-ui;white-space:nowrap}
+#arbres .dialog-head .arbres-bonus-n{display:inline-flex;align-items:center;gap:3px;cursor:default}
+#arbres .dialog-head .arbres-bonus-n .bonus-ico{display:inline-grid;place-items:center;width:18px;height:18px}
+#arbres .dialog-head .arbres-bonus-n .bonus-ico>:is(img,svg,.bonus-lettres){width:100%;height:100%;margin:0;object-fit:contain}
+#arbres .dialog-head .arbres-bonus-n .bonus-lettres{display:grid;place-items:center;font:800 9px/1 system-ui}
 #arbres .dialog-head #arbres-xp{margin-left:auto}
 #arbres .dialog-head #arbres-xp+#arbres-masse{margin-left:6px}
 #arbres .dialog-head #arbres-masse+#arbres-vue{margin-left:6px}

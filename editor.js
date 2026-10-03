@@ -4053,8 +4053,14 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const ordre=['pv','endu','vie','dmg','def','orbe'],rang=k=>k.startsWith('comp:')?ordre.length+Number(k.slice(5)):Math.max(0,ordre.indexOf(k));
   arbresTotal.replaceChildren();arbresTotal.hidden=!total&&!somme.size;
   if(total)arbresTotal.append(Object.assign(document.createElement('span'),{textContent:'Total '+total.toLocaleString('fr-FR')+' XP'}));
+  // En icônes chiffrées, serrées sur deux lignes au plus : le nom paraît en bulle, au survol.
   if(somme.size){const l=document.createElement('span');l.className='arbres-bonus';
-   [...somme].sort(([x],[y])=>rang(x)-rang(y)).forEach(([,e])=>l.append(Object.assign(document.createElement('span'),{textContent:e.n+' '+nomBonusArbre(e.p,e.n)})));arbresTotal.append(l)}}
+   [...somme].sort(([x],[y])=>rang(x)-rang(y)).forEach(([,e])=>{const c=document.createElement('span'),boite=document.createElement('span'),ic=logoBonus(e.p),nom=nomBonusArbre(e.p,e.n);
+    c.className='arbres-bonus-n';boite.className='bonus-ico';if(ic)boite.append(remplitCase(ic));
+    const tint=e.p.carac==='comp'?SKILL_TINTS[Math.max(0,Math.min(7,Number(e.p.comp)||0))]:e.p.carac==='orbe'?'138,99,201':STAT_TINTS[e.p.carac];if(tint)c.style.color='rgb('+tint+')';
+    c.append(boite,String(e.n));c.setAttribute('aria-label',e.n+' '+nom);
+    surveille(c,()=>{const d=document.createElement('div'),t=document.createElement('p'),b=document.createElement('b');d.className='talent-detail large';t.className='talent-bulle-nom';b.textContent=nom;t.append(b);d.append(t);ouvrirBulle(c,d,'bulle-talent')});
+    l.append(c)});arbresTotal.append(l)}}
  // En masse, l'arbre se lit en tableau : ni colonnes ni lignes.
  if(arbresEnMasse&&!a&&view==='mj'){tableMasseTalents(corps,classe);return}
  /* L'élément qui habille l'arbre : celui du Mystique ; sur le plan du MJ, celui qu'il regarde ;
