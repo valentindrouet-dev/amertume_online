@@ -2078,7 +2078,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")
-  &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")&&page.includes("useOwnDamage===false?0:degatsDe(a);")
+  &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")
   &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")&&page.includes("const n=degatsDe(e),{blinde}=encaisse(a,n);")
   &&src.includes("const aura=!(typeof spectateur==='function'&&spectateur())&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}")
@@ -3034,7 +3034,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  {const ia=fs.readFileSync('ia.js','utf8');assert.doesNotThrow(()=>new Function(ia),'ia.js compile');assert.ok(ia.includes('function tourDesAdversaires(')&&ia.includes('function choixCibleIA('),'l’IA est gardée dans ia.js');
   [page,src,fs.readFileSync('combat.js','utf8'),fs.readFileSync('live.js','utf8'),fs.readFileSync('maps.js','utf8')].forEach(t=>['ia-adversaires','iaAdversaires','iaDoitJouer','reactionsIA','frappePar','planifieTourIA','iaDe(','normaliseIa','IA_CIBLAGES','ia_cible'].forEach(k=>assert.ok(!t.includes(k),'plus de trace de l’IA : '+k)));
   assert.ok(!page.includes('ia.js'),'ia.js n’est pas chargé');
-  assert.ok(page.includes("if(partis){if(!actionPriseAuDepart)depensePoint(a,'action');")&&page.includes("$('next').onclick=()=>{if(view!=='mj')return;tourSuivant()};")&&src.includes("{cle:'menace',nom:'Menace',type:'choix',opts:MENACES,"),'attaque à une seule Action, tour suivant, colonne Menace');}
+  assert.ok(page.includes("$('next').onclick=()=>{if(view!=='mj')return;tourSuivant()};")&&src.includes("{cle:'menace',nom:'Menace',type:'choix',opts:MENACES,"),'attaque à une seule Action, tour suivant, colonne Menace');}
  /* v0.491 — Mitraille : un passif ; chaque orbe lancé en fait partir un autre, gratuit, sur l'autre adversaire le
    plus proche ; améliorations : un adversaire de plus, un orbe de plus. */
  {const T=C.TALENTS_CODES;assert.equal(T.mitraille.type,'pass');assert.equal(T.mitraillecibles.pour,'mitraille');assert.equal(T.mitrailleorbes.nom,'Mitraille — un orbe de plus');
@@ -3371,9 +3371,19 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.527 — Chiffre de distance réduit de 30 %. Charge, action du Destructeur : un mouvement jusqu'au contact puis une
+   attaque au contact, pour un seul point de Mouvement ; l'élan en bonus de dégâts ; la cible repoussée hors de la zone,
+   puis de la distance parcourue. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
+ const K=C.TALENTS_CODES;assert.ok(K.charge.type==='act'&&K.charge.gratuit===true&&['chargeelan','chargerepousse','chargerepoussedist'].every(k=>K[k]&&K[k].type==='ame'),'Charge et ses trois améliorations');
+ assert.ok(src.includes("charge:'Destructeur',chargeelan:'Destructeur',chargerepousse:'Destructeur',chargerepoussedist:'Destructeur'"),'chez le Destructeur');
+ assert.ok(page.includes("lab.style.fontSize=Math.max(6.3,tokenPx()*.154).toFixed(1)+'px';"),'le chiffre, 30 % plus petit');
+ assert.ok(page.includes("if(!opts.sansAction&&actionPrise(a))")&&page.includes("degatsDe(a)+(Math.trunc(Number(opts.bonusEnPlus))||0);")&&page.includes("if(!actionPriseAuDepart&&!opts.sansAction)depensePoint(a,'action');")
+  &&page.split("actionPriseAuDepart=true;if(!opts.sansAction)depensePoint(a,'action');").length===3,'l’attaque de la Charge ne prend pas l’Action, et porte son élan');
+ assert.ok(page.includes("if(enCombat()){depensePoint(a,'mouvement');if(actors[selected]===a)$('move').checked=pointsRestants(a,'mouvement')<=0}")&&page.includes("const elan=porteEffet(codes,'chargeelan')?Math.floor(m):0")
+  &&page.includes("attack({vises:[j],sansAction:true,bonusEnPlus:elan,")&&page.includes("repousser(b,a,false,loin?m*tokenPx():0)")&&page.includes("de>0?d+de:0)+2;"),'un point de Mouvement, l’élan, la poussée');}
 /* v0.526 — Le chiffre de distance plus petit, et à la couleur du ciblage : bleu clair s'il part, rouge clair s'il est bloqué. */
-{const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("lab.style.fontSize=Math.max(9,tokenPx()*.22).toFixed(1)+'px';\n lab.setAttribute('class','aim-dist on etat-'+etat)}")
- &&page.includes("#aim .aim-dist.etat-ok{fill:#a9d2f7}#aim .aim-dist.etat-no{fill:#f6a59c}"),'taille et couleur du chiffre');}
+{const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("#aim .aim-dist.etat-ok{fill:#a9d2f7}#aim .aim-dist.etat-no{fill:#f6a59c}"),'taille et couleur du chiffre');}
 /* v0.525 — L'unité de distance : le diamètre d'un socle moyen vaut 1 m. Sur le trait de ciblage, la distance de centre
    à centre, à une décimale. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');

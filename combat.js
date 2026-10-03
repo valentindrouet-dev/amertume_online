@@ -1252,6 +1252,22 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  provocsol:{cle:'provocsol',nom:'Provocation — au sol',court:'au sol',type:'ame',
   aide:'Amélioration de Provocation : l’adversaire provoqué tombe Au sol.',params:[],
   phrase(){return 'L’adversaire provoqué par une <b>Provocation</b> tombe <b>Au sol</b>.'}},
+ /* Charge : une action du Destructeur. Le porteur fait un mouvement jusqu'au contact de sa cible, puis l'attaque au
+    contact ; le tout ne coûte qu'un point de Mouvement, pas l'Action. Trois améliorations : la distance parcourue,
+    en mètres, s'ajoute au bonus de dégâts ; la cible est repoussée hors de la zone de contact ; puis, amélioration
+    de celle-ci, de la distance parcourue. */
+ charge:{cle:'charge',nom:'Charge',type:'act',bouton:'🐂 Charge',attaque:true,gratuit:true,
+  aide:'Action : le porteur fait un mouvement jusqu’au contact de sa cible, puis l’attaque au contact ; le tout ne coûte qu’un point de Mouvement.',params:[],
+  phrase(){return 'Vous effectuez <b>un mouvement</b> jusqu’au contact de votre cible, puis <b>une attaque au contact</b> ; le tout ne coûte qu’<b>un point de Mouvement</b>.'}},
+ chargeelan:{cle:'chargeelan',nom:'Charge — élan',court:'élan',type:'ame',
+  aide:'Amélioration de Charge : le bonus de dégâts de l’attaque augmente de la distance parcourue, en mètres.',params:[],
+  phrase(){return 'Le <b>bonus de dégâts</b> de l’attaque de <b>Charge</b> augmente de la <b>distance parcourue</b> pendant le mouvement, en mètres.'}},
+ chargerepousse:{cle:'chargerepousse',nom:'Charge — repousse',court:'repousse',type:'ame',
+  aide:'Amélioration de Charge : la cible est repoussée hors de la zone de contact du porteur.',params:[],
+  phrase(){return 'La cible de la <b>Charge</b> est <b>repoussée hors de votre zone de contact</b>.'}},
+ chargerepoussedist:{cle:'chargerepoussedist',nom:'Charge — repousse de la distance',court:'repousse loin',type:'ame',
+  aide:'Amélioration de « Charge — repousse » : la cible est repoussée de la distance parcourue pendant le mouvement.',params:[],
+  phrase(){return 'La cible de la <b>Charge</b> est repoussée de la <b>distance parcourue</b> pendant le mouvement, au moins hors de votre zone de contact.'}},
  /* Poussée : une action. Le porteur effectue une attaque, puis repousse la cible hors de sa
     zone de contact. Deux volets, chacun au palier que le MJ choisit : deux fois plus loin que
     la zone (palier 2 d'ordinaire), et tous les adversaires au contact (palier 3). */
