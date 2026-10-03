@@ -1532,8 +1532,7 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
  &&src.includes("if(!l.includes(t.voie)&&l.length<(c.nbArbres[f]===1?1:VOIES_MAX))c.voies[f]=[...l,t.voie]});")&&!src.includes('function descendDe(')
  &&src.includes('function openTalent(i=null,apres=null,defauts=null)')&&src.includes(",...(defauts||{})}:catalog.talents[i];")
  &&src.includes("if(typeof arbresDialog!=='undefined'&&arbresDialog.open)renderArbres()});")&&src.includes('function placerTalent(id,dest)')
- &&src.includes("el.addEventListener('dragstart',e=>{arbreGlisse=t.id;el.classList.add('tire');corps.classList.add('glisse');")
- &&src.includes("if(!id||id===dest.soi)return;if(placerTalent(id,dest))arbreChange()})};")&&src.includes("glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,pos:posDe(t),soi:t.id});")
+ &&src.includes("el.addEventListener('dragstart',e=>{arbreGlisse=t.id;el.classList.add('tire');corps.classList.add('glisse');")&&src.includes("glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,pos:posDe(t),soi:t.id});")
  &&src.includes("cible(p,{famille:col.famille,voie:col.voie,pos:{x:pl.x,y:pl.y}});return p};")
  &&src.includes("cible(h,{famille:c.famille,voie:c.voie});")&&src.includes("champVif(nomVoie,()=>c.voie,v=>{if(nommerVoie(c.famille,c.rang,v))arbreChange();")&&src.includes("nomVoie.classList.toggle('vierge',!c.voie);")&&feuille.includes('.arbre-titre .arbre-voie.vierge{')&&src.includes("if(supprimerArbre(c.famille,c.rang))arbreChange()")
  &&src.includes("{famille:talentFamily(t),voie:t.voie||'',de:t.id,level:Math.min(20,(t.level||1)+1)})));")
@@ -3367,6 +3366,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.538 — Bulle d'un bonus « + 2 <icône> Endu » ; sous le total d'XP de l'arbre, ce qu'il donne de chaque caractéristique ;
+   un talent posé sur un autre, ou une amélioration sur une autre, échangent leurs places. */
+{const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("if(talent){const t=nom.textContent;nom.textContent=t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()}")&&src.includes("boite.append(remplitCase(ic));plus.after(' ',boite)}"),'la bulle d’un bonus');
+ assert.ok(src.includes('function nomBonusArbre(p,n){')&&src.includes("l.className='arbres-bonus';")&&feuille.includes('#arbres .dialog-head .arbres-bonus{'),'le compteur des bonus de l’arbre');
+ assert.ok(src.includes('function echangeTalents(id,b){')&&src.includes('if(autre&&echangeTalents(id,autre)){arbreChange();return}')&&src.includes("[a.liens,b.liens]=[b.liens,a.liens];"),'l’échange de places');}
 /* v0.537 — Stats de Combat : chaque combattant compte ses chiffres là où le geste a lieu, ils voyagent avec lui ; la fin
    du combat les fige dans sa ligne du journal, que « Stats de Combat » ouvre chez chacun. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),ia=fs.readFileSync('ia.js','utf8');
@@ -3815,8 +3820,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(css.includes('.hero-card .talent-ameliorations .cat-pill.gear-carre.talent-carre.bonus-rond>.logo-equip{width:100%;height:100%}')
   &&src.includes("if(l)r.append(remplitCase(l));")&&src.includes("function remplitCase(el){"),'les icônes de bonus à la même taille');
  assert.ok(src.includes("nom.textContent=c==='comp'?(talent?String(skillNames[k]||''):String(skillNames[k]||'').toUpperCase())")
-  &&src.includes("libelleBonusEl(paramsTalent(t),{talent:t})")&&src.includes("libelleBonusEl(g.p,{talent:g.t})")
-  &&src.includes("boite.className='bonus-ico';boite.append(remplitCase(ic));s.prepend(boite)")&&css.includes('.bonus-libelle .bonus-ico{'),'la bulle d’un bonus : icône, compétence comme sur la fiche');}
+  &&src.includes("libelleBonusEl(paramsTalent(t),{talent:t})")&&src.includes("libelleBonusEl(g.p,{talent:g.t})")&&css.includes('.bonus-libelle .bonus-ico{'),'la bulle d’un bonus : icône, compétence comme sur la fiche');}
 /* v0.496 — Retirer ou supprimer un talent de l'arbre laisse sa case vide : ses lignes, ses niveaux et ses petits
    ronds restent ; la case se traverse ; un talent posé dessus reprend le tout. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
