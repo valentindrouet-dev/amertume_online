@@ -4352,10 +4352,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   c.liste.forEach(t=>{if(!cases.has(t.id)){const p=caseLibre(prises.map(q=>({pos:q})),null);cases.set(t.id,p);prises.push(p)}});
   /* Les petits ronds, chacun à sa place : depuis le centre de son talent, dans sa direction, une
      demi-case par rang — la même distance en droite ligne et en diagonale, tout autour du talent. */
-  /* Les petits ronds se serrent contre leur talent : le premier à 0,37 case de son centre, le
-     second 0,29 plus loin, dans toutes les directions. On lit à qui ils sont, et un talent
-     voisin garde de l'air. */
-  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.37+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
+  /* Les petits ronds se tiennent près de leur talent, un peu à l'écart : le premier à 0,43 case de son
+     centre, un second, d'une chaîne d'avant, 0,29 plus loin, dans toutes les directions. On lit à qui
+     ils sont, et un talent voisin garde de l'air. */
+  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
   const petits=[];c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
    Object.keys(DIRS).forEach(d=>{if(ch[d].lien)return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
   /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
@@ -4371,7 +4371,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if(ch[d].lien||ch[d].entrant)return;
      if(['e','s','o'].includes(d)&&!ch[d].petits.length){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.4)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
      if(d==='n'&&racines.has(t.id)&&!ch[d].petits.length)return;
-     const r=ch[d].petits.length+1;if(r>PETITS_MAX)return;const {x,y}=bout(p,d,r);
+     // Un seul petit rond par chemin : ses paliers font ce que faisait une série. Celui qui y est n'en appelle pas d'autre.
+     if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);
      if(libreIci(x,y))places.push({genre:'petit',x,y,de:t,dir:d,rang:r})})});
    if(!c.liste.length)places.push({genre:'gros',x:0,y:0,de:null})}
   // Le plan tient juste ce qu'il montre, une demi-case de marge : le talent de départ est tout en haut.

@@ -2421,7 +2421,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&feuille.includes(".arbre-chemins .chemin .trait{stroke:var(--line-strong);stroke-width:3;stroke-linecap:round;fill:none;stroke-dasharray:3 7;opacity:.75}")
   &&feuille.includes(".arbre-col.sans-acteur .arbre-chemins .chemin .trait{stroke-dasharray:none;opacity:1}")
   &&feuille.includes(".arbre-chemins .chemin.pris .trait{stroke:var(--green);stroke-dasharray:none;opacity:1}")
-  &&feuille.includes(".arbre-chemins .chemin.petit .trait{stroke-width:2.5;stroke-dasharray:none}")&&src.includes("k=.37+(r-1)*.29;"),'les chemins : jusqu’aux boutons, pointillés tant qu’inactifs, pleins vers les petits ronds');
+  &&feuille.includes(".arbre-chemins .chemin.petit .trait{stroke-width:2.5;stroke-dasharray:none}"),'les chemins : jusqu’aux boutons, pointillés tant qu’inactifs, pleins vers les petits ronds');
  assert.ok(src.includes("b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")&&feuille.includes(".arbre-noeud.bonus-vie{--teinte:rgb(122,92,184)}")&&feuille.includes(".arbre-noeud.bonus-dmg{--teinte:rgb(180,72,58)}"),'les bonus aux couleurs de la fiche');
  assert.ok(!src.includes("||(!arbresActeur?NOTE_ARBRES_CLASSE:view==='mj'&&!arbresVueJoueur?NOTE_ARBRES_MJ:NOTE_ARBRES)}"),'plus de mode d’emploi au-dessus des arbres');
 }
@@ -3363,6 +3363,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.564 — Arbre : un seul petit rond par chemin, plus de place offerte après celui qui y est ; les petits ronds s'écartent
+   un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
 /* v0.563 — Fiche d'aventurier : un bonus compte sa valeur au palier tenu, dans le rond qui additionne les bonus identiques.
    Les billes d'un bonus à icône remontent sous l'icône, sans toucher le rond d'en dessous. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
