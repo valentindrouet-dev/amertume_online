@@ -117,7 +117,7 @@ async function attaquesIA(a,j){let coups=0;
 async function orbesIA(a){for(let n=0;n<9;n++){const b=boutonsTalents(a).find(x=>x.code.cle==='orbes');if(!b||!b.peut)return;b.agir();await pauseIA(500)}}
 /* Un déplacement de l'IA : le long d'étapes en pixels, pas à pas, sous la règle du Mouvement — une zone
    franchie se paie, sans point pour la suivante le socle reste au bord ; sans zones, le geste coûte un
-   point, comme à la main. Ceux qu'il quitte frappent, la Foudre tombe, Lamevent s'arme. */
+   point, comme à la main. Ceux qu'il quitte frappent, la Foudre tombe, Ombrelame s'arme. */
 async function marcheIA(a,etapes,ignorer,arrive){const size=mapSize();if(!size.width||!etapes||!etapes.length)return false;
  const regle=regleMouvement(a);if(regle.fini)return false;
  noteContactsDepart(a);const croises=new Set(contactsDe(a)),depart={x:a.x,y:a.y};

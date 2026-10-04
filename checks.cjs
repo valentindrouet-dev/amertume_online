@@ -10,7 +10,7 @@ const png=new Uint8Array(24),v=new DataView(png.buffer);v.setUint32(0,0x89504e47
 const jpg=new Uint8Array([255,216,255,192,0,7,8,2,0,4,0,255,217]);assert.equal(ctx.imageDimensions(jpg).join(','),'1024,512');
 const webp=new Uint8Array(30);webp.set(Buffer.from('RIFF'));webp.set(Buffer.from('WEBPVP8X'),8);webp[24]=255;webp[25]=1;webp[27]=255;assert.equal(ctx.imageDimensions(webp).join(','),'512,256');assert.throws(()=>ctx.imageDimensions(new Uint8Array(30)));
 const c={window:{}};vm.runInNewContext(fs.readFileSync('catalog.js','utf8'),c);const cat=c.window.AMERTUME_CATALOG;assert.equal(cat.classes.length,4);
-['Destructeur','Gardien','Lamevent','Mystique'].forEach(n=>{const k=cat.classes.find(x=>x.name===n);
+['Destructeur','Gardien','Ombrelame','Mystique'].forEach(n=>{const k=cat.classes.find(x=>x.name===n);
  assert.ok(k,'classe manquante : '+n);assert.match(k.tint,/^#[0-9a-f]{6}$/);assert.ok(k.pv>0);
  assert.ok(k.id)});
 assert.equal(new Set(cat.classes.map(k=>k.id)).size,4);
@@ -935,7 +935,7 @@ assert.equal(readStat('level','9',1),9);assert.equal(readStat('level','25',1),20
 {const {competencesDeClasse,bonusDe,COMPETENCES}=require('./combat.js');const v=(r,n)=>competencesDeClasse(r)[COMPETENCES.indexOf(n)];
  assert.deepEqual(['Robustesse','Savoir','Force'].map(n=>v('Gardien',n)),[1,1,1]);assert.equal(v('Gardien','Ruse'),0);
  assert.deepEqual(['Mysticisme','Savoir','Ruse'].map(n=>v('mystique · Voie du gel',n)),[1,1,1]);
- assert.deepEqual(['Agilité','Ruse','Perception'].map(n=>v('Lamevent',n)),[1,1,1]);assert.deepEqual(['Force','Robustesse','Technique'].map(n=>v('Destructeur',n)),[1,1,1]);
+ assert.deepEqual(['Agilité','Ruse','Perception'].map(n=>v('Ombrelame',n)),[1,1,1]);assert.deepEqual(['Force','Robustesse','Technique'].map(n=>v('Destructeur',n)),[1,1,1]);
  assert.equal(competencesDeClasse('Aventurier').reduce((x,y)=>x+y,0),0);
  assert.equal(bonusDe({hero:true,role:'Gardien',talents:[]},[],null).skills[COMPETENCES.indexOf('Force')],1,'l’aventurier le reçoit');
  assert.equal(bonusDe({hero:false,role:'Gardien',talents:[]},[],null).skills[COMPETENCES.indexOf('Force')],0,'pas un adversaire');}
@@ -976,7 +976,7 @@ typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\
 /* Le menu déroulant des mécaniques porte le nom ET la description : on sait ce qu'un effet
    fait avant de le choisir, sans gras — une option ne lit pas le balisage. */
 const lib=C.libelleTalent('lamevent');
-assert.ok(lib.startsWith('Lamevent : '),'le libellé s’ouvre sur le nom : '+lib);
+assert.ok(lib.startsWith('Ombrelame : '),'le libellé s’ouvre sur le nom : '+lib);
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
@@ -2667,7 +2667,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.normaliseCompte({or:'5',x:3,'eclat-rubis':-2,'brisure-saphir':0,'brome-diamant':2.7,'brome-diamant-eteinte':4},C.CLES_RICHESSES),{or:5,'brome-diamant':2},'une éteinte quitte la bourse');
  assert.deepEqual(C.normaliseDomaine(null).ressources,{});
  assert.deepEqual(C.normaliseDomaine({ressources:{or:9,bois:12,'eclat-rubis':3}}).ressources,{bois:12,'eclat-rubis':3});
- assert.ok(src.includes("function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots=normaliseDepots(a.depots);")&&src.includes("a.reposPris=a.reposPris===true;a.horsCarte=a.horsCarte===true;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
+ assert.ok(src.includes("a.reposPris=a.reposPris===true;a.horsCarte=a.horsCarte===true;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);")
   &&src.includes("const listeRessources=()=>ressourcesJeu().map(r=>[r.cle,r.nom]).sort((x,y)=>x[1].localeCompare(y[1],'fr'));"),'les richesses se relisent et voyagent en direct');
  assert.ok(src.includes("function grilleGemmes(compte,poser,qui){")&&src.includes("function blocRichesses(a){")&&src.includes("const poser=view==='mj'?(k,v)=>{poseCompte(a.richesses,k,v);out.replaceWith(blocRichesses(a));")
   &&fief.includes("function renderDomRessources(){")&&fief.includes("const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;")
@@ -3363,6 +3363,16 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.560 — Lamevent s'appelle Ombrelame partout : la classe, ses arbres, ses talents et leurs textes, ses aventuriers, les
+   noms de ses effets (l'ancien nom retrouve encore l'effet). Flèches vers l'arbre de la classe voisine ; dans l'onglet
+   Talents, les talents d'une classe dans un cadre à sa couleur, qui ouvre l'arbre. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
+ assert.equal(C.TALENTS_CODES.lamevent.nom,'Ombrelame');assert.equal(C.effetParNom('Lamevent'),'lamevent');assert.equal(C.effetParNom('Ombrelame'),'lamevent');
+ assert.ok(!page.includes('Lamevent')&&src.includes("function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];migreOmbrelame(c);")
+  &&src.includes("a.role=ombrelame(a.role);")&&fs.readFileSync('catalog.js','utf8').includes('"name": "Ombrelame"'),'le nouveau nom, et la conversion des données');
+ assert.ok(src.includes("if(i>=0&&l.length>1)openArbresClasse(l[(i+sens+l.length)%l.length])};arbresDialog.append(b);return b});")&&src.includes("noteArbres('');renderArbres();if(!arbresDialog.open)arbresDialog.showModal()}")
+  &&feuille.includes('#arbres .arbres-fleche{position:fixed;'),'les flèches');
+ assert.ok(src.includes("cadre.onclick=e=>{if(!e.target.closest('.cat-carte,button'))openArbresClasse(famille)}")&&feuille.includes('.talents-cadre{padding:10px;'),'le cadre des talents');}
 /* v0.559 — Un bonus d'Endurance posé dans l'arbre vaut +2 ; le compteur des bonus de l'arbre tient sur trois lignes :
    caractéristiques (Vie, Endu, PV, Dégâts, DEF), orbes et propres à une classe, compétences par ordre alphabétique. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');

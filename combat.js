@@ -837,7 +837,7 @@ function degatsPeril(n,a,p){if(!a||!(Number(a.max)>0))return n;const s=Math.max(
  if(Number(a.hp)/Number(a.max)*100>=s)return n;return p&&p.effet==='moitie'?Math.ceil(n/2):n*2}
 /* Les dés qu'un orbe peut lancer : ceux de l'attaque, moins le dé de Soin, qui ne frappe pas. */
 const DES_ORBE=[['white','Simple'],['bone','Léger'],['red','Lourd'],['blue','Mystique'],['black','Mortel'],['yellow','Phase']];
-const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:'⚡ Lamevent',
+const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent'],type:'mait',bouton:'⚡ Ombrelame',
  aide:'En terminant un mouvement : ton bonus de dégâts aux adversaires au contact.',
  params:[{cle:'cibles',nom:'Adversaires frappés',type:'choix',defaut:'1',
    options:[['1','Un'],['2','Deux'],['tous','Tous ceux au contact']]},
@@ -902,7 +902,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   aide:'Passif : les critiques adverses contre le porteur deviennent des échecs, ou lui valent une attaque gratuite en retour.',
   params:[{cle:'mode',nom:'Un critique adverse contre le porteur',type:'choix',defaut:'echec',options:[['echec','devient un échec'],['riposte','lui vaut une attaque gratuite en retour']]}],
   phrase(p){return (p&&p.mode)==='riposte'?'Le porteur effectue <b>une attaque gratuite</b> contre l’adversaire qui réalise <b>un critique</b> contre lui.':'Les <b>attaques critiques</b> adverses contre le porteur deviennent des <b>échecs</b>.'}},
- /* Lamevent élémentaire : une amélioration de Lamevent. Ses dégâts infligent aussi l'état réglé. */
+ /* Ombrelame élémentaire : une amélioration d’Ombrelame. Ses dégâts infligent aussi l'état réglé. */
  /* Corps élémentaire : une amélioration. Qui attaque le porteur au contact en garde l'état —
     s'il l'a blessé, ou à chaque attaque, même sans le toucher, selon le réglage « Quand ». */
  corpselem:{cle:'corpselem',nom:'Corps élémentaire',court:'Corps élémentaire',type:'ame',
@@ -910,10 +910,10 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])},
    {cle:'quand',nom:'Quand',type:'choix',defaut:'degats',options:[['degats','S’il vous inflige des dégâts'],['toujours','À chaque attaque, même sans toucher']]}],
   phrase(p){return 'Les adversaires qui attaquent le porteur au contact subissent <b>'+((p&&p.etat)||'Feu')+'</b>'+(p&&p.quand==='toujours'?', <b>même sans le toucher</b>.':' s’ils lui infligent des <b>dégâts</b>.')}},
- lameventelem:{cle:'lameventelem',nom:'Lamevent élémentaire',court:'état infligé',type:'ame',
-  aide:'Amélioration de Lamevent : ses dégâts infligent aussi l’état réglé.',
+ lameventelem:{cle:'lameventelem',nom:'Lamevent élémentaire',court:'état infligé',anciens:['Lamevent — état infligé'],type:'ame',
+  aide:'Amélioration d’Ombrelame : ses dégâts infligent aussi l’état réglé.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
-  phrase(p){return 'Le porteur inflige <b>'+((p&&p.etat)||'Feu')+'</b> lorsqu’il inflige les dégâts de <b>Lamevent</b>.'}},
+  phrase(p){return 'Le porteur inflige <b>'+((p&&p.etat)||'Feu')+'</b> lorsqu’il inflige les dégâts d’<b>Ombrelame</b>.'}},
  /* Double attaque : un passif. Il n'ouvre aucun bouton — rien à déclencher — il élargit
     seulement ce qu'une attaque peut viser. Le ciblage accumule alors jusqu'à ce compte,
     et le bouton d'attaque les frappe toutes, chacune avec son propre jet. */
@@ -1750,7 +1750,7 @@ function variablesPhrase(cle,params,texte=texteBrut){const code=TALENTS_CODES[cl
   variables.push({cle:p.cle,nom:p.nom,debut:S,fin:E,de:pos[S],a:pos[E],valeur:cur,options})});
  variables.sort((x,y)=>x.de-y.de);hors.sort((x,y)=>code.params.findIndex(p=>p.cle===x)-code.params.findIndex(p=>p.cle===y));return {texte:base,variables,hors}}
 /* La même phrase, dépouillée de son gras : une option de menu déroulant ne porte que du
-   texte. « Lamevent : En terminant un mouvement, le porteur inflige… » se lit alors d'un
+   texte. « Ombrelame : En terminant un mouvement, le porteur inflige… » se lit alors d'un
    trait dans la liste, sans qu'il faille la choisir pour savoir ce qu'elle fait. */
 /* Le nom d'un effet : celui que le MJ lui a donné dans la bibliothèque, sinon celui du moteur. */
 function nomEffet(c){const k=c&&typeof c==='object'?c.cle:c,code=TALENTS_CODES[k];if(!code)return '';
@@ -1907,7 +1907,7 @@ function bonusEquipement(a,items){const out=bonusVide();
 // Tout ce qui s'ajoute à la fiche : les nœuds appris, et l'équipement porté.
 /* Ce qu'une classe donne à ses aventuriers en compétences, dès le niveau 1 : un point dans chacune de
    ces trois, en plus de la fiche, comme son bonus de PV. */
-const COMPETENCES_CLASSE={Gardien:['Robustesse','Savoir','Force'],Mystique:['Mysticisme','Savoir','Ruse'],Lamevent:['Agilité','Ruse','Perception'],Destructeur:['Force','Robustesse','Technique']};
+const COMPETENCES_CLASSE={Gardien:['Robustesse','Savoir','Force'],Mystique:['Mysticisme','Savoir','Ruse'],Ombrelame:['Agilité','Ruse','Perception'],Destructeur:['Force','Robustesse','Technique']};
 function competencesDeClasse(role){const k=cleClasse(role),e=k?Object.entries(COMPETENCES_CLASSE).find(([n])=>cleClasse(n)===k):null;
  return COMPETENCES.map(n=>e&&e[1].includes(n)?1:0)}
 function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)

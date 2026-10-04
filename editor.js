@@ -12,7 +12,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.munitionId??='';a.depots=normaliseDepots(a.depots);
+function normalizeActor(a){a.id??=crypto.randomUUID();a.role=ombrelame(a.role);a.munitionId??='';a.depots=normaliseDepots(a.depots);
  // Les zones fouillées par la Perception : la carte, le centre et le rayon, rien d'autre.
  a.fouilles=Array.isArray(a.fouilles)?a.fouilles.filter(f=>f&&Number.isFinite(+f.x)&&Number.isFinite(+f.y)&&+f.r>0).slice(-200).map(f=>({m:String(f.m||'').slice(0,80),x:+f.x,y:+f.y,r:Math.min(1,+f.r),...(Number.isInteger(f.n)&&f.n>=0?{n:Math.min(99,f.n)}:{})})):[];
  if(a.reposCourts===undefined&&a.reposPris)a.reposCourts=1;a.reposCourts=Math.max(0,Math.trunc(Number(a.reposCourts))||0);a.reposPris=a.reposPris===true;a.horsCarte=a.horsCarte===true;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.paliersTalents=normalisePaliersActeur(a);if(a.element!==undefined&&!elementDe(a))delete a.element;a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;if(a.hero&&typeof niveauDeXp==='function')a.level=niveauDeXp(a.xp);a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
@@ -181,7 +181,15 @@ const ONGLETS=[['table','Table de jeu'],['maps','Cartes'],['domaine','Domaine'],
 const ONGLETS_JOUEURS_DEFAUT=['table','domaine','heroes','bestiary','settings'];
 function ongletsJoueurs(){const l=typeof catalog!=='undefined'&&catalog&&Array.isArray(catalog.ongletsJoueurs)?catalog.ongletsJoueurs:ONGLETS_JOUEURS_DEFAUT;
  return ['table',...ONGLETS.map(([k])=>k).filter(k=>k!=='table'&&k!=='maps'&&l.includes(k))]}
-function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
+/* Lamevent s'appelle Ombrelame : la classe, ses arbres et leurs voies, la classe de ses effets, ses talents et
+   leurs textes. Rien ne se perd : ce qui portait l'ancien nom porte le nouveau. */
+function ombrelame(s){return typeof s==='string'&&s.includes('Lamevent')?s.replace(/Lamevent/g,'Ombrelame'):s}
+function migreOmbrelame(c){(c.classes||[]).forEach(k=>{if(k&&k.name==='Lamevent')k.name='Ombrelame'});
+ ['voies','nbArbres'].forEach(f=>{const o=c[f];if(o&&typeof o==='object'&&!Array.isArray(o)&&'Lamevent' in o){if(!('Ombrelame' in o))o.Ombrelame=o.Lamevent;delete o.Lamevent}});
+ if(c.classesEffets&&typeof c.classesEffets==='object')Object.keys(c.classesEffets).forEach(k=>{c.classesEffets[k]=ombrelame(c.classesEffets[k])});
+ (c.talents||[]).forEach(t=>{if(!t)return;t.famille=ombrelame(t.famille);t.name=ombrelame(t.name);t.effects=ombrelame(t.effects);t.effets=ombrelame(t.effets);t.notes=ombrelame(t.notes);
+  if(t.paliers&&typeof t.paliers==='object')Object.values(t.paliers).forEach(p=>{if(p&&typeof p==='object')p.effects=ombrelame(p.effects)})})}
+function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];migreOmbrelame(c);
  if(Array.isArray(c.ongletsJoueurs))c.ongletsJoueurs=ONGLETS.map(([k])=>k).filter(k=>k!=='maps'&&(k==='table'||c.ongletsJoueurs.includes(k)));else delete c.ongletsJoueurs;
  // Les ressources d'abord : les pièces se relisent au travers d'elles, plus bas.
  migreRessources(c);const clesR=new Set(c.items.filter(o=>o&&o.category==='ressource').map(o=>o.cle)),resV=r=>clesR.has(r)?r:'';
@@ -2511,7 +2519,7 @@ function renderBiblioObjets(){const boite=$('biblio-objets');if(!boite)return;
    devine — les orbes au Mystique, la garde au Gardien — si la classe existe ; sinon les
    génériques, ou les adversaires pour un effet de monstre. */
 const CLASSES_EFFETS_DEVINEES={mitraille:'Mystique',ricochet:'Mystique',ricochetplus:'Mystique',ricochetcritique:'Mystique',thesaurisation:'Mystique',thesaurisationfois:'Mystique',thesaurisationsoin:'Mystique',mitraillecibles:'Mystique',mitrailleorbes:'Mystique',orbes:'Mystique',orbescritiques:'Mystique',orbesinratables:'Mystique',orbes2des:'Mystique',orbesrouges:'Mystique',orbescritun:'Mystique',orbescrittous:'Mystique',delugegratuit:'Mystique',implosionmouvement:'Mystique',implosionorbe:'Mystique',contagion:'Mystique',contagioncontact:'Mystique',contagionvue:'Mystique',ignoredegats:'Mystique',soinetat:'Mystique',soinetatdouble:'Mystique',orbesfeu:'Mystique',corpselem:'Mystique',ignition:'Mystique',deluge:'Mystique',eruption:'Mystique',eruptiondegats:'Mystique',eruptiondouble:'Mystique',implosion:'Mystique',degatselem:'Mystique',
- gardien:'Gardien',rempart:'Gardien',provocation:'Gardien',provocattaque:'Gardien',provocsol:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',enragement:'Destructeur',enragementplus:'Destructeur',charge:'Destructeur',chargeelan:'Destructeur',chargerepousse:'Destructeur',chargerepoussedist:'Destructeur',chargeimpact:'Destructeur',lamevent:'Lamevent',rebond:'Lamevent',revanche:'Lamevent',traction:'Lamevent',rapide:'Lamevent',larcin:'Lamevent',tenailles:'Lamevent',deception:'Lamevent',lameventelem:'Lamevent'};
+ gardien:'Gardien',rempart:'Gardien',provocation:'Gardien',provocattaque:'Gardien',provocsol:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',enragement:'Destructeur',enragementplus:'Destructeur',charge:'Destructeur',chargeelan:'Destructeur',chargerepousse:'Destructeur',chargerepoussedist:'Destructeur',chargeimpact:'Destructeur',lamevent:'Ombrelame',rebond:'Ombrelame',revanche:'Ombrelame',traction:'Ombrelame',rapide:'Ombrelame',larcin:'Ombrelame',tenailles:'Ombrelame',deception:'Ombrelame',lameventelem:'Ombrelame'};
 const ADVERSAIRES='Adversaires';
 function classeEffet(c){const choisie=(catalog.classesEffets||{})[c.cle];if(choisie)return choisie;
  const devinee=CLASSES_EFFETS_DEVINEES[c.cle];if(devinee&&(catalog.classes||[]).some(k=>k&&k.name===devinee))return devinee;
@@ -2741,9 +2749,14 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
   /* Une rangée par type, dans cet ordre : Maîtrise, Actions, Réactions, Passifs, Améliorations
      — chacune revient à la ligne. Dans une rangée, l'ordre de l'arbre. */
   const place=new Map(liste.map(([t,i])=>[t.id,i])),ordre=ordonneTalents(liste.map(([t])=>t),catalog.talents);
+  /* Les talents d'une classe dans un cadre à sa couleur, comme sur la fiche d'un aventurier ; au MJ, un clic
+     dans le cadre, hors d'un talent, ouvre l'arbre de la classe. */
+  const cadre=document.createElement('div');cadre.className='talents-cadre';if(encre)cadre.style.setProperty('--classe',encre);
+  if(view==='mj'&&aUnArbre(famille)){cadre.classList.add('cliquable');cadre.onclick=e=>{if(!e.target.closest('.cat-carte,button'))openArbresClasse(famille)}}
   ORDRE_TYPES_TALENTS.forEach(k=>{const lot=ordre.filter(([t])=>talentType(t)[0]===k);if(!lot.length)return;
    const r=document.createElement('div');r.className='talent-rangee t-'+k;r.setAttribute('aria-label',talentType({type:k})[2]);
-   lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));bloc.append(r)});
+   lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));cadre.append(r)});
+  if(cadre.childElementCount)bloc.append(cadre);
   cols.append(bloc)}
 }
 $('talent-search').oninput=renderTalents;$('talent-family').onchange=renderTalents;if($('biblio-filtre'))$('biblio-filtre').oninput=filtreBiblio;
@@ -3914,7 +3927,19 @@ function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresAct
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // L'arbre d'une classe, sans combattant : le MJ le bâtit, personne n'y apprend rien.
 function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arbresActeur=null;arbresClasse=famille||GENERIQUES;
- noteArbres('');renderArbres();arbresDialog.showModal()}
+ noteArbres('');renderArbres();if(!arbresDialog.open)arbresDialog.showModal()}
+/* Sur le plan d'une classe, deux flèches au dehors des bords de la fenêtre : l'arbre de la classe voisine,
+   dans l'ordre de l'onglet Talents ; après la dernière, la première. Dans la fenêtre, pour rester cliquables. */
+const flechesArbres=[-1,1].map(sens=>{const b=document.createElement('button');b.type='button';b.className='arbres-fleche';b.hidden=true;
+ b.textContent=sens<0?'‹':'›';b.onclick=()=>{const l=talentFamilies().filter(aUnArbre),i=l.indexOf(arbresClasse);
+  if(i>=0&&l.length>1)openArbresClasse(l[(i+sens+l.length)%l.length])};arbresDialog.append(b);return b});
+function placeFlechesArbres(){const l=arbresDialog.open&&arbresClasse&&!arbresActeur&&view==='mj'?talentFamilies().filter(aUnArbre):[],i=l.indexOf(arbresClasse);
+ flechesArbres.forEach(b=>b.hidden=i<0||l.length<2);if(i<0||l.length<2)return;
+ const r=arbresDialog.getBoundingClientRect(),w=44;
+ flechesArbres.forEach((b,k)=>{const voisine=l[(i+(k?1:-1)+l.length)%l.length];b.setAttribute('aria-label','Arbre de talents — '+voisine);
+  b.style.setProperty('--encre',teinteClasse(voisine)||'var(--ink)');b.style.top=(r.top+r.height/2)+'px';
+  b.style.left=(k?Math.min(innerWidth-w-4,r.right+10):Math.max(4,r.left-w-10))+'px'})}
+window.addEventListener('resize',()=>{if(arbresDialog.open)placeFlechesArbres()});
 // Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
 // La partie chargée, chez le MJ : les aventuriers ne gardent que ce qu'ils ont activé dans le sphérier.
 document.addEventListener('amertume-partie-chargee',()=>{if(view==='mj'&&accordeTalentsHeros()){render();scheduleSave()}});
@@ -4061,7 +4086,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,pal
   }
  if(note)ligne(note,'muted');
  return d}
-function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();
+function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();requestAnimationFrame(placeFlechesArbres);
  // Un nœud redessiné emporte sa bulle : elle ne reste pas accrochée à l'ancien.
  bulleOrpheline();
  if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);

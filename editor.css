@@ -1961,6 +1961,12 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .gear-detail .gear-des{display:flex;align-items:center;gap:6px}.gear-detail .gear-quantite{font:700 13px system-ui;color:var(--ink)}
 /* Fiche d'aventurier : les chiffres et les compétences dans leur cadre, comme les autres sections. */
 .arbres-chiffres{width:min(440px,100%);box-sizing:border-box;margin:0}
+/* Onglet Talents : les talents d'une classe dans un cadre à sa couleur ; cliquable, il ouvre l'arbre. */
+.talents-cadre{padding:10px;border-radius:12px;background:linear-gradient(135deg,color-mix(in srgb,var(--classe,#8a7a63) 24%,transparent),color-mix(in srgb,var(--classe,#8a7a63) 9%,transparent));border:1px solid color-mix(in srgb,var(--classe,#8a7a63) 50%,transparent)}
+.talents-cadre.cliquable{cursor:pointer}
+/* Les flèches vers l'arbre de la classe voisine, au dehors des bords de la fenêtre. */
+#arbres .arbres-fleche{position:fixed;z-index:5;width:44px;height:72px;margin:-36px 0 0;padding:0;display:grid;place-items:center;border-radius:12px;border:1px solid var(--line-strong);background:var(--panel);color:var(--encre,var(--ink));font:700 38px/1 Georgia,serif;cursor:pointer;box-shadow:0 4px 14px #0005}
+#arbres .arbres-fleche:hover{background:color-mix(in srgb,var(--encre,var(--ink)) 14%,var(--panel))}
 /* Le cadre des chiffres prend la couleur de la classe de l'aventurier. */
 .hero-card .cadre-chiffres,.arbres-tete .cadre-chiffres{padding:8px 6px;border-radius:12px;background:linear-gradient(135deg,color-mix(in srgb,var(--classe,#cf6a5a) 24%,transparent),color-mix(in srgb,var(--classe,#cf6a5a) 9%,transparent));border:1px solid color-mix(in srgb,var(--classe,#cf6a5a) 50%,transparent)}
 .hero-card .comp-ronds.cadre-comps{padding:10px 10px 14px;border-radius:12px;background:linear-gradient(135deg,color-mix(in srgb,#3f9ee0 22%,transparent),color-mix(in srgb,#8a5fd6 22%,transparent));border:1px solid color-mix(in srgb,#6b78c6 50%,transparent)}
