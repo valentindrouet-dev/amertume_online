@@ -3384,13 +3384,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(part.includes("auth.onAuthStateChanged(async user=>{admin=false;adminConnu=!user;")&&part.includes("render();rendPage();status("),'la vue attend le compte');
  assert.ok(vivant.includes("if(!lien){if(deja&&deja.isAnonymous)try{await auth.signOut()}catch(e){}")&&vivant.includes("document.addEventListener('amertume-mj-change',rouvre);rouvre();return}"),'la table du MJ se rouvre en MJ');}
 /* v0.548 — Thésaurisation (Mystique) : les orbes non lancés à la fin du tour restent au tour suivant, tous, ils s'accumulent (v0.550) ;
-   +x orbes gardés en plus (v0.553) ; un soin de 1d6, puis 3d6, par orbe non lancé, avant les orbes en plus (v0.553). */
+   +x orbes en plus s'il en garde au moins un (v0.554) ; un soin de 1d6, puis 3d6, par orbe non lancé, avant les orbes en plus (v0.553). */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),T=C.TALENTS_CODES;
  assert.ok(T.thesaurisation&&T.thesaurisation.type==='pass'&&T.thesaurisationfois.pour==='thesaurisation'&&T.thesaurisationsoin.pour==='thesaurisation','les trois effets');
  assert.ok(C.phraseTalent('thesaurisationfois',{orbes:1},1).includes('+1 orbe</b>')&&C.phraseTalent('thesaurisationfois',{orbes:3},2).includes('+3 orbes</b>')
   &&C.phraseTalent('thesaurisationsoin',{},1,{trois:2}).includes('1d6')&&C.phraseTalent('thesaurisationsoin',{},2,{trois:2}).includes('3d6'),'les phrases à chaque palier');
  assert.ok(page.includes("function orbesDuTour(a,c){const n=orbesPermis(c||talentsCodes(a));return n?n+orbesGardes(a):0}")&&!/orbesPermis\(talentsCodes\(a\)\)/.test(page)
-  &&page.includes("const n=Math.max(0,orbesDuTour(a,c)-orbesLances(a));a.orbesGardes=n+(plus?Math.max(1,Math.trunc(plus.params&&plus.params.orbes)||1):0);")
+  &&page.includes("const n=Math.max(0,orbesDuTour(a,c)-orbesLances(a));a.orbesGardes=n+(plus&&n>0?Math.max(1,Math.trunc(plus.params&&plus.params.orbes)||1):0);")
   &&page.includes("actors.forEach(o=>regenerer(o,'fin'));actors.forEach(thesauriser);round++;"),'le moteur');
  assert.ok(fs.readFileSync('live.js','utf8').includes("'orbes','orbesGardes',")&&fs.readFileSync('shared.js','utf8').includes("'orbes','orbesGardes',"),'les orbes gardés voyagent');}
 /* v0.547 — Les deux bulles d'un palier, centrées, restent dans l'arbre ; grisé, le palier pas encore accessible ou dépassé ;

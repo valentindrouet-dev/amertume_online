@@ -1177,10 +1177,10 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  thesaurisation:{cle:'thesaurisation',nom:'Thésaurisation',type:'pass',aide:'Passif : les orbes non lancés à la fin du tour sont gardés pour le tour suivant.',params:[],
   phrase(){return 'Les <b>orbes</b> que le porteur n’a pas lancés à la fin du tour lui restent au <b>tour suivant</b>.'}},
  /* Sa clé reste celle des orbes doublés qu'elle fut : les talents qui la portent la gardent. */
- thesaurisationfois:{cle:'thesaurisationfois',nom:'Thésaurisation — orbes en plus',court:'orbes en plus',anciens:['Thésaurisation — orbes multipliés'],type:'ame',aide:'Amélioration de Thésaurisation : à la fin du tour, le porteur conserve des orbes en plus.',
+ thesaurisationfois:{cle:'thesaurisationfois',nom:'Thésaurisation — orbes en plus',court:'orbes en plus',anciens:['Thésaurisation — orbes multipliés'],type:'ame',aide:'Amélioration de Thésaurisation : le porteur obtient des orbes en plus s’il en conserve au moins un à la fin du tour.',
   params:[{cle:'orbes',nom:'Orbes en plus',type:'nombre',defaut:1,min:1,max:9}],
   phrase(p){const x=Math.max(1,Math.trunc(p&&p.orbes)||1);
-   return 'À la <b>fin du tour</b>, le porteur conserve <b>+'+x+' orbe'+(x>1?'s':'')+'</b>.'}},
+   return 'Le porteur obtient <b>+'+x+' orbe'+(x>1?'s':'')+'</b> s’il conserve au moins <b>un orbe</b> à la fin du tour.'}},
  thesaurisationsoin:{cle:'thesaurisationsoin',nom:'Thésaurisation — soin',court:'soin',type:'ame',aide:'Amélioration de Thésaurisation : à la fin du tour, le porteur se soigne de 1d6, puis 3d6, par orbe non lancé.',params:[],
   volets:[{cle:'trois',nom:'3d6 par orbe non lancé',palier:2}],
   phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{trois:2}).trois;
