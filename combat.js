@@ -1172,17 +1172,19 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
  mitrailleorbes:{cle:'mitrailleorbes',nom:'Mitraille — un orbe de plus',court:'un orbe de plus',type:'ame',aide:'Amélioration de Mitraille : un orbe de plus sur chaque adversaire.',params:[],
   phrase(){return 'La <b>Mitraille</b> lance <b>un orbe de plus</b> sur chaque adversaire.'}},
  /* Thésaurisation : un passif. Les orbes que le porteur n'a pas lancés à la fin du tour lui restent au
-    tour suivant ; ses améliorations les doublent, ou les triplent, et le soignent par orbe gardé. */
+    tour suivant ; ses améliorations lui en font garder quelques-uns de plus, et le soignent par orbe
+    non lancé. */
  thesaurisation:{cle:'thesaurisation',nom:'Thésaurisation',type:'pass',aide:'Passif : les orbes non lancés à la fin du tour sont gardés pour le tour suivant.',params:[],
   phrase(){return 'Les <b>orbes</b> que le porteur n’a pas lancés à la fin du tour lui restent au <b>tour suivant</b>.'}},
- thesaurisationfois:{cle:'thesaurisationfois',nom:'Thésaurisation — orbes multipliés',court:'orbes multipliés',type:'ame',aide:'Amélioration de Thésaurisation : les orbes gardés d’un tour sur l’autre sont doublés, puis triplés.',params:[],
-  volets:[{cle:'triple',nom:'Triple les orbes gardés',palier:2}],
-  phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{triple:2}).triple;
-   return 'Les <b>orbes</b> gardés d’un tour sur l’autre sont <b>'+(k>0&&n>=k?'triplés':'doublés')+'</b>.'}},
- thesaurisationsoin:{cle:'thesaurisationsoin',nom:'Thésaurisation — soin',court:'soin',type:'ame',aide:'Amélioration de Thésaurisation : à la fin du tour, le porteur se soigne de 1d6, puis 3d6, par orbe gardé.',params:[],
-  volets:[{cle:'trois',nom:'3d6 par orbe gardé',palier:2}],
+ /* Sa clé reste celle des orbes doublés qu'elle fut : les talents qui la portent la gardent. */
+ thesaurisationfois:{cle:'thesaurisationfois',nom:'Thésaurisation — orbes en plus',court:'orbes en plus',anciens:['Thésaurisation — orbes multipliés'],type:'ame',aide:'Amélioration de Thésaurisation : à la fin du tour, le porteur conserve des orbes en plus.',
+  params:[{cle:'orbes',nom:'Orbes en plus',type:'nombre',defaut:1,min:1,max:9}],
+  phrase(p){const x=Math.max(1,Math.trunc(p&&p.orbes)||1);
+   return 'À la <b>fin du tour</b>, le porteur conserve <b>+'+x+' orbe'+(x>1?'s':'')+'</b>.'}},
+ thesaurisationsoin:{cle:'thesaurisationsoin',nom:'Thésaurisation — soin',court:'soin',type:'ame',aide:'Amélioration de Thésaurisation : à la fin du tour, le porteur se soigne de 1d6, puis 3d6, par orbe non lancé.',params:[],
+  volets:[{cle:'trois',nom:'3d6 par orbe non lancé',palier:2}],
   phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{trois:2}).trois;
-   return 'À la <b>fin du tour</b>, le porteur se soigne de <b>'+(k>0&&n>=k?'3d6':'1d6')+'</b> par <b>orbe</b> gardé.'}},
+   return 'À la <b>fin du tour</b>, le porteur se soigne de <b>'+(k>0&&n>=k?'3d6':'1d6')+'</b> par <b>orbe</b> non lancé.'}},
  contagion:{cle:'contagion',nom:'Contagion',type:'pass',aide:'Passif : au début de chaque tour, le porteur inflige l’état réglé à un adversaire à son contact.',
   params:[{cle:'etat',nom:'État',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Au <b>début de chaque tour</b>, le porteur inflige <b>'+((p&&p.etat)||'Feu')+'</b> à <b>un adversaire</b> à son contact.'}},
