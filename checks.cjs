@@ -2078,7 +2078,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&src.includes("const aura=!(typeof spectateur==='function'&&spectateur())&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
-  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee'];")&&src.includes("if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));")
+  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee'];")
   &&src.includes(" ecrire('.stat-tile.t-dmg strong','+\\u202F'+degatsDe(a));")&&src.includes("  const r=rondCompetence(a,k);")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
    en est une ; les miettes ne comptent pas ; le MJ les voit d'un bouton. */
@@ -2751,8 +2751,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fs.readFileSync('combat.js','utf8').includes("function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)"),'la table et les bonus jouent le palier ; il voyage en direct');
  assert.ok(src.includes("a.paliersTalents=normalisePaliersActeur(a);"),'paliers relus, au catalogue et sur la fiche');
  assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")&&feuille.includes('.paliers-table{'),'l’éditeur : une colonne par palier, le coût en PT');
- assert.ok(src.includes("if(max>1){pts=document.createElement('span');pts.className='arbre-paliers';")
-  &&src.includes("const jusque=!a?max:k>0?k:1;")&&src.includes("// Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.")
+ assert.ok(src.includes("const jusque=!a?max:k>0?k:1;")&&src.includes("// Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.")
   &&src.includes("a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);")&&feuille.includes('.arbre-paliers i.on{')&&feuille.includes('.paliers-bulle.n2{grid-template-columns:1fr auto 1fr}'),'l’arbre : points, clic, « − », bulle comparée');}
 /* v0.289 — Brise en trois paliers cumulés, contre une cible qui porte l'état : la DEF ignorée,
    puis retirée pour de bon après l'attaque, puis les dégâts doublés. La bulle de l'arbre montre
@@ -3062,7 +3061,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  /* v0.484 — « XP visible » au MJ seul ; plus d'XP au survol d'un rond ; le cartouche d'XP de la bulle en rouge
    quand l'aventurier n'a pas de quoi payer. */
  assert.ok(src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a);poseXpVisible();")&&src.includes("arbresDialog.classList.toggle('xp-visible',xpVisible&&view==='mj');")
-  &&!feuille.includes('.arbre-plan>.arbre-noeud:hover>.arbre-cout')&&feuille.includes('.talent-bulle-nom .cout-xp.trop-cher{')&&src.includes("a&&coutPalier(t,1)>xpDisponible(a,catalog.talents)?' trop-cher':''"),'XP de l’arbre : MJ seul, sans survol, rouge si trop cher');
+  &&!feuille.includes('.arbre-plan>.arbre-noeud:hover>.arbre-cout')&&feuille.includes('.talent-bulle-nom .cout-xp.trop-cher{'),'XP de l’arbre : MJ seul, sans survol, rouge si trop cher');
  /* v0.483 — Bulle d'une pièce : dés ou DEF au-dessus de l'or, puis la description du MJ, rien d'automatique.
    La Vie et les PV sous leur maximum, légèrement rouges. */
  assert.ok(src.includes("p.className='gear-des';p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));")&&src.includes(" if(col==='object')ligne(o.notes);")&&!src.includes("ligne(o.effects||o.notes||'Effet à préciser dans l’armurerie.')")
@@ -3366,6 +3365,15 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.545 — Les paliers, pour les améliorations et les bonus seuls : « Paliers » coché, deux, et trois si le troisième a
+   un coût, un texte ou des réglages ; les talents restent à un palier. Billes sous le petit rond, montée au clic. */
+{const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),avant=C.PALIERS.actifs;C.PALIERS.actifs=false;
+ const P=t=>C.paliersDe(t);
+ assert.ok(P({type:'act',paliersActifs:true,couts:[1,2,3]})===1&&P({type:'pass',paliersActifs:true})===1&&P({type:'ame'})===1,'un talent, ou une amélioration sans la case, reste à un palier');
+ assert.ok(P({type:'ame',paliersActifs:true})===2&&P({type:'ame',paliersActifs:true,couts:[0,0,5]})===3&&P({type:'ame',paliersActifs:true,paliers:{3:{effects:'x'}}})===3,'une amélioration à paliers');
+ assert.ok(P({type:'pass',effet:'bonus',params:{carac:'dmg',valeur:1}})===1&&P({type:'pass',effet:'bonus',paliersActifs:true,paliers:{3:{params:{carac:'dmg',valeur:3}}}})===3,'un bonus à paliers');
+ assert.ok(C.talentAuPalier({type:'pass',effet:'bonus',paliersActifs:true,params:{carac:'dmg',valeur:1},paliers:{2:{params:{carac:'dmg',valeur:2}}}},2).params.valeur===2,'la valeur d’un bonus suit son palier');
+ assert.ok(src.includes("name=\"paliersActifs\"")&&src.includes("name=\"b_paliers\"")&&src.includes("if(acquis&&palierDe(a,t)<paliersDe(t)){const n=palierDe(a,t)+1;")&&src.includes("const pal={};if(t.effet!=='bonus'||t.paliersActifs===true)"),'l’éditeur et l’arbre');C.PALIERS.actifs=avant;}
 /* v0.544 — La fin du combat ne dit plus « Plus un adversaire debout » ni la liste des états effacés ; ils s'effacent quand même. */
 {const page=fs.readFileSync('index.html','utf8');
  assert.ok(!page.includes('Plus un adversaire debout : le combat prend fin.')&&!page.includes('les états s’effacent (')&&page.includes('actors.forEach(a=>leveEtats(a,true));'),'la fin du combat, sans ces deux lignes');}
@@ -3840,8 +3848,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(css.includes('.hero-card .talent-ameliorations .cat-pill.gear-carre.talent-carre.bonus-rond>.logo-equip{width:100%;height:100%}')
   &&src.includes("if(l)r.append(remplitCase(l));")&&src.includes("function remplitCase(el){"),'les icônes de bonus à la même taille');
- assert.ok(src.includes("nom.textContent=c==='comp'?(talent?String(skillNames[k]||''):String(skillNames[k]||'').toUpperCase())")
-  &&src.includes("libelleBonusEl(paramsTalent(t),{talent:t})")&&src.includes("libelleBonusEl(g.p,{talent:g.t})")&&css.includes('.bonus-libelle .bonus-ico{'),'la bulle d’un bonus : icône, compétence comme sur la fiche');}
+ assert.ok(src.includes("nom.textContent=c==='comp'?(talent?String(skillNames[k]||''):String(skillNames[k]||'').toUpperCase())")&&src.includes("libelleBonusEl(g.p,{talent:g.t})")&&css.includes('.bonus-libelle .bonus-ico{'),'la bulle d’un bonus : icône, compétence comme sur la fiche');}
 /* v0.496 — Retirer ou supprimer un talent de l'arbre laisse sa case vide : ses lignes, ses niveaux et ses petits
    ronds restent ; la case se traverse ; un talent posé dessus reprend le tout. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');

@@ -1496,7 +1496,10 @@ const PALIERS_MAX=3;
    palier 1. Ce qu'on a écrit pour les paliers 2 et 3 reste dans le catalogue, intact, sans agir ;
    « actifs » les rallume. */
 const PALIERS={actifs:false};
-const paliersDe=t=>!PALIERS.actifs||t&&t.effet==='bonus'?1:PALIERS_MAX;
+/* Une amélioration ou un bonus peut, lui, rallumer les siens — jamais un talent : « Paliers » coché, il en a deux,
+   et trois si le troisième a un coût, un texte ou des réglages à lui. */
+const paliersDe=t=>{if(!t)return 1;const bonus=t.effet==='bonus';if(PALIERS.actifs&&!bonus)return PALIERS_MAX;if(!(bonus||t.type==='ame')||t.paliersActifs!==true)return 1;
+ const p3=t.paliers&&t.paliers[3];return coutPalier(t,3)>0||!!(p3&&(String(p3.effects||'').trim()||p3.params))?3:2};
 const coutPalier=(t,n)=>Math.max(0,Math.trunc(Number((t&&Array.isArray(t.couts)?t.couts:[])[n-1]))||0);
 function talentAuPalier(t,n){if(!t)return t;n=Math.max(1,Math.min(paliersDe(t),Math.trunc(Number(n))||1));
  let params=t.params,effects=t.effects;

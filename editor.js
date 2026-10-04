@@ -240,6 +240,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // Retiré de l'arbre, il reste au catalogue.
   if(t.horsArbre!==true)delete t.horsArbre;
   if(t.vide!==true)delete t.vide;
+  if(t.paliersActifs!==true||!(t.type==='ame'||t.effet==='bonus'))delete t.paliersActifs;
   // Un rond de remplissage est une case vide qui a une couleur : celle d'une nature de talent.
   if(t.remplissage!==true||t.vide!==true){delete t.remplissage;delete t.couleur}
   else if(!['act','reac','pass','crit','mait','ame'].includes(t.couleur))t.couleur=t.chemin?'ame':'pass';
@@ -288,7 +289,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   const p=c.talents.find(x=>x&&x!==t&&x.chemin&&x.chemin.de===k.de&&x.chemin.dir===k.dir&&Number(x.chemin.rang)===Number(k.rang)-1);
   if(p&&p.effet&&p.effet===t.effet)t.remplacePrecedente=true});
  c.talents.forEach(t=>{if(!t)return;t.couts=[1,2,3].map(n=>Math.min(999999,coutPalier(t,n)));
-  const pal={};if(t.effet!=='bonus')[2,3].forEach(n=>{const q=t.paliers&&t.paliers[n];if(!q||typeof q!=='object')return;
+  // Un bonus ne garde ses paliers que s'il les a allumés.
+  const pal={};if(t.effet!=='bonus'||t.paliersActifs===true)[2,3].forEach(n=>{const q=t.paliers&&t.paliers[n];if(!q||typeof q!=='object')return;
    const e=String(q.effects||'').slice(0,600),r=t.effet&&q.params&&typeof q.params==='object'&&Object.keys(q.params).length?paramsTalent({effet:t.effet,params:q.params}):null;
    if(e.trim()||r)pal[n]={effects:e,...(r?{params:r}:{})}});
   t.paliers=pal});
@@ -2875,7 +2877,9 @@ function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)retu
   :'<textarea name="pe_'+n+'" rows="4" maxlength="600" placeholder="Comme le palier '+(n-1)+'" aria-label="Texte de l’effet — palier '+n+'">'+esc((d.paliers[n]&&d.paliers[n].effects)||'')+'</textarea>';
  const ligne=(tete,cellules,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+tete+'</th>'+cellules+'</tr>';
  // Paliers en sommeil : la seule colonne du palier 1 se montre ; les autres restent dans le formulaire, rien ne s'y perd.
- let html='<table class="paliers-table'+(PALIERS.actifs?'':' un-palier')+'"><thead><tr><td></td>'+[1,2,3].map(n=>'<th scope="col" class="p'+n+'">Palier '+n+'</th>').join('')+'</tr></thead><tbody>'
+ // Une amélioration à paliers montre ses trois colonnes.
+ const trois=PALIERS.actifs||(f.type&&f.type.value==='ame'&&f.paliersActifs&&f.paliersActifs.checked);
+ let html='<table class="paliers-table'+(trois?'':' un-palier')+'"><thead><tr><td></td>'+[1,2,3].map(n=>'<th scope="col" class="p'+n+'">Palier '+n+'</th>').join('')+'</tr></thead><tbody>'
   +ligne('Coût (XP)',[1,2,3].map(n=>'<td><input type="number" name="c_'+n+'" min="0" max="999999" step="1" value="'+(d.couts[n-1]||0)+'" aria-label="Coût en XP — palier '+n+'"></td>').join(''))
   +ligne('Texte de l’effet',[1,2,3].map(n=>'<td>'+texte(n)+'</td>').join(''));
  if(code){const params=code.params||[],volets=Array.isArray(code.volets)?code.volets:[],ouverts=voletsDe({effet:code.cle,volets:d.volets});
@@ -2963,6 +2967,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<p class="muted accolades-aide">Accolades, dans le nom, les textes et le logo : {élément} Feu · Gel · Foudre — {mot} feu · glace · foudre, {Mot} avec la capitale — {logo} feu · gel · foudre. « Brise{mot} » fait Brisefeu, Briseglace, Brisefoudre.</p>'
   +'<div id="talent-exige"></div></section>'
   +'<section class="talent-boite b-paliers t-seul"><h2 class="sous-titre">'+(PALIERS.actifs?'Paliers — coût, texte et effets câblés':'Coût, texte et effets câblés')+'</h2>'
+  +'<label class="field-check" id="paliers-ame"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="paliersActifs" '+(t.paliersActifs===true?'checked':'')+'>Paliers</label>'
   +'<div id="talent-reglages"></div>'
   +'<label class="field-check" id="remplace-texte"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceTexte" '+(t.remplaceTexte===true?'checked':'')+'>Remplace le texte du talent</label>'
   +'<label class="field-check" id="remplace-precedente"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplacePrecedente" '+(t.remplacePrecedente===true?'checked':'')+'>Remplace le texte de l’amélioration précédente</label>'
@@ -2974,6 +2979,9 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +field('Valeur','b_valeur',pb.valeur,'number','min="1" max="20"')
   +sel('Compétence','b_comp',pb.comp,optBonus('comp'))
   +field('Coût (XP)','b_cout',coutPalier(t,1),'number','min="0" max="999999" step="1"')
+  +'<label class="field-check"><input type="checkbox" name="b_paliers" '+(t.paliersActifs===true&&t.effet==='bonus'?'checked':'')+'>Paliers</label>'
+  +'<div id="b-paliers" class="b-paliers-grille"'+(t.paliersActifs===true&&t.effet==='bonus'?'':' hidden')+'>'+[2,3].map(n=>{const q=t.paliers&&t.paliers[n]&&t.paliers[n].params;
+   return field('Valeur — palier '+n,'b_valeur_'+n,q&&q.valeur||'','number','min="1" max="20"')+field('Coût (XP) — palier '+n,'b_cout_'+n,coutPalier(t,n)||'','number','min="0" max="999999" step="1"')}).join('')+'</div>'
   // Son logo : le sien, ou celui de tous les bonus de la même caractéristique.
   +(()=>{const d=(catalog.logosBonus||{})[cleLogoBonus(pb)]||'';return selLogos('Logo','b_logo',t.logo||d)
    +'<label class="field-check"><input type="checkbox" name="b_logo_tous"'+(!t.logo&&d?' checked':'')+'>Pour tous les bonus de cette caractéristique</label>'})()+'</div>'
@@ -2983,6 +2991,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
     qu'un champ requis absent ne bloque pas l'enregistrement. */
  const champs=$('talent-form').elements;
  // « Remplace le logo du talent » ne vaut que pour une amélioration.
+ if(champs.paliersActifs)champs.paliersActifs.addEventListener('change',()=>{lisBrouillonTalent();dessineReglagesTalent()});
+ if(champs.type&&$('paliers-ame'))champs.type.addEventListener('change',()=>{$('paliers-ame').hidden=champs.type.value!=='ame';lisBrouillonTalent();dessineReglagesTalent()});
  if(champs.type&&$('remplace-logo'))champs.type.addEventListener('change',()=>{$('remplace-logo').hidden=champs.type.value!=='ame';if($('remplace-texte'))$('remplace-texte').hidden=champs.type.value!=='ame';if($('remplace-precedente'))$('remplace-precedente').hidden=champs.type.value!=='ame';if($('pour-attaque'))$('pour-attaque').hidden=!['pass','ame'].includes(champs.type.value);if($('debut-combat'))$('debut-combat').hidden=champs.type.value==='ame'});
  ['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});
  const apercuBonus=()=>{const comp=champs.b_carac.value==='comp';const lc=champs.b_comp.closest('label');if(lc)lc.classList.toggle('talent-cache',!comp);
@@ -2991,6 +3001,9 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   $('talent-fields').querySelectorAll('.t-seul').forEach(el=>{el.classList.toggle('talent-cache',b);el.querySelectorAll('input,select,textarea').forEach(c=>c.disabled=b)});
   $('talent-fields').querySelectorAll('.b-seul').forEach(el=>{el.classList.toggle('talent-cache',!b);el.querySelectorAll('input,select,textarea').forEach(c=>c.disabled=!b)});
   talentDialog.querySelector('.dialog-head h2').textContent=b?'Bonus de caractéristique':'Talent';apercuBonus()};
+ // « Paliers » d'un bonus : la valeur du palier 2 se propose au double de la première.
+ if(champs.b_paliers)champs.b_paliers.onchange=()=>{$('b-paliers').hidden=!champs.b_paliers.checked;
+  if(champs.b_paliers.checked&&!champs.b_valeur_2.value)champs.b_valeur_2.value=Math.min(20,2*num(champs.b_valeur.value,1,20))};
  [...champs.nature].forEach(r=>r.onchange=poseNature);champs.b_carac.onchange=apercuBonus;champs.b_valeur.oninput=apercuBonus;champs.b_comp.onchange=apercuBonus;
  poseNature();
  /* « Autre classe… » ouvre le champ libre et lui donne la main ; revenir sur une classe
@@ -3048,6 +3061,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.effet=TALENTS_CODES[f.effet.value]&&f.effet.value!=='bonus'?f.effet.value:'';
  if(f.elementaire&&f.elementaire.checked)t.elementaire=true;else delete t.elementaire;
  if(t.type==='ame'&&f.remplaceLogo&&f.remplaceLogo.checked)t.remplaceLogo=true;else delete t.remplaceLogo;
+ if(t.type==='ame'&&f.paliersActifs&&f.paliersActifs.checked)t.paliersActifs=true;else delete t.paliersActifs;
  /* Un talent ne se fait remplacer le texte que par un seul chemin : cocher ici décoche les
     améliorations des autres chemins du même talent. */
  if(t.type==='ame'&&f.remplaceTexte&&f.remplaceTexte.checked){t.remplaceTexte=true;const c=lisChemin(t);
@@ -3077,7 +3091,10 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
      — ce bonus suit alors ce choix commun. Aucun : l'icône du jeu. */
   {const l=f.b_logo&&logoValide(f.b_logo.value)?f.b_logo.value:'',k=cleLogoBonus(t.params);
    if(f.b_logo_tous&&f.b_logo_tous.checked){const o={...(catalog.logosBonus||{})};if(l)o[k]=l;else delete o[k];catalog.logosBonus=o;t.logo=''}else t.logo=l}
-  t.couts=[num(f.b_cout.value,0,999999),0,0];t.paliers={};delete t.elementaire;delete t.volets}
+  // Ses paliers : la valeur et le coût de chacun ; un palier sans valeur garde celle d'en dessous.
+  const pal=!!(f.b_paliers&&f.b_paliers.checked);t.couts=[num(f.b_cout.value,0,999999),...[2,3].map(n=>pal&&f['b_cout_'+n]?num(f['b_cout_'+n].value,0,999999):0)];t.paliers={};
+  if(pal){t.paliersActifs=true;[2,3].forEach(n=>{const v=f['b_valeur_'+n]&&f['b_valeur_'+n].value.trim();if(v)t.paliers[n]={effects:'',params:paramsTalent({effet:'bonus',params:{...t.params,valeur:v}})}})}
+  else delete t.paliersActifs;delete t.elementaire;delete t.volets}
  // Seul un bonus se pose sur un chemin : redevenu talent, il le quitte.
  if(!(t.effet==='bonus'||t.type==='ame'))delete t.chemin;
  if(talentIndex===null)catalog.talents.push(t);else catalog.talents[talentIndex]=t;
@@ -3993,14 +4010,15 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}
  // Un bonus a la couleur de son rond : rouge pour les dégâts, vert pour les PV…
  if(bonus)d.classList.add('bulle-bonus','bonus-'+((paramsTalent(t)||{}).carac||'pv'));
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
- if(bonus)nom.replaceChildren(libelleBonusEl(paramsTalent(t),{talent:t}));else nomAccolades(nom,vu(t).name);
+ if(bonus){const tb=a&&palierDe(a,t)>1?talentAuPalier(t,palierDe(a,t)):t;nom.replaceChildren(libelleBonusEl(paramsTalent(tb),{talent:tb}))}else nomAccolades(nom,vu(t).name);
  // Tenu au palier 2 ou 3, le talent le dit après son nom : « Attaque Blindée II ».
  if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));
  // Jamais la nature du talent : la bulle ne l'écrit nulle part.
  tete.append(nom);d.append(tete);
  // Le prix en XP ne se lit que dans l'arbre : en cartouche, en haut à gauche de la bulle.
  // Rouge si l'aventurier n'a pas l'XP qu'il faut pour le prendre.
- if(cout&&coutPalier(t,1)){const pris=!!a&&(a.talents||[]).includes(t.id),c=document.createElement('span');c.className='cout-xp'+(pris?' acquis':a&&coutPalier(t,1)>xpDisponible(a,catalog.talents)?' trop-cher':'');c.textContent=coutPalier(t,1)+' XP';tete.append(c)}
+ {const tenu=!!a&&(a.talents||[]).includes(t.id),suite=tenu&&palierDe(a,t)<paliersDe(t)?palierDe(a,t)+1:1,pris=tenu&&suite===1;
+  if(cout&&coutPalier(t,suite)){const c=document.createElement('span');c.className='cout-xp'+(pris?' acquis':a&&coutPalier(t,suite)>xpDisponible(a,catalog.talents)?' trop-cher':'');c.textContent=coutPalier(t,suite)+' XP';tete.append(c)}}
  // Un talent qui frappe, dans la barre d'action : ses dés et son bonus de dégâts au bout de la ligne de son nom.
  if(des)desAuTitre(tete,des);
  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
@@ -4029,7 +4047,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}
   // Dans l'arbre, chaque rond dit son propre texte : les améliorations ne jouent qu'au dehors.
   // Une amélioration de l'Attaque se lit dans la bulle de l'Attaque, pas dans celle du talent qui la porte.
   if(a&&!cout&&!lisChemin(t)){const {ams,remplace}=ameliorationsTenues(a,t);
-   const ligneAm=(x,cls)=>{const tx=vu(x).effects||'';if(!tx)return;const e=document.createElement('p');e.className='palier-effet'+(cls?' '+cls:'');texteEnrichi(e,tx,noms);g.append(e)};
+   const ligneAm=(x,cls)=>{const tx=talentAuPalier(vu(x),palierDe(a,x)).effects||'';if(!tx)return;const e=document.createElement('p');e.className='palier-effet'+(cls?' '+cls:'');texteEnrichi(e,tx,noms);g.append(e)};
    /* « Remplace le texte du talent » : le texte de base cède la place à celui du chemin qui le
       dit — un seul chemin par talent. Sur ce chemin, la dernière amélioration tenue fait le texte. */
    if(remplace){g.replaceChildren();ligneAm(remplace,'')}
@@ -4053,10 +4071,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  if(!(view==='mj'&&!arbresVueJoueur))lienDepuis=null;
  const classe=a?classeDuHeros(a):arbresClasse;
  // Sur l'arbre d'une classe, au MJ seul et hors vue joueur : la somme des coûts en XP de tout ce qu'il porte. L'arbre d'un aventurier ne la montre pas.
- {const liste=!a&&view==='mj'&&!arbresVueJoueur&&classe?talentsDeLArbre(classe):[],total=liste.reduce((n,t)=>n+coutPalier(t,1),0);
+ {const liste=!a&&view==='mj'&&!arbresVueJoueur&&classe?talentsDeLArbre(classe):[],total=liste.reduce((n,t)=>{for(let k=1;k<=paliersDe(t);k++)n+=coutPalier(t,k);return n},0);
   /* Sous le total, ce que l'arbre donne de chaque caractéristique et compétence : le plus qu'une classe en reçoit.
      Seules celles que l'arbre porte. */
-  const somme=new Map();liste.filter(estBonus).forEach(t=>{const p=paramsTalent(t)||{},c=p.carac||'pv',k=c==='comp'?'comp:'+(Math.max(0,Math.min(7,Number(p.comp)||0))):c;
+  const somme=new Map();liste.filter(estBonus).forEach(t=>{const p=paramsTalent(talentAuPalier(t,paliersDe(t)))||{},c=p.carac||'pv',k=c==='comp'?'comp:'+(Math.max(0,Math.min(7,Number(p.comp)||0))):c;
    const e=somme.get(k)||{p:{carac:c,comp:p.comp},n:0};e.n+=Math.max(1,p.valeur|0);somme.set(k,e)});
   const ordre=['pv','endu','vie','dmg','def','orbe'],rang=k=>k.startsWith('comp:')?ordre.length+Number(k.slice(5)):Math.max(0,ordre.indexOf(k));
   arbresTotal.replaceChildren();arbresTotal.hidden=!total&&!somme.size;
@@ -4131,14 +4149,14 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const niv=document.createElement('span');niv.className='arbre-niv';niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';
   /* Un nœud de bonus n'est pas un talent : son rond dit la valeur et, dessous en petit, la
      caractéristique (« +2 », « ENDU »), une compétence en quatre lettres. */
-  if(t.effet==='bonus'){const p=paramsTalent(t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));
+  if(t.effet==='bonus'){const p=paramsTalent(a&&palierDe(a,t)>1?talentAuPalier(t,palierDe(a,t)):t);b.classList.add('bonus','bonus-'+((p&&p.carac)||'pv'));
    const v=document.createElement('b');v.textContent=String(Math.max(1,(p&&p.valeur)|0));
    let c=libelleBonus(p,true).replace(/^\+\d+ /,'');if(p&&p.carac==='comp')c=c.slice(0,4);
    const q=document.createElement('small');q.textContent=c;rond.replaceChildren(v,q)}
   niv.hidden=!niv.textContent;
   // Sous l'icône, un point par palier : ceux qu'on tient s'allument.
   const max=paliersDe(t),k=a?palierDe(a,t):0;let pts=null;
-  if(max>1){pts=document.createElement('span');pts.className='arbre-paliers';
+  if(max>1){b.classList.add('a-paliers');pts=document.createElement('span');pts.className='arbre-paliers';
    for(let n=1;n<=max;n++){const i=document.createElement('i');if(n<=k)i.className='on';pts.append(i)}}
   b.append(rond,...(pts?[pts]:[]),niv);
   // Au survol, la bulle de description, comme sur la fiche ; « b.noteBulle » s'y ajoute.
@@ -4157,7 +4175,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     if(videDeLArbre(t))arbreChange()}));
    b.append(outils)}
   // Son prix en XP, en cartouche au bas du rond : dans l'arbre seulement.
-  if(coutPalier(t,1)&&etat!=='acquis'){const k=document.createElement('span');k.className='arbre-cout';k.textContent=coutPalier(t,1)+' XP';b.append(k)}
+  {const n=etat==='acquis'&&a?palierDe(a,t)+1:1;if(n<=max&&coutPalier(t,n)){const c=document.createElement('span');c.className='arbre-cout';c.textContent=coutPalier(t,n)+' XP';b.append(c)}}
   surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
   return b};
  // La tête : la classe, l'élément du Mystique, ce que l'arbre a coûté.
@@ -4209,15 +4227,20 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const noeudPetit=(t,depart,col,libre)=>{const acquis=porte(t);
   const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||verrouArbre(a.talents,col.liste,t)||manqueTalent(a.talents,t,catalog.talents)||trop(t);
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);el.classList.add('petit');
-  if(estBonus(t))poseLogoBonus(el.querySelector('.arbre-rond'),t);
+  if(estBonus(t))poseLogoBonus(el.querySelector('.arbre-rond'),a&&palierDe(a,t)>1?talentAuPalier(t,palierDe(a,t)):t);
   const outils=el.querySelector('.arbre-outils');
   if(outils)outils.replaceChildren(ico('✕',estBonus(t)?'Ôter ce bonus du chemin':'Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue',()=>{
     if(estBonus(t)){laisseCaseVide(t);const i=catalog.talents.indexOf(t);if(i>=0)catalog.talents.splice(i,1);actors.forEach(x=>{if(x.talents)x.talents=x.talents.filter(id=>id!==t.id)})}
     else videDeLArbre(t);arbreChange()}));
   el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
    if(estMort(a)&&view!=='mj')return;
-   if(acquis)oublier(t,libre?null:col.liste);else if(!verrou)a.talents=[...a.talents,t.id];else return;
+   // À paliers, le clic monte d'un palier tant que l'XP le paie ; au dernier, il rend l'amélioration.
+   if(acquis&&palierDe(a,t)<paliersDe(t)){const n=palierDe(a,t)+1;if(coutPalier(t,n)>xpDisponible(a,catalog.talents))return;poserPalier(t,n)}
+   else if(acquis)oublier(t,libre?null:col.liste);else if(!verrou)a.talents=[...a.talents,t.id];else return;
    note('');majTable()};
+  // Le clic droit redescend d'un palier ; au premier, il rend l'amélioration.
+  if(a&&paliersDe(t)>1)el.oncontextmenu=e=>{if(!acquis||(estMort(a)&&view!=='mj'))return;e.preventDefault();
+   const k=palierDe(a,t);if(k>1)poserPalier(t,k-1);else oublier(t,libre?null:col.liste);note('');majTable()};
   glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,chemin:lisChemin(t),soi:t.id});
   return el};
  /* Une case vide, laissée par un talent retiré : ses lignes et ses petits ronds y tiennent. Chez le MJ, le
