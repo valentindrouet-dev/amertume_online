@@ -401,7 +401,7 @@ function partOrbes(a){const codes=a&&typeof talentsCodes==='function'?talentsCod
  const d=desOrbe(codes);if(!d)return null;const out=document.createElement('span');out.className='des-orbes';
  const l=logoRemplace(a,t.talent)||(codes.find(x=>x.code.cle==='orbesfeu')||{talent:{}}).talent.logo||t.talent.logo;
  const im=l?logoAttaque(l,'des-arme'):null;if(im)out.append(im);
- out.append(dicePips({[d.couleur]:d.n},etatDesOrbes(codes)||''));
+ out.append(dicePips(poolOrbe(d),etatDesOrbes(codes)||''));
  const bonus=typeof bonusOrbes==='function'?bonusOrbes(a):0;if(bonus){const b=document.createElement('b');b.className='bonus';b.textContent='+ '+bonus;out.append(b)}
  return out}
 function montreDesCombattant(dice,bonus,toujours,logos,apres,etat){const z=$('des-combattant');if(!z)return;

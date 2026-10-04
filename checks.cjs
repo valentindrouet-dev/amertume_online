@@ -181,7 +181,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  assert.match(phraseTalent('orbes'),/lancer <b>1<\/b> orbe qui lance <b>1 dé Mystique<\/b>\./);
  assert.match(phraseTalent('orbes',{orbes:3,des:2,couleur:'red'}),/<b>3<\/b> orbes qui lancent <b>2 dés Lourds<\/b> chacun/);
  const tenus=[{code:TALENTS_CODES.orbes,params:{orbes:2,des:1,couleur:'blue'}},{code:TALENTS_CODES.orbes,params:{orbes:1,des:3,couleur:'black'}}];
- assert.equal(orbesPermis(tenus),2);assert.deepEqual(desOrbe(tenus),{n:3,couleur:'black',nom:'Mortel'});assert.equal(desOrbe([]),null);
+ assert.equal(orbesPermis(tenus),2);assert.deepEqual(desOrbe(tenus),{n:3,couleur:'black',nom:'Mortel',plus:0});assert.equal(desOrbe([]),null);
  assert.equal(orbesPermis([]),0);
  assert.equal(etatDesOrbes(tenus),'');
  /* Destructeur : tous les doubles sont des critiques ; le double 1 reste un échec. */
@@ -1109,7 +1109,7 @@ assert.ok(src.includes("const porteurs=(catalog.talents||[]).map((t,i)=>[t,i]).f
    « Talent — court », et leur ancien nom retrouve encore l'effet. */
 {const T=C.TALENTS_CODES;
  Object.values(T).filter(c=>c.pour&&c.court).forEach(c=>assert.equal(c.nom,T[c.pour].nom+' — '+c.court,'nom uniforme : '+c.cle));
- assert.equal(T.orbes2des.nom,'Orbes mystiques — deux dés');assert.equal(T.eruptiondouble.nom,'Éruption — dégâts doublés');assert.equal(T.ignoredegats.nom,'Ignore les dégâts');
+ assert.equal(T.orbes2des.nom,'Orbes mystiques — dés en plus');assert.equal(T.eruptiondouble.nom,'Éruption — dégâts doublés');assert.equal(T.ignoredegats.nom,'Ignore les dégâts');
  assert.equal(C.effetParNom('Orbes à deux dés'),'orbes2des','l’ancien nom retrouve l’effet');assert.equal(C.effetParNom('Orbes mystiques — deux dés'),'orbes2des');
  assert.equal(C.effetParNom('Éruption — double'),'eruptiondouble');assert.equal(C.effetParNom('Attaque État'),'attaqueetat');assert.equal(C.effetParNom('Ignore les dégâts d’un état'),'ignoredegats');
  assert.ok(src.includes("const table=document.createElement('table');table.className='biblio-table';")&&src.includes("function ligneEffet(c,classe,rangs,parent){")
@@ -3364,6 +3364,15 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.555 — Orbes mystiques, dés en plus : chaque orbe lance x dés Mystiques supplémentaires, x réglé à chaque palier ;
+   ils s'ajoutent aux siens, ou à côté d'eux s'ils sont d'une autre couleur. La clé reste « orbes2des ». */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');
+ const tenus=x=>[{code:C.TALENTS_CODES.orbes,params:{orbes:1,des:1}},...x.map(([cle,params])=>({code:C.TALENTS_CODES[cle],params}))];
+ const d1=C.desOrbe(tenus([['orbes2des',{des:2}]])),d2=C.desOrbe(tenus([['orbes2des',{des:1}],['orbesrouges',{}]]));
+ assert.deepEqual(C.poolOrbe(d1,2),{blue:6});
+ assert.deepEqual(C.poolOrbe(d2,1),{red:1,blue:1});assert.equal(C.texteDesOrbe(d1),'3 dés Mystiques');assert.equal(C.texteDesOrbe(d2),'1 dé Lourd et 1 dé Mystique');
+ assert.ok(C.phraseTalent('orbes2des',{des:1},1).includes('1 dé Mystique</b> supplémentaire.')&&C.phraseTalent('orbes2des',{des:2},2).includes('2 dés Mystiques</b> supplémentaires.'),'la phrase');
+ assert.ok(page.includes("for(let o=0;o<n;o++){for(let i=0;i<des.n;i++)tous.push([d6(),c]);for(let i=0;i<des.plus;i++)tous.push([d6(),cm])}")&&page.includes("Math.floor(tous.indexOf(dice[i])/Math.max(1,parOrbe))"),'le jet');}
 /* v0.552 — Seul un invité de table, venu par son lien ou assis à elle, est rangé d'office en vue joueur. Ni la
    publication reçue sans compte MJ reconnu, ni une identité anonyme seule ne basculent plus l'appareil du MJ. */
 {const part=fs.readFileSync('shared.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
