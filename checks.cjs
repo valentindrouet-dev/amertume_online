@@ -3363,6 +3363,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.559 — Un bonus d'Endurance posé dans l'arbre vaut +2 ; le compteur des bonus de l'arbre tient sur trois lignes :
+   caractéristiques (Vie, Endu, PV, Dégâts, DEF), orbes et propres à une classe, compétences par ordre alphabétique. */
+{const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("const v=carac==='endu'?2:1,params={carac,valeur:v,")&&src.includes("name:'+'+v+' '+nom,"),'Endurance à +2');
+ assert.ok(src.includes("const CARACS=['vie','endu','pv','dmg','def'],")&&src.includes("groupes[k.startsWith('comp:')?2:CARACS.includes(k)?0:1].push(e)")
+  &&src.includes(".localeCompare(nomComp('comp:'+y.p.comp),'fr')")&&feuille.includes('#arbres .dialog-head .arbres-bonus-ligne{display:flex;'),'trois lignes');}
 /* v0.558 — La piste des dés : une ligne qui ne tient pas passe à la rangée suivante, le « + » du critique avec ses dés ; la
    place des visages d'après ceux qui paraissent ; la piste change de largeur, le dernier lancer s'y repose sans tomber. */
 {const page=fs.readFileSync('index.html','utf8');
@@ -3453,8 +3459,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(!src.includes("'stats-prix-qui'")&&src.includes("jeton.setAttribute('aria-label',p.top.nom);")&&src.includes("ouvrirBulle(jeton,d,'bulle-talent')"),'le nom au survol du token');}
 /* v0.540 — Le compteur des bonus de l'arbre en icônes chiffrées, deux lignes au plus, le nom en bulle. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("c.className='arbres-bonus-n';boite.className='bonus-ico';if(ic)boite.append(remplitCase(ic));")&&src.includes("ouvrirBulle(c,d,'bulle-talent')")
-  &&feuille.includes('#arbres .dialog-head .arbres-bonus{display:flex;flex-wrap:wrap;gap:3px 10px;max-width:230px;'),'le compteur condensé');}
+ assert.ok(src.includes("c.className='arbres-bonus-n';boite.className='bonus-ico';if(ic)boite.append(remplitCase(ic));")&&src.includes("ouvrirBulle(c,d,'bulle-talent')"),'le compteur condensé');}
 /* v0.539 — Stats de Combat : le token du combattant désigné à chaque distinction, l'icône des Dégâts après les dégâts de
    chaque camp, « Mise à Mort » au lieu de « mis à terre ». */
 {const src=fs.readFileSync('editor.js','utf8');

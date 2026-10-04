@@ -3935,15 +3935,15 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
  const petit=!!dest.chemin,neuf=(texte,defauts)=>{const b=document.createElement('button');b.type='button';b.className='arbre-choix-neuf';b.textContent=texte;
   b.onclick=()=>{choixArbreDialog.close();openTalent(null,renderArbres,defauts)};return b};
  /* Sur un chemin, les bonus génériques, communs à tous les arbres : un bouton chacun, qui le pose
-    aussitôt — PV, Endurance, Vie, Dégâts et chaque compétence. L'orbe, et toute autre valeur,
-    passent par « Autre bonus ». */
+    aussitôt — PV, Endurance, Vie, Dégâts et chaque compétence ; l'Endurance à +2, les autres à +1.
+    L'orbe, et toute autre valeur, passent par « Autre bonus ». */
  if(petit){const h=document.createElement('h3');h.className='arbre-choix-groupe';h.textContent='Bonus';
   const rang=document.createElement('div');rang.className='bonus-generiques';
   [['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],...skillNames.map((n,k)=>['comp',n,k])].forEach(([carac,nom,k])=>{
-   const params={carac,valeur:1,...(carac==='comp'?{comp:String(k)}:{})},b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud petit bonus bonus-'+carac;
+   const v=carac==='endu'?2:1,params={carac,valeur:v,...(carac==='comp'?{comp:String(k)}:{})},b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud petit bonus bonus-'+carac;
    const r=document.createElement('span');r.className='arbre-rond';b.append(r);poseLogoBonus(r,{effet:'bonus',params});
-   b.setAttribute('aria-label','+1 '+nom);b.title='+1 '+nom;
-   b.onclick=()=>{const t={id:crypto.randomUUID(),name:'+1 '+nom,famille:GENERIQUES,voie:'',type:'pass',level:1,effets:'',effects:'',effet:'bonus',params,couts:[0,0,0]};
+   b.setAttribute('aria-label','+'+v+' '+nom);b.title='+'+v+' '+nom;
+   b.onclick=()=>{const t={id:crypto.randomUUID(),name:'+'+v+' '+nom,famille:GENERIQUES,voie:'',type:'pass',level:1,effets:'',effects:'',effet:'bonus',params,couts:[0,0,0]};
     catalog.talents.push(t);choixArbreDialog.close();if(placerTalent(t.id,dest))arbreChange()};
    rang.append(b)});
   boite.append(h,rang,neuf('✚ Autre bonus',{...dest,type:'pass',effet:'bonus',params:{carac:'orbe',valeur:1},couts:[0,0,0]}),neuf('✚ Nouvelle amélioration',{...dest,type:'ame'}))}
@@ -4082,17 +4082,22 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      Seules celles que l'arbre porte. */
   const somme=new Map();liste.filter(estBonus).forEach(t=>{const p=paramsTalent(talentAuPalier(t,paliersDe(t)))||{},c=p.carac||'pv',k=c==='comp'?'comp:'+(Math.max(0,Math.min(7,Number(p.comp)||0))):c;
    const e=somme.get(k)||{p:{carac:c,comp:p.comp},n:0};e.n+=Math.max(1,p.valeur|0);somme.set(k,e)});
-  const ordre=['pv','endu','vie','dmg','def','orbe'],rang=k=>k.startsWith('comp:')?ordre.length+Number(k.slice(5)):Math.max(0,ordre.indexOf(k));
+  /* Trois lignes : les caractéristiques — Vie, Endurance, PV, Dégâts, puis DEF —, les orbes et ce qui est
+     propre à une classe, les compétences par ordre alphabétique. */
+  const CARACS=['vie','endu','pv','dmg','def'],nomComp=k=>String(skillNames[Number(k.slice(5))]||'');
+  const groupes=[[],[],[]];[...somme].forEach(([k,e])=>groupes[k.startsWith('comp:')?2:CARACS.includes(k)?0:1].push(e));
+  groupes[0].sort((x,y)=>CARACS.indexOf(x.p.carac)-CARACS.indexOf(y.p.carac));groupes[2].sort((x,y)=>nomComp('comp:'+x.p.comp).localeCompare(nomComp('comp:'+y.p.comp),'fr'));
   arbresTotal.replaceChildren();arbresTotal.hidden=!total&&!somme.size;
   if(total)arbresTotal.append(Object.assign(document.createElement('span'),{textContent:'Total '+total.toLocaleString('fr-FR')+' XP'}));
-  // En icônes chiffrées, serrées sur deux lignes au plus : le nom paraît en bulle, au survol.
+  // En icônes chiffrées, une ligne par groupe : le nom paraît en bulle, au survol.
   if(somme.size){const l=document.createElement('span');l.className='arbres-bonus';
-   [...somme].sort(([x],[y])=>rang(x)-rang(y)).forEach(([,e])=>{const c=document.createElement('span'),boite=document.createElement('span'),ic=logoBonus(e.p),nom=nomBonusArbre(e.p,e.n);
+   groupes.filter(g=>g.length).forEach(g=>{const ligne=document.createElement('span');ligne.className='arbres-bonus-ligne';l.append(ligne);
+   g.forEach(e=>{const c=document.createElement('span'),boite=document.createElement('span'),ic=logoBonus(e.p),nom=nomBonusArbre(e.p,e.n);
     c.className='arbres-bonus-n';boite.className='bonus-ico';if(ic)boite.append(remplitCase(ic));
     const tint=e.p.carac==='comp'?SKILL_TINTS[Math.max(0,Math.min(7,Number(e.p.comp)||0))]:e.p.carac==='orbe'?'138,99,201':STAT_TINTS[e.p.carac];if(tint)c.style.color='rgb('+tint+')';
     c.append(boite,String(e.n));c.setAttribute('aria-label',e.n+' '+nom);
     surveille(c,()=>{const d=document.createElement('div'),t=document.createElement('p'),b=document.createElement('b');d.className='talent-detail large';t.className='talent-bulle-nom';b.textContent=nom;t.append(b);d.append(t);ouvrirBulle(c,d,'bulle-talent')});
-    l.append(c)});arbresTotal.append(l)}}
+    ligne.append(c)})});arbresTotal.append(l)}}
  // En masse, l'arbre se lit en tableau : ni colonnes ni lignes.
  if(arbresEnMasse&&!a&&view==='mj'){tableMasseTalents(corps,classe);return}
  /* L'élément qui habille l'arbre : celui du Mystique ; sur le plan du MJ, celui qu'il regarde ;
