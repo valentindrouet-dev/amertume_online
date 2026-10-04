@@ -1414,7 +1414,7 @@ i.gemme.eteinte{width:6px;height:6px;background:#9a948c;box-shadow:0 0 0 1px #00
 /* La bulle compare : le palier tenu et le suivant, côte à côte — ou les trois, sur le plan du MJ. */
 .bulle.large-paliers{max-width:min(580px,94vw)}
 /* Un rond à paliers de l'arbre : le palier tenu, une petite flèche, le suivant. */
-.bulle:has(>.bulles-paliers){max-width:min(700px,96vw)}
+.bulle:has(>.bulles-paliers){max-width:min(700px,96vw)}.bulle:has(>.bulles-paliers)::after{display:none}
 .bulles-paliers{display:flex;align-items:stretch;gap:7px}
 .bulles-paliers>.talent-detail{width:auto;min-width:0;max-width:340px;flex:0 1 auto}
 .bulles-paliers>.palier-suite{flex:none;align-self:center;width:0;height:0;border:8px solid transparent;border-left:11px solid color-mix(in srgb,var(--bulle-bord,#dcd8cf) 35%,#4a4237);border-right:0}

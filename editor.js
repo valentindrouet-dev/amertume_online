@@ -1311,9 +1311,10 @@ function placerBulle(){if(!bulleEl||!bulleAncre)return;
  if(!bulleAncre.isConnected||(!r.width&&!r.height)){fermerBulle();return}
  const dessous=r.top-b.height-12<marge;
  const haut=dessous?r.bottom+10:r.top-b.height-10;
- // Deux bulles côte à côte : celle de gauche se pose sur la vignette, la pointe la touche.
- const ancree=bulleEl.querySelector('.bulle-ancree'),mi=ancree&&ancree.getBoundingClientRect();
- let gauche=r.left+r.width/2-(mi?mi.left-b.left+mi.width/2:b.width/2);
+ let gauche=r.left+r.width/2-b.width/2;
+ // Les deux bulles d'un palier restent dans l'arbre : elles n'en débordent pas.
+ const cadre=bulleEl.querySelector('.bulles-paliers')&&bulleEl.closest('#arbres'),c=cadre&&cadre.getBoundingClientRect();
+ if(c&&b.width<=c.width-2*marge)gauche=Math.max(c.left+marge,Math.min(c.right-b.width-marge,gauche));
  gauche=Math.max(marge,Math.min(innerWidth-b.width-marge,gauche));
  bulleEl.style.top=Math.max(marge,haut)+'px';bulleEl.style.left=gauche+'px';
  bulleEl.classList.toggle('dessous',dessous);
@@ -4028,15 +4029,14 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,pal
  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
  if(bonus){if(t.effects)ligne(t.effects)}
  else{/* Les paliers, un par ligne, le chiffre en tête de sa ligne : « I Vous effectuez… ».
-     Un aventurier ne voit que ceux qu'il a débloqués ; s'il n'a pas le talent, le premier, celui
+     Un aventurier ne lit que celui qu'il tient ; s'il n'a pas le talent, le premier, celui
      qu'il apprendrait. Sans aventurier — l'onglet Talents, le plan d'une classe — rien à
      débloquer : tous. Pas de « Palier 1 · suivant » ; le coût suit le chiffre s'il y en a un. */
   const k=a?palierDe(a,t):0,max=paliersDe(t);
   /* Un palier qui n'apporte rien — le même texte que le précédent, sans coût — ne se répète
      pas : un talent sans paliers écrits se lit en une ligne, sans chiffre. */
   const texteDe=n=>talentAuPalier(vu(t),n).effects||'';
-  const jusque=!a?max:k>0?k:1;
-  const montres=palier?[palier]:Array.from({length:jusque},(_,i)=>i+1).filter(n=>n===1||coutPalier(t,n)>0||texteDe(n)!==texteDe(n-1));
+  const montres=palier||a?[palier||Math.max(1,k)]:Array.from({length:max},(_,i)=>i+1).filter(n=>n===1||coutPalier(t,n)>0||texteDe(n)!==texteDe(n-1));
   const g=document.createElement('div');g.className='paliers-bulle liste';
   montres.forEach(n=>{
    const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n),numero=montres.length>1;
@@ -4142,14 +4142,15 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const r=basculeLien(de,t,col.liste);
   if(r==='plein'||r==='loin'||r==='occupe'){renderArbres();return}
   arbreChange()};
- /* Un rond à paliers : deux bulles côte à côte, le palier tenu — le premier s'il n'est pas pris —
-    et, à sa droite, le suivant. Au dernier palier, la sienne seule. */
- const bulleNoeud=(t,verrou,note)=>{const max=paliersDe(t),n=Math.max(1,a?palierDe(a,t):0);
+ /* Un rond à paliers : deux bulles côte à côte, deux paliers qui se suivent, le tenu et le suivant ;
+    au dernier, le précédent et lui. Grisé, le palier qu'on ne peut pas encore prendre, ou celui
+    que le palier tenu a remplacé. */
+ const bulleNoeud=(t,verrou,note)=>{const max=paliersDe(t);
   if(max<2)return bulleTalent(t,{a,vu,verrou,note,cout:true});
-  const g=bulleTalent(t,{a,vu,verrou,note,cout:true,palier:n});if(n>=max)return g;
+  const k=a?palierDe(a,t):0,n=Math.max(1,Math.min(k,max-1));
+  const une=(p,note)=>{const d=bulleTalent(t,{a,vu,verrou,note,cout:true,palier:p});if(p<k||p>k+1)d.classList.add('grisee');return d};
   const f=document.createElement('span');f.className='palier-suite';f.setAttribute('aria-hidden','true');
-  const d=document.createElement('div');d.className='bulles-paliers';g.classList.add('bulle-ancree');
-  d.append(g,f,bulleTalent(t,{a,vu,cout:true,palier:n+1}));return d};
+  const d=document.createElement('div');d.className='bulles-paliers';d.append(une(n,note),f,une(n+1));return d};
  // Un nœud de l'arbre : le rond au logo — ou au glyphe de sa nature — le nom, le niveau.
  const noeud=(t,etat,verrou)=>{const b=document.createElement('div');b.tabIndex=0;b.setAttribute('role','button');
   b.className='arbre-noeud t-'+talentType(t)[0]+(etat?' '+etat:'');b.dataset.id=t.id;

@@ -2751,7 +2751,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fs.readFileSync('combat.js','utf8').includes("function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)"),'la table et les bonus jouent le palier ; il voyage en direct');
  assert.ok(src.includes("a.paliersTalents=normalisePaliersActeur(a);"),'paliers relus, au catalogue et sur la fiche');
  assert.ok(src.includes("function dessineReglagesTalent(){")&&src.includes("placeholder=\"Comme le palier '+(n-1)+'\"")&&src.includes("const propres=!!q&&JSON.stringify(q)!==JSON.stringify(avant);")&&feuille.includes('.paliers-table{'),'l’éditeur : une colonne par palier, le coût en PT');
- assert.ok(src.includes("const jusque=!a?max:k>0?k:1;")&&src.includes("// Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.")
+ assert.ok(src.includes("// Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.")
   &&src.includes("a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);")&&feuille.includes('.arbre-paliers i.on{')&&feuille.includes('.paliers-bulle.n2{grid-template-columns:1fr auto 1fr}'),'l’arbre : points, clic, « − », bulle comparée');}
 /* v0.289 — Brise en trois paliers cumulés, contre une cible qui porte l'état : la DEF ignorée,
    puis retirée pour de bon après l'attaque, puis les dégâts doublés. La bulle de l'arbre montre
@@ -3365,12 +3365,20 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
-/* v0.546 — Un rond à paliers de l'arbre : deux bulles, le palier tenu — le premier s'il n'est pas pris — puis, après une
-   petite flèche, le suivant ; au dernier palier, la sienne seule. La bulle de gauche se pose sur le rond. */
+/* v0.547 — Les deux bulles d'un palier, centrées, restent dans l'arbre ; grisé, le palier pas encore accessible ou dépassé ;
+   au dernier, le précédent et lui. Ailleurs, la bulle ne lit que le palier tenu. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,palier=0}={}){")&&src.includes("const montres=palier?[palier]:Array.from(")
-  &&src.includes("const bulleNoeud=(t,verrou,note)=>{const max=paliersDe(t),n=Math.max(1,a?palierDe(a,t):0);")&&src.includes("d.append(g,f,bulleTalent(t,{a,vu,cout:true,palier:n+1}));return d};"),'les deux bulles d’un palier');
- assert.ok(src.includes("const ancree=bulleEl.querySelector('.bulle-ancree')")&&feuille.includes('.bulles-paliers{display:flex;')&&feuille.includes('.bulles-paliers>.palier-suite{'),'la bulle de gauche sur le rond, la flèche');}
+ assert.ok(src.includes("const k=a?palierDe(a,t):0,n=Math.max(1,Math.min(k,max-1));")&&src.includes("if(p<k||p>k+1)d.classList.add('grisee');return d};")
+  &&src.includes("d.append(une(n,note),f,une(n+1));return d};"),'la paire de bulles et leurs couleurs');
+ assert.ok(src.includes("const cadre=bulleEl.querySelector('.bulles-paliers')&&bulleEl.closest('#arbres')")&&!src.includes('bulle-ancree')
+  &&feuille.includes('.bulle:has(>.bulles-paliers)::after{display:none}'),'centrées, dans l’arbre');
+ assert.ok(src.includes("const montres=palier||a?[palier||Math.max(1,k)]:Array.from({length:max},"),'ailleurs, le seul palier tenu');}
+/* v0.546 — Un rond à paliers de l'arbre : deux bulles, le palier tenu — le premier s'il n'est pas pris — puis, après une
+   petite flèche, le suivant. */
+{const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,palier=0}={}){")
+  &&src.includes("const bulleNoeud=(t,verrou,note)=>{const max=paliersDe(t);"),'les deux bulles d’un palier');
+ assert.ok(feuille.includes('.bulles-paliers{display:flex;')&&feuille.includes('.bulles-paliers>.palier-suite{'),'la flèche');}
 /* v0.545 — Les paliers, pour les améliorations et les bonus seuls : « Paliers » coché, deux, et trois si le troisième a
    un coût, un texte ou des réglages ; les talents restent à un palier. Billes sous le petit rond, montée au clic. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),avant=C.PALIERS.actifs;C.PALIERS.actifs=false;
