@@ -4172,7 +4172,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('survol');const id=arbreGlisse;arbreGlisse=null;corps.classList.remove('glisse');
    if(!id||id===dest.soi)return;
    // Posé sur un autre talent, ou une amélioration sur une autre : les deux échangent leurs places.
-   const autre=dest.soi?tousTalents().find(x=>x.id===dest.soi):null;if(autre&&echangeTalents(id,autre)){arbreChange();return}
+   const autre=dest.soi?tousTalents().find(x=>x.id===dest.soi):null;
+   /* Un bonus tiré vers un petit rond vide — une place libre, une case vide, un rond de remplissage — y pose
+      une copie de lui-même : l'original reste où il était. */
+   const tire=tousTalents().find(x=>x.id===id);
+   if(tire&&estBonus(tire)&&dest.chemin&&(!autre||estVide(autre))){const copie={...structuredClone(tire),id:crypto.randomUUID()};delete copie.chemin;delete copie.horsArbre;
+    catalog.talents.push(copie);if(placerTalent(copie.id,dest))arbreChange();else catalog.talents.splice(catalog.talents.indexOf(copie),1);return}
+   if(autre&&echangeTalents(id,autre)){arbreChange();return}
    if(placerTalent(id,dest))arbreChange()})};
  /* Le tracé d'une ligne, chez le MJ : le talent d'où elle part est pris ; le clic suivant, sur un autre
     talent de la même colonne, la trace — ou l'efface si elle existe. Deux lignes au plus. */
