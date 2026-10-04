@@ -3367,6 +3367,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.566 — Journal : la tête de mort suit le nom de la victime, sur la ligne de l'attaque, au lieu d'une ligne à elle. */
+{const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("if(mort)suite=String(suite).replace(/\\s*💀/g,'').trim();")&&page.includes("li.append(' ',nom(b),...(mort?[' 💀']:[]),' : ');"),'la tête de mort après le nom');}
 /* v0.565 — Pas de billes de palier sous un bonus de l'arbre : seulement sous les petits ronds des améliorations. */
 {const src=fs.readFileSync('editor.js','utf8');assert.ok(src.includes("if(max>1&&t.effet!=='bonus'){b.classList.add('a-paliers');"),'pas de billes sous un bonus');}
 /* v0.563 — Fiche d'aventurier : un bonus compte sa valeur au palier tenu, dans le rond qui additionne les bonus identiques. */
