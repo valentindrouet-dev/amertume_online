@@ -3364,6 +3364,15 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.549 — Deux paliers au plus pour une amélioration ou un bonus : la troisième colonne se cache, ce qu'elle gardait reste.
+   Recharger ne jette plus le MJ en vue joueur sur la table : on attend que son compte soit reconnu, la table qu'il a
+   ouverte ne se rouvre qu'en MJ, une identité anonyme sans lien de table s'efface. */
+{const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8'),part=fs.readFileSync('shared.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ assert.ok(src.includes("let html='<table class=\"paliers-table'+(trois?'':deux?' deux-paliers':' un-palier')+'\">")&&feuille.includes('.paliers-table.deux-paliers tr>:nth-child(n+4){display:none}')
+  &&src.includes("return n===3?'<div hidden>'+champs+'</div>':champs}).join('')+'</div>'"),'deux colonnes, deux champs');
+ assert.ok(part.includes("const enJoueur=()=>{if(admin)return;if(!adminConnu){document.addEventListener('amertume-mj-change',enJoueur,{once:true});return}")
+  &&part.includes("auth.onAuthStateChanged(async user=>{admin=false;adminConnu=!user;")&&part.includes("render();rendPage();status("),'la vue attend le compte');
+ assert.ok(vivant.includes("if(!lien){if(deja&&deja.isAnonymous)try{await auth.signOut()}catch(e){}")&&vivant.includes("document.addEventListener('amertume-mj-change',rouvre);rouvre();return}"),'la table du MJ se rouvre en MJ');}
 /* v0.548 — Thésaurisation (Mystique) : les orbes non lancés à la fin du tour restent au tour suivant, ceux du tour seulement ;
    doublés, puis triplés au palier 2 ; un soin de 1d6, puis 3d6, par orbe gardé. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),T=C.TALENTS_CODES;
@@ -3393,8 +3402,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),avant=C.PALIERS.actifs;C.PALIERS.actifs=false;
  const P=t=>C.paliersDe(t);
  assert.ok(P({type:'act',paliersActifs:true,couts:[1,2,3]})===1&&P({type:'pass',paliersActifs:true})===1&&P({type:'ame'})===1,'un talent, ou une amélioration sans la case, reste à un palier');
- assert.ok(P({type:'ame',paliersActifs:true})===2&&P({type:'ame',paliersActifs:true,couts:[0,0,5]})===3&&P({type:'ame',paliersActifs:true,paliers:{3:{effects:'x'}}})===3,'une amélioration à paliers');
- assert.ok(P({type:'pass',effet:'bonus',params:{carac:'dmg',valeur:1}})===1&&P({type:'pass',effet:'bonus',paliersActifs:true,paliers:{3:{params:{carac:'dmg',valeur:3}}}})===3,'un bonus à paliers');
+ assert.ok(P({type:'ame',paliersActifs:true})===2&&P({type:'ame',paliersActifs:true,couts:[0,0,5]})===2&&P({type:'ame',paliersActifs:true,paliers:{3:{effects:'x'}}})===2,'une amélioration à paliers : deux au plus');
+ assert.ok(P({type:'pass',effet:'bonus',params:{carac:'dmg',valeur:1}})===1&&P({type:'pass',effet:'bonus',paliersActifs:true,paliers:{3:{params:{carac:'dmg',valeur:3}}}})===2,'un bonus à paliers : deux au plus');
  assert.ok(C.talentAuPalier({type:'pass',effet:'bonus',paliersActifs:true,params:{carac:'dmg',valeur:1},paliers:{2:{params:{carac:'dmg',valeur:2}}}},2).params.valeur===2,'la valeur d’un bonus suit son palier');
  assert.ok(src.includes("name=\"paliersActifs\"")&&src.includes("name=\"b_paliers\"")&&src.includes("if(acquis&&palierDe(a,t)<paliersDe(t)){const n=palierDe(a,t)+1;")&&src.includes("const pal={};if(t.effet!=='bonus'||t.paliersActifs===true)"),'l’éditeur et l’arbre');C.PALIERS.actifs=avant;}
 /* v0.544 — La fin du combat ne dit plus « Plus un adversaire debout » ni la liste des états effacés ; ils s'effacent quand même. */

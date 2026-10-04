@@ -1635,6 +1635,7 @@ body.page-icones .intro,body.page-icones .mj-tools,body.page-icones main.layout,
 
 /* Paliers en sommeil : l'éditeur de talent ne montre que la colonne du palier 1. */
 .paliers-table.un-palier thead,.paliers-table.un-palier tr>:nth-child(n+3){display:none}
+.paliers-table.deux-paliers tr>:nth-child(n+4){display:none}
 
 /* Une bulle rouverte par un rendu ne rejoue pas son entrée. */
 .bulle.sans-entree{animation:none}

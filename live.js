@@ -450,13 +450,21 @@ $('live-copy').onclick=async()=>{try{await navigator.clipboard.writeText(lienTab
 /* Le lien porte le code de la table. Un joueur n'a rien à installer ni à créer : une
    connexion anonyme lui donne un identifiant, le temps de la partie. */
 document.addEventListener('amertume-firebase-prete',async()=>{
- const code=new URL(location.href).searchParams.get('table')||localStorage.getItem(TABLE_CLE);
- if(!code)return;
+ const lien=new URL(location.href).searchParams.get('table'),code=lien||localStorage.getItem(TABLE_CLE);
  // La partie locale se pose d'abord : la table la recouvre ensuite, pas l'inverse.
  if(typeof loading!=='undefined'&&loading)await new Promise(r=>document.addEventListener('amertume-partie-chargee',r,{once:true}));
  // Le compte MJ mémorisé revient tout seul, mais pas tout de suite : on l'attend avant
  // de créer une identité anonyme, qui prendrait sa place.
  const deja=await new Promise(r=>{const off=auth.onAuthStateChanged(u=>{off();r(u)})});
+ /* Sans lien de table, l'appareil n'est pas celui d'un invité : l'identité anonyme d'une table passée
+    s'efface, elle le faisait passer pour un joueur à chaque rechargement. La table retenue ici est celle
+    que le MJ y a ouverte : elle ne se rouvre qu'une fois le MJ reconnu, jamais en invité, ni par un
+    détour en vue joueur, qui le rejetait sur la table. */
+ if(!lien){if(deja&&deja.isAnonymous)try{await auth.signOut()}catch(e){}
+  if(!code)return;
+  auth.onAuthStateChanged(u=>{monUid=u?u.uid:null;majTable()});
+  const rouvre=()=>{if(!estMJ()||enLigne||localStorage.getItem(TABLE_CLE)!==code||!auth.currentUser)return;monUid=auth.currentUser.uid;brancherTable(code)};
+  document.addEventListener('amertume-mj-change',rouvre);rouvre();return}
  try{if(!deja)await auth.signInAnonymously()}catch(e){
   liveStatus('Impossible de rejoindre la table. '+liveErreur(e));ouvreTable();return}
  monUid=auth.currentUser?auth.currentUser.uid:null;

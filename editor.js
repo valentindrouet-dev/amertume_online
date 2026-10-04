@@ -2880,9 +2880,9 @@ function dessineReglagesTalent(){const boite=$('talent-reglages');if(!boite)retu
   :'<textarea name="pe_'+n+'" rows="4" maxlength="600" placeholder="Comme le palier '+(n-1)+'" aria-label="Texte de l’effet — palier '+n+'">'+esc((d.paliers[n]&&d.paliers[n].effects)||'')+'</textarea>';
  const ligne=(tete,cellules,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+tete+'</th>'+cellules+'</tr>';
  // Paliers en sommeil : la seule colonne du palier 1 se montre ; les autres restent dans le formulaire, rien ne s'y perd.
- // Une amélioration à paliers montre ses trois colonnes.
- const trois=PALIERS.actifs||(f.type&&f.type.value==='ame'&&f.paliersActifs&&f.paliersActifs.checked);
- let html='<table class="paliers-table'+(trois?'':' un-palier')+'"><thead><tr><td></td>'+[1,2,3].map(n=>'<th scope="col" class="p'+n+'">Palier '+n+'</th>').join('')+'</tr></thead><tbody>'
+ // Une amélioration à paliers en montre deux : la troisième reste au formulaire, cachée.
+ const trois=PALIERS.actifs,deux=!trois&&!!(f.type&&f.type.value==='ame'&&f.paliersActifs&&f.paliersActifs.checked);
+ let html='<table class="paliers-table'+(trois?'':deux?' deux-paliers':' un-palier')+'"><thead><tr><td></td>'+[1,2,3].map(n=>'<th scope="col" class="p'+n+'">Palier '+n+'</th>').join('')+'</tr></thead><tbody>'
   +ligne('Coût (XP)',[1,2,3].map(n=>'<td><input type="number" name="c_'+n+'" min="0" max="999999" step="1" value="'+(d.couts[n-1]||0)+'" aria-label="Coût en XP — palier '+n+'"></td>').join(''))
   +ligne('Texte de l’effet',[1,2,3].map(n=>'<td>'+texte(n)+'</td>').join(''));
  if(code){const params=code.params||[],volets=Array.isArray(code.volets)?code.volets:[],ouverts=voletsDe({effet:code.cle,volets:d.volets});
@@ -2984,7 +2984,9 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +field('Coût (XP)','b_cout',coutPalier(t,1),'number','min="0" max="999999" step="1"')
   +'<label class="field-check"><input type="checkbox" name="b_paliers" '+(t.paliersActifs===true&&t.effet==='bonus'?'checked':'')+'>Paliers</label>'
   +'<div id="b-paliers" class="b-paliers-grille"'+(t.paliersActifs===true&&t.effet==='bonus'?'':' hidden')+'>'+[2,3].map(n=>{const q=t.paliers&&t.paliers[n]&&t.paliers[n].params;
-   return field('Valeur — palier '+n,'b_valeur_'+n,q&&q.valeur||'','number','min="1" max="20"')+field('Coût (XP) — palier '+n,'b_cout_'+n,coutPalier(t,n)||'','number','min="0" max="999999" step="1"')}).join('')+'</div>'
+   // Deux paliers au plus : les champs du troisième restent au formulaire, cachés, ce qu'ils gardent ne se perd pas.
+   const champs=field('Valeur — palier '+n,'b_valeur_'+n,q&&q.valeur||'','number','min="1" max="20"')+field('Coût (XP) — palier '+n,'b_cout_'+n,coutPalier(t,n)||'','number','min="0" max="999999" step="1"');
+   return n===3?'<div hidden>'+champs+'</div>':champs}).join('')+'</div>'
   // Son logo : le sien, ou celui de tous les bonus de la même caractéristique.
   +(()=>{const d=(catalog.logosBonus||{})[cleLogoBonus(pb)]||'';return selLogos('Logo','b_logo',t.logo||d)
    +'<label class="field-check"><input type="checkbox" name="b_logo_tous"'+(!t.logo&&d?' checked':'')+'>Pour tous les bonus de cette caractéristique</label>'})()+'</div>'
