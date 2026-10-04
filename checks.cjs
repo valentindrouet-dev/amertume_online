@@ -3367,6 +3367,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.567 — Deux talents sous un même identifiant : la copie exacte s'en va au chargement, une autre prend un identifiant
+   à elle ; l'éditeur de talents retrouve le talent ouvert par son identifiant, pas par sa place dans la liste. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("if(JSON.stringify(d)===JSON.stringify(t))return false;t.id=crypto.randomUUID();vus.set(t.id,t);return true});if(l.length!==c.talents.length)c.talents=l}")
+  &&src.includes("if(talentIndex!==null&&talentEdite){const k=catalog.talents.findIndex(x=>x&&x.id===talentEdite);if(k>=0)talentIndex=k}"),'les doublons et l’éditeur');}
 /* v0.566 — Journal : la tête de mort suit le nom de la victime, sur la ligne de l'attaque, au lieu d'une ligne à elle. */
 {const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("if(mort)suite=String(suite).replace(/\\s*💀/g,'').trim();")&&page.includes("li.append(' ',nom(b),...(mort?[' 💀']:[]),' : ');"),'la tête de mort après le nom');}
 /* v0.565 — Pas de billes de palier sous un bonus de l'arbre : seulement sous les petits ronds des améliorations. */

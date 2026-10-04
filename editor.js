@@ -190,6 +190,10 @@ function migreOmbrelame(c){(c.classes||[]).forEach(k=>{if(k&&k.name==='Lamevent'
  (c.talents||[]).forEach(t=>{if(!t)return;t.famille=ombrelame(t.famille);t.name=ombrelame(t.name);t.effects=ombrelame(t.effects);t.effets=ombrelame(t.effets);t.notes=ombrelame(t.notes);
   if(t.paliers&&typeof t.paliers==='object')Object.values(t.paliers).forEach(p=>{if(p&&typeof p==='object')p.effects=ombrelame(p.effects)})})}
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];migreOmbrelame(c);
+ /* Deux talents sous un même identifiant se superposaient dans l'arbre : on en tirait un, l'autre restait, comme
+    une copie. Une copie exacte s'en va ; une autre, qui a changé depuis, prend un identifiant à elle. */
+ {const vus=new Map(),l=c.talents.filter(t=>{if(!t||!t.id)return true;const d=vus.get(t.id);if(!d){vus.set(t.id,t);return true}
+  if(JSON.stringify(d)===JSON.stringify(t))return false;t.id=crypto.randomUUID();vus.set(t.id,t);return true});if(l.length!==c.talents.length)c.talents=l}
  if(Array.isArray(c.ongletsJoueurs))c.ongletsJoueurs=ONGLETS.map(([k])=>k).filter(k=>k!=='maps'&&(k==='table'||c.ongletsJoueurs.includes(k)));else delete c.ongletsJoueurs;
  // Les ressources d'abord : les pièces se relisent au travers d'elles, plus bas.
  migreRessources(c);const clesR=new Set(c.items.filter(o=>o&&o.category==='ressource').map(o=>o.cle)),resV=r=>clesR.has(r)?r:'';
@@ -2843,7 +2847,7 @@ $('mots-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  catalog.motsCles=[...new Set($('mots-form').elements.mots.value.split('\n').map(x=>x.trim().slice(0,60)).filter(Boolean))].slice(0,200);
  motsDialog.close();renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
 const talentDialog=dialog('talent-editor','Talent','<form id="talent-form"><div id="talent-fields"></div><div class="form-actions"><button type="button" id="delete-talent">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
-let talentIndex=null,talentApres=null,talentDraft={effet:'',params:{}},talentDefauts=null;
+let talentIndex=null,talentEdite=null,talentApres=null,talentDraft={effet:'',params:{}},talentDefauts=null;
 /* Fermé sans enregistrer, le dialogue ne doit rien rappeler : sinon une création faite
    plus tard depuis l'armurerie irait se cocher dans une fiche déjà refermée. */
 talentDialog.addEventListener('close',()=>{talentApres=null;
@@ -2930,7 +2934,7 @@ function phrasesPaliers(){const f=$('talent-form').elements,code=TALENTS_CODES[f
 function nomModele(id){const m=(catalog.monsters||[]).find(x=>x&&x.id===id);return m?m.name:''}
 /* « defauts » : ce que l'arbre sait déjà d'un talent qu'on y crée — sa classe, sa voie, le
    talent dont il pendra, sa nature — pour ne pas le redire au formulaire. */
-function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talentIndex=i;talentApres=apres;
+function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talentIndex=i;talentEdite=i===null?null:(catalog.talents[i]||{}).id||null;talentApres=apres;
  // Un talent neuf prend la classe qu'on lui donne, sinon la première du jeu.
  const premiere=[...(catalog.classes||[])].map(c=>c&&c.name).filter(Boolean).sort((x,y)=>x.localeCompare(y,'fr'))[0]||'';
  const t=i===null?{name:'Nouveau talent',famille:premiere,type:'act',level:1,effect:'',effets:'',effects:'',notes:'',effet:'',params:{},...(defauts||{})}:catalog.talents[i];
@@ -3058,6 +3062,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  $('delete-talent').hidden=i===null;talentDialog.showModal()}
 $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  const f=$('talent-form').elements;
+ // Le talent ouvert, retrouvé par son identifiant : la liste a pu bouger depuis, sa place avec.
+ if(talentIndex!==null&&talentEdite){const k=catalog.talents.findIndex(x=>x&&x.id===talentEdite);if(k>=0)talentIndex=k}
  const avant=talentIndex===null?null:catalog.talents[talentIndex];
  const t=avant?structuredClone(avant):{id:crypto.randomUUID()};
  t.name=f.name.value.trim()||'Talent';
@@ -3126,7 +3132,8 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  talentDialog.close();renderCatalogPages();render();scheduleSave();
  const rappel=talentApres;talentApres=null;if(rappel)rappel(t)};
 $('delete-talent').onclick=()=>{if(talentIndex===null)return;
- const t=catalog.talents[talentIndex];
+ if(talentEdite){const k=catalog.talents.findIndex(x=>x&&x.id===talentEdite);if(k>=0)talentIndex=k}
+ const t=catalog.talents[talentIndex];if(!t)return;
  const pris=actors.filter(a=>(a.talents||[]).includes(t.id)).length;
  if(!confirm('Supprimer « '+t.name+' » ?'+(pris?' Il est appris par '+pris+' aventurier(s), qui le perdront.':'')))return;
  actors.forEach(a=>{if(a.talents)a.talents=a.talents.filter(x=>x!==t.id)});
