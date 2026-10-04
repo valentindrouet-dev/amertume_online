@@ -1293,7 +1293,7 @@ assert.ok(page.includes("$('gear-compte').textContent=nbGear;$('bloc-gear').hidd
 /* La barre de PV d'un token est pleine, entamée ou non — c'est sa hauteur qui dit l'actif ;
    sur la piste des dés, le lanceur à gauche et, au bout de chaque ligne, qui reçoit. */
 assert.ok(page.includes('function poseJet(ligne,from,to){ligne.de=from;ligne.vers=to;')
- &&page.includes("const de=from||(lignes.find(l=>l.de)||{}).de||null;")&&page.includes("const cible=recoit(l),tc=lignes.length>1?petit:Math.max(petit,taille);if(cible)visage(cible,tc,bordD+10+tc/2,cy)")
+ &&page.includes("const de=from||(lignes.find(l=>l.de)||{}).de||null;")
  &&page.includes('.board-token{position:absolute;transform:translate(-50%,-50%);border-radius:50%;'),'barre de PV égale, visages sur la piste');
 /* Plus de chip Niveau sur la fiche de table ; le balayage est une déchirure dentelée de 90° ; la coche du
    bestiaire suit le nom ; l'équipement se lit en carrés — logo dessus, dés dessous — dont la description
@@ -3363,6 +3363,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.558 — La piste des dés : une ligne qui ne tient pas passe à la rangée suivante, le « + » du critique avec ses dés ; la
+   place des visages d'après ceux qui paraissent ; la piste change de largeur, le dernier lancer s'y repose sans tomber. */
+{const page=fs.readFileSync('index.html','utf8');
+ assert.ok(page.includes("const ECART=22,BONUS=52,MAX_DES=60;")&&page.includes("if(w+e.w>place&&r.length){const plus=r[r.length-1].plus?[r.pop()]:[];rangs.push(plus);")
+  &&page.includes("const marge=Math.max(faceG,faceD)?Math.max(faceG,faceD)+12:0,place=Math.max(46,size.width-16-2*marge);")
+  &&page.includes("if(avant&&w&&dernierJet&&$('dice-tray').childElementCount)rollOnBoard(...dernierJet,true)"),'la piste ne déborde plus');}
 /* v0.556 — Ricochet (Mystique) : un orbe qui ne passe pas la DEF repart de sa cible vers l'adversaire le plus proche d'elle
    et relance ses dés ; des rebonds en plus ; un critique rebondit aussi, deux orbes au palier 2. Sans coût d'orbe. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),T=C.TALENTS_CODES;
