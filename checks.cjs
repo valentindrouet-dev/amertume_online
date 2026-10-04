@@ -3363,6 +3363,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.561 — Siphon (Mystique) : un adversaire tué par un orbe rend aussitôt un orbe ; un de plus, ou au palier 2 un par cran
+   de l'élément du lanceur sur la cible tuée ; un soin de x dés verts. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),T=C.TALENTS_CODES;
+ assert.ok(T.siphon.type==='pass'&&T.siphonplus.pour==='siphon'&&T.siphonsoin.pour==='siphon','les trois effets');
+ assert.ok(C.phraseTalent('siphonplus',{},1,{parelement:2}).includes('<b>+1 orbe</b>.')&&C.phraseTalent('siphonplus',{},2,{parelement:2}).includes('par cran de son <b>élément</b>')
+  &&C.phraseTalent('siphonsoin',{des:3},2).includes('3 dés verts'),'les phrases');
+ assert.ok(page.includes("const gain=1+(plus?voletOuvert(plus,'parelement')?crans:1:0),avant=orbesLances(a);a.orbes=Math.max(0,avant-gain);")
+  &&page.includes("if(b.hp===0&&hostiles(b,a))siphon(a,Math.max(cransAvant,element?compteEtat(b,element):0))};"),'le moteur');}
 /* v0.560 — Lamevent s'appelle Ombrelame partout : la classe, ses arbres, ses talents et leurs textes, ses aventuriers, les
    noms de ses effets (l'ancien nom retrouve encore l'effet). Flèches vers l'arbre de la classe voisine ; dans l'onglet
    Talents, les talents d'une classe dans un cadre à sa couleur, qui ouvre l'arbre. */

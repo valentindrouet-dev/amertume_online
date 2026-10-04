@@ -1175,6 +1175,17 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
   phrase(){return 'La <b>Mitraille</b> vise <b>un adversaire de plus</b>.'}},
  mitrailleorbes:{cle:'mitrailleorbes',nom:'Mitraille — un orbe de plus',court:'un orbe de plus',type:'ame',aide:'Amélioration de Mitraille : un orbe de plus sur chaque adversaire.',params:[],
   phrase(){return 'La <b>Mitraille</b> lance <b>un orbe de plus</b> sur chaque adversaire.'}},
+ /* Siphon : un passif. Un adversaire tué par un orbe rend aussitôt un orbe au porteur ; ses améliorations en
+    rendent un de plus — au palier 2, un par cran de l'élément du porteur sur la cible tuée — et le soignent. */
+ siphon:{cle:'siphon',nom:'Siphon',type:'pass',aide:'Passif : un adversaire tué par un orbe rend aussitôt un orbe au porteur.',params:[],
+  phrase(){return 'Quand un adversaire est <b>tué par un orbe</b>, le porteur récupère aussitôt <b>1 orbe</b>.'}},
+ siphonplus:{cle:'siphonplus',nom:'Siphon — orbe en plus',court:'orbe en plus',type:'ame',aide:'Amélioration de Siphon : un orbe de plus ; au palier 2, un par cran de l’élément du porteur sur la cible tuée.',params:[],
+  volets:[{cle:'parelement',nom:'Un orbe par cran de l’élément sur la cible',palier:2}],
+  phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{parelement:2}).parelement;
+   return k>0&&n>=k?'Le porteur récupère <b>+1 orbe</b> par cran de son <b>élément</b> présent sur la cible tuée.':'Le porteur récupère <b>+1 orbe</b>.'}},
+ siphonsoin:{cle:'siphonsoin',nom:'Siphon — soin',court:'soin',type:'ame',aide:'Amélioration de Siphon : tuer un adversaire avec un orbe soigne le porteur de dés verts.',
+  params:[{cle:'des',nom:'Dés verts',type:'nombre',defaut:1,min:1,max:9}],
+  phrase(p){const x=Math.max(1,Math.trunc(p&&p.des)||1);return 'En tuant un adversaire avec un <b>orbe</b>, le porteur se soigne de <b>'+x+' dé'+(x>1?'s':'')+' vert'+(x>1?'s':'')+'</b>.'}},
  /* Ricochet : un passif. Un orbe qui ne passe pas la DEF de sa cible repart vers l'adversaire le plus proche
     d'elle et relance ses dés contre lui ; ses améliorations lui donnent des rebonds en plus, et font
     rebondir aussi l'orbe qui fait un critique, deux orbes au palier 2. */
@@ -1317,7 +1328,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
- contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
+ contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',
  soinetat:'ignoredegats',soinetatdouble:'ignoredegats',corpselem:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
