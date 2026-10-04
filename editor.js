@@ -4199,9 +4199,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    let c=libelleBonus(p,true).replace(/^\+\d+ /,'');if(p&&p.carac==='comp')c=c.slice(0,4);
    const q=document.createElement('small');q.textContent=c;rond.replaceChildren(v,q)}
   niv.hidden=!niv.textContent;
-  // Sous l'icône, un point par palier : ceux qu'on tient s'allument.
+  // Sous l'icône, un point par palier : ceux qu'on tient s'allument. Pas sous un bonus : sa valeur dit son palier.
   const max=paliersDe(t),k=a?palierDe(a,t):0;let pts=null;
-  if(max>1){b.classList.add('a-paliers');pts=document.createElement('span');pts.className='arbre-paliers';
+  if(max>1&&t.effet!=='bonus'){b.classList.add('a-paliers');pts=document.createElement('span');pts.className='arbre-paliers';
    for(let n=1;n<=max;n++){const i=document.createElement('i');if(n<=k)i.className='on';pts.append(i)}}
   b.append(rond,...(pts?[pts]:[]),niv);
   // Au survol, la bulle de description, comme sur la fiche ; « b.noteBulle » s'y ajoute.

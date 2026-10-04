@@ -3367,11 +3367,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
-/* v0.563 — Fiche d'aventurier : un bonus compte sa valeur au palier tenu, dans le rond qui additionne les bonus identiques.
-   Les billes d'un bonus à icône remontent sous l'icône, sans toucher le rond d'en dessous. */
+/* v0.565 — Pas de billes de palier sous un bonus de l'arbre : seulement sous les petits ronds des améliorations. */
+{const src=fs.readFileSync('editor.js','utf8');assert.ok(src.includes("if(max>1&&t.effet!=='bonus'){b.classList.add('a-paliers');"),'pas de billes sous un bonus');}
+/* v0.563 — Fiche d'aventurier : un bonus compte sa valeur au palier tenu, dans le rond qui additionne les bonus identiques. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("forEach(x=>{const p=paramsTalent(talentAuPalier(x,palierDe(a,x)))||{},carac=p.carac||'pv',k=carac+(carac==='comp'?':'+p.comp:'');"),'la valeur au palier tenu');
- assert.ok(feuille.includes('.arbre-plan>.arbre-noeud.petit.bonus.a-paliers:has(>.arbre-rond>.logo-bonus)>.arbre-paliers{top:calc(100% - 6px)}'),'les billes remontent');}
+ assert.ok(src.includes("forEach(x=>{const p=paramsTalent(talentAuPalier(x,palierDe(a,x)))||{},carac=p.carac||'pv',k=carac+(carac==='comp'?':'+p.comp:'');"),'la valeur au palier tenu');}
 /* v0.561 — Siphon (Mystique) : un adversaire tué par un orbe rend aussitôt un orbe ; un de plus, ou au palier 2 un par cran
    de l'élément du lanceur sur la cible tuée, un au moins (v0.562) ; un soin de x dés verts. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),T=C.TALENTS_CODES;
