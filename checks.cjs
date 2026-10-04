@@ -1586,7 +1586,6 @@ assert.equal(C.effetParNom(''),'');
 assert.equal(C.etatDesOrbes([{code:C.TALENTS_CODES.orbesfeu,params:{etat:'Feu'}}]),'Feu');
 assert.ok(page.includes('function volOrbe(de,vers,couleur,etat)')&&page.includes("const el=document.createElement('span');el.className='orbe-vol'+(etat==='Feu'?' feu':'');")
  &&page.includes("el.style.setProperty('--orbe',TEINTE_ORBE[etat]||'#9b7ad4');")&&page.includes("const TEINTE_ORBE={Feu:'#ff6a2c',")
- &&page.includes('const duree=volOrbe(a,b,des.couleur,teinte);')&&page.includes("diffuserEffet('orbe',a,b,des.couleur+(teinte?'|'+teinte:''));")
  &&vivant.includes("const [couleur,etat]=(typeof rec.logo==='string'?rec.logo:'').split('|');")
  &&page.includes('.orbe-vol.feu::after{content:')&&page.includes('@keyframes flamme{'),'l’orbe porte son état, et le feu flambe');
 /* La description d'un équipement s'ouvre sur la fiche où l'on a cliqué, et nulle part ailleurs :
@@ -3033,7 +3032,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  {const T=C.TALENTS_CODES;assert.equal(T.mitraille.type,'pass');assert.equal(T.mitraillecibles.pour,'mitraille');assert.equal(T.mitrailleorbes.nom,'Mitraille — un orbe de plus');
   assert.equal(C.texteBrut(C.phraseTalent('mitraille',{})),'Quand le porteur lance un orbe, il lance automatiquement un orbe sur l’autre adversaire le plus proche.');
   assert.ok(C.texteBrut(C.phraseTalent('mitraille',{cibles:2,orbes:2})).includes('2 orbes sur les 2 autres adversaires les plus proches'));}
- assert.ok(page.includes("if(!opts.mitraille&&orbesLances(a)+n>total)")&&page.includes("orbe(a,p,talent,{cible:k,n:m.orbes,mitraille:true,logo:opts.logo})")&&page.includes("function mitrailleDe(a){"),'Mitraille branchée sur le lancer d’orbe');
+ assert.ok(page.includes("orbe(a,p,talent,{cible:k,n:m.orbes,mitraille:true,logo:opts.logo})")&&page.includes("function mitrailleDe(a){"),'Mitraille branchée sur le lancer d’orbe');
  /* v0.490 — Les niveaux de l'arbre : posés sur une ligne entre talents, ils ferment le talent d'après tant que
    l'aventurier n'a pas ce niveau. */
  {const ctxN={DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},lisChemin:()=>null,posDe:t=>t&&t.pos||null};vm.createContext(ctxN);
@@ -3364,6 +3363,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.556 — Ricochet (Mystique) : un orbe qui ne passe pas la DEF repart de sa cible vers l'adversaire le plus proche d'elle
+   et relance ses dés ; des rebonds en plus ; un critique rebondit aussi, deux orbes au palier 2. Sans coût d'orbe. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),T=C.TALENTS_CODES;
+ assert.ok(T.ricochet.type==='pass'&&T.ricochetplus.pour==='ricochet'&&T.ricochetcritique.pour==='ricochet','les trois effets');
+ assert.ok(C.phraseTalent('ricochetplus',{fois:2},1).includes('2 fois</b> supplémentaires')&&C.phraseTalent('ricochetcritique',{},2,{double:2}).includes('deux orbes')&&!C.phraseTalent('ricochetcritique',{},1,{double:2}).includes('deux orbes'),'les phrases');
+ assert.ok(page.includes("const gratuit=!!(opts.mitraille||opts.ricochet);")&&page.includes("const duree=volOrbe(opts.depuis||a,b,des.couleur,teinte);")
+  &&page.includes("if(!r.hit)ricocher(a,p,talent,opts,b,1);return}")&&page.includes("if(cc)ricocher(a,p,talent,opts,b,voletOuvert(cc,'double')?2:1)")
+  &&page.includes("const poser=()=>{poserOrbe();if(!opts.ricochet)opportuniteAuTir(a,contacts,'sort')};"),'le moteur');}
 /* v0.555 — Orbes mystiques, dés en plus : chaque orbe lance x dés Mystiques supplémentaires, x réglé à chaque palier ;
    ils s'ajoutent aux siens, ou à côté d'eux s'ils sont d'une autre couleur. La clé reste « orbes2des ». */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');

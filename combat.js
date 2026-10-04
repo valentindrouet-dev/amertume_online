@@ -1175,6 +1175,18 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   phrase(){return 'La <b>Mitraille</b> vise <b>un adversaire de plus</b>.'}},
  mitrailleorbes:{cle:'mitrailleorbes',nom:'Mitraille — un orbe de plus',court:'un orbe de plus',type:'ame',aide:'Amélioration de Mitraille : un orbe de plus sur chaque adversaire.',params:[],
   phrase(){return 'La <b>Mitraille</b> lance <b>un orbe de plus</b> sur chaque adversaire.'}},
+ /* Ricochet : un passif. Un orbe qui ne passe pas la DEF de sa cible repart vers l'adversaire le plus proche
+    d'elle et relance ses dés contre lui ; ses améliorations lui donnent des rebonds en plus, et font
+    rebondir aussi l'orbe qui fait un critique, deux orbes au palier 2. */
+ ricochet:{cle:'ricochet',nom:'Ricochet',type:'pass',aide:'Passif : un orbe qui ne passe pas la DEF d’un adversaire ricoche sur l’adversaire le plus proche.',params:[],
+  phrase(){return 'Un <b>orbe</b> qui ne passe pas la <b>DEF</b> d’un adversaire ricoche sur l’<b>adversaire le plus proche</b> et tente de lui infliger ses dégâts.'}},
+ ricochetplus:{cle:'ricochetplus',nom:'Ricochet — rebonds en plus',court:'rebonds en plus',type:'ame',aide:'Amélioration de Ricochet : un orbe peut rebondir des fois supplémentaires.',
+  params:[{cle:'fois',nom:'Rebonds en plus',type:'nombre',defaut:1,min:1,max:6}],
+  phrase(p){const x=Math.max(1,Math.trunc(p&&p.fois)||1);return 'Un <b>orbe</b> peut rebondir <b>'+x+' fois</b> supplémentaire'+(x>1?'s':'')+'.'}},
+ ricochetcritique:{cle:'ricochetcritique',nom:'Ricochet — critique',court:'critique',type:'ame',aide:'Amélioration de Ricochet : un orbe qui fait un critique rebondit aussi ; deux orbes au palier 2.',params:[],
+  volets:[{cle:'double',nom:'Deux orbes rebondissent',palier:2}],
+  phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{double:2}).double;
+   return 'Un <b>orbe</b> qui fait un <b>critique</b> rebondit aussi'+(k>0&&n>=k?' : <b>deux orbes</b> repartent de sa cible.':'.')}},
  /* Thésaurisation : un passif. Les orbes que le porteur n'a pas lancés à la fin du tour lui restent au
     tour suivant ; ses améliorations lui en font garder quelques-uns de plus, et le soignent par orbe
     non lancé. */
@@ -1305,7 +1317,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
- contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
+ contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',
  soinetat:'ignoredegats',soinetatdouble:'ignoredegats',corpselem:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
