@@ -2217,5 +2217,8 @@ button.j-stats{padding:0;border:0;background:none;font:inherit;font-weight:800;c
 /* Une amélioration à paliers : ses billes sous le petit rond, sans déplacer le rond ; le prix du palier suivant dessous. */
 .arbre-plan>.arbre-noeud.petit.a-paliers>.arbre-paliers{display:flex;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin:1px 0 0;padding:2px 4px;gap:3px;border-radius:5px}
 .arbre-plan>.arbre-noeud.petit.a-paliers>.arbre-paliers i{width:6px;height:6px;border-width:1.2px}
+/* Un bonus à icône n'a pas de cercle : son rond garde du vide sous l'icône. Ses billes y remontent, juste sous
+   l'icône, au lieu de descendre toucher le rond d'en dessous. */
+.arbre-plan>.arbre-noeud.petit.bonus.a-paliers:has(>.arbre-rond>.logo-bonus)>.arbre-paliers{top:calc(100% - 6px)}
 .arbre-plan>.arbre-noeud.petit.a-paliers>.arbre-cout{transform:translate(-50%,80%)}
 .b-paliers-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;grid-column:1/-1}

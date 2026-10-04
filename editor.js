@@ -1952,7 +1952,8 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
   /* Les bonus de caractéristique ou de compétence, en petits ronds aussi : les bonus identiques
      s'additionnent en un seul rond, « +2 Endurance » plutôt que deux « +1 ». */
   const groupes=new Map();
-  (a.talents||[]).map(talent).filter(x=>x&&estBonus(x)).forEach(x=>{const p=paramsTalent(x)||{},carac=p.carac||'pv',k=carac+(carac==='comp'?':'+p.comp:'');
+  // Au palier que l'aventurier tient : un bonus monté au palier 2 compte sa valeur du palier 2.
+  (a.talents||[]).map(talent).filter(x=>x&&estBonus(x)).forEach(x=>{const p=paramsTalent(talentAuPalier(x,palierDe(a,x)))||{},carac=p.carac||'pv',k=carac+(carac==='comp'?':'+p.comp:'');
    const g=groupes.get(k)||{p:{...p,carac,valeur:0},t:x};g.p.valeur+=Math.max(1,Math.trunc(Number(p.valeur))||1);groupes.set(k,g)});
   groupes.forEach(g=>{const r=document.createElement('span');r.className='cat-pill gear-carre talent-carre bonus-rond bonus-'+g.p.carac;r.tabIndex=0;
    const l=(g.t.logo&&logoTalent(g.t))||logoBonus(g.p);if(l)r.append(remplitCase(l));

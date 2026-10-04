@@ -3363,6 +3363,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.563 — Fiche d'aventurier : un bonus compte sa valeur au palier tenu, dans le rond qui additionne les bonus identiques.
+   Les billes d'un bonus à icône remontent sous l'icône, sans toucher le rond d'en dessous. */
+{const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("forEach(x=>{const p=paramsTalent(talentAuPalier(x,palierDe(a,x)))||{},carac=p.carac||'pv',k=carac+(carac==='comp'?':'+p.comp:'');"),'la valeur au palier tenu');
+ assert.ok(feuille.includes('.arbre-plan>.arbre-noeud.petit.bonus.a-paliers:has(>.arbre-rond>.logo-bonus)>.arbre-paliers{top:calc(100% - 6px)}'),'les billes remontent');}
 /* v0.561 — Siphon (Mystique) : un adversaire tué par un orbe rend aussitôt un orbe ; un de plus, ou au palier 2 un par cran
    de l'élément du lanceur sur la cible tuée, un au moins (v0.562) ; un soin de x dés verts. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),T=C.TALENTS_CODES;
