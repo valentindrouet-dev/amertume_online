@@ -1311,7 +1311,9 @@ function placerBulle(){if(!bulleEl||!bulleAncre)return;
  if(!bulleAncre.isConnected||(!r.width&&!r.height)){fermerBulle();return}
  const dessous=r.top-b.height-12<marge;
  const haut=dessous?r.bottom+10:r.top-b.height-10;
- let gauche=r.left+r.width/2-b.width/2;
+ // Deux bulles côte à côte : celle de gauche se pose sur la vignette, la pointe la touche.
+ const ancree=bulleEl.querySelector('.bulle-ancree'),mi=ancree&&ancree.getBoundingClientRect();
+ let gauche=r.left+r.width/2-(mi?mi.left-b.left+mi.width/2:b.width/2);
  gauche=Math.max(marge,Math.min(innerWidth-b.width-marge,gauche));
  bulleEl.style.top=Math.max(marge,haut)+'px';bulleEl.style.left=gauche+'px';
  bulleEl.classList.toggle('dessous',dessous);
@@ -4005,19 +4007,21 @@ function retireDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;
   porteur ni élément, un nom à accolades les montre en creux. */
 // Le chiffre d'un palier dans une comparaison, où le premier aussi doit se nommer.
 const CHIFFRES_PALIER=['','I','II','III'];
-function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}){const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);
+/* « palier » : la bulle d'un seul palier, celui-là — l'arbre en montre deux côte à côte. */
+function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,palier=0}={}){const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);
+ const pn=palier||(a?palierDe(a,t):0);
  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
  // Un bonus a la couleur de son rond : rouge pour les dégâts, vert pour les PV…
  if(bonus)d.classList.add('bulle-bonus','bonus-'+((paramsTalent(t)||{}).carac||'pv'));
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const nom=document.createElement('b');
- if(bonus){const tb=a&&palierDe(a,t)>1?talentAuPalier(t,palierDe(a,t)):t;nom.replaceChildren(libelleBonusEl(paramsTalent(tb),{talent:tb}))}else nomAccolades(nom,vu(t).name);
+ if(bonus){const tb=pn>1?talentAuPalier(t,pn):t;nom.replaceChildren(libelleBonusEl(paramsTalent(tb),{talent:tb}))}else nomAccolades(nom,vu(t).name);
  // Tenu au palier 2 ou 3, le talent le dit après son nom : « Attaque Blindée II ».
- if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));
+ if(!bonus&&pn>1)nom.append(palierRomain(pn));
  // Jamais la nature du talent : la bulle ne l'écrit nulle part.
  tete.append(nom);d.append(tete);
  // Le prix en XP ne se lit que dans l'arbre : en cartouche, en haut à gauche de la bulle.
  // Rouge si l'aventurier n'a pas l'XP qu'il faut pour le prendre.
- {const tenu=!!a&&(a.talents||[]).includes(t.id),suite=tenu&&palierDe(a,t)<paliersDe(t)?palierDe(a,t)+1:1,pris=tenu&&suite===1;
+ {const tenu=!!a&&(a.talents||[]).includes(t.id),suite=palier||(tenu&&palierDe(a,t)<paliersDe(t)?palierDe(a,t)+1:1),pris=palier?tenu&&palierDe(a,t)>=palier:tenu&&suite===1;
   if(cout&&coutPalier(t,suite)){const c=document.createElement('span');c.className='cout-xp'+(pris?' acquis':a&&coutPalier(t,suite)>xpDisponible(a,catalog.talents)?' trop-cher':'');c.textContent=coutPalier(t,suite)+' XP';tete.append(c)}}
  // Un talent qui frappe, dans la barre d'action : ses dés et son bonus de dégâts au bout de la ligne de son nom.
  if(des)desAuTitre(tete,des);
@@ -4032,7 +4036,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false}={}
      pas : un talent sans paliers écrits se lit en une ligne, sans chiffre. */
   const texteDe=n=>talentAuPalier(vu(t),n).effects||'';
   const jusque=!a?max:k>0?k:1;
-  const montres=Array.from({length:jusque},(_,i)=>i+1).filter(n=>n===1||coutPalier(t,n)>0||texteDe(n)!==texteDe(n-1));
+  const montres=palier?[palier]:Array.from({length:jusque},(_,i)=>i+1).filter(n=>n===1||coutPalier(t,n)>0||texteDe(n)!==texteDe(n-1));
   const g=document.createElement('div');g.className='paliers-bulle liste';
   montres.forEach(n=>{
    const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n),numero=montres.length>1;
@@ -4138,7 +4142,14 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const r=basculeLien(de,t,col.liste);
   if(r==='plein'||r==='loin'||r==='occupe'){renderArbres();return}
   arbreChange()};
- const bulleNoeud=(t,verrou,note)=>bulleTalent(t,{a,vu,verrou,note,cout:true});
+ /* Un rond à paliers : deux bulles côte à côte, le palier tenu — le premier s'il n'est pas pris —
+    et, à sa droite, le suivant. Au dernier palier, la sienne seule. */
+ const bulleNoeud=(t,verrou,note)=>{const max=paliersDe(t),n=Math.max(1,a?palierDe(a,t):0);
+  if(max<2)return bulleTalent(t,{a,vu,verrou,note,cout:true});
+  const g=bulleTalent(t,{a,vu,verrou,note,cout:true,palier:n});if(n>=max)return g;
+  const f=document.createElement('span');f.className='palier-suite';f.setAttribute('aria-hidden','true');
+  const d=document.createElement('div');d.className='bulles-paliers';g.classList.add('bulle-ancree');
+  d.append(g,f,bulleTalent(t,{a,vu,cout:true,palier:n+1}));return d};
  // Un nœud de l'arbre : le rond au logo — ou au glyphe de sa nature — le nom, le niveau.
  const noeud=(t,etat,verrou)=>{const b=document.createElement('div');b.tabIndex=0;b.setAttribute('role','button');
   b.className='arbre-noeud t-'+talentType(t)[0]+(etat?' '+etat:'');b.dataset.id=t.id;

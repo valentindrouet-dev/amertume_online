@@ -2915,7 +2915,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(page.includes("const ROMAINS_PALIER=['','','II','III'];")&&!page.includes("function nomAvecPalier(")
   &&page.includes("palier:paliersDe(talent)>1&&talent.palier>1?talent.palier:0,")&&page.includes("geste(String(t.texte||t.talent.name),"),'les boutons de la table sont des ronds : le palier se lit dans la bulle du talent');
- assert.ok(src.includes("if(!bonus&&a&&palierDe(a,t)>1)nom.append(palierRomain(palierDe(a,t)));")&&src.includes("carte.append(talentRond(t,logo),n);return carte}")&&fs.readFileSync('editor.css','utf8').includes('.cat-carte.talent-carte .nom-carte.nom-rond,.sac-carte .nom-sac{display:none}')&&!src.includes('nom-texte')
+ assert.ok(src.includes("carte.append(talentRond(t,logo),n);return carte}")&&fs.readFileSync('editor.css','utf8').includes('.cat-carte.talent-carte .nom-carte.nom-rond,.sac-carte .nom-sac{display:none}')&&!src.includes('nom-texte')
   &&css.includes(".palier-romain{margin-left:.3em;font:inherit;"),'dans la bulle et sur la fiche, dans la police du nom');}
 /* v0.300 — Un talent élémentaire choisit un logo par élément ; sans logo propre, l'ancien
    logo suit l'élément comme avant. */
@@ -3365,6 +3365,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.546 — Un rond à paliers de l'arbre : deux bulles, le palier tenu — le premier s'il n'est pas pris — puis, après une
+   petite flèche, le suivant ; au dernier palier, la sienne seule. La bulle de gauche se pose sur le rond. */
+{const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,palier=0}={}){")&&src.includes("const montres=palier?[palier]:Array.from(")
+  &&src.includes("const bulleNoeud=(t,verrou,note)=>{const max=paliersDe(t),n=Math.max(1,a?palierDe(a,t):0);")&&src.includes("d.append(g,f,bulleTalent(t,{a,vu,cout:true,palier:n+1}));return d};"),'les deux bulles d’un palier');
+ assert.ok(src.includes("const ancree=bulleEl.querySelector('.bulle-ancree')")&&feuille.includes('.bulles-paliers{display:flex;')&&feuille.includes('.bulles-paliers>.palier-suite{'),'la bulle de gauche sur le rond, la flèche');}
 /* v0.545 — Les paliers, pour les améliorations et les bonus seuls : « Paliers » coché, deux, et trois si le troisième a
    un coût, un texte ou des réglages ; les talents restent à un palier. Billes sous le petit rond, montée au clic. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),avant=C.PALIERS.actifs;C.PALIERS.actifs=false;
