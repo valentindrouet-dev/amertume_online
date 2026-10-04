@@ -1171,6 +1171,18 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
   phrase(){return 'La <b>Mitraille</b> vise <b>un adversaire de plus</b>.'}},
  mitrailleorbes:{cle:'mitrailleorbes',nom:'Mitraille — un orbe de plus',court:'un orbe de plus',type:'ame',aide:'Amélioration de Mitraille : un orbe de plus sur chaque adversaire.',params:[],
   phrase(){return 'La <b>Mitraille</b> lance <b>un orbe de plus</b> sur chaque adversaire.'}},
+ /* Thésaurisation : un passif. Les orbes que le porteur n'a pas lancés à la fin du tour lui restent au
+    tour suivant ; ses améliorations les doublent, ou les triplent, et le soignent par orbe gardé. */
+ thesaurisation:{cle:'thesaurisation',nom:'Thésaurisation',type:'pass',aide:'Passif : les orbes non lancés à la fin du tour sont gardés pour le tour suivant.',params:[],
+  phrase(){return 'Les <b>orbes</b> que le porteur n’a pas lancés à la fin du tour lui restent au <b>tour suivant</b>.'}},
+ thesaurisationfois:{cle:'thesaurisationfois',nom:'Thésaurisation — orbes multipliés',court:'orbes multipliés',type:'ame',aide:'Amélioration de Thésaurisation : les orbes gardés d’un tour sur l’autre sont doublés, puis triplés.',params:[],
+  volets:[{cle:'triple',nom:'Triple les orbes gardés',palier:2}],
+  phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{triple:2}).triple;
+   return 'Les <b>orbes</b> gardés d’un tour sur l’autre sont <b>'+(k>0&&n>=k?'triplés':'doublés')+'</b>.'}},
+ thesaurisationsoin:{cle:'thesaurisationsoin',nom:'Thésaurisation — soin',court:'soin',type:'ame',aide:'Amélioration de Thésaurisation : à la fin du tour, le porteur se soigne de 1d6, puis 3d6, par orbe gardé.',params:[],
+  volets:[{cle:'trois',nom:'3d6 par orbe gardé',palier:2}],
+  phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{trois:2}).trois;
+   return 'À la <b>fin du tour</b>, le porteur se soigne de <b>'+(k>0&&n>=k?'3d6':'1d6')+'</b> par <b>orbe</b> gardé.'}},
  contagion:{cle:'contagion',nom:'Contagion',type:'pass',aide:'Passif : au début de chaque tour, le porteur inflige l’état réglé à un adversaire à son contact.',
   params:[{cle:'etat',nom:'État',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Au <b>début de chaque tour</b>, le porteur inflige <b>'+((p&&p.etat)||'Feu')+'</b> à <b>un adversaire</b> à son contact.'}},
@@ -1287,7 +1299,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Lamevent',type:'mait',bouton:
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
- contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
+ contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',
  soinetat:'ignoredegats',soinetatdouble:'ignoredegats',corpselem:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;

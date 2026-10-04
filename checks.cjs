@@ -1317,8 +1317,7 @@ assert.ok(!page.includes("chips.push('Niveau '+a.level)")
  assert.deepEqual(montantRegeneration({},{quantite:4,forme:'fixe'},()=>1),{total:4,jets:[]});
  assert.ok(phraseTalent('regeneration',{quantite:2,forme:'des',moment:'immediat',bloque:'Feu'}).includes('2d6')&&phraseTalent('regeneration',{quantite:2,forme:'des',moment:'immediat',bloque:'Feu'}).includes('Feu'));
  assert.ok(phraseTalent('invocation',{modele:''}).includes('un combattant du bestiaire'));}
-assert.ok(page.includes('function invocation(a,p,talent)')&&page.includes('function annulerPlacement()')&&page.includes('function regenerer(a,quand)')&&page.includes('applyDamage=function(a,montant)')
- &&page.includes("actors.forEach(o=>regenerer(o,'fin'));round++;")&&page.includes("if(actors.filter(o=>regenerer(o,'debut')).length)render()")&&page.includes('.placement #map{cursor:crosshair}')
+assert.ok(page.includes('function invocation(a,p,talent)')&&page.includes('function annulerPlacement()')&&page.includes('function regenerer(a,quand)')&&page.includes('applyDamage=function(a,montant)')&&page.includes("if(actors.filter(o=>regenerer(o,'debut')).length)render()")&&page.includes('.placement #map{cursor:crosshair}')
  &&src.includes("const opts=p.type==='modele'?[['','— choisir un adversaire —'],...(catalog.monsters||[]).map(m=>[m.id,m.name])]:(p.options||[]);")&&src.includes('function nomModele(id)')
  &&!src.includes("logos.classList.add('croises')")&&!feuille.includes('.logos.croises'),'Invocation, Régénération ; plus de logos croisés : le rond ne montre que la main droite');
 /* Inventaire et équipement : tout ce qu'on possède d'un côté, ce qu'on porte de l'autre — deux mains au
@@ -3365,6 +3364,16 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.548 — Thésaurisation (Mystique) : les orbes non lancés à la fin du tour restent au tour suivant, ceux du tour seulement ;
+   doublés, puis triplés au palier 2 ; un soin de 1d6, puis 3d6, par orbe gardé. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),T=C.TALENTS_CODES;
+ assert.ok(T.thesaurisation&&T.thesaurisation.type==='pass'&&T.thesaurisationfois.pour==='thesaurisation'&&T.thesaurisationsoin.pour==='thesaurisation','les trois effets');
+ assert.ok(C.phraseTalent('thesaurisationfois',{},1,{triple:2}).includes('doublés')&&C.phraseTalent('thesaurisationfois',{},2,{triple:2}).includes('triplés')
+  &&C.phraseTalent('thesaurisationsoin',{},1,{trois:2}).includes('1d6')&&C.phraseTalent('thesaurisationsoin',{},2,{trois:2}).includes('3d6'),'les phrases à chaque palier');
+ assert.ok(page.includes("function orbesDuTour(a,c){const n=orbesPermis(c||talentsCodes(a));return n?n+orbesGardes(a):0}")&&!/orbesPermis\(talentsCodes\(a\)\)/.test(page)
+  &&page.includes("const n=Math.min(Math.max(0,orbesDuTour(a,c)-orbesLances(a)),base)*(fois?voletOuvert(fois,'triple')?3:2:1);a.orbesGardes=n;")
+  &&page.includes("actors.forEach(o=>regenerer(o,'fin'));actors.forEach(thesauriser);round++;"),'le moteur');
+ assert.ok(fs.readFileSync('live.js','utf8').includes("'orbes','orbesGardes',")&&fs.readFileSync('shared.js','utf8').includes("'orbes','orbesGardes',"),'les orbes gardés voyagent');}
 /* v0.547 — Les deux bulles d'un palier, centrées, restent dans l'arbre ; grisé, le palier pas encore accessible ou dépassé ;
    au dernier, le précédent et lui. Ailleurs, la bulle ne lit que le palier tenu. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');

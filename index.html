@@ -3,7 +3,7 @@
 <style>
 /* Killam Bold, fournie par Valentin, pour les chiffres des caractéristiques. Sous-ensemble
    latin en WOFF2 : 48 Ko au lieu des 188 Ko du TTF d'origine, qui reste dans fonts/. */
-@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.547') format('woff2');
+@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.548') format('woff2');
  font-weight:700;font-style:normal;font-display:swap}
 
 /* Deux palettes, un seul jeu de règles : tout le décor passe par ces jetons, si bien
@@ -127,8 +127,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 .floater.perte{color:#f0705a}.floater.gain{color:#8fd77e}.floater.nul{color:#e7d9b8}.board-die{position:absolute;display:grid;place-items:center;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:11px;font:800 20px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -3px 5px #00000026,0 7px 16px #000000a6;will-change:transform}.board-die.dark{color:#f4f6f2}.journal-title{font:600 13px system-ui;letter-spacing:3px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px}.journal{max-height:330px;display:flex;flex-direction:column;gap:9px;padding-right:4px}.journal li{border:0;padding:0}/* Les colonnes se calent sur la colonne centrale : la droite prend sa hauteur exacte et le journal y prend ce que la fiche lui laisse ; à gauche, les points de vie descendent au bas. */.stack.right.calee{min-height:0}.stack.right.calee>.panel{flex:none}.stack.right.calee>.panel:last-child{flex:1 1 0;min-height:150px;display:flex;flex-direction:column;box-sizing:border-box}.stack.right.calee .journal{flex:1;min-height:0;max-height:none}.stack.right.calee .journal-title,.stack.right.calee .journal-chat{flex:none}/* Un seul lettrage pour les titres de blocs : petites capitales espacées, sans Killam. */.eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title,.panel>h2,#carte-titre{font:600 13px/1.25 system-ui,-apple-system,'Segoe UI',sans-serif;letter-spacing:2.5px;text-transform:uppercase}/* Actions et Dés partent de la même ligne : la carte des actions perd sa marge de rangée. *//* Le bloc Actions a une hauteur fixe, vide ou garni : la carte, calée dessus, ne bouge jamais ; un contenu plus haut défile à l'intérieur. */.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}.attack-card.vide #reveal,.attack-card.vide #attack-choices{display:none}#pv-panel.vide .hp-buttons button{opacity:.45;pointer-events:none}#sheet.vide #hpbar,#sheet.vide #bloc-gear,#sheet.vide .divider{display:none}#sheet.vide .sheet-head{min-height:34px}/* La fiche prend la hauteur de ce qu'elle montre — talents et équipement dépliés compris — et le journal, calé dessous, prend tout le reste. */#sheet{min-height:0}.j-entry{font-size:14px;line-height:1.45;color:var(--ink);white-space:pre-line}/* La flèche en vol : un trait sombre à pointe claire, tourné vers sa cible. *//* Le souffle d'un tir : une rafale claire et étirée, deux filets d'air par-dessus. *//* Les coups, lisibles et toujours les mêmes : au contact, un trait de balayage fend l'air sur la cible, puis un choc — un anneau qui s'élargit ; à distance, un projectile file en ligne droite du tireur à la cible, puis le même choc. Blanc cerné de sombre : visible sur toute carte. Chaque geste dure le même temps, au même rythme. */.vfx{position:absolute;pointer-events:none;z-index:5;will-change:transform,opacity;transform:translate(-50%,-50%)}.vfx svg{display:block;width:100%;height:100%;overflow:visible}.vfx-piege svg{filter:drop-shadow(0 0 6px #ff8a2acc)}.vfx-piege .souffle{fill:#ff7a1f;fill-opacity:.6;stroke:#ffc35a;stroke-width:4}.vfx-piege .coeur{fill:#fff4cf}
 .vfx-choc .onde{fill:none;stroke:#fff6dc;stroke-width:7}.vfx-choc svg{filter:drop-shadow(0 0 1px #000d) drop-shadow(0 0 5px #ffc85acc)}.vfx-etincelles .gerbe{stroke:#fff6dc;stroke-width:4.5;stroke-linecap:round}.vfx-etincelles svg{filter:drop-shadow(0 0 1px #000d) drop-shadow(0 0 4px #ffc85acc)}.vfx-fleche{transform:none}.vfx-fleche .hampe-ombre{stroke:#000a;stroke-width:5;fill:none}.vfx-fleche .hampe{stroke:#f1e4c8;stroke-width:2.6;fill:none}.vfx-fleche .plume{fill:#b8452e;stroke:#0009;stroke-width:1}.vfx-fleche .pointe{fill:#e9eef2;stroke:#000b;stroke-width:1.2}.vfx-fleche svg{filter:drop-shadow(0 0 3px #fff8)}/* Le balayage d'un coup au contact : un arc d'air, clair au bord, qui tourne autour de l'attaquant. *//* La parole : le socle de qui parle, puis ses mots. */.j-chat{display:flex;align-items:flex-start;gap:8px;border:1px solid color-mix(in srgb,var(--ink) 14%,transparent);background:color-mix(in srgb,var(--ink) 4%,transparent);border-radius:7px;padding:4px 8px;margin:2px 0}.j-avatar{flex:none;width:24px;height:24px;border-radius:50%;overflow:hidden;background:#d9cfbd;color:#2a2118;display:grid;place-items:center;font:700 12px 'Killam',Georgia,serif}.j-avatar img{width:100%;height:100%;object-fit:cover;display:block}.j-avatar.mj{background:var(--accent);color:#fff}.j-corps{min-width:0}.j-texte{white-space:pre-wrap;overflow-wrap:anywhere}.journal-vider{margin-left:auto;font:600 11px system-ui;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}.journal-vider:hover{color:var(--ink);border-color:var(--ink)}.journal-chat{display:flex;gap:6px;margin-top:8px;flex:none}.journal-chat input{flex:1;min-width:0;font:14px system-ui;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}.journal-chat button{flex:none;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--accent);cursor:pointer;font-size:14px}/* Un cartouche léger, de la couleur de l'action : bleu pour un coup, violet pour un talent, une analyse ou un orbe, vert pour un soin, rouge pour une perte, ambre pour un état, or pour une révélation, brun pour la carte. */.j-entry.ton{--ton:#3f7bc0;border:1px solid color-mix(in srgb,var(--ton) 30%,transparent);background:color-mix(in srgb,var(--ton) 7%,transparent);border-radius:7px;padding:3px 8px;margin:2px 0}.j-entry.ton-attaque{--ton:#3f7bc0}.j-entry.ton-talent{--ton:#8a63c9}.j-entry.ton-competence{--ton:#2f7d45}.j-entry.ton-soin{--ton:#2f8a63}.j-entry.ton-degats{--ton:#b8483a}.j-entry.ton-etat{--ton:#a2691f}.j-entry.ton-reveal{--ton:#9d7b1e}.j-entry.ton-carte{--ton:#8a6d3b}.ton-butin{--ton:#a8832c}.j-turn{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:5px 0 1px}.j-turn::before,.j-turn::after{content:"";flex:1;height:1px;background:var(--line)}.j-name{font-weight:700}.j-key{font-weight:700}.j-num{font-weight:800;color:#b4553a}.j-dice{opacity:.7}/* La ligne d'attaque : le logo de l'arme entre les deux noms, les dégâts cliquables, le détail des dés dessous. */.j-attaque .logo-equip{width:20px;height:20px;vertical-align:-5px;margin:0 1px;filter:drop-shadow(0 1px 1px #0006)}.j-degats{font-weight:800;color:#b4553a}.j-degats.cliquable{cursor:pointer;border-bottom:1px dashed currentColor}.j-degats.cliquable:hover,.j-degats.ouvert{color:#d0644a}.j-detail{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:6px}.j-de{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;font:800 12px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -2px 3px #00000026,0 2px 4px #0000005e}.j-de.dark{color:#f4f6f2}.j-de.barre{opacity:.35;filter:grayscale(1);box-shadow:none}.j-de.relance{margin-left:8px}.j-plus{font:600 12px system-ui;color:var(--muted)}.j-plus.total{font-weight:800;color:var(--ink)}.j-badge{display:inline-block;background:#8d3b32;color:#ffe6df;border-radius:5px;padding:1px 7px;font-weight:700;font-size:12px}
 /* Le socle qui arrive du réseau glisse jusqu'à sa place. */.token.glisse{transition:left .18s linear,top .18s linear}/* L'orbe en vol : une bille lumineuse de la couleur de ses dés. */.orbe-vol{position:absolute;will-change:transform,opacity;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;background:radial-gradient(circle at 35% 35%,#fff9,var(--orbe) 55%,transparent 72%);box-shadow:0 0 14px 5px var(--orbe),0 0 44px 16px color-mix(in srgb,var(--orbe) 55%,transparent)}/* L'orbe de feu : un cœur blanc, une écorce d'ambre et une flamme qui bat autour. Seuls
-   transform et opacity s'animent — le compositeur mène le vol sans le fil principal. */.orbe-vol.feu{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}.orbe-vol.feu::after{content:'';position:absolute;inset:-22%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 50% 66%,#ffb14ab3,#ff5a1e4d 45%,transparent 72%);animation:flamme .26s ease-in-out infinite alternate}@keyframes flamme{from{transform:scale(.86) rotate(-9deg);opacity:.7}to{transform:scale(1.2) rotate(10deg);opacity:1}}@media(prefers-reduced-motion:reduce){.orbe-vol.feu::after{animation:none}}/* Un envoi refusé se voit sur le bouton de la table. */#open-live[data-souci]{color:#b8483a;border-color:#b8483a}</style><link rel="stylesheet" href="./editor.css?v=0.547"></head><body><div id="busy-cover">Chargement de la partie enregistrée…</div>
-<header><div class="brand"><span class="brand-ligne"><span class="brand-nom">Amertüme</span><span class="ver">v0.547</span></span><span class="brand-online">ONLINE</span></div><div class="view-controls"><label for="view">Vue</label><select id="view"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select></div></header>
+   transform et opacity s'animent — le compositeur mène le vol sans le fil principal. */.orbe-vol.feu{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}.orbe-vol.feu::after{content:'';position:absolute;inset:-22%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 50% 66%,#ffb14ab3,#ff5a1e4d 45%,transparent 72%);animation:flamme .26s ease-in-out infinite alternate}@keyframes flamme{from{transform:scale(.86) rotate(-9deg);opacity:.7}to{transform:scale(1.2) rotate(10deg);opacity:1}}@media(prefers-reduced-motion:reduce){.orbe-vol.feu::after{animation:none}}/* Un envoi refusé se voit sur le bouton de la table. */#open-live[data-souci]{color:#b8483a;border-color:#b8483a}</style><link rel="stylesheet" href="./editor.css?v=0.548"></head><body><div id="busy-cover">Chargement de la partie enregistrée…</div>
+<header><div class="brand"><span class="brand-ligne"><span class="brand-nom">Amertüme</span><span class="ver">v0.548</span></span><span class="brand-online">ONLINE</span></div><div class="view-controls"><label for="view">Vue</label><select id="view"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select></div></header>
 <div class="intro" hidden><h1>Les ruines du passage</h1></div>
 <main class="layout"><aside class="stack left"><section class="panel"><div class="turn-head"><div class="eyebrow" id="titre-tour">Tour de combat</div><div class="turn" id="round">01</div></div><div id="bloc-activation" hidden><h2>Activation</h2><div class="checks"><label><input type="checkbox" id="action"> Action</label><label><input type="checkbox" id="move"> Mvt / Analyse</label><label><input type="checkbox" id="item"> Objet</label></div><div class="divider"></div></div><div class="turn-actions"><button class="full" id="next">Tour suivant →</button><button id="reset-round" title="Revenir au tour 1 : activations, cibles, états et analyses remis à zéro, adversaires à nouveau inconnus" aria-label="Réinitialiser le tour de combat">↺</button></div><div class="side-actions"><button id="start-combat" class="primary" hidden>⚔ Début du combat</button><button id="end-combat" hidden>Fin du combat</button></div></section><section class="panel pv-panel" id="pv-panel" hidden><div class="eyebrow">Points de vie</div><div class="hp-buttons" id="hp-buttons"></div></section><section class="panel"><h2>COMBATTANTS</h2><div id="actors"></div><button type="button" class="ajout-camp" id="new-hero" title="Ajouter un aventurier à la scène" aria-label="Ajouter un aventurier à la scène" hidden>+</button><button type="button" class="ajout-camp" id="new-monster" title="Ajouter un adversaire à la scène" aria-label="Ajouter un adversaire à la scène" hidden>+</button></section></aside>
 <div class="stack"><section class="panel map-panel"><div class="mapbar"><div class="mapbar-h1"><strong id="carte-titre">CARTE TACTIQUE</strong><button class="icon-btn toggle-portees" id="portees">◎ Contacts</button><button class="icon-btn toggle-portees" id="fouilles-vue">🔍 Fouilles</button><button class="icon-btn toggle-portees" id="distances-vue">📏 Distances</button><button class="icon-btn toggle-portees" id="coffres-bulles" hidden>🧰 Coffres</button><div class="zoom-bar"><button id="zoom-out" aria-label="Dézoomer">−</button><span id="zoom-label">100 %</span><button id="zoom-in" aria-label="Zoomer">+</button><button id="zoom-reset">Ajuster</button></div></div><div class="mapbar-h2" hidden><label class="file"><button id="upload">Importer une carte</button><input class="sr" type="file" id="mapfile" accept="image/png,image/jpeg,image/webp"></label><button class="icon-btn" id="reset-map" title="Retirer la carte de fond" aria-label="Retirer la carte de fond">🗑</button></div></div><div class="map" id="map" aria-label="Carte tactique. Déplacez les tokens par glissement ou avec les flèches du clavier."><div id="map-view"><svg class="plan" viewBox="0 0 800 480" preserveAspectRatio="none" aria-hidden="true"><g class="walls" fill="#172326" stroke="#57635c" stroke-width="3"></g><g fill="#9da797" font-family="system-ui" font-size="12" letter-spacing="4"><text x="305" y="130">COUR INTÉRIEURE</text><text x="318" y="462">ENTRÉE SUD</text></g></svg><svg id="map-shapes" aria-hidden="true"></svg><svg id="map-coffres" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><canvas id="fog" aria-hidden="true"></canvas><svg id="map-doors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><div id="contact-ring" hidden></div><svg id="aim" aria-hidden="true"><defs><marker id="shot-ok" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#3f7bc0"/></marker><marker id="shot-no" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#e0483c"/></marker><marker id="shot-done" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#8b969b"/></marker></defs><path id="aim-arrow" class="aim-fleche"/></svg><div id="marquee" hidden aria-hidden="true"></div><div id="floaters" aria-hidden="true"></div></div></div></section>
@@ -136,8 +136,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 <aside class="stack right"><section class="panel sheet" id="sheet"><div class="sheet-head"><h1 id="name"></h1><span class="sheet-class" id="kind"></span><button type="button" class="sheet-class" id="pnj-camp" hidden></button></div><p class="muted" id="class"></p><div class="chips" id="sheet-chips"></div><div class="stat-row" id="stats"></div><div class="lifebar big" id="hpbar"><span class="lifebar-fill" id="hpfill"></span><span class="lifebar-text" id="hp"></span></div><div class="comp-ronds" id="skills" hidden></div><div class="bloc-fixe" id="bloc-gear"><div class="bloc-tete"><span class="bloc-titre">Objets</span><span class="compte" id="gear-compte"></span></div><div id="gear"></div></div><details class="bloc-replie" id="bloc-talents" open><summary><span class="bloc-titre">Talents</span><span class="compte" id="talents-compte"></span></summary><div id="sheet-talents"></div></details><div class="divider" hidden></div></section><section class="panel"><h2 class="journal-title"><span aria-hidden="true">📜</span> Journal de combat<button type="button" id="journal-vider" class="journal-vider" hidden title="Vider le journal, ici et chez les joueurs de la table">Vider</button></h2><ol class="journal" id="journal" aria-live="polite"></ol><form id="journal-chat" class="journal-chat" autocomplete="off"><input id="journal-texte" maxlength="300" placeholder="Dire quelque chose…" aria-label="Écrire au journal"><button type="submit" title="Envoyer">➤</button></form></section></aside></main>
 <div id="state-menu" role="menu" aria-label="États" hidden></div>
 
-<script src="./polygon-clipping.umd.min.js?v=0.547"></script>
-<script src="./combat.js?v=0.547"></script>
+<script src="./polygon-clipping.umd.min.js?v=0.548"></script>
+<script src="./combat.js?v=0.548"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -1439,6 +1439,24 @@ function lamevent(a,p){
    combat, retour au tour 1. Hors combat il n'y a pas de tour, donc pas de compte : on
    lance librement, sans jamais épuiser le bouton. */
 function orbesLances(a){return enCombat()?Math.max(0,Math.trunc(a&&a.orbes)||0):0}
+// Les orbes du tour : ceux du talent, et ceux que Thésaurisation a gardés du tour précédent.
+function orbesGardes(a){return enCombat()?Math.max(0,Math.trunc(a&&a.orbesGardes)||0):0}
+function orbesDuTour(a,c){const n=orbesPermis(c||talentsCodes(a));return n?n+orbesGardes(a):0}
+// Un volet d'un effet tenu, ouvert au palier où le porteur le tient.
+function voletOuvert(x,k){const v=voletsDe(x.talent),n=Math.max(1,Math.trunc(Number(x.talent&&x.talent.palier))||1);return v[k]>0&&n>=v[k]}
+/* Thésaurisation, à la fin du tour : les orbes que le porteur n'a pas lancés le suivent au tour
+   d'après. Les orbes gardés partent les premiers : seuls ceux du tour se gardent, d'un tour à
+   l'autre, sans s'accumuler. Ses améliorations les doublent, ou les triplent, et le soignent de
+   1d6, ou 3d6, par orbe gardé. */
+function thesauriser(a){const c=talentsCodes(a),base=orbesPermis(c);
+ if(!enCombat()||!alive(a)||!base||!porteEffet(c,'thesaurisation')){a.orbesGardes=0;return false}
+ const fois=c.find(x=>x.code.cle==='thesaurisationfois'),soin=c.find(x=>x.code.cle==='thesaurisationsoin');
+ const n=Math.min(Math.max(0,orbesDuTour(a,c)-orbesLances(a)),base)*(fois?voletOuvert(fois,'triple')?3:2:1);a.orbesGardes=n;
+ if(!n||!soin||a.hp>=a.max)return false;
+ const jets=Array.from({length:n*(voletOuvert(soin,'trois')?3:1)},()=>d6()),gagne=applyHeal(a,jets.reduce((s,v)=>s+v,0));if(!gagne)return false;
+ rollOnBoard(jets.map(v=>[v,4]),a,a);floatNumber(a,'+'+gagne,'gain');
+ log(nomNum(a)+' · '+(soin.talent.name||'Thésaurisation')+' : +'+gagne+' PV, fin du tour.',{ton:'soin',dice:true});
+ return true}
 /* Invulnérable : le porteur ne subit jamais l'affection réglée. Le refus se pose ici, au
    seul passage par lequel une affection s'installe — arme, orbe, objet ou talent — et se
    dit « immunise », pour que le journal le raconte au lieu de se taire. */
@@ -1517,7 +1535,7 @@ function orbesDuCritique(a){const c=talentsCodes(a),tous=porteEffet(c,'orbescrit
    vise le porteur, sinon le premier en vue. C'est une action, quand les orbes un à un sont gratuits. */
 function deluge(a,p,talent){const codes=talentsCodes(a),orbesT=codes.find(x=>x.code.cle==='orbes');
  if(!orbesT)return nomNum(a)+' n’a pas d’Orbes mystiques à lancer.';
- const reste=orbesPermis(codes)-orbesLances(a);if(reste<=0)return nomNum(a)+' a lancé tous ses orbes ce tour.';
+ const reste=orbesDuTour(a,codes)-orbesLances(a);if(reste<=0)return nomNum(a)+' a lancé tous ses orbes ce tour.';
  const j=cibleOrbe(a);if(j===null)return 'Aucun adversaire en vue : les orbes restent en main.';
  // Un seul jet : tous les dés des orbes qui restent, les bonus appliqués une fois.
  return orbe(a,orbesT.params,orbesT.talent,{cible:j,n:reste,logo:talent&&talent.logo})}
@@ -1531,7 +1549,7 @@ function mitrailleDe(a){const c=talentsCodes(a),t=c.find(x=>x.code.cle==='mitrai
 function autresProches(a,sauf,k){const d=o=>Math.hypot(o.x-a.x,o.y-a.y);
  return reachableTargets('distance').filter(j=>j!==sauf&&hostiles(actors[j],a)).sort((x,y)=>d(actors[x])-d(actors[y])).slice(0,k)}
 function orbe(a,p,talent,opts={}){const allie=opts.cible!==undefined?null:alliePourIgnition(a);
- const j=opts.cible!==undefined?opts.cible:allie!==null?allie:cibleOrbe(a),total=orbesPermis(talentsCodes(a)),n=Math.max(1,Math.trunc(Number(opts.n))||1);
+ const j=opts.cible!==undefined?opts.cible:allie!==null?allie:cibleOrbe(a),total=orbesDuTour(a),n=Math.max(1,Math.trunc(Number(opts.n))||1);
  if(!opts.mitraille&&orbesLances(a)+n>total)return nomNum(a)+' a lancé tous ses orbes ce tour.';
  if(j===null)return 'Aucun adversaire en vue : l’orbe reste en main.';
  const b=actors[j],etat=etatDesOrbes(talentsCodes(a)),des=desOrbe(talentsCodes(a)),pouvoir=etatOrbeAuPalier(talentsCodes(a));
@@ -2014,20 +2032,20 @@ const TALENTS_EFFETS={charge:{fn:charge,peut:a=>!refusCharge(a),titre:a=>refusCh
   titre:a=>{if(!enCombat())return 'Se désigne au début du combat.';if(a.garde)return 'Un aventurier est déjà sous sa garde pour ce combat.';
    const j=protegeDuGardien(a);return j===null?'Aucun aventurier allié au contact.':'Garder '+actors[j].name+'.'}},
  deluge:{fn:deluge,
-  libelle:(a,p,talent)=>{const c=talentsCodes(a),total=orbesPermis(c);return (talent.name||'Déluge')+' '+Math.max(0,total-orbesLances(a))+'/'+total},
+  libelle:(a,p,talent)=>{const c=talentsCodes(a),total=orbesDuTour(a,c);return (talent.name||'Déluge')+' '+Math.max(0,total-orbesLances(a))+'/'+total},
   // Tous les dés des orbes qu'il reste, d'un coup.
-  des:a=>{const c=talentsCodes(a),d=desOrbe(c);if(!d)return null;const n=Math.max(0,orbesPermis(c)-orbesLances(a));return n?{[d.couleur]:d.n*n}:null},
+  des:a=>{const c=talentsCodes(a),d=desOrbe(c);if(!d)return null;const n=Math.max(0,orbesDuTour(a,c)-orbesLances(a));return n?{[d.couleur]:d.n*n}:null},
   bonus:a=>bonusOrbes(a),
-  peut:a=>porteEffet(talentsCodes(a),'orbes')&&orbesLances(a)<orbesPermis(talentsCodes(a))&&cibleOrbe(a)!==null,
-  titre:a=>{const c=talentsCodes(a);if(!porteEffet(c,'orbes'))return 'Sans Orbes mystiques, rien à lancer.';const n=orbesPermis(c)-orbesLances(a);
+  peut:a=>porteEffet(talentsCodes(a),'orbes')&&orbesLances(a)<orbesDuTour(a)&&cibleOrbe(a)!==null,
+  titre:a=>{const c=talentsCodes(a);if(!porteEffet(c,'orbes'))return 'Sans Orbes mystiques, rien à lancer.';const n=orbesDuTour(a,c)-orbesLances(a);
    return n<=0?'Tous les orbes de ce tour sont lancés.':cibleOrbe(a)===null?'Aucun adversaire en vue.':'Lancer les '+n+' orbe'+(n>1?'s':'')+' qu’il reste, ensemble, sur '+actors[cibleOrbe(a)].name+'.'}},
  orbes:{fn:orbe,
   // Le compte dit ce qui reste : 2/2, puis 1/2, puis 0/2.
-  libelle:(a,p,talent)=>{const total=orbesPermis(talentsCodes(a));return (talent.name||'Orbe')+' '+Math.max(0,total-orbesLances(a))+'/'+total},
+  libelle:(a,p,talent)=>{const total=orbesDuTour(a);return (talent.name||'Orbe')+' '+Math.max(0,total-orbesLances(a))+'/'+total},
   des:a=>{const d=desOrbe(talentsCodes(a));return d?{[d.couleur]:d.n}:null},
   bonus:a=>bonusOrbes(a),
-  peut:a=>orbesLances(a)<orbesPermis(talentsCodes(a))&&(cibleOrbe(a)!==null||alliePourIgnition(a)!==null),
-  titre:(a,p)=>{const total=orbesPermis(talentsCodes(a)),des=desOrbe(talentsCodes(a));
+  peut:a=>orbesLances(a)<orbesDuTour(a)&&(cibleOrbe(a)!==null||alliePourIgnition(a)!==null),
+  titre:(a,p)=>{const total=orbesDuTour(a),des=desOrbe(talentsCodes(a));
    const allie=alliePourIgnition(a);
    if(allie!==null&&orbesLances(a)<total)return 'Ignition : charger '+actors[allie].name+' — sa prochaine attaque au contact inflige '+(etatDesOrbes(talentsCodes(a))||'Feu')+'.';
    return (orbesLances(a)>=total?'Tous les orbes de ce tour sont lancés.':cibleOrbe(a)===null?'Aucun adversaire en vue.':
@@ -2252,7 +2270,7 @@ function basculerMode(neuf,annonce){const finit=mode==='combat'&&neuf!=='combat'
   // Et chaque aventurier peut reprendre un repos court, s'il lui en reste.
   actors.forEach(a=>{if(a.hero)a.reposPris=false})}
  round=1;$('round').textContent='01';
- actors.forEach(a=>{a.checks=[0,0,0];a.target=null;a.orbes=0;a.garde=null;a.contactsDepart=null;a.enrage=0;delete a.revanche;delete a.traction;mouvementRapide(a)});
+ actors.forEach(a=>{a.checks=[0,0,0];a.target=null;a.orbes=0;a.orbesGardes=0;a.garde=null;a.contactsDepart=null;a.enrage=0;delete a.revanche;delete a.traction;mouvementRapide(a)});
  // Vide plutôt qu'effacé : un champ absent ne part pas sur la table, et les anciens chiffres reviendraient.
  // Un combat qui commence rouvre son tour 1 au journal, même si le précédent s'était arrêté au tour 1.
  if(enCombat()){actors.forEach(a=>{a.bilan={}});bilanPartis=[];logRound=null}
@@ -2339,7 +2357,7 @@ function saveChecks(){const a=actors[selected];if(!a)return;
 const SKILL_TINTS=['47,138,99','168,105,31','122,92,184','157,123,30','176,88,54','101,120,111','53,119,184','44,140,133'];
 const STAT_TINTS={vie:'122,92,184',endu:'44,140,133',pv:'47,122,91',def:'96,110,118',dmg:'180,72,58',xp:'157,123,30'};
 const TYPE_NOMS={standard:'Standard',solitaire:'Solitaire',alpha:'Élite',boss:'Boss'};
-const IMG_V='0.547';
+const IMG_V='0.548';
 function imgUrl(nom){return './img/'+String(nom).split('/').map(encodeURIComponent).join('/')+'?v='+IMG_V}
 /* Les états et leur jeton, tels qu'ils sont peints sur la table. « Aucun » n'en a pas —
    c'est l'absence d'état — ni « Coma », que la barre de vie dit déjà, ni « Affaibli »,
@@ -3073,7 +3091,7 @@ $('end-combat').onclick=()=>{if(view!=='mj')return;basculerMode('exploration',tr
    chacun perd ses états — Feu, Saignée, Blindage, tout — la rencontre repart entière.
    Seul le Coma tient : il dit les points de vie, qui ne changent pas. Ouvrir une carte
    fait la même chose, sans demander. */
-function remiseAuTourUn(){round=1;actors.forEach(a=>{a.checks=[0,0,0];a.target=null;a.targets=[];a.orbes=0;a.garde=null;a.ignition='';a.enrage=0;delete a.revanche;delete a.traction;mouvementRapide(a);
+function remiseAuTourUn(){round=1;actors.forEach(a=>{a.checks=[0,0,0];a.target=null;a.targets=[];a.orbes=0;a.orbesGardes=0;a.garde=null;a.ignition='';a.enrage=0;delete a.revanche;delete a.traction;mouvementRapide(a);
   // Une rencontre qui repart, c'est un repos : les insensibilités tombent, les charges du jour reviennent.
   a.immunites={etats:[],des:[]};if(typeof reposer==='function')reposer(a,'long');else a.usages={};
   a.states=[];a.bleed=0;a.cumuls={};if(a.hp===0)setState(a,'Coma',true);
@@ -3108,7 +3126,7 @@ $('hp-buttons').replaceChildren(...PV_BOUTONS.map(({texte,classe,titre,ecart,pur
     log(nomNum(o)+' · États levés.',{ton:'etat'});bouge=true}});
   if(bouge)render()};
  return b}));
-function tourSuivant(){savePool();burnAll();actors.forEach(o=>regenerer(o,'fin'));round++;
+function tourSuivant(){savePool();burnAll();actors.forEach(o=>regenerer(o,'fin'));actors.forEach(thesauriser);round++;
  // La Foudre retombe d'un cran à chaque nouveau tour.
  actors.forEach(o=>{if(hasState(o,'Foudre'))ajouteEtat(o,'Foudre',-1)});
  contagions();
@@ -3276,5 +3294,5 @@ $('portees').onclick=()=>{porteesOn=!porteesOn;
 majPortees();
 window.addEventListener('resize',()=>{updateRing();showAim();renderCombat()});
 render();
-</script><script src="./catalog.js?v=0.547"></script><script src="./planches-calcul.js?v=0.547"></script><script src="./planches.js?v=0.547"></script><script src="./editor.js?v=0.547"></script><script src="./maps.js?v=0.547"></script><script src="./domaine.js?v=0.547"></script><script src="./campagnes.js?v=0.547"></script><script src="./firebase-config.js?v=0.547"></script><script src="./shared-data.js?v=0.547"></script><script src="./shared.js?v=0.547"></script>
-<script src="./live.js?v=0.547"></script></body></html>
+</script><script src="./catalog.js?v=0.548"></script><script src="./planches-calcul.js?v=0.548"></script><script src="./planches.js?v=0.548"></script><script src="./editor.js?v=0.548"></script><script src="./maps.js?v=0.548"></script><script src="./domaine.js?v=0.548"></script><script src="./campagnes.js?v=0.548"></script><script src="./firebase-config.js?v=0.548"></script><script src="./shared-data.js?v=0.548"></script><script src="./shared.js?v=0.548"></script>
+<script src="./live.js?v=0.548"></script></body></html>
