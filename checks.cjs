@@ -3364,14 +3364,19 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.551 — La vue est retenue sur l'appareil, comme l'onglet : recharger la rend telle quelle, et un appareil qui en a une
+   n'est plus jeté en vue joueur faute de compte MJ reconnu. Un onglet que seul le MJ ouvre fait de l'appareil celui du MJ. */
+{const page=fs.readFileSync('index.html','utf8'),part=fs.readFileSync('shared.js','utf8'),cartes=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ assert.ok(page.includes("view=vueChoisie()==='player'?'player':'mj',")&&page.includes("view=$('view').value;retiensVue(view);")&&page.includes('<select id="view" autocomplete="off">'),'la vue retenue');
+ assert.ok(part.includes("const enJoueur=()=>{if(admin||vueChoisie())return;")&&cartes.includes("if(p!=='table'&&!vueChoisie()&&!ongletsJoueurs().includes(p))retiensVue('mj');")
+  &&vivant.includes("else if(vueImposee&&!spectateur()){vueImposee=false;view=vueChoisie()||'mj';"),'jamais jeté en vue joueur');}
 /* v0.549 — Deux paliers au plus pour une amélioration ou un bonus : la troisième colonne se cache, ce qu'elle gardait reste.
    Recharger ne jette plus le MJ en vue joueur sur la table : on attend que son compte soit reconnu, la table qu'il a
    ouverte ne se rouvre qu'en MJ, une identité anonyme sans lien de table s'efface. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8'),part=fs.readFileSync('shared.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
  assert.ok(src.includes("let html='<table class=\"paliers-table'+(trois?'':deux?' deux-paliers':' un-palier')+'\">")&&feuille.includes('.paliers-table.deux-paliers tr>:nth-child(n+4){display:none}')
   &&src.includes("return n===3?'<div hidden>'+champs+'</div>':champs}).join('')+'</div>'"),'deux colonnes, deux champs');
- assert.ok(part.includes("const enJoueur=()=>{if(admin)return;if(!adminConnu){document.addEventListener('amertume-mj-change',enJoueur,{once:true});return}")
-  &&part.includes("auth.onAuthStateChanged(async user=>{admin=false;adminConnu=!user;")&&part.includes("render();rendPage();status("),'la vue attend le compte');
+ assert.ok(part.includes("auth.onAuthStateChanged(async user=>{admin=false;adminConnu=!user;")&&part.includes("render();rendPage();status("),'la vue attend le compte');
  assert.ok(vivant.includes("if(!lien){if(deja&&deja.isAnonymous)try{await auth.signOut()}catch(e){}")&&vivant.includes("document.addEventListener('amertume-mj-change',rouvre);rouvre();return}"),'la table du MJ se rouvre en MJ');}
 /* v0.548 — Thésaurisation (Mystique) : les orbes non lancés à la fin du tour restent au tour suivant, tous, ils s'accumulent (v0.550) ;
    doublés, puis triplés au palier 2 ; un soin de 1d6, puis 3d6, par orbe gardé. */

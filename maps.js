@@ -1780,4 +1780,6 @@ window.addEventListener('resize',()=>{calerColonnes();if(document.body.classList
 maps.forEach(ensure);refreshMapPick();renderMapLayer();refreshHistory();renderCatalogPages();
 majOnglets();
 // La page d'avant se rouvre une fois la partie chargée : avant, elle n'a rien à montrer.
-document.addEventListener('amertume-partie-chargee',()=>{refreshMapPick();const p=lastPage();if(p!=='table')showPage(p)});
+/* Un onglet que seul le MJ ouvre, retenu sur l'appareil : c'est l'appareil du MJ, sa vue est celle du MJ. */
+document.addEventListener('amertume-partie-chargee',()=>{refreshMapPick();const p=lastPage();
+ if(p!=='table'&&!vueChoisie()&&!ongletsJoueurs().includes(p))retiensVue('mj');if(p!=='table')showPage(p)});

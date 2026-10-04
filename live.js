@@ -487,7 +487,10 @@ function verrouillerInvite(){const inv=spectateur();
  if(inv){cache($('owner'),true);cache($('owner-label'),true)}
  cache($('open-share'),inv)}
 // Après chaque rendu, ce qui a bougé part sur le réseau — et rien d'autre.
-const renderAvantTable=render;render=function(){
- if(spectateur()&&view!=='player'){view='player';$('view').value='player'}
- renderAvantTable();verrouillerInvite();pousserPlusTard()};
+// Une vue imposée le temps d'être invité se rend dès qu'on ne l'est plus, avec l'onglet d'avant.
+let vueImposee=false;
+const renderAvantTable=render;render=function(){let rendre=false;
+ if(spectateur()&&view!=='player'){view='player';$('view').value='player';vueImposee=true}
+ else if(vueImposee&&!spectateur()){vueImposee=false;view=vueChoisie()||'mj';$('view').value=view;rendre=true}
+ renderAvantTable();verrouillerInvite();pousserPlusTard();if(rendre&&typeof rendPage==='function')rendPage()};
 majTable();
