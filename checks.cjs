@@ -3364,11 +3364,16 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
   &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
+/* v0.552 — Seul un invité de table, venu par son lien ou assis à elle, est rangé d'office en vue joueur. Ni la
+   publication reçue sans compte MJ reconnu, ni une identité anonyme seule ne basculent plus l'appareil du MJ. */
+{const part=fs.readFileSync('shared.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ assert.ok(part.includes("const enJoueur=()=>{if(admin||vueChoisie()||!(typeof tableVoulue!=='undefined'&&tableVoulue))return;")
+  &&vivant.includes("function spectateur(){if(estMJ())return false;\n return enLigne||tableVoulue}"),'seul un invité passe en vue joueur');}
 /* v0.551 — La vue est retenue sur l'appareil, comme l'onglet : recharger la rend telle quelle, et un appareil qui en a une
    n'est plus jeté en vue joueur faute de compte MJ reconnu. Un onglet que seul le MJ ouvre fait de l'appareil celui du MJ. */
 {const page=fs.readFileSync('index.html','utf8'),part=fs.readFileSync('shared.js','utf8'),cartes=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
  assert.ok(page.includes("view=vueChoisie()==='player'?'player':'mj',")&&page.includes("view=$('view').value;retiensVue(view);")&&page.includes('<select id="view" autocomplete="off">'),'la vue retenue');
- assert.ok(part.includes("const enJoueur=()=>{if(admin||vueChoisie())return;")&&cartes.includes("if(p!=='table'&&!vueChoisie()&&!ongletsJoueurs().includes(p))retiensVue('mj');")
+ assert.ok(cartes.includes("if(p!=='table'&&!vueChoisie()&&!ongletsJoueurs().includes(p))retiensVue('mj');")
   &&vivant.includes("else if(vueImposee&&!spectateur()){vueImposee=false;view=vueChoisie()||'mj';"),'jamais jeté en vue joueur');}
 /* v0.549 — Deux paliers au plus pour une amélioration ou un bonus : la troisième colonne se cache, ce qu'elle gardait reste.
    Recharger ne jette plus le MJ en vue joueur sur la table : on attend que son compte soit reconnu, la table qu'il a

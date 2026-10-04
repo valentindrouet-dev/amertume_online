@@ -34,8 +34,11 @@ let journalRef=null,quitteJournal=null,journalVus=new Set(),journalPremier=true;
    arrive par la table. Sinon chaque appareil révélait de son côté, et un joueur qui
    arrivait voyait « révélés » des créatures que personne n'avait aperçues. */
 const tableVoulue=!!new URL(location.href).searchParams.get('table');
+/* Seul un invité est rangé d'office en vue joueur : venu par le lien d'une table, ou assis à l'une
+   d'elles. Une identité anonyme, seule, n'en fait pas un : l'appareil du MJ en gardait une parfois,
+   et chaque rechargement le jetait en vue joueur. */
 function spectateur(){if(estMJ())return false;
- return enLigne||tableVoulue||!!(typeof auth!=='undefined'&&auth&&auth.currentUser&&auth.currentUser.isAnonymous)}
+ return enLigne||tableVoulue}
 // Le socle qu'on tient sous le doigt ne doit pas être replacé par ce qui arrive du réseau.
 window.socleEnMain=null;
 const estMJ=()=>typeof admin!=='undefined'&&admin===true;
