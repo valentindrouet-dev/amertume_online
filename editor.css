@@ -1851,6 +1851,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .talent-detail:has(>.talent-bulle-nom .cout-xp){position:relative}
 /* Le coût à la table : des points bleus pour les PA, ocre pour les PM, en haut à droite de la bulle. */
 .talent-bulle-nom .cout-points{margin-left:auto;display:inline-flex;gap:3px;align-self:center;flex:none;padding-left:6px}
+.talent-bulle-nom.avec-des .cout-points{margin-left:-6px;padding-left:0}
 .talent-bulle-nom .cout-points .pt{display:block;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 -1px 0 rgba(0,0,0,.22),0 0 0 1.5px rgba(255,255,255,.7)}
 .talent-bulle-nom .cout-points .pt.action{background:#3f8fe0}.talent-bulle-nom .cout-points .pt.mvt{background:#e0a04a}
 .talent-bulle-nom .cout-xp.acquis{background:#dff0da;border-color:#3f8a4a;color:#2e6b38}
