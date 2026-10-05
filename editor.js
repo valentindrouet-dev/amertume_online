@@ -1845,10 +1845,31 @@ const deAccolade=k=>{const c=DES_ACCOLADES.get(String(k).normalize('NFD').replac
 function deDansTexte(c){const d=document.createElement('i');d.className='die-sq de-texte';d.style.setProperty('--face',dieFace(c));d.title='Dé '+types[c];d.setAttribute('role','img');d.setAttribute('aria-label','dé '+types[c]);return d}
 // Le même dé dans un texte HTML déjà échappé, pour l'export : une image.
 const desEnImages=html=>String(html||'').replace(new RegExp(ACCOLADES_DES.source,'gu'),(m,k)=>{const c=deAccolade(k);return c<0?m:'<img class="de" src="'+dieFace(c).slice(5,-2)+'" alt="dé '+types[c]+'">'});
-function texteEnrichi(el,texte,noms){texte=String(texte||'');el.replaceChildren();
- // Les dés d'abord ; entre eux, le texte se colore comme avant.
+/* Les variables d'une description : {orbes}, {endu}, {dégâts}… accents et casse ignorés. Chez un combattant, le
+   texte dit sa valeur du moment — talents, améliorations et équipement compris — à la couleur de sa
+   caractéristique sur la fiche ; sans combattant, l'onglet Talents ou l'éditeur, la variable se montre par son nom. */
+const VARIABLES_TALENT={
+ // Les orbes à la couleur du dé Mystique qu'ils lancent ; les caractéristiques à celles de la fiche.
+ orbes:{teinte:'#3f7bc0',val:a=>orbesDuTour(a)},
+ desorbe:{teinte:'#3f7bc0',val:a=>{const d=desOrbe(talentsCodes(a));return d?d.n+d.plus:0}},
+ endu:{stat:'endu',val:a=>enduAffichee(a)},
+ vie:{stat:'vie',val:a=>vieAffichee(a)},
+ pv:{stat:'pv',val:a=>Math.trunc(Number(a.max))||0},
+ degats:{stat:'dmg',val:a=>degatsDe(a)},
+ def:{stat:'def',val:a=>defOf(a)},
+ niveau:{stat:'xp',val:a=>Math.trunc(Number(a.level))||1},
+ pa:{val:a=>pointsMax(a,'action')},
+ pm:{val:a=>pointsMax(a,'mouvement')}};
+const variableTalent=k=>VARIABLES_TALENT[String(k).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()]||null;
+function motVariable(k,v,a){const b=document.createElement('b');b.className='mot-cle mot-variable'+(a?'':' sans-valeur');
+ const c=v.stat&&typeof STAT_TINTS!=='undefined'&&STAT_TINTS[v.stat]?'rgb('+STAT_TINTS[v.stat]+')':v.teinte||'';if(c)b.style.color=c;
+ let n=null;if(a)try{n=v.val(a)}catch(e){n=null}
+ b.textContent=Number.isFinite(n)?String(n):k;return b}
+function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceChildren();
+ // Les dés et les variables d'abord ; entre eux, le texte se colore comme avant.
  const rd=new RegExp(ACCOLADES_DES.source,'gu');let fin=0,d;
- while((d=rd.exec(texte))){const c=deAccolade(d[1]);if(c<0)continue;if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);el.append(deDansTexte(c));fin=rd.lastIndex}
+ while((d=rd.exec(texte))){const c=deAccolade(d[1]),v=c<0?variableTalent(d[1]):null;if(c<0&&!v)continue;
+  if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);el.append(c>=0?deDansTexte(c):motVariable(d[1],v,a));fin=rd.lastIndex}
  if(fin<texte.length)motsDans(el,texte.slice(fin),noms);return el}
 /* Les talents d'un arbre, dans le texte d'un des siens : leur nom exact, casse ignorée, prend la
    couleur de sa nature — « Charge » en bleu d'Action dans un talent du Destructeur. */
@@ -4128,7 +4149,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,pal
   const g=document.createElement('div');g.className='paliers-bulle liste';
   montres.forEach(n=>{
    const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n),numero=montres.length>1;
-   const e=document.createElement('p');e.className='palier-effet';e.textContent=tp.effects||'Effet à préciser.';if(tp.effects)texteEnrichi(e,tp.effects,noms);
+   const e=document.createElement('p');e.className='palier-effet';e.textContent=tp.effects||'Effet à préciser.';if(tp.effects)texteEnrichi(e,tp.effects,noms,a);
    // Seul le texte du MJ : la phrase du moteur se lit dans l'éditeur, pas dans la bulle.
    const tete=[];
    if(numero){const r=document.createElement('span');r.className='palier-num';r.textContent=CHIFFRES_PALIER[n]||String(n);tete.push(r)}
@@ -4139,7 +4160,7 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,pal
   // Dans l'arbre, chaque rond dit son propre texte : les améliorations ne jouent qu'au dehors.
   // Une amélioration de l'Attaque se lit dans la bulle de l'Attaque, pas dans celle du talent qui la porte.
   if(a&&!cout&&!lisChemin(t)){const {ams,remplace}=ameliorationsTenues(a,t);
-   const ligneAm=(x,cls)=>{const tx=talentAuPalier(vu(x),palierDe(a,x)).effects||'';if(!tx)return;const e=document.createElement('p');e.className='palier-effet'+(cls?' '+cls:'');texteEnrichi(e,tx,noms);g.append(e)};
+   const ligneAm=(x,cls)=>{const tx=talentAuPalier(vu(x),palierDe(a,x)).effects||'';if(!tx)return;const e=document.createElement('p');e.className='palier-effet'+(cls?' '+cls:'');texteEnrichi(e,tx,noms,a);g.append(e)};
    /* « Remplace le texte du talent » : le texte de base cède la place à celui du chemin qui le
       dit — un seul chemin par talent. Sur ce chemin, la dernière amélioration tenue fait le texte. */
    if(remplace){g.replaceChildren();ligneAm(remplace,'')}

@@ -3074,7 +3074,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  {const ctxD={};vm.createContext(ctxD);vm.runInContext(src.slice(src.indexOf('const DES_ACCOLADES='),src.indexOf('function deDansTexte('))+';this.deAccolade=deAccolade;',ctxD);
   assert.deepEqual(['bleu','Bleu','BLEU','mystique','Léger','os','noir','Phase','constructor','element'].map(ctxD.deAccolade),[3,3,3,3,1,1,5,6,-1,-1],'couleurs et noms de dés, casse et accents ignorés');
   assert.equal(C.aDesAccolades('Lance {bleu} et {rouge}'),false,'un dé n’est pas une accolade d’élément');
-  assert.ok(src.includes("el.append(deDansTexte(c));")&&src.includes("lignes.push(desEnImages(e(nomEnClair(t.effects))));")&&feuille.includes('.die-sq.de-texte{display:inline-block;'),'le dé dans le texte, à l’écran et au PDF');}
+  assert.ok(src.includes("lignes.push(desEnImages(e(nomEnClair(t.effects))));")&&feuille.includes('.die-sq.de-texte{display:inline-block;'),'le dé dans le texte, à l’écran et au PDF');}
  /* v0.477 — Sur la fiche, l'équipement aux deux tiers, l'inventaire au tiers de droite, à sa taille. */
  assert.ok(feuille.includes('.corps-sac>.sac{grid-column:2;grid-row:1;')
   &&feuille.includes('.sac .cat-pill.gear-carre,.sac .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:36px;min-width:36px;height:36px;'),'équipement et inventaire côte à côte');
@@ -3365,6 +3365,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.577 — Variables dans les descriptions de talents : {orbes}, {desorbe}, {endu}, {vie}, {pv}, {degats}, {def}, {niveau},
+   {pa}, {pm}, accents et casse ignorés. Chez un combattant, sa valeur du moment, à la couleur de sa caractéristique ;
+   sans combattant, le nom de la variable, souligné de points. */
+{const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("const VARIABLES_TALENT={")&&src.includes(" orbes:{teinte:'#3f7bc0',val:a=>orbesDuTour(a)},")&&src.includes(" endu:{stat:'endu',val:a=>enduAffichee(a)},")
+  &&src.includes(" degats:{stat:'dmg',val:a=>degatsDe(a)},")&&src.includes("function texteEnrichi(el,texte,noms,a=null){")
+  &&src.includes("el.append(c>=0?deDansTexte(c):motVariable(d[1],v,a));")&&src.includes("texteEnrichi(e,tp.effects,noms,a);")&&src.includes("texteEnrichi(e,tx,noms,a);g.append(e)};")
+  &&feuille.includes(".mot-variable.sans-valeur{text-decoration:underline dotted;"),'les variables des descriptions');}
 /* v0.576 — Coût des talents : une Action en PA, 1 par défaut, 0 pour une mécanique gratuite (Orbes, Charge) ; un nouveau
    type, Mouvement, en PM, 1 par défaut ; le MJ règle l'un ou l'autre de 0 à 9. Un talent ne se joue qu'une fois par tour en
    combat, même gratuit, sauf les Orbes mystiques, autant qu'il reste d'orbes ; ensuite il est grisé. */
@@ -3644,7 +3652,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    hors combat relance le combat ; des mètres entiers ; le coup du socle au contact ; le choc d'une cible repoussée qui bute ;
    la poussée de la Charge tenue par toute amélioration de poussée. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
- assert.ok(src.includes("const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);")&&src.includes("texteEnrichi(e,tp.effects,noms)")&&src.includes("texteEnrichi(e,tx,noms)"),'les bulles passent les noms de l’arbre');
+ assert.ok(src.includes("const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);"),'les bulles passent les noms de l’arbre');
  {const vm=require('vm'),deb=src.indexOf('const TEINTES_TALENTS='),fin=src.indexOf('function motsDans(');
   const T=[{id:'c',name:'Charge',famille:'Destructeur',type:'act'},{id:'e',name:'Enragement',famille:'Destructeur',type:'pass'},{id:'o',name:'Orbe',famille:'Mage',type:'act'}];
   const ctx={catalog:{talents:T},lisChemin:t=>t.chemin||null,talent:id=>T.find(t=>t.id===id),talentFamily:t=>t.famille||'Génériques',estVide:()=>false,estBonus:()=>false,
