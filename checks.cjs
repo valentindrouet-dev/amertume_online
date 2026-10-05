@@ -3368,7 +3368,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.581 — Essai : les points de coût se placent juste à gauche du nom du talent, dans toutes les bulles, et plus dans le coin. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("const s=pointsDeCout(c);if(s)tete.prepend(s)}")&&src.includes(" {const s=pointsDeCout(points);if(s)tete.prepend(s)}")
-  &&feuille.includes(".talent-bulle-nom .cout-points{margin:0 -2px 0 0;display:inline-flex;"),'les points à gauche du nom');}
+  &&feuille.includes(".talent-bulle-nom .cout-points{margin:0 -2px 0 0;display:inline-flex;gap:3px;align-self:center;flex:none;position:relative;top:-2px}"),'les points à gauche du nom');}
 /* v0.580 — Le Mouvement prend les teintes brunes et beiges du bouton de PM, comme l'Action le bleu de son bouton : bouton
    à l'ocre d'Analyser, bulles, cartes, arbre et noms en brun sur beige. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
