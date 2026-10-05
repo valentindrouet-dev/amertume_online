@@ -3365,6 +3365,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.581 — Essai : les points de coût se placent juste à gauche du nom du talent, dans toutes les bulles, et plus dans le coin. */
+{const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("const s=pointsDeCout(c);if(s)tete.prepend(s)}")&&src.includes(" {const s=pointsDeCout(points);if(s)tete.prepend(s)}")
+  &&feuille.includes(".talent-bulle-nom .cout-points{margin:0 -2px 0 0;display:inline-flex;"),'les points à gauche du nom');}
 /* v0.580 — Le Mouvement prend les teintes brunes et beiges du bouton de PM, comme l'Action le bleu de son bouton : bouton
    à l'ocre d'Analyser, bulles, cartes, arbre et noms en brun sur beige. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
@@ -3374,8 +3378,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    payer ; la bulle d'une attaque, son point d'Action. */
 {const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("function pointsDeCout(c){if(!c||!(c.pa>0||c.pm>0))return null;")&&src.includes("vu:x=>talentPourElement(x,elementDe(a)),points:t.cout||false,")
-  &&src.includes("lignes:voit?lignesAttaque(a):null,points:{pa:1,pm:0}}));")&&page.includes("points:t.cout||false})};")&&page.includes("return {talent,code,params,rangee,logo,cout,")
-  &&feuille.includes(".talent-bulle-nom.avec-des .cout-points{margin-left:-6px;padding-left:0}"),'le coût à la table');}
+  &&src.includes("lignes:voit?lignesAttaque(a):null,points:{pa:1,pm:0}}));")&&page.includes("points:t.cout||false})};")&&page.includes("return {talent,code,params,rangee,logo,cout,"),'le coût à la table');}
 /* v0.578 — Dans la bulle d'un talent — fiche, onglet Talents, arbre —, son coût à la table en haut à droite : un point
    bleu par PA, un point ocre par PM ; pas dans la barre d'action, où les dés tiennent ce coin. Dans l'arbre, le
    cartouche d'XP monte à cheval sur le bord haut de la bulle, à droite. */

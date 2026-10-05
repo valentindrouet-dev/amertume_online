@@ -413,7 +413,7 @@ function bulleAction(b,{nom,dit='',note='',des=null,lignes=null,points=null}){co
  const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=nom;tete.append(n);d.append(tete);
  if(des)desAuTitre(tete,des);
- {const s=pointsDeCout(points);if(s)tete.append(s)}
+ {const s=pointsDeCout(points);if(s)tete.prepend(s)}
  // Une attaque : ce qui l'améliore, une ligne chacun, la pastille à la couleur des actions.
  if(lignes&&lignes.length){d.classList.add('p-act');lignesEnPastilles(d,lignes)}
  if(dit){const p=document.createElement('p');p.className='palier-effet';p.textContent=dit;d.append(p)}
@@ -4144,10 +4144,10 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,pal
   if(cout&&coutPalier(t,suite)){const c=document.createElement('span');c.className='cout-xp'+(pris?' acquis':a&&coutPalier(t,suite)>xpDisponible(a,catalog.talents)?' trop-cher':'');c.textContent=coutPalier(t,suite)+' XP';tete.append(c)}}
  // Un talent qui frappe, dans la barre d'action : ses dés et son bonus de dégâts au bout de la ligne de son nom.
  if(des)desAuTitre(tete,des);
- /* Son coût à la table, dans le coin en haut à droite, après les dés s'il y en a : celui que la table fait payer
-    (« points » le donne), sinon celui réglé ; rien pour un talent gratuit ou de début de combat. */
+ /* Son coût à la table, juste à gauche de son nom : celui que la table fait payer (« points » le donne), sinon
+    celui réglé ; rien pour un talent gratuit ou de début de combat. */
  if(points&&!bonus){const c=typeof points==='object'?points:typeof coutTalent==='function'&&!(typeof talentDebut==='function'&&talentDebut(t))?coutTalent(t):null;
-  const s=pointsDeCout(c);if(s)tete.append(s)}
+  const s=pointsDeCout(c);if(s)tete.prepend(s)}
  const ligne=(texte,classe)=>{const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p);return p};
  if(bonus){if(t.effects)ligne(t.effects)}
  else{/* Les paliers, un par ligne, le chiffre en tête de sa ligne : « I Vous effectuez… ».
