@@ -1684,15 +1684,15 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .token.objet.avec-logo .logo-objet,.shape.objet.avec-logo .logo-objet{width:74%;height:74%;margin:auto;object-fit:contain;pointer-events:none}
 .shape.objet.avec-logo{display:grid;place-items:center}
 
-/* Sans état chez la cible, l'en-tête ne prend aucune place : les actions montent au haut du bloc. */
-.targets:not(:has(.etat-cible)){display:none}
-/* Les états de la cible, en icônes ; le compte d'un état qui se cumule en pastille, au coin bas droit. */
-.etats-cible{display:flex;align-items:center;gap:7px}.etats-cible+.etats-cible{border-left:1px solid var(--line);padding-left:10px}
-.etat-cible{position:relative;display:grid;place-items:center;width:30px;height:30px;font-size:20px;cursor:default}
-.etat-cible img{width:100%;height:100%;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
-.etat-cible.sans-jeton{box-sizing:border-box;border-radius:50%;background:var(--panel-2);border:1px solid var(--line-strong);font:800 13px/1 system-ui;color:var(--ink)}
+/* Sans état chez le combattant, l'en-tête ne prend aucune place : les actions montent au haut du bloc. */
+.targets:not(:has(.etat-tete)){display:none}
+/* Les états du combattant, en icônes ; le compte d'un état qui se cumule en pastille, au coin bas droit. */
+.etats-tete{display:flex;align-items:center;gap:7px}
+.etat-tete{position:relative;display:grid;place-items:center;width:30px;height:30px;font-size:20px;cursor:default}
+.etat-tete img{width:100%;height:100%;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+.etat-tete.sans-jeton{box-sizing:border-box;border-radius:50%;background:var(--panel-2);border:1px solid var(--line-strong);font:800 13px/1 system-ui;color:var(--ink)}
 .talent-detail.bulle-etat{--teinte:#8a6d4a;background:#f4ede0;border-left:4px solid var(--teinte)}.bulle:has(.bulle-etat){--bulle-bord:#f4ede0}
-.etat-cible .pastille-etat{position:absolute;right:-5px;bottom:-4px;min-width:15px;height:15px;box-sizing:border-box;padding:0 3px;display:grid;place-items:center;border-radius:8px;background:#2b2722;border:1.5px solid var(--panel);color:#fff;font:700 9.5px/1 system-ui}
+.etat-tete .pastille-etat{position:absolute;right:-5px;bottom:-4px;min-width:15px;height:15px;box-sizing:border-box;padding:0 3px;display:grid;place-items:center;border-radius:8px;background:#2b2722;border:1.5px solid var(--panel);color:#fff;font:700 9.5px/1 system-ui}
 
 /* Les zones fouillées par la Perception, sur la carte : un disque pointillé ambré par test. */
 #fouilles-layer{position:absolute;inset:0;z-index:2;pointer-events:none}
@@ -1862,12 +1862,12 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .talent-bulle-nom .cout-points .pt{display:block;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 -1px 0 rgba(0,0,0,.22),0 0 0 1.5px rgba(255,255,255,.7)}
 .talent-bulle-nom .cout-points .pt.action{background:#3f8fe0}.talent-bulle-nom .cout-points .pt.mvt{background:#b98b61}
 /* Les jetons des cibles d’un geste : à cheval sur le bord haut de sa bulle, à droite ; la bulle descend son titre d'autant. */
-.talent-detail:has(>.bulle-cibles){position:relative}.bulle .talent-detail.large:has(>.bulle-cibles){padding-top:24px}
+.talent-detail:has(>.bulle-cibles){position:relative}.bulle .talent-detail.large:has(>.bulle-cibles){padding-top:30px}
 .bulle-cibles{position:absolute;top:0;right:10px;transform:translateY(-50%);display:flex;gap:6px;pointer-events:none}
-.jeton-cible{position:relative;display:grid;place-items:center;width:36px;height:36px;box-sizing:border-box;border-radius:50%;border:2.5px solid #5f9b74;background:var(--panel);color:#5f9b74;font:700 17px/1 'Killam',Georgia,serif;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.jeton-cible{position:relative;display:grid;place-items:center;width:47px;height:47px;box-sizing:border-box;border-radius:50%;border:3px solid #5f9b74;background:var(--panel);color:#5f9b74;font:700 22px/1 'Killam',Georgia,serif;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 .jeton-cible.adverse{border-color:#c2604f;color:#c2604f}
 .jeton-cible img{width:100%;height:100%;border-radius:50%;object-fit:cover}
-.jeton-cible b{position:absolute;left:-5px;top:-4px;display:grid;place-items:center;width:15px;height:15px;border-radius:50%;background:var(--panel);border:1px solid var(--line);font:700 9.5px/1 system-ui;color:var(--ink)}
+.jeton-cible b{position:absolute;left:-6px;top:-5px;display:grid;place-items:center;width:19px;height:19px;border-radius:50%;background:var(--panel);border:1px solid var(--line);font:700 12px/1 system-ui;color:var(--ink)}
 .talent-bulle-nom .cout-xp.acquis{background:#dff0da;border-color:#3f8a4a;color:#2e6b38}
 .talent-bulle-nom .cout-xp.trop-cher{background:#f8d9d4;border-color:#b8352f;color:#a02c20}
 /* L'en-tête de l'arbre : le total à gauche, « Modifier en masse » contre « Vue joueur ». */

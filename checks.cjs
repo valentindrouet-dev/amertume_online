@@ -3364,12 +3364,18 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.585 — L'en-tête de la barre d'action montre les états du combattant sélectionné lui-même, pas ceux de sa cible ; les
+   jetons des cibles grossissent encore de 30 %. */
+{const page=fs.readFileSync('index.html','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ const tete=page.slice(page.indexOf('function renderTargets(){'),page.indexOf('function tourEpuise(){'));
+ assert.ok(tete.includes("const liste=statesOf(a).filter(e=>e!=='Coma');if(!liste.length)return;")&&tete.includes("compteEtat(a,etat)")
+  &&!tete.includes('ciblesDe(')&&!tete.includes('ciblesAttaque('),'l’en-tête dit les états du combattant');
+ assert.ok(feuille.includes(".jeton-cible{position:relative;display:grid;place-items:center;width:47px;height:47px;")&&feuille.includes(".bulle .talent-detail.large:has(>.bulle-cibles){padding-top:30px}"),'des jetons de 47 pixels');}
 /* v0.584 — Les jetons des cibles grossissent et passent au coin haut droit de la bulle. L'en-tête suit la cible que le coup
    prendrait quand aucune n'est désignée. Le Mouvement passe au beige tirant vers le brun, et Se relever, qui coûte un point de
    Mouvement, en prend la couleur. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(feuille.includes(".jeton-cible{position:relative;display:grid;place-items:center;width:36px;height:36px;")&&feuille.includes(".bulle .talent-detail.large:has(>.bulle-cibles){padding-top:24px}"),'des jetons plus gros, à droite');
- assert.ok(page.includes("(visees.length?visees:ciblesAttaque(a,rangeOf(a)==='distance'?'distance':'contact')).forEach(j=>{"),'l’en-tête suit la cible automatique');
+ assert.ok(feuille.includes(".bulle-cibles{position:absolute;top:0;right:10px;"),'les jetons à droite');
  assert.ok(page.includes("scheduleSave()},'btn-action btn-mvt')}")&&page.includes(".pastilles .mvt{background:#b98b61}")
   &&!/#e0a04a|#b77b31|#f2e2c4/.test(feuille+page+src),'le Mouvement en beige brun, Se relever compris');}
 /* v0.583 — L'en-tête de la barre d'action ne montre plus les cibles : les états de la cible désignée, en icônes, le compte
@@ -3377,8 +3383,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    à ses jetons, à cheval sur le coin haut gauche de sa bulle : celles que le coup ou le talent prendrait. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  const tete=page.slice(page.indexOf('function renderTargets(){'),page.indexOf('function tourEpuise(){'));
- assert.ok(!tete.includes("b.className='cible'")&&!tete.includes('setTarget(')&&tete.includes("s.className='etat-cible'")&&tete.includes("className:'pastille-etat'")
-  &&tete.includes("surveille(s,()=>bulleEtat(s,o,etat))")&&feuille.includes(".targets:not(:has(.etat-cible)){display:none}"),'les états de la cible dans l’en-tête');
+ assert.ok(!tete.includes("b.className='cible'")&&!tete.includes('setTarget(')&&tete.includes("s.className='etat-tete'")&&tete.includes("className:'pastille-etat'")
+  &&tete.includes("surveille(s,()=>bulleEtat(s,a,etat))")&&feuille.includes(".targets:not(:has(.etat-tete)){display:none}"),'les états du combattant dans l’en-tête');
  const x={actors:[],alive:o=>o&&o.hp>0,nomNum:o=>o.name};vm.createContext(x);
  vm.runInContext(page.slice(page.indexOf('function descriptionEtat('),page.indexOf("/* L'écu de DEF")),x);
  const o={id:'m',name:'Gobelin',hp:5,states:['Feu','Poison','Saignée','Furie','Foudre','Gardé','Ciblage'],cumuls:{Feu:3,Poison:1,Furie:2,Foudre:2},bleed:4};

@@ -421,7 +421,7 @@ function jetonsCibles(a,liste){if(!a||!Array.isArray(liste)||!liste.length||type
   const rang=numeros.get(o.id);if(rang)r.append(Object.assign(document.createElement('b'),{textContent:rang}));
   g.append(r)});
  return g.childElementCount?g:null}
-// La bulle d'un état de la cible, dans l'en-tête de la barre d'action : son nom, ses crans s'il se cumule, ce qu'il fait.
+// La bulle d'un état du combattant, dans l'en-tête de la barre d'action : son nom, ses crans s'il se cumule, ce qu'il fait.
 function bulleEtat(ancre,o,etat){const d=document.createElement('div');d.className='talent-detail large bulle-etat';
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');
  n.textContent=etat+(cumulable(etat)?' '+compteEtat(o,etat):'');tete.append(n);d.append(tete);
