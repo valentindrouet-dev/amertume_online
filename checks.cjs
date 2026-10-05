@@ -3187,8 +3187,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("function noteContactsDepart(a){if(!a||!enCombat())return;")&&page.includes("const contacts=adversairesAuContact(a).filter(([b])=>!avant||!avant.has(b.id));")
   &&page.includes("const arret=tokenOf(a)/2+tokenOf(b)/2+1;")&&page.includes("function cheminVersContact(b,a,size){")
   &&page.includes("if(!r.hit||!r.damage){floatNumber(b,'0','nul');let pose0='',suite0='';"),'Lamevent, Provocation et Orbes');
- assert.ok(page.includes("function retirerVaincus(){if(view!=='mj')return;")&&page.includes("function reposCourtTous(){if(view!=='mj')return;")
-  &&page.includes("const rangs=[...toutes.slice(0,5),...toutes.slice(5).filter(j=>visees.includes(j))];")&&page.includes("#pv-layer .pv.dead{opacity:.45;filter:grayscale(1)}")
+ assert.ok(page.includes("function retirerVaincus(){if(view!=='mj')return;")&&page.includes("function reposCourtTous(){if(view!=='mj')return;")&&page.includes("#pv-layer .pv.dead{opacity:.45;filter:grayscale(1)}")
   &&page.includes("function mouvementEpuise(a){return enCombat()&&!!a&&pointsRestants(a,'mouvement')<=0}"),'boutons de camp, cinq cibles, jauges pâles, Analyser au Mouvement');
  assert.ok(carto.includes("if(deux||mapTool==='objet'){mapSel=dessous;renderCanvas();openObjet(dessous.i);e.preventDefault();return}}")&&!carto.includes("det.textContent=matiereDe(m).length")
   &&feuille.includes('.map-row.live{background:#dcebd9;'),'un objet posé se rouvre ; la liste des cartes au nom seul');}
@@ -3365,6 +3364,32 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.583 — L'en-tête de la barre d'action ne montre plus les cibles : les états de la cible désignée, en icônes, le compte
+   d'un état qui se cumule en pastille, et au survol ce que l'état fait, ses valeurs comprises. Les cibles d'un geste se lisent
+   à ses jetons, à cheval sur le coin haut gauche de sa bulle : celles que le coup ou le talent prendrait. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ const tete=page.slice(page.indexOf('function renderTargets(){'),page.indexOf('function tourEpuise(){'));
+ assert.ok(!tete.includes("b.className='cible'")&&!tete.includes('setTarget(')&&tete.includes("s.className='etat-cible'")&&tete.includes("className:'pastille-etat'")
+  &&tete.includes("surveille(s,()=>bulleEtat(s,o,etat))")&&feuille.includes(".targets:not(:has(.etat-cible)){display:none}"),'les états de la cible dans l’en-tête');
+ const x={actors:[],alive:o=>o&&o.hp>0,nomNum:o=>o.name};vm.createContext(x);
+ vm.runInContext(page.slice(page.indexOf('function descriptionEtat('),page.indexOf("/* L'écu de DEF")),x);
+ const o={id:'m',name:'Gobelin',hp:5,states:['Feu','Poison','Saignée','Furie','Foudre','Gardé','Ciblage'],cumuls:{Feu:3,Poison:1,Furie:2,Foudre:2},bleed:4};
+ x.actors=[o,{id:'g',name:'Brann',hp:9,garde:'m'}];
+ assert.equal(x.descriptionEtat(o,'Feu'),'À chaque nouveau tour, subit 3 dés noirs de dégâts, sans DEF.');
+ assert.equal(x.descriptionEtat(o,'Poison'),'Après chacune de ses Actions, subit 1 dé noir de dégâts, sans DEF.');
+ assert.equal(x.descriptionEtat(o,'Saignée'),'Chaque coup qui le touche lui inflige 4 dégâts de plus.');
+ assert.equal(x.descriptionEtat(o,'Furie'),'+2 aux dégâts de ses coups.');
+ assert.ok(x.descriptionEtat(o,'Foudre').endsWith('S’éteint dans 2 tours.'));
+ assert.equal(x.descriptionEtat(o,'Gardé'),'Sous la garde de Brann.');
+ assert.equal(x.descriptionEtat(o,'Ciblage'),'','sans effet en jeu, rien à dire');
+ assert.ok(src.includes("function bulleEtat(ancre,o,etat){")&&src.includes("function jetonsCibles(a,liste){")&&src.includes("des=null,cout=false,palier=0,points=true,cibles=null}={}){")
+  &&src.includes("points:{pa:1,pm:0},a,cibles:typeof ciblesAttaque==='function'?ciblesAttaque(a,at.range==='distance'?'distance':'contact'):null}));")
+  &&src.includes("points:t.cout||false,cibles:t.cibles?t.cibles():null,")&&page.includes("cibles:()=>ciblesDuGeste(a,code.cle,params,talent),")
+  &&page.includes("points:t.cout||false,cibles:t.cibles()})};")
+  &&feuille.includes(".bulle-cibles{position:absolute;top:0;left:10px;transform:translateY(-50%);")&&feuille.includes(".jeton-cible.adverse{border-color:#c2604f;"),'les jetons des cibles sur les bulles');
+ assert.ok(page.includes("function ciblesAttaque(a,portee){")&&page.includes("function ciblesDuGeste(a,cle,p,talent){")
+  &&page.includes("if(cle==='orbes'){const al=alliePourIgnition(a);return al!==null?[al]:un(cibleOrbe(a))}")
+  &&page.includes("return TALENTS_CODES[cle]&&TALENTS_CODES[cle].attaque?ciblesAttaque(a,portee):[]}"),'qui chaque geste viserait');}
 /* v0.581 — Essai : les points de coût se placent juste à gauche du nom du talent, dans toutes les bulles, et plus dans le coin. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("const s=pointsDeCout(c);if(s)tete.prepend(s)}")&&src.includes(" {const s=pointsDeCout(points);if(s)tete.prepend(s)}")
@@ -3377,13 +3402,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.579 — À la table aussi, la bulle d'un talent dit son coût en points, après ses dés s'il en a : celui que la table fait
    payer ; la bulle d'une attaque, son point d'Action. */
 {const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("function pointsDeCout(c){if(!c||!(c.pa>0||c.pm>0))return null;")&&src.includes("vu:x=>talentPourElement(x,elementDe(a)),points:t.cout||false,")
-  &&src.includes("lignes:voit?lignesAttaque(a):null,points:{pa:1,pm:0}}));")&&page.includes("points:t.cout||false})};")&&page.includes("return {talent,code,params,rangee,logo,cout,"),'le coût à la table');}
+ assert.ok(src.includes("function pointsDeCout(c){if(!c||!(c.pa>0||c.pm>0))return null;")&&src.includes("vu:x=>talentPourElement(x,elementDe(a)),points:t.cout||false,")&&page.includes("return {talent,code,params,rangee,logo,cout,"),'le coût à la table');}
 /* v0.578 — Dans la bulle d'un talent — fiche, onglet Talents, arbre —, son coût à la table en haut à droite : un point
    bleu par PA, un point ocre par PM ; pas dans la barre d'action, où les dés tiennent ce coin. Dans l'arbre, le
    cartouche d'XP monte à cheval sur le bord haut de la bulle, à droite. */
 {const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("des=null,cout=false,palier=0,points=true}={}){")&&src.includes("s.className='cout-points';")
+ assert.ok(src.includes("s.className='cout-points';")
   &&feuille.includes(".talent-bulle-nom .cout-xp{position:absolute;top:0;right:12px;transform:translateY(-50%);")
   &&feuille.includes(".talent-bulle-nom .cout-points .pt.action{background:#3f8fe0}.talent-bulle-nom .cout-points .pt.mvt{background:#e0a04a}"),'le coût en points, l’XP à cheval');}
 /* v0.577 — Variables dans les descriptions de talents : {orbes}, {desorbe}, {endu}, {vie}, {pv}, {degats}, {def}, {niveau},

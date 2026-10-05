@@ -409,7 +409,26 @@ function pointsDeCout(c){if(!c||!(c.pa>0||c.pm>0))return null;const s=document.c
  for(let k=0;k<(c.pa|0);k++)s.append(Object.assign(document.createElement('i'),{className:'pt action'}));
  for(let k=0;k<(c.pm|0);k++)s.append(Object.assign(document.createElement('i'),{className:'pt mvt'}));
  return s}
-function bulleAction(b,{nom,dit='',note='',des=null,lignes=null,points=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
+/* Les cibles qu'un geste prendrait s'il partait maintenant : leurs jetons, à cheval sur le coin haut gauche de sa bulle. Chacun
+   est le socle de la carte, son image ou son initiale, cerclé de rouge pour un adversaire, de vert pour un allié, avec son numéro
+   s'il en a un. Aucune cible, aucun jeton. */
+function jetonsCibles(a,liste){if(!a||!Array.isArray(liste)||!liste.length||typeof actors==='undefined')return null;
+ const numeros=typeof nameNumbers==='function'?nameNumbers():new Map(),g=document.createElement('span');g.className='bulle-cibles';
+ liste.forEach(j=>{const o=actors[j];if(!o)return;const r=document.createElement('span');r.className='jeton-cible '+(memeCamp(o,a)?'allie':'adverse');
+  r.setAttribute('role','img');r.setAttribute('aria-label',typeof nomNum==='function'?nomNum(o):String(o.name||''));
+  if(o.image){const im=document.createElement('img');im.src=o.image;im.alt='';im.draggable=false;r.append(im)}
+  else r.textContent=String(o.name||'?').charAt(0);
+  const rang=numeros.get(o.id);if(rang)r.append(Object.assign(document.createElement('b'),{textContent:rang}));
+  g.append(r)});
+ return g.childElementCount?g:null}
+// La bulle d'un état de la cible, dans l'en-tête de la barre d'action : son nom, ses crans s'il se cumule, ce qu'il fait.
+function bulleEtat(ancre,o,etat){const d=document.createElement('div');d.className='talent-detail large bulle-etat';
+ const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');
+ n.textContent=etat+(cumulable(etat)?' '+compteEtat(o,etat):'');tete.append(n);d.append(tete);
+ const t=typeof descriptionEtat==='function'?descriptionEtat(o,etat):'';
+ if(t){const p=document.createElement('p');p.className='palier-effet';p.textContent=t;d.append(p)}
+ return ouvrirBulle(ancre,d,'bulle-talent')}
+function bulleAction(b,{nom,dit='',note='',des=null,lignes=null,points=null,a=null,cibles=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
  const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=nom;tete.append(n);d.append(tete);
  if(des)desAuTitre(tete,des);
@@ -418,6 +437,7 @@ function bulleAction(b,{nom,dit='',note='',des=null,lignes=null,points=null}){co
  if(lignes&&lignes.length){d.classList.add('p-act');lignesEnPastilles(d,lignes)}
  if(dit){const p=document.createElement('p');p.className='palier-effet';p.textContent=dit;d.append(p)}
  if(note&&note!==dit){const p=document.createElement('p');p.className='muted';p.textContent=note;d.append(p)}
+ {const j=jetonsCibles(a,cibles);if(j)d.prepend(j)}
  return ouvrirBulle(b,d,'bulle-talent')}
 // Le logo de l'arme en main droite : un bouton de talent sans icône prend celui-là.
 function logoArmeEquipee(a){const at=a&&typeof activeAttack==='function'?activeAttack(a):null,l=at&&(at.logos||[])[0];return l?logoAttaque(l,'bouton'):null}
@@ -485,7 +505,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
    +' · '+(at.range==='distance'?'à distance':'au contact')+(at.targets==='all'?' · toutes cibles':'');
   b.setAttribute('aria-label',libelle+(at.gear&&at.name?' ('+at.name+')':'')+' — '+(refus||fait));
   // Sa bulle, celle d'un talent : le nom, les dés et le bonus de dégâts, rien de plus.
-  surveille(b,()=>bulleAction(b,{nom:libelle,des:voit?desEtBonus(at.dice,bonusDe(at),at.useOwnDamage!==false,false):null,lignes:voit?lignesAttaque(a):null,points:{pa:1,pm:0}}));
+  surveille(b,()=>bulleAction(b,{nom:libelle,des:voit?desEtBonus(at.dice,bonusDe(at),at.useOwnDamage!==false,false):null,lignes:voit?lignesAttaque(a):null,points:{pa:1,pm:0},a,cibles:typeof ciblesAttaque==='function'?ciblesAttaque(a,at.range==='distance'?'distance':'contact'):null}));
   /* Le bouton n'arme plus l'attaque : il la porte. On retient laquelle est partie —
      les dés affichés la suivent — puis le coup part aussitôt. */
   b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;
@@ -506,7 +526,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   if(t.rayonne)b.classList.add('debut-combat');
   /* Sa bulle : celle du talent, son texte tel que le MJ l'a écrit ; un talent qui frappe y montre
      ses dés et son bonus, sous son nom, comme une attaque. */
-  surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),points:t.cout||false,
+  surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),points:t.cout||false,cibles:t.cibles?t.cibles():null,
    des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false,orbeux(t)?etatOrbes:''):null}));
   /* Un talent qui frappe montre aussi ses dés au-dessus de la piste, au survol. Les Orbes, eux,
      y sont déjà, à côté de l'arme, qui reste. */
@@ -4126,7 +4146,7 @@ function retireDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;
 // Le chiffre d'un palier dans une comparaison, où le premier aussi doit se nommer.
 const CHIFFRES_PALIER=['','I','II','III'];
 /* « palier » : la bulle d'un seul palier, celui-là — l'arbre en montre deux côte à côte. */
-function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,palier=0,points=true}={}){const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);
+function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,palier=0,points=true,cibles=null}={}){const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);
  const pn=palier||(a?palierDe(a,t):0);
  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
  // Un bonus a la couleur de son rond : rouge pour les dégâts, vert pour les PV…
@@ -4180,6 +4200,8 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,pal
    ams.filter(x=>x!==remplace).forEach(x=>ligneAm(x,'amelioration'))}
   }
  if(note)ligne(note,'muted');
+ // Dans la barre d'action, les jetons de ceux qu'il viserait.
+ {const j=jetonsCibles(a,cibles);if(j)d.prepend(j)}
  return d}
 function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();requestAnimationFrame(placeFlechesArbres);
  // Un nœud redessiné emporte sa bulle : elle ne reste pas accrochée à l'ancien.
