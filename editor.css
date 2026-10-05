@@ -527,6 +527,10 @@ button.comp-rond{cursor:pointer}button.comp-rond:hover{background:rgba(var(--tin
 #settings-page .cat-panel{max-width:760px}
 .reglage-titre{margin:0 0 6px;font:600 12px system-ui;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted)}
 .reglage{display:flex;align-items:center;gap:18px;padding:11px 0;border-bottom:1px solid var(--line)}
+.niveaux-xp{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px 14px;padding:8px 0}
+.niveaux-xp label{display:flex;flex-direction:column;gap:3px;font-size:13px}
+.niveaux-xp input{width:100%;min-width:0}
+.niveaux-xp input.invalide{border-color:#b03828;box-shadow:0 0 0 1px #b03828}
 .onglets-joueurs{display:flex;flex-wrap:wrap;gap:6px 18px;padding:8px 0}
 .onglets-joueurs label{display:inline-flex;align-items:center;gap:6px;font-size:14px;cursor:pointer}
 .onglets-joueurs input:disabled+*,.onglets-joueurs label:has(input:disabled){opacity:.6;cursor:default}

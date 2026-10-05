@@ -1422,7 +1422,8 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
    {id:'e',name:'Serment',famille:'Gardien',type:'pass',level:2,voie:'Serment'},
    {id:'f',name:'Foi',famille:'Gardien',type:'pass',level:2,voie:'Quatrième'},
    {id:'g',name:'Vigilance',famille:'',type:'pass',level:1,voie:''}]},
-  cleClasse:C.cleClasse,ordonneTalents:C.ordonneTalents,talentCode:C.talentCode,manqueTalent:C.manqueTalent,talentsDependants:C.talentsDependants,VOIES_MAX:3,LIENS_MAX:4,DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES:['n','e','s','o']};
+  cleClasse:C.cleClasse,ordonneTalents:C.ordonneTalents,talentCode:C.talentCode,manqueTalent:C.manqueTalent,talentsDependants:C.talentsDependants,VOIES_MAX:3,LIENS_MAX:4,DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES:['n','e','s','o'],
+  crypto:{randomUUID:(()=>{let n=0;return ()=>'case'+(++n)})()}};
  vm.createContext(ctx);
  vm.runInContext(morceau('const TALENT_TYPES=','function talent(id)')+'const estBonus=t=>!!t&&t.effet===\'bonus\';'+morceau('function talentFamilies()',"// L'encre d'une classe")
   +morceau('/* Une classe a toujours toutes ses colonnes','const arbresDialog='),ctx);
@@ -1468,7 +1469,9 @@ assert.ok(src.includes("function sousTitre(texte,titre,fn,glyphe='+')")&&src.inc
  assert.equal(JSON.stringify(ctx.colonnesArbre('Gardien')[0].liste.map(t=>t.id)),JSON.stringify(['d','a','c','b','e','f','m']),'de haut en bas, de gauche à droite ; sans case, en dernier');
  assert.equal(ctx.placerTalent('d',{famille:'',voie:''}),true);
  assert.equal(T('d').famille,'Génériques','sans classe, un générique');assert.equal(T('d').pos===undefined||!!T('d').pos,true);
- assert.equal(T('a').liens,undefined,'parti ailleurs, il laisse ses lignes');
+ assert.equal(JSON.stringify(T('a').liens),'["case1"]','parti ailleurs, ses lignes restent à sa case, vide');
+ {const v=T('case1');assert.ok(v&&v.vide===true&&JSON.stringify(v.pos)==='{"x":-1,"y":0}','la case vide tient sa place');
+  ctx.catalog.talents.splice(ctx.catalog.talents.indexOf(v),1);delete T('a').liens}
  assert.equal(ctx.placerTalent('zzz',{famille:'Gardien'}),false);
  // Tracer, effacer : vers une case voisine droite seulement, jamais vers soi.
  assert.equal(ctx.basculeLien(T('a'),T('b')),'ajoute');assert.equal(ctx.basculeLien(T('a'),T('c')),'ajoute');
@@ -3104,7 +3107,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   assert.equal(ctxA.placerTalent('a2',{famille:'Gardien',voie:'Rempart',chemin:{de:'s',dir:'o',rang:2}}),true);
   assert.deepEqual(['a2','a3','b1'].map(ch),['s.o.2','s.o.1','s.o.3'],'sur son chemin, elle change de rang sans rien perdre');
   L.splice(L.length-4,4)}
- assert.ok(!src.includes("ligne('↳ Requiert : '+socle)")&&src.includes("function arbreChange(){accordeArbres();")&&src.includes("catalog=normalizeCatalog(s.catalog);accordeArbres();")
+ assert.ok(!src.includes("ligne('↳ Requiert : '+socle)")&&src.includes("function arbreChange(){accordeArbres();")
   &&!src.includes("niv.textContent=t.name&&t.name!==libelleBonus(p,true)"),'plus de Requiert, plus de doublon sous un bonus');
  assert.ok(css.includes('.arbre-noeud.t-act:not(.bonus) .arbre-rond{background:#cfdcea}')&&css.includes('.arbre-noeud.t-ame:not(.bonus) .arbre-rond{background:#d3e5cd}'),'le rond a le fond de sa nature');}
 /* v0.330 — Le guide des prix, le prix suggéré ; les ressources sans effet ni rareté choisie ; le
@@ -3367,6 +3370,24 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.571 — Les paliers d'XP se règlent à la main, dans les Paramètres, au MJ : la partie les porte, le niveau des aventuriers
+   les suit. Contagion — au contact, puis en vue au palier 2. Dans l'arbre, les lignes tiennent aux cases : un talent qui
+   part vers une place libre laisse les siennes à sa case, vide ; posé sur une case prise, les deux cases échangent ce
+   qu'elles portent, pas leurs lignes. */
+{const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),partage=fs.readFileSync('shared.js','utf8'),T=C.TALENTS_CODES;
+ assert.ok(C.niveauxXpValides(C.NIVEAUX_XP)&&!C.niveauxXpValides([0,300,200,...C.NIVEAUX_XP.slice(3)])&&!C.niveauxXpValides([5,...C.NIVEAUX_XP.slice(1)])&&!C.niveauxXpValides(C.NIVEAUX_XP.slice(1)),'des paliers qui montent, le premier à 0');
+ assert.equal(C.niveauDeXp(400),2,'sans réglage, ceux d’origine');
+ assert.ok(src.includes("if(!niveauxXpValides(c.niveauxXp)||c.niveauxXp.every((v,i)=>v===NIVEAUX_XP[i]))delete c.niveauxXp;")
+  &&src.includes("+'<div id=\"bloc-niveaux\" hidden><div class=\"divider\"></div><h3 class=\"reglage-titre\">Niveaux d’XP</h3><div id=\"niveaux-xp\" class=\"niveaux-xp\"></div></div>'")
+  &&src.includes("$('bloc-niveaux').hidden=view!=='mj';")&&src.includes("catalog.niveauxXp=l2;normalizeCatalog(catalog);niveauxHeros();")
+  &&src.includes("function niveauxHeros(){actors.forEach(a=>{if(a&&a.hero)a.level=niveauDeXp(a.xp)})}")
+  &&src.includes("catalog=normalizeCatalog(s.catalog);niveauxHeros();")&&partage.includes("catalog=structuredClone(remote.catalog);if(typeof niveauxHeros==='function')niveauxHeros();")
+  &&src.includes(" const seuils=seuilsXp();"),'les paliers d’XP à la main');
+ assert.deepEqual(C.voletsDe({effet:'contagioncontact'}),{vue:2});assert.ok(T.contagionvue.retire);
+ assert.ok(C.phraseTalent('contagioncontact',{},2).includes('visibles')&&C.phraseTalent('contagioncontact',{},1).includes('au contact'));
+ assert.ok(page.includes("vue=porteEffet(codes,'contagionvue')||codes.some(x=>x.code.cle==='contagioncontact'&&voletOuvert(x,'vue'))"),'Contagion en vue au palier 2');
+ assert.ok(src.includes("function echangeCases(a,b){")&&src.includes("function laisseLignes(t){")&&src.includes("if(ailleurs){laisseLignes(t);detacheDeLArbre(t)}")
+  &&src.includes(" if(occ&&avant){echangeCases(t,occ);")&&src.includes(" const reste=avant&&!ailleurs?laisseLignes(t):null;")&&src.includes(" if(avant)petitsHorsDesLignes(t);"),'les lignes tiennent aux cases');}
 /* v0.570 — Améliorations du Mystique en deux paliers : Éruption — dégâts, doublés au palier 2 ; Invulnérable — ignore
    les dégâts d'un état, qui soignent au palier 2 ; Corps élémentaire, à chaque attaque au contact, puis à toute attaque,
    même à distance. Les anciennes améliorations restent comprises des talents qui les portent, hors des listes. */

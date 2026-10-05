@@ -194,6 +194,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
     une copie. Une copie exacte s'en va ; une autre, qui a changé depuis, prend un identifiant à elle. */
  {const vus=new Map(),l=c.talents.filter(t=>{if(!t||!t.id)return true;const d=vus.get(t.id);if(!d){vus.set(t.id,t);return true}
   if(JSON.stringify(d)===JSON.stringify(t))return false;t.id=crypto.randomUUID();vus.set(t.id,t);return true});if(l.length!==c.talents.length)c.talents=l}
+ // Les paliers d'XP réglés à la main : gardés s'ils tiennent et diffèrent de ceux d'origine.
+ if(!niveauxXpValides(c.niveauxXp)||c.niveauxXp.every((v,i)=>v===NIVEAUX_XP[i]))delete c.niveauxXp;
  if(Array.isArray(c.ongletsJoueurs))c.ongletsJoueurs=ONGLETS.map(([k])=>k).filter(k=>k!=='maps'&&(k==='table'||c.ongletsJoueurs.includes(k)));else delete c.ongletsJoueurs;
  // Les ressources d'abord : les pièces se relisent au travers d'elles, plus bas.
  migreRessources(c);const clesR=new Set(c.items.filter(o=>o&&o.category==='ressource').map(o=>o.cle)),resV=r=>clesR.has(r)?r:'';
@@ -327,6 +329,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
  c.monsters.forEach(m=>{m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??=''});
  return c}
+// Le niveau d'un aventurier suit son XP, d'après les paliers de la partie.
+function niveauxHeros(){actors.forEach(a=>{if(a&&a.hero)a.level=niveauDeXp(a.xp)})}
 function idsUniques(liste){const vus=new Set();
  (liste||[]).forEach(a=>{if(!a)return;
   if(!a.id||vus.has(a.id))a.id=crypto.randomUUID();
@@ -592,6 +596,7 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="reglage"><div><strong id="scene-titre"></strong><p class="muted" id="scene-tour"></p></div>'
  +'<button id="edit-scene">Modifier la scène</button></div></div>'
  +'<div id="bloc-onglets" hidden><div class="divider"></div><h3 class="reglage-titre">Onglets des joueurs</h3><div id="onglets-joueurs" class="onglets-joueurs"></div></div>'
+ +'<div id="bloc-niveaux" hidden><div class="divider"></div><h3 class="reglage-titre">Niveaux d’XP</h3><div id="niveaux-xp" class="niveaux-xp"></div></div>'
  +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde</h3>'
  +'<div id="bloc-sauvegarde"></div>'
  +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde globale</h3>'
@@ -841,8 +846,9 @@ function bullesChiffres(a,tuiles){const quoi={vie:detailVie,endu:detailEndu,pv:d
 // L'XP d'un aventurier au survol : son niveau, le suivant et ce qu'il reste à gagner pour l'atteindre.
 function detailXp(a){const xp=Math.max(0,Math.trunc(Number(a.xp))||0),niv=niveauDeXp(xp),f=n=>n.toLocaleString('fr-FR')+' XP';
  const l=[['Niveau '+niv,f(xp)]];
- if(niv>=NIVEAUX_XP.length)l.push(['Niveau maximum','atteint']);
- else{const s=NIVEAUX_XP[niv];l.push(['Niveau '+(niv+1),'à '+f(s)],['Reste à gagner',f(s-xp)])}
+ const seuils=seuilsXp();
+ if(niv>=seuils.length)l.push(['Niveau maximum','atteint']);
+ else{const s=seuils[niv];l.push(['Niveau '+(niv+1),'à '+f(s)],['Reste à gagner',f(s-xp)])}
  return l}
 function calculAuSurvol(tuile,lignes){if(!tuile)return;
  const montre=()=>{const d=document.createElement('div');d.className='calcul-bulle';
@@ -3756,19 +3762,33 @@ function echangeTalents(id,b){const a=tousTalents().find(x=>x.id===id);if(!a||!b
   const range=(x,d)=>{x.famille=estBonus(x)?GENERIQUES:talentFamily(d);x.voie=estBonus(x)?'':d.voie||''};
   a.chemin={...cb};b.chemin={...ca};range(a,db);range(b,da);return true}
  if(!posDe(a)||!posDe(b)||a.horsArbre||b.horsArbre||talentFamily(a)!==talentFamily(b))return false;
+ echangeCases(a,b);return true}
+/* Deux cases du même arbre échangent ce qu'elles portent — talent ou case vide : les lignes et leurs niveaux
+   restent aux cases, chacun garde ses petits ronds. */
+function echangeCases(a,b){
  const pa={...posDe(a)},pb={...posDe(b)},va=a.voie||'',vb=b.voie||'';a.pos=pb;b.pos=pa;a.voie=vb;b.voie=va;
  const m=x=>x===a.id?b.id:x===b.id?a.id:x;
  tousTalents().forEach(x=>{if(Array.isArray(x.liens))x.liens=x.liens.map(m);
   if(x.niveaux&&typeof x.niveaux==='object'){const n={};Object.entries(x.niveaux).forEach(([k,v])=>{n[m(k)]=v});x.niveaux=n}});
  [a.liens,b.liens]=[b.liens,a.liens];[a.niveaux,b.niveaux]=[b.niveaux,a.niveaux];
  [a,b].forEach(x=>{if(!x.liens||!x.liens.length)delete x.liens;if(!x.niveaux||!Object.keys(x.niveaux).length)delete x.niveaux});
- // Un chemin de petits ronds qui tombe sur une ligne passe sur une direction libre.
- [a,b].forEach(x=>{const col=colonneDe(talentFamily(x),x.voie||'');if(!col)return;const ch=cheminsDe(col.liste,x);
+ [a,b].forEach(petitsHorsDesLignes)}
+// Un chemin de petits ronds qui tombe sur une ligne passe sur une direction libre.
+function petitsHorsDesLignes(x){const col=colonneDe(talentFamily(x),x.voie||'');if(!col)return;const ch=cheminsDe(col.liste,x);
   Object.keys(DIRS).forEach(d=>{if(!(ch[d].lien||ch[d].entrant)||!ch[d].petits.length)return;
    // Le nord en dernier : au-dessus d'un talent de départ descend le trait du bandeau.
    const libre=Object.keys(DIRS).sort((x,y)=>(x==='n')-(y==='n')).find(e=>!ch[e].lien&&!ch[e].entrant&&!ch[e].petits.length);if(!libre)return;
-   ch[d].petits.forEach(p=>{p.chemin={...lisChemin(p),dir:libre}});ch[libre].petits=ch[d].petits;ch[d].petits=[]})});
- return true}
+   ch[d].petits.forEach(p=>{p.chemin={...lisChemin(p),dir:libre}});ch[libre].petits=ch[d].petits;ch[d].petits=[]})}
+/* Un talent qui quitte sa case — vers une place libre, ou un autre arbre — y laisse ses lignes et leurs
+   niveaux, sur une case vide ; ses petits ronds ne restent pas. Sans ligne, la case ne reste pas. */
+function laisseLignes(t){const p=posDe(t);if(!p||t.horsArbre||lisChemin(t)||estVide(t))return null;
+ const T=tousTalents(),entrant=T.some(x=>x!==t&&liensDe(x).includes(t.id));if(!liensDe(t).length&&!entrant)return null;
+ const v={id:crypto.randomUUID(),vide:true,name:'',famille:t.famille||'',voie:t.voie||'',type:'pass',level:1,effet:'',effects:'',couts:[0,0,0],pos:{...p}};
+ if(liensDe(t).length)v.liens=[...liensDe(t)];if(t.niveaux)v.niveaux={...t.niveaux};
+ T.forEach(x=>{if(x===t)return;
+  if(liensDe(x).includes(t.id))x.liens=liensDe(x).map(id=>id===t.id?v.id:id);
+  if(x.niveaux&&t.id in x.niveaux){const n={...x.niveaux};n[v.id]=n[t.id];delete n[t.id];x.niveaux=n}});
+ delete t.liens;delete t.niveaux;catalog.talents.push(v);return v}
 function placerTalent(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||!dest)return false;
  if(dest.chemin){if(!peutEtrePetit(t))return false;const de=tousTalents().find(x=>x.id===dest.chemin.de),dir=dest.chemin.dir;
   if(!de||de===t||!DIRS[dir]||!posDe(de)||de.horsArbre)return false;
@@ -3795,18 +3815,28 @@ function placerTalent(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||!
  const famille=dest.famille||GENERIQUES,voie=dest.voie||'';
  const ailleurs=!!t.horsArbre||talentFamily(t)!==famille||(t.voie||'')!==voie||estPetit(t);
  const avant=ailleurs?null:posDe(t);
- if(ailleurs)detacheDeLArbre(t);
+ // Les lignes tiennent aux cases : d'un autre arbre, il laisse les siennes à sa case, vide.
+ if(ailleurs){laisseLignes(t);detacheDeLArbre(t)}
  t.famille=famille;t.voie=voie;t.prerequis='';delete t.horsArbre;delete t.branche;delete t.chemin;
  const col=((colonneDe(famille,voie)||{}).liste||[]).filter(x=>x!==t);
  const voulue=dest.pos&&Number.isInteger(dest.pos.x)&&Number.isInteger(dest.pos.y)?{x:dest.pos.x,y:dest.pos.y}:null;
- if(voulue){const occ=col.find(x=>{const p=posDe(x);return !!p&&p.x===voulue.x&&p.y===voulue.y});
-  // Venu d'ailleurs sur une case vide : il la reprend, lignes et petits ronds compris.
-  if(occ&&estVide(occ)&&ailleurs)reprendCase(t,occ);
-  else if(occ)occ.pos=avant?{...avant}:caseLibre(col.filter(x=>x!==occ),occ)}
- const de=dest.de?tousTalents().find(x=>x.id===dest.de):null;
+ const occ=voulue?col.find(x=>{const p=posDe(x);return !!p&&p.x===voulue.x&&p.y===voulue.y}):null;
+ // Du même arbre sur une case prise, vide ou non : les deux cases échangent ce qu'elles portent, pas leurs lignes.
+ if(occ&&avant){echangeCases(t,occ);
+  // Une case vide arrivée là où rien ne menait ni ne partait n'a plus rien à tenir.
+  if(estVide(occ)&&!liensDe(occ).length&&!tousTalents().some(x=>liensDe(x).includes(occ.id)||(lisChemin(x)||{}).de===occ.id))catalog.talents.splice(catalog.talents.indexOf(occ),1);
+  return true}
+ // Venu d'ailleurs sur une case vide : il la reprend, lignes et petits ronds compris.
+ if(occ&&estVide(occ)&&ailleurs)reprendCase(t,occ);
+ else if(occ)occ.pos=caseLibre(col.filter(x=>x!==occ),occ);
+ // Du même arbre vers une place libre : ses lignes restent à sa case, ses petits ronds le suivent.
+ const reste=avant&&!ailleurs?laisseLignes(t):null;
+ // Une place libre ouverte depuis sa propre case : la ligne part de la case qu'il laisse.
+ const de=dest.de?(dest.de===t.id&&reste?reste:tousTalents().find(x=>x.id===dest.de)):null;
  t.pos=voulue||caseLibre(col,de);
  // La ligne depuis « de » : vers une case voisine droite seulement, et pas par-dessus des petits ronds.
  if(de&&de!==t&&!liensDe(de).includes(t.id)&&liensDe(de).length<LIENS_MAX){const d=dirVers(posDe(de),t.pos);if(d&&!petitsDe(de,d).length)de.liens=[...liensDe(de),t.id]}
+ if(avant)petitsHorsDesLignes(t);
  return true}
 const GLYPHES_TALENT={act:'⚔',reac:'↩',pass:'◆',crit:'✸',mait:'★',ame:'⇧'};
 const arbresDialog=dialog('arbres','Arbres de talents','<p class="muted" id="arbres-note"></p><div id="arbres-corps"></div>');
@@ -4497,6 +4527,17 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
   c.onchange=()=>{catalog.ongletsJoueurs=[...$('onglets-joueurs').querySelectorAll('input:checked')].map(x=>x.value);normalizeCatalog(catalog);
    scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));if(typeof majOnglets==='function')majOnglets()};
   l.append(c,' '+nom);return l}))}
+ // Les paliers d'XP, au MJ : l'XP qu'il faut pour chaque niveau, du 2 au dernier.
+ $('bloc-niveaux').hidden=view!=='mj';
+ if(view==='mj'&&!$('niveaux-xp').contains(document.activeElement)){const seuils=seuilsXp(),champs=[];
+  $('niveaux-xp').replaceChildren(...seuils.slice(1).map((v,i)=>{const l=document.createElement('label'),c=document.createElement('input');
+   c.type='number';c.min='1';c.max=String(XP_PALIER_MAX);c.step='1';c.inputMode='numeric';c.value=String(v);champs.push(c);
+   c.onchange=()=>{const l2=[0,...champs.map(x=>Math.trunc(Number(x.value)))];
+    champs.forEach((x,k)=>{const v=l2[k+1],bon=Number.isInteger(v)&&v>0&&v<=XP_PALIER_MAX&&v>l2[k];x.classList.toggle('invalide',!bon);x.setAttribute('aria-invalid',String(!bon))});
+    if(!niveauxXpValides(l2))return;
+    catalog.niveauxXp=l2;normalizeCatalog(catalog);niveauxHeros();
+    scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));render()};
+   const n=document.createElement('span');n.textContent='Niv. '+(i+2);l.append(n,c);return l}))}
  boite.replaceChildren(...GESTES.map(([cle,nom,aide])=>{
   const ligne=document.createElement('div');ligne.className='reglage';
   const gauche=document.createElement('div');
@@ -5460,7 +5501,7 @@ function resumeSauvegarde(s){const n=(x,un,des)=>x+' '+(x>1?des:un);const c=s.ca
  return [n(s.actors.filter(a=>a&&a.hero).length,'aventurier','aventuriers'),n(s.actors.filter(a=>a&&!a.hero).length,'adversaire','adversaires'),
   n(Array.isArray(s.maps)?s.maps.length:0,'carte','cartes'),n(l('monsters'),'modèle','modèles'),n(l('items'),'équipement','équipements'),n(l('talents'),'talent','talents'),
   ...(Array.isArray(s.campagnes)&&s.campagnes.length?[n(s.campagnes.length,'campagne','campagnes')]:[])].join(', ')}
-function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(normalizeActor));idsUniques(actors);catalog=normalizeCatalog(s.catalog);accordeArbres();
+function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(normalizeActor));idsUniques(actors);catalog=normalizeCatalog(s.catalog);niveauxHeros();accordeArbres();
  round=Number.isInteger(s.round)&&s.round>0?s.round:1;mode=s.mode==='exploration'?'exploration':'combat';
  owner=Number.isInteger(s.owner)&&actors[s.owner]?s.owner:Math.max(0,actors.findIndex(a=>a.hero));
  selected=Number.isInteger(s.selected)&&actors[s.selected]?s.selected:(s.selected===null?null:owner);
