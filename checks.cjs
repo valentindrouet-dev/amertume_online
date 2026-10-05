@@ -1109,7 +1109,7 @@ assert.ok(src.includes("const porteurs=(catalog.talents||[]).map((t,i)=>[t,i]).f
    « Talent — court », et leur ancien nom retrouve encore l'effet. */
 {const T=C.TALENTS_CODES;
  Object.values(T).filter(c=>c.pour&&c.court).forEach(c=>assert.equal(c.nom,T[c.pour].nom+' — '+c.court,'nom uniforme : '+c.cle));
- assert.equal(T.orbes2des.nom,'Orbes mystiques — dés en plus');assert.equal(T.eruptiondouble.nom,'Éruption — dégâts doublés');assert.equal(T.ignoredegats.nom,'Ignore les dégâts');
+ assert.equal(T.orbes2des.nom,'Orbes mystiques — dés en plus');assert.equal(T.eruptiondouble.nom,'Éruption — dégâts doublés');assert.equal(T.ignoredegats.nom,'Invulnérable — ignore les dégâts');
  assert.equal(C.effetParNom('Orbes à deux dés'),'orbes2des','l’ancien nom retrouve l’effet');assert.equal(C.effetParNom('Orbes mystiques — deux dés'),'orbes2des');
  assert.equal(C.effetParNom('Éruption — double'),'eruptiondouble');assert.equal(C.effetParNom('Attaque État'),'attaqueetat');assert.equal(C.effetParNom('Ignore les dégâts d’un état'),'ignoredegats');
  assert.ok(src.includes("const table=document.createElement('table');table.className='biblio-table';")&&src.includes("function ligneEffet(c,classe,rangs,parent){")
@@ -2339,7 +2339,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&fief.includes("+(batimentConstruit(b)?' construit':'')")&&feuille.includes('.dom-etiquette .jeton-rond.mini{width:36px;height:36px;font-size:18px;')
   &&feuille.includes('#dom-plan.glisse-jeton .dom-zone.construit{'),'le jeton se glisse vers un bâtiment construit, en grand');
  assert.ok(src.includes("const estBonus=t=>!!t&&t.effet==='bonus';")&&src.includes("filter(([t])=>!estBonus(t)&&!estVide(t)&&talentFamily(t)===famille")
-  &&src.includes(".filter(t=>!estBonus(t)&&!estVide(t)&&talentFamily(t)===famille")&&src.includes("const codes=Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>{"),'un bonus ne paraît ni dans l’onglet, ni dans le sélecteur, ni dans la bibliothèque');
+  &&src.includes(".filter(t=>!estBonus(t)&&!estVide(t)&&talentFamily(t)===famille"),'un bonus ne paraît ni dans l’onglet, ni dans le sélecteur, ni dans la bibliothèque');
  assert.ok(src.includes('<label><input type="radio" name="nature" value="bonus"')&&src.includes("['name','type','logo','rangee'].forEach(n=>{const l=champs[n]&&champs[n].closest('label');if(l)l.classList.add('t-seul')});")
   &&src.includes("if(f.nature&&f.nature.value==='bonus'){t.params=paramsTalent({effet:'bonus',params:{carac:f.b_carac.value,valeur:f.b_valeur.value,comp:f.b_comp.value}});")
   &&feuille.includes('.talent-cache{display:none!important}'),'l’éditeur devient éditeur de bonus');
@@ -3367,6 +3367,23 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.570 — Améliorations du Mystique en deux paliers : Éruption — dégâts, doublés au palier 2 ; Invulnérable — ignore
+   les dégâts d'un état, qui soignent au palier 2 ; Corps élémentaire, à chaque attaque au contact, puis à toute attaque,
+   même à distance. Les anciennes améliorations restent comprises des talents qui les portent, hors des listes. */
+{const T=C.TALENTS_CODES,page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
+ assert.deepEqual(C.voletsDe({effet:'eruptiondegats'}),{double:2});assert.deepEqual(C.voletsDe({effet:'ignoredegats'}),{soin:2});assert.deepEqual(C.voletsDe({effet:'corpselem'}),{distance:2});
+ assert.equal(T.ignoredegats.pour,'invulnerable');assert.equal(T.ignoredegats.type,'ame');assert.ok(T.eruptiondouble.retire&&T.soinetat.retire&&!T.soinetatdouble.retire);
+ assert.ok(!(T.corpselem.params||[]).some(p=>p.cle==='quand'),'plus de réglage « Quand »');
+ assert.ok(C.phraseTalent('eruptiondegats',{},2).includes('doublés')&&!C.phraseTalent('eruptiondegats',{},1).includes('doublés'));
+ assert.ok(C.phraseTalent('ignoredegats',{etat:'Gel'},2).includes('soignent')&&C.phraseTalent('ignoredegats',{etat:'Gel'},1).includes('ignore les dégâts'));
+ assert.ok(C.phraseTalent('corpselem',{etat:'Feu'},2).includes('même à distance')&&C.phraseTalent('corpselem',{etat:'Feu'},1).includes('au contact'));
+ assert.equal(C.effetParNom('Ignore les dégâts'),'ignoredegats');assert.equal(C.effetParNom('Ignore les dégâts — soin ×2'),'soinetatdouble');
+ assert.ok(page.includes("function corpsElementaire(a,b,auContact){if(!a||!b||a===b||!hostiles(a,b))return '';")&&page.includes("let brule=corpsElementaire(a,b,rangeOf(a)!=='distance');")
+  &&page.includes("const poserOrbe=()=>{const corpsO=corpsElementaire(a,b,false);")&&page.includes("apres+=corpsElementaire(a,b,true);")
+  &&page.includes("(a.hp===0?' 💀':'')+corpsElementaire(e,a,true))})}")&&!page.includes("corpsE.params.quand"),'Corps élémentaire à chaque attaque');
+ assert.ok(page.includes("porteEffet(c,'soinetat')||ignores.some(x=>voletOuvert(x,'soin'))?1:0;")
+  &&page.includes("codes.some(x=>x.code.cle==='eruptiondegats'&&voletOuvert(x,'double'))"),'les paliers en jeu');
+ assert.ok(src.includes(".filter(c=>c.cle!=='bonus'&&!c.retire).map(c=>{")&&src.includes(".filter(c=>c.cle!=='bonus'&&(!c.retire||c.cle===valeur))"),'les anciennes hors des listes');}
 /* v0.569 — Au MJ, sous le total d'XP d'un arbre de classe : le total par tranches de niveau, d'après les niveaux marqués
    sur les lignes ; un petit rond compte avec son talent. */
 {const src=fs.readFileSync('editor.js','utf8');

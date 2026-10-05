@@ -2534,8 +2534,9 @@ function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
     génériques, puis les adversaires. Chaque talent est suivi des améliorations qui le prolongent, en
     retrait sous lui ; celles qui prolongent n'importe quel talent ferment la classe. Dans chaque classe,
     l'ordre du MJ, qui déplace les lignes à la main ; sans lui, par type puis par nom. */
- // Le bonus de caractéristique n'est pas une mécanique de talent : il a son propre éditeur.
- const codes=Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').map(c=>{
+ // Le bonus de caractéristique n'est pas une mécanique de talent : il a son propre éditeur. Un effet
+ // fondu dans les paliers d'un autre n'y paraît plus ; les talents qui le portent le gardent.
+ const codes=Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus'&&!c.retire).map(c=>{
   const k=TALENT_TYPES.findIndex(t=>t[0]===(c.type||'act'));
   return [c,k<0?TALENT_TYPES.length:k]})
   .sort((u,v)=>u[1]-v[1]||String(u[0].nom).localeCompare(String(v[0].nom),'fr'))
@@ -4578,7 +4579,7 @@ function selGroupes(label,key,value,groupes){const opt=v=>'<option value="'+esc(
 /* Le menu des mécaniques, rangé par classe comme la bibliothèque des effets : les classes du jeu,
    puis les génériques, puis les adversaires. */
 function selMecanique(valeur){const classes=(catalog.classes||[]).map(k=>k&&k.name).filter(n=>n&&n!==GENERIQUES),rangs=[...classes,GENERIQUES,ADVERSAIRES];
- const groupes=new Map();Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus').forEach(c=>{const k=classeEffet(c);if(!groupes.has(k))groupes.set(k,[]);groupes.get(k).push(c)});
+ const groupes=new Map();Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus'&&(!c.retire||c.cle===valeur)).forEach(c=>{const k=classeEffet(c);if(!groupes.has(k))groupes.set(k,[]);groupes.get(k).push(c)});
  const opt=(v,t)=>'<option value="'+esc(v)+'"'+(String(valeur)===String(v)?' selected':'')+'>'+esc(t)+'</option>';
  return '<label>Mécanique<select name="effet">'+opt('','— Aucun : talent descriptif —')
   +[...rangs,...[...groupes.keys()].filter(k=>!rangs.includes(k))].filter(k=>groupes.has(k)).map(k=>'<optgroup label="'+esc(k)+'">'

@@ -903,13 +903,14 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
   params:[{cle:'mode',nom:'Un critique adverse contre le porteur',type:'choix',defaut:'echec',options:[['echec','devient un échec'],['riposte','lui vaut une attaque gratuite en retour']]}],
   phrase(p){return (p&&p.mode)==='riposte'?'Le porteur effectue <b>une attaque gratuite</b> contre l’adversaire qui réalise <b>un critique</b> contre lui.':'Les <b>attaques critiques</b> adverses contre le porteur deviennent des <b>échecs</b>.'}},
  /* Ombrelame élémentaire : une amélioration d’Ombrelame. Ses dégâts infligent aussi l'état réglé. */
- /* Corps élémentaire : une amélioration. Qui attaque le porteur au contact en garde l'état —
-    s'il l'a blessé, ou à chaque attaque, même sans le toucher, selon le réglage « Quand ». */
+ /* Corps élémentaire : une amélioration d'Invulnérable. Qui attaque le porteur en garde l'état, au
+    moment même où il attaque, qu'il le touche ou non : au contact, puis toute attaque au palier 2. */
  corpselem:{cle:'corpselem',nom:'Corps élémentaire',court:'Corps élémentaire',type:'ame',
-  aide:'Les adversaires qui attaquent le porteur au contact subissent un état : s’ils lui infligent des dégâts, ou à chaque attaque, même sans le toucher.',
-  params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])},
-   {cle:'quand',nom:'Quand',type:'choix',defaut:'degats',options:[['degats','S’il vous inflige des dégâts'],['toujours','À chaque attaque, même sans toucher']]}],
-  phrase(p){return 'Les adversaires qui attaquent le porteur au contact subissent <b>'+((p&&p.etat)||'Feu')+'</b>'+(p&&p.quand==='toujours'?', <b>même sans le toucher</b>.':' s’ils lui infligent des <b>dégâts</b>.')}},
+  aide:'Les adversaires qui attaquent le porteur au contact subissent un état dès qu’ils attaquent ; toute attaque, même à distance, au palier 2.',
+  params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
+  volets:[{cle:'distance',nom:'Toute attaque, même à distance',palier:2}],
+  phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{distance:2}).distance;
+   return 'Les adversaires qui attaquent le porteur'+(k>0&&n>=k?', <b>même à distance</b>,':' <b>au contact</b>')+' subissent <b>'+((p&&p.etat)||'Feu')+'</b>.'}},
  lameventelem:{cle:'lameventelem',nom:'Lamevent élémentaire',court:'état infligé',anciens:['Lamevent — état infligé'],type:'ame',
   aide:'Amélioration d’Ombrelame : ses dégâts infligent aussi l’état réglé.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
@@ -1134,16 +1135,19 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
   params:[],
   phrase(){return 'Le porteur lance <b>tous ses orbes</b> ensemble contre <b>un même adversaire</b>, en <b>un seul jet</b> de dés commun.'}},
  /* Orbes critiques : une amélioration. Les orbes du porteur peuvent faire des critiques sur un double 6. */
- /* Les dégâts d'un état — Feu qui brûle, décharge de Foudre, Éruption, Poison : un talent les fait
-    ignorer au porteur ; ses améliorations les changent en soin, puis en soin doublé. */
- ignoredegats:{cle:'ignoredegats',nom:'Ignore les dégâts',anciens:['Ignore les dégâts d’un état'],type:'pass',
-  aide:'Passif : le porteur ne subit pas les dégâts de l’état réglé (Feu qui brûle, décharge de Foudre, Éruption, Poison).',
+ /* Les dégâts d'un état — Feu qui brûle, décharge de Foudre, Éruption, Poison : une amélioration
+    d'Invulnérable les fait ignorer au porteur, puis les change en soin au palier 2. Les anciennes
+    améliorations de soin restent comprises des talents qui les portent. */
+ ignoredegats:{cle:'ignoredegats',nom:'Ignore les dégâts',court:'ignore les dégâts',anciens:['Ignore les dégâts d’un état'],type:'ame',
+  aide:'Amélioration d’Invulnérable : le porteur ne subit pas les dégâts de l’état réglé (Feu qui brûle, décharge de Foudre, Éruption, Poison) ; au palier 2, ils le soignent.',
   params:[{cle:'etat',nom:'État',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
-  phrase(p){return 'Le porteur <b>ignore les dégâts</b> de <b>'+((p&&p.etat)||'Feu')+'</b>.'}},
- soinetat:{cle:'soinetat',nom:'Dégâts d’état en soin',court:'soin',type:'ame',
+  volets:[{cle:'soin',nom:'Ces dégâts soignent le porteur',palier:2}],
+  phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{soin:2}).soin,e=(p&&p.etat)||'Feu';
+   return k>0&&n>=k?'Les dégâts de <b>'+e+'</b> <b>soignent</b> le porteur.':'Le porteur <b>ignore les dégâts</b> de <b>'+e+'</b>.'}},
+ soinetat:{cle:'soinetat',nom:'Dégâts d’état en soin',court:'soin',anciens:['Ignore les dégâts — soin'],type:'ame',retire:true,
   aide:'Amélioration : les dégâts de l’état que le porteur ignore, ou auquel il est insensible, le soignent.',params:[],
   phrase(){return 'Les dégâts de l’état que le porteur <b>ignore</b> le <b>soignent</b>.'}},
- soinetatdouble:{cle:'soinetatdouble',nom:'Dégâts d’état en soin ×2',court:'soin ×2',type:'ame',
+ soinetatdouble:{cle:'soinetatdouble',nom:'Dégâts d’état en soin ×2',court:'soin ×2',anciens:['Ignore les dégâts — soin ×2'],type:'ame',
   aide:'Amélioration : les dégâts de l’état que le porteur ignore, ou auquel il est insensible, le soignent deux fois.',params:[],
   phrase(){return 'Les dégâts de l’état que le porteur <b>ignore</b> le <b>soignent deux fois</b>.'}},
  /* Améliorations des Orbes, de Déluge et d'Implosion ; la Contagion et les siennes. */
@@ -1229,16 +1233,19 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
   params:[],
   phrase(){return 'Vos <b>Orbes mystiques</b> peuvent produire des <b>critiques</b> (double 6).'}},
  /* Éruption : un passif. Un adversaire qui meurt en portant l'état réglé le fait éclater : tous
-    les adversaires à son contact le reçoivent. Suit l'élément du Mystique. Deux améliorations :
-    les dégâts de l'état — un dé par cran — puis ces dégâts doublés. */
+    les adversaires à son contact le reçoivent. Suit l'élément du Mystique. Son amélioration : les
+    dégâts de l'état — un dé par cran — puis ces dégâts doublés au palier 2. L'ancienne amélioration
+    des dégâts doublés reste comprise des talents qui la portent. */
  eruption:{cle:'eruption',nom:'Éruption',type:'pass',
   aide:'Passif : quand un adversaire portant l’état réglé est tué, tous les adversaires à son contact le subissent.',
   params:[{cle:'etat',nom:'État qui éclate',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){const e=(p&&p.etat)||'Feu';return 'Quand un adversaire portant <b>'+e+'</b> est tué, tous les adversaires <b>à son contact</b> subissent <b>'+e+'</b>.'}},
  eruptiondegats:{cle:'eruptiondegats',nom:'Éruption — dégâts',court:'dégâts',type:'ame',
-  aide:'Amélioration d’Éruption : les adversaires touchés subissent aussi les dégâts de l’état du mort, un dé par cran (Feu 4 : 4d6).',params:[],
-  phrase(){return 'L’<b>Éruption</b> inflige aussi les <b>dégâts</b> de l’état du mort : un dé par cran.'}},
- eruptiondouble:{cle:'eruptiondouble',nom:'Éruption — double',court:'dégâts doublés',type:'ame',
+  aide:'Amélioration d’Éruption : les adversaires touchés subissent aussi les dégâts de l’état du mort, un dé par cran (Feu 4 : 4d6) ; doublés au palier 2.',params:[],
+  volets:[{cle:'double',nom:'Dégâts doublés',palier:2}],
+  phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{double:2}).double;
+   return 'L’<b>Éruption</b> inflige aussi les <b>dégâts</b> de l’état du mort : un dé par cran'+(k>0&&n>=k?', <b>doublés</b>.':'.')}},
+ eruptiondouble:{cle:'eruptiondouble',nom:'Éruption — double',court:'dégâts doublés',type:'ame',retire:true,
   aide:'Amélioration d’Éruption : les dégâts de l’Éruption sont doublés.',params:[],
   phrase(){return 'Les dégâts de l’<b>Éruption</b> sont <b>doublés</b>.'}},
  /* Implosion : un passif. Un critique rend au porteur le point d'Action qu'il vient de dépenser. */
@@ -1330,7 +1337,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',
- soinetat:'ignoredegats',soinetatdouble:'ignoredegats',corpselem:'invulnerable'};
+ soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
   if(c.court){const nom=TALENTS_CODES[p].nom+' — '+c.court;if(nom!==c.nom){c.anciens=[...(c.anciens||[]),c.nom];c.nom=nom}}})}
 /* ---------- Les effets d'équipement ----------
