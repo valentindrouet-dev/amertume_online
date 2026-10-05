@@ -321,7 +321,7 @@ button.btn-reaction{--fond:#9b7ad4}
 /* Analyser dépense le point de Mouvement : il en porte exactement la couleur, en lettres blanches.
    Le reflet blanc des autres boutons l'éclaircissait en orange : ici, un relief discret seulement.
    Analysé ou inerte, il garde cette teinte — jamais une autre. */
-button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#b98b61;color:#fff;background-image:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.07))}
+button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#bd7a3e;color:#fff;background-image:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.07))}
 button.btn-analyse[hidden]{display:none}
 /* Repos court : vert, texte blanc ; grisé en combat et une fois pris. */button.btn-repos{--fond:#4f9a5a;color:#fff}button.btn-repos[hidden]{display:none}
 /* Retirer un objet du sac : une petite croix rouge, au coin, qui ne paraît qu'au survol. */
@@ -828,7 +828,7 @@ button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,2
    Maîtrise, gris pour un Passif, bleu Action, violet Réaction, rouge Critique, vert
    Amélioration. */
 button.btn-talent.t-act{--fond:#4f7fb5}
-button.btn-talent.t-mvt{--fond:#b98b61}
+button.btn-talent.t-mvt{--fond:#bd7a3e}
 button.btn-talent.t-reac{--fond:#8b6bb5}
 button.btn-talent.t-pass{--fond:#8a8474}
 button.btn-talent.t-crit{--fond:#b5525a}
@@ -1860,7 +1860,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .talent-bulle-nom .cout-points{margin:0 -2px 0 0;display:inline-flex;gap:3px;align-self:center;flex:none;position:relative;top:-2px}
 .talent-bulle-nom.avec-des .cout-points{margin-right:-8px}
 .talent-bulle-nom .cout-points .pt{display:block;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 -1px 0 rgba(0,0,0,.22),0 0 0 1.5px rgba(255,255,255,.7)}
-.talent-bulle-nom .cout-points .pt.action{background:#3f8fe0}.talent-bulle-nom .cout-points .pt.mvt{background:#b98b61}
+.talent-bulle-nom .cout-points .pt.action{background:#3f8fe0}.talent-bulle-nom .cout-points .pt.mvt{background:#bd7a3e}
 /* Les jetons des cibles d’un geste : au-dessus de sa bulle, à droite, et ne mordant sur son bord que de 8 pixels, moins que
    sa marge : le texte garde sa place. */
 .talent-detail:has(>.bulle-cibles){position:relative}

@@ -1095,12 +1095,12 @@ assert.ok(!src.includes('Fiche enregistrée')&&!src.includes('mise(s) à jour')&
 /* Un changement local gardé part au prochain envoi ; le MJ réinitialise d'un clic droit ; pastilles à droite. */
 assert.ok(vivant.includes("gardes.push([id,k,structuredClone(e[k])])")&&vivant.includes("gardes.forEach(([id,k,v])=>{if(base.actors[id])base.actors[id][k]=v})"),'un changement local gardé part');
 assert.ok(page.includes('function inerte(')&&page.includes('function reinitialiser(')&&src.includes('inerte(b,!!refus)')&&src.includes('inerte(b,!t.peut)')&&page.includes('inerte(rev,!!refus)'),'le clic droit du MJ réinitialise');
-assert.ok(page.includes('.pastilles{position:absolute;right:8px')&&page.includes('.actor-nom strong{overflow:hidden;text-overflow:ellipsis')&&feuille.includes('button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#b98b61;color:#fff;background-image:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.07))}')&&!feuille.includes('#8264bb')&&page.includes('function mouvementPris(')&&page.includes(":mouvementEpuise(a)?'Plus de point de Mouvement : analyser en coûte un.")&&page.includes('body.vue-joueur .turn-head{margin-bottom:0}'),'pastilles à droite, nom coupé, Analyser teal, tour compact');
+assert.ok(page.includes('.pastilles{position:absolute;right:8px')&&page.includes('.actor-nom strong{overflow:hidden;text-overflow:ellipsis')&&feuille.includes('button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#bd7a3e;color:#fff;background-image:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.07))}')&&!feuille.includes('#8264bb')&&page.includes('function mouvementPris(')&&page.includes(":mouvementEpuise(a)?'Plus de point de Mouvement : analyser en coûte un.")&&page.includes('body.vue-joueur .turn-head{margin-bottom:0}'),'pastilles à droite, nom coupé, Analyser teal, tour compact');
 /* Vie ou Endurance corrigée sur une fiche : les PV maximum suivent (Vie × Endu + bonus), sans
    dépasser leurs bornes ni laisser les PV du moment au-dessus ; le sélecteur Analyser n'est pas
    « button button » ; chaque effet déjà porté par un talent du catalogue arbore sa coche verte. */
 assert.ok(src.includes('function recalculerPV(')&&src.includes("if(cle==='vie'||cle==='endu')recalculerPV(a);")&&src.includes("writeStat(a,'max',max)"),'les PV max suivent Vie et Endurance');
-assert.ok(!/button\s*\/\*[^*]*\*\/\s*button\.btn-analyse/.test(feuille)&&/\*\/\s*button\.btn-analyse,button\.btn-analyse\.on,button\.btn-mvt\{--fond:#b98b61;color:#fff;/.test(feuille),'le sélecteur Analyser vise bien le bouton');
+assert.ok(!/button\s*\/\*[^*]*\*\/\s*button\.btn-analyse/.test(feuille)&&/\*\/\s*button\.btn-analyse,button\.btn-analyse\.on,button\.btn-mvt\{--fond:#bd7a3e;color:#fff;/.test(feuille),'le sélecteur Analyser vise bien le bouton');
 // v0.472 : la coche verte devient les petits ronds des talents qui portent l'effet, et « + » en crée un.
 assert.ok(src.includes("const porteurs=(catalog.talents||[]).map((t,i)=>[t,i]).filter(([t])=>t&&t.effet===c.cle);")&&src.includes("b.className='biblio-talent';b.append(talentRond(")
  &&src.includes("plus.className='biblio-plus';plus.textContent='+';")&&!src.includes("u.className='utilise'")&&feuille.includes('.biblio-table .biblio-talent .cat-pill.gear-carre.talent-carre{width:20px;height:20px;'),'les talents qui portent un effet, en petits ronds, et « + »');
@@ -3364,6 +3364,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.587 — Le bouton du Mouvement prend un brun plus vif, qu'on ne confond plus avec un bouton grisé ; les pastilles de PM et
+   les points de coût suivent. */
+{const feuille=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
+ assert.ok(feuille.includes("button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#bd7a3e;")&&feuille.includes("button.btn-talent.t-mvt{--fond:#bd7a3e}")
+  &&page.includes(".pastilles .mvt{background:#bd7a3e}")&&!/#b98b61/.test(feuille+page),'le Mouvement en brun vif');}
 /* v0.586 — Les jetons des cibles ne poussent plus le texte de la bulle : ils montent au-dessus d'elle, ne mordant sur son bord
    que de 8 pixels, et la bulle garde sa marge d'avant. */
 {const feuille=fs.readFileSync('editor.css','utf8');
@@ -3380,7 +3385,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    Mouvement, en prend la couleur. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  assert.ok(feuille.includes(".bulle-cibles{position:absolute;top:0;right:10px;"),'les jetons à droite');
- assert.ok(page.includes("scheduleSave()},'btn-action btn-mvt')}")&&page.includes(".pastilles .mvt{background:#b98b61}")
+ assert.ok(page.includes("scheduleSave()},'btn-action btn-mvt')}")&&page.includes(".pastilles .mvt{background:#bd7a3e}")
   &&!/#e0a04a|#b77b31|#f2e2c4/.test(feuille+page+src),'le Mouvement en beige brun, Se relever compris');}
 /* v0.583 — L'en-tête de la barre d'action ne montre plus les cibles : les états de la cible désignée, en icônes, le compte
    d'un état qui se cumule en pastille, et au survol ce que l'état fait, ses valeurs comprises. Les cibles d'un geste se lisent
@@ -3427,7 +3432,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("s.className='cout-points';")
   &&feuille.includes(".talent-bulle-nom .cout-xp{position:absolute;top:0;right:12px;transform:translateY(-50%);")
-  &&feuille.includes(".talent-bulle-nom .cout-points .pt.action{background:#3f8fe0}.talent-bulle-nom .cout-points .pt.mvt{background:#b98b61}"),'le coût en points, l’XP à cheval');}
+  &&feuille.includes(".talent-bulle-nom .cout-points .pt.action{background:#3f8fe0}.talent-bulle-nom .cout-points .pt.mvt{background:#bd7a3e}"),'le coût en points, l’XP à cheval');}
 /* v0.577 — Variables dans les descriptions de talents : {orbes}, {desorbe}, {endu}, {vie}, {pv}, {degats}, {def}, {niveau},
    {pa}, {pm}, accents et casse ignorés. Chez un combattant, sa valeur du moment, à la couleur de sa caractéristique ;
    sans combattant, le nom de la variable, souligné de points. */
@@ -3446,7 +3451,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("const TALENT_TYPES=[['act','ACT','Action'],['mvt','MVT','Mouvement'],")&&src.includes("const ORDRE_TYPES_TALENTS=['mait','act','mvt','reac','crit','pass','ame'];")
   &&src.includes("const GLYPHES_TALENT={act:'⚔',mvt:'➜',")&&src.includes("['coutPA','coutPM'].forEach(k=>{if(!(Number.isInteger(t[k])&&t[k]>=0&&t[k]<=9))delete t[k]});")
   &&src.includes('<label id="cout-action-champ" hidden><span id="cout-action-nom">Coût (PA)</span>')&&src.includes("nom.textContent=ty==='mvt'?'Coût (PM)':'Coût (PA)';")
-  &&feuille.includes("button.btn-talent.t-mvt{--fond:#b98b61}")&&feuille.includes(".arbre-noeud.t-mvt{--teinte:#8a6440}"),'le type Mouvement et le coût à l’éditeur');
+  &&feuille.includes("button.btn-talent.t-mvt{--fond:#bd7a3e}")&&feuille.includes(".arbre-noeud.t-mvt{--teinte:#8a6440}"),'le type Mouvement et le coût à l’éditeur');
  assert.ok(page.includes("const TALENT_TYPES_CLES=['act','mvt','reac','pass','crit','mait','ame'];")&&page.includes("function dejaJoue(a,talent,code){return enCombat()&&!!a&&!!talent&&!(code&&code.cle==='orbes')")
   &&page.includes("const bloque=deja||manquePA||manquePM;")&&page.includes("if(dit===null){if(!ctx.pris&&!placementEnCours&&!fermeFormesMur)marqueTalent(a,talent,code);return}")
   &&page.includes("const pa=opts.sansAction?0:ctxT?ctxT.pa:1;")&&page.includes("if(ctx)payeTalent(ctx);else if(rangeeTalent(talent)==='attaques'")
