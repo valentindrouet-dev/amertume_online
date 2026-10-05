@@ -3364,6 +3364,18 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.588 — L'en-tête range les états du combattant en deux cartouches, ceux des anciennes cibles : les états subis dans le
+   rouge clair, ceux qui servent dans le vert clair, chacun seulement s'il en a ; les icônes gardent leur taille et les boutons
+   descendent. La bulle d'Analyser dit son effet, son point de Mouvement et le jeton de l'adversaire visé. Essai v3 : les jetons
+   des cibles flottent à droite de la bulle, centrés, derrière une petite flèche plate. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ const tete=page.slice(page.indexOf('function renderTargets(){'),page.indexOf('function tourEpuise(){'));
+ assert.ok(tete.includes("const bon=e=>ONDE_EXCLUS.includes(e)||e==='Gardé';")&&tete.includes("[[liste.filter(e=>!bon(e)),'adverses'],[liste.filter(bon),'allies']].forEach(([l,camp])=>{if(!l.length)return;")
+  &&tete.includes("g.className='etats-tete cibles-groupe '+camp;")&&feuille.includes(".etat-tete{position:relative;display:grid;place-items:center;width:30px;height:30px;"),'deux cartouches, les icônes à leur taille');
+ assert.ok(page.includes("rev.dataset.refus=refus;")&&page.includes("dit:'Révèle à toute la table les PV, la DEF et les dégâts de l’adversaire visé.',note:rev.dataset.refus||'',")
+  &&page.includes("points:{pa:0,pm:1},a:qui,cibles:j===null?[]:[j]})})}"),'la bulle d’Analyser');
+ assert.ok(feuille.includes(".bulle-cibles{position:absolute;top:50%;left:100%;transform:translateY(-50%);margin-left:8px;")&&feuille.includes(".bulle-cibles::before{content:'';")
+  &&src.includes("deborde=j?j.getBoundingClientRect().width+10:0;"),'les jetons à droite de la bulle, derrière la flèche');}
 /* v0.587 — Le bouton du Mouvement prend un brun plus vif, qu'on ne confond plus avec un bouton grisé ; les pastilles de PM et
    les points de coût suivent. */
 {const feuille=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
@@ -3372,19 +3384,18 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.586 — Les jetons des cibles ne poussent plus le texte de la bulle : ils montent au-dessus d'elle, ne mordant sur son bord
    que de 8 pixels, et la bulle garde sa marge d'avant. */
 {const feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(feuille.includes(".bulle-cibles{position:absolute;top:0;right:10px;transform:translateY(calc(-100% + 8px));")&&!feuille.includes(":has(>.bulle-cibles){padding-top"),'les jetons au-dessus, le texte à sa place');}
+ assert.ok(!feuille.includes(":has(>.bulle-cibles){padding-top"),'le texte à sa place');}
 /* v0.585 — L'en-tête de la barre d'action montre les états du combattant sélectionné lui-même, pas ceux de sa cible ; les
    jetons des cibles grossissent encore de 30 %. */
 {const page=fs.readFileSync('index.html','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  const tete=page.slice(page.indexOf('function renderTargets(){'),page.indexOf('function tourEpuise(){'));
  assert.ok(tete.includes("const liste=statesOf(a).filter(e=>e!=='Coma');if(!liste.length)return;")&&tete.includes("compteEtat(a,etat)")
   &&!tete.includes('ciblesDe(')&&!tete.includes('ciblesAttaque('),'l’en-tête dit les états du combattant');
- assert.ok(feuille.includes(".jeton-cible{position:relative;display:grid;place-items:center;width:47px;height:47px;")&&feuille.includes(".bulle-cibles{position:absolute;top:0;right:10px;"),'des jetons de 47 pixels');}
+ assert.ok(feuille.includes(".jeton-cible{position:relative;display:grid;place-items:center;width:47px;height:47px;")&&feuille.includes(".bulle-cibles{position:absolute;"),'des jetons de 47 pixels');}
 /* v0.584 — Les jetons des cibles grossissent et passent au coin haut droit de la bulle. L'en-tête suit la cible que le coup
    prendrait quand aucune n'est désignée. Le Mouvement passe au beige tirant vers le brun, et Se relever, qui coûte un point de
    Mouvement, en prend la couleur. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(feuille.includes(".bulle-cibles{position:absolute;top:0;right:10px;"),'les jetons à droite');
  assert.ok(page.includes("scheduleSave()},'btn-action btn-mvt')}")&&page.includes(".pastilles .mvt{background:#bd7a3e}")
   &&!/#e0a04a|#b77b31|#f2e2c4/.test(feuille+page+src),'le Mouvement en beige brun, Se relever compris');}
 /* v0.583 — L'en-tête de la barre d'action ne montre plus les cibles : les états de la cible désignée, en icônes, le compte
@@ -3409,7 +3420,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&src.includes("points:{pa:1,pm:0},a,cibles:typeof ciblesAttaque==='function'?ciblesAttaque(a,at.range==='distance'?'distance':'contact'):null}));")
   &&src.includes("points:t.cout||false,cibles:t.cibles?t.cibles():null,")&&page.includes("cibles:()=>ciblesDuGeste(a,code.cle,params,talent),")
   &&page.includes("points:t.cout||false,cibles:t.cibles()})};")
-  &&feuille.includes(".bulle-cibles{position:absolute;top:0;right:10px;")&&feuille.includes(".jeton-cible.adverse{border-color:#c2604f;"),'les jetons des cibles sur les bulles');
+  &&feuille.includes(".bulle-cibles{position:absolute;")&&feuille.includes(".jeton-cible.adverse{border-color:#c2604f;"),'les jetons des cibles sur les bulles');
  assert.ok(page.includes("function ciblesAttaque(a,portee){")&&page.includes("function ciblesDuGeste(a,cle,p,talent){")
   &&page.includes("if(cle==='orbes'){const al=alliePourIgnition(a);return al!==null?[al]:un(cibleOrbe(a))}")
   &&page.includes("return TALENTS_CODES[cle]&&TALENTS_CODES[cle].attaque?ciblesAttaque(a,portee):[]}"),'qui chaque geste viserait');}

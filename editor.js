@@ -409,7 +409,7 @@ function pointsDeCout(c){if(!c||!(c.pa>0||c.pm>0))return null;const s=document.c
  for(let k=0;k<(c.pa|0);k++)s.append(Object.assign(document.createElement('i'),{className:'pt action'}));
  for(let k=0;k<(c.pm|0);k++)s.append(Object.assign(document.createElement('i'),{className:'pt mvt'}));
  return s}
-/* Les cibles qu'un geste prendrait s'il partait maintenant : leurs jetons, à cheval sur le coin haut droit de sa bulle. Chacun
+/* Les cibles qu'un geste prendrait s'il partait maintenant : leurs jetons, à droite de sa bulle, derrière une flèche. Chacun
    est le socle de la carte, son image ou son initiale, cerclé de rouge pour un adversaire, de vert pour un allié, avec son numéro
    s'il en a un. Aucune cible, aucun jeton. */
 function jetonsCibles(a,liste){if(!a||!Array.isArray(liste)||!liste.length||typeof actors==='undefined')return null;
@@ -1363,7 +1363,9 @@ function placerBulle(){if(!bulleEl||!bulleAncre)return;
  // Les deux bulles d'un palier restent dans l'arbre : elles n'en débordent pas.
  const cadre=bulleEl.querySelector('.bulles-paliers')&&bulleEl.closest('#arbres'),c=cadre&&cadre.getBoundingClientRect();
  if(c&&b.width<=c.width-2*marge)gauche=Math.max(c.left+marge,Math.min(c.right-b.width-marge,gauche));
- gauche=Math.max(marge,Math.min(innerWidth-b.width-marge,gauche));
+ // Les jetons des cibles flottent à droite de la bulle : la place qu'ils prennent se garde aussi au bord de la fenêtre.
+ {const j=bulleEl.querySelector('.bulle-cibles'),deborde=j?j.getBoundingClientRect().width+10:0;
+  gauche=Math.max(marge,Math.min(innerWidth-b.width-marge-deborde,gauche))}
  bulleEl.style.top=Math.max(marge,haut)+'px';bulleEl.style.left=gauche+'px';
  bulleEl.classList.toggle('dessous',dessous);
  bulleEl.style.setProperty('--fleche',Math.max(14,Math.min(b.width-14,r.left+r.width/2-gauche))+'px')}
