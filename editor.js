@@ -257,7 +257,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(t.paliersActifs!==true||!(t.type==='ame'||t.effet==='bonus'))delete t.paliersActifs;
   // Un rond de remplissage est une case vide qui a une couleur : celle d'une nature de talent.
   if(t.remplissage!==true||t.vide!==true){delete t.remplissage;delete t.couleur}
-  else if(!['act','reac','pass','crit','mait','ame'].includes(t.couleur))t.couleur=t.chemin?'ame':'pass';
+  else if(!['act','mvt','reac','pass','crit','mait','ame'].includes(t.couleur))t.couleur=t.chemin?'ame':'pass';
+  // Le coût réglé à la main, en PA ou en PM : de 0 à 9.
+  ['coutPA','coutPM'].forEach(k=>{if(!(Number.isInteger(t[k])&&t[k]>=0&&t[k]<=9))delete t[k]});
   if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;
   if(typeof t.debutCombat!=='boolean')delete t.debutCombat;
   /* Orbes de feu écrit « toujours » avant que le réglage « Quand » n'existe : il le prend, une
@@ -1758,12 +1760,13 @@ function gearPills(a,tout=true,combat=false){const out=document.createElement('d
    details.forEach(d=>d&&out.append(d))}};
  rangees(equipement,'');rangees(objets,combat?'':'Objets');bulleOrpheline();
  return out}
-/* Talents : six natures, chacune sa couleur et son abrégé, comme dans le jeu de table. */
-const TALENT_TYPES=[['act','ACT','Action'],['reac','REAC','Réaction'],['pass','PASS','Passif'],
+/* Talents : sept natures, chacune sa couleur et son abrégé, comme dans le jeu de table. Le Mouvement se paie en
+   points de Mouvement, comme l'Action en points d'Action. */
+const TALENT_TYPES=[['act','ACT','Action'],['mvt','MVT','Mouvement'],['reac','REAC','Réaction'],['pass','PASS','Passif'],
  ['crit','CRIT','Critique'],['mait','MAIT','Maîtrise'],['ame','AME','Amélioration']];
 const talentType=t=>TALENT_TYPES.find(x=>x[0]===(t&&t.type))||TALENT_TYPES[0];
 // L'ordre des rangées de l'onglet Talents : Maîtrise, Actions, Réactions, (Critiques), Passifs, Améliorations.
-const ORDRE_TYPES_TALENTS=['mait','act','reac','crit','pass','ame'];
+const ORDRE_TYPES_TALENTS=['mait','act','mvt','reac','crit','pass','ame'];
 const GENERIQUES='Génériques';
 // La valeur qui n'est pas une classe mais une invitation à en nommer une.
 const AUTRE_CLASSE='__autre';
@@ -1928,7 +1931,7 @@ function logoRemplace(a,t){if(!a||!t)return '';
    les améliorations acquises en petits ronds, douze par ligne — deux sous chaque talent. */
 function talentPills(a,cases){const out=document.createElement('div');out.className='talent-grille'+(cases?' a-cases':'');
  // Sur la fiche, les talents se rangent par nature : Actions, Réactions, Passifs, puis le reste ; l'ordre de l'arbre dans chacune.
- const ORDRE_FICHE=['act','reac','pass','crit','mait'],rangT=t=>{const i=ORDRE_FICHE.indexOf(talentType(t)[0]);return i<0?ORDRE_FICHE.length:i};
+ const ORDRE_FICHE=['act','mvt','reac','pass','crit','mait'],rangT=t=>{const i=ORDRE_FICHE.indexOf(talentType(t)[0]);return i<0?ORDRE_FICHE.length:i};
  const liste=talentsDeFiche(a).map((t,i)=>[t,i]).sort((x,y)=>rangT(x[0])-rangT(y[0])||x[1]-y[1]).map(x=>x[0]);
  if(!liste.length&&!cases){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
  /* Un talent appris dont le socle manque ne fait rien : il se taisait, et on le croyait à
@@ -2975,7 +2978,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   /* Où le bouton du talent se tient à la table : avec les attaques, en grand ; sur la
      ligne des réactions, dessous ; ou nulle part — un passif se lit sur la fiche. */
   +sel('Rangée à la table','rangee',t.rangee||'',[['','Selon le type'],['attaques','Attaques — grand bouton à deux lignes'],
-   ['reactions','Réactions — la ligne dessous'],['aucune','Aucune — passifs et améliorations, sur la fiche seulement']])+'</div>'
+   ['reactions','Réactions — la ligne dessous'],['aucune','Aucune — passifs et améliorations, sur la fiche seulement']])
+  +'<label id="cout-action-champ" hidden><span id="cout-action-nom">Coût (PA)</span><input name="coutAction" type="number" min="0" max="9" step="1" value=""></label>'+'</div>'
   +'<div id="famille-autre" hidden><label>Nom de la nouvelle classe<input name="familleLibre" maxlength="60" value=""></label></div>'
   /* Un talent élémentaire choisit un logo par élément : ils remplacent le logo unique, et
      paraissent quand la case « Élémentaire » est cochée. */
@@ -3038,6 +3042,14 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  poseNature();
  /* « Autre classe… » ouvre le champ libre et lui donne la main ; revenir sur une classe
     connue le referme, et ce qui y était tapé ne compte plus. */
+ /* Le coût, en PA pour une Action, en PM pour un Mouvement : celui réglé, sinon celui par défaut. Tant qu'on n'y
+    touche pas, il suit le type et la mécanique choisis. */
+ {const f=$('talent-form').elements,champ=$('cout-action-champ'),nom=$('cout-action-nom');let touche=false;
+  const regle=ty=>{const v=ty==='mvt'?t.coutPM:ty==='act'?t.coutPA:undefined;return ty===t.type&&Number.isInteger(v)?v:null};
+  const majCout=()=>{const ty=f.type.value,d=coutParDefaut({type:ty,effet:f.effet?f.effet.value:t.effet});champ.hidden=!d;if(!d)return;
+   nom.textContent=ty==='mvt'?'Coût (PM)':'Coût (PA)';if(!touche){const r=regle(ty);f.coutAction.value=String(r!==null?r:ty==='mvt'?d.pm:d.pa)}};
+  f.coutAction.addEventListener('input',()=>{touche=true});f.type.addEventListener('change',()=>{touche=false;majCout()});
+  if(f.effet)f.effet.addEventListener('change',()=>{if(!touche)majCout()});majCout()}
  const fam=$('talent-form').elements.famille;
  fam.onchange=()=>{const autre=fam.value===AUTRE_CLASSE;$('famille-autre').hidden=!autre;
   if(autre){const champ=$('talent-form').elements.familleLibre;champ.value='';champ.focus()}};
@@ -3129,6 +3141,9 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
   else delete t.paliersActifs;delete t.elementaire;delete t.volets}
  // Seul un bonus se pose sur un chemin : redevenu talent, il le quitte.
  if(!(t.effet==='bonus'||t.type==='ame'))delete t.chemin;
+ // Le coût : gardé s'il diffère de celui par défaut, en PA pour une Action, en PM pour un Mouvement.
+ {const d=coutParDefaut(t);delete t.coutPA;delete t.coutPM;
+  if(d&&f.coutAction&&f.coutAction.value!==''){const n=num(f.coutAction.value,0,9);if(t.type==='mvt'){if(n!==d.pm)t.coutPM=n}else if(n!==d.pa)t.coutPA=n}}
  if(talentIndex===null)catalog.talents.push(t);else catalog.talents[talentIndex]=t;
  // Créé sur une case vide de l'arbre : il la reprend, ses lignes et ses petits ronds avec.
  if(!avant&&talentDefauts){const v=caseVideA({...talentDefauts,famille:talentFamily(t),voie:t.voie});
@@ -3535,7 +3550,7 @@ const estVide=t=>!!t&&t.vide===true;
 /* Un rond de remplissage : ni talent ni amélioration, une case de l'arbre dessinée d'avance, à la couleur d'une
    nature. Il tient lignes et petits ronds comme une case vide ; un talent posé dessus les reprend. */
 const estRemplissage=t=>estVide(t)&&t.remplissage===true;
-const COULEURS_REMPLISSAGE=['act','reac','pass','crit','mait','ame'];
+const COULEURS_REMPLISSAGE=['act','mvt','reac','pass','crit','mait','ame'];
 function iconeRemplissage(){const l=typeof catalog!=='undefined'&&catalog.logoRemplissage,im=l&&logoImage(l,LOGOS_TOUS);return im||document.createTextNode('?')}
 // Posé sur une case vide, il la colore ; ailleurs, il prend sa place comme un talent neuf.
 function poseRemplissage(dest,couleur){const v=caseVideA(dest);if(v){v.remplissage=true;v.couleur=couleur;return true}
@@ -3838,7 +3853,7 @@ function placerTalent(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||!
  if(de&&de!==t&&!liensDe(de).includes(t.id)&&liensDe(de).length<LIENS_MAX){const d=dirVers(posDe(de),t.pos);if(d&&!petitsDe(de,d).length)de.liens=[...liensDe(de),t.id]}
  if(avant)petitsHorsDesLignes(t);
  return true}
-const GLYPHES_TALENT={act:'⚔',reac:'↩',pass:'◆',crit:'✸',mait:'★',ame:'⇧'};
+const GLYPHES_TALENT={act:'⚔',mvt:'➜',reac:'↩',pass:'◆',crit:'✸',mait:'★',ame:'⇧'};
 const arbresDialog=dialog('arbres','Arbres de talents','<p class="muted" id="arbres-note"></p><div id="arbres-corps"></div>');
 /* L'arbre s'ouvre de deux façons : sur la fiche d'un combattant — il y choisit ses talents —
    ou depuis l'onglet Talents, pour une classe seule, que le MJ y bâtit sans personne à

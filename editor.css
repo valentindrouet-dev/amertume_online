@@ -513,6 +513,7 @@ button.comp-rond{cursor:pointer}button.comp-rond:hover{background:rgba(var(--tin
 .hero-sous .ico.plus{font:700 14px system-ui;letter-spacing:0;padding:0 7px 2px}
 /* Talents : une couleur par nature, portée par le liseré gauche et par l'abrégé. */
 .cat-pill.t-act{background:#cfdcea;border-left:4px solid #4f7fb5}
+.cat-pill.t-mvt{background:#cde8e3;border-left:4px solid #2e9a8f}
 .cat-pill.t-reac{background:#ddd3ea;border-left:4px solid #8b6bb5}
 .cat-pill.t-pass{background:#dcd8cf;border-left:4px solid #8a8474}
 .cat-pill.t-crit{background:#eccfd0;border-left:4px solid #b5525a}
@@ -559,6 +560,7 @@ button.comp-rond{cursor:pointer}button.comp-rond:hover{background:rgba(var(--tin
 .pick-talent .tag{font:600 11px system-ui;color:#4a3f31;opacity:.85}
 .pick-talent:hover{filter:brightness(1.05)}
 .pick-talent.t-act{background:#cfdcea;border-left-color:#4f7fb5}
+.pick-talent.t-mvt{background:#cde8e3;border-left-color:#2e9a8f}
 .pick-talent.t-reac{background:#ddd3ea;border-left-color:#8b6bb5}
 .pick-talent.t-pass{background:#dcd8cf;border-left-color:#8a8474}
 .pick-talent.t-crit{background:#eccfd0;border-left-color:#b5525a}
@@ -768,6 +770,7 @@ button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,2
 .talent-detail b{color:#7a4f1a}
 /* Chaque nature a sa teinte : la barre à gauche et le nom du talent la portent ensemble. */
 .talent-detail.t-act{--teinte:#4f7fb5;background:#cfdcea;border-left:4px solid var(--teinte)}
+.talent-detail.t-mvt{--teinte:#2e9a8f;background:#cde8e3;border-left:4px solid var(--teinte)}
 .talent-detail.t-reac{--teinte:#8b6bb5;background:#ddd3ea;border-left:4px solid var(--teinte)}
 .talent-detail.t-pass{--teinte:#8a8474;background:#dcd8cf;border-left:4px solid var(--teinte)}
 .talent-detail.t-crit{--teinte:#b5525a;background:#eccfd0;border-left:4px solid var(--teinte)}
@@ -823,6 +826,7 @@ button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,2
    Maîtrise, gris pour un Passif, bleu Action, violet Réaction, rouge Critique, vert
    Amélioration. */
 button.btn-talent.t-act{--fond:#4f7fb5}
+button.btn-talent.t-mvt{--fond:#2e9a8f}
 button.btn-talent.t-reac{--fond:#8b6bb5}
 button.btn-talent.t-pass{--fond:#8a8474}
 button.btn-talent.t-crit{--fond:#b5525a}
@@ -887,11 +891,11 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 .arbre-rond img{width:72%;height:72%;object-fit:contain}
 .arbre-nom{max-width:100%;text-align:center;line-height:1.2}
 .arbre-niv{font:600 11px system-ui;color:var(--muted)}
-.arbre-noeud.t-act{--teinte:#4f7fb5}.arbre-noeud.t-reac{--teinte:#8b6bb5}.arbre-noeud.t-pass{--teinte:#8a8474}
+.arbre-noeud.t-act{--teinte:#4f7fb5}.arbre-noeud.t-mvt{--teinte:#2e9a8f}.arbre-noeud.t-reac{--teinte:#8b6bb5}.arbre-noeud.t-pass{--teinte:#8a8474}
 .arbre-noeud.t-crit{--teinte:#b5525a}.arbre-noeud.t-mait{--teinte:#c99a3c}.arbre-noeud.t-ame{--teinte:#5e9a5b}
 /* Le fond du rond d'un talent, celui de sa tuile dans l'onglet Talents : on reconnaît la nature
    d'un coup d'œil, d'une page à l'autre. Les nœuds de bonus gardent le leur. */
-.arbre-noeud.t-act:not(.bonus) .arbre-rond{background:#cfdcea}.arbre-noeud.t-reac:not(.bonus) .arbre-rond{background:#ddd3ea}
+.arbre-noeud.t-act:not(.bonus) .arbre-rond{background:#cfdcea}.arbre-noeud.t-mvt:not(.bonus) .arbre-rond{background:#cde8e3}.arbre-noeud.t-reac:not(.bonus) .arbre-rond{background:#ddd3ea}
 .arbre-noeud.t-pass:not(.bonus) .arbre-rond{background:#dcd8cf}.arbre-noeud.t-crit:not(.bonus) .arbre-rond{background:#eccfd0}
 .arbre-noeud.t-mait:not(.bonus) .arbre-rond{background:#f0e0bd}.arbre-noeud.t-ame:not(.bonus) .arbre-rond{background:#d3e5cd}
 .arbre-noeud.acquis .arbre-rond{box-shadow:0 0 0 3px var(--panel),0 0 0 5px var(--teinte),0 2px 8px #0005}
@@ -940,7 +944,7 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 .bulle:has(.k-armor){--bulle-bord:#d9dde3}.bulle:has(.k-object){--bulle-bord:#e6d9bd}.bulle:has(.k-treasure){--bulle-bord:#f0e0bd}
 .gear-detail.k-treasure{background:#f0e0bd;border-left-color:#c99a3c}.gear-detail.k-ressource{background:#f1e6d4;border-left-color:#9a7448}.bulle:has(.k-ressource){--bulle-bord:#f1e6d4}
 .bulle:has(.k-object.consommable){--bulle-bord:#d9e7cd}
-.bulle:has(.t-act){--bulle-bord:#cfdcea}.bulle:has(.t-reac){--bulle-bord:#ddd3ea}
+.bulle:has(.t-act){--bulle-bord:#cfdcea}.bulle:has(.t-mvt){--bulle-bord:#cde8e3}.bulle:has(.t-reac){--bulle-bord:#ddd3ea}
 .bulle:has(.t-pass){--bulle-bord:#dcd8cf}.bulle:has(.t-crit){--bulle-bord:#eccfd0}
 .bulle:has(.t-mait){--bulle-bord:#f0e0bd}.bulle:has(.t-ame){--bulle-bord:#d3e5cd}
 /* L'icône d'une attaque spéciale, devant son état : un jeton, ou un losange vide qui invite
@@ -1275,7 +1279,7 @@ body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-
 /* Un talent se range en rond, une pièce d'équipement en carré : on ne confond pas les deux.
    Un contour appuyé à la teinte de sa nature, et le logo qui remplit le rond. */
 .cat-pill.gear-carre.talent-carre{border:3px solid var(--teinte,#8a8474);width:69px;height:69px;min-width:0;min-height:0;padding:0;border-radius:50%}
-.talent-carre.t-act{--teinte:#4f7fb5}.talent-carre.t-reac{--teinte:#8b6bb5}.talent-carre.t-pass{--teinte:#8a8474}
+.talent-carre.t-act{--teinte:#4f7fb5}.talent-carre.t-mvt{--teinte:#2e9a8f}.talent-carre.t-reac{--teinte:#8b6bb5}.talent-carre.t-pass{--teinte:#8a8474}
 .talent-carre.t-crit{--teinte:#b5525a}.talent-carre.t-mait{--teinte:#c99a3c}.talent-carre.t-ame{--teinte:#5e9a5b}
 .cat-pill.gear-carre.talent-carre .logo-equip{width:46px;height:46px}
 .cat-pill.gear-carre.talent-carre .glyphe{font-size:34px;color:var(--teinte)}

@@ -1046,7 +1046,7 @@ assert.ok(page.includes("t.dataset.id=a.id")&&page.includes(".token.glisse{trans
 assert.ok(page.includes("addEventListener('touchmove'")&&page.includes("mapPanX+=c.x-doigts.x"),'deux doigts font glisser la carte');
 /* Le point d'Action chez le joueur, les orbes gratuits, l'orbe qui vole. */
 assert.ok(/orbes:\{[^}]*gratuit:true/.test(fs.readFileSync('combat.js','utf8')),'les orbes se disent gratuits');
-assert.ok(page.includes("if(actionPrise(a)){log(nomNum(a)+' a déjà dépensé son Action ce tour.'")&&page.includes("if(actionPrise(a))return 'Action déjà dépensée ce tour.';"),'l’Action prise ferme la rangée');
+assert.ok(page.includes("if(actionPrise(a)){log(nomNum(a)+' a déjà dépensé son Action ce tour.'"),'l’Action prise ferme la rangée');
 assert.ok(page.includes('function volOrbe(')&&vivant.includes("rec.genre==='effet'"),'l’orbe vole ici et en face');
 assert.ok(vivant.includes("if(!estMJ()&&CHAMPS_ACTEUR_MJ.includes(k))return;")&&vivant.includes('aRepousser.push([id,k])'),'« vu » n’appartient qu’au MJ');
 /* Les invités ne dirigent pas, la carte reste voilée jusqu'au brouillard, le journal a ses tons. */
@@ -1200,8 +1200,7 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
  assert.ok(vivant.includes('texteStable(publicContent())!==lastPublishedText')&&vivant.includes('function programmerApplication(')
   &&vivant.includes('dernierDoc=doc.data();programmerApplication()')&&vivant.includes('const avant=JSON.stringify(etatVivant());')
   &&vivant.includes('const change=complet||JSON.stringify(base)!==avant;')&&vivant.includes('if(change)render();'),'rafales et échos ne redessinent pas pour rien');
- assert.ok(page.includes("if(coute&&pointsRestants(a,'action')>0){depensePoint(a,'action');afterAction(a)}")
-  &&page.includes('function pastillesPoints(a)'),'l’Action se dépense même hors combat, le Mouvement en combat');
+ assert.ok(page.includes('function pastillesPoints(a)'),'l’Action se dépense même hors combat, le Mouvement en combat');
  // Le texte stable ignore l'état vivant et retient le contenu.
  const src2=partage.slice(partage.indexOf('const CHAMPS_VOLATILS='),partage.indexOf('function publicContent('));
  const texteStable=new Function(src2+';return texteStable')();
@@ -1562,15 +1561,13 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
 assert.ok(page.includes('const croises=new Set(contactsDe(b)),depart={x:b.x,y:b.y};')
  &&page.includes('if(venu)ramasseContacts(b,croises,depart,mapSize(),walls());')
  &&page.includes('if(venu)degatsOpportunite(b,[...croises]);')
- &&page.includes("if(!alive(b)){log(nomNum(b)+' tombe en chemin : le coup ne part pas.',{ton:'degats'});")
- &&page.includes("if(pointsRestants(a,'action')>0){depensePoint(a,'action');afterAction(a)}"),'la Provocation paie ses dégâts d’opportunité');
-assert.ok(page.includes('function attack(opts={})')&&page.includes('if(opts.vises){vises=ciblesAtteignables(a,opts.vises,portee);')
- &&page.includes("depensePoint(a,'action');afterAction(a);render();return}}")&&page.includes('const vivants=vises.filter(j=>alive(actors[j]));')
+ &&page.includes("if(!alive(b)){log(nomNum(b)+' tombe en chemin : le coup ne part pas.',{ton:'degats'});"),'la Provocation paie ses dégâts d’opportunité');
+assert.ok(page.includes('function attack(opts={})')&&page.includes('if(opts.vises){vises=ciblesAtteignables(a,opts.vises,portee);')&&page.includes('const vivants=vises.filter(j=>alive(actors[j]));')
  &&page.includes('if(opts.apres)opts.apres({vises,partis,tues:vivants.filter(j=>!alive(actors[j]))});')
  &&page.includes('function attaqueEtat(a,p,talent)')&&page.includes("const survit=p.condition==='survit',gagne=survit?tues.length<vises.length:tues.length>0;")
  &&page.includes('const issue=infligeEtat(a,p.etat);')&&page.includes('function cibleProvocation(a)')&&page.includes('function rapprocher(b,a)')
  &&page.includes('const arret=tokenOf(a)/2+tokenOf(b)/2+1;')&&page.includes('if(d<=arret+1)return false;')
- &&page.includes("if(el){el.classList.add('glisse');el.style.left=b.x+'%';el.style.top=b.y+'%';suitLaJauge(el)}")&&page.includes('function provocation(a,p,talent)')&&page.includes("attack({vises:[j]});scheduleSave()},venu?220:0);")
+ &&page.includes("if(el){el.classList.add('glisse');el.style.left=b.x+'%';el.style.top=b.y+'%';suitLaJauge(el)}")&&page.includes('function provocation(a,p,talent)')
  &&page.includes('attaqueetat:{fn:attaqueEtat,')&&page.includes('provocation:{fn:provocation,')&&page.includes("peut:a=>!hasState(a,'Au sol')&&cibleProvocation(a)!==null,"),'Attaque État et Provocation câblés à la table');
 /* Un talent nommé comme sa mécanique la reçoit, que son nom en donne la clé ou l'intitulé :
    « Orbes de feu » et « Orbes mystiques » restaient descriptifs, donc muets — les orbes
@@ -1762,8 +1759,7 @@ assert.equal(C.pointsRestants({points:{action:3},checks:[1,0,0]},'action'),2);
 assert.ok(page.includes('function pastillesPoints(a)')&&page.includes("const act=alive(a)?pointsRestants(a,'action'):0;")
  &&page.includes("const mvt=alive(a)&&enCombat()?pointsRestants(a,'mouvement'):0;")
  &&page.includes("if(coche&&!epuise)epuisePoints(a,quoi);else if(!coche&&epuise)rendPoint(a,quoi,POINTS_MAX[quoi])})}")
- &&page.includes("l.lastChild.textContent=' '+LIBELLES_POINTS[i]+(s&&max>1?' '+pointsRestants(s,quoi)+'/'+max:'')});")
- &&page.includes("reinit:()=>{if(code.cle==='orbes')a.orbes=0;else if(code.cle==='gardien')a.garde=null;else rendPoint(a,'action')},")&&!page.includes('a.checks=[false,false,false]')
+ &&page.includes("l.lastChild.textContent=' '+LIBELLES_POINTS[i]+(s&&max>1?' '+pointsRestants(s,quoi)+'/'+max:'')});")&&!page.includes('a.checks=[false,false,false]')
  &&vivant.includes("'checks','points','ignition','immunites','usages','cibles'"),'les points d’activation se comptent');
 /* Ignition à la table : l'orbe part sur l'allié désigné, ne blesse pas, et sa braise s'en va
    avec le premier coup au contact. Invulnérable et Brise s'entendent dans le journal. */
@@ -3214,7 +3210,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    Réactions, Passifs, Améliorations. Un bouton « Noms », commun à l'Armurerie, aux Talents, au
    Bestiaire et aux Aventuriers, montre ou cache les noms sous les cartes ; son choix vaut partout. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("const ORDRE_TYPES_TALENTS=['mait','act','reac','crit','pass','ame'];")&&src.includes("ORDRE_TYPES_TALENTS.forEach(k=>{const lot=ordre.filter(([t])=>talentType(t)[0]===k);if(!lot.length)return;")
+ assert.ok(src.includes("ORDRE_TYPES_TALENTS.forEach(k=>{const lot=ordre.filter(([t])=>talentType(t)[0]===k);if(!lot.length)return;")
   &&css.includes('.talent-rangee{flex-basis:100%;display:flex;flex-wrap:wrap;')&&css.includes('.talent-rangee .cat-carte{width:auto;min-width:0}'),'une rangée par type de talent');
  assert.ok(src.includes("let nomsCaches=false;try{nomsCaches=localStorage.getItem('amertume-noms')==='0'}catch(e){}")&&src.includes("[armoryPage,talentsPage,bestiaryPage,heroesPage].forEach(p=>{const a=p.querySelector('.cat-actions');if(a)a.prepend(boutonNoms())});")
   &&css.includes('body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-carte{display:none}'),'un bouton Noms commun aux quatre pages');}
@@ -3369,25 +3365,39 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.576 — Coût des talents : une Action en PA, 1 par défaut, 0 pour une mécanique gratuite (Orbes, Charge) ; un nouveau
+   type, Mouvement, en PM, 1 par défaut ; le MJ règle l'un ou l'autre de 0 à 9. Un talent ne se joue qu'une fois par tour en
+   combat, même gratuit, sauf les Orbes mystiques, autant qu'il reste d'orbes ; ensuite il est grisé. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8'),vivant=fs.readFileSync('live.js','utf8'),partage=fs.readFileSync('shared.js','utf8');
+ assert.deepEqual(C.coutTalent({type:'act'}),{pa:1,pm:0});assert.deepEqual(C.coutTalent({type:'act',effet:'orbes'}),{pa:0,pm:0});assert.deepEqual(C.coutTalent({type:'act',effet:'charge'}),{pa:0,pm:0});
+ assert.deepEqual(C.coutTalent({type:'act',coutPA:3}),{pa:3,pm:0});assert.deepEqual(C.coutTalent({type:'mvt'}),{pa:0,pm:1});assert.deepEqual(C.coutTalent({type:'mvt',coutPM:0}),{pa:0,pm:0});
+ assert.equal(C.coutTalent({type:'mait'}),null);assert.equal(C.coutTalent({type:'act',coutPA:12}).pa,1,'hors bornes, le défaut');
+ assert.ok(src.includes("const TALENT_TYPES=[['act','ACT','Action'],['mvt','MVT','Mouvement'],")&&src.includes("const ORDRE_TYPES_TALENTS=['mait','act','mvt','reac','crit','pass','ame'];")
+  &&src.includes("const GLYPHES_TALENT={act:'⚔',mvt:'➜',")&&src.includes("['coutPA','coutPM'].forEach(k=>{if(!(Number.isInteger(t[k])&&t[k]>=0&&t[k]<=9))delete t[k]});")
+  &&src.includes('<label id="cout-action-champ" hidden><span id="cout-action-nom">Coût (PA)</span>')&&src.includes("nom.textContent=ty==='mvt'?'Coût (PM)':'Coût (PA)';")
+  &&feuille.includes("button.btn-talent.t-mvt{--fond:#2e9a8f}")&&feuille.includes(".arbre-noeud.t-mvt{--teinte:#2e9a8f}"),'le type Mouvement et le coût à l’éditeur');
+ assert.ok(page.includes("const TALENT_TYPES_CLES=['act','mvt','reac','pass','crit','mait','ame'];")&&page.includes("function dejaJoue(a,talent,code){return enCombat()&&!!a&&!!talent&&!(code&&code.cle==='orbes')")
+  &&page.includes("const bloque=deja||manquePA||manquePM;")&&page.includes("if(dit===null){if(!ctx.pris&&!placementEnCours&&!fermeFormesMur)marqueTalent(a,talent,code);return}")
+  &&page.includes("const pa=opts.sansAction?0:ctxT?ctxT.pa:1;")&&page.includes("if(ctx)payeTalent(ctx);else if(rangeeTalent(talent)==='attaques'")
+  &&page.includes("const ctx=talentEnCours;\n viserCible('✦ Clique sur la carte pour poser '+m.name,(vise,q)=>{if(ctx)payeTalent(ctx);")
+  &&(page.match(/a\.talentsJoues=\[\];/g)||[]).length>=3&&vivant.includes("'mursElem','talentsJoues',")&&partage.includes("'mursElem','talentsJoues',"),'une fois par tour, payé à la fin du geste');}
 /* v0.575 — Mur d'élément : la forme se choisit en petites bulles rondes au-dessus du bouton, à sa couleur — 2 et un trait,
    3 et un trait coudé, 4 et un carré fermé —, plus de menu. Un clic ailleurs, Échap ou un autre geste les referme. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(page.includes("choixFormeMur(a,e,choix,talent);return null}")&&!page.includes("menuCarte(nom,choix.map(")
+ assert.ok(!page.includes("menuCarte(nom,choix.map(")
   &&page.includes("function renonceGeste(){if(fermeFormesMur)fermeFormesMur();")&&page.includes("b.className='btn-action rond forme-mur';")
   &&page.includes("if(fond)b.style.setProperty('--fond',fond);")&&page.includes("const FORMES_MUR={2:'<path d=\"M5 17L19 7\"/>")
   &&src.includes("b.dataset.talent=t.talent&&t.talent.id||'';")&&feuille.includes("button.btn-action.rond.forme-mur{width:40px;height:40px;"),'les formes en bulles au-dessus du bouton');}
 /* v0.574 — Recommencer le combat (↺) efface aussi les murs d'éléments ; un nouveau combat efface ce qui restait sur le terrain :
    murs, états des combattants, charges d'Ignition. Une pose en cours y renonce. */
 {const page=fs.readFileSync('index.html','utf8');
- assert.ok(page.includes("function remiseAuTourUn(){round=1;renonceGeste();actors.forEach(a=>{a.checks=[0,0,0];a.target=null;a.targets=[];a.orbes=0;a.orbesGardes=0;a.mursElem=[];")
-  &&page.includes(",commence=mode!=='combat'&&neuf==='combat',")&&page.includes(" if(commence&&!spect)actors.forEach(a=>{leveEtats(a,true);a.ignition=''});")
+ assert.ok(page.includes(",commence=mode!=='combat'&&neuf==='combat',")&&page.includes(" if(commence&&!spect)actors.forEach(a=>{leveEtats(a,true);a.ignition=''});")
   &&page.includes("a.orbesGardes=0;a.mursElem=[];a.garde=null;a.contactsDepart=null;"),'un combat qui recommence ou commence repart d’un terrain propre');}
 /* v0.573 — Mur d'élément : un autre talent, ou une attaque, fait renoncer à la pose en cours ; chaque segment mesure au plus le
    niveau de l'aventurier qui le dresse, en mètres, sans limite pour un adversaire ; dès le premier point, un trait suit la souris
    avec sa distance, rouge au-delà, et un clic trop loin ne pose rien. */
 {const page=fs.readFileSync('index.html','utf8');
- assert.ok(page.includes("function viserCible(annonce,fn,refus,annule){renonceGeste();")&&page.includes("placementEnCours={poser,echap,annule};")
-  &&page.includes("if(bloque)return;renonceGeste();const dit=fn(a,params,talent);")&&page.includes(" if(tirEnVol)return;renonceGeste();"),'un autre geste fait renoncer à la pose');
+ assert.ok(page.includes("function viserCible(annonce,fn,refus,annule){renonceGeste();")&&page.includes("placementEnCours={poser,echap,annule};"),'un autre geste fait renoncer à la pose');
  assert.ok(page.includes("max=a.hero?Math.max(1,Math.trunc(Number(a.level))||1):Infinity;")&&page.includes("if(pts.length&&segmentsGuide(murEnCours,p).some(([u,w])=>distanceM(u,w)>max)){suivant();return}")
   &&page.includes("if(m.zone&&m.pts.length===m.total-1)l.push([q,m.pts[0]]);")&&page.includes("const d=distanceM(u,w),trop=d>m.max,")
   &&page.includes("#aim .mur-guide.trop-long{stroke:#e0483c;")&&page.includes("carte.removeEventListener('pointermove',suit)"),'la longueur au niveau, le trait qui suit la souris');}
@@ -3670,10 +3680,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  const K=C.TALENTS_CODES;assert.ok(K.charge.type==='act'&&K.charge.gratuit===true&&['chargeelan','chargerepousse','chargerepoussedist'].every(k=>K[k]&&K[k].type==='ame'),'Charge et ses trois améliorations');
  assert.ok(src.includes("charge:'Destructeur',chargeelan:'Destructeur',chargerepousse:'Destructeur',chargerepoussedist:'Destructeur'"),'chez le Destructeur');
  assert.ok(page.includes("lab.style.fontSize=Math.max(6.3,tokenPx()*.154).toFixed(1)+'px';"),'le chiffre, 30 % plus petit');
- assert.ok(page.includes("if(!opts.sansAction&&actionPrise(a))")&&page.includes("degatsDe(a)+(Math.trunc(Number(opts.bonusEnPlus))||0);")&&page.includes("if(!actionPriseAuDepart&&!opts.sansAction)depensePoint(a,'action');")
-  &&page.split("actionPriseAuDepart=true;if(!opts.sansAction)depensePoint(a,'action');").length===3,'l’attaque de la Charge ne prend pas l’Action, et porte son élan');
- assert.ok(page.includes("if(enCombat()){depensePoint(a,'mouvement');if(actors[selected]===a)$('move').checked=pointsRestants(a,'mouvement')<=0}")
-  &&page.includes("attack({vises:[j],sansAction:true,bonusEnPlus:elan,")&&page.includes("de>0?d+de:0)+2;"),'un point de Mouvement, l’élan, la poussée');}
+ assert.ok(page.includes("degatsDe(a)+(Math.trunc(Number(opts.bonusEnPlus))||0);")
+  &&page.split("actionPriseAuDepart=true;if(pa)depensePoint(a,'action',pa);").length===3&&page.includes("const pa=opts.sansAction?0:ctxT?ctxT.pa:1;"),'l’attaque de la Charge ne prend pas l’Action, et porte son élan');
+ assert.ok(page.includes("attack({vises:[j],sansAction:true,bonusEnPlus:elan,")&&page.includes("de>0?d+de:0)+2;"),'un point de Mouvement, l’élan, la poussée');}
 /* v0.526 — Le chiffre de distance plus petit, et à la couleur du ciblage : bleu clair s'il part, rouge clair s'il est bloqué. */
 {const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("#aim .aim-dist.etat-ok{fill:#a9d2f7}#aim .aim-dist.etat-no{fill:#f6a59c}"),'taille et couleur du chiffre');}
 /* v0.525 — L'unité de distance : le diamètre d'un socle moyen vaut 1 m. Sur le trait de ciblage, la distance de centre
@@ -3996,7 +4005,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  ctxO.actors[0].checks=[0,0,0];ctxO.actors[0].orbes=1;assert.equal(ctxO.ouvertureCombat(),false,'un orbe lancé aussi');
  ctxO.actors[0].orbes=0;ctxO.round=2;assert.equal(ctxO.ouvertureCombat(),false,'passé le premier tour, plus du combat');
  assert.deepEqual([{effet:'gardien'},{effet:'gardien',debutCombat:false},{debutCombat:true},{}].map(ctxO.t),[true,false,true,false]);
- assert.ok(page.includes("titre:bloque?'Action déjà dépensée ce tour.':ferme?'Seulement au début du premier tour.'")&&page.includes("peut:libre,rayonne:debut&&libre,")&&page.includes("const coute=rangee==='attaques'&&!code.gratuit&&!debut&&")&&page.includes("if(b&&t.rayonne)b.classList.add('debut-combat')")
+ assert.ok(page.includes("peut:libre,rayonne:debut&&libre,")&&page.includes("if(b&&t.rayonne)b.classList.add('debut-combat')")
   &&page.includes("className:'debut-marque',textContent:'!'")&&src.includes("if(t.rayonne)b.classList.add('debut-combat');")&&src.includes('name="debutCombat"'),'les talents de début de combat');
  assert.ok(page.includes("function estMort(a){return !!a&&a.hero===true&&a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0}")
   &&page.includes("+(estMort(a)?' mort':'')")&&src.includes("if(estMort(a)){c.classList.add('mort');")&&src.includes("function ressusciter(a){if(view!=='mj'||!estMort(a))return;")
