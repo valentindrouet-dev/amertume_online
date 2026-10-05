@@ -1861,9 +1861,10 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .talent-bulle-nom.avec-des .cout-points{margin-right:-8px}
 .talent-bulle-nom .cout-points .pt{display:block;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 -1px 0 rgba(0,0,0,.22),0 0 0 1.5px rgba(255,255,255,.7)}
 .talent-bulle-nom .cout-points .pt.action{background:#3f8fe0}.talent-bulle-nom .cout-points .pt.mvt{background:#b98b61}
-/* Les jetons des cibles d’un geste : à cheval sur le bord haut de sa bulle, à droite ; la bulle descend son titre d'autant. */
-.talent-detail:has(>.bulle-cibles){position:relative}.bulle .talent-detail.large:has(>.bulle-cibles){padding-top:30px}
-.bulle-cibles{position:absolute;top:0;right:10px;transform:translateY(-50%);display:flex;gap:6px;pointer-events:none}
+/* Les jetons des cibles d’un geste : au-dessus de sa bulle, à droite, et ne mordant sur son bord que de 8 pixels, moins que
+   sa marge : le texte garde sa place. */
+.talent-detail:has(>.bulle-cibles){position:relative}
+.bulle-cibles{position:absolute;top:0;right:10px;transform:translateY(calc(-100% + 8px));display:flex;gap:6px;pointer-events:none}
 .jeton-cible{position:relative;display:grid;place-items:center;width:47px;height:47px;box-sizing:border-box;border-radius:50%;border:3px solid #5f9b74;background:var(--panel);color:#5f9b74;font:700 22px/1 'Killam',Georgia,serif;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 .jeton-cible.adverse{border-color:#c2604f;color:#c2604f}
 .jeton-cible img{width:100%;height:100%;border-radius:50%;object-fit:cover}
