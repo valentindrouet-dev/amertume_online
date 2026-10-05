@@ -3369,6 +3369,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.574 — Recommencer le combat (↺) efface aussi les murs d'éléments ; un nouveau combat efface ce qui restait sur le terrain :
+   murs, états des combattants, charges d'Ignition. Une pose en cours y renonce. */
+{const page=fs.readFileSync('index.html','utf8');
+ assert.ok(page.includes("function remiseAuTourUn(){round=1;renonceGeste();actors.forEach(a=>{a.checks=[0,0,0];a.target=null;a.targets=[];a.orbes=0;a.orbesGardes=0;a.mursElem=[];")
+  &&page.includes(",commence=mode!=='combat'&&neuf==='combat',")&&page.includes(" if(commence&&!spect)actors.forEach(a=>{leveEtats(a,true);a.ignition=''});")
+  &&page.includes("a.orbesGardes=0;a.mursElem=[];a.garde=null;a.contactsDepart=null;"),'un combat qui recommence ou commence repart d’un terrain propre');}
 /* v0.573 — Mur d'élément : un autre talent, ou une attaque, fait renoncer à la pose en cours ; chaque segment mesure au plus le
    niveau de l'aventurier qui le dresse, en mètres, sans limite pour un adversaire ; dès le premier point, un trait suit la souris
    avec sa distance, rouge au-delà, et un clic trop loin ne pose rien. */
