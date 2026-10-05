@@ -1233,7 +1233,7 @@ assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:6
    s'y arrêter puis en sortir ; tirer ou lancer un orbe au contact déclenche l'occasion de tous les
    adversaires au contact, après les dégâts du tir — un adversaire tué ou entravé ne frappe pas. */
 assert.ok(page.includes('function ramasseContacts('),'la traversée d’une zone de contact compte');
-assert.ok(page.includes('function peutFrapperOpportunite(e){return !!e&&alive(e)&&!frozenSolid(e)&&degatsDe(e)>0}')&&page.includes('function opportuniteAuTir(')
+assert.ok(page.includes('function opportuniteAuTir(')
  &&page.includes("const contacts=rangeOf(a)==='distance'?contactsDe(a):[];")
  ,'tir et sort au contact : occasion après les dégâts');
 /* Le bestiaire crée des modèles : « + Nouveau monstre » enregistre au bestiaire, pas en scène. */
@@ -2065,8 +2065,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  assert.deepEqual(C.elusMeneur({combien:'deux'},[{a:'c',dist:3},{a:'a',dist:1},{a:'b',dist:2}]),['a','b']);
  assert.deepEqual(C.elusMeneur({combien:'un'},[{a:'c',dist:3},{a:'a',dist:1}]),['a']);
  assert.equal(C.elusMeneur({combien:'tous'},[{a:'c',dist:3},{a:'a',dist:1}]).length,2);assert.deepEqual(C.elusMeneur({},[]),[]);
- assert.ok(page.includes("function defOf(a){const d=defenseOf(a,items())+bonusFiche(a).def+auraMeneur(a,'def');return defPlafonnee(a&&a.defBrisee>0?d-a.defBrisee:d)}")
-  &&page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
+ assert.ok(page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")
   &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")
@@ -2432,8 +2431,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const ctxN={actors:[{id:'h',name:'Ulfgar',hero:true},{id:'g1',name:'Gobelin',vu:true,numero:1},{id:'g2',name:'Gobelin',vu:true,numero:2},{id:'o',name:'Ogre',vu:true,numero:1}]};vm.createContext(ctxN);
  vm.runInContext(page.slice(page.indexOf('function nomNum(o)'),page.indexOf('/* Ce qu\'on a le droit de lire d\'un combattant')),ctxN);
  assert.equal(ctxN.actors.map(ctxN.nomNum).join('|'),'Ulfgar|Gobelin 1|Gobelin 2|Ogre');assert.equal(ctxN.nomNum({name:'Inconnu'}),'Inconnu');
- assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||(typeof loading!=='undefined'&&loading)||(typeof spectateur==='function'&&spectateur()))return;")&&page.includes("if(adversairesDebout()>0){combatEngage=true;return}")
-  &&page.includes("function adversairesDebout(){return actors.filter(a=>campDe(a)==='adverse'&&a.vu&&alive(a)).length}")&&page.includes(" effetsPassifs();comaAventuriers();glissantsReveles();finDeCombatAuto();")
+ assert.ok(page.includes("function finDeCombatAuto(){if(!enCombat()||(typeof loading!=='undefined'&&loading)||(typeof spectateur==='function'&&spectateur()))return;")&&page.includes("if(adversairesDebout()>0){combatEngage=true;return}")&&page.includes(" effetsPassifs();comaAventuriers();glissantsReveles();finDeCombatAuto();")
   &&page.includes("if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);"),'le combat finit seul, et rend le repos');
  assert.ok(page.includes('<button class="btn-action btn-repos rond" id="repos" hidden>⛺</button>')&&page.includes(":enCombat()?'Pas de repos en plein combat.'")
   &&page.includes(":a.reposPris===true?'Repos court déjà pris : il revient à la fin du prochain combat.'")&&page.includes("actors.forEach(a=>{if(a.hero)a.reposPris=false})}")&&page.includes("const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);")
@@ -3364,6 +3362,32 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.589 — Orbe statique, une Action du Mystique : un de ses orbes posé sur un point qu'il voit, 1 PV, DEF 0, du camp de son
+   porteur ; au début de chaque tour, son état à tous les adversaires de sa zone de contact. Un seul à la fois. Améliorations :
+   il lance gratuitement des orbes, autant que le porteur en possède au palier 2 ; il rampe du niveau du porteur en mètres vers
+   l'adversaire le plus proche, et laisse un doublon au palier 2. Il ne joue pas de tour, n'est ni dans la liste ni au bilan, et
+   s'efface avec le combat. */
+{const page=fs.readFileSync('index.html','utf8'),feuille=fs.readFileSync('editor.css','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ const T=C.TALENTS_CODES;assert.equal(T.orbestatique.type,'act');assert.equal(T.orbestatiquelance.pour,'orbestatique');assert.equal(T.orbestatiquerampant.pour,'orbestatique');
+ assert.equal(T.orbestatiquelance.nom,'Orbe statique — lance des orbes');assert.deepEqual(T.orbestatiquerampant.volets,[{cle:'doublon',nom:'Laisse un doublon à sa place d’avant',palier:2}]);
+ assert.deepEqual(C.coutTalent({type:'act',effet:'orbestatique'}),{pa:1,pm:0},'une Action');
+ assert.equal(C.campDe({orbeStatique:{camp:'troupe'}}),'troupe');assert.equal(C.campDe({orbeStatique:{camp:'adverse'}}),'adverse');
+ assert.ok(C.hostiles({hero:true},{orbeStatique:{camp:'adverse'}})&&!C.hostiles({hero:true},{orbeStatique:{camp:'troupe'}}),'du camp de son porteur');
+ assert.ok(page.includes("const TALENTS_EFFETS={orbestatique:{fn:orbeStatique,")&&page.includes("function nouvelOrbeStatique(a,etat,x,y,copie){const o=baseActor(false);")
+  &&page.includes("hp:1,max:1,def:0,dmg:0,pool:[0,0,0,0,0,0,0],attacks:[],weapons:[]")&&page.includes("if(wallsBetween(a,pt,walls())){log(nomNum(a)+' ne voit pas ce point")
+  &&page.includes("avant.forEach(o=>{o.hp=0;floatNumber(o,'Dissipé','nul')});"),'la pose, en vue, un seul à la fois');
+ assert.ok(page.includes("async function orbesStatiquesDuTour(){if(orbesStatiquesEnCours||view!=='mj'||!enCombat())return;")
+  &&page.includes("if(!rampe(o,b,niveau*tokenPx()))continue;")&&page.includes("if(voletOuvert(r,'doublon')){const c=nouvelOrbeStatique(a,o.orbeStatique.etat,avant.x,avant.y,true);")
+  &&page.includes("const n=voletOuvert(lance,'tous')?orbesDuTour(a,codes):Math.max(1,Math.trunc(Number(lance.params&&lance.params.n))||1);")
+  &&page.includes("orbe(a,orbesT.params,orbesT.talent,{cible:j,n:1,statique:true,depuis:o});await pauseOrbe(1100)}")
+  &&page.includes("const gratuit=!!(opts.mitraille||opts.ricochet||opts.statique);")&&page.includes("const contacts=opts.statique?[]:contactsDe(a);"),'le début du tour, pas à pas');
+ assert.ok(page.includes("if(effaceOrbesStatiques(false))render();orbesStatiquesDuTour()}")&&page.includes("if((commence||finit)&&!spect)effaceOrbesStatiques(true);")
+  &&page.includes("function remiseAuTourUn(){round=1;renonceGeste();effaceOrbesStatiques(true);"),'effacé avec le combat');
+ assert.ok(page.includes("function tourEpuise(){const debout=actors.filter(o=>alive(o)&&!o.orbeStatique);")&&page.includes("function defOf(a){if(a&&a.orbeStatique)return 0;")
+  &&page.includes("function peutFrapperOpportunite(e){return !!e&&alive(e)&&!e.orbeStatique&&")&&page.includes("&&a.vu&&alive(a)&&!a.orbeStatique).length}")
+  &&page.includes("if(de&&de!==vers&&enCombat()&&!vers.orbeStatique){")&&page.includes("if(a.orbeStatique)b.hidden=true;")&&page.includes("if(a.orbeStatique)jauge.hidden=true;"),'pas un combattant');
+ assert.ok(vivant.includes("'mursElem','talentsJoues','orbeStatique',")&&feuille.includes(".token.orbe-statique .orbe-coeur{position:absolute;inset:15%;")
+  &&feuille.includes(".token.orbe-statique.dead{display:none}")&&feuille.includes(".token.rampe{transition:left 1s ease-in-out,top 1s ease-in-out}"),'en ligne et sur la carte');}
 /* v0.588 — L'en-tête range les états du combattant en deux cartouches, ceux des anciennes cibles : les états subis dans le
    rouge clair, ceux qui servent dans le vert clair, chacun seulement s'il en a ; les icônes gardent leur taille et les boutons
    descendent. La bulle d'Analyser dit son effet, son point de Mouvement et le jeton de l'adversaire visé. Essai v3 : les jetons
@@ -3499,7 +3523,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(C.franchitMur(mur,[[50,-50],[50,50]],10)&&C.franchitMur(mur,[[50,-50],[50,-8]],10)&&!C.franchitMur(mur,[[50,-50],[50,-20]],10),'traverser ou toucher le mur');
  assert.ok(!C.franchitMur(mur,[[50,5],[60,5]],10)&&C.franchitMur(mur,[[50,5],[50,40],[50,5]],10),'qui s’y tient ne le franchit qu’en y revenant');
  assert.ok(C.franchitMur(zone,[[-50,50],[50,50]],5)&&!C.franchitMur(zone,[[40,50],[60,50]],5)&&C.toucheMur(zone,[50,50],5),'la zone, comme les murs');
- assert.ok(page.includes('<svg id="murs-elem" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>')&&page.includes("const TALENTS_EFFETS={murelem:{fn:murElem,")
+ assert.ok(page.includes('<svg id="murs-elem" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>')
   &&page.includes("function viserCible(annonce,fn,refus,annule){")&&page.includes("a.orbes=orbesLances(a)+v.orbes;")&&page.includes("pts:pts.map(q=>({x:+q.x.toFixed(2),y:+q.y.toFixed(2)}))")
   &&page.includes("if(deg){const j=effectDice(o,5,2),total=j.total*(voletOuvert(deg,'double')?2:1);dit+=' '+subitDegatsEtat(o,e,total).dit}")
   &&page.includes("a.orbesGardes=0;a.mursElem=[];")&&page.includes("renderCombat();dessineMursElem();"),'le mur posé, dessiné, effacé à la fin du combat');
@@ -3596,7 +3620,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),T=C.TALENTS_CODES;
  assert.ok(T.ricochet.type==='pass'&&T.ricochetplus.pour==='ricochet'&&T.ricochetcritique.pour==='ricochet','les trois effets');
  assert.ok(C.phraseTalent('ricochetplus',{fois:2},1).includes('2 fois</b> supplémentaires')&&C.phraseTalent('ricochetcritique',{},2,{double:2}).includes('deux orbes')&&!C.phraseTalent('ricochetcritique',{},1,{double:2}).includes('deux orbes'),'les phrases');
- assert.ok(page.includes("const gratuit=!!(opts.mitraille||opts.ricochet);")&&page.includes("const duree=volOrbe(opts.depuis||a,b,des.couleur,teinte);")
+ assert.ok(page.includes("const duree=volOrbe(opts.depuis||a,b,des.couleur,teinte);")
   &&page.includes("if(!r.hit)ricocher(a,p,talent,opts,b,1);return}")&&page.includes("if(cc)ricocher(a,p,talent,opts,b,voletOuvert(cc,'double')?2:1)")
   &&page.includes("const poser=()=>{poserOrbe();if(!opts.ricochet)opportuniteAuTir(a,contacts,'sort')};"),'le moteur');}
 /* v0.555 — Orbes mystiques, dés en plus : chaque orbe lance x dés Mystiques supplémentaires, x réglé à chaque palier ;
@@ -3905,7 +3929,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(ed.includes("const vaincus=partants.filter(f=>f&&!duCoteTroupe(f)&&")&&page.includes("function hpKnown(o){return view==='mj'||!!(o&&(o.hero||duCoteTroupe(o)||o.revealed))}"));
  // La table : trois groupes ; seul un adverse lance le combat et le tient ouvert.
  assert.ok(page.includes("(duCoteTroupe(a)?troupe:campDe(a)==='neutre'?neutres:adverses).push(b);")&&page.includes("if(neutres.some(b=>!b.hidden))groupe('Neutres',neutres);")
-  &&page.includes("if(!enCombat()&&reveles.some(a=>campDe(a)==='adverse'))")&&page.includes("function adversairesDebout(){return actors.filter(a=>campDe(a)==='adverse'&&a.vu&&alive(a)).length}"),'les groupes et le combat');
+  &&page.includes("if(!enCombat()&&reveles.some(a=>campDe(a)==='adverse'))"),'les groupes et le combat');
  assert.ok(!/\b\w+(?:\[\w+\])?\.hero(?:!==|===)\w+(?:\[\w+\])?\.hero\b/.test(page),'plus aucun camp lu au seul drapeau d’aventurier');
  // Les couleurs : socle et barre, liste, fiche et jauge.
  assert.ok(page.includes(".token.pnj.al-allie{background:#2b4466;border-color:#8fb6e0}")&&page.includes(".token.pnj.al-neutre{background:#5c4a1e;border-color:#dcc074}")

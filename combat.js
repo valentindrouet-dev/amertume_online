@@ -1270,6 +1270,24 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
   volets:[{cle:'zone',nom:'Zone à quatre coins, 4 orbes',palier:2}],
   phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{zone:2}).zone;
    return 'Le porteur peut dépenser <b>3 orbes</b> pour un mur à <b>deux segments</b>'+(k>0&&n>=k?', ou <b>4 orbes</b> pour une <b>zone à quatre coins</b> : les adversaires à l’intérieur subissent l’état comme au passage du mur.':'.')}},
+ /* Orbe statique : une Action. Le porteur pose un de ses orbes sur un point de la carte qu'il voit ; posé, l'orbe a 1 PV et
+    DEF 0. Au début de chaque tour, il inflige l'état réglé à tous les adversaires de sa zone de contact. Un seul à la fois :
+    en poser un autre dissipe le premier. Ses deux améliorations le font lancer des orbes, et ramper. */
+ orbestatique:{cle:'orbestatique',nom:'Orbe statique',type:'act',
+  aide:'Action : le porteur pose un de ses orbes sur un point de la carte qu’il voit ; 1 PV, DEF 0. Au début de chaque tour, il inflige l’état réglé à tous les adversaires de sa zone de contact. Un seul à la fois.',
+  params:[{cle:'etat',nom:'État de l’orbe',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
+  phrase(p){const e=(p&&p.etat)||'Feu';return 'Le porteur pose un de ses <b>orbes</b> sur un point de la carte qu’il voit : <b>1 PV, DEF 0</b>. Au <b>début de chaque tour</b>, il inflige <b>'+e+'</b> à tous les adversaires de sa zone de contact. <b>Un seul à la fois</b>.'}},
+ orbestatiquelance:{cle:'orbestatiquelance',nom:'Orbe statique — lance des orbes',court:'lance des orbes',type:'ame',
+  aide:'Amélioration de l’Orbe statique : au début du tour, il lance gratuitement des orbes du porteur sur l’adversaire le plus proche qu’il voit ; au palier 2, autant que le porteur en possède.',
+  params:[{cle:'n',nom:'Orbes lancés',type:'nombre',defaut:1,min:1,max:6}],
+  volets:[{cle:'tous',nom:'Autant d’orbes que le porteur en possède',palier:2}],
+  phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(p&&p.n))||1),k=(v||{tous:2}).tous,tous=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'Au <b>début du tour</b>, l’<b>Orbe statique</b> lance gratuitement '+(tous?'<b>autant d’orbes que le porteur en possède</b>':'<b>'+(n>1?n+' orbes':'un orbe')+'</b>')+' sur l’adversaire le plus proche qu’il voit.'}},
+ orbestatiquerampant:{cle:'orbestatiquerampant',nom:'Orbe statique — rampant',court:'rampant',type:'ame',
+  aide:'Amélioration de l’Orbe statique : au début du tour, avant ses effets, il avance du niveau du porteur en mètres vers l’adversaire le plus proche ; au palier 2, il laisse un doublon de lui-même à sa place d’avant.',
+  params:[],volets:[{cle:'doublon',nom:'Laisse un doublon à sa place d’avant',palier:2}],
+  phrase(p,palier,v){const k=(v||{doublon:2}).doublon,double=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'Au <b>début du tour</b>, avant ses effets, l’<b>Orbe statique</b> avance du <b>niveau du porteur en mètres</b> vers l’adversaire le plus proche'+(double?', et laisse un <b>doublon</b> de lui-même à sa place d’avant.':'.')}},
  /* Implosion : un passif. Un critique rend au porteur le point d'Action qu'il vient de dépenser. */
  implosion:{cle:'implosion',nom:'Implosion',type:'pass',
   aide:'Passif : après un critique, le porteur gagne 1 point d’Action.',
@@ -1358,7 +1376,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
- provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',
+ provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
   if(c.court){const nom=TALENTS_CODES[p].nom+' — '+c.court;if(nom!==c.nom){c.anciens=[...(c.anciens||[]),c.nom];c.nom=nom}}})}
@@ -1700,7 +1718,8 @@ const ALIGNEMENTS=[['allie','Allié'],['neutre','Neutre'],['adverse','Adverse']]
 /* Sur la table, le MJ peut changer l'alignement d'un PNJ le temps d'une rencontre (« alignementJeu ») : il
    l'emporte sur celui du modèle, que le Bestiaire garde intact. */
 function alignementDe(a){if(!a||a.hero)return '';if(!a.pnj)return 'adverse';const al=a.alignementJeu||a.alignement;return ['allie','neutre','adverse'].includes(al)?al:'neutre'}
-function campDe(a){if(!a)return '';if(a.hero)return 'troupe';const al=alignementDe(a);return al==='allie'?'troupe':al}
+// Un Orbe statique est du camp de qui l'a posé.
+function campDe(a){if(!a)return '';if(a.hero)return 'troupe';if(a.orbeStatique)return a.orbeStatique.camp==='troupe'?'troupe':'adverse';const al=alignementDe(a);return al==='allie'?'troupe':al}
 function duCoteTroupe(a){return campDe(a)==='troupe'}
 function memeCamp(a,b){return !!a&&!!b&&campDe(a)===campDe(b)}
 function hostiles(a,b){const x=campDe(a),y=campDe(b);return !!x&&!!y&&x!==y&&(x==='troupe'||y==='troupe')}

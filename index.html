@@ -3,7 +3,7 @@
 <style>
 /* Killam Bold, fournie par Valentin, pour les chiffres des caractéristiques. Sous-ensemble
    latin en WOFF2 : 48 Ko au lieu des 188 Ko du TTF d'origine, qui reste dans fonts/. */
-@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.588') format('woff2');
+@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.589') format('woff2');
  font-weight:700;font-style:normal;font-display:swap}
 
 /* Deux palettes, un seul jeu de règles : tout le décor passe par ces jetons, si bien
@@ -127,8 +127,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 .floater.perte{color:#f0705a}.floater.gain{color:#8fd77e}.floater.nul{color:#e7d9b8}.board-die{position:absolute;display:grid;place-items:center;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:11px;font:800 20px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -3px 5px #00000026,0 7px 16px #000000a6;will-change:transform}.board-die.dark{color:#f4f6f2}.journal-title{font:600 13px system-ui;letter-spacing:3px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px}.journal{max-height:330px;display:flex;flex-direction:column;gap:9px;padding-right:4px}.journal li{border:0;padding:0}/* Les colonnes se calent sur la colonne centrale : la droite prend sa hauteur exacte et le journal y prend ce que la fiche lui laisse ; à gauche, les points de vie descendent au bas. */.stack.right.calee{min-height:0}.stack.right.calee>.panel{flex:none}.stack.right.calee>.panel:last-child{flex:1 1 0;min-height:150px;display:flex;flex-direction:column;box-sizing:border-box}.stack.right.calee .journal{flex:1;min-height:0;max-height:none}.stack.right.calee .journal-title,.stack.right.calee .journal-chat{flex:none}/* Un seul lettrage pour les titres de blocs : petites capitales espacées, sans Killam. */.eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title,.panel>h2,#carte-titre{font:600 13px/1.25 system-ui,-apple-system,'Segoe UI',sans-serif;letter-spacing:2.5px;text-transform:uppercase}/* Actions et Dés partent de la même ligne : la carte des actions perd sa marge de rangée. *//* Le bloc Actions a une hauteur fixe, vide ou garni : la carte, calée dessus, ne bouge jamais ; un contenu plus haut défile à l'intérieur. */.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}.attack-card.vide #reveal,.attack-card.vide #attack-choices{display:none}#pv-panel.vide .hp-buttons button{opacity:.45;pointer-events:none}#sheet.vide #hpbar,#sheet.vide #bloc-gear,#sheet.vide .divider{display:none}#sheet.vide .sheet-head{min-height:34px}/* La fiche prend la hauteur de ce qu'elle montre — talents et équipement dépliés compris — et le journal, calé dessous, prend tout le reste. */#sheet{min-height:0}.j-entry{font-size:14px;line-height:1.45;color:var(--ink);white-space:pre-line}/* La flèche en vol : un trait sombre à pointe claire, tourné vers sa cible. *//* Le souffle d'un tir : une rafale claire et étirée, deux filets d'air par-dessus. *//* Les coups, lisibles et toujours les mêmes : au contact, un trait de balayage fend l'air sur la cible, puis un choc — un anneau qui s'élargit ; à distance, un projectile file en ligne droite du tireur à la cible, puis le même choc. Blanc cerné de sombre : visible sur toute carte. Chaque geste dure le même temps, au même rythme. */.vfx{position:absolute;pointer-events:none;z-index:5;will-change:transform,opacity;transform:translate(-50%,-50%)}.vfx svg{display:block;width:100%;height:100%;overflow:visible}.vfx-piege svg{filter:drop-shadow(0 0 6px #ff8a2acc)}.vfx-piege .souffle{fill:#ff7a1f;fill-opacity:.6;stroke:#ffc35a;stroke-width:4}.vfx-piege .coeur{fill:#fff4cf}
 .vfx-choc .onde{fill:none;stroke:#fff6dc;stroke-width:7}.vfx-choc svg{filter:drop-shadow(0 0 1px #000d) drop-shadow(0 0 5px #ffc85acc)}.vfx-etincelles .gerbe{stroke:#fff6dc;stroke-width:4.5;stroke-linecap:round}.vfx-etincelles svg{filter:drop-shadow(0 0 1px #000d) drop-shadow(0 0 4px #ffc85acc)}.vfx-fleche{transform:none}.vfx-fleche .hampe-ombre{stroke:#000a;stroke-width:5;fill:none}.vfx-fleche .hampe{stroke:#f1e4c8;stroke-width:2.6;fill:none}.vfx-fleche .plume{fill:#b8452e;stroke:#0009;stroke-width:1}.vfx-fleche .pointe{fill:#e9eef2;stroke:#000b;stroke-width:1.2}.vfx-fleche svg{filter:drop-shadow(0 0 3px #fff8)}/* Le balayage d'un coup au contact : un arc d'air, clair au bord, qui tourne autour de l'attaquant. *//* La parole : le socle de qui parle, puis ses mots. */.j-chat{display:flex;align-items:flex-start;gap:8px;border:1px solid color-mix(in srgb,var(--ink) 14%,transparent);background:color-mix(in srgb,var(--ink) 4%,transparent);border-radius:7px;padding:4px 8px;margin:2px 0}.j-avatar{flex:none;width:24px;height:24px;border-radius:50%;overflow:hidden;background:#d9cfbd;color:#2a2118;display:grid;place-items:center;font:700 12px 'Killam',Georgia,serif}.j-avatar img{width:100%;height:100%;object-fit:cover;display:block}.j-avatar.mj{background:var(--accent);color:#fff}.j-corps{min-width:0}.j-texte{white-space:pre-wrap;overflow-wrap:anywhere}.journal-vider{margin-left:auto;font:600 11px system-ui;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}.journal-vider:hover{color:var(--ink);border-color:var(--ink)}.journal-chat{display:flex;gap:6px;margin-top:8px;flex:none}.journal-chat input{flex:1;min-width:0;font:14px system-ui;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}.journal-chat button{flex:none;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--accent);cursor:pointer;font-size:14px}/* Un cartouche léger, de la couleur de l'action : bleu pour un coup, violet pour un talent, une analyse ou un orbe, vert pour un soin, rouge pour une perte, ambre pour un état, or pour une révélation, brun pour la carte. */.j-entry.ton{--ton:#3f7bc0;border:1px solid color-mix(in srgb,var(--ton) 30%,transparent);background:color-mix(in srgb,var(--ton) 7%,transparent);border-radius:7px;padding:3px 8px;margin:2px 0}.j-entry.ton-attaque{--ton:#3f7bc0}.j-entry.ton-talent{--ton:#8a63c9}.j-entry.ton-competence{--ton:#2f7d45}.j-entry.ton-soin{--ton:#2f8a63}.j-entry.ton-degats{--ton:#b8483a}.j-entry.ton-etat{--ton:#a2691f}.j-entry.ton-reveal{--ton:#9d7b1e}.j-entry.ton-carte{--ton:#8a6d3b}.ton-butin{--ton:#a8832c}.j-turn{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:5px 0 1px}.j-turn::before,.j-turn::after{content:"";flex:1;height:1px;background:var(--line)}.j-name{font-weight:700}.j-key{font-weight:700}.j-num{font-weight:800;color:#b4553a}.j-dice{opacity:.7}/* La ligne d'attaque : le logo de l'arme entre les deux noms, les dégâts cliquables, le détail des dés dessous. */.j-attaque .logo-equip{width:20px;height:20px;vertical-align:-5px;margin:0 1px;filter:drop-shadow(0 1px 1px #0006)}.j-degats{font-weight:800;color:#b4553a}.j-degats.cliquable{cursor:pointer;border-bottom:1px dashed currentColor}.j-degats.cliquable:hover,.j-degats.ouvert{color:#d0644a}.j-detail{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:6px}.j-de{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;font:800 12px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -2px 3px #00000026,0 2px 4px #0000005e}.j-de.dark{color:#f4f6f2}.j-de.barre{opacity:.35;filter:grayscale(1);box-shadow:none}.j-de.relance{margin-left:8px}.j-plus{font:600 12px system-ui;color:var(--muted)}.j-plus.total{font-weight:800;color:var(--ink)}.j-badge{display:inline-block;background:#8d3b32;color:#ffe6df;border-radius:5px;padding:1px 7px;font-weight:700;font-size:12px}
 /* Le socle qui arrive du réseau glisse jusqu'à sa place. */.token.glisse{transition:left .18s linear,top .18s linear}/* L'orbe en vol : une bille lumineuse de la couleur de ses dés. */.orbe-vol{position:absolute;will-change:transform,opacity;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;background:radial-gradient(circle at 35% 35%,#fff9,var(--orbe) 55%,transparent 72%);box-shadow:0 0 14px 5px var(--orbe),0 0 44px 16px color-mix(in srgb,var(--orbe) 55%,transparent)}/* L'orbe de feu : un cœur blanc, une écorce d'ambre et une flamme qui bat autour. Seuls
-   transform et opacity s'animent — le compositeur mène le vol sans le fil principal. */.orbe-vol.feu{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}.orbe-vol.feu::after{content:'';position:absolute;inset:-22%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 50% 66%,#ffb14ab3,#ff5a1e4d 45%,transparent 72%);animation:flamme .26s ease-in-out infinite alternate}@keyframes flamme{from{transform:scale(.86) rotate(-9deg);opacity:.7}to{transform:scale(1.2) rotate(10deg);opacity:1}}@media(prefers-reduced-motion:reduce){.orbe-vol.feu::after{animation:none}}/* Un envoi refusé se voit sur le bouton de la table. */#open-live[data-souci]{color:#b8483a;border-color:#b8483a}</style><link rel="stylesheet" href="./editor.css?v=0.588"></head><body><div id="busy-cover">Chargement de la partie enregistrée…</div>
-<header><div class="brand"><span class="brand-ligne"><span class="brand-nom">Amertüme</span><span class="ver">v0.588</span></span><span class="brand-online">ONLINE</span></div><div class="view-controls"><label for="view">Vue</label><select id="view" autocomplete="off"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select></div></header>
+   transform et opacity s'animent — le compositeur mène le vol sans le fil principal. */.orbe-vol.feu{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}.orbe-vol.feu::after{content:'';position:absolute;inset:-22%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 50% 66%,#ffb14ab3,#ff5a1e4d 45%,transparent 72%);animation:flamme .26s ease-in-out infinite alternate}@keyframes flamme{from{transform:scale(.86) rotate(-9deg);opacity:.7}to{transform:scale(1.2) rotate(10deg);opacity:1}}@media(prefers-reduced-motion:reduce){.orbe-vol.feu::after{animation:none}}/* Un envoi refusé se voit sur le bouton de la table. */#open-live[data-souci]{color:#b8483a;border-color:#b8483a}</style><link rel="stylesheet" href="./editor.css?v=0.589"></head><body><div id="busy-cover">Chargement de la partie enregistrée…</div>
+<header><div class="brand"><span class="brand-ligne"><span class="brand-nom">Amertüme</span><span class="ver">v0.589</span></span><span class="brand-online">ONLINE</span></div><div class="view-controls"><label for="view">Vue</label><select id="view" autocomplete="off"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select></div></header>
 <div class="intro" hidden><h1>Les ruines du passage</h1></div>
 <main class="layout"><aside class="stack left"><section class="panel"><div class="turn-head"><div class="eyebrow" id="titre-tour">Tour de combat</div><div class="turn" id="round">01</div></div><div id="bloc-activation" hidden><h2>Activation</h2><div class="checks"><label><input type="checkbox" id="action"> Action</label><label><input type="checkbox" id="move"> Mvt / Analyse</label><label><input type="checkbox" id="item"> Objet</label></div><div class="divider"></div></div><div class="turn-actions"><button class="full" id="next">Tour suivant →</button><button id="reset-round" title="Revenir au tour 1 : activations, cibles, états et analyses remis à zéro, adversaires à nouveau inconnus" aria-label="Réinitialiser le tour de combat">↺</button></div><div class="side-actions"><button id="start-combat" class="primary" hidden>⚔ Début du combat</button><button id="end-combat" hidden>Fin du combat</button></div></section><section class="panel pv-panel" id="pv-panel" hidden><div class="eyebrow">Points de vie</div><div class="hp-buttons" id="hp-buttons"></div></section><section class="panel"><h2>COMBATTANTS</h2><div id="actors"></div><button type="button" class="ajout-camp" id="new-hero" title="Ajouter un aventurier à la scène" aria-label="Ajouter un aventurier à la scène" hidden>+</button><button type="button" class="ajout-camp" id="new-monster" title="Ajouter un adversaire à la scène" aria-label="Ajouter un adversaire à la scène" hidden>+</button></section></aside>
 <div class="stack"><section class="panel map-panel"><div class="mapbar"><div class="mapbar-h1"><strong id="carte-titre">CARTE TACTIQUE</strong><button class="icon-btn toggle-portees" id="portees">◎ Contacts</button><button class="icon-btn toggle-portees" id="fouilles-vue">🔍 Fouilles</button><button class="icon-btn toggle-portees" id="distances-vue">📏 Distances</button><button class="icon-btn toggle-portees" id="coffres-bulles" hidden>🧰 Coffres</button><div class="zoom-bar"><button id="zoom-out" aria-label="Dézoomer">−</button><span id="zoom-label">100 %</span><button id="zoom-in" aria-label="Zoomer">+</button><button id="zoom-reset">Ajuster</button></div></div><div class="mapbar-h2" hidden><label class="file"><button id="upload">Importer une carte</button><input class="sr" type="file" id="mapfile" accept="image/png,image/jpeg,image/webp"></label><button class="icon-btn" id="reset-map" title="Retirer la carte de fond" aria-label="Retirer la carte de fond">🗑</button></div></div><div class="map" id="map" aria-label="Carte tactique. Déplacez les tokens par glissement ou avec les flèches du clavier."><div id="map-view"><svg class="plan" viewBox="0 0 800 480" preserveAspectRatio="none" aria-hidden="true"><g class="walls" fill="#172326" stroke="#57635c" stroke-width="3"></g><g fill="#9da797" font-family="system-ui" font-size="12" letter-spacing="4"><text x="305" y="130">COUR INTÉRIEURE</text><text x="318" y="462">ENTRÉE SUD</text></g></svg><svg id="map-shapes" aria-hidden="true"></svg><svg id="map-coffres" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><canvas id="fog" aria-hidden="true"></canvas><svg id="map-doors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><svg id="murs-elem" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><div id="contact-ring" hidden></div><svg id="aim" aria-hidden="true"><defs><marker id="shot-ok" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#3f7bc0"/></marker><marker id="shot-no" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#e0483c"/></marker><marker id="shot-done" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#8b969b"/></marker></defs><path id="aim-arrow" class="aim-fleche"/></svg><div id="marquee" hidden aria-hidden="true"></div><div id="floaters" aria-hidden="true"></div></div></div></section>
@@ -136,8 +136,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 <aside class="stack right"><section class="panel sheet" id="sheet"><div class="sheet-head"><h1 id="name"></h1><span class="sheet-class" id="kind"></span><button type="button" class="sheet-class" id="pnj-camp" hidden></button></div><p class="muted" id="class"></p><div class="chips" id="sheet-chips"></div><div class="stat-row" id="stats"></div><div class="lifebar big" id="hpbar"><span class="lifebar-fill" id="hpfill"></span><span class="lifebar-text" id="hp"></span></div><div class="comp-ronds" id="skills" hidden></div><div class="bloc-fixe" id="bloc-gear"><div class="bloc-tete"><span class="bloc-titre">Objets</span><span class="compte" id="gear-compte"></span></div><div id="gear"></div></div><details class="bloc-replie" id="bloc-talents" open><summary><span class="bloc-titre">Talents</span><span class="compte" id="talents-compte"></span></summary><div id="sheet-talents"></div></details><div class="divider" hidden></div></section><section class="panel"><h2 class="journal-title"><span aria-hidden="true">📜</span> Journal de combat<button type="button" id="journal-vider" class="journal-vider" hidden title="Vider le journal, ici et chez les joueurs de la table">Vider</button></h2><ol class="journal" id="journal" aria-live="polite"></ol><form id="journal-chat" class="journal-chat" autocomplete="off"><input id="journal-texte" maxlength="300" placeholder="Dire quelque chose…" aria-label="Écrire au journal"><button type="submit" title="Envoyer">➤</button></form></section></aside></main>
 <div id="state-menu" role="menu" aria-label="États" hidden></div>
 
-<script src="./polygon-clipping.umd.min.js?v=0.588"></script>
-<script src="./combat.js?v=0.588"></script>
+<script src="./polygon-clipping.umd.min.js?v=0.589"></script>
+<script src="./combat.js?v=0.589"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -194,7 +194,7 @@ function ditLesJets(nom,j){return j.jets.length<2?'dé '+nom+' '+j.total
 let auteurCoup=null,bilanPartis=[];
 function ajouteBilan(a,k,n){if(!a||!(n>0)||!enCombat())return;if(!a.bilan||typeof a.bilan!=='object')a.bilan={};a.bilan[k]=(Number(a.bilan[k])||0)+n}
 function compteDegats(de,vers,n){if(!(n>0)||!vers)return;ajouteBilan(vers,'sub',n);
- if(de&&de!==vers&&enCombat()){ajouteBilan(de,'inf',n);de.bilan.pic=Math.max(Number(de.bilan.pic)||0,n);if(vers.hp===0)ajouteBilan(de,'abat',1)}}
+ if(de&&de!==vers&&enCombat()&&!vers.orbeStatique){ajouteBilan(de,'inf',n);de.bilan.pic=Math.max(Number(de.bilan.pic)||0,n);if(vers.hp===0)ajouteBilan(de,'abat',1)}}
 function compteDistance(a,depart){if(a&&depart)ajouteBilan(a,'dist',metres(depart,a,mapSize(),tokenPx()))}
 function ligneBilan(a){const b=a.bilan||{},n=k=>Math.max(0,Math.round(Number(b[k])||0));
  return {id:String(a.id||''),nom:nomNum(a),camp:duCoteTroupe(a)?'troupe':'adverse',inf:n('inf'),sub:n('sub'),soin:n('soin'),dist:Math.floor(Math.max(0,Number(b.dist)||0)),
@@ -349,7 +349,7 @@ let porteeForcee=null;
 function rangeOf(a){return porteeForcee&&a&&porteeForcee.id===a.id?porteeForcee.range:(activeAttack(a).range||'contact')}
 /* La DEF qu'une Brise a retirée pour de bon se retranche de tout le reste, sans passer sous zéro.
    Elle ne dépasse jamais 6 : à 6, plus aucune face ne la passe. */
-function defOf(a){const d=defenseOf(a,items())+bonusFiche(a).def+auraMeneur(a,'def');return defPlafonnee(a&&a.defBrisee>0?d-a.defBrisee:d)}
+function defOf(a){if(a&&a.orbeStatique)return 0;const d=defenseOf(a,items())+bonusFiche(a).def+auraMeneur(a,'def');return defPlafonnee(a&&a.defBrisee>0?d-a.defBrisee:d)}
 /* ---------- Les caractéristiques telles qu'elles jouent ----------
    La fiche, plus les nœuds de bonus appris dans l'arbre, plus ce qu'un Meneur allié
    confère à portée. La fiche garde ses valeurs propres : c'est à la lecture que tout s'ajoute. */
@@ -358,14 +358,14 @@ function degatsDe(a){const bonus=(Number(a&&a.dmg)||0)+bonusFiche(a).dmg+auraMen
 // Pris en tenailles : des dégâts en plus par adversaire au contact, au-delà du premier.
 function tenailles(a){if(!a||typeof actors==='undefined'||typeof talentsCodes!=='function'||typeof adversairesAuContact!=='function')return 0;
  const t=talentsCodes(a).filter(x=>x.code.cle==='tenailles');if(!t.length)return 0;
- const n=Math.max(0,adversairesAuContact(a).length-1);return n?t.reduce((s,x)=>s+Math.max(1,(x.params&&x.params.bonus)|0),0)*n:0}
+ const n=Math.max(0,adversairesAuContact(a).filter(([o])=>!o.orbeStatique).length-1);return n?t.reduce((s,x)=>s+Math.max(1,(x.params&&x.params.bonus)|0),0)*n:0}
 // Le mode d'un passif réglé : Dominateur (contre les adversaires au sol), Déception (contre les critiques adverses).
 function modePassif(a,cle){const t=typeof talentsCodes==='function'?talentsCodes(a).find(x=>x.code.cle===cle):null;return t?String(t.params&&t.params.mode||TALENTS_CODES[cle].params[0].defaut):''}
 /* Meute — un allié vivant dans la zone de contact du porteur, sans mur entre eux, et tout son
    bonus de dégâts double, meneur compris. Sans carte mesurée, personne n'est au contact. */
 function meuteActive(a){if(!a||typeof actors==='undefined'||typeof talentsCodes!=='function'||!talentsCodes(a).some(t=>t.code.cle==='meute'))return false;
  const size=mapSize();if(!size.width)return false;const murs=walls(),token=tokenOf(a);
- return actors.some(o=>o!==a&&alive(o)&&memeCamp(o,a)&&!o.horsCarte&&inContact(a,o,size,token,tokenOf(o))&&!wallsBetween(a,o,murs))}
+ return actors.some(o=>o!==a&&alive(o)&&!o.orbeStatique&&memeCamp(o,a)&&!o.horsCarte&&inContact(a,o,size,token,tokenOf(o))&&!wallsBetween(a,o,murs))}
 function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}
 // La valeur d'une compétence : 1, plus ce que l'aventurier y a gagné — points, talents, équipement.
 function valeurCompetence(a,k){return 1+competenceDe(a,k)}
@@ -1004,6 +1004,8 @@ function render(){
     n'est là que le temps de lire la sauvegarde, faisait paraître deux créatures que
     personne n'a jamais posées. */
  const chargee=typeof loading!=='undefined'&&!loading;
+ // Un Orbe statique est vu dès qu'il est posé, même par un joueur, qui n'écrit pas « vu » : il n'a rien à révéler.
+ actors.forEach(a=>{if(a.orbeStatique&&!a.vu){a.vu=true;a.revealed=true}});
  // En ligne, seul le MJ révèle : chez un joueur, « vu » arrive par la table.
  const reveles=!chargee||(typeof spectateur==='function'&&spectateur())?[]:actors.filter(a=>!a.hero&&!a.vu&&!a.hidden&&!hasState(a,'Invisible')
   &&(typeof troupeVoit!=='function'||troupeVoit(a)));
@@ -1029,6 +1031,8 @@ function render(){
  const b=document.createElement('button');b.className='actor '+classesListe;const known=hpKnown(a)&&!jamaisVu;
  // La ligne reste dans la liste, cachée : la table s'y réfère par son rang.
  if(jamaisVu&&view!=='mj')b.hidden=true;
+ // Un Orbe statique n'est pas un combattant de la liste : il ne vit que sur la carte.
+ if(a.orbeStatique)b.hidden=true;
  // Les pastilles d'activation tiennent en haut à droite de la vignette ; le nom se coupe en leur faveur.
  b.innerHTML='<span class="vignette"><span class="avatar">'+escapeName(a.name[0])+'</span></span><span class="actor-body"><span class="actor-nom"><strong>'+escapeName(a.name)+'</strong></span>'+(jamaisVu?'':'<span class="vie-ligne">'+/* Les chiffres d'un adversaire restent cachés jusqu'à l'Analyse, mais sa barre, elle,
       descend sous les yeux de tous : on voit bien qu'un coup a porté. */
@@ -1063,6 +1067,9 @@ function render(){
  // reconstruisait le socle après coup effaçait les deux.
  if(a.image){const im=document.createElement('img');im.className='portrait';im.src=a.image;im.alt='';im.draggable=false;t.append(im)}
  else t.textContent=a.name[0];
+ // Un Orbe statique : l'orbe du lancer, immobile, à la couleur de son état ; son doublon un peu plus pâle.
+ if(a.orbeStatique){t.textContent='';t.classList.add('orbe-statique');if(a.orbeStatique.copie)t.classList.add('copie');t.dataset.etat=a.orbeStatique.etat;
+  t.append(Object.assign(document.createElement('span'),{className:'orbe-coeur'}))}
  if(rang){const n=document.createElement('span');n.className='numero';n.textContent=rang;t.append(n)}
  const jetons=stateIcons(a);if(jetons)t.append(jetons);
  // Mort : la tête de mort sur le jeton. Un talent de début de combat à faire : la marque au-dessus de la tête.
@@ -1076,6 +1083,7 @@ function render(){
  // La jauge vit dans sa propre couche, au-dessus de tous les socles : aucun voisin ne la couvre.
  jauge.style.left=a.x+'%';jauge.style.top=a.y+'%';jauge.dataset.x=a.x;jauge.dataset.y=a.y;jauge.style.setProperty('--token',tokenOf(a)+'px');caleJaugesBientot();
  jauge.classList.add(a.hero?'allie':'enemy');if(a.pnj)jauge.classList.add('al-'+alignementDe(a));['unseen','dead','cachemj','veiled','hors-carte','vaincu'].forEach(c=>{if(t.classList.contains(c))jauge.classList.add(c)});
+ if(a.orbeStatique)jauge.hidden=true;
  t._pv=jauge;couchePV().append(jauge);
  t.oncontextmenu=e=>{if(view!=='mj')return;e.preventDefault();openStateMenu(i,e.clientX,e.clientY)};
  t.title=a.name+(rang?' '+rang:'')+(stateLabel(a)?' · '+stateLabel(a):'')+(lu?' · '+a.hp+' / '+a.max+' PV':'')+(alive(a)?'':' · hors de combat')+veilNote(a);t.setAttribute('aria-label',a.name+' — '+GESTES.map(([c,nom])=>NOM_TOUCHE[raccourcis[c]]+' : '+nom.toLowerCase()).join(', ')+', clic droit pour un état');t.dataset.id=a.id;t.style.left=a.x+'%';t.style.top=a.y+'%';
@@ -1279,7 +1287,7 @@ function ramasseContacts(a,croises,de,size,murs){size=size||mapSize();if(!size.w
   adversaires.forEach(([o])=>{if(!croises.has(o)&&inContact(a,o,size,token,tokenOf(o))&&!wallsBetween(a,o,murs))croises.add(o)})}
  a.x=x;a.y=y}
 /* Un adversaire entravé — au sol, gelé — ou tombé ne profite d'aucune occasion. */
-function peutFrapperOpportunite(e){return !!e&&alive(e)&&!frozenSolid(e)&&degatsDe(e)>0}
+function peutFrapperOpportunite(e){return !!e&&alive(e)&&!e.orbeStatique&&!frozenSolid(e)&&degatsDe(e)>0}
 /* Dévorant et Épines : à la fin d'un déplacement en combat, chaque socle adverse entré dans un contact —
    même en passant — paie, une fois. Le dévorant qui avance blesse ceux qu'il touche ; des épines blessent
    qui vient à elles. */
@@ -1343,7 +1351,7 @@ function adversairesAuContact(a){const size=mapSize();if(!a||!size.width)return 
    aventurier, qui y compte pour un sbire lui aussi. */
 function sbiresAlliesAuContact(a){const size=mapSize();if(!a||!size.width)return [];
  const token=tokenOf(a),murs=walls();
- return actors.map((o,i)=>[o,i]).filter(([o,i])=>o!==a&&alive(o)&&memeCamp(o,a)
+ return actors.map((o,i)=>[o,i]).filter(([o,i])=>o!==a&&alive(o)&&!o.orbeStatique&&memeCamp(o,a)
   &&rangType(o)===RANG_TYPE.standard&&!(cachePour(o,i)&&view!=='mj')
   &&inContact(a,o,size,token,tokenOf(o))&&!wallsBetween(a,o,murs))}
 /* Garde rapprochée — le coup passe d'abord par les sbires, et un sbire n'encaisse que ce
@@ -1597,8 +1605,8 @@ function ricocher(a,p,talent,opts,b,combien){const reste=opts.rebonds!==undefine
   if(alive(a)&&actors[k]&&alive(actors[k]))orbe(a,p,talent,{cible:k,n:opts.n,ricochet:true,depuis:b,rebonds:reste-1,deja,logo:opts.logo})})}
 function orbe(a,p,talent,opts={}){const allie=opts.cible!==undefined?null:alliePourIgnition(a);
  const j=opts.cible!==undefined?opts.cible:allie!==null?allie:cibleOrbe(a),total=orbesDuTour(a),n=Math.max(1,Math.trunc(Number(opts.n))||1);
- // La Mitraille et le Ricochet lancent des orbes qui ne se comptent pas.
- const gratuit=!!(opts.mitraille||opts.ricochet);
+ // La Mitraille, le Ricochet et l'Orbe statique lancent des orbes qui ne se comptent pas.
+ const gratuit=!!(opts.mitraille||opts.ricochet||opts.statique);
  if(!gratuit&&orbesLances(a)+n>total)return nomNum(a)+' a lancé tous ses orbes ce tour.';
  if(j===null)return 'Aucun adversaire en vue : l’orbe reste en main.';
  const b=actors[j],etat=etatDesOrbes(talentsCodes(a)),des=desOrbe(talentsCodes(a)),pouvoir=etatOrbeAuPalier(talentsCodes(a));
@@ -1616,8 +1624,8 @@ function orbe(a,p,talent,opts={}){const allie=opts.cible!==undefined?null:allieP
  // Mitraille : le lancer part aussi vers les autres adversaires les plus proches, sans coûter d'orbe.
  if(!gratuit){const m=mitrailleDe(a);if(m){const vers=autresProches(a,j,m.cibles);
   if(vers.length)setTimeout(()=>vers.forEach(k=>{if(alive(a)&&actors[k]&&alive(actors[k]))orbe(a,p,talent,{cible:k,n:m.orbes,mitraille:true,logo:opts.logo})}),0)}}
- // Qui touche le lanceur au moment du lancer : ils frapperont une fois l'orbe posé.
- const contacts=contactsDe(a);
+ // Qui touche le lanceur au moment du lancer : ils frapperont une fois l'orbe posé. L'Orbe statique lance seul : personne.
+ const contacts=opts.statique?[]:contactsDe(a);
  // L'orbe se voit partir, ici et sur toutes les tables.
  /* L'orbe part avec ce qu'il porte, ici et sur toutes les tables : l'état voyage collé à la
     couleur, dans le champ que les règles du journal connaissent déjà. */
@@ -1701,7 +1709,7 @@ function orbe(a,p,talent,opts={}){const allie=opts.cible!==undefined?null:allieP
    que le porteur cible s'il remplit la condition — au contact, en vue, selon le talent —
    sinon le plus proche qui la remplit. Jamais de menu : le geste part au clic. */
 function cibleAlliee(a,convient){const size=mapSize();
- const candidats=actors.map((o,i)=>[o,i]).filter(([o,i])=>o!==a&&duCoteTroupe(o)&&memeCamp(o,a)&&alive(o)&&convient(o,i));
+ const candidats=actors.map((o,i)=>[o,i]).filter(([o,i])=>o!==a&&!o.orbeStatique&&duCoteTroupe(o)&&memeCamp(o,a)&&alive(o)&&convient(o,i));
  if(!candidats.length)return null;
  const visee=candidats.find(([,i])=>i===a.target||(a.targets||[]).includes(i));if(visee)return visee[1];
  return candidats.sort((u,v)=>tokenDistance(a,u[0],size)-tokenDistance(a,v[0],size))[0][1]}
@@ -2187,7 +2195,94 @@ function charge(a,p,talent){const refus=refusCharge(a);if(refus)return refus;con
     if(c)setTimeout(()=>{if(typeof updateRing==='function')updateRing();degatsOpportunite(b,c);render();scheduleSave()},220)}
    scheduleSave()}})},venu?220:0);
  return null}
-const TALENTS_EFFETS={murelem:{fn:murElem,
+/* ---------- Orbe statique ----------
+   Le Mystique pose un de ses orbes sur un point qu'il voit. L'orbe posé est un combattant à part, « orbeStatique » : 1 PV,
+   DEF 0, sans attaque, du camp de son porteur ; on le frappe comme un autre, et il tombe au premier coup qui porte. Il ne
+   joue pas de tour, n'a pas de ligne dans la liste et l'IA ne le mène pas : au début de chaque tour, la table le fait agir,
+   pas à pas, chaque geste au journal. Un seul à la fois par porteur : en poser un autre dissipe le premier. Tout s'efface
+   avec le combat. */
+const estOrbeStatique=o=>!!(o&&o.orbeStatique);
+function porteurDeLOrbe(o){return o&&o.orbeStatique?actors.find(x=>x&&x.id===o.orbeStatique.de)||null:null}
+function nouvelOrbeStatique(a,etat,x,y,copie){const o=baseActor(false);
+ Object.assign(o,{name:'Orbe statique',role:'Orbe',hp:1,max:1,def:0,dmg:0,pool:[0,0,0,0,0,0,0],attacks:[],weapons:[],armures:[],talents:[],image:null,
+  x,y,vu:true,revealed:true,orbeStatique:{de:a.id,camp:duCoteTroupe(a)?'troupe':'adverse',etat:String(etat||'Feu'),copie:!!copie}});
+ normalizeActor(o);o.numero=prochainNumero(o);return o}
+function orbeStatique(a,p,talent){const e=String(p&&p.etat||'Feu'),nom=talent&&talent.name||'Orbe statique',ctx=talentEnCours;
+ if(!enCombat())return nom+' : seulement en combat.';
+ if(orbesLibres(a)<1)return nom+' : il faut un orbe non lancé ce tour.';
+ // Un point que le porteur voit : aucun mur entre eux. Hors de vue, la pose attend un autre clic.
+ const vise=()=>viserCible('✦ Clique sur un point que '+nomNum(a)+' voit pour y poser l’orbe',(qui,q)=>{
+  const pt={x:Math.max(4,Math.min(96,q.x)),y:Math.max(5,Math.min(95,q.y))};
+  if(wallsBetween(a,pt,walls())){log(nomNum(a)+' ne voit pas ce point : choisis-en un autre, ou Échap.',{local:true});vise();return}
+  if(ctx)payeTalent(ctx);if(enCombat())a.orbes=orbesLances(a)+1;
+  const avant=actors.filter(o=>estOrbeStatique(o)&&!o.orbeStatique.copie&&o.orbeStatique.de===a.id&&alive(o));
+  avant.forEach(o=>{o.hp=0;floatNumber(o,'Dissipé','nul')});
+  const o=nouvelOrbeStatique(a,e,pt.x,pt.y,false);actors.push(o);settleActor(o);
+  log(nomNum(a)+' pose un '+nom+' de '+e+(avant.length?', et le précédent se dissipe':'')+'.',{ton:'talent'});
+  render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))},nom+' annulé.');
+ vise();return null}
+/* Rampant : l'orbe avance en droite ligne vers « b », de « max » pixels au plus, jusqu'au bord de son contact ; les murs et
+   les socles l'arrêtent comme tout socle. Il glisse lentement, pour qu'on le voie venir. */
+function rampe(o,b,max){const size=mapSize();if(!size.width||!(max>0))return false;
+ const ox=o.x/100*size.width,oy=o.y/100*size.height,bx=b.x/100*size.width,by=b.y/100*size.height,d=Math.hypot(bx-ox,by-oy);
+ const pas=Math.min(max,d-(tokenOf(o)/2+tokenOf(b)/2+1));if(!(d>0)||pas<1)return false;
+ const e={...o};moveActor(e,(ox+(bx-ox)/d*pas)/size.width*100,(oy+(by-oy)/d*pas)/size.height*100,false,new Set([o.id,b.id]),true);
+ if(Math.hypot((e.x-o.x)/100*size.width,(e.y-o.y)/100*size.height)<1)return false;
+ o.x=e.x;o.y=e.y;settleActor(o);
+ const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(o.id)+'"]');
+ if(el){el.classList.add('rampe');el.style.left=o.x+'%';el.style.top=o.y+'%'}
+ return true}
+// Le plus proche des adversaires de l'orbe, debout et sur la carte ; « voit » : en ligne de vue de l'orbe.
+function procheDeLOrbe(o,voit){const size=mapSize();if(!size.width)return null;
+ const l=actors.map((x,j)=>[x,j]).filter(([x,j])=>x!==o&&alive(x)&&!x.horsCarte&&!estOrbeStatique(x)&&hostiles(x,o)
+  &&(!voit||(()=>{const r=reachTo(o,x,j,'distance');return !r||r.ok})()));
+ const t=ordreCibles(l,o,size)[0];return t?t[1]:null}
+// L'orbe qui agit s'illumine un instant sous les yeux de tous.
+function brilleOrbe(o){const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(o.id)+'"]');
+ if(el){el.classList.remove('agit');void el.offsetWidth;el.classList.add('agit')}}
+const pauseOrbe=ms=>new Promise(r=>setTimeout(r,matchMedia('(prefers-reduced-motion: reduce)').matches?Math.min(ms,80):ms));
+let orbesStatiquesEnCours=false;
+/* Le début du tour des Orbes statiques, chez le MJ, un geste après l'autre : d'abord ceux qui rampent, et leur doublon ; puis
+   chaque orbe, l'un après l'autre, inflige son état aux adversaires de sa zone de contact et lance ses orbes. */
+async function orbesStatiquesDuTour(){if(orbesStatiquesEnCours||view!=='mj'||!enCombat())return;
+ const debout=()=>actors.filter(o=>estOrbeStatique(o)&&alive(o)&&!o.horsCarte);if(!debout().length)return;
+ orbesStatiquesEnCours=true;const tour=round,fini=()=>round!==tour||!enCombat();
+ const montre=()=>{render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+ try{await pauseOrbe(700);
+  for(const o of debout().filter(x=>!x.orbeStatique.copie)){if(fini())return;const a=porteurDeLOrbe(o);if(!a||!alive(o))continue;
+   const r=talentsCodes(a).find(x=>x.code.cle==='orbestatiquerampant');if(!r)continue;
+   const j=procheDeLOrbe(o,false);if(j===null)continue;const b=actors[j],avant={x:o.x,y:o.y},niveau=Math.max(1,Math.trunc(Number(a.level))||1);
+   brilleOrbe(o);if(!rampe(o,b,niveau*tokenPx()))continue;
+   log(nomNum(o)+' de '+nomNum(a)+' rampe vers '+nomNum(b)+'.',{ton:'talent'});
+   await pauseOrbe(1150);if(fini())return;
+   if(voletOuvert(r,'doublon')){const c=nouvelOrbeStatique(a,o.orbeStatique.etat,avant.x,avant.y,true);actors.push(c);settleActor(c);
+    log(nomNum(o)+' laisse un doublon à sa place d’avant.',{ton:'talent'});montre();await pauseOrbe(600)}
+   else montre()}
+  for(const o of debout()){if(fini())return;const a=porteurDeLOrbe(o),size=mapSize(),murs=walls(),e=o.orbeStatique.etat;if(!size.width)break;
+   // L'état, à tous les adversaires de sa zone de contact.
+   const touches=actors.filter(x=>x!==o&&alive(x)&&!x.horsCarte&&!estOrbeStatique(x)&&hostiles(x,o)&&inContact(o,x,size,tokenOf(o),tokenOf(x))&&!wallsBetween(o,x,murs));
+   if(touches.length){brilleOrbe(o);
+    const dits=touches.map(x=>{const issue=infligeEtat(x,e);floatNumber(x,issue===true?'✦ '+e:issue==='onde'?'Onde':issue==='immunise'?'Immunisé':e,issue===true?'perte':'nul');
+     return nomNum(x)+(issue===true?'':issue==='onde'?' : Onde consumée':issue==='immunise'?' : insensible':' : déjà porté')});
+    log(nomNum(o)+' : '+e+' sur '+dits.join(', ')+'.',{ton:'etat'});montre();await pauseOrbe(900);if(fini())return}
+   // Ses orbes, un à un, sur l'adversaire le plus proche qu'il voit.
+   const codes=a?talentsCodes(a):[],lance=codes.find(x=>x.code.cle==='orbestatiquelance'),orbesT=codes.find(x=>x.code.cle==='orbes');
+   if(!a||!lance||!orbesT||!alive(o))continue;
+   const n=voletOuvert(lance,'tous')?orbesDuTour(a,codes):Math.max(1,Math.trunc(Number(lance.params&&lance.params.n))||1);
+   for(let k=0;k<n;k++){if(fini()||!alive(o))break;const j=procheDeLOrbe(o,true);if(j===null)break;
+    brilleOrbe(o);if(k===0)log(nomNum(o)+' lance '+(n>1?n+' orbes':'un orbe')+'.',{ton:'talent'});
+    orbe(a,orbesT.params,orbesT.talent,{cible:j,n:1,statique:true,depuis:o});await pauseOrbe(1100)}
+   montre()}}
+ finally{orbesStatiquesEnCours=false;montre()}}
+// Les Orbes statiques et leurs doublons s'en vont avec le combat, au début d'un autre comme à la fin ; ceux qui sont tombés aussi.
+// Ni butin, ni XP, ni place au bilan : on les ôte de la liste, sans plus.
+function effaceOrbesStatiques(tous){if(view!=='mj'||typeof sortDeLaListe!=='function')return false;
+ const rangs=actors.map((o,i)=>[o,i]).filter(([o])=>estOrbeStatique(o)&&(tous||!alive(o))).map(([,i])=>i);
+ if(!rangs.length)return false;sortDeLaListe(rangs);marked.clear();return true}
+const TALENTS_EFFETS={orbestatique:{fn:orbeStatique,
+   peut:a=>enCombat()&&orbesLibres(a)>=1,
+   titre:a=>!enCombat()?'Seulement en combat.':orbesLibres(a)<1?'Il faut un orbe non lancé ce tour.':TALENTS_CODES.orbestatique.aide},
+  murelem:{fn:murElem,
   peut:a=>enCombat()&&orbesLibres(a)>=2,
   titre:a=>!enCombat()?'Seulement en combat.':orbesLibres(a)<2?'Il faut 2 orbes non lancés ce tour.':TALENTS_CODES.murelem.aide},
  charge:{fn:charge,peut:a=>!refusCharge(a),titre:a=>refusCharge(a)||TALENTS_CODES.charge.aide,
@@ -2385,7 +2480,7 @@ function renderTargets(){const boite=$('targets'),a=actors[selected];boite.repla
   boite.append(g)})}
 /* Le tour appelle la suite dès que plus un seul combattant debout ne garde son Action —
    c'est-à-dire dès qu'aucune pastille bleue ne reste allumée dans la liste. */
-function tourEpuise(){const debout=actors.filter(alive);
+function tourEpuise(){const debout=actors.filter(o=>alive(o)&&!o.orbeStatique);
  return debout.length>0&&debout.every(o=>pointsRestants(o,'action')<=0)}
 function renderCombat(){const a=actors[selected];
  majMode();
@@ -2473,6 +2568,8 @@ function leveEtats(a,finCombat){if(!a)return [];const garde=new Set([...(finComb
 function basculerMode(neuf,annonce){const finit=mode==='combat'&&neuf!=='combat',commence=mode!=='combat'&&neuf==='combat',spect=typeof spectateur==='function'&&spectateur();
  // Un geste qui attendait la carte, un mur à moitié posé : le combat qui change l'emporte.
  renonceGeste();
+ // Les Orbes statiques aussi, avant le bilan : ce ne sont pas des combattants.
+ if((commence||finit)&&!spect)effaceOrbesStatiques(true);
  // Un combat qui commence efface ce qui restait sur le terrain : les états des combattants, les charges d'Ignition.
  if(commence&&!spect)actors.forEach(a=>{leveEtats(a,true);a.ignition=''});
  const bilan=finit&&!spect?bilanDuCombat():null;mode=neuf==='combat'?'combat':'exploration';
@@ -2528,7 +2625,7 @@ function effetsPassifs(){if((typeof loading!=='undefined'&&loading)||(typeof spe
    ce combat : un combat ouvert à la main, avant toute révélation, ne se referme pas aussitôt.
    Le dernier coup se lit d'abord — une seconde — puis la fin s'annonce. */
 let combatEngage=false,finCombatPrevue=0;
-function adversairesDebout(){return actors.filter(a=>campDe(a)==='adverse'&&a.vu&&alive(a)).length}
+function adversairesDebout(){return actors.filter(a=>campDe(a)==='adverse'&&a.vu&&alive(a)&&!a.orbeStatique).length}
 /* Ce qui tient la partie la juge, quelle que soit la vue : le MJ en vue joueur aussi. Seul un joueur en ligne
    attend que le mode lui arrive par la table. */
 function finDeCombatAuto(){if(!enCombat()||(typeof loading!=='undefined'&&loading)||(typeof spectateur==='function'&&spectateur()))return;
@@ -2570,7 +2667,7 @@ function saveChecks(){const a=actors[selected];if(!a)return;
 const SKILL_TINTS=['47,138,99','168,105,31','122,92,184','157,123,30','176,88,54','101,120,111','53,119,184','44,140,133'];
 const STAT_TINTS={vie:'122,92,184',endu:'44,140,133',pv:'47,122,91',def:'96,110,118',dmg:'180,72,58',xp:'157,123,30'};
 const TYPE_NOMS={standard:'Standard',solitaire:'Solitaire',alpha:'Élite',boss:'Boss'};
-const IMG_V='0.588';
+const IMG_V='0.589';
 function imgUrl(nom){return './img/'+String(nom).split('/').map(encodeURIComponent).join('/')+'?v='+IMG_V}
 /* Les états et leur jeton, tels qu'ils sont peints sur la table. « Aucun » n'en a pas —
    c'est l'absence d'état — ni « Coma », que la barre de vie dit déjà, ni « Affaibli »,
@@ -3340,7 +3437,7 @@ $('end-combat').onclick=()=>{if(view!=='mj')return;basculerMode('exploration',tr
    chacun perd ses états — Feu, Saignée, Blindage, tout — la rencontre repart entière.
    Seul le Coma tient : il dit les points de vie, qui ne changent pas. Ouvrir une carte
    fait la même chose, sans demander. */
-function remiseAuTourUn(){round=1;renonceGeste();actors.forEach(a=>{a.checks=[0,0,0];a.talentsJoues=[];a.target=null;a.targets=[];a.orbes=0;a.orbesGardes=0;a.mursElem=[];a.garde=null;a.ignition='';a.enrage=0;delete a.revanche;delete a.traction;mouvementRapide(a);
+function remiseAuTourUn(){round=1;renonceGeste();effaceOrbesStatiques(true);actors.forEach(a=>{a.checks=[0,0,0];a.talentsJoues=[];a.target=null;a.targets=[];a.orbes=0;a.orbesGardes=0;a.mursElem=[];a.garde=null;a.ignition='';a.enrage=0;delete a.revanche;delete a.traction;mouvementRapide(a);
   // Une rencontre qui repart, c'est un repos : les insensibilités tombent, les charges du jour reviennent.
   a.immunites={etats:[],des:[]};if(typeof reposer==='function')reposer(a,'long');else a.usages={};
   a.states=[];a.bleed=0;a.cumuls={};if(a.hp===0)setState(a,'Coma',true);
@@ -3379,7 +3476,9 @@ function tourSuivant(){savePool();burnAll();actors.forEach(o=>regenerer(o,'fin')
  // La Foudre retombe d'un cran à chaque nouveau tour.
  actors.forEach(o=>{if(hasState(o,'Foudre'))ajouteEtat(o,'Foudre',-1)});
  contagions();
- actors.forEach(a=>{a.checks=[0,0,0];a.talentsJoues=[];a.orbes=0;delete a.revanche;delete a.traction;mouvementRapide(a)});$('round').textContent=String(round).padStart(2,'0');render();annonceFlottante('Tour '+round);if(actors.filter(o=>regenerer(o,'debut')).length)render()}
+ actors.forEach(a=>{a.checks=[0,0,0];a.talentsJoues=[];a.orbes=0;delete a.revanche;delete a.traction;mouvementRapide(a)});$('round').textContent=String(round).padStart(2,'0');render();annonceFlottante('Tour '+round);if(actors.filter(o=>regenerer(o,'debut')).length)render();
+ // Les Orbes statiques tombés s'en vont ; les autres agissent, l'un après l'autre.
+ if(effaceOrbesStatiques(false))render();orbesStatiquesDuTour()}
 $('next').onclick=()=>{if(view!=='mj')return;tourSuivant()};
 $('upload').onclick=()=>$('mapfile').click();$('mapfile').onchange=()=>{const f=$('mapfile').files[0];if(!f)return;if(!['image/png','image/jpeg','image/webp'].includes(f.type)){log('Carte non chargée : utilise une image PNG, JPEG ou WebP.');return}if(mapUrl)URL.revokeObjectURL(mapUrl);mapUrl=URL.createObjectURL(f);$('map-view').style.backgroundImage='url("'+mapUrl+'")';$('map').classList.add('custom');log('Carte importée sur cet appareil. Le plan et ses murs sont masqués : plus d’obstacle défini.');};
 /* Le thème vit dans le navigateur, pas dans la partie : chacun lit comme il veut. */
@@ -3548,5 +3647,5 @@ $('portees').onclick=()=>{porteesOn=!porteesOn;
 majPortees();
 window.addEventListener('resize',()=>{updateRing();showAim();renderCombat()});
 render();
-</script><script src="./catalog.js?v=0.588"></script><script src="./planches-calcul.js?v=0.588"></script><script src="./planches.js?v=0.588"></script><script src="./editor.js?v=0.588"></script><script src="./maps.js?v=0.588"></script><script src="./domaine.js?v=0.588"></script><script src="./campagnes.js?v=0.588"></script><script src="./firebase-config.js?v=0.588"></script><script src="./shared-data.js?v=0.588"></script><script src="./shared.js?v=0.588"></script>
-<script src="./live.js?v=0.588"></script></body></html>
+</script><script src="./catalog.js?v=0.589"></script><script src="./planches-calcul.js?v=0.589"></script><script src="./planches.js?v=0.589"></script><script src="./editor.js?v=0.589"></script><script src="./maps.js?v=0.589"></script><script src="./domaine.js?v=0.589"></script><script src="./campagnes.js?v=0.589"></script><script src="./firebase-config.js?v=0.589"></script><script src="./shared-data.js?v=0.589"></script><script src="./shared.js?v=0.589"></script>
+<script src="./live.js?v=0.589"></script></body></html>

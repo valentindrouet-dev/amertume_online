@@ -2261,3 +2261,17 @@ button.j-stats{padding:0;border:0;background:none;font:inherit;font-weight:800;c
 .arbre-plan>.arbre-noeud.petit.a-paliers>.arbre-paliers i{width:6px;height:6px;border-width:1.2px}
 .arbre-plan>.arbre-noeud.petit.a-paliers>.arbre-cout{transform:translate(-50%,80%)}
 .b-paliers-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;grid-column:1/-1}
+/* L'Orbe statique sur la carte : l'orbe du lancer, posé, à la couleur de son état ; il s'illumine quand il agit, glisse
+   lentement quand il rampe, et disparaît quand il tombe. */
+.token.orbe-statique,.token.orbe-statique.enemy{--orbe:#9b7ad4;background:transparent;border-color:transparent;box-shadow:none;color:transparent}
+.token.orbe-statique[data-etat="Feu"]{--orbe:#ff6a2c}.token.orbe-statique[data-etat="Foudre"]{--orbe:#7ec8ff}.token.orbe-statique[data-etat="Gel"]{--orbe:#8fe3ea}
+.token.orbe-statique[data-etat="Poison"]{--orbe:#8fc45c}.token.orbe-statique[data-etat="Saignée"]{--orbe:#c2483f}
+.token.orbe-statique.selected{box-shadow:0 0 0 max(1px,calc(var(--token)*.04)) #ffffffcc}
+.token.orbe-statique .orbe-coeur{position:absolute;inset:15%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 35% 35%,#fff9,var(--orbe) 55%,transparent 72%);box-shadow:0 0 14px 5px var(--orbe),0 0 44px 16px color-mix(in srgb,var(--orbe) 55%,transparent)}
+.token.orbe-statique[data-etat="Feu"] .orbe-coeur{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}
+.token.orbe-statique.copie .orbe-coeur{opacity:.78}
+.token.orbe-statique.dead{display:none}
+.token.orbe-statique.agit .orbe-coeur{animation:orbe-agit .6s ease-out}
+@keyframes orbe-agit{45%{transform:scale(1.4);filter:brightness(1.35)}}
+.token.rampe{transition:left 1s ease-in-out,top 1s ease-in-out}
+@media (prefers-reduced-motion:reduce){.token.orbe-statique.agit .orbe-coeur{animation:none}.token.rampe{transition:none}}
