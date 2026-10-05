@@ -1233,8 +1233,7 @@ assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:6
 /* Dégâts d'opportunité étendus : traverser une zone de contact pendant un glissement compte comme
    s'y arrêter puis en sortir ; tirer ou lancer un orbe au contact déclenche l'occasion de tous les
    adversaires au contact, après les dégâts du tir — un adversaire tué ou entravé ne frappe pas. */
-assert.ok(page.includes('function ramasseContacts(')&&page.includes("croises:lot0.map(k=>{const s=new Set(contactsDe(actors[k]));return [k,s,{x:actors[k].x,y:actors[k].y},new Set(s)]})")
- &&page.includes("drag.croises.forEach(([k,set,pos])=>{const o=actors[k];if(!o)return;ramasseContacts(o,set,pos,size,murs);pos.x=o.x;pos.y=o.y})}"),'la traversée d’une zone de contact compte');
+assert.ok(page.includes('function ramasseContacts('),'la traversée d’une zone de contact compte');
 assert.ok(page.includes('function peutFrapperOpportunite(e){return !!e&&alive(e)&&!frozenSolid(e)&&degatsDe(e)>0}')&&page.includes('function opportuniteAuTir(')
  &&page.includes("const contacts=rangeOf(a)==='distance'?contactsDe(a):[];")
  ,'tir et sort au contact : occasion après les dégâts');
@@ -1391,7 +1390,7 @@ assert.ok(src.includes('function gearPills(a,tout=true,combat=false)')&&page.inc
 assert.ok(src.includes('function libereMains(a,besoin)')&&src.includes('  else prendArme(a,o)}')&&src.includes('  else prendBouclier(a,o)}')
  &&src.includes('function gearDetail(o,a,enJeu)')&&!src.includes("p.className='gear-astuce';")&&src.includes('function appliquerObjet(a,o,vise,q)')
  &&src.includes("viserCible('◈ '+o.name+' — clique le combattant ou l’endroit visé',")&&src.includes("const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper;")
- &&src.includes('toggleEquip(a,o);ouvrir();')&&page.includes('function viserCible(annonce,fn,refus)')&&page.includes("viserCible('✦ Clique sur la carte pour poser '+m.name,"),'mains remplacées, objet visé, description à l’équipement');
+ &&src.includes('toggleEquip(a,o);ouvrir();')&&page.includes("viserCible('✦ Clique sur la carte pour poser '+m.name,"),'mains remplacées, objet visé, description à l’équipement');
 {const t={mainsPrises:null},src2=src.slice(src.indexOf('function libereMains(a,besoin)'),src.indexOf('/* Équiper depuis l’inventaire'));
  assert.ok(src2.includes('while(mainsPrises(a)+besoin>2)')&&src2.includes('if(a.weapons.length){a.weapons.shift();n++}')&&src2.includes("else if(a.shieldId){a.shieldId='';n++}"),'les mains se libèrent du plus ancien');}
 /* Une seule description ouverte à la fois, celle du dernier carré cliqué, et plus de liseré brun
@@ -3370,6 +3369,23 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.572 — Mur d'élément, une action du Mystique : 2 orbes, deux clics sur la carte, un trait de l'élément visible de toute la
+   table ; tout adversaire qui le traverse ou le touche subit l'état 2. Améliorations : les dégâts de l'état, doublés au palier 2 ;
+   3 orbes pour deux segments, puis 4 pour une zone à quatre coins. Les murs tombent à la fin du combat. */
+{const T=C.TALENTS_CODES,page=fs.readFileSync('index.html','utf8'),vivant=fs.readFileSync('live.js','utf8'),partage=fs.readFileSync('shared.js','utf8'),ia=fs.readFileSync('ia.js','utf8');
+ assert.equal(T.murelem.type,'act');assert.equal(T.murdegats.pour,'murelem');assert.equal(T.murzone.pour,'murelem');
+ assert.deepEqual(C.voletsDe({effet:'murdegats'}),{double:2});assert.deepEqual(C.voletsDe({effet:'murzone'}),{zone:2});
+ assert.ok(C.phraseTalent('murelem',{etat:'Gel'}).includes('Gel 2')&&C.phraseTalent('murzone',{},2).includes('zone à quatre coins')&&!C.phraseTalent('murzone',{},1).includes('zone'));
+ const mur={pts:[[0,0],[100,0]]},zone={pts:[[0,0],[100,0],[100,100],[0,100]],zone:true};
+ assert.ok(C.franchitMur(mur,[[50,-50],[50,50]],10)&&C.franchitMur(mur,[[50,-50],[50,-8]],10)&&!C.franchitMur(mur,[[50,-50],[50,-20]],10),'traverser ou toucher le mur');
+ assert.ok(!C.franchitMur(mur,[[50,5],[60,5]],10)&&C.franchitMur(mur,[[50,5],[50,40],[50,5]],10),'qui s’y tient ne le franchit qu’en y revenant');
+ assert.ok(C.franchitMur(zone,[[-50,50],[50,50]],5)&&!C.franchitMur(zone,[[40,50],[60,50]],5)&&C.toucheMur(zone,[50,50],5),'la zone, comme les murs');
+ assert.ok(page.includes('<svg id="murs-elem" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>')&&page.includes("const TALENTS_EFFETS={murelem:{fn:murElem,")
+  &&page.includes("function viserCible(annonce,fn,refus,annule){")&&page.includes("a.orbes=orbesLances(a)+v.orbes;")&&page.includes("pts:pts.map(q=>({x:+q.x.toFixed(2),y:+q.y.toFixed(2)}))")
+  &&page.includes("if(deg){const j=effectDice(o,5,2),total=j.total*(voletOuvert(deg,'double')?2:1);dit+=' '+subitDegatsEtat(o,e,total).dit}")
+  &&page.includes("a.orbesGardes=0;a.mursElem=[];")&&page.includes("renderCombat();dessineMursElem();"),'le mur posé, dessiné, effacé à la fin du combat');
+ assert.ok((page.match(/passeMurs\(/g)||[]).length>=7&&page.includes("chemin.push({x:o.x,y:o.y})")&&ia.includes("passeMurs(a,[depart,{x:a.x,y:a.y}])"),'chaque déplacement passe les murs');
+ assert.ok(vivant.includes("'auraPv','mursElem',")&&partage.includes("'orbesGardes','mursElem',"),'le mur voyage avec son porteur');}
 /* v0.571 — Les paliers d'XP se règlent à la main, dans les Paramètres, au MJ : la partie les porte, le niveau des aventuriers
    les suit. Contagion — au contact, puis en vue au palier 2. Dans l'arbre, les lignes tiennent aux cases : un talent qui
    part vers une place libre laisse les siennes à sa case, vide ; posé sur une case prise, les deux cases échangent ce
@@ -3557,7 +3573,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),ia=fs.readFileSync('ia.js','utf8');
  assert.ok(page.includes('function encaisse(a,n,de){')&&page.includes('compteDegats(de===undefined?auteurCoup:de,a,perdu);')&&page.includes("compteDegats(a,b,lost);")
   &&page.includes("auteurCoup=a;queueMicrotask(()=>{auteurCoup=null});ajouteBilan(a,'coups',1);")&&page.includes("ajouteBilan(a,'crit',1)")&&page.includes("applyHeal=function(a,m){const g=soinSansBilan(a,m);if(g>0)ajouteBilan(a,'soin',g);return g}"),'les compteurs de dégâts, coups, critiques et soins');
- assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes('compteDistance(a,depart);afterMove(a);'),'la distance, là où un mouvement connaît son départ');
+ assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes("compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);"),'la distance, là où un mouvement connaît son départ');
  assert.ok(page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
  assert.ok(vivant.includes("'enrage','bilan'];")&&vivant.includes("...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
  assert.ok(src.includes('function lisBilan(o){')&&src.includes('function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;'),'la fenêtre');

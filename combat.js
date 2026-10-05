@@ -1252,6 +1252,24 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
  eruptiondouble:{cle:'eruptiondouble',nom:'Éruption — double',court:'dégâts doublés',type:'ame',retire:true,
   aide:'Amélioration d’Éruption : les dégâts de l’Éruption sont doublés.',params:[],
   phrase(){return 'Les dégâts de l’<b>Éruption</b> sont <b>doublés</b>.'}},
+ /* Mur d'élément : une action. Le porteur dépense 2 orbes et pose sur la carte les deux bouts d'un mur de
+    l'état réglé ; tout adversaire qui le traverse ou le touche subit cet état 2. Coché « élémentaire »,
+    l'état suit l'élément du Mystique. Deux améliorations : les dégâts de l'état, doublés au palier 2 ;
+    un mur à deux segments pour 3 orbes, puis une zone à quatre coins pour 4 orbes au palier 2. */
+ murelem:{cle:'murelem',nom:'Mur d’élément',type:'act',
+  aide:'Action : le porteur dépense 2 orbes et pose sur la carte les deux extrémités d’un mur de l’état réglé ; tout adversaire qui le traverse ou le touche subit cet état 2.',
+  params:[{cle:'etat',nom:'État du mur',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
+  phrase(p){const e=(p&&p.etat)||'Feu';return 'Le porteur dépense <b>2 orbes</b> pour dresser un <b>mur de '+e+'</b> entre deux points de la carte : tout adversaire qui le traverse ou le touche subit <b>'+e+' 2</b>.'}},
+ murdegats:{cle:'murdegats',nom:'Mur d’élément — dégâts',court:'dégâts',type:'ame',
+  aide:'Amélioration du Mur d’élément : l’adversaire qui le traverse subit aussi les dégâts de l’état, un dé par cran ; doublés au palier 2.',params:[],
+  volets:[{cle:'double',nom:'Dégâts doublés',palier:2}],
+  phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{double:2}).double;
+   return 'L’adversaire qui traverse le <b>mur</b> subit aussi les <b>dégâts</b> de l’état, un dé par cran'+(k>0&&n>=k?', <b>doublés</b>.':'.')}},
+ murzone:{cle:'murzone',nom:'Mur d’élément — segments',court:'segments',type:'ame',
+  aide:'Amélioration du Mur d’élément : 3 orbes pour un mur à deux segments ; au palier 2, 4 orbes pour une zone à quatre coins, qui frappe aussi les adversaires à l’intérieur.',params:[],
+  volets:[{cle:'zone',nom:'Zone à quatre coins, 4 orbes',palier:2}],
+  phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{zone:2}).zone;
+   return 'Le porteur peut dépenser <b>3 orbes</b> pour un mur à <b>deux segments</b>'+(k>0&&n>=k?', ou <b>4 orbes</b> pour une <b>zone à quatre coins</b> : les adversaires à l’intérieur subissent l’état comme au passage du mur.':'.')}},
  /* Implosion : un passif. Un critique rend au porteur le point d'Action qu'il vient de dépenser. */
  implosion:{cle:'implosion',nom:'Implosion',type:'pass',
   aide:'Passif : après un critique, le porteur gagne 1 point d’Action.',
@@ -1340,7 +1358,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
- provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',
+ provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
   if(c.court){const nom=TALENTS_CODES[p].nom+' — '+c.court;if(nom!==c.nom){c.anciens=[...(c.anciens||[]),c.nom];c.nom=nom}}})}
@@ -1580,6 +1598,25 @@ const ELEMENTS=[{cle:'feu',nom:'Feu',etat:'Feu',mot:'feu',logo:'feu',teinte:'#e8
 const CLASSES_ELEMENTAIRES=['mystique'];
 const classeElementaire=c=>CLASSES_ELEMENTAIRES.includes(cleTalent(c));
 const elementDe=a=>ELEMENTS.find(e=>e.cle===(a&&a.element))||null;
+/* Mur d'élément : ses segments, de point en point, refermés pour une zone. Les mesures sont en pixels de la
+   carte ; un jeton de rayon r touche un segment à moins de r de lui, et se tient dans une zone dès qu'il y entre. */
+function segmentsMur(pts,zone){const s=[];for(let i=0;i+1<pts.length;i++)s.push([pts[i],pts[i+1]]);if(zone&&pts.length>2)s.push([pts[pts.length-1],pts[0]]);return s}
+function distPointSegment(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],l=dx*dx+dy*dy,t=l?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/l)):0;
+ return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy)}
+function distSegments(a,b,c,d){const o=(p,q,r)=>Math.sign((q[0]-p[0])*(r[1]-p[1])-(q[1]-p[1])*(r[0]-p[0]));
+ if(o(a,b,c)*o(a,b,d)<0&&o(c,d,a)*o(c,d,b)<0)return 0;
+ return Math.min(distPointSegment(a,c,d),distPointSegment(b,c,d),distPointSegment(c,a,b),distPointSegment(d,a,b))}
+function dansPolygone(p,pts){let dedans=false;
+ for(let i=0,j=pts.length-1;i<pts.length;j=i++){const [xi,yi]=pts[i],[xj,yj]=pts[j];if((yi>p[1])!==(yj>p[1])&&p[0]<(xj-xi)*(p[1]-yi)/(yj-yi)+xi)dedans=!dedans}
+ return dedans}
+function toucheMur(m,p,r){if(m.zone&&dansPolygone(p,m.pts))return true;return segmentsMur(m.pts,m.zone).some(([a,b])=>distPointSegment(p,a,b)<=r)}
+/* Le chemin d'un jeton franchit le mur s'il vient à le toucher — ou à entrer dans la zone — en venant d'ailleurs :
+   qui s'y tient déjà ne le franchit qu'en le quittant, puis en y revenant. */
+function franchitMur(m,chemin,r){if(!chemin||chemin.length<2)return false;let dans=toucheMur(m,chemin[0],r);
+ for(let i=1;i<chemin.length;i++){const a=chemin[i-1],b=chemin[i];
+  if(!dans&&(segmentsMur(m.pts,m.zone).some(([c,d])=>distSegments(a,b,c,d)<=r)||(m.zone&&dansPolygone(b,m.pts))))return true;
+  dans=toucheMur(m,b,r)}
+ return false}
 /* {élément}, {Élément}, {ELEMENT}, {etat}… : la casse et les accents ne comptent pas. Une
    accolade en capitale donne sa capitale, tout en capitales donne des capitales ; {logo},
    un nom de fichier, reste en minuscules. */
@@ -2231,7 +2268,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
 const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
- NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
+ segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,nomEffet,ciblesPermises,orbesPermis,desOrbe,poolOrbe,texteDesOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,COMPETENCES_CLASSE,competencesDeClasse,ptDepenses,xpDisponible,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);

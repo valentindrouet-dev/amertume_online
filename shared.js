@@ -15,7 +15,7 @@ function publicMaps(){return structuredClone(maps).map(m=>{if(m.id!==currentMapI
    portes ouvertes, mémoire du brouillard, carte ouverte), que la table transporte déjà.
    Sans cela, chaque coup porté republiait tout, images comprises, deux secondes plus
    tard, et chaque joueur retéléchargeait tout : c'était la latence des parties à quatre. */
-const CHAMPS_VOLATILS=['x','y','hp','states','bleed','cumuls','checks','target','targets','activeAttack','orbes','orbesGardes','garde','revealed','vu','numero','pool','weapons','armures','shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee'];
+const CHAMPS_VOLATILS=['x','y','hp','states','bleed','cumuls','checks','target','targets','activeAttack','orbes','orbesGardes','mursElem','garde','revealed','vu','numero','pool','weapons','armures','shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee'];
 function texteStable(value){const v={...value,round:1,mode:'exploration',locked:false,currentMapId:null,mapImage:null,
   actors:(value.actors||[]).map(a=>{const c={...a};CHAMPS_VOLATILS.forEach(k=>delete c[k]);return c}),
   maps:(value.maps||[]).map(m=>{const c={...m};delete c.fog;delete c.seen;c.doors=(m.doors||[]).map(d=>{const p={...d};delete p.open;delete p.decouvert;return p});

@@ -131,7 +131,7 @@ async function marcheIA(a,etapes,ignorer,arrive){const size=mapSize();if(!size.w
  const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(a.id)+'"]');
  if(el){el.classList.add('glisse');el.style.left=a.x+'%';el.style.top=a.y+'%';suitLaJauge(el)}
  await pauseIA(280);
- updateRing();degatsOpportunite(a,[...croises]);compteDistance(a,depart);afterMove(a);render();return true}
+ updateRing();degatsOpportunite(a,[...croises]);compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);render();return true}
 /* Où un geste le mènerait, murs, socles et zones compris, sans rien bouger : le point d'arrivée, ou null
    si le geste est refusé. */
 function essaiPasIA(a,x,y,ignorer){const size=mapSize(),regle=regleMouvement(a);if(regle.fini)return null;
