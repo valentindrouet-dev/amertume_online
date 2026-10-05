@@ -3369,6 +3369,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.575 — Mur d'élément : la forme se choisit en petites bulles rondes au-dessus du bouton, à sa couleur — 2 et un trait,
+   3 et un trait coudé, 4 et un carré fermé —, plus de menu. Un clic ailleurs, Échap ou un autre geste les referme. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(page.includes("choixFormeMur(a,e,choix,talent);return null}")&&!page.includes("menuCarte(nom,choix.map(")
+  &&page.includes("function renonceGeste(){if(fermeFormesMur)fermeFormesMur();")&&page.includes("b.className='btn-action rond forme-mur';")
+  &&page.includes("if(fond)b.style.setProperty('--fond',fond);")&&page.includes("const FORMES_MUR={2:'<path d=\"M5 17L19 7\"/>")
+  &&src.includes("b.dataset.talent=t.talent&&t.talent.id||'';")&&feuille.includes("button.btn-action.rond.forme-mur{width:40px;height:40px;"),'les formes en bulles au-dessus du bouton');}
 /* v0.574 — Recommencer le combat (↺) efface aussi les murs d'éléments ; un nouveau combat efface ce qui restait sur le terrain :
    murs, états des combattants, charges d'Ignition. Une pose en cours y renonce. */
 {const page=fs.readFileSync('index.html','utf8');
@@ -3379,8 +3386,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    niveau de l'aventurier qui le dresse, en mètres, sans limite pour un adversaire ; dès le premier point, un trait suit la souris
    avec sa distance, rouge au-delà, et un clic trop loin ne pose rien. */
 {const page=fs.readFileSync('index.html','utf8');
- assert.ok(page.includes("function renonceGeste(){if(!placementEnCours)return;const f=placementEnCours.annule;annulerPlacement();if(f)f()}")
-  &&page.includes("function viserCible(annonce,fn,refus,annule){renonceGeste();")&&page.includes("placementEnCours={poser,echap,annule};")
+ assert.ok(page.includes("function viserCible(annonce,fn,refus,annule){renonceGeste();")&&page.includes("placementEnCours={poser,echap,annule};")
   &&page.includes("if(bloque)return;renonceGeste();const dit=fn(a,params,talent);")&&page.includes(" if(tirEnVol)return;renonceGeste();"),'un autre geste fait renoncer à la pose');
  assert.ok(page.includes("max=a.hero?Math.max(1,Math.trunc(Number(a.level))||1):Infinity;")&&page.includes("if(pts.length&&segmentsGuide(murEnCours,p).some(([u,w])=>distanceM(u,w)>max)){suivant();return}")
   &&page.includes("if(m.zone&&m.pts.length===m.total-1)l.push([q,m.pts[0]]);")&&page.includes("const d=distanceM(u,w),trop=d>m.max,")

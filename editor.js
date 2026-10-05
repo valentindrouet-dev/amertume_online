@@ -483,7 +483,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
    attack();scheduleSave()};
   survol(b,at.dice,bonusDe(at),at.useOwnDamage!==false,at.logos);boite.append(b)});
  // Les talents à leur suite : ceux d'action, puis les réactions.
- talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque rond';
+ talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque rond';b.dataset.talent=t.talent&&t.talent.id||'';
   if(t.teinte){b.style.setProperty('--fond',t.teinte);b.classList.add('teinte-propre')}
   const im=(t.logo?logoTalent({logo:t.logo},'bouton'):null)||logoArmeEquipee(a);
   if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);b.classList.add('avec-logo');b.append(logos)}

@@ -617,6 +617,14 @@ button.btn-action.rond .glyphe{font-size:26px;line-height:1}
 .attack-row button.btn-action.rond .logo-equip{width:28px;height:28px}
 .attack-row button.btn-action.rond .glyphe{font-size:19px}
 .attack-row button.btn-action.rond .compte-rond{bottom:-6px;min-width:20px;padding:1px 4px;font-size:9px;border-width:1.5px}
+/* Les formes du Mur d'élément : de petites bulles au-dessus du bouton, à sa couleur. */
+.formes-mur{position:fixed;z-index:60;display:flex;gap:8px;padding:0 0 4px}
+button.btn-action.rond.forme-mur{width:40px;height:40px;margin:0;animation:forme-mur-pop .16s ease-out both}
+button.btn-action.rond.forme-mur svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
+button.btn-action.rond.forme-mur svg circle{fill:#fff;stroke:none}
+button.btn-action.rond.forme-mur .compte-rond{bottom:-6px;min-width:18px;padding:1px 4px;font-size:9px;border-width:1.5px}
+@keyframes forme-mur-pop{from{opacity:0;transform:translateY(6px) scale(.7)}}
+@media (prefers-reduced-motion:reduce){button.btn-action.rond.forme-mur{animation:none}}
 /* Au-dessus de la piste, les dés de dégâts et le bonus du combattant pris. */
 .des-combattant{display:flex;align-items:center;min-height:26px}.des-combattant[hidden]{display:none}
 .des-combattant .des-bonus{display:inline-flex;align-items:center;gap:8px}
