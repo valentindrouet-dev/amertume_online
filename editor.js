@@ -1881,7 +1881,7 @@ function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceCh
  if(fin<texte.length)motsDans(el,texte.slice(fin),noms);return el}
 /* Les talents d'un arbre, dans le texte d'un des siens : leur nom exact, casse ignorée, prend la
    couleur de sa nature — « Charge » en bleu d'Action dans un talent du Destructeur. */
-const TEINTES_TALENTS={act:'#4f7fb5',reac:'#8b6bb5',pass:'#8a8474',crit:'#b5525a',mait:'#c99a3c',ame:'#5e9a5b'};
+const TEINTES_TALENTS={act:'#4f7fb5',mvt:'#b77b31',reac:'#8b6bb5',pass:'#8a8474',crit:'#b5525a',mait:'#c99a3c',ame:'#5e9a5b'};
 const cleNomTalent=n=>String(n).toLowerCase().replace(/\s+/g,' ');
 function nomsDeLArbre(t){const c=t&&lisChemin(t),fam=talentFamily(c&&talent(c.de)||t),parNom=new Map();
  const clair=n=>String(n||'').normalize('NFC').replace(new RegExp(ACCOLADES.source,'giu'),(m,k)=>sorteAccolade(k)?libelleAccolade(k):m).trim();

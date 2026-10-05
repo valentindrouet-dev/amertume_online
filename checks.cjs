@@ -3365,6 +3365,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.580 — Le Mouvement prend les teintes brunes et beiges du bouton de PM, comme l'Action le bleu de son bouton : bouton
+   à l'ocre d'Analyser, bulles, cartes, arbre et noms en brun sur beige. */
+{const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(feuille.includes(".talent-detail.t-mvt{--teinte:#b77b31;background:#f2e2c4;")&&feuille.includes(".bulle:has(.t-mvt){--bulle-bord:#f2e2c4}")
+  &&!feuille.includes('#2e9a8f')&&src.includes("const TEINTES_TALENTS={act:'#4f7fb5',mvt:'#b77b31',"),'le Mouvement en brun et beige');}
 /* v0.579 — À la table aussi, la bulle d'un talent dit son coût en points, après ses dés s'il en a : celui que la table fait
    payer ; la bulle d'une attaque, son point d'Action. */
 {const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),feuille=fs.readFileSync('editor.css','utf8');
@@ -3396,7 +3401,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("const TALENT_TYPES=[['act','ACT','Action'],['mvt','MVT','Mouvement'],")&&src.includes("const ORDRE_TYPES_TALENTS=['mait','act','mvt','reac','crit','pass','ame'];")
   &&src.includes("const GLYPHES_TALENT={act:'⚔',mvt:'➜',")&&src.includes("['coutPA','coutPM'].forEach(k=>{if(!(Number.isInteger(t[k])&&t[k]>=0&&t[k]<=9))delete t[k]});")
   &&src.includes('<label id="cout-action-champ" hidden><span id="cout-action-nom">Coût (PA)</span>')&&src.includes("nom.textContent=ty==='mvt'?'Coût (PM)':'Coût (PA)';")
-  &&feuille.includes("button.btn-talent.t-mvt{--fond:#2e9a8f}")&&feuille.includes(".arbre-noeud.t-mvt{--teinte:#2e9a8f}"),'le type Mouvement et le coût à l’éditeur');
+  &&feuille.includes("button.btn-talent.t-mvt{--fond:#e0a04a}")&&feuille.includes(".arbre-noeud.t-mvt{--teinte:#b77b31}"),'le type Mouvement et le coût à l’éditeur');
  assert.ok(page.includes("const TALENT_TYPES_CLES=['act','mvt','reac','pass','crit','mait','ame'];")&&page.includes("function dejaJoue(a,talent,code){return enCombat()&&!!a&&!!talent&&!(code&&code.cle==='orbes')")
   &&page.includes("const bloque=deja||manquePA||manquePM;")&&page.includes("if(dit===null){if(!ctx.pris&&!placementEnCours&&!fermeFormesMur)marqueTalent(a,talent,code);return}")
   &&page.includes("const pa=opts.sansAction?0:ctxT?ctxT.pa:1;")&&page.includes("if(ctx)payeTalent(ctx);else if(rangeeTalent(talent)==='attaques'")
