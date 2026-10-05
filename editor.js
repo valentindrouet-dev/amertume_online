@@ -498,7 +498,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   if(t.rayonne)b.classList.add('debut-combat');
   /* Sa bulle : celle du talent, son texte tel que le MJ l'a écrit ; un talent qui frappe y montre
      ses dés et son bonus, sous son nom, comme une attaque. */
-  surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),
+  surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),points:false,
    des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false,orbeux(t)?etatOrbes:''):null}));
   /* Un talent qui frappe montre aussi ses dés au-dessus de la piste, au survol. Les Orbes, eux,
      y sont déjà, à côté de l'arme, qui reste. */
@@ -4118,7 +4118,7 @@ function retireDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;
 // Le chiffre d'un palier dans une comparaison, où le premier aussi doit se nommer.
 const CHIFFRES_PALIER=['','I','II','III'];
 /* « palier » : la bulle d'un seul palier, celui-là — l'arbre en montre deux côte à côte. */
-function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,palier=0}={}){const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);
+function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,palier=0,points=true}={}){const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);
  const pn=palier||(a?palierDe(a,t):0);
  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
  // Un bonus a la couleur de son rond : rouge pour les dégâts, vert pour les PV…
@@ -4129,7 +4129,15 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,pal
  if(!bonus&&pn>1)nom.append(palierRomain(pn));
  // Jamais la nature du talent : la bulle ne l'écrit nulle part.
  tete.append(nom);d.append(tete);
- // Le prix en XP ne se lit que dans l'arbre : en cartouche, en haut à gauche de la bulle.
+ /* Son coût à la table, en haut à droite : un point bleu par point d'Action, un point ocre par point de
+    Mouvement, aux couleurs des pastilles des combattants. Rien pour un talent gratuit ou de début de combat. */
+ if(points&&!bonus&&typeof coutTalent==='function'&&!(typeof talentDebut==='function'&&talentDebut(t))){const c=coutTalent(t);
+  if(c&&(c.pa||c.pm)){const s=document.createElement('span');s.className='cout-points';s.setAttribute('role','img');
+   s.setAttribute('aria-label',[c.pa?c.pa+' point'+(c.pa>1?'s':'')+' d’Action':'',c.pm?c.pm+' point'+(c.pm>1?'s':'')+' de Mouvement':''].filter(Boolean).join(', '));
+   for(let k=0;k<c.pa;k++)s.append(Object.assign(document.createElement('i'),{className:'pt action'}));
+   for(let k=0;k<c.pm;k++)s.append(Object.assign(document.createElement('i'),{className:'pt mvt'}));
+   tete.append(s)}}
+ // Le prix en XP ne se lit que dans l'arbre : en cartouche, à cheval sur le bord haut de la bulle, à droite.
  // Rouge si l'aventurier n'a pas l'XP qu'il faut pour le prendre.
  {const tenu=!!a&&(a.talents||[]).includes(t.id),suite=palier||(tenu&&palierDe(a,t)<paliersDe(t)?palierDe(a,t)+1:1),pris=palier?tenu&&palierDe(a,t)>=palier:tenu&&suite===1;
   if(cout&&coutPalier(t,suite)){const c=document.createElement('span');c.className='cout-xp'+(pris?' acquis':a&&coutPalier(t,suite)>xpDisponible(a,catalog.talents)?' trop-cher':'');c.textContent=coutPalier(t,suite)+' XP';tete.append(c)}}

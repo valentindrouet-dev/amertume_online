@@ -3365,6 +3365,15 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.578 — Dans la bulle d'un talent — fiche, onglet Talents, arbre —, son coût à la table en haut à droite : un point
+   bleu par PA, un point ocre par PM ; pas dans la barre d'action, où les dés tiennent ce coin. Dans l'arbre, le
+   cartouche d'XP monte à cheval sur le bord haut de la bulle, à droite. */
+{const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("des=null,cout=false,palier=0,points=true}={}){")&&src.includes("s.className='cout-points';")
+  &&src.includes("for(let k=0;k<c.pa;k++)s.append(Object.assign(document.createElement('i'),{className:'pt action'}));")
+  &&src.includes("bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),points:false,")&&page.includes("vu:x=>talentPourElement(x,elementDe(a)),points:false})};")
+  &&feuille.includes(".talent-bulle-nom .cout-xp{position:absolute;top:0;right:12px;transform:translateY(-50%);")
+  &&feuille.includes(".talent-bulle-nom .cout-points .pt.action{background:#3f8fe0}.talent-bulle-nom .cout-points .pt.mvt{background:#e0a04a}"),'le coût en points, l’XP à cheval');}
 /* v0.577 — Variables dans les descriptions de talents : {orbes}, {desorbe}, {endu}, {vie}, {pv}, {degats}, {def}, {niveau},
    {pa}, {pm}, accents et casse ignorés. Chez un combattant, sa valeur du moment, à la couleur de sa caractéristique ;
    sans combattant, le nom de la variable, souligné de points. */
@@ -3569,8 +3578,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.546 — Un rond à paliers de l'arbre : deux bulles, le palier tenu — le premier s'il n'est pas pris — puis, après une
    petite flèche, le suivant. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,palier=0}={}){")
-  &&src.includes("const bulleNoeud=(t,verrou,note)=>{const max=paliersDe(t);"),'les deux bulles d’un palier');
+ assert.ok(src.includes("const bulleNoeud=(t,verrou,note)=>{const max=paliersDe(t);"),'les deux bulles d’un palier');
  assert.ok(feuille.includes('.bulles-paliers{display:flex;')&&feuille.includes('.bulles-paliers>.palier-suite{'),'la flèche');}
 /* v0.545 — Les paliers, pour les améliorations et les bonus seuls : « Paliers » coché, deux, et trois si le troisième a
    un coût, un texte ou des réglages ; les talents restent à un palier. Billes sous le petit rond, montée au clic. */

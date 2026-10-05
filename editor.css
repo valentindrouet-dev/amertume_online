@@ -1847,7 +1847,12 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .arbre-plan>.arbre-noeud>.arbre-cout{position:absolute;left:50%;top:100%;transform:translate(-50%,-55%);z-index:3;pointer-events:none;opacity:0;transition:opacity .1s;
  padding:1px 6px;border-radius:9px;border:1px solid var(--line-strong);background:var(--panel);color:var(--ink);font:700 10px/1.3 system-ui;white-space:nowrap;box-shadow:0 1px 3px #0003}
 .arbre-plan>.arbre-noeud.petit>.arbre-cout{font-size:9px;padding:0 5px}
-.talent-bulle-nom .cout-xp{margin-left:auto;padding:1px 7px;border-radius:9px;border:1px solid #00000033;background:#fffaf0;font:700 11px/1.3 system-ui;color:#5a4a36;align-self:center}
+.talent-bulle-nom .cout-xp{position:absolute;top:0;right:12px;transform:translateY(-50%);margin:0;padding:1px 7px;border-radius:9px;border:1px solid #00000033;background:#fffaf0;font:700 11px/1.3 system-ui;color:#5a4a36;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.talent-detail:has(>.talent-bulle-nom .cout-xp){position:relative}
+/* Le coût à la table : des points bleus pour les PA, ocre pour les PM, en haut à droite de la bulle. */
+.talent-bulle-nom .cout-points{margin-left:auto;display:inline-flex;gap:3px;align-self:center;flex:none;padding-left:6px}
+.talent-bulle-nom .cout-points .pt{display:block;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 -1px 0 rgba(0,0,0,.22),0 0 0 1.5px rgba(255,255,255,.7)}
+.talent-bulle-nom .cout-points .pt.action{background:#3f8fe0}.talent-bulle-nom .cout-points .pt.mvt{background:#e0a04a}
 .talent-bulle-nom .cout-xp.acquis{background:#dff0da;border-color:#3f8a4a;color:#2e6b38}
 .talent-bulle-nom .cout-xp.trop-cher{background:#f8d9d4;border-color:#b8352f;color:#a02c20}
 /* L'en-tête de l'arbre : le total à gauche, « Modifier en masse » contre « Vue joueur ». */
