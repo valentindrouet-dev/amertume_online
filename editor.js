@@ -3837,6 +3837,13 @@ arbresXp.onclick=()=>{xpVisible=!xpVisible;try{localStorage.setItem('amertume-xp
 const arbresTotal=document.createElement('span');arbresTotal.id='arbres-total';arbresTotal.className='arbres-total';
 arbresDialog.querySelector('.dialog-head').insertBefore(arbresTotal,arbresMasse);
 // Tout ce que porte l'arbre d'une classe : ses talents dans l'ordre, chacun suivi de ses petits ronds.
+/* Le niveau qu'il faut pour atteindre chaque talent d'une classe : depuis les départs, au niveau 1, le long des lignes ;
+   une ligne marquée d'un niveau ne se passe qu'à ce niveau. Le chemin le moins exigeant fait foi. */
+function niveauxRequis(classe){const req=new Map();
+ colonnesArbre(classe).forEach(col=>{const L=col.liste;departsDe(L).forEach(id=>req.set(id,1));
+  for(let bouge=true;bouge;){bouge=false;L.forEach(u=>{if(!req.has(u.id))return;voisinsDe(L,u).forEach(v=>{
+   const n=Math.max(req.get(u.id),niveauLien(u,v)||1);if(!req.has(v.id)||n<req.get(v.id)){req.set(v.id,n);bouge=true}})})}});
+ return req}
 function talentsDeLArbre(classe){const ordreDir=Object.keys(DIRS);
  const petitsDuTalent=t=>tousTalents().filter(p=>{const c=lisChemin(p);return c&&c.de===t.id}).sort((x,y)=>ordreDir.indexOf(lisChemin(x).dir)-ordreDir.indexOf(lisChemin(y).dir)||lisChemin(x).rang-lisChemin(y).rang);
  return colonnesArbre(classe).flatMap(c=>c.liste).flatMap(t=>[t,...petitsDuTalent(t)]).filter(t=>t&&!estVide(t))}
@@ -4122,6 +4129,15 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   groupes[0].sort((x,y)=>CARACS.indexOf(x.p.carac)-CARACS.indexOf(y.p.carac));groupes[2].sort((x,y)=>nomComp('comp:'+x.p.comp).localeCompare(nomComp('comp:'+y.p.comp),'fr'));
   arbresTotal.replaceChildren();arbresTotal.hidden=!total&&!somme.size;
   if(total)arbresTotal.append(Object.assign(document.createElement('span'),{textContent:'Total '+total.toLocaleString('fr-FR')+' XP'}));
+  /* Le total par tranches de niveau, d'après les niveaux marqués sur les lignes : ce qu'un aventurier peut dépenser
+     avant de passer chacun d'eux. Un petit rond compte avec son talent. Au MJ seul, comme le total. */
+  if(total){const req=niveauxRequis(classe),niv=t=>{const d=lisChemin(t)?departChemin(t):t;return d&&req.get(d.id)||1};
+   const seuils=[...new Set([1,...[...req.values()]])].sort((x,y)=>x-y),parTranche=new Map();
+   liste.forEach(t=>{const n=niv(t),s=seuils.filter(x=>x<=n).pop();let c=0;for(let k=1;k<=paliersDe(t);k++)c+=coutPalier(t,k);parTranche.set(s,(parTranche.get(s)||0)+c)});
+   if(seuils.length>1){const l=document.createElement('span');l.className='arbres-tranches';
+    seuils.forEach((s,i)=>{const fin=seuils[i+1],e=document.createElement('span');
+     e.textContent='Niv. '+(fin===undefined?s+'+':fin-1>s?s+'-'+(fin-1):s)+' : '+(parTranche.get(s)||0).toLocaleString('fr-FR')+' XP';l.append(e)});
+    arbresTotal.append(l)}}
   // En icônes chiffrées, une ligne par groupe : le nom paraît en bulle, au survol.
   if(somme.size){const l=document.createElement('span');l.className='arbres-bonus';
    groupes.filter(g=>g.length).forEach(g=>{const ligne=document.createElement('span');ligne.className='arbres-bonus-ligne';l.append(ligne);

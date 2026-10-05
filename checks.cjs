@@ -3367,6 +3367,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.569 — Au MJ, sous le total d'XP d'un arbre de classe : le total par tranches de niveau, d'après les niveaux marqués
+   sur les lignes ; un petit rond compte avec son talent. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes('function niveauxRequis(classe){')&&src.includes("const n=Math.max(req.get(u.id),niveauLien(u,v)||1);")
+  &&src.includes("e.textContent='Niv. '+(fin===undefined?s+'+':fin-1>s?s+'-'+(fin-1):s)+' : '"),'le total par tranches de niveau');}
 /* v0.568 — Un bonus tiré vers un petit rond vide (place libre, case vide, remplissage) y pose une copie de lui-même ;
    l'original reste. Sur un rond occupé, les deux échangent leurs places, comme avant. */
 {const src=fs.readFileSync('editor.js','utf8');
