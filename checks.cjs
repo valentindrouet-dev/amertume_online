@@ -3360,6 +3360,22 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.601 — Aucun bord de mur ne se devine plus dans le noir, quelle que soit la façon dont l'obscurité a été posée. Pour
+   l'affichage seul, la pierre et les portes closes vont à l'espace libre le plus proche et noircissent s'il est noir ; un
+   mince filet clair contre la pierre ou entre deux obscurités compte pour noir. Le calque du noir peint cette grille avec
+   l'obscurité ; la règle, elle, ne connaît que l'obscurité dessinée. */
+{const carto=fs.readFileSync('maps.js','utf8');
+ const m={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[45,10],[45,90],[10,90]],[[60,10],[90,10],[90,90],[60,90]]]}],doors:[],
+  obscurite:[{anneaux:[[[10.6,10.6],[44.4,10.6],[44.4,89.4],[10.6,89.4]]]}]};
+ const p=C.noirDeLaPierre(m,320),at=(x,y)=>p.data[Math.floor(y/100*p.rows)*p.cols+Math.floor(x/100*p.cols)];
+ assert.deepEqual([at(30,50),at(10.3,50),at(47,50),at(5,50)],[1,1,1,1],'la salle noire, son filet, et la pierre qui la borde');
+ assert.deepEqual([at(58,50),at(75,50),at(95,50)],[0,0,0],'la pierre qui donne sur la salle claire, et la salle claire, restent');
+ assert.ok(!C.dansObscurite(m,[10.3,50])&&!C.dansObscurite(m,[47,50]),'la règle ne connaît que l’obscurité dessinée');
+ // Une porte ouverte est de l'espace libre ; close, elle est de la pierre.
+ const d={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[45,10],[45,90],[10,90]],[[55,10],[90,10],[90,90],[55,90]],[[44,45],[56,45],[56,55],[44,55]]]}],doors:[{x:45,y:46,w:10,h:8,open:true}],obscurite:[]};
+ assert.ok(C.noirDeLaPierre(d,200).data.every(v=>!v),'sans obscurité, rien');
+ assert.ok(carto.includes(" const c1=m.id+'|'+W+'x'+H+'|'+obscuriteKey(m)+'|'+geometryKey(m),f=toileCache(nuitFondue,W,H);")
+  &&carto.includes("  {const pierre=noirDeLaPierre(m),g=document.createElement('canvas');g.width=pierre.cols;g.height=pierre.rows;"),'le calque du noir la peint');}
 /* v0.600 — Ce qu'un œil voit dans le noir se fond vers son bord, du même dégradé qu'une lumière. Une lumière qui contient
    des objets montre l'icône du premier qui a un logo, sinon le signe de sa famille ; la flamme reste aux lumières vides.
    Le MJ choisit, avec les autres icônes, celle de l'Attaque d'un aventurier sans arme en main. */

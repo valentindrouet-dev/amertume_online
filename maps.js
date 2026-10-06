@@ -197,12 +197,16 @@ function toileCache(o,W,H){if(!o.cv)o.cv=document.createElement('canvas');if(o.c
 // La force d'une lumière, du cœur au bord, en arrêts de dégradé : pleine, un peu moins, puis le noir sur le dernier demi-mètre.
 function lumiereDegrade(r,demi){if(!(r>demi))return [[0,1],[.5,.55],[1,0]];const b=(r-demi)/r,q=(r-demi/2)/r;return [[0,1],[b*.5,.88],[b,.66],[q,.3],[1,0]]}
 function calqueNuit(W,H){const m=currentMap(),size=mapSize();if(!m||!size.width)return null;const k=W/size.width;
- const c1=m.id+'|'+W+'x'+H+'|'+obscuriteKey(m),f=toileCache(nuitFondue,W,H);
+ const c1=m.id+'|'+W+'x'+H+'|'+obscuriteKey(m)+'|'+geometryKey(m),f=toileCache(nuitFondue,W,H);
  if(nuitFondue.cle!==c1){nuitFondue.cle=c1;
   // L'obscurité nette, sur une toile élargie dont les marges prolongent ses bords : le flou ne pâlit pas le tour de la carte.
   // Du même noir que l'inexploré : rien ne distingue une zone obscure d'un mur jamais vu.
   const net=document.createElement('canvas');net.width=W;net.height=H;const nc=net.getContext('2d');nc.fillStyle='rgb(6,9,11)';
   obscuriteDe(m).forEach(p=>{nc.beginPath();p.anneaux.forEach(r=>{r.forEach((q,i)=>nc[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));nc.closePath()});nc.fill('evenodd')});
+  // La pierre et les filets clairs qui touchent le noir, de la même encre, d'une grille fine étirée : aucun bord de mur ne se devine.
+  {const pierre=noirDeLaPierre(m),g=document.createElement('canvas');g.width=pierre.cols;g.height=pierre.rows;const gx=g.getContext('2d'),im=gx.createImageData(pierre.cols,pierre.rows);
+   pierre.data.forEach((v,k)=>{if(v){const o=k*4;im.data[o]=6;im.data[o+1]=9;im.data[o+2]=11;im.data[o+3]=255}});gx.putImageData(im,0,0);
+   nc.imageSmoothingEnabled=true;nc.drawImage(g,0,0,W,H)}
   const flou=Math.max(.5,tokenPx()*.2*k),e=Math.ceil(flou*3)+1,large=document.createElement('canvas');large.width=W+2*e;large.height=H+2*e;const lc=large.getContext('2d');
   lc.drawImage(net,e,e);lc.drawImage(net,0,0,1,H,0,e,e,H);lc.drawImage(net,W-1,0,1,H,W+e,e,e,H);lc.drawImage(net,0,0,W,1,e,0,W,e);lc.drawImage(net,0,H-1,W,1,e,H+e,W,e);
   lc.drawImage(net,0,0,1,1,0,0,e,e);lc.drawImage(net,W-1,0,1,1,W+e,0,e,e);lc.drawImage(net,0,H-1,1,1,0,H+e,e,e);lc.drawImage(net,W-1,H-1,1,1,W+e,H+e,e,e);
