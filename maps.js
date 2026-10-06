@@ -119,14 +119,22 @@ function lumiereAPortee(a,l){const size=mapSize();if(!a||!size.width)return fals
  const p=pointLibre(l,walls())||l;return inContact(a,l,size,tokenOf(a),tokenPx()*SOCLE_TAILLES.small)&&!wallsBetween(a,p,walls())}
 function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;
  const pieces=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);if(!pieces.length)return;
- pieces.forEach(it=>{if(typeof ajouterInventaire==='function')ajouterInventaire(a,it);else noteInventaire(a,it.name)});
- l.eteinte=true;
- log(nomNum(a)+' prend '+pieces.map(it=>'⟦'+it.id+'⟧').join(' ')+' : '+l.nom+' s’éteint.',{ton:'butin'});
+ // Un sac plein ne prend rien : la lumière reste où elle est.
+ const pris=pieces.filter(it=>{if(typeof ajouterInventaire==='function')return ajouterInventaire(a,it)!==false;noteInventaire(a,it.name);return true});if(!pris.length)return;
+ // Posée au sol, elle s'en va avec son objet ; une lumière de la carte s'éteint, et la carte rouverte la rallume.
+ if(l.pose){const m=currentMap(),k=m?(m.lumieres||[]).indexOf(l):-1;if(k>=0)m.lumieres.splice(k,1);log(nomNum(a)+' ramasse '+pris.map(it=>'⟦'+it.id+'⟧').join(' ')+'.',{ton:'butin'})}
+ else{l.eteinte=true;log(nomNum(a)+' prend '+pris.map(it=>'⟦'+it.id+'⟧').join(' ')+' : '+l.nom+' s’éteint.',{ton:'butin'})}
  render();saveMaps();scheduleSave()}
+/* Poser une source de lumière : l'objet qui éclaire quitte l'inventaire et reste au sol, sous l'aventurier, allumé, jusqu'à
+   ce que quelqu'un à son contact le ramasse. */
+function poserLumiere(a,o){const m=currentMap();if(!a||!o||!m||a.horsCarte||!lumiereDe(o)||!(a.inventaire||[]).includes(o.id))return;
+ retirerInventaire(a,o);if(typeof syncEquipped==='function')syncEquipped(a);m.lumieres??=[];
+ m.lumieres.push(cleanLumiere({id:crypto.randomUUID(),nom:o.name,x:a.x,y:a.y,rayon:lumiereDe(o),items:[o.id],pose:true}));
+ log(nomNum(a)+' pose ⟦'+o.id+'⟧.',{ton:'butin'});render();saveMaps();scheduleSave()}
 function menuLumiereMJ(l,x,y){fermeMenuObjet();const m=document.createElement('div');m.className='menu-objet';m.setAttribute('role','menu');
  const t=document.createElement('p');t.className='menu-objet-titre';t.textContent=l.nom||'Lumière';m.append(t);
  const bouton=(txt,fn)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.textContent=txt;b.onclick=()=>{fermeMenuObjet();fn()};m.append(b)};
- bouton(l.eteinte?'Rallumer':'Éteindre',()=>{if(l.eteinte)delete l.eteinte;else l.eteinte=true;log(l.nom+(l.eteinte?' s’éteint.':' se rallume.'),{ton:'carte'});render();saveMaps();scheduleSave()});
+ if(!l.pose)bouton(l.eteinte?'Rallumer':'Éteindre',()=>{if(l.eteinte)delete l.eteinte;else l.eteinte=true;log(l.nom+(l.eteinte?' s’éteint.':' se rallume.'),{ton:'carte'});render();saveMaps();scheduleSave()});
  const h=(l.items||[]).length&&!l.eteinte?heroLePlusProche(l):null;if(h)bouton('Donner à '+nomNum(h)+', le plus proche',()=>recupererLumiere(h,l));
  document.body.append(m);const r=m.getBoundingClientRect();
  m.style.left=Math.max(6,Math.min(x+8,innerWidth-r.width-6))+'px';m.style.top=Math.max(6,Math.min(y+8,innerHeight-r.height-6))+'px';menuObjet=m;
@@ -178,7 +186,8 @@ function calqueNuit(W,H){const m=currentMap(),size=mapSize();if(!m||!size.width)
  const c1=m.id+'|'+W+'x'+H+'|'+obscuriteKey(m),f=toileCache(nuitFondue,W,H);
  if(nuitFondue.cle!==c1){nuitFondue.cle=c1;
   // L'obscurité nette, sur une toile élargie dont les marges prolongent ses bords : le flou ne pâlit pas le tour de la carte.
-  const net=document.createElement('canvas');net.width=W;net.height=H;const nc=net.getContext('2d');nc.fillStyle='#000';
+  // Du même noir que l'inexploré : rien ne distingue une zone obscure d'un mur jamais vu.
+  const net=document.createElement('canvas');net.width=W;net.height=H;const nc=net.getContext('2d');nc.fillStyle='rgb(6,9,11)';
   obscuriteDe(m).forEach(p=>{nc.beginPath();p.anneaux.forEach(r=>{r.forEach((q,i)=>nc[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));nc.closePath()});nc.fill('evenodd')});
   const flou=Math.max(.5,tokenPx()*.2*k),e=Math.ceil(flou*3)+1,large=document.createElement('canvas');large.width=W+2*e;large.height=H+2*e;const lc=large.getContext('2d');
   lc.drawImage(net,e,e);lc.drawImage(net,0,0,1,H,0,e,e,H);lc.drawImage(net,W-1,0,1,H,W+e,e,e,H);lc.drawImage(net,0,0,W,1,e,0,W,e);lc.drawImage(net,0,H-1,W,1,e,H+e,W,e);

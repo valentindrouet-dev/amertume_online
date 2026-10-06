@@ -3360,6 +3360,28 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.596 — Le noir se peint du même noir que l'inexploré : rien ne distingue une zone obscure d'un mur jamais vu. Un
+   aventurier qui porte ce qui éclaire peut le poser au sol, d'un petit rond à l'icône de l'objet : l'objet quitte
+   l'inventaire et éclaire où il est, jusqu'à ce qu'on le ramasse au contact. Posé, il voyage en ligne à la suite des
+   lumières de la carte, sans clé de plus. La fiche de la table montre ses objets en petits carrés, comme le sac. */
+{const page=fs.readFileSync('index.html','utf8'),carto=fs.readFileSync('maps.js','utf8'),feuille=fs.readFileSync('editor.css','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ const items=[{id:'t',name:'Torche',category:'objet',lumiere:5},{id:'l',name:'Lanterne',category:'weapon',hands:1,lumiere:8},{id:'x',name:'Caillou',category:'objet'}];
+ assert.deepEqual(C.objetsLumineux({hero:true,inventaire:['t','t','l','x'],weapons:[]},items).map(o=>o.id),['t'],'la torche une fois, la lanterne rangée non');
+ assert.deepEqual(C.objetsLumineux({hero:true,inventaire:['t','l'],weapons:['l']},items).map(o=>o.id),['t','l']);
+ assert.equal(C.lumierePortee({hero:true,inventaire:['t','l'],weapons:['l']},items),8);assert.deepEqual(C.objetsLumineux(null,items),[]);
+ assert.equal(C.cleanLumiere({id:'a',nom:'Torche',x:1,y:2,rayon:4,items:['t'],pose:true}).pose,true);assert.ok(!('pose' in C.cleanLumiere({pose:'oui'})));
+ assert.ok(carto.includes("nc.fillStyle='rgb(6,9,11)';")&&carto.includes("ctx.fillStyle='rgba(6,9,11,'+(inconnu/255).toFixed(3)+')';"),'le même noir que l’inexploré');
+ assert.ok(carto.includes("function poserLumiere(a,o){const m=currentMap();if(!a||!o||!m||a.horsCarte||!lumiereDe(o)||!(a.inventaire||[]).includes(o.id))return;")
+  &&carto.includes(" m.lumieres.push(cleanLumiere({id:crypto.randomUUID(),nom:o.name,x:a.x,y:a.y,rayon:lumiereDe(o),items:[o.id],pose:true}));")
+  &&carto.includes(" if(l.pose){const m=currentMap(),k=m?(m.lumieres||[]).indexOf(l):-1;if(k>=0)m.lumieres.splice(k,1);")
+  &&carto.includes("ajouterInventaire(a,it)!==false")&&carto.includes(" if(!l.pose)bouton(l.eteinte?'Rallumer':'Éteindre',"),'poser, ramasser');
+ assert.ok(page.includes("geste('Poser la Source de lumière',ic||(typeof glyphePiece==='function'?glyphePiece(itemColumn(o)):'◈'),'',true,()=>poserLumiere(a,o),'btn-action',null,"),'le rond Poser la Source de lumière');
+ assert.ok(vivant.includes("function lumiereAuSol(l){return {n:l.nom,o:(l.items||[])[0]||'',p:l.id,r:l.rayon,x:l.x,y:l.y}}")
+  &&vivant.includes("...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol)]:[];")
+  &&vivant.includes("if(cleIci!==cleRecue&&!(envoyees&&cle(envoyees)===cleRecue)){const avant=new Map(ici.map(l=>[l.id,l]));")
+  &&!/'(posees|auSol|lumieresPosees)'/.test(fs.readFileSync('firestore-online.rules','utf8')),'au sol, en ligne, sans clé nouvelle');
+ assert.ok(feuille.includes("#gear .cat-pill.gear-carre,#gear .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:28px;min-width:28px;height:28px;min-height:28px;")
+  &&feuille.includes("#gear .cat-pill.gear-carre .exemplaires{position:absolute;top:auto;right:-6px;bottom:-6px;"),'les objets de la fiche, comme le sac');}
 /* v0.595 — Le noir n'est plus le brouillard de vue. Il se peint à part, par-dessus : plein chez un joueur, sauf ce que
    chaque œil voit dans le noir ; un voile chez le MJ. Il se referme derrière l'aventurier : la mémoire ne retient, dans le
    noir, que les cases éclairées. Son bord se fond sur un demi-mètre ; une lumière s'assombrit peu à peu de son cœur à son
@@ -3455,11 +3477,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&carto.includes("g.addColorStop(0,'rgba(255,226,176,.30)');g.addColorStop(.55,'rgba(255,216,156,.16)');g.addColorStop(1,'rgba(255,206,136,0)');")
   &&carto.includes("function clesLumieres(){return sourcesLumiere().map(l=>l.x.toFixed(2)+','+l.y.toFixed(2)+','+Math.round(l.rayon)).join(';')}")
   &&feuille.includes("#halos{position:absolute;")&&feuille.includes(".token.lumiere{background:#fff3d6;border-color:#d9a85a;"),'les halos');
- assert.ok(carto.includes("function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;")&&carto.includes(" l.eteinte=true;\n log(nomNum(a)+' prend '+pieces.map(it=>'⟦'+it.id+'⟧').join(' ')+' : '+l.nom+' s’éteint.',{ton:'butin'});")
+ assert.ok(carto.includes("function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;")&&carto.includes(" else{l.eteinte=true;log(nomNum(a)+' prend '+pris.map(it=>'⟦'+it.id+'⟧').join(' ')+' : '+l.nom+' s’éteint.',{ton:'butin'})}")
   &&carto.includes("bouton(l.eteinte?'Rallumer':'Éteindre',()=>{if(l.eteinte)delete l.eteinte;else l.eteinte=true;")
   &&carto.includes(" vue.querySelectorAll('.token.lumiere').forEach(t=>t.remove());renderHalos();if(!m)return;")&&carto.includes(" renderPortes();renderCoffres();renderObjets();renderLumieres()}")
   &&carto.includes("(m.objets||[]).forEach(o=>{delete o.pris});(m.lumieres||[]).forEach(l=>{delete l.eteinte});"),'la prise, le menu, la carte rouverte');
- assert.ok(vivant.includes("...(m.lumieres||[]).map(l=>l.eteinte?1:0)")&&vivant.includes("const n3=n2+(m.coffres||[]).length;(m.lumieres||[]).forEach((l,k)=>{const v=d.doors[n3+k];if(v===1)l.eteinte=true;else if(v===0)delete l.eteinte})}"),'éteinte, en ligne');}
+ assert.ok(vivant.includes("...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.eteinte?1:0),")&&vivant.includes("fixes.forEach((l,k)=>{const v=d.doors[n3+k];if(v===1)l.eteinte=true;else if(v===0)delete l.eteinte});"),'éteinte, en ligne');}
 /* v0.591 — L'obscurité et la vision dans le noir. Sur une carte, une seconde matière, dessinée au rectangle, au contour libre,
    au remplissage d'une pièce, effacée à la gomme : dans le noir, on ne voit que sa zone de contact, ce qui est éclairé, et
    jusqu'où porte sa vision dans le noir ; les alliés hors de vue s'effacent chez les joueurs, et on ne vise que ce qu'on voit.

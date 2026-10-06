@@ -64,6 +64,8 @@ function ciblesIds(a){const brut=Array.isArray(a.targets)?a.targets
   :(a.target===null||a.target===undefined?[]:[a.target]);
  return brut.map(j=>actors[j]&&actors[j].id).filter(Boolean)}
 function indicesDesCibles(ids){return (Array.isArray(ids)?ids:[]).map(id=>actors.findIndex(o=>o&&o.id===id)).filter(j=>j>=0)}
+// Une lumière posée au sol, telle qu'elle voyage : ses clés dans l'ordre où le document les rend.
+function lumiereAuSol(l){return {n:l.nom,o:(l.items||[])[0]||'',p:l.id,r:l.rayon,x:l.x,y:l.y}}
 function etatVivant(){const out={actors:{}};
  actors.forEach(a=>{if(!a||!a.id)return;const e={};
   CHAMPS_VIVANTS.forEach(k=>{if(a[k]!==undefined)e[k]=a[k]});
@@ -80,8 +82,8 @@ function etatVivant(){const out={actors:{}};
  // Puis les coffres, en drapeaux : 1 révélé, 2 déverrouillé, 4 désamorcé, 8 ouvert, 16 tenté verrouillé.
  out.doors=m?[...(m.doors||[]).map(d=>d.decouvert?(d.open?3:2):!!d.open),...(m.objets||[]).map(o=>o.pris?2:o.visible?1:0),
   ...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0)|(c.tente?16:0)),
-  // Puis les lumières : 1 éteinte, 0 allumée.
-  ...(m.lumieres||[]).map(l=>l.eteinte?1:0)]:[];
+  // Puis les lumières de la carte : 1 éteinte, 0 allumée ; enfin, chaque lumière posée au sol, en entier.
+  ...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.eteinte?1:0),...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol)]:[];
  out.fogOff=!!(m&&m.fogOff);
  out.fogReset=typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false};
  /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
@@ -223,7 +225,14 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     if(typeof v==='boolean'){o.visible=v;delete o.pris}else if(v===0||v===1||v===2){o.visible=v>=1;if(v===2)o.pris=true;else delete o.pris}});
    const n2=n+(m.objets||[]).length;(m.coffres||[]).forEach((c,k)=>{const v=d.doors[n2+k];if(!Number.isInteger(v)||v<0||v>31)return;
     [['revele',1],['deverrouille',2],['desamorce',4],['ouvert',8],['tente',16]].forEach(([cle,b])=>{if(v&b)c[cle]=true;else delete c[cle]})});
-   const n3=n2+(m.coffres||[]).length;(m.lumieres||[]).forEach((l,k)=>{const v=d.doors[n3+k];if(v===1)l.eteinte=true;else if(v===0)delete l.eteinte})}
+   const n3=n2+(m.coffres||[]).length,fixes=(m.lumieres||[]).filter(l=>l&&!l.pose);fixes.forEach((l,k)=>{const v=d.doors[n3+k];if(v===1)l.eteinte=true;else if(v===0)delete l.eteinte});
+   /* Les lumières posées au sol arrivent en entier, à la suite. Ce qui revient tel qu'on l'a envoyé n'apprend rien : une
+      lumière posée ou ramassée ici depuis est plus récente, et reste ; sinon, le sol est celui du document. */
+   const auSol=x=>(Array.isArray(x)?x:[]).filter(v=>v&&typeof v==='object'&&typeof v.p==='string'),cle=l=>l.map(v=>[v.p,v.n,v.x,v.y,v.r,v.o].join('|')).join(';');
+   const recues=auSol(d.doors),ici=(m.lumieres||[]).filter(l=>l&&l.pose),cleIci=cle(ici.map(lumiereAuSol)),cleRecue=cle(recues);
+   const envoyees=dernierPousse?auSol(dernierPousse.doors):null;
+   if(cleIci!==cleRecue&&!(envoyees&&cle(envoyees)===cleRecue)){const avant=new Map(ici.map(l=>[l.id,l]));
+    m.lumieres=[...fixes,...recues.map(v=>Object.assign(avant.get(v.p)||{},cleanLumiere({id:v.p,nom:v.n,x:v.x,y:v.y,rayon:v.r,items:v.o?[v.o]:[],pose:true})))]}}
   if(selected!==null&&!actors[selected])selected=null;
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
   if(typeof marked!=='undefined')marked=new Set([...marked].filter(id=>actors.some(a=>a.id===id)));

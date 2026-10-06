@@ -1265,6 +1265,13 @@ body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-
 /* Sur les fiches, les noms sous l'inventaire et les talents ne paraissent que sur la page des
    Aventuriers, et seulement quand « Noms » est allumé ; ailleurs, l'image seule. */
 .sac-carte{display:flex;flex-direction:column;align-items:center;gap:3px}
+/* La fiche de la table : ses objets en petits carrés, comme le sac de l'onglet Aventuriers, le nombre en même pastille. */
+#gear .cat-pill.gear-carre,#gear .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:28px;min-width:28px;height:28px;min-height:28px;padding:2px;gap:0;border-radius:8px;justify-content:center;display:inline-flex;flex-direction:column;align-items:center}
+#gear .cat-pill.gear-carre .logo-equip,#gear .cat-pill.gear-carre .glyphe{width:72%;height:72%;margin:0;flex:none}
+#gear .cat-pill.gear-carre .glyphe{display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1}
+#gear .cat-pill.gear-carre .gear-bas,#gear .cat-pill.gear-carre .pips,#gear .cat-pill.gear-carre .marque-porte{display:none}
+#gear .cat-pill.gear-carre .exemplaires{position:absolute;top:auto;right:-6px;bottom:-6px;left:auto;width:auto;min-width:0;height:auto;min-height:0;padding:0 3px;
+ font:700 9px/13px system-ui;color:var(--ink);border-radius:6px;background:var(--panel);border:1px solid var(--line)}
 /* Le sac en trois lignes — équipement, objets, ressources et restes — de petites icônes seules :
    ni dés, ni DEF, ni nom ; le nombre d'exemplaires reste, la bulle au survol dit le reste. */
 .sac .sac-ligne{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:5px;min-height:0}
