@@ -3360,6 +3360,23 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.595 — Le noir n'est plus le brouillard de vue. Il se peint à part, par-dessus : plein chez un joueur, sauf ce que
+   chaque œil voit dans le noir ; un voile chez le MJ. Il se referme derrière l'aventurier : la mémoire ne retient, dans le
+   noir, que les cases éclairées. Son bord se fond sur un demi-mètre ; une lumière s'assombrit peu à peu de son cœur à son
+   bord, puis tombe au noir sur son dernier demi-mètre. Le brouillard, le noir et les halos ne se repeignent plus qu'au
+   changement. L'infobulle d'un objet qui éclaire dit « Lumière 3m ». */
+{const carto=fs.readFileSync('maps.js','utf8'),src=fs.readFileSync('editor.js','utf8');
+ const ctx={};vm.createContext(ctx);vm.runInContext(carto.slice(carto.indexOf('function lumiereDegrade('),carto.indexOf('function calqueNuit(')),ctx);
+ const g=ctx.lumiereDegrade(132,22);assert.equal(g[0].join(),'0,1');assert.equal(g[g.length-1].join(),'1,0');
+ assert.ok(g.every((s,i)=>!i||(s[0]>g[i-1][0]&&s[1]<g[i-1][1])),'un dégradé qui ne fait que s’assombrir');
+ assert.ok(Math.abs(g[2][0]-(132-22)/132)<1e-9&&g[2][1]>.5,'encore clair à un demi-mètre du bord');assert.equal(ctx.lumiereDegrade(10,22).length,3,'une toute petite lumière');
+ assert.ok(carto.includes(" const peinte=[m.id,fogCalcul,fogMemTick,W,H,view,owner,oeilJoueur(),nuit?nuitPercee.cle:''].join('|');\n if(cv._peinte===peinte)return;cv._peinte=peinte;")
+  &&carto.includes(" fogKey=cle;fogCalcul++;")&&carto.includes("c.putImageData(img,0,0);fogDirty=false;fogMemTick++}")
+  &&carto.includes("+geometryKey(m);if(cv._peinte===cle)return;cv._peinte=cle;"),'rien ne se repeint sans changement');
+ assert.ok(carto.includes("let nuitFondue={cle:'',cv:null},nuitPercee={cle:'',cv:null},nuitVue={cle:'',cv:null};")
+  &&carto.includes("fc.filter='blur('+flou.toFixed(2)+'px)';fc.drawImage(large,-e,-e);fc.filter='none'}")
+  &&carto.includes("const nuit=carteObscure()?calqueNuit(NW,NH):null;")&&!/const lum=document\.createElement\('canvas'\)/.test(carto),'le noir à part, fondu, en cache');
+ assert.ok(src.includes(" if(lumiereDe(o))ligne('Lumière '+String(lumiereDe(o)).replace('.',',')+'m','gear-lumiere');"),'Lumière 3m dans l’infobulle');}
 /* v0.594 — Remplir d'obscurité ne laisse plus de liseré clair le long des murs : deux rangs de cases de mur ou de porte
    qui touchent la zone s'y ajoutent, sans jamais passer dans une autre zone. Le bord d'une lumière se fond sur un
    demi-mètre de part et d'autre de son rayon ; la règle reste au rayon. La validation liste d'un coup toutes les
@@ -3372,8 +3389,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.equal(rates,0,'aucun liseré clair contre les murs');
  const f={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[49.5,10],[49.5,90],[10,90]],[[50.5,10],[90,10],[90,90],[50.5,90]]]}],doors:[]};
  C.remplitObscurite(f,[30,50],320);assert.ok(C.dansObscurite(f,[49.4,50])&&!C.dansObscurite(f,[50.7,50]),'le noir mord le mur, pas la pièce voisine');
- assert.ok(carto.includes("  const fondu=tokenPx()*.25;")&&carto.includes("g=lc.createRadialGradient(cx,cy,Math.max(0,l.rayon-fondu)*k,cx,cy,(l.rayon+fondu)*k);")
-  &&carto.includes("[[0,1],[.2,.93],[.5,.5],[.8,.07],[1,0]].forEach(([o,v])=>g.addColorStop(o,'rgba(255,255,255,'+v+')'));"),'le fondu des lumières');
+ assert.ok(carto.includes("function calqueNuit(W,H){")&&carto.includes("lumiereDegrade(l.rayon,demi).forEach(([o,v])=>g.addColorStop(o,'rgba(0,0,0,'+v+')'));"),'le fondu des lumières');
  assert.ok(outil.includes("function chainesAbsentes(){")&&outil.includes("if(refaire)break;if(f==='checks.cjs')chainesAbsentes();process.exit(1)}"),'toutes les chaînes absentes d’un coup');}
 /* v0.593 — Remplir d'obscurité va par zone : celle que découpent les murs, les portes et les séparations, et que
    réunissent les regroupements ; la case d'une séparation qui touche la zone en fait partie, et dans une miette il inonde
@@ -3476,8 +3492,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(carto.includes("function rayonVision(a){const base=contactRadius(tokenOf(a));")&&carto.includes(" if(!a.hero)return a.orbeStatique||a.nyctalope===false?base:Infinity;")
   &&carto.includes("function voitSocle(o,b){")&&carto.includes("function voitPoint(o,x,y){")&&carto.includes("function eclaireA(x,y){")&&carto.includes("function dansLeNoir(a){return !!a&&carteObscure()&&!eclaireA(a.x,a.y)}")
   &&carto.includes("return visionInPixels().some((p,k)=>polyTouchesDisc(p,c,r)&&(!yeux[k]||voitSocle(yeux[k],a)))}")&&carto.includes("return fogTroupePx.some((p,k)=>polyTouchesDisc(p,c,r)&&(!yeux[k]||voitSocle(yeux[k],a)))}")
-  &&carto.includes("  if(!voitPoint(o.qui,x,y))return false;")&&carto.includes("neuf+=fillPolygonGridSi(fogSeen,d.w,d.h,p,(i,j)=>{if(M&&!aveugle&&M.data[j*d.w+i]===1)return true;")
-  &&carto.includes("lc.fillStyle='#fff';lc.fillRect(0,0,W,H);lc.globalCompositeOperation='destination-out';")&&carto.includes(" if(!oeilJoueur()&&carteObscure()){ctx.fillStyle='rgba(2,4,8,.5)';"),'la vision dans le noir, et son rendu');
+  &&carto.includes("  if(!voitPoint(o.qui,x,y))return false;")&&carto.includes("neuf+=fillPolygonGridSi(fogSeen,d.w,d.h,p,(i,j)=>{if(M&&M.data[j*d.w+i]!==1)return false;if(!aveugle)return true;")
+  &&carto.includes("  ctx.save();trace(ctx,poly);ctx.clip();ctx.beginPath();ctx.arc(o.x/100*W,o.y/100*H,rayonVision(o)*k,0,Math.PI*2);ctx.fill();ctx.restore()});")&&carto.includes("  ctx.globalAlpha=oeilJoueur()?1:.5;ctx.imageSmoothingEnabled=true;ctx.drawImage(src,0,0,W,H);ctx.globalAlpha=1}}"),'la vision dans le noir, et son rendu');
  assert.ok(page.includes("if(typeof voitSocle==='function'&&!voitSocle(a,b))return {ok:false,ranged:true,text:'cible dans le noir'};")
   &&page.includes(" ||(a.hero&&view!=='mj'&&owner!==i&&typeof carteObscure==='function'&&carteObscure()&&typeof partySees==='function'&&!partySees(a))}")
   &&page.includes(" if(blinded(a)&&loin&&!mapSize().width)return 'Aveugle : ne voit rien au-delà de sa zone de contact.';")

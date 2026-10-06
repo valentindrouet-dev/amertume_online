@@ -7,6 +7,7 @@ let mapDraft=null,mapTool='select',mapSel=null,mapDrag=null,cutRect=null,lasso=n
 let undoStack=[],redoStack=[],zoomC=1,panCX=0,panCY=0;
 const nsSVG='http://www.w3.org/2000/svg';
 // Grille du brouillard : des cellules carrées et fines, pour un bord net qui suit les murs.
+let fogCalcul=0,fogMemTick=0;
 const FOG_COLS=640;let fogVis=null,fogSeen=null,fogSeenSrc=null,fogKey='',fogDim=null,fogMem=null,fogDirty=true;
 function fogDims(m){const r=(m&&m.ratio)||16/9,w=FOG_COLS,h=Math.max(32,Math.round(w/r));return{w,h,n:w*h}}
 const KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coffre:'Coffre',lumiere:'Lumière',coupure:'Séparation de zones',lien:'Regroupement de zones'};
@@ -104,6 +105,7 @@ function renderHalos(){const cv=toileHalos(),m=currentMap(),size=mapSize();
  const ech=Math.min(2,window.devicePixelRatio||1),zoom=Math.max(1,typeof mapZoom==='number'&&mapZoom>0?mapZoom:1);
  const W=Math.max(1,Math.min(4096,Math.round(large*ech*zoom))),H=Math.max(1,Math.round(W*haut/large));
  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+ const cle=m.id+'|'+W+'x'+H+'|'+sources.map(l=>l.x.toFixed(2)+','+l.y.toFixed(2)+','+Math.round(l.rayon)).join(';')+'|'+geometryKey(m);if(cv._peinte===cle)return;cv._peinte=cle;
  const ctx=cv.getContext('2d'),k=W/size.width,formes=activeObstacles();ctx.clearRect(0,0,W,H);
  sources.forEach(l=>{const poly=reachPolygon(l,formes,l.rayon,size.width,size.height,96);if(poly.length<3)return;
   const cx=l.x/100*W,cy=l.y/100*H,r=l.rayon*k;ctx.save();
@@ -164,6 +166,33 @@ function masqueEclaire(){const m=currentMap();if(!m||!fogDim)return null;const d
 function eclaireA(x,y){const M=masqueEclaire();if(!M||!fogDim)return true;const d=fogDim;
  const i=Math.min(d.w-1,Math.max(0,Math.floor(x/100*d.w))),j=Math.min(d.h-1,Math.max(0,Math.floor(y/100*d.h)));
  return M.data[j*d.w+i]===1}
+/* Le noir, un calque à part du brouillard de vue : l'obscurité, au bord fondu sur un demi-mètre, percée par les lumières.
+   Une lumière éclaire pleinement en son cœur, s'assombrit peu à peu vers son bord, puis tombe au noir sur son dernier
+   demi-mètre. Deux toiles en cache : l'obscurité fondue, qui ne se refait qu'avec elle ; le noir percé, qui suit aussi les
+   lumières et les murs. */
+let nuitFondue={cle:'',cv:null},nuitPercee={cle:'',cv:null},nuitVue={cle:'',cv:null};
+function toileCache(o,W,H){if(!o.cv)o.cv=document.createElement('canvas');if(o.cv.width!==W||o.cv.height!==H){o.cv.width=W;o.cv.height=H;o.cle=''}return o.cv}
+// La force d'une lumière, du cœur au bord, en arrêts de dégradé : pleine, un peu moins, puis le noir sur le dernier demi-mètre.
+function lumiereDegrade(r,demi){if(!(r>demi))return [[0,1],[.5,.55],[1,0]];const b=(r-demi)/r,q=(r-demi/2)/r;return [[0,1],[b*.5,.88],[b,.66],[q,.3],[1,0]]}
+function calqueNuit(W,H){const m=currentMap(),size=mapSize();if(!m||!size.width)return null;const k=W/size.width;
+ const c1=m.id+'|'+W+'x'+H+'|'+obscuriteKey(m),f=toileCache(nuitFondue,W,H);
+ if(nuitFondue.cle!==c1){nuitFondue.cle=c1;
+  // L'obscurité nette, sur une toile élargie dont les marges prolongent ses bords : le flou ne pâlit pas le tour de la carte.
+  const net=document.createElement('canvas');net.width=W;net.height=H;const nc=net.getContext('2d');nc.fillStyle='#000';
+  obscuriteDe(m).forEach(p=>{nc.beginPath();p.anneaux.forEach(r=>{r.forEach((q,i)=>nc[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));nc.closePath()});nc.fill('evenodd')});
+  const flou=Math.max(.5,tokenPx()*.2*k),e=Math.ceil(flou*3)+1,large=document.createElement('canvas');large.width=W+2*e;large.height=H+2*e;const lc=large.getContext('2d');
+  lc.drawImage(net,e,e);lc.drawImage(net,0,0,1,H,0,e,e,H);lc.drawImage(net,W-1,0,1,H,W+e,e,e,H);lc.drawImage(net,0,0,W,1,e,0,W,e);lc.drawImage(net,0,H-1,W,1,e,H+e,W,e);
+  lc.drawImage(net,0,0,1,1,0,0,e,e);lc.drawImage(net,W-1,0,1,1,W+e,0,e,e);lc.drawImage(net,0,H-1,1,1,0,H+e,e,e);lc.drawImage(net,W-1,H-1,1,1,W+e,H+e,e,e);
+  const fc=f.getContext('2d');fc.clearRect(0,0,W,H);fc.filter='blur('+flou.toFixed(2)+'px)';fc.drawImage(large,-e,-e);fc.filter='none'}
+ const sources=sourcesLumiere(),c2=c1+'|'+sources.map(l=>l.x.toFixed(2)+','+l.y.toFixed(2)+','+Math.round(l.rayon)).join(';')+'|'+geometryKey(m),p=toileCache(nuitPercee,W,H);
+ if(nuitPercee.cle!==c2){nuitPercee.cle=c2;const pc=p.getContext('2d'),formes=activeObstacles(),demi=tokenPx()*.5;
+  pc.globalCompositeOperation='source-over';pc.clearRect(0,0,W,H);pc.drawImage(f,0,0);pc.globalCompositeOperation='destination-out';
+  sources.forEach(l=>{const poly=reachPolygon(l,formes,l.rayon,size.width,size.height,96);if(poly.length<3)return;
+   const cx=l.x/100*W,cy=l.y/100*H,g=pc.createRadialGradient(cx,cy,0,cx,cy,l.rayon*k);
+   lumiereDegrade(l.rayon,demi).forEach(([o,v])=>g.addColorStop(o,'rgba(0,0,0,'+v+')'));
+   pc.fillStyle=g;pc.beginPath();poly.forEach((q,i)=>pc[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));pc.closePath();pc.fill()});
+  pc.globalCompositeOperation='source-over'}
+ return p}
 // Un combattant dans le noir : sur une case obscure que rien n'éclaire.
 function dansLeNoir(a){return !!a&&carteObscure()&&!eclaireA(a.x,a.y)}
 /* Jusqu'où un combattant voit dans le noir, en pixels : sa zone de contact ; plus loin avec Vision dans le noir ; sans limite
@@ -203,7 +232,7 @@ function computeFog(){const m=currentMap();
  const cle=m.id+'|'+d.n+'|'+view+'|'+owner+'|'+troupe.map(a=>a.x.toFixed(2)+','+a.y.toFixed(2)+(obscur||blinded(a)?'/'+Math.round(rayonVision(a)):'')).join(';')
   +'|'+geometryKey(m)+(M?'|'+M.cle:'');
  if(cle===fogKey&&fogVis){emballeFog();return}
- fogKey=cle;
+ fogKey=cle;fogCalcul++;
  /* Le polygone de vision ne dépend que d'une position et de la géométrie : on le garde par
     position tant que la géométrie ne bouge pas. Quand un seul aventurier se déplace, les
     autres — et le maître du jeu voit par tous — ne coûtent plus rien. */
@@ -212,14 +241,15 @@ function computeFog(){const m=currentMap();
  const vues=visionCache.vues,vu=a=>{const k=a.x+','+a.y;
   if(!vues.has(k)){if(vues.size>=48)vues.clear();vues.set(k,visionPolygon(a,formes))}return vues.get(k)};
  // La mémoire retient ce que la troupe entière a vu, où que soit le lecteur.
- /* Dans le noir, la mémoire ne retient que ce que l'aventurier a vraiment vu : les cases éclairées, s'il n'est pas
-    aveugle, et celles de son rayon. Ce qu'il a mémorisé vaut tant que ni la lumière ni son rayon ne changent. */
+ /* Dans le noir, la mémoire ne retient que les cases éclairées : ce que l'aventurier n'a vu qu'au contact, ou par sa vision
+    dans le noir, s'y referme derrière lui. L'aveugle n'en retient que sa zone de contact. Ce qu'il a mémorisé vaut tant que
+    ni la lumière ni son rayon ne changent. */
  let neuf=0;const size=mapSize();for(const a of troupe){const p=vu(a),r=obscur||blinded(a)?rayonVision(a):Infinity;
   const cleM=(M?M.cle:'')+'|'+Math.round(r)+(blinded(a)?'b':'');
   if(fogMemorise.get(p)===cleM)continue;fogMemorise.set(p,cleM);
   if(!Number.isFinite(r)&&!M){neuf+=fillPolygonGrid(fogSeen,d.w,d.h,p);continue}
   const ax=a.x/100*size.width,ay=a.y/100*size.height,r2=r*r,aveugle=blinded(a);
-  neuf+=fillPolygonGridSi(fogSeen,d.w,d.h,p,(i,j)=>{if(M&&!aveugle&&M.data[j*d.w+i]===1)return true;
+  neuf+=fillPolygonGridSi(fogSeen,d.w,d.h,p,(i,j)=>{if(M&&M.data[j*d.w+i]!==1)return false;if(!aveugle)return true;
    const dx=(i+.5)/d.w*size.width-ax,dy=(j+.5)/d.h*size.height-ay;return dx*dx+dy*dy<=r2})}
  fogVis=fogSeers().map(vu);fogVisQui=fogSeers();fogTroupe=troupe.map(vu);fogTroupeQui=troupe;
  if(neuf){fogDirty=true;fogAEmballer=true}
@@ -323,7 +353,7 @@ function memoryCanvas(d){if(!fogSeen)return null;
   fogMem=document.createElement('canvas');fogMem.width=d.w;fogMem.height=d.h;fogDirty=true}
  if(fogDirty){const c=fogMem.getContext('2d'),img=c.createImageData(d.w,d.h);
   for(let k=0;k<d.n;k++)if(fogSeen[k]){const p=k*4;img.data[p]=img.data[p+1]=img.data[p+2]=img.data[p+3]=255}
-  c.putImageData(img,0,0);fogDirty=false}
+  c.putImageData(img,0,0);fogDirty=false;fogMemTick++}
  return fogMem}
 /* Au chargement, l'image de la carte paraissait avant que le brouillard ne la couvre :
    un instant, et toute l'aventure était lue. Un voile opaque couvre la carte tant que le
@@ -353,13 +383,19 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  const W=Math.max(1,Math.min(4096,Math.round(large*ech*zoom))),H=Math.max(1,Math.round(W*haut/large));
  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
  const ctx=cv.getContext('2d');
+ /* Rien ne se repeint tant que rien n'a bougé : ni le calcul du brouillard, ni la mémoire, ni le cadre, ni le noir. Chaque
+    rendu de la table repeignait la toile entière, flou de la mémoire compris. Le noir se calcule à la taille du cadre, sans
+    le zoom : zoomer ne le refait pas. */
+ const mem=memoryCanvas(d),NW=Math.max(1,Math.min(2048,Math.round(large*ech))),NH=Math.max(1,Math.round(NW*haut/large));
+ const nuit=carteObscure()?calqueNuit(NW,NH):null;
+ const peinte=[m.id,fogCalcul,fogMemTick,W,H,view,owner,oeilJoueur(),nuit?nuitPercee.cle:''].join('|');
+ if(cv._peinte===peinte)return;cv._peinte=peinte;
  // Le MJ garde une vue lisible ; le joueur ne voit rien de l'inexploré.
  const inconnu=oeilJoueur()?255:110,memoire=oeilJoueur()?150:40;
  ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
  ctx.clearRect(0,0,W,H);
  ctx.fillStyle='rgba(6,9,11,'+(inconnu/255).toFixed(3)+')';ctx.fillRect(0,0,W,H);
  ctx.globalCompositeOperation='destination-out';
- const mem=memoryCanvas(d);
  /* La mémoire est une grille de bits ; agrandie telle quelle jusqu'à l'écran, sa
     frontière montait en escalier — d'autant plus visible que la carte est zoomée. On
     l'interpole donc, et on la fond sur un peu moins d'une case : le bord de l'exploré
@@ -372,29 +408,12 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  ctx.globalAlpha=1;ctx.fillStyle='#000';
  const trace=(c,poly)=>{c.beginPath();c.moveTo(poly[0][0]/100*W,poly[0][1]/100*H);
   for(let i=1;i<poly.length;i++)c.lineTo(poly[i][0]/100*W,poly[i][1]/100*H);c.closePath()};
- if(!carteObscure()&&!(fogVisQui||[]).some(blinded)){for(const poly of fogVis){if(!poly||poly.length<3)continue;trace(ctx,poly);ctx.fill()}}
- else{const size=mapSize(),k=size.width?W/size.width:1;
-  /* Ce qu'un œil découvre : son polygone de vision, rogné à ce qui est éclairé — sauf s'il est aveugle — et à son rayon.
-     Chaque œil se compose à part, sur une toile de travail, puis s'ôte du brouillard. */
-  const lum=document.createElement('canvas');lum.width=W;lum.height=H;const lc=lum.getContext('2d');
-  // Opaque là où c'est éclairé, vide dans le noir : l'obscurité s'ôte de la toile, les lumières s'y reposent.
-  lc.fillStyle='#fff';lc.fillRect(0,0,W,H);lc.globalCompositeOperation='destination-out';
-  obscuriteDe(m).forEach(p=>{lc.beginPath();p.anneaux.forEach(r=>{r.forEach((q,i)=>lc[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));lc.closePath()});lc.fill('evenodd')});
-  lc.globalCompositeOperation='source-over';lc.fillStyle='#fff';const formes=activeObstacles();
-  // Le bord d'une lumière se fond sur un demi-mètre, de part et d'autre de son rayon ; la règle, elle, reste au rayon.
-  const fondu=tokenPx()*.25;
-  if(size.width)sourcesLumiere().forEach(l=>{const poly=reachPolygon(l,formes,l.rayon+fondu,size.width,size.height,96);if(poly.length<3)return;
-   const cx=l.x/100*W,cy=l.y/100*H,g=lc.createRadialGradient(cx,cy,Math.max(0,l.rayon-fondu)*k,cx,cy,(l.rayon+fondu)*k);
-   [[0,1],[.2,.93],[.5,.5],[.8,.07],[1,0]].forEach(([o,v])=>g.addColorStop(o,'rgba(255,255,255,'+v+')'));lc.fillStyle=g;trace(lc,poly);lc.fill()});
-  const oeil=document.createElement('canvas');oeil.width=W;oeil.height=H;const oc=oeil.getContext('2d');
-  fogVis.forEach((poly,n)=>{if(!poly||poly.length<3)return;const o=(fogVisQui||[])[n];
-   oc.globalCompositeOperation='source-over';oc.clearRect(0,0,W,H);oc.fillStyle='#fff';trace(oc,poly);oc.fill();
-   oc.globalCompositeOperation='destination-in';
-   const voit=document.createElement('canvas');voit.width=W;voit.height=H;const vc=voit.getContext('2d');
-   if(!o||!blinded(o))vc.drawImage(lum,0,0);
-   if(o){const r=rayonVision(o);if(Number.isFinite(r)){vc.fillStyle='#fff';vc.beginPath();vc.arc(o.x/100*W,o.y/100*H,r*k,0,Math.PI*2);vc.fill()}else{vc.fillStyle='#fff';vc.fillRect(0,0,W,H)}}
-   oc.drawImage(voit,0,0);
-   ctx.drawImage(oeil,0,0)})}
+ /* Le brouillard de vue ne sait rien du noir : chacun découvre tout son champ ; l'aveugle, sa seule zone de contact. Le noir
+    se peint ensuite, à part. */
+ const size=mapSize(),k=size.width?W/size.width:1;
+ fogVis.forEach((poly,n)=>{if(!poly||poly.length<3)return;const o=(fogVisQui||[])[n];
+  if(!o||!blinded(o)){trace(ctx,poly);ctx.fill();return}
+  ctx.save();trace(ctx,poly);ctx.clip();ctx.beginPath();ctx.arc(o.x/100*W,o.y/100*H,rayonVision(o)*k,0,Math.PI*2);ctx.fill();ctx.restore()});
  /* Une porte n'est qu'un contour : le regard s'arrête dessus, donc son rectangle n'est
     jamais éclairé et le décor y resterait noir. On lui rend la clarté de ses abords —
     pleine si on la voit, celle de la mémoire si on l'a seulement découverte. */
@@ -409,9 +428,17 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  if(retenues.length){ctx.globalAlpha=1-memoire/inconnu;retenues.forEach(rect);ctx.globalAlpha=1}
  portes.filter(doorInSight).forEach(rect);
  ctx.globalCompositeOperation='source-over';
- // Chez le MJ, l'obscurité se lit en voile sombre par-dessus tout, même ce que la troupe a sous les yeux.
- if(!oeilJoueur()&&carteObscure()){ctx.fillStyle='rgba(2,4,8,.5)';
-  obscuriteDe(m).forEach(p=>{ctx.beginPath();p.anneaux.forEach(r=>{r.forEach((q,i)=>ctx[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));ctx.closePath()});ctx.fill('evenodd')})}}
+ /* Le noir, par-dessus le brouillard. Chez un joueur, il est plein, sauf ce que chaque œil voit dans le noir, dans son champ :
+    sa zone de contact, plus loin avec Vision dans le noir. Rien ne s'en garde : il se referme derrière l'aventurier. Chez le
+    MJ, c'est un voile, que les lumières percent de même. */
+ if(nuit){let src=nuit;
+  if(oeilJoueur()){const v=toileCache(nuitVue,NW,NH),vc=v.getContext('2d'),kk=size.width?NW/size.width:1;
+   vc.globalCompositeOperation='source-over';vc.clearRect(0,0,NW,NH);vc.drawImage(nuit,0,0);vc.globalCompositeOperation='destination-out';vc.fillStyle='#000';
+   fogVis.forEach((poly,n)=>{const o=(fogVisQui||[])[n],r=o?rayonVision(o):0;if(!poly||poly.length<3||!(r>0))return;
+    vc.save();vc.beginPath();poly.forEach((q,i)=>vc[i?'lineTo':'moveTo'](q[0]/100*NW,q[1]/100*NH));vc.closePath();vc.clip();vc.beginPath();
+    if(Number.isFinite(r))vc.arc(o.x/100*NW,o.y/100*NH,r*kk,0,Math.PI*2);else vc.rect(0,0,NW,NH);vc.fill();vc.restore()});
+   vc.globalCompositeOperation='source-over';src=v}
+  ctx.globalAlpha=oeilJoueur()?1:.5;ctx.imageSmoothingEnabled=true;ctx.drawImage(src,0,0,W,H);ctx.globalAlpha=1}}
 /* Chaque remise à zéro du brouillard se compte : le numéro voyage par la table, et les
    joueurs rejouent la même remise à zéro, en silence. */
 let brouillardReset={n:0,tout:false};

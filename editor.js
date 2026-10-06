@@ -1459,6 +1459,8 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // La rareté, puis ce que la pièce confère, une ligne par bonus.
  if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));
  normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});
+ // Ce qui éclaire le dit : « Lumière 3m ».
+ if(lumiereDe(o))ligne('Lumière '+String(lumiereDe(o)).replace('.',',')+'m','gear-lumiere');
  // Au-dessus de sa valeur : les dés d'une arme, et l'état qu'elle inflige ; la DEF d'une armure qui protège.
  // À distance, la place vide d'une munition à droite des dés ; chez son porteur, son bonus de dégâts ensuite.
  if(col==='melee'||col==='ranged'){const p=document.createElement('p');p.className='gear-des';p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));
