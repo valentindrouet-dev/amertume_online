@@ -139,6 +139,11 @@ function menuLumiereMJ(l,x,y){fermeMenuObjet();const m=document.createElement('d
  document.body.append(m);const r=m.getBoundingClientRect();
  m.style.left=Math.max(6,Math.min(x+8,innerWidth-r.width-6))+'px';m.style.top=Math.max(6,Math.min(y+8,innerHeight-r.height-6))+'px';menuObjet=m;
  setTimeout(()=>{document.addEventListener('pointerdown',dehorsMenuObjet,true);document.addEventListener('keydown',echapMenuObjet,true)})}
+/* L'icône d'une lumière qui contient des objets : le logo du premier qui en a un, sinon le signe de la famille du premier,
+   comme son carré dans un inventaire. Sans objet, rien : la flamme. */
+function iconeDeLumiere(l){const pieces=(l&&l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);if(!pieces.length)return null;
+ for(const o of pieces){const im=typeof logoEquipement==='function'?logoEquipement(o):null;if(im)return im}
+ return typeof glyphePiece==='function'&&typeof itemColumn==='function'?glyphePiece(itemColumn(pieces[0])):null}
 // Une lumière est en vue dès qu'un œil de la troupe a la ligne de vue sur son jeton : elle s'éclaire elle-même.
 function lumiereEnVue(l){const m=currentMap();if(!fogVis||!m||m.fogOff)return true;const size=mapSize();if(!size.width)return true;
  const c=[l.x/100*size.width,l.y/100*size.height],r=tokenPx()*SOCLE_TAILLES.small/2,yeux=fogVisQui||[];
@@ -150,7 +155,7 @@ function renderLumieres(){const vue=$('map-view'),m=currentMap();
   if(oeilJoueur()&&!vuTroupe)return;
   // Hors de la vue de la troupe, elle se grise, comme un objet ou une porte dont on se souvient.
   const t=document.createElement('button');t.className='token lumiere'+(!enVue?' veiled':'');
-  const piece=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).find(Boolean),im=piece&&typeof logoEquipement==='function'?logoEquipement(piece):null;
+  const piece=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).find(Boolean),im=iconeDeLumiere(l);
   if(im){im.classList.add('logo-objet');t.append(im);t.classList.add('avec-logo')}else t.textContent='🔥';
   t.setAttribute('aria-label',l.nom);
   t.style.left=l.x+'%';t.style.top=l.y+'%';t.style.setProperty('--token',(tokenPx()*SOCLE_TAILLES.small)+'px');
@@ -227,9 +232,12 @@ function renderNuit(){const cv=toileNuit(),m=currentMap(),size=mapSize();
  if(cv.width!==NW||cv.height!==NH){cv.width=NW;cv.height=NH}
  const c=cv.getContext('2d');c.globalCompositeOperation='source-over';c.clearRect(0,0,NW,NH);c.drawImage(nuit,0,0);
  if(joueur){const formes=activeObstacles();c.globalCompositeOperation='destination-out';c.fillStyle='#000';
+  // Ce que l'œil voit dans le noir se fond vers son bord, du même dégradé qu'une lumière.
+  const kk=NW/size.width,demi=tokenPx()*.5;
   yeux.forEach(({o,r})=>{c.beginPath();
-   if(Number.isFinite(r)){const poly=reachPolygon(o,formes,r,size.width,size.height,72);if(poly.length<3)return;poly.forEach((q,k)=>c[k?'lineTo':'moveTo'](q[0]/100*NW,q[1]/100*NH));c.closePath()}
-   else c.rect(0,0,NW,NH);
+   if(Number.isFinite(r)){const poly=reachPolygon(o,formes,r,size.width,size.height,72);if(poly.length<3)return;poly.forEach((q,k)=>c[k?'lineTo':'moveTo'](q[0]/100*NW,q[1]/100*NH));c.closePath();
+    const cx=o.x/100*NW,cy=o.y/100*NH,g=c.createRadialGradient(cx,cy,0,cx,cy,r*kk);lumiereDegrade(r,demi).forEach(([s,v])=>g.addColorStop(s,'rgba(0,0,0,'+v+')'));c.fillStyle=g}
+   else{c.rect(0,0,NW,NH);c.fillStyle='#000'}
    c.fill()});
   c.globalCompositeOperation='source-over'}
  /* Ce que la lumière éclaire hors de la vue de la troupe se grise, comme ce dont on se souvient : la part éclairée du noir,
@@ -1354,7 +1362,7 @@ function lumiereEl(i,l,formes){const el=document.createElement('div');
   if(poly.length>2)halo.style.clipPath='polygon('+poly.map(q=>(((q[0]-l.x)/100*W/d+.5)*100).toFixed(2)+'% '+(((q[1]-l.y)/100*H/d+.5)*100).toFixed(2)+'%').join(',')+')';
   else if(!o)halo.style.display='none'}
  const coeur=document.createElement('span');coeur.className='lumiere-coeur';coeur.style.width=coeur.style.height=Math.max(12,socle*.55)+'px';
- const piece=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).find(Boolean),im=piece&&typeof logoEquipement==='function'?logoEquipement(piece):null;
+ const im=iconeDeLumiere(l);
  if(im){im.classList.add('logo-objet');coeur.append(im)}else coeur.textContent='🔥';
  const grip=document.createElement('span');grip.className='grip rayon';grip.dataset.grip='rayon';grip.dataset.kind='lumiere';grip.dataset.i=i;
  el.append(halo,coeur,grip);el.title=l.nom+' · '+l.rayon+' m — double-clic pour modifier';

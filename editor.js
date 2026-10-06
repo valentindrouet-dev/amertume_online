@@ -212,6 +212,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  c.logosBonus={};Object.entries(lb).forEach(([k,v])=>{if(/^[a-z]+(:\d+)?$/.test(k)&&typeof v==='string'&&v&&v.length<=120)c.logosBonus[k]=v});
  // Le logo commun des ronds de remplissage de l'arbre.
  if(typeof c.logoRemplissage!=='string'||!c.logoRemplissage||c.logoRemplissage.length>120)delete c.logoRemplissage;
+ // L'icône de l'Attaque d'un aventurier qui n'a pas d'arme en main.
+ if(typeof c.logoAttaqueBase!=='string'||!c.logoAttaqueBase||c.logoAttaqueBase.length>120)delete c.logoAttaqueBase;
  // L'image qu'un état prend à la place de celle du jeu : Gardé, pour l'heure.
  {const le=c.logosEtats&&typeof c.logosEtats==='object'&&!Array.isArray(c.logosEtats)?c.logosEtats:{};c.logosEtats={};
   Object.entries(le).forEach(([k,v])=>{if(STATES.includes(k)&&typeof v==='string'&&v&&v.length<=120)c.logosEtats[k]=v})}
@@ -495,6 +497,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   // Au milieu du rond, le logo de la seule arme de la main droite : la première ; deux armes n'en montrent qu'un.
   const logos=document.createElement('span');logos.className='logos';
   (at.logos||[]).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});
+  // Sans arme en main, l'Attaque d'un aventurier prend l'icône que le MJ a choisie pour elle.
+  if(!logos.childElementCount&&a&&a.hero&&!(a.weapons||[]).length&&catalog.logoAttaqueBase){const im=logoAttaque(catalog.logoAttaqueBase,'bouton');if(im)logos.append(im)}
   if(logos.childElementCount){b.classList.add('avec-logo');b.append(logos)}
   else b.append(Object.assign(document.createElement('span'),{className:'glyphe',textContent:at.range==='distance'?'🏹':'⚔'}));
   /* Une attaque d'équipement s'appelle « Attaque » : les armes se lisent à leurs logos et
@@ -1225,9 +1229,11 @@ function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences
  $('competences-icones-corps').innerHTML='<h3 class="reglage-titre icones-titre">Caractéristiques</h3>'+CARACS_ICONES.map(([k,n])=>selGrille(selGroupes(esc(n),'carac-'+k,lb[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">Compétences</h3>'+skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">États</h3>'+selGrille(selGroupes('Gardé','etat-garde',(catalog.logosEtats||{})['Gardé']||'',groupes))+selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))
-  +'<h3 class="reglage-titre icones-titre">Arbres de talents</h3>'+selGrille(selGroupes('Remplissage','remplissage',catalog.logoRemplissage||'',groupes));
+  +'<h3 class="reglage-titre icones-titre">Arbres de talents</h3>'+selGrille(selGroupes('Remplissage','remplissage',catalog.logoRemplissage||'',groupes))
+  +'<h3 class="reglage-titre icones-titre">Actions</h3>'+selGrille(selGroupes('Attaque sans arme','attaque-base',catalog.logoAttaqueBase||'',groupes));
  $('competences-icones-form').onchange=e=>{const nom=e.target&&e.target.name||'',m=/^comp(\d+)$/.exec(nom),c=/^carac-([a-z]+)$/.exec(nom);
   if(nom==='remplissage'){if(e.target.value)catalog.logoRemplissage=e.target.value;else delete catalog.logoRemplissage;if(arbresDialog.open)renderArbres()}
+  else if(nom==='attaque-base'){if(e.target.value)catalog.logoAttaqueBase=e.target.value;else delete catalog.logoAttaqueBase}
   else if(nom==='etat-garde'||nom==='etat-furie'){const etat=nom==='etat-garde'?'Gardé':'Furie',o={...(catalog.logosEtats||{})};if(e.target.value)o[etat]=e.target.value;else delete o[etat];catalog.logosEtats=o}
   else if(!m&&!c)return;
   else if(m){const icones=iconesCompetences();icones[+m[1]]=e.target.value;catalog.iconesCompetences=normaliseIconesCompetences(icones)}

@@ -3360,6 +3360,16 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.600 — Ce qu'un œil voit dans le noir se fond vers son bord, du même dégradé qu'une lumière. Une lumière qui contient
+   des objets montre l'icône du premier qui a un logo, sinon le signe de sa famille ; la flamme reste aux lumières vides.
+   Le MJ choisit, avec les autres icônes, celle de l'Attaque d'un aventurier sans arme en main. */
+{const carto=fs.readFileSync('maps.js','utf8'),src=fs.readFileSync('editor.js','utf8');
+ assert.ok(carto.includes("    const cx=o.x/100*NW,cy=o.y/100*NH,g=c.createRadialGradient(cx,cy,0,cx,cy,r*kk);lumiereDegrade(r,demi).forEach(([s,v])=>g.addColorStop(s,'rgba(0,0,0,'+v+')'));c.fillStyle=g}"),'le bord de la zone de contact, fondu');
+ assert.ok(carto.includes("function iconeDeLumiere(l){")&&carto.includes(" return typeof glyphePiece==='function'&&typeof itemColumn==='function'?glyphePiece(itemColumn(pieces[0])):null}")
+  &&carto.includes(" const im=iconeDeLumiere(l);\n if(im){im.classList.add('logo-objet');coeur.append(im)}else coeur.textContent='🔥';"),'l’icône de l’objet contenu');
+ assert.ok(src.includes(" if(typeof c.logoAttaqueBase!=='string'||!c.logoAttaqueBase||c.logoAttaqueBase.length>120)delete c.logoAttaqueBase;")
+  &&src.includes("selGrille(selGroupes('Attaque sans arme','attaque-base',catalog.logoAttaqueBase||'',groupes))")
+  &&src.includes("  if(!logos.childElementCount&&a&&a.hero&&!(a.weapons||[]).length&&catalog.logoAttaqueBase){const im=logoAttaque(catalog.logoAttaqueBase,'bouton');if(im)logos.append(im)}"),'l’icône de l’Attaque sans arme');}
 /* v0.599 — Ce que la lumière éclaire hors de la vue de la troupe se grise : la part éclairée du noir, hors des champs de
    vision, reprend la moitié de son noir, et le jeton d'une lumière hors de vue pâlit comme un objet. Pendant un glissement,
    ce que la lumière qui bouge découvre ou recouvre paraît ou s'efface aussitôt, socle, jauge et zone de contact ensemble ;
