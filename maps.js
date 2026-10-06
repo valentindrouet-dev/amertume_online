@@ -150,6 +150,9 @@ function renderLumieres(){const vue=$('map-view'),m=currentMap();
   t.setAttribute('aria-label',l.nom);
   t.style.left=l.x+'%';t.style.top=l.y+'%';t.style.setProperty('--token',(tokenPx()*SOCLE_TAILLES.small)+'px');
   t.onmousedown=e=>e.preventDefault();
+  // Posé au sol, l'objet montre sa bulle au survol, dès qu'il est dans la zone de contact d'un aventurier.
+  if(l.pose&&piece&&typeof surveille==='function')surveille(t,()=>{if(!actors.some(a=>a&&a.hero&&alive(a)&&!a.horsCarte&&lumiereAPortee(a,l)))return;
+   const d=gearDetail(piece,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(t,d,'bulle-gear')});
   t.onclick=e=>{e.stopPropagation();if(view==='mj'){menuLumiereMJ(l,e.clientX,e.clientY);return}
    const a=actors[owner];if(!a||!a.hero||!alive(a)||!(l.items||[]).length)return;
    if(!lumiereAPortee(a,l)){log('Approche ton aventurier : il faut être au contact de '+l.nom+'.',{local:true});return}

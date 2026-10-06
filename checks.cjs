@@ -3360,6 +3360,15 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.598 — Une lumière posée passe devant les socles dans la page : tout ce qui retrouvait le socle d'un combattant par
+   son rang — le glissement, la sélection, la taille des socles, le focus au clavier — ne compte plus qu'eux, et le socle
+   glissé suit enfin la souris. Un rond qui apporte son icône la garde, même avec sa propre bulle : deux objets lumineux,
+   deux icônes. Un objet posé au sol montre sa bulle au survol, dès qu'il est dans la zone de contact d'un aventurier. */
+{const page=fs.readFileSync('index.html','utf8'),carto=fs.readFileSync('maps.js','utf8');
+ assert.ok(!/querySelectorAll\('#map-view \.token'\)/.test(page)&&!/querySelectorAll\('\.token'\)\[/.test(page)
+  &&page.includes("const socles=document.querySelectorAll('#map-view .token:not(.lumiere)');")&&page.includes("render();document.querySelectorAll('.token:not(.lumiere)')[i].focus()};"),'les socles par leur rang, sans les lumières');
+ assert.ok(page.includes("(bulle&&typeof glyphe==='string'&&typeof logoArmeEquipee==='function'?logoArmeEquipee(a):null)"),'chaque rond garde son icône');
+ assert.ok(carto.includes("  if(l.pose&&piece&&typeof surveille==='function')surveille(t,()=>{if(!actors.some(a=>a&&a.hero&&alive(a)&&!a.horsCarte&&lumiereAPortee(a,l)))return;"),'la bulle de l’objet au sol, au contact');}
 /* v0.597 — Le remplissage d'obscurité gagne la pierre : chaque case de mur ou de porte va à l'espace libre le plus proche,
    et noircit si c'est la zone remplie ou une obscurité déjà posée ; aucun mur clair ne se devine plus entre deux salles
    noires. Le noir a sa propre toile, au-dessus du brouillard, et suit le socle qu'on glisse, image après image, avec les
