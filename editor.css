@@ -143,6 +143,11 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .shape.lumiere .grip.rayon{position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:#e9c46a;border:1px solid #8a6420;cursor:ew-resize}
 /* À la table : la toile des halos sous le brouillard, et le jeton d'une lumière, petit et chaud. */
 #halos{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+#nuit{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.bulle-action .bulle-objet{display:flex;align-items:center;gap:8px;margin:4px 0 0;font:600 12px system-ui}
+.bulle-action .bulle-objet .cat-pill.gear-carre,.bulle-action .bulle-objet .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:28px;min-width:28px;height:28px;min-height:28px;padding:2px;gap:0;border-radius:8px;justify-content:center;display:inline-flex;flex:none;pointer-events:none}
+.bulle-action .bulle-objet .cat-pill.gear-carre :is(.logo-equip,.glyphe){width:72%;height:72%;margin:0}
+.bulle-action .bulle-objet .cat-pill.gear-carre :is(.gear-bas,.pips,.marque-porte,.exemplaires){display:none}
 .token.lumiere{background:#fff3d6;border-color:#d9a85a;color:#3a2a08;font-size:calc(var(--token)*.5);box-shadow:0 0 10px 3px #ffd58a99,0 calc(var(--token)*.055) calc(var(--token)*.17) #0008;pointer-events:auto;cursor:pointer}
 .token.lumiere.avec-logo{display:grid;place-items:center}.token.lumiere .logo-objet{width:74%;height:74%;object-fit:contain;pointer-events:none}
 .token.lumiere.veiled{opacity:.46;outline:2px dashed #e2ae72;outline-offset:2px}

@@ -143,7 +143,7 @@ function glisserDistant(d,force){const B=d.actors||{};let bouge=false;
   a.x=e.x;a.y=e.y;bouge=true;
   const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(id)+'"]');
   if(el){el.classList.add('glisse');el.style.left=e.x+'%';el.style.top=e.y+'%'}});
- if(bouge){if(typeof updateRing==='function')updateRing();if(typeof updateSight==='function')updateSight()}
+ if(bouge){if(typeof updateRing==='function')updateRing();if(typeof updateSight==='function')updateSight();if(typeof renderNuit==='function'){renderHalos();renderNuit()}}
  if(bouge||force)planifieRenduComplet()}
 /* Le rendu complet attend la fin du geste local : un rendu détruirait le socle tenu. */
 function planifieRenduComplet(){clearTimeout(renduDiffere);

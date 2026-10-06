@@ -542,6 +542,17 @@ function remplitObscurite(map,pt,cols=320){const ratio=Math.max(.05,Number(map&&
     for(let dj=-1;dj<=1&&!touche;dj++)for(let di=-1;di<=1;di++){const ii=i+di,jj=j+dj;if(ii>=0&&jj>=0&&ii<cols&&jj<rows&&dedans[jj*cols+ii]){touche=true;break}}
     if(touche)ajout.push(k)}
    ajout.forEach(k=>{dedans[k]=1})}}
+ /* Plus loin dans la pierre : chaque case de mur ou de porte va à l'espace libre le plus proche. Celles qui sont plus près
+    de la zone, ou d'une obscurité déjà posée, que de tout espace clair s'y ajoutent : un mur entre deux pièces noires est noir
+    de part en part, un mur qui donne au dehors garde sa face claire. Aucun mur clair ne se devine plus entre deux salles. */
+ {const dur=new Uint8Array(n),noir=new Uint8Array(n),proche=new Uint8Array(n),file=new Int32Array(n);let tete=0,queue=0;
+  matiereDe(map).forEach(p=>rempliAnneaux(dur,cols,rows,p.anneaux,1));portes.forEach(q=>rempliAnneaux(dur,cols,rows,[q],1));
+  obscuriteDe(map).forEach(p=>rempliAnneaux(noir,cols,rows,p.anneaux,1));
+  for(let k=0;k<n;k++)if(!dur[k]){proche[k]=dedans[k]||noir[k]?1:2;file[queue++]=k}
+  while(tete<queue){const k=file[tete++],i=k%cols,j=(k-i)/cols;
+   for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const ii=i+di,jj=j+dj;if((!di&&!dj)||ii<0||jj<0||ii>=cols||jj>=rows)continue;
+    const v=jj*cols+ii;if(dur[v]&&!proche[v]){proche[v]=proche[k];file[queue++]=v}}}
+  for(let k=0;k<n;k++)if(dur[k]&&proche[k]===1)dedans[k]=1}
  // Les cases, en rectangles : une suite de cases sur une ligne, prolongée sur les lignes du dessous tant qu'elle y est identique.
  const rects=[],ouverts=new Map();
  for(let j=0;j<=rows;j++){const vus=new Set();

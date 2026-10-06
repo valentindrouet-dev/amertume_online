@@ -1052,7 +1052,7 @@ assert.ok(vivant.includes("if(!estMJ()&&CHAMPS_ACTEUR_MJ.includes(k))return;")&&
 /* Les invités ne dirigent pas, la carte reste voilée jusqu'au brouillard, le journal a ses tons. */
 assert.ok(vivant.includes('function verrouillerInvite')&&vivant.includes("if(spectateur()&&view!=='player'){view='player'"),'un invité reste en vue joueur');
 const cartes=fs.readFileSync('maps.js','utf8');
-assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false;")&&cartes.includes('renderFog();renderZones();leverVoile();')&&page.includes('#voile-attente{'),'la carte se voile jusqu’au brouillard');
+assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false;")&&cartes.includes('renderFog();renderNuit();renderZones();leverVoile();')&&page.includes('#voile-attente{'),'la carte se voile jusqu’au brouillard');
 assert.ok(page.includes(".j-entry.ton-talent{"),'le journal a ses tons');
 // Le journal se cale sur le bas de la carte, et se libère sur une colonne.
 assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderFouilles();calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
@@ -1266,7 +1266,7 @@ assert.ok(page.includes("if(!enCombat()&&reveles.some(a=>campDe(a)==='adverse'))
    combat seulement, avec cadre et murs lus une fois. */
 assert.ok(cartes.includes('let obstaclesTache=null;')&&cartes.includes("obstaclesTache={m,formes};setTimeout(()=>{obstaclesTache=null},0);")
  &&page.includes('let mursPxTache=null;')&&page.includes("let auraCache={formes:null,cle:'',pts:new Map()};")&&page.includes("auraCache.pts.set(k,pts)")
- &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>{if(drag)drag.image=0;updateRing();updateSight()});")
+ &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>{if(drag)drag.image=0;updateRing();updateSight();if(typeof renderNuit==='function'){renderHalos();renderNuit()}});")
  &&page.includes("if(enCombat()){const size=mapSize(),murs=walls();")&&page.includes('function ramasseContacts(a,croises,de,size,murs){'),'glisser un lot reste léger');
 /* Ciblage : une cible désignée hors de portée ne grise plus l'attaque ; le coup part sur qui est à
    portée, sans jamais retenir une cible automatique ; la désignation lointaine s'efface. */
@@ -3360,6 +3360,25 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.597 — Le remplissage d'obscurité gagne la pierre : chaque case de mur ou de porte va à l'espace libre le plus proche,
+   et noircit si c'est la zone remplie ou une obscurité déjà posée ; aucun mur clair ne se devine plus entre deux salles
+   noires. Le noir a sa propre toile, au-dessus du brouillard, et suit le socle qu'on glisse, image après image, avec les
+   halos. Poser la Source de lumière est un geste de Mouvement : 1 PM en combat, gratuit en exploration ; sa bulle montre
+   l'objet sous son titre. Analyser n'est là qu'en combat. Une lumière posée passe sous les combattants. */
+{const page=fs.readFileSync('index.html','utf8'),carto=fs.readFileSync('maps.js','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ // Deux salles noires et la pierre entre elles ; une salle claire garde sa face de mur.
+ const m={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[30,10],[30,90],[10,90]],[[40,10],[60,10],[60,90],[40,90]],[[70,10],[90,10],[90,90],[70,90]]]}],doors:[]};
+ C.remplitObscurite(m,[20,50],100);C.remplitObscurite(m,[50,50],100);
+ assert.ok(C.dansObscurite(m,[35,50])&&C.dansObscurite(m,[20,50])&&C.dansObscurite(m,[50,50]),'le mur entre deux salles noires est noir');
+ assert.ok(C.dansObscurite(m,[62,50])&&!C.dansObscurite(m,[68,50])&&!C.dansObscurite(m,[80,50]),'le mur qui donne sur la salle claire garde sa face');
+ assert.ok(carto.includes("function renderNuit(){const cv=toileNuit(),m=currentMap(),size=mapSize();")
+  &&carto.includes("   if(Number.isFinite(r)){const poly=reachPolygon(o,formes,r,size.width,size.height,72);if(poly.length<3)return;")
+  &&feuille.includes("#nuit{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}")
+  &&vivant.includes("if(typeof renderNuit==='function'){renderHalos();renderNuit()}}"),'le noir sur sa toile, qui suit le glissement');
+ assert.ok(page.includes(" const rev=$('reveal');rev.hidden=!a||!a.hero||!enCombat();"),'Analyser, en combat seulement');
+ assert.ok(src.includes(" if(objet){const p=document.createElement('p');p.className='bulle-objet';const c=gearCarre(objet,1,false);")
+  &&page.includes("bulleAction(b,{nom:'Poser la Source de lumière',points:enCombat()?{pa:0,pm:1}:null,objet:o})"),'la bulle montre l’objet');
+ assert.ok(carto.includes("  vue.insertBefore(t,vue.querySelector('.token:not(.lumiere)'))})}"),'la lumière posée sous les combattants');}
 /* v0.596 — Le noir se peint du même noir que l'inexploré : rien ne distingue une zone obscure d'un mur jamais vu. Un
    aventurier qui porte ce qui éclaire peut le poser au sol, d'un petit rond à l'icône de l'objet : l'objet quitte
    l'inventaire et éclaire où il est, jusqu'à ce qu'on le ramasse au contact. Posé, il voyage en ligne à la suite des
@@ -3375,7 +3394,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&carto.includes(" m.lumieres.push(cleanLumiere({id:crypto.randomUUID(),nom:o.name,x:a.x,y:a.y,rayon:lumiereDe(o),items:[o.id],pose:true}));")
   &&carto.includes(" if(l.pose){const m=currentMap(),k=m?(m.lumieres||[]).indexOf(l):-1;if(k>=0)m.lumieres.splice(k,1);")
   &&carto.includes("ajouterInventaire(a,it)!==false")&&carto.includes(" if(!l.pose)bouton(l.eteinte?'Rallumer':'Éteindre',"),'poser, ramasser');
- assert.ok(page.includes("geste('Poser la Source de lumière',ic||(typeof glyphePiece==='function'?glyphePiece(itemColumn(o)):'◈'),'',true,()=>poserLumiere(a,o),'btn-action',null,"),'le rond Poser la Source de lumière');
+ assert.ok(page.includes("geste('Poser la Source de lumière',ic||(typeof glyphePiece==='function'?glyphePiece(itemColumn(o)):'◈'),'',!enCombat()||pointsRestants(a,'mouvement')>0,()=>{")&&page.includes("if(enCombat()){saveChecks();savePool();depensePoint(a,'mouvement')}poserLumiere(a,o)},'btn-action btn-mvt',null,null,null,bulle);"),'le rond Poser la Source de lumière');
  assert.ok(vivant.includes("function lumiereAuSol(l){return {n:l.nom,o:(l.items||[])[0]||'',p:l.id,r:l.rayon,x:l.x,y:l.y}}")
   &&vivant.includes("...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol)]:[];")
   &&vivant.includes("if(cleIci!==cleRecue&&!(envoyees&&cle(envoyees)===cleRecue)){const avant=new Map(ici.map(l=>[l.id,l]));")
@@ -3392,12 +3411,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  const g=ctx.lumiereDegrade(132,22);assert.equal(g[0].join(),'0,1');assert.equal(g[g.length-1].join(),'1,0');
  assert.ok(g.every((s,i)=>!i||(s[0]>g[i-1][0]&&s[1]<g[i-1][1])),'un dégradé qui ne fait que s’assombrir');
  assert.ok(Math.abs(g[2][0]-(132-22)/132)<1e-9&&g[2][1]>.5,'encore clair à un demi-mètre du bord');assert.equal(ctx.lumiereDegrade(10,22).length,3,'une toute petite lumière');
- assert.ok(carto.includes(" const peinte=[m.id,fogCalcul,fogMemTick,W,H,view,owner,oeilJoueur(),nuit?nuitPercee.cle:''].join('|');\n if(cv._peinte===peinte)return;cv._peinte=peinte;")
+ assert.ok(carto.includes(" const peinte=[m.id,fogCalcul,fogMemTick,W,H,view,owner,oeilJoueur()].join('|');\n if(cv._peinte===peinte)return;cv._peinte=peinte;")
   &&carto.includes(" fogKey=cle;fogCalcul++;")&&carto.includes("c.putImageData(img,0,0);fogDirty=false;fogMemTick++}")
   &&carto.includes("+geometryKey(m);if(cv._peinte===cle)return;cv._peinte=cle;"),'rien ne se repeint sans changement');
- assert.ok(carto.includes("let nuitFondue={cle:'',cv:null},nuitPercee={cle:'',cv:null},nuitVue={cle:'',cv:null};")
+ assert.ok(carto.includes("let nuitFondue={cle:'',cv:null},nuitPercee={cle:'',cv:null};")
   &&carto.includes("fc.filter='blur('+flou.toFixed(2)+'px)';fc.drawImage(large,-e,-e);fc.filter='none'}")
-  &&carto.includes("const nuit=carteObscure()?calqueNuit(NW,NH):null;")&&!/const lum=document\.createElement\('canvas'\)/.test(carto),'le noir à part, fondu, en cache');
+  &&carto.includes(" const nuit=calqueNuit(NW,NH);if(!nuit)return;")&&!/const lum=document\.createElement\('canvas'\)/.test(carto),'le noir à part, fondu, en cache');
  assert.ok(src.includes(" if(lumiereDe(o))ligne('Lumière '+String(lumiereDe(o)).replace('.',',')+'m','gear-lumiere');"),'Lumière 3m dans l’infobulle');}
 /* v0.594 — Remplir d'obscurité ne laisse plus de liseré clair le long des murs : deux rangs de cases de mur ou de porte
    qui touchent la zone s'y ajoutent, sans jamais passer dans une autre zone. Le bord d'une lumière se fond sur un
@@ -3419,10 +3438,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    traverse ni n'empiète sur un mur, à la table comme dans l'éditeur, où le halo se découpe. Une lumière se duplique. */
 {const carto=fs.readFileSync('maps.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  const m={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[90,10],[90,90],[10,90]]]}],doors:[],zonesCoupures:[{x1:50,y1:10,x2:50,y2:90}],zonesLiens:[]};
- C.remplitObscurite(m,[30,50],64);assert.ok(C.dansObscurite(m,[30,50])&&!C.dansObscurite(m,[70,50])&&!C.dansObscurite(m,[5,5]),'la séparation borne le remplissage');
+ C.remplitObscurite(m,[30,50],64);assert.ok(C.dansObscurite(m,[30,50])&&!C.dansObscurite(m,[70,50])&&C.dansObscurite(m,[5,5])&&!C.dansObscurite(m,[95,50]),'la séparation borne le remplissage ; la pierre va à l’espace libre le plus proche');
  C.remplitObscurite(m,[70,50],64);assert.ok(C.dansObscurite(m,[70,50])&&C.dansObscurite(m,[50.8,50]),'l’autre côté, sans fente claire entre les deux');
  const d={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[40,10],[40,90],[10,90]],[[60,10],[90,10],[90,90],[60,90]]]}],doors:[],zonesCoupures:[],zonesLiens:[{x1:25,y1:50,x2:75,y2:50}]};
- C.remplitObscurite(d,[25,50],64);assert.ok(C.dansObscurite(d,[25,50])&&C.dansObscurite(d,[75,50])&&!C.dansObscurite(d,[50,50]),'un regroupement : les deux pièces d’un coup');
+ C.remplitObscurite(d,[25,50],64);assert.ok(C.dansObscurite(d,[25,50])&&C.dansObscurite(d,[75,50])&&C.dansObscurite(d,[50,50]),'un regroupement : les deux pièces d’un coup, et le mur qui les sépare');
  const f={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[14,10],[14,14],[10,14]]]}],doors:[]};
  C.remplitObscurite(f,[12,12],64);assert.ok(C.dansObscurite(f,[12,12]),'une miette s’inonde à l’ancienne');
  // Une source dans un mur éclaire depuis le point libre le plus proche, et ses rayons n'entrent pas dans le mur.
@@ -3491,7 +3510,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  // La matière de l'obscurité : union, gomme, test d'un point, remplissage d'une pièce close.
  const m={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[60,10],[60,60],[10,60]]]}],doors:[]};
  assert.equal(C.obscuriteDe(m).length,0);C.remplitObscurite(m,[20,20],64);
- assert.equal(m.obscurite.length,1);assert.ok(C.dansObscurite(m,[30,30])&&!C.dansObscurite(m,[80,80])&&!C.dansObscurite(m,[5,5]),'la pièce remplie, pas le mur');
+ assert.equal(m.obscurite.length,1);assert.ok(C.dansObscurite(m,[30,30])&&C.dansObscurite(m,[80,80])&&C.dansObscurite(m,[5,5]),'la pièce remplie, et la pierre qui n’entoure qu’elle');
  C.remplitObscurite(m,[5,5],64);assert.equal(m.obscurite.length,1,'un clic dans un mur ne remplit rien');
  C.retireObscurite(m,[[20,20],[40,20],[40,40],[20,40]]);assert.ok(!C.dansObscurite(m,[30,30])&&C.dansObscurite(m,[15,15]),'la gomme');
  C.ajouteObscurite(m,[[70,70],[90,70],[90,90],[70,90]]);assert.ok(C.dansObscurite(m,[80,80])&&m.obscurite.every(p=>!('verrou' in p)),'le rectangle, sans verrou');
@@ -3515,7 +3534,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&carto.includes("function voitSocle(o,b){")&&carto.includes("function voitPoint(o,x,y){")&&carto.includes("function eclaireA(x,y){")&&carto.includes("function dansLeNoir(a){return !!a&&carteObscure()&&!eclaireA(a.x,a.y)}")
   &&carto.includes("return visionInPixels().some((p,k)=>polyTouchesDisc(p,c,r)&&(!yeux[k]||voitSocle(yeux[k],a)))}")&&carto.includes("return fogTroupePx.some((p,k)=>polyTouchesDisc(p,c,r)&&(!yeux[k]||voitSocle(yeux[k],a)))}")
   &&carto.includes("  if(!voitPoint(o.qui,x,y))return false;")&&carto.includes("neuf+=fillPolygonGridSi(fogSeen,d.w,d.h,p,(i,j)=>{if(M&&M.data[j*d.w+i]!==1)return false;if(!aveugle)return true;")
-  &&carto.includes("  ctx.save();trace(ctx,poly);ctx.clip();ctx.beginPath();ctx.arc(o.x/100*W,o.y/100*H,rayonVision(o)*k,0,Math.PI*2);ctx.fill();ctx.restore()});")&&carto.includes("  ctx.globalAlpha=oeilJoueur()?1:.5;ctx.imageSmoothingEnabled=true;ctx.drawImage(src,0,0,W,H);ctx.globalAlpha=1}}"),'la vision dans le noir, et son rendu');
+  &&carto.includes("  ctx.save();trace(ctx,poly);ctx.clip();ctx.beginPath();ctx.arc(o.x/100*W,o.y/100*H,rayonVision(o)*k,0,Math.PI*2);ctx.fill();ctx.restore()});")&&carto.includes(" cv.style.opacity=joueur?'1':'.5'}"),'la vision dans le noir, et son rendu');
  assert.ok(page.includes("if(typeof voitSocle==='function'&&!voitSocle(a,b))return {ok:false,ranged:true,text:'cible dans le noir'};")
   &&page.includes(" ||(a.hero&&view!=='mj'&&owner!==i&&typeof carteObscure==='function'&&carteObscure()&&typeof partySees==='function'&&!partySees(a))}")
   &&page.includes(" if(blinded(a)&&loin&&!mapSize().width)return 'Aveugle : ne voit rien au-delà de sa zone de contact.';")

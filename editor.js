@@ -430,11 +430,14 @@ function bulleEtat(ancre,o,etat){const d=document.createElement('div');d.classNa
  const t=typeof descriptionEtat==='function'?descriptionEtat(o,etat):'';
  if(t){const p=document.createElement('p');p.className='palier-effet';p.textContent=t;d.append(p)}
  return ouvrirBulle(ancre,d,'bulle-talent')}
-function bulleAction(b,{nom,dit='',note='',des=null,lignes=null,points=null,a=null,cibles=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
+function bulleAction(b,{nom,dit='',note='',des=null,lignes=null,points=null,a=null,cibles=null,objet=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
  const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=nom;tete.append(n);d.append(tete);
  if(des)desAuTitre(tete,des);
  {const s=pointsDeCout(points);if(s)tete.prepend(s)}
+ // Sous le titre, l'objet en question : son carré, son nom.
+ if(objet){const p=document.createElement('p');p.className='bulle-objet';const c=gearCarre(objet,1,false);c.removeAttribute('role');c.tabIndex=-1;
+  const nm=document.createElement('span');nm.textContent=objet.name;p.append(c,nm);d.append(p)}
  // Une attaque : ce qui l'améliore, une ligne chacun, la pastille à la couleur des actions.
  if(lignes&&lignes.length){d.classList.add('p-act');lignesEnPastilles(d,lignes)}
  if(dit){const p=document.createElement('p');p.className='palier-effet';p.textContent=dit;d.append(p)}
