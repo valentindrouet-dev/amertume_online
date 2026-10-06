@@ -139,12 +139,17 @@ function menuLumiereMJ(l,x,y){fermeMenuObjet();const m=document.createElement('d
  document.body.append(m);const r=m.getBoundingClientRect();
  m.style.left=Math.max(6,Math.min(x+8,innerWidth-r.width-6))+'px';m.style.top=Math.max(6,Math.min(y+8,innerHeight-r.height-6))+'px';menuObjet=m;
  setTimeout(()=>{document.addEventListener('pointerdown',dehorsMenuObjet,true);document.addEventListener('keydown',echapMenuObjet,true)})}
+// Une lumière est en vue dès qu'un œil de la troupe a la ligne de vue sur son jeton : elle s'éclaire elle-même.
+function lumiereEnVue(l){const m=currentMap();if(!fogVis||!m||m.fogOff)return true;const size=mapSize();if(!size.width)return true;
+ const c=[l.x/100*size.width,l.y/100*size.height],r=tokenPx()*SOCLE_TAILLES.small/2,yeux=fogVisQui||[];
+ return visionInPixels().some((p,k)=>polyTouchesDisc(p,c,r)&&(!yeux[k]||!blinded(yeux[k])||tokenDistance(yeux[k],l,size)<=rayonVision(yeux[k])+r))}
 function renderLumieres(){const vue=$('map-view'),m=currentMap();
  vue.querySelectorAll('.token.lumiere').forEach(t=>t.remove());renderHalos();if(!m)return;
  (m.lumieres||[]).forEach(l=>{if(!l||l.eteinte)return;
-  const vuTroupe=seenAt(l.x,l.y)||partySees({x:l.x,y:l.y,socle:'small'});
+  const enVue=lumiereEnVue(l),vuTroupe=enVue||seenAt(l.x,l.y);
   if(oeilJoueur()&&!vuTroupe)return;
-  const t=document.createElement('button');t.className='token lumiere'+(!vuTroupe?' veiled':'');
+  // Hors de la vue de la troupe, elle se grise, comme un objet ou une porte dont on se souvient.
+  const t=document.createElement('button');t.className='token lumiere'+(!enVue?' veiled':'');
   const piece=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).find(Boolean),im=piece&&typeof logoEquipement==='function'?logoEquipement(piece):null;
   if(im){im.classList.add('logo-objet');t.append(im);t.classList.add('avec-logo')}else t.textContent='🔥';
   t.setAttribute('aria-label',l.nom);
@@ -182,7 +187,7 @@ function eclaireA(x,y){const M=masqueEclaire();if(!M||!fogDim)return true;const 
    Une lumière éclaire pleinement en son cœur, s'assombrit peu à peu vers son bord, puis tombe au noir sur son dernier
    demi-mètre. Deux toiles en cache : l'obscurité fondue, qui ne se refait qu'avec elle ; le noir percé, qui suit aussi les
    lumières et les murs. */
-let nuitFondue={cle:'',cv:null},nuitPercee={cle:'',cv:null};
+let nuitFondue={cle:'',cv:null},nuitPercee={cle:'',cv:null},nuitGrise={cle:'',cv:null};
 function toileCache(o,W,H){if(!o.cv)o.cv=document.createElement('canvas');if(o.cv.width!==W||o.cv.height!==H){o.cv.width=W;o.cv.height=H;o.cle=''}return o.cv}
 // La force d'une lumière, du cœur au bord, en arrêts de dégradé : pleine, un peu moins, puis le noir sur le dernier demi-mètre.
 function lumiereDegrade(r,demi){if(!(r>demi))return [[0,1],[.5,.55],[1,0]];const b=(r-demi)/r,q=(r-demi/2)/r;return [[0,1],[b*.5,.88],[b,.66],[q,.3],[1,0]]}
@@ -217,7 +222,7 @@ function renderNuit(){const cv=toileNuit(),m=currentMap(),size=mapSize();
  const ech=Math.min(2,window.devicePixelRatio||1),NW=Math.max(1,Math.min(2048,Math.round(large*ech))),NH=Math.max(1,Math.round(NW*haut/large));
  const nuit=calqueNuit(NW,NH);if(!nuit)return;
  const joueur=oeilJoueur(),yeux=joueur?fogSeers().map(o=>({o,r:rayonVision(o)})).filter(y=>y.r>0):[];
- const cle=[nuitPercee.cle,NW,NH,joueur,yeux.map(({o,r})=>o.x.toFixed(2)+','+o.y.toFixed(2)+','+(Number.isFinite(r)?Math.round(r):'∞')).join(';')].join('|');
+ const cle=[nuitPercee.cle,NW,NH,joueur,fogCalcul,yeux.map(({o,r})=>o.x.toFixed(2)+','+o.y.toFixed(2)+','+(Number.isFinite(r)?Math.round(r):'∞')).join(';')].join('|');
  if(cv._peinte===cle)return;cv._peinte=cle;
  if(cv.width!==NW||cv.height!==NH){cv.width=NW;cv.height=NH}
  const c=cv.getContext('2d');c.globalCompositeOperation='source-over';c.clearRect(0,0,NW,NH);c.drawImage(nuit,0,0);
@@ -227,6 +232,12 @@ function renderNuit(){const cv=toileNuit(),m=currentMap(),size=mapSize();
    else c.rect(0,0,NW,NH);
    c.fill()});
   c.globalCompositeOperation='source-over'}
+ /* Ce que la lumière éclaire hors de la vue de la troupe se grise, comme ce dont on se souvient : la part éclairée du noir,
+    hors des champs de vision, reprend la moitié de son noir. */
+ if(fogVis&&fogVis.length&&nuitFondue.cv){const g=toileCache(nuitGrise,NW,NH),gc=g.getContext('2d');
+  gc.globalCompositeOperation='source-over';gc.clearRect(0,0,NW,NH);gc.drawImage(nuitFondue.cv,0,0);gc.globalCompositeOperation='destination-out';gc.drawImage(nuit,0,0);gc.fillStyle='#000';
+  fogVis.forEach(poly=>{if(!poly||poly.length<3)return;gc.beginPath();poly.forEach((q,k)=>gc[k?'lineTo':'moveTo'](q[0]/100*NW,q[1]/100*NH));gc.closePath();gc.fill()});
+  gc.globalCompositeOperation='source-over';c.globalAlpha=.5;c.drawImage(g,0,0);c.globalAlpha=1}
  cv.style.opacity=joueur?'1':'.5'}
 // Un combattant dans le noir : sur une case obscure que rien n'éclaire.
 function dansLeNoir(a){return !!a&&carteObscure()&&!eclaireA(a.x,a.y)}

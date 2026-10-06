@@ -1224,7 +1224,7 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
    sélection sinon ; un joueur inspecte n'importe quel combattant — fiche selon ce qu'il en sait,
    aura — sans le contrôler, et ses cases d'activation restent celles de son actif ; les
    projectiles sont plus lents et plus gros. */
-assert.ok(page.includes('id="portees">◎ Contacts<')&&page.includes("let porteesOn=localStorage.getItem('amertume-portees')==='1';")&&page.includes("return a.hero||(a.vu&&!a.hidden)")&&!page.includes("couche.hidden=!porteesOn"),'Contacts : tous les rayons, ou la sélection');
+assert.ok(page.includes('id="portees">◎ Contacts<')&&page.includes("let porteesOn=localStorage.getItem('amertume-portees')==='1';")&&page.includes("return a.hero||((a.vu||apercusEnGeste.has(a.id))&&!a.hidden)")&&!page.includes("couche.hidden=!porteesOn"),'Contacts : tous les rayons, ou la sélection');
 assert.ok(page.includes('let inspecteId=null;')&&page.includes("if(!controlled(i)){const a=actors[i];inspecteId=a&&inspecteId!==a.id?a.id:null;render();return}")&&!page.includes('Sélectionne ton aventurier, puis cible')
  &&page.includes("const k=view!=='mj'&&inspecteIndex()>=0?inspecteIndex():selected,a=actors[k];")&&page.includes("  $(id).checked=!!s&&pointsRestants(s,quoi)<=0;")
  &&page.includes('#sheet.secret :is(#sheet-chips,#stats,#hpbar,#bloc-gear,#bloc-talents,#skills,.divider){display:none}')&&page.includes("a.id===inspecteId?'inspecte ':''"),'un joueur inspecte sans contrôler');
@@ -1266,7 +1266,7 @@ assert.ok(page.includes("if(!enCombat()&&reveles.some(a=>campDe(a)==='adverse'))
    combat seulement, avec cadre et murs lus une fois. */
 assert.ok(cartes.includes('let obstaclesTache=null;')&&cartes.includes("obstaclesTache={m,formes};setTimeout(()=>{obstaclesTache=null},0);")
  &&page.includes('let mursPxTache=null;')&&page.includes("let auraCache={formes:null,cle:'',pts:new Map()};")&&page.includes("auraCache.pts.set(k,pts)")
- &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>{if(drag)drag.image=0;updateRing();updateSight();if(typeof renderNuit==='function'){renderHalos();renderNuit()}});")
+ &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>{if(drag)drag.image=0;visibilitesEnGeste();updateRing();updateSight();if(typeof renderNuit==='function'){renderHalos();renderNuit()}});")
  &&page.includes("if(enCombat()){const size=mapSize(),murs=walls();")&&page.includes('function ramasseContacts(a,croises,de,size,murs){'),'glisser un lot reste léger');
 /* Ciblage : une cible désignée hors de portée ne grise plus l'attaque ; le coup part sur qui est à
    portée, sans jamais retenir une cible automatique ; la désignation lointaine s'efface. */
@@ -3360,6 +3360,20 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.599 — Ce que la lumière éclaire hors de la vue de la troupe se grise : la part éclairée du noir, hors des champs de
+   vision, reprend la moitié de son noir, et le jeton d'une lumière hors de vue pâlit comme un objet. Pendant un glissement,
+   ce que la lumière qui bouge découvre ou recouvre paraît ou s'efface aussitôt, socle, jauge et zone de contact ensemble ;
+   un adversaire jamais vu ainsi aperçu est révélé au lâcher. */
+{const page=fs.readFileSync('index.html','utf8'),carto=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ assert.ok(carto.includes("function lumiereEnVue(l){const m=currentMap();if(!fogVis||!m||m.fogOff)return true;")
+  &&carto.includes("  const enVue=lumiereEnVue(l),vuTroupe=enVue||seenAt(l.x,l.y);")&&carto.includes("t.className='token lumiere'+(!enVue?' veiled':'');")
+  &&carto.includes("gc.drawImage(nuitFondue.cv,0,0);gc.globalCompositeOperation='destination-out';gc.drawImage(nuit,0,0);")
+  &&carto.includes("gc.globalCompositeOperation='source-over';c.globalAlpha=.5;c.drawImage(g,0,0);c.globalAlpha=1}")
+  &&carto.includes(" const cle=[nuitPercee.cle,NW,NH,joueur,fogCalcul,yeux.map("),'la lumière hors de vue, grisée');
+ assert.ok(page.includes("const apercusEnGeste=new Set();\nfunction visibilitesEnGeste(){")
+  &&page.includes("const cls=joueur?'unseen':(a.hidden?'cachemj':'veiled');t.classList.toggle(cls,cache);if(t._pv)t._pv.classList.toggle(cls,cache)})}")
+  &&page.includes("||troupeVoit(a)||apercusEnGeste.has(a.id)));\n apercusEnGeste.clear();")
+  &&page.includes("drag.image=0;visibilitesEnGeste();updateRing();")&&vivant.includes("if(typeof visibilitesEnGeste==='function')visibilitesEnGeste();"),'les socles suivent la lumière pendant le geste');}
 /* v0.598 — Une lumière posée passe devant les socles dans la page : tout ce qui retrouvait le socle d'un combattant par
    son rang — le glissement, la sélection, la taille des socles, le focus au clavier — ne compte plus qu'eux, et le socle
    glissé suit enfin la souris. Un rond qui apporte son icône la garde, même avec sa propre bulle : deux objets lumineux,
@@ -3423,7 +3437,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(carto.includes(" const peinte=[m.id,fogCalcul,fogMemTick,W,H,view,owner,oeilJoueur()].join('|');\n if(cv._peinte===peinte)return;cv._peinte=peinte;")
   &&carto.includes(" fogKey=cle;fogCalcul++;")&&carto.includes("c.putImageData(img,0,0);fogDirty=false;fogMemTick++}")
   &&carto.includes("+geometryKey(m);if(cv._peinte===cle)return;cv._peinte=cle;"),'rien ne se repeint sans changement');
- assert.ok(carto.includes("let nuitFondue={cle:'',cv:null},nuitPercee={cle:'',cv:null};")
+ assert.ok(carto.includes("let nuitFondue={cle:'',cv:null},nuitPercee={cle:'',cv:null},nuitGrise={cle:'',cv:null};")
   &&carto.includes("fc.filter='blur('+flou.toFixed(2)+'px)';fc.drawImage(large,-e,-e);fc.filter='none'}")
   &&carto.includes(" const nuit=calqueNuit(NW,NH);if(!nuit)return;")&&!/const lum=document\.createElement\('canvas'\)/.test(carto),'le noir à part, fondu, en cache');
  assert.ok(src.includes(" if(lumiereDe(o))ligne('Lumière '+String(lumiereDe(o)).replace('.',',')+'m','gear-lumiere');"),'Lumière 3m dans l’infobulle');}
