@@ -9,7 +9,7 @@ const nsSVG='http://www.w3.org/2000/svg';
 // Grille du brouillard : des cellules carrées et fines, pour un bord net qui suit les murs.
 const FOG_COLS=640;let fogVis=null,fogSeen=null,fogSeenSrc=null,fogKey='',fogDim=null,fogMem=null,fogDirty=true;
 function fogDims(m){const r=(m&&m.ratio)||16/9,w=FOG_COLS,h=Math.max(32,Math.round(w/r));return{w,h,n:w*h}}
-const KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coffre:'Coffre',coupure:'Séparation de zones',lien:'Regroupement de zones'};
+const KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coffre:'Coffre',lumiere:'Lumière',coupure:'Séparation de zones',lien:'Regroupement de zones'};
 function currentMap(){return maps.find(m=>m.id===currentMapId)||null}
 // L'éditeur et la table étirent l'image de la même façon ; encore faut-il que le cadre
 // ait le bon rapport. On le relit sur l'image pour les cartes d'avant son enregistrement.
@@ -86,8 +86,62 @@ let visionCache={cle:'',vues:new Map()};
    Ce qui est éclairé se lit sur un masque à la grille du brouillard : blanc hors de l'obscurité et sous une lumière, noir
    dans le noir. Il se refait quand l'obscurité ou les lumières changent, pas à chaque pas. */
 function obscuriteKey(m){return obscuriteDe(m).map(p=>p.anneaux.map(r=>r.length+':'+r.reduce((t,q)=>t+q[0]*7.31+q[1]*13.07,0).toFixed(3)).join(',')).join(';')}
-// Les sources de lumière de la carte ouverte : chacune {x,y,rayon} en pour cent et en pixels. Aucune pour l'instant.
-function sourcesLumiere(){return []}
+/* Les sources de lumière de la carte ouverte : chacune {x,y,rayon}, le point en pour cent, le rayon en pixels. Les lumières
+   de la carte encore allumées, et chaque combattant debout qui porte de quoi éclairer. */
+function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(),items=typeof catalog!=='undefined'?catalog.items||[]:[];
+ const l=(m.lumieres||[]).filter(x=>x&&!x.eteinte).map(x=>({x:x.x,y:x.y,rayon:x.rayon*tk}));
+ actors.forEach(a=>{if(!a||!alive(a)||a.horsCarte)return;const p=lumierePortee(a,items);if(p>0)l.push({x:a.x,y:a.y,rayon:p*tk})});
+ return l}
+/* Les halos : un rond de clarté chaude, à peine teinté, autour de chaque source, arrêté par les murs. Une toile à part, sous le
+   brouillard : là où l'on voit, le halo paraît ; ailleurs, le noir le couvre. */
+function toileHalos(){let cv=$('halos');if(!cv){cv=document.createElement('canvas');cv.id='halos';cv.setAttribute('aria-hidden','true');$('fog').before(cv)}return cv}
+function renderHalos(){const cv=toileHalos(),m=currentMap(),size=mapSize();
+ const sources=m?sourcesLumiere():[];if(!sources.length||!size.width){cv.style.display='none';return}
+ cv.style.display='';const large=cv.clientWidth,haut=cv.clientHeight;if(!large||!haut)return;
+ const ech=Math.min(2,window.devicePixelRatio||1),zoom=Math.max(1,typeof mapZoom==='number'&&mapZoom>0?mapZoom:1);
+ const W=Math.max(1,Math.min(4096,Math.round(large*ech*zoom))),H=Math.max(1,Math.round(W*haut/large));
+ if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+ const ctx=cv.getContext('2d'),k=W/size.width,formes=activeObstacles();ctx.clearRect(0,0,W,H);
+ sources.forEach(l=>{const poly=reachPolygon(l,formes,l.rayon,size.width,size.height,96);if(poly.length<3)return;
+  const cx=l.x/100*W,cy=l.y/100*H,r=l.rayon*k;ctx.save();
+  ctx.beginPath();poly.forEach((q,i)=>ctx[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));ctx.closePath();ctx.clip();
+  const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,'rgba(255,226,176,.30)');g.addColorStop(.55,'rgba(255,216,156,.16)');g.addColorStop(1,'rgba(255,206,136,0)');
+  ctx.fillStyle=g;ctx.fillRect(cx-r,cy-r,2*r,2*r);ctx.restore()})}
+/* Les lumières de la carte, à la table : un petit jeton au cœur du halo, l'icône de l'objet qu'elle contient ou une flamme.
+   La troupe le voit comme un objet, en vue ou déjà vu ; éteinte, la lumière n'est plus là. Un aventurier au contact prend
+   l'objet d'un clic, et la lumière s'éteint ; le MJ a son menu. */
+function lumiereAPortee(a,l){const size=mapSize();if(!a||!size.width)return false;
+ return inContact(a,l,size,tokenOf(a),tokenPx()*SOCLE_TAILLES.small)&&!wallsBetween(a,l,walls())}
+function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;
+ const pieces=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);if(!pieces.length)return;
+ pieces.forEach(it=>{if(typeof ajouterInventaire==='function')ajouterInventaire(a,it);else noteInventaire(a,it.name)});
+ l.eteinte=true;
+ log(nomNum(a)+' prend '+pieces.map(it=>'⟦'+it.id+'⟧').join(' ')+' : '+l.nom+' s’éteint.',{ton:'butin'});
+ render();saveMaps();scheduleSave()}
+function menuLumiereMJ(l,x,y){fermeMenuObjet();const m=document.createElement('div');m.className='menu-objet';m.setAttribute('role','menu');
+ const t=document.createElement('p');t.className='menu-objet-titre';t.textContent=l.nom||'Lumière';m.append(t);
+ const bouton=(txt,fn)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.textContent=txt;b.onclick=()=>{fermeMenuObjet();fn()};m.append(b)};
+ bouton(l.eteinte?'Rallumer':'Éteindre',()=>{if(l.eteinte)delete l.eteinte;else l.eteinte=true;log(l.nom+(l.eteinte?' s’éteint.':' se rallume.'),{ton:'carte'});render();saveMaps();scheduleSave()});
+ const h=(l.items||[]).length&&!l.eteinte?heroLePlusProche(l):null;if(h)bouton('Donner à '+nomNum(h)+', le plus proche',()=>recupererLumiere(h,l));
+ document.body.append(m);const r=m.getBoundingClientRect();
+ m.style.left=Math.max(6,Math.min(x+8,innerWidth-r.width-6))+'px';m.style.top=Math.max(6,Math.min(y+8,innerHeight-r.height-6))+'px';menuObjet=m;
+ setTimeout(()=>{document.addEventListener('pointerdown',dehorsMenuObjet,true);document.addEventListener('keydown',echapMenuObjet,true)})}
+function renderLumieres(){const vue=$('map-view'),m=currentMap();
+ vue.querySelectorAll('.token.lumiere').forEach(t=>t.remove());renderHalos();if(!m)return;
+ (m.lumieres||[]).forEach(l=>{if(!l||l.eteinte)return;
+  const vuTroupe=seenAt(l.x,l.y)||partySees({x:l.x,y:l.y,socle:'small'});
+  if(oeilJoueur()&&!vuTroupe)return;
+  const t=document.createElement('button');t.className='token lumiere'+(!vuTroupe?' veiled':'');
+  const piece=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).find(Boolean),im=piece&&typeof logoEquipement==='function'?logoEquipement(piece):null;
+  if(im){im.classList.add('logo-objet');t.append(im);t.classList.add('avec-logo')}else t.textContent='🔥';
+  t.setAttribute('aria-label',l.nom);
+  t.style.left=l.x+'%';t.style.top=l.y+'%';t.style.setProperty('--token',(tokenPx()*SOCLE_TAILLES.small)+'px');
+  t.onmousedown=e=>e.preventDefault();
+  t.onclick=e=>{e.stopPropagation();if(view==='mj'){menuLumiereMJ(l,e.clientX,e.clientY);return}
+   const a=actors[owner];if(!a||!a.hero||!alive(a)||!(l.items||[]).length)return;
+   if(!lumiereAPortee(a,l)){log('Approche ton aventurier : il faut être au contact de '+l.nom+'.',{local:true});return}
+   recupererLumiere(a,l)};
+  vue.append(t)})}
 function clesLumieres(){return sourcesLumiere().map(l=>l.x.toFixed(2)+','+l.y.toFixed(2)+','+Math.round(l.rayon)).join(';')}
 // Une carte est obscure dès qu'elle porte de l'obscurité ; sans elle, rien ne change.
 function carteObscure(){const m=currentMap();return !!m&&obscuriteDe(m).length>0}
@@ -438,7 +492,7 @@ function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=curr
  // Un passage secret clos ne perce plus la matière : le mur se peint plein pour tout le
  // monde, MJ compris, et c'est le trait violet — lui seul — qui le lui signale.
  if(formes.murs.contours.length)svg.append(svgMatiere([formes.murs.contours],null,'wall-group'));
- renderPortes();renderCoffres();renderObjets()}
+ renderPortes();renderCoffres();renderObjets();renderLumieres()}
 /* ---------- Les objets à la table ----------
    Un objet visible est un socle comme un autre, doré, que chacun peut ouvrir : on y lit
    la description, et un aventurier au contact y prend ce qui s'y trouve. Caché, seul le
@@ -828,7 +882,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Et ramène sur la table ceux qu'on en avait retirés : ils sont toujours parmi les aventuriers.
  heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.reposCourts=0;a.reposPris=false;a.fouilles=(a.fouilles||[]).filter(f=>f&&f.m!==id)});
  // Et ses objets récupérés reviennent à leur place.
- (m.objets||[]).forEach(o=>{delete o.pris});
+ (m.objets||[]).forEach(o=>{delete o.pris});(m.lumieres||[]).forEach(l=>{delete l.eteinte});
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...heros);
@@ -929,7 +983,7 @@ mapsPage.innerHTML=
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl" aria-label="Modèle de PNJ"></select>'
- +'<button data-tool="objet">+ Objet</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button>'
+ +'<button data-tool="objet">+ Objet</button><button data-tool="coffre">Coffre</button><button data-tool="coffrerond">Coffre rond</button><button data-tool="lumiere">Lumière</button>'
  +'<span class="bar-sep"></span><button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>'
  +'<span class="bar-sep"></span><button id="undo" title="Annuler (⌘Z)">↶ Annuler</button><button id="redo" title="Rétablir (⇧⌘Z)">↷ Rétablir</button>'
  +'<span class="bar-sep"></span><button id="czoom-out" aria-label="Dézoomer">−</button><span id="czoom-label" class="muted">100 %</span>'
@@ -944,7 +998,7 @@ mapsPage.innerHTML=
   +'<button id="foe-objets" hidden>✎ Objets portés</button>'
   +'<label id="door-cle-label" hidden>Clé qui l’ouvre <select id="door-cle"></select></label>'
   +'<button id="coffre-edit" hidden>✎ Modifier le coffre</button><button id="coffre-double" hidden>⧉ Dupliquer le coffre</button>'
- +'<button id="objet-edit" hidden>✎ Modifier l’objet</button>'
+ +'<button id="objet-edit" hidden>✎ Modifier l’objet</button><button id="lumiere-edit" hidden>✎ Modifier la lumière</button>'
  +'<button id="shape-delete" hidden>Supprimer la forme</button>'+'<div class="divider"></div><h2 id="echelle-titre">Échelle de la carte</h2>'+'<p class="muted" id="echelle-info"></p>'+'<p class="muted">Le socle témoin se promène sur la carte : pose-le contre une porte, un lit, un couloir, et tire son coin jusqu’à ce qu’un combattant y tienne. Il ne paraît jamais en partie.</p>'+'<button id="echelle-reset">Rétablir la mesure d’origine</button>'+'<div class="divider"></div><h2>Légende</h2>'
  +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'+'<li><i class="sw-ligne"></i>Ligne de blocage — la même chose, d’un seul trait fin</li>'
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
@@ -953,6 +1007,7 @@ mapsPage.innerHTML=
  +'<li><i class="sw-wall"></i>Pinceau de blocage — de la matière peinte à main levée</li>'
  +'<li><i class="sw-cut"></i>Pinceau de découpe — la même chose en négatif, il gratte</li>'
  +'<li><i class="sw-obscur"></i>Obscurité — dans le noir, on ne voit que sa zone de contact, ce qui est éclairé, ou jusqu’où porte sa vision dans le noir</li>'
+ +'<li><i class="sw-lumiere"></i>Lumière — une torche, une lampe, un feu : elle repousse le noir en rond ; l’objet qu’elle contient se prend, et elle s’éteint</li>'
  +'<li><i class="sw-foe"></i>Adversaire pré-placé</li>'
  +'<li><i class="sw-objet"></i>Objet ou mécanisme — visible, la troupe l’ouvre d’un clic ; caché, un test de compétence le découvre</li></ul><p class="muted" id="map-count"></p>'
  +'<div id="recal-box" hidden><div class="divider"></div><h2>Réparation</h2>'
@@ -997,8 +1052,8 @@ function supprimeSelection(){const m=mapDraft;if(!m||!mapSel)return false;
 function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,matiere:[],doors:[],start:null,foes:[],objets:[],coffres:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
 function ensure(m){m.doors??=[];m.foes??=[];m.ratio??=16/9;
- // L'obscurité est née en v0.591 : une seconde matière, qui ne bloque rien.
- m.obscurite??=[];
+ // L'obscurité est née en v0.591 : une seconde matière, qui ne bloque rien. Les lumières, en v0.592.
+ m.obscurite??=[];m.lumieres??=[];m.lumieres.forEach(l=>{l.id||=crypto.randomUUID();l.items??=[];l.rayon=Math.max(.5,Math.min(40,Number(l.rayon)||3))});
  // Les zones séparées, regroupées ou nommées par le MJ : nées en v0.252.
  m.zonesCoupures??=[];m.zonesLiens??=[];m.zonesNoms??=[];
  // Les objets sont nés en v0.144 ; chacun porte un identifiant, la table s'y réfère.
@@ -1108,6 +1163,7 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  obscurremplir:'Clique dans une pièce : toute la zone libre autour du clic — bornée par les murs, les portes et l’obscurité déjà posée — devient noire d’un coup.',
  obscurgomme:'Contourne l’obscurité à effacer : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  coffre:'Trace un coffre comme une porte : sa fiche s’ouvre aussitôt — nom, description, caché ou non, verrou, piège et contenu. La poignée ronde le fait tourner.',
+ lumiere:'Clique pour poser une lumière — torche au mur, lampe, feu — et régler son nom, sa portée en mètres et l’objet qu’elle contient. Tire sa poignée pour agrandir son halo. Un aventurier au contact prend l’objet d’un clic, et la lumière s’éteint.',
  coffrerond:'Trace un coffre rond : un tonneau, une urne, un nid. Sa fiche s’ouvre aussitôt ; la poignée ronde le fait tourner.',
  foe:'Clique pour poser l’adversaire choisi à droite de la barre. Pour le rendre invisible, donne-lui l’état Invisible en jeu.',
  objet:'Clique pour poser un objet ou un mécanisme : coffre, levier, trésor. Sa fiche s’ouvre aussitôt — nom, taille, description, objets à prendre, et s’il est caché, le test qui le découvre. Double-clic sur un objet posé pour le modifier.',
@@ -1151,6 +1207,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  if(m.start)c.append(shapeEl('start',0,m.start));
  m.foes.forEach((f,i)=>c.append(foeEl(i,f)));
  m.objets.forEach((o,i)=>c.append(objetEl(i,o)));
+ (m.lumieres||[]).forEach((l,i)=>c.append(lumiereEl(i,l)));
  // Le socle témoin par-dessus tout le reste : c'est lui qu'on vient comparer.
  const jauge=echelleEl();if(jauge)c.append(jauge);
  dessineTraits();dessineZonesEditeur();
@@ -1160,6 +1217,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  const cible=mapSel?shapeAt(mapSel):null;
  const adv=mapSel&&mapSel.kind==='foe'?cible:null,porte=mapSel&&mapSel.kind==='door'?cible:null;
  const obj=mapSel&&mapSel.kind==='objet'?cible:null;$('objet-edit').hidden=!obj;
+ const lum=mapSel&&mapSel.kind==='lumiere'?cible:null;$('lumiere-edit').hidden=!lum;
  const coffre=mapSel&&mapSel.kind==='coffre'?cible:null;$('coffre-edit').hidden=$('coffre-double').hidden=!coffre;
  $('door-cle-label').hidden=!(porte&&porte.keyLocked);if(porte&&porte.keyLocked)remplitCles($('door-cle'),porte.cleId||'');
  $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
@@ -1172,9 +1230,9 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  /* Une masse ne s'annonce pas en morceaux : elle est « la zone de blocage », qu'elle soit
     née d'un rectangle, d'un coup de pinceau ou de vingt gestes mêlés. */
  $('shape-label').textContent=mapSel?(porte&&porte.secret?'Passage secret':adv&&(modeleActuel(adv.tpl)||adv.tpl).pnj?'PNJ':KINDS[mapSel.kind])
-  +(adv?' · '+adv.tpl.name+(adv.cache?' · caché':''):'')+(obj?' · '+obj.nom+(obj.visible?'':' · caché'):'')+(coffre?' · '+coffre.nom+(coffre.cache?' · caché':''):'')+(verrou?' · verrouillée':''):'Aucune sélection.';
+  +(adv?' · '+adv.tpl.name+(adv.cache?' · caché':''):'')+(obj?' · '+obj.nom+(obj.visible?'':' · caché'):'')+(lum?' · '+lum.nom+' · '+lum.rayon+' m':'')+(coffre?' · '+coffre.nom+(coffre.cache?' · caché':''):'')+(verrou?' · verrouillée':''):'Aucune sélection.';
  $('map-xp').textContent=xpDeCarte(m)+' xp';
- $('map-count').textContent=matiereDe(m).length+' zone(s) de blocage, '+obscuriteDe(m).length+' zone(s) d’obscurité, '+m.doors.length+' porte(s), '
+ $('map-count').textContent=matiereDe(m).length+' zone(s) de blocage, '+obscuriteDe(m).length+' zone(s) d’obscurité, '+(m.lumieres||[]).length+' lumière(s), '+m.doors.length+' porte(s), '
   +m.foes.length+' adversaire(s), '+m.objets.length+' objet(s), '+m.coffres.length+' coffre(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
  $('recal-box').hidden=!recalNeeded();
  refreshHistory()}
@@ -1212,6 +1270,21 @@ function boiteSelection(p){const b=boitePolygone(p);if(!b)return null;
 /* Un objet sur le plan de travail : un socle rond, comme un adversaire, à la taille qu'il
    aura en partie ; caché, il se dessine en pointillé. */
 let clicObjet=null,clicCoffre=null;
+/* Une lumière sur le plan de travail : son halo, à la taille qu'il aura en partie, un cœur au milieu qui porte l'icône de
+   l'objet contenu, et une poignée au bord du halo pour le régler. */
+let clicLumiere=null;
+function lumiereEl(i,l){const el=document.createElement('div');
+ el.className='shape lumiere'+(mapSel&&mapSel.kind==='lumiere'&&mapSel.i===i?' selected':'');
+ const socle=Math.max(8,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100),d=socle*2*l.rayon;
+ el.style.width=el.style.height=d+'px';el.style.margin=(-d/2)+'px 0 0 '+(-d/2)+'px';
+ el.style.left=l.x+'%';el.style.top=l.y+'%';el.dataset.kind='lumiere';el.dataset.i=i;
+ const coeur=document.createElement('span');coeur.className='lumiere-coeur';coeur.style.width=coeur.style.height=Math.max(12,socle*.55)+'px';
+ const piece=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).find(Boolean),im=piece&&typeof logoEquipement==='function'?logoEquipement(piece):null;
+ if(im){im.classList.add('logo-objet');coeur.append(im)}else coeur.textContent='🔥';
+ const grip=document.createElement('span');grip.className='grip rayon';grip.dataset.grip='rayon';grip.dataset.kind='lumiere';grip.dataset.i=i;
+ el.append(coeur,grip);el.title=l.nom+' · '+l.rayon+' m — double-clic pour modifier';
+ el.ondblclick=e=>{e.stopPropagation();openLumiere(i)};
+ return el}
 function objetEl(i,o){const el=document.createElement('div');
  el.className='shape objet'+(o.visible?'':' cache')+(o.locked?' locked':'')+(mapSel&&mapSel.kind==='objet'&&mapSel.i===i?' selected':'');
  const t=Math.max(10,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100*(SOCLE_TAILLES[o.taille]||1));
@@ -1302,11 +1375,11 @@ function applyLasso(){const brut=lasso&&lasso.pts,mode=lasso&&lasso.mode;lasso=n
  mapSel=null;matiereChangee()}
 function shapeAt(d){const m=mapDraft;if(!m)return null;if(d.kind==='cut'||d.kind==='bloc')return cutRect;
  if(d.kind==='coupure')return (m.zonesCoupures||[])[d.i];if(d.kind==='lien')return (m.zonesLiens||[])[d.i];
- return d.kind==='start'?m.start:(d.kind==='door'?m.doors:d.kind==='objet'?m.objets:d.kind==='coffre'?(m.coffres||[]):m.foes)[d.i]}
+ return d.kind==='start'?m.start:(d.kind==='door'?m.doors:d.kind==='objet'?m.objets:d.kind==='coffre'?(m.coffres||[]):d.kind==='lumiere'?(m.lumieres||[]):m.foes)[d.i]}
 function removeShape(d){const m=mapDraft;
  if(d.kind==='start')m.start=null;
  else if(d.kind==='coupure')m.zonesCoupures.splice(d.i,1);else if(d.kind==='lien')m.zonesLiens.splice(d.i,1);
- else (d.kind==='door'?m.doors:d.kind==='objet'?m.objets:d.kind==='coffre'?m.coffres:m.foes).splice(d.i,1)}
+ else (d.kind==='door'?m.doors:d.kind==='objet'?m.objets:d.kind==='coffre'?m.coffres:d.kind==='lumiere'?m.lumieres:m.foes).splice(d.i,1)}
 /* ---------- L'outil Zones ----------
    Les zones se voient sur le plan de travail, chacune de sa couleur et de son numéro. Le MJ
    les sépare d'un trait — deux clics, comme une ligne de blocage — ou les regroupe d'un
@@ -1438,6 +1511,13 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   if(deja>=0){mapSel={kind:'foe',i:deja};renderCanvas();$('shape-label').textContent=t.name+' est unique : il est déjà sur cette carte.';return}
   pushUndo();mapDraft.foes.push({tpl:structuredClone(t),x:p.x,y:p.y,locked:false});
   mapSel={kind:'foe',i:mapDraft.foes.length-1};renderCanvas();saveMaps();return}
+ if(dessous&&dessous.kind==='lumiere'&&e.button===0&&mapDraft.lumieres&&mapDraft.lumieres[dessous.i]&&!grip){const t=performance.now(),deux=clicLumiere&&clicLumiere.i===dessous.i&&t-clicLumiere.t<450;
+  clicLumiere=deux?null:{i:dessous.i,t};
+  if(deux||mapTool==='lumiere'){mapSel=dessous;renderCanvas();openLumiere(dessous.i);e.preventDefault();return}}
+ // Une lumière se pose d'un clic, comme un objet, et sa fiche s'ouvre : nom, portée, objet contenu.
+ if(mapTool==='lumiere'&&!dessous){pushUndo();
+  mapDraft.lumieres.push({id:crypto.randomUUID(),nom:'Torche',x:p.x,y:p.y,rayon:3,items:[]});
+  mapSel={kind:'lumiere',i:mapDraft.lumieres.length-1};renderCanvas();saveMaps();openLumiere(mapSel.i);return}
  /* Un objet se pose d'un clic et sa fiche s'ouvre aussitôt : on le nomme avant de l'oublier. */
  if(mapTool==='objet'){pushUndo();
   mapDraft.objets.push({id:crypto.randomUUID(),nom:'Objet',desc:'',x:p.x,y:p.y,taille:'medium',visible:true,items:[],tresor:'',test:{comp:3,reussites:1}});
@@ -1527,7 +1607,9 @@ $('map-canvas').addEventListener('pointermove',e=>{
   renderCanvas();return}
  const cible=shapeAt(d);if(!cible)return;
  if(d.mode==='tourne'){cible.a=anglePoignee(d.centre,p,mapDraft.ratio,e.shiftKey);renderCanvas();return}
- if(d.kind==='foe'||d.kind==='objet'){cible.x=p.x;cible.y=p.y}
+ if(d.kind==='lumiere'&&d.grip==='rayon'){const r=$('map-canvas').getBoundingClientRect(),socle=Math.max(8,r.width*echelleSocle(mapDraft)/100);
+  cible.rayon=Math.max(.5,Math.min(40,Math.round(Math.hypot((p.x-cible.x)/100*r.width,(p.y-cible.y)/100*r.height)/socle*2)/2));renderCanvas();return}
+ if(d.kind==='foe'||d.kind==='objet'||d.kind==='lumiere'){cible.x=p.x;cible.y=p.y}
  else if(d.mode==='create'||d.mode==='cut'){cible.x=Math.min(d.from.x,p.x);cible.y=Math.min(d.from.y,p.y);cible.w=Math.abs(p.x-d.from.x);cible.h=Math.abs(p.y-d.from.y);
 }
  else if(d.mode==='move'){cible.x=Math.max(0,Math.min(100-d.orig.w,d.orig.x+p.x-d.from.x));cible.y=Math.max(0,Math.min(100-d.orig.h,d.orig.y+p.y-d.from.y))}
@@ -1561,7 +1643,7 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
   const i=bouge?zoneApres(bouge):-1;
   mapSel=i>=0?{kind:'matiere',i}:null;
   matiereChangee();return}
- const cible=d.kind==='foe'||d.kind==='objet'?null:shapeAt(d);
+ const cible=d.kind==='foe'||d.kind==='objet'||d.kind==='lumiere'?null:shapeAt(d);
  // Un coffre tout juste tracé ouvre sa fiche, comme un objet posé.
  if(cible&&d.mode==='create'&&d.kind==='coffre'&&gesteTrace(cible))setTimeout(()=>openCoffre(d.i));
  if(cible&&!gesteTrace(cible)){removeShape(d);
@@ -1610,6 +1692,20 @@ function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!==
   m.objets.splice(i,1);mapSel=null;objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  objetDialog.showModal()}
 $('objet-edit').onclick=()=>{if(mapSel&&mapSel.kind==='objet')openObjet(mapSel.i)};
+const lumiereDialog=dialog('lumiere-editor','Lumière','<form id="lumiere-form"><div id="lumiere-fields"></div><div class="form-actions"><button type="button" id="lumiere-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
+function openLumiere(i){const m=mapDraft,l=m&&m.lumieres&&m.lumieres[i];if(!l||view!=='mj')return;
+ lumiereDialog.querySelector('h2').textContent=l.nom||'Lumière';
+ $('lumiere-fields').innerHTML='<div class="edit-grid">'+field('Nom','nom',l.nom,'text','required maxlength="60"')
+  +field('Lumière (m)','rayon',l.rayon,'number','min="0.5" max="40" step="0.5"')+'</div>'
+  +'<h2 class="sous-titre">Objet contenu</h2><input id="lumiere-filtre" placeholder="Filtrer l’armurerie…" aria-label="Filtrer l’armurerie"><div id="lumiere-liste" class="objet-liste"></div>';
+ const pris=new Set(l.items||[]);pickerArmurerie($('lumiere-filtre'),$('lumiere-liste'),pris);
+ $('lumiere-form').onsubmit=e=>{e.preventDefault();const f=$('lumiere-form').elements;pushUndo();
+  l.nom=f.nom.value.trim().slice(0,60)||'Torche';l.rayon=Math.max(.5,Math.min(40,Number(f.rayon.value)||3));
+  l.items=[...pris];lumiereDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+ $('lumiere-suppr').onclick=()=>{if(!confirm('Supprimer « '+l.nom+' » ?'))return;pushUndo();
+  m.lumieres.splice(i,1);mapSel=null;lumiereDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
+ lumiereDialog.showModal()}
+$('lumiere-edit').onclick=()=>{if(mapSel&&mapSel.kind==='lumiere')openLumiere(mapSel.i)};
 $('shape-delete').onclick=()=>{if(!supprimeSelection())return;
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('door-key').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;

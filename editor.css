@@ -132,6 +132,19 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .legend i{flex:none;width:20px;height:14px;border-radius:3px}
 .sw-wall{background:#0b1114;border:1px solid #6c7d85}
 .sw-obscur{background:#05070a;border:1px dashed #5b6670;opacity:.75}
+.sw-lumiere{background:radial-gradient(circle,#ffe6b4 0,#ffd58a 45%,#f2c46a00 72%);border:1px solid #d9a85a}
+#map-tools [data-tool=lumiere]{border-color:#c99a3c;color:#8a6420}#map-tools [data-tool=lumiere].on{background:#e9c46a;border-color:#e9c46a;color:#3a2a08}
+/* Une lumière sur le plan : son halo, chaud et à peine teinté, son cœur, et la poignée qui règle son rayon. */
+.shape.lumiere{border-radius:50%;border:1px dashed #d9a85a;background:radial-gradient(circle,rgba(255,226,176,.34) 0,rgba(255,216,156,.16) 55%,rgba(255,206,136,0) 100%);cursor:grab}
+.shape.lumiere.selected{border-style:solid;border-color:#c99a3c;box-shadow:0 0 0 2px #e9c46a66}
+.shape.lumiere .lumiere-coeur{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;place-items:center;border-radius:50%;background:#fff6e0;border:1px solid #c99a3c;font-size:12px;box-shadow:0 1px 3px #00000040;pointer-events:none;overflow:hidden}
+.shape.lumiere .lumiere-coeur .logo-objet{width:80%;height:80%;object-fit:contain}
+.shape.lumiere .grip.rayon{position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:#e9c46a;border:1px solid #8a6420;cursor:ew-resize}
+/* À la table : la toile des halos sous le brouillard, et le jeton d'une lumière, petit et chaud. */
+#halos{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.token.lumiere{background:#fff3d6;border-color:#d9a85a;color:#3a2a08;font-size:calc(var(--token)*.5);box-shadow:0 0 10px 3px #ffd58a99,0 calc(var(--token)*.055) calc(var(--token)*.17) #0008;pointer-events:auto;cursor:pointer}
+.token.lumiere.avec-logo{display:grid;place-items:center}.token.lumiere .logo-objet{width:74%;height:74%;object-fit:contain;pointer-events:none}
+.token.lumiere.veiled{opacity:.46;outline:2px dashed #e2ae72;outline-offset:2px}
 /* L'obscurité sur le plan de travail : un voile sombre, en pointillé, par-dessus la matière. */
 .obscur-skin{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
 .obscur-skin path.bord{fill:none;stroke:#5b6670;stroke-width:1.2;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}

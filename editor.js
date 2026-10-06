@@ -323,6 +323,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(o.category==='ressource'||o.category==='restes'||o.category==='cle'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}
   o.usage=usageObjet(o);o.consumable=o.usage==='conso';
   o.magasin=o.magasin===true;o.unique=estUnique(o);
+  // Sa lumière, en mètres ; rien d'ordinaire.
+  o.lumiere=lumiereDe(o);if(!o.lumiere)delete o.lumiere;
   // Une arme de lancer : à distance, une main, sans munition.
   if(o.category==='weapon'&&o.ranged===true&&o.lancer===true){o.hands=1;o.usesAmmo=false}else delete o.lancer;if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}
   // Un reste donne ses ressources à son rendement ; une pièce du tanneur a sa recette.
@@ -5247,7 +5249,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  if(f.logo)a.logo=logosItem(a).includes(f.logo.value)||estLogoDossier(f.logo.value)?f.logo.value:'';
  if(f.rarete)a.rarete=rareteDe({rarete:f.rarete.value});
  if($('item-bonus'))a.bonus=lireBonusItem();
- for(const k of ['qty','price','hands','def'])if(f[k])a[k]=num(f[k].value,0,k==='def'?DEF_MAX:999999);
+ for(const k of ['qty','price','hands','def','lumiere'])if(f[k])a[k]=num(f[k].value,0,k==='def'?DEF_MAX:k==='lumiere'?40:999999);
  // « consommable » n'a plus de case : c'est l'usage qui le dit, plus haut.
  for(const k of ['usesAmmo'])if(f[k])a[k]=f[k].checked;
  if(f.munDe)a.munDe=keys.includes(f.munDe.value)?f.munDe.value:'';
@@ -5293,6 +5295,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="'+DEF_MAX+'"')
    +sel('Emplacement','slot',emplacementDe(a),[...EMPLACEMENTS.map(([k,n,p])=>[k,n+(p>1?' ('+p+')':'')]),['shield','Bouclier — une main']]):'')
   +(arme||armure?'':field('Quantité','qty',a.qty||1,'number','min="1" max="9999"'))
+  +field('Lumière (m)','lumiere',lumiereDe(a),'number','min="0" max="40"')
   +'</div>'
   // Le prix et les deux ressources, ensemble sur leur ligne.
   +'<div class="edit-grid prix-ressources">'

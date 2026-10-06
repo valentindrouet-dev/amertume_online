@@ -2160,7 +2160,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.equal(C.cleanSegments(Array.from({length:300},()=>({x1:1,y1:1,x2:2,y2:2}))).length,200);
  const nettoyee=C.cleanMap({name:'z',zonesCoupures:[{x1:1,y1:1,x2:2,y2:2}],zonesLiens:'nope'});
  assert.deepEqual(nettoyee.zonesCoupures,[{x1:1,y1:1,x2:2,y2:2}]);assert.deepEqual(nettoyee.zonesLiens,[]);
- assert.ok(cartes.includes("KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coffre:'Coffre',coupure:'Séparation de zones',lien:'Regroupement de zones'}")
+ assert.ok(cartes.includes("KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coffre:'Coffre',lumiere:'Lumière',coupure:'Séparation de zones',lien:'Regroupement de zones'}")
   &&cartes.includes('<button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>')&&cartes.includes("const OUTILS_ZONES=['zones','separer','regrouper'];")
   &&cartes.includes(" m.zonesCoupures??=[];m.zonesLiens??=[];")&&cartes.includes(' dessineTraits();dessineZonesEditeur();')
   &&cartes.includes("if(d.kind==='coupure')return (m.zonesCoupures||[])[d.i];if(d.kind==='lien')return (m.zonesLiens||[])[d.i];")
@@ -2258,7 +2258,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&!vivant.includes('reduction'),'le journal barre les dés écartés par la DEF, ici et en table');
  assert.ok(page.includes("return defPlafonnee(a&&a.defBrisee>0?d-a.defBrisee:d)}")&&src.includes("[...c.items,...c.monsters].forEach(o=>{if(o&&Number(o.def)>DEF_MAX)o.def=DEF_MAX});")
   &&src.includes("{cle:'def',nom:'DEF',type:'nombre',max:DEF_MAX,pour:armure,")&&src.includes("ecrit:(m,v)=>{m.def=entier(0,DEF_MAX)(v)}}")
-  &&src.includes("field('DEF','def',a.def||0,'number','min=\"0\" max=\"'+DEF_MAX+'\"')")&&src.includes("num(f[k].value,0,k==='def'?DEF_MAX:999999)"),'la DEF plafonne à 6 partout');
+  &&src.includes("field('DEF','def',a.def||0,'number','min=\"0\" max=\"'+DEF_MAX+'\"')")&&src.includes("num(f[k].value,0,k==='def'?DEF_MAX:k==='lumiere'?40:999999)"),'la DEF plafonne à 6 partout');
 }
 /* v0.256 — Trois états de plus (hanté, abandonné, envahi), chacun avec son calque ; le domaine
    s'exporte et se reprend à part ; les contours ont un bouton dans l'éditeur, lié à celui de
@@ -3360,6 +3360,50 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.592 — Les lumières dans le noir. Un objet de l'Armurerie porte un champ « Lumière : x m » : arme, armure ou munition
+   n'éclaire que tenue ou portée par un aventurier ; tout autre objet éclaire depuis l'inventaire ; un adversaire éclaire
+   avec tout ce qu'il a. Sur une carte, l'outil Lumière pose un point lumineux, nommé, au rayon tiré à la poignée, qui peut
+   contenir un objet ; à la table, un halo chaud et à peine teinté repousse l'obscurité en rayon, arrêté par les murs, et
+   le petit jeton au cœur du halo se prend au contact : l'objet rejoint l'inventaire, la lumière s'éteint ; le MJ l'éteint,
+   la rallume ou la donne. Éteinte, elle voyage avec les portes ; la carte rouverte la rallume. */
+{const src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),feuille=fs.readFileSync('editor.css','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ // La portée d'un porteur : le plus grand rayon de ce qui éclaire.
+ const items=[{id:'t',name:'Torche',category:'objet',lumiere:5},{id:'l',name:'Lanterne',category:'weapon',hands:1,lumiere:8},{id:'c',name:'Casque',category:'armor',lumiere:2},{id:'b',name:'Bougie',category:'ammo',lumiere:1},{id:'x',name:'Caillou',category:'objet'}];
+ const h={hero:true,inventaire:['t','l','c','b','x'],weapons:[]};
+ assert.equal(C.lumierePortee(h,items),5,'la torche éclaire depuis l’inventaire, la lanterne rangée non');
+ assert.equal(C.lumierePortee({...h,weapons:['l']},items),8,'la lanterne tenue');
+ assert.equal(C.lumierePortee({...h,inventaire:['c','x'],armures:['c']},items),2,'le casque porté');
+ assert.equal(C.lumierePortee({...h,inventaire:['b','x'],munitionId:'b'},items),1,'la munition choisie');
+ assert.equal(C.lumierePortee({...h,inventaire:['l','c','x']},items),0,'rien de tenu, rien d’allumé');
+ assert.equal(C.lumierePortee({hero:false,inventaire:['l']},items),8,'un adversaire éclaire avec tout ce qu’il a');
+ assert.equal(C.lumierePortee(null,items)+C.lumierePortee(h,null)+C.lumierePortee({hero:true},items),0);
+ assert.equal([C.lumiereDe({lumiere:'7'}),C.lumiereDe({lumiere:99}),C.lumiereDe({}),C.lumiereDe(null)].join(),'7,40,0,0');
+ // Une lumière de carte, nettoyée ; au plus cent par carte.
+ assert.deepEqual(C.cleanLumiere({id:'a',nom:'',x:150,y:-3,rayon:0,items:['t',5,''],eteinte:true}),{id:'a',nom:'Torche',x:100,y:0,rayon:3,items:['t'],eteinte:true});
+ assert.deepEqual(C.cleanLumiere({nom:'Feu',x:10,y:20,rayon:60}),{id:'',nom:'Feu',x:10,y:20,rayon:40,items:[]});
+ assert.equal(C.cleanMap({lumieres:Array.from({length:120},(_,i)=>({id:'l'+i,x:1,y:1}))}).lumieres.length,100);assert.deepEqual(C.cleanMap({}).lumieres,[]);
+ // L'Armurerie et le catalogue.
+ assert.ok(src.includes("field('Lumière (m)','lumiere',lumiereDe(a),'number','min=\"0\" max=\"40\"')")&&src.includes("['qty','price','hands','def','lumiere']")
+  &&src.includes("  o.lumiere=lumiereDe(o);if(!o.lumiere)delete o.lumiere;"),'le champ Lumière des objets');
+ // L'éditeur de cartes : l'outil, la fiche, la poignée du rayon.
+ assert.ok(carto.includes("lumiere:'Lumière',")&&carto.includes('<button data-tool="lumiere">Lumière</button>')&&carto.includes('<button id="lumiere-edit" hidden>✎ Modifier la lumière</button>')
+  &&carto.includes(" m.obscurite??=[];m.lumieres??=[];m.lumieres.forEach(l=>{l.id||=crypto.randomUUID();l.items??=[];l.rayon=Math.max(.5,Math.min(40,Number(l.rayon)||3))});")
+  &&carto.includes("function openLumiere(i){const m=mapDraft,l=m&&m.lumieres&&m.lumieres[i];if(!l||view!=='mj')return;")
+  &&carto.includes(" if(d.kind==='lumiere'&&d.grip==='rayon'){const r=$('map-canvas').getBoundingClientRect(),socle=Math.max(8,r.width*echelleSocle(mapDraft)/100);"),'l’outil Lumière');
+ // La table : les sources, les halos sous le brouillard, le jeton, la prise, le menu du MJ.
+ assert.ok(carto.includes("function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(),items=typeof catalog!=='undefined'?catalog.items||[]:[];")
+  &&carto.includes(" const l=(m.lumieres||[]).filter(x=>x&&!x.eteinte).map(x=>({x:x.x,y:x.y,rayon:x.rayon*tk}));")
+  &&carto.includes(" actors.forEach(a=>{if(!a||!alive(a)||a.horsCarte)return;const p=lumierePortee(a,items);if(p>0)l.push({x:a.x,y:a.y,rayon:p*tk})});")
+  &&carto.includes("function toileHalos(){let cv=$('halos');if(!cv){cv=document.createElement('canvas');cv.id='halos';cv.setAttribute('aria-hidden','true');$('fog').before(cv)}return cv}")
+  &&carto.includes("function renderHalos(){const cv=toileHalos(),m=currentMap(),size=mapSize();")
+  &&carto.includes("g.addColorStop(0,'rgba(255,226,176,.30)');g.addColorStop(.55,'rgba(255,216,156,.16)');g.addColorStop(1,'rgba(255,206,136,0)');")
+  &&carto.includes("function clesLumieres(){return sourcesLumiere().map(l=>l.x.toFixed(2)+','+l.y.toFixed(2)+','+Math.round(l.rayon)).join(';')}")
+  &&feuille.includes("#halos{position:absolute;")&&feuille.includes(".token.lumiere{background:#fff3d6;border-color:#d9a85a;"),'les halos');
+ assert.ok(carto.includes("function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;")&&carto.includes(" l.eteinte=true;\n log(nomNum(a)+' prend '+pieces.map(it=>'⟦'+it.id+'⟧').join(' ')+' : '+l.nom+' s’éteint.',{ton:'butin'});")
+  &&carto.includes("bouton(l.eteinte?'Rallumer':'Éteindre',()=>{if(l.eteinte)delete l.eteinte;else l.eteinte=true;")
+  &&carto.includes(" vue.querySelectorAll('.token.lumiere').forEach(t=>t.remove());renderHalos();if(!m)return;")&&carto.includes(" renderPortes();renderCoffres();renderObjets();renderLumieres()}")
+  &&carto.includes("(m.objets||[]).forEach(o=>{delete o.pris});(m.lumieres||[]).forEach(l=>{delete l.eteinte});"),'la prise, le menu, la carte rouverte');
+ assert.ok(vivant.includes("...(m.lumieres||[]).map(l=>l.eteinte?1:0)")&&vivant.includes("const n3=n2+(m.coffres||[]).length;(m.lumieres||[]).forEach((l,k)=>{const v=d.doors[n3+k];if(v===1)l.eteinte=true;else if(v===0)delete l.eteinte})}"),'éteinte, en ligne');}
 /* v0.591 — L'obscurité et la vision dans le noir. Sur une carte, une seconde matière, dessinée au rectangle, au contour libre,
    au remplissage d'une pièce, effacée à la gomme : dans le noir, on ne voit que sa zone de contact, ce qui est éclairé, et
    jusqu'où porte sa vision dans le noir ; les alliés hors de vue s'effacent chez les joueurs, et on ne vise que ce qu'on voit.
