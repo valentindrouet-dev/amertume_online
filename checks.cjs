@@ -2067,8 +2067,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  assert.equal(C.elusMeneur({combien:'tous'},[{a:'c',dist:3},{a:'a',dist:1}]).length,2);assert.deepEqual(C.elusMeneur({},[]),[]);
  assert.ok(page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
-  &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")
-  &&page.includes("if(portee==='vue')return hasLineOfSight(m,o,actors.filter(x=>x!==m&&x!==o&&alive(x)),size,tokenPx());")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")
+  &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")
   &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")
   &&src.includes("const aura=!(typeof spectateur==='function'&&spectateur())&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}")
@@ -3361,6 +3360,52 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.591 — L'obscurité et la vision dans le noir. Sur une carte, une seconde matière, dessinée au rectangle, au contour libre,
+   au remplissage d'une pièce, effacée à la gomme : dans le noir, on ne voit que sa zone de contact, ce qui est éclairé, et
+   jusqu'où porte sa vision dans le noir ; les alliés hors de vue s'effacent chez les joueurs, et on ne vise que ce qu'on voit.
+   Aveugle ramène chacun à sa zone de contact. Les adversaires sont nyctalopes, sauf réglage contraire. Talent Vision dans le
+   noir, et ses améliorations : augmentée, Prédateur des Ombres, dont les dés se lancent au coup. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),feuille=fs.readFileSync('editor.css','utf8'),vivant=fs.readFileSync('live.js','utf8');
+ // La matière de l'obscurité : union, gomme, test d'un point, remplissage d'une pièce close.
+ const m={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[60,10],[60,60],[10,60]]]}],doors:[]};
+ assert.equal(C.obscuriteDe(m).length,0);C.remplitObscurite(m,[20,20],64);
+ assert.equal(m.obscurite.length,1);assert.ok(C.dansObscurite(m,[30,30])&&!C.dansObscurite(m,[80,80])&&!C.dansObscurite(m,[5,5]),'la pièce remplie, pas le mur');
+ C.remplitObscurite(m,[5,5],64);assert.equal(m.obscurite.length,1,'un clic dans un mur ne remplit rien');
+ C.retireObscurite(m,[[20,20],[40,20],[40,40],[20,40]]);assert.ok(!C.dansObscurite(m,[30,30])&&C.dansObscurite(m,[15,15]),'la gomme');
+ C.ajouteObscurite(m,[[70,70],[90,70],[90,90],[70,90]]);assert.ok(C.dansObscurite(m,[80,80])&&m.obscurite.every(p=>!('verrou' in p)),'le rectangle, sans verrou');
+ assert.equal(C.cleanMap({obscurite:[{anneaux:[[[1,1],[2,1],[2,2]]],verrou:true}]}).obscurite.length,1,'l’obscurité voyage avec la carte');
+ assert.deepEqual(C.cleanMap({}).obscurite,[]);
+ // La grille à juge : seules les cases acceptées.
+ {const g=new Uint8Array(100),n=C.fillPolygonGridSi(g,10,10,[[0,0],[100,0],[100,100],[0,100]],(i,j)=>i<5);assert.equal(n,50)}
+ // Les codes du talent.
+ const T=C.TALENTS_CODES;assert.equal(T.visionnoir.type,'pass');assert.equal(T.visionaugmentee.pour,'visionnoir');assert.equal(T.predateurombres.pour,'visionnoir');
+ assert.equal(T.predateurombres.nom,'Vision dans le noir — Prédateur des Ombres');
+ assert.ok(T.predateurombres.params.find(p=>p.cle==='forme').options.map(([k])=>k).join()==='fixe,des,niveau,vie,endu,pv,def,degats','toutes les caractéristiques, en menu');
+ assert.deepEqual(C.predateurDe({forme:'des',nb:2,faces:8}),{forme:'des',x:1,nb:2,faces:8});assert.equal(C.predateurDe({forme:'ailleurs'}).forme,'fixe');
+ assert.ok(T.visionaugmentee.phrase({m1:10,m2:16},2,{loin:2}).includes('16 m')&&T.visionaugmentee.phrase({m1:10,m2:16},1,{loin:2}).includes('10 m'));
+ assert.deepEqual(C.cleanMonster({name:'A',nyctalope:false}).nyctalope,false);assert.ok(!('nyctalope' in C.cleanMonster({name:'A'})));
+ // Les outils de l'éditeur, le rendu, la table.
+ assert.ok(carto.includes('<button data-tool="obscur">Obscurité</button><button data-tool="obscurlibre">Obscurité libre</button><button data-tool="obscurremplir">Remplir d’obscurité</button><button data-tool="obscurgomme">Gomme d’obscurité</button>')
+  &&carto.includes("if(mode==='obscurlibre')ajouteObscurite(mapDraft,forme);else if(mode==='obscurgomme')retireObscurite(mapDraft,forme);else retireMatiere(mapDraft,forme);")
+  &&carto.includes("if(mapTool==='obscurremplir'){pushUndo();")&&carto.includes("if(r.obscur){ajouteObscurite(mapDraft,forme);mapSel=null}")&&carto.includes(" m.obscurite??=[];")
+  &&carto.includes("c.append(svgMatiere([obs.flatMap(p=>p.anneaux)],null,'obscur-skin'))")&&feuille.includes(".obscur-skin path.fond{fill:#05070a;fill-opacity:.62;stroke:none}"),'les outils d’obscurité');
+ assert.ok(carto.includes("function rayonVision(a){const base=contactRadius(tokenOf(a));")&&carto.includes(" if(!a.hero)return a.orbeStatique||a.nyctalope===false?base:Infinity;")
+  &&carto.includes("function voitSocle(o,b){")&&carto.includes("function voitPoint(o,x,y){")&&carto.includes("function eclaireA(x,y){")&&carto.includes("function dansLeNoir(a){return !!a&&carteObscure()&&!eclaireA(a.x,a.y)}")
+  &&carto.includes("return visionInPixels().some((p,k)=>polyTouchesDisc(p,c,r)&&(!yeux[k]||voitSocle(yeux[k],a)))}")&&carto.includes("return fogTroupePx.some((p,k)=>polyTouchesDisc(p,c,r)&&(!yeux[k]||voitSocle(yeux[k],a)))}")
+  &&carto.includes("  if(!voitPoint(o.qui,x,y))return false;")&&carto.includes("neuf+=fillPolygonGridSi(fogSeen,d.w,d.h,p,(i,j)=>{if(M&&!aveugle&&M.data[j*d.w+i]===1)return true;")
+  &&carto.includes("lc.fillStyle='#fff';lc.fillRect(0,0,W,H);lc.globalCompositeOperation='destination-out';")&&carto.includes(" if(!oeilJoueur()&&carteObscure()){ctx.fillStyle='rgba(2,4,8,.5)';"),'la vision dans le noir, et son rendu');
+ assert.ok(page.includes("if(typeof voitSocle==='function'&&!voitSocle(a,b))return {ok:false,ranged:true,text:'cible dans le noir'};")
+  &&page.includes(" ||(a.hero&&view!=='mj'&&owner!==i&&typeof carteObscure==='function'&&carteObscure()&&typeof partySees==='function'&&!partySees(a))}")
+  &&page.includes(" if(blinded(a)&&loin&&!mapSize().width)return 'Aveugle : ne voit rien au-delà de sa zone de contact.';")
+  &&page.includes("  case 'Aveugle':return 'Ne voit rien au-delà de sa zone de contact : ne peut viser que ce qui s’y trouve.';")
+  &&page.includes("  if(typeof voitSocle==='function'&&!voitSocle(a,o))return false;\n  const qui=provoque?o:a;")
+  &&page.includes("&&(typeof voitSocle!=='function'||voitSocle(c,o)));")&&page.includes("&&(typeof voitSocle!=='function'||voitSocle(m,o));"),'on ne vise que ce qu’on voit ; Aveugle');
+ assert.ok(page.includes("+compteEtat(a,'Furie')+bonusPredateur(a);return meuteActive(a)?bonus*2:bonus}")&&page.includes("function visionNoirDe(a){")
+  &&page.includes("const aug=c.find(x=>x.code.cle==='visionaugmentee');if(aug)m=Math.max(m,")&&page.includes("function desPredateur(a){")
+  &&page.includes("+(Math.trunc(Number(opts.bonusEnPlus))||0)+(predateur?predateur.total:0);"),'le talent et ses améliorations');
+ assert.ok(src.includes("'<label class=\"field-check\"><input name=\"nyctalope\" type=\"checkbox\" '+(a.nyctalope===false?'':'checked')+'>Vision dans le noir</label>'")
+  &&src.includes("if(f.nyctalope){if(f.nyctalope.checked)delete a.nyctalope;else a.nyctalope=false}")&&src.includes("{cle:'nyctalope',nom:'Vision dans le noir',type:'choix',")
+  &&src.includes("...(m.nyctalope===false?{nyctalope:false}:{}),notes:m.notes||'',")&&src.includes("...(a.nyctalope===false?{nyctalope:false}:{}),notes:a.notes,")&&vivant.includes("'orbeStatique','nyctalope',"),'le réglage des adversaires');}
 /* v0.590 — La marque « ! » d'un talent de début de combat : le seul rond jaune, sans contour blanc ni brun, par-dessus la
    barre de PV. Le Mouvement passe à un brun plus clair, aussi coloré. La piste de dés prend la moitié de la rangée ; chaque
    jet y tient sur une ligne, aussi grand que la place le permet, le bonus au bout, aligné en colonne ; trop de dés, et la
@@ -3800,8 +3845,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  const K=C.TALENTS_CODES;assert.ok(K.charge.type==='act'&&K.charge.gratuit===true&&['chargeelan','chargerepousse','chargerepoussedist'].every(k=>K[k]&&K[k].type==='ame'),'Charge et ses trois améliorations');
  assert.ok(src.includes("charge:'Destructeur',chargeelan:'Destructeur',chargerepousse:'Destructeur',chargerepoussedist:'Destructeur'"),'chez le Destructeur');
  assert.ok(page.includes("lab.style.fontSize=Math.max(6.3,tokenPx()*.154).toFixed(1)+'px';"),'le chiffre, 30 % plus petit');
- assert.ok(page.includes("degatsDe(a)+(Math.trunc(Number(opts.bonusEnPlus))||0);")
-  &&page.split("actionPriseAuDepart=true;if(pa)depensePoint(a,'action',pa);").length===3&&page.includes("const pa=opts.sansAction?0:ctxT?ctxT.pa:1;"),'l’attaque de la Charge ne prend pas l’Action, et porte son élan');
+ assert.ok(page.split("actionPriseAuDepart=true;if(pa)depensePoint(a,'action',pa);").length===3&&page.includes("const pa=opts.sansAction?0:ctxT?ctxT.pa:1;"),'l’attaque de la Charge ne prend pas l’Action, et porte son élan');
  assert.ok(page.includes("attack({vises:[j],sansAction:true,bonusEnPlus:elan,")&&page.includes("de>0?d+de:0)+2;"),'un point de Mouvement, l’élan, la poussée');}
 /* v0.526 — Le chiffre de distance plus petit, et à la couleur du ciblage : bleu clair s'il part, rouge clair s'il est bloqué. */
 {const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("#aim .aim-dist.etat-ok{fill:#a9d2f7}#aim .aim-dist.etat-no{fill:#f6a59c}"),'taille et couleur du chiffre');}
@@ -3816,7 +3860,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  const a={states:[]};assert.ok(C.cumulable('Furie')&&C.ETATS_JEU.includes('Furie'),'empilable, et posable par un effet');
  C.infligeEtat(a,'Furie');C.infligeEtat(a,'Furie');C.infligeEtat(a,'Furie');assert.equal(C.compteEtat(a,'Furie'),3,'trois crans');
  const b={states:['Onde']};assert.ok(C.infligeEtat(b,'Furie')===true&&C.hasState(b,'Onde'),'l’Onde ne l’absorbe pas');
- assert.ok(page.includes("+compteEtat(a,'Furie');return meuteActive(a)?bonus*2:bonus}")&&page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢'};")
+ assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢'};")
   &&page.includes("'Furie':'#e2463c'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':'Furie'"),'son icône se choisit');}
 /* v0.523 — Enragement, passif de Destructeur : chaque critique ajoute +1 aux dégâts du porteur jusqu'à la fin du

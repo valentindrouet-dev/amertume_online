@@ -339,7 +339,7 @@ function cleanMonster(t){const dés={};
   socle:texte(t&&t.socle,20)||'medium',family:texte(t&&t.family,60),
   pv:Math.round(borne(t&&t.pv,0,9999))||1,def:Math.round(borne(t&&t.def,0,DEF_MAX)),
   damage:Math.round(borne(t&&t.damage,0,999)),xp:Math.round(borne(t&&t.xp,0,9999)),
-  menace:texte(t&&t.menace,30)||'closest',esquive:!!(t&&t.esquive),rapide:!!(t&&t.rapide),
+  menace:texte(t&&t.menace,30)||'closest',esquive:!!(t&&t.esquive),rapide:!!(t&&t.rapide),...(t&&t.nyctalope===false?{nyctalope:false}:{}),
   ...(t&&t.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:t.alignement}),...(t.unique===true?{unique:true}:{})}:{}),...(normaliseBourse(t&&t.bourse).length?{bourse:normaliseBourse(t.bourse)}:{}),
   /* Un adversaire peut n'avoir aucune attaque : c'est au maître du jeu d'en décider, et
      un monstre qui ne frappe pas est un monstre comme un autre. Un modèle d'avant, qui
@@ -393,7 +393,7 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
   :migreMatiere({ratio,walls:cleanRects(m&&m.walls),visions:cleanRects(m&&m.visions),traits:cleanTraits(m&&m.traits)}).matiere;
  return {name:texte(m&&m.name,80)||'Carte',ratio,
   fitted:!(m&&m.fitted===false),image:img,
-  matiere,doors:cleanRects(m&&m.doors,true),
+  matiere,obscurite:cleanMatiere(m&&m.obscurite).map(p=>({anneaux:p.anneaux})),doors:cleanRects(m&&m.doors,true),
   start:cleanRect(m&&m.start),
   foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
    hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),...(f&&typeof f.id==='string'&&f.id?{id:texte(f.id,40)}:{}),...portePropre(f),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
@@ -481,6 +481,42 @@ function retireMatiere(map,forme){const avant=matiereDe(map);
 function refondMatiere(map){const avant=matiereDe(map);if(avant.length<2)return avant;
  map.matiere=garderVerrous(depuisClip(Clipper.union(...avant.map(p=>versClip([p])))),avant);
  return map.matiere}
+/* L'obscurité : une seconde couche de polygones, à part de la matière, qui ne bloque rien mais plonge dans le noir ce
+   qu'elle couvre. Les mêmes opérations exactes : un rectangle ou un contour s'y unit, une gomme l'en ôte. */
+function obscuriteDe(map){if(!map)return [];if(!Array.isArray(map.obscurite))map.obscurite=[];return map.obscurite}
+function ajouteObscurite(map,formes){const avant=obscuriteDe(map);
+ const morceaux=(Array.isArray(formes&&formes[0]&&formes[0][0])?formes:[formes]).filter(f=>f&&f.length>=3).map(f=>[[anneauFerme(f)]]);
+ if(!morceaux.length)return avant;
+ map.obscurite=depuisClip(Clipper.union(...(avant.length?[versClip(avant)]:[]),...morceaux)).map(p=>({anneaux:p.anneaux}));
+ return map.obscurite}
+function retireObscurite(map,forme){const avant=obscuriteDe(map);
+ if(!forme||forme.length<3||!avant.length)return avant;
+ map.obscurite=depuisClip(Clipper.difference(versClip(avant),[[anneauFerme(forme)]])).map(p=>({anneaux:p.anneaux}));
+ return map.obscurite}
+function dansObscurite(map,pt){return obscuriteDe(map).some(p=>polygoneContient(p,pt))}
+/* Le remplissage : la zone libre sous le point — bornée par la matière, les portes et l'obscurité déjà posée — devient
+   noire d'un coup. Elle se cherche sur une grille fine, puis ses cases se fondent en rectangles, et les rectangles en
+   un polygone exact. Rien si le point est dans un mur, ou déjà dans le noir. */
+function remplitObscurite(map,pt,cols=320){const ratio=Math.max(.05,Number(map&&map.ratio)||16/9),rows=Math.max(16,Math.round(cols/ratio)),n=cols*rows;
+ const bouche=new Uint8Array(n);
+ matiereDe(map).forEach(p=>rempliAnneaux(bouche,cols,rows,p.anneaux,1));
+ (map.doors||[]).map(d=>doorPolygon(d,ratio)).filter(Boolean).forEach(q=>rempliAnneaux(bouche,cols,rows,[q],1));
+ obscuriteDe(map).forEach(p=>rempliAnneaux(bouche,cols,rows,p.anneaux,1));
+ const i0=Math.min(cols-1,Math.max(0,Math.floor(pt[0]/100*cols))),j0=Math.min(rows-1,Math.max(0,Math.floor(pt[1]/100*rows)));
+ if(bouche[j0*cols+i0])return obscuriteDe(map);
+ const dedans=new Uint8Array(n),pile=new Int32Array(n);let haut=0;pile[haut++]=j0*cols+i0;dedans[j0*cols+i0]=1;
+ while(haut){const k=pile[--haut],i=k%cols,j=(k-i)/cols;
+  for(const v of [i>0?k-1:-1,i<cols-1?k+1:-1,j>0?k-cols:-1,j<rows-1?k+cols:-1])if(v>=0&&!bouche[v]&&!dedans[v]){dedans[v]=1;pile[haut++]=v}}
+ // Les cases, en rectangles : une suite de cases sur une ligne, prolongée sur les lignes du dessous tant qu'elle y est identique.
+ const rects=[],ouverts=new Map();
+ for(let j=0;j<=rows;j++){const vus=new Set();
+  if(j<rows)for(let i=0;i<cols;){if(!dedans[j*cols+i]){i++;continue}const a=i;while(i<cols&&dedans[j*cols+i])i++;
+   const cle=a+':'+i,r=ouverts.get(cle);if(r)r.j1=j;else ouverts.set(cle,{i0:a,i1:i,j0:j,j1:j});vus.add(cle)}
+  for(const [cle,r] of [...ouverts]){if(!vus.has(cle)){rects.push(r);ouverts.delete(cle)}}}
+ const polys=rects.map(r=>[[anneauFerme([[r.i0/cols*100,r.j0/rows*100],[r.i1/cols*100,r.j0/rows*100],[r.i1/cols*100,(r.j1+1)/rows*100],[r.i0/cols*100,(r.j1+1)/rows*100]])]]);
+ if(!polys.length)return obscuriteDe(map);
+ const zone=depuisClip(Clipper.union(...polys)).map(p=>p.anneaux);
+ return ajouteObscurite(map,zone.flat())}
 function polygoneContient(p,pt){return (p&&p.anneaux||[]).reduce((v,r)=>pointInPolygon(pt,r)?!v:v,false)}
 // Le polygone de matière sous ce point, ou -1 : c'est lui qu'un clic désigne.
 function matiereSous(map,pt){return matiereDe(map).findIndex(p=>polygoneContient(p,pt))}
@@ -730,6 +766,17 @@ function fillPolygonGrid(grid,cols,rows,poly){let neuf=0;
    const i0=Math.max(0,Math.ceil(xs[t]/100*cols-.5)),i1=Math.min(cols-1,Math.floor(xs[t+1]/100*cols-.5));
    for(let i=i0;i<=i1;i++){const k=j*cols+i;if(!grid[k]){grid[k]=1;neuf++}}}}
  return neuf}
+// La même chose, avec un juge par case : seules les cases qu'il accepte entrent dans la grille.
+function fillPolygonGridSi(grid,cols,rows,poly,ok){let neuf=0;
+ if(!poly||poly.length<3)return neuf;
+ for(let j=0;j<rows;j++){const y=(j+.5)/rows*100,xs=[];
+  for(let i=0,k=poly.length-1;i<poly.length;k=i++){const a=poly[k],b=poly[i];
+   if((a[1]>y)!==(b[1]>y))xs.push(a[0]+(y-a[1])*(b[0]-a[0])/(b[1]-a[1]))}
+  xs.sort((u,v)=>u-v);
+  for(let t=0;t+1<xs.length;t+=2){
+   const i0=Math.max(0,Math.ceil(xs[t]/100*cols-.5)),i1=Math.min(cols-1,Math.floor(xs[t+1]/100*cols-.5));
+   for(let i=i0;i<=i1;i++){const k=j*cols+i;if(!grid[k]&&ok(i,j)){grid[k]=1;neuf++}}}}
+ return neuf}
 function maskChars(n){return Math.ceil(Math.ceil(n/8)/3)*4}
 function packMask(grid,n){let s='';
  for(let i=0;i<n;i+=8){let b=0;for(let k=0;k<8&&i+k<n;k++)if(grid[i+k])b|=1<<k;s+=String.fromCharCode(b)}
@@ -829,6 +876,13 @@ const PARAMS_MONTANT=[{cle:'montant',nom:'Dégâts',type:'choix',defaut:'bonus',
  {cle:'x',nom:'x',type:'nombre',defaut:1,min:1,max:20}];
 function phraseMontant(p){const x=Math.max(1,Math.min(20,Math.trunc(Number(p&&p.x))||1)),m=(p&&p.montant)||'bonus';
  return m==='plus'?'<b>son bonus de dégâts + '+x+'</b>':m==='double'?'<b>le double de son bonus de dégâts</b>':m==='fixe'?'<b>'+x+' dégât'+(x>1?'s':'')+'</b>':'<b>son bonus de dégâts</b>'}
+// Ce que le Prédateur des Ombres ajoute : en mots, et en nombre pour un combattant donné (ses dés se lancent à part).
+const CARACS_PREDATEUR={niveau:'son Niveau',vie:'sa VIE',endu:'son ENDU',pv:'ses PV maximum',def:'sa DEF',degats:'son bonus de dégâts'};
+function predateurDe(p){const n=(v,a,b,d)=>Math.max(a,Math.min(b,Math.trunc(Number(v))||d));
+ const forme=p&&(p.forme==='des'||CARACS_PREDATEUR[p.forme])?p.forme:'fixe';
+ return {forme,x:n(p&&p.x,1,20,1),nb:n(p&&p.nb,1,9,1),faces:[4,6,8,10,12,20].includes(Math.trunc(Number(p&&p.faces)))?Math.trunc(Number(p.faces)):6}}
+function phrasePredateur(p){const d=predateurDe(p);
+ return d.forme==='des'?'<b>'+d.nb+'d'+d.faces+'</b>':d.forme==='fixe'?'<b>'+d.x+'</b>':'<b>'+CARACS_PREDATEUR[d.forme]+'</b>'}
 // Le nombre que ces mots valent, le bonus de dégâts du porteur donné.
 function montantDegats(p,bonus){const x=Math.max(1,Math.min(20,Math.trunc(Number(p&&p.x))||1)),b=Math.max(0,Math.trunc(Number(bonus))||0),m=(p&&p.montant)||'bonus';
  return m==='plus'?b+x:m==='double'?2*b:m==='fixe'?x:b}
@@ -1270,6 +1324,25 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
   volets:[{cle:'zone',nom:'Zone à quatre coins, 4 orbes',palier:2}],
   phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{zone:2}).zone;
    return 'Le porteur peut dépenser <b>3 orbes</b> pour un mur à <b>deux segments</b>'+(k>0&&n>=k?', ou <b>4 orbes</b> pour une <b>zone à quatre coins</b> : les adversaires à l’intérieur subissent l’état comme au passage du mur.':'.')}},
+ /* Vision dans le noir : un passif. Dans l'obscurité, le porteur voit jusqu'à x mètres, là où les autres ne voient que leur
+    zone de contact. Ses améliorations la portent plus loin, et font de lui un Prédateur des Ombres, aux coups plus durs
+    tant qu'il se tient dans le noir. */
+ visionnoir:{cle:'visionnoir',nom:'Vision dans le noir',type:'pass',
+  aide:'Passif : dans l’obscurité, le porteur voit jusqu’à x mètres autour de lui.',
+  params:[{cle:'portee',nom:'Portée (m)',type:'nombre',defaut:6,min:1,max:40}],
+  phrase(p){const m=Math.max(1,Math.min(40,Math.trunc(Number(p&&p.portee))||6));return 'Dans l’obscurité, le porteur <b>voit dans le noir</b> jusqu’à <b>'+m+' m</b>.'}},
+ visionaugmentee:{cle:'visionaugmentee',nom:'Vision dans le noir — augmentée',court:'augmentée',type:'ame',
+  aide:'Amélioration de Vision dans le noir : la vision dans le noir porte plus loin ; plus loin encore au palier 2.',
+  params:[{cle:'m1',nom:'Portée au palier 1 (m)',type:'nombre',defaut:10,min:1,max:60},{cle:'m2',nom:'Portée au palier 2 (m)',type:'nombre',defaut:16,min:1,max:60}],
+  volets:[{cle:'loin',nom:'Portée du palier 2',palier:2}],
+  phrase(p,palier,v){const n=(k,d)=>Math.max(1,Math.min(60,Math.trunc(Number(p&&p[k]))||d)),k=(v||{loin:2}).loin,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'La <b>vision dans le noir</b> du porteur s’étend jusqu’à <b>'+n(deux?'m2':'m1',deux?16:10)+' m</b>.'}},
+ predateurombres:{cle:'predateurombres',nom:'Vision dans le noir — Prédateur des Ombres',court:'Prédateur des Ombres',type:'ame',
+  aide:'Amélioration de Vision dans le noir : tant que le porteur se tient dans l’obscurité, il augmente ses dégâts — d’un nombre, de dés, ou d’une de ses caractéristiques.',
+  params:[{cle:'forme',nom:'Dégâts en plus',type:'choix',defaut:'fixe',options:[['fixe','x'],['des','n dés'],['niveau','son Niveau'],['vie','sa VIE'],['endu','son ENDU'],['pv','ses PV maximum'],['def','sa DEF'],['degats','son bonus de dégâts']]},
+   {cle:'x',nom:'x',type:'nombre',defaut:1,min:1,max:20},{cle:'nb',nom:'n dés',type:'nombre',defaut:1,min:1,max:9},
+   {cle:'faces',nom:'Faces des dés',type:'choix',defaut:'6',options:[['4','d4'],['6','d6'],['8','d8'],['10','d10'],['12','d12'],['20','d20']]}],
+  phrase(p){return 'Tant qu’il se tient <b>dans l’obscurité</b>, le porteur augmente ses dégâts de '+phrasePredateur(p)+'.'}},
  /* Orbe statique : une Action. Le porteur pose un de ses orbes sur un point de la carte qu'il voit ; posé, l'orbe a 1 PV et
     DEF 0. Au début de chaque tour, il inflige l'état réglé à tous les adversaires de sa zone de contact. Un seul à la fois :
     en poser un autre dissipe le premier. Ses deux améliorations le font lancer des orbes, et ramper. */
@@ -1376,7 +1449,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',
- provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',
+ provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
   if(c.court){const nom=TALENTS_CODES[p].nom+' — '+c.court;if(nom!==c.nom){c.anciens=[...(c.anciens||[]),c.nom];c.nom=nom}}})}
@@ -2296,6 +2369,6 @@ const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignem
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,coutParDefaut,coutTalent,NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
- DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,nomEffet,ciblesPermises,orbesPermis,desOrbe,poolOrbe,texteDesOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,COMPETENCES_CLASSE,competencesDeClasse,ptDepenses,xpDisponible,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
+ DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,fillPolygonGridSi,obscuriteDe,ajouteObscurite,retireObscurite,dansObscurite,remplitObscurite,predateurDe,phrasePredateur,CARACS_PREDATEUR,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,nomEffet,ciblesPermises,orbesPermis,desOrbe,poolOrbe,texteDesOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,COMPETENCES_CLASSE,competencesDeClasse,ptDepenses,xpDisponible,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

@@ -131,6 +131,15 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .legend li{display:flex;gap:9px;align-items:center;margin:9px 0;line-height:1.3}
 .legend i{flex:none;width:20px;height:14px;border-radius:3px}
 .sw-wall{background:#0b1114;border:1px solid #6c7d85}
+.sw-obscur{background:#05070a;border:1px dashed #5b6670;opacity:.75}
+/* L'obscurité sur le plan de travail : un voile sombre, en pointillé, par-dessus la matière. */
+.obscur-skin{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.obscur-skin path.bord{fill:none;stroke:#5b6670;stroke-width:1.2;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
+.obscur-skin path.fond{fill:#05070a;fill-opacity:.62;stroke:none}
+#map-tools [data-tool=obscur],#map-tools [data-tool=obscurlibre],#map-tools [data-tool=obscurremplir],#map-tools [data-tool=obscurgomme]{border-color:#4a5560;color:var(--ink)}
+#map-tools [data-tool=obscur].on,#map-tools [data-tool=obscurlibre].on,#map-tools [data-tool=obscurremplir].on,#map-tools [data-tool=obscurgomme].on{background:#2a3139;border-color:#2a3139;color:#fff}
+.shape.obscur{background:#05070a66;border:2px dashed #5b6670;pointer-events:none}.shape.obscur .grip{display:none!important}
+.lasso-layer.obscur polygon,.lasso-layer.obscur polyline{stroke:#5b6670;fill:#05070a55}.lasso-layer.obscur-gomme polygon,.lasso-layer.obscur-gomme polyline{stroke:#c9a86a;fill:#c9a86a33}
 .sw-door{background:#c98a4b;border:1px solid #e8b878}
 .sw-door-open{background:#c98a4b2e;border:1px dashed #e8b878}.sw-ligne{background:#0b1114;height:4px;align-self:center}
 /* Les traits de blocage : la même encre que les zones, en polygones puisqu'ils penchent. */

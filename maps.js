@@ -79,10 +79,57 @@ function readSeen(m,d){
    if(Number.isInteger(r)&&r>10&&r<c)return regridMask(m.seen,c,r,d.w,d.h)}
  return new Uint8Array(d.n)}
 let visionCache={cle:'',vues:new Map()};
+/* ---------- L'obscurité et la lumière ----------
+   Dans le noir, on ne voit que ce qui est éclairé, et ce qui tient dans son rayon de vision : la zone de contact pour
+   tout le monde, plus loin avec Vision dans le noir, sans limite pour un adversaire nyctalope. Aveugle ramène chacun à sa
+   zone de contact, lumière ou pas. Les murs s'ajoutent à cela, comme toujours : la règle ne vaut que dans la ligne de vue.
+   Ce qui est éclairé se lit sur un masque à la grille du brouillard : blanc hors de l'obscurité et sous une lumière, noir
+   dans le noir. Il se refait quand l'obscurité ou les lumières changent, pas à chaque pas. */
+function obscuriteKey(m){return obscuriteDe(m).map(p=>p.anneaux.map(r=>r.length+':'+r.reduce((t,q)=>t+q[0]*7.31+q[1]*13.07,0).toFixed(3)).join(',')).join(';')}
+// Les sources de lumière de la carte ouverte : chacune {x,y,rayon} en pour cent et en pixels. Aucune pour l'instant.
+function sourcesLumiere(){return []}
+function clesLumieres(){return sourcesLumiere().map(l=>l.x.toFixed(2)+','+l.y.toFixed(2)+','+Math.round(l.rayon)).join(';')}
+// Une carte est obscure dès qu'elle porte de l'obscurité ; sans elle, rien ne change.
+function carteObscure(){const m=currentMap();return !!m&&obscuriteDe(m).length>0}
+let masqueLum={cle:'',data:null};
+function masqueEclaire(){const m=currentMap();if(!m||!fogDim)return null;const d=fogDim;
+ const cle=m.id+'|'+d.n+'|'+obscuriteKey(m)+'|'+clesLumieres()+'|'+geometryKey(m);
+ if(masqueLum.cle===cle)return masqueLum;
+ const cv=document.createElement('canvas');cv.width=d.w;cv.height=d.h;const c=cv.getContext('2d');
+ c.fillStyle='#fff';c.fillRect(0,0,d.w,d.h);
+ const trace=anneaux=>{c.beginPath();anneaux.forEach(r=>{r.forEach((q,i)=>c[i?'lineTo':'moveTo'](q[0]/100*d.w,q[1]/100*d.h));c.closePath()})};
+ c.fillStyle='#000';obscuriteDe(m).forEach(p=>{trace(p.anneaux);c.fill('evenodd')});
+ // Une lumière repousse le noir en rond autour d'elle, jusqu'aux murs.
+ const size=mapSize(),formes=activeObstacles();c.fillStyle='#fff';
+ if(size.width)sourcesLumiere().forEach(l=>{const poly=reachPolygon(l,formes,l.rayon,size.width,size.height,96);if(poly.length>2){trace([poly]);c.fill()}});
+ const img=c.getImageData(0,0,d.w,d.h).data,data=new Uint8Array(d.n);for(let k=0;k<d.n;k++)data[k]=img[k*4]>127?1:0;
+ masqueLum={cle,data};return masqueLum}
+function eclaireA(x,y){const M=masqueEclaire();if(!M||!fogDim)return true;const d=fogDim;
+ const i=Math.min(d.w-1,Math.max(0,Math.floor(x/100*d.w))),j=Math.min(d.h-1,Math.max(0,Math.floor(y/100*d.h)));
+ return M.data[j*d.w+i]===1}
+// Un combattant dans le noir : sur une case obscure que rien n'éclaire.
+function dansLeNoir(a){return !!a&&carteObscure()&&!eclaireA(a.x,a.y)}
+/* Jusqu'où un combattant voit dans le noir, en pixels : sa zone de contact ; plus loin avec Vision dans le noir ; sans limite
+   pour un adversaire nyctalope, ce qu'ils sont tous sauf réglage contraire. Aveugle : la zone de contact, et rien d'autre. */
+function rayonVision(a){const base=contactRadius(tokenOf(a));
+ if(!a||blinded(a))return base;
+ if(!a.hero)return a.orbeStatique||a.nyctalope===false?base:Infinity;
+ const m=typeof visionNoirDe==='function'?visionNoirDe(a):0;
+ return Math.max(base,m*tokenPx())}
+// « o » voit le socle « b », les murs mis à part : dans son rayon, ou éclairé s'il n'est pas aveugle.
+function voitSocle(o,b){if(!o||!b)return true;if(!carteObscure()&&!blinded(o))return true;
+ const size=mapSize();if(!size.width)return true;
+ if(tokenDistance(o,b,size)<=rayonVision(o)+tokenOf(b)/2)return true;
+ return !blinded(o)&&eclaireA(b.x,b.y)}
+// « o » voit le point (x,y) en pour cent, les murs mis à part.
+function voitPoint(o,x,y){if(!o)return true;if(!carteObscure()&&!blinded(o))return true;
+ const size=mapSize();if(!size.width)return true;
+ if(Math.hypot((x-o.x)/100*size.width,(y-o.y)/100*size.height)<=rayonVision(o))return true;
+ return !blinded(o)&&eclaireA(x,y)}
 /* Les polygones déjà versés dans la mémoire d'exploration : chacun ne l'est qu'une fois.
    Sans cela, chaque pas d'un aventurier refaisait rentrer dans la grille la vue de tous
    les autres, immobiles — quelques millisecondes par tête, à chaque image. */
-let fogMemorise=new WeakSet();
+let fogMemorise=new WeakMap(),fogVisQui=[],fogTroupeQui=[];
 /* La mémoire d'exploration n'est réemballée en base64 — quelques millisecondes pour
    deux cent mille cases — que lorsqu'elle a changé, et une fois par calcul. */
 let fogAEmballer=false;
@@ -92,11 +139,12 @@ function emballeFog(){if(!fogAEmballer)return;fogAEmballer=false;const m=current
 function computeFog(){const m=currentMap();
  if(!m){fogVis=null;fogTroupe=null;fogSeen=null;fogKey='';fogDim=null;return}
  const d=fogDim=fogDims(m);
- if(!fogSeen||fogSeen.length!==d.n||m.fog!==fogSeenSrc){fogSeen=readSeen(m,d);fogSeenSrc=m.fog;fogDirty=true;fogMemorise=new WeakSet()}
+ if(!fogSeen||fogSeen.length!==d.n||m.fog!==fogSeenSrc){fogSeen=readSeen(m,d);fogSeenSrc=m.fog;fogDirty=true;fogMemorise=new WeakMap()}
  const formes=activeObstacles(),troupe=fogParty();
  // Le calcul ne reprend que si la scène a bougé : héros, portes, zones ou point de vue.
- const cle=m.id+'|'+d.n+'|'+view+'|'+owner+'|'+troupe.map(a=>a.x.toFixed(2)+','+a.y.toFixed(2)).join(';')
-  +'|'+geometryKey(m);
+ const obscur=carteObscure(),M=obscur?masqueEclaire():null;
+ const cle=m.id+'|'+d.n+'|'+view+'|'+owner+'|'+troupe.map(a=>a.x.toFixed(2)+','+a.y.toFixed(2)+(obscur||blinded(a)?'/'+Math.round(rayonVision(a)):'')).join(';')
+  +'|'+geometryKey(m)+(M?'|'+M.cle:'');
  if(cle===fogKey&&fogVis){emballeFog();return}
  fogKey=cle;
  /* Le polygone de vision ne dépend que d'une position et de la géométrie : on le garde par
@@ -107,9 +155,16 @@ function computeFog(){const m=currentMap();
  const vues=visionCache.vues,vu=a=>{const k=a.x+','+a.y;
   if(!vues.has(k)){if(vues.size>=48)vues.clear();vues.set(k,visionPolygon(a,formes))}return vues.get(k)};
  // La mémoire retient ce que la troupe entière a vu, où que soit le lecteur.
- let neuf=0;for(const a of troupe){const p=vu(a);if(fogMemorise.has(p))continue;
-  fogMemorise.add(p);neuf+=fillPolygonGrid(fogSeen,d.w,d.h,p)}
- fogVis=fogSeers().map(vu);fogTroupe=troupe.map(vu);
+ /* Dans le noir, la mémoire ne retient que ce que l'aventurier a vraiment vu : les cases éclairées, s'il n'est pas
+    aveugle, et celles de son rayon. Ce qu'il a mémorisé vaut tant que ni la lumière ni son rayon ne changent. */
+ let neuf=0;const size=mapSize();for(const a of troupe){const p=vu(a),r=obscur||blinded(a)?rayonVision(a):Infinity;
+  const cleM=(M?M.cle:'')+'|'+Math.round(r)+(blinded(a)?'b':'');
+  if(fogMemorise.get(p)===cleM)continue;fogMemorise.set(p,cleM);
+  if(!Number.isFinite(r)&&!M){neuf+=fillPolygonGrid(fogSeen,d.w,d.h,p);continue}
+  const ax=a.x/100*size.width,ay=a.y/100*size.height,r2=r*r,aveugle=blinded(a);
+  neuf+=fillPolygonGridSi(fogSeen,d.w,d.h,p,(i,j)=>{if(M&&!aveugle&&M.data[j*d.w+i]===1)return true;
+   const dx=(i+.5)/d.w*size.width-ax,dy=(j+.5)/d.h*size.height-ay;return dx*dx+dy*dy<=r2})}
+ fogVis=fogSeers().map(vu);fogVisQui=fogSeers();fogTroupe=troupe.map(vu);fogTroupeQui=troupe;
  if(neuf){fogDirty=true;fogAEmballer=true}
  emballeFog()}
 // Le champ de vision en pixels : le socle est un disque, pas un point.
@@ -128,8 +183,8 @@ function visionInPixels(){const size=mapSize(),k=cleCadre(size);
 function partySees(a){const m=currentMap();
  if(!fogVis||!m||m.fogOff)return true;
  const size=mapSize();if(!size.width)return true;
- const c=[a.x/100*size.width,a.y/100*size.height],r=tokenOf(a)/2;
- return visionInPixels().some(p=>polyTouchesDisc(p,c,r))}
+ const c=[a.x/100*size.width,a.y/100*size.height],r=tokenOf(a)/2,yeux=fogVisQui||[];
+ return visionInPixels().some((p,k)=>polyTouchesDisc(p,c,r)&&(!yeux[k]||voitSocle(yeux[k],a)))}
 /* Ce que la troupe entière voit à l'instant, où que soit l'écran : c'est elle qui révèle
    un adversaire, et non le seul aventurier de ce joueur. Mêmes règles qu'un socle vu. */
 let fogTroupe=null,fogTroupePx=null,fogTroupeKey='';
@@ -145,8 +200,8 @@ function troupeVoit(a){const m=currentMap();
  const k=cleCadre(size);
  if(fogTroupeKey!==k){fogTroupeKey=k;
   fogTroupePx=fogTroupe.map(p=>p.map(([x,y])=>[x/100*size.width,y/100*size.height]))}
- const c=[a.x/100*size.width,a.y/100*size.height],r=tokenOf(a)/2;
- return fogTroupePx.some(p=>polyTouchesDisc(p,c,r))}
+ const c=[a.x/100*size.width,a.y/100*size.height],r=tokenOf(a)/2,yeux=fogTroupeQui||[];
+ return fogTroupePx.some((p,k)=>polyTouchesDisc(p,c,r)&&(!yeux[k]||voitSocle(yeux[k],a)))}
 // La mémoire d'exploration, lue en un point : sert à garder les portes visibles.
 function seenAt(x,y){if(!fogSeen||!fogDim)return false;const d=fogDim;
  const i=Math.min(d.w-1,Math.max(0,Math.floor(x/100*d.w))),j=Math.min(d.h-1,Math.max(0,Math.floor(y/100*d.h)));
@@ -176,7 +231,7 @@ function doorInSight(d){const size=mapSize();
  const cle=cleCadre(size);
  if(portesVues.cle!==cle){const formes=activeObstacles();
   portesVues={cle,vues:new WeakMap(),formes,idx:indexMurs(formes),
-   yeux:fogSeers().map(a=>({x:a.x,y:a.y,exclues:formesAutour(a,formes)}))}}
+   yeux:fogSeers().map(a=>({x:a.x,y:a.y,exclues:formesAutour(a,formes),qui:a}))}}
  if(portesVues.vues.has(d))return portesVues.vues.get(d);
  /* Chaque sonde est un petit disque, comme avant : son centre et huit points de son
     bord, en pour cent de carte pour un rayon en pixels. Il suffit que l'un d'eux soit
@@ -188,6 +243,8 @@ function doorInSight(d){const size=mapSize();
  const points=doorProbes(d,0);
  const vu=portesVues.yeux.some(o=>points.some(([x,y])=>{const dx=x-o.x,dy=y-o.y;
   const L=Math.hypot(dx/100*size.width,dy/100*size.height);
+  // Dans le noir, la porte doit aussi être éclairée, ou dans le rayon de cet œil.
+  if(!voitPoint(o.qui,x,y))return false;
   if(L<=r)return true;
   const t=1-r/L;return rayonContre(portesVues.idx,o.x,o.y,dx,dy,t,o.exclues)>=t}));
  portesVues.vues.set(d,vu);return vu}
@@ -256,10 +313,27 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
   const flou=Math.max(1,W/d.w*.7);ctx.filter='blur('+flou.toFixed(2)+'px)';
   ctx.drawImage(mem,0,0,W,H);ctx.filter='none'}
  ctx.globalAlpha=1;ctx.fillStyle='#000';
- for(const poly of fogVis){if(!poly||poly.length<3)continue;
-  ctx.beginPath();ctx.moveTo(poly[0][0]/100*W,poly[0][1]/100*H);
-  for(let i=1;i<poly.length;i++)ctx.lineTo(poly[i][0]/100*W,poly[i][1]/100*H);
-  ctx.closePath();ctx.fill()}
+ const trace=(c,poly)=>{c.beginPath();c.moveTo(poly[0][0]/100*W,poly[0][1]/100*H);
+  for(let i=1;i<poly.length;i++)c.lineTo(poly[i][0]/100*W,poly[i][1]/100*H);c.closePath()};
+ if(!carteObscure()&&!(fogVisQui||[]).some(blinded)){for(const poly of fogVis){if(!poly||poly.length<3)continue;trace(ctx,poly);ctx.fill()}}
+ else{const size=mapSize(),k=size.width?W/size.width:1;
+  /* Ce qu'un œil découvre : son polygone de vision, rogné à ce qui est éclairé — sauf s'il est aveugle — et à son rayon.
+     Chaque œil se compose à part, sur une toile de travail, puis s'ôte du brouillard. */
+  const lum=document.createElement('canvas');lum.width=W;lum.height=H;const lc=lum.getContext('2d');
+  // Opaque là où c'est éclairé, vide dans le noir : l'obscurité s'ôte de la toile, les lumières s'y reposent.
+  lc.fillStyle='#fff';lc.fillRect(0,0,W,H);lc.globalCompositeOperation='destination-out';
+  obscuriteDe(m).forEach(p=>{lc.beginPath();p.anneaux.forEach(r=>{r.forEach((q,i)=>lc[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));lc.closePath()});lc.fill('evenodd')});
+  lc.globalCompositeOperation='source-over';lc.fillStyle='#fff';const formes=activeObstacles();
+  if(size.width)sourcesLumiere().forEach(l=>{const poly=reachPolygon(l,formes,l.rayon,size.width,size.height,96);if(poly.length>2){trace(lc,poly);lc.fill()}});
+  const oeil=document.createElement('canvas');oeil.width=W;oeil.height=H;const oc=oeil.getContext('2d');
+  fogVis.forEach((poly,n)=>{if(!poly||poly.length<3)return;const o=(fogVisQui||[])[n];
+   oc.globalCompositeOperation='source-over';oc.clearRect(0,0,W,H);oc.fillStyle='#fff';trace(oc,poly);oc.fill();
+   oc.globalCompositeOperation='destination-in';
+   const voit=document.createElement('canvas');voit.width=W;voit.height=H;const vc=voit.getContext('2d');
+   if(!o||!blinded(o))vc.drawImage(lum,0,0);
+   if(o){const r=rayonVision(o);if(Number.isFinite(r)){vc.fillStyle='#fff';vc.beginPath();vc.arc(o.x/100*W,o.y/100*H,r*k,0,Math.PI*2);vc.fill()}else{vc.fillStyle='#fff';vc.fillRect(0,0,W,H)}}
+   oc.drawImage(voit,0,0);
+   ctx.drawImage(oeil,0,0)})}
  /* Une porte n'est qu'un contour : le regard s'arrête dessus, donc son rectangle n'est
     jamais éclairé et le décor y resterait noir. On lui rend la clarté de ses abords —
     pleine si on la voit, celle de la mémoire si on l'a seulement découverte. */
@@ -273,13 +347,16 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
  const retenues=portes.filter(p=>!doorInSight(p)&&doorRemembered(p));
  if(retenues.length){ctx.globalAlpha=1-memoire/inconnu;retenues.forEach(rect);ctx.globalAlpha=1}
  portes.filter(doorInSight).forEach(rect);
- ctx.globalCompositeOperation='source-over'}
+ ctx.globalCompositeOperation='source-over';
+ // Chez le MJ, l'obscurité se lit en voile sombre par-dessus tout, même ce que la troupe a sous les yeux.
+ if(!oeilJoueur()&&carteObscure()){ctx.fillStyle='rgba(2,4,8,.5)';
+  obscuriteDe(m).forEach(p=>{ctx.beginPath();p.anneaux.forEach(r=>{r.forEach((q,i)=>ctx[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));ctx.closePath()});ctx.fill('evenodd')})}}
 /* Chaque remise à zéro du brouillard se compte : le numéro voyage par la table, et les
    joueurs rejouent la même remise à zéro, en silence. */
 let brouillardReset={n:0,tout:false};
 function resetFog(tout,silencieux){const m=currentMap();if(!m)return;
  const d=fogDims(m),g=new Uint8Array(d.n);if(tout)g.fill(1);
- m.fog=packMask(g,d.n);delete m.seen;m.fogOff=false;fogSeen=g;fogSeenSrc=m.fog;fogDirty=true;fogKey='';fogMemorise=new WeakSet();
+ m.fog=packMask(g,d.n);delete m.seen;m.fogOff=false;fogSeen=g;fogSeenSrc=m.fog;fogDirty=true;fogKey='';fogMemorise=new WeakMap();
  if(!silencieux)brouillardReset={n:brouillardReset.n+1,tout:!!tout};
  render();scheduleSave();
  if(!silencieux)log(tout?'Brouillard levé sur toute la carte.':'Brouillard réinitialisé.',{ton:'carte'})}
@@ -848,6 +925,7 @@ mapsPage.innerHTML=
  +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="pinceau">Pinceau de blocage</button>'
  +'<button data-tool="cut">Découper</button><button data-tool="lasso">Découpe libre</button><button data-tool="gomme">Pinceau de découpe</button>'
  +'<select id="pinceau-taille" aria-label="Grosseur du pinceau" hidden><option value=".3">Pinceau fin</option><option value=".55" selected>Pinceau moyen</option><option value="1">Pinceau large</option></select>'
+ +'<span class="bar-sep"></span><button data-tool="obscur">Obscurité</button><button data-tool="obscurlibre">Obscurité libre</button><button data-tool="obscurremplir">Remplir d’obscurité</button><button data-tool="obscurgomme">Gomme d’obscurité</button><span class="bar-sep"></span>'
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl" aria-label="Modèle de PNJ"></select>'
@@ -874,6 +952,7 @@ mapsPage.innerHTML=
  +'<li><i class="sw-start"></i>Zone de départ des aventuriers</li>'
  +'<li><i class="sw-wall"></i>Pinceau de blocage — de la matière peinte à main levée</li>'
  +'<li><i class="sw-cut"></i>Pinceau de découpe — la même chose en négatif, il gratte</li>'
+ +'<li><i class="sw-obscur"></i>Obscurité — dans le noir, on ne voit que sa zone de contact, ce qui est éclairé, ou jusqu’où porte sa vision dans le noir</li>'
  +'<li><i class="sw-foe"></i>Adversaire pré-placé</li>'
  +'<li><i class="sw-objet"></i>Objet ou mécanisme — visible, la troupe l’ouvre d’un clic ; caché, un test de compétence le découvre</li></ul><p class="muted" id="map-count"></p>'
  +'<div id="recal-box" hidden><div class="divider"></div><h2>Réparation</h2>'
@@ -918,6 +997,8 @@ function supprimeSelection(){const m=mapDraft;if(!m||!mapSel)return false;
 function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,matiere:[],doors:[],start:null,foes:[],objets:[],coffres:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
 function ensure(m){m.doors??=[];m.foes??=[];m.ratio??=16/9;
+ // L'obscurité est née en v0.591 : une seconde matière, qui ne bloque rien.
+ m.obscurite??=[];
  // Les zones séparées, regroupées ou nommées par le MJ : nées en v0.252.
  m.zonesCoupures??=[];m.zonesLiens??=[];m.zonesNoms??=[];
  // Les objets sont nés en v0.144 ; chacun porte un identifiant, la table s'y réfère.
@@ -1022,6 +1103,10 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  start:'Trace la zone où les aventuriers seront regroupés à l’ouverture de la carte. Une seule par carte.',
  pinceau:'Glisse pour peindre de la matière à main levée, comme au feutre. Le trait se fond dans les zones qu’il touche. Sa grosseur se choisit à côté, en fraction de socle : elle suit donc l’échelle de la carte.',
  gomme:'Glisse pour gratter la matière, comme à la gomme. Ce qui est verrouillé résiste. Sa grosseur se choisit à côté.',
+ obscur:'Trace un rectangle d’obscurité : tout ce qu’il couvre est plongé dans le noir, et il fond avec l’obscurité qu’il touche.',
+ obscurlibre:'Contourne la zone à plonger dans le noir : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
+ obscurremplir:'Clique dans une pièce : toute la zone libre autour du clic — bornée par les murs, les portes et l’obscurité déjà posée — devient noire d’un coup.',
+ obscurgomme:'Contourne l’obscurité à effacer : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  coffre:'Trace un coffre comme une porte : sa fiche s’ouvre aussitôt — nom, description, caché ou non, verrou, piège et contenu. La poignée ronde le fait tourner.',
  coffrerond:'Trace un coffre rond : un tonneau, une urne, un nid. Sa fiche s’ouvre aussitôt ; la poignée ronde le fait tourner.',
  foe:'Clique pour poser l’adversaire choisi à droite de la barre. Pour le rendre invisible, donne-lui l’état Invisible en jeu.',
@@ -1044,12 +1129,14 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  const bouge=mapDrag&&mapDrag.mode==='masse'?matiereDe(m)[mapDrag.i]:null;
  const fixes=bouge?contours.filter(r=>!bouge.anneaux.includes(r)):contours;
  if(fixes.length||bouge)c.append(svgMatiere([fixes,bouge?bouge.anneaux:[]],null,'wall-skin'));
+ // L'obscurité, en voile sombre par-dessus : la pièce reste lisible dessous.
+ {const obs=obscuriteDe(m);if(obs.length)c.append(svgMatiere([obs.flatMap(p=>p.anneaux)],null,'obscur-skin'))}
  c.style.backgroundImage=m.image?'url("'+m.image+'")':'';c.classList.toggle('no-image',!m.image);
  m.doors.forEach((r,i)=>c.append(shapeEl('door',i,r)));
  m.coffres.forEach((r,i)=>c.append(shapeEl('coffre',i,r)));
  // L'aperçu du rectangle en cours — bloc ou découpe — tant que la main n'a pas lâché.
- if(cutRect)c.append(shapeEl(cutRect.bloc?'bloc':'cut',0,cutRect));
- if(lasso&&lasso.pts.length){const svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','lasso-layer');
+ if(cutRect)c.append(shapeEl(cutRect.obscur?'obscur':cutRect.bloc?'bloc':'cut',0,cutRect));
+ if(lasso&&lasso.pts.length){const svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','lasso-layer'+(lasso.mode==='obscurlibre'?' obscur':lasso.mode==='obscurgomme'?' obscur-gomme':''));
   svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
   const forme=document.createElementNS(nsSVG,lasso.pts.length>2?'polygon':'polyline');
   forme.setAttribute('points',lasso.pts.map(pt=>pt.join(',')).join(' '));svg.append(forme);
@@ -1087,7 +1174,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  $('shape-label').textContent=mapSel?(porte&&porte.secret?'Passage secret':adv&&(modeleActuel(adv.tpl)||adv.tpl).pnj?'PNJ':KINDS[mapSel.kind])
   +(adv?' · '+adv.tpl.name+(adv.cache?' · caché':''):'')+(obj?' · '+obj.nom+(obj.visible?'':' · caché'):'')+(coffre?' · '+coffre.nom+(coffre.cache?' · caché':''):'')+(verrou?' · verrouillée':''):'Aucune sélection.';
  $('map-xp').textContent=xpDeCarte(m)+' xp';
- $('map-count').textContent=matiereDe(m).length+' zone(s) de blocage, '+m.doors.length+' porte(s), '
+ $('map-count').textContent=matiereDe(m).length+' zone(s) de blocage, '+obscuriteDe(m).length+' zone(s) d’obscurité, '+m.doors.length+' porte(s), '
   +m.foes.length+' adversaire(s), '+m.objets.length+' objet(s), '+m.coffres.length+' coffre(s)'+(m.start?', zone de départ définie.':', aucune zone de départ.');
  $('recal-box').hidden=!recalNeeded();
  refreshHistory()}
@@ -1207,10 +1294,12 @@ function coupPinceau(p){const m=mapDraft,r=pinceauTaille(),der=pinceauDernier||p
 let pinceauDernier=null;
 /* La découpe libre suit l'encre redressée : le tremblement de la main s'efface, les angles
    voulus restent, et la forme ôtée est exactement celle qui a été tracée. */
-function applyLasso(){const brut=lasso&&lasso.pts;lasso=null;
+function applyLasso(){const brut=lasso&&lasso.pts,mode=lasso&&lasso.mode;lasso=null;
  if(!brut||brut.length<3){renderCanvas();return}
- pushUndo();retireMatiere(mapDraft,encreDroite([brut])[0]);mapSel=null;
- matiereChangee()}
+ pushUndo();const forme=encreDroite([brut])[0];
+ // Le même contour fermé, selon l'outil : il creuse la matière, pose l'obscurité, ou l'efface.
+ if(mode==='obscurlibre')ajouteObscurite(mapDraft,forme);else if(mode==='obscurgomme')retireObscurite(mapDraft,forme);else retireMatiere(mapDraft,forme);
+ mapSel=null;matiereChangee()}
 function shapeAt(d){const m=mapDraft;if(!m)return null;if(d.kind==='cut'||d.kind==='bloc')return cutRect;
  if(d.kind==='coupure')return (m.zonesCoupures||[])[d.i];if(d.kind==='lien')return (m.zonesLiens||[])[d.i];
  return d.kind==='start'?m.start:(d.kind==='door'?m.doors:d.kind==='objet'?m.objets:d.kind==='coffre'?(m.coffres||[]):m.foes)[d.i]}
@@ -1377,7 +1466,11 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   pinceauDernier=null;coupPinceau(p);pinceauDernier={x:p.x,y:p.y};
   mapDrag={mode:'pinceau',from:p};$('map-canvas').setPointerCapture(e.pointerId);
   renderCanvas();e.preventDefault();return}
- if(mapTool==='lasso'){if(!lasso)lasso={pts:[]};
+ // Le remplissage d'obscurité : un clic, et la zone libre autour devient noire.
+ if(mapTool==='obscurremplir'){pushUndo();const avant=obscuriteDe(mapDraft).length;remplitObscurite(mapDraft,[p.x,p.y]);
+  if(obscuriteDe(mapDraft).length===avant&&!dansObscurite(mapDraft,[p.x,p.y]))undoStack.pop();
+  mapSel=null;matiereChangee();e.preventDefault();return}
+ if(mapTool==='lasso'||mapTool==='obscurlibre'||mapTool==='obscurgomme'){if(!lasso||lasso.mode!==mapTool)lasso={pts:[],mode:mapTool};
   // Un clic près du premier point ferme le contour, comme dans un outil de détourage.
   if(lasso.pts.length>2&&Math.hypot(p.x-lasso.pts[0][0],p.y-lasso.pts[0][1])<auZoom(1.6)){applyLasso();return}
   lasso.pts.push([p.x,p.y]);mapSel=null;
@@ -1385,7 +1478,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(mapTool==='cut'){cutRect={x:p.x,y:p.y,w:0,h:0};mapSel=null;
   mapDrag={mode:'cut',kind:'cut',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  // Le bloc se trace comme la découpe : un aperçu suit la main, l'union se fait au relâché.
- if(mapTool==='wall'){cutRect={x:p.x,y:p.y,w:0,h:0,bloc:true};mapSel=null;
+ if(mapTool==='wall'||mapTool==='obscur'){cutRect={x:p.x,y:p.y,w:0,h:0,bloc:mapTool==='wall',obscur:mapTool==='obscur'};mapSel=null;
   mapDrag={mode:'cut',kind:'bloc',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  // Outil de dessin : on trace. Un clic sans glisser sélectionne la forme sous le curseur.
  pushUndo();const rect={x:p.x,y:p.y,w:0,h:0,locked:false};
@@ -1455,7 +1548,8 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
     forme, on la choisit et on repasse en Sélection. */
  if(d.mode==='cut'){const r=cutRect;cutRect=null;
   if(gesteTrace(r)){pushUndo();const forme=rectPolygon(r);
-   if(r.bloc){ajouteMatiere(mapDraft,forme);mapSel={kind:'matiere',i:matiereSous(mapDraft,[r.x+r.w/2,r.y+r.h/2])};
+   if(r.obscur){ajouteObscurite(mapDraft,forme);mapSel=null}
+   else if(r.bloc){ajouteMatiere(mapDraft,forme);mapSel={kind:'matiere',i:matiereSous(mapDraft,[r.x+r.w/2,r.y+r.h/2])};
     if(mapSel.i<0)mapSel=null}
    else{retireMatiere(mapDraft,forme);mapSel=null}}
   else if(d.dessous){mapSel=d.dessous;mapTool='select'}
