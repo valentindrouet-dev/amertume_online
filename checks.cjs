@@ -1266,7 +1266,7 @@ assert.ok(page.includes("if(!enCombat()&&reveles.some(a=>campDe(a)==='adverse'))
    combat seulement, avec cadre et murs lus une fois. */
 assert.ok(cartes.includes('let obstaclesTache=null;')&&cartes.includes("obstaclesTache={m,formes};setTimeout(()=>{obstaclesTache=null},0);")
  &&page.includes('let mursPxTache=null;')&&page.includes("let auraCache={formes:null,cle:'',pts:new Map()};")&&page.includes("auraCache.pts.set(k,pts)")
- &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>{if(drag)drag.image=0;visibilitesEnGeste();updateRing();updateSight();if(typeof renderNuit==='function'){renderHalos();renderNuit()}});")
+ &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>{if(drag)drag.image=0;visibilitesEnGeste();updateRing();updateSight();traceMouvement(a,drag&&drag.regle);if(typeof renderNuit==='function'){renderHalos();renderNuit()}});")
  &&page.includes("if(enCombat()){const size=mapSize(),murs=walls();")&&page.includes('function ramasseContacts(a,croises,de,size,murs){'),'glisser un lot reste léger');
 /* Ciblage : une cible désignée hors de portée ne grise plus l'attaque ; le coup part sur qui est à
    portée, sans jamais retenir une cible automatique ; la désignation lointaine s'efface. */
@@ -1666,7 +1666,7 @@ assert.ok(page.includes("&&(!adverses||hostiles(o,a))")
  &&page.includes('if(barrent.length&&(dansUnSocle(suivant,barrent,r)||segmentCoupeSocles(last,suivant,barrent,r)))break;')
  &&page.includes('if(tiennent.length)last=poserHorsDesSocles(last,tiennent,polys,r);')
  &&page.includes("const enMain=new Set(lot.map(k=>actors[k]&&actors[k].id).filter(Boolean));")
- &&page.includes("moveActor(o,o.x+dx,o.y+dy,view==='mj',enMain,true)})}")&&page.includes("else{moveActor(a,q.x,q.y,view==='mj',enMain,true);")
+ &&page.includes("moveActor(o,o.x+dx,o.y+dy,view==='mj',enMain,true)})}")&&page.includes("else{const g=drag.regle?borneMouvement(drag.regle,q):q;moveActor(a,g.x,g.y,view==='mj',enMain,true);")
  &&page.includes("const [x,y]=ecarteDesSocles(px(a.x,a.y),soclesOccupes(a,size,ignorer,!!traverse),tokenOf(a)/2);"),'les socles tiennent la place sur la table ; pendant le geste, les siens se traversent');
 /* La fiche en jeu : plus de barre sous les PV, l'équipement ouvert d'office et les talents
    repliés ; l'attaque d'équipement s'appelle « Attaque » ; un talent qui frappe porte les dés,
@@ -2090,7 +2090,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  const miette=C.calculeZones([{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[50,50],[52,50],[52,52],[50,52]]]}],[],100,50);
  assert.equal(miette.compte,0,'une case ou deux ne font pas une zone');
  assert.equal(C.calculeZones([],[],10,5).compte,1);assert.equal(C.zoneAu(null,1,1),0);
- assert.ok(cartes.includes("const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');")&&cartes.includes("fogBar.append(fogReset,fogAll,eyeBtn,zonesBtn,lockBtn);")
+ assert.ok(cartes.includes("const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');")&&cartes.includes("fogBar.append(fogReset,fogAll,eyeBtn,zonesBtn,lockBtn,limiteBtn);")
   &&cartes.includes("function zonesDe(m){if(!m)return null;")&&cartes.includes("zonesCache={cle,zones:calculeZones(matiereDe(m),portes,cols,rows,10,m.zonesCoupures,m.zonesLiens)}}")
   &&cartes.includes("function zoneDe(a){const m=currentMap();return m&&a?zoneAu(zonesDe(m),a.x,a.y):0}")&&cartes.includes("function memeZone(a,b){")
   &&cartes.includes("if(!zonesVisibles||!m||view!=='mj'){cv.style.display='none';noms.hidden=true;return}")
@@ -2370,32 +2370,38 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxC.verifieCampagne({genre:'campagne',partie:{actors:[{name:'Éla'}]}}),'');
  assert.match(ctxC.verifieCampagne({genre:'domaine',domaine:{}}),/pas une campagne/);assert.match(ctxC.verifieCampagne({genre:'campagne',partie:{actors:[{}]}}),/troupe lisible/);
 }
-/* v0.265, puis v0.363 — Le mouvement en combat se paie en zones : un point par zone franchie (une
-   porte est une zone) ; dans sa zone, on bouge à volonté, contact ou non ; sans point, le socle
-   reste au bord ; lâché dans l'embrasure, il revient dans sa zone. Sans Mouvement ni Action, le
-   geste est fini. */
-{const regle=page.slice(page.indexOf('function regleMouvement(a)'),page.indexOf('function contactsDe(a)'));
- const ctxR={zones:{},notes:[],journal:[],performance:{now:()=>1e6},nomNum:a=>a.name,currentMap:()=>({id:'c'}),zonesDe:()=>({compte:2}),
+/* v0.265, puis v0.363, puis v0.603 — Le mouvement limité : un mouvement va jusqu'à la distance de mouvement, à vol
+   d'oiseau depuis le départ, jamais au-delà ; en combat il coûte un point quelle que soit la distance, et franchir une zone
+   ne coûte plus rien ; lâché dans l'embrasure, le socle revient dans sa zone. En combat, sans point de Mouvement, le geste
+   est fini. En exploration, la limite ne vaut que pour les aventuriers, quand le MJ l'impose, et ne coûte rien de plus. */
+{const regle=page.slice(page.indexOf('let mouvementClavier=null;'),page.indexOf('function contactsDe(a)'));
+ const ctxR={combat:true,zones:{},notes:[],journal:[],performance:{now:()=>1e6},nomNum:a=>a.name,currentMap:()=>({id:'c'}),zonesDe:()=>({compte:2}),
+  enCombat:()=>ctxR.combat,items:()=>[],tokenPx:()=>10,mapSize:()=>({width:1000,height:1000}),distanceMouvement:a=>a.mvt??9,
   pointsRestants:(a,q)=>q==='action'?(a.action??1):a.credit,zoneDe:a=>ctxR.zones[Math.round(a.x)+','+Math.round(a.y)]||0,
   floatNumber:(a,t)=>ctxR.notes.push(t),log:t=>ctxR.journal.push(t)};vm.createContext(ctxR);vm.runInContext(regle,ctxR);
- for(let x=0;x<=100;x+=5)ctxR.zones[x+',50']=x<50?1:x>50?2:0;
+ for(let x=0;x<=100;x+=1)ctxR.zones[x+',50']=x<50?1:x>50?2:0;
  const a={x:20,y:50,credit:1};const r=ctxR.regleMouvement(a);
- assert.equal(r.credit+'/'+r.zone+'/'+r.depense+'/'+r.fini,'1/1/0/false');
- a.x=40;assert.equal(ctxR.appliqueRegleMouvement(a,r),true);assert.equal(r.depense,0,'dans sa zone, rien ne se paie');
- a.x=50;ctxR.appliqueRegleMouvement(a,r);assert.equal(r.depense,0,'la porte — zone 0 — ne compte pas encore');
- a.x=55;ctxR.appliqueRegleMouvement(a,r);assert.equal(r.depense+'/'+r.zone,'1/2','franchir la zone 2 coûte un point');
- a.x=45;assert.equal(ctxR.appliqueRegleMouvement(a,r),false);assert.equal(a.x,55,'sans point, on reste au bord');assert.equal(ctxR.notes.length,1);
- a.x=80;ctxR.appliqueRegleMouvement(a,r);assert.equal(ctxR.soldeRegleMouvement(a,r),1);assert.equal(a.x,80,'dans la zone d’arrivée, on bouge à volonté, contact ou non');
- // Lâché dans l'embrasure : retour dans la zone.
- const b={x:20,y:50,credit:2};const r2=ctxR.regleMouvement(b);b.x=55;ctxR.appliqueRegleMouvement(b,r2);b.x=50;ctxR.appliqueRegleMouvement(b,r2);
- assert.equal(ctxR.soldeRegleMouvement(b,r2),1);assert.equal(b.x,55);assert.equal(ctxR.journal.length,1);
- // Sans point de Mouvement mais avec l'Action : on bouge encore dans sa zone, sans en sortir.
- const h={x:60,y:50,credit:0,action:1};const r8=ctxR.regleMouvement(h);assert.equal(r8.fini,false);h.x=80;assert.equal(ctxR.appliqueRegleMouvement(h,r8),true);
- h.x=45;assert.equal(ctxR.appliqueRegleMouvement(h,r8),false);assert.equal(h.x,80);assert.equal(ctxR.soldeRegleMouvement(h,r8),0);
- // Plus rien : le mouvement est terminé.
- assert.equal(ctxR.regleMouvement({x:60,y:50,credit:0,action:0}).fini,true);
- // Retraverser deux fois coûte deux.
- const c={x:20,y:50,credit:2};const r3=ctxR.regleMouvement(c);c.x=55;ctxR.appliqueRegleMouvement(c,r3);c.x=45;ctxR.appliqueRegleMouvement(c,r3);assert.equal(r3.depense,2);assert.equal(ctxR.soldeRegleMouvement(c,r3),2);
+ assert.equal(r.max+'/'+r.fini+'/'+r.combat,'90/false/true','neuf mètres, en pixels de carte');
+ a.x=25;assert.equal(ctxR.appliqueRegleMouvement(a,r),true);
+ a.x=35;assert.equal(ctxR.appliqueRegleMouvement(a,r),false);assert.equal(a.x,25,'au-delà de sa distance, il reste où il en était');
+ const q=ctxR.borneMouvement(r,{x:40,y:50});assert.ok(q.borne&&Math.abs(q.x-28.995)<1e-6&&q.y===50,'le point visé ramené au bord du cercle');
+ const p=ctxR.borneMouvement(r,{x:20,y:80});assert.ok(p.borne&&Math.abs(p.y-58.995)<1e-6&&p.x===20);
+ const libre={x:22,y:52};assert.equal(ctxR.borneMouvement(r,libre),libre,'dans le cercle, rien ne change');
+ const s=ctxR.borneMouvement(r,{x:40,y:50},{x:25,y:50});assert.ok(s.borne&&Math.abs(s.x-28.995)<1e-6,'l’IA s’arrête sur son chemin');
+ a.x=28;assert.equal(ctxR.soldeRegleMouvement(a,r),1,'un mouvement, un point');
+ const z={x:45,y:50,credit:1},rz=ctxR.regleMouvement(z);z.x=50;ctxR.appliqueRegleMouvement(z,rz);z.x=53;ctxR.appliqueRegleMouvement(z,rz);
+ assert.equal(ctxR.soldeRegleMouvement(z,rz),1,'franchir une zone ne coûte rien de plus');assert.equal(ctxR.notes.length,0);
+ const b={x:45,y:50,credit:2},rb=ctxR.regleMouvement(b);b.x=50;ctxR.appliqueRegleMouvement(b,rb);
+ assert.equal(ctxR.soldeRegleMouvement(b,rb),0);assert.equal(b.x,45,'lâché dans l’embrasure, il revient dans sa zone');assert.equal(ctxR.journal.length,1);
+ assert.equal(ctxR.regleMouvement({x:60,y:50,credit:0,action:1}).fini,true,'sans point de Mouvement, en combat, il ne part pas');
+ assert.equal(ctxR.regleMouvement({x:60,y:50,credit:3,mvt:12}).max,120,'sa distance à lui');
+ const back={x:20,y:50,credit:1},rr=ctxR.regleMouvement(back);back.x=24;ctxR.appliqueRegleMouvement(back,rr);back.x=20;assert.equal(ctxR.soldeRegleMouvement(back,rr),0,'revenu à son départ, il n’a rien payé');
+ // En exploration : la limite, sur ordre du MJ, pour les seuls aventuriers ; ni blocage ni point de plus.
+ ctxR.combat=false;assert.equal(ctxR.mouvementBorne({hero:true}),false);
+ vm.runInContext('mouvementLimiteExplo=true',ctxR);assert.equal(ctxR.mouvementBorne({hero:true}),true);assert.equal(ctxR.mouvementBorne({hero:false}),false);
+ const e={x:20,y:50,credit:0},re=ctxR.regleMouvement(e);assert.equal(re.fini,false);e.x=25;ctxR.appliqueRegleMouvement(e,re);assert.equal(ctxR.soldeRegleMouvement(e,re),0);
+ e.x=40;assert.equal(ctxR.appliqueRegleMouvement(e,re),false,'mais pas au-delà de sa distance');
+ ctxR.combat=true;vm.runInContext('mouvementLimiteExplo=false',ctxR);assert.ok(ctxR.mouvementBorne({hero:false})&&ctxR.mouvementBorne({hero:true}),'en combat, pour tous');
  assert.ok(page.includes("const bloque=!!regle&&regle.fini;")&&page.includes("if(regle&&regle.fini){floatNumber(a,'Plus de Mouvement','nul');return}")
   &&page.includes("function actionPrise(a){return !!a&&pointsRestants(a,'action')<=0}")&&!page.includes('arriveeAuContact'),'le socle verrouillé sans Mouvement ni Action ; le MJ tenu par l’Action');}
 /* v0.267 — Sans point de Mouvement, le socle bouge encore dans sa zone (et y subit l'opportunité) ;
@@ -3360,6 +3366,40 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.603 — Le mouvement limité. Neuf mètres pour tous, une autre distance par créature au bestiaire, et les objets cochés
+   « Bonus de Mouvement » l'allongent pour qui les porte. Du « Révélé » à la fin du combat, chaque mouvement coûte un point
+   et ne va pas plus loin que cette distance ; une flèche le suit, du départ à l'arrivée. Le MJ peut l'imposer aux
+   aventuriers en exploration. Il déplace aussi à la main les objets posés au sol. */
+{const src=fs.readFileSync('editor.js','utf8'),ia=fs.readFileSync('ia.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
+ const items=[{id:'b',name:'Bottes',category:'armor',bonusMouvement:3},{id:'p',name:'Plume',category:'object',bonusMouvement:1.5},{id:'t',name:'Torche',category:'object',lumiere:4}];
+ assert.equal(C.DISTANCE_MOUVEMENT,9);
+ assert.equal(C.distanceMouvement({hero:true,inventaire:['b','p'],armures:[]},items),10.5,'une armure non portée ne compte pas');
+ assert.equal(C.distanceMouvement({hero:true,inventaire:['b','p'],armures:['b']},items),13.5);
+ assert.equal(C.distanceMouvement({hero:false,mouvement:6,inventaire:['b']},items),9,'sa distance au bestiaire, plus ce qu’il porte');
+ assert.equal(C.distanceMouvement({hero:true,mouvement:4},[]),9,'un aventurier part de neuf mètres');
+ assert.deepEqual([C.bonusMouvementDe({bonusMouvement:99}),C.bonusMouvementDe({}),C.bonusMouvementDe({bonusMouvement:-2})],[40,0,0]);
+ assert.equal(C.objetsLumineux({hero:true,inventaire:['t','b'],weapons:[]},items).map(o=>o.id).join(','),'t','les lumières, comme avant');
+ assert.equal(C.cleanMonster({name:'A',mouvement:12}).mouvement,12);assert.equal(C.cleanMonster({name:'A',mouvement:9}).mouvement,undefined);assert.equal(C.cleanMonster({name:'A',mouvement:null}).mouvement,undefined);
+ assert.ok(src.includes("field('Mouvement (m)','mouvement',mouvementPropre(a),'number','min=\"0\" max=\"99\" step=\"0.5\"')")
+  &&src.includes("if(f.mouvement&&!a.hero){const v=Number(f.mouvement.value);if(!Number.isFinite(v)||v===DISTANCE_MOUVEMENT)delete a.mouvement;"),'la distance au bestiaire');
+ assert.ok(src.includes(">Bonus de Mouvement</label>'+field('Bonus (m)','bonusMouvement',")&&src.includes("o.bonusMouvement=bonusMouvementDe(o);if(!o.bonusMouvement)delete o.bonusMouvement;")
+  &&src.includes("if(f.bonusMouvementOn){if(f.bonusMouvementOn.checked)a.bonusMouvement="),'la case Bonus de Mouvement des objets');
+ assert.ok(vif.includes("'nyctalope','mouvement',")&&vif.includes("...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{})};")
+  &&vif.includes("mouvementLimiteExplo=d.fogReset.limite===true;"),'la distance et la limite voyagent en ligne, sans clé nouvelle');
+ assert.ok(page.includes("const regle=lot0.length===1&&mouvementBorne(a)?regleMouvement(a):null;")&&page.includes("traceMouvement(null);\n  if(bloque){if(moved)skipClick=true;return}")
+  &&page.includes(" t.onpointercancel=()=>{drag=null;window.socleEnMain=null;traceMouvement(null)};")&&page.includes("   if(regle&&regle.combat){if(cout>0)depensePoint(a,'mouvement',cout)}"),'le geste à la main');
+ assert.ok(page.includes('<path id="aim-mouvement" class="aim-fleche mvt" marker-end="url(#shot-mvt)"/>')&&page.includes('<marker id="shot-mvt"')
+  &&page.includes("#aim .aim-fleche.mvt{stroke:#cf9152;")&&page.includes("lab.setAttribute('class','aim-dist on mvt')}"),'la flèche du mouvement, à la couleur du Mouvement');
+ assert.ok(page.includes("const k=mouvementClavier,suite=k&&k.id===a.id&&performance.now()-k.t<1500")&&page.includes("if(!regle.paye&&Math.hypot(a.x-regle.depart.x,a.y-regle.depart.y)>=.05){regle.paye=true;depensePoint(a,'mouvement')}"),'au clavier, un mouvement par suite de pas');
+ assert.ok(ia.includes("const q=borneMouvement(regle,{x:x/size.width*100,y:y/size.height*100},{x:a.x,y:a.y});")&&ia.includes("if(!appliqueRegleMouvement(a,regle)||q.borne)break}")
+  &&ia.includes(" soldeRegleMouvement(a,regle);depensePoint(a,'mouvement');")&&ia.includes("q=borneMouvement(regle,{x:x/size.width*100,y:y/size.height*100},{x:a.x,y:a.y});moveActor(e,q.x,q.y,false,ignorer,true);"),'l’IA sous la même règle');
+ assert.ok(carto.includes("const limiteBtn=icone('mouvement-limite','👣','Mouvement limité');")&&carto.includes("localStorage.setItem('amertume-mouvement-limite',mouvementLimiteExplo?'1':'0')")
+  &&carto.includes(" limiteBtn.classList.toggle('on',!!mouvementLimiteExplo)}")&&src.includes("'amertume-fouilles','amertume-mouvement-limite'];"),'le bouton du MJ, gardé avec les réglages de l’appareil');
+ assert.ok(carto.includes("  if(view==='mj'&&l.pose){let g=null;")&&carto.includes("if(!bouge)return;t._glisse=true;setTimeout(()=>{render();saveMaps()},0)};")
+  &&carto.includes("t.onclick=e=>{e.stopPropagation();if(t._glisse){t._glisse=false;return}"),'le MJ déplace les objets posés');
+ const noms=['objetsQuiComptent','DISTANCE_MOUVEMENT','bonusMouvementDe','mouvementPropre','distanceMouvement','mouvementLimiteExplo','mouvementBorne','borneMouvement','traceMouvement','mouvementClavier','limiteBtn'];
+ const decl=n=>new RegExp('(?:function|const|let|var)\\s+'+n+'\\b','g');
+ noms.forEach(n=>{const k=['combat.js','index.html','maps.js','editor.js','live.js','ia.js','shared.js','shared-data.js','campagnes.js','domaine.js','planches.js'].reduce((s,f)=>s+(fs.readFileSync(f,'utf8').match(decl(n))||[]).length,0);assert.equal(k,1,'un seul '+n)});}
 /* v0.602 — Sans arme, un aventurier frappe quand même : l'Attaque à mains nues, un dé Os et ses dégâts, s'il n'a pas ses
    propres attaques sur sa fiche. Ses dés paraissent dans les bulles de la table et de l'onglet Aventuriers ; l'icône que le
    MJ a choisie pour l'Attaque sans arme y paraît aussi, sur le bouton, la piste de dés et la carte Attaque. */
@@ -3418,7 +3458,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    deux icônes. Un objet posé au sol montre sa bulle au survol, dès qu'il est dans la zone de contact d'un aventurier. */
 {const page=fs.readFileSync('index.html','utf8'),carto=fs.readFileSync('maps.js','utf8');
  assert.ok(!/querySelectorAll\('#map-view \.token'\)/.test(page)&&!/querySelectorAll\('\.token'\)\[/.test(page)
-  &&page.includes("const socles=document.querySelectorAll('#map-view .token:not(.lumiere)');")&&page.includes("render();document.querySelectorAll('.token:not(.lumiere)')[i].focus()};"),'les socles par leur rang, sans les lumières');
+  &&page.includes("const socles=document.querySelectorAll('#map-view .token:not(.lumiere)');")&&page.includes("render();document.querySelectorAll('.token:not(.lumiere)')[i].focus();"),'les socles par leur rang, sans les lumières');
  assert.ok(page.includes("(bulle&&typeof glyphe==='string'&&typeof logoArmeEquipee==='function'?logoArmeEquipee(a):null)"),'chaque rond garde son icône');
  assert.ok(carto.includes("  if(l.pose&&piece&&typeof surveille==='function')surveille(t,()=>{if(!actors.some(a=>a&&a.hero&&alive(a)&&!a.horsCarte&&lumiereAPortee(a,l)))return;"),'la bulle de l’objet au sol, au contact');}
 /* v0.597 — Le remplissage d'obscurité gagne la pierre : chaque case de mur ou de porte va à l'espace libre le plus proche,
@@ -3607,7 +3647,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&page.includes("+(Math.trunc(Number(opts.bonusEnPlus))||0)+(predateur?predateur.total:0);"),'le talent et ses améliorations');
  assert.ok(src.includes("'<label class=\"field-check\"><input name=\"nyctalope\" type=\"checkbox\" '+(a.nyctalope===false?'':'checked')+'>Vision dans le noir</label>'")
   &&src.includes("if(f.nyctalope){if(f.nyctalope.checked)delete a.nyctalope;else a.nyctalope=false}")&&src.includes("{cle:'nyctalope',nom:'Vision dans le noir',type:'choix',")
-  &&src.includes("...(m.nyctalope===false?{nyctalope:false}:{}),notes:m.notes||'',")&&src.includes("...(a.nyctalope===false?{nyctalope:false}:{}),notes:a.notes,")&&vivant.includes("'orbeStatique','nyctalope',"),'le réglage des adversaires');}
+  &&src.includes("...(m.nyctalope===false?{nyctalope:false}:{}),...(mouvementPropre({mouvement:m.mouvement})!==DISTANCE_MOUVEMENT?")&&src.includes("...(a.nyctalope===false?{nyctalope:false}:{}),...(mouvementPropre({mouvement:a.mouvement})!==DISTANCE_MOUVEMENT?")&&vivant.includes("'orbeStatique','nyctalope',"),'le réglage des adversaires');}
 /* v0.590 — La marque « ! » d'un talent de début de combat : le seul rond jaune, sans contour blanc ni brun, par-dessus la
    barre de PV. Le Mouvement passe à un brun plus clair, aussi coloré. La piste de dés prend la moitié de la rangée ; chaque
    jet y tient sur une ligne, aussi grand que la place le permet, le bonus au bout, aligné en colonne ; trop de dés, et la
@@ -4127,7 +4167,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(feuille.includes('#bestiary-cols .cat-col.armurerie-grille{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));')&&feuille.includes('#bestiary-cols .cat-pill.gear-carre.best-carre{width:100%;max-width:69px;height:auto;aspect-ratio:1}'),'cinq jetons par ligne');
  // La fiche : la case Unique ; le modèle garde l'alignement du Bestiaire, pas celui du moment.
  assert.ok(src.includes('>Unique</label>\':\'\')')&&src.includes("if(a.pnj&&f.unique){if(f.unique.checked)a.unique=true;else delete a.unique}")
-  &&src.includes("alignement:alignementDe({pnj:true,alignement:a.alignement}),...(a.unique===true?{unique:true}:{})")&&src.includes("'pool','pnj','alignement','unique'])]"),'la case Unique');
+  &&src.includes("alignement:alignementDe({pnj:true,alignement:a.alignement}),...(a.unique===true?{unique:true}:{})")&&src.includes("'pool','pnj','alignement','unique','mouvement'])]"),'la case Unique');
  assert.ok(src.includes("if(m.pnj&&m.unique===true&&actors.some(a=>a&&!a.hero&&a.template===m.id)){")&&src.includes("const n=m.pnj&&m.unique===true?1:"),'sur la table, un seul exemplaire');
  // L'éditeur de cartes : l'outil PNJ, sa liste, l'unique, la couleur.
  assert.ok(mp.includes('<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl"')&&mp.includes("catalog.monsters.forEach((m,i)=>$(m.pnj?'map-pnj-tpl':'map-foe-tpl').add(")
@@ -4180,7 +4220,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&ed.includes("if(templateNeuf&&pnj)Object.assign(draft,{name:'Nouveau PNJ',role:'PNJ',pnj:true,alignement:'neutre'});")
   &&ed.includes("+(a.pnj?sel('Alignement','alignement',alignementDe({pnj:true,alignement:a.alignement}),ALIGNEMENTS)+'<label class=\"field-check\"><input name=\"unique\" type=\"checkbox\" '+(a.unique===true?'checked':'')+'>Unique</label>':'')"),'la colonne, le bouton et le menu Alignement');
  assert.ok(ed.includes("butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m),...(m.unique===true?{unique:true}:{})}:{})}}")&&ed.includes("butin:normaliseButin(a.butin,a.inventaire),bourse:normaliseBourse(a.bourse),...(a.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:a.alignement}),...(a.unique===true?{unique:true}:{})}:{})}}")
-  &&ed.includes("'pool','pnj','alignement','unique'])]")&&ed.includes("if(!neuf.pnj){delete a.pnj;delete a.alignement}if(!neuf.unique)delete a.unique;"),'l’alignement suit le modèle sur la table');
+  &&ed.includes("'pool','pnj','alignement','unique','mouvement'])]")&&ed.includes("if(!neuf.pnj){delete a.pnj;delete a.alignement}if(!neuf.unique)delete a.unique;"),'l’alignement suit le modèle sur la table');
  // Un allié tué ne rapporte pas d'XP ; la troupe lit ses PV.
  assert.ok(ed.includes("const vaincus=partants.filter(f=>f&&!duCoteTroupe(f)&&")&&page.includes("function hpKnown(o){return view==='mj'||!!(o&&(o.hero||duCoteTroupe(o)||o.revealed))}"));
  // La table : trois groupes ; seul un adverse lance le combat et le tient ouvert.

@@ -19,7 +19,7 @@
 /* Ce qui vit et se synchronise. Les images n'y sont pas : elles voyagent avec le contenu
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
- 'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope',
+ 'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement',
  'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
@@ -85,7 +85,9 @@ function etatVivant(){const out={actors:{}};
   // Puis les lumières de la carte : 1 éteinte, 0 allumée ; enfin, chaque lumière posée au sol, en entier.
   ...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.eteinte?1:0),...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol)]:[];
  out.fogOff=!!(m&&m.fogOff);
- out.fogReset=typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false};
+ /* La limite de mouvement que le MJ impose en exploration voyage avec la remise à zéro du brouillard : une clé du MJ seul,
+    que les règles admettent déjà ; aucune clé nouvelle dans le document. */
+ out.fogReset={...(typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false}),...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{})};
  /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
     tableaux qu'on modifie en place (états, cases, cumuls), sinon rien n'en partait. */
  return JSON.parse(JSON.stringify(out))}
@@ -188,6 +190,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';
     $('map').classList.toggle('custom',!!mapImage)}
    // Le voile levé et la remise à zéro du brouillard viennent du MJ.
+   if(d.fogReset&&typeof d.fogReset==='object'&&typeof mouvementLimiteExplo!=='undefined')mouvementLimiteExplo=d.fogReset.limite===true;
    const m0=typeof currentMap==='function'?currentMap():null;
    if(m0&&typeof d.fogOff==='boolean'&&!!m0.fogOff!==d.fogOff){m0.fogOff=d.fogOff;if(typeof fogKey!=='undefined')fogKey=''}
    if(d.fogReset&&typeof d.fogReset.n==='number'&&typeof brouillardReset!=='undefined'&&d.fogReset.n!==brouillardReset.n){
@@ -215,6 +218,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     // Les cibles attendent que toute la scène soit en place : leur combattant peut suivre.
     if(k==='cibles'){cibles.push([a,e[k]]);return}
     a[k]=structuredClone(e[k])});
+   // Une distance de mouvement rendue aux neuf mètres de tous quitte le document : chez un joueur, elle quitte aussi le socle.
+   if(!estMJ()&&!a.hero&&e.mouvement===undefined&&a.mouvement!==undefined)delete a.mouvement;
    normalizeActor(a)});
   cibles.forEach(([a,ids])=>{if(typeof poseCibles==='function')poseCibles(a,indicesDesCibles(ids))});
   // La composition de la scène appartient au MJ : chez les joueurs, ce qui n'y est plus s'en va.

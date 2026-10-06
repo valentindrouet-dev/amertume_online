@@ -163,7 +163,17 @@ function renderLumieres(){const vue=$('map-view'),m=currentMap();
   // Posé au sol, l'objet montre sa bulle au survol, dès qu'il est dans la zone de contact d'un aventurier.
   if(l.pose&&piece&&typeof surveille==='function')surveille(t,()=>{if(!actors.some(a=>a&&a.hero&&alive(a)&&!a.horsCarte&&lumiereAPortee(a,l)))return;
    const d=gearDetail(piece,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(t,d,'bulle-gear')});
-  t.onclick=e=>{e.stopPropagation();if(view==='mj'){menuLumiereMJ(l,e.clientX,e.clientY);return}
+  /* Le MJ déplace à la main un objet posé au sol : sa lumière le suit pendant le geste. Un simple clic ouvre
+     toujours son menu. */
+  if(view==='mj'&&l.pose){let g=null;
+   t.onpointerdown=e=>{if(e.button!==0)return;g={x:e.clientX,y:e.clientY,bouge:false,image:0};t.setPointerCapture(e.pointerId)};
+   t.onpointermove=e=>{if(!g||!t.hasPointerCapture(e.pointerId))return;if(!g.bouge&&Math.hypot(e.clientX-g.x,e.clientY-g.y)<4)return;g.bouge=true;
+    const q=mapPct(e);l.x=Math.max(0,Math.min(100,q.x));l.y=Math.max(0,Math.min(100,q.y));t.style.left=l.x+'%';t.style.top=l.y+'%';
+    if(!g.image)g.image=requestAnimationFrame(()=>{if(g)g.image=0;renderHalos();renderNuit()})};
+   t.onpointerup=e=>{if(!g)return;const bouge=g.bouge;g=null;if(t.hasPointerCapture(e.pointerId))t.releasePointerCapture(e.pointerId);
+    if(!bouge)return;t._glisse=true;setTimeout(()=>{render();saveMaps()},0)};
+   t.onpointercancel=()=>{g=null}}
+  t.onclick=e=>{e.stopPropagation();if(t._glisse){t._glisse=false;return}if(view==='mj'){menuLumiereMJ(l,e.clientX,e.clientY);return}
    const a=actors[owner];if(!a||!a.hero||!alive(a)||!(l.items||[]).length)return;
    if(!lumiereAPortee(a,l)){log('Approche ton aventurier : il faut être au contact de '+l.nom+'.',{local:true});return}
    recupererLumiere(a,l)};
@@ -1956,7 +1966,9 @@ const eyeBtn=icone('troupe-eye','🎭','Voir la carte comme la troupe');
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
    en est une. Un bouton les montre au MJ, chacune de sa couleur et de son numéro. */
 const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');
-fogBar.append(fogReset,fogAll,eyeBtn,zonesBtn,lockBtn);document.querySelector('.mapbar .zoom-bar').after(fogBar);
+// Le mouvement limité en exploration : les aventuriers ne vont pas plus loin que leur distance de mouvement.
+const limiteBtn=icone('mouvement-limite','👣','Mouvement limité');
+fogBar.append(fogReset,fogAll,eyeBtn,zonesBtn,lockBtn,limiteBtn);document.querySelector('.mapbar .zoom-bar').after(fogBar);
 const zonesCanvas=document.createElement('canvas');zonesCanvas.id='map-zones';zonesCanvas.setAttribute('aria-hidden','true');
 const zonesNoms=document.createElement('div');zonesNoms.id='map-zones-noms';zonesNoms.setAttribute('aria-hidden','true');
 $('fog').before(zonesCanvas,zonesNoms);
@@ -2007,6 +2019,8 @@ lockBtn.onclick=()=>{tokensLocked=!tokensLocked;refreshGmBar();render();schedule
  document.dispatchEvent(new Event('amertume-content-changed'));
  // Une note pour le MJ seul : chez les joueurs, le verrou se voit, il ne s'annonce pas.
  log(tokensLocked?'Déplacements figés : les joueurs ne peuvent plus bouger leurs tokens.':'Déplacements rendus aux joueurs.',{ton:'carte',local:true})};
+limiteBtn.onclick=()=>{mouvementLimiteExplo=!mouvementLimiteExplo;try{localStorage.setItem('amertume-mouvement-limite',mouvementLimiteExplo?'1':'0')}catch(e){}
+ refreshGmBar();render();scheduleSave()};
 // L'état des icônes se lit d'un coup d'œil : voile levé, déplacements gelés.
 // L'XP que rapportent les adversaires posés sur une carte, selon le bestiaire du moment.
 function xpDeCarte(m){return (m&&m.foes||[]).map(f=>modeleActuel(f.tpl)||f.tpl||{}).filter(t=>!duCoteTroupe(t)).reduce((s,t)=>s+(Math.max(0,Math.trunc(Number(t.xp))||0)),0)}
@@ -2029,7 +2043,8 @@ function refreshGmBar(){const m=currentMap(),mj=view==='mj';
     ne reparaissaient plus jusqu'à la première retouche de carte. */
  mapPick.hidden=mapOpen.hidden=!mj||!maps.length;
  lockBtn.textContent=tokensLocked?'🔒':'🔓';lockBtn.classList.toggle('on',tokensLocked);
- lockBtn.title=tokensLocked?'Rendre les déplacements aux joueurs':'Figer les déplacements des joueurs'}
+ lockBtn.title=tokensLocked?'Rendre les déplacements aux joueurs':'Figer les déplacements des joueurs';
+ limiteBtn.classList.toggle('on',!!mouvementLimiteExplo)}
 function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 
 // L'onglet Cartes n'existe que pour le MJ ; passer en vue joueur ramène à la table.

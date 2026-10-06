@@ -115,18 +115,19 @@ async function attaquesIA(a,j){let coups=0;
  return coups}
 // Ses orbes, gratuits, comme au bouton.
 async function orbesIA(a){for(let n=0;n<9;n++){const b=boutonsTalents(a).find(x=>x.code.cle==='orbes');if(!b||!b.peut)return;b.agir();await pauseIA(500)}}
-/* Un déplacement de l'IA : le long d'étapes en pixels, pas à pas, sous la règle du Mouvement — une zone
-   franchie se paie, sans point pour la suivante le socle reste au bord ; sans zones, le geste coûte un
-   point, comme à la main. Ceux qu'il quitte frappent, la Foudre tombe, Ombrelame s'arme. */
+/* Un déplacement de l'IA : le long d'étapes en pixels, pas à pas, sous la règle du Mouvement — un point, et
+   jusqu'à sa distance de mouvement, comme à la main : arrivé au bout, il s'arrête sur son chemin. Ceux qu'il
+   quitte frappent, la Foudre tombe, Ombrelame s'arme. */
 async function marcheIA(a,etapes,ignorer,arrive){const size=mapSize();if(!size.width||!etapes||!etapes.length)return false;
  const regle=regleMouvement(a);if(regle.fini)return false;
  noteContactsDepart(a);const croises=new Set(contactsDe(a)),depart={x:a.x,y:a.y};
  for(const [x,y] of etapes){if(arrive&&arrive())break;
-  moveActor(a,x/size.width*100,y/size.height*100,false,ignorer,true);
-  if(!appliqueRegleMouvement(a,regle))break}
+  const q=borneMouvement(regle,{x:x/size.width*100,y:y/size.height*100},{x:a.x,y:a.y});
+  moveActor(a,q.x,q.y,false,ignorer,true);
+  if(!appliqueRegleMouvement(a,regle)||q.borne)break}
  settleActor(a,ignorer);
  if(Math.hypot((a.x-depart.x)/100*size.width,(a.y-depart.y)/100*size.height)<1){a.x=depart.x;a.y=depart.y;return false}
- const cout=soldeRegleMouvement(a,regle);if(regle.zonee){if(cout>0)depensePoint(a,'mouvement',cout)}else depensePoint(a,'mouvement');
+ soldeRegleMouvement(a,regle);depensePoint(a,'mouvement');
  ramasseContacts(a,croises,depart,size,walls());a.lameventPret=round;
  const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(a.id)+'"]');
  if(el){el.classList.add('glisse');el.style.left=a.x+'%';el.style.top=a.y+'%';suitLaJauge(el)}
@@ -135,7 +136,7 @@ async function marcheIA(a,etapes,ignorer,arrive){const size=mapSize();if(!size.w
 /* Où un geste le mènerait, murs, socles et zones compris, sans rien bouger : le point d'arrivée, ou null
    si le geste est refusé. */
 function essaiPasIA(a,x,y,ignorer){const size=mapSize(),regle=regleMouvement(a);if(regle.fini)return null;
- const e={...a};moveActor(e,x/size.width*100,y/size.height*100,false,ignorer,true);
+ const e={...a},q=borneMouvement(regle,{x:x/size.width*100,y:y/size.height*100},{x:a.x,y:a.y});moveActor(e,q.x,q.y,false,ignorer,true);
  return appliqueRegleMouvement(e,regle)?{x:e.x,y:e.y}:null}
 // Jusqu'au contact de la cible : le chemin qui contourne murs et socles adverses, le dernier pas au bord de son socle.
 async function approcheIA(a,j){const b=actors[j],size=mapSize();if(!b||!size.width)return false;
