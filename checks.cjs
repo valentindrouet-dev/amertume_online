@@ -1095,12 +1095,12 @@ assert.ok(!src.includes('Fiche enregistrée')&&!src.includes('mise(s) à jour')&
 /* Un changement local gardé part au prochain envoi ; le MJ réinitialise d'un clic droit ; pastilles à droite. */
 assert.ok(vivant.includes("gardes.push([id,k,structuredClone(e[k])])")&&vivant.includes("gardes.forEach(([id,k,v])=>{if(base.actors[id])base.actors[id][k]=v})"),'un changement local gardé part');
 assert.ok(page.includes('function inerte(')&&page.includes('function reinitialiser(')&&src.includes('inerte(b,!!refus)')&&src.includes('inerte(b,!t.peut)')&&page.includes('inerte(rev,!!refus)'),'le clic droit du MJ réinitialise');
-assert.ok(page.includes('.pastilles{position:absolute;right:8px')&&page.includes('.actor-nom strong{overflow:hidden;text-overflow:ellipsis')&&feuille.includes('button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#bd7a3e;color:#fff;background-image:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.07))}')&&!feuille.includes('#8264bb')&&page.includes('function mouvementPris(')&&page.includes(":mouvementEpuise(a)?'Plus de point de Mouvement : analyser en coûte un.")&&page.includes('body.vue-joueur .turn-head{margin-bottom:0}'),'pastilles à droite, nom coupé, Analyser teal, tour compact');
+assert.ok(page.includes('.pastilles{position:absolute;right:8px')&&page.includes('.actor-nom strong{overflow:hidden;text-overflow:ellipsis')&&feuille.includes('button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#cf9152;color:#fff;background-image:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.07))}')&&!feuille.includes('#8264bb')&&page.includes('function mouvementPris(')&&page.includes(":mouvementEpuise(a)?'Plus de point de Mouvement : analyser en coûte un.")&&page.includes('body.vue-joueur .turn-head{margin-bottom:0}'),'pastilles à droite, nom coupé, Analyser teal, tour compact');
 /* Vie ou Endurance corrigée sur une fiche : les PV maximum suivent (Vie × Endu + bonus), sans
    dépasser leurs bornes ni laisser les PV du moment au-dessus ; le sélecteur Analyser n'est pas
    « button button » ; chaque effet déjà porté par un talent du catalogue arbore sa coche verte. */
 assert.ok(src.includes('function recalculerPV(')&&src.includes("if(cle==='vie'||cle==='endu')recalculerPV(a);")&&src.includes("writeStat(a,'max',max)"),'les PV max suivent Vie et Endurance');
-assert.ok(!/button\s*\/\*[^*]*\*\/\s*button\.btn-analyse/.test(feuille)&&/\*\/\s*button\.btn-analyse,button\.btn-analyse\.on,button\.btn-mvt\{--fond:#bd7a3e;color:#fff;/.test(feuille),'le sélecteur Analyser vise bien le bouton');
+assert.ok(!/button\s*\/\*[^*]*\*\/\s*button\.btn-analyse/.test(feuille)&&/\*\/\s*button\.btn-analyse,button\.btn-analyse\.on,button\.btn-mvt\{--fond:#cf9152;color:#fff;/.test(feuille),'le sélecteur Analyser vise bien le bouton');
 // v0.472 : la coche verte devient les petits ronds des talents qui portent l'effet, et « + » en crée un.
 assert.ok(src.includes("const porteurs=(catalog.talents||[]).map((t,i)=>[t,i]).filter(([t])=>t&&t.effet===c.cle);")&&src.includes("b.className='biblio-talent';b.append(talentRond(")
  &&src.includes("plus.className='biblio-plus';plus.textContent='+';")&&!src.includes("u.className='utilise'")&&feuille.includes('.biblio-table .biblio-talent .cat-pill.gear-carre.talent-carre{width:20px;height:20px;'),'les talents qui portent un effet, en petits ronds, et « + »');
@@ -2402,7 +2402,6 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.267 — Sans point de Mouvement, le socle bouge encore dans sa zone (et y subit l'opportunité) ;
    les jauges de PV ont leur couche, au-dessus de tous les socles. */
 {assert.ok(page.includes("function couchePV(){let c=$('pv-layer');if(!c){c=document.createElement('div');c.id='pv-layer';$('map-view').append(c)}return c}")
-  &&page.includes("function suitLaJauge(el){const j=el&&el._pv;if(!j)return;j.style.left=el.style.left;j.style.top=el.style.top;")
   &&page.includes(" t._pv=jauge;couchePV().append(jauge);")&&page.includes("document.querySelectorAll('.token').forEach(t=>t.remove());couchePV().replaceChildren();")
   &&page.includes("el.style.top=actors[k].y+'%';suitLaJauge(el)}});")&&page.includes("el.style.top=b.y+'%';suitLaJauge(el)}")
   &&page.includes("#pv-layer{position:absolute;inset:0;z-index:3;pointer-events:none}")&&page.includes("#pv-layer .pv.enemy i{background:")&&!page.includes('.token .pv{'),'les jauges au-dessus de tous les socles, et qui suivent');
@@ -3362,6 +3361,19 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.590 — La marque « ! » d'un talent de début de combat : le seul rond jaune, sans contour blanc ni brun, par-dessus la
+   barre de PV. Le Mouvement passe à un brun plus clair, aussi coloré. La piste de dés prend la moitié de la rangée ; chaque
+   jet y tient sur une ligne, aussi grand que la place le permet, le bonus au bout, aligné en colonne ; trop de dés, et la
+   ligne se coupe en rangées égales, le bonus jamais seul ; rien ne déborde, et les dés restent carrés. */
+{const page=fs.readFileSync('index.html','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ assert.ok(feuille.includes("#pv-layer .debut-marque{position:absolute;transform:translate(-50%,-80%);")&&!/\.debut-marque\{[^}]*border:2px solid #fff/.test(feuille)
+  &&page.includes("if(t.classList.contains('hors-carte'))marque.hidden=true;couchePV().append(marque);t._marque=marque}")
+  &&page.includes("function suitLaJauge(el){const m=el&&el._marque;if(m){m.style.left=el.style.left;m.style.top=el.style.top}"),'la marque par-dessus la jauge');
+ assert.ok(feuille.includes("button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#cf9152;")&&!/#bd7a3e/.test(feuille+page),'le Mouvement plus clair');
+ assert.ok(feuille.includes("@media(min-width:701px){.actions-rangee{grid-template-columns:minmax(0,1fr) minmax(max-content,1fr)}}")
+  &&page.includes("for(let taille=42;taille>=18&&!plan;taille-=2)plan=essai(taille,false);")&&page.includes("for(let taille=42;taille>=14&&!plan;taille-=2)plan=essai(taille,true);")
+  &&page.includes("if(e.bonus&&r.length>1)suit.unshift(r.pop());")&&page.includes("const fx=e.bonus?bordD-e.w/2:curseur+e.w/2;")
+  &&page.includes("el.style.borderRadius=Math.round(taille*.26)+'px'")&&page.includes("tray.style.minHeight='';const size=tray.getBoundingClientRect();"),'la piste de dés en ordre');}
 /* v0.589 — Orbe statique, une Action du Mystique : un de ses orbes posé sur un point qu'il voit, 1 PV, DEF 0, du camp de son
    porteur ; au début de chaque tour, son état à tous les adversaires de sa zone de contact. Un seul à la fois. Améliorations :
    il lance gratuitement des orbes, autant que le porteur en possède au palier 2 ; il rampe du niveau du porteur en mètres vers
@@ -3403,8 +3415,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.587 — Le bouton du Mouvement prend un brun plus vif, qu'on ne confond plus avec un bouton grisé ; les pastilles de PM et
    les points de coût suivent. */
 {const feuille=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
- assert.ok(feuille.includes("button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#bd7a3e;")&&feuille.includes("button.btn-talent.t-mvt{--fond:#bd7a3e}")
-  &&page.includes(".pastilles .mvt{background:#bd7a3e}")&&!/#b98b61/.test(feuille+page),'le Mouvement en brun vif');}
+ assert.ok(feuille.includes("button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#cf9152;")&&feuille.includes("button.btn-talent.t-mvt{--fond:#cf9152}")
+  &&page.includes(".pastilles .mvt{background:#cf9152}")&&!/#b98b61/.test(feuille+page),'le Mouvement en brun vif');}
 /* v0.586 — Les jetons des cibles ne poussent plus le texte de la bulle : ils montent au-dessus d'elle, ne mordant sur son bord
    que de 8 pixels, et la bulle garde sa marge d'avant. */
 {const feuille=fs.readFileSync('editor.css','utf8');
@@ -3420,7 +3432,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    prendrait quand aucune n'est désignée. Le Mouvement passe au beige tirant vers le brun, et Se relever, qui coûte un point de
    Mouvement, en prend la couleur. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(page.includes("scheduleSave()},'btn-action btn-mvt')}")&&page.includes(".pastilles .mvt{background:#bd7a3e}")
+ assert.ok(page.includes("scheduleSave()},'btn-action btn-mvt')}")&&page.includes(".pastilles .mvt{background:#cf9152}")
   &&!/#e0a04a|#b77b31|#f2e2c4/.test(feuille+page+src),'le Mouvement en beige brun, Se relever compris');}
 /* v0.583 — L'en-tête de la barre d'action ne montre plus les cibles : les états de la cible désignée, en icônes, le compte
    d'un état qui se cumule en pastille, et au survol ce que l'état fait, ses valeurs comprises. Les cibles d'un geste se lisent
@@ -3467,7 +3479,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("s.className='cout-points';")
   &&feuille.includes(".talent-bulle-nom .cout-xp{position:absolute;top:0;right:12px;transform:translateY(-50%);")
-  &&feuille.includes(".talent-bulle-nom .cout-points .pt.action{background:#3f8fe0}.talent-bulle-nom .cout-points .pt.mvt{background:#bd7a3e}"),'le coût en points, l’XP à cheval');}
+  &&feuille.includes(".talent-bulle-nom .cout-points .pt.action{background:#3f8fe0}.talent-bulle-nom .cout-points .pt.mvt{background:#cf9152}"),'le coût en points, l’XP à cheval');}
 /* v0.577 — Variables dans les descriptions de talents : {orbes}, {desorbe}, {endu}, {vie}, {pv}, {degats}, {def}, {niveau},
    {pa}, {pm}, accents et casse ignorés. Chez un combattant, sa valeur du moment, à la couleur de sa caractéristique ;
    sans combattant, le nom de la variable, souligné de points. */
@@ -3486,7 +3498,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(src.includes("const TALENT_TYPES=[['act','ACT','Action'],['mvt','MVT','Mouvement'],")&&src.includes("const ORDRE_TYPES_TALENTS=['mait','act','mvt','reac','crit','pass','ame'];")
   &&src.includes("const GLYPHES_TALENT={act:'⚔',mvt:'➜',")&&src.includes("['coutPA','coutPM'].forEach(k=>{if(!(Number.isInteger(t[k])&&t[k]>=0&&t[k]<=9))delete t[k]});")
   &&src.includes('<label id="cout-action-champ" hidden><span id="cout-action-nom">Coût (PA)</span>')&&src.includes("nom.textContent=ty==='mvt'?'Coût (PM)':'Coût (PA)';")
-  &&feuille.includes("button.btn-talent.t-mvt{--fond:#bd7a3e}")&&feuille.includes(".arbre-noeud.t-mvt{--teinte:#8a6440}"),'le type Mouvement et le coût à l’éditeur');
+  &&feuille.includes("button.btn-talent.t-mvt{--fond:#cf9152}")&&feuille.includes(".arbre-noeud.t-mvt{--teinte:#8a6440}"),'le type Mouvement et le coût à l’éditeur');
  assert.ok(page.includes("const TALENT_TYPES_CLES=['act','mvt','reac','pass','crit','mait','ame'];")&&page.includes("function dejaJoue(a,talent,code){return enCombat()&&!!a&&!!talent&&!(code&&code.cle==='orbes')")
   &&page.includes("const bloque=deja||manquePA||manquePM;")&&page.includes("if(dit===null){if(!ctx.pris&&!placementEnCours&&!fermeFormesMur)marqueTalent(a,talent,code);return}")
   &&page.includes("const pa=opts.sansAction?0:ctxT?ctxT.pa:1;")&&page.includes("if(ctx)payeTalent(ctx);else if(rangeeTalent(talent)==='attaques'")
@@ -3612,9 +3624,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.558 — La piste des dés : une ligne qui ne tient pas passe à la rangée suivante, le « + » du critique avec ses dés ; la
    place des visages d'après ceux qui paraissent ; la piste change de largeur, le dernier lancer s'y repose sans tomber. */
 {const page=fs.readFileSync('index.html','utf8');
- assert.ok(page.includes("const ECART=22,BONUS=52,MAX_DES=60;")&&page.includes("if(w+e.w>place&&r.length){const plus=r[r.length-1].plus?[r.pop()]:[];rangs.push(plus);")
-  &&page.includes("const marge=Math.max(faceG,faceD)?Math.max(faceG,faceD)+12:0,place=Math.max(46,size.width-16-2*marge);")
-  &&page.includes("if(avant&&w&&dernierJet&&$('dice-tray').childElementCount)rollOnBoard(...dernierJet,true)"),'la piste ne déborde plus');}
+ assert.ok(page.includes("if(avant&&w&&dernierJet&&$('dice-tray').childElementCount)rollOnBoard(...dernierJet,true)"),'la piste ne déborde plus');}
 /* v0.556 — Ricochet (Mystique) : un orbe qui ne passe pas la DEF repart de sa cible vers l'adversaire le plus proche d'elle
    et relance ses dés ; des rebonds en plus ; un critique rebondit aussi, deux orbes au palier 2. Sans coût d'orbe. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),T=C.TALENTS_CODES;

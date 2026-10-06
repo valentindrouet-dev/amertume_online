@@ -3,7 +3,7 @@
 <style>
 /* Killam Bold, fournie par Valentin, pour les chiffres des caractéristiques. Sous-ensemble
    latin en WOFF2 : 48 Ko au lieu des 188 Ko du TTF d'origine, qui reste dans fonts/. */
-@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.589') format('woff2');
+@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.590') format('woff2');
  font-weight:700;font-style:normal;font-display:swap}
 
 /* Deux palettes, un seul jeu de règles : tout le décor passe par ces jetons, si bien
@@ -22,7 +22,7 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 --accent:#e2ae72;--on-accent:#201b15;--green:#8ab5a0;--red-mat:#d4735a;--map-bg:#223235;
 --disabled:#33465a;--disabled-ink:#8fa2b4;--sel-fond:#2b2419;
 --t-select:#a9c8e6;--t-wall:#c3d0d4;--t-door:#e9c08a;--t-start:#a9d7bc;--t-foe:#e8b0a2}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif}button,input,select{font:inherit}button{cursor:pointer;border:1px solid var(--line);color:var(--ink);background:var(--btn);border-radius:6px;padding:8px 12px}button:hover{background:var(--hover)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:700}button:disabled{opacity:.45;cursor:default}button.inerte{opacity:.45;cursor:default}button.inerte:hover{filter:none}header{padding:18px 28px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:20px}/* Le titre tient sur deux lignes : le nom du jeu, et dessous ONLINE en petites capitales brunes. */.brand{display:flex;flex-direction:column;align-items:flex-start;gap:0;font-family:'Killam',Georgia,serif;font-size:30px;letter-spacing:3px;line-height:1.05}.brand-ligne{display:flex;align-items:baseline;gap:14px}.brand-online{font:600 13px system-ui;letter-spacing:7px;color:var(--accent)}.brand .ver{font:14px system-ui;letter-spacing:1px;color:var(--muted)}.intro{padding:18px 28px 0;display:flex;justify-content:space-between;align-items:center;gap:12px}h1{font-family:Georgia,serif;font-size:28px;font-weight:400;margin:0}h2{font-size:15px;margin:0 0 14px;letter-spacing:1px}p{margin:6px 0}.muted{color:var(--muted);font-size:14px}.layout{display:grid;grid-template-columns:236px minmax(0,1fr) 340px;gap:18px;padding:20px 28px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}.stack{display:flex;flex-direction:column;gap:16px}.eyebrow{font-size:12px;letter-spacing:2px;color:var(--accent);text-transform:uppercase}/* Languettes : de quoi lire un nom et des PV, pas plus. */.actor{width:100%;display:flex;align-items:center;gap:9px;text-align:left;margin:5px 0;padding:6px 8px;background:transparent}.actor strong{font-size:13px}.actor .avatar{width:26px;height:26px;font-size:15px}/* Deux pastilles au-dessus de la vignette : l'Action et le Mouvement qui restent. La
-   vignette descend juste ce qu'il faut pour leur faire place, sans grandir ni pousser la ligne. */.vignette{position:relative;flex:none;line-height:0;transform:translateY(4px)}.actor{position:relative}.pastilles{position:absolute;right:8px;top:5px;display:flex;gap:3px;pointer-events:none}.actor-nom strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:22px}.pastilles .pt{display:block;flex:none;width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 2px var(--panel)}.pastilles .action{background:#3f8fe0}.pastilles .mvt{background:#bd7a3e}.pastilles .pt.off{visibility:hidden}/* Le socle seul descend encore un peu : les pastilles, elles, restent où elles sont. */.actor .vignette .avatar{transform:translateY(4px)}/* La barre et l'écu sur une même ligne, à hauteur d'œil : la barre ne porte que les PV
+   vignette descend juste ce qu'il faut pour leur faire place, sans grandir ni pousser la ligne. */.vignette{position:relative;flex:none;line-height:0;transform:translateY(4px)}.actor{position:relative}.pastilles{position:absolute;right:8px;top:5px;display:flex;gap:3px;pointer-events:none}.actor-nom strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:22px}.pastilles .pt{display:block;flex:none;width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 2px var(--panel)}.pastilles .action{background:#3f8fe0}.pastilles .mvt{background:#cf9152}.pastilles .pt.off{visibility:hidden}/* Le socle seul descend encore un peu : les pastilles, elles, restent où elles sont. */.actor .vignette .avatar{transform:translateY(4px)}/* La barre et l'écu sur une même ligne, à hauteur d'œil : la barre ne porte que les PV
    du moment, le maximum se lit dans la fiche. */
 .vie-ligne{display:flex;align-items:center;gap:6px;margin-top:3px}
 .actor .lifebar{flex:1;min-width:0;height:16px;border-radius:999px;margin-top:0}
@@ -119,7 +119,7 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 /* Les coffres, sous le brouillard : seule leur part en vue se découpe. */
 #map-coffres{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}#map-shapes .wall-group{opacity:.62}#map-shapes .wall-group path.fond{fill:#0b1114;stroke:none}/* À la table, la matière n'a pas de liseré : le premier passage ne peint rien. */#map-shapes .wall-group path.bord{fill:none;stroke:none}/* Une porte n'est jamais un bloc plein : close, un contour orange ; ouverte, le même en pointillé gris. */#map-doors .door{fill:none;stroke:#c98a4b;stroke-width:2.5;vector-effect:non-scaling-stroke;opacity:.95;cursor:default;transition:stroke .12s,stroke-width .12s,filter .12s}#map-doors .door.open{stroke:#96a3a7;stroke-width:2;stroke-dasharray:7 6;opacity:.8}#map-doors .door.keyed{stroke:#f3d7a6;stroke-width:3.5}/* Un passage secret ne se dessine que pour le MJ tant qu'il est clos : un trait violet   en pointillé serré, pour ne pas le confondre avec une porte que la troupe voit. */#map-doors .door.secret{stroke:#b06fd0;stroke-width:3;stroke-dasharray:4 3}#map-doors .door.secret.open{stroke:#96a3a7;stroke-width:2;stroke-dasharray:7 6}#map-doors .door.secret.can-open:hover{stroke:#c98ae0;stroke-width:4;filter:drop-shadow(0 0 6px #b06fd099)}#map-doors .door.keyed.open{stroke:#b9c3c6;stroke-width:2.5}/* Survol d'une porte que l'on peut manœuvrer : elle s'allume. */#map-doors .door.can-open{cursor:pointer}#map-doors .door.can-open:hover{stroke:#f6d9a8;stroke-width:4;opacity:1;filter:drop-shadow(0 0 6px #e2ae7299)}#map-doors .door.can-open.open:hover{stroke:#dfe8ea;stroke-width:3.5}#map-shapes .startzone{fill:#8bbd9c;opacity:.12;stroke:#8bbd9c;stroke-width:2;stroke-dasharray:8 6}/* Le plateau à dés est hors du calque zoomé : les dés se posent au bas de la table
    visible, quel que soit le zoom ou le recadrage de la carte. */
-/* La piste de dés : un panneau à droite des Actions, un tiers de la largeur, où les dés animés tombent — plus jamais sur la carte. */.actions-rangee{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:stretch}/* Le plateau des Dés a la hauteur du bloc Actions, quel que soit le nombre de dés : la rangée ne grandit jamais. */.piste-des{display:flex;flex-direction:column;gap:8px;height:220px;overflow:hidden auto}#dice-tray{position:relative;flex:1;min-height:110px;border-radius:12px;background:#0e1518;border:1px solid #ffffff12;box-shadow:inset 0 2px 6px #00000066;pointer-events:none;overflow:hidden}@media(max-width:700px){.actions-rangee{grid-template-columns:1fr}.piste-des{min-height:110px}}/* Un dé qui ne compte pas — double d'os, face de Faille — s'efface : gris, à demi transparent, sans ombre, un peu plus petit. */.board-die.barre{opacity:.35!important;filter:grayscale(1);box-shadow:none;transform:scale(.88)!important}/* Le « + » du critique et le bonus de dégâts, en Killam. *//* Les visages sur la piste : ronds, liserés à la couleur du camp. */.board-token{position:absolute;transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#2a2622;color:#e7d9b8;font:800 16px 'Killam',Georgia,serif;border:2px solid #9fc8b1;box-shadow:0 2px 6px #000a;box-sizing:border-box}.board-token.adverse{border-color:#d29180}.board-token img{width:100%;height:100%;object-fit:cover;display:block}.board-plus{position:absolute;transform:translate(-50%,-50%);font:800 18px 'Killam',Georgia,serif;color:#e7d9b8;text-shadow:0 1px 2px #000c}.board-bonus{position:absolute;transform:translate(-50%,-50%);font:800 24px 'Killam',Georgia,serif;color:#e0604a;text-shadow:0 1px 2px #000c;white-space:nowrap}/* Un dé qui ne passe pas la DEF de la cible porte l'écu vide à son coin. */.board-die .rate{position:absolute;right:-7px;top:-7px;width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px #000c)}
+/* La piste de dés : un panneau à droite des Actions, la moitié de la largeur, où les dés animés tombent — plus jamais sur la carte. */.actions-rangee{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:stretch}/* Le plateau des Dés a la hauteur du bloc Actions, quel que soit le nombre de dés : la rangée ne grandit jamais. */.piste-des{display:flex;flex-direction:column;gap:8px;height:220px;overflow:hidden auto}#dice-tray{position:relative;flex:1;min-height:110px;border-radius:12px;background:#0e1518;border:1px solid #ffffff12;box-shadow:inset 0 2px 6px #00000066;pointer-events:none;overflow:hidden}@media(max-width:700px){.actions-rangee{grid-template-columns:1fr}.piste-des{min-height:110px}}/* Un dé qui ne compte pas — double d'os, face de Faille — s'efface : gris, à demi transparent, sans ombre, un peu plus petit. */.board-die.barre{opacity:.35!important;filter:grayscale(1);box-shadow:none;transform:scale(.88)!important}/* Le « + » du critique et le bonus de dégâts, en Killam. *//* Les visages sur la piste : ronds, liserés à la couleur du camp. */.board-token{position:absolute;transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#2a2622;color:#e7d9b8;font:800 16px 'Killam',Georgia,serif;border:2px solid #9fc8b1;box-shadow:0 2px 6px #000a;box-sizing:border-box}.board-token.adverse{border-color:#d29180}.board-token img{width:100%;height:100%;object-fit:cover;display:block}.board-plus{position:absolute;transform:translate(-50%,-50%);font:800 18px 'Killam',Georgia,serif;color:#e7d9b8;text-shadow:0 1px 2px #000c}.board-bonus{position:absolute;transform:translate(-50%,-50%);font:800 24px 'Killam',Georgia,serif;color:#e0604a;text-shadow:0 1px 2px #000c;white-space:nowrap}/* Un dé qui ne passe pas la DEF de la cible porte l'écu vide à son coin. */.board-die .rate{position:absolute;right:-7px;top:-7px;width:18px;height:18px;object-fit:contain;filter:drop-shadow(0 1px 2px #000c)}
 /* Les chiffres qui montent au-dessus d'un socle : ils vivent dans leur propre couche,
    sinon le redessin des tokens les emporterait au premier changement de PV. */
 #floaters{position:absolute;inset:0;z-index:4;pointer-events:none}/* Le cadre de sélection : tracé au-dessus de la carte, transparent aux clics. */#marquee{position:absolute;z-index:4;pointer-events:none;border:1.5px dashed var(--accent);background:rgba(160,120,60,.13);border-radius:3px}#marquee[hidden]{display:none}
@@ -127,8 +127,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 .floater.perte{color:#f0705a}.floater.gain{color:#8fd77e}.floater.nul{color:#e7d9b8}.board-die{position:absolute;display:grid;place-items:center;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:11px;font:800 20px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -3px 5px #00000026,0 7px 16px #000000a6;will-change:transform}.board-die.dark{color:#f4f6f2}.journal-title{font:600 13px system-ui;letter-spacing:3px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px}.journal{max-height:330px;display:flex;flex-direction:column;gap:9px;padding-right:4px}.journal li{border:0;padding:0}/* Les colonnes se calent sur la colonne centrale : la droite prend sa hauteur exacte et le journal y prend ce que la fiche lui laisse ; à gauche, les points de vie descendent au bas. */.stack.right.calee{min-height:0}.stack.right.calee>.panel{flex:none}.stack.right.calee>.panel:last-child{flex:1 1 0;min-height:150px;display:flex;flex-direction:column;box-sizing:border-box}.stack.right.calee .journal{flex:1;min-height:0;max-height:none}.stack.right.calee .journal-title,.stack.right.calee .journal-chat{flex:none}/* Un seul lettrage pour les titres de blocs : petites capitales espacées, sans Killam. */.eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title,.panel>h2,#carte-titre{font:600 13px/1.25 system-ui,-apple-system,'Segoe UI',sans-serif;letter-spacing:2.5px;text-transform:uppercase}/* Actions et Dés partent de la même ligne : la carte des actions perd sa marge de rangée. *//* Le bloc Actions a une hauteur fixe, vide ou garni : la carte, calée dessus, ne bouge jamais ; un contenu plus haut défile à l'intérieur. */.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}.attack-card.vide #reveal,.attack-card.vide #attack-choices{display:none}#pv-panel.vide .hp-buttons button{opacity:.45;pointer-events:none}#sheet.vide #hpbar,#sheet.vide #bloc-gear,#sheet.vide .divider{display:none}#sheet.vide .sheet-head{min-height:34px}/* La fiche prend la hauteur de ce qu'elle montre — talents et équipement dépliés compris — et le journal, calé dessous, prend tout le reste. */#sheet{min-height:0}.j-entry{font-size:14px;line-height:1.45;color:var(--ink);white-space:pre-line}/* La flèche en vol : un trait sombre à pointe claire, tourné vers sa cible. *//* Le souffle d'un tir : une rafale claire et étirée, deux filets d'air par-dessus. *//* Les coups, lisibles et toujours les mêmes : au contact, un trait de balayage fend l'air sur la cible, puis un choc — un anneau qui s'élargit ; à distance, un projectile file en ligne droite du tireur à la cible, puis le même choc. Blanc cerné de sombre : visible sur toute carte. Chaque geste dure le même temps, au même rythme. */.vfx{position:absolute;pointer-events:none;z-index:5;will-change:transform,opacity;transform:translate(-50%,-50%)}.vfx svg{display:block;width:100%;height:100%;overflow:visible}.vfx-piege svg{filter:drop-shadow(0 0 6px #ff8a2acc)}.vfx-piege .souffle{fill:#ff7a1f;fill-opacity:.6;stroke:#ffc35a;stroke-width:4}.vfx-piege .coeur{fill:#fff4cf}
 .vfx-choc .onde{fill:none;stroke:#fff6dc;stroke-width:7}.vfx-choc svg{filter:drop-shadow(0 0 1px #000d) drop-shadow(0 0 5px #ffc85acc)}.vfx-etincelles .gerbe{stroke:#fff6dc;stroke-width:4.5;stroke-linecap:round}.vfx-etincelles svg{filter:drop-shadow(0 0 1px #000d) drop-shadow(0 0 4px #ffc85acc)}.vfx-fleche{transform:none}.vfx-fleche .hampe-ombre{stroke:#000a;stroke-width:5;fill:none}.vfx-fleche .hampe{stroke:#f1e4c8;stroke-width:2.6;fill:none}.vfx-fleche .plume{fill:#b8452e;stroke:#0009;stroke-width:1}.vfx-fleche .pointe{fill:#e9eef2;stroke:#000b;stroke-width:1.2}.vfx-fleche svg{filter:drop-shadow(0 0 3px #fff8)}/* Le balayage d'un coup au contact : un arc d'air, clair au bord, qui tourne autour de l'attaquant. *//* La parole : le socle de qui parle, puis ses mots. */.j-chat{display:flex;align-items:flex-start;gap:8px;border:1px solid color-mix(in srgb,var(--ink) 14%,transparent);background:color-mix(in srgb,var(--ink) 4%,transparent);border-radius:7px;padding:4px 8px;margin:2px 0}.j-avatar{flex:none;width:24px;height:24px;border-radius:50%;overflow:hidden;background:#d9cfbd;color:#2a2118;display:grid;place-items:center;font:700 12px 'Killam',Georgia,serif}.j-avatar img{width:100%;height:100%;object-fit:cover;display:block}.j-avatar.mj{background:var(--accent);color:#fff}.j-corps{min-width:0}.j-texte{white-space:pre-wrap;overflow-wrap:anywhere}.journal-vider{margin-left:auto;font:600 11px system-ui;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}.journal-vider:hover{color:var(--ink);border-color:var(--ink)}.journal-chat{display:flex;gap:6px;margin-top:8px;flex:none}.journal-chat input{flex:1;min-width:0;font:14px system-ui;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}.journal-chat button{flex:none;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--accent);cursor:pointer;font-size:14px}/* Un cartouche léger, de la couleur de l'action : bleu pour un coup, violet pour un talent, une analyse ou un orbe, vert pour un soin, rouge pour une perte, ambre pour un état, or pour une révélation, brun pour la carte. */.j-entry.ton{--ton:#3f7bc0;border:1px solid color-mix(in srgb,var(--ton) 30%,transparent);background:color-mix(in srgb,var(--ton) 7%,transparent);border-radius:7px;padding:3px 8px;margin:2px 0}.j-entry.ton-attaque{--ton:#3f7bc0}.j-entry.ton-talent{--ton:#8a63c9}.j-entry.ton-competence{--ton:#2f7d45}.j-entry.ton-soin{--ton:#2f8a63}.j-entry.ton-degats{--ton:#b8483a}.j-entry.ton-etat{--ton:#a2691f}.j-entry.ton-reveal{--ton:#9d7b1e}.j-entry.ton-carte{--ton:#8a6d3b}.ton-butin{--ton:#a8832c}.j-turn{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:5px 0 1px}.j-turn::before,.j-turn::after{content:"";flex:1;height:1px;background:var(--line)}.j-name{font-weight:700}.j-key{font-weight:700}.j-num{font-weight:800;color:#b4553a}.j-dice{opacity:.7}/* La ligne d'attaque : le logo de l'arme entre les deux noms, les dégâts cliquables, le détail des dés dessous. */.j-attaque .logo-equip{width:20px;height:20px;vertical-align:-5px;margin:0 1px;filter:drop-shadow(0 1px 1px #0006)}.j-degats{font-weight:800;color:#b4553a}.j-degats.cliquable{cursor:pointer;border-bottom:1px dashed currentColor}.j-degats.cliquable:hover,.j-degats.ouvert{color:#d0644a}.j-detail{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:6px}.j-de{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;font:800 12px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -2px 3px #00000026,0 2px 4px #0000005e}.j-de.dark{color:#f4f6f2}.j-de.barre{opacity:.35;filter:grayscale(1);box-shadow:none}.j-de.relance{margin-left:8px}.j-plus{font:600 12px system-ui;color:var(--muted)}.j-plus.total{font-weight:800;color:var(--ink)}.j-badge{display:inline-block;background:#8d3b32;color:#ffe6df;border-radius:5px;padding:1px 7px;font-weight:700;font-size:12px}
 /* Le socle qui arrive du réseau glisse jusqu'à sa place. */.token.glisse{transition:left .18s linear,top .18s linear}/* L'orbe en vol : une bille lumineuse de la couleur de ses dés. */.orbe-vol{position:absolute;will-change:transform,opacity;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;background:radial-gradient(circle at 35% 35%,#fff9,var(--orbe) 55%,transparent 72%);box-shadow:0 0 14px 5px var(--orbe),0 0 44px 16px color-mix(in srgb,var(--orbe) 55%,transparent)}/* L'orbe de feu : un cœur blanc, une écorce d'ambre et une flamme qui bat autour. Seuls
-   transform et opacity s'animent — le compositeur mène le vol sans le fil principal. */.orbe-vol.feu{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}.orbe-vol.feu::after{content:'';position:absolute;inset:-22%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 50% 66%,#ffb14ab3,#ff5a1e4d 45%,transparent 72%);animation:flamme .26s ease-in-out infinite alternate}@keyframes flamme{from{transform:scale(.86) rotate(-9deg);opacity:.7}to{transform:scale(1.2) rotate(10deg);opacity:1}}@media(prefers-reduced-motion:reduce){.orbe-vol.feu::after{animation:none}}/* Un envoi refusé se voit sur le bouton de la table. */#open-live[data-souci]{color:#b8483a;border-color:#b8483a}</style><link rel="stylesheet" href="./editor.css?v=0.589"></head><body><div id="busy-cover">Chargement de la partie enregistrée…</div>
-<header><div class="brand"><span class="brand-ligne"><span class="brand-nom">Amertüme</span><span class="ver">v0.589</span></span><span class="brand-online">ONLINE</span></div><div class="view-controls"><label for="view">Vue</label><select id="view" autocomplete="off"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select></div></header>
+   transform et opacity s'animent — le compositeur mène le vol sans le fil principal. */.orbe-vol.feu{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}.orbe-vol.feu::after{content:'';position:absolute;inset:-22%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 50% 66%,#ffb14ab3,#ff5a1e4d 45%,transparent 72%);animation:flamme .26s ease-in-out infinite alternate}@keyframes flamme{from{transform:scale(.86) rotate(-9deg);opacity:.7}to{transform:scale(1.2) rotate(10deg);opacity:1}}@media(prefers-reduced-motion:reduce){.orbe-vol.feu::after{animation:none}}/* Un envoi refusé se voit sur le bouton de la table. */#open-live[data-souci]{color:#b8483a;border-color:#b8483a}</style><link rel="stylesheet" href="./editor.css?v=0.590"></head><body><div id="busy-cover">Chargement de la partie enregistrée…</div>
+<header><div class="brand"><span class="brand-ligne"><span class="brand-nom">Amertüme</span><span class="ver">v0.590</span></span><span class="brand-online">ONLINE</span></div><div class="view-controls"><label for="view">Vue</label><select id="view" autocomplete="off"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select></div></header>
 <div class="intro" hidden><h1>Les ruines du passage</h1></div>
 <main class="layout"><aside class="stack left"><section class="panel"><div class="turn-head"><div class="eyebrow" id="titre-tour">Tour de combat</div><div class="turn" id="round">01</div></div><div id="bloc-activation" hidden><h2>Activation</h2><div class="checks"><label><input type="checkbox" id="action"> Action</label><label><input type="checkbox" id="move"> Mvt / Analyse</label><label><input type="checkbox" id="item"> Objet</label></div><div class="divider"></div></div><div class="turn-actions"><button class="full" id="next">Tour suivant →</button><button id="reset-round" title="Revenir au tour 1 : activations, cibles, états et analyses remis à zéro, adversaires à nouveau inconnus" aria-label="Réinitialiser le tour de combat">↺</button></div><div class="side-actions"><button id="start-combat" class="primary" hidden>⚔ Début du combat</button><button id="end-combat" hidden>Fin du combat</button></div></section><section class="panel pv-panel" id="pv-panel" hidden><div class="eyebrow">Points de vie</div><div class="hp-buttons" id="hp-buttons"></div></section><section class="panel"><h2>COMBATTANTS</h2><div id="actors"></div><button type="button" class="ajout-camp" id="new-hero" title="Ajouter un aventurier à la scène" aria-label="Ajouter un aventurier à la scène" hidden>+</button><button type="button" class="ajout-camp" id="new-monster" title="Ajouter un adversaire à la scène" aria-label="Ajouter un adversaire à la scène" hidden>+</button></section></aside>
 <div class="stack"><section class="panel map-panel"><div class="mapbar"><div class="mapbar-h1"><strong id="carte-titre">CARTE TACTIQUE</strong><button class="icon-btn toggle-portees" id="portees">◎ Contacts</button><button class="icon-btn toggle-portees" id="fouilles-vue">🔍 Fouilles</button><button class="icon-btn toggle-portees" id="distances-vue">📏 Distances</button><button class="icon-btn toggle-portees" id="coffres-bulles" hidden>🧰 Coffres</button><div class="zoom-bar"><button id="zoom-out" aria-label="Dézoomer">−</button><span id="zoom-label">100 %</span><button id="zoom-in" aria-label="Zoomer">+</button><button id="zoom-reset">Ajuster</button></div></div><div class="mapbar-h2" hidden><label class="file"><button id="upload">Importer une carte</button><input class="sr" type="file" id="mapfile" accept="image/png,image/jpeg,image/webp"></label><button class="icon-btn" id="reset-map" title="Retirer la carte de fond" aria-label="Retirer la carte de fond">🗑</button></div></div><div class="map" id="map" aria-label="Carte tactique. Déplacez les tokens par glissement ou avec les flèches du clavier."><div id="map-view"><svg class="plan" viewBox="0 0 800 480" preserveAspectRatio="none" aria-hidden="true"><g class="walls" fill="#172326" stroke="#57635c" stroke-width="3"></g><g fill="#9da797" font-family="system-ui" font-size="12" letter-spacing="4"><text x="305" y="130">COUR INTÉRIEURE</text><text x="318" y="462">ENTRÉE SUD</text></g></svg><svg id="map-shapes" aria-hidden="true"></svg><svg id="map-coffres" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><canvas id="fog" aria-hidden="true"></canvas><svg id="map-doors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><svg id="murs-elem" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><div id="contact-ring" hidden></div><svg id="aim" aria-hidden="true"><defs><marker id="shot-ok" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#3f7bc0"/></marker><marker id="shot-no" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#e0483c"/></marker><marker id="shot-done" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#8b969b"/></marker></defs><path id="aim-arrow" class="aim-fleche"/></svg><div id="marquee" hidden aria-hidden="true"></div><div id="floaters" aria-hidden="true"></div></div></div></section>
@@ -136,8 +136,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 <aside class="stack right"><section class="panel sheet" id="sheet"><div class="sheet-head"><h1 id="name"></h1><span class="sheet-class" id="kind"></span><button type="button" class="sheet-class" id="pnj-camp" hidden></button></div><p class="muted" id="class"></p><div class="chips" id="sheet-chips"></div><div class="stat-row" id="stats"></div><div class="lifebar big" id="hpbar"><span class="lifebar-fill" id="hpfill"></span><span class="lifebar-text" id="hp"></span></div><div class="comp-ronds" id="skills" hidden></div><div class="bloc-fixe" id="bloc-gear"><div class="bloc-tete"><span class="bloc-titre">Objets</span><span class="compte" id="gear-compte"></span></div><div id="gear"></div></div><details class="bloc-replie" id="bloc-talents" open><summary><span class="bloc-titre">Talents</span><span class="compte" id="talents-compte"></span></summary><div id="sheet-talents"></div></details><div class="divider" hidden></div></section><section class="panel"><h2 class="journal-title"><span aria-hidden="true">📜</span> Journal de combat<button type="button" id="journal-vider" class="journal-vider" hidden title="Vider le journal, ici et chez les joueurs de la table">Vider</button></h2><ol class="journal" id="journal" aria-live="polite"></ol><form id="journal-chat" class="journal-chat" autocomplete="off"><input id="journal-texte" maxlength="300" placeholder="Dire quelque chose…" aria-label="Écrire au journal"><button type="submit" title="Envoyer">➤</button></form></section></aside></main>
 <div id="state-menu" role="menu" aria-label="États" hidden></div>
 
-<script src="./polygon-clipping.umd.min.js?v=0.589"></script>
-<script src="./combat.js?v=0.589"></script>
+<script src="./polygon-clipping.umd.min.js?v=0.590"></script>
+<script src="./combat.js?v=0.590"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -1072,9 +1072,11 @@ function render(){
   t.append(Object.assign(document.createElement('span'),{className:'orbe-coeur'}))}
  if(rang){const n=document.createElement('span');n.className='numero';n.textContent=rang;t.append(n)}
  const jetons=stateIcons(a);if(jetons)t.append(jetons);
- // Mort : la tête de mort sur le jeton. Un talent de début de combat à faire : la marque au-dessus de la tête.
+ // Mort : la tête de mort sur le jeton. Un talent de début de combat à faire : la marque au-dessus de la tête, posée plus bas
+ // dans la couche des jauges, par-dessus la barre de PV.
+ let marque=null;
  if(estMort(a))t.append(Object.assign(document.createElement('span'),{className:'crane',textContent:'💀'}));
- else if(debutsDispo(a).length)t.append(Object.assign(document.createElement('span'),{className:'debut-marque',textContent:'!'}));
+ else if(debutsDispo(a).length)marque=Object.assign(document.createElement('span'),{className:'debut-marque',textContent:'!'});
  // Les PV sous le socle : chiffrés pour qui a le droit de les lire, pleins sinon.
  const lu=hpKnown(a),part=ratio(a);
  const jauge=document.createElement('span');jauge.className='pv';
@@ -1085,6 +1087,8 @@ function render(){
  jauge.classList.add(a.hero?'allie':'enemy');if(a.pnj)jauge.classList.add('al-'+alignementDe(a));['unseen','dead','cachemj','veiled','hors-carte','vaincu'].forEach(c=>{if(t.classList.contains(c))jauge.classList.add(c)});
  if(a.orbeStatique)jauge.hidden=true;
  t._pv=jauge;couchePV().append(jauge);
+ if(marque){marque.style.left=a.x+'%';marque.style.top=a.y+'%';marque.style.setProperty('--token',tokenOf(a)+'px');
+  if(t.classList.contains('hors-carte'))marque.hidden=true;couchePV().append(marque);t._marque=marque}
  t.oncontextmenu=e=>{if(view!=='mj')return;e.preventDefault();openStateMenu(i,e.clientX,e.clientY)};
  t.title=a.name+(rang?' '+rang:'')+(stateLabel(a)?' · '+stateLabel(a):'')+(lu?' · '+a.hp+' / '+a.max+' PV':'')+(alive(a)?'':' · hors de combat')+veilNote(a);t.setAttribute('aria-label',a.name+' — '+GESTES.map(([c,nom])=>NOM_TOUCHE[raccourcis[c]]+' : '+nom.toLowerCase()).join(', ')+', clic droit pour un état');t.dataset.id=a.id;t.style.left=a.x+'%';t.style.top=a.y+'%';
  t.style.setProperty('--token',tokenOf(a)+'px');
@@ -1207,7 +1211,8 @@ function render(){
    jamais la barre d'un petit. Chaque socle garde la sienne sous la main (« _pv »), pour la
    faire suivre quand il bouge sans rendu — le glisser, la glissade d'une Provocation. */
 function couchePV(){let c=$('pv-layer');if(!c){c=document.createElement('div');c.id='pv-layer';$('map-view').append(c)}return c}
-function suitLaJauge(el){const j=el&&el._pv;if(!j)return;j.style.left=el.style.left;j.style.top=el.style.top;j.classList.toggle('glisse',el.classList.contains('glisse'));
+function suitLaJauge(el){const m=el&&el._marque;if(m){m.style.left=el.style.left;m.style.top=el.style.top}
+ const j=el&&el._pv;if(!j)return;j.style.left=el.style.left;j.style.top=el.style.top;j.classList.toggle('glisse',el.classList.contains('glisse'));
  j.dataset.x=parseFloat(el.style.left);j.dataset.y=parseFloat(el.style.top);placeJauge(j)}
 /* Une jauge nette : sa hauteur et sa place tombent sur des pixels entiers de l'écran, quels que
    soient le zoom de la carte et celui du navigateur. Posée au pourcentage près dans une carte
@@ -2667,7 +2672,7 @@ function saveChecks(){const a=actors[selected];if(!a)return;
 const SKILL_TINTS=['47,138,99','168,105,31','122,92,184','157,123,30','176,88,54','101,120,111','53,119,184','44,140,133'];
 const STAT_TINTS={vie:'122,92,184',endu:'44,140,133',pv:'47,122,91',def:'96,110,118',dmg:'180,72,58',xp:'157,123,30'};
 const TYPE_NOMS={standard:'Standard',solitaire:'Solitaire',alpha:'Élite',boss:'Boss'};
-const IMG_V='0.589';
+const IMG_V='0.590';
 function imgUrl(nom){return './img/'+String(nom).split('/').map(encodeURIComponent).join('/')+'?v='+IMG_V}
 /* Les états et leur jeton, tels qu'ils sont peints sur la table. « Aucun » n'en a pas —
    c'est l'absence d'état — ni « Coma », que la barre de vie dit déjà, ni « Affaibli »,
@@ -3139,44 +3144,63 @@ function rollOnBoard(lignes,from,to,def,figer){const tray=$('dice-tray');clearTi
  if(!Array.isArray(lignes)||!lignes.length)return;
  if(Array.isArray(lignes[0])&&lignes[0].length===2&&typeof lignes[0][0]==='number')lignes=[{dice:lignes,def}];
  lignes=lignes.filter(l=>l&&Array.isArray(l.dice)&&l.dice.length).slice(0,6);if(!lignes.length)return;
- const size=tray.getBoundingClientRect();if(!size.width)return;
+ // La place de la piste, sans ce que le jet d'avant lui avait demandé.
+ tray.style.minHeight='';const size=tray.getBoundingClientRect();if(!size.width)return;
  const calme=!!figer||matchMedia('(prefers-reduced-motion: reduce)').matches;
- /* La place d'une ligne : ses dés, l'écart du critique, le bonus. La plus large dicte le
-    pas ; des dés plus nombreux que la piste n'en loge se serrent, rapetissent avec, puis
-    passent à la rangée suivante : rien ne dépasse de la piste, qui défile s'il le faut. */
- const ECART=22,BONUS=52,MAX_DES=60;
- const largeur=l=>{const n=Math.min(MAX_DES,l.dice.length)+(l.faille!==null&&l.faille!==undefined?1:0);
-  return n+(l.origine&&l.origine<l.dice.length?ECART/46:0)+(l.bonus?BONUS/46:0)};
- /* De part et d'autre des dés, les visages : le lanceur à gauche — un seul, grand, au milieu
-    des lignes — et, au bout de chaque ligne, celui qui reçoit. Un jet sur soi-même n'a
-    pas de vis-à-vis. La piste leur garde leur place avant de tasser les dés. */
+ /* De part et d'autre des dés, les visages : le lanceur à gauche — un seul, au milieu des lignes — et, au bout de chaque
+    ligne, celui qui reçoit. Un jet sur soi-même n'a pas de vis-à-vis. */
  const de=from||(lignes.find(l=>l.de)||{}).de||null;
  const recoit=l=>{const v=l.vers||to||null;return v&&v!==de?v:null};
- // La place des visages, de chaque côté, d'après ceux qui paraissent : rien ne se réserve pour un absent.
- const grand=52,petit=30,faceG=de?(lignes.length>1?grand:42):0,faceD=lignes.some(recoit)?(lignes.length>1?petit:42):0;
- const marge=Math.max(faceG,faceD)?Math.max(faceG,faceD)+12:0,place=Math.max(46,size.width-16-2*marge);
- const pas=Math.max(22,Math.min(46,Math.floor(place/Math.max(...lignes.map(largeur)))));
- const taille=Math.min(42,Math.round(pas*.92)),rang=Math.max(taille+8,48);
- // Chaque ligne se coupe en rangées qui tiennent dans la piste : ses dés, le « + » du critique, le bonus.
- const rangees=lignes.map(l=>{const dice=l.dice.slice(0,MAX_DES),origine=l.origine&&l.origine<dice.length?l.origine:dice.length;
-  const faille=l.faille!==null&&l.faille!==undefined?l.faille:null;
-  const elems=[];[...dice.map((d,i)=>({d,i})),...(faille!==null?[{d:[faille,7],faille:true,i:dice.length}]:[])].forEach(e=>{
-   if(e.i===origine&&!e.faille)elems.push({plus:true,w:ECART});elems.push({...e,w:pas})});
-  if(l.bonus)elems.push({bonus:true,w:BONUS});
-  // Le « + » du critique ne reste pas seul au bout d'une rangée : il passe à la ligne avec ses dés.
-  const rangs=[[]];let w=0;elems.forEach(e=>{const r=rangs[rangs.length-1];
-   if(w+e.w>place&&r.length){const plus=r[r.length-1].plus?[r.pop()]:[];rangs.push(plus);w=plus.reduce((s,x)=>s+x.w,0)}
-   rangs[rangs.length-1].push(e);w+=e.w});
-  return {l,dice,origine,faille,rangs}});
- const R=rangees.reduce((s,r)=>s+r.rangs.length,0),largeurRang=r=>r.reduce((s,e)=>s+e.w,0);
- tray.style.minHeight=Math.max(110,R*rang+16)+'px';
+ /* Tout tient dans la piste, sans défiler ni déborder : on cherche la plus grande taille de dés pour laquelle chaque ligne
+    tient sur la largeur et toutes les rangées sur la hauteur. Les dés, le « + » du critique et le bonus de dégâts restent
+    carrés et sur une même ligne ; trop nombreux, les dés passent à la rangée suivante, mais le bonus n'y part jamais seul :
+    il emmène le dernier dé avec lui. Le bonus se mesure dans sa police, pour ne jamais mordre sur un visage. */
+ const MAX_DES=60,multi=lignes.length>1;
+ const mesure=document.createElement('span');mesure.className='board-bonus';mesure.style.visibility='hidden';mesure.style.fontSize='24px';tray.append(mesure);
+ const bonusBrut=lignes.map(l=>{if(!l.bonus)return 0;mesure.textContent='+ '+l.bonus;return mesure.getBoundingClientRect().width});mesure.remove();
+ const haut=Math.max(60,size.height-10);
+ /* Une ligne coupée l'est en rangées égales : sept dés et sept, plutôt que treize et un. Le bonus n'y part jamais seul — il
+    emmène le dernier dé — et le « + » du critique reste avec les dés qui le suivent. */
+ const coupe=(elems,place)=>{const total=elems.reduce((t,e)=>t+e.w,0);if(total<=place)return [elems];
+  for(let k=Math.ceil(total/place);k<=elems.length;k++){const borne=Math.min(place,total/k+elems[0].w*.5),rangs=[[]];let w=0;
+   elems.forEach(e=>{const r=rangs[rangs.length-1];
+    if(w+e.w>borne&&r.length){const suit=[];if(e.bonus&&r.length>1)suit.unshift(r.pop());if(r.length&&r[r.length-1].plus)suit.unshift(r.pop());
+     rangs.push(suit);w=suit.reduce((t,x)=>t+x.w,0)}
+    rangs[rangs.length-1].push(e);w+=e.w});
+   const l=rangs.filter(r=>r.length);if(l.length<=k&&l.every(r=>r.reduce((t,e)=>t+e.w,0)<=place))return l}
+  return elems.map(e=>[e])};
+ /* D'abord, chaque jet sur une seule ligne, aussi grand que la piste le permet ; seulement s'il y a trop de dés pour cela,
+    des rangées. */
+ const essai=(taille,couper)=>{
+  const pas=taille+4,ecart=Math.max(12,Math.round(taille*.5)),police=Math.max(14,Math.min(24,Math.round(taille*.6))),rang=taille+10;
+  const faceG=de?Math.round(Math.max(26,Math.min(multi?52:42,taille*(multi?1.25:1)))):0;
+  const faceD=lignes.some(recoit)?Math.round(Math.max(22,Math.min(multi?30:42,taille*(multi?.8:1)))):0;
+  const place=size.width-16-(faceG?faceG+10:0)-(faceD?faceD+10:0);if(place<pas*2)return null;
+  const rangees=[];
+  for(const [k,l] of lignes.entries()){const dice=l.dice.slice(0,MAX_DES),origine=l.origine&&l.origine<dice.length?l.origine:dice.length;
+   const faille=l.faille!==null&&l.faille!==undefined?l.faille:null;
+   const elems=[];[...dice.map((d,i)=>({d,i})),...(faille!==null?[{d:[faille,7],faille:true,i:dice.length}]:[])].forEach(e=>{
+    if(e.i===origine&&!e.faille)elems.push({plus:true,w:ecart});elems.push({...e,w:pas})});
+   if(l.bonus)elems.push({bonus:true,w:Math.ceil(bonusBrut[k]*police/24)+12});
+   if(!couper&&elems.reduce((t,e)=>t+e.w,0)>place)return null;
+   rangees.push({l,dice,origine,faille,rangs:coupe(elems,place)})}
+  const R=rangees.reduce((t,r)=>t+r.rangs.length,0);if(R*rang>haut&&taille>14)return null;
+  return {taille,pas,ecart,police,rang:Math.max(taille+4,Math.min(rang,Math.floor(haut/R))),faceG,faceD,rangees,R}};
+ let plan=null;
+ for(let taille=42;taille>=18&&!plan;taille-=2)plan=essai(taille,false);
+ for(let taille=42;taille>=14&&!plan;taille-=2)plan=essai(taille,true);
+ if(!plan)return;
+ const {taille,ecart,police,rang,faceG,faceD,rangees,R}=plan;
+ // Au plus serré, si rien ne tient encore, la piste défile plutôt que de couper.
+ if(R*rang+16>size.height)tray.style.minHeight=(R*rang+16)+'px';
+ const largeurRang=r=>r.reduce((t,e)=>t+e.w,0),maxW=Math.max(...rangees.flatMap(r=>r.rangs.map(largeurRang)));
+ const total=(faceG?faceG+10:0)+maxW+(faceD?faceD+10:0),bordG=(size.width-total)/2+(faceG?faceG+10:0),bordD=bordG+maxW;
  const cy0=Math.max(R*rang/2+6,size.height/2);
- const maxW=Math.max(...rangees.flatMap(r=>r.rangs.map(largeurRang))),bordG=size.width/2-maxW/2,bordD=size.width/2+maxW/2;
  const visage=(o,px,cx,cy)=>{if(!o)return;const el=document.createElement('span');el.className='board-token'+(duCoteTroupe(o)?' allie':' adverse');
   el.style.width=el.style.height=px+'px';el.style.left=cx+'px';el.style.top=cy+'px';el.title=o.name||'';
   if(o.image){const im=document.createElement('img');im.src=o.image;im.alt='';im.draggable=false;el.append(im)}else el.textContent=(o.name||'?')[0];
   tray.append(el);if(!calme)el.animate([{opacity:0,transform:'translate(-50%,-50%) scale(.6)'},{opacity:1,transform:'translate(-50%,-50%) scale(1)'}],{duration:260,easing:'ease-out'})};
- visage(de,lignes.length>1?grand:Math.max(petit,taille),bordG-10-(lignes.length>1?grand:Math.max(petit,taille))/2,cy0);
+ visage(de,faceG,bordG-10-faceG/2,cy0);
  let g=0;
  rangees.forEach(({l,dice,origine,faille,rangs})=>{
   // L'os double d'après les dés lancés : une relance de critique ne le retire pas.
@@ -3185,20 +3209,23 @@ function rollOnBoard(lignes,from,to,def,figer){const tray=$('dice-tray');clearTi
   const passe=d=>l.def===undefined||l.def===null||d[1]>6||passeDef(d,l.def,!!l.solidite);
   const g0=g;
   rangs.forEach(rg=>{const cy=cy0+(g-(R-1)/2)*rang;g++;
-   let curseur=size.width/2-largeurRang(rg)/2;
+   // Les dés partent tous du même bord, d'une ligne à l'autre ; les bonus se rangent en colonne, avant les visages.
+   let curseur=bordG;
    const poser=(el,fx)=>{el.style.left=fx+'px';el.style.top=cy+'px';tray.append(el)};
-   rg.forEach(e=>{const fx=curseur+e.w/2;curseur+=e.w;
+   rg.forEach(e=>{const fx=e.bonus?bordD-e.w/2:curseur+e.w/2;curseur+=e.w;
     // L'écart du critique : les dés ajoutés se tiennent un peu à part, derrière un « + ».
-    if(e.plus){const plus=document.createElement('span');plus.className='board-plus';plus.textContent='+';poser(plus,fx);return}
+    if(e.plus){const plus=document.createElement('span');plus.className='board-plus';plus.textContent='+';plus.style.fontSize=Math.max(12,Math.round(taille*.43))+'px';poser(plus,fx);return}
     // Le bonus de dégâts, au bout de la ligne, en rouge : ce qui s'ajoute aux dés.
-    if(e.bonus){const b=document.createElement('span');b.className='board-bonus';b.textContent='+ '+l.bonus;poser(b,fx);return}
+    if(e.bonus){const b=document.createElement('span');b.className='board-bonus';b.textContent='+ '+l.bonus;b.style.fontSize=police+'px';poser(b,fx);return}
     const [v,c]=e.d,i=e.i,j=Math.min(i,24);
     const el=document.createElement('span');el.className='board-die'+(DARK_DIE.includes(c)?' dark':'')+(barre(e.d)?' barre':'');
     el.style.setProperty('--die',colors[c]);
-    if(taille!==42){el.style.width=el.style.height=taille+'px';el.style.margin=(-taille/2)+'px 0 0 '+(-taille/2)+'px';el.style.fontSize=Math.round(taille*.48)+'px'}
+    // Petit ou grand, un dé reste un dé : ses coins s'arrondissent à sa taille.
+    if(taille!==42){el.style.width=el.style.height=taille+'px';el.style.margin=(-taille/2)+'px 0 0 '+(-taille/2)+'px';el.style.fontSize=Math.round(taille*.48)+'px';el.style.borderRadius=Math.round(taille*.26)+'px'}
     el.textContent=v;el.title=types[c]+' : '+v+(barre(e.d)?(c===1?' — double d’os, ne compte pas':' — face de Faille, ne compte pas'):passe(e.d)?'':' — ne passe pas la DEF '+defPlafonnee(l.def));
     poser(el,fx);
-    const marque=()=>{if(!el.isConnected||barre(e.d)||passe(e.d))return;const im=document.createElement('img');im.className='rate';im.src=imgUrl('DEF VIDE.png');im.alt='';el.append(im)};
+    const marque=()=>{if(!el.isConnected||barre(e.d)||passe(e.d))return;const im=document.createElement('img');im.className='rate';im.src=imgUrl('DEF VIDE.png');im.alt='';
+     if(taille!==42){const t=Math.round(taille*.43),o=-Math.round(taille*.17)+'px';im.style.width=im.style.height=t+'px';im.style.right=im.style.top=o}el.append(im)};
     if(calme){marque();return}
     // Les dés tombent sur la piste et s'y posent, comme jetés sur le coin de la vraie table.
     const spin=(i%2?-1:1)*(400+Math.random()*320),tilt=Math.random()*16-8,cote=(i%2?-1:1)*(14+Math.random()*18);
@@ -3207,7 +3234,7 @@ function rollOnBoard(lignes,from,to,def,figer){const tray=$('dice-tray');clearTi
      {transform:'translate(0,0) rotate('+tilt+'deg) scale(1)',opacity:1}],{duration:560+j*45,easing:'cubic-bezier(.18,.85,.28,1)',fill:'both'});
     const fin=performance.now()+420+j*45,tourner=()=>{if(!el.isConnected)return;if(performance.now()>=fin){el.textContent=v;marque();return}el.textContent=d6();setTimeout(tourner,70)};setTimeout(tourner,60)})});
   // Qui reçoit cette ligne, au bout, au milieu de ses rangées, aligné d'une ligne à l'autre.
-  const cible=recoit(l),tc=lignes.length>1?petit:Math.max(petit,taille);if(cible)visage(cible,tc,bordD+10+tc/2,cy0+((g0+g-1)/2-(R-1)/2)*rang)});
+  const cible=recoit(l);if(cible)visage(cible,faceD,bordD+10+faceD/2,cy0+((g0+g-1)/2-(R-1)/2)*rang)});
   // Le dernier lancer reste sur la piste : le suivant le remplace.
 }
 // La piste change de largeur — fenêtre, colonnes : le dernier lancer s'y repose, sans rien qui dépasse.
@@ -3647,5 +3674,5 @@ $('portees').onclick=()=>{porteesOn=!porteesOn;
 majPortees();
 window.addEventListener('resize',()=>{updateRing();showAim();renderCombat()});
 render();
-</script><script src="./catalog.js?v=0.589"></script><script src="./planches-calcul.js?v=0.589"></script><script src="./planches.js?v=0.589"></script><script src="./editor.js?v=0.589"></script><script src="./maps.js?v=0.589"></script><script src="./domaine.js?v=0.589"></script><script src="./campagnes.js?v=0.589"></script><script src="./firebase-config.js?v=0.589"></script><script src="./shared-data.js?v=0.589"></script><script src="./shared.js?v=0.589"></script>
-<script src="./live.js?v=0.589"></script></body></html>
+</script><script src="./catalog.js?v=0.590"></script><script src="./planches-calcul.js?v=0.590"></script><script src="./planches.js?v=0.590"></script><script src="./editor.js?v=0.590"></script><script src="./maps.js?v=0.590"></script><script src="./domaine.js?v=0.590"></script><script src="./campagnes.js?v=0.590"></script><script src="./firebase-config.js?v=0.590"></script><script src="./shared-data.js?v=0.590"></script><script src="./shared.js?v=0.590"></script>
+<script src="./live.js?v=0.590"></script></body></html>
