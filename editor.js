@@ -447,6 +447,8 @@ function bulleAction(b,{nom,dit='',note='',des=null,lignes=null,points=null,a=nu
  {const j=jetonsCibles(a,cibles);if(j)d.prepend(j)}
  return ouvrirBulle(b,d,'bulle-talent')}
 // Le logo de l'arme en main droite : un bouton de talent sans icône prend celui-là.
+// Les logos d'une attaque : ceux de ses armes ; à mains nues, celui que le MJ a choisi pour l'Attaque sans arme.
+function logosDeAttaque(at){const l=at&&Array.isArray(at.logos)?at.logos:[];return l.length?l:at&&at.mainsNues&&typeof catalog!=='undefined'&&catalog.logoAttaqueBase?[catalog.logoAttaqueBase]:[]}
 function logoArmeEquipee(a){const at=a&&typeof activeAttack==='function'?activeAttack(a):null,l=at&&(at.logos||[])[0];return l?logoAttaque(l,'bouton'):null}
 /* Les orbes d'un Mystique, à droite des dégâts de son arme : le logo des orbes, les dés d'un orbe
    et l'état qu'il porte, son bonus s'il en a un. */
@@ -484,7 +486,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  const retenu=Math.trunc(a&&a.activeAttack)||0,actuelle=liste.length?liste[retenu<liste.length?retenu:0]:null;
  // Un adversaire qu'on n'a pas analysé garde ses dés pour lui, chez les joueurs.
  const voit=!!a&&(view==='mj'||a.hero||duCoteTroupe(a)||!!a.revealed);
- const revient=()=>montreDesCombattant(voit&&actuelle?actuelle.dice:null,bonusDe(actuelle),!!actuelle&&actuelle.useOwnDamage!==false,actuelle?actuelle.logos:null,voit?partOrbes(a):null);
+ const revient=()=>montreDesCombattant(voit&&actuelle?actuelle.dice:null,bonusDe(actuelle),!!actuelle&&actuelle.useOwnDamage!==false,actuelle?logosDeAttaque(actuelle):null,voit?partOrbes(a):null);
  const survol=(b,dice,bonus,toujours,logos,etat)=>{if(!voit||!dice)return;
   b.addEventListener('pointerenter',()=>montreDesCombattant(dice,bonus,toujours,logos,null,etat));b.addEventListener('pointerleave',revient)};
  // Les dés d'un orbe portent l'état qu'il inflige.
@@ -496,9 +498,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   b.className='btn-action choix-attaque rond'+(i===(retenu<liste.length?retenu:0)?' on':'');
   // Au milieu du rond, le logo de la seule arme de la main droite : la première ; deux armes n'en montrent qu'un.
   const logos=document.createElement('span');logos.className='logos';
-  (at.logos||[]).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});
   // Sans arme en main, l'Attaque d'un aventurier prend l'icône que le MJ a choisie pour elle.
-  if(!logos.childElementCount&&a&&a.hero&&!(a.weapons||[]).length&&catalog.logoAttaqueBase){const im=logoAttaque(catalog.logoAttaqueBase,'bouton');if(im)logos.append(im)}
+  logosDeAttaque(at).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});
   if(logos.childElementCount){b.classList.add('avec-logo');b.append(logos)}
   else b.append(Object.assign(document.createElement('span'),{className:'glyphe',textContent:at.range==='distance'?'🏹':'⚔'}));
   /* Une attaque d'équipement s'appelle « Attaque » : les armes se lisent à leurs logos et
@@ -520,7 +521,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;
    boite.querySelectorAll('.choix-attaque:not(.btn-talent)').forEach((x,k)=>x.classList.toggle('on',k===i));
    attack();scheduleSave()};
-  survol(b,at.dice,bonusDe(at),at.useOwnDamage!==false,at.logos);boite.append(b)});
+  survol(b,at.dice,bonusDe(at),at.useOwnDamage!==false,logosDeAttaque(at));boite.append(b)});
  // Les talents à leur suite : ceux d'action, puis les réactions.
  talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque rond';b.dataset.talent=t.talent&&t.talent.id||'';
   if(t.teinte){b.style.setProperty('--fond',t.teinte);b.classList.add('teinte-propre')}
@@ -1982,7 +1983,7 @@ function bulleAttaque(a){const at=typeof activeAttack==='function'?activeAttack(
  if(at&&at.dice)desAuTitre(tete,desEtBonus(at.dice,bonusAttaque(a,at),at.useOwnDamage!==false,false));
  lignesEnPastilles(d,lignesAttaque(a));return d}
 // Son rond sur la fiche, au logo de l'arme en main droite, comme dans la barre d'Actions.
-function carteAttaque(a){const at=typeof activeAttack==='function'?activeAttack(a):null,l=at&&(at.logos||[])[0];
+function carteAttaque(a){const at=typeof activeAttack==='function'?activeAttack(a):null,l=logosDeAttaque(at)[0];
  const carte=talentCarte({id:'attaque',name:'Attaque',type:'act'},l?logoAttaque(l):null),pill=carte.firstChild;
  pill.classList.add('cliquable','talent-attaque');pill.tabIndex=0;pill.setAttribute('aria-label','Attaque');
  surveille(pill,()=>ouvrirBulle(pill,bulleAttaque(a),'bulle-talent'));return carte}

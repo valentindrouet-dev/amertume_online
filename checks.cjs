@@ -285,7 +285,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
   assert.deepEqual(JSON.parse(ma[1].replace(/'/g,'"')).sort(),attaques,'LOGOS_ATTAQUE doit lister img/attack_*.png : '+attaques.join(', '));
   assert.ok(src.includes('const LOGOS_TOUS=[...LOGOS_ATTAQUE,...LOGOS_EQUIPEMENT,...LOGOS_TALENT,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_ETATS,...LOGOS_DIVERS];')
    &&src.includes('function logoAttaque(l,cls){return logoImage(l,LOGOS_TOUS,cls)}')
-   &&src.includes("(at.logos||[]).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
+   &&src.includes("logosDeAttaque(at).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
    &&src.includes("...iconesPlanches(),...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])]))+'</div>'")
    &&src.includes("logos:logoValide(f['ai'+i].value)?[f['ai'+i].value]:[],")
    &&src.includes("...(etats=>({etats,etat:etats[0]||''}))([...form.querySelectorAll('input[name=\"ax'+i+'\"]:checked')].map(x=>x.value).filter(e=>ETATS_JEU.includes(e))),")
@@ -3360,6 +3360,18 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.602 — Sans arme, un aventurier frappe quand même : l'Attaque à mains nues, un dé Os et ses dégâts, s'il n'a pas ses
+   propres attaques sur sa fiche. Ses dés paraissent dans les bulles de la table et de l'onglet Aventuriers ; l'icône que le
+   MJ a choisie pour l'Attaque sans arme y paraît aussi, sur le bouton, la piste de dés et la carte Attaque. */
+{const src=fs.readFileSync('editor.js','utf8');
+ const nue=gearApi.gearAttacks({hero:true,weapons:[]},[]);
+ assert.equal(nue.length,1);assert.equal(nue[0].name,'Attaque');assert.equal(nue[0].dice.bone,1);assert.equal(Object.values(nue[0].dice).reduce((s,n)=>s+n,0),1);
+ assert.ok(nue[0].mainsNues&&nue[0].useOwnDamage&&nue[0].range==='contact','un dé Os, au contact, et les dégâts');
+ assert.deepEqual(gearApi.gearAttacks({weapons:[]},[]),[]);assert.deepEqual(gearApi.gearAttacks({hero:false,weapons:[]},[]),[]);
+ assert.deepEqual(gearApi.gearAttacks({hero:true,weapons:[],attacks:[{name:'Morsure',dice:{white:2}}]},[]),[],'ses propres attaques frappent, comme avant');
+ assert.equal(gearApi.chosenAttack({hero:true,weapons:[]},[]).dice.bone,1);
+ assert.ok(src.includes("function logosDeAttaque(at){")&&src.includes("actuelle?logosDeAttaque(actuelle):null")&&src.includes("survol(b,at.dice,bonusDe(at),at.useOwnDamage!==false,logosDeAttaque(at));")
+  &&src.includes("function carteAttaque(a){const at=typeof activeAttack==='function'?activeAttack(a):null,l=logosDeAttaque(at)[0];"),'l’icône de l’Attaque sans arme, partout où l’Attaque se montre');}
 /* v0.601 — Aucun bord de mur ne se devine plus dans le noir, quelle que soit la façon dont l'obscurité a été posée. Pour
    l'affichage seul, la pierre et les portes closes vont à l'espace libre le plus proche et noircissent s'il est noir ; un
    mince filet clair contre la pierre ou entre deux obscurités compte pour noir. Le calque du noir peint cette grille avec
@@ -3385,7 +3397,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&carto.includes(" const im=iconeDeLumiere(l);\n if(im){im.classList.add('logo-objet');coeur.append(im)}else coeur.textContent='🔥';"),'l’icône de l’objet contenu');
  assert.ok(src.includes(" if(typeof c.logoAttaqueBase!=='string'||!c.logoAttaqueBase||c.logoAttaqueBase.length>120)delete c.logoAttaqueBase;")
   &&src.includes("selGrille(selGroupes('Attaque sans arme','attaque-base',catalog.logoAttaqueBase||'',groupes))")
-  &&src.includes("  if(!logos.childElementCount&&a&&a.hero&&!(a.weapons||[]).length&&catalog.logoAttaqueBase){const im=logoAttaque(catalog.logoAttaqueBase,'bouton');if(im)logos.append(im)}"),'l’icône de l’Attaque sans arme');}
+  &&src.includes("function logosDeAttaque(at){const l=at&&Array.isArray(at.logos)?at.logos:[];return l.length?l:at&&at.mainsNues&&typeof catalog!=='undefined'&&catalog.logoAttaqueBase?[catalog.logoAttaqueBase]:[]}"),'l’icône de l’Attaque sans arme');}
 /* v0.599 — Ce que la lumière éclaire hors de la vue de la troupe se grise : la part éclairée du noir, hors des champs de
    vision, reprend la moitié de son noir, et le jeton d'une lumière hors de vue pâlit comme un objet. Pendant un glissement,
    ce que la lumière qui bouge découvre ou recouvre paraît ou s'efface aussitôt, socle, jauge et zone de contact ensemble ;
@@ -4515,7 +4527,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(css.includes('button.btn-action.rond,button.btn-action.rond.inerte{position:relative;width:58px;height:58px;')
   &&css.includes('button.btn-action.rond.on,button.btn-action.rond.on:hover:not(:disabled){box-shadow:var(--relief)}')
   &&!css.includes('button.choix-attaque.rond')&&!/button\.btn-action\.rond[^{]*\{[^}]*0 0 0 2px var\(--panel\)/.test(css)&&!css.includes('.attaque-carte .dmg-ico'),'la face pleine du bouton d’action, en disque, sans anneau');
- assert.ok(src.includes("(at.logos||[]).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
+ assert.ok(src.includes("logosDeAttaque(at).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
   &&src.includes("if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';")&&src.includes("desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0))"),'la main droite seule ; le jeton de dégâts reste à la bulle des monstres');
  assert.ok(page.includes('<button class="btn-action btn-analyse rond" id="reveal" hidden>🔍</button>')&&page.includes("function poseRond(b,centre,nom,dit,compte,bulle){")
   &&page.includes("poseRond(rev,'🔍',dejà?'Analysé':'Analyser',")
