@@ -381,7 +381,11 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
   lc.fillStyle='#fff';lc.fillRect(0,0,W,H);lc.globalCompositeOperation='destination-out';
   obscuriteDe(m).forEach(p=>{lc.beginPath();p.anneaux.forEach(r=>{r.forEach((q,i)=>lc[i?'lineTo':'moveTo'](q[0]/100*W,q[1]/100*H));lc.closePath()});lc.fill('evenodd')});
   lc.globalCompositeOperation='source-over';lc.fillStyle='#fff';const formes=activeObstacles();
-  if(size.width)sourcesLumiere().forEach(l=>{const poly=reachPolygon(l,formes,l.rayon,size.width,size.height,96);if(poly.length>2){trace(lc,poly);lc.fill()}});
+  // Le bord d'une lumière se fond sur un demi-mètre, de part et d'autre de son rayon ; la règle, elle, reste au rayon.
+  const fondu=tokenPx()*.25;
+  if(size.width)sourcesLumiere().forEach(l=>{const poly=reachPolygon(l,formes,l.rayon+fondu,size.width,size.height,96);if(poly.length<3)return;
+   const cx=l.x/100*W,cy=l.y/100*H,g=lc.createRadialGradient(cx,cy,Math.max(0,l.rayon-fondu)*k,cx,cy,(l.rayon+fondu)*k);
+   [[0,1],[.2,.93],[.5,.5],[.8,.07],[1,0]].forEach(([o,v])=>g.addColorStop(o,'rgba(255,255,255,'+v+')'));lc.fillStyle=g;trace(lc,poly);lc.fill()});
   const oeil=document.createElement('canvas');oeil.width=W;oeil.height=H;const oc=oeil.getContext('2d');
   fogVis.forEach((poly,n)=>{if(!poly||poly.length<3)return;const o=(fogVisQui||[])[n];
    oc.globalCompositeOperation='source-over';oc.clearRect(0,0,W,H);oc.fillStyle='#fff';trace(oc,poly);oc.fill();

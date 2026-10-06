@@ -530,6 +530,15 @@ function remplitObscurite(map,pt,cols=320){const ratio=Math.max(.05,Number(map&&
   const pile=new Int32Array(n);let haut=0;pile[haut++]=k0;dedans[k0]=1;
   while(haut){const k=pile[--haut],i=k%cols,j=(k-i)/cols;
    for(const v of [i>0?k-1:-1,i<cols-1?k+1:-1,j>0?k-cols:-1,j<rows-1?k+cols:-1])if(v>=0&&!bouche[v]&&!dedans[v]){dedans[v]=1;pile[haut++]=v}}}
+ /* Le bord : une case dont le centre tombe dans un mur ou une porte reste hors de la zone, et laissait le long des murs
+    un mince liseré clair. Deux rangs de cases de mur ou de porte qui touchent la zone s'y ajoutent : le noir mord un peu
+    dans la pierre, jamais dans une autre zone. */
+ {const dur=new Uint8Array(n);matiereDe(map).forEach(p=>rempliAnneaux(dur,cols,rows,p.anneaux,1));portes.forEach(q=>rempliAnneaux(dur,cols,rows,[q],1));
+  for(let pas=0;pas<2;pas++){const ajout=[];
+   for(let k=0;k<n;k++){if(dedans[k]||!dur[k])continue;const i=k%cols,j=(k-i)/cols;let touche=false;
+    for(let dj=-1;dj<=1&&!touche;dj++)for(let di=-1;di<=1;di++){const ii=i+di,jj=j+dj;if(ii>=0&&jj>=0&&ii<cols&&jj<rows&&dedans[jj*cols+ii]){touche=true;break}}
+    if(touche)ajout.push(k)}
+   ajout.forEach(k=>{dedans[k]=1})}}
  // Les cases, en rectangles : une suite de cases sur une ligne, prolongée sur les lignes du dessous tant qu'elle y est identique.
  const rects=[],ouverts=new Map();
  for(let j=0;j<=rows;j++){const vus=new Set();

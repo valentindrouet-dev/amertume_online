@@ -3360,6 +3360,21 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.594 — Remplir d'obscurité ne laisse plus de liseré clair le long des murs : deux rangs de cases de mur ou de porte
+   qui touchent la zone s'y ajoutent, sans jamais passer dans une autre zone. Le bord d'une lumière se fond sur un
+   demi-mètre de part et d'autre de son rayon ; la règle reste au rayon. La validation liste d'un coup toutes les
+   chaînes de test devenues absentes des sources. */
+{const carto=fs.readFileSync('maps.js','utf8'),outil=fs.readFileSync('verif.cjs','utf8');
+ const salle=[];for(let k=0;k<40;k++){const a=k/40*Math.PI*2;salle.push([50+30*Math.cos(a)+3*Math.sin(3*a),50+26*Math.sin(a)])}
+ const m={ratio:16/9,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],salle]}],doors:[]};C.remplitObscurite(m,[40,50]);
+ let rates=0;for(let k=0;k<salle.length;k++){const a=salle[k],b=salle[(k+1)%salle.length];for(let t=0;t<1;t+=.1){const x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t,dx=50-x,dy=50-y,L=Math.hypot(dx,dy);
+  if(!C.dansObscurite(m,[x+dx/L*.08,y+dy/L*.08]))rates++}}
+ assert.equal(rates,0,'aucun liseré clair contre les murs');
+ const f={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[49.5,10],[49.5,90],[10,90]],[[50.5,10],[90,10],[90,90],[50.5,90]]]}],doors:[]};
+ C.remplitObscurite(f,[30,50],320);assert.ok(C.dansObscurite(f,[49.4,50])&&!C.dansObscurite(f,[50.7,50]),'le noir mord le mur, pas la pièce voisine');
+ assert.ok(carto.includes("  const fondu=tokenPx()*.25;")&&carto.includes("g=lc.createRadialGradient(cx,cy,Math.max(0,l.rayon-fondu)*k,cx,cy,(l.rayon+fondu)*k);")
+  &&carto.includes("[[0,1],[.2,.93],[.5,.5],[.8,.07],[1,0]].forEach(([o,v])=>g.addColorStop(o,'rgba(255,255,255,'+v+')'));"),'le fondu des lumières');
+ assert.ok(outil.includes("function chainesAbsentes(){")&&outil.includes("if(refaire)break;if(f==='checks.cjs')chainesAbsentes();process.exit(1)}"),'toutes les chaînes absentes d’un coup');}
 /* v0.593 — Remplir d'obscurité va par zone : celle que découpent les murs, les portes et les séparations, et que
    réunissent les regroupements ; la case d'une séparation qui touche la zone en fait partie, et dans une miette il inonde
    à l'ancienne. Une source de lumière prise dans la matière éclaire depuis le point libre le plus proche : son halo ne

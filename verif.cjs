@@ -35,6 +35,13 @@ const {execFile}=require('child_process'),JEUX=['checks.cjs','des-checks.cjs','s
    dans .git, hors du dépôt. La conversion des dés ne lit que le moteur ; les autres, toutes les sources. Une source
    touchée, et le jeu repart. « --tout » rejoue tout. */
 const crypto=require('crypto'),CACHE='.git/verif-cache.json',SOURCES=['index.html','combat.js','editor.js','maps.js','live.js','shared.js','domaine.js','editor.css','catalog.js','campagnes.js','planches.js','planches-calcul.js','shared-data.js','ia.js','planches-worker.js','firestore-online.rules','verif.cjs'];
+/* Sur un échec, toutes les chaînes devenues absentes des sources, d'un coup, pas seulement celles du premier test qui
+   tombe : une seule passe suffit à les remettre à jour. */
+function chainesAbsentes(){const srcs=SOURCES.filter(x=>fs.existsSync(x)).map(x=>fs.readFileSync(x,'utf8')),out=[];
+ const re=/(!?)\b(src|page|css|feuille|vivant|combat|fief|cartes2|cartes|carto|part|partage)\.includes\(("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')\)/g;
+ fs.readFileSync('checks.cjs','utf8').split('\n').forEach((l,i)=>{let x;while((x=re.exec(l))){if(x[1])continue;let lit;try{lit=eval(x[3])}catch(_){continue}
+  if(!srcs.some(s=>s.includes(lit)))out.push('  ligne '+(i+1)+' ('+x[2]+') : '+lit.slice(0,160))}});
+ if(out.length)console.error('chaînes absentes de toutes les sources :\n'+out.join('\n'))}
 const LIT={'des-checks.cjs':['combat.js']};
 // Les tests regardent aussi quelles images existent : la liste du dossier img entre dans l'empreinte.
 const images=()=>{try{return fs.readdirSync('img',{recursive:true}).map(String).sort().join('|')}catch(_){return ''}};
@@ -51,7 +58,7 @@ const lance=f=>{const k=empreinte(f);if(cache[f]&&cache[f].k===k)return Promise.
    const bloc=L.slice(i,n+14).join('\n'),re=/(!?)(src|page|css|feuille|vivant|combat|fief|cartes2|part)\.includes\(("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')\)/g;let x;
    while((x=re.exec(bloc))){let lit;try{lit=eval(x[3])}catch(_){continue}const has=fs.readFileSync(fichiers[x[2]],'utf8').includes(lit);
     if((x[1]==='!')===has){if(epure&&oteChaine(x[2],lit)){otes.push(lit.slice(0,120));refaire=true}else console.error('  chaîne '+(x[1]?'présente à tort':'manquante')+' ('+x[2]+') : '+lit.slice(0,220))}}}
-  if(refaire)break;process.exit(1)}
+  if(refaire)break;if(f==='checks.cjs')chainesAbsentes();process.exit(1)}
  if(!refaire)break}
 if(otes.length)console.log('épuré : '+otes.length+' vérification(s) par chaîne ôtée(s)\n  · '+otes.join('\n  · '));
 try{fs.writeFileSync(CACHE,JSON.stringify(cache))}catch(_){}
