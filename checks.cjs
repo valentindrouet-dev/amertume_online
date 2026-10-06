@@ -3360,6 +3360,31 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.593 — Remplir d'obscurité va par zone : celle que découpent les murs, les portes et les séparations, et que
+   réunissent les regroupements ; la case d'une séparation qui touche la zone en fait partie, et dans une miette il inonde
+   à l'ancienne. Une source de lumière prise dans la matière éclaire depuis le point libre le plus proche : son halo ne
+   traverse ni n'empiète sur un mur, à la table comme dans l'éditeur, où le halo se découpe. Une lumière se duplique. */
+{const carto=fs.readFileSync('maps.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
+ const m={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[90,10],[90,90],[10,90]]]}],doors:[],zonesCoupures:[{x1:50,y1:10,x2:50,y2:90}],zonesLiens:[]};
+ C.remplitObscurite(m,[30,50],64);assert.ok(C.dansObscurite(m,[30,50])&&!C.dansObscurite(m,[70,50])&&!C.dansObscurite(m,[5,5]),'la séparation borne le remplissage');
+ C.remplitObscurite(m,[70,50],64);assert.ok(C.dansObscurite(m,[70,50])&&C.dansObscurite(m,[50.8,50]),'l’autre côté, sans fente claire entre les deux');
+ const d={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[40,10],[40,90],[10,90]],[[60,10],[90,10],[90,90],[60,90]]]}],doors:[],zonesCoupures:[],zonesLiens:[{x1:25,y1:50,x2:75,y2:50}]};
+ C.remplitObscurite(d,[25,50],64);assert.ok(C.dansObscurite(d,[25,50])&&C.dansObscurite(d,[75,50])&&!C.dansObscurite(d,[50,50]),'un regroupement : les deux pièces d’un coup');
+ const f={ratio:1,matiere:[{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[10,10],[14,10],[14,14],[10,14]]]}],doors:[]};
+ C.remplitObscurite(f,[12,12],64);assert.ok(C.dansObscurite(f,[12,12]),'une miette s’inonde à l’ancienne');
+ // Une source dans un mur éclaire depuis le point libre le plus proche, et ses rayons n'entrent pas dans le mur.
+ const mur={contours:[[[40,40],[60,40],[60,60],[40,60]]]},p=C.pointLibre({x:41,y:50},[mur]);
+ assert.ok(p&&(p.x<40||p.x>60||p.y<40||p.y>60)&&C.pointLibre({x:50,y:50},[mur])===null&&C.pointLibre({x:50,y:20},[mur]).x===50);
+ assert.ok(!C.reachPolygon(p,[mur],20,100,100,72).some(q=>q[0]>40.01&&q[0]<59.99&&q[1]>40.01&&q[1]<59.99),'le halo n’empiète pas sur le mur');
+ assert.ok(carto.includes(" const libre=s=>{const p=pointLibre(s,formes);return p?{...s,x:p.x,y:p.y}:null};")
+  &&carto.includes(" const p=pointLibre(l,walls())||l;return inContact(a,l,size,tokenOf(a),tokenPx()*SOCLE_TAILLES.small)&&!wallsBetween(a,p,walls())}")
+  &&carto.includes("function lumiereEl(i,l,formes){")&&carto.includes("  const poly=o&&W&&H?reachPolygon(o,formes||[],socle*l.rayon+3,W,H,72):[];")
+  &&carto.includes(" {const formes=mapShapes(m).formes;(m.lumieres||[]).forEach((l,i)=>c.append(lumiereEl(i,l,formes)))}")
+  &&feuille.includes(".shape.lumiere .lumiere-halo{position:absolute;inset:0;box-sizing:border-box;border-radius:50%;border:1px dashed #d9a85a;")&&feuille.includes(".shape.lumiere.selected{outline:none}"),'les halos bornés par les murs et les portes');
+ assert.ok(carto.includes('<button id="lumiere-double" hidden>⧉ Dupliquer la lumière</button>')&&carto.includes("$('lumiere-edit').hidden=$('lumiere-double').hidden=!lum;")
+  &&carto.includes("$('lumiere-double').onclick=()=>{const l=mapSel&&mapSel.kind==='lumiere'&&shapeAt(mapSel);if(!l)return;pushUndo();")
+  &&carto.includes(" const copie=structuredClone(l);copie.id=crypto.randomUUID();delete copie.eteinte;"),'dupliquer une lumière');
+ assert.ok(carto.includes("obscurremplir:'Clique dans une zone : toute la zone — telle que la découpent les murs, les portes et les séparations, et que la réunissent les regroupements — devient noire d’un coup.',"));}
 /* v0.592 — Les lumières dans le noir. Un objet de l'Armurerie porte un champ « Lumière : x m » : arme, armure ou munition
    n'éclaire que tenue ou portée par un aventurier ; tout autre objet éclaire depuis l'inventaire ; un adversaire éclaire
    avec tout ce qu'il a. Sur une carte, l'outil Lumière pose un point lumineux, nommé, au rayon tiré à la poignée, qui peut
@@ -3391,9 +3416,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&carto.includes("function openLumiere(i){const m=mapDraft,l=m&&m.lumieres&&m.lumieres[i];if(!l||view!=='mj')return;")
   &&carto.includes(" if(d.kind==='lumiere'&&d.grip==='rayon'){const r=$('map-canvas').getBoundingClientRect(),socle=Math.max(8,r.width*echelleSocle(mapDraft)/100);"),'l’outil Lumière');
  // La table : les sources, les halos sous le brouillard, le jeton, la prise, le menu du MJ.
- assert.ok(carto.includes("function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(),items=typeof catalog!=='undefined'?catalog.items||[]:[];")
-  &&carto.includes(" const l=(m.lumieres||[]).filter(x=>x&&!x.eteinte).map(x=>({x:x.x,y:x.y,rayon:x.rayon*tk}));")
-  &&carto.includes(" actors.forEach(a=>{if(!a||!alive(a)||a.horsCarte)return;const p=lumierePortee(a,items);if(p>0)l.push({x:a.x,y:a.y,rayon:p*tk})});")
+ assert.ok(carto.includes("function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(),items=typeof catalog!=='undefined'?catalog.items||[]:[],formes=activeObstacles();")
+  &&carto.includes(" const l=(m.lumieres||[]).filter(x=>x&&!x.eteinte).map(x=>libre({x:x.x,y:x.y,rayon:x.rayon*tk})).filter(Boolean);")
+  &&carto.includes(" actors.forEach(a=>{if(!a||!alive(a)||a.horsCarte)return;const p=lumierePortee(a,items);if(p>0){const s=libre({x:a.x,y:a.y,rayon:p*tk});if(s)l.push(s)}});")
   &&carto.includes("function toileHalos(){let cv=$('halos');if(!cv){cv=document.createElement('canvas');cv.id='halos';cv.setAttribute('aria-hidden','true');$('fog').before(cv)}return cv}")
   &&carto.includes("function renderHalos(){const cv=toileHalos(),m=currentMap(),size=mapSize();")
   &&carto.includes("g.addColorStop(0,'rgba(255,226,176,.30)');g.addColorStop(.55,'rgba(255,216,156,.16)');g.addColorStop(1,'rgba(255,206,136,0)');")

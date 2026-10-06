@@ -512,16 +512,24 @@ function dansObscurite(map,pt){return obscuriteDe(map).some(p=>polygoneContient(
 /* Le remplissage : la zone libre sous le point — bornée par la matière, les portes et l'obscurité déjà posée — devient
    noire d'un coup. Elle se cherche sur une grille fine, puis ses cases se fondent en rectangles, et les rectangles en
    un polygone exact. Rien si le point est dans un mur, ou déjà dans le noir. */
+/* Le remplissage va par zone : celle que découpent les murs, les portes et les séparations, et que réunissent les
+   regroupements, comme à la table. La case d'une séparation qui touche la zone en fait partie : aucune fente claire entre
+   deux zones noires. Dans une miette, un recoin trop petit pour faire une zone, il inonde de case en case, borné par les
+   murs, les portes, les séparations et l'obscurité déjà posée. */
 function remplitObscurite(map,pt,cols=320){const ratio=Math.max(.05,Number(map&&map.ratio)||16/9),rows=Math.max(16,Math.round(cols/ratio)),n=cols*rows;
- const bouche=new Uint8Array(n);
- matiereDe(map).forEach(p=>rempliAnneaux(bouche,cols,rows,p.anneaux,1));
- (map.doors||[]).map(d=>doorPolygon(d,ratio)).filter(Boolean).forEach(q=>rempliAnneaux(bouche,cols,rows,[q],1));
- obscuriteDe(map).forEach(p=>rempliAnneaux(bouche,cols,rows,p.anneaux,1));
- const i0=Math.min(cols-1,Math.max(0,Math.floor(pt[0]/100*cols))),j0=Math.min(rows-1,Math.max(0,Math.floor(pt[1]/100*rows)));
- if(bouche[j0*cols+i0])return obscuriteDe(map);
- const dedans=new Uint8Array(n),pile=new Int32Array(n);let haut=0;pile[haut++]=j0*cols+i0;dedans[j0*cols+i0]=1;
- while(haut){const k=pile[--haut],i=k%cols,j=(k-i)/cols;
-  for(const v of [i>0?k-1:-1,i<cols-1?k+1:-1,j>0?k-cols:-1,j<rows-1?k+cols:-1])if(v>=0&&!bouche[v]&&!dedans[v]){dedans[v]=1;pile[haut++]=v}}
+ const i0=Math.min(cols-1,Math.max(0,Math.floor(pt[0]/100*cols))),j0=Math.min(rows-1,Math.max(0,Math.floor(pt[1]/100*rows))),k0=j0*cols+i0;
+ const portes=(map.doors||[]).map(d=>doorPolygon(d,ratio)).filter(Boolean),coupures=cleanSegments(map.zonesCoupures);
+ const z=calculeZones(matiereDe(map),portes,cols,rows,10,coupures,map.zonesLiens),zc=z.zone[k0],dedans=new Uint8Array(n);
+ if(zc>0){const coupe=new Uint8Array(n);coupures.forEach(c=>traceCoupure(coupe,cols,rows,c));
+  for(let k=0;k<n;k++){if(z.zone[k]===zc)dedans[k]=1;else if(coupe[k]){const i=k%cols,j=(k-i)/cols;
+   if((i>0&&z.zone[k-1]===zc)||(i<cols-1&&z.zone[k+1]===zc)||(j>0&&z.zone[k-cols]===zc)||(j<rows-1&&z.zone[k+cols]===zc))dedans[k]=1}}}
+ else{const bouche=new Uint8Array(n);
+  matiereDe(map).forEach(p=>rempliAnneaux(bouche,cols,rows,p.anneaux,1));portes.forEach(q=>rempliAnneaux(bouche,cols,rows,[q],1));
+  coupures.forEach(c=>traceCoupure(bouche,cols,rows,c));obscuriteDe(map).forEach(p=>rempliAnneaux(bouche,cols,rows,p.anneaux,1));
+  if(bouche[k0])return obscuriteDe(map);
+  const pile=new Int32Array(n);let haut=0;pile[haut++]=k0;dedans[k0]=1;
+  while(haut){const k=pile[--haut],i=k%cols,j=(k-i)/cols;
+   for(const v of [i>0?k-1:-1,i<cols-1?k+1:-1,j>0?k-cols:-1,j<rows-1?k+cols:-1])if(v>=0&&!bouche[v]&&!dedans[v]){dedans[v]=1;pile[haut++]=v}}}
  // Les cases, en rectangles : une suite de cases sur une ligne, prolongée sur les lignes du dessous tant qu'elle y est identique.
  const rects=[],ouverts=new Map();
  for(let j=0;j<=rows;j++){const vus=new Set();
@@ -2379,7 +2387,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,pointLibre,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,coutParDefaut,coutTalent,NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,

@@ -88,9 +88,12 @@ let visionCache={cle:'',vues:new Map()};
 function obscuriteKey(m){return obscuriteDe(m).map(p=>p.anneaux.map(r=>r.length+':'+r.reduce((t,q)=>t+q[0]*7.31+q[1]*13.07,0).toFixed(3)).join(',')).join(';')}
 /* Les sources de lumière de la carte ouverte : chacune {x,y,rayon}, le point en pour cent, le rayon en pixels. Les lumières
    de la carte encore allumées, et chaque combattant debout qui porte de quoi éclairer. */
-function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(),items=typeof catalog!=='undefined'?catalog.items||[]:[];
- const l=(m.lumieres||[]).filter(x=>x&&!x.eteinte).map(x=>({x:x.x,y:x.y,rayon:x.rayon*tk}));
- actors.forEach(a=>{if(!a||!alive(a)||a.horsCarte)return;const p=lumierePortee(a,items);if(p>0)l.push({x:a.x,y:a.y,rayon:p*tk})});
+/* Une source prise dans la matière, une torche scellée au mur, éclaire depuis le point libre le plus proche, comme un socle
+   collé au mur regarde : son halo ne traverse pas le mur et n'empiète pas sur lui ; les portes closes l'arrêtent aussi. */
+function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(),items=typeof catalog!=='undefined'?catalog.items||[]:[],formes=activeObstacles();
+ const libre=s=>{const p=pointLibre(s,formes);return p?{...s,x:p.x,y:p.y}:null};
+ const l=(m.lumieres||[]).filter(x=>x&&!x.eteinte).map(x=>libre({x:x.x,y:x.y,rayon:x.rayon*tk})).filter(Boolean);
+ actors.forEach(a=>{if(!a||!alive(a)||a.horsCarte)return;const p=lumierePortee(a,items);if(p>0){const s=libre({x:a.x,y:a.y,rayon:p*tk});if(s)l.push(s)}});
  return l}
 /* Les halos : un rond de clarté chaude, à peine teinté, autour de chaque source, arrêté par les murs. Une toile à part, sous le
    brouillard : là où l'on voit, le halo paraît ; ailleurs, le noir le couvre. */
@@ -111,7 +114,7 @@ function renderHalos(){const cv=toileHalos(),m=currentMap(),size=mapSize();
    La troupe le voit comme un objet, en vue ou déjà vu ; éteinte, la lumière n'est plus là. Un aventurier au contact prend
    l'objet d'un clic, et la lumière s'éteint ; le MJ a son menu. */
 function lumiereAPortee(a,l){const size=mapSize();if(!a||!size.width)return false;
- return inContact(a,l,size,tokenOf(a),tokenPx()*SOCLE_TAILLES.small)&&!wallsBetween(a,l,walls())}
+ const p=pointLibre(l,walls())||l;return inContact(a,l,size,tokenOf(a),tokenPx()*SOCLE_TAILLES.small)&&!wallsBetween(a,p,walls())}
 function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;
  const pieces=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);if(!pieces.length)return;
  pieces.forEach(it=>{if(typeof ajouterInventaire==='function')ajouterInventaire(a,it);else noteInventaire(a,it.name)});
@@ -998,7 +1001,7 @@ mapsPage.innerHTML=
   +'<button id="foe-objets" hidden>✎ Objets portés</button>'
   +'<label id="door-cle-label" hidden>Clé qui l’ouvre <select id="door-cle"></select></label>'
   +'<button id="coffre-edit" hidden>✎ Modifier le coffre</button><button id="coffre-double" hidden>⧉ Dupliquer le coffre</button>'
- +'<button id="objet-edit" hidden>✎ Modifier l’objet</button><button id="lumiere-edit" hidden>✎ Modifier la lumière</button>'
+ +'<button id="objet-edit" hidden>✎ Modifier l’objet</button><button id="lumiere-edit" hidden>✎ Modifier la lumière</button><button id="lumiere-double" hidden>⧉ Dupliquer la lumière</button>'
  +'<button id="shape-delete" hidden>Supprimer la forme</button>'+'<div class="divider"></div><h2 id="echelle-titre">Échelle de la carte</h2>'+'<p class="muted" id="echelle-info"></p>'+'<p class="muted">Le socle témoin se promène sur la carte : pose-le contre une porte, un lit, un couloir, et tire son coin jusqu’à ce qu’un combattant y tienne. Il ne paraît jamais en partie.</p>'+'<button id="echelle-reset">Rétablir la mesure d’origine</button>'+'<div class="divider"></div><h2>Légende</h2>'
  +'<ul class="legend"><li><i class="sw-wall"></i>Zone de blocage — coupe la vue et le passage</li>'+'<li><i class="sw-ligne"></i>Ligne de blocage — la même chose, d’un seul trait fin</li>'
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
@@ -1160,7 +1163,7 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  gomme:'Glisse pour gratter la matière, comme à la gomme. Ce qui est verrouillé résiste. Sa grosseur se choisit à côté.',
  obscur:'Trace un rectangle d’obscurité : tout ce qu’il couvre est plongé dans le noir, et il fond avec l’obscurité qu’il touche.',
  obscurlibre:'Contourne la zone à plonger dans le noir : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
- obscurremplir:'Clique dans une pièce : toute la zone libre autour du clic — bornée par les murs, les portes et l’obscurité déjà posée — devient noire d’un coup.',
+ obscurremplir:'Clique dans une zone : toute la zone — telle que la découpent les murs, les portes et les séparations, et que la réunissent les regroupements — devient noire d’un coup.',
  obscurgomme:'Contourne l’obscurité à effacer : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  coffre:'Trace un coffre comme une porte : sa fiche s’ouvre aussitôt — nom, description, caché ou non, verrou, piège et contenu. La poignée ronde le fait tourner.',
  lumiere:'Clique pour poser une lumière — torche au mur, lampe, feu — et régler son nom, sa portée en mètres et l’objet qu’elle contient. Tire sa poignée pour agrandir son halo. Un aventurier au contact prend l’objet d’un clic, et la lumière s’éteint.',
@@ -1207,7 +1210,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  if(m.start)c.append(shapeEl('start',0,m.start));
  m.foes.forEach((f,i)=>c.append(foeEl(i,f)));
  m.objets.forEach((o,i)=>c.append(objetEl(i,o)));
- (m.lumieres||[]).forEach((l,i)=>c.append(lumiereEl(i,l)));
+ {const formes=mapShapes(m).formes;(m.lumieres||[]).forEach((l,i)=>c.append(lumiereEl(i,l,formes)))}
  // Le socle témoin par-dessus tout le reste : c'est lui qu'on vient comparer.
  const jauge=echelleEl();if(jauge)c.append(jauge);
  dessineTraits();dessineZonesEditeur();
@@ -1217,7 +1220,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  const cible=mapSel?shapeAt(mapSel):null;
  const adv=mapSel&&mapSel.kind==='foe'?cible:null,porte=mapSel&&mapSel.kind==='door'?cible:null;
  const obj=mapSel&&mapSel.kind==='objet'?cible:null;$('objet-edit').hidden=!obj;
- const lum=mapSel&&mapSel.kind==='lumiere'?cible:null;$('lumiere-edit').hidden=!lum;
+ const lum=mapSel&&mapSel.kind==='lumiere'?cible:null;$('lumiere-edit').hidden=$('lumiere-double').hidden=!lum;
  const coffre=mapSel&&mapSel.kind==='coffre'?cible:null;$('coffre-edit').hidden=$('coffre-double').hidden=!coffre;
  $('door-cle-label').hidden=!(porte&&porte.keyLocked);if(porte&&porte.keyLocked)remplitCles($('door-cle'),porte.cleId||'');
  $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
@@ -1273,16 +1276,22 @@ let clicObjet=null,clicCoffre=null;
 /* Une lumière sur le plan de travail : son halo, à la taille qu'il aura en partie, un cœur au milieu qui porte l'icône de
    l'objet contenu, et une poignée au bord du halo pour le régler. */
 let clicLumiere=null;
-function lumiereEl(i,l){const el=document.createElement('div');
+function lumiereEl(i,l,formes){const el=document.createElement('div');
  el.className='shape lumiere'+(mapSel&&mapSel.kind==='lumiere'&&mapSel.i===i?' selected':'');
  const socle=Math.max(8,$('map-canvas').clientWidth*echelleSocle(mapDraft)/100),d=socle*2*l.rayon;
  el.style.width=el.style.height=d+'px';el.style.margin=(-d/2)+'px 0 0 '+(-d/2)+'px';
  el.style.left=l.x+'%';el.style.top=l.y+'%';el.dataset.kind='lumiere';el.dataset.i=i;
+ // Le halo, découpé par les murs et les portes closes comme à la table ; le cœur et la poignée restent entiers.
+ const halo=document.createElement('span');halo.className='lumiere-halo';
+ {const o=pointLibre({x:l.x,y:l.y},formes||[]),W=$('map-canvas').clientWidth,H=$('map-canvas').clientHeight;
+  const poly=o&&W&&H?reachPolygon(o,formes||[],socle*l.rayon+3,W,H,72):[];
+  if(poly.length>2)halo.style.clipPath='polygon('+poly.map(q=>(((q[0]-l.x)/100*W/d+.5)*100).toFixed(2)+'% '+(((q[1]-l.y)/100*H/d+.5)*100).toFixed(2)+'%').join(',')+')';
+  else if(!o)halo.style.display='none'}
  const coeur=document.createElement('span');coeur.className='lumiere-coeur';coeur.style.width=coeur.style.height=Math.max(12,socle*.55)+'px';
  const piece=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).find(Boolean),im=piece&&typeof logoEquipement==='function'?logoEquipement(piece):null;
  if(im){im.classList.add('logo-objet');coeur.append(im)}else coeur.textContent='🔥';
  const grip=document.createElement('span');grip.className='grip rayon';grip.dataset.grip='rayon';grip.dataset.kind='lumiere';grip.dataset.i=i;
- el.append(coeur,grip);el.title=l.nom+' · '+l.rayon+' m — double-clic pour modifier';
+ el.append(halo,coeur,grip);el.title=l.nom+' · '+l.rayon+' m — double-clic pour modifier';
  el.ondblclick=e=>{e.stopPropagation();openLumiere(i)};
  return el}
 function objetEl(i,o){const el=document.createElement('div');
@@ -1706,6 +1715,11 @@ function openLumiere(i){const m=mapDraft,l=m&&m.lumieres&&m.lumieres[i];if(!l||v
   m.lumieres.splice(i,1);mapSel=null;lumiereDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  lumiereDialog.showModal()}
 $('lumiere-edit').onclick=()=>{if(mapSel&&mapSel.kind==='lumiere')openLumiere(mapSel.i)};
+// Dupliquer : la même lumière, objet compris, posée un peu plus loin, allumée.
+$('lumiere-double').onclick=()=>{const l=mapSel&&mapSel.kind==='lumiere'&&shapeAt(mapSel);if(!l)return;pushUndo();
+ const copie=structuredClone(l);copie.id=crypto.randomUUID();delete copie.eteinte;copie.x=Math.min(100,l.x+2);copie.y=Math.min(100,l.y+2);
+ mapDraft.lumieres.push(copie);mapSel={kind:'lumiere',i:mapDraft.lumieres.length-1};
+ renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('shape-delete').onclick=()=>{if(!supprimeSelection())return;
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('door-key').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
