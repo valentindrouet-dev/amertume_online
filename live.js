@@ -19,7 +19,7 @@
 /* Ce qui vit et se synchronise. Les images n'y sont pas : elles voyagent avec le contenu
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
- 'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement',
+ 'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement','mvtReste','mvtTour',
  'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
@@ -82,8 +82,8 @@ function etatVivant(){const out={actors:{}};
  // Puis les coffres, en drapeaux : 1 révélé, 2 déverrouillé, 4 désamorcé, 8 ouvert, 16 tenté verrouillé.
  out.doors=m?[...(m.doors||[]).map(d=>d.decouvert?(d.open?3:2):!!d.open),...(m.objets||[]).map(o=>o.pris?2:o.visible?1:0),
   ...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0)|(c.tente?16:0)),
-  // Puis les lumières de la carte : 1 éteinte, 0 allumée ; enfin, chaque lumière posée au sol, en entier.
-  ...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.eteinte?1:0),...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol)]:[];
+  // Puis les lumières de la carte : 2 prise, 1 éteinte, 0 allumée ; enfin, chaque lumière posée au sol, en entier.
+  ...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.prise?2:l.eteinte?1:0),...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol)]:[];
  out.fogOff=!!(m&&m.fogOff);
  /* La limite de mouvement que le MJ impose en exploration voyage avec la remise à zéro du brouillard : une clé du MJ seul,
     que les règles admettent déjà ; aucune clé nouvelle dans le document. */
@@ -230,7 +230,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     if(typeof v==='boolean'){o.visible=v;delete o.pris}else if(v===0||v===1||v===2){o.visible=v>=1;if(v===2)o.pris=true;else delete o.pris}});
    const n2=n+(m.objets||[]).length;(m.coffres||[]).forEach((c,k)=>{const v=d.doors[n2+k];if(!Number.isInteger(v)||v<0||v>31)return;
     [['revele',1],['deverrouille',2],['desamorce',4],['ouvert',8],['tente',16]].forEach(([cle,b])=>{if(v&b)c[cle]=true;else delete c[cle]})});
-   const n3=n2+(m.coffres||[]).length,fixes=(m.lumieres||[]).filter(l=>l&&!l.pose);fixes.forEach((l,k)=>{const v=d.doors[n3+k];if(v===1)l.eteinte=true;else if(v===0)delete l.eteinte});
+   const n3=n2+(m.coffres||[]).length,fixes=(m.lumieres||[]).filter(l=>l&&!l.pose);fixes.forEach((l,k)=>{const v=d.doors[n3+k];if(v===2){l.eteinte=true;l.prise=true}else if(v===1){l.eteinte=true;delete l.prise}else if(v===0){delete l.eteinte;delete l.prise}});
    /* Les lumières posées au sol arrivent en entier, à la suite. Ce qui revient tel qu'on l'a envoyé n'apprend rien : une
       lumière posée ou ramassée ici depuis est plus récente, et reste ; sinon, le sol est celui du document. */
    const auSol=x=>(Array.isArray(x)?x:[]).filter(v=>v&&typeof v==='object'&&typeof v.p==='string'),cle=l=>l.map(v=>[v.p,v.n,v.x,v.y,v.r,v.o].join('|')).join(';');

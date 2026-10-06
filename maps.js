@@ -88,13 +88,22 @@ let visionCache={cle:'',vues:new Map()};
    dans le noir. Il se refait quand l'obscurité ou les lumières changent, pas à chaque pas. */
 function obscuriteKey(m){return obscuriteDe(m).map(p=>p.anneaux.map(r=>r.length+':'+r.reduce((t,q)=>t+q[0]*7.31+q[1]*13.07,0).toFixed(3)).join(',')).join(';')}
 /* Les sources de lumière de la carte ouverte : chacune {x,y,rayon}, le point en pour cent, le rayon en pixels. Les lumières
-   de la carte encore allumées, et chaque combattant debout qui porte de quoi éclairer. */
+   de la carte encore allumées, et chaque combattant debout qui porte de quoi éclairer. Le feu éclaire aussi, sur quatre
+   mètres : un combattant debout qui a l'état Feu, un orbe de feu posé sur le terrain, et un mur de feu tout du long, un
+   point par mètre. */
+const LUMIERE_FEU=4;
 /* Une source prise dans la matière, une torche scellée au mur, éclaire depuis le point libre le plus proche, comme un socle
    collé au mur regarde : son halo ne traverse pas le mur et n'empiète pas sur lui ; les portes closes l'arrêtent aussi. */
 function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(),items=typeof catalog!=='undefined'?catalog.items||[]:[],formes=activeObstacles();
  const libre=s=>{const p=pointLibre(s,formes);return p?{...s,x:p.x,y:p.y}:null};
  const l=(m.lumieres||[]).filter(x=>x&&!x.eteinte).map(x=>libre({x:x.x,y:x.y,rayon:x.rayon*tk})).filter(Boolean);
- actors.forEach(a=>{if(!a||!alive(a)||a.horsCarte)return;const p=lumierePortee(a,items);if(p>0){const s=libre({x:a.x,y:a.y,rayon:p*tk});if(s)l.push(s)}});
+ actors.forEach(a=>{if(!a||!alive(a)||a.horsCarte)return;const feu=hasState(a,'Feu')||(a.orbeStatique&&a.orbeStatique.etat==='Feu')?LUMIERE_FEU:0;
+  const p=Math.max(lumierePortee(a,items),feu);if(p>0){const s=libre({x:a.x,y:a.y,rayon:p*tk});if(s)l.push(s)}});
+ const size=mapSize();
+ if(size.width&&typeof mursEnJeu==='function')mursEnJeu().forEach(([,mur])=>{if(String(mur.etat)!=='Feu')return;
+  const pts=mur.pts.map(q=>[q.x/100*size.width,q.y/100*size.height]);if(mur.zone&&pts.length>2)pts.push(pts[0]);
+  for(let i=1;i<pts.length;i++){const [x1,y1]=pts[i-1],[x2,y2]=pts[i],n=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/tk));
+   for(let k=i===1?0:1;k<=n;k++){const s=libre({x:(x1+(x2-x1)*k/n)/size.width*100,y:(y1+(y2-y1)*k/n)/size.height*100,rayon:LUMIERE_FEU*tk});if(s)l.push(s)}}});
  return l}
 /* Les halos : un rond de clarté chaude, à peine teinté, autour de chaque source, arrêté par les murs. Une toile à part, sous le
    brouillard : là où l'on voit, le halo paraît ; ailleurs, le noir le couvre. */
@@ -113,8 +122,8 @@ function renderHalos(){const cv=toileHalos(),m=currentMap(),size=mapSize();
   const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,'rgba(255,226,176,.30)');g.addColorStop(.55,'rgba(255,216,156,.16)');g.addColorStop(1,'rgba(255,206,136,0)');
   ctx.fillStyle=g;ctx.fillRect(cx-r,cy-r,2*r,2*r);ctx.restore()})}
 /* Les lumières de la carte, à la table : un petit jeton au cœur du halo, l'icône de l'objet qu'elle contient ou une flamme.
-   La troupe le voit comme un objet, en vue ou déjà vu ; éteinte, la lumière n'est plus là. Un aventurier au contact prend
-   l'objet d'un clic, et la lumière s'éteint ; le MJ a son menu. */
+   La troupe le voit comme un objet, en vue ou déjà vu ; éteinte, elle reste là, grisée, sans éclairer, et le MJ la rallume
+   de son menu. Un aventurier au contact prend l'objet d'un clic : la lumière s'éteint et n'est plus là. */
 function lumiereAPortee(a,l){const size=mapSize();if(!a||!size.width)return false;
  const p=pointLibre(l,walls())||l;return inContact(a,l,size,tokenOf(a),tokenPx()*SOCLE_TAILLES.small)&&!wallsBetween(a,p,walls())}
 function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;
@@ -123,7 +132,7 @@ function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;
  const pris=pieces.filter(it=>{if(typeof ajouterInventaire==='function')return ajouterInventaire(a,it)!==false;noteInventaire(a,it.name);return true});if(!pris.length)return;
  // Posée au sol, elle s'en va avec son objet ; une lumière de la carte s'éteint, et la carte rouverte la rallume.
  if(l.pose){const m=currentMap(),k=m?(m.lumieres||[]).indexOf(l):-1;if(k>=0)m.lumieres.splice(k,1);log(nomNum(a)+' ramasse '+pris.map(it=>'⟦'+it.id+'⟧').join(' ')+'.',{ton:'butin'})}
- else{l.eteinte=true;log(nomNum(a)+' prend '+pris.map(it=>'⟦'+it.id+'⟧').join(' ')+' : '+l.nom+' s’éteint.',{ton:'butin'})}
+ else{l.eteinte=true;l.prise=true;log(nomNum(a)+' prend '+pris.map(it=>'⟦'+it.id+'⟧').join(' ')+' : '+l.nom+' s’éteint.',{ton:'butin'})}
  render();saveMaps();scheduleSave()}
 /* Poser une source de lumière : l'objet qui éclaire quitte l'inventaire et reste au sol, sous l'aventurier, allumé, jusqu'à
    ce que quelqu'un à son contact le ramasse. */
@@ -134,7 +143,7 @@ function poserLumiere(a,o){const m=currentMap();if(!a||!o||!m||a.horsCarte||!lum
 function menuLumiereMJ(l,x,y){fermeMenuObjet();const m=document.createElement('div');m.className='menu-objet';m.setAttribute('role','menu');
  const t=document.createElement('p');t.className='menu-objet-titre';t.textContent=l.nom||'Lumière';m.append(t);
  const bouton=(txt,fn)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.textContent=txt;b.onclick=()=>{fermeMenuObjet();fn()};m.append(b)};
- if(!l.pose)bouton(l.eteinte?'Rallumer':'Éteindre',()=>{if(l.eteinte)delete l.eteinte;else l.eteinte=true;log(l.nom+(l.eteinte?' s’éteint.':' se rallume.'),{ton:'carte'});render();saveMaps();scheduleSave()});
+ if(!l.pose)bouton(l.eteinte?'Rallumer':'Éteindre',()=>{if(l.eteinte){delete l.eteinte;delete l.prise}else l.eteinte=true;log(l.nom+(l.eteinte?' s’éteint.':' se rallume.'),{ton:'carte'});render();saveMaps();scheduleSave()});
  const h=(l.items||[]).length&&!l.eteinte?heroLePlusProche(l):null;if(h)bouton('Donner à '+nomNum(h)+', le plus proche',()=>recupererLumiere(h,l));
  document.body.append(m);const r=m.getBoundingClientRect();
  m.style.left=Math.max(6,Math.min(x+8,innerWidth-r.width-6))+'px';m.style.top=Math.max(6,Math.min(y+8,innerHeight-r.height-6))+'px';menuObjet=m;
@@ -150,11 +159,11 @@ function lumiereEnVue(l){const m=currentMap();if(!fogVis||!m||m.fogOff)return tr
  return visionInPixels().some((p,k)=>polyTouchesDisc(p,c,r)&&(!yeux[k]||!blinded(yeux[k])||tokenDistance(yeux[k],l,size)<=rayonVision(yeux[k])+r))}
 function renderLumieres(){const vue=$('map-view'),m=currentMap();
  vue.querySelectorAll('.token.lumiere').forEach(t=>t.remove());renderHalos();if(!m)return;
- (m.lumieres||[]).forEach(l=>{if(!l||l.eteinte)return;
+ (m.lumieres||[]).forEach(l=>{if(!l||l.prise)return;
   const enVue=lumiereEnVue(l),vuTroupe=enVue||seenAt(l.x,l.y);
   if(oeilJoueur()&&!vuTroupe)return;
-  // Hors de la vue de la troupe, elle se grise, comme un objet ou une porte dont on se souvient.
-  const t=document.createElement('button');t.className='token lumiere'+(!enVue?' veiled':'');
+  // Hors de la vue de la troupe, elle se grise, comme un objet ou une porte dont on se souvient ; éteinte aussi.
+  const t=document.createElement('button');t.className='token lumiere'+(!enVue?' veiled':'')+(l.eteinte?' eteinte':'');
   const piece=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).find(Boolean),im=iconeDeLumiere(l);
   if(im){im.classList.add('logo-objet');t.append(im);t.classList.add('avec-logo')}else t.textContent='🔥';
   t.setAttribute('aria-label',l.nom);
@@ -973,7 +982,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Et ramène sur la table ceux qu'on en avait retirés : ils sont toujours parmi les aventuriers.
  heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.reposCourts=0;a.reposPris=false;a.fouilles=(a.fouilles||[]).filter(f=>f&&f.m!==id)});
  // Et ses objets récupérés reviennent à leur place.
- (m.objets||[]).forEach(o=>{delete o.pris});(m.lumieres||[]).forEach(l=>{delete l.eteinte});
+ (m.objets||[]).forEach(o=>{delete o.pris});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...heros);
@@ -1805,7 +1814,7 @@ function openLumiere(i){const m=mapDraft,l=m&&m.lumieres&&m.lumieres[i];if(!l||v
 $('lumiere-edit').onclick=()=>{if(mapSel&&mapSel.kind==='lumiere')openLumiere(mapSel.i)};
 // Dupliquer : la même lumière, objet compris, posée un peu plus loin, allumée.
 $('lumiere-double').onclick=()=>{const l=mapSel&&mapSel.kind==='lumiere'&&shapeAt(mapSel);if(!l)return;pushUndo();
- const copie=structuredClone(l);copie.id=crypto.randomUUID();delete copie.eteinte;copie.x=Math.min(100,l.x+2);copie.y=Math.min(100,l.y+2);
+ const copie=structuredClone(l);copie.id=crypto.randomUUID();delete copie.eteinte;delete copie.prise;copie.x=Math.min(100,l.x+2);copie.y=Math.min(100,l.y+2);
  mapDraft.lumieres.push(copie);mapSel={kind:'lumiere',i:mapDraft.lumieres.length-1};
  renderCanvas();renderMapList();saveMaps();if(mapDraft.id===currentMapId)render()};
 $('shape-delete').onclick=()=>{if(!supprimeSelection())return;

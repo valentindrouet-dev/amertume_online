@@ -379,7 +379,7 @@ function cleanObjet(o){const t=o&&o.test||{};
 function cleanLumiere(l){return {id:texte(l&&l.id,40),nom:texte(l&&l.nom,60)||'Torche',x:borne(l&&l.x,0,100),y:borne(l&&l.y,0,100),
   rayon:Math.max(.5,Math.min(40,Number(l&&l.rayon)||3)),
   items:(Array.isArray(l&&l.items)?l.items:[]).filter(x=>typeof x==='string').slice(0,12).map(x=>texte(x,60)).filter(Boolean),
-  ...(l&&l.eteinte===true?{eteinte:true}:{}),...(l&&l.pose===true?{pose:true}:{})}}
+  ...(l&&l.eteinte===true?{eteinte:true}:{}),...(l&&l.prise===true?{prise:true}:{}),...(l&&l.pose===true?{pose:true}:{})}}
 // La lumière qu'un objet donne, en mètres de rayon autour de qui le porte ; rien d'ordinaire.
 function lumiereDe(o){return Math.max(0,Math.min(40,Number(o&&o.lumiere)||0))}
 /* Jusqu'où un combattant éclaire, en mètres : sa pièce la plus lumineuse. Une arme, une armure, une munition n'éclairent
@@ -1003,8 +1003,9 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
  traction:{cle:'traction',nom:'Traction',type:'reac',bouton:'⇢ Traction',gratuit:true,
   aide:'Réaction : après avoir subi les dégâts d’une attaque à distance, le porteur effectue un Mouvement gratuit jusqu’au contact du tireur.',
   params:[],phrase(){return 'Après avoir subi les dégâts d’une <b>attaque à distance</b>, le porteur effectue <b>un Mouvement gratuit</b> jusqu’au contact de l’adversaire.'}},
- /* Rapide : un passif. Un point de Mouvement en plus, au premier tour du combat ou à chaque tour. */
- rapide:{cle:'rapide',nom:'Rapide',type:'pass',
+ /* Rapide : un passif. Un point de Mouvement en plus, au premier tour du combat ou à chaque tour. Désactivé : retiré de la
+    bibliothèque, il ne donne plus rien à la table. */
+ rapide:{cle:'rapide',nom:'Rapide',type:'pass',retire:true,
   aide:'Passif : le porteur gagne 1 point de Mouvement supplémentaire au premier tour de combat, ou au début de chaque tour.',
   params:[{cle:'quand',nom:'Quand',type:'choix',defaut:'premier',options:[['premier','au premier tour de combat'],['chaque','au début de chaque tour']]}],
   phrase(p){return 'Le porteur gagne <b>1 point de Mouvement</b> supplémentaire '+((p&&p.quand)==='chaque'?'<b>au début de chaque tour</b>':'<b>au premier tour de combat</b>')+'.'}},
