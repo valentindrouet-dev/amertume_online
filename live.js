@@ -20,7 +20,8 @@
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement','mvtReste','mvtTour','opportunitesSubies',
- 'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan'];
+ 'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan',
+ 'xp','level','skills','endu','vieMax','pvBonus','sexe','race'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
 // L'élément d'un Mystique est au MJ : un joueur ne le pousse pas.
@@ -111,7 +112,7 @@ function etatVivant(){const out={actors:{}};
  /* La limite de mouvement que le MJ impose en exploration voyage avec la remise à zéro du brouillard : une clé du MJ seul,
     que les règles admettent déjà ; aucune clé nouvelle dans le document. */
  out.fogReset={...(typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false}),...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),
-  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{})};
+  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{}),...(m&&m.obscuriteOff?{noirOff:true}:{})};
  /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
     tableaux qu'on modifie en place (états, cases, cumuls), sinon rien n'en partait. */
  return JSON.parse(JSON.stringify(out))}
@@ -219,6 +220,9 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    if(d.fogReset&&typeof d.fogReset==='object'&&typeof mouvementLimiteExplo!=='undefined')mouvementLimiteExplo=d.fogReset.limite===true;
    const m0=typeof currentMap==='function'?currentMap():null;
    if(m0&&typeof d.fogOff==='boolean'&&!!m0.fogOff!==d.fogOff){m0.fogOff=d.fogOff;if(typeof fogKey!=='undefined')fogKey=''}
+   // L'obscurité que le MJ désactive l'est ici aussi.
+   if(m0&&d.fogReset&&typeof d.fogReset==='object'){const off=d.fogReset.noirOff===true;
+    if(!!m0.obscuriteOff!==off){if(off)m0.obscuriteOff=true;else delete m0.obscuriteOff;if(typeof fogKey!=='undefined')fogKey=''}}
    if(d.fogReset&&typeof d.fogReset.n==='number'&&typeof brouillardReset!=='undefined'&&d.fogReset.n!==brouillardReset.n){
     brouillardReset={n:d.fogReset.n,tout:!!d.fogReset.tout};if(m0&&typeof resetFog==='function')resetFog(brouillardReset.tout,true)}}
   const vus=new Set(),aRepousser=[],gardes=[],cibles=[];
@@ -282,12 +286,22 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   aRepousser.forEach(([id,k])=>{if(base.actors[id])base.actors[id][k]=false});
   gardes.forEach(([id,k,v])=>{if(base.actors[id])base.actors[id][k]=v});
   // L'écho de notre propre envoi n'a rien changé : pas de rendu pour rien.
-  if(change)render();
+  if(change){render();rafraichitFiches()}
   /* Une carte neuve ouverte par le MJ : chez un joueur, la vue s'approche de son aventurier. Ailleurs que sur la table, ce
      sera au retour. */
   if(carteNeuve&&typeof approcherToken==='function'){const moi=actors.find(x=>x.id===monSiege);if(moi)setTimeout(()=>approcherToken(moi),0)}
  }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()}}
 
+/* L'onglet Aventuriers et l'arbre de talents, s'ils sont ouverts, se redessinent sur ce qui arrive : un équipement ôté, un
+   talent appris ailleurs se voient ici aussi. Pas sous la main de qui s'en sert : un champ en saisie, un glissement, une
+   pression tenue attendent d'être finis. */
+let fichesTimer=null,pressionTenue=false;
+addEventListener('pointerdown',()=>{pressionTenue=true},true);
+['pointerup','pointercancel'].forEach(t=>addEventListener(t,()=>{pressionTenue=false},true));
+function rafraichitFiches(){clearTimeout(fichesTimer);fichesTimer=setTimeout(function encore(){
+ if(pressionTenue||(typeof champsOuverts!=='undefined'&&champsOuverts>0)||(typeof arbreGlisse!=='undefined'&&arbreGlisse)){fichesTimer=setTimeout(encore,250);return}
+ if(document.body.classList.contains('page-heroes')&&typeof renderHeroes==='function')renderHeroes();
+ if(typeof arbresDialog!=='undefined'&&arbresDialog.open&&typeof renderArbres==='function')renderArbres()},60)}
 /* Le contenu publié vient d'être posé : il a remplacé les fiches et les cartes, donc
    l'état vivant doit être reposé par-dessus, sans quoi la table reculerait d'un cran. */
 function reappliquerTable(){if(dernierDoc){dernierPousse=null;appliquerSalle(dernierDoc,true)}}
@@ -571,4 +585,6 @@ const renderAvantTable=render;render=function(){let rendre=false;
  if(spectateur()&&view!=='player'){view='player';$('view').value='player';vueImposee=true}
  else if(vueImposee&&!spectateur()){vueImposee=false;view=vueChoisie()||'mj';$('view').value=view;rendre=true}
  renderAvantTable();verrouillerInvite();pousserPlusTard();if(rendre&&typeof rendPage==='function')rendPage()};
+// Ce qui s'enregistre part aussi : une fiche corrigée dans l'onglet Aventuriers n'attend pas le prochain rendu de la table.
+const scheduleSaveAvantTable=scheduleSave;scheduleSave=function(){scheduleSaveAvantTable.apply(this,arguments);pousserPlusTard()};
 majTable();

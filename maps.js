@@ -189,8 +189,8 @@ function renderLumieres(){const vue=$('map-view'),m=currentMap();
   // Sous les combattants : posée à leurs pieds, elle ne les cache pas.
   vue.insertBefore(t,vue.querySelector('.token:not(.lumiere)'))})}
 function clesLumieres(){return sourcesLumiere().map(l=>l.x.toFixed(2)+','+l.y.toFixed(2)+','+Math.round(l.rayon)).join(';')}
-// Une carte est obscure dès qu'elle porte de l'obscurité ; sans elle, rien ne change.
-function carteObscure(){const m=currentMap();return !!m&&obscuriteDe(m).length>0}
+// Une carte est obscure dès qu'elle porte de l'obscurité ; sans elle, rien ne change. Le MJ peut aussi la désactiver en jeu.
+function carteObscure(){const m=currentMap();return !!m&&!m.obscuriteOff&&obscuriteDe(m).length>0}
 let masqueLum={cle:'',data:null};
 function masqueEclaire(){const m=currentMap();if(!m||!fogDim)return null;const d=fogDim;
  const cle=m.id+'|'+d.n+'|'+obscuriteKey(m)+'|'+clesLumieres()+'|'+geometryKey(m);
@@ -2008,7 +2008,9 @@ const eyeBtn=icone('troupe-eye','🎭','Voir la carte comme la troupe');
 const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');
 // Le mouvement limité en exploration : les aventuriers ne vont pas plus loin que leur distance de mouvement.
 const limiteBtn=icone('mouvement-limite','👣','Mouvement limité');
-fogBar.append(fogReset,fogAll,eyeBtn,zonesBtn,lockBtn,limiteBtn);document.querySelector('.mapbar .zoom-bar').after(fogBar);
+// L'obscurité de la carte, activée ou désactivée par le MJ, pour toute la table.
+const noirBtn=icone('obscurite-bascule','🌑','Désactiver l’obscurité');
+fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn);document.querySelector('.mapbar .zoom-bar').after(fogBar);
 const zonesCanvas=document.createElement('canvas');zonesCanvas.id='map-zones';zonesCanvas.setAttribute('aria-hidden','true');
 const zonesNoms=document.createElement('div');zonesNoms.id='map-zones-noms';zonesNoms.setAttribute('aria-hidden','true');
 $('fog').before(zonesCanvas,zonesNoms);
@@ -2059,6 +2061,8 @@ lockBtn.onclick=()=>{tokensLocked=!tokensLocked;refreshGmBar();render();schedule
  document.dispatchEvent(new Event('amertume-content-changed'));
  // Une note pour le MJ seul : chez les joueurs, le verrou se voit, il ne s'annonce pas.
  log(tokensLocked?'Déplacements figés : les joueurs ne peuvent plus bouger leurs tokens.':'Déplacements rendus aux joueurs.',{ton:'carte',local:true})};
+noirBtn.onclick=()=>{const m=currentMap();if(!m)return;if(m.obscuriteOff)delete m.obscuriteOff;else m.obscuriteOff=true;
+ fogKey='';refreshGmBar();render();scheduleSave()};
 limiteBtn.onclick=()=>{mouvementLimiteExplo=!mouvementLimiteExplo;try{localStorage.setItem('amertume-mouvement-limite',mouvementLimiteExplo?'1':'0')}catch(e){}
  refreshGmBar();render();scheduleSave()};
 // L'état des icônes se lit d'un coup d'œil : voile levé, déplacements gelés.
@@ -2077,6 +2081,8 @@ function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  fogAll.classList.toggle('on',!!(m&&m.fogOff));eyeBtn.hidden=!m;eyeBtn.classList.toggle('on',vueTroupe);
  zonesBtn.hidden=!m;zonesBtn.classList.toggle('on',zonesVisibles);zonesBtn.title=zonesVisibles?'Cacher les zones de la carte':'Voir les zones de la carte';
  fogAll.title=m&&m.fogOff?'Rétablir le brouillard':'Tout révéler';
+ noirBtn.hidden=!m||!obscuriteDe(m).length;noirBtn.classList.toggle('on',!!(m&&m.obscuriteOff));
+ noirBtn.title=m&&m.obscuriteOff?'Activer l’obscurité':'Désactiver l’obscurité';noirBtn.setAttribute('aria-label',noirBtn.title);
  /* Changer de carte en pleine partie appartient au MJ : la liste et son bouton suivent
     donc la vue, et non le seul fait qu'il existe des cartes. Ils étaient montés une fois
     pour toutes avant le chargement de la partie, quand « maps » était encore vide : ils

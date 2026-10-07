@@ -1038,7 +1038,7 @@ assert.ok(page.includes("(typeof spectateur==='function'&&spectateur())?[]:actor
 assert.ok(vivant.includes("if(meta&&meta.local)return;"),'les lignes propres à l’appareil restent chez elles');
 /* La table : la référence se prend avant le rendu, les positions partent par salves, les
    socles reçus glissent, et deux doigts mènent la carte. */
-assert.ok(vivant.indexOf("base=etatVivant();")<vivant.indexOf("aRepousser.forEach(([id,k])")&&vivant.indexOf("aRepousser.forEach(([id,k])")<vivant.indexOf("  if(change)render();\n")&&vivant.indexOf("  if(change)render();\n")<vivant.indexOf(" }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()")
+assert.ok(vivant.indexOf("base=etatVivant();")<vivant.indexOf("aRepousser.forEach(([id,k])")&&vivant.indexOf("aRepousser.forEach(([id,k])")<vivant.indexOf("  if(change){render();rafraichitFiches()}\n")&&vivant.indexOf("  if(change){render();rafraichitFiches()}\n")<vivant.indexOf(" }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()")
  ,'la référence précède le rendu');
 assert.ok(vivant.includes('function pousserBientot')&&page.includes("if(typeof pousserBientot==='function')pousserBientot()"),'le glissement part par salves');
 assert.ok(vivant.includes("appliquerSalle(dernierDoc,true)")&&vivant.includes("seulementPositions(docPrecedent,d)"),'les positions seules glissent sans rendu');
@@ -1199,7 +1199,7 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
  ['x','y','hp','states','checks','target','targets','revealed','vu','numero','orbes','garde'].forEach(k=>assert.ok(vol.includes(k),'volatil : '+k));
  assert.ok(vivant.includes('texteStable(publicContent())!==lastPublishedText')&&vivant.includes('function programmerApplication(')
   &&vivant.includes('dernierDoc=doc.data();programmerApplication()')&&vivant.includes('const avant=JSON.stringify(etatVivant());')
-  &&vivant.includes('const change=complet||JSON.stringify(base)!==avant;')&&vivant.includes('if(change)render();'),'rafales et échos ne redessinent pas pour rien');
+  &&vivant.includes('const change=complet||JSON.stringify(base)!==avant;')&&vivant.includes('if(change){render();rafraichitFiches()}'),'rafales et échos ne redessinent pas pour rien');
  assert.ok(page.includes('function pastillesPoints(a)'),'l’Action se dépense même hors combat, le Mouvement en combat');
  // Le texte stable ignore l'état vivant et retient le contenu.
  const src2=partage.slice(partage.indexOf('const CHAMPS_VOLATILS='),partage.indexOf('function publicContent('));
@@ -2090,7 +2090,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  const miette=C.calculeZones([{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[50,50],[52,50],[52,52],[50,52]]]}],[],100,50);
  assert.equal(miette.compte,0,'une case ou deux ne font pas une zone');
  assert.equal(C.calculeZones([],[],10,5).compte,1);assert.equal(C.zoneAu(null,1,1),0);
- assert.ok(cartes.includes("const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');")&&cartes.includes("fogBar.append(fogReset,fogAll,eyeBtn,zonesBtn,lockBtn,limiteBtn);")
+ assert.ok(cartes.includes("const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');")&&cartes.includes("fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn);")
   &&cartes.includes("function zonesDe(m){if(!m)return null;")&&cartes.includes("zonesCache={cle,zones:calculeZones(matiereDe(m),portes,cols,rows,10,m.zonesCoupures,m.zonesLiens)}}")
   &&cartes.includes("function zoneDe(a){const m=currentMap();return m&&a?zoneAu(zonesDe(m),a.x,a.y):0}")&&cartes.includes("function memeZone(a,b){")
   &&cartes.includes("if(!zonesVisibles||!m||view!=='mj'){cv.style.display='none';noms.hidden=true;return}")
@@ -3387,6 +3387,20 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.612 — Un bouton du MJ, sur la barre de la carte, active ou désactive l'obscurité de la carte pour toute la table. Ce que
+   l'onglet Aventuriers règle voyage dans les deux sens : XP, niveau, compétences, VIE, Endurance, espèce ; et l'onglet
+   Aventuriers comme l'arbre de talents ouverts se redessinent sur ce qui arrive, sans couper une saisie ni un glissement. */
+{const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
+ assert.ok(carto.includes("function carteObscure(){const m=currentMap();return !!m&&!m.obscuriteOff&&obscuriteDe(m).length>0}")
+  &&carto.includes("const noirBtn=icone('obscurite-bascule','🌑','Désactiver l’obscurité');")
+  &&carto.includes("noirBtn.onclick=()=>{const m=currentMap();if(!m)return;if(m.obscuriteOff)delete m.obscuriteOff;else m.obscuriteOff=true;")
+  &&carto.includes(" noirBtn.hidden=!m||!obscuriteDe(m).length;"),'le bouton de l’obscurité');
+ assert.ok(vif.includes("...(m&&m.obscuriteOff?{noirOff:true}:{})};")&&vif.includes("const off=d.fogReset.noirOff===true;"),'l’obscurité désactivée voyage avec la remise du brouillard, sans clé nouvelle');
+ assert.ok(["'xp'","'level'","'skills'","'endu'","'vieMax'","'pvBonus'","'sexe'","'race'"].every(k=>vif.slice(vif.indexOf('const CHAMPS_VIVANTS='),vif.indexOf('const CHAMPS_MJ=')).includes(k)),'les réglages de l’onglet Aventuriers voyagent');
+ assert.ok(vif.includes("if(change){render();rafraichitFiches()}")&&vif.includes("if(document.body.classList.contains('page-heroes')&&typeof renderHeroes==='function')renderHeroes();")
+  &&vif.includes("if(typeof arbresDialog!=='undefined'&&arbresDialog.open&&typeof renderArbres==='function')renderArbres()")
+  &&vif.includes("if(pressionTenue||(typeof champsOuverts!=='undefined'&&champsOuverts>0)||(typeof arbreGlisse!=='undefined'&&arbreGlisse)){fichesTimer=setTimeout(encore,250);return}"),'les fiches ouvertes suivent, sans couper un geste');
+ assert.ok(vif.includes("scheduleSave=function(){scheduleSaveAvantTable.apply(this,arguments);pousserPlusTard()};"),'ce qui s’enregistre part en ligne');}
 /* v0.611 — Un adversaire qui possède deux armes de contact à une main, ou plus, les manie ensemble : une seule attaque, dés
    cumulés, « Dague ×2 » ou « Dague + Épée ». Les exemplaires se comptent dans son inventaire. */
 {const C=require('./combat.js'),A=[{id:'dg',name:'Dague',category:'weapon',hands:1,dice:{white:1}},{id:'ep',name:'Épée',category:'weapon',hands:1,dice:{red:1}},
@@ -3518,7 +3532,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&src.includes("if(f.mouvement&&!a.hero){const v=Number(f.mouvement.value);if(!Number.isFinite(v)||v===DISTANCE_MOUVEMENT)delete a.mouvement;"),'la distance au bestiaire');
  assert.ok(src.includes(">Bonus de Mouvement</label>'+field('Bonus (m)','bonusMouvement',")&&src.includes("o.bonusMouvement=bonusMouvementDe(o);if(!o.bonusMouvement)delete o.bonusMouvement;")
   &&src.includes("if(f.bonusMouvementOn){if(f.bonusMouvementOn.checked)a.bonusMouvement="),'la case Bonus de Mouvement des objets');
- assert.ok(vif.includes("'nyctalope','mouvement',")&&vif.includes("...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),\n  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{})};")
+ assert.ok(vif.includes("'nyctalope','mouvement',")&&vif.includes("...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),\n  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{}),...(m&&m.obscuriteOff?{noirOff:true}:{})};")
   &&vif.includes("mouvementLimiteExplo=d.fogReset.limite===true;"),'la distance et la limite voyagent en ligne, sans clé nouvelle');
  assert.ok(page.includes("const regle=lot0.length===1&&mouvementBorne(a)?regleMouvement(a):null;")&&page.includes("traceMouvement(null);\n  if(bloque){if(moved)skipClick=true;return}")
   &&page.includes(" t.onpointercancel=()=>{drag=null;window.socleEnMain=null;traceMouvement(null)};")&&page.includes("   if(regle&&regle.combat){if(cout>0)depensePoint(a,'mouvement',cout)}"),'le geste à la main');
@@ -4148,7 +4162,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("auteurCoup=a;queueMicrotask(()=>{auteurCoup=null});ajouteBilan(a,'coups',1);")&&page.includes("ajouteBilan(a,'crit',1)")&&page.includes("applyHeal=function(a,m){const g=soinSansBilan(a,m);if(g>0)ajouteBilan(a,'soin',g);return g}"),'les compteurs de dégâts, coups, critiques et soins');
  assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes("compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);"),'la distance, là où un mouvement connaît son départ');
  assert.ok(page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
- assert.ok(vivant.includes("'enrage','bilan'];")&&vivant.includes("...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
+ assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race'];")&&vivant.includes("...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
  assert.ok(src.includes('function lisBilan(o){')&&src.includes('function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;'),'la fenêtre');
  // Le bilan venu d'ailleurs est relu : chiffres bornés, noms coupés, camp connu.
  {const vm=require('vm'),deb=src.indexOf('function lisBilan(o){'),fin=src.indexOf('const statsDialog=');const ctx={};vm.createContext(ctx);vm.runInContext(src.slice(deb,fin)+';this.r=lisBilan({tours:"3",liste:[{nom:"x".repeat(99),camp:"pirate",inf:-4,sub:"12",pic:1e9},null]});',ctx);
