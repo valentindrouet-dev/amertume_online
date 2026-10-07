@@ -3387,6 +3387,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.607 — À droite des bottes, dans le schéma d'équipement de l'aventurier, sa distance de mouvement, objets compris. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("if(cle==='bottes'&&a.hero){const m=document.createElement('span');m.className='mouvement-corps';")
+  &&src.includes("e.textContent='Mouvement\\u00a0: ';")&&src.includes("v.textContent=String(+distanceMouvement(a,catalog.items||[]).toFixed(1)).replace('.',',')+'\\u00a0m';")
+  &&css.includes(".corps-sac>.corps .mouvement-corps{top:12px;height:50px;left:calc(50% + 31px)}"),'la distance de mouvement à droite des bottes');}
 /* v0.604 — Le mouvement se compte sur le chemin parcouru, et un point de Mouvement donne la distance de mouvement à dépenser
    par à-coups pendant le tour : ce reste voyage en ligne et s'efface au tour suivant. Une lumière éteinte reste sur la carte,
    grisée, et le MJ la rallume ; prise, elle n'est plus là. Le feu éclaire sur quatre mètres : l'état Feu, un orbe de feu posé,

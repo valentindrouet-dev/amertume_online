@@ -1696,6 +1696,12 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
    if(peutEquiper){const cote=cle==='main'?(k===3?'droite':'gauche'):'';v.textContent='+';v.classList.add('equipable');
     v.setAttribute('role','button');v.tabIndex=0;v.title='Équiper : '+nom;v.setAttribute('aria-label','Équiper '+nom+' de '+a.name);
     const ouvre=()=>choisirPourPlace(a,cle,cote,nom);v.onclick=ouvre;v.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ouvre()}}}}
+  /* À droite des bottes, la distance de mouvement de l'aventurier, ses objets compris : l'intitulé dans le style de ceux
+     des places, la distance dessous. */
+  if(cle==='bottes'&&a.hero){const m=document.createElement('span');m.className='mouvement-corps';
+   const e=document.createElement('span');e.className='etiquette';e.textContent='Mouvement\u00a0: ';
+   const v=document.createElement('span');v.className='valeur';v.textContent=String(+distanceMouvement(a,catalog.items||[]).toFixed(1)).replace('.',',')+'\u00a0m';
+   m.append(e,v);pl.append(m)}
   if(cle==='anneau'){groupeAnneaux.append(pl);if(!groupeAnneaux.isConnected)corps.append(groupeAnneaux)}else corps.append(pl)});
  out.append(corps);
  // Le sac : ce qui n'est pas porté, puis les objets.
