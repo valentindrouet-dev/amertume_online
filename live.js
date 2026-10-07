@@ -21,7 +21,7 @@
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement','mvtReste','mvtTour','opportunitesSubies',
  'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan',
- 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe'];
+ 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
 // L'élément d'un Mystique est au MJ : un joueur ne le pousse pas.
@@ -89,6 +89,8 @@ function ciblesIds(a){const brut=Array.isArray(a.targets)?a.targets
 function indicesDesCibles(ids){return (Array.isArray(ids)?ids:[]).map(id=>actors.findIndex(o=>o&&o.id===id)).filter(j=>j>=0)}
 // Une lumière posée au sol, telle qu'elle voyage : ses clés dans l'ordre où le document les rend.
 function lumiereAuSol(l){return {n:l.nom,o:(l.items||[])[0]||'',p:l.id,r:l.rayon,x:l.x,y:l.y}}
+// L'état d'un piège en un nombre : révélé 1, parti 2, désamorcé 4, détection manquée 8.
+const drapeauxPiege=p=>(p.revele?1:0)|(p.declenche?2:0)|(p.desamorce?4:0)|(p.rate?8:0);
 function etatVivant(){const out={actors:{}};
  actors.forEach(a=>{if(!a||!a.id)return;const e={};
   CHAMPS_VIVANTS.forEach(k=>{if(a[k]!==undefined)e[k]=a[k]});
@@ -109,7 +111,7 @@ function etatVivant(){const out={actors:{}};
   // Puis les lumières de la carte : 2 prise, 1 éteinte, 0 allumée ; enfin, chaque lumière posée au sol, en entier.
   ...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.prise?2:l.eteinte?1:0),...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol),
   // Enfin les pièges, chacun par son identifiant : 1 révélé, 2 déclenché, 4 désamorcé, 8 détection manquée.
-  ...(m.pieges||[]).map(p=>({t:p.id,e:(p.revele?1:0)|(p.declenche?2:0)|(p.desamorce?4:0)|(p.rate?8:0)}))]:[];
+  ...(m.pieges||[]).map(p=>({t:p.id,e:drapeauxPiege(p)}))]:[];
  out.fogOff=!!(m&&m.fogOff);
  /* La limite de mouvement que le MJ impose en exploration voyage avec la remise à zéro du brouillard : une clé du MJ seul,
     que les règles admettent déjà ; aucune clé nouvelle dans le document. */
@@ -227,7 +229,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     if(!!m0.obscuriteOff!==off){if(off)m0.obscuriteOff=true;else delete m0.obscuriteOff;if(typeof fogKey!=='undefined')fogKey=''}}
    if(d.fogReset&&typeof d.fogReset.n==='number'&&typeof brouillardReset!=='undefined'&&d.fogReset.n!==brouillardReset.n){
     brouillardReset={n:d.fogReset.n,tout:!!d.fogReset.tout};if(m0&&typeof resetFog==='function')resetFog(brouillardReset.tout,true)}}
-  const vus=new Set(),aRepousser=[],gardes=[],cibles=[];
+  const vus=new Set(),aRepousser=[],gardes=[],cibles=[],gardesPieges=[];
   Object.entries(d.actors||{}).forEach(([id,e])=>{if(!e||typeof e!=='object')return;
    vus.add(id);
    let a=actors.find(x=>x.id===id);
@@ -274,8 +276,11 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    const envoyees=dernierPousse?auSol(dernierPousse.doors):null;
    if(cleIci!==cleRecue&&!(envoyees&&cle(envoyees)===cleRecue)){const avant=new Map(ici.map(l=>[l.id,l]));
     m.lumieres=[...fixes,...recues.map(v=>Object.assign(avant.get(v.p)||{},cleanLumiere({id:v.p,nom:v.n,x:v.x,y:v.y,rayon:v.r,items:v.o?[v.o]:[],pose:true})))]}
-   // L'état des pièges, chacun retrouvé par son identifiant.
+   /* L'état des pièges, chacun retrouvé par son identifiant. Ce qui revient tel qu'on l'a envoyé n'apprend rien : un piège parti
+      ou désamorcé ici depuis est plus récent ; il reste, et part au prochain envoi. */
+   const envoyes=dernierPousse&&Array.isArray(dernierPousse.doors)?dernierPousse.doors:[];
    d.doors.forEach(v=>{if(!v||typeof v!=='object'||typeof v.t!=='string')return;const p=(m.pieges||[]).find(x=>x&&x.id===v.t);if(!p)return;const e=Number(v.e)||0;
+    const r=envoyes.find(x=>x&&typeof x==='object'&&x.t===v.t);if(r&&(Number(r.e)||0)===e&&drapeauxPiege(p)!==e){gardesPieges.push([v.t,e]);return}
     [['revele',1],['declenche',2],['desamorce',4],['rate',8]].forEach(([k,b])=>{if(e&b)p[k]=true;else delete p[k]})})}
   if(selected!==null&&!actors[selected])selected=null;
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
@@ -295,6 +300,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    CHAMPS_VIVANTS.forEach(k=>{if(recu[k]===undefined&&e[k]!==undefined)delete e[k]})});
   aRepousser.forEach(([id,k])=>{if(base.actors[id])base.actors[id][k]=false});
   gardes.forEach(([id,k,v])=>{if(base.actors[id])base.actors[id][k]=v});
+  gardesPieges.forEach(([t,e])=>{const x=(base.doors||[]).find(y=>y&&typeof y==='object'&&y.t===t);if(x)x.e=e});
   // L'écho de notre propre envoi n'a rien changé : pas de rendu pour rien.
   if(change){render();rafraichitFiches()}
   /* Une carte neuve ouverte par le MJ : chez un joueur, la vue s'approche de son aventurier. Ailleurs que sur la table, ce

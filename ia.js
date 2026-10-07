@@ -117,14 +117,16 @@ async function attaquesIA(a,j){let coups=0;
 async function orbesIA(a){for(let n=0;n<9;n++){const b=boutonsTalents(a).find(x=>x.code.cle==='orbes');if(!b||!b.peut)return;b.agir();await pauseIA(500)}}
 /* Un déplacement de l'IA : le long d'étapes en pixels, pas à pas, sous la règle du Mouvement, comme à la main — ce qui
    reste du mouvement payé, ou un point pour toute sa distance, comptée sur le chemin : arrivé au bout, il s'arrête sur son
-   chemin. Ceux qu'il quitte frappent, la Foudre tombe, Ombrelame s'arme. */
+   chemin. Ceux qu'il quitte frappent, la Foudre tombe, Ombrelame s'arme. Un piège armé qu'il touche l'arrête là, puis part. */
 async function marcheIA(a,etapes,ignorer,arrive){const size=mapSize();if(!size.width||!etapes||!etapes.length)return false;
  const regle=regleMouvement(a);if(regle.fini)return false;
- noteContactsDepart(a);const croises=new Set(contactsDe(a)),depart={x:a.x,y:a.y};
+ noteContactsDepart(a);const croises=new Set(contactsDe(a)),depart={x:a.x,y:a.y};let piege=null;
  for(const [x,y] of etapes){if(arrive&&arrive())break;
-  const q={x:x/size.width*100,y:y/size.height*100};
+  const q={x:x/size.width*100,y:y/size.height*100},avant={x:a.x,y:a.y};
   moveActor(a,q.x,q.y,false,ignorer,true);
-  if(!appliqueRegleMouvement(a,regle)){jusquALaBorne(a,regle,q,(u,v)=>moveActor(a,u,v,false,ignorer,true));break}}
+  const borne=!appliqueRegleMouvement(a,regle);if(borne)jusquALaBorne(a,regle,q,(u,v)=>moveActor(a,u,v,false,ignorer,true));
+  const h=typeof piegeAuPassage==='function'?piegeAuPassage(a,avant):null;if(h){a.x=h.x;a.y=h.y;piege=h;break}
+  if(borne)break}
  settleActor(a,ignorer);
  if(Math.hypot((a.x-depart.x)/100*size.width,(a.y-depart.y)/100*size.height)<1){a.x=depart.x;a.y=depart.y;return false}
  const cout=soldeRegleMouvement(a,regle);if(cout>0)depensePoint(a,'mouvement',cout);
@@ -132,7 +134,8 @@ async function marcheIA(a,etapes,ignorer,arrive){const size=mapSize();if(!size.w
  const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(a.id)+'"]');
  if(el){el.classList.add('glisse');el.style.left=a.x+'%';el.style.top=a.y+'%';suitLaJauge(el)}
  await pauseIA(280);
- updateRing();degatsOpportunite(a,[...croises]);compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);render();return true}
+ updateRing();degatsOpportunite(a,[...croises]);compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);render();
+ if(piege&&typeof declenchePiege==='function')declenchePiege(piege.p,a,piege.contact);return true}
 /* Où un geste le mènerait, murs, socles et zones compris, sans rien bouger : le point d'arrivée, ou null
    si le geste est refusé. */
 function essaiPasIA(a,x,y,ignorer){const size=mapSize(),regle=regleMouvement(a);if(regle.fini)return null;

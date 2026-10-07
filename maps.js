@@ -939,22 +939,21 @@ function polyPiege(p){const m=currentMap();return coffrePolygon({...p,a:0,rond:p
 // L'écart d'un point à un segment, en pixels : un fil se touche à moins d'un rayon de socle.
 function ecartAuFil(c,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],l=dx*dx+dy*dy,t=l?Math.max(0,Math.min(1,((c[0]-a[0])*dx+(c[1]-a[1])*dy)/l)):0;return Math.hypot(c[0]-a[0]-t*dx,c[1]-a[1]-t*dy)}
 // Le disque d'un socle — centre et rayon, en pixels — touche-t-il le piège, sa forme s'il part au contact, ou un de ses déclencheurs ?
+// Rend « contact » quand c'est sa forme, « distance » quand c'est un déclencheur.
 function touchePiege(p,c,r,size){const px=q=>[q[0]/100*size.width,q[1]/100*size.height];
- if(p.contact!==false&&polyTouchesDisc(polyPiege(p).map(px),c,r))return true;
+ if(p.contact!==false&&polyTouchesDisc(polyPiege(p).map(px),c,r))return 'contact';
  return (p.declencheurs||[]).some(d=>d.type==='fil'?ecartAuFil(c,px([d.x1,d.y1]),px([d.x2,d.y2]))<=r
-  :polyTouchesDisc([[d.x,d.y],[d.x+d.w,d.y],[d.x+d.w,d.y+d.h],[d.x,d.y+d.h]].map(px),c,r))}
-/* Le premier piège armé que le socle touche en allant de « de » jusqu'à sa place : lui, et là où il le touche, en pour cent.
-   Ce qu'il touchait déjà au départ ne part pas ; un piège qu'il enjambe non plus, jusqu'à ce qu'il l'ait passé. */
+  :polyTouchesDisc([[d.x,d.y],[d.x+d.w,d.y],[d.x+d.w,d.y+d.h],[d.x,d.y+d.h]].map(px),c,r))?'distance':false}
+/* Le premier piège armé que le socle touche en allant de « de » jusqu'à sa place : lui, là où il le touche, en pour cent, et
+   s'il le touche par sa forme. Ce qu'il touchait déjà au départ ne part pas ; un piège qu'il a su enjamber, plus jamais. */
 function piegeAuPassage(o,de){const m=currentMap(),size=mapSize();
  if(!m||!(m.pieges||[]).length||!o||!de||!size.width||!alive(o)||o.horsCarte||o.orbeStatique)return null;
- const armes=m.pieges.filter(piegeArme);if(!armes.length)return null;
+ const franchis=Array.isArray(o.franchis)?o.franchis:[],armes=m.pieges.filter(p=>piegeArme(p)&&!franchis.includes(p.id));if(!armes.length)return null;
  const r=tokenOf(o)/2,a=[de.x/100*size.width,de.y/100*size.height],b=[o.x/100*size.width,o.y/100*size.height];
- const enj=o.enjambe&&armes.find(p=>p.id===o.enjambe.id);
- if(enj){if(touchePiege(enj,b,r,size))o.enjambe.touche=true;else if(o.enjambe.touche)delete o.enjambe}
- const libres=armes.filter(p=>p!==enj&&!touchePiege(p,a,r,size));if(!libres.length)return null;
+ const libres=armes.filter(p=>!touchePiege(p,a,r,size));if(!libres.length)return null;
  const n=Math.max(1,Math.min(400,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/Math.max(1,r/3))));
  for(let i=1;i<=n;i++){const t=i/n,c=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t],p=libres.find(q=>touchePiege(q,c,r,size));
-  if(p)return {p,x:c[0]/size.width*100,y:c[1]/size.height*100}}
+  if(p)return {p,x:c[0]/size.width*100,y:c[1]/size.height*100,contact:touchePiege(p,c,r,size)==='contact'}}
  return null}
 /* Ce que coûte un piège en caractéristiques : un aventurier le porte à sa fiche, permanent ou jusqu'au repos ; une créature le
    perd pour de bon. Rend les mots du journal. */
@@ -965,10 +964,11 @@ function appliquePertes(o,lignes){const l=cleanPertes(lignes);if(!l.length)retur
   else if(b.carac==='def')o.def=Math.max(0,(Number(o.def)||0)-v);else if(b.carac==='dmg')o.dmg=Math.max(0,(Number(o.dmg)||0)-v);
   else if(b.carac==='comp'&&Array.isArray(o.skills)){const k=Number(b.comp)||0;o.skills[k]=Math.max(0,(Number(o.skills[k])||0)-v)}});
  return l.map(phrasePerte)}
-/* Un piège part sur qui l'a touché : il se grise, révélé s'il était caché, et sa gerbe jaillit sur chaque table. Évitable, la
-   victime tente son test d'abord ; puis les dégâts, les états et les pertes de caractéristique. */
-function declenchePiege(p,o){const m=currentMap();if(!m||!piegeArme(p)||!o)return;
- p.declenche=true;if(p.cache)p.revele=true;if(o.enjambe&&o.enjambe.id===p.id)delete o.enjambe;
+/* Un piège part sur qui l'a touché : il se grise, sauf s'il est toujours actif ; révélé s'il était caché, et sa gerbe jaillit
+   sur chaque table. Évitable, la victime tente son test d'abord ; puis les dégâts, les états et les pertes de caractéristique.
+   Touché par sa forme, il happe sa victime : son socle va au centre du piège, à moins qu'elle ne l'esquive. */
+function declenchePiege(p,o,contact){const m=currentMap();if(!m||!piegeArme(p)||!o)return;
+ if(!p.actif)p.declenche=true;if(p.cache)p.revele=true;
  if(typeof explosionPiege==='function')explosionPiege(centrePiege(p));
  if(typeof diffuserEffet==='function')diffuserEffet('piegecarte',o,null,String(m.pieges.indexOf(p)));
  let issue='plein';
@@ -977,21 +977,28 @@ function declenchePiege(p,o){const m=currentMap();if(!m||!piegeArme(p)||!o)retur
   log(nomNum(o)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — '+(ok?(issue==='esquive'?'esquive le piège':'amortit le piège'):'ne l’évite pas')+'.',{dice:true,ton:'competence'})}
  const parts=[];
  if(issue!=='esquive'){const deg=issue==='moitie'?Math.floor((p.degats||0)/2):(p.degats||0);
-  if(deg>0){const {perdu:n,blinde}=encaisse(o,deg);parts.push(blinde?'Blindage consommé':n+' dégât'+(n>1?'s':''))}
-  if(issue==='plein'){(p.etats||[]).forEach(e=>{if(infligeEtat(o,e)===true)parts.push(e)});parts.push(...appliquePertes(o,p.caracs))}}
+  if(deg>0){const {perdu:n,blinde}=encaisse(o,deg,null);parts.push(blinde?'Blindage consommé':n+' dégât'+(n>1?'s':''))}
+  if(issue==='plein'){const etats=(p.etats||[]).filter(e=>infligeEtat(o,e)===true);parts.push(...etats);
+   // Hors combat, ils survivront au combat que ce pas-là déclenche peut-être.
+   if(etats.length&&!enCombat())o.etatsPieges=[...new Set([...(Array.isArray(o.etatsPieges)?o.etatsPieges:[]),...etats])];
+   parts.push(...appliquePertes(o,p.caracs))}}
  log('Piège ! '+p.nom+' se déclenche sur '+nomNum(o)+(parts.length?' — '+parts.join(', '):'')+'.',{ton:'degats'});
- render();saveMaps();scheduleSave()}
+ const depuis=contact&&issue!=='esquive'?{x:o.x,y:o.y}:null;if(depuis){const c=centrePiege(p);o.x=c.x;o.y=c.y}
+ render();if(depuis)glisseAuPiege(o,depuis);saveMaps();scheduleSave()}
+// Le socle happé glisse jusqu'au centre du piège, du point où il l'a touché.
+function glisseAuPiege(o,depuis){const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(o.id)+'"]');if(!el)return;
+ el.style.left=depuis.x+'%';el.style.top=depuis.y+'%';void el.offsetWidth;el.classList.add('glisse');el.style.left=o.x+'%';el.style.top=o.y+'%';if(typeof suitLaJauge==='function')suitLaJauge(el)}
 // Au contact : la forme du piège touche la zone de contact de l'aventurier.
 function piegeAPortee(a,p){const size=mapSize();return !!a&&!!p&&!!size.width&&polyInReach(a,polyPiege(p),size,tokenOf(a))}
 /* Désamorcer ou enjamber : le test que le MJ a préparé, l'Action en combat. Désamorcé, le piège se grise ; manqué, il reste en
-   l'état. Enjambé, l'aventurier le franchit sans le faire partir ; manqué, il le déclenche. */
+   l'état. Enjambé, l'aventurier le franchit sans le faire partir, et ne le fera plus jamais partir ; manqué, il le déclenche. */
 function testPiege(a,p,quoi){const t=p&&p[quoi];if(!a||!t||!piegeArme(p)||!payeAction(a))return;
  const jet=skillRoll(valeurCompetence(a,t.comp)-1,d6),n=jet.reussites,ok=n>=t.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
  const tete=nomNum(a)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — ';
  if(quoi==='desamorcage'){if(ok)p.desamorce=true;log(tete+(ok?'désamorce '+p.nom:'ne parvient pas à désamorcer '+p.nom)+'.',{dice:true,ton:'competence'})}
- else{log(tete+(ok?'enjambe '+p.nom:'trébuche sur '+p.nom)+'.',{dice:true,ton:'competence'});if(ok)a.enjambe={id:p.id}}
+ else{log(tete+(ok?'enjambe '+p.nom:'trébuche sur '+p.nom)+'.',{dice:true,ton:'competence'});if(ok)a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60)}
  if(enCombat()&&typeof afterAction==='function')afterAction(a);
- if(quoi==='enjambement'&&!ok){declenchePiege(p,a);return}
+ if(quoi==='enjambement'&&!ok){declenchePiege(p,a,p.contact!==false);return}
  render();saveMaps();scheduleSave()}
 // Réamorcer : le porteur du talent Réamorceur rend son mordant à un piège réamorçable et grisé, à son contact.
 function reamorcePiege(a,p){if(!a||!p||piegeArme(p)||!p.reamorcable||!payeAction(a))return;
@@ -1003,7 +1010,7 @@ function menuPiege(p,x,y){const mj=view==='mj',a=heroActif(),proche=!!a&&piegeAP
  if(!mj&&!a){log('Sélectionne d’abord ton aventurier.',{local:true});return}
  if(!mj&&!proche){log('Approche '+a.name+' : il faut être au contact de '+p.nom+'.',{local:true});return}
  if(proche){if(piegeArme(p)){if(p.desamorcage)entrees.push(['Désamorcer · '+skillNames[p.desamorcage.comp],()=>testPiege(a,p,'desamorcage')]);
-   if(p.enjambement)entrees.push(['Enjamber · '+skillNames[p.enjambement.comp],()=>testPiege(a,p,'enjambement')])}
+   if(p.enjambement&&!(Array.isArray(a.franchis)&&a.franchis.includes(p.id)))entrees.push(['Enjamber · '+skillNames[p.enjambement.comp],()=>testPiege(a,p,'enjambement')])}
   else if(p.reamorcable&&porteEffet(talentsCodes(a),'reamorcage'))entrees.push(['Réamorcer',()=>reamorcePiege(a,p)])}
  if(mj){if(p.cache)entrees.push([p.revele?'Cacher à la troupe':'Révéler à la troupe',()=>{p.revele=!p.revele;if(p.revele)floatNumber(centrePiege(p),'Révélé !','nul');render();saveMaps();scheduleSave()}]);
   if(piegeArme(p)){const c=actors[selected];if(c&&alive(c)&&!c.horsCarte)entrees.push(['Déclencher sur '+nomNum(c),()=>declenchePiege(p,c)]);
@@ -1020,7 +1027,7 @@ function bullePiege(p,mj){const g=document.createElement('div');g.className='gea
  const n=document.createElement('p');n.className='gear-nom';n.textContent=p.nom||'Piège';g.append(n);
  if(p.desc){const d=document.createElement('p');d.className='objet-desc-bulle';d.textContent=p.desc;g.append(d)}
  if(mj){const t=(nom,x)=>x?nom+' : '+skillNames[x.comp]+' '+x.reussites:'';
-  const l=[p.cache&&!p.revele?t('Caché',p.detection):'',p.declenche?'Déclenché':p.desamorce?'Désamorcé':'',t('Désamorçable',p.desamorcage),t('Évitable',p.evitement),t('Enjambable',p.enjambement),
+  const l=[p.cache&&!p.revele?t('Caché',p.detection):'',p.declenche?'Déclenché':p.desamorce?'Désamorcé':'',p.actif?'Toujours actif':'',t('Désamorçable',p.desamorcage),t('Évitable',p.evitement),t('Enjambable',p.enjambement),
    p.reamorcable?'Réamorçable':'',p.degats>0?p.degats+' dégât'+(p.degats>1?'s':''):'',...(p.etats||[]),...(p.caracs||[]).map(phrasePerte)].filter(Boolean);
   if(l.length){const q=document.createElement('p');q.className='muted objet-cache-bulle';q.textContent=l.join(' · ');g.append(q)}}
  return g}
@@ -1134,6 +1141,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  (m.coffres||[]).forEach(c=>{['revele','deverrouille','desamorce','ouvert','tente'].forEach(k=>delete c[k])});
  // Et ses pièges, armés et cachés comme le MJ les a posés.
  (m.pieges||[]).forEach(p=>{['revele','declenche','desamorce','rate'].forEach(k=>delete p[k])});
+ {const ids=new Set((m.pieges||[]).map(p=>p.id));heros.forEach(a=>{if(Array.isArray(a.franchis)){a.franchis=a.franchis.filter(id=>!ids.has(id));if(!a.franchis.length)delete a.franchis}})}
  m.fog=packMask(new Uint8Array(grille.n),grille.n);delete m.seen;m.fogOff=false;fogSeen=null;fogSeenSrc=null;fogKey='';
  /* L'invisibilité ne se pose plus sur la carte : c'est un état, donné en jeu. Une carte
     tracée avant la v0.82 garde ses invisibles, mais sous forme d'état. */
@@ -1232,7 +1240,7 @@ mapsPage.innerHTML=
  +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
- +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="pinceau">Pinceau de blocage</button>'
+ +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="pinceau">Pinceau de blocage</button><button data-tool="blocagelibre">Blocage libre</button>'
  +'<button data-tool="cut">Découper</button><button data-tool="lasso">Découpe libre</button><button data-tool="gomme">Pinceau de découpe</button>'
  +'<select id="pinceau-taille" aria-label="Grosseur du pinceau" hidden><option value=".3">Pinceau fin</option><option value=".55" selected>Pinceau moyen</option><option value="1">Pinceau large</option></select>'
  +'<span class="bar-sep"></span><button data-tool="obscur">Obscurité</button><button data-tool="obscurlibre">Obscurité libre</button><button data-tool="obscurremplir">Remplir d’obscurité</button><button data-tool="obscurgomme">Gomme d’obscurité</button><span class="bar-sep"></span>'
@@ -1261,7 +1269,7 @@ mapsPage.innerHTML=
  +'<li><i class="sw-cut"></i>Découper — ouverture rectangulaire dans les zones de blocage</li>'+'<li><i class="sw-cut"></i>Découpe libre — contour tracé ou point par point, pour les formes rondes</li>'
  +'<li><i class="sw-door"></i>Porte — close au début du combat, ouverte d’un clic en jeu</li>'+'<li><i class="sw-key"></i>Porte verrouillée — le MJ seul peut l’ouvrir</li>'+'<li><i class="sw-secret"></i>Passage secret — un mur pour la troupe tant qu’il est clos</li>'
  +'<li><i class="sw-start"></i>Zone de départ des aventuriers</li>'
- +'<li><i class="sw-wall"></i>Pinceau de blocage — de la matière peinte à main levée</li>'
+ +'<li><i class="sw-wall"></i>Pinceau de blocage — de la matière peinte à main levée</li>'+'<li><i class="sw-wall"></i>Blocage libre — contour tracé ou point par point, pour les formes rondes</li>'
  +'<li><i class="sw-cut"></i>Pinceau de découpe — la même chose en négatif, il gratte</li>'
  +'<li><i class="sw-obscur"></i>Obscurité — dans le noir, on ne voit que sa zone de contact, ce qui est éclairé, ou jusqu’où porte sa vision dans le noir</li>'
  +'<li><i class="sw-lumiere"></i>Lumière — une torche, une lampe, un feu : elle repousse le noir en rond ; l’objet qu’elle contient se prend, et elle s’éteint</li>'
@@ -1318,7 +1326,7 @@ function ensure(m){m.doors??=[];m.foes??=[];m.ratio??=16/9;
  // Les coffres sont nés en v0.502.
  m.coffres??=[];m.coffres.forEach(c=>{c.id||=crypto.randomUUID();c.items??=[];c.richesses??={};c.etats??=[]});
  // Les pièges sont nés en v0.615, avec leurs déclencheurs.
- m.pieges??=[];m.pieges.forEach(p=>{p.id||=crypto.randomUUID();p.declencheurs??=[];p.declencheurs.forEach(d=>{d.id||=crypto.randomUUID()});p.etats??=[];p.caracs??=[];p.detection??={comp:3,reussites:1};if(p.contact===undefined)p.contact=true});
+ m.pieges??=[];m.pieges.forEach(p=>{p.id||=crypto.randomUUID();p.declencheurs??=[];p.declencheurs.forEach(d=>{d.id||=crypto.randomUUID()});p.etats??=[];p.caracs??=[];p.detection??={comp:3,reussites:1};if(p.contact===undefined)p.contact=true;if(p.actif&&!p.enjambement)p.enjambement={comp:0,reussites:1}});
  m.echelle??={x:8,y:8,t:SOCLE_DEFAUT};
  // Une carte d'avant — rectangles, traits, zones de vision — est fondue en matière exacte.
  matiereDe(m);return m}
@@ -1412,6 +1420,7 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  ligne:'Un clic pose l’origine du trait, un second l’arrête. ⌘ (ou Ctrl) le redresse à l’horizontale, à la verticale ou à quarante-cinq degrés. Maj au second clic pose un point d’appui : le trait s’arrête là et le suivant en repart, de quoi longer une salle entière sans relever la main. Près d’une extrémité déjà posée, le tracé s’y aimante — une pastille verte le dit — et le carré se ferme juste. Échap abandonne.',
  cut:'Trace un rectangle dans la matière : la découpe y creuse exactement ce rectangle, vue et passage rétablis.',
  lasso:'Contourne la forme à creuser : glisse pour tracer à main levée, ou clique point par point. La découpe suit exactement ton tracé. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
+ blocagelibre:'Contourne la forme à bloquer : glisse pour tracer à main levée, ou clique point par point. Le blocage suit exactement ton tracé. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  door:'Trace une porte : elle perce d’elle-même la matière qu’elle recouvre, et le mur se referme si tu la déplaces. Sélectionne-la et tire sa poignée ronde pour la tourner — pour une porte de biais. Maj tourne par crans de quinze degrés. Close à chaque ouverture de la carte, elle s’ouvre d’un clic en partie — sauf si tu la verrouilles, auquel cas le MJ seul la manœuvre.',
  secret:'Trace un passage secret à même le mur — et tourne-le par sa poignée ronde s’il est de biais : tant qu’il est clos, il ne perce rien et la troupe ne voit qu’un mur — toi seul le devines à son trait violet, et toi seul l’ouvres. Ouvert, il devient une porte comme une autre.',
  start:'Trace la zone où les aventuriers seront regroupés à l’ouverture de la carte. Une seule par carte.',
@@ -1455,7 +1464,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  (m.pieges||[]).forEach((r,i)=>c.append(shapeEl('piege',i,r),...declencheursEl(i,r)));
  // L'aperçu du rectangle en cours — bloc ou découpe — tant que la main n'a pas lâché.
  if(cutRect)c.append(shapeEl(cutRect.obscur?'obscur':cutRect.bloc?'bloc':'cut',0,cutRect));
- if(lasso&&lasso.pts.length){const svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','lasso-layer'+(lasso.mode==='obscurlibre'?' obscur':lasso.mode==='obscurgomme'?' obscur-gomme':''));
+ if(lasso&&lasso.pts.length){const svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','lasso-layer'+(lasso.mode==='obscurlibre'?' obscur':lasso.mode==='obscurgomme'?' obscur-gomme':lasso.mode==='blocagelibre'?' bloc':''));
   svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
   const forme=document.createElementNS(nsSVG,lasso.pts.length>2?'polygon':'polyline');
   forme.setAttribute('points',lasso.pts.map(pt=>pt.join(',')).join(' '));svg.append(forme);
@@ -1643,8 +1652,8 @@ let pinceauDernier=null;
 function applyLasso(){const brut=lasso&&lasso.pts,mode=lasso&&lasso.mode;lasso=null;
  if(!brut||brut.length<3){renderCanvas();return}
  pushUndo();const forme=encreDroite([brut])[0];
- // Le même contour fermé, selon l'outil : il creuse la matière, pose l'obscurité, ou l'efface.
- if(mode==='obscurlibre')ajouteObscurite(mapDraft,forme);else if(mode==='obscurgomme')retireObscurite(mapDraft,forme);else retireMatiere(mapDraft,forme);
+ // Le même contour fermé, selon l'outil : il creuse la matière, en pose, pose l'obscurité, ou l'efface.
+ if(mode==='obscurlibre')ajouteObscurite(mapDraft,forme);else if(mode==='obscurgomme')retireObscurite(mapDraft,forme);else if(mode==='blocagelibre')ajouteMatiere(mapDraft,forme);else retireMatiere(mapDraft,forme);
  mapSel=null;matiereChangee()}
 function shapeAt(d){const m=mapDraft;if(!m)return null;if(d.kind==='cut'||d.kind==='bloc')return cutRect;
  if(d.kind==='coupure')return (m.zonesCoupures||[])[d.i];if(d.kind==='lien')return (m.zonesLiens||[])[d.i];
@@ -1832,7 +1841,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(mapTool==='obscurremplir'){pushUndo();const avant=obscuriteDe(mapDraft).length;remplitObscurite(mapDraft,[p.x,p.y]);
   if(obscuriteDe(mapDraft).length===avant&&!dansObscurite(mapDraft,[p.x,p.y]))undoStack.pop();
   mapSel=null;matiereChangee();e.preventDefault();return}
- if(mapTool==='lasso'||mapTool==='obscurlibre'||mapTool==='obscurgomme'){if(!lasso||lasso.mode!==mapTool)lasso={pts:[],mode:mapTool};
+ if(mapTool==='lasso'||mapTool==='blocagelibre'||mapTool==='obscurlibre'||mapTool==='obscurgomme'){if(!lasso||lasso.mode!==mapTool)lasso={pts:[],mode:mapTool};
   // Un clic près du premier point ferme le contour, comme dans un outil de détourage.
   if(lasso.pts.length>2&&Math.hypot(p.x-lasso.pts[0][0],p.y-lasso.pts[0][1])<auZoom(1.6)){applyLasso();return}
   lasso.pts.push([p.x,p.y]);mapSel=null;
@@ -2094,7 +2103,7 @@ function openPiege(i){const m=mapDraft,p=m&&m.pieges&&m.pieges[i];if(!p||view!==
   +'<h2 class="sous-titre">Apparence</h2><div class="edit-grid">'+choix('Affichage','affichage',p.affichage||'jeton',[['jeton','Jeton'],['image','Image seule']])+selLogos('Icône','logo',p.logo||'')+'</div>'
   +'<div class="piege-image"><span class="piege-apercu" id="piege-apercu"></span><button type="button" id="piege-image-importer">Importer une image</button><button type="button" id="piege-image-retirer">Retirer l’image</button><input type="file" id="piege-image-fichier" accept="image/png,image/webp,image/jpeg,image/gif" hidden></div>'
   +'<h2 class="sous-titre">Détection</h2>'+parade('cache','det','Caché',!!p.cache,p.detection,DETECTION_PIEGE,3)
-  +'<h2 class="sous-titre">Déclenchement</h2><div class="coffre-cases">'+coche('contact','Au contact',p.contact!==false)+'</div>'
+  +'<h2 class="sous-titre">Déclenchement</h2><div class="coffre-cases">'+coche('contact','Au contact',p.contact!==false)+coche('actif','Toujours actif',!!p.actif)+'</div>'
   +'<div class="piege-declencheurs" id="piege-declencheurs"></div>'
   +'<h2 class="sous-titre">Parades</h2>'+parade('desamorcable','des','Désamorçable',!!p.desamorcage,p.desamorcage,DESAMORCAGE_PIEGE,5)
   +parade('evitable','evi','Évitable',!!p.evitement,p.evitement,null,0,'<span>· Si réussi :</span><select name="evi_issue" aria-label="Si le test réussit">'+[['esquive','Esquive le piège'],['moitie','Moitié des dégâts, sans état ni perte']].map(([k,x])=>'<option value="'+k+'"'+((p.evitement?p.evitement.issue:'esquive')===k?' selected':'')+'>'+x+'</option>').join('')+'</select>')
@@ -2104,8 +2113,9 @@ function openPiege(i){const m=mapDraft,p=m&&m.pieges&&m.pieges[i];if(!p||view!==
   +'<div class="coffre-etats">'+ETATS_JEU.map(e=>'<label class="field-check"><input type="checkbox" name="etat" value="'+esc(e)+'"'+((p.etats||[]).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'
   +'<div class="piege-pertes" id="piege-pertes"></div>';
  const f=$('piege-form').elements;
- const montre=()=>piegeDialog.querySelectorAll('.piege-si').forEach(b=>{b.hidden=!f[b.dataset.si].checked});
- ['cache','desamorcable','evitable','enjambable'].forEach(k=>{f[k].onchange=montre});montre();
+ // Toujours actif, il ne se franchit qu'en l'enjambant : la case Enjambable va avec.
+ const montre=()=>{if(f.actif.checked)f.enjambable.checked=true;f.enjambable.disabled=f.actif.checked;piegeDialog.querySelectorAll('.piege-si').forEach(b=>{b.hidden=!f[b.dataset.si].checked})};
+ ['cache','desamorcable','evitable','enjambable','actif'].forEach(k=>{f[k].onchange=montre});montre();
  const apercu=()=>{$('piege-apercu').replaceChildren(visuelPiege({image,logo:f.logo.value}));$('piege-image-retirer').hidden=!image};
  f.logo.addEventListener('change',apercu);apercu();
  $('piege-image-importer').onclick=()=>$('piege-image-fichier').click();
@@ -2119,7 +2129,7 @@ function openPiege(i){const m=mapDraft,p=m&&m.pieges&&m.pieges[i];if(!p||view!==
   if(f.cache.checked)p.cache=true;else delete p.cache;p.detection=lisTest('det');p.contact=f.contact.checked;
   if(f.desamorcable.checked)p.desamorcage=lisTest('des');else delete p.desamorcage;
   if(f.evitable.checked)p.evitement={...lisTest('evi'),issue:f.evi_issue.value==='moitie'?'moitie':'esquive'};else delete p.evitement;
-  if(f.enjambable.checked)p.enjambement=lisTest('enj');else delete p.enjambement;
+  if(f.enjambable.checked||f.actif.checked)p.enjambement=lisTest('enj');else delete p.enjambement;if(f.actif.checked)p.actif=true;else delete p.actif;
   if(f.reamorcable.checked)p.reamorcable=true;else delete p.reamorcable;
   p.degats=n(f.degats.value,99);p.etats=[...piegeDialog.querySelectorAll('input[name="etat"]:checked')].map(x=>x.value).filter(x=>ETATS_JEU.includes(x));
   p.caracs=cleanPertes(pertes)};

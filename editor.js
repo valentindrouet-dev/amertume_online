@@ -73,7 +73,7 @@ function migreRessources(c){
 const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
 const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,cle:0,ressource:0,restes:0,treasure:0},
  des:{white:5,bone:8,red:15,blue:20,green:10,black:30,yellow:25},def:20,deuxMains:5,etat:15,restes:25,
- bonus:{pv:10,endu:25,vie:25,def:20,dmg:30,comp:15},ressources:100,rarete:{commun:100,rare:150,mystique:200,epique:300,ressource:100}};
+ bonus:{pv:10,endu:25,vie:25,def:20,dmg:30,comp:15},ressources:100,rarete:{commun:100,inhabituel:125,rare:150,mystique:200,epique:300,ressource:100}};
 const EFFET_PRIX_DEFAUT=25;
 function normaliseGuidePrix(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:{};const D=GUIDE_PRIX_DEFAUT;
  const n=(v,d,max=99999)=>{const x=v===''||v===null||v===undefined?NaN:Math.round(Number(v));return Number.isFinite(x)?Math.max(0,Math.min(max,x)):d};
@@ -385,7 +385,7 @@ function desEtBonus(dice,bonus,toujours,jeton=true,etat=''){const bas=document.c
    vert pour un consommable, bleu-gris pour une armure. */
 const TEINTE_OBJET={melee:'#8a7a5a',ranged:'#6f8a5a',armor:'#6b7a8a',object:'#9c8a55'};
 // La teinte d'une rareté : c'est elle qui colore les carrés et les boutons, plus la famille.
-const TEINTE_RARETE={commun:'#7d7a74',rare:'#4d7fb0',mystique:'#7a5fc0',epique:'#c26a2f'};
+const TEINTE_RARETE={commun:'#7d7a74',inhabituel:'#4f8a52',rare:'#4d7fb0',mystique:'#7a5fc0',epique:'#c26a2f'};
 function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||!alive(a))return [];
  const vus=new Set(),out=[];
  (a.inventaire||[]).forEach(id=>{if(vus.has(id))return;vus.add(id);
@@ -1742,7 +1742,7 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
     const question='Retirer « '+o.name+' » de l’inventaire de '+a.name+' ?';let n=0;
     if(reste>1&&typeof demanderNombre==='function')n=await demanderNombre(question,reste,'Retirer');
     else n=(typeof demander==='function'?await demander(question,'Retirer'):confirm('Retirer « '+o.name+' » ?'))?1:0;
-    if(!n)return;for(let k=0;k<n;k++)retirerInventaire(a,o);log(nomNum(a)+' se défait de '+(n>1?n+' ':'')+o.name+'.',{local:true});
+    if(!n)return;for(let k=0;k<n;k++)retirerInventaire(a,o);
     render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
    x.onpointerdown=ev=>ev.stopPropagation();p.append(x)}
   // Son nom dessous, sur la page des Aventuriers, quand le bouton « Noms » est allumé.
@@ -1781,7 +1781,6 @@ function choisirPourPlace(a,cle,cote,nom){fermerBulle();
   const ok=cle==='main'?equiperDansMain(a,o,cote):equiperPiece(a,o);
   if(!ok&&nouveau)retirerInventaire(a,o);
   placeDialog.close();
-  if(ok)log(nomNum(a)+(nouveau?' reçoit et équipe ':' équipe ')+o.name+'.',{local:true});
   render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
  placeDialog.dessine=()=>{const corps=$('place-corps');corps.replaceChildren();const q=cleTalent($('place-recherche').value);
   const va=(catalog.items||[]).filter(o=>vaA(o,cle,cote)&&(!q||cleTalent(o.name).includes(q))).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
@@ -5070,7 +5069,7 @@ function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!duCoteTroup
  heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));
  // La carte retient ce qu'elle a déjà donné : le MJ le lit à côté de son nom.
  const carte=typeof currentMap==='function'?currentMap():null;if(carte)carte.xpAccordee=(Math.max(0,Math.trunc(Number(carte.xpAccordee))||0))+xp;
- log('+'+xp+' XP pour '+heros.map(h=>h.name).join(', ')+' ('+listeNombree(vaincus.map(f=>f.name))+').');
+ log('Le groupe gagne '+xp+' XP ('+listeNombree(vaincus.map(f=>f.name))+').');
  document.dispatchEvent(new Event('amertume-content-changed'))}
 /* Le butin d'un adversaire retiré de la scène, comme son XP : chaque exemplaire qu'il possède
    tombe selon sa chance et va dans l'inventaire de l'aventurier le plus proche de son jeton, un

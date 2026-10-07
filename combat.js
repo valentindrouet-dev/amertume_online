@@ -446,7 +446,8 @@ function cleanPiege(p){const r=cleanRect(p);if(!r)return null;const n=(v,max)=>M
   detection:cleanTestPiege(p.detection,DETECTION_PIEGE,3),
   ...(p.desamorcage?{desamorcage:cleanTestPiege(p.desamorcage,DESAMORCAGE_PIEGE,5)}:{}),
   ...(p.evitement?{evitement:{...cleanTestPiege(p.evitement,null,0),issue:p.evitement.issue==='moitie'?'moitie':'esquive'}}:{}),
-  ...(p.enjambement?{enjambement:cleanTestPiege(p.enjambement,null,0)}:{}),
+  // Toujours actif, il ne se grise pas en partant : on ne le franchit qu'en l'enjambant.
+  ...(p.enjambement||p.actif===true?{enjambement:cleanTestPiege(p.enjambement,null,0)}:{}),...(p.actif===true?{actif:true}:{}),
   degats:n(p.degats,99),etats:(Array.isArray(p.etats)?p.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,8),caracs:cleanPertes(p.caracs),
   ...(p.reamorcable===true?{reamorcable:true}:{})}}
 // Ce que les pièges ont ôté à un combattant, ligne par ligne : la fiche les retranche de ses bonus.
@@ -2184,7 +2185,7 @@ function bonusTalents(portes){const out=bonusVide();
 /* ---------- Les raretés et les bonus d'équipement ----------
    Une pièce a une rareté — commune, rare, mystique, épique — qui la teinte, et peut
    conférer des bonus, une ligne chacun, qui jouent tant qu'elle est portée et se cumulent. */
-const RARETES=[['commun','Commun'],['rare','Rare'],['mystique','Mystique'],['epique','Épique']];
+const RARETES=[['commun','Commun'],['inhabituel','Inhabituel'],['rare','Rare'],['mystique','Mystique'],['epique','Épique']];
 // Une ressource a sa rareté à elle, « Ressource », qu'on ne choisit pas.
 function rareteDe(o){if(o&&o.category==='ressource')return 'ressource';const r=o&&o.rarete;return RARETES.some(([k])=>k===r)?r:'commun'}
 const NOM_RARETE=r=>r==='ressource'?'Ressource':(RARETES.find(([k])=>k===r)||RARETES[0])[1];

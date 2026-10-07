@@ -165,7 +165,8 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 #map-tools [data-tool=obscur],#map-tools [data-tool=obscurlibre],#map-tools [data-tool=obscurremplir],#map-tools [data-tool=obscurgomme]{border-color:#4a5560;color:var(--ink)}
 #map-tools [data-tool=obscur].on,#map-tools [data-tool=obscurlibre].on,#map-tools [data-tool=obscurremplir].on,#map-tools [data-tool=obscurgomme].on{background:#2a3139;border-color:#2a3139;color:#fff}
 .shape.obscur{background:#05070a66;border:2px dashed #5b6670;pointer-events:none}.shape.obscur .grip{display:none!important}
-.lasso-layer.obscur polygon,.lasso-layer.obscur polyline{stroke:#5b6670;fill:#05070a55}.lasso-layer.obscur-gomme polygon,.lasso-layer.obscur-gomme polyline{stroke:#c9a86a;fill:#c9a86a33}
+.lasso-layer.obscur polygon,.lasso-layer.obscur polyline{stroke:#5b6670;fill:#05070a55}
+.lasso-layer.bloc polygon,.lasso-layer.bloc polyline{stroke:#6c7d85;fill:#0b111466}.lasso-layer.obscur-gomme polygon,.lasso-layer.obscur-gomme polyline{stroke:#c9a86a;fill:#c9a86a33}
 .sw-door{background:#c98a4b;border:1px solid #e8b878}
 .sw-door-open{background:#c98a4b2e;border:1px dashed #e8b878}.sw-ligne{background:#0b1114;height:4px;align-self:center}
 /* Les traits de blocage : la même encre que les zones, en polygones puisqu'ils penchent. */
@@ -1255,18 +1256,19 @@ button.dom-construire:hover:not(:disabled){background:#fff}button.dom-construire
 /* Un carré, une pastille, une description se teintent de leur rareté, plus de leur famille :
    commun gris, rare bleu, mystique violet, épique orange. */
 .cat-pill.r-commun{background:#dedad3;border-color:#00000026}
+.cat-pill.r-inhabituel{background:#d9e7cd;border-color:#4f8a5255}
 .cat-pill.r-rare{background:#cfe0f5;border-color:#4d7fb055}
 .cat-pill.r-mystique{background:#e3d6f2;border-color:#7a5fc055}
 .cat-pill.r-epique{background:#f5dcc0;border-color:#c26a2f55}
 /* Une ressource : sa rareté à elle, d'un brun très clair. */
 .cat-pill.r-ressource{background:#efe2cc;border-color:#9a744855}.cat-pill.gear-carre.r-ressource{box-shadow:0 0 0 1px #b8946455 inset}
-.cat-pill.gear-carre.r-rare{box-shadow:0 0 0 1px #4d7fb0 inset}.cat-pill.gear-carre.r-mystique{box-shadow:0 0 0 1px #7a5fc0 inset}.cat-pill.gear-carre.r-epique{box-shadow:0 0 0 1px #c26a2f inset}
-.cat-pill.gear-carre.porte.r-rare,.cat-pill.gear-carre.porte.r-mystique,.cat-pill.gear-carre.porte.r-epique{box-shadow:0 0 0 1px var(--green) inset}
-.gear-detail.r-commun{background:#e2ded7;border-left-color:#7d7a74}.gear-detail.r-rare{background:#d9e6f5;border-left-color:#4d7fb0}
+.cat-pill.gear-carre.r-inhabituel{box-shadow:0 0 0 1px #4f8a52 inset}.cat-pill.gear-carre.r-rare{box-shadow:0 0 0 1px #4d7fb0 inset}.cat-pill.gear-carre.r-mystique{box-shadow:0 0 0 1px #7a5fc0 inset}.cat-pill.gear-carre.r-epique{box-shadow:0 0 0 1px #c26a2f inset}
+.cat-pill.gear-carre.porte.r-inhabituel,.cat-pill.gear-carre.porte.r-rare,.cat-pill.gear-carre.porte.r-mystique,.cat-pill.gear-carre.porte.r-epique{box-shadow:0 0 0 1px var(--green) inset}
+.gear-detail.r-commun{background:#e2ded7;border-left-color:#7d7a74}.gear-detail.r-inhabituel{background:#d9e7cd;border-left-color:#4f8a52}.gear-detail.r-rare{background:#d9e6f5;border-left-color:#4d7fb0}
 .gear-detail.r-mystique{background:#e6dcf2;border-left-color:#7a5fc0}.gear-detail.r-epique{background:#f5e0cc;border-left-color:#c26a2f}.gear-detail.r-ressource{background:#f1e6d4;border-left-color:#9a7448}
-.bulle:has(.r-commun){--bulle-bord:#e2ded7}.bulle:has(.r-rare){--bulle-bord:#d9e6f5}.bulle:has(.r-mystique){--bulle-bord:#e6dcf2}.bulle:has(.r-epique){--bulle-bord:#f5e0cc}.bulle:has(.r-ressource){--bulle-bord:#f1e6d4}
+.bulle:has(.r-commun){--bulle-bord:#e2ded7}.bulle:has(.r-inhabituel){--bulle-bord:#d9e7cd}.bulle:has(.r-rare){--bulle-bord:#d9e6f5}.bulle:has(.r-mystique){--bulle-bord:#e6dcf2}.bulle:has(.r-epique){--bulle-bord:#f5e0cc}.bulle:has(.r-ressource){--bulle-bord:#f1e6d4}
 .gear-detail .gear-rarete{font:600 11px system-ui;letter-spacing:2px;text-transform:uppercase}
-.gear-detail .gear-rarete.r-rare{color:#4d7fb0}.gear-detail .gear-rarete.r-mystique{color:#7a5fc0}.gear-detail .gear-rarete.r-epique{color:#c26a2f}.gear-detail .gear-rarete.r-ressource{color:#8a6536}
+.gear-detail .gear-rarete.r-inhabituel{color:#4f8a52}.gear-detail .gear-rarete.r-rare{color:#4d7fb0}.gear-detail .gear-rarete.r-mystique{color:#7a5fc0}.gear-detail .gear-rarete.r-epique{color:#c26a2f}.gear-detail .gear-rarete.r-ressource{color:#8a6536}
 .gear-detail .gear-bonus{font-weight:700;color:#2f6d3a}
 /* Dans la bulle d'un objet, la compétence s'écrit en Killam, comme son nom sur la fiche. */
 .gear-detail .gear-bonus .bonus-comp{font-family:'Killam',Georgia,serif}
@@ -1416,10 +1418,10 @@ body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-
 .j-objet .logo-equip,.j-objet .glyphe{display:inline-block;width:18px;height:18px;margin:0;vertical-align:-4px;font-size:13px;line-height:18px;text-align:center}
 .j-objet .j-objet-n{margin-left:2px;font:700 10px system-ui;color:#2a2118}
 .piece-or{display:inline-block;vertical-align:-2px}.gear-valeur b{color:#a0761a}
-.j-objet.r-rare{background:#d9e6f5}.j-objet.r-mystique{background:#e6dcf2}.j-objet.r-epique{background:#f5e0cc}.j-objet.r-ressource{background:#efe2cc}
+.j-objet.r-inhabituel{background:#d9e7cd}.j-objet.r-rare{background:#d9e6f5}.j-objet.r-mystique{background:#e6dcf2}.j-objet.r-epique{background:#f5e0cc}.j-objet.r-ressource{background:#efe2cc}
 .inv-mini{position:relative;flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:6px;background:#e2ded7;border:1px solid #00000024}
 .inv-mini .logo-equip{width:20px;height:20px;margin:0}.inv-mini .glyphe{font-size:13px;line-height:1}
-.inv-mini.r-rare{background:#d9e6f5}.inv-mini.r-mystique{background:#e6dcf2}.inv-mini.r-epique{background:#f5e0cc}.inv-mini.r-ressource{background:#efe2cc}
+.inv-mini.r-inhabituel{background:#d9e7cd}.inv-mini.r-rare{background:#d9e6f5}.inv-mini.r-mystique{background:#e6dcf2}.inv-mini.r-epique{background:#f5e0cc}.inv-mini.r-ressource{background:#efe2cc}
 .inv-mini-n{position:absolute;right:-4px;bottom:-5px;padding:0 2px;border-radius:5px;background:var(--panel);font:700 9px/1.2 system-ui;color:var(--ink);box-shadow:0 0 0 1px #00000022}
 .cat-pill.gear-carre.talent-carre.mini{width:28px;height:28px;border-width:2px;cursor:default}
 .cat-pill.gear-carre.talent-carre.mini .logo-equip{width:19px;height:19px}
@@ -1718,7 +1720,7 @@ body.page-icones .intro,body.page-icones .mj-tools,body.page-icones main.layout,
 .masse-nom .ico{padding:1px 6px;font-size:12px}
 .masse-table td.masse-sans{color:var(--muted);text-align:center}
 /* Toute la ligne à la couleur pastel de sa rareté, celle des bulles. */
-.masse-table tbody tr.r-commun{background:#e2ded7}.masse-table tbody tr.r-rare{background:#d9e6f5}
+.masse-table tbody tr.r-commun{background:#e2ded7}.masse-table tbody tr.r-inhabituel{background:#d9e7cd}.masse-table tbody tr.r-rare{background:#d9e6f5}
 .masse-table tbody tr.r-mystique{background:#e6dcf2}.masse-table tbody tr.r-epique{background:#f5e0cc}.masse-table tbody tr.r-ressource{background:#f1e6d4}
 .masse-table tbody tr:hover{filter:brightness(1.03)}.masse-table tbody tr.neuve{outline:2px solid var(--accent);outline-offset:-2px}
 .masse-table tbody th,.masse-table tbody td{color:#2a2118}
@@ -1798,6 +1800,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* Un objet de la carte qui contient une pièce prend le fond du carré de cette pièce : la couleur de sa rareté. */
 .token.objet.piece,.shape.objet.piece{color:#2a2118}
 .token.objet.r-commun,.shape.objet.r-commun{background:#dedad3}
+.token.objet.r-inhabituel,.shape.objet.r-inhabituel{background:#d9e7cd}
 .token.objet.r-rare,.shape.objet.r-rare{background:#cfe0f5}
 .token.objet.r-mystique,.shape.objet.r-mystique{background:#e3d6f2}
 .token.objet.r-epique,.shape.objet.r-epique{background:#f5dcc0}
@@ -2217,7 +2220,8 @@ body.sombre .biblio-var{color:#9fd0ec;border-color:#3f7394;background-color:#1b3
 @media (max-width:620px){.conversion-grille{grid-template-columns:1fr}}
 /* Au journal, les dés d'un test de compétence : 4+ en vert, en dessous en rouge. */
 .j-test .j-face{font-weight:800}.j-test .j-face.ok{color:#2e8b3e}.j-test .j-face.ko{color:#b8402d}
-body.sombre .j-test .j-face.ok{color:#7fd38c}body.sombre .j-test .j-face.ko{color:#f0866e}
+body.sombre .j-test .j-face.ok{color:#7fd38c}body.sombre .j-test .j-face.ko{color:#f0866e}.j-test .j-face.six{color:#3577b8}body.sombre .j-test .j-face.six{color:#8cc0f0}
+body.sombre .j-num.j-perte{color:#f0866e}body.sombre .j-num.j-tresor{color:#e0c060}body.sombre .j-num.j-pv{color:#8ac96e}body.sombre .j-num.j-ok{color:#7fd38c}body.sombre .j-num.j-ko{color:#f0866e}
 /* Une case vide, laissée par un talent retiré : un rond en pointillés à la place du sien, où ses
    lignes et ses petits ronds tiennent toujours. */
 .arbre-plan>.arbre-noeud.vide .arbre-rond{background:var(--panel-2);border:2px dashed var(--line-strong);box-shadow:none;filter:none;opacity:1;color:var(--muted);font:600 24px/1 system-ui;display:grid;place-items:center}
@@ -2254,7 +2258,7 @@ button.btn-action.debut-combat{animation:debut-rayonne 1.1s ease-in-out infinite
 .hero-card .talent-ameliorations .cat-pill.bonus-rond .bonus-valeur{left:70%;top:70%;font-size:14px;-webkit-text-stroke-width:2.8px}
 .hero-card .talent-ameliorations .cat-pill.bonus-rond .bonus-valeur::before{font-size:9.5px;-webkit-text-stroke-width:1.9px}
 /* La pastille d'un bonus d'équipement prend la couleur de la rareté de la pièce. */
-.gear-detail.r-commun{--rarete:#7d7a74}.gear-detail.r-rare{--rarete:#4d7fb0}.gear-detail.r-mystique{--rarete:#7a5fc0}.gear-detail.r-epique{--rarete:#c26a2f}.gear-detail.r-ressource{--rarete:#9a7448}
+.gear-detail.r-commun{--rarete:#7d7a74}.gear-detail.r-inhabituel{--rarete:#4f8a52}.gear-detail.r-rare{--rarete:#4d7fb0}.gear-detail.r-mystique{--rarete:#7a5fc0}.gear-detail.r-epique{--rarete:#c26a2f}.gear-detail.r-ressource{--rarete:#9a7448}
 .gear-detail .gear-bonus::before{background:var(--rarete,#7d7a74);box-shadow:0 0 0 1px color-mix(in srgb,var(--rarete,#7d7a74) 60%,#000)}
 /* Une bulle de talent grisée grise aussi ses pastilles. */
 .talent-detail.grisee{--pastille:#8f8a80!important}
