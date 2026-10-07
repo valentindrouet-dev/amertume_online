@@ -215,6 +215,26 @@ let nuitFondue={cle:'',cv:null},nuitPercee={cle:'',cv:null},nuitGrise={cle:'',cv
 function toileCache(o,W,H){if(!o.cv)o.cv=document.createElement('canvas');if(o.cv.width!==W||o.cv.height!==H){o.cv.width=W;o.cv.height=H;o.cle=''}return o.cv}
 // La force d'une lumière, du cœur au bord, en arrêts de dégradé : pleine, un peu moins, puis le noir sur le dernier demi-mètre.
 function lumiereDegrade(r,demi){if(!(r>demi))return [[0,1],[.5,.55],[1,0]];const b=(r-demi)/r,q=(r-demi/2)/r;return [[0,1],[b*.5,.88],[b,.66],[q,.3],[1,0]]}
+/* Le flou des toiles. Safari n'applique pas le filtre de canevas (ctx.filter) : le noir et la mémoire du brouillard y
+   restaient en marches d'escalier. On le vérifie une fois ; sans lui, on floute à la main l'opacité de l'image, en trois
+   passes de boîte (presque un flou gaussien), sur une copie réduite quand le flou est large, puis on l'étire lissée. */
+let filtreCanevas=null;
+function filtreDisponible(){if(filtreCanevas===null){try{const c=document.createElement('canvas');c.width=c.height=9;const x=c.getContext('2d');
+ x.filter='blur(2px)';x.fillRect(4,4,1,1);filtreCanevas=x.getImageData(1,4,1,1).data[3]>0}catch(e){filtreCanevas=false}}return filtreCanevas}
+function boiteFlou(a,w,h,r){const t=new Float32Array(a.length),n=2*r+1;
+ for(let y=0;y<h;y++){const o=y*w;let s=0;for(let k=-r;k<=r;k++)s+=a[o+Math.min(w-1,Math.max(0,k))];
+  for(let x=0;x<w;x++){t[o+x]=s/n;s+=a[o+Math.min(w-1,x+r+1)]-a[o+Math.max(0,x-r)]}}
+ for(let x=0;x<w;x++){let s=0;for(let k=-r;k<=r;k++)s+=t[Math.min(h-1,Math.max(0,k))*w+x];
+  for(let y=0;y<h;y++){a[y*w+x]=s/n;s+=t[Math.min(h-1,y+r+1)*w+x]-t[Math.max(0,y-r)*w+x]}}}
+// Dessine « src » flouté de « flou » pixels, comme blur(), dans (dx,dy,dw,dh) ; « teinte » : la couleur de ce qui reste.
+function dessineFloute(ctx,src,dx,dy,dw,dh,flou,teinte){
+ if(filtreDisponible()){ctx.filter='blur('+flou.toFixed(2)+'px)';ctx.drawImage(src,dx,dy,dw,dh);ctx.filter='none';return}
+ const d=Math.max(1,flou/3),w=Math.max(1,Math.round(dw/d)),h=Math.max(1,Math.round(dh/d)),s=flou/d;
+ const c=document.createElement('canvas');c.width=w;c.height=h;const cx=c.getContext('2d');cx.imageSmoothingEnabled=true;cx.imageSmoothingQuality='high';cx.drawImage(src,0,0,w,h);
+ const im=cx.getImageData(0,0,w,h),px=im.data,a=new Float32Array(w*h);for(let i=0;i<w*h;i++)a[i]=px[i*4+3];
+ const r=Math.max(1,Math.round((Math.sqrt(1+4*s*s)-1)/2));boiteFlou(a,w,h,r);boiteFlou(a,w,h,r);boiteFlou(a,w,h,r);
+ for(let i=0;i<w*h;i++){const o=i*4;px[o]=teinte[0];px[o+1]=teinte[1];px[o+2]=teinte[2];px[o+3]=a[i]}
+ cx.putImageData(im,0,0);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(c,dx,dy,dw,dh)}
 function calqueNuit(W,H){const m=currentMap(),size=mapSize();if(!m||!size.width)return null;const k=W/size.width;
  const c1=m.id+'|'+W+'x'+H+'|'+obscuriteKey(m)+'|'+geometryKey(m),f=toileCache(nuitFondue,W,H);
  if(nuitFondue.cle!==c1){nuitFondue.cle=c1;
@@ -229,7 +249,7 @@ function calqueNuit(W,H){const m=currentMap(),size=mapSize();if(!m||!size.width)
   const flou=Math.max(.5,tokenPx()*.2*k),e=Math.ceil(flou*3)+1,large=document.createElement('canvas');large.width=W+2*e;large.height=H+2*e;const lc=large.getContext('2d');
   lc.drawImage(net,e,e);lc.drawImage(net,0,0,1,H,0,e,e,H);lc.drawImage(net,W-1,0,1,H,W+e,e,e,H);lc.drawImage(net,0,0,W,1,e,0,W,e);lc.drawImage(net,0,H-1,W,1,e,H+e,W,e);
   lc.drawImage(net,0,0,1,1,0,0,e,e);lc.drawImage(net,W-1,0,1,1,W+e,0,e,e);lc.drawImage(net,0,H-1,1,1,0,H+e,e,e);lc.drawImage(net,W-1,H-1,1,1,W+e,H+e,e,e);
-  const fc=f.getContext('2d');fc.clearRect(0,0,W,H);fc.filter='blur('+flou.toFixed(2)+'px)';fc.drawImage(large,-e,-e);fc.filter='none'}
+  const fc=f.getContext('2d');fc.clearRect(0,0,W,H);dessineFloute(fc,large,-e,-e,large.width,large.height,flou,[6,9,11])}
  const sources=sourcesLumiere(),c2=c1+'|'+sources.map(l=>l.x.toFixed(2)+','+l.y.toFixed(2)+','+Math.round(l.rayon)).join(';')+'|'+geometryKey(m),p=toileCache(nuitPercee,W,H);
  if(nuitPercee.cle!==c2){nuitPercee.cle=c2;const pc=p.getContext('2d'),formes=activeObstacles(),demi=tokenPx()*.5;
   pc.globalCompositeOperation='source-over';pc.clearRect(0,0,W,H);pc.drawImage(f,0,0);pc.globalCompositeOperation='destination-out';
@@ -478,8 +498,7 @@ function renderFog(){const cv=$('fog'),m=currentMap(),d=fogDim;
     tracé au trait, et ne doit rien à ce lissage. */
  if(mem){ctx.globalAlpha=1-memoire/inconnu;
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-  const flou=Math.max(1,W/d.w*.7);ctx.filter='blur('+flou.toFixed(2)+'px)';
-  ctx.drawImage(mem,0,0,W,H);ctx.filter='none'}
+  dessineFloute(ctx,mem,0,0,W,H,Math.max(1,W/d.w*.7),[0,0,0])}
  ctx.globalAlpha=1;ctx.fillStyle='#000';
  const trace=(c,poly)=>{c.beginPath();c.moveTo(poly[0][0]/100*W,poly[0][1]/100*H);
   for(let i=1;i<poly.length;i++)c.lineTo(poly[i][0]/100*W,poly[i][1]/100*H);c.closePath()};
@@ -786,7 +805,7 @@ const aLaCle=(a,id)=>!!a&&!!id&&(a.inventaire||[]).includes(id);
 const nomCle=id=>((catalog.items||[]).find(o=>o&&o.id===id)||{}).name||'la clé';
 /* En combat, ouvrir un coffre ou tenter un test coûte l'Action ; sans elle, rien ne se fait. */
 function payeAction(a){if(!enCombat()||!a)return true;
- if(pointsRestants(a,'action')<=0){floatNumber(a,'Action déjà dépensée','nul');log(nomNum(a)+' a déjà dépensé son Action ce tour.',{local:true});return false}
+ if(pointsRestants(a,'action')<=0){floatNumber(a,'Action déjà dépensée','nul',true);log(nomNum(a)+' a déjà dépensé son Action ce tour.',{local:true});return false}
  depensePoint(a,'action');return true}
 // Au contact : le coffre touche la zone de contact de l'aventurier.
 function coffreAPortee(a,c){const size=mapSize();return !!a&&!!size.width&&polyInReach(a,polyCoffre(c),size,tokenOf(a))}
@@ -955,7 +974,7 @@ function renderPortes(){const portes=$('map-doors'),m=currentMap();portes.replac
       la porte ne bouge pas. En exploration, c'est gratuit. */
    const qui=typeof enCombat==='function'&&enCombat()?porteurDePorte(d):null;
    if(qui){if(pointsRestants(qui,'mouvement')<=0){log(nomNum(qui)+' n’a plus de point de Mouvement pour manœuvrer cette porte.',{local:true});
-     if(typeof floatNumber==='function')floatNumber(qui,'Plus de Mouvement','nul');return}
+     if(typeof floatNumber==='function')floatNumber(qui,'Plus de Mouvement','nul',true);return}
     depensePoint(qui,'mouvement')}
    d.open=!d.open;
    render();scheduleSave()};
@@ -1050,7 +1069,9 @@ function showPage(p,retenir=true){if(!ongletsJoueurs().includes(p)&&view!=='mj')
   // La carte du domaine, si c'est elle qu'on éditait, se rouvre à sa place.
   if(typeof domaineEdite!=='undefined'&&domaineEdite){renderMapList();renderDomaineEditeur()}
   else{measureRatio(mapDraft,renderCanvas);renderMapList();renderCanvas()}}
- else if(p==='table')render();
+ else if(p==='table'){render();
+  // Une approche demandée pendant que la carte était masquée — une nouvelle carte, chez un joueur — se fait au retour.
+  if(typeof approcheEnAttente!=='undefined'&&approcheEnAttente){const a=actors.find(x=>x.id===approcheEnAttente);approcheEnAttente=null;if(a)approcherToken(a)}}
  else if(p==='domaine')renderDomaine();
  else if(p==='heroes')renderHeroes();
  else if(p==='talents')renderTalents();

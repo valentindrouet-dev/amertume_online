@@ -1038,7 +1038,7 @@ assert.ok(page.includes("(typeof spectateur==='function'&&spectateur())?[]:actor
 assert.ok(vivant.includes("if(meta&&meta.local)return;"),'les lignes propres à l’appareil restent chez elles');
 /* La table : la référence se prend avant le rendu, les positions partent par salves, les
    socles reçus glissent, et deux doigts mènent la carte. */
-assert.ok(vivant.indexOf("base=etatVivant();")<vivant.indexOf("aRepousser.forEach(([id,k])")&&vivant.indexOf("aRepousser.forEach(([id,k])")<vivant.indexOf("  if(change)render();\n }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()")
+assert.ok(vivant.indexOf("base=etatVivant();")<vivant.indexOf("aRepousser.forEach(([id,k])")&&vivant.indexOf("aRepousser.forEach(([id,k])")<vivant.indexOf("  if(change)render();\n")&&vivant.indexOf("  if(change)render();\n")<vivant.indexOf(" }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()")
  ,'la référence précède le rendu');
 assert.ok(vivant.includes('function pousserBientot')&&page.includes("if(typeof pousserBientot==='function')pousserBientot()"),'le glissement part par salves');
 assert.ok(vivant.includes("appliquerSalle(dernierDoc,true)")&&vivant.includes("seulementPositions(docPrecedent,d)"),'les positions seules glissent sans rendu');
@@ -1167,7 +1167,7 @@ assert.ok(feuille.includes('.talent-rangee.t-ame .cat-pill.gear-carre.talent-car
 {const champs=JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"'));
  assert.ok(champs.includes('cibles')&&!champs.includes('target')&&!champs.includes('targets'),'les cibles partent en identifiants');
  assert.ok(vivant.includes('function ciblesIds(')&&vivant.includes('function indicesDesCibles(')&&vivant.includes('e.cibles=ciblesIds(a);')
-  &&vivant.includes("const local=k==='cibles'?ciblesIds(a):a[k];")&&vivant.includes("if(k==='cibles'){cibles.push([a,e[k]]);return}")
+  &&vivant.includes("const local=k==='cibles'?ciblesIds(a):k==='x'||k==='y'?positionVraie(a)[k]:a[k];")&&vivant.includes("if(k==='cibles'){cibles.push([a,e[k]]);return}")
   &&vivant.includes('cibles.forEach(([a,ids])=>{if(typeof poseCibles===\'function\')poseCibles(a,indicesDesCibles(ids))});'),'les cibles se retraduisent à l’arrivée, une fois la scène en place');
  assert.ok(page.includes("if(cachePour(o,j)&&(view!=='mj'||duCoteTroupe(a)))return false;")&&page.includes('function reach(){const a=actors[selected],j=a?ciblesDe(a)[0]:undefined;'),'un aventurier ne vise pas un adversaire caché');
  const orbeSrc=page.slice(page.indexOf('function orbe('),page.indexOf('function cibleAlliee('));
@@ -2423,7 +2423,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const x={x:20,y:50,credit:0},rx=ctxR.regleMouvement(x);assert.equal(rx.fini+'/'+rx.neuf,'false/false');pas(x,rx,[[25,50]]);assert.equal(ctxR.soldeRegleMouvement(x,rx),0);assert.equal(x.mvtReste,undefined);
  x.x=40;assert.equal(ctxR.appliqueRegleMouvement(x,rx),false,'mais pas au-delà de sa distance');
  ctxR.combat=true;vm.runInContext('mouvementLimiteExplo=false',ctxR);assert.ok(ctxR.mouvementBorne({hero:false})&&ctxR.mouvementBorne({hero:true}),'en combat, pour tous');
- assert.ok(page.includes("const bloque=!!regle&&regle.fini;")&&page.includes("if(regle&&regle.fini){floatNumber(a,'Plus de Mouvement','nul');return}")
+ assert.ok(page.includes("const bloque=!!regle&&regle.fini;")&&page.includes("if(regle&&regle.fini){floatNumber(a,'Plus de Mouvement','nul',true);return}")
   &&page.includes("function actionPrise(a){return !!a&&pointsRestants(a,'action')<=0}")&&!page.includes('arriveeAuContact'),'le socle verrouillé sans Mouvement ni Action ; le MJ tenu par l’Action');}
 /* v0.267 — Sans point de Mouvement, le socle bouge encore dans sa zone (et y subit l'opportunité) ;
    les jauges de PV ont leur couche, au-dessus de tous les socles. */
@@ -2433,7 +2433,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&page.includes("#pv-layer{position:absolute;inset:0;z-index:3;pointer-events:none}")&&page.includes("#pv-layer .pv.enemy i{background:")&&!page.includes('.token .pv{'),'les jauges au-dessus de tous les socles, et qui suivent');
  /* v0.335 — Sans point de Mouvement, le socle est verrouillé : il ne bouge pas, le dit, et
     n'offre aucune occasion puisqu'il ne s'est pas déplacé. */
- assert.ok(page.includes("if(drag.bloque){drag.moved=true;if(!drag.dit){drag.dit=true;floatNumber(a,'Plus de Mouvement','nul')}return}")
+ assert.ok(page.includes("if(drag.bloque){drag.moved=true;if(!drag.dit){drag.dit=true;floatNumber(a,'Plus de Mouvement','nul',true)}return}")
   &&page.includes("  if(bloque){if(moved)skipClick=true;return}"),'sans point, le socle est verrouillé');
 }
 /* v0.268, puis v0.471 — Les chemins de l'arbre vont jusqu'au bord des boutons, dessous, en pointillés tant qu'ils ne sont pas
@@ -3387,6 +3387,27 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.608 — La table en ligne, vue des joueurs. Une carte neuve approche chaque joueur de son aventurier ; la vue ne bouge pas
+   quand la carte est masquée ; un bouton Centrer. Les mots flottants voyagent avec le journal, sauf les refus, et un socle
+   caché ne parle pas chez un joueur. Les socles reçus glissent, position vraie gardée pour l'envoi. Sans filtre de canevas
+   (Safari), le noir et le brouillard se floutent à la main. Un joueur assis ne voit que son aventurier ; la sauvegarde
+   globale est au MJ. */
+{const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8'),src=fs.readFileSync('editor.js','utf8');
+ assert.ok(page.includes("function applyMapZoom(){const m=$('map'),w=m.clientWidth,h=m.clientHeight;if(!w||!h)return;")
+  &&page.includes("function centrerSurSelection(){")&&page.includes('<button id="zoom-centre" title="Centrer sur le token sélectionné"')
+  &&page.includes("if(!w||!h){approcheEnAttente=a.id;return}")&&carto.includes("  if(typeof approcheEnAttente!=='undefined'&&approcheEnAttente){"),'la vue de la carte : gardée, centrée, approchée au retour');
+ assert.ok(vif.includes("if(carteNeuve&&typeof approcherToken==='function'){const moi=actors.find(x=>x.id===monSiege);if(moi)setTimeout(()=>approcherToken(moi),0)}"),'une carte neuve approche le joueur de son aventurier');
+ assert.ok(vif.includes("floatNumber=function(cible,texte,genre,seul){floatNumberLocal(cible,texte,genre);")&&vif.includes("  else if(rec.effet==='flottant')flottantRecu(rec);")
+  &&vif.includes("if(!el||el.hidden||['unseen','veiled','hors-carte','cachemj'].some(c=>el.classList.contains(c)))return}")
+  &&page.includes("floatNumber(a,'Plus de Mouvement','nul',true)")&&carto.includes("floatNumber(a,'Action déjà dépensée','nul',true)"),'les mots flottants partagés, les refus gardés');
+ assert.ok(vif.includes("const GLISSE_RETARD=220,glissements=new Map();")&&vif.includes("  if(glissements.has(a.id)){const v=glissements.get(a.id).cible;e.x=v.x;e.y=v.y}")
+  &&vif.indexOf("aGlisser.forEach(a=>{const e=d.actors[a.id];glisseVers(a,e.x,e.y)});")<vif.indexOf("  base=etatVivant();\n  const change=complet"),'les socles reçus glissent, la vraie position repart');
+ assert.ok(src.includes("const troupe=actors.filter(a=>a.hero&&(!assis||a.id===siege));")&&src.includes(" $('bloc-sauvegarde-globale').hidden=view!=='mj';"),'un joueur assis : son aventurier seul, pas de sauvegarde globale');
+ // Le flou à la main : une marche devient une pente, et l'encre ne se perd pas.
+ const ctxF={};vm.createContext(ctxF);vm.runInContext(carto.slice(carto.indexOf('function boiteFlou('),carto.indexOf('// Dessine « src » flouté')),ctxF);
+ const w=40,h=3,a=new Float32Array(w*h);for(let y=0;y<h;y++)for(let x=20;x<w;x++)a[y*w+x]=255;const total=a.reduce((s,v)=>s+v,0);
+ ctxF.boiteFlou(a,w,h,2);ctxF.boiteFlou(a,w,h,2);ctxF.boiteFlou(a,w,h,2);const ligne=[...a.slice(w,2*w)];
+ assert.ok(ligne.filter(v=>v>5&&v<250).length>=6&&ligne.every((v,i)=>!i||v>=ligne[i-1]-1e-3),'une pente régulière');assert.ok(Math.abs(a.reduce((s,v)=>s+v,0)-total)/total<.02,'l’encre se garde');}
 /* v0.607 — À droite des bottes, dans le schéma d'équipement de l'aventurier, sa distance de mouvement, objets compris. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("if(cle==='bottes'&&a.hero){const m=document.createElement('span');m.className='mouvement-corps';")
@@ -3549,7 +3570,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(carto.includes("function renderNuit(){const cv=toileNuit(),m=currentMap(),size=mapSize();")
   &&carto.includes("   if(Number.isFinite(r)){const poly=reachPolygon(o,formes,r,size.width,size.height,72);if(poly.length<3)return;")
   &&feuille.includes("#nuit{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}")
-  &&vivant.includes("if(typeof renderNuit==='function'){renderHalos();renderNuit()}}"),'le noir sur sa toile, qui suit le glissement');
+  &&vivant.includes(" if(typeof renderNuit==='function'){renderHalos();renderNuit()}\n if(glissements.size)glisseImage=requestAnimationFrame(glisseUneImage);"),'le noir sur sa toile, qui suit le glissement');
  assert.ok(page.includes(" const rev=$('reveal');rev.hidden=!a||!a.hero||!enCombat();"),'Analyser, en combat seulement');
  assert.ok(src.includes(" if(objet){const p=document.createElement('p');p.className='bulle-objet';const c=gearCarre(objet,1,false);")
   &&page.includes("bulleAction(b,{nom:'Poser la Source de lumière',points:enCombat()?{pa:0,pm:1}:null,objet:o})"),'la bulle montre l’objet');
@@ -3590,7 +3611,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&carto.includes(" fogKey=cle;fogCalcul++;")&&carto.includes("c.putImageData(img,0,0);fogDirty=false;fogMemTick++}")
   &&carto.includes("+geometryKey(m);if(cv._peinte===cle)return;cv._peinte=cle;"),'rien ne se repeint sans changement');
  assert.ok(carto.includes("let nuitFondue={cle:'',cv:null},nuitPercee={cle:'',cv:null},nuitGrise={cle:'',cv:null};")
-  &&carto.includes("fc.filter='blur('+flou.toFixed(2)+'px)';fc.drawImage(large,-e,-e);fc.filter='none'}")
+  &&carto.includes("fc.clearRect(0,0,W,H);dessineFloute(fc,large,-e,-e,large.width,large.height,flou,[6,9,11])}")
   &&carto.includes(" const nuit=calqueNuit(NW,NH);if(!nuit)return;")&&!/const lum=document\.createElement\('canvas'\)/.test(carto),'le noir à part, fondu, en cache');
  assert.ok(src.includes(" if(lumiereDe(o))ligne('Lumière '+String(lumiereDe(o)).replace('.',',')+'m','gear-lumiere');"),'Lumière 3m dans l’infobulle');}
 /* v0.594 — Remplir d'obscurité ne laisse plus de liseré clair le long des murs : deux rangs de cases de mur ou de porte

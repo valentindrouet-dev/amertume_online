@@ -640,13 +640,13 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<div id="bloc-niveaux" hidden><div class="divider"></div><h3 class="reglage-titre">Niveaux d’XP</h3><div id="niveaux-xp" class="niveaux-xp"></div></div>'
  +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde</h3>'
  +'<div id="bloc-sauvegarde"></div>'
- +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde globale</h3>'
+ +'<div id="bloc-sauvegarde-globale"><div class="divider"></div><h3 class="reglage-titre">Sauvegarde globale</h3>'
  +'<p class="muted">Toute la partie dans un seul fichier : aventuriers, adversaires, bestiaire, armurerie, talents, cartes, domaine, scène en cours, campagnes enregistrées, journal et réglages de l’appareil. À garder au chaud, au cas où ce navigateur perdrait ses données.</p>'
  +'<div class="reglage"><div><strong>Exporter toute la partie</strong><p class="muted">Télécharge un fichier .json sur cet appareil.</p></div>'
  +'<button id="export-tout" class="primary">⇩ Exporter</button></div>'
  +'<div class="reglage" id="reglage-import"><div><strong>Importer une sauvegarde</strong><p class="muted">Remplace la partie de ce navigateur par le fichier choisi. Exporte d’abord la partie actuelle si tu veux la garder.</p></div>'
  +'<button id="import-tout">⇧ Importer</button><input type="file" id="import-fichier" accept=".json,application/json" hidden></div>'
- +'<p class="form-error" id="import-erreur" role="status" aria-live="polite"></p>'
+ +'<p class="form-error" id="import-erreur" role="status" aria-live="polite"></p></div>'
  +'</section>';
 const talentsPage=document.createElement('main');talentsPage.id='talents-page';
 talentsPage.innerHTML='<section class="cat-panel panel">'
@@ -1118,13 +1118,15 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
- const troupe=actors.filter(a=>a.hero);
+ /* À une table en ligne, un joueur ne voit que son aventurier : toutes les fiches sont au MJ. */
+ const assis=typeof spectateur==='function'&&spectateur(),siege=typeof monSiege!=='undefined'?monSiege:null;
+ const troupe=actors.filter(a=>a.hero&&(!assis||a.id===siege));
  // La maîtrise d'une classe s'acquiert avec la classe : on la pose avant de dessiner.
  // Chercher dans quatre fiches n'a pas de sens : le champ ne paraît qu'à partir de neuf.
  $('hero-filtres').hidden=troupe.length<9&&!q;
  const heros=troupe.filter(a=>!q||a.name.toLowerCase().includes(q));
  heros.forEach((a,i)=>grille.append(heroCard(a,i)));
- if(!heros.length){const v=document.createElement('p');v.className='muted';
+ if(!heros.length&&!assis){const v=document.createElement('p');v.className='muted';
   v.textContent=q?'Aucun aventurier de ce nom.':'Aucun aventurier dans la troupe.';grille.append(v)}}
 $('hero-search').oninput=renderHeroes;
 $('hero-add').onclick=()=>openActor(null,true);
@@ -4616,6 +4618,8 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
  $('scene-tour').textContent='Tour de combat '+String(round).padStart(2,'0');
  if(saveLabel.parentNode!==$('bloc-sauvegarde'))$('bloc-sauvegarde').append(saveLabel);
  $('reglage-import').hidden=view!=='mj';
+ // La sauvegarde globale de toute la partie est l'affaire du MJ : un joueur n'a rien à en exporter.
+ $('bloc-sauvegarde-globale').hidden=view!=='mj';
  // Les onglets ouverts aux joueurs : une case par onglet ; la Table cochée, les Cartes non, sans y toucher.
  $('bloc-onglets').hidden=view!=='mj';
  {const vus=ongletsJoueurs();$('onglets-joueurs').replaceChildren(...ONGLETS.map(([k,nom])=>{const l=document.createElement('label'),c=document.createElement('input');

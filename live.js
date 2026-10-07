@@ -41,6 +41,26 @@ function spectateur(){if(estMJ())return false;
  return enLigne||tableVoulue}
 // Le socle qu'on tient sous le doigt ne doit pas être replacé par ce qui arrive du réseau.
 window.socleEnMain=null;
+/* ---------- Les socles venus du réseau glissent ----------
+   Les positions d'un socle déplacé ailleurs arrivent par à-coups, toutes les 150 ms environ, parfois en grappe. On les
+   rejoue avec un léger retard, d'une position à la suivante à vitesse régulière, image par image : le socle glisse, et sa
+   jauge, son aura, sa lumière avec lui. La position reçue reste la vraie : c'est elle qui repart d'ici. */
+const GLISSE_RETARD=220,glissements=new Map();let glisseImage=0;
+function positionVraie(a){const g=glissements.get(a.id);return g?g.cible:{x:a.x,y:a.y}}
+function glisseVers(a,x,y){const t=performance.now(),g=glissements.get(a.id);
+ if(g){g.pts.push({t,x,y});g.cible={x,y}}else glissements.set(a.id,{pts:[{t:t-GLISSE_RETARD,x:a.x,y:a.y},{t,x,y}],cible:{x,y}});
+ if(!glisseImage)glisseImage=requestAnimationFrame(glisseUneImage)}
+function glisseUneImage(){glisseImage=0;const rt=performance.now()-GLISSE_RETARD;
+ glissements.forEach((g,id)=>{const a=actors.find(x=>x.id===id);if(!a||window.socleEnMain===id){glissements.delete(id);return}
+  while(g.pts.length>2&&g.pts[1].t<=rt)g.pts.shift();
+  const [p,q]=g.pts;let x=q.x,y=q.y;
+  if(rt<q.t){const s=Math.max(0,Math.min(1,(rt-p.t)/Math.max(1,q.t-p.t)));x=p.x+(q.x-p.x)*s;y=p.y+(q.y-p.y)*s}else glissements.delete(id);
+  a.x=x;a.y=y;
+  const el=document.querySelector('#map-view .token:not(.lumiere)[data-id="'+CSS.escape(id)+'"]');
+  if(el){el.classList.remove('glisse');el.style.left=x+'%';el.style.top=y+'%';if(typeof suitLaJauge==='function')suitLaJauge(el)}});
+ if(typeof visibilitesEnGeste==='function')visibilitesEnGeste();if(typeof updateRing==='function')updateRing();if(typeof updateSight==='function')updateSight();
+ if(typeof renderNuit==='function'){renderHalos();renderNuit()}
+ if(glissements.size)glisseImage=requestAnimationFrame(glisseUneImage);else planifieRenduComplet()}
 const estMJ=()=>typeof admin!=='undefined'&&admin===true;
 const liveStatus=t=>{const e=$('live-status');if(e)e.textContent=t};
 /* « Missing or insufficient permissions » ne dit pas quoi faire. Pour la table, la cause
@@ -69,6 +89,7 @@ function lumiereAuSol(l){return {n:l.nom,o:(l.items||[])[0]||'',p:l.id,r:l.rayon
 function etatVivant(){const out={actors:{}};
  actors.forEach(a=>{if(!a||!a.id)return;const e={};
   CHAMPS_VIVANTS.forEach(k=>{if(a[k]!==undefined)e[k]=a[k]});
+  if(glissements.has(a.id)){const v=glissements.get(a.id).cible;e.x=v.x;e.y=v.y}
   e.cibles=ciblesIds(a);
   out.actors[a.id]=e});
  out.round=round;out.locked=!!tokensLocked;out.mode=mode;
@@ -141,15 +162,12 @@ function glisserDistant(d,force){const B=d.actors||{};let bouge=false;
   const r=dernierPousse&&dernierPousse.actors&&dernierPousse.actors[id];
   if(r&&r.x===e.x&&r.y===e.y)return;
   if(r){r.x=e.x;r.y=e.y}
-  if(a.x===e.x&&a.y===e.y)return;
-  a.x=e.x;a.y=e.y;bouge=true;
-  const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(id)+'"]');
-  if(el){el.classList.add('glisse');el.style.left=e.x+'%';el.style.top=e.y+'%'}});
- if(bouge){if(typeof visibilitesEnGeste==='function')visibilitesEnGeste();if(typeof updateRing==='function')updateRing();if(typeof updateSight==='function')updateSight();if(typeof renderNuit==='function'){renderHalos();renderNuit()}}
+  const v=positionVraie(a);if(v.x===e.x&&v.y===e.y)return;
+  glisseVers(a,e.x,e.y);bouge=true});
  if(bouge||force)planifieRenduComplet()}
 /* Le rendu complet attend la fin du geste local : un rendu détruirait le socle tenu. */
 function planifieRenduComplet(){clearTimeout(renduDiffere);
- renduDiffere=setTimeout(()=>{if(window.socleEnMain){planifieRenduComplet();return}
+ renduDiffere=setTimeout(()=>{if(window.socleEnMain||glissements.size){planifieRenduComplet();return}
   if(dernierDoc)appliquerSalle(dernierDoc,true)},220)}
 
 /* Un combattant que l'on ne connaît pas encore : on le rebâtit depuis le bestiaire publié,
@@ -178,14 +196,14 @@ function appliquerSalleSeule(d,complet){if(!d)return;
  docPrecedent=d;clearTimeout(renduDiffere);
  // L'état d'avant, pour ne redessiner que si le document a changé quelque chose ici.
  const avant=JSON.stringify(etatVivant());
- appliquantDistant=true;let base=null;
+ appliquantDistant=true;let base=null,carteNeuve=false;const aGlisser=[];
  try{
   if(!estMJ()){
    if(Number.isFinite(d.round))round=d.round;
    if(d.mode==='combat'||d.mode==='exploration')mode=d.mode;
    if(typeof d.locked==='boolean')tokensLocked=d.locked;
    if(typeof d.title==='string'&&typeof sceneTitle==='function')sceneTitle(d.title);
-   if(d.mapId&&d.mapId!==currentMapId&&maps.some(m=>m.id===d.mapId)){
+   if(d.mapId&&d.mapId!==currentMapId&&maps.some(m=>m.id===d.mapId)){carteNeuve=true;
     currentMapId=d.mapId;const m=currentMap();mapImage=m&&m.image||null;
     $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';
     $('map').classList.toggle('custom',!!mapImage)}
@@ -199,13 +217,15 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   Object.entries(d.actors||{}).forEach(([id,e])=>{if(!e||typeof e!=='object')return;
    vus.add(id);
    let a=actors.find(x=>x.id===id);
-   if(!a){a=instancierActeur(id,e);actors.push(a)}
+   const neuf=!a;if(!a){a=instancierActeur(id,e);actors.push(a)}
    // Ce qu'on tient sous le doigt garde sa place : le réseau ne le reprend pas en main.
    const enMain=window.socleEnMain===id,r=dernierPousse&&dernierPousse.actors&&dernierPousse.actors[id];
+   // Sur la même carte, un socle connu qui a bougé ailleurs y glisse ; sa position ne se pose pas d'un coup.
+   const glisse=!neuf&&!carteNeuve&&!!docPrecedent&&typeof e.x==='number'&&typeof e.y==='number';
    CHAMPS_VIVANTS.forEach(k=>{if(e[k]===undefined)return;
     if(enMain&&(k==='x'||k==='y'))return;
     // Les cibles se comparent par identifiant, telles qu'elles partent : jamais par rang.
-    const local=k==='cibles'?ciblesIds(a):a[k];
+    const local=k==='cibles'?ciblesIds(a):k==='x'||k==='y'?positionVraie(a)[k]:a[k];
     /* Ce qui revient tel qu'on l'a envoyé n'apprend rien : un changement local survenu
        depuis est plus récent. On le garde, et la référence retient la valeur reçue pour
        qu'il parte au prochain envoi — sinon il s'y fondait, ne partait jamais, et le
@@ -217,6 +237,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     if(pareil(local,e[k]))return;
     // Les cibles attendent que toute la scène soit en place : leur combattant peut suivre.
     if(k==='cibles'){cibles.push([a,e[k]]);return}
+    if(glisse&&(k==='x'||k==='y')){if(!aGlisser.includes(a))aGlisser.push(a);return}
+    if(k==='x'||k==='y')glissements.delete(a.id);
     a[k]=structuredClone(e[k])});
    // Une distance de mouvement rendue aux neuf mètres de tous quitte le document : chez un joueur, elle quitte aussi le socle.
    if(!estMJ()&&!a.hero&&e.mouvement===undefined&&a.mouvement!==undefined)delete a.mouvement;
@@ -245,12 +267,17 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   /* Ce qui est reçu devient la référence AVANT le rendu : ce que le rendu ajoute (une
      révélation chez le MJ) est alors une différence, et part. Prise après, elle s'y
      fondait et n'arrivait jamais en face. */
+  // Les glissements partent avant la référence : ce qui part d'ici ensuite porte déjà les positions reçues.
+  aGlisser.forEach(a=>{const e=d.actors[a.id];glisseVers(a,e.x,e.y)});
   base=etatVivant();
   const change=complet||JSON.stringify(base)!==avant;
   aRepousser.forEach(([id,k])=>{if(base.actors[id])base.actors[id][k]=false});
   gardes.forEach(([id,k,v])=>{if(base.actors[id])base.actors[id][k]=v});
   // L'écho de notre propre envoi n'a rien changé : pas de rendu pour rien.
   if(change)render();
+  /* Une carte neuve ouverte par le MJ : chez un joueur, la vue s'approche de son aventurier. Ailleurs que sur la table, ce
+     sera au retour. */
+  if(carteNeuve&&typeof approcherToken==='function'){const moi=actors.find(x=>x.id===monSiege);if(moi)setTimeout(()=>approcherToken(moi),0)}
  }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()}}
 
 /* Le contenu publié vient d'être posé : il a remplacé les fiches et les cartes, donc
@@ -283,6 +310,25 @@ logAttaque=function(a,b,logo,corps,detail,suite,talent){logAttaqueLocal(a,b,logo
  const d=detail?{des:codeDes(detail.dice),origine:Number.isInteger(detail.origine)?detail.origine:null,
   faille:Number.isInteger(detail.faille)?detail.faille:null,bonus:detail.bonus||0,saignee:detail.saignee||0,def:Number.isInteger(detail.def)?detail.def:null,solidite:!!detail.solidite,double:!!detail.double,total:detail.total||0}:null;
  diffuser({genre:'attaque',a:fiche(a),b:fiche(b),logo:logo?String(logo).slice(0,40):null,corps:String(corps).slice(0,60),detail:d,suite:suite?String(suite).slice(0,200):null})};
+/* Les mots qui montent au-dessus des socles — dégâts, Gardé, Échec, Révélé — se voient sur toutes les tables : l'appareil
+   qui agit les envoie avec le journal, comme les effets. Ce qui se calcule en appliquant la table reçue reste chez soi, et un
+   refus (« Plus de Mouvement ») ne regarde que celui qui l'essuie : quatrième argument. */
+const floatNumberLocal=floatNumber;
+floatNumber=function(cible,texte,genre,seul){floatNumberLocal(cible,texte,genre);
+ if(seul||appliquantDistant||!enLigne||!cible||texte===undefined||texte===null)return;
+ const rec={genre:'effet',effet:'flottant',texte:String(texte).slice(0,60),logo:genre?String(genre).slice(0,20):null};
+ if(cible.id&&actors.includes(cible))rec.a=fiche(cible);
+ else if(Number.isFinite(cible.x)&&Number.isFinite(cible.y)){rec.a=null;rec.detail={x:+cible.x.toFixed(2),y:+cible.y.toFixed(2),...(typeof cible.socle==='string'?{socle:cible.socle.slice(0,12)}:{})}}
+ else return;
+ diffuser(rec)};
+// À l'arrivée : un socle que la troupe ne voit pas ne parle pas chez un joueur.
+function flottantRecu(rec){const texte=String(rec.texte||'').slice(0,60);if(!texte)return;
+ const genre=['perte','gain','nul'].includes(rec.logo)?rec.logo:'perte';
+ if(rec.a&&rec.a.id){const a=actors.find(x=>x.id===rec.a.id);if(!a)return;
+  if(!estMJ()){const el=document.querySelector('#map-view .token:not(.lumiere)[data-id="'+CSS.escape(a.id)+'"]');
+   if(!el||el.hidden||['unseen','veiled','hors-carte','cachemj'].some(c=>el.classList.contains(c)))return}
+  floatNumberLocal(a,texte,genre);return}
+ const d=rec.detail;if(d&&typeof d==='object'&&Number.isFinite(d.x)&&Number.isFinite(d.y))floatNumberLocal({x:d.x,y:d.y,socle:typeof d.socle==='string'?d.socle:'medium'},texte,genre)}
 function diffuserEffet(type,a,b,couleur){diffuser({genre:'effet',effet:String(type).slice(0,20),a:fiche(a),b:fiche(b),logo:couleur?String(couleur).slice(0,20):null})}
 // Une parole part avec la fiche de qui parle ; le MJ se reconnaît à son identifiant, pas à son nom.
 logChat=function(qui,texte){logChatLocal(qui,texte);
@@ -301,6 +347,7 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
  if(rec.genre==='effet'){if(rec.effet==='vider'&&duMJ)viderJournalLocal();
   else if(rec.effet==='orbe'&&typeof volOrbe==='function'){const [couleur,etat]=(typeof rec.logo==='string'?rec.logo:'').split('|');
    volOrbe(acteurDuJournal(rec.a),acteurDuJournal(rec.b),couleur||'',etat||'')}
+  else if(rec.effet==='flottant')flottantRecu(rec);
   else if(rec.effet==='fleche'&&typeof volFleche==='function')volFleche(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
   else if(rec.effet==='balayage'&&typeof coupDeToken==='function')coupDeToken(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
   else if(rec.effet==='choc'&&typeof chocImpact==='function'){const [x,y]=(typeof rec.logo==='string'?rec.logo:'').split('|').map(Number);
