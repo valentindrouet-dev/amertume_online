@@ -971,10 +971,14 @@ function declenchePiege(p,o,contact){const m=currentMap();if(!m||!piegeArme(p)||
  if(!p.actif)p.declenche=true;if(p.cache)p.revele=true;
  if(typeof explosionPiege==='function')explosionPiege(centrePiege(p));
  if(typeof diffuserEffet==='function')diffuserEffet('piegecarte',o,null,String(m.pieges.indexOf(p)));
- let issue='plein';
+ /* Le test d'évitement se joue d'abord, mais se dit après : le journal annonce le piège, puis la tentative. Sur la carte,
+    « Piège ! » paraît, puis « Esquive ! », en vert, si la victime l'esquive. */
+ let issue='plein',essai='';
  if(p.evitement){const t=p.evitement,jet=skillRoll(valeurCompetence(o,t.comp)-1,d6),n=jet.reussites,ok=n>=t.reussites;
   rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),o,null);if(ok)issue=t.issue;
-  log(nomNum(o)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — '+(ok?(issue==='esquive'?'esquive le piège':'amortit le piège'):'ne l’évite pas')+'.',{dice:true,ton:'competence'})}
+  essai=nomNum(o)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — '+(ok?(issue==='esquive'?'esquive le piège':'amortit le piège'):'ne l’évite pas')+'.'}
+ const depuis=contact&&issue!=='esquive'?{x:o.x,y:o.y}:null;if(depuis){const c=centrePiege(p);o.x=c.x;o.y=c.y}
+ floatNumber(o,'Piège !','perte');if(issue==='esquive')setTimeout(()=>floatNumber(o,'Esquive !','gain'),650);
  const parts=[];
  if(issue!=='esquive'){const deg=issue==='moitie'?Math.floor((p.degats||0)/2):(p.degats||0);
   if(deg>0){const {perdu:n,blinde}=encaisse(o,deg,null);parts.push(blinde?'Blindage consommé':n+' dégât'+(n>1?'s':''))}
@@ -983,7 +987,7 @@ function declenchePiege(p,o,contact){const m=currentMap();if(!m||!piegeArme(p)||
    if(etats.length&&!enCombat())o.etatsPieges=[...new Set([...(Array.isArray(o.etatsPieges)?o.etatsPieges:[]),...etats])];
    parts.push(...appliquePertes(o,p.caracs))}}
  log('Piège ! '+p.nom+' se déclenche sur '+nomNum(o)+(parts.length?' — '+parts.join(', '):'')+'.',{ton:'degats'});
- const depuis=contact&&issue!=='esquive'?{x:o.x,y:o.y}:null;if(depuis){const c=centrePiege(p);o.x=c.x;o.y=c.y}
+ if(essai)log(essai,{dice:true,ton:'competence'});
  render();if(depuis)glisseAuPiege(o,depuis);saveMaps();scheduleSave()}
 // Le socle happé glisse jusqu'au centre du piège, du point où il l'a touché.
 function glisseAuPiege(o,depuis){const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(o.id)+'"]');if(!el)return;
