@@ -154,8 +154,16 @@ function gearAttacks(actor,items){
     tranche selon la cible. « lancer » dit laquelle part. */
  const lancers=[...new Set(armes.filter(w=>w.ranged===true&&w.lancer===true))],lance=w=>({...attaque([w],'distance',true),lancer:w.id});
  /* Un adversaire porte tout ce qu'il possède, sans compter ses mains : chaque arme est une
-    variante, son bouton à elle, et une arme en double ne frappe pas deux fois. */
- if(actor&&actor.hero===false)return [...new Set(contact)].map(w=>attaque([w],'contact')).concat([...new Set(distance)].map(w=>attaque([w],'distance')),lancers.map(lance));
+    variante, son bouton à elle. Mais deux armes de contact à une main se manient ensemble (v0.611) :
+    les deux premières, dans l'ordre où son inventaire les montre, exemplaires d'un même modèle
+    ensemble, font une seule attaque à la place de la première, dés cumulés — « Dague ×2 », « Dague + Épée ». Une troisième
+    garde sa variante, comme une arme à deux mains. Les exemplaires se comptent dans l'inventaire,
+    où ils sont tous ; « weapons » n'en garde qu'un. */
+ if(actor&&actor.hero===false){const seules=[...new Set(contact)],inv=Array.isArray(actor.inventaire)?actor.inventaire:null;
+  const exemplaires=w=>inv?Math.max(1,inv.filter(id=>id===w.id).length):contact.filter(x=>x===w).length;
+  const uneMain=seules.filter(w=>weaponHands(w)===1).flatMap(w=>Array(exemplaires(w)).fill(w)),paire=uneMain.length>=2?uneMain.slice(0,2):null;
+  const variantes=[];seules.forEach(w=>{if(!paire||!paire.includes(w))variantes.push(attaque([w],'contact'));else if(w===paire[0])variantes.push(attaque(paire,'contact'))});
+  return variantes.concat([...new Set(distance)].map(w=>attaque([w],'distance')),lancers.map(lance))}
  const sorties=[];if(contact.length)sorties.push(attaque(contact,'contact'));if(distance.length)sorties.push(attaque(distance,'distance'));
  lancers.forEach(w=>sorties.push(lance(w)));
  return sorties}

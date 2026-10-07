@@ -46,8 +46,8 @@ assert.equal(gearApi.defenseOf({hero:false,def:5,armures:['a']},[{id:'a',def:0}]
 // elle vient en tête, si bien qu'une fiche d'avant ce choix retrouve son arme.
 const ARSENAL=[{id:'e',name:'Épée',category:'weapon',hands:1,dice:{white:2,red:1}},{id:'d',name:'Dague',category:'weapon',hands:1,dice:{bone:1}},{id:'ar',name:'Armure',category:'armor',def:3}];
 const bete={hero:false,def:4,weapons:['e','e'],armures:['ar'],attacks:[{name:'Griffes',dice:{white:1}},{name:'Souffle',dice:{red:2}}]};
-assert.deepEqual(gearApi.attackChoices(bete,ARSENAL).map(x=>x.name),['Épée','Griffes','Souffle']);   // Un adversaire : une arme en double ne frappe pas deux fois.
-assert.deepEqual(gearApi.attackChoices({...bete,weapons:['e','d']},ARSENAL).map(x=>x.name),['Épée','Dague','Griffes','Souffle']);   // Chaque arme, sa variante.
+assert.deepEqual(gearApi.attackChoices(bete,ARSENAL).map(x=>x.name),['Épée ×2','Griffes','Souffle']);   // Un adversaire : deux armes à une main frappent ensemble (v0.611).
+assert.deepEqual(gearApi.attackChoices({...bete,weapons:['e','d']},ARSENAL).map(x=>x.name),['Épée + Dague','Griffes','Souffle']);   // Deux armes différentes aussi.
 assert.deepEqual(gearApi.attackChoices({...bete,hero:true,weapons:['e','d']},ARSENAL).map(x=>x.name),['Épée + Dague','Griffes','Souffle']);   // Un aventurier les tient ensemble.
 // Les armes d'une même portée font une seule attaque, dés cumulés ; contact et distance
 // ne se cumulent pas — la rapière et l'arc font deux boutons, le contact d'abord.
@@ -77,11 +77,11 @@ assert.equal(gearApi.doorLockedFor({secret:true,open:false},true),false);
 assert.equal(gearApi.doorLockedFor({secret:true,open:true},false),false);    // Ouvert, chacun le referme.
 assert.equal(gearApi.doorLockedFor({keyLocked:true},false),true);
 assert.equal(gearApi.doorLockedFor({},false),false);
-assert.equal(gearApi.chosenAttack(bete,ARSENAL).name,'Épée');             // Sans choix, l'arme décide.
-assert.equal(gearApi.chosenAttack(bete,ARSENAL).dice.white,2);            // Chez un adversaire, le double ne cumule pas.
+assert.equal(gearApi.chosenAttack(bete,ARSENAL).name,'Épée ×2');          // Sans choix, l'arme décide.
+assert.equal(gearApi.chosenAttack(bete,ARSENAL).dice.white,4);            // Chez un adversaire aussi, deux armes à une main cumulent (v0.611).
 assert.equal(gearApi.chosenAttack({...bete,hero:true},ARSENAL).dice.white,4);   // Chez un aventurier, deux exemplaires cumulent.
 assert.equal(gearApi.chosenAttack({...bete,activeAttack:2},ARSENAL).name,'Souffle');
-assert.equal(gearApi.chosenAttack({...bete,activeAttack:9},ARSENAL).name,'Épée'); // Choix caduc : la première.
+assert.equal(gearApi.chosenAttack({...bete,activeAttack:9},ARSENAL).name,'Épée ×2'); // Choix caduc : la première.
 assert.equal(gearApi.gearAttacks({weapons:['e','d']},ARSENAL)[0].name,'Épée + Dague');
 assert.deepEqual(gearApi.gearAttacks({weapons:['ar']},ARSENAL),[]);       // Une armure n'est pas une attaque.
 assert.deepEqual(gearApi.gearAttacks({weapons:[]},ARSENAL),[]);
@@ -3387,6 +3387,17 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.611 — Un adversaire qui possède deux armes de contact à une main, ou plus, les manie ensemble : une seule attaque, dés
+   cumulés, « Dague ×2 » ou « Dague + Épée ». Les exemplaires se comptent dans son inventaire. */
+{const C=require('./combat.js'),A=[{id:'dg',name:'Dague',category:'weapon',hands:1,dice:{white:1}},{id:'ep',name:'Épée',category:'weapon',hands:1,dice:{red:1}},
+  {id:'ma',name:'Massue',category:'weapon',hands:2,dice:{black:1}},{id:'ar',name:'Arc',category:'weapon',ranged:true,dice:{white:1}}];
+ const noms=a=>C.attackChoices({hero:false,attacks:[],...a},A).map(x=>x.name);
+ assert.deepEqual(noms({weapons:['dg'],inventaire:['dg','dg']}),['Dague ×2'],'deux dagues, une attaque');
+ assert.equal(C.chosenAttack({hero:false,weapons:['dg'],inventaire:['dg','dg'],attacks:[]},A).dice.white,2,'deux dés blancs');
+ assert.deepEqual(noms({weapons:['dg'],inventaire:['dg']}),['Dague'],'une seule dague, rien ne change');
+ assert.deepEqual(noms({weapons:['dg','ep'],inventaire:['dg','ep','dg']}),['Dague ×2','Épée'],'une troisième garde sa variante');
+ assert.deepEqual(noms({weapons:['ma','dg','ep','ar'],inventaire:['ma','dg','ep','ar']}),['Massue','Dague + Épée','Arc'],'deux mains et distance à part');
+ assert.deepEqual(noms({weapons:['ma','ar'],inventaire:['ma','ar']}),['Massue','Arc'],'sans deux armes à une main, comme avant');}
 /* v0.610 — Le logo du token, en grand à gauche du nom dans la fiche de la table : hors du flux, il ne grandit pas la ligne et
    ne pousse rien ; le nom reste sur sa ligne et rapetisse s'il est trop long. */
 assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo" id="sheet-logo" hidden></span><h1 id="name"></h1>')
