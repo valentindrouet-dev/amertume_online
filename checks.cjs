@@ -3387,6 +3387,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.610 — Le logo du token, en grand à gauche du nom dans la fiche de la table : hors du flux, il ne grandit pas la ligne et
+   ne pousse rien ; le nom reste sur sa ligne et rapetisse s'il est trop long. */
+assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo" id="sheet-logo" hidden></span><h1 id="name"></h1>')
+ &&page.includes(".sheet-head{position:relative}.sheet-head .sheet-logo{position:absolute;left:0;top:50%;width:52px;height:52px;margin-top:-26px;")
+ &&page.includes(".sheet.a-logo .sheet-head h1{flex:0 1 auto;min-width:0;line-height:39px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}")
+ &&page.includes("lg.style.borderColor=lg.style.color=teinte;lg.hidden=false;$('sheet').classList.add('a-logo')}")
+ &&page.includes("$('sheet').classList.remove('regard','secret','a-logo');$('sheet-logo').hidden=true;"),'le logo du token dans la fiche');
 /* v0.609 — Un même adversaire ne frappe qu'une fois d'opportunité par tour, même si l'on entre et sort plusieurs fois de son
    contact. Le début et la fin du combat s'annoncent chez les joueurs connectés ; le journal ne redit plus « Tour 1. ». Une
    fiche d'aventurier seule prend la place. Le MJ envoie toute la troupe sur l'onglet ouvert, d'un viseur sous l'onglet ; et
