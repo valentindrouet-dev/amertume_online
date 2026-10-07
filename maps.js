@@ -983,7 +983,7 @@ function declenchePiege(p,o,contact){const m=currentMap();if(!m||!piegeArme(p)||
  if(p.evitement){const t=p.evitement,jet=skillRoll(valeurCompetence(o,t.comp)-1,d6),n=jet.reussites,ok=n>=t.reussites;
   rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),o,null);if(ok)issue=t.issue;
   essai=nomNum(o)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — '+(ok?(issue==='esquive'?'esquive le piège':'amortit le piège'):'ne l’évite pas')+'.'}
- const depuis=contact&&issue!=='esquive'?{x:o.x,y:o.y}:null;if(depuis){const c=centrePiege(p);o.x=c.x;o.y=c.y}
+ const depuis=contact&&issue!=='esquive'?{x:o.x,y:o.y}:null;if(depuis){const c=centrePiege(p);o.x=c.x;o.y=c.y;if(p.actif)o.tenuPar=p.id}
  floatNumber(o,'Piège !','perte');if(issue==='esquive')setTimeout(()=>floatNumber(o,'Esquive !','gain'),650);
  const parts=[];
  if(issue!=='esquive'){const jet=tireDegats(p),deg=issue==='moitie'?Math.floor(jet.total/2):jet.total;
@@ -998,6 +998,12 @@ function declenchePiege(p,o,contact){const m=currentMap();if(!m||!piegeArme(p)||
 // Le socle happé glisse jusqu'au centre du piège, du point où il l'a touché.
 function glisseAuPiege(o,depuis){const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(o.id)+'"]');if(!el)return;
  el.style.left=depuis.x+'%';el.style.top=depuis.y+'%';void el.offsetWidth;el.classList.add('glisse');el.style.left=o.x+'%';el.style.top=o.y+'%';if(typeof suitLaJauge==='function')suitLaJauge(el)}
+/* Le piège toujours actif qui a happé un combattant le tient : il n'en sort qu'en l'enjambant, ou le MJ l'en sort. Il le lâche
+   quand il cesse de le toucher, d'être armé, ou quand l'enjambement l'en a affranchi. */
+function tenuParPiege(o){if(!o||!o.tenuPar)return null;const m=currentMap(),p=m&&(m.pieges||[]).find(x=>x&&x.id===o.tenuPar),size=mapSize();
+ if(!size.width)return p||null;
+ if(!p||!piegeArme(p)||(Array.isArray(o.franchis)&&o.franchis.includes(p.id))||!touchePiege(p,[o.x/100*size.width,o.y/100*size.height],tokenOf(o)/2,size)){delete o.tenuPar;return null}
+ return p}
 // Au contact : la forme du piège touche la zone de contact de l'aventurier.
 function piegeAPortee(a,p){const size=mapSize();return !!a&&!!p&&!!size.width&&polyInReach(a,polyPiege(p),size,tokenOf(a))}
 /* Désamorcer ou enjamber : le test que le MJ a préparé, l'Action en combat. Désamorcé, le piège se grise ; manqué, il reste en
@@ -1006,7 +1012,7 @@ function testPiege(a,p,quoi){const t=p&&p[quoi];if(!a||!t||!piegeArme(p)||!payeA
  const jet=skillRoll(valeurCompetence(a,t.comp)-1,d6),n=jet.reussites,ok=n>=t.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
  const tete=nomNum(a)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — ';
  if(quoi==='desamorcage'){if(ok)p.desamorce=true;log(tete+(ok?'désamorce '+p.nom:'ne parvient pas à désamorcer '+p.nom)+'.',{dice:true,ton:'competence'})}
- else{log(tete+(ok?'enjambe '+p.nom:'trébuche sur '+p.nom)+'.',{dice:true,ton:'competence'});if(ok)a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60)}
+ else{log(tete+(ok?'enjambe '+p.nom:'trébuche sur '+p.nom)+'.',{dice:true,ton:'competence'});if(ok){a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60);delete a.tenuPar}}
  if(enCombat()&&typeof afterAction==='function')afterAction(a);
  if(quoi==='enjambement'&&!ok){declenchePiege(p,a,p.contact!==false);return}
  render();saveMaps();scheduleSave()}
@@ -1153,7 +1159,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  (m.coffres||[]).forEach(c=>{['revele','deverrouille','desamorce','ouvert','tente'].forEach(k=>delete c[k])});
  // Et ses pièges, armés et cachés comme le MJ les a posés.
  (m.pieges||[]).forEach(p=>{['revele','declenche','desamorce','rate'].forEach(k=>delete p[k])});
- {const ids=new Set((m.pieges||[]).map(p=>p.id));heros.forEach(a=>{if(Array.isArray(a.franchis)){a.franchis=a.franchis.filter(id=>!ids.has(id));if(!a.franchis.length)delete a.franchis}})}
+ {const ids=new Set((m.pieges||[]).map(p=>p.id));heros.forEach(a=>{delete a.tenuPar;if(Array.isArray(a.franchis)){a.franchis=a.franchis.filter(id=>!ids.has(id));if(!a.franchis.length)delete a.franchis}})}
  m.fog=packMask(new Uint8Array(grille.n),grille.n);delete m.seen;m.fogOff=false;fogSeen=null;fogSeenSrc=null;fogKey='';
  /* L'invisibilité ne se pose plus sur la carte : c'est un état, donné en jeu. Une carte
     tracée avant la v0.82 garde ses invisibles, mais sous forme d'état. */

@@ -3000,7 +3000,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.514 — Au sol : le token est verrouillé, MJ compris, jusqu'à ce que le combattant se relève (un Mouvement) ;
    le bouton Se relever porte l'icône de l'état. */
 {const page=fs.readFileSync('index.html','utf8');
- assert.ok(page.includes("function canMove(i){return controlled(i)&&!hasState(actors[i],'Au sol')&&(view===\"mj\"||(!tokensLocked&&!hasState(actors[i],'Gel')))}")
+ assert.ok(page.includes(" return controlled(i)&&(view===\"mj\"&&tenu||!hasState(actors[i],'Au sol'))&&(view===\"mj\"||(!tenu&&!tokensLocked&&!hasState(actors[i],'Gel')))}")
   &&page.includes("const ic=imageEtat('Au sol');if(ic&&ic.tagName==='IMG')ic.className='logo-equip';")
   &&page.includes("geste('Se relever',ic||'⤴','Remet le combattant debout.',!enCombat()||pointsRestants(a,'mouvement')>0,()=>{"),'Au sol verrouille le token ; Se relever à son icône');}
 /* v0.309 — Une tuile de talent n'écrit plus sa nature sous son logo. */
@@ -3387,6 +3387,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.621 — Happé par un piège toujours actif, un combattant y est tenu : il n'en sort qu'en l'enjambant, et un enjambement
+   réussi le libère pour de bon. Le MJ l'en sort toujours à la main, même au sol, sans règle de mouvement ni point dépensé. */
+{const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
+ assert.ok(carto.includes("function tenuParPiege(o){if(!o||!o.tenuPar)return null;")&&carto.includes("o.x=c.x;o.y=c.y;if(p.actif)o.tenuPar=p.id}")
+  &&carto.includes("p.id])].slice(-60);delete a.tenuPar}}")&&vif.includes("'etatsPieges','tenuPar'];"),'tenu par le piège, libéré par l’enjambement');
+ assert.ok(page.includes(" return controlled(i)&&(view===\"mj\"&&tenu||!hasState(actors[i],'Au sol'))&&(view===\"mj\"||(!tenu&&!tokensLocked&&!hasState(actors[i],'Gel')))}")
+  &&page.includes("const libere=view==='mj'&&typeof tenuParPiege==='function'&&!!tenuParPiege(a);")&&page.includes("   else if(!libere)lot.forEach(k=>{const o=actors[k];if(o)depensePoint(o,'mouvement')});")
+  &&page.includes("   if(libere&&typeof tenuParPiege==='function')tenuParPiege(a);"),'le MJ l’en sort toujours');}
 /* v0.620 — Un clic sur un piège lui parvient enfin : la carte ne capture plus le geste. Un joueur au contact d'un piège qu'il
    n'a qu'à enjamber lance le test d'un clic ; manqué, le piège part sur lui. La table mesure sa carte une fois par rendu, par
    pas de glissement et par image reçue, et non plus à chaque appel. */
@@ -3434,15 +3442,15 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(carto.includes('<button data-tool="blocagelibre">Blocage libre</button>')&&carto.includes("else if(mode==='blocagelibre')ajouteMatiere(mapDraft,forme);")
   &&carto.includes("if(mapTool==='lasso'||mapTool==='blocagelibre'||"),'le blocage libre');
  // Les pièges.
- assert.ok(carto.includes(" if(!p.actif)p.declenche=true;if(p.cache)p.revele=true;")&&carto.includes("const depuis=contact&&issue!=='esquive'?{x:o.x,y:o.y}:null;if(depuis){const c=centrePiege(p);o.x=c.x;o.y=c.y}")
+ assert.ok(carto.includes(" if(!p.actif)p.declenche=true;if(p.cache)p.revele=true;")&&carto.includes("const depuis=contact&&issue!=='esquive'?{x:o.x,y:o.y}:null;if(depuis){const c=centrePiege(p);o.x=c.x;o.y=c.y;if(p.actif)o.tenuPar=p.id}")
   &&carto.includes(" floatNumber(o,'Piège !','perte');if(issue==='esquive')setTimeout(()=>floatNumber(o,'Esquive !','gain'),650);")
   &&carto.indexOf(" log('Piège ! '+p.nom+' se déclenche sur '")<carto.indexOf(" if(essai)log(essai,{dice:true,ton:'competence'});")
   &&carto.includes("contact:touchePiege(p,c,r,size)==='contact'}}")&&carto.includes("armes=m.pieges.filter(p=>piegeArme(p)&&!franchis.includes(p.id))")
-  &&carto.includes("if(ok)a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60)")&&carto.includes("coche('actif','Toujours actif',!!p.actif)"),'happé, toujours actif, enjambé pour toujours');
+  &&carto.includes("if(ok){a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60);delete a.tenuPar}")&&carto.includes("coche('actif','Toujours actif',!!p.actif)"),'happé, toujours actif, enjambé pour toujours');
  assert.ok(carto.includes("if(etats.length&&!enCombat())o.etatsPieges=")&&page.includes("if(commence&&!spect)actors.forEach(a=>{leveEtats(a,true,a.etatsPieges);a.ignition=''});"),'les états d’un piège passent le début du combat');
  const ctxL={statesOf:a=>a.states.slice(),setState:(a,e,on)=>{if(!on)a.states=a.states.filter(x=>x!==e)}};vm.createContext(ctxL);vm.runInContext(page.match(/function leveEtats\(a,finCombat,garder\)\{[^\n]*\n[^\n]*/)[0]+';this.leveEtats=leveEtats',ctxL);
  const h={states:['Saignée','Feu'],etatsPieges:['Saignée']};assert.equal(ctxL.leveEtats(h,true,h.etatsPieges).join(),'Feu');assert.equal(h.states.join(),'Saignée');assert.ok(!('etatsPieges' in h));
- assert.ok(vif.includes("'malusPieges','enjambe','franchis','etatsPieges'];")&&vif.includes("if(r&&(Number(r.e)||0)===e&&drapeauxPiege(p)!==e){gardesPieges.push([v.t,e]);return}")
+ assert.ok(vif.includes("'malusPieges','enjambe','franchis','etatsPieges','tenuPar'];")&&vif.includes("if(r&&(Number(r.e)||0)===e&&drapeauxPiege(p)!==e){gardesPieges.push([v.t,e]);return}")
   &&vif.includes("gardesPieges.forEach(([t,e])=>{const x=(base.doors||[]).find(y=>y&&typeof y==='object'&&y.t===t);if(x)x.e=e});"),'l’état d’un piège ne revient pas en arrière');}
 /* v0.615 — Pièges : un outil de l'éditeur de cartes. Un piège de toute taille, en jeton, en jeton imagé ou en image seule ;
    visible ou caché ; déclenché au contact ou à distance par une zone ou un fil liés ; détecté par Perception ou Ruse ;
@@ -3637,7 +3645,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&src.includes("if(f.bonusMouvementOn){if(f.bonusMouvementOn.checked)a.bonusMouvement="),'la case Bonus de Mouvement des objets');
  assert.ok(vif.includes("'nyctalope','mouvement',")&&vif.includes("...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),\n  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{}),...(m&&m.obscuriteOff?{noirOff:true}:{})};")
   &&vif.includes("mouvementLimiteExplo=d.fogReset.limite===true;"),'la distance et la limite voyagent en ligne, sans clé nouvelle');
- assert.ok(page.includes("const regle=lot0.length===1&&mouvementBorne(a)?regleMouvement(a):null;")&&page.includes("traceMouvement(null);\n  if(bloque){if(moved)skipClick=true;return}")
+ assert.ok(page.includes("const regle=lot0.length===1&&!libere&&mouvementBorne(a)?regleMouvement(a):null;")&&page.includes("traceMouvement(null);\n  if(bloque){if(moved)skipClick=true;return}")
   &&page.includes(" t.onpointercancel=()=>{drag=null;window.socleEnMain=null;traceMouvement(null)};")&&page.includes("   if(regle&&regle.combat){if(cout>0)depensePoint(a,'mouvement',cout)}"),'le geste à la main');
  assert.ok(page.includes('<path id="aim-mouvement" class="aim-fleche mvt" marker-end="url(#shot-mvt)"/>')&&page.includes('<marker id="shot-mvt"')
   &&page.includes("#aim .aim-fleche.mvt{stroke:#cf9152;")&&page.includes("lab.setAttribute('class','aim-dist on mvt')}"),'la flèche du mouvement, à la couleur du Mouvement');
@@ -4265,7 +4273,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("auteurCoup=a;queueMicrotask(()=>{auteurCoup=null});ajouteBilan(a,'coups',1);")&&page.includes("ajouteBilan(a,'crit',1)")&&page.includes("applyHeal=function(a,m){const g=soinSansBilan(a,m);if(g>0)ajouteBilan(a,'soin',g);return g}"),'les compteurs de dégâts, coups, critiques et soins');
  assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes("compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);"),'la distance, là où un mouvement connaît son départ');
  assert.ok(page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
- assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges'];")&&vivant.includes("...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
+ assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar'];")&&vivant.includes("...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
  assert.ok(src.includes('function lisBilan(o){')&&src.includes('function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;'),'la fenêtre');
  // Le bilan venu d'ailleurs est relu : chiffres bornés, noms coupés, camp connu.
  {const vm=require('vm'),deb=src.indexOf('function lisBilan(o){'),fin=src.indexOf('const statsDialog=');const ctx={};vm.createContext(ctx);vm.runInContext(src.slice(deb,fin)+';this.r=lisBilan({tours:"3",liste:[{nom:"x".repeat(99),camp:"pirate",inf:-4,sub:"12",pic:1e9},null]});',ctx);
