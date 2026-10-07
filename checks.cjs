@@ -3387,6 +3387,16 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.619 — Les dégâts d'un piège, posé ou de coffre : fixes, ou « xdy », tirés à chaque fois qu'il part. */
+{const K=require('./combat.js'),carto=fs.readFileSync('maps.js','utf8');
+ assert.deepEqual(K.lisFormuleDegats('2d6'),{degats:0,degatsDes:{n:2,f:6}});assert.deepEqual(K.lisFormuleDegats(' 3 '),{degats:3});assert.deepEqual(K.lisFormuleDegats('3d1'),{degats:3},'un dé d’une face, c’est un nombre');
+ assert.equal(K.lisFormuleDegats('deux'),null);assert.deepEqual(K.lisFormuleDegats('40D200'),{degats:0,degatsDes:{n:20,f:100}});
+ assert.equal(K.formuleDegats({degats:4}),'4');assert.equal(K.formuleDegats({degats:0,degatsDes:{n:1,f:8}}),'1d8');assert.equal(K.formuleDegats({}),'0');
+ assert.deepEqual(K.tireDegats({degatsDes:{n:3,f:6}},()=>.5),{total:12,jets:[4,4,4]});assert.deepEqual(K.tireDegats({degats:5}),{total:5,jets:[]});
+ assert.deepEqual(K.cleanPiege({id:'p',x:1,y:1,w:2,h:2,degatsDes:{n:2,f:8}}).degatsDes,{n:2,f:8});assert.ok(!('degatsDes' in K.cleanPiege({id:'p',x:1,y:1,w:2,h:2,degatsDes:{n:2,f:1}})));
+ assert.deepEqual(K.cleanMap({coffres:[{id:'c',x:1,y:1,w:2,h:2,piege:2,degatsDes:{n:1,f:10}}]}).coffres[0].degatsDes,{n:1,f:10});
+ assert.ok(carto.includes("const jet=tireDegats(p),deg=issue==='moitie'?Math.floor(jet.total/2):jet.total;")&&carto.includes("+field('Dégâts','degats',formuleDegats(p),'text','pattern=")
+  &&carto.includes("+field('Dégâts du piège','degats',formuleDegats(c),'text','pattern=")&&carto.includes("const jet=tireDegats(c);"),'fixes ou aux dés, à la table et dans les fiches');}
 /* v0.616 — Pièges : au contact, la victime est happée au centre du piège ; « Toujours actif », il ne se grise pas et ne se
    franchit qu'en l'enjambant ; un enjambement réussi vaut pour toujours. Les états d'un piège survivent au combat que son pas
    déclenche, et l'état d'un piège ne revient plus en arrière sur un écho du réseau. Le journal : plus de retrait d'inventaire,
@@ -4541,7 +4551,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  const b={hp:5,max:5,states:['Blindage']};
  assert.deepEqual([C.applyDamage(b,3),b.hp,b.states.includes('Blindage'),C.applyDamage(b,3),b.hp],[0,5,false,3,2],'le Blindage absorbe une fois, puis disparaît');
  const c={hp:5,max:5,states:['Blindage']};assert.deepEqual([C.applyDamage(c,0),c.states.includes('Blindage')],[0,true],'zéro dégât ne le consomme pas');
- assert.ok((page.match(/encaisse\(/g)||[]).length>=10&&mp.includes("encaisse(o,c.degats)"),'toutes les sources passent par le Blindage');}
+ assert.ok((page.match(/encaisse\(/g)||[]).length>=10&&mp.includes("encaisse(o,jet.total,null)"),'toutes les sources passent par le Blindage');}
 /* v0.506 — Coffres : calque sous le brouillard, sans contour ni anneau au clic ; bulle du MJ en icônes ; un joueur ouvre
    d'un clic ; l'Action payée même quand le MJ ouvre ; le combat part à toute révélation ; prix des ressources ; clés et
    objets propres à un adversaire posé. */

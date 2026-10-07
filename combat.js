@@ -418,7 +418,7 @@ function cleanCoffre(c){const r=cleanRect(c);if(!r)return null;const n=(v,max)=>
  const a=Number(c.a);if(Number.isFinite(a)&&((a%180)+180)%180!==0)r.a=((a%180)+180)%180;if(c.rond===true)r.rond=true;if(c.cleId)r.cleId=texte(c.cleId,60);
  const rich={};if(c.richesses&&typeof c.richesses==='object')CLES_RICHESSES.forEach(k=>{const v=n(c.richesses[k],99999);if(v)rich[k]=v});const bourse=normaliseBourse(c.bourse,false);
  return {...r,id:texte(c.id,40),nom:texte(c.nom,60)||'Coffre',desc:texte(c.desc,600),...(c.cache===true?{cache:true}:{}),
-  perception:Math.max(1,n(c.perception,9)),verrou:n(c.verrou,9),piege:n(c.piege,9),degats:n(c.degats,99),
+  perception:Math.max(1,n(c.perception,9)),verrou:n(c.verrou,9),piege:n(c.piege,9),degats:n(c.degats,99),...(cleanDesDegats(c.degatsDes)?{degatsDes:cleanDesDegats(c.degatsDes)}:{}),
   etats:(Array.isArray(c.etats)?c.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,8),
   items:(Array.isArray(c.items)?c.items:[]).filter(x=>typeof x==='string').slice(0,99).map(x=>texte(x,60)).filter(Boolean),richesses:rich,...(bourse.length?{bourse}:{})}}
 /* Un piège (v0.615) : un rectangle de la carte, comme un coffre, montré en jeton rond — son icône ou son image dedans — ou en
@@ -428,6 +428,15 @@ function cleanCoffre(c){const r=cleanRect(c);if(!r)return null;const n=(v,max)=>
    caractéristique, permanentes ou jusqu'au prochain repos. Déclenché ou désamorcé, il reste grisé ; réamorçable, le porteur
    du talent Réamorceur le rearme. Ce qui lui arrive en partie — révélé, déclenché, désamorcé — ne voyage pas avec la carte. */
 const DETECTION_PIEGE=[3,5],DESAMORCAGE_PIEGE=[5,7,1];
+/* Les dégâts d'un piège, posé ou de coffre : un nombre fixe, ou « xdy », tant de dés de tant de faces, tirés à chaque fois
+   qu'il part. Un dé d'une seule face n'en est pas un : « 3d1 », c'est 3. */
+function cleanDesDegats(d){if(!d||typeof d!=='object')return null;const f=Math.trunc(Number(d.f))||0;
+ return f>=2?{n:Math.max(1,Math.min(20,Math.trunc(Number(d.n))||1)),f:Math.min(100,f)}:null}
+function formuleDegats(o){const d=cleanDesDegats(o&&o.degatsDes);return d?d.n+'d'+d.f:String(Math.max(0,Math.trunc(Number(o&&o.degats))||0))}
+function lisFormuleDegats(t){const m=/^\s*(\d{1,2})\s*(?:[dD]\s*(\d{1,3}))?\s*$/.exec(String(t??''));if(!m)return null;const n=Number(m[1]),f=Number(m[2]||0);
+ return n>=1&&f>=2?{degats:0,degatsDes:{n:Math.min(20,n),f:Math.min(100,f)}}:{degats:Math.min(99,n)}}
+function tireDegats(o,tirage=Math.random){const d=cleanDesDegats(o&&o.degatsDes);if(!d)return {total:Math.max(0,Math.trunc(Number(o&&o.degats))||0),jets:[]};
+ const jets=Array.from({length:d.n},()=>1+Math.min(d.f-1,Math.floor(tirage()*d.f)));return {total:jets.reduce((s,v)=>s+v,0),jets}}
 function cleanTestPiege(t,liste,def){const k=Math.trunc(Number(t&&t.comp));
  return {comp:(liste||COMPETENCES.map((_,i)=>i)).includes(k)?k:def,reussites:Math.max(1,Math.min(9,Math.trunc(Number(t&&t.reussites))||1))}}
 // Un déclencheur lié : une zone, rectangle de la carte ; ou un fil, d'un point à un autre.
@@ -448,7 +457,7 @@ function cleanPiege(p){const r=cleanRect(p);if(!r)return null;const n=(v,max)=>M
   ...(p.evitement?{evitement:{...cleanTestPiege(p.evitement,null,0),issue:p.evitement.issue==='moitie'?'moitie':'esquive'}}:{}),
   // Toujours actif, il ne se grise pas en partant : on ne le franchit qu'en l'enjambant.
   ...(p.enjambement||p.actif===true?{enjambement:cleanTestPiege(p.enjambement,null,0)}:{}),...(p.actif===true?{actif:true}:{}),
-  degats:n(p.degats,99),etats:(Array.isArray(p.etats)?p.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,8),caracs:cleanPertes(p.caracs),
+  degats:n(p.degats,99),...(cleanDesDegats(p.degatsDes)?{degatsDes:cleanDesDegats(p.degatsDes)}:{}),etats:(Array.isArray(p.etats)?p.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,8),caracs:cleanPertes(p.caracs),
   ...(p.reamorcable===true?{reamorcable:true}:{})}}
 // Ce que les pièges ont ôté à un combattant, ligne par ligne : la fiche les retranche de ses bonus.
 function malusDe(a){return a&&Array.isArray(a.malusPieges)?cleanPertes(a.malusPieges):[]}
@@ -2495,7 +2504,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,pointLibre,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanPiege,cleanPertes,malusDe,DETECTION_PIEGE,DESAMORCAGE_PIEGE,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,pointLibre,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,formuleDegats,lisFormuleDegats,tireDegats,cleanPiege,cleanPertes,malusDe,DETECTION_PIEGE,DESAMORCAGE_PIEGE,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,coutParDefaut,coutTalent,NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
