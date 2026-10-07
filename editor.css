@@ -166,7 +166,11 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 #map-tools [data-tool=obscur].on,#map-tools [data-tool=obscurlibre].on,#map-tools [data-tool=obscurremplir].on,#map-tools [data-tool=obscurgomme].on{background:#2a3139;border-color:#2a3139;color:#fff}
 .shape.obscur{background:#05070a66;border:2px dashed #5b6670;pointer-events:none}.shape.obscur .grip{display:none!important}
 .lasso-layer.obscur polygon,.lasso-layer.obscur polyline{stroke:#5b6670;fill:#05070a55}
-.lasso-layer.bloc polygon,.lasso-layer.bloc polyline{stroke:#6c7d85;fill:#0b111466}.lasso-layer.obscur-gomme polygon,.lasso-layer.obscur-gomme polyline{stroke:#c9a86a;fill:#c9a86a33}
+.lasso-layer.bloc polygon,.lasso-layer.bloc polyline{stroke:#6c7d85;fill:#0b111466}
+/* Le « ! » d'un adversaire qui a entendu sans voir, au-dessus de sa jauge. */
+#pv-layer .entendu{position:absolute;transform:translate(-50%,-100%);margin-top:calc(var(--token) * -.5 - 6px);font:900 max(16px,calc(var(--token)*.75))/1 'Killam',Georgia,serif;color:#ffd23f;-webkit-text-stroke:1px #2a1a05;text-shadow:0 0 3px #000,0 2px 4px #000c,0 0 10px #ffb40080;pointer-events:none}
+#pv-layer .entendu.neuf{animation:entendu-surgit .6s cubic-bezier(.2,1.6,.4,1)}
+@keyframes entendu-surgit{0%{transform:translate(-50%,-40%) scale(.2);opacity:0}100%{transform:translate(-50%,-100%) scale(1);opacity:1}}.lasso-layer.obscur-gomme polygon,.lasso-layer.obscur-gomme polyline{stroke:#c9a86a;fill:#c9a86a33}
 .sw-door{background:#c98a4b;border:1px solid #e8b878}
 .sw-door-open{background:#c98a4b2e;border:1px dashed #e8b878}.sw-ligne{background:#0b1114;height:4px;align-self:center}
 /* Les traits de blocage : la même encre que les zones, en polygones puisqu'ils penchent. */
@@ -360,6 +364,7 @@ button.btn-reaction{--fond:#9b7ad4}
 button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#cf9152;color:#fff;background-image:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.07))}
 button.btn-analyse[hidden]{display:none}
 /* Repos court : vert, texte blanc ; grisé en combat et une fois pris. */button.btn-repos{--fond:#4f9a5a;color:#fff}button.btn-repos[hidden]{display:none}
+/* Crier : ambre, texte blanc ; grisé une fois le cri poussé, jusqu’à la fin du prochain combat. */button.btn-crier{--fond:#b9772c;color:#fff}button.btn-crier[hidden]{display:none}
 /* Retirer un objet du sac : une petite croix rouge, au coin, qui ne paraît qu'au survol. */
 .sac .gear-carre{position:relative}.sac .retirer-sac{position:absolute;top:-7px;right:-7px;width:20px;height:20px;padding:0;margin:0;border-radius:50%;border:2px solid var(--panel);background:#c0392b;color:#fff;font:700 11px/1 system-ui;display:grid;place-items:center;opacity:0;transform:scale(.8);transition:opacity .12s,transform .12s;z-index:3;cursor:pointer;box-shadow:0 1px 3px #0006}
 .sac .gear-carre:hover .retirer-sac,.sac .gear-carre:focus-within .retirer-sac{opacity:1;transform:scale(1)}.sac .retirer-sac:hover{background:#a02c20}
