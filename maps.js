@@ -1057,7 +1057,7 @@ function faisBruit(qui,places,R){if(!qui||!Array.isArray(places)||!places.length
   &&places.some(s=>Math.hypot((a.x-s.x)/100*W,(a.y-s.y)/100*H)<=Rp)&&!voitBruiteur(a,qui));
  if(!proches.length)return 0;
  const pr=propageBruit(t,places,R);let n=0;
- proches.forEach(a=>{const c=chanceEntendre(t,pr,a);if(c>0&&Math.random()<c){a.entendu=Date.now();n++}});
+ proches.forEach(a=>{const c=chanceEntendre(t,pr,a);if(c>0&&Math.random()<c){a.entendu=Date.now();a.entendQui=[...new Set([...(Array.isArray(a.entendQui)?a.entendQui:[]),qui.id])].slice(-8);n++}});
  return n}
 /* Les pas d'un combattant de la troupe, le long du chemin qu'il a suivi. Discret, il marche sans bruit jusqu'au bout de ses
    mètres de discrétion ; le bruit part de là où ils s'épuisent. */
@@ -1071,9 +1071,11 @@ function bruitDePas(o,pts){if(!o||!duCoteTroupe(o)||o.orbeStatique||!alive(o)||o
   places.push({x:q.x,y:q.y})}
  if(avait){if(reste>0)o.discret=Math.round(reste*10)/10;else delete o.discret}
  return places.length?faisBruit(o,places,BRUIT_PAS):0}
-// Qui voit la troupe n'a plus rien à entendre : son « ! » s'en va.
+/* Qui voit celui qu'il a entendu n'a plus rien à entendre : son « ! » s'en va. Voir un autre aventurier ne l'efface pas ; faute
+   de savoir qui il a entendu, toute la troupe compte. */
 function oublieEntendus(){const troupe=actors.filter(o=>o&&duCoteTroupe(o)&&alive(o)&&!o.horsCarte&&!o.orbeStatique);
- actors.forEach(a=>{if(a&&a.entendu&&(!alive(a)||troupe.some(o=>voitBruiteur(a,o))))delete a.entendu})}
+ actors.forEach(a=>{if(!a||!a.entendu)return;const qui=(Array.isArray(a.entendQui)?a.entendQui:[]).map(id=>troupe.find(o=>o.id===id)).filter(Boolean);
+  if(!alive(a)||(qui.length?qui:troupe).some(o=>voitBruiteur(a,o))){delete a.entendu;delete a.entendQui}})}
 /* Le piège toujours actif qui a happé un combattant le tient : il n'en sort qu'en l'enjambant, ou le MJ l'en sort. Il le lâche
    quand il cesse de le toucher, d'être armé, ou quand l'enjambement l'en a affranchi. */
 function tenuParPiege(o){if(!o||!o.tenuPar)return null;const m=currentMap(),p=m&&(m.pieges||[]).find(x=>x&&x.id===o.tenuPar),size=mapSize();

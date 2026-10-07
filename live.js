@@ -21,7 +21,7 @@
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement','mvtReste','mvtTour','opportunitesSubies',
  'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan',
- 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie'];
+ 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','entendQui'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
 // L'élément d'un Mystique est au MJ : un joueur ne le pousse pas.
