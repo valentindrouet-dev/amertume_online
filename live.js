@@ -21,7 +21,7 @@
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement','mvtReste','mvtTour','opportunitesSubies',
  'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan',
- 'xp','level','skills','endu','vieMax','pvBonus','sexe','race'];
+ 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
 // L'élément d'un Mystique est au MJ : un joueur ne le pousse pas.
@@ -107,7 +107,9 @@ function etatVivant(){const out={actors:{}};
  out.doors=m?[...(m.doors||[]).map(d=>d.decouvert?(d.open?3:2):!!d.open),...(m.objets||[]).map(o=>o.pris?2:o.visible?1:0),
   ...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0)|(c.tente?16:0)),
   // Puis les lumières de la carte : 2 prise, 1 éteinte, 0 allumée ; enfin, chaque lumière posée au sol, en entier.
-  ...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.prise?2:l.eteinte?1:0),...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol)]:[];
+  ...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.prise?2:l.eteinte?1:0),...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol),
+  // Enfin les pièges, chacun par son identifiant : 1 révélé, 2 déclenché, 4 désamorcé, 8 détection manquée.
+  ...(m.pieges||[]).map(p=>({t:p.id,e:(p.revele?1:0)|(p.declenche?2:0)|(p.desamorce?4:0)|(p.rate?8:0)}))]:[];
  out.fogOff=!!(m&&m.fogOff);
  /* La limite de mouvement que le MJ impose en exploration voyage avec la remise à zéro du brouillard : une clé du MJ seul,
     que les règles admettent déjà ; aucune clé nouvelle dans le document. */
@@ -271,7 +273,10 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    const recues=auSol(d.doors),ici=(m.lumieres||[]).filter(l=>l&&l.pose),cleIci=cle(ici.map(lumiereAuSol)),cleRecue=cle(recues);
    const envoyees=dernierPousse?auSol(dernierPousse.doors):null;
    if(cleIci!==cleRecue&&!(envoyees&&cle(envoyees)===cleRecue)){const avant=new Map(ici.map(l=>[l.id,l]));
-    m.lumieres=[...fixes,...recues.map(v=>Object.assign(avant.get(v.p)||{},cleanLumiere({id:v.p,nom:v.n,x:v.x,y:v.y,rayon:v.r,items:v.o?[v.o]:[],pose:true})))]}}
+    m.lumieres=[...fixes,...recues.map(v=>Object.assign(avant.get(v.p)||{},cleanLumiere({id:v.p,nom:v.n,x:v.x,y:v.y,rayon:v.r,items:v.o?[v.o]:[],pose:true})))]}
+   // L'état des pièges, chacun retrouvé par son identifiant.
+   d.doors.forEach(v=>{if(!v||typeof v!=='object'||typeof v.t!=='string')return;const p=(m.pieges||[]).find(x=>x&&x.id===v.t);if(!p)return;const e=Number(v.e)||0;
+    [['revele',1],['declenche',2],['desamorce',4],['rate',8]].forEach(([k,b])=>{if(e&b)p[k]=true;else delete p[k]})})}
   if(selected!==null&&!actors[selected])selected=null;
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
   if(typeof marked!=='undefined')marked=new Set([...marked].filter(id=>actors.some(a=>a.id===id)));
@@ -379,7 +384,8 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
   else if(rec.effet==='balayage'&&typeof coupDeToken==='function')coupDeToken(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
   else if(rec.effet==='choc'&&typeof chocImpact==='function'){const [x,y]=(typeof rec.logo==='string'?rec.logo:'').split('|').map(Number);
    chocImpact(acteurDuJournal(rec.a),acteurDuJournal(rec.b),170,Number.isFinite(x)&&Number.isFinite(y)?{x,y}:null)}
-  else if(rec.effet==='piege'&&typeof explosionPiege==='function'){const m=typeof currentMap==='function'?currentMap():null,c=m&&(m.coffres||[])[Number(rec.logo)];if(c)explosionPiege(centreForme(c))}return}
+  else if(rec.effet==='piege'&&typeof explosionPiege==='function'){const m=typeof currentMap==='function'?currentMap():null,c=m&&(m.coffres||[])[Number(rec.logo)];if(c)explosionPiege(centreForme(c))}
+  else if(rec.effet==='piegecarte'&&typeof explosionPiege==='function'){const m=typeof currentMap==='function'?currentMap():null,p=m&&(m.pieges||[])[Number(rec.logo)];if(p)explosionPiege(centrePiege(p))}return}
  if(rec.genre==='attaque'){const r=rec.detail&&typeof rec.detail==='object'?rec.detail:null;
   const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,def:Number.isInteger(r.def)?r.def:null,solidite:!!r.solidite,double:!!r.double,total:r.total}:null;
   logAttaqueLocal(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'',String(rec.corps||''),d,rec.suite?String(rec.suite):'')}

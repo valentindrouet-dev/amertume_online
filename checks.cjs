@@ -2160,7 +2160,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
  assert.equal(C.cleanSegments(Array.from({length:300},()=>({x1:1,y1:1,x2:2,y2:2}))).length,200);
  const nettoyee=C.cleanMap({name:'z',zonesCoupures:[{x1:1,y1:1,x2:2,y2:2}],zonesLiens:'nope'});
  assert.deepEqual(nettoyee.zonesCoupures,[{x1:1,y1:1,x2:2,y2:2}]);assert.deepEqual(nettoyee.zonesLiens,[]);
- assert.ok(cartes.includes("KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coffre:'Coffre',lumiere:'Lumière',coupure:'Séparation de zones',lien:'Regroupement de zones'}")
+ assert.ok(cartes.includes("KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coffre:'Coffre',lumiere:'Lumière',piege:'Piège',declencheur:'Déclencheur du piège',coupure:'Séparation de zones',lien:'Regroupement de zones'}")
   &&cartes.includes('<button data-tool="zones">Zones</button><button data-tool="separer">Séparer les zones</button><button data-tool="regrouper">Regrouper les zones</button>')&&cartes.includes("const OUTILS_ZONES=['zones','separer','regrouper'];")
   &&cartes.includes(" m.zonesCoupures??=[];m.zonesLiens??=[];")&&cartes.includes(' dessineTraits();dessineZonesEditeur();')
   &&cartes.includes("if(d.kind==='coupure')return (m.zonesCoupures||[])[d.i];if(d.kind==='lien')return (m.zonesLiens||[])[d.i];")
@@ -3387,6 +3387,32 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.615 — Pièges : un outil de l'éditeur de cartes. Un piège de toute taille, en jeton, en jeton imagé ou en image seule ;
+   visible ou caché ; déclenché au contact ou à distance par une zone ou un fil liés ; détecté par Perception ou Ruse ;
+   désamorçable, évitable, enjambable ; dégâts, états et pertes de caractéristique, permanentes ou jusqu'au repos ;
+   grisé une fois déclenché ou désamorcé, réamorçable avec le talent Réamorceur. */
+{const K=require('./combat.js'),carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8'),src=fs.readFileSync('editor.js','utf8');
+ const p=K.cleanPiege({id:'p1',x:10,y:10,w:5,h:5,detection:{comp:1,reussites:0},desamorcage:{comp:2,reussites:3},evitement:{comp:0,reussites:2,issue:'moitie'},
+  declencheurs:[{id:'f',type:'fil',x1:1,y1:1,x2:1,y2:1},{id:'f2',type:'fil',x1:1,y1:1,x2:5,y2:1},{id:'z',type:'zone',x:2,y:2,w:3,h:3}],degats:'4',etats:['Saignée','zzz'],caracs:[{carac:'comp',comp:'0',valeur:1,duree:'repos'}]});
+ assert.equal(p.affichage,'jeton');assert.equal(p.contact,true);assert.equal(p.nom,'Piège');assert.equal(p.cache,undefined);
+ assert.deepEqual(p.detection,{comp:3,reussites:1},'une détection hors Perception et Ruse revient à Perception');
+ assert.deepEqual(p.desamorcage,{comp:5,reussites:3},'un désamorçage hors Ruse, Technique et Force revient à Ruse');
+ assert.deepEqual(p.evitement,{comp:0,reussites:2,issue:'moitie'});assert.equal(p.enjambement,undefined);
+ assert.deepEqual(p.declencheurs.map(d=>d.type),['fil','zone'],'un fil sans longueur tombe');assert.equal(p.degats,4);assert.deepEqual(p.etats,['Saignée']);
+ assert.equal(K.cleanPiege({x:1,y:1,w:2,h:2,affichage:'image',contact:false,cache:true,reamorcable:true,image:'javascript:x'}).image,undefined,'une image douteuse tombe');
+ assert.deepEqual(K.cleanPertes([{carac:'zzz',valeur:500,duree:'x'}]),[{carac:'pv',valeur:99,comp:'0',duree:'perm'}]);
+ assert.equal(K.cleanMap({pieges:[{x:1,y:1,w:2,h:2},null]}).pieges.length,1);assert.deepEqual(K.cleanMap({}).pieges,[]);
+ const a={vie:6,endu:3,talents:[],malusPieges:[{carac:'comp',comp:'0',valeur:1,duree:'repos'},{carac:'vie',valeur:1,duree:'perm'}]};
+ assert.deepEqual(K.bonusDe(a,[]),{pv:0,endu:0,vie:-1,def:0,dmg:0,skills:[-1,0,0,0,0,0,0,0]},'les pertes se retranchent de la fiche');
+ assert.equal(K.vieDe(a,[]),5);assert.deepEqual(K.malusDe({}),[]);assert.ok(K.TALENT_CODES?K.TALENT_CODES.reamorcage:fs.readFileSync('combat.js','utf8').includes("reamorcage:{cle:'reamorcage',nom:'Réamorceur',type:'pass',"),'le talent Réamorceur');
+ assert.ok(carto.includes('<button data-tool="piege">Piège</button>')&&carto.includes('function openPiege(i){')&&carto.includes('function declencheursEl(i,p){')
+  &&carto.includes('function piegeAuPassage(o,de){')&&carto.includes('function declenchePiege(p,o){')&&carto.includes('function renderPieges(){')
+  &&carto.includes("diffuserEffet('piegecarte',o,null,String(m.pieges.indexOf(p)));"),'les pièges dans l’éditeur et à la table');
+ assert.ok(page.includes("function piegeApresMouvement(o,depart){")&&(page.match(/piegeApresMouvement\([ab],depart\);compteDistance/g)||[]).length===4
+  &&page.includes("const piegeClavier=typeof piegeAuPassage==='function'?piegeAuPassage(a,{x:x0,y:y0}):null;"),'chaque mouvement s’arrête au piège');
+ assert.ok(vif.includes("...(m.pieges||[]).map(p=>({t:p.id,e:(p.revele?1:0)|(p.declenche?2:0)|(p.desamorce?4:0)|(p.rate?8:0)}))]")
+  &&vif.includes("else if(rec.effet==='piegecarte'&&typeof explosionPiege==='function')"),'l’état des pièges voyage');
+ assert.ok(src.includes("a.malusPieges=a.malusPieges.filter(b=>b&&b.duree!=='repos');"),'un repos efface les pertes temporaires');}
 /* v0.614 — Retirer de l'inventaire un objet en plusieurs exemplaires : on choisit combien, ou tout. Les bulles des boutons de la
    carte : le nom, comme pour un talent, puis une phrase qui suit l'état du bouton. Chez le MJ, un champ que le document de la
    table ne porte pas encore — l'XP — part au prochain envoi : une XP remise à zéro arrive chez les joueurs. */
@@ -3665,7 +3691,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&carto.includes("ajouterInventaire(a,it)!==false")&&carto.includes(" if(!l.pose)bouton(l.eteinte?'Rallumer':'Éteindre',"),'poser, ramasser');
  assert.ok(page.includes("geste('Poser la Source de lumière',ic||(typeof glyphePiece==='function'?glyphePiece(itemColumn(o)):'◈'),'',!enCombat()||pointsRestants(a,'mouvement')>0,()=>{")&&page.includes("if(enCombat()){saveChecks();savePool();depensePoint(a,'mouvement')}poserLumiere(a,o)},'btn-action btn-mvt',null,null,null,bulle);"),'le rond Poser la Source de lumière');
  assert.ok(vivant.includes("function lumiereAuSol(l){return {n:l.nom,o:(l.items||[])[0]||'',p:l.id,r:l.rayon,x:l.x,y:l.y}}")
-  &&vivant.includes("...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol)]:[];")
+  &&vivant.includes("...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol),")
   &&vivant.includes("if(cleIci!==cleRecue&&!(envoyees&&cle(envoyees)===cleRecue)){const avant=new Map(ici.map(l=>[l.id,l]));")
   &&!/'(posees|auSol|lumieresPosees)'/.test(fs.readFileSync('firestore-online.rules','utf8')),'au sol, en ligne, sans clé nouvelle');
  assert.ok(feuille.includes("#gear .cat-pill.gear-carre,#gear .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:28px;min-width:28px;height:28px;min-height:28px;")
@@ -3767,7 +3793,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&feuille.includes("#halos{position:absolute;")&&feuille.includes(".token.lumiere{background:#fff3d6;border-color:#d9a85a;"),'les halos');
  assert.ok(carto.includes("function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;")&&carto.includes(" else{l.eteinte=true;l.prise=true;log(nomNum(a)+' prend '+pris.map(it=>'⟦'+it.id+'⟧').join(' ')+' : '+l.nom+' s’éteint.',{ton:'butin'})}")
   &&carto.includes("bouton(l.eteinte?'Rallumer':'Éteindre',()=>{if(l.eteinte){delete l.eteinte;delete l.prise}else l.eteinte=true;")
-  &&carto.includes(" vue.querySelectorAll('.token.lumiere').forEach(t=>t.remove());renderHalos();if(!m)return;")&&carto.includes(" renderPortes();renderCoffres();renderObjets();renderLumieres()}")
+  &&carto.includes(" vue.querySelectorAll('.token.lumiere').forEach(t=>t.remove());renderHalos();if(!m)return;")&&carto.includes(" renderPortes();renderCoffres();renderPieges();renderObjets();renderLumieres()}")
   &&carto.includes("(m.objets||[]).forEach(o=>{delete o.pris});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});"),'la prise, le menu, la carte rouverte');
  assert.ok(vivant.includes("...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.prise?2:l.eteinte?1:0),")&&vivant.includes("fixes.forEach((l,k)=>{const v=d.doors[n3+k];if(v===2){l.eteinte=true;l.prise=true}else if(v===1){l.eteinte=true;delete l.prise}else if(v===0){delete l.eteinte;delete l.prise}});"),'éteinte, en ligne');}
 /* v0.591 — L'obscurité et la vision dans le noir. Sur une carte, une seconde matière, dessinée au rectangle, au contour libre,
@@ -4182,7 +4208,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("auteurCoup=a;queueMicrotask(()=>{auteurCoup=null});ajouteBilan(a,'coups',1);")&&page.includes("ajouteBilan(a,'crit',1)")&&page.includes("applyHeal=function(a,m){const g=soinSansBilan(a,m);if(g>0)ajouteBilan(a,'soin',g);return g}"),'les compteurs de dégâts, coups, critiques et soins');
  assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes("compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);"),'la distance, là où un mouvement connaît son départ');
  assert.ok(page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
- assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race'];")&&vivant.includes("...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
+ assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe'];")&&vivant.includes("...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
  assert.ok(src.includes('function lisBilan(o){')&&src.includes('function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;'),'la fenêtre');
  // Le bilan venu d'ailleurs est relu : chiffres bornés, noms coupés, camp connu.
  {const vm=require('vm'),deb=src.indexOf('function lisBilan(o){'),fin=src.indexOf('const statsDialog=');const ctx={};vm.createContext(ctx);vm.runInContext(src.slice(deb,fin)+';this.r=lisBilan({tours:"3",liste:[{nom:"x".repeat(99),camp:"pirate",inf:-4,sub:"12",pic:1e9},null]});',ctx);

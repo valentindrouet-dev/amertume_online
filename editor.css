@@ -967,6 +967,47 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 .bulle{position:fixed;z-index:60;max-width:min(340px,92vw);box-sizing:border-box;pointer-events:none;
  filter:drop-shadow(0 6px 18px rgba(0,0,0,.28));animation:bulle-entre .1s ease-out}
 .bulle.epinglee{pointer-events:auto}
+/* Les pièges (v0.615). Sur le plan de l'éditeur : un jeton rond rouge sombre, ou l'image seule ; caché, en pointillé. Leurs
+   déclencheurs en orange : une zone en pointillé, un fil d'un trait, un fin lien de chacun au piège. */
+#map-canvas .shape.piege{border:2px solid #b8432f;border-radius:50%;background:#3a1d1acc;container-type:size}
+#map-canvas .shape.piege.image-seule{border:1px dashed #b8432f99;border-radius:3px;background:none}
+#map-canvas .shape.piege.cache{border-style:dashed;opacity:.8}
+.piege-visuel{position:absolute;inset:0;display:grid;place-items:center;font-size:58cqmin;line-height:1;pointer-events:none;overflow:hidden;border-radius:inherit}
+.piege-visuel .piege-image{width:100%;height:100%;object-fit:contain}
+#map-canvas .shape.piege:not(.image-seule) .piege-image,.piege-table.jeton .piege-image{object-fit:cover}
+#map-canvas .shape.declencheur.zone{border:2px dashed #e0703a;background:#e0703a24;border-radius:3px}
+#map-canvas .declencheur.fil{position:absolute;inset:0;pointer-events:none}
+#map-canvas .declencheur.fil svg,#map-canvas svg.piege-liens{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#map-canvas .declencheur.fil .touche{stroke:transparent;stroke-width:14px;vector-effect:non-scaling-stroke;pointer-events:stroke;cursor:pointer}
+#map-canvas .declencheur.fil .trait{stroke:#e0703a;stroke-width:3px;stroke-dasharray:7 5;vector-effect:non-scaling-stroke;stroke-linecap:round}
+#map-canvas .declencheur.fil.selected .trait{stroke:#ffb36b}
+#map-canvas .declencheur.fil .grip.bout{transform:translate(-50%,-50%);pointer-events:auto}
+#map-canvas .declencheur.fil.selected:not(.locked) .grip{display:block}
+#map-canvas svg.piege-liens .lien{stroke:#e0703a;stroke-width:1.5px;stroke-dasharray:2 4;vector-effect:non-scaling-stroke;opacity:.85}
+.piege-image-ligne,.piege-image{max-width:100%}
+.piege-apercu{position:relative;display:inline-block;width:46px;height:46px;border-radius:50%;border:2px solid #b8432f;background:#3a1d1a;container-type:size;vertical-align:middle;margin-right:8px}
+#piege-editor .piege-image{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+#piege-editor .piege-declencheurs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 6px}
+#piege-editor .piege-decl{display:inline-flex;align-items:center;gap:4px;padding:2px 4px 2px 9px;border:1px dashed #e0703a;border-radius:6px;font-size:13px}
+#piege-editor .piege-perte{display:flex;align-items:center;gap:6px;margin:4px 0}
+#piege-editor .coffre-cases{display:flex;flex-wrap:wrap;gap:4px 18px;margin:6px 0}#piege-editor .coffre-etats{display:flex;flex-wrap:wrap;gap:2px 14px;margin:6px 0}
+#piege-editor .piege-parade{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:4px 0;min-height:38px}#piege-editor .piege-parade>.field-check{min-width:132px}
+#piege-editor .piege-si{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}#piege-editor .piege-si[hidden]{display:none}
+#piege-editor .piege-si select{width:auto;margin:0}#piege-editor .piege-si input[type=number]{width:60px;margin:0}
+#piege-editor .piege-perte select{width:auto;margin:0}#piege-editor .piege-perte input{width:64px;margin:0}
+/* À la table : le calque des pièges, sous le brouillard ; un jeton rond, ou l'image seule. Caché, chez le MJ, en pointillé ;
+   déclenché ou désamorcé, grisé. Les déclencheurs, en orange. */
+#map-pieges{position:absolute;inset:0;z-index:1;pointer-events:none}
+#map-pieges .piege-table{position:absolute;pointer-events:auto;cursor:pointer;container-type:size}
+#map-pieges .piege-table.jeton{border-radius:50%;border:2px solid #b8432f;background:#2a1513d9;box-shadow:0 2px 6px #0008}
+#map-pieges .piege-table.image .piege-visuel{filter:drop-shadow(0 2px 3px #0009)}
+#map-pieges .piege-table.cache{opacity:.6;border-style:dashed}
+#map-pieges .piege-table.inerte{filter:grayscale(1);opacity:.55}
+#map-pieges .piege-table.voile{opacity:.45}
+#map-pieges svg.piege-declencheurs{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#map-pieges svg .zone{fill:#e0703a1f;stroke:#e0703a;stroke-width:2px;stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
+#map-pieges svg .fil{stroke:#e0703a;stroke-width:2.5px;stroke-dasharray:6 4;vector-effect:non-scaling-stroke;stroke-linecap:round}
+#map-pieges svg .inerte{opacity:.35}#map-pieges svg .cache{opacity:.6}
 /* La bulle d'un bouton de la barre de la carte : son nom, puis ce qu'il fait. */
 .bulle-bouton .talent-detail.bulle-bouton-texte{max-width:280px}
 @keyframes bulle-entre{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}

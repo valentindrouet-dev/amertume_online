@@ -1536,7 +1536,10 @@ function reposLong(){if(view!=='mj')return;const troupe=actors.filter(a=>a&&a.he
  log('🌙 Repos long : '+troupe.map(a=>a.name).join(', ')+' retrouvent VIE, PV, repos courts et charges.'
   +(revenus.length?' '+revenus.map(a=>a.name).join(', ')+(revenus.length>1?' reviennent':' revient')+' sur la carte.':''),{ton:'soin'});
  renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
-function reposer(a,type='long'){if(!a||!a.usages)return 0;
+function reposer(a,type='long'){
+ // Un repos rend ce qu'un piège n'avait ôté que jusqu'au repos.
+ if(a&&Array.isArray(a.malusPieges)){a.malusPieges=a.malusPieges.filter(b=>b&&b.duree!=='repos');if(!a.malusPieges.length)delete a.malusPieges}
+ if(!a||!a.usages)return 0;
  const garde={},rendues=[];
  Object.entries(a.usages).forEach(([id,quoi])=>{
   if(type==='long'||quoi==='court')rendues.push(id);else garde[id]=quoi});

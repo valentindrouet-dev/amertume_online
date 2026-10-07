@@ -421,6 +421,36 @@ function cleanCoffre(c){const r=cleanRect(c);if(!r)return null;const n=(v,max)=>
   perception:Math.max(1,n(c.perception,9)),verrou:n(c.verrou,9),piege:n(c.piege,9),degats:n(c.degats,99),
   etats:(Array.isArray(c.etats)?c.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,8),
   items:(Array.isArray(c.items)?c.items:[]).filter(x=>typeof x==='string').slice(0,99).map(x=>texte(x,60)).filter(Boolean),richesses:rich,...(bourse.length?{bourse}:{})}}
+/* Un piège (v0.615) : un rectangle de la carte, comme un coffre, montré en jeton rond — son icône ou son image dedans — ou en
+   image seule, sur fond transparent. Caché ou visible : un test de Perception ou de Ruse, au choix du MJ, le détecte. Il part
+   au contact de sa forme, ou à distance par ses déclencheurs liés, des zones et des fils. Désamorçable (Ruse, Technique ou
+   Force), évitable et enjambable, chacun par le test que le MJ prépare ; il inflige des dégâts, des états, des pertes de
+   caractéristique, permanentes ou jusqu'au prochain repos. Déclenché ou désamorcé, il reste grisé ; réamorçable, le porteur
+   du talent Réamorceur le rearme. Ce qui lui arrive en partie — révélé, déclenché, désamorcé — ne voyage pas avec la carte. */
+const DETECTION_PIEGE=[3,5],DESAMORCAGE_PIEGE=[5,7,1];
+function cleanTestPiege(t,liste,def){const k=Math.trunc(Number(t&&t.comp));
+ return {comp:(liste||COMPETENCES.map((_,i)=>i)).includes(k)?k:def,reussites:Math.max(1,Math.min(9,Math.trunc(Number(t&&t.reussites))||1))}}
+// Un déclencheur lié : une zone, rectangle de la carte ; ou un fil, d'un point à un autre.
+function cleanDeclencheur(d){if(!d||typeof d!=='object')return null;const id=texte(d.id,40);
+ if(d.type==='fil'){const o={x1:borne(d.x1),y1:borne(d.y1),x2:borne(d.x2),y2:borne(d.y2)};return Math.hypot(o.x2-o.x1,o.y2-o.y1)>0?{id,type:'fil',...o}:null}
+ const r=cleanRect(d);return r?{id,type:'zone',x:r.x,y:r.y,w:r.w,h:r.h}:null}
+// Les pertes de caractéristique d'un piège, une ligne chacune, comme les bonus d'un objet ; permanentes, ou jusqu'au repos.
+function cleanPertes(l){return (Array.isArray(l)?l:[]).filter(b=>b&&typeof b==='object').slice(0,6).map(b=>({
+ carac:CARACS_EQUIP.some(([k])=>k===b.carac)?b.carac:'pv',valeur:Math.max(1,Math.min(99,Math.trunc(Number(b.valeur))||1)),
+ comp:String(Math.max(0,Math.min(COMPETENCES.length-1,Math.trunc(Number(b.comp))||0))),duree:b.duree==='repos'?'repos':'perm'}))}
+function cleanPiege(p){const r=cleanRect(p);if(!r)return null;const n=(v,max)=>Math.max(0,Math.min(max,Math.trunc(Number(v))||0));
+ const img=typeof (p&&p.image)==='string'&&IMAGE_RE.test(p.image)?p.image:null;
+ return {...r,id:texte(p.id,40),nom:texte(p.nom,60)||'Piège',desc:texte(p.desc,600),...(p.cache===true?{cache:true}:{}),
+  ...(img?{image:img}:{}),...(p.logo?{logo:texte(p.logo,160)}:{}),affichage:p.affichage==='image'?'image':'jeton',
+  contact:p.contact!==false,declencheurs:(Array.isArray(p.declencheurs)?p.declencheurs:[]).slice(0,12).map(cleanDeclencheur).filter(Boolean),
+  detection:cleanTestPiege(p.detection,DETECTION_PIEGE,3),
+  ...(p.desamorcage?{desamorcage:cleanTestPiege(p.desamorcage,DESAMORCAGE_PIEGE,5)}:{}),
+  ...(p.evitement?{evitement:{...cleanTestPiege(p.evitement,null,0),issue:p.evitement.issue==='moitie'?'moitie':'esquive'}}:{}),
+  ...(p.enjambement?{enjambement:cleanTestPiege(p.enjambement,null,0)}:{}),
+  degats:n(p.degats,99),etats:(Array.isArray(p.etats)?p.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,8),caracs:cleanPertes(p.caracs),
+  ...(p.reamorcable===true?{reamorcable:true}:{})}}
+// Ce que les pièges ont ôté à un combattant, ligne par ligne : la fiche les retranche de ses bonus.
+function malusDe(a){return a&&Array.isArray(a.malusPieges)?cleanPertes(a.malusPieges):[]}
 /* Ce qu'un adversaire posé porte en propre, en plus de son modèle — une clé, un message —, et la chance,
    pièce par pièce, que cela tombe à sa mort. */
 function portePropre(f){const inv=(Array.isArray(f&&f.inventaire)?f.inventaire:[]).filter(x=>typeof x==='string').slice(0,30).map(x=>texte(x,60)).filter(Boolean);
@@ -438,6 +468,7 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
   foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
    hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),...(f&&typeof f.id==='string'&&f.id?{id:texte(f.id,40)}:{}),...portePropre(f),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
   coffres:(Array.isArray(m&&m.coffres)?m.coffres:[]).slice(0,100).map(cleanCoffre).filter(Boolean),
+  pieges:(Array.isArray(m&&m.pieges)?m.pieges:[]).slice(0,100).map(cleanPiege).filter(Boolean),
   objets:(Array.isArray(m&&m.objets)?m.objets:[]).slice(0,200).map(cleanObjet),
   // Les zones que le MJ a séparées ou regroupées voyagent avec la carte.
   zonesCoupures:cleanSegments(m&&m.zonesCoupures),zonesLiens:cleanSegments(m&&m.zonesLiens),zonesNoms:cleanEtiquettes(m&&m.zonesNoms),
@@ -1148,6 +1179,10 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
  enragementplus:{cle:'enragementplus',nom:'Enragement +2',court:'+2',type:'ame',
   aide:'Amélioration : chaque critique augmente les dégâts de +2 au lieu de +1.',params:[],
   phrase(){return 'Chaque <b>critique</b> augmente vos <b>dégâts de +2</b> au lieu de +1.'}},
+ reamorcage:{cle:'reamorcage',nom:'Réamorceur',type:'pass',
+  aide:'Passif : au contact d’un piège réamorçable, déclenché ou désamorcé, le porteur peut le réamorcer.',
+  params:[],
+  phrase(){return 'Le porteur peut <b>réamorcer un piège</b> réamorçable, déclenché ou désamorcé, à son contact.'}},
  insaisissable:{cle:'insaisissable',nom:'Insaisissable',type:'pass',
   aide:'Passif : le porteur ignore les Dégâts d’Opportunité quand il effectue un mouvement.',
   params:[],
@@ -2171,6 +2206,8 @@ function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talen
  .map(t=>{const code=talentCode(t);return code?{code,params:paramsTalent(t)}:null}).filter(Boolean));
  if(a&&a.hero)competencesDeClasse(a.role).forEach((n,k)=>out.skills[k]+=n);
  if(items){const e=bonusEquipement(a,items);['pv','endu','vie','def','dmg'].forEach(k=>out[k]+=e[k]);e.skills.forEach((n,k)=>out.skills[k]+=n)}
+ // Ce que les pièges lui ont ôté, permanent ou jusqu'au repos, se retranche (v0.615).
+ malusDe(a).forEach(b=>{if(b.carac==='comp'){const k=Number(b.comp)||0;if(out.skills[k]!==undefined)out.skills[k]-=b.valeur}else if(out[b.carac]!==undefined)out[b.carac]-=b.valeur});
  return out}
 // La Vie et l'Endurance telles qu'elles jouent : la fiche, plus les bonus appris et portés.
 function vieDe(a,talents,items){return (Math.trunc(Number(a&&a.vie))||0)+(talents||items?bonusDe(a,talents,items).vie:0)}
@@ -2457,7 +2494,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
  dx=Math.max(-Math.min(...xs),Math.min(100-Math.max(...xs),Number(dx)||0));
  dy=Math.max(-Math.min(...ys),Math.min(100-Math.max(...ys),Number(dy)||0));
  return z.map(([x,y])=>[x+dx,y+dy])}
-const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,pointLibre,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
+const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,pointLibre,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,cleanPiege,cleanPertes,malusDe,DETECTION_PIEGE,DESAMORCAGE_PIEGE,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,coutParDefaut,coutTalent,NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
