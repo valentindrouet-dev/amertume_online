@@ -3387,6 +3387,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.625 — Le bruit vaut pour tout adversaire pas encore révélé, qu'il voie l'aventurier ou non : voir dans le noir ne l'empêche plus
+   d'entendre. Au sol, un token qu'on tente de déplacer le dit : « Au Sol ! ». */
+{const carto=fs.readFileSync('maps.js','utf8');
+ assert.ok(!carto.includes('voitBruiteur')&&carto.includes("  &&places.some(s=>Math.hypot((a.x-s.x)/100*W,(a.y-s.y)/100*H)<=Rp));"),'le bruit, sans condition de vue');}
+assert.ok(page.includes("function auSolBloque(i){const a=actors[i];return !!a&&controlled(i)&&hasState(a,'Au sol')&&!canMove(i)&&(alive(a)||view==='mj')}")
+ &&page.includes("if(!geste)return;if(e.button===0&&auSolBloque(i))tenteAuSol(a,e);")&&page.includes("lot.forEach(k=>{if(auSolBloque(k))floatNumber(actors[k],'Au Sol !','nul',true)})")
+ &&page.includes("if(dirs[e.key]&&!e.repeat&&auSolBloque(i))floatNumber(a,'Au Sol !','nul',true);"),'« Au Sol ! » à qui tente de déplacer');
 /* v0.624 — Un tir qui porte le Feu, le Gel ou la Foudre part en boule de son élément, comme un orbe, ici et sur toutes les tables. */
 assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','Gel','Foudre'].includes(e));")
  &&page.includes("duree=Math.max(duree,volOrbe(a,actors[j],'',elem)||0);if(typeof diffuserEffet==='function')diffuserEffet('orbe',a,actors[j],'|'+elem);return}"),'le tir élémentaire, en orbe');
@@ -3402,7 +3409,7 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
 {const K=require('./combat.js'),carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.deepEqual([K.BRUIT_PAS,K.BRUIT_PAS_PORTE,K.BRUIT_ATTAQUE,K.BRUIT_CRI],[5,10,15,20]);assert.deepEqual([0,1,2,3,4,-1,'x'].map(K.metresDiscretion),[0,50,100,200,300,0,0]);
  assert.ok(carto.includes("function terrainDuBruit(){")&&carto.includes("function traverseBruit(t,p,q){")&&carto.includes("function propageBruit(t,sources,R){")
-  &&carto.includes("if(k+x<pr.K&&v+l<=pr.Rk[k+x?1:0])best=Math.max(best,Math.pow(.5,k+x))")&&carto.includes("proches.forEach(a=>{const c=chanceEntendre(t,pr,a);if(!(c>0))return;\n  if(unefois){a.ecoutes=[...(Array.isArray(a.ecoutes)?a.ecoutes:[]),qui.id].slice(-24);if(voitBruiteur(a,qui))return}\n  if(Math.random()<c){a.entendu=Date.now();n++}});")
+  &&carto.includes("if(k+x<pr.K&&v+l<=pr.Rk[k+x?1:0])best=Math.max(best,Math.pow(.5,k+x))")&&carto.includes("proches.forEach(a=>{const c=chanceEntendre(t,pr,a);if(!(c>0))return;\n  if(unefois)a.ecoutes=[...(Array.isArray(a.ecoutes)?a.ecoutes:[]),qui.id].slice(-24);\n  if(Math.random()<c){a.entendu=Date.now();n++}});")
   &&carto.includes("return places.length?faisBruit(o,places,[BRUIT_PAS,BRUIT_PAS_PORTE],true):0}")&&carto.includes("try{computeFog();oublieEntendus();renderBeforeMaps();"),'le son, ses portes, ses pas');
  assert.ok(page.includes("if(!(r0&&r0.ranged)&&typeof faisBruit==='function')faisBruit(a,[{x:a.x,y:a.y}],BRUIT_ATTAQUE);")
   &&page.includes("if(skillNames[i]==='Ruse'&&a.hero&&jet.reussites>0)a.discret=metresDiscretion(jet.reussites);")

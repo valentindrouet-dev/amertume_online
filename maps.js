@@ -999,8 +999,8 @@ function declenchePiege(p,o,contact){const m=currentMap();if(!m||!piegeArme(p)||
 function glisseAuPiege(o,depuis){const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(o.id)+'"]');if(!el)return;
  el.style.left=depuis.x+'%';el.style.top=depuis.y+'%';void el.offsetWidth;el.classList.add('glisse');el.style.left=o.x+'%';el.style.top=o.y+'%';if(typeof suitLaJauge==='function')suitLaJauge(el)}
 /* ---------- Le bruit ----------
-   Un adversaire pas encore révélé, qui ne voit pas un combattant, l'entend quand le son lui parvient : le chemin le plus court
-   entre eux, plié aux angles des murs, ne dépasse pas la portée du bruit. Une porte close sur ce chemin ne le laisse passer
+   Un adversaire pas encore révélé entend un combattant quand le son lui parvient, qu'il le voie ou non : le chemin le plus
+   court entre eux, plié aux angles des murs, ne dépasse pas la portée du bruit. Une porte close sur ce chemin ne le laisse passer
    qu'une fois sur deux, deux portes une fois sur quatre, et ainsi de suite. Les pas ne se tentent qu'une fois, comme on se
    révèle : la première fois qu'un aventurier entre à portée d'un adversaire. Celui qui entend porte un « ! » au-dessus de la
    tête, jusqu'à sa révélation. Rien d'autre : le MJ fait le reste. */
@@ -1048,19 +1048,17 @@ function chanceEntendre(t,pr,a){const p=[a.x/100*t.size.width,a.y/100*t.size.hei
   const c=j*pr.cols+i,q=pr.centre(c),x=traverseBruit(t,q,p);if(x<0)continue;const l=Math.hypot(q[0]-p[0],q[1]-p[1]);
   for(let k=0;k<pr.K;k++){const v=pr.d[c*pr.K+k];if(k+x<pr.K&&v+l<=pr.Rk[k+x?1:0])best=Math.max(best,Math.pow(.5,k+x))}}
  return best}
-// « a » voit le combattant « o » : rien entre eux, et assez de lumière, ou les yeux pour la nuit.
-function voitBruiteur(a,o){return !!a&&!!o&&!hasState(o,'Invisible')&&!wallsBetween(a,o,walls())&&(typeof voitSocle!=='function'||voitSocle(a,o))}
 /* Un bruit, depuis une ou plusieurs places, et sa portée en mètres, ou deux : sans porte, et à travers une porte close. Chaque
-   adversaire pas encore révélé qui ne voit pas qui l'a fait tente de l'entendre. « Une fois » : il ne le tente qu'une fois par
-   aventurier, quand celui-ci entre à sa portée, qu'il le voie alors ou non. Rend le nombre de ceux qui l'ont entendu. */
+   adversaire pas encore révélé tente de l'entendre. « Une fois » : il ne le tente qu'une fois par aventurier, quand celui-ci
+   entre à sa portée. Rend le nombre de ceux qui l'ont entendu. */
 function faisBruit(qui,places,R,unefois){if(!qui||!Array.isArray(places)||!places.length)return 0;const t=terrainDuBruit();if(!t)return 0;
  const W=t.size.width,H=t.size.height,Rp=Math.max(...(Array.isArray(R)?R:[R]))*t.tk,deja=a=>unefois&&Array.isArray(a.ecoutes)&&a.ecoutes.includes(qui.id);
  const proches=actors.filter(a=>a&&a!==qui&&alive(a)&&!a.horsCarte&&!a.orbeStatique&&!a.vu&&campDe(a)==='adverse'&&!deja(a)
-  &&places.some(s=>Math.hypot((a.x-s.x)/100*W,(a.y-s.y)/100*H)<=Rp)&&(unefois||!voitBruiteur(a,qui)));
+  &&places.some(s=>Math.hypot((a.x-s.x)/100*W,(a.y-s.y)/100*H)<=Rp));
  if(!proches.length)return 0;
  const pr=propageBruit(t,places,R);let n=0;
  proches.forEach(a=>{const c=chanceEntendre(t,pr,a);if(!(c>0))return;
-  if(unefois){a.ecoutes=[...(Array.isArray(a.ecoutes)?a.ecoutes:[]),qui.id].slice(-24);if(voitBruiteur(a,qui))return}
+  if(unefois)a.ecoutes=[...(Array.isArray(a.ecoutes)?a.ecoutes:[]),qui.id].slice(-24);
   if(Math.random()<c){a.entendu=Date.now();n++}});
  return n}
 /* Les pas d'un combattant de la troupe, le long du chemin qu'il a suivi. Discret, il marche sans bruit jusqu'au bout de ses
