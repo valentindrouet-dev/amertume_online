@@ -19,7 +19,7 @@
 /* Ce qui vit et se synchronise. Les images n'y sont pas : elles voyagent avec le contenu
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
- 'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement','mvtReste','mvtTour',
+ 'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement','mvtReste','mvtTour','opportunitesSubies',
  'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
@@ -29,6 +29,8 @@ const TABLE_CLE='amertume-table';
 let tableId=null,salleRef=null,siegesRef=null,enLigne=false,appliquantDistant=false;
 let dernierPousse=null,poussePret=false,pousseTimer=null,docPrecedent=null,renduDiffere=null,dernierRefus='';
 let monUid=null,monSiege=null,sieges={},quitteSalle=null,quitteSieges=null,dernierDoc=null;
+// Ce qu'un joueur a déjà vu de la table : le mode, le dernier envoi d'onglet. Remis à zéro en quittant la table.
+let modeConnu=false,ongletConnu=false,ongletVu=null,envoiOnglet=null;
 let journalRef=null,quitteJournal=null,journalVus=new Set(),journalPremier=true;
 /* Chez un joueur en ligne, révéler n'est pas son affaire : le MJ révèle, et « vu » lui
    arrive par la table. Sinon chaque appareil révélait de son côté, et un joueur qui
@@ -108,7 +110,8 @@ function etatVivant(){const out={actors:{}};
  out.fogOff=!!(m&&m.fogOff);
  /* La limite de mouvement que le MJ impose en exploration voyage avec la remise à zéro du brouillard : une clé du MJ seul,
     que les règles admettent déjà ; aucune clé nouvelle dans le document. */
- out.fogReset={...(typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false}),...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{})};
+ out.fogReset={...(typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false}),...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),
+  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{})};
  /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
     tableaux qu'on modifie en place (états, cases, cumuls), sinon rien n'en partait. */
  return JSON.parse(JSON.stringify(out))}
@@ -200,7 +203,12 @@ function appliquerSalleSeule(d,complet){if(!d)return;
  try{
   if(!estMJ()){
    if(Number.isFinite(d.round))round=d.round;
-   if(d.mode==='combat'||d.mode==='exploration')mode=d.mode;
+   if(d.mode==='combat'||d.mode==='exploration'){const avant=mode;mode=d.mode;
+    // Le combat qui commence ou finit chez le MJ s'annonce ici aussi, du même bandeau ; pas à l'arrivée à la table.
+    if(modeConnu&&avant!==mode&&typeof annonceFlottante==='function')annonceFlottante(mode==='combat'?'⚔ Début du combat !':'🕊 Fin du combat');modeConnu=true}
+   // L'onglet où le MJ envoie la troupe : chaque envoi porte son instant ; celui qu'on trouve en arrivant ne compte pas.
+   {const pn=d.fogReset&&typeof d.fogReset.pn==='number'?d.fogReset.pn:null;
+    if(ongletConnu&&pn!==null&&pn!==ongletVu&&typeof showPage==='function')showPage(String(d.fogReset.page||'table'));ongletVu=pn;ongletConnu=true}
    if(typeof d.locked==='boolean')tokensLocked=d.locked;
    if(typeof d.title==='string'&&typeof sceneTitle==='function')sceneTitle(d.title);
    if(d.mapId&&d.mapId!==currentMapId&&maps.some(m=>m.id===d.mapId)){carteNeuve=true;
@@ -443,6 +451,7 @@ async function fermerTable(){if(!estMJ()||!tableId)return;
  debrancherTable();localStorage.removeItem(TABLE_CLE);liveStatus('Table fermée.')}
 function debrancherTable(){if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
  quitteSalle=quitteSieges=quitteJournal=null;enLigne=false;poussePret=false;tableId=null;salleRef=siegesRef=journalRef=null;journalVus=new Set();
+ modeConnu=ongletConnu=false;ongletVu=null;envoiOnglet=null;
  sieges={};monSiege=null;majTable()}
 function brancherTable(code){if(!cloud)return;debrancherTable();
  tableId=code;salleRef=cloud.doc('amertume_online_live/'+code);
@@ -461,7 +470,9 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
 /* La fenêtre ne cache plus ses boutons : elle les montre, grisés quand il manque quelque
    chose, et dit lequel. Masquer « Ouvrir une table » tant que le MJ n'était pas reconnu ne
    laissait qu'une fenêtre vide, sans rien à faire ni rien à comprendre. */
-function majTable(){const ouvert=!!tableId,pret=!!cloud&&typeof firebase!=='undefined';verrouillerInvite();
+// Le MJ envoie toute la troupe connectée sur un onglet.
+function envoyerOnglet(p){if(!estMJ()||!enLigne||!p)return;envoiOnglet={page:String(p),pn:Date.now()};pousserPlusTard()}
+function majTable(){const ouvert=!!tableId,pret=!!cloud&&typeof firebase!=='undefined';verrouillerInvite();if(typeof majEnvoiOnglet==='function')majEnvoiOnglet();
  const connecte=!!(auth&&auth.currentUser),mj=estMJ();
  const ligne=$('live-lien');if(ligne){ligne.hidden=!ouvert;if(ouvert)ligne.value=lienTable(tableId)}
  const montre=(id,vu,off,pourquoi)=>{const e=$(id);if(!e)return;

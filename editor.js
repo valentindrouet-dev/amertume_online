@@ -179,6 +179,13 @@ function migreArbres(c){const T=(c.talents||[]).filter(Boolean),fam=t=>(t.famill
    choix voyage avec le contenu publié ; sans choix, les onglets d'avant. */
 const ONGLETS=[['table','Table de jeu'],['maps','Cartes'],['domaine','Domaine'],['heroes','Aventuriers'],['talents','Talents'],['armory','Armurerie'],['bestiary','Bestiaire'],['icones','Icônes'],['settings','Paramètres']];
 const ONGLETS_JOUEURS_DEFAUT=['table','domaine','heroes','bestiary','settings'];
+/* La page d'accueil des joueurs. Au premier chargement d'une session de navigation, un joueur arrive sur l'onglet que le MJ
+   a choisi, dès que le contenu publié est là ; recharger la page garde l'onglet en cours. Le MJ n'est jamais déplacé. */
+let accueilAFaire=false;try{accueilAFaire=!sessionStorage.getItem('amertume-session');sessionStorage.setItem('amertume-session','1')}catch(e){}
+function accueilDeSession(){if(!accueilAFaire)return;
+ if(typeof adminConnu!=='undefined'&&!adminConnu){document.addEventListener('amertume-mj-change',accueilDeSession,{once:true});return}
+ const cat=typeof remote!=='undefined'&&remote&&remote.catalog?remote.catalog:catalog;if(!cat)return;accueilAFaire=false;
+ if(typeof admin!=='undefined'&&admin)return;const p=cat.pageAccueil;if(typeof p==='string'&&ongletsJoueurs().includes(p))showPage(p)}
 function ongletsJoueurs(){const l=typeof catalog!=='undefined'&&catalog&&Array.isArray(catalog.ongletsJoueurs)?catalog.ongletsJoueurs:ONGLETS_JOUEURS_DEFAUT;
  return ['table',...ONGLETS.map(([k])=>k).filter(k=>k!=='table'&&k!=='maps'&&l.includes(k))]}
 /* Lamevent s'appelle Ombrelame : la classe, ses arbres et leurs voies, la classe de ses effets, ses talents et
@@ -197,6 +204,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Les paliers d'XP réglés à la main : gardés s'ils tiennent et diffèrent de ceux d'origine.
  if(!niveauxXpValides(c.niveauxXp)||c.niveauxXp.every((v,i)=>v===NIVEAUX_XP[i]))delete c.niveauxXp;
  if(Array.isArray(c.ongletsJoueurs))c.ongletsJoueurs=ONGLETS.map(([k])=>k).filter(k=>k!=='maps'&&(k==='table'||c.ongletsJoueurs.includes(k)));else delete c.ongletsJoueurs;
+ // La page d'accueil des joueurs : un onglet connu, jamais les Cartes.
+ if(typeof c.pageAccueil!=='string'||!ONGLETS.some(([k])=>k===c.pageAccueil)||c.pageAccueil==='maps')delete c.pageAccueil;
  // Les ressources d'abord : les pièces se relisent au travers d'elles, plus bas.
  migreRessources(c);const clesR=new Set(c.items.filter(o=>o&&o.category==='ressource').map(o=>o.cle)),resV=r=>clesR.has(r)?r:'';
  // Le guide des prix, réglé par le MJ dans l'Armurerie.
@@ -636,7 +645,8 @@ settingsPage.innerHTML='<section class="cat-panel panel">'
  +'<p class="muted">Le titre de la partie et le tour de combat. Ils voyagent avec la scène publiée.</p>'
  +'<div class="reglage"><div><strong id="scene-titre"></strong><p class="muted" id="scene-tour"></p></div>'
  +'<button id="edit-scene">Modifier la scène</button></div></div>'
- +'<div id="bloc-onglets" hidden><div class="divider"></div><h3 class="reglage-titre">Onglets des joueurs</h3><div id="onglets-joueurs" class="onglets-joueurs"></div></div>'
+ +'<div id="bloc-onglets" hidden><div class="divider"></div><h3 class="reglage-titre">Onglets des joueurs</h3><div id="onglets-joueurs" class="onglets-joueurs"></div>'
+ +'<label class="page-accueil">Page d’Accueil : <select id="page-accueil"></select></label></div>'
  +'<div id="bloc-niveaux" hidden><div class="divider"></div><h3 class="reglage-titre">Niveaux d’XP</h3><div id="niveaux-xp" class="niveaux-xp"></div></div>'
  +'<div class="divider"></div><h3 class="reglage-titre">Sauvegarde</h3>'
  +'<div id="bloc-sauvegarde"></div>'
@@ -1125,6 +1135,7 @@ function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.rep
  // Chercher dans quatre fiches n'a pas de sens : le champ ne paraît qu'à partir de neuf.
  $('hero-filtres').hidden=troupe.length<9&&!q;
  const heros=troupe.filter(a=>!q||a.name.toLowerCase().includes(q));
+ grille.classList.toggle('une-fiche',heros.length===1);
  heros.forEach((a,i)=>grille.append(heroCard(a,i)));
  if(!heros.length&&!assis){const v=document.createElement('p');v.className='muted';
   v.textContent=q?'Aucun aventurier de ce nom.':'Aucun aventurier dans la troupe.';grille.append(v)}}
@@ -4610,6 +4621,11 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
    l.setAttribute('class','entree'+(el.classList.contains('acquis')?' pris':''));svg.append(l)})})}
 /* Les réglages de l'appareil : le thème et les touches de la carte. Rien n'est enregistré
    dans la partie — c'est le navigateur qui s'en souvient, pour ce poste seulement. */
+// La page d'accueil des joueurs : l'un des onglets qui leur sont ouverts.
+function majPageAccueil(){const s=$('page-accueil');if(!s)return;const vus=ongletsJoueurs();
+ s.replaceChildren(...ONGLETS.filter(([k])=>vus.includes(k)).map(([k,nom])=>new Option(nom,k)));
+ s.value=vus.includes(catalog.pageAccueil)?catalog.pageAccueil:'table';
+ s.onchange=()=>{catalog.pageAccueil=s.value;normalizeCatalog(catalog);scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}}
 function renderSettings(){const boite=$('raccourcis');if(!boite)return;
  $('theme-switch').textContent=document.body.classList.contains('sombre')?'☀ Repasser au thème clair':'☾ Passer au mode nuit';
  // La scène n'a plus de bandeau au-dessus de la table : son titre se lit et se change ici.
@@ -4625,8 +4641,9 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
  {const vus=ongletsJoueurs();$('onglets-joueurs').replaceChildren(...ONGLETS.map(([k,nom])=>{const l=document.createElement('label'),c=document.createElement('input');
   c.type='checkbox';c.value=k;c.checked=vus.includes(k);c.disabled=k==='table'||k==='maps';
   c.onchange=()=>{catalog.ongletsJoueurs=[...$('onglets-joueurs').querySelectorAll('input:checked')].map(x=>x.value);normalizeCatalog(catalog);
-   scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));if(typeof majOnglets==='function')majOnglets()};
+   scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));if(typeof majOnglets==='function')majOnglets();majPageAccueil()};
   l.append(c,' '+nom);return l}))}
+ majPageAccueil();
  // Les paliers d'XP, au MJ : l'XP qu'il faut pour chaque niveau, du 2 au dernier.
  $('bloc-niveaux').hidden=view!=='mj';
  if(view==='mj'&&!$('niveaux-xp').contains(document.activeElement)){const seuils=seuilsXp(),champs=[];

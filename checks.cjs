@@ -3387,6 +3387,27 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.609 — Un même adversaire ne frappe qu'une fois d'opportunité par tour, même si l'on entre et sort plusieurs fois de son
+   contact. Le début et la fin du combat s'annoncent chez les joueurs connectés ; le journal ne redit plus « Tour 1. ». Une
+   fiche d'aventurier seule prend la place. Le MJ envoie toute la troupe sur l'onglet ouvert, d'un viseur sous l'onglet ; et
+   choisit la Page d'Accueil des joueurs, où ils arrivent en début de session. */
+{const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8'),src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),part=fs.readFileSync('shared.js','utf8');
+ assert.ok(page.includes("function opportunitesDuTour(a){const o=a&&a.opportunitesSubies;return o&&o.tour===round&&Array.isArray(o.ids)?o.ids:[]}")
+  &&page.includes("const deja=opportunitesDuTour(a);if(e.id&&deja.includes(e.id))return;if(e.id)a.opportunitesSubies={tour:round,ids:[...deja,e.id]};")
+  &&vif.includes("'mvtReste','mvtTour','opportunitesSubies',"),'une opportunité par adversaire et par tour, retenue en ligne');
+ {const ctxO={round:3};vm.createContext(ctxO);vm.runInContext(page.slice(page.indexOf('function opportunitesDuTour('),page.indexOf('function degatsOpportunite(')),ctxO);
+  assert.deepEqual([...ctxO.opportunitesDuTour({opportunitesSubies:{tour:3,ids:['g']}})],['g']);assert.equal(ctxO.opportunitesDuTour({opportunitesSubies:{tour:2,ids:['g']}}).length,0,'un nouveau tour rend le coup')}
+ assert.ok(page.includes("log(enCombat()?'⚔ Le combat commence.':bilan?'Fin du combat :':'Fin du combat.',bilan?{bilan}:undefined);")&&!page.includes("Le combat commence. Tour 1."),'le journal ne redit plus Tour 1');
+ assert.ok(vif.includes("if(modeConnu&&avant!==mode&&typeof annonceFlottante==='function')annonceFlottante(mode==='combat'?'⚔ Début du combat !':'🕊 Fin du combat');modeConnu=true}")
+  &&vif.includes(" modeConnu=ongletConnu=false;ongletVu=null;envoiOnglet=null;"),'le combat qui commence ou finit s’annonce chez les joueurs');
+ assert.ok(src.includes(" grille.classList.toggle('une-fiche',heros.length===1);")&&css.includes(".hero-grid.une-fiche{grid-template-columns:minmax(0,880px)!important}"),'une fiche seule prend la place');
+ assert.ok(vif.includes("function envoyerOnglet(p){if(!estMJ()||!enLigne||!p)return;envoiOnglet={page:String(p),pn:Date.now()};pousserPlusTard()}")
+  &&vif.includes("if(ongletConnu&&pn!==null&&pn!==ongletVu&&typeof showPage==='function')showPage(String(d.fogReset.page||'table'));ongletVu=pn;ongletConnu=true}")
+  &&carto.includes("const montre=!!b&&view==='mj'&&typeof estMJ==='function'&&estMJ()&&typeof enLigne!=='undefined'&&enLigne&&ongletsJoueurs().includes(p);")
+  &&carto.includes("tabs.querySelectorAll('button[data-page]').forEach(b=>b.onclick=()=>showPage(b.dataset.page));"),'le viseur du MJ envoie la troupe sur l’onglet');
+ assert.ok(src.includes("if(typeof c.pageAccueil!=='string'||!ONGLETS.some(([k])=>k===c.pageAccueil)||c.pageAccueil==='maps')delete c.pageAccueil;")
+  &&src.includes("accueilAFaire=!sessionStorage.getItem('amertume-session');")&&src.includes("if(typeof admin!=='undefined'&&admin)return;const p=cat.pageAccueil;")
+  &&part.includes(" if(typeof accueilDeSession==='function')accueilDeSession()}")&&src.includes("Page d’Accueil : <select id=\"page-accueil\"></select>"),'la Page d’Accueil des joueurs');}
 /* v0.608 — La table en ligne, vue des joueurs. Une carte neuve approche chaque joueur de son aventurier ; la vue ne bouge pas
    quand la carte est masquée ; un bouton Centrer. Les mots flottants voyagent avec le journal, sauf les refus, et un socle
    caché ne parle pas chez un joueur. Les socles reçus glissent, position vraie gardée pour l'envoi. Sans filtre de canevas
@@ -3419,7 +3440,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un mur de feu tout du long. Rapide est désactivé. */
 {const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(vif.includes("'orbeStatique','nyctalope','mouvement','mvtReste','mvtTour',"),'le reste du mouvement voyage en ligne');
- assert.ok(page.includes("delete a.revanche;delete a.traction;delete a.mvtReste;delete a.mvtTour;mouvementRapide(a)});")&&page.includes("actors.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour;"),'un nouveau tour l’efface');
+ assert.ok(page.includes("delete a.revanche;delete a.traction;delete a.mvtReste;delete a.mvtTour;delete a.opportunitesSubies;mouvementRapide(a)});")&&page.includes("actors.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour;"),'un nouveau tour l’efface');
  assert.ok(page.includes("   if(drag.regle&&!appliqueRegleMouvement(a,drag.regle))jusquALaBorne(a,drag.regle,g,(x,y)=>moveActor(a,x,y,view==='mj',enMain,true))}")
   &&page.includes("fleche.setAttribute('d','M'+pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L'));"),'la main va jusqu’à la limite, la flèche suit le chemin');
  assert.equal(C.TALENTS_CODES.rapide.retire,true,'Rapide retiré de la bibliothèque');
@@ -3479,7 +3500,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
   &&src.includes("if(f.mouvement&&!a.hero){const v=Number(f.mouvement.value);if(!Number.isFinite(v)||v===DISTANCE_MOUVEMENT)delete a.mouvement;"),'la distance au bestiaire');
  assert.ok(src.includes(">Bonus de Mouvement</label>'+field('Bonus (m)','bonusMouvement',")&&src.includes("o.bonusMouvement=bonusMouvementDe(o);if(!o.bonusMouvement)delete o.bonusMouvement;")
   &&src.includes("if(f.bonusMouvementOn){if(f.bonusMouvementOn.checked)a.bonusMouvement="),'la case Bonus de Mouvement des objets');
- assert.ok(vif.includes("'nyctalope','mouvement',")&&vif.includes("...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{})};")
+ assert.ok(vif.includes("'nyctalope','mouvement',")&&vif.includes("...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),\n  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{})};")
   &&vif.includes("mouvementLimiteExplo=d.fogReset.limite===true;"),'la distance et la limite voyagent en ligne, sans clé nouvelle');
  assert.ok(page.includes("const regle=lot0.length===1&&mouvementBorne(a)?regleMouvement(a):null;")&&page.includes("traceMouvement(null);\n  if(bloque){if(moved)skipClick=true;return}")
   &&page.includes(" t.onpointercancel=()=>{drag=null;window.socleEnMain=null;traceMouvement(null)};")&&page.includes("   if(regle&&regle.combat){if(cout>0)depensePoint(a,'mouvement',cout)}"),'le geste à la main');

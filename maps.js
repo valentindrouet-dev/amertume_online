@@ -1046,9 +1046,19 @@ tabs.innerHTML='<button data-page="table" class="on">Table de jeu</button><butto
  +'<button data-page="settings">Paramètres</button>';
 document.querySelector('.view-controls').before(tabs);
 const PAGES=['table','maps','domaine','heroes','talents','armory','bestiary','icones','settings'];
+/* Sous l'onglet ouvert, chez le MJ seul et pendant une table en ligne : un petit viseur. Un clic envoie tous les joueurs
+   connectés sur cet onglet, s'il leur est ouvert. */
+const envoiOngletBtn=document.createElement('button');envoiOngletBtn.type='button';envoiOngletBtn.className='envoi-onglet';envoiOngletBtn.textContent='⌖';envoiOngletBtn.hidden=true;let envoiOngletPage=null;
+envoiOngletBtn.setAttribute('aria-label','Envoyer les joueurs sur cet onglet');tabs.append(envoiOngletBtn);
+function majEnvoiOnglet(){const b=tabs.querySelector('button.on[data-page]'),p=b&&b.dataset.page;
+ const montre=!!b&&view==='mj'&&typeof estMJ==='function'&&estMJ()&&typeof enLigne!=='undefined'&&enLigne&&ongletsJoueurs().includes(p);
+ envoiOngletBtn.hidden=!montre;if(montre){envoiOngletPage=p;envoiOngletBtn.style.left=(b.offsetLeft+b.offsetWidth/2)+'px'}}
+envoiOngletBtn.onclick=e=>{e.stopPropagation();if(typeof envoyerOnglet!=='function')return;envoyerOnglet(envoiOngletPage);
+ envoiOngletBtn.classList.remove('envoye');void envoiOngletBtn.offsetWidth;envoiOngletBtn.classList.add('envoye')};
+window.addEventListener('resize',()=>majEnvoiOnglet());
 /* La troupe voit les onglets que le MJ lui ouvre dans les Paramètres — ongletsJoueurs() : la Table
    toujours, les Cartes jamais. Tout ce qui s'y modifie reste au MJ — voir « vue-joueur » dans editor.css. */
-function majOnglets(){const ouverts=ongletsJoueurs();{const cv=$('conversion-ouvre');if(cv)cv.hidden=view!=='mj'}tabs.querySelectorAll('button').forEach(b=>{b.hidden=view!=='mj'&&!ouverts.includes(b.dataset.page)});
+function majOnglets(){majEnvoiOnglet();const ouverts=ongletsJoueurs();{const cv=$('conversion-ouvre');if(cv)cv.hidden=view!=='mj'}tabs.querySelectorAll('button[data-page]').forEach(b=>{b.hidden=view!=='mj'&&!ouverts.includes(b.dataset.page)});
  document.body.classList.toggle('vue-joueur',view!=='mj');
  if(view!=='mj'&&PAGES.some(x=>!ouverts.includes(x)&&document.body.classList.contains('page-'+x)))showPage('table',false)}
 /* L'onglet ouvert est un réglage d'appareil, comme le thème : recharger en plein
@@ -1064,7 +1074,7 @@ function showPage(p,retenir=true){if(!ongletsJoueurs().includes(p)&&view!=='mj')
  if(typeof fermerBulle==='function')fermerBulle();
  if(retenir)rememberPage(p);
  PAGES.forEach(x=>document.body.classList.toggle('page-'+x,x===p&&x!=='table'));
- tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.page===p));
+ tabs.querySelectorAll('button[data-page]').forEach(b=>b.classList.toggle('on',b.dataset.page===p));majEnvoiOnglet();
  if(p==='maps'){if(!maps.length)newMap();if(!mapDraft)mapDraft=maps.find(m=>m.id===currentMapId)||maps[0];
   // La carte du domaine, si c'est elle qu'on éditait, se rouvre à sa place.
   if(typeof domaineEdite!=='undefined'&&domaineEdite){renderMapList();renderDomaineEditeur()}
@@ -1082,7 +1092,7 @@ function showPage(p,retenir=true){if(!ongletsJoueurs().includes(p)&&view!=='mj')
  // De retour sur la table, tout est remesuré : la carte était masquée, donc sans largeur,
  // et les socles comme le brouillard se calculent sur cette largeur.
  else{applyMapRatio();applyMapZoom();render()}}
-tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+tabs.querySelectorAll('button[data-page]').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
 
 /* ---------- Page de l'éditeur ---------- */
 const mapsPage=document.createElement('main');mapsPage.id='maps-page';

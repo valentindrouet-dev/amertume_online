@@ -50,6 +50,10 @@ dialog.demande{width:min(440px,94vw)}dialog.demande p{margin:4px 0 0;font-size:1
 .tabs button{border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:6px;font-size:14px}
 .tabs button:hover{background:var(--hover);color:var(--ink)}
 .tabs button.on{background:var(--accent);color:var(--on-accent);font-weight:700}
+/* Le viseur du MJ, sous l'onglet ouvert : il envoie la troupe sur cet onglet. */
+.tabs{position:relative}.tabs .envoi-onglet{position:absolute;top:calc(100% + 3px);transform:translateX(-50%);width:20px;height:20px;padding:0;border-radius:50%;display:grid;place-items:center;font:600 16px/1 system-ui;background:var(--panel);color:var(--accent);border:1px solid var(--line-strong);box-shadow:0 2px 6px #0003;z-index:5;cursor:pointer}
+.tabs .envoi-onglet:hover{background:var(--accent);color:var(--on-accent)}
+.tabs .envoi-onglet.envoye{animation:envoi-onglet .6s ease-out}@keyframes envoi-onglet{0%{box-shadow:0 0 0 0 var(--accent)}100%{box-shadow:0 0 0 12px transparent}}
 #maps-page{display:none}
 body.page-maps #maps-page{display:grid;grid-template-columns:230px minmax(0,1fr) 270px;gap:16px;padding:16px 28px 26px;align-items:start}
 body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.page-maps #save-status,body.page-maps footer{display:none!important}
@@ -433,6 +437,8 @@ button.btn-analyse[hidden]{display:none}
 /* Une fiche d'aventurier par carte : portrait, chiffres et équipement d'un coup d'œil. */
 #hero-search{flex:0 1 340px}
 .hero-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:start}
+/* Une fiche seule — celle du joueur à la table — prend la place, sans s'étirer à l'infini. */
+.hero-grid.une-fiche{grid-template-columns:minmax(0,880px)!important}
 .hero-card{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:14px 15px 13px}
 .hero-head{display:flex;align-items:center;gap:11px}
 .hero-id{flex:1;min-width:0}
@@ -567,6 +573,7 @@ button.comp-rond{cursor:pointer}button.comp-rond:hover{background:rgba(var(--tin
 .onglets-joueurs{display:flex;flex-wrap:wrap;gap:6px 18px;padding:8px 0}
 .onglets-joueurs label{display:inline-flex;align-items:center;gap:6px;font-size:14px;cursor:pointer}
 .onglets-joueurs input:disabled+*,.onglets-joueurs label:has(input:disabled){opacity:.6;cursor:default}
+.page-accueil{display:flex;align-items:center;gap:8px;font-size:14px;padding:2px 0 8px}
 .reglage:last-child{border-bottom:0}
 .reglage>div{flex:1;min-width:0}
 .reglage strong{display:block;font-size:15px}
