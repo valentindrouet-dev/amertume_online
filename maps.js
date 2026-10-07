@@ -110,7 +110,8 @@ function sourcesLumiere(){const m=currentMap();if(!m)return [];const tk=tokenPx(
 function toileHalos(){let cv=$('halos');if(!cv){cv=document.createElement('canvas');cv.id='halos';cv.setAttribute('aria-hidden','true');$('fog').before(cv)}return cv}
 function renderHalos(){const cv=toileHalos(),m=currentMap(),size=mapSize();
  const sources=m?sourcesLumiere():[];if(!sources.length||!size.width){cv.style.display='none';return}
- cv.style.display='';const large=cv.clientWidth,haut=cv.clientHeight;if(!large||!haut)return;
+ // La toile couvre la carte : sa taille est celle du cadre, déjà mesuré pendant un rendu.
+ cv.style.display='';const large=cadreFige?cadreFige.cw:cv.clientWidth,haut=cadreFige?cadreFige.ch:cv.clientHeight;if(!large||!haut)return;
  const ech=Math.min(2,window.devicePixelRatio||1),zoom=Math.max(1,typeof mapZoom==='number'&&mapZoom>0?mapZoom:1);
  const W=Math.max(1,Math.min(4096,Math.round(large*ech*zoom))),H=Math.max(1,Math.round(W*haut/large));
  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
@@ -266,7 +267,8 @@ function calqueNuit(W,H){const m=currentMap(),size=mapSize();if(!m||!size.width)
 function toileNuit(){let cv=$('nuit');if(!cv){cv=document.createElement('canvas');cv.id='nuit';cv.setAttribute('aria-hidden','true');$('fog').after(cv)}return cv}
 function renderNuit(){const cv=toileNuit(),m=currentMap(),size=mapSize();
  if(!m||!size.width||!carteObscure()){cv.style.display='none';cv._peinte='';return}
- cv.style.display='';const large=cv.clientWidth,haut=cv.clientHeight;if(!large||!haut)return;
+ // La toile couvre la carte : sa taille est celle du cadre, déjà mesuré pendant un rendu.
+ cv.style.display='';const large=cadreFige?cadreFige.cw:cv.clientWidth,haut=cadreFige?cadreFige.ch:cv.clientHeight;if(!large||!haut)return;
  const ech=Math.min(2,window.devicePixelRatio||1),NW=Math.max(1,Math.min(2048,Math.round(large*ech))),NH=Math.max(1,Math.round(NW*haut/large));
  const nuit=calqueNuit(NW,NH);if(!nuit)return;
  const joueur=oeilJoueur(),yeux=joueur?fogSeers().map(o=>({o,r:rayonVision(o)})).filter(y=>y.r>0):[];
@@ -552,11 +554,12 @@ function hauteurDispoCarte(el){const repli=Math.round(innerHeight*.72),r=el.getB
     hauteur de la carte. (Le bas de la colonne, lui, s'étire sur la plus haute des trois.) */
  const sous=rangee.getBoundingClientRect().bottom-r.bottom,marge=layout?parseFloat(getComputedStyle(layout).paddingBottom)||0:0;
  return Math.round(innerHeight-(r.top+scrollY)-sous-marge)}
+// Rend vrai quand le cadre a changé de taille.
 function applyMapRatio(){const m=currentMap(),el=$('map');
- if(!m||!m.ratio){el.style.width='';el.style.height='';return}
+ if(!m||!m.ratio){const avait=!!(el.style.width||el.style.height);el.style.width='';el.style.height='';return avait}
  const dispo=el.parentElement.clientWidth||el.clientWidth||600,hMax=Math.max(260,hauteurDispoCarte(el));
  let w=dispo,h=w/m.ratio;if(h>hMax){h=hMax;w=h*m.ratio}
- el.style.width=Math.round(w)+'px';el.style.height=Math.round(h)+'px'}
+ const W=Math.round(w)+'px',H=Math.round(h)+'px',change=el.style.width!==W||el.style.height!==H;el.style.width=W;el.style.height=H;return change}
 /* Le contour lissé devient un tracé SVG dans un repère de 0 à 100 : c'est très
    exactement la matière qui arrête le regard, dessinée sans un pixel d'écart. */
 /* Plusieurs tracés dans une même toile : les zones d'un côté, les traits de l'autre, mais
@@ -603,7 +606,8 @@ function svgPorte(d,ratio,cls){if(!(Number(d.a)||0))return svgRect(d,cls);
  el.setAttribute('points',doorPolygon(d,ratio).map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));
  if(cls)el.setAttribute('class',cls);return el}
 function renderMapLayer(){const svg=$('map-shapes'),portes=$('map-doors'),m=currentMap();
- svg.replaceChildren();portes.replaceChildren();applyMapRatio();renderFog();renderNuit();renderZones();leverVoile();refreshGmBar();
+ // La rangée des Actions a pu changer de hauteur : le cadre se recale, et se remesure s'il a bougé.
+ svg.replaceChildren();portes.replaceChildren();if(applyMapRatio()&&cadreFige)cadreFige=mesureCadre();renderFog();renderNuit();renderZones();leverVoile();refreshGmBar();
  // .hidden n'existe pas sur un élément SVG : le masquage passe par une classe.
  $('map').classList.toggle('has-map',!!m);if(!m)return;
  if(m.start&&view==='mj')svg.append(svgRect(m.start,'startzone'));
@@ -1018,6 +1022,8 @@ function menuPiege(p,x,y){const mj=view==='mj',a=heroActif(),proche=!!a&&piegeAP
  if(proche){if(piegeArme(p)){if(p.desamorcage)entrees.push(['Désamorcer · '+skillNames[p.desamorcage.comp],()=>testPiege(a,p,'desamorcage')]);
    if(p.enjambement&&!(Array.isArray(a.franchis)&&a.franchis.includes(p.id)))entrees.push(['Enjamber · '+skillNames[p.enjambement.comp],()=>testPiege(a,p,'enjambement')])}
   else if(p.reamorcable&&porteEffet(talentsCodes(a),'reamorcage'))entrees.push(['Réamorcer',()=>reamorcePiege(a,p)])}
+ /* Un joueur au contact d'un piège qu'il n'a qu'à enjamber : son clic lance le test, sans menu. Manqué, le piège part sur lui. */
+ if(!mj&&entrees.length===1&&p.enjambement&&entrees[0][0].startsWith('Enjamber')){entrees[0][1]();return}
  if(mj){if(p.cache)entrees.push([p.revele?'Cacher à la troupe':'Révéler à la troupe',()=>{p.revele=!p.revele;if(p.revele)floatNumber(centrePiege(p),'Révélé !','nul');render();saveMaps();scheduleSave()}]);
   if(piegeArme(p)){const c=actors[selected];if(c&&alive(c)&&!c.horsCarte)entrees.push(['Déclencher sur '+nomNum(c),()=>declenchePiege(p,c)]);
    entrees.push(['Désamorcer',()=>{p.desamorce=true;log(p.nom+' est désamorcé.',{ton:'carte',local:true});render();saveMaps();scheduleSave()}])}
@@ -2415,7 +2421,10 @@ function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new E
 const renderBeforeMaps=render;render=function(){
  // Une autre carte, ou un voile qui change : elle se couvre jusqu'à la prochaine peinture.
  if(cleVoile()!==cartePeinte)voileAttente.hidden=false;
- applyMapRatio();computeFog();renderBeforeMaps();renderMapLayer();renderFouilles();calerColonnes();
+ // Le cadre posé, il se mesure une fois pour tout le rendu.
+ applyMapRatio();const dehors=cadreFige;cadreFige=mesureCadre();
+ try{computeFog();renderBeforeMaps();renderMapLayer();renderFouilles()}finally{cadreFige=dehors?cadreFige:null}
+ calerColonnes();
  majOnglets()};
 /* Le journal descend jusqu'au bas de la carte : son panneau est calé dessus à chaque rendu
    et à chaque changement de taille. Sur une seule colonne, il reprend sa hauteur propre. */

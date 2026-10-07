@@ -53,7 +53,7 @@ function positionVraie(a){const g=glissements.get(a.id);return g?g.cible:{x:a.x,
 function glisseVers(a,x,y){const t=performance.now(),g=glissements.get(a.id);
  if(g){g.pts.push({t,x,y});g.cible={x,y}}else glissements.set(a.id,{pts:[{t:t-GLISSE_RETARD,x:a.x,y:a.y},{t,x,y}],cible:{x,y}});
  if(!glisseImage)glisseImage=requestAnimationFrame(glisseUneImage)}
-function glisseUneImage(){glisseImage=0;const rt=performance.now()-GLISSE_RETARD;
+function glisseUneImage(){if(typeof figeCadre==='function'&&!cadreFige)return figeCadre(glisseUneImage);glisseImage=0;const rt=performance.now()-GLISSE_RETARD;
  glissements.forEach((g,id)=>{const a=actors.find(x=>x.id===id);if(!a||window.socleEnMain===id){glissements.delete(id);return}
   while(g.pts.length>2&&g.pts[1].t<=rt)g.pts.shift();
   const [p,q]=g.pts;let x=q.x,y=q.y;

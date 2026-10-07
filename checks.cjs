@@ -1055,7 +1055,7 @@ const cartes=fs.readFileSync('maps.js','utf8');
 assert.ok(cartes.includes("if(cleVoile()!==cartePeinte)voileAttente.hidden=false;")&&cartes.includes('renderFog();renderNuit();renderZones();leverVoile();')&&page.includes('#voile-attente{'),'la carte se voile jusqu’au brouillard');
 assert.ok(page.includes(".j-entry.ton-talent{"),'le journal a ses tons');
 // Le journal se cale sur le bas de la carte, et se libère sur une colonne.
-assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderFouilles();calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
+assert.ok(cartes.includes('function calerColonnes')&&cartes.includes('renderFouilles()}finally{cadreFige=dehors?cadreFige:null}\n calerColonnes();')&&page.includes('.stack.right.calee .journal{flex:1'),'les colonnes se calent sur la centrale');
 assert.ok(cartes.includes("moveActor(heros[i],p.x,p.y,true)"),'l’ouverture d’une carte place librement');
 assert.ok(feuille.includes('repeat(4,minmax(0,1fr))')&&feuille.includes("@media(max-width:1150px){.hero-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}"),'quatre aventuriers par ligne');
 assert.ok(page.includes(".eyebrow,.turn-head .eyebrow,#titre-tour,.journal-title,.panel>h2,#carte-titre{font:600 13px")&&!page.includes('titre-actions')&&feuille.includes(".bloc-titre,.bloc-replie .bloc-titre{font:600 13px")&&page.includes('.actions-rangee>.attack-card{margin:0;height:220px;overflow:auto}'),'un seul lettrage de titres');
@@ -1266,7 +1266,7 @@ assert.ok(page.includes("if(!enCombat()&&reveles.some(a=>campDe(a)==='adverse'))
    combat seulement, avec cadre et murs lus une fois. */
 assert.ok(cartes.includes('let obstaclesTache=null;')&&cartes.includes("obstaclesTache={m,formes};setTimeout(()=>{obstaclesTache=null},0);")
  &&page.includes('let mursPxTache=null;')&&page.includes("let auraCache={formes:null,cle:'',pts:new Map()};")&&page.includes("auraCache.pts.set(k,pts)")
- &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>{if(drag)drag.image=0;visibilitesEnGeste();updateRing();updateSight();traceMouvement(a,drag&&drag.regle);if(typeof renderNuit==='function'){renderHalos();renderNuit()}});")
+ &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>figeCadre(()=>{if(drag)drag.image=0;visibilitesEnGeste();updateRing();updateSight();traceMouvement(a,drag&&drag.regle);if(typeof renderNuit==='function'){renderHalos();renderNuit()}}));")
  &&page.includes("if(enCombat()){const size=mapSize(),murs=walls();")&&page.includes('function ramasseContacts(a,croises,de,size,murs){'),'glisser un lot reste léger');
 /* Ciblage : une cible désignée hors de portée ne grise plus l'attaque ; le coup part sur qui est à
    portée, sans jamais retenir une cible automatique ; la désignation lointaine s'efface. */
@@ -3387,6 +3387,18 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.620 — Un clic sur un piège lui parvient enfin : la carte ne capture plus le geste. Un joueur au contact d'un piège qu'il
+   n'a qu'à enjamber lance le test d'un clic ; manqué, le piège part sur lui. La table mesure sa carte une fois par rendu, par
+   pas de glissement et par image reçue, et non plus à chaque appel. */
+{const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
+ assert.ok(page.includes("e.target.closest('#map-coffres')||e.target.closest('#map-pieges'))return;"),'le clic atteint le piège');
+ assert.ok(carto.includes("if(!mj&&entrees.length===1&&p.enjambement&&entrees[0][0].startsWith('Enjamber')){entrees[0][1]();return}"),'un clic, le test d’enjambement');
+ assert.ok(page.includes("function figeCadre(fn){if(cadreFige)return fn();cadreFige=mesureCadre();try{return fn()}finally{cadreFige=null}}")
+  &&page.includes("function mapSize(){const r=cadreFige||$('map').getBoundingClientRect();return {width:r.width,height:r.height}}")
+  &&page.includes(" {const pasBrut=t.onpointermove;t.onpointermove=e=>figeCadre(()=>pasBrut(e))}")&&page.includes("figeCadre(()=>document.querySelectorAll('#pv-layer .pv').forEach(j=>placeJauge(j)))")
+  &&carto.includes(" applyMapRatio();const dehors=cadreFige;cadreFige=mesureCadre();")&&carto.includes("if(applyMapRatio()&&cadreFige)cadreFige=mesureCadre();")
+  &&vif.includes("function glisseUneImage(){if(typeof figeCadre==='function'&&!cadreFige)return figeCadre(glisseUneImage);"),'la carte se mesure une fois');
+ assert.ok(page.includes("function ajusteNomFiche(){if(nomAAjuster)return;nomAAjuster=requestAnimationFrame(")&&!page.includes("for(let f=25;f>=17&&n.scrollWidth>n.clientWidth;f--)"),'le nom se cale à l’image suivante');}
 /* v0.619 — Les dégâts d'un piège, posé ou de coffre : fixes, ou « xdy », tirés à chaque fois qu'il part. */
 {const K=require('./combat.js'),carto=fs.readFileSync('maps.js','utf8');
  assert.deepEqual(K.lisFormuleDegats('2d6'),{degats:0,degatsDes:{n:2,f:6}});assert.deepEqual(K.lisFormuleDegats(' 3 '),{degats:3});assert.deepEqual(K.lisFormuleDegats('3d1'),{degats:3},'un dé d’une face, c’est un nombre');
@@ -4558,7 +4570,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  const m=C.cleanMap({id:'m',name:'M',foes:[{x:1,y:1,tpl:{id:'t',name:'Gob',pv:5},inventaire:['k1','k1',3],butin:{k1:150,autre:20}},{x:2,y:2,tpl:{id:'t',name:'Gob',pv:5}}]});
  assert.deepEqual([m.foes[0].inventaire,m.foes[0].butin,'inventaire' in m.foes[1]],[['k1','k1'],{k1:100},false],'un adversaire posé garde ses objets propres');
- assert.ok(page.indexOf('<svg id="map-coffres"')>0&&page.indexOf('<svg id="map-coffres"')<page.indexOf('<canvas id="fog"')&&page.includes("e.target.closest('#map-coffres'))return;"),'le calque des coffres sous le brouillard');
+ assert.ok(page.indexOf('<svg id="map-coffres"')>0&&page.indexOf('<svg id="map-coffres"')<page.indexOf('<canvas id="fog"')&&page.includes("e.target.closest('#map-coffres')||e.target.closest('#map-pieges'))return;"),'le calque des coffres sous le brouillard');
  assert.ok(mp.includes("el.onmousedown=e=>e.preventDefault();")&&mp.includes("if(mj)menuCoffre(c,e.clientX,e.clientY);else ouvreCoffreJoueur(c)}")&&mp.includes("function ouvreCoffreJoueur(c){"),'le clic du joueur ouvre');
  assert.ok(src.includes("el instanceof SVGElement&&el.getClientRects().length>0")&&src.includes("if(col==='restes'||col==='ressource'||")&&src.includes("['cles','Clés',o=>o.category==='cle']"),'bulle SVG, prix des ressources, clés');
  assert.ok(src.includes("function ajoutePropres(a,p){")&&src.includes("neuf=ajoutePropres(fromMonster(m),a.propres);")&&mp.includes("a.propres={inventaire:[...(f.inventaire||[])],butin:{...(f.butin||{})},...(bourse.length?{bourse}:{})};ajoutePropres(a,a.propres)")
