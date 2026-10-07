@@ -3530,7 +3530,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("function applyMapZoom(){const m=$('map'),w=m.clientWidth,h=m.clientHeight;if(!w||!h)return;")
   &&page.includes("function centrerSurSelection(){")&&page.includes('<button id="zoom-centre" title="Centrer sur le token sélectionné"')
   &&page.includes("if(!w||!h){approcheEnAttente=a.id;return}")&&carto.includes("  if(typeof approcheEnAttente!=='undefined'&&approcheEnAttente){"),'la vue de la carte : gardée, centrée, approchée au retour');
- assert.ok(vif.includes("if(carteNeuve&&typeof approcherToken==='function'){const moi=actors.find(x=>x.id===monSiege);if(moi)setTimeout(()=>approcherToken(moi),0)}"),'une carte neuve approche le joueur de son aventurier');
+ assert.ok(vif.includes("if(carteNeuve&&typeof resetMapZoom==='function')setTimeout(resetMapZoom,0);")&&page.includes(" $('map-view').style.transform='translate(0px,0px) scale(1)';$('zoom-label').textContent='100 %';applyMapZoom()}"),'une carte neuve se montre toute entière, à 100 %, partout');
  assert.ok(vif.includes("floatNumber=function(cible,texte,genre,seul){floatNumberLocal(cible,texte,genre);")&&vif.includes("  else if(rec.effet==='flottant')flottantRecu(rec);")
   &&vif.includes("if(!el||el.hidden||['unseen','veiled','hors-carte','cachemj'].some(c=>el.classList.contains(c)))return}")
   &&page.includes("floatNumber(a,'Plus de Mouvement','nul',true)")&&carto.includes("floatNumber(a,'Action déjà dépensée','nul',true)"),'les mots flottants partagés, les refus gardés');

@@ -303,9 +303,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   gardesPieges.forEach(([t,e])=>{const x=(base.doors||[]).find(y=>y&&typeof y==='object'&&y.t===t);if(x)x.e=e});
   // L'écho de notre propre envoi n'a rien changé : pas de rendu pour rien.
   if(change){render();rafraichitFiches()}
-  /* Une carte neuve ouverte par le MJ : chez un joueur, la vue s'approche de son aventurier. Ailleurs que sur la table, ce
-     sera au retour. */
-  if(carteNeuve&&typeof approcherToken==='function'){const moi=actors.find(x=>x.id===monSiege);if(moi)setTimeout(()=>approcherToken(moi),0)}
+  // Une carte neuve ouverte par le MJ se montre toute entière, à 100 %, chez chaque joueur aussi.
+  if(carteNeuve&&typeof resetMapZoom==='function')setTimeout(resetMapZoom,0);
  }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()}}
 
 /* L'onglet Aventuriers et l'arbre de talents, s'ils sont ouverts, se redessinent sur ce qui arrive : un équipement ôté, un
