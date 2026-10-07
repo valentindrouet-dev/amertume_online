@@ -831,7 +831,12 @@ if($('coffres-bulles'))$('coffres-bulles').onclick=()=>{bullesCoffresMJ=!bullesC
  if(!bullesCoffresMJ&&typeof fermerBulle==='function')fermerBulle();majBoutonCoffres()};
 /* Les coffres ont leur calque, sous le brouillard : hors de la vue de la troupe, il les couvre, et seule leur
    part en vue se découpe. */
-function renderCoffres(){const calque=$('map-coffres'),vue=$('map-view'),m=currentMap();calque.replaceChildren();vue.querySelectorAll('.coffre-alerte,.coffre-cadenas').forEach(x=>x.remove());majBoutonCoffres();if(!m)return;
+function renderCoffres(){const calque=$('map-coffres'),vue=$('map-view'),m=currentMap();calque.replaceChildren();vue.querySelectorAll('.coffre-alerte,.coffre-cadenas').forEach(x=>x.remove());majBoutonCoffres();
+ /* Un coffre caché, pas encore trouvé, le MJ le voit toujours : un contour en pointillés, au-dessus du brouillard et du noir,
+    qui couvraient jusqu'à le faire disparaître. */
+ let caches=$('coffres-caches');if(!caches){caches=document.createElementNS(nsSVG,'svg');caches.id='coffres-caches';caches.setAttribute('viewBox','0 0 100 100');
+  caches.setAttribute('preserveAspectRatio','none');caches.setAttribute('aria-hidden','true');$('fog').after(caches)}
+ caches.replaceChildren();if(!m)return;
  const mj=view==='mj',oeil=typeof oeilJoueur==='function'&&oeilJoueur();
  (m.coffres||[]).forEach(c=>{const enVue=coffreEnVue(c);
   // La troupe ne voit un coffre que révélé et sous ses yeux ; le MJ voit tout, pâli hors de la vue de la troupe.
@@ -839,6 +844,8 @@ function renderCoffres(){const calque=$('map-coffres'),vue=$('map-view'),m=curre
   const cls='coffre'+(c.ouvert?' ouvert':'')+(coffreVisible(c)?'':' cache')+(enVue?'':' voile');
   let el;if(!c.rond)el=svgPorte(c,m.ratio,cls);
   else{el=document.createElementNS(nsSVG,'polygon');el.setAttribute('points',polyCoffre(c).map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));el.setAttribute('class',cls)}
+  if(mj&&!oeil&&!coffreVisible(c)&&!c.ouvert){const o=document.createElementNS(nsSVG,'polygon');o.setAttribute('class','coffre-cache-mj');
+   o.setAttribute('points',polyCoffre(c).map(q=>q[0].toFixed(3)+','+q[1].toFixed(3)).join(' '));caches.append(o)}
   // Piégé et encore armé : l'avertissement, chez le MJ seul.
   if(mj&&!oeil&&coffreArme(c)){const w=document.createElement('span');w.className='coffre-alerte';w.textContent='⚠';w.title='Piégé';
    w.style.left=(c.x+c.w/2)+'%';w.style.top=(c.y+c.h/2)+'%';vue.append(w)}

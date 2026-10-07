@@ -3387,12 +3387,23 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.626 — Le MJ voit toujours un coffre caché : un contour en pointillés au-dessus du brouillard et du noir. Chez un joueur, le token
+   d'un autre qu'on tente de déplacer dit « Ce n’est pas moi ! », et son aventurier est en vert dans la colonne des combattants.
+   Les adversaires crient aussi, et chaque cri, tiré au hasard, se lit au journal. */
+{const carto=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(carto.includes("if(mj&&!oeil&&!coffreVisible(c)&&!c.ouvert){const o=document.createElementNS(nsSVG,'polygon');o.setAttribute('class','coffre-cache-mj');")
+  &&carto.includes("caches.replaceChildren();if(!m)return;")&&css.includes('#coffres-caches .coffre-cache-mj{'),'le coffre caché, chez le MJ, au-dessus du brouillard');
+ assert.ok(page.includes("else if(e.button===0&&view!=='mj'&&!controlled(i))tenteBloque(a,e,'Ce n’est pas moi !');")
+  &&page.includes("else if(dirs[e.key]&&!e.repeat&&view!=='mj'&&!controlled(i))floatNumber(a,'Ce n’est pas moi !','nul',true);"),'« Ce n’est pas moi ! »');
+ assert.ok(page.includes("(view!=='mj'&&a.hero&&i===owner&&!(typeof spectateur==='function'&&spectateur())?' mien':'')")&&page.includes('.actor.mien .actor-nom strong{color:var(--green)}'),'son aventurier en vert');
+ assert.ok(page.includes("const cri=$('crier');cri.hidden=!a||!!a.orbeStatique||(!a.hero&&!controlled(selected));")&&page.includes("if(a.hero)log(nomNum(a)+' pousse un cri : '+auHasard(CRIS_TROUPE));")
+  &&page.includes("log(nomNum(a)+' pousse un '+genre+' : '+auHasard(CRIS_ADVERSES[genre]))"),'les cris, au journal, pour tous');}
 /* v0.625 — Le bruit vaut pour tout adversaire pas encore révélé, qu'il voie l'aventurier ou non : voir dans le noir ne l'empêche plus
    d'entendre. Au sol, un token qu'on tente de déplacer le dit : « Au Sol ! ». */
 {const carto=fs.readFileSync('maps.js','utf8');
  assert.ok(!carto.includes('voitBruiteur')&&carto.includes("  &&places.some(s=>Math.hypot((a.x-s.x)/100*W,(a.y-s.y)/100*H)<=Rp));"),'le bruit, sans condition de vue');}
 assert.ok(page.includes("function auSolBloque(i){const a=actors[i];return !!a&&controlled(i)&&hasState(a,'Au sol')&&!canMove(i)&&(alive(a)||view==='mj')}")
- &&page.includes("if(!geste)return;if(e.button===0&&auSolBloque(i))tenteAuSol(a,e);")&&page.includes("lot.forEach(k=>{if(auSolBloque(k))floatNumber(actors[k],'Au Sol !','nul',true)})")
+ &&page.includes("if(!geste)return;if(e.button===0&&auSolBloque(i))tenteBloque(a,e,'Au Sol !');")&&page.includes("lot.forEach(k=>{if(auSolBloque(k))floatNumber(actors[k],'Au Sol !','nul',true)})")
  &&page.includes("if(dirs[e.key]&&!e.repeat&&auSolBloque(i))floatNumber(a,'Au Sol !','nul',true);"),'« Au Sol ! » à qui tente de déplacer');
 /* v0.624 — Un tir qui porte le Feu, le Gel ou la Foudre part en boule de son élément, comme un orbe, ici et sur toutes les tables. */
 assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','Gel','Foudre'].includes(e));")
@@ -3415,7 +3426,7 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
   &&page.includes("if(skillNames[i]==='Ruse'&&a.hero&&jet.reussites>0)a.discret=metresDiscretion(jet.reussites);")
   &&page.includes("if(traces&&typeof bruitDePas==='function')lot.forEach((k,n)=>{const o=actors[k],tr=traces[n];if(o&&tr)bruitDePas(o,[...tr,{x:o.x,y:o.y}])});")
   &&page.includes("if(typeof bruitDePas==='function')bruitDePas(o,[depart,{x:o.x,y:o.y}]);const h=piegeAuPassage(o,depart);"),'coups, Ruse, pas à la main et imposés');
- assert.ok(page.includes('<button class="btn-action btn-crier rond" id="crier" hidden>📢</button>')&&page.includes("a.crie=true;if(typeof faisBruit==='function')faisBruit(a,[{x:a.x,y:a.y}],BRUIT_CRI);")
+ assert.ok(page.includes('<button class="btn-action btn-crier rond" id="crier" hidden>📢</button>')&&page.includes(" if(typeof faisBruit==='function')faisBruit(a,[{x:a.x,y:a.y}],BRUIT_CRI);render();scheduleSave()};")
   &&page.includes("  actors.forEach(a=>{delete a.crie;delete a.entendu;delete a.ecoutes})}")&&css.includes('button.btn-crier{--fond:#b9772c;color:#fff}'),'Crier, une fois entre deux combats');
  assert.ok(page.includes("if(a.entendu&&!a.vu&&campDe(a)==='adverse'&&!t.classList.contains('unseen')){const e=document.createElement('span');e.className='entendu'")&&css.includes('#pv-layer .entendu{')
   &&vif.includes("'tenuPar','entendu','discret','crie','ecoutes'];"),'le « ! », sur toutes les tables');}
