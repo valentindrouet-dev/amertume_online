@@ -2381,7 +2381,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const mur=[{contours:[[[400,0],[600,0],[600,700],[400,700]]]}];
  const ctxR={combat:true,round:3,zones:{},notes:[],journal:[],performance:{now:()=>1e6},nomNum:a=>a.name,currentMap:()=>({id:'c'}),zonesDe:()=>({compte:2}),
   enCombat:()=>ctxR.combat,items:()=>[],tokenPx:()=>10,mapSize:()=>({width:1000,height:1000}),distanceMouvement:a=>a.mvt??9,
-  wallsInPixels:()=>ctxR.murs||[],segmentHitsPolys:C.segmentHitsPolys,contoursOf:C.contoursOf,
+  wallsInPixels:()=>ctxR.murs||[],segmentHitsPolys:C.segmentHitsPolys,contoursOf:C.contoursOf,shapeContains:C.shapeContains,
   pointsUses:(a,q)=>a.uses||0,pointsRestants:(a,q)=>q==='action'?(a.action??1):a.credit,zoneDe:a=>ctxR.zones[Math.round(a.x)+','+Math.round(a.y)]||0,
   floatNumber:(a,t)=>ctxR.notes.push(t),log:t=>ctxR.journal.push(t)};vm.createContext(ctxR);vm.runInContext(regle,ctxR);
  for(let x=0;x<=100;x+=1)ctxR.zones[x+',50']=x<50?1:x>50?2:0;
@@ -3405,7 +3405,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  // v0.605 — À découvert, la ligne droite du départ au socle, quel que soit le geste ; un mur contourné la plie à son angle.
  const regle=page.slice(page.indexOf('let mouvementClavier=null;'),page.indexOf('function contactsDe(a)'));
  const cx={round:1,performance:{now:()=>1e6},nomNum:a=>a.name,currentMap:()=>null,enCombat:()=>true,items:()=>[],tokenPx:()=>10,mapSize:()=>({width:1000,height:1000}),distanceMouvement:()=>99,
-  wallsInPixels:()=>cx.murs||[],segmentHitsPolys:C.segmentHitsPolys,contoursOf:C.contoursOf,pointsUses:()=>0,pointsRestants:()=>1,zoneDe:()=>1,floatNumber(){},log(){}};vm.createContext(cx);vm.runInContext(regle,cx);
+  wallsInPixels:()=>cx.murs||[],segmentHitsPolys:C.segmentHitsPolys,contoursOf:C.contoursOf,shapeContains:C.shapeContains,pointsUses:()=>0,pointsRestants:()=>1,zoneDe:()=>1,floatNumber(){},log(){}};vm.createContext(cx);vm.runInContext(regle,cx);
  const geste=(pts,o=[20,20])=>{const g={x:o[0],y:o[1]},r=cx.regleMouvement(g);for(const [x,y] of pts){g.x=o[0]+x;g.y=o[1]+y;cx.appliqueRegleMouvement(g,r)}cx.dernier=r;return r.long/10};
  const ligne=(a,b,pas)=>{const o=[],n=Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])/pas);for(let k=1;k<=n;k++)o.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n]);return o};
  [[.125,.0833],[.2,.05],[.3,.02],[.05,.3]].forEach(([u,v])=>assert.ok(Math.abs(geste([...ligne([0,0],[3,0],u),...ligne([3,0],[1,0],v)])-1)<.01,'aller-retour '+u+'/'+v));
@@ -3421,7 +3421,20 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  // Un pilier contourné par le bas : deux plis, un à chaque angle.
  cx.murs=[{contours:[[[450,200],[550,200],[550,600],[450,600]]]}];
  const pilier=geste([...ligne([0,0],[10,14],.3),...ligne([10,14],[30,16],.3),...ligne([30,16],[50,14],.3),...ligne([50,14],[60,0],.3)],[20,50]);
- assert.ok(Math.abs(pilier-(Math.hypot(250,100)*2+100)/10)<.01&&cx.dernier.chemin.length===4,'autour du pilier : '+pilier);cx.murs=null;}
+ assert.ok(Math.abs(pilier-(Math.hypot(250,100)*2+100)/10)<.01&&cx.dernier.chemin.length===4,'autour du pilier : '+pilier);
+ /* v0.606 — Un mur tracé à la main : une face gauche toute en bosses, une encoche, posés de biais. Le plus court chemin
+    longe la face par ses bosses saillantes, ne plonge jamais dans l'encoche ni dans la matière, et se plie au coin du bas ;
+    un segment posé sur un bord ne le coupe pas, malgré les arrondis. */
+ const face=[];for(let k=0;k<=60;k++){const s=k/60,y=300+s*500,x=400+Math.sin(s*37)*6+(y>520&&y<640?60*Math.sin((y-520)/120*Math.PI):0);face.push([x,y])}
+ const forme=[...face,[800,800],[800,300]];cx.murs=[{contours:[forme]}];
+ const main=geste([...ligne([0,0],[6,10],.3),...ligne([6,10],[7,35],.3),...ligne([7,35],[7,60],.3),...ligne([7,60],[9,66],.3),...ligne([9,66],[20,66],.3)],[30,20]);
+ const plis=cx.dernier.chemin.slice(1,-1);
+ assert.ok(main<75&&plis.length>=1&&plis.every(p=>p[0]<=400&&!C.shapeContains({contours:[forme]},[p[0]-.5,p[1]])),'le long de la face, au coin du bas : '+main+' '+JSON.stringify(plis));
+ // Le long d'un bord, un point de la ligne est sur la matière à un arrondi près : il compte comme dehors.
+ const auBord=q=>forme.some((u,i)=>{const v=forme[(i+1)%forme.length],dx=v[0]-u[0],dy=v[1]-u[1],l=dx*dx+dy*dy,s=l?Math.max(0,Math.min(1,((q[0]-u[0])*dx+(q[1]-u[1])*dy)/l)):0;return Math.hypot(q[0]-u[0]-dx*s,q[1]-u[1]-dy*s)<.5});
+ const tout=cx.dernier.chemin;for(let i=1;i<tout.length;i++)for(let k=1;k<20;k++){const q=[tout[i-1][0]+(tout[i][0]-tout[i-1][0])*k/20,tout[i-1][1]+(tout[i][1]-tout[i-1][1])*k/20];
+  assert.ok(!C.shapeContains({contours:[forme]},q)||auBord(q),'la ligne ne traverse pas la matière')}
+ cx.murs=null;}
 /* v0.603 — Le mouvement limité. Neuf mètres pour tous, une autre distance par créature au bestiaire, et les objets cochés
    « Bonus de Mouvement » l'allongent pour qui les porte. Du « Révélé » à la fin du combat, chaque mouvement coûte un point
    et ne va pas plus loin que cette distance ; une flèche le suit, du départ à l'arrivée. Le MJ peut l'imposer aux
