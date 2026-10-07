@@ -1224,7 +1224,7 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
    sélection sinon ; un joueur inspecte n'importe quel combattant — fiche selon ce qu'il en sait,
    aura — sans le contrôler, et ses cases d'activation restent celles de son actif ; les
    projectiles sont plus lents et plus gros. */
-assert.ok(page.includes('id="portees">◎ Contacts<')&&page.includes("let porteesOn=localStorage.getItem('amertume-portees')==='1';")&&page.includes("return a.hero||((a.vu||apercusEnGeste.has(a.id))&&!a.hidden)")&&!page.includes("couche.hidden=!porteesOn"),'Contacts : tous les rayons, ou la sélection');
+assert.ok(page.includes('id="portees">◎<')&&page.includes("let porteesOn=localStorage.getItem('amertume-portees')==='1';")&&page.includes("return a.hero||((a.vu||apercusEnGeste.has(a.id))&&!a.hidden)")&&!page.includes("couche.hidden=!porteesOn"),'Contacts : tous les rayons, ou la sélection');
 assert.ok(page.includes('let inspecteId=null;')&&page.includes("if(!controlled(i)){const a=actors[i];inspecteId=a&&inspecteId!==a.id?a.id:null;render();return}")&&!page.includes('Sélectionne ton aventurier, puis cible')
  &&page.includes("const k=view!=='mj'&&inspecteIndex()>=0?inspecteIndex():selected,a=actors[k];")&&page.includes("  $(id).checked=!!s&&pointsRestants(s,quoi)<=0;")
  &&page.includes('#sheet.secret :is(#sheet-chips,#stats,#hpbar,#bloc-gear,#bloc-talents,#skills,.divider){display:none}')&&page.includes("a.id===inspecteId?'inspecte ':''"),'un joueur inspecte sans contrôler');
@@ -3387,6 +3387,15 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.613 — La barre de la carte : les bascules de vue en icônes seules, de la taille des autres ; le zoom à droite ; chaque bouton
+   dit ce qu'il fait dès le survol, dans une bulle du site, et sa bulle suit son état. */
+{const carto=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(['id="portees">◎</button>','id="fouilles-vue">🔍</button>','id="distances-vue">📏</button>','id="coffres-bulles" hidden>🧰</button>'].every(s=>page.includes(s))
+  &&!page.includes('.toggle-portees{font:600 13px system-ui'),'les bascules en icônes seules');
+ assert.ok(carto.includes("document.querySelector('.mapbar .zoom-bar').before(fogBar);")&&page.includes('.mapbar-h1 .zoom-bar{margin-left:auto}')&&page.includes('#fog-bar{margin-left:auto}'),'le zoom tout à droite');
+ assert.ok(carto.includes("function bulleBouton(b){const t=texteBouton(b);")&&carto.includes("ouvrirBulle(b,d,'bulle-bouton')")
+  &&carto.includes(".observe(barreCarte,{subtree:true,attributes:true,attributeFilter:['title']});")&&carto.includes("if(e.pointerType==='touch')return;")
+  &&page.includes('<button id="zoom-reset" title="Ajuster la carte au cadre">Ajuster</button>')&&css.includes('.bulle-bouton .cat-detail.bulle-bouton-texte{'),'les bulles des boutons de la carte');}
 /* v0.612 — Un bouton du MJ, sur la barre de la carte, active ou désactive l'obscurité de la carte pour toute la table. Ce que
    l'onglet Aventuriers règle voyage dans les deux sens : XP, niveau, compétences, VIE, Endurance, espèce ; et l'onglet
    Aventuriers comme l'arbre de talents ouverts se redessinent sur ce qui arrive, sans couper une saisie ni un glissement. */
@@ -4226,7 +4235,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    un bouton « Distances » montre ou cache les distances des flèches, pour chacun. */
 {const page=fs.readFileSync('index.html','utf8');
  assert.ok(!page.includes("diceTimer=setTimeout(")&&page.includes("const avant=ciblesDe(a).slice(),designee=avant.includes(i);\n if(!designee)setTarget(i);\n if(ciblesDe(a).includes(i))attack();\n if(!designee){poseCibles(a,avant);render()}}"),'les dés restent, la cible ne reste pas');
- assert.ok(page.includes('id="distances-vue">📏 Distances</button>')&&page.includes("localStorage.getItem('amertume-distances')!=='0'")&&page.includes("$('aim').classList.toggle('sans-distances',!distancesOn)")
+ assert.ok(page.includes('id="distances-vue">📏</button>')&&page.includes("localStorage.getItem('amertume-distances')!=='0'")&&page.includes("$('aim').classList.toggle('sans-distances',!distancesOn)")
   &&page.includes("#aim.sans-distances .aim-dist{display:none!important}"),'le bouton des distances');}
 /* v0.527 — Chiffre de distance réduit de 30 %. Charge, action du Destructeur : un mouvement jusqu'au contact puis une
    attaque au contact, pour un seul point de Mouvement ; l'élan en bonus de dégâts ; la cible repoussée hors de la zone,

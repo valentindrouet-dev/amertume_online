@@ -966,6 +966,8 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 .bulle{position:fixed;z-index:60;max-width:min(340px,92vw);box-sizing:border-box;pointer-events:none;
  filter:drop-shadow(0 6px 18px rgba(0,0,0,.28));animation:bulle-entre .1s ease-out}
 .bulle.epinglee{pointer-events:auto}
+/* La bulle d'un bouton de la barre de la carte : ce qu'il fait, en une ligne ou deux. */
+.bulle-bouton .cat-detail.bulle-bouton-texte{margin:0;padding:6px 10px;font:600 12.5px/1.35 system-ui;max-width:260px}
 @keyframes bulle-entre{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.bulle{animation:none}}
 .bulle>*{margin:0;width:auto;min-width:0;max-width:none;flex-basis:auto}

@@ -2010,7 +2010,23 @@ const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');
 const limiteBtn=icone('mouvement-limite','👣','Mouvement limité');
 // L'obscurité de la carte, activée ou désactivée par le MJ, pour toute la table.
 const noirBtn=icone('obscurite-bascule','🌑','Désactiver l’obscurité');
-fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn);document.querySelector('.mapbar .zoom-bar').after(fogBar);
+fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn);document.querySelector('.mapbar .zoom-bar').before(fogBar);
+/* Les boutons de la barre de la carte disent ce qu'ils font dès le survol, dans une bulle du site : l'infobulle du système
+   tardait et ne ressemblait à rien d'ici. Leur titre devient le texte de la bulle, et celui qu'un rendu leur redonne aussi ;
+   le nom reste au lecteur d'écran. Au doigt, pas de bulle : un toucher n'est pas un survol. */
+const barreCarte=document.querySelector('.mapbar');let boutonSurvole=null;
+function texteBouton(b){if(b.hasAttribute('title')){const t=b.getAttribute('title');b.removeAttribute('title');
+  if(t){b.dataset.infobulle=t;if(!b.getAttribute('aria-label'))b.setAttribute('aria-label',t)}}
+ return b.dataset.infobulle||b.getAttribute('aria-label')||''}
+function bulleBouton(b){const t=texteBouton(b);if(!t||b.hidden||typeof ouvrirBulle!=='function'||bulleEpinglee)return;
+ const d=document.createElement('div');d.className='cat-detail bulle-bouton-texte';d.textContent=t;ouvrirBulle(b,d,'bulle-bouton')}
+barreCarte.querySelectorAll('[title]').forEach(texteBouton);
+new MutationObserver(ms=>ms.forEach(m=>{const b=m.target;if(!(b instanceof Element)||!b.hasAttribute('title'))return;
+ texteBouton(b);if(b===boutonSurvole)bulleBouton(b)})).observe(barreCarte,{subtree:true,attributes:true,attributeFilter:['title']});
+barreCarte.addEventListener('pointerover',e=>{if(e.pointerType==='touch')return;const b=e.target.closest('button');
+ if(!b||!barreCarte.contains(b)||b===boutonSurvole)return;boutonSurvole=b;bulleBouton(b)});
+barreCarte.addEventListener('pointerout',e=>{const b=e.target.closest('button');if(!b||b!==boutonSurvole||b.contains(e.relatedTarget))return;
+ boutonSurvole=null;if(bulleAncre===b&&!bulleEpinglee)fermerBulle()});
 const zonesCanvas=document.createElement('canvas');zonesCanvas.id='map-zones';zonesCanvas.setAttribute('aria-hidden','true');
 const zonesNoms=document.createElement('div');zonesNoms.id='map-zones-noms';zonesNoms.setAttribute('aria-hidden','true');
 $('fog').before(zonesCanvas,zonesNoms);
