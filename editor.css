@@ -10,7 +10,8 @@ body.vue-joueur #bestiary-add,body.vue-joueur .cat-actions{display:none!importan
 #open-live.has-news{border-color:var(--green);color:var(--green)}
 .mj-tools{display:flex;gap:8px;flex-wrap:wrap;padding:12px 28px}.mj-tools button{font-size:14px}dialog{color:var(--ink);background:var(--panel);border:1px solid var(--line-strong);border-radius:12px;width:min(840px,94vw);max-height:90dvh;padding:22px;overflow:auto}dialog::backdrop{background:#0007}
 /* La boîte d'une question : étroite, une phrase, deux boutons. */
-dialog.demande{width:min(440px,94vw)}dialog.demande p{margin:4px 0 0;font-size:15px;line-height:1.5}dialog h2{font:26px Georgia;letter-spacing:0}dialog .dialog-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.edit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}/* Quatre champs d'identité tiennent une seule ligne : nom, classe, type, niveau. */.edit-grid.quatre{grid-template-columns:repeat(4,minmax(0,1fr))}
+dialog.demande{width:min(440px,94vw)}dialog.demande p{margin:4px 0 0;font-size:15px;line-height:1.5}
+dialog.demande .combien-champ{display:flex;align-items:center;gap:8px;margin:12px 0 0;font-size:15px}dialog.demande .combien-champ input{width:84px;margin:0}dialog h2{font:26px Georgia;letter-spacing:0}dialog .dialog-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.edit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}/* Quatre champs d'identité tiennent une seule ligne : nom, classe, type, niveau. */.edit-grid.quatre{grid-template-columns:repeat(4,minmax(0,1fr))}
 /* Le prix et les ressources d'un objet : leur propre ligne, sous la rareté. */
 .edit-grid.prix-ressources{margin-top:12px}dialog label{display:block;font-size:14px;color:var(--muted)}dialog input:not([type=checkbox]),dialog textarea{width:100%;border:1px solid var(--line);background:var(--field);border-radius:5px;color:var(--ink);padding:9px;margin-top:5px}dialog select{margin-top:5px}dialog textarea{resize:vertical;min-height:65px}.span-all{grid-column:1/-1}.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;flex-wrap:wrap}.attack-card,.catalog-row{border:1px solid var(--line);border-radius:7px;padding:12px;margin:10px 0}.catalog-row{display:flex;justify-content:space-between;gap:12px;align-items:center}.catalog-row p{font-size:14px;color:var(--muted)}.catalog-row .toolbar{flex-shrink:0}/* L'intitulé d'un bloc de pastilles se lit comme l'intitulé d'un champ : même taille,
    même encre. Ce n'est pas un chapitre, c'est une étiquette. */
@@ -966,8 +967,8 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 .bulle{position:fixed;z-index:60;max-width:min(340px,92vw);box-sizing:border-box;pointer-events:none;
  filter:drop-shadow(0 6px 18px rgba(0,0,0,.28));animation:bulle-entre .1s ease-out}
 .bulle.epinglee{pointer-events:auto}
-/* La bulle d'un bouton de la barre de la carte : ce qu'il fait, en une ligne ou deux. */
-.bulle-bouton .cat-detail.bulle-bouton-texte{margin:0;padding:6px 10px;font:600 12.5px/1.35 system-ui;max-width:260px}
+/* La bulle d'un bouton de la barre de la carte : son nom, puis ce qu'il fait. */
+.bulle-bouton .talent-detail.bulle-bouton-texte{max-width:280px}
 @keyframes bulle-entre{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.bulle{animation:none}}
 .bulle>*{margin:0;width:auto;min-width:0;max-width:none;flex-basis:auto}

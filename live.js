@@ -283,6 +283,11 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   aGlisser.forEach(a=>{const e=d.actors[a.id];glisseVers(a,e.x,e.y)});
   base=etatVivant();
   const change=complet||JSON.stringify(base)!==avant;
+  /* Chez le MJ, ce que le document ne porte pas encore — un champ qu'une version plus récente fait voyager, comme l'XP — n'est
+     pas tenu pour envoyé : il part au prochain envoi, même s'il n'a pas bougé ici depuis. Sans cela, une XP remise à zéro
+     avant que le champ voyage restait chez les joueurs à sa vieille valeur. */
+  if(estMJ())Object.entries(base.actors).forEach(([id,e])=>{const recu=d.actors&&d.actors[id];if(!recu){delete base.actors[id];return}
+   CHAMPS_VIVANTS.forEach(k=>{if(recu[k]===undefined&&e[k]!==undefined)delete e[k]})});
   aRepousser.forEach(([id,k])=>{if(base.actors[id])base.actors[id][k]=false});
   gardes.forEach(([id,k,v])=>{if(base.actors[id])base.actors[id][k]=v});
   // L'écho de notre propre envoi n'a rien changé : pas de rendu pour rien.

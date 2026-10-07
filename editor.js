@@ -1731,13 +1731,15 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
  [...comptes.entries()].forEach(([o,n])=>{const equipement=o.category==='weapon'||o.category==='armor'||o.category==='ammo';
   const reste=equipement?n-portes(o):n;if(reste<=0)return;rien=false;
   const p=carreDeFiche(a,o,reste,true,()=>0,peutEquiper,equipement?false:undefined);
-  /* Au survol, une petite croix rouge retire un exemplaire de l'inventaire — après confirmation.
-     Ce qui est porté ne bouge pas : on retire un exemplaire du sac. */
+  /* Au survol, une petite croix rouge retire de l'inventaire — après confirmation ; s'il y en a plusieurs, on choisit
+     combien, ou tout. Ce qui est porté ne bouge pas : on ne retire que ce qui est dans le sac. */
   if(peutEquiper){const x=document.createElement('button');x.type='button';x.className='retirer-sac';x.textContent='✕';
    x.title='Retirer '+o.name+' de l’inventaire';x.setAttribute('aria-label',x.title);x.draggable=false;
    x.onclick=async ev=>{ev.stopPropagation();ev.preventDefault();fermerBulle();
-    const ok=typeof demander==='function'?await demander('Retirer « '+o.name+' » de l’inventaire de '+a.name+' ?'+(reste>1?' Un exemplaire sur '+reste+'.':''),'Retirer'):confirm('Retirer « '+o.name+' » ?');
-    if(!ok)return;retirerInventaire(a,o);log(nomNum(a)+' se défait de '+o.name+'.',{local:true});
+    const question='Retirer « '+o.name+' » de l’inventaire de '+a.name+' ?';let n=0;
+    if(reste>1&&typeof demanderNombre==='function')n=await demanderNombre(question,reste,'Retirer');
+    else n=(typeof demander==='function'?await demander(question,'Retirer'):confirm('Retirer « '+o.name+' » ?'))?1:0;
+    if(!n)return;for(let k=0;k<n;k++)retirerInventaire(a,o);log(nomNum(a)+' se défait de '+(n>1?n+' ':'')+o.name+'.',{local:true});
     render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
    x.onpointerdown=ev=>ev.stopPropagation();p.append(x)}
   // Son nom dessous, sur la page des Aventuriers, quand le bouton « Noms » est allumé.

@@ -2018,13 +2018,35 @@ const barreCarte=document.querySelector('.mapbar');let boutonSurvole=null;
 function texteBouton(b){if(b.hasAttribute('title')){const t=b.getAttribute('title');b.removeAttribute('title');
   if(t){b.dataset.infobulle=t;if(!b.getAttribute('aria-label'))b.setAttribute('aria-label',t)}}
  return b.dataset.infobulle||b.getAttribute('aria-label')||''}
-function bulleBouton(b){const t=texteBouton(b);if(!t||b.hidden||typeof ouvrirBulle!=='function'||bulleEpinglee)return;
- const d=document.createElement('div');d.className='cat-detail bulle-bouton-texte';d.textContent=t;ouvrirBulle(b,d,'bulle-bouton')}
+const BOUTONS_CARTE={
+ portees:()=>['Contacts',porteesOn?'Les contacts de tous les combattants sont affichés ; un clic ne garde que ceux de la sélection.':'Affiche les contacts de tous les combattants, aventuriers et adversaires révélés.'],
+ 'fouilles-vue':()=>['Fouilles',(fouillesOn?'Masque':'Affiche')+' les zones où un test de Perception a déjà été fait'+(view==='mj'?' ; un clic droit les efface sur cette carte.':'.')],
+ 'distances-vue':()=>['Distances',(distancesOn?'Masque':'Affiche')+' les distances sur les flèches de ciblage.'],
+ 'coffres-bulles':()=>['Coffres',(bullesCoffresMJ?'Masque':'Affiche')+' la bulle des coffres au survol.'],
+ 'fog-reset':()=>['Brouillard','Remet le brouillard : la carte redevient inexplorée pour la troupe.'],
+ 'fog-all':()=>{const m=currentMap();return ['Tout révéler',m&&m.fogOff?'Le voile est levé pour tous ; un clic rétablit le brouillard.':'Lève le voile : toute la carte devient visible pour tous.']},
+ 'obscurite-bascule':()=>{const m=currentMap();return ['Obscurité',m&&m.obscuriteOff?'L’obscurité est désactivée pour toute la table ; un clic la rétablit.':'Désactive l’obscurité de la carte pour toute la table.']},
+ 'troupe-eye':()=>['Vue de la troupe',vueTroupe?'Tu vois la carte comme la troupe ; un clic rend la vue du MJ.':'Montre la carte comme la voit la troupe, sans quitter la vue du MJ.'],
+ 'zones-eye':()=>['Zones',(zonesVisibles?'Cache':'Montre')+' les zones de la carte, chacune de sa couleur et de son numéro.'],
+ 'token-lock':()=>['Verrou',tokensLocked?'Les déplacements des joueurs sont figés ; un clic les leur rend.':'Fige les déplacements des joueurs, le temps de décrire une scène.'],
+ 'mouvement-limite':()=>['Mouvement limité',mouvementLimiteExplo?'En exploration, chaque aventurier ne va pas plus loin que sa distance de mouvement ; un clic lève la limite.':'En exploration, limite chaque déplacement à la distance de mouvement de l’aventurier.'],
+ 'zoom-out':()=>['Dézoomer','Éloigne la vue de la carte.'],
+ 'zoom-in':()=>['Zoomer','Rapproche la vue de la carte.'],
+ 'zoom-reset':()=>['Ajuster','Ajuste la carte entière au cadre.'],
+ 'zoom-centre':()=>['Centrer','Centre la vue sur le token sélectionné, sans changer le zoom.']};
+function bulleBouton(b){let nom='',dit=texteBouton(b);if(BOUTONS_CARTE[b.id])try{[nom,dit]=BOUTONS_CARTE[b.id]()}catch(e){}
+ if((!nom&&!dit)||b.hidden||typeof ouvrirBulle!=='function'||bulleEpinglee)return;
+ const d=document.createElement('div');d.className='talent-detail large bulle-etat bulle-bouton-texte';
+ if(nom){const t=document.createElement('p');t.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=nom;t.append(n);d.append(t)}
+ if(dit){const p=document.createElement('p');p.className='palier-effet';p.textContent=dit;d.append(p)}
+ ouvrirBulle(b,d,'bulle-talent bulle-bouton')}
 barreCarte.querySelectorAll('[title]').forEach(texteBouton);
 new MutationObserver(ms=>ms.forEach(m=>{const b=m.target;if(!(b instanceof Element)||!b.hasAttribute('title'))return;
  texteBouton(b);if(b===boutonSurvole)bulleBouton(b)})).observe(barreCarte,{subtree:true,attributes:true,attributeFilter:['title']});
 barreCarte.addEventListener('pointerover',e=>{if(e.pointerType==='touch')return;const b=e.target.closest('button');
  if(!b||!barreCarte.contains(b)||b===boutonSurvole)return;boutonSurvole=b;bulleBouton(b)});
+// Un clic change l'état du bouton : sa bulle se relit aussitôt.
+barreCarte.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b===boutonSurvole)requestAnimationFrame(()=>{if(b===boutonSurvole)bulleBouton(b)})});
 barreCarte.addEventListener('pointerout',e=>{const b=e.target.closest('button');if(!b||b!==boutonSurvole||b.contains(e.relatedTarget))return;
  boutonSurvole=null;if(bulleAncre===b&&!bulleEpinglee)fermerBulle()});
 const zonesCanvas=document.createElement('canvas');zonesCanvas.id='map-zones';zonesCanvas.setAttribute('aria-hidden','true');

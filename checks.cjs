@@ -2482,7 +2482,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  a=h(['h']);ctxM.equiperDansMain(a,I.d,'gauche');assert.equal(dit(a),'d/-','une arme à deux mains cède les deux');}
 {assert.ok(src.includes("const droite=armes[0]||null,gauche=droite&&weaponHands(droite)===2?{deux:droite}:(bouclier||armes[1]||null);")
   &&src.includes("if(cle==='main')pl.dataset.main=k===3?'droite':'gauche';")&&src.includes("g.cible=e.target&&e.target.closest?e.target.closest('.place'):null;"),'le schéma : main droite à gauche de l’image, dépôt ciblé');
- assert.ok(src.includes("x.className='retirer-sac';x.textContent='✕';")&&src.includes("if(!ok)return;retirerInventaire(a,o);")
+ assert.ok(src.includes("x.className='retirer-sac';x.textContent='✕';")&&src.includes("if(!n)return;for(let k=0;k<n;k++)retirerInventaire(a,o);")
   &&feuille.includes('.sac .gear-carre:hover .retirer-sac,.sac .gear-carre:focus-within .retirer-sac{opacity:1;'),'la croix de retrait du sac');
  const ctxK={catalog:{motsCles:['Allié']},STAT_TINTS:{pv:'1,2,3',dmg:'4,5,6',def:'0,0,0',endu:'0,0,0',vie:'0,0,0',xp:'0,0,0'},ETATS_JEU:gearApi.ETATS_JEU,
   document:{createElement:()=>({className:'',textContent:'',style:{color:''}})}};vm.createContext(ctxK);
@@ -3387,15 +3387,26 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.614 — Retirer de l'inventaire un objet en plusieurs exemplaires : on choisit combien, ou tout. Les bulles des boutons de la
+   carte : le nom, comme pour un talent, puis une phrase qui suit l'état du bouton. Chez le MJ, un champ que le document de la
+   table ne porte pas encore — l'XP — part au prochain envoi : une XP remise à zéro arrive chez les joueurs. */
+{const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8'),src=fs.readFileSync('editor.js','utf8');
+ assert.ok(page.includes("function demanderNombre(texte,max,ok){")&&page.includes("$('combien-tout').onclick=()=>fin(max);$('combien-oui').onclick=()=>fin(lu());")
+  &&src.includes("if(reste>1&&typeof demanderNombre==='function')n=await demanderNombre(question,reste,'Retirer');")&&src.includes("if(!n)return;for(let k=0;k<n;k++)retirerInventaire(a,o);"),'combien retirer, ou tout');
+ assert.ok(carto.includes("'distances-vue':()=>['Distances',(distancesOn?'Masque':'Affiche')+' les distances sur les flèches de ciblage.'],")
+  &&carto.includes("d.className='talent-detail large bulle-etat bulle-bouton-texte';")&&carto.includes("t.className='talent-bulle-nom'")
+  &&carto.includes("if(b&&b===boutonSurvole)requestAnimationFrame(()=>{if(b===boutonSurvole)bulleBouton(b)})"),'la bulle d’un bouton : son nom, puis ce qu’il fait');
+ assert.ok(vif.indexOf("const change=complet||JSON.stringify(base)!==avant;")<vif.indexOf("CHAMPS_VIVANTS.forEach(k=>{if(recu[k]===undefined&&e[k]!==undefined)delete e[k]})")
+  &&vif.includes("if(estMJ())Object.entries(base.actors).forEach(([id,e])=>{const recu=d.actors&&d.actors[id];if(!recu){delete base.actors[id];return}"),'ce que le document ne porte pas encore part du MJ');}
 /* v0.613 — La barre de la carte : les bascules de vue en icônes seules, de la taille des autres ; le zoom à droite ; chaque bouton
    dit ce qu'il fait dès le survol, dans une bulle du site, et sa bulle suit son état. */
 {const carto=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(['id="portees">◎</button>','id="fouilles-vue">🔍</button>','id="distances-vue">📏</button>','id="coffres-bulles" hidden>🧰</button>'].every(s=>page.includes(s))
   &&!page.includes('.toggle-portees{font:600 13px system-ui'),'les bascules en icônes seules');
  assert.ok(carto.includes("document.querySelector('.mapbar .zoom-bar').before(fogBar);")&&page.includes('.mapbar-h1 .zoom-bar{margin-left:auto}')&&page.includes('#fog-bar{margin-left:auto}'),'le zoom tout à droite');
- assert.ok(carto.includes("function bulleBouton(b){const t=texteBouton(b);")&&carto.includes("ouvrirBulle(b,d,'bulle-bouton')")
+ assert.ok(carto.includes("function bulleBouton(b){let nom='',dit=texteBouton(b);")&&carto.includes("ouvrirBulle(b,d,'bulle-talent bulle-bouton')")
   &&carto.includes(".observe(barreCarte,{subtree:true,attributes:true,attributeFilter:['title']});")&&carto.includes("if(e.pointerType==='touch')return;")
-  &&page.includes('<button id="zoom-reset" title="Ajuster la carte au cadre">Ajuster</button>')&&css.includes('.bulle-bouton .cat-detail.bulle-bouton-texte{'),'les bulles des boutons de la carte');}
+  &&page.includes('<button id="zoom-reset" title="Ajuster la carte au cadre">Ajuster</button>')&&css.includes('.bulle-bouton .talent-detail.bulle-bouton-texte{'),'les bulles des boutons de la carte');}
 /* v0.612 — Un bouton du MJ, sur la barre de la carte, active ou désactive l'obscurité de la carte pour toute la table. Ce que
    l'onglet Aventuriers règle voyage dans les deux sens : XP, niveau, compétences, VIE, Endurance, espèce ; et l'onglet
    Aventuriers comme l'arbre de talents ouverts se redessinent sur ce qui arrive, sans couper une saisie ni un glissement. */
