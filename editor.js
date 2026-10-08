@@ -3711,6 +3711,17 @@ function poseRemplissage(dest,couleur){const v=caseVideA(dest);if(v){v.remplissa
  catalog.talents.splice(catalog.talents.indexOf(t),1);return false}
 /* Les niveaux de l'arbre : un niveau posé sur la ligne entre deux talents, gardé sur celui d'où elle part
    (« niveaux » : talent visé → niveau). Un aventurier ne passe par cette ligne qu'à ce niveau. 0 : aucun. */
+/* Cacher la suite d'une ligne : le MJ coche « Cacher » à côté de son niveau, et les talents qui en descendent — le talent au
+   bout de la ligne, ce qui en part à son tour, et leurs petits ronds — ne sont plus, chez les joueurs, que des ronds flous :
+   la forme de l'arbre, rien d'autre. La ligne cachée se retient sur le talent qui la porte (« caches »). */
+const cacheLien=(de,vers)=>!!de&&!!vers&&Array.isArray(de.caches)&&de.caches.includes(vers.id);
+function basculeCache(de,vers){if(!de||!vers)return;const l=Array.isArray(de.caches)?de.caches:[];
+ if(l.includes(vers.id)){de.caches=l.filter(x=>x!==vers.id);if(!de.caches.length)delete de.caches}else de.caches=[...l,vers.id]}
+function talentsCaches(liste){const parId=new Map(tousTalents().map(t=>[t.id,t])),caches=new Set(),file=[];
+ (liste||[]).forEach(de=>(Array.isArray(de.caches)?de.caches:[]).forEach(id=>{if(liensDe(de).includes(id)&&parId.has(id))file.push(id)}));
+ while(file.length){const id=file.pop();if(caches.has(id))continue;caches.add(id);const t=parId.get(id);
+  liensDe(t).forEach(x=>{if(parId.has(x))file.push(x)});Object.keys(DIRS).forEach(d=>petitsDe(t,d).forEach(s=>caches.add(s.id)))}
+ return caches}
 const niveauLien=(x,y)=>!x||!y?0:Math.max(Math.trunc(Number((x.niveaux||{})[y.id]))||0,Math.trunc(Number((y.niveaux||{})[x.id]))||0);
 function poseNiveauLien(de,vers,n){if(!de||!vers)return;
  [[de,vers],[vers,de]].forEach(([t,u])=>{if(t.niveaux){delete t.niveaux[u.id];if(!Object.keys(t.niveaux).length)delete t.niveaux}});
@@ -4660,8 +4671,11 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
    const i=ic&&ic.getBoundingClientRect();return {x:r.left+r.width/2-R.left,y:r.top+r.height/2-R.top,r:i&&i.width?Math.min(i.width,i.height)*.22:r.width/2-2}};
   col.classList.toggle('sans-acteur',!a);
   const pris=(x,y)=>!!a&&a.talents.includes(x.id)&&a.talents.includes(y.id);
+  // Ce que le MJ a caché : flou chez les joueurs ; chez lui, pâli, pour qu'il sache ce qu'ils ne voient pas.
+  const caches=talentsCaches(liste),voitTout=view==='mj'&&!arbresVueJoueur;
+  col.querySelectorAll('.arbre-plan>.arbre-noeud').forEach(el=>{const c=caches.has(el.dataset.id);el.classList.toggle('cache-joueur',c&&!voitTout);el.classList.toggle('cache-mj',c&&voitTout)});
   const trait=(de,vers,A,B,lien)=>{const p=centre(A),q=centre(B),g=document.createElementNS(ns,'g');
-   g.setAttribute('class','chemin'+(lien?'':' petit')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':''));
+   g.setAttribute('class','chemin'+(lien?'':' petit')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':'')+(caches.has(vers.id)?(voitTout?' cache-mj':' cache-joueur'):''));
    // Le trait ne traverse jamais un bouton : il ne vit qu'entre deux, d'un bord à l'autre.
    const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,rp=Math.min(p.r,d/2),rq=Math.min(q.r,d/2);
    const P={x:p.x+ux*rp,y:p.y+uy*rp},Q={x:q.x-ux*rq,y:q.y-uy*rq};
@@ -4675,9 +4689,13 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
   liste.forEach(de=>Object.keys(DIRS).forEach(d=>{let av=de,A=elDe(de.id);petitsDe(de,d).forEach(s=>{const B=elDe(s.id);if(!A||!B)return;trait(av,s,A,B,false);av=s;A=B})}));
   /* Les niveaux, au milieu des lignes entre talents : « NIV. 3 », ouvert à ce niveau, fermé avant. Chez le MJ,
      une place sur chaque ligne : le clic pose le niveau 2, puis l'augmente ; le clic droit le baisse, puis l'ôte. */
-  col.querySelectorAll(':scope>.arbre-niveau').forEach(x=>x.remove());
+  col.querySelectorAll(':scope>.arbre-niveau,:scope>.arbre-cacher').forEach(x=>x.remove());
   liste.forEach(de=>liensDe(de).forEach(id=>{const vers=liste.find(x=>x.id===id),A=elDe(de.id),B=vers&&elDe(id);if(!A||!B)return;
-   const n=niveauLien(de,vers);if(!n&&!mj)return;const p=centre(A),q=centre(B),b=document.createElement(mj?'button':'span');if(mj)b.type='button';
+   const n=niveauLien(de,vers);if(!n&&!mj)return;if(!voitTout&&caches.has(de.id))return;const p=centre(A),q=centre(B),b=document.createElement(mj?'button':'span');if(mj)b.type='button';
+   // À côté du niveau, chez le MJ : « Cacher » la suite de la ligne aux joueurs.
+   if(mj){const l=document.createElement('label'),c=document.createElement('input');l.className='arbre-cacher'+(cacheLien(de,vers)?' on':'');c.type='checkbox';c.checked=cacheLien(de,vers);
+    l.append(c,'Cacher');l.style.left=((p.x+q.x)/2).toFixed(1)+'px';l.style.top=((p.y+q.y)/2).toFixed(1)+'px';l.onclick=e=>e.stopPropagation();
+    c.onchange=()=>{basculeCache(de,vers);arbreChange()};col.append(l)}
    b.className='arbre-niveau'+(n?'':' vide')+(a&&n?((Number(a.level)||1)>=n?' ouvert':' ferme'):'');
    b.style.left=((p.x+q.x)/2).toFixed(1)+'px';b.style.top=((p.y+q.y)/2).toFixed(1)+'px';
    const v=document.createElement('b');v.textContent=n?String(n):'+';if(n){const c=document.createElement('small');c.textContent='Niv.';b.append(c)}b.append(v);

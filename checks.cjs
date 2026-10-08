@@ -3102,7 +3102,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(feuille.includes('.corps-sac>.sac{grid-column:2;grid-row:1;')
   &&feuille.includes('.sac .cat-pill.gear-carre,.sac .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:36px;min-width:36px;height:36px;'),'équipement et inventaire côte à côte');
  /* v0.476 — Le trait d'un bonus, plus fin, va sous son icône ; un petit « + » devant sa valeur, sans la déplacer. */
- assert.ok(src.includes("g.setAttribute('class','chemin'+(lien?'':' petit')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':''));")
+ assert.ok(src.includes("g.setAttribute('class','chemin'+(lien?'':' petit')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':'')+(caches.has(vers.id)?(voitTout?' cache-mj':' cache-joueur'):''));")
   &&src.includes("r:i&&i.width?Math.min(i.width,i.height)*.22:r.width/2-2}};")&&feuille.includes('.arbre-chemins .chemin.bonus .trait{stroke-width:1.5}')&&feuille.includes('.arbre-plan>.arbre-noeud.petit.bonus::before{display:none}')
   &&feuille.includes(".arbre-plan>.arbre-noeud.petit.bonus .arbre-rond b.bonus-valeur::before{content:'+';position:absolute;right:100%;"),'trait fin sous l’icône, petit + devant la valeur');
  /* v0.475 — Un bonus de l'arbre : l'icône et la valeur seules ; la valeur plus petite, dans le coin bas droit. */
@@ -3387,6 +3387,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.633 — « Cacher » à côté du niveau d'une ligne : ce qui en descend n'est plus, chez les joueurs, que des ronds flous. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("function talentsCaches(liste){")&&src.includes("function basculeCache(de,vers){")&&src.includes("l.append(c,'Cacher');")
+  &&css.includes('.arbre-noeud.cache-joueur{filter:blur(3px);pointer-events:none}'),'cacher la suite d’une ligne');}
 /* v0.632 — Un adversaire tout analysé ne s'analyse plus, et la case qui apprend sa dernière chose le dit ; plus de 🎲 à l'Analyse. */
 assert.ok(page.includes("function analyseComplete(o){const s=connuDe(o);return INFOS_ANALYSE.every(([k])=>s.has(k))}")
  &&page.includes("+(neufs.length&&analyseComplete(o)?'\\n'+o.name+' est entièrement analysé !':''),{ton:'talent'});")
