@@ -1212,17 +1212,17 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   aide:'Amélioration de Coupure : le double des dégâts contre un adversaire au contact d’un de ses alliés.',
   params:[],phrase(){return '<b>Coupure</b> inflige <b>le double de ses dégâts</b> à un adversaire <b>au contact d’un de ses alliés</b>.'}},
  /* Insaisissable — Coupure d'Adieu : quitter la zone de contact d'un adversaire lui inflige Coupure, une fois par tour ; à volonté au
-    palier 2. Ombre fuyante : finir son mouvement au contact d'aucun adversaire donne Invisible ; Invisible et Onde au palier 2. */
+    palier 2. Ombre fuyante : finir son tour au contact d'aucun adversaire donne Invisible ; Invisible et Onde au palier 2. */
  insaisisadieu:{cle:'insaisisadieu',nom:'Insaisissable — Coupure d’Adieu',court:'Coupure d’Adieu',type:'ame',
   aide:'Amélioration d’Insaisissable : le porteur inflige Coupure à l’adversaire dont il quitte la zone de contact, une fois par tour ; à volonté au palier 2.',
   params:[],volets:[{cle:'volonte',nom:'À volonté',palier:2}],
   phrase(p,palier,v){const k=(v||{volonte:2}).volonte,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
    return 'Le porteur inflige <b>Coupure</b> en sortant de la zone de contact d’un adversaire, '+(deux?'<b>à volonté</b>':'<b>une fois par tour</b>')+'.'}},
  insaisisombre:{cle:'insaisisombre',nom:'Insaisissable — Ombre fuyante',court:'Ombre fuyante',type:'ame',
-  aide:'Amélioration d’Insaisissable : le porteur qui termine son mouvement au contact d’aucun adversaire gagne Invisible ; Invisible et Onde au palier 2.',
+  aide:'Amélioration d’Insaisissable : le porteur qui termine son tour au contact d’aucun adversaire gagne Invisible ; Invisible et Onde au palier 2.',
   params:[],volets:[{cle:'onde',nom:'Onde en plus',palier:2}],
   phrase(p,palier,v){const k=(v||{onde:2}).onde,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
-   return 'Si le porteur termine son mouvement <b>au contact d’aucun adversaire</b>, il gagne <b>'+(deux?'Invisible et Onde':'Invisible')+'</b>.'}},
+   return 'Si le porteur termine son tour <b>au contact d’aucun adversaire</b>, il gagne <b>'+(deux?'Invisible et Onde':'Invisible')+'</b>.'}},
  /* Insaisissable — Poison : une amélioration. Les adversaires dont le porteur quitte le contact reçoivent Poison 1, puis 2 au palier 2. */
  insaisispoison:{cle:'insaisispoison',nom:'Insaisissable — Poison',court:'Poison',type:'ame',
   aide:'Amélioration d’Insaisissable : Poison 1 aux adversaires dont le porteur quitte le contact ; Poison 2 au palier 2.',

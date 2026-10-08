@@ -3399,7 +3399,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const C5=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  assert.ok(C5.TALENTS_CODES.insaisisadieu.pour==='insaisissable'&&C5.TALENTS_CODES.insaisisombre.pour==='insaisissable','les améliorations');
  assert.match(C5.phraseTalent('insaisisadieu',{},2),/à volonté/);assert.match(C5.phraseTalent('insaisisombre',{},2),/Invisible et Onde/);
- assert.ok(idx.includes("function afterMove(a,seulFoudre){if(!seulFoudre)ombreFuyante(a);")&&idx.includes(" coupureAdieu(a,avant,c);if(!poison&&!degats)return;"),'câblées');}
+ assert.ok(idx.includes("actors.forEach(o=>regenerer(o,'fin'));actors.forEach(ombreFuyante);")&&idx.includes(" coupureAdieu(a,avant,c);if(!poison&&!degats)return;"),'câblées');}
 /* v0.658 — Coupure : Empoisonnée, Profonde, Fatale. */
 {const C4=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  ['lameventpoison','lameventprofonde','lameventfatale'].forEach(k=>assert.equal(C4.TALENTS_CODES[k].pour,'lamevent',k));
@@ -4440,7 +4440,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&C.phraseTalent('thesaurisationsoin',{},1,{trois:2}).includes('1d6')&&C.phraseTalent('thesaurisationsoin',{},2,{trois:2}).includes('3d6'),'les phrases à chaque palier');
  assert.ok(page.includes("function orbesDuTour(a,c){const n=orbesPermis(c||talentsCodes(a));return n?n+orbesGardes(a):0}")&&!/orbesPermis\(talentsCodes\(a\)\)/.test(page)
   &&page.includes("const n=Math.max(0,orbesDuTour(a,c)-orbesLances(a));a.orbesGardes=n+(plus&&n>0?Math.max(1,Math.trunc(plus.params&&plus.params.orbes)||1):0);")
-  &&page.includes("actors.forEach(o=>regenerer(o,'fin'));actors.forEach(thesauriser);round++;"),'le moteur');
+  &&page.includes("actors.forEach(o=>regenerer(o,'fin'));actors.forEach(ombreFuyante);actors.forEach(thesauriser);round++;"),'le moteur');
  assert.ok(fs.readFileSync('live.js','utf8').includes("'orbes','orbesGardes',")&&fs.readFileSync('shared.js','utf8').includes("'orbes','orbesGardes',"),'les orbes gardés voyagent');}
 /* v0.547 — Les deux bulles d'un palier, centrées, restent dans l'arbre ; grisé, le palier pas encore accessible ou dépassé ;
    au dernier, le précédent et lui. Ailleurs, la bulle ne lit que le palier tenu. */
