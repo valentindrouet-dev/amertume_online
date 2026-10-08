@@ -3389,6 +3389,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.652 — Le Poison en violet : ses dégâts qui montent, et le mot dans les bulles. */
+assert.ok(fs.readFileSync('index.html','utf8').includes("couleurFlottant=COULEURS_ETATS.Poison;")&&fs.readFileSync('editor.js','utf8').includes("Poison:'#9b4fc0',"),'le Poison en violet');
 /* v0.651 — Course mortelle va toujours à l'adversaire le plus proche ; déjà à son contact, le porteur ne bouge pas. */
 assert.ok(fs.readFileSync('index.html','utf8').includes("const cands=vusPourMouvement(a,false).filter(j=>actors[j]);"),'Course mortelle : le plus proche, quoi qu’il arrive');
 /* v0.650 — La bulle d'un piège quitte le piège, pour tout le monde, et se pose sur le rond Enjamber. */
@@ -3410,7 +3412,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const cands=vusPourMouv
   .forEach(([k,p])=>assert.equal(C.TALENTS_CODES[k].pour,p,k+' améliore '+p));
  assert.ok(C.TALENTS_CODES.coursemortelle.attaque&&C.TALENTS_CODES.lameempoisonnee.attaque&&C.TALENTS_CODES.bondissement.type==='reac'&&C.TALENTS_CODES.decoupe.type==='pass','les quatre talents');
  assert.match(C.phraseTalent('lamepoisonplus',{},2),/Poison 3/);assert.match(C.phraseTalent('lamepoisonplus',{},1),/Poison 2/);assert.match(C.phraseTalent('decoupeplus',{},2),/\+3/);
- assert.ok(idx.includes("if(hasState(a,'Poison')){const n=compteEtat(a,'Poison'),r=subitDegatsEtat(a,'Poison',n);")&&!idx.includes("effectDice(a,5,"),'le Poison : un dégât par cran');
+ assert.ok(idx.includes("if(hasState(a,'Poison')){const n=compteEtat(a,'Poison');couleurFlottant=COULEURS_ETATS.Poison;let r;try{r=subitDegatsEtat(a,'Poison',n)}")&&!idx.includes("effectDice(a,5,"),'le Poison : un dégât par cran');
  assert.ok(idx.includes("function frappeOmbrelame(a,p,frappes){")&&idx.includes("function courseMortelle(a,p,talent){")&&idx.includes("function bondissement(a,p,talent){")&&idx.includes("function lameEmpoisonnee(a,p,talent){")
   &&idx.includes("function noteDecoupe(a,b,quoi){")&&idx.includes("if(!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false)bonus+=decoupeContre(a,b);")
   &&idx.includes("b.bondissement={de:a.id,tour:round};")&&fs.readFileSync('live.js','utf8').includes("'revanche','traction','bondissement','decoupe',"),'les talents d’Ombrelame câblés');
@@ -5079,4 +5081,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1909 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1910 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
