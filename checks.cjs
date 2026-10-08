@@ -3389,6 +3389,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.654 — Les états posés par un coup montent au-dessus de la cible, après ses dégâts. */
+assert.ok(fs.readFileSync('index.html','utf8').includes(" posesDits.forEach(e=>floatNumber(b,'✦ '+e,'perte'));"),'les états du coup montent');
 /* v0.653 — Lame empoisonnée, Poison au contact : l'adversaire le plus proche, puis tous ceux de la zone de contact au palier 2. */
 assert.match(C.phraseTalent('lamepoisoncontact',{},1),/l’adversaire le plus proche/);assert.match(C.phraseTalent('lamepoisoncontact',{},2),/tous les adversaires/);
 assert.ok(fs.readFileSync('index.html','utf8').includes("const touches=voletOuvert(contact,'tous')?autres:autres.slice(0,1);"),'Poison au contact : tous au palier 2');
@@ -5084,4 +5086,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1913 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1914 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
