@@ -196,6 +196,18 @@ function migreOmbrelame(c){(c.classes||[]).forEach(k=>{if(k&&k.name==='Lamevent'
  if(c.classesEffets&&typeof c.classesEffets==='object')Object.keys(c.classesEffets).forEach(k=>{c.classesEffets[k]=ombrelame(c.classesEffets[k])});
  (c.talents||[]).forEach(t=>{if(!t)return;t.famille=ombrelame(t.famille);t.name=ombrelame(t.name);t.effects=ombrelame(t.effects);t.effets=ombrelame(t.effets);t.notes=ombrelame(t.notes);
   if(t.paliers&&typeof t.paliers==='object')Object.values(t.paliers).forEach(p=>{if(p&&typeof p==='object')p.effects=ombrelame(p.effects)})})}
+/* Les actions spéciales de la barre d'action, Analyser, Repos court, Crier, Fouiller, et celles à venir : le MJ choisit leur icône
+   et leur texte, qui prend ses symboles et ses couleurs comme celui d'un talent. Une ligne de plus ici, et la suivante y entre. */
+const ACTIONS_SPECIALES=[['analyser','Analyser'],['repos','Repos court'],['crier','Crier'],['fouiller','Fouiller']];
+function normaliseActionsSpeciales(o){const out={};if(!o||typeof o!=='object'||Array.isArray(o))return out;
+ ACTIONS_SPECIALES.forEach(([k])=>{const v=o[k];if(!v||typeof v!=='object')return;const e={};
+  if(typeof v.logo==='string'&&v.logo&&v.logo.length<=120)e.logo=v.logo;
+  if(typeof v.texte==='string'&&v.texte.trim())e.texte=v.texte.slice(0,600);
+  if(Object.keys(e).length)out[k]=e});
+ return out}
+function actionSpeciale(k){return normaliseActionsSpeciales(typeof catalog!=='undefined'&&catalog?catalog.actionsSpeciales:null)[k]||{}}
+// Le centre de son rond : l'icône choisie, sinon son symbole.
+function centreAction(k,symbole){const l=actionSpeciale(k).logo,im=l?logoAttaque(l,'logo-equip'):null;return im||symbole}
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];migreOmbrelame(c);
  /* Deux talents sous un même identifiant se superposaient dans l'arbre : on en tirait un, l'autre restait, comme
     une copie. Une copie exacte s'en va ; une autre, qui a changé depuis, prend un identifiant à elle. */
@@ -223,6 +235,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(typeof c.logoRemplissage!=='string'||!c.logoRemplissage||c.logoRemplissage.length>120)delete c.logoRemplissage;
  // L'icône de l'Attaque d'un aventurier qui n'a pas d'arme en main.
  if(typeof c.logoAttaqueBase!=='string'||!c.logoAttaqueBase||c.logoAttaqueBase.length>120)delete c.logoAttaqueBase;
+ // L'icône et le texte des actions spéciales.
+ c.actionsSpeciales=normaliseActionsSpeciales(c.actionsSpeciales);if(!Object.keys(c.actionsSpeciales).length)delete c.actionsSpeciales;
  // L'image qu'un état prend à la place de celle du jeu : Gardé, pour l'heure.
  {const le=c.logosEtats&&typeof c.logosEtats==='object'&&!Array.isArray(c.logosEtats)?c.logosEtats:{};c.logosEtats={};
   Object.entries(le).forEach(([k,v])=>{if(STATES.includes(k)&&typeof v==='string'&&v&&v.length<=120)c.logosEtats[k]=v})}
@@ -442,7 +456,7 @@ function bulleEtat(ancre,o,etat){const d=document.createElement('div');d.classNa
  const t=typeof descriptionEtat==='function'?descriptionEtat(o,etat):'';
  if(t){const p=document.createElement('p');p.className='palier-effet';p.textContent=t;d.append(p)}
  return ouvrirBulle(ancre,d,'bulle-talent')}
-function bulleAction(b,{nom,dit='',note='',des=null,lignes=null,points=null,a=null,cibles=null,objet=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
+function bulleAction(b,{nom,dit='',riche='',note='',des=null,lignes=null,points=null,a=null,cibles=null,objet=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
  const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=nom;tete.append(n);d.append(tete);
  if(des)desAuTitre(tete,des);
@@ -452,7 +466,9 @@ function bulleAction(b,{nom,dit='',note='',des=null,lignes=null,points=null,a=nu
   const nm=document.createElement('span');nm.textContent=objet.name;p.append(c,nm);d.append(p)}
  // Une attaque : ce qui l'améliore, une ligne chacun, la pastille à la couleur des actions.
  if(lignes&&lignes.length){d.classList.add('p-act');lignesEnPastilles(d,lignes)}
- if(dit){const p=document.createElement('p');p.className='palier-effet';p.textContent=dit;d.append(p)}
+ // Le texte que le MJ a écrit pour une action spéciale prend la place de celui du jeu, avec ses symboles et ses couleurs.
+ if(riche){const p=document.createElement('p');p.className='palier-effet';texteEnrichi(p,riche,null,a);d.append(p)}
+ else if(dit){const p=document.createElement('p');p.className='palier-effet';p.textContent=dit;d.append(p)}
  if(note&&note!==dit){const p=document.createElement('p');p.className='muted';p.textContent=note;d.append(p)}
  {const j=jetonsCibles(a,cibles);if(j)d.prepend(j)}
  return ouvrirBulle(b,d,'bulle-talent')}
@@ -1245,11 +1261,15 @@ function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences
   +'<h3 class="reglage-titre icones-titre">Compétences</h3>'+skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">États</h3>'+selGrille(selGroupes('Gardé','etat-garde',(catalog.logosEtats||{})['Gardé']||'',groupes))+selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))
   +'<h3 class="reglage-titre icones-titre">Arbres de talents</h3>'+selGrille(selGroupes('Remplissage','remplissage',catalog.logoRemplissage||'',groupes))
-  +'<h3 class="reglage-titre icones-titre">Actions</h3>'+selGrille(selGroupes('Attaque sans arme','attaque-base',catalog.logoAttaqueBase||'',groupes));
+  +'<h3 class="reglage-titre icones-titre">Actions</h3>'+selGrille(selGroupes('Attaque sans arme','attaque-base',catalog.logoAttaqueBase||'',groupes))
+  +ACTIONS_SPECIALES.map(([k,n])=>selGrille(selGroupes(esc(n),'action-'+k,actionSpeciale(k).logo||'',groupes))+'<label class="action-texte">Texte · '+esc(n)+'<textarea name="actiontexte-'+k+'" rows="2">'+esc(actionSpeciale(k).texte||'')+'</textarea></label>').join('');
  $('competences-icones-form').onchange=e=>{const nom=e.target&&e.target.name||'',m=/^comp(\d+)$/.exec(nom),c=/^carac-([a-z]+)$/.exec(nom);
   if(nom==='remplissage'){if(e.target.value)catalog.logoRemplissage=e.target.value;else delete catalog.logoRemplissage;if(arbresDialog.open)renderArbres()}
   else if(nom==='attaque-base'){if(e.target.value)catalog.logoAttaqueBase=e.target.value;else delete catalog.logoAttaqueBase}
   else if(nom==='etat-garde'||nom==='etat-furie'){const etat=nom==='etat-garde'?'Gardé':'Furie',o={...(catalog.logosEtats||{})};if(e.target.value)o[etat]=e.target.value;else delete o[etat];catalog.logosEtats=o}
+  else if(/^action(texte)?-[a-z]+$/.test(nom)){const r=/^action(texte)?-([a-z]+)$/.exec(nom),o=normaliseActionsSpeciales(catalog.actionsSpeciales),x={...(o[r[2]]||{})},v=e.target.value;
+   if(r[1]){if(v.trim())x.texte=v;else delete x.texte}else if(v)x.logo=v;else delete x.logo;
+   o[r[2]]=x;catalog.actionsSpeciales=normaliseActionsSpeciales(o)}
   else if(!m&&!c)return;
   else if(m){const icones=iconesCompetences();icones[+m[1]]=e.target.value;catalog.iconesCompetences=normaliseIconesCompetences(icones)}
   else{const o={...(catalog.logosBonus||{})};if(e.target.value)o[c[1]]=e.target.value;else delete o[c[1]];catalog.logosBonus=o}
@@ -4245,7 +4265,14 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,pal
  // Dans la barre d'action, les jetons de ceux qu'il viserait.
  {const j=jetonsCibles(a,cibles);if(j)d.prepend(j)}
  return d}
-function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();requestAnimationFrame(placeFlechesArbres);
+/* Ce qui défile dans une fenêtre, et où : redessinée, elle y revient. L'arbre se redessine à chaque nouvelle de la table — un
+   token déplacé par un autre suffit —, et son défilement retombait en haut sous les yeux de qui lisait le bas de son arbre. */
+function gardeDefilement(racine){if(!racine)return ()=>{};
+ const cle=el=>{const l=[];for(let e=el;e&&e!==racine;e=e.parentElement)l.push(e.tagName+'.'+e.className+':'+(e.parentElement?[...e.parentElement.children].indexOf(e):0));return l.join('<')};
+ const vus=[racine,...racine.querySelectorAll('*')].filter(e=>e.scrollTop||e.scrollLeft).map(e=>[e===racine?null:cle(e),e.scrollTop,e.scrollLeft]);
+ return ()=>{if(!vus.length)return;const tous=vus.some(([k])=>k!==null)?[...racine.querySelectorAll('*')]:[];
+  vus.forEach(([k,t,g])=>{const e=k===null?racine:tous.find(x=>cle(x)===k);if(e){e.scrollTop=t;e.scrollLeft=g}})}}
+function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;queueMicrotask(gardeDefilement(arbresDialog));corps.replaceChildren();requestAnimationFrame(placeFlechesArbres);
  // Un nœud redessiné emporte sa bulle : elle ne reste pas accrochée à l'ancien.
  bulleOrpheline();
  if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);
@@ -5638,7 +5665,7 @@ function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(no
    illisible n'empêche pas l'export : le journal dit ce qui manque au fichier. */
 const ANNEXES_SAUVEGARDE=[];
 // Les réglages de l'appareil. Ni l'onglet ouvert, ni la table en ligne, ni les marques de fenêtre : ils ne servent qu'ici.
-const REGLAGES_APPAREIL=['amertume-theme','amertume-raccourcis','amertume-portees','amertume-distances','amertume-noms','amertume-tris','amertume-biblio-plis','amertume-xp-visible','amertume-bulles-coffres','amertume-fouilles','amertume-mouvement-limite'];
+const REGLAGES_APPAREIL=['amertume-raccourcis','amertume-portees','amertume-distances','amertume-noms','amertume-tris','amertume-biblio-plis','amertume-xp-visible','amertume-bulles-coffres','amertume-fouilles','amertume-mouvement-limite'];
 ANNEXES_SAUVEGARDE.push({nom:'le journal',
  lit:()=>{garderJournal();let j=[];try{j=JSON.parse(localStorage.getItem(JOURNAL_CLE)||'[]')}catch(e){}return {journal:Array.isArray(j)?j:[]}},
  pose:s=>{if(!Array.isArray(s.journal))return;localStorage.setItem(JOURNAL_CLE,JSON.stringify(s.journal));$('journal').replaceChildren();logRound=null;rejouerJournalGarde()}},

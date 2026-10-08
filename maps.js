@@ -726,6 +726,9 @@ function noteFouille(a,reussites){const size=mapSize();if(!a||!size.width)return
 let fouillesOn=false;try{fouillesOn=localStorage.getItem('amertume-fouilles')==='1'}catch(e){}
 function renderFouilles(){const vue=$('map-view');if(!vue)return;let c=$('fouilles-layer');
  if(!c){c=document.createElement('div');c.id='fouilles-layer';vue.append(c)}
+ /* Les fouilles passent toujours sous les tokens : posées devant eux, leurs chiffres empêchaient d'attraper un aventurier
+    qui se tenait dessous. Leur calque se range avant le premier token, au-dessus du brouillard et du noir. */
+ {const t0=vue.querySelector(':scope > .token');if(t0&&(c.compareDocumentPosition(t0)&Node.DOCUMENT_POSITION_PRECEDING))t0.before(c)}
  c.replaceChildren();c.hidden=!fouillesOn;const b=$('fouilles-vue');
  if(b){b.classList.toggle('on',fouillesOn);b.setAttribute('aria-pressed',String(fouillesOn));
   b.title=(fouillesOn?'Masquer':'Afficher')+' les zones où un test de Perception a déjà été fait'+(view==='mj'?' — clic droit : les effacer sur cette carte':'');b.setAttribute('aria-label',b.title)}

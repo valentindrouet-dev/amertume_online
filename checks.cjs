@@ -1696,7 +1696,7 @@ assert.ok(page.includes('#pv-layer .pv{position:absolute;transform:translate(-50
    ne pose plus de bandeau en travers de la carte. */
 assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null,arbresVueJoueur=false;')
  &&src.includes("function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arbresActeur=null;arbresClasse=famille||GENERIQUES;")
- &&src.includes("function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;corps.replaceChildren();")
+ &&src.includes("function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;queueMicrotask(gardeDefilement(arbresDialog));corps.replaceChildren();")
  &&src.includes("const classe=a?classeDuHeros(a):arbresClasse;")&&src.includes("const porte=t=>!!a&&a.talents.includes(t.id);")
  &&src.includes("el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}")
  &&src.includes("const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);")
@@ -3997,7 +3997,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  const tete=page.slice(page.indexOf('function renderTargets(){'),page.indexOf('function tourEpuise(){'));
  assert.ok(tete.includes("const bon=e=>ONDE_EXCLUS.includes(e)||e==='Gardé';")&&tete.includes("[[liste.filter(e=>!bon(e)),'adverses'],[liste.filter(bon),'allies']].forEach(([l,camp])=>{if(!l.length)return;")
   &&tete.includes("g.className='etats-tete cibles-groupe '+camp;")&&feuille.includes(".etat-tete{position:relative;display:grid;place-items:center;width:30px;height:30px;"),'deux cartouches, les icônes à leur taille');
- assert.ok(page.includes("rev.dataset.refus=refus;")&&page.includes("dit:'Révèle à toute la table les PV, la DEF et les dégâts de l’adversaire visé.',note:rev.dataset.refus||'',")
+ assert.ok(page.includes("rev.dataset.refus=refus;")&&page.includes("dit:'Révèle à toute la table les PV, la DEF et les dégâts de l’adversaire visé.',riche:rev.dataset.riche||'',note:rev.dataset.refus||'',")
   &&page.includes("points:{pa:0,pm:1},a:qui,cibles:j===null?[]:[j]})})}"),'la bulle d’Analyser');
  assert.ok(feuille.includes(".bulle-cibles{position:absolute;top:50%;left:100%;transform:translateY(-50%);margin-left:8px;")&&feuille.includes(".bulle-cibles::before{content:'';")
   &&src.includes("deborde=j?j.getBoundingClientRect().width+10:0;"),'les jetons à droite de la bulle, derrière la flèche');}
@@ -4872,7 +4872,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(src.includes("logosDeAttaque(at).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
   &&src.includes("if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';")&&src.includes("desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0))"),'la main droite seule ; le jeton de dégâts reste à la bulle des monstres');
  assert.ok(page.includes('<button class="btn-action btn-analyse rond" id="reveal" hidden>🔍</button>')&&page.includes("function poseRond(b,centre,nom,dit,compte,bulle){")
-  &&page.includes("poseRond(rev,'🔍',dejà?'Analysé':'Analyser',")
+  &&page.includes("poseRond(rev,centreRond('analyser','🔍'),dejà?'Analysé':'Analyser',")
   &&page.includes("poseRond(b,im||glyphe,nom,titre,compteDuTexte(nom),bulle);")&&page.includes("geste('Dégel','❄',")&&page.includes("geste('Se relever',ic||'⤴',")
   &&page.includes("(b.dataset.nom||b.textContent)")&&!page.includes("rev.textContent=")&&!page.includes("repos.textContent="),'Analyser, Repos court, gestes et réactions en ronds, nommés dans la bulle');
  assert.ok(src.includes("const titreComp=sousTitre('Compétences');")&&src.includes("const titreKit=sousTitre('Inventaire','Ajouter à l’inventaire de '+a.name,view==='mj'?()=>openPicker(a,'gear'):null);")
