@@ -3387,6 +3387,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.641 — Le rond Enjamber garde, à l'écran, la taille d'un petit bouton de la barre d'action, quel que soit le zoom. */
+assert.ok(page.includes("$('map-view').style.setProperty('--dezoom',String(1/mapZoom));")&&page.includes("#piege-boutons button.btn-action.rond.btn-enjamber{position:absolute;width:42px;height:42px;font-size:19px;transform:translate(-50%,-50%) scale(var(--dezoom,1));"),'le rond Enjamber à la taille d’un bouton de la barre');
 /* v0.640 — Le jeu à plusieurs : les PV partent en différence additionnée par Firestore, l'état du tour d'un joueur est daté et le
    MJ écarte ce qui arrive d'un tour révolu, le début et la fin d'un combat interrompent les gestes, un coup dont la cible est
    tombée entre-temps passe à l'adversaire suivant, la remise au tour 1 ne clôt plus le combat, la table en ligne a le dernier
@@ -5009,4 +5011,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1879 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1880 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
