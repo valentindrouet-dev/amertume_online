@@ -3394,6 +3394,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.equal(C.cleanMap({pieges:[{id:'p',nom:'P',x:1,y:1,w:2,h:2,declencheurs:[{id:'h',type:'bloc',x:0,y:0,w:10,h:20}]}]}).pieges[0].declencheurs[0].type,'bloc','la hitbox voyage avec le piège');
  assert.ok(carto.includes("if((p.declencheurs||[]).some(d=>d.type==='bloc'&&polyTouchesDisc(rectHitbox(d).map(px),c,r)))return 'contact';")
   &&carto.includes("['bloc','+ Hitbox de blocage']")&&carto.includes("type:mapTool==='piegebloc'?'bloc':'zone'")&&carto.includes("if(d.type==='bloc'&&!mj)return;")
+  &&carto.includes("el.className='shape declencheur zone'+(d.type==='bloc'?' hitbox':'')")&&!fs.readFileSync('editor.css','utf8').includes('.zone.bloc{')
   &&carto.includes("if(murs.length&&(segmentHitsPolys(q,fin,murs)||")&&carto.includes("(p.declencheurs||[]).some(d=>d.type==='bloc'&&polyInReach(a,rectHitbox(d),size,tokenOf(a)))"),'la hitbox du piège');}
 /* v0.643 — Ce qui se prend au sol — lumière posée ou fixe, objet de carte, coffre — se réserve d'abord sur la table, par une
    transaction : deux tables qui le prennent au même instant, une seule l'a. Un bouton montre ou cache au MJ le terrain

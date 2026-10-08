@@ -1227,7 +1227,7 @@ function renderPieges(){let calque=$('map-pieges');if(!calque){calque=document.c
   if(mj||arme)(p.declencheurs||[]).forEach(d=>{let f;if(d.type==='bloc'&&!mj)return;
    if(d.type==='fil'){f=document.createElementNS(nsSVG,'line');[['x1',d.x1],['y1',d.y1],['x2',d.x2],['y2',d.y2]].forEach(([k,v])=>f.setAttribute(k,v))}
    else{f=document.createElementNS(nsSVG,'rect');[['x',d.x],['y',d.y],['width',d.w],['height',d.h]].forEach(([k,v])=>f.setAttribute(k,v))}
-   f.setAttribute('class',(d.type==='fil'?'fil':d.type==='bloc'?'zone bloc':'zone')+(arme?'':' inerte')+(connu?'':' cache'));svg.append(f)})});
+   f.setAttribute('class',(d.type==='fil'?'fil':d.type==='bloc'?'zone hitbox':'zone')+(arme?'':' inerte')+(connu?'':' cache'));svg.append(f)})});
  if(svg.childNodes.length)calque.prepend(svg)}
 /* Enjamber : au-dessus d'un piège armé, connu, en vue et enjambable que l'aventurier choisi touche de sa zone de contact, un
    bouton rond flottant, à la couleur de la compétence du test. Un clic lance le test d'Enjamber, avec ses suites ordinaires. */
@@ -2290,7 +2290,7 @@ function declencheursEl(i,p){const out=[],cx=p.x+p.w/2,cy=p.y+p.h/2,svg=document
   if(fil){el.className='declencheur fil'+(choisi?' selected':'')+(d.locked?' locked':'');const s=document.createElementNS(nsSVG,'svg');
    s.setAttribute('viewBox','0 0 100 100');s.setAttribute('preserveAspectRatio','none');s.append(ligne('touche',d.x1,d.y1,d.x2,d.y2),ligne('trait',d.x1,d.y1,d.x2,d.y2));el.append(s);
    [['a',d.x1,d.y1],['b',d.x2,d.y2]].forEach(([g,x,y])=>{const h=document.createElement('span');h.className='grip bout';h.dataset.grip=g;h.style.left=x+'%';h.style.top=y+'%';el.append(h)})}
-  else{el.className='shape declencheur zone'+(d.type==='bloc'?' bloc':'')+(choisi?' selected':'')+(d.locked?' locked':'');el.style.left=d.x+'%';el.style.top=d.y+'%';el.style.width=d.w+'%';el.style.height=d.h+'%';
+  else{el.className='shape declencheur zone'+(d.type==='bloc'?' hitbox':'')+(choisi?' selected':'')+(d.locked?' locked':'');el.style.left=d.x+'%';el.style.top=d.y+'%';el.style.width=d.w+'%';el.style.height=d.h+'%';
    ['nw','ne','sw','se'].forEach(g=>{const h=document.createElement('span');h.className='grip '+g;h.dataset.grip=g;el.append(h)})}
   out.push(el)});
  if(svg.childNodes.length)out.unshift(svg);return out}
