@@ -3387,6 +3387,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.632 — Un adversaire tout analysé ne s'analyse plus, et la case qui apprend sa dernière chose le dit ; plus de 🎲 à l'Analyse. */
+assert.ok(page.includes("function analyseComplete(o){const s=connuDe(o);return INFOS_ANALYSE.every(([k])=>s.has(k))}")
+ &&page.includes("+(neufs.length&&analyseComplete(o)?'\\n'+o.name+' est entièrement analysé !':''),{ton:'talent'});")
+ &&page.includes(":proie&&analyseComplete(proie)?nomNum(proie)+' est entièrement analysé.'"),'l’adversaire entièrement analysé');
 /* v0.631 — La DEF connue d'un adversaire paraît dans la colonne des combattants ; l'XP de l'Analyse se lit dans sa case du journal. */
 assert.ok(page.includes("if(!jamaisVu&&(view==='mj'||connait(a,'def')))b.querySelector('.vie-ligne').append(shieldBadge(defOf(a)));")
  &&page.includes("+(gagne?'\\nLe groupe gagne '+gain+' XP.':'')"),'la DEF connue, l’XP dans la case de l’Analyse');
