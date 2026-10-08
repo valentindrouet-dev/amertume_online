@@ -1190,6 +1190,23 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   params:[],volets:[{cle:'tous',nom:'Tous les alliés au contact',palier:2}],
   phrase(p,palier,v){const k=(v||{tous:2}).tous,tous=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
    return (tous?'<b>Tous les alliés</b> au contact du porteur gagnent':'<b>Un allié</b> au contact du porteur gagne')+' aussi <b>1 PA</b>.'}},
+ /* Coupure — Empoisonnée : Poison à l'adversaire touché le plus proche ; à tous au palier 2. Profonde : le double du bonus de
+    dégâts, le triple au palier 2. Fatale : un adversaire tué par Coupure donne 1 PM, 1 PA et 1 PM au palier 2, une fois par tour. */
+ lameventpoison:{cle:'lameventpoison',nom:'Coupure — Empoisonnée',court:'Empoisonnée',type:'ame',
+  aide:'Amélioration de Coupure : elle inflige aussi Poison à l’adversaire touché le plus proche ; à tous les adversaires touchés au palier 2.',
+  params:[],volets:[{cle:'tous',nom:'Tous les adversaires touchés',palier:2}],
+  phrase(p,palier,v){const k=(v||{tous:2}).tous,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return '<b>Coupure</b> inflige aussi <b>Poison</b> à '+(deux?'<b>tous les adversaires</b> touchés':'<b>l’adversaire le plus proche</b>')+'.'}},
+ lameventprofonde:{cle:'lameventprofonde',nom:'Coupure — Profonde',court:'Profonde',type:'ame',
+  aide:'Amélioration de Coupure : elle inflige le double du bonus de dégâts ; le triple au palier 2.',
+  params:[],volets:[{cle:'triple',nom:'Le triple',palier:2}],
+  phrase(p,palier,v){const k=(v||{triple:2}).triple,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return '<b>Coupure</b> inflige <b>le '+(deux?'triple':'double')+'</b> du bonus de dégâts du porteur.'}},
+ lameventfatale:{cle:'lameventfatale',nom:'Coupure — Fatale',court:'Fatale',type:'ame',
+  aide:'Amélioration de Coupure : un adversaire tué par Coupure rapporte 1 PM ; 1 PA et 1 PM au palier 2. Une fois par tour.',
+  params:[],volets:[{cle:'pa',nom:'1 PA en plus',palier:2}],
+  phrase(p,palier,v){const k=(v||{pa:2}).pa,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'Si le porteur <b>tue un adversaire</b> avec <b>Coupure</b>, il gagne <b>'+(deux?'1 PA et 1 PM':'1 PM')+'</b>, une fois par tour.'}},
  /* Coupure — dégâts doublés : une amélioration. Contre un adversaire au contact d'un de ses alliés, Coupure frappe double. */
  lameventdouble:{cle:'lameventdouble',nom:'Coupure — dégâts doublés',court:'dégâts doublés',type:'ame',
   aide:'Amélioration de Coupure : le double des dégâts contre un adversaire au contact d’un de ses alliés.',
@@ -1688,7 +1705,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
- contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
+ contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;

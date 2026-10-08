@@ -2070,7 +2070,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  assert.ok(page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")
-  &&page.includes("function degatsOmbrelame(a,p){return (p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0)}")
+  &&page.includes("function degatsOmbrelame(a,p){if(p.etat&&p.mode==='place')return 0;")
   &&src.includes("const aura=!(typeof spectateur==='function'&&spectateur())&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
@@ -3389,6 +3389,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.658 — Coupure : Empoisonnée, Profonde, Fatale. */
+{const C4=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
+ ['lameventpoison','lameventprofonde','lameventfatale'].forEach(k=>assert.equal(C4.TALENTS_CODES[k].pour,'lamevent',k));
+ assert.match(C4.phraseTalent('lameventprofonde',{},2),/triple/);assert.match(C4.phraseTalent('lameventfatale',{},2),/1 PA et 1 PM/);assert.match(C4.phraseTalent('lameventpoison',{},1),/le plus proche/);
+ assert.ok(idx.includes("if(fatale&&tues&&enCombat()&&a.coupureFatale!==round){")&&idx.includes("return degatsDe(a)*(pr?voletOuvert(pr,'triple')?3:2:1)+(p.bonus|0)}"),'Coupure câblée');}
 /* v0.656 — PA et PM sont des bonus de caractéristique de l'arbre, à l'icône réglable ; Point supplémentaire quitte la bibliothèque. */
 {const C3=require('./combat.js'),idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(C3.TALENTS_CODES.bonus.params[0].options.some(([k])=>k==='pa')&&C3.TALENTS_CODES.bonus.params[0].options.some(([k])=>k==='pm')&&C3.TALENTS_CODES.pointsupp.retire===true,'PA et PM en bonus');
@@ -3792,7 +3797,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    un mur de feu tout du long. Rapide est désactivé. */
 {const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(vif.includes("'orbeStatique','nyctalope','mouvement','mvtReste','mvtTour',"),'le reste du mouvement voyage en ligne');
- assert.ok(page.includes("delete a.revanche;delete a.traction;delete a.bondissement;delete a.decoupe;delete a.impulsion;delete a.mvtReste;delete a.mvtTour;delete a.opportunitesSubies;mouvementRapide(a)});")&&page.includes("actors.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour;"),'un nouveau tour l’efface');
+ assert.ok(page.includes("delete a.revanche;delete a.traction;delete a.bondissement;delete a.decoupe;delete a.impulsion;delete a.coupureFatale;delete a.mvtReste;delete a.mvtTour;delete a.opportunitesSubies;mouvementRapide(a)});")&&page.includes("actors.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour;"),'un nouveau tour l’efface');
  assert.ok(page.includes("   if(drag.regle&&!appliqueRegleMouvement(a,drag.regle))jusquALaBorne(a,drag.regle,g,(x,y)=>moveActor(a,x,y,view==='mj',enMain,true))}")
   &&page.includes("fleche.setAttribute('d','M'+pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L'));"),'la main va jusqu’à la limite, la flèche suit le chemin');
  assert.equal(C.TALENTS_CODES.rapide.retire,true,'Rapide retiré de la bibliothèque');
@@ -5096,4 +5101,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1922 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1928 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
