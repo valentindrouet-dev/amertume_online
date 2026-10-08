@@ -3387,6 +3387,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.631 — La DEF connue d'un adversaire paraît dans la colonne des combattants ; l'XP de l'Analyse se lit dans sa case du journal. */
+assert.ok(page.includes("if(!jamaisVu&&(view==='mj'||connait(a,'def')))b.querySelector('.vie-ligne').append(shieldBadge(defOf(a)));")
+ &&page.includes("+(gagne?'\\nLe groupe gagne '+gain+' XP.':'')"),'la DEF connue, l’XP dans la case de l’Analyse');
 /* v0.630 — La bulle d'un token aux chiffres de la fiche, la vie sur toute la largeur, les Attaques spéciales à découvrir à part. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("chiffres.className='stat-row en-icones';")&&src.includes("else inconnuBulle(d,'Attaques spéciales');")&&src.includes("function rangAttaques(d,attaques,bonus){")
