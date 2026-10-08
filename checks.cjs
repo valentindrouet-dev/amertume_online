@@ -2967,7 +2967,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("const choix=attackChoices(eq,catalog.items||[]),attaques=choix.length?choix:propres;")
   &&src.includes("[...(at.etats||[])].reverse().forEach(e=>{const p=etatPastille(e);if(p)pips.prepend(p)});")
-  &&src.includes("const bas=desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0)),pips=bas.querySelector('.pips');")
+  &&src.includes("const bas=desEtBonus(at.dice,at.useOwnDamage===false?0:bonus),pips=bas.querySelector('.pips');")&&src.includes("if(sait('attaques'))rangAttaques(d,attaques,sait('dmg')?Number(m.damage)||0:0);")
   &&!src.includes("ligne('Attaques spéciales : '"),'les attaques de la bulle, avec dés et états');}
 /* v0.305 — Le dossier img/talents : ses icônes paraissent seules dans le menu Logo d'un
    talent (la liste vient de GitHub, le dépôt étant public). Un chemin à dossier s'encode
@@ -3387,11 +3387,17 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.630 — La bulle d'un token aux chiffres de la fiche, la vie sur toute la largeur, les Attaques spéciales à découvrir à part. */
+{const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(src.includes("chiffres.className='stat-row en-icones';")&&src.includes("else inconnuBulle(d,'Attaques spéciales');")&&src.includes("function rangAttaques(d,attaques,bonus){")
+  &&css.includes('.bulle-comb-vie{margin:4px 0 2px;width:100%;flex:1 1 100%;align-self:stretch}'),'la bulle à la manière de la fiche');}
 /* v0.629 — L'Analyse : un test de Savoir, chaque réussite une chose au hasard parmi six, apprise pour tout le type ; la première
    fois, 10 % de l'XP de l'adversaire au groupe, au moins 1 ; un aventurier n'analyse un type qu'une fois par combat ; le Bestiaire
    efface tout. La bulle d'un token au survol, « ? » pour l'inconnu, chez le MJ aussi. Fouiller exige un socle qui déborde. */
 {const src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
- assert.ok(page.includes("const INFOS_ANALYSE=[['pv','PV max'],['def','DEF'],['dmg','Bonus de dégâts'],['xp','XP'],['talents','Talents'],['equip','Équipement']];")
+ assert.ok(page.includes("const INFOS_ANALYSE=[['pv','PV max'],['def','DEF'],['dmg','Bonus de dégâts'],['attaques','Attaques spéciales'],['xp','XP'],['talents','Talents'],['equip','Équipement']];")
+  &&page.includes("for(let n=0;n<jet.reussites&&restants.length;n++)tires.push(restants.splice(Math.floor(Math.random()*restants.length),1)[0]);")
+  &&page.includes("(neufs.length?'\\n'+neufs.map(x=>'- '+dit[x]()).join('\\n'):'\\nAucune information nouvelle.')")
   &&page.includes("const k=skillNames.indexOf('Savoir'),jet=skillRoll(valeurCompetence(a,k)-1,d6);")
   &&page.includes("const gain=neufs.length*Math.max(1,Math.round((Math.trunc(Number(o.xp))||0)/10))")
   &&page.includes("const cle=cleAnalyse(o);if((a.analysesFaites||[]).includes(cle))")&&vif.includes("'connu','analysesFaites'];"),'l’Analyse par le Savoir');
@@ -4886,7 +4892,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&css.includes('button.btn-action.rond.on,button.btn-action.rond.on:hover:not(:disabled){box-shadow:var(--relief)}')
   &&!css.includes('button.choix-attaque.rond')&&!/button\.btn-action\.rond[^{]*\{[^}]*0 0 0 2px var\(--panel\)/.test(css)&&!css.includes('.attaque-carte .dmg-ico'),'la face pleine du bouton d’action, en disque, sans anneau');
  assert.ok(src.includes("logosDeAttaque(at).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
-  &&src.includes("if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';")&&src.includes("desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0))"),'la main droite seule ; le jeton de dégâts reste à la bulle des monstres');
+  &&src.includes("if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';")&&src.includes("desEtBonus(at.dice,at.useOwnDamage===false?0:bonus)"),'la main droite seule ; le jeton de dégâts reste à la bulle des monstres');
  assert.ok(page.includes('<button class="btn-action btn-analyse rond" id="reveal" hidden>🔍</button>')&&page.includes("function poseRond(b,centre,nom,dit,compte,bulle){")
   &&page.includes("poseRond(rev,centreRond('analyser','🔍'),dejà?'Analysé':'Analyser',")
   &&page.includes("poseRond(b,im||glyphe,nom,titre,compteDuTexte(nom),bulle);")&&page.includes("geste('Dégel','❄',")&&page.includes("geste('Se relever',ic||'⤴',")
@@ -4901,7 +4907,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(src.includes("const talents=[...gros.filter(b=>b.rangee==='attaques'),...gros.filter(b=>b.rangee==='reactions')];")
   &&!page.includes("filter(b=>b.rangee==='reactions')")&&!page.includes('rangee-ronds')&&!css.includes('rangee-ronds')
   &&css.includes('.attack-row button.btn-action.rond,.attack-row button.btn-action.rond.inerte{width:42px;height:42px;font-size:19px}'),'gros ronds pour agir et réagir, petits pour les maîtrises et les gestes');
- assert.ok(src.includes("const voit=!!a&&(view==='mj'||(typeof connait==='function'?connait(a,'dmg'):a.hero||duCoteTroupe(a)||!!a.revealed));")
+ assert.ok(src.includes("const voit=!!a&&(view==='mj'||(typeof connait==='function'?connait(a,'attaques'):a.hero||duCoteTroupe(a)||!!a.revealed));")
   
   &&src.includes("if(marked.size>1){boite.replaceChildren();boite.hidden=true;montreDesCombattant(null);return}")
   &&css.includes('.des-combattant{display:flex;align-items:center;min-height:26px}.des-combattant[hidden]{display:none}'),'les dés du combattant au-dessus de la piste, ceux du rond survolé le temps du survol');

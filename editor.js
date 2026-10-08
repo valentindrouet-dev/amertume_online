@@ -236,7 +236,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // L'icône de l'Attaque d'un aventurier qui n'a pas d'arme en main.
  if(typeof c.logoAttaqueBase!=='string'||!c.logoAttaqueBase||c.logoAttaqueBase.length>120)delete c.logoAttaqueBase;
  // Ce que la troupe a appris de chaque type d'adversaire par l'Analyse : six clés connues, par modèle.
- {const an=c.analyses&&typeof c.analyses==='object'&&!Array.isArray(c.analyses)?c.analyses:{},ok=['pv','def','dmg','xp','talents','equip'];c.analyses={};
+ {const an=c.analyses&&typeof c.analyses==='object'&&!Array.isArray(c.analyses)?c.analyses:{},ok=['pv','def','dmg','attaques','xp','talents','equip'];c.analyses={};
   Object.entries(an).forEach(([k,l])=>{if(typeof k==='string'&&k.length<=80&&Array.isArray(l)){const v=[...new Set(l.filter(x=>ok.includes(x)))];if(v.length)c.analyses[k]=v}});
   if(!Object.keys(c.analyses).length)delete c.analyses}
  // L'icône et le texte des actions spéciales.
@@ -515,7 +515,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  const bonusDe=at=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
  const retenu=Math.trunc(a&&a.activeAttack)||0,actuelle=liste.length?liste[retenu<liste.length?retenu:0]:null;
  // Un adversaire qu'on n'a pas analysé garde ses dés pour lui, chez les joueurs.
- const voit=!!a&&(view==='mj'||(typeof connait==='function'?connait(a,'dmg'):a.hero||duCoteTroupe(a)||!!a.revealed));
+ const voit=!!a&&(view==='mj'||(typeof connait==='function'?connait(a,'attaques'):a.hero||duCoteTroupe(a)||!!a.revealed));
  const revient=()=>montreDesCombattant(voit&&actuelle?actuelle.dice:null,bonusDe(actuelle),!!actuelle&&actuelle.useOwnDamage!==false,actuelle?logosDeAttaque(actuelle):null,voit?partOrbes(a):null);
  const survol=(b,dice,bonus,toujours,logos,etat)=>{if(!voit||!dice)return;
   b.addEventListener('pointerenter',()=>montreDesCombattant(dice,bonus,toujours,logos,null,etat));b.addEventListener('pointerleave',revient)};
@@ -2369,20 +2369,22 @@ function bulleModele(m){const d=document.createElement('div');d.className='cat-d
  // Sans arme ni attaque spéciale, il frappe de ses propres dés.
  const propres=m.dice&&Object.values(m.dice).some(n=>n>0)?[{name:'Attaque',dice:m.dice,range:'contact',useOwnDamage:true}]:[];
  const choix=attackChoices(eq,catalog.items||[]),attaques=choix.length?choix:propres;
- if(attaques.length&&sait('dmg')){const liste=document.createElement('div');liste.className='bulle-attaques';
-  attaques.forEach(at=>{const l=document.createElement('div');l.className='bulle-attaque';
-   (at.logos||[]).slice(0,2).forEach(x=>{const im=logoAttaque(x,'mini');if(im)l.append(im)});
-   const n=document.createElement('span');n.className='bulle-att-nom';n.textContent=at.name||'Attaque';
-   const bas=desEtBonus(at.dice,at.useOwnDamage===false?0:(Number(m.damage)||0)),pips=bas.querySelector('.pips');
-   [...(at.etats||[])].reverse().forEach(e=>{const p=etatPastille(e);if(p)pips.prepend(p)});
-   l.append(n,bas);liste.append(l)});
-  d.append(liste)}
+ if(sait('attaques'))rangAttaques(d,attaques,sait('dmg')?Number(m.damage)||0:0);else inconnuBulle(d,'Attaques spéciales');
  // Ses talents en petits ronds, comme leurs boutons ailleurs ; le nom au survol.
  if(sait('talents'))rangTalents(d,(m.talents||[]).map(talent).filter(Boolean));else inconnuBulle(d,'Talents');
  // Son inventaire dessous, en petits carrés aussi : l'icône, le nombre d'exemplaires ; le nom au survol.
  if(sait('equip'))rangInventaire(d,m.inventaire);else inconnuBulle(d,'Équipement');
  if(view!=='mj'&&typeof INFOS_ANALYSE!=='undefined'&&INFOS_ANALYSE.some(([k])=>!sait(k)))noteAnalyse(d);
  return d}
+// Des attaques, une ligne chacune : le logo, le nom, les états qu'elles infligent, les dés et le bonus de dégâts.
+function rangAttaques(d,attaques,bonus){if(!attaques.length)return;const liste=document.createElement('div');liste.className='bulle-attaques';
+ attaques.forEach(at=>{const l=document.createElement('div');l.className='bulle-attaque';
+  (at.logos||[]).slice(0,2).forEach(x=>{const im=logoAttaque(x,'mini');if(im)l.append(im)});
+  const n=document.createElement('span');n.className='bulle-att-nom';n.textContent=at.name||'Attaque';
+  const bas=desEtBonus(at.dice,at.useOwnDamage===false?0:bonus),pips=bas.querySelector('.pips');
+  [...(at.etats||[])].reverse().forEach(e=>{const p=etatPastille(e);if(p)pips.prepend(p)});
+  l.append(n,bas);liste.append(l)});
+ d.append(liste)}
 // Des talents en petits ronds, le nom au survol.
 function rangTalents(d,talents){if(!talents.length)return;const rang=document.createElement('div');rang.className='bulle-talents';
  talents.forEach(t=>{const r=talentRond(t);r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;r.setAttribute('aria-label',n);rang.append(r)});
@@ -2403,14 +2405,16 @@ function noteAnalyse(d){const p=document.createElement('p');p.className='bulle-a
 function bulleCombattant(o){const d=document.createElement('div');d.className='cat-detail bulle-modele-corps bulle-combattant-corps'+(o.hero?' heros':' k-'+(o.type||'standard'));
  const sait=k=>typeof connait!=='function'||connait(o,k);
  const tete=document.createElement('div');tete.className='bulle-comb-tete';tete.append(jetonRond(o.image,o.name,'grand'));
- const col=document.createElement('div');col.className='bulle-comb-col';
- const nom=document.createElement('p');nom.className='best-bulle-nom';nom.textContent=typeof nomNum==='function'?nomNum(o):o.name;
- const vie=document.createElement('div');vie.className='bulle-comb-vie';vie.innerHTML=lifebar(ratio(o),'',!!o.hero,o.pnj?alignementDe(o):'');
- const pv=document.createElement('p');pv.className='bulle-comb-pv';pv.textContent=sait('pv')?o.hp+' / '+o.max+' PV':'? PV';
- col.append(nom,vie,pv);tete.append(col);d.append(tete);
- const chiffres=document.createElement('div');chiffres.className='stat-row';
- [['def','DEF',sait('def')?defOf(o):'?',true],['dmg','Dég.',sait('dmg')?'+'+degatsDe(o):'?'],['xp','XP',sait('xp')?Math.trunc(Number(o.xp))||0:'?']].forEach(x=>chiffres.append(statTile(...x)));
- d.append(chiffres);
+ const nom=document.createElement('p');nom.className='best-bulle-nom';nom.textContent=typeof nomNum==='function'?nomNum(o):o.name;tete.append(nom);d.append(tete);
+ // Les chiffres comme sur la fiche de la table : chacun devant son icône, PV, DEF, dégâts, XP ; puis la vie sur toute la largeur.
+ const chiffres=document.createElement('div');chiffres.className='stat-row en-icones';
+ const tuiles=[['pv','PV',sait('pv')?o.hp:'?',false],['def','DEF',sait('def')?defOf(o):'?',true],['dmg','Dég.',sait('dmg')?'+ '+degatsDe(o):'?'],['xp','XP',sait('xp')?Math.trunc(Number(o.xp))||0:'?']].map(x=>statTile(...x));
+ [['pv',0],['dmg',2],['xp',3]].forEach(([c,k])=>iconeStat(tuiles[k],c));tuiles[0].classList.toggle('sous-max',sait('pv')&&(Number(o.hp)||0)<(Number(o.max)||0));
+ chiffres.append(...tuiles);d.append(chiffres);
+ const vie=document.createElement('div');vie.className='bulle-comb-vie';vie.innerHTML=lifebar(ratio(o),sait('pv')?o.hp+' / '+o.max+' PV':'? PV',!!o.hero,o.pnj?alignementDe(o):'');d.append(vie);
+ // Ses attaques : celles d'un adversaire sont une chose à découvrir, à part de son bonus de dégâts.
+ const eqA=o.hero?o:(typeof equipeAdversaire==='function'?equipeAdversaire(o):o),att=typeof attackChoices==='function'?attackChoices(eqA,catalog.items||[]):[];
+ if(sait('attaques'))rangAttaques(d,att,sait('dmg')&&typeof degatsDe==='function'?degatsDe(o):0);else inconnuBulle(d,'Attaques spéciales');
  const tal=o.hero?talentsDeFiche(o):(o.talents||[]).map(talent).filter(Boolean);
  if(sait('talents'))rangTalents(d,tal);else inconnuBulle(d,'Talents');
  // Ce qu'il porte : l'arme, l'armure, le bouclier d'un aventurier ; tout l'inventaire d'un adversaire, qui porte tout.
