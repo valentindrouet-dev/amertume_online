@@ -990,9 +990,12 @@ function polyPiege(p){const m=currentMap();return coffrePolygon({...p,a:0,rond:p
 function ecartAuFil(c,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],l=dx*dx+dy*dy,t=l?Math.max(0,Math.min(1,((c[0]-a[0])*dx+(c[1]-a[1])*dy)/l)):0;return Math.hypot(c[0]-a[0]-t*dx,c[1]-a[1]-t*dy)}
 // Le disque d'un socle — centre et rayon, en pixels — touche-t-il le piège, sa forme s'il part au contact, ou un de ses déclencheurs ?
 // Rend « contact » quand c'est sa forme, « distance » quand c'est un déclencheur.
+/* La hitbox (« bloc ») d'un piège en est le corps, plus large que son icône : la toucher, c'est toucher le piège. */
+const rectHitbox=d=>[[d.x,d.y],[d.x+d.w,d.y],[d.x+d.w,d.y+d.h],[d.x,d.y+d.h]];
 function touchePiege(p,c,r,size){const px=q=>[q[0]/100*size.width,q[1]/100*size.height];
  if(p.contact!==false&&polyTouchesDisc(polyPiege(p).map(px),c,r))return 'contact';
- return (p.declencheurs||[]).some(d=>d.type==='fil'?ecartAuFil(c,px([d.x1,d.y1]),px([d.x2,d.y2]))<=r
+ if((p.declencheurs||[]).some(d=>d.type==='bloc'&&polyTouchesDisc(rectHitbox(d).map(px),c,r)))return 'contact';
+ return (p.declencheurs||[]).some(d=>d.type==='bloc'?false:d.type==='fil'?ecartAuFil(c,px([d.x1,d.y1]),px([d.x2,d.y2]))<=r
   :polyTouchesDisc([[d.x,d.y],[d.x+d.w,d.y],[d.x+d.w,d.y+d.h],[d.x,d.y+d.h]].map(px),c,r))?'distance':false}
 /* L'écart, en pixels, d'un point au piège : à sa forme s'il part au contact, et à chacun de ses déclencheurs ; 0 dedans. Les
    formes se mesurent une fois : la fonction rendue sert à chaque échantillon d'un geste. */
@@ -1032,6 +1035,9 @@ function piegeAuPassage(o,de){const m=currentMap(),size=mapSize();
      const m2=Math.max(1,Math.ceil(Math.hypot(s[0]-q[0],s[1]-q[1])/Math.max(1,r/3)));let ok=1;
      for(let k=1;k<=m2;k++){const c=[q[0]+(s[0]-q[0])*k/m2,q[1]+(s[1]-q[1])*k/m2];if(bute2(c))break;ok=k}
      if(ok>=1&&!bute2([q[0]+(s[0]-q[0])*ok/m2,q[1]+(s[1]-q[1])*ok/m2]))fin=[q[0]+(s[0]-q[0])*ok/m2,q[1]+(s[1]-q[1])*ok/m2]}}
+   // Le long du piège, jamais à travers un mur ni le terrain impraticable : la glissade qui en toucherait un n'a pas lieu.
+   if(fin!==q&&typeof obstaclesDuPas==='function'){const murs=obstaclesDuPas((x,y)=>[x/100*size.width,y/100*size.height]);
+    if(murs.length&&(segmentHitsPolys(q,fin,murs)||Math.hypot(...(([x,y])=>[x-fin[0],y-fin[1]])(slideOutOfWalls(fin,murs,r)))>.5))fin=q}
    return {p:mur.p,...pct(fin),bloque:true}}
   const p=libres.find(q=>touchePiege(q,c,r,size));
   if(p)return {p,...pct(c),contact:touchePiege(p,c,r,size)==='contact'}}
@@ -1158,7 +1164,7 @@ function tenuParPiege(o){if(!o||!o.tenuPar)return null;const m=currentMap(),p=m&
  if(!p||p.desamorce||(!piegeArme(p)&&!p.enjambement)||(Array.isArray(o.franchis)&&o.franchis.includes(p.id))||!touchePiege(p,[o.x/100*size.width,o.y/100*size.height],tokenOf(o)/2,size)){delete o.tenuPar;return null}
  return p}
 // Au contact : la forme du piège touche la zone de contact de l'aventurier.
-function piegeAPortee(a,p){const size=mapSize();return !!a&&!!p&&!!size.width&&polyInReach(a,polyPiege(p),size,tokenOf(a))}
+function piegeAPortee(a,p){const size=mapSize();return !!a&&!!p&&!!size.width&&(polyInReach(a,polyPiege(p),size,tokenOf(a))||(p.declencheurs||[]).some(d=>d.type==='bloc'&&polyInReach(a,rectHitbox(d),size,tokenOf(a))))}
 /* Désamorcer ou enjamber : le test que le MJ a préparé, l'Action en combat. Désamorcé, le piège se grise ; manqué, il reste en
    l'état. Enjambé, l'aventurier le franchit sans le faire partir, et ne le fera plus jamais partir ; manqué, il le déclenche. */
 function testPiege(a,p,quoi){const t=p&&p[quoi],dedans=quoi==='enjambement'&&!!p&&tenuParPiege(a)===p;if(!a||!t||(!piegeArme(p)&&!dedans)||!payeAction(a))return;
@@ -1218,10 +1224,10 @@ function renderPieges(){let calque=$('map-pieges');if(!calque){calque=document.c
   if(typeof surveille==='function')surveille(el,()=>ouvrirBulle(el,bullePiege(p,mj),'bulle-gear'));
   el.onmousedown=e=>e.preventDefault();el.onclick=e=>{e.stopPropagation();if(typeof fermerBulle==='function')fermerBulle();menuPiege(p,e.clientX,e.clientY)};
   calque.append(el);
-  if(mj||arme)(p.declencheurs||[]).forEach(d=>{let f;
+  if(mj||arme)(p.declencheurs||[]).forEach(d=>{let f;if(d.type==='bloc'&&!mj)return;
    if(d.type==='fil'){f=document.createElementNS(nsSVG,'line');[['x1',d.x1],['y1',d.y1],['x2',d.x2],['y2',d.y2]].forEach(([k,v])=>f.setAttribute(k,v))}
    else{f=document.createElementNS(nsSVG,'rect');[['x',d.x],['y',d.y],['width',d.w],['height',d.h]].forEach(([k,v])=>f.setAttribute(k,v))}
-   f.setAttribute('class',(d.type==='fil'?'fil':'zone')+(arme?'':' inerte')+(connu?'':' cache'));svg.append(f)})});
+   f.setAttribute('class',(d.type==='fil'?'fil':d.type==='bloc'?'zone bloc':'zone')+(arme?'':' inerte')+(connu?'':' cache'));svg.append(f)})});
  if(svg.childNodes.length)calque.prepend(svg)}
 /* Enjamber : au-dessus d'un piège armé, connu, en vue et enjambable que l'aventurier choisi touche de sa zone de contact, un
    bouton rond flottant, à la couleur de la compétence du test. Un clic lance le test d'Enjamber, avec ses suites ordinaires. */
@@ -1635,6 +1641,7 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  coffrerond:'Trace un coffre rond : un tonneau, une urne, un nid. Sa fiche s’ouvre aussitôt ; la poignée ronde le fait tourner.',
  piege:'Trace un piège à la taille voulue : sa fiche s’ouvre aussitôt — apparence, détection, déclenchement, parades et effets.',
  piegezone:'Trace la zone qui déclenche le piège : un combattant qui y entre le fait partir.',
+ piegebloc:'Trace la hitbox du piège : un rectangle à part de son icône, qu’on étire en travers du passage. Tant qu’un aventurier ne l’a pas enjambé, il ne traverse pas ; caché, le piège part dès qu’on la touche.',
  piegefil:'Tire le fil qui déclenche le piège, d’un bout à l’autre : un combattant qui le touche le fait partir.',
  foe:'Clique pour poser l’adversaire choisi à droite de la barre. Pour le rendre invisible, donne-lui l’état Invisible en jeu.',
  objet:'Clique pour poser un objet ou un mécanisme : coffre, levier, trésor. Sa fiche s’ouvre aussitôt — nom, taille, description, objets à prendre, et s’il est caché, le test qui le découvre. Double-clic sur un objet posé pour le modifier.',
@@ -2055,11 +2062,11 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapDrag={mode:'cut',kind:'bloc',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  /* Un déclencheur se trace pour le piège dont la fiche l'a demandé : une zone comme un rectangle, un fil d'un bout à l'autre.
     Tracé, on repasse en Sélection. */
- if(mapTool==='piegezone'||mapTool==='piegefil'){const pg=(mapDraft.pieges||[])[piegeLie];if(!pg){mapTool='select';renderCanvas();return}
+ if(mapTool==='piegezone'||mapTool==='piegefil'||mapTool==='piegebloc'){const pg=(mapDraft.pieges||[])[piegeLie];if(!pg){mapTool='select';renderCanvas();return}
   pg.declencheurs??=[];if(pg.declencheurs.length>=12)return;pushUndo();
   if(mapTool==='piegefil'){pg.declencheurs.push({id:crypto.randomUUID(),type:'fil',x1:p.x,y1:p.y,x2:p.x,y2:p.y});mapSel={kind:'declencheur',i:piegeLie,k:pg.declencheurs.length-1};
    mapDrag={mode:'fil',...mapSel,bout:'b',orig:null,from:p,neuf:true}}
-  else{pg.declencheurs.push({id:crypto.randomUUID(),type:'zone',x:p.x,y:p.y,w:0,h:0});mapSel={kind:'declencheur',i:piegeLie,k:pg.declencheurs.length-1};
+  else{pg.declencheurs.push({id:crypto.randomUUID(),type:mapTool==='piegebloc'?'bloc':'zone',x:p.x,y:p.y,w:0,h:0});mapSel={kind:'declencheur',i:piegeLie,k:pg.declencheurs.length-1};
    mapDrag={mode:'create',...mapSel,from:p,dessous:null}}
   $('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  // Outil de dessin : on trace. Un clic sans glisser sélectionne la forme sous le curseur.
@@ -2283,7 +2290,7 @@ function declencheursEl(i,p){const out=[],cx=p.x+p.w/2,cy=p.y+p.h/2,svg=document
   if(fil){el.className='declencheur fil'+(choisi?' selected':'')+(d.locked?' locked':'');const s=document.createElementNS(nsSVG,'svg');
    s.setAttribute('viewBox','0 0 100 100');s.setAttribute('preserveAspectRatio','none');s.append(ligne('touche',d.x1,d.y1,d.x2,d.y2),ligne('trait',d.x1,d.y1,d.x2,d.y2));el.append(s);
    [['a',d.x1,d.y1],['b',d.x2,d.y2]].forEach(([g,x,y])=>{const h=document.createElement('span');h.className='grip bout';h.dataset.grip=g;h.style.left=x+'%';h.style.top=y+'%';el.append(h)})}
-  else{el.className='shape declencheur zone'+(choisi?' selected':'')+(d.locked?' locked':'');el.style.left=d.x+'%';el.style.top=d.y+'%';el.style.width=d.w+'%';el.style.height=d.h+'%';
+  else{el.className='shape declencheur zone'+(d.type==='bloc'?' bloc':'')+(choisi?' selected':'')+(d.locked?' locked':'');el.style.left=d.x+'%';el.style.top=d.y+'%';el.style.width=d.w+'%';el.style.height=d.h+'%';
    ['nw','ne','sw','se'].forEach(g=>{const h=document.createElement('span');h.className='grip '+g;h.dataset.grip=g;el.append(h)})}
   out.push(el)});
  if(svg.childNodes.length)out.unshift(svg);return out}
@@ -2338,11 +2345,11 @@ function openPiege(i){const m=mapDraft,p=m&&m.pieges&&m.pieges[i];if(!p||view!==
   p.caracs=cleanPertes(pertes)};
  // Les déclencheurs liés : une ligne chacun, que la croix retire ; les deux boutons en tracent un de plus sur la carte.
  const listeDecl=()=>{const b=$('piege-declencheurs');b.replaceChildren();let nz=0,nf=0;
-  (p.declencheurs||[]).forEach((d,k)=>{const l=document.createElement('span');l.className='piege-decl';l.textContent=d.type==='fil'?'Fil '+(++nf):'Zone '+(++nz);
+  (p.declencheurs||[]).forEach((d,k)=>{const l=document.createElement('span');l.className='piege-decl';l.textContent=d.type==='fil'?'Fil '+(++nf):d.type==='bloc'?'Hitbox':'Zone '+(++nz);
    const x=document.createElement('button');x.type='button';x.className='ico';x.textContent='✕';x.setAttribute('aria-label','Retirer '+l.textContent);
    x.onclick=()=>{pushUndo();p.declencheurs.splice(k,1);listeDecl();renderCanvas();saveMaps()};l.append(x);b.append(l)});
-  [['zone','+ Zone de déclenchement'],['fil','+ Fil de déclenchement']].forEach(([type,txt])=>{const t=document.createElement('button');t.type='button';t.textContent=txt;
-   t.disabled=(p.declencheurs||[]).length>=12;t.onclick=()=>{applique();piegeDialog.close();piegeLie=i;mapTool=type==='fil'?'piegefil':'piegezone';mapSel={kind:'piege',i};renderCanvas();renderMapList();saveMaps()};b.append(t)})};
+  [['zone','+ Zone de déclenchement'],['fil','+ Fil de déclenchement'],['bloc','+ Hitbox de blocage']].forEach(([type,txt])=>{const t=document.createElement('button');t.type='button';t.textContent=txt;
+   t.disabled=(p.declencheurs||[]).length>=12;t.onclick=()=>{applique();piegeDialog.close();piegeLie=i;mapTool=type==='fil'?'piegefil':type==='bloc'?'piegebloc':'piegezone';mapSel={kind:'piege',i};renderCanvas();renderMapList();saveMaps()};b.append(t)})};
  listeDecl();
  // Les pertes de caractéristique : une ligne chacune — laquelle, combien, pour combien de temps.
  const listePertes=()=>{const b=$('piege-pertes');b.replaceChildren();

@@ -3387,6 +3387,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.644 — La hitbox d'un piège : un rectangle à part de son icône, qu'on étire en travers d'un passage ; elle compte comme le
+   piège, bloque l'aventurier tant qu'il ne l'a pas enjambé et ne se montre qu'au MJ. La glissade le long d'un piège ne traverse
+   plus ni mur ni terrain impraticable. */
+{const carto=fs.readFileSync('maps.js','utf8'),C=require('./combat.js');
+ assert.equal(C.cleanMap({pieges:[{id:'p',nom:'P',x:1,y:1,w:2,h:2,declencheurs:[{id:'h',type:'bloc',x:0,y:0,w:10,h:20}]}]}).pieges[0].declencheurs[0].type,'bloc','la hitbox voyage avec le piège');
+ assert.ok(carto.includes("if((p.declencheurs||[]).some(d=>d.type==='bloc'&&polyTouchesDisc(rectHitbox(d).map(px),c,r)))return 'contact';")
+  &&carto.includes("['bloc','+ Hitbox de blocage']")&&carto.includes("type:mapTool==='piegebloc'?'bloc':'zone'")&&carto.includes("if(d.type==='bloc'&&!mj)return;")
+  &&carto.includes("if(murs.length&&(segmentHitsPolys(q,fin,murs)||")&&carto.includes("(p.declencheurs||[]).some(d=>d.type==='bloc'&&polyInReach(a,rectHitbox(d),size,tokenOf(a)))"),'la hitbox du piège');}
 /* v0.643 — Ce qui se prend au sol — lumière posée ou fixe, objet de carte, coffre — se réserve d'abord sur la table, par une
    transaction : deux tables qui le prennent au même instant, une seule l'a. Un bouton montre ou cache au MJ le terrain
    impraticable. */
@@ -5029,4 +5037,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1888 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1890 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

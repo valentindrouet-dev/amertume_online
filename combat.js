@@ -446,7 +446,8 @@ function cleanTestPiege(t,liste,def){const k=Math.trunc(Number(t&&t.comp));
 // Un déclencheur lié : une zone, rectangle de la carte ; ou un fil, d'un point à un autre.
 function cleanDeclencheur(d){if(!d||typeof d!=='object')return null;const id=texte(d.id,40);
  if(d.type==='fil'){const o={x1:borne(d.x1),y1:borne(d.y1),x2:borne(d.x2),y2:borne(d.y2)};return Math.hypot(o.x2-o.x1,o.y2-o.y1)>0?{id,type:'fil',...o}:null}
- const r=cleanRect(d);return r?{id,type:'zone',x:r.x,y:r.y,w:r.w,h:r.h}:null}
+ // « bloc » : la hitbox du piège, un rectangle qu'on étire à part de son icône ; elle compte comme le piège lui-même.
+ const r=cleanRect(d);return r?{id,type:d.type==='bloc'?'bloc':'zone',x:r.x,y:r.y,w:r.w,h:r.h}:null}
 // Les pertes de caractéristique d'un piège, une ligne chacune, comme les bonus d'un objet ; permanentes, ou jusqu'au repos.
 function cleanPertes(l){return (Array.isArray(l)?l:[]).filter(b=>b&&typeof b==='object').slice(0,6).map(b=>({
  carac:CARACS_EQUIP.some(([k])=>k===b.carac)?b.carac:'pv',valeur:Math.max(1,Math.min(99,Math.trunc(Number(b.valeur))||1)),
