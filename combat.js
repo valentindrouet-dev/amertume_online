@@ -1279,7 +1279,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   phrase(){return 'Le porteur réalise des <b>critiques sur tous ses doubles</b> avec une <b>arme au contact</b> ; un double 1 reste un échec.'}},
  /* Point supplémentaire : une maîtrise. Le porteur a un point d'Action, ou de Mouvement, de plus à chaque tour,
     au-delà du plafond ordinaire ; deux de ces maîtrises en donnent deux. */
- pointsupp:{cle:'pointsupp',nom:'Point supplémentaire',type:'mait',
+ pointsupp:{cle:'pointsupp',nom:'Point supplémentaire',type:'mait',retire:true,
   aide:'Maîtrise : le porteur dispose d’un point d’Action, ou d’un point de Mouvement, de plus à chaque tour.',
   params:[{cle:'quoi',nom:'Point',type:'choix',defaut:'action',options:[['action','Action'],['mouvement','Mouvement']]}],
   phrase(p){return 'Le porteur dispose de <b>+1 point '+((p&&p.quoi)==='mouvement'?'de Mouvement':'d’Action')+'</b> à chaque tour.'}},
@@ -1406,8 +1406,8 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
     à la fiche : des PV max, de l'Endurance, de la Vie, des dégâts, ou un point à une
     compétence. La fiche garde ses valeurs propres ; le bonus s'ajoute à la lecture. */
  bonus:{cle:'bonus',nom:'Bonus de caractéristique',type:'pass',
-  aide:'Un nœud d’arbre qui n’est pas un talent : +x PV max, Endurance, Vie, Dégâts, Orbes mystiques, ou un point à une compétence.',
-  params:[{cle:'carac',nom:'Caractéristique',type:'choix',defaut:'pv',options:[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],['orbe','Orbe mystique'],['comp','Compétence']]},
+  aide:'Un nœud d’arbre qui n’est pas un talent : +x PV max, Endurance, Vie, Dégâts, Orbes mystiques, PA, PM, ou un point à une compétence.',
+  params:[{cle:'carac',nom:'Caractéristique',type:'choix',defaut:'pv',options:[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],['orbe','Orbe mystique'],['pa','Point d’Action'],['pm','Point de Mouvement'],['comp','Compétence']]},
    {cle:'valeur',nom:'Bonus',type:'nombre',defaut:1,min:1,max:20},
    {cle:'comp',nom:'Compétence',type:'choix',defaut:'0',options:COMPETENCES.map((n,i)=>[String(i),n])}],
   phrase(p){return '<b>'+libelleBonus(p)+'</b>.'}},
@@ -2279,7 +2279,7 @@ function writeStat(a,cle,texte){if(!a||!STAT_LIMITS[cle])return null;
    la table ni vers les joueurs : le domaine reste sur l'appareil du MJ.
    ==================================================================================== */
 /* ---------- Les compétences et les bonus de caractéristique ---------- */
-const NOM_CARAC={pv:'PV max',endu:'Endurance',vie:'Vie',def:'DEF',dmg:'Dégâts',orbe:'Orbe mystique'},NOM_CARAC_COURT={pv:'PV',endu:'Endu',vie:'Vie',def:'DEF',dmg:'Dég.',orbe:'Orbe'};
+const NOM_CARAC={pv:'PV max',endu:'Endurance',vie:'Vie',def:'DEF',dmg:'Dégâts',orbe:'Orbe mystique',pa:'PA',pm:'PM'},NOM_CARAC_COURT={pv:'PV',endu:'Endu',vie:'Vie',def:'DEF',dmg:'Dég.',orbe:'Orbe',pa:'PA',pm:'PM'};
 // « +2 PV max », « +1 Force » — ou, en court pour un nœud d'arbre, « +2 PV ».
 function libelleBonus(p,court){const n=Math.max(1,(p&&p.valeur)|0),c=p&&p.carac;
  if(c==='comp')return '+'+n+' '+(COMPETENCES[Number(p&&p.comp)||0]||COMPETENCES[0]);

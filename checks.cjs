@@ -3389,6 +3389,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.656 — PA et PM sont des bonus de caractéristique de l'arbre, à l'icône réglable ; Point supplémentaire quitte la bibliothèque. */
+{const C3=require('./combat.js'),idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(C3.TALENTS_CODES.bonus.params[0].options.some(([k])=>k==='pa')&&C3.TALENTS_CODES.bonus.params[0].options.some(([k])=>k==='pm')&&C3.TALENTS_CODES.pointsupp.retire===true,'PA et PM en bonus');
+ assert.equal(C3.libelleBonus({carac:'pa',valeur:1}),'+1 PA');assert.equal(C3.libelleBonus({carac:'pm',valeur:2}),'+2 PM');
+ assert.ok(idx.includes("c.filter(t=>t.code.cle==='bonus'&&k&&t.params&&t.params.carac===k)")&&ed.includes("['pa','Point d’Action'],['pm','Point de Mouvement']];"),'PA et PM comptés, icônes réglables');}
 /* v0.655 — Impulsion et ses améliorations ; « +1 PA » et « +1 PM » montent avec leur point. */
 {const C2=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  assert.ok(C2.TALENTS_CODES.impulsiontour.pour==='impulsion'&&C2.TALENTS_CODES.impulsionallie.pour==='impulsion','Impulsion');
@@ -4467,7 +4472,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 /* v0.538 — Bulle d'un bonus « + 2 <icône> Endu » ; sous le total d'XP de l'arbre, ce qu'il donne de chaque caractéristique ;
    un talent posé sur un autre, ou une amélioration sur une autre, échangent leurs places. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("if(talent){const t=nom.textContent;nom.textContent=t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()}")&&src.includes("boite.append(remplitCase(ic));plus.after(' ',boite)}"),'la bulle d’un bonus');
+ assert.ok(src.includes("if(talent&&c!=='pa'&&c!=='pm'){const t=nom.textContent;nom.textContent=t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()}")&&src.includes("boite.append(remplitCase(ic));plus.after(' ',boite)}"),'la bulle d’un bonus');
  assert.ok(src.includes('function nomBonusArbre(p,n){')&&src.includes("l.className='arbres-bonus';")&&feuille.includes('#arbres .dialog-head .arbres-bonus{'),'le compteur des bonus de l’arbre');
  assert.ok(src.includes('function echangeTalents(id,b){')&&src.includes('if(autre&&echangeTalents(id,autre)){arbreChange();return}')&&src.includes("[a.liens,b.liens]=[b.liens,a.liens];"),'l’échange de places');}
 /* v0.537 — Stats de Combat : chaque combattant compte ses chiffres là où le geste a lieu, ils voyagent avec lui ; la fin
@@ -4591,7 +4596,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual([C.pointsMax(h,'action'),C.pointsMax(h,'mouvement'),C.pointsMax(h,'action',true)],[2,1,1],'+1 Action, la fiche garde 1');
  h.points.action=4;assert.equal(C.pointsMax(h,'action'),5,'au-delà du plafond');delete globalThis.pointsDeTalents;
  assert.ok(src.includes("a.points={action:pointsMax(a,'action',true),mouvement:pointsMax(a,'mouvement',true),objet:pointsMax(a,'objet',true)};")
-  &&page.includes("function pointsDeTalents(a,quoi){if(!a||typeof talentsCodes!=='function')return 0;return talentsCodes(a).filter(t=>t.code.cle==='pointsupp'"),'la fiche ne garde que sa base');
+  &&page.includes("+c.filter(t=>t.code.cle==='pointsupp'&&((t.params&&t.params.quoi)||'action')===quoi).length}"),'la fiche ne garde que sa base');
  // L'arbre : la ligne qui saute une case vide.
  const ctx={DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES:['n','e','s','o'],LIENS_MAX:4,petitsDe:()=>[]};vm.createContext(ctx);
  vm.runInContext(src.slice(src.indexOf('function posDe(t){'),src.indexOf('const liensDe='))+'const liensDe=t=>Array.isArray(t&&t.liens)?t.liens:[];'
@@ -5091,4 +5096,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1918 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1922 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -1263,7 +1263,7 @@ $('conversion-dnd').oninput=conversionPlusTard;
  b.onclick=()=>{renderConversion();conversionDialog.showModal();$('conversion-dnd').focus();$('conversion-dnd').select()}}
 const competencesDialog=dialog('competences-icones','Icônes des caracs et compétences','<form id="competences-icones-form"><p class="muted">Une icône par caractéristique et par compétence, sur toutes les fiches d’aventuriers.</p><div id="competences-icones-corps" class="edit-grid"></div></form>');
 // Les caractéristiques dont l'icône se choisit : celle de leurs bonus, dans l'arbre comme sur la fiche.
-const CARACS_ICONES=[['vie','Vie'],['endu','Endurance'],['pv','PV max'],['dmg','Dégâts'],['xp','XP'],['orbe','Orbe mystique']];
+const CARACS_ICONES=[['vie','Vie'],['endu','Endurance'],['pv','PV max'],['dmg','Dégâts'],['xp','XP'],['orbe','Orbe mystique'],['pa','Point d’Action'],['pm','Point de Mouvement']];
 $('competences-icones-form').onsubmit=e=>e.preventDefault();
 function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences(),groupes=groupesLogosCompetence();
  const lb=catalog.logosBonus||{};
@@ -1485,19 +1485,19 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
  return p}
 /* Un bonus en bulle : « + 4 » à l'encre, puis la caractéristique en capitales, à sa couleur —
    « + 4 ENDU », « + 1 FORCE ». */
-const NOM_BONUS_BULLE={pv:'PV',endu:'ENDU',vie:'VIE',def:'DEF',dmg:'DÉGÂTS'};
+const NOM_BONUS_BULLE={pv:'PV',endu:'ENDU',vie:'VIE',def:'DEF',dmg:'DÉGÂTS',pa:'PA',pm:'PM'};
 /* Dans la bulle d'un bonus de talent (« talent » : le bonus lui-même, ou le premier des bonus
    additionnés), son icône vient devant, et la compétence s'écrit comme sur la fiche : « Mysticisme ». */
 // Le nom d'une caractéristique ou d'une compétence de bonus, la première lettre seule en majuscule : « Endu », « Mysticisme ».
 function nomBonusArbre(p,n){const c=(p&&p.carac)||'pv',t=c==='comp'?String(skillNames[Math.max(0,Math.min(7,Number(p.comp)||0))]||''):c==='orbe'?(n>1?'orbes':'orbe'):(NOM_BONUS_BULLE[c]||'PV');
- return t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()}
+ return c==='pa'||c==='pm'?t:t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()}
 function libelleBonusEl(p,{talent=null}={}){const n=Math.max(1,(p&&p.valeur)|0),c=(p&&p.carac)||'pv',k=Math.max(0,Math.min(7,Number(p&&p.comp)||0));
  const s=document.createElement('span');s.className='bonus-libelle';
  const plus=document.createElement('span');plus.className='bonus-plus';plus.textContent='+ '+n;
  const nom=document.createElement('span');nom.className='bonus-carac';
  nom.textContent=c==='comp'?(talent?String(skillNames[k]||''):String(skillNames[k]||'').toUpperCase()):c==='orbe'?(n>1?'ORBES':'ORBE'):(NOM_BONUS_BULLE[c]||'PV');
  // Dans la bulle d'un bonus : « + 2 <icône> Endu », le nom en minuscules sauf la première lettre.
- if(talent){const t=nom.textContent;nom.textContent=t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()}
+ if(talent&&c!=='pa'&&c!=='pm'){const t=nom.textContent;nom.textContent=t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()}
  const tint=c==='comp'?SKILL_TINTS[k]:c==='orbe'?'138,99,201':STAT_TINTS[c];if(tint)nom.style.color='rgb('+tint+')';
  // Une compétence prend la couleur de son rond sur la fiche : celle de son logo, la sienne à défaut.
  if(c==='comp'){nom.classList.add('bonus-comp');nom.style.setProperty('--tint',tint);nom.style.color='rgb(var(--tint))';
@@ -3788,7 +3788,7 @@ const peutEtrePetit=t=>!!t&&(estBonus(t)||t.type==='ame');
 /* Le logo d'un bonus de caractéristique, dans son petit rond : un cœur pour les PV, un éclair pour
    l'Endurance, une étoile pour la Vie, l'éclat des dégâts, l'orbe, l'icône d'une compétence — à
    défaut ses deux lettres. Son chiffre en pastille. */
-const SVG_BONUS={xp:'<circle cx="12" cy="12" r="10" fill="#d9b45a" stroke="#7a5a12" stroke-width="1.2"/><text x="12" y="15.6" text-anchor="middle" font-size="9.5" font-weight="800" font-family="system-ui,sans-serif" fill="#4a3508">XP</text>',pv:'<path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.2 0 3.6 1.2 4.3 2.4.7-1.2 2.1-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z" fill="#c0392b" stroke="#6e1a12" stroke-width="1.2"/>',
+const SVG_BONUS={pa:'<circle cx="12" cy="12" r="8.5" fill="#3f8fe0" stroke="#fff" stroke-width="2"/>',pm:'<circle cx="12" cy="12" r="8.5" fill="#cf9152" stroke="#fff" stroke-width="2"/>',xp:'<circle cx="12" cy="12" r="10" fill="#d9b45a" stroke="#7a5a12" stroke-width="1.2"/><text x="12" y="15.6" text-anchor="middle" font-size="9.5" font-weight="800" font-family="system-ui,sans-serif" fill="#4a3508">XP</text>',pv:'<path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.2 0 3.6 1.2 4.3 2.4.7-1.2 2.1-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z" fill="#c0392b" stroke="#6e1a12" stroke-width="1.2"/>',
  endu:'<path d="M13.5 2 5 13.2h5.6L9.4 22 19 10.4h-5.8z" fill="#2c8c85" stroke="#12423f" stroke-width="1.2" stroke-linejoin="round"/>',
  vie:'<path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.6 6.6L12 16.8l-5.8 3.5 1.6-6.6-5.2-4.4 6.8-.5z" fill="#7a5cb8" stroke="#3b2966" stroke-width="1.2" stroke-linejoin="round"/>'};
 // La clé du logo commun d'un bonus : sa caractéristique, et sa compétence s'il en vise une.
