@@ -3717,7 +3717,9 @@ function poseRemplissage(dest,couleur){const v=caseVideA(dest);if(v){v.remplissa
 const cacheLien=(de,vers)=>!!de&&!!vers&&Array.isArray(de.caches)&&de.caches.includes(vers.id);
 function basculeCache(de,vers){if(!de||!vers)return;const l=Array.isArray(de.caches)?de.caches:[];
  if(l.includes(vers.id)){de.caches=l.filter(x=>x!==vers.id);if(!de.caches.length)delete de.caches}else de.caches=[...l,vers.id]}
-function talentsCaches(liste){const parId=new Map(tousTalents().map(t=>[t.id,t])),caches=new Set(),file=[];
+/* Désactivé pour l'heure, à la demande du MJ : aucune case « Cacher », rien de flou ; les lignes déjà cochées ne cachent plus rien. */
+const CACHER_ARBRE=false;
+function talentsCaches(liste){if(!CACHER_ARBRE)return new Set();const parId=new Map(tousTalents().map(t=>[t.id,t])),caches=new Set(),file=[];
  (liste||[]).forEach(de=>(Array.isArray(de.caches)?de.caches:[]).forEach(id=>{if(liensDe(de).includes(id)&&parId.has(id))file.push(id)}));
  while(file.length){const id=file.pop();if(caches.has(id))continue;caches.add(id);const t=parId.get(id);
   liensDe(t).forEach(x=>{if(parId.has(x))file.push(x)});Object.keys(DIRS).forEach(d=>petitsDe(t,d).forEach(s=>caches.add(s.id)))}
@@ -4693,7 +4695,7 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
   liste.forEach(de=>liensDe(de).forEach(id=>{const vers=liste.find(x=>x.id===id),A=elDe(de.id),B=vers&&elDe(id);if(!A||!B)return;
    const n=niveauLien(de,vers);if(!n&&!mj)return;if(!voitTout&&caches.has(de.id))return;const p=centre(A),q=centre(B),b=document.createElement(mj?'button':'span');if(mj)b.type='button';
    // À côté du niveau, chez le MJ : « Cacher » la suite de la ligne aux joueurs.
-   if(mj){const l=document.createElement('label'),c=document.createElement('input');l.className='arbre-cacher'+(cacheLien(de,vers)?' on':'');c.type='checkbox';c.checked=cacheLien(de,vers);
+   if(mj&&CACHER_ARBRE){const l=document.createElement('label'),c=document.createElement('input');l.className='arbre-cacher'+(cacheLien(de,vers)?' on':'');c.type='checkbox';c.checked=cacheLien(de,vers);
     l.append(c,'Cacher');l.style.left=((p.x+q.x)/2).toFixed(1)+'px';l.style.top=((p.y+q.y)/2).toFixed(1)+'px';l.onclick=e=>e.stopPropagation();
     c.onchange=()=>{basculeCache(de,vers);arbreChange()};col.append(l)}
    b.className='arbre-niveau'+(n?'':' vide')+(a&&n?((Number(a.level)||1)>=n?' ouvert':' ferme'):'');

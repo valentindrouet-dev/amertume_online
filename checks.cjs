@@ -3390,7 +3390,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.633 — « Cacher » à côté du niveau d'une ligne : ce qui en descend n'est plus, chez les joueurs, que des ronds flous. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("function talentsCaches(liste){")&&src.includes("function basculeCache(de,vers){")&&src.includes("l.append(c,'Cacher');")
-  &&css.includes('.arbre-noeud.cache-joueur{filter:blur(3px);pointer-events:none}'),'cacher la suite d’une ligne');}
+  &&css.includes('.arbre-noeud.cache-joueur{filter:blur(3px);pointer-events:none}'),'cacher la suite d’une ligne');
+ // v0.634 — Désactivé : ni case, ni flou.
+ assert.ok(src.includes("const CACHER_ARBRE=false;")&&src.includes("function talentsCaches(liste){if(!CACHER_ARBRE)return new Set();")&&src.includes("if(mj&&CACHER_ARBRE){"),'Cacher désactivé');}
 /* v0.632 — Un adversaire tout analysé ne s'analyse plus, et la case qui apprend sa dernière chose le dit ; plus de 🎲 à l'Analyse. */
 assert.ok(page.includes("function analyseComplete(o){const s=connuDe(o);return INFOS_ANALYSE.every(([k])=>s.has(k))}")
  &&page.includes("+(neufs.length&&analyseComplete(o)?'\\n'+o.name+' est entièrement analysé !':''),{ton:'talent'});")
