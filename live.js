@@ -21,11 +21,11 @@
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement','mvtReste','mvtTour','opportunitesSubies',
  'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan',
- 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites'];
+ 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
 // L'élément d'un Mystique est au MJ : un joueur ne le pousse pas.
-const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu'];
+const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu','debutTour'];
 const TABLE_CLE='amertume-table';
 let tableId=null,salleRef=null,siegesRef=null,enLigne=false,appliquantDistant=false;
 let dernierPousse=null,poussePret=false,pousseTimer=null,docPrecedent=null,renduDiffere=null,dernierRefus='';
@@ -116,7 +116,7 @@ function etatVivant(){const out={actors:{}};
  /* La limite de mouvement que le MJ impose en exploration voyage avec la remise à zéro du brouillard : une clé du MJ seul,
     que les règles admettent déjà ; aucune clé nouvelle dans le document. */
  out.fogReset={...(typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false}),...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),
-  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{}),...(m&&m.obscuriteOff?{noirOff:true}:{})};
+  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{}),...(m&&m.obscuriteOff?{noirOff:true}:{}),...(typeof bruitCoupe!=='undefined'&&bruitCoupe?{bruitOff:true}:{})};
  /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
     tableaux qu'on modifie en place (états, cases, cumuls), sinon rien n'en partait. */
  return JSON.parse(JSON.stringify(out))}
@@ -222,6 +222,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     $('map').classList.toggle('custom',!!mapImage)}
    // Le voile levé et la remise à zéro du brouillard viennent du MJ.
    if(d.fogReset&&typeof d.fogReset==='object'&&typeof mouvementLimiteExplo!=='undefined')mouvementLimiteExplo=d.fogReset.limite===true;
+   if(d.fogReset&&typeof d.fogReset==='object'&&typeof bruitCoupe!=='undefined')bruitCoupe=d.fogReset.bruitOff===true;
    const m0=typeof currentMap==='function'?currentMap():null;
    if(m0&&typeof d.fogOff==='boolean'&&!!m0.fogOff!==d.fogOff){m0.fogOff=d.fogOff;if(typeof fogKey!=='undefined')fogKey=''}
    // L'obscurité que le MJ désactive l'est ici aussi.

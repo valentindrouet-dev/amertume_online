@@ -1068,7 +1068,7 @@ function chanceEntendre(t,pr,a){const p=[a.x/100*t.size.width,a.y/100*t.size.hei
 /* Un bruit, depuis une ou plusieurs places, et sa portée en mètres, ou deux : sans porte, et à travers une porte close. Chaque
    adversaire pas encore révélé tente de l'entendre. « Une fois » : il ne le tente qu'une fois par aventurier, quand celui-ci
    entre à sa portée. Rend le nombre de ceux qui l'ont entendu. */
-function faisBruit(qui,places,R,unefois){if(!qui||!Array.isArray(places)||!places.length)return 0;const t=terrainDuBruit();if(!t)return 0;
+function faisBruit(qui,places,R,unefois){if(!qui||!Array.isArray(places)||!places.length||(typeof bruitCoupe!=='undefined'&&bruitCoupe))return 0;const t=terrainDuBruit();if(!t)return 0;
  const W=t.size.width,H=t.size.height,Rp=Math.max(...(Array.isArray(R)?R:[R]))*t.tk,deja=a=>unefois&&Array.isArray(a.ecoutes)&&a.ecoutes.includes(qui.id);
  const proches=actors.filter(a=>a&&a!==qui&&alive(a)&&!a.horsCarte&&!a.orbeStatique&&!a.vu&&campDe(a)==='adverse'&&!deja(a)
   &&places.some(s=>Math.hypot((a.x-s.x)/100*W,(a.y-s.y)/100*H)<=Rp));
@@ -1161,6 +1161,18 @@ function renderPieges(){let calque=$('map-pieges');if(!calque){calque=document.c
    else{f=document.createElementNS(nsSVG,'rect');[['x',d.x],['y',d.y],['width',d.w],['height',d.h]].forEach(([k,v])=>f.setAttribute(k,v))}
    f.setAttribute('class',(d.type==='fil'?'fil':'zone')+(arme?'':' inerte')+(connu?'':' cache'));svg.append(f)})});
  if(svg.childNodes.length)calque.prepend(svg)}
+/* Enjamber : au-dessus d'un piège armé, connu, en vue et enjambable que l'aventurier choisi touche de sa zone de contact, un
+   bouton rond flottant, à la couleur de la compétence du test. Un clic lance le test d'Enjamber, avec ses suites ordinaires. */
+function renderEnjamber(){let calque=$('piege-boutons');if(!calque){calque=document.createElement('div');calque.id='piege-boutons';calque.setAttribute('aria-hidden','false');$('map-view').append(calque)}
+ calque.replaceChildren();const m=currentMap(),a=heroActif();if(!m||!a||a.horsCarte||!(m.pieges||[]).length)return;
+ m.pieges.forEach(p=>{if(!p||!p.enjambement||!piegeArme(p)||!piegeConnu(p)||!coffreEnVue(p)||(Array.isArray(a.franchis)&&a.franchis.includes(p.id))||!piegeAPortee(a,p))return;
+  const k=Math.max(0,Math.min(7,Math.trunc(Number(p.enjambement.comp))||0)),b=document.createElement('button');b.type='button';
+  b.className='btn-action rond btn-enjamber';b.style.left=(p.x+p.w/2)+'%';b.style.top=p.y+'%';b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');
+  const ico=typeof logoCompetence==='function'?logoCompetence(k):null;if(ico)b.append(ico);else b.textContent=skillNames[k].slice(0,2);
+  b.setAttribute('aria-label','Enjamber · '+skillNames[k]);
+  inerte(b,enCombat()&&(pointsRestants(a,'action')<=0||(typeof gelDebut==='function'&&gelDebut(a))));
+  b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};
+  b.onclick=e=>{e.stopPropagation();if(estInerte(b))return;testPiege(a,p,'enjambement')};calque.append(b)})}
 const objetVue=dialog('objet-vue','Objet','<div id="objet-corps"></div>');
 function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o||(!o.visible&&view!=='mj'))return;
  objetVue.querySelector('h2').textContent=(o.visible?'':'◌ ')+o.nom;
@@ -2394,7 +2406,9 @@ const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');
 const limiteBtn=icone('mouvement-limite','👣','Mouvement limité');
 // L'obscurité de la carte, activée ou désactivée par le MJ, pour toute la table.
 const noirBtn=icone('obscurite-bascule','🌑','Désactiver l’obscurité');
-fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn);document.querySelector('.mapbar .zoom-bar').before(fogBar);
+// Le bruit, activé ou désactivé par le MJ, pour toute la table.
+const bruitBtn=icone('bruit-bascule','🔊','Désactiver le bruit');
+fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn,bruitBtn);document.querySelector('.mapbar .zoom-bar').before(fogBar);
 /* Les boutons de la barre de la carte disent ce qu'ils font dès le survol, dans une bulle du site : l'infobulle du système
    tardait et ne ressemblait à rien d'ici. Leur titre devient le texte de la bulle, et celui qu'un rendu leur redonne aussi ;
    le nom reste au lecteur d'écran. Au doigt, pas de bulle : un toucher n'est pas un survol. */
@@ -2413,6 +2427,7 @@ const BOUTONS_CARTE={
  'troupe-eye':()=>['Vue de la troupe',vueTroupe?'Tu vois la carte comme la troupe ; un clic rend la vue du MJ.':'Montre la carte comme la voit la troupe, sans quitter la vue du MJ.'],
  'zones-eye':()=>['Zones',(zonesVisibles?'Cache':'Montre')+' les zones de la carte, chacune de sa couleur et de son numéro.'],
  'token-lock':()=>['Verrou',tokensLocked?'Les déplacements des joueurs sont figés ; un clic les leur rend.':'Fige les déplacements des joueurs, le temps de décrire une scène.'],
+ 'bruit-bascule':()=>['Bruit',bruitCoupe?'Le bruit est désactivé pour toute la table ; un clic le rétablit.':'Désactive le bruit pour toute la table : les adversaires pas encore révélés n’entendent plus rien.'],
  'mouvement-limite':()=>['Mouvement limité',mouvementLimiteExplo?'En exploration, chaque aventurier ne va pas plus loin que sa distance de mouvement ; un clic lève la limite.':'En exploration, limite chaque déplacement à la distance de mouvement de l’aventurier.'],
  'zoom-out':()=>['Dézoomer','Éloigne la vue de la carte.'],
  'zoom-in':()=>['Zoomer','Rapproche la vue de la carte.'],
@@ -2485,6 +2500,8 @@ lockBtn.onclick=()=>{tokensLocked=!tokensLocked;refreshGmBar();render();schedule
  log(tokensLocked?'Déplacements figés : les joueurs ne peuvent plus bouger leurs tokens.':'Déplacements rendus aux joueurs.',{ton:'carte',local:true})};
 noirBtn.onclick=()=>{const m=currentMap();if(!m)return;if(m.obscuriteOff)delete m.obscuriteOff;else m.obscuriteOff=true;
  fogKey='';refreshGmBar();render();scheduleSave()};
+bruitBtn.onclick=()=>{bruitCoupe=!bruitCoupe;try{localStorage.setItem('amertume-bruit-coupe',bruitCoupe?'1':'0')}catch(e){}
+ refreshGmBar();render();scheduleSave()};
 limiteBtn.onclick=()=>{mouvementLimiteExplo=!mouvementLimiteExplo;try{localStorage.setItem('amertume-mouvement-limite',mouvementLimiteExplo?'1':'0')}catch(e){}
  refreshGmBar();render();scheduleSave()};
 // L'état des icônes se lit d'un coup d'œil : voile levé, déplacements gelés.
@@ -2512,7 +2529,9 @@ function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  mapPick.hidden=mapOpen.hidden=!mj||!maps.length;
  lockBtn.textContent=tokensLocked?'🔒':'🔓';lockBtn.classList.toggle('on',tokensLocked);
  lockBtn.title=tokensLocked?'Rendre les déplacements aux joueurs':'Figer les déplacements des joueurs';
- limiteBtn.classList.toggle('on',!!mouvementLimiteExplo)}
+ limiteBtn.classList.toggle('on',!!mouvementLimiteExplo);
+ bruitBtn.textContent=bruitCoupe?'🔇':'🔊';bruitBtn.classList.toggle('on',!!bruitCoupe);
+ bruitBtn.title=bruitCoupe?'Activer le bruit':'Désactiver le bruit';bruitBtn.setAttribute('aria-label',bruitBtn.title)}
 function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 
 // L'onglet Cartes n'existe que pour le MJ ; passer en vue joueur ramène à la table.

@@ -1046,7 +1046,7 @@ assert.ok(page.includes("t.dataset.id=a.id")&&page.includes(".token.glisse{trans
 assert.ok(page.includes("addEventListener('touchmove'")&&page.includes("mapPanX+=c.x-doigts.x"),'deux doigts font glisser la carte');
 /* Le point d'Action chez le joueur, les orbes gratuits, l'orbe qui vole. */
 assert.ok(/orbes:\{[^}]*gratuit:true/.test(fs.readFileSync('combat.js','utf8')),'les orbes se disent gratuits');
-assert.ok(page.includes("const enCombatNow=enCombat();if(enCombatNow){if(actionPrise(a))return;depensePoint(a,'action')}"),'en combat, le test prend l’Action, et ne se fait pas sans elle');
+assert.ok(page.includes("const enCombatNow=enCombat();if(enCombatNow){if(actionPrise(a)||gelDebut(a))return;depensePoint(a,'action')}"),'en combat, le test prend l’Action, et ne se fait pas sans elle');
 assert.ok(page.includes('function volOrbe(')&&vivant.includes("rec.genre==='effet'"),'l’orbe vole ici et en face');
 assert.ok(vivant.includes("if(!estMJ()&&CHAMPS_ACTEUR_MJ.includes(k))return;")&&vivant.includes('aRepousser.push([id,k])'),'« vu » n’appartient qu’au MJ');
 /* Les invités ne dirigent pas, la carte reste voilée jusqu'au brouillard, le journal a ses tons. */
@@ -1094,7 +1094,7 @@ assert.ok(page.includes("porteEffet(talentsCodes(a),'insaisissable')")&&page.inc
 assert.ok(!src.includes('Fiche enregistrée')&&!src.includes('mise(s) à jour')&&!cartes.includes('» ouverte : '),'le journal se tait sur l’intendance');
 /* Un changement local gardé part au prochain envoi ; le MJ réinitialise d'un clic droit ; pastilles à droite. */
 assert.ok(vivant.includes("gardes.push([id,k,structuredClone(e[k])])")&&vivant.includes("gardes.forEach(([id,k,v])=>{if(base.actors[id])base.actors[id][k]=v})"),'un changement local gardé part');
-assert.ok(page.includes('function inerte(')&&page.includes('function reinitialiser(')&&src.includes('inerte(b,!!refus)')&&src.includes('inerte(b,!t.peut)')&&page.includes('inerte(rev,!!refus)'),'le clic droit du MJ réinitialise');
+assert.ok(page.includes('function inerte(')&&page.includes('function reinitialiser(')&&src.includes("inerte(b,!!refus||(typeof gelDebut==='function'&&gelDebut(a)))")&&src.includes('inerte(b,!t.peut)')&&page.includes('inerte(rev,!!refus||gelDebut(a))'),'le clic droit du MJ réinitialise');
 assert.ok(page.includes('.pastilles{position:absolute;right:8px')&&page.includes('.actor-nom strong{overflow:hidden;text-overflow:ellipsis')&&feuille.includes('button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#cf9152;color:#fff;background-image:linear-gradient(180deg,rgba(255,255,255,.07),rgba(0,0,0,.07))}')&&!feuille.includes('#8264bb')&&page.includes('function mouvementPris(')&&page.includes(":mouvementEpuise(a)?'Plus de point de Mouvement : analyser en coûte un.")&&page.includes('body.vue-joueur .turn-head{margin-bottom:0}'),'pastilles à droite, nom coupé, Analyser teal, tour compact');
 /* Vie ou Endurance corrigée sur une fiche : les PV maximum suivent (Vie × Endu + bonus), sans
    dépasser leurs bornes ni laisser les PV du moment au-dessus ; le sélecteur Analyser n'est pas
@@ -1388,7 +1388,7 @@ assert.ok(src.includes('function gearPills(a,tout=true,combat=false)')&&page.inc
    description, et un objet se vise avant de s'employer, à la table de jeu seulement. */
 assert.ok(src.includes('function libereMains(a,besoin)')&&src.includes('  else prendArme(a,o)}')&&src.includes('  else prendBouclier(a,o)}')
  &&src.includes('function gearDetail(o,a,enJeu)')&&!src.includes("p.className='gear-astuce';")&&src.includes('function appliquerObjet(a,o,vise,q)')
- &&src.includes("viserCible('◈ '+o.name+' — clique le combattant ou l’endroit visé',")&&src.includes("const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper;")
+ &&src.includes("viserCible('◈ '+o.name+' — clique le combattant ou l’endroit visé',")&&src.includes("const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper&&!verrouEquip(a,o);")
  &&src.includes('toggleEquip(a,o);ouvrir();')&&page.includes("viserCible('✦ Clique sur la carte pour poser '+m.name,"),'mains remplacées, objet visé, description à l’équipement');
 {const t={mainsPrises:null},src2=src.slice(src.indexOf('function libereMains(a,besoin)'),src.indexOf('/* Équiper depuis l’inventaire'));
  assert.ok(src2.includes('while(mainsPrises(a)+besoin>2)')&&src2.includes('if(a.weapons.length){a.weapons.shift();n++}')&&src2.includes("else if(a.shieldId){a.shieldId='';n++}"),'les mains se libèrent du plus ancien');}
@@ -2090,7 +2090,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  const miette=C.calculeZones([{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[50,50],[52,50],[52,52],[50,52]]]}],[],100,50);
  assert.equal(miette.compte,0,'une case ou deux ne font pas une zone');
  assert.equal(C.calculeZones([],[],10,5).compte,1);assert.equal(C.zoneAu(null,1,1),0);
- assert.ok(cartes.includes("const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');")&&cartes.includes("fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn);")
+ assert.ok(cartes.includes("const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');")&&cartes.includes("fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn,bruitBtn);")
   &&cartes.includes("function zonesDe(m){if(!m)return null;")&&cartes.includes("zonesCache={cle,zones:calculeZones(matiereDe(m),portes,cols,rows,10,m.zonesCoupures,m.zonesLiens)}}")
   &&cartes.includes("function zoneDe(a){const m=currentMap();return m&&a?zoneAu(zonesDe(m),a.x,a.y):0}")&&cartes.includes("function memeZone(a,b){")
   &&cartes.includes("if(!zonesVisibles||!m||view!=='mj'){cv.style.display='none';noms.hidden=true;return}")
@@ -2807,7 +2807,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const libre={...t,elementaire:undefined};assert.equal(C.talentPourElement(libre,G).params.etat,'Feu','sans la case, l’état réglé reste');
  const neutre={id:'x',name:'Forge',params:{etat:'Feu'}};assert.equal(C.talentPourElement(neutre,G),neutre);assert.equal(C.estElementaire(neutre),false);assert.equal(C.estElementaire(libre),true);
  assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefoudre','Foudre',1]],'la table joue l’élément, puis le palier ; la DEF retirée, réglage commun, reste celle du palier 1');
- assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu'];")
+ assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu','debutTour'];")
   &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
  assert.ok(src.includes("function choixElement(a,classe,rendre){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
   &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n)")
@@ -3000,7 +3000,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.514 — Au sol : le token est verrouillé, MJ compris, jusqu'à ce que le combattant se relève (un Mouvement) ;
    le bouton Se relever porte l'icône de l'état. */
 {const page=fs.readFileSync('index.html','utf8');
- assert.ok(page.includes(" return controlled(i)&&(view===\"mj\"&&tenu||!hasState(actors[i],'Au sol'))&&(view===\"mj\"||(!tenu&&!tokensLocked&&!hasState(actors[i],'Gel')))}")
+ assert.ok(page.includes(" return controlled(i)&&(view===\"mj\"&&tenu||!hasState(actors[i],'Au sol'))&&(view===\"mj\"||(!tenu&&!tokensLocked&&!hasState(actors[i],'Gel')))&&!gelDebut(actors[i])}")
   &&page.includes("const ic=imageEtat('Au sol');if(ic&&ic.tagName==='IMG')ic.className='logo-equip';")
   &&page.includes("geste('Se relever',ic||'⤴','Remet le combattant debout.',!enCombat()||pointsRestants(a,'mouvement')>0,()=>{"),'Au sol verrouille le token ; Se relever à son icône');}
 /* v0.309 — Une tuile de talent n'écrit plus sa nature sous son logo. */
@@ -3387,6 +3387,22 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.637 — La barre de mouvement, l'arrêt au contact, le gel du début de combat, les flèches d'un mètre, Échanger un objet et
+   Changer d'armes, le verrou des armes en combat, le glisser d'une fiche à l'autre, Enjamber au-dessus du piège, le bruit coupé. */
+{const src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
+ assert.ok(page.includes('<div id="barre-mouvement" hidden aria-hidden="true"></div>')&&page.includes("function traceMouvement(a,r){if(a&&r&&r.combat&&r.tk)barreMouvement(a,r.metres-r.long/r.tk);else majBarreMouvement();")
+  &&page.includes("[...el.children].forEach((p,n)=>p.classList.toggle('pris',n>=plein));el.hidden=false}"),'la barre de mouvement, un point par mètre');
+ assert.ok(page.includes("function arretAuContact(a,de){")&&page.includes("if(arretContact){t.onpointerup(e);return}")&&page.includes("if(regle&&regle.combat){const h=arretAuContact(a,{x:x0,y:y0});if(h){a.x=h.x;a.y=h.y}}"),'entrer au contact d’un adversaire arrête le geste');
+ assert.ok(page.includes("function gelDebut(a){if(!enCombat()||!a)return false;")&&page.includes("&&!gelDebut(actors[i])}")&&page.includes("ferme=debut&&!ouvertureCombat(a),gele=!debut&&gelDebut(a);")
+  &&page.includes("debout().forEach(o=>{o.debutTour=round});")&&vif.includes("'alignementJeu','debutTour'];"),'le début de combat et le début de tour gèlent les autres');
+ assert.ok(page.includes("const mx=100*tk/sz.width,my=100*tk/sz.height,dirs={ArrowLeft:[-mx,0],ArrowRight:[mx,0],ArrowUp:[0,-my],ArrowDown:[0,my]};")
+  &&page.includes(" t.onkeydown=e=>pasClavier(i,e)")&&page.includes("const a=actors[selected];if(!a||!document.querySelector('#map-view .token[data-id=\"'+CSS.escape(a.id)+'\"]'))return;pasClavier(selected,e)});"),'les flèches : un mètre par appui, même sans focus');
+ assert.ok(page.includes('id="echanger" hidden>')&&page.includes('id="changer-armes" hidden>')&&page.includes("function cibleEchange(a){")&&src.includes("['echanger','Échanger un objet'],['armes','Changer d’armes']];")
+  &&src.includes("function verrouEquip(a,o){")&&src.includes("&&tout&&peutEquiper&&!verrouEquip(a,o);"),'Échanger un objet, Changer d’armes, et le verrou des armes en combat');
+ assert.ok(src.includes("objetGlisse={de:a.id,id:o.id}")&&src.includes("retirerInventaire(de,o);if(!ajouterInventaire(a,o)){ajouterInventaire(de,o);return}"),'un objet glissé d’une fiche à l’autre');
+ assert.ok(carto.includes("function renderEnjamber(){")&&carto.includes("testPiege(a,p,'enjambement')};calque.append(b)})}")&&page.includes("if(typeof renderEnjamber==='function')renderEnjamber();"),'Enjamber, au-dessus du piège');
+ assert.ok(carto.includes("const bruitBtn=icone('bruit-bascule','🔊','Désactiver le bruit');")&&carto.includes("||(typeof bruitCoupe!=='undefined'&&bruitCoupe))return 0;")
+  &&vif.includes("bruitCoupe=d.fogReset.bruitOff===true;")&&page.includes("localStorage.getItem('amertume-bruit-coupe')==='1'"),'le bruit coupé pour toute la table');}
 /* v0.635 — L'Analyse déjà faite pendant ce combat se dit à la deuxième personne. */
 assert.ok(page.includes(":dejà?'Vous avez déjà analysé '+nomNum(proie)+' pendant ce combat.'")&&page.includes("log('Vous avez déjà analysé '+nomNum(o)+' pendant ce combat.',{local:true});return}"),'déjà analysé');
 /* v0.633 — « Cacher » à côté du niveau d'une ligne : ce qui en descend n'est plus, chez les joueurs, que des ronds flous. */
@@ -3415,7 +3431,7 @@ assert.ok(page.includes("if(!jamaisVu&&(view==='mj'||connait(a,'def')))b.querySe
   &&page.includes("(neufs.length?'\\n'+neufs.map(x=>'- '+dit[x]()).join('\\n'):'\\nAucune information nouvelle.')")
   &&page.includes("const k=skillNames.indexOf('Savoir'),jet=skillRoll(valeurCompetence(a,k)-1,d6);")
   &&page.includes("const gain=neufs.length*Math.max(1,Math.round((Math.trunc(Number(o.xp))||0)/10))")
-  &&page.includes("const cle=cleAnalyse(o);if((a.analysesFaites||[]).includes(cle))")&&vif.includes("'connu','analysesFaites'];"),'l’Analyse par le Savoir');
+  &&page.includes("const cle=cleAnalyse(o);if((a.analysesFaites||[]).includes(cle))")&&vif.includes("'connu','analysesFaites','debutTour'];"),'l’Analyse par le Savoir');
  assert.ok(src.includes("function bulleCombattant(o){")&&src.includes("const sait=k=>typeof connait!=='function'||connait(o,k);")&&src.includes("'Analysez un adversaire pour en savoir davantage à son sujet !'")
   &&page.includes("if(typeof bulleCombattant==='function'){t.removeAttribute('title');survolToken(t,a)}")&&src.includes("function oublierAnalyses(){delete catalog.analyses;")
   &&src.includes("id=\"bestiary-analyses\""),'la bulle du token, le Bestiaire qui oublie');
@@ -3466,13 +3482,13 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
  assert.ok(page.includes('<button class="btn-action btn-crier rond" id="crier" hidden>📢</button>')&&page.includes(" if(typeof faisBruit==='function')faisBruit(a,[{x:a.x,y:a.y}],BRUIT_CRI);render();scheduleSave()};")
   &&page.includes("  actors.forEach(a=>{delete a.crie;delete a.entendu;delete a.ecoutes;delete a.analysesFaites})}")&&css.includes('button.btn-crier{--fond:#b9772c;color:#fff}'),'Crier, une fois entre deux combats');
  assert.ok(page.includes("if(a.entendu&&!a.vu&&campDe(a)==='adverse'&&!t.classList.contains('unseen')){const e=document.createElement('span');e.className='entendu'")&&css.includes('#pv-layer .entendu{')
-  &&vif.includes("'tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites'];"),'le « ! », sur toutes les tables');}
+  &&vif.includes("'tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour'];"),'le « ! », sur toutes les tables');}
 /* v0.621 — Happé par un piège toujours actif, un combattant y est tenu : il n'en sort qu'en l'enjambant, et un enjambement
    réussi le libère pour de bon. Le MJ l'en sort toujours à la main, même au sol, sans règle de mouvement ni point dépensé. */
 {const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
  assert.ok(carto.includes("function tenuParPiege(o){if(!o||!o.tenuPar)return null;")&&carto.includes("o.x=c.x;o.y=c.y;if(p.actif)o.tenuPar=p.id}")
-  &&carto.includes("p.id])].slice(-60);delete a.tenuPar}}")&&vif.includes("'etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites'];"),'tenu par le piège, libéré par l’enjambement');
- assert.ok(page.includes(" return controlled(i)&&(view===\"mj\"&&tenu||!hasState(actors[i],'Au sol'))&&(view===\"mj\"||(!tenu&&!tokensLocked&&!hasState(actors[i],'Gel')))}")
+  &&carto.includes("p.id])].slice(-60);delete a.tenuPar}}")&&vif.includes("'etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour'];"),'tenu par le piège, libéré par l’enjambement');
+ assert.ok(page.includes(" return controlled(i)&&(view===\"mj\"&&tenu||!hasState(actors[i],'Au sol'))&&(view===\"mj\"||(!tenu&&!tokensLocked&&!hasState(actors[i],'Gel')))&&!gelDebut(actors[i])}")
   &&page.includes("const libere=view==='mj'&&typeof tenuParPiege==='function'&&!!tenuParPiege(a);")&&page.includes("   else if(!libere)lot.forEach(k=>{const o=actors[k];if(o)depensePoint(o,'mouvement')});")
   &&page.includes("   if(libere&&typeof tenuParPiege==='function')tenuParPiege(a);"),'le MJ l’en sort toujours');}
 /* v0.620 — Un clic sur un piège lui parvient enfin : la carte ne capture plus le geste. Un joueur au contact d'un piège qu'il
@@ -3517,7 +3533,7 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
  assert.ok(page.includes(".j-num{font-weight:800;color:var(--ink)}.j-num.j-perte{color:#b4553a}.j-num.j-tresor{color:#9d7b1e}")&&page.includes("f.className='j-face '+(Number(v)>=6?'six':Number(v)>=4?'ok':'ko');")
   &&css.includes('.j-test .j-face.six{color:#3577b8}'),'les couleurs du journal');
  assert.ok(src.includes(" log('Le groupe gagne '+xp+' XP ('+listeNombree(vaincus.map(f=>f.name))+').');")&&!src.includes(' se défait de ')&&!src.includes(" reçoit et équipe "),'le journal sans l’inventaire');
- assert.ok(page.includes("  b.onclick=()=>{if(sansPA)return;testSkill(i)};")&&page.includes("const sansPA=enCombat()&&actionPrise(a);")&&css.includes('#skills .fouillee,#skills .sans-pa{'),'le rond de compétence, en combat aussi, grisé sans Action');
+ assert.ok(page.includes("  b.onclick=()=>{if(sansPA)return;testSkill(i)};")&&page.includes("const sansPA=enCombat()&&(actionPrise(a)||gelDebut(a));")&&css.includes('#skills .fouillee,#skills .sans-pa{'),'le rond de compétence, en combat aussi, grisé sans Action');
  assert.ok(page.includes("alive(o)&&!memeCamp(o,a)),size,token);return {ok:!blocked.length,ranged:true,"),'la ligne de vue passe entre ceux de son camp');
  assert.ok(carto.includes('<button data-tool="blocagelibre">Blocage libre</button>')&&carto.includes("else if(mode==='blocagelibre')ajouteMatiere(mapDraft,forme);")
   &&carto.includes("if(mapTool==='lasso'||mapTool==='blocagelibre'||"),'le blocage libre');
@@ -3530,7 +3546,7 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
  assert.ok(carto.includes("if(etats.length&&!enCombat())o.etatsPieges=")&&page.includes("if(commence&&!spect)actors.forEach(a=>{leveEtats(a,true,a.etatsPieges);a.ignition=''});"),'les états d’un piège passent le début du combat');
  const ctxL={statesOf:a=>a.states.slice(),setState:(a,e,on)=>{if(!on)a.states=a.states.filter(x=>x!==e)}};vm.createContext(ctxL);vm.runInContext(page.match(/function leveEtats\(a,finCombat,garder\)\{[^\n]*\n[^\n]*/)[0]+';this.leveEtats=leveEtats',ctxL);
  const h={states:['Saignée','Feu'],etatsPieges:['Saignée']};assert.equal(ctxL.leveEtats(h,true,h.etatsPieges).join(),'Feu');assert.equal(h.states.join(),'Saignée');assert.ok(!('etatsPieges' in h));
- assert.ok(vif.includes("'malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites'];")&&vif.includes("if(r&&(Number(r.e)||0)===e&&drapeauxPiege(p)!==e){gardesPieges.push([v.t,e]);return}")
+ assert.ok(vif.includes("'malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour'];")&&vif.includes("if(r&&(Number(r.e)||0)===e&&drapeauxPiege(p)!==e){gardesPieges.push([v.t,e]);return}")
   &&vif.includes("gardesPieges.forEach(([t,e])=>{const x=(base.doors||[]).find(y=>y&&typeof y==='object'&&y.t===t);if(x)x.e=e});"),'l’état d’un piège ne revient pas en arrière');}
 /* v0.615 — Pièges : un outil de l'éditeur de cartes. Un piège de toute taille, en jeton, en jeton imagé ou en image seule ;
    visible ou caché ; déclenché au contact ou à distance par une zone ou un fil liés ; détecté par Perception ou Ruse ;
@@ -3586,7 +3602,7 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
   &&carto.includes("const noirBtn=icone('obscurite-bascule','🌑','Désactiver l’obscurité');")
   &&carto.includes("noirBtn.onclick=()=>{const m=currentMap();if(!m)return;if(m.obscuriteOff)delete m.obscuriteOff;else m.obscuriteOff=true;")
   &&carto.includes(" noirBtn.hidden=!m||!obscuriteDe(m).length;"),'le bouton de l’obscurité');
- assert.ok(vif.includes("...(m&&m.obscuriteOff?{noirOff:true}:{})};")&&vif.includes("const off=d.fogReset.noirOff===true;"),'l’obscurité désactivée voyage avec la remise du brouillard, sans clé nouvelle');
+ assert.ok(vif.includes("...(m&&m.obscuriteOff?{noirOff:true}:{}),")&&vif.includes("const off=d.fogReset.noirOff===true;"),'l’obscurité désactivée voyage avec la remise du brouillard, sans clé nouvelle');
  assert.ok(["'xp'","'level'","'skills'","'endu'","'vieMax'","'pvBonus'","'sexe'","'race'"].every(k=>vif.slice(vif.indexOf('const CHAMPS_VIVANTS='),vif.indexOf('const CHAMPS_MJ=')).includes(k)),'les réglages de l’onglet Aventuriers voyagent');
  assert.ok(vif.includes("if(change){render();rafraichitFiches()}")&&vif.includes("if(document.body.classList.contains('page-heroes')&&typeof renderHeroes==='function')renderHeroes();")
   &&vif.includes("if(typeof arbresDialog!=='undefined'&&arbresDialog.open&&typeof renderArbres==='function')renderArbres()")
@@ -3723,17 +3739,17 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&src.includes("if(f.mouvement&&!a.hero){const v=Number(f.mouvement.value);if(!Number.isFinite(v)||v===DISTANCE_MOUVEMENT)delete a.mouvement;"),'la distance au bestiaire');
  assert.ok(src.includes(">Bonus de Mouvement</label>'+field('Bonus (m)','bonusMouvement',")&&src.includes("o.bonusMouvement=bonusMouvementDe(o);if(!o.bonusMouvement)delete o.bonusMouvement;")
   &&src.includes("if(f.bonusMouvementOn){if(f.bonusMouvementOn.checked)a.bonusMouvement="),'la case Bonus de Mouvement des objets');
- assert.ok(vif.includes("'nyctalope','mouvement',")&&vif.includes("...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),\n  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{}),...(m&&m.obscuriteOff?{noirOff:true}:{})};")
+ assert.ok(vif.includes("'nyctalope','mouvement',")&&vif.includes("...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),\n  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{}),...(m&&m.obscuriteOff?{noirOff:true}:{}),")
   &&vif.includes("mouvementLimiteExplo=d.fogReset.limite===true;"),'la distance et la limite voyagent en ligne, sans clé nouvelle');
  assert.ok(page.includes("const regle=lot0.length===1&&!libere&&mouvementBorne(a)?regleMouvement(a):null;")&&page.includes("traceMouvement(null);\n  if(bloque){if(moved)skipClick=true;return}")
   &&page.includes(" t.onpointercancel=()=>{drag=null;window.socleEnMain=null;traceMouvement(null)};")&&page.includes("   if(regle&&regle.combat){if(cout>0)depensePoint(a,'mouvement',cout)}"),'le geste à la main');
  assert.ok(page.includes('<path id="aim-mouvement" class="aim-fleche mvt" marker-end="url(#shot-mvt)"/>')&&page.includes('<marker id="shot-mvt"')
   &&page.includes("#aim .aim-fleche.mvt{stroke:#cf9152;")&&page.includes("lab.setAttribute('class','aim-dist on mvt')}"),'la flèche du mouvement, à la couleur du Mouvement');
- assert.ok(page.includes("const k=mouvementClavier,suite=k&&k.id===a.id&&performance.now()-k.t<1500")&&page.includes("   if(regle.combat){if(cout>0)depensePoint(a,'mouvement',cout);a.lameventPret=round}"),'au clavier, une suite de pas puise dans le même reste');
+ assert.ok(page.includes("const k=mouvementClavier,suite=k&&k.id===a.id&&!k.regle.combat&&performance.now()-k.t<1500")&&page.includes("   if(regle.combat){if(cout>0)depensePoint(a,'mouvement',cout);a.lameventPret=round}"),'au clavier, une suite de pas puise dans le même reste');
  assert.ok(ia.includes("const borne=!appliqueRegleMouvement(a,regle);if(borne)jusquALaBorne(a,regle,q,(u,v)=>moveActor(a,u,v,false,ignorer,true));")&&ia.includes("  if(borne)break}")
   &&ia.includes(" const cout=soldeRegleMouvement(a,regle);if(cout>0)depensePoint(a,'mouvement',cout);")&&ia.includes("q=borneMouvement(regle,{x:x/size.width*100,y:y/size.height*100},{x:a.x,y:a.y});moveActor(e,q.x,q.y,false,ignorer,true);"),'l’IA sous la même règle');
  assert.ok(carto.includes("const limiteBtn=icone('mouvement-limite','👣','Mouvement limité');")&&carto.includes("localStorage.setItem('amertume-mouvement-limite',mouvementLimiteExplo?'1':'0')")
-  &&carto.includes(" limiteBtn.classList.toggle('on',!!mouvementLimiteExplo)}")&&src.includes("'amertume-fouilles','amertume-mouvement-limite'];"),'le bouton du MJ, gardé avec les réglages de l’appareil');
+  &&carto.includes(" limiteBtn.classList.toggle('on',!!mouvementLimiteExplo);")&&src.includes("'amertume-fouilles','amertume-mouvement-limite','amertume-bruit-coupe'];"),'le bouton du MJ, gardé avec les réglages de l’appareil');
  assert.ok(carto.includes("  if(view==='mj'&&l.pose){let g=null;")&&carto.includes("if(!bouge)return;t._glisse=true;setTimeout(()=>{render();saveMaps()},0)};")
   &&carto.includes("t.onclick=e=>{e.stopPropagation();if(t._glisse){t._glisse=false;return}"),'le MJ déplace les objets posés');
  const noms=['objetsQuiComptent','DISTANCE_MOUVEMENT','bonusMouvementDe','mouvementPropre','distanceMouvement','mouvementLimiteExplo','mouvementBorne','borneMouvement','traceMouvement','mouvementClavier','limiteBtn'];
@@ -3797,7 +3813,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    deux icônes. Un objet posé au sol montre sa bulle au survol, dès qu'il est dans la zone de contact d'un aventurier. */
 {const page=fs.readFileSync('index.html','utf8'),carto=fs.readFileSync('maps.js','utf8');
  assert.ok(!/querySelectorAll\('#map-view \.token'\)/.test(page)&&!/querySelectorAll\('\.token'\)\[/.test(page)
-  &&page.includes("const socles=document.querySelectorAll('#map-view .token:not(.lumiere)');")&&page.includes("render();document.querySelectorAll('.token:not(.lumiere)')[i].focus();"),'les socles par leur rang, sans les lumières');
+  &&page.includes("const socles=document.querySelectorAll('#map-view .token:not(.lumiere)');")&&page.includes("render();refocusToken(a);"),'les socles par leur rang, sans les lumières');
  assert.ok(page.includes("(bulle&&typeof glyphe==='string'&&typeof logoArmeEquipee==='function'?logoArmeEquipee(a):null)"),'chaque rond garde son icône');
  assert.ok(carto.includes("  if(l.pose&&piece&&typeof surveille==='function')surveille(t,()=>{if(!actors.some(a=>a&&a.hero&&alive(a)&&!a.horsCarte&&lumiereAPortee(a,l)))return;"),'la bulle de l’objet au sol, au contact');}
 /* v0.597 — Le remplissage d'obscurité gagne la pierre : chaque case de mur ou de porte va à l'espace libre le plus proche,
@@ -4353,7 +4369,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("auteurCoup=a;queueMicrotask(()=>{auteurCoup=null});ajouteBilan(a,'coups',1);")&&page.includes("ajouteBilan(a,'crit',1)")&&page.includes("applyHeal=function(a,m){const g=soinSansBilan(a,m);if(g>0)ajouteBilan(a,'soin',g);return g}"),'les compteurs de dégâts, coups, critiques et soins');
  assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes("compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);"),'la distance, là où un mouvement connaît son départ');
  assert.ok(page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
- assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites'];")&&vivant.includes("...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
+ assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour'];")&&vivant.includes("...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
  assert.ok(src.includes('function lisBilan(o){')&&src.includes('function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;'),'la fenêtre');
  // Le bilan venu d'ailleurs est relu : chiffres bornés, noms coupés, camp connu.
  {const vm=require('vm'),deb=src.indexOf('function lisBilan(o){'),fin=src.indexOf('const statsDialog=');const ctx={};vm.createContext(ctx);vm.runInContext(src.slice(deb,fin)+';this.r=lisBilan({tours:"3",liste:[{nom:"x".repeat(99),camp:"pirate",inf:-4,sub:"12",pic:1e9},null]});',ctx);
@@ -4513,7 +4529,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&mp.includes("if(mapTool==='foe'||mapTool==='pnj'){")&&mp.includes("const deja=t.pnj&&t.unique===true?mapDraft.foes.findIndex(f=>f&&f.tpl&&f.tpl.id===t.id):-1;")
   &&mp.includes("if(t&&t.pnj&&t.unique===true){if(uniques.has(t.id))return;uniques.add(t.id)}")&&feuille.includes('.shape.foe.al-allie{'),'l’outil PNJ');
  // La fiche de table : le bouton d'alignement, au MJ ; en ligne, au MJ seul.
- assert.ok(page.includes('<button type="button" class="sheet-class" id="pnj-camp" hidden></button>')&&page.includes("function pnjCamp(a){const b=$('pnj-camp');b.hidden=!(a&&a.pnj&&view==='mj');")&&vivant.includes("'alignementJeu'];")&&/CHAMPS_ACTEUR_MJ=\[[^\]]*'alignementJeu'/.test(vivant),'l’alignement du moment');}
+ assert.ok(page.includes('<button type="button" class="sheet-class" id="pnj-camp" hidden></button>')&&page.includes("function pnjCamp(a){const b=$('pnj-camp');b.hidden=!(a&&a.pnj&&view==='mj');")&&vivant.includes("'alignementJeu','debutTour'];")&&/CHAMPS_ACTEUR_MJ=\[[^\]]*'alignementJeu'/.test(vivant),'l’alignement du moment');}
 /* v0.519 — L'or et les gemmes d'un adversaire, d'un PNJ ou d'un coffre, tirés aux dés : une bourse de lignes
    « x d y », avec, pour un adversaire, la chance qu'elle tombe. Tirée au retrait de l'adversaire, ou à
    l'ouverture du coffre. */
@@ -4682,7 +4698,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  const m=C.cleanMap({id:'m',name:'M',coffres:[{id:'c',x:1,y:1,w:5,h:5,a:30,rond:true,cleId:'k1',items:Array(120).fill('o'),revele:true}],doors:[{x:1,y:1,w:4,h:1,keyLocked:true,cleId:'k1'}]});
  const c=m.coffres[0];assert.ok(c.a===30&&c.rond===true&&c.cleId==='k1'&&c.items.length===99&&!('revele' in c),'le coffre garde rotation, forme, clé et nombres');
  assert.equal(m.doors[0].cleId,'k1','une porte garde sa clé');
- assert.ok(page.includes("$('skills').hidden=!a.hero;")&&page.includes("const enCombatNow=enCombat();if(enCombatNow){if(actionPrise(a))return;depensePoint(a,'action')}")
+ assert.ok(page.includes("$('skills').hidden=!a.hero;")&&page.includes("const enCombatNow=enCombat();if(enCombatNow){if(actionPrise(a)||gelDebut(a))return;depensePoint(a,'action')}")
   &&page.includes("if(enCombatNow){afterAction(a);render();scheduleSave()}}"),"un test de compétence coûte l’Action en combat, et ne se fait pas sans elle");
  assert.ok(mp.includes("||!payeAction(a))return;")&&mp.includes("if(h&&!payeAction(h))return;")&&mp.includes("function payeAction(a)"),'tester ou ouvrir un coffre coûte l’Action en combat');
  assert.ok(mp.includes("if((!mj||oeil)&&(!coffreVisible(c)||!enVue))return;")&&mp.includes("className='coffre-alerte'")&&mp.includes("$('coffre-double').onclick"),'coffres : vue, piège, double');
@@ -4744,11 +4760,12 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("function imageEtat(etat){const choisi=typeof catalog!=='undefined'&&catalog.logosEtats&&catalog.logosEtats[etat];")
   &&src.includes("selGroupes('Gardé','etat-garde',")&&src.includes("c.logosEtats={};"),'Gardé, et son image au choix');
  const ctxO={round:1,enCombat:()=>true,actors:[{hero:true,checks:[0,0,0]},{hero:false,checks:[1,0,0]}]};vm.createContext(ctxO);
- vm.runInContext(page.match(/function ouvertureCombat\(\)[^\n]*/)[0]+'\n'+page.match(/const talentDebut=[^\n]*/)[0]+';this.t=talentDebut;',ctxO);
+ vm.runInContext(page.match(/function ouvertureCombat\(qui\)[^\n]*\n[^\n]*/)[0]+'\n'+page.match(/const talentDebut=[^\n]*/)[0]+';this.t=talentDebut;',ctxO);
  assert.equal(ctxO.ouvertureCombat(),true,'un adversaire qui agit ne ferme rien');
  ctxO.actors[0].checks=[0,1,0];assert.equal(ctxO.ouvertureCombat(),false,'un aventurier qui bouge ferme le début du combat');
  ctxO.actors[0].checks=[0,0,0];ctxO.actors[0].orbes=1;assert.equal(ctxO.ouvertureCombat(),false,'un orbe lancé aussi');
  ctxO.actors[0].orbes=0;ctxO.round=2;assert.equal(ctxO.ouvertureCombat(),false,'passé le premier tour, plus du combat');
+ ctxO.round=1;ctxO.actors.push({hero:true,checks:[0,1,0]});assert.equal(ctxO.ouvertureCombat(ctxO.actors[0]),true,'chacun garde son début de combat tant qu’il n’a pas agi');assert.equal(ctxO.ouvertureCombat(ctxO.actors[2]),false,'celui qui a agi a fermé le sien');ctxO.actors.pop();
  assert.deepEqual([{effet:'gardien'},{effet:'gardien',debutCombat:false},{debutCombat:true},{}].map(ctxO.t),[true,false,true,false]);
  assert.ok(page.includes("peut:libre,rayonne:debut&&libre,")&&page.includes("if(b&&t.rayonne)b.classList.add('debut-combat')")
   &&page.includes("className:'debut-marque',textContent:'!'")&&src.includes("if(t.rayonne)b.classList.add('debut-combat');")&&src.includes('name="debutCombat"'),'les talents de début de combat');
@@ -4966,4 +4983,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1862 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1870 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

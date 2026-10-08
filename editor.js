@@ -198,7 +198,7 @@ function migreOmbrelame(c){(c.classes||[]).forEach(k=>{if(k&&k.name==='Lamevent'
   if(t.paliers&&typeof t.paliers==='object')Object.values(t.paliers).forEach(p=>{if(p&&typeof p==='object')p.effects=ombrelame(p.effects)})})}
 /* Les actions spéciales de la barre d'action, Analyser, Repos court, Crier, Fouiller, et celles à venir : le MJ choisit leur icône
    et leur texte, qui prend ses symboles et ses couleurs comme celui d'un talent. Une ligne de plus ici, et la suivante y entre. */
-const ACTIONS_SPECIALES=[['analyser','Analyser'],['repos','Repos court'],['crier','Crier'],['fouiller','Fouiller']];
+const ACTIONS_SPECIALES=[['analyser','Analyser'],['repos','Repos court'],['crier','Crier'],['fouiller','Fouiller'],['echanger','Échanger un objet'],['armes','Changer d’armes']];
 function normaliseActionsSpeciales(o){const out={};if(!o||typeof o!=='object'||Array.isArray(o))return out;
  ACTIONS_SPECIALES.forEach(([k])=>{const v=o[k];if(!v||typeof v!=='object')return;const e={};
   if(typeof v.logo==='string'&&v.logo&&v.logo.length<=120)e.logo=v.logo;
@@ -538,7 +538,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
      chaque arme est une variante à elle seule : son bouton porte son nom. */
   const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');
   const refus=typeof refusAttaque==='function'?refusAttaque(a,at):'';
-  inerte(b,!!refus);
+  inerte(b,!!refus||(typeof gelDebut==='function'&&gelDebut(a)));
   // Le clic droit du MJ rend l'Action et pose la flèche en vol.
   b.reinit=()=>{rendPoint(a,'action');if(typeof tirEnVol!=='undefined')tirEnVol=false};
   const fait=(at.gear&&at.name?at.name+' — ':'')+'Frapper : '+(at.gear?'attaque avec l’équipement':'attaque de fiche')
@@ -1645,7 +1645,7 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
  // Une seule description à la fois : ouvrir celle d'un objet referme celle d'un talent.
  const ouvrir=()=>{gearOuvert=cle;talentOuvert=null};
  const basculer=()=>{gearOuvert=ouvert?null:cle;if(BULLES&&ouvert)fermerBulle();redessine()};
- const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper;
+ const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper&&!verrouEquip(a,o);
  // Un objet d'un combattant en scène s'utilise d'un clic, pour son joueur ou le MJ ; une munition se porte.
  // Un trésor se garde et se vend ; il ne s'utilise pas : un clic montre sa description.
  const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='cle'&&peutEquiper&&actors.includes(a);
@@ -1666,7 +1666,23 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
   p.addEventListener('dragend',()=>{gearGlisse=null;p.classList.remove('tire');
    const boite=p.closest('.corps-sac');if(boite)boite.className='corps-sac'})}
  p.detailPlie=detail;return p}
-let gearGlisse=null;
+let gearGlisse=null,objetGlisse=null;
+/* En combat, l'inventaire d'un aventurier en scène ne change plus ses armes : le rond « Changer d'armes » s'en charge, pour
+   1 PM. Ses armures, pas du tout. */
+function verrouEquip(a,o){return !!a&&!!o&&a.hero===true&&typeof enCombat==='function'&&enCombat()&&actors.includes(a)&&(o.category==='weapon'||o.category==='armor')}
+// Ce que le sac donne : ce qui n'est pas porté.
+function sacDonnable(a){const n=new Map();(a&&a.inventaire||[]).map(objetDe).filter(Boolean).forEach(o=>n.set(o,(n.get(o)||0)+1));
+ return [...n.entries()].map(([o,k])=>[o,k-(o.category==='weapon'?gearCount(a,o.id):o.category==='ammo'?(a.munitionId===o.id?k:0):o.id===a.shieldId?1:o.category==='armor'?armuresDe(a).filter(x=>x===o.id).length:0)]).filter(([,k])=>k>0)}
+// Ce qui se tient en main : les armes et les boucliers de l'inventaire, portés ou non.
+function armesEnMain(a){const n=new Map();(a&&a.inventaire&&a.inventaire.length?a.inventaire:a?[...(a.weapons||[]),a.shieldId].filter(Boolean):[]).map(objetDe).filter(o=>o&&(o.category==='weapon'||(o.category==='armor'&&emplacementDe(o)==='shield'))).forEach(o=>n.set(o,(n.get(o)||0)+1));
+ return [...n.entries()]}
+/* La petite bulle d'inventaire des deux ronds : les carrés des objets, un clic sur l'un le choisit. « portes » coche ce qui est
+   en main. */
+function bulleSac(b,liste,choisit,portes){const d=document.createElement('div'),a=actors[selected]||{};d.className='bulle-sac gear-grille';
+ liste.forEach(([o,n])=>{const p=gearCarre(o,n,portes?(o.category==='weapon'?gearCount(a,o.id):o.id===a.shieldId?1:0):0);
+  p.tabIndex=0;p.setAttribute('role','button');p.classList.add('choix-sac');
+  const va=e=>{e.stopPropagation();choisit(o)};p.onclick=va;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();va(e)}};d.append(p)});
+ if(ouvrirBulle(b,d,'bulle-gear bulle-sac-cadre'))epingleBulle(true)}
 // L'emplacement où va une pièce : ses mains pour une arme ou un bouclier, le sien pour une armure.
 function placeDe(o){return o.category==='ammo'?'munitions':o.category==='weapon'||emplacementDe(o)==='shield'?'main':emplacementDe(o)}
 /* Équiper une pièce de plus, ou en reposer une : les deux moitiés du basculement, pour le
@@ -1734,7 +1750,7 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
    if(n>1){const x=sq.querySelector('.exemplaires');if(x)x.textContent=String(n)}pl.append(sq)}
   else{const v=document.createElement('span');v.className='vide';v.textContent='·';pl.append(v);
    // Un emplacement vide s'équipe d'un clic : ce qui lui va, du sac d'abord, puis de l'Armurerie.
-   if(peutEquiper){const cote=cle==='main'?(k===3?'droite':'gauche'):'';v.textContent='+';v.classList.add('equipable');
+   if(peutEquiper&&!(cle!=='munitions'&&verrouEquip(a,{category:'armor'}))){const cote=cle==='main'?(k===3?'droite':'gauche'):'';v.textContent='+';v.classList.add('equipable');
     v.setAttribute('role','button');v.tabIndex=0;v.title='Équiper : '+nom;v.setAttribute('aria-label','Équiper '+nom+' de '+a.name);
     const ouvre=()=>choisirPourPlace(a,cle,cote,nom);v.onclick=ouvre;v.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ouvre()}}}}
   /* À droite des bottes, la distance de mouvement de l'aventurier, ses objets compris : l'intitulé dans le style de ceux
@@ -1772,6 +1788,10 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
    x.onpointerdown=ev=>ev.stopPropagation();p.append(x)}
   // Son nom dessous, sur la page des Aventuriers, quand le bouton « Noms » est allumé.
   const w=document.createElement('div');w.className='sac-carte';const nomSac=document.createElement('span');nomSac.className='nom-carte nom-sac';nomSac.textContent=o.name;
+  // Le carré se tire aussi vers la fiche d'un autre aventurier : un exemplaire passe dans son inventaire.
+  if(peutEquiper&&a.hero&&actors.includes(a)){p.draggable=true;
+   p.addEventListener('dragstart',e=>{objetGlisse={de:a.id,id:o.id};try{if(!e.dataTransfer.getData('text/plain'))e.dataTransfer.setData('text/plain',o.id);e.dataTransfer.effectAllowed='move'}catch(_){}});
+   p.addEventListener('dragend',()=>{objetGlisse=null;document.querySelectorAll('.corps-sac.recoit').forEach(x=>x.classList.remove('recoit'))})}
   w.append(p,nomSac);ligneDe(o).append(w)});
  lignes.forEach(l=>{if(l.childElementCount>1)sac.append(l)});
  if(rien){const v=document.createElement('span');v.className='muted';v.textContent='Rien dans le sac.';sac.append(v)}
@@ -1786,6 +1806,15 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
    // Lâchée sur une main, la pièce prend cette main-là ; ailleurs sur le corps, sa place d'usage.
    const main=g.cible&&g.cible.dataset&&g.cible.dataset.main;return main?equiperDansMain(a,o,main):equiperPiece(a,o)});
   recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}
+ /* D'une fiche à l'autre : lâché sur la fiche d'un autre aventurier, l'objet quitte le sac du premier pour celui-ci. En combat,
+    c'est l'affaire du rond « Échanger un objet », au contact ; le MJ, lui, le fait toujours. */
+ if(a.hero&&actors.includes(a)){const vient=()=>{const g=objetGlisse;return g&&g.de!==a.id&&(view==='mj'||!enCombat())?g:null};
+  out.addEventListener('dragover',e=>{if(!vient())return;e.preventDefault();out.classList.add('recoit');try{e.dataTransfer.dropEffect='move'}catch(_){}});
+  out.addEventListener('dragleave',e=>{if(!out.contains(e.relatedTarget))out.classList.remove('recoit')});
+  out.addEventListener('drop',e=>{const g=vient();out.classList.remove('recoit');if(!g)return;e.preventDefault();objetGlisse=null;gearGlisse=null;
+   const de=actors.find(x=>x&&x.id===g.de),o=objetDe(g.id);if(!de||!o||!(de.inventaire||[]).includes(o.id))return;
+   retirerInventaire(de,o);if(!ajouterInventaire(a,o)){ajouterInventaire(de,o);return}
+   syncEquipped(de);syncEquipped(a);render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))})}
  bulleOrpheline();return out}
 /* Équiper un emplacement vide. Ce qui lui va : une arme pour la main droite ; une arme à une
    main ou un bouclier pour la gauche ; des munitions ; sinon une armure de cet emplacement. Le
@@ -5727,7 +5756,7 @@ function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(no
    illisible n'empêche pas l'export : le journal dit ce qui manque au fichier. */
 const ANNEXES_SAUVEGARDE=[];
 // Les réglages de l'appareil. Ni l'onglet ouvert, ni la table en ligne, ni les marques de fenêtre : ils ne servent qu'ici.
-const REGLAGES_APPAREIL=['amertume-raccourcis','amertume-portees','amertume-distances','amertume-noms','amertume-tris','amertume-biblio-plis','amertume-xp-visible','amertume-bulles-coffres','amertume-fouilles','amertume-mouvement-limite'];
+const REGLAGES_APPAREIL=['amertume-raccourcis','amertume-portees','amertume-distances','amertume-noms','amertume-tris','amertume-biblio-plis','amertume-xp-visible','amertume-bulles-coffres','amertume-fouilles','amertume-mouvement-limite','amertume-bruit-coupe'];
 ANNEXES_SAUVEGARDE.push({nom:'le journal',
  lit:()=>{garderJournal();let j=[];try{j=JSON.parse(localStorage.getItem(JOURNAL_CLE)||'[]')}catch(e){}return {journal:Array.isArray(j)?j:[]}},
  pose:s=>{if(!Array.isArray(s.journal))return;localStorage.setItem(JOURNAL_CLE,JSON.stringify(s.journal));$('journal').replaceChildren();logRound=null;rejouerJournalGarde()}},
