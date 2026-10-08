@@ -967,15 +967,29 @@ function touchePiege(p,c,r,size){const px=q=>[q[0]/100*size.width,q[1]/100*size.
  if(p.contact!==false&&polyTouchesDisc(polyPiege(p).map(px),c,r))return 'contact';
  return (p.declencheurs||[]).some(d=>d.type==='fil'?ecartAuFil(c,px([d.x1,d.y1]),px([d.x2,d.y2]))<=r
   :polyTouchesDisc([[d.x,d.y],[d.x+d.w,d.y],[d.x+d.w,d.y+d.h],[d.x,d.y+d.h]].map(px),c,r))?'distance':false}
+/* L'écart, en pixels, d'un point au piège : à sa forme s'il part au contact, et à chacun de ses déclencheurs ; 0 dedans. */
+function ecartAuPiege(p,c,size){const px=q=>[q[0]/100*size.width,q[1]/100*size.height];let best=Infinity;
+ const poly=l=>{if(pointInPolygon(c,l))return 0;let d=Infinity;l.forEach((q,i)=>{d=Math.min(d,ecartAuFil(c,q,l[(i+1)%l.length]))});return d};
+ if(p.contact!==false)best=Math.min(best,poly(polyPiege(p).map(px)));
+ (p.declencheurs||[]).forEach(d=>{best=Math.min(best,d.type==='fil'?ecartAuFil(c,px([d.x1,d.y1]),px([d.x2,d.y2])):poly([[d.x,d.y],[d.x+d.w,d.y],[d.x+d.w,d.y+d.h],[d.x,d.y+d.h]].map(px)))});
+ return best}
 /* Le premier piège armé que le socle touche en allant de « de » jusqu'à sa place : lui, là où il le touche, en pour cent, et
-   s'il le touche par sa forme. Ce qu'il touchait déjà au départ ne part pas ; un piège qu'il a su enjamber, plus jamais. */
+   s'il le touche par sa forme. Ce qu'il touchait déjà au départ ne part pas ; un piège qu'il a su enjamber, plus jamais.
+   Un piège que la troupe connaît, un aventurier n'y tombe pas sans le vouloir : il l'arrête comme un mur, au bord (« bloque »),
+   tant qu'il ne l'a pas enjambé ; il peut s'en écarter ou le longer, pas s'y engager. */
 function piegeAuPassage(o,de){const m=currentMap(),size=mapSize();
  if(!m||!(m.pieges||[]).length||!o||!de||!size.width||!alive(o)||o.horsCarte||o.orbeStatique)return null;
  const franchis=Array.isArray(o.franchis)?o.franchis:[],armes=m.pieges.filter(p=>piegeArme(p)&&!franchis.includes(p.id));if(!armes.length)return null;
  const r=tokenOf(o)/2,a=[de.x/100*size.width,de.y/100*size.height],b=[o.x/100*size.width,o.y/100*size.height];
- const libres=armes.filter(p=>!touchePiege(p,a,r,size));if(!libres.length)return null;
+ const connus=o.hero===true&&!tenuParPiege(o)?armes.filter(piegeConnu):[];
+ const libres=armes.filter(p=>!connus.includes(p)&&!touchePiege(p,a,r,size));if(!libres.length&&!connus.length)return null;
+ const d0=new Map(connus.map(p=>[p,ecartAuPiege(p,a,size)]));
+ const au=t=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t],bute=(p,c)=>{const d=ecartAuPiege(p,c,size);return d<r&&d<d0.get(p)-.5};
  const n=Math.max(1,Math.min(400,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/Math.max(1,r/3))));
- for(let i=1;i<=n;i++){const t=i/n,c=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t],p=libres.find(q=>touchePiege(q,c,r,size));
+ for(let i=1;i<=n;i++){const t=i/n,c=au(t),mur=connus.find(p=>bute(p,c));
+  if(mur){let lo=(i-1)/n,hi=t;for(let k=0;k<6;k++){const mi=(lo+hi)/2;if(bute(mur,au(mi)))hi=mi;else lo=mi}
+   const q=au(lo);return {p:mur,x:q[0]/size.width*100,y:q[1]/size.height*100,bloque:true}}
+  const p=libres.find(q=>touchePiege(q,c,r,size));
   if(p)return {p,x:c[0]/size.width*100,y:c[1]/size.height*100,contact:touchePiege(p,c,r,size)==='contact'}}
  return null}
 /* Ce que coûte un piège en caractéristiques : un aventurier le porte à sa fiche, permanent ou jusqu'au repos ; une créature le
@@ -1000,7 +1014,7 @@ function declenchePiege(p,o,contact){const m=currentMap();if(!m||!piegeArme(p)||
  if(p.evitement){const t=p.evitement,jet=skillRoll(valeurCompetence(o,t.comp)-1,d6),n=jet.reussites,ok=n>=t.reussites;
   rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),o,null);if(ok)issue=t.issue;
   essai=nomNum(o)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — '+(ok?(issue==='esquive'?'esquive le piège':'amortit le piège'):'ne l’évite pas')+'.'}
- const depuis=contact&&issue!=='esquive'?{x:o.x,y:o.y}:null;if(depuis){const c=centrePiege(p);o.x=c.x;o.y=c.y;if(p.actif)o.tenuPar=p.id}
+ const depuis=contact&&issue!=='esquive'?{x:o.x,y:o.y}:null;if(depuis){const c=centrePiege(p);o.x=c.x;o.y=c.y;if(p.actif||p.enjambement)o.tenuPar=p.id}
  floatNumber(o,'Piège !','perte');if(issue==='esquive')setTimeout(()=>floatNumber(o,'Esquive !','gain'),650);
  const parts=[];
  if(issue!=='esquive'){const jet=tireDegats(p),deg=issue==='moitie'?Math.floor(jet.total/2):jet.total;
@@ -1092,23 +1106,27 @@ function bruitDePas(o,pts){if(!o||!duCoteTroupe(o)||o.orbeStatique||!alive(o)||o
  return places.length?faisBruit(o,places,[BRUIT_PAS,BRUIT_PAS_PORTE],true):0}
 // Le « ! » ne vaut qu'avant la révélation : révélé, ou tombé, l'adversaire le perd.
 function oublieEntendus(){actors.forEach(a=>{if(a&&a.entendu&&(a.vu||!alive(a)))delete a.entendu})}
-/* Le piège toujours actif qui a happé un combattant le tient : il n'en sort qu'en l'enjambant, ou le MJ l'en sort. Il le lâche
-   quand il cesse de le toucher, d'être armé, ou quand l'enjambement l'en a affranchi. */
+/* Le piège toujours actif, ou enjambable, qui a happé un combattant le tient : il n'en sort qu'en l'enjambant, ou le MJ l'en
+   sort. Il le lâche quand il cesse de le toucher, quand on le désamorce, quand l'enjambement l'en a affranchi ; déclenché, un
+   piège enjambable le tient encore. */
 function tenuParPiege(o){if(!o||!o.tenuPar)return null;const m=currentMap(),p=m&&(m.pieges||[]).find(x=>x&&x.id===o.tenuPar),size=mapSize();
  if(!size.width)return p||null;
- if(!p||!piegeArme(p)||(Array.isArray(o.franchis)&&o.franchis.includes(p.id))||!touchePiege(p,[o.x/100*size.width,o.y/100*size.height],tokenOf(o)/2,size)){delete o.tenuPar;return null}
+ if(!p||p.desamorce||(!piegeArme(p)&&!p.enjambement)||(Array.isArray(o.franchis)&&o.franchis.includes(p.id))||!touchePiege(p,[o.x/100*size.width,o.y/100*size.height],tokenOf(o)/2,size)){delete o.tenuPar;return null}
  return p}
 // Au contact : la forme du piège touche la zone de contact de l'aventurier.
 function piegeAPortee(a,p){const size=mapSize();return !!a&&!!p&&!!size.width&&polyInReach(a,polyPiege(p),size,tokenOf(a))}
 /* Désamorcer ou enjamber : le test que le MJ a préparé, l'Action en combat. Désamorcé, le piège se grise ; manqué, il reste en
    l'état. Enjambé, l'aventurier le franchit sans le faire partir, et ne le fera plus jamais partir ; manqué, il le déclenche. */
-function testPiege(a,p,quoi){const t=p&&p[quoi];if(!a||!t||!piegeArme(p)||!payeAction(a))return;
+function testPiege(a,p,quoi){const t=p&&p[quoi],dedans=quoi==='enjambement'&&!!p&&tenuParPiege(a)===p;if(!a||!t||(!piegeArme(p)&&!dedans)||!payeAction(a))return;
  const jet=skillRoll(valeurCompetence(a,t.comp)-1,d6),n=jet.reussites,ok=n>=t.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
  const tete=nomNum(a)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — ';
  if(quoi==='desamorcage'){if(ok)p.desamorce=true;log(tete+(ok?'désamorce '+p.nom:'ne parvient pas à désamorcer '+p.nom)+'.',{dice:true,ton:'competence'})}
  else{log(tete+(ok?'enjambe '+p.nom:'trébuche sur '+p.nom)+'.',{dice:true,ton:'competence'});if(ok){a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60);delete a.tenuPar}}
  if(enCombat()&&typeof afterAction==='function')afterAction(a);
- if(quoi==='enjambement'&&!ok){declenchePiege(p,a,p.contact!==false);return}
+ /* Manqué du bord, l'aventurier est précipité dans le piège ; manqué du fond, il y reste et en subit encore les états. */
+ if(quoi==='enjambement'&&!ok&&dedans){const etats=(p.etats||[]).filter(e=>infligeEtat(a,e)===true);floatNumber(a,'Piège !','perte');
+  if(etats.length)log('Piège ! '+nomNum(a)+' retombe dans '+p.nom+' — '+etats.join(', ')+'.',{ton:'degats'});render();saveMaps();scheduleSave();return}
+ if(quoi==='enjambement'&&!ok){declenchePiege(p,a,true);return}
  render();saveMaps();scheduleSave()}
 // Réamorcer : le porteur du talent Réamorceur rend son mordant à un piège réamorçable et grisé, à son contact.
 function reamorcePiege(a,p){if(!a||!p||piegeArme(p)||!p.reamorcable||!payeAction(a))return;
@@ -1165,9 +1183,10 @@ function renderPieges(){let calque=$('map-pieges');if(!calque){calque=document.c
    bouton rond flottant, à la couleur de la compétence du test. Un clic lance le test d'Enjamber, avec ses suites ordinaires. */
 function renderEnjamber(){let calque=$('piege-boutons');if(!calque){calque=document.createElement('div');calque.id='piege-boutons';calque.setAttribute('aria-hidden','false');$('map-view').append(calque)}
  calque.replaceChildren();const m=currentMap(),a=heroActif();if(!m||!a||a.horsCarte||!(m.pieges||[]).length)return;
- m.pieges.forEach(p=>{if(!p||!p.enjambement||!piegeArme(p)||!piegeConnu(p)||!coffreEnVue(p)||(Array.isArray(a.franchis)&&a.franchis.includes(p.id))||!piegeAPortee(a,p))return;
+ m.pieges.forEach(p=>{const dedans=!!p&&tenuParPiege(a)===p;
+  if(!p||!p.enjambement||(!dedans&&(!piegeArme(p)||!piegeConnu(p)||!coffreEnVue(p)||(Array.isArray(a.franchis)&&a.franchis.includes(p.id))||!piegeAPortee(a,p))))return;
   const k=Math.max(0,Math.min(7,Math.trunc(Number(p.enjambement.comp))||0)),b=document.createElement('button');b.type='button';
-  b.className='btn-action rond btn-enjamber';b.style.left=(p.x+p.w/2)+'%';b.style.top=p.y+'%';b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');
+  b.className='btn-action rond btn-enjamber';b.style.left=(p.x+p.w/2)+'%';b.style.top=(p.y+p.h/2)+'%';b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');
   const ico=typeof logoCompetence==='function'?logoCompetence(k):null;if(ico)b.append(ico);else b.textContent=skillNames[k].slice(0,2);
   b.setAttribute('aria-label','Enjamber · '+skillNames[k]);
   inerte(b,enCombat()&&(pointsRestants(a,'action')<=0||(typeof gelDebut==='function'&&gelDebut(a))));
