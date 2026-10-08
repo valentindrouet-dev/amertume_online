@@ -1167,8 +1167,10 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   phrase(p,palier,v){const n=(k,d)=>Math.max(1,Math.min(9,Math.trunc(Number(p&&p[k]))||d)),k=(v||{fort:2}).fort,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
    return '<b>Lame empoisonnée</b> inflige <b>Poison '+n(deux?'n2':'n1',deux?3:2)+'</b>.'}},
  lamepoisoncontact:{cle:'lamepoisoncontact',nom:'Lame empoisonnée — Poison au contact',court:'Poison au contact',type:'ame',
-  aide:'Amélioration de Lame empoisonnée : le Poison gagne aussi un autre adversaire de la zone de contact.',
-  params:[],phrase(){return '<b>Lame empoisonnée</b> inflige aussi son <b>Poison</b> à un autre adversaire de la zone de contact du porteur.'}},
+  aide:'Amélioration de Lame empoisonnée : le même Poison touche aussi l’adversaire le plus proche dans la zone de contact ; tous au palier 2.',
+  params:[],volets:[{cle:'tous',nom:'Tous les adversaires de la zone de contact',palier:2}],
+  phrase(p,palier,v){const k=(v||{tous:2}).tous,tous=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'Le même <b>Poison</b> touche aussi '+(tous?'<b>tous les adversaires</b>':'<b>l’adversaire le plus proche</b>')+' dans la zone de contact du porteur.'}},
  lameventelem:{cle:'lameventelem',nom:'Lamevent élémentaire',court:'état infligé',anciens:['Lamevent — état infligé','Ombrelame — état infligé'],type:'ame',
   aide:'Amélioration de Coupure : ses dégâts infligent aussi l’état réglé.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
