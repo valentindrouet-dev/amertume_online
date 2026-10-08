@@ -1266,7 +1266,7 @@ assert.ok(page.includes("if(!enCombat()&&reveles.some(a=>campDe(a)==='adverse'))
    combat seulement, avec cadre et murs lus une fois. */
 assert.ok(cartes.includes('let obstaclesTache=null;')&&cartes.includes("obstaclesTache={m,formes};setTimeout(()=>{obstaclesTache=null},0);")
  &&page.includes('let mursPxTache=null;')&&page.includes("let auraCache={formes:null,cle:'',pts:new Map()};")&&page.includes("auraCache.pts.set(k,pts)")
- &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>figeCadre(()=>{if(drag)drag.image=0;visibilitesEnGeste();updateRing();updateSight();traceMouvement(a,drag&&drag.regle);if(typeof renderNuit==='function'){renderHalos();renderNuit()}}));")
+ &&page.includes("if(!drag.image)drag.image=requestAnimationFrame(()=>figeCadre(()=>{if(drag)drag.image=0;visibilitesEnGeste();updateRing();updateSight();traceMouvement(a,drag&&drag.regle);if(typeof renderEnjamber==='function')renderEnjamber();if(typeof renderNuit==='function'){renderHalos();renderNuit()}}));")
  &&page.includes("if(enCombat()){const size=mapSize(),murs=walls();")&&page.includes('function ramasseContacts(a,croises,de,size,murs){'),'glisser un lot reste léger');
 /* Ciblage : une cible désignée hors de portée ne grise plus l'attaque ; le coup part sur qui est à
    portée, sans jamais retenir une cible automatique ; la désignation lointaine s'efface. */
@@ -3387,13 +3387,26 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.640 — Le jeu à plusieurs : les PV partent en différence additionnée par Firestore, l'état du tour d'un joueur est daté et le
+   MJ écarte ce qui arrive d'un tour révolu, le début et la fin d'un combat interrompent les gestes, un coup dont la cible est
+   tombée entre-temps passe à l'adversaire suivant, la remise au tour 1 ne clôt plus le combat, la table en ligne a le dernier
+   mot avant la fin ; le piège connu ne se grignote plus et se longe ; le rond Enjamber suit le geste. */
+{const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
+ assert.ok(vif.includes("firebase.firestore.FieldValue.increment(b[k]-a[k]):b[k]});")&&vif.includes("if(tour&&!estMJ()&&typeof cleTour==='function')maj['actors.'+id+'.tourVu']=cleTour()});")
+  &&vif.includes("const perime=estMJ()&&!neuf&&typeof e.tourVu==='string'&&cleIci!==null&&e.tourVu!==cleIci;")&&vif.includes("if(typeof a.hp==='number'&&a.hp<0){a.hp=0;if(estMJ()&&typeof e.hp==='number'&&e.hp<0)gardes.push([id,'hp',e.hp])}")
+  &&vif.includes("...(typeof numeroCombat!=='undefined'?{cb:numeroCombat}:{})};"),'les PV additionnés, le tour daté');
+ assert.ok(page.includes("function interromptGestes(){")&&page.includes("if(commence||finit)interromptGestes();if(commence&&!spect)numeroCombat++;")
+  &&vif.includes("if(basculeMode&&typeof interromptGestes==='function')interromptGestes();"),'le début et la fin d’un combat interrompent les gestes');
+ assert.ok(page.includes("const idsVises=vises.map(j=>actors[j]&&actors[j].id);")&&page.includes("if(opts.vises&&!opts.vises.some(j=>actors[j]&&alive(actors[j]))){vises=cibleAutomatique(a,portee);opts={...opts,vises:null}}"),'le coup passe à l’adversaire suivant');
+ assert.ok(page.includes(" combatEngage=false;if(finCombatPrevue){clearTimeout(finCombatPrevue);finCombatPrevue=0}")&&vif.includes("function adversairesDeboutTable(){"),'le combat ne finit pas sur un adversaire encore debout');
+ assert.ok(carto.includes("const bute=(k,c)=>{const d=k.ecart(c);return d<r&&d<Math.min(k.d0,r)-.01};")&&carto.includes("function mesureEcartPiege(p,size){")&&carto.includes("if(cle===enjamberCle&&calque.isConnected)return;"),'le piège connu se longe, le rond suit le geste');}
 /* v0.639 — Les flèches sans rendu complet à chaque appui ; les Points de vie sous les Combattants ; Échanger et Changer
    d'armes en exploration aussi ; Enjamber au centre du piège ; un piège connu arrête l'aventurier, l'échec l'y précipite et
    il n'en sort qu'en réussissant le test, en subissant de nouveau ses états à chaque échec. */
 {const carto=fs.readFileSync('maps.js','utf8');
  assert.ok(page.includes("function pasVisible(a){")&&page.includes("bruitDePas(a,[{x:x0,y:y0},{x:a.x,y:a.y}])}pasVisible(a);")&&page.includes("if(!renduClavier){saveChecks();savePool()}selected=i;"),'le pas d’une flèche se voit aussitôt');
  assert.ok(page.includes("ech.hidden=arm.hidden=!a||!a.hero||!!a.horsCarte;")&&page.includes("if(enCombat())depensePoint(a,'mouvement');fermerBulle();apresEchange()"),'Échanger et Changer d’armes en exploration');
- assert.ok(carto.includes("function ecartAuPiege(p,c,size){")&&carto.includes("return {p:mur,x:q[0]/size.width*100,y:q[1]/size.height*100,bloque:true}}")
+ assert.ok(carto.includes("function ecartAuPiege(p,c,size){")&&carto.includes("return {p:mur.p,...pct(fin),bloque:true}}")
   &&page.includes("if(piegeClavier&&!piegeClavier.bloque)declenchePiege(")&&carto.includes("b.style.top=(p.y+p.h/2)+'%';")
   &&carto.includes("if(quoi==='enjambement'&&!ok){declenchePiege(p,a,true);return}")&&carto.includes("if(!p||p.desamorce||(!piegeArme(p)&&!p.enjambement)||"),'le piège connu bloque, on n’en sort qu’en l’enjambant');}
 /* v0.638 — L'arrêt au contact se fait à la sortie : entré à plus de moitié dans la zone d'un adversaire, le socle qui en ressort
@@ -3755,7 +3768,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(vif.includes("'nyctalope','mouvement',")&&vif.includes("...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),\n  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{}),...(m&&m.obscuriteOff?{noirOff:true}:{}),")
   &&vif.includes("mouvementLimiteExplo=d.fogReset.limite===true;"),'la distance et la limite voyagent en ligne, sans clé nouvelle');
  assert.ok(page.includes("const regle=lot0.length===1&&!libere&&mouvementBorne(a)?regleMouvement(a):null;")&&page.includes("traceMouvement(null);\n  if(bloque){if(moved)skipClick=true;return}")
-  &&page.includes(" t.onpointercancel=()=>{drag=null;window.socleEnMain=null;traceMouvement(null)};")&&page.includes("   if(regle&&regle.combat){if(cout>0)depensePoint(a,'mouvement',cout)}"),'le geste à la main');
+  &&page.includes(" t.onpointercancel=()=>{gesteActif=null;drag=null;window.socleEnMain=null;traceMouvement(null)};")&&page.includes("   if(regle&&regle.combat){if(cout>0)depensePoint(a,'mouvement',cout)}"),'le geste à la main');
  assert.ok(page.includes('<path id="aim-mouvement" class="aim-fleche mvt" marker-end="url(#shot-mvt)"/>')&&page.includes('<marker id="shot-mvt"')
   &&page.includes("#aim .aim-fleche.mvt{stroke:#cf9152;")&&page.includes("lab.setAttribute('class','aim-dist on mvt')}"),'la flèche du mouvement, à la couleur du Mouvement');
  assert.ok(page.includes("const k=mouvementClavier,suite=k&&k.id===a.id&&!k.regle.combat&&performance.now()-k.t<1500")&&page.includes("   if(regle.combat){if(cout>0)depensePoint(a,'mouvement',cout);a.lameventPret=round}"),'au clavier, une suite de pas puise dans le même reste');
@@ -4996,4 +5009,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1874 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1879 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

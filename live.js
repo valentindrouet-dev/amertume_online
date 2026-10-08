@@ -26,6 +26,10 @@ const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
 // L'élément d'un Mystique est au MJ : un joueur ne le pousse pas.
 const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu','debutTour'];
+/* L'état du tour d'un aventurier : ce qu'il a dépensé, joué, parcouru. Un joueur l'écrit daté du tour qu'il voit (« tourVu »,
+   cleTour) ; le MJ écarte ce qui arrive daté d'un tour révolu. Au début, à la fin d'un combat et à chaque tour, le joueur reprend
+   ces champs tels que le MJ les a remis, sans garder ce qu'il avait encore en route. */
+const CHAMPS_TOUR=['checks','mvtReste','mvtTour','talentsJoues','orbes','orbesGardes','garde','lameventPret','opportunitesSubies'];
 const TABLE_CLE='amertume-table';
 let tableId=null,salleRef=null,siegesRef=null,enLigne=false,appliquantDistant=false;
 let dernierPousse=null,poussePret=false,pousseTimer=null,docPrecedent=null,renduDiffere=null,dernierRefus='';
@@ -116,7 +120,7 @@ function etatVivant(){const out={actors:{}};
  /* La limite de mouvement que le MJ impose en exploration voyage avec la remise à zéro du brouillard : une clé du MJ seul,
     que les règles admettent déjà ; aucune clé nouvelle dans le document. */
  out.fogReset={...(typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false}),...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),
-  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{}),...(m&&m.obscuriteOff?{noirOff:true}:{}),...(typeof bruitCoupe!=='undefined'&&bruitCoupe?{bruitOff:true}:{})};
+  ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{}),...(m&&m.obscuriteOff?{noirOff:true}:{}),...(typeof bruitCoupe!=='undefined'&&bruitCoupe?{bruitOff:true}:{}),...(typeof numeroCombat!=='undefined'?{cb:numeroCombat}:{})};
  /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
     tableaux qu'on modifie en place (états, cases, cumuls), sinon rien n'en partait. */
  return JSON.parse(JSON.stringify(out))}
@@ -131,8 +135,13 @@ function diffEtat(av,ap){const maj={},SUPPR=firebase.firestore.FieldValue.delete
   // Sans référence, un joueur compare au dernier document reçu : il n'écrit jamais un combattant entier qui existe déjà.
   if(!a&&!estMJ()&&docPrecedent&&docPrecedent.actors&&docPrecedent.actors[id])a=docPrecedent.actors[id];
   if(!a){maj['actors.'+id]=b;return}
-  CHAMPS_VIVANTS.forEach(k=>{if(!estMJ()&&CHAMPS_ACTEUR_MJ.includes(k))return;
-   if(!pareil(a[k],b[k]))maj['actors.'+id+'.'+k]=b[k]===undefined?SUPPR:b[k]})});
+  /* Les PV partent en différence, que Firestore additionne lui-même : deux coups portés au même instant sur le même adversaire
+     comptent tous les deux. Une référence négative — des coups qui se sont croisés — se corrige d'une valeur pleine. */
+  let tour=false;
+  CHAMPS_VIVANTS.forEach(k=>{if(!estMJ()&&CHAMPS_ACTEUR_MJ.includes(k))return;if(pareil(a[k],b[k]))return;
+   if(CHAMPS_TOUR.includes(k))tour=true;
+   maj['actors.'+id+'.'+k]=b[k]===undefined?SUPPR:k==='hp'&&typeof a[k]==='number'&&typeof b[k]==='number'&&a[k]>=0?firebase.firestore.FieldValue.increment(b[k]-a[k]):b[k]});
+  if(tour&&!estMJ()&&typeof cleTour==='function')maj['actors.'+id+'.tourVu']=cleTour()});
  if(!pareil(av&&av.doors,ap.doors))maj.doors=ap.doors;
  // Le tour, la carte ouverte, le verrou et le titre appartiennent au MJ.
  if(estMJ())CHAMPS_MJ.forEach(k=>{if(!pareil(av&&av[k],ap[k]))maj[k]=ap[k]});
@@ -174,6 +183,10 @@ function glisserDistant(d,force){const B=d.actors||{};let bouge=false;
   glisseVers(a,e.x,e.y);bouge=true});
  if(bouge||force)planifieRenduComplet()}
 /* Le rendu complet attend la fin du geste local : un rendu détruirait le socle tenu. */
+// Les adversaires révélés que le dernier document reçu dit encore debout : la fin du combat les attend.
+function adversairesDeboutTable(){if(!enLigne||!dernierDoc||!dernierDoc.actors)return 0;
+ return Object.entries(dernierDoc.actors).filter(([id,e])=>{const a=actors.find(x=>x&&x.id===id);
+  return a&&e&&campDe(a)==='adverse'&&!a.orbeStatique&&(e.vu===true||a.vu)&&Number(e.hp)>0}).length}
 function planifieRenduComplet(){clearTimeout(renduDiffere);
  renduDiffere=setTimeout(()=>{if(window.socleEnMain||glissements.size){planifieRenduComplet();return}
   if(dernierDoc)appliquerSalle(dernierDoc,true)},220)}
@@ -199,13 +212,20 @@ function appliquerSalle(d,complet){appliquerSalleSeule(d,complet);if(d&&estMJ()&
 function appliquerSalleSeule(d,complet){if(!d)return;
  /* Seules des positions ont bougé, ou un socle est sous le doigt ici : les socles glissent,
     le rendu complet attend la fin du geste. */
+ /* Le combat qui commence ou finit chez le MJ interrompt le geste en cours ici, et s'applique aussitôt. */
+ const basculeMode=!estMJ()&&modeConnu&&(d.mode==='combat'||d.mode==='exploration')&&d.mode!==mode;
+ if(basculeMode&&typeof interromptGestes==='function')interromptGestes();
  const enGeste=!!window.socleEnMain;
- if(!complet&&poussePret&&docPrecedent&&(enGeste||seulementPositions(docPrecedent,d))){docPrecedent=d;glisserDistant(d,enGeste);return}
+ if(!complet&&!basculeMode&&poussePret&&docPrecedent&&(enGeste||seulementPositions(docPrecedent,d))){docPrecedent=d;glisserDistant(d,enGeste);return}
  docPrecedent=d;clearTimeout(renduDiffere);
  // L'état d'avant, pour ne redessiner que si le document a changé quelque chose ici.
  const avant=JSON.stringify(etatVivant());
- appliquantDistant=true;let base=null,carteNeuve=false;const aGlisser=[];
+ appliquantDistant=true;let base=null,carteNeuve=false,tourChange=false;const aGlisser=[];
  try{
+  const cb=d.fogReset&&Number.isFinite(d.fogReset.cb)?d.fogReset.cb:null;
+  // Un joueur prend le numéro du combat du MJ ; le MJ qui revient à la table reprend le sien là où il en était.
+  if(cb!==null&&typeof numeroCombat!=='undefined'&&(!estMJ()||cb>numeroCombat))numeroCombat=cb;
+  if(!estMJ()&&((Number.isFinite(d.round)&&d.round!==round)||((d.mode==='combat'||d.mode==='exploration')&&d.mode!==mode)))tourChange=true;
   if(!estMJ()){
    if(Number.isFinite(d.round))round=d.round;
    if(d.mode==='combat'||d.mode==='exploration'){const avant=mode;mode=d.mode;
@@ -230,7 +250,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     if(!!m0.obscuriteOff!==off){if(off)m0.obscuriteOff=true;else delete m0.obscuriteOff;if(typeof fogKey!=='undefined')fogKey=''}}
    if(d.fogReset&&typeof d.fogReset.n==='number'&&typeof brouillardReset!=='undefined'&&d.fogReset.n!==brouillardReset.n){
     brouillardReset={n:d.fogReset.n,tout:!!d.fogReset.tout};if(m0&&typeof resetFog==='function')resetFog(brouillardReset.tout,true)}}
-  const vus=new Set(),aRepousser=[],gardes=[],cibles=[],gardesPieges=[];
+  const vus=new Set(),aRepousser=[],gardes=[],cibles=[],gardesPieges=[],cleIci=typeof cleTour==='function'?cleTour():null;
   Object.entries(d.actors||{}).forEach(([id,e])=>{if(!e||typeof e!=='object')return;
    vus.add(id);
    let a=actors.find(x=>x.id===id);
@@ -239,6 +259,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    const enMain=window.socleEnMain===id,r=dernierPousse&&dernierPousse.actors&&dernierPousse.actors[id];
    // Sur la même carte, un socle connu qui a bougé ailleurs y glisse ; sa position ne se pose pas d'un coup.
    const glisse=!neuf&&!carteNeuve&&!!docPrecedent&&typeof e.x==='number'&&typeof e.y==='number';
+   // Chez le MJ : l'état du tour qu'un joueur a écrit daté d'un autre tour ne passe pas ; le MJ renvoie le sien.
+   const perime=estMJ()&&!neuf&&typeof e.tourVu==='string'&&cleIci!==null&&e.tourVu!==cleIci;
    CHAMPS_VIVANTS.forEach(k=>{if(e[k]===undefined)return;
     if(enMain&&(k==='x'||k==='y'))return;
     // Les cibles se comparent par identifiant, telles qu'elles partent : jamais par rang.
@@ -247,7 +269,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
        depuis est plus récent. On le garde, et la référence retient la valeur reçue pour
        qu'il parte au prochain envoi — sinon il s'y fondait, ne partait jamais, et le
        document suivant l'écrasait (des PV corrigés qui « ne comptaient pas »). */
-    if(r&&pareil(r[k],e[k])&&!pareil(local,e[k])){gardes.push([id,k,structuredClone(e[k])]);return}
+    if(perime&&CHAMPS_TOUR.includes(k)&&!pareil(local,e[k])){gardes.push([id,k,structuredClone(e[k])]);return}
+    if(r&&pareil(r[k],e[k])&&!pareil(local,e[k])&&!(tourChange&&CHAMPS_TOUR.includes(k))){gardes.push([id,k,structuredClone(e[k])]);return}
     /* Révélé, pour de bon : le MJ ne reprend jamais un « vu » à faux venu du réseau, il le
        renvoie à vrai. Ses propres remises à zéro passent, elles partent de chez lui. */
     if(estMJ()&&CHAMPS_ACTEUR_MJ.includes(k)&&k!=='hidden'&&a[k]===true&&e[k]===false){aRepousser.push([id,k]);return}
@@ -259,6 +282,9 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     a[k]=structuredClone(e[k])});
    // Une distance de mouvement rendue aux neuf mètres de tous quitte le document : chez un joueur, elle quitte aussi le socle.
    if(!estMJ()&&!a.hero&&e.mouvement===undefined&&a.mouvement!==undefined)delete a.mouvement;
+   /* Des coups croisés ont pu passer sous zéro : ici on lit zéro ; chez le MJ, la référence garde le négatif reçu, et le zéro
+      repart en valeur pleine. */
+   if(typeof a.hp==='number'&&a.hp<0){a.hp=0;if(estMJ()&&typeof e.hp==='number'&&e.hp<0)gardes.push([id,'hp',e.hp])}
    normalizeActor(a)});
   cibles.forEach(([a,ids])=>{if(typeof poseCibles==='function')poseCibles(a,indicesDesCibles(ids))});
   // La composition de la scène appartient au MJ : chez les joueurs, ce qui n'y est plus s'en va.

@@ -967,30 +967,47 @@ function touchePiege(p,c,r,size){const px=q=>[q[0]/100*size.width,q[1]/100*size.
  if(p.contact!==false&&polyTouchesDisc(polyPiege(p).map(px),c,r))return 'contact';
  return (p.declencheurs||[]).some(d=>d.type==='fil'?ecartAuFil(c,px([d.x1,d.y1]),px([d.x2,d.y2]))<=r
   :polyTouchesDisc([[d.x,d.y],[d.x+d.w,d.y],[d.x+d.w,d.y+d.h],[d.x,d.y+d.h]].map(px),c,r))?'distance':false}
-/* L'écart, en pixels, d'un point au piège : à sa forme s'il part au contact, et à chacun de ses déclencheurs ; 0 dedans. */
-function ecartAuPiege(p,c,size){const px=q=>[q[0]/100*size.width,q[1]/100*size.height];let best=Infinity;
- const poly=l=>{if(pointInPolygon(c,l))return 0;let d=Infinity;l.forEach((q,i)=>{d=Math.min(d,ecartAuFil(c,q,l[(i+1)%l.length]))});return d};
- if(p.contact!==false)best=Math.min(best,poly(polyPiege(p).map(px)));
- (p.declencheurs||[]).forEach(d=>{best=Math.min(best,d.type==='fil'?ecartAuFil(c,px([d.x1,d.y1]),px([d.x2,d.y2])):poly([[d.x,d.y],[d.x+d.w,d.y],[d.x+d.w,d.y+d.h],[d.x,d.y+d.h]].map(px)))});
- return best}
+/* L'écart, en pixels, d'un point au piège : à sa forme s'il part au contact, et à chacun de ses déclencheurs ; 0 dedans. Les
+   formes se mesurent une fois : la fonction rendue sert à chaque échantillon d'un geste. */
+function mesureEcartPiege(p,size){const px=q=>[q[0]/100*size.width,q[1]/100*size.height],polys=[],fils=[];
+ if(p.contact!==false)polys.push(polyPiege(p).map(px));
+ (p.declencheurs||[]).forEach(d=>{if(d.type==='fil')fils.push([px([d.x1,d.y1]),px([d.x2,d.y2])]);else polys.push([[d.x,d.y],[d.x+d.w,d.y],[d.x+d.w,d.y+d.h],[d.x,d.y+d.h]].map(px))});
+ return c=>{let best=Infinity;
+  for(const l of polys){if(pointInPolygon(c,l))return 0;for(let i=0;i<l.length;i++)best=Math.min(best,ecartAuFil(c,l[i],l[(i+1)%l.length]))}
+  for(const [a,b] of fils)best=Math.min(best,ecartAuFil(c,a,b));
+  return best}}
+function ecartAuPiege(p,c,size){return mesureEcartPiege(p,size)(c)}
 /* Le premier piège armé que le socle touche en allant de « de » jusqu'à sa place : lui, là où il le touche, en pour cent, et
    s'il le touche par sa forme. Ce qu'il touchait déjà au départ ne part pas ; un piège qu'il a su enjamber, plus jamais.
    Un piège que la troupe connaît, un aventurier n'y tombe pas sans le vouloir : il l'arrête comme un mur, au bord (« bloque »),
-   tant qu'il ne l'a pas enjambé ; il peut s'en écarter ou le longer, pas s'y engager. */
+   tant qu'il ne l'a pas enjambé. Le socle n'y avance plus d'un pixel ; ce qui reste du pas le fait glisser le long du bord. */
 function piegeAuPassage(o,de){const m=currentMap(),size=mapSize();
  if(!m||!(m.pieges||[]).length||!o||!de||!size.width||!alive(o)||o.horsCarte||o.orbeStatique)return null;
  const franchis=Array.isArray(o.franchis)?o.franchis:[],armes=m.pieges.filter(p=>piegeArme(p)&&!franchis.includes(p.id));if(!armes.length)return null;
  const r=tokenOf(o)/2,a=[de.x/100*size.width,de.y/100*size.height],b=[o.x/100*size.width,o.y/100*size.height];
- const connus=o.hero===true&&!tenuParPiege(o)?armes.filter(piegeConnu):[];
- const libres=armes.filter(p=>!connus.includes(p)&&!touchePiege(p,a,r,size));if(!libres.length&&!connus.length)return null;
- const d0=new Map(connus.map(p=>[p,ecartAuPiege(p,a,size)]));
- const au=t=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t],bute=(p,c)=>{const d=ecartAuPiege(p,c,size);return d<r&&d<d0.get(p)-.5};
+ const connus=(o.hero===true&&!tenuParPiege(o)?armes.filter(piegeConnu):[]).map(p=>({p,ecart:mesureEcartPiege(p,size)}));
+ const libres=armes.filter(p=>!connus.some(k=>k.p===p)&&!touchePiege(p,a,r,size));if(!libres.length&&!connus.length)return null;
+ connus.forEach(k=>{k.d0=k.ecart(a)});
+ // Bute : touché, et plus près qu'au départ du pas. Celui qui touchait déjà peut longer le piège ou s'en écarter, pas y entrer.
+ const bute=(k,c)=>{const d=k.ecart(c);return d<r&&d<Math.min(k.d0,r)-.01};
+ const pct=c=>({x:c[0]/size.width*100,y:c[1]/size.height*100});
  const n=Math.max(1,Math.min(400,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/Math.max(1,r/3))));
- for(let i=1;i<=n;i++){const t=i/n,c=au(t),mur=connus.find(p=>bute(p,c));
-  if(mur){let lo=(i-1)/n,hi=t;for(let k=0;k<6;k++){const mi=(lo+hi)/2;if(bute(mur,au(mi)))hi=mi;else lo=mi}
-   const q=au(lo);return {p:mur,x:q[0]/size.width*100,y:q[1]/size.height*100,bloque:true}}
+ for(let i=1;i<=n;i++){const t=i/n,c=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t],mur=connus.find(k=>bute(k,c));
+  if(mur){const au=t=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];let lo=(i-1)/n,hi=t;
+   for(let k=0;k<6;k++){const mi=(lo+hi)/2;if(bute(mur,au(mi)))hi=mi;else lo=mi}
+   const q=au(lo);
+   /* Le reste du pas, privé de ce qui va vers le piège : la pente de l'écart donne la direction du bord. */
+   const e=1,gx=mur.ecart([q[0]+e,q[1]])-mur.ecart([q[0]-e,q[1]]),gy=mur.ecart([q[0],q[1]+e])-mur.ecart([q[0],q[1]-e]),gn=Math.hypot(gx,gy);
+   let fin=q;
+   if(gn>0){const nx=gx/gn,ny=gy/gn,vx=b[0]-q[0],vy=b[1]-q[1],dot=vx*nx+vy*ny;
+    // Poussé de face, il s'arrête net : il ne glisse que pris de biais.
+    if(dot<0&&Math.hypot(vx-dot*nx,vy-dot*ny)>=.3*Math.hypot(vx,vy)){const s=[q[0]+vx-dot*nx,q[1]+vy-dot*ny],kq={...mur,d0:mur.ecart(q)},bute2=c=>connus.some(k=>bute(k===mur?kq:k,c));
+     const m2=Math.max(1,Math.ceil(Math.hypot(s[0]-q[0],s[1]-q[1])/Math.max(1,r/3)));let ok=1;
+     for(let k=1;k<=m2;k++){const c=[q[0]+(s[0]-q[0])*k/m2,q[1]+(s[1]-q[1])*k/m2];if(bute2(c))break;ok=k}
+     if(ok>=1&&!bute2([q[0]+(s[0]-q[0])*ok/m2,q[1]+(s[1]-q[1])*ok/m2]))fin=[q[0]+(s[0]-q[0])*ok/m2,q[1]+(s[1]-q[1])*ok/m2]}}
+   return {p:mur.p,...pct(fin),bloque:true}}
   const p=libres.find(q=>touchePiege(q,c,r,size));
-  if(p)return {p,x:c[0]/size.width*100,y:c[1]/size.height*100,contact:touchePiege(p,c,r,size)==='contact'}}
+  if(p)return {p,...pct(c),contact:touchePiege(p,c,r,size)==='contact'}}
  return null}
 /* Ce que coûte un piège en caractéristiques : un aventurier le porte à sa fiche, permanent ou jusqu'au repos ; une créature le
    perd pour de bon. Rend les mots du journal. */
@@ -1181,15 +1198,22 @@ function renderPieges(){let calque=$('map-pieges');if(!calque){calque=document.c
  if(svg.childNodes.length)calque.prepend(svg)}
 /* Enjamber : au-dessus d'un piège armé, connu, en vue et enjambable que l'aventurier choisi touche de sa zone de contact, un
    bouton rond flottant, à la couleur de la compétence du test. Un clic lance le test d'Enjamber, avec ses suites ordinaires. */
-function renderEnjamber(){let calque=$('piege-boutons');if(!calque){calque=document.createElement('div');calque.id='piege-boutons';calque.setAttribute('aria-hidden','false');$('map-view').append(calque)}
- calque.replaceChildren();const m=currentMap(),a=heroActif();if(!m||!a||a.horsCarte||!(m.pieges||[]).length)return;
- m.pieges.forEach(p=>{const dedans=!!p&&tenuParPiege(a)===p;
-  if(!p||!p.enjambement||(!dedans&&(!piegeArme(p)||!piegeConnu(p)||!coffreEnVue(p)||(Array.isArray(a.franchis)&&a.franchis.includes(p.id))||!piegeAPortee(a,p))))return;
+/* Il se redessine au fil du geste : le rond paraît dès que le piège entre dans la zone de contact. Rien ne change, rien ne se
+   refait. */
+let enjamberCle='';
+function renderEnjamber(){let calque=$('piege-boutons');if(!calque){calque=document.createElement('div');calque.id='piege-boutons';calque.setAttribute('aria-hidden','false');$('map-view').append(calque);enjamberCle=''}
+ const m=currentMap(),a=heroActif();
+ const montres=!m||!a||a.horsCarte?[]:(m.pieges||[]).filter(p=>{const dedans=!!p&&tenuParPiege(a)===p;
+  return !!p&&!!p.enjambement&&(dedans||(piegeArme(p)&&piegeConnu(p)&&coffreEnVue(p)&&!(Array.isArray(a.franchis)&&a.franchis.includes(p.id))&&piegeAPortee(a,p)))});
+ const gris=!!a&&enCombat()&&(pointsRestants(a,'action')<=0||(typeof gelDebut==='function'&&gelDebut(a)));
+ const cle=(a?a.id:'')+'|'+gris+'|'+montres.map(p=>p.id+':'+p.x+':'+p.y+':'+p.w+':'+p.h).join(',');
+ if(cle===enjamberCle&&calque.isConnected)return;enjamberCle=cle;calque.replaceChildren();
+ montres.forEach(p=>{
   const k=Math.max(0,Math.min(7,Math.trunc(Number(p.enjambement.comp))||0)),b=document.createElement('button');b.type='button';
   b.className='btn-action rond btn-enjamber';b.style.left=(p.x+p.w/2)+'%';b.style.top=(p.y+p.h/2)+'%';b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');
   const ico=typeof logoCompetence==='function'?logoCompetence(k):null;if(ico)b.append(ico);else b.textContent=skillNames[k].slice(0,2);
   b.setAttribute('aria-label','Enjamber · '+skillNames[k]);
-  inerte(b,enCombat()&&(pointsRestants(a,'action')<=0||(typeof gelDebut==='function'&&gelDebut(a))));
+  inerte(b,gris);
   b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};
   b.onclick=e=>{e.stopPropagation();if(estInerte(b))return;testPiege(a,p,'enjambement')};calque.append(b)})}
 const objetVue=dialog('objet-vue','Objet','<div id="objet-corps"></div>');
