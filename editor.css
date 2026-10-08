@@ -995,7 +995,7 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 #map-canvas .shape.piege:not(.image-seule) .piege-image,.piege-table.jeton .piege-image{object-fit:cover}
 #map-canvas .shape.declencheur.zone{border:2px dashed #e0703a;background:#e0703a24;border-radius:3px}
 /* La hitbox d'un piège : son corps de blocage, en rouge, à part de son icône. */
-#map-canvas .shape.declencheur.zone.hitbox{border-color:#d23b2f;background:#d23b2f1f}
+#map-canvas .shape.declencheur.zone.hitbox{border-color:#d23b2f;background:#d23b2f1f}#map-canvas .shape.declencheur.zone.hitbox.selected{z-index:3}#piege-editor .piege-decl{cursor:pointer}
 #map-canvas .declencheur.fil{position:absolute;inset:0;pointer-events:none}
 #map-canvas .declencheur.fil svg,#map-canvas svg.piege-liens{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 #map-canvas .declencheur.fil .touche{stroke:transparent;stroke-width:14px;vector-effect:non-scaling-stroke;pointer-events:stroke;cursor:pointer}

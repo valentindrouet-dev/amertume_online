@@ -1981,7 +1981,13 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(e.target.closest('.echelle-token')&&e.button===0){pushUndo();
   mapDrag={mode:e.target.dataset.echelleGrip?'echelle-taille':'echelle',from:p,orig:{...mapDraft.echelle}};
   $('map-canvas').setPointerCapture(e.pointerId);e.preventDefault();return}
- const dessous=sous?{kind:sous.dataset.kind,i:Number(sous.dataset.i),...(sous.dataset.k!==undefined?{k:Number(sous.dataset.k)}:{})}:null;
+ let dessous=sous?{kind:sous.dataset.kind,i:Number(sous.dataset.i),...(sous.dataset.k!==undefined?{k:Number(sous.dataset.k)}:{})}:null;
+ /* Avec la Sélection, la hitbox d'un piège passe devant les grandes formes qui la couvrent : départ, matière, halo d'une
+    lumière hors de son cœur. */
+ if(!grip&&e.button===0&&mapTool==='select'){const hb=hitboxSous(p);
+  const coeur=dessous&&dessous.kind==='lumiere'&&sous.querySelector('.lumiere-coeur'),r=coeur?coeur.getBoundingClientRect():null;
+  const surCoeur=!!r&&Math.hypot(e.clientX-(r.left+r.width/2),e.clientY-(r.top+r.height/2))<=r.width/2+4;
+  if(hb&&(!dessous||dessous.kind==='start'||dessous.kind==='matiere'||(dessous.kind==='lumiere'&&!surCoeur)))dessous=hb}
  /* Un objet déjà posé se rouvre : un clic dessus avec l'outil Objet, qui en posait un autre par
     mégarde ; deux clics rapprochés avec la Sélection. Le plan se redessine à chaque clic, le
     double clic du navigateur n'arrivait donc jamais jusqu'à lui. */
@@ -2293,6 +2299,11 @@ $('door-cle').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel
    le piège inflige à qui est au contact ; et ce qu'il contient : des pièces, de l'or, des gemmes. */
 /* Les déclencheurs d'un piège, sur le plan : chaque zone en pointillé, chaque fil d'un trait, et un fin lien de chacun au
    piège. Une zone se tire par ses coins ; un fil, par ses bouts. */
+/* La hitbox sous un point de la carte, la dernière tracée d'abord : celle qu'on voit au-dessus. */
+function hitboxSous(p){const pg=(mapDraft&&mapDraft.pieges)||[];
+ for(let i=pg.length-1;i>=0;i--){const ds=(pg[i]&&pg[i].declencheurs)||[];
+  for(let k=ds.length-1;k>=0;k--){const d=ds[k];if(d&&d.type==='bloc'&&p.x>=d.x&&p.x<=d.x+d.w&&p.y>=d.y&&p.y<=d.y+d.h)return {kind:'declencheur',i,k}}}
+ return null}
 function declencheursEl(i,p){const out=[],cx=p.x+p.w/2,cy=p.y+p.h/2,svg=document.createElementNS(nsSVG,'svg');
  svg.setAttribute('class','piege-liens');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
  const ligne=(cls,x1,y1,x2,y2)=>{const l=document.createElementNS(nsSVG,'line');l.setAttribute('class',cls);[['x1',x1],['y1',y1],['x2',x2],['y2',y2]].forEach(([k,v])=>l.setAttribute(k,v));return l};
@@ -2358,6 +2369,8 @@ function openPiege(i){const m=mapDraft,p=m&&m.pieges&&m.pieges[i];if(!p||view!==
  // Les déclencheurs liés : une ligne chacun, que la croix retire ; les deux boutons en tracent un de plus sur la carte.
  const listeDecl=()=>{const b=$('piege-declencheurs');b.replaceChildren();let nz=0,nf=0;
   (p.declencheurs||[]).forEach((d,k)=>{const l=document.createElement('span');l.className='piege-decl';l.textContent=d.type==='fil'?'Fil '+(++nf):d.type==='bloc'?'Hitbox':'Zone '+(++nz);
+   // Un clic sur son nom le choisit sur la carte, Sélection en main : on le déplace, on l'étire.
+   l.onclick=ev=>{if(ev.target!==l)return;applique();piegeDialog.close();mapTool='select';mapSel={kind:'declencheur',i,k};renderCanvas();renderMapList();saveMaps()};
    const x=document.createElement('button');x.type='button';x.className='ico';x.textContent='✕';x.setAttribute('aria-label','Retirer '+l.textContent);
    x.onclick=()=>{pushUndo();p.declencheurs.splice(k,1);listeDecl();renderCanvas();saveMaps()};l.append(x);b.append(l)});
   [['zone','+ Zone de déclenchement'],['fil','+ Fil de déclenchement'],['bloc','+ Hitbox de blocage']].forEach(([type,txt])=>{const t=document.createElement('button');t.type='button';t.textContent=txt;

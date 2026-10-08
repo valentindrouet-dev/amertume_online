@@ -5325,7 +5325,7 @@ function groupesLogosItem(o){const l=logosItem(o),vus=new Set(),groupes=[];
  const reste=l.filter(x=>!vus.has(x)),planches=reste.filter(estIconePlanche),autres=reste.filter(x=>!estIconePlanche(x));
  if(planches.length)groupes.push([groupes.length?'Autres icônes des planches':'Icônes des planches',planches]);
  groupes.push(['Logos',autres]);return groupes}
-function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches(''),...iconesPlanches('talents'),...LOGOS_DOSSIERS.equipement];
+function logosItem(o){const c=o&&o.category,d=[...iconesPlanches('equipement'),...iconesPlanches('divers'),...iconesPlanches(''),...iconesPlanches('talents'),...iconesPlanches('ombrelame'),...LOGOS_DOSSIERS.equipement];
  // Un trésor peut prendre toute image : un objet, une gemme, une pièce d'équipement.
  const l=c==='weapon'||c==='armor'?[...d,...LOGOS_EQUIPEMENT]:c==='ammo'?[...d,...LOGOS_EQUIPEMENT,...LOGOS_OBJET]:c==='treasure'||c==='ressource'||c==='restes'?[...d,...LOGOS_OBJET,...LOGOS_RESSOURCES,...LOGOS_EQUIPEMENT]:[...d,...LOGOS_OBJET];
  // Le logo en place reste offert, même si la liste des dossiers n'est pas venue.
