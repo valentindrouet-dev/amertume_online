@@ -2381,7 +2381,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const mur=[{contours:[[[400,0],[600,0],[600,700],[400,700]]]}];
  const ctxR={combat:true,round:3,zones:{},notes:[],journal:[],performance:{now:()=>1e6},nomNum:a=>a.name,currentMap:()=>({id:'c'}),zonesDe:()=>({compte:2}),
   enCombat:()=>ctxR.combat,items:()=>[],tokenPx:()=>10,mapSize:()=>({width:1000,height:1000}),distanceMouvement:a=>a.mvt??9,
-  wallsInPixels:()=>ctxR.murs||[],segmentHitsPolys:C.segmentHitsPolys,contoursOf:C.contoursOf,shapeContains:C.shapeContains,
+  wallsInPixels:()=>ctxR.murs||[],obstaclesDuPas:()=>ctxR.murs||[],segmentHitsPolys:C.segmentHitsPolys,contoursOf:C.contoursOf,shapeContains:C.shapeContains,
   pointsUses:(a,q)=>a.uses||0,pointsRestants:(a,q)=>q==='action'?(a.action??1):a.credit,zoneDe:a=>ctxR.zones[Math.round(a.x)+','+Math.round(a.y)]||0,
   floatNumber:(a,t)=>ctxR.notes.push(t),log:t=>ctxR.journal.push(t)};vm.createContext(ctxR);vm.runInContext(regle,ctxR);
  for(let x=0;x<=100;x+=1)ctxR.zones[x+',50']=x<50?1:x>50?2:0;
@@ -3387,8 +3387,18 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.642 — Le terrain impraticable : une couche que le MJ seul voit, en pointillés rouges, qui arrête le pas comme un mur sans
+   couper la vue ; rectangle, contour libre, trait et gomme. Le rond Enjamber prend la taille d'un gros bouton de la barre. */
+{const carto=fs.readFileSync('maps.js','utf8'),C=require('./combat.js');
+ const m={};C.ajouteImpraticable(m,[[10,10],[20,10],[20,20],[10,20]]);assert.equal(C.impraticableDe(m).length,1);
+ C.retireImpraticable(m,[[14,0],[16,0],[16,30],[14,30]]);assert.equal(m.impraticable.length,2,'la gomme coupe le terrain en deux');
+ assert.equal(C.cleanMap(m).impraticable.length,2,'il voyage avec la carte');assert.ok(!('impraticable' in C.cleanMap({})),'une carte sans terrain impraticable reste la même');
+ assert.ok(page.includes("function obstaclesDuPas(px){")&&page.includes(" const polys=obstaclesDuPas(px);")&&page.includes("function cheminVers(r,p){const size=mapSize(),murs=obstaclesDuPas(")
+  &&carto.includes("function renderImpraticables(){")&&carto.includes("if(!m||view!=='mj'||(typeof oeilJoueur==='function'&&oeilJoueur()))return;")
+  &&carto.includes('<button data-tool="imprat">Impraticable</button><button data-tool="impratlibre">Impraticable libre</button><button data-tool="impratligne">Ligne impraticable</button><button data-tool="impratgomme">Gomme d’impraticable</button>'),'le terrain impraticable');
+ assert.ok(page.includes("#piege-boutons button.btn-action.rond.btn-enjamber{position:absolute;width:58px;height:58px;font-size:26px;")&&page.includes("#piege-boutons{position:absolute;inset:0;z-index:6;pointer-events:none}"),'le rond Enjamber en gros bouton, au-dessus des textes');}
 /* v0.641 — Le rond Enjamber garde, à l'écran, la taille d'un petit bouton de la barre d'action, quel que soit le zoom. */
-assert.ok(page.includes("$('map-view').style.setProperty('--dezoom',String(1/mapZoom));")&&page.includes("#piege-boutons button.btn-action.rond.btn-enjamber{position:absolute;width:42px;height:42px;font-size:19px;transform:translate(-50%,-50%) scale(var(--dezoom,1));"),'le rond Enjamber à la taille d’un bouton de la barre');
+assert.ok(page.includes("$('map-view').style.setProperty('--dezoom',String(1/mapZoom));")&&page.includes("#piege-boutons button.btn-action.rond.btn-enjamber{position:absolute;width:58px;height:58px;font-size:26px;transform:translate(-50%,-50%) scale(var(--dezoom,1));"),'le rond Enjamber à la taille d’un bouton de la barre');
 /* v0.640 — Le jeu à plusieurs : les PV partent en différence additionnée par Firestore, l'état du tour d'un joueur est daté et le
    MJ écarte ce qui arrive d'un tour révolu, le début et la fin d'un combat interrompent les gestes, un coup dont la cible est
    tombée entre-temps passe à l'adversaire suivant, la remise au tour 1 ne clôt plus le combat, la table en ligne a le dernier
@@ -3719,7 +3729,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  // v0.605 — À découvert, la ligne droite du départ au socle, quel que soit le geste ; un mur contourné la plie à son angle.
  const regle=page.slice(page.indexOf('let mouvementClavier=null;'),page.indexOf('function contactsDe(a)'));
  const cx={round:1,performance:{now:()=>1e6},nomNum:a=>a.name,currentMap:()=>null,enCombat:()=>true,items:()=>[],tokenPx:()=>10,mapSize:()=>({width:1000,height:1000}),distanceMouvement:()=>99,
-  wallsInPixels:()=>cx.murs||[],segmentHitsPolys:C.segmentHitsPolys,contoursOf:C.contoursOf,shapeContains:C.shapeContains,pointsUses:()=>0,pointsRestants:()=>1,zoneDe:()=>1,floatNumber(){},log(){}};vm.createContext(cx);vm.runInContext(regle,cx);
+  wallsInPixels:()=>cx.murs||[],obstaclesDuPas:()=>cx.murs||[],segmentHitsPolys:C.segmentHitsPolys,contoursOf:C.contoursOf,shapeContains:C.shapeContains,pointsUses:()=>0,pointsRestants:()=>1,zoneDe:()=>1,floatNumber(){},log(){}};vm.createContext(cx);vm.runInContext(regle,cx);
  const geste=(pts,o=[20,20])=>{const g={x:o[0],y:o[1]},r=cx.regleMouvement(g);for(const [x,y] of pts){g.x=o[0]+x;g.y=o[1]+y;cx.appliqueRegleMouvement(g,r)}cx.dernier=r;return r.long/10};
  const ligne=(a,b,pas)=>{const o=[],n=Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])/pas);for(let k=1;k<=n;k++)o.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n]);return o};
  [[.125,.0833],[.2,.05],[.3,.02],[.05,.3]].forEach(([u,v])=>assert.ok(Math.abs(geste([...ligne([0,0],[3,0],u),...ligne([3,0],[1,0],v)])-1)<.01,'aller-retour '+u+'/'+v));
@@ -3968,7 +3978,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&src.includes("  o.lumiere=lumiereDe(o);if(!o.lumiere)delete o.lumiere;"),'le champ Lumière des objets');
  // L'éditeur de cartes : l'outil, la fiche, la poignée du rayon.
  assert.ok(carto.includes("lumiere:'Lumière',")&&carto.includes('<button data-tool="lumiere">Lumière</button>')&&carto.includes('<button id="lumiere-edit" hidden>✎ Modifier la lumière</button>')
-  &&carto.includes(" m.obscurite??=[];m.lumieres??=[];m.lumieres.forEach(l=>{l.id||=crypto.randomUUID();l.items??=[];l.rayon=Math.max(.5,Math.min(40,Number(l.rayon)||3))});")
+  &&carto.includes(" m.obscurite??=[];m.impraticable??=[];m.lumieres??=[];m.lumieres.forEach(l=>{l.id||=crypto.randomUUID();l.items??=[];l.rayon=Math.max(.5,Math.min(40,Number(l.rayon)||3))});")
   &&carto.includes("function openLumiere(i){const m=mapDraft,l=m&&m.lumieres&&m.lumieres[i];if(!l||view!=='mj')return;")
   &&carto.includes(" if(d.kind==='lumiere'&&d.grip==='rayon'){const r=$('map-canvas').getBoundingClientRect(),socle=Math.max(8,r.width*echelleSocle(mapDraft)/100);"),'l’outil Lumière');
  // La table : les sources, les halos sous le brouillard, le jeton, la prise, le menu du MJ.
@@ -5011,4 +5021,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1880 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1886 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

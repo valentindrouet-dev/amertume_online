@@ -160,6 +160,15 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .token.lumiere.eteinte{background:#d9d6cf;border-color:#8d8a83;color:#5d5a54;box-shadow:0 calc(var(--token)*.055) calc(var(--token)*.17) #0008;filter:grayscale(1)}
 /* L'obscurité sur le plan de travail : un voile sombre, en pointillé, par-dessus la matière. */
 .obscur-skin{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+/* Le terrain impraticable : des pointillés rouges, sur un voile rouge très léger, à l'éditeur comme chez le MJ en table. */
+.imprat-skin{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.imprat-skin path.bord{fill:none;stroke:#d23b2f;stroke-width:1.6;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
+.imprat-skin path.fond{fill:#d23b2f;fill-opacity:.1;stroke:none}
+.shape.imprat{background:#d23b2f1a;border:2px dashed #d23b2f;pointer-events:none}.shape.imprat .grip{display:none!important}
+.lasso-layer.imprat polygon,.lasso-layer.imprat polyline{stroke:#d23b2f;fill:#d23b2f22}
+.sw-imprat{background:#d23b2f1a;border:1px dashed #d23b2f}
+#impraticables-mj{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:visible}
+#impraticables-mj .imprat-mj{fill:#d23b2f14;fill-rule:evenodd;stroke:#d23b2f;stroke-width:2px;stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
 .obscur-skin path.bord{fill:none;stroke:#5b6670;stroke-width:1.2;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
 .obscur-skin path.fond{fill:#05070a;fill-opacity:.62;stroke:none}
 #map-tools [data-tool=obscur],#map-tools [data-tool=obscurlibre],#map-tools [data-tool=obscurremplir],#map-tools [data-tool=obscurgomme]{border-color:#4a5560;color:var(--ink)}
