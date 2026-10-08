@@ -1233,7 +1233,7 @@ function renderPieges(){let calque=$('map-pieges');if(!calque){calque=document.c
   if(!mj&&(!connu||!enVue))return;
   const el=document.createElement('div');el.className='piege-table '+(p.affichage==='image'&&(p.image||p.logo)?'image':'jeton')+(connu?'':' cache')+(arme?'':' inerte')+(enVue?'':' voile');
   el.style.left=p.x+'%';el.style.top=p.y+'%';el.style.width=p.w+'%';el.style.height=p.h+'%';el.append(visuelPiege(p));el.setAttribute('aria-label',p.nom);
-  if(typeof surveille==='function')surveille(el,()=>ouvrirBulle(el,bullePiege(p,mj),'bulle-gear'));
+  // Sa bulle n'est plus sur le piège, pour personne : elle est sur le rond Enjamber (renderEnjamber).
   el.onmousedown=e=>e.preventDefault();el.onclick=e=>{e.stopPropagation();if(typeof fermerBulle==='function')fermerBulle();menuPiege(p,e.clientX,e.clientY)};
   calque.append(el);
   if(mj||arme)(p.declencheurs||[]).forEach(d=>{let f;if(d.type==='bloc'&&!mj)return;
@@ -1258,6 +1258,8 @@ function renderEnjamber(){let calque=$('piege-boutons');if(!calque){calque=docum
   b.className='btn-action rond btn-enjamber';b.style.left=(p.x+p.w/2)+'%';b.style.top=(p.y+p.h/2)+'%';b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');
   const ico=typeof logoCompetence==='function'?logoCompetence(k):null;if(ico)b.append(ico);else b.textContent=skillNames[k].slice(0,2);
   b.setAttribute('aria-label','Enjamber · '+skillNames[k]);
+  // La bulle du piège, au-dessus du rond.
+  if(typeof surveille==='function')surveille(b,()=>ouvrirBulle(b,bullePiege(p,view==='mj'&&!(typeof oeilJoueur==='function'&&oeilJoueur())),'bulle-gear'));
   inerte(b,gris);
   b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};
   b.onclick=e=>{e.stopPropagation();if(estInerte(b))return;testPiege(a,p,'enjambement')};calque.append(b)})}
