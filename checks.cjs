@@ -3405,7 +3405,7 @@ assert.ok(page.includes("if(!jamaisVu&&(view==='mj'||connait(a,'def')))b.querySe
 /* v0.630 — La bulle d'un token aux chiffres de la fiche, la vie sur toute la largeur, les Attaques spéciales à découvrir à part. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("chiffres.className='stat-row en-icones';")&&src.includes("else inconnuBulle(d,'Attaques spéciales');")&&src.includes("function rangAttaques(d,attaques,bonus){")
-  &&css.includes('.bulle-comb-vie{margin:4px 0 2px;width:100%;flex:1 1 100%;align-self:stretch}'),'la bulle à la manière de la fiche');}
+  &&css.includes('.bulle-comb-vie{margin:4px 0 2px;width:100%;flex:1 1 100%;align-self:stretch}')&&css.includes('.bulle-comb-vie .lifebar{display:flex;align-items:center;width:100%;height:18px;margin:0}'),'la bulle à la manière de la fiche');}
 /* v0.629 — L'Analyse : un test de Savoir, chaque réussite une chose au hasard parmi six, apprise pour tout le type ; la première
    fois, 10 % de l'XP de l'adversaire au groupe, au moins 1 ; un aventurier n'analyse un type qu'une fois par combat ; le Bestiaire
    efface tout. La bulle d'un token au survol, « ? » pour l'inconnu, chez le MJ aussi. Fouiller exige un socle qui déborde. */
