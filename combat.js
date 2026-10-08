@@ -1211,6 +1211,18 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  lameventdouble:{cle:'lameventdouble',nom:'Coupure — dégâts doublés',court:'dégâts doublés',type:'ame',
   aide:'Amélioration de Coupure : le double des dégâts contre un adversaire au contact d’un de ses alliés.',
   params:[],phrase(){return '<b>Coupure</b> inflige <b>le double de ses dégâts</b> à un adversaire <b>au contact d’un de ses alliés</b>.'}},
+ /* Insaisissable — Coupure d'Adieu : quitter la zone de contact d'un adversaire lui inflige Coupure, une fois par tour ; à volonté au
+    palier 2. Ombre fuyante : finir son mouvement au contact d'aucun adversaire donne Invisible ; Invisible et Onde au palier 2. */
+ insaisisadieu:{cle:'insaisisadieu',nom:'Insaisissable — Coupure d’Adieu',court:'Coupure d’Adieu',type:'ame',
+  aide:'Amélioration d’Insaisissable : le porteur inflige Coupure à l’adversaire dont il quitte la zone de contact, une fois par tour ; à volonté au palier 2.',
+  params:[],volets:[{cle:'volonte',nom:'À volonté',palier:2}],
+  phrase(p,palier,v){const k=(v||{volonte:2}).volonte,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'Le porteur inflige <b>Coupure</b> en sortant de la zone de contact d’un adversaire, '+(deux?'<b>à volonté</b>':'<b>une fois par tour</b>')+'.'}},
+ insaisisombre:{cle:'insaisisombre',nom:'Insaisissable — Ombre fuyante',court:'Ombre fuyante',type:'ame',
+  aide:'Amélioration d’Insaisissable : le porteur qui termine son mouvement au contact d’aucun adversaire gagne Invisible ; Invisible et Onde au palier 2.',
+  params:[],volets:[{cle:'onde',nom:'Onde en plus',palier:2}],
+  phrase(p,palier,v){const k=(v||{onde:2}).onde,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'Si le porteur termine son mouvement <b>au contact d’aucun adversaire</b>, il gagne <b>'+(deux?'Invisible et Onde':'Invisible')+'</b>.'}},
  /* Insaisissable — Poison : une amélioration. Les adversaires dont le porteur quitte le contact reçoivent Poison 1, puis 2 au palier 2. */
  insaisispoison:{cle:'insaisispoison',nom:'Insaisissable — Poison',court:'Poison',type:'ame',
   aide:'Amélioration d’Insaisissable : Poison 1 aux adversaires dont le porteur quitte le contact ; Poison 2 au palier 2.',
@@ -1705,7 +1717,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
- contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
+ contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
