@@ -1175,6 +1175,21 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   aide:'Amélioration de Coupure : ses dégâts infligent aussi l’état réglé.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
   phrase(p){return 'Le porteur inflige <b>'+((p&&p.etat)||'Feu')+'</b> lorsqu’il inflige les dégâts de <b>Coupure</b>.'}},
+ /* Impulsion : un passif. La première fois que le porteur tue un adversaire dans un combat, il gagne 1 PA. Améliorations : la
+    première fois à chaque tour, puis les deux premières au palier 2 ; un allié au contact gagne aussi 1 PA, tous au palier 2. */
+ impulsion:{cle:'impulsion',nom:'Impulsion',type:'pass',
+  aide:'Passif : la première fois que le porteur tue un adversaire pendant un combat, il gagne 1 PA.',
+  params:[],phrase(){return 'La première fois que le porteur <b>tue un adversaire</b> pendant un combat, il gagne <b>1 PA</b>.'}},
+ impulsiontour:{cle:'impulsiontour',nom:'Impulsion — à chaque tour',court:'à chaque tour',type:'ame',
+  aide:'Amélioration d’Impulsion : 1 PA la première fois que le porteur tue un adversaire à chaque tour ; les deux premières fois au palier 2.',
+  params:[],volets:[{cle:'deux',nom:'Les deux premières fois',palier:2}],
+  phrase(p,palier,v){const k=(v||{deux:2}).deux,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'Le porteur gagne <b>1 PA</b> '+(deux?'les <b>deux premières fois</b>':'la <b>première fois</b>')+' qu’il tue un adversaire, <b>à chaque tour</b>.'}},
+ impulsionallie:{cle:'impulsionallie',nom:'Impulsion — alliés',court:'alliés',type:'ame',
+  aide:'Amélioration d’Impulsion : un allié au contact gagne aussi 1 PA ; tous les alliés au contact au palier 2.',
+  params:[],volets:[{cle:'tous',nom:'Tous les alliés au contact',palier:2}],
+  phrase(p,palier,v){const k=(v||{tous:2}).tous,tous=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return (tous?'<b>Tous les alliés</b> au contact du porteur gagnent':'<b>Un allié</b> au contact du porteur gagne')+' aussi <b>1 PA</b>.'}},
  /* Coupure — dégâts doublés : une amélioration. Contre un adversaire au contact d'un de ses alliés, Coupure frappe double. */
  lameventdouble:{cle:'lameventdouble',nom:'Coupure — dégâts doublés',court:'dégâts doublés',type:'ame',
   aide:'Amélioration de Coupure : le double des dégâts contre un adversaire au contact d’un de ses alliés.',
@@ -1673,7 +1688,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
- contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',insaisispoison:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
+ contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
@@ -1827,7 +1842,9 @@ const POINTS_CLES=['action','mouvement','objet'];
    garde. Le point d'une maîtrise Point supplémentaire s'ajoute, comme Rapide, au-delà du plafond. */
 function pointsMax(a,quoi,base){const plafond=POINTS_MAX[quoi]||1;
  const v=Math.trunc(Number(a&&a.points&&a.points[quoi])),talents=!base&&typeof pointsDeTalents==='function'?Math.max(0,Math.min(9,pointsDeTalents(a,quoi)|0)):0;
- const bonus=talents+(!base&&quoi==='mouvement'?Math.max(0,Math.min(9,Math.trunc(Number(a&&a.mvtBonus))||0)):0);
+ const bonus=talents+(!base&&quoi==='mouvement'?Math.max(0,Math.min(9,Math.trunc(Number(a&&a.mvtBonus))||0)):0)
+  // Les PA gagnés le temps d'un tour (« paBonus » : Impulsion).
+  +(!base&&quoi==='action'?Math.max(0,Math.min(9,Math.trunc(Number(a&&a.paBonus))||0)):0);
  return Math.max(1,Math.min(plafond+bonus,(Number.isFinite(v)&&v>0?v:1)+bonus))}
 // Combien il en a dépensés, jamais plus qu'il n'en a.
 function pointsUses(a,quoi){const i=POINTS_CLES.indexOf(quoi);if(i<0)return 0;

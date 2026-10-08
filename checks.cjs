@@ -3389,6 +3389,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.655 — Impulsion et ses améliorations ; « +1 PA » et « +1 PM » montent avec leur point. */
+{const C2=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
+ assert.ok(C2.TALENTS_CODES.impulsiontour.pour==='impulsion'&&C2.TALENTS_CODES.impulsionallie.pour==='impulsion','Impulsion');
+ assert.equal(C2.pointsMax({points:{action:1},paBonus:1},'action'),2);assert.equal(C2.pointsMax({points:{action:1},paBonus:1},'action',true),1);
+ assert.ok(idx.includes("if(vers.hp===0){ajouteBilan(de,'abat',1);impulsion(de,vers)}")&&idx.includes("floatNumber(a,'+1 PM','gain');")&&idx.includes("pt.className='pt '+(m[1]==='PA'?'action':'mvt')"),'Impulsion câblée');}
 /* v0.654 — Les états posés par un coup montent au-dessus de la cible, après ses dégâts. */
 assert.ok(fs.readFileSync('index.html','utf8').includes(" posesDits.forEach(e=>floatNumber(b,'✦ '+e,'perte'));"),'les états du coup montent');
 /* v0.653 — Lame empoisonnée, Poison au contact : l'adversaire le plus proche, puis tous ceux de la zone de contact au palier 2. */
@@ -3782,11 +3787,11 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    un mur de feu tout du long. Rapide est désactivé. */
 {const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(vif.includes("'orbeStatique','nyctalope','mouvement','mvtReste','mvtTour',"),'le reste du mouvement voyage en ligne');
- assert.ok(page.includes("delete a.revanche;delete a.traction;delete a.bondissement;delete a.decoupe;delete a.mvtReste;delete a.mvtTour;delete a.opportunitesSubies;mouvementRapide(a)});")&&page.includes("actors.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour;"),'un nouveau tour l’efface');
+ assert.ok(page.includes("delete a.revanche;delete a.traction;delete a.bondissement;delete a.decoupe;delete a.impulsion;delete a.mvtReste;delete a.mvtTour;delete a.opportunitesSubies;mouvementRapide(a)});")&&page.includes("actors.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour;"),'un nouveau tour l’efface');
  assert.ok(page.includes("   if(drag.regle&&!appliqueRegleMouvement(a,drag.regle))jusquALaBorne(a,drag.regle,g,(x,y)=>moveActor(a,x,y,view==='mj',enMain,true))}")
   &&page.includes("fleche.setAttribute('d','M'+pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L'));"),'la main va jusqu’à la limite, la flèche suit le chemin');
  assert.equal(C.TALENTS_CODES.rapide.retire,true,'Rapide retiré de la bibliothèque');
- assert.ok(page.includes("function mouvementRapide(a){if(!a)return;a.mvtBonus=0}"),'Rapide ne donne plus rien');
+ assert.ok(page.includes("function mouvementRapide(a){if(!a)return;a.mvtBonus=0;a.paBonus=0}"),"Rapide ne donne plus rien");
  assert.equal(C.cleanLumiere({id:'l',nom:'T',x:1,y:2,rayon:3,eteinte:true,prise:true}).prise,true);assert.equal(C.cleanLumiere({id:'l',x:1,y:2,rayon:3,prise:'x'}).prise,undefined);
  assert.ok(carto.includes(" (m.lumieres||[]).forEach(l=>{if(!l||l.prise)return;")&&css.includes(".token.lumiere.eteinte{")&&carto.includes("delete copie.eteinte;delete copie.prise;"),'éteinte, grisée ; prise, absente');
  assert.ok(carto.includes("const LUMIERE_FEU=4;")&&carto.includes("const feu=hasState(a,'Feu')||(a.orbeStatique&&a.orbeStatique.etat==='Feu')?LUMIERE_FEU:0;")
@@ -5086,4 +5091,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1914 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1918 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
