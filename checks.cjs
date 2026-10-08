@@ -978,7 +978,7 @@ typesAdv.forEach(t=>{const r=feuille.match(new RegExp('\\.cat-col\\.c-'+t+' h3\\
 /* Le menu déroulant des mécaniques porte le nom ET la description : on sait ce qu'un effet
    fait avant de le choisir, sans gras — une option ne lit pas le balisage. */
 const lib=C.libelleTalent('lamevent');
-assert.ok(lib.startsWith('Ombrelame : '),'le libellé s’ouvre sur le nom : '+lib);
+assert.ok(lib.startsWith('Coupure : '),'le libellé s’ouvre sur le nom : '+lib);
 assert.ok(!/[<>]/.test(lib),'le libellé ne porte aucune balise : '+lib);
 assert.ok(lib.includes('bonus de dégâts')&&lib.includes('au contact'),lib);
 assert.equal(C.libelleTalent('inconnu'),'');
@@ -3389,6 +3389,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.649 — Insaisissable n'est pas arrêté au contact ; ses améliorations frappent ceux qu'il quitte, Poison 1 puis 2 et son bonus
+   de dégâts. Ombrelame, le talent, s'appelle Coupure ; son amélioration double ses dégâts contre un adversaire au contact d'un allié. */
+{const C=require('./combat.js'),idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(idx.includes("if(porteEffet(talentsCodes(a),'insaisissable'))return null;")&&idx.includes("if(porteEffet(talentsCodes(a),'insaisissable')){quitteInsaisissable(a,avant);return}")&&idx.includes('function quitteInsaisissable(a,avant){'),'Insaisissable');
+ assert.ok(C.TALENTS_CODES.insaisispoison.pour==='insaisissable'&&C.TALENTS_CODES.insaisisdegats.pour==='insaisissable'&&C.TALENTS_CODES.lameventdouble.pour==='lamevent','les améliorations');
+ assert.equal(C.TALENTS_CODES.lamevent.nom,'Coupure');assert.equal(C.effetParNom('Ombrelame'),'lamevent');assert.match(C.phraseTalent('insaisispoison',{},2),/Poison 2/);
+ assert.ok(ed.includes("if(c.coupure!==1){")&&idx.includes("*(double&&entoure(b)?2:1)"),'Coupure');}
 /* v0.648 — En combat, l'arbre d'un aventurier ne se change pas, sauf par le MJ. Le nombre d'adversaires d'Ombrelame devient une
    amélioration. Course mortelle, Bondissement, Découpe et Lame empoisonnée, avec leurs améliorations. Le Poison inflige un dégât par
    cran. La catégorie d'icônes de la classe d'un talent passe en tête de ses menus de logos. */
@@ -4335,7 +4342,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    noms de ses effets (l'ancien nom retrouve encore l'effet). Flèches vers l'arbre de la classe voisine ; dans l'onglet
    Talents, les talents d'une classe dans un cadre à sa couleur, qui ouvre l'arbre. */
 {const C=require('./combat.js'),src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
- assert.equal(C.TALENTS_CODES.lamevent.nom,'Ombrelame');assert.equal(C.effetParNom('Lamevent'),'lamevent');assert.equal(C.effetParNom('Ombrelame'),'lamevent');
+ assert.equal(C.TALENTS_CODES.lamevent.nom,'Coupure');assert.equal(C.effetParNom('Lamevent'),'lamevent');assert.equal(C.effetParNom('Ombrelame'),'lamevent');
  assert.ok(!page.includes('Lamevent')&&src.includes("function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];migreOmbrelame(c);")
   &&src.includes("a.role=ombrelame(a.role);")&&fs.readFileSync('catalog.js','utf8').includes('"name": "Ombrelame"'),'le nouveau nom, et la conversion des données');
  assert.ok(src.includes("if(i>=0&&l.length>1)openArbresClasse(l[(i+sens+l.length)%l.length])};arbresDialog.append(b);return b});")&&src.includes("noteArbres('');renderArbres();if(!arbresDialog.open)arbresDialog.showModal()}")
@@ -5067,4 +5074,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1902 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1907 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

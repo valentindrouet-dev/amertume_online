@@ -1041,7 +1041,7 @@ function degatsPeril(n,a,p){if(!a||!(Number(a.max)>0))return n;const s=Math.max(
  if(Number(a.hp)/Number(a.max)*100>=s)return n;return p&&p.effet==='moitie'?Math.ceil(n/2):n*2}
 /* Les dés qu'un orbe peut lancer : ceux de l'attaque, moins le dé de Soin, qui ne frappe pas. */
 const DES_ORBE=[['white','Simple'],['bone','Léger'],['red','Lourd'],['blue','Mystique'],['black','Mortel'],['yellow','Phase']];
-const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent'],type:'mait',bouton:'⚡ Ombrelame',
+const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent','Ombrelame'],type:'mait',bouton:'⚡ Coupure',
  aide:'En terminant un mouvement : ton bonus de dégâts aux adversaires au contact.',
  params:[{cle:'bonus',nom:'Dégâts en plus du bonus',type:'nombre',defaut:0,min:0,max:99},
   {cle:'etat',nom:'État infligé',type:'choix',defaut:'',options:CHOIX_ETAT},
@@ -1115,10 +1115,10 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
   phrase(p,palier,v){const n=Math.max(1,Math.trunc(Number(palier))||1),k=(v||{distance:2}).distance;
    return 'Les adversaires qui attaquent le porteur'+(k>0&&n>=k?', <b>même à distance</b>,':' <b>au contact</b>')+' subissent <b>'+((p&&p.etat)||'Feu')+'</b>.'}},
  /* Ombrelame — adversaires frappés : une amélioration d'Ombrelame. Il frappe deux adversaires au contact, ou tous. */
- lameventcibles:{cle:'lameventcibles',nom:'Ombrelame — adversaires frappés',court:'adversaires frappés',type:'ame',
-  aide:'Amélioration d’Ombrelame : il frappe deux adversaires au contact, ou tous.',
+ lameventcibles:{cle:'lameventcibles',nom:'Coupure — adversaires frappés',anciens:['Ombrelame — adversaires frappés'],court:'adversaires frappés',type:'ame',
+  aide:'Amélioration de Coupure : elle frappe deux adversaires au contact, ou tous.',
   params:[{cle:'cibles',nom:'Adversaires frappés',type:'choix',defaut:'2',options:[['2','Deux'],['tous','Tous ceux au contact']]}],
-  phrase(p){return '<b>Ombrelame</b> frappe '+((p&&p.cibles)==='tous'?'<b>tous les adversaires</b> au contact':'<b>deux</b> adversaires au contact')+'.'}},
+  phrase(p){return '<b>Coupure</b> frappe '+((p&&p.cibles)==='tous'?'<b>tous les adversaires</b> au contact':'<b>deux</b> adversaires au contact')+'.'}},
  /* Course mortelle : une action. Le porteur attaque ; s'il tue la cible, il rejoint d'un mouvement gratuit l'adversaire en vue
     le plus proche. Améliorations : il choisit qui il rejoint ; il y inflige Ombrelame. */
  coursemortelle:{cle:'coursemortelle',nom:'Course mortelle',type:'act',bouton:'☠ Course mortelle',attaque:true,
@@ -1127,9 +1127,9 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
  coursechoix:{cle:'coursechoix',nom:'Course mortelle — choix de l’adversaire',court:'choix de l’adversaire',type:'ame',
   aide:'Amélioration de Course mortelle : le porteur choisit l’adversaire qu’il rejoint.',
   params:[],phrase(){return 'Après <b>Course mortelle</b>, le porteur <b>choisit l’adversaire</b> qu’il rejoint parmi ceux qui s’éclairent.'}},
- courseombrelame:{cle:'courseombrelame',nom:'Course mortelle — Ombrelame',court:'Ombrelame',type:'ame',
-  aide:'Amélioration de Course mortelle : arrivé au contact du nouvel adversaire, le porteur lui inflige Ombrelame.',
-  params:[],phrase(){return 'Arrivé au contact du nouvel adversaire, le porteur lui inflige <b>Ombrelame</b>, avec ses améliorations.'}},
+ courseombrelame:{cle:'courseombrelame',nom:'Course mortelle — Coupure',anciens:['Course mortelle — Ombrelame'],court:'Coupure',type:'ame',
+  aide:'Amélioration de Course mortelle : arrivé au contact du nouvel adversaire, le porteur lui inflige Coupure.',
+  params:[],phrase(){return 'Arrivé au contact du nouvel adversaire, le porteur lui inflige <b>Coupure</b>, avec ses améliorations.'}},
  /* Bondissement : une réaction, gratuite. Visé par une attaque à distance, le porteur rejoint le tireur d'un mouvement gratuit,
     s'il est à sa portée de mouvement. Améliorations : quelle que soit la distance ; puis il l'attaque. */
  bondissement:{cle:'bondissement',nom:'Bondissement',type:'reac',bouton:'⤴ Bondissement',gratuit:true,
@@ -1148,7 +1148,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
   params:[],phrase(){return 'À chaque fois que le porteur inflige <b>une attaque</b> contre un adversaire, il augmente ses <b>dégâts</b> contre lui de <b>+1</b>, cumulable.'}},
  decoupedegats:{cle:'decoupedegats',nom:'Découpe — toute source de dégâts',court:'toute source de dégâts',type:'ame',
   aide:'Amélioration de Découpe : elle monte à chaque fois que le porteur inflige des dégâts à l’adversaire, de toute source.',
-  params:[],phrase(){return '<b>Découpe</b> monte à chaque fois que le porteur inflige des <b>dégâts</b> à l’adversaire, de toute source : attaque, Ombrelame et le reste.'}},
+  params:[],phrase(){return '<b>Découpe</b> monte à chaque fois que le porteur inflige des <b>dégâts</b> à l’adversaire, de toute source : attaque, Coupure et le reste.'}},
  decoupeplus:{cle:'decoupeplus',nom:'Découpe — dégâts accrus',court:'dégâts accrus',type:'ame',
   aide:'Amélioration de Découpe : chaque cran vaut +2, puis +3 au palier 2.',
   params:[{cle:'n1',nom:'Dégâts par cran au palier 1',type:'nombre',defaut:2,min:1,max:9},{cle:'n2',nom:'Dégâts par cran au palier 2',type:'nombre',defaut:3,min:1,max:9}],
@@ -1169,10 +1169,25 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
  lamepoisoncontact:{cle:'lamepoisoncontact',nom:'Lame empoisonnée — Poison au contact',court:'Poison au contact',type:'ame',
   aide:'Amélioration de Lame empoisonnée : le Poison gagne aussi un autre adversaire de la zone de contact.',
   params:[],phrase(){return '<b>Lame empoisonnée</b> inflige aussi son <b>Poison</b> à un autre adversaire de la zone de contact du porteur.'}},
- lameventelem:{cle:'lameventelem',nom:'Lamevent élémentaire',court:'état infligé',anciens:['Lamevent — état infligé'],type:'ame',
-  aide:'Amélioration d’Ombrelame : ses dégâts infligent aussi l’état réglé.',
+ lameventelem:{cle:'lameventelem',nom:'Lamevent élémentaire',court:'état infligé',anciens:['Lamevent — état infligé','Ombrelame — état infligé'],type:'ame',
+  aide:'Amélioration de Coupure : ses dégâts infligent aussi l’état réglé.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])}],
-  phrase(p){return 'Le porteur inflige <b>'+((p&&p.etat)||'Feu')+'</b> lorsqu’il inflige les dégâts d’<b>Ombrelame</b>.'}},
+  phrase(p){return 'Le porteur inflige <b>'+((p&&p.etat)||'Feu')+'</b> lorsqu’il inflige les dégâts de <b>Coupure</b>.'}},
+ /* Coupure — dégâts doublés : une amélioration. Contre un adversaire au contact d'un de ses alliés, Coupure frappe double. */
+ lameventdouble:{cle:'lameventdouble',nom:'Coupure — dégâts doublés',court:'dégâts doublés',type:'ame',
+  aide:'Amélioration de Coupure : le double des dégâts contre un adversaire au contact d’un de ses alliés.',
+  params:[],phrase(){return '<b>Coupure</b> inflige <b>le double de ses dégâts</b> à un adversaire <b>au contact d’un de ses alliés</b>.'}},
+ /* Insaisissable — Poison : une amélioration. Les adversaires dont le porteur quitte le contact reçoivent Poison 1, puis 2 au palier 2. */
+ insaisispoison:{cle:'insaisispoison',nom:'Insaisissable — Poison',court:'Poison',type:'ame',
+  aide:'Amélioration d’Insaisissable : Poison 1 aux adversaires dont le porteur quitte le contact ; Poison 2 au palier 2.',
+  params:[{cle:'n1',nom:'Poison au palier 1',type:'nombre',defaut:1,min:1,max:9},{cle:'n2',nom:'Poison au palier 2',type:'nombre',defaut:2,min:1,max:9}],
+  volets:[{cle:'fort',nom:'Valeur du palier 2',palier:2}],
+  phrase(p,palier,v){const n=(k,d)=>Math.max(1,Math.min(9,Math.trunc(Number(p&&p[k]))||d)),k=(v||{fort:2}).fort,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'Le porteur inflige <b>Poison '+n(deux?'n2':'n1',deux?2:1)+'</b> aux adversaires dont il <b>quitte le contact</b>.'}},
+ /* Insaisissable — dégâts : une amélioration. Les adversaires dont le porteur quitte le contact subissent son bonus de dégâts. */
+ insaisisdegats:{cle:'insaisisdegats',nom:'Insaisissable — dégâts',court:'dégâts',type:'ame',
+  aide:'Amélioration d’Insaisissable : le porteur inflige son bonus de dégâts aux adversaires dont il quitte le contact.',
+  params:[],phrase(){return 'Le porteur inflige son <b>bonus de dégâts</b> aux adversaires dont il <b>quitte le contact</b>.'}},
  /* Double attaque : un passif. Il n'ouvre aucun bouton — rien à déclencher — il élargit
     seulement ce qu'une attaque peut viser. Le ciblage accumule alors jusqu'à ce compte,
     et le bouton d'attaque les frappe toutes, chacune avec son propre jet. */
@@ -1264,9 +1279,9 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
   params:[],
   phrase(){return 'Le porteur peut <b>réamorcer un piège</b> réamorçable, déclenché ou désamorcé, à son contact.'}},
  insaisissable:{cle:'insaisissable',nom:'Insaisissable',type:'pass',
-  aide:'Passif : le porteur ignore les Dégâts d’Opportunité quand il effectue un mouvement.',
+  aide:'Passif : le porteur ignore les Dégâts d’Opportunité quand il effectue un mouvement, et entrer ou sortir de la zone de contact d’un adversaire n’interrompt pas son mouvement.',
   params:[],
-  phrase(){return 'Le porteur <b>ignore les Dégâts d’Opportunité</b> en effectuant un mouvement.'}},
+  phrase(){return 'Le porteur <b>ignore les Dégâts d’Opportunité</b> en effectuant un mouvement. Entrer ou sortir de la zone de contact d’un adversaire <b>n’interrompt pas</b> son mouvement.'}},
  /* Meute : un passif d'adversaire, la bête qui chasse en groupe. Un allié dans sa zone de
     contact, et le porteur double son bonus de dégâts ; la table mesure qui touche qui. */
  meute:{cle:'meute',nom:'Meute',type:'pass',monstre:true,
@@ -1656,7 +1671,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Ombrelame',anciens:['Lamevent
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
- contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
+ contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',insaisispoison:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
