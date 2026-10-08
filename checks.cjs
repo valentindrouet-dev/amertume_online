@@ -3398,7 +3398,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const C2=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  assert.ok(C2.TALENTS_CODES.impulsiontour.pour==='impulsion'&&C2.TALENTS_CODES.impulsionallie.pour==='impulsion','Impulsion');
  assert.equal(C2.pointsMax({points:{action:1},paBonus:1},'action'),2);assert.equal(C2.pointsMax({points:{action:1},paBonus:1},'action',true),1);
- assert.ok(idx.includes("if(vers.hp===0){ajouteBilan(de,'abat',1);impulsion(de,vers)}")&&idx.includes("floatNumber(a,'+1 PM','gain');")&&idx.includes("pt.className='pt '+(m[1]==='PA'?'action':'mvt')"),'Impulsion câblée');}
+ assert.ok(idx.includes("if(vers.hp===0){ajouteBilan(de,'abat',1);impulsion(de,vers)}")&&idx.includes("floatNumber(a,'+1 PM','gain');")&&idx.includes("pt.className='pt '+(pa?'action':'mvt');el.append(pt);el.style.color=pa?'#3f8fe0':'#cf9152'"),'Impulsion câblée');}
 /* v0.654 — Les états posés par un coup montent au-dessus de la cible, après ses dégâts. */
 assert.ok(fs.readFileSync('index.html','utf8').includes(" posesDits.forEach(e=>floatNumber(b,'✦ '+e,'perte'));"),'les états du coup montent');
 /* v0.653 — Lame empoisonnée, Poison au contact : l'adversaire le plus proche, puis tous ceux de la zone de contact au palier 2. */

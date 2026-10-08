@@ -995,8 +995,8 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 #map-canvas .shape.piege:not(.image-seule) .piege-image,.piege-table.jeton .piege-image{object-fit:cover}
 #map-canvas .shape.declencheur.zone{border:2px dashed #e0703a;background:#e0703a24;border-radius:3px}
 /* La hitbox d'un piège : son corps de blocage, en rouge, à part de son icône. */
-/* Le point d'Action, bleu, ou de Mouvement, marron, devant « +1 PA » et « +1 PM » qui montent. */
-.floater .pt{display:inline-block;width:.42em;height:.42em;margin-right:.22em;border-radius:50%;vertical-align:.12em;box-shadow:inset 0 -1px 0 rgba(0,0,0,.22),0 0 0 1.5px rgba(255,255,255,.7)}
+/* « +1 PA » en bleu, « +1 PM » en brun, et leur point à droite du mot. */
+.floater .pt{display:inline-block;width:.42em;height:.42em;margin-left:.22em;border-radius:50%;vertical-align:.12em;box-shadow:inset 0 -1px 0 rgba(0,0,0,.22),0 0 0 1.5px rgba(255,255,255,.7)}
 .floater .pt.action{background:#3f8fe0}.floater .pt.mvt{background:#cf9152}
 /* Course mortelle : les adversaires qu'on peut rejoindre s'éclairent, et attendent le clic. */
 .token.choix-course{outline:3px solid #8fe04f!important;outline-offset:4px;box-shadow:0 0 16px 5px #8fe04f99;cursor:pointer;animation:choixCourse 1.1s ease-in-out infinite alternate}
