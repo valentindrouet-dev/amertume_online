@@ -3387,6 +3387,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.638 — L'arrêt au contact se fait à la sortie : entré à plus de moitié dans la zone d'un adversaire, le socle qui en ressort
+   s'arrête au bord, une fois par adversaire et par tour. La barre de mouvement est celle du token sélectionné. */
+assert.ok(page.includes("if(tokenDistance(a,o,size)<=contactRadius(tokenOf(o)))eng.add(o.id);continue}")&&page.includes("if(!eng.has(o.id))continue;eng.delete(o.id);if(s===0||faits.has(o.id))continue;")
+ &&page.includes("const a=actors[selected]||null;barreMouvement(a,a?resteMouvement(a):0)}"),'l’arrêt en sortie de zone, une fois ; la barre du token sélectionné');
 /* v0.637 — La barre de mouvement, l'arrêt au contact, le gel du début de combat, les flèches d'un mètre, Échanger un objet et
    Changer d'armes, le verrou des armes en combat, le glisser d'une fiche à l'autre, Enjamber au-dessus du piège, le bruit coupé. */
 {const src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
@@ -4983,4 +4987,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1870 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1871 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
