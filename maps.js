@@ -1064,7 +1064,7 @@ function declenchePiege(p,o,contact){const m=currentMap();if(!m||!piegeArme(p)||
  if(p.evitement){const t=p.evitement,jet=skillRoll(valeurCompetence(o,t.comp)-1,d6),n=jet.reussites,ok=n>=t.reussites;
   rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),o,null);if(ok)issue=t.issue;
   essai=nomNum(o)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — '+(ok?(issue==='esquive'?'esquive le piège':'amortit le piège'):'ne l’évite pas')+'.'}
- const depuis=contact&&issue!=='esquive'?{x:o.x,y:o.y}:null;if(depuis){const c=centrePiege(p);o.x=c.x;o.y=c.y;if(p.actif||p.enjambement)o.tenuPar=p.id}
+ const depuis=contact&&issue!=='esquive'?{x:o.x,y:o.y}:null;if(depuis){const c=centrePiege(p);o.avantPiege={x:depuis.x,y:depuis.y};o.x=c.x;o.y=c.y;if(p.actif||p.enjambement)o.tenuPar=p.id}
  floatNumber(o,'Piège !','perte');if(issue==='esquive')setTimeout(()=>floatNumber(o,'Esquive !','gain'),650);
  const parts=[];
  if(issue!=='esquive'){const jet=tireDegats(p),deg=issue==='moitie'?Math.floor(jet.total/2):jet.total;
@@ -1076,6 +1076,16 @@ function declenchePiege(p,o,contact){const m=currentMap();if(!m||!piegeArme(p)||
  log('Piège ! '+p.nom+' se déclenche sur '+nomNum(o)+(parts.length?' — '+parts.join(', '):'')+'.',{ton:'degats'});
  if(essai)log(essai,{dice:true,ton:'competence'});
  render();if(depuis)glisseAuPiege(o,depuis);saveMaps();scheduleSave()}
+/* Où sortir d'un piège : la place d'où il a happé le socle ; sinon, autour de lui, le premier point libre — hors du piège et de
+   sa hitbox, hors des murs —, en s'éloignant peu à peu. */
+function sortieDuPiege(o,p){if(o.avantPiege&&Number.isFinite(o.avantPiege.x)&&Number.isFinite(o.avantPiege.y))return {x:o.avantPiege.x,y:o.avantPiege.y};
+ const size=mapSize(),c=centrePiege(p);if(!size.width)return {x:o.x,y:o.y};
+ const r=tokenOf(o)/2,murs=typeof obstaclesDuPas==='function'?obstaclesDuPas((x,y)=>[x/100*size.width,y/100*size.height]):[];
+ for(let d=r;d<size.width;d+=r/2)for(let k=0;k<16;k++){const t=k/16*2*Math.PI,q=[c.x/100*size.width+Math.cos(t)*d,c.y/100*size.height+Math.sin(t)*d];
+  if(q[0]<r||q[1]<r||q[0]>size.width-r||q[1]>size.height-r||touchePiege(p,q,r,size))continue;
+  const s=murs.length?slideOutOfWalls(q,murs,r):q;if(Math.hypot(s[0]-q[0],s[1]-q[1])>.5)continue;
+  return {x:q[0]/size.width*100,y:q[1]/size.height*100}}
+ return {x:o.x,y:o.y}}
 // Le socle happé glisse jusqu'au centre du piège, du point où il l'a touché.
 function glisseAuPiege(o,depuis){const el=document.querySelector('#map-view .token[data-id="'+CSS.escape(o.id)+'"]');if(!el)return;
  el.style.left=depuis.x+'%';el.style.top=depuis.y+'%';void el.offsetWidth;el.classList.add('glisse');el.style.left=o.x+'%';el.style.top=o.y+'%';if(typeof suitLaJauge==='function')suitLaJauge(el)}
@@ -1171,7 +1181,9 @@ function testPiege(a,p,quoi){const t=p&&p[quoi],dedans=quoi==='enjambement'&&!!p
  const jet=skillRoll(valeurCompetence(a,t.comp)-1,d6),n=jet.reussites,ok=n>=t.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
  const tete=nomNum(a)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — ';
  if(quoi==='desamorcage'){if(ok)p.desamorce=true;log(tete+(ok?'désamorce '+p.nom:'ne parvient pas à désamorcer '+p.nom)+'.',{dice:true,ton:'competence'})}
- else{log(tete+(ok?'enjambe '+p.nom:'trébuche sur '+p.nom)+'.',{dice:true,ton:'competence'});if(ok){a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60);delete a.tenuPar}}
+ else{log(tete+(ok?'enjambe '+p.nom:'trébuche sur '+p.nom)+'.',{dice:true,ton:'competence'});if(ok){a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60);delete a.tenuPar}
+  // Sorti du fond, il regagne la place d'où le piège l'avait happé, ou à défaut le bord le plus proche, hors du piège.
+  if(ok&&dedans){const de={x:a.x,y:a.y},q=sortieDuPiege(a,p);a.x=q.x;a.y=q.y;delete a.avantPiege;if(typeof settleActor==='function')settleActor(a);render();glisseAuPiege(a,de);saveMaps();scheduleSave();return}}
  if(enCombat()&&typeof afterAction==='function')afterAction(a);
  /* Manqué du bord, l'aventurier est précipité dans le piège ; manqué du fond, il y reste et en subit encore les états. */
  if(quoi==='enjambement'&&!ok&&dedans){const etats=(p.etats||[]).filter(e=>infligeEtat(a,e)===true);floatNumber(a,'Piège !','perte');
