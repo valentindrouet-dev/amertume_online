@@ -715,7 +715,14 @@ function zonePerception(a){const size=mapSize(),W=size.width,H=size.height;if(!a
  const A=auraPx(a.x,a.y,contactRadius(tokenOf(a)),W,H);let zone={nouvelle:[],part:0};
  if(A){let N=A;try{if(U.length)N=Clipper.difference(A,U)}catch(e){}const aA=aireMulti(A);zone={nouvelle:N,part:aA?aireMulti(N)/aA:0}}
  zoneCache={cle,zone};return zone}
-function zoneFouillee(a){return zonePerception(a).part<PART_MINIMALE}
+/* Un aventurier peut fouiller tant qu'une part de son socle, même infime, déborde des zones déjà fouillées ; tout entier
+   dedans, il n'a plus rien à y chercher. Le socle se découpe aux murs, comme l'aura. */
+let socleFouilleCache={cle:'',dedans:false};
+function zoneFouillee(a){const size=mapSize(),W=size.width,H=size.height;if(!a||!W||!H)return false;const U=unionFouilles();if(!U.length)return false;
+ const cle=a.x+','+a.y+','+tokenOf(a)+'|'+fouillesCache.cle;if(socleFouilleCache.cle===cle)return socleFouilleCache.dedans;
+ const D=auraPx(a.x,a.y,tokenOf(a)/2,W,H);let dedans=false;
+ if(D)try{const tout=aireMulti(D);dedans=aireMulti(Clipper.difference(D,U))<=Math.max(1,tout*.002)}catch(e){dedans=false}
+ socleFouilleCache={cle,dedans};return dedans}
 // Un objet se trouve si une part de son socle tombe dans ce que le test fouille vraiment.
 function dansFouilleNeuve(o,nouvelle){const size=mapSize(),W=size.width,H=size.height;if(!W||!nouvelle||!nouvelle.length)return false;
  const D=disquePx(o.x,o.y,tokenPx()*(SOCLE_TAILLES[o.taille]||1)/2,W,H);try{return aireMulti(Clipper.intersection(D,nouvelle))>.5}catch(e){return false}}

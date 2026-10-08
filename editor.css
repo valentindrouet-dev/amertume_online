@@ -365,7 +365,7 @@ button.btn-analyse,button.btn-analyse.on,button.btn-mvt{--fond:#cf9152;color:#ff
 button.btn-analyse[hidden]{display:none}
 /* Repos court : vert, texte blanc ; grisé en combat et une fois pris. */button.btn-repos{--fond:#4f9a5a;color:#fff}button.btn-repos[hidden]{display:none}
 /* Crier : ambre, texte blanc ; grisé une fois le cri poussé, jusqu’à la fin du prochain combat. */button.btn-crier{--fond:#b9772c;color:#fff}button.btn-crier[hidden]{display:none}
-/* Fouiller : jaune, comme la Perception ; en exploration seulement. */button.btn-fouiller{--fond:rgb(157,123,30);color:#fff}button.btn-fouiller[hidden]{display:none}
+/* Fouiller : jaune, comme la Perception ; en exploration seulement. */button.btn-fouiller{--fond:#e0b84c;color:#fff}button.btn-fouiller[hidden]{display:none}
 /* Retirer un objet du sac : une petite croix rouge, au coin, qui ne paraît qu'au survol. */
 .sac .gear-carre{position:relative}.sac .retirer-sac{position:absolute;top:-7px;right:-7px;width:20px;height:20px;padding:0;margin:0;border-radius:50%;border:2px solid var(--panel);background:#c0392b;color:#fff;font:700 11px/1 system-ui;display:grid;place-items:center;opacity:0;transform:scale(.8);transition:opacity .12s,transform .12s;z-index:3;cursor:pointer;box-shadow:0 1px 3px #0006}
 .sac .gear-carre:hover .retirer-sac,.sac .gear-carre:focus-within .retirer-sac{opacity:1;transform:scale(1)}.sac .retirer-sac:hover{background:#a02c20}
@@ -1418,6 +1418,8 @@ body.sans-noms :is(#armory-page,#talents-page,#bestiary-page,#heroes-page) .nom-
 .bulle-modele .stat-tile .ecu{width:20px;height:24px;margin:2px auto 0}.bulle-modele .stat-tile .ecu b{font-size:11px}
 .bulle-talents{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .bulle-inventaire{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+/* Ce qui reste inconnu d'un adversaire, et l'invitation à l'analyser. */.bulle-inconnu{margin:5px 0 0;font:600 12px system-ui;color:var(--muted)}.bulle-inconnu b{font:700 15px Georgia,serif;color:var(--ink)}.bulle-analyse{margin:7px 0 0!important;font:italic 12px/1.35 Georgia,serif;color:var(--accent)}
+/* La bulle d'un combattant au survol de son token : son image en grand à gauche, nom, vie et PV à côté. */.bulle-comb-tete{display:flex;align-items:center;gap:10px}.bulle-comb-col{flex:1;min-width:0;display:grid;gap:3px}.bulle-comb-vie .lifebar{display:block;width:100%}.bulle-comb-pv{font:700 12px system-ui;color:var(--muted)}.bulle-combattant .stat-row{grid-template-columns:repeat(3,1fr)}
 /* Une pièce au journal, surlignée comme à l'Armurerie : la teinte de sa rareté, son logo, son nom. */
 /* Sur la ligne du texte : la pastille garde la ligne de base des mots autour, le logo s'y cale. */
 .j-objet{display:inline-block;padding:1px 3px;border-radius:6px;background:#e2ded7;border:1px solid #00000024;color:#2a2118;font-weight:700;line-height:1.3;vertical-align:baseline;cursor:default}

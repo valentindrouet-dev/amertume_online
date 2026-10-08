@@ -235,6 +235,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(typeof c.logoRemplissage!=='string'||!c.logoRemplissage||c.logoRemplissage.length>120)delete c.logoRemplissage;
  // L'icône de l'Attaque d'un aventurier qui n'a pas d'arme en main.
  if(typeof c.logoAttaqueBase!=='string'||!c.logoAttaqueBase||c.logoAttaqueBase.length>120)delete c.logoAttaqueBase;
+ // Ce que la troupe a appris de chaque type d'adversaire par l'Analyse : six clés connues, par modèle.
+ {const an=c.analyses&&typeof c.analyses==='object'&&!Array.isArray(c.analyses)?c.analyses:{},ok=['pv','def','dmg','xp','talents','equip'];c.analyses={};
+  Object.entries(an).forEach(([k,l])=>{if(typeof k==='string'&&k.length<=80&&Array.isArray(l)){const v=[...new Set(l.filter(x=>ok.includes(x)))];if(v.length)c.analyses[k]=v}});
+  if(!Object.keys(c.analyses).length)delete c.analyses}
  // L'icône et le texte des actions spéciales.
  c.actionsSpeciales=normaliseActionsSpeciales(c.actionsSpeciales);if(!Object.keys(c.actionsSpeciales).length)delete c.actionsSpeciales;
  // L'image qu'un état prend à la place de celle du jeu : Gardé, pour l'heure.
@@ -511,7 +515,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  const bonusDe=at=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
  const retenu=Math.trunc(a&&a.activeAttack)||0,actuelle=liste.length?liste[retenu<liste.length?retenu:0]:null;
  // Un adversaire qu'on n'a pas analysé garde ses dés pour lui, chez les joueurs.
- const voit=!!a&&(view==='mj'||a.hero||duCoteTroupe(a)||!!a.revealed);
+ const voit=!!a&&(view==='mj'||(typeof connait==='function'?connait(a,'dmg'):a.hero||duCoteTroupe(a)||!!a.revealed));
  const revient=()=>montreDesCombattant(voit&&actuelle?actuelle.dice:null,bonusDe(actuelle),!!actuelle&&actuelle.useOwnDamage!==false,actuelle?logosDeAttaque(actuelle):null,voit?partOrbes(a):null);
  const survol=(b,dice,bonus,toujours,logos,etat)=>{if(!voit||!dice)return;
   b.addEventListener('pointerenter',()=>montreDesCombattant(dice,bonus,toujours,logos,null,etat));b.addEventListener('pointerleave',revient)};
@@ -702,6 +706,7 @@ const bestiaryPage=document.createElement('main');bestiaryPage.id='bestiary-page
 bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Bestiaire</h2><div class="cat-actions">'
  +'<button id="bestiary-masse" type="button" aria-pressed="false" title="Modifier PV, DEF, dégâts, XP… de tous les adversaires affichés">✎ Modifier en masse</button>'
+ +'<button id="bestiary-analyses" type="button" title="Effacer tout ce que la troupe a appris des adversaires par l’Analyse">↺ Réinitialiser les analyses</button>'
  +'<button id="bestiary-pnj">+ Nouveau PNJ</button><button id="bestiary-add" class="primary">+ Nouveau monstre</button></div></header>'
  
  +'<div class="cat-filters"><input id="bestiary-search" placeholder="Rechercher…" aria-label="Rechercher un monstre">'
@@ -2350,19 +2355,21 @@ function bestiaryRow(m,i){const carte=document.createElement('div');carte.classN
    carrés. Type, famille et socle se lisent ailleurs. Rien à corriger ici : le
    formulaire s'ouvre d'un clic. */
 function bulleModele(m){const d=document.createElement('div');d.className='cat-detail bulle-modele-corps k-'+(m.type||'standard');
+ // Chez les joueurs, seul ce que la troupe a analysé de l'espèce se lit ; le reste est un « ? ».
+ const sait=k=>view==='mj'||!!(catalog.analyses&&(catalog.analyses[m.id]||[]).includes(k))||actors.some(a=>duModele(a,m)&&typeof connuDe==='function'&&connuDe(a).has(k));
  const ligne=(texte,cls)=>{if(!texte)return;const p=document.createElement('p');if(cls)p.className=cls;p.textContent=texte;d.append(p)};
  ligne(m.name,'best-bulle-nom');
  // Il porte tout ce qu'il possède, même un modèle enregistré avant ce choix.
  const eq=equipeAdversaire({...m,hero:false,inventaire:[...(m.inventaire||[])]});
  const defPortee=equippedDef(eq,catalog.items),chiffres=document.createElement('div');chiffres.className='stat-row';
- [['pv','PV',m.pv||0],['def','DEF',defPlafonnee(defPortee===null?m.def:defPortee),true],['dmg','Dég.','+'+(m.damage||0)],['xp','XP',m.xp||0]].forEach(x=>chiffres.append(statTile(...x)));
+ [['pv','PV',sait('pv')?m.pv||0:'?'],['def','DEF',sait('def')?defPlafonnee(defPortee===null?m.def:defPortee):'?',true],['dmg','Dég.',sait('dmg')?'+'+(m.damage||0):'?'],['xp','XP',sait('xp')?m.xp||0:'?']].forEach(x=>chiffres.append(statTile(...x)));
  d.append(chiffres);
  /* Ses attaques, celles de son équipement comme ses attaques spéciales : le logo, le nom, puis
     les états qu'elles infligent, les dés et le bonus de dégâts, comme sur un bouton de table. */
  // Sans arme ni attaque spéciale, il frappe de ses propres dés.
  const propres=m.dice&&Object.values(m.dice).some(n=>n>0)?[{name:'Attaque',dice:m.dice,range:'contact',useOwnDamage:true}]:[];
  const choix=attackChoices(eq,catalog.items||[]),attaques=choix.length?choix:propres;
- if(attaques.length){const liste=document.createElement('div');liste.className='bulle-attaques';
+ if(attaques.length&&sait('dmg')){const liste=document.createElement('div');liste.className='bulle-attaques';
   attaques.forEach(at=>{const l=document.createElement('div');l.className='bulle-attaque';
    (at.logos||[]).slice(0,2).forEach(x=>{const im=logoAttaque(x,'mini');if(im)l.append(im)});
    const n=document.createElement('span');n.className='bulle-att-nom';n.textContent=at.name||'Attaque';
@@ -2371,26 +2378,56 @@ function bulleModele(m){const d=document.createElement('div');d.className='cat-d
    l.append(n,bas);liste.append(l)});
   d.append(liste)}
  // Ses talents en petits ronds, comme leurs boutons ailleurs ; le nom au survol.
- const talents=(m.talents||[]).map(talent).filter(Boolean);
- if(talents.length){const rang=document.createElement('div');rang.className='bulle-talents';
-  talents.forEach(t=>{const r=talentRond(t);r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;r.setAttribute('aria-label',n);rang.append(r)});
-  d.append(rang)}
+ if(sait('talents'))rangTalents(d,(m.talents||[]).map(talent).filter(Boolean));else inconnuBulle(d,'Talents');
  // Son inventaire dessous, en petits carrés aussi : l'icône, le nombre d'exemplaires ; le nom au survol.
- const comptes=new Map();(m.inventaire||[]).map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
- if(comptes.size){const rang=document.createElement('div');rang.className='bulle-inventaire';
-  comptes.forEach((n,o)=>{const c=document.createElement('span');c.className='inv-mini r-'+rareteDe(o);c.title=o.name+(n>1?' ×'+n:'');c.setAttribute('aria-label',c.title);
-   c.append(logoEquipement(o)||glyphePiece(itemColumn(o)));
-   if(n>1){const x=document.createElement('span');x.className='inv-mini-n';x.textContent='×'+n;c.append(x)}rang.append(c)});
-  d.append(rang)}
+ if(sait('equip'))rangInventaire(d,m.inventaire);else inconnuBulle(d,'Équipement');
+ if(view!=='mj'&&typeof INFOS_ANALYSE!=='undefined'&&INFOS_ANALYSE.some(([k])=>!sait(k)))noteAnalyse(d);
  return d}
-/* Un modèle est « analysé » dès qu'une des créatures posées qui en descend l'a été :
-   c'est l'espèce que la troupe a percée, pas l'individu. */
-function modeleAnalyse(m){return actors.some(a=>!a.hero&&a.revealed
- &&(a.template?a.template===m.id:a.name===m.name))}
-function oublierAnalyse(m){let n=0;
- actors.forEach(a=>{if(!a.hero&&a.revealed&&(a.template?a.template===m.id:a.name===m.name)){a.revealed=false;n++}});
+// Des talents en petits ronds, le nom au survol.
+function rangTalents(d,talents){if(!talents.length)return;const rang=document.createElement('div');rang.className='bulle-talents';
+ talents.forEach(t=>{const r=talentRond(t);r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;r.setAttribute('aria-label',n);rang.append(r)});
+ d.append(rang)}
+// Des pièces en petits carrés : l'icône, le nombre d'exemplaires ; le nom au survol.
+function rangInventaire(d,ids){const comptes=new Map();(ids||[]).map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
+ if(!comptes.size)return;const rang=document.createElement('div');rang.className='bulle-inventaire';
+ comptes.forEach((n,o)=>{const c=document.createElement('span');c.className='inv-mini r-'+rareteDe(o);c.title=o.name+(n>1?' ×'+n:'');c.setAttribute('aria-label',c.title);
+  c.append(logoEquipement(o)||glyphePiece(itemColumn(o)));
+  if(n>1){const x=document.createElement('span');x.className='inv-mini-n';x.textContent='×'+n;c.append(x)}rang.append(c)});
+ d.append(rang)}
+// Ce que la troupe ne sait pas encore : son nom, et un « ? ».
+function inconnuBulle(d,quoi){const p=document.createElement('p');p.className='bulle-inconnu';const b=document.createElement('b');b.textContent='?';p.append(quoi+' : ',b);d.append(p)}
+function noteAnalyse(d){const p=document.createElement('p');p.className='bulle-analyse';p.textContent='Analysez un adversaire pour en savoir davantage à son sujet !';d.append(p)}
+/* La bulle d'un combattant, au survol de son token : son image en grand, son nom, sa vie, sa DEF, ses dégâts, son XP, ses
+   talents et son équipement, sans les compétences. D'un adversaire, ce que la troupe n'a pas analysé reste un « ? », chez le
+   MJ aussi : la bulle dit ce que la table sait ; sa fiche garde tout pour le MJ. */
+function bulleCombattant(o){const d=document.createElement('div');d.className='cat-detail bulle-modele-corps bulle-combattant-corps'+(o.hero?' heros':' k-'+(o.type||'standard'));
+ const sait=k=>typeof connait!=='function'||connait(o,k);
+ const tete=document.createElement('div');tete.className='bulle-comb-tete';tete.append(jetonRond(o.image,o.name,'grand'));
+ const col=document.createElement('div');col.className='bulle-comb-col';
+ const nom=document.createElement('p');nom.className='best-bulle-nom';nom.textContent=typeof nomNum==='function'?nomNum(o):o.name;
+ const vie=document.createElement('div');vie.className='bulle-comb-vie';vie.innerHTML=lifebar(ratio(o),'',!!o.hero,o.pnj?alignementDe(o):'');
+ const pv=document.createElement('p');pv.className='bulle-comb-pv';pv.textContent=sait('pv')?o.hp+' / '+o.max+' PV':'? PV';
+ col.append(nom,vie,pv);tete.append(col);d.append(tete);
+ const chiffres=document.createElement('div');chiffres.className='stat-row';
+ [['def','DEF',sait('def')?defOf(o):'?',true],['dmg','Dég.',sait('dmg')?'+'+degatsDe(o):'?'],['xp','XP',sait('xp')?Math.trunc(Number(o.xp))||0:'?']].forEach(x=>chiffres.append(statTile(...x)));
+ d.append(chiffres);
+ const tal=o.hero?talentsDeFiche(o):(o.talents||[]).map(talent).filter(Boolean);
+ if(sait('talents'))rangTalents(d,tal);else inconnuBulle(d,'Talents');
+ // Ce qu'il porte : l'arme, l'armure, le bouclier d'un aventurier ; tout l'inventaire d'un adversaire, qui porte tout.
+ const porte=o.hero?[...(o.weapons||[]),...(typeof armuresDe==='function'?armuresDe(o):o.armures||[]),...(o.shieldId?[o.shieldId]:[])]:(typeof equipeAdversaire==='function'?equipeAdversaire(o):o).inventaire;
+ if(sait('equip'))rangInventaire(d,porte);else inconnuBulle(d,'Équipement');
+ if(!o.hero&&!duCoteTroupe(o)&&typeof INFOS_ANALYSE!=='undefined'&&INFOS_ANALYSE.some(([k])=>!sait(k)))noteAnalyse(d);
+ return d}
+/* Un modèle est « analysé » dès que la troupe en sait quelque chose : c'est l'espèce qu'elle perce, pas l'individu. */
+const duModele=(a,m)=>!a.hero&&(a.template?a.template===m.id:a.name===m.name);
+function modeleAnalyse(m){return !!(catalog.analyses&&(catalog.analyses[m.id]||[]).length)||actors.some(a=>duModele(a,m)&&(a.revealed||(Array.isArray(a.connu)&&a.connu.length)))}
+function oublierAnalyse(m){let n=catalog.analyses&&catalog.analyses[m.id]?1:0;if(n){const o={...catalog.analyses};delete o[m.id];catalog.analyses=o}
+ actors.forEach(a=>{if(duModele(a,m)&&(a.revealed||a.connu)){a.revealed=false;delete a.connu;n++}});
  return n}
+// Le Bestiaire efface d'un coup tout ce que la troupe a appris, et les Analyses déjà faites pendant le combat en cours.
+function oublierAnalyses(){delete catalog.analyses;actors.forEach(a=>{if(!a)return;if(a.hero)delete a.analysesFaites;else{a.revealed=false;delete a.connu}})}
 function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.replaceChildren();
+ if($('bestiary-analyses'))$('bestiary-analyses').hidden=view!=='mj';
  const masse=bestiaryMasse&&view==='mj',bm=$('bestiary-masse');if(bm){bm.hidden=view!=='mj';bm.setAttribute('aria-pressed',String(masse));bm.classList.toggle('on',masse)}
  cols.classList.toggle('en-masse',masse);const tous=[];
  // La troupe ne lit au bestiaire que ce qu'elle a analysé.
@@ -4743,6 +4780,7 @@ $('armory-add').onclick=()=>openItem(null);
 $('bestiary-search').oninput=renderBestiary;$('bestiary-family').onchange=renderBestiary;
 $('bestiary-sort').onchange=renderBestiary;
 $('bestiary-masse').onclick=()=>{bestiaryMasse=!bestiaryMasse;renderBestiary()};
+$('bestiary-analyses').onclick=()=>{if(view!=='mj'||!confirm('Réinitialiser toutes les analyses ?'))return;oublierAnalyses();renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
 /* Les tris choisis restent d'une session à l'autre, sur l'appareil — le rechargement qui suit une
    mise à jour les remettait à zéro : Armurerie, Bestiaire, Talents, et le tri par colonne du
    tableau de Modifier en masse. */
