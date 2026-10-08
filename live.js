@@ -183,6 +183,14 @@ function glisserDistant(d,force){const B=d.actors||{};let bouge=false;
   glisseVers(a,e.x,e.y);bouge=true});
  if(bouge||force)planifieRenduComplet()}
 /* Le rendu complet attend la fin du geste local : un rendu détruirait le socle tenu. */
+/* Prendre ce qui est au sol se joue sur la table, d'un seul coup : une transaction relit l'état du sol tel que le serveur le
+   tient, et ne marque la chose prise que si personne ne l'a prise avant. « marque » reçoit le tableau des portes et objets du
+   document et rend le tableau marqué, ou null si c'est déjà pris. Rend vrai si la prise est à nous ; hors ligne, toujours vrai.
+   Un MJ et un joueur qui ramassent la même torche au même instant : un seul l'a. */
+function reserveSurTable(marque){if(!enLigne||!salleRef)return Promise.resolve(true);
+ return salleRef.firestore.runTransaction(async tx=>{const s=await tx.get(salleRef),d=s.exists?s.data():null;
+  const neuf=marque(Array.isArray(d&&d.doors)?d.doors.slice():[]);if(!neuf)return false;
+  tx.update(salleRef,{doors:neuf,at:firebase.firestore.FieldValue.serverTimestamp()});return true}).catch(e=>{console.warn('Prise refusée',e);return false})}
 // Les adversaires révélés que le dernier document reçu dit encore debout : la fin du combat les attend.
 function adversairesDeboutTable(){if(!enLigne||!dernierDoc||!dernierDoc.actors)return 0;
  return Object.entries(dernierDoc.actors).filter(([id,e])=>{const a=actors.find(x=>x&&x.id===id);

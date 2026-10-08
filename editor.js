@@ -5756,7 +5756,7 @@ function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(no
    illisible n'empêche pas l'export : le journal dit ce qui manque au fichier. */
 const ANNEXES_SAUVEGARDE=[];
 // Les réglages de l'appareil. Ni l'onglet ouvert, ni la table en ligne, ni les marques de fenêtre : ils ne servent qu'ici.
-const REGLAGES_APPAREIL=['amertume-raccourcis','amertume-portees','amertume-distances','amertume-noms','amertume-tris','amertume-biblio-plis','amertume-xp-visible','amertume-bulles-coffres','amertume-fouilles','amertume-mouvement-limite','amertume-bruit-coupe'];
+const REGLAGES_APPAREIL=['amertume-raccourcis','amertume-portees','amertume-distances','amertume-noms','amertume-tris','amertume-biblio-plis','amertume-xp-visible','amertume-bulles-coffres','amertume-fouilles','amertume-mouvement-limite','amertume-bruit-coupe','amertume-impraticables'];
 ANNEXES_SAUVEGARDE.push({nom:'le journal',
  lit:()=>{garderJournal();let j=[];try{j=JSON.parse(localStorage.getItem(JOURNAL_CLE)||'[]')}catch(e){}return {journal:Array.isArray(j)?j:[]}},
  pose:s=>{if(!Array.isArray(s.journal))return;localStorage.setItem(JOURNAL_CLE,JSON.stringify(s.journal));$('journal').replaceChildren();logRound=null;rejouerJournalGarde()}},

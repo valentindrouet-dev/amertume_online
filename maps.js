@@ -127,8 +127,20 @@ function renderHalos(){const cv=toileHalos(),m=currentMap(),size=mapSize();
    de son menu. Un aventurier au contact prend l'objet d'un clic : la lumière s'éteint et n'est plus là. */
 function lumiereAPortee(a,l){const size=mapSize();if(!a||!size.width)return false;
  const p=pointLibre(l,walls())||l;return inContact(a,l,size,tokenOf(a),tokenPx()*SOCLE_TAILLES.small)&&!wallsBetween(a,p,walls())}
+/* Ce qui se prend au sol se réserve d'abord sur la table (reserveSurTable) : la prise n'a lieu qu'une fois, même si deux
+   tables la tentent au même instant. Les rangs dans le tableau des portes sont ceux qu'etatVivant écrit. */
+function rangsSol(m){const n=(m.doors||[]).length,n2=n+(m.objets||[]).length,n3=n2+(m.coffres||[]).length;return {n,n2,n3}}
+function prisSurTable(marque,fait){if(!marque||typeof reserveSurTable!=='function'||typeof enLigne==='undefined'||!enLigne)return fait();
+ reserveSurTable(marque).then(ok=>{if(ok)fait();else{render();scheduleSave()}})}
 function recupererLumiere(a,l){if(!a||!l||l.eteinte)return;
  const pieces=(l.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);if(!pieces.length)return;
+ const m=currentMap();if(!m)return;
+ // Un sac plein ne prend rien : on ne réserve pas ce qu'on ne pourra pas porter.
+ if(typeof inventairePlein==='function'&&pieces.every(it=>inventairePlein(a,it)))return;
+ const marque=l.pose?arr=>{const k=arr.findIndex(v=>v&&typeof v==='object'&&v.p===l.id);if(k<0)return null;arr.splice(k,1);return arr}
+  :arr=>{const k=rangsSol(m).n3+(m.lumieres||[]).filter(x=>x&&!x.pose).indexOf(l);if(k<rangsSol(m).n3||arr[k]===2)return null;arr[k]=2;return arr};
+ prisSurTable(marque,()=>recupereLumiereFait(a,l,pieces))}
+function recupereLumiereFait(a,l,pieces){
  // Un sac plein ne prend rien : la lumière reste où elle est.
  const pris=pieces.filter(it=>{if(typeof ajouterInventaire==='function')return ajouterInventaire(a,it)!==false;noteInventaire(a,it.name);return true});if(!pris.length)return;
  // Posée au sol, elle s'en va avec son objet ; une lumière de la carte s'éteint, et la carte rouverte la rallume.
@@ -656,7 +668,9 @@ function bulleObjetCarte(o){const d=document.createElement('div');d.className='b
  return d}
 /* Récupérer un objet : ses pièces vont à l'inventaire de l'aventurier, son trésor à ses notes, et
    l'objet quitte la carte pour toute la table — jusqu'à ce que la carte soit rechargée. */
-function recupererObjet(a,o){if(!a||!o||o.pris)return;
+function recupererObjet(a,o){if(!a||!o||o.pris)return;const m=currentMap(),k=m?(m.objets||[]).indexOf(o):-1;
+ prisSurTable(k<0?null:arr=>{const i=rangsSol(m).n+k;if(arr[i]===2)return null;arr[i]=2;return arr},()=>recupereObjetFait(a,o))}
+function recupereObjetFait(a,o){
  const pieces=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
  pieces.forEach(it=>{if(typeof ajouterInventaire==='function')ajouterInventaire(a,it);else noteInventaire(a,it.name)});
  if(o.tresor)noteInventaire(a,o.tresor);o.pris=true;
@@ -843,9 +857,10 @@ if($('coffres-bulles'))$('coffres-bulles').onclick=()=>{bullesCoffresMJ=!bullesC
    part en vue se découpe. */
 /* Le terrain impraticable, à la table : chez le MJ seul, en pointillés rouges, au-dessus du brouillard ; la troupe ne le voit
    jamais, elle s'y heurte. */
+let impratVisible=(()=>{try{return localStorage.getItem('amertume-impraticables')!=='0'}catch(e){return true}})();
 function renderImpraticables(){let svg=$('impraticables-mj');if(!svg){svg=document.createElementNS(nsSVG,'svg');svg.id='impraticables-mj';svg.setAttribute('viewBox','0 0 100 100');
   svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');$('fog').after(svg)}
- svg.replaceChildren();const m=currentMap();if(!m||view!=='mj'||(typeof oeilJoueur==='function'&&oeilJoueur()))return;
+ svg.replaceChildren();const m=currentMap();if(!m||view!=='mj'||!impratVisible||(typeof oeilJoueur==='function'&&oeilJoueur()))return;
  impraticableDe(m).forEach(p=>{const el=document.createElementNS(nsSVG,'path');
   el.setAttribute('d',p.anneaux.map(r=>'M'+r.map(q=>q[0].toFixed(3)+' '+q[1].toFixed(3)).join('L')+'Z').join(''));el.setAttribute('class','imprat-mj');svg.append(el)})}
 function renderCoffres(){renderImpraticables();const calque=$('map-coffres'),vue=$('map-view'),m=currentMap();calque.replaceChildren();vue.querySelectorAll('.coffre-alerte,.coffre-cadenas').forEach(x=>x.remove());majBoutonCoffres();
@@ -935,7 +950,12 @@ function ouvreCoffreJoueur(c){const a=heroActif();
  if(coffreVerrouille(c)){c.deverrouille=true;log(nomNum(a)+' déverrouille '+c.nom+' avec '+nomCle(c.cleId)+'.',{ton:'carte'})}
  ouvrirCoffre(c,a,false)}
 /* En combat, ouvrir coûte l'Action de qui ouvre, que le geste vienne de lui ou du MJ. */
-function ouvrirCoffre(c,h,parMJ){if(!c||c.ouvert||(coffreVerrouille(c)&&!parMJ))return;if(h&&!payeAction(h))return;
+function ouvrirCoffre(c,h,parMJ){if(!c||c.ouvert||(coffreVerrouille(c)&&!parMJ))return;
+ // Sans Action en combat, le refus se dit, et rien ne se réserve.
+ if(h&&enCombat()&&pointsRestants(h,'action')<=0){payeAction(h);return}
+ const m=currentMap(),k=m?(m.coffres||[]).indexOf(c):-1;
+ prisSurTable(k<0?null:arr=>{const i=rangsSol(m).n2+k,v=Number(arr[i])||0;if(v&8)return null;arr[i]=v|8|2;return arr},()=>ouvreCoffreFait(c,h))}
+function ouvreCoffreFait(c,h){if(h&&!payeAction(h))return;
  if(coffreArme(c)){c.desamorce=true;
   // Le piège part : une gerbe de feu sur le coffre, ici et sur chaque table.
   if(typeof explosionPiege==='function'){explosionPiege(centreForme(c));const m=currentMap();if(m&&typeof diffuserEffet==='function')diffuserEffet('piege',h,null,String((m.coffres||[]).indexOf(c)))}
@@ -2467,7 +2487,9 @@ const limiteBtn=icone('mouvement-limite','👣','Mouvement limité');
 const noirBtn=icone('obscurite-bascule','🌑','Désactiver l’obscurité');
 // Le bruit, activé ou désactivé par le MJ, pour toute la table.
 const bruitBtn=icone('bruit-bascule','🔊','Désactiver le bruit');
-fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn,bruitBtn);document.querySelector('.mapbar .zoom-bar').before(fogBar);
+// Le terrain impraticable, montré ou caché au MJ ; la troupe ne le voit jamais.
+const impratBtn=icone('impraticables-vue','🚧','Cacher le terrain impraticable');
+fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn,bruitBtn,impratBtn);document.querySelector('.mapbar .zoom-bar').before(fogBar);
 /* Les boutons de la barre de la carte disent ce qu'ils font dès le survol, dans une bulle du site : l'infobulle du système
    tardait et ne ressemblait à rien d'ici. Leur titre devient le texte de la bulle, et celui qu'un rendu leur redonne aussi ;
    le nom reste au lecteur d'écran. Au doigt, pas de bulle : un toucher n'est pas un survol. */
@@ -2486,6 +2508,7 @@ const BOUTONS_CARTE={
  'troupe-eye':()=>['Vue de la troupe',vueTroupe?'Tu vois la carte comme la troupe ; un clic rend la vue du MJ.':'Montre la carte comme la voit la troupe, sans quitter la vue du MJ.'],
  'zones-eye':()=>['Zones',(zonesVisibles?'Cache':'Montre')+' les zones de la carte, chacune de sa couleur et de son numéro.'],
  'token-lock':()=>['Verrou',tokensLocked?'Les déplacements des joueurs sont figés ; un clic les leur rend.':'Fige les déplacements des joueurs, le temps de décrire une scène.'],
+ 'impraticables-vue':()=>['Terrain impraticable',impratVisible?'Les pointillés rouges du terrain impraticable sont visibles ; un clic les cache. La troupe ne les voit jamais.':'Le terrain impraticable est caché ; un clic montre ses pointillés rouges.'],
  'bruit-bascule':()=>['Bruit',bruitCoupe?'Le bruit est désactivé pour toute la table ; un clic le rétablit.':'Désactive le bruit pour toute la table : les adversaires pas encore révélés n’entendent plus rien.'],
  'mouvement-limite':()=>['Mouvement limité',mouvementLimiteExplo?'En exploration, chaque aventurier ne va pas plus loin que sa distance de mouvement ; un clic lève la limite.':'En exploration, limite chaque déplacement à la distance de mouvement de l’aventurier.'],
  'zoom-out':()=>['Dézoomer','Éloigne la vue de la carte.'],
@@ -2559,6 +2582,8 @@ lockBtn.onclick=()=>{tokensLocked=!tokensLocked;refreshGmBar();render();schedule
  log(tokensLocked?'Déplacements figés : les joueurs ne peuvent plus bouger leurs tokens.':'Déplacements rendus aux joueurs.',{ton:'carte',local:true})};
 noirBtn.onclick=()=>{const m=currentMap();if(!m)return;if(m.obscuriteOff)delete m.obscuriteOff;else m.obscuriteOff=true;
  fogKey='';refreshGmBar();render();scheduleSave()};
+impratBtn.onclick=()=>{impratVisible=!impratVisible;try{localStorage.setItem('amertume-impraticables',impratVisible?'1':'0')}catch(e){}
+ refreshGmBar();renderImpraticables()};
 bruitBtn.onclick=()=>{bruitCoupe=!bruitCoupe;try{localStorage.setItem('amertume-bruit-coupe',bruitCoupe?'1':'0')}catch(e){}
  refreshGmBar();render();scheduleSave()};
 limiteBtn.onclick=()=>{mouvementLimiteExplo=!mouvementLimiteExplo;try{localStorage.setItem('amertume-mouvement-limite',mouvementLimiteExplo?'1':'0')}catch(e){}
@@ -2589,6 +2614,8 @@ function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  lockBtn.textContent=tokensLocked?'🔒':'🔓';lockBtn.classList.toggle('on',tokensLocked);
  lockBtn.title=tokensLocked?'Rendre les déplacements aux joueurs':'Figer les déplacements des joueurs';
  limiteBtn.classList.toggle('on',!!mouvementLimiteExplo);
+ impratBtn.hidden=!m||!impraticableDe(m).length;impratBtn.classList.toggle('on',!impratVisible);
+ impratBtn.title=impratVisible?'Cacher le terrain impraticable':'Montrer le terrain impraticable';impratBtn.setAttribute('aria-label',impratBtn.title);
  bruitBtn.textContent=bruitCoupe?'🔇':'🔊';bruitBtn.classList.toggle('on',!!bruitCoupe);
  bruitBtn.title=bruitCoupe?'Activer le bruit':'Désactiver le bruit';bruitBtn.setAttribute('aria-label',bruitBtn.title)}
 function saveMaps(){refreshMapPick();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}

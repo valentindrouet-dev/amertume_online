@@ -2090,7 +2090,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  const miette=C.calculeZones([{anneaux:[[[0,0],[100,0],[100,100],[0,100]],[[50,50],[52,50],[52,52],[50,52]]]}],[],100,50);
  assert.equal(miette.compte,0,'une case ou deux ne font pas une zone');
  assert.equal(C.calculeZones([],[],10,5).compte,1);assert.equal(C.zoneAu(null,1,1),0);
- assert.ok(cartes.includes("const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');")&&cartes.includes("fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn,bruitBtn);")
+ assert.ok(cartes.includes("const zonesBtn=icone('zones-eye','▦','Voir les zones de la carte');")&&cartes.includes("fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn,bruitBtn,impratBtn);")
   &&cartes.includes("function zonesDe(m){if(!m)return null;")&&cartes.includes("zonesCache={cle,zones:calculeZones(matiereDe(m),portes,cols,rows,10,m.zonesCoupures,m.zonesLiens)}}")
   &&cartes.includes("function zoneDe(a){const m=currentMap();return m&&a?zoneAu(zonesDe(m),a.x,a.y):0}")&&cartes.includes("function memeZone(a,b){")
   &&cartes.includes("if(!zonesVisibles||!m||view!=='mj'){cv.style.display='none';noms.hidden=true;return}")
@@ -3387,6 +3387,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.643 — Ce qui se prend au sol — lumière posée ou fixe, objet de carte, coffre — se réserve d'abord sur la table, par une
+   transaction : deux tables qui le prennent au même instant, une seule l'a. Un bouton montre ou cache au MJ le terrain
+   impraticable. */
+{const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
+ assert.ok(vif.includes("function reserveSurTable(marque){if(!enLigne||!salleRef)return Promise.resolve(true);")&&vif.includes("const neuf=marque(Array.isArray(d&&d.doors)?d.doors.slice():[]);if(!neuf)return false;")
+  &&carto.includes("prisSurTable(marque,()=>recupereLumiereFait(a,l,pieces))}")&&carto.includes(",()=>recupereObjetFait(a,o))}")&&carto.includes("if(v&8)return null;arr[i]=v|8|2;return arr},()=>ouvreCoffreFait(c,h))}")
+  &&carto.includes("if(typeof inventairePlein==='function'&&pieces.every(it=>inventairePlein(a,it)))return;"),'une prise au sol, une seule fois');
+ assert.ok(carto.includes("const impratBtn=icone('impraticables-vue','🚧','Cacher le terrain impraticable');")&&carto.includes(" impratBtn.hidden=!m||!impraticableDe(m).length;"),'le bouton du terrain impraticable');}
 /* v0.642 — Le terrain impraticable : une couche que le MJ seul voit, en pointillés rouges, qui arrête le pas comme un mur sans
    couper la vue ; rectangle, contour libre, trait et gomme. Le rond Enjamber prend la taille d'un gros bouton de la barre. */
 {const carto=fs.readFileSync('maps.js','utf8'),C=require('./combat.js');
@@ -3394,7 +3402,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  C.retireImpraticable(m,[[14,0],[16,0],[16,30],[14,30]]);assert.equal(m.impraticable.length,2,'la gomme coupe le terrain en deux');
  assert.equal(C.cleanMap(m).impraticable.length,2,'il voyage avec la carte');assert.ok(!('impraticable' in C.cleanMap({})),'une carte sans terrain impraticable reste la même');
  assert.ok(page.includes("function obstaclesDuPas(px){")&&page.includes(" const polys=obstaclesDuPas(px);")&&page.includes("function cheminVers(r,p){const size=mapSize(),murs=obstaclesDuPas(")
-  &&carto.includes("function renderImpraticables(){")&&carto.includes("if(!m||view!=='mj'||(typeof oeilJoueur==='function'&&oeilJoueur()))return;")
+  &&carto.includes("function renderImpraticables(){")&&carto.includes("if(!m||view!=='mj'||!impratVisible||(typeof oeilJoueur==='function'&&oeilJoueur()))return;")
   &&carto.includes('<button data-tool="imprat">Impraticable</button><button data-tool="impratlibre">Impraticable libre</button><button data-tool="impratligne">Ligne impraticable</button><button data-tool="impratgomme">Gomme d’impraticable</button>'),'le terrain impraticable');
  assert.ok(page.includes("#piege-boutons button.btn-action.rond.btn-enjamber{position:absolute;width:58px;height:58px;font-size:26px;")&&page.includes("#piege-boutons{position:absolute;inset:0;z-index:6;pointer-events:none}"),'le rond Enjamber en gros bouton, au-dessus des textes');}
 /* v0.641 — Le rond Enjamber garde, à l'écran, la taille d'un petit bouton de la barre d'action, quel que soit le zoom. */
@@ -3787,7 +3795,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(ia.includes("const borne=!appliqueRegleMouvement(a,regle);if(borne)jusquALaBorne(a,regle,q,(u,v)=>moveActor(a,u,v,false,ignorer,true));")&&ia.includes("  if(borne)break}")
   &&ia.includes(" const cout=soldeRegleMouvement(a,regle);if(cout>0)depensePoint(a,'mouvement',cout);")&&ia.includes("q=borneMouvement(regle,{x:x/size.width*100,y:y/size.height*100},{x:a.x,y:a.y});moveActor(e,q.x,q.y,false,ignorer,true);"),'l’IA sous la même règle');
  assert.ok(carto.includes("const limiteBtn=icone('mouvement-limite','👣','Mouvement limité');")&&carto.includes("localStorage.setItem('amertume-mouvement-limite',mouvementLimiteExplo?'1':'0')")
-  &&carto.includes(" limiteBtn.classList.toggle('on',!!mouvementLimiteExplo);")&&src.includes("'amertume-fouilles','amertume-mouvement-limite','amertume-bruit-coupe'];"),'le bouton du MJ, gardé avec les réglages de l’appareil');
+  &&carto.includes(" limiteBtn.classList.toggle('on',!!mouvementLimiteExplo);")&&src.includes("'amertume-fouilles','amertume-mouvement-limite','amertume-bruit-coupe','amertume-impraticables'];"),'le bouton du MJ, gardé avec les réglages de l’appareil');
  assert.ok(carto.includes("  if(view==='mj'&&l.pose){let g=null;")&&carto.includes("if(!bouge)return;t._glisse=true;setTimeout(()=>{render();saveMaps()},0)};")
   &&carto.includes("t.onclick=e=>{e.stopPropagation();if(t._glisse){t._glisse=false;return}"),'le MJ déplace les objets posés');
  const noms=['objetsQuiComptent','DISTANCE_MOUVEMENT','bonusMouvementDe','mouvementPropre','distanceMouvement','mouvementLimiteExplo','mouvementBorne','borneMouvement','traceMouvement','mouvementClavier','limiteBtn'];
@@ -5021,4 +5029,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1886 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1888 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
