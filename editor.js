@@ -2714,7 +2714,7 @@ function renderBiblioObjets(){const boite=$('biblio-objets');if(!boite)return;
    devine — les orbes au Mystique, la garde au Gardien — si la classe existe ; sinon les
    génériques, ou les adversaires pour un effet de monstre. */
 const CLASSES_EFFETS_DEVINEES={murelem:'Mystique',murdegats:'Mystique',murzone:'Mystique',mitraille:'Mystique',siphon:'Mystique',siphonplus:'Mystique',siphonsoin:'Mystique',ricochet:'Mystique',ricochetplus:'Mystique',ricochetcritique:'Mystique',thesaurisation:'Mystique',thesaurisationfois:'Mystique',thesaurisationsoin:'Mystique',mitraillecibles:'Mystique',mitrailleorbes:'Mystique',orbes:'Mystique',orbescritiques:'Mystique',orbesinratables:'Mystique',orbes2des:'Mystique',orbesrouges:'Mystique',orbescritun:'Mystique',orbescrittous:'Mystique',delugegratuit:'Mystique',implosionmouvement:'Mystique',implosionorbe:'Mystique',contagion:'Mystique',contagioncontact:'Mystique',contagionvue:'Mystique',ignoredegats:'Mystique',soinetat:'Mystique',soinetatdouble:'Mystique',orbesfeu:'Mystique',corpselem:'Mystique',ignition:'Mystique',deluge:'Mystique',eruption:'Mystique',eruptiondegats:'Mystique',eruptiondouble:'Mystique',implosion:'Mystique',degatselem:'Mystique',
- gardien:'Gardien',rempart:'Gardien',provocation:'Gardien',provocattaque:'Gardien',provocsol:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',enragement:'Destructeur',enragementplus:'Destructeur',charge:'Destructeur',chargeelan:'Destructeur',chargerepousse:'Destructeur',chargerepoussedist:'Destructeur',chargeimpact:'Destructeur',lamevent:'Ombrelame',rebond:'Ombrelame',revanche:'Ombrelame',traction:'Ombrelame',rapide:'Ombrelame',larcin:'Ombrelame',tenailles:'Ombrelame',deception:'Ombrelame',lameventelem:'Ombrelame'};
+ gardien:'Gardien',rempart:'Gardien',provocation:'Gardien',provocattaque:'Gardien',provocsol:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',enragement:'Destructeur',enragementplus:'Destructeur',charge:'Destructeur',chargeelan:'Destructeur',chargerepousse:'Destructeur',chargerepoussedist:'Destructeur',chargeimpact:'Destructeur',lamevent:'Ombrelame',rebond:'Ombrelame',revanche:'Ombrelame',traction:'Ombrelame',rapide:'Ombrelame',larcin:'Ombrelame',tenailles:'Ombrelame',deception:'Ombrelame',lameventelem:'Ombrelame',lameventcibles:'Ombrelame',coursemortelle:'Ombrelame',coursechoix:'Ombrelame',courseombrelame:'Ombrelame',bondissement:'Ombrelame',bondissementlibre:'Ombrelame',bondissementfrappe:'Ombrelame',decoupe:'Ombrelame',decoupedegats:'Ombrelame',decoupeplus:'Ombrelame',lameempoisonnee:'Ombrelame',lamepoisonplus:'Ombrelame',lamepoisoncontact:'Ombrelame'};
 const ADVERSAIRES='Adversaires';
 function classeEffet(c){const choisie=(catalog.classesEffets||{})[c.cle];if(choisie)return choisie;
  const devinee=CLASSES_EFFETS_DEVINEES[c.cle];if(devinee&&(catalog.classes||[]).some(k=>k&&k.name===devinee))return devinee;
@@ -3232,7 +3232,9 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   f.coutAction.addEventListener('input',()=>{touche=true});f.type.addEventListener('change',()=>{touche=false;majCout()});
   if(f.effet)f.effet.addEventListener('change',()=>{if(!touche)majCout()});majCout()}
  const fam=$('talent-form').elements.famille;
- fam.onchange=()=>{const autre=fam.value===AUTRE_CLASSE;$('famille-autre').hidden=!autre;
+ // La catégorie d'icônes qui porte le nom de la classe passe en tête des menus de logos.
+ const tetes=()=>$('talent-form').querySelectorAll('select[name="logo"],select[name="b_logo"]').forEach(s=>iconesClasseEnTete(s,fam.value));tetes();
+ fam.onchange=()=>{const autre=fam.value===AUTRE_CLASSE;$('famille-autre').hidden=!autre;tetes();
   if(autre){const champ=$('talent-form').elements.familleLibre;champ.value='';champ.focus()}};
  const menu=$('talent-form').elements.effet;
  menu.onchange=()=>{lisBrouillonTalent();talentDraft.effet=menu.value;dessineReglagesTalent()};
@@ -3610,7 +3612,7 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
      redessinait pas quand on décochait un talent. */
   const manque=t=>porte(t)?'':manqueTalent(a.talents,t,catalog.talents);
   const clic=t=>{const m=manque(t);
-   if(m)return;
+   if(m||figeEnCombat())return;
    if(porte(t)){const avant=a.talents,liste=sansChuteArbre(a,talentsSans(avant,t.id,catalog.talents).liste),tombes=avant.filter(id=>id!==t.id&&!liste.includes(id)).map(id=>{const x=talentDuCatalogue(catalog.talents,id);return x?x.name:''}).filter(Boolean);a.talents=liste;
     $('picker-note').textContent=tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'Clique un talent pour l’apprendre ou l’oublier.'}
    else{if(coutPalier(t,1)>xpDisponible(a,catalog.talents))return;a.talents=[...a.talents,t.id];$('picker-note').textContent='Clique un talent pour l’apprendre ou l’oublier.'}
@@ -4355,6 +4357,8 @@ function gardeDefilement(racine){if(!racine)return ()=>{};
  const vus=[racine,...racine.querySelectorAll('*')].filter(e=>e.scrollTop||e.scrollLeft).map(e=>[e===racine?null:cle(e),e.scrollTop,e.scrollLeft]);
  return ()=>{if(!vus.length)return;const tous=vus.some(([k])=>k!==null)?[...racine.querySelectorAll('*')]:[];
   vus.forEach(([k,t,g])=>{const e=k===null?racine:tous.find(x=>cle(x)===k);if(e){e.scrollTop=t;e.scrollLeft=g}})}}
+// En combat, l'arbre d'un aventurier ne se change pas : ni talent pris ni talent rendu. Le MJ, lui, le peut toujours.
+function figeEnCombat(){return view!=='mj'&&typeof enCombat==='function'&&enCombat()}
 function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;queueMicrotask(gardeDefilement(arbresDialog));corps.replaceChildren();requestAnimationFrame(placeFlechesArbres);
  // Un nœud redessiné emporte sa bulle : elle ne reste pas accrochée à l'ancien.
  bulleOrpheline();
@@ -4540,7 +4544,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(mj&&lienDepuis===t.id)el.classList.add('relie-source');
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
    if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
-   if(verrou||(estMort(a)&&view!=='mj'))return;
+   if(verrou||(estMort(a)&&view!=='mj')||figeEnCombat())return;
    // Un clic l'active ; tenu, un clic le désactive — et ce qu'on n'atteignait que par lui.
    if(acquis)oublier(t,libre?null:col.liste);else a.talents=[...a.talents,t.id];
    note('');majTable()};
@@ -4561,13 +4565,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     if(estBonus(t)){laisseCaseVide(t);const i=catalog.talents.indexOf(t);if(i>=0)catalog.talents.splice(i,1);actors.forEach(x=>{if(x.talents)x.talents=x.talents.filter(id=>id!==t.id)})}
     else videDeLArbre(t);arbreChange()}));
   el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
-   if(estMort(a)&&view!=='mj')return;
+   if((estMort(a)&&view!=='mj')||figeEnCombat())return;
    // À paliers, le clic monte d'un palier tant que l'XP le paie ; au dernier, il rend l'amélioration.
    if(acquis&&palierDe(a,t)<paliersDe(t)){const n=palierDe(a,t)+1;if(coutPalier(t,n)>xpDisponible(a,catalog.talents))return;poserPalier(t,n)}
    else if(acquis)oublier(t,libre?null:col.liste);else if(!verrou)a.talents=[...a.talents,t.id];else return;
    note('');majTable()};
   // Le clic droit redescend d'un palier ; au premier, il rend l'amélioration.
-  if(a&&paliersDe(t)>1)el.oncontextmenu=e=>{if(!acquis||(estMort(a)&&view!=='mj'))return;e.preventDefault();
+  if(a&&paliersDe(t)>1)el.oncontextmenu=e=>{if(!acquis||(estMort(a)&&view!=='mj')||figeEnCombat())return;e.preventDefault();
    const k=palierDe(a,t);if(k>1)poserPalier(t,k-1);else oublier(t,libre?null:col.liste);note('');majTable()};
   glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,chemin:lisChemin(t),soi:t.id});
   return el};

@@ -190,8 +190,8 @@ async function conduiteProtecteur(a,j){const p=protegeIA(a);if(!p)return conduit
  if(!reachTo(a,p,k,'contact').ok)await approcheIA(a,k);
  if(!(await attaquesIA(a,cible))&&pointsRestants(a,'action')>0){const autre=cibleIA(a,'proche');if(autre!==null&&autre!==cible)await attaquesIA(a,autre)}}
 /* En mode IA, un adversaire joue sa réaction dès qu'elle s'arme : Revanche sur l'échec d'un aventurier,
-   Traction sur le tir qui l'a blessé. Un Mouvement gratuit, comme au bouton. */
+   Traction sur le tir qui l'a blessé, Bondissement sur le tir reçu, le tireur à portée. Un Mouvement gratuit, comme au bouton. */
 function reactionsIA(){if(!iaActif())return;
- actors.forEach(o=>{if(o.hero||!alive(o)||o.horsCarte)return;['revanche','traction'].forEach(cle=>{const r=o[cle];if(!r||r.tour!==round||r.ia)return;
-  const t=talentsCodes(o).find(x=>x.code.cle===cle);if(!t)return;r.ia=true;
+ actors.forEach(o=>{if(o.hero||!alive(o)||o.horsCarte)return;['revanche','traction','bondissement'].forEach(cle=>{const r=o[cle];if(!r||r.tour!==round||r.ia)return;
+  const t=talentsCodes(o).find(x=>x.code.cle===cle);if(!t||(cle==='bondissement'&&!cibleBondissement(o)))return;r.ia=true;
   setTimeout(()=>{if(!iaActif()||!alive(o)||!o[cle])return;const dit=TALENTS_EFFETS[cle].fn(o,t.params,t.talent);if(dit)log(dit,{ton:'talent'});render();scheduleSave()},450)})})};

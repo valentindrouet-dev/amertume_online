@@ -476,25 +476,27 @@ for(const o of [{x:22.7,y:74.3},{x:50.5,y:47.3}]){const vision=visionPolygon(o,F
  assert.equal(talentCode(null),null);
  const code=TALENTS_CODES.lamevent;
  // Les réglages sont relus au travers de leur déclaration : bornés, et jamais absents.
- assert.deepEqual(paramsTalent({effet:'lamevent'}),{cibles:'1',bonus:0,etat:'',mode:'plus'});
+ assert.deepEqual(paramsTalent({effet:'lamevent'}),{bonus:0,etat:'',mode:'plus'});
  assert.deepEqual(paramsTalent({effet:'lamevent',params:{cibles:'tous',bonus:'7',etat:'Feu',mode:'place'}}),
-  {cibles:'tous',bonus:7,etat:'Feu',mode:'place'});
+  {bonus:7,etat:'Feu',mode:'place'});
  /* Un choix hors de la liste, un nombre hors des bornes, ou un talent enregistré avant que
     ces réglages n'existent : chacun retombe sur son défaut sans rien casser. */
  assert.deepEqual(paramsTalent({effet:'lamevent',params:{cibles:1,bonus:-5,etat:'Dragon',mode:'x'}}),
-  {cibles:'1',bonus:0,etat:'',mode:'plus'});
+  {bonus:0,etat:'',mode:'plus'});
  assert.equal(paramsTalent({effet:''}),null);
  assert.equal(reglageTalent(code,{},'inexistant'),undefined);
  /* La phrase d'un effet est bâtie par le moteur, réglages en gras : la bibliothèque et la
     fiche du talent la lisent au même endroit, elle ne peut donc pas mentir. */
  const {phraseTalent}=require('./combat.js');
  assert.match(phraseTalent('lamevent'),/<b>bonus de dégâts<\/b> à <b>un<\/b> adversaire au contact/);
- assert.match(phraseTalent('lamevent',{cibles:'2',bonus:2,etat:'Gel'}),
-  /<b>bonus de dégâts \+ 2<\/b> et <b>Gel<\/b> à <b>deux<\/b> adversaires au contact/);
- assert.match(phraseTalent('lamevent',{cibles:'tous'}),/<b>tous les adversaires<\/b> au contact/);
+ assert.match(phraseTalent('lamevent',{bonus:2,etat:'Gel'}),
+  /<b>bonus de dégâts \+ 2<\/b> et <b>Gel<\/b> à <b>un<\/b> adversaire au contact/);
+ // Deux adversaires, ou tous : l'amélioration d'Ombrelame.
+ assert.match(phraseTalent('lameventcibles'),/<b>deux<\/b> adversaires au contact/);
+ assert.match(phraseTalent('lameventcibles',{cibles:'tous'}),/<b>tous les adversaires<\/b> au contact/);
  // L'état à la place des dégâts : la phrase le dit, et le moteur ne retire alors aucun PV.
- assert.match(phraseTalent('lamevent',{cibles:'tous',etat:'Feu',mode:'place'}),
-  /inflige <b>Feu<\/b> à <b>tous les adversaires<\/b> au contact, <b>sans dégâts<\/b>/);
+ assert.match(phraseTalent('lamevent',{etat:'Feu',mode:'place'}),
+  /inflige <b>Feu<\/b> à <b>un<\/b> adversaire au contact, <b>sans dégâts<\/b>/);
  assert.equal(phraseTalent('inconnu'),'');}
 const {simplifyClosed,closestOnSegment,encreDroite,wallShape,polyTouchesDisc,rectInReach}=require('./combat.js');
 /* ====================================================================================
@@ -1069,7 +1071,7 @@ assert.ok(page.includes('function volFleche(')&&vivant.includes("rec.effet==='fl
 assert.ok(page.includes("if(duree>0)setTimeout(()=>{poser();render();")&&page.includes("setTimeout(()=>{tirEnVol=false;frapper();scheduleSave()},duree)"),'les dégâts attendent le vol');
 assert.ok(cartes.includes("icone('troupe-eye'")&&cartes.includes('function oeilJoueur')&&cartes.includes("inconnu=oeilJoueur()?255:110"),'l’œil de la troupe');
 assert.ok(!page.includes('Bienvenue dans Amertume')&&!cartes.includes("(d.secret?'Passage secret ':'Porte ')")&&page.includes(" garde '+nomNum(o)+'.'")&&page.includes("' 🔍 '+nomNum(o)+' · '+skillNames[k]+' : '"),'le journal s’épure');
-assert.ok(!src.includes("loin.textContent=' ⤳'")&&page.includes('.actor.enemy.k-alpha:not(.selected){background:#efdcc2}')&&page.includes("total+' Dégâts'+(poses.length?' + '+poses.join(' + '):'')+'.'"),'boutons et vignettes');
+assert.ok(!src.includes("loin.textContent=' ⤳'")&&page.includes('.actor.enemy.k-alpha:not(.selected){background:#efdcc2}')&&page.includes("total+' Dégâts'+(posesDits.length?' + '+posesDits.join(' + '):'')+'.'"),'boutons et vignettes');
 /* Le tour 1 à l'ouverture d'une carte, les numéros à la révélation, les adversaires cachés repliés, l'Onde et les talents en colonnes. */
 assert.ok(page.includes('function remiseAuTourUn')&&cartes.includes("if(typeof remiseAuTourUn==='function')remiseAuTourUn();"),'ouvrir une carte revient au tour 1');
 assert.ok(page.includes('function prochainNumero')&&page.includes("a.vu=true;if(!a.numero)a.numero=prochainNumero(a)")&&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('numero'),'les numéros se donnent à la révélation');
@@ -1172,7 +1174,7 @@ assert.ok(feuille.includes('.talent-rangee.t-ame .cat-pill.gear-carre.talent-car
  assert.ok(page.includes("if(cachePour(o,j)&&(view!=='mj'||duCoteTroupe(a)))return false;")&&page.includes('function reach(){const a=actors[selected],j=a?ciblesDe(a)[0]:undefined;'),'un aventurier ne vise pas un adversaire caché');
  const orbeSrc=page.slice(page.indexOf('function orbe('),page.indexOf('function cibleAlliee('));
  assert.ok(!orbeSrc.includes('mauvaisSort(')&&!orbeSrc.includes('Mauvais Sort :')&&orbeSrc.includes("let suite='',pose='';"),'l’orbe est un talent : pas de Mauvais Sort');
- const frappeSrc=page.slice(page.indexOf('function frappe('),page.indexOf('function frappe(')+1400);
+ const frappeSrc=page.slice(page.indexOf('function frappe('),page.indexOf('function frappe(')+2000);
  assert.ok(frappeSrc.includes("porteEffet(talentsCodes(b),'mauvaissort')?mauvaisSort(dice,d6):null"),'Mauvais Sort reste sur les attaques');}
 /* Les boutons d'action écrivent en blanc, actifs, grisés ou inertes ; un talent sans dés ne porte
    plus sa nature ; un adversaire retiré laisse son XP aux aventuriers et les cibles ne glissent pas. */
@@ -1765,7 +1767,7 @@ assert.ok(page.includes('function pastillesPoints(a)')&&page.includes("const act
    avec le premier coup au contact. Invulnérable et Brise s'entendent dans le journal. */
 assert.ok(page.includes('function alliePourIgnition(a)')&&page.includes("const j=ciblesDe(a).find(k=>vus.includes(k)&&actors[k]&&memeCamp(actors[k],a)&&actors[k]!==a);")
  &&page.includes('if(allie!==null){const feu=etat||\'Feu\';')&&page.includes("const poser=()=>{b.ignition=feu;floatNumber(b,'✦ '+feu,'gain');")
- &&page.includes("const charge=(rangeOf(a)==='distance'?'':a.ignition)||'';")&&page.includes("if(charge)a.ignition=''}")
+ &&page.includes("const charge=(rangeOf(a)==='distance'?'':a.ignition)||'';")&&page.includes("if(charge)a.ignition='';")
  &&page.includes('const infligeEtatBrut=infligeEtat;')
  &&page.includes('const brise=briseContre(talentsCodes(a),b),ouverte=brise.ignore;')&&page.includes("const def=hasState(b,'Au sol')||ouverte?0:defOf(b);")&&page.includes("(immunises.length?' Invulnérable : '+immunises.join(', ')+' sans effet.':'')"),'Ignition, Invulnérable et Brise câblés');
 /* Les descriptions d'objet et de talent sortent du flux : une bulle se pose au-dessus de la
@@ -2068,7 +2070,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
  assert.ok(page.includes("function competenceDe(a,k){return (Number(a&&a.skills&&a.skills[k])||0)+(bonusFiche(a).skills[k]||0)}")
   &&page.includes("function auraMeneur(a,quoi){")&&page.includes("const size=mapSize();if(!size.width)return 0;let total=0,murs=null;")
   &&page.includes("if(elusMeneur(params,candidats).includes(a))total+=bonusDuMeneur(params)?propreBonusMeneur(m,quoi):Math.max(1,params.valeur|0)})});")&&page.includes("function valeurCompetence(a,k){return 1+competenceDe(a,k)}")
-  &&page.includes(" const degats=(p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0);")
+  &&page.includes("function degatsOmbrelame(a,p){return (p.etat&&p.mode==='place')?0:degatsDe(a)+(p.bonus|0)}")
   &&src.includes("const aura=!(typeof spectateur==='function'&&spectateur())&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
@@ -3387,6 +3389,21 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.648 — En combat, l'arbre d'un aventurier ne se change pas, sauf par le MJ. Le nombre d'adversaires d'Ombrelame devient une
+   amélioration. Course mortelle, Bondissement, Découpe et Lame empoisonnée, avec leurs améliorations. Le Poison inflige un dégât par
+   cran. La catégorie d'icônes de la classe d'un talent passe en tête de ses menus de logos. */
+{const C=require('./combat.js'),idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),pl=fs.readFileSync('planches.js','utf8');
+ assert.ok(!C.TALENTS_CODES.lamevent.params.some(p=>p.cle==='cibles')&&C.TALENTS_CODES.lameventcibles.pour==='lamevent','Ombrelame : les adversaires frappés en amélioration');
+ [['coursechoix','coursemortelle'],['courseombrelame','coursemortelle'],['bondissementlibre','bondissement'],['bondissementfrappe','bondissement'],['decoupedegats','decoupe'],['decoupeplus','decoupe'],['lamepoisonplus','lameempoisonnee'],['lamepoisoncontact','lameempoisonnee']]
+  .forEach(([k,p])=>assert.equal(C.TALENTS_CODES[k].pour,p,k+' améliore '+p));
+ assert.ok(C.TALENTS_CODES.coursemortelle.attaque&&C.TALENTS_CODES.lameempoisonnee.attaque&&C.TALENTS_CODES.bondissement.type==='reac'&&C.TALENTS_CODES.decoupe.type==='pass','les quatre talents');
+ assert.match(C.phraseTalent('lamepoisonplus',{},2),/Poison 3/);assert.match(C.phraseTalent('lamepoisonplus',{},1),/Poison 2/);assert.match(C.phraseTalent('decoupeplus',{},2),/\+3/);
+ assert.ok(idx.includes("if(hasState(a,'Poison')){const n=compteEtat(a,'Poison'),r=subitDegatsEtat(a,'Poison',n);")&&!idx.includes("effectDice(a,5,"),'le Poison : un dégât par cran');
+ assert.ok(idx.includes("function frappeOmbrelame(a,p,frappes){")&&idx.includes("function courseMortelle(a,p,talent){")&&idx.includes("function bondissement(a,p,talent){")&&idx.includes("function lameEmpoisonnee(a,p,talent){")
+  &&idx.includes("function noteDecoupe(a,b,quoi){")&&idx.includes("if(!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false)bonus+=decoupeContre(a,b);")
+  &&idx.includes("b.bondissement={de:a.id,tour:round};")&&fs.readFileSync('live.js','utf8').includes("'revanche','traction','bondissement','decoupe',"),'les talents d’Ombrelame câblés');
+ assert.ok(ed.includes("function figeEnCombat(){return view!=='mj'&&typeof enCombat==='function'&&enCombat()}")&&ed.includes("if(m||figeEnCombat())return;"),'l’arbre figé en combat');
+ assert.ok(pl.includes("function iconesClasseEnTete(select,famille){")&&pl.includes("if(tete)groupe(tete.label,[...tete.children],false);"),'la catégorie de la classe en tête');}
 /* v0.647 — Avec la Sélection, la hitbox d'un piège passe devant le départ, la matière et le halo d'une lumière ; son nom dans la
    fiche du piège la choisit sur la carte. Choisir un token d'un clic redessine les ronds Enjamber. La planche OMBRELAME et sa
    catégorie. */
@@ -3746,7 +3763,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    un mur de feu tout du long. Rapide est désactivé. */
 {const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(vif.includes("'orbeStatique','nyctalope','mouvement','mvtReste','mvtTour',"),'le reste du mouvement voyage en ligne');
- assert.ok(page.includes("delete a.revanche;delete a.traction;delete a.mvtReste;delete a.mvtTour;delete a.opportunitesSubies;mouvementRapide(a)});")&&page.includes("actors.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour;"),'un nouveau tour l’efface');
+ assert.ok(page.includes("delete a.revanche;delete a.traction;delete a.bondissement;delete a.decoupe;delete a.mvtReste;delete a.mvtTour;delete a.opportunitesSubies;mouvementRapide(a)});")&&page.includes("actors.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour;"),'un nouveau tour l’efface');
  assert.ok(page.includes("   if(drag.regle&&!appliqueRegleMouvement(a,drag.regle))jusquALaBorne(a,drag.regle,g,(x,y)=>moveActor(a,x,y,view==='mj',enMain,true))}")
   &&page.includes("fleche.setAttribute('d','M'+pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L'));"),'la main va jusqu’à la limite, la flèche suit le chemin');
  assert.equal(C.TALENTS_CODES.rapide.retire,true,'Rapide retiré de la bibliothèque');
@@ -4155,7 +4172,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  const o={id:'m',name:'Gobelin',hp:5,states:['Feu','Poison','Saignée','Furie','Foudre','Gardé','Ciblage'],cumuls:{Feu:3,Poison:1,Furie:2,Foudre:2},bleed:4};
  x.actors=[o,{id:'g',name:'Brann',hp:9,garde:'m'}];
  assert.equal(x.descriptionEtat(o,'Feu'),'À chaque nouveau tour, subit 3 dés noirs de dégâts, sans DEF.');
- assert.equal(x.descriptionEtat(o,'Poison'),'Après chacune de ses Actions, subit 1 dé noir de dégâts, sans DEF.');
+ assert.equal(x.descriptionEtat(o,'Poison'),'Après chacune de ses Actions, subit 1 dégât, sans DEF.');
  assert.equal(x.descriptionEtat(o,'Saignée'),'Chaque coup qui le touche lui inflige 4 dégâts de plus.');
  assert.equal(x.descriptionEtat(o,'Furie'),'+2 aux dégâts de ses coups.');
  assert.ok(x.descriptionEtat(o,'Foudre').endsWith('S’éteint dans 2 tours.'));
@@ -4838,7 +4855,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("className:'debut-marque',textContent:'!'")&&src.includes("if(t.rayonne)b.classList.add('debut-combat');")&&src.includes('name="debutCombat"'),'les talents de début de combat');
  assert.ok(page.includes("function estMort(a){return !!a&&a.hero===true&&a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0}")
   &&page.includes("+(estMort(a)?' mort':'')")&&src.includes("if(estMort(a)){c.classList.add('mort');")&&src.includes("function ressusciter(a){if(view!=='mj'||!estMort(a))return;")
-  &&src.includes("if(verrou||(estMort(a)&&view!=='mj'))return;")&&src.includes("troupe.forEach(a=>{if(estMort(a))return;"),'un aventurier mort');}
+  &&src.includes("if(verrou||(estMort(a)&&view!=='mj')||figeEnCombat())return;")&&src.includes("troupe.forEach(a=>{if(estMort(a))return;"),'un aventurier mort');}
 /* v0.499 — L'Attaque, talent de base de tout aventurier, en tête de sa fiche ; ce qui l'améliore s'ajoute à sa
    bulle et à celle de la barre d'Actions, une pastille devant, à la couleur foncée de la nature du talent. Tous
    les états s'en vont à la fin d'un combat ; le tour qui commence ne parle plus des activations. */
@@ -5050,4 +5067,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1894 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1902 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

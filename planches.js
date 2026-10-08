@@ -300,6 +300,12 @@ let grilleDialog=null,grilleSelect=null;
 const vueGrille=typeof IntersectionObserver==='function'
  ?new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;vueGrille.unobserve(e.target);poseLogo(e.target,e.target.dataset.logo)}),{rootMargin:'200px'})
  :{observe:im=>poseLogo(im,im.dataset.logo),unobserve(){}};
+/* La catégorie d'icônes d'une classe : celle qui porte son nom, Ombrelame pour Ombrelame. Dans un menu de logos de talent, elle
+   passe en tête ; les autres catégories reprennent leur ordre. */
+function categorieDeClasse(famille){const k=cleTalent(famille);return k?CATS_ICONES.find(([,n])=>cleTalent(n)===k)||null:null}
+function iconesClasseEnTete(select,famille){if(!select)return;select._ordre??=[...select.querySelectorAll('optgroup')];
+ const cat=categorieDeClasse(famille),tete=cat?select._ordre.find(g=>g.label==='Icônes · '+cat[1]):null;
+ [...(tete?[tete]:[]),...select._ordre.filter(g=>g!==tete)].forEach(g=>select.append(g))}
 function ouvreGrilleLogos(select){grilleSelect=select;
  if(!grilleDialog){grilleDialog=dialog('grille-logos','Choisir un logo','<input id="grille-logos-recherche" placeholder="Rechercher…" aria-label="Rechercher un logo"><div id="grille-logos-corps"></div>');
   $('grille-logos-recherche').oninput=dessineGrilleLogos}
@@ -328,9 +334,12 @@ function dessineGrilleLogos(){const corps=$('grille-logos-corps'),s=grilleSelect
   const tetes=s.name==='b_logo'?['caracteristiques','talents']:['talents'];
   const planche=o=>{const m=/^(planches\/([a-z]+)_(\d+)\.(?:png|webp))#(\d+)$/i.exec(o.value);if(!m)return null;const k=tetes.indexOf(m[2].toLowerCase());return k<0?null:{f:m[1],k,n:+m[3],i:+m[4]}};
   const vues=new Set(),parPlanche=new Map();
+  // La catégorie qui porte le nom de la classe du talent vient avant tout, dépliée : Ombrelame pour un talent d'Ombrelame.
+  const f=s.form&&s.form.elements.famille,cat=f?categorieDeClasse(f.value):null,tete=cat?groupes.find(g=>g.label==='Icônes · '+cat[1]):null;
+  if(tete)[...tete.children].forEach(o=>vues.add(o.value));
   groupes.forEach(g=>[...g.children].forEach(o=>{const p=planche(o);if(!p||vues.has(o.value))return;vues.add(o.value);
    if(!parPlanche.has(p.f))parPlanche.set(p.f,{k:p.k,n:p.n,l:[]});parPlanche.get(p.f).l.push([p.i,o])}));
-  groupe('',options);
+  groupe('',options);if(tete)groupe(tete.label,[...tete.children],false);
   [...parPlanche.entries()].sort((x,y)=>x[1].k-y[1].k||x[1].n-y[1].n).forEach(([f,p])=>groupe(nomPlanche(f),p.l.sort((x,y)=>x[0]-y[0]).map(x=>x[1]),false));
   groupes.forEach(g=>groupe(g.label,[...g.children].filter(o=>!vues.has(o.value)),true))}
  else{groupe('',options);groupes.forEach(g=>groupe(g.label,[...g.children]))}
