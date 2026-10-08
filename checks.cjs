@@ -3389,6 +3389,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.661 — Les statistiques comptent les dégâts réels du coup, au-delà des PV qui restaient à la cible. */
+{const idx=fs.readFileSync('index.html','utf8');
+ assert.ok(idx.includes("compteDegats(de===undefined?auteurCoup:de,a,perdu>0?Math.max(perdu,Math.trunc(n)):0);")&&idx.includes("compteDegats(a,b,lost>0?Math.max(lost,damage):0);"),'les dégâts réels comptent');}
 /* v0.660 — Une cible tuée par un coup, Coupure ou Insaisissable ne reçoit pas les états qui viennent après les dégâts. */
 {const idx=fs.readFileSync('index.html','utf8');
  assert.ok(idx.includes("if(!r.failed&&!blocked&&lost>0){if(b.hp>0)afflictions.forEach(")&&idx.includes("if(b.hp>0)etats.forEach(e=>{const issue=infligeEtat(b,e);")&&idx.includes("if(poison&&b.hp>0&&")&&idx.includes("if(e.hp>0)for(let i=0;i<n;i++)if(infligeEtat(e,'Poison')===true)k++;"),'pas d’état sur un mort');}
@@ -4491,7 +4494,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 /* v0.537 — Stats de Combat : chaque combattant compte ses chiffres là où le geste a lieu, ils voyagent avec lui ; la fin
    du combat les fige dans sa ligne du journal, que « Stats de Combat » ouvre chez chacun. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),ia=fs.readFileSync('ia.js','utf8');
- assert.ok(page.includes('function encaisse(a,n,de){')&&page.includes('compteDegats(de===undefined?auteurCoup:de,a,perdu);')&&page.includes("compteDegats(a,b,lost);")
+ assert.ok(page.includes('function encaisse(a,n,de){')&&page.includes('compteDegats(de===undefined?auteurCoup:de,a,perdu>0?Math.max(perdu,Math.trunc(n)):0);')&&page.includes("compteDegats(a,b,lost>0?Math.max(lost,damage):0);")
   &&page.includes("auteurCoup=a;queueMicrotask(()=>{auteurCoup=null});ajouteBilan(a,'coups',1);")&&page.includes("ajouteBilan(a,'crit',1)")&&page.includes("applyHeal=function(a,m){const g=soinSansBilan(a,m);if(g>0)ajouteBilan(a,'soin',g);return g}"),'les compteurs de dégâts, coups, critiques et soins');
  assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes("compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);"),'la distance, là où un mouvement connaît son départ');
  assert.ok(page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
@@ -5109,4 +5112,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1934 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1935 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
