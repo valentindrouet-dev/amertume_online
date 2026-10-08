@@ -3387,6 +3387,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.628 — Fouiller, en exploration seulement et sans rien coûter, est seul à fouiller : zone de fouille, objets révélés. Un rond
+   de compétence ne fait que jeter les dés. */
+assert.ok(page.includes("function testSkill(i,fouille){")&&page.includes("let zone=null;if(fouille&&i===PERCEPTION_RANG&&a.hero")&&page.includes("if(zone&&typeof objetsDecouverts==='function')objetsDecouverts(")
+ &&page.includes("const fou=$('fouiller');fou.hidden=!a||!a.hero||enCombat();")&&page.includes("||enCombat())return;testSkill(PERCEPTION_RANG,true)};"),'Fouiller seul fouille, en exploration');
 /* v0.626 — Le MJ voit toujours un coffre caché : un contour en pointillés au-dessus du brouillard et du noir. Chez un joueur, le token
    d'un autre qu'on tente de déplacer dit « Ce n’est pas moi ! », et son aventurier est en vert dans la colonne des combattants.
    Les adversaires crient aussi, et chaque cri, tiré au hasard, se lit au journal. */
@@ -3480,7 +3484,7 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
  assert.ok(page.includes(".j-num{font-weight:800;color:var(--ink)}.j-num.j-perte{color:#b4553a}.j-num.j-tresor{color:#9d7b1e}")&&page.includes("f.className='j-face '+(Number(v)>=6?'six':Number(v)>=4?'ok':'ko');")
   &&css.includes('.j-test .j-face.six{color:#3577b8}'),'les couleurs du journal');
  assert.ok(src.includes(" log('Le groupe gagne '+xp+' XP ('+listeNombree(vaincus.map(f=>f.name))+').');")&&!src.includes(' se défait de ')&&!src.includes(" reçoit et équipe "),'le journal sans l’inventaire');
- assert.ok(page.includes("  b.onclick=()=>{if(fouillee||sansPA)return;testSkill(i)};")&&page.includes("const sansPA=enCombat()&&actionPrise(a);")&&css.includes('#skills .fouillee,#skills .sans-pa{'),'le rond de compétence, en combat aussi, grisé sans Action');
+ assert.ok(page.includes("  b.onclick=()=>{if(sansPA)return;testSkill(i)};")&&page.includes("const sansPA=enCombat()&&actionPrise(a);")&&css.includes('#skills .fouillee,#skills .sans-pa{'),'le rond de compétence, en combat aussi, grisé sans Action');
  assert.ok(page.includes("alive(o)&&!memeCamp(o,a)),size,token);return {ok:!blocked.length,ranged:true,"),'la ligne de vue passe entre ceux de son camp');
  assert.ok(carto.includes('<button data-tool="blocagelibre">Blocage libre</button>')&&carto.includes("else if(mode==='blocagelibre')ajouteMatiere(mapDraft,forme);")
   &&carto.includes("if(mapTool==='lasso'||mapTool==='blocagelibre'||"),'le blocage libre');
