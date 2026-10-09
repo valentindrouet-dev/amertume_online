@@ -1008,7 +1008,7 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 .dom-quete{margin:6px 0;padding:8px 10px;border:1px solid var(--line);border-left:4px solid #c9953f;border-radius:8px;background:var(--panel-2)}
 .dom-quete.q-encours{border-left-color:#3f8fe0}.dom-quete.q-reussie{border-left-color:#4f9a5a;opacity:.85}.dom-quete.q-echouee{border-left-color:#b8432f;opacity:.75}.dom-quete.q-cachee{border-left-style:dashed;opacity:.7}
 .dom-quete-tete{display:flex;align-items:baseline;justify-content:space-between;gap:8px}.dom-quete-etat{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-.dom-quete-lieu,.dom-quete-qui{display:block;color:var(--muted);font-size:12px}.dom-quete-texte{margin:5px 0;white-space:pre-wrap;font-size:13px}.dom-quete-recompense{margin:4px 0;font-size:13px}
+.dom-quete-lieu,.dom-quete-qui{display:block;color:var(--muted);font-size:12px}.dom-quete-texte{margin:5px 0;white-space:pre-wrap;font-size:13px}.dom-quete-recompense{margin:4px 0;font-size:13px;display:flex;flex-wrap:wrap;align-items:center;gap:5px}.dom-quete-recompense .cat-pill{flex:none;width:auto}
 .dom-quete-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.dom-quete-actions button{padding:3px 9px;font-size:12px}.dom-quetes-bat{margin-top:10px}
 #dom-journal-quetes-vue{width:min(560px,92vw)}#dom-journal-quetes-corps{max-height:70vh;overflow:auto}
 /* Course mortelle : les adversaires qu'on peut rejoindre s'éclairent, et attendent le clic. */

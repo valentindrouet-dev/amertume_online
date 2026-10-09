@@ -1275,6 +1275,8 @@ function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o
  p(o.desc?'objet-desc':'muted',o.desc||'Aucune description.');
  const a=actors[selected],mien=!!(a&&a.hero&&controlled(selected)&&alive(a)),pres=mien&&objetAPortee(a,o);
  const pourquoi=!mien?'Sélectionne d’abord ton aventurier.':!pres?'Approche ton aventurier : il faut être au contact.':'';
+ // Au contact, l'objet débloque la quête cachée qu'il porte.
+ if(pres&&o.quete&&typeof debloqueQuete==='function')debloqueQuete(a,o.quete);
  const liste=(o.items||[]).map(id=>(catalog.items||[]).find(x=>x&&x.id===id)).filter(Boolean);
  if(liste.length||o.tresor){const h=document.createElement('h3');h.textContent='À prendre';corps.append(h)}
  liste.forEach(it=>{const ligne=document.createElement('div');ligne.className='objet-ligne';ligne.append(gearPill(it));
@@ -1479,6 +1481,7 @@ mapsPage.innerHTML=
   +'<label id="door-perception-label" hidden>Réussites de Perception pour le trouver <input type="number" id="door-perception" min="1" max="9"></label>'
   +'<label id="foe-cache-label" hidden><input type="checkbox" id="foe-cache"> Caché — le MJ le révèle d’un clic en jeu</label>'
   +'<button id="foe-objets" hidden>✎ Objets portés</button>'
+  +'<label id="foe-quete-label" hidden>Quête débloquée au contact <select id="foe-quete"></select></label>'
   +'<label id="door-cle-label" hidden>Clé qui l’ouvre <select id="door-cle"></select></label>'
   +'<button id="coffre-edit" hidden>✎ Modifier le coffre</button><button id="coffre-double" hidden>⧉ Dupliquer le coffre</button>'
   +'<button id="piege-edit" hidden>✎ Modifier le piège</button><button id="piege-double" hidden>⧉ Dupliquer le piège</button>'
@@ -1725,6 +1728,9 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  if(porte){$('door-key').checked=!!porte.keyLocked;$('door-secret').checked=!!porte.secret}
  $('door-perception-label').hidden=!(porte&&porte.secret);if(porte&&porte.secret)$('door-perception').value=Number(porte.perception)||1;
  $('foe-cache-label').hidden=$('foe-objets').hidden=!adv;if(adv)$('foe-cache').checked=adv.cache===true;
+ // Un PNJ peut débloquer une quête cachée : l'aventurier qui le rejoint au contact la découvre.
+ {const pnj=!!adv&&!!(modeleActuel(adv.tpl)||adv.tpl||{}).pnj;$('foe-quete-label').hidden=!pnj;
+  if(pnj){const s=$('foe-quete');s.replaceChildren(new Option('— aucune —',''),...((typeof domaine!=='undefined'&&domaine.quetes)||[]).map(q=>new Option(q.titre,q.id)));s.value=adv.quete||''}}
  const verrou=masse?!!masse.verrou:!!(cible&&cible.locked);
  $('shape-delete').hidden=!mapSel||verrou;$('shape-lock').hidden=!mapSel||mapSel.kind==='coupure'||mapSel.kind==='lien';
  if(mapSel)$('shape-lock').textContent=verrou?'🔓 Déverrouiller':'🔒 Verrouiller';
@@ -2228,13 +2234,14 @@ function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!==
   +'<label>Description lue par les joueurs<textarea name="desc" rows="3" maxlength="600">'+esc(o.desc||'')+'</textarea></label>'
   +'<div class="edit-grid">'+sel('Test de découverte — compétence','comp',String(o.test.comp),skillNames.map((n,k)=>[String(k),n]))
   +field('Réussites nécessaires','reussites',o.test.reussites,'number','min="1" max="9"')
-  +field('Trésor — en toutes lettres','tresor',o.tresor||'','text','maxlength="200"')+'</div>'
+  +field('Trésor — en toutes lettres','tresor',o.tresor||'','text','maxlength="200"')
+  +sel('Quête débloquée','quete',o.quete||'',[['','— aucune —'],...((typeof domaine!=='undefined'&&domaine.quetes)||[]).map(q=>[q.id,q.titre])])+'</div>'
   +'<h2 class="sous-titre">Objets à prendre</h2><input id="objet-filtre" placeholder="Filtrer l’armurerie…" aria-label="Filtrer l’armurerie"><div id="objet-liste" class="objet-liste"></div>'
   +'<p class="muted">Ce qui est choisi, d’un clic, attend dans l’objet ; la première pièce choisie donne son icône au jeton. Un aventurier au contact la prend d’un clic : elle va dans son inventaire.</p>';
  const pris=new Set(o.items||[]);pickerArmurerie($('objet-filtre'),$('objet-liste'),pris);
  $('objet-form').onsubmit=e=>{e.preventDefault();const f=$('objet-form').elements;pushUndo();
   o.nom=f.nom.value.trim().slice(0,60)||'Objet';o.taille=f.taille.value;o.visible=f.visible.value==='1';
-  o.desc=f.desc.value.trim().slice(0,600);o.tresor=f.tresor.value.trim().slice(0,200);
+  o.desc=f.desc.value.trim().slice(0,600);o.tresor=f.tresor.value.trim().slice(0,200);if(f.quete.value)o.quete=f.quete.value;else delete o.quete;
   o.test={comp:Math.max(0,Math.min(7,Number(f.comp.value)||0)),reussites:Math.max(1,Math.min(9,Number(f.reussites.value)||1))};
   o.items=[...pris];objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  $('objet-suppr').onclick=()=>{if(!confirm('Supprimer « '+o.nom+' » ?'))return;pushUndo();
@@ -2283,6 +2290,8 @@ $('foe-objets').onclick=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel
 function adversaireDeLaTable(m,f){if(!m||!f||m.id!==currentMapId)return null;
  return actors.find(a=>a&&!a.hero&&f.id&&a.pose===f.id)
   ||actors.find(a=>a&&!a.hero&&!a.pose&&f.tpl&&a.template===f.tpl.id&&Math.abs(a.x-f.x)<.5&&Math.abs(a.y-f.y)<.5)||null}
+$('foe-quete').onchange=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;
+ pushUndo();if($('foe-quete').value)f.quete=$('foe-quete').value;else delete f.quete;saveMaps()};
 $('foe-cache').onchange=()=>{const f=mapSel&&mapSel.kind==='foe'&&shapeAt(mapSel);if(!f)return;
  pushUndo();if($('foe-cache').checked)f.cache=true;else delete f.cache;
  // La carte est ouverte sur la table : l'adversaire posé là suit la case tout de suite, sans rouvrir la carte.

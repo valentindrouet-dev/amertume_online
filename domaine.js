@@ -715,7 +715,8 @@ function renderDomFinances(){const boite=$('dom-finances');boite.replaceChildren
  form.append(montant,libelle,plus,moins);if(mjDom())boite.append(form);
  const liste=document.createElement('ul');liste.className='dom-journal';
  // Les joueurs ne lisent pas les étapes que le MJ a posées ; le MJ les voit, en retrait.
- const lignes=mjDom()?f.journal:f.journal.filter(ligneDesJoueurs);
+ // Les constructions n'y paraissent pas : le cartouche de chaque bâtiment dit déjà son étape.
+ const lignes=(mjDom()?f.journal:f.journal.filter(ligneDesJoueurs)).filter(e=>!/^Construction — /.test(e.libelle));
  [...lignes].reverse().slice(0,25).forEach(e=>{const li=document.createElement('li');
   if(e.par==='mj'){li.className='du-mj';li.title='Posée par le MJ : les joueurs ne voient pas cette ligne'}
   const date=document.createElement('small');date.textContent=e.t?new Date(e.t).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}):'';
@@ -730,7 +731,7 @@ function renderDomFinances(){const boite=$('dom-finances');boite.replaceChildren
 function renderDomRessources(){const boite=$('dom-ressources');if(!boite)return;boite.replaceChildren();
  // Chez un joueur, la réserve compte aussi les dépôts que le MJ n'a pas encore versés.
  const mj=mjDom(),r=mj?(domaine.ressources||(domaine.ressources={})):reserveVue();
- if(!mj){renderRessourcesLues(boite,r);return}
+ renderRessourcesLues(boite,r);if(mj){const b=document.createElement('button');b.className='dom-ajout';b.textContent='± Ressources';b.onclick=openReserve;boite.append(b)}return;
  const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;
  const titre=t=>{const h=document.createElement('h3');h.className='reglage-titre';h.textContent=t;return h};
  const mats=document.createElement('div');mats.className='materiaux';
@@ -758,53 +759,101 @@ function renderRessourcesLues(boite,r){const out=document.createElement('div');o
   out.append(titre('Matériaux'),l)}
  const g=ligneGemmes(r,null,'');if(g)out.append(titre('Gemmes'),g);
  if(out.childElementCount)boite.append(out)}
+/* Corriger la réserve, au MJ : une ressource ou une gemme, une quantité, ajouter ou retirer. */
+const reserveDialog=dialog('dom-reserve-editor','Ressources du domaine','<form id="dom-reserve-form"><div class="edit-grid"><label>Quoi<select name="quoi" id="dom-reserve-quoi"></select></label>'
+ +'<label>Quantité<input name="n" type="number" min="1" max="999999" step="1" value="1" required></label></div>'
+ +'<div class="form-actions"><button type="button" id="dom-reserve-retirer">Retirer</button><button class="primary">Ajouter</button></div></form>');
+function openReserve(){if(!mjDom())return;const r=domaine.ressources||(domaine.ressources={}),menu=$('dom-reserve-quoi'),avant=menu.value;menu.replaceChildren();
+ const opt=(k,t)=>new Option(t+((r[k]||0)?' — '+(r[k]).toLocaleString('fr-FR'):''),k);
+ const mats=document.createElement('optgroup');mats.label='Matériaux';ressourcesJeu().filter(x=>x.cle!=='or').forEach(({cle,nom})=>mats.append(opt(cle,nom)));menu.append(mats);
+ TAILLES_GEMMES.forEach(([ta,nt])=>{const g=document.createElement('optgroup');g.label=nt;VARIETES_GEMMES.forEach(([v])=>g.append(opt(cleGemme(ta,v,false),nomGemme(ta,v,false))));menu.append(g)});
+ if(avant&&[...menu.options].some(o=>o.value===avant))menu.value=avant;$('dom-reserve-form').elements.n.value='1';reserveDialog.showModal()}
+function bougeReserve(signe){const f=$('dom-reserve-form').elements,k=f.quoi.value,n=lisCompte(f.n.value);if(!k||!n)return;
+ const r=domaine.ressources||(domaine.ressources={});poseCompte(r,k,(r[k]||0)+signe*n);reserveDialog.close();renderDomaine(true);sauveDomaine()}
+$('dom-reserve-form').onsubmit=e=>{e.preventDefault();bougeReserve(1)};$('dom-reserve-retirer').onclick=()=>bougeReserve(-1);
 /* ---------- Les quêtes ---------- */
 /* Une quête se prend par les aventuriers du joueur — tous ceux qu'il mène — et se lit « En cours » dès qu'un aventurier la porte.
    Le MJ dit son issue : Réussie ou Échouée. Le journal les range : en cours, proposées, terminées. */
 const NOMS_ETAT_QUETE={proposee:'Proposée',encours:'En cours',reussie:'Réussie',echouee:'Échouée',cachee:'Cachée'};
 const preneursQuete=q=>actors.filter(a=>a&&a.hero&&Array.isArray(a.quetesPrises)&&a.quetesPrises.includes(q.id));
-function etatQuete(q){return q.statut==='proposee'?(preneursQuete(q).length?'encours':'proposee'):q.statut}
-const quetesVues=()=>(domaine.quetes||[]).filter(q=>mjDom()||q.statut!=='cachee');
+// Une quête cachée qu'un aventurier a débloquée — un objet ouvert, un PNJ rejoint — se lit comme une quête proposée.
+const debloquee=q=>actors.some(a=>a&&a.hero&&Array.isArray(a.quetesDebloquees)&&a.quetesDebloquees.includes(q.id));
+const ouverte=q=>q.statut==='proposee'||(q.statut==='cachee'&&debloquee(q));
+function etatQuete(q){return ouverte(q)?(preneursQuete(q).length?'encours':'proposee'):q.statut}
+const quetesVues=()=>(domaine.quetes||[]).filter(q=>mjDom()||q.statut!=='cachee'||debloquee(q));
+function debloqueQuete(a,id){const q=(domaine.quetes||[]).find(x=>x.id===id);if(!a||!a.hero||!q||q.statut!=='cachee'||debloquee(q))return;
+ a.quetesDebloquees=[...(Array.isArray(a.quetesDebloquees)?a.quetesDebloquees:[]),q.id].slice(-100);
+ log(nomNum(a)+' découvre une quête : '+q.titre+'.',{ton:'talent'});if(typeof scheduleSave==='function')scheduleSave()}
+// Au contact d'un PNJ de la carte qui porte une quête, l'aventurier la débloque.
+function quetesAuContact(a){if(!a||!a.hero||typeof currentMap!=='function')return;const m=currentMap(),size=mapSize();if(!m||!size.width)return;
+ actors.forEach(o=>{if(!o||o===a||!o.pose||!alive(o))return;const f=(m.foes||[]).find(x=>x&&x.id===o.pose);if(!f||!f.quete)return;
+  if(inContact(a,o,size,tokenOf(a),tokenOf(o))||inContact(o,a,size,tokenOf(o),tokenOf(a)))debloqueQuete(a,f.quete)})}
+// La récompense en mots : « 30 or », « 2d6 or », « 1 éclat de rubis ».
+function ditBourse(l){const nom=(phraseRichesses({[l.k]:2})[0]||'').replace(/^2 /,'');return l.f===1?(phraseRichesses({[l.k]:l.n})[0]||''):l.n+'d'+l.f+' '+nom}
+/* Réussie, la quête donne sa récompense, une fois : l'or et les gemmes tirés aux dés, puis partagés entre ceux qui l'ont prise —
+   toute la troupe, si personne ne l'a prise ; les pièces, une à chacun tour à tour. */
+function donneRecompense(q){if(q.donnee)return;q.donnee=true;const tire=tireBourse(q.gains.bourse),items=(q.gains.items||[]).map(objetDe).filter(Boolean);
+ let qui=preneursQuete(q).filter(a=>!a.horsCarte);if(!qui.length)qui=actors.filter(a=>a&&a.hero&&!a.horsCarte);if(!qui.length)return;
+ const gains=new Map(qui.map(a=>[a,{or:0,rich:{},objets:[]}]));let k=0;
+ Object.entries(tire).forEach(([cle,v])=>{if(cle==='or'){const part=Math.floor(v/qui.length);let reste=v-part*qui.length;qui.forEach(a=>{const n=part+(reste>0?1:0);if(reste>0)reste--;if(n){ajouteOr(a,n);gains.get(a).or+=n}})}
+  else for(let i=0;i<v;i++){const a=qui[k++%qui.length];a.richesses={...(a.richesses||{})};a.richesses[cle]=(Math.trunc(Number(a.richesses[cle]))||0)+1;gains.get(a).rich[cle]=(gains.get(a).rich[cle]||0)+1}});
+ items.forEach(o=>{const a=qui[k++%qui.length];if(ajouterInventaire(a,o))gains.get(a).objets.push(o.id)});
+ gains.forEach((g,a)=>{const dits=[...g.objets.map(id=>'⟦'+id+'⟧'),...phraseRichesses({or:g.or,...g.rich})];if(dits.length)log(a.name+' reçoit '+dits.join(', ')+' ('+q.titre+').',{ton:'butin'})});
+ if(typeof renderHeroes==='function')renderHeroes();render();scheduleSave()}
 const finieQuete=q=>q.statut==='reussie'||q.statut==='echouee';
-function nomLieuQuete(q){const b=q.lieu?batimentDom(q.lieu):null;return b?b.nom:domaine.nom}
+function nomLieuQuete(q){if(q.ou==='region'){const m=(typeof maps!=='undefined'?maps:[]).find(x=>x&&x.id===q.carte);return m?m.name:'Région'}const b=q.lieu?batimentDom(q.lieu):null;return b?b.nom:domaine.nom}
 function prendreQuete(q,prendre){const qui=actors.filter(a=>a&&a.hero&&agitPour(a));if(!qui.length)return;
  qui.forEach(a=>{const l=(Array.isArray(a.quetesPrises)?a.quetesPrises:[]).filter(x=>x!==q.id);a.quetesPrises=prendre?[...l,q.id].slice(-100):l});
  renderDomaine(true);render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
-function issueQuete(q,statut){q.statut=statut;renderDomaine(true);sauveDomaine()}
+function issueQuete(q,statut){q.statut=statut;if(statut==='reussie')donneRecompense(q);renderDomaine(true);sauveDomaine()}
 function carteQuete(q,avecLieu){const e=etatQuete(q),c=document.createElement('article');c.className='dom-quete q-'+e;
  const tete=document.createElement('div');tete.className='dom-quete-tete';
  const t=document.createElement('strong');t.textContent=q.titre;const badge=document.createElement('span');badge.className='dom-quete-etat';badge.textContent=NOMS_ETAT_QUETE[e];
  tete.append(t,badge);c.append(tete);
  if(avecLieu){const l=document.createElement('small');l.className='dom-quete-lieu';l.textContent=nomLieuQuete(q);c.append(l)}
  if(q.texte){const p=document.createElement('p');p.className='dom-quete-texte';p.textContent=q.texte;c.append(p)}
- if(q.recompense){const p=document.createElement('p');p.className='dom-quete-recompense';const b=document.createElement('b');b.textContent='Récompense : ';p.append(b,q.recompense);c.append(p)}
+ // La récompense : l'or et les gemmes en mots, les pièces en petits carrés.
+ {const mots=[...q.gains.bourse.map(ditBourse),...(q.recompense?[q.recompense]:[])].filter(Boolean),items=new Map();q.gains.items.map(objetDe).filter(Boolean).forEach(o=>items.set(o,(items.get(o)||0)+1));
+  if(mots.length||items.size){const p=document.createElement('div');p.className='dom-quete-recompense';const b=document.createElement('b');b.textContent='Récompense : ';p.append(b);
+   if(mots.length)p.append(mots.join(', '));items.forEach((n,o)=>{const x=carreInventaire(o,n);x.removeAttribute('role');x.tabIndex=-1;p.append(x)});c.append(p)}}
  const pris=preneursQuete(q);if(pris.length){const p=document.createElement('small');p.className='dom-quete-qui';p.textContent='Prise par '+pris.map(a=>a.name).join(', ');c.append(p)}
  const actions=document.createElement('div');actions.className='dom-quete-actions';
  const bouton=(txt,fn,cls)=>{const x=document.createElement('button');x.type='button';x.textContent=txt;if(cls)x.className=cls;x.onclick=fn;actions.append(x)};
  const miens=actors.filter(a=>a&&a.hero&&agitPour(a)),tousPris=miens.length&&miens.every(a=>pris.includes(a)),unPris=miens.some(a=>pris.includes(a));
- if(!finieQuete(q)&&q.statut!=='cachee'&&miens.length){if(!tousPris)bouton('Accepter',()=>prendreQuete(q,true),'primary');if(unPris)bouton('Abandonner',()=>prendreQuete(q,false))}
+ if(!finieQuete(q)&&ouverte(q)&&miens.length){if(!tousPris)bouton('Accepter',()=>prendreQuete(q,true),'primary');if(unPris)bouton('Abandonner',()=>prendreQuete(q,false))}
  if(mjDom()){if(!finieQuete(q)){bouton('✓ Réussie',()=>issueQuete(q,'reussie'));bouton('✗ Échouée',()=>issueQuete(q,'echouee'))}bouton('✎',()=>openQuete(q.id),'dom-quete-edit')}
  if(actions.childElementCount)c.append(actions);return c}
 // Les quêtes de tout le domaine, dans la colonne : en cours et proposées ; les terminées vont au journal.
 function renderDomQuetes(){const boite=$('dom-quetes');if(!boite)return;boite.replaceChildren();
- quetesVues().filter(q=>!q.lieu&&(mjDom()||!finieQuete(q))).forEach(q=>boite.append(carteQuete(q,false)));
+ // Celles de tout le domaine, puis celles des régions, qui disent leur carte.
+ quetesVues().filter(q=>q.ou!=='region'&&!q.lieu&&(mjDom()||!finieQuete(q))).forEach(q=>boite.append(carteQuete(q,false)));
+ quetesVues().filter(q=>q.ou==='region'&&(mjDom()||!finieQuete(q))).forEach(q=>boite.append(carteQuete(q,true)));
  if(mjDom()){const add=document.createElement('button');add.textContent='+ Quête';add.className='dom-ajout';add.onclick=()=>openQuete(null,'');boite.append(add)}}
 // Les quêtes d'un bâtiment, au bas de sa fiche.
-function blocQuetes(b){const lot=quetesVues().filter(q=>q.lieu===b.id&&(mjDom()||!finieQuete(q)));if(!lot.length&&!mjDom())return null;
+function blocQuetes(b){const lot=quetesVues().filter(q=>q.ou!=='region'&&q.lieu===b.id&&(mjDom()||!finieQuete(q)));if(!lot.length&&!mjDom())return null;
  const out=document.createElement('section');out.className='dom-quetes-bat';out.append(titreFonction('Quêtes'));lot.forEach(q=>out.append(carteQuete(q,false)));
  if(mjDom()){const add=document.createElement('button');add.textContent='+ Quête ici';add.className='dom-ajout';add.onclick=()=>openQuete(null,b.id);out.append(add)}
  return out}
 const queteDialog=dialog('dom-quete-editor','Quête','<form id="dom-quete-form"><div id="dom-quete-fields"></div><div class="form-actions"><button type="button" id="dom-quete-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
 function openQuete(id,lieu){if(!mjDom())return;const q=id?(domaine.quetes||[]).find(x=>x.id===id):null;
  queteDialog.querySelector('h2').textContent=q?q.titre:'Nouvelle quête';
- const lieux=[['','Tout le domaine'],...domaine.batiments.map(b=>[b.id,b.nom])];
+ const lieux=[['','Tout le domaine'],...domaine.batiments.map(b=>[b.id,b.nom])],cartes=(typeof maps!=='undefined'?maps:[]).filter(m=>m&&m.id).map(m=>[m.id,m.name||'Carte']);
  $('dom-quete-fields').innerHTML='<div class="edit-grid">'+field('Titre','titre',q?q.titre:'','text','required maxlength="80"')
-  +sel('Lieu','lieu',q?q.lieu:(lieu||''),lieux)+sel('Statut','statut',q?q.statut:'proposee',STATUTS_QUETE)+'</div>'
+  +sel('Où','ou',q?q.ou:'domaine',[['domaine','Domaine'],['region','Région']])
+  +'<span data-ou="domaine">'+sel('Lieu du domaine','lieu',q?q.lieu:(lieu||''),lieux)+'</span>'
+  +'<span data-ou="region">'+sel('Carte','carte',q?q.carte:'',cartes.length?cartes:[['','— aucune carte —']])+'</span>'
+  +sel('Statut','statut',q?q.statut:'proposee',STATUTS_QUETE)+'</div>'
   +'<label>Description<textarea name="texte" rows="5" maxlength="3000">'+esc(q?q.texte:'')+'</textarea></label>'
-  +field('Récompense','recompense',q?q.recompense:'','text','maxlength="300"');
+  +(q&&q.recompense?field('Récompense écrite','recompense',q.recompense,'text','maxlength="300"'):'')
+  +'<h2 class="sous-titre">Récompense</h2><div class="coffre-tresor" id="dom-quete-bourse"></div><div id="dom-quete-contenu"></div>';
+ const fo=$('dom-quete-form').elements,montreOu=()=>$('dom-quete-fields').querySelectorAll('[data-ou]').forEach(x=>{x.hidden=x.dataset.ou!==fo.ou.value});fo.ou.onchange=montreOu;montreOu();
+ // Comme un coffre : l'or et les gemmes aux dés, les pièces de l'armurerie d'un clic.
+ const bourse={bourse:[...(q?q.gains.bourse:[])]},contenu={inventaire:[...(q?q.gains.items:[])]};
+ $('dom-quete-bourse').append(editeurBourse(bourse,null,false));contenuCoffre($('dom-quete-contenu'),contenu);
  $('dom-quete-suppr').hidden=!q;
  $('dom-quete-form').onsubmit=e=>{e.preventDefault();const f=$('dom-quete-form').elements;
-  const v=normaliseQuete({id:q?q.id:undefined,titre:f.titre.value.trim()||'Quête',lieu:batimentDom(f.lieu.value)?f.lieu.value:'',statut:f.statut.value,texte:f.texte.value,recompense:f.recompense.value.trim(),t:q?q.t:Date.now()});
+  const v=normaliseQuete({id:q?q.id:undefined,titre:f.titre.value.trim()||'Quête',ou:f.ou.value,lieu:batimentDom(f.lieu.value)?f.lieu.value:'',carte:f.carte.value,statut:f.statut.value,texte:f.texte.value,
+   recompense:f.recompense?f.recompense.value.trim():'',gains:{bourse:bourse.bourse,items:contenu.inventaire},t:q?q.t:Date.now(),donnee:q?q.donnee:false});
   domaine.quetes??=[];if(q)Object.assign(q,v);else domaine.quetes.push(v);queteDialog.close();renderDomaine();sauveDomaine()};
  $('dom-quete-suppr').onclick=()=>{if(!q||!confirm('Supprimer la quête « '+q.titre+' » ?'))return;
   domaine.quetes=domaine.quetes.filter(x=>x!==q);queteDialog.close();renderDomaine();sauveDomaine()};
@@ -812,7 +861,7 @@ function openQuete(id,lieu){if(!mjDom())return;const q=id?(domaine.quetes||[]).f
 // Le journal de quêtes : en cours, proposées, terminées ; chacune dit son lieu.
 const journalQuetes=dialog('dom-journal-quetes-vue','Journal de quêtes','<div id="dom-journal-quetes-corps"></div>');
 function renderJournalQuetes(){const corps=$('dom-journal-quetes-corps');corps.replaceChildren();const l=quetesVues();
- [['En cours',q=>etatQuete(q)==='encours'],['Proposées',q=>etatQuete(q)==='proposee'],...(mjDom()?[['Cachées',q=>q.statut==='cachee']]:[]),['Terminées',finieQuete]].forEach(([t,f])=>{
+ [['En cours',q=>etatQuete(q)==='encours'],['Proposées',q=>etatQuete(q)==='proposee'],...(mjDom()?[['Cachées',q=>etatQuete(q)==='cachee']]:[]),['Terminées',finieQuete]].forEach(([t,f])=>{
   const lot=l.filter(f);if(!lot.length)return;const h=document.createElement('h3');h.className='reglage-titre';h.textContent=t;corps.append(h);
   lot.forEach(q=>corps.append(carteQuete(q,true)))});
  if(!corps.childElementCount){const p=document.createElement('p');p.className='muted';p.textContent='Aucune quête.';corps.append(p)}}

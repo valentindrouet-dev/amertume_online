@@ -2460,9 +2460,15 @@ function normaliseBatiment(b){const n=nouveauBatiment(b&&b.nom,b&&b.id);
    leur issue ; les joueurs les prennent, par leurs aventuriers (« quetesPrises »), et les lisent au journal. Cachée, une quête
    n'est qu'au MJ. */
 const STATUTS_QUETE=[['proposee','Proposée'],['cachee','Cachée'],['reussie','Réussie'],['echouee','Échouée']];
-function normaliseQuete(q){return {id:q&&typeof q.id==='string'&&q.id?q.id.slice(0,60):idDomaine(),titre:String(q&&q.titre||'Quête').slice(0,80),
- texte:String(q&&q.texte||'').slice(0,3000),recompense:String(q&&q.recompense||'').slice(0,300),lieu:String(q&&q.lieu||'').slice(0,60),
- statut:STATUTS_QUETE.some(([k])=>k===(q&&q.statut))?q.statut:'proposee',t:Number(q&&q.t)||0}}
+/* Où : au domaine — tout le domaine, ou un bâtiment (« lieu ») — ou dans une région, une carte de l'éditeur (« carte »). La
+   récompense est faite de ce que le jeu connaît : or et gemmes aux dés, comme un coffre, et pièces de l'armurerie (« gains ») ;
+   donnée une fois (« donnee »). */
+function normaliseQuete(q){const g=q&&q.gains&&typeof q.gains==='object'?q.gains:{},region=q&&q.ou==='region';
+ return {id:q&&typeof q.id==='string'&&q.id?q.id.slice(0,60):idDomaine(),titre:String(q&&q.titre||'Quête').slice(0,80),
+ texte:String(q&&q.texte||'').slice(0,3000),recompense:String(q&&q.recompense||'').slice(0,300),ou:region?'region':'domaine',
+ lieu:region?'':String(q&&q.lieu||'').slice(0,60),carte:region?String(q&&q.carte||'').slice(0,80):'',
+ gains:{bourse:normaliseBourse(g.bourse,false),items:(Array.isArray(g.items)?g.items:[]).filter(x=>typeof x==='string'&&x).slice(0,99)},
+ statut:STATUTS_QUETE.some(([k])=>k===(q&&q.statut))?q.statut:'proposee',t:Number(q&&q.t)||0,...(q&&q.donnee===true?{donnee:true}:{})}}
 function normalisePnj(p){return {id:p&&p.id||idDomaine(),nom:String(p&&p.nom||'Inconnu').slice(0,60),role:String(p&&p.role||'').slice(0,80),
  statut:p&&p.statut==='visiteur'?'visiteur':'habitant',batiment:String(p&&p.batiment||'').slice(0,60),notes:String(p&&p.notes||'').slice(0,2000)}}
 /* ---------- Les ressources ---------- */

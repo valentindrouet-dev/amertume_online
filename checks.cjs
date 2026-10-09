@@ -2613,7 +2613,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&fief.includes("boite.classList.toggle('en-grille',!mjDom());")&&feuille.includes('#dom-aventuriers.en-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));'),'les joueurs : pas de friche, pas de contours, la troupe en deux colonnes');
  assert.ok(fief.includes("v.setAttribute('class','dom-lueur');v.setAttribute('filter','url(#dom-lueur-flou)');")&&!fief.includes('dom-voile')&&feuille.includes('#dom-plan .dom-zone.sel,#dom-plan.sans-contours .dom-zone.sel{stroke:transparent;fill:transparent}')
   &&feuille.includes('.dom-bat.sel{border-color:var(--accent);border-left-color:var(--t,var(--accent));'),'le bâtiment choisi s’allume, sur le plan et dans la liste');
- assert.ok(fief.includes("const lignes=mjDom()?f.journal:f.journal.filter(ligneDesJoueurs);")&&fief.includes("avance.onclick=()=>{if(avancerEtape(b)){renderDomaine();sauveDomaine()}};")
+ assert.ok(fief.includes("const lignes=(mjDom()?f.journal:f.journal.filter(ligneDesJoueurs))")&&fief.includes("avance.onclick=()=>{if(avancerEtape(b)){renderDomaine();sauveDomaine()}};")
   &&fief.includes(" const reste=[1,2,3].filter(e=>e>b.etape);")&&!fief.includes("'Coût des étapes : '"),'le journal des joueurs sans les étapes du MJ');
  assert.ok(fief.includes(" dessineCartouches(etiquettes,opts);")&&fief.includes("deplaceCartouche:(k,pt)=>{pushDomUndo();domaine.carte.cartouches[k]=pt;renderDomaineEditeur();sauveDomaine()}")
   &&fief.includes("habitants:accorde(compte('habitant'),'habitant'),visiteurs:accorde(compte('visiteur'),'visiteur')};")&&feuille.includes("#dom-plan,#dom-canvas{container-type:inline-size}")
@@ -3389,12 +3389,21 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.671 — Le journal du trésor tait les constructions ; le MJ lit aussi la réserve en inventaire et la corrige à part. Une quête
+   est au domaine ou dans une région ; sa récompense est faite d'or, de gemmes et de pièces, donnée une fois quand elle réussit. Un
+   objet de carte ou un PNJ débloque une quête cachée. */
+{const C7=require('./combat.js'),dom=fs.readFileSync('domaine.js','utf8'),carto=fs.readFileSync('maps.js','utf8');
+ const q=C7.normaliseQuete({ou:'region',carte:'c1',lieu:'b1',gains:{bourse:[{k:'or',n:2,f:6}],items:['x',3]}});
+ assert.deepEqual([q.ou,q.carte,q.lieu,q.gains.bourse.length,q.gains.items],['region','c1','',1,['x']]);
+ assert.ok(dom.includes(".filter(e=>!/^Construction — /.test(e.libelle));")&&dom.includes('function donneRecompense(q){if(q.donnee)return;q.donnee=true;')&&dom.includes('function debloqueQuete(a,id){')
+  &&carto.includes("if(pres&&o.quete&&typeof debloqueQuete==='function')debloqueQuete(a,o.quete);")&&carto.includes("$('foe-quete').onchange=")
+  &&fs.readFileSync('index.html','utf8').includes("if(!seulFoudre&&typeof quetesAuContact==='function')quetesAuContact(a);"),'quêtes : lieux, récompenses, déblocage');}
 /* v0.670 — Au domaine, les joueurs lisent les ressources comme sur une fiche, seulement ce qui y est ; les quêtes, globales ou d'un
    bâtiment, se prennent par les aventuriers et se lisent au journal. */
 {const C6=require('./combat.js'),dom=fs.readFileSync('domaine.js','utf8');
  const d=C6.normaliseDomaine({quetes:[{titre:'Rats',lieu:'b1',statut:'xx'},null,{id:'q2',titre:'',statut:'reussie'}]});
  assert.equal(d.quetes.length,2);assert.equal(d.quetes[0].statut,'proposee');assert.equal(d.quetes[1].titre,'Quête');assert.equal(d.quetes[1].statut,'reussie');
- assert.ok(dom.includes("if(!mj){renderRessourcesLues(boite,r);return}")&&dom.includes('function carteQuete(q,avecLieu){')&&dom.includes("$('dom-journal-quetes').onclick=")&&fs.readFileSync('live.js','utf8').includes("'quetesPrises'"),'ressources lues et quêtes');}
+ assert.ok(dom.includes(" renderRessourcesLues(boite,r);if(mj){")&&dom.includes('function carteQuete(q,avecLieu){')&&dom.includes("$('dom-journal-quetes').onclick=")&&fs.readFileSync('live.js','utf8').includes("'quetesPrises'"),'ressources lues et quêtes');}
 /* v0.669 — Sorti d'un piège qui inflige Au sol, l'aventurier n'est plus Au sol. */
 assert.ok(fs.readFileSync('maps.js','utf8').includes("if((p.etats||[]).includes('Au sol')&&hasState(a,'Au sol'))setState(a,'Au sol',false);"),'sorti du piège, debout');
 /* v0.668 — La bulle du rond Enjamber se lit comme celle d'une action : Enjamber le piège, ou Sortir du piège ; le test requis. */
@@ -5134,4 +5143,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1946 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1951 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
