@@ -6,7 +6,7 @@
    planche remplacée par la même en plus grand garde ses découpes. Chaque icône y reçoit un
    nom et une catégorie, puis se choisit comme n'importe quel logo : « planches/x.webp#7 ».
    Rien n'est extrait en fichier : l'icône se découpe à l'affichage, dans le navigateur. */
-const CATS_ICONES=[['talents','Talents'],['equipement','Équipement'],['divers','Divers'],['ombrelame','Ombrelame']];
+const CATS_ICONES=[['talents','Talents'],['equipement','Équipement'],['divers','Divers'],['ombrelame','Ombrelame'],['actions','Actions']];
 /* Le nom d'une planche : ce que GitHub accepte d'ordinaire, espaces et accents compris, sans
    dossier, ni guillemet, ni chevron, ni rien qui casserait une adresse ou une page. */
 const estFichierPlanche=l=>/^planches\/[^/#?"'<>&\\]+\.(png|webp)$/i.test(String(l||''));
@@ -262,8 +262,8 @@ async function decouper(f,lignes,colonnes){
  const cases=g.cases,avant=plancheDe(f);
  if(!cases.length){alert('Aucune icône trouvée dans cette grille.');return}
  if(avant&&avant.icones.some(i=>i.nom||i.cat)&&!confirm('Redécouper « '+nomPlanche(f)+' » en '+cases.length+' icônes ? Les noms et catégories restent attachés aux numéros : vérifie-les ensuite.'))return;
- // Une planche qui porte le nom d'une catégorie, « OMBRELAME », y range d'emblée ses icônes nouvelles.
- const catNom=(CATS_ICONES.find(([,n])=>cleTalent(n)===cleTalent(nomPlanche(f)))||[''])[0];
+ // Une planche qui porte le nom d'une catégorie, « OMBRELAME », « Actions 2 », y range d'emblée ses icônes nouvelles.
+ const catNom=(CATS_ICONES.find(([,n])=>cleTalent(n)===cleTalent(nomPlanche(f)).replace(/\d+$/,''))||[''])[0];
  const p={fichier:f,lignes:g.lignes,colonnes:g.colonnes,cases,icones:cases.map((_,i)=>avant&&avant.icones[i]?{...avant.icones[i]}:{nom:'',cat:catNom})};
  catalog.planches=[...planchesDuCatalogue().filter(x=>x.fichier!==f),normalisePlanches([p])[0]];PLANCHES_OUVERTES.add(f);sauveIcones();renderIcones();
  // Toutes ses icônes rejoignent l'appareil dans la foulée, et la planche quitte la mémoire.
