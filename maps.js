@@ -1259,9 +1259,10 @@ function renderEnjamber(){let calque=$('piege-boutons');if(!calque){calque=docum
   const k=Math.max(0,Math.min(7,Math.trunc(Number(p.enjambement.comp))||0)),b=document.createElement('button');b.type='button';
   b.className='btn-action rond btn-enjamber'+(dansBarre?' contexte':'');if(!dansBarre){b.style.left=(p.x+p.w/2)+'%';b.style.top=(p.y+p.h/2)+'%'}b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');
   const ico=typeof logoCompetence==='function'?logoCompetence(k):null;if(ico)b.append(ico);else b.textContent=skillNames[k].slice(0,2);
-  b.setAttribute('aria-label','Enjamber · '+skillNames[k]);
-  // La bulle du piège, au-dessus du rond.
-  if(typeof surveille==='function')surveille(b,()=>ouvrirBulle(b,bullePiege(p,view==='mj'&&!(typeof oeilJoueur==='function'&&oeilJoueur())),'bulle-gear'));
+  // Sa bulle, comme celle d'une action : Enjamber le piège, ou Sortir du piège pour qui y est tombé ; le test requis.
+  const nom=tenuParPiege(a)===p?'Sortir du piège':'Enjamber le piège',dit='Test de '+skillNames[k]+' requis.';
+  b.setAttribute('aria-label',nom+' — '+dit);
+  if(typeof surveille==='function'&&typeof bulleAction==='function')surveille(b,()=>bulleAction(b,{nom,dit}));
   inerte(b,gris);
   b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};
   b.onclick=e=>{e.stopPropagation();if(estInerte(b))return;testPiege(a,p,'enjambement')};(dansBarre?barre:calque).append(b)}))}
