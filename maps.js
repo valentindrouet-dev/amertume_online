@@ -1252,17 +1252,19 @@ function renderEnjamber(){let calque=$('piege-boutons');if(!calque){calque=docum
   return !!p&&!!p.enjambement&&(dedans||(piegeArme(p)&&piegeConnu(p)&&coffreEnVue(p)&&!(Array.isArray(a.franchis)&&a.franchis.includes(p.id))&&piegeAPortee(a,p)))});
  const gris=!!a&&enCombat()&&(pointsRestants(a,'action')<=0||(typeof gelDebut==='function'&&gelDebut(a)));
  const cle=(a?a.id:'')+'|'+gris+'|'+montres.map(p=>p.id+':'+p.x+':'+p.y+':'+p.w+':'+p.h).join(',');
- if(cle===enjamberCle&&calque.isConnected)return;enjamberCle=cle;calque.replaceChildren();
- montres.forEach(p=>{
+ // Le même rond, dans la barre d'actions, au bout des petits boutons, cerné de sa couleur.
+ let barre=$('actions-contexte');if(!barre){const row=$('attack-row');if(row){barre=document.createElement('span');barre.id='actions-contexte';row.append(barre);enjamberCle=''}}
+ if(cle===enjamberCle&&calque.isConnected&&(!barre||barre.isConnected))return;enjamberCle=cle;calque.replaceChildren();if(barre)barre.replaceChildren();
+ montres.forEach(p=>[false,true].forEach(dansBarre=>{if(dansBarre&&!barre)return;
   const k=Math.max(0,Math.min(7,Math.trunc(Number(p.enjambement.comp))||0)),b=document.createElement('button');b.type='button';
-  b.className='btn-action rond btn-enjamber';b.style.left=(p.x+p.w/2)+'%';b.style.top=(p.y+p.h/2)+'%';b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');
+  b.className='btn-action rond btn-enjamber'+(dansBarre?' contexte':'');if(!dansBarre){b.style.left=(p.x+p.w/2)+'%';b.style.top=(p.y+p.h/2)+'%'}b.style.setProperty('--fond','rgb('+SKILL_TINTS[k]+')');
   const ico=typeof logoCompetence==='function'?logoCompetence(k):null;if(ico)b.append(ico);else b.textContent=skillNames[k].slice(0,2);
   b.setAttribute('aria-label','Enjamber · '+skillNames[k]);
   // La bulle du piège, au-dessus du rond.
   if(typeof surveille==='function')surveille(b,()=>ouvrirBulle(b,bullePiege(p,view==='mj'&&!(typeof oeilJoueur==='function'&&oeilJoueur())),'bulle-gear'));
   inerte(b,gris);
   b.onpointerdown=e=>e.stopPropagation();b.onmousedown=e=>{e.preventDefault();e.stopPropagation()};
-  b.onclick=e=>{e.stopPropagation();if(estInerte(b))return;testPiege(a,p,'enjambement')};calque.append(b)})}
+  b.onclick=e=>{e.stopPropagation();if(estInerte(b))return;testPiege(a,p,'enjambement')};(dansBarre?barre:calque).append(b)}))}
 const objetVue=dialog('objet-vue','Objet','<div id="objet-corps"></div>');
 function openObjetTable(i){const m=currentMap(),o=m&&m.objets&&m.objets[i];if(!o||(!o.visible&&view!=='mj'))return;
  objetVue.querySelector('h2').textContent=(o.visible?'':'◌ ')+o.nom;

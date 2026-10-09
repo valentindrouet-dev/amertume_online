@@ -3389,6 +3389,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.666 — Le rond Enjamber se reprend au bout des petits boutons de la barre d'actions, cerné d'une aura à sa couleur. */
+{const carto=fs.readFileSync('maps.js','utf8');
+ assert.ok(carto.includes("barre=document.createElement('span');barre.id='actions-contexte';row.append(barre);")&&carto.includes("(dansBarre?barre:calque).append(b)")&&fs.readFileSync('editor.css','utf8').includes('@keyframes auraContexte'),'le bouton contextuel dans la barre');}
 /* v0.665 — Les planches Actions dans les menus d'icônes des caractéristiques et compétences, après les leurs. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("/action/i.test(nomPlanche(f))||/action/i.test(f)?1:-1;"),'les planches Actions dans les icônes des caracs');
 /* v0.664 — Trois planches Actions et une planche de talents ; la catégorie Actions ; une planche nommée d'une catégorie et d'un
@@ -3511,7 +3514,7 @@ assert.ok(page.includes("$('map-view').style.setProperty('--dezoom',String(1/map
   &&vif.includes("if(basculeMode&&typeof interromptGestes==='function')interromptGestes();"),'le début et la fin d’un combat interrompent les gestes');
  assert.ok(page.includes("const idsVises=vises.map(j=>actors[j]&&actors[j].id);")&&page.includes("if(opts.vises&&!opts.vises.some(j=>actors[j]&&alive(actors[j]))){vises=cibleAutomatique(a,portee);opts={...opts,vises:null}}"),'le coup passe à l’adversaire suivant');
  assert.ok(page.includes(" combatEngage=false;if(finCombatPrevue){clearTimeout(finCombatPrevue);finCombatPrevue=0}")&&vif.includes("function adversairesDeboutTable(){"),'le combat ne finit pas sur un adversaire encore debout');
- assert.ok(carto.includes("const bute=(k,c)=>{const d=k.ecart(c);return d<r&&d<Math.min(k.d0,r)-.01};")&&carto.includes("function mesureEcartPiege(p,size){")&&carto.includes("if(cle===enjamberCle&&calque.isConnected)return;"),'le piège connu se longe, le rond suit le geste');}
+ assert.ok(carto.includes("const bute=(k,c)=>{const d=k.ecart(c);return d<r&&d<Math.min(k.d0,r)-.01};")&&carto.includes("function mesureEcartPiege(p,size){")&&carto.includes("if(cle===enjamberCle&&calque.isConnected&&(!barre||barre.isConnected))return;"),'le piège connu se longe, le rond suit le geste');}
 /* v0.639 — Les flèches sans rendu complet à chaque appui ; les Points de vie sous les Combattants ; Échanger et Changer
    d'armes en exploration aussi ; Enjamber au centre du piège ; un piège connu arrête l'aventurier, l'échec l'y précipite et
    il n'en sort qu'en réussissant le test, en subissant de nouveau ses états à chaque échec. */
@@ -3519,7 +3522,7 @@ assert.ok(page.includes("$('map-view').style.setProperty('--dezoom',String(1/map
  assert.ok(page.includes("function pasVisible(a){")&&page.includes("bruitDePas(a,[{x:x0,y:y0},{x:a.x,y:a.y}])}pasVisible(a);")&&page.includes("if(!renduClavier){saveChecks();savePool()}selected=i;"),'le pas d’une flèche se voit aussitôt');
  assert.ok(page.includes("ech.hidden=arm.hidden=!a||!a.hero||!!a.horsCarte;")&&page.includes("if(enCombat())depensePoint(a,'mouvement');fermerBulle();apresEchange()"),'Échanger et Changer d’armes en exploration');
  assert.ok(carto.includes("function ecartAuPiege(p,c,size){")&&carto.includes("return {p:mur.p,...pct(fin),bloque:true}}")
-  &&page.includes("if(piegeClavier&&!piegeClavier.bloque)declenchePiege(")&&carto.includes("b.style.top=(p.y+p.h/2)+'%';")
+  &&page.includes("if(piegeClavier&&!piegeClavier.bloque)declenchePiege(")&&carto.includes("b.style.top=(p.y+p.h/2)+'%'}")
   &&carto.includes("if(quoi==='enjambement'&&!ok){declenchePiege(p,a,true);return}")&&carto.includes("if(!p||p.desamorce||(!piegeArme(p)&&!p.enjambement)||"),'le piège connu bloque, on n’en sort qu’en l’enjambant');}
 /* v0.638 — L'arrêt au contact se fait à la sortie : entré à plus de moitié dans la zone d'un adversaire, le socle qui en ressort
    s'arrête au bord, une fois par adversaire et par tour. La barre de mouvement est celle du token sélectionné. */
@@ -3538,7 +3541,7 @@ assert.ok(page.includes("if(tokenDistance(a,o,size)<=contactRadius(tokenOf(o)))e
  assert.ok(page.includes('id="echanger" hidden>')&&page.includes('id="changer-armes" hidden>')&&page.includes("function cibleEchange(a){")&&src.includes("['echanger','Échanger un objet'],['armes','Changer d’armes']];")
   &&src.includes("function verrouEquip(a,o){")&&src.includes("&&tout&&peutEquiper&&!verrouEquip(a,o);"),'Échanger un objet, Changer d’armes, et le verrou des armes en combat');
  assert.ok(src.includes("objetGlisse={de:a.id,id:o.id}")&&src.includes("retirerInventaire(de,o);if(!ajouterInventaire(a,o)){ajouterInventaire(de,o);return}"),'un objet glissé d’une fiche à l’autre');
- assert.ok(carto.includes("function renderEnjamber(){")&&carto.includes("testPiege(a,p,'enjambement')};calque.append(b)})}")&&page.includes("if(typeof renderEnjamber==='function')renderEnjamber();"),'Enjamber, au-dessus du piège');
+ assert.ok(carto.includes("function renderEnjamber(){")&&carto.includes("testPiege(a,p,'enjambement')};(dansBarre?barre:calque).append(b)}))}")&&page.includes("if(typeof renderEnjamber==='function')renderEnjamber();"),'Enjamber, au-dessus du piège');
  assert.ok(carto.includes("const bruitBtn=icone('bruit-bascule','🔊','Désactiver le bruit');")&&carto.includes("||(typeof bruitCoupe!=='undefined'&&bruitCoupe))return 0;")
   &&vif.includes("bruitCoupe=d.fogReset.bruitOff===true;")&&page.includes("localStorage.getItem('amertume-bruit-coupe')==='1'"),'le bruit coupé pour toute la table');}
 /* v0.635 — L'Analyse déjà faite pendant ce combat se dit à la deuxième personne. */
@@ -5121,4 +5124,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1938 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1939 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
