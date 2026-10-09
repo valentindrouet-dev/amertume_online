@@ -998,8 +998,8 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 /* « +1 PA » en bleu, « +1 PM » en brun, et leur point à droite du mot. */
 .floater .pt{display:inline-block;width:.42em;height:.42em;margin-left:.22em;border-radius:50%;vertical-align:.12em;box-shadow:inset 0 -1px 0 rgba(0,0,0,.22),0 0 0 1.5px rgba(255,255,255,.7)}
 .floater .pt.action{background:#3f8fe0}.floater .pt.mvt{background:#cf9152}
-/* Un bouton contextuel de la carte, repris au bout des petits boutons de la barre d'actions, cerné d'une aura à sa couleur. */
-#actions-contexte{display:flex;gap:inherit;margin-left:auto}#actions-contexte:empty{display:none}
+/* Un bouton contextuel de la carte, repris juste après les petits boutons de la barre d'actions, cerné d'une aura à sa couleur. */
+#actions-contexte{display:flex;gap:inherit}#actions-contexte:empty{display:none}
 .attack-row .btn-action.rond.contexte{animation:auraContexte 1.1s ease-in-out infinite alternate}
 .attack-row .btn-action.rond.contexte img{width:72%;height:72%;object-fit:contain}
 @keyframes auraContexte{from{box-shadow:0 0 0 2px var(--fond),0 0 6px 1px var(--fond)}to{box-shadow:0 0 0 3px var(--fond),0 0 16px 6px var(--fond)}}
