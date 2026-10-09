@@ -1183,7 +1183,8 @@ function testPiege(a,p,quoi){const t=p&&p[quoi],dedans=quoi==='enjambement'&&!!p
  if(quoi==='desamorcage'){if(ok)p.desamorce=true;log(tete+(ok?'désamorce '+p.nom:'ne parvient pas à désamorcer '+p.nom)+'.',{dice:true,ton:'competence'})}
  else{log(tete+(ok?'enjambe '+p.nom:'trébuche sur '+p.nom)+'.',{dice:true,ton:'competence'});if(ok){a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60);delete a.tenuPar}
   // Sorti du fond, il regagne la place d'où le piège l'avait happé, ou à défaut le bord le plus proche, hors du piège.
-  if(ok&&dedans){const de={x:a.x,y:a.y},q=sortieDuPiege(a,p);a.x=q.x;a.y=q.y;delete a.avantPiege;if(typeof settleActor==='function')settleActor(a);render();glisseAuPiege(a,de);saveMaps();scheduleSave();return}}
+  // Sorti, il n'est plus Au sol si c'est ce piège qui l'y avait mis.
+  if(ok&&dedans){const de={x:a.x,y:a.y},q=sortieDuPiege(a,p);a.x=q.x;a.y=q.y;delete a.avantPiege;if((p.etats||[]).includes('Au sol')&&hasState(a,'Au sol'))setState(a,'Au sol',false);if(typeof settleActor==='function')settleActor(a);render();glisseAuPiege(a,de);saveMaps();scheduleSave();return}}
  if(enCombat()&&typeof afterAction==='function')afterAction(a);
  /* Manqué du bord, l'aventurier est précipité dans le piège ; manqué du fond, il y reste et en subit encore les états. */
  if(quoi==='enjambement'&&!ok&&dedans){const etats=(p.etats||[]).filter(e=>infligeEtat(a,e)===true);floatNumber(a,'Piège !','perte');
