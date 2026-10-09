@@ -17,14 +17,14 @@ const appliquerSansDomaine=appliquerSauvegarde;appliquerSauvegarde=function(s){a
    monde. Zéro, c'est le domaine d'origine, vierge. */
 function poidsDomaine(d){if(!d||!d.carte||!Array.isArray(d.batiments))return 0;
  return d.carte.calques.filter(Boolean).length*100+d.batiments.filter(b=>b.zone).length*5+d.batiments.filter(b=>b.etape>0||b.etat).length*2
-  +(d.nom!=='Le Domaine'?1:0)+(d.pnj||[]).length+((d.finances&&d.finances.journal)||[]).length+(d.finances&&d.finances.tresor?1:0)}
+  +(d.nom!=='Le Domaine'?1:0)+(d.pnj||[]).length+(d.quetes||[]).length+((d.finances&&d.finances.journal)||[]).length+(d.finances&&d.finances.tresor?1:0)}
 /* ---------- Le domaine de secours ---------- */
 /* À chaque enregistrement, un domaine qui a du contenu se garde aussi à part, sous
    « domaine:secours », sur cet appareil. Un domaine vide ne l'écrase jamais : si la partie perd
    son domaine — une autre fenêtre restée ouverte, une sauvegarde trop ancienne —, le dernier
    domaine digne de ce nom reste, et l'onglet Domaine propose de le reprendre. */
 let secoursDomaine=null,signatureSecours='';
-const signatureDomaine=d=>[d.nom,d.carte.calques.map(c=>c?c.length:0).join('.'),JSON.stringify(d.batiments).length,JSON.stringify(d.finances).length,(d.pnj||[]).length,JSON.stringify(d.ressources||{}).length].join('|');
+const signatureDomaine=d=>[d.nom,d.carte.calques.map(c=>c?c.length:0).join('.'),JSON.stringify(d.batiments).length,JSON.stringify(d.finances).length,(d.pnj||[]).length,JSON.stringify(d.ressources||{}).length,JSON.stringify(d.quetes||[]).length].join('|');
 const saveNowSansSecours=saveNow;saveNow=function(){saveNowSansSecours();gardeSecoursDomaine()};
 function gardeSecoursDomaine(){if(typeof db==='undefined'||!db||(typeof ongletPerime!=='undefined'&&ongletPerime)||poidsDomaine(domaine)<=0)return;
  const sig=signatureDomaine(domaine);if(sig===signatureSecours)return;
@@ -399,7 +399,7 @@ const domainePage=document.createElement('main');domainePage.id='domaine-page';
 domainePage.innerHTML=
  '<aside class="panel dom-col" id="dom-col-bat"><h2>Bâtiments</h2><div id="dom-bats"></div></aside>'
  +'<section class="panel dom-centre"><header class="dom-tete"><h2 id="dom-titre"></h2>'
- +'<span class="dom-tresor" id="dom-tresor-tete"></span><span class="dom-actions"><button id="dom-contours" title="Montrer ou cacher le contour des bâtiments">▦ Contours</button><button id="dom-editer">✎ Modifier la carte</button>'
+ +'<span class="dom-tresor" id="dom-tresor-tete"></span><span class="dom-actions"><button id="dom-contours" title="Montrer ou cacher le contour des bâtiments">▦ Contours</button><button id="dom-journal-quetes">📜 Journal de quêtes</button><button id="dom-editer">✎ Modifier la carte</button>'
  +'<button id="dom-export" title="Télécharger le domaine — carte, bâtiments, finances, habitants — dans un fichier .json">⇩ Exporter</button><button id="dom-import" title="Reprendre un domaine exporté, à la place de celui-ci">⇧ Importer</button><input type="file" id="dom-json" accept="application/json,.json" hidden></span></header>'
  +'<div class="dom-secours" id="dom-secours" hidden></div>'
  +'<div class="dom-carte-wrap"><div id="dom-plan"><canvas id="dom-plan-fond"></canvas><svg id="dom-plan-zones" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>'
@@ -407,6 +407,7 @@ domainePage.innerHTML=
  +'<div id="dom-fiche"></div></section>'
  +'<aside class="panel dom-col" id="dom-col-gestion"><h2>Finances</h2><div id="dom-finances"></div>'
  +'<div class="divider"></div><h2>Ressources</h2><div id="dom-ressources"></div>'
+ +'<div class="divider"></div><h2>Quêtes</h2><div id="dom-quetes"></div>'
  +'<div class="divider"></div><h2>Habitants et visiteurs</h2><div id="dom-pnj"></div>'
  +'<div class="divider"></div><h2>Aventuriers</h2><div id="dom-aventuriers"></div></aside>';
 document.querySelector('main.layout').after(domainePage);
@@ -456,7 +457,7 @@ function renderDomaine(leger){const d=domaine,mj=mjDom();vueDomaine=view;if(mj&&
  // Sur l'onglet, le nom ne se déplace pas : il choisit le bâtiment, c'est tout.
  dessineZonesDom($('dom-plan-zones'),$('dom-plan-etiquettes'),{sel:sel>=0?sel:null,jeu:true,inerte:b=>!batimentChoisissable(b),
   clic:b=>{domPageSel=domPageSel===b.id?null:b.id;renderDomaine()}});
- renderDomBats();renderDomFiche();renderDomFinances();renderDomRessources();renderDomPnj();renderDomAventuriers()}
+ renderDomBats();renderDomFiche();renderDomFinances();renderDomRessources();renderDomQuetes();renderDomPnj();renderDomAventuriers();{const jq=document.getElementById('dom-journal-quetes-vue');if(jq&&jq.open)renderJournalQuetes()}}
 $('dom-plan-zones').addEventListener('click',e=>{const z=e.target.closest('[data-bat]');if(!z)return;
  const b=domaine.batiments[Number(z.dataset.bat)];if(b&&!batimentChoisissable(b))return;domPageSel=b&&domPageSel!==b.id?b.id:null;renderDomaine()});
 // Construire : d'un clic, si le trésor y suffit ; sinon le MJ confirme, et le trésor plonge.
@@ -549,7 +550,7 @@ function renderDomFicheLue(boite,b){const tete=document.createElement('div');tet
  boite.append(qui);finFiche(boite,b)}
 /* ---------- Se déplacer, et ce que fait le bâtiment ---------- */
 // Au bas de la fiche : un bouton par aventurier pour s'y rendre, puis la fonction du bâtiment.
-function finFiche(boite,b){const dep=blocDeplacements(b);if(dep)boite.append(dep);const f=blocFonction(b);if(f)boite.append(f)}
+function finFiche(boite,b){const dep=blocDeplacements(b);if(dep)boite.append(dep);const f=blocFonction(b);if(f)boite.append(f);const q=blocQuetes(b);if(q)boite.append(q)}
 function deplaceAventurier(a,b){if(!agitPour(a)||!batimentConstruit(b)||lieuDe(a)===b.id)return;
  poseLieu(a,b.id);renderDomaine(true);render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 /* Chaque bâtiment construit a un bouton par aventurier : « S'y déplacer », ou « Ici » pour qui
@@ -729,6 +730,7 @@ function renderDomFinances(){const boite=$('dom-finances');boite.replaceChildren
 function renderDomRessources(){const boite=$('dom-ressources');if(!boite)return;boite.replaceChildren();
  // Chez un joueur, la réserve compte aussi les dépôts que le MJ n'a pas encore versés.
  const mj=mjDom(),r=mj?(domaine.ressources||(domaine.ressources={})):reserveVue();
+ if(!mj){renderRessourcesLues(boite,r);return}
  const poser=mj?(k,v)=>{poseCompte(r,k,v);renderDomRessources();sauveDomaine()}:null;
  const titre=t=>{const h=document.createElement('h3');h.className='reglage-titre';h.textContent=t;return h};
  const mats=document.createElement('div');mats.className='materiaux';
@@ -741,6 +743,80 @@ function renderDomRessources(){const boite=$('dom-ressources');if(!boite)return;
   const lg=piece&&logoEquipement(piece,'materiau-logo');if(lg)chip.append(lg);
   chip.append(nom,v);mats.append(chip)});
  boite.append(titre('Matériaux'),mats,titre('Gemmes'),grilleGemmes(r,poser,'réserve du domaine'))}
+/* Chez les joueurs, les ressources du domaine se lisent comme les richesses d'un aventurier : l'or du trésor, les matériaux que la
+   réserve contient, en carrés, puis ses gemmes ; rien de ce qui manque. */
+function renderRessourcesLues(boite,r){const out=document.createElement('div');out.className='richesses dom-richesses';
+ const titre=t=>{const x=document.createElement('span');x.className='richesses-titre';x.textContent=t;return x};
+ const or=Math.max(0,domaine.finances.tresor||0);if(or)out.append(titre('Or'),ligneOr(or,null));
+ const mats=ressourcesJeu().filter(x=>x.cle!=='or'&&(r[x.cle]||0)>0);
+ if(mats.length){const l=document.createElement('div');l.className='dom-materiaux-lus';
+  mats.forEach(({cle,nom,piece})=>{const n=r[cle]||0;let c;
+   if(piece){c=gearCarre(piece,n,false);c.classList.add('petit');c.removeAttribute('role');c.tabIndex=-1;
+    if(typeof surveille==='function')surveille(c,()=>{const d=gearDetail(piece,null,true);d.hidden=false;d.classList.add('large');ouvrirBulle(c,d,'bulle-gear')})}
+   else{c=document.createElement('span');c.className='materiau';const nm=document.createElement('span');nm.textContent=nom;const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');c.append(nm,v)}
+   c.setAttribute('aria-label',nom+' : '+n);l.append(c)});
+  out.append(titre('Matériaux'),l)}
+ const g=ligneGemmes(r,null,'');if(g)out.append(titre('Gemmes'),g);
+ if(out.childElementCount)boite.append(out)}
+/* ---------- Les quêtes ---------- */
+/* Une quête se prend par les aventuriers du joueur — tous ceux qu'il mène — et se lit « En cours » dès qu'un aventurier la porte.
+   Le MJ dit son issue : Réussie ou Échouée. Le journal les range : en cours, proposées, terminées. */
+const NOMS_ETAT_QUETE={proposee:'Proposée',encours:'En cours',reussie:'Réussie',echouee:'Échouée',cachee:'Cachée'};
+const preneursQuete=q=>actors.filter(a=>a&&a.hero&&Array.isArray(a.quetesPrises)&&a.quetesPrises.includes(q.id));
+function etatQuete(q){return q.statut==='proposee'?(preneursQuete(q).length?'encours':'proposee'):q.statut}
+const quetesVues=()=>(domaine.quetes||[]).filter(q=>mjDom()||q.statut!=='cachee');
+const finieQuete=q=>q.statut==='reussie'||q.statut==='echouee';
+function nomLieuQuete(q){const b=q.lieu?batimentDom(q.lieu):null;return b?b.nom:domaine.nom}
+function prendreQuete(q,prendre){const qui=actors.filter(a=>a&&a.hero&&agitPour(a));if(!qui.length)return;
+ qui.forEach(a=>{const l=(Array.isArray(a.quetesPrises)?a.quetesPrises:[]).filter(x=>x!==q.id);a.quetesPrises=prendre?[...l,q.id].slice(-100):l});
+ renderDomaine(true);render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+function issueQuete(q,statut){q.statut=statut;renderDomaine(true);sauveDomaine()}
+function carteQuete(q,avecLieu){const e=etatQuete(q),c=document.createElement('article');c.className='dom-quete q-'+e;
+ const tete=document.createElement('div');tete.className='dom-quete-tete';
+ const t=document.createElement('strong');t.textContent=q.titre;const badge=document.createElement('span');badge.className='dom-quete-etat';badge.textContent=NOMS_ETAT_QUETE[e];
+ tete.append(t,badge);c.append(tete);
+ if(avecLieu){const l=document.createElement('small');l.className='dom-quete-lieu';l.textContent=nomLieuQuete(q);c.append(l)}
+ if(q.texte){const p=document.createElement('p');p.className='dom-quete-texte';p.textContent=q.texte;c.append(p)}
+ if(q.recompense){const p=document.createElement('p');p.className='dom-quete-recompense';const b=document.createElement('b');b.textContent='Récompense : ';p.append(b,q.recompense);c.append(p)}
+ const pris=preneursQuete(q);if(pris.length){const p=document.createElement('small');p.className='dom-quete-qui';p.textContent='Prise par '+pris.map(a=>a.name).join(', ');c.append(p)}
+ const actions=document.createElement('div');actions.className='dom-quete-actions';
+ const bouton=(txt,fn,cls)=>{const x=document.createElement('button');x.type='button';x.textContent=txt;if(cls)x.className=cls;x.onclick=fn;actions.append(x)};
+ const miens=actors.filter(a=>a&&a.hero&&agitPour(a)),tousPris=miens.length&&miens.every(a=>pris.includes(a)),unPris=miens.some(a=>pris.includes(a));
+ if(!finieQuete(q)&&q.statut!=='cachee'&&miens.length){if(!tousPris)bouton('Accepter',()=>prendreQuete(q,true),'primary');if(unPris)bouton('Abandonner',()=>prendreQuete(q,false))}
+ if(mjDom()){if(!finieQuete(q)){bouton('✓ Réussie',()=>issueQuete(q,'reussie'));bouton('✗ Échouée',()=>issueQuete(q,'echouee'))}bouton('✎',()=>openQuete(q.id),'dom-quete-edit')}
+ if(actions.childElementCount)c.append(actions);return c}
+// Les quêtes de tout le domaine, dans la colonne : en cours et proposées ; les terminées vont au journal.
+function renderDomQuetes(){const boite=$('dom-quetes');if(!boite)return;boite.replaceChildren();
+ quetesVues().filter(q=>!q.lieu&&(mjDom()||!finieQuete(q))).forEach(q=>boite.append(carteQuete(q,false)));
+ if(mjDom()){const add=document.createElement('button');add.textContent='+ Quête';add.className='dom-ajout';add.onclick=()=>openQuete(null,'');boite.append(add)}}
+// Les quêtes d'un bâtiment, au bas de sa fiche.
+function blocQuetes(b){const lot=quetesVues().filter(q=>q.lieu===b.id&&(mjDom()||!finieQuete(q)));if(!lot.length&&!mjDom())return null;
+ const out=document.createElement('section');out.className='dom-quetes-bat';out.append(titreFonction('Quêtes'));lot.forEach(q=>out.append(carteQuete(q,false)));
+ if(mjDom()){const add=document.createElement('button');add.textContent='+ Quête ici';add.className='dom-ajout';add.onclick=()=>openQuete(null,b.id);out.append(add)}
+ return out}
+const queteDialog=dialog('dom-quete-editor','Quête','<form id="dom-quete-form"><div id="dom-quete-fields"></div><div class="form-actions"><button type="button" id="dom-quete-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
+function openQuete(id,lieu){if(!mjDom())return;const q=id?(domaine.quetes||[]).find(x=>x.id===id):null;
+ queteDialog.querySelector('h2').textContent=q?q.titre:'Nouvelle quête';
+ const lieux=[['','Tout le domaine'],...domaine.batiments.map(b=>[b.id,b.nom])];
+ $('dom-quete-fields').innerHTML='<div class="edit-grid">'+field('Titre','titre',q?q.titre:'','text','required maxlength="80"')
+  +sel('Lieu','lieu',q?q.lieu:(lieu||''),lieux)+sel('Statut','statut',q?q.statut:'proposee',STATUTS_QUETE)+'</div>'
+  +'<label>Description<textarea name="texte" rows="5" maxlength="3000">'+esc(q?q.texte:'')+'</textarea></label>'
+  +field('Récompense','recompense',q?q.recompense:'','text','maxlength="300"');
+ $('dom-quete-suppr').hidden=!q;
+ $('dom-quete-form').onsubmit=e=>{e.preventDefault();const f=$('dom-quete-form').elements;
+  const v=normaliseQuete({id:q?q.id:undefined,titre:f.titre.value.trim()||'Quête',lieu:batimentDom(f.lieu.value)?f.lieu.value:'',statut:f.statut.value,texte:f.texte.value,recompense:f.recompense.value.trim(),t:q?q.t:Date.now()});
+  domaine.quetes??=[];if(q)Object.assign(q,v);else domaine.quetes.push(v);queteDialog.close();renderDomaine();sauveDomaine()};
+ $('dom-quete-suppr').onclick=()=>{if(!q||!confirm('Supprimer la quête « '+q.titre+' » ?'))return;
+  domaine.quetes=domaine.quetes.filter(x=>x!==q);queteDialog.close();renderDomaine();sauveDomaine()};
+ queteDialog.showModal()}
+// Le journal de quêtes : en cours, proposées, terminées ; chacune dit son lieu.
+const journalQuetes=dialog('dom-journal-quetes-vue','Journal de quêtes','<div id="dom-journal-quetes-corps"></div>');
+function renderJournalQuetes(){const corps=$('dom-journal-quetes-corps');corps.replaceChildren();const l=quetesVues();
+ [['En cours',q=>etatQuete(q)==='encours'],['Proposées',q=>etatQuete(q)==='proposee'],...(mjDom()?[['Cachées',q=>q.statut==='cachee']]:[]),['Terminées',finieQuete]].forEach(([t,f])=>{
+  const lot=l.filter(f);if(!lot.length)return;const h=document.createElement('h3');h.className='reglage-titre';h.textContent=t;corps.append(h);
+  lot.forEach(q=>corps.append(carteQuete(q,true)))});
+ if(!corps.childElementCount){const p=document.createElement('p');p.className='muted';p.textContent='Aucune quête.';corps.append(p)}}
+$('dom-journal-quetes').onclick=()=>{renderJournalQuetes();journalQuetes.showModal()};
 /* ---------- Les habitants et les visiteurs ---------- */
 const pnjDialog=dialog('dom-pnj-editor','Personnage','<form id="dom-pnj-form"><div id="dom-pnj-fields"></div><div class="form-actions"><button type="button" id="dom-pnj-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
 function openPnj(id){const p=id?domaine.pnj.find(x=>x.id===id):null;
