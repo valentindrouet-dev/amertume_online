@@ -1226,9 +1226,9 @@ function teinteLogoSur(el,im,cle){const pose=t=>{if(t)el.style.setProperty('--ti
  if(TEINTES_LOGOS.has(cle)){pose(TEINTES_LOGOS.get(cle));return}
  const lis=()=>{if(TEINTES_LOGOS.has(cle)){pose(TEINTES_LOGOS.get(cle));return}if(!im.naturalWidth)return;const t=teinteDominante(im);if(t){TEINTES_LOGOS.set(cle,t);pose(t)}};
  if(im.complete&&im.naturalWidth)lis();im.addEventListener('load',lis)}
-// Les planches Caractéristiques et Compétences d'abord, puis le reste des icônes.
-function groupesLogosCompetence(){const vus=new Set(),groupes=[];
- planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f)).sort((x,y)=>nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))
+// Les planches Caractéristiques et Compétences d'abord, puis les planches Actions, puis le reste des icônes.
+function groupesLogosCompetence(){const vus=new Set(),groupes=[],rang=f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f)?0:/action/i.test(nomPlanche(f))||/action/i.test(f)?1:-1;
+ planchesDuCatalogue().map(p=>p.fichier).filter(f=>rang(f)>=0).sort((x,y)=>rang(x)-rang(y)||nomPlanche(x).localeCompare(nomPlanche(y),'fr',{numeric:true}))
   .forEach(f=>{const ids=iconesPlanches().filter(id=>id.startsWith(f+'#'));ids.forEach(i=>vus.add(i));if(ids.length)groupes.push([nomPlanche(f),ids])});
  [...famillesPlanches(),...FAMILLES_LOGOS].forEach(([t,l])=>{const reste=l.filter(x=>!vus.has(x));if(reste.length)groupes.push([t,reste])});return groupes}
 /* ---------- La conversion des dégâts de D&D 5.5 ----------

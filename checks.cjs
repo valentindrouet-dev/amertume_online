@@ -3383,12 +3383,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.deepEqual([...ctxC.n(['planches/caracteristiques_1.webp#4',7,'a"b'])],['planches/caracteristiques_1.webp#4','','',...Array(C.COMPETENCES.length-3).fill('')],'une icône par compétence, rien d’autre');
  assert.equal(ctxC.n(null).length,C.COMPETENCES.length,'autant de places que de compétences');
  assert.ok(src.includes("c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);")&&src.includes('<button id="hero-icones-comp" type="button"')
-  &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>/caract|comp[ée]t/i.test(nomPlanche(f))||/caract|comp[ée]t/i.test(f))")
+  &&src.includes("planchesDuCatalogue().map(p=>p.fichier).filter(f=>rang(f)>=0)")
   &&page.includes(" skillNames.forEach((name,i)=>{const b=typeof rondCompetence==='function'?rondCompetence(a,i,true):"),'les icônes des compétences sur les fiches');}
 /* v0.564 — Arbre : un seul petit rond par chemin, plus de place offerte après celui qui y est ; les petits ronds s'écartent
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.665 — Les planches Actions dans les menus d'icônes des caractéristiques et compétences, après les leurs. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("/action/i.test(nomPlanche(f))||/action/i.test(f)?1:-1;"),'les planches Actions dans les icônes des caracs');
 /* v0.664 — Trois planches Actions et une planche de talents ; la catégorie Actions ; une planche nommée d'une catégorie et d'un
    numéro y range ses icônes à la découpe. */
 {const pl=fs.readFileSync('planches.js','utf8');
@@ -5119,4 +5121,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1937 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1938 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
