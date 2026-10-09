@@ -379,7 +379,7 @@ function cleanObjet(o){const t=o&&o.test||{};
   // Récupéré par un aventurier : il reste hors de la carte jusqu'à ce qu'elle soit rechargée sur la table.
   ...(o&&o.pris===true?{pris:true}:{}),
   items:(Array.isArray(o&&o.items)?o.items:[]).filter(x=>typeof x==='string').slice(0,20).map(x=>texte(x,60)).filter(Boolean),
-  tresor:texte(o&&o.tresor,200),
+  tresor:texte(o&&o.tresor,200),...(o&&typeof o.quete==='string'&&o.quete?{quete:texte(o.quete,60)}:{}),
   test:{comp:Math.max(0,Math.min(7,Math.trunc(Number(t.comp))||0)),
    reussites:Math.max(1,Math.min(9,Math.trunc(Number(t.reussites))||1))}}}
 /* Une lumière sur la carte : une torche au mur, une lampe, un feu. Un point, un rayon en mètres, et l'objet qu'elle
@@ -476,12 +476,13 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
  const ratio=Math.max(.2,Math.min(6,Number(m&&m.ratio)||16/9));
  const matiere=Array.isArray(m&&m.matiere)?cleanMatiere(m.matiere)
   :migreMatiere({ratio,walls:cleanRects(m&&m.walls),visions:cleanRects(m&&m.visions),traits:cleanTraits(m&&m.traits)}).matiere;
- return {name:texte(m&&m.name,80)||'Carte',ratio,
+ // Le lieu qui la rassemble avec d'autres cartes — étages, grands lieux —, s'il en a un.
+ return {name:texte(m&&m.name,80)||'Carte',...(m&&typeof m.lieu==='string'&&m.lieu.trim()?{lieu:texte(m.lieu.trim(),60)}:{}),ratio,
   fitted:!(m&&m.fitted===false),image:img,
   matiere,obscurite:cleanMatiere(m&&m.obscurite).map(p=>({anneaux:p.anneaux})),...(m&&Array.isArray(m.impraticable)&&m.impraticable.length?{impraticable:cleanMatiere(m.impraticable).map(p=>({anneaux:p.anneaux}))}:{}),lumieres:(Array.isArray(m&&m.lumieres)?m.lumieres:[]).slice(0,100).map(cleanLumiere),doors:cleanRects(m&&m.doors,true),
   start:cleanRect(m&&m.start),
   foes:(Array.isArray(m&&m.foes)?m.foes:[]).slice(0,200).map(f=>({x:borne(f&&f.x),y:borne(f&&f.y),
-   hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),...(f&&typeof f.id==='string'&&f.id?{id:texte(f.id,40)}:{}),...portePropre(f),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
+   hidden:!!(f&&f.hidden),...(f&&f.cache===true?{cache:true}:{}),...(f&&typeof f.id==='string'&&f.id?{id:texte(f.id,40)}:{}),...portePropre(f),...(f&&typeof f.quete==='string'&&f.quete?{quete:texte(f.quete,60)}:{}),locked:!!(f&&f.locked),tpl:cleanMonster(f&&f.tpl)})),
   coffres:(Array.isArray(m&&m.coffres)?m.coffres:[]).slice(0,100).map(cleanCoffre).filter(Boolean),
   pieges:(Array.isArray(m&&m.pieges)?m.pieges:[]).slice(0,100).map(cleanPiege).filter(Boolean),
   objets:(Array.isArray(m&&m.objets)?m.objets:[]).slice(0,200).map(cleanObjet),

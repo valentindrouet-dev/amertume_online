@@ -1011,6 +1011,11 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 .dom-quete-lieu,.dom-quete-qui{display:block;color:var(--muted);font-size:12px}.dom-quete-texte{margin:5px 0;white-space:pre-wrap;font-size:13px}.dom-quete-recompense{margin:4px 0;font-size:13px;display:flex;flex-wrap:wrap;align-items:center;gap:5px}.dom-quete-recompense .cat-pill{flex:none;width:auto}
 .dom-quete-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.dom-quete-actions button{padding:3px 9px;font-size:12px}.dom-quetes-bat{margin-top:10px}
 #dom-journal-quetes-vue{width:min(560px,92vw)}#dom-journal-quetes-corps{max-height:70vh;overflow:auto}
+/* Les lieux de l'éditeur de cartes : un bandeau repliable, ses cartes en retrait dessous. */
+.map-lieu{margin:6px 0;border-radius:8px}.map-lieu.survol,#map-list.survol{outline:2px dashed var(--accent);outline-offset:2px}
+.map-lieu-tete{display:flex;align-items:center;gap:6px;padding:4px 6px;cursor:pointer;font-weight:700;font-size:13px;color:var(--muted);user-select:none}
+.map-lieu-tete .map-lieu-nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.map-lieu-tete small{font-weight:600}
+.map-lieu-tete .ico{padding:0 4px;opacity:.6}.map-lieu-tete .ico:hover{opacity:1}.map-lieu>.map-row{margin-left:12px;width:calc(100% - 12px)}
 /* Course mortelle : les adversaires qu'on peut rejoindre s'éclairent, et attendent le clic. */
 .token.choix-course{outline:3px solid #8fe04f!important;outline-offset:4px;box-shadow:0 0 16px 5px #8fe04f99;cursor:pointer;animation:choixCourse 1.1s ease-in-out infinite alternate}
 @keyframes choixCourse{from{box-shadow:0 0 8px 2px #8fe04f66}to{box-shadow:0 0 18px 7px #8fe04fbb}}

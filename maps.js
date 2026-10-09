@@ -1456,7 +1456,7 @@ mapsPage.innerHTML=
  +'<p class="muted">Un fichier qui contient toutes tes cartes : zones, portes, découpes, zone de départ, adversaires, objets et image de fond. Le domaine n’y est pas : il s’exporte depuis son onglet, et la partie entière depuis les Paramètres.</p>'
  +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
  +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
- +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><span class="map-xp" id="map-xp"></span>'
+ +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><label>Lieu<select id="map-lieu"></select></label><span class="map-xp" id="map-xp"></span>'
  +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
@@ -1560,6 +1560,9 @@ $('map-del').onclick=()=>{if(!mapDraft||!confirm('Supprimer « '+mapDraft.name+'
  const i=maps.indexOf(mapDraft);maps.splice(i,1);if(currentMapId===mapDraft.id)currentMapId=null;
  mapDraft=maps[Math.max(0,i-1)]||null;mapSel=null;undoStack=[];redoStack=[];if(!maps.length)newMap();
  renderMapList();renderCanvas();saveMaps();render()};
+$('map-lieu').onchange=()=>{const s=$('map-lieu');if(!mapDraft)return;
+ if(s.value==='*'){const n=prompt('Nom du nouveau lieu :','');if(n&&n.trim())poseLieuCarte(mapDraft,n);else renderMapList();return}
+ poseLieuCarte(mapDraft,s.value)};
 $('map-name').oninput=()=>{if(mapDraft){mapDraft.name=$('map-name').value;renderMapList();saveMaps()}};
 /* Sauvegarde des couches : le fichier se suffit à lui-même, image comprise, et il
    revient toujours en cartes neuves — on ne remplace jamais ce qui est là. */
@@ -1606,11 +1609,38 @@ document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{ma
 
 /* La liste des cartes : le nom seul, sur une ligne ; en vert, celle qui est chargée sur la table.
    Le détail — zones, portes, adversaires, objets — se lit au survol. */
-function renderMapList(){$('map-list').replaceChildren(...maps.map(m=>{const b=document.createElement('button');
+/* Les lieux : des cartes rassemblées sous un même nom — les étages d'une tour, les salles d'un grand lieu. Une carte sans lieu
+   reste en tête, comme avant ; chaque lieu a son bandeau, qui se replie, se renomme, et reçoit la carte qu'on y dépose. */
+let lieuxReplies=new Set();try{lieuxReplies=new Set(JSON.parse(localStorage.getItem('amertume-lieux-replies')||'[]'))}catch(e){}
+const lieuxDesCartes=()=>[...new Set(maps.map(m=>m&&typeof m.lieu==='string'?m.lieu.trim():'').filter(Boolean))].sort((x,y)=>x.localeCompare(y,'fr',{numeric:true}));
+function poseLieuCarte(m,lieu){if(!m)return;const l=String(lieu||'').trim().slice(0,60);if(l)m.lieu=l;else delete m.lieu;renderMapList();saveMaps()}
+function renommeLieu(ancien){const n=prompt('Nom du lieu :',ancien);if(n===null)return;const l=n.trim().slice(0,60);
+ maps.forEach(m=>{if(m&&m.lieu===ancien){if(l)m.lieu=l;else delete m.lieu}});
+ if(lieuxReplies.delete(ancien)&&l)lieuxReplies.add(l);try{localStorage.setItem('amertume-lieux-replies',JSON.stringify([...lieuxReplies]))}catch(e){}
+ renderMapList();saveMaps()}
+let carteGlissee=null;
+function renderMapList(){const rangee=m=>{const b=document.createElement('button');
  b.className='map-row'+(m===mapDraft?' current':'')+(m.id===currentMapId?' live':'');
  const nom=document.createElement('strong');nom.textContent=m.name;ensure(m);
  b.title=m.name+(m.id===currentMapId?' — chargée sur la table':'')+'\n'+matiereDe(m).length+' zone(s) · '+m.doors.length+' porte(s) · '+m.foes.length+' adversaire(s)'+((m.objets||[]).length?' · '+m.objets.length+' objet(s)':'');
- b.append(nom);b.onclick=()=>{mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()};return b}));
+ b.append(nom);b.onclick=()=>{mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()};
+  // Elle se glisse sur le bandeau d'un lieu, ou sur la liste hors des lieux pour l'en sortir.
+  b.draggable=true;b.addEventListener('dragstart',e=>{carteGlissee=m;try{e.dataTransfer.setData('text/plain',m.id||'');e.dataTransfer.effectAllowed='move'}catch(_){}});
+  b.addEventListener('dragend',()=>{carteGlissee=null});return b};
+ const recoit=(el,lieu)=>{el.addEventListener('dragover',e=>{if(!carteGlissee)return;e.preventDefault();e.stopPropagation();el.classList.add('survol')});
+  el.addEventListener('dragleave',()=>el.classList.remove('survol'));
+  el.addEventListener('drop',e=>{if(!carteGlissee)return;e.preventDefault();e.stopPropagation();el.classList.remove('survol');const m=carteGlissee;carteGlissee=null;poseLieuCarte(m,lieu)})};
+ const liste=$('map-list');liste.replaceChildren(...maps.filter(m=>!(m&&typeof m.lieu==='string'&&m.lieu.trim())).map(rangee));if(!liste.dataset.recoit){liste.dataset.recoit='1';recoit(liste,'')}
+ lieuxDesCartes().forEach(l=>{const lot=maps.filter(m=>m&&m.lieu&&m.lieu.trim()===l),replie=lieuxReplies.has(l);
+  const g=document.createElement('div');g.className='map-lieu'+(replie?' replie':'');
+  const tete=document.createElement('div');tete.className='map-lieu-tete';tete.setAttribute('role','button');tete.tabIndex=0;
+  const nom=document.createElement('span');nom.className='map-lieu-nom';nom.textContent=(replie?'▸ ':'▾ ')+l;const n=document.createElement('small');n.textContent=lot.length;
+  const ren=document.createElement('button');ren.type='button';ren.className='ico';ren.textContent='✎';ren.title='Renommer le lieu';ren.setAttribute('aria-label','Renommer le lieu '+l);
+  ren.onclick=e=>{e.stopPropagation();renommeLieu(l)};tete.append(nom,n,ren);
+  tete.onclick=()=>{if(lieuxReplies.has(l))lieuxReplies.delete(l);else lieuxReplies.add(l);try{localStorage.setItem('amertume-lieux-replies',JSON.stringify([...lieuxReplies]))}catch(e){}renderMapList()};
+  recoit(g,l);g.append(tete);if(!replie)lot.forEach(m=>g.append(rangee(m)));liste.append(g)});
+ // Le lieu de la carte ouverte : aucun, un lieu existant, ou un nouveau.
+ {const s=$('map-lieu');if(s){s.replaceChildren(new Option('— aucun lieu —',''),...lieuxDesCartes().map(l=>new Option(l,l)),new Option('✎ Nouveau lieu…','*'));s.value=mapDraft&&mapDraft.lieu||'';s.disabled=!mapDraft}}
  if(mapDraft)$('map-name').value=mapDraft.name;
  // Deux outils, deux listes : les adversaires d'un côté, les PNJ de l'autre.
  $('map-foe-tpl').replaceChildren();$('map-pnj-tpl').replaceChildren();catalog.monsters.forEach((m,i)=>$(m.pnj?'map-pnj-tpl':'map-foe-tpl').add(new Option(m.name,String(i))))}
