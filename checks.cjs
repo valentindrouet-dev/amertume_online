@@ -1678,7 +1678,7 @@ assert.ok(!page.includes('<details class="bloc-replie" id="bloc-gear">')&&page.i
  &&(page.match(/class="divider"/g)||[]).length===2,'fiche en jeu : équipement ouvert, pas de barre sous les PV');
 assert.ok(src.includes("const libelle=at.gear&&a.hero?'Attaque':(at.name||'Attaque');")
  
- &&page.includes('des:eff.des?eff.des(a,params):code.attaque?activeAttack(a).dice:null,')
+ &&page.includes('des:eff.des?eff.des(a,params):code.attaque?desAttaque(a,activeAttack(a).dice):null,')
  
  &&C.TALENTS_CODES.attaqueetat.attaque===true&&C.TALENTS_CODES.provocation.attaque===true
  &&!C.TALENTS_CODES.orbes.attaque,'le bouton d’attaque dit « Attaque », le talent qui frappe montre ses dés');
@@ -3389,13 +3389,16 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.676 — Les dés qu'un talent ajoute à une attaque, Coup de Bouclier, se lisent dans ses bulles, comme ils partent au jet. */
+{const idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(idx.includes("function poolOf(a){return diceToPool(desAttaque(a,activeAttack(a).dice))")&&ed.includes("des:voit?desEtBonus(desAttaque(a,at.dice),")&&ed.includes("survol(b,desAttaque(a,at.dice),"),'les dés des talents dans les bulles');}
 /* v0.675 — La planche GARDIEN et sa catégorie. */
 assert.ok(fs.existsSync('img/planches/GARDIEN.webp')&&fs.readFileSync('planches.js','utf8').includes("['gardien','Gardien']]"),'la planche GARDIEN');
 /* v0.674 — Gardien : Boutoir et Coup de Bouclier, avec leurs améliorations. */
 {const C10=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  [['boutoirtous','boutoir'],['boutoirimpact','boutoir'],['coupbouclierplus','coupbouclier'],['coupboucliernoir','coupbouclier']].forEach(([k,p])=>assert.equal(C10.TALENTS_CODES[k].pour,p,k));
  assert.match(C10.phraseTalent('boutoirtous',{},2),/deux fois/);assert.match(C10.phraseTalent('boutoirimpact',{},2),/lui aussi/);
- assert.ok(idx.includes('function boutoir(a,p,talent){')&&idx.includes("q[porteEffet(c,'coupboucliernoir')?5:2]+=porteEffet(c,'coupbouclierplus')?2:1;"),'Boutoir et Coup de Bouclier câblés');}
+ assert.ok(idx.includes('function boutoir(a,p,talent){')&&idx.includes("function desAttaque(a,dice){"),'Boutoir et Coup de Bouclier câblés');}
 /* v0.673 — La feuille d'aventurier n'a plus de bloc Richesses : son or est en bas à gauche du schéma d'inventaire. Une carte se
    lie à un bâtiment du domaine, dont la fiche l'ouvre sur la table, au MJ. */
 {const C9=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8'),dom=fs.readFileSync('domaine.js','utf8');
@@ -3943,7 +3946,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(gearApi.gearAttacks({weapons:[]},[]),[]);assert.deepEqual(gearApi.gearAttacks({hero:false,weapons:[]},[]),[]);
  assert.deepEqual(gearApi.gearAttacks({hero:true,weapons:[],attacks:[{name:'Morsure',dice:{white:2}}]},[]),[],'ses propres attaques frappent, comme avant');
  assert.equal(gearApi.chosenAttack({hero:true,weapons:[]},[]).dice.bone,1);
- assert.ok(src.includes("function logosDeAttaque(at){")&&src.includes("actuelle?logosDeAttaque(actuelle):null")&&src.includes("survol(b,at.dice,bonusDe(at),at.useOwnDamage!==false,logosDeAttaque(at));")
+ assert.ok(src.includes("function logosDeAttaque(at){")&&src.includes("actuelle?logosDeAttaque(actuelle):null")&&src.includes("survol(b,desAttaque(a,at.dice),bonusDe(at),at.useOwnDamage!==false,logosDeAttaque(at));")
   &&src.includes("function carteAttaque(a){const at=typeof activeAttack==='function'?activeAttack(a):null,l=logosDeAttaque(at)[0];"),'l’icône de l’Attaque sans arme, partout où l’Attaque se montre');}
 /* v0.601 — Aucun bord de mur ne se devine plus dans le noir, quelle que soit la façon dont l'obscurité a été posée. Pour
    l'affichage seul, la pierre et les portes closes vont à l'espace libre le plus proche et noircissent s'il est noir ; un
@@ -5161,4 +5164,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1965 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1966 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
