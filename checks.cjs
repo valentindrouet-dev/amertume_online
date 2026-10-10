@@ -3389,6 +3389,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.675 — La planche GARDIEN et sa catégorie. */
+assert.ok(fs.existsSync('img/planches/GARDIEN.webp')&&fs.readFileSync('planches.js','utf8').includes("['gardien','Gardien']]"),'la planche GARDIEN');
 /* v0.674 — Gardien : Boutoir et Coup de Bouclier, avec leurs améliorations. */
 {const C10=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  [['boutoirtous','boutoir'],['boutoirimpact','boutoir'],['coupbouclierplus','coupbouclier'],['coupboucliernoir','coupbouclier']].forEach(([k,p])=>assert.equal(C10.TALENTS_CODES[k].pour,p,k));
@@ -3503,7 +3505,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const cands=vusPourMouv
  assert.ok(carto.includes("function hitboxSous(p){")&&carto.includes("if(hb&&(!dessous||dessous.kind==='start'||dessous.kind==='matiere'||(dessous.kind==='lumiere'&&!surCoeur)))dessous=hb}")
   &&carto.includes("mapTool='select';mapSel={kind:'declencheur',i,k};")&&fs.readFileSync('editor.css','utf8').includes('.hitbox.selected{z-index:3}'),'la hitbox se reprend');
  assert.ok(/function pickNow\(i\)\{[\s\S]*?renderEnjamber\(\);\n return true\}/.test(idx),'les ronds Enjamber suivent le token choisi');
- assert.ok(pl.includes("['ombrelame','Ombrelame'],['actions','Actions']]")&&pl.includes("{nom:'',cat:catNom}")&&fs.existsSync('img/planches/OMBRELAME.webp'),'la planche OMBRELAME');}
+ assert.ok(pl.includes("['ombrelame','Ombrelame'],['actions','Actions'],['gardien','Gardien']]")&&pl.includes("{nom:'',cat:catNom}")&&fs.existsSync('img/planches/OMBRELAME.webp'),'la planche OMBRELAME');}
 /* v0.646 — Sorti du fond d'un piège par un test réussi, l'aventurier regagne la place d'où le piège l'avait happé, ou à défaut le
    premier point libre hors du piège. */
 {const carto=fs.readFileSync('maps.js','utf8');
@@ -5159,4 +5161,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1964 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1965 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

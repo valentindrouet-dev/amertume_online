@@ -6,7 +6,7 @@
    planche remplacée par la même en plus grand garde ses découpes. Chaque icône y reçoit un
    nom et une catégorie, puis se choisit comme n'importe quel logo : « planches/x.webp#7 ».
    Rien n'est extrait en fichier : l'icône se découpe à l'affichage, dans le navigateur. */
-const CATS_ICONES=[['talents','Talents'],['equipement','Équipement'],['divers','Divers'],['ombrelame','Ombrelame'],['actions','Actions']];
+const CATS_ICONES=[['talents','Talents'],['equipement','Équipement'],['divers','Divers'],['ombrelame','Ombrelame'],['actions','Actions'],['gardien','Gardien']];
 /* Le nom d'une planche : ce que GitHub accepte d'ordinaire, espaces et accents compris, sans
    dossier, ni guillemet, ni chevron, ni rien qui casserait une adresse ou une page. */
 const estFichierPlanche=l=>/^planches\/[^/#?"'<>&\\]+\.(png|webp)$/i.test(String(l||''));
