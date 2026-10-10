@@ -1191,6 +1191,31 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   params:[],volets:[{cle:'tous',nom:'Tous les alliés au contact',palier:2}],
   phrase(p,palier,v){const k=(v||{tous:2}).tous,tous=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
    return (tous?'<b>Tous les alliés</b> au contact du porteur gagnent':'<b>Un allié</b> au contact du porteur gagne')+' aussi <b>1 PA</b>.'}},
+/* Boutoir : une action. Le porteur attaque un adversaire au contact, puis le repousse hors de sa zone de contact.
+    Améliorations : tous les adversaires au contact, deux fois plus loin au palier 2 ; heurtant un obstacle, ils subissent encore
+    le bonus de dégâts du porteur, et l'adversaire heurté aussi au palier 2. */
+ boutoir:{cle:'boutoir',nom:'Boutoir',type:'act',bouton:'🛡 Boutoir',attaque:true,
+  aide:'Action : le porteur attaque un adversaire au contact, puis le repousse hors de sa zone de contact.',
+  params:[],phrase(){return 'Le porteur effectue <b>une attaque</b> contre un adversaire <b>au contact</b>, puis le <b>repousse hors de sa zone de contact</b>.'}},
+ boutoirtous:{cle:'boutoirtous',nom:'Boutoir — tous',court:'tous',type:'ame',
+  aide:'Amélioration de Boutoir : il repousse tous les adversaires au contact ; deux fois plus loin au palier 2.',
+  params:[],volets:[{cle:'loin',nom:'Deux fois la zone de contact',palier:2}],
+  phrase(p,palier,v){const k=(v||{loin:2}).loin,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return '<b>Boutoir</b> repousse <b>tous les adversaires</b> '+(deux?'à <b>deux fois la zone de contact</b>':'<b>hors de la zone de contact</b>')+'.'}},
+ boutoirimpact:{cle:'boutoirimpact',nom:'Boutoir — impact',court:'impact',type:'ame',
+  aide:'Amélioration de Boutoir : l’adversaire repoussé qui heurte un mur ou un combattant subit encore le bonus de dégâts du porteur ; l’adversaire heurté aussi, au palier 2.',
+  params:[],volets:[{cle:'contre',nom:'L’adversaire heurté aussi',palier:2}],
+  phrase(p,palier,v){const k=(v||{contre:2}).contre,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'L’adversaire repoussé qui heurte <b>un obstacle</b> subit à nouveau le <b>bonus de dégâts</b> du porteur'+(deux?' ; si l’obstacle est un autre adversaire, <b>lui aussi</b>.':'.')}},
+ /* Coup de Bouclier : un passif. Un bouclier équipé, les attaques du porteur lancent un dé rouge de plus ; deux avec
+    l'amélioration ; noirs avec l'autre. */
+ coupbouclier:{cle:'coupbouclier',nom:'Coup de Bouclier',type:'pass',
+  aide:'Passif : avec un bouclier équipé, les attaques du porteur infligent +1 dé rouge de dégâts.',
+  params:[],phrase(){return 'Avec un <b>bouclier</b> équipé, les attaques du porteur infligent <b>+1 dé rouge</b> de dégâts.'}},
+ coupbouclierplus:{cle:'coupbouclierplus',nom:'Coup de Bouclier — deux dés',court:'deux dés',type:'ame',
+  aide:'Amélioration de Coup de Bouclier : +2 dés rouges.',params:[],phrase(){return '<b>Coup de Bouclier</b> donne <b>+2 dés</b> de dégâts.'}},
+ coupboucliernoir:{cle:'coupboucliernoir',nom:'Coup de Bouclier — dés noirs',court:'dés noirs',type:'ame',
+  aide:'Amélioration de Coup de Bouclier : ses dés de dégâts en plus sont noirs.',params:[],phrase(){return 'Les dés de <b>Coup de Bouclier</b> sont des <b>dés noirs</b>.'}},
  /* Coupure — Empoisonnée : Poison à l'adversaire touché le plus proche ; à tous au palier 2. Profonde : le double du bonus de
     dégâts, le triple au palier 2. Fatale : un adversaire tué par Coupure donne 1 PM, 1 PA et 1 PM au palier 2, une fois par tour. */
  lameventpoison:{cle:'lameventpoison',nom:'Coupure — Empoisonnée',court:'Empoisonnée',type:'ame',
@@ -1718,7 +1743,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
- contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
+ contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
