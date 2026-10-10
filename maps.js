@@ -1456,7 +1456,7 @@ mapsPage.innerHTML=
  +'<p class="muted">Un fichier qui contient toutes tes cartes : zones, portes, découpes, zone de départ, adversaires, objets et image de fond. Le domaine n’y est pas : il s’exporte depuis son onglet, et la partie entière depuis les Paramètres.</p>'
  +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
  +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
- +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><label>Lieu<select id="map-lieu"></select></label><span class="map-xp" id="map-xp"></span>'
+ +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><label>Lieu<select id="map-lieu"></select></label><label>Bâtiment<select id="map-batiment"></select></label><span class="map-xp" id="map-xp"></span>'
  +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
@@ -1560,6 +1560,7 @@ $('map-del').onclick=()=>{if(!mapDraft||!confirm('Supprimer « '+mapDraft.name+'
  const i=maps.indexOf(mapDraft);maps.splice(i,1);if(currentMapId===mapDraft.id)currentMapId=null;
  mapDraft=maps[Math.max(0,i-1)]||null;mapSel=null;undoStack=[];redoStack=[];if(!maps.length)newMap();
  renderMapList();renderCanvas();saveMaps();render()};
+$('map-batiment').onchange=()=>{if(!mapDraft)return;const v=$('map-batiment').value;if(v)mapDraft.batiment=v;else delete mapDraft.batiment;saveMaps()};
 $('map-lieu').onchange=()=>{const s=$('map-lieu');if(!mapDraft)return;
  if(s.value==='*'){const n=prompt('Nom du nouveau lieu :','');if(n&&n.trim())poseLieuCarte(mapDraft,n);else renderMapList();return}
  poseLieuCarte(mapDraft,s.value)};
@@ -1640,6 +1641,8 @@ function renderMapList(){const rangee=m=>{const b=document.createElement('button
   tete.onclick=()=>{if(lieuxReplies.has(l))lieuxReplies.delete(l);else lieuxReplies.add(l);try{localStorage.setItem('amertume-lieux-replies',JSON.stringify([...lieuxReplies]))}catch(e){}renderMapList()};
   recoit(g,l);g.append(tete);if(!replie)lot.forEach(m=>g.append(rangee(m)));liste.append(g)});
  // Le lieu de la carte ouverte : aucun, un lieu existant, ou un nouveau.
+ // Le bâtiment du domaine dont c'est une carte de combat, s'il en a un.
+ {const s=$('map-batiment');if(s){s.replaceChildren(new Option('— aucun —',''),...((typeof domaine!=='undefined'&&domaine.batiments)||[]).map(b=>new Option(b.nom,b.id)));s.value=mapDraft&&mapDraft.batiment||'';s.disabled=!mapDraft}}
  {const s=$('map-lieu');if(s){s.replaceChildren(new Option('— aucun lieu —',''),...lieuxDesCartes().map(l=>new Option(l,l)),new Option('✎ Nouveau lieu…','*'));s.value=mapDraft&&mapDraft.lieu||'';s.disabled=!mapDraft}}
  if(mapDraft)$('map-name').value=mapDraft.name;
  // Deux outils, deux listes : les adversaires d'un côté, les PNJ de l'autre.

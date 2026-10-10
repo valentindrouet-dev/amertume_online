@@ -507,6 +507,10 @@ function renderDomFiche(){const boite=$('dom-fiche');boite.replaceChildren();con
  FONCTIONS_BATIMENT.forEach(([k,n])=>fonc.add(new Option(n,k)));fonc.value=b.fonction||'';
  fonc.onchange=()=>{b.fonction=FONCTIONS_BATIMENT.some(([k])=>k===fonc.value)?fonc.value:'';renderDomaine();sauveDomaine()};
  tete.append(nom,et,etat,fonc,boutonConstruire(b),recul,avance);boite.append(tete);
+ {const cartes=(typeof maps!=='undefined'?maps:[]).filter(m=>m&&m.batiment===b.id);
+  if(cartes.length){const l=document.createElement('div');l.className='dom-cartes-bat';
+   cartes.forEach(m=>{const x=document.createElement('button');x.type='button';x.textContent='⚔ '+(m.name||'Carte');x.title='Ouvrir cette carte de combat sur la table';
+    x.onclick=()=>{openBattleMap(m.id);showPage('table')};l.append(x)});boite.append(l)}}
  const grille=document.createElement('div');grille.className='dom-couts';
  [1,2,3].forEach(e=>{const l=document.createElement('label');l.textContent='Coût — '+NOM_ETAPE(e);
   const inp=document.createElement('input');inp.type='number';inp.min='0';inp.step='1';inp.value=String(b.couts[e-1]);

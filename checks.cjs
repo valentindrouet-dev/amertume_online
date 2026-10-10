@@ -3389,6 +3389,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.673 — La feuille d'aventurier n'a plus de bloc Richesses : son or est en bas à gauche du schéma d'inventaire. Une carte se
+   lie à un bâtiment du domaine, dont la fiche l'ouvre sur la table, au MJ. */
+{const C9=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8'),dom=fs.readFileSync('domaine.js','utf8');
+ assert.equal(C9.cleanMap({name:'A',batiment:'b1'}).batiment,'b1');
+ assert.ok(!ed.includes("sousTitre('Richesses'")&&ed.includes("or.className='or-corps'")&&dom.includes("x.onclick=()=>{openBattleMap(m.id);showPage('table')}")&&fs.readFileSync('maps.js','utf8').includes("$('map-batiment').onchange="),'or du schéma, cartes des bâtiments');}
 /* v0.672 — Les lieux de l'éditeur de cartes : des cartes rassemblées sous un nom, sans toucher aux autres. La quête d'un objet ou
    d'un PNJ voyage avec l'export des cartes. */
 {const C8=require('./combat.js'),carto=fs.readFileSync('maps.js','utf8');
@@ -5149,4 +5154,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1957 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1959 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

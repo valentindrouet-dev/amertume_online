@@ -1151,7 +1151,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   if(view==='mj'){const r=document.createElement('button');r.type='button';r.className='ressusciter';r.textContent='Ressusciter';
    r.onclick=e=>{e.stopPropagation();ressusciter(a)};tete.append(r)}
   else['click','contextmenu','dragstart','pointerdown','keydown','change','input'].forEach(ev=>c.addEventListener(ev,e=>{if(e.type==='keydown'&&!['Enter',' '].includes(e.key))return;e.stopPropagation();e.preventDefault()},true))}
- c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,corpsEtSac(a),sousTitre('Richesses','Ajouter de l’or ou des gemmes à '+a.name,view==='mj'?()=>openRichesses(a):null),blocRichesses(a));return c}
+ c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,corpsEtSac(a));return c}
 function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
  /* À une table en ligne, un joueur ne voit que son aventurier : toutes les fiches sont au MJ. */
@@ -1765,6 +1765,11 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
    const v=document.createElement('span');v.className='valeur';v.textContent=String(+distanceMouvement(a,catalog.items||[]).toFixed(1)).replace('.',',')+'\u00a0m';
    m.append(e,v);pl.append(m)}
   if(cle==='anneau'){groupeAnneaux.append(pl);if(!groupeAnneaux.isConnected)corps.append(groupeAnneaux)}else corps.append(pl)});
+ // En bas à gauche du schéma, l'or de l'aventurier : la pièce et le nombre. Le MJ y ajoute ou retire or et gemmes d'un clic.
+ if(a.hero){const n=orDe(a),or=document.createElement('span');or.className='or-corps'+(n?'':' zero');or.setAttribute('aria-label',n.toLocaleString('fr-FR')+' or');
+  const piece=document.createElement('i');piece.className='piece-or';const v=document.createElement('b');v.textContent=n.toLocaleString('fr-FR');or.append(piece,v);
+  if(view==='mj'){or.classList.add('cliquable');or.setAttribute('role','button');or.tabIndex=0;or.onclick=()=>openRichesses(a);or.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRichesses(a)}}}
+  corps.append(or)}
  out.append(corps);
  // Le sac : ce qui n'est pas porté, puis les objets.
  const sac=document.createElement('div');sac.className='sac gear-grille';

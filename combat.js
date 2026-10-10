@@ -477,7 +477,7 @@ function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.i
  const matiere=Array.isArray(m&&m.matiere)?cleanMatiere(m.matiere)
   :migreMatiere({ratio,walls:cleanRects(m&&m.walls),visions:cleanRects(m&&m.visions),traits:cleanTraits(m&&m.traits)}).matiere;
  // Le lieu qui la rassemble avec d'autres cartes — étages, grands lieux —, s'il en a un.
- return {name:texte(m&&m.name,80)||'Carte',...(m&&typeof m.lieu==='string'&&m.lieu.trim()?{lieu:texte(m.lieu.trim(),60)}:{}),ratio,
+ return {name:texte(m&&m.name,80)||'Carte',...(m&&typeof m.lieu==='string'&&m.lieu.trim()?{lieu:texte(m.lieu.trim(),60)}:{}),...(m&&typeof m.batiment==='string'&&m.batiment?{batiment:texte(m.batiment,60)}:{}),ratio,
   fitted:!(m&&m.fitted===false),image:img,
   matiere,obscurite:cleanMatiere(m&&m.obscurite).map(p=>({anneaux:p.anneaux})),...(m&&Array.isArray(m.impraticable)&&m.impraticable.length?{impraticable:cleanMatiere(m.impraticable).map(p=>({anneaux:p.anneaux}))}:{}),lumieres:(Array.isArray(m&&m.lumieres)?m.lumieres:[]).slice(0,100).map(cleanLumiere),doors:cleanRects(m&&m.doors,true),
   start:cleanRect(m&&m.start),
