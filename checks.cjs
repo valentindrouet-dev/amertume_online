@@ -3389,6 +3389,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.683 — Deux dés de couleurs différentes se cumulent sur une pièce, et tous ses préfixes se lisent dans son nom ;
+   le générateur commence à Inhabituel. */
+{const C13=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
+ const A=C13.normaliseAffixes([{id:'r',nom:'lourd',effet:'de',de:'red',valeur:1},{id:'b',nom:'mystique',effet:'de',de:'blue',valeur:1},{id:'r2',nom:'brutal',effet:'de',de:'red',valeur:1}]);
+ const ep={id:'ep',name:'Épée',category:'weapon',dice:{white:1},price:5};
+ const ids=C13.tireAffixes(ep,3,A,1,()=>0);assert.ok(ids.length===2&&ids.includes('b'),'rouge et bleu ensemble, pas deux rouges');
+ const o=C13.objetForge({id:'f',base:'ep',affixes:['r','b']},[ep],A);assert.deepEqual([o.name,o.rarete,o.dice],['Épée lourde mystique','rare',{white:1,red:1,blue:1}]);
+ assert.ok(!ed.includes("['0','0 · Commun']")&&ed.includes("tireNombreAffixes(catalog.forge,{chance:100,min:1,max:4})"),'générateur sans commun');}
 /* v0.682 — Au tableau des affixes, les familles d'armes entières se lisent « Mêlée » et « Distance ». */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("x.familles.map(f=>({melee:'Mêlée',ranged:'Distance'})[f]||"),'familles courtes');}
 /* v0.681 — Le générateur tire aussi sa base au sort, parmi celles que les affixes existants peuvent toucher. */
@@ -3422,7 +3430,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  const g={bonus:{dmg:30},des:{red:15},etat:15,mouvement:15,lumiere:5,rarete:{commun:100,inhabituel:125,rare:150}};
  assert.deepEqual(A.map(x=>C12.valeurAffixe(x,g)),[15,30,30]);
  const o=C12.objetForge({id:'f',base:'Épée',affixes:['t','l']},[w('Épée')],A,g);
- assert.deepEqual([o.name,o.price],['Épée tranchante',Math.round((10+15+30)*150/100)]);
+ assert.deepEqual([o.name,o.price],['Épée tranchante lourde',Math.round((10+15+30)*150/100)]);
  assert.equal(C12.objetForge({id:'f',base:'Épée lourde',affixes:['l']},[w('Épée lourde')],A,g).name,'Épée lourde','pas deux fois le même mot');
  assert.equal(C12.objetForge({id:'f',base:'Bottes',affixes:['r']},[{id:'Bottes',name:'Bottes',category:'armor',slot:'bottes',price:4}],[{id:'r',nom:'lourd',place:'prefixe',effet:'mouvement',valeur:1}],g).name,'Bottes lourdes');
  assert.ok(ed.includes(".filter(x=>x.effet==='mouvement').forEach(x=>ligne('✦ '+formeAffixe(x,accordDe(o))+' : '")&&ed.includes("+field('Valeur en or','prix',0,'number','readonly tabindex=\"-1\"')")
@@ -3435,7 +3443,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  let k=0;const seq=[0.1,0.9,0.5,0.5];const ids=C11.tireAffixes(base,4,A,5,()=>seq[k++%4]);
  assert.ok(ids.length===3&&!(ids.includes('a2')&&ids.includes('a4')),'pas deux affixes du même groupe');
  const o=C11.objetForge({id:'f1',base:'ep',affixes:['a1','a2','a3']},[base],A);
- assert.deepEqual([o.name,o.rarete,o.price,o.dice.red,o.etat,o.unique,o.magasin,o.bonus.length],['Épée tranchante du Loup','mystique',5,1,'Feu',true,false,1]);
+ assert.deepEqual([o.name,o.rarete,o.price,o.dice.red,o.etat,o.unique,o.magasin,o.bonus.length],['Épée tranchante ardente du Loup','mystique',5,1,'Feu',true,false,1]);
  assert.equal(C11.objetForge({id:'f2',base:'arc',affixes:['a1']},[arc],A).dice.red,undefined,'un affixe de mêlée ne va pas sur un arc');
  assert.equal(C11.objetForge({id:'f3',base:'nul',affixes:[]},[base],A),null);
  assert.deepEqual([C11.tireNombreAffixes({chance:100,repartition:[0,0,0,100]},null,()=>0.5),C11.tireNombreAffixes({chance:0},null,()=>0.5),C11.tireNombreAffixes({chance:0},{min:2,max:3},()=>0.5)],[4,0,2]);
@@ -5218,4 +5226,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1982 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1983 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

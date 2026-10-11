@@ -2416,7 +2416,7 @@ function phraseAffixe(x){x=normaliseAffixe(x);
  if(x.effet==='de')return '+'+x.valeur+' dé'+(x.valeur>1?'s':'')+' '+((NOMS_DES.find(([k])=>k===x.de)||[])[1]||'');
  if(x.effet==='etat')return 'inflige '+x.etat;if(x.effet==='mouvement')return '+'+x.valeur+' m de mouvement';return 'lumière '+x.valeur+' m'}
 // Le groupe d'un affixe : deux affixes du même groupe ne vont pas sur la même pièce. Sans groupe écrit, celui de son effet.
-function groupeAffixe(x){return x.groupe||(x.effet==='carac'?'carac:'+x.carac:x.effet==='comp'?'comp:'+x.comp:x.effet)}
+function groupeAffixe(x){return x.groupe||(x.effet==='carac'?'carac:'+x.carac:x.effet==='comp'?'comp:'+x.comp:x.effet==='de'?'de:'+x.de:x.effet)}
 // Un affixe va-t-il sur cette base : sa famille, son niveau, et pas d'état sur une arme qui en inflige déjà un.
 function affixeVaSur(x,base,niveau){if(!x||!base)return false;const fam=familleAffixe(base),fams=[fam,typeArmeDe(base)].filter(Boolean);if(!fam||(x.familles.length&&!x.familles.some(f=>fams.includes(f))))return false;
  if(x.effet==='etat'&&(base.category!=='weapon'||base.etat))return false;if((x.effet==='de')&&base.category!=='weapon')return false;
@@ -2441,11 +2441,11 @@ function plurielAffixe(m){if(/[sxz]$/.test(m))return m;if(/(eau|eu)$/.test(m))re
 const surDernier=(t,fn)=>{const i=t.lastIndexOf(' ');return i<0?fn(t):t.slice(0,i+1)+fn(t.slice(i+1))};
 function formeAffixe(x,accord){if(!x)return '';if(x.place==='suffixe')return x.nom;const f=x.nomF||surDernier(x.nom,femininAffixe);
  return accord==='fs'?f:accord==='mp'?x.nomMP||surDernier(x.nom,plurielAffixe):accord==='fp'?x.nomFP||surDernier(f,plurielAffixe):x.nom}
-// Le nom : un préfixe au plus, accordé à la base, la base, un suffixe au plus ; les autres affixes se lisent dans la bulle.
-function nomForge(base,affixes){const pre=affixes.find(x=>x.place==='prefixe'),suf=affixes.find(x=>x.place==='suffixe'),mot=pre&&formeAffixe(pre,accordDe(base));
- // Le mot que la base porte déjà ne se répète pas : « Épée lourde », pas « Épée lourde lourde ».
- const deja=mot&&sansAccent(' '+base.name+' ').includes(' '+sansAccent(mot)+' ');
- return [base.name,!deja&&mot,suf&&suf.nom].filter(Boolean).join(' ')}
+// Le nom : la base, ses préfixes accordés, un suffixe au plus.
+function nomForge(base,affixes){const suf=affixes.find(x=>x.place==='suffixe'),vus=' '+sansAccent(base.name)+' ';
+ // Tous les préfixes, accordés, à la suite : « Épée lourde mystique ». Un mot déjà dit ne se répète pas : « Épée lourde », pas « Épée lourde lourde ».
+ const mots=[];affixes.filter(x=>x.place==='prefixe').forEach(x=>{const m=formeAffixe(x,accordDe(base)),k=' '+sansAccent(m)+' ';if(m&&!(vus+mots.map(sansAccent).join(' ')+' ').includes(k))mots.push(m)});
+ return [base.name,...mots,suf&&suf.nom].filter(Boolean).join(' ')}
 /* Ce que vaut un affixe, au guide des prix : ses bonus comme ceux d'une pièce, son dé, son état, ses mètres. Sans guide, rien. */
 function valeurAffixe(x,g){if(!x||!g)return 0;x=normaliseAffixe(x);const b=g.bonus||{},d=g.des||{};
  if(x.effet==='carac')return x.valeur*(b[x.carac]||0);if(x.effet==='comp')return x.valeur*(b.comp||0);if(x.effet==='de')return x.valeur*(d[x.de]||0);
