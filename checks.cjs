@@ -1369,7 +1369,7 @@ assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.fi
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,combat?'':'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
- &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armures','shieldId','munitionId','auraPv',")&&page.includes("const nbGear=typeof objetDeCombat==='function'?(a.inventaire||[]).filter(id=>objetDeCombat((catalog.items||[]).find(x=>x.id===id))).length:0;")
+ &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armures','shieldId','munitionId','auraPv',")&&page.includes("const nbGear=typeof objetDeCombat==='function'?(a.inventaire||[]).filter(id=>objetDeCombat((catalog.items||[]).find(x=>x.id===id))).length")
  &&feuille.includes('.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}')&&feuille.includes('.cat-pill.gear-carre.dispo{opacity:.55}')&&feuille.includes('.gear-rangee-titre{flex-basis:100%;')
  &&feuille.includes('.best-attaque{background:#cfdcea;border:1px solid #00000026;border-left:4px solid #4f7fb5;border-radius:9px;'),'inventaire, équipement et attaques spéciales');
 /* Fiche d'un modèle : plus de cartouche « Adversaire », le type porte sa couleur comme tout le bloc,
@@ -1380,11 +1380,11 @@ assert.ok(src.includes("d.className='cat-detail bulle-modele-corps k-'+(m.type||
 /* En jeu, la fiche ne montre que le porté et les objets ; la coche est un rond à cheval sur l'angle ;
    plus de chevron ni de titre « Équipement » en double ; un objet se lit et s'utilise ; le MJ équipe
    aussi un modèle du bestiaire, et un refus dit combien de mains manquent. */
-assert.ok(src.includes('function gearPills(a,tout=true,combat=false)')&&page.includes('gearPills(a,false,true)')&&src.includes("const armurerie=tous.filter(([o])=>o.category==='weapon'||o.category==='armor');")&&src.includes("const equipement=combat?[]:armurerie.filter(([o])=>tout||portes(o));")
+assert.ok(src.includes('function gearPills(a,tout=true,combat=false)')&&page.includes('gearPills(a,false,true)')&&src.includes("const armurerie=tous.filter(([o])=>o.category==='weapon'||o.category==='armor');")&&src.includes("const equipement=combat?armurerie.filter(([o])=>pieceActivePortee(a,o)):armurerie.filter(([o])=>tout||portes(o));")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,combat?'':'Objets');")&&!src.includes("chev.title='Détail'")&&!src.includes("p.querySelector('.chev').onclick=deplie;")
  &&src.includes('function utiliserObjet(a,o)')&&!src.includes("'Clique l’objet pour l’utiliser.'")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
  &&feuille.includes('.cat-pill.gear-carre .marque-porte{display:none;position:absolute;top:-6px;left:-6px;')&&feuille.includes('.gear-detail.k-object.consommable{background:#d9e7cd;')
- &&page.includes("const nbGear=typeof objetDeCombat==='function'?(a.inventaire||[]).filter(id=>objetDeCombat((catalog.items||[]).find(x=>x.id===id))).length:0;")
+ &&page.includes("const nbGear=typeof objetDeCombat==='function'?(a.inventaire||[]).filter(id=>objetDeCombat((catalog.items||[]).find(x=>x.id===id))).length")
  &&!src.includes('inventairesOuverts')&&!src.includes('gear-sac')&&!feuille.includes('gear-sac'),'fiche en jeu : porté et objets, coche ronde, objet utilisable');
 /* Les mains se remplacent au lieu de refuser ; en jeu, pas de sac à déplier, le clic ouvre la
    description, et un objet se vise avant de s'employer, à la table de jeu seulement. */
@@ -2520,7 +2520,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(JSON.stringify(pv.slice(3)),JSON.stringify([['Endu × Vie','4 × 5 = 20'],['Classe (Gardien)','+ 2'],['Total','22']]));
  ctxD.bonusDe=(a,t,i)=>i===null?{dmg:2}:{dmg:2};const dg=ctxD.detailDegats({dmg:0});
  assert.equal(JSON.stringify(dg.map(x=>x[0])),JSON.stringify(['Dégâts','Base','Talents','Total']),'les +2 viennent d’un talent, la base dit 0');}
-{assert.ok(src.includes("const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='cle'&&peutEquiper&&actors.includes(a);")
+{assert.ok(src.includes("const utilisable=(o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='cle'")
   &&src.includes("if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}")&&src.includes("function employerDepuisFiche(a,o){")&&!src.includes("b.className='gear-utiliser'"),'un objet s’utilise d’un clic');
  assert.ok(src.includes("const NIVEAUX_TALENTS=false;")&&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes('<select id="talent-sort" aria-label="Tri" hidden>')
   &&src.includes("niv.textContent=NIVEAUX_TALENTS?'Niv. '+(t.level||1):'';")&&src.includes("'<input type=\"hidden\" name=\"level\" value=\"'"),'les niveaux de talent se cachent, le câblage reste');
@@ -3389,6 +3389,25 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.688 — Les affixes de classe, réservés au quatrième affixe des Légendaires ; l'état conféré d'un clic ; le premier affixe
+   de classe : les orbes du Mystique infligent aussi Poison x. */
+{const C17=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
+ const A=C17.normaliseAffixes([{id:'a',nom:'lourd',effet:'de',de:'red'},{id:'b',nom:'mystique',effet:'de',de:'blue'},{id:'c',nom:'mortel',effet:'de',de:'black'},{id:'d',nom:'brutal',effet:'carac',carac:'dmg'},
+  {id:'v',nom:'de la Vipère',place:'suffixe',effet:'orbesEtat',etat:'Poison',valeur:2,classe:'Mystique'},{id:'i',nom:'furtif',effet:'confere',etat:'Invisible',usage:'jour'},{id:'x',nom:'raté',effet:'confere',etat:'Poison'}]);
+ const ep={id:'ep',name:'Épée',category:'weapon',dice:{white:1},price:5},potion={id:'po',name:'Épée sainte',category:'weapon',effet:'soin'};
+ const sans=A.filter(x=>x.id!=='v');
+ assert.equal(C17.tireAffixes(ep,4,sans.filter(x=>x.effet!=='confere'),1,()=>0).length,3,'sans affixe de classe, la pièce s’arrête à trois');
+ const ids=C17.tireAffixes(ep,4,A.filter(x=>x.effet!=='confere'),1,()=>0);assert.ok(ids.length===4&&ids[3]==='v','le quatrième est l’affixe de classe');
+ assert.ok(!C17.tireAffixes(ep,2,A,1,()=>0.99).includes('v'),'pas d’affixe de classe hors Légendaire');
+ const f=l=>C17.objetForge({id:'f',base:'ep',affixes:l},[ep],A);
+ assert.deepEqual([f(['a','b','c','d']).rarete,f(['a','b','c','d']).forge.affixes.length,f(['a','b','c','v']).rarete,f(['a','b','v']).forge.affixes],['mystique',3,'epique',['a','b']]);
+ assert.deepEqual([f(['a','b','c','v']).name,f(['a','b','c','v']).orbesEtats],['Épée lourde mystique mortelle de la Vipère',[['Poison',2]]]);
+ const o=f(['i']);assert.deepEqual([o.effet,o.params,o.mode,o.usage,A.find(x=>x.id==='x').etat],['etat',{etat:'Invisible'},'actif','jour','Blindage']);
+ assert.ok(!C17.affixeVaSur(A.find(x=>x.id==='i'),{...ep,effet:'soin'},0),'un état conféré ne remplace pas l’effet d’une pièce');
+ assert.deepEqual(C17.ETATS_POSITIFS,['Blindage','Furie','Invisible','Onde','Vie']);
+ assert.ok(ed.includes("if(!c.semisForge.includes('orbes-poison')){if(!c.affixes.some(x=>x.id==='affixe-orbes-poison'))c.affixes.push(normaliseAffixe({id:'affixe-orbes-poison',nom:'de la Vipère',place:'suffixe',effet:'orbesEtat',etat:'Poison',valeur:1,classe:'Mystique',")
+  &&ed.includes("||!tout&&EQUIPEMENTS.includes(o.category)&&!!objetCode(o)&&modeObjet(o)==='actif'&&!!portes(o))&&peutEquiper&&actors.includes(a);")
+  &&page.includes("if(b.hp>0)etatsOrbesPortes(a).forEach(([e,n])=>{const issue=infligeEtat(b,e);")&&page.includes("function etatsOrbesPortes(a){"),'affixes de classe câblés');}
 /* v0.687 — Les bonus d'objet se lisent sans pastille, et en minuscules : « + 1 Robustesse ». */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("if(!talent&&!['pv','def','pa','pm'].includes(c)){const t=nom.textContent;nom.textContent=t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()}")
  &&fs.readFileSync('editor.css','utf8').includes('.gear-detail .gear-bonus::before{display:none}'),'bonus d’objet en minuscules, sans pastille');}
@@ -3478,7 +3497,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.deepEqual([o.name,o.price],['Épée tranchante lourde',Math.round((10+15+30)*150/100)]);
  assert.equal(C12.objetForge({id:'f',base:'Épée lourde',affixes:['l']},[w('Épée lourde')],A,g).name,'Épée lourde','pas deux fois le même mot');
  assert.equal(C12.objetForge({id:'f',base:'Bottes',affixes:['r']},[{id:'Bottes',name:'Bottes',category:'armor',slot:'bottes',price:4}],[{id:'r',nom:'lourd',place:'prefixe',effet:'mouvement',valeur:1}],g).name,'Bottes lourdes');
- assert.ok(ed.includes(".filter(x=>x.effet==='mouvement').forEach(x=>ligne('✦ '+formeAffixe(x,accordDe(o))+' : '")&&ed.includes("+field('Valeur en or','prix',0,'number','readonly tabindex=\"-1\"')")
+ assert.ok(ed.includes(".filter(x=>['mouvement','confere','orbesEtat'].includes(x.effet)).forEach(x=>{const t=phraseAffixe(x);")&&ed.includes("+field('Valeur en or','prix',0,'number','readonly tabindex=\"-1\"')")
   &&ed.includes("const o=objetForge(f,base,catalog.affixes||[],guide);")&&ed.includes("sel('Genre','accord',accordDe(a),ACCORDS)")&&ed.includes("champ(fa,'Par m de mouvement',"),'Forge v0.678 câblée');}
 /* v0.677 — La Forge, première livraison : les affixes et leur tirage, les pièces forgées chez les aventuriers, recomposées au
    catalogue le temps de jouer, le générateur, le loot forgé réglé par adversaire. */
@@ -5166,7 +5185,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.equal(ctxO.f({category:'object',effet}),true,'une potion à effet sert en combat');
  assert.equal(ctxO.f({category:'object'}),false,'un objet sans effet ne sert pas');
  assert.equal(ctxO.f({category:'weapon',effet}),false,'une arme, même à effet, n’en est pas');
- assert.ok(page.includes("$('gear').replaceChildren(typeof gearPills==='function'?gearPills(a,false,true):")&&src.includes("const equipement=combat?[]:armurerie.filter(([o])=>tout||portes(o));")
+ assert.ok(page.includes("$('gear').replaceChildren(typeof gearPills==='function'?gearPills(a,false,true):")&&src.includes("const equipement=combat?armurerie.filter(([o])=>pieceActivePortee(a,o)):armurerie.filter(([o])=>tout||portes(o));")
   &&!src.includes("c.className='attaque-carte'"),'objets de combat, boutons d’attaque d’une ligne');}
 /* v0.356 — La bulle de valeur plus bas, verte au-dessus de 1 ; les talents sous les compétences ;
    plus de double trait au-dessus des fiches ; deux arbres par classe au lieu de trois. */
@@ -5271,4 +5290,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1988 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1989 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

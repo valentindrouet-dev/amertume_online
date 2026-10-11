@@ -212,6 +212,9 @@ function centreAction(k,symbole){const l=actionSpeciale(k).logo,im=l?logoAttaque
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];migreOmbrelame(c);
  // Les pièces forgées ne sont pas au catalogue : elles vivent chez les aventuriers, et s'y recomposent (syncForges).
  c.items=c.items.filter(o=>!(o&&o.forge));c.affixes=normaliseAffixes(c.affixes);c.forge=normaliseReglageForge(c.forge);
+ // Les affixes livrés avec la Forge, posés une seule fois : effacés par le MJ, ils ne reviennent pas.
+ c.semisForge=Array.isArray(c.semisForge)?c.semisForge.filter(k=>typeof k==='string').slice(0,100):[];
+ if(!c.semisForge.includes('orbes-poison')){if(!c.affixes.some(x=>x.id==='affixe-orbes-poison'))c.affixes.push(normaliseAffixe({id:'affixe-orbes-poison',nom:'de la Vipère',place:'suffixe',effet:'orbesEtat',etat:'Poison',valeur:1,classe:'Mystique',poids:10,niveau:1}));c.semisForge.push('orbes-poison')}
  /* Deux talents sous un même identifiant se superposaient dans l'arbre : on en tirait un, l'autre restait, comme
     une copie. Une copie exacte s'en va ; une autre, qui a changé depuis, prend un identifiant à elle. */
  {const vus=new Map(),l=c.talents.filter(t=>{if(!t||!t.id)return true;const d=vus.get(t.id);if(!d){vus.set(t.id,t);return true}
@@ -1521,7 +1524,7 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // Ce que la pièce confère, une ligne par bonus ; sa rareté se lit à sa couleur.
  /* Une pièce forgée : les affixes que rien d'autre ne montre. Bonus, dés, état et lumière se lisent déjà dans leurs lignes,
     leurs dés et leurs pastilles. */
- affixesDe(o,catalog.affixes).filter(x=>x.effet==='mouvement').forEach(x=>ligne('✦ '+formeAffixe(x,accordDe(o))+' : '+phraseAffixe(x),'gear-affixe'));
+ affixesDe(o,catalog.affixes).filter(x=>['mouvement','confere','orbesEtat'].includes(x.effet)).forEach(x=>{const t=phraseAffixe(x);ligne(x.classe?x.classe+' : '+t:t.charAt(0).toUpperCase()+t.slice(1),'gear-affixe'+(x.classe?' de-classe':''))});
  normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});
  // Ce qui éclaire le dit : « Lumière 3m ».
  if(lumiereDe(o))ligne('Lumière '+String(lumiereDe(o)).replace('.',',')+'m','gear-lumiere');
@@ -1663,7 +1666,9 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
  const equipable=(o.category==='weapon'||o.category==='armor'||o.category==='ammo')&&tout&&peutEquiper&&!verrouEquip(a,o);
  // Un objet d'un combattant en scène s'utilise d'un clic, pour son joueur ou le MJ ; une munition se porte.
  // Un trésor se garde et se vend ; il ne s'utilise pas : un clic montre sa description.
- const utilisable=o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='cle'&&peutEquiper&&actors.includes(a);
+ const utilisable=(o.category!=='weapon'&&o.category!=='armor'&&o.category!=='ammo'&&o.category!=='treasure'&&o.category!=='ressource'&&o.category!=='restes'&&o.category!=='cle'
+  // En jeu, une pièce portée dont l'effet est actif, un état conféré, s'emploie aussi d'un clic.
+  ||!tout&&EQUIPEMENTS.includes(o.category)&&!!objetCode(o)&&modeObjet(o)==='actif'&&!!portes(o))&&peutEquiper&&actors.includes(a);
  const agir=e=>{e.stopPropagation();
   if(utilisable){fermerBulle();employerDepuisFiche(a,o);return}
   /* Au survol, la description se montre seule. En jeu, le clic l'épingle — le temps
@@ -1879,6 +1884,9 @@ function choisirPourPlace(a,cle,cote,nom){fermerBulle();
 /* Un objet de combat : ni arme, ni armure, ni munition, mais une pièce dont le moteur connaît
    l'effet — une potion, une bombe. C'est tout ce que montre la fiche de la table. */
 const objetDeCombat=o=>!!o&&!EQUIPEMENTS.includes(o.category)&&!!objetCode(o);
+// Une pièce portée dont l'effet est actif, un état conféré : elle sert en jeu, d'un clic, comme un objet de combat.
+const pieceActivePortee=(a,o)=>!!a&&!!o&&EQUIPEMENTS.includes(o.category)&&!!objetCode(o)&&modeObjet(o)==='actif'
+ &&(gearCount(a,o.id)>0||o.id===a.shieldId||o.id===a.munitionId||armuresDe(a).includes(o.id));
 function gearPills(a,tout=true,combat=false){const out=document.createElement('div');out.className='gear-grille';
  const possede=(a.inventaire&&a.inventaire.length)?a.inventaire:[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean);
  const comptes=new Map();possede.map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
@@ -1888,8 +1896,8 @@ function gearPills(a,tout=true,combat=false){const out=document.createElement('d
     bouton du bout déplie le reste du sac — c'est ainsi qu'on change d'arme en pleine
     partie, joueur comme MJ. Ailleurs, tout l'inventaire est là d'emblée. */
  const armurerie=tous.filter(([o])=>o.category==='weapon'||o.category==='armor');
- // À la table, rien de ce qui est porté : les seuls objets qui servent en combat.
- const equipement=combat?[]:armurerie.filter(([o])=>tout||portes(o));
+ // À la table, de ce qui est porté, seulement les pièces qui s'emploient : les objets qui servent en combat.
+ const equipement=combat?armurerie.filter(([o])=>pieceActivePortee(a,o)):armurerie.filter(([o])=>tout||portes(o));
  const objets=tous.filter(([o])=>o.category!=='weapon'&&o.category!=='armor'&&(!combat||objetDeCombat(o)));
  if(!equipement.length&&!objets.length){const v=document.createElement('span');v.className='muted';v.textContent=combat?'Aucun objet de combat':'Aucun équipement';out.append(v);return out}
  const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);
@@ -3441,19 +3449,26 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
  $('affixe-fields').innerHTML='<div class="edit-grid">'+field('Mot, au masculin','nom',x?v.nom:'','text','required maxlength="40" placeholder="tranchant, du Loup…"')
   +'<span data-place="prefixe avant">'+field('Au féminin','nomF',v.nomF,'text','maxlength="40"')+field('Au masculin pluriel','nomMP',v.nomMP,'text','maxlength="40"')+field('Au féminin pluriel','nomFP',v.nomFP,'text','maxlength="40"')+'</span>'
   +sel('Place dans le nom','place',v.place,[['avant','Avant la base : « Grosse épée »'],['prefixe','Après la base : « Épée tranchante »'],['suffixe','En suffixe : « Épée du Loup »']])
+  +sel('Catégorie','categorie',v.classe?'classe':'',[['','Commune'],['classe','Classe']])
+  +'<span data-categorie="classe">'+sel('Classe','classe',v.classe,(catalog.classes||[]).map(c=>[c.name,c.name]))+'</span>'
   +sel('Effet','effet',v.effet,EFFETS_AFFIXE)
   +'<span data-effet="carac">'+sel('Caractéristique','carac',v.carac,CARACS_EQUIP.filter(([k])=>k!=='comp'))+'</span>'
   +'<span data-effet="comp">'+sel('Compétence','comp',v.comp,COMPETENCES.map((n,k)=>[String(k),n]))+'</span>'
   +'<span data-effet="de">'+sel('Dé','de',v.de,NOMS_DES)+'</span>'
-  +'<span data-effet="etat">'+sel('État','etat',v.etat,ETATS_JEU.map(e=>[e,e]))+'</span>'
-  +'<span data-effet="carac comp de mouvement lumiere">'+field('Valeur','valeur',v.valeur,'number','min="1" max="40"')+'</span>'
+  +'<span data-effet="etat orbesEtat">'+sel('État','etat',v.effet==='confere'?'Feu':v.etat,ETATS_JEU.map(e=>[e,e]))+'</span>'
+  +'<span data-effet="confere">'+sel('État conféré','etatConfere',v.effet==='confere'?v.etat:'Blindage',ETATS_POSITIFS.map(e=>[e,e]))+sel('Usage','usage',v.usage,USAGES_AFFIXE)+'</span>'
+  +'<span data-effet="carac comp de mouvement lumiere orbesEtat">'+field('Valeur','valeur',v.valeur,'number','min="1" max="40"')+'</span>'
   +field('Poids au tirage','poids',v.poids,'number','min="1" max="100"')+field('Niveau minimum','niveau',v.niveau,'number','min="1" max="20"')+field('Valeur en or','prix',0,'number','readonly tabindex="-1"')
   +field('Groupe','groupe',v.groupe,'text','maxlength="40" placeholder="vide : celui de l’effet"')+'</div>'
   +'<p class="muted">Familles d’équipement qu’il peut toucher ; aucune cochée, toutes.</p><div class="coffre-cases">'+cases+'</div>';
- const f=$('affixe-form').elements,lit=()=>normaliseAffixe({nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.etat.value,valeur:f.valeur.value,nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value});
+ const f=$('affixe-form').elements,lit=()=>normaliseAffixe({nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.effet.value==='confere'?f.etatConfere.value:f.etat.value,usage:f.usage.value,valeur:f.valeur.value,nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value});
  // Les formes vides montrent celle qui sera tirée du masculin ; la valeur en or se lit au guide des prix.
  const montre=()=>{$('affixe-fields').querySelectorAll('[data-effet]').forEach(s=>{s.hidden=!s.dataset.effet.split(' ').includes(f.effet.value)});
-  $('affixe-fields').querySelectorAll('[data-place]').forEach(s=>{s.hidden=!s.dataset.place.split(' ').includes(f.place.value)});const l=lit();
+  $('affixe-fields').querySelectorAll('[data-place]').forEach(s=>{s.hidden=!s.dataset.place.split(' ').includes(f.place.value)});
+  // Un affixe de classe choisit sa classe, et seul il peut armer les orbes ; un affixe commun ne le peut pas.
+  const deClasse=f.categorie.value==='classe';$('affixe-fields').querySelectorAll('[data-categorie]').forEach(s=>{s.hidden=!deClasse});
+  [...f.effet.options].forEach(o=>{o.hidden=o.value==='orbesEtat'&&!deClasse});if(f.effet.value==='orbesEtat'&&!deClasse){f.effet.value='carac';montre();return}
+  const l=lit();
   f.nomF.placeholder=formeAffixe({...l,nomF:''},'fs');f.nomMP.placeholder=formeAffixe({...l,nomMP:''},'mp');f.nomFP.placeholder=formeAffixe({...l,nomFP:''},'fp');
   f.prix.value=String(valeurAffixe(l,normaliseGuidePrix(catalog.guidePrix)))};
  $('affixe-form').oninput=montre;$('affixe-form').onchange=montre;montre();
@@ -3462,9 +3477,9 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
   par.onchange=()=>{sous.forEach(s=>{s.checked=par.checked});par.indeterminate=false};sous.forEach(s=>{s.onchange=etat})});
  $('affixe-suppr').hidden=!x;
  $('affixe-form').onsubmit=e=>{e.preventDefault();
-  const n=normaliseAffixe({id:x?x.id:undefined,nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.etat.value,valeur:f.valeur.value,poids:f.poids.value,niveau:f.niveau.value,prix:x?x.prix:0,groupe:f.groupe.value,nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value,
-   familles:(c=>c.filter(e=>!e.dataset.de&&(e.dataset.parent||e.checked)).flatMap(e=>{if(!e.dataset.parent)return [e.value];const sous=c.filter(s=>s.dataset.de===e.value),on=sous.filter(s=>s.checked);
-    return on.length===sous.length?[e.value]:on.map(s=>s.value)}))([...affixeDialog.querySelectorAll('input[name="famille"]')]),classe:x?x.classe:''});
+  const n=normaliseAffixe({id:x?x.id:undefined,nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.effet.value==='confere'?f.etatConfere.value:f.etat.value,usage:f.usage.value,valeur:f.valeur.value,poids:f.poids.value,niveau:f.niveau.value,prix:x?x.prix:0,groupe:f.groupe.value,nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value,
+   classe:f.categorie.value==='classe'?f.classe.value:'',familles:(c=>c.filter(e=>!e.dataset.de&&(e.dataset.parent||e.checked)).flatMap(e=>{if(!e.dataset.parent)return [e.value];const sous=c.filter(s=>s.dataset.de===e.value),on=sous.filter(s=>s.checked);
+    return on.length===sous.length?[e.value]:on.map(s=>s.value)}))([...affixeDialog.querySelectorAll('input[name="famille"]')])});
   if(x)Object.assign(x,n);else catalog.affixes.push(n);affixeDialog.close();sauveForge();renderForge()};
  $('affixe-suppr').onclick=()=>{if(!x||!confirm('Supprimer l’affixe « '+x.nom+' » ? Les pièces forgées qui le portent le perdent.'))return;
   catalog.affixes=catalog.affixes.filter(a=>a!==x);affixeDialog.close();sauveForge();renderForge()};
