@@ -2457,3 +2457,10 @@ button.j-stats{padding:0;border:0;background:none;font:inherit;font-weight:800;c
 #affixe-editor .echelle-rang{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:600}
 #affixe-editor .echelle-rang.r-inhabituel>span:first-child{color:#4f8a52}#affixe-editor .echelle-rang.r-rare>span:first-child{color:#4d7fb0}#affixe-editor .echelle-rang.r-mystique>span:first-child{color:#7a5fc0}#affixe-editor .echelle-rang.r-epique>span:first-child{color:#c26a2f}
 #affixe-editor .echelle-paire{display:flex;align-items:center;gap:5px;font-weight:400}#affixe-editor .echelle-paire input{width:100%;min-width:0}
+/* Sur mesure : la base, puis chaque affixe et sa valeur. */
+.forge-mesure{flex-wrap:wrap}.forge-mesure .mesure-affixe{display:inline-flex;gap:4px;align-items:center}.forge-mesure .mesure-affixe select{max-width:280px}.forge-mesure .mesure-affixe input{width:64px}
+/* La Chambre forte : une ligne par pièce, son carré, son nom à la couleur de sa rareté, où elle est, à qui la donner. */
+#chambre-forte .chambre-ligne{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+#chambre-forte .chambre-nom{flex:1;display:flex;flex-direction:column;min-width:0}
+#chambre-forte .chambre-nom b.r-inhabituel{color:#4f8a52}#chambre-forte .chambre-nom b.r-rare{color:#4d7fb0}#chambre-forte .chambre-nom b.r-mystique{color:#7a5fc0}#chambre-forte .chambre-nom b.r-epique{color:#c26a2f}
+#chambre-forte .chambre-ligne select{width:auto;flex:0 0 200px;max-width:200px}#chambre-forte .chambre-nom{flex:1 1 220px}#chambre-forte .chambre-ligne>.gear-carre{flex:none}

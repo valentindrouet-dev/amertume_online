@@ -212,6 +212,8 @@ function centreAction(k,symbole){const l=actionSpeciale(k).logo,im=l?logoAttaque
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];migreOmbrelame(c);
  // Les pièces forgées ne sont pas au catalogue : elles vivent chez les aventuriers, et s'y recomposent (syncForges).
  c.items=c.items.filter(o=>!(o&&o.forge));c.affixes=normaliseAffixes(c.affixes);c.forge=normaliseReglageForge(c.forge);
+ // La Chambre forte : les pièces que le MJ a forgées sur mesure, uniques, qu'il donne à qui il veut.
+ c.chambreForte=normaliseForges(c.chambreForte);
  // Les affixes livrés avec la Forge, posés une seule fois : effacés par le MJ, ils ne reviennent pas.
  c.semisForge=Array.isArray(c.semisForge)?c.semisForge.filter(k=>typeof k==='string').slice(0,100):[];
  // Vampirique, Accélération, Domination, Réaction, Épines : leurs valeurs se tirent selon la rareté.
@@ -643,6 +645,7 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Armurerie</h2><div class="cat-actions">'
  +'<button id="armory-masse" type="button" aria-pressed="false" title="Modifier prix, raretés, ressources… de toutes les pièces affichées">✎ Modifier en masse</button>'
  +'<button id="armory-forge" type="button" title="Les affixes, le tirage et le générateur d’objets rares">✦ Forge</button>'
+ +'<button id="armory-chambre" type="button">◈ Chambre forte</button>'
  +'<button id="armory-add" class="primary">+ Ajouter</button></div></header>'
  
  +'<div class="cat-filters"><input id="armory-search" placeholder="Rechercher…" aria-label="Rechercher un objet">'
@@ -3413,6 +3416,8 @@ $('delete-talent').onclick=()=>{if(talentIndex===null)return;
 const forgeDialog=dialog('forge-editor','Forge','<div id="forge-corps"></div>');
 const affixeDialog=dialog('affixe-editor','Affixe','<form id="affixe-form"><div id="affixe-fields"></div><div class="form-actions"><button type="button" id="affixe-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
 let forgeApercu=null,forgeBase='',forgeNombre='',forgeNiveau=1;
+// La pièce sur mesure en cours : sa base, ses quatre places d'affixe, les valeurs choisies.
+let mesureForge={id:'forge-'+crypto.randomUUID(),base:'',affixes:['','','',''],valeurs:{}};
 function sauveForge(){scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 function openForge(){if(view!=='mj')return;renderForge();forgeDialog.showModal()}
 function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.replaceChildren();catalog.affixes=normaliseAffixes(catalog.affixes);catalog.forge=normaliseReglageForge(catalog.forge);
@@ -3461,7 +3466,70 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
    const b=base.value?bases.find(o=>o.id===base.value):possibles[Math.floor(Math.random()*possibles.length)];if(!b){forgeApercu=null;montre();return}
    const n=nombre.value===''?tireNombreAffixes(catalog.forge,{chance:100,min:1,max:4}):Math.trunc(Number(nombre.value));
    forgeApercu={id:'forge-'+crypto.randomUUID(),base:b.id,affixes:tireAffixes(b,n,catalog.affixes,forgeNiveau)};montre()};
-  [base,nombre,niveau,forger].forEach(x=>ligne.append(x));s.append(ligne,apercu);montre()}}
+  [base,nombre,niveau,forger].forEach(x=>ligne.append(x));s.append(ligne,apercu);montre()}
+ // Sur mesure : la pièce de base choisie, chacun de ses affixes, chaque valeur ; elle entre dans la Chambre forte.
+ {const s=bloc('Sur mesure'),m=mesureForge,bases=(catalog.items||[]).filter(o=>o&&!o.forge&&(o.category==='weapon'||o.category==='armor')).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
+  const base=document.createElement('select');base.setAttribute('aria-label','Pièce de base, sur mesure');base.replaceChildren(new Option('— pièce de base —',''),...bases.map(o=>new Option(o.name+' · '+(o.category==='weapon'?(o.ranged?'à distance':'mêlée'):NOM_EMPLACEMENT(emplacementDe(o))),o.id)));base.value=m.base;
+  const b=bases.find(o=>o.id===m.base),tous=normaliseAffixes(catalog.affixes),vaSur=b?tous.filter(x=>affixeVaSur(x,b,0)):[];
+  // Un affixe qui ne va pas sur la nouvelle base s'en va ; deux affixes d'un même groupe, non plus.
+  m.affixes=m.affixes.map(id=>vaSur.some(x=>x.id===id)?id:'');
+  const choisi=i=>vaSur.find(x=>x.id===m.affixes[i]),communs=[0,1,2].filter(i=>choisi(i)).length;if(communs<3)m.affixes[3]='';
+  const lot=m.affixes.map((id,i)=>choisi(i)).filter(Boolean),rarete=rareteForge(lot.length);
+  const ligne=document.createElement('div');ligne.className='forge-reglages forge-mesure';ligne.append(base);
+  base.onchange=()=>{m.base=base.value;renderForge()};
+  [0,1,2,3].forEach(i=>{const se=document.createElement('select');se.setAttribute('aria-label',i<3?'Affixe '+(i+1):'Affixe de classe');
+   const pris=new Set(m.affixes.filter((id,k)=>id&&k!==i).map(id=>groupeAffixe(vaSur.find(x=>x.id===id))));
+   se.add(new Option(i<3?'— affixe '+(i+1)+' —':'— affixe de classe —',''));
+   vaSur.filter(x=>i<3?!x.classe:!!x.classe).forEach(x=>{const o=new Option(formeAffixe(x,accordDe(b))+' · '+(x.classe?x.classe+' · ':'')+phraseAffixe(x),x.id);o.disabled=pris.has(groupeAffixe(x));se.add(o)});
+   se.value=m.affixes[i]||'';se.disabled=!b||(i===3&&communs<3);se.onchange=()=>{m.affixes[i]=se.value;renderForge()};
+   const boite=document.createElement('span');boite.className='mesure-affixe';boite.append(se);
+   // Une valeur selon la rareté se choisit dans l'échelle de celle de la pièce.
+   const x=choisi(i);if(x&&x.variable){const [lo,hi]=x.echelle[RANG_RARETE[rarete]??0];const v=document.createElement('input');v.type='number';v.min=String(lo);v.max=String(hi);
+    v.setAttribute('aria-label','Valeur de '+x.nom);v.value=String(valeurTiree(x,m.id,rarete,m.valeurs[x.id]));v.title=lo+' à '+hi;v.onchange=()=>{m.valeurs[x.id]=Math.max(lo,Math.min(hi,Math.trunc(Number(v.value))||lo));renderForge()};boite.append(v)}
+   ligne.append(boite)});
+  const forger=document.createElement('button');forger.type='button';forger.className='primary';forger.textContent='⚒ Forger';forger.disabled=!b||!lot.length;
+  const apercu=document.createElement('div');apercu.className='forge-apercu';
+  const rec=b?{id:m.id,base:b.id,affixes:lot.map(x=>x.id),valeurs:Object.fromEntries(lot.filter(x=>x.variable).map(x=>[x.id,valeurTiree(x,m.id,rarete,m.valeurs[x.id])]))}:null;
+  const o=rec&&objetForge(rec,catalog.items,catalog.affixes,normaliseGuidePrix(catalog.guidePrix));
+  if(o&&lot.length){const c=gearCarre(o,1,false);c.removeAttribute('role');c.tabIndex=-1;const d=gearDetail(o,null,false);d.hidden=false;apercu.append(c,d)}
+  forger.onclick=()=>{if(!rec||!lot.length)return;catalog.chambreForte=[...normaliseForges(catalog.chambreForte),normaliseForges([rec])[0]];
+   mesureForge={id:'forge-'+crypto.randomUUID(),base:m.base,affixes:['','','',''],valeurs:{}};syncForges();sauveForge();renderForge();openChambre()};
+  ligne.append(forger);s.append(ligne,apercu)}}
+/* ---------- La Chambre forte ----------
+   Les pièces forgées sur mesure, uniques : chacune dit où elle est, et se donne à un aventurier, à un adversaire en scène ou à
+   un adversaire du bestiaire ; elle quitte alors celui qui l'avait. */
+const chambreDialog=dialog('chambre-forte','Chambre forte','<div id="chambre-corps"></div>');
+function openChambre(){if(view!=='mj')return;renderChambre();if(!chambreDialog.open)chambreDialog.showModal()}
+// Qui tient la pièce : des aventuriers, des adversaires en scène, des adversaires du bestiaire.
+function porteursPiece(id){return [...(typeof actors!=='undefined'?actors:[]).filter(a=>a&&(a.inventaire||[]).includes(id)).map(a=>nomNum(a)),
+ ...(catalog.monsters||[]).filter(m=>m&&(m.inventaire||[]).includes(id)).map(m=>m.name+' (bestiaire)')]}
+function retirePiecePartout(id){const o=objetDe(id);
+ (typeof actors!=='undefined'?actors:[]).forEach(a=>{if(!a)return;if(o)while((a.inventaire||[]).includes(id))retirerInventaire(a,o);else if(a.inventaire)a.inventaire=a.inventaire.filter(x=>x!==id);
+  if(Array.isArray(a.forges))a.forges=a.forges.filter(f=>f.id!==id)});
+ (catalog.monsters||[]).forEach(m=>{if(!m)return;['inventaire','weapons','armures'].forEach(k=>{if(Array.isArray(m[k]))m[k]=m[k].filter(x=>x!==id)});if(m.shieldId===id)m.shieldId=''})}
+function donnePiece(rec,cible){if(!rec||!cible)return;retirePiecePartout(rec.id);
+ if(cible.m){cible.m.inventaire=[...(cible.m.inventaire||[]),rec.id]}
+ else{const a=cible.a;a.forges=[...(a.forges||[]).filter(f=>f.id!==rec.id),structuredClone(rec)];a.inventaire=[...(a.inventaire||[]),rec.id];syncEquipped(a)}
+ syncForges();render();if(typeof renderHeroes==='function')renderHeroes();sauveForge();renderChambre()}
+function renderChambre(){const corps=$('chambre-corps');if(!corps)return;corps.replaceChildren();catalog.chambreForte=normaliseForges(catalog.chambreForte);syncForges();
+ if(!catalog.chambreForte.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucune pièce.';corps.append(p);return}
+ catalog.chambreForte.forEach(rec=>{const o=objetDe(rec.id);if(!o)return;const l=document.createElement('div');l.className='chambre-ligne';
+  const c=gearCarre(o,1,false);if(typeof surveille==='function'&&typeof BULLES!=='undefined'&&BULLES)surveille(c,()=>{const d=gearDetail(o,null,false);d.hidden=false;return d});
+  const nom=document.createElement('div');nom.className='chambre-nom';const t=document.createElement('b');t.textContent=o.name;t.className='r-'+rareteDe(o);
+  const ou=document.createElement('small');ou.className='muted';ou.textContent=porteursPiece(rec.id).join(', ')||'Dans la Chambre forte';nom.append(t,ou);
+  const qui=document.createElement('select');qui.setAttribute('aria-label','Donner à');qui.add(new Option('— donner à —',''));
+  const groupe=(titre,liste)=>{if(!liste.length)return;const g=document.createElement('optgroup');g.label=titre;liste.forEach(([v,n])=>g.append(new Option(n,v)));qui.append(g)};
+  const acteurs=typeof actors!=='undefined'?actors.filter(Boolean):[];
+  groupe('Aventuriers',acteurs.filter(a=>a.hero).map(a=>['a:'+a.id,a.name]));
+  groupe('Adversaires en scène',acteurs.filter(a=>!a.hero).map(a=>['a:'+a.id,nomNum(a)]));
+  groupe('Bestiaire',(catalog.monsters||[]).filter(m=>m&&m.id).map(m=>['m:'+m.id,m.name]));
+  const donner=document.createElement('button');donner.type='button';donner.textContent='Donner';
+  donner.onclick=()=>{const [k,id]=[qui.value.slice(0,1),qui.value.slice(2)];if(!id)return;
+   const cible=k==='m'?{m:(catalog.monsters||[]).find(m=>m.id===id)}:{a:actors.find(a=>a&&a.id===id)};if(cible.m||cible.a)donnePiece(rec,cible)};
+  const suppr=document.createElement('button');suppr.type='button';suppr.className='ico danger';suppr.textContent='✕';suppr.title='Détruire';suppr.setAttribute('aria-label','Détruire '+o.name);
+  suppr.onclick=()=>{if(!confirm('Détruire « '+o.name+' » ? Elle quitte aussi celui qui la porte.'))return;retirePiecePartout(rec.id);
+   catalog.chambreForte=catalog.chambreForte.filter(f=>f.id!==rec.id);syncForges();render();if(typeof renderHeroes==='function')renderHeroes();sauveForge();renderChambre()};
+  l.append(c,nom,qui,donner,suppr);corps.append(l)})}
 // La valeur en or d'un affixe : un nombre, ou de tant à tant quand sa valeur se tire selon la rareté.
 function orAffixe(x){const g=normaliseGuidePrix(catalog.guidePrix);if(!x.variable)return String(valeurAffixe(x,g));
  const a=valeurAffixe({...x,variable:false,valeur:x.echelle[0][0]},g),b=valeurAffixe({...x,variable:false,valeur:x.echelle[3][1]},g);return a===b?String(a):a+'–'+b}
@@ -3523,7 +3591,9 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
 function syncForges(){if(typeof catalog==='undefined'||!catalog||!Array.isArray(catalog.items))return;const items=catalog.items;
  for(let i=items.length-1;i>=0;i--)if(items[i]&&items[i].forge)items.splice(i,1);
  const base=[...items],vus=new Set(),guide=normaliseGuidePrix(catalog.guidePrix);
- (typeof actors!=='undefined'?actors:[]).forEach(a=>(a&&a.forges||[]).forEach(f=>{if(vus.has(f.id)||!(a.inventaire||[]).includes(f.id))return;vus.add(f.id);const o=objetForge(f,base,catalog.affixes||[],guide);if(o)items.push(o)}))}
+ (typeof actors!=='undefined'?actors:[]).forEach(a=>(a&&a.forges||[]).forEach(f=>{if(vus.has(f.id)||!(a.inventaire||[]).includes(f.id))return;vus.add(f.id);const o=objetForge(f,base,catalog.affixes||[],guide);if(o)items.push(o)}));
+ // Les pièces de la Chambre forte, où qu'elles soient : chez un adversaire du bestiaire aussi.
+ (catalog.chambreForte||[]).forEach(f=>{if(vus.has(f.id))return;vus.add(f.id);const o=objetForge(f,base,catalog.affixes||[],guide);if(o)items.push(o)})}
 const renderSansForges=render;render=function(){syncForges();renderSansForges()};
 // Une pièce forgée qui change de sac : son enregistrement suit, pour que la table la recompose chez son nouveau porteur.
 function deplaceForge(a,id){if(!a||!a.hero||typeof actors==='undefined')return;let rec=null;
@@ -5019,7 +5089,7 @@ function noterReglage(texte){const n=$('raccourcis-erreur');if(!n)return;
 function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();renderBestiary()}
 $('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;$('armory-sort').onchange=renderArmory;
 $('armory-masse').onclick=()=>{armoryMasse=!armoryMasse;renderArmory()};
-$('armory-add').onclick=()=>openItem(null);$('armory-forge').onclick=()=>openForge();
+$('armory-add').onclick=()=>openItem(null);$('armory-forge').onclick=()=>openForge();$('armory-chambre').onclick=()=>openChambre();
 $('bestiary-search').oninput=renderBestiary;$('bestiary-family').onchange=renderBestiary;
 $('bestiary-sort').onchange=renderBestiary;
 $('bestiary-masse').onclick=()=>{bestiaryMasse=!bestiaryMasse;renderBestiary()};
