@@ -3396,7 +3396,7 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
    ['Mot','Place','Familles','Effet','Poids','Niv.','Or',''].forEach(x=>{const th=document.createElement('th');th.textContent=x;tete.append(th)});
    const corpsT=t.createTBody();
    [...catalog.affixes].sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(x=>{const r=corpsT.insertRow();r.className='forge-ligne';r.tabIndex=0;
-    [x.nom,x.place==='suffixe'?'suffixe':'préfixe',x.familles.length?x.familles.map(f=>({melee:'Mêlée',ranged:'Distance'})[f]||(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,valeurAffixe(x,normaliseGuidePrix(catalog.guidePrix))].forEach(v=>{r.insertCell().textContent=String(v)});
+    [x.nom,x.place==='suffixe'?'suffixe':'préfixe',x.familles.length?x.familles.map(f=>({melee:'Mêlée',ranged:'Distance',armure:'Armures'})[f]||(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,valeurAffixe(x,normaliseGuidePrix(catalog.guidePrix))].forEach(v=>{r.insertCell().textContent=String(v)});
     r.onclick=()=>openAffixe(x.id);r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAffixe(x.id)}};
     // Dupliquer : une copie juste à côté, à corriger.
     const double=document.createElement('button');double.type='button';double.className='ico';double.textContent='⧉';double.title='Dupliquer';double.setAttribute('aria-label','Dupliquer '+x.nom);
@@ -3432,8 +3432,8 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
  /* Les familles en cascade : cocher les armes de mêlée coche tous leurs types dessous ; en décocher un raréfie l'affixe.
     Tous cochés, l'affixe garde la famille entière. */
  const coche=(k,n,attr,on)=>'<label class="field-check"><input type="checkbox" name="famille" value="'+k+'"'+attr+(on?' checked':'')+'>'+esc(n)+'</label>';
- const nomFam=k=>(FAMILLES_AFFIXE.find(([x])=>x===k)||[])[1]||k,sousDe=g=>TYPES_ARME.filter(t=>t[2]===g).map(([k])=>k);
- const cases=FAMILLES_AFFIXE.filter(([k])=>!TYPES_ARME.some(t=>t[0]===k)).map(([k,n])=>{const sous=sousDe(k);if(!sous.length)return coche(k,n,'',v.familles.includes(k));
+ const nomFam=k=>(FAMILLES_AFFIXE.find(([x])=>x===k)||[])[1]||k,sousDe=g=>CASCADE_AFFIXE[g]||[];
+ const cases=FAMILLES_AFFIXE.filter(([k])=>!Object.values(CASCADE_AFFIXE).flat().includes(k)).map(([k,n])=>{const sous=sousDe(k);if(!sous.length)return coche(k,n,'',v.familles.includes(k));
   const tout=v.familles.includes(k);return '<div class="affixe-cascade">'+coche(k,n,' data-parent="'+k+'"',tout||sous.some(s=>v.familles.includes(s)))
    +'<div class="affixe-sous">'+sous.map(s=>coche(s,nomFam(s),' data-de="'+k+'"',tout||v.familles.includes(s))).join('')+'</div></div>'}).join('');
  $('affixe-fields').innerHTML='<div class="edit-grid">'+field('Mot, au masculin','nom',x?v.nom:'','text','required maxlength="40" placeholder="tranchant, du Loup…"')

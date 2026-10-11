@@ -3389,6 +3389,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.686 — Les armures en cascade, comme les armes : le groupe Armures réunit corps, boucliers, casques, capes, anneaux,
+   amulettes et bottes. */
+{const C15=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
+ const A=C15.normaliseAffixes([{id:'a',nom:'solide',familles:['armure']},{id:'b',nom:'ferré',familles:['bottes']}]);
+ const bottes={id:'bo',name:'Bottes',category:'armor',slot:'bottes'},casque={id:'ca',name:'Casque',category:'armor',slot:'tete'},ep={id:'ep',name:'Épée',category:'weapon'};
+ assert.deepEqual([C15.affixeVaSur(A[0],bottes,0),C15.affixeVaSur(A[0],casque,0),C15.affixeVaSur(A[0],ep,0),C15.affixeVaSur(A[1],bottes,0),C15.affixeVaSur(A[1],casque,0)],[true,true,false,true,false]);
+ assert.ok(ed.includes("sousDe=g=>CASCADE_AFFIXE[g]||[];")&&ed.includes("armure:'Armures'})[f]"),'cascade des armures');}
 /* v0.685 — Un affixe se duplique depuis la liste de la Forge. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const copie=normaliseAffixe({...structuredClone(x),id:idDomaine(),nom:(x.nom+' (copie)').slice(0,40)});"),'affixe dupliqué');}
 /* v0.684 — Le lexique de l'accord : féminins irréguliers, pluriels en -eus et -als, compléments invariables ;
@@ -3428,7 +3435,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  const o=C13.objetForge({id:'f',base:'ep',affixes:['r','b']},[ep],A);assert.deepEqual([o.name,o.rarete,o.dice],['Épée lourde mystique','rare',{white:1,red:1,blue:1}]);
  assert.ok(!ed.includes("['0','0 · Commun']")&&ed.includes("tireNombreAffixes(catalog.forge,{chance:100,min:1,max:4})"),'générateur sans commun');}
 /* v0.682 — Au tableau des affixes, les familles d'armes entières se lisent « Mêlée » et « Distance ». */
-{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("x.familles.map(f=>({melee:'Mêlée',ranged:'Distance'})[f]||"),'familles courtes');}
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("x.familles.map(f=>({melee:'Mêlée',ranged:'Distance',armure:'Armures'})[f]||"),'familles courtes');}
 /* v0.681 — Le générateur tire aussi sa base au sort, parmi celles que les affixes existants peuvent toucher. */
 {const ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ed.includes("base.replaceChildren(new Option('Tirage au sort',''),")&&ed.includes("const possibles=bases.filter(o=>catalog.affixes.some(x=>!x.classe&&affixeVaSur(x,o,forgeNiveau)));"),'base au sort');}
@@ -5256,4 +5263,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1985 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1986 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
