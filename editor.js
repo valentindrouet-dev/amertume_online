@@ -2130,14 +2130,19 @@ function logoRemplace(a,t){if(!a||!t)return '';
    les améliorations acquises en petits ronds, douze par ligne — deux sous chaque talent. */
 function talentPills(a,cases){const out=document.createElement('div');out.className='talent-grille'+(cases?' a-cases':'');
  // Sur la fiche, les talents se rangent par nature : Actions, Réactions, Passifs, puis le reste ; l'ordre de l'arbre dans chacune.
- const ORDRE_FICHE=['act','mvt','reac','pass','crit','mait'],rangT=t=>{const i=ORDRE_FICHE.indexOf(talentType(t)[0]);return i<0?ORDRE_FICHE.length:i};
+ // Sur la fiche à cases, la Maîtrise ouvre la rangée moyenne, devant les Passifs.
+ const ORDRE_FICHE=cases?['act','mvt','reac','mait','pass','crit']:['act','mvt','reac','pass','crit','mait'],rangT=t=>{const i=ORDRE_FICHE.indexOf(talentType(t)[0]);return i<0?ORDRE_FICHE.length:i};
  const liste=talentsDeFiche(a).map((t,i)=>[t,i]).sort((x,y)=>rangT(x[0])-rangT(y[0])||x[1]-y[1]).map(x=>x[0]);
  if(!liste.length&&!cases){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
  /* Un talent appris dont le socle manque ne fait rien : il se taisait, et on le croyait à
     l'œuvre. Il porte désormais sa marque, et sa bulle dit ce qu'il attend. */
  const sansEffet=t=>typeof manqueTalent==='function'?manqueTalent(a.talents||[],t,catalog.talents):'';
  // L'Attaque, que tout aventurier possède : la première de ses actions.
- const attaque=cases&&a.hero?carteAttaque(a):null;if(attaque)out.append(attaque);const nb=liste.length+(attaque?1:0);
+ /* Sur la fiche, quatre rangées : en grand, l'Attaque, les Actions et les Réactions ; en moyen, les Maîtrises et les Passifs ;
+    en petit, les améliorations ; enfin les bonus, sous la ligne. */
+ const rangee=cls=>{const r=document.createElement('div');r.className='talent-rang '+cls;return r},grands=cases?rangee('rang-grands'):out,moyens=cases?rangee('rang-moyens'):out;
+ const MOYENS=['mait','pass','crit'];
+ const attaque=cases&&a.hero?carteAttaque(a):null;if(attaque)grands.append(attaque);const nb=liste.length+(attaque?1:0);
  liste.forEach(t=>{const k=palierDe(a,t);
   // Chaque talent tel que le porte cet aventurier : à son élément, s'il en a un.
   const tv0=talentPourElement(t,elementDe(a)),sur=logoRemplace(a,t),tv=sur?{...tv0,logo:sur}:tv0,carte=talentCarte(tv),pill=carte.firstChild;
@@ -2153,12 +2158,13 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
   const cle=(a.id||'?')+'|'+t.id;
   const montre=()=>{talentOuvert=cle;gearOuvert=null;const d=detail.cloneNode(true);d.hidden=false;ouvrirBulle(pill,d,'bulle-talent')};
   if(talentOuvert===cle)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});
-  surveille(pill,montre);out.append(carte)});
+  surveille(pill,montre);(MOYENS.includes(talentType(t)[0])?moyens:grands).append(carte)});
  if(cases){const vide=cls=>{const v=document.createElement('span');v.className=cls;v.setAttribute('aria-hidden','true');return v};
-  for(let n=nb;n<Math.max(6,Math.ceil(nb/6)*6);n++)out.append(vide('talent-case-vide'));
+  const nbG=grands.childElementCount;for(let n=nbG;n<Math.max(6,Math.ceil(nbG/6)*6);n++)grands.append(vide('talent-case-vide'));
+  out.append(grands);if(moyens.childElementCount)out.append(moyens);
   // Les améliorations qui jouent : celles qu'une suivante ne remplace pas.
   const ams=sansAmeliorationsRemplacees((a.talents||[]).map(talent).filter(x=>x&&!estBonus(x)&&lisChemin(x)));
-  const rang=document.createElement('div');rang.className='talent-ameliorations';
+  const rang=document.createElement('div');rang.className='talent-ameliorations rang-ameliorations';const bonusR=document.createElement('div');bonusR.className='talent-ameliorations rang-bonus';
   ams.forEach(x=>{const vuA=y=>talentPourElement(y,elementDe(a)),xv=logoHerite(vuA(x),vuA),r=talentRond(xv);r.classList.add('cliquable');r.tabIndex=0;r.setAttribute('aria-label',nomEnClair(xv.name));
    surveille(r,()=>{const d=bulleTalent(x,{a,vu:y=>talentPourElement(y,elementDe(a)),cout:false});ouvrirBulle(r,d,'bulle-talent')});rang.append(r)});
   /* Les bonus de caractéristique ou de compétence, en petits ronds aussi : les bonus identiques
@@ -2173,9 +2179,9 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
    const nom=libelleBonus(g.p);r.setAttribute('aria-label',nom);
    surveille(r,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+g.p.carac;
     const tete=document.createElement('p');tete.className='talent-bulle-nom';const b=document.createElement('b');b.append(libelleBonusEl(g.p,{talent:g.t}));tete.append(b);d.append(tete);ouvrirBulle(r,d,'bulle-talent')});
-   rang.append(r)});
-  for(let n=rang.childElementCount;n<Math.max(12,Math.ceil(rang.childElementCount/12)*12);n++)rang.append(vide('amelioration-case-vide'));
-  out.append(rang)}
+   bonusR.append(r)});
+  if(rang.childElementCount){for(let n=rang.childElementCount;n<Math.max(12,Math.ceil(rang.childElementCount/12)*12);n++)rang.append(vide('amelioration-case-vide'));out.append(rang)}
+  if(bonusR.childElementCount)out.append(bonusR)}
  bulleOrpheline();return out}
 // Les Trésors : trésors et objets rares, qui se gardent, se montrent et se vendent, sans s'utiliser.
 // Quatre colonnes par rangée : les Ressources et les Trésors passent en dessous.

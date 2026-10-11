@@ -1792,14 +1792,14 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
  &&src.includes("rangees(equipement,'');rangees(objets,combat?'':'Objets');bulleOrpheline();")&&src.includes(' bulleOrpheline();return out}')
  &&src.includes("if(!equipable){if(BULLES){if(!tout)basculeEpingle(p,montre)}else basculer();return}")
  // Le chevron des vignettes de talent d'une fiche ne dépliait que l'ancien dépliant.
- &&!src.includes("chev.textContent='⌄'")&&src.includes('surveille(pill,montre);out.append(carte)});')
+ &&!src.includes("chev.textContent='⌄'")&&src.includes('surveille(pill,montre);(MOYENS.includes(talentType(t)[0])?moyens:grands).append(carte)});')
  &&src.includes('function fermerBulle()')&&src.includes("document.addEventListener('pointerdown',bulleDehors,true);")
  &&src.includes("document.addEventListener('keydown',bulleEchap,true);")&&src.includes(" e.preventDefault();e.stopPropagation();fermerBulle()}")&&src.includes("window.addEventListener('scroll',fermerBulle,true);window.addEventListener('resize',fermerBulle)")
  &&src.includes("if(!bulleAncre.isConnected||(!r.width&&!r.height)){fermerBulle();return}")&&src.includes("function ancreVisible(el){return !!el&&el.isConnected&&(!!el.offsetParent||(el instanceof SVGElement&&el.getClientRects().length>0))}")&&src.includes('const dessous=r.top-b.height-12<marge;')
  &&src.includes("bulleEl.style.setProperty('--fleche',")
  // Les deux chemins cohabitent : la bulle, et le dépliant d'avant si l'on repasse BULLES à faux.
  &&src.includes("if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&gearOuvert===cle&&ancreVisible(p))reposeBulle(montre)});")
- &&src.includes("out.append(p);if(!BULLES)details.push(p.detailPlie)});")&&src.includes("surveille(pill,montre);out.append(carte)});")
+ &&src.includes("out.append(p);if(!BULLES)details.push(p.detailPlie)});")&&src.includes("surveille(pill,montre);(MOYENS.includes(talentType(t)[0])?moyens:grands).append(carte)});")
  &&src.includes('let talentOuvert=null;')&&src.includes("const cle=(a.id||'?')+'|'+t.id;")
  &&src.includes("if(talentOuvert===cle)requestAnimationFrame(()=>{if(bulleEl&&talentOuvert===cle&&ancreVisible(pill))montre()});")
  &&!src.includes('talentsOuverts')
@@ -3389,6 +3389,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.698 — Les talents de la fiche en quatre rangées : Attaque, Actions et Réactions en grand ; Maîtrises et Passifs en moyen ;
+   améliorations en petit ; la ligne, puis les bonus. */
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(ed.includes("const MOYENS=['mait','pass','crit'];")&&ed.includes("(MOYENS.includes(talentType(t)[0])?moyens:grands).append(carte)});")&&ed.includes("if(bonusR.childElementCount)out.append(bonusR)}")
+  &&css.includes('.hero-card .talent-grille .rang-moyens .cat-pill.gear-carre.talent-carre{max-width:44px}')&&css.includes('.hero-card .talent-grille .talent-ameliorations.rang-bonus{border-top:1px dashed #cfae5e;padding-top:8px}'),'quatre rangées de talents');}
 /* v0.697 — Jamais deux fois le même bonus sur une pièce : ni deux caractéristiques identiques, ni deux compétences identiques,
    ni ce que la base donne déjà. */
 {const C24=require('./combat.js');
@@ -5158,7 +5163,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  vm.runInContext(src.slice(src.indexOf('const EFFETS_SUR_ATTAQUE='),src.indexOf('function lignesAttaque('))+';this.f=ameliorAttaque;',ctxA);
  assert.deepEqual([{type:'pass',pourAttaque:true},{type:'ame',effet:'tenailles'},{type:'ame',effet:'tenailles',pourAttaque:false},{type:'act',pourAttaque:true},{type:'pass',effet:'bonus',pourAttaque:true},{type:'pass'}].map(ctxA.f),
   [true,true,false,false,false,false],'passifs et améliorations cochés, ou câblés sur les attaques');
- assert.ok(src.includes("const attaque=cases&&a.hero?carteAttaque(a):null;if(attaque)out.append(attaque);")&&src.includes("talentCarte({id:'attaque',name:'Attaque',type:'act'},l?logoAttaque(l):null)")
+ assert.ok(src.includes("const attaque=cases&&a.hero?carteAttaque(a):null;if(attaque)grands.append(attaque);")&&src.includes("talentCarte({id:'attaque',name:'Attaque',type:'act'},l?logoAttaque(l):null)")
   &&src.includes("lignes:voit?lignesAttaque(a):null")&&src.includes("lisChemin(x).de===t.id&&!ameliorAttaque(x));")
   &&src.includes('name="pourAttaque"')&&src.includes("if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;"),'l’Attaque sur la fiche et ses améliorations');
  assert.ok(css.includes('.talent-detail .palier-effet.amelioration::before{background:color-mix(in srgb,var(--pastille,var(--teinte,#4f7fb5)) 85%,#000);')&&css.includes('.talent-detail.p-act{--pastille:#4f7fb5}'),'la pastille à la couleur de la nature');
@@ -5361,4 +5366,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1997 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1998 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

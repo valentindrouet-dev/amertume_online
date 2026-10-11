@@ -2464,3 +2464,12 @@ button.j-stats{padding:0;border:0;background:none;font:inherit;font-weight:800;c
 #chambre-forte .chambre-nom{flex:1;display:flex;flex-direction:column;min-width:0}
 #chambre-forte .chambre-nom b.r-inhabituel{color:#4f8a52}#chambre-forte .chambre-nom b.r-rare{color:#4d7fb0}#chambre-forte .chambre-nom b.r-mystique{color:#7a5fc0}#chambre-forte .chambre-nom b.r-epique{color:#c26a2f}
 #chambre-forte .chambre-ligne select{width:auto;flex:0 0 200px;max-width:200px}#chambre-forte .chambre-nom{flex:1 1 220px}#chambre-forte .chambre-ligne>.gear-carre{flex:none}
+/* La fiche d'aventurier : en grand, l'Attaque, les Actions et les Réactions ; en moyen, les Maîtrises et les Passifs ; en petit,
+   les améliorations ; la ligne, puis les bonus. */
+.hero-card .talent-grille .talent-rang{grid-column:1/-1;width:100%;display:grid;justify-items:center;align-items:start}
+.hero-card .talent-grille .rang-grands{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px 4px}
+.hero-card .talent-grille .rang-moyens{grid-template-columns:repeat(8,minmax(0,1fr));gap:8px 3px}
+.hero-card .talent-grille .rang-moyens .cat-pill.gear-carre.talent-carre{max-width:44px}
+.hero-card .talent-grille .rang-moyens .cat-carte.talent-carte{width:100%;min-width:0;align-items:center}
+.hero-card .talent-grille .talent-ameliorations.rang-ameliorations{border-top:0;padding-top:0}
+.hero-card .talent-grille .talent-ameliorations.rang-bonus{border-top:1px dashed #cfae5e;padding-top:8px}
