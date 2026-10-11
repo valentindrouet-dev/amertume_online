@@ -2452,3 +2452,8 @@ button.j-stats{padding:0;border:0;background:none;font:inherit;font-weight:800;c
    le talent, la classe et l'état en gras. */
 .gear-detail .gear-affixe.de-classe{color:#2b2620;font-weight:400}.gear-detail .gear-affixe.de-classe b{font-weight:700}
 .gear-detail .gear-losange{display:inline-block;width:12px;height:12px;margin-right:5px;vertical-align:-1px;background:color-mix(in srgb,var(--rarete,#7d7a74) 85%,#000);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1Q13.6 10.4 23 12Q13.6 13.6 12 23Q10.4 13.6 1 12Q10.4 10.4 12 1Z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1Q13.6 10.4 23 12Q13.6 13.6 12 23Q10.4 13.6 1 12Q10.4 10.4 12 1Z'/%3E%3C/svg%3E") center/contain no-repeat}
+/* Une valeur d'affixe selon la rareté : de tant à tant, pour chacune, à sa couleur. */
+#affixe-editor .affixe-echelle-ligne{grid-column:1/-1}#affixe-editor .affixe-echelle{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:6px}
+#affixe-editor .echelle-rang{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:600}
+#affixe-editor .echelle-rang.r-inhabituel>span:first-child{color:#4f8a52}#affixe-editor .echelle-rang.r-rare>span:first-child{color:#4d7fb0}#affixe-editor .echelle-rang.r-mystique>span:first-child{color:#7a5fc0}#affixe-editor .echelle-rang.r-epique>span:first-child{color:#c26a2f}
+#affixe-editor .echelle-paire{display:flex;align-items:center;gap:5px;font-weight:400}#affixe-editor .echelle-paire input{width:100%;min-width:0}

@@ -3389,6 +3389,20 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.691 — Valeurs d'affixe fixes ou tirées selon la rareté ; Vampirique, Accélération, Domination, Réaction, Épines. */
+{const C18=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
+ const A=C18.normaliseAffixes([{id:'v',nom:'vampirique',effet:'vampire',variable:true},{id:'d',nom:'de Domination',place:'suffixe',effet:'domination',etat:'Au sol',valeur:3},
+  {id:'r',nom:'de Réaction',place:'suffixe',effet:'reaction',variable:true,echelle:[[2,2],[5,5],[9,9],[20,20]]},{id:'e',nom:'d’Épines',place:'suffixe',effet:'epinesEtat',etat:'Poison',valeur:2},{id:'x',nom:'lourd',effet:'de',de:'red'}]);
+ assert.deepEqual([A[0].variable,A[0].echelle,A[1].variable,C18.valeurTexte(A[0]),C18.phraseAffixe(A[0])],[true,[[1,3],[4,7],[8,15],[16,30]],false,'1–30','vous soigne de 1–30 PV en cas d’attaque réussie']);
+ const ep={id:'ep',name:'Épée',category:'weapon',dice:{white:1},price:5};
+ for(let k=0;k<40;k++){const o=C18.objetForge({id:'f'+k,base:'ep',affixes:['v']},[ep],A);const n=o.forge.valeurs.v;assert.ok(n>=1&&n<=3&&o.forgeEffets.vampire===n,'Inhabituel : 1 à 3')}
+ const o2=C18.objetForge({id:'g',base:'ep',affixes:['v','x']},[ep],A);assert.ok(o2.forge.valeurs.v>=4&&o2.forge.valeurs.v<=7,'Rare : 4 à 7');
+ assert.equal(C18.objetForge({id:'g',base:'ep',affixes:['v','x']},[ep],A).forge.valeurs.v,o2.forge.valeurs.v,'la même pièce tire toujours la même valeur');
+ const o3=C18.objetForge({id:'h',base:'ep',affixes:['r','d','e']},[ep],A);assert.deepEqual(o3.forgeEffets,{reaction:9,domination:{'Au sol':3},epines:{Poison:2}});
+ assert.deepEqual(C18.affixesDe(o3,A).map(x=>[x.id,x.valeur,x.variable]),[['r',9,false],['d',3,false],['e',2,false]]);
+ assert.ok(page.includes("if(partis&&toucheTombe)apresTouche(a);")&&page.includes("if(!r.failed&&r.hit)toucheTombe=true;")&&page.includes("bonus+=dominationContre(a,b);")
+  &&page.includes("+bonusReaction(a,ctxT&&ctxT.talent);")&&page.includes("const bonusOrbe=bonusOrbes(a)+bonusReaction(a,talent);")&&page.includes("Object.entries(effetsForge(o).epines).forEach(([e,n])=>{")
+  &&ed.includes("if(!c.semisForge.includes('affixes-combat')){")&&ed.includes("sel('Valeur','mode',v.variable?'echelle':'fixe',[['fixe','Fixe'],['echelle','Selon la rareté']])"),'affixes de combat câblés');}
 /* v0.689 — La ligne d'un affixe de classe : losange, talent à sa couleur, classe en gras, « Vos Orbes infligent Poison 1. » */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(ed.includes("p.append(los,b(nom,teinte),' (',b(x.classe),') : Vos ',b(nom,teinte),' infligent ',b(x.etat+' '+x.valeur,TEINTE_ETAT_MOT[x.etat]),'.');return p}")
@@ -3501,7 +3515,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.deepEqual([o.name,o.price],['Épée tranchante lourde',Math.round((10+15+30)*150/100)]);
  assert.equal(C12.objetForge({id:'f',base:'Épée lourde',affixes:['l']},[w('Épée lourde')],A,g).name,'Épée lourde','pas deux fois le même mot');
  assert.equal(C12.objetForge({id:'f',base:'Bottes',affixes:['r']},[{id:'Bottes',name:'Bottes',category:'armor',slot:'bottes',price:4}],[{id:'r',nom:'lourd',place:'prefixe',effet:'mouvement',valeur:1}],g).name,'Bottes lourdes');
- assert.ok(ed.includes(".filter(x=>['mouvement','confere','orbesEtat'].includes(x.effet)).forEach(x=>{if(x.effet==='orbesEtat'){d.append(ligneAffixeClasse(x));return}const t=phraseAffixe(x);")&&ed.includes("+field('Valeur en or','prix',0,'number','readonly tabindex=\"-1\"')")
+ assert.ok(ed.includes(".filter(x=>EFFETS_EN_LIGNE.includes(x.effet)).forEach(x=>d.append(x.effet==='orbesEtat'?ligneAffixeClasse(x):ligneAffixe(x)));")&&ed.includes("+field('Valeur en or','prix','','text','readonly tabindex=\"-1\"')")
   &&ed.includes("const o=objetForge(f,base,catalog.affixes||[],guide);")&&ed.includes("sel('Genre','accord',accordDe(a),ACCORDS)")&&ed.includes("champ(fa,'Par m de mouvement',"),'Forge v0.678 câblée');}
 /* v0.677 — La Forge, première livraison : les affixes et leur tirage, les pièces forgées chez les aventuriers, recomposées au
    catalogue le temps de jouer, le générateur, le loot forgé réglé par adversaire. */
@@ -3586,7 +3600,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("/action/i.test(nomPlanch
 {const C4=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  ['lameventpoison','lameventprofonde','lameventfatale'].forEach(k=>assert.equal(C4.TALENTS_CODES[k].pour,'lamevent',k));
  assert.match(C4.phraseTalent('lameventprofonde',{},2),/triple/);assert.match(C4.phraseTalent('lameventfatale',{},2),/1 PA et 1 PM/);assert.match(C4.phraseTalent('lameventpoison',{},1),/le plus proche/);
- assert.ok(idx.includes("if(fatale&&tues&&enCombat()&&a.coupureFatale!==round){")&&idx.includes("return degatsDe(a)*(pr?voletOuvert(pr,'triple')?3:2:1)+(p.bonus|0)}"),'Coupure câblée');}
+ assert.ok(idx.includes("if(fatale&&tues&&enCombat()&&a.coupureFatale!==round){")&&idx.includes("return degatsDe(a)*(pr?voletOuvert(pr,'triple')?3:2:1)+(p.bonus|0)+bonusReaction(a,talentEnCours&&talentEnCours.talent)}"),'Coupure câblée');}
 /* v0.656 — PA et PM sont des bonus de caractéristique de l'arbre, à l'icône réglable ; Point supplémentaire quitte la bibliothèque. */
 {const C3=require('./combat.js'),idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(C3.TALENTS_CODES.bonus.params[0].options.some(([k])=>k==='pa')&&C3.TALENTS_CODES.bonus.params[0].options.some(([k])=>k==='pm')&&C3.TALENTS_CODES.pointsupp.retire===true,'PA et PM en bonus');
@@ -4310,7 +4324,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("&&(typeof voitSocle!=='function'||voitSocle(c,o)));")&&page.includes("&&(typeof voitSocle!=='function'||voitSocle(m,o));"),'on ne vise que ce qu’on voit ; Aveugle');
  assert.ok(page.includes("+compteEtat(a,'Furie')+bonusPredateur(a);return meuteActive(a)?bonus*2:bonus}")&&page.includes("function visionNoirDe(a){")
   &&page.includes("const aug=c.find(x=>x.code.cle==='visionaugmentee');if(aug)m=Math.max(m,")&&page.includes("function desPredateur(a){")
-  &&page.includes("+(Math.trunc(Number(opts.bonusEnPlus))||0)+(predateur?predateur.total:0);"),'le talent et ses améliorations');
+  &&page.includes("+(Math.trunc(Number(opts.bonusEnPlus))||0)+(predateur?predateur.total:0)"),'le talent et ses améliorations');
  assert.ok(src.includes("'<label class=\"field-check\"><input name=\"nyctalope\" type=\"checkbox\" '+(a.nyctalope===false?'':'checked')+'>Vision dans le noir</label>'")
   &&src.includes("if(f.nyctalope){if(f.nyctalope.checked)delete a.nyctalope;else a.nyctalope=false}")&&src.includes("{cle:'nyctalope',nom:'Vision dans le noir',type:'choix',")
   &&src.includes("...(m.nyctalope===false?{nyctalope:false}:{}),...(mouvementPropre({mouvement:m.mouvement})!==DISTANCE_MOUVEMENT?")&&src.includes("...(a.nyctalope===false?{nyctalope:false}:{}),...(mouvementPropre({mouvement:a.mouvement})!==DISTANCE_MOUVEMENT?")&&vivant.includes("'orbeStatique','nyctalope',"),'le réglage des adversaires');}
@@ -5294,4 +5308,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1990 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1991 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

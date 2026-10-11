@@ -214,6 +214,11 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  c.items=c.items.filter(o=>!(o&&o.forge));c.affixes=normaliseAffixes(c.affixes);c.forge=normaliseReglageForge(c.forge);
  // Les affixes livrés avec la Forge, posés une seule fois : effacés par le MJ, ils ne reviennent pas.
  c.semisForge=Array.isArray(c.semisForge)?c.semisForge.filter(k=>typeof k==='string').slice(0,100):[];
+ // Vampirique, Accélération, Domination, Réaction, Épines : leurs valeurs se tirent selon la rareté.
+ if(!c.semisForge.includes('affixes-combat')){[{id:'affixe-vampirique',nom:'vampirique',place:'prefixe',effet:'vampire'},{id:'affixe-acceleration',nom:'d’Accélération',place:'suffixe',effet:'acceleration'},
+   {id:'affixe-domination',nom:'de Domination',place:'suffixe',effet:'domination',etat:'Au sol'},{id:'affixe-reaction',nom:'de Réaction',place:'suffixe',effet:'reaction'},
+   {id:'affixe-epines',nom:'d’Épines',place:'suffixe',effet:'epines',familles:['armure']},{id:'affixe-epines-poison',nom:'d’Épines empoisonnées',place:'suffixe',effet:'epinesEtat',etat:'Poison',familles:['armure']}]
+   .forEach(a=>{if(!c.affixes.some(x=>x.id===a.id))c.affixes.push(normaliseAffixe({...a,variable:true,poids:10,niveau:1}))});c.semisForge.push('affixes-combat')}
  if(!c.semisForge.includes('orbes-poison')){if(!c.affixes.some(x=>x.id==='affixe-orbes-poison'))c.affixes.push(normaliseAffixe({id:'affixe-orbes-poison',nom:'de la Vipère',place:'suffixe',effet:'orbesEtat',etat:'Poison',valeur:1,classe:'Mystique',poids:10,niveau:1}));c.semisForge.push('orbes-poison')}
  /* Deux talents sous un même identifiant se superposaient dans l'arbre : on en tirait un, l'autre restait, comme
     une copie. Une copie exacte s'en va ; une autre, qui a changé depuis, prend un identifiant à elle. */
@@ -1520,6 +1525,18 @@ function libelleBonusEl(p,{talent=null}={}){const n=Math.max(1,(p&&p.valeur)|0),
    dés et la DEF sont sur le carré —, l'état qu'elle inflige s'il y en a un. */
 /* La ligne d'un affixe de classe : le losange des bonus d'objet, le talent qu'il modifie à sa couleur, la classe en gras,
    puis ce qu'il fait : « Orbes (Mystique) : Vos Orbes infligent Poison 1. » */
+/* Les affixes que rien d'autre ne montre, chacun sa ligne : le losange des bonus d'objet, puis ce qu'il fait, ses valeurs et
+   ses états en gras, les états à leur couleur. */
+const EFFETS_EN_LIGNE=['mouvement','confere','orbesEtat','vampire','acceleration','domination','reaction','epines','epinesEtat'];
+function ligneAffixe(x){const p=document.createElement('p');p.className='gear-affixe de-classe';const v=x.valeur;
+ const los=document.createElement('span');los.className='gear-losange';los.setAttribute('aria-hidden','true');p.append(los);
+ const b=(txt,coul)=>{const e=document.createElement('b');e.textContent=txt;if(coul)e.style.color=coul;return e},et=t=>b(t,TEINTE_ETAT_MOT[x.etat]);
+ const usage=((USAGES_AFFIXE.find(([k])=>k===x.usage)||USAGES_AFFIXE[0])[1]).toLowerCase();
+ const parts={mouvement:[b('+'+v+' m'),' de mouvement.'],confere:['Confère ',et(x.etat),', '+usage+'.'],
+  vampire:['Vous soigne de ',b(v+' PV'),' en cas d’attaque réussie.'],acceleration:[b('+'+v+' m'),' de mouvement par attaque réussie.'],
+  domination:[b('+'+v+' dégâts'),' contre les cibles avec ',et(x.etat),'.'],reaction:['Vos talents de ',b('Réaction',TEINTES_TALENTS.reac),' infligent ',b('+'+v+' dégâts'),'.'],
+  epines:['Inflige ',b(v+' dégâts'),' à l’adversaire qui arrive à votre contact.'],epinesEtat:['Inflige ',et(x.etat+' '+v),' à l’adversaire qui arrive à votre contact.']}[x.effet]||[phraseAffixe(x)];
+ p.append(...parts);return p}
 function ligneAffixeClasse(x){const p=document.createElement('p');p.className='gear-affixe de-classe';
  const t=(catalog.talents||[]).find(t=>t&&t.effet==='orbes'),nom=(t&&t.name)||'Orbes';
  const b=(txt,coul)=>{const e=document.createElement('b');e.textContent=txt;if(coul)e.style.color=coul;return e};
@@ -1532,7 +1549,7 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // Ce que la pièce confère, une ligne par bonus ; sa rareté se lit à sa couleur.
  /* Une pièce forgée : les affixes que rien d'autre ne montre. Bonus, dés, état et lumière se lisent déjà dans leurs lignes,
     leurs dés et leurs pastilles. */
- affixesDe(o,catalog.affixes).filter(x=>['mouvement','confere','orbesEtat'].includes(x.effet)).forEach(x=>{if(x.effet==='orbesEtat'){d.append(ligneAffixeClasse(x));return}const t=phraseAffixe(x);ligne(x.classe?x.classe+' : '+t:t.charAt(0).toUpperCase()+t.slice(1),'gear-affixe'+(x.classe?' de-classe':''))});
+ affixesDe(o,catalog.affixes).filter(x=>EFFETS_EN_LIGNE.includes(x.effet)).forEach(x=>d.append(x.effet==='orbesEtat'?ligneAffixeClasse(x):ligneAffixe(x)));
  normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});
  // Ce qui éclaire le dit : « Lumière 3m ».
  if(lumiereDe(o))ligne('Lumière '+String(lumiereDe(o)).replace('.',',')+'m','gear-lumiere');
@@ -3414,7 +3431,7 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
    ['Mot','Place','Familles','Effet','Poids','Niv.','Or',''].forEach(x=>{const th=document.createElement('th');th.textContent=x;tete.append(th)});
    const corpsT=t.createTBody();
    [...catalog.affixes].sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(x=>{const r=corpsT.insertRow();r.className='forge-ligne';r.tabIndex=0;
-    [x.nom,({suffixe:'suffixe',avant:'avant'})[x.place]||'préfixe',x.familles.length?x.familles.map(f=>({melee:'Mêlée',ranged:'Distance',armure:'Armures'})[f]||(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,valeurAffixe(x,normaliseGuidePrix(catalog.guidePrix))].forEach(v=>{r.insertCell().textContent=String(v)});
+    [x.nom,({suffixe:'suffixe',avant:'avant'})[x.place]||'préfixe',x.familles.length?x.familles.map(f=>({melee:'Mêlée',ranged:'Distance',armure:'Armures'})[f]||(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,orAffixe(x)].forEach(v=>{r.insertCell().textContent=String(v)});
     r.onclick=()=>openAffixe(x.id);r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAffixe(x.id)}};
     // Dupliquer : une copie juste à côté, à corriger.
     const double=document.createElement('button');double.type='button';double.className='ico';double.textContent='⧉';double.title='Dupliquer';double.setAttribute('aria-label','Dupliquer '+x.nom);
@@ -3445,6 +3462,9 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
    const n=nombre.value===''?tireNombreAffixes(catalog.forge,{chance:100,min:1,max:4}):Math.trunc(Number(nombre.value));
    forgeApercu={id:'forge-'+crypto.randomUUID(),base:b.id,affixes:tireAffixes(b,n,catalog.affixes,forgeNiveau)};montre()};
   [base,nombre,niveau,forger].forEach(x=>ligne.append(x));s.append(ligne,apercu);montre()}}
+// La valeur en or d'un affixe : un nombre, ou de tant à tant quand sa valeur se tire selon la rareté.
+function orAffixe(x){const g=normaliseGuidePrix(catalog.guidePrix);if(!x.variable)return String(valeurAffixe(x,g));
+ const a=valeurAffixe({...x,variable:false,valeur:x.echelle[0][0]},g),b=valeurAffixe({...x,variable:false,valeur:x.echelle[3][1]},g);return a===b?String(a):a+'–'+b}
 function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=normaliseAffixe(x||{});
  affixeDialog.querySelector('h2').textContent=x?x.nom:'Nouvel affixe';
  /* Les familles en cascade : cocher les armes de mêlée coche tous leurs types dessous ; en décocher un raréfie l'affixe.
@@ -3463,29 +3483,33 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
   +'<span data-effet="carac">'+sel('Caractéristique','carac',v.carac,CARACS_EQUIP.filter(([k])=>k!=='comp'))+'</span>'
   +'<span data-effet="comp">'+sel('Compétence','comp',v.comp,COMPETENCES.map((n,k)=>[String(k),n]))+'</span>'
   +'<span data-effet="de">'+sel('Dé','de',v.de,NOMS_DES)+'</span>'
-  +'<span data-effet="etat orbesEtat">'+sel('État','etat',v.effet==='confere'?'Feu':v.etat,ETATS_JEU.map(e=>[e,e]))+'</span>'
+  +'<span data-effet="etat orbesEtat domination epinesEtat">'+sel('État','etat',v.effet==='confere'?'Feu':v.etat,ETATS_JEU.map(e=>[e,e]))+'</span>'
   +'<span data-effet="confere">'+sel('État conféré','etatConfere',v.effet==='confere'?v.etat:'Blindage',ETATS_POSITIFS.map(e=>[e,e]))+sel('Usage','usage',v.usage,USAGES_AFFIXE)+'</span>'
-  +'<span data-effet="carac comp de mouvement lumiere orbesEtat">'+field('Valeur','valeur',v.valeur,'number','min="1" max="40"')+'</span>'
-  +field('Poids au tirage','poids',v.poids,'number','min="1" max="100"')+field('Niveau minimum','niveau',v.niveau,'number','min="1" max="20"')+field('Valeur en or','prix',0,'number','readonly tabindex="-1"')
+  +'<span data-effet="carac comp de mouvement lumiere orbesEtat vampire acceleration domination reaction epines epinesEtat">'+sel('Valeur','mode',v.variable?'echelle':'fixe',[['fixe','Fixe'],['echelle','Selon la rareté']])
+   +'<span data-mode="fixe">'+field('Valeur fixe','valeur',v.valeur,'number','min="1" max="99"')+'</span></span>'
+   // Selon la rareté : de tant à tant, pour chaque rareté, sur toute la largeur ; la pièce tire sa valeur dans l'échelle de la sienne.
+   +'<span class="affixe-echelle-ligne" data-effet="carac comp de mouvement lumiere orbesEtat vampire acceleration domination reaction epines epinesEtat"><span data-mode="echelle" class="affixe-echelle">'+['Inhabituel','Rare','Épique','Légendaire'].map((r,i)=>'<label class="echelle-rang r-'+['inhabituel','rare','mystique','epique'][i]+'"><span>'+r+'</span><span class="echelle-paire"><input type="number" name="e'+i+'a" min="1" max="99" value="'+v.echelle[i][0]+'"> à <input type="number" name="e'+i+'b" min="1" max="99" value="'+v.echelle[i][1]+'"></span></label>').join('')+'</span></span>'
+  +field('Poids au tirage','poids',v.poids,'number','min="1" max="100"')+field('Niveau minimum','niveau',v.niveau,'number','min="1" max="20"')+field('Valeur en or','prix','','text','readonly tabindex="-1"')
   +field('Groupe','groupe',v.groupe,'text','maxlength="40" placeholder="vide : celui de l’effet"')+'</div>'
   +'<p class="muted">Familles d’équipement qu’il peut toucher ; aucune cochée, toutes.</p><div class="coffre-cases">'+cases+'</div>';
- const f=$('affixe-form').elements,lit=()=>normaliseAffixe({nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.effet.value==='confere'?f.etatConfere.value:f.etat.value,usage:f.usage.value,valeur:f.valeur.value,nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value});
+ const f=$('affixe-form').elements,lit=()=>normaliseAffixe({nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.effet.value==='confere'?f.etatConfere.value:f.etat.value,usage:f.usage.value,valeur:f.valeur.value,variable:f.mode.value==='echelle',echelle:[0,1,2,3].map(i=>[f['e'+i+'a'].value,f['e'+i+'b'].value]),nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value});
  // Les formes vides montrent celle qui sera tirée du masculin ; la valeur en or se lit au guide des prix.
  const montre=()=>{$('affixe-fields').querySelectorAll('[data-effet]').forEach(s=>{s.hidden=!s.dataset.effet.split(' ').includes(f.effet.value)});
   $('affixe-fields').querySelectorAll('[data-place]').forEach(s=>{s.hidden=!s.dataset.place.split(' ').includes(f.place.value)});
+  $('affixe-fields').querySelectorAll('[data-mode]').forEach(s=>{s.hidden=s.dataset.mode!==f.mode.value});
   // Un affixe de classe choisit sa classe, et seul il peut armer les orbes ; un affixe commun ne le peut pas.
   const deClasse=f.categorie.value==='classe';$('affixe-fields').querySelectorAll('[data-categorie]').forEach(s=>{s.hidden=!deClasse});
   [...f.effet.options].forEach(o=>{o.hidden=o.value==='orbesEtat'&&!deClasse});if(f.effet.value==='orbesEtat'&&!deClasse){f.effet.value='carac';montre();return}
   const l=lit();
   f.nomF.placeholder=formeAffixe({...l,nomF:''},'fs');f.nomMP.placeholder=formeAffixe({...l,nomMP:''},'mp');f.nomFP.placeholder=formeAffixe({...l,nomFP:''},'fp');
-  f.prix.value=String(valeurAffixe(l,normaliseGuidePrix(catalog.guidePrix)))};
+  f.prix.value=orAffixe(l)};
  $('affixe-form').oninput=montre;$('affixe-form').onchange=montre;montre();
  affixeDialog.querySelectorAll('input[data-parent]').forEach(par=>{const sous=[...affixeDialog.querySelectorAll('input[data-de="'+par.value+'"]')];
   const etat=()=>{const n=sous.filter(s=>s.checked).length;par.checked=n>0;par.indeterminate=n>0&&n<sous.length};etat();
   par.onchange=()=>{sous.forEach(s=>{s.checked=par.checked});par.indeterminate=false};sous.forEach(s=>{s.onchange=etat})});
  $('affixe-suppr').hidden=!x;
  $('affixe-form').onsubmit=e=>{e.preventDefault();
-  const n=normaliseAffixe({id:x?x.id:undefined,nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.effet.value==='confere'?f.etatConfere.value:f.etat.value,usage:f.usage.value,valeur:f.valeur.value,poids:f.poids.value,niveau:f.niveau.value,prix:x?x.prix:0,groupe:f.groupe.value,nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value,
+  const n=normaliseAffixe({id:x?x.id:undefined,nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.effet.value==='confere'?f.etatConfere.value:f.etat.value,usage:f.usage.value,valeur:f.valeur.value,variable:f.mode.value==='echelle',echelle:[0,1,2,3].map(i=>[f['e'+i+'a'].value,f['e'+i+'b'].value]),poids:f.poids.value,niveau:f.niveau.value,prix:x?x.prix:0,groupe:f.groupe.value,nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value,
    classe:f.categorie.value==='classe'?f.classe.value:'',familles:(c=>c.filter(e=>!e.dataset.de&&(e.dataset.parent||e.checked)).flatMap(e=>{if(!e.dataset.parent)return [e.value];const sous=c.filter(s=>s.dataset.de===e.value),on=sous.filter(s=>s.checked);
     return on.length===sous.length?[e.value]:on.map(s=>s.value)}))([...affixeDialog.querySelectorAll('input[name="famille"]')])});
   if(x)Object.assign(x,n);else catalog.affixes.push(n);affixeDialog.close();sauveForge();renderForge()};
