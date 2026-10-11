@@ -1668,12 +1668,18 @@ function boutAimante(p,ratio){const m=mapDraft;if(!m)return null;
  matiereDe(m).forEach(p=>p.anneaux.forEach(r=>r.forEach(q=>test(q[0],q[1]))));
  if(traitDepart)test(traitDepart.x,traitDepart.y);
  return meilleur}
-function viseTrait(p,droit,ratio){const bout=boutAimante(p,ratio);
+/* Maj tenu : le trait parfaitement horizontal ou vertical, selon le côté où va le curseur, sans aimant qui le dévierait. */
+function traitDroit(a,b,ratio){const r=Math.max(.05,Number(ratio)||16/9);return Math.abs((b.x-a.x)*r)>=Math.abs(b.y-a.y)?{x:b.x,y:a.y}:{x:a.x,y:b.y}}
+let traitCurseur=null;
+function viseTrait(p,droit,ratio,maj){if(maj&&traitDepart)return traitDroit(traitDepart,p,ratio);const bout=boutAimante(p,ratio);
  return bout?{x:bout.x,y:bout.y,aimante:true}:traitContraint(traitDepart,p,droit,ratio)}
+// Maj enfoncée ou relâchée sans bouger : l'aperçu se redresse ou se libère aussitôt.
+['keydown','keyup'].forEach(t=>document.addEventListener(t,e=>{if(e.key!=='Shift'||!traitDepart||!traitCurseur||!document.body.classList.contains('page-maps'))return;
+ traitVise=viseTrait(traitCurseur,e.metaKey||e.ctrlKey,mapDraft&&mapDraft.ratio,e.type==='keydown');dessineTraits()}));
 function annulerTrait(){if(!traitDepart)return false;traitDepart=traitVise=null;renderCanvas();return true}
 const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour le sélectionner, glisse pour le déplacer, tire un coin pour le redimensionner. ⌘Z annule.',
  wall:'Trace un rectangle de blocage : il coupe la vue et le passage, et fond avec la matière qu’il touche. Suppr efface la sélection.',
- ligne:'Un clic pose l’origine du trait, un second l’arrête. ⌘ (ou Ctrl) le redresse à l’horizontale, à la verticale ou à quarante-cinq degrés. Maj au second clic pose un point d’appui : le trait s’arrête là et le suivant en repart, de quoi longer une salle entière sans relever la main. Près d’une extrémité déjà posée, le tracé s’y aimante — une pastille verte le dit — et le carré se ferme juste. Échap abandonne.',
+ ligne:'Un clic pose l’origine du trait, un second l’arrête. ⌘ (ou Ctrl) le redresse à l’horizontale, à la verticale ou à quarante-cinq degrés. Maj le tient parfaitement horizontal ou vertical, et au second clic pose un point d’appui : le trait s’arrête là et le suivant en repart, de quoi longer une salle entière sans relever la main. Près d’une extrémité déjà posée, le tracé s’y aimante — une pastille verte le dit — et le carré se ferme juste. Échap abandonne.',
  cut:'Trace un rectangle dans la matière : la découpe y creuse exactement ce rectangle, vue et passage rétablis.',
  lasso:'Contourne la forme à creuser : glisse pour tracer à main levée, ou clique point par point. La découpe suit exactement ton tracé. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  blocagelibre:'Contourne la forme à bloquer : glisse pour tracer à main levée, ou clique point par point. Le blocage suit exactement ton tracé. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
@@ -1687,7 +1693,7 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  obscurremplir:'Clique dans une zone : toute la zone — telle que la découpent les murs, les portes et les séparations, et que la réunissent les regroupements — devient noire d’un coup.',
  imprat:'Trace un rectangle de terrain impraticable : personne ne le traverse, la vue passe, et la troupe ne le voit pas.',
  impratlibre:'Contourne le terrain impraticable : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
- impratligne:'Un trait impraticable : premier clic, origine ; second clic, arrivée. Maj enchaîne le trait suivant depuis le bout.',
+ impratligne:'Un trait impraticable : premier clic, origine ; second clic, arrivée. Maj le tient horizontal ou vertical et enchaîne le trait suivant depuis le bout.',
  impratgomme:'Gomme le terrain impraticable sous le pinceau, à main levée.',
  obscurgomme:'Contourne l’obscurité à effacer : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  coffre:'Trace un coffre comme une porte : sa fiche s’ouvre aussitôt — nom, description, caché ou non, verrou, piège et contenu. La poignée ronde le fait tourner.',
@@ -2090,7 +2096,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(mapTool==='ligne'||mapTool==='impratligne'){
   if(!traitDepart){const d=boutAimante(p,mapDraft.ratio)||p;
    traitDepart={x:d.x,y:d.y};traitVise={x:d.x,y:d.y};renderCanvas();e.preventDefault();return}
-  const fin=viseTrait(p,e.metaKey||e.ctrlKey,mapDraft.ratio);
+  const fin=viseTrait(p,e.metaKey||e.ctrlKey,mapDraft.ratio,e.shiftKey);
   const r=Math.max(.05,Number(mapDraft.ratio)||16/9);
   const pose=Math.hypot((fin.x-traitDepart.x)*r,fin.y-traitDepart.y)>=auZoom(.5);
   // On ne choisit pas ce qu'on vient de tracer : la main est encore à l'ouvrage.
@@ -2147,7 +2153,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  mapDrag={mode:'create',kind:mapSel.kind,i:mapSel.i,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault()});
 $('map-canvas').addEventListener('pointermove',e=>{
  if(enZones()&&zoneTrait&&!mapDrag){zoneVise=pct(e);dessineZonesEditeur();return}
- if(traitDepart&&!mapDrag){traitVise=viseTrait(pct(e),e.metaKey||e.ctrlKey,mapDraft&&mapDraft.ratio);
+ if(traitDepart&&!mapDrag){traitCurseur=pct(e);traitVise=viseTrait(traitCurseur,e.metaKey||e.ctrlKey,mapDraft&&mapDraft.ratio,e.shiftKey);
   dessineTraits();return}
  if(!mapDrag)return;const p=pct(e),d=mapDrag;
  if(d.mode==='echelle'){const j=mapDraft.echelle;

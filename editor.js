@@ -1516,8 +1516,7 @@ function libelleBonusEl(p,{talent=null}={}){const n=Math.max(1,(p&&p.valeur)|0),
 function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
  const titre=document.createElement('p');titre.className='gear-nom';titre.textContent=o.name;d.append(titre);
  const ligne=(texte,classe)=>{if(!texte)return;const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p)};
- // La rareté, puis ce que la pièce confère, une ligne par bonus.
- if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));
+ // Ce que la pièce confère, une ligne par bonus ; sa rareté se lit à sa couleur.
  /* Une pièce forgée : les affixes que rien d'autre ne montre. Bonus, dés, état et lumière se lisent déjà dans leurs lignes,
     leurs dés et leurs pastilles. */
  affixesDe(o,catalog.affixes).filter(x=>x.effet==='mouvement').forEach(x=>ligne('✦ '+formeAffixe(x,accordDe(o))+' : '+phraseAffixe(x),'gear-affixe'));

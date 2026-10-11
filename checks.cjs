@@ -2118,7 +2118,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
   &&src.includes("if(f.rarete)a.rarete=rareteDe({rarete:f.rarete.value});")&&src.includes(" if($('item-bonus'))a.bonus=lireBonusItem();")
   &&src.includes('function dessineBonusItem(){')&&src.includes('function lireBonusItem(){')&&src.includes("teinte:TEINTE_RARETE[rareteDe(o)]||TEINTE_OBJET.object,")
   &&src.includes("p.className='cat-pill gear-carre k-'+col+' r-'+rareteDe(o)+")&&src.includes("p.className='cat-pill k-'+col+' r-'+rareteDe(o)+")
-  &&src.includes("if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));")&&src.includes("normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});")
+  &&!src.includes("ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));")&&src.includes("normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});")
   &&page.includes("function bonusFiche(a){return bonusDe(a,typeof catalog!=='undefined'?catalog.talents:[],items())}")
   &&feuille.includes('.cat-pill.r-rare{background:#cfe0f5;')&&feuille.includes('.cat-pill.gear-carre .logo-equip{width:38px;height:38px;margin:0}')&&feuille.includes('.cat-pill.gear-carre .die-sq,.cat-pill.gear-carre .pips .etat-inflige{flex-basis:19px;width:19px;height:19px}'),'rareté et bonus : formulaire, carrés, bulle, moteur');}
 /* Le corps de l'aventurier sur sa page : les emplacements et ce qu'ils portent, le sac
@@ -3389,6 +3389,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.679 — Maj tenu redresse le trait des cartes, parfaitement horizontal ou vertical ; la bulle d'un objet tait sa rareté ;
+   une étoile à quatre branches devant ses bonus. */
+{const mp=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ const f=new Function(mp.match(/function traitDroit\(a,b,ratio\)\{[^\n]*\n/)[0]+'return traitDroit')();
+ assert.deepEqual([f({x:10,y:20},{x:40,y:23},1.5),f({x:10,y:20},{x:11,y:50},1.5)],[{x:40,y:20},{x:10,y:50}]);
+ assert.ok(mp.includes("const fin=viseTrait(p,e.metaKey||e.ctrlKey,mapDraft.ratio,e.shiftKey);")&&mp.includes("function viseTrait(p,droit,ratio,maj){if(maj&&traitDepart)return traitDroit(traitDepart,p,ratio);")
+  &&css.includes(".gear-detail .gear-bonus::before{content:'';width:12px;height:12px;")&&!fs.readFileSync('editor.js','utf8').includes("'gear-rarete r-'+rareteDe(o)"),'trait droit, rareté tue, étoile');}
 /* v0.678 — La Forge : l'affixe s'accorde au genre et au nombre de sa base, ne va que sur le type d'arme choisi, vaut ce que dit
    le guide des prix ; la bulle ne redit pas ce que montrent déjà les dés, les pastilles et les bonus. */
 {const C12=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
@@ -5202,4 +5209,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1978 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1979 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
