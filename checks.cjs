@@ -3389,6 +3389,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.699 — Le carré de blocage et le carré impraticable : seul le contour, de l'épaisseur d'une ligne. */
+{const mp=fs.readFileSync('maps.js','utf8');const C25=require('./combat.js');
+ const f=new Function('TRAIT_EPAISSEUR','rectPolygon',mp.match(/function cadreFormes\(r,ratio\)\{[^\n]*\n[^\n]*\n/)[0]+'return cadreFormes')(C25.TRAIT_EPAISSEUR,C25.rectPolygon);
+ const fs4=f({x:10,y:10,w:20,h:30},1);assert.equal(fs4.length,4);
+ const m={matiere:[]};fs4.forEach(x=>C25.ajouteMatiere(m,x));const z=C25.matiereDe(m);
+ assert.ok(z.length===1&&z[0].anneaux.length===2,'un seul contour, troué au milieu');
+ assert.ok(mp.includes('<button data-tool="cadre">Carré de blocage</button>')&&mp.includes('<button data-tool="impratcadre">Carré impraticable</button>'),'les deux outils');}
 /* v0.698 — Les talents de la fiche en quatre rangées : Attaque, Actions et Réactions en grand ; Maîtrises et Passifs en moyen ;
    améliorations en petit ; la ligne, puis les bonus. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
@@ -3740,7 +3747,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const cands=vusPourMouv
  assert.equal(C.cleanMap(m).impraticable.length,2,'il voyage avec la carte');assert.ok(!('impraticable' in C.cleanMap({})),'une carte sans terrain impraticable reste la même');
  assert.ok(page.includes("function obstaclesDuPas(px){")&&page.includes(" const polys=obstaclesDuPas(px);")&&page.includes("function cheminVers(r,p){const size=mapSize(),murs=obstaclesDuPas(")
   &&carto.includes("function renderImpraticables(){")&&carto.includes("if(!m||view!=='mj'||!impratVisible||(typeof oeilJoueur==='function'&&oeilJoueur()))return;")
-  &&carto.includes('<button data-tool="imprat">Impraticable</button><button data-tool="impratlibre">Impraticable libre</button><button data-tool="impratligne">Ligne impraticable</button><button data-tool="impratgomme">Gomme d’impraticable</button>'),'le terrain impraticable');
+  &&carto.includes('<button data-tool="imprat">Impraticable</button><button data-tool="impratlibre">Impraticable libre</button><button data-tool="impratligne">Ligne impraticable</button><button data-tool="impratcadre">Carré impraticable</button><button data-tool="impratgomme">Gomme d’impraticable</button>'),'le terrain impraticable');
  assert.ok(page.includes("#piege-boutons button.btn-action.rond.btn-enjamber{position:absolute;width:58px;height:58px;font-size:26px;")&&page.includes("#piege-boutons{position:absolute;inset:0;z-index:6;pointer-events:none}"),'le rond Enjamber en gros bouton, au-dessus des textes');}
 /* v0.641 — Le rond Enjamber garde, à l'écran, la taille d'un petit bouton de la barre d'action, quel que soit le zoom. */
 assert.ok(page.includes("$('map-view').style.setProperty('--dezoom',String(1/mapZoom));")&&page.includes("#piege-boutons button.btn-action.rond.btn-enjamber{position:absolute;width:58px;height:58px;font-size:26px;transform:translate(-50%,-50%) scale(var(--dezoom,1));"),'le rond Enjamber à la taille d’un bouton de la barre');
@@ -5366,4 +5373,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1998 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1999 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

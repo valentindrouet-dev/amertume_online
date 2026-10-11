@@ -1460,11 +1460,11 @@ mapsPage.innerHTML=
  +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
- +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="pinceau">Pinceau de blocage</button><button data-tool="blocagelibre">Blocage libre</button>'
+ +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="cadre">Carré de blocage</button><button data-tool="pinceau">Pinceau de blocage</button><button data-tool="blocagelibre">Blocage libre</button>'
  +'<button data-tool="cut">Découper</button><button data-tool="lasso">Découpe libre</button><button data-tool="gomme">Pinceau de découpe</button>'
  +'<select id="pinceau-taille" aria-label="Grosseur du pinceau" hidden><option value=".3">Pinceau fin</option><option value=".55" selected>Pinceau moyen</option><option value="1">Pinceau large</option></select>'
  +'<span class="bar-sep"></span><button data-tool="obscur">Obscurité</button><button data-tool="obscurlibre">Obscurité libre</button><button data-tool="obscurremplir">Remplir d’obscurité</button><button data-tool="obscurgomme">Gomme d’obscurité</button><span class="bar-sep"></span>'
- +'<button data-tool="imprat">Impraticable</button><button data-tool="impratlibre">Impraticable libre</button><button data-tool="impratligne">Ligne impraticable</button><button data-tool="impratgomme">Gomme d’impraticable</button><span class="bar-sep"></span>'
+ +'<button data-tool="imprat">Impraticable</button><button data-tool="impratlibre">Impraticable libre</button><button data-tool="impratligne">Ligne impraticable</button><button data-tool="impratcadre">Carré impraticable</button><button data-tool="impratgomme">Gomme d’impraticable</button><span class="bar-sep"></span>'
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl" aria-label="Modèle de PNJ"></select>'
@@ -1676,6 +1676,10 @@ function viseTrait(p,droit,ratio,maj){if(maj&&traitDepart)return traitDroit(trai
 // Maj enfoncée ou relâchée sans bouger : l'aperçu se redresse ou se libère aussitôt.
 ['keydown','keyup'].forEach(t=>document.addEventListener(t,e=>{if(e.key!=='Shift'||!traitDepart||!traitCurseur||!document.body.classList.contains('page-maps'))return;
  traitVise=viseTrait(traitCurseur,e.metaKey||e.ctrlKey,mapDraft&&mapDraft.ratio,e.type==='keydown');dessineTraits()}));
+/* Le contour d'un rectangle, de l'épaisseur d'une ligne de blocage : quatre barres qui se chevauchent aux angles, pour une
+   case vide au trait plein. */
+function cadreFormes(r,ratio){const e=TRAIT_EPAISSEUR/2,ex=e,ey=e*Math.max(.05,Number(ratio)||16/9),x0=Math.min(r.x,r.x+r.w),x1=Math.max(r.x,r.x+r.w),y0=Math.min(r.y,r.y+r.h),y1=Math.max(r.y,r.y+r.h);
+ return [{x:x0-ex,y:y0-ey,w:x1-x0+2*ex,h:2*ey},{x:x0-ex,y:y1-ey,w:x1-x0+2*ex,h:2*ey},{x:x0-ex,y:y0-ey,w:2*ex,h:y1-y0+2*ey},{x:x1-ex,y:y0-ey,w:2*ex,h:y1-y0+2*ey}].map(rectPolygon)}
 function annulerTrait(){if(!traitDepart)return false;traitDepart=traitVise=null;renderCanvas();return true}
 const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour le sélectionner, glisse pour le déplacer, tire un coin pour le redimensionner. ⌘Z annule.',
  wall:'Trace un rectangle de blocage : il coupe la vue et le passage, et fond avec la matière qu’il touche. Suppr efface la sélection.',
@@ -1692,6 +1696,8 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  obscurlibre:'Contourne la zone à plonger dans le noir : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  obscurremplir:'Clique dans une zone : toute la zone — telle que la découpent les murs, les portes et les séparations, et que la réunissent les regroupements — devient noire d’un coup.',
  imprat:'Trace un rectangle de terrain impraticable : personne ne le traverse, la vue passe, et la troupe ne le voit pas.',
+ cadre:'Trace un rectangle dont seul le contour bloque, de l’épaisseur d’une ligne : une case vide.',
+ impratcadre:'Trace un rectangle dont seul le contour est impraticable, de l’épaisseur d’une ligne : une case vide.',
  impratlibre:'Contourne le terrain impraticable : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  impratligne:'Un trait impraticable : premier clic, origine ; second clic, arrivée. Maj le tient horizontal ou vertical et enchaîne le trait suivant depuis le bout.',
  impratgomme:'Gomme le terrain impraticable sous le pinceau, à main levée.',
@@ -1732,7 +1738,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  m.coffres.forEach((r,i)=>c.append(shapeEl('coffre',i,r)));
  (m.pieges||[]).forEach((r,i)=>c.append(shapeEl('piege',i,r),...declencheursEl(i,r)));
  // L'aperçu du rectangle en cours — bloc ou découpe — tant que la main n'a pas lâché.
- if(cutRect)c.append(shapeEl(cutRect.imprat?'imprat':cutRect.obscur?'obscur':cutRect.bloc?'bloc':'cut',0,cutRect));
+ if(cutRect){const el=shapeEl(cutRect.imprat?'imprat':cutRect.obscur?'obscur':cutRect.bloc?'bloc':'cut',0,cutRect);if(cutRect.cadre)el.classList.add('cadre');c.append(el)}
  if(lasso&&lasso.pts.length){const svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','lasso-layer'+(lasso.mode==='obscurlibre'?' obscur':lasso.mode==='obscurgomme'?' obscur-gomme':lasso.mode==='blocagelibre'?' bloc':lasso.mode==='impratlibre'?' imprat':''));
   svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
   const forme=document.createElementNS(nsSVG,lasso.pts.length>2?'polygon':'polyline');
@@ -2127,7 +2133,8 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(mapTool==='cut'){cutRect={x:p.x,y:p.y,w:0,h:0};mapSel=null;
   mapDrag={mode:'cut',kind:'cut',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  // Le bloc se trace comme la découpe : un aperçu suit la main, l'union se fait au relâché.
- if(mapTool==='wall'||mapTool==='obscur'||mapTool==='imprat'){cutRect={x:p.x,y:p.y,w:0,h:0,bloc:mapTool==='wall',obscur:mapTool==='obscur',imprat:mapTool==='imprat'};mapSel=null;
+ // Le carré de blocage, ou d'impraticable, se tire de même : seul son contour, de l'épaisseur d'une ligne, se pose.
+ if(mapTool==='wall'||mapTool==='obscur'||mapTool==='imprat'||mapTool==='cadre'||mapTool==='impratcadre'){cutRect={x:p.x,y:p.y,w:0,h:0,bloc:mapTool==='wall'||mapTool==='cadre',obscur:mapTool==='obscur',imprat:mapTool==='imprat'||mapTool==='impratcadre',cadre:mapTool==='cadre'||mapTool==='impratcadre'};mapSel=null;
   mapDrag={mode:'cut',kind:'bloc',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  /* Un déclencheur se trace pour le piège dont la fiche l'a demandé : une zone comme un rectangle, un fil d'un bout à l'autre.
     Tracé, on repasse en Sélection. */
@@ -2216,7 +2223,8 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
     forme, on la choisit et on repasse en Sélection. */
  if(d.mode==='cut'){const r=cutRect;cutRect=null;
   if(gesteTrace(r)){pushUndo();const forme=rectPolygon(r);
-   if(r.imprat){ajouteImpraticable(mapDraft,forme);mapSel=null}
+   if(r.cadre){const formes=cadreFormes(r,mapDraft.ratio);if(r.imprat)ajouteImpraticable(mapDraft,formes);else formes.forEach(f=>ajouteMatiere(mapDraft,f));mapSel=null}
+   else if(r.imprat){ajouteImpraticable(mapDraft,forme);mapSel=null}
    else if(r.obscur){ajouteObscurite(mapDraft,forme);mapSel=null}
    else if(r.bloc){ajouteMatiere(mapDraft,forme);mapSel={kind:'matiere',i:matiereSous(mapDraft,[r.x+r.w/2,r.y+r.h/2])};
     if(mapSel.i<0)mapSel=null}

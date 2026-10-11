@@ -2473,3 +2473,5 @@ button.j-stats{padding:0;border:0;background:none;font:inherit;font-weight:800;c
 .hero-card .talent-grille .rang-moyens .cat-carte.talent-carte{width:100%;min-width:0;align-items:center}
 .hero-card .talent-grille .talent-ameliorations.rang-ameliorations{border-top:0;padding-top:0}
 .hero-card .talent-grille .talent-ameliorations.rang-bonus{border-top:1px dashed #cfae5e;padding-top:8px}
+/* Le carré de blocage ou d'impraticable : l'aperçu n'en montre que le contour. */
+.shape.cadre{background:transparent!important;border-style:solid}
