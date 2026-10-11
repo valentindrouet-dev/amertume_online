@@ -2440,12 +2440,15 @@ function phraseAffixe(x){x=normaliseAffixe(x);const v=valeurTexte(x),plus=t=>x.v
  if(x.effet==='epinesEtat')return 'inflige '+x.etat+' '+v+' à l’adversaire qui arrive au contact';
  return 'lumière '+v+' m'}
 // Le groupe d'un affixe : deux affixes du même groupe ne vont pas sur la même pièce. Sans groupe écrit, celui de son effet.
-function groupeAffixe(x){return x.groupe||(x.effet==='carac'||x.effet==='comp'?x.effet+':'+x.id:x.effet==='de'?'de:'+x.de:x.effet==='domination'||x.effet==='epinesEtat'?x.effet+':'+x.etat:x.effet)}
+function groupeAffixe(x){return x.groupe||(x.effet==='carac'?'carac:'+x.carac:x.effet==='comp'?'comp:'+x.comp:x.effet==='de'?'de:'+x.de:x.effet==='domination'||x.effet==='epinesEtat'?x.effet+':'+x.etat:x.effet)}
 // Un affixe va-t-il sur cette base : sa famille, son niveau, et pas d'état sur une arme qui en inflige déjà un.
 function affixeVaSur(x,base,niveau){if(!x||!base)return false;const fam=familleAffixe(base),fams=[fam,typeArmeDe(base),base.category==='armor'?'armure':''].filter(Boolean);if(!fam||(x.familles.length&&!x.familles.some(f=>fams.includes(f))))return false;
  if(x.effet==='etat'&&(base.category!=='weapon'||base.etat))return false;if((x.effet==='de')&&base.category!=='weapon')return false;
  // Un état conféré devient l'effet de la pièce : seulement sur une base qui n'en a pas.
  if(x.effet==='confere'&&objetCode(base))return false;
+ // Jamais deux fois le même bonus : ni la caractéristique, ni la compétence que la base donne déjà.
+ const deBase=normaliseBonusEquip(base.bonus);if(x.effet==='carac'&&deBase.some(b=>b.carac===x.carac))return false;
+ if(x.effet==='comp'&&x.comp!=='*'&&deBase.some(b=>b.carac==='comp'&&String(b.comp)===String(x.comp)))return false;
  return !(niveau>0&&x.niveau>niveau)}
 /* Le tirage : n affixes parmi ceux qui vont sur la base, au poids, sans deux du même groupe. « tirage » rend un nombre de 0 à 1,
    pour que les vérifications le fixent. */
@@ -2533,10 +2536,13 @@ function objetForge(f,items,affixes,guide){if(!f||!Array.isArray(items))return n
  const communs=pris.filter(x=>!x.classe).slice(0,3),choisis=[...communs,...(communs.length===3?pris.filter(x=>x.classe).slice(0,1):[])];
  // Chaque valeur variable se tire dans l'échelle de la rareté de la pièce.
  // Une compétence au hasard se tire à la génération, toujours la même pour cette pièce ; le mot de l'affixe la suit.
+ /* Une compétence au hasard prend une compétence que la pièce n'a pas encore : ni celle de sa base, ni celle d'un autre
+    affixe, ni celle d'un précédent tirage. */
+ const prises=[...normaliseBonusEquip(base.bonus).filter(b=>b.carac==='comp').map(b=>+b.comp),...choisis.filter(x=>x.effet==='comp'&&x.comp!=='*').map(x=>+x.comp)];
  const rarete=rareteForge(choisis.length),cles=clesAffixes(choisis.map(x=>x.id)),lotComp={},lot=choisis.map((x,i)=>{const cle=cles[i],graine=f.id+(cle===x.id?'':cle.slice(x.id.length));
   const y={...x,cle,valeur:valeurTiree(x,graine,rarete,f.valeurs&&f.valeurs[cle])};
   // Une compétence au hasard qui revient en prend une autre : jamais deux fois la même sur la pièce.
-  if(x.effet==='comp'&&x.comp==='*'){const deja=lotComp[x.id]||(lotComp[x.id]=[]),libres=COMPETENCES.map((c,k)=>k).filter(k=>!deja.includes(k)),l=libres.length?libres:COMPETENCES.map((c,k)=>k);
+  if(x.effet==='comp'&&x.comp==='*'){const deja=lotComp[x.id]||(lotComp[x.id]=[]),libres=COMPETENCES.map((c,k)=>k).filter(k=>!deja.includes(k)&&!prises.includes(k)),l=libres.length?libres:COMPETENCES.map((c,k)=>k);
    const k=l[hachageForge(graine+'|comp|'+x.id)%l.length];deja.push(k);y.comp=String(k);y.nom=motCompetence(x.nom,k)}return y});
  const o={...structuredClone(base),id:f.id,forge:{base:f.base,affixes:lot.map(x=>x.id),valeurs:Object.fromEntries(lot.map(x=>[x.cle,x.valeur]))},name:nomForge(base,lot),rarete,unique:true,magasin:false,tanneur:false,recette:[]};
  o.bonus=[...normaliseBonusEquip(base.bonus)];o.price=Math.max(0,Math.trunc(Number(base.price))||0);

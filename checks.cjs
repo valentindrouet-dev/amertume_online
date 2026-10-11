@@ -3389,11 +3389,22 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.697 — Jamais deux fois le même bonus sur une pièce : ni deux caractéristiques identiques, ni deux compétences identiques,
+   ni ce que la base donne déjà. */
+{const C24=require('./combat.js');
+ const A=C24.normaliseAffixes([{id:'f1',nom:'fort',effet:'comp',comp:'1',valeur:2},{id:'f2',nom:'du Taureau',place:'suffixe',effet:'comp',comp:'1',valeur:5},{id:'d1',nom:'brutal',effet:'carac',carac:'dmg',valeur:2},
+  {id:'d2',nom:'du Boucher',place:'suffixe',effet:'carac',carac:'dmg',valeur:7},{id:'e',nom:'endurant',effet:'carac',carac:'endu',valeur:1},{id:'c',nom:'',effet:'comp',comp:'*',valeur:1}]);
+ const ep={id:'ep',name:'Épée',category:'weapon',dice:{white:1},price:5},forte={...ep,id:'fo',bonus:[{carac:'comp',comp:'4',valeur:1},{carac:'endu',valeur:1}]};
+ for(let k=0;k<30;k++){let i=0;const ids=C24.tireAffixes(ep,3,A.slice(0,5),1,()=>((k*7+i++*13)%100)/100);
+  assert.ok(!(ids.includes('f1')&&ids.includes('f2'))&&!(ids.includes('d1')&&ids.includes('d2')),ids.join())}
+ assert.ok(!C24.affixeVaSur(A[4],forte,0)&&C24.affixeVaSur(A[2],forte,0),'pas d’Endurance sur une base qui en donne');
+ for(let k=0;k<40;k++){const o=C24.objetForge({id:'g'+k,base:'fo',affixes:['f1','c','c']},[forte],A),cs=o.bonus.filter(b=>b.carac==='comp').map(b=>b.comp);
+  assert.equal(new Set(cs).size,cs.length,'des compétences toutes différentes : '+cs.join())}}
 /* v0.696 — Plusieurs bonus de caractéristique et de compétence sur une même pièce ; la compétence au hasard peut revenir. */
 {const C23=require('./combat.js');
  const A=C23.normaliseAffixes([{id:'p1',nom:'robuste',effet:'carac',carac:'pv',valeur:2},{id:'p2',nom:'du Colosse',place:'suffixe',effet:'carac',carac:'pv',valeur:5},{id:'c',nom:'',effet:'comp',comp:'*',valeur:1,variable:true}]);
  const ep={id:'ep',name:'Épée',category:'weapon',dice:{white:1},price:5};
- assert.deepEqual(C23.tireAffixes(ep,2,A.slice(0,2),1,()=>0).sort(),['p1','p2'],'deux bonus de PV ensemble');
+ assert.equal(C23.tireAffixes(ep,2,A.slice(0,2),1,()=>0).length,1,'jamais deux bonus de PV');
  assert.deepEqual(C23.tireAffixes(ep,3,[A[2]],1,()=>0),['c','c','c'],'la compétence au hasard revient');
  let deux=null;for(let k=0;k<40&&!deux;k++){const o=C23.objetForge({id:'r'+k,base:'ep',affixes:['c','c']},[ep],A);const b=o.bonus.filter(x=>x.carac==='comp');if(b.length===2)deux=o}
  assert.ok(deux,'deux compétences différentes sur une même pièce');assert.deepEqual(Object.keys(deux.forge.valeurs),['c','c#1']);
@@ -5350,4 +5361,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1996 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1997 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
