@@ -3393,11 +3393,16 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
  // Les affixes : une ligne chacun ; un clic l'ouvre.
  {const s=bloc('Affixes · '+catalog.affixes.length);
   if(catalog.affixes.length){const t=document.createElement('table');t.className='forge-table';const tete=t.createTHead().insertRow();
-   ['Mot','Place','Familles','Effet','Poids','Niv.','Or'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tete.append(th)});
+   ['Mot','Place','Familles','Effet','Poids','Niv.','Or',''].forEach(x=>{const th=document.createElement('th');th.textContent=x;tete.append(th)});
    const corpsT=t.createTBody();
    [...catalog.affixes].sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(x=>{const r=corpsT.insertRow();r.className='forge-ligne';r.tabIndex=0;
     [x.nom,x.place==='suffixe'?'suffixe':'préfixe',x.familles.length?x.familles.map(f=>({melee:'Mêlée',ranged:'Distance'})[f]||(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,valeurAffixe(x,normaliseGuidePrix(catalog.guidePrix))].forEach(v=>{r.insertCell().textContent=String(v)});
-    r.onclick=()=>openAffixe(x.id);r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAffixe(x.id)}}});
+    r.onclick=()=>openAffixe(x.id);r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAffixe(x.id)}};
+    // Dupliquer : une copie juste à côté, à corriger.
+    const double=document.createElement('button');double.type='button';double.className='ico';double.textContent='⧉';double.title='Dupliquer';double.setAttribute('aria-label','Dupliquer '+x.nom);
+    double.onclick=e=>{e.stopPropagation();const copie=normaliseAffixe({...structuredClone(x),id:idDomaine(),nom:(x.nom+' (copie)').slice(0,40)});
+     catalog.affixes.splice(catalog.affixes.indexOf(x)+1,0,copie);sauveForge();renderForge()};
+    double.onkeydown=e=>e.stopPropagation();r.insertCell().append(double)});
    s.append(t)}
   else{const p=document.createElement('p');p.className='muted';p.textContent='Aucun affixe : rien ne se forge encore.';s.append(p)}
   const add=document.createElement('button');add.type='button';add.className='dom-ajout';add.textContent='+ Affixe';add.onclick=()=>openAffixe(null);s.append(add)}
