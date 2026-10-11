@@ -1501,7 +1501,9 @@ function libelleBonusEl(p,{talent=null}={}){const n=Math.max(1,(p&&p.valeur)|0),
  const s=document.createElement('span');s.className='bonus-libelle';
  const plus=document.createElement('span');plus.className='bonus-plus';plus.textContent='+ '+n;
  const nom=document.createElement('span');nom.className='bonus-carac';
- nom.textContent=c==='comp'?(talent?String(skillNames[k]||''):String(skillNames[k]||'').toUpperCase()):c==='orbe'?(n>1?'ORBES':'ORBE'):(NOM_BONUS_BULLE[c]||'PV');
+ nom.textContent=c==='comp'?String(skillNames[k]||''):c==='orbe'?(n>1?'ORBES':'ORBE'):(NOM_BONUS_BULLE[c]||'PV');
+ // Dans la bulle d'un objet : « + 1 Robustesse », « + 2 Endu » ; PV, DEF, PA et PM restent des sigles.
+ if(!talent&&!['pv','def','pa','pm'].includes(c)){const t=nom.textContent;nom.textContent=t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()}
  // Dans la bulle d'un bonus : « + 2 <icône> Endu », le nom en minuscules sauf la première lettre.
  if(talent&&c!=='pa'&&c!=='pm'){const t=nom.textContent;nom.textContent=t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()}
  const tint=c==='comp'?SKILL_TINTS[k]:c==='orbe'?'138,99,201':STAT_TINTS[c];if(tint)nom.style.color='rgb('+tint+')';
@@ -3396,7 +3398,7 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
    ['Mot','Place','Familles','Effet','Poids','Niv.','Or',''].forEach(x=>{const th=document.createElement('th');th.textContent=x;tete.append(th)});
    const corpsT=t.createTBody();
    [...catalog.affixes].sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(x=>{const r=corpsT.insertRow();r.className='forge-ligne';r.tabIndex=0;
-    [x.nom,x.place==='suffixe'?'suffixe':'préfixe',x.familles.length?x.familles.map(f=>({melee:'Mêlée',ranged:'Distance',armure:'Armures'})[f]||(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,valeurAffixe(x,normaliseGuidePrix(catalog.guidePrix))].forEach(v=>{r.insertCell().textContent=String(v)});
+    [x.nom,({suffixe:'suffixe',avant:'avant'})[x.place]||'préfixe',x.familles.length?x.familles.map(f=>({melee:'Mêlée',ranged:'Distance',armure:'Armures'})[f]||(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,valeurAffixe(x,normaliseGuidePrix(catalog.guidePrix))].forEach(v=>{r.insertCell().textContent=String(v)});
     r.onclick=()=>openAffixe(x.id);r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAffixe(x.id)}};
     // Dupliquer : une copie juste à côté, à corriger.
     const double=document.createElement('button');double.type='button';double.className='ico';double.textContent='⧉';double.title='Dupliquer';double.setAttribute('aria-label','Dupliquer '+x.nom);
@@ -3437,8 +3439,8 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
   const tout=v.familles.includes(k);return '<div class="affixe-cascade">'+coche(k,n,' data-parent="'+k+'"',tout||sous.some(s=>v.familles.includes(s)))
    +'<div class="affixe-sous">'+sous.map(s=>coche(s,nomFam(s),' data-de="'+k+'"',tout||v.familles.includes(s))).join('')+'</div></div>'}).join('');
  $('affixe-fields').innerHTML='<div class="edit-grid">'+field('Mot, au masculin','nom',x?v.nom:'','text','required maxlength="40" placeholder="tranchant, du Loup…"')
-  +'<span data-place="prefixe">'+field('Au féminin','nomF',v.nomF,'text','maxlength="40"')+field('Au masculin pluriel','nomMP',v.nomMP,'text','maxlength="40"')+field('Au féminin pluriel','nomFP',v.nomFP,'text','maxlength="40"')+'</span>'
-  +sel('Place dans le nom','place',v.place,[['prefixe','Après la base : « Épée tranchante »'],['suffixe','En suffixe : « Épée du Loup »']])
+  +'<span data-place="prefixe avant">'+field('Au féminin','nomF',v.nomF,'text','maxlength="40"')+field('Au masculin pluriel','nomMP',v.nomMP,'text','maxlength="40"')+field('Au féminin pluriel','nomFP',v.nomFP,'text','maxlength="40"')+'</span>'
+  +sel('Place dans le nom','place',v.place,[['avant','Avant la base : « Grosse épée »'],['prefixe','Après la base : « Épée tranchante »'],['suffixe','En suffixe : « Épée du Loup »']])
   +sel('Effet','effet',v.effet,EFFETS_AFFIXE)
   +'<span data-effet="carac">'+sel('Caractéristique','carac',v.carac,CARACS_EQUIP.filter(([k])=>k!=='comp'))+'</span>'
   +'<span data-effet="comp">'+sel('Compétence','comp',v.comp,COMPETENCES.map((n,k)=>[String(k),n]))+'</span>'
@@ -3451,7 +3453,7 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
  const f=$('affixe-form').elements,lit=()=>normaliseAffixe({nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.etat.value,valeur:f.valeur.value,nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value});
  // Les formes vides montrent celle qui sera tirée du masculin ; la valeur en or se lit au guide des prix.
  const montre=()=>{$('affixe-fields').querySelectorAll('[data-effet]').forEach(s=>{s.hidden=!s.dataset.effet.split(' ').includes(f.effet.value)});
-  $('affixe-fields').querySelectorAll('[data-place]').forEach(s=>{s.hidden=f.place.value!==s.dataset.place});const l=lit();
+  $('affixe-fields').querySelectorAll('[data-place]').forEach(s=>{s.hidden=!s.dataset.place.split(' ').includes(f.place.value)});const l=lit();
   f.nomF.placeholder=formeAffixe({...l,nomF:''},'fs');f.nomMP.placeholder=formeAffixe({...l,nomMP:''},'mp');f.nomFP.placeholder=formeAffixe({...l,nomFP:''},'fp');
   f.prix.value=String(valeurAffixe(l,normaliseGuidePrix(catalog.guidePrix)))};
  $('affixe-form').oninput=montre;$('affixe-form').onchange=montre;montre();

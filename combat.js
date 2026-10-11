@@ -2396,7 +2396,7 @@ const RARETES_FORGE=['commun','inhabituel','rare','mystique','epique'];
 const rareteForge=n=>RARETES_FORGE[Math.max(0,Math.min(4,Math.trunc(Number(n))||0))];
 function normaliseAffixe(x){x=x&&typeof x==='object'?x:{};const n=(v,a,b,d)=>{const k=Math.trunc(Number(v));return Number.isFinite(k)?Math.max(a,Math.min(b,k)):d};
  const effet=EFFETS_AFFIXE.some(([k])=>k===x.effet)?x.effet:'carac';
- return {id:typeof x.id==='string'&&x.id?x.id.slice(0,60):idDomaine(),nom:String(x.nom||'').trim().slice(0,40)||'Affixe',place:x.place==='suffixe'?'suffixe':'prefixe',
+ return {id:typeof x.id==='string'&&x.id?x.id.slice(0,60):idDomaine(),nom:String(x.nom||'').trim().slice(0,40)||'Affixe',place:x.place==='suffixe'||x.place==='avant'?x.place:'prefixe',
   familles:(Array.isArray(x.familles)?x.familles:[]).filter(f=>FAMILLES_AFFIXE.some(([k])=>k===f)).slice(0,20),effet,
   carac:CARACS_EQUIP.some(([k])=>k===x.carac&&k!=='comp')?x.carac:'pv',comp:String(n(x.comp,0,COMPETENCES.length-1,0)),
   de:DICE_KEYS.includes(x.de)&&x.de!=='green'?x.de:'red',etat:ETATS_JEU.includes(x.etat)?x.etat:'Feu',valeur:n(x.valeur,1,40,1),
@@ -2459,11 +2459,16 @@ const MOTS_INVARIANTS=/^(de|du|des|d['’].*|à|au|aux|en|sans|sous|sur|contre|p
 function accordePhrase(t,fn){const mots=t.split(' ');let k=mots.findIndex(w=>MOTS_INVARIANTS.test(w));if(k<0)k=mots.length;if(k===0)return t;mots[k-1]=fn(mots[k-1]);return mots.join(' ')}
 function formeAffixe(x,accord){if(!x)return '';if(x.place==='suffixe')return x.nom;const f=x.nomF||accordePhrase(x.nom,femininAffixe);
  return accord==='fs'?f:accord==='mp'?x.nomMP||accordePhrase(x.nom,plurielAffixe):accord==='fp'?x.nomFP||accordePhrase(f,plurielAffixe):x.nom}
-// Le nom : la base, ses préfixes accordés, un suffixe au plus.
-function nomForge(base,affixes){const suf=affixes.find(x=>x.place==='suffixe'),vus=' '+sansAccent(base.name)+' ';
- // Tous les préfixes, accordés, à la suite : « Épée lourde mystique ». Un mot déjà dit ne se répète pas : « Épée lourde », pas « Épée lourde lourde ».
- const mots=[];affixes.filter(x=>x.place==='prefixe').forEach(x=>{const m=formeAffixe(x,accordDe(base)),k=' '+sansAccent(m)+' ';if(m&&!(vus+mots.map(sansAccent).join(' ')+' ').includes(k))mots.push(m)});
- return [base.name,...mots,suf&&suf.nom].filter(Boolean).join(' ')}
+/* Avant la base, un mot masculin prend sa forme d'élision devant une voyelle : « Vieil arc », « Bel arc ». */
+const ELISIONS={beau:'bel',nouveau:'nouvel',vieux:'vieil',fou:'fol',mou:'mol'};
+// Le nom : ses mots d'avant, la base, ses préfixes accordés, un suffixe au plus. Un mot déjà dit ne se répète pas.
+function nomForge(base,affixes){const suf=affixes.find(x=>x.place==='suffixe'),acc=accordDe(base),dits=[sansAccent(base.name)];
+ const prend=place=>{const out=[];affixes.filter(x=>x.place===place).forEach(x=>{const m=formeAffixe(x,acc),k=' '+sansAccent(m)+' ';
+  if(m&&!(' '+dits.join(' ')+' ').includes(k)){out.push(m);dits.push(sansAccent(m))}});return out};
+ const avant=prend('avant'),apres=prend('prefixe');
+ if(avant.length&&acc==='ms'&&/^[aeiouyhàâéèêëîïôûœ]/i.test(base.name)){const d=avant.length-1,bas=avant[d].toLowerCase();if(ELISIONS[bas])avant[d]=ELISIONS[bas]}
+ if(avant.length)avant[0]=avant[0].charAt(0).toUpperCase()+avant[0].slice(1);
+ return [...avant,base.name,...apres,suf&&suf.nom].filter(Boolean).join(' ')}
 /* Ce que vaut un affixe, au guide des prix : ses bonus comme ceux d'une pièce, son dé, son état, ses mètres. Sans guide, rien. */
 function valeurAffixe(x,g){if(!x||!g)return 0;x=normaliseAffixe(x);const b=g.bonus||{},d=g.des||{};
  if(x.effet==='carac')return x.valeur*(b[x.carac]||0);if(x.effet==='comp')return x.valeur*(b.comp||0);if(x.effet==='de')return x.valeur*(d[x.de]||0);

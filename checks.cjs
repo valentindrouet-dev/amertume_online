@@ -3389,6 +3389,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.687 — Les bonus d'objet se lisent sans pastille, et en minuscules : « + 1 Robustesse ». */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("if(!talent&&!['pv','def','pa','pm'].includes(c)){const t=nom.textContent;nom.textContent=t.charAt(0).toUpperCase()+t.slice(1).toLowerCase()}")
+ &&fs.readFileSync('editor.css','utf8').includes('.gear-detail .gear-bonus::before{display:none}'),'bonus d’objet en minuscules, sans pastille');}
+/* v0.687 — Un affixe peut se placer avant la base : « Grosse Épée lourde », « Vieil arc ». */
+{const C16=require('./combat.js');const A=C16.normaliseAffixes([{id:'g',nom:'gros',place:'avant'},{id:'l',nom:'lourd',place:'prefixe'},{id:'v',nom:'vieux',place:'avant'},{id:'s',nom:'du Loup',place:'suffixe'}]);
+ const n=(name,ids)=>C16.nomForge({name},ids.map(i=>A.find(x=>x.id===i)));
+ assert.deepEqual([n('Épée',['g','l']),n('Arc',['v','s']),n('Marteau',['v']),n('Bottes',['g','l'])],['Grosse Épée lourde','Vieil Arc du Loup','Vieux Marteau','Grosses Bottes lourdes']);
+ assert.equal(A[0].place,'avant');assert.ok(fs.readFileSync('editor.js','utf8').includes("['avant','Avant la base : « Grosse épée »']"),'place avant la base');}
 /* v0.686 — Les armures en cascade, comme les armes : le groupe Armures réunit corps, boucliers, casques, capes, anneaux,
    amulettes et bottes. */
 {const C15=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
@@ -3449,7 +3457,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  const f=new Function(mp.match(/function traitDroit\(a,b,ratio\)\{[^\n]*\n/)[0]+'return traitDroit')();
  assert.deepEqual([f({x:10,y:20},{x:40,y:23},1.5),f({x:10,y:20},{x:11,y:50},1.5)],[{x:40,y:20},{x:10,y:50}]);
  assert.ok(mp.includes("const fin=viseTrait(p,e.metaKey||e.ctrlKey,mapDraft.ratio,e.shiftKey);")&&mp.includes("function viseTrait(p,droit,ratio,maj){if(maj&&traitDepart)return traitDroit(traitDepart,p,ratio);")
-  &&css.includes(".gear-detail .gear-bonus::before{content:'';width:12px;height:12px;")&&!fs.readFileSync('editor.js','utf8').includes("'gear-rarete r-'+rareteDe(o)"),'trait droit, rareté tue, étoile');}
+  &&css.includes(".gear-detail .gear-bonus::before{display:none}")&&!fs.readFileSync('editor.js','utf8').includes("'gear-rarete r-'+rareteDe(o)"),'trait droit, rareté tue, étoile');}
 /* v0.678 — La Forge : l'affixe s'accorde au genre et au nombre de sa base, ne va que sur le type d'arme choisi, vaut ce que dit
    le guide des prix ; la bulle ne redit pas ce que montrent déjà les dés, les pastilles et les bonus. */
 {const C12=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
@@ -5087,7 +5095,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(css.includes('.hero-card .talent-ameliorations .cat-pill.gear-carre.talent-carre.bonus-rond>.logo-equip{width:100%;height:100%}')
   &&src.includes("if(l)r.append(remplitCase(l));")&&src.includes("function remplitCase(el){"),'les icônes de bonus à la même taille');
- assert.ok(src.includes("nom.textContent=c==='comp'?(talent?String(skillNames[k]||''):String(skillNames[k]||'').toUpperCase())")&&src.includes("libelleBonusEl(g.p,{talent:g.t})")&&css.includes('.bonus-libelle .bonus-ico{'),'la bulle d’un bonus : icône, compétence comme sur la fiche');}
+ assert.ok(src.includes("nom.textContent=c==='comp'?String(skillNames[k]||'')")&&src.includes("libelleBonusEl(g.p,{talent:g.t})")&&css.includes('.bonus-libelle .bonus-ico{'),'la bulle d’un bonus : icône, compétence comme sur la fiche');}
 /* v0.496 — Retirer ou supprimer un talent de l'arbre laisse sa case vide : ses lignes, ses niveaux et ses petits
    ronds restent ; la case se traverse ; un talent posé dessus reprend le tout. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
@@ -5263,4 +5271,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1986 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1988 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

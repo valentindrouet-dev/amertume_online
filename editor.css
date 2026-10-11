@@ -2319,8 +2319,8 @@ button.btn-action.debut-combat{animation:debut-rayonne 1.1s ease-in-out infinite
 /* La pastille d'un bonus d'équipement prend la couleur de la rareté de la pièce. */
 .gear-detail.r-commun{--rarete:#7d7a74}.gear-detail.r-inhabituel{--rarete:#4f8a52}.gear-detail.r-rare{--rarete:#4d7fb0}.gear-detail.r-mystique{--rarete:#7a5fc0}.gear-detail.r-epique{--rarete:#c26a2f}.gear-detail.r-ressource{--rarete:#9a7448}
 .gear-detail .gear-bonus::before{background:var(--rarete,#7d7a74);box-shadow:0 0 0 1px color-mix(in srgb,var(--rarete,#7d7a74) 60%,#000)}
-/* Devant un bonus d'objet, une étoile à quatre branches, de la couleur de sa rareté. */
-.gear-detail .gear-bonus::before{content:'';width:12px;height:12px;border-radius:0;box-shadow:none;background:color-mix(in srgb,var(--rarete,#7d7a74) 75%,#000);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1Q13.6 10.4 23 12Q13.6 13.6 12 23Q10.4 13.6 1 12Q10.4 10.4 12 1Z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1Q13.6 10.4 23 12Q13.6 13.6 12 23Q10.4 13.6 1 12Q10.4 10.4 12 1Z'/%3E%3C/svg%3E") center/contain no-repeat}
+/* Un bonus d'objet se lit seul, sans pastille devant. */
+.gear-detail .gear-bonus::before{display:none}
 /* Une bulle de talent grisée grise aussi ses pastilles. */
 .talent-detail.grisee{--pastille:#8f8a80!important}
 /* Le coffre : un contour fin brun orangé — pas celui des portes — et un voile léger par-dessus la carte.
