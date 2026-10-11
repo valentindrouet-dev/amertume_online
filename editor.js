@@ -3396,7 +3396,7 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
    ['Mot','Place','Familles','Effet','Poids','Niv.','Or'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tete.append(th)});
    const corpsT=t.createTBody();
    [...catalog.affixes].sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(x=>{const r=corpsT.insertRow();r.className='forge-ligne';r.tabIndex=0;
-    [x.nom,x.place==='suffixe'?'suffixe':'préfixe',x.familles.length?x.familles.map(f=>(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,valeurAffixe(x,normaliseGuidePrix(catalog.guidePrix))].forEach(v=>{r.insertCell().textContent=String(v)});
+    [x.nom,x.place==='suffixe'?'suffixe':'préfixe',x.familles.length?x.familles.map(f=>({melee:'Mêlée',ranged:'Distance'})[f]||(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,valeurAffixe(x,normaliseGuidePrix(catalog.guidePrix))].forEach(v=>{r.insertCell().textContent=String(v)});
     r.onclick=()=>openAffixe(x.id);r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAffixe(x.id)}}});
    s.append(t)}
   else{const p=document.createElement('p');p.className='muted';p.textContent='Aucun affixe : rien ne se forge encore.';s.append(p)}
