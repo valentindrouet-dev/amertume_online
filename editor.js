@@ -12,7 +12,7 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.role=ombrelame(a.role);a.munitionId??='';a.depots=normaliseDepots(a.depots);
+function normalizeActor(a){a.id??=crypto.randomUUID();a.role=ombrelame(a.role);a.munitionId??='';a.depots=normaliseDepots(a.depots);a.forges=normaliseForges(a.forges);
  // Les zones fouillées par la Perception : la carte, le centre et le rayon, rien d'autre.
  a.fouilles=Array.isArray(a.fouilles)?a.fouilles.filter(f=>f&&Number.isFinite(+f.x)&&Number.isFinite(+f.y)&&+f.r>0).slice(-200).map(f=>({m:String(f.m||'').slice(0,80),x:+f.x,y:+f.y,r:Math.min(1,+f.r),...(Number.isInteger(f.n)&&f.n>=0?{n:Math.min(99,f.n)}:{})})):[];
  if(a.reposCourts===undefined&&a.reposPris)a.reposCourts=1;a.reposCourts=Math.max(0,Math.trunc(Number(a.reposCourts))||0);a.reposPris=a.reposPris===true;a.horsCarte=a.horsCarte===true;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.paliersTalents=normalisePaliersActeur(a);if(a.element!==undefined&&!elementDe(a))delete a.element;a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;if(a.hero&&typeof niveauDeXp==='function')a.level=niveauDeXp(a.xp);a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
@@ -209,6 +209,8 @@ function actionSpeciale(k){return normaliseActionsSpeciales(typeof catalog!=='un
 // Le centre de son rond : l'icône choisie, sinon son symbole.
 function centreAction(k,symbole){const l=actionSpeciale(k).logo,im=l?logoAttaque(l,'logo-equip'):null;return im||symbole}
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];migreOmbrelame(c);
+ // Les pièces forgées ne sont pas au catalogue : elles vivent chez les aventuriers, et s'y recomposent (syncForges).
+ c.items=c.items.filter(o=>!(o&&o.forge));c.affixes=normaliseAffixes(c.affixes);c.forge=normaliseReglageForge(c.forge);
  /* Deux talents sous un même identifiant se superposaient dans l'arbre : on en tirait un, l'autre restait, comme
     une copie. Une copie exacte s'en va ; une autre, qui a changé depuis, prend un identifiant à elle. */
  {const vus=new Map(),l=c.talents.filter(t=>{if(!t||!t.id)return true;const d=vus.get(t.id);if(!d){vus.set(t.id,t);return true}
@@ -366,7 +368,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(o.category==='restes'){o.rendement1=lisQte(o.rendement1);o.rendement2=lisQte(o.rendement2)}
   o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
- c.monsters.forEach(m=>{m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??=''});
+ c.monsters.forEach(m=>{m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??='';const fo=normaliseForgeAdv(m.forge);if(fo)m.forge=fo;else delete m.forge});
  return c}
 // Le niveau d'un aventurier suit son XP, d'après les paliers de la partie.
 function niveauxHeros(){actors.forEach(a=>{if(a&&a.hero)a.level=niveauDeXp(a.xp)})}
@@ -629,6 +631,7 @@ const armoryPage=document.createElement('main');armoryPage.id='armory-page';
 armoryPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Armurerie</h2><div class="cat-actions">'
  +'<button id="armory-masse" type="button" aria-pressed="false" title="Modifier prix, raretés, ressources… de toutes les pièces affichées">✎ Modifier en masse</button>'
+ +'<button id="armory-forge" type="button" title="Les affixes, le tirage et le générateur d’objets rares">✦ Forge</button>'
  +'<button id="armory-add" class="primary">+ Ajouter</button></div></header>'
  
  +'<div class="cat-filters"><input id="armory-search" placeholder="Rechercher…" aria-label="Rechercher un objet">'
@@ -1152,7 +1155,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
    r.onclick=e=>{e.stopPropagation();ressusciter(a)};tete.append(r)}
   else['click','contextmenu','dragstart','pointerdown','keydown','change','input'].forEach(ev=>c.addEventListener(ev,e=>{if(e.type==='keydown'&&!['Enter',' '].includes(e.key))return;e.stopPropagation();e.preventDefault()},true))}
  c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,corpsEtSac(a));return c}
-function renderHeroes(){const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
+function renderHeroes(){syncForges();const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
  /* À une table en ligne, un joueur ne voit que son aventurier : toutes les fiches sont au MJ. */
  const assis=typeof spectateur==='function'&&spectateur(),siege=typeof monSiege!=='undefined'?monSiege:null;
@@ -1512,6 +1515,8 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  const ligne=(texte,classe)=>{if(!texte)return;const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p)};
  // La rareté, puis ce que la pièce confère, une ligne par bonus.
  if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));
+ // Une pièce forgée : chaque affixe, son mot et ce qu'il fait.
+ affixesDe(o,catalog.affixes).forEach(x=>ligne('✦ '+x.nom+' : '+phraseAffixe(x),'gear-affixe'));
  normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});
  // Ce qui éclaire le dit : « Lumière 3m ».
  if(lumiereDe(o))ligne('Lumière '+String(lumiereDe(o)).replace('.',',')+'m','gear-lumiere');
@@ -1793,7 +1798,7 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
     const question='Retirer « '+o.name+' » de l’inventaire de '+a.name+' ?';let n=0;
     if(reste>1&&typeof demanderNombre==='function')n=await demanderNombre(question,reste,'Retirer');
     else n=(typeof demander==='function'?await demander(question,'Retirer'):confirm('Retirer « '+o.name+' » ?'))?1:0;
-    if(!n)return;for(let k=0;k<n;k++)retirerInventaire(a,o);
+    if(!n)return;for(let k=0;k<n;k++)retirerInventaire(a,o);if(o.forge)oublieForge(a,o.id);
     render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
    x.onpointerdown=ev=>ev.stopPropagation();p.append(x)}
   // Son nom dessous, sur la page des Aventuriers, quand le bouton « Noms » est allumé.
@@ -1847,7 +1852,7 @@ function choisirPourPlace(a,cle,cote,nom){fermerBulle();
   placeDialog.close();
   render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
  placeDialog.dessine=()=>{const corps=$('place-corps');corps.replaceChildren();const q=cleTalent($('place-recherche').value);
-  const va=(catalog.items||[]).filter(o=>vaA(o,cle,cote)&&(!q||cleTalent(o.name).includes(q))).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
+  const va=(catalog.items||[]).filter(o=>vaA(o,cle,cote)&&!(o.forge&&!(a.inventaire||[]).includes(o.id))&&(!q||cleTalent(o.name).includes(q))).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
   const groupe=(titre,liste,nouveau)=>{if(!liste.length)return;const h=document.createElement('h3');h.className='arbre-choix-groupe';h.textContent=titre;
    const g=document.createElement('div');g.className='pick-grille';
    liste.forEach(o=>{const carte=document.createElement('div');carte.className='cat-carte pick-carte';
@@ -2338,7 +2343,7 @@ function renderArmory(){renderBiblioObjets();renderGuidePrix();const cols=$('arm
  const q=($('armory-search').value||'').trim().toLowerCase(),choisie=$('armory-cat').value,tri=$('armory-sort').value;
  const masse=armoryMasse&&view==='mj';$('armory-masse').setAttribute('aria-pressed',String(masse));$('armory-masse').classList.toggle('on',masse);
  cols.classList.toggle('en-masse',masse);
- const visibles=key=>trieObjets(catalog.items.map((a,i)=>[a,i]).filter(([a])=>itemColumn(a)===key&&(!q||a.name.toLowerCase().includes(q))),tri);
+ const visibles=key=>trieObjets(catalog.items.map((a,i)=>[a,i]).filter(([a])=>!a.forge&&itemColumn(a)===key&&(!q||a.name.toLowerCase().includes(q))),tri);
  if(masse){barreMasse(cols,choisie);tableMasse(cols,ARMORY_COLS.filter(([k])=>!choisie||choisie===k).flatMap(([k])=>visibles(k)));bulleOrpheline();return}
  for(const [key,titre] of ARMORY_COLS){
   if(choisie&&choisie!==key)continue;
@@ -3363,6 +3368,91 @@ $('delete-talent').onclick=()=>{if(talentIndex===null)return;
    bestiaire n'a ni PV du moment ni réserve : on ne lui écrit rien. */
 /* L'inventaire est tout ce que le combattant possède ; l'équipement, ce qu'il porte, en
    fait toujours partie : ce qui est porté sans être possédé entre dans l'inventaire. */
+/* ---------- La Forge : les affixes, le tirage, le générateur ----------
+   Au MJ, depuis l'Armurerie. Les affixes s'écrivent ici ; le tirage se règle ici ; et le générateur forge une pièce de n'importe
+   quelle rareté, pour la voir, puis la donner à un aventurier. */
+const forgeDialog=dialog('forge-editor','Forge','<div id="forge-corps"></div>');
+const affixeDialog=dialog('affixe-editor','Affixe','<form id="affixe-form"><div id="affixe-fields"></div><div class="form-actions"><button type="button" id="affixe-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
+let forgeApercu=null,forgeBase='',forgeNombre='',forgeNiveau=1;
+function sauveForge(){scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+function openForge(){if(view!=='mj')return;renderForge();forgeDialog.showModal()}
+function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.replaceChildren();catalog.affixes=normaliseAffixes(catalog.affixes);catalog.forge=normaliseReglageForge(catalog.forge);
+ const h=t=>{const x=document.createElement('h3');x.className='reglage-titre';x.textContent=t;return x};
+ const bloc=t=>{const s=document.createElement('section');s.className='forge-bloc';s.append(h(t));corps.append(s);return s};
+ // Le tirage : la chance, puis la part de chaque nombre d'affixes.
+ {const s=bloc('Tirage'),g=catalog.forge,ligne=document.createElement('div');ligne.className='forge-reglages';
+  const nb=(lab,v,fn)=>{const l=document.createElement('label');const i=document.createElement('input');i.type='number';i.min='0';i.max='100';i.value=String(v);i.onchange=()=>fn(i.value);l.append(lab+' ',i);ligne.append(l)};
+  nb('Chance qu’une pièce qui tombe soit forgée, en %',g.chance,v=>{catalog.forge=normaliseReglageForge({...g,chance:v});sauveForge();renderForge()});
+  ['1 affixe','2 affixes','3 affixes','4 affixes'].forEach((lab,i)=>nb(lab,g.repartition[i],v=>{const r=[...g.repartition];r[i]=v;catalog.forge=normaliseReglageForge({...g,repartition:r});sauveForge();renderForge()}));
+  const n=document.createElement('p');n.className='muted';n.textContent='Les parts se lisent l’une par rapport aux autres : 60, 25, 10, 5 font 60 % d’Inhabituels. Un adversaire ou un coffre peut avoir sa chance et ses bornes.';
+  s.append(ligne,n)}
+ // Les affixes : une ligne chacun ; un clic l'ouvre.
+ {const s=bloc('Affixes · '+catalog.affixes.length);
+  if(catalog.affixes.length){const t=document.createElement('table');t.className='forge-table';const tete=t.createTHead().insertRow();
+   ['Mot','Place','Familles','Effet','Poids','Niv.','Or'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tete.append(th)});
+   const corpsT=t.createTBody();
+   [...catalog.affixes].sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(x=>{const r=corpsT.insertRow();r.className='forge-ligne';r.tabIndex=0;
+    [x.nom,x.place==='suffixe'?'suffixe':'préfixe',x.familles.length?x.familles.map(f=>(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,x.prix].forEach(v=>{r.insertCell().textContent=String(v)});
+    r.onclick=()=>openAffixe(x.id);r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAffixe(x.id)}}});
+   s.append(t)}
+  else{const p=document.createElement('p');p.className='muted';p.textContent='Aucun affixe : rien ne se forge encore.';s.append(p)}
+  const add=document.createElement('button');add.type='button';add.className='dom-ajout';add.textContent='+ Affixe';add.onclick=()=>openAffixe(null);s.append(add)}
+ // Le générateur : une base, un nombre d'affixes, un niveau ; la pièce, pour la voir, puis la donner.
+ {const s=bloc('Générateur'),ligne=document.createElement('div');ligne.className='forge-reglages';
+  const bases=(catalog.items||[]).filter(o=>o&&!o.forge&&(o.category==='weapon'||o.category==='armor')).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
+  const base=document.createElement('select');base.setAttribute('aria-label','Pièce de base');base.replaceChildren(new Option('— pièce de base —',''),...bases.map(o=>new Option(o.name+' · '+(o.category==='weapon'?(o.ranged?'à distance':'mêlée'):NOM_EMPLACEMENT(emplacementDe(o))),o.id)));base.value=forgeBase;base.onchange=()=>{forgeBase=base.value};
+  const nombre=document.createElement('select');nombre.setAttribute('aria-label','Nombre d’affixes');[['','Tirage au sort'],['0','0 · Commun'],['1','1 · Inhabituel'],['2','2 · Rare'],['3','3 · Mystique'],['4','4 · Épique']].forEach(([v,t])=>nombre.add(new Option(t,v)));nombre.value=forgeNombre;nombre.onchange=()=>{forgeNombre=nombre.value};
+  const niveau=document.createElement('input');niveau.type='number';niveau.min='1';niveau.max='20';niveau.value=String(forgeNiveau);niveau.title='Niveau : les affixes d’un niveau plus haut ne tombent pas';niveau.setAttribute('aria-label','Niveau');niveau.onchange=()=>{forgeNiveau=Math.max(1,Math.min(20,Math.trunc(Number(niveau.value))||1))};
+  const forger=document.createElement('button');forger.type='button';forger.className='primary';forger.textContent='⚒ Forger';
+  const apercu=document.createElement('div');apercu.className='forge-apercu';
+  const montre=()=>{apercu.replaceChildren();if(!forgeApercu)return;const o=objetForge(forgeApercu,catalog.items,catalog.affixes);if(!o){forgeApercu=null;return}
+   const c=gearCarre(o,1,false);c.removeAttribute('role');c.tabIndex=-1;const d=gearDetail(o,null,false);d.hidden=false;apercu.append(c,d);
+   // La donner : à un aventurier, dans son sac.
+   const heros=actors.filter(a=>a&&a.hero);if(!heros.length)return;const qui=document.createElement('select');qui.setAttribute('aria-label','À qui');heros.forEach(a=>qui.add(new Option(a.name,a.id)));
+   const donner=document.createElement('button');donner.type='button';donner.textContent='Donner';donner.onclick=()=>{const a=heros.find(x=>x.id===qui.value);if(!a)return;
+    a.forges=[...(a.forges||[]),forgeApercu];a.inventaire??=[];a.inventaire.push(forgeApercu.id);syncForges();forgeApercu=null;renderHeroes();render();sauveForge();renderForge()};
+   const l=document.createElement('div');l.className='forge-donner';l.append(qui,donner);apercu.append(l)};
+  forger.onclick=()=>{const b=bases.find(o=>o.id===base.value);if(!b){forgeApercu=null;montre();return}
+   const n=nombre.value===''?tireNombreAffixes(catalog.forge,null):Math.trunc(Number(nombre.value));
+   forgeApercu={id:'forge-'+crypto.randomUUID(),base:b.id,affixes:tireAffixes(b,n,catalog.affixes,forgeNiveau)};montre()};
+  [base,nombre,niveau,forger].forEach(x=>ligne.append(x));s.append(ligne,apercu);montre()}}
+function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=normaliseAffixe(x||{});
+ affixeDialog.querySelector('h2').textContent=x?x.nom:'Nouvel affixe';
+ const coche=(k,n)=>'<label class="field-check"><input type="checkbox" name="famille" value="'+k+'"'+(v.familles.includes(k)?' checked':'')+'>'+esc(n)+'</label>';
+ $('affixe-fields').innerHTML='<div class="edit-grid">'+field('Mot','nom',x?v.nom:'','text','required maxlength="40" placeholder="tranchante, du Loup…"')
+  +sel('Place dans le nom','place',v.place,[['prefixe','Après la base : « Épée tranchante »'],['suffixe','En suffixe : « Épée du Loup »']])
+  +sel('Effet','effet',v.effet,EFFETS_AFFIXE)
+  +'<span data-effet="carac">'+sel('Caractéristique','carac',v.carac,CARACS_EQUIP.filter(([k])=>k!=='comp'))+'</span>'
+  +'<span data-effet="comp">'+sel('Compétence','comp',v.comp,COMPETENCES.map((n,k)=>[String(k),n]))+'</span>'
+  +'<span data-effet="de">'+sel('Dé','de',v.de,NOMS_DES)+'</span>'
+  +'<span data-effet="etat">'+sel('État','etat',v.etat,ETATS_JEU.map(e=>[e,e]))+'</span>'
+  +'<span data-effet="carac comp de mouvement lumiere">'+field('Valeur','valeur',v.valeur,'number','min="1" max="40"')+'</span>'
+  +field('Poids au tirage','poids',v.poids,'number','min="1" max="100"')+field('Niveau minimum','niveau',v.niveau,'number','min="1" max="20"')+field('Valeur en or','prix',v.prix,'number','min="0" max="99999"')
+  +field('Groupe','groupe',v.groupe,'text','maxlength="40" placeholder="vide : celui de l’effet"')+'</div>'
+  +'<p class="muted">Familles d’équipement qu’il peut toucher ; aucune cochée, toutes.</p><div class="coffre-cases">'+FAMILLES_AFFIXE.map(([k,n])=>coche(k,n)).join('')+'</div>';
+ const f=$('affixe-form').elements,montre=()=>$('affixe-fields').querySelectorAll('[data-effet]').forEach(s=>{s.hidden=!s.dataset.effet.split(' ').includes(f.effet.value)});f.effet.onchange=montre;montre();
+ $('affixe-suppr').hidden=!x;
+ $('affixe-form').onsubmit=e=>{e.preventDefault();
+  const n=normaliseAffixe({id:x?x.id:undefined,nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.etat.value,valeur:f.valeur.value,poids:f.poids.value,niveau:f.niveau.value,prix:f.prix.value,groupe:f.groupe.value,
+   familles:[...affixeDialog.querySelectorAll('input[name="famille"]:checked')].map(c=>c.value),classe:x?x.classe:''});
+  if(x)Object.assign(x,n);else catalog.affixes.push(n);affixeDialog.close();sauveForge();renderForge()};
+ $('affixe-suppr').onclick=()=>{if(!x||!confirm('Supprimer l’affixe « '+x.nom+' » ? Les pièces forgées qui le portent le perdent.'))return;
+  catalog.affixes=catalog.affixes.filter(a=>a!==x);affixeDialog.close();sauveForge();renderForge()};
+ affixeDialog.showModal()}
+/* ---------- Les pièces forgées, au catalogue le temps de jouer ----------
+   Chaque aventurier porte ses pièces forgées ; avant chaque rendu, elles se recomposent au catalogue, marquées « forge », pour
+   que tout ce qui cherche une pièce par son identifiant les trouve : le sac, les mains, l'attaque. Elles n'y restent pas : ni
+   à la publication, ni au chargement. L'Armurerie et ses choix ne les listent pas. */
+function syncForges(){if(typeof catalog==='undefined'||!catalog||!Array.isArray(catalog.items))return;const items=catalog.items;
+ for(let i=items.length-1;i>=0;i--)if(items[i]&&items[i].forge)items.splice(i,1);
+ const base=[...items],vus=new Set();
+ (typeof actors!=='undefined'?actors:[]).forEach(a=>(a&&a.forges||[]).forEach(f=>{if(vus.has(f.id)||!(a.inventaire||[]).includes(f.id))return;vus.add(f.id);const o=objetForge(f,base,catalog.affixes||[]);if(o)items.push(o)}))}
+const renderSansForges=render;render=function(){syncForges();renderSansForges()};
+// Une pièce forgée qui change de sac : son enregistrement suit, pour que la table la recompose chez son nouveau porteur.
+function deplaceForge(a,id){if(!a||!a.hero||typeof actors==='undefined')return;let rec=null;
+ actors.forEach(x=>{if(!x||!Array.isArray(x.forges))return;const k=x.forges.findIndex(f=>f.id===id);if(k>=0){rec=x.forges[k];if(x!==a)x.forges=x.forges.filter(f=>f.id!==id)}});
+ if(rec&&!(a.forges||[]).some(f=>f.id===id))a.forges=[...(a.forges||[]),rec]}
+function oublieForge(a,id){if(a&&Array.isArray(a.forges)&&!(a.inventaire||[]).includes(id))a.forges=a.forges.filter(f=>f.id!==id)}
 function completerInventaire(a){if(!a)return;a.inventaire??=[];
  const besoin=new Map();[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean).forEach(id=>besoin.set(id,(besoin.get(id)||0)+1));
  besoin.forEach((n,id)=>{const ont=a.inventaire.filter(x=>x===id).length;for(let k=ont;k<n;k++)a.inventaire.push(id)})}
@@ -3453,7 +3543,7 @@ function inventaireAdversaire(boite,cible,apres,genre){boite.replaceChildren();b
   if(!n){if(x)x.remove();return}if(!x){x=document.createElement('span');x.className='exemplaires';p.append(x)}x.textContent='×'+n});
  const remplit=()=>{grille.replaceChildren();carres.clear();const q=(restes?filtreRestes:filtreInvAdv).trim().toLowerCase(),tests=restes?[estReste]:CATS_INV_ADV.filter(([k])=>catsInvAdv.has(k)).map(([,,t])=>t);
   const ordre=o=>{const i=CATS_INV_ADV.findIndex(([,,t])=>t(o));return i<0?9:i};
-  const liste=(catalog.items||[]).filter(o=>o&&tests.some(t=>t(o))&&(!q||String(o.name||'').toLowerCase().includes(q)))
+  const liste=(catalog.items||[]).filter(o=>o&&!o.forge&&tests.some(t=>t(o))&&(!q||String(o.name||'').toLowerCase().includes(q)))
    .sort((x,y)=>ordre(x)-ordre(y)||String(x.name).localeCompare(String(y.name),'fr'));
   if(!liste.length){const v=document.createElement('p');v.className='muted';v.textContent=restes?'Aucun reste à l’Armurerie.':tests.length?'Aucune pièce ici.':'Allume une famille ci-dessus.';grille.append(v);return}
   liste.forEach(o=>{const p=carreInventaire(o,compte(o.id));p.classList.add('inv-pioche');p.title='Ajouter '+o.name;p.setAttribute('aria-label',p.title);
@@ -3464,7 +3554,15 @@ function inventaireAdversaire(boite,cible,apres,genre){boite.replaceChildren();b
   b.onclick=()=>{if(on())catsInvAdv.delete(k);else catsInvAdv.add(k);pose();remplit()};barre.append(b)});
  filtre.oninput=()=>{if(restes)filtreRestes=filtre.value;else filtreInvAdv=filtre.value;remplit()};
  const change=()=>{majPossede();majComptes();apres()};
- barre.append(filtre);boite.append(possede,...(restes?[]:[editeurBourse(cible,apres)]),barre,grille);majPossede();remplit()}
+ barre.append(filtre);boite.append(possede,...(restes?[]:[editeurBourse(cible,apres),editeurForgeAdv(cible,apres)]),barre,grille);majPossede();remplit()}
+/* Le loot forgé de cet adversaire : sa chance qu'une pièce qui tombe soit forgée, la commune à défaut, et de tant à tant d'affixes. */
+function editeurForgeAdv(cible,apres){const out=document.createElement('div');out.className='forge-adv';const f=normaliseForgeAdv(cible.forge)||{chance:null,min:0,max:4};
+ const t=document.createElement('span');t.className='forge-adv-titre';t.textContent='Loot forgé';out.append(t);
+ const champ=(lab,el)=>{const l=document.createElement('label');l.append(lab+' ',el);out.append(l)};
+ const chance=document.createElement('input');chance.type='number';chance.min='0';chance.max='100';chance.step='5';chance.placeholder=String(normaliseReglageForge(catalog.forge).chance);chance.value=f.chance===null?'':String(f.chance);chance.title='Chance qu’une arme ou une armure qui tombe soit forgée ; vide, la chance commune de la Forge';
+ const min=document.createElement('select'),max=document.createElement('select');[0,1,2,3,4].forEach(n=>min.add(new Option(n===0?'aucun':n,String(n))));[1,2,3,4].forEach(n=>max.add(new Option(n,String(n))));min.value=String(f.min);max.value=String(f.max);
+ const pose=()=>{const v=normaliseForgeAdv({chance:chance.value,min:min.value,max:max.value});if(v)cible.forge=v;else delete cible.forge;apres()};chance.onchange=min.onchange=max.onchange=pose;
+ champ('Chance %',chance);champ('Affixes de',min);champ('à',max);return out}
 /* Ce que l'adversaire tire de son inventaire, en une phrase : ses attaques d'armes, sa DEF. Le
    champ DEF se tait quand une armure décide, comme à l'ouverture, et rend son chiffre sinon. */
 function resumeAdversaire(){const a=equipeAdversaire({...draft,hero:false,inventaire:[...(draft.inventaire||[])]}),f=$('actor-form').elements;
@@ -3552,6 +3650,7 @@ function uniqueAilleurs(o,a){return porteursUnique(o).some(x=>x!==a&&x.id!==(a&&
 function inventairePlein(a,o){return !!a&&!!o&&(a.inventaire||[]).filter(x=>x===o.id).length>=(estUnique(o)?1:INVENTAIRE_MAX)}
 function ajouterInventaire(a,o){if(!a||!o)return false;a.inventaire??=[];if(inventairePlein(a,o))return false;
  // Un aventurier prend une pièce unique : elle quitte le sac où elle était, quel qu'il soit sur la table.
+ if(o.forge)deplaceForge(a,o.id);
  if(a.hero&&estUnique(o)&&typeof actors!=='undefined')actors.forEach(x=>{if(x&&x!==a&&x.id!==a.id)while((x.inventaire||[]).includes(o.id))retirerInventaire(x,o)});
  a.inventaire.push(o.id);return true}
 function retirerInventaire(a,o){if(!a||!o)return;a.inventaire??=[];const i=a.inventaire.lastIndexOf(o.id);if(i<0)return;
@@ -3601,7 +3700,7 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
   const porte=o=>(a.inventaire||[]).includes(o.id);
   const clic=(o,retirer)=>{if(retirer)retirerInventaire(a,o);else ajouterInventaire(a,o);
    renderPicker();if(pickerApres)pickerApres();else{renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}};
-  const filtre=p=>catalog.items.filter(o=>p(o)&&(!q||o.name.toLowerCase().includes(q)));
+  const filtre=p=>catalog.items.filter(o=>!o.forge&&p(o)&&(!q||o.name.toLowerCase().includes(q)));
   groupe('Armes de mêlée',filtre(o=>o.category==='weapon'&&!o.ranged),porte,gearPill,clic);
   groupe('Armes à distance',filtre(o=>o.category==='weapon'&&o.ranged),porte,gearPill,clic);
   groupe('Armures',filtre(o=>o.category==='armor'&&o.slot!=='shield'),porte,gearPill,clic);
@@ -4843,7 +4942,7 @@ function noterReglage(texte){const n=$('raccourcis-erreur');if(!n)return;
 function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();renderBestiary()}
 $('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;$('armory-sort').onchange=renderArmory;
 $('armory-masse').onclick=()=>{armoryMasse=!armoryMasse;renderArmory()};
-$('armory-add').onclick=()=>openItem(null);
+$('armory-add').onclick=()=>openItem(null);$('armory-forge').onclick=()=>openForge();
 $('bestiary-search').oninput=renderBestiary;$('bestiary-family').onchange=renderBestiary;
 $('bestiary-sort').onchange=renderBestiary;
 $('bestiary-masse').onclick=()=>{bestiaryMasse=!bestiaryMasse;renderBestiary()};
@@ -4914,7 +5013,7 @@ function openActor(index=null,hero=true,template=null,neuf=false,pnj=false){if(v
  if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;templateNeuf=!!neuf&&template===null&&!hero;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);if(templateNeuf&&pnj)Object.assign(draft,{name:'Nouveau PNJ',role:'PNJ',pnj:true,alignement:'neutre'});attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero||templateNeuf;
  // Une fiche d'adversaire a, en haut, le convertisseur de dés et un second Enregistrer.
  $('actor-haut').hidden=!!draft.hero;renderActorForm();actorDialog.showModal()}
-function renderActorForm(){const a=draft;const weaponOptions=[['','Aucune'],...catalog.items.filter(w=>w.category==='weapon').map(w=>[w.id,w.name])];const armorOptions=slot=>[['','Aucune'],...catalog.items.filter(w=>w.category==='armor'&&w.slot===slot).map(w=>[w.id,w.name])];
+function renderActorForm(){const a=draft;const sien=w=>!w.forge||(a.inventaire||[]).includes(w.id),weaponOptions=[['','Aucune'],...catalog.items.filter(w=>w.category==='weapon'&&sien(w)).map(w=>[w.id,w.name])];const armorOptions=slot=>[['','Aucune'],...catalog.items.filter(w=>w.category==='armor'&&w.slot===slot&&sien(w)).map(w=>[w.id,w.name])];
 $('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role,'text',a.hero?'list="classes-jeu" maxlength="120"':'')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum','max',a.max,'number','min="1" max="99999" required'+(a.hero?' readonly':''))+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="'+DEF_MAX+'"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"'+(a.hero?' disabled':''))+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+field('Espèce','race',a.race,'text','maxlength="40"'):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any" disabled')+field('Endurance','endu',a.endu,'number','min="1" max="999" disabled')+field('Bonus PV (classe + espèce)','pvBonus',a.pvBonus,'number','min="-9999" max="9999" readonly')+field('Niveau','level',a.level,'number',a.hero?'min="1" max="20" disabled':'min="1" max="20"'):'')+'</div>'
   +(a.hero?'<datalist id="classes-jeu">'+(catalog.classes||[]).map(c=>'<option value="'+esc(c.name)+'">').join('')+'</datalist>'
    +'<p class="muted">Classes du jeu : '+(catalog.classes||[]).map(c=>esc(c.name)+' (PV +'+(c.pv||0)+')').join(' · ')+'.</p>':'')
@@ -4950,7 +5049,7 @@ renderAttacks()}
 /* Le menu d'ajout : toute l'armurerie, rangée par famille. */
 function inventaireOptions(){const nomCat=o=>o.category==='weapon'?(o.ranged?'à distance':'mêlée'):o.category==='armor'?NOM_EMPLACEMENT(emplacementDe(o)).toLowerCase():o.category==='cle'?'clé':'objet';
  const ordre=o=>o.category==='weapon'?(o.ranged?1:0):o.category==='armor'?(emplacementDe(o)==='shield'?3:2):4;
- return [['','— choisir —'],...[...(catalog.items||[])].sort((x,y)=>ordre(x)-ordre(y)||x.name.localeCompare(y.name,'fr')).map(o=>[o.id,o.name+' · '+nomCat(o)])]}
+ return [['','— choisir —'],...(catalog.items||[]).filter(o=>!o.forge||(draft&&(draft.inventaire||[]).includes(o.id))).sort((x,y)=>ordre(x)-ordre(y)||x.name.localeCompare(y.name,'fr')).map(o=>[o.id,o.name+' · '+nomCat(o)])]}
 /* L'inventaire du formulaire : une ligne par objet possédé, son compte, « Équiper » ou
    « Porté » pour l'équipement, « − » pour en retirer un exemplaire. */
 function dessineInventaire(){const boite=$('inventaire-edit');if(!boite||!draft)return;
@@ -5758,7 +5857,7 @@ function resumeSauvegarde(s){const n=(x,un,des)=>x+' '+(x>1?des:un);const c=s.ca
  return [n(s.actors.filter(a=>a&&a.hero).length,'aventurier','aventuriers'),n(s.actors.filter(a=>a&&!a.hero).length,'adversaire','adversaires'),
   n(Array.isArray(s.maps)?s.maps.length:0,'carte','cartes'),n(l('monsters'),'modèle','modèles'),n(l('items'),'équipement','équipements'),n(l('talents'),'talent','talents'),
   ...(Array.isArray(s.campagnes)&&s.campagnes.length?[n(s.campagnes.length,'campagne','campagnes')]:[])].join(', ')}
-function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(normalizeActor));idsUniques(actors);catalog=normalizeCatalog(s.catalog);niveauxHeros();accordeArbres();
+function appliquerSauvegarde(s){actors.splice(0,actors.length,...s.actors.map(normalizeActor));idsUniques(actors);catalog=normalizeCatalog(s.catalog);syncForges();niveauxHeros();accordeArbres();
  round=Number.isInteger(s.round)&&s.round>0?s.round:1;mode=s.mode==='exploration'?'exploration':'combat';
  owner=Number.isInteger(s.owner)&&actors[s.owner]?s.owner:Math.max(0,actors.findIndex(a=>a.hero));
  selected=Number.isInteger(s.selected)&&actors[s.selected]?s.selected:(s.selected===null?null:owner);

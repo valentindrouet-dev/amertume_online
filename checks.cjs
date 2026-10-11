@@ -2346,7 +2346,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
    campagnes s'enregistrent dans l'appli : troupe, adversaires, domaine, scène, progression des cartes. */
 {const fief=fs.readFileSync('domaine.js','utf8'),camp=fs.readFileSync('campagnes.js','utf8'),partage=fs.readFileSync('shared.js','utf8');
  assert.ok(fs.readFileSync('editor.js','utf8').includes("const ONGLETS_JOUEURS_DEFAUT=['table','domaine','heroes','bestiary','settings'];")
-  &&partage.includes(",locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:structuredClone(catalog),")
+  &&partage.includes(",locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:(c=>{c.items=(c.items||[]).filter(o=>!(o&&o.forge));return c})(structuredClone(catalog)),")
   &&partage.includes("if(remote.domaine&&typeof normaliseDomaine==='function'){const d=normaliseDomaine(remote.domaine);if(typeof poidsDomaine!=='function'||poidsDomaine(d)>0||poidsDomaine(domaine)===0)domaine=d;domSel=null;domPageSel=null}")
   &&fief.includes("function sauveDomaine(){evacueNonConstruits();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}"),'le domaine voyage avec le contenu publié');
  assert.ok(fief.includes("const mjDom=()=>typeof view==='undefined'||view==='mj';")&&fief.includes("['dom-editer','dom-export','dom-import','dom-contours'].forEach(id=>$(id).hidden=!mj);")
@@ -3389,6 +3389,22 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.677 — La Forge, première livraison : les affixes et leur tirage, les pièces forgées chez les aventuriers, recomposées au
+   catalogue le temps de jouer, le générateur, le loot forgé réglé par adversaire. */
+{const C11=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8'),sh=fs.readFileSync('shared.js','utf8');
+ const A=C11.normaliseAffixes([{id:'a1',nom:'tranchante',place:'prefixe',familles:['melee'],effet:'de',de:'red',valeur:1,prix:20,poids:50},{id:'a2',nom:'du Loup',place:'suffixe',effet:'carac',carac:'dmg',valeur:2,prix:30},{id:'a3',nom:'ardente',place:'prefixe',effet:'etat',etat:'Feu'},{id:'a4',nom:'solide',place:'prefixe',effet:'carac',carac:'dmg',valeur:1}]);
+ const base={id:'ep',name:'Épée',category:'weapon',dice:{white:1},price:5,bonus:[]},arc={id:'arc',name:'Arc',category:'weapon',ranged:true,dice:{white:1},price:5};
+ let k=0;const seq=[0.1,0.9,0.5,0.5];const ids=C11.tireAffixes(base,4,A,5,()=>seq[k++%4]);
+ assert.ok(ids.length===3&&!(ids.includes('a2')&&ids.includes('a4')),'pas deux affixes du même groupe');
+ const o=C11.objetForge({id:'f1',base:'ep',affixes:['a1','a2','a3']},[base],A);
+ assert.deepEqual([o.name,o.rarete,o.price,o.dice.red,o.etat,o.unique,o.magasin,o.bonus.length],['Épée tranchante du Loup','mystique',55,1,'Feu',true,false,1]);
+ assert.equal(C11.objetForge({id:'f2',base:'arc',affixes:['a1']},[arc],A).dice.red,undefined,'un affixe de mêlée ne va pas sur un arc');
+ assert.equal(C11.objetForge({id:'f3',base:'nul',affixes:[]},[base],A),null);
+ assert.deepEqual([C11.tireNombreAffixes({chance:100,repartition:[0,0,0,100]},null,()=>0.5),C11.tireNombreAffixes({chance:0},null,()=>0.5),C11.tireNombreAffixes({chance:0},{min:2,max:3},()=>0.5)],[4,0,2]);
+ assert.equal(C11.rareteForge(2),'rare');assert.equal(C11.normaliseForgeAdv({chance:'',min:0,max:4}),null);assert.deepEqual(C11.normaliseForgeAdv({chance:50,min:1,max:2}),{chance:50,min:1,max:2});
+ assert.ok(ed.includes("c.items=c.items.filter(o=>!(o&&o.forge));c.affixes=normaliseAffixes(c.affixes);c.forge=normaliseReglageForge(c.forge);")&&ed.includes("function syncForges(){")&&ed.includes("const renderSansForges=render;render=function(){syncForges();renderSansForges()};")
+  &&ed.includes("a.forges=normaliseForges(a.forges);")&&ed.includes("if(o.forge)deplaceForge(a,o.id);")&&ed.includes("function openForge(){")&&ed.includes("function editeurForgeAdv(cible,apres){")
+  &&sh.includes("catalog:(c=>{c.items=(c.items||[]).filter(o=>!(o&&o.forge));return c})(structuredClone(catalog)),")&&fs.readFileSync('live.js','utf8').includes("'forges',"),'la Forge câblée');}
 /* v0.676 — Les dés qu'un talent ajoute à une attaque, Coup de Bouclier, se lisent dans ses bulles, comme ils partent au jet. */
 {const idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(idx.includes("function poolOf(a){return diceToPool(desAttaque(a,activeAttack(a).dice))")&&ed.includes("des:voit?desEtBonus(desAttaque(a,at.dice),")&&ed.includes("survol(b,desAttaque(a,at.dice),"),'les dés des talents dans les bulles');}
@@ -4375,7 +4391,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&src.includes("+'<div id=\"bloc-niveaux\" hidden><div class=\"divider\"></div><h3 class=\"reglage-titre\">Niveaux d’XP</h3><div id=\"niveaux-xp\" class=\"niveaux-xp\"></div></div>'")
   &&src.includes("$('bloc-niveaux').hidden=view!=='mj';")&&src.includes("catalog.niveauxXp=l2;normalizeCatalog(catalog);niveauxHeros();")
   &&src.includes("function niveauxHeros(){actors.forEach(a=>{if(a&&a.hero)a.level=niveauDeXp(a.xp)})}")
-  &&src.includes("catalog=normalizeCatalog(s.catalog);niveauxHeros();")&&partage.includes("catalog=structuredClone(remote.catalog);if(typeof niveauxHeros==='function')niveauxHeros();")
+  &&src.includes("catalog=normalizeCatalog(s.catalog);syncForges();niveauxHeros();")&&partage.includes("catalog=structuredClone(remote.catalog);if(typeof niveauxHeros==='function')niveauxHeros();")
   &&src.includes(" const seuils=seuilsXp();"),'les paliers d’XP à la main');
  assert.deepEqual(C.voletsDe({effet:'contagioncontact'}),{vue:2});assert.ok(T.contagionvue.retire);
  assert.ok(C.phraseTalent('contagioncontact',{},2).includes('visibles')&&C.phraseTalent('contagioncontact',{},1).includes('au contact'));
@@ -4731,7 +4747,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.equal(ctx.journal[0],'Brom trouve 8 or, 1 éclat de rubis (Gobelin).');
  ctx.journal.length=0;ctx.butinDesRetires([{name:'Rat',hero:false,x:12,y:10,bourse:[{k:'or',n:1,f:6,p:30}]}],()=>.5);assert.equal(ctx.journal.length,0,'30 % : un tirage à 50 ne tombe pas');
  // L'éditeur : dans l'inventaire de tout adversaire, PNJ compris, et au coffre ; le modèle et la carte la portent.
- assert.ok(src.includes("boite.append(possede,...(restes?[]:[editeurBourse(cible,apres)]),barre,grille);")&&src.includes("function editeurBourse(cible,apres,avecChance=true){")
+ assert.ok(src.includes("boite.append(possede,...(restes?[]:[editeurBourse(cible,apres),editeurForgeAdv(cible,apres)]),barre,grille);")&&src.includes("function editeurBourse(cible,apres,avecChance=true){")
   &&src.includes("bourse:normaliseBourse(m.bourse),")&&src.includes("bourse:normaliseBourse(a.bourse),")&&src.includes("if(bourse.length)a.bourse=[...normaliseBourse(a.bourse),...bourse];"),'l’éditeur et le modèle');
  assert.ok(mp.includes("$('coffre-bourse').append(editeurBourse(bourse,null,false));")&&mp.includes("c.richesses={};const b=normaliseBourse(bourse.bourse,false);")
   &&mp.includes("Object.entries(tireBourse(c.bourse)).forEach(([k,v])=>{rich[k]=(Math.trunc(Number(rich[k]))||0)+v});")&&mp.includes("const des=ligneBourse(c.bourse);")
@@ -5164,4 +5180,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1966 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1977 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -469,9 +469,11 @@ function malusDe(a){return a&&Array.isArray(a.malusPieges)?cleanPertes(a.malusPi
 /* Ce qu'un adversaire posé porte en propre, en plus de son modèle — une clé, un message —, et la chance,
    pièce par pièce, que cela tombe à sa mort. */
 function portePropre(f){const inv=(Array.isArray(f&&f.inventaire)?f.inventaire:[]).filter(x=>typeof x==='string').slice(0,30).map(x=>texte(x,60)).filter(Boolean);
- const bourse=normaliseBourse(f&&f.bourse);if(!inv.length&&!bourse.length)return {};const butin={};
+ const bourse=normaliseBourse(f&&f.bourse),fo=forgePropre(f);if(!inv.length&&!bourse.length)return fo;const butin={};
  Object.entries(f.butin&&typeof f.butin==='object'?f.butin:{}).forEach(([id,v])=>{const n=Math.max(0,Math.min(100,Math.round(Number(v))||0));if(n&&inv.includes(id))butin[id]=n});
- return {...(inv.length?{inventaire:inv}:{}),...(Object.keys(butin).length?{butin}:{}),...(bourse.length?{bourse}:{})}}
+ return {...fo,...(inv.length?{inventaire:inv}:{}),...(Object.keys(butin).length?{butin}:{}),...(bourse.length?{bourse}:{})}}
+// Ce qu'un adversaire ou un coffre dit de son loot forgé, s'il en dit quelque chose.
+const forgePropre=f=>{const x=normaliseForgeAdv(f&&f.forge);return x?{forge:x}:{}}
 function cleanMap(m){const img=typeof (m&&m.image)==='string'&&IMAGE_RE.test(m.image)?m.image:null;
  const ratio=Math.max(.2,Math.min(6,Number(m&&m.ratio)||16/9));
  const matiere=Array.isArray(m&&m.matiere)?cleanMatiere(m.matiere)
@@ -2357,6 +2359,77 @@ const RARETES=[['commun','Commun'],['inhabituel','Inhabituel'],['rare','Rare'],[
 // Une ressource a sa rareté à elle, « Ressource », qu'on ne choisit pas.
 function rareteDe(o){if(o&&o.category==='ressource')return 'ressource';const r=o&&o.rarete;return RARETES.some(([k])=>k===r)?r:'commun'}
 const NOM_RARETE=r=>r==='ressource'?'Ressource':(RARETES.find(([k])=>k===r)||RARETES[0])[1];
+/* ---------- Les affixes et les objets forgés ----------
+   Un objet forgé est une pièce d'équipement de l'Armurerie, la base, plus un à quatre affixes tirés parmi ceux que le MJ a
+   écrits. Chaque affixe porte un mot, préfixe ou suffixe, qui compose le nom ; les familles d'équipement qu'il touche ; son
+   effet ; son poids au tirage, son niveau minimum, sa valeur en or. La rareté suit le nombre d'affixes : un Inhabituel, deux
+   Rare, trois Mystique, quatre Épique. L'objet forgé vit chez l'aventurier qui le porte (« forges ») ; sa pièce entière se
+   recalcule de sa base et de ses affixes (objetForge). Un affixe peut porter une classe : les légendaires, à venir. */
+const FAMILLES_AFFIXE=[['melee','Armes de mêlée'],['ranged','Armes à distance'],['torse','Armures de corps'],['shield','Boucliers'],['tete','Casques'],['dos','Capes'],['anneau','Anneaux'],['amulette','Amulettes'],['bottes','Bottes']];
+function familleAffixe(o){if(!o)return '';if(o.category==='weapon')return o.ranged===true?'ranged':'melee';if(o.category==='armor')return emplacementDe(o);return ''}
+const EFFETS_AFFIXE=[['carac','Bonus de caractéristique'],['comp','Bonus de compétence'],['de','Dé de dégâts en plus'],['etat','État infligé par l’arme'],['mouvement','Mouvement en plus, en mètres'],['lumiere','Lumière, en mètres']];
+const NOMS_DES=[['white','Simple'],['bone','Léger'],['red','Lourd'],['blue','Mystique'],['black','Mortel'],['yellow','Phase']];
+const RARETES_FORGE=['commun','inhabituel','rare','mystique','epique'];
+const rareteForge=n=>RARETES_FORGE[Math.max(0,Math.min(4,Math.trunc(Number(n))||0))];
+function normaliseAffixe(x){x=x&&typeof x==='object'?x:{};const n=(v,a,b,d)=>{const k=Math.trunc(Number(v));return Number.isFinite(k)?Math.max(a,Math.min(b,k)):d};
+ const effet=EFFETS_AFFIXE.some(([k])=>k===x.effet)?x.effet:'carac';
+ return {id:typeof x.id==='string'&&x.id?x.id.slice(0,60):idDomaine(),nom:String(x.nom||'').trim().slice(0,40)||'Affixe',place:x.place==='suffixe'?'suffixe':'prefixe',
+  familles:(Array.isArray(x.familles)?x.familles:[]).filter(f=>FAMILLES_AFFIXE.some(([k])=>k===f)).slice(0,20),effet,
+  carac:CARACS_EQUIP.some(([k])=>k===x.carac&&k!=='comp')?x.carac:'pv',comp:String(n(x.comp,0,COMPETENCES.length-1,0)),
+  de:DICE_KEYS.includes(x.de)&&x.de!=='green'?x.de:'red',etat:ETATS_JEU.includes(x.etat)?x.etat:'Feu',valeur:n(x.valeur,1,40,1),
+  poids:n(x.poids,1,100,10),niveau:n(x.niveau,1,20,1),prix:n(x.prix,0,99999,0),groupe:String(x.groupe||'').trim().slice(0,40),classe:String(x.classe||'').trim().slice(0,60)}}
+function normaliseAffixes(l){const vus=new Set();return (Array.isArray(l)?l:[]).filter(x=>x&&typeof x==='object').slice(0,400).map(normaliseAffixe).filter(x=>!vus.has(x.id)&&vus.add(x.id))}
+// Les réglages du tirage : la chance qu'un équipement qui tombe soit forgé, puis la part de 1, 2, 3 et 4 affixes.
+function normaliseReglageForge(f){f=f&&typeof f==='object'?f:{};const n=(v,d)=>{const k=Math.trunc(Number(v));return Number.isFinite(k)?Math.max(0,Math.min(100,k)):d};
+ const r=Array.isArray(f.repartition)?f.repartition:[];return {chance:n(f.chance,30),repartition:[n(r[0],60),n(r[1],25),n(r[2],10),n(r[3],5)]}}
+// Le tirage chez un adversaire ou un coffre : sa chance à lui, sinon la commune ; de tant à tant d'affixes.
+function normaliseForgeAdv(f){if(!f||typeof f!=='object')return null;const n=(v,a,b)=>{const k=Math.trunc(Number(v));return Number.isFinite(k)?Math.max(a,Math.min(b,k)):null};
+ const chance=f.chance===''||f.chance===null||f.chance===undefined?null:n(f.chance,0,100),min=n(f.min,0,4)??0,max=Math.max(min||1,n(f.max,1,4)??4);
+ return chance===null&&min===0&&max===4?null:{chance,min,max}}
+// Ce qu'un aventurier porte de forgé : la base, les affixes, l'identifiant de la pièce.
+function normaliseForges(l){const vus=new Set();return (Array.isArray(l)?l:[]).filter(f=>f&&typeof f==='object'&&typeof f.id==='string'&&f.id&&typeof f.base==='string'&&f.base).slice(0,200)
+ .map(f=>({id:f.id.slice(0,60),base:f.base.slice(0,60),affixes:(Array.isArray(f.affixes)?f.affixes:[]).filter(x=>typeof x==='string'&&x).slice(0,4)})).filter(f=>!vus.has(f.id)&&vus.add(f.id))}
+// Ce qu'un affixe fait, en mots : « +2 PV max », « +1 dé Lourd », « inflige Feu ».
+function phraseAffixe(x){x=normaliseAffixe(x);
+ if(x.effet==='carac')return libelleBonus({carac:x.carac,valeur:x.valeur});if(x.effet==='comp')return libelleBonus({carac:'comp',valeur:x.valeur,comp:x.comp});
+ if(x.effet==='de')return '+'+x.valeur+' dé'+(x.valeur>1?'s':'')+' '+((NOMS_DES.find(([k])=>k===x.de)||[])[1]||'');
+ if(x.effet==='etat')return 'inflige '+x.etat;if(x.effet==='mouvement')return '+'+x.valeur+' m de mouvement';return 'lumière '+x.valeur+' m'}
+// Le groupe d'un affixe : deux affixes du même groupe ne vont pas sur la même pièce. Sans groupe écrit, celui de son effet.
+function groupeAffixe(x){return x.groupe||(x.effet==='carac'?'carac:'+x.carac:x.effet==='comp'?'comp:'+x.comp:x.effet)}
+// Un affixe va-t-il sur cette base : sa famille, son niveau, et pas d'état sur une arme qui en inflige déjà un.
+function affixeVaSur(x,base,niveau){if(!x||!base)return false;const fam=familleAffixe(base);if(!fam||(x.familles.length&&!x.familles.includes(fam)))return false;
+ if(x.effet==='etat'&&(base.category!=='weapon'||base.etat))return false;if((x.effet==='de')&&base.category!=='weapon')return false;
+ return !(niveau>0&&x.niveau>niveau)}
+/* Le tirage : n affixes parmi ceux qui vont sur la base, au poids, sans deux du même groupe. « tirage » rend un nombre de 0 à 1,
+   pour que les vérifications le fixent. */
+function tireAffixes(base,n,affixes,niveau,tirage=Math.random){const out=[],pris=new Set();let reste=normaliseAffixes(affixes).filter(x=>!x.classe&&affixeVaSur(x,base,niveau));
+ for(let i=0;i<n&&reste.length;i++){const total=reste.reduce((s,x)=>s+x.poids,0);let r=tirage()*total,choisi=reste[reste.length-1];
+  for(const x of reste){r-=x.poids;if(r<0){choisi=x;break}}
+  out.push(choisi.id);pris.add(groupeAffixe(choisi));reste=reste.filter(x=>!pris.has(groupeAffixe(x)))}
+ return out}
+// Combien d'affixes : la répartition commune, bornée par l'adversaire ou le coffre ; zéro si le tirage ne forge pas.
+function tireNombreAffixes(reglage,adv,tirage=Math.random){const g=normaliseReglageForge(reglage),a=normaliseForgeAdv(adv)||{chance:null,min:0,max:4};
+ const chance=a.chance===null?g.chance:a.chance;if(tirage()*100>=chance)return Math.max(0,a.min);
+ const parts=g.repartition.map((p,i)=>i+1>=Math.max(1,a.min)&&i+1<=a.max?p:0),total=parts.reduce((s,p)=>s+p,0);
+ if(!total)return Math.max(1,a.min);let r=tirage()*total;for(let i=0;i<4;i++){r-=parts[i];if(r<0)return i+1}return a.max}
+// Le nom : un préfixe au plus, la base, un suffixe au plus ; les autres affixes se lisent dans la bulle.
+function nomForge(base,affixes){const pre=affixes.find(x=>x.place==='prefixe'),suf=affixes.find(x=>x.place==='suffixe');
+ return [base.name,pre&&pre.nom,suf&&suf.nom].filter(Boolean).join(' ')}
+/* La pièce forgée, entière : sa base, ses bonus et dés en plus, son nom, sa rareté, son prix. Unique, hors magasin et tannerie.
+   Sans sa base, rien : la pièce a quitté l'Armurerie. */
+function objetForge(f,items,affixes){if(!f||!Array.isArray(items))return null;const base=items.find(o=>o&&o.id===f.base&&!o.forge);if(!base||!EQUIPEMENTS.includes(base.category)||base.category==='ammo')return null;
+ // Un affixe qui ne va plus sur la base, changée depuis, ne compte pas.
+ const lot=f.affixes.map(id=>normaliseAffixes(affixes).find(x=>x.id===id)).filter(x=>x&&affixeVaSur(x,base,0)).slice(0,4);
+ const o={...structuredClone(base),id:f.id,forge:{base:f.base,affixes:lot.map(x=>x.id)},name:nomForge(base,lot),rarete:rareteForge(lot.length),unique:true,magasin:false,tanneur:false,recette:[]};
+ o.bonus=[...normaliseBonusEquip(base.bonus)];o.price=Math.max(0,Math.trunc(Number(base.price))||0);
+ lot.forEach(x=>{o.price+=x.prix;
+  if(x.effet==='carac')o.bonus.push({carac:x.carac,valeur:x.valeur,comp:'0'});else if(x.effet==='comp')o.bonus.push({carac:'comp',valeur:x.valeur,comp:x.comp});
+  else if(x.effet==='de'){o.dice={...(o.dice||{})};o.dice[x.de]=Math.min(12,(Number(o.dice[x.de])||0)+x.valeur)}
+  else if(x.effet==='etat'){if(!o.etat)o.etat=x.etat}else if(x.effet==='mouvement')o.bonusMouvement=Math.min(40,(Number(o.bonusMouvement)||0)+x.valeur);
+  else if(x.effet==='lumiere')o.lumiere=Math.min(40,Math.max(Number(o.lumiere)||0,x.valeur))});
+ o.bonus=normaliseBonusEquip(o.bonus);o.price=Math.min(999999,o.price);return o}
+// Les affixes d'une pièce forgée, lus au catalogue.
+function affixesDe(o,affixes){return o&&o.forge?o.forge.affixes.map(id=>normaliseAffixes(affixes).find(x=>x.id===id)).filter(Boolean):[]}
 const CARACS_EQUIP=[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['def','DEF'],['dmg','Dégâts'],['comp','Compétence']];
 function normaliseBonusEquip(l){return (Array.isArray(l)?l:[]).filter(b=>b&&typeof b==='object').slice(0,12).map(b=>({
  carac:CARACS_EQUIP.some(([k])=>k===b.carac)?b.carac:'pv',valeur:Math.max(1,Math.min(99,Math.trunc(Number(b.valeur))||1)),
@@ -2682,7 +2755,7 @@ const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignem
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
  segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,coutParDefaut,coutTalent,NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
- ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,STATUTS_QUETE,normaliseQuete,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
+ ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,STATUTS_QUETE,normaliseQuete,FAMILLES_AFFIXE,familleAffixe,EFFETS_AFFIXE,NOMS_DES,rareteForge,normaliseAffixe,normaliseAffixes,normaliseReglageForge,normaliseForgeAdv,normaliseForges,phraseAffixe,groupeAffixe,affixeVaSur,tireAffixes,tireNombreAffixes,nomForge,objetForge,affixesDe,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,fillPolygonGridSi,noirDeLaPierre,attaqueMainsNues,objetsQuiComptent,DISTANCE_MOUVEMENT,bonusMouvementDe,mouvementPropre,distanceMouvement,cleanLumiere,lumiereDe,lumierePortee,objetsLumineux,obscuriteDe,ajouteObscurite,retireObscurite,dansObscurite,impraticableDe,ajouteImpraticable,retireImpraticable,remplitObscurite,predateurDe,phrasePredateur,CARACS_PREDATEUR,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,nomEffet,ciblesPermises,orbesPermis,desOrbe,poolOrbe,texteDesOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,COMPETENCES_CLASSE,competencesDeClasse,ptDepenses,xpDisponible,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);
 })(globalThis);

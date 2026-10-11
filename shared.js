@@ -21,7 +21,7 @@ function texteStable(value){const v={...value,round:1,mode:'exploration',locked:
   maps:(value.maps||[]).map(m=>{const c={...m};delete c.fog;delete c.seen;c.doors=(m.doors||[]).map(d=>{const p={...d};delete p.open;delete p.decouvert;return p});
    c.coffres=(m.coffres||[]).map(x=>{const p={...x};['revele','deverrouille','desamorce','ouvert','tente'].forEach(k=>delete p[k]);return p});return c})};
  return JSON.stringify(v)}
-function publicContent(){saveChecks();savePool();return {schema:1,title:sceneTitle(),round,mode,mapImage,maps:publicMaps(),currentMapId,locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:structuredClone(catalog),actors:actors.map(a=>({...structuredClone(a),target:null,checks:[false,false,false]}))}}
+function publicContent(){saveChecks();savePool();return {schema:1,title:sceneTitle(),round,mode,mapImage,maps:publicMaps(),currentMapId,locked:tokensLocked,domaine:typeof domaine!=='undefined'?structuredClone(domaine):null,catalog:(c=>{c.items=(c.items||[]).filter(o=>!(o&&o.forge));return c})(structuredClone(catalog)),actors:actors.map(a=>({...structuredClone(a),target:null,checks:[false,false,false]}))}}
 /* ---------- Les grandes images, publiées à part ----------
    Une carte, un calque du domaine, un grand portrait pèsent des mégaoctets : ensemble, ils
    faisaient passer la publication au-delà de 16 Mo, et chaque republication les renvoyait tous.

@@ -2242,7 +2242,7 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
    « pris » : l'ensemble des identifiants choisis, que le formulaire relit à l'enregistrement. */
 function pickerArmurerie(filtre,boite,pris){const liste=()=>{const q=(filtre.value||'').trim().toLowerCase();boite.replaceChildren();
   [['weapon','Armes'],['armor','Armures et boucliers'],['object','Objets'],['cle','Clés'],['treasure','Trésors'],['ressource','Ressources'],['restes','Restes']].forEach(([cat,titre])=>{
-   const lot=(catalog.items||[]).filter(it=>it&&it.category===cat&&(!q||it.name.toLowerCase().includes(q)));
+   const lot=(catalog.items||[]).filter(it=>it&&!it.forge&&it.category===cat&&(!q||it.name.toLowerCase().includes(q)));
    if(!lot.length)return;const h=document.createElement('h3');h.textContent=titre;boite.append(h);
    /* De petits carrés, comme l'inventaire d'un aventurier : l'icône seule, la bulle au survol ; un
       clic prend la pièce, un autre la repose. */
@@ -2503,7 +2503,7 @@ function contenuCoffre(boite,cible){boite.replaceChildren();boite.classList.add(
   if(!n){if(x)x.remove();return}if(!x){x=document.createElement('span');x.className='exemplaires';p.append(x)}x.textContent='×'+n});
  const remplit=()=>{grille.replaceChildren();carres.clear();const q=filtreCoffre.trim().toLowerCase(),tests=CATS_COFFRE.filter(([k])=>catsCoffre.has(k)).map(([,,t])=>t);
   const ordre=o=>{const i=CATS_COFFRE.findIndex(([,,t])=>t(o));return i<0?9:i};
-  (catalog.items||[]).filter(o=>o&&tests.some(t=>t(o))&&(!q||String(o.name||'').toLowerCase().includes(q)))
+  (catalog.items||[]).filter(o=>o&&!o.forge&&tests.some(t=>t(o))&&(!q||String(o.name||'').toLowerCase().includes(q)))
    .sort((x,y)=>ordre(x)-ordre(y)||String(x.name).localeCompare(String(y.name),'fr'))
    .forEach(o=>{const p=carreInventaire(o,compte(o.id));p.classList.add('inv-pioche');p.setAttribute('aria-label','Ajouter '+o.name);
     p.onclick=()=>ajoute(o);p.oncontextmenu=e=>{e.preventDefault();retire(o)};carres.set(o,p);grille.append(p)})};
