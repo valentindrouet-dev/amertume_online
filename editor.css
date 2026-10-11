@@ -2444,3 +2444,7 @@ button.j-stats{padding:0;border:0;background:none;font:inherit;font-weight:800;c
 .arbre-noeud.cache-mj{opacity:.55}.arbre-chemins .chemin.cache-mj{opacity:.45}
 .arbre-cacher{position:absolute;z-index:3;transform:translate(16px,-50%);display:flex;align-items:center;gap:3px;padding:1px 5px 1px 2px;border-radius:9px;background:var(--panel);border:1px solid var(--line);font:600 10px system-ui;color:var(--muted);cursor:pointer;white-space:nowrap}
 .arbre-cacher input{margin:0;width:12px;height:12px}.arbre-cacher.on{color:#b06fd0;border-color:#b06fd0}
+/* Les familles d'un affixe : sous les armes de mêlée et à distance, leurs types, en retrait. */
+#affixe-editor .coffre-cases{display:flex;flex-wrap:wrap;gap:4px 18px;margin:6px 0}
+#affixe-editor .affixe-cascade{flex-basis:100%;display:flex;flex-direction:column;gap:2px}
+#affixe-editor .affixe-sous{display:flex;flex-wrap:wrap;gap:2px 14px;padding-left:22px}

@@ -3422,7 +3422,13 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
   [base,nombre,niveau,forger].forEach(x=>ligne.append(x));s.append(ligne,apercu);montre()}}
 function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=normaliseAffixe(x||{});
  affixeDialog.querySelector('h2').textContent=x?x.nom:'Nouvel affixe';
- const coche=(k,n)=>'<label class="field-check"><input type="checkbox" name="famille" value="'+k+'"'+(v.familles.includes(k)?' checked':'')+'>'+esc(n)+'</label>';
+ /* Les familles en cascade : cocher les armes de mêlée coche tous leurs types dessous ; en décocher un raréfie l'affixe.
+    Tous cochés, l'affixe garde la famille entière. */
+ const coche=(k,n,attr,on)=>'<label class="field-check"><input type="checkbox" name="famille" value="'+k+'"'+attr+(on?' checked':'')+'>'+esc(n)+'</label>';
+ const nomFam=k=>(FAMILLES_AFFIXE.find(([x])=>x===k)||[])[1]||k,sousDe=g=>TYPES_ARME.filter(t=>t[2]===g).map(([k])=>k);
+ const cases=FAMILLES_AFFIXE.filter(([k])=>!TYPES_ARME.some(t=>t[0]===k)).map(([k,n])=>{const sous=sousDe(k);if(!sous.length)return coche(k,n,'',v.familles.includes(k));
+  const tout=v.familles.includes(k);return '<div class="affixe-cascade">'+coche(k,n,' data-parent="'+k+'"',tout||sous.some(s=>v.familles.includes(s)))
+   +'<div class="affixe-sous">'+sous.map(s=>coche(s,nomFam(s),' data-de="'+k+'"',tout||v.familles.includes(s))).join('')+'</div></div>'}).join('');
  $('affixe-fields').innerHTML='<div class="edit-grid">'+field('Mot, au masculin','nom',x?v.nom:'','text','required maxlength="40" placeholder="tranchant, du Loup…"')
   +'<span data-place="prefixe">'+field('Au féminin','nomF',v.nomF,'text','maxlength="40"')+field('Au masculin pluriel','nomMP',v.nomMP,'text','maxlength="40"')+field('Au féminin pluriel','nomFP',v.nomFP,'text','maxlength="40"')+'</span>'
   +sel('Place dans le nom','place',v.place,[['prefixe','Après la base : « Épée tranchante »'],['suffixe','En suffixe : « Épée du Loup »']])
@@ -3434,7 +3440,7 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
   +'<span data-effet="carac comp de mouvement lumiere">'+field('Valeur','valeur',v.valeur,'number','min="1" max="40"')+'</span>'
   +field('Poids au tirage','poids',v.poids,'number','min="1" max="100"')+field('Niveau minimum','niveau',v.niveau,'number','min="1" max="20"')+field('Valeur en or','prix',0,'number','readonly tabindex="-1"')
   +field('Groupe','groupe',v.groupe,'text','maxlength="40" placeholder="vide : celui de l’effet"')+'</div>'
-  +'<p class="muted">Familles d’équipement qu’il peut toucher ; aucune cochée, toutes.</p><div class="coffre-cases">'+FAMILLES_AFFIXE.map(([k,n])=>coche(k,n)).join('')+'</div>';
+  +'<p class="muted">Familles d’équipement qu’il peut toucher ; aucune cochée, toutes.</p><div class="coffre-cases">'+cases+'</div>';
  const f=$('affixe-form').elements,lit=()=>normaliseAffixe({nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.etat.value,valeur:f.valeur.value,nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value});
  // Les formes vides montrent celle qui sera tirée du masculin ; la valeur en or se lit au guide des prix.
  const montre=()=>{$('affixe-fields').querySelectorAll('[data-effet]').forEach(s=>{s.hidden=!s.dataset.effet.split(' ').includes(f.effet.value)});
@@ -3442,10 +3448,14 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
   f.nomF.placeholder=formeAffixe({...l,nomF:''},'fs');f.nomMP.placeholder=formeAffixe({...l,nomMP:''},'mp');f.nomFP.placeholder=formeAffixe({...l,nomFP:''},'fp');
   f.prix.value=String(valeurAffixe(l,normaliseGuidePrix(catalog.guidePrix)))};
  $('affixe-form').oninput=montre;$('affixe-form').onchange=montre;montre();
+ affixeDialog.querySelectorAll('input[data-parent]').forEach(par=>{const sous=[...affixeDialog.querySelectorAll('input[data-de="'+par.value+'"]')];
+  const etat=()=>{const n=sous.filter(s=>s.checked).length;par.checked=n>0;par.indeterminate=n>0&&n<sous.length};etat();
+  par.onchange=()=>{sous.forEach(s=>{s.checked=par.checked});par.indeterminate=false};sous.forEach(s=>{s.onchange=etat})});
  $('affixe-suppr').hidden=!x;
  $('affixe-form').onsubmit=e=>{e.preventDefault();
   const n=normaliseAffixe({id:x?x.id:undefined,nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.etat.value,valeur:f.valeur.value,poids:f.poids.value,niveau:f.niveau.value,prix:x?x.prix:0,groupe:f.groupe.value,nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value,
-   familles:[...affixeDialog.querySelectorAll('input[name="famille"]:checked')].map(c=>c.value),classe:x?x.classe:''});
+   familles:(c=>c.filter(e=>!e.dataset.de&&(e.dataset.parent||e.checked)).flatMap(e=>{if(!e.dataset.parent)return [e.value];const sous=c.filter(s=>s.dataset.de===e.value),on=sous.filter(s=>s.checked);
+    return on.length===sous.length?[e.value]:on.map(s=>s.value)}))([...affixeDialog.querySelectorAll('input[name="famille"]')]),classe:x?x.classe:''});
   if(x)Object.assign(x,n);else catalog.affixes.push(n);affixeDialog.close();sauveForge();renderForge()};
  $('affixe-suppr').onclick=()=>{if(!x||!confirm('Supprimer l’affixe « '+x.nom+' » ? Les pièces forgées qui le portent le perdent.'))return;
   catalog.affixes=catalog.affixes.filter(a=>a!==x);affixeDialog.close();sauveForge();renderForge()};
