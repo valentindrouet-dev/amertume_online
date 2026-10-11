@@ -3389,6 +3389,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.693 — Accélération : une réserve de mouvement au-dessus de la barre, prise avant elle et sans point de Mouvement, qui dure
+   jusqu'à la fin du combat. */
+{const page=fs.readFileSync('index.html','utf8'),C20=require('./combat.js');
+ assert.ok(page.includes("const bonus=combat?reserveMouvement(a):0,base=combat&&!neuf?reste:combat&&credit<=0?0:distanceMouvement(a,items()),metres=base+bonus;")
+  &&page.includes("const u=r.long/r.tk,b0=r.bonus0||0,surBase=Math.max(0,u-b0);if(b0>0)a.accelM=Math.round(Math.max(0,b0-u)*100)/100;")&&page.includes(" if(r.neuf&&surBase<.05)return 0;")
+  &&page.includes("if(f.acceleration>0&&enCombat()){a.accelM=reserveMouvement(a)+f.acceleration;")&&page.includes("actors.forEach(a=>{delete a.accelM;delete a.acceleration});")
+  &&fs.readFileSync('live.js','utf8').includes("'forges','accelM'")&&C20.EFFETS_AFFIXE.find(([k])=>k==='mouvement')[1]==='Bonus de Mouvement, en mètres','réserve d’Accélération');}
 /* v0.692 — Les deux Épines se cumulent ; la Forge sur mesure, ses valeurs choisies ; la Chambre forte. */
 {const C19=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
  const A=C19.normaliseAffixes([{id:'e',nom:'d’Épines',place:'suffixe',effet:'epines',valeur:4,familles:['armure']},{id:'p',nom:'venimeux',effet:'epinesEtat',etat:'Poison',valeur:2,familles:['armure']},
@@ -3728,7 +3735,7 @@ assert.ok(page.includes("if(tokenDistance(a,o,size)<=contactRadius(tokenOf(o)))e
 /* v0.637 — La barre de mouvement, l'arrêt au contact, le gel du début de combat, les flèches d'un mètre, Échanger un objet et
    Changer d'armes, le verrou des armes en combat, le glisser d'une fiche à l'autre, Enjamber au-dessus du piège, le bruit coupé. */
 {const src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
- assert.ok(page.includes('<div id="barre-mouvement" hidden aria-hidden="true"></div>')&&page.includes("function traceMouvement(a,r){if(a&&r&&r.combat&&r.tk)barreMouvement(a,r.metres-r.long/r.tk);else majBarreMouvement();")
+ assert.ok(page.includes('<div id="barre-mouvement" hidden aria-hidden="true"></div>')&&page.includes("function traceMouvement(a,r){if(a&&r&&r.combat&&r.tk){const u=r.long/r.tk,b0=r.bonus0||0;barreMouvement(a,(r.metres-b0)-Math.max(0,u-b0),Math.max(0,b0-u))}else majBarreMouvement();")
   &&page.includes("[...el.children].forEach((p,n)=>p.classList.toggle('pris',n>=plein));el.hidden=false}"),'la barre de mouvement, un point par mètre');
  assert.ok(page.includes("function arretAuContact(a,de){")&&page.includes("if(arretContact){t.onpointerup(e);return}")&&page.includes("if(regle&&regle.combat){const h=arretAuContact(a,{x:x0,y:y0});if(h){a.x=h.x;a.y=h.y}}"),'entrer au contact d’un adversaire arrête le geste');
  assert.ok(page.includes("function gelDebut(a){if(!enCombat()||!a)return false;")&&page.includes("&&!gelDebut(actors[i])}")&&page.includes("ferme=debut&&!ouvertureCombat(a),gele=!debut&&gelDebut(a);")
@@ -5321,4 +5328,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1992 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1993 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

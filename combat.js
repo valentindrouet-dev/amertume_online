@@ -2390,7 +2390,7 @@ function accordDe(o){if(o&&ACCORDS.some(([k])=>k===o.accord))return o.accord;
 // Les familles en cascade : sous chaque groupe, ce qu'il réunit.
 const CASCADE_AFFIXE={melee:['lame','hache','contondant','hast'],ranged:['arc','arbalete','jet'],armure:['torse','shield','tete','dos','anneau','amulette','bottes']};
 function familleAffixe(o){if(!o)return '';if(o.category==='weapon')return o.ranged===true?'ranged':'melee';if(o.category==='armor')return emplacementDe(o);return ''}
-const EFFETS_AFFIXE=[['carac','Bonus de caractéristique'],['comp','Bonus de compétence'],['de','Dé de dégâts en plus'],['etat','État infligé par l’arme'],['mouvement','Mouvement en plus, en mètres'],['lumiere','Lumière, en mètres'],['confere','État conféré par l’objet'],['vampire','Vampirique : soin à chaque attaque réussie'],['acceleration','Accélération : mouvement à chaque attaque réussie'],['domination','Domination : dégâts contre un état'],['reaction','Réaction : dégâts des talents de Réaction'],['epines','Épines : dégâts au contact'],['epinesEtat','Épines d’état : état au contact'],['orbesEtat','Vos orbes infligent un état']];
+const EFFETS_AFFIXE=[['carac','Bonus de caractéristique'],['comp','Bonus de compétence'],['de','Dé de dégâts en plus'],['etat','État infligé par l’arme'],['mouvement','Bonus de Mouvement, en mètres'],['lumiere','Lumière, en mètres'],['confere','État conféré par l’objet'],['vampire','Vampirique : soin à chaque attaque réussie'],['acceleration','Accélération : mouvement en réserve à chaque attaque réussie'],['domination','Domination : dégâts contre un état'],['reaction','Réaction : dégâts des talents de Réaction'],['epines','Épines : dégâts au contact'],['epinesEtat','Épines d’état : état au contact'],['orbesEtat','Vos orbes infligent un état']];
 /* Les valeurs d'un affixe : fixes, ou tirées selon la rareté de la pièce, d'Inhabituel à Légendaire. */
 const ECHELLE_DEFAUT=[[1,3],[4,7],[8,15],[16,30]];
 const RANG_RARETE={inhabituel:0,rare:1,mystique:2,epique:3};
@@ -2433,7 +2433,7 @@ function phraseAffixe(x){x=normaliseAffixe(x);const v=valeurTexte(x),plus=t=>x.v
  if(x.effet==='confere')return 'confère '+x.etat+', '+((USAGES_AFFIXE.find(([k])=>k===x.usage)||USAGES_AFFIXE[0])[1]).toLowerCase();
  if(x.effet==='orbesEtat')return 'vos orbes infligent '+x.etat+' '+v;
  if(x.effet==='vampire')return 'vous soigne de '+v+' PV en cas d’attaque réussie';
- if(x.effet==='acceleration')return '+'+v+' m de mouvement par attaque réussie';
+ if(x.effet==='acceleration')return '+'+v+' m de mouvement en réserve par attaque réussie';
  if(x.effet==='domination')return '+'+v+' dégâts contre les cibles avec '+x.etat;
  if(x.effet==='reaction')return 'vos talents de Réaction infligent +'+v+' dégâts';
  if(x.effet==='epines')return 'inflige '+v+' dégâts à l’adversaire qui arrive au contact';
