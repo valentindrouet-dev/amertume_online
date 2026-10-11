@@ -2421,7 +2421,7 @@ function normaliseForgeAdv(f){if(!f||typeof f!=='object')return null;const n=(v,
 function normaliseForges(l){const vus=new Set();return (Array.isArray(l)?l:[]).filter(f=>f&&typeof f==='object'&&typeof f.id==='string'&&f.id&&typeof f.base==='string'&&f.base).slice(0,200)
  .map(f=>{const aff=(Array.isArray(f.affixes)?f.affixes:[]).filter(x=>typeof x==='string'&&x).slice(0,4),src=f.valeurs&&typeof f.valeurs==='object'&&!Array.isArray(f.valeurs)?f.valeurs:{};
   // Les valeurs choisies à la main, sur mesure : une par affixe de la pièce, de 1 à 99.
-  const vals=Object.fromEntries(aff.filter(k=>Number.isFinite(Math.trunc(Number(src[k])))&&src[k]!==''&&src[k]!==null).map(k=>[k,Math.max(1,Math.min(99,Math.trunc(Number(src[k]))))]));
+  const vals=Object.fromEntries(clesAffixes(aff).filter(k=>Number.isFinite(Math.trunc(Number(src[k])))&&src[k]!==''&&src[k]!==null).map(k=>[k,Math.max(1,Math.min(99,Math.trunc(Number(src[k]))))]));
   return {id:f.id.slice(0,60),base:f.base.slice(0,60),affixes:aff,...(Object.keys(vals).length?{valeurs:vals}:{})}}).filter(f=>!vus.has(f.id)&&vus.add(f.id))}
 // Ce qu'un affixe fait, en mots : « +2 PV max », « +1 dé Lourd », « inflige Feu ».
 // Une valeur d'affixe en mots : « 2 », ou « 1–30 » quand elle se tire selon la rareté.
@@ -2440,7 +2440,7 @@ function phraseAffixe(x){x=normaliseAffixe(x);const v=valeurTexte(x),plus=t=>x.v
  if(x.effet==='epinesEtat')return 'inflige '+x.etat+' '+v+' à l’adversaire qui arrive au contact';
  return 'lumière '+v+' m'}
 // Le groupe d'un affixe : deux affixes du même groupe ne vont pas sur la même pièce. Sans groupe écrit, celui de son effet.
-function groupeAffixe(x){return x.groupe||(x.effet==='carac'?'carac:'+x.carac:x.effet==='comp'?'comp:'+x.comp:x.effet==='de'?'de:'+x.de:x.effet==='domination'||x.effet==='epinesEtat'?x.effet+':'+x.etat:x.effet)}
+function groupeAffixe(x){return x.groupe||(x.effet==='carac'||x.effet==='comp'?x.effet+':'+x.id:x.effet==='de'?'de:'+x.de:x.effet==='domination'||x.effet==='epinesEtat'?x.effet+':'+x.etat:x.effet)}
 // Un affixe va-t-il sur cette base : sa famille, son niveau, et pas d'état sur une arme qui en inflige déjà un.
 function affixeVaSur(x,base,niveau){if(!x||!base)return false;const fam=familleAffixe(base),fams=[fam,typeArmeDe(base),base.category==='armor'?'armure':''].filter(Boolean);if(!fam||(x.familles.length&&!x.familles.some(f=>fams.includes(f))))return false;
  if(x.effet==='etat'&&(base.category!=='weapon'||base.etat))return false;if((x.effet==='de')&&base.category!=='weapon')return false;
@@ -2453,7 +2453,8 @@ function affixeVaSur(x,base,niveau){if(!x||!base)return false;const fam=familleA
    affixes communs. Faute d'affixe de classe qui convienne, la pièce s'arrête à Épique. */
 function tireAffixes(base,n,affixes,niveau,tirage=Math.random){const out=[],pris=new Set(),tous=normaliseAffixes(affixes).filter(x=>affixeVaSur(x,base,niveau));
  const tire=liste=>{const total=liste.reduce((s,x)=>s+x.poids,0);let r=tirage()*total,choisi=liste[liste.length-1];for(const x of liste){r-=x.poids;if(r<0){choisi=x;break}}
-  out.push(choisi.id);pris.add(groupeAffixe(choisi))};
+  // Une compétence au hasard peut sortir plusieurs fois : chaque fois, sa compétence et sa valeur à elle.
+  out.push(choisi.id);if(!repetable(choisi))pris.add(groupeAffixe(choisi))};
  for(let i=0;i<Math.min(n,3);i++){const reste=tous.filter(x=>!x.classe&&!pris.has(groupeAffixe(x)));if(!reste.length)break;tire(reste)}
  if(n>=4&&out.length===3){const classe=tous.filter(x=>x.classe&&!pris.has(groupeAffixe(x)));if(classe.length)tire(classe)}
  return out}
@@ -2513,7 +2514,13 @@ function motCompetence(nom,k){const neuf=COMPETENCES[k]||'',voy=/^[aeiouyhàâé
   if(m){const D=(m[2]||m[3]||'d').charAt(0);return nom.replace(re,m[1]+(voy?D+'’':D+'e ')+neuf)}
   if(String(nom).includes(c))return String(nom).replace(c,neuf)}
  return nom}
-function hachageForge(t){let h=2166136261;for(const c of String(t)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)>>>0}return h}
+// Un affixe qui peut revenir sur une même pièce : la compétence au hasard, sans groupe écrit.
+const repetable=x=>!!x&&x.effet==='comp'&&x.comp==='*'&&!x.groupe;
+// La clé de chaque affixe d'une pièce : son identifiant, puis « #1 », « #2 » quand il revient.
+function clesAffixes(ids){const n={};return ids.map(id=>{const k=n[id]||0;n[id]=k+1;return k?id+'#'+k:id})}
+function hachageForge(t){let h=2166136261;for(const c of String(t)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)>>>0}
+ // Un affixe qui revient (« #1 ») : le hachage se brasse encore, pour que sa valeur ne suive pas celle du premier.
+ if(String(t).includes('#')){h^=h>>>16;h=Math.imul(h,0x85ebca6b)>>>0;h^=h>>>13;h=Math.imul(h,0xc2b2ae35)>>>0;h^=h>>>16}return h>>>0}
 function valeurTiree(x,id,rarete,impose){if(!x.variable)return x.valeur;const [lo,hi]=x.echelle[RANG_RARETE[rarete]??0]||x.echelle[0];
  // Une valeur choisie à la main reste dans l'échelle de la rareté.
  if(Number.isFinite(impose))return Math.max(lo,Math.min(hi,Math.trunc(impose)));return lo+hachageForge(id+'|'+x.id)%(hi-lo+1)}
@@ -2526,9 +2533,12 @@ function objetForge(f,items,affixes,guide){if(!f||!Array.isArray(items))return n
  const communs=pris.filter(x=>!x.classe).slice(0,3),choisis=[...communs,...(communs.length===3?pris.filter(x=>x.classe).slice(0,1):[])];
  // Chaque valeur variable se tire dans l'échelle de la rareté de la pièce.
  // Une compétence au hasard se tire à la génération, toujours la même pour cette pièce ; le mot de l'affixe la suit.
- const rarete=rareteForge(choisis.length),lot=choisis.map(x=>{const y={...x,valeur:valeurTiree(x,f.id,rarete,f.valeurs&&f.valeurs[x.id])};
-  if(x.effet==='comp'&&x.comp==='*'){y.comp=String(hachageForge(f.id+'|comp|'+x.id)%COMPETENCES.length);y.nom=motCompetence(x.nom,+y.comp)}return y});
- const o={...structuredClone(base),id:f.id,forge:{base:f.base,affixes:lot.map(x=>x.id),valeurs:Object.fromEntries(lot.map(x=>[x.id,x.valeur]))},name:nomForge(base,lot),rarete,unique:true,magasin:false,tanneur:false,recette:[]};
+ const rarete=rareteForge(choisis.length),cles=clesAffixes(choisis.map(x=>x.id)),lotComp={},lot=choisis.map((x,i)=>{const cle=cles[i],graine=f.id+(cle===x.id?'':cle.slice(x.id.length));
+  const y={...x,cle,valeur:valeurTiree(x,graine,rarete,f.valeurs&&f.valeurs[cle])};
+  // Une compétence au hasard qui revient en prend une autre : jamais deux fois la même sur la pièce.
+  if(x.effet==='comp'&&x.comp==='*'){const deja=lotComp[x.id]||(lotComp[x.id]=[]),libres=COMPETENCES.map((c,k)=>k).filter(k=>!deja.includes(k)),l=libres.length?libres:COMPETENCES.map((c,k)=>k);
+   const k=l[hachageForge(graine+'|comp|'+x.id)%l.length];deja.push(k);y.comp=String(k);y.nom=motCompetence(x.nom,k)}return y});
+ const o={...structuredClone(base),id:f.id,forge:{base:f.base,affixes:lot.map(x=>x.id),valeurs:Object.fromEntries(lot.map(x=>[x.cle,x.valeur]))},name:nomForge(base,lot),rarete,unique:true,magasin:false,tanneur:false,recette:[]};
  o.bonus=[...normaliseBonusEquip(base.bonus)];o.price=Math.max(0,Math.trunc(Number(base.price))||0);
  lot.forEach(x=>{o.price+=valeurAffixe(x,guide);
   if(x.effet==='carac')o.bonus.push({carac:x.carac,valeur:x.valeur,comp:'0'});else if(x.effet==='comp')o.bonus.push({carac:'comp',valeur:x.valeur,comp:x.comp});
@@ -2547,8 +2557,8 @@ function objetForge(f,items,affixes,guide){if(!f||!Array.isArray(items))return n
  const taux=r=>guide&&guide.rarete&&Number.isFinite(guide.rarete[r])?guide.rarete[r]:100;
  o.bonus=normaliseBonusEquip(o.bonus);o.price=Math.min(999999,Math.round(o.price*taux(o.rarete)/(taux(rareteDe(base))||100)));return o}
 // Les affixes d'une pièce forgée, lus au catalogue.
-function affixesDe(o,affixes){const v=o&&o.forge&&o.forge.valeurs||{};return o&&o.forge?o.forge.affixes.map(id=>normaliseAffixes(affixes).find(x=>x.id===id)).filter(Boolean)
- .map(x=>Number.isFinite(v[x.id])?{...x,valeur:v[x.id],variable:false}:x):[]}
+function affixesDe(o,affixes){const v=o&&o.forge&&o.forge.valeurs||{};if(!o||!o.forge)return [];const cles=clesAffixes(o.forge.affixes);
+ return o.forge.affixes.map((id,i)=>{const x=normaliseAffixes(affixes).find(a=>a.id===id);return x&&Number.isFinite(v[cles[i]])?{...x,valeur:v[cles[i]],variable:false}:x}).filter(Boolean)}
 const CARACS_EQUIP=[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['def','DEF'],['dmg','Dégâts'],['comp','Compétence']];
 function normaliseBonusEquip(l){return (Array.isArray(l)?l:[]).filter(b=>b&&typeof b==='object').slice(0,12).map(b=>({
  carac:CARACS_EQUIP.some(([k])=>k===b.carac)?b.carac:'pv',valeur:Math.max(1,Math.min(99,Math.trunc(Number(b.valeur))||1)),
@@ -2873,7 +2883,7 @@ function deplaceZone(zone,dx,dy){const z=zoneValide(zone);if(!z)return null;
 const api={metres,normaliseBourse,tireBourse,phraseRichesses,ALIGNEMENTS,alignementDe,campDe,duCoteTroupe,memeCamp,hostiles,dominateurDe,coffrePolygon,montantDegats,degatsPeril,phraseMontant,PARAMS_MONTANT,texteBrut,valeursReglage,variablesPhrase,DEF_MAX,defPlafonnee,passeDef,FACES_DND,lireDegatsDnd,moyennePoignee,moyenneDesAmertume,CONVERSION_COULEURS,conversionDegats,normaliseRecette,rendementReste,recetteDelta,appliqueDelta,manqueRecette,normaliseDepots,fonctionsPosees,lisQte,normaliseReserve,CLE_MATERIAU,visionPolygon,pointLibre,cleanMonster,Clipper,matiereDe,migreMatiere,ajouteMatiere,retireMatiere,refondMatiere,polygoneContient,matiereSous,boitePolygone,transformePolygone,contoursMatiere,capsulePolygon,trouPorte,doorFrame,doorPolygon,anglePoignee,redimPorteTournee,polyInReach,uncontainPoints,cleanMatiere,ENCRE_TOL,packMaps,readMapsFile,cleanMap,BRUIT_PAS,BRUIT_PAS_PORTE,BRUIT_ATTAQUE,BRUIT_CRI,metresDiscretion,formuleDegats,lisFormuleDegats,tireDegats,cleanPiege,cleanPertes,malusDe,DETECTION_PIEGE,DESAMORCAGE_PIEGE,cleanObjet,TAILLES_OBJET,MAP_FORMAT,polyTouchesDisc,rayHitsSegment,contourBox,simplifyClosed,encreDroite,ENCRE_TOL,wallShape,contoursOf,shapeContains,rectInReach,polygonArea,fillPolygonGrid,packMask,unpackMask,maskChars,regridMask,rayHitsRect,reachPolygon,resolveAttack,contactRadius,tokenDistance,inContact,socleFacteur,SOCLE_TAILLES,sightBlockers,hasLineOfSight,crosses,wallsBetween,segmentHitsPolys,
  rectPolygon,traitPolygon,TRAIT_EPAISSEUR,obstaclesFrom,indexMurs,rayonContre,formesAutour,uncontain,spreadInZone,
  CALQUES_DOMAINE,ETATS_BATIMENT,NOM_ETAT_BATIMENT,calqueDuBatiment,cleanSegments,cleanEtiquettes,traceCoupure,
- segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,coutParDefaut,coutTalent,NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,ETATS_POSITIFS,ECHELLE_DEFAUT,RANG_RARETE,valeurTexte,valeurTiree,USAGES_AFFIXE,TYPES_ARME,typeArmeDe,ACCORDS,accordDe,formeAffixe,valeurAffixe,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
+ segmentsMur,distSegments,dansPolygone,toucheMur,franchitMur,coutParDefaut,coutTalent,NIVEAUX_XP,niveauDeXp,niveauxXpValides,seuilsXp,XP_PALIER_MAX,COMPETENCES,NOM_CARAC,libelleBonus,bonusTalents,bonusDe,vieDe,enduDe,elusMeneur,bonusDuMeneur,RARETES,rareteDe,NOM_RARETE,CARACS_EQUIP,ETATS_POSITIFS,clesAffixes,repetable,ECHELLE_DEFAUT,RANG_RARETE,valeurTexte,valeurTiree,USAGES_AFFIXE,TYPES_ARME,typeArmeDe,ACCORDS,accordDe,formeAffixe,valeurAffixe,normaliseBonusEquip,bonusEquipement,bonusVide,rempliAnneaux,calculeZones,zoneAu,
  ETAPES_DOMAINE,NOM_ETAPE,BATIMENTS_DEFAUT,STATUTS_PNJ,STATUTS_QUETE,normaliseQuete,FAMILLES_AFFIXE,CASCADE_AFFIXE,familleAffixe,EFFETS_AFFIXE,NOMS_DES,rareteForge,normaliseAffixe,normaliseAffixes,normaliseReglageForge,normaliseForgeAdv,normaliseForges,phraseAffixe,groupeAffixe,affixeVaSur,tireAffixes,tireNombreAffixes,nomForge,objetForge,affixesDe,idDomaine,zoneValide,nouveauBatiment,normaliseDomaine,coutEtape,prochaineEtape,peutConstruire,mouvementFinance,construire,reculerEtape,avancerEtape,ligneDesJoueurs,CARTOUCHES_DOMAINE,cartouchesValides,FONCTIONS_BATIMENT,NOM_FONCTION,fonctionActive,fonctionParNom,TAUX_VENTE,prixAchat,prixVente,orDe,ajouteOr,peutAcheter,MATERIAUX,cleRessource,TAILLES_GEMMES,VARIETES_GEMMES,VALEURS_GEMMES,valeurGemme,valeurGemmes,cleGemme,GEMMES_ETEINTES,FICHIERS_TAILLES,iconeGemme,nomGemme,CLES_GEMMES,CLES_RICHESSES,CLES_RESSOURCES_DOMAINE,lisCompte,normaliseCompte,calqueDisponible,centroide,batimentSous,pnjDuBatiment,deplaceZone,
  DICE_KEYS,modeObjet,phraseDeObjet,passifsPortes,EQUIPEMENTS,equippedPool,equippedRanged,equippedDef,MAINS_MAX,EMPLACEMENTS,NOM_EMPLACEMENT,placesEmplacement,emplacementDe,armuresDe,portesA,placesLibres,defenseOf,doorHiddenFrom,doorLockedFor,doorPierces,doorBlocks,rectsOverlap,fillPolygonGridSi,noirDeLaPierre,attaqueMainsNues,objetsQuiComptent,DISTANCE_MOUVEMENT,bonusMouvementDe,mouvementPropre,distanceMouvement,cleanLumiere,lumiereDe,lumierePortee,objetsLumineux,obscuriteDe,ajouteObscurite,retireObscurite,dansObscurite,impraticableDe,ajouteImpraticable,retireImpraticable,remplitObscurite,predateurDe,phrasePredateur,CARACS_PREDATEUR,weaponHands,gearAttacks,attackChoices,chosenAttack,closestOnSegment,pointInPolygon,slideOutOfWalls,ecarteDesSocles,dansUnSocle,segmentCoupeSocles,poserHorsDesSocles,skillRoll,statesOf,hasState,setState,ONDE_EXCLUS,frozenSolid,blinded,bleedOf,addBleed,RANG_TYPE,rangType,ordreCibles,cleTalent,effetParNom,cleClasse,OBJETS_CODES,USAGES_OBJET,USAGES_LIMITES,usageLimite,NOM_USAGE,objetCode,paramsObjet,phraseObjet,usageObjet,immunites,immuniseEtat,immuniseDe,poseImmunite,classeDe,bonusPV,pvMaximum,pvEspece,ESPECES_PV,talentCode,voletsDe,reglageCommun,reglageTalent,paramsTalent,phraseTalent,libelleTalent,nomEffet,ciblesPermises,orbesPermis,desOrbe,poolOrbe,texteDesOrbe,DES_ORBE,etatDesOrbes,partDuRempart,porteEffet,mauvaisSort,regenerationDe,montantRegeneration,etatRefuse,desRefuses,briseLaGarde,briseContre,etatOrbeAuPalier,ditEtatOrbe,POINTS_MAX,POINTS_CLES,pointsMax,pointsUses,pointsRestants,depensePoint,rendPoint,epuisePoints,talentDuCatalogue,manqueTalent,nomPrerequis,talentsDependants,talentsSans,talentsTenus,PALIERS_MAX,PALIERS,paliersDe,coutPalier,talentAuPalier,ELEMENTS,CLASSES_ELEMENTAIRES,classeElementaire,elementDe,remplaceElement,aDesAccolades,ACCOLADES,sorteAccolade,estElementaire,talentPourElement,palierDe,talentsAuPalier,sansAmeliorationsRemplacees,COMPETENCES_CLASSE,competencesDeClasse,ptDepenses,xpDisponible,normalisePaliersActeur,ordonneTalents,ETATS_JEU,CHOIX_ETAT,TALENTS_CODES,ETATS_CUMULES,cumulable,compteEtat,ajouteEtat,infligeEtat,ondeCures,etatsDArmes,applyDamage,applyHeal,STAT_LIMITS,readStat,writeStat};
 if(typeof module!=='undefined')module.exports=api;else Object.assign(root,api);

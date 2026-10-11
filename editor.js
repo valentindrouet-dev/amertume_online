@@ -3474,22 +3474,24 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
   // Un affixe qui ne va pas sur la nouvelle base s'en va ; deux affixes d'un même groupe, non plus.
   m.affixes=m.affixes.map(id=>vaSur.some(x=>x.id===id)?id:'');
   const choisi=i=>vaSur.find(x=>x.id===m.affixes[i]),communs=[0,1,2].filter(i=>choisi(i)).length;if(communs<3)m.affixes[3]='';
-  const lot=m.affixes.map((id,i)=>choisi(i)).filter(Boolean),rarete=rareteForge(lot.length);
+  const lot=m.affixes.map((id,i)=>choisi(i)).filter(Boolean),rarete=rareteForge(lot.length),cles=clesAffixes(lot.map(x=>x.id));
+  // La clé d'une place : celle de son affixe dans la pièce, « #1 » quand il revient.
+  const cleDe=i=>{const avant=[0,1,2,3].filter(k=>k<i&&choisi(k)).length;return cles[avant]},graineDe=(x,cle)=>m.id+(cle===x.id?'':cle.slice(x.id.length));
   const ligne=document.createElement('div');ligne.className='forge-reglages forge-mesure';ligne.append(base);
   base.onchange=()=>{m.base=base.value;renderForge()};
   [0,1,2,3].forEach(i=>{const se=document.createElement('select');se.setAttribute('aria-label',i<3?'Affixe '+(i+1):'Affixe de classe');
-   const pris=new Set(m.affixes.filter((id,k)=>id&&k!==i).map(id=>groupeAffixe(vaSur.find(x=>x.id===id))));
+   const pris=new Set(m.affixes.filter((id,k)=>id&&k!==i).map(id=>vaSur.find(x=>x.id===id)).filter(x=>!repetable(x)).map(groupeAffixe));
    se.add(new Option(i<3?'— affixe '+(i+1)+' —':'— affixe de classe —',''));
    vaSur.filter(x=>i<3?!x.classe:!!x.classe).forEach(x=>{const o=new Option(formeAffixe(x,accordDe(b))+' · '+(x.classe?x.classe+' · ':'')+phraseAffixe(x),x.id);o.disabled=pris.has(groupeAffixe(x));se.add(o)});
    se.value=m.affixes[i]||'';se.disabled=!b||(i===3&&communs<3);se.onchange=()=>{m.affixes[i]=se.value;renderForge()};
    const boite=document.createElement('span');boite.className='mesure-affixe';boite.append(se);
    // Une valeur selon la rareté se choisit dans l'échelle de celle de la pièce.
    const x=choisi(i);if(x&&x.variable){const [lo,hi]=x.echelle[RANG_RARETE[rarete]??0];const v=document.createElement('input');v.type='number';v.min=String(lo);v.max=String(hi);
-    v.setAttribute('aria-label','Valeur de '+x.nom);v.value=String(valeurTiree(x,m.id,rarete,m.valeurs[x.id]));v.title=lo+' à '+hi;v.onchange=()=>{m.valeurs[x.id]=Math.max(lo,Math.min(hi,Math.trunc(Number(v.value))||lo));renderForge()};boite.append(v)}
+    const cle=cleDe(i);v.setAttribute('aria-label','Valeur de '+x.nom+(cle===x.id?'':' '+cle.slice(x.id.length)));v.value=String(valeurTiree(x,graineDe(x,cle),rarete,m.valeurs[cle]));v.title=lo+' à '+hi;v.onchange=()=>{m.valeurs[cle]=Math.max(lo,Math.min(hi,Math.trunc(Number(v.value))||lo));renderForge()};boite.append(v)}
    ligne.append(boite)});
   const forger=document.createElement('button');forger.type='button';forger.className='primary';forger.textContent='⚒ Forger';forger.disabled=!b||!lot.length;
   const apercu=document.createElement('div');apercu.className='forge-apercu';
-  const rec=b?{id:m.id,base:b.id,affixes:lot.map(x=>x.id),valeurs:Object.fromEntries(lot.filter(x=>x.variable).map(x=>[x.id,valeurTiree(x,m.id,rarete,m.valeurs[x.id])]))}:null;
+  const rec=b?{id:m.id,base:b.id,affixes:lot.map(x=>x.id),valeurs:Object.fromEntries(lot.map((x,k)=>[x,cles[k]]).filter(([x])=>x.variable).map(([x,cle])=>[cle,valeurTiree(x,graineDe(x,cle),rarete,m.valeurs[cle])]))}:null;
   const o=rec&&objetForge(rec,catalog.items,catalog.affixes,normaliseGuidePrix(catalog.guidePrix));
   if(o&&lot.length){const c=gearCarre(o,1,false);c.removeAttribute('role');c.tabIndex=-1;const d=gearDetail(o,null,false);d.hidden=false;apercu.append(c,d)}
   forger.onclick=()=>{if(!rec||!lot.length)return;catalog.chambreForte=[...normaliseForges(catalog.chambreForte),normaliseForges([rec])[0]];

@@ -3389,6 +3389,17 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.696 — Plusieurs bonus de caractéristique et de compétence sur une même pièce ; la compétence au hasard peut revenir. */
+{const C23=require('./combat.js');
+ const A=C23.normaliseAffixes([{id:'p1',nom:'robuste',effet:'carac',carac:'pv',valeur:2},{id:'p2',nom:'du Colosse',place:'suffixe',effet:'carac',carac:'pv',valeur:5},{id:'c',nom:'',effet:'comp',comp:'*',valeur:1,variable:true}]);
+ const ep={id:'ep',name:'Épée',category:'weapon',dice:{white:1},price:5};
+ assert.deepEqual(C23.tireAffixes(ep,2,A.slice(0,2),1,()=>0).sort(),['p1','p2'],'deux bonus de PV ensemble');
+ assert.deepEqual(C23.tireAffixes(ep,3,[A[2]],1,()=>0),['c','c','c'],'la compétence au hasard revient');
+ let deux=null;for(let k=0;k<40&&!deux;k++){const o=C23.objetForge({id:'r'+k,base:'ep',affixes:['c','c']},[ep],A);const b=o.bonus.filter(x=>x.carac==='comp');if(b.length===2)deux=o}
+ assert.ok(deux,'deux compétences différentes sur une même pièce');assert.deepEqual(Object.keys(deux.forge.valeurs),['c','c#1']);
+ assert.equal(C23.affixesDe(deux,A).length,2);
+ const o=C23.objetForge({id:'v',base:'ep',affixes:['c','c'],valeurs:{c:4,'c#1':6}},[ep],A);assert.deepEqual(Object.values(o.forge.valeurs),[4,6]);
+ assert.deepEqual(C23.normaliseForges([{id:'v',base:'ep',affixes:['c','c'],valeurs:{c:4,'c#1':6,'c#2':9}}])[0].valeurs,{c:4,'c#1':6});}
 /* v0.695 — Un affixe de compétence au hasard sans mot : « de Compétence », qui devient la compétence tirée. */
 {const C22=require('./combat.js');const A=C22.normaliseAffixes([{id:'c',nom:'',place:'suffixe',effet:'comp',comp:'*',valeur:1}]);
  assert.equal(A[0].nom,'de Compétence');const o=C22.objetForge({id:'z1',base:'ep',affixes:['c']},[{id:'ep',name:'Épée',category:'weapon',dice:{white:1},price:5}],A);
@@ -5339,4 +5350,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1995 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1996 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
