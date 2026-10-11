@@ -3549,7 +3549,7 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
   +'<span data-categorie="classe">'+sel('Classe','classe',v.classe,(catalog.classes||[]).map(c=>[c.name,c.name]))+'</span>'
   +sel('Effet','effet',v.effet,EFFETS_AFFIXE)
   +'<span data-effet="carac">'+sel('Caractéristique','carac',v.carac,CARACS_EQUIP.filter(([k])=>k!=='comp'))+'</span>'
-  +'<span data-effet="comp">'+sel('Compétence','comp',v.comp,COMPETENCES.map((n,k)=>[String(k),n]))+'</span>'
+  +'<span data-effet="comp">'+sel('Compétence','comp',v.comp,[['*','Au hasard, à la génération'],...COMPETENCES.map((n,k)=>[String(k),n])])+'</span>'
   +'<span data-effet="de">'+sel('Dé','de',v.de,NOMS_DES)+'</span>'
   +'<span data-effet="etat orbesEtat domination epinesEtat">'+sel('État','etat',v.effet==='confere'?'Feu':v.etat,ETATS_JEU.map(e=>[e,e]))+'</span>'
   +'<span data-effet="confere">'+sel('État conféré','etatConfere',v.effet==='confere'?v.etat:'Blindage',ETATS_POSITIFS.map(e=>[e,e]))+sel('Usage','usage',v.usage,USAGES_AFFIXE)+'</span>'

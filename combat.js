@@ -2405,7 +2405,7 @@ function normaliseAffixe(x){x=x&&typeof x==='object'?x:{};const n=(v,a,b,d)=>{co
  const effet=EFFETS_AFFIXE.some(([k])=>k===x.effet)?x.effet:'carac';
  return {id:typeof x.id==='string'&&x.id?x.id.slice(0,60):idDomaine(),nom:String(x.nom||'').trim().slice(0,40)||'Affixe',place:x.place==='suffixe'||x.place==='avant'?x.place:'prefixe',
   familles:(Array.isArray(x.familles)?x.familles:[]).filter(f=>FAMILLES_AFFIXE.some(([k])=>k===f)).slice(0,20),effet,
-  carac:CARACS_EQUIP.some(([k])=>k===x.carac&&k!=='comp')?x.carac:'pv',comp:String(n(x.comp,0,COMPETENCES.length-1,0)),
+  carac:CARACS_EQUIP.some(([k])=>k===x.carac&&k!=='comp')?x.carac:'pv',comp:x.comp==='*'?'*':String(n(x.comp,0,COMPETENCES.length-1,0)),
   de:DICE_KEYS.includes(x.de)&&x.de!=='green'?x.de:'red',etat:effet==='confere'?(ETATS_POSITIFS.includes(x.etat)?x.etat:'Blindage'):ETATS_JEU.includes(x.etat)?x.etat:effet==='orbesEtat'||effet==='epinesEtat'?'Poison':effet==='domination'?'Au sol':'Feu',valeur:n(x.valeur,1,99,1),variable:x.variable===true,
   echelle:ECHELLE_DEFAUT.map((d,i)=>{const e=Array.isArray(x.echelle)&&Array.isArray(x.echelle[i])?x.echelle[i]:d,lo=n(e[0],1,99,d[0]),hi=n(e[1],1,99,d[1]);return [Math.min(lo,hi),Math.max(lo,hi)]}),usage:USAGES_AFFIXE.some(([k])=>k===x.usage)?x.usage:'court',
   poids:n(x.poids,1,100,10),niveau:n(x.niveau,1,20,1),prix:n(x.prix,0,99999,0),...Object.fromEntries(['nomF','nomMP','nomFP'].map(k=>[k,String(x[k]||'').trim().slice(0,40)])),groupe:String(x.groupe||'').trim().slice(0,40),classe:String(x.classe||'').trim().slice(0,60)}}
@@ -2427,7 +2427,7 @@ function normaliseForges(l){const vus=new Set();return (Array.isArray(l)?l:[]).f
 // Une valeur d'affixe en mots : « 2 », ou « 1–30 » quand elle se tire selon la rareté.
 function valeurTexte(x){return x.variable?x.echelle[0][0]+'–'+x.echelle[3][1]:String(x.valeur)}
 function phraseAffixe(x){x=normaliseAffixe(x);const v=valeurTexte(x),plus=t=>x.variable?t.replace(/^\+\s?1\b/,'+'+v):t;
- if(x.effet==='carac')return plus(libelleBonus({carac:x.carac,valeur:x.variable?1:x.valeur}));if(x.effet==='comp')return plus(libelleBonus({carac:'comp',valeur:x.variable?1:x.valeur,comp:x.comp}));
+ if(x.effet==='carac')return plus(libelleBonus({carac:x.carac,valeur:x.variable?1:x.valeur}));if(x.effet==='comp')return x.comp==='*'?'+'+v+' à une compétence au hasard':plus(libelleBonus({carac:'comp',valeur:x.variable?1:x.valeur,comp:x.comp}));
  if(x.effet==='de')return '+'+v+' dé'+(x.variable||x.valeur>1?'s':'')+' '+((NOMS_DES.find(([k])=>k===x.de)||[])[1]||'');
  if(x.effet==='etat')return 'inflige '+x.etat;if(x.effet==='mouvement')return '+'+v+' m de mouvement';
  if(x.effet==='confere')return 'confère '+x.etat+', '+((USAGES_AFFIXE.find(([k])=>k===x.usage)||USAGES_AFFIXE[0])[1]).toLowerCase();
@@ -2505,6 +2505,13 @@ function valeurAffixe(x,g){if(!x||!g)return 0;x=normaliseAffixe(x);const b=g.bon
  if(x.effet==='domination'||x.effet==='reaction'||x.effet==='epines')return Math.round(x.valeur*(b.dmg||0)/2);return x.valeur*(g.lumiere||0)}
 /* La valeur tirée d'un affixe sur une pièce : fixe, ou dans l'échelle de sa rareté, au hasard mais toujours la même pour
   cette pièce — chez le MJ comme chez les joueurs. */
+/* Le mot d'un affixe de compétence au hasard : la compétence qu'il nomme devient celle tirée, « de Robustesse » devient
+   « d’Agilité » ; un mot qui n'en nomme aucune reste tel quel. */
+function motCompetence(nom,k){const neuf=COMPETENCES[k]||'',voy=/^[aeiouyhàâéèêëîïôûœ]/i.test(sansAccent(neuf));
+ for(const c of COMPETENCES){const re=new RegExp('(^|\\s)(?:(de|De)\\s+|([dD])[\'’])'+c+'(?=$|\\s|[,.])');const m=String(nom).match(re);
+  if(m){const D=(m[2]||m[3]||'d').charAt(0);return nom.replace(re,m[1]+(voy?D+'’':D+'e ')+neuf)}
+  if(String(nom).includes(c))return String(nom).replace(c,neuf)}
+ return nom}
 function hachageForge(t){let h=2166136261;for(const c of String(t)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)>>>0}return h}
 function valeurTiree(x,id,rarete,impose){if(!x.variable)return x.valeur;const [lo,hi]=x.echelle[RANG_RARETE[rarete]??0]||x.echelle[0];
  // Une valeur choisie à la main reste dans l'échelle de la rareté.
@@ -2517,7 +2524,9 @@ function objetForge(f,items,affixes,guide){if(!f||!Array.isArray(items))return n
  // Trois affixes communs au plus ; un affixe de classe seulement en quatrième, sur une pièce qui en a trois.
  const communs=pris.filter(x=>!x.classe).slice(0,3),choisis=[...communs,...(communs.length===3?pris.filter(x=>x.classe).slice(0,1):[])];
  // Chaque valeur variable se tire dans l'échelle de la rareté de la pièce.
- const rarete=rareteForge(choisis.length),lot=choisis.map(x=>({...x,valeur:valeurTiree(x,f.id,rarete,f.valeurs&&f.valeurs[x.id])}));
+ // Une compétence au hasard se tire à la génération, toujours la même pour cette pièce ; le mot de l'affixe la suit.
+ const rarete=rareteForge(choisis.length),lot=choisis.map(x=>{const y={...x,valeur:valeurTiree(x,f.id,rarete,f.valeurs&&f.valeurs[x.id])};
+  if(x.effet==='comp'&&x.comp==='*'){y.comp=String(hachageForge(f.id+'|comp|'+x.id)%COMPETENCES.length);y.nom=motCompetence(x.nom,+y.comp)}return y});
  const o={...structuredClone(base),id:f.id,forge:{base:f.base,affixes:lot.map(x=>x.id),valeurs:Object.fromEntries(lot.map(x=>[x.id,x.valeur]))},name:nomForge(base,lot),rarete,unique:true,magasin:false,tanneur:false,recette:[]};
  o.bonus=[...normaliseBonusEquip(base.bonus)];o.price=Math.max(0,Math.trunc(Number(base.price))||0);
  lot.forEach(x=>{o.price+=valeurAffixe(x,guide);
