@@ -1518,13 +1518,20 @@ function libelleBonusEl(p,{talent=null}={}){const n=Math.max(1,(p&&p.valeur)|0),
  return s}
 /* Le dépliant ne dit que l'essentiel : le nom, la valeur en or d'une arme ou d'une armure — les
    dés et la DEF sont sur le carré —, l'état qu'elle inflige s'il y en a un. */
+/* La ligne d'un affixe de classe : le losange des bonus d'objet, le talent qu'il modifie à sa couleur, la classe en gras,
+   puis ce qu'il fait : « Orbes (Mystique) : Vos Orbes infligent Poison 1. » */
+function ligneAffixeClasse(x){const p=document.createElement('p');p.className='gear-affixe de-classe';
+ const t=(catalog.talents||[]).find(t=>t&&t.effet==='orbes'),nom=(t&&t.name)||'Orbes';
+ const b=(txt,coul)=>{const e=document.createElement('b');e.textContent=txt;if(coul)e.style.color=coul;return e};
+ const los=document.createElement('span');los.className='gear-losange';los.setAttribute('aria-hidden','true');
+ p.append(los,b(nom,TEINTES_TALENTS[(t&&t.type)||(TALENTS_CODES.orbes||{}).type||'act']),' (',b(x.classe),') : Vos '+nom+' infligent ',b(x.etat+' '+x.valeur),'.');return p}
 function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
  const titre=document.createElement('p');titre.className='gear-nom';titre.textContent=o.name;d.append(titre);
  const ligne=(texte,classe)=>{if(!texte)return;const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p)};
  // Ce que la pièce confère, une ligne par bonus ; sa rareté se lit à sa couleur.
  /* Une pièce forgée : les affixes que rien d'autre ne montre. Bonus, dés, état et lumière se lisent déjà dans leurs lignes,
     leurs dés et leurs pastilles. */
- affixesDe(o,catalog.affixes).filter(x=>['mouvement','confere','orbesEtat'].includes(x.effet)).forEach(x=>{const t=phraseAffixe(x);ligne(x.classe?x.classe+' : '+t:t.charAt(0).toUpperCase()+t.slice(1),'gear-affixe'+(x.classe?' de-classe':''))});
+ affixesDe(o,catalog.affixes).filter(x=>['mouvement','confere','orbesEtat'].includes(x.effet)).forEach(x=>{if(x.effet==='orbesEtat'){d.append(ligneAffixeClasse(x));return}const t=phraseAffixe(x);ligne(x.classe?x.classe+' : '+t:t.charAt(0).toUpperCase()+t.slice(1),'gear-affixe'+(x.classe?' de-classe':''))});
  normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});
  // Ce qui éclaire le dit : « Lumière 3m ».
  if(lumiereDe(o))ligne('Lumière '+String(lumiereDe(o)).replace('.',',')+'m','gear-lumiere');

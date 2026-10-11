@@ -2448,5 +2448,7 @@ button.j-stats{padding:0;border:0;background:none;font:inherit;font-weight:800;c
 #affixe-editor .coffre-cases{display:flex;flex-wrap:wrap;gap:4px 18px;margin:6px 0}
 #affixe-editor .affixe-cascade{flex-basis:100%;display:flex;flex-direction:column;gap:2px}
 #affixe-editor .affixe-sous{display:flex;flex-wrap:wrap;gap:2px 14px;padding-left:22px}
-/* Un affixe de classe, dans la bulle d'une pièce Légendaire : à la couleur de la rareté. */
-.gear-detail .gear-affixe.de-classe{color:#c26a2f;font-weight:700}
+/* Un affixe de classe, dans la bulle d'une pièce : le losange des bonus d'objet à la couleur de la rareté, le texte sans gras ;
+   le talent, la classe et l'état en gras. */
+.gear-detail .gear-affixe.de-classe{color:#2b2620;font-weight:400}.gear-detail .gear-affixe.de-classe b{font-weight:700}
+.gear-detail .gear-losange{display:inline-block;width:12px;height:12px;margin-right:5px;vertical-align:-1px;background:color-mix(in srgb,var(--rarete,#7d7a74) 85%,#000);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1Q13.6 10.4 23 12Q13.6 13.6 12 23Q10.4 13.6 1 12Q10.4 10.4 12 1Z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1Q13.6 10.4 23 12Q13.6 13.6 12 23Q10.4 13.6 1 12Q10.4 10.4 12 1Z'/%3E%3C/svg%3E") center/contain no-repeat}

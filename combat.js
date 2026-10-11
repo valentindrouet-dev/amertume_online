@@ -2422,7 +2422,7 @@ function phraseAffixe(x){x=normaliseAffixe(x);
  if(x.effet==='de')return '+'+x.valeur+' dé'+(x.valeur>1?'s':'')+' '+((NOMS_DES.find(([k])=>k===x.de)||[])[1]||'');
  if(x.effet==='etat')return 'inflige '+x.etat;if(x.effet==='mouvement')return '+'+x.valeur+' m de mouvement';
  if(x.effet==='confere')return 'confère '+x.etat+', '+((USAGES_AFFIXE.find(([k])=>k===x.usage)||USAGES_AFFIXE[0])[1]).toLowerCase();
- if(x.effet==='orbesEtat')return 'vos orbes infligent également '+x.etat+' '+x.valeur;return 'lumière '+x.valeur+' m'}
+ if(x.effet==='orbesEtat')return 'vos orbes infligent '+x.etat+' '+x.valeur;return 'lumière '+x.valeur+' m'}
 // Le groupe d'un affixe : deux affixes du même groupe ne vont pas sur la même pièce. Sans groupe écrit, celui de son effet.
 function groupeAffixe(x){return x.groupe||(x.effet==='carac'?'carac:'+x.carac:x.effet==='comp'?'comp:'+x.comp:x.effet==='de'?'de:'+x.de:x.effet)}
 // Un affixe va-t-il sur cette base : sa famille, son niveau, et pas d'état sur une arme qui en inflige déjà un.

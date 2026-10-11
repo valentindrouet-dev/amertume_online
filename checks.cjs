@@ -3389,6 +3389,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.689 — La ligne d'un affixe de classe : losange, talent à sa couleur, classe en gras, « Vos Orbes infligent Poison 1. » */
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(ed.includes("p.append(los,b(nom,TEINTES_TALENTS[(t&&t.type)||(TALENTS_CODES.orbes||{}).type||'act']),' (',b(x.classe),') : Vos '+nom+' infligent ',b(x.etat+' '+x.valeur),'.');return p}")
+  &&css.includes('.gear-detail .gear-losange{display:inline-block;width:12px;height:12px;')&&css.includes('.gear-detail .gear-affixe.de-classe{color:#2b2620;font-weight:400}'),'ligne d’affixe de classe');}
 /* v0.688 — Les affixes de classe, réservés au quatrième affixe des Légendaires ; l'état conféré d'un clic ; le premier affixe
    de classe : les orbes du Mystique infligent aussi Poison x. */
 {const C17=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
@@ -3497,7 +3501,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.deepEqual([o.name,o.price],['Épée tranchante lourde',Math.round((10+15+30)*150/100)]);
  assert.equal(C12.objetForge({id:'f',base:'Épée lourde',affixes:['l']},[w('Épée lourde')],A,g).name,'Épée lourde','pas deux fois le même mot');
  assert.equal(C12.objetForge({id:'f',base:'Bottes',affixes:['r']},[{id:'Bottes',name:'Bottes',category:'armor',slot:'bottes',price:4}],[{id:'r',nom:'lourd',place:'prefixe',effet:'mouvement',valeur:1}],g).name,'Bottes lourdes');
- assert.ok(ed.includes(".filter(x=>['mouvement','confere','orbesEtat'].includes(x.effet)).forEach(x=>{const t=phraseAffixe(x);")&&ed.includes("+field('Valeur en or','prix',0,'number','readonly tabindex=\"-1\"')")
+ assert.ok(ed.includes(".filter(x=>['mouvement','confere','orbesEtat'].includes(x.effet)).forEach(x=>{if(x.effet==='orbesEtat'){d.append(ligneAffixeClasse(x));return}const t=phraseAffixe(x);")&&ed.includes("+field('Valeur en or','prix',0,'number','readonly tabindex=\"-1\"')")
   &&ed.includes("const o=objetForge(f,base,catalog.affixes||[],guide);")&&ed.includes("sel('Genre','accord',accordDe(a),ACCORDS)")&&ed.includes("champ(fa,'Par m de mouvement',"),'Forge v0.678 câblée');}
 /* v0.677 — La Forge, première livraison : les affixes et leur tirage, les pièces forgées chez les aventuriers, recomposées au
    catalogue le temps de jouer, le générateur, le loot forgé réglé par adversaire. */
@@ -5290,4 +5294,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1989 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1990 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
