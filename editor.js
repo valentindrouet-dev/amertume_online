@@ -73,14 +73,14 @@ function migreRessources(c){
 const CATS_PRIX=[['melee','Arme de mêlée'],['ranged','Arme à distance'],['armor','Armure'],['ammo','Munition'],['object','Objet'],['cle','Clé'],['ressource','Ressource'],['restes','Restes'],['treasure','Trésor']];
 const GUIDE_PRIX_DEFAUT={base:{melee:5,ranged:10,armor:10,ammo:1,object:5,cle:0,ressource:0,restes:0,treasure:0},
  des:{white:5,bone:8,red:15,blue:20,green:10,black:30,yellow:25},def:20,deuxMains:5,etat:15,restes:25,
- bonus:{pv:10,endu:25,vie:25,def:20,dmg:30,comp:15},ressources:100,rarete:{commun:100,inhabituel:125,rare:150,mystique:200,epique:300,ressource:100}};
+ bonus:{pv:10,endu:25,vie:25,def:20,dmg:30,comp:15},ressources:100,mouvement:15,lumiere:5,rarete:{commun:100,inhabituel:125,rare:150,mystique:200,epique:300,ressource:100}};
 const EFFET_PRIX_DEFAUT=25;
 function normaliseGuidePrix(g){g=g&&typeof g==='object'&&!Array.isArray(g)?g:{};const D=GUIDE_PRIX_DEFAUT;
  const n=(v,d,max=99999)=>{const x=v===''||v===null||v===undefined?NaN:Math.round(Number(v));return Number.isFinite(x)?Math.max(0,Math.min(max,x)):d};
  const table=(src,def,max)=>Object.fromEntries(Object.entries(def).map(([k,d])=>[k,n(src&&typeof src==='object'?src[k]:undefined,d,max)]));
  return {base:table(g.base,D.base),des:table(g.des,D.des),def:n(g.def,D.def),deuxMains:n(g.deuxMains,D.deuxMains),etat:n(g.etat,D.etat),
   effets:table(g.effets,Object.fromEntries(Object.keys(OBJETS_CODES).map(k=>[k,EFFET_PRIX_DEFAUT]))),bonus:table(g.bonus,D.bonus),
-  ressources:n(g.ressources,D.ressources,1000),restes:n(g.restes,D.restes,100),rarete:table(g.rarete,D.rarete,1000)}}
+  ressources:n(g.ressources,D.ressources,1000),mouvement:n(g.mouvement,D.mouvement),lumiere:n(g.lumiere,D.lumiere),restes:n(g.restes,D.restes,100),rarete:table(g.rarete,D.rarete,1000)}}
 /* Le prix qu'une pièce vaudrait selon le guide, et le détail du calcul. Les ressources comptent
    pour leur valeur, celle que porte leur pièce à l'Armurerie. */
 function prixSuggere(o,g){g=normaliseGuidePrix(g||(typeof catalog!=='undefined'&&catalog?catalog.guidePrix:null));const lignes=[],ajoute=(nom,v)=>{if(v)lignes.push([nom,v])};
@@ -96,6 +96,7 @@ function prixSuggere(o,g){g=normaliseGuidePrix(g||(typeof catalog!=='undefined'&
  if((o.category==='weapon'||o.category==='ammo')&&o.etat)ajoute('Inflige '+o.etat,g.etat);
  const def=Math.max(0,Math.trunc(Number(o.def))||0);if(o.category==='armor'&&def)ajoute(def+' DEF',def*g.def);
  const code=objetCode(o);if(code)ajoute('Effet '+code.nom,g.effets[code.cle]||0);
+ const mv=Math.max(0,Math.min(40,Number(o.bonusMouvement)||0)),lu=Math.max(0,Math.min(40,Number(o.lumiere)||0));if(mv)ajoute('+'+String(mv).replace('.',',')+' m de mouvement',Math.round(mv*g.mouvement));if(lu)ajoute('Lumière '+String(lu).replace('.',',')+' m',Math.round(lu*g.lumiere));
  normaliseBonusEquip(o.bonus).forEach(b=>ajoute('+'+b.valeur+' '+((CARACS_EQUIP.find(([k])=>k===b.carac)||[])[1]||b.carac),b.valeur*(g.bonus[b.carac]||0)));
  if(o.category!=='ressource')[[o.ressource1,o.rendement1],[o.ressource2,o.rendement2]].forEach(([k,q])=>{const r=k&&ressourcesJeu().find(x=>x.cle===k),n=o.category==='restes'?lisQte(q):1;
   if(r&&r.piece)ajoute((n>1?n+' ':'')+r.nom,Math.round((Number(r.piece.price)||0)*n*g.ressources/100))});
@@ -362,6 +363,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // Sa lumière, en mètres ; rien d'ordinaire.
   o.lumiere=lumiereDe(o);if(!o.lumiere)delete o.lumiere;
   o.bonusMouvement=bonusMouvementDe(o);if(!o.bonusMouvement)delete o.bonusMouvement;
+  // Le type d'une arme et le genre d'une pièce, pour les affixes : seulement s'ils sont écrits et valables.
+  if(o.typeArme!==undefined&&o.typeArme!==''&&!TYPES_ARME.some(([k])=>k===o.typeArme))delete o.typeArme;if(o.accord!==undefined&&!ACCORDS.some(([k])=>k===o.accord))delete o.accord;
   // Une arme de lancer : à distance, une main, sans munition.
   if(o.category==='weapon'&&o.ranged===true&&o.lancer===true){o.hands=1;o.usesAmmo=false}else delete o.lancer;if(o.category==='ressource'){o.ressource1='';o.ressource2=''}else{o.ressource1=resV(o.ressource1);o.ressource2=resV(o.ressource2)}
   // Un reste donne ses ressources à son rendement ; une pièce du tanneur a sa recette.
@@ -1515,8 +1518,9 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  const ligne=(texte,classe)=>{if(!texte)return;const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p)};
  // La rareté, puis ce que la pièce confère, une ligne par bonus.
  if(rareteDe(o)!=='commun')ligne(NOM_RARETE(rareteDe(o)),'gear-rarete r-'+rareteDe(o));
- // Une pièce forgée : chaque affixe, son mot et ce qu'il fait.
- affixesDe(o,catalog.affixes).forEach(x=>ligne('✦ '+x.nom+' : '+phraseAffixe(x),'gear-affixe'));
+ /* Une pièce forgée : les affixes que rien d'autre ne montre. Bonus, dés, état et lumière se lisent déjà dans leurs lignes,
+    leurs dés et leurs pastilles. */
+ affixesDe(o,catalog.affixes).filter(x=>x.effet==='mouvement').forEach(x=>ligne('✦ '+formeAffixe(x,accordDe(o))+' : '+phraseAffixe(x),'gear-affixe'));
  normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});
  // Ce qui éclaire le dit : « Lumière 3m ».
  if(lumiereDe(o))ligne('Lumière '+String(lumiereDe(o)).replace('.',',')+'m','gear-lumiere');
@@ -2328,6 +2332,7 @@ function renderGuidePrix(){const boite=$('guide-prix'),bloc=$('bloc-guide-prix')
  const fa=groupe('Défense et armes');
  champ(fa,'Par point de DEF',()=>G().def,v=>{G().def=v});champ(fa,'Deux mains',()=>G().deuxMains,v=>{G().deuxMains=v});
  champ(fa,'État infligé',()=>G().etat,v=>{G().etat=v});
+ champ(fa,'Par m de mouvement',()=>G().mouvement,v=>{G().mouvement=v});champ(fa,'Par m de lumière',()=>G().lumiere,v=>{G().lumiere=v});
  const fe=groupe('Effets','L’effet appliqué par le moteur.');
  Object.values(OBJETS_CODES).forEach(c=>champ(fe,c.nom,()=>G().effets[c.cle],v=>{G().effets[c.cle]=v}));
  const fx=groupe('Bonus','Par +1 de caractéristique.');
@@ -3392,7 +3397,7 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
    ['Mot','Place','Familles','Effet','Poids','Niv.','Or'].forEach(x=>{const th=document.createElement('th');th.textContent=x;tete.append(th)});
    const corpsT=t.createTBody();
    [...catalog.affixes].sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(x=>{const r=corpsT.insertRow();r.className='forge-ligne';r.tabIndex=0;
-    [x.nom,x.place==='suffixe'?'suffixe':'préfixe',x.familles.length?x.familles.map(f=>(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,x.prix].forEach(v=>{r.insertCell().textContent=String(v)});
+    [x.nom,x.place==='suffixe'?'suffixe':'préfixe',x.familles.length?x.familles.map(f=>(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,valeurAffixe(x,normaliseGuidePrix(catalog.guidePrix))].forEach(v=>{r.insertCell().textContent=String(v)});
     r.onclick=()=>openAffixe(x.id);r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAffixe(x.id)}}});
    s.append(t)}
   else{const p=document.createElement('p');p.className='muted';p.textContent='Aucun affixe : rien ne se forge encore.';s.append(p)}
@@ -3405,7 +3410,7 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
   const niveau=document.createElement('input');niveau.type='number';niveau.min='1';niveau.max='20';niveau.value=String(forgeNiveau);niveau.title='Niveau : les affixes d’un niveau plus haut ne tombent pas';niveau.setAttribute('aria-label','Niveau');niveau.onchange=()=>{forgeNiveau=Math.max(1,Math.min(20,Math.trunc(Number(niveau.value))||1))};
   const forger=document.createElement('button');forger.type='button';forger.className='primary';forger.textContent='⚒ Forger';
   const apercu=document.createElement('div');apercu.className='forge-apercu';
-  const montre=()=>{apercu.replaceChildren();if(!forgeApercu)return;const o=objetForge(forgeApercu,catalog.items,catalog.affixes);if(!o){forgeApercu=null;return}
+  const montre=()=>{apercu.replaceChildren();if(!forgeApercu)return;const o=objetForge(forgeApercu,catalog.items,catalog.affixes,normaliseGuidePrix(catalog.guidePrix));if(!o){forgeApercu=null;return}
    const c=gearCarre(o,1,false);c.removeAttribute('role');c.tabIndex=-1;const d=gearDetail(o,null,false);d.hidden=false;apercu.append(c,d);
    // La donner : à un aventurier, dans son sac.
    const heros=actors.filter(a=>a&&a.hero);if(!heros.length)return;const qui=document.createElement('select');qui.setAttribute('aria-label','À qui');heros.forEach(a=>qui.add(new Option(a.name,a.id)));
@@ -3419,7 +3424,8 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
 function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=normaliseAffixe(x||{});
  affixeDialog.querySelector('h2').textContent=x?x.nom:'Nouvel affixe';
  const coche=(k,n)=>'<label class="field-check"><input type="checkbox" name="famille" value="'+k+'"'+(v.familles.includes(k)?' checked':'')+'>'+esc(n)+'</label>';
- $('affixe-fields').innerHTML='<div class="edit-grid">'+field('Mot','nom',x?v.nom:'','text','required maxlength="40" placeholder="tranchante, du Loup…"')
+ $('affixe-fields').innerHTML='<div class="edit-grid">'+field('Mot, au masculin','nom',x?v.nom:'','text','required maxlength="40" placeholder="tranchant, du Loup…"')
+  +'<span data-place="prefixe">'+field('Au féminin','nomF',v.nomF,'text','maxlength="40"')+field('Au masculin pluriel','nomMP',v.nomMP,'text','maxlength="40"')+field('Au féminin pluriel','nomFP',v.nomFP,'text','maxlength="40"')+'</span>'
   +sel('Place dans le nom','place',v.place,[['prefixe','Après la base : « Épée tranchante »'],['suffixe','En suffixe : « Épée du Loup »']])
   +sel('Effet','effet',v.effet,EFFETS_AFFIXE)
   +'<span data-effet="carac">'+sel('Caractéristique','carac',v.carac,CARACS_EQUIP.filter(([k])=>k!=='comp'))+'</span>'
@@ -3427,13 +3433,19 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
   +'<span data-effet="de">'+sel('Dé','de',v.de,NOMS_DES)+'</span>'
   +'<span data-effet="etat">'+sel('État','etat',v.etat,ETATS_JEU.map(e=>[e,e]))+'</span>'
   +'<span data-effet="carac comp de mouvement lumiere">'+field('Valeur','valeur',v.valeur,'number','min="1" max="40"')+'</span>'
-  +field('Poids au tirage','poids',v.poids,'number','min="1" max="100"')+field('Niveau minimum','niveau',v.niveau,'number','min="1" max="20"')+field('Valeur en or','prix',v.prix,'number','min="0" max="99999"')
+  +field('Poids au tirage','poids',v.poids,'number','min="1" max="100"')+field('Niveau minimum','niveau',v.niveau,'number','min="1" max="20"')+field('Valeur en or','prix',0,'number','readonly tabindex="-1"')
   +field('Groupe','groupe',v.groupe,'text','maxlength="40" placeholder="vide : celui de l’effet"')+'</div>'
   +'<p class="muted">Familles d’équipement qu’il peut toucher ; aucune cochée, toutes.</p><div class="coffre-cases">'+FAMILLES_AFFIXE.map(([k,n])=>coche(k,n)).join('')+'</div>';
- const f=$('affixe-form').elements,montre=()=>$('affixe-fields').querySelectorAll('[data-effet]').forEach(s=>{s.hidden=!s.dataset.effet.split(' ').includes(f.effet.value)});f.effet.onchange=montre;montre();
+ const f=$('affixe-form').elements,lit=()=>normaliseAffixe({nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.etat.value,valeur:f.valeur.value,nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value});
+ // Les formes vides montrent celle qui sera tirée du masculin ; la valeur en or se lit au guide des prix.
+ const montre=()=>{$('affixe-fields').querySelectorAll('[data-effet]').forEach(s=>{s.hidden=!s.dataset.effet.split(' ').includes(f.effet.value)});
+  $('affixe-fields').querySelectorAll('[data-place]').forEach(s=>{s.hidden=f.place.value!==s.dataset.place});const l=lit();
+  f.nomF.placeholder=formeAffixe({...l,nomF:''},'fs');f.nomMP.placeholder=formeAffixe({...l,nomMP:''},'mp');f.nomFP.placeholder=formeAffixe({...l,nomFP:''},'fp');
+  f.prix.value=String(valeurAffixe(l,normaliseGuidePrix(catalog.guidePrix)))};
+ $('affixe-form').oninput=montre;$('affixe-form').onchange=montre;montre();
  $('affixe-suppr').hidden=!x;
  $('affixe-form').onsubmit=e=>{e.preventDefault();
-  const n=normaliseAffixe({id:x?x.id:undefined,nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.etat.value,valeur:f.valeur.value,poids:f.poids.value,niveau:f.niveau.value,prix:f.prix.value,groupe:f.groupe.value,
+  const n=normaliseAffixe({id:x?x.id:undefined,nom:f.nom.value,place:f.place.value,effet:f.effet.value,carac:f.carac.value,comp:f.comp.value,de:f.de.value,etat:f.etat.value,valeur:f.valeur.value,poids:f.poids.value,niveau:f.niveau.value,prix:x?x.prix:0,groupe:f.groupe.value,nomF:f.nomF.value,nomMP:f.nomMP.value,nomFP:f.nomFP.value,
    familles:[...affixeDialog.querySelectorAll('input[name="famille"]:checked')].map(c=>c.value),classe:x?x.classe:''});
   if(x)Object.assign(x,n);else catalog.affixes.push(n);affixeDialog.close();sauveForge();renderForge()};
  $('affixe-suppr').onclick=()=>{if(!x||!confirm('Supprimer l’affixe « '+x.nom+' » ? Les pièces forgées qui le portent le perdent.'))return;
@@ -3445,8 +3457,8 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
    à la publication, ni au chargement. L'Armurerie et ses choix ne les listent pas. */
 function syncForges(){if(typeof catalog==='undefined'||!catalog||!Array.isArray(catalog.items))return;const items=catalog.items;
  for(let i=items.length-1;i>=0;i--)if(items[i]&&items[i].forge)items.splice(i,1);
- const base=[...items],vus=new Set();
- (typeof actors!=='undefined'?actors:[]).forEach(a=>(a&&a.forges||[]).forEach(f=>{if(vus.has(f.id)||!(a.inventaire||[]).includes(f.id))return;vus.add(f.id);const o=objetForge(f,base,catalog.affixes||[]);if(o)items.push(o)}))}
+ const base=[...items],vus=new Set(),guide=normaliseGuidePrix(catalog.guidePrix);
+ (typeof actors!=='undefined'?actors:[]).forEach(a=>(a&&a.forges||[]).forEach(f=>{if(vus.has(f.id)||!(a.inventaire||[]).includes(f.id))return;vus.add(f.id);const o=objetForge(f,base,catalog.affixes||[],guide);if(o)items.push(o)}))}
 const renderSansForges=render;render=function(){syncForges();renderSansForges()};
 // Une pièce forgée qui change de sac : son enregistrement suit, pour que la table la recompose chez son nouveau porteur.
 function deplaceForge(a,id){if(!a||!a.hero||typeof actors==='undefined')return;let rec=null;
@@ -5514,6 +5526,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  // Une arme de lancer se tient d'une main et n'a pas de munition.
  if(a.lancer){a.hands=1;a.usesAmmo=false}
  for(const k of ['name','slot','etat','notes'])if(f[k])a[k]=f[k].value.trim();
+ if(f.typeArme)a.typeArme=f.typeArme.value;if(f.accord)a.accord=f.accord.value;
  /* L'effet, son usage et ses réglages, relus au travers de la déclaration : « consommable »
     n'est plus une case à part, c'est l'un des trois usages. */
  if(f.effet)a.effet=OBJETS_CODES[f.effet.value]?f.effet.value:'';
@@ -5568,6 +5581,8 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +selGrille(planchesEnTete(a).length?selGroupes('Logo','logo',a.logo||'',groupesLogosItem(a)):sel('Logo','logo',a.logo||'',[['','— aucun —'],...logosItem(a).map(l=>[l,nomLogo(l)])]))
   +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))
   +(arme&&!a.lancer?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
+  +(arme?sel('Type d’arme','typeArme',typeArmeDe(a),[...(a.ranged?[]:[['','—']]),...TYPES_ARME.filter(t=>t[2]===(a.ranged?'ranged':'melee')).map(([k,n])=>[k,n])]):'')
+  +(arme||armure?sel('Genre','accord',accordDe(a),ACCORDS):'')
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="'+DEF_MAX+'"')
    +sel('Emplacement','slot',emplacementDe(a),[...EMPLACEMENTS.map(([k,n,p])=>[k,n+(p>1?' ('+p+')':'')]),['shield','Bouclier — une main']]):'')
   +(arme||armure?'':field('Quantité','qty',a.qty||1,'number','min="1" max="9999"'))

@@ -3389,6 +3389,28 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.678 — La Forge : l'affixe s'accorde au genre et au nombre de sa base, ne va que sur le type d'arme choisi, vaut ce que dit
+   le guide des prix ; la bulle ne redit pas ce que montrent déjà les dés, les pastilles et les bonus. */
+{const C12=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
+ const nom=(n,o={})=>C12.accordDe({name:n,...o});
+ assert.deepEqual(['Épée','Arc','Marteau','Bottes','Bolas','Gants','Casque','Grande hache','Faux','Sabre'].map(n=>nom(n)),['fs','ms','ms','fp','fp','mp','ms','fs','fs','ms']);
+ assert.equal(nom('Arc',{accord:'fp'}),'fp','le genre écrit l’emporte');
+ const L={nom:'lourd',place:'prefixe'},T={nom:'tranchant',place:'prefixe',nomFP:'tranchantes'};
+ assert.deepEqual(['ms','fs','mp','fp'].map(a=>C12.formeAffixe(L,a)),['lourd','lourde','lourds','lourdes']);
+ assert.deepEqual([C12.formeAffixe({nom:'vif',place:'prefixe'},'fs'),C12.formeAffixe({nom:'du Loup',place:'suffixe'},'fp'),C12.formeAffixe(T,'fp')],['vive','du Loup','tranchantes']);
+ const w=(name,o={})=>({id:name,name,category:'weapon',dice:{white:1},price:10,...o});
+ assert.deepEqual([w('Épée'),w('Marteau'),w('Hache'),w('Lance'),w('Arc',{ranged:true}),w('Arbalète',{ranged:true}),w('Bolas',{ranged:true,lancer:true}),w('Truc'),w('Truc',{typeArme:'hache'})].map(C12.typeArmeDe),
+  ['lame','contondant','hache','hast','arc','arbalete','jet','','hache']);
+ const A=C12.normaliseAffixes([{id:'t',nom:'tranchant',place:'prefixe',familles:['lame'],effet:'de',de:'red',valeur:1},{id:'l',nom:'lourd',place:'prefixe',familles:['melee'],effet:'carac',carac:'dmg',valeur:1},{id:'r',nom:'rapide',place:'prefixe',effet:'mouvement',valeur:2}]);
+ assert.ok(C12.affixeVaSur(A[0],w('Épée'),0)&&!C12.affixeVaSur(A[0],w('Marteau'),0)&&!C12.affixeVaSur(A[0],w('Arc',{ranged:true}),0)&&C12.affixeVaSur(A[1],w('Marteau'),0),'tranchant sur les lames seules');
+ const g={bonus:{dmg:30},des:{red:15},etat:15,mouvement:15,lumiere:5,rarete:{commun:100,inhabituel:125,rare:150}};
+ assert.deepEqual(A.map(x=>C12.valeurAffixe(x,g)),[15,30,30]);
+ const o=C12.objetForge({id:'f',base:'Épée',affixes:['t','l']},[w('Épée')],A,g);
+ assert.deepEqual([o.name,o.price],['Épée tranchante',Math.round((10+15+30)*150/100)]);
+ assert.equal(C12.objetForge({id:'f',base:'Épée lourde',affixes:['l']},[w('Épée lourde')],A,g).name,'Épée lourde','pas deux fois le même mot');
+ assert.equal(C12.objetForge({id:'f',base:'Bottes',affixes:['r']},[{id:'Bottes',name:'Bottes',category:'armor',slot:'bottes',price:4}],[{id:'r',nom:'lourd',place:'prefixe',effet:'mouvement',valeur:1}],g).name,'Bottes lourdes');
+ assert.ok(ed.includes(".filter(x=>x.effet==='mouvement').forEach(x=>ligne('✦ '+formeAffixe(x,accordDe(o))+' : '")&&ed.includes("+field('Valeur en or','prix',0,'number','readonly tabindex=\"-1\"')")
+  &&ed.includes("const o=objetForge(f,base,catalog.affixes||[],guide);")&&ed.includes("sel('Genre','accord',accordDe(a),ACCORDS)")&&ed.includes("champ(fa,'Par m de mouvement',"),'Forge v0.678 câblée');}
 /* v0.677 — La Forge, première livraison : les affixes et leur tirage, les pièces forgées chez les aventuriers, recomposées au
    catalogue le temps de jouer, le générateur, le loot forgé réglé par adversaire. */
 {const C11=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8'),sh=fs.readFileSync('shared.js','utf8');
@@ -3397,7 +3419,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  let k=0;const seq=[0.1,0.9,0.5,0.5];const ids=C11.tireAffixes(base,4,A,5,()=>seq[k++%4]);
  assert.ok(ids.length===3&&!(ids.includes('a2')&&ids.includes('a4')),'pas deux affixes du même groupe');
  const o=C11.objetForge({id:'f1',base:'ep',affixes:['a1','a2','a3']},[base],A);
- assert.deepEqual([o.name,o.rarete,o.price,o.dice.red,o.etat,o.unique,o.magasin,o.bonus.length],['Épée tranchante du Loup','mystique',55,1,'Feu',true,false,1]);
+ assert.deepEqual([o.name,o.rarete,o.price,o.dice.red,o.etat,o.unique,o.magasin,o.bonus.length],['Épée tranchante du Loup','mystique',5,1,'Feu',true,false,1]);
  assert.equal(C11.objetForge({id:'f2',base:'arc',affixes:['a1']},[arc],A).dice.red,undefined,'un affixe de mêlée ne va pas sur un arc');
  assert.equal(C11.objetForge({id:'f3',base:'nul',affixes:[]},[base],A),null);
  assert.deepEqual([C11.tireNombreAffixes({chance:100,repartition:[0,0,0,100]},null,()=>0.5),C11.tireNombreAffixes({chance:0},null,()=>0.5),C11.tireNombreAffixes({chance:0},{min:2,max:3},()=>0.5)],[4,0,2]);
@@ -5180,4 +5202,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1977 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1978 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
