@@ -3566,6 +3566,8 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
   $('affixe-fields').querySelectorAll('[data-place]').forEach(s=>{s.hidden=!s.dataset.place.split(' ').includes(f.place.value)});
   $('affixe-fields').querySelectorAll('[data-mode]').forEach(s=>{s.hidden=s.dataset.mode!==f.mode.value});
   // Un affixe de classe choisit sa classe, et seul il peut armer les orbes ; un affixe commun ne le peut pas.
+  // Une compétence au hasard : le mot peut rester vide, il vaudra « de Compétence », remplacé par celle tirée.
+  const auHasard=f.effet.value==='comp'&&f.comp.value==='*';f.nom.required=!auHasard;f.nom.placeholder=auHasard?'de Compétence':'tranchant, du Loup…';if(auHasard&&!f.nom.value.trim())f.place.value='suffixe';
   const deClasse=f.categorie.value==='classe';$('affixe-fields').querySelectorAll('[data-categorie]').forEach(s=>{s.hidden=!deClasse});
   [...f.effet.options].forEach(o=>{o.hidden=o.value==='orbesEtat'&&!deClasse});if(f.effet.value==='orbesEtat'&&!deClasse){f.effet.value='carac';montre();return}
   const l=lit();

@@ -2403,7 +2403,7 @@ const RARETES_FORGE=['commun','inhabituel','rare','mystique','epique'];
 const rareteForge=n=>RARETES_FORGE[Math.max(0,Math.min(4,Math.trunc(Number(n))||0))];
 function normaliseAffixe(x){x=x&&typeof x==='object'?x:{};const n=(v,a,b,d)=>{const k=Math.trunc(Number(v));return Number.isFinite(k)?Math.max(a,Math.min(b,k)):d};
  const effet=EFFETS_AFFIXE.some(([k])=>k===x.effet)?x.effet:'carac';
- return {id:typeof x.id==='string'&&x.id?x.id.slice(0,60):idDomaine(),nom:String(x.nom||'').trim().slice(0,40)||'Affixe',place:x.place==='suffixe'||x.place==='avant'?x.place:'prefixe',
+ return {id:typeof x.id==='string'&&x.id?x.id.slice(0,60):idDomaine(),nom:String(x.nom||'').trim().slice(0,40)||(effet==='comp'&&x.comp==='*'?'de Compétence':'Affixe'),place:x.place==='suffixe'||x.place==='avant'?x.place:'prefixe',
   familles:(Array.isArray(x.familles)?x.familles:[]).filter(f=>FAMILLES_AFFIXE.some(([k])=>k===f)).slice(0,20),effet,
   carac:CARACS_EQUIP.some(([k])=>k===x.carac&&k!=='comp')?x.carac:'pv',comp:x.comp==='*'?'*':String(n(x.comp,0,COMPETENCES.length-1,0)),
   de:DICE_KEYS.includes(x.de)&&x.de!=='green'?x.de:'red',etat:effet==='confere'?(ETATS_POSITIFS.includes(x.etat)?x.etat:'Blindage'):ETATS_JEU.includes(x.etat)?x.etat:effet==='orbesEtat'||effet==='epinesEtat'?'Poison':effet==='domination'?'Au sol':'Feu',valeur:n(x.valeur,1,99,1),variable:x.variable===true,
@@ -2508,7 +2508,8 @@ function valeurAffixe(x,g){if(!x||!g)return 0;x=normaliseAffixe(x);const b=g.bon
 /* Le mot d'un affixe de compétence au hasard : la compétence qu'il nomme devient celle tirée, « de Robustesse » devient
    « d’Agilité » ; un mot qui n'en nomme aucune reste tel quel. */
 function motCompetence(nom,k){const neuf=COMPETENCES[k]||'',voy=/^[aeiouyhàâéèêëîïôûœ]/i.test(sansAccent(neuf));
- for(const c of COMPETENCES){const re=new RegExp('(^|\\s)(?:(de|De)\\s+|([dD])[\'’])'+c+'(?=$|\\s|[,.])');const m=String(nom).match(re);
+ // « Compétence » tout court se remplace aussi : « de Compétence » devient « de Ruse ».
+ for(const c of [...COMPETENCES,'Compétence']){const re=new RegExp('(^|\\s)(?:(de|De)\\s+|([dD])[\'’])'+c+'(?=$|\\s|[,.])');const m=String(nom).match(re);
   if(m){const D=(m[2]||m[3]||'d').charAt(0);return nom.replace(re,m[1]+(voy?D+'’':D+'e ')+neuf)}
   if(String(nom).includes(c))return String(nom).replace(c,neuf)}
  return nom}

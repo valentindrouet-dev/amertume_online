@@ -3389,6 +3389,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.695 — Un affixe de compétence au hasard sans mot : « de Compétence », qui devient la compétence tirée. */
+{const C22=require('./combat.js');const A=C22.normaliseAffixes([{id:'c',nom:'',place:'suffixe',effet:'comp',comp:'*',valeur:1}]);
+ assert.equal(A[0].nom,'de Compétence');const o=C22.objetForge({id:'z1',base:'ep',affixes:['c']},[{id:'ep',name:'Épée',category:'weapon',dice:{white:1},price:5}],A);
+ const n=C22.COMPETENCES[+o.bonus.find(b=>b.carac==='comp').comp];assert.equal(o.name,'Épée '+(/^[AEIOU]/.test(n)?'d’':'de ')+n);}
 /* v0.694 — Un affixe de compétence au hasard : la compétence se tire à la génération, et le mot la suit. */
 {const C21=require('./combat.js');const A=C21.normaliseAffixes([{id:'c',nom:'de Robustesse',place:'suffixe',effet:'comp',comp:'*',valeur:2}]);
  assert.deepEqual([A[0].comp,C21.phraseAffixe(A[0])],['*','+2 à une compétence au hasard']);
@@ -5335,4 +5339,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1994 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1995 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
