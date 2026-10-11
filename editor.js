@@ -1524,7 +1524,8 @@ function ligneAffixeClasse(x){const p=document.createElement('p');p.className='g
  const t=(catalog.talents||[]).find(t=>t&&t.effet==='orbes'),nom=(t&&t.name)||'Orbes';
  const b=(txt,coul)=>{const e=document.createElement('b');e.textContent=txt;if(coul)e.style.color=coul;return e};
  const los=document.createElement('span');los.className='gear-losange';los.setAttribute('aria-hidden','true');
- p.append(los,b(nom,TEINTES_TALENTS[(t&&t.type)||(TALENTS_CODES.orbes||{}).type||'act']),' (',b(x.classe),') : Vos '+nom+' infligent ',b(x.etat+' '+x.valeur),'.');return p}
+ const teinte=TEINTES_TALENTS[(t&&t.type)||(TALENTS_CODES.orbes||{}).type||'act'];
+ p.append(los,b(nom,teinte),' (',b(x.classe),') : Vos ',b(nom,teinte),' infligent ',b(x.etat+' '+x.valeur,TEINTE_ETAT_MOT[x.etat]),'.');return p}
 function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
  const titre=document.createElement('p');titre.className='gear-nom';titre.textContent=o.name;d.append(titre);
  const ligne=(texte,classe)=>{if(!texte)return;const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p)};
