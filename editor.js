@@ -3404,7 +3404,7 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
  // Le générateur : une base, un nombre d'affixes, un niveau ; la pièce, pour la voir, puis la donner.
  {const s=bloc('Générateur'),ligne=document.createElement('div');ligne.className='forge-reglages';
   const bases=(catalog.items||[]).filter(o=>o&&!o.forge&&(o.category==='weapon'||o.category==='armor')).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
-  const base=document.createElement('select');base.setAttribute('aria-label','Pièce de base');base.replaceChildren(new Option('— pièce de base —',''),...bases.map(o=>new Option(o.name+' · '+(o.category==='weapon'?(o.ranged?'à distance':'mêlée'):NOM_EMPLACEMENT(emplacementDe(o))),o.id)));base.value=forgeBase;base.onchange=()=>{forgeBase=base.value};
+  const base=document.createElement('select');base.setAttribute('aria-label','Pièce de base');base.replaceChildren(new Option('Tirage au sort',''),...bases.map(o=>new Option(o.name+' · '+(o.category==='weapon'?(o.ranged?'à distance':'mêlée'):NOM_EMPLACEMENT(emplacementDe(o))),o.id)));base.value=forgeBase;base.onchange=()=>{forgeBase=base.value};
   const nombre=document.createElement('select');nombre.setAttribute('aria-label','Nombre d’affixes');[['','Tirage au sort'],['0','0 · Commun'],['1','1 · Inhabituel'],['2','2 · Rare'],['3','3 · Mystique'],['4','4 · Épique']].forEach(([v,t])=>nombre.add(new Option(t,v)));nombre.value=forgeNombre;nombre.onchange=()=>{forgeNombre=nombre.value};
   const niveau=document.createElement('input');niveau.type='number';niveau.min='1';niveau.max='20';niveau.value=String(forgeNiveau);niveau.title='Niveau : les affixes d’un niveau plus haut ne tombent pas';niveau.setAttribute('aria-label','Niveau');niveau.onchange=()=>{forgeNiveau=Math.max(1,Math.min(20,Math.trunc(Number(niveau.value))||1))};
   const forger=document.createElement('button');forger.type='button';forger.className='primary';forger.textContent='⚒ Forger';
@@ -3416,7 +3416,9 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
    const donner=document.createElement('button');donner.type='button';donner.textContent='Donner';donner.onclick=()=>{const a=heros.find(x=>x.id===qui.value);if(!a)return;
     a.forges=[...(a.forges||[]),forgeApercu];a.inventaire??=[];a.inventaire.push(forgeApercu.id);syncForges();forgeApercu=null;renderHeroes();render();sauveForge();renderForge()};
    const l=document.createElement('div');l.className='forge-donner';l.append(qui,donner);apercu.append(l)};
-  forger.onclick=()=>{const b=bases.find(o=>o.id===base.value);if(!b){forgeApercu=null;montre();return}
+  // Au tirage, une base que l'un au moins des affixes existants peut toucher, à ce niveau.
+  forger.onclick=()=>{const possibles=bases.filter(o=>catalog.affixes.some(x=>!x.classe&&affixeVaSur(x,o,forgeNiveau)));
+   const b=base.value?bases.find(o=>o.id===base.value):possibles[Math.floor(Math.random()*possibles.length)];if(!b){forgeApercu=null;montre();return}
    const n=nombre.value===''?tireNombreAffixes(catalog.forge,null):Math.trunc(Number(nombre.value));
    forgeApercu={id:'forge-'+crypto.randomUUID(),base:b.id,affixes:tireAffixes(b,n,catalog.affixes,forgeNiveau)};montre()};
   [base,nombre,niveau,forger].forEach(x=>ligne.append(x));s.append(ligne,apercu);montre()}}

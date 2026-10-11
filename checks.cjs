@@ -3389,6 +3389,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.681 — Le générateur tire aussi sa base au sort, parmi celles que les affixes existants peuvent toucher. */
+{const ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ed.includes("base.replaceChildren(new Option('Tirage au sort',''),")&&ed.includes("const possibles=bases.filter(o=>catalog.affixes.some(x=>!x.classe&&affixeVaSur(x,o,forgeNiveau)));"),'base au sort');}
 /* v0.680 — Les familles d'un affixe en cascade : mêlée et distance, leurs types cochés dessous, décochables un à un. */
 {const ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ed.includes("par.onchange=()=>{sous.forEach(s=>{s.checked=par.checked});par.indeterminate=false};")&&ed.includes("return on.length===sous.length?[e.value]:on.map(s=>s.value)}))")
@@ -5213,4 +5216,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1980 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1981 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
