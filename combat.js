@@ -2355,7 +2355,7 @@ function bonusTalents(portes){const out=bonusVide();
 /* ---------- Les raretés et les bonus d'équipement ----------
    Une pièce a une rareté — commune, rare, mystique, épique — qui la teinte, et peut
    conférer des bonus, une ligne chacun, qui jouent tant qu'elle est portée et se cumulent. */
-const RARETES=[['commun','Commun'],['inhabituel','Inhabituel'],['rare','Rare'],['mystique','Mystique'],['epique','Épique']];
+const RARETES=[['commun','Commun'],['inhabituel','Inhabituel'],['rare','Rare'],['mystique','Épique'],['epique','Légendaire']];
 // Une ressource a sa rareté à elle, « Ressource », qu'on ne choisit pas.
 function rareteDe(o){if(o&&o.category==='ressource')return 'ressource';const r=o&&o.rarete;return RARETES.some(([k])=>k===r)?r:'commun'}
 const NOM_RARETE=r=>r==='ressource'?'Ressource':(RARETES.find(([k])=>k===r)||RARETES[0])[1];
@@ -2363,7 +2363,7 @@ const NOM_RARETE=r=>r==='ressource'?'Ressource':(RARETES.find(([k])=>k===r)||RAR
    Un objet forgé est une pièce d'équipement de l'Armurerie, la base, plus un à quatre affixes tirés parmi ceux que le MJ a
    écrits. Chaque affixe porte un mot, préfixe ou suffixe, qui compose le nom ; les familles d'équipement qu'il touche ; son
    effet ; son poids au tirage, son niveau minimum, sa valeur en or. La rareté suit le nombre d'affixes : un Inhabituel, deux
-   Rare, trois Mystique, quatre Épique. L'objet forgé vit chez l'aventurier qui le porte (« forges ») ; sa pièce entière se
+   Rare, trois Épique, quatre Légendaire. L'objet forgé vit chez l'aventurier qui le porte (« forges ») ; sa pièce entière se
    recalcule de sa base et de ses affixes (objetForge). Un affixe peut porter une classe : les légendaires, à venir. */
 const FAMILLES_AFFIXE=[['melee','Armes de mêlée'],['lame','Lames'],['hache','Haches'],['contondant','Armes contondantes'],['hast','Armes d’hast'],['ranged','Armes à distance'],['arc','Arcs'],['arbalete','Arbalètes'],['jet','Armes de jet'],['torse','Armures de corps'],['shield','Boucliers'],['tete','Casques'],['dos','Capes'],['anneau','Anneaux'],['amulette','Amulettes'],['bottes','Bottes']];
 /* Le type d'une arme, pour qu'un mot comme « tranchante » n'aille que sur une lame : celui écrit à l'Armurerie, sinon deviné
@@ -2435,12 +2435,28 @@ function tireNombreAffixes(reglage,adv,tirage=Math.random){const g=normaliseRegl
  if(!total)return Math.max(1,a.min);let r=tirage()*total;for(let i=0;i<4;i++){r-=parts[i];if(r<0)return i+1}return a.max}
 /* Le mot d'un affixe accordé : écrit au masculin, ses autres formes écrites à côté, sinon tirées du masculin.
    Un suffixe, « du Loup », ne s'accorde pas. */
-function femininAffixe(m){if(/e$/.test(m))return m;if(/eux$/.test(m))return m.slice(0,-1)+'se';if(/if$/.test(m))return m.slice(0,-1)+'ve';if(/er$/.test(m))return m.slice(0,-2)+'ère';
- if(/eau$/.test(m))return m.slice(0,-2)+'lle';if(/(el|en|on)$/.test(m))return m+m.slice(-1)+'e';if(/(et)$/.test(m))return m+'te';return m+'e'}
-function plurielAffixe(m){if(/[sxz]$/.test(m))return m;if(/(eau|eu)$/.test(m))return m+'x';if(/al$/.test(m))return m.slice(0,-1)+'ux';return m+'s'}
-const surDernier=(t,fn)=>{const i=t.lastIndexOf(' ');return i<0?fn(t):t.slice(0,i+1)+fn(t.slice(i+1))};
-function formeAffixe(x,accord){if(!x)return '';if(x.place==='suffixe')return x.nom;const f=x.nomF||surDernier(x.nom,femininAffixe);
- return accord==='fs'?f:accord==='mp'?x.nomMP||surDernier(x.nom,plurielAffixe):accord==='fp'?x.nomFP||surDernier(f,plurielAffixe):x.nom}
+/* L'accord d'un adjectif : les féminins irréguliers d'abord, puis les terminaisons régulières. */
+const FEMININS_IRREG={beau:'belle',bel:'belle',nouveau:'nouvelle',nouvel:'nouvelle',fou:'folle',fol:'folle',mou:'molle',vieux:'vieille',vieil:'vieille',frais:'fraîche',
+ blanc:'blanche',franc:'franche',sec:'sèche',long:'longue',oblong:'oblongue',grec:'grecque',turc:'turque',public:'publique',caduc:'caduque',faux:'fausse',roux:'rousse',doux:'douce',
+ gentil:'gentille',nul:'nulle',malin:'maligne',bénin:'bénigne',favori:'favorite',coi:'coite',tiers:'tierce',bref:'brève',paysan:'paysanne',
+ vengeur:'vengeresse',enchanteur:'enchanteresse',pécheur:'pécheresse',traître:'traîtresse',menteur:'menteuse',chanteur:'chanteuse',flatteur:'flatteuse',porteur:'porteuse',
+ bas:'basse',gras:'grasse',gros:'grosse',las:'lasse',épais:'épaisse',exprès:'expresse',métis:'métisse',
+ complet:'complète',incomplet:'incomplète',secret:'secrète',discret:'discrète',indiscret:'indiscrète',concret:'concrète',inquiet:'inquiète',replet:'replète',désuet:'désuète',
+ sot:'sotte',pâlot:'pâlotte',vieillot:'vieillotte',aigu:'aiguë',ambigu:'ambiguë',contigu:'contiguë',exigu:'exiguë',andalou:'andalouse'};
+function femininAffixe(m){const bas=m.toLowerCase(),irr=FEMININS_IRREG[bas];if(irr)return m[0]!==bas[0]?irr[0].toUpperCase()+irr.slice(1):irr;
+ if(/e$/.test(bas))return m;if(/eux$/.test(bas))return m.slice(0,-1)+'se';if(/teur$/.test(bas))return m.slice(0,-3)+'rice';
+ if(/(ieur|^majeur|^mineur|^meilleur)$/.test(bas))return m+'e';if(/eur$/.test(bas))return m.slice(0,-1)+'se';
+ if(/f$/.test(bas))return m.slice(0,-1)+'ve';if(/er$/.test(bas))return m.slice(0,-2)+'ère';if(/eau$/.test(bas))return m.slice(0,-2)+'lle';
+ if(/(el|eil|en|on|et)$/.test(bas))return m+m.slice(-1)+'e';if(/c$/.test(bas))return m.slice(0,-1)+'que';if(/x$/.test(bas))return m.slice(0,-1)+'se';return m+'e'}
+const PLURIELS_AL=['banal','bancal','fatal','final','natal','naval','causal','tonal','idéal','glacial'];
+function plurielAffixe(m){const bas=m.toLowerCase();if(/[sxz]$/.test(bas))return m;if(/eau$/.test(bas)||bas==='hébreu')return m+'x';
+ if(/al$/.test(bas)&&!PLURIELS_AL.includes(bas))return m.slice(0,-1)+'ux';return m+'s'}
+/* Dans un mot de plusieurs termes, seul s'accorde l'adjectif qui précède le complément : « couvert de sang » donne
+   « couverte de sang ». Un complément seul, « de Feu », « en flammes », « à pointes », ne s'accorde pas. */
+const MOTS_INVARIANTS=/^(de|du|des|d['’].*|à|au|aux|en|sans|sous|sur|contre|pour|par|avec|dans|entre|le|la|les|l['’].*)$/i;
+function accordePhrase(t,fn){const mots=t.split(' ');let k=mots.findIndex(w=>MOTS_INVARIANTS.test(w));if(k<0)k=mots.length;if(k===0)return t;mots[k-1]=fn(mots[k-1]);return mots.join(' ')}
+function formeAffixe(x,accord){if(!x)return '';if(x.place==='suffixe')return x.nom;const f=x.nomF||accordePhrase(x.nom,femininAffixe);
+ return accord==='fs'?f:accord==='mp'?x.nomMP||accordePhrase(x.nom,plurielAffixe):accord==='fp'?x.nomFP||accordePhrase(f,plurielAffixe):x.nom}
 // Le nom : la base, ses préfixes accordés, un suffixe au plus.
 function nomForge(base,affixes){const suf=affixes.find(x=>x.place==='suffixe'),vus=' '+sansAccent(base.name)+' ';
  // Tous les préfixes, accordés, à la suite : « Épée lourde mystique ». Un mot déjà dit ne se répète pas : « Épée lourde », pas « Épée lourde lourde ».

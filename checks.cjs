@@ -2108,7 +2108,7 @@ assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(
   {id:'r',category:'armor',slot:'anneau',bonus:[{carac:'pv',valeur:3},{carac:'def',valeur:1}]},{id:'x',category:'armor',slot:'torse',rarete:'zzz',bonus:'nope'},{id:'s',category:'armor',slot:'shield',bonus:[{carac:'endu',valeur:1},{carac:'vie',valeur:1}]}];
  const a={weapons:['w'],armures:['r','r','x'],shieldId:'s',vie:6,endu:3,talents:[]};
  assert.deepEqual(C.bonusEquipement(a,it),{pv:6,endu:1,vie:1,def:2,dmg:2,skills:[0,0,0,1,0,0,0,0]});
- assert.equal(C.rareteDe(it[0]),'rare');assert.equal(C.rareteDe(it[2]),'commun');assert.equal(C.rareteDe(null),'commun');assert.equal(C.NOM_RARETE('epique'),'Épique');assert.equal(C.NOM_RARETE('zzz'),'Commun');
+ assert.equal(C.rareteDe(it[0]),'rare');assert.equal(C.rareteDe(it[2]),'commun');assert.equal(C.rareteDe(null),'commun');assert.equal(C.NOM_RARETE('epique'),'Légendaire');assert.equal(C.NOM_RARETE('zzz'),'Commun');
  assert.deepEqual(C.normaliseBonusEquip(it[2].bonus),[]);assert.deepEqual(C.normaliseBonusEquip([{carac:'zzz',valeur:0,comp:'99'},null,{carac:'comp',valeur:150,comp:'2'}]),[{carac:'pv',valeur:1,comp:'7'},{carac:'comp',valeur:99,comp:'2'}],'bornés : la compétence à la dernière, la valeur à 99');
  assert.equal(C.pvMaximum([],a,[],it),(6+1)*(3+1)+6);assert.equal(C.vieDe(a,[],it),7);assert.equal(C.enduDe(a,[],it),4);
  assert.deepEqual(C.bonusDe(a,[],it),{pv:6,endu:1,vie:1,def:2,dmg:2,skills:[0,0,0,1,0,0,0,0]});
@@ -3389,6 +3389,34 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.684 — Le lexique de l'accord : féminins irréguliers, pluriels en -eus et -als, compléments invariables ;
+   les raretés se nomment Inhabituel, Rare, Épique, Légendaire. */
+{const C14=require('./combat.js'),F=(nom,a)=>C14.formeAffixe({nom,place:'prefixe'},a);
+ const quatre=n=>['ms','fs','mp','fp'].map(a=>F(n,a));
+ assert.deepEqual(quatre('de Feu'),['de Feu','de Feu','de Feu','de Feu']);
+ assert.deepEqual(quatre('en flammes'),['en flammes','en flammes','en flammes','en flammes']);
+ assert.deepEqual(quatre('couvert de sang'),['couvert de sang','couverte de sang','couverts de sang','couvertes de sang']);
+ assert.deepEqual(quatre('bleu'),['bleu','bleue','bleus','bleues']);
+ assert.deepEqual(quatre('brutal'),['brutal','brutale','brutaux','brutales']);
+ assert.deepEqual(quatre('fatal'),['fatal','fatale','fatals','fatales']);
+ assert.deepEqual(quatre('vengeur'),['vengeur','vengeresse','vengeurs','vengeresses']);
+ assert.deepEqual(quatre('destructeur'),['destructeur','destructrice','destructeurs','destructrices']);
+ assert.deepEqual(quatre('ravageur'),['ravageur','ravageuse','ravageurs','ravageuses']);
+ assert.deepEqual(quatre('furieux'),['furieux','furieuse','furieux','furieuses']);
+ assert.deepEqual(quatre('blanc'),['blanc','blanche','blancs','blanches']);
+ assert.deepEqual(quatre('long'),['long','longue','longs','longues']);
+ assert.deepEqual(quatre('cruel'),['cruel','cruelle','cruels','cruelles']);
+ assert.deepEqual(quatre('ancien'),['ancien','ancienne','anciens','anciennes']);
+ assert.deepEqual(quatre('divin'),['divin','divine','divins','divines']);
+ assert.deepEqual(quatre('secret'),['secret','secrète','secrets','secrètes']);
+ assert.deepEqual(quatre('muet'),['muet','muette','muets','muettes']);
+ assert.deepEqual(quatre('aigu'),['aigu','aiguë','aigus','aiguës']);
+ assert.deepEqual(quatre('nouveau'),['nouveau','nouvelle','nouveaux','nouvelles']);
+ assert.deepEqual(quatre('gris'),['gris','grise','gris','grises']);
+ assert.deepEqual(quatre('gros'),['gros','grosse','gros','grosses']);
+ assert.deepEqual(quatre('supérieur'),['supérieur','supérieure','supérieurs','supérieures']);
+ assert.deepEqual(C14.RARETES.map(r=>r[1]),['Commun','Inhabituel','Rare','Épique','Légendaire']);
+ assert.ok(fs.readFileSync('editor.js','utf8').includes("['3','3 · Épique'],['4','4 · Légendaire']"),'générateur renommé');}
 /* v0.683 — Deux dés de couleurs différentes se cumulent sur une pièce, et tous ses préfixes se lisent dans son nom ;
    le générateur commence à Inhabituel. */
 {const C13=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
@@ -5226,4 +5254,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('1983 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('1984 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
