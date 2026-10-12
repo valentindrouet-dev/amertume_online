@@ -1393,12 +1393,12 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
 
 /* ---------- Onglets de page, réservés au MJ ---------- */
 const tabs=document.createElement('nav');tabs.className='tabs';
-tabs.innerHTML='<button data-page="table" class="on">Table de jeu</button><button data-page="maps">Cartes</button>'
+tabs.innerHTML='<button data-page="accueil">Accueil</button><button data-page="table" class="on">Table de jeu</button><button data-page="maps">Cartes</button>'
  +'<button data-page="domaine">Domaine</button><button data-page="heroes">Aventuriers</button><button data-page="talents">Talents</button>'
  +'<button data-page="armory">Armurerie</button><button data-page="bestiary">Bestiaire</button><button data-page="icones">Icônes</button>'
  +'<button data-page="settings">Paramètres</button>';
 document.querySelector('.view-controls').before(tabs);
-const PAGES=['table','maps','domaine','heroes','talents','armory','bestiary','icones','settings'];
+const PAGES=['accueil','table','maps','domaine','heroes','talents','armory','bestiary','icones','settings'];
 /* Sous l'onglet ouvert, chez le MJ seul et pendant une table en ligne : un petit viseur. Un clic envoie tous les joueurs
    connectés sur cet onglet, s'il leur est ouvert. */
 const envoiOngletBtn=document.createElement('button');envoiOngletBtn.type='button';envoiOngletBtn.className='envoi-onglet';envoiOngletBtn.textContent='⌖';envoiOngletBtn.hidden=true;let envoiOngletPage=null;
@@ -1436,6 +1436,7 @@ function showPage(p,retenir=true){if(!ongletsJoueurs().includes(p)&&view!=='mj')
   // Une approche demandée pendant que la carte était masquée — une nouvelle carte, chez un joueur — se fait au retour.
   if(typeof approcheEnAttente!=='undefined'&&approcheEnAttente){const a=actors.find(x=>x.id===approcheEnAttente);approcheEnAttente=null;if(a)approcherToken(a)}}
  else if(p==='domaine')renderDomaine();
+ else if(p==='accueil')renderAccueil();
  else if(p==='heroes')renderHeroes();
  else if(p==='talents')renderTalents();
  else if(p==='armory')renderArmory();

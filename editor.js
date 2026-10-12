@@ -178,7 +178,7 @@ function migreArbres(c){const T=(c.talents||[]).filter(Boolean),fam=t=>(t.famill
  return change}
 /* Les onglets, et ceux que le MJ ouvre aux joueurs : la Table de jeu toujours, les Cartes jamais. Le
    choix voyage avec le contenu publié ; sans choix, les onglets d'avant. */
-const ONGLETS=[['table','Table de jeu'],['maps','Cartes'],['domaine','Domaine'],['heroes','Aventuriers'],['talents','Talents'],['armory','Armurerie'],['bestiary','Bestiaire'],['icones','Icônes'],['settings','Paramètres']];
+const ONGLETS=[['accueil','Accueil'],['table','Table de jeu'],['maps','Cartes'],['domaine','Domaine'],['heroes','Aventuriers'],['talents','Talents'],['armory','Armurerie'],['bestiary','Bestiaire'],['icones','Icônes'],['settings','Paramètres']];
 const ONGLETS_JOUEURS_DEFAUT=['table','domaine','heroes','bestiary','settings'];
 /* La page d'accueil des joueurs. Au premier chargement d'une session de navigation, un joueur arrive sur l'onglet que le MJ
    a choisi, dès que le contenu publié est là ; recharger la page garde l'onglet en cours. Le MJ n'est jamais déplacé. */
@@ -188,7 +188,8 @@ function accueilDeSession(){if(!accueilAFaire)return;
  const cat=typeof remote!=='undefined'&&remote&&remote.catalog?remote.catalog:catalog;if(!cat)return;accueilAFaire=false;
  if(typeof admin!=='undefined'&&admin)return;const p=cat.pageAccueil;if(typeof p==='string'&&ongletsJoueurs().includes(p))showPage(p)}
 function ongletsJoueurs(){const l=typeof catalog!=='undefined'&&catalog&&Array.isArray(catalog.ongletsJoueurs)?catalog.ongletsJoueurs:ONGLETS_JOUEURS_DEFAUT;
- return ['table',...ONGLETS.map(([k])=>k).filter(k=>k!=='table'&&k!=='maps'&&l.includes(k))]}
+ // L'Accueil et la Table sont toujours ouverts : on y crée son aventurier, on y joue.
+ return ['accueil','table',...ONGLETS.map(([k])=>k).filter(k=>k!=='accueil'&&k!=='table'&&k!=='maps'&&l.includes(k))]}
 /* Lamevent s'appelle Ombrelame : la classe, ses arbres et leurs voies, la classe de ses effets, ses talents et
    leurs textes. Rien ne se perd : ce qui portait l'ancien nom porte le nouveau. */
 function ombrelame(s){return typeof s==='string'&&s.includes('Lamevent')?s.replace(/Lamevent/g,'Ombrelame'):s}
@@ -738,7 +739,16 @@ bestiaryPage.innerHTML='<section class="cat-panel panel">'
  +'<div class="cat-cols" id="bestiary-cols"></div></section>';
 // Le bouton « Noms » en tête des actions de chaque page qui montre des cartes.
 [armoryPage,talentsPage,bestiaryPage,heroesPage].forEach(p=>{const a=p.querySelector('.cat-actions');if(a)a.prepend(boutonNoms())});
-document.querySelector('main.layout').after(heroesPage,talentsPage,armoryPage,bestiaryPage,settingsPage);majNoms();
+/* ---------- L'Accueil ----------
+   Le seuil de la campagne : créer un aventurier, les dernières actualités de la table, les aventuriers présents au domaine, les
+   hauts faits. */
+const accueilPage=document.createElement('main');accueilPage.id='accueil-page';
+accueilPage.innerHTML='<section class="cat-panel panel accueil"><header class="cat-head"><h2>Accueil</h2></header><div class="accueil-grille">'
+ +'<section class="accueil-bloc accueil-creer"><h3>Créer un nouvel aventurier</h3><button id="accueil-creer" type="button" class="primary">+ Créer un aventurier</button></section>'
+ +'<section class="accueil-bloc accueil-actus"><h3>Dernières actualités</h3><div id="accueil-actus"></div></section>'
+ +'<section class="accueil-bloc accueil-actifs"><h3>Aventuriers actifs</h3><div id="accueil-actifs"></div></section>'
+ +'<section class="accueil-bloc accueil-faits"><h3>Derniers hauts faits</h3><div id="accueil-faits"></div></section></div></section>';
+document.querySelector('main.layout').after(accueilPage,heroesPage,talentsPage,armoryPage,bestiaryPage,settingsPage);majNoms();
 /* Un sous-titre de carte, avec son « + » : équiper ou attribuer sans ouvrir la fiche. */
 /* Un menu déroulant posé à côté d'un bouton, le temps d'un choix. choixVif remplace le
    nœud qu'il décore ; ici il n'y a rien à remplacer, seulement une liste à offrir. */
@@ -3610,6 +3620,69 @@ function deplaceForge(a,id){if(!a||!a.hero||typeof actors==='undefined')return;l
  actors.forEach(x=>{if(!x||!Array.isArray(x.forges))return;const k=x.forges.findIndex(f=>f.id===id);if(k>=0){rec=x.forges[k];if(x!==a)x.forges=x.forges.filter(f=>f.id!==id)}});
  if(rec&&!(a.forges||[]).some(f=>f.id===id))a.forges=[...(a.forges||[]),rec]}
 function oublieForge(a,id){if(a&&Array.isArray(a.forges)&&!(a.inventaire||[]).includes(id))a.forges=a.forges.filter(f=>f.id!==id)}
+/* Les dernières actualités : le résumé des dix dernières publications, s'il est à jour ; sinon leurs titres, les plus récents. */
+function renderActualites(){const boite=$('accueil-actus');if(!boite)return;boite.replaceChildren();
+ const A=typeof ACTUALITES!=='undefined'?ACTUALITES:{versions:[]},v=(A.versions||[]).slice(0,10);
+ const lignes=A.resume&&v.length&&A.resume.jusqua===v[0].v?A.resume.lignes:v.slice(0,6).map(x=>x.t);
+ if(v.length){const p=document.createElement('p');p.className='accueil-versions muted';p.textContent='v'+v[v.length-1].v+' → v'+v[0].v;boite.append(p)}
+ const ul=document.createElement('ul');ul.className='accueil-liste';(lignes||[]).forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.append(li)});boite.append(ul)}
+// Les aventuriers présents au domaine : ni partis en aventure, ni absents.
+function aventuriersActifs(){const lieu=a=>typeof lieuDe==='function'?lieuDe(a):(a.lieuDomaine||'');return actors.filter(a=>a&&a.hero&&!['aventure','absent'].includes(lieu(a)))}
+function renderActifs(){const boite=$('accueil-actifs');if(!boite)return;boite.replaceChildren();const l=aventuriersActifs();
+ if(!l.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun aventurier au domaine.';boite.append(p);return}
+ l.forEach(a=>{const c=document.createElement('div');c.className='accueil-heros';const classe=classeDe(catalog.classes,a.role);
+  const av=document.createElement('span');av.className='accueil-avatar';if(classe&&classe.tint)av.style.setProperty('--teinte',classe.tint);
+  if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';av.append(im)}else av.textContent=String(a.name||'?').trim().charAt(0).toUpperCase();
+  const t=document.createElement('div');t.className='accueil-heros-texte';const n=document.createElement('b');n.textContent=a.name;
+  const d=document.createElement('small');d.textContent=[a.role,/niveau/i.test(a.role||'')?'':'niveau '+(Math.trunc(Number(a.level))||1),typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieuDe(a)):''].filter(Boolean).join(' · ');
+  if(classe&&classe.tint)n.style.color=classe.tint;t.append(n,d);c.append(av,t);boite.append(c)})}
+function renderAccueil(){renderActualites();renderActifs();const f=$('accueil-faits');if(f){f.replaceChildren();const p=document.createElement('p');p.className='muted';p.textContent='Aucun haut fait pour l’instant.';f.append(p)}}
+/* ---------- Créer un aventurier ----------
+   Onglet par onglet : identité, classe, caractéristiques, compétences, puis le récapitulatif. L'aventurier rejoint la campagne,
+   au domaine : la page Aventuriers du MJ, et la fiche du joueur qui l'a créé. Il est prêt pour une mission, une aventure. */
+const ETAPES_CREATION=[['identite','Identité'],['classe','Classe'],['caracs','Caractéristiques'],['comps','Compétences'],['recap','Récapitulatif']];
+const creationDialog=dialog('creation-aventurier','Créer un aventurier','<nav id="creation-etapes" class="creation-etapes"></nav><div id="creation-corps" class="creation-corps"></div><div class="form-actions"><button type="button" id="creation-prec">Précédent</button><button type="button" id="creation-suiv" class="primary">Suivant</button></div>');
+let creation=null;
+function openCreation(){creation={etape:0,name:'',sexe:'',race:'',role:'',skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
+// Tout aventurier part de Vie 3, Endurance 2, Dégâts +0 ; sa classe ajoute ses PV.
+const pvCreation=c=>Math.max(1,BASE_HEROS.vieMax*BASE_HEROS.endu+bonusPV(catalog.classes,c.role,c.race));
+// Une étape n'ouvre la suivante que remplie : un nom, une classe.
+const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='classe'&&!creation.role?'Choisis une classe.':'';
+function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-etapes'),corps=$('creation-corps');nav.replaceChildren();corps.replaceChildren();
+ ETAPES_CREATION.forEach(([k,n],i)=>{const b=document.createElement('button');b.type='button';b.textContent=(i+1)+'. '+n;b.className=i===c.etape?'on':'';
+  b.disabled=ETAPES_CREATION.slice(0,i).some(([k2])=>etapeManque(k2));b.onclick=()=>{c.etape=i;renderCreation()};nav.append(b)});
+ const k=ETAPES_CREATION[c.etape][0],lab=(t,el)=>{const l=document.createElement('label');l.className='creation-champ';const s=document.createElement('span');s.textContent=t;l.append(s,el);return l};
+ const inp=(type,v,on,attrs={})=>{const i=document.createElement('input');i.type=type;i.value=String(v);Object.entries(attrs).forEach(([a,b])=>i.setAttribute(a,b));i.oninput=()=>on(i.value);return i};
+ if(k==='identite'){const n=inp('text',c.name,v=>{c.name=v.slice(0,120);majBoutons()},{maxlength:'120',placeholder:'Nom de l’aventurier'});
+  const s=document.createElement('select');[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']].forEach(([v,t])=>s.add(new Option(t,v)));s.value=c.sexe;s.onchange=()=>{c.sexe=s.value};
+  const r=inp('text',c.race,v=>{c.race=v.slice(0,40)},{maxlength:'40'});corps.append(lab('Nom',n),lab('Sexe',s),lab('Espèce',r));setTimeout(()=>n.focus())}
+ else if(k==='classe'){const g=document.createElement('div');g.className='creation-classes';
+  (catalog.classes||[]).forEach(cl=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.role===cl.name?' on':'');b.style.setProperty('--teinte',cl.tint||'#8a7a5a');
+   const n=document.createElement('b');n.textContent=cl.name;const p=document.createElement('small');p.textContent='+'+(Number(cl.pv)||0)+' PV';b.append(n,p);
+   b.onclick=()=>{c.role=cl.name;renderCreation()};g.append(b)});corps.append(g)}
+ else if(k==='caracs'){const dl=document.createElement('dl');dl.className='creation-recap';
+  [['Vie',BASE_HEROS.vieMax],['Endurance',BASE_HEROS.endu],['Dégâts','+'+BASE_HEROS.dmg],['PV maximum',pvCreation(c)]].forEach(([t,v])=>{const dt=document.createElement('dt');dt.textContent=t;const dd=document.createElement('dd');dd.textContent=String(v);dl.append(dt,dd)});corps.append(dl)}
+ else if(k==='comps'){const g=document.createElement('div');g.className='creation-comps';
+  COMPETENCES.forEach((nom,i)=>{const l=document.createElement('div');l.className='creation-comp';const n=document.createElement('span');n.textContent=nom;n.style.color='rgb('+SKILL_TINTS[i]+')';
+   const v=document.createElement('b');v.textContent=String(c.skills[i]);
+   const pas=d=>{const b=document.createElement('button');b.type='button';b.className='ico';b.textContent=d>0?'+':'−';b.onclick=()=>{c.skills[i]=Math.max(0,Math.min(30,c.skills[i]+d));v.textContent=String(c.skills[i])};return b};
+   l.append(n,pas(-1),v,pas(1));g.append(l)});corps.append(g)}
+ else{const l=[['Nom',c.name],['Sexe',c.sexe||'—'],['Espèce',c.race||'—'],['Classe',c.role],['PV maximum',pvCreation(c)],
+   ['Compétences',COMPETENCES.map((n,i)=>c.skills[i]?n+' '+c.skills[i]:'').filter(Boolean).join(', ')||'—']];
+  const dl=document.createElement('dl');dl.className='creation-recap';l.forEach(([t,v])=>{const dt=document.createElement('dt');dt.textContent=t;const dd=document.createElement('dd');dd.textContent=String(v);dl.append(dt,dd)});corps.append(dl)}
+ majBoutons()}
+function majBoutons(){const c=creation,k=ETAPES_CREATION[c.etape][0],fin=c.etape===ETAPES_CREATION.length-1;
+ $('creation-prec').hidden=c.etape===0;$('creation-suiv').textContent=fin?'Créer l’aventurier':'Suivant';$('creation-suiv').disabled=!!etapeManque(k)||(fin&&ETAPES_CREATION.some(([k2])=>etapeManque(k2)))}
+$('creation-prec').onclick=()=>{if(creation&&creation.etape>0){creation.etape--;renderCreation()}};
+$('creation-suiv').onclick=()=>{const c=creation;if(!c)return;if(c.etape<ETAPES_CREATION.length-1){if(!etapeManque(ETAPES_CREATION[c.etape][0])){c.etape++;renderCreation()}return}creerAventurier()};
+// L'aventurier créé : au domaine, hors de la carte ; chez un joueur, il devient le sien.
+function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;
+ const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:c.name.trim(),sexe:c.sexe,race:c.race.trim(),role:c.role,vie:BASE_HEROS.vieMax,skills:[...c.skills],level:1,xp:0,horsCarte:true,lieuDomaine:''});
+ a.max=pvCreation(c);a.hp=a.max;normalizeActor(a);actors.push(a);creation=null;creationDialog.close();
+ const i=actors.indexOf(a);
+ if(view!=='mj'){if(typeof enLigne!=='undefined'&&enLigne&&typeof prendreSiege==='function')prendreSiege(a);else{owner=i;selected=i}}
+ render();if(view!=='mj'&&!(typeof enLigne!=='undefined'&&enLigne)&&$('owner'))$('owner').value=String(i);if(typeof renderHeroes==='function')renderHeroes();scheduleSave();if(typeof pousserBientot==='function')pousserBientot();renderAccueil()}
+$('accueil-creer').onclick=()=>openCreation();
 function completerInventaire(a){if(!a)return;a.inventaire??=[];
  const besoin=new Map();[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean).forEach(id=>besoin.set(id,(besoin.get(id)||0)+1));
  besoin.forEach((n,id)=>{const ont=a.inventaire.filter(x=>x===id).length;for(let k=ont;k<n;k++)a.inventaire.push(id)})}
@@ -5030,7 +5103,7 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
  // Les onglets ouverts aux joueurs : une case par onglet ; la Table cochée, les Cartes non, sans y toucher.
  $('bloc-onglets').hidden=view!=='mj';
  {const vus=ongletsJoueurs();$('onglets-joueurs').replaceChildren(...ONGLETS.map(([k,nom])=>{const l=document.createElement('label'),c=document.createElement('input');
-  c.type='checkbox';c.value=k;c.checked=vus.includes(k);c.disabled=k==='table'||k==='maps';
+  c.type='checkbox';c.value=k;c.checked=vus.includes(k);c.disabled=k==='accueil'||k==='table'||k==='maps';
   c.onchange=()=>{catalog.ongletsJoueurs=[...$('onglets-joueurs').querySelectorAll('input:checked')].map(x=>x.value);normalizeCatalog(catalog);
    scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));if(typeof majOnglets==='function')majOnglets();majPageAccueil()};
   l.append(c,' '+nom);return l}))}

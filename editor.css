@@ -592,7 +592,7 @@ button.comp-rond{cursor:pointer}button.comp-rond:hover{background:rgba(var(--tin
 .onglets-joueurs{display:flex;flex-wrap:wrap;gap:6px 18px;padding:8px 0}
 .onglets-joueurs label{display:inline-flex;align-items:center;gap:6px;font-size:14px;cursor:pointer}
 .onglets-joueurs input:disabled+*,.onglets-joueurs label:has(input:disabled){opacity:.6;cursor:default}
-.page-accueil{display:flex;align-items:center;gap:8px;font-size:14px;padding:2px 0 8px}
+label.page-accueil{display:flex;align-items:center;gap:8px;font-size:14px;padding:2px 0 8px}
 .reglage:last-child{border-bottom:0}
 .reglage>div{flex:1;min-width:0}
 .reglage strong{display:block;font-size:15px}
@@ -2479,3 +2479,32 @@ button.j-stats{padding:0;border:0;background:none;font:inherit;font-weight:800;c
 .arbre-noeud.bonus-pa{--teinte:#3f8fe0}.arbre-noeud.bonus-pm{--teinte:#cf9152}
 .talent-detail.bulle-bonus.bonus-pa{--teinte:#3f8fe0}.talent-detail.bulle-bonus.bonus-pm{--teinte:#cf9152}
 .hero-card .talent-ameliorations .bonus-rond.bonus-pa{--teinte:#3f8fe0}.hero-card .talent-ameliorations .bonus-rond.bonus-pm{--teinte:#cf9152}
+/* L'Accueil : quatre blocs, la création en tête. */
+#accueil-page{display:none;padding:16px 28px 26px}body.page-accueil #accueil-page{display:block}
+body.page-accueil .intro,body.page-accueil .mj-tools,body.page-accueil main.layout,body.page-accueil #save-status,body.page-accueil footer{display:none!important}
+#accueil-page .accueil-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:10px}
+#accueil-page .accueil-bloc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+#accueil-page .accueil-bloc h3{margin:0 0 10px;font:600 12px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+#accueil-page .accueil-creer{grid-column:1/-1;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(#f6e8bf,#efdca6);border-color:#d8bd72}
+#accueil-page .accueil-creer button{font-size:17px;padding:10px 18px}
+#accueil-page .accueil-liste{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+#accueil-page .accueil-versions{margin:0 0 6px;font-size:12px}
+#accueil-page #accueil-actifs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+#accueil-page .accueil-heros{display:flex;align-items:center;gap:10px}
+#accueil-page .accueil-avatar{--teinte:#8a7a5a;flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:color-mix(in srgb,var(--teinte) 22%,#fff);border:2px solid var(--teinte);font:700 17px Georgia,serif;color:var(--teinte)}
+#accueil-page .accueil-avatar img{width:100%;height:100%;object-fit:cover}
+#accueil-page .accueil-heros-texte{display:flex;flex-direction:column;min-width:0}#accueil-page .accueil-heros-texte small{color:var(--muted)}
+@media (max-width:900px){#accueil-page{padding:14px}#accueil-page .accueil-grille{grid-template-columns:1fr}}
+/* La création d'un aventurier, onglet par onglet. */
+#creation-aventurier{width:min(640px,94vw)}
+#creation-aventurier .creation-etapes{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px}
+#creation-aventurier .creation-etapes button{font-size:13px;padding:5px 10px;border-radius:999px}#creation-aventurier .creation-etapes button.on{background:var(--accent);color:var(--on-accent,#fff);border-color:var(--accent)}
+#creation-aventurier .creation-corps{display:flex;flex-direction:column;gap:10px;min-height:220px}
+#creation-aventurier .creation-champ{display:flex;flex-direction:column;gap:4px}#creation-aventurier .creation-champ>span{font-size:13px;color:var(--muted)}
+#creation-aventurier .creation-classes{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+#creation-aventurier .creation-classe{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border:2px solid var(--line);border-left:5px solid var(--teinte);border-radius:10px;background:var(--panel)}
+#creation-aventurier .creation-classe b{color:var(--teinte)}#creation-aventurier .creation-classe.on{border-color:var(--teinte);background:color-mix(in srgb,var(--teinte) 14%,var(--panel))}
+#creation-aventurier .creation-pv{font-weight:700;margin:4px 0 0}
+#creation-aventurier .creation-comps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 18px}
+#creation-aventurier .creation-comp{display:grid;grid-template-columns:1fr auto 28px auto;align-items:center;gap:6px}#creation-aventurier .creation-comp b{text-align:center}
+#creation-aventurier .creation-recap{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0}#creation-aventurier .creation-recap dt{color:var(--muted)}#creation-aventurier .creation-recap dd{margin:0;font-weight:600}
