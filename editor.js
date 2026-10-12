@@ -12,7 +12,11 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();a.role=ombrelame(a.role);a.munitionId??='';a.depots=normaliseDepots(a.depots);a.forges=normaliseForges(a.forges);
+function normalizeActor(a){a.id??=crypto.randomUUID();
+ // Les points de la création d'un aventurier : trois au plus, en Endurance, Vie ou Dégâts.
+ if(a.pointsCreation&&typeof a.pointsCreation==='object'){const n=k=>Math.max(0,Math.min(3,Math.trunc(Number(a.pointsCreation[k]))||0)),p={endu:n('endu'),vie:n('vie'),dmg:n('dmg')};
+  if(p.endu+p.vie+p.dmg>3||!(p.endu+p.vie+p.dmg))delete a.pointsCreation;else a.pointsCreation=p}else delete a.pointsCreation;
+a.role=ombrelame(a.role);a.munitionId??='';a.depots=normaliseDepots(a.depots);a.forges=normaliseForges(a.forges);
  // Les zones fouillées par la Perception : la carte, le centre et le rayon, rien d'autre.
  a.fouilles=Array.isArray(a.fouilles)?a.fouilles.filter(f=>f&&Number.isFinite(+f.x)&&Number.isFinite(+f.y)&&+f.r>0).slice(-200).map(f=>({m:String(f.m||'').slice(0,80),x:+f.x,y:+f.y,r:Math.min(1,+f.r),...(Number.isInteger(f.n)&&f.n>=0?{n:Math.min(99,f.n)}:{})})):[];
  if(a.reposCourts===undefined&&a.reposPris)a.reposCourts=1;a.reposCourts=Math.max(0,Math.trunc(Number(a.reposCourts))||0);a.reposPris=a.reposPris===true;a.horsCarte=a.horsCarte===true;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);a.paliersTalents=normalisePaliersActeur(a);if(a.element!==undefined&&!elementDe(a))delete a.element;a.vie??=a.hero?Math.max(1,a.max/3):0;a.endu??=3;a.pvBonus??=0;a.xp??=0;a.level??=1;if(a.hero&&typeof niveauDeXp==='function')a.level=niveauDeXp(a.xp);a.type??='standard';a.socle??='medium';a.menace??='closest';a.attacks=(Array.isArray(a.attacks)?a.attacks:[]).filter(x=>x&&x.name!==ATTAQUE_AUTO);a.notes??='';a.states??=(a.state&&a.state!=='Aucun'?[a.state]:[]);delete a.state;a.sexe??='';a.race??='';a.vieMax??=a.vie;a.hidden??=false;a.skills??=Array(8).fill(0);a.weapons??=[];a.armures=armuresDe(a);delete a.armorId;a.shieldId??='';a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);a.activeAttack??=0;a.talents??=[];a.ignition??='';
@@ -3641,47 +3645,76 @@ function renderAccueil(){renderActualites();renderActifs();const f=$('accueil-fa
    Onglet par onglet : identité, classe, caractéristiques, compétences, puis le récapitulatif. L'aventurier rejoint la campagne,
    au domaine : la page Aventuriers du MJ, et la fiche du joueur qui l'a créé. Il est prêt pour une mission, une aventure. */
 const ETAPES_CREATION=[['identite','Identité'],['classe','Classe'],['caracs','Caractéristiques'],['comps','Compétences'],['recap','Récapitulatif']];
+// La présentation des classes du jeu ; une classe du catalogue peut porter la sienne.
+const DESCRIPTIONS_CLASSES={Destructeur:'L’ivresse des batailles vous habite, et la rage vous envahit lorsque vous prenez les armes, afin d’exterminer vos adversaires et de protéger vos coéquipiers.',
+ Gardien:'Protecteur et esprit tactique de votre équipe, vous êtes le héraut des plus faibles et la robustesse incarnée. Défendez vos coéquipiers et arrachez la victoire grâce à votre esprit de stratège.',
+ Ombrelame:'Combattant redoutablement rapide, vous vous faufilez entre les adversaires pour leur infliger d’innombrables coups et attaques empoisonnées, avant de disparaître dans les ténèbres.',
+ Mystique:'Maître des arts mystiques, vous manipulez des puissances qui, bien souvent, vous dépassent. Vos Orbes annihilent des hordes d’adversaires — et vous choisissez l’élément qui les anime.'};
+const descriptionClasse=cl=>!cl?'':String(cl.description||'').trim()||DESCRIPTIONS_CLASSES[cl.name]||'';
+// Trois points de caractéristique : +2 Endurance, +1 Vie ou +1 Dégâts chacun ; quatre points de compétence, +2 au plus dans une même.
+const POINTS_CARACS=3,POINTS_COMPS=4,COMP_MAX_CREATION=2,XP_CREATION=100;
+const CARACS_CREATION=[['endu','Endurance',2],['vie','Vie',1],['dmg','Dégâts',1]];
 const creationDialog=dialog('creation-aventurier','Créer un aventurier','<nav id="creation-etapes" class="creation-etapes"></nav><div id="creation-corps" class="creation-corps"></div><div class="form-actions"><button type="button" id="creation-prec">Précédent</button><button type="button" id="creation-suiv" class="primary">Suivant</button></div>');
 let creation=null;
-function openCreation(){creation={etape:0,name:'',sexe:'',race:'',role:'',skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
-// Tout aventurier part de Vie 3, Endurance 2, Dégâts +0 ; sa classe ajoute ses PV.
-const pvCreation=c=>Math.max(1,BASE_HEROS.vieMax*BASE_HEROS.endu+bonusPV(catalog.classes,c.role,c.race));
-// Une étape n'ouvre la suivante que remplie : un nom, une classe.
-const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='classe'&&!creation.role?'Choisis une classe.':'';
+function openCreation(){creation={etape:0,name:'',sexe:'',race:'',role:'',caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
+const restantCaracs=c=>POINTS_CARACS-c.caracs.endu-c.caracs.vie-c.caracs.dmg,restantComps=c=>POINTS_COMPS-c.skills.reduce((s,n)=>s+n,0);
+const valeursCreation=c=>({vie:BASE_HEROS.vieMax+c.caracs.vie,endu:BASE_HEROS.endu+2*c.caracs.endu,dmg:BASE_HEROS.dmg+c.caracs.dmg});
+const pvCreation=c=>{const v=valeursCreation(c);return Math.max(1,v.vie*v.endu+bonusPV(catalog.classes,c.role,c.race))};
+// Une étape n'ouvre la suivante que remplie : un nom, une classe, tous les points dépensés.
+const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='classe'&&!creation.role?'Choisis une classe.'
+ :k==='caracs'&&restantCaracs(creation)?'Points à dépenser.':k==='comps'&&restantComps(creation)?'Points à répartir.':'';
 function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-etapes'),corps=$('creation-corps');nav.replaceChildren();corps.replaceChildren();
  ETAPES_CREATION.forEach(([k,n],i)=>{const b=document.createElement('button');b.type='button';b.textContent=(i+1)+'. '+n;b.className=i===c.etape?'on':'';
   b.disabled=ETAPES_CREATION.slice(0,i).some(([k2])=>etapeManque(k2));b.onclick=()=>{c.etape=i;renderCreation()};nav.append(b)});
  const k=ETAPES_CREATION[c.etape][0],lab=(t,el)=>{const l=document.createElement('label');l.className='creation-champ';const s=document.createElement('span');s.textContent=t;l.append(s,el);return l};
  const inp=(type,v,on,attrs={})=>{const i=document.createElement('input');i.type=type;i.value=String(v);Object.entries(attrs).forEach(([a,b])=>i.setAttribute(a,b));i.oninput=()=>on(i.value);return i};
+ const reste=(n,total)=>{const p=document.createElement('p');p.className='creation-reste'+(n?'':' fini');p.textContent='Points restants : '+n+' / '+total;return p};
+ const pas=(d,ok,fait)=>{const b=document.createElement('button');b.type='button';b.className='ico creation-pas';b.textContent=d>0?'+':'−';b.disabled=!ok;b.onclick=fait;return b};
+ const recap=l=>{const dl=document.createElement('dl');dl.className='creation-recap';l.forEach(([t,v])=>{const dt=document.createElement('dt');dt.textContent=t;const dd=document.createElement('dd');dd.textContent=String(v);dl.append(dt,dd)});return dl};
  if(k==='identite'){const n=inp('text',c.name,v=>{c.name=v.slice(0,120);majBoutons()},{maxlength:'120',placeholder:'Nom de l’aventurier'});
   const s=document.createElement('select');[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']].forEach(([v,t])=>s.add(new Option(t,v)));s.value=c.sexe;s.onchange=()=>{c.sexe=s.value};
   const r=inp('text',c.race,v=>{c.race=v.slice(0,40)},{maxlength:'40'});corps.append(lab('Nom',n),lab('Sexe',s),lab('Espèce',r));setTimeout(()=>n.focus())}
  else if(k==='classe'){const g=document.createElement('div');g.className='creation-classes';
   (catalog.classes||[]).forEach(cl=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.role===cl.name?' on':'');b.style.setProperty('--teinte',cl.tint||'#8a7a5a');
    const n=document.createElement('b');n.textContent=cl.name;const p=document.createElement('small');p.textContent='+'+(Number(cl.pv)||0)+' PV';b.append(n,p);
-   b.onclick=()=>{c.role=cl.name;renderCreation()};g.append(b)});corps.append(g)}
- else if(k==='caracs'){const dl=document.createElement('dl');dl.className='creation-recap';
-  [['Vie',BASE_HEROS.vieMax],['Endurance',BASE_HEROS.endu],['Dégâts','+'+BASE_HEROS.dmg],['PV maximum',pvCreation(c)]].forEach(([t,v])=>{const dt=document.createElement('dt');dt.textContent=t;const dd=document.createElement('dd');dd.textContent=String(v);dl.append(dt,dd)});corps.append(dl)}
- else if(k==='comps'){const g=document.createElement('div');g.className='creation-comps';
-  COMPETENCES.forEach((nom,i)=>{const l=document.createElement('div');l.className='creation-comp';const n=document.createElement('span');n.textContent=nom;n.style.color='rgb('+SKILL_TINTS[i]+')';
+   b.onclick=()=>{c.role=cl.name;renderCreation()};g.append(b)});corps.append(g);
+  // La classe choisie : sa présentation, ses PV, ses compétences.
+  const cl=(catalog.classes||[]).find(x=>x.name===c.role);
+  if(cl){const f=document.createElement('div');f.className='creation-fiche-classe';f.style.setProperty('--teinte',cl.tint||'#8a7a5a');
+   const t=document.createElement('h3');t.textContent=cl.name;f.append(t);const d=descriptionClasse(cl);if(d){const p=document.createElement('p');p.className='creation-description';p.textContent=d;f.append(p)}
+   const bonus=document.createElement('div');bonus.className='creation-bonus';const pv=document.createElement('span');pv.className='creation-pastille';pv.textContent='+'+(Number(cl.pv)||0)+' PV';bonus.append(pv);
+   competencesDeClasse(cl.name).forEach((n,i)=>{if(!n)return;const s=document.createElement('span');s.className='creation-pastille';s.style.color='rgb('+SKILL_TINTS[i]+')';s.textContent='+'+n+' '+COMPETENCES[i];bonus.append(s)});
+   f.append(bonus);corps.append(f)}}
+ else if(k==='caracs'){const n=restantCaracs(c),g=document.createElement('div');g.className='creation-points';
+  CARACS_CREATION.forEach(([cle,nom,par])=>{const l=document.createElement('div');l.className='creation-comp';const t=document.createElement('span');t.textContent=nom+' (+'+par+' par point)';
+   const v=document.createElement('b');v.textContent=String(c.caracs[cle]);
+   l.append(t,pas(-1,c.caracs[cle]>0,()=>{c.caracs[cle]--;renderCreation()}),v,pas(1,n>0,()=>{c.caracs[cle]++;renderCreation()}));g.append(l)});
+  const v=valeursCreation(c);corps.append(reste(n,POINTS_CARACS),g,recap([['Vie',v.vie],['Endurance',v.endu],['Dégâts','+'+v.dmg],['PV maximum',pvCreation(c)]]))}
+ else if(k==='comps'){const n=restantComps(c),g=document.createElement('div'),cls=competencesDeClasse(c.role);g.className='creation-comps';
+  COMPETENCES.forEach((nom,i)=>{const l=document.createElement('div');l.className='creation-comp';const t=document.createElement('span');t.textContent=nom+(cls[i]?' (+'+cls[i]+' classe)':'');t.style.color='rgb('+SKILL_TINTS[i]+')';
    const v=document.createElement('b');v.textContent=String(c.skills[i]);
-   const pas=d=>{const b=document.createElement('button');b.type='button';b.className='ico';b.textContent=d>0?'+':'−';b.onclick=()=>{c.skills[i]=Math.max(0,Math.min(30,c.skills[i]+d));v.textContent=String(c.skills[i])};return b};
-   l.append(n,pas(-1),v,pas(1));g.append(l)});corps.append(g)}
- else{const l=[['Nom',c.name],['Sexe',c.sexe||'—'],['Espèce',c.race||'—'],['Classe',c.role],['PV maximum',pvCreation(c)],
-   ['Compétences',COMPETENCES.map((n,i)=>c.skills[i]?n+' '+c.skills[i]:'').filter(Boolean).join(', ')||'—']];
-  const dl=document.createElement('dl');dl.className='creation-recap';l.forEach(([t,v])=>{const dt=document.createElement('dt');dt.textContent=t;const dd=document.createElement('dd');dd.textContent=String(v);dl.append(dt,dd)});corps.append(dl)}
+   l.append(t,pas(-1,c.skills[i]>0,()=>{c.skills[i]--;renderCreation()}),v,pas(1,n>0&&c.skills[i]<COMP_MAX_CREATION,()=>{c.skills[i]++;renderCreation()}));g.append(l)});
+  corps.append(reste(n,POINTS_COMPS),g)}
+ else{const v=valeursCreation(c),cls=competencesDeClasse(c.role);
+  corps.append(recap([['Nom',c.name],['Sexe',c.sexe||'—'],['Espèce',c.race||'—'],['Classe',c.role],['Vie',v.vie],['Endurance',v.endu],['Dégâts','+'+v.dmg],['PV maximum',pvCreation(c)],
+   ['Compétences',COMPETENCES.map((n,i)=>c.skills[i]+cls[i]?n+' '+(c.skills[i]+cls[i]):'').filter(Boolean).join(', ')||'—'],['XP à investir',XP_CREATION]]))}
  majBoutons()}
 function majBoutons(){const c=creation,k=ETAPES_CREATION[c.etape][0],fin=c.etape===ETAPES_CREATION.length-1;
  $('creation-prec').hidden=c.etape===0;$('creation-suiv').textContent=fin?'Créer l’aventurier':'Suivant';$('creation-suiv').disabled=!!etapeManque(k)||(fin&&ETAPES_CREATION.some(([k2])=>etapeManque(k2)))}
 $('creation-prec').onclick=()=>{if(creation&&creation.etape>0){creation.etape--;renderCreation()}};
 $('creation-suiv').onclick=()=>{const c=creation;if(!c)return;if(c.etape<ETAPES_CREATION.length-1){if(!etapeManque(ETAPES_CREATION[c.etape][0])){c.etape++;renderCreation()}return}creerAventurier()};
-// L'aventurier créé : au domaine, hors de la carte ; chez un joueur, il devient le sien.
+/* L'aventurier créé : au domaine, hors de la carte, avec ses 100 premiers XP ; chez un joueur, il devient le sien. Son arbre
+   s'ouvre aussitôt, jusqu'au niveau 4, pour qu'il les investisse. */
+let arbresCreationId=null;
 function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;
- const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:c.name.trim(),sexe:c.sexe,race:c.race.trim(),role:c.role,vie:BASE_HEROS.vieMax,skills:[...c.skills],level:1,xp:0,horsCarte:true,lieuDomaine:''});
- a.max=pvCreation(c);a.hp=a.max;normalizeActor(a);actors.push(a);creation=null;creationDialog.close();
+ const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:c.name.trim(),sexe:c.sexe,race:c.race.trim(),role:c.role,vie:BASE_HEROS.vieMax,skills:[...c.skills],level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'',pointsCreation:{...c.caracs}});
+ normalizeActor(a);a.max=Math.max(1,pvMaximum(catalog.classes,a,catalog.talents,catalog.items));a.hp=a.max;actors.push(a);creation=null;creationDialog.close();
  const i=actors.indexOf(a);
- if(view!=='mj'){if(typeof enLigne!=='undefined'&&enLigne&&typeof prendreSiege==='function')prendreSiege(a);else{owner=i;selected=i}}
- render();if(view!=='mj'&&!(typeof enLigne!=='undefined'&&enLigne)&&$('owner'))$('owner').value=String(i);if(typeof renderHeroes==='function')renderHeroes();scheduleSave();if(typeof pousserBientot==='function')pousserBientot();renderAccueil()}
+ if(view!=='mj'){owner=i;selected=i;if(typeof enLigne!=='undefined'&&enLigne&&typeof prendreSiege==='function')prendreSiege(a)}
+ render();if(view!=='mj'&&!(typeof enLigne!=='undefined'&&enLigne)&&$('owner'))$('owner').value=String(i);
+ if(typeof renderHeroes==='function')renderHeroes();scheduleSave();if(typeof pousserBientot==='function')pousserBientot();renderAccueil();
+ // L'arbre de la création referme sa parenthèse en se fermant : l'aventurier retrouve les verrous de son niveau.
+ arbresCreationId=a.id;arbresDialog.addEventListener('close',()=>{arbresCreationId=null},{once:true});openArbres(a)}
 $('accueil-creer').onclick=()=>openCreation();
 function completerInventaire(a){if(!a)return;a.inventaire??=[];
  const besoin=new Map();[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean).forEach(id=>besoin.set(id,(besoin.get(id)||0)+1));
@@ -4878,7 +4911,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // Un talent, un bonus ou une amélioration que l'XP restante ne paie pas se grise, comme un prérequis manquant.
  const trop=t=>a&&coutPalier(t,1)>xpDisponible(a,catalog.talents)?'XP insuffisante':'';
  const noeudArbre=(t,col,libre)=>{const acquis=porte(t);
-  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t,Number(a.level)||1))||manqueTalent(a.talents,t,catalog.talents)||trop(t);
+  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t,Math.max(Number(a.level)||1,arbresCreationId&&a.id===arbresCreationId?4:0)))||manqueTalent(a.talents,t,catalog.talents)||trop(t);
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);
   if(mj&&lienDepuis===t.id)el.classList.add('relie-source');
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}

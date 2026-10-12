@@ -2590,6 +2590,8 @@ function competencesDeClasse(role){const k=cleClasse(role),e=k?Object.entries(CO
 function bonusDe(a,talents,items){const out=bonusTalents(talentsAuPalier(a,talents)
  .map(t=>{const code=talentCode(t);return code?{code,params:paramsTalent(t)}:null}).filter(Boolean));
  if(a&&a.hero)competencesDeClasse(a.role).forEach((n,k)=>out.skills[k]+=n);
+ // Les trois points de la création : +2 Endurance, +1 Vie ou +1 Dégâts chacun.
+ if(a&&a.hero&&a.pointsCreation){const p=a.pointsCreation;out.endu+=2*(Math.trunc(Number(p.endu))||0);out.vie+=Math.trunc(Number(p.vie))||0;out.dmg+=Math.trunc(Number(p.dmg))||0}
  if(items){const e=bonusEquipement(a,items);['pv','endu','vie','def','dmg'].forEach(k=>out[k]+=e[k]);e.skills.forEach((n,k)=>out.skills[k]+=n)}
  // Ce que les pièges lui ont ôté, permanent ou jusqu'au repos, se retranche (v0.615).
  malusDe(a).forEach(b=>{if(b.carac==='comp'){const k=Number(b.comp)||0;if(out.skills[k]!==undefined)out.skills[k]-=b.valeur}else if(out[b.carac]!==undefined)out[b.carac]-=b.valeur});

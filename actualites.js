@@ -1,14 +1,15 @@
 /* Les dernières actualités de la table, pour l'Accueil. Chaque publication s'ajoute d'elle-même en tête de « versions »
    (publie.sh) ; « resume » condense les dix dernières en quelques lignes, tant qu'il va jusqu'à la plus récente. */
-const ACTUALITES={resume:{jusqua:'0.702',lignes:[
- 'Nouvel onglet Accueil : créer un aventurier pas à pas, les actualités, les aventuriers présents au domaine.',
- 'Forge : forge sur mesure et Chambre forte, pour des pièces uniques à donner aux aventuriers comme aux adversaires.',
+const ACTUALITES={resume:{jusqua:'0.703',lignes:[
+ 'Accueil : création d’aventurier pas à pas — classe présentée, 3 points de caractéristique, 4 de compétence, 100 XP à investir dans l’arbre.',
+ 'Accueil : les dernières actualités, les aventuriers présents au domaine, et bientôt les hauts faits.',
  'Forge : compétence tirée au hasard, plusieurs bonus différents sur une pièce, jamais deux fois le même.',
- 'Accélération : une réserve de mouvement gagnée à chaque coup réussi, jusqu’à la fin du combat.',
  'Fiche d’aventurier : les talents rangés en quatre rangées, des Actions aux bonus.',
- 'Cartes : carrés de blocage et impraticables ; talents : effets Points d’Action et Points de Mouvement.']},
+ 'Cartes : carrés de blocage et impraticables, pour tracer des cases vides.',
+ 'Talents : effets génériques Points d’Action et Points de Mouvement.']},
 versions:[
 /* versions */
+{"v":"0.703","d":"2026-10-12","t":"Création d'aventurier : classe, points, arbre"},
 {"v":"0.702","d":"2026-10-12","t":"Accueil : créer un aventurier, actualités, aventuriers actifs"},
 {"v":"0.701","d":"2026-10-12","t":"Talents : effets Points d'Action et Points de Mouvement"},
 {"v":"0.700","d":"2026-10-12","t":"Arbres : bonus génériques PA et PM"},

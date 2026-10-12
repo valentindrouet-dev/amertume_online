@@ -2508,3 +2508,11 @@ body.page-accueil .intro,body.page-accueil .mj-tools,body.page-accueil main.layo
 #creation-aventurier .creation-comps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 18px}
 #creation-aventurier .creation-comp{display:grid;grid-template-columns:1fr auto 28px auto;align-items:center;gap:6px}#creation-aventurier .creation-comp b{text-align:center}
 #creation-aventurier .creation-recap{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0}#creation-aventurier .creation-recap dt{color:var(--muted)}#creation-aventurier .creation-recap dd{margin:0;font-weight:600}
+/* La création : la fiche de la classe choisie, les points à dépenser. */
+#creation-aventurier .creation-fiche-classe{--teinte:#8a7a5a;border-left:4px solid var(--teinte);background:color-mix(in srgb,var(--teinte) 8%,var(--panel));border-radius:8px;padding:10px 14px}
+#creation-aventurier .creation-fiche-classe h3{margin:0 0 6px;color:var(--teinte);font:700 18px Georgia,serif}
+#creation-aventurier .creation-description{margin:0 0 8px;font-style:italic}
+#creation-aventurier .creation-bonus{display:flex;flex-wrap:wrap;gap:6px}#creation-aventurier .creation-pastille{font-weight:700;font-size:13px;padding:2px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+#creation-aventurier .creation-reste{margin:0;font-weight:700;color:var(--accent)}#creation-aventurier .creation-reste.fini{color:var(--muted)}
+#creation-aventurier .creation-points{display:flex;flex-direction:column;gap:6px;max-width:340px}
+#creation-aventurier .creation-pas:disabled{opacity:.35}

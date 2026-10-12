@@ -3065,7 +3065,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   ctxN.poseNiveauLien(B,A,3);assert.equal(JSON.stringify(A.niveaux),'{"B":3}','le niveau tient sur le talent d’où part la ligne');assert.equal(ctxN.niveauLien(B,A),3);
   assert.equal(ctxN.verrouArbre(['A'],L,B,2),'Niveau 3','niveau 2 : fermé');assert.equal(ctxN.verrouArbre(['A'],L,B,3),'','niveau 3 : ouvert');
   ctxN.poseNiveauLien(A,B,1);assert.equal(A.niveaux,undefined,'sous 2, le niveau s’ôte');}
- assert.ok(src.includes("(libre?'':verrouArbre(a.talents,col.liste,t,Number(a.level)||1))")&&src.includes("b.className='arbre-niveau'+(n?'':' vide')")&&feuille.includes('.arbre-col>.arbre-niveau{position:absolute;'),'les niveaux de l’arbre');
+ assert.ok(src.includes("(libre?'':verrouArbre(a.talents,col.liste,t,Math.max(Number(a.level)||1,arbresCreationId&&a.id===arbresCreationId?4:0)))")&&src.includes("b.className='arbre-niveau'+(n?'':' vide')")&&feuille.includes('.arbre-col>.arbre-niveau{position:absolute;'),'les niveaux de l’arbre');
  /* v0.487 — Munitions équipées toutes ensemble ; bulle d'arme à distance avec sa place de munition et le bonus de
    dégâts du porteur ; l'écu de DEF garde sa forme. */
  assert.ok(src.includes("o.category==='ammo'?(o.id===a.munitionId?(comptes.get(o)||0):0)")&&src.includes("p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));")
@@ -3389,6 +3389,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.703 — La création : la classe présentée, trois points de caractéristique, quatre de compétence, l'arbre jusqu'au niveau 4. */
+{const C27=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
+ const b=C27.bonusDe({hero:true,role:'Gardien',pointsCreation:{endu:1,vie:1,dmg:1},talents:[]},[],[]);assert.deepEqual([b.endu,b.vie,b.dmg],[2,1,1]);
+ assert.equal(C27.pvMaximum([{name:'Gardien',pv:18}],{hero:true,role:'Gardien',vie:3,endu:2,pointsCreation:{endu:2,vie:1,dmg:0},talents:[]},[],[]),4*6+18);
+ assert.ok(ed.includes("const POINTS_CARACS=3,POINTS_COMPS=4,COMP_MAX_CREATION=2,XP_CREATION=100;")&&ed.includes("Ombrelame:'Combattant redoutablement rapide")
+  &&ed.includes("arbresCreationId=a.id;arbresDialog.addEventListener('close',()=>{arbresCreationId=null},{once:true});openArbres(a)}")&&fs.readFileSync('live.js','utf8').includes("'pointsCreation'"),'création complète');}
 /* v0.702 — L'onglet Accueil : créer un aventurier pas à pas, les dernières actualités, les aventuriers au domaine, les hauts faits. */
 {const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),act=fs.readFileSync('actualites.js','utf8'),sh=fs.readFileSync('publie.sh','utf8');
  const A=new Function(act+';return ACTUALITES')();assert.ok(A.versions.length>=10&&A.resume.lignes.length>=5&&A.resume.lignes.length<=6,'les actualités');
@@ -5385,4 +5391,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2001 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2002 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
