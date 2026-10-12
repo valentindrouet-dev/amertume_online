@@ -2475,3 +2475,7 @@ button.j-stats{padding:0;border:0;background:none;font:inherit;font-weight:800;c
 .hero-card .talent-grille .talent-ameliorations.rang-bonus{border-top:1px dashed #cfae5e;padding-top:8px}
 /* Le carré de blocage ou d'impraticable : l'aperçu n'en montre que le contour. */
 .shape.cadre{background:transparent!important;border-style:solid}
+/* Les bonus de Point d'Action et de Point de Mouvement : le bleu des PA, le brun des PM. */
+.arbre-noeud.bonus-pa{--teinte:#3f8fe0}.arbre-noeud.bonus-pm{--teinte:#cf9152}
+.talent-detail.bulle-bonus.bonus-pa{--teinte:#3f8fe0}.talent-detail.bulle-bonus.bonus-pm{--teinte:#cf9152}
+.hero-card .talent-ameliorations .bonus-rond.bonus-pa{--teinte:#3f8fe0}.hero-card .talent-ameliorations .bonus-rond.bonus-pm{--teinte:#cf9152}

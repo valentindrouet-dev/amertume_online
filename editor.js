@@ -4487,7 +4487,8 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
     L'orbe, et toute autre valeur, passent par « Autre bonus ». */
  if(petit){const h=document.createElement('h3');h.className='arbre-choix-groupe';h.textContent='Bonus';
   const rang=document.createElement('div');rang.className='bonus-generiques';
-  [['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],...skillNames.map((n,k)=>['comp',n,k])].forEach(([carac,nom,k])=>{
+  // Les Points d'Action et de Mouvement aussi, à +1 ; les améliorations qui en donnent restent ce qu'elles sont.
+  [['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],['pa','Point d’Action'],['pm','Point de Mouvement'],...skillNames.map((n,k)=>['comp',n,k])].forEach(([carac,nom,k])=>{
    const v=carac==='endu'?2:1,params={carac,valeur:v,...(carac==='comp'?{comp:String(k)}:{})},b=document.createElement('button');b.type='button';b.className='bonus-generique arbre-noeud petit bonus bonus-'+carac;
    const r=document.createElement('span');r.className='arbre-rond';b.append(r);poseLogoBonus(r,{effet:'bonus',params});
    b.setAttribute('aria-label','+'+v+' '+nom);b.title='+'+v+' '+nom;
