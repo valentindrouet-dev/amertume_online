@@ -3393,7 +3393,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const C27=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
  const b=C27.bonusDe({hero:true,role:'Gardien',pointsCreation:{endu:1,vie:1,dmg:1},talents:[]},[],[]);assert.deepEqual([b.endu,b.vie,b.dmg],[2,1,1]);
  assert.equal(C27.pvMaximum([{name:'Gardien',pv:18}],{hero:true,role:'Gardien',vie:3,endu:2,pointsCreation:{endu:2,vie:1,dmg:0},talents:[]},[],[]),4*6+18);
- assert.ok(ed.includes("const POINTS_CARACS=3,POINTS_COMPS=4,COMP_MAX_CREATION=2,XP_CREATION=100;")&&ed.includes("Ombrelame:'Combattant redoutablement rapide")
+ assert.ok(ed.includes("const POINTS_CARACS=3,POINTS_COMPS=4,COMP_MAX_CREATION=2,XP_CREATION=100,COMP_BASE=1;")&&ed.includes("skills:c.skills.map(n=>COMP_BASE+n),")&&ed.includes("Ombrelame:'Combattant redoutablement rapide")
   &&ed.includes("arbresCreationId=a.id;arbresDialog.addEventListener('close',()=>{arbresCreationId=null},{once:true});openArbres(a)}")&&fs.readFileSync('live.js','utf8').includes("'pointsCreation'"),'création complète');}
 /* v0.702 — L'onglet Accueil : créer un aventurier pas à pas, les dernières actualités, les aventuriers au domaine, les hauts faits. */
 {const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),act=fs.readFileSync('actualites.js','utf8'),sh=fs.readFileSync('publie.sh','utf8');

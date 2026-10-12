@@ -2516,3 +2516,12 @@ body.page-accueil .intro,body.page-accueil .mj-tools,body.page-accueil main.layo
 #creation-aventurier .creation-reste{margin:0;font-weight:700;color:var(--accent)}#creation-aventurier .creation-reste.fini{color:var(--muted)}
 #creation-aventurier .creation-points{display:flex;flex-direction:column;gap:6px;max-width:340px}
 #creation-aventurier .creation-pas:disabled{opacity:.35}
+/* La création, en couleurs : les icônes des caractéristiques et des compétences, des tuiles pour les valeurs. */
+#creation-aventurier .creation-ico{width:20px;height:20px;flex:none;object-fit:contain;display:inline-grid;place-items:center;font:800 9px/1 system-ui;vertical-align:middle}
+#creation-aventurier .creation-nom{display:inline-flex;align-items:center;gap:6px;font-weight:700}#creation-aventurier .creation-nom small{font-weight:400;color:var(--muted);font-size:12px}
+#creation-aventurier .creation-pastille{display:inline-flex;align-items:center;gap:5px}
+#creation-aventurier .creation-tuiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:4px}
+#creation-aventurier .creation-tuile{--teinte:#8a7a5a;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 6px;border-radius:10px;border:2px solid var(--teinte);background:color-mix(in srgb,var(--teinte) 10%,var(--panel))}
+#creation-aventurier .creation-tuile .creation-ico{width:26px;height:26px}#creation-aventurier .creation-tuile b{font:800 20px/1 system-ui;color:var(--teinte)}#creation-aventurier .creation-tuile small{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+#creation-aventurier .creation-points .creation-comp,#creation-aventurier .creation-comps .creation-comp{grid-template-columns:1fr auto 28px auto}
+#creation-aventurier .creation-comps .creation-comp b.monte{color:var(--accent)}
