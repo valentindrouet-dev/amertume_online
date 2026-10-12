@@ -1340,6 +1340,14 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   aide:'Maîtrise : le porteur dispose d’un point d’Action, ou d’un point de Mouvement, de plus à chaque tour.',
   params:[{cle:'quoi',nom:'Point',type:'choix',defaut:'action',options:[['action','Action'],['mouvement','Mouvement']]}],
   phrase(p){return 'Le porteur dispose de <b>+1 point '+((p&&p.quoi)==='mouvement'?'de Mouvement':'d’Action')+'</b> à chaque tour.'}},
+ /* Points d'Action, Points de Mouvement : le porteur dispose de x points de plus à chaque tour. Les améliorations qui en
+    donnent restent à part. */
+ pointsaction:{cle:'pointsaction',nom:'Points d’Action',type:'pass',aide:'Le porteur dispose de x points d’Action de plus à chaque tour.',
+  params:[{cle:'x',nom:'x',type:'nombre',defaut:1,min:1,max:9}],
+  phrase(p){const x=Math.max(1,Math.min(9,Math.trunc(Number(p&&p.x))||1));return 'Le porteur dispose de <b>+'+x+' point'+(x>1?'s':'')+' d’Action</b> à chaque tour.'}},
+ pointsmouvement:{cle:'pointsmouvement',nom:'Points de Mouvement',type:'pass',aide:'Le porteur dispose de x points de Mouvement de plus à chaque tour.',
+  params:[{cle:'x',nom:'x',type:'nombre',defaut:1,min:1,max:9}],
+  phrase(p){const x=Math.max(1,Math.min(9,Math.trunc(Number(p&&p.x))||1));return 'Le porteur dispose de <b>+'+x+' point'+(x>1?'s':'')+' de Mouvement</b> à chaque tour.'}},
  /* Enragement : chaque critique du porteur ajoute à ses dégâts, jusqu'à la fin du combat ; +1, +2 avec son
     amélioration. Le compte repart de zéro quand le combat finit. */
  enragement:{cle:'enragement',nom:'Enragement',type:'pass',

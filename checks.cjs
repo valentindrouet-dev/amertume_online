@@ -3389,8 +3389,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
-/* v0.700 — Les bonus génériques de l'arbre offrent aussi +1 Point d'Action et +1 Point de Mouvement. */
-{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],['pa','Point d’Action'],['pm','Point de Mouvement'],...skillNames.map((n,k)=>['comp',n,k])]"),'bonus PA et PM');}
+/* v0.701 — Les effets de talent Points d'Action et Points de Mouvement : +x à chaque tour ; les bonus de l'arbre restent tels
+   qu'ils étaient. */
+{const C26=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.deepEqual([C26.TALENTS_CODES.pointsaction.type,C26.TALENTS_CODES.pointsmouvement.phrase({x:2})],['pass','Le porteur dispose de <b>+2 points de Mouvement</b> à chaque tour.']);
+ assert.ok(page.includes("+c.filter(t=>t.code.cle===(quoi==='action'?'pointsaction':quoi==='mouvement'?'pointsmouvement':'')).reduce(")
+  &&ed.includes("[['pv','PV max'],['endu','Endurance'],['vie','Vie'],['dmg','Dégâts'],...skillNames.map((n,k)=>['comp',n,k])]"),'points de talent');}
 /* v0.699 — Le carré de blocage et le carré impraticable : seul le contour, de l'épaisseur d'une ligne. */
 {const mp=fs.readFileSync('maps.js','utf8');const C25=require('./combat.js');
  const f=new Function('TRAIT_EPAISSEUR','rectPolygon',mp.match(/function cadreFormes\(r,ratio\)\{[^\n]*\n[^\n]*\n/)[0]+'return cadreFormes')(C25.TRAIT_EPAISSEUR,C25.rectPolygon);
@@ -4875,7 +4879,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual([C.pointsMax(h,'action'),C.pointsMax(h,'mouvement'),C.pointsMax(h,'action',true)],[2,1,1],'+1 Action, la fiche garde 1');
  h.points.action=4;assert.equal(C.pointsMax(h,'action'),5,'au-delà du plafond');delete globalThis.pointsDeTalents;
  assert.ok(src.includes("a.points={action:pointsMax(a,'action',true),mouvement:pointsMax(a,'mouvement',true),objet:pointsMax(a,'objet',true)};")
-  &&page.includes("+c.filter(t=>t.code.cle==='pointsupp'&&((t.params&&t.params.quoi)||'action')===quoi).length}"),'la fiche ne garde que sa base');
+  &&page.includes("+c.filter(t=>t.code.cle==='pointsupp'&&((t.params&&t.params.quoi)||'action')===quoi).length"),'la fiche ne garde que sa base');
  // L'arbre : la ligne qui saute une case vide.
  const ctx={DIRS:{n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES:['n','e','s','o'],LIENS_MAX:4,petitsDe:()=>[]};vm.createContext(ctx);
  vm.runInContext(src.slice(src.indexOf('function posDe(t){'),src.indexOf('const liensDe='))+'const liensDe=t=>Array.isArray(t&&t.liens)?t.liens:[];'
