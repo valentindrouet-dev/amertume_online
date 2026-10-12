@@ -1,7 +1,7 @@
 /* Les dernières actualités de la table, pour l'Accueil. Chaque publication s'ajoute d'elle-même en tête de « versions »
    (publie.sh) ; « resume » condense les dix dernières en quelques lignes, tant qu'il va jusqu'à la plus récente. */
-const ACTUALITES={resume:{jusqua:'0.704',lignes:[
- 'Accueil : création d’aventurier pas à pas, en couleurs — classe présentée, 3 points de caractéristique, 4 de compétence, 100 XP à investir dans l’arbre.',
+const ACTUALITES={resume:{jusqua:'0.705',lignes:[
+ 'Accueil : création d’aventurier pas à pas, en couleurs — classe présentée, 3 points de caractéristique, 4 de compétence, 100 XP de départ.',
  'Accueil : les dernières actualités, les aventuriers présents au domaine, et bientôt les hauts faits.',
  'Forge : compétence tirée au hasard, plusieurs bonus différents sur une pièce, jamais deux fois le même.',
  'Fiche d’aventurier : les talents rangés en quatre rangées, des Actions aux bonus.',
@@ -9,6 +9,7 @@ const ACTUALITES={resume:{jusqua:'0.704',lignes:[
  'Talents : effets génériques Points d’Action et Points de Mouvement.']},
 versions:[
 /* versions */
+{"v":"0.705","d":"2026-10-12","t":"Création d'aventurier : fin sur le récapitulatif"},
 {"v":"0.704","d":"2026-10-12","t":"Création d'aventurier en couleurs, compétences à 1"},
 {"v":"0.703","d":"2026-10-12","t":"Création d'aventurier : classe, points, arbre"},
 {"v":"0.702","d":"2026-10-12","t":"Accueil : créer un aventurier, actualités, aventuriers actifs"},

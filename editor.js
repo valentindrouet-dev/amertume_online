@@ -3714,18 +3714,15 @@ function majBoutons(){const c=creation,k=ETAPES_CREATION[c.etape][0],fin=c.etape
  $('creation-prec').hidden=c.etape===0;$('creation-suiv').textContent=fin?'Créer l’aventurier':'Suivant';$('creation-suiv').disabled=!!etapeManque(k)||(fin&&ETAPES_CREATION.some(([k2])=>etapeManque(k2)))}
 $('creation-prec').onclick=()=>{if(creation&&creation.etape>0){creation.etape--;renderCreation()}};
 $('creation-suiv').onclick=()=>{const c=creation;if(!c)return;if(c.etape<ETAPES_CREATION.length-1){if(!etapeManque(ETAPES_CREATION[c.etape][0])){c.etape++;renderCreation()}return}creerAventurier()};
-/* L'aventurier créé : au domaine, hors de la carte, avec ses 100 premiers XP ; chez un joueur, il devient le sien. Son arbre
-   s'ouvre aussitôt, jusqu'au niveau 4, pour qu'il les investisse. */
-let arbresCreationId=null;
+/* L'aventurier créé : au domaine, hors de la carte, avec ses 100 premiers XP ; chez un joueur, il devient le sien. La création
+   s'achève sur le récapitulatif. */
 function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;
  const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:c.name.trim(),sexe:c.sexe,race:c.race.trim(),role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.map(n=>COMP_BASE+n),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'',pointsCreation:{...c.caracs}});
  normalizeActor(a);a.max=Math.max(1,pvMaximum(catalog.classes,a,catalog.talents,catalog.items));a.hp=a.max;actors.push(a);creation=null;creationDialog.close();
  const i=actors.indexOf(a);
  if(view!=='mj'){owner=i;selected=i;if(typeof enLigne!=='undefined'&&enLigne&&typeof prendreSiege==='function')prendreSiege(a)}
  render();if(view!=='mj'&&!(typeof enLigne!=='undefined'&&enLigne)&&$('owner'))$('owner').value=String(i);
- if(typeof renderHeroes==='function')renderHeroes();scheduleSave();if(typeof pousserBientot==='function')pousserBientot();renderAccueil();
- // L'arbre de la création referme sa parenthèse en se fermant : l'aventurier retrouve les verrous de son niveau.
- arbresCreationId=a.id;arbresDialog.addEventListener('close',()=>{arbresCreationId=null},{once:true});openArbres(a)}
+ if(typeof renderHeroes==='function')renderHeroes();scheduleSave();if(typeof pousserBientot==='function')pousserBientot();renderAccueil()}
 $('accueil-creer').onclick=()=>openCreation();
 function completerInventaire(a){if(!a)return;a.inventaire??=[];
  const besoin=new Map();[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean).forEach(id=>besoin.set(id,(besoin.get(id)||0)+1));
@@ -4922,7 +4919,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // Un talent, un bonus ou une amélioration que l'XP restante ne paie pas se grise, comme un prérequis manquant.
  const trop=t=>a&&coutPalier(t,1)>xpDisponible(a,catalog.talents)?'XP insuffisante':'';
  const noeudArbre=(t,col,libre)=>{const acquis=porte(t);
-  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t,Math.max(Number(a.level)||1,arbresCreationId&&a.id===arbresCreationId?4:0)))||manqueTalent(a.talents,t,catalog.talents)||trop(t);
+  const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t,Number(a.level)||1))||manqueTalent(a.talents,t,catalog.talents)||trop(t);
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);
   if(mj&&lienDepuis===t.id)el.classList.add('relie-source');
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}

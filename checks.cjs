@@ -3065,7 +3065,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   ctxN.poseNiveauLien(B,A,3);assert.equal(JSON.stringify(A.niveaux),'{"B":3}','le niveau tient sur le talent d’où part la ligne');assert.equal(ctxN.niveauLien(B,A),3);
   assert.equal(ctxN.verrouArbre(['A'],L,B,2),'Niveau 3','niveau 2 : fermé');assert.equal(ctxN.verrouArbre(['A'],L,B,3),'','niveau 3 : ouvert');
   ctxN.poseNiveauLien(A,B,1);assert.equal(A.niveaux,undefined,'sous 2, le niveau s’ôte');}
- assert.ok(src.includes("(libre?'':verrouArbre(a.talents,col.liste,t,Math.max(Number(a.level)||1,arbresCreationId&&a.id===arbresCreationId?4:0)))")&&src.includes("b.className='arbre-niveau'+(n?'':' vide')")&&feuille.includes('.arbre-col>.arbre-niveau{position:absolute;'),'les niveaux de l’arbre');
+ assert.ok(src.includes("(libre?'':verrouArbre(a.talents,col.liste,t,Number(a.level)||1))")&&src.includes("b.className='arbre-niveau'+(n?'':' vide')")&&feuille.includes('.arbre-col>.arbre-niveau{position:absolute;'),'les niveaux de l’arbre');
  /* v0.487 — Munitions équipées toutes ensemble ; bulle d'arme à distance avec sa place de munition et le bonus de
    dégâts du porteur ; l'écu de DEF garde sa forme. */
  assert.ok(src.includes("o.category==='ammo'?(o.id===a.munitionId?(comptes.get(o)||0):0)")&&src.includes("p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));")
@@ -3394,7 +3394,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  const b=C27.bonusDe({hero:true,role:'Gardien',pointsCreation:{endu:1,vie:1,dmg:1},talents:[]},[],[]);assert.deepEqual([b.endu,b.vie,b.dmg],[2,1,1]);
  assert.equal(C27.pvMaximum([{name:'Gardien',pv:18}],{hero:true,role:'Gardien',vie:3,endu:2,pointsCreation:{endu:2,vie:1,dmg:0},talents:[]},[],[]),4*6+18);
  assert.ok(ed.includes("const POINTS_CARACS=3,POINTS_COMPS=4,COMP_MAX_CREATION=2,XP_CREATION=100,COMP_BASE=1;")&&ed.includes("skills:c.skills.map(n=>COMP_BASE+n),")&&ed.includes("Ombrelame:'Combattant redoutablement rapide")
-  &&ed.includes("arbresCreationId=a.id;arbresDialog.addEventListener('close',()=>{arbresCreationId=null},{once:true});openArbres(a)}")&&fs.readFileSync('live.js','utf8').includes("'pointsCreation'"),'création complète');}
+  &&!ed.includes('arbresCreationId')&&ed.includes("if(typeof pousserBientot==='function')pousserBientot();renderAccueil()}")&&fs.readFileSync('live.js','utf8').includes("'pointsCreation'"),'création complète');}
 /* v0.702 — L'onglet Accueil : créer un aventurier pas à pas, les dernières actualités, les aventuriers au domaine, les hauts faits. */
 {const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),act=fs.readFileSync('actualites.js','utf8'),sh=fs.readFileSync('publie.sh','utf8');
  const A=new Function(act+';return ACTUALITES')();assert.ok(A.versions.length>=10&&A.resume.lignes.length>=5&&A.resume.lignes.length<=6,'les actualités');
