@@ -2555,6 +2555,10 @@ body.page-accueil .intro,body.page-accueil .mj-tools,body.page-accueil main.layo
 .hero-poignee{flex:none;cursor:grab;color:var(--muted);font-size:18px;line-height:1;padding:2px 2px;user-select:none;touch-action:none}.hero-poignee:active{cursor:grabbing}
 .hero-card.fiche-glissee{opacity:.45}.hero-card.cible-avant{box-shadow:inset 4px 0 0 var(--accent)}.hero-card.cible-apres{box-shadow:inset -4px 0 0 var(--accent)}
 #hero-tri{font:600 13px system-ui}
+/* La barre des Aventuriers tient sur une ligne : chaque bouton s'allonge, son icône à côté du texte, le tri à sa largeur. */
+#heroes-page .cat-actions{flex-wrap:nowrap;align-items:center}
+#heroes-page .cat-actions>button{display:inline-flex;flex-direction:row;align-items:center;gap:6px;white-space:nowrap;flex:none;width:auto;height:auto;min-height:0;padding:7px 12px}
+#heroes-page .cat-actions>button>*{margin:0}#heroes-page .cat-actions>select{width:auto;flex:none;min-width:0;max-width:150px}
 body.table-sans-heros main.layout{visibility:hidden}
 #verrou-page{display:none}body.site-verrouille #verrou-page{display:grid;place-items:center;min-height:60vh;padding:24px}
 body.site-verrouille>main:not(#verrou-page),body.site-verrouille nav.tabs,body.site-verrouille .view-controls{display:none!important}
