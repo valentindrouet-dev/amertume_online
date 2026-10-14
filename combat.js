@@ -1747,6 +1747,12 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  chargerepoussedist:{cle:'chargerepoussedist',nom:'Charge — repousse de la distance',court:'repousse loin',type:'ame',
   aide:'Amélioration de « Charge — repousse » : la cible est repoussée de la distance parcourue pendant le mouvement.',params:[],
   phrase(){return 'La cible de la <b>Charge</b> est repoussée de la <b>distance parcourue</b> pendant le mouvement, au moins hors de votre zone de contact.'}},
+ /* Charge — regain : la cible tuée par l'attaque de Charge rend 1 PM au porteur ; au palier 2, la Charge le rend toujours. */
+ chargeregain:{cle:'chargeregain',nom:'Charge — regain',court:'regain',type:'ame',
+  aide:'Amélioration de Charge : si l’attaque de Charge tue la cible, le porteur gagne 1 PM ; au palier 2, il gagne 1 PM après chaque Charge.',
+  params:[],volets:[{cle:'toujours',nom:'1 PM après chaque Charge',palier:2}],
+  phrase(p,palier,v){const k=(v||{toujours:2}).toujours,toujours=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return toujours?'Vous gagnez automatiquement <b>1 PM</b> après une <b>Charge</b>.':'Si vous tuez l’adversaire ciblé avec l’attaque de <b>Charge</b>, vous gagnez <b>1 PM</b>.'}},
  /* Poussée : une action. Le porteur effectue une attaque, puis repousse la cible hors de sa
     zone de contact. Deux volets, chacun au palier que le MJ choisit : deux fois plus loin que
     la zone (palier 2 d'ordinaire), et tous les adversaires au contact (palier 3). */
