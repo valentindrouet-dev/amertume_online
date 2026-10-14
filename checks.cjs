@@ -3389,6 +3389,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.734 — La limite de l'arbre d'une classe : les joueurs ne voient que les talents au-dessus de la barrière choisie. */
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(ed.includes("function limiteArbre(classe){")&&ed.includes("function coupeArbre(liste,cases,classe){"));
+ assert.ok(ed.includes("const pts=[...prises,...petits,...places].filter(q=>limiteVue||!sous(q));"));
+ assert.ok(ed.includes("if(t===depart)el.classList.add('racine');pose(el,p.x,p.y);marque(el,p);plan.append(el)"));
+ assert.ok(css.includes(".arbre-noeud.hors-limite{visibility:hidden!important;pointer-events:none!important}"));}
 /* v0.733 — Charge — regain : 1 PM si la Charge tue sa cible ; au palier 2, après chaque Charge. */
 {const C35=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),t=C35.TALENTS_CODES.chargeregain;
  assert.ok(t&&t.type==='ame'&&t.volets[0].cle==='toujours'&&t.volets[0].palier===2);
@@ -5550,4 +5556,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2047 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2051 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

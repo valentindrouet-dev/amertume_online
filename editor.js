@@ -268,6 +268,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  {const an=c.analyses&&typeof c.analyses==='object'&&!Array.isArray(c.analyses)?c.analyses:{},ok=['pv','def','dmg','attaques','xp','talents','equip'];c.analyses={};
   Object.entries(an).forEach(([k,l])=>{if(typeof k==='string'&&k.length<=80&&Array.isArray(l)){const v=[...new Set(l.filter(x=>ok.includes(x)))];if(v.length)c.analyses[k]=v}});
   if(!Object.keys(c.analyses).length)delete c.analyses}
+ // Jusqu'où les joueurs voient l'arbre de chaque classe : le niveau d'une barrière, rien en dessous.
+ {const l=c.limitesArbres&&typeof c.limitesArbres==='object'&&!Array.isArray(c.limitesArbres)?c.limitesArbres:{};c.limitesArbres={};
+  Object.entries(l).slice(0,60).forEach(([k,v])=>{const n=Math.trunc(Number(v));if(typeof k==='string'&&k&&n>=2&&n<=20)c.limitesArbres[k.slice(0,60)]=n});
+  if(!Object.keys(c.limitesArbres).length)delete c.limitesArbres}
  // L'icône et le texte des actions spéciales.
  c.actionsSpeciales=normaliseActionsSpeciales(c.actionsSpeciales);if(!Object.keys(c.actionsSpeciales).length)delete c.actionsSpeciales;
  // L'image qu'un état prend à la place de celle du jeu : Gardé, pour l'heure.
@@ -4804,6 +4808,12 @@ window.addEventListener('resize',()=>{if(arbresDialog.open)placeFlechesArbres()}
 // Après un changement d'arbre : la popup, les onglets du catalogue, la table et la sauvegarde.
 // La partie chargée, chez le MJ : les aventuriers ne gardent que ce qu'ils ont activé dans le sphérier.
 document.addEventListener('amertume-partie-chargee',()=>{if(view==='mj'&&accordeTalentsHeros()){render();scheduleSave()}});
+// La limite de l'arbre d'une classe chez les joueurs : le niveau de sa barrière, ou 0 pour tout l'arbre.
+function limiteArbre(classe){const n=Math.trunc(Number(catalog&&catalog.limitesArbres&&catalog.limitesArbres[classe]));return n>=2?n:0}
+/* Où l'arbre s'arrête, dans une colonne : à la plus haute ligne qui porte la limite ou plus ; Infinity sans limite ni telle ligne. */
+function coupeArbre(liste,cases,classe){const L=limiteArbre(classe);if(!L)return Infinity;let y=Infinity;
+ liste.forEach(de=>liensDe(de).forEach(id=>{const vers=liste.find(x=>x.id===id),p=cases.get(de.id),q=vers&&cases.get(id);
+  if(p&&q&&(niveauLien(de,vers)||0)>=L)y=Math.min(y,(p.y+q.y)/2)}));return y}
 function arbreChange(){accordeArbres();noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
 /* Ajouter à l'arbre : un talent neuf, ou l'un de ceux qui existent déjà — maîtrises comprises. D'abord
    ceux de la classe retirés de l'arbre, puis les génériques, puis ceux des autres classes. Choisi,
@@ -5001,6 +5011,14 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     seuils.forEach((s,i)=>{const fin=seuils[i+1],e=document.createElement('span');
      e.textContent='Niv. '+(fin===undefined?s+'+':fin-1>s?s+'-'+(fin-1):s)+' : '+(parTranche.get(s)||0).toLocaleString('fr-FR')+' XP';l.append(e)});
     arbresTotal.append(l)}}
+  /* Ce que les joueurs voient de cet arbre : tout, ou jusqu'à l'une de ses barrières de niveau. */
+  if(liste.length){const req=niveauxRequis(classe),niveaux=[...new Set([...req.values()].filter(n=>n>1))].sort((x,y)=>x-y),L=limiteArbre(classe);
+   if(L&&!niveaux.includes(L))niveaux.push(L);
+   if(niveaux.length){const s=document.createElement('select');s.className='arbres-limite';s.setAttribute('aria-label','Talents visibles des joueurs');
+    s.append(new Option('Tout l’arbre','0'),...niveaux.sort((x,y)=>x-y).map(n=>new Option('Jusqu’au niv. '+n,String(n))));s.value=String(L);
+    s.onchange=()=>{const n=Math.trunc(Number(s.value))||0;catalog.limitesArbres={...(catalog.limitesArbres||{})};if(n)catalog.limitesArbres[classe]=n;else delete catalog.limitesArbres[classe];
+     if(!Object.keys(catalog.limitesArbres).length)delete catalog.limitesArbres;renderArbres();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+    arbresTotal.hidden=false;arbresTotal.append(s)}}
   // En icônes chiffrées, une ligne par groupe : le nom paraît en bulle, au survol.
   if(somme.size){const l=document.createElement('span');l.className='arbres-bonus';
    groupes.filter(g=>g.length).forEach(g=>{const ligne=document.createElement('span');ligne.className='arbres-bonus-ligne';l.append(ligne);
@@ -5267,8 +5285,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);
      if(libreIci(x,y))places.push({genre:'petit',x,y,de:t,dir:d,rang:r})})});
    if(!c.liste.length)places.push({genre:'gros',x:0,y:0,de:null})}
+  /* La limite de l'arbre : chez les joueurs, rien sous la barrière choisie, et le plan s'arrête là ; chez le MJ, pâli. */
+  const coupe=coupeArbre(c.liste,cases,classe),limiteVue=view==='mj'&&!arbresVueJoueur,sous=q=>q.y>coupe;
   // Le plan tient juste ce qu'il montre, une demi-case de marge : le talent de départ est tout en haut.
-  const pts=[...prises,...petits,...places];
+  const pts=[...prises,...petits,...places].filter(q=>limiteVue||!sous(q));
   let x0=pts.length?Math.min(...pts.map(q=>q.x)):0,x1=pts.length?Math.max(...pts.map(q=>q.x)):0;const y0=pts.length?Math.min(...pts.map(q=>q.y)):0,y1=pts.length?Math.max(...pts.map(q=>q.y)):0;
   // Le talent de départ est le centre de l'arbre : le plan s'étend autant de chaque côté de lui.
   // Le talent de départ : la racine la plus haute. Seul lui reçoit le trait du bandeau ; un talent sans lien n'en a pas.
@@ -5277,8 +5297,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const L=CASE_SPHERIER,plan=document.createElement('div');plan.className='arbre-plan';
   plan.style.width=((x1-x0+1)*L).toFixed(0)+'px';plan.style.height=((y1-y0+1)*L).toFixed(0)+'px';
   const pose=(el,x,y)=>{el.style.left=((x-x0+.5)*L).toFixed(1)+'px';el.style.top=((y-y0+.5)*L).toFixed(1)+'px'};
-  c.liste.forEach(t=>{const p=cases.get(t.id),el=estVide(t)?noeudVide(t,c,false):noeudArbre(t,c,libre);if(t===depart)el.classList.add('racine');pose(el,p.x,p.y);plan.append(el)});
-  petits.forEach(s=>{const el=estVide(s.t)?noeudVide(s.t,c,true):noeudPetit(s.t,s.de,c,libre);pose(el,s.x,s.y);plan.append(el)});
+  const marque=(el,q)=>{if(sous(q))el.classList.add(limiteVue?'hors-limite-mj':'hors-limite')};if(coupe<Infinity&&!limiteVue)col.classList.add('coupee');
+  c.liste.forEach(t=>{const p=cases.get(t.id),el=estVide(t)?noeudVide(t,c,false):noeudArbre(t,c,libre);if(t===depart)el.classList.add('racine');pose(el,p.x,p.y);marque(el,p);plan.append(el)});
+  petits.forEach(s=>{const el=estVide(s.t)?noeudVide(s.t,c,true):noeudPetit(s.t,s.de,c,libre);pose(el,s.x,s.y);marque(el,s);plan.append(el)});
   places.forEach(pl=>{const el=pl.genre==='gros'?place(c,pl):placePetit(c,pl);pose(el,pl.x,pl.y);plan.append(el)});
   col.append(plan);
   return col};
@@ -5314,7 +5335,9 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
   // Ce que le MJ a caché : flou chez les joueurs ; chez lui, pâli, pour qu'il sache ce qu'ils ne voient pas.
   const caches=talentsCaches(liste),voitTout=view==='mj'&&!arbresVueJoueur;
   col.querySelectorAll('.arbre-plan>.arbre-noeud').forEach(el=>{const c=caches.has(el.dataset.id);el.classList.toggle('cache-joueur',c&&!voitTout);el.classList.toggle('cache-mj',c&&voitTout)});
-  const trait=(de,vers,A,B,lien)=>{const p=centre(A),q=centre(B),g=document.createElementNS(ns,'g');
+  // Sous la limite, chez les joueurs : pas de trait ; celui qui y descend s'arrête à la barrière.
+  const trait=(de,vers,A,B,lien)=>{const hA=A.classList.contains('hors-limite'),hB=B.classList.contains('hors-limite');if(hA||(hB&&!lien))return;
+   const p=centre(A),q0=centre(B),q=hB?{x:(p.x+q0.x)/2,y:(p.y+q0.y)/2,r:0}:q0,g=document.createElementNS(ns,'g');
    g.setAttribute('class','chemin'+(lien?'':' petit')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':'')+(caches.has(vers.id)?(voitTout?' cache-mj':' cache-joueur'):''));
    // Le trait ne traverse jamais un bouton : il ne vit qu'entre deux, d'un bord à l'autre.
    const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,rp=Math.min(p.r,d/2),rq=Math.min(q.r,d/2);
@@ -5331,7 +5354,7 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
      une place sur chaque ligne : le clic pose le niveau 2, puis l'augmente ; le clic droit le baisse, puis l'ôte. */
   col.querySelectorAll(':scope>.arbre-niveau,:scope>.arbre-cacher').forEach(x=>x.remove());
   liste.forEach(de=>liensDe(de).forEach(id=>{const vers=liste.find(x=>x.id===id),A=elDe(de.id),B=vers&&elDe(id);if(!A||!B)return;
-   const n=niveauLien(de,vers);if(!n&&!mj)return;if(!voitTout&&caches.has(de.id))return;const p=centre(A),q=centre(B),b=document.createElement(mj?'button':'span');if(mj)b.type='button';
+   const n=niveauLien(de,vers);if(!n&&!mj)return;if(!voitTout&&caches.has(de.id))return;if(A.classList.contains('hors-limite'))return;const p=centre(A),q=centre(B),b=document.createElement(mj?'button':'span');if(mj)b.type='button';
    // À côté du niveau, chez le MJ : « Cacher » la suite de la ligne aux joueurs.
    if(mj&&CACHER_ARBRE){const l=document.createElement('label'),c=document.createElement('input');l.className='arbre-cacher'+(cacheLien(de,vers)?' on':'');c.type='checkbox';c.checked=cacheLien(de,vers);
     l.append(c,'Cacher');l.style.left=((p.x+q.x)/2).toFixed(1)+'px';l.style.top=((p.y+q.y)/2).toFixed(1)+'px';l.onclick=e=>e.stopPropagation();
