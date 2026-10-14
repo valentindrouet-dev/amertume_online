@@ -26,6 +26,8 @@ const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
 // L'élément d'un Mystique est au MJ : un joueur ne le pousse pas.
 const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu','debutTour','enAventure'];
+// L'attente d'un aventurier créé par un joueur : le MJ seul la lève, et elle voyage avec les autres champs.
+CHAMPS_ACTEUR_MJ.push('enAttente');CHAMPS_VIVANTS.push('enAttente');
 /* L'état du tour d'un aventurier : ce qu'il a dépensé, joué, parcouru. Un joueur l'écrit daté du tour qu'il voit (« tourVu »,
    cleTour) ; le MJ écarte ce qui arrive daté d'un tour révolu. Au début, à la fin d'un combat et à chaque tour, le joueur reprend
    ces champs tels que le MJ les a remis, sans garder ce qu'il avait encore en route. */
@@ -309,6 +311,9 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    /* Des coups croisés ont pu passer sous zéro : ici on lit zéro ; chez le MJ, la référence garde le négatif reçu, et le zéro
       repart en valeur pleine. */
    if(typeof a.hp==='number'&&a.hp<0){a.hp=0;if(estMJ()&&typeof e.hp==='number'&&e.hp<0)gardes.push([id,'hp',e.hp])}
+   /* Un aventurier qui arrive d'un joueur attend la validation du MJ, quoi que dise le document : un second compte ne fait
+      pas entrer un second personnage sans son accord. */
+   if(estMJ()&&neuf&&a.hero){a.enAttente=true;if(typeof log==='function')log((a.joueurNom||'Un joueur')+' a créé '+a.name+' : en attente de ta validation, dans l’onglet Aventuriers.',{local:true})}
    normalizeActor(a)});
   cibles.forEach(([a,ids])=>{if(typeof poseCibles==='function')poseCibles(a,indicesDesCibles(ids))});
   // La composition de la scène appartient au MJ : chez les joueurs, ce qui n'y est plus s'en va.

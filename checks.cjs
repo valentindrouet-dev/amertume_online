@@ -3389,6 +3389,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.747 — Un aventurier créé par un joueur attend la validation du MJ : il arrive « en attente », le MJ l'accepte ou le refuse. */
+{const lv=fs.readFileSync('live.js','utf8'),ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8');
+ assert.ok(lv.includes("CHAMPS_ACTEUR_MJ.push('enAttente');CHAMPS_VIVANTS.push('enAttente');")&&lv.includes("if(estMJ()&&neuf&&a.hero){a.enAttente=true;"));
+ assert.ok(ed.includes("function prendPartAventure(a){return !!a&&!!a.hero&&a.enAttente!==true&&")&&ed.includes("else bloc.textContent='En attente du MJ';"));
+ assert.ok(mp.includes(" heros.forEach(a=>{if(a.enAttente===true)a.horsCarte=true});"));}
 /* v0.746 — Le MJ paraît parmi les joueurs connectés : il se signale à la table, sous son nom, comme eux. */
 {const lv=fs.readFileSync('live.js','utf8');
  assert.ok(lv.includes("async function signaleJoueur(){if(!siegesRef||!monUid)return;")&&lv.includes("localStorage.setItem(TABLE_CLE,code);brancherTable(code);signaleJoueur();"));
@@ -5612,4 +5617,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2086 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2089 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

@@ -1372,6 +1372,8 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Une carte rechargée rend aussi ses zones à fouiller : les tests de Perception y repartent de zéro.
  // Et ramène sur la table ceux qu'on en avait retirés : ils sont toujours parmi les aventuriers.
  heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.reposCourts=0;a.reposPris=false;a.fouilles=(a.fouilles||[]).filter(f=>f&&f.m!==id)});
+ // Un aventurier en attente du MJ n'entre pas sur la carte.
+ heros.forEach(a=>{if(a.enAttente===true)a.horsCarte=true});
  // Et ses objets récupérés reviennent à leur place.
  (m.objets||[]).forEach(o=>{delete o.pris});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.

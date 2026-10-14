@@ -1110,7 +1110,7 @@ function joueursConnus(){const m=new Map();actors.forEach(a=>{if(a&&a.hero&&a.jo
  if(typeof sieges!=='undefined')Object.entries(sieges).forEach(([uid,s])=>{if(s&&typeof s.nom==='string'&&s.nom.trim()&&(typeof monUid==='undefined'||uid!==monUid))m.set(uid,s.nom.trim().slice(0,30))});
  return [...m.entries()].sort((x,y)=>x[1].localeCompare(y[1],'fr'))}
 // Ceux qui prennent part à l'aventure : les aventuriers cochés par le MJ, ou tous quand aucun ne l'est.
-function prendPartAventure(a){return !!a&&!!a.hero&&(a.enAventure===true||!actors.some(h=>h&&h.hero&&h.enAventure===true))}
+function prendPartAventure(a){return !!a&&!!a.hero&&a.enAttente!==true&&(a.enAventure===true||!actors.some(h=>h&&h.hero&&h.enAventure===true))}
 function heroCard(a,i){const c=document.createElement('article');c.className='hero-card';
  const tete=document.createElement('div');tete.className='hero-head';
  // En tri libre, la poignée : on la tient pour glisser la fiche avant ou après une autre.
@@ -1185,6 +1185,15 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  tete.append(...(poignee?[poignee]:[]),...(part?[part]:[]),jeton,titre,...(origine?[origine]:[]),classe,outils);
  const puces=document.createElement('div');puces.className='chips';
  if(joueurEl)puces.append(joueurEl);
+ // Créé par un joueur, en attente : le MJ l'accepte ou le refuse ; le joueur attend.
+ if(a.hero&&a.enAttente===true){c.classList.add('en-attente');const bloc=document.createElement('div');bloc.className='hero-attente';
+  if(view==='mj'){const oui=document.createElement('button');oui.type='button';oui.className='primary';oui.textContent='Accepter';
+   oui.onclick=()=>{a.enAttente=false;renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
+   const non=document.createElement('button');non.type='button';non.className='danger';non.textContent='Refuser';
+   non.onclick=()=>{if(!confirm('Refuser '+a.name+' ? Sa fiche est supprimée.'))return;const i=actors.indexOf(a);if(i<0)return;sortDeLaListe([i]);marked.clear();renderHeroes();render();scheduleSave()};
+   bloc.append(oui,non)}
+  else bloc.textContent='En attente du MJ';
+  c.append(bloc)}
  const marques=[];if(!a.hero){if(a.sexe)marques.push([(a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe]);
  if(a.race)marques.push([a.race])}
  // Le niveau et l'expérience sont des chiffres de fiche : ils se corrigent d'un clic.
@@ -5798,7 +5807,7 @@ function removeActor(i){return removeActors([i],true)}
 function retireDeLaTable(a){const j=actors.indexOf(a);if(j<0||!a.hero)return;a.horsCarte=true;a.retire=true;poseCibles(a,[]);
  actors.forEach(o=>{if(o===a)return;const t=Array.isArray(o.targets)?o.targets:(o.target===null||o.target===undefined?[]:[o.target]);if(t.includes(j))poseCibles(o,t.filter(k=>k!==j))});
  if(selected===j)selected=null}
-function ramenerSurLaTable(a){if(view!=='mj'||!a||!a.hero||!a.horsCarte)return;a.horsCarte=false;delete a.retire;
+function ramenerSurLaTable(a){if(view!=='mj'||!a||!a.hero||!a.horsCarte||a.enAttente===true)return;a.horsCarte=false;delete a.retire;
  const m=typeof currentMap==='function'?currentMap():null;
  if(m&&m.start&&typeof spreadInZone==='function'){const p=spreadInZone(1,m.start)[0];if(p)moveActor(a,p.x,p.y,true)}
  settleActor(a);renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
@@ -6288,7 +6297,7 @@ function renderScenePicker(){const corps=$('scene-picker-body');if(!corps)return
   if(!liste.length)corps.append(videScene(q?'Aucun modèle de ce nom.':'Le bestiaire est vide.'))}
  else{
   // Ceux qui ne sont pas encore sur la carte d'abord : c'est eux qu'on vient chercher.
-  const liste=actors.map((a,i)=>[a,i]).filter(([a])=>a.hero&&(!q||a.name.toLowerCase().includes(q))).sort((u,v)=>(v[0].horsCarte?1:0)-(u[0].horsCarte?1:0));
+  const liste=actors.map((a,i)=>[a,i]).filter(([a])=>a.hero&&a.enAttente!==true&&(!q||a.name.toLowerCase().includes(q))).sort((u,v)=>(v[0].horsCarte?1:0)-(u[0].horsCarte?1:0));
   liste.forEach(([a,i])=>corps.append(ligneScene(a.name,a.image,
    a.hp+' / '+a.max+' PV · '+(a.role||'Aventurier'),
    ()=>placerAventurier(i,libre(),false),(x,y)=>placerAventurier(i,{x,y},true),
