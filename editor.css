@@ -1767,7 +1767,9 @@ body.page-icones .intro,body.page-icones .mj-tools,body.page-icones main.layout,
 .masse-bestiaire .masse-def-totale{display:inline-flex;margin-left:4px;width:24px;height:26px}.masse-bestiaire .masse-def-totale .ecu{display:inline-flex;width:24px;height:26px}.masse-bestiaire .masse-def-totale img{width:24px;height:26px;object-fit:contain}
 .masse-bestiaire td.masse-forge .forge-adv{display:flex;align-items:center;gap:4px;flex-wrap:nowrap;margin:0;padding:0;border:0;background:none}
 .masse-bestiaire td.masse-forge .forge-adv-titre{display:none}.masse-bestiaire td.masse-forge label{display:inline-flex;align-items:center;gap:3px;white-space:nowrap;font-size:12px}
-.masse-bestiaire td.masse-forge input{width:50px}.masse-bestiaire td.masse-forge select{width:auto}
+.masse-bestiaire td.masse-forge input{width:50px}
+/* Une chance qu'on n'a pas écrite joue quand même : la commune, en bleu. */
+.inv-butin input::placeholder,.forge-adv input::placeholder{color:#2f6fb3;opacity:1;font-weight:700}.masse-bestiaire td.masse-forge select{width:auto}
 .masse-porte{margin-left:6px;font:600 11px system-ui;color:#6b5d4b}
 /* Attaques, talents et inventaire : un aperçu cliquable, qui ouvre leur panneau. */
 .masse-panneau-bouton{display:flex;align-items:center;gap:3px;min-height:30px;max-width:230px;padding:2px 6px;margin:0;border:1px dashed #00000033;border-radius:8px;background:#ffffff66;cursor:pointer;font:12px system-ui;color:#2a2118;overflow:hidden;width:auto}

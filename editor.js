@@ -2724,7 +2724,7 @@ function tableMasseBestiaire(boite,liste){
   // L'or et les gemmes de sa bourse, en formules ; un clic ouvre la bourse à modifier.
   {cle:'bourse',nom:'Or et gemmes',type:'panneau',tri:m=>normaliseBourse(m.bourse).length},
   // Le loot forgé : sa chance qu'une pièce qui tombe soit forgée, la commune à défaut, et de tant à tant d'affixes.
-  {cle:'forge',nom:'Loot forgé',type:'forge',tri:m=>{const f=normaliseForgeAdv(m.forge);return f?(f.chance===null?-1:f.chance):null}},
+  {cle:'forge',nom:'Loot forgé',type:'forge',tri:m=>forgeAdvEffectif(m).chance},
   {cle:'socle',nom:'Socle',type:'choix',opts:SOCLES_ADVERSAIRE,lit:m=>m.socle||'medium',ecrit:(m,v)=>{m.socle=dans(SOCLES_ADVERSAIRE,v,'medium')},tri:m=>SOCLES_ADVERSAIRE.findIndex(([k])=>k===(m.socle||'medium'))},
   {cle:'menace',nom:'Menace',type:'choix',opts:MENACES,lit:m=>m.menace||'closest',ecrit:(m,v)=>{m.menace=dans(MENACES,v,'closest')},tri:m=>MENACE_NOMS[m.menace||'closest']||''},
   // La vision dans le noir : tous l'ont, sauf réglage contraire.
@@ -2784,7 +2784,7 @@ function tableMasseBestiaire(boite,liste){
    if(c.type==='nombre'){el=document.createElement('input');el.type='number';el.min='0';el.max=String(c.max);el.step='1';el.value=c.lit(m);
     el.onchange=()=>{c.ecrit(m,Number(el.value)||0);el.value=c.lit(m);sauveBestiaire([m])}}
    else if(c.type==='choix'){el=document.createElement('select');el.innerHTML=options(c.opts,c.lit(m));
-    el.onchange=()=>{c.ecrit(m,el.value);if(c.cle==='type')tr.className='b-'+(m.type||'standard');sauveBestiaire([m])}}
+    el.onchange=()=>{c.ecrit(m,el.value);if(c.cle==='type'){tr.className='b-'+(m.type||'standard');const ch=tr.querySelector('.masse-forge input');if(ch)ch.placeholder=String(forgeAdvEffectif(m).chance)}sauveBestiaire([m])}}
    else{el=document.createElement('input');el.value=c.lit(m);el.maxLength=60;el.onchange=()=>{c.ecrit(m,el.value);el.value=c.lit(m);sauveBestiaire([m])}}
    el.setAttribute('aria-label',c.nom+' — '+m.name);td.append(el);tr.append(td);
    /* La DEF : sa fiche, son bonus, puis l'écu de sa DEF en jeu — ce qu'il porte, ou sa fiche, plus le bonus. */
@@ -3932,11 +3932,13 @@ function equipementAdversaire(a,items){const l=[...new Set((a&&a.inventaire)||[]
 // Ce qu'il portait avant ce choix rejoint son inventaire, puis il porte tout.
 function equipeAdversaire(a){if(!a||a.hero)return a;completerInventaire(a);Object.assign(a,equipementAdversaire(a,catalog.items));return a}
 /* Le butin d'un adversaire : pour chaque pièce, la chance en pour cent qu'un exemplaire tombe
-   quand il quitte la carte. Zéro par défaut, et zéro ne s'écrit pas ; une pièce qu'il ne
-   possède plus n'en garde pas. */
+   quand il quitte la carte. Une pièce sans chance écrite tombe à 25 % ; zéro s'écrit, pour qu'elle
+   ne tombe jamais. Une pièce qu'il ne possède plus n'en garde pas. */
 const lisPourcent=v=>Math.max(0,Math.min(100,Math.round(Number(v))||0));
+const BUTIN_DEFAUT=25;
 function normaliseButin(b,inventaire){const out={};if(!b||typeof b!=='object'||Array.isArray(b))return out;
- Object.entries(b).slice(0,200).forEach(([id,v])=>{const n=lisPourcent(v);if(n&&typeof id==='string'&&(!inventaire||inventaire.includes(id)))out[id]=n});return out}
+ Object.entries(b).slice(0,200).forEach(([id,v])=>{const n=lisPourcent(v);if(typeof id==='string'&&(!inventaire||inventaire.includes(id)))out[id]=n});return out}
+const chanceButin=(chances,id)=>Object.prototype.hasOwnProperty.call(chances||{},id)?chances[id]:BUTIN_DEFAUT;
 /* Les familles où l'on puise l'inventaire d'un adversaire : on en allume plusieurs, et un clic sur
    une pièce l'ajoute. Munitions avec les armes, trésors avec les objets. Les restes ont leur champ
    à eux, au formulaire comme dans le tableau en masse. */
@@ -3996,8 +3998,10 @@ function inventaireAdversaire(boite,cible,apres,genre){boite.replaceChildren();b
    x.onclick=e=>{e.stopPropagation();e.preventDefault();fermerBulle();retirerInventaire(cible,o);if(!compte(o.id)&&cible.butin)delete cible.butin[o.id];change()};p.append(x);
    // Un adversaire n'équipe rien, il porte tout : sous chaque pièce, la chance qu'elle tombe en butin.
    const l=document.createElement('label');l.className='inv-butin';l.title='Butin : chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte';
-   const c=document.createElement('input');c.type='number';c.min='0';c.max='100';c.step='5';c.value=String((cible.butin||{})[o.id]||0);c.setAttribute('aria-label','Butin de '+o.name+', en pour cent');
-   c.onchange=()=>{cible.butin={...(cible.butin||{})};const v=lisPourcent(c.value);c.value=String(v);if(v)cible.butin[o.id]=v;else delete cible.butin[o.id];apres()};
+   // Sans chance écrite, les 25 % communs, en bleu ; vider le champ y revient.
+   const ecrit=Object.prototype.hasOwnProperty.call(cible.butin||{},o.id);
+   const c=document.createElement('input');c.type='number';c.min='0';c.max='100';c.step='5';c.placeholder=String(BUTIN_DEFAUT);c.value=ecrit?String(cible.butin[o.id]):'';c.setAttribute('aria-label','Butin de '+o.name+', en pour cent');
+   c.onchange=()=>{cible.butin={...(cible.butin||{})};if(c.value.trim()===''){delete cible.butin[o.id];apres();return}const v=lisPourcent(c.value);c.value=String(v);cible.butin[o.id]=v;apres()};
    l.append(c,'%');w.append(p,l);possede.append(w)})};
  const barre=document.createElement('div');barre.className='inv-cats';
  const filtre=document.createElement('input');filtre.type='search';filtre.className='inv-filtre';filtre.placeholder=restes?'Filtrer les restes':'Filtrer';filtre.value=restes?filtreRestes:filtreInvAdv;filtre.setAttribute('aria-label',restes?'Filtrer les restes':'Filtrer les pièces');
@@ -4022,7 +4026,7 @@ function inventaireAdversaire(boite,cible,apres,genre){boite.replaceChildren();b
 function editeurForgeAdv(cible,apres){const out=document.createElement('div');out.className='forge-adv';const f=normaliseForgeAdv(cible.forge)||{chance:null,min:0,max:4};
  const t=document.createElement('span');t.className='forge-adv-titre';t.textContent='Loot forgé';out.append(t);
  const champ=(lab,el)=>{const l=document.createElement('label');l.append(lab+' ',el);out.append(l)};
- const chance=document.createElement('input');chance.type='number';chance.min='0';chance.max='100';chance.step='5';chance.placeholder=String(normaliseReglageForge(catalog.forge).chance);chance.value=f.chance===null?'':String(f.chance);chance.title='Chance qu’une arme ou une armure qui tombe soit forgée ; vide, la chance commune de la Forge';
+ const chance=document.createElement('input');chance.type='number';chance.min='0';chance.max='100';chance.step='5';chance.placeholder=String(forgeAdvEffectif({type:cible.type}).chance);chance.value=f.chance===null?'':String(f.chance);chance.title='Chance qu’une arme ou une armure qui tombe soit forgée ; vide, celle de son type : 15 % standard, 25 % élite, 40 % solitaire, 50 % boss';
  const min=document.createElement('select'),max=document.createElement('select');[0,1,2,3,4].forEach(n=>min.add(new Option(n===0?'aucun':n,String(n))));[1,2,3,4].forEach(n=>max.add(new Option(n,String(n))));min.value=String(f.min);max.value=String(f.max);
  const pose=()=>{const v=normaliseForgeAdv({chance:chance.value,min:min.value,max:max.value});if(v)cible.forge=v;else delete cible.forge;apres()};chance.onchange=min.onchange=max.onchange=pose;
  champ('Chance %',chance);champ('Affixes de',min);champ('à',max);return out}
@@ -5776,11 +5780,17 @@ function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!duCoteTroup
    vivant de préférence, sur la carte. Une ligne au journal par aventurier servi. */
 function butinDesRetires(partants,tirage=Math.random){const heros=actors.filter(h=>h&&h.hero&&!h.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(h)));if(!heros.length)return;
  const vivants=heros.filter(h=>h.hp>0),parmi=vivants.length?vivants:heros,taille=typeof mapSize==='function'?mapSize():null,gains=new Map();
- partants.forEach(f=>{if(!f||f.hero)return;const chances=normaliseButin(f.butin,f.inventaire),tire=tireBourse(f.bourse,tirage);if(!Object.keys(chances).length&&!Object.keys(tire).length)return;
+ partants.forEach(f=>{if(!f||f.hero)return;const chances=normaliseButin(f.butin,f.inventaire),tire=tireBourse(f.bourse,tirage);if(!(f.inventaire||[]).length&&!Object.keys(tire).length)return;
+  // Son loot forgé : le sien, ou celui de son modèle, sinon la chance de son type.
+  const modele=(catalog.monsters||[]).find(m=>m&&m.id===f.template),forgeF=forgeAdvEffectif({type:f.type,forge:f.forge||(modele&&modele.forge)});
   const loin=h=>taille&&taille.width>0?tokenDistance(f,h,taille):Math.hypot((h.x||0)-(f.x||0),(h.y||0)-(f.y||0));
   const h=parmi.reduce((m,x)=>loin(x)<loin(m)?x:m);
-  (f.inventaire||[]).forEach(id=>{const o=objetDe(id);if(!o||!chances[id]||tirage()*100>=chances[id])return;
-   ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{}});const g=gains.get(h);g.objets.set(o.id,(g.objets.get(o.id)||0)+1);g.de.add(f)});
+  (f.inventaire||[]).forEach(id=>{const o=objetDe(id),ch=chanceButin(chances,id);if(!o||!ch||tirage()*100>=ch)return;
+   // Une arme ou une armure qui tombe peut sortir forgée : de tant à tant d'affixes, au niveau de qui la reçoit.
+   let donne=o;if((o.category==='weapon'||o.category==='armor')&&!o.forge){const n=tireNombreAffixes(catalog.forge,forgeF,tirage);
+    if(n>0){const aff=tireAffixes(o,n,catalog.affixes||[],Number(h.level)||1,tirage);if(aff.length){const rec={id:'forge-'+crypto.randomUUID(),base:o.id,affixes:aff};
+     h.forges=[...(h.forges||[]),rec];h.inventaire=[...(h.inventaire||[]),rec.id];syncForges();donne=objetDe(rec.id)||o}}}
+   if(donne===o)ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{}});const g=gains.get(h);g.objets.set(donne.id,(g.objets.get(donne.id)||0)+1);g.de.add(f)});
   // L'or et les gemmes de sa bourse, tirés aux dés : au même aventurier.
   Object.entries(tire).forEach(([k,v])=>{if(k==='or')ajouteOr(h,v);else{h.richesses={...(h.richesses||{})};h.richesses[k]=(Math.trunc(Number(h.richesses[k]))||0)+v}
    if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{}});const g=gains.get(h);g.richesses[k]=(g.richesses[k]||0)+v;g.de.add(f)})});

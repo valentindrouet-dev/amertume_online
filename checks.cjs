@@ -3281,10 +3281,10 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.attackChoices({hero:false,...eq,attacks:[]},items).map(x=>x.name),['Massue','Griffes'],'deux armes, deux variantes');
  assert.equal(C.defenseOf({hero:false,def:5,...eq},items),5,'DEF : Cuir 3 et Pavois 2, pas les pièces en double');
  const ctxB={actors:[],log:t=>ctxB.journal.push(t),journal:[],document:{dispatchEvent(){}},Event:class{},objetDe:id=>items.find(o=>o.id===id)||null,
-  ajouterInventaire:(a,o)=>{a.inventaire??=[];a.inventaire.push(o.id)}};vm.createContext(ctxB);
+  ajouterInventaire:(a,o)=>{a.inventaire??=[];a.inventaire.push(o.id)},catalog:{monsters:[],forge:null,affixes:[]},forgeAdvEffectif:()=>({chance:0,min:0,max:4}),tireNombreAffixes:()=>0,tireAffixes:()=>[],syncForges(){}};vm.createContext(ctxB);
  vm.runInContext(src.slice(src.indexOf('const lisPourcent='),src.indexOf('/* Les familles où l\'on puise'))+src.slice(src.indexOf('function plurielMot('),src.indexOf('/* Un adversaire retiré de la scène laisse son XP'))+src.slice(src.indexOf('function butinDesRetires('),src.indexOf('/* Rejouer la même rencontre'))
   +';this.normaliseButin=normaliseButin;this.butinDesRetires=butinDesRetires;',ctxB);
- assert.equal(JSON.stringify(ctxB.normaliseButin({m:'150',g:0,p:-4,r:33.4,z:50},['m','g','p','r'])),JSON.stringify({m:100,r:33}),'bornée à 0-100, zéro ne s\'écrit pas, pièce possédée seulement');
+ assert.equal(JSON.stringify(ctxB.normaliseButin({m:'150',g:0,p:-4,r:33.4,z:50},['m','g','p','r'])),JSON.stringify({m:100,g:0,p:0,r:33}),'bornée à 0-100, zéro s\'écrit (jamais), pièce possédée seulement');
  const pres={name:'Brom',hero:true,x:10,y:10,hp:5},loin={name:'Ysa',hero:true,x:60,y:10,hp:5},mort={name:'Kel',hero:true,x:11,y:10,hp:0},dehors={name:'Tam',hero:true,x:10,y:11,hp:5,horsCarte:true};
  ctxB.actors.push(pres,loin,mort,dehors);
  const troll={name:'Troll',hero:false,x:12,y:10,inventaire:['m','r','r','p'],butin:{m:100,r:100,p:0}};
@@ -3389,6 +3389,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.728 — Le butin : 25 % par défaut pour chaque pièce sans chance écrite, zéro qui s'écrit ; le loot forgé selon le type
+   (15, 25, 40, 50 %) quand l'adversaire n'a pas le sien, et appliqué à l'arme ou l'armure qui tombe. */
+{const C31=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
+ assert.deepEqual(['standard','alpha','solitaire','boss'].map(t=>C31.forgeAdvEffectif({type:t}).chance),[15,25,40,50]);
+ assert.equal(C31.forgeAdvEffectif({type:'boss',forge:{chance:10,min:1,max:2}}).chance,10);
+ assert.ok(ed.includes("const chanceButin=(chances,id)=>Object.prototype.hasOwnProperty.call(chances||{},id)?chances[id]:BUTIN_DEFAUT;")&&ed.includes("const n=tireNombreAffixes(catalog.forge,forgeF,tirage);")
+  &&ed.includes("c.placeholder=String(BUTIN_DEFAUT);"),'butin et loot forgé par défaut');}
 /* v0.727 — Le bonus de DEF d'un adversaire, ajouté à ce qu'il porte ; au bestiaire en masse, la DEF avec son bonus et l'écu de
    sa DEF en jeu, et le loot forgé en colonne. */
 {const C30=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
@@ -5062,7 +5069,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  const m=C.cleanMap({foes:[{x:1,y:1,bourse:[{k:'or',n:1,f:6,p:40}],tpl:{name:'Gob',bourse:[{k:'or',n:3,f:4,p:20}]}}],coffres:[{x:1,y:1,w:2,h:2,bourse:[{k:'or',n:2,f:6,p:10}]}]});
  assert.ok(m.foes[0].bourse[0].p===40&&m.foes[0].tpl.bourse[0].n===3&&JSON.stringify(m.coffres[0].bourse)==='[{"k":"or","n":2,"f":6}]','la carte garde les bourses');
  // Au retrait : la bourse tombe à l'aventurier le plus proche, avec ses pièces, sur la même ligne du journal.
- const ctx={actors:[],log:t=>ctx.journal.push(t),journal:[],document:{dispatchEvent(){}},Event:class{},objetDe:()=>null,ajouterInventaire(){},ajouteOr:C.ajouteOr};vm.createContext(ctx);
+ const ctx={actors:[],log:t=>ctx.journal.push(t),journal:[],document:{dispatchEvent(){}},Event:class{},objetDe:()=>null,ajouterInventaire(){},ajouteOr:C.ajouteOr,catalog:{monsters:[],forge:null,affixes:[]},forgeAdvEffectif:()=>({chance:0,min:0,max:4}),tireNombreAffixes:()=>0,tireAffixes:()=>[],syncForges(){}};vm.createContext(ctx);
  vm.runInContext(src.slice(src.indexOf('const lisPourcent='),src.indexOf('/* Les familles où l\'on puise'))+src.slice(src.indexOf('function plurielMot('),src.indexOf('/* Un adversaire retiré de la scène laisse son XP'))+src.slice(src.indexOf('function butinDesRetires('),src.indexOf('/* Rejouer la même rencontre'))+';this.butinDesRetires=butinDesRetires;',ctx);
  const brom={name:'Brom',hero:true,x:10,y:10,hp:5,richesses:{or:3}};ctx.actors.push(brom,{name:'Ysa',hero:true,x:80,y:10,hp:5});
  ctx.butinDesRetires([{name:'Gobelin',hero:false,x:12,y:10,bourse:[{k:'or',n:2,f:6,p:100},{k:'eclat-rubis',n:1,f:1,p:100}]}],()=>.5);
@@ -5503,4 +5510,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2023 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2024 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
