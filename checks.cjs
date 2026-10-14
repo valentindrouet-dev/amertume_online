@@ -3389,6 +3389,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.743 — L'infobulle d'une pièce forgée dit aussi Expérience, Chercheur et Orpailleur. */
+{const ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ed.includes("const EFFETS_EN_LIGNE=['mouvement','confere','orbesEtat','vampire','acceleration','domination','reaction','epines','epinesEtat','xpVaincu','fouille','orKill'];"));
+ assert.ok(ed.includes("xpVaincu:[b('+'+v+' XP'),' par adversaire vaincu.']")&&ed.includes("orKill:[b('+'+v+'d6'),' pièces d’or quand vous tuez un adversaire.']"));}
 /* v0.741 — Crocheter : hors combat, un test de Ruse sur les coffres et les portes verrouillés à portée. */
 {const C39=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),mp=fs.readFileSync('maps.js','utf8'),lv=fs.readFileSync('live.js','utf8');
  assert.equal(C39.doorLockedFor({keyLocked:true,crochetee:true},false),false);assert.equal(C39.doorLockedFor({keyLocked:true},false),true);
@@ -5596,4 +5600,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2077 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2079 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

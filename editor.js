@@ -1646,7 +1646,7 @@ function libelleBonusEl(p,{talent=null}={}){const n=Math.max(1,(p&&p.valeur)|0),
    puis ce qu'il fait : « Orbes (Mystique) : Vos Orbes infligent Poison 1. » */
 /* Les affixes que rien d'autre ne montre, chacun sa ligne : le losange des bonus d'objet, puis ce qu'il fait, ses valeurs et
    ses états en gras, les états à leur couleur. */
-const EFFETS_EN_LIGNE=['mouvement','confere','orbesEtat','vampire','acceleration','domination','reaction','epines','epinesEtat'];
+const EFFETS_EN_LIGNE=['mouvement','confere','orbesEtat','vampire','acceleration','domination','reaction','epines','epinesEtat','xpVaincu','fouille','orKill'];
 function ligneAffixe(x){const p=document.createElement('p');p.className='gear-affixe de-classe';const v=x.valeur;
  const los=document.createElement('span');los.className='gear-losange';los.setAttribute('aria-hidden','true');p.append(los);
  const b=(txt,coul)=>{const e=document.createElement('b');e.textContent=txt;if(coul)e.style.color=coul;return e},et=t=>b(t,TEINTE_ETAT_MOT[x.etat]);
@@ -1654,7 +1654,8 @@ function ligneAffixe(x){const p=document.createElement('p');p.className='gear-af
  const parts={mouvement:[b('+'+v+' m'),' de mouvement.'],confere:['Confère ',et(x.etat),', '+usage+'.'],
   vampire:['Vous soigne de ',b(v+' PV'),' en cas d’attaque réussie.'],acceleration:[b('+'+v+' m'),' de mouvement en réserve par attaque réussie, jusqu’à la fin du combat.'],
   domination:[b('+'+v+' dégâts'),' contre les cibles avec ',et(x.etat),'.'],reaction:['Vos talents de ',b('Réaction',TEINTES_TALENTS.reac),' infligent ',b('+'+v+' dégâts'),'.'],
-  epines:['Inflige ',b(v+' dégâts'),' à l’adversaire qui arrive à votre contact.'],epinesEtat:['Inflige ',et(x.etat+' '+v),' à l’adversaire qui arrive à votre contact.']}[x.effet]||[phraseAffixe(x)];
+  epines:['Inflige ',b(v+' dégâts'),' à l’adversaire qui arrive à votre contact.'],epinesEtat:['Inflige ',et(x.etat+' '+v),' à l’adversaire qui arrive à votre contact.'],
+  xpVaincu:[b('+'+v+' XP'),' par adversaire vaincu.'],fouille:[b('+'+v+' réussite'+(v>1?'s':'')),' à vos tests de fouille.'],orKill:[b('+'+v+'d6'),' pièces d’or quand vous tuez un adversaire.']}[x.effet]||[phraseAffixe(x)];
  p.append(...parts);return p}
 function ligneAffixeClasse(x){const p=document.createElement('p');p.className='gear-affixe de-classe';
  const t=(catalog.talents||[]).find(t=>t&&t.effet==='orbes'),nom=(t&&t.name)||'Orbes';
