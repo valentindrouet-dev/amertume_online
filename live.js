@@ -574,7 +574,9 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
 function envoyerOnglet(p){if(!estMJ()||!enLigne||!p)return;envoiOnglet={page:String(p),pn:Date.now()};pousserPlusTard()}
 function majTable(){const ouvert=!!tableId,pret=!!cloud&&typeof firebase!=='undefined';verrouillerInvite();if(typeof majEnvoiOnglet==='function')majEnvoiOnglet();
  const connecte=!!(auth&&auth.currentUser),mj=estMJ();
- const ligne=$('live-lien');if(ligne){ligne.hidden=!ouvert;if(ouvert)ligne.value=lienTable(tableId)}
+ // Un joueur n'a que ses options : l'état de la table et la quitter. Le lien, les sièges et qui incarne qui sont au MJ.
+ const joueur=invitEnLigne();
+ const ligne=$('live-lien');if(ligne){ligne.hidden=!ouvert||joueur;if(ouvert)ligne.value=lienTable(tableId)}
  const montre=(id,vu,off,pourquoi)=>{const e=$(id);if(!e)return;
   e.hidden=!vu;e.disabled=!!off;e.title=off?pourquoi:''};
  montre('live-open',!ouvert,!pret||!mj,
@@ -585,11 +587,12 @@ function majTable(){const ouvert=!!tableId,pret=!!cloud&&typeof firebase!=='unde
  {const l=$('live-login');if(l)l.textContent=tableVoulue?'Se connecter':'Connexion MJ'}
  montre('live-close',ouvert&&mj,false,'');
  montre('live-quit',ouvert&&!mj,false,'');
- montre('live-copy',ouvert,false,'');
- ['live-sieges','live-titre-sieges'].forEach(id=>{const e=$(id);if(e)e.hidden=!ouvert});
+ montre('live-copy',ouvert&&!joueur,false,'');
+ ['live-sieges','live-titre-sieges'].forEach(id=>{const e=$(id);if(e)e.hidden=!ouvert||joueur});
  const b=$('open-live');if(b){b.classList.toggle('has-news',ouvert);
-  b.textContent=ouvert?'Table · '+tableId:'Table en ligne'}
- const c=$('live-compte');if(c)c.textContent=ouvert
+  b.textContent=joueur?'Options en ligne':ouvert?'Table · '+tableId:'Table en ligne'}
+ {const t=document.querySelector('#live-panel .dialog-head h2');if(t)t.textContent=joueur?'Options en ligne':'Table en ligne'}
+ const c=$('live-compte');if(c)c.hidden=joueur;if(c)c.textContent=ouvert
   ?Object.keys(sieges).length+' joueur(s) assis · table '+tableId:'';
  if(ouvert)return;
  liveStatus(!pret?'Firebase ne répond pas : vérifie la connexion, ou un bloqueur qui empêcherait gstatic.com. La partie reste jouable sur cet appareil.'
@@ -701,7 +704,9 @@ function verrouillerInvite(){const inv=spectateur();
  const cache=(el,oui)=>{if(el)el.hidden=oui};
  cache($('view'),inv);cache(document.querySelector('label[for="view"]'),inv);
  if(inv){cache($('owner'),true);cache($('owner-label'),true)}
- cache($('open-share'),inv)}
+ cache($('open-share'),inv);
+ // Les joueurs connectés, dans l'en-tête, sont au MJ ; à l'Accueil, tout le monde les voit.
+ cache($('open-joueurs'),inv)}
 // Après chaque rendu, ce qui a bougé part sur le réseau — et rien d'autre.
 // Une vue imposée le temps d'être invité se rend dès qu'on ne l'est plus, avec l'onglet d'avant.
 let vueImposee=false;

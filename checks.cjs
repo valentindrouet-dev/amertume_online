@@ -3389,6 +3389,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.719 — Chez un joueur : « Options en ligne », l'état de la table et « Quitter la table » seulement ; le bouton des joueurs
+   connectés est au MJ. */
+{const vv=fs.readFileSync('live.js','utf8');
+ assert.ok(vv.includes("b.textContent=joueur?'Options en ligne':ouvert?'Table · '+tableId:'Table en ligne'}")&&vv.includes(" montre('live-copy',ouvert&&!joueur,false,'');")
+  &&vv.includes("e.hidden=!ouvert||joueur});")&&vv.includes(" cache($('open-joueurs'),inv)}"),'options en ligne du joueur');}
 /* v0.717 — Le site au MJ : son compte reconnu, ou un appareil où il l'a été ; hors d'une table, tout autre visiteur n'a qu'une page
    fermée. La scène publiée et les catalogues au MJ seul ; la publication ne s'écoute que connecté, et les règles le demandent. */
 {const pg=fs.readFileSync('index.html','utf8'),sh=fs.readFileSync('shared.js','utf8'),vv=fs.readFileSync('live.js','utf8'),rg=fs.readFileSync('firestore-online.rules','utf8');
@@ -5468,4 +5473,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2014 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2015 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
