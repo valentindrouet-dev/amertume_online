@@ -657,8 +657,12 @@ async function quitterSiege(){if(!siegesRef||!monUid||estMJ())return;const ref=s
 // La page qui se ferme ou se recharge date la présence du joueur : il sort de la liste aussitôt, et la reprend en revenant.
 window.addEventListener('pagehide',()=>{if(!siegesRef||!monUid||estMJ()||typeof firebase==='undefined')return;
  try{siegesRef.doc(monUid).update({at:firebase.firestore.Timestamp.fromMillis(0)}).catch(()=>{})}catch(e){}});
-$('live-quit').onclick=async()=>{await quitterSiege();debrancherTable();
- const u=new URL(location.href);u.searchParams.delete('table');history.replaceState(null,'',u);
+/* Quitter la table ferme tout chez un joueur : le siège s'efface, et la page repart sans le lien de table, sur la page fermée.
+   Chez le MJ, la partie reste ouverte sur l'appareil, comme avant. */
+$('live-quit').onclick=async()=>{const joueur=!estMJ();await quitterSiege();debrancherTable();
+ const u=new URL(location.href);u.searchParams.delete('table');
+ if(joueur){try{localStorage.removeItem(TABLE_CLE)}catch(e){}location.replace(u.toString());return}
+ history.replaceState(null,'',u);
  liveStatus('Table quittée. La partie reste sur cet appareil.')};
 $('live-copy').onclick=async()=>{try{await navigator.clipboard.writeText(lienTable(tableId));
  liveStatus('Lien copié : donne-le à tes joueurs.')}catch(e){$('live-lien').select()}};
@@ -726,4 +730,5 @@ majTable();
 if(document.body.classList.contains('page-accueil')&&typeof renderAccueil==='function')renderAccueil();
 // Le verrou suit le compte : le MJ reconnu ouvre tout ; un autre compte, sur cette page fermée, l'apprend.
 appliqueVerrou();document.addEventListener('amertume-mj-change',()=>{appliqueVerrou();const s=$('verrou-statut');
- if(s)s.textContent=typeof adminConnu!=='undefined'&&adminConnu&&auth&&auth.currentUser&&!estMJ()?'Ce compte n’est pas celui du MJ.':''});
+ // Le refus ne se dit qu'à qui a demandé la connexion MJ : un joueur qui vient de quitter sa table ne le lit pas.
+ if(s)s.textContent=$('verrou-page')&&$('verrou-page').dataset.demande&&typeof adminConnu!=='undefined'&&adminConnu&&auth&&auth.currentUser&&!estMJ()?'Ce compte n’est pas celui du MJ.':''});
