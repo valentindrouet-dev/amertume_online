@@ -188,7 +188,8 @@ function chosenAttack(actor,items){const liste=attackChoices(actor,items);
    de DEF propre : la sienne est toujours celle de ce qu'il porte, zéro compris. */
 function defenseOf(actor,items){const porte=equippedDef(actor,items);
  if(actor&&actor.hero)return porte||0;
- return porte===null||porte===undefined?(Number(actor&&actor.def)||0):porte}
+ // Un adversaire : ce qu'il porte, sinon sa fiche ; puis son bonus de DEF, qui s'ajoute dans les deux cas.
+ return (porte===null||porte===undefined?(Number(actor&&actor.def)||0):porte)+Math.max(0,Math.trunc(Number(actor&&actor.defBonus))||0)}
 /* Un passage secret est un mur pour la troupe tant qu'il est clos : il ne se dessine
    pas et le MJ seul le manœuvre. Ouvert, ce n'est plus qu'une porte — visible de tous
    et refermable par qui l'atteint, comme n'importe quelle autre. */

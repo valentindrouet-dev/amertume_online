@@ -397,7 +397,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(o.category==='restes'){o.rendement1=lisQte(o.rendement1);o.rendement2=lisQte(o.rendement2)}
   o.tanneur=o.tanneur===true&&o.category!=='ressource'&&o.category!=='restes';o.recette=normaliseRecette(o.recette,clesR);o.price=Math.max(0,Math.min(999999,Math.trunc(Number(o.price))||0))});
  // Un modèle s'équipe depuis la v0.73 : les anciens reçoivent leurs emplacements vides.
- c.monsters.forEach(m=>{m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??='';const fo=normaliseForgeAdv(m.forge);if(fo)m.forge=fo;else delete m.forge});
+ c.monsters.forEach(m=>{m.weapons||=[];m.armures=armuresDe(m);delete m.armorId;m.shieldId??='';if(!(Number.isInteger(m.defBonus)&&m.defBonus>0&&m.defBonus<=DEF_MAX))delete m.defBonus;const fo=normaliseForgeAdv(m.forge);if(fo)m.forge=fo;else delete m.forge});
  return c}
 // Le niveau d'un aventurier suit son XP, d'après les paliers de la partie.
 function niveauxHeros(){actors.forEach(a=>{if(a&&a.hero)a.level=niveauDeXp(a.xp)})}
@@ -959,6 +959,7 @@ function detailPv(a){const tete=['PV',(Number(a.hp)||0)+' / '+(Number(a.max)||0)
 function detailDef(a){const l=[['DEF','= armure + bonus']],pieces=[...armuresDe(a),a.shieldId].filter(Boolean).map(id=>(catalog.items||[]).find(o=>o&&o.id===id)).filter(Boolean);
  pieces.forEach(o=>{const d=Number(o.def)||0;if(d)l.push([(o.id===a.shieldId?'Bouclier':'Armure')+' : '+o.name,'+ '+d])});
  if(!a.hero&&equippedDef(a,catalog.items)===null)l.push(['Base',String(Number(a.def)||0)]);
+ if(!a.hero&&a.defBonus>0)l.push(['Bonus','+ '+a.defBonus]);
  if(a.hero&&!pieces.some(o=>Number(o.def)))l.push(['Aucune armure','0']);
  l.push(...partsBonus(a,'def'));
  const aura=typeof auraMeneur==='function'?auraMeneur(a,'def'):0;if(aura)l.push(['Meneur allié','+ '+aura]);
@@ -2722,6 +2723,8 @@ function tableMasseBestiaire(boite,liste){
   {cle:'restes',nom:'Restes',type:'panneau',tri:m=>(m.inventaire||[]).filter(id=>estReste(objetDe(id))).length},
   // L'or et les gemmes de sa bourse, en formules ; un clic ouvre la bourse à modifier.
   {cle:'bourse',nom:'Or et gemmes',type:'panneau',tri:m=>normaliseBourse(m.bourse).length},
+  // Le loot forgé : sa chance qu'une pièce qui tombe soit forgée, la commune à défaut, et de tant à tant d'affixes.
+  {cle:'forge',nom:'Loot forgé',type:'forge',tri:m=>{const f=normaliseForgeAdv(m.forge);return f?(f.chance===null?-1:f.chance):null}},
   {cle:'socle',nom:'Socle',type:'choix',opts:SOCLES_ADVERSAIRE,lit:m=>m.socle||'medium',ecrit:(m,v)=>{m.socle=dans(SOCLES_ADVERSAIRE,v,'medium')},tri:m=>SOCLES_ADVERSAIRE.findIndex(([k])=>k===(m.socle||'medium'))},
   {cle:'menace',nom:'Menace',type:'choix',opts:MENACES,lit:m=>m.menace||'closest',ecrit:(m,v)=>{m.menace=dans(MENACES,v,'closest')},tri:m=>MENACE_NOMS[m.menace||'closest']||''},
   // La vision dans le noir : tous l'ont, sauf réglage contraire.
@@ -2754,7 +2757,7 @@ function tableMasseBestiaire(boite,liste){
   else if(c.type==='choix'){const sel=document.createElement('select');sel.setAttribute('aria-label',c.nom+' pour tous');
    sel.innerHTML='<option value="\u0001">Pour tous…</option>'+options(c.opts,'\u0001');
    sel.onchange=()=>{const v=sel.value;if(v==='\u0001')return;const nomV=(c.opts.find(([k])=>String(k)===v)||[])[1]||v;sel.value='\u0001';pourTous(m=>c.ecrit(m,v),c.nom+' : '+nomV)};td.append(sel)}
-  else if(c.type==='panneau'){}
+  else if(c.type==='panneau'||c.type==='forge'){}
   else{const n=document.createElement('input');n.setAttribute('aria-label',c.nom+' pour tous');n.maxLength=60;
    const ok=document.createElement('button');ok.type='button';ok.textContent='OK';ok.onclick=()=>pourTous(m=>c.ecrit(m,n.value),c.nom+' : '+(n.value.trim()||'aucune'));
    const g=document.createElement('span');g.className='masse-op masse-texte';g.append(n,ok);td.append(g)}
@@ -2777,16 +2780,21 @@ function tableMasseBestiaire(boite,liste){
   const majLigne=[];
   COLS.forEach(c=>{const td=document.createElement('td');let el;
    if(c.type==='panneau'){td.className='masse-vue';td.append(cellulePanneau(m,c.cle,()=>majLigne.forEach(f=>f())));tr.append(td);return}
+   if(c.type==='forge'){td.className='masse-forge';td.append(editeurForgeAdv(m,()=>sauveBestiaire([m])));tr.append(td);return}
    if(c.type==='nombre'){el=document.createElement('input');el.type='number';el.min='0';el.max=String(c.max);el.step='1';el.value=c.lit(m);
     el.onchange=()=>{c.ecrit(m,Number(el.value)||0);el.value=c.lit(m);sauveBestiaire([m])}}
    else if(c.type==='choix'){el=document.createElement('select');el.innerHTML=options(c.opts,c.lit(m));
     el.onchange=()=>{c.ecrit(m,el.value);if(c.cle==='type')tr.className='b-'+(m.type||'standard');sauveBestiaire([m])}}
    else{el=document.createElement('input');el.value=c.lit(m);el.maxLength=60;el.onchange=()=>{c.ecrit(m,el.value);el.value=c.lit(m);sauveBestiaire([m])}}
    el.setAttribute('aria-label',c.nom+' — '+m.name);td.append(el);tr.append(td);
-   // Une armure qu'il possède décide de sa DEF en jeu : on le lit à côté de son chiffre à lui.
-   if(c.cle==='def'){const x=document.createElement('span');x.className='masse-porte';td.append(x);
-    const maj=()=>{const porte=equippedDef(equipeAdversaire({...m,hero:false,inventaire:[...(m.inventaire||[])]}),catalog.items);
-     x.hidden=porte===null;x.textContent=porte===null?'':'armure : '+porte;x.title=porte===null?'':'En jeu, sa DEF est celle de ce qu’il porte : '+porte};maj();majLigne.push(maj)}});
+   /* La DEF : sa fiche, son bonus, puis l'écu de sa DEF en jeu — ce qu'il porte, ou sa fiche, plus le bonus. */
+   if(c.cle==='def'){const bonus=document.createElement('input');bonus.type='number';bonus.min='0';bonus.max=String(DEF_MAX);bonus.step='1';bonus.className='masse-def-bonus';
+    bonus.placeholder='+0';bonus.value=m.defBonus>0?String(m.defBonus):'';bonus.title='Bonus de DEF, ajouté à ce qu’il porte';bonus.setAttribute('aria-label','Bonus de DEF — '+m.name);
+    const x=document.createElement('span');x.className='masse-porte masse-def-totale';td.classList.add('masse-def');td.append(bonus,x);
+    const maj=()=>{const clone=equipeAdversaire({...m,hero:false,inventaire:[...(m.inventaire||[])]}),porte=equippedDef(clone,catalog.items),total=defenseOf(clone,catalog.items);
+     x.replaceChildren(shieldBadge(total));x.title='DEF en jeu : '+(porte===null?'sa fiche':'ce qu’il porte, '+porte)+(m.defBonus>0?', plus '+m.defBonus+' de bonus':'')+' = '+total};
+    bonus.onchange=()=>{const v=Math.max(0,Math.min(DEF_MAX,Math.trunc(Number(bonus.value))||0));if(v)m.defBonus=v;else delete m.defBonus;bonus.value=v?String(v):'';maj();sauveBestiaire([m])};
+    el.addEventListener('change',maj);maj();majLigne.push(maj)}});
   if(m.id===bestiaireNeuf){tr.classList.add('neuve');requestAnimationFrame(()=>{tr.scrollIntoView({block:'nearest'});n.focus();n.select()});bestiaireNeuf=null}
   corps.append(tr)});
  t.append(corps);const cadre=document.createElement('div');cadre.className='masse-cadre';cadre.append(t);boite.append(cadre)}
@@ -5466,7 +5474,7 @@ let templateNeuf=false;
 // Un aventurier commence au niveau 1 avec Vie 3, Endu 2 et Dégâts +0 ; sa classe ajoute ses PV et ses compétences.
 function baseActor(hero){return normalizeActor({name:hero?'Nouvel aventurier':'Nouveau monstre',hero,role:hero?'Aventurier':'Adversaire',...(hero?{hp:6,max:6,vie:3,vieMax:3,endu:2,dmg:0,level:1,xp:0}:{hp:12,max:12,dmg:2}),def:2,x:50,y:60,pool:[2,0,0,0,0,0,0],checks:[false,false,false],target:null,skills:Array(8).fill(0)})}
 // Ce que le modèle du bestiaire dit d'une créature, et rien d'autre : le reste est l'état de la partie.
-function profilDuModele(m){return {template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,...(m.nyctalope===false?{nyctalope:false}:{}),...(mouvementPropre({mouvement:m.mouvement})!==DISTANCE_MOUVEMENT?{mouvement:mouvementPropre({mouvement:m.mouvement})}:{}),notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,weapons:[...(m.weapons||[])],armures:[...armuresDe(m)],shieldId:m.shieldId||'',inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m),...(m.unique===true?{unique:true}:{})}:{})}}
+function profilDuModele(m){return {template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,...(m.defBonus>0?{defBonus:m.defBonus}:{}),dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,...(m.nyctalope===false?{nyctalope:false}:{}),...(mouvementPropre({mouvement:m.mouvement})!==DISTANCE_MOUVEMENT?{mouvement:mouvementPropre({mouvement:m.mouvement})}:{}),notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,weapons:[...(m.weapons||[])],armures:[...armuresDe(m)],shieldId:m.shieldId||'',inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m),...(m.unique===true?{unique:true}:{})}:{})}}
 function fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);a.activeAttack=0;a.pool=poolOf(a);return a}
 function openActor(index=null,hero=true,template=null,neuf=false,pnj=false){if(view!=='mj')return;
  if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;templateNeuf=!!neuf&&template===null&&!hero;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);if(templateNeuf&&pnj)Object.assign(draft,{name:'Nouveau PNJ',role:'PNJ',pnj:true,alignement:'neutre'});attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero||templateNeuf;
@@ -5639,7 +5647,7 @@ function readActor(){const f=$('actor-form').elements;readAttacks();const a=stru
  // Un aventurier ne saisit jamais sa DEF : elle vaut son armure plus son bouclier, zéro compris.
  if(a.hero)a.def=defenseOf(a,catalog.items);
  a.pool=poolFrom(chosenAttack(a,catalog.items).dice)||poolFrom(attackDraft[0]?.dice);return a}
-function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,...(a.nyctalope===false?{nyctalope:false}:{}),...(mouvementPropre({mouvement:a.mouvement})!==DISTANCE_MOUVEMENT?{mouvement:mouvementPropre({mouvement:a.mouvement})}:{}),notes:a.notes,talents:[...(a.talents||[])],attacks:structuredClone(a.attacks),image:a.image||null,weapons:[...(a.weapons||[])],armures:[...armuresDe(a)],shieldId:a.shieldId||'',inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire),bourse:normaliseBourse(a.bourse),...(a.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:a.alignement}),...(a.unique===true?{unique:true}:{})}:{})}}
+function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,...(a.defBonus>0?{defBonus:a.defBonus}:{}),damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,...(a.nyctalope===false?{nyctalope:false}:{}),...(mouvementPropre({mouvement:a.mouvement})!==DISTANCE_MOUVEMENT?{mouvement:mouvementPropre({mouvement:a.mouvement})}:{}),notes:a.notes,talents:[...(a.talents||[])],attacks:structuredClone(a.attacks),image:a.image||null,weapons:[...(a.weapons||[])],armures:[...armuresDe(a)],shieldId:a.shieldId||'',inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire),bourse:normaliseBourse(a.bourse),...(a.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:a.alignement}),...(a.unique===true?{unique:true}:{})}:{})}}
 /* Une créature posée sur la table garde le lien vers son modèle : corriger les PV maximum
    au bestiaire corrige ceux qui combattent déjà. Une créature blessée garde sa blessure,
    une créature intacte reste intacte. Les créatures d'avant ce lien sont rattrapées par

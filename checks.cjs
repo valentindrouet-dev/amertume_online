@@ -3389,6 +3389,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.727 — Le bonus de DEF d'un adversaire, ajouté à ce qu'il porte ; au bestiaire en masse, la DEF avec son bonus et l'écu de
+   sa DEF en jeu, et le loot forgé en colonne. */
+{const C30=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
+ assert.deepEqual([C30.defenseOf({hero:false,def:3},[]),C30.defenseOf({hero:false,def:3,defBonus:2},[]),C30.defenseOf({hero:true,defBonus:2},[])],[3,5,0]);
+ assert.ok(ed.includes("{cle:'forge',nom:'Loot forgé',type:'forge',")&&ed.includes("td.append(editeurForgeAdv(m,()=>sauveBestiaire([m])))")&&ed.includes("def:m.def,...(m.defBonus>0?{defBonus:m.defBonus}:{}),")
+  &&ed.includes("if(!a.hero&&a.defBonus>0)l.push(['Bonus','+ '+a.defBonus]);"),'bonus de DEF et loot forgé en masse');}
 /* v0.726 — Le soin de tout un camp porte l'icône du Soin choisie dans Icônes. */
 assert.ok(fs.readFileSync('index.html','utf8').includes("[SOIN_CAMP.hero,SOIN_CAMP.foe].forEach(iconeSoinCamp);return SOIN_CAMP}"),'icône du soin du camp');
 /* v0.725 — Seul l'appareil du MJ enregistre la partie : un joueur n'en garde plus de copie. */
@@ -5497,4 +5503,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2022 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2023 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
