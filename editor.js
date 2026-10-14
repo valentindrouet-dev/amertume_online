@@ -2784,7 +2784,7 @@ function tableMasseBestiaire(boite,liste){
    if(c.type==='nombre'){el=document.createElement('input');el.type='number';el.min='0';el.max=String(c.max);el.step='1';el.value=c.lit(m);
     el.onchange=()=>{c.ecrit(m,Number(el.value)||0);el.value=c.lit(m);sauveBestiaire([m])}}
    else if(c.type==='choix'){el=document.createElement('select');el.innerHTML=options(c.opts,c.lit(m));
-    el.onchange=()=>{c.ecrit(m,el.value);if(c.cle==='type'){tr.className='b-'+(m.type||'standard');const ch=tr.querySelector('.masse-forge input');if(ch)ch.placeholder=String(forgeAdvEffectif(m).chance)}sauveBestiaire([m])}}
+    el.onchange=()=>{c.ecrit(m,el.value);if(c.cle==='type'){tr.className='b-'+(m.type||'standard');const td=tr.querySelector('td.masse-forge');if(td)td.replaceChildren(editeurForgeAdv(m,()=>sauveBestiaire([m])))}sauveBestiaire([m])}}
    else{el=document.createElement('input');el.value=c.lit(m);el.maxLength=60;el.onchange=()=>{c.ecrit(m,el.value);el.value=c.lit(m);sauveBestiaire([m])}}
    el.setAttribute('aria-label',c.nom+' — '+m.name);td.append(el);tr.append(td);
    /* La DEF : sa fiche, son bonus, puis l'écu de sa DEF en jeu — ce qu'il porte, ou sa fiche, plus le bonus. */
@@ -4024,11 +4024,14 @@ function inventaireAdversaire(boite,cible,apres,genre){boite.replaceChildren();b
  barre.append(filtre);boite.append(possede,...(restes?[]:[editeurBourse(cible,apres),editeurForgeAdv(cible,apres)]),barre,grille);majPossede();remplit()}
 /* Le loot forgé de cet adversaire : sa chance qu'une pièce qui tombe soit forgée, la commune à défaut, et de tant à tant d'affixes. */
 function editeurForgeAdv(cible,apres){const out=document.createElement('div');out.className='forge-adv';const f=normaliseForgeAdv(cible.forge)||{chance:null,min:0,max:4};
+ // Le type de l'adversaire borne le nombre d'affixes : jusqu'à 2 standard, 3 élite, 4 solitaire et boss.
+ const type=cible.type||(cible.tpl&&cible.tpl.type)||'standard',cap=plafondForgeAdv(type);
  const t=document.createElement('span');t.className='forge-adv-titre';t.textContent='Loot forgé';out.append(t);
  const champ=(lab,el)=>{const l=document.createElement('label');l.append(lab+' ',el);out.append(l)};
- const chance=document.createElement('input');chance.type='number';chance.min='0';chance.max='100';chance.step='5';chance.placeholder=String(forgeAdvEffectif({type:cible.type}).chance);chance.value=f.chance===null?'':String(f.chance);chance.title='Chance qu’une arme ou une armure qui tombe soit forgée ; vide, celle de son type : 15 % standard, 25 % élite, 40 % solitaire, 50 % boss';
- const min=document.createElement('select'),max=document.createElement('select');[0,1,2,3,4].forEach(n=>min.add(new Option(n===0?'aucun':n,String(n))));[1,2,3,4].forEach(n=>max.add(new Option(n,String(n))));min.value=String(f.min);max.value=String(f.max);
- const pose=()=>{const v=normaliseForgeAdv({chance:chance.value,min:min.value,max:max.value});if(v)cible.forge=v;else delete cible.forge;apres()};chance.onchange=min.onchange=max.onchange=pose;
+ const chance=document.createElement('input');chance.type='number';chance.min='0';chance.max='100';chance.step='5';chance.placeholder=String(forgeAdvEffectif({type}).chance);chance.value=f.chance===null?'':String(f.chance);chance.title='Chance qu’une arme ou une armure qui tombe soit forgée ; vide, celle de son type : 15 % standard, 25 % élite, 40 % solitaire, 50 % boss';
+ const min=document.createElement('select'),max=document.createElement('select');[0,1,2,3,4].filter(n=>n<=cap).forEach(n=>min.add(new Option(n===0?'aucun':n,String(n))));[1,2,3,4].filter(n=>n<=cap).forEach(n=>max.add(new Option(n,String(n))));
+ max.value=String(Math.min(f.max,cap));min.value=String(Math.min(f.min,Number(max.value)));
+ const pose=()=>{if(Number(min.value)>Number(max.value))min.value=max.value;const v=normaliseForgeAdv({chance:chance.value,min:min.value,max:Number(max.value)>=cap?4:max.value});if(v)cible.forge=v;else delete cible.forge;apres()};chance.onchange=min.onchange=max.onchange=pose;
  champ('Chance %',chance);champ('Affixes de',min);champ('à',max);return out}
 /* Ce que l'adversaire tire de son inventaire, en une phrase : ses attaques d'armes, sa DEF. Le
    champ DEF se tait quand une armure décide, comme à l'ouverture, et rend son chiffre sinon. */
