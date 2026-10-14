@@ -1669,7 +1669,7 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // Ce que la pièce confère, une ligne par bonus ; sa rareté se lit à sa couleur.
  /* Une pièce forgée : les affixes que rien d'autre ne montre. Bonus, dés, état et lumière se lisent déjà dans leurs lignes,
     leurs dés et leurs pastilles. */
- affixesDe(o,catalog.affixes).filter(x=>EFFETS_EN_LIGNE.includes(x.effet)).forEach(x=>d.append(x.effet==='orbesEtat'?ligneAffixeClasse(x):ligneAffixe(x)));
+ affixesDe(o,catalog.affixes).filter(x=>EFFETS_EN_LIGNE.includes(x.effet)||(x.effet==='carac'&&CARACS_POINTS.includes(x.carac))).forEach(x=>d.append(x.effet==='orbesEtat'?ligneAffixeClasse(x):ligneAffixe(x)));
  normaliseBonusEquip(o.bonus).forEach(b=>{const p=document.createElement('p');p.className='gear-bonus';p.append(libelleBonusEl(b));d.append(p)});
  // Ce qui éclaire le dit : « Lumière 3m ».
  if(lumiereDe(o))ligne('Lumière '+String(lumiereDe(o)).replace('.',',')+'m','gear-lumiere');
@@ -3569,7 +3569,7 @@ function sauveForge(){scheduleSave();document.dispatchEvent(new Event('amertume-
 function openForge(){if(view!=='mj')return;renderForge();forgeDialog.showModal()}
 /* Le nom du groupe d'un affixe, dans la Forge : celui que le MJ a écrit ; sinon celui de son effet, en clair. */
 function nomGroupeAffixe(x){if(x.groupe)return x.groupe;const eff=(EFFETS_AFFIXE.find(([k])=>k===x.effet)||[])[1]||x.effet;
- if(x.effet==='carac')return (CARACS_EQUIP.find(([k])=>k===x.carac)||[])[1]||x.carac;if(x.effet==='comp')return x.comp==='*'?'Compétence au hasard':COMPETENCES[+x.comp]||'Compétence';
+ if(x.effet==='carac')return (CARACS_AFFIXE.find(([k])=>k===x.carac)||[])[1]||x.carac;if(x.effet==='comp')return x.comp==='*'?'Compétence au hasard':COMPETENCES[+x.comp]||'Compétence';
  if(x.effet==='de')return 'Dé '+((NOMS_DES.find(([k])=>k===x.de)||[])[1]||'');if(x.effet==='domination'||x.effet==='epinesEtat')return eff.split(' :')[0]+' · '+x.etat;return eff.split(' :')[0]}
 // Les groupes repliés de la Forge : l'appareil s'en souvient.
 let forgePlis=new Set();try{forgePlis=new Set(JSON.parse(localStorage.getItem('amertume-forge-plis')||'[]'))}catch(e){}
@@ -3713,7 +3713,7 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
   +sel('Catégorie','categorie',v.classe?'classe':'',[['','Commune'],['classe','Classe']])
   +'<span data-categorie="classe">'+sel('Classe','classe',v.classe,(catalog.classes||[]).map(c=>[c.name,c.name]))+'</span>'
   +sel('Effet','effet',v.effet,EFFETS_AFFIXE)
-  +'<span data-effet="carac">'+sel('Caractéristique','carac',v.carac,CARACS_EQUIP.filter(([k])=>k!=='comp'))+'</span>'
+  +'<span data-effet="carac">'+sel('Caractéristique','carac',v.carac,CARACS_AFFIXE)+'</span>'
   +'<span data-effet="comp">'+sel('Compétence','comp',v.comp,[['*','Au hasard, à la génération'],...COMPETENCES.map((n,k)=>[String(k),n])])+'</span>'
   +'<span data-effet="de">'+sel('Dé','de',v.de,NOMS_DES)+'</span>'
   +'<span data-effet="etat orbesEtat domination epinesEtat">'+sel('État','etat',v.effet==='confere'?'Feu':v.etat,ETATS_JEU.map(e=>[e,e]))+'</span>'

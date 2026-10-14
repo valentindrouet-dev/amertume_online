@@ -3389,6 +3389,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.744 — Trois caractéristiques d'affixe : les mètres de mouvement, les points de Mouvement, les points d'Action. */
+{const C40=require('./combat.js');
+ assert.deepEqual(C40.CARACS_AFFIXE.slice(-3).map(x=>x[0]),['metres','pm','pa']);
+ assert.equal(C40.normaliseAffixe({effet:'carac',carac:'pa'}).carac,'pa');assert.equal(C40.phraseAffixe({effet:'carac',carac:'pm',valeur:1}),'+1 PM');
+ const items=[{id:'b',name:'Cuirasse',category:'armor',slot:'torse',def:2}],aff=[{id:'x',nom:'vif',effet:'carac',carac:'pm',valeur:1},{id:'y',nom:'agile',effet:'carac',carac:'metres',valeur:2}];
+ const o=C40.objetForge({id:'forge-z',base:'b',affixes:['x','y']},items,aff,null);assert.equal(o.forgeEffets.pm,1);assert.equal(o.bonusMouvement,2);}
 /* v0.743 — L'infobulle d'une pièce forgée dit aussi Expérience, Chercheur et Orpailleur. */
 {const ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ed.includes("const EFFETS_EN_LIGNE=['mouvement','confere','orbesEtat','vampire','acceleration','domination','reaction','epines','epinesEtat','xpVaincu','fouille','orKill'];"));
@@ -3807,7 +3813,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
  assert.deepEqual([o.name,o.price],['Épée tranchante lourde',Math.round((10+15+30)*150/100)]);
  assert.equal(C12.objetForge({id:'f',base:'Épée lourde',affixes:['l']},[w('Épée lourde')],A,g).name,'Épée lourde','pas deux fois le même mot');
  assert.equal(C12.objetForge({id:'f',base:'Bottes',affixes:['r']},[{id:'Bottes',name:'Bottes',category:'armor',slot:'bottes',price:4}],[{id:'r',nom:'lourd',place:'prefixe',effet:'mouvement',valeur:1}],g).name,'Bottes lourdes');
- assert.ok(ed.includes(".filter(x=>EFFETS_EN_LIGNE.includes(x.effet)).forEach(x=>d.append(x.effet==='orbesEtat'?ligneAffixeClasse(x):ligneAffixe(x)));")&&ed.includes("+field('Valeur en or','prix','','text','readonly tabindex=\"-1\"')")
+ assert.ok(ed.includes(".filter(x=>EFFETS_EN_LIGNE.includes(x.effet)||(x.effet==='carac'&&CARACS_POINTS.includes(x.carac))).forEach(x=>d.append(x.effet==='orbesEtat'?ligneAffixeClasse(x):ligneAffixe(x)));")&&ed.includes("+field('Valeur en or','prix','','text','readonly tabindex=\"-1\"')")
   &&ed.includes("const o=objetForge(f,base,catalog.affixes||[],guide);")&&ed.includes("sel('Genre','accord',accordDe(a),ACCORDS)")&&ed.includes("champ(fa,'Par m de mouvement',"),'Forge v0.678 câblée');}
 /* v0.677 — La Forge, première livraison : les affixes et leur tirage, les pièces forgées chez les aventuriers, recomposées au
    catalogue le temps de jouer, le générateur, le loot forgé réglé par adversaire. */
@@ -5600,4 +5606,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2079 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2083 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
