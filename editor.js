@@ -1674,10 +1674,6 @@ function ligneAffixeClasse(x){const p=document.createElement('p');p.className='g
  const los=document.createElement('span');los.className='gear-losange';los.setAttribute('aria-hidden','true');
  const teinte=TEINTES_TALENTS[(t&&t.type)||(TALENTS_CODES.orbes||{}).type||'act'];
  p.append(los,b(nom,teinte),' (',b(x.classe),') : Vos ',b(nom,teinte),' infligent ',b(x.etat+' '+x.valeur,TEINTE_ETAT_MOT[x.etat]),'.');return p}
-/* Les pièces portées d'un aventurier, pour la fiche de la table : la vignette de chacune, sa bulle au survol. */
-function piecesPortees(a){const ids=[...new Set([...(a.weapons||[]),a.shieldId,...armuresDe(a),a.munitionId].filter(Boolean))];
- return ids.map(objetDe).filter(Boolean).map(o=>{const p=gearCarre(o,1,true);if(o.category==='weapon')remplitMunition(p,a,o);p.removeAttribute('role');
-  if(BULLES)surveille(p,()=>{const d=gearDetail(o,a,true);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')});return p})}
 function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
  const titre=document.createElement('p');titre.className='gear-nom';titre.textContent=o.name;d.append(titre);
  const ligne=(texte,classe)=>{if(!texte)return;const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p)};
@@ -2280,7 +2276,7 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
  // Sur la fiche à cases, la Maîtrise ouvre la rangée moyenne, devant les Passifs.
  const ORDRE_FICHE=cases?['act','mvt','reac','mait','pass','crit']:['act','mvt','reac','pass','crit','mait'],rangT=t=>{const i=ORDRE_FICHE.indexOf(talentType(t)[0]);return i<0?ORDRE_FICHE.length:i};
  const liste=talentsDeFiche(a).map((t,i)=>[t,i]).sort((x,y)=>rangT(x[0])-rangT(y[0])||x[1]-y[1]).map(x=>x[0]);
- if(!liste.length&&!cases){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
+ if(!liste.length&&!cases&&!a.hero){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
  /* Un talent appris dont le socle manque ne fait rien : il se taisait, et on le croyait à
     l'œuvre. Il porte désormais sa marque, et sa bulle dit ce qu'il attend. */
  const sansEffet=t=>typeof manqueTalent==='function'?manqueTalent(a.talents||[],t,catalog.talents):'';
@@ -2289,7 +2285,7 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
     en petit, les améliorations ; enfin les bonus, sous la ligne. */
  const rangee=cls=>{const r=document.createElement('div');r.className='talent-rang '+cls;return r},grands=cases?rangee('rang-grands'):out,moyens=cases?rangee('rang-moyens'):out;
  const MOYENS=['mait','pass','crit'];
- const attaque=cases&&a.hero?carteAttaque(a):null;if(attaque)grands.append(attaque);const nb=liste.length+(attaque?1:0);
+ const attaque=a.hero?carteAttaque(a):null;if(attaque)grands.append(attaque);const nb=liste.length+(attaque?1:0);
  liste.forEach(t=>{const k=palierDe(a,t);
   // Chaque talent tel que le porte cet aventurier : à son élément, s'il en a un.
   const tv0=talentPourElement(t,elementDe(a)),sur=logoRemplace(a,t),tv=sur?{...tv0,logo:sur}:tv0,carte=talentCarte(tv),pill=carte.firstChild;

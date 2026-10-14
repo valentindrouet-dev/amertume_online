@@ -3389,10 +3389,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
-/* v0.748 — La fiche de la table montre, sous les talents, les pièces que l'aventurier porte. */
+/* v0.749 — La fiche de la table : les Objets sous les Talents, l'Attaque parmi les talents, aucun bloc d'équipement. */
 {const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
- assert.ok(ix.includes('<details class="bloc-replie" id="bloc-equipe" open hidden>')&&ix.includes("$('sheet-equipe').replaceChildren(...l)}"));
- assert.ok(ed.includes("function piecesPortees(a){const ids=[...new Set([...(a.weapons||[]),a.shieldId,...armuresDe(a),a.munitionId].filter(Boolean))];"));}
+ assert.ok(ix.includes('<div id="sheet-talents"></div></details><div class="bloc-fixe" id="bloc-gear">')&&!ix.includes('bloc-equipe')&&!ed.includes('function piecesPortees'));
+ assert.ok(ed.includes(" const attaque=a.hero?carteAttaque(a):null;if(attaque)grands.append(attaque);")&&ix.includes("const nAff=nTalents+(a.hero?1:0);"));}
 /* v0.747 — Un aventurier créé par un joueur attend la validation du MJ : il arrive « en attente », le MJ l'accepte ou le refuse. */
 {const lv=fs.readFileSync('live.js','utf8'),ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8');
  assert.ok(lv.includes("CHAMPS_ACTEUR_MJ.push('enAttente');CHAMPS_VIVANTS.push('enAttente');")&&lv.includes("if(estMJ()&&neuf&&a.hero){a.enAttente=true;"));
@@ -5418,7 +5418,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  vm.runInContext(src.slice(src.indexOf('const EFFETS_SUR_ATTAQUE='),src.indexOf('function lignesAttaque('))+';this.f=ameliorAttaque;',ctxA);
  assert.deepEqual([{type:'pass',pourAttaque:true},{type:'ame',effet:'tenailles'},{type:'ame',effet:'tenailles',pourAttaque:false},{type:'act',pourAttaque:true},{type:'pass',effet:'bonus',pourAttaque:true},{type:'pass'}].map(ctxA.f),
   [true,true,false,false,false,false],'passifs et améliorations cochés, ou câblés sur les attaques');
- assert.ok(src.includes("const attaque=cases&&a.hero?carteAttaque(a):null;if(attaque)grands.append(attaque);")&&src.includes("talentCarte({id:'attaque',name:'Attaque',type:'act'},l?logoAttaque(l):null)")
+ assert.ok(src.includes("const attaque=a.hero?carteAttaque(a):null;if(attaque)grands.append(attaque);")&&src.includes("talentCarte({id:'attaque',name:'Attaque',type:'act'},l?logoAttaque(l):null)")
   &&src.includes("lignes:voit?lignesAttaque(a):null")&&src.includes("lisChemin(x).de===t.id&&!ameliorAttaque(x));")
   &&src.includes('name="pourAttaque"')&&src.includes("if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;"),'l’Attaque sur la fiche et ses améliorations');
  assert.ok(css.includes('.talent-detail .palier-effet.amelioration::before{background:color-mix(in srgb,var(--pastille,var(--teinte,#4f7fb5)) 85%,#000);')&&css.includes('.talent-detail.p-act{--pastille:#4f7fb5}'),'la pastille à la couleur de la nature');
