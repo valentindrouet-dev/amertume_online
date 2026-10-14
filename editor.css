@@ -2587,6 +2587,13 @@ body.page-accueil .intro,body.page-accueil .mj-tools,body.page-accueil main.layo
 .hero-aventure{flex:none;width:18px;height:18px;margin:0;accent-color:var(--accent);cursor:pointer}.hero-aventure:disabled{cursor:default}
 .hero-joueur{flex:none;max-width:110px;font:600 12px system-ui;padding:2px 4px}
 .hero-head>.avatar{flex:none}
+/* La fiche de la table : les pièces portées, en vignettes, sous les talents. */
+#sheet-equipe{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0}
+#sheet-equipe .cat-pill.gear-carre,#sheet-equipe .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:28px;min-width:28px;height:28px;min-height:28px;padding:2px;gap:0;border-radius:8px;justify-content:center;display:inline-flex;flex-direction:column;align-items:center}
+#sheet-equipe .cat-pill.gear-carre .logo-equip,#sheet-equipe .cat-pill.gear-carre .glyphe{width:72%;height:72%;margin:0;flex:none}
+#sheet-equipe .cat-pill.gear-carre .glyphe{display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1}
+#sheet-equipe .cat-pill.gear-carre .gear-bas,#sheet-equipe .cat-pill.gear-carre .pips,#sheet-equipe .cat-pill.gear-carre .marque-porte{display:none}
+#bloc-equipe[hidden]{display:none}
 /* Un aventurier créé par un joueur, en attente du MJ : pâli, et la décision du MJ dessous. */
 .hero-card.en-attente{outline:2px dashed #c08a4e;outline-offset:-2px}.hero-attente{display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;font:700 13px system-ui;color:#a5672b}
 .hero-poignee{flex:none;cursor:grab;color:var(--muted);font-size:18px;line-height:1;padding:2px 2px;user-select:none;touch-action:none}.hero-poignee:active{cursor:grabbing}

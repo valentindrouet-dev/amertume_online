@@ -3389,6 +3389,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.748 — La fiche de la table montre, sous les talents, les pièces que l'aventurier porte. */
+{const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ix.includes('<details class="bloc-replie" id="bloc-equipe" open hidden>')&&ix.includes("$('sheet-equipe').replaceChildren(...l)}"));
+ assert.ok(ed.includes("function piecesPortees(a){const ids=[...new Set([...(a.weapons||[]),a.shieldId,...armuresDe(a),a.munitionId].filter(Boolean))];"));}
 /* v0.747 — Un aventurier créé par un joueur attend la validation du MJ : il arrive « en attente », le MJ l'accepte ou le refuse. */
 {const lv=fs.readFileSync('live.js','utf8'),ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8');
  assert.ok(lv.includes("CHAMPS_ACTEUR_MJ.push('enAttente');CHAMPS_VIVANTS.push('enAttente');")&&lv.includes("if(estMJ()&&neuf&&a.hero){a.enAttente=true;"));
@@ -5617,4 +5621,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2089 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2091 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
