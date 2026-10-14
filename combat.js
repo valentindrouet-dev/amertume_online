@@ -195,7 +195,7 @@ function defenseOf(actor,items){const porte=equippedDef(actor,items);
    et refermable par qui l'atteint, comme n'importe quelle autre. */
 /* Un passage secret découvert (« decouvert ») par un test de Perception devient une porte comme une autre. */
 function doorHiddenFrom(d,estMJ){return !!(d&&d.secret&&!d.open&&!d.decouvert&&!estMJ)}
-function doorLockedFor(d,estMJ){return !estMJ&&!!(d&&(d.keyLocked||(d.secret&&!d.open&&!d.decouvert)))}
+function doorLockedFor(d,estMJ){return !estMJ&&!!(d&&((d.keyLocked&&!d.crochetee)||(d.secret&&!d.open&&!d.decouvert)))}
 /* Déplacement : le socle est un disque repoussé hors des murs. Le mouvement restant
    subsiste le long de l'obstacle, ce qui produit le glissement. */
 function closestOnSegment(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],len2=dx*dx+dy*dy;

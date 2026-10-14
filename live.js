@@ -112,7 +112,7 @@ function etatVivant(){const out={actors:{}};
     ne lit que les portes et ignore la suite. */
  // Un objet : 0 caché, 1 visible, 2 récupéré. Une porte : ouverte ou non ; passage secret découvert, 2 close, 3 ouverte.
  // Puis les coffres, en drapeaux : 1 révélé, 2 déverrouillé, 4 désamorcé, 8 ouvert, 16 tenté verrouillé.
- out.doors=m?[...(m.doors||[]).map(d=>d.decouvert?(d.open?3:2):!!d.open),...(m.objets||[]).map(o=>o.pris?2:o.visible?1:0),
+ out.doors=m?[...(m.doors||[]).map(d=>d.crochetee?4+(d.decouvert?2:0)+(d.open?1:0):d.decouvert?(d.open?3:2):!!d.open),...(m.objets||[]).map(o=>o.pris?2:o.visible?1:0),
   ...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0)|(c.tente?16:0)),
   // Puis les lumières de la carte : 2 prise, 1 éteinte, 0 allumée ; enfin, chaque lumière posée au sol, en entier.
   ...(m.lumieres||[]).filter(l=>l&&!l.pose).map(l=>l.prise?2:l.eteinte?1:0),...(m.lumieres||[]).filter(l=>l&&l.pose).map(lumiereAuSol),
@@ -314,7 +314,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   // La composition de la scène appartient au MJ : chez les joueurs, ce qui n'y est plus s'en va.
   if(!estMJ())for(let i=actors.length-1;i>=0;i--)if(!vus.has(actors[i].id))actors.splice(i,1);
   const m=typeof currentMap==='function'?currentMap():null;
-  if(m&&Array.isArray(d.doors)){(m.doors||[]).forEach((p,i)=>{const v=d.doors[i];if(typeof v==='boolean'){p.open=v;delete p.decouvert}else if(v===2||v===3){p.open=v===3;p.decouvert=true}});
+  if(m&&Array.isArray(d.doors)){(m.doors||[]).forEach((p,i)=>{const v=d.doors[i];if(typeof v==='boolean'){p.open=v;delete p.decouvert;delete p.crochetee}else if(v===2||v===3){p.open=v===3;p.decouvert=true;delete p.crochetee}
+    else if(Number.isInteger(v)&&v>=4&&v<=7){p.open=!!(v&1);if(v&2)p.decouvert=true;else delete p.decouvert;p.crochetee=true}});
    const n=(m.doors||[]).length;(m.objets||[]).forEach((o,k)=>{const v=d.doors[n+k];
     if(typeof v==='boolean'){o.visible=v;delete o.pris}else if(v===0||v===1||v===2){o.visible=v>=1;if(v===2)o.pris=true;else delete o.pris}});
    const n2=n+(m.objets||[]).length;(m.coffres||[]).forEach((c,k)=>{const v=d.doors[n2+k];if(!Number.isInteger(v)||v<0||v>31)return;

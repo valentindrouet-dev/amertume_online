@@ -928,6 +928,20 @@ function menuCoffre(c,x,y){const mj=view==='mj',a=heroActif(),proche=!!a&&coffre
    log(c.nom+(c.revele?' est révélé.':' est caché.'),{ton:'carte'});render();saveMaps();scheduleSave()}]);
   const h=heroLePlusProche(centreForme(c));if(h&&!(proche&&h===a))entrees.push(['Ouvrir pour '+nomNum(h)+', le plus proche',()=>ouvrirCoffre(c,h,true)])}
  menuCarte(c.nom||'Coffre',entrees,x,y)}
+/* Crocheter : un test de Ruse sur chaque serrure à portée de l'aventurier — un coffre verrouillé qu'il touche, une porte
+   verrouillée qu'il atteint. Assez de réussites : le coffre se déverrouille, la porte aussi, et s'ouvre. Hors combat, on retente. */
+const difficultePorte=d=>Math.max(1,Math.min(9,Math.trunc(Number(d&&d.crochetage))||1));
+function serruresAPortee(a){const m=currentMap(),size=mapSize();if(!a||!m||!size.width)return [];
+ const coffres=(m.coffres||[]).filter(c=>c&&!c.ouvert&&coffreVisible(c)&&coffreVerrouille(c)&&coffreAPortee(a,c)).map(c=>({c,n:c.verrou}));
+ const portes=(m.doors||[]).filter(d=>d&&d.keyLocked&&!d.crochetee&&!d.open&&(!d.secret||d.decouvert)&&doorSeen(d)&&polyInReach(a,doorPolygon(d,m.ratio),size,tokenPx())).map(d=>({d,n:difficultePorte(d)}));
+ return [...coffres,...portes]}
+function crocheter(a){const l=serruresAPortee(a);if(!a||!l.length)return;
+ const jet=skillRoll(valeurCompetence(a,RUSE)-1,d6),n=jet.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
+ const faits=[];l.forEach(s=>{if(n<s.n)return;
+  if(s.c){s.c.deverrouille=true;floatNumber(centreForme(s.c),'Déverrouillé','nul');faits.push(s.c.nom||'le coffre')}
+  else{s.d.crochetee=true;s.d.open=true;faits.push('la porte')}});
+ log(nomNum(a)+' · Ruse : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — '+(faits.length?'crochète '+faits.join(', '):'la serrure résiste')+'.',{dice:true,ton:'competence'});
+ render();saveMaps();scheduleSave()}
 /* Déverrouiller ou chercher un piège : un test de Ruse ou de Technique, assez de réussites. Quand le
    verrou et le piège demandent autant de réussites, réussir l'un vient à bout de l'autre ; sinon,
    chacun le sien. Un piège trouvé est désamorcé. */
@@ -1364,7 +1378,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
  actors.splice(0,actors.length,...tous);
  // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
- (m.doors||[]).forEach(d=>{d.open=false;delete d.decouvert});const grille=fogDims(m);
+ (m.doors||[]).forEach(d=>{d.open=false;delete d.decouvert;delete d.crochetee});const grille=fogDims(m);
  // Et ses coffres reviennent comme le MJ les a laissés : cachés, verrouillés, piégés, pleins.
  (m.coffres||[]).forEach(c=>{['revele','deverrouille','desamorce','ouvert','tente'].forEach(k=>delete c[k])});
  // Et ses pièges, armés et cachés comme le MJ les a posés.
@@ -1489,6 +1503,7 @@ mapsPage.innerHTML=
   +'<label id="door-key-label" hidden><input type="checkbox" id="door-key"> Verrouillée — le MJ seul l’ouvre</label>'
   +'<label id="door-secret-label" hidden><input type="checkbox" id="door-secret"> Passage secret — un mur pour la troupe tant qu’il est clos</label>'
   +'<label id="door-perception-label" hidden>Réussites de Perception pour le trouver <input type="number" id="door-perception" min="1" max="9"></label>'
+  +'<label id="door-crochet-label" hidden>Réussites de Ruse pour la crocheter <input type="number" id="door-crochet" min="1" max="9"></label>'
   +'<label id="foe-cache-label" hidden><input type="checkbox" id="foe-cache"> Caché — le MJ le révèle d’un clic en jeu</label>'
   +'<button id="foe-objets" hidden>✎ Objets portés</button>'
   +'<label id="foe-quete-label" hidden>Quête débloquée au contact <select id="foe-quete"></select></label>'
@@ -1804,6 +1819,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
  if(porte){$('door-key').checked=!!porte.keyLocked;$('door-secret').checked=!!porte.secret}
  $('door-perception-label').hidden=!(porte&&porte.secret);if(porte&&porte.secret)$('door-perception').value=Number(porte.perception)||1;
+ $('door-crochet-label').hidden=!(porte&&porte.keyLocked);if(porte&&porte.keyLocked)$('door-crochet').value=difficultePorte(porte);
  $('foe-cache-label').hidden=$('foe-objets').hidden=!adv;if(adv)$('foe-cache').checked=adv.cache===true;
  // Un PNJ peut débloquer une quête cachée : l'aventurier qui le rejoint au contact la découvre.
  {const pnj=!!adv&&!!(modeleActuel(adv.tpl)||adv.tpl||{}).pnj;$('foe-quete-label').hidden=!pnj;
@@ -2356,6 +2372,8 @@ $('door-key').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel
 $('door-secret').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
  pushUndo();d.secret=$('door-secret').checked;renderCanvas();saveMaps();if(mapDraft.id===currentMapId)render()};
 // Le nombre de réussites de Perception qu'un passage secret demande pour être trouvé.
+$('door-crochet').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
+ pushUndo();d.crochetage=difficultePorte({crochetage:$('door-crochet').value});renderCanvas();saveMaps()};
 $('door-perception').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
  pushUndo();d.perception=Math.max(1,Math.min(9,Math.trunc(Number($('door-perception').value))||1));renderCanvas();saveMaps()};
 // Un adversaire caché : la troupe ne le voit pas tant que le MJ ne le révèle pas, d'un clic en jeu.

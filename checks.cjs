@@ -3389,6 +3389,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.741 — Crocheter : hors combat, un test de Ruse sur les coffres et les portes verrouillés à portée. */
+{const C39=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),mp=fs.readFileSync('maps.js','utf8'),lv=fs.readFileSync('live.js','utf8');
+ assert.equal(C39.doorLockedFor({keyLocked:true,crochetee:true},false),false);assert.equal(C39.doorLockedFor({keyLocked:true},false),true);
+ assert.ok(ix.includes('id="crocheter" hidden>🗝</button>')&&ix.includes("const cro=$('crocheter');cro.hidden=!a||!a.hero||enCombat();"));
+ assert.ok(mp.includes("function serruresAPortee(a){")&&mp.includes("function crocheter(a){")&&mp.includes('id="door-crochet"'));
+ assert.ok(lv.includes("d.crochetee?4+(d.decouvert?2:0)+(d.open?1:0)")&&lv.includes("else if(Number.isInteger(v)&&v>=4&&v<=7){p.open=!!(v&1);"));}
 /* v0.740 — Affixes d'Expérience, du Chercheur, d'Orpailleur ; la Forge par groupes repliables ; poser d'un clic sur la carte. */
 {const C38=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(['xpVaincu','fouille','orKill'].every(k=>C38.EFFETS_AFFIXE.some(([e])=>e===k)));
@@ -5344,7 +5350,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(carto.includes("if(f.cache)a.hidden=true;actors.push(a)});")&&page.includes("menuCarte(a.name,[['Révéler à la troupe',()=>{a.hidden=false;render();scheduleSave()}]]")
   &&!carto.includes("'Découvert !'")&&carto.includes("d.decouvert=true;floatNumber(centreForme(d),'Révélé !','nul')")&&carto.includes("c.revele=true;floatNumber(centreForme(c),'Révélé !','nul')")
   &&carto.includes("if(o.visible)floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul');"),'les révélations');
- assert.ok(vivant.includes("...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0)|(c.tente?16:0))")&&vivant.includes("else if(v===2||v===3){p.open=v===3;p.decouvert=true}"),'la table partage portes découvertes et coffres');
+ assert.ok(vivant.includes("...(m.coffres||[]).map(c=>(c.revele?1:0)|(c.deverrouille?2:0)|(c.desamorce?4:0)|(c.ouvert?8:0)|(c.tente?16:0))")&&vivant.includes("else if(v===2||v===3){p.open=v===3;p.decouvert=true;delete p.crochetee}"),'la table partage portes découvertes et coffres');
  // Les règles du coffre : verrou et piège égaux, l'un défait l'autre ; distincts, chacun le sien.
  const ctx={Math,c:null};vm.createContext(ctx);vm.runInContext(carto.match(/const coffreVisible=[^\n]*/)[0]+';this.v=coffreVerrouille;this.a=coffreArme;',ctx);
  assert.equal(ctx.v({verrou:2}),true);assert.equal(ctx.v({verrou:2,deverrouille:true}),false);assert.equal(ctx.v({verrou:0}),false);assert.equal(ctx.a({piege:1}),true);assert.equal(ctx.a({piege:1,desamorce:true}),false);
@@ -5588,4 +5594,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2070 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2075 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
