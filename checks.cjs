@@ -3389,6 +3389,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.735 — Attaque d'état, automatique (Onde au palier 2) et relance (1 PA, 2 au palier 2), réglées sur l'état de l'attaque. */
+{const C36=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),au=C36.TALENTS_CODES.attaqueetatauto,re=C36.TALENTS_CODES.attaqueetatpa;
+ assert.ok(au&&re&&au.type==='ame'&&re.type==='ame'&&au.params[0].defaut==='Blindage'&&re.params[0].defaut==='Blindage');
+ assert.equal(au.phrase({etat:'Blindage'},1),'Vous gagnez <b>Blindage</b> automatiquement.');assert.equal(au.phrase({etat:'Blindage'},2),'Vous gagnez <b>Blindage</b> et <b>Onde</b>.');
+ assert.equal(re.phrase({etat:'Blindage'},2),'Si vous avez déjà <b>Blindage</b>, vous gagnez <b>2 PA</b>.');
+ assert.ok(ix.includes("if(!gagne&&!auto){")&&ix.includes("if(relance&&dejaLa){const n=voletOuvert(relance,'deux')?2:1;"));}
 /* v0.734 — La limite de l'arbre d'une classe : les joueurs ne voient que les talents au-dessus de la barrière choisie. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(ed.includes("function limiteArbre(classe){")&&ed.includes("function coupeArbre(liste,cases,classe){"));
@@ -5556,4 +5562,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2051 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2055 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

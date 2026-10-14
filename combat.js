@@ -1458,6 +1458,18 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   phrase(p){const e=p&&p.etat,c=p&&p.condition;
    return 'Le porteur effectue <b>une attaque</b>. '+(c==='survit'?'Si <b>la cible n’est pas tuée</b>':'S’il <b>tue la cible</b>')
     +', il gagne <b>'+(e||'un état à régler')+'</b>.'}},
+ /* Les améliorations d'une Attaque d'état, réglées sur son état — Blindage pour l'Attaque Blindée. Automatique : l'état se
+    gagne quoi qu'il arrive, et Onde avec lui au palier 2. Relance : déjà porteur de l'état, 1 PA, 2 au palier 2. */
+ attaqueetatauto:{cle:'attaqueetatauto',nom:'Attaque d’état — automatique',court:'automatique',type:'ame',
+  aide:'Amélioration d’Attaque d’état : le porteur gagne l’état automatiquement ; au palier 2, il gagne aussi Onde.',
+  params:[{cle:'etat',nom:'État de l’attaque',type:'choix',defaut:'Blindage',options:ETATS_JEU.map(e=>[e,e])}],volets:[{cle:'onde',nom:'Gagne aussi Onde',palier:2}],
+  phrase(p,palier,v){const e=(p&&p.etat)||'Blindage',k=(v||{onde:2}).onde,onde=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return onde?'Vous gagnez <b>'+e+'</b> et <b>Onde</b>.':'Vous gagnez <b>'+e+'</b> automatiquement.'}},
+ attaqueetatpa:{cle:'attaqueetatpa',nom:'Attaque d’état — relance',court:'relance',type:'ame',
+  aide:'Amélioration d’Attaque d’état : si le porteur a déjà l’état, il gagne 1 PA ; 2 PA au palier 2.',
+  params:[{cle:'etat',nom:'État de l’attaque',type:'choix',defaut:'Blindage',options:ETATS_JEU.map(e=>[e,e])}],volets:[{cle:'deux',nom:'2 PA',palier:2}],
+  phrase(p,palier,v){const e=(p&&p.etat)||'Blindage',k=(v||{deux:2}).deux,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'Si vous avez déjà <b>'+e+'</b>, vous gagnez <b>'+(deux?'2 PA':'1 PA')+'</b>.'}},
  /* Meneur : un passif. Le porteur augmente les dégâts, la DEF ou — temporairement — les
     PV max d'un, deux ou tous ses alliés au contact ou dans sa ligne de vue : les plus
     proches d'abord. C'est la table qui sait qui est où ; le moteur ne fait que choisir. */
