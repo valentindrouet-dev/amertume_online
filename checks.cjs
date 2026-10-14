@@ -3389,6 +3389,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.760 — Les socles passent au-dessus des portes : un socle dans l'encadrement se prend toujours. */
+{assert.ok(page.includes("#map-view .token:not(.objet){z-index:2}"));}
 /* v0.759 — Les onglets ouverts aux joueurs voyagent avec la table, sans attendre une publication. */
 {const lv=fs.readFileSync('live.js','utf8');assert.ok(lv.includes("out.fogReset.ong=catalog.ongletsJoueurs.slice();")&&lv.includes("if(!pareil(catalog.ongletsJoueurs,l)){catalog.ongletsJoueurs=l;if(typeof majOnglets==='function')majOnglets()}}"));}
 /* v0.758 — Chez un joueur : le bandeau de chaque nouveau tour, celui d'un combat qui recommence, et le journal rangé sous le tour du MJ. */
@@ -5653,4 +5655,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2104 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2105 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
