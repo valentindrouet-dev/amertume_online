@@ -1073,8 +1073,10 @@ function blocRichesses(a){const out=document.createElement('div');out.className=
 /* Le « + » des richesses, au MJ : ajouter — ou retirer — de l'or ou des gemmes à un aventurier.
    Le menu dit ce qu'il a déjà de chaque. */
 const richessesDialog=dialog('richesses-ajout','Richesses','<form id="richesses-form"><div class="edit-grid"><label>Quoi<select name="quoi" id="richesses-quoi"></select></label>'
- +'<label>Quantité<input name="n" type="number" min="1" max="999999" step="1" value="1" required></label></div>'
- +'<div class="form-actions"><button type="button" id="richesses-retirer">Retirer</button><button class="primary">Ajouter</button></div></form>');
+ +'<label>Quantité<input name="n" type="number" min="-999999" max="999999" step="1" value="1" required></label></div>'
+ +'<div class="form-actions"><button type="button" id="richesses-vider">Tout retirer</button><button type="button" id="richesses-retirer">Retirer</button><button class="primary">Ajouter</button></div></form>');
+/* Une quantité signée : -40 retire 40, quel que soit le bouton qui part ; zéro ne fait rien. */
+const lisQuantite=v=>Math.max(-999999,Math.min(999999,Math.trunc(Number(String(v??'').replace(/[\s\u202f\u00a0]/g,'')))||0));
 let richessesActeur=null;
 function openRichesses(a){if(view!=='mj'||!a)return;richessesActeur=a;a.richesses=normaliseCompte(a.richesses,CLES_RICHESSES);
  richessesDialog.querySelector('h2').textContent='Richesses de '+a.name;
@@ -1085,10 +1087,12 @@ function openRichesses(a){if(view!=='mj'||!a)return;richessesActeur=a;a.richesse
  if(avant&&CLES_RICHESSES.includes(avant))menu.value=avant;
  $('richesses-form').elements.n.value='1';richessesDialog.showModal()}
 function bougeRichesse(signe){const a=richessesActeur,f=$('richesses-form').elements;if(!a)return;
- const k=f.quoi.value,n=lisCompte(f.n.value);if(!n||!CLES_RICHESSES.includes(k))return;
- poseCompte(a.richesses,k,(a.richesses[k]||0)+signe*n);richessesDialog.close();
+ const k=f.quoi.value,q=lisQuantite(f.n.value);if(!CLES_RICHESSES.includes(k))return;
+ // « Tout retirer » (signe 0) vide la ligne ; sinon, une quantité négative retire, quel que soit le bouton.
+ const n=signe===0?-(a.richesses[k]||0):q<0?q:signe*q;if(!n)return;
+ poseCompte(a.richesses,k,(a.richesses[k]||0)+n);richessesDialog.close();
  if(typeof renderHeroes==='function')renderHeroes();rendrePlusTard();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
-$('richesses-form').onsubmit=e=>{e.preventDefault();bougeRichesse(1)};$('richesses-retirer').onclick=()=>bougeRichesse(-1);
+$('richesses-form').onsubmit=e=>{e.preventDefault();bougeRichesse(1)};$('richesses-retirer').onclick=()=>bougeRichesse(-1);$('richesses-vider').onclick=()=>bougeRichesse(0);
 // Ressusciter, chez le MJ : une VIE, ses PV au complet, de retour sur la carte, sans état.
 function ressusciter(a){if(view!=='mj'||!estMort(a))return;
  a.vie=1;a.comaVie=false;a.horsCarte=false;a.states=[];a.cumuls={};a.bleed=0;if(typeof recalculerPV==='function')recalculerPV(a);a.hp=a.max;

@@ -2819,7 +2819,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  /* v0.301 : sur la carte d'un aventurier, ses gemmes en ligne, sans tableau ni valeur en or. */
  assert.ok(src.includes("function ligneGemmes(compte,poser,qui){const l=document.createElement('div');l.className='gemmes-ligne';")&&src.includes("return l.childElementCount?l:null}")
   &&src.includes("const g=ligneGemmes(a.richesses,poser,a.name);")&&!src.includes('possedees')&&src.includes("function openRichesses(a){if(view!=='mj'||!a)return;")
-  &&src.includes("poseCompte(a.richesses,k,(a.richesses[k]||0)+signe*n);")&&fs.readFileSync('editor.css','utf8').includes('.gemmes-ligne{display:flex;flex-wrap:wrap;'),'les gemmes possédées en ligne, et le « + » du MJ');}
+  &&src.includes("poseCompte(a.richesses,k,(a.richesses[k]||0)+n);")&&fs.readFileSync('editor.css','utf8').includes('.gemmes-ligne{display:flex;flex-wrap:wrap;'),'les gemmes possédées en ligne, et le « + » du MJ');}
 /* v0.291 — Un talent se supprime depuis le plan de l'arbre ; ce qui pendait sous lui remonte.
    Plus de fusion ni de phrase d'aperçu. Seule une classe du jeu a un arbre : ni les adversaires,
    ni les génériques. */
@@ -3389,6 +3389,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.737 — La fouille révèle tout objet caché de sa zone ; l'œil fermé des coffres cachés ; le paysage jamais zoomé dans l'éditeur ;
+   une quantité négative retire, « Tout retirer » vide la ligne, pour l'or comme pour les ressources du domaine. */
+{const mp=fs.readFileSync('maps.js','utf8'),ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8');
+ assert.ok(mp.includes("(nouvelle||o.test.comp===comp)&&reussites>=o.test.reussites&&atteint(o)"));
+ assert.ok(mp.includes("o.className='coffre-oeil'")&&mp.includes("if(estPaysage(m)&&zoomC!==1){zoomC=1;panCX=panCY=0}"));
+ assert.ok(ed.includes("const n=signe===0?-(a.richesses[k]||0):q<0?q:signe*q;if(!n)return;")&&ed.includes('min="-999999" max="999999"'));
+ assert.ok(dm.includes("n=signe===0?-(r[k]||0):q<0?q:signe*q;if(!n)return;")&&dm.includes('id="dom-reserve-vider"'));}
 /* v0.736 — Un aventurier par compte joueur ; un aventurier hors de la carte y entre en pleine partie par le « + » de la table. */
 {const ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ed.includes("function aventuriersPermis(){return 1}")&&ed.includes("function openCreation(){if(!peutCreerAventurier())return;"));
@@ -5567,4 +5574,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2058 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2062 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

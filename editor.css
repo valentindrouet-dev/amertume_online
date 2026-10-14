@@ -2371,6 +2371,9 @@ button.btn-action.debut-combat{animation:debut-rayonne 1.1s ease-in-out infinite
 /* Le piège encore armé, au MJ seul : un avertissement au centre du coffre. */
 .coffre-alerte{position:absolute;transform:translate(-50%,-50%);z-index:3;pointer-events:none;font-size:15px;line-height:1;color:#f1c40f;text-shadow:0 0 2px #000,0 0 4px #000}
 .shape.coffre .coffre-alerte{left:50%;top:50%}
+/* Un coffre caché, dans l'éditeur : un œil fermé, en haut à droite. */
+.shape.coffre .coffre-oeil{position:absolute;top:-9px;right:-9px;width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:#2a1d14;color:#f3d7a6;pointer-events:none;box-shadow:0 1px 3px #0006}
+.shape.coffre .coffre-oeil svg{width:13px;height:13px}
 #coffre-editor .coffre-cases{display:flex;flex-wrap:wrap;gap:4px 18px;margin:6px 0}
 #coffre-editor .coffre-si[hidden]{display:none}
 #coffre-editor .coffre-etats{display:flex;flex-wrap:wrap;gap:2px 14px;margin:0 0 6px}

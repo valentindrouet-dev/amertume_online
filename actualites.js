@@ -1,6 +1,6 @@
 /* Les dernières actualités de la table, pour l'Accueil. Chaque publication s'ajoute d'elle-même en tête de « versions »
    (publie.sh) ; « resume » condense les dix dernières en quelques lignes, tant qu'il va jusqu'à la plus récente. */
-const ACTUALITES={resume:{jusqua:'0.736',lignes:[
+const ACTUALITES={resume:{jusqua:'0.737',lignes:[
  'Accueil : création d’aventurier pas à pas, en couleurs — espèce, classe, 3 points de caractéristique, 3 de compétence, l’équipement de départ, 10d6 Or et un objet inhabituel tiré au hasard.',
  'Aventuriers : le MJ coche ceux qui partent à l’aventure ; eux seuls entrent sur la carte et gagnent XP et butin.',
  'Accueil : les dernières actualités, tous les aventuriers et où ils se trouvent, et bientôt les hauts faits.',
@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.736',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.737","d":"2026-10-14","t":"Fouille, coffres cachés, paysage, retirer or et ressources"},
 {"v":"0.736","d":"2026-10-14","t":"Un aventurier par joueur, ajout en cours de partie"},
 {"v":"0.735","d":"2026-10-14","t":"Améliorations d'Attaque Blindée"},
 {"v":"0.734","d":"2026-10-14","t":"Limite de l'arbre de talents"},

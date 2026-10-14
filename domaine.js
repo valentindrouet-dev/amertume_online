@@ -765,16 +765,17 @@ function renderRessourcesLues(boite,r){const out=document.createElement('div');o
  if(out.childElementCount)boite.append(out)}
 /* Corriger la réserve, au MJ : une ressource ou une gemme, une quantité, ajouter ou retirer. */
 const reserveDialog=dialog('dom-reserve-editor','Ressources du domaine','<form id="dom-reserve-form"><div class="edit-grid"><label>Quoi<select name="quoi" id="dom-reserve-quoi"></select></label>'
- +'<label>Quantité<input name="n" type="number" min="1" max="999999" step="1" value="1" required></label></div>'
- +'<div class="form-actions"><button type="button" id="dom-reserve-retirer">Retirer</button><button class="primary">Ajouter</button></div></form>');
+ +'<label>Quantité<input name="n" type="number" min="-999999" max="999999" step="1" value="1" required></label></div>'
+ +'<div class="form-actions"><button type="button" id="dom-reserve-vider">Tout retirer</button><button type="button" id="dom-reserve-retirer">Retirer</button><button class="primary">Ajouter</button></div></form>');
 function openReserve(){if(!mjDom())return;const r=domaine.ressources||(domaine.ressources={}),menu=$('dom-reserve-quoi'),avant=menu.value;menu.replaceChildren();
  const opt=(k,t)=>new Option(t+((r[k]||0)?' — '+(r[k]).toLocaleString('fr-FR'):''),k);
  const mats=document.createElement('optgroup');mats.label='Matériaux';ressourcesJeu().filter(x=>x.cle!=='or').forEach(({cle,nom})=>mats.append(opt(cle,nom)));menu.append(mats);
  TAILLES_GEMMES.forEach(([ta,nt])=>{const g=document.createElement('optgroup');g.label=nt;VARIETES_GEMMES.forEach(([v])=>g.append(opt(cleGemme(ta,v,false),nomGemme(ta,v,false))));menu.append(g)});
  if(avant&&[...menu.options].some(o=>o.value===avant))menu.value=avant;$('dom-reserve-form').elements.n.value='1';reserveDialog.showModal()}
-function bougeReserve(signe){const f=$('dom-reserve-form').elements,k=f.quoi.value,n=lisCompte(f.n.value);if(!k||!n)return;
- const r=domaine.ressources||(domaine.ressources={});poseCompte(r,k,(r[k]||0)+signe*n);reserveDialog.close();renderDomaine(true);sauveDomaine()}
-$('dom-reserve-form').onsubmit=e=>{e.preventDefault();bougeReserve(1)};$('dom-reserve-retirer').onclick=()=>bougeReserve(-1);
+function bougeReserve(signe){const f=$('dom-reserve-form').elements,k=f.quoi.value,q=lisQuantite(f.n.value);if(!k)return;
+ // « Tout retirer » (signe 0) vide la ligne ; une quantité négative retire, quel que soit le bouton.
+ const r=domaine.ressources||(domaine.ressources={}),n=signe===0?-(r[k]||0):q<0?q:signe*q;if(!n)return;poseCompte(r,k,(r[k]||0)+n);reserveDialog.close();renderDomaine(true);sauveDomaine()}
+$('dom-reserve-form').onsubmit=e=>{e.preventDefault();bougeReserve(1)};$('dom-reserve-retirer').onclick=()=>bougeReserve(-1);$('dom-reserve-vider').onclick=()=>bougeReserve(0);
 /* ---------- Les quêtes ---------- */
 /* Une quête se prend par les aventuriers du joueur — tous ceux qu'il mène — et se lit « En cours » dès qu'un aventurier la porte.
    Le MJ dit son issue : Réussie ou Échouée. Le journal les range : en cours, proposées, terminées. */

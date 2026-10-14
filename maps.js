@@ -803,7 +803,8 @@ function testerObjet(a,o){const jet=skillRoll(a.skills[o.test.comp]||0,d6);
 function objetsDecouverts(a,comp,reussites,nouvelle){const m=currentMap();if(!a||!a.hero||!m)return [];
  // La Perception ne cherche que dans la part neuve de la fouille ; une autre compétence, dans tout le contact.
  const murs=walls(),atteint=o=>nouvelle?!wallsBetween(a,o,murs)&&dansFouilleNeuve(o,nouvelle):objetAPortee(a,o);
- const trouves=(m.objets||[]).filter(o=>!o.visible&&o.test&&o.test.comp===comp&&reussites>=o.test.reussites&&atteint(o));
+ // Fouiller révèle tout objet caché de sa zone, quelle que soit la compétence de son test ; un autre test, ceux de sa compétence.
+ const trouves=(m.objets||[]).filter(o=>!o.visible&&o.test&&(nouvelle||o.test.comp===comp)&&reussites>=o.test.reussites&&atteint(o));
  trouves.forEach(o=>{o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul')});
  /* La Perception trouve aussi les passages secrets et les coffres cachés que sa fouille neuve touche,
     avec assez de réussites : le passage devient une porte, le coffre paraît. */
@@ -1750,6 +1751,8 @@ function sizeCanvas(){const c=$('map-canvas'),w=document.querySelector('.canvas-
  c.style.width=Math.round(lw)+'px';c.style.height=Math.round(lh)+'px'}
 function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textContent=HINTS[mapTool]||'';
  document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===mapTool));
+ // Un paysage se voit en entier : jamais zoomé dans l'éditeur, où il n'a pas de bouton pour s'ajuster.
+ if(estPaysage(m)&&zoomC!==1){zoomC=1;panCX=panCY=0}
  c.replaceChildren();sizeCanvas();applyCanvasZoom();majEchelle();if(!m)return;ensure(m);
  /* La matière est peinte d'un seul tenant, percée de ses portes : l'éditeur montre le
     mur du jeu. Pendant qu'on déplace une zone, elle se peint à part, par-dessus : deux
@@ -1832,6 +1835,9 @@ function shapeEl(kind,i,r){const el=document.createElement('div');
  if(kind==='piege'){el.prepend(visuelPiege(r));if(typeof surveille==='function')surveille(el,()=>{if(!mapDrag)ouvrirBulle(el,bullePiege(r,true),'bulle-gear')})}
  // Un coffre : sa bulle au survol, comme en partie, contenu compris ; piégé, l'avertissement du MJ.
  if(kind==='coffre'){if(r.piege>0)el.append(Object.assign(document.createElement('span'),{className:'coffre-alerte',textContent:'⚠',title:'Piégé'}));
+  // Caché : un œil fermé, pour que le MJ le sache d'un coup d'œil.
+  if(r.cache){const o=document.createElement('span');o.className='coffre-oeil';o.setAttribute('aria-label','Caché');
+   o.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10c2.5 3.2 5.6 4.8 9 4.8s6.5-1.6 9-4.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M6.5 13.4 5 16M12 14.8V17.8M17.5 13.4 19 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';el.append(o)}
   if(typeof surveille==='function')surveille(el,()=>{if(!mapDrag)ouvrirBulle(el,bulleCoffre(r),'bulle-gear')})}
  return el}
 /* La zone choisie s'éclaire d'un seul tenant, trous compris : un seul tracé, à la règle
@@ -2571,13 +2577,13 @@ $('czoom-in').onclick=()=>{const c=$('map-canvas');zoomCanvasAt(1.25,c.clientWid
 $('czoom-out').onclick=()=>{const c=$('map-canvas');zoomCanvasAt(1/1.25,c.clientWidth/2,c.clientHeight/2)};
 $('czoom-reset').onclick=()=>{zoomC=1;panCX=panCY=0;applyCanvasZoom()};
 const wrap=document.querySelector('.canvas-wrap');
-wrap.addEventListener('wheel',e=>{const r=$('map-canvas').getBoundingClientRect();
+wrap.addEventListener('wheel',e=>{if(estPaysage(mapDraft))return;const r=$('map-canvas').getBoundingClientRect();
  // Le pincement du trackpad arrive en molette avec ctrlKey : c'est le zoom du système.
  if(e.ctrlKey||e.metaKey){e.preventDefault();zoomCanvasAt(Math.exp(-e.deltaY*.0035),e.clientX-r.left,e.clientY-r.top);return}
  if(zoomC>1){e.preventDefault();panCX-=e.deltaX;panCY-=e.deltaY;applyCanvasZoom()}},{passive:false});
 let gestC=1;
 wrap.addEventListener('gesturestart',e=>{e.preventDefault();gestC=zoomC});
-wrap.addEventListener('gesturechange',e=>{e.preventDefault();const r=$('map-canvas').getBoundingClientRect();
+wrap.addEventListener('gesturechange',e=>{e.preventDefault();if(estPaysage(mapDraft))return;const r=$('map-canvas').getBoundingClientRect();
  zoomCanvasAt(gestC*e.scale/zoomC,e.clientX-r.left,e.clientY-r.top)});
 
 /* ---------- Accès depuis la table de jeu ---------- */
