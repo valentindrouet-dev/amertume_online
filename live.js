@@ -147,7 +147,8 @@ function diffEtat(av,ap){const maj={},SUPPR=firebase.firestore.FieldValue.delete
    if(CHAMPS_TOUR.includes(k))tour=true;
    maj['actors.'+id+'.'+k]=b[k]===undefined?SUPPR:k==='hp'&&typeof a[k]==='number'&&typeof b[k]==='number'&&a[k]>=0?firebase.firestore.FieldValue.increment(b[k]-a[k]):b[k]});
   if(tour&&!estMJ()&&typeof cleTour==='function')maj['actors.'+id+'.tourVu']=cleTour()});
- if(!pareil(av&&av.doors,ap.doors))maj.doors=ap.doors;
+ // Un joueur n'écrit l'état du sol que pour la carte ouverte par le MJ : jamais celui d'une carte périmée.
+ if(!pareil(av&&av.doors,ap.doors)&&(estMJ()||(dernierDoc&&dernierDoc.mapId&&dernierDoc.mapId===currentMapId)))maj.doors=ap.doors;
  // Le tour, la carte ouverte, le verrou et le titre appartiennent au MJ.
  if(estMJ())CHAMPS_MJ.forEach(k=>{if(!pareil(av&&av[k],ap[k]))maj[k]=ap[k]});
  return maj}
@@ -251,7 +252,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     if(donjonConnu&&dn!==null&&dn!==donjonVu&&typeof annonceFlottante==='function')annonceFlottante('🏆 Donjon Terminé !','annonce-victoire');donjonVu=dn;donjonConnu=true}
    if(typeof d.locked==='boolean')tokensLocked=d.locked;
    if(typeof d.title==='string'&&typeof sceneTitle==='function')sceneTitle(d.title);
-   if(!d.mapId&&typeof enPaysage==='function'&&enPaysage()){carteNeuve=true;currentMapId=null;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom')}
+   // Sans carte chez le MJ, aucune chez le joueur : ni un paysage refermé, ni une carte d'une vieille copie de son navigateur.
+   if(!d.mapId&&currentMapId){carteNeuve=true;currentMapId=null;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom')}
    if(d.mapId&&d.mapId!==currentMapId&&maps.some(m=>m.id===d.mapId)){carteNeuve=true;
     currentMapId=d.mapId;const m=currentMap();mapImage=m&&m.image||null;
     $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';

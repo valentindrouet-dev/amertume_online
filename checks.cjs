@@ -3389,6 +3389,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.750 — Une partie enregistrée ne se relit que chez le MJ ; un joueur suit la carte de la table, et n'écrit le sol que pour elle. */
+{const ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8');
+ assert.ok(ed.includes("if(typeof mjIci==='function'&&!mjIci()){sessionDeCote=s;return}")&&ed.includes(" if(sessionDeCote)return;"));
+ assert.ok(lv.includes("   if(!d.mapId&&currentMapId){carteNeuve=true;")&&lv.includes("(estMJ()||(dernierDoc&&dernierDoc.mapId&&dernierDoc.mapId===currentMapId)))maj.doors=ap.doors;"));}
 /* v0.749 — La fiche de la table : les Objets sous les Talents, l'Attaque parmi les talents, aucun bloc d'équipement. */
 {const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ix.includes('<div id="sheet-talents"></div></details><div class="bloc-fixe" id="bloc-gear">')&&!ix.includes('bloc-equipe')&&!ed.includes('function piecesPortees'));
@@ -5621,4 +5625,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2091 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2093 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

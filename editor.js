@@ -6517,6 +6517,8 @@ function domaineRempli(d){try{return !!d&&typeof d==='object'&&(typeof poidsDoma
 /* Seul l'appareil du MJ garde la partie. Un joueur la reçoit à chaque connexion à la table, et son navigateur n'en écrit plus
    de copie. Rien n'est effacé : une copie d'avant reste derrière la page fermée. */
 function saveNow(){if(typeof mjIci==='function'&&!mjIci())return;if(ongletPerime){if(document.visibilityState==='visible')bandeauFenetres.hidden=false;return}
+ // Une partie mise de côté au chargement attend de se poser : rien ne s'écrit par-dessus avant.
+ if(sessionDeCote)return;
  if(db&&!sessionLue){noterSauvegarde('La partie enregistrée n’est pas encore lue : rien n’est écrit par-dessus.',true);return}
  if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}marqueSession();try{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),s=snapshot();
   if(domaineRempli(s.domaine))st.put(s,'session');
@@ -6532,9 +6534,15 @@ let sessionRepondue=false;
 /* Tant que la partie enregistrée n'a pas été lue, rien ne s'écrit par-dessus : une scène ouverte
    sans elle — l'appareil tardait à répondre — n'effacerait pas le domaine ou les fiches qu'elle
    porte, à la première modification ou au premier changement d'onglet. */
-let sessionLue=false;
+let sessionLue=false,sessionDeCote=null;
+// Le MJ se reconnaît sur cet appareil : la partie mise de côté au chargement se pose, avant toute sauvegarde.
+document.addEventListener('amertume-mj-change',()=>{if(!sessionDeCote||typeof mjIci!=='function'||!mjIci())return;const s=sessionDeCote;sessionDeCote=null;
+ try{appliquerSauvegarde(s);if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();if(typeof reappliquerTable==='function')reappliquerTable()}catch(e){}});
 function loadSession(){
  const poser=s=>{try{if(verifieSauvegarde(s))return;
+   /* Hors de l'appareil du MJ, une partie enregistrée — la copie qu'un joueur gardait avant la v0.72x — ne se relit plus :
+      elle ramenait de vieilles cartes. Elle reste de côté, intacte : si le MJ se reconnaît ensuite ici, elle se pose alors. */
+   if(typeof mjIci==='function'&&!mjIci()){sessionDeCote=s;return}
    if(!loading){const invite=typeof auth!=='undefined'&&auth&&auth.currentUser&&(auth.currentUser.isAnonymous||invitEnLigne());if(invite)return}
    appliquerSauvegarde(s);
    if(!loading){if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();
