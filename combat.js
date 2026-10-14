@@ -1417,6 +1417,14 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  tourbillon:{cle:'tourbillon',nom:'Tourbillon',type:'pass',monstre:true,
   aide:'Passif : l’attaque du porteur frappe tous les adversaires de sa zone de contact.',params:[],
   phrase(){return 'L’attaque du porteur frappe <b>tous les adversaires</b> de sa zone de contact.'}},
+ /* Trembleterre : une action d'adversaire. Les dés de l'une de ses attaques spéciales, lancés une fois, frappent tous les
+    aventuriers de la carte, vus ou non, chacun derrière sa DEF ; pour chacun, les dégâts sont multipliés par le nombre de
+    ses alliés dans sa zone de contact, une fois au moins. */
+ trembleterre:{cle:'trembleterre',nom:'Trembleterre',type:'act',monstre:true,bouton:'Trembleterre',
+  aide:'Action : les dégâts d’une attaque spéciale du porteur frappent tous les aventuriers, multipliés pour chacun par le nombre de ses alliés dans sa zone de contact.',
+  params:[{cle:'attaque',nom:'Attaque spéciale n°',type:'nombre',defaut:1,min:1,max:8}],
+  phrase(p){const n=Math.max(1,(p&&p.attaque)|0);
+   return 'Vous infligez vos dégâts de l’<b>attaque spéciale n°'+n+'</b> à <b>tous les aventuriers</b>, visibles ou non. Pour chacun, ces dégâts sont <b>multipliés par le nombre de ses alliés</b> dans sa zone de contact.'}},
  /* Péril : sous un seuil de ses PV, le porteur double ses dégâts — ou les divise par deux. */
  peril:{cle:'peril',nom:'Péril',type:'pass',monstre:true,
   aide:'Passif : sous un seuil de ses PV, le porteur double ses dégâts, ou les divise par deux.',
