@@ -132,6 +132,8 @@ function etatVivant(){const out={actors:{}};
  if(envoiDonjon)out.fogReset.dn=envoiDonjon;
  // La version du MJ voyage : un joueur resté sur une plus ancienne recharge sa page.
  if(typeof IMG_V==='string'&&typeof estMJ==='function'&&estMJ())out.fogReset.v=IMG_V;
+ // Les onglets ouverts aux joueurs voyagent avec la table : cochés dans les Paramètres, ils s'ouvrent aussitôt, sans attendre une publication.
+ if(typeof estMJ==='function'&&estMJ()&&typeof catalog!=='undefined'&&catalog&&Array.isArray(catalog.ongletsJoueurs))out.fogReset.ong=catalog.ongletsJoueurs.slice();
  /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
     tableaux qu'on modifie en place (états, cases, cumuls), sinon rien n'en partait. */
  return JSON.parse(JSON.stringify(out))}
@@ -263,6 +265,10 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    {const v=d.fogReset&&typeof d.fogReset.v==='string'?d.fogReset.v:'';
     if(v&&typeof IMG_V==='string'&&parseFloat(v)>parseFloat(IMG_V)){let deja='';try{deja=sessionStorage.getItem('amertume-recharge')||''}catch(e){}
      if(deja!==v){try{sessionStorage.setItem('amertume-recharge',v)}catch(e){}const u=new URL(location.href);u.searchParams.set('v',v);location.replace(u.toString())}}}
+   // Les onglets que le MJ ouvre aux joueurs, tels qu'il les a cochés à l'instant.
+   if(d.fogReset&&Array.isArray(d.fogReset.ong)&&typeof catalog!=='undefined'&&catalog&&typeof ONGLETS!=='undefined'){
+    const l=d.fogReset.ong.filter(k=>typeof k==='string'&&ONGLETS.some(([x])=>x===k));
+    if(!pareil(catalog.ongletsJoueurs,l)){catalog.ongletsJoueurs=l;if(typeof majOnglets==='function')majOnglets()}}
    {const dn=d.fogReset&&typeof d.fogReset.dn==='number'?d.fogReset.dn:null;
     if(donjonConnu&&dn!==null&&dn!==donjonVu&&typeof annonceFlottante==='function')annonceFlottante('🏆 Donjon Terminé !','annonce-victoire');donjonVu=dn;donjonConnu=true}
    if(typeof d.locked==='boolean')tokensLocked=d.locked;
