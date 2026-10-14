@@ -3398,7 +3398,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.740 — Affixes d'Expérience, du Chercheur, d'Orpailleur ; la Forge par groupes repliables ; poser d'un clic sur la carte. */
 {const C38=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(['xpVaincu','fouille','orKill'].every(k=>C38.EFFETS_AFFIXE.some(([e])=>e===k)));
- assert.equal(C38.phraseAffixe({effet:'xpVaincu',valeur:3}),'+3 XP par adversaire vaincu');assert.equal(C38.phraseAffixe({effet:'orKill',valeur:5}),'+5 pièces d’or quand vous tuez un adversaire');
+ assert.equal(C38.phraseAffixe({effet:'xpVaincu',valeur:3}),'+3 XP par adversaire vaincu');assert.equal(C38.phraseAffixe({effet:'orKill',valeur:5}),'+5d6 pièces d’or quand vous tuez un adversaire');
+ assert.equal(C38.phraseAffixe({effet:'orKill',variable:true,echelle:[[1,3],[4,7],[8,15],[16,30]]}),'+1d6 à 30d6 pièces d’or quand vous tuez un adversaire');
+ assert.ok(fs.readFileSync('index.html','utf8').includes("let or=0;for(let i=0;i<n;i++)or+=d6();ajouteOr(de,or);"));
  assert.ok(ix.includes("if(zone){const plus=effetsForge(a).fouille;if(plus>0)jet.reussites+=plus}")&&ix.includes("function orpailleur(de,vers){"));
  assert.ok(ed.includes("if(nb)heros.forEach(h=>{const b=nb*effetsForge(h).xpVaincu;")&&ed.includes("function nomGroupeAffixe(x){")&&ed.includes("viserCible('✦ Clique sur la carte pour poser '+nom,"));}
 /* v0.739 — L'élément du Mystique quitte la fiche (il est au-dessus de son arbre) ; le jeton de la fiche ne s'écrase plus. */
@@ -5594,4 +5596,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2075 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2077 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
