@@ -206,6 +206,12 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
  font:700 clamp(21px,3.2vw,34px)/1.1 'Killam',Georgia,serif;letter-spacing:1.4px;
  box-shadow:0 14px 36px #00000073;animation:annonce-passe 2.6s cubic-bezier(.2,.8,.3,1) forwards}
 /* La victoire : plus grande, dorée, et plus longue à lire. */
+/* L'éditeur d'un paysage : son nom, son image, et le bouton qui l'affiche ; rien d'une carte de jeu. */
+#paysage-play{display:none}#maps-page.edition-paysage #paysage-play{display:inline-block}
+#maps-page.edition-paysage #map-play,#maps-page.edition-paysage #map-tools,#maps-page.edition-paysage .maps-props,#maps-page.edition-paysage #map-xp,
+#maps-page.edition-paysage .echelle-token,#maps-page.edition-paysage label:has(#map-lieu),#maps-page.edition-paysage label:has(#map-batiment),#maps-page.edition-paysage #map-hint{display:none!important}
+/* Un paysage à la table : l'image seule, ni socles ni calques ; ni actions, ni dés, ni soins. */
+body.vue-paysage #map-view>*,body.vue-paysage #pv-panel,body.vue-paysage .attack-card,body.vue-paysage #piste-des{display:none!important}
 .annonce-flottante.annonce-victoire{padding:20px 46px;font-size:clamp(30px,5vw,56px);color:#ffd77a;border:2px solid #e2ae72;
  background:radial-gradient(circle at 50% 0,#4a3215f5,#1b1410f5);text-shadow:0 2px 0 #000,0 0 18px #e2ae7299;animation-duration:4.2s}
 @keyframes annonce-passe{

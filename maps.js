@@ -12,6 +12,10 @@ const FOG_COLS=640;let fogVis=null,fogSeen=null,fogSeenSrc=null,fogKey='',fogDim
 function fogDims(m){const r=(m&&m.ratio)||16/9,w=FOG_COLS,h=Math.max(32,Math.round(w/r));return{w,h,n:w*h}}
 const KINDS={matiere:'Zone de blocage',door:'Porte',start:'Zone de départ',foe:'Adversaire',objet:'Objet',coffre:'Coffre',lumiere:'Lumière',piege:'Piège',declencheur:'Déclencheur du piège',coupure:'Séparation de zones',lien:'Regroupement de zones'};
 function currentMap(){return maps.find(m=>m.id===currentMapId)||null}
+/* Les paysages : des visions d'autres endroits, non des cartes. Ils vivent parmi les cartes, marqués « paysage », et la table
+   les montre quand le MJ le veut : une image, sans tracé, sans socles, sans zone de départ, sans rien d'un combat. */
+const estPaysage=m=>!!m&&m.paysage===true;
+function enPaysage(){return estPaysage(currentMap())}
 // L'éditeur et la table étirent l'image de la même façon ; encore faut-il que le cadre
 // ait le bon rapport. On le relit sur l'image pour les cartes d'avant son enregistrement.
 function measureRatio(m,apres){if(!m||!m.image)return;const img=new Image();
@@ -1456,12 +1460,13 @@ const mapsPage=document.createElement('main');mapsPage.id='maps-page';
 mapsPage.innerHTML=
  '<aside class="maps-side panel"><h2>Cartes</h2><div id="map-list"></div>'
  +'<div class="side-actions"><button id="map-new" class="primary">+ Nouvelle carte</button><button id="map-copy">Dupliquer</button><button id="map-del">Supprimer</button></div>'
+ +'<div class="divider"></div><h2>Paysages</h2><div id="paysage-list"></div><div class="side-actions"><button id="paysage-new" class="primary">+ Nouveau paysage</button></div>'
  +'<div class="divider"></div><h2>Sauvegarde</h2>'
  +'<p class="muted">Un fichier qui contient toutes tes cartes : zones, portes, découpes, zone de départ, adversaires, objets et image de fond. Le domaine n’y est pas : il s’exporte depuis son onglet, et la partie entière depuis les Paramètres.</p>'
  +'<div class="side-actions"><button id="map-export">⇩ Exporter</button><button id="map-import">⇧ Importer</button></div>'
  +'<input type="file" id="map-json" accept="application/json,.json" hidden></aside>'
  +'<section class="maps-main panel"><div class="maps-bar"><label class="grow">Nom de la carte<input id="map-name" maxlength="80"></label><label>Lieu<select id="map-lieu"></select></label><label>Bâtiment<select id="map-batiment"></select></label><span class="map-xp" id="map-xp"></span>'
- +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button></div>'
+ +'<button id="map-image">Image de fond</button><button id="map-image-clear">Retirer l’image</button><button id="map-play" class="primary">Ouvrir en combat</button><button id="paysage-play" class="primary">Afficher le paysage</button></div>'
  +'<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp" hidden>'
  +'<div class="tool-bar" id="map-tools"><button data-tool="select">Sélection</button><button data-tool="wall">Zone de blocage</button>'
  +'<button data-tool="ligne">Ligne de blocage</button><button data-tool="cadre">Carré de blocage</button><button data-tool="pinceau">Pinceau de blocage</button><button data-tool="blocagelibre">Blocage libre</button>'
@@ -1541,6 +1546,19 @@ function supprimeSelection(){const m=mapDraft;if(!m||!mapSel)return false;
  mapSel=null;return true}
 
 /* ---------- Cartes ---------- */
+function newPaysage(){const m={id:crypto.randomUUID(),name:'Paysage '+(maps.filter(estPaysage).length+1),image:null,ratio:16/9,fitted:true,paysage:true,fogOff:true,
+ matiere:[],doors:[],start:null,foes:[],objets:[],coffres:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
+ maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
+/* Afficher un paysage : la table le montre à la place de sa carte. La carte reste telle quelle, socles, portes et brouillard,
+   et revient quand le MJ ferme le paysage. */
+function montreCarte(m){currentMapId=m?m.id:null;mapImage=m&&m.image||null;
+ $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);
+ fogSeen=null;fogSeenSrc=null;fogKey='';if(m)measureRatio(m,render);resetMapZoom();refreshMapPick();render()}
+function afficherPaysage(id){const p=maps.find(m=>m&&m.id===id&&estPaysage(m));if(!p)return;const avant=currentMap();
+ if(avant!==p){if(estPaysage(avant)){p.retour=avant.retour||null;delete avant.retour}else p.retour=currentMapId||null}
+ montreCarte(p);showPage('table');scheduleSave()}
+function fermerPaysage(){const p=currentMap();if(!estPaysage(p))return;const r=maps.find(m=>m&&m.id===p.retour&&!estPaysage(m));delete p.retour;
+ montreCarte(r||null);scheduleSave()}
 function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),image:null,ratio:16/9,fitted:true,matiere:[],doors:[],start:null,foes:[],objets:[],coffres:[],echelle:{x:8,y:8,t:SOCLE_DEFAUT}};
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
 function ensure(m){m.doors??=[];m.foes??=[];m.ratio??=16/9;
@@ -1605,6 +1623,8 @@ $('map-file').onchange=()=>{const f=$('map-file').files[0];$('map-file').value='
   img.onerror=()=>{renderCanvas();saveMaps()};img.src=url})};
 $('map-image-clear').onclick=()=>{if(mapDraft){pushUndo();mapDraft.image=null;renderCanvas();saveMaps()}};
 $('map-play').onclick=()=>{if(mapDraft)openBattleMap(mapDraft.id)};
+$('paysage-play').onclick=()=>{if(estPaysage(mapDraft))afficherPaysage(mapDraft.id)};
+$('paysage-new').onclick=()=>{newPaysage();renderMapList();renderCanvas();saveMaps()};
 document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(mapTool!=='lasso')lasso=null;
  $('pinceau-taille').hidden=mapTool!=='pinceau'&&mapTool!=='gomme'&&mapTool!=='impratgomme';
  zoneTrait=zoneVise=null;
@@ -1617,7 +1637,7 @@ document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{ma
 /* Les lieux : des cartes rassemblées sous un même nom — les étages d'une tour, les salles d'un grand lieu. Une carte sans lieu
    reste en tête, comme avant ; chaque lieu a son bandeau, qui se replie, se renomme, et reçoit la carte qu'on y dépose. */
 let lieuxReplies=new Set();try{lieuxReplies=new Set(JSON.parse(localStorage.getItem('amertume-lieux-replies')||'[]'))}catch(e){}
-const lieuxDesCartes=()=>[...new Set(maps.map(m=>m&&typeof m.lieu==='string'?m.lieu.trim():'').filter(Boolean))].sort((x,y)=>x.localeCompare(y,'fr',{numeric:true}));
+const lieuxDesCartes=()=>[...new Set(maps.filter(m=>!estPaysage(m)).map(m=>m&&typeof m.lieu==='string'?m.lieu.trim():'').filter(Boolean))].sort((x,y)=>x.localeCompare(y,'fr',{numeric:true}));
 function poseLieuCarte(m,lieu){if(!m)return;const l=String(lieu||'').trim().slice(0,60);if(l)m.lieu=l;else delete m.lieu;renderMapList();saveMaps()}
 function renommeLieu(ancien){const n=prompt('Nom du lieu :',ancien);if(n===null)return;const l=n.trim().slice(0,60);
  maps.forEach(m=>{if(m&&m.lieu===ancien){if(l)m.lieu=l;else delete m.lieu}});
@@ -1635,8 +1655,13 @@ function renderMapList(){const rangee=m=>{const b=document.createElement('button
  const recoit=(el,lieu)=>{el.addEventListener('dragover',e=>{if(!carteGlissee)return;e.preventDefault();e.stopPropagation();el.classList.add('survol')});
   el.addEventListener('dragleave',()=>el.classList.remove('survol'));
   el.addEventListener('drop',e=>{if(!carteGlissee)return;e.preventDefault();e.stopPropagation();el.classList.remove('survol');const m=carteGlissee;carteGlissee=null;poseLieuCarte(m,lieu)})};
- const liste=$('map-list');liste.replaceChildren(...maps.filter(m=>!(m&&typeof m.lieu==='string'&&m.lieu.trim())).map(rangee));if(!liste.dataset.recoit){liste.dataset.recoit='1';recoit(liste,'')}
- lieuxDesCartes().forEach(l=>{const lot=maps.filter(m=>m&&m.lieu&&m.lieu.trim()===l),replie=lieuxReplies.has(l);
+ const liste=$('map-list');liste.replaceChildren(...maps.filter(m=>!estPaysage(m)&&!(m&&typeof m.lieu==='string'&&m.lieu.trim())).map(rangee));if(!liste.dataset.recoit){liste.dataset.recoit='1';recoit(liste,'')}
+ // Les paysages : leur liste à eux, sans lieu ; celui qu'on édite n'a ni outils ni zone de départ.
+ {const pl=$('paysage-list');if(pl)pl.replaceChildren(...maps.filter(estPaysage).map(m=>{const b=document.createElement('button');
+  b.className='map-row'+(m===mapDraft?' current':'')+(m.id===currentMapId?' live':'');const nom=document.createElement('strong');nom.textContent=m.name;b.append(nom);
+  b.onclick=()=>{mapDraft=m;mapSel=null;undoStack=[];redoStack=[];measureRatio(m,renderCanvas);renderMapList();renderCanvas()};return b}))}
+ mapsPage.classList.toggle('edition-paysage',estPaysage(mapDraft));if(estPaysage(mapDraft))mapTool='select';
+ lieuxDesCartes().forEach(l=>{const lot=maps.filter(m=>m&&!estPaysage(m)&&m.lieu&&m.lieu.trim()===l),replie=lieuxReplies.has(l);
   const g=document.createElement('div');g.className='map-lieu'+(replie?' replie':'');
   const tete=document.createElement('div');tete.className='map-lieu-tete';tete.setAttribute('role','button');tete.tabIndex=0;
   const nom=document.createElement('span');nom.className='map-lieu-nom';nom.textContent=(replie?'▸ ':'▾ ')+l;const n=document.createElement('small');n.textContent=lot.length;
@@ -2561,7 +2586,7 @@ mapPick.style.width='auto';mapPick.style.margin='0';
 const mapOpen=document.createElement('button');mapOpen.id='map-open';mapOpen.textContent='Ouvrir la carte';
 // Les cartes se choisissent et s'ouvrent depuis l'onglet Cartes : la barre de la table
 // n'en propose plus ni la liste, ni l'ouverture, ni l'import d'image.
-function refreshMapPick(){mapPick.replaceChildren();maps.forEach(m=>mapPick.add(new Option(m.name,m.id)));
+function refreshMapPick(){mapPick.replaceChildren();maps.filter(m=>!estPaysage(m)).forEach(m=>mapPick.add(new Option(m.name,m.id)));
  refreshGmBar();
  if(currentMapId)mapPick.value=currentMapId}
 mapOpen.onclick=()=>{if(mapPick.value)openBattleMap(mapPick.value)};
@@ -2588,6 +2613,9 @@ const bruitBtn=icone('bruit-bascule','🔊','Désactiver le bruit');
 // Le terrain impraticable, montré ou caché au MJ ; la troupe ne le voit jamais.
 const impratBtn=icone('impraticables-vue','🚧','Cacher le terrain impraticable');
 fogBar.append(fogReset,fogAll,noirBtn,eyeBtn,zonesBtn,lockBtn,limiteBtn,bruitBtn,impratBtn);document.querySelector('.mapbar .zoom-bar').before(fogBar);
+// Un paysage affiché : le MJ le ferme, et sa carte revient.
+const paysageFin=document.createElement('button');paysageFin.id='paysage-fin';paysageFin.type='button';paysageFin.textContent='Fermer le paysage';paysageFin.hidden=true;
+paysageFin.onclick=()=>fermerPaysage();fogBar.before(paysageFin);
 /* Les boutons de la barre de la carte disent ce qu'ils font dès le survol, dans une bulle du site : l'infobulle du système
    tardait et ne ressemblait à rien d'ici. Leur titre devient le texte de la bulle, et celui qu'un rendu leur redonne aussi ;
    le nom reste au lecteur d'écran. Au doigt, pas de bulle : un toucher n'est pas un survol. */
@@ -2696,9 +2724,10 @@ function refreshGmBar(){const m=currentMap(),mj=view==='mj';
  if(titre)titre.textContent=m&&m.name?m.name:'Carte tactique';
  /* Au MJ seul, à côté du nom : l'XP déjà accordée sur cette carte, sur tout ce qu'elle rapporte —
     l'accordée plus celle des adversaires encore en scène. */
- if(titre&&mj&&m){const donne=Math.max(0,Math.trunc(Number(m.xpAccordee))||0),reste=actors.filter(a=>a&&!duCoteTroupe(a)).reduce((s,a)=>s+(Math.max(0,Math.trunc(Number(a.xp))||0)),0);
+ document.body.classList.toggle('vue-paysage',estPaysage(m));paysageFin.hidden=!mj||!estPaysage(m);
+ if(titre&&mj&&m&&!estPaysage(m)){const donne=Math.max(0,Math.trunc(Number(m.xpAccordee))||0),reste=actors.filter(a=>a&&!duCoteTroupe(a)).reduce((s,a)=>s+(Math.max(0,Math.trunc(Number(a.xp))||0)),0);
   const x=document.createElement('span');x.className='xp-carte';x.textContent=donne+'/'+(donne+reste)+' xp';titre.append(x)}
- fogBar.hidden=!mj;fogReset.hidden=fogAll.hidden=!m;
+ fogBar.hidden=!mj||estPaysage(m);fogReset.hidden=fogAll.hidden=!m;
  fogAll.classList.toggle('on',!!(m&&m.fogOff));eyeBtn.hidden=!m;eyeBtn.classList.toggle('on',vueTroupe);
  zonesBtn.hidden=!m;zonesBtn.classList.toggle('on',zonesVisibles);zonesBtn.title=zonesVisibles?'Cacher les zones de la carte':'Voir les zones de la carte';
  fogAll.title=m&&m.fogOff?'Rétablir le brouillard':'Tout révéler';

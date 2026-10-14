@@ -249,6 +249,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     if(donjonConnu&&dn!==null&&dn!==donjonVu&&typeof annonceFlottante==='function')annonceFlottante('🏆 Donjon Terminé !','annonce-victoire');donjonVu=dn;donjonConnu=true}
    if(typeof d.locked==='boolean')tokensLocked=d.locked;
    if(typeof d.title==='string'&&typeof sceneTitle==='function')sceneTitle(d.title);
+   if(!d.mapId&&typeof enPaysage==='function'&&enPaysage()){carteNeuve=true;currentMapId=null;mapImage=null;$('map-view').style.backgroundImage='';$('map').classList.remove('custom')}
    if(d.mapId&&d.mapId!==currentMapId&&maps.some(m=>m.id===d.mapId)){carteNeuve=true;
     currentMapId=d.mapId;const m=currentMap();mapImage=m&&m.image||null;
     $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';

@@ -3389,6 +3389,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.732 — Les paysages : parmi les cartes, marqués « paysage » ; affichés à la table sans rien d'un combat, puis la carte revient. */
+{const mp=fs.readFileSync('maps.js','utf8'),ix=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(mp.includes("const estPaysage=m=>!!m&&m.paysage===true;")&&mp.includes("function afficherPaysage(id){")&&mp.includes("function fermerPaysage(){"));
+ assert.ok(mp.includes("maps.filter(m=>!estPaysage(m)).forEach(m=>mapPick.add(")&&mp.includes("document.body.classList.toggle('vue-paysage',estPaysage(m));"));
+ assert.ok(ix.includes("const reveles=!chargee||(typeof enPaysage==='function'&&enPaysage())||"));
+ assert.ok(css.includes("body.vue-paysage #map-view>*,body.vue-paysage #pv-panel,body.vue-paysage .attack-card,body.vue-paysage #piste-des{display:none!important}"));}
 /* v0.731 — Trembleterre : une attaque spéciale du porteur, un jet, tous les aventuriers, × leurs alliés au contact. */
 {const C34=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),t=C34.TALENTS_CODES.trembleterre;
  assert.ok(t&&t.monstre===true&&t.type==='act'&&t.params[0].cle==='attaque'&&t.params[0].max===8);
@@ -5539,4 +5545,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2040 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2044 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

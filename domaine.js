@@ -841,7 +841,7 @@ function blocQuetes(b){const lot=quetesVues().filter(q=>q.ou!=='region'&&q.lieu=
 const queteDialog=dialog('dom-quete-editor','Quête','<form id="dom-quete-form"><div id="dom-quete-fields"></div><div class="form-actions"><button type="button" id="dom-quete-suppr">Supprimer</button><button class="primary">Enregistrer</button></div></form>');
 function openQuete(id,lieu){if(!mjDom())return;const q=id?(domaine.quetes||[]).find(x=>x.id===id):null;
  queteDialog.querySelector('h2').textContent=q?q.titre:'Nouvelle quête';
- const lieux=[['','Tout le domaine'],...domaine.batiments.map(b=>[b.id,b.nom])],cartes=(typeof maps!=='undefined'?maps:[]).filter(m=>m&&m.id).map(m=>[m.id,m.name||'Carte']);
+ const lieux=[['','Tout le domaine'],...domaine.batiments.map(b=>[b.id,b.nom])],cartes=(typeof maps!=='undefined'?maps:[]).filter(m=>m&&m.id&&m.paysage!==true).map(m=>[m.id,m.name||'Carte']);
  $('dom-quete-fields').innerHTML='<div class="edit-grid">'+field('Titre','titre',q?q.titre:'','text','required maxlength="80"')
   +sel('Où','ou',q?q.ou:'domaine',[['domaine','Domaine'],['region','Région']])
   +'<span data-ou="domaine">'+sel('Lieu du domaine','lieu',q?q.lieu:(lieu||''),lieux)+'</span>'
