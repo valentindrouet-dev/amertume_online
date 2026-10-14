@@ -3404,7 +3404,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.715 — Les joueurs connectés : leur présence renouvelée chaque minute, leur liste à l'Accueil et dans une fenêtre, un bouton
    dans l'en-tête à côté de la table. */
 {const vv=fs.readFileSync('live.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
- assert.ok(vv.includes("const PRESENCE_MS=60000,PRESENCE_MAX=180000;")&&vv.includes("function renderJoueursConnectes(){")&&vv.includes("liveButton.after(joueursButton);")
+ assert.ok(vv.includes("const PRESENCE_MS=30000,PRESENCE_MAX=75000;")&&vv.includes("$('live-quit').onclick=async()=>{await quitterSiege();debrancherTable();")&&vv.includes("function renderJoueursConnectes(){")&&vv.includes("liveButton.after(joueursButton);")
   &&vv.includes("clearInterval(presenceTimer);presenceTimer=setInterval(")&&ed.includes('<div id="accueil-joueurs" class="joueurs-connectes"></div>'),'joueurs connectés');}
 /* v0.714 — Les comptes des joueurs : Amertüme (pseudo et mot de passe) ou Google ; chaque aventurier a son joueur ; un joueur ne
    voit et ne tient que les siens, et sa table reste vide sans aventurier à lui sur la carte ; le MJ confie les siens. */

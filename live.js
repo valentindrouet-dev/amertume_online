@@ -451,9 +451,10 @@ function ecouterJournal(){journalPremier=true;
    journalVus.add(ch.doc.id);poserLigne(ch.doc.data())})},()=>{})}
 
 /* ---------- Les joueurs connectés ----------
-   Un joueur à la table renouvelle sa présence chaque minute : il compte comme connecté tant qu'elle date de moins de trois.
+   Un joueur à la table renouvelle sa présence toutes les trente secondes : il compte comme connecté tant qu'elle date de moins
+   de soixante-quinze. Quitter la table efface son siège ; fermer la page date sa présence d'avant, et il sort de la liste.
    Sous son pseudo, l'aventurier qu'il incarne, quand on a le droit de le voir. */
-const PRESENCE_MS=60000,PRESENCE_MAX=180000;let presenceTimer=null;
+const PRESENCE_MS=30000,PRESENCE_MAX=75000;let presenceTimer=null;
 function joueursConnectes(){const now=Date.now();
  return Object.entries(sieges).filter(([,s])=>{if(!s||typeof s.nom!=='string'||!s.nom.trim())return false;
   const t=s.at&&typeof s.at.toMillis==='function'?s.at.toMillis():null;return t===null||now-t<PRESENCE_MAX})
@@ -511,7 +512,7 @@ function pseudoJoueur(){const u=typeof auth!=='undefined'&&auth&&auth.currentUse
 /* Un joueur qui rejoint se signale à la table sous son pseudo, même sans aventurier : le MJ le voit, et peut lui en confier un. */
 async function signaleJoueur(){if(!siegesRef||!monUid||estMJ())return;const ref=siegesRef.doc(monUid),at=firebase.firestore.FieldValue.serverTimestamp();
  try{const d=await ref.get();if(d.exists)await ref.update({nom:pseudoJoueur(),at});else await ref.set({actorId:'',nom:pseudoJoueur(),at})}catch(e){}
- // Puis sa présence, chaque minute, tant qu'il est à la table.
+ // Puis sa présence, toutes les trente secondes, tant qu'il est à la table.
  clearInterval(presenceTimer);presenceTimer=setInterval(()=>{if(!siegesRef||!monUid||estMJ()){clearInterval(presenceTimer);presenceTimer=null;return}
   siegesRef.doc(monUid).update({at:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{})},PRESENCE_MS)}
 async function libererSiege(){if(!siegesRef||!monUid)return;
@@ -647,7 +648,13 @@ $('compte-google').onclick=()=>compteAvec(()=>auth.signInWithPopup(new firebase.
 document.addEventListener('amertume-mj-change',majTable);
 document.addEventListener('amertume-firebase-prete',majTable);
 $('live-close').onclick=fermerTable;
-$('live-quit').onclick=()=>{libererSiege();debrancherTable();
+// Quitter la table : le siège s'efface, le MJ ne le voit plus connecté.
+async function quitterSiege(){if(!siegesRef||!monUid||estMJ())return;const ref=siegesRef.doc(monUid);clearInterval(presenceTimer);presenceTimer=null;
+ try{await ref.delete()}catch(e){}monSiege=null;try{localStorage.removeItem(TABLE_CLE+'-siege')}catch(e){}}
+// La page qui se ferme ou se recharge date la présence du joueur : il sort de la liste aussitôt, et la reprend en revenant.
+window.addEventListener('pagehide',()=>{if(!siegesRef||!monUid||estMJ()||typeof firebase==='undefined')return;
+ try{siegesRef.doc(monUid).update({at:firebase.firestore.Timestamp.fromMillis(0)}).catch(()=>{})}catch(e){}});
+$('live-quit').onclick=async()=>{await quitterSiege();debrancherTable();
  const u=new URL(location.href);u.searchParams.delete('table');history.replaceState(null,'',u);
  liveStatus('Table quittée. La partie reste sur cet appareil.')};
 $('live-copy').onclick=async()=>{try{await navigator.clipboard.writeText(lienTable(tableId));
