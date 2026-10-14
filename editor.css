@@ -2553,5 +2553,8 @@ body.page-accueil .intro,body.page-accueil .mj-tools,body.page-accueil main.layo
 .hero-aventure{flex:none;width:18px;height:18px;margin:0;accent-color:var(--accent);cursor:pointer}.hero-aventure:disabled{cursor:default}
 .hero-joueur{flex:none;max-width:110px;font:600 12px system-ui;padding:2px 4px}
 body.table-sans-heros main.layout{visibility:hidden}
+#verrou-page{display:none}body.site-verrouille #verrou-page{display:grid;place-items:center;min-height:60vh;padding:24px}
+body.site-verrouille>main:not(#verrou-page),body.site-verrouille nav.tabs,body.site-verrouille .view-controls{display:none!important}
+.verrou-carte{max-width:420px;text-align:center;display:grid;gap:12px;justify-items:center;padding:26px 30px}.verrou-carte h2{margin:0;font:700 26px Georgia,serif}
 #compte-joueur form{display:grid;gap:10px;min-width:min(320px,80vw)}#compte-joueur label{display:grid;gap:4px}#compte-joueur .compte-ou{display:flex;justify-content:center;border-top:1px solid var(--line);padding-top:10px}
 .sheet-origine{flex:none;display:inline-flex;align-items:center;gap:4px;font:600 13px system-ui;color:var(--muted);white-space:nowrap}.origine-genre{font-size:15px;line-height:1}.hero-card .sheet-origine{align-self:center}#sheet .sheet-head>.sheet-origine{margin-left:auto;margin-right:-4px}

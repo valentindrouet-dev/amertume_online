@@ -702,6 +702,8 @@ const renderAvantTable=render;render=function(){let rendre=false;
  if(spectateur()&&view!=='player'){view='player';$('view').value='player';vueImposee=true}
  else if(vueImposee&&!spectateur()){vueImposee=false;view=vueChoisie()||'mj';$('view').value=view;rendre=true}
  renderAvantTable();verrouillerInvite();pousserPlusTard();
+ // Hors d'une table, le site n'est qu'au MJ.
+ appliqueVerrou();
  // Un joueur dont aucun aventurier n'est sur la carte ne voit rien de la table.
  document.body.classList.toggle('table-sans-heros',invitEnLigne()&&!actors.some(a=>aMoi(a)&&!a.horsCarte));if(rendre&&typeof rendPage==='function')rendPage()};
 // Ce qui s'enregistre part aussi : une fiche corrigée dans l'onglet Aventuriers n'attend pas le prochain rendu de la table.
@@ -710,3 +712,6 @@ majTable();
 /* L'Accueil s'est dessiné avant ce fichier, sans savoir qui regarde : chez un joueur, il montrait les aventuriers de tous. Il se
    redessine maintenant que la table sait qui est invité. */
 if(document.body.classList.contains('page-accueil')&&typeof renderAccueil==='function')renderAccueil();
+// Le verrou suit le compte : le MJ reconnu ouvre tout ; un autre compte, sur cette page fermée, l'apprend.
+appliqueVerrou();document.addEventListener('amertume-mj-change',()=>{appliqueVerrou();const s=$('verrou-statut');
+ if(s)s.textContent=typeof adminConnu!=='undefined'&&adminConnu&&auth&&auth.currentUser&&!estMJ()?'Ce compte n’est pas celui du MJ.':''});

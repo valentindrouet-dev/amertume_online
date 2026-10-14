@@ -30,6 +30,14 @@ Un compte Amertüme n'a pas d'adresse e-mail : un mot de passe oublié ne se
 récupère pas. Le joueur se crée un nouveau compte, et tu lui confies ses
 aventuriers depuis l'onglet **Aventuriers**.
 
+### Le site au MJ seul (v0.717)
+
+Sans ton compte MJ, le site n'offre qu'une page fermée, hors d'une table. Ton
+appareil s'en souvient dès que ton compte y a été reconnu une fois. Dans les
+règles Firestore, chaque `if true` des blocs Amertüme Online devient
+`if request.auth != null` : seul un visiteur connecté lit le contenu publié et
+la table. Ne remplace que ces mots, pas le reste des règles.
+
 ## 2. Vérifier que le site est autorisé
 
 1. Toujours dans **Authentication**, onglet **Settings** (Paramètres).

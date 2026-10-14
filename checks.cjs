@@ -3389,6 +3389,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.717 — Le site au MJ : son compte reconnu, ou un appareil où il l'a été ; hors d'une table, tout autre visiteur n'a qu'une page
+   fermée. La scène publiée et les catalogues au MJ seul ; la publication ne s'écoute que connecté, et les règles le demandent. */
+{const pg=fs.readFileSync('index.html','utf8'),sh=fs.readFileSync('shared.js','utf8'),vv=fs.readFileSync('live.js','utf8'),rg=fs.readFileSync('firestore-online.rules','utf8');
+ assert.ok(pg.includes("function siteVerrouille(){return !mjIci()&&!invitEnLigne()}")&&pg.split('function mjIci(').length===2&&vv.includes(" appliqueVerrou();\n")
+  &&sh.includes("if(admin)localStorage.setItem('amertume-mj-appareil','1');else localStorage.removeItem('amertume-mj-appareil')")&&sh.includes("$('shared-scene').hidden=!admin;")
+  &&sh.includes("function ecoutePublication(user){")&&sh.split('unsubscribe=publicationRef()').length===2&&!/if true;/.test(rg),'site au MJ, lecture connectée');}
 /* v0.716 — L'Accueil suit les fiches et la table sans recharger la page ; chez un joueur, il ne montre que ses aventuriers dès le
    chargement ; la case de l'aventure et le token pâli sont au MJ seul. */
 {const ed=fs.readFileSync('editor.js','utf8'),vv=fs.readFileSync('live.js','utf8'),pg=fs.readFileSync('index.html','utf8');
@@ -4780,7 +4786,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8'),part=fs.readFileSync('shared.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
  assert.ok(src.includes("let html='<table class=\"paliers-table'+(trois?'':deux?' deux-paliers':' un-palier')+'\">")&&feuille.includes('.paliers-table.deux-paliers tr>:nth-child(n+4){display:none}')
   &&src.includes("return n===3?'<div hidden>'+champs+'</div>':champs}).join('')+'</div>'"),'deux colonnes, deux champs');
- assert.ok(part.includes("auth.onAuthStateChanged(async user=>{admin=false;adminConnu=!user;")&&part.includes("render();rendPage();status("),'la vue attend le compte');
+ assert.ok(part.includes("auth.onAuthStateChanged(async user=>{admin=false;ecoutePublication(user);adminConnu=!user;")&&part.includes("render();rendPage();status("),'la vue attend le compte');
  assert.ok(vivant.includes("if(!lien){if(deja&&deja.isAnonymous)try{await auth.signOut()}catch(e){}")&&vivant.includes("document.addEventListener('amertume-mj-change',rouvre);rouvre();return}"),'la table du MJ se rouvre en MJ');}
 /* v0.548 — Thésaurisation (Mystique) : les orbes non lancés à la fin du tour restent au tour suivant, tous, ils s'accumulent (v0.550) ;
    +x orbes en plus s'il en garde au moins un (v0.554) ; un soin de 1d6, puis 3d6, par orbe non lancé, avant les orbes en plus (v0.553). */
@@ -5462,4 +5468,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2013 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2014 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
