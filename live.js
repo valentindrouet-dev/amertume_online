@@ -211,7 +211,7 @@ function instancierActeur(id,e){
 /* Les instantanés arrivent en rafale — quatre joueurs, l'écho de nos propres envois — et
    chacun redessinait toute la table. On n'applique que le dernier reçu, un instant plus
    tard : une rafale ne coûte qu'une application. */
-let applicationTimer=null;
+let applicationTimer=null;const imagesRattrapees=new WeakSet();
 function programmerApplication(){if(applicationTimer)return;
  applicationTimer=setTimeout(()=>{applicationTimer=null;if(dernierDoc){appliquerSalle(dernierDoc);majTable()}},40)}
 /* Chez le MJ, ce que les joueurs ont déposé sur leur aventurier pour la réserve — une conversion
@@ -294,6 +294,9 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    if(!estMJ()&&!a.hero&&e.mouvement===undefined&&a.mouvement!==undefined)delete a.mouvement;
    // L'image qu'un joueur a donnée à son aventurier : chez qui n'en a pas, elle devient la sienne.
    if(typeof e.imageJeton==='string'&&!a.image)a.image=e.imageJeton;
+   // Chez son joueur, l'image d'un aventurier qui n'est jamais partie (trop lourde, avant la v0.721) repart, allégée.
+   if(!estMJ()&&aMoi(a)&&!a.imageJeton&&typeof a.image==='string'&&a.image.startsWith('data:image/')&&!imagesRattrapees.has(a)){imagesRattrapees.add(a);
+    imagePourTable(a.image).then(u=>{if(u&&!a.imageJeton){a.imageJeton=u;pousserBientot()}})}
    /* Des coups croisés ont pu passer sous zéro : ici on lit zéro ; chez le MJ, la référence garde le négatif reçu, et le zéro
       repart en valeur pleine. */
    if(typeof a.hp==='number'&&a.hp<0){a.hp=0;if(estMJ()&&typeof e.hp==='number'&&e.hp<0)gardes.push([id,'hp',e.hp])}

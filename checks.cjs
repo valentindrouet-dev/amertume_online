@@ -3389,6 +3389,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.721 — L'image d'un joueur allégée pour voyager par la table (Safari écrit du PNG, trop lourd) ; celle qui n'était pas
+   partie repart de chez son joueur. */
+{const ed=fs.readFileSync('editor.js','utf8'),vv=fs.readFileSync('live.js','utf8');
+ assert.ok(ed.includes("const IMAGE_TABLE_MAX=150000;")&&ed.includes("async function imagePourTable(url){")&&ed.includes("c.imageTable=await imagePourTable(url);")
+  &&vv.includes("imagePourTable(a.image).then(u=>{if(u&&!a.imageJeton){a.imageJeton=u;pousserBientot()}})")&&vv.includes("const imagesRattrapees=new WeakSet();"),'image du joueur allégée');}
 /* v0.720 — Quitter la table, chez un joueur, repart sur la page fermée ; le refus d'un compte ne se dit qu'à qui a demandé la
    connexion MJ. */
 {const vv=fs.readFileSync('live.js','utf8'),pg=fs.readFileSync('index.html','utf8');
@@ -3464,7 +3469,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  assert.ok(mp.includes("const tous=actors.filter(a=>a.hero),choisis=tous.filter(a=>a.enAventure===true),heros=choisis.length?choisis:tous;")&&mp.includes(" actors.splice(0,actors.length,...tous);")
   &&ed.includes("function prendPartAventure(a){")&&ed.includes("!a.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(a)));")&&ed.includes("!h.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(h)));")
   &&ed.includes("part.disabled=view!=='mj';")&&vv.includes("'espece','enAventure','imageJeton',")&&vv.includes("if(typeof e.imageJeton==='string'&&!a.image)a.image=e.imageJeton;")
-  &&ed.includes("async function openImage(file,kind,accept,joueur){if(view!=='mj'&&!joueur)return;")&&ed.includes("if(c.image){a.image=c.image;if(view!=='mj')a.imageJeton=c.image}")
+  &&ed.includes("async function openImage(file,kind,accept,joueur){if(view!=='mj'&&!joueur)return;")&&ed.includes("if(c.image){a.image=c.image;if(view!=='mj')a.imageJeton=c.imageTable||c.image}")
   &&pg.includes("{const o=a.hero&&typeof origineAventurier==='function'?origineAventurier(a):null;if(o)$('kind').before(o)}")&&ed.includes("else if(cls[i]||esp[i])v.classList.add('bonifie');"),'aventure, origine, token');}
 /* v0.706 — Les espèces : une étape de la création, présentée comme les classes, et leurs bonus pour toujours ; les bulles
    des caractéristiques et des compétences. Une espèce écrite à la main ne donne rien. */
@@ -5477,4 +5482,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2016 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2017 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

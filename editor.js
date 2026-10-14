@@ -3778,7 +3778,7 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
   const jeton=document.createElement('div');jeton.className='creation-champ';const tj=document.createElement('span');tj.textContent='Illustration du token';
   const im=document.createElement('img');im.className='preview-token';im.alt='Token';if(c.image)im.src=c.image;else im.hidden=true;
   const fi=document.createElement('input');fi.type='file';fi.accept='image/png,image/jpeg,image/webp';fi.hidden=true;
-  fi.onchange=()=>{const x=fi.files[0];fi.value='';if(x)openImage(x,'token',url=>{if(creation!==c)return;c.image=url;renderCreation()},true)};
+  fi.onchange=()=>{const x=fi.files[0];fi.value='';if(x)openImage(x,'token',async url=>{if(creation!==c)return;c.image=url;c.imageTable=await imagePourTable(url);if(creation===c)renderCreation()},true)};
   const imp=document.createElement('button');imp.type='button';imp.textContent='Importer et optimiser';imp.onclick=()=>fi.click();
   const ret=document.createElement('button');ret.type='button';ret.textContent='Retirer l’image';ret.hidden=!c.image;ret.onclick=()=>{c.image='';renderCreation()};
   const barre=document.createElement('div');barre.className='toolbar';barre.append(imp,ret);jeton.append(tj,im,barre,fi);
@@ -3840,6 +3840,15 @@ function majBoutons(){const c=creation,k=ETAPES_CREATION[c.etape][0],fin=c.etape
  $('creation-prec').hidden=c.etape===0;$('creation-suiv').textContent=fin?'Créer l’aventurier':'Suivant';$('creation-suiv').disabled=!!etapeManque(k)||(fin&&ETAPES_CREATION.some(([k2])=>etapeManque(k2)))}
 $('creation-prec').onclick=()=>{if(creation&&creation.etape>0){creation.etape--;renderCreation()}};
 $('creation-suiv').onclick=()=>{const c=creation;if(!c)return;if(c.etape<ETAPES_CREATION.length-1){if(!etapeManque(ETAPES_CREATION[c.etape][0])){c.etape++;renderCreation()}return}creerAventurier()};
+/* L'image qu'un joueur envoie par la table : assez légère pour y voyager. Safari ne sait pas écrire le WebP et rend un PNG bien
+   plus lourd, qui dépassait la limite et ne partait pas : on réduit la taille jusqu'à passer, transparence gardée. */
+const IMAGE_TABLE_MAX=150000;
+async function imagePourTable(url){if(typeof url!=='string'||!url.startsWith('data:image/'))return null;if(url.length<=IMAGE_TABLE_MAX)return url;
+ try{const im=new Image();im.src=url;await im.decode();
+  for(const t of [256,192,160,128,96,72]){const k=Math.min(1,t/Math.max(im.naturalWidth,im.naturalHeight)),cv=document.createElement('canvas');
+   cv.width=Math.max(1,Math.round(im.naturalWidth*k));cv.height=Math.max(1,Math.round(im.naturalHeight*k));cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
+   for(const [type,q] of [['image/webp',.85],['image/png',undefined]]){const d=cv.toDataURL(type,q);if(d.startsWith('data:'+type)&&d.length<=IMAGE_TABLE_MAX)return d}}}catch(e){}
+ return null}
 /* L'aventurier créé : sur la route, hors de la carte, avec ses 100 premiers XP ; chez un joueur, il devient le sien. La création
    s'achève sur le récapitulatif. Sa fiche ne garde que les points de compétence : le 1 de base, la classe et l'espèce s'y ajoutent
    au jeu, comme pour tout aventurier. */
@@ -3853,7 +3862,7 @@ function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>e
  // Créé par un joueur à une table en ligne : il lui appartient, et le MJ le voit arriver.
  if(invitEnLigne()&&typeof monUid!=='undefined'&&monUid){a.joueur=monUid;a.joueurNom=pseudoJoueur()}
  // Son image : chez un joueur, elle part aussi par la table, pour que le MJ la reçoive.
- if(c.image){a.image=c.image;if(view!=='mj')a.imageJeton=c.image}
+ if(c.image){a.image=c.image;if(view!=='mj')a.imageJeton=c.imageTable||c.image}
  normalizeActor(a);ajouteOr(a,or);a.max=Math.max(1,pvMaximum(catalog.classes,a,catalog.talents,catalog.items));
  // Les armes, l'armure et les munitions du lot se portent d'emblée ; l'objet tiré attend au sac.
  kit.forEach(([o,n])=>{if(o.category==='weapon')for(let k=0;k<n;k++)toggleEquip(a,o);else if(o.category==='armor'||o.category==='ammo')toggleEquip(a,o)});
