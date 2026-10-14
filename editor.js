@@ -3673,8 +3673,8 @@ const DESCRIPTIONS_CLASSES={Destructeur:'L’ivresse des batailles vous habite, 
  Ombrelame:'Combattant redoutablement rapide, vous vous faufilez entre les adversaires pour leur infliger d’innombrables coups et attaques empoisonnées, avant de disparaître dans les ténèbres.',
  Mystique:'Maître des arts mystiques, vous manipulez des puissances qui, bien souvent, vous dépassent. Vos Orbes annihilent des hordes d’adversaires — et vous choisissez l’élément qui les anime.'};
 const descriptionClasse=cl=>!cl?'':String(cl.description||'').trim()||DESCRIPTIONS_CLASSES[cl.name]||'';
-// Trois points de caractéristique : +2 Endurance, +1 Vie ou +1 Dégâts chacun ; quatre points de compétence, +2 au plus dans une même.
-const POINTS_CARACS=3,POINTS_COMPS=4,COMP_MAX_CREATION=2,XP_CREATION=100,COMP_BASE=1;
+// Trois points de caractéristique : +2 Endurance, +1 Vie ou +1 Dégâts chacun ; trois points de compétence, +2 au plus dans une même.
+const POINTS_CARACS=3,POINTS_COMPS=3,COMP_MAX_CREATION=2,XP_CREATION=100,COMP_BASE=1;
 const CARACS_CREATION=[['endu','Endurance',2],['vie','Vie',1],['dmg','Dégâts',1]];
 // Ce que disent les bulles des caractéristiques et des compétences : les règles telles que la table les joue.
 const TEXTES_CARACS={vie:'PV max = Endurance × Vie + bonus de classe.',endu:'PV max = Endurance × Vie + bonus de classe. Un repos court rend 1d6 + Endurance PV.',
@@ -3685,13 +3685,15 @@ const NOMS_CARACS_CREATION={vie:'Vie',endu:'Endurance',dmg:'Dégâts',pv:'PV max
    fin de la création, parmi ce qui convient à la classe. Les pièces se trouvent au catalogue par leur nom, sans tenir
    compte des accents, des majuscules ni du pluriel. */
 const ARMES_DEPART=[[['Épée courte',2]],[['Épée courte',1],['Bouclier',1]],[['Arc court',1],['Flèche',20]]];
-const ARMURES_DEPART=[[['Armure de cuir',1]],[['Manteau',1]]],OBJETS_DEPART=[['Ration',10]];
+const ARMURES_DEPART=[[['Armure de cuir',1]],[['Manteau',1]]],OBJETS_DEPART=[['Ration',10]],OR_DEPART='10d6';
 const OBJET_ALEATOIRE_CLASSE={Destructeur:['une-main','armure'],Gardien:['une-main','armure','bouclier'],Ombrelame:['une-main','armure'],Mystique:['distance','armure']};
 const NOMS_OBJET_ALEATOIRE={'une-main':'Arme à une main',armure:'Armure',bouclier:'Bouclier',distance:'Arme à distance'};
 const GENRES_OBJET_ALEATOIRE={'une-main':o=>o.category==='weapon'&&o.ranged!==true&&weaponHands(o)===1,distance:o=>o.category==='weapon'&&o.ranged===true,
  armure:o=>o.category==='armor'&&['torse','tete','dos','bottes'].includes(emplacementDe(o)),bouclier:o=>o.category==='armor'&&emplacementDe(o)==='shield'};
 const cleNomObjet=n=>String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().split(/\s+/).map(m=>m.length>2?m.replace(/[sx]$/,''):m).join(' ');
-const objetNomme=n=>(catalog.items||[]).find(o=>o&&!o.forge&&cleNomObjet(o.name)===cleNomObjet(n))||null;
+function objetNomme(n){const k=cleNomObjet(n),l=(catalog.items||[]).filter(o=>o&&!o.forge);const exact=l.find(o=>cleNomObjet(o.name)===k);if(exact)return exact;
+ // À défaut, une pièce dont le nom porte tous ces mots, dans n'importe quel ordre : la plus courte.
+ const mots=k.split(' ');return l.filter(o=>{const m=cleNomObjet(o.name).split(' ');return mots.every(x=>m.includes(x))}).sort((x,y)=>x.name.length-y.name.length)[0]||null}
 // Le lot choisi : chaque pièce trouvée, et combien.
 const kitCreation=c=>[...(ARMES_DEPART[c.armes]||[]),...(ARMURES_DEPART[c.armure]||[]),...OBJETS_DEPART].map(([n,k])=>[objetNomme(n),k]).filter(([o])=>o);
 const genresAleatoires=role=>{const k=cleClasse(role),e=Object.entries(OBJET_ALEATOIRE_CLASSE).find(([n])=>cleClasse(n)===k);return e?e[1]:['une-main','armure']};
@@ -3784,16 +3786,18 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    l.append(t,pas(-1,c.skills[i]>0,()=>{c.skills[i]--;renderCreation()}),v,pas(1,n>0&&c.skills[i]<COMP_MAX_CREATION,()=>{c.skills[i]++;renderCreation()}));g.append(l)});
   corps.append(reste(n,POINTS_COMPS),g)}
  else if(k==='equipement'){const cl=(catalog.classes||[]).find(x=>x.name===c.role),tint=cl&&cl.tint||'#8a7a5a';
-  // Chaque pièce d'un lot : son carré, au survol sa fiche ; une pièce absente du catalogue reste un nom.
-  const piece=([nom,n])=>{const o=objetNomme(nom),s=document.createElement('span');s.className='creation-piece';
-   if(o){const q=gearCarre(o,n,0);q.removeAttribute('role');q.tabIndex=-1;surveille(q,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(q,d,'bulle-gear')});s.append(q)}
-   else s.classList.add('manque');const t=document.createElement('small');t.textContent=n>1?n+' '+plurielNom(o?o.name:nom):(o?o.name:nom);s.append(t);return s};
+  // Chaque pièce d'un lot : sa petite icône, comme à l'Armurerie, sans son nom ; au survol sa fiche. Absente du catalogue, son nom barré.
+  const piece=([nom,n])=>{const o=objetNomme(nom);if(!o){const s=document.createElement('small');s.className='creation-manque';s.textContent=nom;return s}
+   const q=gearCarre(o,n,0);q.classList.remove('dispo');const m=q.querySelector('.marque-porte');if(m)m.remove();q.removeAttribute('role');q.tabIndex=-1;
+   surveille(q,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(q,d,'bulle-gear')});return q};
   const lot=(l,on,clic)=>{const b=document.createElement(clic?'button':'div');if(clic){b.type='button';b.onclick=clic}b.className='creation-classe creation-kit'+(on?' on':'');b.style.setProperty('--teinte',tint);l.forEach(x=>b.append(piece(x)));return b};
   const groupe=(titre,...cartes)=>{const h=document.createElement('h4');h.className='creation-kit-titre';h.textContent=titre;const g=document.createElement('div');g.className='creation-classes creation-kits';g.append(...cartes);corps.append(h,g)};
   groupe('Armes',...ARMES_DEPART.map((l,i)=>lot(l,c.armes===i,()=>{c.armes=i;renderCreation()})));
   groupe('Armure',...ARMURES_DEPART.map((l,i)=>lot(l,c.armure===i,()=>{c.armure=i;renderCreation()})));
-  groupe('Objets',lot(OBJETS_DEPART,true,null));
-  const alea=document.createElement('div');alea.className='creation-classe creation-kit on';alea.style.setProperty('--teinte',tint);
+  // Les objets, et l'or : 10d6, lancés en créant l'aventurier.
+  const objets=lot(OBJETS_DEPART,true,null),or=document.createElement('span');or.className='cat-pill gear-carre creation-or';or.setAttribute('aria-label',OR_DEPART+' or');
+  const po=document.createElement('i');po.className='piece-or';const x=document.createElement('span');x.className='exemplaires';x.textContent=OR_DEPART;or.append(po,x);objets.append(or);groupe('Objets',objets);
+  const alea=document.createElement('div');alea.className='creation-classe creation-kit creation-kit-alea on';alea.style.setProperty('--teinte',tint);
   const q=document.createElement('span');q.className='cat-pill gear-carre r-inhabituel creation-alea';q.textContent='?';
   const t=document.createElement('small');t.textContent=NOM_RARETE('inhabituel')+' · '+genresAleatoires(c.role).map(g=>NOMS_OBJET_ALEATOIRE[g]).join(' ou ');
   const s=document.createElement('span');s.className='creation-piece creation-piece-alea';s.append(q,t);alea.append(s);groupe('Objet aléatoire',alea)}
@@ -3816,9 +3820,11 @@ function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>e
  // L'équipement de départ au sac ; l'objet inhabituel, tiré ici, une seule fois.
  const kit=kitCreation(c);kit.forEach(([o,n])=>{for(let k=0;k<n;k++)a.inventaire.push(o.id)});
  const tiree=tirePieceDepart(c.role);if(tiree){a.forges=[tiree];a.inventaire.push(tiree.id)}
+ // Et sa bourse : 10d6 pièces d'or.
+ const or=Array.from({length:10},()=>1+Math.floor(Math.random()*6)).reduce((s,n)=>s+n,0);
  // Son image : chez un joueur, elle part aussi par la table, pour que le MJ la reçoive.
  if(c.image){a.image=c.image;if(view!=='mj')a.imageJeton=c.image}
- normalizeActor(a);a.max=Math.max(1,pvMaximum(catalog.classes,a,catalog.talents,catalog.items));
+ normalizeActor(a);ajouteOr(a,or);a.max=Math.max(1,pvMaximum(catalog.classes,a,catalog.talents,catalog.items));
  // Les armes, l'armure et les munitions du lot se portent d'emblée ; l'objet tiré attend au sac.
  kit.forEach(([o,n])=>{if(o.category==='weapon')for(let k=0;k<n;k++)toggleEquip(a,o);else if(o.category==='armor'||o.category==='ammo')toggleEquip(a,o)});
  a.max=Math.max(1,pvMaximum(catalog.classes,a,catalog.talents,catalog.items));a.hp=a.max;actors.push(a);syncForges();creation=null;creationDialog.close();
@@ -3977,7 +3983,9 @@ function libereMainGauche(a){a.weapons??=[];
   else break}}
 // Prendre une arme en main : à droite si une place s'y libère, sinon à gauche, main droite occupée.
 function prendArme(a,o){const retires=libereMains(a,weaponHands(o));
- a.weapons=retires>0||!(a.weapons||[]).length?[o.id,...(a.weapons||[])]:[...a.weapons,o.id]}
+ a.weapons=retires>0||!(a.weapons||[]).length?[o.id,...(a.weapons||[])]:[...a.weapons,o.id];
+ // Une arme de contact en main : les munitions portées retournent au sac.
+ if(o.ranged!==true)a.munitionId=''}
 function prendBouclier(a,o){a.shieldId='';libereMainGauche(a);a.shieldId=o.id}
 /* Équiper depuis l'inventaire, d'un clic sur le carré : une arme prend la place qu'il
    faut — un second clic prend un second exemplaire s'il est possédé et qu'une main reste,
@@ -3993,7 +4001,7 @@ function toggleEquip(a,o){if(!a||!o)return 'Rien à équiper.';
  const dans=(a.inventaire||[]).filter(x=>x===o.id).length;
  if(!dans)return o.name+' n’est pas dans l’inventaire.';
  if(o.category==='weapon'){const n=gearCount(a,o.id);
-  if(n>0&&n<dans&&mainsPrises(a)+weaponHands(o)<=2)a.weapons=[...(a.weapons||[]),o.id];
+  if(n>0&&n<dans&&mainsPrises(a)+weaponHands(o)<=2){a.weapons=[...(a.weapons||[]),o.id];if(o.ranged!==true)a.munitionId=''}
   else if(n>0)a.weapons=(a.weapons||[]).filter(x=>x!==o.id);
   else prendArme(a,o)}
  else if(o.category==='armor'&&emplacementDe(o)==='shield'){

@@ -3389,6 +3389,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.710 — Trois points de compétence ; une arme de contact en main renvoie les munitions au sac ; l'équipement de départ
+   en petites icônes ; 10d6 pièces d'or à la création ; un nom d'objet trouvé dans le désordre. */
+{const ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ed.includes(" // Une arme de contact en main : les munitions portées retournent au sac.\n if(o.ranged!==true)a.munitionId=''}")&&ed.includes("{a.weapons=[...(a.weapons||[]),o.id];if(o.ranged!==true)a.munitionId=''}")
+  &&ed.includes("normalizeActor(a);ajouteOr(a,or);")&&ed.includes("OR_DEPART='10d6';")&&ed.includes("const mots=k.split(' ');return l.filter(o=>"),'départ et munitions');}
 /* v0.709 — La liste des combattants ne garde que les aventuriers chargés sur la carte ; l'Accueil montre tous les
    aventuriers et leur emplacement ; un aventurier créé est sur la route. */
 {const ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8');
@@ -3397,7 +3402,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.708 — L'équipement de départ : un lot d'armes, une armure, dix rations, trouvés au catalogue par leur nom ; l'objet
    inhabituel tiré à la création seulement, selon la classe. La bulle d'une compétence dit son usage ; plus de Gnome. */
 {const ed=fs.readFileSync('editor.js','utf8');
- const cle=new Function(ed.slice(ed.indexOf('const cleNomObjet='),ed.indexOf('const objetNomme='))+';return cleNomObjet')();
+ const cle=new Function(ed.slice(ed.indexOf('const cleNomObjet='),ed.indexOf('function objetNomme('))+';return cleNomObjet')();
  assert.deepEqual([cle('Épées Courtes'),cle('epee courte'),cle('Flèches'),cle('Ration'),cle('Armure de cuir')],['epee courte','epee courte','fleche','ration','armure de cuir']);
  assert.ok(ed.includes("const ARMES_DEPART=[[['Épée courte',2]],[['Épée courte',1],['Bouclier',1]],[['Arc court',1],['Flèche',20]]];")&&ed.includes("Mystique:['distance','armure']};")
   &&ed.includes(" const tiree=tirePieceDepart(c.role);if(tiree){a.forges=[tiree];a.inventaire.push(tiree.id)}")&&ed.split('tirePieceDepart(').length===3
@@ -3423,7 +3428,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 {const C27=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
  const b=C27.bonusDe({hero:true,role:'Gardien',pointsCreation:{endu:1,vie:1,dmg:1},talents:[]},[],[]);assert.deepEqual([b.endu,b.vie,b.dmg],[2,1,1]);
  assert.equal(C27.pvMaximum([{name:'Gardien',pv:18}],{hero:true,role:'Gardien',vie:3,endu:2,pointsCreation:{endu:2,vie:1,dmg:0},talents:[]},[],[]),4*6+18);
- assert.ok(ed.includes("const POINTS_CARACS=3,POINTS_COMPS=4,COMP_MAX_CREATION=2,XP_CREATION=100,COMP_BASE=1;")&&ed.includes("skills:c.skills.slice(),")&&ed.includes("Ombrelame:'Combattant redoutablement rapide")
+ assert.ok(ed.includes("const POINTS_CARACS=3,POINTS_COMPS=3,COMP_MAX_CREATION=2,XP_CREATION=100,COMP_BASE=1;")&&ed.includes("skills:c.skills.slice(),")&&ed.includes("Ombrelame:'Combattant redoutablement rapide")
   &&!ed.includes('arbresCreationId')&&ed.includes("if(typeof pousserBientot==='function')pousserBientot();renderAccueil()}")&&fs.readFileSync('live.js','utf8').includes("'pointsCreation'"),'création complète');}
 /* v0.702 — L'onglet Accueil : créer un aventurier pas à pas, les dernières actualités, les aventuriers au domaine, les hauts faits. */
 {const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),act=fs.readFileSync('actualites.js','utf8'),sh=fs.readFileSync('publie.sh','utf8');
@@ -5421,4 +5426,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2006 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2007 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
