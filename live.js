@@ -523,11 +523,13 @@ async function prendreSiege(a){if(!siegesRef||!monUid||!tientAventurier(a))retur
  catch(e){liveStatus('Siège refusé. '+liveErreur(e))}}
 // Le pseudo du joueur : celui de son compte.
 function pseudoJoueur(){const u=typeof auth!=='undefined'&&auth&&auth.currentUser;return String(u&&u.displayName||'Joueur').trim().slice(0,30)||'Joueur'}
-/* Un joueur qui rejoint se signale à la table sous son pseudo, même sans aventurier : le MJ le voit, et peut lui en confier un. */
-async function signaleJoueur(){if(!siegesRef||!monUid||estMJ())return;const ref=siegesRef.doc(monUid),at=firebase.firestore.FieldValue.serverTimestamp();
- try{const d=await ref.get();if(d.exists)await ref.update({nom:pseudoJoueur(),at});else await ref.set({actorId:'',nom:pseudoJoueur(),at})}catch(e){}
+/* Un joueur qui rejoint se signale à la table sous son pseudo, même sans aventurier : le MJ le voit, et peut lui en confier un.
+   Le MJ aussi : il paraît parmi les connectés, sous son nom. */
+const nomConnecte=()=>{if(!estMJ())return pseudoJoueur();const u=typeof auth!=='undefined'&&auth&&auth.currentUser;return String(u&&u.displayName||'MJ').trim().slice(0,30)||'MJ'};
+async function signaleJoueur(){if(!siegesRef||!monUid)return;const ref=siegesRef.doc(monUid),at=firebase.firestore.FieldValue.serverTimestamp();
+ try{const d=await ref.get();if(d.exists)await ref.update({nom:nomConnecte(),at});else await ref.set({actorId:'',nom:nomConnecte(),at})}catch(e){}
  // Puis sa présence, toutes les trente secondes, tant qu'il est à la table.
- clearInterval(presenceTimer);presenceTimer=setInterval(()=>{if(!siegesRef||!monUid||estMJ()){clearInterval(presenceTimer);presenceTimer=null;return}
+ clearInterval(presenceTimer);presenceTimer=setInterval(()=>{if(!siegesRef||!monUid){clearInterval(presenceTimer);presenceTimer=null;return}
   siegesRef.doc(monUid).update({at:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{})},PRESENCE_MS)}
 async function libererSiege(){if(!siegesRef||!monUid)return;
  try{await siegesRef.doc(monUid).set({actorId:'',nom:pseudoJoueur(),at:firebase.firestore.FieldValue.serverTimestamp()});monSiege=null;localStorage.removeItem(TABLE_CLE+'-siege');
@@ -553,7 +555,7 @@ async function ouvrirTable(){if(!cloud||!auth||!auth.currentUser){liveStatus('Co
  const code=codeNeuf();
  try{await cloud.doc('amertume_online_live/'+code).set({...etatVivant(),
    mj:auth.currentUser.uid,at:firebase.firestore.FieldValue.serverTimestamp()});
-  localStorage.setItem(TABLE_CLE,code);brancherTable(code);
+  localStorage.setItem(TABLE_CLE,code);brancherTable(code);signaleJoueur();
   liveStatus('Table ouverte. Partage le lien à tes joueurs.')}
  catch(e){liveStatus('Ouverture impossible. '+liveErreur(e))}}
 async function fermerTable(){if(!estMJ()||!tableId)return;
@@ -608,7 +610,7 @@ function majTable(){const ouvert=!!tableId,pret=!!cloud&&typeof firebase!=='unde
   b.textContent=joueur?'Options en ligne':ouvert?'Table · '+tableId:'Table en ligne'}
  {const t=document.querySelector('#live-panel .dialog-head h2');if(t)t.textContent=joueur?'Options en ligne':'Table en ligne'}
  const c=$('live-compte');if(c)c.hidden=joueur;if(c)c.textContent=ouvert
-  ?Object.keys(sieges).length+' joueur(s) assis · table '+tableId:'';
+  ?Object.keys(sieges).filter(u=>u!==monUid).length+' joueur(s) assis · table '+tableId:'';
  if(ouvert)return;
  liveStatus(!pret?'Firebase ne répond pas : vérifie la connexion, ou un bloqueur qui empêcherait gstatic.com. La partie reste jouable sur cet appareil.'
   :!connecte?'Connecte-toi avec ton compte MJ pour ouvrir une table. Tes joueurs, eux, n’auront rien à créer : le lien suffira.'
@@ -673,7 +675,7 @@ $('live-close').onclick=fermerTable;
 async function quitterSiege(){if(!siegesRef||!monUid||estMJ())return;const ref=siegesRef.doc(monUid);clearInterval(presenceTimer);presenceTimer=null;
  try{await ref.delete()}catch(e){}monSiege=null;try{localStorage.removeItem(TABLE_CLE+'-siege')}catch(e){}}
 // La page qui se ferme ou se recharge date la présence du joueur : il sort de la liste aussitôt, et la reprend en revenant.
-window.addEventListener('pagehide',()=>{if(!siegesRef||!monUid||estMJ()||typeof firebase==='undefined')return;
+window.addEventListener('pagehide',()=>{if(!siegesRef||!monUid||typeof firebase==='undefined')return;
  try{siegesRef.doc(monUid).update({at:firebase.firestore.Timestamp.fromMillis(0)}).catch(()=>{})}catch(e){}});
 /* Quitter la table ferme tout chez un joueur : le siège s'efface, et la page repart sans le lien de table, sur la page fermée.
    Chez le MJ, la partie reste ouverte sur l'appareil, comme avant. */
@@ -702,7 +704,7 @@ document.addEventListener('amertume-firebase-prete',async()=>{
  if(!lien){if(deja&&deja.isAnonymous)try{await auth.signOut()}catch(e){}
   if(!code)return;
   auth.onAuthStateChanged(u=>{monUid=u?u.uid:null;majTable()});
-  const rouvre=()=>{if(!estMJ()||enLigne||localStorage.getItem(TABLE_CLE)!==code||!auth.currentUser)return;monUid=auth.currentUser.uid;brancherTable(code)};
+  const rouvre=()=>{if(!estMJ()||enLigne||localStorage.getItem(TABLE_CLE)!==code||!auth.currentUser)return;monUid=auth.currentUser.uid;brancherTable(code);signaleJoueur()};
   document.addEventListener('amertume-mj-change',rouvre);rouvre();return}
  /* Un joueur rejoint avec son compte : Amertüme, pseudo et mot de passe, ou Google. Une identité anonyme d'avant s'efface : elle
     ne retrouverait pas ses aventuriers d'un appareil à l'autre. */
@@ -714,7 +716,7 @@ document.addEventListener('amertume-firebase-prete',async()=>{
  // Un invité joue en joueur, avec le contenu publié s'il est déjà arrivé : sinon il
  // n'aurait que la scène de cet appareil, et rien pour le lui dire. Le MJ se reconnaît d'abord.
  for(let k=0;k<50&&typeof adminConnu!=='undefined'&&!adminConnu;k++)await new Promise(r=>setTimeout(r,100));
- const invite=!estMJ();if(invite)signaleJoueur();
+ const invite=!estMJ();signaleJoueur();
  if(invite){view='player';$('view').value='player';
   if(typeof remote!=='undefined'&&remote&&typeof applyRemote==='function')applyRemote();else render()}
  liveStatus('Table rejointe.');});
