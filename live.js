@@ -152,6 +152,8 @@ function diffEtat(av,ap){const maj={},SUPPR=firebase.firestore.FieldValue.delete
    maj['actors.'+id+'.'+k]=b[k]===undefined?SUPPR:k==='hp'&&typeof a[k]==='number'&&typeof b[k]==='number'&&a[k]>=0?firebase.firestore.FieldValue.increment(b[k]-a[k]):b[k]});
   if(tour&&!estMJ()&&typeof cleTour==='function')maj['actors.'+id+'.tourVu']=cleTour()});
  // Un joueur n'écrit l'état du sol que pour la carte ouverte par le MJ : jamais celui d'une carte périmée.
+ // Une position écrite par un joueur porte aussi la date du tour qu'il voit : le MJ en combat écarte un pas fait hors combat.
+ if(!estMJ()&&typeof cleTour==='function')Object.keys(maj).forEach(k=>{const p=/^actors\.(.+)\.[xy]$/.exec(k);if(p)maj['actors.'+p[1]+'.tourVu']=cleTour()});
  if(!pareil(av&&av.doors,ap.doors)&&(estMJ()||(dernierDoc&&dernierDoc.mapId&&dernierDoc.mapId===currentMapId)))maj.doors=ap.doors;
  // Le tour, la carte ouverte, le verrou et le titre appartiennent au MJ.
  if(estMJ())CHAMPS_MJ.forEach(k=>{if(!pareil(av&&av[k],ap[k]))maj[k]=ap[k]});
@@ -289,6 +291,10 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    // Chez le MJ : l'état du tour qu'un joueur a écrit daté d'un autre tour ne passe pas ; le MJ renvoie le sien.
    const jetonAvant=a.imageJeton;
    const perime=estMJ()&&!neuf&&typeof e.tourVu==='string'&&cleIci!==null&&e.tourVu!==cleIci;
+   /* Chez le MJ en combat : ce qu'un joueur a écrit en se croyant hors combat, ou dans un combat fini, ne compte pas. Ses pas, ses
+      points du tour reviennent tels que le MJ les tient. Un aventurier déplacé sans date est traité de même. */
+   const horsCombat=estMJ()&&!neuf&&mode==='combat'&&typeof numeroCombat!=='undefined'
+    &&(typeof e.tourVu==='string'?!e.tourVu.startsWith('c'+numeroCombat+'.'):a.hero===true);
    CHAMPS_VIVANTS.forEach(k=>{if(e[k]===undefined)return;
     if(enMain&&(k==='x'||k==='y'))return;
     // Les cibles se comparent par identifiant, telles qu'elles partent : jamais par rang.
@@ -298,6 +304,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
        qu'il parte au prochain envoi — sinon il s'y fondait, ne partait jamais, et le
        document suivant l'écrasait (des PV corrigés qui « ne comptaient pas »). */
     if(perime&&CHAMPS_TOUR.includes(k)&&!pareil(local,e[k])){gardes.push([id,k,structuredClone(e[k])]);return}
+    if(horsCombat&&(k==='x'||k==='y'||CHAMPS_TOUR.includes(k))&&!pareil(local,e[k])){gardes.push([id,k,structuredClone(e[k])]);return}
     if(r&&pareil(r[k],e[k])&&!pareil(local,e[k])&&!(tourChange&&CHAMPS_TOUR.includes(k))){gardes.push([id,k,structuredClone(e[k])]);return}
     /* Révélé, pour de bon : le MJ ne reprend jamais un « vu » à faux venu du réseau, il le
        renvoie à vrai. Ses propres remises à zéro passent, elles partent de chez lui. */
@@ -597,7 +604,9 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
  quitteSalle=salleRef.onSnapshot(doc=>{
   if(!doc.exists){liveStatus('Cette table n’existe plus. Demande un nouveau lien au MJ.');debrancherTable();if(!estMJ())ouvreTable();return}
   dernierDoc=doc.data();programmerApplication()},
-  e=>{liveStatus('Écoute interrompue. '+liveErreur(e));if(!estMJ())ouvreTable()});
+  e=>{liveStatus('Écoute interrompue. '+liveErreur(e));if(!estMJ())ouvreTable();
+   // Sans écoute, un joueur jouerait sur une table figée, hors combat peut-être : il se rebranche, sauf refus des règles.
+   if(!estMJ()&&!(e&&e.code==='permission-denied'))setTimeout(()=>{if(tableId===code)brancherTable(code)},3000)});
  quitteSieges=siegesRef.onSnapshot(s=>{sieges={};s.forEach(d=>sieges[d.id]=d.data());
   const mien=monUid&&sieges[monUid];monSiege=mien?mien.actorId:null;
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
