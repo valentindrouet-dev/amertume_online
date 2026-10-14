@@ -2592,8 +2592,7 @@ function competencesDeClasse(role){const k=cleClasse(role),e=k?Object.entries(CO
 const ESPECES=[{id:'humain',nom:'Humain',teinte:'#9a7b4f',vie:1,comps:{Perception:1,Savoir:1}},
  {id:'nain',nom:'Nain',teinte:'#8c5a3c',pv:8,comps:{Robustesse:1,Technique:1}},
  {id:'goliath',nom:'Goliath',teinte:'#5f7183',dmg:2,comps:{Force:1,Robustesse:1}},
- {id:'elfe',nom:'Elfe',teinte:'#4f8a5b',endu:1,dmg:1,comps:{Agilité:1,Mysticisme:1}},
- {id:'gnome',nom:'Gnome',teinte:'#8a5aa0',comps:{Ruse:1,Technique:1},capacite:'Discrétion'}];
+ {id:'elfe',nom:'Elfe',teinte:'#4f8a5b',endu:1,dmg:1,comps:{Agilité:1,Mysticisme:1}}];
 const especeDe=id=>ESPECES.find(e=>e.id===id)||null;
 function bonusEspece(a){const e=a&&a.hero?especeDe(a.espece):null,n=k=>e&&Number(e[k])||0;
  return {vie:n('vie'),endu:n('endu'),dmg:n('dmg'),pv:n('pv'),skills:COMPETENCES.map(c=>e&&e.comps[c]||0)}}

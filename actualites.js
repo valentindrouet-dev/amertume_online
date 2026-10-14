@@ -1,7 +1,7 @@
 /* Les dernières actualités de la table, pour l'Accueil. Chaque publication s'ajoute d'elle-même en tête de « versions »
    (publie.sh) ; « resume » condense les dix dernières en quelques lignes, tant qu'il va jusqu'à la plus récente. */
-const ACTUALITES={resume:{jusqua:'0.707',lignes:[
- 'Accueil : création d’aventurier pas à pas, en couleurs — espèce et classe présentées, 3 points de caractéristique, 4 de compétence, 100 XP de départ.',
+const ACTUALITES={resume:{jusqua:'0.708',lignes:[
+ 'Accueil : création d’aventurier pas à pas, en couleurs — espèce, classe, 3 points de caractéristique, 4 de compétence, l’équipement de départ et un objet inhabituel tiré au hasard.',
  'Aventuriers : le MJ coche ceux qui partent à l’aventure ; eux seuls entrent sur la carte et gagnent XP et butin.',
  'Accueil : les dernières actualités, les aventuriers présents au domaine, et bientôt les hauts faits.',
  'Forge : compétence tirée au hasard, plusieurs bonus différents sur une pièce, jamais deux fois le même.',
@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.707',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.708","d":"2026-10-14","t":"Création d'aventurier : équipement de départ et objet inhabituel"},
 {"v":"0.707","d":"2026-10-14","t":"Aventuriers : qui part à l'aventure, genre et espèce, token à la création"},
 {"v":"0.706","d":"2026-10-14","t":"Création d'aventurier : espèces et bulles des caractéristiques"},
 {"v":"0.705","d":"2026-10-12","t":"Création d'aventurier : fin sur le récapitulatif"},
