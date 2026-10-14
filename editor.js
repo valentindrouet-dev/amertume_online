@@ -888,7 +888,9 @@ function recalculerPV(a){if(!a||!a.hero)return false;
  if(max===a.max&&!delta)return false;
  writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}
 // À chaque rendu de qui tient la partie, quelle que soit sa vue, les PV max de la troupe se relisent : un nœud appris, un Meneur qui s'approche.
-function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;let change=false;
+/* Les pièces forgées d'abord : le catalogue chargé, ou reçu publié, arrive sans elles. Relu avant elles, le PV max d'un
+   aventurier qui en porte une baissait un instant et rabotait ses PV ; remonté au rendu suivant, il les laissait perdus. */
+function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;if(typeof syncForges==='function')syncForges();let change=false;
  actors.forEach(a=>{if(a&&a.hero&&recalculerPV(a))change=true});return change}
 function poserCarac(a,cle,brut,carte){const avant=a[cle];writeStat(a,cle,brut);
  if(a[cle]===avant)return;
