@@ -2845,7 +2845,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(fief.includes("const saveNowSansSecours=saveNow;saveNow=function(){saveNowSansSecours();gardeSecoursDomaine()};")&&fief.includes("tx.objectStore('state').put(rec,'domaine:secours');")
   &&fief.includes("||poidsDomaine(domaine)<=0)return;")&&fief.includes("b.textContent='⟲ Reprendre ce domaine';")
   &&fief.includes("o.genre==='campagne'&&o.partie&&o.partie.domaine?o.partie.domaine:"),'le domaine de secours, et l’import depuis une campagne');
- assert.ok(src.includes("function saveNow(){if(ongletPerime){")&&src.includes("marqueSession();try{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),s=snapshot();")
+ assert.ok(src.includes("function saveNow(){if(typeof mjIci==='function'&&!mjIci())return;if(ongletPerime){")&&src.includes("marqueSession();try{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),s=snapshot();")
   &&src.includes("window.addEventListener('storage',e=>{if(e.key!=='amertume-session-marque'||!e.newValue)return;")&&src.includes("if(document.visibilityState==='visible'&&ongletPerime)relireSession()"),'une fenêtre périmée n’écrase plus la partie');
  assert.ok(cartes2.includes("Array.isArray(o.actors)&&Array.isArray(o.maps)?o.maps.filter(m=>m&&typeof m==='object'):null;")&&cartes2.includes("Ce fichier est un export du domaine : reprends-le dans l’onglet Domaine")
   &&cartes2.includes('Le domaine n’y est pas : il s’exporte depuis son onglet, et la partie entière depuis les Paramètres.'),'l’import des cartes reconnaît les autres fichiers');
@@ -3389,6 +3389,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.725 — Seul l'appareil du MJ enregistre la partie : un joueur n'en garde plus de copie. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("function saveNow(){if(typeof mjIci==='function'&&!mjIci())return;"),'pas de copie chez les joueurs');
 /* v0.724 — La barre des Aventuriers sur une ligne. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actions{flex-wrap:nowrap;align-items:center}"),'barre des Aventuriers');
 /* v0.723 — L'ordre des fiches d'aventuriers : libre, glissé par la poignée, ou par nom, niveau, classe, XP. */
@@ -5493,4 +5495,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2020 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2021 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

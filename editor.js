@@ -6393,7 +6393,9 @@ $('fenetre-garder').onclick=()=>{ongletPerime=false;bandeauFenetres.hidden=true;
    entier —, le domaine déjà enregistré est gardé tel quel. */
 function domaineRempli(d){try{return !!d&&typeof d==='object'&&(typeof poidsDomaine==='function'?poidsDomaine(d)>0
  :!!(d.carte&&Array.isArray(d.carte.calques)&&d.carte.calques.some(Boolean)||Array.isArray(d.batiments)&&d.batiments.some(b=>b&&b.zone)))}catch(e){return false}}
-function saveNow(){if(ongletPerime){if(document.visibilityState==='visible')bandeauFenetres.hidden=false;return}
+/* Seul l'appareil du MJ garde la partie. Un joueur la reçoit à chaque connexion à la table, et son navigateur n'en écrit plus
+   de copie. Rien n'est effacé : une copie d'avant reste derrière la page fermée. */
+function saveNow(){if(typeof mjIci==='function'&&!mjIci())return;if(ongletPerime){if(document.visibilityState==='visible')bandeauFenetres.hidden=false;return}
  if(db&&!sessionLue){noterSauvegarde('La partie enregistrée n’est pas encore lue : rien n’est écrit par-dessus.',true);return}
  if(!db){noterSauvegarde('Sauvegarde locale indisponible : cette session ne sera pas conservée.',true);return}marqueSession();try{const tx=db.transaction('state','readwrite'),st=tx.objectStore('state'),s=snapshot();
   if(domaineRempli(s.domaine))st.put(s,'session');
