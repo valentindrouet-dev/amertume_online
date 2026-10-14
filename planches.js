@@ -6,7 +6,7 @@
    planche remplacée par la même en plus grand garde ses découpes. Chaque icône y reçoit un
    nom et une catégorie, puis se choisit comme n'importe quel logo : « planches/x.webp#7 ».
    Rien n'est extrait en fichier : l'icône se découpe à l'affichage, dans le navigateur. */
-const CATS_ICONES=[['talents','Talents'],['equipement','Équipement'],['divers','Divers'],['ombrelame','Ombrelame'],['actions','Actions'],['gardien','Gardien']];
+const CATS_ICONES=[['talents','Talents'],['equipement','Équipement'],['divers','Divers'],['ombrelame','Ombrelame'],['actions','Actions'],['gardien','Gardien'],['artisanat','Artisanat']];
 /* Le nom d'une planche : ce que GitHub accepte d'ordinaire, espaces et accents compris, sans
    dossier, ni guillemet, ni chevron, ni rien qui casserait une adresse ou une page. */
 const estFichierPlanche=l=>/^planches\/[^/#?"'<>&\\]+\.(png|webp)$/i.test(String(l||''));
@@ -19,7 +19,7 @@ function plancheDe(fichier){return planchesDuCatalogue().find(p=>p&&p.fichier===
    fichier, « planches/runes_02.webp » se lisant « Runes 02 ». Le fichier ne change pas : le
    site ne peut pas renommer ce qui est sur GitHub, et les logos déjà choisis restent valides. */
 function nomPlanche(f){const donne=typeof catalog!=='undefined'&&catalog.nomsPlanches&&catalog.nomsPlanches[f];if(donne)return donne;
- const n=String(f||'').replace(/^planches\//,'').replace(/\.[a-z]+$/i,'').replace(/[_-]+/g,' ').trim();return n?n[0].toUpperCase()+n.slice(1):'Planche'}
+ const n=String(f||'').replace(/^planches\//,'').replace(/\.[a-z]+$/i,'').replace(/_+/g,' ').replace(/\s+/g,' ').replace(/^-+|-+$/g,'').trim();return n?n[0].toUpperCase()+n.slice(1):'Planche'}
 function normaliseNomsPlanches(o){const out={};if(!o||typeof o!=='object'||Array.isArray(o))return out;
  Object.entries(o).slice(0,500).forEach(([f,n])=>{if(estFichierPlanche(f)&&typeof n==='string'&&n.trim())out[f]=n.trim().slice(0,40)});return out}
 function renommePlanche(f){const n=prompt('Nom de la planche « '+nomPlanche(f)+' » :',nomPlanche(f));if(n===null)return;
@@ -262,8 +262,9 @@ async function decouper(f,lignes,colonnes){
  const cases=g.cases,avant=plancheDe(f);
  if(!cases.length){alert('Aucune icône trouvée dans cette grille.');return}
  if(avant&&avant.icones.some(i=>i.nom||i.cat)&&!confirm('Redécouper « '+nomPlanche(f)+' » en '+cases.length+' icônes ? Les noms et catégories restent attachés aux numéros : vérifie-les ensuite.'))return;
- // Une planche qui porte le nom d'une catégorie, « OMBRELAME », « Actions 2 », y range d'emblée ses icônes nouvelles.
- const catNom=(CATS_ICONES.find(([,n])=>cleTalent(n)===cleTalent(nomPlanche(f)).replace(/\d+$/,''))||[''])[0];
+ /* Une planche qui porte le nom d'une catégorie, « OMBRELAME », « Actions 2 », y range d'emblée ses icônes nouvelles ; une
+    planche « Artisanat - Forge » aussi, par le premier mot de son nom. */
+ const catNom=(CATS_ICONES.find(([,n])=>cleTalent(n)===cleTalent(nomPlanche(f)).replace(/\d+$/,''))||CATS_ICONES.find(([,n])=>cleTalent(n)===cleTalent(nomPlanche(f).split(/\s+-\s+/)[0]))||[''])[0];
  const p={fichier:f,lignes:g.lignes,colonnes:g.colonnes,cases,icones:cases.map((_,i)=>avant&&avant.icones[i]?{...avant.icones[i]}:{nom:'',cat:catNom})};
  catalog.planches=[...planchesDuCatalogue().filter(x=>x.fichier!==f),normalisePlanches([p])[0]];PLANCHES_OUVERTES.add(f);sauveIcones();renderIcones();
  // Toutes ses icônes rejoignent l'appareil dans la foulée, et la planche quitte la mémoire.
@@ -312,19 +313,23 @@ function ouvreGrilleLogos(select){grilleSelect=select;
  $('grille-logos-recherche').value='';dessineGrilleLogos();grilleDialog.showModal();$('grille-logos-recherche').focus()}
 function dessineGrilleLogos(){const corps=$('grille-logos-corps'),s=grilleSelect;if(!corps||!s)return;corps.replaceChildren();
  const q=cleTalent($('grille-logos-recherche').value);let montres=0;
+ const logoVu=v=>String(v).includes('{logo}')&&typeof remplaceElement==='function'?remplaceElement(v,ELEMENTS[0]):v;
  const tuile=o=>{const v=o.value;if(!v||(q&&!cleTalent(o.textContent).includes(q)))return null;
   const b=document.createElement('button');b.type='button';b.className='grille-logo'+(v===s.value?' on':'');b.title=o.textContent;
   const im=document.createElement('img');im.alt='';im.draggable=false;
   // L'image se pose quand la tuile paraît : les planches qu'on ne fait pas défiler ne se téléchargent pas.
-  im.dataset.logo=String(v).includes('{logo}')&&typeof remplaceElement==='function'?remplaceElement(v,ELEMENTS[0]):v;vueGrille.observe(im);
+  im.dataset.logo=logoVu(v);vueGrille.observe(im);
   const n=document.createElement('span');n.textContent=o.textContent;b.append(im,n);
   b.onclick=()=>{s.value=v;s.dispatchEvent(new Event('change',{bubbles:true}));grilleDialog.close()};montres++;return b};
  /* Replié, un groupe se déplie d'un clic sur son titre ; une recherche ouvre ceux qui répondent. */
- const groupe=(titre,options,replie)=>{const t=options.map(tuile).filter(Boolean);if(!t.length)return;
+ /* Replié, un groupe se déplie aussi quand il porte le logo choisi. Avec « vignette », son titre montre sa première icône. */
+ const groupe=(titre,options,replie,vignette)=>{const t=options.map(tuile).filter(Boolean);if(!t.length)return;
   const g=document.createElement('div');g.className='grille-logos-liste';g.append(...t);
   if(!titre){corps.append(g);return}
-  const d=document.createElement('details');d.className='grille-logos-groupe';d.open=!replie||!!q;
-  const h=document.createElement('summary');h.className='grille-logos-titre';h.textContent=titre;d.append(h,g);corps.append(d)};
+  const d=document.createElement('details');d.className='grille-logos-groupe'+(vignette?' avec-vignette':'');d.open=!replie||!!q||options.some(o=>o.value&&o.value===s.value);
+  const h=document.createElement('summary');h.className='grille-logos-titre';
+  if(vignette){const im=document.createElement('img');im.alt='';im.draggable=false;im.className='grille-logos-vignette';im.onerror=()=>{im.style.visibility='hidden'};im.dataset.logo=logoVu(options[0].value);vueGrille.observe(im);h.append(im)}
+  h.append(titre);d.append(h,g);corps.append(d)};
  const options=[...s.children].filter(x=>x.tagName==='OPTION'),groupes=[...s.querySelectorAll('optgroup')];
  /* Le logo d'un talent : les planches de talents d'abord, une par une et dépliées ; tout le
     reste suit, replié. */
@@ -342,7 +347,15 @@ function dessineGrilleLogos(){const corps=$('grille-logos-corps'),s=grilleSelect
   groupe('',options);if(tete)groupe(tete.label,[...tete.children],false);
   [...parPlanche.entries()].sort((x,y)=>x[1].k-y[1].k||x[1].n-y[1].n).forEach(([f,p])=>groupe(nomPlanche(f),p.l.sort((x,y)=>x[0]-y[0]).map(x=>x[1]),false));
   groupes.forEach(g=>groupe(g.label,[...g.children].filter(o=>!vues.has(o.value)),true))}
- else{groupe('',options);groupes.forEach(g=>groupe(g.label,[...g.children]))}
+ /* Le logo d'un objet ou d'une attaque : une planche par groupe, replié, son nom et sa première icône en tête ; ce qui
+    n'est pas d'une planche suit, replié aussi. */
+ else{const vues=new Set(),parPlanche=new Map(),range=o=>{const m=/^(planches\/[^#]+)#(\d+)$/.exec(o.value);if(!m||vues.has(o.value))return;vues.add(o.value);
+   if(!parPlanche.has(m[1]))parPlanche.set(m[1],[]);parPlanche.get(m[1]).push([+m[2],o])};
+  // Les planches dans l'ordre du menu : celles qu'il met en tête le restent.
+  options.forEach(range);groupes.forEach(g=>[...g.children].forEach(range));
+  [...parPlanche.entries()].forEach(([f,l])=>groupe(nomPlanche(f),l.sort((x,y)=>x[0]-y[0]).map(x=>x[1]),true,true));
+  groupe('Logos',options.filter(o=>!vues.has(o.value)),true,true);
+  groupes.forEach(g=>groupe(g.label,[...g.children].filter(o=>!vues.has(o.value)),true,true))}
  if(!montres){const v=document.createElement('p');v.className='muted';v.textContent='Aucun logo de ce nom.';corps.append(v)}}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.grille-logos');if(!b)return;
  e.preventDefault();const s=b.parentNode.querySelector('select');if(s)ouvreGrilleLogos(s)});

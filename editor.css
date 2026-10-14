@@ -1739,6 +1739,7 @@ body.page-icones .intro,body.page-icones .mj-tools,body.page-icones main.layout,
 #grille-logos{width:min(760px,94vw)}
 #grille-logos-corps{max-height:min(62vh,560px);overflow:auto;margin-top:10px}
 .grille-logos-titre{margin:12px 0 6px;font:600 11px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.grille-logos-groupe.avec-vignette>.grille-logos-titre{display:flex;align-items:center;gap:10px;cursor:pointer;margin:4px 0;padding:4px 6px;border-radius:8px}.grille-logos-groupe.avec-vignette>.grille-logos-titre:hover{background:color-mix(in srgb,var(--accent) 10%,transparent)}.grille-logos-vignette{width:34px;height:34px;object-fit:contain;flex:none}
 .grille-logos-liste{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
 .grille-logo{display:flex;flex-direction:column;align-items:center;gap:4px;width:auto;margin:0;padding:6px 4px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2);font:600 10px/1.2 system-ui;color:var(--ink);cursor:pointer}
 .grille-logo img{width:44px;height:44px;object-fit:contain}
