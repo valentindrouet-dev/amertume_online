@@ -2515,6 +2515,8 @@ button.j-stats{padding:0;border:0;background:none;font:inherit;font-weight:800;c
 #accueil-page{display:none;padding:16px 28px 26px}body.page-accueil #accueil-page{display:block}
 body.page-accueil .intro,body.page-accueil .mj-tools,body.page-accueil main.layout,body.page-accueil #save-status,body.page-accueil footer{display:none!important}
 #accueil-page .accueil-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:10px}
+/* Un joueur qui a déjà son aventurier n'en crée pas d'autre : le bloc s'efface. */
+#accueil-page .accueil-creer[hidden]{display:none}
 #accueil-page .accueil-bloc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
 #accueil-page .accueil-bloc h3{margin:0 0 10px;font:600 12px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
 #accueil-page .accueil-creer{grid-column:1/-1;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(#f6e8bf,#efdca6);border-color:#d8bd72}

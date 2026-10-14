@@ -3761,7 +3761,7 @@ function renderActifs(){const boite=$('accueil-actifs');if(!boite)return;boite.r
   const ou=document.createElement('small');ou.className='accueil-lieu';ou.textContent=typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieuDe(a)):'';
   const d=document.createElement('small');d.textContent=[a.role,/niveau/i.test(a.role||'')?'':'niveau '+(Math.trunc(Number(a.level))||1)].filter(Boolean).join(' · ');
   if(classe&&classe.tint)n.style.color=classe.tint;t.append(n,ou,d);c.append(av,t);boite.append(c)})}
-function renderAccueil(){renderActualites();renderActifs();if(typeof renderJoueursConnectes==='function')renderJoueursConnectes();const f=$('accueil-faits');if(f){f.replaceChildren();const p=document.createElement('p');p.className='muted';p.textContent='Aucun haut fait pour l’instant.';f.append(p)}}
+function renderAccueil(){{const b=document.querySelector('.accueil-creer');if(b)b.hidden=!peutCreerAventurier()}renderActualites();renderActifs();if(typeof renderJoueursConnectes==='function')renderJoueursConnectes();const f=$('accueil-faits');if(f){f.replaceChildren();const p=document.createElement('p');p.className='muted';p.textContent='Aucun haut fait pour l’instant.';f.append(p)}}
 /* ---------- Créer un aventurier ----------
    Onglet par onglet : identité, classe, caractéristiques, compétences, puis le récapitulatif. L'aventurier rejoint la campagne,
    au domaine : la page Aventuriers du MJ, et la fiche du joueur qui l'a créé. Il est prêt pour une mission, une aventure. */
@@ -3804,7 +3804,11 @@ function tirePieceDepart(role,tirage=Math.random){const bases=(catalog.items||[]
  return affixes.length?{id:'forge-'+crypto.randomUUID(),base:b.id,affixes}:null}
 const creationDialog=dialog('creation-aventurier','Créer un aventurier','<nav id="creation-etapes" class="creation-etapes"></nav><div id="creation-corps" class="creation-corps"></div><div class="form-actions"><button type="button" id="creation-prec">Précédent</button><button type="button" id="creation-suiv" class="primary">Suivant</button></div>');
 let creation=null;
-function openCreation(){creation={etape:0,name:'',sexe:'',image:'',espece:'',role:'',armes:null,armure:null,caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
+/* Un compte joueur crée un seul aventurier : des Éclats d'Âme en ouvriront d'autres. Le MJ n'a pas de limite. */
+function aventuriersPermis(){return 1}
+function peutCreerAventurier(){if((typeof mjIci==='function'&&mjIci())||!invitEnLigne())return true;
+ const uid=typeof monUid!=='undefined'?monUid:null;return !!uid&&actors.filter(a=>a&&a.hero&&a.joueur===uid).length<aventuriersPermis()}
+function openCreation(){if(!peutCreerAventurier())return;creation={etape:0,name:'',sexe:'',image:'',espece:'',role:'',armes:null,armure:null,caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
 const restantCaracs=c=>POINTS_CARACS-c.caracs.endu-c.caracs.vie-c.caracs.dmg,restantComps=c=>POINTS_COMPS-c.skills.reduce((s,n)=>s+n,0);
 const especeCreation=c=>especeDe(c.espece),compsEspece=c=>bonusEspece({hero:true,espece:c.espece}).skills;
 const valeursCreation=c=>{const e=bonusEspece({hero:true,espece:c.espece});return {vie:BASE_HEROS.vieMax+c.caracs.vie+e.vie,endu:BASE_HEROS.endu+2*c.caracs.endu+e.endu,dmg:BASE_HEROS.dmg+c.caracs.dmg+e.dmg}};
@@ -3923,7 +3927,7 @@ async function imagePourTable(url){if(typeof url!=='string'||!url.startsWith('da
 /* L'aventurier créé : sur la route, hors de la carte, avec ses 100 premiers XP ; chez un joueur, il devient le sien. La création
    s'achève sur le récapitulatif. Sa fiche ne garde que les points de compétence : le 1 de base, la classe et l'espèce s'y ajoutent
    au jeu, comme pour tout aventurier. */
-function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;const e=especeCreation(c);
+function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;if(!peutCreerAventurier()){creationDialog.close();return}const e=especeCreation(c);
  const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:c.name.trim(),sexe:c.sexe,race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
  // L'équipement de départ au sac ; l'objet inhabituel, tiré ici, une seule fois.
  const kit=kitCreation(c);kit.forEach(([o,n])=>{for(let k=0;k<n;k++)a.inventaire.push(o.id)});
@@ -6239,7 +6243,7 @@ function openScenePicker(mode){if(view!=='mj')return;scenePickerMode=mode;
  sceneDialog2.querySelector('h2').textContent=mode==='foe'?'Ajouter un adversaire':'Placer un aventurier';
  $('scene-picker-note').textContent=mode==='foe'
   ?'Glisse un modèle du bestiaire jusqu’à l’endroit voulu sur la carte. Un simple clic le pose au centre. Sans lâcher, appuie sur Maj autant de fois que tu veux d’exemplaires : ils se posent en groupe.'
-  :'Toute la troupe est déjà en scène. Glisse un aventurier là où tu le veux sur la carte ; un simple clic le repose au centre.';
+  :'Glisse un aventurier là où tu le veux sur la carte ; un simple clic le repose au centre.';
  $('scene-picker-new').textContent=mode==='foe'?'+ Créer un monstre au bestiaire':'+ Créer un aventurier';
  $('scene-picker-search').value='';$('scene-picker-search').oninput=renderScenePicker;
  renderScenePicker();sceneDialog2.showModal()}
@@ -6254,7 +6258,8 @@ function renderScenePicker(){const corps=$('scene-picker-body');if(!corps)return
    {hero:false,pv:m.pv||0,def:m.def||0,groupe:true})));
   if(!liste.length)corps.append(videScene(q?'Aucun modèle de ce nom.':'Le bestiaire est vide.'))}
  else{
-  const liste=actors.map((a,i)=>[a,i]).filter(([a])=>a.hero&&(!q||a.name.toLowerCase().includes(q)));
+  // Ceux qui ne sont pas encore sur la carte d'abord : c'est eux qu'on vient chercher.
+  const liste=actors.map((a,i)=>[a,i]).filter(([a])=>a.hero&&(!q||a.name.toLowerCase().includes(q))).sort((u,v)=>(v[0].horsCarte?1:0)-(u[0].horsCarte?1:0));
   liste.forEach(([a,i])=>corps.append(ligneScene(a.name,a.image,
    a.hp+' / '+a.max+' PV · '+(a.role||'Aventurier'),
    ()=>placerAventurier(i,libre(),false),(x,y)=>placerAventurier(i,{x,y},true),
@@ -6290,7 +6295,11 @@ function poserAdversaire(i,ou,glisse,combien){saveChecks();savePool();
  render();scheduleSave();
  log(n>1?n+' × '+m.name+' posés en groupe.'
   :m.name+(glisse?' posé à l’endroit choisi.':' ajouté à la carte.'))}
-function placerAventurier(i,ou,glisse){saveChecks();savePool();Object.assign(actors[i],ou);
+function placerAventurier(i,ou,glisse){saveChecks();savePool();const a=actors[i];if(!a)return;
+ /* Un aventurier resté hors de la carte y entre en pleine partie — un joueur arrivé en retard : il prend part à l'aventure,
+    XP et butin compris, sans rouvrir la carte. */
+ if(a.hero&&a.horsCarte){a.horsCarte=false;delete a.retire;if(actors.some(h=>h&&h.hero&&h!==a&&h.enAventure===true))a.enAventure=true}
+ Object.assign(a,ou);
  selected=i;markOnly(i);sceneDialog2.close();showPage('table');settleActor(actors[i]);render();scheduleSave();
  log(actors[i].name+(glisse?' placé à l’endroit choisi.':' replacé au centre de la carte.'))}
 // Le point lâché est-il sur la carte ? On vise le cadre visible, pas le calque zoomé.
