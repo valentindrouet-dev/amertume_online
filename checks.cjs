@@ -3389,6 +3389,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.740 — Affixes d'Expérience, du Chercheur, d'Orpailleur ; la Forge par groupes repliables ; poser d'un clic sur la carte. */
+{const C38=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(['xpVaincu','fouille','orKill'].every(k=>C38.EFFETS_AFFIXE.some(([e])=>e===k)));
+ assert.equal(C38.phraseAffixe({effet:'xpVaincu',valeur:3}),'+3 XP par adversaire vaincu');assert.equal(C38.phraseAffixe({effet:'orKill',valeur:5}),'+5 pièces d’or quand vous tuez un adversaire');
+ assert.ok(ix.includes("if(zone){const plus=effetsForge(a).fouille;if(plus>0)jet.reussites+=plus}")&&ix.includes("function orpailleur(de,vers){"));
+ assert.ok(ed.includes("if(nb)heros.forEach(h=>{const b=nb*effetsForge(h).xpVaincu;")&&ed.includes("function nomGroupeAffixe(x){")&&ed.includes("viserCible('✦ Clique sur la carte pour poser '+nom,"));}
 /* v0.739 — L'élément du Mystique quitte la fiche (il est au-dessus de son arbre) ; le jeton de la fiche ne s'écrase plus. */
 {const ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ed.includes(" tete.append(...(poignee?[poignee]:[]),...(part?[part]:[]),jeton,titre,...(origine?[origine]:[]),classe,outils);"));
@@ -3884,7 +3890,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("/action/i.test(nomPlanch
 {const C2=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  assert.ok(C2.TALENTS_CODES.impulsiontour.pour==='impulsion'&&C2.TALENTS_CODES.impulsionallie.pour==='impulsion','Impulsion');
  assert.equal(C2.pointsMax({points:{action:1},paBonus:1},'action'),2);assert.equal(C2.pointsMax({points:{action:1},paBonus:1},'action',true),1);
- assert.ok(idx.includes("if(vers.hp===0){ajouteBilan(de,'abat',1);impulsion(de,vers)}")&&idx.includes("floatNumber(a,'+1 PM','gain');")&&idx.includes("pt.className='pt '+(pa?'action':'mvt');el.append(pt);el.style.color=pa?'#3f8fe0':'#cf9152'"),'Impulsion câblée');}
+ assert.ok(idx.includes("if(vers.hp===0){ajouteBilan(de,'abat',1);orpailleur(de,vers);impulsion(de,vers)}")&&idx.includes("floatNumber(a,'+1 PM','gain');")&&idx.includes("pt.className='pt '+(pa?'action':'mvt');el.append(pt);el.style.color=pa?'#3f8fe0':'#cf9152'"),'Impulsion câblée');}
 /* v0.654 — Les états posés par un coup montent au-dessus de la cible, après ses dégâts. */
 assert.ok(fs.readFileSync('index.html','utf8').includes(" posesDits.forEach(e=>floatNumber(b,'✦ '+e,'perte'));"),'les états du coup montent');
 /* v0.653 — Lame empoisonnée, Poison au contact : l'adversaire le plus proche, puis tous ceux de la zone de contact au palier 2. */
@@ -5582,4 +5588,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2066 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2070 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

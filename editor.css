@@ -2232,6 +2232,11 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 /* Le bandeau d'une classe : son nom à son encre, le nombre d'effets ; un clic le replie. */
 .biblio-table tr.biblio-groupe th{padding:9px 10px 7px;text-align:left;cursor:pointer;user-select:none;font:700 11px system-ui;letter-spacing:1.6px;text-transform:uppercase;
  color:var(--encre,var(--muted));background:color-mix(in srgb,var(--encre,#8a7a63) 12%,var(--panel));border-top:1px solid color-mix(in srgb,var(--encre,#8a7a63) 40%,transparent);border-bottom:1px solid color-mix(in srgb,var(--encre,#8a7a63) 30%,transparent)}
+/* La Forge : les affixes par groupe, chaque bandeau repliable. */
+.forge-plis{display:flex;gap:6px;justify-content:flex-end;margin:0 0 6px}.forge-plis button{font:600 12px system-ui;padding:3px 9px}
+.forge-table tr.forge-groupe-tete th{padding:9px 10px 6px;text-align:left;cursor:pointer;user-select:none;font:700 11px system-ui;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
+.forge-table tr.forge-groupe-tete th::before{content:'▾';display:inline-block;width:14px;transition:transform .12s}.forge-table tbody.replie tr.forge-groupe-tete th::before{transform:rotate(-90deg)}
+.forge-table tr.forge-groupe-tete .biblio-n{margin-left:8px}.forge-table tbody.replie tr.forge-ligne{display:none}
 .biblio-table tr.biblio-groupe th::before{content:'▾';display:inline-block;width:14px;font-size:12px;transition:transform .12s;color:var(--encre,var(--muted))}
 .biblio-table tbody.replie:not(.filtre) tr.biblio-groupe th::before{transform:rotate(-90deg)}
 .biblio-table tbody.replie:not(.filtre) tr.effet-ligne{display:none}

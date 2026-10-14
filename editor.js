@@ -3566,6 +3566,13 @@ let forgeApercu=null,forgeBase='',forgeNombre='',forgeNiveau=1;
 let mesureForge={id:'forge-'+crypto.randomUUID(),base:'',affixes:['','','',''],valeurs:{}};
 function sauveForge(){scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 function openForge(){if(view!=='mj')return;renderForge();forgeDialog.showModal()}
+/* Le nom du groupe d'un affixe, dans la Forge : celui que le MJ a écrit ; sinon celui de son effet, en clair. */
+function nomGroupeAffixe(x){if(x.groupe)return x.groupe;const eff=(EFFETS_AFFIXE.find(([k])=>k===x.effet)||[])[1]||x.effet;
+ if(x.effet==='carac')return (CARACS_EQUIP.find(([k])=>k===x.carac)||[])[1]||x.carac;if(x.effet==='comp')return x.comp==='*'?'Compétence au hasard':COMPETENCES[+x.comp]||'Compétence';
+ if(x.effet==='de')return 'Dé '+((NOMS_DES.find(([k])=>k===x.de)||[])[1]||'');if(x.effet==='domination'||x.effet==='epinesEtat')return eff.split(' :')[0]+' · '+x.etat;return eff.split(' :')[0]}
+// Les groupes repliés de la Forge : l'appareil s'en souvient.
+let forgePlis=new Set();try{forgePlis=new Set(JSON.parse(localStorage.getItem('amertume-forge-plis')||'[]'))}catch(e){}
+const gardeForgePlis=()=>{try{localStorage.setItem('amertume-forge-plis',JSON.stringify([...forgePlis]))}catch(e){}};
 function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.replaceChildren();catalog.affixes=normaliseAffixes(catalog.affixes);catalog.forge=normaliseReglageForge(catalog.forge);
  const h=t=>{const x=document.createElement('h3');x.className='reglage-titre';x.textContent=t;return x};
  const bloc=t=>{const s=document.createElement('section');s.className='forge-bloc';s.append(h(t));corps.append(s);return s};
@@ -3580,15 +3587,24 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
  {const s=bloc('Affixes · '+catalog.affixes.length);
   if(catalog.affixes.length){const t=document.createElement('table');t.className='forge-table';const tete=t.createTHead().insertRow();
    ['Mot','Place','Familles','Effet','Poids','Niv.','Or',''].forEach(x=>{const th=document.createElement('th');th.textContent=x;tete.append(th)});
-   const corpsT=t.createTBody();
-   [...catalog.affixes].sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(x=>{const r=corpsT.insertRow();r.className='forge-ligne';r.tabIndex=0;
+   /* Rangés par groupe : un bandeau par groupe, qui se replie d'un clic ; deux boutons replient ou déplient tout. */
+   const groupes=new Map();[...catalog.affixes].sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).forEach(x=>{const g=nomGroupeAffixe(x);if(!groupes.has(g))groupes.set(g,[]);groupes.get(g).push(x)});
+   const noms=[...groupes.keys()].sort((x,y)=>x.localeCompare(y,'fr'));
+   const tout=document.createElement('div');tout.className='forge-plis';
+   [['Tout replier',true],['Tout déplier',false]].forEach(([txt,plie])=>{const b=document.createElement('button');b.type='button';b.textContent=txt;
+    b.onclick=()=>{if(plie)noms.forEach(n=>forgePlis.add(n));else forgePlis.clear();gardeForgePlis();renderForge()};tout.append(b)});s.append(tout);
+   noms.forEach(g=>{const corpsT=t.createTBody();corpsT.className='forge-groupe'+(forgePlis.has(g)?' replie':'');
+    const rg=corpsT.insertRow();rg.className='forge-groupe-tete';const th=document.createElement('th');th.colSpan=8;th.scope='rowgroup';
+    const nom=document.createElement('span');nom.textContent=g;const n=document.createElement('span');n.className='biblio-n';n.textContent=groupes.get(g).length;th.append(nom,n);rg.append(th);
+    th.onclick=()=>{if(forgePlis.has(g))forgePlis.delete(g);else forgePlis.add(g);gardeForgePlis();corpsT.classList.toggle('replie',forgePlis.has(g))};
+   groupes.get(g).forEach(x=>{const r=corpsT.insertRow();r.className='forge-ligne';r.tabIndex=0;
     [x.nom,({suffixe:'suffixe',avant:'avant'})[x.place]||'préfixe',x.familles.length?x.familles.map(f=>({melee:'Mêlée',ranged:'Distance',armure:'Armures'})[f]||(FAMILLES_AFFIXE.find(([k])=>k===f)||[])[1]||f).join(', '):'toutes',phraseAffixe(x),x.poids,x.niveau,orAffixe(x)].forEach(v=>{r.insertCell().textContent=String(v)});
     r.onclick=()=>openAffixe(x.id);r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openAffixe(x.id)}};
     // Dupliquer : une copie juste à côté, à corriger.
     const double=document.createElement('button');double.type='button';double.className='ico';double.textContent='⧉';double.title='Dupliquer';double.setAttribute('aria-label','Dupliquer '+x.nom);
     double.onclick=e=>{e.stopPropagation();const copie=normaliseAffixe({...structuredClone(x),id:idDomaine(),nom:(x.nom+' (copie)').slice(0,40)});
      catalog.affixes.splice(catalog.affixes.indexOf(x)+1,0,copie);sauveForge();renderForge()};
-    double.onkeydown=e=>e.stopPropagation();r.insertCell().append(double)});
+    double.onkeydown=e=>e.stopPropagation();r.insertCell().append(double)})});
    s.append(t)}
   else{const p=document.createElement('p');p.className='muted';p.textContent='Aucun affixe : rien ne se forge encore.';s.append(p)}
   const add=document.createElement('button');add.type='button';add.className='dom-ajout';add.textContent='+ Affixe';add.onclick=()=>openAffixe(null);s.append(add)}
@@ -3701,10 +3717,10 @@ function openAffixe(id){const x=id?catalog.affixes.find(a=>a.id===id):null,v=nor
   +'<span data-effet="de">'+sel('Dé','de',v.de,NOMS_DES)+'</span>'
   +'<span data-effet="etat orbesEtat domination epinesEtat">'+sel('État','etat',v.effet==='confere'?'Feu':v.etat,ETATS_JEU.map(e=>[e,e]))+'</span>'
   +'<span data-effet="confere">'+sel('État conféré','etatConfere',v.effet==='confere'?v.etat:'Blindage',ETATS_POSITIFS.map(e=>[e,e]))+sel('Usage','usage',v.usage,USAGES_AFFIXE)+'</span>'
-  +'<span data-effet="carac comp de mouvement lumiere orbesEtat vampire acceleration domination reaction epines epinesEtat">'+sel('Valeur','mode',v.variable?'echelle':'fixe',[['fixe','Fixe'],['echelle','Selon la rareté']])
+  +'<span data-effet="carac comp de mouvement lumiere orbesEtat vampire acceleration domination reaction epines epinesEtat xpVaincu fouille orKill">'+sel('Valeur','mode',v.variable?'echelle':'fixe',[['fixe','Fixe'],['echelle','Selon la rareté']])
    +'<span data-mode="fixe">'+field('Valeur fixe','valeur',v.valeur,'number','min="1" max="99"')+'</span></span>'
    // Selon la rareté : de tant à tant, pour chaque rareté, sur toute la largeur ; la pièce tire sa valeur dans l'échelle de la sienne.
-   +'<span class="affixe-echelle-ligne" data-effet="carac comp de mouvement lumiere orbesEtat vampire acceleration domination reaction epines epinesEtat"><span data-mode="echelle" class="affixe-echelle">'+['Inhabituel','Rare','Épique','Légendaire'].map((r,i)=>'<label class="echelle-rang r-'+['inhabituel','rare','mystique','epique'][i]+'"><span>'+r+'</span><span class="echelle-paire"><input type="number" name="e'+i+'a" min="1" max="99" value="'+v.echelle[i][0]+'"> à <input type="number" name="e'+i+'b" min="1" max="99" value="'+v.echelle[i][1]+'"></span></label>').join('')+'</span></span>'
+   +'<span class="affixe-echelle-ligne" data-effet="carac comp de mouvement lumiere orbesEtat vampire acceleration domination reaction epines epinesEtat xpVaincu fouille orKill"><span data-mode="echelle" class="affixe-echelle">'+['Inhabituel','Rare','Épique','Légendaire'].map((r,i)=>'<label class="echelle-rang r-'+['inhabituel','rare','mystique','epique'][i]+'"><span>'+r+'</span><span class="echelle-paire"><input type="number" name="e'+i+'a" min="1" max="99" value="'+v.echelle[i][0]+'"> à <input type="number" name="e'+i+'b" min="1" max="99" value="'+v.echelle[i][1]+'"></span></label>').join('')+'</span></span>'
   +field('Poids au tirage','poids',v.poids,'number','min="1" max="100"')+field('Niveau minimum','niveau',v.niveau,'number','min="1" max="20"')+field('Valeur en or','prix','','text','readonly tabindex="-1"')
   +field('Groupe','groupe',v.groupe,'text','maxlength="40" placeholder="vide : celui de l’effet"')+'</div>'
   +'<p class="muted">Familles d’équipement qu’il peut toucher ; aucune cochée, toutes.</p><div class="coffre-cases">'+cases+'</div>';
@@ -5833,6 +5849,9 @@ function listeNombree(noms){const n=new Map();noms.forEach(x=>n.set(x,(n.get(x)|
    sur la carte, en entier. Une seule ligne au journal, partagée à la table. */
 function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!duCoteTroupe(f)&&(Math.trunc(Number(f.xp))||0)>0);
  const xp=vaincus.reduce((s,f)=>s+Math.trunc(Number(f.xp)),0),heros=actors.filter(a=>a&&a.hero&&!a.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(a)));
+ // D'Expérience : chaque aventurier gagne en plus, par adversaire vaincu, ce que ses pièces forgées lui promettent.
+ if(heros.length&&typeof effetsForge==='function'){const nb=partants.filter(f=>f&&!duCoteTroupe(f)&&!f.orbeStatique).length;
+  if(nb)heros.forEach(h=>{const b=nb*effetsForge(h).xpVaincu;if(b>0){writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+b);if(typeof floatNumber==='function')floatNumber(h,'+'+b+' XP','gain')}})}
  if(!xp||!heros.length)return;
  heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));
  // La carte retient ce qu'elle a déjà donné : le MJ le lit à côté de son nom.
@@ -6249,8 +6268,8 @@ let scenePickerMode='foe';
 function openScenePicker(mode){if(view!=='mj')return;scenePickerMode=mode;
  sceneDialog2.querySelector('h2').textContent=mode==='foe'?'Ajouter un adversaire':'Placer un aventurier';
  $('scene-picker-note').textContent=mode==='foe'
-  ?'Glisse un modèle du bestiaire jusqu’à l’endroit voulu sur la carte. Un simple clic le pose au centre. Sans lâcher, appuie sur Maj autant de fois que tu veux d’exemplaires : ils se posent en groupe.'
-  :'Glisse un aventurier là où tu le veux sur la carte ; un simple clic le repose au centre.';
+  ?'Clique un modèle, puis clique sur la carte là où le poser ; ou glisse-le jusqu’à l’endroit voulu. Sans lâcher, appuie sur Maj autant de fois que tu veux d’exemplaires : ils se posent en groupe.'
+  :'Clique un aventurier, puis clique sur la carte là où le poser ; ou glisse-le jusqu’à l’endroit voulu.';
  $('scene-picker-new').textContent=mode==='foe'?'+ Créer un monstre au bestiaire':'+ Créer un aventurier';
  $('scene-picker-search').value='';$('scene-picker-search').oninput=renderScenePicker;
  renderScenePicker();sceneDialog2.showModal()}
@@ -6369,7 +6388,10 @@ function ligneScene(nom,image,detail,clic,poser,fiche){const f=fiche||{};
  const fleche=document.createElement('span');fleche.className='pick-etat';fleche.textContent='+';
  b.append(fleche);
  b.title=nom+(detail?' · '+detail:'');
- b.onclick=()=>{if(b.dataset.glisse){delete b.dataset.glisse;return}clic()};
+ /* Un clic choisit ; le clic suivant, sur la carte, pose à cet endroit. Échap y renonce. Le glisser pose aussi, comme avant. */
+ b.onclick=()=>{if(b.dataset.glisse){delete b.dataset.glisse;return}
+  if(!poser||typeof viserCible!=='function'){clic();return}
+  sceneDialog2.close();showPage('table');viserCible('✦ Clique sur la carte pour poser '+nom,(vise,q)=>{if(q)poser(q.x,q.y,1)},'Pose annulée.')};
  if(poser)glisserVersCarte(b,nom,image,poser,!!f.groupe);
  return b}
 function videScene(texte){const v=document.createElement('p');v.className='muted';v.textContent=texte;return v}
