@@ -128,6 +128,8 @@ function etatVivant(){const out={actors:{}};
  out.fogReset={...(typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false}),...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),
   ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{}),...(m&&m.obscuriteOff?{noirOff:true}:{}),...(typeof bruitCoupe!=='undefined'&&bruitCoupe?{bruitOff:true}:{}),...(typeof numeroCombat!=='undefined'?{cb:numeroCombat}:{})};
  if(envoiDonjon)out.fogReset.dn=envoiDonjon;
+ // La version du MJ voyage : un joueur resté sur une plus ancienne recharge sa page.
+ if(typeof IMG_V==='string'&&typeof estMJ==='function'&&estMJ())out.fogReset.v=IMG_V;
  /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
     tableaux qu'on modifie en place (états, cases, cumuls), sinon rien n'en partait. */
  return JSON.parse(JSON.stringify(out))}
@@ -250,6 +252,11 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    // L'onglet où le MJ envoie la troupe : chaque envoi porte son instant ; celui qu'on trouve en arrivant ne compte pas.
    {const pn=d.fogReset&&typeof d.fogReset.pn==='number'?d.fogReset.pn:null;
     if(ongletConnu&&pn!==null&&pn!==ongletVu&&typeof showPage==='function')showPage(String(d.fogReset.page||'table'));ongletVu=pn;ongletConnu=true}
+   /* Une version plus récente chez le MJ : la page du joueur se recharge, une fois par version, pour prendre le code à jour —
+      ses correctifs compris. */
+   {const v=d.fogReset&&typeof d.fogReset.v==='string'?d.fogReset.v:'';
+    if(v&&typeof IMG_V==='string'&&parseFloat(v)>parseFloat(IMG_V)){let deja='';try{deja=sessionStorage.getItem('amertume-recharge')||''}catch(e){}
+     if(deja!==v){try{sessionStorage.setItem('amertume-recharge',v)}catch(e){}const u=new URL(location.href);u.searchParams.set('v',v);location.replace(u.toString())}}}
    {const dn=d.fogReset&&typeof d.fogReset.dn==='number'?d.fogReset.dn:null;
     if(donjonConnu&&dn!==null&&dn!==donjonVu&&typeof annonceFlottante==='function')annonceFlottante('🏆 Donjon Terminé !','annonce-victoire');donjonVu=dn;donjonConnu=true}
    if(typeof d.locked==='boolean')tokensLocked=d.locked;
