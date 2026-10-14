@@ -1012,8 +1012,8 @@ assert.ok(src.includes('get.onsuccess=()=>{sessionLue=true;poser(get.result);fin
  assert.ok(src.includes("if(domaineRempli(s.domaine))st.put(s,'session');")&&src.includes("else{const g=st.get('session');g.onsuccess=()=>{const avant=g.result;if(avant&&domaineRempli(avant.domaine))s.domaine=avant.domaine;st.put(s,'session')}}"),'le domaine enregistré survit à une sauvegarde qui n’en a pas');}
 /* La table en ligne : ce que le joueur voit quand ça coince, et l'ordre des choses. */
 const vivant=fs.readFileSync('live.js','utf8');
-assert.ok(vivant.indexOf('onAuthStateChanged(u=>{off();r(u)})')<vivant.indexOf('await auth.signInAnonymously()'),'l’identité mémorisée revient avant toute connexion anonyme');
-assert.ok(vivant.includes("liveErreur(e));ouvreTable();return"),'un échec pour rejoindre ouvre la fenêtre');
+assert.ok(vivant.indexOf('onAuthStateChanged(u=>{off();r(u)})')<vivant.indexOf('await demandeCompte();'),'l’identité mémorisée revient avant toute demande de compte');
+assert.ok(vivant.includes("if(!auth.currentUser||auth.currentUser.isAnonymous)await demandeCompte();"),'sans compte, la fenêtre de connexion s’ouvre');
 assert.ok(vivant.includes('await publishShared(false)'),'ouvrir une table publie d’abord le contenu');
 assert.ok(vivant.includes("if(invite){view='player'"),'un invité joue en joueur');
 /* Le chargement n'attend pas une sauvegarde muette, et une erreur se lit sur le voile. */
@@ -1367,7 +1367,7 @@ assert.equal(t.toggleEquip(a,o('ar')),null);assert.equal(JSON.stringify(a.armure
  const b={weapons:['h'],armures:['ar'],shieldId:'',inventaire:[]};t.completerInventaire(b);assert.equal(JSON.stringify(b.inventaire),JSON.stringify(['h','ar']));}
 assert.ok(src.includes("a.inventaire=Array.isArray(a.inventaire)?a.inventaire.filter(x=>typeof x==='string'&&x):[];completerInventaire(a);")&&src.includes("inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire),bourse:normaliseBourse(a.bourse),...(a.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:a.alignement}),...(a.unique===true?{unique:true}:{})}:{})}}")&&src.includes("inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m),...(m.unique===true?{unique:true}:{})}:{})}}")
  &&src.includes('function toggleEquip(a,o)')&&src.includes('function dessineInventaire()')&&src.includes("sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())")&&!src.includes('function refreshGearOptions')&&!src.includes("'weapon1'")
- &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,combat?'':'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
+ &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,combat?'':'Objets');")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&tientAventurier(a));")
  &&JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')).includes('inventaire')
  &&fs.readFileSync('shared.js','utf8').includes("'pool','weapons','armures','shieldId','munitionId','auraPv',")&&page.includes("const nbGear=typeof objetDeCombat==='function'?(a.inventaire||[]).filter(id=>objetDeCombat((catalog.items||[]).find(x=>x.id===id))).length")
  &&feuille.includes('.cat-pill.gear-carre .pips{gap:2px;justify-content:center;flex-wrap:nowrap}')&&feuille.includes('.cat-pill.gear-carre.dispo{opacity:.55}')&&feuille.includes('.gear-rangee-titre{flex-basis:100%;')
@@ -1382,7 +1382,7 @@ assert.ok(src.includes("d.className='cat-detail bulle-modele-corps k-'+(m.type||
    aussi un modèle du bestiaire, et un refus dit combien de mains manquent. */
 assert.ok(src.includes('function gearPills(a,tout=true,combat=false)')&&page.includes('gearPills(a,false,true)')&&src.includes("const armurerie=tous.filter(([o])=>o.category==='weapon'||o.category==='armor');")&&src.includes("const equipement=combat?armurerie.filter(([o])=>pieceActivePortee(a,o)):armurerie.filter(([o])=>tout||portes(o));")
  &&src.includes("rangees(equipement,'');")&&src.includes("rangees(objets,combat?'':'Objets');")&&!src.includes("chev.title='Détail'")&&!src.includes("p.querySelector('.chev').onclick=deplie;")
- &&src.includes('function utiliserObjet(a,o)')&&!src.includes("'Clique l’objet pour l’utiliser.'")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);")
+ &&src.includes('function utiliserObjet(a,o)')&&!src.includes("'Clique l’objet pour l’utiliser.'")&&src.includes("const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&tientAventurier(a));")
  &&feuille.includes('.cat-pill.gear-carre .marque-porte{display:none;position:absolute;top:-6px;left:-6px;')&&feuille.includes('.gear-detail.k-object.consommable{background:#d9e7cd;')
  &&page.includes("const nbGear=typeof objetDeCombat==='function'?(a.inventaire||[]).filter(id=>objetDeCombat((catalog.items||[]).find(x=>x.id===id))).length")
  &&!src.includes('inventairesOuverts')&&!src.includes('gear-sac')&&!feuille.includes('gear-sac'),'fiche en jeu : porté et objets, coche ronde, objet utilisable');
@@ -1605,7 +1605,7 @@ assert.ok(src.includes("const sansEffet=t=>typeof manqueTalent==='function'?manq
    d'une page dessinée avant tenait l'ancienne, et restait muet chez un joueur. La fiche se
    retrouve par son identifiant. */
 assert.ok(src.includes('function acteurCourant(a){if(!a||actors.includes(a))return a;return actors.find(x=>x&&x.id===a.id)||a}')
- &&src.includes('function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&(view===\'mj\'||actors.indexOf(a)===owner)}')
+ &&src.includes('function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&tientAventurier(a)}')
  &&src.includes(' if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);')
  &&fs.readFileSync('shared.js','utf8').includes("if(typeof renderCatalogPages==='function')renderCatalogPages();")
  &&src.includes('function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;')
@@ -2714,7 +2714,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.peutAcheter(a,{price:25,magasin:true}),{ok:false,prix:25,manque:5,enVente:true});assert.equal(C.peutAcheter(a,{price:5}).ok,false,'hors magasin, pas d’achat');
  assert.equal(C.ajouteOr(a,-15),5);assert.equal(C.ajouteOr(a,-9),0);assert.deepEqual(a.richesses,{},'l’or ne descend pas sous zéro, et un compte nul disparaît');assert.equal(C.ajouteOr(a,3),3);
  assert.ok(fief.includes("const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');")
-  &&fief.includes("if(typeof enLigne!=='undefined'&&enLigne)return typeof monSiege!=='undefined'&&monSiege===a.id;"),'le lieu voyage avec l’aventurier, et son joueur seul le déplace');
+  &&fief.includes("if(typeof enLigne!=='undefined'&&enLigne)return aMoi(a)||(typeof monSiege!=='undefined'&&monSiege===a.id);"),'le lieu voyage avec l’aventurier, et son joueur seul le déplace');
  assert.ok(fief.includes("function blocDeplacements(b){const troupe=actors.filter(a=>a.hero);if(!troupe.length||!batimentConstruit(b))return null;")
   &&fief.includes("quoi.textContent=ici?'Ici':'S’y déplacer';")&&fief.includes("function finFiche(boite,b){")&&(fief.match(/boite\.append\(qui\);finFiche\(boite,b\)\}/g)||[]).length===2,'un bouton par aventurier, sur chaque fiche');
  assert.ok(fief.includes("if(!fonctionActive(b)){")&&fief.includes("if(b.fonction==='magasin')blocMagasin(out,b);")
@@ -3389,6 +3389,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.714 — Les comptes des joueurs : Amertüme (pseudo et mot de passe) ou Google ; chaque aventurier a son joueur ; un joueur ne
+   voit et ne tient que les siens, et sa table reste vide sans aventurier à lui sur la carte ; le MJ confie les siens. */
+{const ed=fs.readFileSync('editor.js','utf8'),vv=fs.readFileSync('live.js','utf8'),pg=fs.readFileSync('index.html','utf8');
+ assert.ok(pg.includes("function aMoi(a){return !!a&&!!a.hero&&typeof monUid!=='undefined'&&!!monUid&&a.joueur===monUid}")&&pg.includes('function controlled(i){return view==="mj"||(invitEnLigne()?aMoi(actors[i]):i===owner)}')
+  &&vv.includes("'imageJeton','joueur','joueurNom',")&&vv.includes("if(estMJ()&&!neuf&&(k==='joueur'||k==='joueurNom')&&!pareil(a[k],e[k])){gardes.push([id,k,structuredClone(e[k])]);return}")
+  &&vv.includes("const courrielCompte=p=>cleCompte(p)+'@joueurs.amertume-online.example.com';")&&!vv.includes('signInAnonymously')
+  &&vv.includes("document.body.classList.toggle('table-sans-heros',invitEnLigne()&&!actors.some(a=>aMoi(a)&&!a.horsCarte));")
+  &&ed.includes(" if(invitEnLigne()&&typeof monUid!=='undefined'&&monUid){a.joueur=monUid;a.joueurNom=pseudoJoueur()}")&&ed.includes("function joueursConnus(){"),'comptes et aventuriers des joueurs');}
 /* v0.713 — L'icône des dégâts après chaque bonus de dégâts ; la bulle d'un objet de soin dit « Soin », son icône, ce qu'il
    rend, et son prix ; l'usage hors combat ; l'équipement et l'arbre figés pour le seul aventurier pris dans le combat. */
 {const ed=fs.readFileSync('editor.js','utf8'),C29=require('./combat.js');
@@ -3414,7 +3422,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.709 — La liste des combattants ne garde que les aventuriers chargés sur la carte ; l'Accueil montre tous les
    aventuriers et leur emplacement ; un aventurier créé est sur la route. */
 {const ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8');
- assert.ok(ed.includes("const l=actors.filter(a=>a&&a.hero);")&&ed.includes("t.append(n,ou,d);")&&ed.includes("<h3>Aventuriers</h3>")&&dm.includes("if(lieu==='route')return 'Sur la route';")
+ assert.ok(ed.includes("const l=actors.filter(a=>a&&a.hero&&voitAventurier(a));")&&ed.includes("t.append(n,ou,d);")&&ed.includes("<h3>Aventuriers</h3>")&&dm.includes("if(lieu==='route')return 'Sur la route';")
   &&dm.includes("l==='absent'||l==='route')return;"),'route et Accueil');}
 /* v0.708 — L'équipement de départ : un lot d'armes, une armure, dix rations, trouvés au catalogue par leur nom ; l'objet
    inhabituel tiré à la création seulement, selon la classe. La bulle d'une compétence dit son usage ; plus de Gnome. */
@@ -4122,7 +4130,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("floatNumber(a,'Plus de Mouvement','nul',true)")&&carto.includes("floatNumber(a,'Action déjà dépensée','nul',true)"),'les mots flottants partagés, les refus gardés');
  assert.ok(vif.includes("const GLISSE_RETARD=220,glissements=new Map();")&&vif.includes("  if(glissements.has(a.id)){const v=glissements.get(a.id).cible;e.x=v.x;e.y=v.y}")
   &&vif.indexOf("aGlisser.forEach(a=>{const e=d.actors[a.id];glisseVers(a,e.x,e.y)});")<vif.indexOf("  base=etatVivant();\n  const change=complet"),'les socles reçus glissent, la vraie position repart');
- assert.ok(src.includes("const troupe=actors.filter(a=>a.hero&&(!assis||a.id===siege));")&&src.includes(" $('bloc-sauvegarde-globale').hidden=view!=='mj';"),'un joueur assis : son aventurier seul, pas de sauvegarde globale');
+ assert.ok(src.includes("const troupe=actors.filter(a=>a.hero&&voitAventurier(a));")&&src.includes(" $('bloc-sauvegarde-globale').hidden=view!=='mj';"),'un joueur assis : son aventurier seul, pas de sauvegarde globale');
  // Le flou à la main : une marche devient une pente, et l'encre ne se perd pas.
  const ctxF={};vm.createContext(ctxF);vm.runInContext(carto.slice(carto.indexOf('function boiteFlou('),carto.indexOf('// Dessine « src » flouté')),ctxF);
  const w=40,h=3,a=new Float32Array(w*h);for(let y=0;y<h;y++)for(let x=20;x<w;x++)a[y*w+x]=255;const total=a.reduce((s,v)=>s+v,0);
@@ -5443,4 +5451,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2010 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2011 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

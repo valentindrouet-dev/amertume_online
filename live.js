@@ -20,7 +20,7 @@
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement','mvtReste','mvtTour','opportunitesSubies',
- 'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','bondissement','decoupe','insaisisQuittes','paBonus','impulsion','coupureFatale','adieu','quetesPrises','quetesDebloquees','forges','accelM','pointsCreation','espece','enAventure','imageJeton','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan',
+ 'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','bondissement','decoupe','insaisisQuittes','paBonus','impulsion','coupureFatale','adieu','quetesPrises','quetesDebloquees','forges','accelM','pointsCreation','espece','enAventure','imageJeton','joueur','joueurNom','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan',
  'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
@@ -282,6 +282,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     /* Révélé, pour de bon : le MJ ne reprend jamais un « vu » à faux venu du réseau, il le
        renvoie à vrai. Ses propres remises à zéro passent, elles partent de chez lui. */
     if(estMJ()&&CHAMPS_ACTEUR_MJ.includes(k)&&k!=='hidden'&&a[k]===true&&e[k]===false){aRepousser.push([id,k]);return}
+    // Le joueur d'un aventurier, chez le MJ : posé à sa création par le joueur, puis par le MJ seul ; un autre changement repart.
+    if(estMJ()&&!neuf&&(k==='joueur'||k==='joueurNom')&&!pareil(a[k],e[k])){gardes.push([id,k,structuredClone(e[k])]);return}
     if(pareil(local,e[k]))return;
     // Les cibles attendent que toute la scène soit en place : leur combattant peut suivre.
     if(k==='cibles'){cibles.push([a,e[k]]);return}
@@ -450,9 +452,9 @@ function ecouterJournal(){journalPremier=true;
 function renderSieges(){const boite=$('live-sieges');if(!boite)return;boite.replaceChildren();
  if(tableId&&!estMJ()&&!(typeof remote!=='undefined'&&remote)){const p=document.createElement('p');p.className='muted';
   p.textContent='Le MJ n’a pas encore publié son contenu : fiches, images et cartes arriveront dès qu’il l’aura fait (Partager → Publier mon contenu).';boite.append(p)}
- const troupe=actors.filter(a=>a.hero);
+ const troupe=actors.filter(a=>a.hero&&voitAventurier(a));
  if(!troupe.length){const v=document.createElement('p');v.className='muted';
-  v.textContent='Aucun aventurier dans la scène publiée.';boite.append(v);return}
+  v.textContent=invitEnLigne()?'Crée ton aventurier depuis l’Accueil.':'Aucun aventurier dans la scène publiée.';boite.append(v);return}
  troupe.forEach(a=>{
   const occupant=Object.entries(sieges).find(([,s])=>s&&s.actorId===a.id);
   const b=document.createElement('button');
@@ -474,16 +476,21 @@ function renderSieges(){const boite=$('live-sieges');if(!boite)return;boite.repl
   b.disabled=!!occupant&&occupant[0]!==monUid;
   b.onclick=()=>monSiege===a.id?libererSiege():prendreSiege(a);
   boite.append(b)})}
-async function prendreSiege(a){if(!siegesRef||!monUid)return;
- try{await siegesRef.doc(monUid).set({actorId:a.id,nom:a.name,at:firebase.firestore.FieldValue.serverTimestamp()});
+async function prendreSiege(a){if(!siegesRef||!monUid||!tientAventurier(a))return;
+ try{await siegesRef.doc(monUid).set({actorId:a.id,nom:pseudoJoueur(),at:firebase.firestore.FieldValue.serverTimestamp()});
   monSiege=a.id;localStorage.setItem(TABLE_CLE+'-siege',a.id);
   const i=actors.findIndex(x=>x.id===a.id);
   if(i>=0){owner=i;selected=i;markOnly(i);$('owner').value=String(i)}
   if(!estMJ()){view='player';$('view').value='player'}
   render();renderSieges();liveStatus('Tu incarnes '+a.name+'.')}
  catch(e){liveStatus('Siège refusé. '+liveErreur(e))}}
+// Le pseudo du joueur : celui de son compte.
+function pseudoJoueur(){const u=typeof auth!=='undefined'&&auth&&auth.currentUser;return String(u&&u.displayName||'Joueur').trim().slice(0,30)||'Joueur'}
+/* Un joueur qui rejoint se signale à la table sous son pseudo, même sans aventurier : le MJ le voit, et peut lui en confier un. */
+async function signaleJoueur(){if(!siegesRef||!monUid||estMJ())return;const ref=siegesRef.doc(monUid),at=firebase.firestore.FieldValue.serverTimestamp();
+ try{const d=await ref.get();if(d.exists)await ref.update({nom:pseudoJoueur(),at});else await ref.set({actorId:'',nom:pseudoJoueur(),at})}catch(e){}}
 async function libererSiege(){if(!siegesRef||!monUid)return;
- try{await siegesRef.doc(monUid).delete();monSiege=null;localStorage.removeItem(TABLE_CLE+'-siege');
+ try{await siegesRef.doc(monUid).set({actorId:'',nom:pseudoJoueur(),at:firebase.firestore.FieldValue.serverTimestamp()});monSiege=null;localStorage.removeItem(TABLE_CLE+'-siege');
   renderSieges();liveStatus('Siège libéré.')}catch(e){liveStatus(liveErreur(e))}}
 
 /* ---------- Ouvrir, rejoindre ---------- */
@@ -549,6 +556,7 @@ function majTable(){const ouvert=!!tableId,pret=!!cloud&&typeof firebase!=='unde
   :!connecte?'Connecte-toi d’abord avec ton compte MJ.'
   :'Ce compte n’est pas encore autorisé comme MJ.');
  montre('live-login',!ouvert&&!mj,!pret,'La bibliothèque Firebase n’est pas chargée.');
+ {const l=$('live-login');if(l)l.textContent=tableVoulue?'Se connecter':'Connexion MJ'}
  montre('live-close',ouvert&&mj,false,'');
  montre('live-quit',ouvert&&!mj,false,'');
  montre('live-copy',ouvert,false,'');
@@ -580,8 +588,32 @@ const liveButton=document.createElement('button');liveButton.id='open-live';
 liveButton.textContent='Table en ligne';liveButton.onclick=()=>{renderSieges();majTable();liveDialog.showModal()};
 document.querySelector('.view-controls').append(liveButton);
 $('live-open').onclick=ouvrirTable;
-$('live-login').onclick=()=>{const b=$('shared-login');if(b)b.click();
+$('live-login').onclick=()=>{if(tableVoulue){demandeCompte();return}const b=$('shared-login');if(b)b.click();
  liveStatus('Fenêtre de connexion Google ouverte…')};
+/* ---------- Le compte d'un joueur ----------
+   Un compte Amertüme : un pseudo et un mot de passe, sans adresse e-mail — Firebase en garde une, faite du pseudo. Ou Google. */
+const compteDialog=dialog('compte-joueur','Rejoindre la table','<form id="compte-form" autocomplete="on"><label>Pseudo<input name="pseudo" maxlength="24" autocomplete="username" required></label>'
+ +'<label>Mot de passe<input name="mdp" type="password" minlength="6" autocomplete="current-password"></label>'
+ +'<div class="form-actions compte-actions"><button type="button" id="compte-creer">Créer mon compte</button><button type="submit" class="primary">Se connecter</button></div>'
+ +'<div class="compte-ou"><button type="button" id="compte-google">Continuer avec Google</button></div><p class="form-error" id="compte-erreur" role="alert"></p></form>');
+let compteAttente=[];
+const cleCompte=p=>String(p||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+const courrielCompte=p=>cleCompte(p)+'@joueurs.amertume-online.example.com';
+function erreurCompte(e){const c=String(e&&e.code||'');
+ return c==='pseudo'?'Pseudo trop court : trois lettres ou chiffres au moins.':/email-already-in-use/.test(c)?'Ce pseudo est déjà pris.':/wrong-password|invalid-credential|user-not-found|invalid-login/.test(c)?'Pseudo ou mot de passe incorrect.'
+  :/weak-password/.test(c)?'Mot de passe trop court : six caractères au moins.':/operation-not-allowed/.test(c)?'Ce mode de connexion n’est pas activé dans Firebase.'
+  :/popup-closed|cancelled-popup/.test(c)?'':/too-many-requests/.test(c)?'Trop d’essais : patiente un instant.':'Connexion impossible. '+(e&&e.message||'')}
+function demandeCompte(){return new Promise(r=>{if(auth&&auth.currentUser&&!auth.currentUser.isAnonymous){r(auth.currentUser);return}
+ compteAttente.push(r);$('compte-erreur').textContent='';if(!compteDialog.open)compteDialog.showModal()})}
+async function compteFait(pseudo){const u=auth.currentUser;if(!u)return;
+ if(pseudo&&(!u.displayName||u.displayName!==pseudo))try{await u.updateProfile({displayName:pseudo})}catch(e){}
+ compteDialog.close();const l=compteAttente;compteAttente=[];l.forEach(f=>f(u))}
+async function compteAvec(fait){const f=$('compte-form').elements,pseudo=f.pseudo.value.trim();$('compte-erreur').textContent='';
+ try{await fait(pseudo,f.mdp.value);await compteFait(pseudo||null)}catch(e){$('compte-erreur').textContent=erreurCompte(e)}}
+const pseudoValide=p=>cleCompte(p).length>=3||(()=>{throw {code:'pseudo'}})();
+$('compte-form').onsubmit=e=>{e.preventDefault();compteAvec((p,m)=>{pseudoValide(p);return auth.signInWithEmailAndPassword(courrielCompte(p),m)})};
+$('compte-creer').onclick=()=>compteAvec((p,m)=>{pseudoValide(p);return auth.createUserWithEmailAndPassword(courrielCompte(p),m)});
+$('compte-google').onclick=()=>compteAvec(()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
 document.addEventListener('amertume-mj-change',majTable);
 document.addEventListener('amertume-firebase-prete',majTable);
 $('live-close').onclick=fermerTable;
@@ -610,18 +642,20 @@ document.addEventListener('amertume-firebase-prete',async()=>{
   auth.onAuthStateChanged(u=>{monUid=u?u.uid:null;majTable()});
   const rouvre=()=>{if(!estMJ()||enLigne||localStorage.getItem(TABLE_CLE)!==code||!auth.currentUser)return;monUid=auth.currentUser.uid;brancherTable(code)};
   document.addEventListener('amertume-mj-change',rouvre);rouvre();return}
- try{if(!deja)await auth.signInAnonymously()}catch(e){
-  liveStatus('Impossible de rejoindre la table. '+liveErreur(e));ouvreTable();return}
+ /* Un joueur rejoint avec son compte : Amertüme, pseudo et mot de passe, ou Google. Une identité anonyme d'avant s'efface : elle
+    ne retrouverait pas ses aventuriers d'un appareil à l'autre. */
+ if(deja&&deja.isAnonymous){try{await auth.signOut()}catch(e){}}
+ if(!auth.currentUser||auth.currentUser.isAnonymous)await demandeCompte();
  monUid=auth.currentUser?auth.currentUser.uid:null;
  auth.onAuthStateChanged(u=>{monUid=u?u.uid:null;majTable()});
  brancherTable(code);
  // Un invité joue en joueur, avec le contenu publié s'il est déjà arrivé : sinon il
- // n'aurait que la scène de cet appareil, et rien pour le lui dire.
- const invite=!!(auth.currentUser&&auth.currentUser.isAnonymous);
+ // n'aurait que la scène de cet appareil, et rien pour le lui dire. Le MJ se reconnaît d'abord.
+ for(let k=0;k<50&&typeof adminConnu!=='undefined'&&!adminConnu;k++)await new Promise(r=>setTimeout(r,100));
+ const invite=!estMJ();if(invite)signaleJoueur();
  if(invite){view='player';$('view').value='player';
   if(typeof remote!=='undefined'&&remote&&typeof applyRemote==='function')applyRemote();else render()}
- liveStatus('Table rejointe. Choisis l’aventurier que tu incarnes.');
- setTimeout(()=>{if(!monSiege&&invite)ouvreTable()},1200)});
+ liveStatus('Table rejointe.');});
 
 /* Un invité joue, il ne dirige pas : ni la vue MJ, ni le choix d'un autre aventurier (son
    siège est son aventurier), ni le partage. Ses onglets sont ceux que le MJ ouvre aux joueurs.
@@ -637,7 +671,9 @@ let vueImposee=false;
 const renderAvantTable=render;render=function(){let rendre=false;
  if(spectateur()&&view!=='player'){view='player';$('view').value='player';vueImposee=true}
  else if(vueImposee&&!spectateur()){vueImposee=false;view=vueChoisie()||'mj';$('view').value=view;rendre=true}
- renderAvantTable();verrouillerInvite();pousserPlusTard();if(rendre&&typeof rendPage==='function')rendPage()};
+ renderAvantTable();verrouillerInvite();pousserPlusTard();
+ // Un joueur dont aucun aventurier n'est sur la carte ne voit rien de la table.
+ document.body.classList.toggle('table-sans-heros',invitEnLigne()&&!actors.some(a=>aMoi(a)&&!a.horsCarte));if(rendre&&typeof rendPage==='function')rendPage()};
 // Ce qui s'enregistre part aussi : une fiche corrigée dans l'onglet Aventuriers n'attend pas le prochain rendu de la table.
 const scheduleSaveAvantTable=scheduleSave;scheduleSave=function(){scheduleSaveAvantTable.apply(this,arguments);pousserPlusTard()};
 majTable();

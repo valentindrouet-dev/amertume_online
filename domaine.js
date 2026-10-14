@@ -92,7 +92,7 @@ function evacueNonConstruits(){let n=0;actors.forEach(a=>{if(!a.hero)return;cons
 /* Qui agit pour un aventurier : le MJ, pour tous ; en ligne, le joueur assis à sa place ;
    sur un seul appareil, celui de « Mon aventurier ». */
 function agitPour(a){if(!a)return false;if(mjDom())return true;
- if(typeof enLigne!=='undefined'&&enLigne)return typeof monSiege!=='undefined'&&monSiege===a.id;
+ if(typeof enLigne!=='undefined'&&enLigne)return aMoi(a)||(typeof monSiege!=='undefined'&&monSiege===a.id);
  return actors.indexOf(a)===owner}
 function nomLieu(lieu){if(lieu==='aventure')return 'En aventure';if(lieu==='route')return 'Sur la route';if(lieu==='absent')return 'Absent';
  const b=lieu?batimentDom(lieu):null;return b?b.nom:'Au domaine'}

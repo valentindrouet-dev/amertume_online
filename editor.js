@@ -18,6 +18,9 @@ function normalizeActor(a){a.id??=crypto.randomUUID();
   if(p.endu+p.vie+p.dmg>3||!(p.endu+p.vie+p.dmg))delete a.pointsCreation;else a.pointsCreation=p}else delete a.pointsCreation;
  // Son espèce, quand elle est de la table : une autre ne compte pas.
  if(!especeDe(a.espece))delete a.espece;
+ // Son joueur, à une table en ligne : son identifiant et son pseudo, ou personne.
+ if(typeof a.joueur!=='string'||!/^[A-Za-z0-9_-]{6,128}$/.test(a.joueur)){delete a.joueur;delete a.joueurNom}
+ else if(typeof a.joueurNom!=='string'||!a.joueurNom.trim())delete a.joueurNom;else a.joueurNom=a.joueurNom.trim().slice(0,30);
  // Part à l'aventure : coché par le MJ, ou rien.
  if(a.enAventure!==true)delete a.enAventure;
  // L'image qu'un joueur a donnée à son aventurier : une image en ligne, légère.
@@ -1086,6 +1089,11 @@ function origineAventurier(a){const g=a.sexe==='Femme'?'♀':a.sexe==='Homme'?'�
  const s=document.createElement('span');s.className='sheet-origine';
  if(g){const i=document.createElement('span');i.className='origine-genre';i.textContent=g;i.setAttribute('aria-label',a.sexe);s.append(i)}
  if(r)s.append(r);return s}
+/* Les joueurs que le MJ connaît : ceux qui sont venus à la table, sous leur pseudo, et ceux à qui un aventurier appartient
+   déjà, même absents. */
+function joueursConnus(){const m=new Map();actors.forEach(a=>{if(a&&a.hero&&a.joueur)m.set(a.joueur,a.joueurNom||'Joueur')});
+ if(typeof sieges!=='undefined')Object.entries(sieges).forEach(([uid,s])=>{if(s&&typeof s.nom==='string'&&s.nom.trim()&&(typeof monUid==='undefined'||uid!==monUid))m.set(uid,s.nom.trim().slice(0,30))});
+ return [...m.entries()].sort((x,y)=>x[1].localeCompare(y[1],'fr'))}
 // Ceux qui prennent part à l'aventure : les aventuriers cochés par le MJ, ou tous quand aucun ne l'est.
 function prendPartAventure(a){return !!a&&!!a.hero&&(a.enAventure===true||!actors.some(h=>h&&h.hero&&h.enAventure===true))}
 function heroCard(a,i){const c=document.createElement('article');c.className='hero-card';
@@ -1140,9 +1148,15 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // Un Mystique porte son élément à côté de sa classe, à la couleur de l'élément.
  const el=elementDe(a),elem=el?document.createElement('span'):null;
  if(elem){elem.className='sheet-class sheet-element el-'+el.cle;elem.textContent=el.nom.toUpperCase();elem.style.color=elem.style.borderColor=el.teinte||teinte}
- const origine=a.hero?origineAventurier(a):null;
+ const origine=a.hero?origineAventurier(a):null;let joueurEl=null;
+ // Le MJ confie l'aventurier à un joueur : sans joueur, il reste au MJ, et aucun joueur ne le voit.
+ if(a.hero&&view==='mj'){const qui=document.createElement('select');qui.className='hero-joueur';qui.setAttribute('aria-label','Joueur de '+a.name);
+  qui.add(new Option('MJ',''));joueursConnus().forEach(([uid,nom])=>qui.add(new Option(nom,uid)));qui.value=a.joueur||'';
+  qui.onchange=()=>{const j=joueursConnus().find(([u])=>u===qui.value);if(j){a.joueur=j[0];a.joueurNom=j[1]}else{delete a.joueur;delete a.joueurNom}
+   scheduleSave();if(typeof pousserBientot==='function')pousserBientot()};joueurEl=qui}
  tete.append(...(part?[part]:[]),jeton,titre,...(origine?[origine]:[]),classe,...(elem?[elem]:[]),outils);
  const puces=document.createElement('div');puces.className='chips';
+ if(joueurEl)puces.append(joueurEl);
  const marques=[];if(!a.hero){if(a.sexe)marques.push([(a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe]);
  if(a.race)marques.push([a.race])}
  // Le niveau et l'expérience sont des chiffres de fiche : ils se corrigent d'un clic.
@@ -1209,16 +1223,15 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,corpsEtSac(a));return c}
 function renderHeroes(){syncForges();const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
- /* À une table en ligne, un joueur ne voit que son aventurier : toutes les fiches sont au MJ. */
- const assis=typeof spectateur==='function'&&spectateur(),siege=typeof monSiege!=='undefined'?monSiege:null;
- const troupe=actors.filter(a=>a.hero&&(!assis||a.id===siege));
+ /* À une table en ligne, un joueur ne voit que ses aventuriers : ceux qu'il a créés, ou que le MJ lui a confiés. */
+ const troupe=actors.filter(a=>a.hero&&voitAventurier(a));
  // La maîtrise d'une classe s'acquiert avec la classe : on la pose avant de dessiner.
  // Chercher dans quatre fiches n'a pas de sens : le champ ne paraît qu'à partir de neuf.
  $('hero-filtres').hidden=troupe.length<9&&!q;
  const heros=troupe.filter(a=>!q||a.name.toLowerCase().includes(q));
  grille.classList.toggle('une-fiche',heros.length===1);
  heros.forEach((a,i)=>grille.append(heroCard(a,i)));
- if(!heros.length&&!assis){const v=document.createElement('p');v.className='muted';
+ if(!heros.length&&!invitEnLigne()){const v=document.createElement('p');v.className='muted';
   v.textContent=q?'Aucun aventurier de ce nom.':'Aucun aventurier dans la troupe.';grille.append(v)}}
 $('hero-search').oninput=renderHeroes;
 $('hero-add').onclick=()=>openActor(null,true);
@@ -1819,7 +1832,7 @@ const SILHOUETTE='<img class="silhouette" src="'+imgUrl('PERSO.png')+'" alt="" a
    la reposer ; le clic fait de même. Une pièce sans place libre prend celle de la plus
    ancienne. */
 function corpsEtSac(a){const out=document.createElement('div');out.className='corps-sac';
- const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);
+ const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&tientAventurier(a));
  const possede=(a.inventaire&&a.inventaire.length)?a.inventaire:[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean);
  const comptes=new Map();possede.map(objetDe).filter(Boolean).forEach(o=>comptes.set(o,(comptes.get(o)||0)+1));
  const portes=o=>o.category==='weapon'?gearCount(a,o.id):o.category==='ammo'?(o.id===a.munitionId?(comptes.get(o)||0):0):o.id===a.shieldId?1:armuresDe(a).filter(x=>x===o.id).length;
@@ -1976,7 +1989,7 @@ function gearPills(a,tout=true,combat=false){const out=document.createElement('d
  const equipement=combat?armurerie.filter(([o])=>pieceActivePortee(a,o)):armurerie.filter(([o])=>tout||portes(o));
  const objets=tous.filter(([o])=>o.category!=='weapon'&&o.category!=='armor'&&(!combat||objetDeCombat(o)));
  if(!equipement.length&&!objets.length){const v=document.createElement('span');v.className='muted';v.textContent=combat?'Aucun objet de combat':'Aucun équipement';out.append(v);return out}
- const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&i===owner);
+ const i=actors.indexOf(a),peutEquiper=view==='mj'||(i>=0&&tientAventurier(a));
  const PAR_LIGNE=6;
  const rangees=(liste,titre)=>{if(!liste.length)return;
   if(titre){const t=document.createElement('span');t.className='gear-rangee-titre';t.textContent=titre;out.append(t)}
@@ -3666,7 +3679,7 @@ function renderActualites(){const boite=$('accueil-actus');if(!boite)return;boit
  const ul=document.createElement('ul');ul.className='accueil-liste';(lignes||[]).forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.append(li)});boite.append(ul)}
 // Les aventuriers présents au domaine : ni partis en aventure, ni absents.
 function aventuriersActifs(){const lieu=a=>typeof lieuDe==='function'?lieuDe(a):(a.lieuDomaine||'');return actors.filter(a=>a&&a.hero&&!['aventure','absent','route'].includes(lieu(a)))}
-function renderActifs(){const boite=$('accueil-actifs');if(!boite)return;boite.replaceChildren();const l=actors.filter(a=>a&&a.hero);
+function renderActifs(){const boite=$('accueil-actifs');if(!boite)return;boite.replaceChildren();const l=actors.filter(a=>a&&a.hero&&voitAventurier(a));
  if(!l.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun aventurier.';boite.append(p);return}
  l.forEach(a=>{const c=document.createElement('div');c.className='accueil-heros';const classe=classeDe(catalog.classes,a.role);
   const av=document.createElement('span');av.className='accueil-avatar';if(classe&&classe.tint)av.style.setProperty('--teinte',classe.tint);
@@ -3836,6 +3849,8 @@ function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>e
  const tiree=tirePieceDepart(c.role);if(tiree){a.forges=[tiree];a.inventaire.push(tiree.id)}
  // Et sa bourse : 10d6 pièces d'or.
  const or=Array.from({length:10},()=>1+Math.floor(Math.random()*6)).reduce((s,n)=>s+n,0);
+ // Créé par un joueur à une table en ligne : il lui appartient, et le MJ le voit arriver.
+ if(invitEnLigne()&&typeof monUid!=='undefined'&&monUid){a.joueur=monUid;a.joueurNom=pseudoJoueur()}
  // Son image : chez un joueur, elle part aussi par la table, pour que le MJ la reçoive.
  if(c.image){a.image=c.image;if(view!=='mj')a.imageJeton=c.image}
  normalizeActor(a);ajouteOr(a,or);a.max=Math.max(1,pvMaximum(catalog.classes,a,catalog.talents,catalog.items));
@@ -4682,7 +4697,7 @@ function noteArbres(texte){const n=$('arbres-note');n.textContent=texte||'';n.hi
 function acteurCourant(a){if(!a||actors.includes(a))return a;return actors.find(x=>x&&x.id===a.id)||a}
 // Le MJ ouvre l'arbre de n'importe quelle fiche ; un joueur, celui de son aventurier.
 // Seul un aventurier a un arbre : un adversaire prend ses talents dans une liste.
-function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&(view==='mj'||actors.indexOf(a)===owner)}
+function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&tientAventurier(a)}
 // Seule une classe du jeu a un arbre : ni les génériques, ni les familles d'adversaires.
 function aUnArbre(f){return !!f&&f!==GENERIQUES&&(catalog.classes||[]).some(c=>c&&c.name===f)}
 function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;
@@ -6348,7 +6363,7 @@ let sessionRepondue=false;
 let sessionLue=false;
 function loadSession(){
  const poser=s=>{try{if(verifieSauvegarde(s))return;
-   if(!loading){const invite=typeof auth!=='undefined'&&auth&&auth.currentUser&&auth.currentUser.isAnonymous;if(invite)return}
+   if(!loading){const invite=typeof auth!=='undefined'&&auth&&auth.currentUser&&(auth.currentUser.isAnonymous||invitEnLigne());if(invite)return}
    appliquerSauvegarde(s);
    if(!loading){if(typeof refreshMapPick==='function')refreshMapPick();renderCatalogPages();render();
     if(typeof reappliquerTable==='function')reappliquerTable()}}

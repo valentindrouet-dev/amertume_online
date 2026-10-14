@@ -8,18 +8,27 @@ Compte à utiliser : le tien, celui qui est déjà MJ.
 
 ---
 
-## 1. Autoriser tes joueurs à se connecter sans compte
+## 1. Autoriser tes joueurs à se créer un compte
 
-Tes amis ne doivent rien créer. Firebase leur donnera une identité anonyme, le
-temps de la partie.
+Depuis la v0.714, un joueur rejoint la table avec son compte : un **compte
+Amertüme** (un pseudo et un mot de passe, sans adresse e-mail) ou son compte
+**Google**. C'est ce compte qui lui rend ses aventuriers, d'un appareil à
+l'autre et d'une séance à l'autre.
 
 1. Menu de gauche → **Build** → **Authentication**.
 2. Onglet **Sign-in method** (Méthode de connexion).
-3. Dans la liste des fournisseurs, clique **Anonymous** (Anonyme).
-   S’il n’apparaît pas, clique d’abord **Add new provider**.
-4. Bascule **Enable** (Activer) → **Save** (Enregistrer).
+3. Clique **Email/Password** (Adresse e-mail/Mot de passe). S’il n’apparaît pas,
+   clique d’abord **Add new provider**.
+4. Bascule le premier **Enable** (Activer), laisse *Email link* désactivé →
+   **Save** (Enregistrer).
+5. Vérifie que **Google** est bien **Enabled** : c'est déjà le cas, ton compte
+   MJ s'en sert.
 
-✅ *Anonymous* doit afficher **Enabled**.
+✅ *Email/Password* et *Google* doivent afficher **Enabled**.
+
+Un compte Amertüme n'a pas d'adresse e-mail : un mot de passe oublié ne se
+récupère pas. Le joueur se crée un nouveau compte, et tu lui confies ses
+aventuriers depuis l'onglet **Aventuriers**.
 
 ## 2. Vérifier que le site est autorisé
 
@@ -92,8 +101,16 @@ Dans l’application, dans cet ordre :
    changé dans ton contenu, puis un code est tiré.
 4. **Copier le lien** et l’envoyer à tes joueurs.
 
-Tes joueurs ouvrent le lien : rien à installer, aucun compte. La fenêtre
-s’ouvre, ils choisissent l’aventurier qu’ils incarnent, et vous jouez.
+Tes joueurs ouvrent le lien : rien à installer. La fenêtre **Rejoindre la
+table** leur demande de se connecter, ou de se créer un compte Amertüme d'un
+pseudo et d'un mot de passe, ou de passer par Google. Un nouveau joueur crée
+ensuite son aventurier depuis l'**Accueil** : il lui appartient, et tu le vois
+arriver dans ton onglet **Aventuriers**.
+
+Un joueur ne voit que ses aventuriers. Les tiens lui restent cachés, sauf ceux
+que tu lui confies : sur leur fiche, onglet **Aventuriers**, le menu **MJ**
+liste les joueurs venus à la table, sous leur pseudo. Tant qu'aucun de ses
+aventuriers n'est sur la carte, la Table de jeu reste vide chez lui.
 Le journal de combat est commun : chaque ligne écrite d’un côté paraît de
 l’autre, et qui rejoint la table reçoit les soixante dernières.
 
@@ -131,7 +148,7 @@ Ce qui reste à ta main :
 | Pas encore autorisé comme MJ | Étape 4 |
 | Règles Firestore incomplètes ou périmées pour la table | Étape 3. Si le bloc est déjà là mais que l’envoi échoue, sa liste `hasOnly([...])` doit contenir `'mode'` (v0.181) |
 | Journal non partagé. Règles Firestore… | Le sous-bloc `match /journal/{ligne}` (v0.182) manque dans `amertume_online_live` — étape 3 |
-| Connexion anonyme désactivée | Étape 1 |
+| Ce mode de connexion n’est pas activé dans Firebase | Étape 1 |
 | Cette table n’existe plus | Le MJ a fermé la table, ou le lien est périmé |
 
 Chez un joueur, la fenêtre *Table en ligne* s’ouvre d’elle-même et dit ce qui
