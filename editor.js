@@ -18,6 +18,10 @@ function normalizeActor(a){a.id??=crypto.randomUUID();
   if(p.endu+p.vie+p.dmg>3||!(p.endu+p.vie+p.dmg))delete a.pointsCreation;else a.pointsCreation=p}else delete a.pointsCreation;
  // Son espèce, quand elle est de la table : une autre ne compte pas.
  if(!especeDe(a.espece))delete a.espece;
+ // Part à l'aventure : coché par le MJ, ou rien.
+ if(a.enAventure!==true)delete a.enAventure;
+ // L'image qu'un joueur a donnée à son aventurier : une image en ligne, légère.
+ if(typeof a.imageJeton!=='string'||!/^data:image\/(webp|png|jpeg);base64,/.test(a.imageJeton)||a.imageJeton.length>200000)delete a.imageJeton;
 a.role=ombrelame(a.role);a.munitionId??='';a.depots=normaliseDepots(a.depots);a.forges=normaliseForges(a.forges);
  // Les zones fouillées par la Perception : la carte, le centre et le rayon, rien d'autre.
  a.fouilles=Array.isArray(a.fouilles)?a.fouilles.filter(f=>f&&Number.isFinite(+f.x)&&Number.isFinite(+f.y)&&+f.r>0).slice(-200).map(f=>({m:String(f.m||'').slice(0,80),x:+f.x,y:+f.y,r:Math.min(1,+f.r),...(Number.isInteger(f.n)&&f.n>=0?{n:Math.min(99,f.n)}:{})})):[];
@@ -1073,8 +1077,19 @@ $('richesses-form').onsubmit=e=>{e.preventDefault();bougeRichesse(1)};$('richess
 function ressusciter(a){if(view!=='mj'||!estMort(a))return;
  a.vie=1;a.comaVie=false;a.horsCarte=false;a.states=[];a.cumuls={};a.bleed=0;if(typeof recalculerPV==='function')recalculerPV(a);a.hp=a.max;
  renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+// Le genre en symbole, puis l'espèce : à gauche de la classe, sur la page Aventuriers comme à la table.
+function origineAventurier(a){const g=a.sexe==='Femme'?'♀':a.sexe==='Homme'?'♂':'',r=String(a.race||'').trim();if(!g&&!r)return null;
+ const s=document.createElement('span');s.className='sheet-origine';
+ if(g){const i=document.createElement('span');i.className='origine-genre';i.textContent=g;i.setAttribute('aria-label',a.sexe);s.append(i)}
+ if(r)s.append(r);return s}
+// Ceux qui prennent part à l'aventure : les aventuriers cochés par le MJ, ou tous quand aucun ne l'est.
+function prendPartAventure(a){return !!a&&!!a.hero&&(a.enAventure===true||!actors.some(h=>h&&h.hero&&h.enAventure===true))}
 function heroCard(a,i){const c=document.createElement('article');c.className='hero-card';
  const tete=document.createElement('div');tete.className='hero-head';
+ // En haut à gauche, la case de l'aventure : le MJ seul la coche.
+ const part=a.hero?document.createElement('input'):null;
+ if(part){part.type='checkbox';part.className='hero-aventure';part.checked=a.enAventure===true;part.disabled=view!=='mj';part.setAttribute('aria-label',a.name+' part à l’aventure');
+  part.onchange=()=>{if(view!=='mj')return;if(part.checked)a.enAventure=true;else delete a.enAventure;scheduleSave();if(typeof pousserBientot==='function')pousserBientot()}}
  const jeton=document.createElement('span');jeton.className='avatar';
  if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';jeton.append(im)}
  else jeton.textContent=(a.name||'?')[0];
@@ -1121,10 +1136,11 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // Un Mystique porte son élément à côté de sa classe, à la couleur de l'élément.
  const el=elementDe(a),elem=el?document.createElement('span'):null;
  if(elem){elem.className='sheet-class sheet-element el-'+el.cle;elem.textContent=el.nom.toUpperCase();elem.style.color=elem.style.borderColor=el.teinte||teinte}
- tete.append(jeton,titre,classe,...(elem?[elem]:[]),outils);
+ const origine=a.hero?origineAventurier(a):null;
+ tete.append(...(part?[part]:[]),jeton,titre,...(origine?[origine]:[]),classe,...(elem?[elem]:[]),outils);
  const puces=document.createElement('div');puces.className='chips';
- const marques=[];if(a.sexe)marques.push([(a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe]);
- if(a.race)marques.push([a.race]);
+ const marques=[];if(!a.hero){if(a.sexe)marques.push([(a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe]);
+ if(a.race)marques.push([a.race])}
  // Le niveau et l'expérience sont des chiffres de fiche : ils se corrigent d'un clic.
  // Un aventurier tient son niveau de son XP : seul celui d'un adversaire se corrige à la main.
  // Chez un aventurier, le niveau se lit dans sa classe et l'XP avec ses chiffres.
@@ -3666,7 +3682,7 @@ const USAGES_COMPETENCES={Ruse:'Larcin, déverrouiller un coffre ou y chercher u
 const NOMS_CARACS_CREATION={vie:'Vie',endu:'Endurance',dmg:'Dégâts',pv:'PV max'};
 const creationDialog=dialog('creation-aventurier','Créer un aventurier','<nav id="creation-etapes" class="creation-etapes"></nav><div id="creation-corps" class="creation-corps"></div><div class="form-actions"><button type="button" id="creation-prec">Précédent</button><button type="button" id="creation-suiv" class="primary">Suivant</button></div>');
 let creation=null;
-function openCreation(){creation={etape:0,name:'',sexe:'',espece:'',role:'',caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
+function openCreation(){creation={etape:0,name:'',sexe:'',image:'',espece:'',role:'',caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
 const restantCaracs=c=>POINTS_CARACS-c.caracs.endu-c.caracs.vie-c.caracs.dmg,restantComps=c=>POINTS_COMPS-c.skills.reduce((s,n)=>s+n,0);
 const especeCreation=c=>especeDe(c.espece),compsEspece=c=>bonusEspece({hero:true,espece:c.espece}).skills;
 const valeursCreation=c=>{const e=bonusEspece({hero:true,espece:c.espece});return {vie:BASE_HEROS.vieMax+c.caracs.vie+e.vie,endu:BASE_HEROS.endu+2*c.caracs.endu+e.endu,dmg:BASE_HEROS.dmg+c.caracs.dmg+e.dmg}};
@@ -3706,11 +3722,18 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
   return bonus};
  if(k==='identite'){const n=inp('text',c.name,v=>{c.name=v.slice(0,120);majBoutons()},{maxlength:'120',placeholder:'Nom de l’aventurier'});
   const s=document.createElement('select');[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']].forEach(([v,t])=>s.add(new Option(t,v)));s.value=c.sexe;s.onchange=()=>{c.sexe=s.value};
-  corps.append(lab('Nom',n),lab('Sexe',s));setTimeout(()=>n.focus())}
+  // L'illustration du token : importée et optimisée comme celles du MJ.
+  const jeton=document.createElement('div');jeton.className='creation-champ';const tj=document.createElement('span');tj.textContent='Illustration du token';
+  const im=document.createElement('img');im.className='preview-token';im.alt='Token';if(c.image)im.src=c.image;else im.hidden=true;
+  const fi=document.createElement('input');fi.type='file';fi.accept='image/png,image/jpeg,image/webp';fi.hidden=true;
+  fi.onchange=()=>{const x=fi.files[0];fi.value='';if(x)openImage(x,'token',url=>{if(creation!==c)return;c.image=url;renderCreation()},true)};
+  const imp=document.createElement('button');imp.type='button';imp.textContent='Importer et optimiser';imp.onclick=()=>fi.click();
+  const ret=document.createElement('button');ret.type='button';ret.textContent='Retirer l’image';ret.hidden=!c.image;ret.onclick=()=>{c.image='';renderCreation()};
+  const barre=document.createElement('div');barre.className='toolbar';barre.append(imp,ret);jeton.append(tj,im,barre,fi);
+  corps.append(lab('Nom',n),lab('Sexe',s),jeton);setTimeout(()=>n.focus())}
  else if(k==='espece'){const g=document.createElement('div');g.className='creation-classes';
   ESPECES.forEach(e=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.espece===e.id?' on':'');b.style.setProperty('--teinte',e.teinte);
-   const n=document.createElement('b');n.textContent=e.nom;const p=document.createElement('small');
-   p.textContent=[['vie','Vie'],['endu','Endurance'],['dmg','Dégâts'],['pv','PV']].filter(([cle])=>e[cle]).map(([cle,nom])=>'+'+e[cle]+' '+nom).join(' · ')||e.capacite||'';b.append(n,p);
+   const n=document.createElement('b');n.textContent=e.nom;b.append(n);
    b.onclick=()=>{c.espece=e.id;renderCreation()};g.append(b)});corps.append(g);
   const e=especeCreation(c);
   if(e){const f=document.createElement('div');f.className='creation-fiche-classe';f.style.setProperty('--teinte',e.teinte);
@@ -3732,9 +3755,10 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    l.append(t,pas(-1,c.caracs[cle]>0,()=>{c.caracs[cle]--;renderCreation()}),v,pas(1,n>0,()=>{c.caracs[cle]++;renderCreation()}));g.append(l)});
   corps.append(reste(n,POINTS_CARACS),g,statsCreation())}
  else if(k==='comps'){const n=restantComps(c),g=document.createElement('div'),cls=competencesDeClasse(c.role),esp=compsEspece(c);g.className='creation-comps';
-  COMPETENCES.forEach((nom,i)=>{const l=document.createElement('div');l.className='creation-comp';const t=nomComp(i,[cls[i]?'+'+cls[i]+' classe':'',esp[i]?'+'+esp[i]+' espèce':''].filter(Boolean).join(' · '));
-   // La valeur à jour : 1 pour tous, plus la classe et l'espèce, plus les points ; les boutons n'engagent que les points, +2 au plus.
-   const v=document.createElement('b');v.textContent=String(COMP_BASE+cls[i]+esp[i]+c.skills[i]);if(c.skills[i])v.classList.add('monte');
+  COMPETENCES.forEach((nom,i)=>{const l=document.createElement('div');l.className='creation-comp';const t=nomComp(i);
+   /* La valeur à jour : 1 pour tous, plus la classe et l'espèce, plus les points ; les boutons n'engagent que les points, +2 au plus.
+      Montée par la classe ou l'espèce, elle change de couleur. */
+   const v=document.createElement('b');v.textContent=String(COMP_BASE+cls[i]+esp[i]+c.skills[i]);if(c.skills[i])v.classList.add('monte');else if(cls[i]||esp[i])v.classList.add('bonifie');
    l.append(t,pas(-1,c.skills[i]>0,()=>{c.skills[i]--;renderCreation()}),v,pas(1,n>0&&c.skills[i]<COMP_MAX_CREATION,()=>{c.skills[i]++;renderCreation()}));g.append(l)});
   corps.append(reste(n,POINTS_COMPS),g)}
  else{const cls=competencesDeClasse(c.role),esp=compsEspece(c),e=especeCreation(c);
@@ -3753,6 +3777,8 @@ $('creation-suiv').onclick=()=>{const c=creation;if(!c)return;if(c.etape<ETAPES_
    au jeu, comme pour tout aventurier. */
 function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;const e=especeCreation(c);
  const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:c.name.trim(),sexe:c.sexe,race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'',pointsCreation:{...c.caracs}});
+ // Son image : chez un joueur, elle part aussi par la table, pour que le MJ la reçoive.
+ if(c.image){a.image=c.image;if(view!=='mj')a.imageJeton=c.image}
  normalizeActor(a);a.max=Math.max(1,pvMaximum(catalog.classes,a,catalog.talents,catalog.items));a.hp=a.max;actors.push(a);creation=null;creationDialog.close();
  const i=actors.indexOf(a);
  if(view!=='mj'){owner=i;selected=i;if(typeof enLigne!=='undefined'&&enLigne&&typeof prendreSiege==='function')prendreSiege(a)}
@@ -5341,7 +5367,7 @@ if(a.hero){const f=$('actor-form').elements;
   f.max.value=Math.max(1,num(f.vie.value,1,999)*num(f.endu.value,1,999)+bonus);if(plein)f.hp.value=f.max.value};
  ['vie','endu','role','race'].forEach(k=>{if(f[k])f[k].addEventListener('input',majPV)});
  majPV()}
-$('token-upload').onclick=()=>$('token-file').click();$('token-file').onchange=()=>{const f=$('token-file').files[0];if(f)openImage(f,'token',url=>{draft.image=url;$('draft-image').src=url;$('draft-image').hidden=false})};$('token-remove').onclick=()=>{draft.image=null;$('draft-image').hidden=true};if($('add-attack'))$('add-attack').onclick=()=>{readAttacks();attackDraft.push({name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',useOwnDamage:true,effects:{}});renderAttacks()};renderStatePicker();
+$('token-upload').onclick=()=>$('token-file').click();$('token-file').onchange=()=>{const f=$('token-file').files[0];if(f)openImage(f,'token',url=>{draft.image=url;delete draft.imageJeton;$('draft-image').src=url;$('draft-image').hidden=false})};$('token-remove').onclick=()=>{draft.image=null;delete draft.imageJeton;$('draft-image').hidden=true};if($('add-attack'))$('add-attack').onclick=()=>{readAttacks();attackDraft.push({name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',useOwnDamage:true,effects:{}});renderAttacks()};renderStatePicker();
 if($('talent-filter')){$('talent-filter').oninput=renderTalentPicker;renderTalentPicker();
  // Créé depuis la fiche, le talent y est aussitôt coché : on l'ajoutait pour cet aventurier.
  $('add-talent').onclick=()=>openTalent(null,t=>{draft.talents=[...new Set([...(draft.talents||[]),t.id])];
@@ -5601,7 +5627,7 @@ function listeNombree(noms){const n=new Map();noms.forEach(x=>n.set(x,(n.get(x)|
 /* Un adversaire retiré de la scène laisse son XP : elle va à chaque aventurier présent
    sur la carte, en entier. Une seule ligne au journal, partagée à la table. */
 function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!duCoteTroupe(f)&&(Math.trunc(Number(f.xp))||0)>0);
- const xp=vaincus.reduce((s,f)=>s+Math.trunc(Number(f.xp)),0),heros=actors.filter(a=>a&&a.hero&&!a.horsCarte);
+ const xp=vaincus.reduce((s,f)=>s+Math.trunc(Number(f.xp)),0),heros=actors.filter(a=>a&&a.hero&&!a.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(a)));
  if(!xp||!heros.length)return;
  heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));
  // La carte retient ce qu'elle a déjà donné : le MJ le lit à côté de son nom.
@@ -5611,7 +5637,7 @@ function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!duCoteTroup
 /* Le butin d'un adversaire retiré de la scène, comme son XP : chaque exemplaire qu'il possède
    tombe selon sa chance et va dans l'inventaire de l'aventurier le plus proche de son jeton, un
    vivant de préférence, sur la carte. Une ligne au journal par aventurier servi. */
-function butinDesRetires(partants,tirage=Math.random){const heros=actors.filter(h=>h&&h.hero&&!h.horsCarte);if(!heros.length)return;
+function butinDesRetires(partants,tirage=Math.random){const heros=actors.filter(h=>h&&h.hero&&!h.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(h)));if(!heros.length)return;
  const vivants=heros.filter(h=>h.hp>0),parmi=vivants.length?vivants:heros,taille=typeof mapSize==='function'?mapSize():null,gains=new Map();
  partants.forEach(f=>{if(!f||f.hero)return;const chances=normaliseButin(f.butin,f.inventaire),tire=tireBourse(f.bourse,tirage);if(!Object.keys(chances).length&&!Object.keys(tire).length)return;
   const loin=h=>taille&&taille.width>0?tokenDistance(f,h,taille):Math.hypot((h.x||0)-(f.x||0),(h.y||0)-(f.y||0));
@@ -6287,8 +6313,8 @@ function imageDimensions(bytes){const v=new DataView(bytes.buffer,bytes.byteOffs
 }
 let imageJob=null,imageGeneration=0;
 const pretty=n=>n<1024*1024?Math.round(n/1024)+' Ko':(n/(1024*1024)).toFixed(2)+' Mo';
-async function openImage(file,kind,accept){if(view!=='mj')return;try{if(file.size>25*1024*1024)throw Error('Fichier trop lourd : maximum 25 Mo. Réduis-le avant de l’importer.');const bytes=new Uint8Array(await file.arrayBuffer());const [w,h]=imageDimensions(bytes);if(!w||!h||w*h>64000000||Math.max(w,h)>20000)throw Error('Image trop grande : maximum 64 millions de pixels et 20 000 pixels par côté.');
- cleanupImage();const original=URL.createObjectURL(file);imageJob={file,kind,accept,original,w,h,output:null,url:null,bitmap:null,zoom:1,dx:0,dy:0};$('image-before').src=original;$('before-info').textContent=w+' × '+h+' · '+pretty(file.size);$('image-size').replaceChildren(...(kind==='map'?[2048,4096]:[256,512]).map(n=>new Option(n+' pixels',String(n))));$('image-size').value=kind==='map'?'4096':'512';$('image-quality').value='90';$('quality-label').textContent='90 %';$('image-error').textContent='';$('image-accept').disabled=true;
+async function openImage(file,kind,accept,joueur){if(view!=='mj'&&!joueur)return;try{if(file.size>25*1024*1024)throw Error('Fichier trop lourd : maximum 25 Mo. Réduis-le avant de l’importer.');const bytes=new Uint8Array(await file.arrayBuffer());const [w,h]=imageDimensions(bytes);if(!w||!h||w*h>64000000||Math.max(w,h)>20000)throw Error('Image trop grande : maximum 64 millions de pixels et 20 000 pixels par côté.');
+ cleanupImage();const original=URL.createObjectURL(file);imageJob={file,kind,accept,original,w,h,output:null,url:null,bitmap:null,zoom:1,dx:0,dy:0,joueur:!!joueur};$('image-before').src=original;$('before-info').textContent=w+' × '+h+' · '+pretty(file.size);$('image-size').replaceChildren(...(kind==='map'?[2048,4096]:joueur?[256]:[256,512]).map(n=>new Option(n+' pixels',String(n))));$('image-size').value=kind==='map'?'4096':joueur?'256':'512';$('image-quality').value='90';$('quality-label').textContent='90 %';$('image-error').textContent='';$('image-accept').disabled=true;
  // Le socle se cadre : on garde l'image décodée sous la main pour l'aperçu rond.
  $('token-frame').hidden=kind!=='token';$('token-zoom').value='100';
  imgDialog.showModal();
@@ -6346,6 +6372,6 @@ $('token-center').onclick=()=>{if(!imageJob)return;imageJob.zoom=1;imageJob.dx=i
   $('token-zoom').value=String(Math.round(imageJob.zoom*100));drawTokenPreview();retouche()}})();
 function cleanupImage(){imageGeneration++;clearTimeout(retoucheTimer);if(imageJob){URL.revokeObjectURL(imageJob.original);if(imageJob.url)URL.revokeObjectURL(imageJob.url);imageJob.bitmap?.close()}imageJob=null;$('image-before').removeAttribute('src');$('image-after').removeAttribute('src')}
 $('image-quality').oninput=()=>{$('quality-label').textContent=$('image-quality').value+' %';retouche()};$('image-size').onchange=retouche;$('image-recalc').onclick=optimizeImage;$('image-cancel').onclick=()=>imgDialog.close();imgDialog.addEventListener('close',cleanupImage);
-$('image-accept').onclick=()=>{const job=imageJob;if(!job?.output||view!=='mj')return;$('image-accept').disabled=true;const reader=new FileReader();reader.onerror=()=>{$('image-error').textContent='Impossible de lire la copie optimisée.'};reader.onload=()=>{if(job!==imageJob)return;job.accept(reader.result);imgDialog.close();scheduleSave()};reader.readAsDataURL(job.output)};
+$('image-accept').onclick=()=>{const job=imageJob;if(!job?.output||(view!=='mj'&&!job.joueur))return;$('image-accept').disabled=true;const reader=new FileReader();reader.onerror=()=>{$('image-error').textContent='Impossible de lire la copie optimisée.'};reader.onload=()=>{if(job!==imageJob)return;job.accept(reader.result);imgDialog.close();scheduleSave()};reader.readAsDataURL(job.output)};
 $('mapfile').onchange=()=>{const file=$('mapfile').files[0];$('mapfile').value='';if(file)openImage(file,'map',url=>{mapImage=url;$('map-view').style.backgroundImage='url("'+url+'")';$('map').classList.add('custom');log('Carte optimisée et importée.',{local:true});document.dispatchEvent(new Event('amertume-content-changed'))})};
 loadSession();

@@ -2809,7 +2809,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const libre={...t,elementaire:undefined};assert.equal(C.talentPourElement(libre,G).params.etat,'Feu','sans la case, l’état réglé reste');
  const neutre={id:'x',name:'Forge',params:{etat:'Feu'}};assert.equal(C.talentPourElement(neutre,G),neutre);assert.equal(C.estElementaire(neutre),false);assert.equal(C.estElementaire(libre),true);
  assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefoudre','Foudre',1]],'la table joue l’élément, puis le palier ; la DEF retirée, réglage commun, reste celle du palier 1');
- assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu','debutTour'];")
+ assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu','debutTour','enAventure'];")
   &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
  assert.ok(src.includes("function choixElement(a,classe,rendre){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
   &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n)")
@@ -3389,6 +3389,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.707 — La case de l'aventure : le MJ coche ceux qui partent, eux seuls entrent sur la carte ouverte et y gagnent XP et
+   butin ; le genre en symbole et l'espèce à gauche de la classe ; le token importé à la création, chez un joueur aussi. */
+{const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),vv=fs.readFileSync('live.js','utf8'),pg=fs.readFileSync('index.html','utf8');
+ assert.ok(mp.includes("const tous=actors.filter(a=>a.hero),choisis=tous.filter(a=>a.enAventure===true),heros=choisis.length?choisis:tous;")&&mp.includes(" actors.splice(0,actors.length,...tous);")
+  &&ed.includes("function prendPartAventure(a){")&&ed.includes("!a.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(a)));")&&ed.includes("!h.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(h)));")
+  &&ed.includes("part.disabled=view!=='mj';")&&vv.includes("'espece','enAventure','imageJeton',")&&vv.includes("if(typeof e.imageJeton==='string'&&!a.image)a.image=e.imageJeton;")
+  &&ed.includes("async function openImage(file,kind,accept,joueur){if(view!=='mj'&&!joueur)return;")&&ed.includes("if(c.image){a.image=c.image;if(view!=='mj')a.imageJeton=c.image}")
+  &&pg.includes("{const o=a.hero&&typeof origineAventurier==='function'?origineAventurier(a):null;if(o)$('kind').before(o)}")&&ed.includes("else if(cls[i]||esp[i])v.classList.add('bonifie');"),'aventure, origine, token');}
 /* v0.706 — Les espèces : une étape de la création, présentée comme les classes, et leurs bonus pour toujours ; les bulles
    des caractéristiques et des compétences. Une espèce écrite à la main ne donne rien. */
 {const C28=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
@@ -3811,7 +3819,7 @@ assert.ok(page.includes("if(tokenDistance(a,o,size)<=contactRadius(tokenOf(o)))e
   &&page.includes("[...el.children].forEach((p,n)=>p.classList.toggle('pris',n>=plein));el.hidden=false}"),'la barre de mouvement, un point par mètre');
  assert.ok(page.includes("function arretAuContact(a,de){")&&page.includes("if(arretContact){t.onpointerup(e);return}")&&page.includes("if(regle&&regle.combat){const h=arretAuContact(a,{x:x0,y:y0});if(h){a.x=h.x;a.y=h.y}}"),'entrer au contact d’un adversaire arrête le geste');
  assert.ok(page.includes("function gelDebut(a){if(!enCombat()||!a)return false;")&&page.includes("&&!gelDebut(actors[i])}")&&page.includes("ferme=debut&&!ouvertureCombat(a),gele=!debut&&gelDebut(a);")
-  &&page.includes("debout().forEach(o=>{o.debutTour=round});")&&vif.includes("'alignementJeu','debutTour'];"),'le début de combat et le début de tour gèlent les autres');
+  &&page.includes("debout().forEach(o=>{o.debutTour=round});")&&vif.includes("'alignementJeu','debutTour','enAventure'];"),'le début de combat et le début de tour gèlent les autres');
  assert.ok(page.includes("const mx=100*tk/sz.width,my=100*tk/sz.height,dirs={ArrowLeft:[-mx,0],ArrowRight:[mx,0],ArrowUp:[0,-my],ArrowDown:[0,my]};")
   &&page.includes(" t.onkeydown=e=>pasClavier(i,e)")&&page.includes("const a=actors[selected];if(!a||!document.querySelector('#map-view .token[data-id=\"'+CSS.escape(a.id)+'\"]'))return;pasClavier(selected,e)});"),'les flèches : un mètre par appui, même sans focus');
  assert.ok(page.includes('id="echanger" hidden>')&&page.includes('id="changer-armes" hidden>')&&page.includes("function cibleEchange(a){")&&src.includes("['echanger','Échanger un objet'],['armes','Changer d’armes']];")
@@ -4946,7 +4954,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&mp.includes("if(mapTool==='foe'||mapTool==='pnj'){")&&mp.includes("const deja=t.pnj&&t.unique===true?mapDraft.foes.findIndex(f=>f&&f.tpl&&f.tpl.id===t.id):-1;")
   &&mp.includes("if(t&&t.pnj&&t.unique===true){if(uniques.has(t.id))return;uniques.add(t.id)}")&&feuille.includes('.shape.foe.al-allie{'),'l’outil PNJ');
  // La fiche de table : le bouton d'alignement, au MJ ; en ligne, au MJ seul.
- assert.ok(page.includes('<button type="button" class="sheet-class" id="pnj-camp" hidden></button>')&&page.includes("function pnjCamp(a){const b=$('pnj-camp');b.hidden=!(a&&a.pnj&&view==='mj');")&&vivant.includes("'alignementJeu','debutTour'];")&&/CHAMPS_ACTEUR_MJ=\[[^\]]*'alignementJeu'/.test(vivant),'l’alignement du moment');}
+ assert.ok(page.includes('<button type="button" class="sheet-class" id="pnj-camp" hidden></button>')&&page.includes("function pnjCamp(a){const b=$('pnj-camp');b.hidden=!(a&&a.pnj&&view==='mj');")&&vivant.includes("'alignementJeu','debutTour','enAventure'];")&&/CHAMPS_ACTEUR_MJ=\[[^\]]*'alignementJeu'/.test(vivant),'l’alignement du moment');}
 /* v0.519 — L'or et les gemmes d'un adversaire, d'un PNJ ou d'un coffre, tirés aux dés : une bourse de lignes
    « x d y », avec, pour un adversaire, la chance qu'elle tombe. Tirée au retrait de l'adversaire, ou à
    l'ouverture du coffre. */
@@ -5400,4 +5408,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2003 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2004 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

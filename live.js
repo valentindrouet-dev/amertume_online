@@ -20,12 +20,12 @@
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement','mvtReste','mvtTour','opportunitesSubies',
- 'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','bondissement','decoupe','insaisisQuittes','paBonus','impulsion','coupureFatale','adieu','quetesPrises','quetesDebloquees','forges','accelM','pointsCreation','espece','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan',
+ 'revealed','hidden','vu','numero','orbes','orbesGardes','garde','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','bondissement','decoupe','insaisisQuittes','paBonus','impulsion','coupureFatale','adieu','quetesPrises','quetesDebloquees','forges','accelM','pointsCreation','espece','enAventure','imageJeton','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan',
  'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
 // L'élément d'un Mystique est au MJ : un joueur ne le pousse pas.
-const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu','debutTour'];
+const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu','debutTour','enAventure'];
 /* L'état du tour d'un aventurier : ce qu'il a dépensé, joué, parcouru. Un joueur l'écrit daté du tour qu'il voit (« tourVu »,
    cleTour) ; le MJ écarte ce qui arrive daté d'un tour révolu. Au début, à la fin d'un combat et à chaque tour, le joueur reprend
    ces champs tels que le MJ les a remis, sans garder ce qu'il avait encore en route. */
@@ -290,6 +290,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     a[k]=structuredClone(e[k])});
    // Une distance de mouvement rendue aux neuf mètres de tous quitte le document : chez un joueur, elle quitte aussi le socle.
    if(!estMJ()&&!a.hero&&e.mouvement===undefined&&a.mouvement!==undefined)delete a.mouvement;
+   // L'image qu'un joueur a donnée à son aventurier : chez qui n'en a pas, elle devient la sienne.
+   if(typeof e.imageJeton==='string'&&!a.image)a.image=e.imageJeton;
    /* Des coups croisés ont pu passer sous zéro : ici on lit zéro ; chez le MJ, la référence garde le négatif reçu, et le zéro
       repart en valeur pleine. */
    if(typeof a.hp==='number'&&a.hp<0){a.hp=0;if(estMJ()&&typeof e.hp==='number'&&e.hp<0)gardes.push([id,'hp',e.hp])}

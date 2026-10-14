@@ -1345,7 +1345,10 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  // Une carte ouverte repart de zéro XP accordée : la rencontre est à venir.
  m.xpAccordee=0;
  $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);
- const heros=actors.filter(a=>a.hero);
+ /* Ceux que le MJ a cochés partent à l'aventure : eux seuls entrent sur la carte, les autres restent hors de la carte.
+    Sans aucune case cochée, tous entrent, comme avant. */
+ const tous=actors.filter(a=>a.hero),choisis=tous.filter(a=>a.enAventure===true),heros=choisis.length?choisis:tous;
+ tous.forEach(a=>{if(!heros.includes(a))a.horsCarte=true});
  // Une carte rechargée rend à chacun ses repos courts.
  // Une carte rechargée rend aussi ses zones à fouiller : les tests de Perception y repartent de zéro.
  // Et ramène sur la table ceux qu'on en avait retirés : ils sont toujours parmi les aventuriers.
@@ -1354,7 +1357,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  (m.objets||[]).forEach(o=>{delete o.pris});(m.lumieres||[]).forEach(l=>{delete l.eteinte;delete l.prise});
  // Placement libre : d'une carte à l'autre, les murs de la nouvelle ne barrent pas le chemin.
  if(m.start)spreadInZone(heros.length,m.start).forEach((p,i)=>moveActor(heros[i],p.x,p.y,true));
- actors.splice(0,actors.length,...heros);
+ actors.splice(0,actors.length,...tous);
  // Une carte s'ouvre portes closes et brouillard intact : l'état des portes est une affaire de partie.
  (m.doors||[]).forEach(d=>{d.open=false;delete d.decouvert});const grille=fogDims(m);
  // Et ses coffres reviennent comme le MJ les a laissés : cachés, verrouillés, piégés, pleins.
@@ -1387,7 +1390,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  render();actors.forEach(a=>settleActor(a));   // Personne ne démarre dans un mur.
 
  actors.forEach(a=>{a.target=null});
- owner=actors.findIndex(a=>a.hero);selected=Math.max(0,owner);
+ owner=actors.findIndex(a=>a.hero&&!a.horsCarte);if(owner<0)owner=actors.findIndex(a=>a.hero);selected=Math.max(0,owner);
  resetMapZoom();showPage('table');render();
  scheduleSave()}
 
