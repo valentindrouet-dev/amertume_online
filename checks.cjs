@@ -3389,6 +3389,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.738 — La bibliothèque range les nouvelles améliorations : sous Attaque d'état, et Charge — regain au Destructeur. */
+{const C37=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
+ assert.equal(C37.TALENTS_CODES.attaqueetatauto.pour,'attaqueetat');assert.equal(C37.TALENTS_CODES.attaqueetatpa.pour,'attaqueetat');
+ assert.ok(ed.includes("const CLASSES_EFFETS_DEVINEES={chargeregain:'Destructeur',")&&ed.includes("if(!devinee&&c.pour&&TALENTS_CODES[c.pour]&&TALENTS_CODES[c.pour]!==c)return classeEffet(TALENTS_CODES[c.pour]);"));}
 /* v0.737 — La fouille révèle tout objet caché de sa zone ; l'œil fermé des coffres cachés ; le paysage jamais zoomé dans l'éditeur ;
    une quantité négative retire, « Tout retirer » vide la ligne, pour l'or comme pour les ressources du domaine. */
 {const mp=fs.readFileSync('maps.js','utf8'),ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8');
@@ -5574,4 +5578,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2062 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2064 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
