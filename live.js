@@ -355,6 +355,8 @@ addEventListener('pointerdown',()=>{pressionTenue=true},true);
 function rafraichitFiches(){clearTimeout(fichesTimer);fichesTimer=setTimeout(function encore(){
  if(pressionTenue||(typeof champsOuverts!=='undefined'&&champsOuverts>0)||(typeof arbreGlisse!=='undefined'&&arbreGlisse)){fichesTimer=setTimeout(encore,250);return}
  if(document.body.classList.contains('page-heroes')&&typeof renderHeroes==='function')renderHeroes();
+ // L'Accueil aussi : un aventurier qu'un joueur vient de créer y paraît sans recharger la page.
+ if(document.body.classList.contains('page-accueil')&&typeof renderAccueil==='function')renderAccueil();
  if(typeof arbresDialog!=='undefined'&&arbresDialog.open&&typeof renderArbres==='function')renderArbres()},60)}
 /* Le contenu publié vient d'être posé : il a remplacé les fiches et les cartes, donc
    l'état vivant doit être reposé par-dessus, sans quoi la table reculerait d'un cran. */
@@ -705,3 +707,6 @@ const renderAvantTable=render;render=function(){let rendre=false;
 // Ce qui s'enregistre part aussi : une fiche corrigée dans l'onglet Aventuriers n'attend pas le prochain rendu de la table.
 const scheduleSaveAvantTable=scheduleSave;scheduleSave=function(){scheduleSaveAvantTable.apply(this,arguments);pousserPlusTard()};
 majTable();
+/* L'Accueil s'est dessiné avant ce fichier, sans savoir qui regarde : chez un joueur, il montrait les aventuriers de tous. Il se
+   redessine maintenant que la table sait qui est invité. */
+if(document.body.classList.contains('page-accueil')&&typeof renderAccueil==='function')renderAccueil();

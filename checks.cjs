@@ -3389,6 +3389,12 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.716 — L'Accueil suit les fiches et la table sans recharger la page ; chez un joueur, il ne montre que ses aventuriers dès le
+   chargement ; la case de l'aventure et le token pâli sont au MJ seul. */
+{const ed=fs.readFileSync('editor.js','utf8'),vv=fs.readFileSync('live.js','utf8'),pg=fs.readFileSync('index.html','utf8');
+ assert.ok(ed.includes("renderBestiary();if(document.body.classList.contains('page-accueil'))renderAccueil()}")&&vv.includes("if(document.body.classList.contains('page-accueil')&&typeof renderAccueil==='function')renderAccueil();")
+  &&pg.includes("return !!new URL(location.href).searchParams.get('table')&&!(typeof admin!=='undefined'&&admin===true)}")
+  &&ed.includes(" const part=a.hero&&view==='mj'?document.createElement('input'):null;")&&ed.includes(" if(a.horsCarte&&view==='mj'){jeton.classList.add('hors-table');"),'Accueil à jour, case et pâleur au MJ');}
 /* v0.715 — Les joueurs connectés : leur présence renouvelée chaque minute, leur liste à l'Accueil et dans une fenêtre, un bouton
    dans l'en-tête à côté de la table. */
 {const vv=fs.readFileSync('live.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
@@ -5456,4 +5462,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2012 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2013 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

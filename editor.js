@@ -1099,15 +1099,15 @@ function joueursConnus(){const m=new Map();actors.forEach(a=>{if(a&&a.hero&&a.jo
 function prendPartAventure(a){return !!a&&!!a.hero&&(a.enAventure===true||!actors.some(h=>h&&h.hero&&h.enAventure===true))}
 function heroCard(a,i){const c=document.createElement('article');c.className='hero-card';
  const tete=document.createElement('div');tete.className='hero-head';
- // En haut à gauche, la case de l'aventure : le MJ seul la coche.
- const part=a.hero?document.createElement('input'):null;
+ // En haut à gauche, la case de l'aventure : le MJ seul la voit et la coche.
+ const part=a.hero&&view==='mj'?document.createElement('input'):null;
  if(part){part.type='checkbox';part.className='hero-aventure';part.checked=a.enAventure===true;part.disabled=view!=='mj';part.setAttribute('aria-label',a.name+' part à l’aventure');
   part.onchange=()=>{if(view!=='mj')return;if(part.checked)a.enAventure=true;else delete a.enAventure;scheduleSave();if(typeof pousserBientot==='function')pousserBientot()}}
  const jeton=document.createElement('span');jeton.className='avatar';
  if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';jeton.append(im)}
  else jeton.textContent=(a.name||'?')[0];
- // Retiré de la table : son token pâlit ; un clic du MJ le ramène dans la zone de départ.
- if(a.horsCarte){jeton.classList.add('hors-table');if(view==='mj'){jeton.setAttribute('role','button');jeton.tabIndex=0;jeton.onclick=()=>ramenerSurLaTable(a)}}
+ // Retiré de la table : chez le MJ, son token pâlit, et un clic le ramène dans la zone de départ. Chez un joueur, rien ne pâlit.
+ if(a.horsCarte&&view==='mj'){jeton.classList.add('hors-table');{jeton.setAttribute('role','button');jeton.tabIndex=0;jeton.onclick=()=>ramenerSurLaTable(a)}}
  const titre=document.createElement('div');titre.className='hero-id';
  const nom=document.createElement('strong');nom.textContent=a.name;
  titre.append(nom);  // La classe est portée par la pastille, le niveau par une puce : pas de troisième copie.
@@ -5352,7 +5352,8 @@ let reglageTimer;
 function noterReglage(texte){const n=$('raccourcis-erreur');if(!n)return;
  n.textContent='✓ '+texte;n.classList.add('ok');clearTimeout(reglageTimer);
  reglageTimer=setTimeout(()=>{n.textContent='';n.classList.remove('ok')},3200)}
-function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();renderBestiary()}
+// L'Accueil suit les fiches : un contenu reçu, un aventurier arrivé d'un joueur y paraissent sans recharger la page.
+function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();renderBestiary();if(document.body.classList.contains('page-accueil'))renderAccueil()}
 $('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;$('armory-sort').onchange=renderArmory;
 $('armory-masse').onclick=()=>{armoryMasse=!armoryMasse;renderArmory()};
 $('armory-add').onclick=()=>openItem(null);$('armory-forge').onclick=()=>openForge();$('armory-chambre').onclick=()=>openChambre();
