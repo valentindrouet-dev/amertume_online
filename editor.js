@@ -423,11 +423,14 @@ const note=document.createElement('p');note.id='actor-notes';note.className='mut
    clique celle qui part. Le bouton retenu est plein, les autres sont dessinés. */
 /* Les dés d'une attaque et, s'il y a lieu, le bonus de dégâts avec son jeton : la même
    seconde ligne pour l'attaque d'une arme et pour le talent qui frappe. */
+// L'icône des dégâts, celle que le MJ a choisie dans Icônes : à la taille des dés qu'elle suit.
+function iconeDegats(){const ic=logoBonus({carac:'dmg'});if(!ic)return null;ic.classList.remove('logo-bonus');ic.classList.add('dmg-ico');
+ if(ic.tagName==='IMG'){ic.alt='dégâts';ic.draggable=false}else ic.setAttribute('aria-label','dégâts');return ic}
 function desEtBonus(dice,bonus,toujours,jeton=true,etat=''){const bas=document.createElement('span');bas.className='des-bonus';
  bas.append(dicePips(dice,etat||''));
+ // Le bonus de dégâts, puis son icône, partout où il se lit : bulles, barre des dés, monstres.
  if(bonus||toujours){const plus=document.createElement('b');plus.className='bonus';plus.textContent='+ '+bonus;bas.append(plus);
-  // Le jeton des dégâts, après la valeur, dans la bulle des monstres ; le bloc Dés s'en passe.
-  if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';ico.src=imgUrl('DEGATS.webp');ico.alt='dégâts';ico.draggable=false;bas.append(ico)}}
+  const ico=iconeDegats();if(ico)bas.append(ico)}
  return bas}
 /* Les objets qui agissent : chaque pièce portée ou rangée dont le moteur connaît l'effet
    offre son bouton dans la rangée des Actions, à l'encre de sa famille — brun pour une arme,
@@ -447,10 +450,11 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
      0 / jour une fois pris ; 1 / repos entre deux repos courts. */
   const texte=code.cle==='etat'?(p&&p.etat)||code.nom:code.nom;
   const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':'repos'):'';
+  const horsCombat=usage==='horscombat'&&typeof enCombat==='function'&&enCombat();
   out.push({objet:o,texte,compte,
    teinte:TEINTE_RARETE[rareteDe(o)]||TEINTE_OBJET.object,
-   peut:dispo,limite:usageLimite(usage),epuise:!dispo,
-   titre:dispo?o.name+' — '+NOM_USAGE(usage)+' · '+code.phrase(paramsObjet(o)).replace(/<[^>]*>/g,'')
+   peut:dispo&&!horsCombat,limite:usageLimite(usage),epuise:!dispo,
+   titre:horsCombat?o.name+' ne s’emploie qu’hors combat.':dispo?o.name+' — '+NOM_USAGE(usage)+' · '+code.phrase(paramsObjet(o)).replace(/<[^>]*>/g,'')
     :o.name+' a déjà servi aujourd’hui : il faut une nuit de repos.',
    acteur:a,agir:()=>utiliserObjet(a,o)})});
  return out}
@@ -518,7 +522,7 @@ function partOrbes(a){const codes=a&&typeof talentsCodes==='function'?talentsCod
  const l=logoRemplace(a,t.talent)||(codes.find(x=>x.code.cle==='orbesfeu')||{talent:{}}).talent.logo||t.talent.logo;
  const im=l?logoAttaque(l,'des-arme'):null;if(im)out.append(im);
  out.append(dicePips(poolOrbe(d),etatDesOrbes(codes)||''));
- const bonus=typeof bonusOrbes==='function'?bonusOrbes(a):0;if(bonus){const b=document.createElement('b');b.className='bonus';b.textContent='+ '+bonus;out.append(b)}
+ const bonus=typeof bonusOrbes==='function'?bonusOrbes(a):0;if(bonus){const b=document.createElement('b');b.className='bonus';b.textContent='+ '+bonus;out.append(b);const ico=iconeDegats();if(ico)out.append(ico)}
  return out}
 function montreDesCombattant(dice,bonus,toujours,logos,apres,etat){const z=$('des-combattant');if(!z)return;
  z.replaceChildren();z.hidden=!dice&&!apres;z.classList.toggle('avec-orbes',!!apres);if(!dice){if(apres)z.append(apres);return}
@@ -1314,7 +1318,7 @@ $('conversion-dnd').oninput=conversionPlusTard;
  b.onclick=()=>{renderConversion();conversionDialog.showModal();$('conversion-dnd').focus();$('conversion-dnd').select()}}
 const competencesDialog=dialog('competences-icones','Icônes des caracs et compétences','<form id="competences-icones-form"><p class="muted">Une icône par caractéristique et par compétence, sur toutes les fiches d’aventuriers.</p><div id="competences-icones-corps" class="edit-grid"></div></form>');
 // Les caractéristiques dont l'icône se choisit : celle de leurs bonus, dans l'arbre comme sur la fiche.
-const CARACS_ICONES=[['vie','Vie'],['endu','Endurance'],['pv','PV max'],['dmg','Dégâts'],['xp','XP'],['orbe','Orbe mystique'],['pa','Point d’Action'],['pm','Point de Mouvement']];
+const CARACS_ICONES=[['vie','Vie'],['endu','Endurance'],['pv','PV max'],['dmg','Dégâts'],['xp','XP'],['orbe','Orbe mystique'],['pa','Point d’Action'],['pm','Point de Mouvement'],['soin','Soin']];
 $('competences-icones-form').onsubmit=e=>e.preventDefault();
 function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences(),groupes=groupesLogosCompetence();
  const lb=catalog.logosBonus||{};
@@ -1593,7 +1597,7 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // Au-dessus de sa valeur : les dés d'une arme, et l'état qu'elle inflige ; la DEF d'une armure qui protège.
  // À distance, la place vide d'une munition à droite des dés ; chez son porteur, son bonus de dégâts ensuite.
  if(col==='melee'||col==='ranged'){const p=document.createElement('p');p.className='gear-des';p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));
-  if(a&&(a.inventaire||[]).includes(o.id)){const b=document.createElement('b');b.className='bonus';b.textContent='+ '+degatsDe(a);p.append(b)}
+  if(a&&(a.inventaire||[]).includes(o.id)){const b=document.createElement('b');b.className='bonus';b.textContent='+ '+degatsDe(a);p.append(b);const ico=iconeDegats();if(ico)p.append(ico)}
   d.append(p)}
  else if(col==='armor'&&((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))){const p=document.createElement('p');p.className='gear-def';p.append(shieldBadge(o.def||0));d.append(p)}
  // Une munition : le dé qu'elle ajoute, et l'état qu'elle inflige ; à côté, combien l'aventurier en a.
@@ -1601,8 +1605,12 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
   if(keys.includes(o.munDe))p.append(dicePips({[o.munDe]:1},o.etat));else if(o.etat)p.append(etatPastille(o.etat));
   if(a){const q=document.createElement('b');q.className='gear-quantite';q.textContent='× '+(a.inventaire||[]).filter(x=>x===o.id).length;p.append(q)}
   if(p.childNodes.length)d.append(p)}
- // Une arme, une armure, une munition, une ressource ou un reste : sa valeur, « 7 » et la pièce d'or.
- if(col==='restes'||col==='ressource'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
+ // Un objet de soin : « Soin », son icône, puis ce qu'il rend, en gras.
+ const soin=objetCode(o)&&objetCode(o).cle==='soin'?paramsObjet(o):null;
+ if(soin){const p=document.createElement('p');p.className='gear-soin';p.append('Soin');const ic=logoBonus({carac:'soin'});if(ic){ic.classList.add('soin-ico');p.append(' ',ic)}
+  const n=Math.max(1,soin.quantite|0),b=document.createElement('b');b.textContent=soin.forme==='des'?n+'d6':soin.forme==='endu'?n+' + Endurance':soin.forme==='vie'?n+' + Vie':String(n);p.append(' : ',b);d.append(p)}
+ // Une arme, une armure, une munition, une ressource, un reste ou un objet de soin : sa valeur, « 7 » et la pièce d'or.
+ if(col==='restes'||col==='ressource'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'||soin){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
  // Un objet : la description du MJ, telle qu'il l'a écrite ; sans elle, rien. Ailleurs, aucun texte.
  if(col==='object')ligne(o.notes);
@@ -1680,11 +1688,14 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
 /* Sur la table, l'objet se vise sur la carte ; ailleurs — l'onglet Aventuriers, sans carte —
    il s'emploie sur son porteur, à moins qu'il n'inflige un état : celui-là ramène à la table
    pour y viser sa cible. */
-function employerDepuisFiche(a,o){const surTable=typeof PAGES==='undefined'||!PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x));
+// Un objet hors combat seulement : en plein combat, il ne sert pas, et on le dit.
+function refusHorsCombat(o){if(usageObjet(o)!=='horscombat'||typeof enCombat!=='function'||!enCombat())return false;
+ log(o.name+' ne s’emploie qu’hors combat.',{local:true});return true}
+function employerDepuisFiche(a,o){if(refusHorsCombat(o))return;const surTable=typeof PAGES==='undefined'||!PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x));
  if(surTable||objetCode(o)){utiliserObjet(a,o);return}
  if(o.etat&&typeof showPage==='function'){showPage('table');utiliserObjet(a,o);return}
  appliquerObjet(a,o,a,null)}
-function utiliserObjet(a,o){if(!a||!o)return;
+function utiliserObjet(a,o){if(!a||!o||refusHorsCombat(o))return;
  // Un objet qui porte un effet du moteur agit sur son porteur : il n'y a rien à désigner.
  if(objetCode(o)){appliquerEffetObjet(a,o);return}
  if(typeof viserCible!=='function'){appliquerObjet(a,o,a,null);return}
@@ -1749,9 +1760,12 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
    const boite=p.closest('.corps-sac');if(boite)boite.className='corps-sac'})}
  p.detailPlie=detail;return p}
 let gearGlisse=null,objetGlisse=null;
+/* Un aventurier pris dans le combat : un combat en cours, et lui sur la carte. Au domaine, hors de la table ou resté hors de la
+   carte, il n'y est pas, même si d'autres se battent. */
+function aventurierEnCombat(a){return !!a&&a.hero===true&&typeof enCombat==='function'&&enCombat()&&actors.includes(a)&&!a.horsCarte}
 /* En combat, l'inventaire d'un aventurier en scène ne change plus ses armes : le rond « Changer d'armes » s'en charge, pour
    1 PM. Ses armures, pas du tout. */
-function verrouEquip(a,o){return !!a&&!!o&&a.hero===true&&typeof enCombat==='function'&&enCombat()&&actors.includes(a)&&(o.category==='weapon'||o.category==='armor')}
+function verrouEquip(a,o){return !!a&&!!o&&aventurierEnCombat(a)&&(o.category==='weapon'||o.category==='armor')}
 // Ce que le sac donne : ce qui n'est pas porté.
 function sacDonnable(a){const n=new Map();(a&&a.inventaire||[]).map(objetDe).filter(Boolean).forEach(o=>n.set(o,(n.get(o)||0)+1));
  return [...n.entries()].map(([o,k])=>[o,k-(o.category==='weapon'?gearCount(a,o.id):o.category==='ammo'?(a.munitionId===o.id?k:0):o.id===a.shieldId?1:o.category==='armor'?armuresDe(a).filter(x=>x===o.id).length:0)]).filter(([,k])=>k>0)}
@@ -1895,7 +1909,7 @@ function corpsEtSac(a){const out=document.createElement('div');out.className='co
   recoit(sac,(o,g)=>g.porte&&reposerPiece(a,o))}
  /* D'une fiche à l'autre : lâché sur la fiche d'un autre aventurier, l'objet quitte le sac du premier pour celui-ci. En combat,
     c'est l'affaire du rond « Échanger un objet », au contact ; le MJ, lui, le fait toujours. */
- if(a.hero&&actors.includes(a)){const vient=()=>{const g=objetGlisse;return g&&g.de!==a.id&&(view==='mj'||!enCombat())?g:null};
+ if(a.hero&&actors.includes(a)){const vient=()=>{const g=objetGlisse;return g&&g.de!==a.id&&(view==='mj'||(!aventurierEnCombat(a)&&!aventurierEnCombat(actors.find(x=>x&&x.id===g.de))))?g:null};
   out.addEventListener('dragover',e=>{if(!vient())return;e.preventDefault();out.classList.add('recoit');try{e.dataTransfer.dropEffect='move'}catch(_){}});
   out.addEventListener('dragleave',e=>{if(!out.contains(e.relatedTarget))out.classList.remove('recoit')});
   out.addEventListener('drop',e=>{const g=vient();out.classList.remove('recoit');if(!g)return;e.preventDefault();objetGlisse=null;gearGlisse=null;
@@ -4103,7 +4117,7 @@ function renderPicker(){const corps=$('picker-body');if(!corps||!pickerActeur)re
      redessinait pas quand on décochait un talent. */
   const manque=t=>porte(t)?'':manqueTalent(a.talents,t,catalog.talents);
   const clic=t=>{const m=manque(t);
-   if(m||figeEnCombat())return;
+   if(m||figeEnCombat(a))return;
    if(porte(t)){const avant=a.talents,liste=sansChuteArbre(a,talentsSans(avant,t.id,catalog.talents).liste),tombes=avant.filter(id=>id!==t.id&&!liste.includes(id)).map(id=>{const x=talentDuCatalogue(catalog.talents,id);return x?x.name:''}).filter(Boolean);a.talents=liste;
     $('picker-note').textContent=tombes.length?'« '+t.name+' » oublié, et avec lui : '+tombes.join(', ')+'.':'Clique un talent pour l’apprendre ou l’oublier.'}
    else{if(coutPalier(t,1)>xpDisponible(a,catalog.talents))return;a.talents=[...a.talents,t.id];$('picker-note').textContent='Clique un talent pour l’apprendre ou l’oublier.'}
@@ -4848,8 +4862,9 @@ function gardeDefilement(racine){if(!racine)return ()=>{};
  const vus=[racine,...racine.querySelectorAll('*')].filter(e=>e.scrollTop||e.scrollLeft).map(e=>[e===racine?null:cle(e),e.scrollTop,e.scrollLeft]);
  return ()=>{if(!vus.length)return;const tous=vus.some(([k])=>k!==null)?[...racine.querySelectorAll('*')]:[];
   vus.forEach(([k,t,g])=>{const e=k===null?racine:tous.find(x=>cle(x)===k);if(e){e.scrollTop=t;e.scrollLeft=g}})}}
-// En combat, l'arbre d'un aventurier ne se change pas : ni talent pris ni talent rendu. Le MJ, lui, le peut toujours.
-function figeEnCombat(){return view!=='mj'&&typeof enCombat==='function'&&enCombat()}
+/* En combat, l'arbre d'un aventurier pris dans le combat ne se change pas : ni talent pris ni talent rendu. Celui qui n'y est pas
+   le change, même si d'autres se battent. Le MJ, lui, le peut toujours. */
+function figeEnCombat(a){return view!=='mj'&&aventurierEnCombat(a)}
 function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;queueMicrotask(gardeDefilement(arbresDialog));corps.replaceChildren();requestAnimationFrame(placeFlechesArbres);
  // Un nœud redessiné emporte sa bulle : elle ne reste pas accrochée à l'ancien.
  bulleOrpheline();
@@ -5035,7 +5050,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(mj&&lienDepuis===t.id)el.classList.add('relie-source');
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
    if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
-   if(verrou||(estMort(a)&&view!=='mj')||figeEnCombat())return;
+   if(verrou||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
    // Un clic l'active ; tenu, un clic le désactive — et ce qu'on n'atteignait que par lui.
    if(acquis)oublier(t,libre?null:col.liste);else a.talents=[...a.talents,t.id];
    note('');majTable()};
@@ -5056,13 +5071,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     if(estBonus(t)){laisseCaseVide(t);const i=catalog.talents.indexOf(t);if(i>=0)catalog.talents.splice(i,1);actors.forEach(x=>{if(x.talents)x.talents=x.talents.filter(id=>id!==t.id)})}
     else videDeLArbre(t);arbreChange()}));
   el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
-   if((estMort(a)&&view!=='mj')||figeEnCombat())return;
+   if((estMort(a)&&view!=='mj')||figeEnCombat(a))return;
    // À paliers, le clic monte d'un palier tant que l'XP le paie ; au dernier, il rend l'amélioration.
    if(acquis&&palierDe(a,t)<paliersDe(t)){const n=palierDe(a,t)+1;if(coutPalier(t,n)>xpDisponible(a,catalog.talents))return;poserPalier(t,n)}
    else if(acquis)oublier(t,libre?null:col.liste);else if(!verrou)a.talents=[...a.talents,t.id];else return;
    note('');majTable()};
   // Le clic droit redescend d'un palier ; au premier, il rend l'amélioration.
-  if(a&&paliersDe(t)>1)el.oncontextmenu=e=>{if(!acquis||(estMort(a)&&view!=='mj')||figeEnCombat())return;e.preventDefault();
+  if(a&&paliersDe(t)>1)el.oncontextmenu=e=>{if(!acquis||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;e.preventDefault();
    const k=palierDe(a,t);if(k>1)poserPalier(t,k-1);else oublier(t,libre?null:col.liste);note('');majTable()};
   glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,chemin:lisChemin(t),soi:t.id});
   return el};

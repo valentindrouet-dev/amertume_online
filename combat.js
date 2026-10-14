@@ -1763,7 +1763,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
    des réglages, une phrase que le moteur écrit lui-même — et trois manières d'en user.
    Ce qu'il en advient à l'écran vit dans la table de jeu. */
 const USAGES_OBJET=[['libre','À volonté'],['conso','Consommable — l’objet est défaussé'],
- ['court','Une fois entre deux repos courts'],['jour','Une fois par jour']];
+ ['court','Une fois entre deux repos courts'],['jour','Une fois par jour'],['horscombat','Hors combat seulement — à volonté']];
 // Les usages qui se comptent : une charge prise, et il faut un repos pour la rendre.
 const USAGES_LIMITES=['court','jour'];
 const usageLimite=u=>USAGES_LIMITES.includes(u);

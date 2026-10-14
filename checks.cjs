@@ -1809,7 +1809,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
    réglages, une phrase — et trois manières d'en user. */
 {const codes=C.OBJETS_CODES;
  assert.equal(Object.keys(codes).sort().join(),'etat,invulnerabilite,soin');
- assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','court','jour']));
+ assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','court','jour','horscombat']));
  assert.equal(JSON.stringify(C.USAGES_LIMITES),JSON.stringify(['court','jour']));
  assert.equal(C.usageLimite('court'),true);assert.equal(C.usageLimite('conso'),false);
  assert.equal(C.NOM_USAGE('court'),'Une fois entre deux repos courts');
@@ -3389,6 +3389,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.713 — L'icône des dégâts après chaque bonus de dégâts ; la bulle d'un objet de soin dit « Soin », son icône, ce qu'il
+   rend, et son prix ; l'usage hors combat ; l'équipement et l'arbre figés pour le seul aventurier pris dans le combat. */
+{const ed=fs.readFileSync('editor.js','utf8'),C29=require('./combat.js');
+ assert.ok(C29.USAGES_OBJET.some(([k])=>k==='horscombat')&&ed.includes("function refusHorsCombat(o){")&&ed.includes("function utiliserObjet(a,o){if(!a||!o||refusHorsCombat(o))return;")
+  &&ed.includes("function iconeDegats(){const ic=logoBonus({carac:'dmg'});")&&ed.includes("['pm','Point de Mouvement'],['soin','Soin']];")&&ed.includes("const soin=objetCode(o)&&objetCode(o).cle==='soin'?paramsObjet(o):null;")
+  &&ed.includes("function aventurierEnCombat(a){return !!a&&a.hero===true&&typeof enCombat==='function'&&enCombat()&&actors.includes(a)&&!a.horsCarte}")
+  &&ed.includes("function verrouEquip(a,o){return !!a&&!!o&&aventurierEnCombat(a)&&"),'dégâts, soin, hors combat, verrous par aventurier');}
 /* v0.712 — L'équipement de départ en icônes de sac, sans vide ni texte ; un nom d'objet lu sans ses tirets. */
 {const ed=fs.readFileSync('editor.js','utf8');const cle=new Function(ed.slice(ed.indexOf('const cleNomObjet='),ed.indexOf('function objetNomme('))+';return cleNomObjet')();
  assert.deepEqual([cle('Épée-courte'),cle('Épée courte (1 main)')],['epee courte','epee courte 1 main']);
@@ -3733,7 +3740,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("/action/i.test(nomPlanch
 {const C3=require('./combat.js'),idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(C3.TALENTS_CODES.bonus.params[0].options.some(([k])=>k==='pa')&&C3.TALENTS_CODES.bonus.params[0].options.some(([k])=>k==='pm')&&C3.TALENTS_CODES.pointsupp.retire===true,'PA et PM en bonus');
  assert.equal(C3.libelleBonus({carac:'pa',valeur:1}),'+1 PA');assert.equal(C3.libelleBonus({carac:'pm',valeur:2}),'+2 PM');
- assert.ok(idx.includes("c.filter(t=>t.code.cle==='bonus'&&k&&t.params&&t.params.carac===k)")&&ed.includes("['pa','Point d’Action'],['pm','Point de Mouvement']];"),'PA et PM comptés, icônes réglables');}
+ assert.ok(idx.includes("c.filter(t=>t.code.cle==='bonus'&&k&&t.params&&t.params.carac===k)")&&ed.includes("['pa','Point d’Action'],['pm','Point de Mouvement'],['soin','Soin']];"),'PA et PM comptés, icônes réglables');}
 /* v0.655 — Impulsion et ses améliorations ; « +1 PA » et « +1 PM » montent avec leur point. */
 {const C2=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  assert.ok(C2.TALENTS_CODES.impulsiontour.pour==='impulsion'&&C2.TALENTS_CODES.impulsionallie.pour==='impulsion','Impulsion');
@@ -3771,7 +3778,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const cands=vusPourMouv
  assert.ok(idx.includes("function frappeOmbrelame(a,p,frappes){")&&idx.includes("function courseMortelle(a,p,talent){")&&idx.includes("function bondissement(a,p,talent){")&&idx.includes("function lameEmpoisonnee(a,p,talent){")
   &&idx.includes("function noteDecoupe(a,b,quoi){")&&idx.includes("if(!hasState(a,'Affaibli')&&activeAttack(a).useOwnDamage!==false)bonus+=decoupeContre(a,b);")
   &&idx.includes("b.bondissement={de:a.id,tour:round};")&&fs.readFileSync('live.js','utf8').includes("'revanche','traction','bondissement','decoupe',"),'les talents d’Ombrelame câblés');
- assert.ok(ed.includes("function figeEnCombat(){return view!=='mj'&&typeof enCombat==='function'&&enCombat()}")&&ed.includes("if(m||figeEnCombat())return;"),'l’arbre figé en combat');
+ assert.ok(ed.includes("function figeEnCombat(a){return view!=='mj'&&aventurierEnCombat(a)}")&&ed.includes("if(m||figeEnCombat(a))return;"),'l’arbre figé en combat');
  assert.ok(pl.includes("function iconesClasseEnTete(select,famille){")&&pl.includes("if(tete)groupe(tete.label,[...tete.children],false);"),'la catégorie de la classe en tête');}
 /* v0.647 — Avec la Sélection, la hitbox d'un piège passe devant le départ, la matière et le halo d'une lumière ; son nom dans la
    fiche du piège la choisit sur la carte. Choisir un token d'un clic redessine les ronds Enjamber. La planche OMBRELAME et sa
@@ -5224,7 +5231,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("className:'debut-marque',textContent:'!'")&&src.includes("if(t.rayonne)b.classList.add('debut-combat');")&&src.includes('name="debutCombat"'),'les talents de début de combat');
  assert.ok(page.includes("function estMort(a){return !!a&&a.hero===true&&a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0}")
   &&page.includes("+(estMort(a)?' mort':'')")&&src.includes("if(estMort(a)){c.classList.add('mort');")&&src.includes("function ressusciter(a){if(view!=='mj'||!estMort(a))return;")
-  &&src.includes("if(verrou||(estMort(a)&&view!=='mj')||figeEnCombat())return;")&&src.includes("troupe.forEach(a=>{if(estMort(a))return;"),'un aventurier mort');}
+  &&src.includes("if(verrou||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;")&&src.includes("troupe.forEach(a=>{if(estMort(a))return;"),'un aventurier mort');}
 /* v0.499 — L'Attaque, talent de base de tout aventurier, en tête de sa fiche ; ce qui l'améliore s'ajoute à sa
    bulle et à celle de la barre d'Actions, une pastille devant, à la couleur foncée de la nature du talent. Tous
    les états s'en vont à la fin d'un combat ; le tour qui commence ne parle plus des activations. */
@@ -5377,7 +5384,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&css.includes('button.btn-action.rond.on,button.btn-action.rond.on:hover:not(:disabled){box-shadow:var(--relief)}')
   &&!css.includes('button.choix-attaque.rond')&&!/button\.btn-action\.rond[^{]*\{[^}]*0 0 0 2px var\(--panel\)/.test(css)&&!css.includes('.attaque-carte .dmg-ico'),'la face pleine du bouton d’action, en disque, sans anneau');
  assert.ok(src.includes("logosDeAttaque(at).slice(0,1).forEach(l=>{const im=logoAttaque(l,'bouton');if(im)logos.append(im)});")
-  &&src.includes("if(jeton){const ico=document.createElement('img');ico.className='dmg-ico';")&&src.includes("desEtBonus(at.dice,at.useOwnDamage===false?0:bonus)"),'la main droite seule ; le jeton de dégâts reste à la bulle des monstres');
+  &&src.includes("const ico=iconeDegats();if(ico)bas.append(ico)}")&&src.includes("desEtBonus(at.dice,at.useOwnDamage===false?0:bonus)"),'la main droite seule ; le jeton de dégâts reste à la bulle des monstres');
  assert.ok(page.includes('<button class="btn-action btn-analyse rond" id="reveal" hidden>🔍</button>')&&page.includes("function poseRond(b,centre,nom,dit,compte,bulle){")
   &&page.includes("poseRond(rev,centreRond('analyser','🔍'),dejà?'Analysé':'Analyser',")
   &&page.includes("poseRond(b,im||glyphe,nom,titre,compteDuTexte(nom),bulle);")&&page.includes("geste('Dégel','❄',")&&page.includes("geste('Se relever',ic||'⤴',")
@@ -5436,4 +5443,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2009 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2010 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
