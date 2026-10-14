@@ -813,6 +813,10 @@ let vueImposee=false;
 const renderAvantTable=render;render=function(){let rendre=false;
  if(spectateur()&&view!=='player'){view='player';$('view').value='player';vueImposee=true}
  else if(vueImposee&&!spectateur()){vueImposee=false;view=vueChoisie()||'mj';$('view').value=view;rendre=true}
+ /* Un joueur voit par l'aventurier qui est le sien, celui qu'il commande : sans siège pris, la vue retombait sur le premier de la
+    liste, et il commandait l'un en voyant par les yeux d'un autre. */
+ if(typeof invitEnLigne==='function'&&invitEnLigne()&&!aMoi(actors[owner])){let i=actors.findIndex(a=>aMoi(a)&&!a.horsCarte);if(i<0)i=actors.findIndex(aMoi);
+  if(i>=0){if(selected===owner)selected=i;owner=i;if($('owner'))$('owner').value=String(i)}}
  renderAvantTable();verrouillerInvite();pousserPlusTard();
  // Hors d'une table, le site n'est qu'au MJ.
  appliqueVerrou();
