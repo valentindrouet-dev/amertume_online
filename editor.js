@@ -764,6 +764,7 @@ accueilPage.innerHTML='<section class="cat-panel panel accueil"><header class="c
  +'<section class="accueil-bloc accueil-creer"><h3>Créer un nouvel aventurier</h3><button id="accueil-creer" type="button" class="primary">+ Créer un aventurier</button></section>'
  +'<section class="accueil-bloc accueil-actus"><h3>Dernières actualités</h3><div id="accueil-actus"></div></section>'
  +'<section class="accueil-bloc accueil-actifs"><h3>Aventuriers</h3><div id="accueil-actifs"></div></section>'
+ +'<section class="accueil-bloc accueil-joueurs"><h3>Joueurs connectés</h3><div id="accueil-joueurs" class="joueurs-connectes"></div></section>'
  +'<section class="accueil-bloc accueil-faits"><h3>Derniers hauts faits</h3><div id="accueil-faits"></div></section></div></section>';
 document.querySelector('main.layout').after(accueilPage,heroesPage,talentsPage,armoryPage,bestiaryPage,settingsPage);majNoms();
 /* Un sous-titre de carte, avec son « + » : équiper ou attribuer sans ouvrir la fiche. */
@@ -3689,7 +3690,7 @@ function renderActifs(){const boite=$('accueil-actifs');if(!boite)return;boite.r
   const ou=document.createElement('small');ou.className='accueil-lieu';ou.textContent=typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieuDe(a)):'';
   const d=document.createElement('small');d.textContent=[a.role,/niveau/i.test(a.role||'')?'':'niveau '+(Math.trunc(Number(a.level))||1)].filter(Boolean).join(' · ');
   if(classe&&classe.tint)n.style.color=classe.tint;t.append(n,ou,d);c.append(av,t);boite.append(c)})}
-function renderAccueil(){renderActualites();renderActifs();const f=$('accueil-faits');if(f){f.replaceChildren();const p=document.createElement('p');p.className='muted';p.textContent='Aucun haut fait pour l’instant.';f.append(p)}}
+function renderAccueil(){renderActualites();renderActifs();if(typeof renderJoueursConnectes==='function')renderJoueursConnectes();const f=$('accueil-faits');if(f){f.replaceChildren();const p=document.createElement('p');p.className='muted';p.textContent='Aucun haut fait pour l’instant.';f.append(p)}}
 /* ---------- Créer un aventurier ----------
    Onglet par onglet : identité, classe, caractéristiques, compétences, puis le récapitulatif. L'aventurier rejoint la campagne,
    au domaine : la page Aventuriers du MJ, et la fiche du joueur qui l'a créé. Il est prêt pour une mission, une aventure. */

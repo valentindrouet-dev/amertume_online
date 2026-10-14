@@ -448,6 +448,26 @@ function ecouterJournal(){journalPremier=true;
   s.docChanges().forEach(ch=>{if(ch.type!=='added'||journalVus.has(ch.doc.id))return;
    journalVus.add(ch.doc.id);poserLigne(ch.doc.data())})},()=>{})}
 
+/* ---------- Les joueurs connectés ----------
+   Un joueur à la table renouvelle sa présence chaque minute : il compte comme connecté tant qu'elle date de moins de trois.
+   Sous son pseudo, l'aventurier qu'il incarne, quand on a le droit de le voir. */
+const PRESENCE_MS=60000,PRESENCE_MAX=180000;let presenceTimer=null;
+function joueursConnectes(){const now=Date.now();
+ return Object.entries(sieges).filter(([,s])=>{if(!s||typeof s.nom!=='string'||!s.nom.trim())return false;
+  const t=s.at&&typeof s.at.toMillis==='function'?s.at.toMillis():null;return t===null||now-t<PRESENCE_MAX})
+  .map(([uid,s])=>({uid,nom:s.nom.trim().slice(0,30),heros:actors.find(a=>a&&a.id===s.actorId)||null})).sort((x,y)=>x.nom.localeCompare(y.nom,'fr'))}
+function renderJoueursConnectes(){const l=tableId?joueursConnectes():[];
+ const b=$('open-joueurs');if(b){const n=b.querySelector('.compte');if(n)n.textContent=l.length?String(l.length):''}
+ ['accueil-joueurs','joueurs-liste'].forEach(id=>{const boite=$(id);if(!boite)return;boite.replaceChildren();
+  if(!l.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun joueur connecté.';boite.append(p);return}
+  l.forEach(j=>{const c=document.createElement('div');c.className='joueur-connecte';const h=j.heros&&voitAventurier(j.heros)?j.heros:null;
+   const av=document.createElement('span');av.className='joueur-avatar';
+   if(h&&h.image){const im=document.createElement('img');im.src=h.image;im.alt='';av.append(im)}else av.textContent=j.nom.charAt(0).toUpperCase();
+   const t=document.createElement('div');t.className='joueur-texte';const n=document.createElement('b');n.textContent=j.nom;t.append(n);
+   if(h){const s=document.createElement('small');s.textContent=h.name;t.append(s)}
+   const point=document.createElement('i');point.className='point-connecte';point.setAttribute('aria-hidden','true');c.append(point,av,t);boite.append(c)})})}
+setInterval(()=>{if(tableId)renderJoueursConnectes()},30000);
+
 /* ---------- Sièges : qui incarne qui ---------- */
 function renderSieges(){const boite=$('live-sieges');if(!boite)return;boite.replaceChildren();
  if(tableId&&!estMJ()&&!(typeof remote!=='undefined'&&remote)){const p=document.createElement('p');p.className='muted';
@@ -488,7 +508,10 @@ async function prendreSiege(a){if(!siegesRef||!monUid||!tientAventurier(a))retur
 function pseudoJoueur(){const u=typeof auth!=='undefined'&&auth&&auth.currentUser;return String(u&&u.displayName||'Joueur').trim().slice(0,30)||'Joueur'}
 /* Un joueur qui rejoint se signale à la table sous son pseudo, même sans aventurier : le MJ le voit, et peut lui en confier un. */
 async function signaleJoueur(){if(!siegesRef||!monUid||estMJ())return;const ref=siegesRef.doc(monUid),at=firebase.firestore.FieldValue.serverTimestamp();
- try{const d=await ref.get();if(d.exists)await ref.update({nom:pseudoJoueur(),at});else await ref.set({actorId:'',nom:pseudoJoueur(),at})}catch(e){}}
+ try{const d=await ref.get();if(d.exists)await ref.update({nom:pseudoJoueur(),at});else await ref.set({actorId:'',nom:pseudoJoueur(),at})}catch(e){}
+ // Puis sa présence, chaque minute, tant qu'il est à la table.
+ clearInterval(presenceTimer);presenceTimer=setInterval(()=>{if(!siegesRef||!monUid||estMJ()){clearInterval(presenceTimer);presenceTimer=null;return}
+  siegesRef.doc(monUid).update({at:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{})},PRESENCE_MS)}
 async function libererSiege(){if(!siegesRef||!monUid)return;
  try{await siegesRef.doc(monUid).set({actorId:'',nom:pseudoJoueur(),at:firebase.firestore.FieldValue.serverTimestamp()});monSiege=null;localStorage.removeItem(TABLE_CLE+'-siege');
   renderSieges();liveStatus('Siège libéré.')}catch(e){liveStatus(liveErreur(e))}}
@@ -523,10 +546,10 @@ async function fermerTable(){if(!estMJ()||!tableId)return;
  for(const col of [siegesRef,journalRef]){if(!col)continue;
   try{let lot;do{lot=await col.limit(200).get();if(!lot.size)break;const b=cloud.batch();lot.forEach(d=>b.delete(d.ref));await b.commit()}while(lot.size===200)}catch(e){}}
  debrancherTable();localStorage.removeItem(TABLE_CLE);liveStatus('Table fermée.')}
-function debrancherTable(){if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
+function debrancherTable(){clearInterval(presenceTimer);presenceTimer=null;if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
  quitteSalle=quitteSieges=quitteJournal=null;enLigne=false;poussePret=false;tableId=null;salleRef=siegesRef=journalRef=null;journalVus=new Set();
  modeConnu=ongletConnu=false;ongletVu=null;envoiOnglet=null;
- sieges={};monSiege=null;majTable()}
+ sieges={};monSiege=null;majTable();renderJoueursConnectes()}
 function brancherTable(code){if(!cloud)return;debrancherTable();
  tableId=code;salleRef=cloud.doc('amertume_online_live/'+code);
  siegesRef=salleRef.collection('seats');journalRef=salleRef.collection('journal');
@@ -539,7 +562,7 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
  quitteSieges=siegesRef.onSnapshot(s=>{sieges={};s.forEach(d=>sieges[d.id]=d.data());
   const mien=monUid&&sieges[monUid];monSiege=mien?mien.actorId:null;
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
-  renderSieges();majTable()},()=>{});
+  renderSieges();renderJoueursConnectes();majTable()},()=>{});
  majTable()}
 /* La fenêtre ne cache plus ses boutons : elle les montre, grisés quand il manque quelque
    chose, et dit lequel. Masquer « Ouvrir une table » tant que le MJ n'était pas reconnu ne
@@ -587,6 +610,11 @@ const ouvreTable=()=>{if(!liveDialog.open)liveDialog.showModal()};
 const liveButton=document.createElement('button');liveButton.id='open-live';
 liveButton.textContent='Table en ligne';liveButton.onclick=()=>{renderSieges();majTable();liveDialog.showModal()};
 document.querySelector('.view-controls').append(liveButton);
+// À côté, les joueurs connectés : leur nombre sur le bouton, leur liste dans la fenêtre.
+const joueursDialog=dialog('joueurs-connectes','Joueurs connectés','<div id="joueurs-liste" class="joueurs-connectes"></div>');
+const joueursButton=document.createElement('button');joueursButton.id='open-joueurs';joueursButton.type='button';
+joueursButton.append('Joueurs connectés',Object.assign(document.createElement('span'),{className:'compte'}));
+joueursButton.onclick=()=>{renderJoueursConnectes();joueursDialog.showModal()};liveButton.after(joueursButton);
 $('live-open').onclick=ouvrirTable;
 $('live-login').onclick=()=>{if(tableVoulue){demandeCompte();return}const b=$('shared-login');if(b)b.click();
  liveStatus('Fenêtre de connexion Google ouverte…')};

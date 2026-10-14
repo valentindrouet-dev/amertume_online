@@ -8,6 +8,11 @@ body.vue-joueur #bestiary-add,body.vue-joueur .cat-actions{display:none!importan
 #live-sieges{display:flex;flex-direction:column;gap:2px;margin-top:4px}
 #live-sieges .pick-ligne:disabled{opacity:.55}
 #open-live.has-news{border-color:var(--green);color:var(--green)}
+#open-joueurs .compte:not(:empty){margin-left:6px;display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--green);color:#fff;font:700 11px/18px system-ui;text-align:center}
+.joueurs-connectes{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}#joueurs-liste{min-width:min(360px,80vw)}
+.joueur-connecte{display:flex;align-items:center;gap:9px}.point-connecte{flex:none;width:8px;height:8px;border-radius:50%;background:#3fae5a;box-shadow:0 0 0 3px color-mix(in srgb,#3fae5a 22%,transparent)}
+.joueur-avatar{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:var(--panel-2);border:2px solid var(--line-strong);font:700 16px Georgia,serif;color:var(--ink)}
+.joueur-avatar img{width:100%;height:100%;object-fit:cover}.joueur-texte{display:flex;flex-direction:column;min-width:0}.joueur-texte small{color:var(--muted)}
 .mj-tools{display:flex;gap:8px;flex-wrap:wrap;padding:12px 28px}.mj-tools button{font-size:14px}dialog{color:var(--ink);background:var(--panel);border:1px solid var(--line-strong);border-radius:12px;width:min(840px,94vw);max-height:90dvh;padding:22px;overflow:auto}dialog::backdrop{background:#0007}
 /* La boîte d'une question : étroite, une phrase, deux boutons. */
 dialog.demande{width:min(440px,94vw)}dialog.demande p{margin:4px 0 0;font-size:15px;line-height:1.5}

@@ -1,15 +1,16 @@
 /* Les dernières actualités de la table, pour l'Accueil. Chaque publication s'ajoute d'elle-même en tête de « versions »
    (publie.sh) ; « resume » condense les dix dernières en quelques lignes, tant qu'il va jusqu'à la plus récente. */
-const ACTUALITES={resume:{jusqua:'0.714',lignes:[
+const ACTUALITES={resume:{jusqua:'0.715',lignes:[
  'Accueil : création d’aventurier pas à pas, en couleurs — espèce, classe, 3 points de caractéristique, 3 de compétence, l’équipement de départ, 10d6 Or et un objet inhabituel tiré au hasard.',
  'Aventuriers : le MJ coche ceux qui partent à l’aventure ; eux seuls entrent sur la carte et gagnent XP et butin.',
  'Accueil : les dernières actualités, tous les aventuriers et où ils se trouvent, et bientôt les hauts faits.',
  'Objets : soin et prix dans la bulle, usage hors combat ; en combat, seul l’aventurier sur la carte garde son équipement et son arbre figés.',
- 'Table en ligne : chaque joueur a son compte et ses aventuriers ; le MJ voit tout et confie les siens.',
+ 'Table en ligne : chaque joueur a son compte et ses aventuriers ; le MJ voit tout et confie les siens ; les joueurs connectés à l’Accueil.',
  'Icônes : cinq planches Artisanat ; le choix d’un logo d’objet se fait planche par planche.',
 ]},
 versions:[
 /* versions */
+{"v":"0.715","d":"2026-10-14","t":"Joueurs connectés à l'Accueil et dans l'en-tête"},
 {"v":"0.714","d":"2026-10-14","t":"Comptes des joueurs et aventuriers de chacun"},
 {"v":"0.713","d":"2026-10-14","t":"Icône des dégâts, bulle de soin, usage hors combat, verrous par aventurier"},
 {"v":"0.712","d":"2026-10-14","t":"Équipement de départ en icônes de sac"},
