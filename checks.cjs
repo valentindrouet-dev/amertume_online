@@ -2514,7 +2514,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {assert.ok(src.includes("['pv','PV max',a.max],['def','DEF',defOf(a),true],")&&src.includes("tuilesVives(a,tuiles,[['vie','vieMax'],['endu'],[],['def'],['dmg'],['xp']],c);")
   &&src.includes(" bullesChiffres(a,tuiles);")&&src.includes("function bullesChiffres(a,tuiles){const quoi={vie:detailVie,endu:detailEndu,pv:detailPv,def:detailDef,dmg:detailDegats,xp:detailXp};")&&page.includes("if(typeof bullesChiffres==='function'&&!secret)bullesChiffres(a,tuiles);")&&src.includes(" ecrire('.stat-tile.t-pv strong',a.max);")
   &&feuille.includes('.calcul-ligne.total{'),'PV max et leur calcul, Dégâts détaillés');
- const ctxD={catalog:{talents:[],items:[],classes:[{name:'Gardien',pv:2}]},bonusDe:()=>({pv:0,vie:0,endu:0,dmg:2,def:0,skills:[]}),classeDe:(cl,r)=>cl.find(c=>c.name===r),pvEspece:()=>0,auraMeneur:()=>0,degatsDe:a=>a.dmg+2};
+ const ctxD={catalog:{talents:[],items:[],classes:[{name:'Gardien',pv:2}]},bonusDe:()=>({pv:0,vie:0,endu:0,dmg:2,def:0,skills:[]}),classeDe:(cl,r)=>cl.find(c=>c.name===r),pvEspece:()=>0,bonusEspece:()=>({pv:0,vie:0,endu:0,dmg:0,skills:[]}),bonusCreation:()=>({pv:0,vie:0,endu:0,dmg:0}),especeDe:()=>null,auraMeneur:()=>0,degatsDe:a=>a.dmg+2};
  vm.createContext(ctxD);vm.runInContext(src.slice(src.indexOf('function detailPvMax(a)'),src.indexOf('function calculAuSurvol(')),ctxD);
  const pv=ctxD.detailPvMax({vie:5,endu:4,role:'Gardien',max:22});
  assert.equal(JSON.stringify(pv.slice(3)),JSON.stringify([['Endu × Vie','4 × 5 = 20'],['Classe (Gardien)','+ 2'],['Total','22']]));
@@ -3389,17 +3389,26 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.706 — Les espèces : une étape de la création, présentée comme les classes, et leurs bonus pour toujours ; les bulles
+   des caractéristiques et des compétences. Une espèce écrite à la main ne donne rien. */
+{const C28=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
+ const nain=C28.bonusDe({hero:true,espece:'nain',talents:[]},[],[]),elfe=C28.bonusDe({hero:true,espece:'elfe',talents:[]},[],[]),libre=C28.bonusDe({hero:true,race:'Nain',talents:[]},[],[]);
+ assert.deepEqual([nain.pv,nain.skills[4],nain.skills[7],elfe.endu,elfe.dmg,elfe.skills[0],elfe.skills[2],libre.pv,libre.skills[4]],[8,1,1,1,1,1,1,0,0]);
+ assert.equal(C28.pvMaximum([{name:'Gardien',pv:18}],{hero:true,role:'Gardien',espece:'nain',vie:3,endu:2,talents:[]},[],[]),6+18+8);
+ assert.equal(C28.especeDe('gnome').capacite,'Discrétion');assert.equal(C28.bonusDe({hero:false,espece:'goliath',talents:[]},[],[]).dmg,0);
+ assert.ok(ed.includes("['identite','Identité'],['espece','Espèce'],['classe','Classe']")&&ed.includes(" if(!especeDe(a.espece))delete a.espece;")&&ed.includes("race:e.nom,espece:e.id,")
+  &&ed.includes("const bulleStat=(el,carac,comp)=>{surveille(el,()=>{")&&fs.readFileSync('live.js','utf8').includes("'pointsCreation','espece',"),'espèces et bulles');}
 /* v0.703 — La création : la classe présentée, trois points de caractéristique, quatre de compétence, l'arbre jusqu'au niveau 4. */
 {const C27=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
  const b=C27.bonusDe({hero:true,role:'Gardien',pointsCreation:{endu:1,vie:1,dmg:1},talents:[]},[],[]);assert.deepEqual([b.endu,b.vie,b.dmg],[2,1,1]);
  assert.equal(C27.pvMaximum([{name:'Gardien',pv:18}],{hero:true,role:'Gardien',vie:3,endu:2,pointsCreation:{endu:2,vie:1,dmg:0},talents:[]},[],[]),4*6+18);
- assert.ok(ed.includes("const POINTS_CARACS=3,POINTS_COMPS=4,COMP_MAX_CREATION=2,XP_CREATION=100,COMP_BASE=1;")&&ed.includes("skills:c.skills.map(n=>COMP_BASE+n),")&&ed.includes("Ombrelame:'Combattant redoutablement rapide")
+ assert.ok(ed.includes("const POINTS_CARACS=3,POINTS_COMPS=4,COMP_MAX_CREATION=2,XP_CREATION=100,COMP_BASE=1;")&&ed.includes("skills:c.skills.slice(),")&&ed.includes("Ombrelame:'Combattant redoutablement rapide")
   &&!ed.includes('arbresCreationId')&&ed.includes("if(typeof pousserBientot==='function')pousserBientot();renderAccueil()}")&&fs.readFileSync('live.js','utf8').includes("'pointsCreation'"),'création complète');}
 /* v0.702 — L'onglet Accueil : créer un aventurier pas à pas, les dernières actualités, les aventuriers au domaine, les hauts faits. */
 {const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),act=fs.readFileSync('actualites.js','utf8'),sh=fs.readFileSync('publie.sh','utf8');
  const A=new Function(act+';return ACTUALITES')();assert.ok(A.versions.length>=10&&A.resume.lignes.length>=5&&A.resume.lignes.length<=6,'les actualités');
  assert.ok(ed.includes("const ONGLETS=[['accueil','Accueil'],['table','Table de jeu'],")&&ed.includes("return ['accueil','table',")&&mp.includes("const PAGES=['accueil','table','maps',")
-  &&mp.includes("else if(p==='accueil')renderAccueil();")&&ed.includes("const ETAPES_CREATION=[['identite','Identité'],['classe','Classe'],['caracs','Caractéristiques'],['comps','Compétences'],['recap','Récapitulatif']];")
+  &&mp.includes("else if(p==='accueil')renderAccueil();")&&ed.includes("const ETAPES_CREATION=[['identite','Identité'],['espece','Espèce'],['classe','Classe'],['caracs','Caractéristiques'],['comps','Compétences'],['recap','Récapitulatif']];")
   &&ed.includes("horsCarte:true,lieuDomaine:''")&&sh.includes("s.replace('/* versions */',"),'l’Accueil câblé');}
 /* v0.701 — Les effets de talent Points d'Action et Points de Mouvement : +x à chaque tour ; les bonus de l'arbre restent tels
    qu'ils étaient. */
@@ -5391,4 +5400,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2002 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2003 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

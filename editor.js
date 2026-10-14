@@ -16,6 +16,8 @@ function normalizeActor(a){a.id??=crypto.randomUUID();
  // Les points de la création d'un aventurier : trois au plus, en Endurance, Vie ou Dégâts.
  if(a.pointsCreation&&typeof a.pointsCreation==='object'){const n=k=>Math.max(0,Math.min(3,Math.trunc(Number(a.pointsCreation[k]))||0)),p={endu:n('endu'),vie:n('vie'),dmg:n('dmg')};
   if(p.endu+p.vie+p.dmg>3||!(p.endu+p.vie+p.dmg))delete a.pointsCreation;else a.pointsCreation=p}else delete a.pointsCreation;
+ // Son espèce, quand elle est de la table : une autre ne compte pas.
+ if(!especeDe(a.espece))delete a.espece;
 a.role=ombrelame(a.role);a.munitionId??='';a.depots=normaliseDepots(a.depots);a.forges=normaliseForges(a.forges);
  // Les zones fouillées par la Perception : la carte, le centre et le rayon, rien d'autre.
  a.fouilles=Array.isArray(a.fouilles)?a.fouilles.filter(f=>f&&Number.isFinite(+f.x)&&Number.isFinite(+f.y)&&+f.r>0).slice(-200).map(f=>({m:String(f.m||'').slice(0,80),x:+f.x,y:+f.y,r:Math.min(1,+f.r),...(Number.isInteger(f.n)&&f.n>=0?{n:Math.min(99,f.n)}:{})})):[];
@@ -909,19 +911,21 @@ function detailPvMax(a){const b=bonusDe(a,catalog.talents,catalog.items);
   ['Endu × Vie',endu+' × '+vie+' = '+endu*vie]];
  l.push(['Classe'+(c&&c.name?' ('+c.name+')':''),(classe>=0?'+ ':'− ')+Math.abs(classe)]);
  if(espece)l.push(['Espèce ('+a.race+')',(espece>=0?'+ ':'− ')+Math.abs(espece)]);
- if(b.pv)l.push(['Bonus de talents et d’équipement','+ '+b.pv]);
+ const pvEs=bonusEspece(a).pv,es=especeDe(a.espece);if(pvEs)l.push(['Espèce ('+(es?es.nom:a.race)+')','+ '+pvEs]);
+ if(b.pv-pvEs)l.push(['Bonus de talents et d’équipement','+ '+(b.pv-pvEs)]);
  if(aura)l.push(['Meneur allié','+ '+aura]);
  l.push(['Total',String(a.max)]);return l}
 function detailDegats(a){const b=bonusDe(a,catalog.talents,catalog.items),bt=bonusDe(a,catalog.talents,null),aura=typeof auraMeneur==='function'?auraMeneur(a,'dmg'):0;
  const l=[['Dégâts','= base + bonus'],['Base',String(Number(a.dmg)||0)]];
- if(bt.dmg)l.push(['Talents','+ '+bt.dmg]);if(b.dmg-bt.dmg)l.push(['Équipement','+ '+(b.dmg-bt.dmg)]);if(aura)l.push(['Meneur allié','+ '+aura]);
+ l.push(...partsBonus(a,'dmg'));if(aura)l.push(['Meneur allié','+ '+aura]);
  {const t=typeof tenailles==='function'?tenailles(a):0;if(t)l.push(['Pris en tenailles','+ '+t])}
  if(typeof meuteActive==='function'&&meuteActive(a))l.push(['Meute (allié au contact)','× 2']);
  l.push(['Total','+'+degatsDe(a)]);return l}
 /* Les bulles des chiffres, au survol de chacun : d'où il vient, ligne par ligne, le total au bas.
    Talents et équipement se lisent à part : on sait quel nœud de l'arbre ou quelle pièce compte. */
 const partsBonus=(a,cle)=>{const b=bonusDe(a,catalog.talents,catalog.items),bt=bonusDe(a,catalog.talents,null),l=[];
- if(bt[cle])l.push(['Talents','+ '+bt[cle]]);if(b[cle]-bt[cle])l.push(['Équipement','+ '+(b[cle]-bt[cle])]);return l};
+ const cr=bonusCreation(a)[cle]||0,es=bonusEspece(a)[cle]||0,ta=bt[cle]-cr-es,e=especeDe(a.espece);
+ if(cr)l.push(['Création','+ '+cr]);if(es)l.push(['Espèce'+(e?' ('+e.nom+')':''),'+ '+es]);if(ta)l.push(['Talents',(ta>0?'+ ':'− ')+Math.abs(ta)]);if(b[cle]-bt[cle])l.push(['Équipement','+ '+(b[cle]-bt[cle])]);return l};
 // La Vie : celle du moment sur la Vie max, d'où vient le maximum, et ce qu'elle pèse dans les PV max.
 function detailVie(a){const b=bonusDe(a,catalog.talents,catalog.items),base=Math.max(0,Math.trunc(Number(a.vieMax??a.vie))||0),max=base+b.vie;
  const endu=enduAffichee(a),vie=vieAffichee(a),c=classeDe(catalog.classes,a.role),classe=(c&&Number(c.pv))||0,reste=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)-endu*vie;
@@ -3644,7 +3648,7 @@ function renderAccueil(){renderActualites();renderActifs();const f=$('accueil-fa
 /* ---------- Créer un aventurier ----------
    Onglet par onglet : identité, classe, caractéristiques, compétences, puis le récapitulatif. L'aventurier rejoint la campagne,
    au domaine : la page Aventuriers du MJ, et la fiche du joueur qui l'a créé. Il est prêt pour une mission, une aventure. */
-const ETAPES_CREATION=[['identite','Identité'],['classe','Classe'],['caracs','Caractéristiques'],['comps','Compétences'],['recap','Récapitulatif']];
+const ETAPES_CREATION=[['identite','Identité'],['espece','Espèce'],['classe','Classe'],['caracs','Caractéristiques'],['comps','Compétences'],['recap','Récapitulatif']];
 // La présentation des classes du jeu ; une classe du catalogue peut porter la sienne.
 const DESCRIPTIONS_CLASSES={Destructeur:'L’ivresse des batailles vous habite, et la rage vous envahit lorsque vous prenez les armes, afin d’exterminer vos adversaires et de protéger vos coéquipiers.',
  Gardien:'Protecteur et esprit tactique de votre équipe, vous êtes le héraut des plus faibles et la robustesse incarnée. Défendez vos coéquipiers et arrachez la victoire grâce à votre esprit de stratège.',
@@ -3654,14 +3658,21 @@ const descriptionClasse=cl=>!cl?'':String(cl.description||'').trim()||DESCRIPTIO
 // Trois points de caractéristique : +2 Endurance, +1 Vie ou +1 Dégâts chacun ; quatre points de compétence, +2 au plus dans une même.
 const POINTS_CARACS=3,POINTS_COMPS=4,COMP_MAX_CREATION=2,XP_CREATION=100,COMP_BASE=1;
 const CARACS_CREATION=[['endu','Endurance',2],['vie','Vie',1],['dmg','Dégâts',1]];
+// Ce que disent les bulles des caractéristiques et des compétences : les règles telles que la table les joue.
+const TEXTES_CARACS={vie:'PV max = Endurance × Vie + bonus de classe.',endu:'PV max = Endurance × Vie + bonus de classe. Un repos court rend 1d6 + Endurance PV.',
+ dmg:'S’ajoutent aux dégâts de chaque attaque.',pv:'PV max = Endurance × Vie + bonus de classe, d’espèce et de talents.'};
+const TEXTE_TEST_COMPETENCE='Un test lance autant de d6 que sa valeur : chaque 4 ou plus est une réussite, chaque 6 fait lancer un dé de plus.';
+const USAGES_COMPETENCES={Ruse:'Larcin, déverrouiller un coffre ou y chercher un piège.',Technique:'Déverrouiller un coffre ou y chercher un piège.',Savoir:'Analyser un adversaire : chaque réussite révèle ce que la troupe en ignorait.'};
+const NOMS_CARACS_CREATION={vie:'Vie',endu:'Endurance',dmg:'Dégâts',pv:'PV max'};
 const creationDialog=dialog('creation-aventurier','Créer un aventurier','<nav id="creation-etapes" class="creation-etapes"></nav><div id="creation-corps" class="creation-corps"></div><div class="form-actions"><button type="button" id="creation-prec">Précédent</button><button type="button" id="creation-suiv" class="primary">Suivant</button></div>');
 let creation=null;
-function openCreation(){creation={etape:0,name:'',sexe:'',race:'',role:'',caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
+function openCreation(){creation={etape:0,name:'',sexe:'',espece:'',role:'',caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
 const restantCaracs=c=>POINTS_CARACS-c.caracs.endu-c.caracs.vie-c.caracs.dmg,restantComps=c=>POINTS_COMPS-c.skills.reduce((s,n)=>s+n,0);
-const valeursCreation=c=>({vie:BASE_HEROS.vieMax+c.caracs.vie,endu:BASE_HEROS.endu+2*c.caracs.endu,dmg:BASE_HEROS.dmg+c.caracs.dmg});
-const pvCreation=c=>{const v=valeursCreation(c);return Math.max(1,v.vie*v.endu+bonusPV(catalog.classes,c.role,c.race))};
-// Une étape n'ouvre la suivante que remplie : un nom, une classe, tous les points dépensés.
-const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='classe'&&!creation.role?'Choisis une classe.'
+const especeCreation=c=>especeDe(c.espece),compsEspece=c=>bonusEspece({hero:true,espece:c.espece}).skills;
+const valeursCreation=c=>{const e=bonusEspece({hero:true,espece:c.espece});return {vie:BASE_HEROS.vieMax+c.caracs.vie+e.vie,endu:BASE_HEROS.endu+2*c.caracs.endu+e.endu,dmg:BASE_HEROS.dmg+c.caracs.dmg+e.dmg}};
+const pvCreation=c=>{const v=valeursCreation(c);return Math.max(1,v.vie*v.endu+bonusPV(catalog.classes,c.role,'')+bonusEspece({hero:true,espece:c.espece}).pv)};
+// Une étape n'ouvre la suivante que remplie : un nom, une espèce, une classe, tous les points dépensés.
+const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='espece'&&!especeCreation(creation)?'Choisis une espèce.':k==='classe'&&!creation.role?'Choisis une classe.'
  :k==='caracs'&&restantCaracs(creation)?'Points à dépenser.':k==='comps'&&restantComps(creation)?'Points à répartir.':'';
 function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-etapes'),corps=$('creation-corps');nav.replaceChildren();corps.replaceChildren();
  ETAPES_CREATION.forEach(([k,n],i)=>{const b=document.createElement('button');b.type='button';b.textContent=(i+1)+'. '+n;b.className=i===c.etape?'on':'';
@@ -3673,15 +3684,37 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
  // Les icônes et les couleurs des caractéristiques et des compétences, telles que la fiche les montre.
  const ico=el=>{if(el)el.classList.add('creation-ico');return el},icoCarac=k=>ico(logoBonus({carac:k})),teinte=k=>'rgb('+((typeof STAT_TINTS!=='undefined'&&STAT_TINTS[k])||'120,110,90')+')';
  const icoComp=i=>ico(logoCompetence(i))||Object.assign(document.createElement('span'),{className:'bonus-lettres creation-ico',textContent:COMPETENCES[i].slice(0,2)});
- const nomComp=(i,suite)=>{const s=document.createElement('span');s.className='creation-nom';s.style.color='rgb('+SKILL_TINTS[i]+')';s.append(icoComp(i),COMPETENCES[i]);if(suite){const m=document.createElement('small');m.textContent=suite;s.append(m)}return s};
- const nomCarac=(k,nom,suite)=>{const s=document.createElement('span');s.className='creation-nom';s.style.color=teinte(k);const i=icoCarac(k);if(i)s.append(i);s.append(nom);if(suite){const m=document.createElement('small');m.textContent=suite;s.append(m)}return s};
+ // Au survol d'une caractéristique ou d'une compétence, sa bulle : son nom, à sa couleur, et ce qu'elle fait.
+ const bulleStat=(el,carac,comp)=>{surveille(el,()=>{const d=document.createElement('div');d.className='cat-detail bulle-comp-corps';
+  d.style.setProperty('--tint',carac?((typeof STAT_TINTS!=='undefined'&&STAT_TINTS[carac])||'120,110,90'):SKILL_TINTS[comp]);
+  const nom=document.createElement('p');nom.className='bulle-comp-nom creation-nom';if(carac){const i=icoCarac(carac);if(i)nom.append(i);nom.append(NOMS_CARACS_CREATION[carac])}else nom.append(icoComp(comp),COMPETENCES[comp]);d.append(nom);
+  (carac?[TEXTES_CARACS[carac]]:[TEXTE_TEST_COMPETENCE,USAGES_COMPETENCES[COMPETENCES[comp]]]).filter(Boolean).forEach(t=>{const p=document.createElement('p');p.className='bulle-comp-texte';p.textContent=t;d.append(p)});
+  ouvrirBulle(el,d,'bulle-comp')});return el};
+ const nomComp=(i,suite)=>{const s=document.createElement('span');s.className='creation-nom';s.style.color='rgb('+SKILL_TINTS[i]+')';s.append(icoComp(i),COMPETENCES[i]);if(suite){const m=document.createElement('small');m.textContent=suite;s.append(m)}return bulleStat(s,null,i)};
+ const nomCarac=(k,nom,suite)=>{const s=document.createElement('span');s.className='creation-nom';s.style.color=teinte(k);const i=icoCarac(k);if(i)s.append(i);s.append(nom);if(suite){const m=document.createElement('small');m.textContent=suite;s.append(m)}return bulleStat(s,k)};
+ const pastilleCarac=(k,txt)=>{const s=document.createElement('span');s.className='creation-pastille';s.style.color=teinte(k);const i=icoCarac(k);if(i)s.append(i);s.append(txt);return bulleStat(s,k)};
+ const pastilleComp=(i,txt)=>{const s=document.createElement('span');s.className='creation-pastille';s.style.color='rgb('+SKILL_TINTS[i]+')';s.append(icoComp(i),txt);return bulleStat(s,null,i)};
  const tuiles=l=>{const g=document.createElement('div');g.className='creation-tuiles';l.forEach(([k,nom,v])=>{const t=document.createElement('div');t.className='creation-tuile';t.style.setProperty('--teinte',teinte(k));
-  const i=icoCarac(k);if(i)t.append(i);const b=document.createElement('b');b.textContent=String(v);const s=document.createElement('small');s.textContent=nom;t.append(b,s);g.append(t)});return g};
+  const i=icoCarac(k);if(i)t.append(i);const b=document.createElement('b');b.textContent=String(v);const s=document.createElement('small');s.textContent=nom;t.append(b,s);g.append(bulleStat(t,k))});return g};
  const statsCreation=()=>{const v=valeursCreation(c);return tuiles([['vie','Vie',v.vie],['endu','Endurance',v.endu],['dmg','Dégâts','+'+v.dmg],['pv','PV max',pvCreation(c)]])};
  const recap=l=>{const dl=document.createElement('dl');dl.className='creation-recap';l.forEach(([t,v])=>{const dt=document.createElement('dt');dt.textContent=t;const dd=document.createElement('dd');dd.textContent=String(v);dl.append(dt,dd)});return dl};
+ // Les bonus d'une espèce en pastilles, comme ceux d'une classe ; sa capacité à part.
+ const bonusEspeceEl=e=>{const bonus=document.createElement('div');bonus.className='creation-bonus';
+  [['vie','Vie'],['endu','Endurance'],['dmg','Dégâts'],['pv','PV']].forEach(([cle,nom])=>{if(e[cle])bonus.append(pastilleCarac(cle,'+'+e[cle]+' '+nom))});
+  COMPETENCES.forEach((n,i)=>{const v=e.comps[n];if(v)bonus.append(pastilleComp(i,'+'+v+' '+n))});
+  if(e.capacite){const s=document.createElement('span');s.className='creation-pastille creation-capacite';const t=document.createElement('i');t.textContent='ESP';s.append(t,e.capacite);bonus.append(s)}
+  return bonus};
  if(k==='identite'){const n=inp('text',c.name,v=>{c.name=v.slice(0,120);majBoutons()},{maxlength:'120',placeholder:'Nom de l’aventurier'});
   const s=document.createElement('select');[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']].forEach(([v,t])=>s.add(new Option(t,v)));s.value=c.sexe;s.onchange=()=>{c.sexe=s.value};
-  const r=inp('text',c.race,v=>{c.race=v.slice(0,40)},{maxlength:'40'});corps.append(lab('Nom',n),lab('Sexe',s),lab('Espèce',r));setTimeout(()=>n.focus())}
+  corps.append(lab('Nom',n),lab('Sexe',s));setTimeout(()=>n.focus())}
+ else if(k==='espece'){const g=document.createElement('div');g.className='creation-classes';
+  ESPECES.forEach(e=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.espece===e.id?' on':'');b.style.setProperty('--teinte',e.teinte);
+   const n=document.createElement('b');n.textContent=e.nom;const p=document.createElement('small');
+   p.textContent=[['vie','Vie'],['endu','Endurance'],['dmg','Dégâts'],['pv','PV']].filter(([cle])=>e[cle]).map(([cle,nom])=>'+'+e[cle]+' '+nom).join(' · ')||e.capacite||'';b.append(n,p);
+   b.onclick=()=>{c.espece=e.id;renderCreation()};g.append(b)});corps.append(g);
+  const e=especeCreation(c);
+  if(e){const f=document.createElement('div');f.className='creation-fiche-classe';f.style.setProperty('--teinte',e.teinte);
+   const t=document.createElement('h3');t.textContent=e.nom;f.append(t,bonusEspeceEl(e));corps.append(f)}}
  else if(k==='classe'){const g=document.createElement('div');g.className='creation-classes';
   (catalog.classes||[]).forEach(cl=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.role===cl.name?' on':'');b.style.setProperty('--teinte',cl.tint||'#8a7a5a');
    const n=document.createElement('b');n.textContent=cl.name;const p=document.createElement('small');p.textContent='+'+(Number(cl.pv)||0)+' PV';b.append(n,p);
@@ -3690,24 +3723,25 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
   const cl=(catalog.classes||[]).find(x=>x.name===c.role);
   if(cl){const f=document.createElement('div');f.className='creation-fiche-classe';f.style.setProperty('--teinte',cl.tint||'#8a7a5a');
    const t=document.createElement('h3');t.textContent=cl.name;f.append(t);const d=descriptionClasse(cl);if(d){const p=document.createElement('p');p.className='creation-description';p.textContent=d;f.append(p)}
-   const bonus=document.createElement('div');bonus.className='creation-bonus';const pv=document.createElement('span');pv.className='creation-pastille';pv.style.color=teinte('pv');{const i=icoCarac('pv');if(i)pv.append(i)}pv.append('+'+(Number(cl.pv)||0)+' PV');bonus.append(pv);
-   competencesDeClasse(cl.name).forEach((n,i)=>{if(!n)return;const s=document.createElement('span');s.className='creation-pastille';s.style.color='rgb('+SKILL_TINTS[i]+')';s.append(icoComp(i),'+'+n+' '+COMPETENCES[i]);bonus.append(s)});
+   const bonus=document.createElement('div');bonus.className='creation-bonus';bonus.append(pastilleCarac('pv','+'+(Number(cl.pv)||0)+' PV'));
+   competencesDeClasse(cl.name).forEach((n,i)=>{if(n)bonus.append(pastilleComp(i,'+'+n+' '+COMPETENCES[i]))});
    f.append(bonus);corps.append(f)}}
  else if(k==='caracs'){const n=restantCaracs(c),g=document.createElement('div');g.className='creation-points';
   CARACS_CREATION.forEach(([cle,nom,par])=>{const l=document.createElement('div');l.className='creation-comp';const t=nomCarac(cle,nom,'+'+par+' par point');
    const v=document.createElement('b');v.textContent=String(c.caracs[cle]);
    l.append(t,pas(-1,c.caracs[cle]>0,()=>{c.caracs[cle]--;renderCreation()}),v,pas(1,n>0,()=>{c.caracs[cle]++;renderCreation()}));g.append(l)});
   corps.append(reste(n,POINTS_CARACS),g,statsCreation())}
- else if(k==='comps'){const n=restantComps(c),g=document.createElement('div'),cls=competencesDeClasse(c.role);g.className='creation-comps';
-  COMPETENCES.forEach((nom,i)=>{const l=document.createElement('div');l.className='creation-comp';const t=nomComp(i,cls[i]?'+'+cls[i]+' classe':'');
-   // La valeur à jour : 1 pour tous, plus la classe, plus les points ; les boutons n'engagent que les points, +2 au plus.
-   const v=document.createElement('b');v.textContent=String(COMP_BASE+cls[i]+c.skills[i]);if(c.skills[i])v.classList.add('monte');
+ else if(k==='comps'){const n=restantComps(c),g=document.createElement('div'),cls=competencesDeClasse(c.role),esp=compsEspece(c);g.className='creation-comps';
+  COMPETENCES.forEach((nom,i)=>{const l=document.createElement('div');l.className='creation-comp';const t=nomComp(i,[cls[i]?'+'+cls[i]+' classe':'',esp[i]?'+'+esp[i]+' espèce':''].filter(Boolean).join(' · '));
+   // La valeur à jour : 1 pour tous, plus la classe et l'espèce, plus les points ; les boutons n'engagent que les points, +2 au plus.
+   const v=document.createElement('b');v.textContent=String(COMP_BASE+cls[i]+esp[i]+c.skills[i]);if(c.skills[i])v.classList.add('monte');
    l.append(t,pas(-1,c.skills[i]>0,()=>{c.skills[i]--;renderCreation()}),v,pas(1,n>0&&c.skills[i]<COMP_MAX_CREATION,()=>{c.skills[i]++;renderCreation()}));g.append(l)});
   corps.append(reste(n,POINTS_COMPS),g)}
- else{const v=valeursCreation(c),cls=competencesDeClasse(c.role);
-  const cl=(catalog.classes||[]).find(x=>x.name===c.role),dl=recap([['Nom',c.name],['Sexe',c.sexe||'—'],['Espèce',c.race||'—'],['Classe',c.role],['XP à investir',XP_CREATION]]);
+ else{const cls=competencesDeClasse(c.role),esp=compsEspece(c),e=especeCreation(c);
+  const cl=(catalog.classes||[]).find(x=>x.name===c.role),dl=recap([['Nom',c.name],['Sexe',c.sexe||'—'],['Espèce',e?e.nom:'—'],['Classe',c.role],['XP à investir',XP_CREATION]]);
+  if(e)[...dl.querySelectorAll('dd')][2].style.color=e.teinte;
   if(cl&&cl.tint)[...dl.querySelectorAll('dd')][3].style.color=cl.tint;
-  const comps=document.createElement('div');comps.className='creation-bonus';COMPETENCES.forEach((n,i)=>{const t=COMP_BASE+c.skills[i]+cls[i];const s=document.createElement('span');s.className='creation-pastille';s.style.color='rgb('+SKILL_TINTS[i]+')';s.append(icoComp(i),n+' '+t);comps.append(s)});
+  const comps=document.createElement('div');comps.className='creation-bonus';COMPETENCES.forEach((n,i)=>comps.append(pastilleComp(i,n+' '+(COMP_BASE+c.skills[i]+cls[i]+esp[i]))));
   corps.append(dl,statsCreation(),comps)}
  majBoutons()}
 function majBoutons(){const c=creation,k=ETAPES_CREATION[c.etape][0],fin=c.etape===ETAPES_CREATION.length-1;
@@ -3715,9 +3749,10 @@ function majBoutons(){const c=creation,k=ETAPES_CREATION[c.etape][0],fin=c.etape
 $('creation-prec').onclick=()=>{if(creation&&creation.etape>0){creation.etape--;renderCreation()}};
 $('creation-suiv').onclick=()=>{const c=creation;if(!c)return;if(c.etape<ETAPES_CREATION.length-1){if(!etapeManque(ETAPES_CREATION[c.etape][0])){c.etape++;renderCreation()}return}creerAventurier()};
 /* L'aventurier créé : au domaine, hors de la carte, avec ses 100 premiers XP ; chez un joueur, il devient le sien. La création
-   s'achève sur le récapitulatif. */
-function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;
- const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:c.name.trim(),sexe:c.sexe,race:c.race.trim(),role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.map(n=>COMP_BASE+n),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'',pointsCreation:{...c.caracs}});
+   s'achève sur le récapitulatif. Sa fiche ne garde que les points de compétence : le 1 de base, la classe et l'espèce s'y ajoutent
+   au jeu, comme pour tout aventurier. */
+function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;const e=especeCreation(c);
+ const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:c.name.trim(),sexe:c.sexe,race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'',pointsCreation:{...c.caracs}});
  normalizeActor(a);a.max=Math.max(1,pvMaximum(catalog.classes,a,catalog.talents,catalog.items));a.hp=a.max;actors.push(a);creation=null;creationDialog.close();
  const i=actors.indexOf(a);
  if(view!=='mj'){owner=i;selected=i;if(typeof enLigne!=='undefined'&&enLigne&&typeof prendreSiege==='function')prendreSiege(a)}
