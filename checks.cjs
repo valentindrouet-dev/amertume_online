@@ -3389,6 +3389,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.712 — L'équipement de départ en icônes de sac, sans vide ni texte ; un nom d'objet lu sans ses tirets. */
+{const ed=fs.readFileSync('editor.js','utf8');const cle=new Function(ed.slice(ed.indexOf('const cleNomObjet='),ed.indexOf('function objetNomme('))+';return cleNomObjet')();
+ assert.deepEqual([cle('Épée-courte'),cle('Épée courte (1 main)')],['epee courte','epee courte 1 main']);
+ assert.ok(ed.includes("b.className=clic?'creation-classe creation-kit'+(on?' on':''):'creation-kit creation-kit-nu';")&&!ed.includes("creation-piece-alea"),'packs en icônes');}
 /* v0.711 — Cinq planches Artisanat et leur catégorie ; dans la grille des logos d'un objet, une planche par groupe replié,
    son nom et sa première icône en tête. */
 {const pl=fs.readFileSync('planches.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
@@ -5432,4 +5436,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2008 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2009 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

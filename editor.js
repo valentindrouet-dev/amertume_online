@@ -3690,7 +3690,7 @@ const OBJET_ALEATOIRE_CLASSE={Destructeur:['une-main','armure'],Gardien:['une-ma
 const NOMS_OBJET_ALEATOIRE={'une-main':'Arme à une main',armure:'Armure',bouclier:'Bouclier',distance:'Arme à distance'};
 const GENRES_OBJET_ALEATOIRE={'une-main':o=>o.category==='weapon'&&o.ranged!==true&&weaponHands(o)===1,distance:o=>o.category==='weapon'&&o.ranged===true,
  armure:o=>o.category==='armor'&&['torse','tete','dos','bottes'].includes(emplacementDe(o)),bouclier:o=>o.category==='armor'&&emplacementDe(o)==='shield'};
-const cleNomObjet=n=>String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().split(/\s+/).map(m=>m.length>2?m.replace(/[sx]$/,''):m).join(' ');
+const cleNomObjet=n=>String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().split(' ').map(m=>m.length>2?m.replace(/[sx]$/,''):m).join(' ');
 function objetNomme(n){const k=cleNomObjet(n),l=(catalog.items||[]).filter(o=>o&&!o.forge);const exact=l.find(o=>cleNomObjet(o.name)===k);if(exact)return exact;
  // À défaut, une pièce dont le nom porte tous ces mots, dans n'importe quel ordre : la plus courte.
  const mots=k.split(' ');return l.filter(o=>{const m=cleNomObjet(o.name).split(' ');return mots.every(x=>m.includes(x))}).sort((x,y)=>x.name.length-y.name.length)[0]||null}
@@ -3790,17 +3790,17 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
   const piece=([nom,n])=>{const o=objetNomme(nom);if(!o){const s=document.createElement('small');s.className='creation-manque';s.textContent=nom;return s}
    const q=gearCarre(o,n,0);q.classList.remove('dispo');const m=q.querySelector('.marque-porte');if(m)m.remove();q.removeAttribute('role');q.tabIndex=-1;
    surveille(q,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(q,d,'bulle-gear')});return q};
-  const lot=(l,on,clic)=>{const b=document.createElement(clic?'button':'div');if(clic){b.type='button';b.onclick=clic}b.className='creation-classe creation-kit'+(on?' on':'');b.style.setProperty('--teinte',tint);l.forEach(x=>b.append(piece(x)));return b};
+  // Un pack au choix est une carte ; ce que tous reçoivent, les icônes seules.
+  const lot=(l,on,clic)=>{const b=document.createElement(clic?'button':'div');if(clic){b.type='button';b.onclick=clic}b.className=clic?'creation-classe creation-kit'+(on?' on':''):'creation-kit creation-kit-nu';b.style.setProperty('--teinte',tint);l.forEach(x=>b.append(piece(x)));return b};
   const groupe=(titre,...cartes)=>{const h=document.createElement('h4');h.className='creation-kit-titre';h.textContent=titre;const g=document.createElement('div');g.className='creation-classes creation-kits';g.append(...cartes);corps.append(h,g)};
   groupe('Armes',...ARMES_DEPART.map((l,i)=>lot(l,c.armes===i,()=>{c.armes=i;renderCreation()})));
   groupe('Armure',...ARMURES_DEPART.map((l,i)=>lot(l,c.armure===i,()=>{c.armure=i;renderCreation()})));
   // Les objets, et l'or : 10d6, lancés en créant l'aventurier.
   const objets=lot(OBJETS_DEPART,true,null),or=document.createElement('span');or.className='cat-pill gear-carre creation-or';or.setAttribute('aria-label',OR_DEPART+' or');
   const po=document.createElement('i');po.className='piece-or';const x=document.createElement('span');x.className='exemplaires';x.textContent=OR_DEPART;or.append(po,x);objets.append(or);groupe('Objets',objets);
-  const alea=document.createElement('div');alea.className='creation-classe creation-kit creation-kit-alea on';alea.style.setProperty('--teinte',tint);
+  const alea=document.createElement('div');alea.className='creation-kit creation-kit-nu';
   const q=document.createElement('span');q.className='cat-pill gear-carre r-inhabituel creation-alea';q.textContent='?';
-  const t=document.createElement('small');t.textContent=NOM_RARETE('inhabituel')+' · '+genresAleatoires(c.role).map(g=>NOMS_OBJET_ALEATOIRE[g]).join(' ou ');
-  const s=document.createElement('span');s.className='creation-piece creation-piece-alea';s.append(q,t);alea.append(s);groupe('Objet aléatoire',alea)}
+  q.setAttribute('aria-label',NOM_RARETE('inhabituel')+' : '+genresAleatoires(c.role).map(g=>NOMS_OBJET_ALEATOIRE[g]).join(' ou '));alea.append(q);groupe('Objet aléatoire',alea)}
  else{const cls=competencesDeClasse(c.role),esp=compsEspece(c),e=especeCreation(c);
   const cl=(catalog.classes||[]).find(x=>x.name===c.role),dl=recap([['Nom',c.name],['Sexe',c.sexe||'—'],['Espèce',e?e.nom:'—'],['Classe',c.role],['XP à investir',XP_CREATION]]);
   if(e)[...dl.querySelectorAll('dd')][2].style.color=e.teinte;

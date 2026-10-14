@@ -2534,7 +2534,13 @@ body.page-accueil .intro,body.page-accueil .mj-tools,body.page-accueil main.layo
 #creation-aventurier .creation-piece{display:flex;flex-direction:column;align-items:center;gap:3px;max-width:96px;text-align:center}#creation-aventurier .creation-piece small{color:var(--ink)}
 #creation-aventurier .creation-piece.manque small{opacity:.55;text-decoration:line-through}
 #creation-aventurier .creation-alea{display:grid;place-items:center;font:800 22px Georgia,serif}
-#creation-aventurier .creation-kits{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}#creation-aventurier .creation-kit{padding:8px 10px;gap:6px;align-items:center}
+#creation-aventurier .creation-kits{display:flex;flex-wrap:wrap;gap:8px}#creation-aventurier .creation-kit{width:auto;padding:8px 10px;gap:8px;align-items:center;flex-wrap:nowrap}
+#creation-aventurier .creation-kit-nu{display:flex;padding:2px 0;border:0;background:none}
+#creation-aventurier .creation-kit .cat-pill.gear-carre{width:36px;min-width:36px;height:36px;min-height:36px;padding:2px;gap:0;border-radius:8px;justify-content:center;cursor:default}
+#creation-aventurier .creation-kit .cat-pill.gear-carre :is(.logo-equip,.glyphe){width:26px;height:26px;margin:0;flex:none}
+#creation-aventurier .creation-kit .cat-pill.gear-carre>:is(.marque-porte,.gear-bas,.pips){display:none}
+#creation-aventurier .creation-kit .cat-pill.gear-carre .exemplaires{position:absolute;top:auto;right:-6px;bottom:-6px;left:auto;padding:0 3px;font:700 9px/13px system-ui;color:var(--ink);border-radius:6px;background:var(--panel);border:1px solid var(--line)}
+#creation-aventurier .creation-kit .creation-or .piece-or{width:20px;height:20px}#creation-aventurier .creation-kit .creation-alea{font-size:18px}
 #creation-aventurier .creation-manque{opacity:.55;text-decoration:line-through;align-self:center}#creation-aventurier .creation-or{display:grid;place-items:center}#creation-aventurier .creation-kit-alea{grid-column:span 2}#creation-aventurier .creation-or .piece-or{width:22px;height:22px}#creation-aventurier .creation-piece.creation-piece-alea{flex-direction:row;max-width:none;gap:10px;text-align:left}
 .hero-aventure{flex:none;width:18px;height:18px;margin:0;accent-color:var(--accent);cursor:pointer}.hero-aventure:disabled{cursor:default}
 .sheet-origine{flex:none;display:inline-flex;align-items:center;gap:4px;font:600 13px system-ui;color:var(--muted);white-space:nowrap}.origine-genre{font-size:15px;line-height:1}.hero-card .sheet-origine{align-self:center}#sheet .sheet-head>.sheet-origine{margin-left:auto;margin-right:-4px}
