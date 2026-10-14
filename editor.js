@@ -1179,7 +1179,8 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   qui.add(new Option('MJ',''));joueursConnus().forEach(([uid,nom])=>qui.add(new Option(nom,uid)));qui.value=a.joueur||'';
   qui.onchange=()=>{const j=joueursConnus().find(([u])=>u===qui.value);if(j){a.joueur=j[0];a.joueurNom=j[1]}else{delete a.joueur;delete a.joueurNom}
    scheduleSave();if(typeof pousserBientot==='function')pousserBientot()};joueurEl=qui}
- tete.append(...(poignee?[poignee]:[]),...(part?[part]:[]),jeton,titre,...(origine?[origine]:[]),classe,...(elem?[elem]:[]),outils);
+ // L'élément du Mystique ne se lit plus sur la fiche : il est au-dessus de son arbre de talents.
+ tete.append(...(poignee?[poignee]:[]),...(part?[part]:[]),jeton,titre,...(origine?[origine]:[]),classe,outils);
  const puces=document.createElement('div');puces.className='chips';
  if(joueurEl)puces.append(joueurEl);
  const marques=[];if(!a.hero){if(a.sexe)marques.push([(a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe]);

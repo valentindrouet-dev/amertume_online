@@ -3389,6 +3389,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.739 — L'élément du Mystique quitte la fiche (il est au-dessus de son arbre) ; le jeton de la fiche ne s'écrase plus. */
+{const ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ed.includes(" tete.append(...(poignee?[poignee]:[]),...(part?[part]:[]),jeton,titre,...(origine?[origine]:[]),classe,outils);"));
+ assert.ok(fs.readFileSync('editor.css','utf8').includes(".hero-head>.avatar{flex:none}"));}
 /* v0.738 — La bibliothèque range les nouvelles améliorations : sous Attaque d'état, et Charge — regain au Destructeur. */
 {const C37=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
  assert.equal(C37.TALENTS_CODES.attaqueetatauto.pour,'attaqueetat');assert.equal(C37.TALENTS_CODES.attaqueetatpa.pour,'attaqueetat');
@@ -5578,4 +5582,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2064 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2066 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
