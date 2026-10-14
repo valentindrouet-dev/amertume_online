@@ -244,6 +244,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
  const avant=JSON.stringify(etatVivant());
  appliquantDistant=true;let base=null,carteNeuve=false,tourChange=false;const aGlisser=[];
  try{
+  // Ce que le joueur connaissait avant ce document : le bandeau d'un nouveau tour, ou d'un combat qui a recommencé, s'en déduit.
+  const avantIci={connu:modeConnu,mode,round,cb:typeof numeroCombat!=='undefined'?numeroCombat:0};
   const cb=d.fogReset&&Number.isFinite(d.fogReset.cb)?d.fogReset.cb:null;
   // Un joueur prend le numéro du combat du MJ ; le MJ qui revient à la table reprend le sien là où il en était.
   if(cb!==null&&typeof numeroCombat!=='undefined'&&(!estMJ()||cb>numeroCombat))numeroCombat=cb;
@@ -285,6 +287,11 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     if(m0&&typeof resetFog==='function'&&(brouillardConnu||brouillardReset.tout))resetFog(brouillardReset.tout,true)}
    // Le numéro connu, la mémoire d'exploration gardée sur l'appareil se relit.
    if(!brouillardConnu&&d.fogReset&&typeof d.fogReset.n==='number'){brouillardConnu=true;if(typeof fogSeenSrc!=='undefined'){fogSeenSrc=null;fogKey=''}}}
+  /* Chez un joueur, en combat d'un document à l'autre : un nouveau combat s'annonce, même sans retour à l'exploration entre les
+     deux ; sinon un nouveau tour s'annonce, comme chez le MJ, et ouvre son tour au journal. */
+  if(!estMJ()&&avantIci.connu&&avantIci.mode==='combat'&&mode==='combat'&&typeof annonceFlottante==='function'){
+   if(typeof numeroCombat!=='undefined'&&numeroCombat!==avantIci.cb)annonceFlottante('⚔ Début du combat !');
+   else if(round!==avantIci.round){annonceFlottante('Tour '+round);if(typeof separateurTour==='function')separateurTour($('journal'))}}
   // Le MJ qui revient à la table reprend le numéro des remises à zéro là où il en était : sinon chaque joueur rejouait une remise à zéro.
   if(estMJ()&&d.fogReset&&typeof d.fogReset.n==='number'&&typeof brouillardReset!=='undefined'&&d.fogReset.n>brouillardReset.n)brouillardReset={n:d.fogReset.n,tout:!!d.fogReset.tout};
   const vus=new Set(),aRepousser=[],gardes=[],cibles=[],gardesPieges=[],cleIci=typeof cleTour==='function'?cleTour():null;
@@ -492,7 +499,14 @@ function ecouterJournal(){journalPremier=true;
   if(journalPremier){journalPremier=false;const docs=s.docs.filter(d=>!journalVus.has(d.id));
    if(docs.length){docs.forEach(d=>journalVus.add(d.id));rejouerJournal(docs)}return}
   s.docChanges().forEach(ch=>{if(ch.type!=='added'||journalVus.has(ch.doc.id))return;
-   journalVus.add(ch.doc.id);poserLigne(ch.doc.data())})},()=>{})}
+   journalVus.add(ch.doc.id);poserLigneEnDirect(ch.doc.data())})},()=>{})}
+/* Chez un joueur, une ligne du MJ arrive souvent avant l'état de la table qui la suit : elle se range sous le tour où le MJ l'a
+   écrite, et non sous celui que la page connaît encore. « Le combat commence » ouvre son tour 1 ; « Fin du combat » n'en ouvre aucun. */
+function poserLigneEnDirect(rec){if(estMJ()||!rec||typeof rec!=='object'||rec.genre==='effet'||!Number.isFinite(rec.tour)){poserLigne(rec);return}
+ const texte=rec.genre==='texte'&&!rec.a?String(rec.texte||''):'',debut=texte==='⚔ Le combat commence.',fin=/^Fin du combat/.test(texte);
+ if(!debut&&!fin&&!enCombat()){poserLigne(rec);return}
+ const r0=round,m0=mode;if(debut){mode='combat';logRound=null}else if(fin)mode='exploration';else round=rec.tour;
+ try{poserLigne(rec)}finally{round=r0;mode=m0}}
 
 /* ---------- Les joueurs connectés ----------
    Un joueur à la table renouvelle sa présence toutes les trente secondes : il compte comme connecté tant qu'elle date de moins
