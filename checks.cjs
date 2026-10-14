@@ -1787,7 +1787,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
  &&src.includes('function epingleBulle(oui){bulleEpinglee=!!oui&&!!bulleEl;')&&src.includes('function basculeEpingle(el,quoi){if(bulleEpinglee&&bulleAncre===el){fermerBulle();return}')
  &&src.includes('function reposeBulle(quoi){const ep=bulleEpinglee;quoi();if(ep)epingleBulle(true)}')
  &&src.includes('function fermerBulle(){retireBulle();if(BULLES){gearOuvert=null;talentOuvert=null}}')
- &&src.includes('function retireBulle(){bulleEpinglee=false;if(!bulleEl)return;')
+ &&src.includes('function retireBulle(){bulleEpinglee=false;retireComparaison();comparerAvec=null;if(!bulleEl)return;')
  &&src.includes('function bulleOrpheline(){if(BULLES)requestAnimationFrame(()=>{if(bulleEl&&bulleAncre&&!bulleAncre.isConnected)fermerBulle()})}')
  &&src.includes("rangees(equipement,'');rangees(objets,combat?'':'Objets');bulleOrpheline();")&&src.includes(' bulleOrpheline();return out}')
  &&src.includes("if(!equipable){if(BULLES){if(!tout)basculeEpingle(p,montre)}else basculer();return}")
@@ -1809,7 +1809,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
    réglages, une phrase — et trois manières d'en user. */
 {const codes=C.OBJETS_CODES;
  assert.equal(Object.keys(codes).sort().join(),'etat,invulnerabilite,soin');
- assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','court','jour','horscombat']));
+ assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','court','jour','horscombat','horsconso']));
  assert.equal(JSON.stringify(C.USAGES_LIMITES),JSON.stringify(['court','jour']));
  assert.equal(C.usageLimite('court'),true);assert.equal(C.usageLimite('conso'),false);
  assert.equal(C.NOM_USAGE('court'),'Une fois entre deux repos courts');
@@ -1843,12 +1843,12 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
    formulaire, le bouton qui l'emploie, la charge du jour et les dés écartés. */
 assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function renderArmory(){renderBiblioObjets();")
  &&src.includes('📖 Banque des effets d’équipement')&&src.includes("const porteurs=(catalog.items||[]).filter(o=>o&&o.effet===c.cle).map(o=>o.name);")
- &&src.includes("o.effet=OBJETS_CODES[o.effet]?o.effet:'';")&&src.includes("o.usage=usageObjet(o);o.consumable=o.usage==='conso';")
+ &&src.includes("o.effet=OBJETS_CODES[o.effet]?o.effet:'';")&&src.includes("o.usage=usageObjet(o);o.consumable=usageConsomme(o.usage);")
  &&src.includes("+sel('Usage','usage',usageObjet(a),USAGES_OBJET)")&&src.includes('function dessineReglagesObjet()')
  &&src.includes("a.params=a.effet?paramsObjet({effet:a.effet,params:lireReglagesObjet()}):{};")&&!src.includes(">Consommable</label>')")
  &&src.includes('function usageEpuise(a,o)')&&src.includes("function objetDisponible(a,o){return !usageLimite(usageObjet(o))||!usageEpuise(a,o)}")
  &&src.includes('function appliquerEffetObjet(a,o)')&&src.includes("if(usageLimite(usage)){a.usages={...(a.usages||{}),[o.id]:usage}}")
- &&src.includes("if(usage==='conso')retirerInventaire(a,o);")&&src.includes('if(objetCode(o)){appliquerEffetObjet(a,o);return}')
+ &&src.includes("if(usageConsomme(usage))retirerInventaire(a,o);")&&src.includes('if(objetCode(o)){appliquerEffetObjet(a,o);return}')
  &&src.includes("a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};")
  &&page.includes('function desRecus(b,dice)')&&page.includes('const {gardes:dice,ecartes}=desRecus(b,tous);')
  &&page.includes('const suite=domDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
@@ -2249,7 +2249,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(C.effetParNom('Solidité'),'solidite');
  assert.ok(C.porteEffet([{code:s,params:{}}],'solidite'));
  assert.ok(page.includes("const solide=porteEffet(talentsCodes(b),'solidite');")
-  &&page.includes("const defCible=hasState(b,'Au sol')?0:defOf(b),solide=porteEffet(talentsCodes(b),'solidite');")
+  &&page.includes("const defCible=hasState(b,'Au sol')||briseO.ignore?0:defOf(b),solide=porteEffet(talentsCodes(b),'solidite');")
   &&page.includes("const passe=d=>l.def===undefined||l.def===null||d[1]>6||passeDef(d,l.def,!!l.solidite);"),'attaque et orbe demandent Solidité à la cible, et la piste le sait');
  assert.ok(page.includes("poseJet({dice:r.dice,origine:dice.length,faille:r.failleFace,def,bonus:r.failed||blocked||!r.hit?0:bonus,solidite:solide},a,b);")
   &&page.includes("im.className='rate';im.src=imgUrl('DEF VIDE.png');")&&page.includes(".board-die .rate{")&&page.includes("if(calme){marque();return}")
@@ -3389,6 +3389,25 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.731 — « Donjon Terminé ! » au retrait du dernier adversaire ; l'usage hors combat consommable. */
+{const C33=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8');
+ assert.deepEqual(['conso','horsconso','horscombat','libre'].map(C33.usageConsomme),[true,true,false,false]);
+ assert.deepEqual(['conso','horsconso','horscombat','libre'].map(C33.usageHorsCombat),[false,true,true,false]);
+ assert.ok(ed.includes("render();scheduleSave();donjonTermine(partants);return null}"));
+ assert.ok(ed.includes("annonceFlottante('🏆 Donjon Terminé !','annonce-victoire')"));
+ assert.ok(lv.includes("if(envoiDonjon)out.fogReset.dn=envoiDonjon;"));}
+/* v0.731 — MAJ au survol d'une pièce d'équipement du sac : ce qui est porté au même endroit, en bulles à gauche. */
+{const ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ed.includes("let majTenue=false,comparaisonEl=null,comparerAvec=null;"));
+ assert.ok(ed.includes("if(o.category==='weapon')l=(a.weapons||[]).map(objetDe);"));
+ assert.ok(ed.includes("comparerAvec={ancre:p,liste:()=>equipesComparables(a,o),detail:x=>gearDetail(x,a,!tout)};montreComparaison()"));
+ assert.ok(fs.readFileSync('editor.css','utf8').includes(".bulles-comparaison{position:fixed;"));}
+/* v0.730 — Brise vaut aussi pour les orbes : DEF ignorée, DEF retirée, dégâts doublés contre la cible qui porte l'état. */
+{const ix=fs.readFileSync('index.html','utf8');
+ assert.ok(ix.includes("const briseO=briseContre(talentsCodes(a),b);"));
+ assert.ok(ix.includes("const defCible=hasState(b,'Au sol')||briseO.ignore?0:defOf(b)"));
+ assert.ok(ix.includes("if(briseO.double&&!r.failed&&r.damage)r={...r,damage:r.damage*2};"));
+ assert.ok(ix.includes("if(briseO.perte)b.defBrisee="));}
 /* v0.729 — Le loot forgé borné par type : 2 affixes standard, 3 élite, 4 solitaire et boss. */
 {const C32=require('./combat.js');
  assert.deepEqual(['standard','alpha','solitaire','boss'].map(t=>C32.forgeAdvEffectif({type:t}).max),[2,3,4,4]);
@@ -3419,7 +3438,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 /* v0.722 — La troupe se redessine sans remonter la page ; « hors combat » se juge pour l'aventurier ; les joueurs connectés au
    survol ; l'image que le MJ donne à l'aventurier d'un joueur part par la table. */
 {const ed=fs.readFileSync('editor.js','utf8'),vv=fs.readFileSync('live.js','utf8');
- assert.ok(ed.includes("{const sansDefilement=renderHeroes;renderHeroes=function(){")&&ed.includes("function enCombatPour(a){")&&ed.includes("const horsCombat=usage==='horscombat'&&enCombatPour(a);")
+ assert.ok(ed.includes("{const sansDefilement=renderHeroes;renderHeroes=function(){")&&ed.includes("function enCombatPour(a){")&&ed.includes("const horsCombat=usageHorsCombat(usage)&&enCombatPour(a);")
   &&ed.includes("if(draft.hero&&draft.joueur){const j=await imagePourTable(url);")&&vv.includes("const jetonAvant=a.imageJeton;")&&vv.includes("surveille(joueursButton,()=>{"),'défilement, hors combat, survol, image du MJ');}
 /* v0.721 — L'image d'un joueur allégée pour voyager par la table (Safari écrit du PNG, trop lourd) ; celle qui n'était pas
    partie repart de chez son joueur. */
@@ -5514,4 +5533,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2025 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2036 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

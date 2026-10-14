@@ -384,7 +384,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   o.rarete=rareteDe(o);o.bonus=normaliseBonusEquip(o.bonus);
   // Une ressource n'a ni effet, ni usage, ni bonus : elle se stocke et se vend. Une clé non plus.
   if(o.category==='ressource'||o.category==='restes'||o.category==='cle'){o.effet='';o.params={};o.bonus=[];o.usage='libre';delete o.mode}
-  o.usage=usageObjet(o);o.consumable=o.usage==='conso';
+  o.usage=usageObjet(o);o.consumable=usageConsomme(o.usage);
   o.magasin=o.magasin===true;o.unique=estUnique(o);
   // Sa lumière, en mètres ; rien d'ordinaire.
   o.lumiere=lumiereDe(o);if(!o.lumiere)delete o.lumiere;
@@ -455,7 +455,7 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
      0 / jour une fois pris ; 1 / repos entre deux repos courts. */
   const texte=code.cle==='etat'?(p&&p.etat)||code.nom:code.nom;
   const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':'repos'):'';
-  const horsCombat=usage==='horscombat'&&enCombatPour(a);
+  const horsCombat=usageHorsCombat(usage)&&enCombatPour(a);
   out.push({objet:o,texte,compte,
    teinte:TEINTE_RARETE[rareteDe(o)]||TEINTE_OBJET.object,
    peut:dispo&&!horsCombat,limite:usageLimite(usage),epuise:!dispo,
@@ -1500,7 +1500,7 @@ function bulleOrpheline(){if(BULLES)requestAnimationFrame(()=>{if(bulleEl&&bulle
    face — ne la ferait pas renaître sur la dernière vignette survolée. */
 function fermerBulle(){retireBulle();if(BULLES){gearOuvert=null;talentOuvert=null}}
 // Ôter la bulle sans rien oublier de ce qui est ouvert : c'est ainsi qu'elle se remplace.
-function retireBulle(){bulleEpinglee=false;if(!bulleEl)return;bulleEl.remove();bulleEl=null;bulleAncre=null;bulleRetiree=performance.now();
+function retireBulle(){bulleEpinglee=false;retireComparaison();comparerAvec=null;if(!bulleEl)return;bulleEl.remove();bulleEl=null;bulleAncre=null;bulleRetiree=performance.now();
  document.removeEventListener('pointerdown',bulleDehors,true);
  document.removeEventListener('keydown',bulleEchap,true);
  window.removeEventListener('scroll',fermerBulle,true);window.removeEventListener('resize',fermerBulle)}
@@ -1527,7 +1527,28 @@ function placerBulle(){if(!bulleEl||!bulleAncre)return;
   gauche=Math.max(marge,Math.min(innerWidth-b.width-marge-deborde,gauche))}
  bulleEl.style.top=Math.max(marge,haut)+'px';bulleEl.style.left=gauche+'px';
  bulleEl.classList.toggle('dessous',dessous);
- bulleEl.style.setProperty('--fleche',Math.max(14,Math.min(b.width-14,r.left+r.width/2-gauche))+'px')}
+ bulleEl.style.setProperty('--fleche',Math.max(14,Math.min(b.width-14,r.left+r.width/2-gauche))+'px');placeComparaison()}
+/* MAJ tenue au survol d'une pièce d'équipement de l'inventaire : ce que l'aventurier porte au même endroit paraît à gauche
+   de la bulle, pour comparer ; deux armes en main, l'une au-dessus de l'autre. */
+let majTenue=false,comparaisonEl=null,comparerAvec=null;
+function equipesComparables(a,o){if(!a||!o)return [];let l=[];
+ if(o.category==='weapon')l=(a.weapons||[]).map(objetDe);
+ else if(o.category==='ammo')l=[a.munitionId?objetDe(a.munitionId):null];
+ else if(o.category==='armor'){const s=emplacementDe(o);l=s==='shield'?[a.shieldId?objetDe(a.shieldId):objetDe((a.weapons||[])[1])]:portesA(a,s,catalog.items).map(objetDe)}
+ return l.filter(x=>x&&x!==o)}
+function retireComparaison(){if(comparaisonEl){comparaisonEl.remove();comparaisonEl=null}}
+function montreComparaison(){retireComparaison();if(!majTenue||!bulleEl||!comparerAvec||comparerAvec.ancre!==bulleAncre)return;
+ const l=comparerAvec.liste();if(!l.length)return;
+ const c=document.createElement('div');c.className='bulles-comparaison';
+ l.forEach(o=>{const b=document.createElement('div');b.className='bulle bulle-gear bulle-compare sans-entree';const d=comparerAvec.detail(o);d.hidden=false;d.classList.add('large');b.append(d);c.append(b)});
+ bulleEl.after(c);comparaisonEl=c;placeComparaison()}
+// À gauche de la bulle, son haut au même niveau ; sans place à gauche, à droite.
+function placeComparaison(){if(!comparaisonEl||!bulleEl)return;const b=bulleEl.getBoundingClientRect(),c=comparaisonEl.getBoundingClientRect(),marge=8;
+ let gauche=b.left-c.width-10;if(gauche<marge)gauche=Math.min(innerWidth-c.width-marge,b.right+10);
+ comparaisonEl.style.left=Math.max(marge,gauche)+'px';comparaisonEl.style.top=Math.max(marge,Math.min(innerHeight-c.height-marge,b.top))+'px'}
+document.addEventListener('keydown',e=>{if(e.key!=='Shift'||majTenue)return;majTenue=true;montreComparaison()});
+document.addEventListener('keyup',e=>{if(e.key!=='Shift')return;majTenue=false;retireComparaison()});
+window.addEventListener('blur',()=>{majTenue=false;retireComparaison()});
 // « ancre » doit être visible : une vignette d'une page repliée n'ouvre pas de bulle.
 // Un élément SVG de la carte n'a pas de offsetParent : il est visible s'il occupe une place.
 function ancreVisible(el){return !!el&&el.isConnected&&(!!el.offsetParent||(el instanceof SVGElement&&el.getClientRects().length>0))}
@@ -1728,7 +1749,7 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
   if(neuf&&!des&&hasState(a,valeur)){setState(a,valeur,false);dit+=', et '+valeur+' se dissipe'}}
  // La charge du jour est prise, le consommable quitte l'inventaire.
  if(usageLimite(usage)){a.usages={...(a.usages||{}),[o.id]:usage}}
- if(usage==='conso')retirerInventaire(a,o);
+ if(usageConsomme(usage))retirerInventaire(a,o);
  log(nomNum(a)+' emploie '+o.name+(dit?' : '+dit:'')+'.',{ton:'talent'});
  if(typeof annonceFlottante==='function')annonceFlottante('◈ '+o.name+(dit?' · '+dit:''));
  render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();
@@ -1740,7 +1761,7 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
 /* En combat, pour un objet : l'aventurier pris dans le combat, sur la carte ; un adversaire, dès qu'un combat se joue. Un
    aventurier au domaine ou hors de la carte n'y est pas, même si d'autres se battent. */
 function enCombatPour(a){return typeof enCombat==='function'&&enCombat()&&(!a||!a.hero||aventurierEnCombat(a))}
-function refusHorsCombat(a,o){if(usageObjet(o)!=='horscombat'||!enCombatPour(a))return false;
+function refusHorsCombat(a,o){if(!usageHorsCombat(usageObjet(o))||!enCombatPour(a))return false;
  log(o.name+' ne s’emploie qu’hors combat.',{local:true});return true}
 function employerDepuisFiche(a,o){if(refusHorsCombat(a,o))return;const surTable=typeof PAGES==='undefined'||!PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x));
  if(surTable||objetCode(o)){utiliserObjet(a,o);return}
@@ -1778,7 +1799,9 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
  if(portes(o))remplitMunition(p,a,o);
  const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert||BULLES;
  const montre=()=>{gearOuvert=cle;talentOuvert=null;
-  const d=gearDetail(o,a,!tout);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear')};
+  const d=gearDetail(o,a,!tout);d.hidden=false;d.classList.add('large');ouvrirBulle(p,d,'bulle-gear');
+  // Dans le sac, une pièce d'équipement se compare, MAJ tenue, à ce qui est porté.
+  if(!corps&&(o.category==='weapon'||o.category==='armor'||o.category==='ammo')){comparerAvec={ancre:p,liste:()=>equipesComparables(a,o),detail:x=>gearDetail(x,a,!tout)};montreComparaison()}};
  /* Après un rendu — on vient d'équiper — la bulle se repose d'elle-même sur la vignette
     refaite : le doigt n'a pas bougé, aucun survol ne se déclencherait. */
  if(BULLES&&ouvert)requestAnimationFrame(()=>{if(bulleEl&&gearOuvert===cle&&ancreVisible(p))reposeBulle(montre)});
@@ -5748,7 +5771,11 @@ function removeActors(liste,demande){
  const partants=rangs.map(i=>actors[i]);sortDeLaListe(rangs);
  marked.clear();
  xpDesRetires(partants);butinDesRetires(partants);
- render();scheduleSave();return null}
+ render();scheduleSave();donjonTermine(partants);return null}
+/* Le dernier adversaire de la carte retiré : la victoire s'annonce, chez le MJ et à la table. */
+function donjonTermine(partants){if(!currentMapId||!partants.some(f=>f&&campDe(f)==='adverse'&&!f.orbeStatique))return;
+ if(actors.some(o=>o&&campDe(o)==='adverse'&&!o.orbeStatique))return;
+ annonceFlottante('🏆 Donjon Terminé !','annonce-victoire');if(typeof signaleDonjon==='function')signaleDonjon()}
 /* Sortir des combattants de la liste. Les cibles sont des rangs dans la liste : on les retient par
    identifiant avant de retirer, et on les repose après — sinon elles glissaient sur d'autres combattants. */
 function sortDeLaListe(liste){const rangs=[...new Set(liste)].filter(i=>actors[i]).sort((x,y)=>y-x);
@@ -6003,7 +6030,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  if(f.usage)a.usage=USAGES_OBJET.some(([k])=>k===f.usage.value)?f.usage.value:'libre';
  if(f.mode)a.mode=f.mode.value==='passif'?'passif':'actif';
  a.params=a.effet?paramsObjet({effet:a.effet,params:lireReglagesObjet()}):{};
- a.consumable=usageObjet(a)==='conso';
+ a.consumable=usageConsomme(usageObjet(a));
  if(f.logo)a.logo=logosItem(a).includes(f.logo.value)||estLogoDossier(f.logo.value)?f.logo.value:'';
  if(f.rarete)a.rarete=rareteDe({rarete:f.rarete.value});
  if($('item-bonus'))a.bonus=lireBonusItem();

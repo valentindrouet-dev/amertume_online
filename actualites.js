@@ -1,6 +1,6 @@
 /* Les dernières actualités de la table, pour l'Accueil. Chaque publication s'ajoute d'elle-même en tête de « versions »
    (publie.sh) ; « resume » condense les dix dernières en quelques lignes, tant qu'il va jusqu'à la plus récente. */
-const ACTUALITES={resume:{jusqua:'0.729',lignes:[
+const ACTUALITES={resume:{jusqua:'0.730',lignes:[
  'Accueil : création d’aventurier pas à pas, en couleurs — espèce, classe, 3 points de caractéristique, 3 de compétence, l’équipement de départ, 10d6 Or et un objet inhabituel tiré au hasard.',
  'Aventuriers : le MJ coche ceux qui partent à l’aventure ; eux seuls entrent sur la carte et gagnent XP et butin.',
  'Accueil : les dernières actualités, tous les aventuriers et où ils se trouvent, et bientôt les hauts faits.',
@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.729',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.730","d":"2026-10-14","t":"Brise et orbes, comparaison MAJ, Donjon Terminé, hors combat consommable"},
 {"v":"0.729","d":"2026-10-14","t":"Loot forgé borné par type"},
 {"v":"0.728","d":"2026-10-14","t":"Butin à 25 % et loot forgé par type"},
 {"v":"0.727","d":"2026-10-14","t":"Bestiaire en masse : loot forgé et bonus de DEF"},

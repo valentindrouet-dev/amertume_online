@@ -36,6 +36,8 @@ let dernierPousse=null,poussePret=false,pousseTimer=null,docPrecedent=null,rendu
 let monUid=null,monSiege=null,sieges={},quitteSalle=null,quitteSieges=null,dernierDoc=null;
 // Ce qu'un joueur a déjà vu de la table : le mode, le dernier envoi d'onglet. Remis à zéro en quittant la table.
 let modeConnu=false,ongletConnu=false,ongletVu=null,envoiOnglet=null;
+// La victoire sur la carte : son instant voyage avec la table ; celle qu'on trouve en arrivant ne s'annonce pas.
+let donjonConnu=false,donjonVu=null,envoiDonjon=null;
 let journalRef=null,quitteJournal=null,journalVus=new Set(),journalPremier=true;
 /* Chez un joueur en ligne, révéler n'est pas son affaire : le MJ révèle, et « vu » lui
    arrive par la table. Sinon chaque appareil révélait de son côté, et un joueur qui
@@ -121,6 +123,7 @@ function etatVivant(){const out={actors:{}};
     que les règles admettent déjà ; aucune clé nouvelle dans le document. */
  out.fogReset={...(typeof brouillardReset!=='undefined'?brouillardReset:{n:0,tout:false}),...(typeof mouvementLimiteExplo!=='undefined'&&mouvementLimiteExplo?{limite:true}:{}),
   ...(envoiOnglet?{page:envoiOnglet.page,pn:envoiOnglet.pn}:{}),...(m&&m.obscuriteOff?{noirOff:true}:{}),...(typeof bruitCoupe!=='undefined'&&bruitCoupe?{bruitOff:true}:{}),...(typeof numeroCombat!=='undefined'?{cb:numeroCombat}:{})};
+ if(envoiDonjon)out.fogReset.dn=envoiDonjon;
  /* Une copie profonde : la référence gardée pour la différence ne doit pas suivre les
     tableaux qu'on modifie en place (états, cases, cumuls), sinon rien n'en partait. */
  return JSON.parse(JSON.stringify(out))}
@@ -242,6 +245,8 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    // L'onglet où le MJ envoie la troupe : chaque envoi porte son instant ; celui qu'on trouve en arrivant ne compte pas.
    {const pn=d.fogReset&&typeof d.fogReset.pn==='number'?d.fogReset.pn:null;
     if(ongletConnu&&pn!==null&&pn!==ongletVu&&typeof showPage==='function')showPage(String(d.fogReset.page||'table'));ongletVu=pn;ongletConnu=true}
+   {const dn=d.fogReset&&typeof d.fogReset.dn==='number'?d.fogReset.dn:null;
+    if(donjonConnu&&dn!==null&&dn!==donjonVu&&typeof annonceFlottante==='function')annonceFlottante('🏆 Donjon Terminé !','annonce-victoire');donjonVu=dn;donjonConnu=true}
    if(typeof d.locked==='boolean')tokensLocked=d.locked;
    if(typeof d.title==='string'&&typeof sceneTitle==='function')sceneTitle(d.title);
    if(d.mapId&&d.mapId!==currentMapId&&maps.some(m=>m.id===d.mapId)){carteNeuve=true;
@@ -558,7 +563,7 @@ async function fermerTable(){if(!estMJ()||!tableId)return;
  debrancherTable();localStorage.removeItem(TABLE_CLE);liveStatus('Table fermée.')}
 function debrancherTable(){clearInterval(presenceTimer);presenceTimer=null;if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
  quitteSalle=quitteSieges=quitteJournal=null;enLigne=false;poussePret=false;tableId=null;salleRef=siegesRef=journalRef=null;journalVus=new Set();
- modeConnu=ongletConnu=false;ongletVu=null;envoiOnglet=null;
+ modeConnu=ongletConnu=false;ongletVu=null;envoiOnglet=null;donjonConnu=false;donjonVu=null;envoiDonjon=null;
  sieges={};monSiege=null;majTable();renderJoueursConnectes()}
 function brancherTable(code){if(!cloud)return;debrancherTable();
  tableId=code;salleRef=cloud.doc('amertume_online_live/'+code);
@@ -578,6 +583,7 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
    chose, et dit lequel. Masquer « Ouvrir une table » tant que le MJ n'était pas reconnu ne
    laissait qu'une fenêtre vide, sans rien à faire ni rien à comprendre. */
 // Le MJ envoie toute la troupe connectée sur un onglet.
+function signaleDonjon(){if(!estMJ()||!enLigne)return;envoiDonjon=Date.now();pousserPlusTard()}
 function envoyerOnglet(p){if(!estMJ()||!enLigne||!p)return;envoiOnglet={page:String(p),pn:Date.now()};pousserPlusTard()}
 function majTable(){const ouvert=!!tableId,pret=!!cloud&&typeof firebase!=='undefined';verrouillerInvite();if(typeof majEnvoiOnglet==='function')majEnvoiOnglet();
  const connecte=!!(auth&&auth.currentUser),mj=estMJ();
