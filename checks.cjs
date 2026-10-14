@@ -1228,7 +1228,7 @@ assert.ok(cartes.includes('function hauteurDispoCarte(')&&cartes.includes('retur
    projectiles sont plus lents et plus gros. */
 assert.ok(page.includes('id="portees">◎<')&&page.includes("let porteesOn=localStorage.getItem('amertume-portees')==='1';")&&page.includes("return a.hero||((a.vu||apercusEnGeste.has(a.id))&&!a.hidden)")&&!page.includes("couche.hidden=!porteesOn"),'Contacts : tous les rayons, ou la sélection');
 assert.ok(page.includes('let inspecteId=null;')&&page.includes("if(!controlled(i)){const a=actors[i];inspecteId=a&&inspecteId!==a.id?a.id:null;render();return}")&&!page.includes('Sélectionne ton aventurier, puis cible')
- &&page.includes("const k=view!=='mj'&&inspecteIndex()>=0?inspecteIndex():selected,a=actors[k];")&&page.includes("  $(id).checked=!!s&&pointsRestants(s,quoi)<=0;")
+ &&page.includes("const k0=view!=='mj'&&inspecteIndex()>=0?inspecteIndex():selected;")&&page.includes("  $(id).checked=!!s&&pointsRestants(s,quoi)<=0;")
  &&page.includes('#sheet.secret :is(#sheet-chips,#stats,#hpbar,#bloc-gear,#bloc-talents,#skills,.divider){display:none}')&&page.includes("a.id===inspecteId?'inspecte ':''"),'un joueur inspecte sans contrôler');
 assert.ok(page.includes('duration:calme?1:650')&&page.includes('return calme?0:650}')&&page.includes('Math.max(16,tokenOf(vers)*.7)')&&page.includes("const long=Math.max(34,Math.min(70,tokenOf(vers)*1.15)),haut=long*.16;"),'projectiles plus lents et plus visibles');
 /* Dégâts d'opportunité étendus : traverser une zone de contact pendant un glissement compte comme
@@ -3389,6 +3389,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.752 — Exclure un joueur de la table ; le cadre de sélection au MJ seul ; aucun adversaire vu sur un paysage. */
+{const lv=fs.readFileSync('live.js','utf8'),ix=fs.readFileSync('index.html','utf8'),r=fs.readFileSync('firestore-online.rules','utf8');
+ assert.ok(lv.includes("async function exclureJoueur(uid,nom){")&&lv.includes("quitteMonBan=bannisRef.doc(monUid).onSnapshot(d=>{if(d.exists)exclu()},()=>{})"));
+ assert.ok(r.includes("match /bannis/{uid} {")&&(r.match(/bannis\/\$\(request\.auth\.uid\)\)/g)||[]).length>=6);
+ assert.ok(ix.includes("const k=view!=='mj'&&actors[k0]&&cachePour(actors[k0],k0)?null:k0,a=k===null?undefined:actors[k];")&&ix.includes("if(!z)return;if(view!=='mj'){leverSelection();return}")&&ix.includes("||(!a.hero&&typeof enPaysage==='function'&&enPaysage())"));}
 /* v0.751 — Le journal ne se garde et ne se rejoue que sur l'appareil du MJ ; la vieille copie d'un joueur s'efface. */
 {const ix=fs.readFileSync('index.html','utf8');assert.ok(ix.includes("const journalGardeIci=()=>typeof mjIci!=='function'||mjIci();")&&ix.includes("function rejouerJournalGarde(){if(!journalGardeIci()){try{localStorage.removeItem(JOURNAL_CLE)}catch(e){}return}"));}
 /* v0.750 — Une partie enregistrée ne se relit que chez le MJ ; un joueur suit la carte de la table, et n'écrit le sol que pour elle. */
@@ -5627,4 +5632,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2094 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2097 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

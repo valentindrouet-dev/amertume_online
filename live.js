@@ -41,6 +41,8 @@ let modeConnu=false,ongletConnu=false,ongletVu=null,envoiOnglet=null;
 // La victoire sur la carte : son instant voyage avec la table ; celle qu'on trouve en arrivant ne s'annonce pas.
 let donjonConnu=false,donjonVu=null,envoiDonjon=null;
 let journalRef=null,quitteJournal=null,journalVus=new Set(),journalPremier=true;
+/* Les exclus d'une table : le MJ les inscrit ; les règles leur ferment la table, et leur propre page les en sort aussitôt. */
+let bannisRef=null,bannis={},quitteBannis=null,quitteMonBan=null;
 /* Chez un joueur en ligne, révéler n'est pas son affaire : le MJ révèle, et « vu » lui
    arrive par la table. Sinon chaque appareil révélait de son côté, et un joueur qui
    arrivait voyait « révélés » des créatures que personne n'avait aperçues. */
@@ -476,7 +478,7 @@ function ecouterJournal(){journalPremier=true;
    Sous son pseudo, l'aventurier qu'il incarne, quand on a le droit de le voir. */
 const PRESENCE_MS=30000,PRESENCE_MAX=75000;let presenceTimer=null;
 function joueursConnectes(){const now=Date.now();
- return Object.entries(sieges).filter(([,s])=>{if(!s||typeof s.nom!=='string'||!s.nom.trim())return false;
+ return Object.entries(sieges).filter(([uid,s])=>{if(!s||typeof s.nom!=='string'||!s.nom.trim()||bannis[uid])return false;
   const t=s.at&&typeof s.at.toMillis==='function'?s.at.toMillis():null;return t===null||now-t<PRESENCE_MAX})
   .map(([uid,s])=>({uid,nom:s.nom.trim().slice(0,30),heros:actors.find(a=>a&&a.id===s.actorId)||null})).sort((x,y)=>x.nom.localeCompare(y.nom,'fr'))}
 function renderJoueursConnectes(){const l=tableId?joueursConnectes():[];
@@ -489,7 +491,10 @@ function remplitJoueurs(boite,l){if(!boite)return;boite.replaceChildren();
    if(h&&h.image){const im=document.createElement('img');im.src=h.image;im.alt='';av.append(im)}else av.textContent=j.nom.charAt(0).toUpperCase();
    const t=document.createElement('div');t.className='joueur-texte';const n=document.createElement('b');n.textContent=j.nom;t.append(n);
    if(h){const s=document.createElement('small');s.textContent=h.name;t.append(s)}
-   const point=document.createElement('i');point.className='point-connecte';point.setAttribute('aria-hidden','true');c.append(point,av,t);boite.append(c)})}
+   const point=document.createElement('i');point.className='point-connecte';point.setAttribute('aria-hidden','true');c.append(point,av,t);
+   // Chez le MJ, dans la liste de l'Accueil et la fenêtre : Exclure, pour tout autre que lui.
+   if(boite.id&&estMJ()&&j.uid!==monUid){const x=document.createElement('button');x.type='button';x.className='exclure';x.textContent='Exclure';x.onclick=()=>exclureJoueur(j.uid,j.nom);c.append(x)}
+   boite.append(c)})}
 setInterval(()=>{if(tableId)renderJoueursConnectes()},30000);
 
 /* ---------- Sièges : qui incarne qui ---------- */
@@ -569,10 +574,11 @@ async function fermerTable(){if(!estMJ()||!tableId)return;
  if(!confirm('Fermer la table ? Les joueurs connectés ne verront plus la partie.'))return;
  try{await salleRef.delete()}catch(e){}
  // Les sièges et le journal ne suivent pas le document : on les balaie, sans en faire une affaire.
- for(const col of [siegesRef,journalRef]){if(!col)continue;
+ for(const col of [siegesRef,journalRef,bannisRef]){if(!col)continue;
   try{let lot;do{lot=await col.limit(200).get();if(!lot.size)break;const b=cloud.batch();lot.forEach(d=>b.delete(d.ref));await b.commit()}while(lot.size===200)}catch(e){}}
  debrancherTable();localStorage.removeItem(TABLE_CLE);liveStatus('Table fermée.')}
 function debrancherTable(){clearInterval(presenceTimer);presenceTimer=null;if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
+ if(quitteBannis)quitteBannis();if(quitteMonBan)quitteMonBan();quitteBannis=quitteMonBan=null;bannisRef=null;bannis={};
  quitteSalle=quitteSieges=quitteJournal=null;enLigne=false;poussePret=false;tableId=null;salleRef=siegesRef=journalRef=null;journalVus=new Set();
  modeConnu=ongletConnu=false;ongletVu=null;envoiOnglet=null;donjonConnu=false;donjonVu=null;envoiDonjon=null;
  sieges={};monSiege=null;majTable();renderJoueursConnectes()}
@@ -589,7 +595,25 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
   const mien=monUid&&sieges[monUid];monSiege=mien?mien.actorId:null;
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
   renderSieges();renderJoueursConnectes();majTable()},()=>{});
+ bannisRef=salleRef.collection('bannis');ecouterBannis();
  majTable()}
+function ecouterBannis(){if(!bannisRef)return;
+ // Le MJ suit la liste ; un joueur, sa seule inscription : exclu, il quitte la table.
+ if(estMJ())quitteBannis=bannisRef.onSnapshot(s=>{bannis={};s.forEach(d=>bannis[d.id]=d.data());renderBannis();renderJoueursConnectes()},()=>{});
+ else if(monUid)quitteMonBan=bannisRef.doc(monUid).onSnapshot(d=>{if(d.exists)exclu()},()=>{})}
+// Exclu : la table se ferme ici, la page repart sans son lien, et dit pourquoi.
+function exclu(){debrancherTable();try{localStorage.removeItem(TABLE_CLE);sessionStorage.setItem('amertume-exclu','1')}catch(e){}
+ const u=new URL(location.href);u.searchParams.delete('table');location.replace(u.toString())}
+async function exclureJoueur(uid,nom){if(!estMJ()||!bannisRef||!uid||uid===monUid)return;
+ if(!confirm('Exclure '+nom+' de la table ? Il ne pourra plus la voir ni y jouer, même en revenant par le lien.'))return;
+ try{await bannisRef.doc(uid).set({nom:String(nom||'Joueur').slice(0,30),at:firebase.firestore.FieldValue.serverTimestamp()});
+  try{await siegesRef.doc(uid).delete()}catch(e){}log(nom+' est exclu de la table.',{local:true})}
+ catch(e){liveStatus('Exclusion refusée. '+liveErreur(e))}}
+async function readmettre(uid){if(!estMJ()||!bannisRef||!uid)return;try{await bannisRef.doc(uid).delete()}catch(e){liveStatus(liveErreur(e))}}
+function renderBannis(){const boite=$('live-bannis'),titre=$('live-titre-bannis');if(!boite)return;const l=Object.entries(bannis);
+ boite.hidden=titre.hidden=!estMJ()||!l.length;boite.replaceChildren(...l.map(([uid,b])=>{const r=document.createElement('div');r.className='banni';
+  const n=document.createElement('span');n.textContent=b&&b.nom||'Joueur';const btn=document.createElement('button');btn.type='button';btn.textContent='Réadmettre';btn.onclick=()=>readmettre(uid);
+  r.append(n,btn);return r}))}
 /* La fenêtre ne cache plus ses boutons : elle les montre, grisés quand il manque quelque
    chose, et dit lequel. Masquer « Ouvrir une table » tant que le MJ n'était pas reconnu ne
    laissait qu'une fenêtre vide, sans rien à faire ni rien à comprendre. */
@@ -634,7 +658,8 @@ const liveDialog=dialog('live-panel','Table en ligne',
  +'<button id="live-copy" hidden>Copier le lien</button></div>'
  +'<input id="live-lien" readonly hidden aria-label="Lien de la table">'
  +'<p class="muted" id="live-compte"></p>'
- +'<h2 class="sous-titre" id="live-titre-sieges" hidden>Qui incarne qui</h2><div id="live-sieges" hidden></div>');
+ +'<h2 class="sous-titre" id="live-titre-sieges" hidden>Qui incarne qui</h2><div id="live-sieges" hidden></div>'
+ +'<h2 class="sous-titre" id="live-titre-bannis" hidden>Exclus</h2><div id="live-bannis" hidden></div>');
 // Ce qui coince se montre : une fenêtre fermée ne renseigne personne.
 const ouvreTable=()=>{if(!liveDialog.open)liveDialog.showModal()};
 const liveButton=document.createElement('button');liveButton.id='open-live';

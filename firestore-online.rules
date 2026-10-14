@@ -40,7 +40,9 @@ match /amertume_online_versions/{revision}/parts/{part} {
 // lire. Le MJ seul l'ouvre et la ferme ; tout joueur connecté — même anonymement —
 // pousse l'état vivant des combattants et des portes, jamais le tour ni le verrou.
 match /amertume_online_live/{table} {
-  allow get: if request.auth != null; // v0.717 : lecture réservée aux comptes connectés.
+  // v0.752 : un compte exclu par le MJ (bannis/{uid}) ne lit ni n'écrit plus rien de la table.
+  allow get: if request.auth != null
+    && !exists(/databases/$(database)/documents/amertume_online_live/$(table)/bannis/$(request.auth.uid));
   allow list: if false; // Les tables ne s'énumèrent pas.
   allow create: if isOnlineMJ() && request.resource.data.mj == request.auth.uid;
   allow delete: if isOnlineMJ() && resource.data.mj == request.auth.uid;
@@ -49,11 +51,22 @@ match /amertume_online_live/{table} {
     && request.resource.data.mj == resource.data.mj
     && request.resource.data.keys().hasOnly(['actors','doors','round','locked','title','mode','mapId','mj','at','fogOff','fogReset'])
     && (isOnlineMJ()
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actors','doors','at']));
+        || (!exists(/databases/$(database)/documents/amertume_online_live/$(table)/bannis/$(request.auth.uid))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actors','doors','at'])));
+
+  // Les exclus (v0.752) : le MJ les inscrit et les réadmet ; chacun peut voir s'il l'est.
+  match /bannis/{uid} {
+    allow get: if request.auth != null && (request.auth.uid == uid || isOnlineMJ());
+    allow list: if isOnlineMJ();
+    allow create, update: if isOnlineMJ() && request.resource.data.keys().hasOnly(['nom','at']);
+    allow delete: if isOnlineMJ();
+  }
 
   match /seats/{uid} {
-    allow get, list: if request.auth != null;
+    allow get, list: if request.auth != null
+      && !exists(/databases/$(database)/documents/amertume_online_live/$(table)/bannis/$(request.auth.uid));
     allow create, update: if request.auth != null && request.auth.uid == uid
+      && !exists(/databases/$(database)/documents/amertume_online_live/$(table)/bannis/$(request.auth.uid))
       && request.resource.data.keys().hasOnly(['actorId','nom','at'])
       && request.resource.data.actorId is string
       && request.resource.data.actorId.size() <= 100;
@@ -63,8 +76,10 @@ match /amertume_online_live/{table} {
   // Le journal partagé (v0.182) : chaque ligne est écrite une fois par son auteur, en
   // texte et en chiffres. Tout le monde à la table le lit, le MJ seul le balaie.
   match /journal/{ligne} {
-    allow get, list: if request.auth != null;
+    allow get, list: if request.auth != null
+      && !exists(/databases/$(database)/documents/amertume_online_live/$(table)/bannis/$(request.auth.uid));
     allow create: if request.auth != null
+      && !exists(/databases/$(database)/documents/amertume_online_live/$(table)/bannis/$(request.auth.uid))
       && request.resource.data.de == request.auth.uid
       && request.resource.data.t is number
       && request.resource.data.keys().hasOnly(['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite','effet','ton'])
