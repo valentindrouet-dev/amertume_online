@@ -453,7 +453,7 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
      0 / jour une fois pris ; 1 / repos entre deux repos courts. */
   const texte=code.cle==='etat'?(p&&p.etat)||code.nom:code.nom;
   const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':'repos'):'';
-  const horsCombat=usage==='horscombat'&&typeof enCombat==='function'&&enCombat();
+  const horsCombat=usage==='horscombat'&&enCombatPour(a);
   out.push({objet:o,texte,compte,
    teinte:TEINTE_RARETE[rareteDe(o)]||TEINTE_OBJET.object,
    peut:dispo&&!horsCombat,limite:usageLimite(usage),epuise:!dispo,
@@ -1234,7 +1234,11 @@ function renderHeroes(){syncForges();const grille=$('hero-grid');if(!grille)retu
  heros.forEach((a,i)=>grille.append(heroCard(a,i)));
  if(!heros.length&&!invitEnLigne()){const v=document.createElement('p');v.className='muted';
   v.textContent=q?'Aucun aventurier de ce nom.':'Aucun aventurier dans la troupe.';grille.append(v)}}
-$('hero-search').oninput=renderHeroes;
+/* Redessiner la troupe garde la page où elle est : la grille se vidait un instant, et la page remontait tout en haut sous les
+   yeux de qui modifiait l'inventaire d'un aventurier du bas. */
+{const sansDefilement=renderHeroes;renderHeroes=function(){const g=$('hero-grid'),y=window.scrollY,h=g?g.offsetHeight:0;if(g&&h)g.style.minHeight=h+'px';
+ try{return sansDefilement.apply(this,arguments)}finally{if(g)g.style.minHeight='';if(Math.abs(window.scrollY-y)>1)window.scrollTo(0,y)}}}
+$('hero-search').oninput=()=>renderHeroes();
 $('hero-add').onclick=()=>openActor(null,true);
 $('hero-repos-long').onclick=reposLong;
 $('hero-icones-comp').onclick=()=>openIconesCompetences();
@@ -1703,13 +1707,16 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
    il s'emploie sur son porteur, à moins qu'il n'inflige un état : celui-là ramène à la table
    pour y viser sa cible. */
 // Un objet hors combat seulement : en plein combat, il ne sert pas, et on le dit.
-function refusHorsCombat(o){if(usageObjet(o)!=='horscombat'||typeof enCombat!=='function'||!enCombat())return false;
+/* En combat, pour un objet : l'aventurier pris dans le combat, sur la carte ; un adversaire, dès qu'un combat se joue. Un
+   aventurier au domaine ou hors de la carte n'y est pas, même si d'autres se battent. */
+function enCombatPour(a){return typeof enCombat==='function'&&enCombat()&&(!a||!a.hero||aventurierEnCombat(a))}
+function refusHorsCombat(a,o){if(usageObjet(o)!=='horscombat'||!enCombatPour(a))return false;
  log(o.name+' ne s’emploie qu’hors combat.',{local:true});return true}
-function employerDepuisFiche(a,o){if(refusHorsCombat(o))return;const surTable=typeof PAGES==='undefined'||!PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x));
+function employerDepuisFiche(a,o){if(refusHorsCombat(a,o))return;const surTable=typeof PAGES==='undefined'||!PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x));
  if(surTable||objetCode(o)){utiliserObjet(a,o);return}
  if(o.etat&&typeof showPage==='function'){showPage('table');utiliserObjet(a,o);return}
  appliquerObjet(a,o,a,null)}
-function utiliserObjet(a,o){if(!a||!o||refusHorsCombat(o))return;
+function utiliserObjet(a,o){if(!a||!o||refusHorsCombat(a,o))return;
  // Un objet qui porte un effet du moteur agit sur son porteur : il n'y a rien à désigner.
  if(objetCode(o)){appliquerEffetObjet(a,o);return}
  if(typeof viserCible!=='function'){appliquerObjet(a,o,a,null);return}
@@ -3842,10 +3849,10 @@ $('creation-prec').onclick=()=>{if(creation&&creation.etape>0){creation.etape--;
 $('creation-suiv').onclick=()=>{const c=creation;if(!c)return;if(c.etape<ETAPES_CREATION.length-1){if(!etapeManque(ETAPES_CREATION[c.etape][0])){c.etape++;renderCreation()}return}creerAventurier()};
 /* L'image qu'un joueur envoie par la table : assez légère pour y voyager. Safari ne sait pas écrire le WebP et rend un PNG bien
    plus lourd, qui dépassait la limite et ne partait pas : on réduit la taille jusqu'à passer, transparence gardée. */
-const IMAGE_TABLE_MAX=150000;
+const IMAGE_TABLE_MAX=60000;
 async function imagePourTable(url){if(typeof url!=='string'||!url.startsWith('data:image/'))return null;if(url.length<=IMAGE_TABLE_MAX)return url;
  try{const im=new Image();im.src=url;await im.decode();
-  for(const t of [256,192,160,128,96,72]){const k=Math.min(1,t/Math.max(im.naturalWidth,im.naturalHeight)),cv=document.createElement('canvas');
+  for(const t of [192,160,128,96,72,64]){const k=Math.min(1,t/Math.max(im.naturalWidth,im.naturalHeight)),cv=document.createElement('canvas');
    cv.width=Math.max(1,Math.round(im.naturalWidth*k));cv.height=Math.max(1,Math.round(im.naturalHeight*k));cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
    for(const [type,q] of [['image/webp',.85],['image/png',undefined]]){const d=cv.toDataURL(type,q);if(d.startsWith('data:'+type)&&d.length<=IMAGE_TABLE_MAX)return d}}}catch(e){}
  return null}
@@ -5458,7 +5465,9 @@ if(a.hero){const f=$('actor-form').elements;
   f.max.value=Math.max(1,num(f.vie.value,1,999)*num(f.endu.value,1,999)+bonus);if(plein)f.hp.value=f.max.value};
  ['vie','endu','role','race'].forEach(k=>{if(f[k])f[k].addEventListener('input',majPV)});
  majPV()}
-$('token-upload').onclick=()=>$('token-file').click();$('token-file').onchange=()=>{const f=$('token-file').files[0];if(f)openImage(f,'token',url=>{draft.image=url;delete draft.imageJeton;$('draft-image').src=url;$('draft-image').hidden=false})};$('token-remove').onclick=()=>{draft.image=null;delete draft.imageJeton;$('draft-image').hidden=true};if($('add-attack'))$('add-attack').onclick=()=>{readAttacks();attackDraft.push({name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',useOwnDamage:true,effects:{}});renderAttacks()};renderStatePicker();
+$('token-upload').onclick=()=>$('token-file').click();$('token-file').onchange=()=>{const f=$('token-file').files[0];if(f)openImage(f,'token',async url=>{draft.image=url;delete draft.imageJeton;$('draft-image').src=url;$('draft-image').hidden=false;
+ // L'aventurier d'un joueur : son image part aussi par la table, allégée, et le joueur la voit aussitôt.
+ if(draft.hero&&draft.joueur){const j=await imagePourTable(url);if(j&&draft.image===url)draft.imageJeton=j}})};$('token-remove').onclick=()=>{draft.image=null;delete draft.imageJeton;$('draft-image').hidden=true};if($('add-attack'))$('add-attack').onclick=()=>{readAttacks();attackDraft.push({name:'Nouvelle attaque',dice:diceFrom([1,0,0,0,0,0,0]),range:'contact',targets:'one',useOwnDamage:true,effects:{}});renderAttacks()};renderStatePicker();
 if($('talent-filter')){$('talent-filter').oninput=renderTalentPicker;renderTalentPicker();
  // Créé depuis la fiche, le talent y est aussitôt coché : on l'ajoutait pour cet aventurier.
  $('add-talent').onclick=()=>openTalent(null,t=>{draft.talents=[...new Set([...(draft.talents||[]),t.id])];

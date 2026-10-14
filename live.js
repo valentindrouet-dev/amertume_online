@@ -268,6 +268,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    // Sur la même carte, un socle connu qui a bougé ailleurs y glisse ; sa position ne se pose pas d'un coup.
    const glisse=!neuf&&!carteNeuve&&!!docPrecedent&&typeof e.x==='number'&&typeof e.y==='number';
    // Chez le MJ : l'état du tour qu'un joueur a écrit daté d'un autre tour ne passe pas ; le MJ renvoie le sien.
+   const jetonAvant=a.imageJeton;
    const perime=estMJ()&&!neuf&&typeof e.tourVu==='string'&&cleIci!==null&&e.tourVu!==cleIci;
    CHAMPS_VIVANTS.forEach(k=>{if(e[k]===undefined)return;
     if(enMain&&(k==='x'||k==='y'))return;
@@ -293,7 +294,9 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    // Une distance de mouvement rendue aux neuf mètres de tous quitte le document : chez un joueur, elle quitte aussi le socle.
    if(!estMJ()&&!a.hero&&e.mouvement===undefined&&a.mouvement!==undefined)delete a.mouvement;
    // L'image qu'un joueur a donnée à son aventurier : chez qui n'en a pas, elle devient la sienne.
-   if(typeof e.imageJeton==='string'&&!a.image)a.image=e.imageJeton;
+   /* L'image envoyée par la table devient celle de l'aventurier chez qui n'en a pas ; chez un joueur, aussi quand elle change :
+      le MJ vient de la lui donner. Le MJ, lui, garde la sienne. */
+   if(typeof e.imageJeton==='string'&&(!a.image||(!estMJ()&&e.imageJeton!==jetonAvant)))a.image=e.imageJeton;
    // Chez son joueur, l'image d'un aventurier qui n'est jamais partie (trop lourde, avant la v0.721) repart, allégée.
    if(!estMJ()&&aMoi(a)&&!a.imageJeton&&typeof a.image==='string'&&a.image.startsWith('data:image/')&&!imagesRattrapees.has(a)){imagesRattrapees.add(a);
     imagePourTable(a.image).then(u=>{if(u&&!a.imageJeton){a.imageJeton=u;pousserBientot()}})}
@@ -464,14 +467,15 @@ function joueursConnectes(){const now=Date.now();
   .map(([uid,s])=>({uid,nom:s.nom.trim().slice(0,30),heros:actors.find(a=>a&&a.id===s.actorId)||null})).sort((x,y)=>x.nom.localeCompare(y.nom,'fr'))}
 function renderJoueursConnectes(){const l=tableId?joueursConnectes():[];
  const b=$('open-joueurs');if(b){const n=b.querySelector('.compte');if(n)n.textContent=l.length?String(l.length):''}
- ['accueil-joueurs','joueurs-liste'].forEach(id=>{const boite=$(id);if(!boite)return;boite.replaceChildren();
+ ['accueil-joueurs','joueurs-liste'].forEach(id=>remplitJoueurs($(id),l))}
+function remplitJoueurs(boite,l){if(!boite)return;boite.replaceChildren();
   if(!l.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun joueur connecté.';boite.append(p);return}
   l.forEach(j=>{const c=document.createElement('div');c.className='joueur-connecte';const h=j.heros&&voitAventurier(j.heros)?j.heros:null;
    const av=document.createElement('span');av.className='joueur-avatar';
    if(h&&h.image){const im=document.createElement('img');im.src=h.image;im.alt='';av.append(im)}else av.textContent=j.nom.charAt(0).toUpperCase();
    const t=document.createElement('div');t.className='joueur-texte';const n=document.createElement('b');n.textContent=j.nom;t.append(n);
    if(h){const s=document.createElement('small');s.textContent=h.name;t.append(s)}
-   const point=document.createElement('i');point.className='point-connecte';point.setAttribute('aria-hidden','true');c.append(point,av,t);boite.append(c)})})}
+   const point=document.createElement('i');point.className='point-connecte';point.setAttribute('aria-hidden','true');c.append(point,av,t);boite.append(c)})}
 setInterval(()=>{if(tableId)renderJoueursConnectes()},30000);
 
 /* ---------- Sièges : qui incarne qui ---------- */
@@ -624,6 +628,9 @@ const joueursDialog=dialog('joueurs-connectes','Joueurs connectés','<div id="jo
 const joueursButton=document.createElement('button');joueursButton.id='open-joueurs';joueursButton.type='button';
 joueursButton.append('Joueurs connectés',Object.assign(document.createElement('span'),{className:'compte'}));
 joueursButton.onclick=()=>{renderJoueursConnectes();joueursDialog.showModal()};liveButton.after(joueursButton);
+// Au survol, la liste paraît en bulle : plus besoin de cliquer.
+if(typeof surveille==='function')surveille(joueursButton,()=>{const d=document.createElement('div');d.className='joueurs-connectes joueurs-bulle';
+ remplitJoueurs(d,tableId?joueursConnectes():[]);ouvrirBulle(joueursButton,d,'bulle-joueurs')});
 $('live-open').onclick=ouvrirTable;
 $('live-login').onclick=()=>{if(tableVoulue){demandeCompte();return}const b=$('shared-login');if(b)b.click();
  liveStatus('Fenêtre de connexion Google ouverte…')};
