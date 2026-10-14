@@ -2552,6 +2552,9 @@ body.page-accueil .intro,body.page-accueil .mj-tools,body.page-accueil main.layo
 #creation-aventurier .creation-manque{opacity:.55;text-decoration:line-through;align-self:center}#creation-aventurier .creation-or{display:grid;place-items:center}#creation-aventurier .creation-kit-alea{grid-column:span 2}#creation-aventurier .creation-or .piece-or{width:22px;height:22px}#creation-aventurier .creation-piece.creation-piece-alea{flex-direction:row;max-width:none;gap:10px;text-align:left}
 .hero-aventure{flex:none;width:18px;height:18px;margin:0;accent-color:var(--accent);cursor:pointer}.hero-aventure:disabled{cursor:default}
 .hero-joueur{flex:none;max-width:110px;font:600 12px system-ui;padding:2px 4px}
+.hero-poignee{flex:none;cursor:grab;color:var(--muted);font-size:18px;line-height:1;padding:2px 2px;user-select:none;touch-action:none}.hero-poignee:active{cursor:grabbing}
+.hero-card.fiche-glissee{opacity:.45}.hero-card.cible-avant{box-shadow:inset 4px 0 0 var(--accent)}.hero-card.cible-apres{box-shadow:inset -4px 0 0 var(--accent)}
+#hero-tri{font:600 13px system-ui}
 body.table-sans-heros main.layout{visibility:hidden}
 #verrou-page{display:none}body.site-verrouille #verrou-page{display:grid;place-items:center;min-height:60vh;padding:24px}
 body.site-verrouille>main:not(#verrou-page),body.site-verrouille nav.tabs,body.site-verrouille .view-controls{display:none!important}

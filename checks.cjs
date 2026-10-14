@@ -3389,6 +3389,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.723 — L'ordre des fiches d'aventuriers : libre, glissé par la poignée, ou par nom, niveau, classe, XP. */
+{const ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ed.includes("const TRIS_HEROS=['libre','nom','niveau','classe','xp'];")&&ed.includes("const heros=trieHeros(troupe.filter(")&&ed.includes("function deplaceFiche(x,cible,apres){")
+  &&ed.includes("poignee.draggable=true;")&&ed.includes("if(!(Number.isInteger(a.rangFiche)&&a.rangFiche>=0&&a.rangFiche<10000))delete a.rangFiche;"),'ordre des fiches');}
 /* v0.722 — La troupe se redessine sans remonter la page ; « hors combat » se juge pour l'aventurier ; les joueurs connectés au
    survol ; l'image que le MJ donne à l'aventurier d'un joueur part par la table. */
 {const ed=fs.readFileSync('editor.js','utf8'),vv=fs.readFileSync('live.js','utf8');
@@ -5487,4 +5491,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2018 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2019 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

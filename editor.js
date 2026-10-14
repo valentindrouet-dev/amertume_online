@@ -21,6 +21,8 @@ function normalizeActor(a){a.id??=crypto.randomUUID();
  // Son joueur, à une table en ligne : son identifiant et son pseudo, ou personne.
  if(typeof a.joueur!=='string'||!/^[A-Za-z0-9_-]{6,128}$/.test(a.joueur)){delete a.joueur;delete a.joueurNom}
  else if(typeof a.joueurNom!=='string'||!a.joueurNom.trim())delete a.joueurNom;else a.joueurNom=a.joueurNom.trim().slice(0,30);
+ // Son rang dans l'ordre libre des fiches.
+ if(!(Number.isInteger(a.rangFiche)&&a.rangFiche>=0&&a.rangFiche<10000))delete a.rangFiche;
  // Part à l'aventure : coché par le MJ, ou rien.
  if(a.enAventure!==true)delete a.enAventure;
  // L'image qu'un joueur a donnée à son aventurier : une image en ligne, légère.
@@ -681,6 +683,7 @@ armoryPage.innerHTML='<section class="cat-panel panel">'
 const heroesPage=document.createElement('main');heroesPage.id='heroes-page';
 heroesPage.innerHTML='<section class="cat-panel panel">'
  +'<header class="cat-head"><h2>Aventuriers</h2><div class="cat-actions">'
+ +'<select id="hero-tri" aria-label="Ordre des aventuriers"><option value="libre">Tri : libre</option><option value="nom">Tri : nom</option><option value="niveau">Tri : niveau</option><option value="classe">Tri : classe</option><option value="xp">Tri : XP</option></select>'
  +'<button id="hero-repos-long" type="button" title="VIE et PV au maximum, repos courts et charges rendus, états levés sauf le Blindage ; ceux retournés au domaine reviennent">🌙 Repos long</button>'
  +'<button id="hero-icones-comp" type="button" title="Choisir l’icône de chaque caractéristique et de chaque compétence, la même sur toutes les fiches">🖼 Icônes des caracs et compétences</button>'
  +'<button id="hero-add" class="primary">+ Nouvel aventurier</button></div></header>'
@@ -1099,6 +1102,18 @@ function joueursConnus(){const m=new Map();actors.forEach(a=>{if(a&&a.hero&&a.jo
 function prendPartAventure(a){return !!a&&!!a.hero&&(a.enAventure===true||!actors.some(h=>h&&h.hero&&h.enAventure===true))}
 function heroCard(a,i){const c=document.createElement('article');c.className='hero-card';
  const tete=document.createElement('div');tete.className='hero-head';
+ // En tri libre, la poignée : on la tient pour glisser la fiche avant ou après une autre.
+ const poignee=a.hero&&triHeros()==='libre'?document.createElement('span'):null;
+ if(poignee){poignee.className='hero-poignee';poignee.textContent='⠿';poignee.setAttribute('aria-label','Déplacer '+a.name);
+  // La poignée se glisse, et emporte l'image de toute la fiche.
+  poignee.draggable=true;
+  poignee.addEventListener('dragstart',e=>{e.stopPropagation();ficheGlissee=a;c.classList.add('fiche-glissee');fermerBulle();
+   try{e.dataTransfer.setData('text/plain',a.id);e.dataTransfer.effectAllowed='move';e.dataTransfer.setDragImage(c,20,20)}catch(_){}});
+  poignee.addEventListener('dragend',()=>{ficheGlissee=null;c.classList.remove('fiche-glissee');document.querySelectorAll('.hero-card.cible-avant,.hero-card.cible-apres').forEach(x=>x.classList.remove('cible-avant','cible-apres'))})}
+ if(a.hero){c.addEventListener('dragover',e=>{if(!ficheGlissee||ficheGlissee===a)return;e.preventDefault();const r=c.getBoundingClientRect(),apres=e.clientX>r.left+r.width/2;
+   c.classList.toggle('cible-apres',apres);c.classList.toggle('cible-avant',!apres)});
+  c.addEventListener('dragleave',e=>{if(!c.contains(e.relatedTarget))c.classList.remove('cible-avant','cible-apres')});
+  c.addEventListener('drop',e=>{if(!ficheGlissee||ficheGlissee===a)return;e.preventDefault();e.stopPropagation();const apres=c.classList.contains('cible-apres');c.classList.remove('cible-avant','cible-apres');deplaceFiche(ficheGlissee,a,apres)})}
  // En haut à gauche, la case de l'aventure : le MJ seul la voit et la coche.
  const part=a.hero&&view==='mj'?document.createElement('input'):null;
  if(part){part.type='checkbox';part.className='hero-aventure';part.checked=a.enAventure===true;part.disabled=view!=='mj';part.setAttribute('aria-label',a.name+' part à l’aventure');
@@ -1155,7 +1170,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
   qui.add(new Option('MJ',''));joueursConnus().forEach(([uid,nom])=>qui.add(new Option(nom,uid)));qui.value=a.joueur||'';
   qui.onchange=()=>{const j=joueursConnus().find(([u])=>u===qui.value);if(j){a.joueur=j[0];a.joueurNom=j[1]}else{delete a.joueur;delete a.joueurNom}
    scheduleSave();if(typeof pousserBientot==='function')pousserBientot()};joueurEl=qui}
- tete.append(...(part?[part]:[]),jeton,titre,...(origine?[origine]:[]),classe,...(elem?[elem]:[]),outils);
+ tete.append(...(poignee?[poignee]:[]),...(part?[part]:[]),jeton,titre,...(origine?[origine]:[]),classe,...(elem?[elem]:[]),outils);
  const puces=document.createElement('div');puces.className='chips';
  if(joueurEl)puces.append(joueurEl);
  const marques=[];if(!a.hero){if(a.sexe)marques.push([(a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe]);
@@ -1222,6 +1237,19 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
    r.onclick=e=>{e.stopPropagation();ressusciter(a)};tete.append(r)}
   else['click','contextmenu','dragstart','pointerdown','keydown','change','input'].forEach(ev=>c.addEventListener(ev,e=>{if(e.type==='keydown'&&!['Enter',' '].includes(e.key))return;e.stopPropagation();e.preventDefault()},true))}
  c.append(tete,puces,chiffres,barrePv,titreComp,comps,titreTal,blocTal,titreKit,corpsEtSac(a));return c}
+/* L'ordre des fiches : libre, comme le MJ les a rangées en les glissant par leur poignée, ou par nom, niveau, classe, XP.
+   Le choix reste sur l'appareil ; l'ordre libre, sur chaque aventurier. */
+const TRIS_HEROS=['libre','nom','niveau','classe','xp'];
+function triHeros(){try{const t=localStorage.getItem('amertume-tri-heros');return TRIS_HEROS.includes(t)?t:'libre'}catch(e){return 'libre'}}
+const rangLibre=a=>Number.isFinite(a.rangFiche)?a.rangFiche:100000+actors.indexOf(a);
+function trieHeros(l){const t=triHeros(),nom=(x,y)=>String(x.name||'').localeCompare(String(y.name||''),'fr',{sensitivity:'base'});
+ const par={nom,niveau:(x,y)=>(Number(y.level)||1)-(Number(x.level)||1)||nom(x,y),classe:(x,y)=>String(x.role||'').localeCompare(String(y.role||''),'fr',{sensitivity:'base'})||nom(x,y),
+  xp:(x,y)=>(Number(y.xp)||0)-(Number(x.xp)||0)||nom(x,y),libre:(x,y)=>rangLibre(x)-rangLibre(y)};
+ return [...l].sort(par[t])}
+// Glisser une fiche avant ou après une autre : toute la troupe reprend un rang, dans l'ordre affiché.
+let ficheGlissee=null;
+function deplaceFiche(x,cible,apres){const l=trieHeros(actors.filter(a=>a&&a.hero)).filter(a=>a!==x),i=l.indexOf(cible);if(i<0)return;
+ l.splice(apres?i+1:i,0,x);l.forEach((a,k)=>{a.rangFiche=k});scheduleSave();renderHeroes()}
 function renderHeroes(){syncForges();const grille=$('hero-grid');if(!grille)return;grille.replaceChildren();
  const q=($('hero-search').value||'').trim().toLowerCase();
  /* À une table en ligne, un joueur ne voit que ses aventuriers : ceux qu'il a créés, ou que le MJ lui a confiés. */
@@ -1229,7 +1257,7 @@ function renderHeroes(){syncForges();const grille=$('hero-grid');if(!grille)retu
  // La maîtrise d'une classe s'acquiert avec la classe : on la pose avant de dessiner.
  // Chercher dans quatre fiches n'a pas de sens : le champ ne paraît qu'à partir de neuf.
  $('hero-filtres').hidden=troupe.length<9&&!q;
- const heros=troupe.filter(a=>!q||a.name.toLowerCase().includes(q));
+ const heros=trieHeros(troupe.filter(a=>!q||a.name.toLowerCase().includes(q)));
  grille.classList.toggle('une-fiche',heros.length===1);
  heros.forEach((a,i)=>grille.append(heroCard(a,i)));
  if(!heros.length&&!invitEnLigne()){const v=document.createElement('p');v.className='muted';
@@ -1239,6 +1267,7 @@ function renderHeroes(){syncForges();const grille=$('hero-grid');if(!grille)retu
 {const sansDefilement=renderHeroes;renderHeroes=function(){const g=$('hero-grid'),y=window.scrollY,h=g?g.offsetHeight:0;if(g&&h)g.style.minHeight=h+'px';
  try{return sansDefilement.apply(this,arguments)}finally{if(g)g.style.minHeight='';if(Math.abs(window.scrollY-y)>1)window.scrollTo(0,y)}}}
 $('hero-search').oninput=()=>renderHeroes();
+$('hero-tri').value=triHeros();$('hero-tri').onchange=()=>{try{localStorage.setItem('amertume-tri-heros',$('hero-tri').value)}catch(e){}renderHeroes()};
 $('hero-add').onclick=()=>openActor(null,true);
 $('hero-repos-long').onclick=reposLong;
 $('hero-icones-comp').onclick=()=>openIconesCompetences();
