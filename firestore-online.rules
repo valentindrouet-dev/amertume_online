@@ -11,7 +11,7 @@ match /amertume_online_admins/{uid} {
   allow list, write: if false; // Administrateurs ajoutés depuis la console uniquement.
 }
 match /amertume_online_public/main {
-  allow get: if true;
+  allow get: if request.auth != null; // v0.717 : lecture réservée aux comptes connectés.
   allow list, delete: if false;
   allow create, update: if isOnlineMJ()
     && request.resource.data.keys().hasOnly(['revision','parts','bytes','updatedAt','author'])
@@ -24,7 +24,7 @@ match /amertume_online_public/main {
     && request.resource.data.author == request.auth.uid;
 }
 match /amertume_online_versions/{revision}/parts/{part} {
-  allow get: if true;
+  allow get: if request.auth != null; // v0.717 : lecture réservée aux comptes connectés.
   allow list: if false;
   allow create: if isOnlineMJ()
     && request.resource.data.keys().hasOnly(['data'])
@@ -40,7 +40,7 @@ match /amertume_online_versions/{revision}/parts/{part} {
 // lire. Le MJ seul l'ouvre et la ferme ; tout joueur connecté — même anonymement —
 // pousse l'état vivant des combattants et des portes, jamais le tour ni le verrou.
 match /amertume_online_live/{table} {
-  allow get: if true;
+  allow get: if request.auth != null; // v0.717 : lecture réservée aux comptes connectés.
   allow list: if false; // Les tables ne s'énumèrent pas.
   allow create: if isOnlineMJ() && request.resource.data.mj == request.auth.uid;
   allow delete: if isOnlineMJ() && resource.data.mj == request.auth.uid;
@@ -52,7 +52,7 @@ match /amertume_online_live/{table} {
         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actors','doors','at']));
 
   match /seats/{uid} {
-    allow get, list: if true;
+    allow get, list: if request.auth != null;
     allow create, update: if request.auth != null && request.auth.uid == uid
       && request.resource.data.keys().hasOnly(['actorId','nom','at'])
       && request.resource.data.actorId is string
@@ -63,7 +63,7 @@ match /amertume_online_live/{table} {
   // Le journal partagé (v0.182) : chaque ligne est écrite une fois par son auteur, en
   // texte et en chiffres. Tout le monde à la table le lit, le MJ seul le balaie.
   match /journal/{ligne} {
-    allow get, list: if true;
+    allow get, list: if request.auth != null;
     allow create: if request.auth != null
       && request.resource.data.de == request.auth.uid
       && request.resource.data.t is number
