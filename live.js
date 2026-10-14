@@ -40,6 +40,8 @@ let monUid=null,monSiege=null,sieges={},quitteSalle=null,quitteSieges=null,derni
 let modeConnu=false,ongletConnu=false,ongletVu=null,envoiOnglet=null;
 // La victoire sur la carte : son instant voyage avec la table ; celle qu'on trouve en arrivant ne s'annonce pas.
 let donjonConnu=false,donjonVu=null,envoiDonjon=null;
+// Le numéro des remises à zéro du brouillard, reçu une première fois de la table.
+let brouillardConnu=false;
 let journalRef=null,quitteJournal=null,journalVus=new Set(),journalPremier=true;
 /* Les exclus d'une table : le MJ les inscrit ; les règles leur ferment la table, et leur propre page les en sort aussitôt. */
 let bannisRef=null,bannis={},quitteBannis=null,quitteMonBan=null;
@@ -278,7 +280,13 @@ function appliquerSalleSeule(d,complet){if(!d)return;
    if(m0&&d.fogReset&&typeof d.fogReset==='object'){const off=d.fogReset.noirOff===true;
     if(!!m0.obscuriteOff!==off){if(off)m0.obscuriteOff=true;else delete m0.obscuriteOff;if(typeof fogKey!=='undefined')fogKey=''}}
    if(d.fogReset&&typeof d.fogReset.n==='number'&&typeof brouillardReset!=='undefined'&&d.fogReset.n!==brouillardReset.n){
-    brouillardReset={n:d.fogReset.n,tout:!!d.fogReset.tout};if(m0&&typeof resetFog==='function')resetFog(brouillardReset.tout,true)}}
+    brouillardReset={n:d.fogReset.n,tout:!!d.fogReset.tout};
+    // À l'arrivée à la table, la dernière remise à zéro du MJ est déjà passée : elle ne se rejoue pas, sauf un voile levé partout.
+    if(m0&&typeof resetFog==='function'&&(brouillardConnu||brouillardReset.tout))resetFog(brouillardReset.tout,true)}
+   // Le numéro connu, la mémoire d'exploration gardée sur l'appareil se relit.
+   if(!brouillardConnu&&d.fogReset&&typeof d.fogReset.n==='number'){brouillardConnu=true;if(typeof fogSeenSrc!=='undefined'){fogSeenSrc=null;fogKey=''}}}
+  // Le MJ qui revient à la table reprend le numéro des remises à zéro là où il en était : sinon chaque joueur rejouait une remise à zéro.
+  if(estMJ()&&d.fogReset&&typeof d.fogReset.n==='number'&&typeof brouillardReset!=='undefined'&&d.fogReset.n>brouillardReset.n)brouillardReset={n:d.fogReset.n,tout:!!d.fogReset.tout};
   const vus=new Set(),aRepousser=[],gardes=[],cibles=[],gardesPieges=[],cleIci=typeof cleTour==='function'?cleTour():null;
   Object.entries(d.actors||{}).forEach(([id,e])=>{if(!e||typeof e!=='object')return;
    vus.add(id);
@@ -594,7 +602,7 @@ async function fermerTable(){if(!estMJ()||!tableId)return;
 function debrancherTable(){clearInterval(presenceTimer);presenceTimer=null;if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
  if(quitteBannis)quitteBannis();if(quitteMonBan)quitteMonBan();quitteBannis=quitteMonBan=null;bannisRef=null;bannis={};
  quitteSalle=quitteSieges=quitteJournal=null;enLigne=false;poussePret=false;tableId=null;salleRef=siegesRef=journalRef=null;journalVus=new Set();
- modeConnu=ongletConnu=false;ongletVu=null;envoiOnglet=null;donjonConnu=false;donjonVu=null;envoiDonjon=null;
+ modeConnu=ongletConnu=false;ongletVu=null;envoiOnglet=null;donjonConnu=false;donjonVu=null;envoiDonjon=null;brouillardConnu=false;
  sieges={};monSiege=null;majTable();renderJoueursConnectes()}
 function brancherTable(code){if(!cloud)return;debrancherTable();
  tableId=code;salleRef=cloud.doc('amertume_online_live/'+code);

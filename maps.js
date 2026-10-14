@@ -336,11 +336,24 @@ let fogMemorise=new WeakMap(),fogVisQui=[],fogTroupeQui=[];
 let fogAEmballer=false;
 function emballeFog(){if(!fogAEmballer)return;fogAEmballer=false;const m=currentMap();
  if(!m||!fogSeen||!fogDim)return;
- m.fog=fogSeenSrc=packMask(fogSeen,fogDim.n);delete m.seen;scheduleSave()}
+ m.fog=fogSeenSrc=packMask(fogSeen,fogDim.n);delete m.seen;scheduleSave();garderBrouillardJoueur()}
+/* Chez un joueur en ligne, rien ne s'enregistre : sa mémoire d'exploration se garde donc à part, sur l'appareil, par table et par
+   carte, avec le numéro de la dernière remise à zéro. Rechargée, la page la retrouve ; une remise à zéro survenue depuis l'efface. */
+const BROUILLARD_CLE='amertume-brouillard';let brouillardGardeTimer=0;
+function brouillardJoueurPret(){return typeof spectateur==='function'&&spectateur()&&typeof tableId!=='undefined'&&!!tableId&&typeof brouillardConnu!=='undefined'&&brouillardConnu}
+function garderBrouillardJoueur(){if(brouillardGardeTimer||!brouillardJoueurPret())return;
+ brouillardGardeTimer=setTimeout(()=>{brouillardGardeTimer=0;const m=currentMap();if(!m||typeof m.fog!=='string'||!brouillardJoueurPret())return;
+  try{const t=JSON.parse(localStorage.getItem(BROUILLARD_CLE)||'{}'),k=tableId+'|'+m.id;delete t[k];t[k]={n:brouillardReset.n,f:m.fog};
+   const cles=Object.keys(t);cles.slice(0,Math.max(0,cles.length-6)).forEach(c=>delete t[c]);localStorage.setItem(BROUILLARD_CLE,JSON.stringify(t))}catch(e){}},1000)}
+function brouillardRetrouve(m,d){if(!brouillardJoueurPret())return;let e=null;
+ try{e=JSON.parse(localStorage.getItem(BROUILLARD_CLE)||'{}')[tableId+'|'+m.id]}catch(x){}
+ if(!e||e.n!==brouillardReset.n||typeof e.f!=='string'||e.f.length!==maskChars(d.n))return;
+ const g=unpackMask(e.f,d.n);let plus=0;for(let k=0;k<d.n;k++)if(g[k]&&!fogSeen[k]){fogSeen[k]=1;plus++}
+ if(plus){fogDirty=true;fogAEmballer=true}}
 function computeFog(){const m=currentMap();
  if(!m){fogVis=null;fogTroupe=null;fogSeen=null;fogKey='';fogDim=null;return}
  const d=fogDim=fogDims(m);
- if(!fogSeen||fogSeen.length!==d.n||m.fog!==fogSeenSrc){fogSeen=readSeen(m,d);fogSeenSrc=m.fog;fogDirty=true;fogMemorise=new WeakMap()}
+ if(!fogSeen||fogSeen.length!==d.n||m.fog!==fogSeenSrc){fogSeen=readSeen(m,d);fogSeenSrc=m.fog;fogDirty=true;fogMemorise=new WeakMap();brouillardRetrouve(m,d)}
  const formes=activeObstacles(),troupe=fogParty();
  // Le calcul ne reprend que si la scène a bougé : héros, portes, zones ou point de vue.
  const obscur=carteObscure(),M=obscur?masqueEclaire():null;
