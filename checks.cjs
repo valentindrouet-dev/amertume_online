@@ -1979,7 +1979,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
   &&feuille.includes('#maps-page.mode-domaine #domaine-editeur{display:flex}')&&feuille.includes('#maps-page.mode-domaine>.maps-main:not(#domaine-editeur)'),'la carte du domaine s’édite dans Cartes : calques, tracé, déplacement, sommets');
  assert.ok(fief.includes("if(!p.ok&&!confirm('Le trésor ne suffit pas : il manque '")&&fief.includes('construire(domaine,b,true);renderDomaine();sauveDomaine()}')
   &&fief.includes("mouvementFinance(domaine,signe*m,libelle.value.trim()||(signe>0?'Recette':'Dépense'));")
-  &&fief.includes("const pnjDialog=dialog('dom-pnj-editor','Personnage',")&&fief.includes("[['','Au domaine'],...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),['aventure','En aventure'],['absent','Absent']]")
+  &&fief.includes("const pnjDialog=dialog('dom-pnj-editor','Personnage',")&&fief.includes("[['','Au domaine'],...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),['route','Sur la route'],['aventure','En aventure'],['absent','Absent']]")
   &&fief.includes("ta.onchange=()=>{b.effets[i]=ta.value.slice(0,600);renderDomBats();sauveDomaine()}")
   &&feuille.includes('body.page-domaine #domaine-page{display:grid;')&&feuille.includes('body.page-domaine main.layout'),'l’onglet Domaine : construire, financer, peupler, loger, conférer');}
 /* Six retouches d'écran : plus de spécialisation sur la vignette ; l'infobulle du système
@@ -3389,6 +3389,11 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.709 — La liste des combattants ne garde que les aventuriers chargés sur la carte ; l'Accueil montre tous les
+   aventuriers et leur emplacement ; un aventurier créé est sur la route. */
+{const ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8');
+ assert.ok(ed.includes("const l=actors.filter(a=>a&&a.hero);")&&ed.includes("t.append(n,ou,d);")&&ed.includes("<h3>Aventuriers</h3>")&&dm.includes("if(lieu==='route')return 'Sur la route';")
+  &&dm.includes("l==='absent'||l==='route')return;"),'route et Accueil');}
 /* v0.708 — L'équipement de départ : un lot d'armes, une armure, dix rations, trouvés au catalogue par leur nom ; l'objet
    inhabituel tiré à la création seulement, selon la classe. La bulle d'une compétence dit son usage ; plus de Gnome. */
 {const ed=fs.readFileSync('editor.js','utf8');
@@ -3425,7 +3430,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
  const A=new Function(act+';return ACTUALITES')();assert.ok(A.versions.length>=10&&A.resume.lignes.length>=5&&A.resume.lignes.length<=6,'les actualités');
  assert.ok(ed.includes("const ONGLETS=[['accueil','Accueil'],['table','Table de jeu'],")&&ed.includes("return ['accueil','table',")&&mp.includes("const PAGES=['accueil','table','maps',")
   &&mp.includes("else if(p==='accueil')renderAccueil();")&&ed.includes("const ETAPES_CREATION=[['identite','Identité'],['espece','Espèce'],['classe','Classe'],['caracs','Caractéristiques'],['comps','Compétences'],['equipement','Équipement'],['recap','Récapitulatif']];")
-  &&ed.includes("horsCarte:true,lieuDomaine:''")&&sh.includes("s.replace('/* versions */',"),'l’Accueil câblé');}
+  &&ed.includes("horsCarte:true,lieuDomaine:'route'")&&sh.includes("s.replace('/* versions */',"),'l’Accueil câblé');}
 /* v0.701 — Les effets de talent Points d'Action et Points de Mouvement : +x à chaque tour ; les bonus de l'arbre restent tels
    qu'ils étaient. */
 {const C26=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
@@ -5070,7 +5075,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(src.includes("tous.filter(i=>actors[i].hero).forEach(i=>retireDeLaTable(actors[i]));")&&src.includes("function retireDeLaTable(a){")&&src.includes("a.horsCarte=true;a.retire=true;"),'retirer un aventurier ne le supprime pas');
  assert.ok(src.includes("if(mot.trim()!=='SUPPRIMER')return")&&src.includes("const suppr=ico('✕','Supprimer',()=>{const souci=supprimerAventurier(a);")&&src.includes("actors[editing].hero?supprimerAventurier(actors[editing]):removeActor(editing)"),'supprimer pour de bon : SUPPRIMER, à l’onglet Aventuriers');
  assert.ok(mp.includes("heros.forEach(a=>{a.horsCarte=false;delete a.retire;")&&src.includes("jeton.onclick=()=>ramenerSurLaTable(a)"),'le token revient : carte rechargée, ou clic à l’onglet Aventuriers');
- assert.ok(page.includes('function alive(a){return a.hp>0&&!hasState(a,"Coma")&&!a.horsCarte}')&&page.includes("if(!(a.hero&&a.retire))(duCoteTroupe(a)?troupe:campDe(a)==='neutre'?neutres:adverses).push(b);")&&vivant.includes("'horsCarte','retire',"),'hors de la table, il n’y est pas');
+ assert.ok(page.includes('function alive(a){return a.hp>0&&!hasState(a,"Coma")&&!a.horsCarte}')&&page.includes("if(!(a.hero&&(a.retire||a.horsCarte)))(duCoteTroupe(a)?troupe:campDe(a)==='neutre'?neutres:adverses).push(b);")&&vivant.includes("'horsCarte','retire',"),'hors de la table, il n’y est pas');
  assert.ok(css.includes('.talent-rangee{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));'),'sept talents par ligne');}
 /* v0.509 — Gerbe de feu quand un piège part ; cadenas sur un coffre trouvé verrouillé ; pièces uniques. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
@@ -5416,4 +5421,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2005 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2006 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

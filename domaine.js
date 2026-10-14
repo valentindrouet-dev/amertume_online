@@ -87,14 +87,14 @@ const batimentChoisissable=b=>!!b&&(mjDom()||b.etape>0);
    lit encore le domaine, jusqu'à son premier déplacement. */
 const lieuDe=a=>!a?'':typeof a.lieuDomaine==='string'?a.lieuDomaine:((domaine.aventuriers[a.id]||{}).lieu||'');
 function poseLieu(a,lieu){if(a)a.lieuDomaine=String(lieu||'').slice(0,60)}
-function evacueNonConstruits(){let n=0;actors.forEach(a=>{if(!a.hero)return;const l=lieuDe(a);if(!l||l==='aventure'||l==='absent')return;
+function evacueNonConstruits(){let n=0;actors.forEach(a=>{if(!a.hero)return;const l=lieuDe(a);if(!l||l==='aventure'||l==='absent'||l==='route')return;
  if(!batimentConstruit(batimentDom(l))){poseLieu(a,'');n++}});return n}
 /* Qui agit pour un aventurier : le MJ, pour tous ; en ligne, le joueur assis à sa place ;
    sur un seul appareil, celui de « Mon aventurier ». */
 function agitPour(a){if(!a)return false;if(mjDom())return true;
  if(typeof enLigne!=='undefined'&&enLigne)return typeof monSiege!=='undefined'&&monSiege===a.id;
  return actors.indexOf(a)===owner}
-function nomLieu(lieu){if(lieu==='aventure')return 'En aventure';if(lieu==='absent')return 'Absent';
+function nomLieu(lieu){if(lieu==='aventure')return 'En aventure';if(lieu==='route')return 'Sur la route';if(lieu==='absent')return 'Absent';
  const b=lieu?batimentDom(lieu):null;return b?b.nom:'Au domaine'}
 function montantLisible(n){const s=Math.abs(n).toLocaleString('fr-FR');return (n<0?'−':'')+s+' '+domaine.monnaie}
 
@@ -911,8 +911,8 @@ function renderDomAventuriers(){const boite=$('dom-aventuriers');boite.replaceCh
   const nom=document.createElement('strong');nom.textContent=a.name;tete.append(jetonRond(a.image,a.name,'mini'),nom);
   const lieu=document.createElement('select');lieu.setAttribute('aria-label','Où est '+a.name);
   // Seuls les bâtiments construits accueillent quelqu'un.
-  [['','Au domaine'],...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),['aventure','En aventure'],['absent','Absent']].forEach(([k,n])=>lieu.add(new Option(n,k)));
-  lieu.value=(ou&&(ou==='aventure'||ou==='absent'||batimentConstruit(batimentDom(ou))))?ou:'';
+  [['','Au domaine'],...domaine.batiments.filter(batimentConstruit).map(b=>[b.id,b.nom]),['route','Sur la route'],['aventure','En aventure'],['absent','Absent']].forEach(([k,n])=>lieu.add(new Option(n,k)));
+  lieu.value=(ou&&(ou==='aventure'||ou==='absent'||ou==='route'||batimentConstruit(batimentDom(ou))))?ou:'';
   lieu.onchange=()=>{poseLieu(a,lieu.value);renderDomaine(true);render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
   // La note de l'aventurier reste dans les données et l'export ; elle ne s'affiche plus ici.
   // Les joueurs lisent où est chacun ; le MJ le choisit.

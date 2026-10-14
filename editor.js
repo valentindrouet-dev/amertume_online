@@ -756,7 +756,7 @@ const accueilPage=document.createElement('main');accueilPage.id='accueil-page';
 accueilPage.innerHTML='<section class="cat-panel panel accueil"><header class="cat-head"><h2>Accueil</h2></header><div class="accueil-grille">'
  +'<section class="accueil-bloc accueil-creer"><h3>Créer un nouvel aventurier</h3><button id="accueil-creer" type="button" class="primary">+ Créer un aventurier</button></section>'
  +'<section class="accueil-bloc accueil-actus"><h3>Dernières actualités</h3><div id="accueil-actus"></div></section>'
- +'<section class="accueil-bloc accueil-actifs"><h3>Aventuriers actifs</h3><div id="accueil-actifs"></div></section>'
+ +'<section class="accueil-bloc accueil-actifs"><h3>Aventuriers</h3><div id="accueil-actifs"></div></section>'
  +'<section class="accueil-bloc accueil-faits"><h3>Derniers hauts faits</h3><div id="accueil-faits"></div></section></div></section>';
 document.querySelector('main.layout').after(accueilPage,heroesPage,talentsPage,armoryPage,bestiaryPage,settingsPage);majNoms();
 /* Un sous-titre de carte, avec son « + » : équiper ou attribuer sans ouvrir la fiche. */
@@ -3651,15 +3651,17 @@ function renderActualites(){const boite=$('accueil-actus');if(!boite)return;boit
  if(v.length){const p=document.createElement('p');p.className='accueil-versions muted';p.textContent='v'+v[v.length-1].v+' → v'+v[0].v;boite.append(p)}
  const ul=document.createElement('ul');ul.className='accueil-liste';(lignes||[]).forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.append(li)});boite.append(ul)}
 // Les aventuriers présents au domaine : ni partis en aventure, ni absents.
-function aventuriersActifs(){const lieu=a=>typeof lieuDe==='function'?lieuDe(a):(a.lieuDomaine||'');return actors.filter(a=>a&&a.hero&&!['aventure','absent'].includes(lieu(a)))}
-function renderActifs(){const boite=$('accueil-actifs');if(!boite)return;boite.replaceChildren();const l=aventuriersActifs();
- if(!l.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun aventurier au domaine.';boite.append(p);return}
+function aventuriersActifs(){const lieu=a=>typeof lieuDe==='function'?lieuDe(a):(a.lieuDomaine||'');return actors.filter(a=>a&&a.hero&&!['aventure','absent','route'].includes(lieu(a)))}
+function renderActifs(){const boite=$('accueil-actifs');if(!boite)return;boite.replaceChildren();const l=actors.filter(a=>a&&a.hero);
+ if(!l.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun aventurier.';boite.append(p);return}
  l.forEach(a=>{const c=document.createElement('div');c.className='accueil-heros';const classe=classeDe(catalog.classes,a.role);
   const av=document.createElement('span');av.className='accueil-avatar';if(classe&&classe.tint)av.style.setProperty('--teinte',classe.tint);
   if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';av.append(im)}else av.textContent=String(a.name||'?').trim().charAt(0).toUpperCase();
   const t=document.createElement('div');t.className='accueil-heros-texte';const n=document.createElement('b');n.textContent=a.name;
-  const d=document.createElement('small');d.textContent=[a.role,/niveau/i.test(a.role||'')?'':'niveau '+(Math.trunc(Number(a.level))||1),typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieuDe(a)):''].filter(Boolean).join(' · ');
-  if(classe&&classe.tint)n.style.color=classe.tint;t.append(n,d);c.append(av,t);boite.append(c)})}
+  // En seconde ligne, où il se trouve ; puis sa classe et son niveau.
+  const ou=document.createElement('small');ou.className='accueil-lieu';ou.textContent=typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieuDe(a)):'';
+  const d=document.createElement('small');d.textContent=[a.role,/niveau/i.test(a.role||'')?'':'niveau '+(Math.trunc(Number(a.level))||1)].filter(Boolean).join(' · ');
+  if(classe&&classe.tint)n.style.color=classe.tint;t.append(n,ou,d);c.append(av,t);boite.append(c)})}
 function renderAccueil(){renderActualites();renderActifs();const f=$('accueil-faits');if(f){f.replaceChildren();const p=document.createElement('p');p.className='muted';p.textContent='Aucun haut fait pour l’instant.';f.append(p)}}
 /* ---------- Créer un aventurier ----------
    Onglet par onglet : identité, classe, caractéristiques, compétences, puis le récapitulatif. L'aventurier rejoint la campagne,
@@ -3806,11 +3808,11 @@ function majBoutons(){const c=creation,k=ETAPES_CREATION[c.etape][0],fin=c.etape
  $('creation-prec').hidden=c.etape===0;$('creation-suiv').textContent=fin?'Créer l’aventurier':'Suivant';$('creation-suiv').disabled=!!etapeManque(k)||(fin&&ETAPES_CREATION.some(([k2])=>etapeManque(k2)))}
 $('creation-prec').onclick=()=>{if(creation&&creation.etape>0){creation.etape--;renderCreation()}};
 $('creation-suiv').onclick=()=>{const c=creation;if(!c)return;if(c.etape<ETAPES_CREATION.length-1){if(!etapeManque(ETAPES_CREATION[c.etape][0])){c.etape++;renderCreation()}return}creerAventurier()};
-/* L'aventurier créé : au domaine, hors de la carte, avec ses 100 premiers XP ; chez un joueur, il devient le sien. La création
+/* L'aventurier créé : sur la route, hors de la carte, avec ses 100 premiers XP ; chez un joueur, il devient le sien. La création
    s'achève sur le récapitulatif. Sa fiche ne garde que les points de compétence : le 1 de base, la classe et l'espèce s'y ajoutent
    au jeu, comme pour tout aventurier. */
 function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;const e=especeCreation(c);
- const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:c.name.trim(),sexe:c.sexe,race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'',pointsCreation:{...c.caracs}});
+ const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:c.name.trim(),sexe:c.sexe,race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
  // L'équipement de départ au sac ; l'objet inhabituel, tiré ici, une seule fois.
  const kit=kitCreation(c);kit.forEach(([o,n])=>{for(let k=0;k<n;k++)a.inventaire.push(o.id)});
  const tiree=tirePieceDepart(c.role);if(tiree){a.forges=[tiree];a.inventaire.push(tiree.id)}
