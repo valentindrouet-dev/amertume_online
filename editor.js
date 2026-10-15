@@ -5591,7 +5591,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    gens.forEach(x=>{const xv=vu(x),bonus=estBonus(x),max=paliersDe(x),k=a?palierDe(a,x):0;
     const ferme=!a||(sansElement&&estElementaire(x))||verrouArbre(a.talents,liste,x)||manqueTalent(a.talents,x,catalog.talents)||(estMort(a)&&view!=='mj')||figeEnCombat(a);
     for(let n=1;n<=max;n++){const c=document.createElement('div'),prix=coutPalier(x,n),suivante=!!a&&n===k+1&&!ferme&&prix<=dispo;
-     c.className='detail-amelioration'+(bonus?' detail-bonus':'')+(k>=n?' acquise':'')+(suivante?' achetable':'');
+     c.className='detail-amelioration'+(bonus?' detail-bonus':'')+(k>=n?' acquise':'')+(suivante?' achetable':'')+(n>1?' suite':max>1?' premier':'');
      const l=document.createElement('p');l.className='detail-am-nom';const b=document.createElement('b');
      if(bonus){const xp=talentAuPalier(x,n);b.append(libelleBonusEl(paramsTalent(xp),{talent:xp}))}
      else{nomAccolades(b,xv.name);if(max>1)b.append(' '+CHIFFRES_PALIER[n])}

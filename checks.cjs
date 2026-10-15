@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.815 — Une flèche beige d'un palier au suivant : entre deux bonus, au-dessus d'une amélioration de palier 2. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("+(n>1?' suite':max>1?' premier':'');")&&fs.readFileSync('editor.css','utf8').includes('.detail-bonus.suite::before'),'les flèches de palier');
 /* v0.813 — La tête du panneau à la teinte de sa nature, les améliorations en vert ; les talents non tenus grisés ; un bouton remet à zéro
    l'arbre d'un aventurier, talent de classe gardé. */
 {const src=fs.readFileSync('editor.js','utf8');

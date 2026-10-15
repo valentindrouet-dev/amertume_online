@@ -2938,3 +2938,11 @@ body.sombre #accueil-page .accueil-v2 .accueil-bloc{background:var(--panel);bord
  mask-image:linear-gradient(90deg,transparent,#000 35%,#000 92%,transparent),linear-gradient(transparent,#000 20%,#000 75%,transparent);mask-composite:intersect}
 #accueil-page .accueil-v2 .accueil-ville[hidden]{display:none}
 #accueil-page .accueil-v2 .accueil-ville img{width:100%;height:100%;object-fit:cover;object-position:62% 38%;display:block}
+/* v0.815 : une petite flèche beige, de la couleur des filets, mène d'un palier au suivant : entre deux bonus, à droite ; au-dessus
+   d'une amélioration de palier 2. */
+.arbres-v2 .arbres-detail .detail-amelioration.suite{position:relative;overflow:visible}
+.arbres-v2 .arbres-detail .detail-amelioration:not(.detail-bonus).suite{margin-top:6px}
+.arbres-v2 .arbres-detail .detail-amelioration:not(.detail-bonus).suite::before{content:'';position:absolute;left:50%;top:-21px;width:18px;height:18px;transform:translateX(-50%);background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 4v14M6 13l6 6 6-6' fill='none' stroke='%23cdbb94' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;pointer-events:none}
+.arbres-v2 .arbres-detail .detail-bonus-grille{column-gap:24px}
+.arbres-v2 .arbres-detail .detail-bonus.premier{grid-column:1}
+.arbres-v2 .arbres-detail .detail-bonus.suite::before{content:'';position:absolute;left:-22px;top:50%;width:20px;height:20px;transform:translateY(-50%);background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14M13 6l6 6-6 6' fill='none' stroke='%23cdbb94' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;pointer-events:none}
