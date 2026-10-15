@@ -2098,7 +2098,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&cartes.includes("if(!zonesVisibles||!m||view!=='mj'){cv.style.display='none';noms.hidden=true;return}")
   &&cartes.includes("zonesBtn.hidden=!m;zonesBtn.classList.toggle('on',zonesVisibles);")&&feuille.includes('#map-zones,#map-zones-noms{position:absolute;inset:0;'),'les zones se voient d’un bouton, et se retiennent');}
 /* Maj + clic dans la liste : tout ce qui va de l'actif à la ligne cliquée, bornes comprises. */
-assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&selected!==null&&selected!==i&&markRange(i))return;onGesture(gestureOf(e),i)};")
+assert.ok(page.includes(" b.dataset.index=i;")&&page.includes("b.onclick=e=>{if(e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&selected!==null&&selected!==i&&markRange(i))return;")
  &&page.includes("function markRange(i){const lignes=[...document.querySelectorAll('#actors .actor[data-index]')].map(b=>Number(b.dataset.index));")
  &&page.includes(" marked=new Set(plage);render();return true}"),'la plage de sélection');
 /* Les raretés et les bonus d'équipement : une pièce se teinte de sa rareté, plus de sa
@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.818 — Le double clic sur un token, ou sur sa vignette, recentre la carte sur lui sans changer le zoom. */
+{const page=fs.readFileSync('index.html','utf8');assert.ok(!page.includes("mapZoom=Math.max(mapZoom,zoomApproche());")&&page.includes("onGesture(gestureOf(e),i);if(deux&&!a.horsCarte)approcherToken(a)};"),'recentrer sans zoomer');}
 /* v0.817 — Chevrons de palier ; le prix du talent sous son rond ; les noms longs rapetissent ; la tête s'ouvre dans l'éditeur. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("pr.className='detail-prix detail-prix-rond'")&&src.includes("if(!a&&mj){tete.classList.add('editable');")&&fs.readFileSync('editor.css','utf8').includes("M9.5 5.5 16 12l-6.5 6.5"),'v0.817');}
