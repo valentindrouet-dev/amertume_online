@@ -1787,7 +1787,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
  &&src.includes('function epingleBulle(oui){bulleEpinglee=!!oui&&!!bulleEl;')&&src.includes('function basculeEpingle(el,quoi){if(bulleEpinglee&&bulleAncre===el){fermerBulle();return}')
  &&src.includes('function reposeBulle(quoi){const ep=bulleEpinglee;quoi();if(ep)epingleBulle(true)}')
  &&src.includes('function fermerBulle(){retireBulle();if(BULLES){gearOuvert=null;talentOuvert=null}}')
- &&src.includes('function retireBulle(){bulleEpinglee=false;retireComparaison();comparerAvec=null;if(!bulleEl)return;')
+ &&src.includes('function retireBulle(){bulleEpinglee=false;retireComparaison();retireDetailSac();comparerAvec=null;if(!bulleEl)return;')
  &&src.includes('function bulleOrpheline(){if(BULLES)requestAnimationFrame(()=>{if(bulleEl&&bulleAncre&&!bulleAncre.isConnected)fermerBulle()})}')
  &&src.includes("rangees(equipement,'');rangees(objets,combat?'':'Objets');bulleOrpheline();")&&src.includes(' bulleOrpheline();return out}')
  &&src.includes("if(!equipable){if(BULLES){if(!tout)basculeEpingle(p,montre)}else basculer();return}")

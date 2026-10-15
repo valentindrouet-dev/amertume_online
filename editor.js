@@ -1550,7 +1550,7 @@ function bulleOrpheline(){if(BULLES)requestAnimationFrame(()=>{if(bulleEl&&bulle
    face — ne la ferait pas renaître sur la dernière vignette survolée. */
 function fermerBulle(){retireBulle();if(BULLES){gearOuvert=null;talentOuvert=null}}
 // Ôter la bulle sans rien oublier de ce qui est ouvert : c'est ainsi qu'elle se remplace.
-function retireBulle(){bulleEpinglee=false;retireComparaison();comparerAvec=null;if(!bulleEl)return;bulleEl.remove();bulleEl=null;bulleAncre=null;bulleRetiree=performance.now();
+function retireBulle(){bulleEpinglee=false;retireComparaison();retireDetailSac();comparerAvec=null;if(!bulleEl)return;bulleEl.remove();bulleEl=null;bulleAncre=null;bulleRetiree=performance.now();
  document.removeEventListener('pointerdown',bulleDehors,true);
  document.removeEventListener('keydown',bulleEchap,true);
  window.removeEventListener('scroll',fermerBulle,true);window.removeEventListener('resize',fermerBulle)}
@@ -1904,9 +1904,23 @@ function armesEnMain(a){const n=new Map();(a&&a.inventaire&&a.inventaire.length?
    en main. */
 function bulleSac(b,liste,choisit,portes){const d=document.createElement('div'),a=actors[selected]||{};d.className='bulle-sac gear-grille';
  liste.forEach(([o,n])=>{const p=gearCarre(o,n,portes?(o.category==='weapon'?gearCount(a,o.id):o.id===a.shieldId?1:0):0);
-  p.tabIndex=0;p.setAttribute('role','button');p.classList.add('choix-sac');
+  p.tabIndex=0;p.setAttribute('role','button');p.classList.add('choix-sac');p.removeAttribute('title');
+  // Au survol, avant de choisir : la fiche de la pièce, au-dessus de la petite bulle.
+  p.addEventListener('pointerenter',()=>montreDetailSac(p,o));p.addEventListener('pointerleave',retireDetailSac);
+  p.addEventListener('focus',()=>montreDetailSac(p,o));p.addEventListener('blur',retireDetailSac);
   const va=e=>{e.stopPropagation();choisit(o)};p.onclick=va;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();va(e)}};d.append(p)});
  if(ouvrirBulle(b,d,'bulle-gear bulle-sac-cadre'))epingleBulle(true)}
+/* La fiche d'une pièce de la petite bulle d'inventaire : une seconde bulle, comme celle de la comparaison, posée au-dessus de la
+   première à l'aplomb du carré survolé ; sans place au-dessus, à côté. */
+let detailSacEl=null;
+function retireDetailSac(){if(detailSacEl){detailSacEl.remove();detailSacEl=null}}
+function montreDetailSac(carre,o){retireDetailSac();if(!bulleEl||!o||!carre.isConnected)return;
+ const c=document.createElement('div');c.className='bulles-comparaison bulle-sac-detail';const b=document.createElement('div');b.className='bulle bulle-gear sans-entree';
+ const d=gearDetail(o,actors[selected]||null,false);d.hidden=false;d.classList.add('large');b.append(d);c.append(b);bulleEl.after(c);detailSacEl=c;
+ const r=bulleEl.getBoundingClientRect(),q=carre.getBoundingClientRect(),t=c.getBoundingClientRect(),marge=8;
+ let gauche=Math.max(marge,Math.min(innerWidth-t.width-marge,q.left+q.width/2-t.width/2)),haut=r.top-t.height-10;
+ if(haut<marge){haut=Math.max(marge,Math.min(innerHeight-t.height-marge,r.top));gauche=r.left-t.width-10;if(gauche<marge)gauche=Math.min(innerWidth-t.width-marge,r.right+10)}
+ c.style.left=gauche+'px';c.style.top=haut+'px'}
 // L'emplacement où va une pièce : ses mains pour une arme ou un bouclier, le sien pour une armure.
 function placeDe(o){return o.category==='ammo'?'munitions':o.category==='weapon'||emplacementDe(o)==='shield'?'main':emplacementDe(o)}
 /* Équiper une pièce de plus, ou en reposer une : les deux moitiés du basculement, pour le

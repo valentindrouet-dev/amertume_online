@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.778","d":"2026-10-15","t":"Fiche de l'objet au survol avant de le choisir"},
 {"v":"0.777","d":"2026-10-15","t":"Icônes des caracs et compétences : ouverture immédiate"},
 {"v":"0.776","d":"2026-10-15","t":"La carte descend jusqu'au bas de l'écran"},
 {"v":"0.775","d":"2026-10-15","t":"Objet aléatoire montré comme à l'Armurerie"},
