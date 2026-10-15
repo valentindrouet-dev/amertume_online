@@ -217,6 +217,10 @@ body.page-maps .intro,body.page-maps .mj-tools,body.page-maps main.layout,body.p
 .map-panel>.barre-actions:not(:has(button:not([hidden]))){display:none}
 .barre-actions>.attack-info,.barre-actions>.targets{flex-basis:100%;justify-content:center;text-align:center;color:#f0d9b5;margin:0;min-height:0}
 .barre-actions>.attack-info:empty,.barre-actions>.targets:empty{display:none}
+/* Les états du combattant ne sont plus dans la barre d'actions : leur cartouche flotte au-dessus, centré, et au-dessus encore de
+   la barre de mouvement quand elle paraît. */
+.map-panel>.attack-card.barre-actions>.targets{position:absolute;left:50%;bottom:calc(100% + 8px + var(--sur-barre,0px));transform:translateX(-50%);flex-basis:auto;width:max-content;max-width:90vw;pointer-events:auto}
+.map-panel>.attack-card.barre-actions>.targets .cibles-groupe{box-shadow:0 2px 8px #0000004d}.map-panel>.attack-card.barre-actions>.targets .cibles-groupe.adverses{background:#f8e6e1}.map-panel>.attack-card.barre-actions>.targets .cibles-groupe.allies{background:#e5f0e8}
 .barre-actions>.choix-attaques,.barre-actions>.attack-row{margin:0;flex-wrap:nowrap;align-items:center;gap:10px}
 .barre-actions>.choix-attaques:not([hidden])+.attack-row{padding-left:14px;border-left:1px solid #ffffff26}
 .map-panel .barre-actions button.btn-action.rond.rond{width:54px;height:54px;font-size:23px}

@@ -4118,7 +4118,7 @@ assert.ok(page.includes("if(tokenDistance(a,o,size)<=contactRadius(tokenOf(o)))e
    Changer d'armes, le verrou des armes en combat, le glisser d'une fiche à l'autre, Enjamber au-dessus du piège, le bruit coupé. */
 {const src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
  assert.ok(page.includes('<div id="barre-mouvement" hidden aria-hidden="true"></div>')&&page.includes("function traceMouvement(a,r){if(a&&r&&r.combat&&r.tk){const u=r.long/r.tk,b0=r.bonus0||0;barreMouvement(a,(r.metres-b0)-Math.max(0,u-b0),Math.max(0,b0-u))}else majBarreMouvement();")
-  &&page.includes("[...el.children].forEach((p,n)=>p.classList.toggle('pris',n>=plein));el.hidden=false}"),'la barre de mouvement, un point par mètre');
+  &&page.includes("[...el.children].forEach((p,n)=>p.classList.toggle('pris',n>=plein));el.hidden=false;placeBarreMouvement()}"),'la barre de mouvement, un point par mètre');
  assert.ok(page.includes("function arretAuContact(a,de){")&&page.includes("if(arretContact){t.onpointerup(e);return}")&&page.includes("if(regle&&regle.combat){const h=arretAuContact(a,{x:x0,y:y0});if(h){a.x=h.x;a.y=h.y}}"),'entrer au contact d’un adversaire arrête le geste');
  assert.ok(page.includes("function gelDebut(a){if(!enCombat()||!a)return false;")&&page.includes("&&!gelDebut(actors[i])}")&&page.includes("ferme=debut&&!ouvertureCombat(a),gele=!debut&&gelDebut(a);")
   &&page.includes("debout().forEach(o=>{o.debutTour=round});")&&vif.includes("'alignementJeu','debutTour','enAventure'];"),'le début de combat et le début de tour gèlent les autres');
