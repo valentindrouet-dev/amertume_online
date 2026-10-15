@@ -5408,7 +5408,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   /* Les petits ronds se tiennent près de leur talent, un peu à l'écart : le premier à 0,43 case de son
      centre, un second, d'une chaîne d'avant, 0,29 plus loin, dans toutes les directions. On lit à qui
      ils sont, et un talent voisin garde de l'air. */
-  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
+  /* v0.789 : en bas à gauche et à droite, les améliorations remontent le long de leur lien jusqu'à chevaucher un peu leur talent. */
+  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=(d==='so'||d==='se'?.27:.43)+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
   const petits=[];c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
    Object.keys(DIRS).forEach(d=>{if(ch[d].lien)return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
   /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
@@ -5417,7 +5418,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      le trait du bandeau : en haut à gauche et à droite, il en reçoit comme les autres. */
   const racines=departsDe(c.liste),places=[];
   // Une place trop près d'un rond déjà posé ne s'offre pas : un talent à moins de 0,36 case, un petit rond à moins de 0,24.
-  const libreIci=(x,y)=>!prises.some(q=>Math.hypot(q.x-x,q.y-y)<.36)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.24)&&!places.some(q=>Math.hypot(q.x-x,q.y-y)<.24);
+  const libreIci=(x,y,soi)=>!prises.some(q=>!(soi&&q.x===soi.x&&q.y===soi.y)&&Math.hypot(q.x-x,q.y-y)<.36)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.24)&&!places.some(q=>Math.hypot(q.x-x,q.y-y)<.24);
   if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),vues=new Set();
    c.liste.forEach(t=>liensDe(t).forEach(id=>{const v=c.liste.find(x=>x.id===id),p=cases.get(t.id),q=v&&cases.get(v.id);if(p&&q&&Math.abs(q.x-p.x)+Math.abs(q.y-p.y)===2&&(p.x===q.x||p.y===q.y))occupe.add((p.x+q.x)/2+','+(p.y+q.y)/2)}));
    c.liste.forEach(t=>{if(estVide(t)&&!estRemplissage(t))return;const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
@@ -5426,7 +5427,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      if(d==='n'&&racines.has(t.id)&&!ch[d].petits.length)return;
      // Un seul petit rond par chemin : ses paliers font ce que faisait une série. Celui qui y est n'en appelle pas d'autre.
      if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);
-     if(libreIci(x,y))places.push({genre:'petit',x,y,de:t,dir:d,rang:r})})});
+     if(libreIci(x,y,p))places.push({genre:'petit',x,y,de:t,dir:d,rang:r})})});
    if(!c.liste.length)places.push({genre:'gros',x:0,y:0,de:null})}
   /* La limite de l'arbre : chez les joueurs, rien sous la barrière choisie, et le plan s'arrête là ; chez le MJ, pâli. */
   const coupe=coupeArbre(c.liste,cases,classe),limiteVue=view==='mj'&&!arbresVueJoueur,sous=q=>q.y>coupe;
@@ -5452,8 +5453,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    else if(mj){el=document.createElement('div');el.className='arbre-place';el.setAttribute('role','button');el.tabIndex=0;el.textContent='+';el.title='Ajouter un talent ici';
     el.onclick=()=>{lienDepuis=null;ajouterDansArbre({famille:classe,flottant:true,type:'mait'})};
     el.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();el.click()}};cible(el,{famille:classe,flottant:true})}
-   if(el){el.classList.add('arbre-flottant');const haut=((depart?cases.get(depart.id).y:y0)-y0+.5)*L;col.append(el);
-    requestAnimationFrame(()=>{el.style.top=(plan.offsetTop+haut)+'px'})}}
+   if(el){el.classList.add('arbre-flottant');col.append(el);
+    requestAnimationFrame(()=>{el.style.top=(plan.offsetTop+26)+'px'})}}
   return col};
  /* Les colonnes : les deux de la classe, ni plus ni moins. Les génériques ont leur propre
     arbre — on l'ouvre par son rouage, dans l'onglet Talents — et n'encombrent plus celui
