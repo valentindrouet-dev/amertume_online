@@ -2645,7 +2645,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("const FAMILLES_LOGOS=[['Élémentaire — suit l’élément',LOGOS_ELEMENTAIRES],...DOSSIERS_LOGOS.map(([d,nom])=>[nom,LOGOS_DOSSIERS[d]]),['Talents',LOGOS_TALENT],['Attaques',LOGOS_ATTAQUE],['Équipement',LOGOS_EQUIPEMENT],['Objets',LOGOS_OBJET],['Ressources',LOGOS_RESSOURCES],['États',LOGOS_ETATS],['Divers',LOGOS_DIVERS]];"),'le logo d’un talent : toutes les images, par famille');
  const ctxL={};vm.createContext(ctxL);vm.runInContext(fs.readFileSync('planches.js','utf8').match(/const estIconePlanche=[^\n]*/)[0]+'\n'+src.match(/const estLogoDossier=[^\n]*/)[0]+'\n'+src.slice(src.indexOf('const NOMS_LOGOS='),src.indexOf('// Un menu de logos en familles'))+';this.nomLogo=nomLogo;',ctxL);
  assert.deepEqual(['BLINDAGE INITIAL','SAIGNEE','DEF 3','weapon_cape_elfique','DEGATS','weapon_cuir_epais','talents/brise_glace.png'].map(ctxL.nomLogo),['Blindage initial','Saignée','DEF 3','Cape elfique','Dégâts','Cuir épais','Brise glace']);
- assert.ok(src.includes("surveille(b,()=>{const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'")&&!src.includes("b.title=t.name+' — '+[talentType(t)[2]")
+ assert.ok(src.includes("const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'")&&!src.includes("b.title=t.name+' — '+[talentType(t)[2]")
   &&src.includes("(ancre.closest('dialog[open]')||document.body).append(bulleEl);")&&feuille.includes(".talent-bulle-nom b{font:700 14px 'Killam'"),'l’arbre décrit ses talents au survol, dans sa fenêtre');}
 /* v0.281 — La bulle d'un nœud de l'arbre n'écrit jamais la nature du talent. Chaque objet porte
    deux ressources et un prix en or, saisis à l'armurerie et lus nulle part ailleurs. */
@@ -5192,6 +5192,12 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.805 — L'arbre v2 : l'arbre à gauche, le panneau du talent à droite, un drapeau pour revenir à la v1 ; un nom à tiret ne casse
+   plus les bulles. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("const ARBRE_V2=true;let arbreDetailId=null;")&&src.includes("const remplitDetail=(panneau,t)=>{")&&src.includes("arbresDialog.classList.toggle('v2',ARBRE_V2&&!!a);")
+  &&!src.includes("x.replace(/[.*+?^${}()|[\\]\\\\\\/-]/g"),'l’arbre v2');
+ const q=x=>x.replace(/[.*+?^${}()|[\]\\\/]/g,'\\$&');assert.ok(new RegExp(q('Brise-os'),'u').test('Brise-os'),'un tiret dans un nom');}
 /* v0.804 — L'Attaque : 1 PA devant son nom sur la fiche, et sa description, au contact ou à distance, sur la fiche et à la table. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("const texteAttaque=at=>'Vous effectuez 1 Attaque contre un adversaire '+(at&&at.range==='distance'?'à distance':'au contact')+'.';")

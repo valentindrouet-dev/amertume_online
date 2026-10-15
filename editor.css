@@ -2722,3 +2722,33 @@ body.site-verrouille>main:not(#verrou-page),body.site-verrouille nav.tabs,body.s
 .arbre-plan>.arbre-noeud.talent-classe .arbre-cout{display:none}.arbre-plan>.arbre-noeud.talent-classe .arbre-rond::after{display:none}
 /* Une ligne à niveau : invisible aux joueurs ; chez le MJ, pâle et pointillée. */
 .arbre-chemins .chemin.a-niveau .trait{stroke-dasharray:2 8;opacity:.4;stroke:var(--line-strong)}
+/* ---------- L'arbre de talents v2 (v0.805) : l'arbre à gauche, trois cinquièmes ; le talent regardé à droite, deux cinquièmes. ---------- */
+#arbres.v2{width:min(1560px,96vw)}
+.arbres-v2{display:grid;grid-template-columns:3fr 2fr;gap:18px;align-items:start}
+.arbres-v2-arbre{min-width:0;overflow:auto}
+.arbres-v2-arbre>.arbres-cols{justify-content:center}
+.arbres-detail{position:sticky;top:0;box-sizing:border-box;min-height:460px;display:flex;flex-direction:column;gap:12px;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.arbres-detail .detail-tete{display:flex;align-items:center;gap:18px}
+.arbres-detail .detail-rond{flex:none;width:120px;height:120px;border-radius:50%;display:grid;place-items:center;font-size:44px;box-sizing:border-box;border:3px solid #c99a3c;background:radial-gradient(circle at 50% 40%,#fbf3e2,#efe2c6);box-shadow:0 2px 8px #0002;overflow:hidden}
+.arbres-detail .detail-rond>:is(img,svg){width:84%;height:84%;object-fit:contain}
+.arbres-detail .detail-tete h3{margin:0;font:700 30px/1.1 'Killam',Georgia,serif;color:var(--ink)}
+.arbres-detail .detail-corps{margin:0;width:auto;max-width:none;box-shadow:none}
+.arbres-detail .detail-corps .talent-bulle-nom>b{display:none}
+.arbres-detail .detail-titre{display:flex;align-items:center;gap:12px;margin:6px 0 0;font:800 13px system-ui;letter-spacing:2px;text-transform:uppercase;color:var(--ink)}
+.arbres-detail .detail-titre::after{content:'';flex:1;border-top:1px solid var(--line)}
+.arbres-detail .detail-amelioration{padding:10px 14px;border:1px solid var(--line);border-left:4px solid #b9b1a2;border-radius:8px;background:color-mix(in srgb,var(--panel) 85%,#888 15%);opacity:.85}
+.arbres-detail .detail-amelioration.acquise{border-color:#7fb07a;border-left-color:#4f9a5a;background:#e8f4e6;opacity:1}
+.arbres-detail .detail-amelioration p{margin:0}
+.arbres-detail .detail-am-nom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px!important}
+.arbres-detail .detail-am-nom b{font:700 18px 'Killam',Georgia,serif}
+.arbres-detail .detail-amelioration.acquise .detail-am-nom b{color:#2f6b3a}
+.arbres-detail .detail-prix{flex:none;padding:1px 10px;border:1.5px solid #c99a3c;border-radius:999px;font:700 13px system-ui;color:var(--ink);background:var(--panel)}
+.arbres-detail .detail-pied{margin-top:auto;display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.arbres-detail .detail-apprendre{padding:14px;border:0;border-radius:8px;background:#b0482f;color:#fff;font:700 19px system-ui;cursor:pointer}
+.arbres-detail .detail-apprendre:hover:not(:disabled){background:#9a3d27}
+.arbres-detail .detail-apprendre:disabled{cursor:default;opacity:.55}
+.arbres-detail .detail-apprendre.acquis{background:#4f9a5a;opacity:1}
+.arbres-detail .detail-reste{margin:0;text-align:center;font:600 14px system-ui;color:var(--muted)}
+/* Le début d'un niveau, dans l'arbre v2 : un trait pointillé en travers, « Niveau n » à gauche. */
+.arbre-plan>.arbre-rangee-niveau{position:absolute;left:0;right:0;height:0;border-top:1.5px dashed var(--line);pointer-events:none;z-index:0}
+.arbre-plan>.arbre-rangee-niveau>span{position:absolute;left:4px;top:-11px;padding:2px 8px;border-radius:5px;background:color-mix(in srgb,var(--panel) 80%,#999 20%);font:800 11px system-ui;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}

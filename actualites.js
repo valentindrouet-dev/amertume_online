@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.805","d":"2026-10-15","t":"Arbre de talents v2"},
 {"v":"0.804","d":"2026-10-15","t":"Attaque : PA et description"},
 {"v":"0.803","d":"2026-10-15","t":"Plus d'améliorations sur la fiche Aventuriers"},
 {"v":"0.802","d":"2026-10-15","t":"Lignes à niveau invisibles, paliers 4, 7, 15"},
