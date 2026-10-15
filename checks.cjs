@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.798 — Un gain d'état flottant, « +1 Rage », prend la couleur de l'état. */
+assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\\s+(.+)$/.exec(String(texte));if(g&&COULEURS_ETATS[g[1]])el.style.color=COULEURS_ETATS[g[1]]}"),'+1 Rage en couleur');
 /* v0.797 — Rage en rouge orangé vif, même quand c'est aussi le nom d'un talent de l'arbre ; le chiffre d'un état qui s'empile
    prend sa couleur. */
 {const src=fs.readFileSync('editor.js','utf8');
