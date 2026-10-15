@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.820 — La fenêtre de l'arbre moitié plus haute. */
+assert.ok(fs.readFileSync('editor.css','utf8').includes(".arbres-v2 .arbres-detail{min-height:min(930px,calc(100dvh - 190px))}"),'arbre plus haut');
 /* v0.819 — Chez un aventurier, ce qu'il ne tient pas reste gris dans le panneau ; pris, il prend sa couleur. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes(".arbres-v2 .arbres-detail .detail-amelioration:not(.acquise):not(.editable){border-color:#ddd6c8!important;"),'gris tant que non pris');
 /* v0.818 — Le double clic sur un token, ou sur sa vignette, recentre la carte sur lui sans changer le zoom. */

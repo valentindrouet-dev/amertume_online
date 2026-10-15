@@ -2972,3 +2972,9 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 .arbres-v2 .arbres-detail .detail-amelioration:not(.acquise):not(.editable) .detail-am-nom b *{color:inherit!important}
 .arbres-v2 .arbres-detail .detail-amelioration:not(.acquise):not(.editable) .detail-am-nom b :is(img,svg){filter:grayscale(1)}
 .arbres-v2 .arbres-detail :is(.detail-tete.achetable,.detail-amelioration.achetable):is(:hover,:focus-visible){border-color:#b9a77f!important;box-shadow:0 0 0 2px #d9cba855!important}
+/* v0.820 : une fenêtre d'arbre moitié plus haute — 930 px au lieu de 620, dans la limite de l'écran ; la colonne de l'arbre
+   descend avec le panneau. */
+.arbres-v2 .arbres-detail{min-height:min(930px,calc(100dvh - 190px))}
+.arbres-v2 .arbres-v2-arbre{display:flex}
+.arbres-v2 .arbres-v2-arbre>.arbres-cols{flex:1;align-items:stretch}
+@media (max-width:1100px){.arbres-v2 .arbres-detail{min-height:min(700px,calc(100dvh - 190px))}}

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.820","d":"2026-10-15","t":"Arbre moitié plus haut"},
 {"v":"0.819","d":"2026-10-15","t":"Panneau : gris tant que non pris"},
 {"v":"0.818","d":"2026-10-15","t":"Double clic : recentrer sans zoomer"},
 {"v":"0.817","d":"2026-10-15","t":"Panneau : chevrons, noms, prix, édition"},
