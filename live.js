@@ -28,6 +28,8 @@ const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu','debutTour','enAventure'];
 // L'attente d'un aventurier créé par un joueur : le MJ seul la lève, et elle voyage avec les autres champs.
 CHAMPS_ACTEUR_MJ.push('enAttente');CHAMPS_VIVANTS.push('enAttente');
+// L'aventurier que le MJ a sorti du combat de la table : à lui seul de l'y faire rentrer.
+CHAMPS_ACTEUR_MJ.push('sortiCombat');CHAMPS_VIVANTS.push('sortiCombat');
 // Où chaque test de compétence a été fait : le même ne se refait pas sans être sorti de sa zone de contact.
 CHAMPS_VIVANTS.push('testsLieux');
 /* L'état du tour d'un aventurier : ce qu'il a dépensé, joué, parcouru. Un joueur l'écrit daté du tour qu'il voit (« tourVu »,
@@ -414,8 +416,9 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   // Une carte neuve ouverte par le MJ se montre toute entière, à 100 %, chez chaque joueur aussi.
   if(carteNeuve&&typeof resetMapZoom==='function')setTimeout(resetMapZoom,0);
  }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard();
-  // Le premier état de la table posé, le voile d'arrivée tombe : la carte qui paraît est la bonne.
-  document.body.classList.remove('table-attendue')}}
+  /* Le premier état de la table posé, le voile d'arrivée tombe : la carte qui paraît est la bonne. Pas tant que la carte de la
+     table manque encore ici : l'ancienne resterait à l'écran jusqu'au contenu publié, qui l'apporte et fait réappliquer la table. */
+  if(!(d.mapId&&d.mapId!==currentMapId))document.body.classList.remove('table-attendue')}}
 
 /* L'onglet Aventuriers et l'arbre de talents, s'ils sont ouverts, se redessinent sur ce qui arrive : un équipement ôté, un
    talent appris ailleurs se voient ici aussi. Pas sous la main de qui s'en sert : un champ en saisie, un glissement, une
@@ -488,6 +491,8 @@ logChat=function(qui,texte){logChatLocal(qui,texte);
  diffuser({genre:'texte',texte:String(texte).slice(0,400),a:qui&&qui.mj?{id:null,name:'MJ',hero:false}:fiche(qui),ton:'chat'})};
 viderJournal=function(){viderJournalLocal();if(!enLigne||!estMJ()||!journalRef)return;
  diffuser({genre:'effet',effet:'vider',a:null,b:null,logo:null});balayerJournal()};
+// Une nouvelle session : le journal se vide partout, sa marque reste à la table, et rien d'avant elle ne se rejoue.
+nouvelleSession=function(){viderJournalLocal();if(!enLigne||!estMJ()||!journalRef)return;diffuser({genre:'effet',effet:'session',a:null,b:null,logo:null})};
 // Le MJ balaie les lignes de la table : qui rejoint ensuite ne rejoue rien.
 async function balayerJournal(){try{let lot;do{lot=await journalRef.limit(200).get();if(!lot.size)break;
   const b=cloud.batch();lot.forEach(d=>b.delete(d.ref));await b.commit()}while(lot.size===200)}catch(e){}}
@@ -497,7 +502,7 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
   const qui=f.id?acteurDuJournal(f):{name:duMJ&&f.name==='MJ'?'MJ':String(f.name||'?').slice(0,60),mj:duMJ&&f.name==='MJ'};
   logChatLocal(qui,String(rec.texte||''));return}
  // Un effet ne s'écrit pas : il se joue, et seulement en direct.
- if(rec.genre==='effet'){if(rec.effet==='vider'&&duMJ)viderJournalLocal();
+ if(rec.genre==='effet'){if((rec.effet==='vider'||rec.effet==='session')&&duMJ)viderJournalLocal();
   else if(rec.effet==='orbe'&&typeof volOrbe==='function'){const [couleur,etat]=(typeof rec.logo==='string'?rec.logo:'').split('|');
    volOrbe(acteurDuJournal(rec.a),acteurDuJournal(rec.b),couleur||'',etat||'')}
   else if(rec.effet==='flottant')flottantRecu(rec);
@@ -517,6 +522,8 @@ function rejouerJournal(docs){const j=$('journal');if(!j)return;j.replaceChildre
 function rejouerJournalSeul(docs,j,tour){
  // Seule la session en cours se rejoue : les combats d'un autre soir restent dans le passé.
  if(typeof debutSession==='function')docs=docs.slice(debutSession(docs.map(d=>d.data())));
+ // Ni ce qui précède la dernière session ouverte, ou le dernier journal vidé, par le MJ.
+ {const k=docs.map(d=>d.data()).findLastIndex(r=>r&&r.genre==='effet'&&(r.effet==='session'||r.effet==='vider')&&(!dernierDoc||!dernierDoc.mj||r.de===dernierDoc.mj));if(k>=0)docs=docs.slice(k+1)}
  docs.forEach(d=>{const rec=d.data();if(!rec||rec.genre==='effet')return;
   if(rec.tour!==tour){tour=rec.tour;const sep=document.createElement('li');sep.className='j-turn';
    const t=document.createElement('span');t.textContent='Tour '+tour;sep.append(t);j.append(sep)}

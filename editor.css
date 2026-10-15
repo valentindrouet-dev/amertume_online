@@ -315,8 +315,8 @@ body.actions-autrui .map-panel>.barre-actions{display:none}
 #paysage-play{display:none}#maps-page.edition-paysage #paysage-play{display:inline-block}
 #maps-page.edition-paysage #map-play,#maps-page.edition-paysage #map-tools,#maps-page.edition-paysage .maps-props,#maps-page.edition-paysage #map-xp,
 #maps-page.edition-paysage .echelle-token,#maps-page.edition-paysage label:has(#map-lieu),#maps-page.edition-paysage label:has(#map-batiment),#maps-page.edition-paysage #map-hint{display:none!important}
-/* Un paysage à la table : l'image seule, ni socles ni calques ; ni actions, ni dés, ni soins. */
-body.vue-paysage #map-view>*,body.vue-paysage #pv-panel,body.vue-paysage .attack-card,body.vue-paysage #piste-des{display:none!important}
+/* Un paysage à la table : l'image seule, ni socles ni calques ; ni actions, ni dés. Les PV restent au MJ, qui soigne et blesse hors combat. */
+body.vue-paysage #map-view>*,body.vue-paysage .attack-card,body.vue-paysage #piste-des{display:none!important}
 .annonce-flottante.annonce-victoire{padding:20px 46px;font-size:clamp(30px,5vw,56px);color:#ffd77a;border:2px solid #e2ae72;
  background:radial-gradient(circle at 50% 0,#4a3215f5,#1b1410f5);text-shadow:0 2px 0 #000,0 0 18px #e2ae7299;animation-duration:4.2s}
 @keyframes annonce-passe{
@@ -2660,7 +2660,8 @@ body.page-accueil .intro,body.page-accueil .mj-tools,body.page-accueil main.layo
 #creation-aventurier .creation-fiche-classe{--teinte:#8a7a5a;border-left:4px solid var(--teinte);background:color-mix(in srgb,var(--teinte) 8%,var(--panel));border-radius:8px;padding:10px 14px}
 #creation-aventurier .creation-fiche-classe h3{margin:0 0 6px;color:var(--teinte);font:700 18px Georgia,serif}
 #creation-aventurier .creation-description{margin:0 0 8px;font-style:italic}
-#creation-aventurier .creation-bonus{display:flex;flex-wrap:wrap;gap:6px}#creation-aventurier .creation-pastille{font-weight:700;font-size:13px;padding:2px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+#creation-aventurier .creation-bonus{display:flex;flex-wrap:wrap;gap:6px}#creation-aventurier .creation-talents{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+#objet-depart{max-width:420px}#objet-depart .objet-depart-corps>.cat-detail{position:static;display:block;margin:4px 0 0}#creation-aventurier .creation-pastille{font-weight:700;font-size:13px;padding:2px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
 #creation-aventurier .creation-reste{margin:0;font-weight:700;color:var(--accent)}#creation-aventurier .creation-reste.fini{color:var(--muted)}
 #creation-aventurier .creation-points{display:flex;flex-direction:column;gap:6px;max-width:340px}
 #creation-aventurier .creation-pas:disabled{opacity:.35}

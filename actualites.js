@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.774","d":"2026-10-15","t":"Création guidée, PV de la fiche, sortie de combat, nouvelle session"},
 {"v":"0.773","d":"2026-10-15","t":"Plus de bouton d'élément"},
 {"v":"0.772","d":"2026-10-15","t":"Le Mystique n'est plus que de Feu"},
 {"v":"0.771","d":"2026-10-15","t":"Fiches d'aventuriers repliables d'un clic sur leur token"},

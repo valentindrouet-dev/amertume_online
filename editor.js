@@ -459,11 +459,11 @@ function boutonsObjets(a){if(!a||(view!=='mj'&&!controlled(actors.indexOf(a)))||
      0 / jour une fois pris ; 1 / repos entre deux repos courts. */
   const texte=code.cle==='etat'?(p&&p.etat)||code.nom:code.nom;
   const compte=usageLimite(usage)?(dispo?'1':'0')+' / '+(usage==='jour'?'jour':'repos'):'';
-  const horsCombat=usageHorsCombat(usage)&&enCombatPour(a);
+  const horsCombat=usageHorsCombat(usage)&&enCombatPour(a),plein=soinInutile(a,o);
   out.push({objet:o,texte,compte,
    teinte:TEINTE_RARETE[rareteDe(o)]||TEINTE_OBJET.object,
-   peut:dispo&&!horsCombat,limite:usageLimite(usage),epuise:!dispo,
-   titre:horsCombat?o.name+' ne s’emploie qu’hors combat.':dispo?o.name+' — '+NOM_USAGE(usage)+' · '+code.phrase(paramsObjet(o)).replace(/<[^>]*>/g,'')
+   peut:dispo&&!horsCombat&&!plein,limite:usageLimite(usage),epuise:!dispo,
+   titre:horsCombat?o.name+' ne s’emploie qu’hors combat.':plein?nomNum(a)+' a déjà tous ses PV.':dispo?o.name+' — '+NOM_USAGE(usage)+' · '+code.phrase(paramsObjet(o)).replace(/<[^>]*>/g,'')
     :o.name+' a déjà servi aujourd’hui : il faut une nuit de repos.',
    acteur:a,agir:()=>utiliserObjet(a,o)})});
  return out}
@@ -1804,8 +1804,11 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
 /* En combat, pour un objet : l'aventurier pris dans le combat, sur la carte ; un adversaire, dès qu'un combat se joue. Un
    aventurier au domaine ou hors de la carte n'y est pas, même si d'autres se battent. */
 function enCombatPour(a){return typeof enCombat==='function'&&enCombat()&&(!a||!a.hero||aventurierEnCombat(a))}
-function refusHorsCombat(a,o){if(!usageHorsCombat(usageObjet(o))||!enCombatPour(a))return false;
+function refusHorsCombat(a,o){if(soinInutile(a,o)){log(nomNum(a)+' est déjà au complet : '+o.name+' reste en réserve.',{local:true});return true}
+ if(!usageHorsCombat(usageObjet(o))||!enCombatPour(a))return false;
  log(o.name+' ne s’emploie qu’hors combat.',{local:true});return true}
+// Un soin, une ration, ne se gâchent pas : PV pleins, ils restent au sac.
+function soinInutile(a,o){return !!a&&!!o&&Number(a.hp)>=Number(a.max)&&((objetCode(o)||{}).cle==='soin'||cleNomObjet(o.name)==='ration')}
 function employerDepuisFiche(a,o){if(refusHorsCombat(a,o))return;const surTable=typeof PAGES==='undefined'||!PAGES.some(x=>x!=='table'&&document.body.classList.contains('page-'+x));
  if(surTable||objetCode(o)){utiliserObjet(a,o);return}
  if(o.etat&&typeof showPage==='function'){showPage('table');utiliserObjet(a,o);return}
@@ -1879,7 +1882,7 @@ function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n
 let gearGlisse=null,objetGlisse=null;
 /* Un aventurier pris dans le combat : un combat en cours, et lui sur la carte. Au domaine, hors de la table ou resté hors de la
    carte, il n'y est pas, même si d'autres se battent. */
-function aventurierEnCombat(a){return !!a&&a.hero===true&&typeof enCombat==='function'&&enCombat()&&actors.includes(a)&&!a.horsCarte}
+function aventurierEnCombat(a){return !!a&&a.hero===true&&typeof enCombat==='function'&&enCombat()&&actors.includes(a)&&!a.horsCarte&&!(typeof sortiDuCombat==='function'&&sortiDuCombat(a))}
 /* En combat, l'inventaire d'un aventurier en scène ne change plus ses armes : le rond « Changer d'armes » s'en charge, pour
    1 PM. Ses armures, pas du tout. */
 function verrouEquip(a,o){return !!a&&!!o&&aventurierEnCombat(a)&&(o.category==='weapon'||o.category==='armor')}
@@ -3835,7 +3838,10 @@ const CARACS_CREATION=[['endu','Endurance',2],['vie','Vie',1],['dmg','Dégâts',
 // Ce que disent les bulles des caractéristiques et des compétences : les règles telles que la table les joue.
 const TEXTES_CARACS={vie:'PV max = Endurance × Vie + bonus de classe.',endu:'PV max = Endurance × Vie + bonus de classe. Un repos court rend 1d6 + Endurance PV.',
  dmg:'S’ajoutent aux dégâts de chaque attaque.',pv:'PV max = Endurance × Vie + bonus de classe, d’espèce et de talents.'};
-const USAGES_COMPETENCES={Perception:'Fouiller les alentours, hors combat.',Ruse:'Larcin, déverrouiller un coffre ou y chercher un piège.',Technique:'Déverrouiller un coffre ou y chercher un piège.',Savoir:'Analyser un adversaire : chaque réussite révèle ce que la troupe en ignorait.'};
+const USAGES_COMPETENCES={Perception:'Fouiller les alentours, hors combat.',Ruse:'Larcin, déverrouiller un coffre ou y chercher un piège.',Technique:'Déverrouiller un coffre ou y chercher un piège.',Savoir:'Analyser un adversaire : chaque réussite révèle ce que la troupe en ignorait.',
+ Agilité:'Éviter ou enjamber un piège, selon le test que prépare le MJ.',Force:'Désamorcer un piège, selon le test que prépare le MJ.',Mysticisme:'Les tests que prépare le MJ.',Robustesse:'Les tests que prépare le MJ.'};
+// L'échelle d'une compétence, dans chacune de ses bulles : ce que vaut son chiffre au moment du jet.
+const ECHELLE_COMPETENCES='Valeur : le nombre de dés lancés. Chaque 4 ou plus est une réussite ; chaque 6 fait lancer un dé de plus.';
 const NOMS_CARACS_CREATION={vie:'Vie',endu:'Endurance',dmg:'Dégâts',pv:'PV max'};
 /* L'équipement de départ : un lot d'armes, une armure, des rations pour tous, et un objet inhabituel tiré au hasard à la
    fin de la création, parmi ce qui convient à la classe. Les pièces se trouvent au catalogue par leur nom, sans tenir
@@ -3859,6 +3865,13 @@ function tirePieceDepart(role,tirage=Math.random){const bases=(catalog.items||[]
  const genres=genresAleatoires(role).map(g=>bases.filter(GENRES_OBJET_ALEATOIRE[g])).filter(l=>l.length);if(!genres.length)return null;
  const l=genres[Math.floor(tirage()*genres.length)],b=l[Math.floor(tirage()*l.length)],affixes=tireAffixes(b,1,catalog.affixes,1,tirage);
  return affixes.length?{id:'forge-'+crypto.randomUUID(),base:b.id,affixes}:null}
+/* Les premiers talents d'une classe, pour la choisir en connaissance de cause : dans chaque arbre, de haut en bas, ni
+   amélioration ni bonus, rien de ce que le MJ cache aux joueurs ; les arbres pris tour à tour, six au plus. */
+const TALENTS_APERCU=6;
+function talentsApercuClasse(classe){if(!classe||typeof colonnesArbre!=='function')return [];
+ const cols=colonnesArbre(classe).map(c=>{const caches=talentsCaches(c.liste);return c.liste.filter(t=>!estBonus(t)&&t.type!=='ame'&&!caches.has(t.id))});
+ const out=[];for(let k=0;out.length<TALENTS_APERCU&&cols.some(l=>l.length>k);k++)cols.forEach(l=>{if(l[k]&&out.length<TALENTS_APERCU)out.push(l[k])});
+ return out}
 const creationDialog=dialog('creation-aventurier','Créer un aventurier','<nav id="creation-etapes" class="creation-etapes"></nav><div id="creation-corps" class="creation-corps"></div><div class="form-actions"><button type="button" id="creation-prec">Précédent</button><button type="button" id="creation-suiv" class="primary">Suivant</button></div>');
 let creation=null;
 /* Un compte joueur crée un seul aventurier : des Éclats d'Âme en ouvriront d'autres. Le MJ n'a pas de limite. */
@@ -3888,7 +3901,7 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
  const bulleStat=(el,carac,comp)=>{surveille(el,()=>{const d=document.createElement('div');d.className='cat-detail bulle-comp-corps';
   d.style.setProperty('--tint',carac?((typeof STAT_TINTS!=='undefined'&&STAT_TINTS[carac])||'120,110,90'):SKILL_TINTS[comp]);
   const nom=document.createElement('p');nom.className='bulle-comp-nom creation-nom';if(carac){const i=icoCarac(carac);if(i)nom.append(i);nom.append(NOMS_CARACS_CREATION[carac])}else nom.append(icoComp(comp),COMPETENCES[comp]);d.append(nom);
-  (carac?[TEXTES_CARACS[carac]]:[USAGES_COMPETENCES[COMPETENCES[comp]]]).filter(Boolean).forEach(t=>{const p=document.createElement('p');p.className='bulle-comp-texte';p.textContent=t;d.append(p)});
+  (carac?[TEXTES_CARACS[carac]]:[USAGES_COMPETENCES[COMPETENCES[comp]],ECHELLE_COMPETENCES]).filter(Boolean).forEach(t=>{const p=document.createElement('p');p.className='bulle-comp-texte';p.textContent=t;d.append(p)});
   ouvrirBulle(el,d,'bulle-comp')});return el};
  const nomComp=(i,suite)=>{const s=document.createElement('span');s.className='creation-nom';s.style.color='rgb('+SKILL_TINTS[i]+')';s.append(icoComp(i),COMPETENCES[i]);if(suite){const m=document.createElement('small');m.textContent=suite;s.append(m)}return bulleStat(s,null,i)};
  const nomCarac=(k,nom,suite)=>{const s=document.createElement('span');s.className='creation-nom';s.style.color=teinte(k);const i=icoCarac(k);if(i)s.append(i);s.append(nom);if(suite){const m=document.createElement('small');m.textContent=suite;s.append(m)}return bulleStat(s,k)};
@@ -3932,7 +3945,13 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    const t=document.createElement('h3');t.textContent=cl.name;f.append(t);const d=descriptionClasse(cl);if(d){const p=document.createElement('p');p.className='creation-description';p.textContent=d;f.append(p)}
    const bonus=document.createElement('div');bonus.className='creation-bonus';bonus.append(pastilleCarac('pv','+'+(Number(cl.pv)||0)+' PV'));
    competencesDeClasse(cl.name).forEach((n,i)=>{if(n)bonus.append(pastilleComp(i,'+'+n+' '+COMPETENCES[i]))});
-   f.append(bonus);corps.append(f)}}
+   f.append(bonus);
+   // Sous ses bonus, les premiers talents de ses arbres, en ronds : de quoi deviner son jeu. Leur bulle au survol.
+   const apercu=talentsApercuClasse(cl.name);
+   if(apercu.length){const vu=x=>talentPourElement(x,elementDe({hero:true,role:cl.name})),r=document.createElement('div');r.className='creation-talents';
+    apercu.forEach(t=>{const tv=logoHerite(vu(t),vu),q=talentRond(tv);q.setAttribute('aria-label',nomEnClair(tv.name));surveille(q,()=>bulleTalentSur(q,t,{vu,points:false}));r.append(q)});
+    f.append(r)}
+   corps.append(f)}}
  else if(k==='caracs'){const n=restantCaracs(c),g=document.createElement('div');g.className='creation-points';
   CARACS_CREATION.forEach(([cle,nom,par])=>{const l=document.createElement('div');l.className='creation-comp';const t=nomCarac(cle,nom,'+'+par+' par point');
    const v=document.createElement('b');v.textContent=String(c.caracs[cle]);
@@ -4002,7 +4021,14 @@ function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>e
  const i=actors.indexOf(a);
  if(view!=='mj'){owner=i;selected=i;if(typeof enLigne!=='undefined'&&enLigne&&typeof prendreSiege==='function')prendreSiege(a)}
  render();if(view!=='mj'&&!(typeof enLigne!=='undefined'&&enLigne)&&$('owner'))$('owner').value=String(i);
- if(typeof renderHeroes==='function')renderHeroes();scheduleSave();if(typeof pousserBientot==='function')pousserBientot();renderAccueil()}
+ if(typeof renderHeroes==='function')renderHeroes();scheduleSave();if(typeof pousserBientot==='function')pousserBientot();renderAccueil();
+ // L'objet tiré se montre aussitôt : son nom à la couleur de sa rareté, ce qu'il confère, sa valeur.
+ if(tiree)annonceObjetDepart(objetDe(tiree.id))}
+let objetDepartDialog=null;
+function annonceObjetDepart(o){if(!o)return;
+ objetDepartDialog??=dialog('objet-depart','Objet aléatoire','<div id="objet-depart-corps" class="objet-depart-corps"></div><div class="form-actions"><button type="button" class="primary" data-ok>OK</button></div>');
+ objetDepartDialog.querySelector('[data-ok]').onclick=()=>objetDepartDialog.close();
+ const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');$('objet-depart-corps').replaceChildren(d);objetDepartDialog.showModal()}
 $('accueil-creer').onclick=()=>openCreation();
 function completerInventaire(a){if(!a)return;a.inventaire??=[];
  const besoin=new Map();[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean).forEach(id=>besoin.set(id,(besoin.get(id)||0)+1));
@@ -5617,7 +5643,7 @@ if(a.hero){const f=$('actor-form').elements;
   f.pvBonus.value=bonus;
   // PV pleins, ils suivent le maximum.
   const plein=f.hp&&num(f.hp.value,0,99999)===num(f.max.value,0,99999);
-  f.max.value=Math.max(1,num(f.vie.value,1,999)*num(f.endu.value,1,999)+bonus);if(plein)f.hp.value=f.max.value};
+  f.max.value=pvMaxFiche(draft,num(f.vie.value,0,999),f.role.value,f.race.value);if(plein)f.hp.value=f.max.value};
  ['vie','endu','role','race'].forEach(k=>{if(f[k])f[k].addEventListener('input',majPV)});
  majPV()}
 $('token-upload').onclick=()=>$('token-file').click();$('token-file').onchange=()=>{const f=$('token-file').files[0];if(f)openImage(f,'token',async url=>{draft.image=url;delete draft.imageJeton;$('draft-image').src=url;$('draft-image').hidden=false;
@@ -5764,7 +5790,20 @@ function readActor(){const f=$('actor-form').elements;readAttacks();const a=stru
  a.attacks=attackDraft;a.activeAttack=0;a.talents=[...new Set(draft.talents||[])].filter(id=>(catalog.talents||[]).some(t=>t.id===id));
  // Un aventurier ne saisit jamais sa DEF : elle vaut son armure plus son bouclier, zéro compris.
  if(a.hero)a.def=defenseOf(a,catalog.items);
+ if(a.hero)pvDeFiche(a,f);
  a.pool=poolFrom(chosenAttack(a,catalog.items).dice)||poolFrom(attackDraft[0]?.dice);return a}
+/* Les PV d'un aventurier à l'enregistrement de sa fiche. Le plafond est celui du jeu. Les PV que le MJ n'a pas touchés sont ceux
+   du moment, pas ceux de l'ouverture : un coup reçu pendant que la fiche était ouverte reste reçu. Hors combat, ils suivent le
+   plafond, comme partout ; en combat, ils ne bougent pas. */
+function pvDeFiche(a,f){const vivant=editing!==null&&templateIndex===null?actors[editing]:null,max=pvMaxFiche(a,a.vie,a.role,a.race);
+ const saisi=f.hp&&!f.hp.disabled&&num(f.hp.value,0,99999)!==num(draft.hp,0,99999);
+ let hp=saisi?num(f.hp.value,0,99999):vivant?Number(vivant.hp)||0:Number(draft.hp)||0;
+ if(!saisi&&vivant&&hp>0&&!(typeof estMort==='function'&&estMort(vivant))&&!aventurierEnCombat(vivant))hp=Math.max(1,hp+max-(Number(vivant.max)||max));
+ if(!saisi&&!vivant)hp=max;
+ a.max=max;a.hp=Math.max(0,Math.min(hp,max));setState(a,'Coma',!a.hp)}
+/* Le plafond qu'une fiche d'aventurier affiche et enregistre : celui du jeu, espèce, points de création, talents et équipement
+   compris, plus l'aura d'un Meneur. Vie × Endurance + classe seuls le minoraient : enregistrer la fiche rabotait les PV d'autant. */
+function pvMaxFiche(a,vie,role,race){return Math.max(1,pvMaximum(catalog.classes,{...a,vie,role,race},catalog.talents,catalog.items)+(Number(a.auraPv)||0))}
 function toMonster(a){return {id:crypto.randomUUID(),name:a.name,family:a.role,sexe:a.sexe,race:a.race,pv:a.max,def:a.def,...(a.defBonus>0?{defBonus:a.defBonus}:{}),damage:a.dmg,xp:a.xp,type:a.type,socle:a.socle,menace:a.menace,rapide:a.rapide,esquive:a.esquive,...(a.nyctalope===false?{nyctalope:false}:{}),...(mouvementPropre({mouvement:a.mouvement})!==DISTANCE_MOUVEMENT?{mouvement:mouvementPropre({mouvement:a.mouvement})}:{}),notes:a.notes,talents:[...(a.talents||[])],attacks:structuredClone(a.attacks),image:a.image||null,weapons:[...(a.weapons||[])],armures:[...armuresDe(a)],shieldId:a.shieldId||'',inventaire:[...(a.inventaire||[])],butin:normaliseButin(a.butin,a.inventaire),bourse:normaliseBourse(a.bourse),...(a.pnj?{pnj:true,alignement:alignementDe({pnj:true,alignement:a.alignement}),...(a.unique===true?{unique:true}:{})}:{})}}
 /* Une créature posée sur la table garde le lien vers son modèle : corriger les PV maximum
    au bestiaire corrige ceux qui combattent déjà. Une créature blessée garde sa blessure,
