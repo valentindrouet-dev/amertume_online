@@ -3389,6 +3389,10 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.763 — La barre d'actions sur le bas de la carte ; les panneaux redimensionnables ; la piste de dés abaissée sur les écrans bas. */
+{const carto=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(page.includes("carte.classList.add('barre-actions');panneau.append(carte)")&&css.includes(".map-panel>.attack-card.barre-actions{position:absolute;"),'barre d’actions');
+ assert.ok(carto.includes("const TAILLES_CLE='amertume-tailles';")&&page.includes('id="redim-panneaux"')&&css.includes("body.redim .poignee-taille{display:block;"),'panneaux redimensionnables');}
 /* v0.762 — Après le playtest : voile d'arrivée, journal de la session, bandeau de version, vue de zone, bannière de tour, contact d'un allié. */
 {const lv=fs.readFileSync('live.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(lv.includes("document.body.classList.add('table-attendue')")&&page.includes("body.table-attendue #voile-attente{display:block!important}"),'voile d’arrivée');
@@ -5665,4 +5669,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2112 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2114 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

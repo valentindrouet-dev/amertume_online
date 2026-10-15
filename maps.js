@@ -2822,3 +2822,33 @@ majOnglets();
 /* Un onglet que seul le MJ ouvre, retenu sur l'appareil : c'est l'appareil du MJ, sa vue est celle du MJ. */
 document.addEventListener('amertume-partie-chargee',()=>{refreshMapPick();const p=lastPage();
  if(p!=='table'&&!vueChoisie()&&!ongletsJoueurs().includes(p))retiensVue('mj');if(p!=='table')showPage(p)});
+
+/* ---------- Les panneaux à la taille de chacun ----------
+   Le bouton ⇔ de la barre de la carte déverrouille la mise en page : des poignées paraissent entre les colonnes et sous la
+   carte, et se glissent. La colonne des combattants, celle de la fiche et du journal, la hauteur de la carte : chaque taille se
+   garde sur l'appareil. Un double-clic sur une poignée rend sa taille d'origine ; recliquer sur ⇔ reverrouille l'ensemble. */
+const TAILLES_CLE='amertume-tailles';
+function lisTailles(){try{const t=JSON.parse(localStorage.getItem(TAILLES_CLE)||'{}');return t&&typeof t==='object'?t:{}}catch(e){return {}}}
+function gardeTailles(t){try{localStorage.setItem(TAILLES_CLE,JSON.stringify(t))}catch(e){}}
+function appliqueTailles(){const L=document.querySelector('main.layout');if(!L)return;const t=lisTailles();L.style.gridTemplateColumns='';
+ if(innerWidth<=1150||!(t.g||t.d))return;const [g,,d]=getComputedStyle(L).gridTemplateColumns.split(/\s+/).map(parseFloat);
+ L.style.gridTemplateColumns=Math.round(t.g||g)+'px minmax(0,1fr) '+Math.round(t.d||d)+'px'}
+// La hauteur de la carte choisie à la main passe avant celle qui tient dans l'écran.
+{const hauteurAvantTailles=hauteurDispoCarte;hauteurDispoCarte=function(el){const h=Math.round(Number(lisTailles().h));return h>=200?h:hauteurAvantTailles(el)}}
+let renduTailles=0;const rendTailles=()=>{if(renduTailles)return;renduTailles=requestAnimationFrame(()=>{renduTailles=0;render()})};
+function poigneeTaille(parent,cle,sens){const p=document.createElement('div');p.className='poignee-taille poignee-'+cle;p.setAttribute('aria-hidden','true');
+ p.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();p.setPointerCapture(e.pointerId);
+  const L=document.querySelector('main.layout'),cols=getComputedStyle(L).gridTemplateColumns.split(/\s+/).map(parseFloat);
+  const depart=cle==='h'?$('map').getBoundingClientRect().height:cle==='g'?cols[0]:cols[2],x0=e.clientX,y0=e.clientY;
+  const bouge=ev=>{const t=lisTailles();
+   if(cle==='h')t.h=Math.round(Math.max(200,Math.min(2400,depart+ev.clientY-y0)));
+   else t[cle]=Math.round(Math.max(170,Math.min(640,depart+(sens*(ev.clientX-x0)))));
+   gardeTailles(t);appliqueTailles();rendTailles()};
+  const fin=()=>{p.removeEventListener('pointermove',bouge);p.removeEventListener('pointerup',fin);p.removeEventListener('pointercancel',fin);rendTailles()};
+  p.addEventListener('pointermove',bouge);p.addEventListener('pointerup',fin);p.addEventListener('pointercancel',fin)});
+ p.addEventListener('dblclick',()=>{const t=lisTailles();delete t[cle];gardeTailles(t);appliqueTailles();rendTailles()});
+ parent.append(p)}
+{const g=document.querySelector('main.layout>.stack.left'),d=document.querySelector('main.layout>.stack.right'),c=document.querySelector('.map-panel');
+ if(g)poigneeTaille(g,'g',1);if(d)poigneeTaille(d,'d',-1);if(c)poigneeTaille(c,'h',1)}
+$('redim-panneaux').onclick=()=>{const on=document.body.classList.toggle('redim');$('redim-panneaux').classList.toggle('on',on);$('redim-panneaux').setAttribute('aria-pressed',on?'true':'false')};
+addEventListener('resize',appliqueTailles);appliqueTailles();

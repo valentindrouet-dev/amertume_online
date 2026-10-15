@@ -1,6 +1,6 @@
 /* Les dernières actualités de la table, pour l'Accueil. Chaque publication s'ajoute d'elle-même en tête de « versions »
    (publie.sh) ; « resume » condense les dix dernières en quelques lignes, tant qu'il va jusqu'à la plus récente. */
-const ACTUALITES={resume:{jusqua:'0.762',lignes:[
+const ACTUALITES={resume:{jusqua:'0.763',lignes:[
  'Accueil : création d’aventurier pas à pas, en couleurs — espèce, classe, 3 points de caractéristique, 3 de compétence, l’équipement de départ, 10d6 Or et un objet inhabituel tiré au hasard.',
  'Aventuriers : le MJ coche ceux qui partent à l’aventure ; eux seuls entrent sur la carte et gagnent XP et butin.',
  'Accueil : les dernières actualités, tous les aventuriers et où ils se trouvent, et bientôt les hauts faits.',
@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.762',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.763","d":"2026-10-15","t":"Barre d'actions sur la carte, panneaux redimensionnables"},
 {"v":"0.762","d":"2026-10-15","t":"Premier lot du playtest en ligne"},
 {"v":"0.761","d":"2026-10-14","t":"Chaque joueur voit par son propre aventurier"},
 {"v":"0.760","d":"2026-10-14","t":"Les portes ne bloquent plus la prise des socles"},
