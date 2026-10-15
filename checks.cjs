@@ -3086,7 +3086,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&fs.readFileSync('domaine.js','utf8').includes(" if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;ajouteOr(a,-p.prix);")&&feuille.includes('.gear-detail .gear-def .ecu{width:auto;height:22px;'),'bulles sans texte, munitions comptées, 99 au plus');
  /* v0.484 — « XP visible » au MJ seul ; plus d'XP au survol d'un rond ; le cartouche d'XP de la bulle en rouge
    quand l'aventurier n'a pas de quoi payer. */
- assert.ok(src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||(V2&&!mj);poseXpVisible();")&&src.includes("arbresDialog.classList.toggle('xp-visible',xpVisible&&view==='mj');")
+ assert.ok(src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();")&&src.includes("arbresDialog.classList.toggle('xp-visible',xpVisible&&view==='mj');")
   &&!feuille.includes('.arbre-plan>.arbre-noeud:hover>.arbre-cout')&&feuille.includes('.talent-bulle-nom .cout-xp.trop-cher{'),'XP de l’arbre : MJ seul, sans survol, rouge si trop cher');
  /* v0.483 — Bulle d'une pièce : dés ou DEF au-dessus de l'or, puis la description du MJ, rien d'automatique.
    La Vie et les PV sous leur maximum, légèrement rouges. */
@@ -5192,6 +5192,12 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.812 — Arbre v2 : la limite de niveau vaut aussi sur l'arbre d'un aventurier chez le MJ ; plus de bouton XP visible ; le talent
+   se prend et se rend par sa tête, une amélioration ou un bonus tenu se rend d'un clic ; le panneau défile dans une hauteur fixe ;
+   les bonus deux par ligne ; les points du talent à gauche de son nom. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("limiteVue=view==='mj'&&!arbresVueJoueur&&!a,")&&src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;")&&src.includes("tete.onclick=()=>el.agir();")
+  &&src.includes("c.classList.add('rendable');")&&src.includes("panneau.className='detail-defile'")&&src.includes("g.className='detail-bonus-grille'"),'l’arbre v2, v0.812');}
 /* v0.811 — L'Accueil refait : titre, ville en filigrane, cartes d'aventuriers, actualités à puces, joueurs et hauts faits dessous. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes('<section class="accueil accueil-v2">')&&src.includes('id="accueil-creer"')&&src.includes('<div id="accueil-joueurs" class="joueurs-connectes"></div>')&&src.includes("function iconeLieuAccueil(lieu,nom)"),'l’Accueil refait');}
@@ -5206,7 +5212,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 /* v0.808 — Arbre v2 : le clic choisit, le panneau apprend ; les améliorations s'achètent dans le panneau, sans petits ronds ; ni coches,
    ni bouton XP visible ; la barre d'XP dans le bandeau ; les chiffres à côté de la classe. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("if(V2){montreDetail(t);return}")&&src.includes("ch[d].petits.forEach(s=>{if(V2)return;")&&src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||(V2&&!mj);")
+ assert.ok(src.includes("if(V2){montreDetail(t);return}")&&src.includes("ch[d].petits.forEach(s=>{if(V2)return;")&&src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;")
   &&src.includes("c.onclick=()=>{if(n===1)a.talents=[...a.talents,x.id];else poserPalier(x,n);note('');majTable()};")&&src.includes("nomVoie.replaceChildren(barreXp||barreVide())"),'l’arbre v2, troisième passe');}
 /* v0.807 — Arbre v2 affiné : noms sous les ronds, rangées plus hautes, un seul repère par palier ; la maîtrise de départ du premier
    arbre, nommé ou non, est le talent de classe. */
@@ -5219,7 +5225,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 /* v0.805 — L'arbre v2 : l'arbre à gauche, le panneau du talent à droite, un drapeau pour revenir à la v1 ; un nom à tiret ne casse
    plus les bulles. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("const ARBRE_V2=true;let arbreDetailId=null;")&&src.includes("const remplitDetail=(panneau,t)=>{")&&src.includes("arbresDialog.classList.toggle('v2',V2);")
+ assert.ok(src.includes("const ARBRE_V2=true;let arbreDetailId=null;")&&src.includes("const remplitDetail=(aside,t)=>{")&&src.includes("arbresDialog.classList.toggle('v2',V2);")
   &&!src.includes("x.replace(/[.*+?^${}()|[\\]\\\\\\/-]/g"),'l’arbre v2');
  const q=x=>x.replace(/[.*+?^${}()|[\]\\\/]/g,'\\$&');assert.ok(new RegExp(q('Brise-os'),'u').test('Brise-os'),'un tiret dans un nom');}
 /* v0.804 — L'Attaque : 1 PA devant son nom sur la fiche, et sa description, au contact ou à distance, sur la fiche et à la table. */

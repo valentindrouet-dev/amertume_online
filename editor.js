@@ -5189,7 +5189,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // L'arbre v2 : panneau à droite ; chez un aventurier comme dans l'éditeur du MJ, qui garde ses outils.
  const V2=ARBRE_V2;
  arbresVue.hidden=view!=='mj'||!!a||arbresEnMasse;arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
- arbresMasse.hidden=view!=='mj'||!!a||(V2&&arbresVueJoueur);arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||(V2&&!mj);poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
+ arbresMasse.hidden=view!=='mj'||!!a||(V2&&arbresVueJoueur);arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
  if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}}
  else if(view!=='mj'){arbresDialog.close();return}
  // Chez le MJ, l'arbre s'accorde avant de se dessiner : chaque talent a sa case, chaque ligne son but.
@@ -5515,7 +5515,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      if(libreIci(x,y,p))places.push({genre:'petit',x,y,de:t,dir:d,rang:r})})});
    if(!c.liste.length)places.push({genre:'gros',x:0,y:0,de:null})}
   /* La limite de l'arbre : chez les joueurs, rien sous la barrière choisie, et le plan s'arrête là ; chez le MJ, pâli. */
-  const coupe=coupeArbre(c.liste,cases,classe),limiteVue=view==='mj'&&!arbresVueJoueur,sous=q=>q.y>coupe;
+  const coupe=coupeArbre(c.liste,cases,classe),limiteVue=view==='mj'&&!arbresVueJoueur&&!a,sous=q=>q.y>coupe;
   // Le plan tient juste ce qu'il montre, une demi-case de marge : le talent de départ est tout en haut.
   const pts=[...prises,...petits,...places].filter(q=>limiteVue||!sous(q));
   let x0=pts.length?Math.min(...pts.map(q=>q.x)):0,x1=pts.length?Math.max(...pts.map(q=>q.x)):0;const y0=pts.length?Math.min(...pts.map(q=>q.y)):0,y1=pts.length?Math.max(...pts.map(q=>q.y)):0;
@@ -5545,17 +5545,29 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     d'une classe. */
  /* v2 : le panneau du talent regardé — son rond en grand, son nom, sa bulle ; ses améliorations, palier par palier, leur
     prix ; le bouton qui l'apprend, au prix de son premier palier, et l'XP qui restera. */
- const remplitDetail=(panneau,t)=>{arbreDetailId=t.id;panneau.replaceChildren();
+ const remplitDetail=(aside,t)=>{arbreDetailId=t.id;aside.replaceChildren();
+  // Le contenu défile dans sa boîte : la fenêtre garde sa hauteur d'un talent à l'autre.
+  const panneau=document.createElement('div');panneau.className='detail-defile';aside.append(panneau);
   corps.querySelectorAll('.arbre-plan>.arbre-noeud.choisi').forEach(x=>x.classList.remove('choisi'));{const e=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]');if(e)e.classList.add('choisi')}
   const tv=logoHerite(vu(t),vu);
   // En tête : le rond en grand ; à sa droite, le nom et, dessous, la description.
   const tete=document.createElement('div');tete.className='detail-tete';
   const rond=document.createElement('span');rond.className='detail-rond t-'+talentType(t)[0];const lg=logoTalent(tv);if(lg)rond.append(lg);else rond.textContent=GLYPHES_TALENT[t.type]||'✦';
   const droite=document.createElement('div');droite.className='detail-droite';
-  const nom=document.createElement('h3');nomAccolades(nom,tv.name);droite.append(nom);
-  const corpsT=bulleNoeud(t,'','');corpsT.classList.add('detail-corps');droite.append(corpsT);
-  tete.append(rond,droite);panneau.append(tete);
+  const nom=document.createElement('h3');const ligneNom=document.createElement('div');ligneNom.className='detail-nom-ligne';ligneNom.append(nom);droite.append(ligneNom);
+  const corpsT=bulleNoeud(t,'','');corpsT.classList.add('detail-corps');
+  /* Les points d'Action ou de Mouvement qu'il coûte : à gauche de son nom, comme dans les bulles ; la ligne de nom de la bulle s'en va. */
+  {const tb=corpsT.querySelector('.talent-bulle-nom');if(tb){const pts=tb.querySelector('.cout-points');if(pts)nom.append(pts);tb.remove()}}
+  {const sp=document.createElement('span');nomAccolades(sp,tv.name);nom.append(sp)}
+  droite.append(corpsT);tete.append(rond,droite);panneau.append(tete);
   const el=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]'),acquis=porte(t),verrou=!!el&&el.classList.contains('verrou');
+  /* Le talent lui-même s'apprend d'un clic sur sa tête, et se rend d'un autre clic ; son prix à droite de son nom. Le talent
+     de classe, tenu d'office, ne se rend pas. */
+  if(a&&t.flottant!==true){const prix=coutPalier(t,1),dispoT=xpDisponible(a,catalog.talents);
+   if(prix&&!acquis){const pr=document.createElement('span');pr.className='detail-prix';pr.textContent=prix+' XP';ligneNom.append(pr)}
+   const ok=acquis||(!verrou&&!!el&&prix<=dispoT);tete.classList.add('cliquable',acquis?'acquise':ok?'achetable':'fermee');
+   if(ok&&el&&el.agir){tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>el.agir();
+    tete.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tete.click()}}}}
   /* Ses améliorations, puis ses bonus, palier par palier : le suivant à prendre s'achète d'un clic sur sa carte, au prix de son
      palier, quand son talent est tenu ; le clic droit sur une carte tenue la rend, palier par palier. Chez le MJ, « + » en
      ajoute un, ✕ l'ôte, et les cartes se glissent pour changer leur ordre. Ils n'ont plus de petit rond dans l'arbre. */
@@ -5584,7 +5596,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      if(suivante){c.tabIndex=0;c.setAttribute('role','button');
       c.onclick=()=>{if(n===1)a.talents=[...a.talents,x.id];else poserPalier(x,n);note('');majTable()};
       c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();c.click()}}}
-     if(a&&k>=n&&n===k)c.oncontextmenu=e=>{e.preventDefault();if(k>1)poserPalier(x,k-1);else oublier(x,liste);note('');majTable()};
+     // Le dernier palier tenu se rend d'un clic, ou du clic droit.
+     if(a&&k>=n&&n===k&&!(estMort(a)&&view!=='mj')&&!figeEnCombat(a)){const rendre=()=>{if(k>1)poserPalier(x,k-1);else oublier(x,liste);note('');majTable()};
+      c.classList.add('rendable');c.tabIndex=0;c.setAttribute('role','button');c.onclick=rendre;c.oncontextmenu=e=>{e.preventDefault();rendre()};
+      c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rendre()}}}
      if(!a&&mj){c.classList.add('editable');c.onclick=()=>openTalent(catalog.talents.indexOf(x),renderArbres);
       // Glisser une carte sur une autre : il prend sa place, les autres se décalent.
       if(n===1){c.draggable=true;c.addEventListener('dragstart',e=>{glisse=x;try{e.dataTransfer.setData('text/plain',x.id)}catch(_){}});
@@ -5596,12 +5611,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      panneau.append(c)}})};
   section('Améliorations',tousP.filter(x=>!estBonus(x)));
   section('Bonus',tousP.filter(estBonus));
-  if(a&&t.flottant!==true){const pied=document.createElement('div');pied.className='detail-pied';const prix=coutPalier(t,1),dispo=xpDisponible(a,catalog.talents);
-   const btn=document.createElement('button');btn.type='button';btn.className='detail-apprendre'+(acquis?' acquis':'');
-   btn.textContent=acquis?'Acquis':'Apprendre'+(prix?' · '+prix+' XP':'');btn.disabled=acquis||verrou||!el||prix>dispo;
-   btn.onclick=()=>{if(el&&el.agir)el.agir()};pied.append(btn);
-   if(!acquis){const r=document.createElement('p');r.className='detail-reste';r.textContent='XP restants : '+Math.max(0,dispo-prix).toLocaleString('fr-FR');pied.append(r)}
-   panneau.append(pied)}};
+  {const bs=[...panneau.querySelectorAll(':scope>.detail-bonus')];if(bs.length){const g=document.createElement('div');g.className='detail-bonus-grille';bs[0].before(g);g.append(...bs)}}
+};
  const grille=document.createElement('div');grille.className='arbres-cols';
  const premierRang=classe?(colonnesArbre(classe).find(k=>k.liste.length)||{}).rang:-1;
  /* Un Mystique n'a qu'une colonne à lui, « Élémentaire » : dans son arbre, les colonnes vides se
