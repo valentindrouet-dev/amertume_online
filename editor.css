@@ -2718,3 +2718,5 @@ body.site-verrouille>main:not(#verrou-page),body.site-verrouille nav.tabs,body.s
 .sheet-origine{flex:none;display:inline-flex;align-items:center;gap:4px;font:600 13px system-ui;color:var(--muted);white-space:nowrap}.origine-genre{font-size:15px;line-height:1}.hero-card .sheet-origine{align-self:center}#sheet .sheet-head>.sheet-origine{margin-left:auto;margin-right:-4px}
 /* Une caractéristique relevée pour un temps, la Rage dans les dégâts : son chiffre en orange doré clair. */
 .stat-tile.en-hausse strong,.stat-row.en-icones .stat-tile.avec-icone.en-hausse strong{color:#ffc35a}
+/* Le talent de classe, en haut du Tronc commun : tenu d'office, ni prix ni coche. */
+.arbre-plan>.arbre-noeud.talent-classe .arbre-cout{display:none}.arbre-plan>.arbre-noeud.talent-classe .arbre-rond::after{display:none}

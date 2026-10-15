@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.800","d":"2026-10-15","t":"Talent de classe au centre, lignes en diagonale"},
 {"v":"0.799","d":"2026-10-15","t":"Rage dans les dégâts de la fiche"},
 {"v":"0.798","d":"2026-10-15","t":"+1 Rage flottant en couleur de l'état"},
 {"v":"0.797","d":"2026-10-15","t":"Rage en rouge orangé, chiffre des états coloré"},

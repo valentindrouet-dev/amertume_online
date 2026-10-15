@@ -2869,8 +2869,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(!T('a').liens&&T('c').pos&&T('g').pos,'la ligne qui menait à lui s’efface ; ses suivants restent en place, devenus des départs');
  assert.ok(T('k').horsArbre&&!T('k').chemin&&T('k2').horsArbre&&!T('k2').chemin,'les petits ronds de ses chemins quittent l’arbre');
  assert.equal(ctxR.retireDeLArbre(T('b')),false,'un talent déjà retiré ne se retire pas deux fois');
- assert.ok(src.includes("function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!t.flottant&&!lisChemin(t));")
-  &&src.includes(" t.famille=famille;t.voie=voie;t.prerequis='';delete t.horsArbre;delete t.flottant;delete t.branche;"),'hors de l’arbre, il n’y paraît plus ; replacé, il y revient');
+ assert.ok(src.includes("function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!lisChemin(t));")
+  &&src.includes(" t.famille=famille;t.voie=voie;t.prerequis='';delete t.horsArbre;delete t.branche;"),'hors de l’arbre, il n’y paraît plus ; replacé, il y revient');
  /* v0.294 — Ni réserve sous l'arbre, ni mention au catalogue : un talent retiré se remet
     dans l'arbre par son formulaire, « Place dans l'arbre ». */
  assert.ok(src.includes("if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue'")
@@ -5192,6 +5192,13 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.800 — Le talent de classe prend sa case en haut du Tronc commun ; jusqu'à cinq lignes, droites ou diagonales, pour tous ;
+   les améliorations du bas chevauchent le départ des lignes. Le rond flottant du coin n'est plus. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("const LIENS_MAX=5;")&&src.includes("function dirVers(p,q){if(!p||!q)return '';return Object.keys(DIRS).find(")
+  &&src.includes("if(t.flottant!==true||t.horsArbre===true)delete t.flottant;else delete t.chemin;")&&src.includes("t.pos=ps.length?{x:Math.round((Math.min(...ps.map(q=>q.x))+Math.max(...ps.map(q=>q.x)))/2),y:Math.min(...ps.map(q=>q.y))-1}:{x:0,y:0};")
+  &&src.includes("const gene=(t,k)=>!!k&&!['so','s','se'].includes(k)&&petitsDe(t,k).length>0;")&&!src.includes("w.className='arbre-flottant'")
+  &&src.includes("if(t.flottant&&talentFamily(t)!==famille)delete t.flottant;"),'le talent de classe au centre, cinq lignes');}
 /* v0.799 — La Rage au contact compte dans les dégâts de la fiche, en orange doré clair comme toute hausse du moment. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
  assert.ok(page.includes("function degatsAffiches(a){return degatsDe(a)+rageContact(a,rangeOf(a))}")&&page.includes("tuiles[2].classList.toggle('en-hausse',degatsEnHausse(a));")
@@ -5520,7 +5527,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
   &&page.includes("className:'debut-marque',textContent:'!'")&&src.includes("if(t.rayonne)b.classList.add('debut-combat');")&&src.includes('name="debutCombat"'),'les talents de début de combat');
  assert.ok(page.includes("function estMort(a){return !!a&&a.hero===true&&a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0}")
   &&page.includes("+(estMort(a)?' mort':'')")&&src.includes("if(estMort(a)){c.classList.add('mort');")&&src.includes("function ressusciter(a){if(view!=='mj'||!estMort(a))return;")
-  &&src.includes("if(verrou||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;")&&src.includes("troupe.forEach(a=>{if(estMort(a))return;"),'un aventurier mort');}
+  &&src.includes("if(t.flottant===true||verrou||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;")&&src.includes("troupe.forEach(a=>{if(estMort(a))return;"),'un aventurier mort');}
 /* v0.499 — L'Attaque, talent de base de tout aventurier, en tête de sa fiche ; ce qui l'améliore s'ajoute à sa
    bulle et à celle de la barre d'Actions, une pastille devant, à la couleur foncée de la nature du talent. Tous
    les états s'en vont à la fin d'un combat ; le tour qui commence ne parle plus des activations. */
@@ -5656,8 +5663,8 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['o','b1','b2','b3'])),JSON.stringify(['o','b1','b2','b3']));
  assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['o','b2','b3'])),JSON.stringify(['o','b3']),'sans le premier, le second tombe ; un bonus hors chemin reste');
  assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['b1','b2'])),'[]','sans le talent, tout le chemin tombe');
- assert.equal(ctxB.basculeLien(T[0],T[2]),'ajoute','Cendre est la case de droite');assert.equal(ctxB.basculeLien(T[2],T[1]),'loin','en diagonale : pas de ligne');
- assert.ok(src.includes("reste=sansChuteArbre(a,sansBonusOrphelins(reste));")&&src.includes("&&!t.horsArbre&&!t.flottant&&!lisChemin(t));")&&src.includes("if(d.chemin)t.chemin=d.chemin;"),'les petits ronds');}
+ assert.equal(ctxB.basculeLien(T[0],T[2]),'ajoute','Cendre est la case de droite');assert.equal(ctxB.basculeLien(T[2],T[1]),'ajoute','en diagonale aussi, une ligne');
+ assert.ok(src.includes("reste=sansChuteArbre(a,sansBonusOrphelins(reste));")&&src.includes("&&!t.horsArbre&&!lisChemin(t));")&&src.includes("if(d.chemin)t.chemin=d.chemin;"),'les petits ronds');}
 /* v0.358 — Dans la barre d'action, attaques et talents d'attaque sont des ronds, comme les talents
    d'une fiche, à la couleur de l'action ; le nom dans la bulle, les dés dessous. Sur la table, plus
    de nom sous les ronds de talents. */
