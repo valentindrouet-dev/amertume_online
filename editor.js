@@ -2399,7 +2399,7 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
    surveille(r,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+g.p.carac;
     const tete=document.createElement('p');tete.className='talent-bulle-nom';const b=document.createElement('b');b.append(libelleBonusEl(g.p,{talent:g.t}));tete.append(b);d.append(tete);ouvrirBulle(r,d,'bulle-talent')});
    bonusR.append(r)});
-  if(rang.childElementCount){for(let n=rang.childElementCount;n<Math.max(12,Math.ceil(rang.childElementCount/12)*12);n++)rang.append(vide('amelioration-case-vide'));out.append(rang)}
+  // v0.803 : les améliorations ne paraissent plus sur la fiche ; elles se lisent dans l'arbre.
   if(bonusR.childElementCount)out.append(bonusR)}
  bulleOrpheline();return out}
 // Les Trésors : trésors et objets rares, qui se gardent, se montrent et se vendent, sans s'utiliser.

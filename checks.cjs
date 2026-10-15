@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.803 — La fiche de l'onglet Aventuriers ne montre plus les améliorations : gros ronds, ronds moyens, bonus. */
+assert.ok(!fs.readFileSync('editor.js','utf8').includes("rang.append(vide('amelioration-case-vide'));out.append(rang)"),'pas d’améliorations sur la fiche');
 /* v0.802 — Une ligne à niveau : invisible aux joueurs, pastille et barrière gardées ; au niveau voulu, le talent du bas s'ouvre sans
    celui d'en haut, et ce qui lui est relié le suit. */
 {const src=fs.readFileSync('editor.js','utf8');
