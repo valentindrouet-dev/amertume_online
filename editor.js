@@ -5173,10 +5173,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);
  // En vue joueur, le MJ perd ses outils le temps de regarder : l'arbre se lit comme chez la troupe.
  const a=arbresActeur,mj=view==='mj'&&!arbresVueJoueur&&!a;
- // L'arbre v2, celui d'un aventurier : noms sous les ronds, rangées plus hautes, panneau à droite.
- const V2=ARBRE_V2&&!!a;
+ // L'arbre v2 : panneau à droite ; chez un aventurier comme dans l'éditeur du MJ, qui garde ses outils.
+ const V2=ARBRE_V2;
  arbresVue.hidden=view!=='mj'||!!a||arbresEnMasse;arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
- arbresMasse.hidden=view!=='mj'||!!a;arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
+ arbresMasse.hidden=view!=='mj'||!!a;arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||(V2&&!!a);poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
  if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}}
  else if(view!=='mj'){arbresDialog.close();return}
  // Chez le MJ, l'arbre s'accorde avant de se dessiner : chaque talent a sa case, chaque ligne son but.
@@ -5367,16 +5367,15 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);
   if(mj&&lienDepuis===t.id)el.classList.add('relie-source');if(t.flottant===true)el.classList.add('talent-classe');
   /* v2 : son vrai nom sous le rond, deux lignes au plus, sous les améliorations du bas s'il en porte. */
-  if(V2){const n=document.createElement('span');n.className='arbre-nom-v2';nomAccolades(n,vu(t).name);
-   const bonusBas=d=>petitsDe(t,d).some(estBonus),bas=bonusBas('s')?94:(bonusBas('so')||bonusBas('se'))?72:54;el.style.setProperty('--nom-y',bas+'px');el.append(n);
-   if(t.id===arbreDetailId)el.classList.add('choisi')}
+  // v2 : pas de nom sous le rond ; le talent choisi se reconnaît à son double contour.
+  if(V2&&t.id===arbreDetailId)el.classList.add('choisi')
   const agir=()=>{if(t.flottant===true||verrou||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
    // Un clic l'active ; tenu, un clic le désactive — et ce qu'on n'atteignait que par lui.
    if(acquis)oublier(t,libre?null:col.liste);else a.talents=[...a.talents,t.id];
    note('');majTable()};el.agir=agir;
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
    if(a)arbreDetailId=t.id;
-   if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
+   if(!a){if(V2)montreDetail(t);if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
    // v2 : le clic choisit le talent, le panneau l'apprend ; le clic droit rend un talent tenu.
    if(V2){montreDetail(t);return}
    agir()};
@@ -5480,7 +5479,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   /* v0.789 : en bas à gauche et à droite, les améliorations remontent le long de leur lien jusqu'à chevaucher un peu leur talent. */
   const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=(d==='so'||d==='se'?.34:d==='s'?.35:.5)+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
   const petits=[];c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
-   Object.keys(DIRS).forEach(d=>{if(ch[d].lien&&!['so','s','se'].includes(d))return;ch[d].petits.forEach(s=>{if(V2&&!estBonus(s))return;const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
+   Object.keys(DIRS).forEach(d=>{if(ch[d].lien&&!['so','s','se'].includes(d))return;ch[d].petits.forEach(s=>{if(V2&&a&&!estBonus(s))return;const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
   /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
      talent — jamais au-dessus : l'arbre part d'un talent tout en haut et descend ; sur chaque chemin
      sans ligne, la place du petit rond suivant, sauf droit au-dessus du talent de départ, où descend
@@ -5510,7 +5509,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(depart){const rx=cases.get(depart.id).x,e=Math.max(rx-x0,x1-rx);x0=rx-e;x1=rx+e}
   const L=CASE_SPHERIER,plan=document.createElement('div');plan.className='arbre-plan';
   /* v2 : une rangée plus haute, pour le nom sous chaque talent ; un petit rond garde sa distance à son talent. */
-  const LY=V2?205:L;
+  const LY=L;
   plan.style.width=((x1-x0+1)*L).toFixed(0)+'px';plan.style.height=((y1-y0+1)*LY).toFixed(0)+'px';
   const pose=(el,x,y,de)=>{const b=de&&cases.get(de.id);
    el.style.left=((x-x0+.5)*L).toFixed(1)+'px';el.style.top=(b?(b.y-y0+.5)*LY+(y-b.y)*L:(y-y0+.5)*LY).toFixed(1)+'px'};
@@ -5556,6 +5555,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      if(suivante){c.tabIndex=0;c.setAttribute('role','button');
       c.onclick=()=>{if(n===1)a.talents=[...a.talents,x.id];else poserPalier(x,n);note('');majTable()};
       c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();c.click()}}}
+     if(!a&&mj){c.classList.add('editable');c.onclick=()=>openTalent(catalog.talents.indexOf(x),renderArbres)}
      if(a&&k>=n&&n===k)c.oncontextmenu=e=>{e.preventDefault();if(k>1)poserPalier(x,k-1);else oublier(x,liste);note('');majTable()};
      panneau.append(c)}})}
   if(a&&t.flottant!==true){const pied=document.createElement('div');pied.className='detail-pied';const prix=coutPalier(t,1),dispo=xpDisponible(a,catalog.talents);
@@ -5568,9 +5568,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const premierRang=classe?(colonnesArbre(classe).find(k=>k.liste.length)||{}).rang:-1;
  /* Un Mystique n'a qu'une colonne à lui, « Élémentaire » : dans son arbre, les colonnes vides se
     retirent. Le plan du MJ les garde, pour y créer des talents ; les autres classes ne changent pas. */
- (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)&&!(V2&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));
- arbresDialog.classList.toggle('v2',ARBRE_V2&&!!a);
- if(ARBRE_V2&&a){const cadre=document.createElement('div');cadre.className='arbres-v2';
+ (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)&&!(V2&&a&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));
+ arbresDialog.classList.toggle('v2',V2);
+ if(V2){const cadre=document.createElement('div');cadre.className='arbres-v2';
   const g=document.createElement('div');g.className='arbres-v2-arbre';g.append(grille);
   const panneau=document.createElement('aside');panneau.className='arbres-detail';cadre.append(g,panneau);corps.append(cadre);
   montreDetail=t=>remplitDetail(panneau,t);
@@ -5604,7 +5604,7 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
   // Sous la limite, chez les joueurs : pas de trait ; celui qui y descend s'arrête à la barrière.
   const trait=(de,vers,A,B,lien)=>{const hA=A.classList.contains('hors-limite'),hB=B.classList.contains('hors-limite');if(hA||(hB&&!lien))return;
    // Une ligne qui porte un niveau ne se voit pas chez les joueurs : sa pastille et la barrière restent ; chez le MJ, pâle.
-   const aNiveau=lien&&niveauLien(de,vers)>0;if(aNiveau&&!voitTout)return;
+   const aNiveau=lien&&niveauLien(de,vers)>0;if(aNiveau&&!mj)return;
    const p=centre(A),q0=centre(B),q=hB?{x:(p.x+q0.x)/2,y:(p.y+q0.y)/2,r:0}:q0,g=document.createElementNS(ns,'g');
    g.setAttribute('class','chemin'+(lien?'':' petit')+(aNiveau?' a-niveau':'')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':'')+(caches.has(vers.id)?(voitTout?' cache-mj':' cache-joueur'):''));
    // Le trait ne traverse jamais un bouton : il ne vit qu'entre deux, d'un bord à l'autre.

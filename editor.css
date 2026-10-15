@@ -2823,3 +2823,8 @@ body.sombre .arbres-v2 .arbres-detail{background:var(--panel);border-color:var(-
 /* La prochaine amélioration à prendre : un clic l'achète. */
 .arbres-v2 .arbres-detail .detail-amelioration.achetable{cursor:pointer;opacity:1;border-left-color:#c99a3c;background:#fffaf0}
 .arbres-v2 .arbres-detail .detail-amelioration.achetable:is(:hover,:focus-visible){border-color:#c99a3c;box-shadow:0 0 0 2px #f2c14e55}
+/* v0.809 : l'éditeur des arbres prend la mise en forme v2 ; les lignes à niveau ne se voient plus, leur cartouche reste. */
+#arbres.v2:not(.du-heros) .dialog-head>.arbres-classe{flex:0 1 auto;text-align:left;margin:0 auto 0 0;order:-2}
+.arbres-v2 .arbre-chemins .chemin.a-niveau .trait{opacity:0}
+.arbres-v2 .arbres-detail .detail-amelioration.editable{cursor:pointer;opacity:1}
+.arbres-v2 .arbres-detail .detail-amelioration.editable:hover{border-color:#c99a3c}

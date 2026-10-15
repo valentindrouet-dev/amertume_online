@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.809","d":"2026-10-15","t":"Éditeur d'arbre en v2"},
 {"v":"0.808","d":"2026-10-15","t":"Arbre v2, reprise"},
 {"v":"0.807","d":"2026-10-15","t":"Arbre v2 affiné"},
 {"v":"0.806","d":"2026-10-15","t":"Maîtrise de départ tenue d'office"},
