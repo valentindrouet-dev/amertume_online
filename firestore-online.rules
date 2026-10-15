@@ -62,6 +62,18 @@ match /amertume_online_live/{table} {
     allow delete: if isOnlineMJ();
   }
 
+  // L'exploration de chaque carte (v0.766) : le MJ l'écrit, tout joueur de la table la lit.
+  match /brouillard/{carte} {
+    allow get, list: if request.auth != null
+      && !exists(/databases/$(database)/documents/amertume_online_live/$(table)/bannis/$(request.auth.uid));
+    allow create, update: if isOnlineMJ()
+      && request.resource.data.keys().hasOnly(['f','n','at'])
+      && request.resource.data.f is string
+      && request.resource.data.f.size() <= 300000
+      && request.resource.data.n is int;
+    allow delete: if isOnlineMJ();
+  }
+
   match /seats/{uid} {
     allow get, list: if request.auth != null
       && !exists(/databases/$(database)/documents/amertume_online_live/$(table)/bannis/$(request.auth.uid));

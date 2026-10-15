@@ -341,10 +341,16 @@ function emballeFog(){if(!fogAEmballer)return;fogAEmballer=false;const m=current
    carte, avec le numéro de la dernière remise à zéro. Rechargée, la page la retrouve ; une remise à zéro survenue depuis l'efface. */
 const BROUILLARD_CLE='amertume-brouillard';let brouillardGardeTimer=0;
 function brouillardJoueurPret(){return typeof spectateur==='function'&&spectateur()&&typeof tableId!=='undefined'&&!!tableId&&typeof brouillardConnu!=='undefined'&&brouillardConnu}
-function garderBrouillardJoueur(){if(brouillardGardeTimer||!brouillardJoueurPret())return;
+function garderBrouillardJoueur(){if(typeof pousserBrouillard==='function')pousserBrouillard();if(brouillardGardeTimer||!brouillardJoueurPret())return;
  brouillardGardeTimer=setTimeout(()=>{brouillardGardeTimer=0;const m=currentMap();if(!m||typeof m.fog!=='string'||!brouillardJoueurPret())return;
   try{const t=JSON.parse(localStorage.getItem(BROUILLARD_CLE)||'{}'),k=tableId+'|'+m.id;delete t[k];t[k]={n:brouillardReset.n,f:m.fog};
    const cles=Object.keys(t);cles.slice(0,Math.max(0,cles.length-6)).forEach(c=>delete t[c]);localStorage.setItem(BROUILLARD_CLE,JSON.stringify(t))}catch(e){}},1000)}
+/* L'exploration gardée par la table — celle du MJ, qui voit par toute la troupe — s'ajoute à celle de la page : un joueur qui
+   recharge, ou qui arrive en cours de partie, retrouve tout ce que la troupe a exploré. */
+function ajouteBrouillard(m,f){if(!m||typeof f!=='string')return;const d=fogDims(m);if(f.length!==maskChars(d.n))return;const g=unpackMask(f,d.n);
+ const ici=currentMap()===m&&fogSeen&&fogSeen.length===d.n?fogSeen:readSeen(m,d);let plus=0;for(let k=0;k<d.n;k++)if(g[k]&&!ici[k]){ici[k]=1;plus++}
+ if(!plus)return;if(ici===fogSeen){fogDirty=true;fogAEmballer=true;fogKey='';fogMemorise=new WeakMap()}else{m.fog=packMask(ici,d.n);delete m.seen}
+ if(typeof render==='function')render()}
 function brouillardRetrouve(m,d){if(!brouillardJoueurPret())return;let e=null;
  try{e=JSON.parse(localStorage.getItem(BROUILLARD_CLE)||'{}')[tableId+'|'+m.id]}catch(x){}
  if(!e||e.n!==brouillardReset.n||typeof e.f!=='string'||e.f.length!==maskChars(d.n))return;
@@ -2801,7 +2807,8 @@ const renderBeforeMaps=render;render=function(){
    et à chaque changement de taille. Sur une seule colonne, il reprend sa hauteur propre. */
 function calerColonnes(){const centre=document.querySelector('.layout>.stack:not(.left):not(.right)'),droite=document.querySelector('.stack.right'),gauche=document.querySelector('.stack.left');
  if(!centre||!droite||!centre.lastElementChild)return;
- const rc=centre.getBoundingClientRect(),rd=droite.getBoundingClientRect(),bas=centre.lastElementChild.getBoundingClientRect().bottom;
+ // Le bas du dernier panneau affiché de la colonne du centre : la rangée du bas, vidée, ne compte plus.
+ const rc=centre.getBoundingClientRect(),rd=droite.getBoundingClientRect(),bas=[...centre.children].filter(e=>e.offsetParent).reduce((m,e)=>Math.max(m,e.getBoundingClientRect().bottom),0);
  const aCote=rd.left>=rc.right-1&&rc.height>0,h=Math.round(bas-rd.top);
  if(!aCote||h<300){droite.style.height='';droite.classList.remove('calee');if(gauche)gauche.classList.remove('calee');return}
  droite.classList.add('calee');droite.style.height=h+'px';if(gauche)gauche.classList.add('calee')}
@@ -2823,6 +2830,11 @@ majOnglets();
 document.addEventListener('amertume-partie-chargee',()=>{refreshMapPick();const p=lastPage();
  if(p!=='table'&&!vueChoisie()&&!ongletsJoueurs().includes(p))retiensVue('mj');if(p!=='table')showPage(p)});
 
+// La rangée du bas vidée, la carte descend jusqu'au bas de la page ouverte ; sur un écran étroit, tout défile comme avant.
+{const hauteurAvantRangee=hauteurDispoCarte;hauteurDispoCarte=function(el){const rangee=document.querySelector('.actions-rangee'),r=el.getBoundingClientRect();
+ if(innerWidth<=900||!rangee||!rangee.classList.contains('vide')||!el.offsetParent||!r.width)return hauteurAvantRangee(el);
+ const layout=document.querySelector('.layout'),marge=layout?parseFloat(getComputedStyle(layout).paddingBottom)||0:0;
+ return Math.round(innerHeight-(r.top+scrollY)-marge-2)}}
 /* ---------- Les panneaux à la taille de chacun ----------
    Le bouton ⇔ de la barre de la carte déverrouille la mise en page : des poignées paraissent entre les colonnes et sous la
    carte, et se glissent. La colonne des combattants, celle de la fiche et du journal, la hauteur de la carte : chaque taille se
@@ -2852,3 +2864,27 @@ function poigneeTaille(parent,cle,sens){const p=document.createElement('div');p.
  if(g)poigneeTaille(g,'g',1);if(d)poigneeTaille(d,'d',-1);if(c)poigneeTaille(c,'h',1)}
 $('redim-panneaux').onclick=()=>{const on=document.body.classList.toggle('redim');$('redim-panneaux').classList.toggle('on',on);$('redim-panneaux').setAttribute('aria-pressed',on?'true':'false')};
 addEventListener('resize',appliqueTailles);appliqueTailles();
+/* ---------- Le zoom de chacun, par carte ----------
+   Le zoom et le point visé se gardent sur l'appareil, carte par carte : à l'ouverture d'une carte, au rechargement, la vue revient
+   où on l'avait laissée. « Ajuster » la remet à 100 %, et c'est ce qui se garde alors. */
+const ZOOMS_CLE='amertume-zooms';let zoomGardeTimer=0,zoomReprisPour=null,zoomEnReprise=false,zoomPrevu=0;
+function lisZooms(){try{const t=JSON.parse(localStorage.getItem(ZOOMS_CLE)||'{}');return t&&typeof t==='object'?t:{}}catch(e){return {}}}
+{const applyAvantGarde=applyMapZoom;applyMapZoom=function(){applyAvantGarde.apply(this,arguments);
+ const id=typeof currentMapId!=='undefined'&&currentMapId;if(!id||zoomEnReprise||zoomReprisPour!==id)return;
+ clearTimeout(zoomGardeTimer);zoomGardeTimer=setTimeout(()=>{const m=$('map'),w=m.clientWidth,h=m.clientHeight;if(!w||!h||currentMapId!==id)return;
+  const t=lisZooms();delete t[id];t[id]={z:+mapZoom.toFixed(3),x:+((w/2-mapPanX)/(w*mapZoom)).toFixed(4),y:+((h/2-mapPanY)/(h*mapZoom)).toFixed(4)};
+  const c=Object.keys(t);c.slice(0,Math.max(0,c.length-30)).forEach(k=>delete t[k]);try{localStorage.setItem(ZOOMS_CLE,JSON.stringify(t))}catch(e){}},400)}}
+function reprendZoom(){const id=typeof currentMapId!=='undefined'&&currentMapId,m=$('map'),w=m.clientWidth,h=m.clientHeight;if(!id||!w||!h)return;
+ zoomReprisPour=id;const s=lisZooms()[id];if(!s||!(s.z>0)||!Number.isFinite(s.x)||!Number.isFinite(s.y))return;
+ zoomEnReprise=true;try{mapZoom=Math.min(8,Math.max(.4,s.z));mapPanX=w/2-s.x*w*mapZoom;mapPanY=h/2-s.y*h*mapZoom;vueCadre={w,h};applyMapZoom()}finally{zoomEnReprise=false}}
+// Une carte qui paraît — ouverte, reçue de la table, retrouvée au chargement — reprend son zoom, une fois posée à l'écran.
+{const renderAvantZoom=render;render=function(){renderAvantZoom.apply(this,arguments);
+ if(typeof currentMapId!=='undefined'&&currentMapId&&zoomReprisPour!==currentMapId&&!zoomPrevu)zoomPrevu=setTimeout(()=>{zoomPrevu=0;if(zoomReprisPour!==currentMapId)reprendZoom()},80)}}
+/* ---------- Le ping ----------
+   Alt + clic sur la carte, hors d'un token : un signal s'y anime, chez tous à la table. Celui du MJ est doré, celui d'un joueur
+   vert d'eau. */
+function pingCarte(x,y,mj){if(!Number.isFinite(x)||!Number.isFinite(y))return;const el=document.createElement('div');el.className='ping-carte'+(mj?' mj':'');
+ el.style.left=Math.max(0,Math.min(100,x))+'%';el.style.top=Math.max(0,Math.min(100,y))+'%';el.setAttribute('aria-hidden','true');
+ el.innerHTML='<i></i><i></i><i></i><b></b>';$('map-view').append(el);setTimeout(()=>el.remove(),2600)}
+$('map').addEventListener('pointerdown',e=>{if(!e.altKey||e.button!==0||e.target.closest('.token')||!currentMap())return;
+ e.preventDefault();e.stopImmediatePropagation();const p=mapPct(e),mj=view==='mj';pingCarte(p.x,p.y,mj);if(typeof diffuserPing==='function')diffuserPing(p.x,p.y,mj)},true);

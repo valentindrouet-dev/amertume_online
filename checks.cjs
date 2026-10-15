@@ -3392,6 +3392,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.766 — Zoom gardé par carte ; exploration gardée par la table ; adversaires vus par la troupe visibles chez tous ; ping ;
+   piste de dés à gauche, carte jusqu'au bas de la page. */
+{const lv=fs.readFileSync('live.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),r=fs.readFileSync('firestore-online.rules','utf8');
+ assert.ok(carto.includes("const ZOOMS_CLE='amertume-zooms';")&&carto.includes("function reprendZoom(){"),'zoom gardé');
+ assert.ok(lv.includes("function pousserBrouillard(){")&&lv.includes("function appliqueBrouillardTable(){")&&carto.includes("function ajouteBrouillard(m,f){")&&r.includes("match /brouillard/{carte} {"),'exploration de la table');
+ assert.ok(page.includes("!(view!=='mj'&&typeof troupeVoit==='function'&&troupeVoit(a))"),'ennemis vus par la troupe');
+ assert.ok(carto.includes("function pingCarte(x,y,mj){")&&lv.includes("rec.effet==='ping'"),'ping');
+ assert.ok(page.includes("if(des&&gauche&&rangee){gauche.append(des);rangee.classList.add('vide')}")&&carto.includes("return Math.round(innerHeight-(r.top+scrollY)-marge-2)}}"),'dés à gauche, carte jusqu’en bas');}
 /* v0.765 — Seules les pièces inhabituelles ou mieux se nomment au journal et paraissent en bannière ; l'or d'un butin en pièce d'or. */
 {assert.ok(page.includes("nomme=!!nomme&&['inhabituel','rare','mystique','epique'].includes(rareteDe(o));")&&page.includes("li.querySelectorAll('.j-objet.j-objet-nomme')")&&page.includes("const orB=butin?/^(\\d+) or$/.exec(m[0]):null;"));}
 /* v0.764 — Trouvailles en cartouche et en bannière, sources du butin dans la bulle ; tests regroupés au nouveau format ; un même test
@@ -5681,4 +5689,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2119 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2124 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

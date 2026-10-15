@@ -262,6 +262,19 @@ body.redim main.layout .panel{outline:1px dashed #c98a4b80;outline-offset:2px}
 .j-comp .j-reussite{cursor:help;text-decoration:underline dotted #0006;text-underline-offset:3px}
 .j-comp .j-reussite.j-ok{color:#2e8b3e}.j-comp .j-reussite.j-ko{color:#b8402f}
 .bulle-des-test{display:flex;gap:6px;font:700 15px system-ui;padding:7px 11px;background:var(--panel);border:1px solid var(--line-strong);border-radius:10px;box-shadow:0 6px 18px #00000033}
+/* La piste de dés, au bas de la colonne de gauche ; la rangée du bas, vidée, ne prend plus de place. */
+.actions-rangee.vide{display:none}
+main.layout>.stack.left>.piste-des{height:210px;flex:none}
+@media(max-height:860px){main.layout>.stack.left>.piste-des{height:150px}main.layout>.stack.left #dice-tray{min-height:70px}}
+/* Le ping : trois ondes et un point, qui s'étendent et s'effacent. */
+.ping-carte{position:absolute;width:0;height:0;z-index:7;pointer-events:none;--c:#5fd0c0}
+.ping-carte.mj{--c:#f2c14e}
+.ping-carte i,.ping-carte b{position:absolute;left:0;top:0;border-radius:50%;transform:translate(-50%,-50%)}
+.ping-carte i{width:calc(var(--token,46px)*2.2);height:calc(var(--token,46px)*2.2);border:3px solid var(--c);box-shadow:0 0 12px var(--c);opacity:0;animation:ping-onde 1.5s ease-out forwards}
+.ping-carte i:nth-child(2){animation-delay:.35s}.ping-carte i:nth-child(3){animation-delay:.7s}
+.ping-carte b{width:calc(var(--token,46px)*.32);height:calc(var(--token,46px)*.32);background:var(--c);box-shadow:0 0 0 3px #0008,0 0 16px var(--c);animation:ping-point 2.5s ease-out forwards}
+@keyframes ping-onde{0%{opacity:1;transform:translate(-50%,-50%) scale(.1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+@keyframes ping-point{0%{opacity:0;transform:translate(-50%,-50%) scale(2)}12%{opacity:1;transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
 /* Une version plus récente en ligne : un bandeau en haut de l'écran, et son bouton pour recharger. */
 .bandeau-version{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:300;display:flex;align-items:center;gap:12px;padding:8px 10px 8px 16px;
  border-radius:12px;background:#1b1410f2;color:#f6e9d8;border:1px solid #d29180;box-shadow:0 10px 28px #0007;font:600 14px system-ui;max-width:calc(100vw - 32px)}

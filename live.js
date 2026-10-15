@@ -47,6 +47,8 @@ let brouillardConnu=false;
 let journalRef=null,quitteJournal=null,journalVus=new Set(),journalPremier=true;
 /* Les exclus d'une table : le MJ les inscrit ; les règles leur ferment la table, et leur propre page les en sort aussitôt. */
 let bannisRef=null,bannis={},quitteBannis=null,quitteMonBan=null;
+// L'exploration de chaque carte, gardée par la table : le MJ l'écrit, les joueurs l'écoutent.
+let brouillardsRef=null,quitteBrouillard=null,brouillardEcoute=null,brouillardTable=null,brouillardPousseTimer=0;const brouillardsPousses=new Map();
 /* Chez un joueur en ligne, révéler n'est pas son affaire : le MJ révèle, et « vu » lui
    arrive par la table. Sinon chaque appareil révélait de son côté, et un joueur qui
    arrivait voyait « révélés » des créatures que personne n'avait aperçues. */
@@ -298,7 +300,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     // À l'arrivée à la table, la dernière remise à zéro du MJ est déjà passée : elle ne se rejoue pas, sauf un voile levé partout.
     if(m0&&typeof resetFog==='function'&&(brouillardConnu||brouillardReset.tout))resetFog(brouillardReset.tout,true)}
    // Le numéro connu, la mémoire d'exploration gardée sur l'appareil se relit.
-   if(!brouillardConnu&&d.fogReset&&typeof d.fogReset.n==='number'){brouillardConnu=true;if(typeof fogSeenSrc!=='undefined'){fogSeenSrc=null;fogKey=''}}}
+   if(!brouillardConnu&&d.fogReset&&typeof d.fogReset.n==='number'){brouillardConnu=true;if(typeof fogSeenSrc!=='undefined'){fogSeenSrc=null;fogKey=''}setTimeout(appliqueBrouillardTable,0)}}
   /* Chez un joueur, en combat d'un document à l'autre : un nouveau combat s'annonce, même sans retour à l'exploration entre les
      deux ; sinon un nouveau tour s'annonce, comme chez le MJ, et ouvre son tour au journal. */
   if(!estMJ()&&avantIci.connu&&avantIci.mode==='combat'&&mode==='combat'&&typeof annonceFlottante==='function'){
@@ -474,6 +476,8 @@ function flottantRecu(rec){const texte=String(rec.texte||'').slice(0,60);if(!tex
    if(!el||el.hidden||['unseen','veiled','hors-carte','cachemj'].some(c=>el.classList.contains(c)))return}
   floatNumberLocal(a,texte,genre);return}
  const d=rec.detail;if(d&&typeof d==='object'&&Number.isFinite(d.x)&&Number.isFinite(d.y))floatNumberLocal({x:d.x,y:d.y,socle:typeof d.socle==='string'?d.socle:'medium'},texte,genre)}
+// Un ping part à toute la table, en direct, comme un effet : son point en pour cent, et s'il vient du MJ.
+function diffuserPing(x,y,mj){diffuser({genre:'effet',effet:'ping',a:null,b:null,logo:mj?'mj':'joueur',detail:{x:+x.toFixed(2),y:+y.toFixed(2)}})}
 function diffuserEffet(type,a,b,couleur){diffuser({genre:'effet',effet:String(type).slice(0,20),a:fiche(a),b:fiche(b),logo:couleur?String(couleur).slice(0,20):null})}
 // Une parole part avec la fiche de qui parle ; le MJ se reconnaît à son identifiant, pas à son nom.
 logChat=function(qui,texte){logChatLocal(qui,texte);
@@ -493,6 +497,7 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
   else if(rec.effet==='orbe'&&typeof volOrbe==='function'){const [couleur,etat]=(typeof rec.logo==='string'?rec.logo:'').split('|');
    volOrbe(acteurDuJournal(rec.a),acteurDuJournal(rec.b),couleur||'',etat||'')}
   else if(rec.effet==='flottant')flottantRecu(rec);
+  else if(rec.effet==='ping'&&typeof pingCarte==='function'&&rec.detail&&typeof rec.detail==='object')pingCarte(Number(rec.detail.x),Number(rec.detail.y),rec.logo==='mj');
   else if(rec.effet==='fleche'&&typeof volFleche==='function')volFleche(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
   else if(rec.effet==='balayage'&&typeof coupDeToken==='function')coupDeToken(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
   else if(rec.effet==='choc'&&typeof chocImpact==='function'){const [x,y]=(typeof rec.logo==='string'?rec.logo:'').split('|').map(Number);
@@ -633,7 +638,7 @@ async function fermerTable(){if(!estMJ()||!tableId)return;
  for(const col of [siegesRef,journalRef,bannisRef]){if(!col)continue;
   try{let lot;do{lot=await col.limit(200).get();if(!lot.size)break;const b=cloud.batch();lot.forEach(d=>b.delete(d.ref));await b.commit()}while(lot.size===200)}catch(e){}}
  debrancherTable();localStorage.removeItem(TABLE_CLE);liveStatus('Table fermée.')}
-function debrancherTable(){document.body.classList.remove('table-attendue');clearInterval(presenceTimer);presenceTimer=null;if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
+function debrancherTable(){document.body.classList.remove('table-attendue');if(quitteBrouillard)quitteBrouillard();quitteBrouillard=null;brouillardEcoute=null;brouillardTable=null;brouillardsRef=null;brouillardsPousses.clear();clearInterval(presenceTimer);presenceTimer=null;if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
  if(quitteBannis)quitteBannis();if(quitteMonBan)quitteMonBan();quitteBannis=quitteMonBan=null;bannisRef=null;bannis={};
  quitteSalle=quitteSieges=quitteJournal=null;enLigne=false;poussePret=false;tableId=null;salleRef=siegesRef=journalRef=null;journalVus=new Set();
  modeConnu=ongletConnu=false;ongletVu=null;envoiOnglet=null;donjonConnu=false;donjonVu=null;envoiDonjon=null;brouillardConnu=false;
@@ -653,7 +658,7 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
   const mien=monUid&&sieges[monUid];monSiege=mien?mien.actorId:null;
   if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
   renderSieges();renderJoueursConnectes();majTable()},()=>{});
- bannisRef=salleRef.collection('bannis');ecouterBannis();
+ bannisRef=salleRef.collection('bannis');ecouterBannis();brouillardsRef=salleRef.collection('brouillard');
  majTable()}
 function ecouterBannis(){if(!bannisRef)return;
  // Le MJ suit la liste ; un joueur, sa seule inscription : exclu, il quitte la table.
@@ -858,3 +863,25 @@ function verifieVersion(){if(typeof IMG_V!=='string'||typeof fetch!=='function')
   b.firstChild.textContent='Nouvelle version disponible : v'+v;b.lastChild.onclick=()=>rechargerVersion(v)}).catch(()=>{})}
 setTimeout(verifieVersion,4000);setInterval(verifieVersion,5*60*1000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')verifieVersion()});
+
+/* ---------- L'exploration gardée par la table ----------
+   « brouillard/{carte} » : la mémoire d'exploration de la carte, telle que le MJ la tient, et le numéro de sa dernière remise à
+   zéro. Le MJ l'écrit au plus toutes les trois secondes, quand elle a changé ; chaque joueur écoute celle de la carte ouverte et
+   l'ajoute à la sienne. Sans la règle Firestore qui l'admet, rien ne s'écrit et rien ne casse. */
+function pousserBrouillard(){if(!estMJ()||!enLigne||!brouillardsRef||brouillardPousseTimer)return;
+ brouillardPousseTimer=setTimeout(()=>{brouillardPousseTimer=0;const m=typeof currentMap==='function'?currentMap():null;
+  if(!m||!brouillardsRef||typeof m.fog!=='string'||m.fog.length>300000||(typeof estPaysage==='function'&&estPaysage(m)))return;
+  const n=typeof brouillardReset!=='undefined'?brouillardReset.n:0,cle=n+'|'+m.fog;if(brouillardsPousses.get(m.id)===cle)return;brouillardsPousses.set(m.id,cle);
+  brouillardsRef.doc(m.id).set({f:m.fog,n,at:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>brouillardsPousses.delete(m.id))},3000)}
+// Une remise à zéro du MJ part aussitôt : la mémoire vidée remplace l'ancienne.
+{const resetFogSansTable=resetFog;resetFog=function(){const r=resetFogSansTable.apply(this,arguments);pousserBrouillard();return r}}
+function ecouterBrouillard(id){if(quitteBrouillard)quitteBrouillard();quitteBrouillard=null;brouillardTable=null;brouillardEcoute=id||null;
+ if(!id||!brouillardsRef)return;quitteBrouillard=brouillardsRef.doc(id).onSnapshot(d=>{const o=d.exists?d.data():null;
+  brouillardTable=o&&typeof o.f==='string'&&typeof o.n==='number'?{id,f:o.f,n:o.n}:null;appliqueBrouillardTable()},()=>{})}
+function appliqueBrouillardTable(){const t=brouillardTable,m=typeof currentMap==='function'?currentMap():null;
+ if(estMJ()||!t||!m||m.id!==t.id||!brouillardConnu||typeof brouillardReset==='undefined'||t.n!==brouillardReset.n||typeof ajouteBrouillard!=='function')return;
+ ajouteBrouillard(m,t.f)}
+// Chez un joueur, l'écoute suit la carte ouverte ; chez le MJ, la carte ouverte part une première fois.
+{const renderAvantBrouillard=render;render=function(){renderAvantBrouillard.apply(this,arguments);if(!enLigne||!brouillardsRef)return;
+ const id=typeof currentMapId!=='undefined'&&currentMapId||null;
+ if(estMJ()){if(id&&!brouillardsPousses.has(id))pousserBrouillard()}else if(id!==brouillardEcoute)ecouterBrouillard(id)}}
