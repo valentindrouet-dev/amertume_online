@@ -49,6 +49,10 @@ let bannisRef=null,bannis={},quitteBannis=null,quitteMonBan=null;
    arrive par la table. Sinon chaque appareil révélait de son côté, et un joueur qui
    arrivait voyait « révélés » des créatures que personne n'avait aperçues. */
 const tableVoulue=!!new URL(location.href).searchParams.get('table');
+/* Un joueur qui arrive ou revient à sa table : la carte reste voilée jusqu'au premier état reçu de la table, au lieu de montrer
+   quelques secondes celle de la dernière publication. Le voile tombe au plus tard au bout de trente secondes. */
+{let attendue=false;try{attendue=!(typeof mjIci==='function'&&mjIci())&&(tableVoulue||!!localStorage.getItem(TABLE_CLE))}catch(e){}
+ if(attendue){document.body.classList.add('table-attendue');setTimeout(()=>document.body.classList.remove('table-attendue'),30000)}}
 /* Seul un invité est rangé d'office en vue joueur : venu par le lien d'une table, ou assis à l'une
    d'elles. Une identité anonyme, seule, n'en fait pas un : l'appareil du MJ en gardait une parfois,
    et chaque rechargement le jetait en vue joueur. */
@@ -401,7 +405,9 @@ function appliquerSalleSeule(d,complet){if(!d)return;
   if(change){render();rafraichitFiches()}
   // Une carte neuve ouverte par le MJ se montre toute entière, à 100 %, chez chaque joueur aussi.
   if(carteNeuve&&typeof resetMapZoom==='function')setTimeout(resetMapZoom,0);
- }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard()}}
+ }finally{appliquantDistant=false;dernierPousse=base||etatVivant();poussePret=true;pousserPlusTard();
+  // Le premier état de la table posé, le voile d'arrivée tombe : la carte qui paraît est la bonne.
+  document.body.classList.remove('table-attendue')}}
 
 /* L'onglet Aventuriers et l'arbre de talents, s'ils sont ouverts, se redessinent sur ce qui arrive : un équipement ôté, un
    talent appris ailleurs se voient ici aussi. Pas sous la main de qui s'en sert : un champ en saisie, un glissement, une
@@ -494,6 +500,8 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
   logAttaqueLocal(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'',String(rec.corps||''),d,rec.suite?String(rec.suite):'')}
  else logLocal(String(rec.texte||''),{badge:rec.badge?String(rec.badge):undefined,ton:typeof rec.ton==='string'?rec.ton:undefined,bilan:rec.detail&&typeof rec.detail==='object'&&rec.detail.bilan||undefined})}
 function rejouerJournal(docs){const j=$('journal');if(!j)return;j.replaceChildren();let tour=null;
+ // Seule la session en cours se rejoue : les combats d'un autre soir restent dans le passé.
+ if(typeof debutSession==='function')docs=docs.slice(debutSession(docs.map(d=>d.data())));
  docs.forEach(d=>{const rec=d.data();if(!rec||rec.genre==='effet')return;
   if(rec.tour!==tour){tour=rec.tour;const sep=document.createElement('li');sep.className='j-turn';
    const t=document.createElement('span');t.textContent='Tour '+tour;sep.append(t);j.append(sep)}
@@ -619,7 +627,7 @@ async function fermerTable(){if(!estMJ()||!tableId)return;
  for(const col of [siegesRef,journalRef,bannisRef]){if(!col)continue;
   try{let lot;do{lot=await col.limit(200).get();if(!lot.size)break;const b=cloud.batch();lot.forEach(d=>b.delete(d.ref));await b.commit()}while(lot.size===200)}catch(e){}}
  debrancherTable();localStorage.removeItem(TABLE_CLE);liveStatus('Table fermée.')}
-function debrancherTable(){clearInterval(presenceTimer);presenceTimer=null;if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
+function debrancherTable(){document.body.classList.remove('table-attendue');clearInterval(presenceTimer);presenceTimer=null;if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
  if(quitteBannis)quitteBannis();if(quitteMonBan)quitteMonBan();quitteBannis=quitteMonBan=null;bannisRef=null;bannis={};
  quitteSalle=quitteSieges=quitteJournal=null;enLigne=false;poussePret=false;tableId=null;salleRef=siegesRef=journalRef=null;journalVus=new Set();
  modeConnu=ongletConnu=false;ongletVu=null;envoiOnglet=null;donjonConnu=false;donjonVu=null;envoiDonjon=null;brouillardConnu=false;
@@ -832,3 +840,15 @@ if(document.body.classList.contains('page-accueil')&&typeof renderAccueil==='fun
 appliqueVerrou();document.addEventListener('amertume-mj-change',()=>{appliqueVerrou();const s=$('verrou-statut');
  // Le refus ne se dit qu'à qui a demandé la connexion MJ : un joueur qui vient de quitter sa table ne le lit pas.
  if(s)s.textContent=$('verrou-page')&&$('verrou-page').dataset.demande&&typeof adminConnu!=='undefined'&&adminConnu&&auth&&auth.currentUser&&!estMJ()?'Ce compte n’est pas celui du MJ.':''});
+/* ---------- Une version plus récente en ligne ----------
+   Chaque publication écrit son numéro dans « version.json ». La page le relit au chargement, toutes les cinq minutes et en
+   revenant au premier plan : plus récent que le sien, un bandeau le dit, et son bouton recharge la page sur la nouvelle version. */
+function rechargerVersion(v){const u=new URL(location.href);u.searchParams.set('v',v);location.replace(u.toString())}
+function verifieVersion(){if(typeof IMG_V!=='string'||typeof fetch!=='function')return;
+ fetch('./version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(o=>{const v=o&&typeof o.v==='string'?o.v:'';
+  if(!v||!(parseFloat(v)>parseFloat(IMG_V)))return;let b=$('bandeau-version');
+  if(!b){b=document.createElement('div');b.id='bandeau-version';b.className='bandeau-version';b.setAttribute('role','status');
+   const t=document.createElement('span'),r=document.createElement('button');r.type='button';r.textContent='Recharger';b.append(t,r);document.body.append(b)}
+  b.firstChild.textContent='Nouvelle version disponible : v'+v;b.lastChild.onclick=()=>rechargerVersion(v)}).catch(()=>{})}
+setTimeout(verifieVersion,4000);setInterval(verifieVersion,5*60*1000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')verifieVersion()});
