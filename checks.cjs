@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.826 — Un seul talent initial par classe : la Maîtrise du haut du premier arbre, la plus au centre ; les autres perdent la marque. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("else if(!doit&&t.flottant===true&&posDe(t)){delete t.flottant;change=true}"),'un seul talent initial');
 /* v0.825 — À la création, les talents d'une classe dans l'ordre de l'arbre : initial, sa ligne à gauche puis à droite, puis les lignes suivantes. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("if(p.y===r.y)return [p.y,p.x<r.x?1:2,Math.abs(p.x-r.x)];return [p.y,3,p.x]"),'ordre de l’aperçu');
 /* v0.824 — Le talent du haut du premier arbre est tenu d'office quelle que soit sa nature ; l'arbre le rend avant de se dessiner. */
@@ -5243,10 +5245,10 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("+(n>1?' suite':max>1?' p
    arbre, nommé ou non, est le talent de classe. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("const LY=L;")&&!src.includes("n.className='arbre-nom-v2'")&&src.includes("if(n&&col.querySelector('.arbre-rangee-niveau[data-n=\"'+n+'\"]'))return;")
-  &&src.includes("if(col.rang===(colonnesArbre(classe).find(k=>k.liste.length)||{}).rang){"),'l’arbre v2 affiné');}
+  ,'l’arbre v2 affiné');}
 /* v0.806 — La maîtrise de départ du Tronc commun devient talent de classe : tenue d'office, jamais décochée, à côté de l'ancien rond flottant. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("if(haut&&haut.flottant!==true){haut.flottant=true;change=true}")&&src.includes("fls.forEach(fl=>{if(!garde.includes(fl.id))garde.push(fl.id)});"),'la maîtrise de départ tenue d’office');}
+ assert.ok(src.includes("const init=l.filter(t=>posDe(t).y===haut&&t.type==='mait')")&&src.includes("fls.forEach(fl=>{if(!garde.includes(fl.id))garde.push(fl.id)});"),'la maîtrise de départ tenue d’office');}
 /* v0.805 — L'arbre v2 : l'arbre à gauche, le panneau du talent à droite, un drapeau pour revenir à la v1 ; un nom à tiret ne casse
    plus les bulles. */
 {const src=fs.readFileSync('editor.js','utf8');

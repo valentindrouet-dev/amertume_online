@@ -4700,13 +4700,18 @@ function colonneDe(famille,voie){const cols=colonnesArbre(famille);return cols.f
    il porte la classe et la voie de son talent. Vrai si quelque chose a changé. */
 function accordeArbres(){let change=false;
  (catalog.classes||[]).map(c=>c&&c.name).filter(n=>n&&n!==GENERIQUES).forEach(classe=>{
+  /* v0.826 : le talent initial d'une classe est toujours la Maîtrise tout en haut de son premier arbre, la plus au centre : tenu
+     d'office, gratuit, jamais oublié. Lui seul ; tout autre talent de la classe qui portait cette marque la perd, et se paie. */
+  {const col=colonnesArbre(classe).find(k=>k.liste.length);
+   col&&col.liste.forEach(t=>{if(!t.flottant||posDe(t))return;const ps=col.liste.filter(x=>x!==t).map(posDe).filter(Boolean);
+    t.pos=ps.length?{x:Math.round((Math.min(...ps.map(q=>q.x))+Math.max(...ps.map(q=>q.x)))/2),y:Math.min(...ps.map(q=>q.y))-1}:{x:0,y:0};change=true});
+   const l=col?col.liste.filter(t=>!estVide(t)&&posDe(t)):[],haut=l.length?Math.min(...l.map(t=>posDe(t).y)):0;
+   const xs=l.map(t=>posDe(t).x),centre=xs.length?(Math.min(...xs)+Math.max(...xs))/2:0;
+   const init=l.filter(t=>posDe(t).y===haut&&t.type==='mait').sort((x,y)=>Math.abs(posDe(x).x-centre)-Math.abs(posDe(y).x-centre)||posDe(x).x-posDe(y).x)[0]||null;
+   (catalog.talents||[]).forEach(t=>{if(!t||talentFamily(t)!==classe||t.horsArbre)return;const doit=t===init;
+    if(doit&&t.flottant!==true){t.flottant=true;change=true}else if(!doit&&t.flottant===true&&posDe(t)){delete t.flottant;change=true}})}
   colonnesArbre(classe).forEach(col=>{const ids=new Set(col.liste.map(t=>t.id)),posees=[];
    /* Le talent de classe sans case : en haut, au centre de sa colonne, une rangée au-dessus des autres. */
-   /* v0.806 : la maîtrise tout en haut du premier arbre de la classe, nommé ou non, son départ, est le talent de classe :
-      tenue d'office, jamais décochée. */
-   if(col.rang===(colonnesArbre(classe).find(k=>k.liste.length)||{}).rang){const dep=departsDe(col.liste),haut=col.liste.filter(t=>dep.has(t.id)&&!estVide(t)&&posDe(t)).sort((x,y)=>posDe(x).y-posDe(y).y)[0];
-    // v0.824 : quelle que soit sa nature — une Action, comme Coupure chez l'Ombrelame, aussi.
-    if(haut&&haut.flottant!==true){haut.flottant=true;change=true}}
    col.liste.forEach(t=>{if(!t.flottant||posDe(t))return;const ps=col.liste.filter(x=>x!==t).map(posDe).filter(Boolean);
     t.pos=ps.length?{x:Math.round((Math.min(...ps.map(q=>q.x))+Math.max(...ps.map(q=>q.x)))/2),y:Math.min(...ps.map(q=>q.y))-1}:{x:0,y:0};change=true});
    col.liste.forEach(t=>{const l=liensDe(t),bon=[...new Set(l.filter(id=>ids.has(id)&&id!==t.id))].slice(0,LIENS_MAX);
