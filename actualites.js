@@ -1,6 +1,6 @@
 /* Les dernières actualités de la table, pour l'Accueil. Chaque publication s'ajoute d'elle-même en tête de « versions »
    (publie.sh) ; « resume » condense les dix dernières en quelques lignes, tant qu'il va jusqu'à la plus récente. */
-const ACTUALITES={resume:{jusqua:'0.768',lignes:[
+const ACTUALITES={resume:{jusqua:'0.769',lignes:[
  'Accueil : création d’aventurier pas à pas, en couleurs — espèce, classe, 3 points de caractéristique, 3 de compétence, l’équipement de départ, 10d6 Or et un objet inhabituel tiré au hasard.',
  'Aventuriers : le MJ coche ceux qui partent à l’aventure ; eux seuls entrent sur la carte et gagnent XP et butin.',
  'Accueil : les dernières actualités, tous les aventuriers et où ils se trouvent, et bientôt les hauts faits.',
@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.768',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.769","d":"2026-10-15","t":"Hors combat, les PV suivent les PV max"},
 {"v":"0.768","d":"2026-10-15","t":"Sas des comptes, aventuriers protégés, build verrouillé"},
 {"v":"0.767","d":"2026-10-15","t":"Le journal s'arrête au bas de la carte"},
 {"v":"0.766","d":"2026-10-15","t":"Zoom gardé, exploration gardée par la table, ping, carte agrandie"},

@@ -886,6 +886,10 @@ function recalculerPV(a){if(!a||!a.hero)return false;
  const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;a.pvBonus=bonusPV(catalog.classes,a.role,a.race);
  const delta=aura-(Number(a.auraPv)||0);a.auraPv=aura;
  if(max===a.max&&!delta)return false;
+ /* Hors combat, les PV du moment suivent le plafond : ce qu'un équipement, l'Endu ou un nœud ajoute ou retire aux PV max, ils le
+    gagnent ou le perdent — 22/22, un habit à +8 PV, et c'est 30/30. Jamais sous 1 PV. En combat, ils ne bougent pas. */
+ {const avant=Number(a.max)||0,decale=(max-aura)-(avant-(aura-delta));
+  if(decale&&avant>0&&a.hp>0&&!(typeof estMort==='function'&&estMort(a))&&!aventurierEnCombat(a))a.hp=Math.max(1,Math.min(max,(Number(a.hp)||0)+decale))}
  writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}
 // À chaque rendu de qui tient la partie, quelle que soit sa vue, les PV max de la troupe se relisent : un nœud appris, un Meneur qui s'approche.
 /* Les pièces forgées d'abord : le catalogue chargé, ou reçu publié, arrive sans elles. Relu avant elles, le PV max d'un
