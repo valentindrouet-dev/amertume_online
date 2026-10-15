@@ -3943,10 +3943,14 @@ function tirePieceDepart(role,tirage=Math.random){const bases=(catalog.items||[]
 /* Les premiers talents d'une classe, pour la choisir en connaissance de cause : dans chaque arbre, de haut en bas, ni
    amélioration ni bonus, rien de ce que le MJ cache aux joueurs ; les arbres pris tour à tour, six au plus. */
 const TALENTS_APERCU=6;
+/* v0.825 : dans l'ordre de l'arbre — le talent initial, puis ceux de sa ligne à sa gauche, puis à sa droite, du plus proche au plus
+   loin ; puis chaque ligne suivante, de gauche à droite. Le premier arbre d'abord, les autres ensuite. */
 function talentsApercuClasse(classe){if(!classe||typeof colonnesArbre!=='function')return [];
- const cols=colonnesArbre(classe).map(c=>{const caches=talentsCaches(c.liste);return c.liste.filter(t=>!estBonus(t)&&t.type!=='ame'&&!caches.has(t.id))});
- const out=[];for(let k=0;out.length<TALENTS_APERCU&&cols.some(l=>l.length>k);k++)cols.forEach(l=>{if(l[k]&&out.length<TALENTS_APERCU)out.push(l[k])});
- return out}
+ const cols=colonnesArbre(classe).map(c=>{const caches=talentsCaches(c.liste);return c.liste.filter(t=>!estBonus(t)&&t.type!=='ame'&&!caches.has(t.id)&&!estVide(t)&&posDe(t))}).filter(l=>l.length);
+ const out=[];cols.forEach(l=>{const dep=departsDe(l),racine=l.find(t=>t.flottant===true)||l.filter(t=>dep.has(t.id)).sort((x,y)=>posDe(x).y-posDe(y).y)[0]||l[0];
+  const r=posDe(racine),cle=t=>{const p=posDe(t);if(t===racine)return [p.y,0,0];if(p.y===r.y)return [p.y,p.x<r.x?1:2,Math.abs(p.x-r.x)];return [p.y,3,p.x]};
+  [...l].sort((x,y)=>{const a=cle(x),b=cle(y);return a[0]-b[0]||a[1]-b[1]||a[2]-b[2]}).forEach(t=>out.push(t))});
+ return out.slice(0,TALENTS_APERCU)}
 const creationDialog=dialog('creation-aventurier','Créer un aventurier','<nav id="creation-etapes" class="creation-etapes"></nav><div id="creation-corps" class="creation-corps"></div><div class="form-actions"><button type="button" id="creation-prec">Précédent</button><button type="button" id="creation-suiv" class="primary">Suivant</button></div>');
 let creation=null;
 /* Un compte joueur crée un seul aventurier : des Éclats d'Âme en ouvriront d'autres. Le MJ n'a pas de limite. */

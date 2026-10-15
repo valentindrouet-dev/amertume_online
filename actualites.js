@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.825","d":"2026-10-15","t":"Création : talents dans l'ordre de l'arbre"},
 {"v":"0.824","d":"2026-10-15","t":"Talent initial toujours tenu"},
 {"v":"0.823","d":"2026-10-15","t":"Panneau aux couleurs des bulles"},
 {"v":"0.822","d":"2026-10-15","t":"Talent d'une autre classe : copié"},

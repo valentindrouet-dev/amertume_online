@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.825 — À la création, les talents d'une classe dans l'ordre de l'arbre : initial, sa ligne à gauche puis à droite, puis les lignes suivantes. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("if(p.y===r.y)return [p.y,p.x<r.x?1:2,Math.abs(p.x-r.x)];return [p.y,3,p.x]"),'ordre de l’aperçu');
 /* v0.824 — Le talent du haut du premier arbre est tenu d'office quelle que soit sa nature ; l'arbre le rend avant de se dessiner. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("if(a&&typeof accordeFlottants==='function'&&accordeFlottants())scheduleSave();"),'talent initial tenu d’office');
 /* v0.823 — Les cartes prises du panneau ont les couleurs des bulles de talent. */
