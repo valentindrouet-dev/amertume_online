@@ -2917,7 +2917,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual([1,2,3].map(n=>C.ditEtatOrbe(C.etatOrbeAuPalier(O(n)))),['Feu sur 6+','Feu à la touche','Feu 2 à la touche']);
  assert.ok(page.includes("const k=pouvoir?crans(pouvoir.six?orbesAvecSix():pouvoir.blesse?orbesTouchant():n):0;")
   &&page.includes("else if(issue===true){if(k>1)ajouteEtat(b,e,k-1);pose=' + '+e+(k>1?' '+k:'')}}"),'la table pose l’état selon le palier, un cran par orbe du Déluge');
- assert.ok(src.includes("function ajouterDansArbre(dest){")&&src.includes("if(f!==dest.famille&&!t.horsArbre)videDeLArbre(t);")
+ assert.ok(src.includes("function ajouterDansArbre(dest){")&&src.includes("const copie=f!==dest.famille&&!estBonus(t)?copieTalentPourArbre(t,dest.famille):null;")
   &&src.includes("ajouterDansArbre({famille:col.famille,voie:col.voie,pos:{x:pl.x,y:pl.y},de:")&&fs.readFileSync('editor.css','utf8').includes('.arbre-choix-liste{'),'les « + » de l’arbre prennent aussi un talent existant');}
 /* v0.298 — Meneur câblé sur ses textes : l'allié le plus proche, où qu'il soit, d'un nombre
    fixe ou du bonus propre du porteur ; tous les alliés au contact. Les accolades se lisent
@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.822 — Un talent d'une autre classe se copie dans l'arbre, avec ses améliorations et ses bonus, sans quitter le sien. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("function copieTalentPourArbre(t,famille){")&&!fs.readFileSync('editor.js','utf8').includes("il le quitte pour celui de"),'copier, pas déplacer');
 /* v0.821 — Arbre v2 : les bonus et améliorations, sans petits ronds, ne bloquent plus ni les places d'à côté ni les lignes en diagonale. */
 {const src=fs.readFileSync('editor.js','utf8');assert.ok(src.includes("if(['e','s','o'].includes(d)&&!ch[d].lien&&(V2||d==='s'||!ch[d].petits.length)){")&&src.includes("const gene=(t,k)=>!(typeof ARBRE_V2!=='undefined'&&ARBRE_V2)&&"),'places et diagonales libres');}
 /* v0.820 — La fenêtre de l'arbre moitié plus haute. */

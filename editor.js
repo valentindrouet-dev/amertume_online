@@ -5078,13 +5078,19 @@ function dessineChoixArbre(){const dest=choixArbreDest,boite=$('arbre-choix-list
   b.onclick=()=>prendreDansArbre(t);grille.append(b)});
  if(!libres.length&&(q||!petit)){const v=document.createElement('p');v.className='muted';v.textContent=q?'Aucun talent de ce nom.':'Tous les talents du catalogue sont déjà dans cet arbre.';boite.append(v)}}
 $('arbre-choix-filtre').oninput=dessineChoixArbre;
+/* v0.822 : un talent d'une autre classe, ou générique, ne quitte pas son arbre : il est copié dans celui-ci, sous un identifiant
+   à lui, avec ses améliorations et ses bonus ; l'original reste où il était, chez ceux qui le tiennent. Plusieurs arbres
+   peuvent ainsi partager un même talent. Un talent de la même classe, lui, se déplace comme avant. */
+function copieTalentPourArbre(t,famille){const neuf=x=>{const c=JSON.parse(JSON.stringify(x));c.id=crypto.randomUUID();
+  ['pos','liens','niveaux','chemin','flottant','horsArbre','branche'].forEach(k=>delete c[k]);c.prerequis='';return c};
+ const c=neuf(t);c.famille=famille;c.voie='';catalog.talents.push(c);
+ tousTalents().filter(p=>{const k=lisChemin(p);return k&&k.de===t.id&&!estVide(p)}).forEach(p=>{const q=neuf(p);q.chemin={...lisChemin(p),de:c.id};if(!estBonus(q))q.famille=famille;catalog.talents.push(q)});
+ return c}
 async function prendreDansArbre(t){const dest=choixArbreDest;if(!t||!dest)return;const f=talentFamily(t),nom=nomEnClair(t.name);
- if(f!==dest.famille&&aUnArbre(f)&&!t.horsArbre&&typeof demander==='function'
-  &&!await demander('« '+nom+' » est dans l’arbre de '+f+' : il le quitte pour celui de '+dest.famille+'.','Déplacer'))return;
  choixArbreDialog.close();
- if(f!==dest.famille&&!t.horsArbre)videDeLArbre(t);
- if(!placerTalent(t.id,dest))return;
- arbreChange();noteArbres('« '+nom+' » rejoint l’arbre de '+dest.famille+'.')}
+ const copie=f!==dest.famille&&!estBonus(t)?copieTalentPourArbre(t,dest.famille):null;
+ if(!placerTalent((copie||t).id,dest)){if(copie)catalog.talents=catalog.talents.filter(x=>x!==copie&&!(lisChemin(x)&&lisChemin(x).de===copie.id));return}
+ arbreChange();noteArbres('« '+nom+' » '+(copie?'est copié dans':'rejoint')+' l’arbre de '+dest.famille+'.')}
 /* ---------- L'élément du Mystique ---------- */
 const VERROU_ELEMENT='l’élément du Mystique';
 let elementApercu='feu';

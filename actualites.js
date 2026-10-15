@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.822","d":"2026-10-15","t":"Talent d'une autre classe : copié"},
 {"v":"0.821","d":"2026-10-15","t":"Éditeur : places et diagonales débloquées"},
 {"v":"0.820","d":"2026-10-15","t":"Arbre moitié plus haut"},
 {"v":"0.819","d":"2026-10-15","t":"Panneau : gris tant que non pris"},
