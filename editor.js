@@ -5420,7 +5420,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      centre, un second, d'une chaîne d'avant, 0,29 plus loin, dans toutes les directions. On lit à qui
      ils sont, et un talent voisin garde de l'air. */
   /* v0.789 : en bas à gauche et à droite, les améliorations remontent le long de leur lien jusqu'à chevaucher un peu leur talent. */
-  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=(d==='so'||d==='se'?.27:d==='s'?.36:.43)+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
+  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=(d==='so'||d==='se'?.34:d==='s'?.43:.5)+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
   const petits=[];c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
    Object.keys(DIRS).forEach(d=>{if(ch[d].lien&&d!=='s')return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
   /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
@@ -5468,10 +5468,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if(el){const w=document.createElement('div');w.className='arbre-flottant';el.classList.add('flottant-rond');w.append(el);
     /* Ses trois améliorations, comme sous un talent de l'arbre : en bas à gauche et à droite, et dessous, un peu plus bas, chacune
        chevauchant un peu son rond ; chez le MJ, leurs places vides. */
-    if(fl)[['so',-35,35],['s',0,62],['se',35,35]].forEach(([dir,dx,dy])=>{const ps=petitsDe(fl,dir),s0=ps[0];let pe=null;
+    if(fl)[['so',-45,45],['s',0,76],['se',45,45]].forEach(([dir,dx,dy])=>{const ps=petitsDe(fl,dir),s0=ps[0];let pe=null;
      if(s0)pe=estVide(s0)?noeudVide(s0,c,true):noeudPetit(s0,fl,c,false);
      else if(mj)pe=placePetit(c,{de:fl,dir,rang:1});
-     if(!pe)return;pe.classList.add('flottant-petit');pe.style.left=(38+dx)+'px';pe.style.top=(38+dy)+'px';w.append(pe)});
+     if(!pe)return;pe.classList.add('flottant-petit');pe.style.left=(51.5+dx)+'px';pe.style.top=(51.5+dy)+'px';w.append(pe)});
     col.append(w);requestAnimationFrame(()=>{w.style.top=(plan.offsetTop+46)+'px'})}}
   return col};
  /* Les colonnes : les deux de la classe, ni plus ni moins. Les génériques ont leur propre

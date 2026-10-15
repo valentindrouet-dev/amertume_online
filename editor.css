@@ -1226,7 +1226,7 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
    cases : le MJ clique une ligne pour l'effacer. */
 .arbre-col{position:relative;min-width:250px;max-width:none;flex:0 0 auto}
 /* Le gros rond flottant : dans le coin supérieur gauche du premier arbre de la classe. */
-.arbre-col>.arbre-flottant{position:absolute;left:18px;top:60px;width:76px;height:76px;z-index:3}.arbre-flottant>.flottant-rond{width:auto;padding:0}.arbre-flottant>.flottant-rond .arbre-rond{width:76px;height:76px}.arbre-flottant>.arbre-place.flottant-rond{width:76px;height:76px;margin:0;opacity:.85}.arbre-flottant>.flottant-rond .arbre-cout{display:none}.arbre-flottant>.flottant-rond .arbre-rond::after{display:none}
+.arbre-col>.arbre-flottant{position:absolute;left:18px;top:60px;width:103px;height:103px;z-index:3}.arbre-flottant>.flottant-rond{width:auto;padding:0}.arbre-flottant>.flottant-rond .arbre-rond{width:103px;height:103px}.arbre-flottant>.arbre-place.flottant-rond{width:103px;height:103px;margin:0;opacity:.85}.arbre-flottant>.flottant-rond .arbre-cout{display:none}.arbre-flottant>.flottant-rond .arbre-rond::after{display:none}
 .arbre-flottant>.flottant-petit{position:absolute;width:auto;padding:0;margin:0;transform:translate(-50%,-50%);z-index:2}.arbre-flottant>.arbre-petit-place.flottant-petit{width:40px;height:40px;box-sizing:border-box;display:grid;place-items:center;font:600 18px/1 system-ui}
 .arbre-chemins{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:0}
 .arbre-grille{--case-l:74px;--case-h:88px;position:relative;z-index:1;display:grid;column-gap:30px;row-gap:30px;justify-content:center;padding:4px 14px;pointer-events:none}
@@ -2074,10 +2074,11 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
 .des-combattant{flex-shrink:0}
 
 /* Le sphérier à la taille de l'onglet Talents : les talents à 69 px, les petits ronds d'autant plus gros. */
-.arbre-plan>.arbre-noeud:not(.petit) .arbre-rond{width:69px;height:69px}
+/* v0.794 : les gros ronds de talents grandissent d'un tiers et un peu plus ; les petits ronds gardent leur taille. */
+.arbre-plan>.arbre-noeud:not(.petit) .arbre-rond{width:93px;height:93px}
 .arbre-plan>.arbre-noeud:not(.petit) .arbre-rond img{width:66%;height:66%}
 .arbre-plan>.arbre-noeud.petit .arbre-rond{width:40px;height:40px}
-.arbre-plan>.arbre-place{width:69px;height:69px;font-size:28px}
+.arbre-plan>.arbre-place{width:93px;height:93px;font-size:32px}
 .arbre-plan>.arbre-petit-place{width:40px;height:40px;font-size:18px}
 /* Chez un aventurier : un talent qu'il n'a pas pris est un peu transparent, cerclé de pointillés ; pris,
    il est plein, d'un seul trait de contour, comme tout talent. */
