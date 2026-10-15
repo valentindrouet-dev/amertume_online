@@ -5566,13 +5566,18 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const corpsT=bulleNoeud(t,'','');corpsT.classList.add('detail-corps');
   /* Les points d'Action ou de Mouvement qu'il coûte : à gauche de son nom, comme dans les bulles ; la ligne de nom de la bulle s'en va. */
   {const tb=corpsT.querySelector('.talent-bulle-nom');if(tb){const pts=tb.querySelector('.cout-points');if(pts)nom.append(pts);tb.remove()}}
-  {const sp=document.createElement('span');nomAccolades(sp,tv.name);nom.append(sp)}
+  {const sp=document.createElement('span');nomAccolades(sp,tv.name);nom.append(sp);
+   // Un nom long rapetisse plutôt que de passer à la ligne.
+   const L=String(sp.textContent||'').length;if(L>11)nom.style.fontSize=(L>18?20:L>14?22:24)+'px'}
   droite.append(corpsT);tete.append(rond,droite);tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474');panneau.append(tete);
   const el=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]'),acquis=porte(t),verrou=!!el&&el.classList.contains('verrou');
   /* Le talent lui-même s'apprend d'un clic sur sa tête, et se rend d'un autre clic ; son prix à droite de son nom. Le talent
      de classe, tenu d'office, ne se rend pas. */
+  if(!a&&mj){tete.classList.add('editable');tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>openTalent(catalog.talents.indexOf(t),renderArbres);
+   tete.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tete.click()}}}
   if(a&&t.flottant!==true){const prix=coutPalier(t,1),dispoT=xpDisponible(a,catalog.talents);
-   if(prix&&!acquis){const pr=document.createElement('span');pr.className='detail-prix';pr.textContent=prix+' XP';ligneNom.append(pr)}
+   // Le prix sous le grand rond : le nom garde toute sa ligne, et le cartouche ne sort jamais du cadre.
+   if(prix&&!acquis){const pr=document.createElement('span');pr.className='detail-prix detail-prix-rond';pr.textContent=prix+' XP';rond.after(pr);const pile=document.createElement('span');pile.className='detail-gauche';pr.before(pile);pile.append(rond,pr)}
    const ok=acquis||(!verrou&&!!el&&prix<=dispoT);tete.classList.add('cliquable',acquis?'acquise':ok?'achetable':'fermee');
    if(ok&&el&&el.agir){tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>el.agir();
     tete.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tete.click()}}}}
@@ -5594,7 +5599,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      c.className='detail-amelioration'+(bonus?' detail-bonus':'')+(k>=n?' acquise':'')+(suivante?' achetable':'')+(n>1?' suite':max>1?' premier':'');
      const l=document.createElement('p');l.className='detail-am-nom';const b=document.createElement('b');
      if(bonus){const xp=talentAuPalier(x,n);b.append(libelleBonusEl(paramsTalent(xp),{talent:xp}))}
-     else{nomAccolades(b,xv.name);if(max>1)b.append(' '+CHIFFRES_PALIER[n])}
+     else{nomAccolades(b,xv.name);if(max>1)b.append(' '+CHIFFRES_PALIER[n]);
+      // Un nom long rapetisse, pour tenir sur sa ligne à côté de son prix.
+      const L=String(b.textContent||'').length;if(L>18)b.style.fontSize=(L>26?14:L>22?15.5:16.5)+'px'}
      l.append(b);
      if(prix){const pr=document.createElement('span');pr.className='detail-prix';pr.textContent=prix+' XP';l.append(pr)}
      if(mj&&n===1){const x2=document.createElement('button');x2.type='button';x2.className='detail-oter';x2.textContent='✕';x2.setAttribute('aria-label','Ôter');
