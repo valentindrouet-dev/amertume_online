@@ -2772,7 +2772,6 @@ body.site-verrouille>main:not(#verrou-page),body.site-verrouille nav.tabs,body.s
 .arbres-v2 .arbre-plan>.arbre-noeud.dispo .arbre-rond{border-style:dashed;border-width:3px}
 .arbres-v2 .arbre-plan>.arbre-noeud.verrou .arbre-rond{filter:grayscale(.55);opacity:.82;border-style:dashed}
 .arbres-v2 .arbre-plan>.arbre-noeud.verrou:not(.petit) .arbre-rond::after{content:'🔒';position:absolute;top:2px;right:2px;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#6f675c;color:#fff;font:12px/1 system-ui;border:2px solid var(--panel);filter:grayscale(1)}
-.arbres-v2 .arbre-plan>.arbre-noeud.acquis:not(.petit):not(.talent-classe) .arbre-rond::after{display:block;content:'✓';position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:50%;background:#3f8a4f;color:#fff;font:700 14px/24px system-ui;text-align:center;border:2px solid var(--panel)}
 .arbres-v2 .arbre-plan>.arbre-noeud.choisi:not(.petit) .arbre-rond{box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px #c99a3c,0 0 0 6px var(--panel),0 0 0 7.5px #c99a3c,0 0 18px 6px #f2c14e55}
 /* Le nom sous le rond : centré, deux lignes au plus, sur un fond qui cache le trait qui passe dessous. */
 .arbres-v2 .arbre-plan>.arbre-noeud>.arbre-nom-v2{position:absolute;left:50%;top:calc(50% + var(--nom-y,54px));transform:translateX(-50%);width:150px;text-align:center;pointer-events:none;z-index:2;
@@ -2802,3 +2801,25 @@ body.site-verrouille>main:not(#verrou-page),body.site-verrouille nav.tabs,body.s
 body.sombre .arbres-v2 .arbres-detail{background:var(--panel);border-color:var(--line)}
 /* Une fenêtre étroite : le panneau passe sous l'arbre. */
 @media (max-width:1100px){.arbres-v2{grid-template-columns:1fr}.arbres-v2 .arbres-detail{position:static}}
+/* ---------- Arbre v2, troisième passe (v0.808) ---------- */
+/* La fenêtre se serre sur l'arbre et le panneau : son bord gauche suit le talent le plus à gauche. */
+#arbres.v2{width:fit-content;max-width:calc(100vw - 24px)}
+.arbres-v2{grid-template-columns:auto minmax(380px,440px)}
+.arbres-v2 .arbres-cols{justify-content:flex-start}
+.arbres-v2 .arbre-col{flex:0 0 auto}
+/* Les chiffres de l'aventurier, dans la tête, à côté du nom de la classe ; la tête du corps, vide, s'efface. */
+#arbres.v2.du-heros .dialog-head>.arbres-classe{margin:0}
+#arbres.v2 .dialog-head>.arbres-chiffres{width:auto;margin:0 auto 0 6px;padding:4px 10px}
+#arbres.v2 .arbres-tete.v2:empty{display:none}
+/* Le bandeau du premier arbre porte la barre d'XP à la place de son nom. */
+.arbres-v2 .arbre-col>.arbre-titre.a-xp{padding:10px 18px 18px}
+.arbres-v2 .arbre-titre.a-xp .arbre-voie{display:block}
+.arbres-v2 .arbre-titre.a-xp .arbres-pt{width:min(380px,100%);margin:0 auto}
+.arbres-v2 .arbre-titre.a-xp .lifebar{height:20px;border:1px solid #0003}
+/* Le panneau : le nom et la description à droite du grand rond. */
+.arbres-v2 .arbres-detail .detail-tete{align-items:flex-start}
+.arbres-v2 .arbres-detail .detail-droite{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding-top:6px}
+.arbres-v2 .arbres-detail .detail-droite h3{font-size:28px}
+/* La prochaine amélioration à prendre : un clic l'achète. */
+.arbres-v2 .arbres-detail .detail-amelioration.achetable{cursor:pointer;opacity:1;border-left-color:#c99a3c;background:#fffaf0}
+.arbres-v2 .arbres-detail .detail-amelioration.achetable:is(:hover,:focus-visible){border-color:#c99a3c;box-shadow:0 0 0 2px #f2c14e55}

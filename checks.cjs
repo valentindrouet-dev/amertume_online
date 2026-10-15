@@ -1540,7 +1540,7 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
  &&src.includes("{famille:talentFamily(t),voie:t.voie||'',de:t.id,level:Math.min(20,(t.level||1)+1)})));")
  &&src.includes("if(!avant&&talentDefauts&&talentDefauts.de){const de=talent(talentDefauts.de);")
  &&!src.includes('+ Spécialisation')&&!src.includes('arbre-col nouvelle')
- &&src.includes(" (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
+ &&src.includes(" (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)&&!(V2&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
  &&!src.includes("grille.append(colonne(colonneArbre(GENERIQUES,GENERIQUES,")
  &&src.includes("const oublier=(t,liste)=>{")&&src.includes("const chute=[t,...(liste?chuteArbre(avant,liste,t):[])].filter(x=>x.flottant!==true);")
  &&!feuille.includes('arbre-entre')&&!feuille.includes('arbre-enfants')&&!feuille.includes('arbre-etage')
@@ -2818,7 +2818,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
  assert.ok(src.includes("function choixElement(a,classe,rendre){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
   &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n)")
-  &&src.includes(".filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
+  &&src.includes(".filter(c=>!(a&&elementaire&&!c.liste.length)&&!(V2&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
   &&!src.includes("name=\"elementaire\""),'l’arbre et la fiche suivent l’élément ; plus de case Élémentaire dans l’éditeur (v0.788)');
  assert.ok(src.includes(".filter(r=>ELEMENTS.every(e=>LOGOS_TOUS.includes(r+'_'+e.logo))).map(r=>r+'_{logo}');")&&page.includes("const teinte=etat||(elementDe(a)||{}).etat||'';"),'le logo et l’orbe suivent l’élément ; les dés restent les leurs');
  /* v0.301 : sur la carte d'un aventurier, ses gemmes en ligne, sans tableau ni valeur en or. */
@@ -3086,7 +3086,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   &&fs.readFileSync('domaine.js','utf8').includes(" if(inventairePlein(a,o)||uniqueAilleurs(o,a))return;ajouteOr(a,-p.prix);")&&feuille.includes('.gear-detail .gear-def .ecu{width:auto;height:22px;'),'bulles sans texte, munitions comptées, 99 au plus');
  /* v0.484 — « XP visible » au MJ seul ; plus d'XP au survol d'un rond ; le cartouche d'XP de la bulle en rouge
    quand l'aventurier n'a pas de quoi payer. */
- assert.ok(src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a);poseXpVisible();")&&src.includes("arbresDialog.classList.toggle('xp-visible',xpVisible&&view==='mj');")
+ assert.ok(src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();")&&src.includes("arbresDialog.classList.toggle('xp-visible',xpVisible&&view==='mj');")
   &&!feuille.includes('.arbre-plan>.arbre-noeud:hover>.arbre-cout')&&feuille.includes('.talent-bulle-nom .cout-xp.trop-cher{'),'XP de l’arbre : MJ seul, sans survol, rouge si trop cher');
  /* v0.483 — Bulle d'une pièce : dés ou DEF au-dessus de l'or, puis la description du MJ, rien d'automatique.
    La Vie et les PV sous leur maximum, légèrement rouges. */
@@ -5192,6 +5192,11 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.808 — Arbre v2 : le clic choisit, le panneau apprend ; les améliorations s'achètent dans le panneau, sans petits ronds ; ni coches,
+   ni bouton XP visible ; la barre d'XP dans le bandeau ; les chiffres à côté de la classe. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("if(V2){montreDetail(t);return}")&&src.includes("ch[d].petits.forEach(s=>{if(V2&&!estBonus(s))return;")&&src.includes("arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;")
+  &&src.includes("c.onclick=()=>{if(n===1)a.talents=[...a.talents,x.id];else poserPalier(x,n);note('');majTable()};")&&src.includes("nomVoie.replaceChildren(barreXp)"),'l’arbre v2, troisième passe');}
 /* v0.807 — Arbre v2 affiné : noms sous les ronds, rangées plus hautes, un seul repère par palier ; la maîtrise de départ du premier
    arbre, nommé ou non, est le talent de classe. */
 {const src=fs.readFileSync('editor.js','utf8');

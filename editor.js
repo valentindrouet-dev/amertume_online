@@ -5176,7 +5176,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // L'arbre v2, celui d'un aventurier : noms sous les ronds, rangées plus hautes, panneau à droite.
  const V2=ARBRE_V2&&!!a;
  arbresVue.hidden=view!=='mj'||!!a||arbresEnMasse;arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
- arbresMasse.hidden=view!=='mj'||!!a;arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a);poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
+ arbresMasse.hidden=view!=='mj'||!!a;arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
  if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}}
  else if(view!=='mj'){arbresDialog.close();return}
  // Chez le MJ, l'arbre s'accorde avant de se dessiner : chaque talent a sa case, chaque ligne son but.
@@ -5236,7 +5236,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const note=noteArbres;
  // Sans combattant, nul ne porte rien : l'arbre se lit comme un plan, et se corrige.
  const porte=t=>!!a&&a.talents.includes(t.id);
- let montreDetail=()=>{};
+ let montreDetail=()=>{},barreXp=null;
  /* Le choix d'un joueur part à la table comme le reste de sa fiche : les talents voyagent
     avec les champs vivants — le rendu les pousse — et le MJ les voit sans republier. */
  const majTable=()=>{renderArbres();renderHeroes();render();scheduleSave()};
@@ -5327,7 +5327,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    b.append(outils)}
   // Son prix en XP, en cartouche au bas du rond : dans l'arbre seulement.
   {const n=etat==='acquis'&&a?palierDe(a,t)+1:1;if(n<=max&&coutPalier(t,n)){const c=document.createElement('span');c.className='arbre-cout';c.textContent=coutPalier(t,n)+' XP';b.append(c)}}
-  surveille(b,()=>{if(ARBRE_V2&&a&&!b.classList.contains('petit')&&b.closest('.arbres-v2')){montreDetail(t);return}
+  surveille(b,()=>{if(ARBRE_V2&&a&&!b.classList.contains('petit')&&b.closest('.arbres-v2'))return;
    const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
   return b};
  // La tête : la classe, l'élément du Mystique, ce que l'arbre a coûté.
@@ -5351,9 +5351,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  if(a){const dispo=xpDisponible(a,catalog.talents),total=Math.max(0,Math.trunc(Number(a.xp))||0),s=document.createElement('div');s.className='arbres-pt';
   // La jauge se remplit de ce qui est payé : 100 XP dépensées sur 1000 gagnées, « 100 / 1000 XP ».
   const paye=Math.max(0,total-dispo),pct=total?Math.max(0,Math.min(100,Math.round(paye/total*100))):0,texte=paye+' / '+total+' XP';
-  s.innerHTML='<span class="lifebar xp"><span class="lifebar-fill" style="width:'+pct+'%"></span><span class="lifebar-text">'+esc(texte)+'</span></span>';tete.append(s)}
+  s.innerHTML='<span class="lifebar xp"><span class="lifebar-fill" style="width:'+pct+'%"></span><span class="lifebar-text">'+esc(texte)+'</span></span>';if(V2)barreXp=s;else tete.append(s)}
  if(!classe){const v=document.createElement('p');v.className='muted';v.textContent='Donne une classe à '+a.name+' pour lui ouvrir un arbre.';tete.append(v)}
  tete.classList.toggle('v2',V2);corps.append(tete);
+ // v2 : les chiffres de l'aventurier dans la tête de la fenêtre, à côté du nom de la classe.
+ {const h=arbresDialog.querySelector('.dialog-head');h.querySelectorAll(':scope>.arbres-chiffres').forEach(x=>x.remove());
+  const ch=V2&&tete.querySelector('.arbres-chiffres');if(ch)h.querySelector('.arbres-classe').after(ch)}
  /* Un nœud de l'arbre, et ce qu'il attend : une ligne depuis un talent tenu, sauf s'il n'en a aucune
     qui mène à lui ; et partout, ce que son effet réclame. Le tronc libre n'enchaîne rien. Sans
     porteur, le clic ouvre le talent : c'est le plan qu'on corrige. */
@@ -5365,15 +5368,19 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(mj&&lienDepuis===t.id)el.classList.add('relie-source');if(t.flottant===true)el.classList.add('talent-classe');
   /* v2 : son vrai nom sous le rond, deux lignes au plus, sous les améliorations du bas s'il en porte. */
   if(V2){const n=document.createElement('span');n.className='arbre-nom-v2';nomAccolades(n,vu(t).name);
-   const bas=petitsDe(t,'s').length?94:(petitsDe(t,'so').length||petitsDe(t,'se').length)?72:54;el.style.setProperty('--nom-y',bas+'px');el.append(n);
+   const bonusBas=d=>petitsDe(t,d).some(estBonus),bas=bonusBas('s')?94:(bonusBas('so')||bonusBas('se'))?72:54;el.style.setProperty('--nom-y',bas+'px');el.append(n);
    if(t.id===arbreDetailId)el.classList.add('choisi')}
+  const agir=()=>{if(t.flottant===true||verrou||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
+   // Un clic l'active ; tenu, un clic le désactive — et ce qu'on n'atteignait que par lui.
+   if(acquis)oublier(t,libre?null:col.liste);else a.talents=[...a.talents,t.id];
+   note('');majTable()};el.agir=agir;
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
    if(a)arbreDetailId=t.id;
    if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
-   if(t.flottant===true||verrou||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
-   // Un clic l'active ; tenu, un clic le désactive — et ce qu'on n'atteignait que par lui.
-   if(acquis)oublier(t,libre?null:col.liste);else a.talents=[...a.talents,t.id];
-   note('');majTable()};
+   // v2 : le clic choisit le talent, le panneau l'apprend ; le clic droit rend un talent tenu.
+   if(V2){montreDetail(t);return}
+   agir()};
+  if(V2&&a)el.oncontextmenu=e=>{e.preventDefault();if(acquis)agir()};
   glissable(el,t);cible(el,{famille:col.famille,voie:col.voie,pos:posDe(t),soi:t.id});
   return el};
  /* Un bonus posé sur une ligne : petit, au milieu du trait. Activable dès que le talent d'où part
@@ -5443,6 +5450,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   // Chez un aventurier, le bandeau de la colonne se passe de son nom.
   const nomVoie=document.createElement('span');nomVoie.className='arbre-voie';nomVoie.textContent=a&&!V2?'':c.titre;h.append(nomVoie);if(a&&!V2)h.classList.add('sans-nom');
   if(!c.liste.length)col.classList.add('sans-talent');
+  if(V2&&c.rang===premierRang&&barreXp){nomVoie.replaceChildren(barreXp);h.classList.add('a-xp')}
   cible(h,{famille:c.famille,voie:c.voie});
   /* Le nom d'une colonne se corrige là où il se lit, nommée ou non : c'est ainsi qu'on
      baptise une spécialisation, et le ✕ lui reprend son nom — ses talents reviennent au
@@ -5472,7 +5480,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   /* v0.789 : en bas à gauche et à droite, les améliorations remontent le long de leur lien jusqu'à chevaucher un peu leur talent. */
   const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=(d==='so'||d==='se'?.34:d==='s'?.35:.5)+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
   const petits=[];c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
-   Object.keys(DIRS).forEach(d=>{if(ch[d].lien&&!['so','s','se'].includes(d))return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
+   Object.keys(DIRS).forEach(d=>{if(ch[d].lien&&!['so','s','se'].includes(d))return;ch[d].petits.forEach(s=>{if(V2&&!estBonus(s))return;const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
   /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
      talent — jamais au-dessus : l'arbre part d'un talent tout en haut et descend ; sur chaque chemin
      sans ligne, la place du petit rond suivant, sauf droit au-dessus du talent de départ, où descend
@@ -5511,7 +5519,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   petits.forEach(s=>{const el=estVide(s.t)?noeudVide(s.t,c,true):noeudPetit(s.t,s.de,c,libre);pose(el,s.x,s.y,s.de);marque(el,s);plan.append(el)});
   places.forEach(pl=>{const el=pl.genre==='gros'?place(c,pl):placePetit(c,pl);pose(el,pl.x,pl.y,pl.genre==='gros'?null:pl.de);plan.append(el)});
   /* v2 : là où commence chaque niveau de l'arbre, un trait pointillé en travers et « Niveau n » à gauche. */
-  if(ARBRE_V2&&a){const req=niveauxRequis(classe),hauts=new Map();
+  if(false){const req=niveauxRequis(classe),hauts=new Map();
    c.liste.forEach(t=>{const n=req.get(t.id)||1,p=cases.get(t.id);if(n>1&&p&&!sous(p)&&(!hauts.has(n)||p.y<hauts.get(n)))hauts.set(n,p.y)});
    hauts.forEach((y,n)=>{const r=document.createElement('div');r.className='arbre-rangee-niveau';r.dataset.n=String(n);r.style.top=((y-y0+.5)*LY-62).toFixed(1)+'px';
     const l=document.createElement('span');l.textContent='Niveau '+n;r.append(l);plan.append(r)})}
@@ -5523,30 +5531,44 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  /* v2 : le panneau du talent regardé — son rond en grand, son nom, sa bulle ; ses améliorations, palier par palier, leur
     prix ; le bouton qui l'apprend, au prix de son premier palier, et l'XP qui restera. */
  const remplitDetail=(panneau,t)=>{arbreDetailId=t.id;panneau.replaceChildren();
-  corps.querySelectorAll('.arbre-plan>.arbre-noeud.choisi').forEach(x=>x.classList.remove('choisi'));{const e=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]');if(e)e.classList.add('choisi')}const tv=logoHerite(vu(t),vu);
+  corps.querySelectorAll('.arbre-plan>.arbre-noeud.choisi').forEach(x=>x.classList.remove('choisi'));{const e=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]');if(e)e.classList.add('choisi')}
+  const tv=logoHerite(vu(t),vu);
+  // En tête : le rond en grand ; à sa droite, le nom et, dessous, la description.
   const tete=document.createElement('div');tete.className='detail-tete';
   const rond=document.createElement('span');rond.className='detail-rond t-'+talentType(t)[0];const lg=logoTalent(tv);if(lg)rond.append(lg);else rond.textContent=GLYPHES_TALENT[t.type]||'✦';
-  const nom=document.createElement('h3');nomAccolades(nom,tv.name);tete.append(rond,nom);panneau.append(tete);
+  const droite=document.createElement('div');droite.className='detail-droite';
+  const nom=document.createElement('h3');nomAccolades(nom,tv.name);droite.append(nom);
+  const corpsT=bulleNoeud(t,'','');corpsT.classList.add('detail-corps');droite.append(corpsT);
+  tete.append(rond,droite);panneau.append(tete);
   const el=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]'),acquis=porte(t),verrou=!!el&&el.classList.contains('verrou');
-  const corpsT=bulleNoeud(t,'','');corpsT.classList.add('detail-corps');panneau.append(corpsT);
+  /* Les améliorations, palier par palier : la suivante à prendre s'achète d'un clic sur sa carte, au prix de son palier,
+     quand son talent est tenu ; le clic droit sur une carte tenue la rend, palier par palier, comme sur son petit rond. */
   const ams=Object.keys(DIRS).flatMap(d=>petitsDe(t,d)).filter(x=>x&&!estVide(x)&&!estBonus(x));
   if(ams.length){const h=document.createElement('p');h.className='detail-titre';h.textContent='Améliorations';panneau.append(h);
+   const liste=(colonneDe(talentFamily(t),t.voie||'')||{}).liste||[],dispo=xpDisponible(a,catalog.talents);
    ams.forEach(x=>{const xv=vu(x),max=paliersDe(x),k=a?palierDe(a,x):0;
-    for(let n=1;n<=max;n++){const c=document.createElement('div');c.className='detail-amelioration'+(k>=n?' acquise':'');
+    const ferme=!a||(sansElement&&estElementaire(x))||verrouArbre(a.talents,liste,x)||manqueTalent(a.talents,x,catalog.talents)||(estMort(a)&&view!=='mj')||figeEnCombat(a);
+    for(let n=1;n<=max;n++){const c=document.createElement('div'),prix=coutPalier(x,n),suivante=!!a&&n===k+1&&!ferme&&prix<=dispo;
+     c.className='detail-amelioration'+(k>=n?' acquise':'')+(suivante?' achetable':'');
      const l=document.createElement('p');l.className='detail-am-nom';const b=document.createElement('b');nomAccolades(b,xv.name);if(max>1)b.append(' '+CHIFFRES_PALIER[n]);l.append(b);
-     if(coutPalier(x,n)){const pr=document.createElement('span');pr.className='detail-prix';pr.textContent=coutPalier(x,n)+' XP';l.append(pr)}c.append(l);
+     if(prix){const pr=document.createElement('span');pr.className='detail-prix';pr.textContent=prix+' XP';l.append(pr)}c.append(l);
      const tx=talentAuPalier(xv,n).effects||'';if(tx){const e=document.createElement('p');texteEnrichi(e,tx,nomsDeLArbre(x),a);c.append(e)}
+     if(suivante){c.tabIndex=0;c.setAttribute('role','button');
+      c.onclick=()=>{if(n===1)a.talents=[...a.talents,x.id];else poserPalier(x,n);note('');majTable()};
+      c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();c.click()}}}
+     if(a&&k>=n&&n===k)c.oncontextmenu=e=>{e.preventDefault();if(k>1)poserPalier(x,k-1);else oublier(x,liste);note('');majTable()};
      panneau.append(c)}})}
   if(a&&t.flottant!==true){const pied=document.createElement('div');pied.className='detail-pied';const prix=coutPalier(t,1),dispo=xpDisponible(a,catalog.talents);
    const btn=document.createElement('button');btn.type='button';btn.className='detail-apprendre'+(acquis?' acquis':'');
    btn.textContent=acquis?'Acquis':'Apprendre'+(prix?' · '+prix+' XP':'');btn.disabled=acquis||verrou||!el||prix>dispo;
-   btn.onclick=()=>{if(el)el.click()};pied.append(btn);
+   btn.onclick=()=>{if(el&&el.agir)el.agir()};pied.append(btn);
    if(!acquis){const r=document.createElement('p');r.className='detail-reste';r.textContent='XP restants : '+Math.max(0,dispo-prix).toLocaleString('fr-FR');pied.append(r)}
    panneau.append(pied)}};
  const grille=document.createElement('div');grille.className='arbres-cols';
+ const premierRang=classe?(colonnesArbre(classe).find(k=>k.liste.length)||{}).rang:-1;
  /* Un Mystique n'a qu'une colonne à lui, « Élémentaire » : dans son arbre, les colonnes vides se
     retirent. Le plan du MJ les garde, pour y créer des talents ; les autres classes ne changent pas. */
- (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));
+ (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)&&!(V2&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));
  arbresDialog.classList.toggle('v2',ARBRE_V2&&!!a);
  if(ARBRE_V2&&a){const cadre=document.createElement('div');cadre.className='arbres-v2';
   const g=document.createElement('div');g.className='arbres-v2-arbre';g.append(grille);
