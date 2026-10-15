@@ -4729,7 +4729,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("  case 'Aveugle':return 'Ne voit rien au-delà de sa zone de contact : ne peut viser que ce qui s’y trouve.';")
   &&page.includes("  if(typeof voitSocle==='function'&&!voitSocle(a,o))return false;\n  const qui=provoque?o:a;")
   &&page.includes("&&(typeof voitSocle!=='function'||voitSocle(c,o)));")&&page.includes("&&(typeof voitSocle!=='function'||voitSocle(m,o));"),'on ne vise que ce qu’on voit ; Aveugle');
- assert.ok(page.includes("+compteEtat(a,'Furie')+compteEtat(a,'Rage')+bonusPredateur(a);return meuteActive(a)?bonus*2:bonus}")&&page.includes("function visionNoirDe(a){")
+ assert.ok(page.includes("+compteEtat(a,'Furie')+bonusPredateur(a);return meuteActive(a)?bonus*2:bonus}")&&page.includes("function visionNoirDe(a){")
   &&page.includes("const aug=c.find(x=>x.code.cle==='visionaugmentee');if(aug)m=Math.max(m,")&&page.includes("function desPredateur(a){")
   &&page.includes("+(Math.trunc(Number(opts.bonusEnPlus))||0)+(predateur?predateur.total:0)"),'le talent et ses améliorations');
  assert.ok(src.includes("'<label class=\"field-check\"><input name=\"nyctalope\" type=\"checkbox\" '+(a.nyctalope===false?'':'checked')+'>Vision dans le noir</label>'")

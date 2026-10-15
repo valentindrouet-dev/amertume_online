@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.792","d":"2026-10-15","t":"Rage : aux Attaques au contact seulement"},
 {"v":"0.791","d":"2026-10-15","t":"Troisième amélioration sous le talent"},
 {"v":"0.790","d":"2026-10-15","t":"Talent de classe sans coche, un peu plus bas"},
 {"v":"0.789","d":"2026-10-15","t":"Talent de classe dans le coin, améliorations du bas contre leur talent"},

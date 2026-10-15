@@ -510,8 +510,15 @@ function bulleEtat(ancre,o,etat){const d=document.createElement('div');d.classNa
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');
  n.textContent=etat+(cumulable(etat)?' '+compteEtat(o,etat):'');tete.append(n);d.append(tete);
  const t=typeof descriptionEtat==='function'?descriptionEtat(o,etat):'';
- if(t){const p=document.createElement('p');p.className='palier-effet';p.textContent=t;d.append(p)}
+ if(etat==='Rage')d.append(texteRage(compteEtat(o,etat)));
+ else if(t){const p=document.createElement('p');p.className='palier-effet';p.textContent=t;d.append(p)}
  return ouvrirBulle(ancre,d,'bulle-talent')}
+/* La Rage, telle que la bulle la dit : « + x <dégâts> aux Attaques au contact. », le chiffre en gras, « Attaques » et « au contact »
+   à la couleur et au gras des mots-clés. */
+function texteRage(n){const p=document.createElement('p');p.className='palier-effet';const {couleur}=motsCles();
+ const cle=(mot,...autres)=>{const b=document.createElement('b');b.className='mot-cle';b.textContent=mot;b.style.color=[mot,...autres].map(couleur).find(Boolean)||'var(--accent)';return b};
+ const x=document.createElement('b');x.textContent='+ '+n;p.append(x,' ');const ic=iconeDegats();if(ic)p.append(ic,' ');else p.append('dégâts ');
+ p.append('aux ',cle('Attaques','Attaque'),' ',cle('au contact','contact','Contact'),'.');return p}
 function bulleAction(b,{nom,dit='',riche='',note='',des=null,lignes=null,points=null,a=null,cibles=null,objet=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
  const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=nom;tete.append(n);d.append(tete);
@@ -564,7 +571,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  // Les Orbes mystiques, une maîtrise, prennent la grande ligne, tout à gauche.
  const gros=a&&typeof boutonsTalents==='function'?boutonsTalents(a).filter(b=>b.rangee!=='aucune'&&(b.talent.type!=='mait'||b.code.cle==='orbes')):[];
  const talents=[...gros.filter(b=>b.rangee==='attaques'),...gros.filter(b=>b.rangee==='reactions')];
- const bonusDe=at=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
+ const bonusDe=at=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a)+(typeof rageContact==='function'?rageContact(a,at.range):0);
  const retenu=Math.trunc(a&&a.activeAttack)||0,actuelle=liste.length?liste[retenu<liste.length?retenu:0]:null;
  // Un adversaire qu'on n'a pas analysé garde ses dés pour lui, chez les joueurs.
  const voit=!!a&&(view==='mj'||(typeof connait==='function'?connait(a,'attaques'):a.hero||duCoteTroupe(a)||!!a.revealed));
@@ -2310,7 +2317,7 @@ function lignesAttaque(a){if(!a)return [];const e=elementDe(a);
  return sansAmeliorationsRemplacees((a.talents||[]).map(talent).filter(ameliorAttaque)).map(x=>{const y=!lisChemin(x)&&ameliorationsTenues(a,x).remplace||x;
   return talentAuPalier(talentPourElement(y,e),palierDe(a,y)).effects||''}).filter(Boolean)}
 function lignesEnPastilles(d,lignes){(lignes||[]).forEach(tx=>{const e=document.createElement('p');e.className='palier-effet amelioration';texteEnrichi(e,tx);d.append(e)})}
-const bonusAttaque=(a,at)=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a);
+const bonusAttaque=(a,at)=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a)+(typeof rageContact==='function'?rageContact(a,at.range):0);
 // Sa bulle, celle de la barre d'Actions : le nom, les dés et le bonus de dégâts, puis ce qui l'améliore.
 function bulleAttaque(a){const at=typeof activeAttack==='function'?activeAttack(a):null,d=document.createElement('div');d.className='talent-detail large t-act';
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent='Attaque';tete.append(n);d.append(tete);
