@@ -5192,6 +5192,13 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.796 — Rage : 1 Rage par dégâts subis en combat ; ses trois améliorations, critiques, adversaires tués, début du combat,
+   chacune élargie au palier 2 ; posées une fois sur les petits ronds sans effet du talent de classe. */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),T=C.TALENTS_CODES;
+ assert.ok(/subissez des dégâts/.test(T.rage.phrase({}))&&['ragecritique','ragetue','ragedepart'].every(k=>T[k].type==='ame'&&T[k].pour==='rage'),'Rage et ses améliorations');
+ assert.ok(/vous ou un allié/.test(T.ragecritique.phrase({},2))&&!/allié/.test(T.ragecritique.phrase({},1))&&/n’importe qui/.test(T.ragetue.phrase({},2))&&/1d6 \+ niveau/.test(T.ragedepart.phrase({},2))&&!/niveau/.test(T.ragedepart.phrase({},1)),'le palier 2 élargit');
+ assert.ok(page.includes("if(vers.hp>0&&rageEnCombat(vers))gagneRage(vers,1);")&&page.includes(" if(commence&&!spect)actors.forEach(rageDeDepart);")&&page.includes("if(x&&(o===a||voletOuvert(x,'allies')&&!hostiles(o,a)))gagneRage(o,1)"),'branchée aux dégâts, aux critiques, au début du combat');
+ assert.ok(src.includes("if(!t.effet){t.effet=effet;t.paliersActifs=true}")&&src.includes("[['so','ragecritique'],['s','ragetue'],['se','ragedepart']]"),'posées sans rien remplacer');}
 /* v0.523 — Enragement, passif de Destructeur : chaque critique ajoute +1 aux dégâts du porteur jusqu'à la fin du
    combat, +2 avec son amélioration ; le compte repart de zéro quand le combat finit ou que la rencontre repart. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8');

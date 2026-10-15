@@ -1339,7 +1339,24 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   params:[],phrase(){return 'Vous effectuez <b>une attaque</b>. Vous gagnez <b>1 Rage</b>.'}},
  rage:{cle:'rage',nom:'Rage',type:'mait',
   aide:'Maîtrise : le porteur génère de la Rage durant un combat ; chaque point de Rage augmente ses dégâts de +1.',
-  params:[],phrase(){return 'Vous générez de la <b>Rage</b> durant un combat. Chaque point de Rage augmente vos <b>dégâts de +1</b>.'}},
+  params:[],phrase(){return 'Vous générez de la <b>Rage</b> durant un combat. Chaque point de Rage augmente vos <b>dégâts de +1</b>. Vous gagnez <b>1 point de Rage</b> chaque fois que vous <b>subissez des dégâts</b> en combat.'}},
+ /* Les trois améliorations de Rage : 1 Rage à chaque critique, d'un allié aussi au palier 2 ; à chaque adversaire tué par le
+    porteur, par n'importe qui au palier 2 ; 1d6 Rage au début de chaque combat, 1d6 + niveau au palier 2. */
+ ragecritique:{cle:'ragecritique',nom:'Rage — critiques',court:'critiques',type:'ame',
+  aide:'Amélioration de Rage : 1 Rage chaque fois que le porteur réalise un critique ; ou un allié, au palier 2.',
+  params:[],volets:[{cle:'allies',nom:'Les critiques des alliés aussi',palier:2}],
+  phrase(p,palier,v){const k=(v||{allies:2}).allies,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'Vous gagnez <b>1 point de Rage</b> chaque fois que '+(deux?'<b>vous ou un allié</b> réalisez':'vous réalisez')+' un <b>critique</b>.'}},
+ ragetue:{cle:'ragetue',nom:'Rage — adversaires tués',court:'adversaires tués',type:'ame',
+  aide:'Amélioration de Rage : 1 Rage chaque fois que le porteur tue un adversaire ; chaque fois qu’un adversaire est tué, par n’importe qui, au palier 2.',
+  params:[],volets:[{cle:'tous',nom:'Tué par n’importe qui',palier:2}],
+  phrase(p,palier,v){const k=(v||{tous:2}).tous,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'Vous gagnez <b>1 point de Rage</b> chaque fois '+(deux?'qu’un <b>adversaire est tué</b>, par n’importe qui.':'que vous <b>tuez un adversaire</b>.')}},
+ ragedepart:{cle:'ragedepart',nom:'Rage — début du combat',court:'début du combat',type:'ame',
+  aide:'Amélioration de Rage : le porteur commence chaque combat avec 1d6 points de Rage ; 1d6 + son niveau au palier 2.',
+  params:[],volets:[{cle:'niveau',nom:'1d6 + niveau',palier:2}],
+  phrase(p,palier,v){const k=(v||{niveau:2}).niveau,deux=k>0&&Math.max(1,Math.trunc(Number(palier))||1)>=k;
+   return 'Vous commencez chaque combat avec <b>'+(deux?'1d6 + niveau':'1d6')+' points de Rage</b>.'}},
  destructeur:{cle:'destructeur',nom:'Destructeur',type:'mait',
   aide:'Maîtrise : avec une arme au contact, le porteur réussit un critique sur tous ses doubles, pas seulement les 6.',
   params:[],
@@ -1791,7 +1808,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
  contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
- soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat'};
+ soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
   if(c.court){const nom=TALENTS_CODES[p].nom+' — '+c.court;if(nom!==c.nom){c.anciens=[...(c.anciens||[]),c.nom];c.nom=nom}}})}
 /* ---------- Les effets d'équipement ----------

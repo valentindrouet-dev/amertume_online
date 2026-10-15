@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.796","d":"2026-10-15","t":"Rage et ses trois améliorations"},
 {"v":"0.795","d":"2026-10-15","t":"Amélioration centrale remontée"},
 {"v":"0.794","d":"2026-10-15","t":"Gros ronds de talents plus grands"},
 {"v":"0.793","d":"2026-10-15","t":"Troisième amélioration visible, trois améliorations pour le talent de classe"},
