@@ -3047,7 +3047,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxA.accordeArbres(),true);
  assert.equal(JSON.stringify(T('r').liens),'["s"]','une ligne vers une autre colonne s’efface');
  assert.deepEqual(['m','r','s','p'].map(id=>JSON.stringify(T(id).pos)),['{"x":0,"y":0}','{"x":0,"y":0}','{"x":0,"y":1}','{"x":0,"y":0}'],'une case chacun : le second venu descend, le sans-case en reçoit une');
- assert.ok(T('k').horsArbre&&!T('k').chemin,'un petit rond sur le chemin d’une ligne quitte l’arbre');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
+ assert.ok(!T('k').horsArbre&&T('k').chemin&&T('k').chemin.dir==='s','v0.791 : sur le chemin du bas, un petit rond garde sa place par-dessus la ligne');assert.equal(T('x').pos,undefined,'hors des classes, rien ne bouge');
  assert.equal(ctxA.accordeArbres(),false,'une seconde fois : plus rien à accorder');
  /* v0.493 — L'IA des adversaires est mise de côté dans ia.js, qu'aucune page ne charge : rien du site n'en
    parle. Reste la correction d'une attaque animée qui coûtait deux Actions, et « Tour suivant » en fonction. */
@@ -3396,7 +3396,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.564 — Arbre : un seul petit rond par chemin, plus de place offerte après celui qui y est ; les petits ronds s'écartent
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=(d==='so'||d==='se'?.27:.43)+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+ assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=(d==='so'||d==='se'?.27:d==='s'?.32:.43)+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
 /* v0.773 — Plus de choix d'élément affiché : ni au-dessus de l'arbre, ni sur la page des talents. */
 {assert.ok(fs.readFileSync('editor.js','utf8').includes(" bloc.hidden=true;return bloc}"));}
 /* v0.772 — Le Mystique n'est plus que de Feu : Gel et Foudre jouent le Feu, le choix ne propose que lui. */

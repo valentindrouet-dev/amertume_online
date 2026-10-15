@@ -51,6 +51,8 @@ const PETITS_MAX=2;
 /* Les huit chemins d'un talent du sphérier : les quatre droits mènent au talent de la case voisine ou à
    de petits ronds, les quatre diagonales à de petits ronds seulement. */
 const DIRS={n:[0,-1],ne:[1,-1],e:[1,0],se:[1,1],s:[0,1],so:[-1,1],o:[-1,0],no:[-1,-1]},DIRS_DROITES=['n','e','s','o'];
+/* Le chemin du bas, « s », seul, porte une amélioration même quand une ligne en descend vers le talent suivant (v0.791) : son
+   petit rond se tient entre ceux du bas à gauche et à droite, un peu plus bas, par-dessus le haut de la ligne. */
 /* Un catalogue enregistré avant les talents n'a pas le rayon : on l'ouvre vide. */
 /* Les ressources dont une pièce est faite — deux au plus — et son prix, en or : saisis à
    l'armurerie, lus nulle part ailleurs pour l'instant. Le menu les range par ordre alphabétique. */
@@ -4653,7 +4655,7 @@ function accordeArbres(){let change=false;
     const p=posDe(t);if(p&&!posees.some(q=>{const r=posDe(q);return r.x===p.x&&r.y===p.y})){posees.push(t);return}
     t.pos=caseLibre(posees,null);posees.push(t);change=true});
    col.liste.forEach(t=>{const ch=cheminsDe(col.liste,t);Object.keys(DIRS).forEach(d=>{const ps=ch[d].petits;if(!ps.length)return;
-    if(ch[d].lien){ps.forEach(p=>{delete p.chemin;p.horsArbre=true});change=true;return}
+    if(ch[d].lien&&d!=='s'){ps.forEach(p=>{delete p.chemin;p.horsArbre=true});change=true;return}
     ps.forEach((p,k)=>{if(lisChemin(p).rang!==k+1){p.chemin={...lisChemin(p),rang:k+1};change=true}})})})})});
  tousTalents().forEach(t=>{const c=lisChemin(t);if(!c)return;const d=departChemin(t);
   if(!d||!peutEtrePetit(t)){delete t.chemin;t.horsArbre=true;change=true;return}
@@ -4728,7 +4730,7 @@ function echangeCases(a,b){
  [a,b].forEach(petitsHorsDesLignes)}
 // Un chemin de petits ronds qui tombe sur une ligne passe sur une direction libre.
 function petitsHorsDesLignes(x){const col=colonneDe(talentFamily(x),x.voie||'');if(!col)return;const ch=cheminsDe(col.liste,x);
-  Object.keys(DIRS).forEach(d=>{if(!(ch[d].lien||ch[d].entrant)||!ch[d].petits.length)return;
+  Object.keys(DIRS).forEach(d=>{if(!((ch[d].lien&&d!=='s')||ch[d].entrant)||!ch[d].petits.length)return;
    // Le nord en dernier : au-dessus d'un talent de départ descend le trait du bandeau.
    const libre=Object.keys(DIRS).sort((x,y)=>(x==='n')-(y==='n')).find(e=>!ch[e].lien&&!ch[e].entrant&&!ch[e].petits.length);if(!libre)return;
    ch[d].petits.forEach(p=>{p.chemin={...lisChemin(p),dir:libre}});ch[libre].petits=ch[d].petits;ch[d].petits=[]})}
@@ -4751,7 +4753,7 @@ function placerTalent(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||!
  if(dest.chemin){if(!peutEtrePetit(t))return false;const de=tousTalents().find(x=>x.id===dest.chemin.de),dir=dest.chemin.dir;
   if(!de||de===t||!DIRS[dir]||!posDe(de)||de.horsArbre)return false;
   const col=colonneDe(talentFamily(de),de.voie||'');if(!col||!col.liste.includes(de))return false;
-  if(cheminsDe(col.liste,de)[dir].lien)return false;
+  if(cheminsDe(col.liste,de)[dir].lien&&dir!=='s')return false;
   // Sur son propre chemin, il change seulement de rang : les autres se rangent autour de lui.
   const c0=lisChemin(t),d0=c0&&tousTalents().find(x=>x.id===c0.de);
   if(c0&&c0.de===de.id&&c0.dir===dir){const l=petitsDe(de,dir).filter(p=>p!==t),voulu=Number.isInteger(dest.chemin.rang)?dest.chemin.rang:l.length+1;
@@ -5409,9 +5411,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      centre, un second, d'une chaîne d'avant, 0,29 plus loin, dans toutes les directions. On lit à qui
      ils sont, et un talent voisin garde de l'air. */
   /* v0.789 : en bas à gauche et à droite, les améliorations remontent le long de leur lien jusqu'à chevaucher un peu leur talent. */
-  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=(d==='so'||d==='se'?.27:.43)+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
+  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=(d==='so'||d==='se'?.27:d==='s'?.32:.43)+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
   const petits=[];c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
-   Object.keys(DIRS).forEach(d=>{if(ch[d].lien)return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
+   Object.keys(DIRS).forEach(d=>{if(ch[d].lien&&d!=='s')return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
   /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
      talent — jamais au-dessus : l'arbre part d'un talent tout en haut et descend ; sur chaque chemin
      sans ligne, la place du petit rond suivant, sauf droit au-dessus du talent de départ, où descend
@@ -5422,8 +5424,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(mj){const occupe=new Set(prises.map(p=>p.x+','+p.y)),vues=new Set();
    c.liste.forEach(t=>liensDe(t).forEach(id=>{const v=c.liste.find(x=>x.id===id),p=cases.get(t.id),q=v&&cases.get(v.id);if(p&&q&&Math.abs(q.x-p.x)+Math.abs(q.y-p.y)===2&&(p.x===q.x||p.y===q.y))occupe.add((p.x+q.x)/2+','+(p.y+q.y)/2)}));
    c.liste.forEach(t=>{if(estVide(t)&&!estRemplissage(t))return;const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
-    Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if(ch[d].lien||ch[d].entrant)return;
-     if(['e','s','o'].includes(d)&&!ch[d].petits.length){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.4)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
+    Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if((ch[d].lien&&d!=='s')||ch[d].entrant)return;
+     // Vers le bas, une amélioration n'empêche pas d'y poser le talent suivant : elle chevauche le haut de son lien.
+     if(['e','s','o'].includes(d)&&!ch[d].lien&&(d==='s'||!ch[d].petits.length)){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.4)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
      if(d==='n'&&racines.has(t.id)&&!ch[d].petits.length)return;
      // Un seul petit rond par chemin : ses paliers font ce que faisait une série. Celui qui y est n'en appelle pas d'autre.
      if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);
