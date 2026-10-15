@@ -5195,7 +5195,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  /* « 100 / 2415 XP disponibles » : ce qui reste à dépenser, sur toute l'XP gagnée, en barre dorée
     comme celle des PV — elle se vide à chaque talent pris, se remplit à chaque talent rendu. */
  if(a){const dispo=xpDisponible(a,catalog.talents),total=Math.max(0,Math.trunc(Number(a.xp))||0),s=document.createElement('div');s.className='arbres-pt';
-  const pct=total?Math.max(0,Math.min(100,Math.round(dispo/total*100))):0,texte=dispo+' / '+total+' XP disponible'+(dispo>1?'s':'');
+  // La jauge se remplit de ce qui est payé : 100 XP dépensées sur 1000 gagnées, « 100 / 1000 XP ».
+  const paye=Math.max(0,total-dispo),pct=total?Math.max(0,Math.min(100,Math.round(paye/total*100))):0,texte=paye+' / '+total+' XP';
   s.innerHTML='<span class="lifebar xp"><span class="lifebar-fill" style="width:'+pct+'%"></span><span class="lifebar-text">'+esc(texte)+'</span></span>';tete.append(s)}
  if(!classe){const v=document.createElement('p');v.className='muted';v.textContent='Donne une classe à '+a.name+' pour lui ouvrir un arbre.';tete.append(v)}
  corps.append(tete);
