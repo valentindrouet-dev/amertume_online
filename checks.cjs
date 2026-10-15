@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.804 — L'Attaque : 1 PA devant son nom sur la fiche, et sa description, au contact ou à distance, sur la fiche et à la table. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("const texteAttaque=at=>'Vous effectuez 1 Attaque contre un adversaire '+(at&&at.range==='distance'?'à distance':'au contact')+'.';")
+  &&src.includes("{const c=pointsDeCout({pa:1,pm:0});if(c)tete.prepend(c)}")&&src.includes("descr:texteAttaque(at),points:{pa:1,pm:0}"),'l’Attaque décrite, à 1 PA');}
 /* v0.803 — La fiche de l'onglet Aventuriers ne montre plus les améliorations : gros ronds, ronds moyens, bonus. */
 assert.ok(!fs.readFileSync('editor.js','utf8').includes("rang.append(vide('amelioration-case-vide'));out.append(rang)"),'pas d’améliorations sur la fiche');
 /* v0.802 — Une ligne à niveau : invisible aux joueurs, pastille et barrière gardées ; au niveau voulu, le talent du bas s'ouvre sans

@@ -525,7 +525,7 @@ function texteRage(n){const p=document.createElement('p');p.className='palier-ef
  const cle=(mot,...autres)=>{const b=document.createElement('b');b.className='mot-cle';b.textContent=mot;b.style.color=[mot,...autres].map(couleur).find(Boolean)||'var(--accent)';return b};
  const x=document.createElement('b');x.textContent='+ '+n;p.append(x,' ');const ic=iconeDegats();if(ic)p.append(ic,' ');else p.append('dégâts ');
  p.append('aux ',cle('Attaques','Attaque'),' ',cle('au contact','contact','Contact'),'.');return p}
-function bulleAction(b,{nom,dit='',riche='',note='',des=null,lignes=null,points=null,a=null,cibles=null,objet=null}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
+function bulleAction(b,{nom,dit='',riche='',note='',des=null,lignes=null,points=null,a=null,cibles=null,objet=null,descr=''}){const d=document.createElement('div');d.className='talent-detail large bulle-action'+(boutonGrise(b)?' grisee':'');
  const fond=getComputedStyle(b).getPropertyValue('--fond').trim();if(fond)d.style.setProperty('--teinte',fond);
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=nom;tete.append(n);d.append(tete);
  if(des)desAuTitre(tete,des);
@@ -533,6 +533,8 @@ function bulleAction(b,{nom,dit='',riche='',note='',des=null,lignes=null,points=
  // Sous le titre, l'objet en question : son carré, son nom.
  if(objet){const p=document.createElement('p');p.className='bulle-objet';const c=gearCarre(objet,1,false);c.removeAttribute('role');c.tabIndex=-1;
   const nm=document.createElement('span');nm.textContent=objet.name;p.append(c,nm);d.append(p)}
+ // Ce que fait l'action, avant ce qui l'améliore.
+ if(descr){const p=document.createElement('p');p.className='palier-effet';texteEnrichi(p,descr,null,a);d.append(p)}
  // Une attaque : ce qui l'améliore, une ligne chacun, la pastille à la couleur des actions.
  if(lignes&&lignes.length){d.classList.add('p-act');lignesEnPastilles(d,lignes)}
  // Le texte que le MJ a écrit pour une action spéciale prend la place de celui du jeu, avec ses symboles et ses couleurs.
@@ -610,7 +612,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
    +' · '+(at.range==='distance'?'à distance':'au contact')+(at.targets==='all'?' · toutes cibles':'');
   b.setAttribute('aria-label',libelle+(at.gear&&at.name?' ('+at.name+')':'')+' — '+(refus||fait));
   // Sa bulle, celle d'un talent : le nom, les dés et le bonus de dégâts, rien de plus.
-  surveille(b,()=>bulleAction(b,{nom:libelle,des:voit?desEtBonus(desAttaque(a,at.dice),bonusDe(at),at.useOwnDamage!==false,false):null,lignes:voit?lignesAttaque(a):null,points:{pa:1,pm:0},a,cibles:typeof ciblesAttaque==='function'?ciblesAttaque(a,at.range==='distance'?'distance':'contact'):null}));
+  surveille(b,()=>bulleAction(b,{nom:libelle,des:voit?desEtBonus(desAttaque(a,at.dice),bonusDe(at),at.useOwnDamage!==false,false):null,lignes:voit?lignesAttaque(a):null,descr:texteAttaque(at),points:{pa:1,pm:0},a,cibles:typeof ciblesAttaque==='function'?ciblesAttaque(a,at.range==='distance'?'distance':'contact'):null}));
   /* Le bouton n'arme plus l'attaque : il la porte. On retient laquelle est partie —
      les dés affichés la suivent — puis le coup part aussitôt. */
   b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;
@@ -2331,9 +2333,14 @@ function lignesAttaque(a){if(!a)return [];const e=elementDe(a);
 function lignesEnPastilles(d,lignes){(lignes||[]).forEach(tx=>{const e=document.createElement('p');e.className='palier-effet amelioration';texteEnrichi(e,tx);d.append(e)})}
 const bonusAttaque=(a,at)=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a)+(typeof rageContact==='function'?rageContact(a,at.range):0);
 // Sa bulle, celle de la barre d'Actions : le nom, les dés et le bonus de dégâts, puis ce qui l'améliore.
+// Ce que fait l'Attaque, selon l'arme en main : au contact, ou à distance.
+const texteAttaque=at=>'Vous effectuez 1 Attaque contre un adversaire '+(at&&at.range==='distance'?'à distance':'au contact')+'.';
 function bulleAttaque(a){const at=typeof activeAttack==='function'?activeAttack(a):null,d=document.createElement('div');d.className='talent-detail large t-act';
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');n.textContent='Attaque';tete.append(n);d.append(tete);
  if(at&&at.dice)desAuTitre(tete,desEtBonus(desAttaque(a,at.dice),bonusAttaque(a,at),at.useOwnDamage!==false,false));
+ // Son coût, devant son nom, comme à la table : 1 PA.
+ {const c=pointsDeCout({pa:1,pm:0});if(c)tete.prepend(c)}
+ {const p=document.createElement('p');p.className='palier-effet';texteEnrichi(p,texteAttaque(at),null,a);d.append(p)}
  lignesEnPastilles(d,lignesAttaque(a));return d}
 // Son rond sur la fiche, au logo de l'arme en main droite, comme dans la barre d'Actions.
 function carteAttaque(a){const at=typeof activeAttack==='function'?activeAttack(a):null,l=logosDeAttaque(at)[0];
