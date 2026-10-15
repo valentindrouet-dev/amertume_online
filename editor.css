@@ -240,6 +240,28 @@ body.redim .poignee-g{top:0;bottom:0;right:-15px;width:12px;cursor:col-resize}
 body.redim .poignee-d{top:0;bottom:0;left:-15px;width:12px;cursor:col-resize}
 body.redim .poignee-h{left:30%;right:30%;bottom:2px;height:12px;cursor:row-resize}
 body.redim main.layout .panel{outline:1px dashed #c98a4b80;outline-offset:2px}
+/* Une trouvaille au journal : un cartouche, son icône et son nom en entier, bordé de la couleur de sa rareté. */
+.j-objet{--rarete:#7d7a74}.j-objet.r-inhabituel{--rarete:#4f8a52}.j-objet.r-rare{--rarete:#4d7fb0}.j-objet.r-mystique{--rarete:#7a5fc0}.j-objet.r-epique{--rarete:#c26a2f}.j-objet.r-ressource{--rarete:#9a7448}
+.j-objet.j-objet-nomme{padding:1px 8px 1px 4px;border-left:3px solid var(--rarete);border-radius:7px;margin:1px 0;white-space:nowrap}
+.j-objet .j-objet-nom{margin-left:5px;font:700 12.5px/1.3 system-ui;color:var(--rarete);filter:brightness(.8)}
+/* La bannière d'une trouvaille : les mêmes cartouches, en grand, au milieu de l'écran. */
+.annonce-flottante.annonce-butin{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 26px;animation-duration:3.4s}
+.annonce-butin .j-objet{font-size:22px;padding:5px 16px 5px 8px;border-left-width:5px;box-shadow:0 6px 18px #0006}
+.annonce-butin .j-objet .logo-equip,.annonce-butin .j-objet .glyphe{width:34px;height:34px;vertical-align:-9px;font-size:24px;line-height:34px}
+.annonce-butin .j-objet .j-objet-nom{font:700 24px/1.2 'Killam',Georgia,serif;margin-left:10px;filter:brightness(.75)}
+.annonce-butin .j-objet .j-objet-n{font-size:15px;margin-left:6px}
+/* Dans la bulle d'une pièce trouvée, au coin haut droit : les adversaires qui l'ont laissée tomber. */
+.sources-butin{position:absolute;top:-13px;right:-11px;display:flex;gap:3px;z-index:2}
+.sources-butin .board-token{box-shadow:0 2px 6px #0007}
+.sources-butin .board-token{position:static;transform:none;width:28px;height:28px;font-size:13px}
+/* Un test au journal : l'icône de la compétence, son nom à sa couleur, les réussites ; leurs dés au survol. */
+.j-comp{display:inline}
+.j-comp img,.j-comp .logo-equip,.j-comp .skill-ico{display:inline-block;width:18px;height:18px;margin:0 1px 0 0;vertical-align:-4px;object-fit:contain}
+.j-comp .j-comp-lettres{display:inline-block;padding:0 4px;border-radius:5px;background:#00000014;font:700 10px/16px system-ui;vertical-align:1px}
+.j-comp .j-comp-nom{font-weight:700}
+.j-comp .j-reussite{cursor:help;text-decoration:underline dotted #0006;text-underline-offset:3px}
+.j-comp .j-reussite.j-ok{color:#2e8b3e}.j-comp .j-reussite.j-ko{color:#b8402f}
+.bulle-des-test{display:flex;gap:6px;font:700 15px system-ui;padding:7px 11px;background:var(--panel);border:1px solid var(--line-strong);border-radius:10px;box-shadow:0 6px 18px #00000033}
 /* Une version plus récente en ligne : un bandeau en haut de l'écran, et son bouton pour recharger. */
 .bandeau-version{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:300;display:flex;align-items:center;gap:12px;padding:8px 10px 8px 16px;
  border-radius:12px;background:#1b1410f2;color:#f6e9d8;border:1px solid #d29180;box-shadow:0 10px 28px #0007;font:600 14px system-ui;max-width:calc(100vw - 32px)}

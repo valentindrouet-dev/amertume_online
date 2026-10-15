@@ -28,6 +28,8 @@ const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu','debutTour','enAventure'];
 // L'attente d'un aventurier créé par un joueur : le MJ seul la lève, et elle voyage avec les autres champs.
 CHAMPS_ACTEUR_MJ.push('enAttente');CHAMPS_VIVANTS.push('enAttente');
+// Où chaque test de compétence a été fait : le même ne se refait pas sans être sorti de sa zone de contact.
+CHAMPS_VIVANTS.push('testsLieux');
 /* L'état du tour d'un aventurier : ce qu'il a dépensé, joué, parcouru. Un joueur l'écrit daté du tour qu'il voit (« tourVu »,
    cleTour) ; le MJ écarte ce qui arrive daté d'un tour révolu. Au début, à la fin d'un combat et à chaque tour, le joueur reprend
    ces champs tels que le MJ les a remis, sans garder ce qu'il avait encore en route. */
@@ -445,7 +447,9 @@ function diffuser(rec){if(!enLigne||!journalRef||!monUid)return;
    const sans={...plein};delete sans.ton;return ref.set(sans).catch(e2=>liveStatus('Journal non partagé. '+liveErreur(e2)))}
   liveStatus('Journal non partagé. '+liveErreur(e))})}
 log=function(text,meta){logLocal(text,meta);if(meta&&meta.local)return;
- diffuser({genre:'texte',texte:String(text).slice(0,400),badge:meta&&meta.badge?String(meta.badge).slice(0,40):null,ton:meta&&meta.ton?String(meta.ton).slice(0,20):null,...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})})};
+ // Les sources d'un butin partent avec la ligne, à côté du bilan d'un combat : les règles du journal admettent déjà « detail ».
+ const detail={...(meta&&meta.bilan?{bilan:meta.bilan}:{}),...(meta&&Array.isArray(meta.sources)?{sources:meta.sources.slice(0,20)}:{})};
+ diffuser({genre:'texte',texte:String(text).slice(0,400),badge:meta&&meta.badge?String(meta.badge).slice(0,40):null,ton:meta&&meta.ton?String(meta.ton).slice(0,20):null,...(Object.keys(detail).length?{detail}:{})})};
 // « talent » ne colore que la ligne locale ; elle part sans lui, les règles du journal ne le connaissent pas.
 logAttaque=function(a,b,logo,corps,detail,suite,talent){logAttaqueLocal(a,b,logo,corps,detail,suite,talent);
  const d=detail?{des:codeDes(detail.dice),origine:Number.isInteger(detail.origine)?detail.origine:null,
@@ -498,8 +502,10 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
  if(rec.genre==='attaque'){const r=rec.detail&&typeof rec.detail==='object'?rec.detail:null;
   const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,def:Number.isInteger(r.def)?r.def:null,solidite:!!r.solidite,double:!!r.double,total:r.total}:null;
   logAttaqueLocal(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'',String(rec.corps||''),d,rec.suite?String(rec.suite):'')}
- else logLocal(String(rec.texte||''),{badge:rec.badge?String(rec.badge):undefined,ton:typeof rec.ton==='string'?rec.ton:undefined,bilan:rec.detail&&typeof rec.detail==='object'&&rec.detail.bilan||undefined})}
-function rejouerJournal(docs){const j=$('journal');if(!j)return;j.replaceChildren();let tour=null;
+ else logLocal(String(rec.texte||''),{badge:rec.badge?String(rec.badge):undefined,ton:typeof rec.ton==='string'?rec.ton:undefined,bilan:rec.detail&&typeof rec.detail==='object'&&rec.detail.bilan||undefined,
+  sources:rec.detail&&typeof rec.detail==='object'&&Array.isArray(rec.detail.sources)?rec.detail.sources:undefined})}
+function rejouerJournal(docs){const j=$('journal');if(!j)return;j.replaceChildren();let tour=null;journalRejoue=true;try{rejouerJournalSeul(docs,j,tour)}finally{journalRejoue=false}}
+function rejouerJournalSeul(docs,j,tour){
  // Seule la session en cours se rejoue : les combats d'un autre soir restent dans le passé.
  if(typeof debutSession==='function')docs=docs.slice(debutSession(docs.map(d=>d.data())));
  docs.forEach(d=>{const rec=d.data();if(!rec||rec.genre==='effet')return;

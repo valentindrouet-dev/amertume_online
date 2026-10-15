@@ -1146,7 +1146,7 @@ assert.ok(src.includes("const porteurs=(catalog.talents||[]).map((t,i)=>[t,i]).f
   &&src.includes("$('view').after(b)")&&!src.includes("conversion-dit")&&!src.includes("conversion-def")&&feuille.includes('.conversion-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));'),'le dé à côté de la vue ouvre la conversion');}
 /* Un test de compétence tient sur une ligne au journal : la compétence, les réussites, les dés — 4+ en vert, en
    dessous en rouge —, sans « Test de », ni nombre de dés, ni six explosifs. La classe dit aussi ses compétences. */
-assert.ok(page.includes(" log(nomNum(a)+' · '+skillNames[i]+' : '+jet.reussites+' réussite'+(jet.reussites>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄',{dice:true,ton:'competence'});")
+assert.ok(page.includes(" log(nomNum(a)+' : ⟬'+i+'|'+jet.reussites+'|'+jet.des.slice(0,40).join(',')+'⟭',{ton:'competence'});")
  &&!page.includes("six explosi")&&page.includes("const faces=/^⦃([0-9,]+)⦄$/.exec(m[0]);")&&feuille.includes('.j-test .j-face.ok{color:#2e8b3e}')
  &&src.includes("competencesDeClasse(nomCl).forEach((n,i)=>{if(!n)return;")&&src.includes("classe.style.background='color-mix(in srgb,'+teinte+' 16%,transparent)';"),'test de compétence sur une ligne, classe et ses compétences');
 /* Les petites améliorations de l'onglet Talents et de la fiche d'aventurier gardent leur taille, comme le sphérier
@@ -3291,7 +3291,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  let n=0;ctxB.butinDesRetires([troll],()=>(n++%2)*0.5);
  assert.deepEqual(pres.inventaire,['m','r','r'],'le plus proche des vivants sur la carte ramasse ce qui tombe');
  assert.ok(!loin.inventaire&&!mort.inventaire&&!dehors.inventaire,'ni le lointain, ni le tombé, ni l’absent');
- assert.equal(ctxB.journal[0],'Brom trouve ⟦m⟧ ⟦r⟧ ×2 (Troll).','une ligne au journal');
+ assert.equal(ctxB.journal[0],'Brom trouve ⟦m⟧ ⟦r⟧ ×2.','une ligne au journal, les pièces seules (v0.764)');
  ctxB.journal.length=0;ctxB.butinDesRetires([{name:'Rat',hero:false,x:0,y:0,inventaire:['m'],butin:{m:40}}],()=>0.4);
  assert.equal(ctxB.journal.length,0,'40 % : un tirage à 40 ne tombe pas');
  assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m),...(m.unique===true?{unique:true}:{})}:{})}}\nfunction fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);")
@@ -3328,7 +3328,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function inventaireAdversaire(boite,cible,apres,genre){boite.replaceChildren();boite.classList.add('inv-adv');const restes=genre==='restes',dugenre=o=>estReste(o)===restes;")
   &&src.includes('<h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')&&src.includes("{cle:'restes',nom:'Restes',type:'panneau',")
   &&!src.includes("['restes','Restes',o=>o.category==='restes']"),'les restes à part');
- assert.ok(src.includes("+' ('+listeNombree([...g.de].map(f=>f.name))+').',{ton:'butin'}));")
+ assert.ok(src.includes("{ton:'butin',sources:[...g.src].map(([o,d])=>({o,d:d.slice(0,8)}))}")
   &&css.includes('.j-objet{display:inline-block;'),'le butin au journal');
  // decorate en machine virtuelle : les pièces en pastilles, « ×3 » avec elles, aucun chiffre rouge.
  const el=()=>({kids:[],attrs:{},className:'',textContent:'',style:{},append(...x){this.kids.push(...x)},setAttribute(k,v){this.attrs[k]=v},classList:{contains:c=>false}});
@@ -3341,8 +3341,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const li={kids:[],append(...x){this.kids.push(...x)},classList:{contains:c=>c==='ton-butin'}};
  ctxJ.decorate(li,'Éla trouve ⟦r⟧ ×2 ⟦d2⟧ (Gobelin).');
  const vus=li.kids.map(x=>typeof x==='string'?x:x.attrs&&x.attrs['aria-label']?'['+x.attrs['aria-label']+':'+x.kids.map(y=>typeof y==='string'?y:y.textContent).join('')+']':(x.className||'?')+'['+x.textContent+']');
- assert.equal(vus.join(''),'j-name[Éla] trouve [Rapière ×2:◈×2] [Dent de Gobelin:◈] (j-name[Gobelin]).','le logo seul, son nombre à côté, le nom pour le lecteur d’écran');
- const piece=li.kids.find(x=>x.attrs&&x.attrs['aria-label']==='Dent de Gobelin');assert.ok(piece&&!piece.kids.some(y=>typeof y==='string'&&y.includes('Dent')),'aucun nom écrit');}
+ assert.equal(vus.join(''),'j-name[Éla] trouve [Rapière ×2:◈Rapière×2] [Dent de Gobelin:◈Dent de Gobelin] (j-name[Gobelin]).','le logo, le nom en entier à côté (v0.764), son nombre');
+ const piece=li.kids.find(x=>x.attrs&&x.attrs['aria-label']==='Dent de Gobelin');assert.ok(piece&&piece.kids.some(y=>y&&y.textContent==='Dent de Gobelin'),'le nom écrit dans le cartouche');}
 /* v0.347 — Meute, passif d'adversaire : un allié dans sa zone de contact, et le porteur double son
    bonus de dégâts. */
 {const C=require('./combat.js'),m=C.TALENTS_CODES.meute;
@@ -3389,6 +3389,13 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.764 — Trouvailles en cartouche et en bannière, sources du butin dans la bulle ; tests regroupés au nouveau format ; un même test
+   ne se refait pas au même endroit. */
+{const lv=fs.readFileSync('live.js','utf8'),src=fs.readFileSync('editor.js','utf8');
+ assert.ok(page.includes("function annonceTrouvaille(li){")&&page.includes("if(nomme)c.append(Object.assign(document.createElement('span'),{className:'j-objet-nom',textContent:o.name}));"),'trouvailles');
+ assert.ok(src.includes("g.src.get(donne.id).push({t:String(f.template||''),n:String(f.name||'').slice(0,40)})")&&lv.includes("sources:meta.sources.slice(0,20)")&&page.includes("s.className='sources-butin';"),'sources du butin');
+ assert.ok(page.includes("function testAuJournal(k,series){")&&page.includes("text=m[1]+' : ⟬'+m[2]+'|'+p[3]+';'+m[3]+'⟭';der.remove()"),'tests regroupés');
+ assert.ok(page.includes("if(!fouille&&view!=='mj'&&testDejaFaitIci(a,i))return;")&&page.includes("function testDejaFaitIci(a,i){")&&lv.includes("CHAMPS_VIVANTS.push('testsLieux');"),'un test par endroit');}
 /* v0.763 — La barre d'actions sur le bas de la carte ; les panneaux redimensionnables ; la piste de dés abaissée sur les écrans bas. */
 {const carto=fs.readFileSync('maps.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(page.includes("carte.classList.add('barre-actions');panneau.append(carte)")&&css.includes(".map-panel>.attack-card.barre-actions{position:absolute;"),'barre d’actions');
@@ -5055,7 +5062,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("auteurCoup=a;queueMicrotask(()=>{auteurCoup=null});ajouteBilan(a,'coups',1);")&&page.includes("ajouteBilan(a,'crit',1)")&&page.includes("applyHeal=function(a,m){const g=soinSansBilan(a,m);if(g>0)ajouteBilan(a,'soin',g);return g}"),'les compteurs de dégâts, coups, critiques et soins');
  assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes("compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);"),'la distance, là où un mouvement connaît son départ');
  assert.ok(page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
- assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege'];")&&vivant.includes("...(meta&&meta.bilan?{detail:{bilan:meta.bilan}}:{})")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
+ assert.ok(vivant.includes("'enrage','bilan',\n 'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege'];")&&vivant.includes("const detail={...(meta&&meta.bilan?{bilan:meta.bilan}:{}),")&&vivant.includes('bilan:rec.detail&&typeof rec.detail===\'object\'&&rec.detail.bilan||undefined'),'en ligne : les compteurs et la ligne du bilan');
  assert.ok(src.includes('function lisBilan(o){')&&src.includes('function ouvrirStatsCombat(brut){const b=lisBilan(brut);if(!b)return;'),'la fenêtre');
  // Le bilan venu d'ailleurs est relu : chiffres bornés, noms coupés, camp connu.
  {const vm=require('vm'),deb=src.indexOf('function lisBilan(o){'),fin=src.indexOf('const statsDialog=');const ctx={};vm.createContext(ctx);vm.runInContext(src.slice(deb,fin)+';this.r=lisBilan({tours:"3",liste:[{nom:"x".repeat(99),camp:"pirate",inf:-4,sub:"12",pic:1e9},null]});',ctx);
@@ -5233,7 +5240,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  const brom={name:'Brom',hero:true,x:10,y:10,hp:5,richesses:{or:3}};ctx.actors.push(brom,{name:'Ysa',hero:true,x:80,y:10,hp:5});
  ctx.butinDesRetires([{name:'Gobelin',hero:false,x:12,y:10,bourse:[{k:'or',n:2,f:6,p:100},{k:'eclat-rubis',n:1,f:1,p:100}]}],()=>.5);
  assert.equal(JSON.stringify(brom.richesses),JSON.stringify({or:11,'eclat-rubis':1}),'8 or et un éclat de rubis');
- assert.equal(ctx.journal[0],'Brom trouve 8 or, 1 éclat de rubis (Gobelin).');
+ assert.equal(ctx.journal[0],'Brom trouve 8 or, 1 éclat de rubis.');
  ctx.journal.length=0;ctx.butinDesRetires([{name:'Rat',hero:false,x:12,y:10,bourse:[{k:'or',n:1,f:6,p:30}]}],()=>.5);assert.equal(ctx.journal.length,0,'30 % : un tirage à 50 ne tombe pas');
  // L'éditeur : dans l'inventaire de tout adversaire, PNJ compris, et au coffre ; le modèle et la carte la portent.
  assert.ok(src.includes("boite.append(possede,...(restes?[]:[editeurBourse(cible,apres),editeurForgeAdv(cible,apres)]),barre,grille);")&&src.includes("function editeurBourse(cible,apres,avecChance=true){")
@@ -5669,4 +5676,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2114 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2118 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

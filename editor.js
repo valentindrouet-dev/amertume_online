@@ -5885,12 +5885,16 @@ function butinDesRetires(partants,tirage=Math.random){const heros=actors.filter(
    let donne=o;if((o.category==='weapon'||o.category==='armor')&&!o.forge){const n=tireNombreAffixes(catalog.forge,forgeF,tirage);
     if(n>0){const aff=tireAffixes(o,n,catalog.affixes||[],Number(h.level)||1,tirage);if(aff.length){const rec={id:'forge-'+crypto.randomUUID(),base:o.id,affixes:aff};
      h.forges=[...(h.forges||[]),rec];h.inventaire=[...(h.inventaire||[]),rec.id];syncForges();donne=objetDe(rec.id)||o}}}
-   if(donne===o)ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{}});const g=gains.get(h);g.objets.set(donne.id,(g.objets.get(donne.id)||0)+1);g.de.add(f)});
+   if(donne===o)ajouterInventaire(h,o);if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{},src:new Map()});const g=gains.get(h);g.objets.set(donne.id,(g.objets.get(donne.id)||0)+1);g.de.add(f);
+   // Qui l'a laissée tomber : son modèle au Bestiaire et son nom, pour la bulle de la pièce au journal.
+   if(!g.src.has(donne.id))g.src.set(donne.id,[]);g.src.get(donne.id).push({t:String(f.template||''),n:String(f.name||'').slice(0,40)})});
   // L'or et les gemmes de sa bourse, tirés aux dés : au même aventurier.
   Object.entries(tire).forEach(([k,v])=>{if(k==='or')ajouteOr(h,v);else{h.richesses={...(h.richesses||{})};h.richesses[k]=(Math.trunc(Number(h.richesses[k]))||0)+v}
-   if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{}});const g=gains.get(h);g.richesses[k]=(g.richesses[k]||0)+v;g.de.add(f)})});
+   if(!gains.has(h))gains.set(h,{objets:new Map(),de:new Set(),richesses:{},src:new Map()});const g=gains.get(h);g.richesses[k]=(g.richesses[k]||0)+v;g.de.add(f)})});
  // Chaque pièce part au journal sous son identifiant, « ⟦id⟧ » : le journal y pose son logo, et sa bulle.
- gains.forEach((g,h)=>log(h.name+' trouve '+[[...g.objets].map(([id,k])=>'⟦'+id+'⟧'+(k>1?' ×'+k:'')).join(' '),...phraseRichesses(g.richesses)].filter(Boolean).join(', ')+' ('+listeNombree([...g.de].map(f=>f.name))+').',{ton:'butin'}));
+ // La ligne ne dit que ce qui est trouvé ; qui l'a laissé tombé se lit dans la bulle de chaque pièce.
+ gains.forEach((g,h)=>log(h.name+' trouve '+[[...g.objets].map(([id,k])=>'⟦'+id+'⟧'+(k>1?' ×'+k:'')).join(' '),...phraseRichesses(g.richesses)].filter(Boolean).join(', ')+'.',
+  {ton:'butin',sources:[...g.src].map(([o,d])=>({o,d:d.slice(0,8)}))}));
  if(gains.size)document.dispatchEvent(new Event('amertume-content-changed'))}
 /* Rejouer la même rencontre : les adversaires repartent intacts, la troupe garde ses
    blessures — c'est le combat qu'on recommence, pas la partie. */
