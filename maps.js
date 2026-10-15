@@ -2845,6 +2845,11 @@ function gardeTailles(t){try{localStorage.setItem(TAILLES_CLE,JSON.stringify(t))
 function appliqueTailles(){const L=document.querySelector('main.layout');if(!L)return;const t=lisTailles();L.style.gridTemplateColumns='';
  if(innerWidth<=1150||!(t.g||t.d))return;const [g,,d]=getComputedStyle(L).gridTemplateColumns.split(/\s+/).map(parseFloat);
  L.style.gridTemplateColumns=Math.round(t.g||g)+'px minmax(0,1fr) '+Math.round(t.d||d)+'px'}
+/* Le panneau de la carte touche le bas de l'écran, quelle que soit la forme de l'image : la carte garde ses proportions, et le
+   panneau s'allonge sous elle de ce qui manque. Sur un écran étroit, tout défile comme avant. */
+{const ratioSeul=applyMapRatio;applyMapRatio=function(){const change=ratioSeul(),el=$('map'),panneau=el&&el.closest('.map-panel');if(!panneau)return change;
+ const m=currentMap();if(innerWidth<=900||!m||!m.ratio||!el.offsetParent){panneau.style.minHeight='';return change}
+ const haut=el.getBoundingClientRect().top-panneau.getBoundingClientRect().top;panneau.style.minHeight=Math.round(haut+Math.max(260,hauteurDispoCarte(el)))+'px';return change}}
 // La hauteur de la carte choisie à la main passe avant celle qui tient dans l'écran.
 {const hauteurAvantTailles=hauteurDispoCarte;hauteurDispoCarte=function(el){const h=Math.round(Number(lisTailles().h));return h>=200?h:hauteurAvantTailles(el)}}
 let renduTailles=0;const rendTailles=()=>{if(renduTailles)return;renduTailles=requestAnimationFrame(()=>{renduTailles=0;render()})};

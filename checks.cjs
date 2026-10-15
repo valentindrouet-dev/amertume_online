@@ -3460,7 +3460,7 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
 /* v0.756 — Une pièce du journal restée inconnue se retrouve dès que le catalogue la connaît. */
 {assert.ok(page.includes("function piecesRetrouvees(){const l=document.querySelectorAll('.j-objet[data-inconnu]');")&&page.includes(" effetsPassifs();comaAventuriers();glissantsReveles();finDeCombatAuto();\n piecesRetrouvees();"));}
 /* v0.755 — Zoomée, la carte de la table s'étend dans les bords vides du panneau ; le voile d'attente les couvre aussi. */
-{assert.ok(page.includes(".map-panel>#map{overflow:visible;clip-path:inset(0 -100vw)}")&&page.includes(".map-panel>#map>#voile-attente{left:-100vw;right:-100vw}")
+{assert.ok(page.includes(".map-panel>#map{overflow:visible;clip-path:inset(0 -100vw -100vh)}")&&page.includes(".map-panel>#map>#voile-attente{left:-100vw;right:-100vw;bottom:-100vh}")
  &&page.includes("const lo=zw>w+g+dr?w+dr-zw:Math.max(w-zw,-g),hi=zw>w+g+dr?-g:Math.min(0,w+dr-zw);"));}
 /* v0.754 — En combat, le MJ écarte les pas et les points du tour écrits hors de ce combat ; un joueur date ses positions. */
 {const lv=fs.readFileSync('live.js','utf8');assert.ok(lv.includes("if(horsCombat&&(k==='x'||k==='y'||CHAMPS_TOUR.includes(k))&&!pareil(local,e[k])){gardes.push([id,k,structuredClone(e[k])]);return}")
