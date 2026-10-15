@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.781","d":"2026-10-15","t":"Double-clic sur un token : approche plus éloignée"},
 {"v":"0.780","d":"2026-10-15","t":"Mouvement et états centrés au-dessus de la barre d'actions"},
 {"v":"0.779","d":"2026-10-15","t":"La flèche vole jusqu'à sa cible"},
 {"v":"0.778","d":"2026-10-15","t":"Fiche de l'objet au survol avant de le choisir"},
