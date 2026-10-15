@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.797 — Rage en rouge orangé vif, même quand c'est aussi le nom d'un talent de l'arbre ; le chiffre d'un état qui s'empile
+   prend sa couleur. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("Rage:'#e8501c'")&&src.includes("ETATS_JEU.some(e=>e.toLowerCase()===n.toLowerCase()))return;")&&src.includes("if(cran){el.append(cran[1]);gras(cran[2],teinte);last+=cran[0].length;rx.lastIndex=last}"),'Rage 1 en couleur');}
 /* v0.796 — Rage : 1 Rage par dégâts subis en combat ; ses trois améliorations, critiques, adversaires tués, début du combat,
    chacune élargie au palier 2 ; posées une fois sur les petits ronds sans effet du talent de classe. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),T=C.TALENTS_CODES;

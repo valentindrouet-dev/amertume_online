@@ -2193,7 +2193,7 @@ function enElementDuMystique(html,etat){if(!etat)return html;
    fiche), états (à leurs teintes), points et natures (en gras), formules de dés et bonus
    chiffrés (« 1d6+2 », « +3 »). Le MJ en ajoute dans l'onglet Talents ; « **ainsi** » force
    le gras. Le texte se découpe autour d'eux, sans jamais passer par du HTML. */
-const TEINTE_ETAT_MOT={Furie:'#c0392b',Rage:'#c24a1f',Feu:'#c2503a',Gel:'#2f8fae',Foudre:'#3a6fc2',Poison:'#9b4fc0','Saignée':'#b8352f',Onde:'#3577b8',Invisible:'#6a5fb0',Faille:'#a0408f'};
+const TEINTE_ETAT_MOT={Furie:'#c0392b',Rage:'#e8501c',Feu:'#c2503a',Gel:'#2f8fae',Foudre:'#3a6fc2',Poison:'#9b4fc0','Saignée':'#b8352f',Onde:'#3577b8',Invisible:'#6a5fb0',Faille:'#a0408f'};
 /* La couleur d'un mot clé du MJ : « Allié : vert », « Allié = #2f8a63 », ou rien — la
    couleur du thème. Un mot du jeu redéclaré prend la couleur qu'on lui donne. */
 const COULEURS_MOTS={rouge:'#b8352f',orange:'#c2692a',or:'#9d7b1e',jaune:'#b39222',vert:'#2f7a4b',turquoise:'#2c8c85',bleu:'#3a6fc2',violet:'#7a5cb8',rose:'#b04a8a',brun:'#8a5a2b',gris:'#6e6a66',noir:'#2a2622'};
@@ -2268,7 +2268,8 @@ const cleNomTalent=n=>String(n).toLowerCase().replace(/\s+/g,' ');
 function nomsDeLArbre(t){const c=t&&lisChemin(t),fam=talentFamily(c&&talent(c.de)||t),parNom=new Map();
  const clair=n=>String(n||'').normalize('NFC').replace(new RegExp(ACCOLADES.source,'giu'),(m,k)=>sorteAccolade(k)?libelleAccolade(k):m).trim();
  (catalog.talents||[]).forEach(x=>{if(!x||estVide(x)||estBonus(x)||talentFamily(x)!==fam)return;
-  const n=clair(x.name);if(n&&!parNom.has(cleNomTalent(n)))parNom.set(cleNomTalent(n),TEINTES_TALENTS[talentType(x)[0]])});
+  const n=clair(x.name);if(n&&typeof ETATS_JEU!=='undefined'&&ETATS_JEU.some(e=>e.toLowerCase()===n.toLowerCase()))return;
+  if(n&&!parNom.has(cleNomTalent(n)))parNom.set(cleNomTalent(n),TEINTES_TALENTS[talentType(x)[0]])});
  if(!parNom.size)return null;
  const q=x=>x.replace(/[.*+?^${}()|[\]\\\/-]/g,'\\$&').replace(/ /g,'\\s+');
  const motifs=[...parNom.keys()].sort((x,y)=>y.length-x.length).map(q);
@@ -2287,7 +2288,10 @@ function motsClesDans(el,texte){const {rx,entrees}=motsCles();rx.lastIndex=0;let
   const debut=m.index+m[2].length;if(debut>last)el.append(texte.slice(last,debut));
   // Le groupe qui a pris : une entrée (sa couleur), ou la formule de dés (en gras seul).
   let k=3;while(k<3+entrees.length&&m[k]===undefined)k++;
-  gras(m[k]!==undefined?m[k]:m[3+entrees.length],k<3+entrees.length?entrees[k-3].couleur:'');last=rx.lastIndex}
+  const mot=m[k]!==undefined?m[k]:m[3+entrees.length],teinte=k<3+entrees.length?entrees[k-3].couleur:'';gras(mot,teinte);last=rx.lastIndex;
+  // Un état qui s'empile, suivi de son chiffre : « Rage 1 », le chiffre prend la couleur de l'état.
+  const cran=typeof ETATS_CUMULES!=='undefined'&&ETATS_CUMULES.some(e=>e.toLowerCase()===mot.toLowerCase())&&/^(\s+)(\d+)(?![\p{L}\p{N}])/u.exec(texte.slice(last));
+  if(cran){el.append(cran[1]);gras(cran[2],teinte);last+=cran[0].length;rx.lastIndex=last}}
  if(last<texte.length)el.append(texte.slice(last));return el}
 function talentDetail(t){const d=document.createElement('div');d.className='talent-detail t-'+talentType(t)[0];
  const ligne=(texte,html)=>{if(!texte)return null;const p=document.createElement('p');
