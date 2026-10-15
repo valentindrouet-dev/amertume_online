@@ -4464,7 +4464,7 @@ function dissoudreVoie(famille,nom){const i=voiesDe(famille).indexOf(nom);
    le sphérier, ni ce qu'une ligne ne mène plus jusqu'à lui. Sans classe à arbre, rien ne bouge. */
 function talentsDuSpherier(a){const classe=classeDuHeros(a);if(!a||!classe||!aUnArbre(classe))return null;
  const vus=new Set();colonnesArbre(classe).forEach(col=>atteintsDepuis(a.talents,col.liste,null).forEach(id=>vus.add(id)));
- {const fl=talentFlottant(classe);if(fl){vus.add(fl.id);tousTalents().forEach(x=>{const c=lisChemin(x);if(c&&c.de===fl.id)vus.add(x.id)})}}
+ talentsFlottants(classe).forEach(fl=>{vus.add(fl.id);tousTalents().forEach(x=>{const c=lisChemin(x);if(c&&c.de===fl.id)vus.add(x.id)})});
  return (a.talents||[]).filter(id=>vus.has(id))}
 /* Un aventurier qui oublie un talent de son arbre perd tout ce qui en dépendait : talents, bonus et
    améliorations qu'aucun talent tenu ne rattache plus au départ, et ce qui reposait sur eux, jusqu'à
@@ -4657,9 +4657,11 @@ function basculeLien(de,vers,liste){if(!de||!vers||de===vers)return 'rien';
 /* Le gros rond flottant au bord gauche de l'arbre d'une classe : un talent hors de la grille, que tout aventurier de la classe
    tient d'office, sans payer d'XP (v0.783). Un seul par classe. */
 function talentFlottant(classe){return (catalog.talents||[]).find(t=>t&&t.flottant===true&&!t.horsArbre&&talentFamily(t)===classe)||null}
+// Tous les talents de classe d'une classe, tenus d'office : l'ancien rond flottant, et la maîtrise de départ.
+function talentsFlottants(classe){return (catalog.talents||[]).filter(t=>t&&t.flottant===true&&!t.horsArbre&&talentFamily(t)===classe)}
 function accordeFlottants(){if(typeof spectateur==='function'&&spectateur())return false;let change=false;
- (typeof actors!=='undefined'?actors:[]).forEach(a=>{if(!a||!a.hero)return;const fl=talentFlottant(classeDuHeros(a)),l=a.talents||[];
-  const garde=l.filter(id=>{const t=talent(id);return !t||!t.flottant||t===fl});if(fl&&!garde.includes(fl.id))garde.push(fl.id);
+ (typeof actors!=='undefined'?actors:[]).forEach(a=>{if(!a||!a.hero)return;const fls=talentsFlottants(classeDuHeros(a)),l=a.talents||[];
+  const garde=l.filter(id=>{const t=talent(id);return !t||!t.flottant||fls.includes(t)});fls.forEach(fl=>{if(!garde.includes(fl.id))garde.push(fl.id)});
   if(garde.length!==l.length||garde.some((id,k)=>id!==l[k])){a.talents=garde;change=true}});
  return change}
 function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!lisChemin(t));
@@ -4682,6 +4684,9 @@ function accordeArbres(){let change=false;
  (catalog.classes||[]).map(c=>c&&c.name).filter(n=>n&&n!==GENERIQUES).forEach(classe=>{
   colonnesArbre(classe).forEach(col=>{const ids=new Set(col.liste.map(t=>t.id)),posees=[];
    /* Le talent de classe sans case : en haut, au centre de sa colonne, une rangée au-dessus des autres. */
+   /* v0.806 : la maîtrise tout en haut du Tronc commun, son départ, est le talent de classe : tenue d'office, jamais décochée. */
+   if(col.rang===rangDAccueil(classe)){const dep=departsDe(col.liste),haut=col.liste.filter(t=>dep.has(t.id)&&!estVide(t)&&posDe(t)).sort((x,y)=>posDe(x).y-posDe(y).y)[0];
+    if(haut&&haut.type==='mait'&&haut.flottant!==true){haut.flottant=true;change=true}}
    col.liste.forEach(t=>{if(!t.flottant||posDe(t))return;const ps=col.liste.filter(x=>x!==t).map(posDe).filter(Boolean);
     t.pos=ps.length?{x:Math.round((Math.min(...ps.map(q=>q.x))+Math.max(...ps.map(q=>q.x)))/2),y:Math.min(...ps.map(q=>q.y))-1}:{x:0,y:0};change=true});
    col.liste.forEach(t=>{const l=liensDe(t),bon=[...new Set(l.filter(id=>ids.has(id)&&id!==t.id))].slice(0,LIENS_MAX);

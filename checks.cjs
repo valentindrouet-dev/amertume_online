@@ -5192,6 +5192,9 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.806 — La maîtrise de départ du Tronc commun devient talent de classe : tenue d'office, jamais décochée, à côté de l'ancien rond flottant. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("if(haut&&haut.type==='mait'&&haut.flottant!==true){haut.flottant=true;change=true}")&&src.includes("fls.forEach(fl=>{if(!garde.includes(fl.id))garde.push(fl.id)});"),'la maîtrise de départ tenue d’office');}
 /* v0.805 — L'arbre v2 : l'arbre à gauche, le panneau du talent à droite, un drapeau pour revenir à la v1 ; un nom à tiret ne casse
    plus les bulles. */
 {const src=fs.readFileSync('editor.js','utf8');
