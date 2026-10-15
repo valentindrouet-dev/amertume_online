@@ -2963,3 +2963,12 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 .arbres-v2 .arbres-detail .detail-tete.editable:hover{border-color:var(--teinte)}
 .arbres-v2 .arbres-detail .detail-amelioration:not(.detail-bonus).suite::before{width:16px;height:16px;top:-19px}
 .arbres-v2 .arbres-detail .detail-bonus.suite::before{width:16px;height:16px;left:-20px}
+/* v0.819 : chez un aventurier, une carte qu'il ne tient pas — talent, amélioration ou bonus — reste grise, qu'elle soit à prendre
+   ou hors d'atteinte ; prise, elle prend sa couleur. Une carte à prendre se signale au survol. */
+.arbres-v2 .arbres-detail .detail-tete.cliquable:not(.acquise),
+.arbres-v2 .arbres-detail .detail-amelioration:not(.acquise):not(.editable){border-color:#ddd6c8!important;border-left-color:#b9b1a2!important;background:#ecebe6!important;opacity:1}
+.arbres-v2 .arbres-detail .detail-tete.cliquable:not(.acquise) .detail-rond{border-color:#b9b1a2;filter:grayscale(1)}
+.arbres-v2 .arbres-detail .detail-amelioration:not(.acquise):not(.editable) .detail-am-nom b{color:#6f6a62!important}
+.arbres-v2 .arbres-detail .detail-amelioration:not(.acquise):not(.editable) .detail-am-nom b *{color:inherit!important}
+.arbres-v2 .arbres-detail .detail-amelioration:not(.acquise):not(.editable) .detail-am-nom b :is(img,svg){filter:grayscale(1)}
+.arbres-v2 .arbres-detail :is(.detail-tete.achetable,.detail-amelioration.achetable):is(:hover,:focus-visible){border-color:#b9a77f!important;box-shadow:0 0 0 2px #d9cba855!important}
