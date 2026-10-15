@@ -3445,9 +3445,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
      le texte qui se lit à la table, les valeurs qui agissent, et ce que coûte le palier. */
   +'<section class="talent-boite b-moteur t-seul"><h2 class="sous-titre">Mécanique du moteur</h2>'
   +selMecanique(bonus?'':(t.effet||''))
-  /* Élémentaire : pour le Mystique, l'état réglé suit l'élément choisi ; les accolades, elles,
-     se remplissent dans le nom, les textes et le logo de tout talent. */
-  +'<label class="field-check"><input type="checkbox" name="elementaire" '+(t.elementaire===true?'checked':'')+'>Élémentaire — l’état réglé suit l’élément du Mystique</label>'
+  /* La case Élémentaire n'est plus (v0.788) : le Mystique n'a plus qu'un élément. Les accolades, elles, se remplissent toujours
+     dans le nom, les textes et le logo de tout talent. */
   +'<label class="field-check" id="remplace-logo"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceLogo" '+(t.remplaceLogo===true?'checked':'')+'>Remplace le logo du talent</label>'
   +'<p class="muted accolades-aide">Accolades, dans le nom, les textes et le logo : {élément} Feu · Gel · Foudre — {mot} feu · glace · foudre, {Mot} avec la capitale — {logo} feu · gel · foudre. « Brise{mot} » fait Brisefeu, Briseglace, Brisefoudre.</p>'
   +'<div id="talent-exige"></div></section>'
@@ -3558,7 +3557,8 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  t.rangee=f.rangee&&['attaques','reactions','aucune'].includes(f.rangee.value)?f.rangee.value:'';
  // L'effet et ses réglages, relus au travers de leur déclaration : rien d'illisible n'entre.
  t.effet=TALENTS_CODES[f.effet.value]&&f.effet.value!=='bonus'?f.effet.value:'';
- if(f.elementaire&&f.elementaire.checked)t.elementaire=true;else delete t.elementaire;
+ // Sans la case, un talent garde le réglage Élémentaire qu'il avait.
+ if(f.elementaire){if(f.elementaire.checked)t.elementaire=true;else delete t.elementaire}
  if(t.type==='ame'&&f.remplaceLogo&&f.remplaceLogo.checked)t.remplaceLogo=true;else delete t.remplaceLogo;
  if(t.type==='ame'&&f.paliersActifs&&f.paliersActifs.checked)t.paliersActifs=true;else delete t.paliersActifs;
  /* Un talent ne se fait remplacer le texte que par un seul chemin : cocher ici décoche les

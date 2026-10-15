@@ -2819,7 +2819,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(src.includes("function choixElement(a,classe,rendre){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
   &&src.includes("(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')")&&src.includes("const tp=talentAuPalier(vu(t),n),c=coutPalier(t,n)")
   &&src.includes(".filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
-  &&src.includes("name=\"elementaire\""),'l’arbre, la fiche et l’éditeur suivent l’élément');
+  &&!src.includes("name=\"elementaire\""),'l’arbre et la fiche suivent l’élément ; plus de case Élémentaire dans l’éditeur (v0.788)');
  assert.ok(src.includes(".filter(r=>ELEMENTS.every(e=>LOGOS_TOUS.includes(r+'_'+e.logo))).map(r=>r+'_{logo}');")&&page.includes("const teinte=etat||(elementDe(a)||{}).etat||'';"),'le logo et l’orbe suivent l’élément ; les dés restent les leurs');
  /* v0.301 : sur la carte d'un aventurier, ses gemmes en ligne, sans tableau ni valeur en or. */
  assert.ok(src.includes("function ligneGemmes(compte,poser,qui){const l=document.createElement('div');l.className='gemmes-ligne';")&&src.includes("return l.childElementCount?l:null}")

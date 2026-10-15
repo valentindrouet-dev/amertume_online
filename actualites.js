@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.788","d":"2026-10-15","t":"Plus de case Élémentaire dans l'éditeur de talents"},
 {"v":"0.787","d":"2026-10-15","t":"Plus d'arrêt en sortant de la zone d'un adversaire"},
 {"v":"0.786","d":"2026-10-15","t":"Zone d'ajustement : pointillés plus fins"},
 {"v":"0.785","d":"2026-10-15","t":"Adversaires morts au bas de la liste"},
