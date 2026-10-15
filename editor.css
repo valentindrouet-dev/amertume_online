@@ -2720,3 +2720,5 @@ body.site-verrouille>main:not(#verrou-page),body.site-verrouille nav.tabs,body.s
 .stat-tile.en-hausse strong,.stat-row.en-icones .stat-tile.avec-icone.en-hausse strong{color:#ffc35a}
 /* Le talent de classe, en haut du Tronc commun : tenu d'office, ni prix ni coche. */
 .arbre-plan>.arbre-noeud.talent-classe .arbre-cout{display:none}.arbre-plan>.arbre-noeud.talent-classe .arbre-rond::after{display:none}
+/* Une ligne à niveau : invisible aux joueurs ; chez le MJ, pâle et pointillée. */
+.arbre-chemins .chemin.a-niveau .trait{stroke-dasharray:2 8;opacity:.4;stroke:var(--line-strong)}

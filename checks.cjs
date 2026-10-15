@@ -3109,7 +3109,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(feuille.includes('.corps-sac>.sac{grid-column:2;grid-row:1;')
   &&feuille.includes('.sac .cat-pill.gear-carre,.sac .cat-pill.gear-carre:not(.talent-carre):not(.best-carre){width:36px;min-width:36px;height:36px;'),'équipement et inventaire côte à côte');
  /* v0.476 — Le trait d'un bonus, plus fin, va sous son icône ; un petit « + » devant sa valeur, sans la déplacer. */
- assert.ok(src.includes("g.setAttribute('class','chemin'+(lien?'':' petit')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':'')+(caches.has(vers.id)?(voitTout?' cache-mj':' cache-joueur'):''));")
+ assert.ok(src.includes("g.setAttribute('class','chemin'+(lien?'':' petit')+(aNiveau?' a-niveau':'')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':'')+(caches.has(vers.id)?(voitTout?' cache-mj':' cache-joueur'):''));")
   &&src.includes("r:i&&i.width?Math.min(i.width,i.height)*.22:r.width/2-2}};")&&feuille.includes('.arbre-chemins .chemin.bonus .trait{stroke-width:1.5}')&&feuille.includes('.arbre-plan>.arbre-noeud.petit.bonus::before{display:none}')
   &&feuille.includes(".arbre-plan>.arbre-noeud.petit.bonus .arbre-rond b.bonus-valeur::before{content:'+';position:absolute;right:100%;"),'trait fin sous l’icône, petit + devant la valeur');
  /* v0.475 — Un bonus de l'arbre : l'icône et la valeur seules ; la valeur plus petite, dans le coin bas droit. */
@@ -5192,6 +5192,11 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.802 — Une ligne à niveau : invisible aux joueurs, pastille et barrière gardées ; au niveau voulu, le talent du bas s'ouvre sans
+   celui d'en haut, et ce qui lui est relié le suit. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("{const dn=typeof departsDeNiveau==='function'?departsDeNiveau(liste):new Map();if(dn.has(t.id))return dn.get(t.id)<=niveau?'':'Niveau '+dn.get(t.id)}")
+  &&src.includes("file=L.filter(t=>(departs.has(t.id)||dn.has(t.id))&&passe(t));")&&src.includes("const aNiveau=lien&&niveauLien(de,vers)>0;if(aNiveau&&!voitTout)return;"),'les lignes à niveau');}
 /* v0.801 — Le talent de classe tenu d'office ne se désactive ni dans l'arbre, ni dans le choix des talents de la fiche. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes(" const oublier=(t,liste)=>{if(t&&t.flottant===true)return;")&&fs.readFileSync('editor.js','utf8').includes("const bascule=()=>{if(pris&&cible.hero&&t.flottant===true)return;"),'le talent de classe reste acquis');
 /* v0.800 — Le talent de classe prend sa case en haut du Tronc commun ; jusqu'à cinq lignes, droites ou diagonales, pour tous ;

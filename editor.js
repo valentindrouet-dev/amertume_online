@@ -4595,11 +4595,17 @@ function profondeursDe(liste){const L=(liste||[]).filter(Boolean),departs=depart
    nomme ceux d'au-dessus. Un petit rond attend le petit rond d'avant sur son chemin, ou, s'il est le
    premier, son talent. */
 // « niveau » : celui de l'aventurier ; une ligne qui exige plus ne mène pas encore à ce talent.
+/* v0.802 — Les départs de niveau : au bout bas de chaque ligne qui porte un niveau, le talent qui s'ouvre à ce niveau, sans qu'il
+   faille tenir celui d'en haut ; la ligne ne se montre pas aux joueurs. Talent → plus petit niveau qui l'ouvre. */
+function departsDeNiveau(liste){const L=(liste||[]).filter(Boolean),out=new Map(),y=t=>{const p=posDe(t);return p?p.y:0};
+ L.forEach(x=>liensDe(x).forEach(id=>{const v=L.find(z=>z.id===id),n=v?niveauLien(x,v):0;if(n<2)return;const bas=y(v)>=y(x)?v:x;
+  if(!out.has(bas.id)||n<out.get(bas.id))out.set(bas.id,n)}));return out}
 function verrouArbre(portes,liste,t,niveau=Infinity){const tous=portes||[];
  // Une case vide se traverse une fois atteinte : le talent qui y manque ne ferme pas ce qui la suit.
  let atteints=null;const tenu=x=>tous.includes(x.id)||(estVide(x)&&(atteints||=atteintsDepuis(tous,liste,null)).has(x.id));
  if(lisChemin(t)){const d=departChemin(t);if(!d)return '';const av=precedentChemin(t)||d;return tenu(av)?'':av.name||'—'}
  if(departsDe(liste).has(t.id))return '';
+ {const dn=typeof departsDeNiveau==='function'?departsDeNiveau(liste):new Map();if(dn.has(t.id))return dn.get(t.id)<=niveau?'':'Niveau '+dn.get(t.id)}
  const v=voisinsDe(liste,t);if(!v.length)return '';
  const tenus=v.filter(tenu);if(tenus.some(x=>niveauLien(x,t)<=niveau))return '';
  if(tenus.length)return 'Niveau '+Math.min(...tenus.map(x=>niveauLien(x,t)));
@@ -4611,7 +4617,7 @@ function verrouArbre(portes,liste,t,niveau=Infinity){const tous=portes||[];
 function atteintsDepuis(portes,liste,sans){const tient=new Set((portes||[]).filter(id=>id!==sans)),L=(liste||[]).filter(Boolean),departs=departsDe(L),vus=new Set();
  // Une case vide se traverse comme un talent tenu.
  const passe=x=>tient.has(x.id)||estVide(x);
- const file=L.filter(t=>departs.has(t.id)&&passe(t));
+ const dn=typeof departsDeNiveau==='function'?departsDeNiveau(L):new Map(),file=L.filter(t=>(departs.has(t.id)||dn.has(t.id))&&passe(t));
  while(file.length){const t=file.shift();if(vus.has(t.id))continue;vus.add(t.id);
   voisinsDe(L,t).forEach(x=>{if(passe(x)&&!vus.has(x.id))file.push(x)});
   Object.keys(DIRS).forEach(d=>{for(const p of petitsDe(t,d)){if(!passe(p))break;vus.add(p.id)}})}
@@ -5511,8 +5517,10 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
   col.querySelectorAll('.arbre-plan>.arbre-noeud').forEach(el=>{const c=caches.has(el.dataset.id);el.classList.toggle('cache-joueur',c&&!voitTout);el.classList.toggle('cache-mj',c&&voitTout)});
   // Sous la limite, chez les joueurs : pas de trait ; celui qui y descend s'arrête à la barrière.
   const trait=(de,vers,A,B,lien)=>{const hA=A.classList.contains('hors-limite'),hB=B.classList.contains('hors-limite');if(hA||(hB&&!lien))return;
+   // Une ligne qui porte un niveau ne se voit pas chez les joueurs : sa pastille et la barrière restent ; chez le MJ, pâle.
+   const aNiveau=lien&&niveauLien(de,vers)>0;if(aNiveau&&!voitTout)return;
    const p=centre(A),q0=centre(B),q=hB?{x:(p.x+q0.x)/2,y:(p.y+q0.y)/2,r:0}:q0,g=document.createElementNS(ns,'g');
-   g.setAttribute('class','chemin'+(lien?'':' petit')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':'')+(caches.has(vers.id)?(voitTout?' cache-mj':' cache-joueur'):''));
+   g.setAttribute('class','chemin'+(lien?'':' petit')+(aNiveau?' a-niveau':'')+(estBonusEl(A)||estBonusEl(B)?' bonus':'')+(pris(de,vers)?' pris':'')+(caches.has(vers.id)?(voitTout?' cache-mj':' cache-joueur'):''));
    // Le trait ne traverse jamais un bouton : il ne vit qu'entre deux, d'un bord à l'autre.
    const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,rp=Math.min(p.r,d/2),rq=Math.min(q.r,d/2);
    const P={x:p.x+ux*rp,y:p.y+uy*rp},Q={x:q.x-ux*rq,y:q.y-uy*rq};
