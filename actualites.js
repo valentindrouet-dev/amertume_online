@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.816","d":"2026-10-15","t":"Accueil : l'illustration, allégée"},
 {"v":"0.815","d":"2026-10-15","t":"Flèches de palier"},
 {"v":"0.814","d":"2026-10-15","t":"Accueil : place de l'illustration"},
 {"v":"0.813","d":"2026-10-15","t":"Arbre v2 : teintes, grisé, réinitialiser"},

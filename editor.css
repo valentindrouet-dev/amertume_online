@@ -2946,3 +2946,7 @@ body.sombre #accueil-page .accueil-v2 .accueil-bloc{background:var(--panel);bord
 .arbres-v2 .arbres-detail .detail-bonus-grille{column-gap:24px}
 .arbres-v2 .arbres-detail .detail-bonus.premier{grid-column:1}
 .arbres-v2 .arbres-detail .detail-bonus.suite::before{content:'';position:absolute;left:-22px;top:50%;width:20px;height:20px;transform:translateY(-50%);background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14M13 6l6 6-6 6' fill='none' stroke='%23cdbb94' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;pointer-events:none}
+/* L'illustration est peinte sur du blanc : en « multiply », le blanc prend la teinte de la page. */
+#accueil-page .accueil-v2 .accueil-ville img{mix-blend-mode:multiply}
+body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
+#accueil-page .accueil-v2 .accueil-ville{opacity:.8;width:min(900px,64%)}
