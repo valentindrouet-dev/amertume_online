@@ -790,12 +790,12 @@ bestiaryPage.innerHTML='<section class="cat-panel panel">'
    Le seuil de la campagne : créer un aventurier, les dernières actualités de la table, les aventuriers présents au domaine, les
    hauts faits. */
 const accueilPage=document.createElement('main');accueilPage.id='accueil-page';
-accueilPage.innerHTML='<section class="cat-panel panel accueil"><header class="cat-head"><h2>Accueil</h2></header><div class="accueil-grille">'
- +'<section class="accueil-bloc accueil-creer"><h3>Créer un nouvel aventurier</h3><button id="accueil-creer" type="button" class="primary">+ Créer un aventurier</button></section>'
- +'<section class="accueil-bloc accueil-actus"><h3>Dernières actualités</h3><div id="accueil-actus"></div></section>'
- +'<section class="accueil-bloc accueil-actifs"><h3>Aventuriers</h3><div id="accueil-actifs"></div></section>'
- +'<section class="accueil-bloc accueil-joueurs"><h3>Joueurs connectés</h3><div id="accueil-joueurs" class="joueurs-connectes"></div></section>'
- +'<section class="accueil-bloc accueil-faits"><h3>Derniers hauts faits</h3><div id="accueil-faits"></div></section></div></section>';
+accueilPage.innerHTML='<section class="accueil accueil-v2"><header class="accueil-tete"><div class="accueil-titres"><h2>Accueil</h2><p class="accueil-sous">Retrouvez vos aventuriers et les nouvelles de votre campagne.</p></div><div class="accueil-ville" aria-hidden="true"><svg viewBox="0 0 520 150" preserveAspectRatio="xMaxYMax meet"><g fill="currentColor"><path d="M0 150V128q40-14 80-6t90-4q50-10 110 0t110-4q60-8 130 4v32Z" opacity=".35"/><path d="M60 150v-46h14V86l9-18 9 18v18h12v46Z"/><path d="M118 150v-34h26v34Z"/><path d="M150 150v-62h10V64l12-26 12 26v24h10v62Z"/><path d="M200 150v-40h18l10-14 10 14h18v40Z"/><path d="M262 150V96h10V70l14-34 14 34v26h10v54Z"/><path d="M318 150v-44l16-16 16 16v44Z"/><path d="M356 150V78h8V56l11-22 11 22v22h8v72Z"/><path d="M400 150v-50h30v50Z"/><path d="M436 150V92l14-20 14 20v58Z"/><path d="M472 150v-36h22l8-10 8 10v36Z"/><path d="M20 150c4-14 10-20 16-22 6 2 12 8 16 22Z" opacity=".6"/><path d="M84 150q20-26 40 0Z" opacity=".5"/></g></svg></div><div class="accueil-creer"><button id="accueil-creer" type="button" class="primary">+ Créer un aventurier</button></div></header>'
+ +'<div class="accueil-haut"><section class="accueil-bloc accueil-actifs"><h3>Vos aventuriers <span class="accueil-compte" id="accueil-compte"></span></h3><div id="accueil-actifs"></div></section>'
+ +'<section class="accueil-bloc accueil-actus"><h3>Dernières actualités <span class="accueil-version" id="accueil-version"></span></h3><div id="accueil-actus"></div></section></div>'
+ +'<div class="accueil-bas"><section class="accueil-bloc accueil-joueurs"><span class="accueil-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.4 2.7-5.6 6-5.6s6 2.2 6 5.6"/><circle cx="16.8" cy="9" r="2.6"/><path d="M16 13.6c2.9 0 5 1.9 5 4.9"/></svg></span><div><h3>Joueurs connectés</h3><div id="accueil-joueurs" class="joueurs-connectes"></div></div></section>'
+ +'<section class="accueil-bloc accueil-faits"><span class="accueil-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0Z"/><path d="M7 6H4v1.5A3.5 3.5 0 0 0 7.5 11M17 6h3v1.5A3.5 3.5 0 0 1 16.5 11"/><path d="M12 14v3M8.5 20h7M9.5 17h5v3h-5Z"/></svg></span><div><h3>Derniers hauts faits</h3><div id="accueil-faits"></div></div></section></div>'
+ +'<p class="accueil-pied" id="accueil-pied"></p></section>';
 document.querySelector('main.layout').after(accueilPage,heroesPage,talentsPage,armoryPage,bestiaryPage,settingsPage);majNoms();
 /* Un sous-titre de carte, avec son « + » : équiper ou attribuer sans ouvrir la fiche. */
 /* Un menu déroulant posé à côté d'un bouton, le temps d'un choix. choixVif remplace le
@@ -3869,21 +3869,34 @@ function oublieForge(a,id){if(a&&Array.isArray(a.forges)&&!(a.inventaire||[]).in
 function renderActualites(){const boite=$('accueil-actus');if(!boite)return;boite.replaceChildren();
  const A=typeof ACTUALITES!=='undefined'?ACTUALITES:{versions:[]},v=(A.versions||[]).slice(0,10);
  const lignes=A.resume&&v.length&&A.resume.jusqua===v[0].v?A.resume.lignes:v.slice(0,6).map(x=>x.t);
- if(v.length){const p=document.createElement('p');p.className='accueil-versions muted';p.textContent='v'+v[v.length-1].v+' → v'+v[0].v;boite.append(p)}
+ {const e=$('accueil-version');if(e)e.textContent=v.length?'v'+v[0].v:''}
+ if(v.length){const p=document.createElement('p');p.className='accueil-versions muted';p.textContent='Depuis la v'+v[v.length-1].v;boite.append(p)}
  const ul=document.createElement('ul');ul.className='accueil-liste';(lignes||[]).forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.append(li)});boite.append(ul)}
 // Les aventuriers présents au domaine : ni partis en aventure, ni absents.
 function aventuriersActifs(){const lieu=a=>typeof lieuDe==='function'?lieuDe(a):(a.lieuDomaine||'');return actors.filter(a=>a&&a.hero&&!['aventure','absent','route'].includes(lieu(a)))}
+// L'icône du lieu d'un aventurier : une chope à la taverne, des montagnes sur la route ou en aventure, une maison ailleurs au domaine.
+function iconeLieuAccueil(lieu,nom){const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');
+ svg.innerHTML=lieu==='route'||lieu==='aventure'?'<path d="M2 20 9 8l4 6 2.5-3.5L22 20Z"/><path d="m7.5 10.5 1.5 1.5 1.5-1.5"/>'
+  :/taverne|auberge/i.test(nom||'')?'<path d="M5 7h10v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z"/><path d="M15 10h2.5a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H15"/><path d="M5 7c0-2 1.5-3 3-3 .8-1.2 3.4-1.2 4.2 0 1.6 0 2.8 1 2.8 3"/><path d="M8.5 11v7M11.5 11v7"/>'
+  :'<path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>';return svg}
 function renderActifs(){const boite=$('accueil-actifs');if(!boite)return;boite.replaceChildren();const l=actors.filter(a=>a&&a.hero&&voitAventurier(a));
+ {const n=$('accueil-compte');if(n){n.textContent=l.length?String(l.length):'';n.hidden=!l.length}}
  if(!l.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun aventurier.';boite.append(p);return}
- l.forEach(a=>{const c=document.createElement('div');c.className='accueil-heros';const classe=classeDe(catalog.classes,a.role);
-  const av=document.createElement('span');av.className='accueil-avatar';if(classe&&classe.tint)av.style.setProperty('--teinte',classe.tint);
+ /* Une carte par aventurier : son portrait cerclé de la couleur de sa classe, son nom à cette couleur, sa classe et son niveau, où
+    il se trouve ; un clic ouvre sa fiche, dans l'onglet Aventuriers. */
+ l.forEach(a=>{const c=document.createElement('button');c.type='button';c.className='accueil-heros';const classe=classeDe(catalog.classes,a.role);
+  if(classe&&classe.tint)c.style.setProperty('--teinte',classe.tint);
+  const av=document.createElement('span');av.className='accueil-avatar';
   if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';av.append(im)}else av.textContent=String(a.name||'?').trim().charAt(0).toUpperCase();
-  const t=document.createElement('div');t.className='accueil-heros-texte';const n=document.createElement('b');n.textContent=a.name;
-  // En seconde ligne, où il se trouve ; puis sa classe et son niveau.
-  const ou=document.createElement('small');ou.className='accueil-lieu';ou.textContent=typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieuDe(a)):'';
-  const d=document.createElement('small');d.textContent=[a.role,/niveau/i.test(a.role||'')?'':'niveau '+(Math.trunc(Number(a.level))||1)].filter(Boolean).join(' · ');
-  if(classe&&classe.tint)n.style.color=classe.tint;t.append(n,ou,d);c.append(av,t);boite.append(c)})}
-function renderAccueil(){{const b=document.querySelector('.accueil-creer');if(b)b.hidden=!peutCreerAventurier()}renderActualites();renderActifs();if(typeof renderJoueursConnectes==='function')renderJoueursConnectes();const f=$('accueil-faits');if(f){f.replaceChildren();const p=document.createElement('p');p.className='muted';p.textContent='Aucun haut fait pour l’instant.';f.append(p)}}
+  const t=document.createElement('span');t.className='accueil-heros-texte';const n=document.createElement('b');n.textContent=a.name;
+  const d=document.createElement('small');d.className='accueil-classe';d.textContent=[a.role,/niveau/i.test(a.role||'')?'':'Niveau '+(Math.trunc(Number(a.level))||1)].filter(Boolean).join(' · ');
+  const lieu=typeof lieuDe==='function'?lieuDe(a):'',nomL=typeof nomLieu==='function'&&typeof lieuDe==='function'?nomLieu(lieu):'';
+  const ou=document.createElement('small');ou.className='accueil-lieu';if(nomL){ou.append(iconeLieuAccueil(lieu,nomL),document.createTextNode(nomL))}
+  t.append(n,d,ou);const fl=document.createElement('span');fl.className='accueil-fleche';fl.setAttribute('aria-hidden','true');fl.textContent='›';
+  c.append(av,t,fl);c.setAttribute('aria-label',a.name);
+  c.onclick=()=>{if(typeof showPage!=='function')return;showPage('heroes');requestAnimationFrame(()=>{const f=document.querySelector('#hero-grid>.hero-card[data-heros="'+a.id+'"]');if(f)f.scrollIntoView({block:'center',behavior:'smooth'})})};
+  boite.append(c)})}
+function renderAccueil(){{const b=document.querySelector('.accueil-creer');if(b)b.hidden=!peutCreerAventurier()}{const v=document.querySelector('.brand .ver'),p=$('accueil-pied');if(p)p.textContent=v?v.textContent:''}renderActualites();renderActifs();if(typeof renderJoueursConnectes==='function')renderJoueursConnectes();const f=$('accueil-faits');if(f){f.replaceChildren();const p=document.createElement('p');p.className='muted';p.textContent='Aucun haut fait pour l’instant.';f.append(p)}}
 /* ---------- Créer un aventurier ----------
    Onglet par onglet : identité, classe, caractéristiques, compétences, puis le récapitulatif. L'aventurier rejoint la campagne,
    au domaine : la page Aventuriers du MJ, et la fiche du joueur qui l'a créé. Il est prêt pour une mission, une aventure. */

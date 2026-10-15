@@ -3686,7 +3686,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 /* v0.709 — La liste des combattants ne garde que les aventuriers chargés sur la carte ; l'Accueil montre tous les
    aventuriers et leur emplacement ; un aventurier créé est sur la route. */
 {const ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8');
- assert.ok(ed.includes("const l=actors.filter(a=>a&&a.hero&&voitAventurier(a));")&&ed.includes("t.append(n,ou,d);")&&ed.includes("<h3>Aventuriers</h3>")&&dm.includes("if(lieu==='route')return 'Sur la route';")
+ assert.ok(ed.includes("const l=actors.filter(a=>a&&a.hero&&voitAventurier(a));")&&ed.includes("t.append(n,d,ou);")&&ed.includes("<h3>Vos aventuriers ")&&dm.includes("if(lieu==='route')return 'Sur la route';")
   &&dm.includes("l==='absent'||l==='route')return;"),'route et Accueil');}
 /* v0.708 — L'équipement de départ : un lot d'armes, une armure, dix rations, trouvés au catalogue par leur nom ; l'objet
    inhabituel tiré à la création seulement, selon la classe. La bulle d'une compétence dit son usage ; plus de Gnome. */
@@ -5192,6 +5192,9 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.811 — L'Accueil refait : titre, ville en filigrane, cartes d'aventuriers, actualités à puces, joueurs et hauts faits dessous. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes('<section class="accueil accueil-v2">')&&src.includes('id="accueil-creer"')&&src.includes('<div id="accueil-joueurs" class="joueurs-connectes"></div>')&&src.includes("function iconeLieuAccueil(lieu,nom)"),'l’Accueil refait');}
 /* v0.810 — Plus de petits ronds dans l'arbre v2 : améliorations et bonus vivent dans le panneau, s'y achètent, s'y ajoutent et s'y
    réordonnent ; ils restent au catalogue avec leur chemin. La vue joueur de l'éditeur suit celle d'un aventurier. */
 {const src=fs.readFileSync('editor.js','utf8');

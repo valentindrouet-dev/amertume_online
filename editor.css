@@ -2841,3 +2841,53 @@ body.sombre .arbres-v2 .arbres-detail{background:var(--panel);border-color:var(-
 .arbres-v2 .arbres-detail .detail-bonus .detail-am-nom{justify-content:flex-start}
 .arbres-v2 .arbres-detail .detail-bonus-ico{flex:none;display:inline-grid;place-items:center;width:28px;height:28px}
 .arbres-v2 .arbres-detail .detail-bonus-ico>:is(img,svg,.bonus-lettres){width:100%;height:100%;object-fit:contain}
+/* ---------- L'Accueil (v0.811) : un titre, la ville en filigrane, « Créer un aventurier » à droite ; les aventuriers en cartes,
+   les actualités à côté ; les joueurs connectés et les hauts faits dessous. ---------- */
+#accueil-page{padding:18px 32px 22px}
+#accueil-page .accueil-v2{max-width:1640px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+#accueil-page .accueil-v2 .accueil-tete{position:relative;border:0;background:none;box-shadow:none;margin:0;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;min-height:120px;padding:6px 4px 0}
+#accueil-page .accueil-v2 .accueil-titres{position:relative;z-index:1}
+#accueil-page .accueil-v2 .accueil-tete h2{margin:0;font:700 clamp(46px,5vw,68px)/1 'Killam',Georgia,serif;color:var(--ink);letter-spacing:-.5px}
+#accueil-page .accueil-v2 .accueil-sous{margin:10px 0 0;font:400 19px system-ui;color:color-mix(in srgb,var(--ink) 72%,transparent)}
+#accueil-page .accueil-v2 .accueil-ville{position:absolute;right:250px;top:-18px;bottom:-14px;width:min(560px,46%);color:#b49a72;opacity:.2;pointer-events:none;
+ -webkit-mask-image:linear-gradient(90deg,transparent,#000 30%,#000 80%,transparent);mask-image:linear-gradient(90deg,transparent,#000 30%,#000 80%,transparent)}
+#accueil-page .accueil-v2 .accueil-ville svg{width:100%;height:100%}
+#accueil-page .accueil-v2 .accueil-creer{position:relative;z-index:1;align-self:center;display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin:0;padding:0;background:none;border:0}
+#accueil-page .accueil-v2 .accueil-creer[hidden]{display:none}
+#accueil-page .accueil-v2 #accueil-creer{padding:14px 26px;border-radius:10px;border:1px solid #9a6a1f;background:linear-gradient(#cf9a3e,#a8701f);color:#fff8e8;font:700 22px 'Killam',Georgia,serif;box-shadow:0 2px 6px #6a4a1433,inset 0 1px 0 #ffffff40;cursor:pointer}
+#accueil-page .accueil-v2 #accueil-creer:hover:not(:disabled){filter:brightness(1.06)}
+#accueil-page .accueil-v2 .accueil-bloc{background:#fbf6ea;border:1px solid #e6d9bf;border-radius:14px;padding:22px 24px;box-shadow:0 1px 3px #0000000d}
+body.sombre #accueil-page .accueil-v2 .accueil-bloc{background:var(--panel);border-color:var(--line)}
+#accueil-page .accueil-v2 .accueil-bloc h3{display:flex;align-items:center;gap:14px;margin:0 0 18px;font:700 29px/1.1 'Killam',Georgia,serif;letter-spacing:0;text-transform:none;color:var(--ink)}
+#accueil-page .accueil-v2 .accueil-haut{display:grid;grid-template-columns:minmax(0,2.55fr) minmax(320px,1fr);gap:18px;align-items:stretch}
+#accueil-page .accueil-v2 .accueil-compte{display:inline-grid;place-items:center;min-width:44px;height:36px;padding:0 10px;border-radius:999px;background:#efe4cc;font:700 19px system-ui;color:var(--ink)}
+#accueil-page .accueil-v2 .accueil-compte[hidden]{display:none}
+#accueil-page .accueil-v2 #accueil-actifs{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+#accueil-page .accueil-v2 .accueil-heros{--teinte:#8a7a5a;position:relative;display:flex;align-items:center;gap:18px;min-height:170px;padding:18px 40px 18px 16px;text-align:left;cursor:pointer;
+ border:1px solid #e6d9bf;border-top:3px solid var(--teinte);border-radius:12px;background:#fffdf7;box-shadow:0 1px 3px #0000000f;font:inherit;color:inherit}
+#accueil-page .accueil-v2 .accueil-heros:hover{box-shadow:0 2px 10px #00000017;border-color:color-mix(in srgb,var(--teinte) 50%,#e6d9bf)}
+#accueil-page .accueil-v2 .accueil-avatar{flex:none;width:124px;height:124px;border-radius:50%;display:grid;place-items:center;overflow:hidden;border:4px solid var(--teinte);
+ box-shadow:0 0 0 3px #fffdf7,0 0 0 5px color-mix(in srgb,var(--teinte) 45%,transparent);background:color-mix(in srgb,var(--teinte) 20%,#fff);font:700 48px Georgia,serif;color:var(--teinte)}
+#accueil-page .accueil-v2 .accueil-avatar img{width:100%;height:100%;object-fit:cover}
+#accueil-page .accueil-v2 .accueil-heros-texte{display:flex;flex-direction:column;gap:10px;min-width:0}
+#accueil-page .accueil-v2 .accueil-heros-texte b{font:700 26px/1.1 'Killam',Georgia,serif;color:var(--teinte);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#accueil-page .accueil-v2 .accueil-heros-texte small{font:400 16px system-ui;color:color-mix(in srgb,var(--ink) 72%,transparent)}
+#accueil-page .accueil-v2 .accueil-lieu{display:flex;align-items:center;gap:10px;margin-top:6px}
+#accueil-page .accueil-v2 .accueil-lieu svg{flex:none;width:26px;height:26px;fill:none;stroke:#a07a45;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#accueil-page .accueil-v2 .accueil-fleche{position:absolute;right:16px;bottom:12px;font:400 30px/1 system-ui;color:color-mix(in srgb,var(--ink) 60%,transparent)}
+#accueil-page .accueil-v2 .accueil-actus h3{margin-bottom:6px;justify-content:space-between}
+#accueil-page .accueil-v2 .accueil-version{padding:4px 14px;border-radius:999px;border:1px solid #d9bd7c;background:#f7ebcd;font:700 16px system-ui;color:#8a5a1b}
+#accueil-page .accueil-v2 .accueil-actus .accueil-versions{margin:0 0 12px;padding-bottom:16px;border-bottom:1px solid #e6d9bf;font:400 17px system-ui}
+#accueil-page .accueil-v2 .accueil-actus .accueil-liste{list-style:none;margin:0;padding:0;gap:0}
+#accueil-page .accueil-v2 .accueil-actus .accueil-liste li{position:relative;padding:15px 0 15px 30px;border-bottom:1px solid #eee3cc;font:400 18px/1.35 system-ui;color:var(--ink)}
+#accueil-page .accueil-v2 .accueil-actus .accueil-liste li:last-child{border-bottom:0}
+#accueil-page .accueil-v2 .accueil-actus .accueil-liste li::before{content:'';position:absolute;left:4px;top:50%;width:10px;height:10px;margin-top:-5px;transform:rotate(45deg);background:linear-gradient(135deg,#e8be5a,#b98321);border-radius:1px}
+#accueil-page .accueil-v2 .accueil-bas{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+#accueil-page .accueil-v2 .accueil-bas .accueil-bloc{display:flex;align-items:flex-start;gap:30px;padding:28px 36px}
+#accueil-page .accueil-v2 .accueil-bas .accueil-bloc h3{margin-bottom:12px}
+#accueil-page .accueil-v2 .accueil-bas .muted{margin:0;font:400 18px system-ui}
+#accueil-page .accueil-v2 .accueil-ico{flex:none;width:58px;height:58px;color:#a07a45}
+#accueil-page .accueil-v2 .accueil-ico svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+#accueil-page .accueil-v2 .accueil-pied{margin:-6px 4px 0;text-align:right;font:400 14px system-ui;color:var(--muted)}
+@media (max-width:1100px){#accueil-page .accueil-v2 .accueil-haut,#accueil-page .accueil-v2 .accueil-bas{grid-template-columns:1fr}#accueil-page .accueil-v2 .accueil-ville{display:none}}
+@media (max-width:640px){#accueil-page{padding:14px}#accueil-page .accueil-v2 .accueil-tete{flex-direction:column;align-items:flex-start}#accueil-page .accueil-v2 .accueil-avatar{width:96px;height:96px}#accueil-page .accueil-v2 .accueil-heros{min-height:130px}}
