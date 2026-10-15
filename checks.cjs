@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.824 — Le talent du haut du premier arbre est tenu d'office quelle que soit sa nature ; l'arbre le rend avant de se dessiner. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("if(a&&typeof accordeFlottants==='function'&&accordeFlottants())scheduleSave();"),'talent initial tenu d’office');
 /* v0.823 — Les cartes prises du panneau ont les couleurs des bulles de talent. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes(".arbres-v2 .arbres-detail .detail-tete.t-mvt{--fond:#eee2d4}")&&fs.readFileSync('editor.js','utf8').includes("tete.classList.add('t-'+talentType(t)[0]);"),'couleurs des bulles');
 /* v0.822 — Un talent d'une autre classe se copie dans l'arbre, avec ses améliorations et ses bonus, sans quitter le sien. */
@@ -5212,7 +5214,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("+(n>1?' suite':max>1?' p
 /* v0.813 — La tête du panneau à la teinte de sa nature, les améliorations en vert ; les talents non tenus grisés ; un bouton remet à zéro
    l'arbre d'un aventurier, talent de classe gardé. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474')")&&src.includes("a.talents=(a.talents||[]).filter(id=>fl.includes(id));a.paliersTalents={};")&&src.includes("arbresReset.hidden=!a||!V2;"),'v0.813');}
+ assert.ok(src.includes("tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474')")&&src.includes("a.talents=[...fl];a.paliersTalents={};")&&src.includes("arbresReset.hidden=!a||!V2;"),'v0.813');}
 /* v0.812 — Arbre v2 : la limite de niveau vaut aussi sur l'arbre d'un aventurier chez le MJ ; plus de bouton XP visible ; le talent
    se prend et se rend par sa tête, une amélioration ou un bonus tenu se rend d'un clic ; le panneau défile dans une hauteur fixe ;
    les bonus deux par ligne ; les points du talent à gauche de son nom. */
@@ -5242,7 +5244,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("+(n>1?' suite':max>1?' p
   &&src.includes("if(col.rang===(colonnesArbre(classe).find(k=>k.liste.length)||{}).rang){"),'l’arbre v2 affiné');}
 /* v0.806 — La maîtrise de départ du Tronc commun devient talent de classe : tenue d'office, jamais décochée, à côté de l'ancien rond flottant. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("if(haut&&haut.type==='mait'&&haut.flottant!==true){haut.flottant=true;change=true}")&&src.includes("fls.forEach(fl=>{if(!garde.includes(fl.id))garde.push(fl.id)});"),'la maîtrise de départ tenue d’office');}
+ assert.ok(src.includes("if(haut&&haut.flottant!==true){haut.flottant=true;change=true}")&&src.includes("fls.forEach(fl=>{if(!garde.includes(fl.id))garde.push(fl.id)});"),'la maîtrise de départ tenue d’office');}
 /* v0.805 — L'arbre v2 : l'arbre à gauche, le panneau du talent à droite, un drapeau pour revenir à la v1 ; un nom à tiret ne casse
    plus les bulles. */
 {const src=fs.readFileSync('editor.js','utf8');

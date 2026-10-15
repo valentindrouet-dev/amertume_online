@@ -4701,7 +4701,8 @@ function accordeArbres(){let change=false;
    /* v0.806 : la maîtrise tout en haut du premier arbre de la classe, nommé ou non, son départ, est le talent de classe :
       tenue d'office, jamais décochée. */
    if(col.rang===(colonnesArbre(classe).find(k=>k.liste.length)||{}).rang){const dep=departsDe(col.liste),haut=col.liste.filter(t=>dep.has(t.id)&&!estVide(t)&&posDe(t)).sort((x,y)=>posDe(x).y-posDe(y).y)[0];
-    if(haut&&haut.type==='mait'&&haut.flottant!==true){haut.flottant=true;change=true}}
+    // v0.824 : quelle que soit sa nature — une Action, comme Coupure chez l'Ombrelame, aussi.
+    if(haut&&haut.flottant!==true){haut.flottant=true;change=true}}
    col.liste.forEach(t=>{if(!t.flottant||posDe(t))return;const ps=col.liste.filter(x=>x!==t).map(posDe).filter(Boolean);
     t.pos=ps.length?{x:Math.round((Math.min(...ps.map(q=>q.x))+Math.max(...ps.map(q=>q.x)))/2),y:Math.min(...ps.map(q=>q.y))-1}:{x:0,y:0};change=true});
    col.liste.forEach(t=>{const l=liensDe(t),bon=[...new Set(l.filter(id=>ids.has(id)&&id!==t.id))].slice(0,LIENS_MAX);
@@ -4895,7 +4896,7 @@ arbresDialog.querySelector('.dialog-head').insertBefore(arbresReset,arbresVue);
 arbresReset.onclick=async()=>{const a=arbresActeur&&acteurCourant(arbresActeur);if(!a||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
  const classe=classeDuHeros(a),fl=classe?talentsFlottants(classe).map(t=>t.id):[];
  if(typeof demander==='function'&&!await demander('Réinitialiser tout l’arbre de talents de '+a.name+' ? Ses talents, améliorations et bonus lui sont rendus, et leur XP lui revient.','Réinitialiser'))return;
- a.talents=(a.talents||[]).filter(id=>fl.includes(id));a.paliersTalents={};arbreDetailId=null;renderArbres();renderHeroes();render();scheduleSave()};
+ a.talents=[...fl];a.paliersTalents={};arbreDetailId=null;renderArbres();renderHeroes();render();scheduleSave()};
 const arbresTotal=document.createElement('span');arbresTotal.id='arbres-total';arbresTotal.className='arbres-total';
 arbresDialog.querySelector('.dialog-head').insertBefore(arbresTotal,arbresMasse);
 // Tout ce que porte l'arbre d'une classe : ses talents dans l'ordre, chacun suivi de ses petits ronds.
@@ -5209,6 +5210,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  else if(view!=='mj'){arbresDialog.close();return}
  // Chez le MJ, l'arbre s'accorde avant de se dessiner : chaque talent a sa case, chaque ligne son but.
  if(view==='mj'&&(accordeArbres()|accordeTalentsHeros()))scheduleSave();
+ // Le talent de classe, tenu d'office : l'aventurier l'a avant que son arbre ne se dessine.
+ if(a&&typeof accordeFlottants==='function'&&accordeFlottants())scheduleSave();
  // Une ligne en cours de tracé n'a de sens que dans l'édition.
  if(!(view==='mj'&&!arbresVueJoueur))lienDepuis=null;
  const classe=a?classeDuHeros(a):arbresClasse;
