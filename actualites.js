@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.786","d":"2026-10-15","t":"Zone d'ajustement : pointillés plus fins"},
 {"v":"0.785","d":"2026-10-15","t":"Adversaires morts au bas de la liste"},
 {"v":"0.784","d":"2026-10-15","t":"Comparaison Maj sur les objets du journal"},
 {"v":"0.783","d":"2026-10-15","t":"Rage et Frappe Furieuse, rond flottant de l'arbre, zone d'ajustement visible"},
