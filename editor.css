@@ -2987,3 +2987,5 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 .arbres-v2 .arbres-detail .detail-tete:is(.acquise,:not(.cliquable)) .detail-nom-ligne h3>span{color:var(--teinte)}
 .arbres-v2 .arbres-detail .detail-amelioration:not(.detail-bonus):is(.acquise,.editable){background:#d3e5cd;border-color:color-mix(in srgb,#5e9a5b 35%,transparent);border-left-color:#5e9a5b}
 .arbres-v2 .arbres-detail .detail-amelioration:not(.detail-bonus):is(.acquise,.editable) .detail-am-nom b{color:#5e9a5b}
+/* v0.829 : un prix payé reste affiché, en vert, comme dans les bulles. */
+.arbres-v2 .arbres-detail .detail-prix.paye{background:#dff0da!important;border-color:#3f8a4a!important;color:#2e6b38!important}

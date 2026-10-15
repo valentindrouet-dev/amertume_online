@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.829 — Le prix d'un talent, d'une amélioration ou d'un bonus pris reste affiché, en vert. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("pr.className='detail-prix detail-prix-rond'+(acquis?' paye':'');")&&fs.readFileSync('editor.css','utf8').includes('.detail-prix.paye{'),'prix payé en vert');
 /* v0.827 — Les Orbes infligent Feu d'office quand ils blessent ; « Orbes — Feu toujours », amélioration des Orbes, même sans dégâts. */
 {const C=require('./combat.js'),o={code:C.TALENTS_CODES.orbes,params:{orbes:1,des:1,couleur:'blue'}},tj={code:C.TALENTS_CODES.orbesfeutoujours,params:{}};
  assert.deepEqual(C.etatOrbeAuPalier([o]),{etat:'Feu',six:false,crans:1,blesse:true});assert.deepEqual(C.etatOrbeAuPalier([o,tj]),{etat:'Feu',six:false,crans:1,blesse:false});
