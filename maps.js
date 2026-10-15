@@ -2859,7 +2859,8 @@ function poigneeTaille(parent,cle,sens){const p=document.createElement('div');p.
   const fin=()=>{p.removeEventListener('pointermove',bouge);p.removeEventListener('pointerup',fin);p.removeEventListener('pointercancel',fin);rendTailles()};
   p.addEventListener('pointermove',bouge);p.addEventListener('pointerup',fin);p.addEventListener('pointercancel',fin)});
  p.addEventListener('dblclick',()=>{const t=lisTailles();delete t[cle];gardeTailles(t);appliqueTailles();rendTailles()});
- parent.append(p)}
+ // Dans une colonne, la poignée passe en tête : le dernier panneau reste le dernier, et le journal garde sa hauteur calée sur la carte.
+ if(cle==='h')parent.append(p);else parent.prepend(p)}
 {const g=document.querySelector('main.layout>.stack.left'),d=document.querySelector('main.layout>.stack.right'),c=document.querySelector('.map-panel');
  if(g)poigneeTaille(g,'g',1);if(d)poigneeTaille(d,'d',-1);if(c)poigneeTaille(c,'h',1)}
 $('redim-panneaux').onclick=()=>{const on=document.body.classList.toggle('redim');$('redim-panneaux').classList.toggle('on',on);$('redim-panneaux').setAttribute('aria-pressed',on?'true':'false')};

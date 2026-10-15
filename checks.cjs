@@ -3392,6 +3392,8 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.767 — La poignée d'une colonne passe en tête : le journal, dernier panneau, reste calé sur le bas de la carte. */
+{assert.ok(fs.readFileSync('maps.js','utf8').includes("if(cle==='h')parent.append(p);else parent.prepend(p)}")&&page.includes(".stack.right.calee>.panel:last-child{flex:1 1 0;"));}
 /* v0.766 — Zoom gardé par carte ; exploration gardée par la table ; adversaires vus par la troupe visibles chez tous ; ping ;
    piste de dés à gauche, carte jusqu'au bas de la page. */
 {const lv=fs.readFileSync('live.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),r=fs.readFileSync('firestore-online.rules','utf8');
@@ -5689,4 +5691,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2124 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2125 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
