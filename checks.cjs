@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.823 — Les cartes prises du panneau ont les couleurs des bulles de talent. */
+assert.ok(fs.readFileSync('editor.css','utf8').includes(".arbres-v2 .arbres-detail .detail-tete.t-mvt{--fond:#eee2d4}")&&fs.readFileSync('editor.js','utf8').includes("tete.classList.add('t-'+talentType(t)[0]);"),'couleurs des bulles');
 /* v0.822 — Un talent d'une autre classe se copie dans l'arbre, avec ses améliorations et ses bonus, sans quitter le sien. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("function copieTalentPourArbre(t,famille){")&&!fs.readFileSync('editor.js','utf8').includes("il le quitte pour celui de"),'copier, pas déplacer');
 /* v0.821 — Arbre v2 : les bonus et améliorations, sans petits ronds, ne bloquent plus ni les places d'à côté ni les lignes en diagonale. */

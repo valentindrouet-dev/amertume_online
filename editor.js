@@ -5576,7 +5576,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   {const sp=document.createElement('span');nomAccolades(sp,tv.name);nom.append(sp);
    // Un nom long rapetisse plutôt que de passer à la ligne.
    const L=String(sp.textContent||'').length;if(L>11)nom.style.fontSize=(L>18?20:L>14?22:24)+'px'}
-  droite.append(corpsT);tete.append(rond,droite);tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474');panneau.append(tete);
+  droite.append(corpsT);tete.append(rond,droite);tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474');tete.classList.add('t-'+talentType(t)[0]);panneau.append(tete);
   const el=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]'),acquis=porte(t),verrou=!!el&&el.classList.contains('verrou');
   /* Le talent lui-même s'apprend d'un clic sur sa tête, et se rend d'un autre clic ; son prix à droite de son nom. Le talent
      de classe, tenu d'office, ne se rend pas. */
