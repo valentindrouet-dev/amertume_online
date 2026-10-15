@@ -2075,7 +2075,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
   &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee','sortiCombat','ajuste'];")
-  &&src.includes(" ecrire('.stat-tile.t-dmg strong','+\\u202F'+degatsDe(a));")&&src.includes("  const r=rondCompetence(a,k);")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
+  &&src.includes(" ecrire('.stat-tile.t-dmg strong','+\\u202F'+degatsAffiches(a));")&&src.includes("  const r=rondCompetence(a,k);")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
    en est une ; les miettes ne comptent pas ; le MJ les voit d'un bouton. */
 {const mur={anneaux:[[[49,0],[51,0],[51,100],[49,100]]]};
@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.799 — La Rage au contact compte dans les dégâts de la fiche, en orange doré clair comme toute hausse du moment. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
+ assert.ok(page.includes("function degatsAffiches(a){return degatsDe(a)+rageContact(a,rangeOf(a))}")&&page.includes("tuiles[2].classList.toggle('en-hausse',degatsEnHausse(a));")
+  &&src.includes("tuiles[4].classList.toggle('en-hausse',degatsEnHausse(a));")&&src.includes("if(r)l.push(['Rage','+ '+r])"),'la Rage dans les dégâts de la fiche');}
 /* v0.798 — Un gain d'état flottant, « +1 Rage », prend la couleur de l'état. */
 assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\\s+(.+)$/.exec(String(texte));if(g&&COULEURS_ETATS[g[1]])el.style.color=COULEURS_ETATS[g[1]]}"),'+1 Rage en couleur');
 /* v0.797 — Rage en rouge orangé vif, même quand c'est aussi le nom d'un talent de l'arbre ; le chiffre d'un état qui s'empile
@@ -5493,7 +5497,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
 /* v0.501 — Fiche : « + » serré sur les dégâts, valeurs des bonus du bloc Talents plus grandes ; pastilles d'équipement
    à la couleur de la rareté ; pastilles grises dans une bulle de talent grisée. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("ecrire('.stat-tile.t-dmg strong','+\\u202F'+degatsDe(a));")&&src.includes("['dmg','Dég.','+\\u202F'+degatsDe(a)],['xp','XP',a.xp||0]]\n  .map(t=>statTile(...t));")
+ assert.ok(src.includes("ecrire('.stat-tile.t-dmg strong','+\\u202F'+degatsAffiches(a));")&&src.includes("['dmg','Dég.','+\\u202F'+degatsAffiches(a)],['xp','XP',a.xp||0]]\n  .map(t=>statTile(...t));")
   &&css.includes('.hero-card .talent-ameliorations .cat-pill.bonus-rond .bonus-valeur{left:70%;top:70%;font-size:14px;')
   &&css.includes('.gear-detail .gear-bonus::before{background:var(--rarete,#7d7a74);')&&css.includes('.talent-detail.grisee{--pastille:#8f8a80!important}'),'les retouches de la fiche et des pastilles');}
 /* v0.500 — Blindage ne s'empile pas ; Gardien pose l'état Gardé, à l'image choisie par le MJ ; les talents de début

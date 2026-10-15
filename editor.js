@@ -942,7 +942,7 @@ function majFiche(carte,a){if(!carte)return;
  ecrire('.stat-tile.t-pv strong',a.max);
  {const b=carte.querySelector('.hero-pv');if(b)b.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true)}
  // Sur la fiche, le « + » serre un peu la valeur des dégâts : une espace fine.
- ecrire('.stat-tile.t-dmg strong','+\u202F'+degatsDe(a));ecrire('.stat-tile.t-xp strong',a.xp||0);
+ ecrire('.stat-tile.t-dmg strong','+\u202F'+degatsAffiches(a));{const t=carte.querySelector('.stat-tile.t-dmg');if(t)t.classList.toggle('en-hausse',degatsEnHausse(a))}ecrire('.stat-tile.t-xp strong',a.xp||0);
  ecrire('.chip-niveau','Niveau '+a.level);ecrire('.classe-niv',' niv. '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
  majEcu(carte.querySelector('.stat-tile.t-def .ecu'),defOf(a));
  carte.querySelectorAll('.comp-rond').forEach((r,k)=>{const v=r.querySelector('.comp-val');if(v){v.textContent=valeurCompetence(a,k);v.classList.toggle('haute',valeurCompetence(a,k)>1)}
@@ -967,7 +967,8 @@ function detailDegats(a){const b=bonusDe(a,catalog.talents,catalog.items),bt=bon
  l.push(...partsBonus(a,'dmg'));if(aura)l.push(['Meneur allié','+ '+aura]);
  {const t=typeof tenailles==='function'?tenailles(a):0;if(t)l.push(['Pris en tenailles','+ '+t])}
  if(typeof meuteActive==='function'&&meuteActive(a))l.push(['Meute (allié au contact)','× 2']);
- l.push(['Total','+'+degatsDe(a)]);return l}
+ {const r=typeof rageContact==='function'&&typeof rangeOf==='function'?rageContact(a,rangeOf(a)):0;if(r)l.push(['Rage','+ '+r])}
+ l.push(['Total','+'+(typeof degatsAffiches==='function'?degatsAffiches(a):degatsDe(a))]);return l}
 /* Les bulles des chiffres, au survol de chacun : d'où il vient, ligne par ligne, le total au bas.
    Talents et équipement se lisent à part : on sait quel nœud de l'arbre ou quelle pièce compte. */
 const partsBonus=(a,cle)=>{const b=bonusDe(a,catalog.talents,catalog.items),bt=bonusDe(a,catalog.talents,null),l=[];
@@ -1235,8 +1236,9 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  // valeur en gros, une teinte par caractéristique, l'écu pour la DEF.
  const chiffres=document.createElement('div');chiffres.className='stat-row';
  const tuiles=[['vie','Vie',vieAffichee(a),false,a.vieMax??a.vie],['endu','Endu',enduAffichee(a)],
-  ['pv','PV max',a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+\u202F'+degatsDe(a)],['xp','XP',a.xp||0]]
+  ['pv','PV max',a.max],['def','DEF',defOf(a),true],['dmg','Dég.','+\u202F'+degatsAffiches(a)],['xp','XP',a.xp||0]]
   .map(t=>statTile(...t));
+ tuiles[4].classList.toggle('en-hausse',degatsEnHausse(a));
  // La Vie sous son maximum se teinte de rouge, et redevient blanche au maximum.
  tuiles[0].classList.toggle('sous-max',vieEntamee(a));
  // Le MJ corrige un chiffre là où il le lit ; les PV max se calculent, ils ne se saisissent pas.
