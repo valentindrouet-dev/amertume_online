@@ -5213,7 +5213,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes(".arbres-v2 .arbres-deta
 /* v0.819 — Chez un aventurier, ce qu'il ne tient pas reste gris dans le panneau ; pris, il prend sa couleur. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes(".arbres-v2 .arbres-detail .detail-amelioration:not(.acquise):not(.editable){border-color:#ddd6c8!important;"),'gris tant que non pris');
 /* v0.818 — Le double clic sur un token, ou sur sa vignette, recentre la carte sur lui sans changer le zoom. */
-{const page=fs.readFileSync('index.html','utf8');assert.ok(!page.includes("mapZoom=Math.max(mapZoom,zoomApproche());")&&page.includes("onGesture(gestureOf(e),i);if(deux&&!a.horsCarte)approcherToken(a)};"),'recentrer sans zoomer');}
+{const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("if(zoomer)mapZoom=Math.max(mapZoom,zoomApproche());")&&page.includes("approcherToken(a,true)")&&page.includes("onGesture(gestureOf(e),i);if(deux&&!a.horsCarte)approcherToken(a)};"),'recentrer sans zoomer');}
 /* v0.817 — Chevrons de palier ; le prix du talent sous son rond ; les noms longs rapetissent ; la tête s'ouvre dans l'éditeur. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("pr.className='detail-prix detail-prix-rond'")&&src.includes("if(!a&&mj){tete.classList.add('editable');")&&fs.readFileSync('editor.css','utf8').includes("M9.5 5.5 16 12l-6.5 6.5"),'v0.817');}
