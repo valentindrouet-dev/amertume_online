@@ -4953,7 +4953,8 @@ function choixElement(a,classe,rendre){const out=document.createElement('div');o
  const bloc=document.createElement('div');bloc.className='elements-bloc';bloc.append(out);
  const dit=a&&!elementDe(a)?(peut?'Choisis l’élément de '+a.name+' : ses talents élémentaires l’attendent.':'Le MJ choisit l’élément : les talents élémentaires l’attendent.'):'';
  if(dit){const p=document.createElement('p');p.className='muted elements-dit';p.textContent=dit;bloc.append(p)}
- return bloc}
+ // Le Mystique n'est plus que de Feu : il n'y a plus d'élément à choisir, le bloc ne se montre nulle part.
+ bloc.hidden=true;return bloc}
 /* Supprimer un talent de l'arbre — donc du catalogue —, après confirmation : les aventuriers
    qui l'avaient le perdent, palier compris, et ce qui pendait sous lui remonte à sa place, sous
    son propre prérequis, plutôt que de se retrouver sans attache. */
