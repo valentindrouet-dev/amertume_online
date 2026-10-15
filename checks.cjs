@@ -2074,7 +2074,7 @@ assert.ok(src.includes('function traceChemins(){const corps=$(\'arbres-corps\');
   &&src.includes("const aura=!(typeof spectateur==='function'&&spectateur())&&typeof auraMeneur==='function'?auraMeneur(a,'pv'):(Number(a.auraPv)||0);")
   &&src.includes(" const max=pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+aura;")&&src.includes("writeStat(a,'max',max);if(delta>0&&!(typeof estMort==='function'&&estMort(a)))a.hp=Math.min(a.max,a.hp+delta);return true}")
   &&src.includes("function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;")&&src.includes("render=function(){if(!loading&&synchronisePV())scheduleSave();originalRender();")
-  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee','sortiCombat'];")
+  &&vivant.includes("'activeAttack','auraPv',")&&fs.readFileSync('shared.js','utf8').includes("'shieldId','munitionId','auraPv','reposPris','reposCourts','horsCarte','contactsDepart','comaVie','etatsPassifs','defBrisee','sortiCombat','ajuste'];")
   &&src.includes(" ecrire('.stat-tile.t-dmg strong','+\\u202F'+degatsDe(a));")&&src.includes("  const r=rondCompetence(a,k);")&&feuille.includes('.arbre-noeud.bonus{--teinte:#b8862b}'),'les caractéristiques telles qu’elles jouent, et le Meneur');}
 /* Les zones : toute étendue close par la matière et par les portes — ouvertes ou fermées —
    en est une ; les miettes ne comptent pas ; le MJ les voit d'un bouton. */
@@ -2382,7 +2382,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  // Un mur de 40 à 60 en x, de 0 à 70 en y, sur une carte de 1000 pixels de côté ; un mètre fait 10 pixels.
  const mur=[{contours:[[[400,0],[600,0],[600,700],[400,700]]]}];
  const ctxR={combat:true,round:3,zones:{},notes:[],journal:[],performance:{now:()=>1e6},nomNum:a=>a.name,currentMap:()=>({id:'c'}),zonesDe:()=>({compte:2}),
-  enCombat:()=>ctxR.combat,items:()=>[],tokenPx:()=>10,mapSize:()=>({width:1000,height:1000}),distanceMouvement:a=>a.mvt??9,
+  enCombat:()=>ctxR.combat,items:()=>[],tokenPx:()=>10,tokenOf:()=>10,mapSize:()=>({width:1000,height:1000}),distanceMouvement:a=>a.mvt??9,
   wallsInPixels:()=>ctxR.murs||[],obstaclesDuPas:()=>ctxR.murs||[],segmentHitsPolys:C.segmentHitsPolys,contoursOf:C.contoursOf,shapeContains:C.shapeContains,
   pointsUses:(a,q)=>a.uses||0,pointsRestants:(a,q)=>q==='action'?(a.action??1):a.credit,zoneDe:a=>ctxR.zones[Math.round(a.x)+','+Math.round(a.y)]||0,
   floatNumber:(a,t)=>ctxR.notes.push(t),log:t=>ctxR.journal.push(t)};vm.createContext(ctxR);vm.runInContext(regle,ctxR);
@@ -2407,7 +2407,12 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxR.soldeRegleMouvement(a,r),0,'une seule fois');
  a.uses=1;a.credit=0;const r2=ctxR.regleMouvement(a);assert.equal(r2.neuf+'/'+r2.fini+'/'+r2.max,'false/false/30','il repart avec ses trois mètres, sans point');
  pas(a,r2,[[28,50],[29,50]]);assert.equal(ctxR.soldeRegleMouvement(a,r2),0);assert.equal(a.mvtReste,0);
- assert.equal(ctxR.regleMouvement(a).fini,true,'plus de reste ni de point : il ne part pas');
+ /* v0.782 — L'ajustement, à l'essai : plus de reste ni de point, il ne part plus, il s'ajuste. Depuis où il s'est arrêté, sans
+    rien payer, autant de fois qu'il veut, sans que son socle sorte de la zone de contact de cette position : un diamètre de chemin. */
+ {const ra=ctxR.regleMouvement(a);assert.equal(ra.fini+'/'+ra.ajustement+'/'+ra.max+'/'+ra.depart.x,'false/true/10/29','plus de reste ni de point : il s’ajuste');
+  assert.ok(pas(a,ra,[[30,50]])&&!pas(a,ra,[[31.5,50]])&&a.x===30,'un diamètre de socle autour de sa position, pas plus');
+  assert.equal(ctxR.soldeRegleMouvement(a,ra),0);assert.equal(a.mvtReste,0,'gratuit');
+  const rb2=ctxR.regleMouvement(a);assert.equal(rb2.depart.x,29,'la position retenue ne suit pas les ajustements');assert.ok(pas(a,rb2,[[28,50]]),'autant d’ajustements qu’il veut');a.x=29;delete a.ajuste;}
  a.credit=1;const r3=ctxR.regleMouvement(a);assert.equal(r3.neuf+'/'+r3.max,'true/90','un nouveau point, toute la distance');
  ctxR.round=4;assert.equal(ctxR.resteMouvement({mvtTour:3,mvtReste:5,uses:1}),0,'le reste ne passe pas au tour suivant');ctxR.round=3;
  assert.equal(ctxR.resteMouvement({mvtTour:3,mvtReste:5,uses:0}),0,'points rendus : plus de reste');
@@ -2416,7 +2421,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxR.soldeRegleMouvement(z,rz),1,'franchir une zone ne coûte rien de plus');assert.equal(z.mvtReste,1);
  const y={x:45,y:50,credit:2},ry=ctxR.regleMouvement(y);pas(y,ry,[[50,50]]);
  assert.equal(ctxR.soldeRegleMouvement(y,ry),0);assert.equal(y.x,45,'lâché dans l’embrasure, il revient dans sa zone');assert.equal(ctxR.journal.length,1);
- assert.equal(ctxR.regleMouvement({x:60,y:50,credit:0,action:1}).fini,true,'sans point ni reste, en combat, il ne part pas');
+ assert.equal(ctxR.regleMouvement({x:60,y:50,credit:0,action:1}).ajustement,true,'sans point ni reste, en combat, il s’ajuste');
  assert.equal(ctxR.regleMouvement({x:60,y:50,credit:3,mvt:12}).max,120,'sa distance à lui');
  const q=ctxR.borneMouvement(r3,{x:50,y:50});assert.ok(q.borne&&Math.abs(q.x-(29+8.995))<1e-6,'le point visé ramené dans le cercle');
  // En exploration : sur ordre du MJ, pour les seuls aventuriers ; ni blocage, ni point, ni reste.
@@ -4117,7 +4122,7 @@ assert.ok(page.includes("if(tokenDistance(a,o,size)<=contactRadius(tokenOf(o)))e
 /* v0.637 — La barre de mouvement, l'arrêt au contact, le gel du début de combat, les flèches d'un mètre, Échanger un objet et
    Changer d'armes, le verrou des armes en combat, le glisser d'une fiche à l'autre, Enjamber au-dessus du piège, le bruit coupé. */
 {const src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
- assert.ok(page.includes('<div id="barre-mouvement" hidden aria-hidden="true"></div>')&&page.includes("function traceMouvement(a,r){if(a&&r&&r.combat&&r.tk){const u=r.long/r.tk,b0=r.bonus0||0;barreMouvement(a,(r.metres-b0)-Math.max(0,u-b0),Math.max(0,b0-u))}else majBarreMouvement();")
+ assert.ok(page.includes('<div id="barre-mouvement" hidden aria-hidden="true"></div>')&&page.includes("function traceMouvement(a,r){if(a&&r&&r.combat&&r.tk&&!r.ajustement){const u=r.long/r.tk,b0=r.bonus0||0;barreMouvement(a,(r.metres-b0)-Math.max(0,u-b0),Math.max(0,b0-u))}else majBarreMouvement();")
   &&page.includes("[...el.children].forEach((p,n)=>p.classList.toggle('pris',n>=plein));el.hidden=false;placeBarreMouvement()}"),'la barre de mouvement, un point par mètre');
  assert.ok(page.includes("function arretAuContact(a,de){")&&page.includes("if(arretContact){t.onpointerup(e);return}")&&page.includes("if(regle&&regle.combat){const h=arretAuContact(a,{x:x0,y:y0});if(h){a.x=h.x;a.y=h.y}}"),'entrer au contact d’un adversaire arrête le geste');
  assert.ok(page.includes("function gelDebut(a){if(!enCombat()||!a)return false;")&&page.includes("&&!gelDebut(actors[i])}")&&page.includes("ferme=debut&&!ouvertureCombat(a),gele=!debut&&gelDebut(a);")
@@ -4472,7 +4477,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes(" t.onpointercancel=()=>{gesteActif=null;drag=null;window.socleEnMain=null;traceMouvement(null)};")&&page.includes("   if(regle&&regle.combat){if(cout>0)depensePoint(a,'mouvement',cout)}"),'le geste à la main');
  assert.ok(page.includes('<path id="aim-mouvement" class="aim-fleche mvt" marker-end="url(#shot-mvt)"/>')&&page.includes('<marker id="shot-mvt"')
   &&page.includes("#aim .aim-fleche.mvt{stroke:#cf9152;")&&page.includes("lab.setAttribute('class','aim-dist on mvt')}"),'la flèche du mouvement, à la couleur du Mouvement');
- assert.ok(page.includes("const k=mouvementClavier,suite=k&&k.id===a.id&&!k.regle.combat&&performance.now()-k.t<1500")&&page.includes("   if(regle.combat){if(cout>0)depensePoint(a,'mouvement',cout);a.lameventPret=round}"),'au clavier, une suite de pas puise dans le même reste');
+ assert.ok(page.includes("const k=mouvementClavier,suite=k&&k.id===a.id&&!k.regle.combat&&performance.now()-k.t<1500")&&page.includes("   if(regle.combat){if(cout>0)depensePoint(a,'mouvement',cout);if(!regle.ajustement)a.lameventPret=round}"),'au clavier, une suite de pas puise dans le même reste');
  assert.ok(ia.includes("const borne=!appliqueRegleMouvement(a,regle);if(borne)jusquALaBorne(a,regle,q,(u,v)=>moveActor(a,u,v,false,ignorer,true));")&&ia.includes("  if(borne)break}")
   &&ia.includes(" const cout=soldeRegleMouvement(a,regle);if(cout>0)depensePoint(a,'mouvement',cout);")&&ia.includes("q=borneMouvement(regle,{x:x/size.width*100,y:y/size.height*100},{x:a.x,y:a.y});moveActor(e,q.x,q.y,false,ignorer,true);"),'l’IA sous la même règle');
  assert.ok(carto.includes("const limiteBtn=icone('mouvement-limite','👣','Mouvement limité');")&&carto.includes("localStorage.setItem('amertume-mouvement-limite',mouvementLimiteExplo?'1':'0')")

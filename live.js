@@ -30,6 +30,8 @@ const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','align
 CHAMPS_ACTEUR_MJ.push('enAttente');CHAMPS_VIVANTS.push('enAttente');
 // L'aventurier que le MJ a sorti du combat de la table : à lui seul de l'y faire rentrer.
 CHAMPS_ACTEUR_MJ.push('sortiCombat');CHAMPS_VIVANTS.push('sortiCombat');
+// La position d'où un socle au mouvement épuisé s'ajuste.
+CHAMPS_VIVANTS.push('ajuste');
 // Où chaque test de compétence a été fait : le même ne se refait pas sans être sorti de sa zone de contact.
 CHAMPS_VIVANTS.push('testsLieux');
 /* L'état du tour d'un aventurier : ce qu'il a dépensé, joué, parcouru. Un joueur l'écrit daté du tour qu'il voit (« tourVu »,
