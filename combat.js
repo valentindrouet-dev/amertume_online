@@ -1300,6 +1300,9 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
     d'Orbes mystiques au-dessus : c'est le MJ qui nomme le prérequis, talent par talent.
     Trois volets, chacun au palier que le MJ choisit : l'état sur un 6 (palier 1), puis à
     chaque touche (2), puis en deux crans (3). */
+ orbesfeutoujours:{cle:'orbesfeutoujours',nom:'Orbes — Feu toujours',court:'Feu toujours',type:'ame',
+  aide:'Amélioration des Orbes : ils infligent Feu à chaque orbe, même sans dégâts.',
+  params:[],phrase(){return 'Vos <b>orbes</b> infligent <b>Feu</b> à chaque orbe, <b>même sans dégâts</b>.'}},
  orbesfeu:{cle:'orbesfeu',nom:'Orbes de feu',court:'état infligé',type:'ame',
   aide:'Les orbes du porteur infligent un état en plus de leurs dégâts : sur un 6, puis à chaque touche, puis en deux crans, chacun au palier choisi.',
   params:[{cle:'etat',nom:'État infligé',type:'choix',defaut:'Feu',options:ETATS_JEU.map(e=>[e,e])},
@@ -1806,7 +1809,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
- contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
+ contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesfeutoujours:'orbes',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;
@@ -1918,14 +1921,18 @@ function poolOrbe(d,k=1){if(!d)return null;const o={[d.couleur]:d.n*k};if(d.plus
 // Les dés d'un orbe, en toutes lettres : « 2 dés Mystiques », « 1 dé Lourd et 1 dé Mystique ».
 function texteDesOrbe(d){if(!d)return '';const dit=(n,nom)=>n+' dé'+(n>1?'s':'')+' '+nom+(n>1?'s':'');
  return d.plus&&d.couleur!=='blue'?dit(d.n,d.nom)+' et '+dit(d.plus,'Mystique'):dit(d.n+(d.plus||0),d.nom)}
+/* v0.827 : le Mystique n'a plus que le Feu ; ses Orbes l'emportent d'office — Feu quand ils infligent des dégâts, toujours avec
+   l'amélioration « Orbes de feu — toujours ». Un talent Orbes de feu tenu garde ses réglages. */
+function feuDesOrbes(portes){return porteEffet(portes,'orbes')||porteEffet(portes,'orbesfeutoujours')}
 function etatDesOrbes(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle==='orbesfeu');
- return t?String(t.params&&t.params.etat||'Feu'):''}
+ return t?String(t.params&&t.params.etat||'Feu'):feuDesOrbes(portes)?'Feu':''}
 /* L'état des orbes au palier tenu : ce qu'il faut pour qu'il prenne — un 6 parmi les dés, ou
    la seule touche — et combien de crans il pose. Null tant qu'aucun volet ne l'ouvre. Deux
    crans ne valent que pour un état qui s'empile. */
-function etatOrbeAuPalier(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle==='orbesfeu');if(!t)return null;
+function etatOrbeAuPalier(portes){const t=(portes||[]).find(t=>t&&t.code&&t.code.cle==='orbesfeu'),toujours=porteEffet(portes,'orbesfeutoujours');
+ if(!t)return feuDesOrbes(portes)?{etat:'Feu',six:false,crans:1,blesse:!toujours}:null;
  // Paliers en sommeil : l'orbe emporte l'état, un cran ; s'il blesse, ou toujours, selon le réglage « Quand ».
- if(!PALIERS.actifs)return {etat:String(t.params&&t.params.etat||'Feu'),six:false,crans:1,blesse:!(t.params&&t.params.quand==='toujours')};
+ if(!PALIERS.actifs)return {etat:String(t.params&&t.params.etat||'Feu'),six:false,crans:1,blesse:!(t.params&&t.params.quand==='toujours')&&!toujours};
  const n=Math.max(1,Math.min(PALIERS_MAX,Math.trunc(Number(t.talent&&t.talent.palier))||1));
  const v=voletsDe({...(t.talent||{}),effet:'orbesfeu'}),ouvert=k=>v[k]>0&&n>=v[k];
  if(!ouvert('six')&&!ouvert('touche'))return null;

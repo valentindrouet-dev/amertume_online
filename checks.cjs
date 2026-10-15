@@ -183,7 +183,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
  const tenus=[{code:TALENTS_CODES.orbes,params:{orbes:2,des:1,couleur:'blue'}},{code:TALENTS_CODES.orbes,params:{orbes:1,des:3,couleur:'black'}}];
  assert.equal(orbesPermis(tenus),2);assert.deepEqual(desOrbe(tenus),{n:3,couleur:'black',nom:'Mortel',plus:0});assert.equal(desOrbe([]),null);
  assert.equal(orbesPermis([]),0);
- assert.equal(etatDesOrbes(tenus),'');
+ assert.equal(etatDesOrbes(tenus),'Feu','v0.827 : les Orbes emportent le Feu d’office');
  /* Destructeur : tous les doubles sont des critiques ; le double 1 reste un échec. */
  assert.equal(TALENTS_CODES.destructeur.type,'mait');assert.match(phraseTalent('destructeur'),/<b>critiques sur tous ses doubles<\/b>/);
  assert.equal(resolveAttack({dice:[[3,0],[3,0]],def:0,dmg:0,roll:()=>2}).critical,false);
@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.827 — Les Orbes infligent Feu d'office quand ils blessent ; « Orbes — Feu toujours », amélioration des Orbes, même sans dégâts. */
+{const C=require('./combat.js'),o={code:C.TALENTS_CODES.orbes,params:{orbes:1,des:1,couleur:'blue'}},tj={code:C.TALENTS_CODES.orbesfeutoujours,params:{}};
+ assert.deepEqual(C.etatOrbeAuPalier([o]),{etat:'Feu',six:false,crans:1,blesse:true});assert.deepEqual(C.etatOrbeAuPalier([o,tj]),{etat:'Feu',six:false,crans:1,blesse:false});
+ assert.equal(C.etatOrbeAuPalier([]),null);assert.ok(C.TALENTS_CODES.orbesfeutoujours.pour==='orbes'&&C.TALENTS_CODES.orbesfeutoujours.type==='ame','l’amélioration des Orbes');}
 /* v0.826 — Un seul talent initial par classe : la Maîtrise du haut du premier arbre, la plus au centre ; les autres perdent la marque. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("else if(!doit&&t.flottant===true&&posDe(t)){delete t.flottant;change=true}"),'un seul talent initial');
 /* v0.825 — À la création, les talents d'une classe dans l'ordre de l'arbre : initial, sa ligne à gauche puis à droite, puis les lignes suivantes. */
