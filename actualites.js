@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.784","d":"2026-10-15","t":"Comparaison Maj sur les objets du journal"},
 {"v":"0.783","d":"2026-10-15","t":"Rage et Frappe Furieuse, rond flottant de l'arbre, zone d'ajustement visible"},
 {"v":"0.782","d":"2026-10-15","t":"À l'essai : l'ajustement"},
 {"v":"0.781","d":"2026-10-15","t":"Double-clic sur un token : approche plus éloignée"},
