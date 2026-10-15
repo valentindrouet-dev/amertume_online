@@ -4684,8 +4684,9 @@ function accordeArbres(){let change=false;
  (catalog.classes||[]).map(c=>c&&c.name).filter(n=>n&&n!==GENERIQUES).forEach(classe=>{
   colonnesArbre(classe).forEach(col=>{const ids=new Set(col.liste.map(t=>t.id)),posees=[];
    /* Le talent de classe sans case : en haut, au centre de sa colonne, une rangée au-dessus des autres. */
-   /* v0.806 : la maîtrise tout en haut du Tronc commun, son départ, est le talent de classe : tenue d'office, jamais décochée. */
-   if(col.rang===rangDAccueil(classe)){const dep=departsDe(col.liste),haut=col.liste.filter(t=>dep.has(t.id)&&!estVide(t)&&posDe(t)).sort((x,y)=>posDe(x).y-posDe(y).y)[0];
+   /* v0.806 : la maîtrise tout en haut du premier arbre de la classe, nommé ou non, son départ, est le talent de classe :
+      tenue d'office, jamais décochée. */
+   if(col.rang===(colonnesArbre(classe).find(k=>k.liste.length)||{}).rang){const dep=departsDe(col.liste),haut=col.liste.filter(t=>dep.has(t.id)&&!estVide(t)&&posDe(t)).sort((x,y)=>posDe(x).y-posDe(y).y)[0];
     if(haut&&haut.type==='mait'&&haut.flottant!==true){haut.flottant=true;change=true}}
    col.liste.forEach(t=>{if(!t.flottant||posDe(t))return;const ps=col.liste.filter(x=>x!==t).map(posDe).filter(Boolean);
     t.pos=ps.length?{x:Math.round((Math.min(...ps.map(q=>q.x))+Math.max(...ps.map(q=>q.x)))/2),y:Math.min(...ps.map(q=>q.y))-1}:{x:0,y:0};change=true});
@@ -5172,6 +5173,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);
  // En vue joueur, le MJ perd ses outils le temps de regarder : l'arbre se lit comme chez la troupe.
  const a=arbresActeur,mj=view==='mj'&&!arbresVueJoueur&&!a;
+ // L'arbre v2, celui d'un aventurier : noms sous les ronds, rangées plus hautes, panneau à droite.
+ const V2=ARBRE_V2&&!!a;
  arbresVue.hidden=view!=='mj'||!!a||arbresEnMasse;arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
  arbresMasse.hidden=view!=='mj'||!!a;arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a);poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
  if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}}
@@ -5350,7 +5353,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const paye=Math.max(0,total-dispo),pct=total?Math.max(0,Math.min(100,Math.round(paye/total*100))):0,texte=paye+' / '+total+' XP';
   s.innerHTML='<span class="lifebar xp"><span class="lifebar-fill" style="width:'+pct+'%"></span><span class="lifebar-text">'+esc(texte)+'</span></span>';tete.append(s)}
  if(!classe){const v=document.createElement('p');v.className='muted';v.textContent='Donne une classe à '+a.name+' pour lui ouvrir un arbre.';tete.append(v)}
- corps.append(tete);
+ tete.classList.toggle('v2',V2);corps.append(tete);
  /* Un nœud de l'arbre, et ce qu'il attend : une ligne depuis un talent tenu, sauf s'il n'en a aucune
     qui mène à lui ; et partout, ce que son effet réclame. Le tronc libre n'enchaîne rien. Sans
     porteur, le clic ouvre le talent : c'est le plan qu'on corrige. */
@@ -5360,6 +5363,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const verrou=!a||acquis?'':(sansElement&&estElementaire(t)?VERROU_ELEMENT:'')||(libre?'':verrouArbre(a.talents,col.liste,t,Number(a.level)||1))||manqueTalent(a.talents,t,catalog.talents)||trop(t);
   const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);
   if(mj&&lienDepuis===t.id)el.classList.add('relie-source');if(t.flottant===true)el.classList.add('talent-classe');
+  /* v2 : son vrai nom sous le rond, deux lignes au plus, sous les améliorations du bas s'il en porte. */
+  if(V2){const n=document.createElement('span');n.className='arbre-nom-v2';nomAccolades(n,vu(t).name);
+   const bas=petitsDe(t,'s').length?94:(petitsDe(t,'so').length||petitsDe(t,'se').length)?72:54;el.style.setProperty('--nom-y',bas+'px');el.append(n);
+   if(t.id===arbreDetailId)el.classList.add('choisi')}
   el.onclick=()=>{if(mj&&lienDepuis){relie(t,col);return}
    if(a)arbreDetailId=t.id;
    if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}
@@ -5434,7 +5441,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const colonne=(c,libre)=>{const col=document.createElement('div');col.className='arbre-col'+(libre?' libre':'')+(mj?' editable':'');
   const h=document.createElement('h4');h.className='arbre-titre';
   // Chez un aventurier, le bandeau de la colonne se passe de son nom.
-  const nomVoie=document.createElement('span');nomVoie.className='arbre-voie';nomVoie.textContent=a?'':c.titre;h.append(nomVoie);if(a)h.classList.add('sans-nom');
+  const nomVoie=document.createElement('span');nomVoie.className='arbre-voie';nomVoie.textContent=a&&!V2?'':c.titre;h.append(nomVoie);if(a&&!V2)h.classList.add('sans-nom');
+  if(!c.liste.length)col.classList.add('sans-talent');
   cible(h,{famille:c.famille,voie:c.voie});
   /* Le nom d'une colonne se corrige là où il se lit, nommée ou non : c'est ainsi qu'on
      baptise une spécialisation, et le ✕ lui reprend son nom — ses talents reviennent au
@@ -5493,16 +5501,19 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const depart=c.liste.filter(t=>racines.has(t.id)).sort((x,y)=>cases.get(x.id).y-cases.get(y.id).y)[0];
   if(depart){const rx=cases.get(depart.id).x,e=Math.max(rx-x0,x1-rx);x0=rx-e;x1=rx+e}
   const L=CASE_SPHERIER,plan=document.createElement('div');plan.className='arbre-plan';
-  plan.style.width=((x1-x0+1)*L).toFixed(0)+'px';plan.style.height=((y1-y0+1)*L).toFixed(0)+'px';
-  const pose=(el,x,y)=>{el.style.left=((x-x0+.5)*L).toFixed(1)+'px';el.style.top=((y-y0+.5)*L).toFixed(1)+'px'};
+  /* v2 : une rangée plus haute, pour le nom sous chaque talent ; un petit rond garde sa distance à son talent. */
+  const LY=V2?205:L;
+  plan.style.width=((x1-x0+1)*L).toFixed(0)+'px';plan.style.height=((y1-y0+1)*LY).toFixed(0)+'px';
+  const pose=(el,x,y,de)=>{const b=de&&cases.get(de.id);
+   el.style.left=((x-x0+.5)*L).toFixed(1)+'px';el.style.top=(b?(b.y-y0+.5)*LY+(y-b.y)*L:(y-y0+.5)*LY).toFixed(1)+'px'};
   const marque=(el,q)=>{if(sous(q))el.classList.add(limiteVue?'hors-limite-mj':'hors-limite')};if(coupe<Infinity&&!limiteVue)col.classList.add('coupee');
   c.liste.forEach(t=>{const p=cases.get(t.id),el=estVide(t)?noeudVide(t,c,false):noeudArbre(t,c,libre);if(t===depart)el.classList.add('racine');pose(el,p.x,p.y);marque(el,p);plan.append(el)});
-  petits.forEach(s=>{const el=estVide(s.t)?noeudVide(s.t,c,true):noeudPetit(s.t,s.de,c,libre);pose(el,s.x,s.y);marque(el,s);plan.append(el)});
-  places.forEach(pl=>{const el=pl.genre==='gros'?place(c,pl):placePetit(c,pl);pose(el,pl.x,pl.y);plan.append(el)});
+  petits.forEach(s=>{const el=estVide(s.t)?noeudVide(s.t,c,true):noeudPetit(s.t,s.de,c,libre);pose(el,s.x,s.y,s.de);marque(el,s);plan.append(el)});
+  places.forEach(pl=>{const el=pl.genre==='gros'?place(c,pl):placePetit(c,pl);pose(el,pl.x,pl.y,pl.genre==='gros'?null:pl.de);plan.append(el)});
   /* v2 : là où commence chaque niveau de l'arbre, un trait pointillé en travers et « Niveau n » à gauche. */
   if(ARBRE_V2&&a){const req=niveauxRequis(classe),hauts=new Map();
    c.liste.forEach(t=>{const n=req.get(t.id)||1,p=cases.get(t.id);if(n>1&&p&&!sous(p)&&(!hauts.has(n)||p.y<hauts.get(n)))hauts.set(n,p.y)});
-   hauts.forEach((y,n)=>{const r=document.createElement('div');r.className='arbre-rangee-niveau';r.style.top=((y-y0)*L).toFixed(1)+'px';
+   hauts.forEach((y,n)=>{const r=document.createElement('div');r.className='arbre-rangee-niveau';r.dataset.n=String(n);r.style.top=((y-y0+.5)*LY-62).toFixed(1)+'px';
     const l=document.createElement('span');l.textContent='Niveau '+n;r.append(l);plan.append(r)})}
   col.append(plan);
   return col};
@@ -5511,7 +5522,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     d'une classe. */
  /* v2 : le panneau du talent regardé — son rond en grand, son nom, sa bulle ; ses améliorations, palier par palier, leur
     prix ; le bouton qui l'apprend, au prix de son premier palier, et l'XP qui restera. */
- const remplitDetail=(panneau,t)=>{arbreDetailId=t.id;panneau.replaceChildren();const tv=logoHerite(vu(t),vu);
+ const remplitDetail=(panneau,t)=>{arbreDetailId=t.id;panneau.replaceChildren();
+  corps.querySelectorAll('.arbre-plan>.arbre-noeud.choisi').forEach(x=>x.classList.remove('choisi'));{const e=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]');if(e)e.classList.add('choisi')}const tv=logoHerite(vu(t),vu);
   const tete=document.createElement('div');tete.className='detail-tete';
   const rond=document.createElement('span');rond.className='detail-rond t-'+talentType(t)[0];const lg=logoTalent(tv);if(lg)rond.append(lg);else rond.textContent=GLYPHES_TALENT[t.type]||'✦';
   const nom=document.createElement('h3');nomAccolades(nom,tv.name);tete.append(rond,nom);panneau.append(tete);
@@ -5588,7 +5600,9 @@ function traceChemins(){const corps=$('arbres-corps');if(!corps||!arbresDialog.o
      une place sur chaque ligne : le clic pose le niveau 2, puis l'augmente ; le clic droit le baisse, puis l'ôte. */
   col.querySelectorAll(':scope>.arbre-niveau,:scope>.arbre-cacher').forEach(x=>x.remove());
   liste.forEach(de=>liensDe(de).forEach(id=>{const vers=liste.find(x=>x.id===id),A=elDe(de.id),B=vers&&elDe(id);if(!A||!B)return;
-   const n=niveauLien(de,vers);if(!n&&!mj)return;if(!voitTout&&caches.has(de.id))return;if(A.classList.contains('hors-limite'))return;const p=centre(A),q=centre(B),b=document.createElement(mj?'button':'span');if(mj)b.type='button';
+   const n=niveauLien(de,vers);if(!n&&!mj)return;
+   // v2 : la rangée « Niveau n » dit déjà ce seuil ; pas de pastille en double.
+   if(n&&col.querySelector('.arbre-rangee-niveau[data-n="'+n+'"]'))return;if(!voitTout&&caches.has(de.id))return;if(A.classList.contains('hors-limite'))return;const p=centre(A),q=centre(B),b=document.createElement(mj?'button':'span');if(mj)b.type='button';
    // À côté du niveau, chez le MJ : « Cacher » la suite de la ligne aux joueurs.
    if(mj&&CACHER_ARBRE){const l=document.createElement('label'),c=document.createElement('input');l.className='arbre-cacher'+(cacheLien(de,vers)?' on':'');c.type='checkbox';c.checked=cacheLien(de,vers);
     l.append(c,'Cacher');l.style.left=((p.x+q.x)/2).toFixed(1)+'px';l.style.top=((p.y+q.y)/2).toFixed(1)+'px';l.onclick=e=>e.stopPropagation();

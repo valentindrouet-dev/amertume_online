@@ -2752,3 +2752,53 @@ body.site-verrouille>main:not(#verrou-page),body.site-verrouille nav.tabs,body.s
 /* Le début d'un niveau, dans l'arbre v2 : un trait pointillé en travers, « Niveau n » à gauche. */
 .arbre-plan>.arbre-rangee-niveau{position:absolute;left:0;right:0;height:0;border-top:1.5px dashed var(--line);pointer-events:none;z-index:0}
 .arbre-plan>.arbre-rangee-niveau>span{position:absolute;left:4px;top:-11px;padding:2px 8px;border-radius:5px;background:color-mix(in srgb,var(--panel) 80%,#999 20%);font:800 11px system-ui;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+/* ---------- Arbre v2, affiné (v0.807) : toute la largeur, en-tête compacte, talents lisibles, noms, paliers, traits fins. ---------- */
+#arbres.v2{width:calc(100vw - 24px);max-width:none;padding:18px 28px 24px}
+#arbres.v2 .dialog-head{margin-bottom:10px}
+#arbres.v2.du-heros .dialog-head>.arbres-classe{position:static;transform:none;flex:0 1 auto;text-align:left;margin:0 auto 0 0;pointer-events:auto}
+#arbres.v2 #arbres-corps{padding:0}
+#arbres.v2 .arbres-tete.v2{flex-direction:row;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:10px 18px;margin:0 0 14px}
+#arbres.v2 .arbres-tete.v2 .arbres-chiffres{width:auto;padding:4px 10px}
+#arbres.v2 .arbres-tete.v2 .arbres-pt{width:min(360px,100%);margin:0}
+.arbres-v2{grid-template-columns:minmax(0,65fr) minmax(330px,35fr);gap:22px}
+.arbres-v2-arbre{overflow:auto}
+.arbres-v2 .arbres-cols{flex-wrap:nowrap;justify-content:flex-start;align-items:stretch;gap:16px}
+.arbres-v2 .arbre-col{flex:1 1 auto;min-width:0;max-width:none}
+.arbres-v2 .arbre-col.sans-talent{flex:0 0 190px}
+.arbres-v2 .arbre-col>.arbre-titre{padding:12px 12px 18px;font-size:14px;letter-spacing:3px;min-height:0}
+.arbres-v2 .arbre-col>.arbre-plan{margin-top:-14px}
+/* Les talents : lisibles, chacun dans son état. */
+.arbres-v2 .arbre-plan>.arbre-noeud:not(.petit):is(.dispo,.verrou) .arbre-rond{opacity:1}
+.arbres-v2 .arbre-plan>.arbre-noeud.dispo .arbre-rond{border-style:dashed;border-width:3px}
+.arbres-v2 .arbre-plan>.arbre-noeud.verrou .arbre-rond{filter:grayscale(.55);opacity:.82;border-style:dashed}
+.arbres-v2 .arbre-plan>.arbre-noeud.verrou:not(.petit) .arbre-rond::after{content:'🔒';position:absolute;top:2px;right:2px;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#6f675c;color:#fff;font:12px/1 system-ui;border:2px solid var(--panel);filter:grayscale(1)}
+.arbres-v2 .arbre-plan>.arbre-noeud.acquis:not(.petit):not(.talent-classe) .arbre-rond::after{display:block;content:'✓';position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:50%;background:#3f8a4f;color:#fff;font:700 14px/24px system-ui;text-align:center;border:2px solid var(--panel)}
+.arbres-v2 .arbre-plan>.arbre-noeud.choisi:not(.petit) .arbre-rond{box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px #c99a3c,0 0 0 6px var(--panel),0 0 0 7.5px #c99a3c,0 0 18px 6px #f2c14e55}
+/* Le nom sous le rond : centré, deux lignes au plus, sur un fond qui cache le trait qui passe dessous. */
+.arbres-v2 .arbre-plan>.arbre-noeud>.arbre-nom-v2{position:absolute;left:50%;top:calc(50% + var(--nom-y,54px));transform:translateX(-50%);width:150px;text-align:center;pointer-events:none;z-index:2;
+ font:700 15px/1.15 'Killam',Georgia,serif;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.arbres-v2 .arbre-plan>.arbre-noeud>.arbre-nom-v2>*{background:var(--panel-2);box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0 4px;border-radius:4px}
+.arbres-v2 .arbre-plan>.arbre-noeud.verrou>.arbre-nom-v2{color:color-mix(in srgb,var(--ink) 70%,transparent)}
+/* Un repère par palier : un filet et son libellé à gauche. */
+.arbres-v2 .arbre-plan>.arbre-rangee-niveau{border-top:1px dashed color-mix(in srgb,var(--line-strong) 70%,transparent)}
+.arbres-v2 .arbre-plan>.arbre-rangee-niveau>span{top:-12px;left:6px;font-size:11.5px}
+/* Les traits : fins, taupe ; acquis, un vert discret. */
+.arbres-v2 .arbre-chemins .chemin .trait{stroke:#a89b86;stroke-width:2;stroke-dasharray:none;opacity:.9}
+.arbres-v2 .arbre-chemins .chemin.petit .trait{stroke-width:1.5}
+.arbres-v2 .arbre-chemins .chemin.pris .trait{stroke:#5e9a5b;stroke-width:2.5;opacity:1}
+.arbres-v2 .arbre-chemins .chemin.a-niveau .trait{stroke-dasharray:2 7;opacity:.45}
+.arbres-v2 .arbre-chemins .entree{stroke:#a89b86;stroke-width:2}
+.arbres-v2 .arbre-chemins .entree.pris{stroke:#5e9a5b}
+/* Le panneau : ivoire, accents dorés, ombres légères, sans vide imposé. */
+.arbres-v2 .arbres-detail{min-height:0;gap:14px;padding:20px;border-color:#e2d4b8;border-radius:12px;background:#fbf6ea;box-shadow:0 1px 3px #0000000d,0 4px 14px #00000008}
+.arbres-v2 .arbres-detail .detail-rond{width:112px;height:112px}
+.arbres-v2 .arbres-detail .detail-corps{padding:0;border:0;background:transparent;font-size:15.5px;line-height:1.5}
+.arbres-v2 .arbres-detail .detail-corps .cout-xp{display:none}
+.arbres-v2 .arbres-detail .detail-corps .talent-bulle-nom:empty{display:none}
+.arbres-v2 .arbres-detail .detail-amelioration{border-radius:10px;padding:12px 14px;box-shadow:0 1px 2px #0000000a}
+.arbres-v2 .arbres-detail .detail-apprendre{border-radius:10px}
+.arbres-v2 .arbres-detail .detail-pied{margin-top:4px}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .arbres-v2 .arbres-detail{background:var(--panel)}}
+body.sombre .arbres-v2 .arbres-detail{background:var(--panel);border-color:var(--line)}
+/* Une fenêtre étroite : le panneau passe sous l'arbre. */
+@media (max-width:1100px){.arbres-v2{grid-template-columns:1fr}.arbres-v2 .arbres-detail{position:static}}
