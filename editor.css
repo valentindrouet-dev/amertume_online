@@ -2661,7 +2661,7 @@ body.page-accueil .intro,body.page-accueil .mj-tools,body.page-accueil main.layo
 #creation-aventurier .creation-fiche-classe h3{margin:0 0 6px;color:var(--teinte);font:700 18px Georgia,serif}
 #creation-aventurier .creation-description{margin:0 0 8px;font-style:italic}
 #creation-aventurier .creation-bonus{display:flex;flex-wrap:wrap;gap:6px}#creation-aventurier .creation-talents{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-#objet-depart{max-width:420px}#objet-depart .objet-depart-corps>.cat-detail{position:static;display:block;margin:4px 0 0}#creation-aventurier .creation-pastille{font-weight:700;font-size:13px;padding:2px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+#objet-depart{max-width:420px}#objet-depart .objet-depart-corps{display:flex;justify-content:center;padding:6px 0 2px}#creation-aventurier .creation-pastille{font-weight:700;font-size:13px;padding:2px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
 #creation-aventurier .creation-reste{margin:0;font-weight:700;color:var(--accent)}#creation-aventurier .creation-reste.fini{color:var(--muted)}
 #creation-aventurier .creation-points{display:flex;flex-direction:column;gap:6px;max-width:340px}
 #creation-aventurier .creation-pas:disabled{opacity:.35}

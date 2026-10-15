@@ -4022,13 +4022,17 @@ function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>e
  if(view!=='mj'){owner=i;selected=i;if(typeof enLigne!=='undefined'&&enLigne&&typeof prendreSiege==='function')prendreSiege(a)}
  render();if(view!=='mj'&&!(typeof enLigne!=='undefined'&&enLigne)&&$('owner'))$('owner').value=String(i);
  if(typeof renderHeroes==='function')renderHeroes();scheduleSave();if(typeof pousserBientot==='function')pousserBientot();renderAccueil();
- // L'objet tiré se montre aussitôt : son nom à la couleur de sa rareté, ce qu'il confère, sa valeur.
+ // L'objet tiré se montre aussitôt, comme à l'Armurerie : son carré et son nom, sa fiche au survol.
  if(tiree)annonceObjetDepart(objetDe(tiree.id))}
 let objetDepartDialog=null;
 function annonceObjetDepart(o){if(!o)return;
  objetDepartDialog??=dialog('objet-depart','Objet aléatoire','<div id="objet-depart-corps" class="objet-depart-corps"></div><div class="form-actions"><button type="button" class="primary" data-ok>OK</button></div>');
  objetDepartDialog.querySelector('[data-ok]').onclick=()=>objetDepartDialog.close();
- const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');$('objet-depart-corps').replaceChildren(d);objetDepartDialog.showModal()}
+ const carte=document.createElement('div');carte.className='cat-carte';
+ const q=gearCarre(o,1,0);q.classList.remove('dispo');const coche=q.querySelector('.marque-porte');if(coche)coche.remove();q.removeAttribute('role');q.tabIndex=0;q.setAttribute('aria-label',o.name);
+ surveille(q,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(q,d,'bulle-gear')});
+ const nom=document.createElement('span');nom.className='nom-carte';nom.textContent=o.name;carte.append(q,nom);
+ $('objet-depart-corps').replaceChildren(carte);objetDepartDialog.showModal()}
 $('accueil-creer').onclick=()=>openCreation();
 function completerInventaire(a){if(!a)return;a.inventaire??=[];
  const besoin=new Map();[...(a.weapons||[]),...armuresDe(a),a.shieldId].filter(Boolean).forEach(id=>besoin.set(id,(besoin.get(id)||0)+1));
