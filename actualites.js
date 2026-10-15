@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.790","d":"2026-10-15","t":"Talent de classe sans coche, un peu plus bas"},
 {"v":"0.789","d":"2026-10-15","t":"Talent de classe dans le coin, améliorations du bas contre leur talent"},
 {"v":"0.788","d":"2026-10-15","t":"Plus de case Élémentaire dans l'éditeur de talents"},
 {"v":"0.787","d":"2026-10-15","t":"Plus d'arrêt en sortant de la zone d'un adversaire"},

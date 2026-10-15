@@ -5454,7 +5454,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     el.onclick=()=>{lienDepuis=null;ajouterDansArbre({famille:classe,flottant:true,type:'mait'})};
     el.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();el.click()}};cible(el,{famille:classe,flottant:true})}
    if(el){el.classList.add('arbre-flottant');col.append(el);
-    requestAnimationFrame(()=>{el.style.top=(plan.offsetTop+26)+'px'})}}
+    requestAnimationFrame(()=>{el.style.top=(plan.offsetTop+46)+'px'})}}
   return col};
  /* Les colonnes : les deux de la classe, ni plus ni moins. Les génériques ont leur propre
     arbre — on l'ouvre par son rouage, dans l'onglet Talents — et n'encombrent plus celui
