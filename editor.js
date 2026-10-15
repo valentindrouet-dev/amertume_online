@@ -4661,7 +4661,8 @@ function basculeLien(de,vers,liste){if(!de||!vers||de===vers)return 'rien';
  if(liensDe(de).includes(vers.id)){de.liens=liensDe(de).filter(x=>x!==vers.id);if(!de.liens.length)delete de.liens;return 'retire'}
  const d=dirLien(posDe(de),posDe(vers),liste);if(!d)return 'loin';
  // En bas à gauche, dessous et en bas à droite, les améliorations chevauchent le départ de la ligne : elles ne la gênent pas.
- const gene=(t,k)=>!!k&&!['so','s','se'].includes(k)&&petitsDe(t,k).length>0;
+ // Arbre v2 : les petits ronds ne se dessinent plus dans l'arbre ; ils ne gênent aucune ligne.
+ const gene=(t,k)=>!(typeof ARBRE_V2!=='undefined'&&ARBRE_V2)&&!!k&&!['so','s','se'].includes(k)&&petitsDe(t,k).length>0;
  if(gene(de,d)||gene(vers,dirLien(posDe(vers),posDe(de),liste)))return 'occupe';
  if(liensDe(de).length>=LIENS_MAX)return 'plein';
  de.liens=[...liensDe(de),vers.id];return 'ajoute'}
@@ -4854,7 +4855,7 @@ function placerTalent(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||!
  const de=dest.de?(dest.de===t.id&&reste?reste:tousTalents().find(x=>x.id===dest.de)):null;
  t.pos=voulue||caseLibre(col,de);
  // La ligne depuis « de » : vers une case voisine, et pas par-dessus des petits ronds, sauf les améliorations du bas.
- if(de&&de!==t&&!liensDe(de).includes(t.id)&&liensDe(de).length<LIENS_MAX){const d=dirVers(posDe(de),t.pos);if(d&&(['so','s','se'].includes(d)||!petitsDe(de,d).length))de.liens=[...liensDe(de),t.id]}
+ if(de&&de!==t&&!liensDe(de).includes(t.id)&&liensDe(de).length<LIENS_MAX){const d=dirVers(posDe(de),t.pos);if(d&&((typeof ARBRE_V2!=='undefined'&&ARBRE_V2)||['so','s','se'].includes(d)||!petitsDe(de,d).length))de.liens=[...liensDe(de),t.id]}
  if(avant)petitsHorsDesLignes(t);
  return true}
 const GLYPHES_TALENT={act:'⚔',mvt:'➜',reac:'↩',pass:'◆',crit:'✸',mait:'★',ame:'⇧'};
@@ -5516,7 +5517,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    c.liste.forEach(t=>{if(estVide(t)&&!estRemplissage(t))return;const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
     Object.keys(DIRS).forEach(d=>{const [dx,dy]=DIRS[d];if((ch[d].lien&&!['so','s','se'].includes(d))||ch[d].entrant)return;
      // Vers le bas, une amélioration n'empêche pas d'y poser le talent suivant : elle chevauche le haut de son lien.
-     if(['e','s','o'].includes(d)&&!ch[d].lien&&(d==='s'||!ch[d].petits.length)){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.4)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
+     if(['e','s','o'].includes(d)&&!ch[d].lien&&(V2||d==='s'||!ch[d].petits.length)){const x=p.x+dx,y=p.y+dy,k='g'+x+','+y;if(!occupe.has(x+','+y)&&!vues.has(k)&&!petits.some(q=>Math.hypot(q.x-x,q.y-y)<.4)){vues.add(k);places.push({genre:'gros',x,y,de:t})}}
      if(d==='n'&&racines.has(t.id)&&!ch[d].petits.length)return;
      // Un seul petit rond par chemin : ses paliers font ce que faisait une série. Celui qui y est n'en appelle pas d'autre.
      if(V2||ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);

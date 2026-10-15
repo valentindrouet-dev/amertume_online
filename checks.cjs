@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.821 — Arbre v2 : les bonus et améliorations, sans petits ronds, ne bloquent plus ni les places d'à côté ni les lignes en diagonale. */
+{const src=fs.readFileSync('editor.js','utf8');assert.ok(src.includes("if(['e','s','o'].includes(d)&&!ch[d].lien&&(V2||d==='s'||!ch[d].petits.length)){")&&src.includes("const gene=(t,k)=>!(typeof ARBRE_V2!=='undefined'&&ARBRE_V2)&&"),'places et diagonales libres');}
 /* v0.820 — La fenêtre de l'arbre moitié plus haute. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes(".arbres-v2 .arbres-detail{min-height:min(930px,calc(100dvh - 190px))}"),'arbre plus haut');
 /* v0.819 — Chez un aventurier, ce qu'il ne tient pas reste gris dans le panneau ; pris, il prend sa couleur. */
@@ -5261,7 +5263,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes(" const oublier=(t,liste)
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("const LIENS_MAX=5;")&&src.includes("function dirVers(p,q){if(!p||!q)return '';return Object.keys(DIRS).find(")
   &&src.includes("if(t.flottant!==true||t.horsArbre===true)delete t.flottant;else delete t.chemin;")&&src.includes("t.pos=ps.length?{x:Math.round((Math.min(...ps.map(q=>q.x))+Math.max(...ps.map(q=>q.x)))/2),y:Math.min(...ps.map(q=>q.y))-1}:{x:0,y:0};")
-  &&src.includes("const gene=(t,k)=>!!k&&!['so','s','se'].includes(k)&&petitsDe(t,k).length>0;")&&!src.includes("w.className='arbre-flottant'")
+  &&src.includes("const gene=(t,k)=>!(typeof ARBRE_V2!=='undefined'&&ARBRE_V2)&&!!k&&!['so','s','se'].includes(k)&&petitsDe(t,k).length>0;")&&!src.includes("w.className='arbre-flottant'")
   &&src.includes("if(t.flottant&&talentFamily(t)!==famille)delete t.flottant;"),'le talent de classe au centre, cinq lignes');}
 /* v0.799 — La Rage au contact compte dans les dégâts de la fiche, en orange doré clair comme toute hausse du moment. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
