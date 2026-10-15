@@ -4887,6 +4887,14 @@ arbresDialog.querySelector('.dialog-head').insertBefore(arbresXp,arbresMasse);
 // Le bouton et l'XP sous les ronds sont au MJ seul ; un joueur ne les voit jamais.
 const poseXpVisible=()=>{arbresDialog.classList.toggle('xp-visible',xpVisible&&view==='mj');arbresXp.classList.toggle('on',xpVisible);arbresXp.setAttribute('aria-pressed',String(xpVisible))};poseXpVisible();
 arbresXp.onclick=()=>{xpVisible=!xpVisible;try{localStorage.setItem('amertume-xp-visible',xpVisible?'1':'0')}catch(e){}poseXpVisible()};
+/* v0.813 : remettre à zéro tout l'arbre d'un aventurier — talents, améliorations, bonus et paliers rendus, leur XP revient ; le
+   talent de classe, tenu d'office, reste. Ni mort, ni figé en combat. */
+const arbresReset=document.createElement('button');arbresReset.type='button';arbresReset.id='arbres-reset';arbresReset.className='arbres-vue';arbresReset.textContent='↺ Réinitialiser l’arbre';
+arbresDialog.querySelector('.dialog-head').insertBefore(arbresReset,arbresVue);
+arbresReset.onclick=async()=>{const a=arbresActeur&&acteurCourant(arbresActeur);if(!a||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
+ const classe=classeDuHeros(a),fl=classe?talentsFlottants(classe).map(t=>t.id):[];
+ if(typeof demander==='function'&&!await demander('Réinitialiser tout l’arbre de talents de '+a.name+' ? Ses talents, améliorations et bonus lui sont rendus, et leur XP lui revient.','Réinitialiser'))return;
+ a.talents=(a.talents||[]).filter(id=>fl.includes(id));a.paliersTalents={};arbreDetailId=null;renderArbres();renderHeroes();render();scheduleSave()};
 const arbresTotal=document.createElement('span');arbresTotal.id='arbres-total';arbresTotal.className='arbres-total';
 arbresDialog.querySelector('.dialog-head').insertBefore(arbresTotal,arbresMasse);
 // Tout ce que porte l'arbre d'une classe : ses talents dans l'ordre, chacun suivi de ses petits ronds.
@@ -5189,7 +5197,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // L'arbre v2 : panneau à droite ; chez un aventurier comme dans l'éditeur du MJ, qui garde ses outils.
  const V2=ARBRE_V2;
  arbresVue.hidden=view!=='mj'||!!a||arbresEnMasse;arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
- arbresMasse.hidden=view!=='mj'||!!a||(V2&&arbresVueJoueur);arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
+ arbresMasse.hidden=view!=='mj'||!!a||(V2&&arbresVueJoueur);arbresReset.hidden=!a||!V2;arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
  if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}}
  else if(view!=='mj'){arbresDialog.close();return}
  // Chez le MJ, l'arbre s'accorde avant de se dessiner : chaque talent a sa case, chaque ligne son but.
@@ -5559,7 +5567,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   /* Les points d'Action ou de Mouvement qu'il coûte : à gauche de son nom, comme dans les bulles ; la ligne de nom de la bulle s'en va. */
   {const tb=corpsT.querySelector('.talent-bulle-nom');if(tb){const pts=tb.querySelector('.cout-points');if(pts)nom.append(pts);tb.remove()}}
   {const sp=document.createElement('span');nomAccolades(sp,tv.name);nom.append(sp)}
-  droite.append(corpsT);tete.append(rond,droite);panneau.append(tete);
+  droite.append(corpsT);tete.append(rond,droite);tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474');panneau.append(tete);
   const el=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]'),acquis=porte(t),verrou=!!el&&el.classList.contains('verrou');
   /* Le talent lui-même s'apprend d'un clic sur sa tête, et se rend d'un autre clic ; son prix à droite de son nom. Le talent
      de classe, tenu d'office, ne se rend pas. */

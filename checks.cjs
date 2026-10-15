@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.813 — La tête du panneau à la teinte de sa nature, les améliorations en vert ; les talents non tenus grisés ; un bouton remet à zéro
+   l'arbre d'un aventurier, talent de classe gardé. */
+{const src=fs.readFileSync('editor.js','utf8');
+ assert.ok(src.includes("tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474')")&&src.includes("a.talents=(a.talents||[]).filter(id=>fl.includes(id));a.paliersTalents={};")&&src.includes("arbresReset.hidden=!a||!V2;"),'v0.813');}
 /* v0.812 — Arbre v2 : la limite de niveau vaut aussi sur l'arbre d'un aventurier chez le MJ ; plus de bouton XP visible ; le talent
    se prend et se rend par sa tête, une amélioration ou un bonus tenu se rend d'un clic ; le panneau défile dans une hauteur fixe ;
    les bonus deux par ligne ; les points du talent à gauche de son nom. */

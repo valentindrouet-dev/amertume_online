@@ -2913,3 +2913,22 @@ body.sombre #accueil-page .accueil-v2 .accueil-bloc{background:var(--panel);bord
 .arbres-v2 .arbres-detail .detail-bonus .detail-prix{padding:0 6px;font-size:11px}
 .arbres-v2 .arbres-detail .detail-bonus .detail-oter{padding:0 2px;font-size:11px;margin-left:0}
 @media (max-width:1100px){.arbres-v2 .arbres-detail{min-height:520px}}
+/* v0.813 : la tête du panneau, une carte comme les améliorations : bande et fond à la couleur de la nature du talent. Les
+   améliorations prennent la leur, verte. Dans l'arbre d'un aventurier, ce qu'il ne tient pas est grisé. */
+.arbres-v2 .arbres-detail .detail-tete{--teinte:#8a8474;margin:0;padding:14px 16px 14px 14px;border:1px solid color-mix(in srgb,var(--teinte) 35%,#e2d4b8);border-left:4px solid var(--teinte);border-radius:10px;
+ background:color-mix(in srgb,var(--teinte) 10%,#fbf6ea);box-shadow:0 1px 2px #0000000a}
+.arbres-v2 .arbres-detail .detail-tete.cliquable.achetable{border-color:color-mix(in srgb,var(--teinte) 45%,#e2d4b8);border-left-color:var(--teinte);background:color-mix(in srgb,var(--teinte) 10%,#fbf6ea)}
+.arbres-v2 .arbres-detail .detail-tete.cliquable.achetable:is(:hover,:focus-visible){border-color:var(--teinte);box-shadow:0 0 0 2px color-mix(in srgb,var(--teinte) 35%,transparent)}
+.arbres-v2 .arbres-detail .detail-tete.cliquable.acquise{border-color:color-mix(in srgb,var(--teinte) 55%,#e2d4b8);border-left-color:var(--teinte);background:color-mix(in srgb,var(--teinte) 22%,#fbf6ea)}
+.arbres-v2 .arbres-detail .detail-tete.cliquable.fermee{opacity:.8}
+.arbres-v2 .arbres-detail .detail-rond{width:104px;height:104px;border-color:var(--teinte)}
+.arbres-v2 .arbres-detail .detail-amelioration:not(.detail-bonus){--teinte:#5e9a5b;border-color:color-mix(in srgb,var(--teinte) 30%,#e2d4b8);border-left:4px solid var(--teinte);background:color-mix(in srgb,var(--teinte) 8%,#fbf6ea);opacity:.85}
+.arbres-v2 .arbres-detail .detail-amelioration:not(.detail-bonus).achetable{opacity:1;background:color-mix(in srgb,var(--teinte) 10%,#fffaf0)}
+.arbres-v2 .arbres-detail .detail-amelioration:not(.detail-bonus).achetable:is(:hover,:focus-visible){border-color:var(--teinte);box-shadow:0 0 0 2px color-mix(in srgb,var(--teinte) 35%,transparent)}
+.arbres-v2 .arbres-detail .detail-amelioration:not(.detail-bonus).acquise{opacity:1;background:color-mix(in srgb,var(--teinte) 20%,#fbf6ea);border-color:color-mix(in srgb,var(--teinte) 55%,#e2d4b8)}
+.arbres-v2 .arbres-detail .detail-amelioration:not(.detail-bonus) .detail-am-nom b{color:color-mix(in srgb,var(--teinte) 55%,var(--ink))}
+.arbres-v2 .arbres-detail .detail-nom-ligne h3 .cout-points .pt{display:block;width:12px;height:12px;border-radius:50%;box-shadow:inset 0 -1px 0 rgba(0,0,0,.22),0 0 0 1.5px rgba(255,255,255,.7)}
+.arbres-v2 .arbres-detail .detail-nom-ligne h3 .cout-points .pt.action{background:#3f8fe0}.arbres-v2 .arbres-detail .detail-nom-ligne h3 .cout-points .pt.mvt{background:#cf9152}
+.arbres-v2 .arbre-plan>.arbre-noeud:not(.petit):is(.dispo,.verrou) .arbre-rond{filter:grayscale(1);opacity:.75}
+.arbres-v2 .arbre-plan>.arbre-noeud:not(.petit).choisi:is(.dispo,.verrou) .arbre-rond{opacity:.9}
+#arbres .dialog-head #arbres-reset{margin-left:auto}

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.813","d":"2026-10-15","t":"Arbre v2 : teintes, grisé, réinitialiser"},
 {"v":"0.812","d":"2026-10-15","t":"Arbre v2 : clics, hauteur, bonus"},
 {"v":"0.811","d":"2026-10-15","t":"Nouvel Accueil"},
 {"v":"0.810","d":"2026-10-15","t":"Améliorations et bonus dans le panneau"},
