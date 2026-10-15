@@ -4445,7 +4445,7 @@ function dissoudreVoie(famille,nom){const i=voiesDe(famille).indexOf(nom);
    le sphérier, ni ce qu'une ligne ne mène plus jusqu'à lui. Sans classe à arbre, rien ne bouge. */
 function talentsDuSpherier(a){const classe=classeDuHeros(a);if(!a||!classe||!aUnArbre(classe))return null;
  const vus=new Set();colonnesArbre(classe).forEach(col=>atteintsDepuis(a.talents,col.liste,null).forEach(id=>vus.add(id)));
- {const fl=talentFlottant(classe);if(fl)vus.add(fl.id)}
+ {const fl=talentFlottant(classe);if(fl){vus.add(fl.id);tousTalents().forEach(x=>{const c=lisChemin(x);if(c&&c.de===fl.id)vus.add(x.id)})}}
  return (a.talents||[]).filter(id=>vus.has(id))}
 /* Un aventurier qui oublie un talent de son arbre perd tout ce qui en dépendait : talents, bonus et
    améliorations qu'aucun talent tenu ne rattache plus au départ, et ce qui reposait sur eux, jusqu'à
@@ -4558,7 +4558,7 @@ function cheminsDe(liste,t){const out={},p=posDe(t);
  (liste||[]).forEach(v=>{if(!v||v===t||!liensDe(v).includes(t.id))return;const d=dirLien(p,posDe(v),liste);if(d&&!out[d].lien)out[d].entrant=v});
  return out}
 // Le talent d'où part le chemin d'un petit rond, tant qu'il est dans un arbre.
-function departChemin(t){const c=lisChemin(t);if(!c)return null;return tousTalents().find(x=>x.id===c.de&&x!==t&&posDe(x)&&!x.horsArbre)||null}
+function departChemin(t){const c=lisChemin(t);if(!c)return null;return tousTalents().find(x=>x.id===c.de&&x!==t&&(posDe(x)||x.flottant===true)&&!x.horsArbre)||null}
 // Le petit rond juste avant sur le même chemin ; rien pour le premier.
 function precedentChemin(t){const c=lisChemin(t),d=departChemin(t);if(!c||!d||c.rang<=1)return null;return petitsDe(d,c.dir).find(x=>lisChemin(x).rang===c.rang-1)||null}
 // Ceux d'une liste d'où part une ligne vers ce talent.
@@ -4758,9 +4758,11 @@ function placerTalent(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||!
   if(!t.horsArbre&&(posDe(t)||lisChemin(t))){laisseLignes(t);detacheDeLArbre(t)}
   t.famille=fam;t.voie='';t.prerequis='';t.flottant=true;delete t.horsArbre;delete t.pos;delete t.liens;delete t.chemin;delete t.branche;return true}
  if(dest.chemin){if(!peutEtrePetit(t))return false;const de=tousTalents().find(x=>x.id===dest.chemin.de),dir=dest.chemin.dir;
-  if(!de||de===t||!DIRS[dir]||!posDe(de)||de.horsArbre)return false;
-  const col=colonneDe(talentFamily(de),de.voie||'');if(!col||!col.liste.includes(de))return false;
-  if(cheminsDe(col.liste,de)[dir].lien&&dir!=='s')return false;
+  if(!de||de===t||!DIRS[dir]||(!posDe(de)&&!de.flottant)||de.horsArbre)return false;
+  // Le talent du gros rond flottant n'a pas de case : ses trois améliorations, en bas à gauche, à droite et dessous.
+  if(de.flottant){if(!['so','s','se'].includes(dir))return false}
+  else{const col=colonneDe(talentFamily(de),de.voie||'');if(!col||!col.liste.includes(de))return false;
+   if(cheminsDe(col.liste,de)[dir].lien&&dir!=='s')return false}
   // Sur son propre chemin, il change seulement de rang : les autres se rangent autour de lui.
   const c0=lisChemin(t),d0=c0&&tousTalents().find(x=>x.id===c0.de);
   if(c0&&c0.de===de.id&&c0.dir===dir){const l=petitsDe(de,dir).filter(p=>p!==t),voulu=Number.isInteger(dest.chemin.rang)?dest.chemin.rang:l.length+1;
@@ -5418,7 +5420,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
      centre, un second, d'une chaîne d'avant, 0,29 plus loin, dans toutes les directions. On lit à qui
      ils sont, et un talent voisin garde de l'air. */
   /* v0.789 : en bas à gauche et à droite, les améliorations remontent le long de leur lien jusqu'à chevaucher un peu leur talent. */
-  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=(d==='so'||d==='se'?.27:d==='s'?.32:.43)+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
+  const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=(d==='so'||d==='se'?.27:d==='s'?.36:.43)+(r-1)*.29;return {x:+(p.x+dx/n*k).toFixed(3),y:+(p.y+dy/n*k).toFixed(3)}};
   const petits=[];c.liste.forEach(t=>{const p=cases.get(t.id),ch=cheminsDe(c.liste,t);
    Object.keys(DIRS).forEach(d=>{if(ch[d].lien&&d!=='s')return;ch[d].petits.forEach(s=>{const r=lisChemin(s).rang;petits.push({t:s,de:t,dir:d,rang:r,...bout(p,d,r)})})})});
   /* Chez le MJ, où l'arbre peut grandir : sous un talent et à ses côtés, la case voisine pour un
@@ -5463,8 +5465,14 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    else if(mj){el=document.createElement('div');el.className='arbre-place';el.setAttribute('role','button');el.tabIndex=0;el.textContent='+';el.title='Ajouter un talent ici';
     el.onclick=()=>{lienDepuis=null;ajouterDansArbre({famille:classe,flottant:true,type:'mait'})};
     el.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();el.click()}};cible(el,{famille:classe,flottant:true})}
-   if(el){el.classList.add('arbre-flottant');col.append(el);
-    requestAnimationFrame(()=>{el.style.top=(plan.offsetTop+46)+'px'})}}
+   if(el){const w=document.createElement('div');w.className='arbre-flottant';el.classList.add('flottant-rond');w.append(el);
+    /* Ses trois améliorations, comme sous un talent de l'arbre : en bas à gauche et à droite, et dessous, un peu plus bas, chacune
+       chevauchant un peu son rond ; chez le MJ, leurs places vides. */
+    if(fl)[['so',-35,35],['s',0,62],['se',35,35]].forEach(([dir,dx,dy])=>{const ps=petitsDe(fl,dir),s0=ps[0];let pe=null;
+     if(s0)pe=estVide(s0)?noeudVide(s0,c,true):noeudPetit(s0,fl,c,false);
+     else if(mj)pe=placePetit(c,{de:fl,dir,rang:1});
+     if(!pe)return;pe.classList.add('flottant-petit');pe.style.left=(38+dx)+'px';pe.style.top=(38+dy)+'px';w.append(pe)});
+    col.append(w);requestAnimationFrame(()=>{w.style.top=(plan.offsetTop+46)+'px'})}}
   return col};
  /* Les colonnes : les deux de la classe, ni plus ni moins. Les génériques ont leur propre
     arbre — on l'ouvre par son rouage, dans l'onglet Talents — et n'encombrent plus celui

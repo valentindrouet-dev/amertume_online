@@ -1226,7 +1226,8 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
    cases : le MJ clique une ligne pour l'effacer. */
 .arbre-col{position:relative;min-width:250px;max-width:none;flex:0 0 auto}
 /* Le gros rond flottant : dans le coin supérieur gauche du premier arbre de la classe. */
-.arbre-col>.arbre-flottant{position:absolute;left:18px;top:60px;width:auto;padding:0;z-index:3}.arbre-col>.arbre-flottant .arbre-rond{width:76px;height:76px}.arbre-col>.arbre-place.arbre-flottant{width:76px;height:76px;margin:0;opacity:.85}.arbre-col>.arbre-flottant .arbre-cout{display:none}.arbre-col>.arbre-flottant .arbre-rond::after{display:none}
+.arbre-col>.arbre-flottant{position:absolute;left:18px;top:60px;width:76px;height:76px;z-index:3}.arbre-flottant>.flottant-rond{width:auto;padding:0}.arbre-flottant>.flottant-rond .arbre-rond{width:76px;height:76px}.arbre-flottant>.arbre-place.flottant-rond{width:76px;height:76px;margin:0;opacity:.85}.arbre-flottant>.flottant-rond .arbre-cout{display:none}.arbre-flottant>.flottant-rond .arbre-rond::after{display:none}
+.arbre-flottant>.flottant-petit{position:absolute;width:auto;padding:0;margin:0;transform:translate(-50%,-50%);z-index:2}.arbre-flottant>.arbre-petit-place.flottant-petit{width:40px;height:40px;box-sizing:border-box;display:grid;place-items:center;font:600 18px/1 system-ui}
 .arbre-chemins{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:0}
 .arbre-grille{--case-l:74px;--case-h:88px;position:relative;z-index:1;display:grid;column-gap:30px;row-gap:30px;justify-content:center;padding:4px 14px;pointer-events:none}
 .arbre-grille>*{pointer-events:auto}
