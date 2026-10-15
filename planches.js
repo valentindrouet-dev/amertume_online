@@ -307,7 +307,7 @@ function categorieDeClasse(famille){const k=cleTalent(famille);return k?CATS_ICO
 function iconesClasseEnTete(select,famille){if(!select)return;select._ordre??=[...select.querySelectorAll('optgroup')];
  const cat=categorieDeClasse(famille),tete=cat?select._ordre.find(g=>g.label==='Icônes · '+cat[1]):null;
  [...(tete?[tete]:[]),...select._ordre.filter(g=>g!==tete)].forEach(g=>select.append(g))}
-function ouvreGrilleLogos(select){grilleSelect=select;
+function ouvreGrilleLogos(select){grilleSelect=select;if(select&&typeof select._remplir==='function')select._remplir();
  if(!grilleDialog){grilleDialog=dialog('grille-logos','Choisir un logo','<input id="grille-logos-recherche" placeholder="Rechercher…" aria-label="Rechercher un logo"><div id="grille-logos-corps"></div>');
   $('grille-logos-recherche').oninput=dessineGrilleLogos}
  $('grille-logos-recherche').value='';dessineGrilleLogos();grilleDialog.showModal();$('grille-logos-recherche').focus()}

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.777","d":"2026-10-15","t":"Icônes des caracs et compétences : ouverture immédiate"},
 {"v":"0.776","d":"2026-10-15","t":"La carte descend jusqu'au bas de l'écran"},
 {"v":"0.775","d":"2026-10-15","t":"Objet aléatoire montré comme à l'Armurerie"},
 {"v":"0.774","d":"2026-10-15","t":"Création guidée, PV de la fiche, sortie de combat, nouvelle session"},

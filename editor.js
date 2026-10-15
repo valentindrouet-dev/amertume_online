@@ -1411,6 +1411,10 @@ const competencesDialog=dialog('competences-icones','Icônes des caracs et comp�
 const CARACS_ICONES=[['vie','Vie'],['endu','Endurance'],['pv','PV max'],['dmg','Dégâts'],['xp','XP'],['orbe','Orbe mystique'],['pa','Point d’Action'],['pm','Point de Mouvement'],['soin','Soin']];
 $('competences-icones-form').onsubmit=e=>e.preventDefault();
 function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences(),groupes=groupesLogosCompetence();
+ /* Vingt-huit menus de toutes les icônes : des dizaines de milliers d'options à bâtir, plusieurs secondes d'attente. Chaque
+    menu ne porte d'abord que son icône choisie ; la liste entière, faite une fois, s'y pose quand on l'ouvre ou qu'on ouvre sa grille. */
+ const liste=groupes.map(([t,l2])=>'<optgroup label="'+esc(t)+'">'+l2.map(v=>'<option value="'+esc(v)+'">'+esc(nomLogo(v))+'</option>').join('')+'</optgroup>').join('');
+ const selGroupes=(label,key,value)=>'<label>'+label+'<select name="'+key+'" data-paresseux="1"><option value="">— aucun —</option>'+(value?'<option value="'+esc(value)+'" selected>'+esc(nomLogo(value))+'</option>':'')+'</select></label>';
  const lb=catalog.logosBonus||{};
  $('competences-icones-corps').innerHTML='<h3 class="reglage-titre icones-titre">Caractéristiques</h3>'+CARACS_ICONES.map(([k,n])=>selGrille(selGroupes(esc(n),'carac-'+k,lb[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">Compétences</h3>'+skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('')
@@ -1429,6 +1433,10 @@ function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences
   else if(m){const icones=iconesCompetences();icones[+m[1]]=e.target.value;catalog.iconesCompetences=normaliseIconesCompetences(icones)}
   else{const o={...(catalog.logosBonus||{})};if(e.target.value)o[c[1]]=e.target.value;else delete o[c[1]];catalog.logosBonus=o}
   scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderHeroes();render()};
+ $('competences-icones-corps').querySelectorAll('select[data-paresseux]').forEach(sl=>{
+  sl._remplir=()=>{if(!sl.dataset.paresseux)return;delete sl.dataset.paresseux;const v=sl.value,choisi=sl.querySelector('option[selected]');
+   sl.insertAdjacentHTML('beforeend',liste);if(choisi&&v&&sl.querySelectorAll('option[value="'+CSS.escape(v)+'"]').length>1)choisi.remove();sl.value=v};
+  ['mousedown','focus','keydown'].forEach(t=>sl.addEventListener(t,sl._remplir,{once:true}))});
  competencesDialog.showModal()}
 /* Une pastille par dé de la réserve, dans l’ordre officiel d’affichage : noir, rouge,
    bleu, vert, jaune, blanc, os. Le Mortel porte un liseré clair, et Lourd, Mystique et
