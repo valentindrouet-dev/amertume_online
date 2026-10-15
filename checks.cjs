@@ -1542,7 +1542,7 @@ assert.ok(src.includes("const voies=c.voies&&typeof c.voies==='object'&&!Array.i
  &&!src.includes('+ Spécialisation')&&!src.includes('arbre-col nouvelle')
  &&src.includes(" (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));")
  &&!src.includes("grille.append(colonne(colonneArbre(GENERIQUES,GENERIQUES,")
- &&src.includes("const oublier=(t,liste)=>{")&&src.includes("const chute=[t,...(liste?chuteArbre(avant,liste,t):[])];")
+ &&src.includes("const oublier=(t,liste)=>{")&&src.includes("const chute=[t,...(liste?chuteArbre(avant,liste,t):[])].filter(x=>x.flottant!==true);")
  &&!feuille.includes('arbre-entre')&&!feuille.includes('arbre-enfants')&&!feuille.includes('arbre-etage')
  &&feuille.includes('.arbre-noeud:hover .arbre-outils,.arbre-noeud:focus-within .arbre-outils{display:flex}')&&feuille.includes('.arbre-col.nouvelle{border-style:dashed;'),'l’arbre s’édite en place');
 
@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.801 — Le talent de classe tenu d'office ne se désactive ni dans l'arbre, ni dans le choix des talents de la fiche. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes(" const oublier=(t,liste)=>{if(t&&t.flottant===true)return;")&&fs.readFileSync('editor.js','utf8').includes("const bascule=()=>{if(pris&&cible.hero&&t.flottant===true)return;"),'le talent de classe reste acquis');
 /* v0.800 — Le talent de classe prend sa case en haut du Tronc commun ; jusqu'à cinq lignes, droites ou diagonales, pour tous ;
    les améliorations du bas chevauchent le départ des lignes. Le rond flottant du coin n'est plus. */
 {const src=fs.readFileSync('editor.js','utf8');

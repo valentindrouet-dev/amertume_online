@@ -5219,9 +5219,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     elles ; du bas vers le haut, pour que chaque retrait n'emporte que le sien. */
  // Le palier tenu d'un talent : 1 ne s'écrit pas, c'est d'avoir appris.
  const poserPalier=(t,n)=>{a.paliersTalents={...(a.paliersTalents||{})};if(n>1)a.paliersTalents[t.id]=Math.min(paliersDe(t),n);else delete a.paliersTalents[t.id]};
- const oublier=(t,liste)=>{const avant=a.talents;let reste=avant;
-  // Ce qu'on n'atteignait plus que par lui tombe avec lui, du plus loin au plus proche.
-  const chute=[t,...(liste?chuteArbre(avant,liste,t):[])];
+ const oublier=(t,liste)=>{if(t&&t.flottant===true)return;const avant=a.talents;let reste=avant;
+  // Ce qu'on n'atteignait plus que par lui tombe avec lui, du plus loin au plus proche ; jamais le talent de classe, tenu d'office.
+  const chute=[t,...(liste?chuteArbre(avant,liste,t):[])].filter(x=>x.flottant!==true);
   [...chute].reverse().forEach(x=>{reste=talentsSans(reste,x.id,catalog.talents).liste});
   reste=sansChuteArbre(a,sansBonusOrphelins(reste));
   a.talents=reste;a.paliersTalents=normalisePaliersActeur(a);
@@ -5851,7 +5851,7 @@ function choixTalents(boite,cible,filtre,familles,apres){boite.replaceChildren()
    const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m);
    p.setAttribute('role','checkbox');p.setAttribute('aria-checked',String(pris));p.setAttribute('aria-label',nomEnClair(t.name));p.tabIndex=0;
    if(BULLES)surveille(p,()=>bulleTalentSur(p,t));
-   const bascule=()=>{cible.talents=pris?(cible.hero?sansChuteArbre(cible,talentsSans(cible.talents,t.id,catalog.talents).liste):cible.talents.filter(x=>x!==t.id)):[...new Set([...cible.talents,t.id])];fermerBulle();choixTalents(boite,cible,filtre,familles,apres);if(apres)apres()};
+   const bascule=()=>{if(pris&&cible.hero&&t.flottant===true)return;cible.talents=pris?(cible.hero?sansChuteArbre(cible,talentsSans(cible.talents,t.id,catalog.talents).liste):cible.talents.filter(x=>x!==t.id)):[...new Set([...cible.talents,t.id])];fermerBulle();choixTalents(boite,cible,filtre,familles,apres);if(apres)apres()};
    p.onclick=bascule;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bascule()}};
    grille.append(carte)});
   bloc.append(grille);boite.append(bloc)}
