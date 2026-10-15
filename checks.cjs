@@ -2808,7 +2808,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual([g.name,g.effects,g.logo,g.params.etat,g.paliers[2].params.etat,g.paliers[2].params.perte],['Briseglace','Contre Gel','spell_orbes_gel','Gel','Gel',2],'élémentaire : mots, logo et état suivent');
  const libre={...t,elementaire:undefined};assert.equal(C.talentPourElement(libre,G).params.etat,'Feu','sans la case, l’état réglé reste');
  const neutre={id:'x',name:'Forge',params:{etat:'Feu'}};assert.equal(C.talentPourElement(neutre,G),neutre);assert.equal(C.estElementaire(neutre),false);assert.equal(C.estElementaire(libre),true);
- assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefoudre','Foudre',1]],'la table joue l’élément, puis le palier ; la DEF retirée, réglage commun, reste celle du palier 1');
+ assert.deepEqual(C.talentsAuPalier({talents:['b'],element:'foudre',paliersTalents:{b:2}},[t]).map(x=>[x.name,x.params.etat,x.params.perte]),[['Brisefeu','Feu',1]],'la table joue l’élément, puis le palier ; la DEF retirée, réglage commun, reste celle du palier 1');
  assert.ok(vivant.includes("const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','alignement','alignementJeu','debutTour','enAventure'];")
   &&src.includes("if(a.element!==undefined&&!elementDe(a))delete a.element;"),'l’élément voyage, au MJ seul');
  assert.ok(src.includes("function choixElement(a,classe,rendre){")&&src.includes("if(elementaire)tete.append(choixElement(a,classe));")&&src.includes("b.disabled=!peut;")
@@ -3392,6 +3392,9 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.772 — Le Mystique n'est plus que de Feu : Gel et Foudre jouent le Feu, le choix ne propose que lui. */
+{const C=require('./combat.js');assert.equal(C.elementDe({hero:true,role:'Mystique',element:'gel'}).cle,'feu');assert.equal(C.elementDe({hero:true,role:'Mystique · niveau 2'}).cle,'feu');
+ assert.equal(C.elementDe({hero:true,role:'Gardien'}),null);assert.ok(fs.readFileSync('editor.js','utf8').includes("const ELEMENTS=[elementDe({hero:true,element:'feu'})];"));}
 /* v0.771 — Onglet Aventuriers : un clic sur le token d'une fiche la replie dans la rangée des repliés, un clic l'y déplie. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("const HEROS_REPLIES_CLE='amertume-heros-replies';")&&ed.includes("rang.className='heros-replies';")&&ed.includes("b.onclick=()=>replieHeros(a.id,false);"));}
 /* v0.770 — La jauge d'XP de l'arbre se remplit de ce qui est payé. */
@@ -5705,4 +5708,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2133 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2136 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

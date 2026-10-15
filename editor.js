@@ -4940,6 +4940,8 @@ let elementApercu='feu';
 /* Le choix de l'élément : Feu, Gel, Foudre. Pour un Mystique, le MJ seul le fixe — le joueur voit
    le sien. Sur le plan de la classe, le MJ regarde l'arbre sous chaque élément. */
 function choixElement(a,classe,rendre){const out=document.createElement('div');out.className='elements-choix';out.setAttribute('role','radiogroup');out.setAttribute('aria-label','Élément');
+ // Le Mystique n'est plus que de Feu : le choix ne propose que lui.
+ const ELEMENTS=[elementDe({hero:true,element:'feu'})];
  const actuel=a?elementDe(a):ELEMENTS.find(e=>e.cle===elementApercu),peut=view==='mj';
  ELEMENTS.forEach(e=>{const b=document.createElement('button');b.type='button';const on=!!actuel&&actuel.cle===e.cle;
   b.className='element-bouton el-'+e.cle+(on?' on':'');b.setAttribute('role','radio');b.setAttribute('aria-checked',String(on));

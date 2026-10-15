@@ -2034,7 +2034,10 @@ function palierDe(a,t){if(!a||!t||!(a.talents||[]).includes(t.id))return 0;
 const ELEMENTS=[{cle:'feu',nom:'Feu',etat:'Feu',mot:'feu',logo:'feu',teinte:'#e8842c'},{cle:'gel',nom:'Gel',etat:'Gel',mot:'glace',logo:'gel',teinte:'#8fd0ef'},{cle:'foudre',nom:'Foudre',etat:'Foudre',mot:'foudre',logo:'foudre',teinte:'#e8c230'}];
 const CLASSES_ELEMENTAIRES=['mystique'];
 const classeElementaire=c=>CLASSES_ELEMENTAIRES.includes(cleTalent(c));
-const elementDe=a=>ELEMENTS.find(e=>e.cle===(a&&a.element))||null;
+/* v0.772 : le Mystique n'est plus que de Feu. Un Gel ou une Foudre choisis avant jouent le Feu, et un Mystique sans élément
+   est de Feu : les talents élémentaires ne prennent plus jamais leurs formes de Gel ni de Foudre. */
+const elementDe=a=>{if(!a)return null;if(ELEMENTS.some(e=>e.cle===a.element))return ELEMENTS[0];
+ return a.hero===true&&classeElementaire(String(a.role||'').split('·')[0].trim())?ELEMENTS[0]:null};
 /* Mur d'élément : ses segments, de point en point, refermés pour une zone. Les mesures sont en pixels de la
    carte ; un jeton de rayon r touche un segment à moins de r de lui, et se tient dans une zone dès qu'il y entre. */
 function segmentsMur(pts,zone){const s=[];for(let i=0;i+1<pts.length;i++)s.push([pts[i],pts[i+1]]);if(zone&&pts.length>2)s.push([pts[pts.length-1],pts[0]]);return s}
