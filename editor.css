@@ -2828,3 +2828,16 @@ body.sombre .arbres-v2 .arbres-detail{background:var(--panel);border-color:var(-
 .arbres-v2 .arbre-chemins .chemin.a-niveau .trait{opacity:0}
 .arbres-v2 .arbres-detail .detail-amelioration.editable{cursor:pointer;opacity:1}
 .arbres-v2 .arbres-detail .detail-amelioration.editable:hover{border-color:#c99a3c}
+/* v0.810 : un seul corps de texte dans le panneau, description, améliorations et bonus ; « + » et ✕ du MJ ; les cartes se glissent. */
+.arbres-v2 .arbres-detail .detail-corps,.arbres-v2 .arbres-detail .detail-corps p,.arbres-v2 .arbres-detail .detail-amelioration>p:not(.detail-am-nom){font:400 15px/1.5 system-ui}
+.arbres-v2 .arbres-detail .detail-titre .detail-plus{order:2;margin-left:2px;width:26px;height:26px;padding:0;border-radius:50%;border:1.5px dashed #c99a3c;background:transparent;color:#a2691f;font:700 16px/1 system-ui;cursor:pointer}
+.arbres-v2 .arbres-detail .detail-titre .detail-plus:hover{background:#c99a3c22}
+.arbres-v2 .arbres-detail .detail-titre::after{order:1}
+.arbres-v2 .arbres-detail .detail-oter{flex:none;margin-left:6px;padding:0 6px;border:0;background:transparent;color:var(--muted);font:600 13px system-ui;cursor:pointer;opacity:.6}
+.arbres-v2 .arbres-detail .detail-oter:hover{opacity:1;color:#b0482f}
+.arbres-v2 .arbres-detail .detail-am-nom b{flex:1;min-width:0}
+.arbres-v2 .arbres-detail .detail-amelioration[draggable=true]{cursor:grab}
+.arbres-v2 .arbres-detail .detail-amelioration.survol{border-color:#c99a3c;box-shadow:0 0 0 2px #f2c14e88}
+.arbres-v2 .arbres-detail .detail-bonus .detail-am-nom{justify-content:flex-start}
+.arbres-v2 .arbres-detail .detail-bonus-ico{flex:none;display:inline-grid;place-items:center;width:28px;height:28px}
+.arbres-v2 .arbres-detail .detail-bonus-ico>:is(img,svg,.bonus-lettres){width:100%;height:100%;object-fit:contain}
