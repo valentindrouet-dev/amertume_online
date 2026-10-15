@@ -3392,6 +3392,14 @@ assert.ok(page.includes('button.ajout-camp{margin-left:auto;flex:none;box-sizing
    un peu de leur talent (0,43 case au lieu de 0,37). Les séries d'avant restent à leur place. */
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("if(ch[d].petits.length)return;const r=1,{x,y}=bout(p,d,r);")&&src.includes("const bout=(p,d,r)=>{const [dx,dy]=DIRS[d],n=Math.hypot(dx,dy),k=.43+(r-1)*.29;"),'un petit rond par chemin, plus écarté');}
+/* v0.768 — Sas des comptes, connexion MJ de la page fermée, exclusion rebranchée, un aventurier à soi, un seul tirage de départ,
+   l'aventurier Actif. */
+{const lv=fs.readFileSync('live.js','utf8'),r=fs.readFileSync('firestore-online.rules','utf8');
+ assert.ok(lv.includes("function sasEnAttente(){")&&lv.includes("async function admettre(uid,nom){")&&r.includes("match /admis/{uid} {")&&r.includes("exists(/databases/$(database)/documents/amertume_online_live/$(table)/admis/$(request.auth.uid))"),'sas');
+ assert.ok(lv.includes("async function connexionMJ(){")&&page.includes("if(typeof connexionMJ==='function'){connexionMJ();return}"),'connexion MJ');
+ assert.ok(lv.includes("if(i>=0&&(estMJ()||aMoi(actors[i])))owner=i")&&lv.includes("document.body.classList.toggle('actions-autrui',"),'un aventurier à soi');
+ assert.ok(lv.includes("const cle='amertume-tirage-depart',k=uid+'|'+role;")&&lv.includes("p.textContent='Composant manquant : Fragment d’Âme';"),'un seul tirage');
+ assert.ok(lv.includes("CHAMPS_VIVANTS.push('actif');")&&lv.includes("annonceFlottante('Vous pouvez modifier vos talents')"),'Actif');}
 /* v0.767 — La poignée d'une colonne passe en tête : le journal, dernier panneau, reste calé sur le bas de la carte. */
 {assert.ok(fs.readFileSync('maps.js','utf8').includes("if(cle==='h')parent.append(p);else parent.prepend(p)}")&&page.includes(".stack.right.calee>.panel:last-child{flex:1 1 0;"));}
 /* v0.766 — Zoom gardé par carte ; exploration gardée par la table ; adversaires vus par la troupe visibles chez tous ; ping ;
@@ -5691,4 +5699,4 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.talentsAuPalier(a,[t]).map(x=>x.params.orbes),[1],'le moteur joue le palier 1');
  assert.equal(C.ptDepenses(a,[t]),1,'seul le palier 1 se paie');
  assert.deepEqual(C.normalisePaliersActeur(a),{o:2},'le palier retenu reste écrit, pour quand les paliers reviendront');}
-console.log('2125 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');
+console.log('2130 vérifications passées : dimensions PNG/JPEG/WebP, catalogue, dégâts, édition de fiche, contact, ligne de vue et matière exacte.');

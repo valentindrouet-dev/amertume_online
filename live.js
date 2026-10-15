@@ -47,6 +47,10 @@ let brouillardConnu=false;
 let journalRef=null,quitteJournal=null,journalVus=new Set(),journalPremier=true;
 /* Les exclus d'une table : le MJ les inscrit ; les règles leur ferment la table, et leur propre page les en sort aussitôt. */
 let bannisRef=null,bannis={},quitteBannis=null,quitteMonBan=null;
+/* Le sas : un compte joueur n'agit à une table qu'une fois accepté par le MJ, pour de bon à cette table (« admis/{uid} »).
+   En attendant, la table lui reste voilée, et rien ne part de chez lui : ni combattant, ni ligne de journal, ni aventurier. */
+let admisRef=null,admis={},quitteAdmis=null,quitteMonAdmis=null,admisIci=true;
+function sasEnAttente(){return enLigne&&!estMJ()&&!(typeof mjIci==='function'&&mjIci())&&!admisIci}
 // L'exploration de chaque carte, gardée par la table : le MJ l'écrit, les joueurs l'écoutent.
 let brouillardsRef=null,quitteBrouillard=null,brouillardEcoute=null,brouillardTable=null,brouillardPousseTimer=0;const brouillardsPousses=new Map();
 /* Chez un joueur en ligne, révéler n'est pas son affaire : le MJ révèle, et « vu » lui
@@ -178,7 +182,7 @@ function pousserBientot(){if(!enLigne||appliquantDistant||!poussePret||pousseTim
  pousseTimer=setTimeout(pousserEtat,150)}
 /* Les envois se suivent sans s'attendre : Firestore les ordonne. Un refus fait repartir
    l'état entier au prochain envoi, pour que rien ne manque en face. */
-function pousserEtat(){pousseTimer=null;if(!enLigne||!salleRef)return;
+function pousserEtat(){pousseTimer=null;if(!enLigne||!salleRef||sasEnAttente())return;
  const ap=etatVivant(),maj=diffEtat(dernierPousse,ap);
  if(!Object.keys(maj).length)return;
  dernierPousse=ap;maj.at=firebase.firestore.FieldValue.serverTimestamp();
@@ -387,7 +391,7 @@ function appliquerSalleSeule(d,complet){if(!d)return;
     const r=envoyes.find(x=>x&&typeof x==='object'&&x.t===v.t);if(r&&(Number(r.e)||0)===e&&drapeauxPiege(p)!==e){gardesPieges.push([v.t,e]);return}
     [['revele',1],['declenche',2],['desamorce',4],['rate',8]].forEach(([k,b])=>{if(e&b)p[k]=true;else delete p[k]})})}
   if(selected!==null&&!actors[selected])selected=null;
-  if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
+  if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0&&(estMJ()||aMoi(actors[i])))owner=i}
   if(typeof marked!=='undefined')marked=new Set([...marked].filter(id=>actors.some(a=>a.id===id)));
   $('round').textContent=String(round).padStart(2,'0');
   /* Ce qui est reçu devient la référence AVANT le rendu : ce que le rendu ajoute (une
@@ -441,7 +445,7 @@ function decodeDes(des){return (des||[]).map(x=>[Math.floor(x/8),x%8])}
 function fiche(o){return {id:o&&o.id||null,name:String(o&&o.name||'?').slice(0,60),hero:!!(o&&o.hero)}}
 function acteurDuJournal(f){return (f&&f.id&&actors.find(x=>x.id===f.id))||{name:String(f&&f.name||'?'),hero:!!(f&&f.hero)}}
 function idJournal(){return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}
-function diffuser(rec){if(!enLigne||!journalRef||!monUid)return;
+function diffuser(rec){if(!enLigne||!journalRef||!monUid||sasEnAttente())return;
  const id=idJournal();journalVus.add(id);const ref=journalRef.doc(id),plein={t:Date.now(),de:monUid,tour:round,...rec};
  ref.set(plein).catch(e=>{
   // Une règle qui ignore encore « ton » refuse la ligne : elle repart sans sa couleur.
@@ -554,6 +558,8 @@ function remplitJoueurs(boite,l){if(!boite)return;boite.replaceChildren();
    if(h){const s=document.createElement('small');s.textContent=h.name;t.append(s)}
    const point=document.createElement('i');point.className='point-connecte';point.setAttribute('aria-hidden','true');c.append(point,av,t);
    // Chez le MJ, dans la liste de l'Accueil et la fenêtre : Exclure, pour tout autre que lui.
+   // Un compte qui attend la validation : Accepter, avant Exclure.
+   if(boite.id&&estMJ()&&j.uid!==monUid&&admisRef&&!admis[j.uid]){c.classList.add('en-attente');const ok=document.createElement('button');ok.type='button';ok.className='accepter';ok.textContent='Accepter';ok.onclick=()=>admettre(j.uid,j.nom);c.append(ok)}
    if(boite.id&&estMJ()&&j.uid!==monUid){const x=document.createElement('button');x.type='button';x.className='exclure';x.textContent='Exclure';x.onclick=()=>exclureJoueur(j.uid,j.nom);c.append(x)}
    boite.append(c)})}
 setInterval(()=>{if(tableId)renderJoueursConnectes()},30000);
@@ -638,7 +644,7 @@ async function fermerTable(){if(!estMJ()||!tableId)return;
  for(const col of [siegesRef,journalRef,bannisRef]){if(!col)continue;
   try{let lot;do{lot=await col.limit(200).get();if(!lot.size)break;const b=cloud.batch();lot.forEach(d=>b.delete(d.ref));await b.commit()}while(lot.size===200)}catch(e){}}
  debrancherTable();localStorage.removeItem(TABLE_CLE);liveStatus('Table fermée.')}
-function debrancherTable(){document.body.classList.remove('table-attendue');if(quitteBrouillard)quitteBrouillard();quitteBrouillard=null;brouillardEcoute=null;brouillardTable=null;brouillardsRef=null;brouillardsPousses.clear();clearInterval(presenceTimer);presenceTimer=null;if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
+function debrancherTable(){document.body.classList.remove('table-attendue');if(quitteAdmis)quitteAdmis();if(quitteMonAdmis)quitteMonAdmis();quitteAdmis=quitteMonAdmis=null;admisRef=null;admis={};admisIci=true;majSas();if(quitteBrouillard)quitteBrouillard();quitteBrouillard=null;brouillardEcoute=null;brouillardTable=null;brouillardsRef=null;brouillardsPousses.clear();clearInterval(presenceTimer);presenceTimer=null;if(quitteSalle)quitteSalle();if(quitteSieges)quitteSieges();if(quitteJournal)quitteJournal();
  if(quitteBannis)quitteBannis();if(quitteMonBan)quitteMonBan();quitteBannis=quitteMonBan=null;bannisRef=null;bannis={};
  quitteSalle=quitteSieges=quitteJournal=null;enLigne=false;poussePret=false;tableId=null;salleRef=siegesRef=journalRef=null;journalVus=new Set();
  modeConnu=ongletConnu=false;ongletVu=null;envoiOnglet=null;donjonConnu=false;donjonVu=null;envoiDonjon=null;brouillardConnu=false;
@@ -656,9 +662,10 @@ function brancherTable(code){if(!cloud)return;debrancherTable();
    if(!estMJ()&&!(e&&e.code==='permission-denied'))setTimeout(()=>{if(tableId===code)brancherTable(code)},3000)});
  quitteSieges=siegesRef.onSnapshot(s=>{sieges={};s.forEach(d=>sieges[d.id]=d.data());
   const mien=monUid&&sieges[monUid];monSiege=mien?mien.actorId:null;
-  if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0)owner=i}
+  if(monSiege){const i=actors.findIndex(a=>a.id===monSiege);if(i>=0&&(estMJ()||aMoi(actors[i])))owner=i}
   renderSieges();renderJoueursConnectes();majTable()},()=>{});
  bannisRef=salleRef.collection('bannis');ecouterBannis();brouillardsRef=salleRef.collection('brouillard');
+ admisRef=salleRef.collection('admis');ecouterAdmis();
  majTable()}
 function ecouterBannis(){if(!bannisRef)return;
  // Le MJ suit la liste ; un joueur, sa seule inscription : exclu, il quitte la table.
@@ -670,7 +677,7 @@ function exclu(){debrancherTable();try{localStorage.removeItem(TABLE_CLE);sessio
 async function exclureJoueur(uid,nom){if(!estMJ()||!bannisRef||!uid||uid===monUid)return;
  if(!confirm('Exclure '+nom+' de la table ? Il ne pourra plus la voir ni y jouer, même en revenant par le lien.'))return;
  try{await bannisRef.doc(uid).set({nom:String(nom||'Joueur').slice(0,30),at:firebase.firestore.FieldValue.serverTimestamp()});
-  try{await siegesRef.doc(uid).delete()}catch(e){}log(nom+' est exclu de la table.',{local:true})}
+  try{await siegesRef.doc(uid).delete()}catch(e){}if(admisRef)try{await admisRef.doc(uid).delete()}catch(e){}log(nom+' est exclu de la table.',{local:true})}
  catch(e){liveStatus('Exclusion refusée. '+liveErreur(e))}}
 async function readmettre(uid){if(!estMJ()||!bannisRef||!uid)return;try{await bannisRef.doc(uid).delete()}catch(e){liveStatus(liveErreur(e))}}
 function renderBannis(){const boite=$('live-bannis'),titre=$('live-titre-bannis');if(!boite)return;const l=Object.entries(bannis);
@@ -885,3 +892,79 @@ function appliqueBrouillardTable(){const t=brouillardTable,m=typeof currentMap==
 {const renderAvantBrouillard=render;render=function(){renderAvantBrouillard.apply(this,arguments);if(!enLigne||!brouillardsRef)return;
  const id=typeof currentMapId!=='undefined'&&currentMapId||null;
  if(estMJ()){if(id&&!brouillardsPousses.has(id))pousserBrouillard()}else if(id!==brouillardEcoute)ecouterBrouillard(id)}}
+
+/* ---------- Le sas des comptes ---------- */
+function ecouterAdmis(){if(!admisRef)return;if(quitteAdmis){quitteAdmis();quitteAdmis=null}if(quitteMonAdmis){quitteMonAdmis();quitteMonAdmis=null}
+ if(estMJ()){admisIci=true;quitteAdmis=admisRef.onSnapshot(s=>{admis={};s.forEach(d=>admis[d.id]=d.data());renderJoueursConnectes();majSas()},()=>{})}
+ else if(monUid){admisIci=false;quitteMonAdmis=admisRef.doc(monUid).onSnapshot(d=>{const avant=admisIci;admisIci=d.exists;majSas();if(admisIci&&!avant){pousserPlusTard();render()}},
+  // Sans la règle Firestore du sas, la lecture est refusée : le sas n'existe pas encore, la table reste ouverte comme avant.
+  ()=>{admisIci=true;majSas()})}
+ majSas()}
+// Le compte connu après coup, ou le MJ reconnu : l'écoute se refait.
+document.addEventListener('amertume-mj-change',()=>{if(enLigne&&admisRef)setTimeout(()=>{if(enLigne&&admisRef)ecouterAdmis()},0)});
+// De même pour l'exclusion : un compte connu après l'ouverture de la table écoute aussitôt la sienne, et l'exclusion le touche dans l'instant.
+document.addEventListener('amertume-mj-change',()=>setTimeout(()=>{if(!enLigne||!bannisRef)return;
+ if(estMJ()?!quitteBannis:(!quitteMonBan&&!!monUid)){if(quitteBannis){quitteBannis();quitteBannis=null}if(quitteMonBan){quitteMonBan();quitteMonBan=null}ecouterBannis()}},0));
+async function admettre(uid,nom){if(!estMJ()||!admisRef||!uid)return;
+ try{await admisRef.doc(uid).set({nom:String(nom||'Joueur').slice(0,30),at:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){liveStatus('Validation refusée. '+liveErreur(e))}}
+// L'attente se voit : chez le joueur, la table voilée et le message ; chez le MJ, un point sur « Joueurs connectés ».
+function majSas(){const attente=sasEnAttente();document.body.classList.toggle('sas-attente',attente);
+ let m=$('sas-message');if(attente&&!m){m=document.createElement('div');m.id='sas-message';m.className='sas-message';m.setAttribute('role','status');m.textContent='En attente de la validation du MJ…';document.body.append(m)}
+ if(m)m.hidden=!attente;
+ const b=$('open-joueurs');if(b)b.classList.toggle('attente',estMJ()&&!!admisRef&&joueursConnectes().some(j=>j.uid!==monUid&&!admis[j.uid]));
+ if(typeof renderAccueil==='function'&&document.body.classList.contains('page-accueil'))renderAccueil()}
+{const renderJoueursSansSas=renderJoueursConnectes;renderJoueursConnectes=function(){renderJoueursSansSas.apply(this,arguments);
+ const b=$('open-joueurs');if(b)b.classList.toggle('attente',estMJ()&&!!admisRef&&joueursConnectes().some(j=>j.uid!==monUid&&!admis[j.uid]))}}
+// Un compte en attente ne crée pas d'aventurier.
+{const peutCreerSansSas=peutCreerAventurier;peutCreerAventurier=function(){return !sasEnAttente()&&peutCreerSansSas.apply(this,arguments)}}
+
+/* ---------- Un aventurier à soi, et à personne d'autre ----------
+   Chez un joueur, la barre d'actions ne montre que les actions d'un aventurier qu'il commande : celui d'un autre, sélectionné
+   pour lire sa fiche, n'y paraît pas. */
+{const renderAvantAutrui=render;render=function(){renderAvantAutrui.apply(this,arguments);
+ document.body.classList.toggle('actions-autrui',invitEnLigne()&&!(selected!==null&&actors[selected]&&controlled(selected)))}}
+
+/* ---------- Un seul tirage de départ ----------
+   L'objet inhabituel de départ se tire une fois par compte et par classe, et se garde : recréer un aventurier ne le relance pas.
+   Seul le MJ supprime un aventurier ; un joueur qui a déjà le sien lit pourquoi il n'en crée pas d'autre. */
+{const tireSansGarde=tirePieceDepart;tirePieceDepart=function(role,tirage){const uid=!tirage&&invitEnLigne()&&monUid?monUid:null;if(!uid)return tireSansGarde.apply(this,arguments);
+ const cle='amertume-tirage-depart',k=uid+'|'+role;let t={};try{t=JSON.parse(localStorage.getItem(cle)||'{}')||{}}catch(e){}
+ const g=t[k];if(g&&typeof g.base==='string'&&Array.isArray(g.affixes)&&(catalog.items||[]).some(o=>o&&o.id===g.base))return {id:'forge-'+crypto.randomUUID(),base:g.base,affixes:structuredClone(g.affixes)};
+ const r=tireSansGarde(role);if(r){t[k]={base:r.base,affixes:r.affixes};try{localStorage.setItem(cle,JSON.stringify(t))}catch(e){}}return r}}
+{const supprimerSansCompte=supprimerAventurier;supprimerAventurier=function(){if(invitEnLigne()&&!(typeof mjIci==='function'&&mjIci()))return 'Seul le MJ peut supprimer un aventurier.';return supprimerSansCompte.apply(this,arguments)}}
+{const renderAccueilSansFragment=renderAccueil;renderAccueil=function(){renderAccueilSansFragment.apply(this,arguments);
+ const bloc=document.querySelector('.accueil-creer'),b=$('accueil-creer');if(!bloc||!b)return;
+ const manque=invitEnLigne()&&!sasEnAttente()&&actors.some(a=>aMoi(a))&&!peutCreerAventurier();let p=bloc.querySelector('.manque-fragment');
+ if(manque){bloc.hidden=false;b.disabled=true;if(!p){p=document.createElement('p');p.className='manque-fragment';p.textContent='Composant manquant : Fragment d’Âme';bloc.append(p)}p.hidden=false}
+ else{b.disabled=false;if(p)p.hidden=true}}}
+
+/* ---------- L'aventurier « Actif » ----------
+   Au premier combat, chaque aventurier en scène devient Actif : son arbre — talents et caractéristiques — se fige jusqu'à son
+   prochain repos, court ou long. Il s'ouvre et se lit ; un essai de changement le dit. Le MJ, lui, passe outre. */
+CHAMPS_VIVANTS.push('actif');
+{const basculerSansActif=basculerMode;basculerMode=function(){const avant=enCombat(),r=basculerSansActif.apply(this,arguments);
+ if(!avant&&enCombat()&&!(typeof spectateur==='function'&&spectateur())){let n=0;
+  actors.forEach(a=>{if(a&&a.hero&&!a.horsCarte&&a.actif!==true&&(typeof prendPartAventure!=='function'||prendPartAventure(a))){a.actif=true;n++}});if(n)scheduleSave()}
+ return r}}
+{const reposerSansActif=reposer;reposer=function(a){const r=reposerSansActif.apply(this,arguments);if(a&&a.actif===true)a.actif=false;return r}}
+{const figeSansActif=figeEnCombat;figeEnCombat=function(a){const f=figeSansActif.apply(this,arguments)||(view!=='mj'&&!!a&&a.hero===true&&a.actif===true);
+ if(f&&typeof annonceVerrouBuild==='function')annonceVerrouBuild();return f}}
+let verrouAnnonce=0;
+function annonceVerrouBuild(){if(performance.now()-verrouAnnonce<1500)return;verrouAnnonce=performance.now();
+ const hote=document.querySelector('dialog[open]')||document.body,el=document.createElement('div');el.className='annonce-flottante annonce-info';el.setAttribute('role','status');
+ el.textContent='Votre aventurier est au cœur de l’action, il ne peut pas modifier ses talents avant le prochain repos court.';
+ el.style.left='50%';el.style.top='32%';el.addEventListener('animationend',()=>el.remove());hote.append(el)}
+// Le repos venu, chez qui commande l'aventurier : son arbre se rouvre, et il le lit.
+const actifsConnus=new Map();
+{const renderAvantRepos=render;render=function(){renderAvantRepos.apply(this,arguments);
+ actors.forEach((a,i)=>{if(!a||!a.hero||!a.id)return;const avant=actifsConnus.get(a.id),mien=view!=='mj'&&(invitEnLigne()?aMoi(a):i===owner);
+  if(mien&&avant===true&&a.actif!==true&&typeof annonceFlottante==='function')annonceFlottante('Vous pouvez modifier vos talents');actifsConnus.set(a.id,a.actif===true)})}}
+
+/* ---------- La connexion MJ de la page fermée ----------
+   Elle ouvre la même fenêtre de compte que les joueurs : pseudo et mot de passe, ou Google, et ses erreurs s'y lisent. Le service
+   pas encore prêt, elle l'attend ; un autre compte déjà connecté sur l'appareil cède d'abord la place. */
+async function connexionMJ(){if(!auth){document.addEventListener('amertume-firebase-prete',()=>connexionMJ(),{once:true});return}
+ if(auth.currentUser&&!estMJ())try{await auth.signOut()}catch(e){}
+ // La fenêtre porte, le temps de cette connexion, le nom du bouton qui l'ouvre.
+ const t=compteDialog.querySelector('.dialog-head h2'),avant=t?t.textContent:'';if(t)t.textContent='Connexion MJ';
+ compteDialog.addEventListener('close',()=>{if(t)t.textContent=avant},{once:true});demandeCompte()}

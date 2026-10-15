@@ -275,6 +275,21 @@ main.layout>.stack.left>.piste-des{height:210px;flex:none}
 .ping-carte b{width:calc(var(--token,46px)*.32);height:calc(var(--token,46px)*.32);background:var(--c);box-shadow:0 0 0 3px #0008,0 0 16px var(--c);animation:ping-point 2.5s ease-out forwards}
 @keyframes ping-onde{0%{opacity:1;transform:translate(-50%,-50%) scale(.1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
 @keyframes ping-point{0%{opacity:0;transform:translate(-50%,-50%) scale(2)}12%{opacity:1;transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
+/* Le sas : la table voilée, et le message d'attente au milieu de l'écran. */
+body.sas-attente main.layout{visibility:hidden}
+.sas-message{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:90;padding:18px 30px;border-radius:14px;background:#1b1410f2;color:#f6e9d8;
+ border:1px solid #d29180;box-shadow:0 14px 36px #0007;font:700 clamp(18px,2.4vw,26px)/1.3 'Killam',Georgia,serif;text-align:center;max-width:calc(100vw - 32px)}
+.sas-message[hidden]{display:none}
+.joueur-connecte .accepter{margin-left:auto;font:600 11px system-ui;padding:2px 8px;color:#2e7d43;border-color:#9fc8a8}
+.joueur-connecte .accepter+.exclure{margin-left:6px}
+.joueur-connecte.en-attente .point-connecte{background:#d9a13b}
+#open-joueurs.attente{position:relative}#open-joueurs.attente::after{content:'';position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#d9a13b;box-shadow:0 0 0 2px var(--panel,#fff)}
+/* Chez un joueur, les actions d'un aventurier qu'il ne commande pas ne paraissent pas. */
+body.actions-autrui .map-panel>.barre-actions{display:none}
+/* Composant manquant : la création d'un autre aventurier. */
+.accueil-creer .manque-fragment{margin:8px 0 0;font-weight:700;color:#8a5a2b}
+/* Un message plus long au milieu de l'écran, sur plusieurs lignes. */
+.annonce-flottante.annonce-info{white-space:normal;max-width:min(560px,86vw);text-align:center;font-size:clamp(17px,2vw,22px);line-height:1.35}
 /* Une version plus récente en ligne : un bandeau en haut de l'écran, et son bouton pour recharger. */
 .bandeau-version{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:300;display:flex;align-items:center;gap:12px;padding:8px 10px 8px 16px;
  border-radius:12px;background:#1b1410f2;color:#f6e9d8;border:1px solid #d29180;box-shadow:0 10px 28px #0007;font:600 14px system-ui;max-width:calc(100vw - 32px)}

@@ -52,10 +52,20 @@ match /amertume_online_live/{table} {
     && request.resource.data.keys().hasOnly(['actors','doors','round','locked','title','mode','mapId','mj','at','fogOff','fogReset'])
     && (isOnlineMJ()
         || (!exists(/databases/$(database)/documents/amertume_online_live/$(table)/bannis/$(request.auth.uid))
+            // v0.768 : seul un compte accepté par le MJ (admis/{uid}) agit à la table.
+            && exists(/databases/$(database)/documents/amertume_online_live/$(table)/admis/$(request.auth.uid))
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actors','doors','at'])));
 
   // Les exclus (v0.752) : le MJ les inscrit et les réadmet ; chacun peut voir s'il l'est.
   match /bannis/{uid} {
+    allow get: if request.auth != null && (request.auth.uid == uid || isOnlineMJ());
+    allow list: if isOnlineMJ();
+    allow create, update: if isOnlineMJ() && request.resource.data.keys().hasOnly(['nom','at']);
+    allow delete: if isOnlineMJ();
+  }
+
+  // Le sas (v0.768) : le MJ accepte un compte une fois pour toutes à cette table ; chacun peut voir s'il l'est.
+  match /admis/{uid} {
     allow get: if request.auth != null && (request.auth.uid == uid || isOnlineMJ());
     allow list: if isOnlineMJ();
     allow create, update: if isOnlineMJ() && request.resource.data.keys().hasOnly(['nom','at']);
@@ -93,6 +103,7 @@ match /amertume_online_live/{table} {
     allow create: if request.auth != null
       && !exists(/databases/$(database)/documents/amertume_online_live/$(table)/bannis/$(request.auth.uid))
       && request.resource.data.de == request.auth.uid
+      && (isOnlineMJ() || exists(/databases/$(database)/documents/amertume_online_live/$(table)/admis/$(request.auth.uid)))
       && request.resource.data.t is number
       && request.resource.data.keys().hasOnly(['t','de','tour','genre','texte','badge','logo','a','b','corps','detail','suite','effet','ton'])
       && request.resource.data.genre in ['texte','attaque','effet']
