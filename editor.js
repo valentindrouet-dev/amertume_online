@@ -1291,6 +1291,24 @@ function renderHeroes(){syncForges();const grille=$('hero-grid');if(!grille)retu
    yeux de qui modifiait l'inventaire d'un aventurier du bas. */
 {const sansDefilement=renderHeroes;renderHeroes=function(){const g=$('hero-grid'),y=window.scrollY,h=g?g.offsetHeight:0;if(g&&h)g.style.minHeight=h+'px';
  try{return sansDefilement.apply(this,arguments)}finally{if(g)g.style.minHeight='';if(Math.abs(window.scrollY-y)>1)window.scrollTo(0,y)}}}
+/* Un clic sur le token d'une fiche la replie tout entière : elle rejoint, en simple token, la rangée des repliés au-dessus des
+   fiches ouvertes ; un clic sur ce token la déplie. Le choix se garde sur l'appareil. Chez le MJ, le token pâli d'un aventurier
+   retiré de la table garde son clic : il le ramène sur la carte. */
+const HEROS_REPLIES_CLE='amertume-heros-replies';
+function herosReplies(){try{const l=JSON.parse(localStorage.getItem(HEROS_REPLIES_CLE)||'[]');return new Set(Array.isArray(l)?l:[])}catch(e){return new Set()}}
+function replieHeros(id,replie){const l=herosReplies();if(replie)l.add(id);else l.delete(id);try{localStorage.setItem(HEROS_REPLIES_CLE,JSON.stringify([...l]))}catch(e){}renderHeroes()}
+{const heroCardSansRepli=heroCard;heroCard=function(a){const c=heroCardSansRepli.apply(this,arguments);c.dataset.heros=a.id||'';
+ const jeton=c.querySelector('.hero-head .avatar');if(jeton&&a.id&&!jeton.classList.contains('hors-table')){jeton.classList.add('repliable');
+  jeton.onclick=e=>{e.stopPropagation();replieHeros(a.id,true)}}return c}}
+{const renderHerosSansRepli=renderHeroes;renderHeroes=function(){const r=renderHerosSansRepli.apply(this,arguments);const g=$('hero-grid');if(!g)return r;
+ const replies=herosReplies(),cartes=[...g.querySelectorAll(':scope>.hero-card')].filter(c=>replies.has(c.dataset.heros));if(!cartes.length)return r;
+ const rang=document.createElement('div');rang.className='heros-replies';
+ cartes.forEach(c=>{const a=actors.find(x=>x&&x.id===c.dataset.heros);c.remove();if(!a)return;
+  const b=document.createElement('button');b.type='button';b.className='avatar heros-replie';b.setAttribute('aria-label',a.name);b.dataset.heros=a.id;
+  if(a.image){const im=document.createElement('img');im.src=a.image;im.alt='';b.append(im)}else b.textContent=(a.name||'?')[0];
+  if(typeof surveille==='function')surveille(b,()=>{const d=document.createElement('div');d.className='bulle-joueurs';d.textContent=a.name;ouvrirBulle(b,d)});else b.title=a.name;
+  b.onclick=()=>replieHeros(a.id,false);rang.append(b)});
+ g.prepend(rang);g.classList.toggle('une-fiche',g.querySelectorAll(':scope>.hero-card').length===1);return r}}
 $('hero-search').oninput=()=>renderHeroes();
 $('hero-tri').value=triHeros();$('hero-tri').onchange=()=>{try{localStorage.setItem('amertume-tri-heros',$('hero-tri').value)}catch(e){}renderHeroes()};
 $('hero-add').onclick=()=>openActor(null,true);

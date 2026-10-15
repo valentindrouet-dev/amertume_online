@@ -290,6 +290,12 @@ body.actions-autrui .map-panel>.barre-actions{display:none}
 .accueil-creer .manque-fragment{margin:8px 0 0;font-weight:700;color:#8a5a2b}
 /* Un message plus long au milieu de l'écran, sur plusieurs lignes. */
 .annonce-flottante.annonce-info{white-space:normal;max-width:min(560px,86vw);text-align:center;font-size:clamp(17px,2vw,22px);line-height:1.35}
+/* Les fiches repliées : une rangée de tokens au-dessus des fiches ouvertes ; un token de fiche se clique pour la replier. */
+.heros-replies{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;padding:2px 0 4px}
+.heros-replies .heros-replie{width:52px;height:52px;padding:0;border-radius:50%;overflow:hidden;display:grid;place-items:center;cursor:pointer;font:700 20px 'Killam',Georgia,serif;box-shadow:0 2px 6px #0003}
+.heros-replies .heros-replie img{width:100%;height:100%;object-fit:cover;display:block}
+.heros-replies .heros-replie:hover{transform:translateY(-1px);box-shadow:0 4px 10px #0004}
+.hero-card .hero-head .avatar.repliable{cursor:pointer}
 /* Une version plus récente en ligne : un bandeau en haut de l'écran, et son bouton pour recharger. */
 .bandeau-version{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:300;display:flex;align-items:center;gap:12px;padding:8px 10px 8px 16px;
  border-radius:12px;background:#1b1410f2;color:#f6e9d8;border:1px solid #d29180;box-shadow:0 10px 28px #0007;font:600 14px system-ui;max-width:calc(100vw - 32px)}
