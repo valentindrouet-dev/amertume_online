@@ -2869,8 +2869,8 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(!T('a').liens&&T('c').pos&&T('g').pos,'la ligne qui menait à lui s’efface ; ses suivants restent en place, devenus des départs');
  assert.ok(T('k').horsArbre&&!T('k').chemin&&T('k2').horsArbre&&!T('k2').chemin,'les petits ronds de ses chemins quittent l’arbre');
  assert.equal(ctxR.retireDeLArbre(T('b')),false,'un talent déjà retiré ne se retire pas deux fois');
- assert.ok(src.includes("function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!lisChemin(t));")
-  &&src.includes(" t.famille=famille;t.voie=voie;t.prerequis='';delete t.horsArbre;delete t.branche;"),'hors de l’arbre, il n’y paraît plus ; replacé, il y revient');
+ assert.ok(src.includes("function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!t.flottant&&!lisChemin(t));")
+  &&src.includes(" t.famille=famille;t.voie=voie;t.prerequis='';delete t.horsArbre;delete t.flottant;delete t.branche;"),'hors de l’arbre, il n’y paraît plus ; replacé, il y revient');
  /* v0.294 — Ni réserve sous l'arbre, ni mention au catalogue : un talent retiré se remet
     dans l'arbre par son formulaire, « Place dans l'arbre ». */
  assert.ok(src.includes("if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue'")
@@ -3829,7 +3829,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
  assert.deepEqual([f(['a','b','c','v']).name,f(['a','b','c','v']).orbesEtats],['Épée lourde mystique mortelle de la Vipère',[['Poison',2]]]);
  const o=f(['i']);assert.deepEqual([o.effet,o.params,o.mode,o.usage,A.find(x=>x.id==='x').etat],['etat',{etat:'Invisible'},'actif','jour','Blindage']);
  assert.ok(!C17.affixeVaSur(A.find(x=>x.id==='i'),{...ep,effet:'soin'},0),'un état conféré ne remplace pas l’effet d’une pièce');
- assert.deepEqual(C17.ETATS_POSITIFS,['Blindage','Furie','Invisible','Onde','Vie']);
+ assert.deepEqual(C17.ETATS_POSITIFS,['Blindage','Furie','Invisible','Onde','Vie','Rage']);
  assert.ok(ed.includes("if(!c.semisForge.includes('orbes-poison')){if(!c.affixes.some(x=>x.id==='affixe-orbes-poison'))c.affixes.push(normaliseAffixe({id:'affixe-orbes-poison',nom:'de la Vipère',place:'suffixe',effet:'orbesEtat',etat:'Poison',valeur:1,classe:'Mystique',")
   &&ed.includes("||!tout&&EQUIPEMENTS.includes(o.category)&&!!objetCode(o)&&modeObjet(o)==='actif'&&!!portes(o))&&peutEquiper&&actors.includes(a);")
   &&page.includes("if(b.hp>0)etatsOrbesPortes(a).forEach(([e,n])=>{const issue=infligeEtat(b,e);")&&page.includes("function etatsOrbesPortes(a){"),'affixes de classe câblés');}
@@ -4729,7 +4729,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&page.includes("  case 'Aveugle':return 'Ne voit rien au-delà de sa zone de contact : ne peut viser que ce qui s’y trouve.';")
   &&page.includes("  if(typeof voitSocle==='function'&&!voitSocle(a,o))return false;\n  const qui=provoque?o:a;")
   &&page.includes("&&(typeof voitSocle!=='function'||voitSocle(c,o)));")&&page.includes("&&(typeof voitSocle!=='function'||voitSocle(m,o));"),'on ne vise que ce qu’on voit ; Aveugle');
- assert.ok(page.includes("+compteEtat(a,'Furie')+bonusPredateur(a);return meuteActive(a)?bonus*2:bonus}")&&page.includes("function visionNoirDe(a){")
+ assert.ok(page.includes("+compteEtat(a,'Furie')+compteEtat(a,'Rage')+bonusPredateur(a);return meuteActive(a)?bonus*2:bonus}")&&page.includes("function visionNoirDe(a){")
   &&page.includes("const aug=c.find(x=>x.code.cle==='visionaugmentee');if(aug)m=Math.max(m,")&&page.includes("function desPredateur(a){")
   &&page.includes("+(Math.trunc(Number(opts.bonusEnPlus))||0)+(predateur?predateur.total:0)"),'le talent et ses améliorations');
  assert.ok(src.includes("'<label class=\"field-check\"><input name=\"nyctalope\" type=\"checkbox\" '+(a.nyctalope===false?'':'checked')+'>Vision dans le noir</label>'")
@@ -5189,9 +5189,9 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  const a={states:[]};assert.ok(C.cumulable('Furie')&&C.ETATS_JEU.includes('Furie'),'empilable, et posable par un effet');
  C.infligeEtat(a,'Furie');C.infligeEtat(a,'Furie');C.infligeEtat(a,'Furie');assert.equal(C.compteEtat(a,'Furie'),3,'trois crans');
  const b={states:['Onde']};assert.ok(C.infligeEtat(b,'Furie')===true&&C.hasState(b,'Onde'),'l’Onde ne l’absorbe pas');
- assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢'};")
-  &&page.includes("'Furie':'#e2463c'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
- assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':'Furie'"),'son icône se choisit');}
+ assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
+  &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
+ assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
 /* v0.523 — Enragement, passif de Destructeur : chaque critique ajoute +1 aux dégâts du porteur jusqu'à la fin du
    combat, +2 avec son amélioration ; le compte repart de zéro quand le combat finit ou que la rencontre repart. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8');
@@ -5640,7 +5640,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['o','b2','b3'])),JSON.stringify(['o','b3']),'sans le premier, le second tombe ; un bonus hors chemin reste');
  assert.equal(JSON.stringify(ctxB.sansBonusOrphelins(['b1','b2'])),'[]','sans le talent, tout le chemin tombe');
  assert.equal(ctxB.basculeLien(T[0],T[2]),'ajoute','Cendre est la case de droite');assert.equal(ctxB.basculeLien(T[2],T[1]),'loin','en diagonale : pas de ligne');
- assert.ok(src.includes("reste=sansChuteArbre(a,sansBonusOrphelins(reste));")&&src.includes("&&!t.horsArbre&&!lisChemin(t));")&&src.includes("if(d.chemin)t.chemin=d.chemin;"),'les petits ronds');}
+ assert.ok(src.includes("reste=sansChuteArbre(a,sansBonusOrphelins(reste));")&&src.includes("&&!t.horsArbre&&!t.flottant&&!lisChemin(t));")&&src.includes("if(d.chemin)t.chemin=d.chemin;"),'les petits ronds');}
 /* v0.358 — Dans la barre d'action, attaques et talents d'attaque sont des ronds, comme les talents
    d'une fiche, à la couleur de l'action ; le nom dans la bulle, les dés dessous. Sur la table, plus
    de nom sous les ronds de talents. */

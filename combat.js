@@ -964,7 +964,7 @@ function setState(a,etat,pose){const reste=statesOf(a).filter(x=>x!==etat);
  return a.states}
 /* Les états et ce qu'ils empêchent ou déclenchent. Tout ce qui se calcule vit ici ;
    l'interface ne fait que déclencher au bon moment et raconter. */
-const ONDE_EXCLUS=['Blindage','Invisible','Onde','Vie','Coma','Furie'];
+const ONDE_EXCLUS=['Blindage','Invisible','Onde','Vie','Coma','Furie','Rage'];
 function frozenSolid(a){return hasState(a,'Gel')||hasState(a,'Au sol')}
 function blinded(a){return hasState(a,'Aveugle')}
 /* Furie s'empile aussi : chaque cran donne +1 aux dégâts du combattant. Quatre autres états s'empilent : chaque aggravation vaut un cran, et à zéro l'état s'en va.
@@ -972,7 +972,8 @@ function blinded(a){return hasState(a,'Aveugle')}
    de brûlure. La saignée garde le champ qui était le sien avant les autres : les parties
    déjà enregistrées le portent, et tout ce qui s'appuie dessus continue de le lire. Les
    trois autres logent ensemble dans « cumuls ». */
-const ETATS_CUMULES=['Saignée','Feu','Foudre','Poison','Furie'];
+// La Rage du Destructeur (v0.783) s'empile comme la Furie : chaque cran, +1 aux dégâts.
+const ETATS_CUMULES=['Saignée','Feu','Foudre','Poison','Furie','Rage'];
 function cumulable(etat){return ETATS_CUMULES.includes(etat)}
 function compteEtat(a,etat){if(!hasState(a,etat))return 0;
  if(!cumulable(etat))return 1;
@@ -1019,7 +1020,7 @@ function effetParNom(nom){const k=cleTalent(nom);if(!k)return '';
 // Les huit compétences, dans l'ordre des fiches : la table les nomme depuis le moteur.
 const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ruse','Savoir','Technique'];
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Furie','Gel',
- 'Invisible','Onde','Poison','Saignée','Vie','Affaibli'];
+ 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
 // Les réglages de Dominateur, bornés : l'état visé, x, et les dés de xdx.
 function dominateurDe(p){const n=(v,a,b,d)=>Math.max(a,Math.min(b,Math.trunc(Number(v))||d));
@@ -1331,6 +1332,14 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  /* Destructeur : une maîtrise. Avec une arme au contact, tous les doubles sont des
     critiques, pas seulement les 6 ; le double 1 reste ce qu'il est, un échec. Ni les
     armes à distance, ni les orbes, ni les attaques de fiche n'en profitent. */
+ /* La Rage du Destructeur : un état qui s'empile, chaque cran +1 aux dégâts, gagné au combat — Frappe Furieuse en donne un.
+    La maîtrise Rage le dit ; c'est l'état qui compte. Il tombe, comme les autres, à la fin du combat. */
+ frappefurieuse:{cle:'frappefurieuse',nom:'Frappe Furieuse',type:'act',bouton:'Frappe Furieuse',attaque:true,
+  aide:'Action : le porteur effectue une attaque, et gagne 1 Rage.',
+  params:[],phrase(){return 'Vous effectuez <b>une attaque</b>. Vous gagnez <b>1 Rage</b>.'}},
+ rage:{cle:'rage',nom:'Rage',type:'mait',
+  aide:'Maîtrise : le porteur génère de la Rage durant un combat ; chaque point de Rage augmente ses dégâts de +1.',
+  params:[],phrase(){return 'Vous générez de la <b>Rage</b> durant un combat. Chaque point de Rage augmente vos <b>dégâts de +1</b>.'}},
  destructeur:{cle:'destructeur',nom:'Destructeur',type:'mait',
   aide:'Maîtrise : avec une arme au contact, le porteur réussit un critique sur tous ses doubles, pas seulement les 6.',
   params:[],
@@ -2089,7 +2098,8 @@ function sansAmeliorationsRemplacees(liste){const L=(liste||[]).filter(Boolean);
  return L.filter(t=>!am(t)||!L.some(u=>u!==t&&am(u)&&u.remplacePrecedente===true&&u.chemin.de===t.chemin.de&&u.chemin.dir===t.chemin.dir&&(Number(u.chemin.rang)||0)>(Number(t.chemin.rang)||0)))}
 function talentsAuPalier(a,talents){const e=elementDe(a);return talentsTenus(a&&a.talents,talents).map(t=>talentAuPalier(talentPourElement(t,e),palierDe(a,t)))}
 // Ce qu'a coûté l'arbre d'un aventurier : chaque palier acquis, au prix que le talent en demande.
-function ptDepenses(a,talents){return talentsTenus(a&&a.talents,talents).reduce((s,t)=>{let n=0;for(let i=1;i<=palierDe(a,t);i++)n+=coutPalier(t,i);return s+n},0)}
+// Le talent du gros rond flottant se tient d'office : il ne coûte rien.
+function ptDepenses(a,talents){return talentsTenus(a&&a.talents,talents).filter(t=>t.flottant!==true).reduce((s,t)=>{let n=0;for(let i=1;i<=palierDe(a,t);i++)n+=coutPalier(t,i);return s+n},0)}
 /* L'XP paie les talents, les bonus et les améliorations : il reste à dépenser l'XP gagnée moins ce
    que coûte ce qu'il tient. Le niveau, lui, suit toute l'XP gagnée : dépenser ne le fait pas
    redescendre, et oublier un talent rend son prix. */
@@ -2438,7 +2448,7 @@ const EFFETS_AFFIXE=[['carac','Bonus de caractéristique'],['comp','Bonus de com
 const ECHELLE_DEFAUT=[[1,3],[4,7],[8,15],[16,30]];
 const RANG_RARETE={inhabituel:0,rare:1,mystique:2,epique:3};
 // Les états qu'un objet peut conférer à son porteur, d'un clic : ceux qui le servent.
-const ETATS_POSITIFS=['Blindage','Furie','Invisible','Onde','Vie'];
+const ETATS_POSITIFS=['Blindage','Furie','Invisible','Onde','Vie','Rage'];
 // Combien de fois un objet confère son état : à volonté, entre deux repos courts, une fois par jour.
 const USAGES_AFFIXE=[['court','Une fois entre deux repos courts'],['jour','Une fois par jour'],['libre','À volonté']];
 const NOMS_DES=[['white','Simple'],['bone','Léger'],['red','Lourd'],['blue','Mystique'],['black','Mortel'],['yellow','Phase']];

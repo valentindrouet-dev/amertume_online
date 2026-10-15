@@ -238,6 +238,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    {id:'affixe-epines',nom:'d’Épines',place:'suffixe',effet:'epines',familles:['armure']},{id:'affixe-epines-poison',nom:'d’Épines empoisonnées',place:'suffixe',effet:'epinesEtat',etat:'Poison',familles:['armure']}]
    .forEach(a=>{if(!c.affixes.some(x=>x.id===a.id))c.affixes.push(normaliseAffixe({...a,variable:true,poids:10,niveau:1}))});c.semisForge.push('affixes-combat')}
  if(!c.semisForge.includes('orbes-poison')){if(!c.affixes.some(x=>x.id==='affixe-orbes-poison'))c.affixes.push(normaliseAffixe({id:'affixe-orbes-poison',nom:'de la Vipère',place:'suffixe',effet:'orbesEtat',etat:'Poison',valeur:1,classe:'Mystique',poids:10,niveau:1}));c.semisForge.push('orbes-poison')}
+ // Frappe Furieuse, posée une fois dans la Bibliothèque du Destructeur, hors de l'arbre : le MJ la place où il veut.
+ if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
+  if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
+   effet:'frappefurieuse',params:{},effects:'',effets:'',notes:'',horsArbre:true});c.semisForge.push('frappe-furieuse')}
  /* Deux talents sous un même identifiant se superposaient dans l'arbre : on en tirait un, l'autre restait, comme
     une copie. Une copie exacte s'en va ; une autre, qui a changé depuis, prend un identifiant à elle. */
  {const vus=new Map(),l=c.talents.filter(t=>{if(!t||!t.id)return true;const d=vus.get(t.id);if(!d){vus.set(t.id,t);return true}
@@ -320,6 +324,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   t.branche=t.branche==='g'||t.branche==='d'?t.branche:'';
   // Retiré de l'arbre, il reste au catalogue.
   if(t.horsArbre!==true)delete t.horsArbre;
+  // Le talent du gros rond flottant, au bord gauche de l'arbre de sa classe : hors de la grille, tenu d'office.
+  if(t.flottant!==true||t.horsArbre===true)delete t.flottant;else{delete t.pos;delete t.liens;delete t.chemin}
   if(t.vide!==true)delete t.vide;
   if(t.paliersActifs!==true||!(t.type==='ame'||t.effet==='bonus'))delete t.paliersActifs;
   // Un rond de remplissage est une case vide qui a une couleur : celle d'une nature de talent.
@@ -896,6 +902,8 @@ function recalculerPV(a){if(!a||!a.hero)return false;
    aventurier qui en porte une baissait un instant et rabotait ses PV ; remonté au rendu suivant, il les laissait perdus. */
 function synchronisePV(){if(typeof spectateur==='function'&&spectateur())return false;if(typeof syncForges==='function')syncForges();let change=false;
  actors.forEach(a=>{if(a&&a.hero&&recalculerPV(a))change=true});return change}
+// Et chaque aventurier tient d'office le talent du gros rond flottant de sa classe.
+{const pvSeuls=synchronisePV;synchronisePV=function(){const f=accordeFlottants();return pvSeuls()||f}}
 function poserCarac(a,cle,brut,carte){const avant=a[cle];writeStat(a,cle,brut);
  if(a[cle]===avant)return;
  if(cle==='vie'||cle==='endu')recalculerPV(a);
@@ -1418,14 +1426,14 @@ function openIconesCompetences(){if(view!=='mj')return;const l=iconesCompetences
  const lb=catalog.logosBonus||{};
  $('competences-icones-corps').innerHTML='<h3 class="reglage-titre icones-titre">Caractéristiques</h3>'+CARACS_ICONES.map(([k,n])=>selGrille(selGroupes(esc(n),'carac-'+k,lb[k]||'',groupes))).join('')
   +'<h3 class="reglage-titre icones-titre">Compétences</h3>'+skillNames.map((n,k)=>selGrille(selGroupes(esc(n),'comp'+k,l[k]||'',groupes))).join('')
-  +'<h3 class="reglage-titre icones-titre">États</h3>'+selGrille(selGroupes('Gardé','etat-garde',(catalog.logosEtats||{})['Gardé']||'',groupes))+selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))
+  +'<h3 class="reglage-titre icones-titre">États</h3>'+selGrille(selGroupes('Gardé','etat-garde',(catalog.logosEtats||{})['Gardé']||'',groupes))+selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))+selGrille(selGroupes('Rage','etat-rage',(catalog.logosEtats||{})['Rage']||'',groupes))
   +'<h3 class="reglage-titre icones-titre">Arbres de talents</h3>'+selGrille(selGroupes('Remplissage','remplissage',catalog.logoRemplissage||'',groupes))
   +'<h3 class="reglage-titre icones-titre">Actions</h3>'+selGrille(selGroupes('Attaque sans arme','attaque-base',catalog.logoAttaqueBase||'',groupes))
   +ACTIONS_SPECIALES.map(([k,n])=>selGrille(selGroupes(esc(n),'action-'+k,actionSpeciale(k).logo||'',groupes))+'<label class="action-texte">Texte · '+esc(n)+'<textarea name="actiontexte-'+k+'" rows="2">'+esc(actionSpeciale(k).texte||'')+'</textarea></label>').join('');
  $('competences-icones-form').onchange=e=>{const nom=e.target&&e.target.name||'',m=/^comp(\d+)$/.exec(nom),c=/^carac-([a-z]+)$/.exec(nom);
   if(nom==='remplissage'){if(e.target.value)catalog.logoRemplissage=e.target.value;else delete catalog.logoRemplissage;if(arbresDialog.open)renderArbres()}
   else if(nom==='attaque-base'){if(e.target.value)catalog.logoAttaqueBase=e.target.value;else delete catalog.logoAttaqueBase}
-  else if(nom==='etat-garde'||nom==='etat-furie'){const etat=nom==='etat-garde'?'Gardé':'Furie',o={...(catalog.logosEtats||{})};if(e.target.value)o[etat]=e.target.value;else delete o[etat];catalog.logosEtats=o}
+  else if(nom==='etat-garde'||nom==='etat-furie'||nom==='etat-rage'){const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie',o={...(catalog.logosEtats||{})};if(e.target.value)o[etat]=e.target.value;else delete o[etat];catalog.logosEtats=o}
   else if(/^action(texte)?-[a-z]+$/.test(nom)){const r=/^action(texte)?-([a-z]+)$/.exec(nom),o=normaliseActionsSpeciales(catalog.actionsSpeciales),x={...(o[r[2]]||{})},v=e.target.value;
    if(r[1]){if(v.trim())x.texte=v;else delete x.texte}else if(v)x.logo=v;else delete x.logo;
    o[r[2]]=x;catalog.actionsSpeciales=normaliseActionsSpeciales(o)}
@@ -2171,7 +2179,7 @@ function enElementDuMystique(html,etat){if(!etat)return html;
    fiche), états (à leurs teintes), points et natures (en gras), formules de dés et bonus
    chiffrés (« 1d6+2 », « +3 »). Le MJ en ajoute dans l'onglet Talents ; « **ainsi** » force
    le gras. Le texte se découpe autour d'eux, sans jamais passer par du HTML. */
-const TEINTE_ETAT_MOT={Furie:'#c0392b',Feu:'#c2503a',Gel:'#2f8fae',Foudre:'#3a6fc2',Poison:'#9b4fc0','Saignée':'#b8352f',Onde:'#3577b8',Invisible:'#6a5fb0',Faille:'#a0408f'};
+const TEINTE_ETAT_MOT={Furie:'#c0392b',Rage:'#c24a1f',Feu:'#c2503a',Gel:'#2f8fae',Foudre:'#3a6fc2',Poison:'#9b4fc0','Saignée':'#b8352f',Onde:'#3577b8',Invisible:'#6a5fb0',Faille:'#a0408f'};
 /* La couleur d'un mot clé du MJ : « Allié : vert », « Allié = #2f8a63 », ou rien — la
    couleur du thème. Un mot du jeu redéclaré prend la couleur qu'on lui donne. */
 const COULEURS_MOTS={rouge:'#b8352f',orange:'#c2692a',or:'#9d7b1e',jaune:'#b39222',vert:'#2f7a4b',turquoise:'#2c8c85',bleu:'#3a6fc2',violet:'#7a5cb8',rose:'#b04a8a',brun:'#8a5a2b',gris:'#6e6a66',noir:'#2a2622'};
@@ -2975,6 +2983,8 @@ function renderBiblioObjets(){const boite=$('biblio-objets');if(!boite)return;
    génériques, ou les adversaires pour un effet de monstre. */
 const CLASSES_EFFETS_DEVINEES={chargeregain:'Destructeur',murelem:'Mystique',murdegats:'Mystique',murzone:'Mystique',mitraille:'Mystique',siphon:'Mystique',siphonplus:'Mystique',siphonsoin:'Mystique',ricochet:'Mystique',ricochetplus:'Mystique',ricochetcritique:'Mystique',thesaurisation:'Mystique',thesaurisationfois:'Mystique',thesaurisationsoin:'Mystique',mitraillecibles:'Mystique',mitrailleorbes:'Mystique',orbes:'Mystique',orbescritiques:'Mystique',orbesinratables:'Mystique',orbes2des:'Mystique',orbesrouges:'Mystique',orbescritun:'Mystique',orbescrittous:'Mystique',delugegratuit:'Mystique',implosionmouvement:'Mystique',implosionorbe:'Mystique',contagion:'Mystique',contagioncontact:'Mystique',contagionvue:'Mystique',ignoredegats:'Mystique',soinetat:'Mystique',soinetatdouble:'Mystique',orbesfeu:'Mystique',corpselem:'Mystique',ignition:'Mystique',deluge:'Mystique',eruption:'Mystique',eruptiondegats:'Mystique',eruptiondouble:'Mystique',implosion:'Mystique',degatselem:'Mystique',
  gardien:'Gardien',rempart:'Gardien',boutoir:'Gardien',boutoirtous:'Gardien',boutoirimpact:'Gardien',coupbouclier:'Gardien',coupbouclierplus:'Gardien',coupboucliernoir:'Gardien',provocation:'Gardien',provocattaque:'Gardien',provocsol:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',enragement:'Destructeur',enragementplus:'Destructeur',charge:'Destructeur',chargeelan:'Destructeur',chargerepousse:'Destructeur',chargerepoussedist:'Destructeur',chargeimpact:'Destructeur',lamevent:'Ombrelame',rebond:'Ombrelame',revanche:'Ombrelame',traction:'Ombrelame',rapide:'Ombrelame',larcin:'Ombrelame',tenailles:'Ombrelame',deception:'Ombrelame',lameventelem:'Ombrelame',lameventcibles:'Ombrelame',lameventdouble:'Ombrelame',lameventpoison:'Ombrelame',lameventprofonde:'Ombrelame',lameventfatale:'Ombrelame',impulsion:'Ombrelame',impulsiontour:'Ombrelame',impulsionallie:'Ombrelame',insaisispoison:'Ombrelame',insaisisadieu:'Ombrelame',insaisisombre:'Ombrelame',insaisisdegats:'Ombrelame',coursemortelle:'Ombrelame',coursechoix:'Ombrelame',courseombrelame:'Ombrelame',bondissement:'Ombrelame',bondissementlibre:'Ombrelame',bondissementfrappe:'Ombrelame',decoupe:'Ombrelame',decoupedegats:'Ombrelame',decoupeplus:'Ombrelame',lameempoisonnee:'Ombrelame',lamepoisonplus:'Ombrelame',lamepoisoncontact:'Ombrelame'};
+// Frappe Furieuse et la maîtrise Rage sont au Destructeur.
+Object.assign(CLASSES_EFFETS_DEVINEES,{frappefurieuse:'Destructeur',rage:'Destructeur'});
 const ADVERSAIRES='Adversaires';
 function classeEffet(c){const choisie=(catalog.classesEffets||{})[c.cle];if(choisie)return choisie;
  const devinee=CLASSES_EFFETS_DEVINEES[c.cle];if(devinee&&(catalog.classes||[]).some(k=>k&&k.name===devinee))return devinee;
@@ -3590,6 +3600,8 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  {const d=coutParDefaut(t);delete t.coutPA;delete t.coutPM;
   if(d&&f.coutAction&&f.coutAction.value!==''){const n=num(f.coutAction.value,0,9);if(t.type==='mvt'){if(n!==d.pm)t.coutPM=n}else if(n!==d.pa)t.coutPA=n}}
  if(talentIndex===null)catalog.talents.push(t);else catalog.talents[talentIndex]=t;
+ // Créé depuis le gros rond flottant : il s'y pose.
+ if(!avant&&talentDefauts&&talentDefauts.flottant)placerTalent(t.id,{famille:talentFamily(t),flottant:true});
  // Créé sur une case vide de l'arbre : il la reprend, ses lignes et ses petits ronds avec.
  if(!avant&&talentDefauts){const v=caseVideA({...talentDefauts,famille:talentFamily(t),voie:t.voie});
   if(v&&v!==t){if(!lisChemin(v))reprendCase(t,v);else if(lisChemin(t))catalog.talents.splice(catalog.talents.indexOf(v),1)}}
@@ -4424,6 +4436,7 @@ function dissoudreVoie(famille,nom){const i=voiesDe(famille).indexOf(nom);
    le sphérier, ni ce qu'une ligne ne mène plus jusqu'à lui. Sans classe à arbre, rien ne bouge. */
 function talentsDuSpherier(a){const classe=classeDuHeros(a);if(!a||!classe||!aUnArbre(classe))return null;
  const vus=new Set();colonnesArbre(classe).forEach(col=>atteintsDepuis(a.talents,col.liste,null).forEach(id=>vus.add(id)));
+ {const fl=talentFlottant(classe);if(fl)vus.add(fl.id)}
  return (a.talents||[]).filter(id=>vus.has(id))}
 /* Un aventurier qui oublie un talent de son arbre perd tout ce qui en dépendait : talents, bonus et
    améliorations qu'aucun talent tenu ne rattache plus au départ, et ce qui reposait sur eux, jusqu'à
@@ -4605,7 +4618,15 @@ function basculeLien(de,vers,liste){if(!de||!vers||de===vers)return 'rien';
  de.liens=[...liensDe(de),vers.id];return 'ajoute'}
 /* Les colonnes d'une classe : deux, toujours, nommées ou non. Celle qui accueille les talents sans
    voie s'appelle « Tronc commun » tant qu'elle n'a pas de nom ; les autres attendent le leur. */
-function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!lisChemin(t));
+/* Le gros rond flottant au bord gauche de l'arbre d'une classe : un talent hors de la grille, que tout aventurier de la classe
+   tient d'office, sans payer d'XP (v0.783). Un seul par classe. */
+function talentFlottant(classe){return (catalog.talents||[]).find(t=>t&&t.flottant===true&&!t.horsArbre&&talentFamily(t)===classe)||null}
+function accordeFlottants(){if(typeof spectateur==='function'&&spectateur())return false;let change=false;
+ (typeof actors!=='undefined'?actors:[]).forEach(a=>{if(!a||!a.hero)return;const fl=talentFlottant(classeDuHeros(a)),l=a.talents||[];
+  const garde=l.filter(id=>{const t=talent(id);return !t||!t.flottant||t===fl});if(fl&&!garde.includes(fl.id))garde.push(fl.id);
+  if(garde.length!==l.length||garde.some((id,k)=>id!==l[k])){a.talents=garde;change=true}});
+ return change}
+function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!t.flottant&&!lisChemin(t));
  const voies=voiesDe(classe),nommees=voies.filter(Boolean),accueil=rangDAccueil(classe);
  // Dans une colonne, de haut en bas puis de gauche à droite ; qui n'a pas encore de case, en dernier.
  const rang=t=>{const p=posDe(t);return p?[p.y,p.x]:[1e9,0]};
@@ -4722,6 +4743,11 @@ function laisseLignes(t){const p=posDe(t);if(!p||t.horsArbre||lisChemin(t)||estV
   if(x.niveaux&&t.id in x.niveaux){const n={...x.niveaux};n[v.id]=n[t.id];delete n[t.id];x.niveaux=n}});
  delete t.liens;delete t.niveaux;catalog.talents.push(v);return v}
 function placerTalent(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||!dest)return false;
+ // Dans le gros rond flottant : un talent seul, hors de la grille ; celui qui y était revient à la Bibliothèque.
+ if(dest.flottant){if(estBonus(t)||peutEtrePetit(t))return false;const fam=dest.famille||GENERIQUES;
+  tousTalents().forEach(x=>{if(x!==t&&x.flottant&&talentFamily(x)===fam){delete x.flottant;x.horsArbre=true}});
+  if(!t.horsArbre&&(posDe(t)||lisChemin(t))){laisseLignes(t);detacheDeLArbre(t)}
+  t.famille=fam;t.voie='';t.prerequis='';t.flottant=true;delete t.horsArbre;delete t.pos;delete t.liens;delete t.chemin;delete t.branche;return true}
  if(dest.chemin){if(!peutEtrePetit(t))return false;const de=tousTalents().find(x=>x.id===dest.chemin.de),dir=dest.chemin.dir;
   if(!de||de===t||!DIRS[dir]||!posDe(de)||de.horsArbre)return false;
   const col=colonneDe(talentFamily(de),de.voie||'');if(!col||!col.liste.includes(de))return false;
@@ -4749,7 +4775,7 @@ function placerTalent(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||!
  const avant=ailleurs?null:posDe(t);
  // Les lignes tiennent aux cases : d'un autre arbre, il laisse les siennes à sa case, vide.
  if(ailleurs){laisseLignes(t);detacheDeLArbre(t)}
- t.famille=famille;t.voie=voie;t.prerequis='';delete t.horsArbre;delete t.branche;delete t.chemin;
+ t.famille=famille;t.voie=voie;t.prerequis='';delete t.horsArbre;delete t.flottant;delete t.branche;delete t.chemin;
  const col=((colonneDe(famille,voie)||{}).liste||[]).filter(x=>x!==t);
  const voulue=dest.pos&&Number.isInteger(dest.pos.x)&&Number.isInteger(dest.pos.y)?{x:dest.pos.x,y:dest.pos.y}:null;
  const occ=voulue?col.find(x=>{const p=posDe(x);return !!p&&p.x===voulue.x&&p.y===voulue.y}):null;
@@ -5419,6 +5445,15 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   petits.forEach(s=>{const el=estVide(s.t)?noeudVide(s.t,c,true):noeudPetit(s.t,s.de,c,libre);pose(el,s.x,s.y);marque(el,s);plan.append(el)});
   places.forEach(pl=>{const el=pl.genre==='gros'?place(c,pl):placePetit(c,pl);pose(el,pl.x,pl.y);plan.append(el)});
   col.append(plan);
+  /* Le gros rond flottant, au bord gauche du premier arbre de la classe, à la hauteur du talent de départ : son talent, tenu
+     d'office par tout aventurier de la classe ; chez le MJ, vide, la place où en poser un. */
+  if(classe&&classe!==GENERIQUES&&c.rang===0){const fl=talentFlottant(classe);let el=null;
+   if(fl){el=noeud(fl,!a?'modele':'acquis','');el.onclick=()=>{if(!a&&mj)openTalent(catalog.talents.indexOf(fl),renderArbres)};glissable(el,fl);cible(el,{famille:classe,flottant:true})}
+   else if(mj){el=document.createElement('div');el.className='arbre-place';el.setAttribute('role','button');el.tabIndex=0;el.textContent='+';el.title='Ajouter un talent ici';
+    el.onclick=()=>{lienDepuis=null;ajouterDansArbre({famille:classe,flottant:true,type:'mait'})};
+    el.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();el.click()}};cible(el,{famille:classe,flottant:true})}
+   if(el){el.classList.add('arbre-flottant');const haut=((depart?cases.get(depart.id).y:y0)-y0+.5)*L;col.append(el);
+    requestAnimationFrame(()=>{el.style.top=(plan.offsetTop+haut)+'px'})}}
   return col};
  /* Les colonnes : les deux de la classe, ni plus ni moins. Les génériques ont leur propre
     arbre — on l'ouvre par son rouage, dans l'onglet Talents — et n'encombrent plus celui
