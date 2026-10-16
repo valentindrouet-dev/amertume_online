@@ -5216,7 +5216,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 {const page=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),lv=fs.readFileSync('live.js','utf8');
  assert.ok(cb.includes("intervention:{cle:'intervention',nom:'Intervention',type:'reac',"),'v0.839 : le talent Intervention');
  assert.ok(page.includes("const attackSansIntervention=attack;")&&page.includes("const iv=interventionPossible(a,vises);if(iv){demandeIntervention(iv,a,opts);return}")
-  &&page.includes("const minuterie=setTimeout(()=>fini(false),10000);")&&page.includes("if(oui&&alive(g)&&alive(b)){rapprocher(g,b);marqueTalent(g,x.talent,x.code);"),'v0.839 : la pause, le choix, le déplacement');
+  &&page.includes("const minuterie=setTimeout(()=>fini(false),10000);")&&page.includes("if(rapprocher(g,b)){croises=avant;ramasseContacts(g,croises,depart,mapSize(),walls());")&&page.includes("degatsOpportunite(g,[...croises]);render();scheduleSave()}"),'v0.839 : la pause, le choix, le déplacement');
  assert.ok(page.includes("(typeof interventionMarque!=='undefined'&&interventionMarque===a.id))marque=")&&lv.includes("rec.effet==='intervention'&&typeof interventionRecue==='function'"),'v0.839 : le « ! » et la réponse du joueur par la table');}
 /* v0.838 — Gardien : allié visible, la moitié de ses dégâts au contact, Totalité et Deux alliés ; Gardé en vert. */
 {const page=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),cb=fs.readFileSync('combat.js','utf8');
