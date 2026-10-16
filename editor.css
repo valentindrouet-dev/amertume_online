@@ -3041,7 +3041,7 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 .fenetres-debut .choix-intervention{position:relative;left:auto;top:auto;transform:none;border-left-color:#c99a3c}
 .choix-debut-qui{font-weight:700;font-size:13px}
 /* v0.851 : la Cellule à Plasma, au-dessus de la barre d'actions, à droite ; ses dés roses. */
-.map-panel>.cellule-plasma{position:absolute;display:flex;gap:7px;padding:6px 9px;border-radius:14px;
+.barre-actions>.cellule-plasma,.map-panel>.cellule-plasma{position:absolute;display:flex;gap:7px;padding:6px 9px;border-radius:14px;
  background:linear-gradient(#3a1f3dee,#25142aee);border:1px solid #d966d688;box-shadow:0 0 12px #d966d655,inset 0 0 8px #d966d633;z-index:7}
 .cellule-plasma[hidden]{display:none}
 .de-plasma{width:30px;height:30px;border-radius:7px;background:#d966d6;border:2px solid #f7c2f5;box-shadow:0 0 8px #e57ae2aa;position:relative}
@@ -3085,3 +3085,4 @@ body.plasma-en-main .barre-actions button.accepte-plasma{box-shadow:0 0 0 3px #d
 .eclairs-plasma>i:nth-child(3){bottom:2px;right:10px;transform:rotate(160deg);animation-delay:1.05s}
 @keyframes eclair-plasma{0%{opacity:0}8%{opacity:1}16%{opacity:.2}22%{opacity:1}30%,100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.barre-actions button.charge-plasma{animation:none}.eclairs-plasma>i{animation:none;opacity:.8}}
+.board-die.plasma{color:#fff;border-color:#f7c2f5!important;box-shadow:0 0 10px #e57ae2}

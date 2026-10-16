@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.865","d":"2026-10-16","t":"Plasma ajouté et visible, Cellule dans la barre"},
 {"v":"0.864","d":"2026-10-16","t":"Cellule du Mécaniste et talents chargés de Plasma"},
 {"v":"0.863","d":"2026-10-16","t":"Inventions justes et barre dans l'ordre de l'arbre"},
 {"v":"0.862","d":"2026-10-16","t":"Inventions : fin de combat, attaque propre, objet réglable"},
