@@ -652,7 +652,9 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
      y sont déjà, à côté de l'arme, qui reste. */
   if(t.code.cle!=='orbes')survol(b,t.des,t.bonus||0,false,t.logo?[t.logo]:null,orbeux(t)?etatOrbes:'');
   b.onclick=()=>{if(estInerte(b))return;t.agir()};b.reinit=t.reinit;if(t.code.cle==='orbes')boite.prepend(b);else boite.append(b)});
- if(avaitBulle)requestAnimationFrame(rouvreBulleSous)}
+ if(avaitBulle)requestAnimationFrame(rouvreBulleSous);
+ // v0.866 : la Cellule à Plasma suit la barre — un clic sur un token ne redessine que la barre.
+ if(typeof majCellule==='function')majCellule()}
 // Le voile est déjà dans la page dès le premier affichage : la scène de base ne se montre plus avant la partie.
 const cover=document.getElementById('busy-cover')||Object.assign(document.createElement('div'),{id:'busy-cover',textContent:'Chargement de la partie enregistrée…'});document.body.append(cover);
 function dialog(id,title,body){const el=document.createElement('dialog');el.id=id;el.innerHTML='<div class="dialog-head"><h2>'+title+'</h2><button type="button" aria-label="Fermer" data-close>✕</button></div>'+body;document.body.append(el);el.querySelector('[data-close]').onclick=()=>el.close();return el}

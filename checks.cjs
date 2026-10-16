@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.866 — La Cellule suit chaque dessin de la barre d'action. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("if(avaitBulle)requestAnimationFrame(rouvreBulleSous);\n // v0.866")&&fs.readFileSync('editor.js','utf8').includes("if(typeof majCellule==='function')majCellule()}"),'v0.866 : la Cellule suit la barre');
 /* v0.865 — Le Plasma compte même sans le bonus du porteur ; ses dés roses dans la piste ; la Cellule dans la barre. */
 {const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("+bonusReaction(a,ctxT&&ctxT.talent))+plasmaDuCoup(ctxT);")&&page.includes("function prendPlasmaJet(){")&&page.includes("if(c.parentElement!==barre)barre.append(c);"),'v0.865 : Plasma ajouté, montré, Cellule dans la barre');}
 /* v0.864 — La Cellule de tout Mécaniste ; un talent chargé de Plasma, rose et crépitant. */
