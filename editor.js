@@ -3630,6 +3630,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  // Le coût : gardé s'il diffère de celui par défaut, en PA pour une Action, en PM pour un Mouvement.
  {const d=coutParDefaut(t);delete t.coutPA;delete t.coutPM;
   if(d&&f.coutAction&&f.coutAction.value!==''){const n=num(f.coutAction.value,0,9);if(t.type==='mvt'){if(n!==d.pm)t.coutPM=n}else if(n!==d.pa)t.coutPA=n}}
+ if(!avant&&t.effet==='bonus'&&t.chemin)t.ligneAuto=0;
  if(talentIndex===null)catalog.talents.push(t);else catalog.talents[talentIndex]=t;
  // Créé depuis le gros rond flottant : il s'y pose.
  if(!avant&&talentDefauts&&talentDefauts.flottant)placerTalent(t.id,{famille:talentFamily(t),flottant:true});
@@ -3639,7 +3640,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  // Créé depuis une case de l'arbre : la ligne qui y mène part du talent voisin, s'il en a encore une.
  if(!avant&&talentDefauts&&talentDefauts.de){const de=talent(talentDefauts.de);
   if(de&&de!==t&&!liensDe(de).includes(t.id)&&liensDe(de).length<LIENS_MAX)de.liens=[...liensDe(de),t.id]}
- talentDialog.close();renderCatalogPages();render();scheduleSave();
+ talentDialog.close();if(tarifeBonus())renderArbres();renderCatalogPages();render();scheduleSave();
  const rappel=talentApres;talentApres=null;if(rappel)rappel(t)};
 $('delete-talent').onclick=()=>{if(talentIndex===null)return;
  if(talentEdite){const k=catalog.talents.findIndex(x=>x&&x.id===talentEdite);if(k>=0)talentIndex=k}
@@ -5042,7 +5043,22 @@ function limiteArbre(classe){const n=Math.trunc(Number(catalog&&catalog.limitesA
 function coupeArbre(liste,cases,classe){const L=limiteArbre(classe);if(!L)return Infinity;let y=Infinity;
  liste.forEach(de=>liensDe(de).forEach(id=>{const vers=liste.find(x=>x.id===id),p=cases.get(de.id),q=vers&&cases.get(id);
   if(p&&q&&(niveauLien(de,vers)||0)>=L)y=Math.min(y,(p.y+q.y)/2)}));return y}
-function arbreChange(){accordeArbres();noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
+/* v0.843 — Le prix d'un bonus suit la ligne de son talent dans l'arbre, la ligne 1 en haut de sa colonne : Dégâts, Endurance
+   et PV coûtent 100 XP par ligne ; Vie, 100 de plus ; une compétence, 50 où qu'elle soit. Il se calcule quand le bonus naît,
+   quand il passe sur un autre talent, quand son talent change de ligne (« ligneAuto » retient la ligne du dernier calcul) ;
+   entre-temps, le prix réglé à la main reste. Palier n : n fois le prix. */
+function ligneDuBonus(x){const c=lisChemin(x),T=c&&talent(c.de);if(!T)return null;const p=posDe(T);if(!p)return null;
+ const col=colonneDe(talentFamily(T),T.voie||'');const ys=(col&&col.liste||[]).map(posDe).filter(Boolean).map(q=>q.y);
+ return ys.length?p.y-Math.min(...ys)+1:null}
+function prixBonusLigne(x,L){const carac=(paramsTalent(x)||{}).carac;
+ const base=carac==='comp'?50:['dmg','endu','pv'].includes(carac)?100*L:carac==='vie'?100*(L+1):null;if(base===null)return false;
+ const n=Math.max(1,paliersDe(x));x.couts=[1,2,3].map(k=>k<=n?base*k:0);return true}
+function tarifeBonus(){if(view!=='mj')return false;let change=false;
+ (catalog.talents||[]).forEach(x=>{if(!estBonus(x)||!lisChemin(x))return;const L=ligneDuBonus(x);if(!L)return;
+  if(x.ligneAuto===undefined){x.ligneAuto=L;return}
+  if(x.ligneAuto!==L){prixBonusLigne(x,L);x.ligneAuto=L;change=true}});
+ return change}
+function arbreChange(){tarifeBonus();accordeArbres();noteArbres('');renderArbres();renderCatalogPages();render();scheduleSave()}
 /* Ajouter à l'arbre : un talent neuf, ou l'un de ceux qui existent déjà — maîtrises comprises. D'abord
    ceux de la classe retirés de l'arbre, puis les génériques, puis ceux des autres classes. Choisi,
    il vient à la case désignée, relié depuis son voisin, et prend la classe de l'arbre ; celui qui
@@ -5211,7 +5227,7 @@ function gardeDefilement(racine){if(!racine)return ()=>{};
 /* En combat, l'arbre d'un aventurier pris dans le combat ne se change pas : ni talent pris ni talent rendu. Celui qui n'y est pas
    le change, même si d'autres se battent. Le MJ, lui, le peut toujours. */
 function figeEnCombat(a){return view!=='mj'&&aventurierEnCombat(a)}
-function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;queueMicrotask(gardeDefilement(arbresDialog));corps.replaceChildren();requestAnimationFrame(placeFlechesArbres);
+function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;if(view==='mj'&&tarifeBonus())scheduleSave();queueMicrotask(gardeDefilement(arbresDialog));corps.replaceChildren();requestAnimationFrame(placeFlechesArbres);
  // Un nœud redessiné emporte sa bulle : elle ne reste pas accrochée à l'ancien.
  bulleOrpheline();
  if(arbresActeur)arbresActeur=acteurCourant(arbresActeur);
@@ -5686,7 +5702,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    g.addEventListener('drop',e=>{if(!bonusTenu)return;const r=cible(e);if(!r)return;e.preventDefault();e.stopPropagation();
     const [,T]=r,x=bonusTenu;bonusTenu=null;const ORDRE=['so','s','se','o','e','no','n','ne'],d=ORDRE.find(k=>!petitsDe(T,k).length);
     const k=structuredClone(x);k.id=crypto.randomUUID();k.famille=talentFamily(T);k.voie=T.voie||'';delete k.pos;
-    k.chemin=d?{de:T.id,dir:d,rang:1}:{de:T.id,dir:'so',rang:petitsDe(T,'so').length+1};
+    k.chemin=d?{de:T.id,dir:d,rang:1}:{de:T.id,dir:'so',rang:petitsDe(T,'so').length+1};k.ligneAuto=0;
     catalog.talents.push(k);arbreChange()},true)}
   const tous=colonnesArbre(classe).flatMap(c=>c.liste).filter(t=>!estVide(t));
   const vuT=tous.find(t=>t.id===arbreDetailId)||tous.find(t=>t.flottant)||tous[0];if(vuT)remplitDetail(panneau,vuT)}

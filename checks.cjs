@@ -1698,7 +1698,7 @@ assert.ok(page.includes('#pv-layer .pv{position:absolute;transform:translate(-50
    ne pose plus de bandeau en travers de la carte. */
 assert.ok(src.includes('let arbresActeur=null,arbresClasse=null,arbreGlisse=null,arbresVueJoueur=false;')
  &&src.includes("function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arbresActeur=null;arbresClasse=famille||GENERIQUES;")
- &&src.includes("function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;queueMicrotask(gardeDefilement(arbresDialog));corps.replaceChildren();")
+ &&src.includes("function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&&!arbresClasse))return;if(view==='mj'&&tarifeBonus())scheduleSave();queueMicrotask(gardeDefilement(arbresDialog));corps.replaceChildren();")
  &&src.includes("const classe=a?classeDuHeros(a):arbresClasse;")&&src.includes("const porte=t=>!!a&&a.talents.includes(t.id);")
  &&src.includes("el.onclick=()=>{if(!a){if(mj)openTalent(catalog.talents.indexOf(t),renderArbres);return}")
  &&src.includes("const el=noeud(t,!a?'modele':acquis?'acquis':verrou?'verrou':'dispo',verrou);")
@@ -3132,7 +3132,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
   assert.equal(ctxA.placerTalent('a2',{famille:'Gardien',voie:'Rempart',chemin:{de:'s',dir:'o',rang:2}}),true);
   assert.deepEqual(['a2','a3','b1'].map(ch),['s.o.2','s.o.1','s.o.3'],'sur son chemin, elle change de rang sans rien perdre');
   L.splice(L.length-4,4)}
- assert.ok(!src.includes("ligne('↳ Requiert : '+socle)")&&src.includes("function arbreChange(){accordeArbres();")
+ assert.ok(!src.includes("ligne('↳ Requiert : '+socle)")&&src.includes("function arbreChange(){tarifeBonus();accordeArbres();")
   &&!src.includes("niv.textContent=t.name&&t.name!==libelleBonus(p,true)"),'plus de Requiert, plus de doublon sous un bonus');
  assert.ok(css.includes('.arbre-noeud.t-act:not(.bonus) .arbre-rond{background:#cfdcea}')&&css.includes('.arbre-noeud.t-ame:not(.bonus) .arbre-rond{background:#d3e5cd}'),'le rond a le fond de sa nature');}
 /* v0.330 — Le guide des prix, le prix suggéré ; les ressources sans effet ni rareté choisie ; le
@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.843 — Prix des bonus par ligne de l'arbre : 100 par ligne pour Dégâts, Endurance et PV, 100 de plus pour Vie, 50 pour une compétence. */
+{const ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ed.includes("const base=carac==='comp'?50:['dmg','endu','pv'].includes(carac)?100*L:carac==='vie'?100*(L+1):null;")&&ed.includes("if(x.ligneAuto!==L){prixBonusLigne(x,L);x.ligneAuto=L;change=true}"),'v0.843 : le barème par ligne, recalculé au changement de ligne');
+ assert.ok(ed.includes("if(!avant&&t.effet==='bonus'&&t.chemin)t.ligneAuto=0;")&&ed.includes("rang:petitsDe(T,'so').length+1};k.ligneAuto=0;"),'v0.843 : un bonus créé ou copié prend le prix de sa ligne');}
 /* v0.841 — Les Passifs en rond moyen dans l'arbre. */
 {const css=fs.readFileSync('editor.css','utf8');assert.ok(css.includes('.arbre-plan>.arbre-noeud.t-pass:not(.petit):not(.bonus) .arbre-rond{width:70px;height:70px}'),'v0.841 : les Passifs en rond moyen');}
 /* v0.840 — Éditeur d'arbre : un bonus glissé sur un talent s'y copie ; améliorations et bonus se réordonnent de chaque carte ; la classe éditée en tête des mécaniques. */
