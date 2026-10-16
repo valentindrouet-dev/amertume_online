@@ -345,6 +345,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   ['coutPA','coutPM'].forEach(k=>{if(!(Number.isInteger(t[k])&&t[k]>=0&&t[k]<=9))delete t[k]});
   if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;
   if(typeof t.debutCombat!=='boolean')delete t.debutCombat;
+  if(t.plasma!==true)delete t.plasma;
   /* Orbes de feu écrit « toujours » avant que le réglage « Quand » n'existe : il le prend, une
      fois ; le MJ le change ensuite dans l'éditeur. */
   if(t.effet==='orbesfeu'&&!(t.params&&typeof t.params==='object'&&'quand' in t.params)&&/toujours/i.test(String(t.effects||'')))
@@ -3017,7 +3018,7 @@ function renderBiblioObjets(){const boite=$('biblio-objets');if(!boite)return;
 const CLASSES_EFFETS_DEVINEES={chargeregain:'Destructeur',murelem:'Mystique',murdegats:'Mystique',murzone:'Mystique',mitraille:'Mystique',siphon:'Mystique',siphonplus:'Mystique',siphonsoin:'Mystique',ricochet:'Mystique',ricochetplus:'Mystique',ricochetcritique:'Mystique',thesaurisation:'Mystique',thesaurisationfois:'Mystique',thesaurisationsoin:'Mystique',mitraillecibles:'Mystique',mitrailleorbes:'Mystique',orbes:'Mystique',orbescritiques:'Mystique',orbesinratables:'Mystique',orbes2des:'Mystique',orbesrouges:'Mystique',orbescritun:'Mystique',orbescrittous:'Mystique',delugegratuit:'Mystique',implosionmouvement:'Mystique',implosionorbe:'Mystique',contagion:'Mystique',contagioncontact:'Mystique',contagionvue:'Mystique',ignoredegats:'Mystique',soinetat:'Mystique',soinetatdouble:'Mystique',orbesfeu:'Mystique',corpselem:'Mystique',ignition:'Mystique',deluge:'Mystique',eruption:'Mystique',eruptiondegats:'Mystique',eruptiondouble:'Mystique',implosion:'Mystique',degatselem:'Mystique',
  gardien:'Gardien',rempart:'Gardien',boutoir:'Gardien',boutoirtous:'Gardien',boutoirimpact:'Gardien',coupbouclier:'Gardien',coupbouclierplus:'Gardien',coupboucliernoir:'Gardien',provocation:'Gardien',provocattaque:'Gardien',provocsol:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',enragement:'Destructeur',enragementplus:'Destructeur',charge:'Destructeur',chargeelan:'Destructeur',chargerepousse:'Destructeur',chargerepoussedist:'Destructeur',chargeimpact:'Destructeur',lamevent:'Ombrelame',rebond:'Ombrelame',revanche:'Ombrelame',traction:'Ombrelame',rapide:'Ombrelame',larcin:'Ombrelame',tenailles:'Ombrelame',deception:'Ombrelame',lameventelem:'Ombrelame',lameventcibles:'Ombrelame',lameventdouble:'Ombrelame',lameventpoison:'Ombrelame',lameventprofonde:'Ombrelame',lameventfatale:'Ombrelame',impulsion:'Ombrelame',impulsiontour:'Ombrelame',impulsionallie:'Ombrelame',insaisispoison:'Ombrelame',insaisisadieu:'Ombrelame',insaisisombre:'Ombrelame',insaisisdegats:'Ombrelame',coursemortelle:'Ombrelame',coursechoix:'Ombrelame',courseombrelame:'Ombrelame',bondissement:'Ombrelame',bondissementlibre:'Ombrelame',bondissementfrappe:'Ombrelame',decoupe:'Ombrelame',decoupedegats:'Ombrelame',decoupeplus:'Ombrelame',lameempoisonnee:'Ombrelame',lamepoisonplus:'Ombrelame',lamepoisoncontact:'Ombrelame'};
 // Frappe Furieuse et la maîtrise Rage sont au Destructeur.
-Object.assign(CLASSES_EFFETS_DEVINEES,{vengeance:'Destructeur',intervention:'Gardien',gardientotal:'Gardien',gardiendeux:'Gardien',orbesfeutoujours:'Mystique',doubleattaquetourbillon:'Destructeur',frappefurieusemortelle:'Destructeur',frappefurieuse:'Destructeur',rage:'Destructeur',ragecritique:'Destructeur',ragetue:'Destructeur',ragedepart:'Destructeur'});
+Object.assign(CLASSES_EFFETS_DEVINEES,{cellule:'Mécaniste',grandecellule:'Mécaniste',condensateur:'Mécaniste',valvesecours:'Mécaniste',vengeance:'Destructeur',intervention:'Gardien',gardientotal:'Gardien',gardiendeux:'Gardien',orbesfeutoujours:'Mystique',doubleattaquetourbillon:'Destructeur',frappefurieusemortelle:'Destructeur',frappefurieuse:'Destructeur',rage:'Destructeur',ragecritique:'Destructeur',ragetue:'Destructeur',ragedepart:'Destructeur'});
 const ADVERSAIRES='Adversaires';
 function classeEffet(c){const choisie=(catalog.classesEffets||{})[c.cle];if(choisie)return choisie;
  const devinee=CLASSES_EFFETS_DEVINEES[c.cle];if(devinee&&(catalog.classes||[]).some(k=>k&&k.name===devinee))return devinee;
@@ -3489,6 +3490,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<label class="field-check" id="remplace-texte"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceTexte" '+(t.remplaceTexte===true?'checked':'')+'>Remplace le texte du talent</label>'
   +'<label class="field-check" id="remplace-precedente"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplacePrecedente" '+(t.remplacePrecedente===true?'checked':'')+'>Remplace le texte de l’amélioration précédente</label>'
   +'<label class="field-check" id="debut-combat"'+((t.type||'act')==='ame'?' hidden':'')+'><input type="checkbox" name="debutCombat" '+(talentDebut(t)?'checked':'')+'>Début de combat</label>'
+  // v0.851 : le talent reçoit les dés de Plasma glissés sur son bouton.
+  +'<label class="field-check"><input type="checkbox" name="plasma" '+(t.plasma===true?'checked':'')+'>Accepte le Plasma</label>'
   +'<label class="field-check" id="pour-attaque"'+(['pass','ame'].includes(t.type||'act')?'':' hidden')+'><input type="checkbox" name="pourAttaque" '+(ameliorAttaque({...t,type:t.type||'act'})?'checked':'')+'>Améliore l’Attaque</label></section>'
   // Le bonus : une caractéristique, une valeur — et la compétence, si c'est là qu'il va.
   +'<section class="talent-boite b-bonus b-seul"><h2 class="sous-titre">Le bonus</h2><div class="edit-grid">'
@@ -3603,6 +3606,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  if(t.type==='ame'&&f.remplacePrecedente)t.remplacePrecedente=f.remplacePrecedente.checked;else delete t.remplacePrecedente;
  if(['pass','ame'].includes(t.type)&&f.pourAttaque&&t.effet!=='bonus')t.pourAttaque=f.pourAttaque.checked;else delete t.pourAttaque;
  if(t.type!=='ame'&&f.debutCombat&&t.effet!=='bonus')t.debutCombat=f.debutCombat.checked;else delete t.debutCombat;
+ if(f.plasma&&f.plasma.checked&&t.effet!=='bonus')t.plasma=true;else delete t.plasma;
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p_')}):{};
  /* Les paliers : leur coût ; pour le 2 et le 3, leur texte s'il en a un, leurs réglages s'ils
     diffèrent de ceux d'en dessous — sinon ils en héritent, et suivront s'ils changent. */

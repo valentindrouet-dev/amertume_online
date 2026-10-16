@@ -3808,7 +3808,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
  const o3=C18.objetForge({id:'h',base:'ep',affixes:['r','d','e']},[ep],A);assert.deepEqual(o3.forgeEffets,{reaction:9,domination:{'Au sol':3},epines:{Poison:2}});
  assert.deepEqual(C18.affixesDe(o3,A).map(x=>[x.id,x.valeur,x.variable]),[['r',9,false],['d',3,false],['e',2,false]]);
  assert.ok(page.includes("if(partis&&toucheTombe)apresTouche(a);")&&page.includes("if(!r.failed&&r.hit)toucheTombe=true;")&&page.includes("bonus+=dominationContre(a,b);")
-  &&page.includes("+bonusReaction(a,ctxT&&ctxT.talent);")&&page.includes("const bonusOrbe=bonusOrbes(a)+bonusReaction(a,talent);")&&page.includes("Object.entries(effetsForge(o).epines).forEach(([e,n])=>{")
+  &&page.includes("+bonusReaction(a,ctxT&&ctxT.talent)+plasmaDuCoup(ctxT);")&&page.includes("const bonusOrbe=bonusOrbes(a)+bonusReaction(a,talent);")&&page.includes("Object.entries(effetsForge(o).epines).forEach(([e,n])=>{")
   &&ed.includes("if(!c.semisForge.includes('affixes-combat')){")&&ed.includes("sel('Valeur','mode',v.variable?'echelle':'fixe',[['fixe','Fixe'],['echelle','Selon la rareté']])"),'affixes de combat câblés');}
 /* v0.689 — La ligne d'un affixe de classe : losange, talent à sa couleur, classe en gras, « Vos Orbes infligent Poison 1. » */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
@@ -5192,6 +5192,11 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.851 — Le Plasma : Cellule rechargée chaque tour, dés glissés sur les talents qui l'acceptent, d6 ajoutés aux dégâts, Incident sur 1. */
+{const page=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(cb.includes("cellule:{cle:'cellule',nom:'Cellule à Plasma',type:'mait',")&&cb.includes("grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',"),'v0.851 : la Cellule et ses améliorations');
+ assert.ok(page.includes("incident=des.some(v=>v===1);")&&page.includes("+bonusReaction(a,ctxT&&ctxT.talent)+plasmaDuCoup(ctxT);")&&page.includes("ctx.plasma=lancePlasma(a,talent,code);")&&page.includes("a.talentsJoues=[];rechargeCellule(a);"),'v0.851 : lancer, ajouter, recharger');
+ assert.ok(ed.includes('name=\"plasma\"')&&ed.includes("if(f.plasma&&f.plasma.checked&&t.effet!=='bonus')t.plasma=true;else delete t.plasma;"),'v0.851 : la case Accepte le Plasma');}
 /* v0.850 — Le Mécaniste : classe rose-violet, 12 PV, Savoir, Perception et Technique ; sa planche d'icônes. */
 {const ed=fs.readFileSync('editor.js','utf8'),cb=fs.readFileSync('combat.js','utf8');
  assert.ok(ed.includes("if(!c.semisForge.includes('classe-mecaniste')){")&&cb.includes("'Mécaniste':['Savoir','Perception','Technique']")&&fs.existsSync('img/planches/MECANISTE.webp'),'v0.850 : la classe Mécaniste et sa planche');}
