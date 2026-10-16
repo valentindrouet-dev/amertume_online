@@ -2793,7 +2793,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const ph=n=>C.phraseTalent('brise',{etat:'Feu',perte:2},n);
  assert.ok(!ph(1).includes('retirent')&&ph(2).includes('<b>retirent 2 DEF</b>')&&!ph(2).includes('double')&&ph(3).includes('<b>le double de dégâts</b>'),'la phrase suit le palier');
  assert.ok(page.includes("const brisee=brise.perte&&!r.failed?brise.perte:0;if(brisee)b.defBrisee=(Math.trunc(Number(b.defBrisee))||0)+brisee;")
-  &&page.includes("def,solidite:solide,double,total},suite);")&&page.includes("if(detail.double)plus('× 2 — Brise','double');")
+  &&page.includes("def,solidite:solide,double,total},suite,talentDuCoup?talentDuCoup.id:false);")&&page.includes("if(detail.double)plus('× 2 — Brise','double');")
   &&vivant.includes("solidite:!!detail.solidite,double:!!detail.double,total:detail.total||0}"),'Brise à la table : doublée, la DEF retirée, dite au journal, en direct');
  assert.ok(src.includes("g.className='paliers-bulle liste';")
   &&fs.readFileSync('editor.css','utf8').includes('.paliers-bulle.liste .palier-num{')&&!fs.readFileSync('editor.css','utf8').includes('.paliers-bulle.liste .palier-col'),'v0.324 : les paliers d’un talent appris en liste, I, II, III');}
@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.833 — Frappe Furieuse : son dé Mortel dans sa bulle ; au journal, le logo du talent qui frappe et sa bulle au survol ; plus de ligne de Rage. */
+{const page=fs.readFileSync('index.html','utf8');
+ assert.ok(page.includes("function logoDuCoup(a){")&&page.includes("talentDuCoup=ctxT&&ctxT.talent||null;")&&page.includes("function bulleTalentJournal(im,id){")
+  &&page.includes("if(infligeEtat(a,'Rage')===true)floatNumber(a,'+ Rage','gain');")&&page.includes("return {...d,black:(Number(d.black)||0)+1}"),'Frappe Furieuse au journal');}
 /* v0.832 — Les bonus en cartouches courts, le prix centré dessous. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes(".arbres-v2 .arbres-detail .detail-bonus .detail-am-nom{flex-direction:column;"),'bonus courts');
 /* v0.831 — Destructeur : Tourbillon, amélioration de Double attaque ; Mortelle, amélioration de Frappe Furieuse (+1 dé Mortel). */
