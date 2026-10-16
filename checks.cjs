@@ -2251,7 +2251,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.ok(page.includes("const solide=porteEffet(talentsCodes(b),'solidite');")
   &&page.includes("const defCible=hasState(b,'Au sol')||briseO.ignore?0:defOf(b),solide=porteEffet(talentsCodes(b),'solidite');")
   &&page.includes("const passe=d=>l.def===undefined||l.def===null||d[1]==='plasma'||d[1]>6||passeDef(d,l.def,!!l.solidite);"),'attaque et orbe demandent Solidité à la cible, et la piste le sait');
- assert.ok(page.includes("poseJet({dice:r.dice,origine:dice.length,faille:r.failleFace,def,bonus:r.failed||blocked||!r.hit?0:Math.max(0,bonus-(pj?pj.somme:0)),solidite:solide,...(pj?{plasma:pj.des}:{})},a,b)")
+ assert.ok(page.includes("poseJet({dice:r.dice,origine:dice.length,faille:r.failleFace,def,bonus:r.failed||blocked||!r.hit?0:bonus,solidite:solide,...(pj?{plasma:pj.des}:{})},a,b)")
   &&page.includes("im.className='rate';im.src=imgUrl('DEF VIDE.png');")&&page.includes(".board-die .rate{")&&page.includes("if(calme){marque();return}")
   &&!page.includes('board-def')&&!page.includes('reduction'),'la piste barre d’un écu vide les dés qui ne passent pas la DEF, plus de « − DEF »');
  assert.ok(page.includes("const arrete=!barre&&defJ!==null&&!passeDef([v,c],defJ,!!detail.solidite);")&&!page.includes('.j-plus.def{')
@@ -3808,7 +3808,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
  const o3=C18.objetForge({id:'h',base:'ep',affixes:['r','d','e']},[ep],A);assert.deepEqual(o3.forgeEffets,{reaction:9,domination:{'Au sol':3},epines:{Poison:2}});
  assert.deepEqual(C18.affixesDe(o3,A).map(x=>[x.id,x.valeur,x.variable]),[['r',9,false],['d',3,false],['e',2,false]]);
  assert.ok(page.includes("if(partis&&toucheTombe)apresTouche(a);")&&page.includes("if(!r.failed&&r.hit)toucheTombe=true;")&&page.includes("bonus+=dominationContre(a,b);")
-  &&page.includes("+bonusReaction(a,ctxT&&ctxT.talent))+plasmaDuCoup(ctxT);")&&page.includes("const bonusOrbe=bonusOrbes(a)+bonusReaction(a,talent);")&&page.includes("Object.entries(effetsForge(o).epines).forEach(([e,n])=>{")
+  &&page.includes("+bonusReaction(a,ctxT&&ctxT.talent));")&&page.includes("const bonusOrbe=bonusOrbes(a)+bonusReaction(a,talent);")&&page.includes("Object.entries(effetsForge(o).epines).forEach(([e,n])=>{")
   &&ed.includes("if(!c.semisForge.includes('affixes-combat')){")&&ed.includes("sel('Valeur','mode',v.variable?'echelle':'fixe',[['fixe','Fixe'],['echelle','Selon la rareté']])"),'affixes de combat câblés');}
 /* v0.689 — La ligne d'un affixe de classe : losange, talent à sa couleur, classe en gras, « Vos Orbes infligent Poison 1. » */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.871 — Le Plasma inflige toujours ses dégâts, comme un dé Mortel ; la pastille des dés posés existe bel et bien. */
+{const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("let total=double?r.damage*2:r.damage;if(plasmaSomme&&!r.failed)total+=plasmaSomme;")&&page.includes("rayonne.\n  const p=document.createElement('span');p.className='plasma-pose';"),'v0.871 : Plasma toujours, pastille');}
 /* v0.870 — Le dé de Plasma de la Cellule : survol et bulle. */
 assert.ok(fs.readFileSync('index.html','utf8').includes("n.textContent='Dé de Plasma'")&&fs.readFileSync('editor.css','utf8').includes('.de-plasma:hover{transform:scale(1.18)'),'v0.870 : bulle du dé de Plasma');
 /* v0.869 — Les fenêtres de la Table restent sur la Table. */
@@ -5203,7 +5205,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("pl.className='detail-pla
 /* v0.866 — La Cellule suit chaque dessin de la barre d'action. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("if(avaitBulle)requestAnimationFrame(rouvreBulleSous);\n // v0.866")&&fs.readFileSync('editor.js','utf8').includes("if(typeof majCellule==='function')majCellule()}"),'v0.866 : la Cellule suit la barre');
 /* v0.865 — Le Plasma compte même sans le bonus du porteur ; ses dés roses dans la piste ; la Cellule dans la barre. */
-{const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("+bonusReaction(a,ctxT&&ctxT.talent))+plasmaDuCoup(ctxT);")&&page.includes("function prendPlasmaJet(){")&&page.includes("if(c.parentElement!==barre)barre.append(c);"),'v0.865 : Plasma ajouté, montré, Cellule dans la barre');}
+{const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("+bonusReaction(a,ctxT&&ctxT.talent));")&&page.includes("function prendPlasmaJet(){")&&page.includes("if(c.parentElement!==barre)barre.append(c);"),'v0.865 : Plasma ajouté, montré, Cellule dans la barre');}
 /* v0.864 — La Cellule de tout Mécaniste ; un talent chargé de Plasma, rose et crépitant. */
 {const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("cleClasse(a.role)===cleClasse('Mécaniste')))return 0;")&&page.includes("b.classList.toggle('charge-plasma',n>0);"),'v0.864 : Cellule du Mécaniste et bouton chargé');}
 /* v0.863 — Dés de l'Invention sur son bouton, Foudre portée par l'objet, bulle rose, barre dans l'ordre de l'arbre. */
@@ -5241,7 +5243,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("rose:'#b04a8a',plasma:'#
 /* v0.851 — Le Plasma : Cellule rechargée chaque tour, dés glissés sur les talents qui l'acceptent, d6 ajoutés aux dégâts, Incident sur 1. */
 {const page=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(cb.includes("cellule:{cle:'cellule',nom:'Cellule à Plasma',type:'mait',")&&cb.includes("grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',"),'v0.851 : la Cellule et ses améliorations');
- assert.ok(page.includes("incident=des.some(v=>v===1)&&!sansIncident(a,code);")&&page.includes("+bonusReaction(a,ctxT&&ctxT.talent))+plasmaDuCoup(ctxT);")&&page.includes("ctx.plasma=lancePlasma(a,talent,code);")&&page.includes("a.talentsJoues=[];rechargeCellule(a);"),'v0.851 : lancer, ajouter, recharger');
+ assert.ok(page.includes("incident=des.some(v=>v===1)&&!sansIncident(a,code);")&&page.includes("+bonusReaction(a,ctxT&&ctxT.talent));")&&page.includes("ctx.plasma=lancePlasma(a,talent,code);")&&page.includes("a.talentsJoues=[];rechargeCellule(a);"),'v0.851 : lancer, ajouter, recharger');
  assert.ok(ed.includes('name=\"plasma\"')&&ed.includes("if(f.plasma&&f.plasma.checked&&t.effet!=='bonus')t.plasma=true;else delete t.plasma;"),'v0.851 : la case Accepte le Plasma');}
 /* v0.850 — Le Mécaniste : classe rose-violet, 12 PV, Savoir, Perception et Technique ; sa planche d'icônes. */
 {const ed=fs.readFileSync('editor.js','utf8'),cb=fs.readFileSync('combat.js','utf8');
