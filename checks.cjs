@@ -5097,7 +5097,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 /* v0.537 — Stats de Combat : chaque combattant compte ses chiffres là où le geste a lieu, ils voyagent avec lui ; la fin
    du combat les fige dans sa ligne du journal, que « Stats de Combat » ouvre chez chacun. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),vivant=fs.readFileSync('live.js','utf8'),ia=fs.readFileSync('ia.js','utf8');
- assert.ok(page.includes('function encaisse(a,n,de){')&&page.includes('compteDegats(de===undefined?auteurCoup:de,a,perdu>0?Math.max(perdu,Math.trunc(n)):0);')&&page.includes("compteDegats(a,b,lost>0?Math.max(lost,damage):0);")
+ assert.ok(page.includes('function encaisse(a,n,de,marque){')&&page.includes('compteDegats(de===undefined?auteurCoup:de,a,perdu>0?Math.max(perdu,Math.trunc(n)):0);')&&page.includes("compteDegats(a,b,lost>0?Math.max(lost,damage):0);")
   &&page.includes("auteurCoup=a;queueMicrotask(()=>{auteurCoup=null});ajouteBilan(a,'coups',1);")&&page.includes("ajouteBilan(a,'crit',1)")&&page.includes("applyHeal=function(a,m){const g=soinSansBilan(a,m);if(g>0)ajouteBilan(a,'soin',g);return g}"),'les compteurs de dégâts, coups, critiques et soins');
  assert.ok((page.match(/compteDistance\(/g)||[]).length>=7&&ia.includes("compteDistance(a,depart);if(typeof passeMurs==='function')passeMurs(a,[depart,{x:a.x,y:a.y}]);afterMove(a);"),'la distance, là où un mouvement connaît son départ');
  assert.ok(page.includes('bilan:r.detail&&r.detail.bilan||undefined'),'le bilan figé au journal, rejoué');
@@ -5192,6 +5192,11 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.837 — Journal : icône des dégâts, états et poussée sur la ligne du coup, opportunité à l'icône des dégâts et ⚠ sur la carte ; survol fin et rougeoyant. */
+{const page=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(page.includes("function fondsAuCoup(j,text){")&&page.includes("const fondu=meta&&meta.ton==='talent'?fondsAuCoup(j,String(text)):null;")&&page.includes("li._ajouts.push('le repousse'+(m[4]||''))"),'v0.837 : la poussée rejoint la ligne du coup');
+ assert.ok(page.includes("if(logo==='*degats'){const im=typeof iconeDegats==='function'?iconeDegats():null;")&&page.includes("encaisse(a,n,e,' ⚠');\n  logAttaque(e,a,'*degats',"),'v0.837 : opportunité à l’icône des dégâts, ⚠ sur la carte');
+ assert.ok(page.includes("base.split('Dégâts').forEach(")&&css.includes('#map-view .token.vise-survol{box-shadow:0 0 0 1.5px #ff7a4ad9'),'v0.837 : icône des dégâts au journal, survol rougeoyant');}
 /* v0.836 — Bonus du panneau en petits ronds teintés, prix à cheval, bulle au survol. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  if(!ed.includes("c.classList.add('bonus-rond-panneau')")||!ed.includes("rond.className='rond-bonus'")||!ed.includes("surveille(c,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+carac"))throw new Error('v0.836 : bonus en petits ronds absents');

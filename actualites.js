@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.837","d":"2026-10-16","t":"Journal des dégâts, poussée et opportunité"},
 {"v":"0.836","d":"2026-10-16","t":"Bonus en petits ronds"},
 {"v":"0.835","d":"2026-10-16","t":"Cibles en surbrillance au survol"},
 {"v":"0.834","d":"2026-10-16","t":"Lignes entre tous les talents"},

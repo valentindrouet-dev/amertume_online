@@ -2999,8 +2999,8 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 .arbres-v2 .arbres-detail .detail-bonus .detail-am-nom .detail-prix{align-self:center}
 .arbres-v2 .arbres-detail .detail-bonus .detail-oter{position:absolute;top:2px;right:2px}
 /* v0.835 : la cible d'une action survolée, sur la carte : un halo doré qui palpite. */
-#map-view .token.vise-survol{box-shadow:0 0 0 3px #fff6d8,0 0 0 6px #f2b632,0 0 22px 10px #f2c14ecc!important;animation:vise-survol 1s ease-in-out infinite;z-index:6}
-@keyframes vise-survol{50%{box-shadow:0 0 0 3px #fff6d8,0 0 0 7px #f2b632,0 0 30px 14px #f2c14ee6}}
+#map-view .token.vise-survol{box-shadow:0 0 0 1.5px #ff7a4ad9,0 0 8px 2px #e2463c8c,0 0 16px 5px #e2463c40!important;animation:vise-survol 1.4s ease-in-out infinite;z-index:6}
+@keyframes vise-survol{50%{box-shadow:0 0 0 1.5px #ff9a5ae6,0 0 11px 3px #e2463cb3,0 0 22px 8px #e2463c59}}
 @media (prefers-reduced-motion:reduce){#map-view .token.vise-survol{animation:none}}
 /* v0.836 : les bonus en petits ronds — fond pâle à la couleur de leur caractéristique, son logo seul, le prix à cheval sur le bas. */
 .arbres-v2 .arbres-detail .detail-bonus-grille{grid-template-columns:repeat(auto-fill,minmax(62px,max-content));column-gap:24px;row-gap:16px;align-items:start}
@@ -3017,3 +3017,6 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 .arbres-v2 .arbres-detail .bonus-rond-panneau.rendable,.arbres-v2 .arbres-detail .bonus-rond-panneau.editable{cursor:pointer}
 .arbres-v2 .arbres-detail .bonus-rond-panneau .detail-oter{position:absolute;top:-6px;right:-6px;width:18px;height:18px;padding:0;border-radius:50%;background:var(--panel);font-size:10px;line-height:18px}
 .arbres-v2 .arbres-detail .detail-bonus.bonus-rond-panneau.suite::before{left:-21px;top:28px}
+/* v0.837 : au journal, l'icône des dégâts à la place du mot, à la hauteur du texte. */
+#journal .j-degats .j-ico-degats,#journal .j-logo-degats,.bulle-detail-degats .total .dmg-ico{width:1.15em;height:1.15em;vertical-align:-.22em;margin-left:.1em}
+#journal .j-logo-degats{width:1.35em;height:1.35em;vertical-align:-.3em}
