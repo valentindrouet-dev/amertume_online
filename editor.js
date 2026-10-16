@@ -583,7 +583,12 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
     couleur de l'action ; le nom et ce qu'il fait dans la bulle, au survol. */
  // Les Orbes mystiques, une maîtrise, prennent la grande ligne, tout à gauche.
  const gros=a&&typeof boutonsTalents==='function'?boutonsTalents(a).filter(b=>b.rangee!=='aucune'&&(b.talent.type!=='mait'||b.code.cle==='orbes')):[];
- const talents=[...gros.filter(b=>b.rangee==='attaques'),...gros.filter(b=>b.rangee==='reactions')];
+ /* v0.863 : les talents dans l'ordre de leur arbre — colonne, puis ligne, puis de gauche à droite ; ceux hors de l'arbre ensuite.
+    L'attaque reste tout à gauche, les réactions après les actions. */
+ const ordreArbre=b=>{const t=b.talent,p=t&&typeof posDe==='function'?posDe(t):null;if(!p)return [1,0,0,0];
+  const voies=(catalog.voies||{})[talentFamily(t)]||[];return [0,Math.max(0,voies.indexOf(t.voie||'')),p.y,p.x]};
+ const parArbre=l=>l.map((b,i)=>[b,ordreArbre(b),i]).sort((u,v)=>{for(let k=0;k<4;k++)if(u[1][k]!==v[1][k])return u[1][k]-v[1][k];return u[2]-v[2]}).map(x=>x[0]);
+ const talents=[...parArbre(gros.filter(b=>b.rangee==='attaques')),...parArbre(gros.filter(b=>b.rangee==='reactions'))];
  const bonusDe=at=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a)+(typeof rageContact==='function'?rageContact(a,at.range):0);
  const retenu=Math.trunc(a&&a.activeAttack)||0,actuelle=liste.length?liste[retenu<liste.length?retenu:0]:null;
  // Un adversaire qu'on n'a pas analysé garde ses dés pour lui, chez les joueurs.
@@ -1740,7 +1745,8 @@ function ligneAffixeClasse(x){const p=document.createElement('p');p.className='g
  const teinte=TEINTES_TALENTS[(t&&t.type)||(TALENTS_CODES.orbes||{}).type||'act'];
  p.append(los,b(nom,teinte),' (',b(x.classe),') : Vos ',b(nom,teinte),' infligent ',b(x.etat+' '+x.valeur,TEINTE_ETAT_MOT[x.etat]),'.');return p}
 function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement('div');d.className='gear-detail large k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
- const titre=document.createElement('p');titre.className='gear-nom';titre.textContent=o.name;d.append(titre);
+ if(o.invention)d.classList.add('gear-invention');
+ const titre=document.createElement('p');titre.className='gear-nom';avecTirets(titre,o.name);d.append(titre);
  const ligne=(texte,classe)=>{if(!texte)return;const p=document.createElement('p');if(classe)p.className=classe;p.textContent=texte;d.append(p)};
  // Ce que la pièce confère, une ligne par bonus ; sa rareté se lit à sa couleur.
  /* Une pièce forgée : les affixes que rien d'autre ne montre. Bonus, dés, état et lumière se lisent déjà dans leurs lignes,
@@ -6693,7 +6699,7 @@ function openModeleInvention(m){const o=modeleInventionActuel(m);if(!o)return;op
 function normaliseModelesInventions(o){const out={};if(!o||typeof o!=='object'||Array.isArray(o))return out;
  Object.entries(o).slice(0,20).forEach(([k,v])=>{if(!/^[a-z]{2,30}$/.test(k)||!v||typeof v!=='object')return;
   out[k]={name:String(v.name||'').slice(0,60)||'Invention',category:'weapon',hands:Number(v.hands)===1?1:2,ranged:v.ranged===true,dice:v.dice&&typeof v.dice==='object'?v.dice:{},
-   ...(typeof v.etat==='string'&&v.etat?{etat:v.etat.slice(0,30)}:{}),bonus:normaliseBonusEquip(v.bonus),...(v.sansBonusDegats===true?{sansBonusDegats:true}:{}),
+   ...(typeof v.etat==='string'?{etat:v.etat.slice(0,30)}:{}),bonus:normaliseBonusEquip(v.bonus),...(v.sansBonusDegats===true?{sansBonusDegats:true}:{}),
    ...(typeof v.logo==='string'&&v.logo?{logo:v.logo.slice(0,200)}:{}),...(typeof v.notes==='string'&&v.notes?{notes:v.notes.slice(0,400)}:{})}});return out}
 $('item-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  if(itemModeleInvention){const m=itemModeleInvention,ff=$('item-form').elements,a=itemDepuisForm({...itemDraft});a.sansBonusDegats=!(ff.inventionBonus&&ff.inventionBonus.checked);

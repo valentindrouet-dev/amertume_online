@@ -3073,3 +3073,5 @@ body.plasma-en-main .barre-actions button.accepte-plasma{box-shadow:0 0 0 3px #d
 /* v0.860 : « Incident » partout en italique, dans son rouge ; sur la carte aussi. */
 .mot-incident-txt{font-style:italic;color:#b03a48!important;font-weight:700}
 .floater.floater-incident{font-style:italic;color:#e0566a!important}
+/* v0.863 : la bulle d'une Invention, au rose pâle du Plasma. */
+.gear-detail.gear-invention{background:linear-gradient(#fbe9fa,#f3d2f1)!important;border-color:#d58ad3!important}

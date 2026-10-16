@@ -5192,6 +5192,9 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.863 — Dés de l'Invention sur son bouton, Foudre portée par l'objet, bulle rose, barre dans l'ordre de l'arbre. */
+{const page=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(page.includes("function desInvention(a,modele){")&&page.includes("dice:{blue:1},etat:'Foudre',sansBonusDegats:true")&&ed.includes("const parArbre=l=>")&&ed.includes("if(o.invention)d.classList.add('gear-invention');"),'v0.863 : Invention juste, barre dans l’ordre de l’arbre');}
 /* v0.862 — Inventions : disparues hors combat, attaque à elles seules, objet fabriqué réglé dans l'éditeur d'objets. */
 {const cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
  assert.ok(cb.includes("if(inventions.length)sorties.push({...attaque(inventions,")&&page.includes("findIndex(at=>at.invention===true)")&&page.includes("effaceOrbesStatiques(true);actors.forEach(finInventions);"),'v0.862 : attaque propre, fin des inventions');
@@ -5873,7 +5876,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
    dessous, les maîtrises, Analyser, le Repos court. Les dés de dégâts et le bonus du combattant pris
    passent au-dessus de la piste, dans le bloc Dés ; un rond qui frappe y montre les siens au survol. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
- assert.ok(src.includes("const talents=[...gros.filter(b=>b.rangee==='attaques'),...gros.filter(b=>b.rangee==='reactions')];")
+ assert.ok(src.includes("const talents=[...parArbre(gros.filter(b=>b.rangee==='attaques')),...parArbre(gros.filter(b=>b.rangee==='reactions'))];")
   &&!page.includes("filter(b=>b.rangee==='reactions')")&&!page.includes('rangee-ronds')&&!css.includes('rangee-ronds')
   &&css.includes('.attack-row button.btn-action.rond,.attack-row button.btn-action.rond.inerte{width:42px;height:42px;font-size:19px}'),'gros ronds pour agir et réagir, petits pour les maîtrises et les gestes');
  assert.ok(src.includes("const voit=!!a&&(view==='mj'||(typeof connait==='function'?connait(a,'attaques'):a.hero||duCoteTroupe(a)||!!a.revealed));")
