@@ -3002,3 +3002,18 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 #map-view .token.vise-survol{box-shadow:0 0 0 3px #fff6d8,0 0 0 6px #f2b632,0 0 22px 10px #f2c14ecc!important;animation:vise-survol 1s ease-in-out infinite;z-index:6}
 @keyframes vise-survol{50%{box-shadow:0 0 0 3px #fff6d8,0 0 0 7px #f2b632,0 0 30px 14px #f2c14ee6}}
 @media (prefers-reduced-motion:reduce){#map-view .token.vise-survol{animation:none}}
+/* v0.836 : les bonus en petits ronds — fond pâle à la couleur de leur caractéristique, son logo seul, le prix à cheval sur le bas. */
+.arbres-v2 .arbres-detail .detail-bonus-grille{grid-template-columns:repeat(auto-fill,minmax(62px,max-content));column-gap:24px;row-gap:16px;align-items:start}
+.arbres-v2 .arbres-detail .detail-amelioration.detail-bonus.bonus-rond-panneau.bonus-rond-panneau{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;width:62px;padding:0;border:0!important;background:none!important;box-shadow:none!important;opacity:1}
+.arbres-v2 .arbres-detail .bonus-rond-panneau .rond-bonus{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;box-sizing:border-box;
+ background:rgba(var(--tint),.22);border:2px solid rgba(var(--tint),.55);box-shadow:0 1px 3px #0000001a}
+.arbres-v2 .arbres-detail .bonus-rond-panneau .rond-bonus>*{width:62%;height:62%;object-fit:contain}
+.arbres-v2 .arbres-detail .bonus-rond-panneau .detail-prix{margin-top:-11px;position:relative;z-index:1;font-size:10.5px;padding:0 6px;background:#fffaf0}
+.arbres-v2 .arbres-detail .bonus-rond-panneau:not(.acquise):not(.editable) .rond-bonus{background:#ecebe6;border-color:#cfc8ba}
+.arbres-v2 .arbres-detail .bonus-rond-panneau:not(.acquise):not(.editable) .rond-bonus>*{filter:grayscale(1);opacity:.75}
+.arbres-v2 .arbres-detail .bonus-rond-panneau.acquise .rond-bonus{border-color:rgb(var(--tint));background:rgba(var(--tint),.28)}
+.arbres-v2 .arbres-detail .bonus-rond-panneau.achetable{cursor:pointer}
+.arbres-v2 .arbres-detail .bonus-rond-panneau.achetable:is(:hover,:focus-visible) .rond-bonus{border-color:#c99a3c;box-shadow:0 0 0 3px #f2c14e55}
+.arbres-v2 .arbres-detail .bonus-rond-panneau.rendable,.arbres-v2 .arbres-detail .bonus-rond-panneau.editable{cursor:pointer}
+.arbres-v2 .arbres-detail .bonus-rond-panneau .detail-oter{position:absolute;top:-6px;right:-6px;width:18px;height:18px;padding:0;border-radius:50%;background:var(--panel);font-size:10px;line-height:18px}
+.arbres-v2 .arbres-detail .detail-bonus.bonus-rond-panneau.suite::before{left:-21px;top:28px}

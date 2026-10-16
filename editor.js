@@ -5649,6 +5649,15 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
        c.addEventListener('drop',e=>{e.preventDefault();c.classList.remove('survol');if(!glisse||glisse===x)return;
         const l2=gens.filter(y=>y!==glisse),i=l2.indexOf(x),de=gens.indexOf(glisse),vers=gens.indexOf(x);l2.splice(de<vers?i+1:i,0,glisse);
         const places=gens.map(y=>({...lisChemin(y)}));l2.forEach((y,m)=>{y.chemin=places[m]});glisse=null;arbreChange()})}}
+     /* v0.836 : un bonus, en petit rond — le logo de sa caractéristique sur le fond pâle de sa couleur, le prix à cheval sur
+        son bas ; ce qu'il donne se lit dans sa bulle, au survol. */
+     if(bonus){const xp=talentAuPalier(x,n),pb=paramsTalent(xp)||{},carac=pb.carac||'pv';
+      const tint=carac==='comp'?SKILL_TINTS[Math.max(0,Math.min(7,Number(pb.comp)||0))]:carac==='orbe'?'138,99,201':STAT_TINTS[carac]||'150,150,150';
+      c.classList.add('bonus-rond-panneau');c.style.setProperty('--tint',tint);
+      const rond=document.createElement('span');rond.className='rond-bonus';const ic=logoBonus(pb);if(ic)rond.append(remplitCase(ic));
+      const pr=l.querySelector('.detail-prix'),ot=l.querySelector('.detail-oter');c.replaceChildren(rond,...(pr?[pr]:[]),...(ot?[ot]:[]));
+      surveille(c,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+carac;const t=document.createElement('p');t.className='talent-bulle-nom';
+       const b2=document.createElement('b');b2.append(libelleBonusEl(pb,{talent:xp}));t.append(b2);d.append(t);ouvrirBulle(c,d,'bulle-talent')})}
      panneau.append(c)}})};
   section('Améliorations',tousP.filter(x=>!estBonus(x)));
   section('Bonus',tousP.filter(estBonus));

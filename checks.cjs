@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.836 — Bonus du panneau en petits ronds teintés, prix à cheval, bulle au survol. */
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ if(!ed.includes("c.classList.add('bonus-rond-panneau')")||!ed.includes("rond.className='rond-bonus'")||!ed.includes("surveille(c,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-bonus bonus-'+carac"))throw new Error('v0.836 : bonus en petits ronds absents');
+ if(!css.includes('.bonus-rond-panneau .rond-bonus{')||!css.includes('rgba(var(--tint),.22)'))throw new Error('v0.836 : style des ronds de bonus absent');}
 /* v0.835 — Au survol d'une action de la barre, ses cibles automatiques s'allument sur la carte. */
 {const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
  assert.ok(page.includes("function surbrillanceCibles(b,f){")&&page.includes("if(ciblesSurvolIds&&ciblesSurvolIds.has(a.id))t.classList.add('vise-survol');")
