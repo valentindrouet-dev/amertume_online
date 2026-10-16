@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.832","d":"2026-10-16","t":"Bonus : prix sous le libellé"},
 {"v":"0.831","d":"2026-10-16","t":"Tourbillon et Mortelle"},
 {"v":"0.830","d":"2026-10-16","t":"Prix hors de portée en rouge"},
 {"v":"0.829","d":"2026-10-15","t":"Prix payé en vert"},

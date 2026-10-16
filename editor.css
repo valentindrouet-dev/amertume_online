@@ -2991,3 +2991,10 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 .arbres-v2 .arbres-detail .detail-prix.paye{background:#dff0da!important;border-color:#3f8a4a!important;color:#2e6b38!important}
 /* v0.830 : un prix que l'XP disponible ne couvre pas : rouge doux. Payé : vert. À portée : l'encre habituelle. */
 .arbres-v2 .arbres-detail .detail-prix.trop-cher{background:#f8e3df!important;border-color:#c97b70!important;color:#a5473b!important}
+/* v0.832 : un bonus, en cartouche court — son libellé sur une ligne, son prix centré dessous ; le ✕ du MJ dans le coin. */
+.arbres-v2 .arbres-detail .detail-bonus-grille{grid-template-columns:repeat(2,max-content);justify-content:start}
+.arbres-v2 .arbres-detail .detail-bonus{position:relative;min-width:120px;padding:6px 14px 7px}
+.arbres-v2 .arbres-detail .detail-bonus .detail-am-nom{flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.arbres-v2 .arbres-detail .detail-bonus .detail-am-nom b{flex:none;justify-content:center}
+.arbres-v2 .arbres-detail .detail-bonus .detail-am-nom .detail-prix{align-self:center}
+.arbres-v2 .arbres-detail .detail-bonus .detail-oter{position:absolute;top:2px;right:2px}

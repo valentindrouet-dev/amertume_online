@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.832 — Les bonus en cartouches courts, le prix centré dessous. */
+assert.ok(fs.readFileSync('editor.css','utf8').includes(".arbres-v2 .arbres-detail .detail-bonus .detail-am-nom{flex-direction:column;"),'bonus courts');
 /* v0.831 — Destructeur : Tourbillon, amélioration de Double attaque ; Mortelle, amélioration de Frappe Furieuse (+1 dé Mortel). */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');
  assert.ok(C.TALENTS_CODES.doubleattaquetourbillon.pour==='doubleattaque'&&C.TALENTS_CODES.frappefurieusemortelle.pour==='frappefurieuse'
