@@ -1332,6 +1332,10 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   aide:'Maîtrise : au début du premier tour de combat, un allié visible reçoit l’état Gardé — l’allié ciblé, sinon le plus proche. Le porteur subit à sa place la moitié des dégâts qu’il reçoit, s’il est à son contact.',
   params:[],
   phrase(){return 'Au début du premier tour de combat, un <b>allié visible</b> reçoit l’état <b>Gardé</b> : l’allié ciblé, sinon le plus proche. Vous subissez <b>la moitié</b> des dégâts reçus par cet allié à sa place, si vous êtes à son contact.'}},
+ /* v0.838 — Intervention : une Réaction ; avant qu'un allié à portée de mouvement ne subisse des dégâts, le porteur vient à son contact. */
+ intervention:{cle:'intervention',nom:'Intervention',type:'reac',
+  aide:'Réaction : avant qu’un allié à portée de mouvement ne subisse des dégâts, le porteur se déplace à son contact.',
+  params:[],phrase(){return 'Avant qu’un <b>allié</b> à portée de mouvement ne subisse des dégâts, vous vous déplacez <b>à son contact</b>.'}},
  /* v0.838 — Améliorations de Gardien : la totalité des dégâts du Gardé, au contact ; deux alliés Gardés. */
  gardientotal:{cle:'gardientotal',nom:'Gardien — Totalité',court:'Totalité',type:'ame',
   aide:'Amélioration de Gardien : le porteur subit la totalité des dégâts reçus par son allié Gardé à sa place, s’il est à son contact.',

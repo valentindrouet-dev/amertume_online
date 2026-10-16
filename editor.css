@@ -3020,3 +3020,12 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 /* v0.837 : au journal, l'icône des dégâts à la place du mot, à la hauteur du texte. */
 #journal .j-degats .j-ico-degats,#journal .j-logo-degats,.bulle-detail-degats .total .dmg-ico{width:1.15em;height:1.15em;vertical-align:-.22em;margin-left:.1em}
 #journal .j-logo-degats{width:1.35em;height:1.35em;vertical-align:-.3em}
+/* v0.838 : le choix d'Intervention, en haut au centre, avec ses 10 secondes qui filent. */
+.choix-intervention{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 18px 14px;border-radius:12px;
+ background:var(--panel,#fbf6ea);border:1px solid #d9cdb4;border-left:4px solid #8b6bb5;box-shadow:0 8px 26px #0003;overflow:hidden;min-width:220px}
+.choix-intervention-titre{margin:0;display:flex;align-items:center;gap:6px;font-size:15px}
+.choix-intervention-titre :is(img,svg){width:26px;height:26px}
+.choix-intervention-boutons{display:flex;gap:10px}
+.choix-intervention-attente{margin:0;font-size:13px;opacity:.8}
+.choix-intervention-compte{position:absolute;left:0;bottom:0;height:3px;width:100%;background:#8b6bb5;transform-origin:left;animation:compte-intervention 10s linear forwards}
+@keyframes compte-intervention{to{transform:scaleX(0)}}

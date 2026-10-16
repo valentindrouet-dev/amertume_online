@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.839","d":"2026-10-16","t":"Intervention"},
 {"v":"0.838","d":"2026-10-16","t":"Gardien"},
 {"v":"0.837","d":"2026-10-16","t":"Journal des dégâts, poussée et opportunité"},
 {"v":"0.836","d":"2026-10-16","t":"Bonus en petits ronds"},

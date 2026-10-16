@@ -5192,6 +5192,12 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.839 — Intervention : le coup d'un adversaire attend 10 s le choix du porteur, « ! » au-dessus de lui ; Intervenir le pose au contact et prend sa Réaction. */
+{const page=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),lv=fs.readFileSync('live.js','utf8');
+ assert.ok(cb.includes("intervention:{cle:'intervention',nom:'Intervention',type:'reac',"),'v0.839 : le talent Intervention');
+ assert.ok(page.includes("const attackSansIntervention=attack;")&&page.includes("const iv=interventionPossible(a,vises);if(iv){demandeIntervention(iv,a,opts);return}")
+  &&page.includes("const minuterie=setTimeout(()=>fini(false),10000);")&&page.includes("if(oui&&alive(g)&&alive(b)){rapprocher(g,b);marqueTalent(g,x.talent,x.code);"),'v0.839 : la pause, le choix, le déplacement');
+ assert.ok(page.includes("(typeof interventionMarque!=='undefined'&&interventionMarque===a.id))marque=")&&lv.includes("rec.effet==='intervention'&&typeof interventionRecue==='function'"),'v0.839 : le « ! » et la réponse du joueur par la table');}
 /* v0.838 — Gardien : allié visible, la moitié de ses dégâts au contact, Totalité et Deux alliés ; Gardé en vert. */
 {const page=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),cb=fs.readFileSync('combat.js','utf8');
  assert.ok(page.includes("function passeParLeGardien(b,degats){")&&page.includes("{const x=passeParLeGardien(b,reste);if(x){reste=x.reste;gardien.push(...x.dits)}}")&&page.includes("porteEffet(talentsCodes(g),'gardientotal')?degats:Math.min(partDuRempart(degats),degats)"),'v0.838 : le Gardien prend la moitié, la totalité amélioré');
