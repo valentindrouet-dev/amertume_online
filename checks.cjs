@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.880 — La Foudre frappe tous ceux dont le porteur traverse la zone de contact, mouvements forcés compris. */
+{const h=fs.readFileSync('index.html','utf8');
+ assert.ok(h.includes('function passeMurs(o,chemin){noteTrajet(o,chemin);')&&h.includes('function pointsDuTrajet(a,size,token){')
+  &&h.includes("const points=seulFoudre?[{x:a.x,y:a.y}]:pointsDuTrajet(a,size,token);"),'v0.880 : Foudre sur le trajet');}
 /* v0.879 — Le second Gantelet a les mêmes dés que le premier, dé Bleu de l'amélioration compris. */
 assert.ok(fs.readFileSync('index.html','utf8').includes("  if(porteEffet(c,'ganteletsbleu'))o.dice={...o.dice,blue:"),'v0.879 : gantelets jumeaux');
 /* v0.878 — La bille de Plasma, plus grosse et plus brillante. */
