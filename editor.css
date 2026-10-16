@@ -3059,3 +3059,9 @@ body.plasma-en-main .barre-actions button.accepte-plasma{box-shadow:0 0 0 3px #d
 .cat-pill.invention.hors-service .nom{text-decoration:line-through}
 .gear-carre.invention{background:radial-gradient(circle at 50% 40%,#f7d6f6,#e3a5e1)!important;border-color:#c766c4!important;box-shadow:0 0 0 2px #d966d655,0 0 10px #d966d655}
 .gear-carre.invention.hors-service{filter:grayscale(.85);opacity:.6}
+/* v0.857 : l'icône d'un état et le dé de Plasma dans un texte, à la hauteur des lettres. */
+.etat-texte{display:inline-flex;align-items:center;justify-content:center;width:1.25em;height:1.25em;vertical-align:-.28em;margin:0 .05em}
+.etat-texte>img{width:100%;height:100%;object-fit:contain}.etat-texte>.glyphe-etat{font-size:.95em;line-height:1}
+.etat-texte.sans-image{width:auto;height:auto;font-weight:700}
+.de-plasma-texte{display:inline-block;position:relative;width:.95em;height:.95em;border-radius:.2em;background:#d966d6;border:.1em solid #f7c2f5;box-shadow:0 0 .3em #e57ae2aa;vertical-align:-.12em;margin:0 .05em;box-sizing:border-box}
+.de-plasma-texte::after{content:'';position:absolute;inset:28%;border-radius:50%;background:#fff8;box-shadow:0 0 .2em #fff}

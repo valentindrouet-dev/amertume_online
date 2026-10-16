@@ -4860,7 +4860,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  assert.ok(src.includes("const VARIABLES_TALENT={")&&src.includes(" orbes:{teinte:'#3f7bc0',val:a=>orbesDuTour(a)},")&&src.includes(" endu:{stat:'endu',val:a=>enduAffichee(a)},")
   &&src.includes(" degats:{stat:'dmg',val:a=>degatsDe(a)},")&&src.includes("function texteEnrichi(el,texte,noms,a=null){")
-  &&src.includes("el.append(c>=0?deDansTexte(c):motVariable(d[1],v,a));")&&src.includes("texteEnrichi(e,tp.effects,noms,a);")&&src.includes("texteEnrichi(e,tx,noms,a);g.append(e)};")
+  &&src.includes("el.append(c>=0?deDansTexte(c):et?etatDansTexte(et):pl?plasmaDansTexte():motVariable(k,v,a));")&&src.includes("texteEnrichi(e,tp.effects,noms,a);")&&src.includes("texteEnrichi(e,tx,noms,a);g.append(e)};")
   &&feuille.includes(".mot-variable.sans-valeur{text-decoration:underline dotted;"),'les variables des descriptions');}
 /* v0.576 — Coût des talents : une Action en PA, 1 par défaut, 0 pour une mécanique gratuite (Orbes, Charge) ; un nouveau
    type, Mouvement, en PM, 1 par défaut ; le MJ règle l'un ou l'autre de 0 à 9. Un talent ne se joue qu'une fois par tour en
@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.857 — {Foudre} ou [Foudre] : l'icône de l'état ; {plasma} : un dé de Plasma. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("function etatAccolade(k){")&&fs.readFileSync('editor.js','utf8').includes("function plasmaDansTexte(){"),'v0.857 : icônes d’état et dé de Plasma dans les textes');
 /* v0.856 — La Cellule sur la ligne du mouvement, centrée au-dessus des gros boutons, dés plus gros. */
 assert.ok(fs.readFileSync('index.html','utf8').includes("function placeCellule(){")&&fs.readFileSync('editor.css','utf8').includes('.de-plasma{width:30px;height:30px;'),'v0.856 : la Cellule placée');
 /* v0.855 — Les chiffres, les formules de dés et les pourcentages en gras dans les textes. */

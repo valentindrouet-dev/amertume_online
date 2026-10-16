@@ -2245,6 +2245,11 @@ function motsCles(){const perso=(catalog&&catalog.motsCles)||[],cle=perso.join('
 const DES_ACCOLADES=new Map([['blanc',0],['simple',0],['os',1],['ivoire',1],['beige',1],['leger',1],['rouge',2],['lourd',2],['bleu',3],['mystique',3],['vert',4],['soin',4],['noir',5],['mortel',5],['jaune',6],['phase',6]]);
 const ACCOLADES_DES=/\{(\p{L}{2,12})\}/gu;
 const deAccolade=k=>{const c=DES_ACCOLADES.get(String(k).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());return c===undefined?-1:c};
+const cleAccolade=k=>String(k).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+function etatAccolade(k){const q=cleAccolade(k);return typeof ETATS_JEU!=='undefined'?ETATS_JEU.find(e=>cleAccolade(e)===q)||null:null}
+function etatDansTexte(e){const s=document.createElement('span');s.className='etat-texte';s.title=e;s.setAttribute('role','img');s.setAttribute('aria-label',e);
+ const im=typeof imageEtat==='function'?imageEtat(e):null;if(im)s.append(im);else{s.textContent=e;s.classList.add('sans-image')}return s}
+function plasmaDansTexte(){const d=document.createElement('i');d.className='de-plasma-texte';d.title='Dé de Plasma';d.setAttribute('role','img');d.setAttribute('aria-label','dé de Plasma');return d}
 function deDansTexte(c){const d=document.createElement('i');d.className='die-sq de-texte';d.style.setProperty('--face',dieFace(c));d.title='Dé '+types[c];d.setAttribute('role','img');d.setAttribute('aria-label','dé '+types[c]);return d}
 // Le même dé dans un texte HTML déjà échappé, pour l'export : une image.
 const desEnImages=html=>String(html||'').replace(new RegExp(ACCOLADES_DES.source,'gu'),(m,k)=>{const c=deAccolade(k);return c<0?m:'<img class="de" src="'+dieFace(c).slice(5,-2)+'" alt="dé '+types[c]+'">'});
@@ -2270,9 +2275,11 @@ function motVariable(k,v,a){const b=document.createElement('b');b.className='mot
  b.textContent=Number.isFinite(n)?String(n):k;return b}
 function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceChildren();
  // Les dés et les variables d'abord ; entre eux, le texte se colore comme avant.
- const rd=new RegExp(ACCOLADES_DES.source,'gu');let fin=0,d;
- while((d=rd.exec(texte))){const c=deAccolade(d[1]),v=c<0?variableTalent(d[1]):null;if(c<0&&!v)continue;
-  if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);el.append(c>=0?deDansTexte(c):motVariable(d[1],v,a));fin=rd.lastIndex}
+ /* v0.857 : un état entre accolades ou crochets, {Foudre} ou [Foudre], devient son icône ; {plasma}, un dé de Plasma. */
+ const rd=new RegExp(ACCOLADES_DES.source+'|\\[(\\p{L}{2,12})\\]','gu');let fin=0,d;
+ while((d=rd.exec(texte))){const k=d[1]!==undefined?d[1]:d[2],c=deAccolade(k),et=c<0?etatAccolade(k):null,pl=c<0&&!et&&cleAccolade(k)==='plasma';
+  const v=c<0&&!et&&!pl&&d[1]!==undefined?variableTalent(k):null;if(c<0&&!et&&!pl&&!v)continue;
+  if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);el.append(c>=0?deDansTexte(c):et?etatDansTexte(et):pl?plasmaDansTexte():motVariable(k,v,a));fin=rd.lastIndex}
  if(fin<texte.length)motsDans(el,texte.slice(fin),noms);return el}
 /* Les talents d'un arbre, dans le texte d'un des siens : leur nom exact, casse ignorée, prend la
    couleur de sa nature — « Charge » en bleu d'Action dans un talent du Destructeur. */
