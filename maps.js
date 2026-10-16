@@ -1379,6 +1379,8 @@ function modeleActuel(tpl){if(!tpl)return tpl;const liste=catalog.monsters||[];
  const parNom=liste.filter(x=>x&&x.name===tpl.name);return parNom.length===1?parNom[0]:tpl}
 function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  if(!confirm('Ouvrir « '+m.name+' » ? Les aventuriers sont regroupés dans la zone de départ et les adversaires de la scène sont remplacés par ceux de la carte.'))return;
+ // v0.848 : rouvrir la carte déjà en cours garde le zoom et le point visé.
+ const memeCarte=currentMapId===id;
  currentMapId=id;mapImage=m.image||null;measureRatio(m,render);
  // Une carte ouverte repart de zéro XP accordée : la rencontre est à venir.
  m.xpAccordee=0;
@@ -1431,7 +1433,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
 
  actors.forEach(a=>{a.target=null});
  owner=actors.findIndex(a=>a.hero&&!a.horsCarte);if(owner<0)owner=actors.findIndex(a=>a.hero);selected=Math.max(0,owner);
- resetMapZoom();showPage('table');render();
+ if(!memeCarte)resetMapZoom();showPage('table');render();
  scheduleSave()}
 
 /* ---------- Onglets de page, réservés au MJ ---------- */

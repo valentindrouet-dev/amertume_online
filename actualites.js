@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.848","d":"2026-10-16","t":"Même carte, même zoom"},
 {"v":"0.847","d":"2026-10-16","t":"Intervention et attaques d'opportunité"},
 {"v":"0.846","d":"2026-10-16","t":"Bouton d'Intervention et fenêtre de début de combat"},
 {"v":"0.845","d":"2026-10-16","t":"Le ! de Vengeance"},

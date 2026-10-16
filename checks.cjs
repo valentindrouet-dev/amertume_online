@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.848 — Rouvrir la carte en cours garde le zoom. */
+{const mp=fs.readFileSync('maps.js','utf8');assert.ok(mp.includes(" const memeCarte=currentMapId===id;")&&mp.includes(" if(!memeCarte)resetMapZoom();showPage('table');render();"),'v0.848 : la même carte garde son zoom');}
 /* v0.846 — Intervention a son bouton de réaction ; les talents de début de combat ont leur fenêtre en haut de l'écran. */
 {const page=fs.readFileSync('index.html','utf8');
  assert.ok(page.includes(" intervention:{fn:intervention,\n  peut:a=>interventionEnCours(a),")&&page.includes("if(choixIntervention&&choixIntervention.g===a.id&&choixIntervention.choix){choixIntervention.choix(true);return null}"),'v0.846 : le bouton d’Intervention');
