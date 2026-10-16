@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.831 — Destructeur : Tourbillon, amélioration de Double attaque ; Mortelle, amélioration de Frappe Furieuse (+1 dé Mortel). */
+{const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8');
+ assert.ok(C.TALENTS_CODES.doubleattaquetourbillon.pour==='doubleattaque'&&C.TALENTS_CODES.frappefurieusemortelle.pour==='frappefurieuse'
+  &&page.includes("porteEffet(talentsCodes(a),'doubleattaquetourbillon')")&&page.includes("attack({...(mortelle?{desEnPlus:[0,0,0,0,0,1,0]}:{}),apres:"),'Tourbillon et Mortelle');}
 /* v0.830 — Un prix hors de portée de l'XP disponible, en rouge doux. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("(acquis?' paye':prix>dispoT?' trop-cher':'')")&&fs.readFileSync('editor.css','utf8').includes('.detail-prix.trop-cher{'),'prix trop cher en rouge');
 /* v0.829 — Le prix d'un talent, d'une amélioration ou d'un bonus pris reste affiché, en vert. */
