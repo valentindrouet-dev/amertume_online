@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.854 — La couleur Plasma parmi celles des mots clés. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("rose:'#b04a8a',plasma:'#c23fbe',"),'v0.854 : la couleur plasma des mots clés');
 /* v0.853 — Une ligne décalée garde ses colonnes : la planche MECANISTE, 7 lignes de 6 et 3 icônes centrées, se lit en 45 icônes. */
 {const pc=fs.readFileSync('planches-calcul.js','utf8');
  assert.ok(pc.includes("bx:centres.map(r=>!r.length||aligne(r,cx)?commun:bornes(r,W))")&&pc.includes("const bxr=Array.isArray(bx[0])?bx[r]:bx;"),'v0.853 : des colonnes par ligne quand une ligne est décalée');}
