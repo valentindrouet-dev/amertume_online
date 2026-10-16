@@ -245,7 +245,7 @@ assert.equal(gearApi.defenseOf({hero:false,def:4},ARSENAL),4);
 {const {TALENTS_CODES,paramsTalent,phraseTalent,partDuRempart,porteEffet,ONDE_EXCLUS}=require('./combat.js');
  assert.equal(TALENTS_CODES.debordement.type,'pass');assert.match(phraseTalent('debordement'),/<b>reliquat de dégâts<\/b>/);
  assert.equal(TALENTS_CODES.rempart.type,'pass');assert.match(phraseTalent('rempart'),/<b>la moitié<\/b>/);
- assert.equal(TALENTS_CODES.gardien.type,'mait');assert.match(phraseTalent('gardien'),/<b>au contact<\/b> reçoit l’état <b>Gardé<\/b>/);
+ assert.equal(TALENTS_CODES.gardien.type,'mait');assert.match(phraseTalent('gardien'),/<b>allié visible<\/b> reçoit l’état <b>Gardé<\/b>.*<b>la moitié<\/b>/);
  assert.ok(!TALENTS_CODES.gardienblindage);   // L'amélioration a disparu avec l'état Gardé.
  // La part du rempart : la moitié arrondie au-dessus, rien sur rien.
  assert.equal(partDuRempart(5),3);assert.equal(partDuRempart(4),2);assert.equal(partDuRempart(1),1);assert.equal(partDuRempart(0),0);
@@ -4889,7 +4889,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    murs, états des combattants, charges d'Ignition. Une pose en cours y renonce. */
 {const page=fs.readFileSync('index.html','utf8');
  assert.ok(page.includes(",commence=mode!=='combat'&&neuf==='combat',")&&page.includes(" if(commence&&!spect)actors.forEach(a=>{leveEtats(a,true,a.etatsPieges);a.ignition=''});")
-  &&page.includes("a.orbesGardes=0;a.mursElem=[];a.garde=null;a.contactsDepart=null;"),'un combat qui recommence ou commence repart d’un terrain propre');}
+  &&page.includes("a.orbesGardes=0;a.mursElem=[];a.garde=null;a.garde2=null;a.contactsDepart=null;"),'un combat qui recommence ou commence repart d’un terrain propre');}
 /* v0.573 — Mur d'élément : un autre talent, ou une attaque, fait renoncer à la pose en cours ; chaque segment mesure au plus le
    niveau de l'aventurier qui le dresse, en mètres, sans limite pour un adversaire ; dès le premier point, un trait suit la souris
    avec sa distance, rouge au-delà, et un clic trop loin ne pose rien. */
@@ -5192,6 +5192,11 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.838 — Gardien : allié visible, la moitié de ses dégâts au contact, Totalité et Deux alliés ; Gardé en vert. */
+{const page=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),cb=fs.readFileSync('combat.js','utf8');
+ assert.ok(page.includes("function passeParLeGardien(b,degats){")&&page.includes("{const x=passeParLeGardien(b,reste);if(x){reste=x.reste;gardien.push(...x.dits)}}")&&page.includes("porteEffet(talentsCodes(g),'gardientotal')?degats:Math.min(partDuRempart(degats),degats)"),'v0.838 : le Gardien prend la moitié, la totalité amélioré');
+ assert.ok(page.includes("function protegeDuGardien(a,sauf){return cibleAlliee(a,o=>(!sauf||o.id!==sauf)&&allieVisible(a,o))}")&&page.includes("porteEffet(talentsCodes(a),'gardiendeux')"),'v0.838 : un allié visible, deux améliorés');
+ assert.ok(cb.includes("gardientotal:'gardien',gardiendeux:'gardien',")&&ed.includes("ajoute(['Gardé','GARDÉ'],TEINTE_ETAT_MOT['Gardé']);")&&page.includes("'Gardé':'#6fcf5a'"),'v0.838 : améliorations rattachées, Gardé en vert');}
 /* v0.837 — Journal : icône des dégâts, états et poussée sur la ligne du coup, opportunité à l'icône des dégâts et ⚠ sur la carte ; survol fin et rougeoyant. */
 {const page=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(page.includes("function fondsAuCoup(j,text){")&&page.includes("const fondu=meta&&meta.ton==='talent'?fondsAuCoup(j,String(text)):null;")&&page.includes("li._ajouts.push('le repousse'+(m[4]||''))"),'v0.837 : la poussée rejoint la ligne du coup');
