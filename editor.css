@@ -3070,3 +3070,6 @@ body.plasma-en-main .barre-actions button.accepte-plasma{box-shadow:0 0 0 3px #d
 .field-check:has(input[name=incidentOn]:not(:checked))+.incident-champ{display:none}
 .incident-champ{display:flex;flex-direction:column;gap:4px}
 .tiret{margin:0 .12em}
+/* v0.860 : « Incident » partout en italique, dans son rouge ; sur la carte aussi. */
+.mot-incident-txt{font-style:italic;color:#b03a48!important;font-weight:700}
+.floater.floater-incident{font-style:italic;color:#e0566a!important}

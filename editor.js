@@ -2308,7 +2308,7 @@ function motsDans(el,texte,noms){if(!noms)return motsClesDans(el,texte);
   const b=document.createElement('b');b.className='mot-cle mot-talent';b.textContent=m[0];b.style.color=noms.couleur(m[0]);el.append(b);last=rx.lastIndex}
  if(last<texte.length)motsClesDans(el,texte.slice(last));return el}
 function motsClesDans(el,texte){const {rx,entrees}=motsCles();rx.lastIndex=0;let last=0,m;
- const gras=(mot,couleur)=>{const b=document.createElement('b');b.className='mot-cle';b.textContent=mot;if(couleur)b.style.color=couleur;el.append(b)};
+ const gras=(mot,couleur)=>{const b=document.createElement('b');b.className='mot-cle'+(/^incidents?$/i.test(mot)?' mot-incident-txt':'');b.textContent=mot;if(couleur)b.style.color=couleur;el.append(b)};
  while((m=rx.exec(texte))){
   if(m[1]!==undefined){if(m.index>last)el.append(texte.slice(last,m.index));gras(m[1],'');last=rx.lastIndex;continue}
   const debut=m.index+m[2].length;if(debut>last)el.append(texte.slice(last,debut));
