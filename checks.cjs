@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.849 — Une réaction disponible brille dans la barre. */
+{const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("peut:libre,rayonne:(debut||(talent.type==='reac'&&!!eff.peut))&&libre,"),'v0.849 : la réaction disponible brille');}
 /* v0.848 — Rouvrir la carte en cours garde le zoom. */
 {const mp=fs.readFileSync('maps.js','utf8');assert.ok(mp.includes(" const memeCarte=currentMapId===id;")&&mp.includes(" if(!memeCarte)resetMapZoom();showPage('table');render();"),'v0.848 : la même carte garde son zoom');}
 /* v0.846 — Intervention a son bouton de réaction ; les talents de début de combat ont leur fenêtre en haut de l'écran. */
@@ -5665,7 +5667,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  ctxO.actors[0].orbes=0;ctxO.round=2;assert.equal(ctxO.ouvertureCombat(),false,'passé le premier tour, plus du combat');
  ctxO.round=1;ctxO.actors.push({hero:true,checks:[0,1,0]});assert.equal(ctxO.ouvertureCombat(ctxO.actors[0]),true,'chacun garde son début de combat tant qu’il n’a pas agi');assert.equal(ctxO.ouvertureCombat(ctxO.actors[2]),false,'celui qui a agi a fermé le sien');ctxO.actors.pop();
  assert.deepEqual([{effet:'gardien'},{effet:'gardien',debutCombat:false},{debutCombat:true},{}].map(ctxO.t),[true,false,true,false]);
- assert.ok(page.includes("peut:libre,rayonne:debut&&libre,")&&page.includes("if(b&&t.rayonne)b.classList.add('debut-combat')")
+ assert.ok(page.includes("peut:libre,rayonne:(debut||(talent.type==='reac'&&!!eff.peut))&&libre,")&&page.includes("if(b&&t.rayonne)b.classList.add('debut-combat')")
   &&page.includes("className:'debut-marque',textContent:'!'")&&src.includes("if(t.rayonne)b.classList.add('debut-combat');")&&src.includes('name="debutCombat"'),'les talents de début de combat');
  assert.ok(page.includes("function estMort(a){return !!a&&a.hero===true&&a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0}")
   &&page.includes("+(estMort(a)?' mort':'')")&&src.includes("if(estMort(a)){c.classList.add('mort');")&&src.includes("function ressusciter(a){if(view!=='mj'||!estMort(a))return;")
