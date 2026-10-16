@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.870 — Le dé de Plasma de la Cellule : survol et bulle. */
+assert.ok(fs.readFileSync('index.html','utf8').includes("n.textContent='Dé de Plasma'")&&fs.readFileSync('editor.css','utf8').includes('.de-plasma:hover{transform:scale(1.18)'),'v0.870 : bulle du dé de Plasma');
 /* v0.869 — Les fenêtres de la Table restent sur la Table. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes('body[class*="page-"] .fenetres-debut,body[class*="page-"] .choix-intervention{display:none!important}'),'v0.869 : fenêtres de la Table seulement');
 /* v0.868 — « Plasma » sous le rond des talents qui l'acceptent, dans le panneau de l'arbre. */

@@ -3089,3 +3089,7 @@ body.plasma-en-main .barre-actions button.accepte-plasma{box-shadow:0 0 0 3px #d
 .arbres-detail .detail-plasma>.de-plasma-texte{width:13px;height:13px}
 /* v0.869 : les fenêtres de début de combat et d'Intervention n'appartiennent qu'à la Table de jeu : sur un autre onglet, elles se taisent. */
 body[class*="page-"] .fenetres-debut,body[class*="page-"] .choix-intervention{display:none!important}
+/* v0.870 : un dé de Plasma réagit au survol. */
+.de-plasma{transition:transform .14s ease,box-shadow .14s ease}
+.de-plasma:hover{transform:scale(1.18);box-shadow:0 0 14px #f29bf0,0 0 4px #fff}
+.bulle-plasma .talent-bulle-nom b{color:#c23fbe}
