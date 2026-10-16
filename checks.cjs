@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.841 — Les Passifs en rond moyen dans l'arbre. */
+{const css=fs.readFileSync('editor.css','utf8');assert.ok(css.includes('.arbre-plan>.arbre-noeud.t-pass:not(.petit):not(.bonus) .arbre-rond{width:70px;height:70px}'),'v0.841 : les Passifs en rond moyen');}
 /* v0.840 — Éditeur d'arbre : un bonus glissé sur un talent s'y copie ; améliorations et bonus se réordonnent de chaque carte ; la classe éditée en tête des mécaniques. */
 {const ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ed.includes("const k=structuredClone(x);k.id=crypto.randomUUID();k.famille=talentFamily(T);k.voie=T.voie||'';delete k.pos;")&&ed.includes("c.addEventListener('dragstart',e=>{glisse=x;bonusTenu=bonus?x:null;"),'v0.840 : la copie du bonus glissé sur un talent');

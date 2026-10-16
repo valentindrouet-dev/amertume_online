@@ -3034,3 +3034,5 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 .arbres-v2 .arbres-detail .detail-amelioration.saisi{opacity:.45}
 .arbres-v2 .arbres-detail .bonus-rond-panneau.survol .rond-bonus{box-shadow:0 0 0 3px #f2c14e99}
 .arbre-plan>.arbre-noeud.recoit-bonus{box-shadow:0 0 0 4px #f2c14e,0 0 18px 6px #f2c14e88!important}
+/* v0.841 : les Passifs, en rond moyen dans l'arbre, éditeur et vue aventurier ; même écart qu'entre grands et moyens de la fiche. */
+.arbre-plan>.arbre-noeud.t-pass:not(.petit):not(.bonus) .arbre-rond{width:70px;height:70px}
