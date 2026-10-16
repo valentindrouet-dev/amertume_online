@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.879 — Le second Gantelet a les mêmes dés que le premier, dé Bleu de l'amélioration compris. */
+assert.ok(fs.readFileSync('index.html','utf8').includes("  if(porteEffet(c,'ganteletsbleu'))o.dice={...o.dice,blue:"),'v0.879 : gantelets jumeaux');
 /* v0.878 — La bille de Plasma, plus grosse et plus brillante. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes('.bille-plasma{position:fixed;left:0;top:0;width:22px;height:22px;')&&fs.readFileSync('index.html','utf8').includes("translate('+(x-11)+'px,'+(y-11)+'px)"),'v0.878 : bille plus grosse');
 /* v0.877 — La recharge de Plasma se voit : une bille bondit du token à la Cellule ; plus de « Plasma rechargé » au journal. */
