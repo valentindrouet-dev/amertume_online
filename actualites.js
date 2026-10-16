@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.878","d":"2026-10-16","t":"Bille de Plasma plus grosse et plus brillante"},
 {"v":"0.877","d":"2026-10-16","t":"Bille de Plasma à la recharge"},
 {"v":"0.876","d":"2026-10-16","t":"Cellule rechargée par la Clé à Molette seulement"},
 {"v":"0.875","d":"2026-10-16","t":"Fenêtres de réaction sur la carte, côte à côte"},

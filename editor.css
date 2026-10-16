@@ -3110,7 +3110,8 @@ body.plasma-en-main .barre-actions button.accepte-plasma::before{content:'';posi
 #pile-fenetres .fenetres-debut .choix-intervention{position:relative;left:auto;top:auto;transform:none}
 body[class*="page-"] #pile-fenetres{display:none!important}
 /* v0.877 : la bille de Plasma qui bondit du token jusqu'à la Cellule, et l'éclat de son arrivée. */
-.bille-plasma{position:fixed;left:0;top:0;width:14px;height:14px;border-radius:50%;pointer-events:none;z-index:200;
- background:radial-gradient(circle at 38% 35%,#fff 0 18%,#ffc2f6 32%,#d966d6 62%,#8e2d93 100%);box-shadow:0 0 8px 3px #d966d6cc,0 0 18px 6px #d966d655}
-.eclat-plasma{position:fixed;width:30px;height:30px;border-radius:50%;pointer-events:none;z-index:201;
+.bille-plasma{position:fixed;left:0;top:0;width:22px;height:22px;border-radius:50%;pointer-events:none;z-index:200;
+ background:radial-gradient(circle at 40% 36%,#fff 0 24%,#ffd6fb 38%,#ef7ced 62%,#b13cb4 100%);
+ box-shadow:0 0 6px 2px #fff,0 0 14px 6px #f28ef0,0 0 30px 12px #d966d6cc,0 0 54px 22px #d966d666;filter:brightness(1.15) saturate(1.2)}
+.eclat-plasma{position:fixed;width:40px;height:40px;border-radius:50%;pointer-events:none;z-index:201;
  background:radial-gradient(circle,#fff 0 20%,#ffc2f6aa 38%,#d966d655 60%,transparent 72%);box-shadow:0 0 0 2px #ffd6fb99}
