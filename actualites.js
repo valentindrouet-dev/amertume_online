@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.881","d":"2026-10-16","t":"Talent Stimulant du Mécaniste"},
 {"v":"0.880","d":"2026-10-16","t":"Foudre sur tout le trajet"},
 {"v":"0.879","d":"2026-10-16","t":"Second Gantelet identique au premier"},
 {"v":"0.878","d":"2026-10-16","t":"Bille de Plasma plus grosse et plus brillante"},

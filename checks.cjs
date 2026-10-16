@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.881 — Stimulant du Mécaniste et ses trois améliorations. */
+{const h=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
+ assert.ok(cb.includes("stimulant:{cle:'stimulant',nom:'Stimulant',type:'act',")&&cb.includes("stimulantsoi:'stimulant',stimulantonde:'stimulant',stimulantplasma:'stimulant',")
+  &&h.includes('function stimulant(a,p,talent){')&&h.includes("const INCIDENTS_PLASMA_DITS=['gantelets','stimulant'];")&&h.includes(' stimulant:{fn:stimulant,'),'v0.881 : Stimulant');}
 /* v0.880 — La Foudre frappe tous ceux dont le porteur traverse la zone de contact, mouvements forcés compris. */
 {const h=fs.readFileSync('index.html','utf8');
  assert.ok(h.includes('function passeMurs(o,chemin){noteTrajet(o,chemin);')&&h.includes('function pointsDuTrajet(a,size,token){')
