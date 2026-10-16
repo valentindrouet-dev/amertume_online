@@ -20,7 +20,7 @@
    publié, une fois pour toutes, et pèsent mille fois plus. */
 const CHAMPS_VIVANTS=['name','hero','template','role','type','socle','x','y','hp','max','def','dmg',
  'pool','attacks','weapons','armures','shieldId','munitionId','inventaire','talents','states','bleed','cumuls','checks','points','ignition','immunites','usages','cibles','activeAttack','auraPv','mursElem','talentsJoues','orbeStatique','nyctalope','mouvement','mvtReste','mvtTour','opportunitesSubies',
- 'revealed','hidden','vu','numero','orbes','orbesGardes','garde','garde2','plasma','plasmaPose','inventions','armesAvantInventions','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','bondissement','decoupe','vengeance','insaisisQuittes','paBonus','impulsion','coupureFatale','adieu','quetesPrises','quetesDebloquees','forges','accelM','pointsCreation','espece','enAventure','imageJeton','joueur','joueurNom','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan',
+ 'revealed','hidden','vu','numero','orbes','orbesGardes','garde','garde2','plasma','plasmaPose','plasmaTour','inventions','armesAvantInventions','notes','reposPris','vie','comaVie','etatsPassifs','richesses','lieuDomaine','paliersTalents','defBrisee','element','depots','reposCourts','horsCarte','retire','butin','lameventPret','fouilles','revanche','traction','bondissement','decoupe','vengeance','insaisisQuittes','paBonus','impulsion','coupureFatale','adieu','quetesPrises','quetesDebloquees','forges','accelM','pointsCreation','espece','enAventure','imageJeton','joueur','joueurNom','mvtBonus','pnj','alignement','bourse','alignementJeu','enrage','bilan',
  'xp','level','skills','endu','vieMax','pvBonus','sexe','race','malusPieges','enjambe','franchis','etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege'];
 const CHAMPS_MJ=['round','mapId','locked','title','mode','fogOff','fogReset'];
 // Ce qu'un joueur n'écrit jamais sur un combattant : révéler et voiler sont l'affaire du MJ.
@@ -37,7 +37,7 @@ CHAMPS_VIVANTS.push('testsLieux');
 /* L'état du tour d'un aventurier : ce qu'il a dépensé, joué, parcouru. Un joueur l'écrit daté du tour qu'il voit (« tourVu »,
    cleTour) ; le MJ écarte ce qui arrive daté d'un tour révolu. Au début, à la fin d'un combat et à chaque tour, le joueur reprend
    ces champs tels que le MJ les a remis, sans garder ce qu'il avait encore en route. */
-const CHAMPS_TOUR=['checks','mvtReste','mvtTour','talentsJoues','orbes','orbesGardes','garde','garde2','plasma','plasmaPose','lameventPret','opportunitesSubies'];
+const CHAMPS_TOUR=['checks','mvtReste','mvtTour','talentsJoues','orbes','orbesGardes','garde','garde2','plasma','plasmaPose','plasmaTour','lameventPret','opportunitesSubies'];
 const TABLE_CLE='amertume-table';
 let tableId=null,salleRef=null,siegesRef=null,enLigne=false,appliquantDistant=false;
 let dernierPousse=null,poussePret=false,pousseTimer=null,docPrecedent=null,renduDiffere=null,dernierRefus='';
@@ -464,7 +464,7 @@ log=function(text,meta){logLocal(text,meta);if(meta&&meta.local)return;
 // « talent » ne colore que la ligne locale ; elle part sans lui, les règles du journal ne le connaissent pas.
 logAttaque=function(a,b,logo,corps,detail,suite,talent){logAttaqueLocal(a,b,logo,corps,detail,suite,talent);
  const d=detail?{des:codeDes(detail.dice),origine:Number.isInteger(detail.origine)?detail.origine:null,
-  faille:Number.isInteger(detail.faille)?detail.faille:null,bonus:detail.bonus||0,saignee:detail.saignee||0,def:Number.isInteger(detail.def)?detail.def:null,solidite:!!detail.solidite,double:!!detail.double,total:detail.total||0}:null;
+  faille:Number.isInteger(detail.faille)?detail.faille:null,...(Array.isArray(detail.plasma)?{plasma:detail.plasma.slice(0,6).map(v=>Math.trunc(Number(v))||0)}:{}),bonus:detail.bonus||0,saignee:detail.saignee||0,def:Number.isInteger(detail.def)?detail.def:null,solidite:!!detail.solidite,double:!!detail.double,total:detail.total||0}:null;
  diffuser({genre:'attaque',a:fiche(a),b:fiche(b),logo:logo?String(logo).slice(0,40):null,corps:String(corps).slice(0,60),detail:d,suite:suite?String(suite).slice(0,200):null})};
 /* Les mots qui montent au-dessus des socles — dégâts, Gardé, Échec, Révélé — se voient sur toutes les tables : l'appareil
    qui agit les envoie avec le journal, comme les effets. Ce qui se calcule en appliquant la table reçue reste chez soi, et un
@@ -517,7 +517,7 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
   else if(rec.effet==='piege'&&typeof explosionPiege==='function'){const m=typeof currentMap==='function'?currentMap():null,c=m&&(m.coffres||[])[Number(rec.logo)];if(c)explosionPiege(centreForme(c))}
   else if(rec.effet==='piegecarte'&&typeof explosionPiege==='function'){const m=typeof currentMap==='function'?currentMap():null,p=m&&(m.pieges||[])[Number(rec.logo)];if(p)explosionPiege(centrePiege(p))}return}
  if(rec.genre==='attaque'){const r=rec.detail&&typeof rec.detail==='object'?rec.detail:null;
-  const d=r?{dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,def:Number.isInteger(r.def)?r.def:null,solidite:!!r.solidite,double:!!r.double,total:r.total}:null;
+  const d=r?{...(Array.isArray(r.plasma)?{plasma:r.plasma.slice(0,6)}:{}),dice:decodeDes(Array.isArray(r.des)?r.des:[]),origine:r.origine,faille:r.faille,bonus:r.bonus,saignee:r.saignee,def:Number.isInteger(r.def)?r.def:null,solidite:!!r.solidite,double:!!r.double,total:r.total}:null;
   logAttaqueLocal(acteurDuJournal(rec.a),acteurDuJournal(rec.b),typeof rec.logo==='string'?rec.logo:'',String(rec.corps||''),d,rec.suite?String(rec.suite):'')}
  else logLocal(String(rec.texte||''),{badge:rec.badge?String(rec.badge):undefined,ton:typeof rec.ton==='string'?rec.ton:undefined,bilan:rec.detail&&typeof rec.detail==='object'&&rec.detail.bilan||undefined,
   sources:rec.detail&&typeof rec.detail==='object'&&Array.isArray(rec.detail.sources)?rec.detail.sources:undefined})}

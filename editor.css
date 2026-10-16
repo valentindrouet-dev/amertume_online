@@ -3078,11 +3078,8 @@ body.plasma-en-main .barre-actions button.accepte-plasma{box-shadow:0 0 0 3px #d
 /* v0.864 : un talent chargé de Plasma — rose Plasma, une lueur qui palpite, de petits éclairs autour. */
 .barre-actions button.charge-plasma{background:radial-gradient(circle at 50% 35%,#f6a8f3,#d966d6 60%,#a83ea6)!important;border-color:#f7c2f5!important;animation:charge-plasma 1.2s ease-in-out infinite}
 @keyframes charge-plasma{0%,100%{box-shadow:0 0 0 2px #f2a3ef,0 0 10px 3px #d966d6aa}50%{box-shadow:0 0 0 3px #ffd2fd,0 0 22px 8px #e57ae2}}
-.barre-actions button>.eclairs-plasma{position:absolute;inset:-9px;pointer-events:none;z-index:1}
-.eclairs-plasma>i{position:absolute;width:9px;height:16px;background:#fff3fe;clip-path:polygon(55% 0,0 58%,42% 58%,30% 100%,100% 38%,58% 38%);filter:drop-shadow(0 0 3px #f29bf0);opacity:0;animation:eclair-plasma 1.6s steps(1) infinite}
-.eclairs-plasma>i:nth-child(1){top:0;left:6px;transform:rotate(-20deg)}
-.eclairs-plasma>i:nth-child(2){top:4px;right:2px;transform:rotate(25deg);animation-delay:.55s}
-.eclairs-plasma>i:nth-child(3){bottom:2px;right:10px;transform:rotate(160deg);animation-delay:1.05s}
-@keyframes eclair-plasma{0%{opacity:0}8%{opacity:1}16%{opacity:.2}22%{opacity:1}30%,100%{opacity:0}}
-@media (prefers-reduced-motion:reduce){.barre-actions button.charge-plasma{animation:none}.eclairs-plasma>i{animation:none;opacity:.8}}
+@media (prefers-reduced-motion:reduce){.barre-actions button.charge-plasma{animation:none}}
 .board-die.plasma{color:#fff;border-color:#f7c2f5!important;box-shadow:0 0 10px #e57ae2}
+/* v0.867 : une Invention au journal, pièce rose ; un dé de Plasma dans la bulle des dégâts. */
+.j-objet.j-objet-invention{background:linear-gradient(#fbe9fa,#efc8ed)!important;border-color:#d58ad3!important}
+.j-de.plasma{color:#fff;border-color:#f7c2f5!important}
