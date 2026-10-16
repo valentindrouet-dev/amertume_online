@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.864 — La Cellule de tout Mécaniste ; un talent chargé de Plasma, rose et crépitant. */
+{const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("cleClasse(a.role)===cleClasse('Mécaniste')))return 0;")&&page.includes("b.classList.toggle('charge-plasma',n>0);"),'v0.864 : Cellule du Mécaniste et bouton chargé');}
 /* v0.863 — Dés de l'Invention sur son bouton, Foudre portée par l'objet, bulle rose, barre dans l'ordre de l'arbre. */
 {const page=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(page.includes("function desInvention(a,modele){")&&page.includes("dice:{blue:1},etat:'Foudre',sansBonusDegats:true")&&ed.includes("const parArbre=l=>")&&ed.includes("if(o.invention)d.classList.add('gear-invention');"),'v0.863 : Invention juste, barre dans l’ordre de l’arbre');}
