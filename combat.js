@@ -149,7 +149,9 @@ function gearAttacks(actor,items){
   const etats=[...new Set([...etatsDArmes(lot),...(tire&&mun.etat?[mun.etat]:[])])];
   return {name:[...groupes].map(([w,n])=>w.name+(n>1?' ×'+n:'')).join(' + ')+(tire?' · '+mun.name:''),dice,range,
    targets:'one',useOwnDamage:!lot.some(w=>w.sansBonusDegats===true),effects:{},etats,logos:lot.filter(w=>w.logo).map(w=>String(w.logo)).slice(0,2),gear:true,munition:tire?mun.id:null}};
- const contact=armes.filter(w=>w.ranged!==true),distance=armes.filter(w=>w.ranged===true&&w.lancer!==true);
+ /* v0.862 : une Invention du Mécaniste frappe de ses propres dés, seule : elle ne se cumule pas avec les autres armes en main. */
+ const inventions=armes.filter(w=>w.invention===true);
+ const contact=armes.filter(w=>w.ranged!==true&&w.invention!==true),distance=armes.filter(w=>w.ranged===true&&w.lancer!==true&&w.invention!==true);
  /* Une arme de lancer a son bouton à elle, sans munition : lancée au loin, ou maniée au contact — la table
     tranche selon la cible. « lancer » dit laquelle part. */
  const lancers=[...new Set(armes.filter(w=>w.ranged===true&&w.lancer===true))],lance=w=>({...attaque([w],'distance',true),lancer:w.id});
@@ -165,6 +167,7 @@ function gearAttacks(actor,items){
   const variantes=[];seules.forEach(w=>{if(!paire||!paire.includes(w))variantes.push(attaque([w],'contact'));else if(w===paire[0])variantes.push(attaque(paire,'contact'))});
   return variantes.concat([...new Set(distance)].map(w=>attaque([w],'distance')),lancers.map(lance))}
  const sorties=[];if(contact.length)sorties.push(attaque(contact,'contact'));if(distance.length)sorties.push(attaque(distance,'distance'));
+ if(inventions.length)sorties.push({...attaque(inventions,inventions.some(w=>w.ranged===true)?'distance':'contact',true),invention:true});
  lancers.forEach(w=>sorties.push(lance(w)));
  return sorties}
 /* Une attaque de fiche — l'attaque spéciale d'un adversaire — peut poser une affliction,
@@ -1081,7 +1084,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  /* v0.852 — Les Inventions du Mécaniste. Gantelets-Tonnerre : fabriqués et équipés au premier usage, ils frappent ensuite, Plasma
     compris, et la cible subit Foudre ; Incident : le porteur subit Foudre et les Gantelets sont hors service. Clé à Molette : une
     Attaque au contact qui recharge 1 Plasma ; tous, ou une Invention réparée, avec ses améliorations. */
- gantelets:{cle:'gantelets',nom:'Gantelets-Tonnerre',type:'act',bouton:'Gantelets-Tonnerre',attaque:true,
+ gantelets:{cle:'gantelets',nom:'Gantelets-Tonnerre',type:'act',bouton:'Gantelets-Tonnerre',attaque:true,invention:'gantelets',
   aide:'Action, Invention : le porteur fabrique et équipe des Gantelets-Tonnerre (1 dé Bleu, sans bonus de dégâts), puis effectue une Attaque au contact, plus la somme des dés de Plasma ; la cible subit Foudre. Incident : le porteur subit Foudre et les Gantelets sont hors service pour le combat.',
   params:[],phrase(){return 'Vous fabriquez et équipez des <b>Gantelets-Tonnerre</b> (dégâts 1 dé Bleu, pas de bonus de dégâts). Vous effectuez <b>1 Attaque</b> au contact, plus la somme des dés de Plasma ; la cible subit <b>Foudre</b>. <b>Incident</b> : vous subissez aussi Foudre et l’Invention est hors service pour le reste du combat.'}},
  /* v0.861 — Améliorations des Gantelets-Tonnerre : un dé Bleu de plus, plus d'Incident, deux Gantelets, un dans chaque main. */

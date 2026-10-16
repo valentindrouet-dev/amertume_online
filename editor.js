@@ -242,6 +242,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('orbes-poison')){if(!c.affixes.some(x=>x.id==='affixe-orbes-poison'))c.affixes.push(normaliseAffixe({id:'affixe-orbes-poison',nom:'de la Vipère',place:'suffixe',effet:'orbesEtat',etat:'Poison',valeur:1,classe:'Mystique',poids:10,niveau:1}));c.semisForge.push('orbes-poison')}
  // Frappe Furieuse, posée une fois dans la Bibliothèque du Destructeur, hors de l'arbre : le MJ la place où il veut.
  /* v0.850 — Le Mécaniste, nouvelle classe : il rejoint une fois les classes d'un catalogue déjà enregistré ; ensuite elle est au MJ. */
+ c.inventionsModeles=typeof normaliseModelesInventions==='function'?normaliseModelesInventions(c.inventionsModeles):(c.inventionsModeles&&typeof c.inventionsModeles==='object'?c.inventionsModeles:{});
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
@@ -1751,7 +1752,7 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  // Au-dessus de sa valeur : les dés d'une arme, et l'état qu'elle inflige ; la DEF d'une armure qui protège.
  // À distance, la place vide d'une munition à droite des dés ; chez son porteur, son bonus de dégâts ensuite.
  if(col==='melee'||col==='ranged'){const p=document.createElement('p');p.className='gear-des';p.append(dicePips(o.dice,o.etat,col==='ranged'&&!o.lancer));
-  if(a&&(a.inventaire||[]).includes(o.id)){const b=document.createElement('b');b.className='bonus';b.textContent='+ '+degatsDe(a);p.append(b);const ico=iconeDegats();if(ico)p.append(ico)}
+  if(a&&(a.inventaire||[]).includes(o.id)&&o.sansBonusDegats!==true){const b=document.createElement('b');b.className='bonus';b.textContent='+ '+degatsDe(a);p.append(b);const ico=iconeDegats();if(ico)p.append(ico)}
   d.append(p)}
  else if(col==='armor'&&((Number(o.def)||0)>0||['torse','shield'].includes(emplacementDe(o)))){const p=document.createElement('p');p.className='gear-def';p.append(shieldBadge(o.def||0));d.append(p)}
  // Une munition : le dé qu'elle ajoute, et l'état qu'elle inflige ; à côté, combien l'aventurier en a.
@@ -1764,7 +1765,7 @@ function gearDetail(o,a,enJeu){const col=itemColumn(o),d=document.createElement(
  if(soin){const p=document.createElement('p');p.className='gear-soin';p.append('Soin');const ic=logoBonus({carac:'soin'});if(ic){ic.classList.add('soin-ico');p.append(' ',ic)}
   const n=Math.max(1,soin.quantite|0),b=document.createElement('b');b.textContent=soin.forme==='des'?n+'d6':soin.forme==='endu'?n+' + Endurance':soin.forme==='vie'?n+' + Vie':String(n);p.append(' : ',b);d.append(p)}
  // Une arme, une armure, une munition, une ressource, un reste ou un objet de soin : sa valeur, « 7 » et la pièce d'or.
- if(col==='restes'||col==='ressource'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'||soin){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
+ if(!o.invention&&(col==='restes'||col==='ressource'||col==='melee'||col==='ranged'||col==='armor'||o.category==='ammo'||soin)){const v=document.createElement('p');v.className='gear-valeur';const n=document.createElement('b');n.textContent=(o.price||0).toLocaleString('fr-FR');
   const piece=document.createElement('i');piece.className='piece-or';piece.setAttribute('role','img');piece.setAttribute('aria-label','or');v.append(n,' ',piece);d.append(v)}
  // Un objet : la description du MJ, telle qu'il l'a écrite ; sans elle, rien. Ailleurs, aucun texte.
  if(col==='object')ligne(o.notes);
@@ -3493,6 +3494,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   /* On choisit l'effet dans la liste de ce que le moteur sait faire ; puis, palier par palier,
      le texte qui se lit à la table, les valeurs qui agissent, et ce que coûte le palier. */
   +'<section class="talent-boite b-moteur t-seul"><h2 class="sous-titre">Mécanique du moteur</h2>'
+  +'<button type="button" id="modele-invention" class="arbre-ajout" hidden>Objet fabriqué : dés, bonus, DEF, caractéristiques, états…</button>'
   +selMecanique(bonus?'':(t.effet||''),famille&&famille!==GENERIQUES?famille:(typeof arbresClasse==='string'?arbresClasse:''))
   /* La case Élémentaire n'est plus (v0.788) : le Mystique n'a plus qu'un élément. Les accolades, elles, se remplissent toujours
      dans le nom, les textes et le logo de tout talent. */
@@ -3586,6 +3588,9 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   apercus.forEach(v=>v())};
  poseLogosElements();
  dessineReglagesTalent();
+ // v0.862 : une Invention règle l'objet qu'elle fabrique, dans l'éditeur d'objets.
+ {const s=$('talent-form').elements.effet,b=$('modele-invention');if(s&&b){const inv=()=>{const c=TALENTS_CODES[s.value];return c&&c.invention||''};
+  const maj=()=>{b.hidden=!inv()};s.addEventListener('change',maj);maj();b.onclick=()=>{const m=inv();if(m&&typeof openModeleInvention==='function')openModeleInvention(m)}}}
  $('delete-talent').hidden=i===null;talentDialog.showModal()}
 $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  const f=$('talent-form').elements;
@@ -3889,6 +3894,9 @@ function syncForges(){if(typeof catalog==='undefined'||!catalog||!Array.isArray(
  // Les pièces de la Chambre forte, où qu'elles soient : chez un adversaire du bestiaire aussi.
  (catalog.chambreForte||[]).forEach(f=>{if(vus.has(f.id))return;vus.add(f.id);const o=objetForge(f,base,catalog.affixes||[],guide);if(o)items.push(o)});
  // v0.852 : les Inventions du Mécaniste, le temps d'un combat, de même.
+ /* v0.862 : hors combat, les Inventions n'existent plus — quelle que soit la façon dont le combat a fini ; elles ne reviennent que
+    refabriquées. */
+ if(typeof finInventions==='function'&&typeof enCombat==='function'&&!enCombat()&&!(typeof loading!=='undefined'&&loading))(typeof actors!=='undefined'?actors:[]).forEach(a=>{if(a&&Array.isArray(a.inventions))finInventions(a)});
  if(typeof objetInvention==='function')(typeof actors!=='undefined'?actors:[]).forEach(a=>(a&&a.inventions||[]).forEach(v=>{if(!v||vus.has(v.id))return;vus.add(v.id);const o=objetInvention(v,a);if(o)items.push(o)}))}
 const renderSansForges=render;render=function(){syncForges();renderSansForges()};
 // Une pièce forgée qui change de sac : son enregistrement suit, pour que la table la recompose chez son nouveau porteur.
@@ -6673,7 +6681,23 @@ function openItem(i=null,apres=null,defauts=null){itemIndex=i;itemApres=apres;
  itemDraft=i===null?{name:'Nouvel objet',category:'weapon',ranged:false,hands:1,qty:1,price:0,ressource1:'',ressource2:'',magasin:false,def:0,slot:'torse',dice:{},traits:[],...(defauts||{})}
   :structuredClone(catalog.items[i]);
  dessineItem();$('delete-item').hidden=i===null;itemDialog.showModal()}
+/* v0.862 : l'objet qu'une Invention fabrique, réglé dans l'éditeur d'objets — dés, état infligé, bonus de caractéristiques (Dégâts,
+   DEF, compétences…), et s'il ajoute le bonus de dégâts du porteur. Il se garde à part du catalogue d'objets (« inventionsModeles ») :
+   ni l'Armurerie, ni les butins ne le voient. */
+let itemModeleInvention=null;
+itemDialog.addEventListener('close',()=>{itemModeleInvention=null});
+function modeleInventionActuel(m){const base=typeof INVENTIONS_MODELES!=='undefined'?INVENTIONS_MODELES[m]:null,r=(catalog.inventionsModeles||{})[m];return base?{...structuredClone(base),...(r?structuredClone(r):{})}:null}
+function openModeleInvention(m){const o=modeleInventionActuel(m);if(!o)return;openItem(null,null,{...o,price:0,qty:1});itemModeleInvention=m;$('delete-item').hidden=true;
+ const ch=document.createElement('label');ch.className='field-check';ch.id='invention-bonus';ch.innerHTML='<input type="checkbox" name="inventionBonus"'+(o.sansBonusDegats===true?'':' checked')+'>Ajoute le bonus de dégâts du porteur';
+ const f=$('item-fields');if(f)f.prepend(ch)}
+function normaliseModelesInventions(o){const out={};if(!o||typeof o!=='object'||Array.isArray(o))return out;
+ Object.entries(o).slice(0,20).forEach(([k,v])=>{if(!/^[a-z]{2,30}$/.test(k)||!v||typeof v!=='object')return;
+  out[k]={name:String(v.name||'').slice(0,60)||'Invention',category:'weapon',hands:Number(v.hands)===1?1:2,ranged:v.ranged===true,dice:v.dice&&typeof v.dice==='object'?v.dice:{},
+   ...(typeof v.etat==='string'&&v.etat?{etat:v.etat.slice(0,30)}:{}),bonus:normaliseBonusEquip(v.bonus),...(v.sansBonusDegats===true?{sansBonusDegats:true}:{}),
+   ...(typeof v.logo==='string'&&v.logo?{logo:v.logo.slice(0,200)}:{}),...(typeof v.notes==='string'&&v.notes?{notes:v.notes.slice(0,400)}:{})}});return out}
 $('item-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
+ if(itemModeleInvention){const m=itemModeleInvention,ff=$('item-form').elements,a=itemDepuisForm({...itemDraft});a.sansBonusDegats=!(ff.inventionBonus&&ff.inventionBonus.checked);
+  catalog.inventionsModeles={...normaliseModelesInventions(catalog.inventionsModeles),...normaliseModelesInventions({[m]:a})};itemDialog.close();render();scheduleSave();return}
  const a=itemDepuisForm({...(itemIndex===null?{id:crypto.randomUUID()}:structuredClone(catalog.items[itemIndex])),...itemDraft});
  if(itemIndex===null)catalog.items.push(a);else catalog.items[itemIndex]=a;itemDialog.close();renderCatalogPages();scheduleSave();const rappel=itemApres;itemApres=null;if(rappel)rappel(a)};
 $('delete-item').onclick=()=>{if(view!=='mj'||itemIndex===null||!confirm('Supprimer cet objet du catalogue ? Les attaques déjà appliquées restent inchangées.'))return;const id=catalog.items[itemIndex].id;actors.forEach(a=>{a.weapons=a.weapons.filter(w=>w!==id);a.armures=armuresDe(a).filter(x=>x!==id);if(a.shieldId===id)a.shieldId=''});catalog.items.splice(itemIndex,1);itemDialog.close();renderCatalogPages();scheduleSave()};

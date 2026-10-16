@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.862","d":"2026-10-16","t":"Inventions : fin de combat, attaque propre, objet réglable"},
 {"v":"0.861","d":"2026-10-16","t":"Améliorations des Gantelets-Tonnerre"},
 {"v":"0.860","d":"2026-10-16","t":"Incident en italique partout"},
 {"v":"0.859","d":"2026-10-16","t":"Incident plus lisible"},

@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.862 — Inventions : disparues hors combat, attaque à elles seules, objet fabriqué réglé dans l'éditeur d'objets. */
+{const cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8');
+ assert.ok(cb.includes("if(inventions.length)sorties.push({...attaque(inventions,")&&page.includes("findIndex(at=>at.invention===true)")&&page.includes("effaceOrbesStatiques(true);actors.forEach(finInventions);"),'v0.862 : attaque propre, fin des inventions');
+ assert.ok(ed.includes("function openModeleInvention(m){")&&ed.includes("catalog.inventionsModeles={...normaliseModelesInventions(catalog.inventionsModeles)")&&ed.includes("&&!enCombat()&&!(typeof loading!=='undefined'&&loading))"),'v0.862 : le modèle réglé, hors combat rien');}
 /* v0.861 — Améliorations des Gantelets-Tonnerre : Dé Bleu, Sans Incident, Paire. */
 {const cb=fs.readFileSync('combat.js','utf8'),page=fs.readFileSync('index.html','utf8');
  assert.ok(cb.includes("ganteletsbleu:'gantelets',ganteletssur:'gantelets',ganteletsdeux:'gantelets',")&&page.includes("const SANS_INCIDENT={gantelets:'ganteletssur'};")&&page.includes("const voulus=porteEffet(talentsCodes(a),'ganteletsdeux')?2:1"),'v0.861 : les améliorations des Gantelets');}
@@ -5609,7 +5613,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  assert.deepEqual([m.foes[0].inventaire,m.foes[0].butin,'inventaire' in m.foes[1]],[['k1','k1'],{k1:100},false],'un adversaire posé garde ses objets propres');
  assert.ok(page.indexOf('<svg id="map-coffres"')>0&&page.indexOf('<svg id="map-coffres"')<page.indexOf('<canvas id="fog"')&&page.includes("e.target.closest('#map-coffres')||e.target.closest('#map-pieges'))return;"),'le calque des coffres sous le brouillard');
  assert.ok(mp.includes("el.onmousedown=e=>e.preventDefault();")&&mp.includes("if(mj)menuCoffre(c,e.clientX,e.clientY);else ouvreCoffreJoueur(c)}")&&mp.includes("function ouvreCoffreJoueur(c){"),'le clic du joueur ouvre');
- assert.ok(src.includes("el instanceof SVGElement&&el.getClientRects().length>0")&&src.includes("if(col==='restes'||col==='ressource'||")&&src.includes("['cles','Clés',o=>o.category==='cle']"),'bulle SVG, prix des ressources, clés');
+ assert.ok(src.includes("el instanceof SVGElement&&el.getClientRects().length>0")&&src.includes("(col==='restes'||col==='ressource'||")&&src.includes("['cles','Clés',o=>o.category==='cle']"),'bulle SVG, prix des ressources, clés');
  assert.ok(src.includes("function ajoutePropres(a,p){")&&src.includes("neuf=ajoutePropres(fromMonster(m),a.propres);")&&mp.includes("a.propres={inventaire:[...(f.inventaire||[])],butin:{...(f.butin||{})},...(bourse.length?{bourse}:{})};ajoutePropres(a,a.propres)")
   &&mp.includes("inventaireAdversaire($('foe-objets-corps'),f,()=>saveMaps());"),'objets propres d’un adversaire');}
 /* v0.505 — Nuée : finir son mouvement sur un token, traverser les adversaires ; corriger un modèle ne rend plus
