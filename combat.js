@@ -1068,6 +1068,10 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  revanche:{cle:'revanche',nom:'Revanche',type:'reac',bouton:'↯ Revanche',gratuit:true,
   aide:'Réaction : après l’échec d’un adversaire, le porteur effectue un Mouvement gratuit jusqu’à son contact.',
   params:[],phrase(){return 'Après qu’un adversaire réalise <b>un échec</b>, le porteur effectue <b>un Mouvement gratuit</b> jusqu’à son contact.'}},
+ /* v0.844 — Vengeance : une réaction du Destructeur, gratuite. Blessé par un adversaire au contact, le porteur lui rend une Attaque gratuite. */
+ vengeance:{cle:'vengeance',nom:'Vengeance',type:'reac',bouton:'⚔ Vengeance',gratuit:true,
+  aide:'Réaction : après qu’un adversaire au contact inflige des dégâts au porteur, celui-ci effectue une Attaque gratuite contre lui.',
+  params:[],phrase(){return 'Après qu’un <b>adversaire au contact</b> vous inflige des <b>dégâts</b>, vous effectuez une <b>Attaque gratuite</b> contre ce dernier.'}},
  /* Traction : une réaction, gratuite. Blessé par une attaque à distance, le porteur rejoint le tireur. */
  traction:{cle:'traction',nom:'Traction',type:'reac',bouton:'⇢ Traction',gratuit:true,
   aide:'Réaction : après avoir subi les dégâts d’une attaque à distance, le porteur effectue un Mouvement gratuit jusqu’au contact du tireur.',

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.844","d":"2026-10-16","t":"Vengeance"},
 {"v":"0.843","d":"2026-10-16","t":"Prix des bonus par ligne"},
 {"v":"0.842","d":"2026-10-16","t":"Rangées de talents resserrées"},
 {"v":"0.841","d":"2026-10-16","t":"Passifs en rond moyen"},

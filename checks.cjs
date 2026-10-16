@@ -4411,7 +4411,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    un mur de feu tout du long. Rapide est désactivé. */
 {const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(vif.includes("'orbeStatique','nyctalope','mouvement','mvtReste','mvtTour',"),'le reste du mouvement voyage en ligne');
- assert.ok(page.includes("delete a.revanche;delete a.traction;delete a.bondissement;delete a.decoupe;delete a.impulsion;delete a.coupureFatale;delete a.adieu;delete a.mvtReste;delete a.mvtTour;delete a.opportunitesSubies;mouvementRapide(a)});")&&page.includes("actors.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour;"),'un nouveau tour l’efface');
+ assert.ok(page.includes("delete a.revanche;delete a.traction;delete a.vengeance;delete a.bondissement;delete a.decoupe;delete a.impulsion;delete a.coupureFatale;delete a.adieu;delete a.mvtReste;delete a.mvtTour;delete a.opportunitesSubies;mouvementRapide(a)});")&&page.includes("actors.forEach(a=>{a.checks=[0,0,0];delete a.mvtReste;delete a.mvtTour;"),'un nouveau tour l’efface');
  assert.ok(page.includes("   if(drag.regle&&!appliqueRegleMouvement(a,drag.regle))jusquALaBorne(a,drag.regle,g,(x,y)=>moveActor(a,x,y,view==='mj',enMain,true))}")
   &&page.includes("fleche.setAttribute('d','M'+pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L'));"),'la main va jusqu’à la limite, la flèche suit le chemin');
  assert.equal(C.TALENTS_CODES.rapide.retire,true,'Rapide retiré de la bibliothèque');
@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.844 — Vengeance : blessé par un adversaire au contact, le porteur lui rend une Attaque gratuite. */
+{const page=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
+ assert.ok(cb.includes("vengeance:{cle:'vengeance',nom:'Vengeance',type:'reac',")&&page.includes("porteEffet(talentsCodes(b),'vengeance')&&contactsDe(b).includes(a))b.vengeance={de:a.id,tour:round};")
+  &&page.includes("delete a.vengeance;selected=actors.indexOf(a);attack({vises:[actors.indexOf(b)],sansAction:true});return null}"),'v0.844 : Vengeance ouverte par le coup reçu au contact, une Attaque gratuite');}
 /* v0.843 — Prix des bonus par ligne de l'arbre : 100 par ligne pour Dégâts, Endurance et PV, 100 de plus pour Vie, 50 pour une compétence. */
 {const ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ed.includes("const base=carac==='comp'?50:['dmg','endu','pv'].includes(carac)?100*L:carac==='vie'?100*(L+1):null;")&&ed.includes("if(x.ligneAuto!==L){prixBonusLigne(x,L);x.ligneAuto=L;change=true}"),'v0.843 : le barème par ligne, recalculé au changement de ligne');
