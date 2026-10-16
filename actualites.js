@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.830","d":"2026-10-16","t":"Prix hors de portée en rouge"},
 {"v":"0.829","d":"2026-10-15","t":"Prix payé en vert"},
 {"v":"0.828","d":"2026-10-15","t":"Double clic sur la carte : le zoom revient"},
 {"v":"0.827","d":"2026-10-15","t":"Orbes : Feu d'office"},

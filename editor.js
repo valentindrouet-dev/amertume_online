@@ -5597,7 +5597,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(a&&t.flottant!==true){const prix=coutPalier(t,1),dispoT=xpDisponible(a,catalog.talents);
    // Le prix sous le grand rond : le nom garde toute sa ligne, et le cartouche ne sort jamais du cadre.
    // Pris, son prix reste, en vert : de l'XP dépensée.
-   if(prix){const pr=document.createElement('span');pr.className='detail-prix detail-prix-rond'+(acquis?' paye':'');pr.textContent=prix+' XP';rond.after(pr);const pile=document.createElement('span');pile.className='detail-gauche';pr.before(pile);pile.append(rond,pr)}
+   if(prix){const pr=document.createElement('span');pr.className='detail-prix detail-prix-rond'+(acquis?' paye':prix>dispoT?' trop-cher':'');pr.textContent=prix+' XP';rond.after(pr);const pile=document.createElement('span');pile.className='detail-gauche';pr.before(pile);pile.append(rond,pr)}
    const ok=acquis||(!verrou&&!!el&&prix<=dispoT);tete.classList.add('cliquable',acquis?'acquise':ok?'achetable':'fermee');
    if(ok&&el&&el.agir){tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>el.agir();
     tete.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tete.click()}}}}
@@ -5623,7 +5623,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       // Un nom long rapetisse, pour tenir sur sa ligne à côté de son prix.
       const L=String(b.textContent||'').length;if(L>18)b.style.fontSize=(L>26?14:L>22?15.5:16.5)+'px'}
      l.append(b);
-     if(prix){const pr=document.createElement('span');pr.className='detail-prix'+(k>=n?' paye':'');pr.textContent=prix+' XP';l.append(pr)}
+     if(prix){const pr=document.createElement('span');pr.className='detail-prix'+(k>=n?' paye':a&&prix>dispo?' trop-cher':'');pr.textContent=prix+' XP';l.append(pr)}
      if(mj&&n===1){const x2=document.createElement('button');x2.type='button';x2.className='detail-oter';x2.textContent='✕';x2.setAttribute('aria-label','Ôter');
       x2.onclick=e=>{e.stopPropagation();if(bonus){laisseCaseVide(x);const i=catalog.talents.indexOf(x);if(i>=0)catalog.talents.splice(i,1);actors.forEach(y=>{if(y.talents)y.talents=y.talents.filter(id=>id!==x.id)})}else videDeLArbre(x);arbreChange()};l.append(x2)}
      c.append(l);
