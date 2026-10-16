@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.876 — La Cellule ne se recharge plus au début du tour : pleine au début du combat, puis par la Clé à Molette. */
+{const h=fs.readFileSync('index.html','utf8');
+ assert.ok(h.includes(" actors.forEach(a=>{a.checks=[0,0,0];a.talentsJoues=[];a.orbes=0;delete a.revanche;")&&!h.includes('a.plasmaTour!==round}')
+  &&h.includes("return a.plasmaTour===undefined||a.plasmaTour===null||!Number.isFinite(t)||t>round}"),'v0.876 : pas de recharge au tour');}
 /* v0.875 — Fenêtres des réactions et du début de combat sur la carte, sous ses boutons, côte à côte. */
 {const h=fs.readFileSync('index.html','utf8'),c=fs.readFileSync('editor.css','utf8');
  assert.ok(h.includes(' pileFenetres().append(d);choixIntervention=')&&h.includes(' pileFenetres().append(box);fenDebut=')&&h.includes('function placePileFenetres(){')

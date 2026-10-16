@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.876","d":"2026-10-16","t":"Cellule rechargée par la Clé à Molette seulement"},
 {"v":"0.875","d":"2026-10-16","t":"Fenêtres de réaction sur la carte, côte à côte"},
 {"v":"0.874","d":"2026-10-16","t":"Ordre des améliorations dans les bulles"},
 {"v":"0.873","d":"2026-10-16","t":"Les dés bleus doublent avec tous les dés"},
