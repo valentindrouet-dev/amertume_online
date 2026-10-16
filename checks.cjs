@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.859 — L'Incident en italique, détaché d'un léger espace, d'un rouge plus clair, partout le même. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("ajoute(['Incident','incident','INCIDENT'],'#b03a48');")&&fs.readFileSync('editor.css','utf8').includes('.talent-incident{font-style:italic;margin-top:6px!important}'),'v0.859 : la couleur de l’Incident');
 /* v0.858 — Le champ Incident d'un talent et sa ligne dans la bulle ; de l'air autour des tirets des noms. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("if(f.incidentOn&&f.incidentOn.checked&&f.incident&&f.incident.value.trim()&&t.effet!=='bonus')t.incident=")&&ed.includes("m.className='mot-incident';m.textContent='Incident :';")&&ed.includes("function avecTirets(el,s){"),'v0.858 : Incident et tirets');}
 /* v0.857 — {Foudre} ou [Foudre] : l'icône de l'état ; {plasma} : un dé de Plasma. */

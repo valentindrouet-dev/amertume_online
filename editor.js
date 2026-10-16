@@ -2210,6 +2210,8 @@ function enElementDuMystique(html,etat){if(!etat)return html;
    fiche), états (à leurs teintes), points et natures (en gras), formules de dés et bonus
    chiffrés (« 1d6+2 », « +3 »). Le MJ en ajoute dans l'onglet Talents ; « **ainsi** » force
    le gras. Le texte se découpe autour d'eux, sans jamais passer par du HTML. */
+// v0.859 : le rouge de l'Incident, partout où le mot paraît dans les talents.
+const TEINTE_INCIDENT='#b03a48';
 const TEINTE_ETAT_MOT={'Gardé':'#3d8b2f',Furie:'#c0392b',Rage:'#e8501c',Feu:'#c2503a',Gel:'#2f8fae',Foudre:'#3a6fc2',Poison:'#9b4fc0','Saignée':'#b8352f',Onde:'#3577b8',Invisible:'#6a5fb0',Faille:'#a0408f'};
 /* La couleur d'un mot clé du MJ : « Allié : vert », « Allié = #2f8a63 », ou rien — la
    couleur du thème. Un mot du jeu redéclaré prend la couleur qu'on lui donne. */
@@ -2231,7 +2233,7 @@ function motsCles(){const perso=(catalog&&catalog.motsCles)||[],cle=perso.join('
  const entrees=[],vus=new Set();
  const ajoute=(formes,couleur,insensible)=>formes.forEach(f=>{if(!f)return;const motif=motifMotCle(f,insensible);if(vus.has(motif))return;vus.add(motif);entrees.push({mot:f,motif,couleur,re:new RegExp('^(?:'+motif+')$','u')})});
  // Ceux du MJ qui ont une couleur passent d'abord : ils l'emportent sur ceux du jeu. Sans couleur, un mot du jeu garde la sienne.
- const lus=perso.map(lisMotCle).filter(x=>x.mot);ajoute(['Gardé','GARDÉ'],TEINTE_ETAT_MOT['Gardé']);lus.filter(x=>x.couleur).forEach(x=>ajoute([x.mot],x.couleur,true));
+ const lus=perso.map(lisMotCle).filter(x=>x.mot);ajoute(['Gardé','GARDÉ'],TEINTE_ETAT_MOT['Gardé']);ajoute(['Incident','incident','INCIDENT'],'#b03a48');lus.filter(x=>x.couleur).forEach(x=>ajoute([x.mot],x.couleur,true));
  const rgb=k=>typeof STAT_TINTS!=='undefined'&&STAT_TINTS[k]?'rgb('+STAT_TINTS[k]+')':'';
  ajoute(['PV max','PV'],rgb('pv'));ajoute(['DEF','Défense'],rgb('def'));ajoute(['Endurance','ENDU','Endu'],rgb('endu'));
  ajoute(['Vie','VIE'],rgb('vie'));ajoute(['Dégât','dégât','DÉGÂT'],rgb('dmg'));ajoute(['XP'],rgb('xp'));
