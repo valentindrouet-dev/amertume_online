@@ -3109,3 +3109,8 @@ body.plasma-en-main .barre-actions button.accepte-plasma::before{content:'';posi
 #pile-fenetres>.fenetres-debut{display:contents}
 #pile-fenetres .fenetres-debut .choix-intervention{position:relative;left:auto;top:auto;transform:none}
 body[class*="page-"] #pile-fenetres{display:none!important}
+/* v0.877 : la bille de Plasma qui bondit du token jusqu'à la Cellule, et l'éclat de son arrivée. */
+.bille-plasma{position:fixed;left:0;top:0;width:14px;height:14px;border-radius:50%;pointer-events:none;z-index:200;
+ background:radial-gradient(circle at 38% 35%,#fff 0 18%,#ffc2f6 32%,#d966d6 62%,#8e2d93 100%);box-shadow:0 0 8px 3px #d966d6cc,0 0 18px 6px #d966d655}
+.eclat-plasma{position:fixed;width:30px;height:30px;border-radius:50%;pointer-events:none;z-index:201;
+ background:radial-gradient(circle,#fff 0 20%,#ffc2f6aa 38%,#d966d655 60%,transparent 72%);box-shadow:0 0 0 2px #ffd6fb99}

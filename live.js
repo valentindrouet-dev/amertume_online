@@ -510,6 +510,7 @@ function poserLigne(rec){if(!rec||typeof rec!=='object')return;
   else if(rec.effet==='flottant')flottantRecu(rec);
   else if(rec.effet==='ping'&&typeof pingCarte==='function'&&rec.detail&&typeof rec.detail==='object')pingCarte(Number(rec.detail.x),Number(rec.detail.y),rec.logo==='mj');
   else if(rec.effet==='intervention'&&typeof interventionRecue==='function')interventionRecue(rec);
+  else if(rec.effet==='plasma'&&typeof billesPlasma==='function')billesPlasma(acteurDuJournal(rec.a),Number(rec.logo)||1,false);
   else if(rec.effet==='fleche'&&typeof volFleche==='function')volFleche(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
   else if(rec.effet==='balayage'&&typeof coupDeToken==='function')coupDeToken(acteurDuJournal(rec.a),acteurDuJournal(rec.b));
   else if(rec.effet==='choc'&&typeof chocImpact==='function'){const [x,y]=(typeof rec.logo==='string'?rec.logo:'').split('|').map(Number);

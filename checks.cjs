@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.877 — La recharge de Plasma se voit : une bille bondit du token à la Cellule ; plus de « Plasma rechargé » au journal. */
+{const h=fs.readFileSync('index.html','utf8');
+ assert.ok(h.includes('function billesPlasma(a,n,diffuse){')&&h.includes('function eclatPlasma(c,k){')&&!h.includes("' Plasma rechargé'")&&!h.includes('Valve de Secours : 1 Plasma rechargé')
+  &&fs.readFileSync('live.js','utf8').includes("rec.effet==='plasma'&&typeof billesPlasma==='function'")&&fs.readFileSync('editor.css','utf8').includes('.bille-plasma{'),'v0.877 : bille de Plasma');}
 /* v0.876 — La Cellule ne se recharge plus au début du tour : pleine au début du combat, puis par la Clé à Molette. */
 {const h=fs.readFileSync('index.html','utf8');
  assert.ok(h.includes(" actors.forEach(a=>{a.checks=[0,0,0];a.talentsJoues=[];a.orbes=0;delete a.revanche;")&&!h.includes('a.plasmaTour!==round}')
