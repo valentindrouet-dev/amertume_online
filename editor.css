@@ -3065,3 +3065,8 @@ body.plasma-en-main .barre-actions button.accepte-plasma{box-shadow:0 0 0 3px #d
 .etat-texte.sans-image{width:auto;height:auto;font-weight:700}
 .de-plasma-texte{display:inline-block;position:relative;width:.95em;height:.95em;border-radius:.2em;background:#d966d6;border:.1em solid #f7c2f5;box-shadow:0 0 .3em #e57ae2aa;vertical-align:-.12em;margin:0 .05em;box-sizing:border-box}
 .de-plasma-texte::after{content:'';position:absolute;inset:28%;border-radius:50%;background:#fff8;box-shadow:0 0 .2em #fff}
+/* v0.858 : l'Incident d'un talent, dans sa bulle ; sa case dans l'éditeur ; l'air autour des tirets des noms. */
+.talent-incident .mot-incident{color:#7a1f2b;font-style:italic;font-weight:700}
+.field-check:has(input[name=incidentOn]:not(:checked))+.incident-champ{display:none}
+.incident-champ{display:flex;flex-direction:column;gap:4px}
+.tiret{margin:0 .12em}

@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.858","d":"2026-10-16","t":"Incident des talents et tirets"},
 {"v":"0.857","d":"2026-10-16","t":"Icônes d'états et dé de Plasma dans les textes"},
 {"v":"0.856","d":"2026-10-16","t":"Cellule à Plasma déplacée"},
 {"v":"0.855","d":"2026-10-16","t":"Chiffres en gras"},

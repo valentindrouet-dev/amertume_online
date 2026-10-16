@@ -346,6 +346,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;
   if(typeof t.debutCombat!=='boolean')delete t.debutCombat;
   if(t.plasma!==true)delete t.plasma;
+  if(typeof t.incident!=='string'||!t.incident.trim())delete t.incident;else t.incident=t.incident.trim().slice(0,400);
   /* Orbes de feu écrit « toujours » avant que le réglage « Quand » n'existe : il le prend, une
      fois ; le MJ le change ensuite dans l'éditeur. */
   if(t.effet==='orbesfeu'&&!(t.params&&typeof t.params==='object'&&'quand' in t.params)&&/toujours/i.test(String(t.effects||'')))
@@ -2187,12 +2188,15 @@ const NIVEAUX_TALENTS=false;
 /* Un nom à accolades, sans porteur pour le remplir : le texte, et chaque accolade en pastille
    (« Brise » puis « élément »). Sans accolade, le nom tel quel. */
 const libelleAccolade=k=>sorteAccolade(k)==='logo'?'logo':'élément';
+/* v0.858 : en Killam gras, le tiret d'un nom composé colle à ses lettres — « Gantelets-Tonnerre » se lisait d'un bloc. Il prend
+   un peu d'air de chaque côté. */
+function avecTirets(el,s){String(s).split(/(-)/).forEach(x=>{if(x!=='-'){if(x)el.append(x);return}const t=document.createElement('span');t.className='tiret';t.textContent='-';el.append(t)})}
 function nomAccolades(el,texte){texte=String(texte||'');el.replaceChildren();
- if(!aDesAccolades(texte)){el.textContent=texte;return el}
+ if(!aDesAccolades(texte)){avecTirets(el,texte);return el}
  const rx=new RegExp(ACCOLADES.source,'giu');let last=0,m;texte=texte.normalize('NFC');
- while((m=rx.exec(texte))){if(!sorteAccolade(m[1]))continue;if(m.index>last)el.append(texte.slice(last,m.index));
+ while((m=rx.exec(texte))){if(!sorteAccolade(m[1]))continue;if(m.index>last)avecTirets(el,texte.slice(last,m.index));
   const k=document.createElement('span');k.className='accolade';k.textContent=libelleAccolade(m[1]);el.append(k);last=rx.lastIndex}
- if(last<texte.length)el.append(texte.slice(last));return el}
+ if(last<texte.length)avecTirets(el,texte.slice(last));return el}
 // Le même nom en texte seul, pour un menu : les accolades entre chevrons.
 const nomEnClair=texte=>String(texte||'').normalize('NFC').replace(new RegExp(ACCOLADES.source,'giu'),(m,k)=>sorteAccolade(k)?'‹'+libelleAccolade(k)+'›':m);
 /* Un talent élémentaire sans élément pour le remplir : sa phrase dit « l'élément du Mystique »
@@ -3501,6 +3505,9 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<label class="field-check" id="debut-combat"'+((t.type||'act')==='ame'?' hidden':'')+'><input type="checkbox" name="debutCombat" '+(talentDebut(t)?'checked':'')+'>Début de combat</label>'
   // v0.851 : le talent reçoit les dés de Plasma glissés sur son bouton.
   +'<label class="field-check"><input type="checkbox" name="plasma" '+(t.plasma===true?'checked':'')+'>Accepte le Plasma</label>'
+  // v0.858 : l'Incident, pour les talents qui en ont un ; son texte paraît quand la case est cochée.
+  +'<label class="field-check"><input type="checkbox" name="incidentOn" '+(typeof t.incident==='string'&&t.incident.trim()?'checked':'')+'>Incident</label>'
+  +'<label class="incident-champ">Texte de l’incident<textarea name="incident" rows="2" maxlength="400">'+esc(typeof t.incident==='string'?t.incident:'')+'</textarea></label>'
   +'<label class="field-check" id="pour-attaque"'+(['pass','ame'].includes(t.type||'act')?'':' hidden')+'><input type="checkbox" name="pourAttaque" '+(ameliorAttaque({...t,type:t.type||'act'})?'checked':'')+'>Améliore l’Attaque</label></section>'
   // Le bonus : une caractéristique, une valeur — et la compétence, si c'est là qu'il va.
   +'<section class="talent-boite b-bonus b-seul"><h2 class="sous-titre">Le bonus</h2><div class="edit-grid">'
@@ -3616,6 +3623,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  if(['pass','ame'].includes(t.type)&&f.pourAttaque&&t.effet!=='bonus')t.pourAttaque=f.pourAttaque.checked;else delete t.pourAttaque;
  if(t.type!=='ame'&&f.debutCombat&&t.effet!=='bonus')t.debutCombat=f.debutCombat.checked;else delete t.debutCombat;
  if(f.plasma&&f.plasma.checked&&t.effet!=='bonus')t.plasma=true;else delete t.plasma;
+ if(f.incidentOn&&f.incidentOn.checked&&f.incident&&f.incident.value.trim()&&t.effet!=='bonus')t.incident=f.incident.value.trim().slice(0,400);else delete t.incident;
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p_')}):{};
  /* Les paliers : leur coût ; pour le 2 et le 3, leur texte s'il en a un, leurs réglages s'ils
     diffèrent de ceux d'en dessous — sinon ils en héritent, et suivront s'ils changent. */
@@ -5230,6 +5238,9 @@ function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,pal
    if(remplace){g.replaceChildren();ligneAm(remplace,'')}
    ams.filter(x=>x!==remplace).forEach(x=>ligneAm(x,'amelioration'))}
   }
+ // v0.858 : l'Incident du talent, à la ligne : « Incident : … », le mot en bordeaux et en italique.
+ if(!bonus&&typeof t.incident==='string'&&t.incident.trim()){const e=document.createElement('p');e.className='palier-effet talent-incident';
+  const m=document.createElement('span');m.className='mot-incident';m.textContent='Incident :';const x=document.createElement('span');texteEnrichi(x,t.incident.trim(),noms,a);e.append(m,' ',x);d.append(e)}
  if(note)ligne(note,'muted');
  // Dans la barre d'action, les jetons de ceux qu'il viserait.
  {const j=jetonsCibles(a,cibles);if(j)d.prepend(j)}
