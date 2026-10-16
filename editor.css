@@ -3093,3 +3093,11 @@ body[class*="page-"] .fenetres-debut,body[class*="page-"] .choix-intervention{di
 .de-plasma{transition:transform .14s ease,box-shadow .14s ease}
 .de-plasma:hover{transform:scale(1.18);box-shadow:0 0 14px #f29bf0,0 0 4px #fff}
 .bulle-plasma .talent-bulle-nom b{color:#c23fbe}
+/* v0.872 : la bulle du dé de Plasma, au rose pâle du Plasma ; pendant qu'on tient un dé, le slot carré où l'enchâsser, au centre des
+   talents qui le reçoivent. */
+.talent-detail.bulle-plasma{--teinte:#c23fbe;background:linear-gradient(#fdf0fc,#f3d2f1);border-left:4px solid var(--teinte)}
+body.plasma-en-main .barre-actions button.accepte-plasma::before{content:'';position:absolute;left:50%;top:50%;width:24px;height:24px;transform:translate(-50%,-50%);
+ box-sizing:border-box;border:2px dashed #fff;border-radius:6px;background:#d966d666;box-shadow:0 0 0 2px #d966d6aa,0 0 10px #f29bf0;z-index:2;pointer-events:none;
+ animation:slot-plasma 1s ease-in-out infinite}
+@keyframes slot-plasma{50%{background:#e57ae2aa;box-shadow:0 0 0 2px #f2a3ef,0 0 16px #f29bf0}}
+.barre-actions button.recoit-plasma::before{background:#f29bf0cc!important;border-style:solid!important}

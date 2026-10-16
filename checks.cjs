@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.872 — Bulle du dé de Plasma teintée ; slot carré pendant qu'on tient un dé. */
+assert.ok(fs.readFileSync('editor.css','utf8').includes('.talent-detail.bulle-plasma{')&&fs.readFileSync('editor.css','utf8').includes('body.plasma-en-main .barre-actions button.accepte-plasma::before{')&&fs.readFileSync('index.html','utf8').includes('à un Gadget ou une Invention'),'v0.872 : bulle et slot du Plasma');
 /* v0.871 — Le Plasma inflige toujours ses dégâts, comme un dé Mortel ; la pastille des dés posés existe bel et bien. */
 {const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("let total=double?r.damage*2:r.damage;if(plasmaSomme&&!r.failed)total+=plasmaSomme;")&&page.includes("rayonne.\n  const p=document.createElement('span');p.className='plasma-pose';"),'v0.871 : Plasma toujours, pastille');}
 /* v0.870 — Le dé de Plasma de la Cellule : survol et bulle. */
