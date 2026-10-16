@@ -2998,3 +2998,7 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 .arbres-v2 .arbres-detail .detail-bonus .detail-am-nom b{flex:none;justify-content:center}
 .arbres-v2 .arbres-detail .detail-bonus .detail-am-nom .detail-prix{align-self:center}
 .arbres-v2 .arbres-detail .detail-bonus .detail-oter{position:absolute;top:2px;right:2px}
+/* v0.835 : la cible d'une action survolée, sur la carte : un halo doré qui palpite. */
+#map-view .token.vise-survol{box-shadow:0 0 0 3px #fff6d8,0 0 0 6px #f2b632,0 0 22px 10px #f2c14ecc!important;animation:vise-survol 1s ease-in-out infinite;z-index:6}
+@keyframes vise-survol{50%{box-shadow:0 0 0 3px #fff6d8,0 0 0 7px #f2b632,0 0 30px 14px #f2c14ee6}}
+@media (prefers-reduced-motion:reduce){#map-view .token.vise-survol{animation:none}}

@@ -611,6 +611,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   const fait=(at.gear&&at.name?at.name+' — ':'')+'Frapper : '+(at.gear?'attaque avec l’équipement':'attaque de fiche')
    +' · '+(at.range==='distance'?'à distance':'au contact')+(at.targets==='all'?' · toutes cibles':'');
   b.setAttribute('aria-label',libelle+(at.gear&&at.name?' ('+at.name+')':'')+' — '+(refus||fait));
+  // Au survol, ceux que le coup viserait s'allument sur la carte.
+  if(typeof surbrillanceCibles==='function'&&typeof ciblesAttaque==='function')surbrillanceCibles(b,()=>ciblesAttaque(a,at.range==='distance'?'distance':'contact'));
   // Sa bulle, celle d'un talent : le nom, les dés et le bonus de dégâts, rien de plus.
   surveille(b,()=>bulleAction(b,{nom:libelle,des:voit?desEtBonus(desAttaque(a,at.dice),bonusDe(at),at.useOwnDamage!==false,false):null,lignes:voit?lignesAttaque(a):null,descr:texteAttaque(at),points:{pa:1,pm:0},a,cibles:typeof ciblesAttaque==='function'?ciblesAttaque(a,at.range==='distance'?'distance':'contact'):null}));
   /* Le bouton n'arme plus l'attaque : il la porte. On retient laquelle est partie —
@@ -633,6 +635,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   if(t.rayonne)b.classList.add('debut-combat');
   /* Sa bulle : celle du talent, son texte tel que le MJ l'a écrit ; un talent qui frappe y montre
      ses dés et son bonus, sous son nom, comme une attaque. */
+  if(t.cibles&&typeof surbrillanceCibles==='function')surbrillanceCibles(b,()=>t.cibles());
   surveille(b,()=>bulleTalentSur(b,t.talent,{a,vu:x=>talentPourElement(x,elementDe(a)),points:t.cout||false,cibles:t.cibles?t.cibles():null,
    des:voit&&t.des?desEtBonus(t.des,t.bonus||0,false,false,orbeux(t)?etatOrbes:''):null}));
   /* Un talent qui frappe montre aussi ses dés au-dessus de la piste, au survol. Les Orbes, eux,

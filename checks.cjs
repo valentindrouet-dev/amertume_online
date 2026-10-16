@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.835 — Au survol d'une action de la barre, ses cibles automatiques s'allument sur la carte. */
+{const page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8');
+ assert.ok(page.includes("function surbrillanceCibles(b,f){")&&page.includes("if(ciblesSurvolIds&&ciblesSurvolIds.has(a.id))t.classList.add('vise-survol');")
+  &&src.includes("surbrillanceCibles(b,()=>ciblesAttaque(a,")&&src.includes("surbrillanceCibles(b,()=>t.cibles());"),'cibles en surbrillance');}
 /* v0.834 — Arbre v2 : une ligne entre deux talents quelconques de la colonne, huit au plus par talent. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("const sx=Math.sign(q.x-p.x),sy=Math.sign(q.y-p.y);return Object.keys(DIRS).find(k=>DIRS[k][0]===sx&&DIRS[k][1]===sy)||''}"),'lignes libres');
 /* v0.833 — Frappe Furieuse : son dé Mortel dans sa bulle ; au journal, le logo du talent qui frappe et sa bulle au survol ; plus de ligne de Rage. */
