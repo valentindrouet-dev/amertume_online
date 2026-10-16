@@ -5192,6 +5192,12 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.873 — Un dé Mystique (bleu) double aussi avec les dés de Plasma. */
+{const {resolveAttack:ra}=require('./combat.js');
+ assert.equal(ra({dice:[[3,3],[4,0]],def:0,dmg:0,roll:()=>2}).damage,7,'v0.873 : bleu seul, pas de double');
+ assert.equal(ra({dice:[[3,3],[4,0]],def:0,dmg:0,roll:()=>2,facesEnPlus:[3,4]}).damage,10,'v0.873 : bleu 3 double avec un Plasma 3');
+ assert.equal(ra({dice:[[3,3]],def:0,dmg:0,roll:()=>2,facesEnPlus:[5]}).damage,3,'v0.873 : pas de double sans face égale');
+ const h=fs.readFileSync('index.html','utf8');assert.ok(h.includes("facesEnPlus:pj&&pj.faces||[]")&&h.includes('faces:[...des]'),'v0.873 : le Plasma passe ses faces au coup');}
 /* v0.872 — Bulle du dé de Plasma teintée ; slot carré pendant qu'on tient un dé. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes('.talent-detail.bulle-plasma{')&&fs.readFileSync('editor.css','utf8').includes('body.plasma-en-main .barre-actions button.accepte-plasma::before{')&&fs.readFileSync('index.html','utf8').includes('à un Gadget ou une Invention'),'v0.872 : bulle et slot du Plasma');
 /* v0.871 — Le Plasma inflige toujours ses dégâts, comme un dé Mortel ; la pastille des dés posés existe bel et bien. */

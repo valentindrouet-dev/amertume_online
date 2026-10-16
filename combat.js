@@ -6,7 +6,8 @@
    s'ajoute à tout coup qui passe. */
 /* « doublesCritiques » : Destructeur — n'importe quel double vaut un critique, pas
    seulement deux 6 ; un double 1 reste un échec, il est jugé avant. */
-function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0,doublesCritiques=false,solidite=false,sansEchec=false,sansCritique=false}){
+/* « facesEnPlus » (v0.873) : les faces de dés lancés à part — les dés de Plasma —, avec lesquelles un dé Mystique (bleu) double aussi. */
+function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,bleed=0,doublesCritiques=false,solidite=false,sansEchec=false,sansCritique=false,facesEnPlus=[]}){
  const all=dice.map(d=>[...d]);
  if(!all.length||all.some(([v,c])=>!Number.isInteger(v)||v<1||v>6||![0,1,2,3,5,6].includes(c)))throw Error('Réserve offensive invalide');
  /* Un dé d'os qui double avec un autre dé lancé s'en va d'abord, avant tout le reste :
@@ -22,6 +23,7 @@ function resolveAttack({dice,def,dmg,round=1,criticalColor=0,roll,faille=false,b
  if(critical){if(!vifs.some(([,c])=>c===criticalColor))throw Error('Couleur critique absente');let v;let count=0;do{v=roll();all.push([v,criticalColor]);vifs.push([v,criticalColor]);if(++count>=100&&v===6)throw Error('Limite de relances atteinte, attaque non appliquée');}while(v===6)}
  const failleFace=faille?roll():null;
  const kept=vifs.filter(([v])=>v!==failleFace);const remaining={};kept.forEach(([v])=>remaining[v]=(remaining[v]||0)+1);
+ (Array.isArray(facesEnPlus)?facesEnPlus:[]).forEach(v=>{if(Number.isInteger(v)&&v>=1&&v<=6&&v!==failleFace)remaining[v]=(remaining[v]||0)+1});
  /* La DEF écarte les dés : un dé dont la face est égale ou inférieure à sa valeur ne compte
     pas. Le Lourd (rouge) et le Mortel (noir) passent toujours ; sous Solidité, le Lourd la
     subit comme les autres. Sans un dé qui passe, pas de coup : ni bonus, ni saignée. */
