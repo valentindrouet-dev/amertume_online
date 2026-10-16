@@ -2353,7 +2353,9 @@ const ameliorAttaque=t=>!!t&&!estBonus(t)&&['pass','ame'].includes(t.type)&&(t.p
    le texte du talent, sur le chemin où l'une est cochée « Remplace le texte du talent ». La bulle du talent et celle de
    l'Attaque lisent la même. */
 function ameliorationsTenues(a,t){const tenues=(a&&a.talents||[]).map(talent).filter(x=>x&&!estBonus(x)&&lisChemin(x)&&lisChemin(x).de===t.id&&!ameliorAttaque(x));
- const ams=sansAmeliorationsRemplacees(tenues).sort((x,y)=>Object.keys(DIRS).indexOf(lisChemin(x).dir)-Object.keys(DIRS).indexOf(lisChemin(y).dir)||lisChemin(x).rang-lisChemin(y).rang);
+ // v0.874 : dans la bulle, les améliorations suivent l'ordre de l'onglet de l'arbre, de haut en bas : par rang, puis par direction.
+ const ordreP=['so','s','se','o','e','no','n','ne'],rangA=x=>{const c=lisChemin(x);return [Number(c.rang)||0,ordreP.indexOf(c.dir)]};
+ const ams=sansAmeliorationsRemplacees(tenues).sort((x,y)=>rangA(x)[0]-rangA(y)[0]||rangA(x)[1]-rangA(y)[1]);
  const dirR=Object.keys(DIRS).find(d=>tenues.some(x=>lisChemin(x).dir===d&&x.remplaceTexte===true));
  return {ams,remplace:dirR?ams.find(x=>lisChemin(x).dir===dirR)||null:null}}
 // Un talent qui améliore l'Attaque y parle avec le texte qu'il a dans sa bulle : celui de l'amélioration qui le remplace, s'il y en a une.
