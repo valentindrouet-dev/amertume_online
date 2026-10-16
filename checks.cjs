@@ -5192,6 +5192,9 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.861 — Améliorations des Gantelets-Tonnerre : Dé Bleu, Sans Incident, Paire. */
+{const cb=fs.readFileSync('combat.js','utf8'),page=fs.readFileSync('index.html','utf8');
+ assert.ok(cb.includes("ganteletsbleu:'gantelets',ganteletssur:'gantelets',ganteletsdeux:'gantelets',")&&page.includes("const SANS_INCIDENT={gantelets:'ganteletssur'};")&&page.includes("const voulus=porteEffet(talentsCodes(a),'ganteletsdeux')?2:1"),'v0.861 : les améliorations des Gantelets');}
 /* v0.860 — « Incident » en italique et dans son rouge partout : textes, bulles, journal, carte. */
 assert.ok(fs.readFileSync('index.html','utf8').includes("function marqueIncident(li){")&&fs.readFileSync('editor.js','utf8').includes("(/^incidents?$/i.test(mot)?' mot-incident-txt':'')"),'v0.860 : Incident partout en italique');
 /* v0.859 — L'Incident en italique, détaché d'un léger espace, d'un rouge plus clair, partout le même. */
@@ -5213,11 +5216,11 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("rose:'#b04a8a',plasma:'#
 {const page=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(cb.includes("gantelets:{cle:'gantelets',nom:'Gantelets-Tonnerre',type:'act',")&&cb.includes("clemolettetout:'clemolette',clemolettereparer:'clemolette',")
   &&cb.includes("useOwnDamage:!lot.some(w=>w.sansBonusDegats===true)")&&cb.includes("w.category==='weapon'&&w.horsService!==true"),'v0.852 : Gantelets, Clé, sans bonus, hors service');
- assert.ok(page.includes("function finInventions(a){")&&page.includes("actors.forEach(finInventions);")&&page.includes("const subitIncident=()=>{if(!incident)return;")&&ed.includes("const o=objetInvention(v);if(o)items.push(o)"),'v0.852 : Inventions recomposées, retirées en fin de combat, Incident');}
+ assert.ok(page.includes("function finInventions(a){")&&page.includes("actors.forEach(finInventions);")&&page.includes("const subitIncident=()=>{if(!incident)return;")&&ed.includes("const o=objetInvention(v,a);if(o)items.push(o)"),'v0.852 : Inventions recomposées, retirées en fin de combat, Incident');}
 /* v0.851 — Le Plasma : Cellule rechargée chaque tour, dés glissés sur les talents qui l'acceptent, d6 ajoutés aux dégâts, Incident sur 1. */
 {const page=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(cb.includes("cellule:{cle:'cellule',nom:'Cellule à Plasma',type:'mait',")&&cb.includes("grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',"),'v0.851 : la Cellule et ses améliorations');
- assert.ok(page.includes("incident=des.some(v=>v===1);")&&page.includes("+bonusReaction(a,ctxT&&ctxT.talent)+plasmaDuCoup(ctxT);")&&page.includes("ctx.plasma=lancePlasma(a,talent,code);")&&page.includes("a.talentsJoues=[];rechargeCellule(a);"),'v0.851 : lancer, ajouter, recharger');
+ assert.ok(page.includes("incident=des.some(v=>v===1)&&!sansIncident(a,code);")&&page.includes("+bonusReaction(a,ctxT&&ctxT.talent)+plasmaDuCoup(ctxT);")&&page.includes("ctx.plasma=lancePlasma(a,talent,code);")&&page.includes("a.talentsJoues=[];rechargeCellule(a);"),'v0.851 : lancer, ajouter, recharger');
  assert.ok(ed.includes('name=\"plasma\"')&&ed.includes("if(f.plasma&&f.plasma.checked&&t.effet!=='bonus')t.plasma=true;else delete t.plasma;"),'v0.851 : la case Accepte le Plasma');}
 /* v0.850 — Le Mécaniste : classe rose-violet, 12 PV, Savoir, Perception et Technique ; sa planche d'icônes. */
 {const ed=fs.readFileSync('editor.js','utf8'),cb=fs.readFileSync('combat.js','utf8');
