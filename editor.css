@@ -3036,3 +3036,7 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 .arbre-plan>.arbre-noeud.recoit-bonus{box-shadow:0 0 0 4px #f2c14e,0 0 18px 6px #f2c14e88!important}
 /* v0.841 : les Passifs, en rond moyen dans l'arbre, éditeur et vue aventurier ; même écart qu'entre grands et moyens de la fiche. */
 .arbre-plan>.arbre-noeud.t-pass:not(.petit):not(.bonus) .arbre-rond{width:70px;height:70px}
+/* v0.846 : les fenêtres des talents de début de combat, empilées en haut au centre. */
+.fenetres-debut{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:59;display:flex;flex-direction:column;align-items:center;gap:8px}
+.fenetres-debut .choix-intervention{position:relative;left:auto;top:auto;transform:none;border-left-color:#c99a3c}
+.choix-debut-qui{font-weight:700;font-size:13px}

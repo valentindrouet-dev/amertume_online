@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.846","d":"2026-10-16","t":"Bouton d'Intervention et fenêtre de début de combat"},
 {"v":"0.845","d":"2026-10-16","t":"Le ! de Vengeance"},
 {"v":"0.844","d":"2026-10-16","t":"Vengeance"},
 {"v":"0.843","d":"2026-10-16","t":"Prix des bonus par ligne"},

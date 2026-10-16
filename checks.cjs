@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.846 — Intervention a son bouton de réaction ; les talents de début de combat ont leur fenêtre en haut de l'écran. */
+{const page=fs.readFileSync('index.html','utf8');
+ assert.ok(page.includes(" intervention:{fn:intervention,\n  peut:a=>interventionEnCours(a),")&&page.includes("if(choixIntervention&&choixIntervention.g===a.id&&choixIntervention.choix){choixIntervention.choix(true);return null}"),'v0.846 : le bouton d’Intervention');
+ assert.ok(page.includes("function majFenetresDebut(){")&&page.includes("bs.filter(b=>talentDebut(b.talent)&&b.peut&&!debutsLaisses.has(h.id+'|'+b.talent.id))")&&page.includes("if(typeof majFenetresDebut==='function')queueMicrotask(majFenetresDebut);"),'v0.846 : la fenêtre des talents de début de combat');}
 /* v0.845 — Le « ! » au-dessus du porteur tant que Vengeance est ouverte. */
 {const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("else if(debutEnAttente(a)||vengeanceOuverte(a)||")&&page.includes("function vengeanceOuverte(a){if(!a||!alive(a)||!a.vengeance)return false;"),'v0.845 : le « ! » de Vengeance');}
 /* v0.844 — Vengeance : blessé par un adversaire au contact, le porteur lui rend une Attaque gratuite. */
