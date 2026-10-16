@@ -48,7 +48,19 @@ function detecteGrille(al){const {W,H}=al,comps=proprietaires(al).objets.filter(
  const etalee=g=>g.some(x=>x.e>med*.9);
  if(etalee(gx)&&!etalee(gy))gx=parRang(vote,gy,cyk,cxk);
  else if(etalee(gy)&&!etalee(gx))gy=parRang(vote,gx,cxk,cyk);
- const cx=gx.map(x=>x.m),cy=gy.map(x=>x.m);
+ let cx=gx.map(x=>x.m);const cy=gy.map(x=>x.m);
+ /* v0.853 : une ligne qui ne tombe pas sur les colonnes des autres — trois icônes centrées sous une planche de six — ne
+    doit pas inventer des colonnes pour toute la planche. Les colonnes se lisent alors sur les lignes complètes, et la ligne
+    décalée garde les siennes : « bx » donne alors, ligne par ligne, ses bornes. */
+ const rangs=cy.map(()=>[]);vote.forEach(k=>{let i=0,d=Infinity;cy.forEach((m,j)=>{const e=Math.abs(cyk(k)-m);if(e<d){d=e;i=j}});rangs[i].push(cxk(k))});
+ const centres=rangs.map(r=>r.length?grappes(r,med*.45).map(g=>g.m):[]),compte=new Map();
+ centres.forEach(r=>{if(r.length)compte.set(r.length,(compte.get(r.length)||0)+1)});
+ const M=compte.size?[...compte.entries()].sort((a,b)=>b[1]-a[1]||b[0]-a[0])[0][0]:cx.length;
+ const aligne=(r,cols)=>r.every(x=>cols.some(c=>Math.abs(c-x)<=med*.45));
+ if(cx.length!==M||!centres.every(r=>aligne(r,cx))){const pleines=centres.filter(r=>r.length===M);
+  if(pleines.length){cx=Array.from({length:M},(_,i)=>pleines.reduce((t,r)=>t+r[i],0)/pleines.length);const commun=bornes(cx,W);
+   if(centres.every(r=>aligne(r,cx)))return {lignes:cy.length,colonnes:M,bx:commun,by:bornes(cy,H)};
+   return {lignes:cy.length,colonnes:M,bx:centres.map(r=>!r.length||aligne(r,cx)?commun:bornes(r,W)),by:bornes(cy,H)}}}
  return {lignes:cy.length,colonnes:cx.length,bx:bornes(cx,W),by:bornes(cy,H)}}
 // Une grille imposée : lignes et colonnes égales, sur l'étendue opaque de la planche.
 function grilleUniforme({W,H,A},lignes,colonnes){let x0=W,y0=H,x1=-1,y1=-1;
@@ -136,8 +148,9 @@ function erode({W},k,n,med,lab){const w=k.x1-k.x0+1,h=k.y1-k.y0+1,D=new Uint16Ar
    séparer, se partagent à la frontière des cases. Une case presque vide, au bout d'une dernière
    ligne incomplète, n'est pas une icône. */
 function casesDe(al,bx,by){const {W,H}=al,{objets,med}=proprietaires(al),cases=[],m=Math.max(4,med*.08);
- for(let r=0;r<by.length-1;r++)for(let c=0;c<bx.length-1;c++){
-  const X0=bx[c],X1=bx[c+1],Y0=by[r],Y1=by[r+1];
+ // Des bornes par ligne, quand une ligne a ses propres colonnes (v0.853).
+ for(let r=0;r<by.length-1;r++){const bxr=Array.isArray(bx[0])?bx[r]:bx;for(let c=0;c<bxr.length-1;c++){
+  const X0=bxr[c],X1=bxr[c+1],Y0=by[r],Y1=by[r+1];
   let x0=W,y0=H,x1=-1,y1=-1,n=0;
   const prend=(a,b,c,d,nb)=>{n+=nb;if(a<x0)x0=a;if(c>x1)x1=c;if(b<y0)y0=b;if(d>y1)y1=d};
   objets.forEach(o=>{if(o.absorbe)return;
@@ -153,7 +166,7 @@ function casesDe(al,bx,by){const {W,H}=al,{objets,med}=proprietaires(al),cases=[
     Math.max(o.x1,Math.min(o.hx1,o.x1+m)),Math.max(o.y1,Math.min(o.hy1,o.y1+m)),o.c)});
   if(x1<0||n<(X1-X0)*(Y1-Y0)*.02)continue;
   x0=Math.max(0,Math.floor(x0));y0=Math.max(0,Math.floor(y0));x1=Math.min(W-1,Math.ceil(x1));y1=Math.min(H-1,Math.ceil(y1));
-  cases.push([x0/W,y0/H,(x1-x0+1)/W,(y1-y0+1)/H])}
+  cases.push([x0/W,y0/H,(x1-x0+1)/W,(y1-y0+1)/H])}}
  return cases}
 /* Le cadre d'une icône peut mordre sur ses voisines : il ne garde que les pixels des icônes dont
    le centre y tombe, et efface le reste, halo et ombre des voisines compris. Deux icônes restées

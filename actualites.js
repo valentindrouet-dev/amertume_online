@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.853","d":"2026-10-16","t":"Découpe de la planche du Mécaniste"},
 {"v":"0.852","d":"2026-10-16","t":"Inventions du Mécaniste"},
 {"v":"0.851","d":"2026-10-16","t":"Plasma du Mécaniste"},
 {"v":"0.850","d":"2026-10-16","t":"Classe Mécaniste"},
