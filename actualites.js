@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.869","d":"2026-10-16","t":"Fenêtres de combat sur la Table seulement"},
 {"v":"0.868","d":"2026-10-16","t":"Étiquette Plasma sous les talents"},
 {"v":"0.867","d":"2026-10-16","t":"Plasma au journal et recharge"},
 {"v":"0.866","d":"2026-10-16","t":"La Cellule suit la barre d'action"},

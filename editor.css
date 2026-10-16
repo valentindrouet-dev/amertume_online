@@ -3087,3 +3087,5 @@ body.plasma-en-main .barre-actions button.accepte-plasma{box-shadow:0 0 0 3px #d
 .arbres-detail .detail-plasma{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:6px;font-size:13px;line-height:1}
 .arbres-detail .detail-plasma>b{color:#c23fbe;font-weight:800;letter-spacing:.2px}
 .arbres-detail .detail-plasma>.de-plasma-texte{width:13px;height:13px}
+/* v0.869 : les fenêtres de début de combat et d'Intervention n'appartiennent qu'à la Table de jeu : sur un autre onglet, elles se taisent. */
+body[class*="page-"] .fenetres-debut,body[class*="page-"] .choix-intervention{display:none!important}
