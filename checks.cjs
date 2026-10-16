@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.834 — Arbre v2 : une ligne entre deux talents quelconques de la colonne, huit au plus par talent. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("const sx=Math.sign(q.x-p.x),sy=Math.sign(q.y-p.y);return Object.keys(DIRS).find(k=>DIRS[k][0]===sx&&DIRS[k][1]===sy)||''}"),'lignes libres');
 /* v0.833 — Frappe Furieuse : son dé Mortel dans sa bulle ; au journal, le logo du talent qui frappe et sa bulle au survol ; plus de ligne de Rage. */
 {const page=fs.readFileSync('index.html','utf8');
  assert.ok(page.includes("function logoDuCoup(a){")&&page.includes("talentDuCoup=ctxT&&ctxT.talent||null;")&&page.includes("function bulleTalentJournal(im,id){")
@@ -5289,7 +5291,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes(" const oublier=(t,liste)
 /* v0.800 — Le talent de classe prend sa case en haut du Tronc commun ; jusqu'à cinq lignes, droites ou diagonales, pour tous ;
    les améliorations du bas chevauchent le départ des lignes. Le rond flottant du coin n'est plus. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("const LIENS_MAX=5;")&&src.includes("function dirVers(p,q){if(!p||!q)return '';return Object.keys(DIRS).find(")
+ assert.ok(src.includes("const LIENS_MAX=8;")&&src.includes("function dirVers(p,q){if(!p||!q)return '';return Object.keys(DIRS).find(")
   &&src.includes("if(t.flottant!==true||t.horsArbre===true)delete t.flottant;else delete t.chemin;")&&src.includes("t.pos=ps.length?{x:Math.round((Math.min(...ps.map(q=>q.x))+Math.max(...ps.map(q=>q.x)))/2),y:Math.min(...ps.map(q=>q.y))-1}:{x:0,y:0};")
   &&src.includes("const gene=(t,k)=>!(typeof ARBRE_V2!=='undefined'&&ARBRE_V2)&&!!k&&!['so','s','se'].includes(k)&&petitsDe(t,k).length>0;")&&!src.includes("w.className='arbre-flottant'")
   &&src.includes("if(t.flottant&&talentFamily(t)!==famille)delete t.flottant;"),'le talent de classe au centre, cinq lignes');}

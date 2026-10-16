@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.834","d":"2026-10-16","t":"Lignes entre tous les talents"},
 {"v":"0.833","d":"2026-10-16","t":"Talent au journal, dé Mortel en bulle"},
 {"v":"0.832","d":"2026-10-16","t":"Bonus : prix sous le libellé"},
 {"v":"0.831","d":"2026-10-16","t":"Tourbillon et Mortelle"},

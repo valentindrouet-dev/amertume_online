@@ -45,7 +45,7 @@ function baseHeros(a){if(!a||!a.hero||Object.entries(BASE_HEROS).every(([k,v])=>
 // Deux spécialisations par classe, pour l'instant : les deux branches de l'arbre.
 const VOIES_MAX=2;
 // De chaque talent d'un arbre partent deux lignes au plus, vers deux autres talents.
-const LIENS_MAX=5;
+const LIENS_MAX=8;
 // Sur un chemin, deux petits ronds à la suite, pas davantage.
 const PETITS_MAX=2;
 /* Les huit chemins d'un talent du sphérier : les quatre droits mènent au talent de la case voisine ou à
@@ -4552,7 +4552,10 @@ function dirVers(p,q){if(!p||!q)return '';return Object.keys(DIRS).find(d=>p.x+D
    même direction quand la case du milieu est libre — la ligne saute alors ce gros rond vide. « liste » : les
    talents de la colonne, pour savoir la case du milieu libre. */
 function dirLien(p,q,liste){const d=dirVers(p,q);if(d||!p||!q)return d;
- return Object.keys(DIRS).find(k=>p.x+2*DIRS[k][0]===q.x&&p.y+2*DIRS[k][1]===q.y&&!caseTenue(liste,p.x+DIRS[k][0],p.y+DIRS[k][1]))||''}
+ const saut=Object.keys(DIRS).find(k=>p.x+2*DIRS[k][0]===q.x&&p.y+2*DIRS[k][1]===q.y&&!caseTenue(liste,p.x+DIRS[k][0],p.y+DIRS[k][1]))||'';
+ if(saut||!(typeof ARBRE_V2!=='undefined'&&ARBRE_V2))return saut;
+ /* v0.834 : dans l'arbre v2, une ligne relie deux talents quelconques ; sa direction est celle qui s'en approche le plus. */
+ const sx=Math.sign(q.x-p.x),sy=Math.sign(q.y-p.y);return Object.keys(DIRS).find(k=>DIRS[k][0]===sx&&DIRS[k][1]===sy)||''}
 function caseTenue(liste,x,y){return (liste||[]).some(t=>{const r=posDe(t);return !!r&&r.x===x&&r.y===y})}
 function lisChemin(t){const c=t&&t.chemin;if(!c||typeof c!=='object'||!DIRS[c.dir]||typeof c.de!=='string')return null;
  const r=Math.trunc(Number(c.rang));return {de:c.de,dir:c.dir,rang:r>=1?r:1}}
