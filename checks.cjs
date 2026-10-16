@@ -2562,7 +2562,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  vm.runInContext(src.slice(src.indexOf('const TEINTE_ETAT_MOT='),src.indexOf('function talentDetail(t)')),ctxP);
  const el={k:[],replaceChildren(){this.k=[]},append(...x){this.k.push(...x.map(y=>typeof y==='string'?y:'['+y.textContent+(y.style.color?'|'+y.style.color:'')+']'))}};
  ctxP.texteEnrichi(el,'Deux attaques, une Attaque critique, des attaques critiques, ATTAQUE ; les alliés gagnent 2 Dégâts et des Actions ; la vie reste.');
- assert.equal(el.k.join(''),'Deux [attaques|#b8352f], une [Attaque critique|#7a5cb8], des [attaques critiques|#7a5cb8], [ATTAQUE|#b8352f] ; les [alliés|var(--accent)] gagnent 2 [Dégâts|rgb(4,5,6)] et des [Actions] ; la vie reste.');
+ assert.equal(el.k.join(''),'Deux [attaques|#b8352f], une [Attaque critique|#7a5cb8], des [attaques critiques|#7a5cb8], [ATTAQUE|#b8352f] ; les [alliés|var(--accent)] gagnent [2] [Dégâts|rgb(4,5,6)] et des [Actions] ; la vie reste.');
  ctxP.texteEnrichi(el,'Feux et Gels : 1d6+2, +3.');assert.equal(el.k.join(''),'[Feux|#c2503a] et [Gels|#2f8fae] : [1d6+2], [+3].');
  assert.ok(!src.includes("ligne('Débloque : '"),'plus de « Débloque » dans la description d’un talent');}
 /* v0.274 — Le dernier anneau se centre sous la main gauche ; la munition portée remplit la place vide du dé de l'arme à distance. */
@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.855 — Les chiffres, les formules de dés et les pourcentages en gras dans les textes. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("|[+−]?\\\\d+(?:[.,]\\\\d+)?\\\\s?%|[+−]\\\\d+|\\\\d+(?:[.,]\\\\d+)?))"),'v0.855 : chiffres et pourcentages en gras');
 /* v0.854 — La couleur Plasma parmi celles des mots clés. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("rose:'#b04a8a',plasma:'#c23fbe',"),'v0.854 : la couleur plasma des mots clés');
 /* v0.853 — Une ligne décalée garde ses colonnes : la planche MECANISTE, 7 lignes de 6 et 3 icônes centrées, se lit en 45 icônes. */

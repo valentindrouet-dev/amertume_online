@@ -2236,7 +2236,7 @@ function motsCles(){const perso=(catalog&&catalog.motsCles)||[],cle=perso.join('
  lus.filter(x=>!x.couleur).forEach(x=>ajoute([x.mot],'var(--accent)',true));
  // Les expressions longues d'abord : « Attaque critique » avant « Attaque ».
  entrees.sort((x,y)=>y.mot.length-x.mot.length);
- const rx=new RegExp('\\*\\*([^*\\n]+)\\*\\*|(^|[^\\p{L}\\p{N}])(?:'+entrees.map(x=>'('+x.motif+')').join('|')+'|(\\d*d\\d+(?:\\s*[+−-]\\s*\\d+)?|[+−]\\d+))(?![\\p{L}\\p{N}])','gu');
+ const rx=new RegExp('\\*\\*([^*\\n]+)\\*\\*|(^|[^\\p{L}\\p{N}])(?:'+entrees.map(x=>'('+x.motif+')').join('|')+'|(\\d*d\\d+(?:\\s*[+−-]\\s*\\d+)?|[+−]?\\d+(?:[.,]\\d+)?\\s?%|[+−]\\d+|\\d+(?:[.,]\\d+)?))(?![\\p{L}\\p{N}])','gu');
  // La couleur d'un texte trouvé : celle de la première entrée qui le reconnaît.
  const couleur=texte=>{const x=entrees.find(x=>x.re.test(texte));return x?x.couleur:''};
  return motsClesCache={cle,entrees,rx,couleur}}
