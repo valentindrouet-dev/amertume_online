@@ -2696,7 +2696,7 @@ function bonusEquipement(a,items){const out=bonusVide();
 // Tout ce qui s'ajoute à la fiche : les nœuds appris, et l'équipement porté.
 /* Ce qu'une classe donne à ses aventuriers en compétences, dès le niveau 1 : un point dans chacune de
    ces trois, en plus de la fiche, comme son bonus de PV. */
-const COMPETENCES_CLASSE={Gardien:['Robustesse','Savoir','Force'],Mystique:['Mysticisme','Savoir','Ruse'],Ombrelame:['Agilité','Ruse','Perception'],Destructeur:['Force','Robustesse','Technique']};
+const COMPETENCES_CLASSE={Gardien:['Robustesse','Savoir','Force'],Mystique:['Mysticisme','Savoir','Ruse'],Ombrelame:['Agilité','Ruse','Perception'],Destructeur:['Force','Robustesse','Technique'],'Mécaniste':['Savoir','Perception','Technique']};
 function competencesDeClasse(role){const k=cleClasse(role),e=k?Object.entries(COMPETENCES_CLASSE).find(([n])=>cleClasse(n)===k):null;
  return COMPETENCES.map(n=>e&&e[1].includes(n)?1:0)}
 /* Les espèces d'aventurier et ce que chacune donne pour toujours : Vie, Endurance, Dégâts, PV, compétences, et une capacité

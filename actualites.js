@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.850","d":"2026-10-16","t":"Classe Mécaniste"},
 {"v":"0.849","d":"2026-10-16","t":"Les réactions disponibles brillent"},
 {"v":"0.848","d":"2026-10-16","t":"Même carte, même zoom"},
 {"v":"0.847","d":"2026-10-16","t":"Intervention et attaques d'opportunité"},

@@ -241,6 +241,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    .forEach(a=>{if(!c.affixes.some(x=>x.id===a.id))c.affixes.push(normaliseAffixe({...a,variable:true,poids:10,niveau:1}))});c.semisForge.push('affixes-combat')}
  if(!c.semisForge.includes('orbes-poison')){if(!c.affixes.some(x=>x.id==='affixe-orbes-poison'))c.affixes.push(normaliseAffixe({id:'affixe-orbes-poison',nom:'de la Vipère',place:'suffixe',effet:'orbesEtat',etat:'Poison',valeur:1,classe:'Mystique',poids:10,niveau:1}));c.semisForge.push('orbes-poison')}
  // Frappe Furieuse, posée une fois dans la Bibliothèque du Destructeur, hors de l'arbre : le MJ la place où il veut.
+ /* v0.850 — Le Mécaniste, nouvelle classe : il rejoint une fois les classes d'un catalogue déjà enregistré ; ensuite elle est au MJ. */
+ if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
    effet:'frappefurieuse',params:{},effects:'',effets:'',notes:'',horsArbre:true});c.semisForge.push('frappe-furieuse')}

@@ -4,7 +4,8 @@ window.AMERTUME_CATALOG = {
     { "id": "cls-destructeur", "name": "Destructeur", "tint": "#b0452e", "pv": 16 },
     { "id": "cls-gardien",     "name": "Gardien",     "tint": "#3f7bc0", "pv": 18 },
     { "id": "cls-lamevent",    "name": "Ombrelame",   "tint": "#3f7d5e", "pv": 14 },
-    { "id": "cls-mystique",    "name": "Mystique",    "tint": "#7a5cb8", "pv": 10 }
+    { "id": "cls-mystique",    "name": "Mystique",    "tint": "#7a5cb8", "pv": 10 },
+    { "id": "cls-mecaniste",   "name": "Mécaniste",   "tint": "#b04fb8", "pv": 12 }
   ],
   "items": [
     {

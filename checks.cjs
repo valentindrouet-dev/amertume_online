@@ -9,11 +9,11 @@ const editor=fs.readFileSync('editor.js','utf8');const ctx={};vm.createContext(c
 const png=new Uint8Array(24),v=new DataView(png.buffer);v.setUint32(0,0x89504e47);v.setUint32(4,0x0d0a1a0a);v.setUint32(16,4096);v.setUint32(20,2048);assert.equal(ctx.imageDimensions(png).join(','),'4096,2048');
 const jpg=new Uint8Array([255,216,255,192,0,7,8,2,0,4,0,255,217]);assert.equal(ctx.imageDimensions(jpg).join(','),'1024,512');
 const webp=new Uint8Array(30);webp.set(Buffer.from('RIFF'));webp.set(Buffer.from('WEBPVP8X'),8);webp[24]=255;webp[25]=1;webp[27]=255;assert.equal(ctx.imageDimensions(webp).join(','),'512,256');assert.throws(()=>ctx.imageDimensions(new Uint8Array(30)));
-const c={window:{}};vm.runInNewContext(fs.readFileSync('catalog.js','utf8'),c);const cat=c.window.AMERTUME_CATALOG;assert.equal(cat.classes.length,4);
-['Destructeur','Gardien','Ombrelame','Mystique'].forEach(n=>{const k=cat.classes.find(x=>x.name===n);
+const c={window:{}};vm.runInNewContext(fs.readFileSync('catalog.js','utf8'),c);const cat=c.window.AMERTUME_CATALOG;assert.equal(cat.classes.length,5);
+['Destructeur','Gardien','Ombrelame','Mystique','Mécaniste'].forEach(n=>{const k=cat.classes.find(x=>x.name===n);
  assert.ok(k,'classe manquante : '+n);assert.match(k.tint,/^#[0-9a-f]{6}$/);assert.ok(k.pv>0);
  assert.ok(k.id)});
-assert.equal(new Set(cat.classes.map(k=>k.id)).size,4);
+assert.equal(new Set(cat.classes.map(k=>k.id)).size,5);
 assert.equal(cat.items.filter(i=>i.category==='weapon').length,14);assert.equal(cat.items.filter(i=>i.category==='armor').length,5);assert.equal(cat.monsters.length,4);assert.equal(cat.monsters.find(m=>m.name==='Mystique déchu').attacks[0].dice.blue,2);
 const {resolveAttack:r}=require('./combat.js');assert.equal(r({dice:[[5,0]],def:3,dmg:0,roll:()=>2}).damage,5); // Le 5 passe la DEF 3.
 /* L'os qui double s'en va avant tout : ni critique, ni échec, ni dégâts avec lui. */
@@ -3675,7 +3675,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 /* v0.711 — Cinq planches Artisanat et leur catégorie ; dans la grille des logos d'un objet, une planche par groupe replié,
    son nom et sa première icône en tête. */
 {const pl=fs.readFileSync('planches.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
- assert.ok(['Construction','Cuisine','Forge','Mécanique 1','Mécanique 2'].every(n=>fs.existsSync('img/planches/Artisanat - '+n+'.webp'))&&pl.includes("['gardien','Gardien'],['artisanat','Artisanat']];")
+ assert.ok(['Construction','Cuisine','Forge','Mécanique 1','Mécanique 2'].every(n=>fs.existsSync('img/planches/Artisanat - '+n+'.webp'))&&pl.includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste']];")
   &&pl.includes("CATS_ICONES.find(([,n])=>cleTalent(n)===cleTalent(nomPlanche(f).split(/\\s+-\\s+/)[0]))")&&pl.includes("groupe(nomPlanche(f),l.sort((x,y)=>x[0]-y[0]).map(x=>x[1]),true,true)")
   &&ed.includes("...iconesPlanches('divers'),...iconesPlanches('artisanat'),"),'planches Artisanat et grille repliée');}
 /* v0.710 — Trois points de compétence ; une arme de contact en main renvoie les munitions au sac ; l'équipement de départ
@@ -3944,7 +3944,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 {const idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(idx.includes("function poolOf(a){return diceToPool(desAttaque(a,activeAttack(a).dice))")&&ed.includes("des:voit?desEtBonus(desAttaque(a,at.dice),")&&ed.includes("survol(b,desAttaque(a,at.dice),"),'les dés des talents dans les bulles');}
 /* v0.675 — La planche GARDIEN et sa catégorie. */
-assert.ok(fs.existsSync('img/planches/GARDIEN.webp')&&fs.readFileSync('planches.js','utf8').includes("['gardien','Gardien'],['artisanat','Artisanat']]"),'la planche GARDIEN');
+assert.ok(fs.existsSync('img/planches/GARDIEN.webp')&&fs.readFileSync('planches.js','utf8').includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste']]"),'la planche GARDIEN');
 /* v0.674 — Gardien : Boutoir et Coup de Bouclier, avec leurs améliorations. */
 {const C10=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  [['boutoirtous','boutoir'],['boutoirimpact','boutoir'],['coupbouclierplus','coupbouclier'],['coupboucliernoir','coupbouclier']].forEach(([k,p])=>assert.equal(C10.TALENTS_CODES[k].pour,p,k));
@@ -4059,7 +4059,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const cands=vusPourMouv
  assert.ok(carto.includes("function hitboxSous(p){")&&carto.includes("if(hb&&(!dessous||dessous.kind==='start'||dessous.kind==='matiere'||(dessous.kind==='lumiere'&&!surCoeur)))dessous=hb}")
   &&carto.includes("mapTool='select';mapSel={kind:'declencheur',i,k};")&&fs.readFileSync('editor.css','utf8').includes('.hitbox.selected{z-index:3}'),'la hitbox se reprend');
  assert.ok(/function pickNow\(i\)\{[\s\S]*?renderEnjamber\(\);\n return true\}/.test(idx),'les ronds Enjamber suivent le token choisi');
- assert.ok(pl.includes("['ombrelame','Ombrelame'],['actions','Actions'],['gardien','Gardien'],['artisanat','Artisanat']]")&&pl.includes("{nom:'',cat:catNom}")&&fs.existsSync('img/planches/OMBRELAME.webp'),'la planche OMBRELAME');}
+ assert.ok(pl.includes("['ombrelame','Ombrelame'],['actions','Actions'],['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste']]")&&pl.includes("{nom:'',cat:catNom}")&&fs.existsSync('img/planches/OMBRELAME.webp'),'la planche OMBRELAME');}
 /* v0.646 — Sorti du fond d'un piège par un test réussi, l'aventurier regagne la place d'où le piège l'avait happé, ou à défaut le
    premier point libre hors du piège. */
 {const carto=fs.readFileSync('maps.js','utf8');
@@ -5192,6 +5192,9 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.850 — Le Mécaniste : classe rose-violet, 12 PV, Savoir, Perception et Technique ; sa planche d'icônes. */
+{const ed=fs.readFileSync('editor.js','utf8'),cb=fs.readFileSync('combat.js','utf8');
+ assert.ok(ed.includes("if(!c.semisForge.includes('classe-mecaniste')){")&&cb.includes("'Mécaniste':['Savoir','Perception','Technique']")&&fs.existsSync('img/planches/MECANISTE.webp'),'v0.850 : la classe Mécaniste et sa planche');}
 /* v0.849 — Une réaction disponible brille dans la barre. */
 {const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("peut:libre,rayonne:(debut||(talent.type==='reac'&&!!eff.peut))&&libre,"),'v0.849 : la réaction disponible brille');}
 /* v0.848 — Rouvrir la carte en cours garde le zoom. */
