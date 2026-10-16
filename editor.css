@@ -3083,3 +3083,7 @@ body.plasma-en-main .barre-actions button.accepte-plasma{box-shadow:0 0 0 3px #d
 /* v0.867 : une Invention au journal, pièce rose ; un dé de Plasma dans la bulle des dégâts. */
 .j-objet.j-objet-invention{background:linear-gradient(#fbe9fa,#efc8ed)!important;border-color:#d58ad3!important}
 .j-de.plasma{color:#fff;border-color:#f7c2f5!important}
+/* v0.868 : « Plasma » sous le rond d'un talent qui l'accepte. */
+.arbres-detail .detail-plasma{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:6px;font-size:13px;line-height:1}
+.arbres-detail .detail-plasma>b{color:#c23fbe;font-weight:800;letter-spacing:.2px}
+.arbres-detail .detail-plasma>.de-plasma-texte{width:13px;height:13px}

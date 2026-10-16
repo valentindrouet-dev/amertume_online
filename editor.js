@@ -5671,7 +5671,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    const ok=acquis||(!verrou&&!!el&&prix<=dispoT);tete.classList.add('cliquable',acquis?'acquise':ok?'achetable':'fermee');
    if(ok&&el&&el.agir){tete.tabIndex=0;tete.setAttribute('role','button');tete.onclick=()=>el.agir();
     tete.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tete.click()}}}}
-  /* Ses améliorations, puis ses bonus, palier par palier : le suivant à prendre s'achète d'un clic sur sa carte, au prix de son
+  // v0.868 : sous le rond d'un talent qui accepte le Plasma, un petit dé de Plasma et « Plasma », en rose gras.
+ if(t.plasma===true){let pile=rond.parentElement&&rond.parentElement.classList.contains('detail-gauche')?rond.parentElement:null;
+  if(!pile){pile=document.createElement('span');pile.className='detail-gauche';rond.before(pile);pile.append(rond)}
+  const pl=document.createElement('span');pl.className='detail-plasma';if(typeof plasmaDansTexte==='function')pl.append(plasmaDansTexte());
+  const n=document.createElement('b');n.textContent='Plasma';pl.append(n);pile.append(pl)}
+ /* Ses améliorations, puis ses bonus, palier par palier : le suivant à prendre s'achète d'un clic sur sa carte, au prix de son
      palier, quand son talent est tenu ; le clic droit sur une carte tenue la rend, palier par palier. Chez le MJ, « + » en
      ajoute un, ✕ l'ôte, et les cartes se glissent pour changer leur ordre. Ils n'ont plus de petit rond dans l'arbre. */
   const ORDRE_PETITS=['so','s','se','o','e','no','n','ne'],rangP=x=>{const c=lisChemin(x);return [c.rang,ORDRE_PETITS.indexOf(c.dir)]};
