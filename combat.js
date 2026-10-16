@@ -132,7 +132,7 @@ function attaqueMainsNues(){const dice={};DICE_KEYS.forEach(k=>{dice[k]=0});dice
  return {name:'Attaque',dice,range:'contact',targets:'one',useOwnDamage:true,effects:{},etats:[],logos:[],gear:true,munition:null,mainsNues:true}}
 function gearAttacks(actor,items){
  // Seule une arme frappe : un objet rangé là par erreur ne crée pas une attaque sans dés.
- const armes=gearOf(actor&&actor.weapons,items).filter(w=>w.category==='weapon');
+ const armes=gearOf(actor&&actor.weapons,items).filter(w=>w.category==='weapon'&&w.horsService!==true);
  /* Sans arme, un aventurier frappe quand même : l'Attaque à mains nues, un dé Os et ses dégâts. S'il a ses propres attaques
     sur sa fiche, ce sont elles qui frappent, comme avant. */
  if(!armes.length)return actor&&actor.hero===true&&!(Array.isArray(actor.attacks)&&actor.attacks.length)?[attaqueMainsNues()]:[];
@@ -148,7 +148,7 @@ function gearAttacks(actor,items){
   if(tire&&DICE_KEYS.includes(mun.munDe))dice[mun.munDe]=Math.min(12,(dice[mun.munDe]||0)+1);
   const etats=[...new Set([...etatsDArmes(lot),...(tire&&mun.etat?[mun.etat]:[])])];
   return {name:[...groupes].map(([w,n])=>w.name+(n>1?' ×'+n:'')).join(' + ')+(tire?' · '+mun.name:''),dice,range,
-   targets:'one',useOwnDamage:true,effects:{},etats,logos:lot.filter(w=>w.logo).map(w=>String(w.logo)).slice(0,2),gear:true,munition:tire?mun.id:null}};
+   targets:'one',useOwnDamage:!lot.some(w=>w.sansBonusDegats===true),effects:{},etats,logos:lot.filter(w=>w.logo).map(w=>String(w.logo)).slice(0,2),gear:true,munition:tire?mun.id:null}};
  const contact=armes.filter(w=>w.ranged!==true),distance=armes.filter(w=>w.ranged===true&&w.lancer!==true);
  /* Une arme de lancer a son bouton à elle, sans munition : lancée au loin, ou maniée au contact — la table
     tranche selon la cible. « lancer » dit laquelle part. */
@@ -1078,6 +1078,19 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   aide:'Amélioration de la Cellule à Plasma : chaque dé de Plasma ajoute +1 à son résultat ; l’Incident se vérifie avant.',params:[],phrase(){return 'Chaque dé de Plasma ajoute <b>+1</b> à son résultat (l’Incident se vérifie avant le bonus).'}},
  valvesecours:{cle:'valvesecours',nom:'Cellule à Plasma — Valve de Secours',court:'Valve de Secours',type:'ame',
   aide:'Amélioration de la Cellule à Plasma : après un Incident, le porteur recharge 1 Plasma.',params:[],phrase(){return 'Après un <b>Incident</b>, vous rechargez <b>1 Plasma</b>.'}},
+ /* v0.852 — Les Inventions du Mécaniste. Gantelets-Tonnerre : fabriqués et équipés au premier usage, ils frappent ensuite, Plasma
+    compris, et la cible subit Foudre ; Incident : le porteur subit Foudre et les Gantelets sont hors service. Clé à Molette : une
+    Attaque au contact qui recharge 1 Plasma ; tous, ou une Invention réparée, avec ses améliorations. */
+ gantelets:{cle:'gantelets',nom:'Gantelets-Tonnerre',type:'act',bouton:'Gantelets-Tonnerre',attaque:true,
+  aide:'Action, Invention : le porteur fabrique et équipe des Gantelets-Tonnerre (1 dé Bleu, sans bonus de dégâts), puis effectue une Attaque au contact, plus la somme des dés de Plasma ; la cible subit Foudre. Incident : le porteur subit Foudre et les Gantelets sont hors service pour le combat.',
+  params:[],phrase(){return 'Vous fabriquez et équipez des <b>Gantelets-Tonnerre</b> (dégâts 1 dé Bleu, pas de bonus de dégâts). Vous effectuez <b>1 Attaque</b> au contact, plus la somme des dés de Plasma ; la cible subit <b>Foudre</b>. <b>Incident</b> : vous subissez aussi Foudre et l’Invention est hors service pour le reste du combat.'}},
+ clemolette:{cle:'clemolette',nom:'Clé à Molette',type:'act',bouton:'Clé à Molette',attaque:true,
+  aide:'Action : le porteur effectue une Attaque au contact, puis recharge 1 Plasma.',
+  params:[],phrase(){return 'Vous effectuez <b>1 Attaque</b> au contact. Vous rechargez <b>1 Plasma</b>.'}},
+ clemolettetout:{cle:'clemolettetout',nom:'Clé à Molette — Recharge complète',court:'Recharge complète',type:'ame',
+  aide:'Amélioration de Clé à Molette : le porteur recharge tous ses Plasma.',params:[],phrase(){return 'Vous rechargez <b>tous les Plasma</b>.'}},
+ clemolettereparer:{cle:'clemolettereparer',nom:'Clé à Molette — Réparation',court:'Réparation',type:'ame',
+  aide:'Amélioration de Clé à Molette : le porteur répare 1 Invention hors service.',params:[],phrase(){return 'Vous réparez <b>1 Invention</b> hors service.'}},
  /* v0.844 — Vengeance : une réaction du Destructeur, gratuite. Blessé par un adversaire au contact, le porteur lui rend une Attaque gratuite. */
  vengeance:{cle:'vengeance',nom:'Vengeance',type:'reac',bouton:'⚔ Vengeance',gratuit:true,
   aide:'Réaction : après qu’un adversaire au contact inflige des dégâts au porteur, celui-ci effectue une Attaque gratuite contre lui.',
@@ -1842,7 +1855,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
    l'effet d'un talent nommé d'après lui. Celles qui ne sont liées à aucun talent en particulier restent
    seules, sous leur propre nom. */
 {const POUR={orbes2des:'orbes',orbesrouges:'orbes',orbescritun:'orbes',orbescrittous:'orbes',delugegratuit:'deluge',implosionmouvement:'implosion',implosionorbe:'implosion',
- contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesfeutoujours:'orbes',doubleattaquetourbillon:'doubleattaque',grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',gardientotal:'gardien',gardiendeux:'gardien',frappefurieusemortelle:'frappefurieuse',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
+ contagioncontact:'contagion',contagionvue:'contagion',mitraillecibles:'mitraille',mitrailleorbes:'mitraille',thesaurisationfois:'thesaurisation',thesaurisationsoin:'thesaurisation',ricochetplus:'ricochet',ricochetcritique:'ricochet',siphonplus:'siphon',siphonsoin:'siphon',orbesfeu:'orbes',orbescritiques:'orbes',orbesfeutoujours:'orbes',doubleattaquetourbillon:'doubleattaque',grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',clemolettetout:'clemolette',clemolettereparer:'clemolette',gardientotal:'gardien',gardiendeux:'gardien',frappefurieusemortelle:'frappefurieuse',orbesinratables:'orbes',ignition:'orbes',lameventelem:'lamevent',lameventcibles:'lamevent',lameventdouble:'lamevent',boutoirtous:'boutoir',boutoirimpact:'boutoir',coupbouclierplus:'coupbouclier',coupboucliernoir:'coupbouclier',lameventpoison:'lamevent',lameventprofonde:'lamevent',lameventfatale:'lamevent',impulsiontour:'impulsion',impulsionallie:'impulsion',insaisispoison:'insaisissable',insaisisadieu:'insaisissable',insaisisombre:'insaisissable',insaisisdegats:'insaisissable',coursechoix:'coursemortelle',courseombrelame:'coursemortelle',bondissementlibre:'bondissement',bondissementfrappe:'bondissement',decoupedegats:'decoupe',decoupeplus:'decoupe',lamepoisonplus:'lameempoisonnee',lamepoisoncontact:'lameempoisonnee',
  provocattaque:'provocation',provocsol:'provocation',eruptiondegats:'eruption',eruptiondouble:'eruption',murdegats:'murelem',murzone:'murelem',orbestatiquelance:'orbestatique',orbestatiquerampant:'orbestatique',visionaugmentee:'visionnoir',predateurombres:'visionnoir',
  soinetat:'invulnerable',soinetatdouble:'invulnerable',corpselem:'invulnerable',ignoredegats:'invulnerable',attaqueetatauto:'attaqueetat',attaqueetatpa:'attaqueetat',ragecritique:'rage',ragetue:'rage',ragedepart:'rage'};
  Object.entries(POUR).forEach(([k,p])=>{const c=TALENTS_CODES[k];if(!c||!TALENTS_CODES[p])return;c.pour=p;

@@ -3053,3 +3053,9 @@ body.plasma-en-main .barre-actions button.accepte-plasma{box-shadow:0 0 0 3px #d
 .barre-actions button.recoit-plasma{box-shadow:0 0 0 4px #f29bf0,0 0 20px #d966d6!important}
 .barre-actions button>.plasma-pose{position:absolute;left:-4px;bottom:-4px;min-width:20px;height:20px;padding:0 4px;box-sizing:border-box;border-radius:6px;background:#d966d6;color:#fff;
  border:2px solid #f7c2f5;font:800 11px/16px system-ui;text-align:center;box-shadow:0 0 8px #e57ae2;cursor:pointer;z-index:2}
+/* v0.852 : les Inventions, au rose du Plasma ; hors service, grisées et barrées. */
+.cat-pill.invention{background:linear-gradient(#f6d3f5,#ebb4ea)!important;border-color:#c766c4!important;color:#4a1d48}
+.cat-pill.invention.hors-service{filter:grayscale(.8);opacity:.6}
+.cat-pill.invention.hors-service .nom{text-decoration:line-through}
+.gear-carre.invention{background:radial-gradient(circle at 50% 40%,#f7d6f6,#e3a5e1)!important;border-color:#c766c4!important;box-shadow:0 0 0 2px #d966d655,0 0 10px #d966d655}
+.gear-carre.invention.hors-service{filter:grayscale(.85);opacity:.6}

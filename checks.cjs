@@ -5192,6 +5192,11 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.852 — Les Inventions : Gantelets-Tonnerre fabriqués une fois, Plasma, Foudre, Incident hors service ; Clé à Molette ; fin du combat. */
+{const page=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(cb.includes("gantelets:{cle:'gantelets',nom:'Gantelets-Tonnerre',type:'act',")&&cb.includes("clemolettetout:'clemolette',clemolettereparer:'clemolette',")
+  &&cb.includes("useOwnDamage:!lot.some(w=>w.sansBonusDegats===true)")&&cb.includes("w.category==='weapon'&&w.horsService!==true"),'v0.852 : Gantelets, Clé, sans bonus, hors service');
+ assert.ok(page.includes("function finInventions(a){")&&page.includes("actors.forEach(finInventions);")&&page.includes("const subitIncident=()=>{if(!incident)return;")&&ed.includes("const o=objetInvention(v);if(o)items.push(o)"),'v0.852 : Inventions recomposées, retirées en fin de combat, Incident');}
 /* v0.851 — Le Plasma : Cellule rechargée chaque tour, dés glissés sur les talents qui l'acceptent, d6 ajoutés aux dégâts, Incident sur 1. */
 {const page=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(cb.includes("cellule:{cle:'cellule',nom:'Cellule à Plasma',type:'mait',")&&cb.includes("grandecellule:'cellule',condensateur:'cellule',valvesecours:'cellule',"),'v0.851 : la Cellule et ses améliorations');

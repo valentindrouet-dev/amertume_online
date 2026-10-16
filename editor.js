@@ -1527,7 +1527,7 @@ function itemColumn(a){return a.category==='cle'?'cle':a.category==='restes'?'re
 /* La même pastille qu'à l'armurerie, mais posée : sur une fiche on lit son équipement,
    on ne le modifie pas d'un clic. Les dés de l'arme, la DEF de l'armure, l'effet d'un objet. */
 function gearPill(o){const col=itemColumn(o);
- const p=document.createElement('span');p.className='cat-pill k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'');
+ const p=document.createElement('span');p.className='cat-pill k-'+col+' r-'+rareteDe(o)+(o.consumable?' consommable':'')+(o.invention?' invention':'')+(o.horsService?' hors-service':'');
  const logo=logoEquipement(o);if(logo)p.append(logo);
  const nom=document.createElement('span');nom.className='nom';nom.textContent=o.name;p.append(nom);
  if(col==='armor')p.append(shieldBadge(o.def||0));
@@ -1535,7 +1535,7 @@ function gearPill(o){const col=itemColumn(o);
   t.textContent=(o.effects||o.notes||'—').slice(0,22);p.append(t)}
  else p.append(dicePips(o.dice,o.etat));
  const info=[o.etat?'inflige '+o.etat:'',o.effects,(o.traits||[]).join(', '),o.notes].filter(Boolean).join(' · ');
- p.title=info?o.name+' — '+info:o.name;
+ p.title=(info?o.name+' — '+info:o.name)+(o.horsService?' — hors service':'');
  return p}
 /* L'équipement d'une fiche, sur deux colonnes : les armes à gauche, l'armure et le
    bouclier à droite, chaque colonne empilant les siens. Deux exemplaires de la même arme
@@ -1883,6 +1883,8 @@ function remplitMunition(p,a,o){if(!p||!a||!a.munitionId||!o||o.category!=='weap
  if(place&&k>=0){place.classList.remove('die-munition');place.classList.add('die-charge');place.style.setProperty('--face',dieFace(k));place.title=types[k]+' — '+mun.name}
  return p}
 function carreDeFiche(a,o,n,tout,portes,peutEquiper,corps){const p=gearCarre(o,n,portes(o)),detail=gearDetail(o,a,!tout);
+ // v0.852 : une Invention du Mécaniste, au rose du Plasma ; hors service, grisée.
+ if(o&&o.invention){p.classList.add('invention');if(o.horsService)p.classList.add('hors-service')}
  if(portes(o))remplitMunition(p,a,o);
  const cle=cleGear(a,o),ouvert=gearOuvert===cle;detail.hidden=!ouvert||BULLES;
  const montre=()=>{gearOuvert=cle;talentOuvert=null;
@@ -3018,7 +3020,7 @@ function renderBiblioObjets(){const boite=$('biblio-objets');if(!boite)return;
 const CLASSES_EFFETS_DEVINEES={chargeregain:'Destructeur',murelem:'Mystique',murdegats:'Mystique',murzone:'Mystique',mitraille:'Mystique',siphon:'Mystique',siphonplus:'Mystique',siphonsoin:'Mystique',ricochet:'Mystique',ricochetplus:'Mystique',ricochetcritique:'Mystique',thesaurisation:'Mystique',thesaurisationfois:'Mystique',thesaurisationsoin:'Mystique',mitraillecibles:'Mystique',mitrailleorbes:'Mystique',orbes:'Mystique',orbescritiques:'Mystique',orbesinratables:'Mystique',orbes2des:'Mystique',orbesrouges:'Mystique',orbescritun:'Mystique',orbescrittous:'Mystique',delugegratuit:'Mystique',implosionmouvement:'Mystique',implosionorbe:'Mystique',contagion:'Mystique',contagioncontact:'Mystique',contagionvue:'Mystique',ignoredegats:'Mystique',soinetat:'Mystique',soinetatdouble:'Mystique',orbesfeu:'Mystique',corpselem:'Mystique',ignition:'Mystique',deluge:'Mystique',eruption:'Mystique',eruptiondegats:'Mystique',eruptiondouble:'Mystique',implosion:'Mystique',degatselem:'Mystique',
  gardien:'Gardien',rempart:'Gardien',boutoir:'Gardien',boutoirtous:'Gardien',boutoirimpact:'Gardien',coupbouclier:'Gardien',coupbouclierplus:'Gardien',coupboucliernoir:'Gardien',provocation:'Gardien',provocattaque:'Gardien',provocsol:'Gardien',destructeur:'Destructeur',debordement:'Destructeur',enragement:'Destructeur',enragementplus:'Destructeur',charge:'Destructeur',chargeelan:'Destructeur',chargerepousse:'Destructeur',chargerepoussedist:'Destructeur',chargeimpact:'Destructeur',lamevent:'Ombrelame',rebond:'Ombrelame',revanche:'Ombrelame',traction:'Ombrelame',rapide:'Ombrelame',larcin:'Ombrelame',tenailles:'Ombrelame',deception:'Ombrelame',lameventelem:'Ombrelame',lameventcibles:'Ombrelame',lameventdouble:'Ombrelame',lameventpoison:'Ombrelame',lameventprofonde:'Ombrelame',lameventfatale:'Ombrelame',impulsion:'Ombrelame',impulsiontour:'Ombrelame',impulsionallie:'Ombrelame',insaisispoison:'Ombrelame',insaisisadieu:'Ombrelame',insaisisombre:'Ombrelame',insaisisdegats:'Ombrelame',coursemortelle:'Ombrelame',coursechoix:'Ombrelame',courseombrelame:'Ombrelame',bondissement:'Ombrelame',bondissementlibre:'Ombrelame',bondissementfrappe:'Ombrelame',decoupe:'Ombrelame',decoupedegats:'Ombrelame',decoupeplus:'Ombrelame',lameempoisonnee:'Ombrelame',lamepoisonplus:'Ombrelame',lamepoisoncontact:'Ombrelame'};
 // Frappe Furieuse et la maîtrise Rage sont au Destructeur.
-Object.assign(CLASSES_EFFETS_DEVINEES,{cellule:'Mécaniste',grandecellule:'Mécaniste',condensateur:'Mécaniste',valvesecours:'Mécaniste',vengeance:'Destructeur',intervention:'Gardien',gardientotal:'Gardien',gardiendeux:'Gardien',orbesfeutoujours:'Mystique',doubleattaquetourbillon:'Destructeur',frappefurieusemortelle:'Destructeur',frappefurieuse:'Destructeur',rage:'Destructeur',ragecritique:'Destructeur',ragetue:'Destructeur',ragedepart:'Destructeur'});
+Object.assign(CLASSES_EFFETS_DEVINEES,{gantelets:'Mécaniste',clemolette:'Mécaniste',clemolettetout:'Mécaniste',clemolettereparer:'Mécaniste',cellule:'Mécaniste',grandecellule:'Mécaniste',condensateur:'Mécaniste',valvesecours:'Mécaniste',vengeance:'Destructeur',intervention:'Gardien',gardientotal:'Gardien',gardiendeux:'Gardien',orbesfeutoujours:'Mystique',doubleattaquetourbillon:'Destructeur',frappefurieusemortelle:'Destructeur',frappefurieuse:'Destructeur',rage:'Destructeur',ragecritique:'Destructeur',ragetue:'Destructeur',ragedepart:'Destructeur'});
 const ADVERSAIRES='Adversaires';
 function classeEffet(c){const choisie=(catalog.classesEffets||{})[c.cle];if(choisie)return choisie;
  const devinee=CLASSES_EFFETS_DEVINEES[c.cle];if(devinee&&(catalog.classes||[]).some(k=>k&&k.name===devinee))return devinee;
@@ -3868,7 +3870,9 @@ function syncForges(){if(typeof catalog==='undefined'||!catalog||!Array.isArray(
  const base=[...items],vus=new Set(),guide=normaliseGuidePrix(catalog.guidePrix);
  (typeof actors!=='undefined'?actors:[]).forEach(a=>(a&&a.forges||[]).forEach(f=>{if(vus.has(f.id)||!(a.inventaire||[]).includes(f.id))return;vus.add(f.id);const o=objetForge(f,base,catalog.affixes||[],guide);if(o)items.push(o)}));
  // Les pièces de la Chambre forte, où qu'elles soient : chez un adversaire du bestiaire aussi.
- (catalog.chambreForte||[]).forEach(f=>{if(vus.has(f.id))return;vus.add(f.id);const o=objetForge(f,base,catalog.affixes||[],guide);if(o)items.push(o)})}
+ (catalog.chambreForte||[]).forEach(f=>{if(vus.has(f.id))return;vus.add(f.id);const o=objetForge(f,base,catalog.affixes||[],guide);if(o)items.push(o)});
+ // v0.852 : les Inventions du Mécaniste, le temps d'un combat, de même.
+ if(typeof objetInvention==='function')(typeof actors!=='undefined'?actors:[]).forEach(a=>(a&&a.inventions||[]).forEach(v=>{if(!v||vus.has(v.id))return;vus.add(v.id);const o=objetInvention(v);if(o)items.push(o)}))}
 const renderSansForges=render;render=function(){syncForges();renderSansForges()};
 // Une pièce forgée qui change de sac : son enregistrement suit, pour que la table la recompose chez son nouveau porteur.
 function deplaceForge(a,id){if(!a||!a.hero||typeof actors==='undefined')return;let rec=null;
