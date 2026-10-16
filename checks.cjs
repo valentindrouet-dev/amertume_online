@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.845 — Le « ! » au-dessus du porteur tant que Vengeance est ouverte. */
+{const page=fs.readFileSync('index.html','utf8');assert.ok(page.includes("else if(debutEnAttente(a)||vengeanceOuverte(a)||")&&page.includes("function vengeanceOuverte(a){if(!a||!alive(a)||!a.vengeance)return false;"),'v0.845 : le « ! » de Vengeance');}
 /* v0.844 — Vengeance : blessé par un adversaire au contact, le porteur lui rend une Attaque gratuite. */
 {const page=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
  assert.ok(cb.includes("vengeance:{cle:'vengeance',nom:'Vengeance',type:'reac',")&&page.includes("porteEffet(talentsCodes(b),'vengeance')&&contactsDe(b).includes(a))b.vengeance={de:a.id,tour:round};")
