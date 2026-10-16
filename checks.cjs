@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.856 — La Cellule sur la ligne du mouvement, centrée au-dessus des gros boutons, dés plus gros. */
+assert.ok(fs.readFileSync('index.html','utf8').includes("function placeCellule(){")&&fs.readFileSync('editor.css','utf8').includes('.de-plasma{width:30px;height:30px;'),'v0.856 : la Cellule placée');
 /* v0.855 — Les chiffres, les formules de dés et les pourcentages en gras dans les textes. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("|[+−]?\\\\d+(?:[.,]\\\\d+)?\\\\s?%|[+−]\\\\d+|\\\\d+(?:[.,]\\\\d+)?))"),'v0.855 : chiffres et pourcentages en gras');
 /* v0.854 — La couleur Plasma parmi celles des mots clés. */

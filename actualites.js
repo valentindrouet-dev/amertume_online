@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.856","d":"2026-10-16","t":"Cellule à Plasma déplacée"},
 {"v":"0.855","d":"2026-10-16","t":"Chiffres en gras"},
 {"v":"0.854","d":"2026-10-16","t":"Couleur plasma des mots clés"},
 {"v":"0.853","d":"2026-10-16","t":"Découpe de la planche du Mécaniste"},
