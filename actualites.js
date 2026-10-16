@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.842","d":"2026-10-16","t":"Rangées de talents resserrées"},
 {"v":"0.841","d":"2026-10-16","t":"Passifs en rond moyen"},
 {"v":"0.840","d":"2026-10-16","t":"Glisser des bonus et mécaniques de la classe"},
 {"v":"0.839","d":"2026-10-16","t":"Intervention"},

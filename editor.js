@@ -5558,7 +5558,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   if(depart){const rx=cases.get(depart.id).x,e=Math.max(rx-x0,x1-rx);x0=rx-e;x1=rx+e}
   const L=CASE_SPHERIER,plan=document.createElement('div');plan.className='arbre-plan';
   /* v2 : une rangée plus haute, pour le nom sous chaque talent ; un petit rond garde sa distance à son talent. */
-  const LY=L;
+  /* v0.842 : les rangées plus serrées en hauteur, les ronds Passifs ayant rapetissé. */
+  const LY=V2?130:L;
   plan.style.width=((x1-x0+1)*L).toFixed(0)+'px';plan.style.height=((y1-y0+1)*LY).toFixed(0)+'px';
   const pose=(el,x,y,de)=>{const b=de&&cases.get(de.id);
    el.style.left=((x-x0+.5)*L).toFixed(1)+'px';el.style.top=(b?(b.y-y0+.5)*LY+(y-b.y)*L:(y-y0+.5)*LY).toFixed(1)+'px'};
