@@ -3475,7 +3475,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   /* On choisit l'effet dans la liste de ce que le moteur sait faire ; puis, palier par palier,
      le texte qui se lit à la table, les valeurs qui agissent, et ce que coûte le palier. */
   +'<section class="talent-boite b-moteur t-seul"><h2 class="sous-titre">Mécanique du moteur</h2>'
-  +selMecanique(bonus?'':(t.effet||''))
+  +selMecanique(bonus?'':(t.effet||''),famille&&famille!==GENERIQUES?famille:(typeof arbresClasse==='string'?arbresClasse:''))
   /* La case Élémentaire n'est plus (v0.788) : le Mystique n'a plus qu'un élément. Les accolades, elles, se remplissent toujours
      dans le nom, les textes et le logo de tout talent. */
   +'<label class="field-check" id="remplace-logo"'+((t.type||'act')==='ame'?'':' hidden')+'><input type="checkbox" name="remplaceLogo" '+(t.remplaceLogo===true?'checked':'')+'>Remplace le logo du talent</label>'
@@ -5578,6 +5578,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     d'une classe. */
  /* v2 : le panneau du talent regardé — son rond en grand, son nom, sa bulle ; ses améliorations, palier par palier, leur
     prix ; le bouton qui l'apprend, au prix de son premier palier, et l'XP qui restera. */
+ let bonusTenu=null;
  const remplitDetail=(aside,t)=>{arbreDetailId=t.id;aside.replaceChildren();
   // Le contenu défile dans sa boîte : la fenêtre garde sa hauteur d'un talent à l'autre.
   const panneau=document.createElement('div');panneau.className='detail-defile';aside.append(panneau);
@@ -5643,10 +5644,12 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
       c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();rendre()}}}
      if(!a&&mj){c.classList.add('editable');c.onclick=()=>openTalent(catalog.talents.indexOf(x),renderArbres);
       // Glisser une carte sur une autre : il prend sa place, les autres se décalent.
-      if(n===1){c.draggable=true;c.addEventListener('dragstart',e=>{glisse=x;try{e.dataTransfer.setData('text/plain',x.id)}catch(_){}});
+      /* v0.840 : chaque carte d'une amélioration la saisit, chaque carte la reçoit ; un bonus se glisse aussi sur un talent de l'arbre. */
+      {c.draggable=true;c.addEventListener('dragstart',e=>{glisse=x;bonusTenu=bonus?x:null;c.classList.add('saisi');try{e.dataTransfer.effectAllowed='copyMove';e.dataTransfer.setData('text/plain',x.id)}catch(_){}});
+       c.addEventListener('dragend',()=>{c.classList.remove('saisi');glisse=null;bonusTenu=null;corps.querySelectorAll('.arbre-noeud.recoit-bonus').forEach(z=>z.classList.remove('recoit-bonus'))});
        c.addEventListener('dragover',e=>{if(glisse&&glisse!==x&&estBonus(glisse)===bonus){e.preventDefault();c.classList.add('survol')}});
        c.addEventListener('dragleave',()=>c.classList.remove('survol'));
-       c.addEventListener('drop',e=>{e.preventDefault();c.classList.remove('survol');if(!glisse||glisse===x)return;
+       c.addEventListener('drop',e=>{e.preventDefault();c.classList.remove('survol');if(!glisse||glisse===x||estBonus(glisse)!==bonus)return;
         const l2=gens.filter(y=>y!==glisse),i=l2.indexOf(x),de=gens.indexOf(glisse),vers=gens.indexOf(x);l2.splice(de<vers?i+1:i,0,glisse);
         const places=gens.map(y=>({...lisChemin(y)}));l2.forEach((y,m)=>{y.chemin=places[m]});glisse=null;arbreChange()})}}
      /* v0.836 : un bonus, en petit rond — le logo de sa caractéristique sur le fond pâle de sa couleur, le prix à cheval sur
@@ -5673,6 +5676,17 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const g=document.createElement('div');g.className='arbres-v2-arbre';g.append(grille);
   const panneau=document.createElement('aside');panneau.className='arbres-detail';cadre.append(g,panneau);corps.append(cadre);
   montreDetail=t=>remplitDetail(panneau,t);
+  /* v0.840 : un bonus du panneau lâché sur le grand rond d'un autre talent de l'arbre s'y copie, paliers et prix compris, à
+     son premier chemin libre. */
+  if(mj){const cible=e=>{const n=e.target&&e.target.closest&&e.target.closest('.arbre-plan>.arbre-noeud[data-id]');const T=n&&talent(n.dataset.id);
+    return T&&bonusTenu&&lisChemin(bonusTenu)&&lisChemin(bonusTenu).de!==T.id&&!estVide(T)?[n,T]:null};
+   g.addEventListener('dragover',e=>{if(!bonusTenu)return;const r=cible(e);corps.querySelectorAll('.arbre-noeud.recoit-bonus').forEach(z=>{if(!r||z!==r[0])z.classList.remove('recoit-bonus')});
+    if(r){e.preventDefault();e.stopPropagation();try{e.dataTransfer.dropEffect='copy'}catch(_){}r[0].classList.add('recoit-bonus')}},true);
+   g.addEventListener('drop',e=>{if(!bonusTenu)return;const r=cible(e);if(!r)return;e.preventDefault();e.stopPropagation();
+    const [,T]=r,x=bonusTenu;bonusTenu=null;const ORDRE=['so','s','se','o','e','no','n','ne'],d=ORDRE.find(k=>!petitsDe(T,k).length);
+    const k=structuredClone(x);k.id=crypto.randomUUID();k.famille=talentFamily(T);k.voie=T.voie||'';delete k.pos;
+    k.chemin=d?{de:T.id,dir:d,rang:1}:{de:T.id,dir:'so',rang:petitsDe(T,'so').length+1};
+    catalog.talents.push(k);arbreChange()},true)}
   const tous=colonnesArbre(classe).flatMap(c=>c.liste).filter(t=>!estVide(t));
   const vuT=tous.find(t=>t.id===arbreDetailId)||tous.find(t=>t.flottant)||tous[0];if(vuT)remplitDetail(panneau,vuT)}
  else corps.append(grille);
@@ -5860,7 +5874,9 @@ function selGroupes(label,key,value,groupes){const opt=v=>'<option value="'+esc(
  return '<label>'+label+'<select name="'+key+'">'+opt('')+groupes.map(([t,l])=>'<optgroup label="'+esc(t)+'">'+l.map(opt).join('')+'</optgroup>').join('')+'</select></label>'}
 /* Le menu des mécaniques, rangé par classe comme la bibliothèque des effets : les classes du jeu,
    puis les génériques, puis les adversaires. */
-function selMecanique(valeur){const classes=(catalog.classes||[]).map(k=>k&&k.name).filter(n=>n&&n!==GENERIQUES),rangs=[...classes,GENERIQUES,ADVERSAIRES];
+/* v0.840 : la classe du talent qu'on édite passe en tête de la liste. */
+function selMecanique(valeur,premiere){const classes=(catalog.classes||[]).map(k=>k&&k.name).filter(n=>n&&n!==GENERIQUES);let rangs=[...classes,GENERIQUES,ADVERSAIRES];
+ if(premiere&&premiere!==GENERIQUES)rangs=[premiere,...rangs.filter(k=>k!==premiere)];
  const groupes=new Map();Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus'&&(!c.retire||c.cle===valeur)).forEach(c=>{const k=classeEffet(c);if(!groupes.has(k))groupes.set(k,[]);groupes.get(k).push(c)});
  const opt=(v,t)=>'<option value="'+esc(v)+'"'+(String(valeur)===String(v)?' selected':'')+'>'+esc(t)+'</option>';
  return '<label>Mécanique<select name="effet">'+opt('','— Aucun : talent descriptif —')

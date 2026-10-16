@@ -3029,3 +3029,8 @@ body.sombre #accueil-page .accueil-v2 .accueil-ville{opacity:.35}
 .choix-intervention-attente{margin:0;font-size:13px;opacity:.8}
 .choix-intervention-compte{position:absolute;left:0;bottom:0;height:3px;width:100%;background:#8b6bb5;transform-origin:left;animation:compte-intervention 10s linear forwards}
 @keyframes compte-intervention{to{transform:scaleX(0)}}
+/* v0.840 : glisser dans l'éditeur d'arbre — la carte saisie s'efface un peu, le talent qui recevra le bonus s'allume. */
+.arbres-v2 .arbres-detail .detail-amelioration.editable[draggable=true]{cursor:grab}
+.arbres-v2 .arbres-detail .detail-amelioration.saisi{opacity:.45}
+.arbres-v2 .arbres-detail .bonus-rond-panneau.survol .rond-bonus{box-shadow:0 0 0 3px #f2c14e99}
+.arbre-plan>.arbre-noeud.recoit-bonus{box-shadow:0 0 0 4px #f2c14e,0 0 18px 6px #f2c14e88!important}

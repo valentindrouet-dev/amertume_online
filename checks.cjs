@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.840 — Éditeur d'arbre : un bonus glissé sur un talent s'y copie ; améliorations et bonus se réordonnent de chaque carte ; la classe éditée en tête des mécaniques. */
+{const ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ed.includes("const k=structuredClone(x);k.id=crypto.randomUUID();k.famille=talentFamily(T);k.voie=T.voie||'';delete k.pos;")&&ed.includes("c.addEventListener('dragstart',e=>{glisse=x;bonusTenu=bonus?x:null;"),'v0.840 : la copie du bonus glissé sur un talent');
+ assert.ok(ed.includes("function selMecanique(valeur,premiere){")&&ed.includes("if(premiere&&premiere!==GENERIQUES)rangs=[premiere,...rangs.filter(k=>k!==premiere)];"),'v0.840 : la classe éditée en tête des mécaniques');}
 /* v0.839 — Intervention : le coup d'un adversaire attend 10 s le choix du porteur, « ! » au-dessus de lui ; Intervenir le pose au contact et prend sa Réaction. */
 {const page=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),lv=fs.readFileSync('live.js','utf8');
  assert.ok(cb.includes("intervention:{cle:'intervention',nom:'Intervention',type:'reac',"),'v0.839 : le talent Intervention');
