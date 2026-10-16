@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.875 — Fenêtres des réactions et du début de combat sur la carte, sous ses boutons, côte à côte. */
+{const h=fs.readFileSync('index.html','utf8'),c=fs.readFileSync('editor.css','utf8');
+ assert.ok(h.includes(' pileFenetres().append(d);choixIntervention=')&&h.includes(' pileFenetres().append(box);fenDebut=')&&h.includes('function placePileFenetres(){')
+  &&c.includes('#pile-fenetres{position:absolute;')&&c.includes('#pile-fenetres>.fenetres-debut{display:contents}'),'v0.875 : pile des fenêtres sur la carte');}
 /* v0.874 — Les améliorations de la bulle suivent l'ordre de l'onglet de l'arbre. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("const ams=sansAmeliorationsRemplacees(tenues).sort((x,y)=>rangA(x)[0]-rangA(y)[0]||rangA(x)[1]-rangA(y)[1]);"),'v0.874 : ordre des améliorations dans la bulle');
 /* v0.873 — Un dé Mystique (bleu) double aussi avec les dés de Plasma. */

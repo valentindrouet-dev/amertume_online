@@ -3101,3 +3101,11 @@ body.plasma-en-main .barre-actions button.accepte-plasma::before{content:'';posi
  animation:slot-plasma 1s ease-in-out infinite}
 @keyframes slot-plasma{50%{background:#e57ae2aa;box-shadow:0 0 0 2px #f2a3ef,0 0 16px #f29bf0}}
 .barre-actions button.recoit-plasma::before{background:#f29bf0cc!important;border-style:solid!important}
+/* v0.875 : les fenêtres des réactions et du début de combat, sur la carte sous sa barre de boutons, côte à côte sans se couvrir. */
+#pile-fenetres{position:absolute;left:0;right:0;z-index:60;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:10px;padding:0 12px;pointer-events:none}
+#pile-fenetres:empty{display:none}
+#pile-fenetres>*,#pile-fenetres .choix-intervention{pointer-events:auto}
+#pile-fenetres>.choix-intervention{position:relative;left:auto;top:auto;transform:none;order:-1}
+#pile-fenetres>.fenetres-debut{display:contents}
+#pile-fenetres .fenetres-debut .choix-intervention{position:relative;left:auto;top:auto;transform:none}
+body[class*="page-"] #pile-fenetres{display:none!important}
