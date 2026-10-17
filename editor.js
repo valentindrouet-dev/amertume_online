@@ -4185,7 +4185,9 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    corps.append(g)};
   liste(adaptes,true);liste(autres,false)}
  else if(k==='espece'){const g=document.createElement('div');g.className='creation-classes';
-  ESPECES.forEach(e=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.espece===e.id?' on':'');b.style.setProperty('--teinte',e.teinte);
+  /* v0.893 : les espèces sans Extension d'abord, puis par Extension, dans l'ordre des Extensions ; dans chaque groupe, par nom. */
+  const rangExt=e=>{const k=extensionEspece(e);return k?1+EXTENSIONS.findIndex(([c])=>c===k):0};
+  [...ESPECES].sort((x,y)=>rangExt(x)-rangExt(y)||x.nom.localeCompare(y.nom,'fr')).forEach(e=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.espece===e.id?' on':'');b.style.setProperty('--teinte',e.teinte);
    const n=document.createElement('b');n.textContent=e.nom;b.append(n);
    {const px=pastilleExtension(extensionEspece(e));if(px)b.append(px)}
    b.onclick=()=>{c.espece=e.id;renderCreation()};g.append(b)});corps.append(g);
@@ -4195,7 +4197,8 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    // v0.883 : sa présentation, sa Vitesse, et ses Talents d'Espèce en ronds, leur bulle au survol.
    if(e.description){const p=document.createElement('p');p.className='creation-description';p.textContent=e.description;f.append(p)}
    f.append(bonusEspeceEl(e));
-   const tals=(catalog.talents||[]).filter(x=>x&&talentFamily(x)===FAMILLE_ESPECES&&x.espece===e.id&&!estBonus(x)&&!estVide(x));
+   // v0.893 : dans l'ordre habituel des types — Maîtrise, Action, Mouvement, Réaction, Passif.
+   const tals=(catalog.talents||[]).filter(x=>x&&talentFamily(x)===FAMILLE_ESPECES&&x.espece===e.id&&!estBonus(x)&&!estVide(x)).sort((x,y)=>ORDRE_TYPES_TALENTS.indexOf(talentType(x)[0])-ORDRE_TYPES_TALENTS.indexOf(talentType(y)[0]));
    // v0.889 : Savoir Antérieur — la compétence de sa vie d'avant, choisie ici.
    const sa=tals.find(x=>x.effet==='savoiranterieur');
    if(sa){const s=document.createElement('select');s.add(new Option('—',''));COMPETENCES.forEach((n,i)=>s.add(new Option(n,String(i))));
