@@ -3178,3 +3178,10 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 /* v0.888 (charte, § 5) : dans une fenêtre de réaction, l'action principale en bleu, l'autre en relief neutre. */
 .choix-intervention-boutons button.btn-action:not(.primaire){--fond:#8d8676}
 .creation-savoir{margin-top:10px;max-width:280px}
+/* v0.890 : l'arbre d'espèce — ses talents en ronds, Actions, Mouvements et Réactions en haut, Passifs dessous. */
+.arbre-especes{display:flex;flex-direction:column;align-items:center;gap:30px;padding:34px 20px}
+.arbre-especes-rangee{display:flex;flex-wrap:wrap;justify-content:center;gap:30px}
+.arbre-noeud-espece{display:flex;flex-direction:column;align-items:center;gap:8px;width:112px;padding:4px;background:none;border:0;cursor:pointer;font:700 13px/1.2 system-ui;color:var(--ink);text-align:center}
+.arbre-noeud-espece:hover{background:none}
+.arbre-noeud-espece .talent-carre{width:78px;height:78px;min-width:78px;min-height:78px;border-radius:50%}
+.arbre-noeud-espece.choisi .talent-carre{box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px #c99a3c,0 0 0 6px var(--panel),0 0 0 7.5px #c99a3c,0 0 18px 6px color-mix(in srgb,#c99a3c 35%,transparent)}

@@ -5099,6 +5099,13 @@ arbresXp.onclick=()=>{xpVisible=!xpVisible;try{localStorage.setItem('amertume-xp
    talent de classe, tenu d'office, reste. Ni mort, ni figé en combat. */
 const arbresReset=document.createElement('button');arbresReset.type='button';arbresReset.id='arbres-reset';arbresReset.className='arbres-vue';arbresReset.textContent='↺ Réinitialiser l’arbre';
 arbresDialog.querySelector('.dialog-head').insertBefore(arbresReset,arbresVue);
+/* v0.890 : le bouton de l'espèce de l'aventurier, en haut de son arbre : il montre ses Talents d'Espèce à la place de l'arbre de
+   sa classe — Actions, Mouvements et Réactions en haut, Passifs dessous ; un clic sur l'un d'eux le décrit dans le panneau. */
+let arbresEspece=false;
+const arbresEspeceBtn=document.createElement('button');arbresEspeceBtn.type='button';arbresEspeceBtn.id='arbres-espece';arbresEspeceBtn.className='arbres-vue';arbresEspeceBtn.hidden=true;
+arbresDialog.querySelector('.dialog-head').insertBefore(arbresEspeceBtn,arbresReset);
+arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;renderArbres()};
+const talentsDEspece=a=>a&&a.hero&&especeDe(a.espece)?(catalog.talents||[]).filter(t=>t&&talentFamily(t)===FAMILLE_ESPECES&&t.espece===a.espece&&!estBonus(t)&&!estVide(t)):[];
 arbresReset.onclick=async()=>{const a=arbresActeur&&acteurCourant(arbresActeur);if(!a||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
  const classe=classeDuHeros(a),fl=classe?talentsFlottants(classe).map(t=>t.id):[];
  if(typeof demander==='function'&&!await demander('Réinitialiser tout l’arbre de talents de '+a.name+' ? Ses talents, améliorations et bonus lui sont rendus, et leur XP lui revient.','Réinitialiser'))return;
@@ -5207,7 +5214,7 @@ function acteurCourant(a){if(!a||actors.includes(a))return a;return actors.find(
 function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&tientAventurier(a)}
 // Seule une classe du jeu a un arbre : ni les génériques, ni les familles d'adversaires.
 function aUnArbre(f){return !!f&&f!==GENERIQUES&&(catalog.classes||[]).some(c=>c&&c.name===f)}
-function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;
+function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;arbresEspece=false;
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // L'arbre d'une classe, sans combattant : le MJ le bâtit, personne n'y apprend rien.
 function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arbresActeur=null;arbresClasse=famille||GENERIQUES;
@@ -5429,7 +5436,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  // L'arbre v2 : panneau à droite ; chez un aventurier comme dans l'éditeur du MJ, qui garde ses outils.
  const V2=ARBRE_V2;
  arbresVue.hidden=view!=='mj'||!!a||arbresEnMasse;arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
- arbresMasse.hidden=view!=='mj'||!!a||(V2&&arbresVueJoueur);arbresReset.hidden=!a||!V2;arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
+ arbresMasse.hidden=view!=='mj'||!!a||(V2&&arbresVueJoueur);arbresReset.hidden=!a||!V2;
+ {const e=a&&V2?especeDe(a.espece):null,l=e?talentsDEspece(a):[];arbresEspeceBtn.hidden=!l.length;if(!l.length)arbresEspece=false;if(e)arbresEspeceBtn.textContent=e.nom;
+  arbresEspeceBtn.classList.toggle('on',arbresEspece);arbresEspeceBtn.setAttribute('aria-pressed',String(arbresEspece))}arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
  if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}}
  else if(view!=='mj'){arbresDialog.close();return}
  // Chez le MJ, l'arbre s'accorde avant de se dessiner : chaque talent a sa case, chaque ligne son but.
@@ -5888,7 +5897,15 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  (classe?colonnesArbre(classe):[]).filter(c=>!(a&&elementaire&&!c.liste.length)&&!(V2&&!mj&&!c.liste.length)).forEach(c=>grille.append(colonne(c,classe===GENERIQUES)));
  arbresDialog.classList.toggle('v2',V2);
  if(V2){const cadre=document.createElement('div');cadre.className='arbres-v2';
-  const g=document.createElement('div');g.className='arbres-v2-arbre';g.append(grille);
+  const g=document.createElement('div');g.className='arbres-v2-arbre';
+  const tEsp=arbresEspece&&a?talentsDEspece(a):[];
+  if(tEsp.length){const plan=document.createElement('div');plan.className='arbre-especes';
+   const rang=t=>['pass','ame'].includes(talentType(t)[0])?1:0;
+   [0,1].forEach(k=>{const l=tEsp.filter(t=>rang(t)===k);if(!l.length)return;const r=document.createElement('div');r.className='arbre-especes-rangee';
+    l.forEach(t=>{const b=document.createElement('button');b.type='button';b.className='arbre-noeud-espece';b.dataset.id=t.id;const n=document.createElement('b');n.textContent=nomEnClair(t.name);
+     b.append(talentRond(t),n);b.onclick=()=>{plan.querySelectorAll('.arbre-noeud-espece.choisi').forEach(x=>x.classList.remove('choisi'));b.classList.add('choisi');montreDetail(t)};r.append(b)});plan.append(r)});
+   g.append(plan)}
+  else g.append(grille);
   const panneau=document.createElement('aside');panneau.className='arbres-detail';cadre.append(g,panneau);corps.append(cadre);
   montreDetail=t=>remplitDetail(panneau,t);
   /* v0.840 : un bonus du panneau lâché sur le grand rond d'un autre talent de l'arbre s'y copie, paliers et prix compris, à
@@ -5902,8 +5919,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     const k=structuredClone(x);k.id=crypto.randomUUID();k.famille=talentFamily(T);k.voie=T.voie||'';delete k.pos;
     k.chemin=d?{de:T.id,dir:d,rang:1}:{de:T.id,dir:'so',rang:petitsDe(T,'so').length+1};k.ligneAuto=0;
     catalog.talents.push(k);arbreChange()},true)}
-  const tous=colonnesArbre(classe).flatMap(c=>c.liste).filter(t=>!estVide(t));
-  const vuT=tous.find(t=>t.id===arbreDetailId)||tous.find(t=>t.flottant)||tous[0];if(vuT)remplitDetail(panneau,vuT)}
+  const tous=tEsp.length?tEsp:colonnesArbre(classe).flatMap(c=>c.liste).filter(t=>!estVide(t));
+  const vuT=tous.find(t=>t.id===arbreDetailId)||tous.find(t=>t.flottant)||tous[0];if(vuT){remplitDetail(panneau,vuT);const e=g.querySelector('.arbre-noeud-espece[data-id="'+vuT.id+'"]');if(e)e.classList.add('choisi')}}
  else corps.append(grille);
  // Les lignes attendent que la fenêtre soit ouverte et la grille mesurée.
  requestAnimationFrame(traceChemins)}

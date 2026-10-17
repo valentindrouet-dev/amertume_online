@@ -5192,6 +5192,9 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.890 — L'arbre d'espèce : un bouton au nom de l'espèce, ses talents en deux rangées, leur description au panneau. */
+{const ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ed.includes("arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;renderArbres()};")&&ed.includes("plan.className='arbre-especes';")&&ed.includes("const tous=tEsp.length?tEsp:colonnesArbre(classe)"),'v0.890');}
 /* v0.889 — Ressuscité : espèce, Endurance Inattendue, Étreinte de la mort, Immarcescible, Savoir Antérieur ; état Sommeil. */
 {const C=require('./combat.js'),h=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.equal(C.mouvementPropre({hero:true,espece:'ressuscite'}),7,'v0.889 : Vitesse 7');assert.ok(C.ETATS_JEU.includes('Sommeil'),'v0.889 : Sommeil');
