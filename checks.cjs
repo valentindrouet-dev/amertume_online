@@ -3233,7 +3233,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 {const src=fs.readFileSync('editor.js','utf8');
  assert.ok(src.includes("function openItem(i=null,apres=null,defauts=null){")&&src.includes("plus.onclick=e=>{e.stopPropagation();openItem(null,null,PIECE_NEUVE[key])};h.append(plus)}")
   &&src.includes("const PIECE_NEUVE={melee:{category:'weapon',ranged:false,hands:1,"),'le + de chaque colonne de l’Armurerie');
- assert.ok(src.includes("return [...classes,...autres,...(orphelins?[GENERIQUES]:[])]}")&&src.includes("const nomFamille=f=>f===GENERIQUES?'Sans classe':f;")
+ assert.ok(src.includes("return [...classes,'Espèces',...autres,...(orphelins?[GENERIQUES]:[])]}")&&src.includes("const nomFamille=f=>f===GENERIQUES?'Sans classe':f;")
   &&src.includes("  const tete=classe?[classe]:[];")&&src.includes(" const tete=!draft.hero?[ADVERSAIRES]:sienne&&toutes.includes(sienne)?[sienne]:[];")&&!src.includes("famille:GENERIQUES,type:'act'"),'plus de famille Génériques');}
 /* v0.338 — L'onglet Talents range chaque classe en rangées, une par type : Maîtrise, Actions,
    Réactions, Passifs, Améliorations. Un bouton « Noms », commun à l'Armurerie, aux Talents, au
@@ -3723,7 +3723,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 {const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),act=fs.readFileSync('actualites.js','utf8'),sh=fs.readFileSync('publie.sh','utf8');
  const A=new Function(act+';return ACTUALITES')();assert.ok(A.versions.length>=10&&A.resume.lignes.length>=5&&A.resume.lignes.length<=6,'les actualités');
  assert.ok(ed.includes("const ONGLETS=[['accueil','Accueil'],['table','Table de jeu'],")&&ed.includes("return ['accueil','table',")&&mp.includes("const PAGES=['accueil','table','maps',")
-  &&mp.includes("else if(p==='accueil')renderAccueil();")&&ed.includes("const ETAPES_CREATION=[['identite','Identité'],['espece','Espèce'],['classe','Classe'],['caracs','Caractéristiques'],['comps','Compétences'],['equipement','Équipement'],['recap','Récapitulatif']];")
+  &&mp.includes("else if(p==='accueil')renderAccueil();")&&ed.includes("const ETAPES_CREATION=[['identite','Identité'],['espece','Espèce'],['classe','Classe'],['caracs','Caractéristiques'],['comps','Compétences'],['equipement','Équipement'],['illustration','Illustration'],['recap','Récapitulatif']];")
   &&ed.includes("horsCarte:true,lieuDomaine:'route'")&&sh.includes("s.replace('/* versions */',"),'l’Accueil câblé');}
 /* v0.701 — Les effets de talent Points d'Action et Points de Mouvement : +x à chaque tour ; les bonus de l'arbre restent tels
    qu'ils étaient. */
@@ -5192,6 +5192,16 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.883 — Extensions (icônes, pastilles, champ), espèce Lupin et ses Talents d'Espèce, étape Illustration et tokens proposés. */
+{const ed=fs.readFileSync('editor.js','utf8'),h=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
+ ['diablo','wow','dnd','ravenloft','faerun','nimble','cthulhu','amertume'].forEach(k=>assert.ok(fs.existsSync('img/extensions/'+k+'.webp'),'v0.883 : icône '+k));
+ assert.ok(ed.includes("const EXTENSIONS=[['diablo','Diablo'],")&&ed.includes('function pastilleExtension(k){')&&ed.includes("$('hero-extensions').onclick=()=>openExtensions();")
+  &&ed.includes("{const px=pastilleExtension(extensionEspece(e));if(px)b.append(px)}")&&ed.includes("{const px=pastilleExtension(o.extension);if(px)p.append(px)}"),'v0.883 : extensions');
+ assert.ok(cb.includes("{id:'lupin',nom:'Lupin',teinte:'#6f5f86',endu:1,dmg:1,vitesse:10,comps:{Agilité:1,Ruse:1},extension:'ravenloft',")&&cb.includes("bondferoce:{cle:'bondferoce',")
+  &&cb.includes("griffes:{cle:'griffes',")&&cb.includes("hurlement:{cle:'hurlement',")&&h.includes('function bondFeroce(a,p,talent){')&&h.includes('function hurlement(a,p,talent){'),'v0.883 : Lupin');
+ assert.ok(ed.includes("const FAMILLE_ESPECES='Espèces';")&&ed.includes("c.semisForge.push('espece-lupin')")&&ed.includes("['illustration','Illustration'],['recap','Récapitulatif']")
+  &&ed.includes('function tokensPourCreation(c){')&&ed.includes('function renderTokensProposes(){'),'v0.883 : espèces et illustration');
+ const {mouvementPropre:mp}=require('./combat.js');assert.equal(mp({hero:true,espece:'lupin'}),10,'v0.883 : Vitesse du Lupin');assert.equal(mp({hero:true,espece:'nain'}),9,'v0.883 : Vitesse par défaut');}
 /* v0.882 — Les bonus du panneau de l'arbre, centrés sur leur ligne. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes('.arbres-v2 .arbres-detail .detail-bonus-grille{display:flex;flex-wrap:wrap;justify-content:center;'),'v0.882 : bonus centrés');
 /* v0.881 — Stimulant du Mécaniste et ses trois améliorations. */

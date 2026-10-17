@@ -137,7 +137,10 @@ function gearAttacks(actor,items){
  const armes=gearOf(actor&&actor.weapons,items).filter(w=>w.category==='weapon'&&w.horsService!==true);
  /* Sans arme, un aventurier frappe quand même : l'Attaque à mains nues, un dé Os et ses dégâts. S'il a ses propres attaques
     sur sa fiche, ce sont elles qui frappent, comme avant. */
- if(!armes.length)return actor&&actor.hero===true&&!(Array.isArray(actor.attacks)&&actor.attacks.length)?[attaqueMainsNues()]:[];
+ if(!armes.length){if(!(actor&&actor.hero===true&&!(Array.isArray(actor.attacks)&&actor.attacks.length)))return [];
+  // v0.883 : Griffes (Lupin) — sans arme, 1 dé rouge plus ses dégâts, et Saignée.
+  if(typeof porteGriffes==='function'&&porteGriffes(actor)){const g=attaqueMainsNues();g.dice.bone=0;g.dice.red=1;g.name='Griffes';g.etats=['Saignée'];g.griffes=true;return [g]}
+  return [attaqueMainsNues()]}
  /* Les armes d'une même portée font une seule attaque : dés cumulés, un seul bouton, le
     nom les énumère, et les logos sont ceux des armes du lot qui en ont un — deux au plus,
     que le bouton croise. Contact et distance ne se cumulent pas : une épée et un arc font
@@ -412,7 +415,9 @@ function objetsLumineux(a,items){return objetsQuiComptent(a,items,o=>lumiereDe(o
    réglée au bestiaire. Un objet coché « Bonus de Mouvement » l'allonge de ses mètres, porté comme une lumière. */
 const DISTANCE_MOUVEMENT=9;
 function bonusMouvementDe(o){return Math.max(0,Math.min(40,Number(o&&o.bonusMouvement)||0))}
-function mouvementPropre(a){const v=a&&!a.hero&&a.mouvement!=null&&a.mouvement!==''?Number(a.mouvement):NaN;return Number.isFinite(v)?Math.max(0,Math.min(99,v)):DISTANCE_MOUVEMENT}
+function mouvementPropre(a){const v=a&&!a.hero&&a.mouvement!=null&&a.mouvement!==''?Number(a.mouvement):NaN;if(Number.isFinite(v))return Math.max(0,Math.min(99,v));
+ // v0.883 : la Vitesse de son espèce, quand elle en a une (le Lupin, 10 m).
+ const e=a&&a.hero&&typeof especeDe==='function'?especeDe(a.espece):null;return e&&Number(e.vitesse)>0?Number(e.vitesse):DISTANCE_MOUVEMENT}
 function distanceMouvement(a,items){return mouvementPropre(a)+objetsQuiComptent(a,items,o=>bonusMouvementDe(o)>0).reduce((s,o)=>s+bonusMouvementDe(o),0)}
 function lumierePortee(a,items){return objetsLumineux(a,items).reduce((m,o)=>Math.max(m,lumiereDe(o)),0)}
 /* Un coffre : un rectangle, comme une porte. Son nom et sa description ; caché (« cache »), un test de
@@ -1751,6 +1756,16 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  /* Vision dans le noir : un passif. Dans l'obscurité, le porteur voit jusqu'à x mètres, là où les autres ne voient que leur
     zone de contact. Ses améliorations la portent plus loin, et font de lui un Prédateur des Ombres, aux coups plus durs
     tant qu'il se tient dans le noir. */
+ /* v0.883 — Talents d'Espèce du Lupin (« espece » : ils se rangent dans le groupe Espèces). */
+ bondferoce:{cle:'bondferoce',nom:'Bond Féroce',type:'mvt',bouton:'Bond Féroce',espece:true,
+  aide:'Mouvement : le porteur bondit jusqu’à un point de la carte à portée de sa Vitesse, par-dessus les socles et le terrain impraticable mais pas à travers les murs, portes et blocages, puis effectue 1 Attaque contre un adversaire au contact.',
+  params:[],phrase(){return 'Vous bondissez jusqu’à un endroit du champ de bataille, puis effectuez <b>1 Attaque</b> contre un adversaire au contact.'}},
+ griffes:{cle:'griffes',nom:'Griffes',type:'pass',espece:true,
+  aide:'Passif : sans arme équipée, les attaques du porteur infligent 1 dé rouge plus ses dégâts, et Saignée.',
+  params:[],phrase(){return 'Vos attaques sans arme infligent <b>1 dé rouge</b> + dégâts et <b>Saignée</b>.'}},
+ hurlement:{cle:'hurlement',nom:'Hurlement',type:'act',bouton:'Hurlement',espece:true,
+  aide:'Action, une fois entre deux repos courts : chaque adversaire à 5 m ou moins fait un test de Savoir 1 ; sur un échec, il recule hors du rayon et subit Affaibli.',
+  params:[],phrase(){return 'Tout adversaire dans un rayon de <b>5 m</b> doit réussir un test de <b>Savoir 1</b>, sinon il recule hors du rayon et subit <b>Affaibli</b>. Une fois entre deux repos courts.'}},
  visionnoir:{cle:'visionnoir',nom:'Vision dans le noir',type:'pass',
   aide:'Passif : dans l’obscurité, le porteur voit jusqu’à x mètres autour de lui.',
   params:[{cle:'portee',nom:'Portée (m)',type:'nombre',defaut:6,min:1,max:40}],
@@ -2750,7 +2765,10 @@ function competencesDeClasse(role){const k=cleClasse(role),e=k?Object.entries(CO
 const ESPECES=[{id:'humain',nom:'Humain',teinte:'#9a7b4f',vie:1,comps:{Perception:1,Savoir:1}},
  {id:'nain',nom:'Nain',teinte:'#8c5a3c',pv:8,comps:{Robustesse:1,Technique:1}},
  {id:'goliath',nom:'Goliath',teinte:'#5f7183',dmg:2,comps:{Force:1,Robustesse:1}},
- {id:'elfe',nom:'Elfe',teinte:'#4f8a5b',endu:1,dmg:1,comps:{Agilité:1,Mysticisme:1}}];
+ {id:'elfe',nom:'Elfe',teinte:'#4f8a5b',endu:1,dmg:1,comps:{Agilité:1,Mysticisme:1}},
+ /* v0.883 — Le Lupin, de l'Extension Ravenloft : Vitesse 10 m, ses Talents d'Espèce dans le groupe Espèces de l'onglet Talents. */
+ {id:'lupin',nom:'Lupin',teinte:'#6f5f86',endu:1,dmg:1,vitesse:10,comps:{Agilité:1,Ruse:1},extension:'ravenloft',
+  description:'Poil hérissé et crocs retroussés, vous êtes né d’un loup-garou dont la malédiction n’a pris qu’à moitié : figé entre la bête et l’humain, vous en gardez une force sauvage, des instincts aiguisés et un hurlement qui sème l’effroi.'}];
 const especeDe=id=>ESPECES.find(e=>e.id===id)||null;
 function bonusEspece(a){const e=a&&a.hero?especeDe(a.espece):null,n=k=>e&&Number(e[k])||0;
  return {vie:n('vie'),endu:n('endu'),dmg:n('dmg'),pv:n('pv'),skills:COMPETENCES.map(c=>e&&e.comps[c]||0)}}

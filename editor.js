@@ -243,6 +243,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // Frappe Furieuse, posée une fois dans la Bibliothèque du Destructeur, hors de l'arbre : le MJ la place où il veut.
  /* v0.850 — Le Mécaniste, nouvelle classe : il rejoint une fois les classes d'un catalogue déjà enregistré ; ensuite elle est au MJ. */
  c.inventionsModeles=typeof normaliseModelesInventions==='function'?normaliseModelesInventions(c.inventionsModeles):(c.inventionsModeles&&typeof c.inventionsModeles==='object'?c.inventionsModeles:{});
+ /* v0.883 — Les Talents d'Espèce du Lupin, posés une fois dans le groupe Espèces ; ensuite ils sont au MJ. */
+ if(!c.semisForge.includes('espece-lupin')&&Array.isArray(c.talents)){
+  [{id:'talent-lupin-bond',name:'Bond Féroce',type:'mvt',effet:'bondferoce',params:{},effects:'Vous bondissez jusqu’à un endroit du champ de bataille, puis effectuez 1 Attaque contre un adversaire au contact.'},
+   {id:'talent-lupin-griffes',name:'Griffes',type:'pass',effet:'griffes',params:{},effects:'Vos attaques sans arme équipée infligent 1 dé rouge + dégâts et Saignée.'},
+   {id:'talent-lupin-hurlement',name:'Hurlement',type:'act',effet:'hurlement',params:{},effects:'Vous poussez un hurlement surnaturel : tout adversaire dans un rayon de 5 m doit réussir un test de Savoir 1, sinon il recule hors du rayon et subit Affaibli. Une fois entre deux repos courts.'},
+   {id:'talent-lupin-vision',name:'Vision dans le noir',type:'pass',effet:'visionnoir',params:{portee:18},effects:'Vous voyez dans le noir jusqu’à 18 m.'}]
+   .forEach(t=>{if(!c.talents.some(x=>x&&x.id===t.id))c.talents.push({...t,famille:'Espèces',espece:'lupin',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  c.semisForge.push('espece-lupin')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
@@ -291,6 +299,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // L'image qu'un état prend à la place de celle du jeu : Gardé, pour l'heure.
  {const le=c.logosEtats&&typeof c.logosEtats==='object'&&!Array.isArray(c.logosEtats)?c.logosEtats:{};c.logosEtats={};
   Object.entries(le).forEach(([k,v])=>{if(STATES.includes(k)&&typeof v==='string'&&v&&v.length<=120)c.logosEtats[k]=v})}
+ // v0.883 : les tokens proposés à la création — une image, et pour qui : tous (''), une espèce, une classe.
+ c.tokensProposes=(Array.isArray(c.tokensProposes)?c.tokensProposes:[]).filter(t=>t&&typeof t.id==='string'&&typeof t.image==='string'&&/^(data:image\/|img\/)/.test(t.image))
+  .map(t=>({id:t.id.slice(0,60),image:t.image,pour:typeof t.pour==='string'&&/^((espece|classe):.{1,60})?$/.test(t.pour)?t.pour:''}));
+ // v0.883 : les icônes des Extensions, et l'Extension que le MJ donne à chaque espèce.
+ {const ext=['diablo','wow','dnd','ravenloft','faerun','nimble','cthulhu','amertume'],lx=c.logosExtensions&&typeof c.logosExtensions==='object'&&!Array.isArray(c.logosExtensions)?c.logosExtensions:{},
+   ee=c.extensionsEspeces&&typeof c.extensionsEspeces==='object'&&!Array.isArray(c.extensionsEspeces)?c.extensionsEspeces:{};
+  c.logosExtensions={};Object.entries(lx).forEach(([k,v])=>{if(ext.includes(k)&&typeof v==='string'&&v&&v.length<=120)c.logosExtensions[k]=v});
+  c.extensionsEspeces={};Object.entries(ee).forEach(([k,v])=>{if(/^[a-z0-9_-]{1,40}$/.test(k)&&typeof v==='string'&&(v===''||ext.includes(v)))c.extensionsEspeces[k]=v})}
  // Les noms que le MJ a donnés aux effets, dans la bibliothèque : un texte court par effet connu.
  const ne=c.nomsEffets&&typeof c.nomsEffets==='object'&&!Array.isArray(c.nomsEffets)?c.nomsEffets:{};
  c.nomsEffets={};Object.entries(ne).forEach(([k,v])=>{if(TALENTS_CODES[k]&&typeof v==='string'&&v.trim())c.nomsEffets[k]=v.trim().slice(0,60)});
@@ -728,6 +744,7 @@ heroesPage.innerHTML='<section class="cat-panel panel">'
  +'<select id="hero-tri" aria-label="Ordre des aventuriers"><option value="libre">Tri : libre</option><option value="nom">Tri : nom</option><option value="niveau">Tri : niveau</option><option value="classe">Tri : classe</option><option value="xp">Tri : XP</option></select>'
  +'<button id="hero-repos-long" type="button" title="VIE et PV au maximum, repos courts et charges rendus, états levés sauf le Blindage ; ceux retournés au domaine reviennent">🌙 Repos long</button>'
  +'<button id="hero-icones-comp" type="button" title="Choisir l’icône de chaque caractéristique et de chaque compétence, la même sur toutes les fiches">🖼 Icônes des caracs et compétences</button>'
+ +'<button id="hero-extensions" type="button" title="Les icônes des Extensions, et l’Extension de chaque classe et de chaque espèce">🖼 Extensions</button>'
  +'<button id="hero-add" class="primary">+ Nouvel aventurier</button></div></header>'
  // Le mode d'emploi n'a plus à occuper le haut de la page : les infobulles le disent
  // au survol de chaque valeur, et le champ de recherche ne sert qu'à une grande troupe.
@@ -1356,6 +1373,7 @@ $('hero-tri').value=triHeros();$('hero-tri').onchange=()=>{try{localStorage.setI
 $('hero-add').onclick=()=>openActor(null,true);
 $('hero-repos-long').onclick=reposLong;
 $('hero-icones-comp').onclick=()=>openIconesCompetences();
+$('hero-extensions').onclick=()=>openExtensions();
 /* ---------- Une icône par compétence ----------
    La même sur toutes les fiches d'aventuriers, devant le nom de la compétence. Le MJ les choisit
    dans une fenêtre de la page Aventuriers, parmi les logos et les icônes des planches, celles de
@@ -1448,6 +1466,60 @@ $('conversion-dnd').oninput=conversionPlusTard;
 // Le même convertisseur, depuis la fiche d'adversaire : il s'ouvre par-dessus, la fiche reste derrière.
 {const b=$('actor-conversion');b.title='Conversion des dégâts';b.setAttribute('aria-label','Conversion des dégâts D&D 5.5 en dés d’Amertüme');
  b.onclick=()=>{renderConversion();conversionDialog.showModal();$('conversion-dnd').focus();$('conversion-dnd').select()}}
+/* v0.883 — Les Extensions : d'où vient une espèce, une classe, un objet, un adversaire. Chacune a son icône, celle de la planche
+   d'origine (img/extensions/), que le MJ peut remplacer par un logo ; ce qui en vient la porte dans une pastille ronde, au coin. */
+const EXTENSIONS=[['diablo','Diablo'],['wow','WoW'],['dnd','D&D'],['ravenloft','Ravenloft'],['faerun','Faërun'],['nimble','Nimble'],['cthulhu','Cthulhu'],['amertume','Amertüme']];
+const extensionValide=k=>EXTENSIONS.some(([c])=>c===k)?k:'';
+const nomExtension=k=>(EXTENSIONS.find(([c])=>c===k)||[,''])[1];
+function logoExtensionEl(k){k=extensionValide(k);if(!k)return null;const choisi=(catalog.logosExtensions||{})[k];
+ if(choisi&&typeof logoImage==='function'){const im=logoImage(choisi,LOGOS_TOUS);if(im)return im}
+ const im=document.createElement('img');im.src='img/extensions/'+k+'.webp';im.alt='';im.draggable=false;return im}
+function pastilleExtension(k){k=extensionValide(k);if(!k)return null;const p=document.createElement('span');p.className='pastille-extension';
+ p.title='Extension '+nomExtension(k);p.setAttribute('aria-label','Extension '+nomExtension(k));const im=logoExtensionEl(k);if(im)p.append(im);return p}
+// L'Extension d'une espèce : celle que le MJ lui a donnée, sinon celle de la table des espèces.
+function extensionEspece(e){if(!e)return '';const o=(catalog.extensionsEspeces||{})[e.id];return extensionValide(o===undefined?e.extension||'':o)}
+function extensionClasse(c){return c?extensionValide(c.extension||''):''}
+// Les tokens proposés à qui crée un aventurier : les libres, ceux de son espèce, ceux de sa classe.
+function tokensPourCreation(c){return (catalog.tokensProposes||[]).filter(t=>!t.pour||t.pour==='espece:'+c.espece||t.pour==='classe:'+c.role)}
+/* La section Tokens de l'onglet Icônes : le MJ importe des tokens, optimisés, et dit pour qui ils sont. */
+{const sec=document.createElement('section');sec.className='cat-panel panel tokens-proposes';sec.id='tokens-proposes';
+ sec.innerHTML='<header class="cat-head"><h2>Tokens</h2><button type="button" id="tokens-ajout" class="primary">+ Importer un token</button><input type="file" id="tokens-fichier" accept="image/png,image/jpeg,image/webp" hidden></header>'
+  +'<p class="muted">Les tokens proposés à la création d’un aventurier : à tous, ou seulement à une espèce ou à une classe.</p><div id="tokens-grille" class="tokens-grille"></div>';
+ const page=$('icones-page');if(page)page.append(sec);
+ $('tokens-ajout').onclick=()=>$('tokens-fichier').click();
+ $('tokens-fichier').onchange=()=>{const f=$('tokens-fichier').files[0];$('tokens-fichier').value='';if(f)openImage(f,'token',url=>{
+  catalog.tokensProposes=[...(catalog.tokensProposes||[]),{id:'tok-'+crypto.randomUUID().slice(0,12),image:url,pour:''}];scheduleSave();renderTokensProposes()})}}
+function renderTokensProposes(){const g=$('tokens-grille'),sec=$('tokens-proposes');if(!g)return;sec.hidden=view!=='mj';g.replaceChildren();
+ const l=catalog.tokensProposes||[];if(!l.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun token pour l’instant.';g.append(p);return}
+ const pour=[['','Tous'],...ESPECES.map(e=>['espece:'+e.id,'Espèce · '+e.nom]),...(catalog.classes||[]).filter(c=>c&&c.name).map(c=>['classe:'+c.name,'Classe · '+c.name])];
+ l.forEach(t=>{const c=document.createElement('div');c.className='token-carte';const i=document.createElement('img');i.src=t.image;i.alt='';
+  const s=document.createElement('select');s.setAttribute('aria-label','Pour qui');pour.forEach(([v,n])=>s.add(new Option(n,v)));s.value=pour.some(([v])=>v===t.pour)?t.pour:'';
+  s.onchange=()=>{t.pour=s.value;scheduleSave()};
+  const x=document.createElement('button');x.type='button';x.className='ico danger';x.textContent='✕';x.title='Retirer ce token';x.setAttribute('aria-label','Retirer ce token');
+  x.onclick=()=>{if(!confirm('Retirer ce token des propositions ? Les aventuriers qui le portent le gardent.'))return;catalog.tokensProposes=(catalog.tokensProposes||[]).filter(y=>y!==t);scheduleSave();renderTokensProposes()};
+  c.append(i,s,x);g.append(c)})}
+{const ri=renderIcones;renderIcones=function(){ri();renderTokensProposes()}}
+const extensionsDialog=dialog('extensions-icones','Extensions','<form id="extensions-form"><p class="muted">L’icône de chaque Extension, et l’Extension de chaque classe et de chaque espèce.</p><div id="extensions-corps" class="edit-grid"></div></form>');
+$('extensions-form').onsubmit=e=>e.preventDefault();
+function openExtensions(){if(view!=='mj')return;const groupes=groupesLogosCompetence(),lg=catalog.logosExtensions||{};
+ const liste=groupes.map(([t,l2])=>'<optgroup label="'+esc(t)+'">'+l2.map(v=>'<option value="'+esc(v)+'">'+esc(nomLogo(v))+'</option>').join('')+'</optgroup>').join('');
+ const selLogo=(label,key,value)=>'<label>'+label+'<select name="'+key+'" data-paresseux="1"><option value="">— icône d’origine —</option>'+(value?'<option value="'+esc(value)+'" selected>'+esc(nomLogo(value))+'</option>':'')+'</select></label>';
+ const selExt=(label,key,value)=>'<label>'+esc(label)+'<select name="'+key+'"><option value="">— aucune —</option>'+EXTENSIONS.map(([k,n])=>'<option value="'+k+'"'+(k===value?' selected':'')+'>'+esc(n)+'</option>').join('')+'</select></label>';
+ $('extensions-corps').innerHTML='<h3 class="reglage-titre icones-titre">Icônes</h3>'+EXTENSIONS.map(([k,n])=>'<div class="extension-ligne" data-ext="'+k+'"><span class="extension-apercu"></span>'+selGrille(selLogo(esc(n),'logo-'+k,lg[k]||''))+'</div>').join('')
+  +'<h3 class="reglage-titre icones-titre">Classes</h3>'+(catalog.classes||[]).filter(c=>c&&c.name).map((c,i)=>selExt(c.name,'classe-'+i,extensionClasse(c))).join('')
+  +'<h3 class="reglage-titre icones-titre">Espèces</h3>'+ESPECES.map(e=>selExt(e.nom,'espece-'+e.id,extensionEspece(e))).join('');
+ const apercus=()=>$('extensions-corps').querySelectorAll('.extension-ligne').forEach(l=>{const a=l.querySelector('.extension-apercu');a.replaceChildren();const p=pastilleExtension(l.dataset.ext);if(p)a.append(p)});apercus();
+ $('extensions-form').onchange=e=>{const nom=e.target&&e.target.name||'',v=e.target.value;let r;
+  if((r=/^logo-([a-z]+)$/.exec(nom))){const o={...(catalog.logosExtensions||{})};if(v)o[r[1]]=v;else delete o[r[1]];catalog.logosExtensions=o;apercus()}
+  else if((r=/^classe-(\d+)$/.exec(nom))){const c=(catalog.classes||[]).filter(c=>c&&c.name)[+r[1]];if(!c)return;if(extensionValide(v))c.extension=v;else delete c.extension}
+  else if((r=/^espece-([a-z0-9_-]+)$/.exec(nom))){const o={...(catalog.extensionsEspeces||{})};o[r[1]]=extensionValide(v);catalog.extensionsEspeces=o}
+  else return;
+  scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));renderCatalogPages()};
+ $('extensions-corps').querySelectorAll('select[data-paresseux]').forEach(sl=>{
+  sl._remplir=()=>{if(!sl.dataset.paresseux)return;delete sl.dataset.paresseux;const v=sl.value,choisi=sl.querySelector('option[selected]');
+   sl.insertAdjacentHTML('beforeend',liste);if(choisi&&v&&sl.querySelectorAll('option[value="'+CSS.escape(v)+'"]').length>1)choisi.remove();sl.value=v};
+  ['mousedown','focus','keydown'].forEach(t=>sl.addEventListener(t,sl._remplir,{once:true}))});
+ extensionsDialog.showModal()}
 const competencesDialog=dialog('competences-icones','Icônes des caracs et compétences','<form id="competences-icones-form"><p class="muted">Une icône par caractéristique et par compétence, sur toutes les fiches d’aventuriers.</p><div id="competences-icones-corps" class="edit-grid"></div></form>');
 // Les caractéristiques dont l'icône se choisit : celle de leurs bonus, dans l'arbre comme sur la fiche.
 const CARACS_ICONES=[['vie','Vie'],['endu','Endurance'],['pv','PV max'],['dmg','Dégâts'],['xp','XP'],['orbe','Orbe mystique'],['pa','Point d’Action'],['pm','Point de Mouvement'],['soin','Soin']];
@@ -1684,6 +1756,7 @@ function gearCarre(o,n,portes){const col=itemColumn(o),equipable=o.category==='w
  if(equipable){const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m)}
  const logo=logoEquipement(o);
  if(logo)p.append(logo);else p.append(glyphePiece(col));
+ {const px=pastilleExtension(o.extension);if(px)p.append(px)}
  /* Sous le logo d'une pièce d'équipement : sa DEF — seulement si elle en donne, ou si c'est une
     armure de corps ou un bouclier —, puis l'icône de son effet : l'état qu'elle rend, barré
     quand elle en protège. Un anneau sans DEF ne porte plus d'écu à zéro. */
@@ -2677,6 +2750,7 @@ const SOCLE_NOMS={small:'Petit socle',medium:'Socle moyen',large:'Grand socle',h
 function bestiaryRow(m,i){const carte=document.createElement('div');carte.className='cat-carte';const mj=view==='mj';
  const p=document.createElement('span');p.className='cat-pill gear-carre best-carre k-'+(m.type||'standard')+(m.pnj?' al-'+alignementDe(m):'');p.setAttribute('role','button');p.tabIndex=0;
  p.append(jetonRond(m.image,m.name,'plein'));
+ {const px=pastilleExtension(m.extension);if(px)p.append(px)}
  p.setAttribute('aria-label',(mj?'Modifier ':'')+m.name);
  if(BULLES)surveille(p,()=>ouvrirBulle(p,bulleModele(m),'bulle-modele'));
  if(mj){p.onclick=()=>openActor(null,false,i);p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openActor(null,false,i)}}}
@@ -2965,9 +3039,9 @@ function talentFamilies(){
     resté sans classe se range sous « Sans classe », qui ne paraît que s'il en reste un. */
  const classes=[...new Set((catalog.classes||[]).map(c=>c&&c.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
  const autres=[...new Set((catalog.talents||[]).map(talentFamily))]
-  .filter(f=>f!==GENERIQUES&&!classes.includes(f)).sort((a,b)=>a.localeCompare(b,'fr'));
+  .filter(f=>f!==GENERIQUES&&f!=='Espèces'&&!classes.includes(f)).sort((a,b)=>a.localeCompare(b,'fr'));
  const orphelins=(catalog.talents||[]).some(t=>t&&t.effet!=='bonus'&&!estVide(t)&&talentFamily(t)===GENERIQUES);
- return [...classes,...autres,...(orphelins?[GENERIQUES]:[])]}
+ return [...classes,'Espèces',...autres,...(orphelins?[GENERIQUES]:[])]}
 // Le nom qu'on lit : « Sans classe » pour ce qui était la famille Génériques.
 const nomFamille=f=>f===GENERIQUES?'Sans classe':f;
 // L'encre d'une classe, pour un intitulé de colonne ou une languette.
@@ -3046,7 +3120,10 @@ const CLASSES_EFFETS_DEVINEES={chargeregain:'Destructeur',murelem:'Mystique',mur
 // Frappe Furieuse et la maîtrise Rage sont au Destructeur.
 Object.assign(CLASSES_EFFETS_DEVINEES,{stimulant:'Mécaniste',stimulantsoi:'Mécaniste',stimulantonde:'Mécaniste',stimulantplasma:'Mécaniste',ganteletsbleu:'Mécaniste',ganteletssur:'Mécaniste',ganteletsdeux:'Mécaniste',gantelets:'Mécaniste',clemolette:'Mécaniste',clemolettetout:'Mécaniste',clemolettereparer:'Mécaniste',cellule:'Mécaniste',grandecellule:'Mécaniste',condensateur:'Mécaniste',valvesecours:'Mécaniste',vengeance:'Destructeur',intervention:'Gardien',gardientotal:'Gardien',gardiendeux:'Gardien',orbesfeutoujours:'Mystique',doubleattaquetourbillon:'Destructeur',frappefurieusemortelle:'Destructeur',frappefurieuse:'Destructeur',rage:'Destructeur',ragecritique:'Destructeur',ragetue:'Destructeur',ragedepart:'Destructeur'});
 const ADVERSAIRES='Adversaires';
+// v0.883 : les Talents d'Espèce ont leur groupe, comme ceux des Adversaires ; pas d'arbre.
+const FAMILLE_ESPECES='Espèces';
 function classeEffet(c){const choisie=(catalog.classesEffets||{})[c.cle];if(choisie)return choisie;
+ if(c.espece)return FAMILLE_ESPECES;
  const devinee=CLASSES_EFFETS_DEVINEES[c.cle];if(devinee&&(catalog.classes||[]).some(k=>k&&k.name===devinee))return devinee;
  // Une amélioration sans classe à elle suit son talent : elle se range sous lui, où qu'il soit.
  if(!devinee&&c.pour&&TALENTS_CODES[c.pour]&&TALENTS_CODES[c.pour]!==c)return classeEffet(TALENTS_CODES[c.pour]);
@@ -3066,7 +3143,7 @@ function renderBiblioEffets(){const boite=$('biblio-effets');if(!boite)return;
  const compte=$('biblio-compte');
  if(compte)compte.textContent=codes.length;
  boite.replaceChildren();
- const classes=(catalog.classes||[]).map(k=>k&&k.name).filter(n=>n&&n!==GENERIQUES),rangs=[...classes,GENERIQUES,ADVERSAIRES];
+ const classes=(catalog.classes||[]).map(k=>k&&k.name).filter(n=>n&&n!==GENERIQUES),rangs=[...classes,GENERIQUES,FAMILLE_ESPECES,ADVERSAIRES];
  const groupes=new Map();codes.forEach(c=>{const k=classeEffet(c);if(!groupes.has(k))groupes.set(k,[]);groupes.get(k).push(c)});
  // L'ordre du MJ ne touche ni aux talents ni aux arbres ; un effet qu'il n'a pas encore placé vient après.
  const ordre=new Map((catalog.ordreEffets||[]).map((k,i)=>[k,i])),place=c=>ordre.has(c.cle)?ordre.get(c.cle):Infinity;
@@ -3494,6 +3571,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
    ['reactions','Réactions — la ligne dessous'],['aucune','Aucune — passifs et améliorations, sur la fiche seulement']])
   +'<label id="cout-action-champ" hidden><span id="cout-action-nom">Coût (PA)</span><input name="coutAction" type="number" min="0" max="9" step="1" value=""></label>'+'</div>'
   +'<div id="famille-autre" hidden><label>Nom de la nouvelle classe<input name="familleLibre" maxlength="60" value=""></label></div>'
+  +'<div id="famille-espece"'+(famille===FAMILLE_ESPECES?'':' hidden')+'><label>Espèce<select name="espece">'+ESPECES.map(e=>'<option value="'+e.id+'"'+(t.espece===e.id?' selected':'')+'>'+esc(e.nom)+'</option>').join('')+'</select></label></div>'
   /* Un talent élémentaire choisit un logo par élément : ils remplacent le logo unique, et
      paraissent quand la case « Élémentaire » est cochée. */
   +'<div class="edit-grid logos-elements t-seul" id="logos-elements" hidden>'+ELEMENTS.map(e=>selLogos('Logo · '+e.nom,'logo_'+e.cle,(t.logos||{})[e.cle]||'',true)).join('')+'</div>'
@@ -3571,7 +3649,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  const fam=$('talent-form').elements.famille;
  // La catégorie d'icônes qui porte le nom de la classe passe en tête des menus de logos.
  const tetes=()=>$('talent-form').querySelectorAll('select[name="logo"],select[name="b_logo"]').forEach(s=>iconesClasseEnTete(s,fam.value));tetes();
- fam.onchange=()=>{const autre=fam.value===AUTRE_CLASSE;$('famille-autre').hidden=!autre;tetes();
+ fam.onchange=()=>{const autre=fam.value===AUTRE_CLASSE;$('famille-autre').hidden=!autre;$('famille-espece').hidden=fam.value!==FAMILLE_ESPECES;tetes();
   if(autre){const champ=$('talent-form').elements.familleLibre;champ.value='';champ.focus()}};
  const menu=$('talent-form').elements.effet;
  menu.onchange=()=>{lisBrouillonTalent();talentDraft.effet=menu.value;dessineReglagesTalent()};
@@ -3610,6 +3688,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  const t=avant?structuredClone(avant):{id:crypto.randomUUID()};
  t.name=f.name.value.trim()||'Talent';
  t.famille=(f.famille.value===AUTRE_CLASSE?f.familleLibre.value:f.famille.value).trim()||GENERIQUES;
+ if(t.famille===FAMILLE_ESPECES&&f.espece&&especeDe(f.espece.value))t.espece=f.espece.value;else delete t.espece;
  /* La voie, le prérequis et la place viennent de l'arbre : ceux qu'il a donnés à un talent
     créé chez lui, ceux qu'il tient déjà sinon. Changer de classe les remet à zéro. */
  if(!avant){const d=talentDefauts||{};t.voie=d.voie||'';t.prerequis='';if(d.chemin)t.chemin=d.chemin;
@@ -3949,7 +4028,7 @@ function renderAccueil(){{const b=document.querySelector('.accueil-creer');if(b)
 /* ---------- Créer un aventurier ----------
    Onglet par onglet : identité, classe, caractéristiques, compétences, puis le récapitulatif. L'aventurier rejoint la campagne,
    au domaine : la page Aventuriers du MJ, et la fiche du joueur qui l'a créé. Il est prêt pour une mission, une aventure. */
-const ETAPES_CREATION=[['identite','Identité'],['espece','Espèce'],['classe','Classe'],['caracs','Caractéristiques'],['comps','Compétences'],['equipement','Équipement'],['recap','Récapitulatif']];
+const ETAPES_CREATION=[['identite','Identité'],['espece','Espèce'],['classe','Classe'],['caracs','Caractéristiques'],['comps','Compétences'],['equipement','Équipement'],['illustration','Illustration'],['recap','Récapitulatif']];
 // La présentation des classes du jeu ; une classe du catalogue peut porter la sienne.
 const DESCRIPTIONS_CLASSES={Destructeur:'L’ivresse des batailles vous habite, et la rage vous envahit lorsque vous prenez les armes, afin d’exterminer vos adversaires et de protéger vos coéquipiers.',
  Gardien:'Protecteur et esprit tactique de votre équipe, vous êtes le héraut des plus faibles et la robustesse incarnée. Défendez vos coéquipiers et arrachez la victoire grâce à votre esprit de stratège.',
@@ -4006,7 +4085,7 @@ let creation=null;
 function aventuriersPermis(){return 1}
 function peutCreerAventurier(){if((typeof mjIci==='function'&&mjIci())||!invitEnLigne())return true;
  const uid=typeof monUid!=='undefined'?monUid:null;return !!uid&&actors.filter(a=>a&&a.hero&&a.joueur===uid).length<aventuriersPermis()}
-function openCreation(){if(!peutCreerAventurier())return;creation={etape:0,name:'',sexe:'',image:'',espece:'',role:'',armes:null,armure:null,caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
+function openCreation(){if(!peutCreerAventurier())return;creation={etape:0,name:'',sexe:'',image:'',tokenPropose:'',espece:'',role:'',armes:null,armure:null,caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
 const restantCaracs=c=>POINTS_CARACS-c.caracs.endu-c.caracs.vie-c.caracs.dmg,restantComps=c=>POINTS_COMPS-c.skills.reduce((s,n)=>s+n,0);
 const especeCreation=c=>especeDe(c.espece),compsEspece=c=>bonusEspece({hero:true,espece:c.espece}).skills;
 const valeursCreation=c=>{const e=bonusEspece({hero:true,espece:c.espece});return {vie:BASE_HEROS.vieMax+c.caracs.vie+e.vie,endu:BASE_HEROS.endu+2*c.caracs.endu+e.endu,dmg:BASE_HEROS.dmg+c.caracs.dmg+e.dmg}};
@@ -4047,25 +4126,41 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
   return bonus};
  if(k==='identite'){const n=inp('text',c.name,v=>{c.name=v.slice(0,120);majBoutons()},{maxlength:'120',placeholder:'Nom de l’aventurier'});
   const s=document.createElement('select');[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']].forEach(([v,t])=>s.add(new Option(t,v)));s.value=c.sexe;s.onchange=()=>{c.sexe=s.value};
-  // L'illustration du token : importée et optimisée comme celles du MJ.
-  const jeton=document.createElement('div');jeton.className='creation-champ';const tj=document.createElement('span');tj.textContent='Illustration du token';
+  corps.append(lab('Nom',n),lab('Sexe',s));setTimeout(()=>n.focus())}
+ /* v0.883 — L'Illustration : importer une image, optimisée comme celles du MJ, ou choisir un des tokens proposés —
+    les libres, ceux de son espèce, ceux de sa classe. L'image suit l'aventurier, et chacun la voit. */
+ else if(k==='illustration'){const jeton=document.createElement('div');jeton.className='creation-champ creation-illustration';
   const im=document.createElement('img');im.className='preview-token';im.alt='Token';if(c.image)im.src=c.image;else im.hidden=true;
   const fi=document.createElement('input');fi.type='file';fi.accept='image/png,image/jpeg,image/webp';fi.hidden=true;
-  fi.onchange=()=>{const x=fi.files[0];fi.value='';if(x)openImage(x,'token',async url=>{if(creation!==c)return;c.image=url;c.imageTable=await imagePourTable(url);if(creation===c)renderCreation()},true)};
+  fi.onchange=()=>{const x=fi.files[0];fi.value='';if(x)openImage(x,'token',async url=>{if(creation!==c)return;c.image=url;c.tokenPropose='';c.imageTable=await imagePourTable(url);if(creation===c)renderCreation()},true)};
   const imp=document.createElement('button');imp.type='button';imp.textContent='Importer et optimiser';imp.onclick=()=>fi.click();
-  const ret=document.createElement('button');ret.type='button';ret.textContent='Retirer l’image';ret.hidden=!c.image;ret.onclick=()=>{c.image='';renderCreation()};
-  const barre=document.createElement('div');barre.className='toolbar';barre.append(imp,ret);jeton.append(tj,im,barre,fi);
-  corps.append(lab('Nom',n),lab('Sexe',s),jeton);setTimeout(()=>n.focus())}
+  const ret=document.createElement('button');ret.type='button';ret.textContent='Retirer l’image';ret.hidden=!c.image;ret.onclick=()=>{c.image='';c.imageTable=null;c.tokenPropose='';renderCreation()};
+  const barre=document.createElement('div');barre.className='toolbar';barre.append(imp,ret);jeton.append(im,barre,fi);corps.append(jeton);
+  const l=tokensPourCreation(c);
+  if(l.length){const g=document.createElement('div');g.className='creation-tokens';
+   l.forEach(t=>{const b=document.createElement('button');b.type='button';b.className='creation-token'+(c.tokenPropose===t.id?' on':'');b.setAttribute('aria-label','Choisir ce token');
+    const i=document.createElement('img');i.src=t.image;i.alt='';b.append(i);
+    b.onclick=async()=>{c.image=t.image;c.tokenPropose=t.id;c.imageTable=await imagePourTable(t.image);if(creation===c)renderCreation()};g.append(b)});
+   corps.append(g)}}
  else if(k==='espece'){const g=document.createElement('div');g.className='creation-classes';
   ESPECES.forEach(e=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.espece===e.id?' on':'');b.style.setProperty('--teinte',e.teinte);
    const n=document.createElement('b');n.textContent=e.nom;b.append(n);
+   {const px=pastilleExtension(extensionEspece(e));if(px)b.append(px)}
    b.onclick=()=>{c.espece=e.id;renderCreation()};g.append(b)});corps.append(g);
   const e=especeCreation(c);
   if(e){const f=document.createElement('div');f.className='creation-fiche-classe';f.style.setProperty('--teinte',e.teinte);
-   const t=document.createElement('h3');t.textContent=e.nom;f.append(t,bonusEspeceEl(e));corps.append(f)}}
+   const t=document.createElement('h3');t.textContent=e.nom;f.append(t);
+   // v0.883 : sa présentation, sa Vitesse, et ses Talents d'Espèce en ronds, leur bulle au survol.
+   if(e.description){const p=document.createElement('p');p.className='creation-description';p.textContent=e.description;f.append(p)}
+   const bonus=bonusEspeceEl(e);if(Number(e.vitesse)>0)bonus.prepend(pastilleCarac('pm','Vitesse '+e.vitesse+' m'));f.append(bonus);
+   const tals=(catalog.talents||[]).filter(x=>x&&talentFamily(x)===FAMILLE_ESPECES&&x.espece===e.id&&!estBonus(x)&&!estVide(x));
+   if(tals.length){const r=document.createElement('div');r.className='creation-talents';
+    tals.forEach(x=>{const q=talentRond(x);q.setAttribute('aria-label',nomEnClair(x.name));surveille(q,()=>bulleTalentSur(q,x,{points:false}));r.append(q)});f.append(r)}
+   corps.append(f)}}
  else if(k==='classe'){const g=document.createElement('div');g.className='creation-classes';
   (catalog.classes||[]).forEach(cl=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.role===cl.name?' on':'');b.style.setProperty('--teinte',cl.tint||'#8a7a5a');
    const n=document.createElement('b');n.textContent=cl.name;const p=document.createElement('small');p.textContent='+'+(Number(cl.pv)||0)+' PV';b.append(n,p);
+   {const px=pastilleExtension(extensionClasse(cl));if(px)b.append(px)}
    b.onclick=()=>{c.role=cl.name;renderCreation()};g.append(b)});corps.append(g);
   // La classe choisie : sa présentation, ses PV, ses compétences.
   const cl=(catalog.classes||[]).find(x=>x.name===c.role);
@@ -4732,6 +4827,9 @@ function talentsFlottants(classe){return (catalog.talents||[]).filter(t=>t&&t.fl
 function accordeFlottants(){if(typeof spectateur==='function'&&spectateur())return false;let change=false;
  (typeof actors!=='undefined'?actors:[]).forEach(a=>{if(!a||!a.hero)return;const fls=talentsFlottants(classeDuHeros(a)),l=a.talents||[];
   const garde=l.filter(id=>{const t=talent(id);return !t||!t.flottant||fls.includes(t)});fls.forEach(fl=>{if(!garde.includes(fl.id))garde.push(fl.id)});
+  // v0.883 : ceux de son espèce, d'office et gratuits ; ceux d'une autre espèce s'en vont.
+  {const de=t=>t&&talentFamily(t)===FAMILLE_ESPECES&&!estBonus(t)&&!lisChemin(t),siens=(catalog.talents||[]).filter(t=>de(t)&&t.espece&&t.espece===a.espece);
+   for(let k=garde.length-1;k>=0;k--){const t=talent(garde[k]);if(de(t)&&!siens.includes(t))garde.splice(k,1)}siens.forEach(t=>{if(!garde.includes(t.id))garde.push(t.id)})}
   if(garde.length!==l.length||garde.some((id,k)=>id!==l[k])){a.talents=garde;change=true}});
  return change}
 function colonnesArbre(classe){const talents=(catalog.talents||[]).filter(t=>t&&talentFamily(t)===classe&&!t.horsArbre&&!lisChemin(t));
@@ -5945,7 +6043,7 @@ function selGroupes(label,key,value,groupes){const opt=v=>'<option value="'+esc(
 /* Le menu des mécaniques, rangé par classe comme la bibliothèque des effets : les classes du jeu,
    puis les génériques, puis les adversaires. */
 /* v0.840 : la classe du talent qu'on édite passe en tête de la liste. */
-function selMecanique(valeur,premiere){const classes=(catalog.classes||[]).map(k=>k&&k.name).filter(n=>n&&n!==GENERIQUES);let rangs=[...classes,GENERIQUES,ADVERSAIRES];
+function selMecanique(valeur,premiere){const classes=(catalog.classes||[]).map(k=>k&&k.name).filter(n=>n&&n!==GENERIQUES);let rangs=[...classes,GENERIQUES,FAMILLE_ESPECES,ADVERSAIRES];
  if(premiere&&premiere!==GENERIQUES)rangs=[premiere,...rangs.filter(k=>k!==premiere)];
  const groupes=new Map();Object.values(TALENTS_CODES).filter(c=>c.cle!=='bonus'&&(!c.retire||c.cle===valeur)).forEach(c=>{const k=classeEffet(c);if(!groupes.has(k))groupes.set(k,[]);groupes.get(k).push(c)});
  const opt=(v,t)=>'<option value="'+esc(v)+'"'+(String(valeur)===String(v)?' selected':'')+'>'+esc(t)+'</option>';
@@ -5992,7 +6090,7 @@ function renderActorForm(){const a=draft;const sien=w=>!w.forge||(a.inventaire||
 $('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role,'text',a.hero?'list="classes-jeu" maxlength="120"':'')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum','max',a.max,'number','min="1" max="99999" required'+(a.hero?' readonly':''))+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="'+DEF_MAX+'"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"'+(a.hero?' disabled':''))+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+field('Espèce','race',a.race,'text','maxlength="40"'):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any" disabled')+field('Endurance','endu',a.endu,'number','min="1" max="999" disabled')+field('Bonus PV (classe + espèce)','pvBonus',a.pvBonus,'number','min="-9999" max="9999" readonly')+field('Niveau','level',a.level,'number',a.hero?'min="1" max="20" disabled':'min="1" max="20"'):'')+'</div>'
   +(a.hero?'<datalist id="classes-jeu">'+(catalog.classes||[]).map(c=>'<option value="'+esc(c.name)+'">').join('')+'</datalist>'
    +'<p class="muted">Classes du jeu : '+(catalog.classes||[]).map(c=>esc(c.name)+' (PV +'+(c.pv||0)+')').join(' · ')+'.</p>':'')
-  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']]):'')+(a.pnj?sel('Alignement','alignement',alignementDe({pnj:true,alignement:a.alignement}),ALIGNEMENTS)+'<label class="field-check"><input name="unique" type="checkbox" '+(a.unique===true?'checked':'')+'>Unique</label>':'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'<label class="field-check"><input name="nyctalope" type="checkbox" '+(a.nyctalope===false?'':'checked')+'>Vision dans le noir</label>'+field('Mouvement (m)','mouvement',mouvementPropre(a),'number','min="0" max="99" step="0.5"'))+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Inventaire<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div id="inventaire-edit"></div>'+(a.hero?'<div class="edit-grid inv-ajout">'+sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())+'<button type="button" id="inv-ajouter">Ajouter</button></div>':'')+'<p class="muted" id="equip-summary"></p><p class="muted">'+(a.hero?'L’inventaire dit tout ce que le combattant possède ; l’équipement, ce qu’il porte — deux mains au plus : une arme à une main et un bouclier, deux armes à une main, ou une arme à deux mains — et une armure. Les dés de l’attaque et la DEF découlent de ce qui est porté ; les objets restent dans l’inventaire.':'Un adversaire porte toujours tout ce qu’il possède, sans compter ses mains : chaque arme est une variante, son bouton en combat, et la meilleure pièce de chaque emplacement fait sa DEF. Le butin est la chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte.')+'</p>'+(a.hero?'':'<div class="divider"></div><h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
+  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']])+sel('Extension','extension',extensionValide(a.extension),[['','— aucune —'],...EXTENSIONS]):'')+(a.pnj?sel('Alignement','alignement',alignementDe({pnj:true,alignement:a.alignement}),ALIGNEMENTS)+'<label class="field-check"><input name="unique" type="checkbox" '+(a.unique===true?'checked':'')+'>Unique</label>':'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'<label class="field-check"><input name="nyctalope" type="checkbox" '+(a.nyctalope===false?'':'checked')+'>Vision dans le noir</label>'+field('Mouvement (m)','mouvement',mouvementPropre(a),'number','min="0" max="99" step="0.5"'))+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Inventaire<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div id="inventaire-edit"></div>'+(a.hero?'<div class="edit-grid inv-ajout">'+sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())+'<button type="button" id="inv-ajouter">Ajouter</button></div>':'')+'<p class="muted" id="equip-summary"></p><p class="muted">'+(a.hero?'L’inventaire dit tout ce que le combattant possède ; l’équipement, ce qu’il porte — deux mains au plus : une arme à une main et un bouclier, deux armes à une main, ou une arme à deux mains — et une armure. Les dés de l’attaque et la DEF découlent de ce qui est porté ; les objets restent dans l’inventaire.':'Un adversaire porte toujours tout ce qu’il possède, sans compter ses mains : chaque arme est une variante, son bouton en combat, et la meilleure pièce de chaque emplacement fait sa DEF. Le butin est la chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte.')+'</p>'+(a.hero?'':'<div class="divider"></div><h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
 /* Un adversaire qui porte une armure tire sa DEF d'elle seule : le champ se tait et
    montre ce que l'armure donne. Son chiffre propre reste dessous — readActor ne lit pas
    un champ éteint — et revient tel quel si l'armure s'en va. */
@@ -6143,7 +6241,7 @@ function choixTalents(boite,cible,filtre,familles,apres){boite.replaceChildren()
 /* Recharger les quatre listes d'équipement en place : reconstruire tout le formulaire
    perdrait ce qui y est saisi et pas encore enregistré. Le choix courant est conservé,
    et un objet tout neuf va se poser dans le premier emplacement libre qui l'accepte. */
-function readActor(){const f=$('actor-form').elements;readAttacks();const a=structuredClone(draft);for(const k of ['name','role','notes','socle'])a[k]=f[k].value.trim();a.states=[...statesOf(draft)];for(const k of ['sexe','race'])if(f[k])a[k]=f[k].value.trim();
+function readActor(){const f=$('actor-form').elements;readAttacks();const a=structuredClone(draft);for(const k of ['name','role','notes','socle'])a[k]=f[k].value.trim();a.states=[...statesOf(draft)];for(const k of ['sexe','race'])if(f[k])a[k]=f[k].value.trim();if(f.extension){if(extensionValide(f.extension.value))a.extension=f.extension.value;else delete a.extension}
  for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k]&&!f[k].disabled)a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?999999:99999);if(a.hero&&typeof niveauDeXp==='function')a.level=niveauDeXp(a.xp);a.max=Math.max(1,a.max);if(Number.isFinite(a.def))a.def=defPlafonnee(a.def);if(templateIndex!==null)a.hp=a.max;a.hp=Math.min(a.hp,a.max);setState(a,'Coma',!a.hp);if(!a.hero){a.type=f.type.value;if(f.menace)a.menace=f.menace.value;if(a.pnj&&f.alignement)a.alignement=alignementDe({pnj:true,alignement:f.alignement.value});if(a.pnj&&f.unique){if(f.unique.checked)a.unique=true;else delete a.unique}}// Sans cases à l'écran (adversaires), les valeurs enregistrées sont conservées telles quelles.
  if(f.rapide)a.rapide=f.rapide.checked;if(f.esquive)a.esquive=f.esquive.checked;if(f.nyctalope){if(f.nyctalope.checked)delete a.nyctalope;else a.nyctalope=false}if(f.mouvement&&!a.hero){const v=Number(f.mouvement.value);if(!Number.isFinite(v)||v===DISTANCE_MOUVEMENT)delete a.mouvement;else a.mouvement=Math.max(0,Math.min(99,v))}if(f.skill0)a.skills=skillNames.map((_,i)=>num(f['skill'+i].value,0,30));// Un adversaire n'a pas de rayon d'armurerie dans son formulaire : ce qu'il porte reste tel quel.
  // L'inventaire et l'équipement viennent du brouillon, où le formulaire les a composés ; ce qui n'est plus au catalogue s'efface.
@@ -6521,6 +6619,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  // Une arme de lancer se tient d'une main et n'a pas de munition.
  if(a.lancer){a.hands=1;a.usesAmmo=false}
  for(const k of ['name','slot','etat','notes'])if(f[k])a[k]=f[k].value.trim();
+ if(f.extension){if(extensionValide(f.extension.value))a.extension=f.extension.value;else delete a.extension}
  if(f.typeArme)a.typeArme=f.typeArme.value;if(f.accord)a.accord=f.accord.value;
  /* L'effet, son usage et ses réglages, relus au travers de la déclaration : « consommable »
     n'est plus une case à part, c'est l'un des trois usages. */
@@ -6578,6 +6677,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +(arme&&!a.lancer?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(arme?sel('Type d’arme','typeArme',typeArmeDe(a),[...(a.ranged?[]:[['','—']]),...TYPES_ARME.filter(t=>t[2]===(a.ranged?'ranged':'melee')).map(([k,n])=>[k,n])]):'')
   +(arme||armure?sel('Genre','accord',accordDe(a),ACCORDS):'')
+  +sel('Extension','extension',extensionValide(a.extension),[['','— aucune —'],...EXTENSIONS])
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="'+DEF_MAX+'"')
    +sel('Emplacement','slot',emplacementDe(a),[...EMPLACEMENTS.map(([k,n,p])=>[k,n+(p>1?' ('+p+')':'')]),['shield','Bouclier — une main']]):'')
   +(arme||armure?'':field('Quantité','qty',a.qty||1,'number','min="1" max="9999"'))
