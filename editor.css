@@ -3198,3 +3198,14 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 .arbres-cols-espece{display:flex}
 .arbres-cols-espece>.arbre-col{flex:1 1 auto;width:100%}
 .arbres-cols-espece .arbre-plan{margin-left:auto;margin-right:auto}
+/* v0.896 : le terrain difficile — hachures ocre (#a2691f), visibles de tous à la table, et dans l'éditeur de carte. */
+#difficiles-carte{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;overflow:visible}
+#difficiles-carte .diffi-carte{fill:url(#hachures-difficile);fill-rule:evenodd;stroke:#a2691f;stroke-width:1.5px;stroke-dasharray:2 3;vector-effect:non-scaling-stroke;opacity:.85}
+#difficiles-carte .hachure{stroke:#a2691f;stroke-width:.35;opacity:.55}
+.diffi-skin{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.diffi-skin path.bord{fill:none;stroke:#a2691f;stroke-width:1.6;stroke-dasharray:2 3;vector-effect:non-scaling-stroke}
+.diffi-skin path.fond{fill:#a2691f;fill-opacity:.16;stroke:none}
+.shape.diffi{background:color-mix(in srgb,#a2691f 14%,transparent);border:2px dotted #a2691f;pointer-events:none}
+.shape.diffi .grip{display:none!important}
+.lasso-layer.diffi polygon,.lasso-layer.diffi polyline{stroke:#a2691f;fill:color-mix(in srgb,#a2691f 16%,transparent)}
+.sw-diffi{background:color-mix(in srgb,#a2691f 16%,transparent);border:1px dotted #a2691f}

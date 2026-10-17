@@ -887,7 +887,15 @@ function renderImpraticables(){let svg=$('impraticables-mj');if(!svg){svg=docume
  svg.replaceChildren();const m=currentMap();if(!m||view!=='mj'||!impratVisible||(typeof oeilJoueur==='function'&&oeilJoueur()))return;
  impraticableDe(m).forEach(p=>{const el=document.createElementNS(nsSVG,'path');
   el.setAttribute('d',p.anneaux.map(r=>'M'+r.map(q=>q[0].toFixed(3)+' '+q[1].toFixed(3)).join('L')+'Z').join(''));el.setAttribute('class','imprat-mj');svg.append(el)})}
-function renderCoffres(){renderImpraticables();const calque=$('map-coffres'),vue=$('map-view'),m=currentMap();calque.replaceChildren();vue.querySelectorAll('.coffre-alerte,.coffre-cadenas').forEach(x=>x.remove());majBoutonCoffres();
+/* v0.896 : le terrain difficile, à la table : visible de tous, en hachures ocre, sous les socles. */
+function renderDifficiles(){let svg=$('difficiles-carte');if(!svg){svg=document.createElementNS(nsSVG,'svg');svg.id='difficiles-carte';svg.setAttribute('viewBox','0 0 100 100');
+  svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');$('fog').before(svg)}
+ svg.replaceChildren();const m=currentMap();if(!m)return;const l=difficileDe(m);if(!l.length)return;
+ const defs=document.createElementNS(nsSVG,'defs'),pat=document.createElementNS(nsSVG,'pattern');pat.id='hachures-difficile';pat.setAttribute('patternUnits','userSpaceOnUse');
+ pat.setAttribute('width','1.2');pat.setAttribute('height','1.2');pat.setAttribute('patternTransform','rotate(45)');
+ const ln=document.createElementNS(nsSVG,'line');ln.setAttribute('x1','0');ln.setAttribute('y1','0');ln.setAttribute('x2','0');ln.setAttribute('y2','1.2');ln.setAttribute('class','hachure');pat.append(ln);defs.append(pat);svg.append(defs);
+ l.forEach(p=>{const el=document.createElementNS(nsSVG,'path');el.setAttribute('d',p.anneaux.map(r=>'M'+r.map(q=>q[0].toFixed(3)+' '+q[1].toFixed(3)).join('L')+'Z').join(''));el.setAttribute('class','diffi-carte');svg.append(el)})}
+function renderCoffres(){renderImpraticables();renderDifficiles();const calque=$('map-coffres'),vue=$('map-view'),m=currentMap();calque.replaceChildren();vue.querySelectorAll('.coffre-alerte,.coffre-cadenas').forEach(x=>x.remove());majBoutonCoffres();
  /* Un coffre caché, pas encore trouvé, le MJ le voit toujours : un contour en pointillés, au-dessus du brouillard et du noir,
     qui couvraient jusqu'à le faire disparaître. */
  let caches=$('coffres-caches');if(!caches){caches=document.createElementNS(nsSVG,'svg');caches.id='coffres-caches';caches.setAttribute('viewBox','0 0 100 100');
@@ -1512,6 +1520,7 @@ mapsPage.innerHTML=
  +'<select id="pinceau-taille" aria-label="Grosseur du pinceau" hidden><option value=".3">Pinceau fin</option><option value=".55" selected>Pinceau moyen</option><option value="1">Pinceau large</option></select>'
  +'<span class="bar-sep"></span><button data-tool="obscur">Obscurité</button><button data-tool="obscurlibre">Obscurité libre</button><button data-tool="obscurremplir">Remplir d’obscurité</button><button data-tool="obscurgomme">Gomme d’obscurité</button><span class="bar-sep"></span>'
  +'<button data-tool="imprat">Impraticable</button><button data-tool="impratlibre">Impraticable libre</button><button data-tool="impratligne">Ligne impraticable</button><button data-tool="impratcadre">Carré impraticable</button><button data-tool="impratgomme">Gomme d’impraticable</button><span class="bar-sep"></span>'
+ +'<button data-tool="diffi">Difficile</button><button data-tool="diffilibre">Difficile libre</button><button data-tool="diffiligne">Ligne difficile</button><button data-tool="difficadre">Carré difficile</button><button data-tool="diffigomme">Gomme de difficile</button><span class="bar-sep"></span>'
  +'<button data-tool="door">Porte</button><button data-tool="secret">Passage secret</button><button data-tool="start">Zone de départ</button>'
  +'<button data-tool="foe">Adversaire</button><select id="map-foe-tpl" aria-label="Modèle d’adversaire"></select>'
  +'<button data-tool="pnj">PNJ</button><select id="map-pnj-tpl" aria-label="Modèle de PNJ"></select>'
@@ -1543,6 +1552,7 @@ mapsPage.innerHTML=
  +'<li><i class="sw-cut"></i>Pinceau de découpe — la même chose en négatif, il gratte</li>'
  +'<li><i class="sw-obscur"></i>Obscurité — dans le noir, on ne voit que sa zone de contact, ce qui est éclairé, ou jusqu’où porte sa vision dans le noir</li>'
  +'<li><i class="sw-imprat"></i>Impraticable — un terrain qu’on ne traverse pas ; la vue passe, et la troupe ne le voit pas</li>'
+ +'<li><i class="sw-diffi"></i>Difficile — chaque mètre parcouru dedans en coûte deux ; tout le monde le voit</li>'
  +'<li><i class="sw-lumiere"></i>Lumière — une torche, une lampe, un feu : elle repousse le noir en rond ; l’objet qu’elle contient se prend, et elle s’éteint</li>'
  +'<li><i class="sw-foe"></i>Adversaire pré-placé</li>'
  +'<li><i class="sw-objet"></i>Objet ou mécanisme — visible, la troupe l’ouvre d’un clic ; caché, un test de compétence le découvre</li></ul><p class="muted" id="map-count"></p>'
@@ -1602,7 +1612,7 @@ function newMap(){const m={id:crypto.randomUUID(),name:'Carte '+(maps.length+1),
  maps.push(m);mapDraft=m;mapSel=null;undoStack=[];redoStack=[];return m}
 function ensure(m){m.doors??=[];m.foes??=[];m.ratio??=16/9;
  // L'obscurité est née en v0.591 : une seconde matière, qui ne bloque rien. Les lumières, en v0.592.
- m.obscurite??=[];m.impraticable??=[];m.lumieres??=[];m.lumieres.forEach(l=>{l.id||=crypto.randomUUID();l.items??=[];l.rayon=Math.max(.5,Math.min(40,Number(l.rayon)||3))});
+ m.obscurite??=[];m.impraticable??=[];m.lumieres??=[];m.lumieres.forEach(l=>{l.id||=crypto.randomUUID();l.items??=[];l.rayon=Math.max(.5,Math.min(40,Number(l.rayon)||3))});m.difficile??=[];
  // Les zones séparées, regroupées ou nommées par le MJ : nées en v0.252.
  m.zonesCoupures??=[];m.zonesLiens??=[];m.zonesNoms??=[];
  // Les objets sont nés en v0.144 ; chacun porte un identifiant, la table s'y réfère.
@@ -1665,10 +1675,10 @@ $('map-play').onclick=()=>{if(mapDraft)openBattleMap(mapDraft.id)};
 $('paysage-play').onclick=()=>{if(estPaysage(mapDraft))afficherPaysage(mapDraft.id)};
 $('paysage-new').onclick=()=>{newPaysage();renderMapList();renderCanvas();saveMaps()};
 document.querySelectorAll('#map-tools [data-tool]').forEach(b=>b.onclick=()=>{mapTool=b.dataset.tool;if(mapTool!=='lasso')lasso=null;
- $('pinceau-taille').hidden=mapTool!=='pinceau'&&mapTool!=='gomme'&&mapTool!=='impratgomme';
+ $('pinceau-taille').hidden=mapTool!=='pinceau'&&mapTool!=='gomme'&&mapTool!=='impratgomme'&&mapTool!=='diffigomme';
  zoneTrait=zoneVise=null;
  // Changer d'outil abandonne le tracé en cours : on ne finit pas un trait à la truelle.
- if(mapTool!=='ligne'&&mapTool!=='impratligne')traitDepart=traitVise=null;
+ if(mapTool!=='ligne'&&mapTool!=='impratligne'&&mapTool!=='diffiligne')traitDepart=traitVise=null;
  renderCanvas()});
 
 /* La liste des cartes : le nom seul, sur une ligne ; en vert, celle qui est chargée sur la table.
@@ -1769,6 +1779,11 @@ const HINTS={select:'Clique une zone de blocage, une porte ou un adversaire pour
  impratlibre:'Contourne le terrain impraticable : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  impratligne:'Un trait impraticable : premier clic, origine ; second clic, arrivée. Maj le tient horizontal ou vertical et enchaîne le trait suivant depuis le bout.',
  impratgomme:'Gomme le terrain impraticable sous le pinceau, à main levée.',
+ diffi:'Trace un rectangle de terrain difficile : chaque mètre parcouru dedans en coûte deux, et tout le monde le voit.',
+ difficadre:'Trace un rectangle dont seul le contour est difficile, de l’épaisseur d’une ligne.',
+ diffilibre:'Contourne le terrain difficile : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
+ diffiligne:'Un trait difficile : premier clic, origine ; second clic, arrivée. Maj le tient horizontal ou vertical et enchaîne le trait suivant depuis le bout.',
+ diffigomme:'Gomme le terrain difficile sous le pinceau, à main levée.',
  obscurgomme:'Contourne l’obscurité à effacer : glisse pour tracer à main levée, ou clique point par point. Entrée ou un clic sur le premier point ferme le tracé, Échap l’abandonne.',
  coffre:'Trace un coffre comme une porte : sa fiche s’ouvre aussitôt — nom, description, caché ou non, verrou, piège et contenu. La poignée ronde le fait tourner.',
  lumiere:'Clique pour poser une lumière — torche au mur, lampe, feu — et régler son nom, sa portée en mètres et l’objet qu’elle contient. Tire sa poignée pour agrandir son halo. Un aventurier au contact prend l’objet d’un clic, et la lumière s’éteint.',
@@ -1803,13 +1818,15 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  {const obs=obscuriteDe(m);if(obs.length)c.append(svgMatiere([obs.flatMap(p=>p.anneaux)],null,'obscur-skin'))}
  // Le terrain impraticable, en pointillés rouges.
  {const imp=impraticableDe(m);if(imp.length)c.append(svgMatiere([imp.flatMap(p=>p.anneaux)],null,'imprat-skin'))}
+ // Le terrain difficile, en hachures ocre.
+ {const dif=difficileDe(m);if(dif.length)c.append(svgMatiere([dif.flatMap(p=>p.anneaux)],null,'diffi-skin'))}
  c.style.backgroundImage=m.image?'url("'+m.image+'")':'';c.classList.toggle('no-image',!m.image);
  m.doors.forEach((r,i)=>c.append(shapeEl('door',i,r)));
  m.coffres.forEach((r,i)=>c.append(shapeEl('coffre',i,r)));
  (m.pieges||[]).forEach((r,i)=>c.append(shapeEl('piege',i,r),...declencheursEl(i,r)));
  // L'aperçu du rectangle en cours — bloc ou découpe — tant que la main n'a pas lâché.
- if(cutRect){const el=shapeEl(cutRect.imprat?'imprat':cutRect.obscur?'obscur':cutRect.bloc?'bloc':'cut',0,cutRect);if(cutRect.cadre)el.classList.add('cadre');c.append(el)}
- if(lasso&&lasso.pts.length){const svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','lasso-layer'+(lasso.mode==='obscurlibre'?' obscur':lasso.mode==='obscurgomme'?' obscur-gomme':lasso.mode==='blocagelibre'?' bloc':lasso.mode==='impratlibre'?' imprat':''));
+ if(cutRect){const el=shapeEl(cutRect.diffi?'diffi':cutRect.imprat?'imprat':cutRect.obscur?'obscur':cutRect.bloc?'bloc':'cut',0,cutRect);if(cutRect.cadre)el.classList.add('cadre');c.append(el)}
+ if(lasso&&lasso.pts.length){const svg=document.createElementNS(nsSVG,'svg');svg.setAttribute('class','lasso-layer'+(lasso.mode==='obscurlibre'?' obscur':lasso.mode==='obscurgomme'?' obscur-gomme':lasso.mode==='blocagelibre'?' bloc':lasso.mode==='impratlibre'?' imprat':lasso.mode==='diffilibre'?' diffi':''));
   svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');
   const forme=document.createElementNS(nsSVG,lasso.pts.length>2?'polygon':'polyline');
   forme.setAttribute('points',lasso.pts.map(pt=>pt.join(',')).join(' '));svg.append(forme);
@@ -1997,7 +2014,7 @@ function pinceauTaille(){const sel=$('pinceau-taille');
 // Une touche : la capsule entre le pas d'avant et celui-ci — ou un rond, au premier appui.
 function coupPinceau(p){const m=mapDraft,r=pinceauTaille(),der=pinceauDernier||p;
  const forme=capsulePolygon(der,p,r,m.ratio);
- if(mapTool==='impratgomme')retireImpraticable(m,forme);else if(mapTool==='gomme')retireMatiere(m,forme);else ajouteMatiere(m,forme)}
+ if(mapTool==='impratgomme')retireImpraticable(m,forme);else if(mapTool==='diffigomme')retireDifficile(m,forme);else if(mapTool==='gomme')retireMatiere(m,forme);else ajouteMatiere(m,forme)}
 let pinceauDernier=null;
 /* La découpe libre suit l'encre redressée : le tremblement de la main s'efface, les angles
    voulus restent, et la forme ôtée est exactement celle qui a été tracée. */
@@ -2005,7 +2022,7 @@ function applyLasso(){const brut=lasso&&lasso.pts,mode=lasso&&lasso.mode;lasso=n
  if(!brut||brut.length<3){renderCanvas();return}
  pushUndo();const forme=encreDroite([brut])[0];
  // Le même contour fermé, selon l'outil : il creuse la matière, en pose, pose l'obscurité, ou l'efface.
- if(mode==='impratlibre')ajouteImpraticable(mapDraft,forme);else if(mode==='obscurlibre')ajouteObscurite(mapDraft,forme);else if(mode==='obscurgomme')retireObscurite(mapDraft,forme);else if(mode==='blocagelibre')ajouteMatiere(mapDraft,forme);else retireMatiere(mapDraft,forme);
+ if(mode==='impratlibre')ajouteImpraticable(mapDraft,forme);else if(mode==='diffilibre')ajouteDifficile(mapDraft,forme);else if(mode==='obscurlibre')ajouteObscurite(mapDraft,forme);else if(mode==='obscurgomme')retireObscurite(mapDraft,forme);else if(mode==='blocagelibre')ajouteMatiere(mapDraft,forme);else retireMatiere(mapDraft,forme);
  mapSel=null;matiereChangee()}
 function shapeAt(d){const m=mapDraft;if(!m)return null;if(d.kind==='cut'||d.kind==='bloc')return cutRect;
  if(d.kind==='coupure')return (m.zonesCoupures||[])[d.i];if(d.kind==='lien')return (m.zonesLiens||[])[d.i];
@@ -2173,7 +2190,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapSel={kind:'objet',i:mapDraft.objets.length-1};renderCanvas();saveMaps();openObjet(mapSel.i);return}
  /* Le tracé : premier clic, origine ; second clic, arrivée. Entre les deux, l'aperçu suit
     le curseur — et Maj le redresse. */
- if(mapTool==='ligne'||mapTool==='impratligne'){
+ if(mapTool==='ligne'||mapTool==='impratligne'||mapTool==='diffiligne'){
   if(!traitDepart){const d=boutAimante(p,mapDraft.ratio)||p;
    traitDepart={x:d.x,y:d.y};traitVise={x:d.x,y:d.y};renderCanvas();e.preventDefault();return}
   const fin=viseTrait(p,e.metaKey||e.ctrlKey,mapDraft.ratio,e.shiftKey);
@@ -2181,7 +2198,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   const pose=Math.hypot((fin.x-traitDepart.x)*r,fin.y-traitDepart.y)>=auZoom(.5);
   // On ne choisit pas ce qu'on vient de tracer : la main est encore à l'ouvrage.
   if(pose){pushUndo();
-   (mapTool==='impratligne'?ajouteImpraticable:ajouteMatiere)(mapDraft,traitPolygon({x1:traitDepart.x,y1:traitDepart.y,x2:fin.x,y2:fin.y,e:TRAIT_EPAISSEUR},mapDraft.ratio))}
+   (mapTool==='impratligne'?ajouteImpraticable:mapTool==='diffiligne'?ajouteDifficile:ajouteMatiere)(mapDraft,traitPolygon({x1:traitDepart.x,y1:traitDepart.y,x2:fin.x,y2:fin.y,e:TRAIT_EPAISSEUR},mapDraft.ratio))}
   /* Maj pose un point d'appui : le trait s'arrête là et le suivant en repart. C'est ainsi
      qu'on longe une salle entière sans relever la main. */
   if(pose&&e.shiftKey){traitDepart={x:fin.x,y:fin.y};traitVise={x:fin.x,y:fin.y}}
@@ -2191,7 +2208,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  /* Le pinceau : on appuie, on trace, on relâche. Chaque pas dépose ou gratte, et le pas
     vaut la moitié de la grosseur — assez serré pour que la trace soit continue, assez
     espacé pour ne pas empiler mille formes sur un geste. */
- if(mapTool==='pinceau'||mapTool==='gomme'||mapTool==='impratgomme'){pushUndo();mapSel=null;
+ if(mapTool==='pinceau'||mapTool==='gomme'||mapTool==='impratgomme'||mapTool==='diffigomme'){pushUndo();mapSel=null;
   pinceauDernier=null;coupPinceau(p);pinceauDernier={x:p.x,y:p.y};
   mapDrag={mode:'pinceau',from:p};$('map-canvas').setPointerCapture(e.pointerId);
   renderCanvas();e.preventDefault();return}
@@ -2199,7 +2216,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
  if(mapTool==='obscurremplir'){pushUndo();const avant=obscuriteDe(mapDraft).length;remplitObscurite(mapDraft,[p.x,p.y]);
   if(obscuriteDe(mapDraft).length===avant&&!dansObscurite(mapDraft,[p.x,p.y]))undoStack.pop();
   mapSel=null;matiereChangee();e.preventDefault();return}
- if(mapTool==='lasso'||mapTool==='blocagelibre'||mapTool==='obscurlibre'||mapTool==='obscurgomme'||mapTool==='impratlibre'){if(!lasso||lasso.mode!==mapTool)lasso={pts:[],mode:mapTool};
+ if(mapTool==='lasso'||mapTool==='blocagelibre'||mapTool==='obscurlibre'||mapTool==='obscurgomme'||mapTool==='impratlibre'||mapTool==='diffilibre'){if(!lasso||lasso.mode!==mapTool)lasso={pts:[],mode:mapTool};
   // Un clic près du premier point ferme le contour, comme dans un outil de détourage.
   if(lasso.pts.length>2&&Math.hypot(p.x-lasso.pts[0][0],p.y-lasso.pts[0][1])<auZoom(1.6)){applyLasso();return}
   lasso.pts.push([p.x,p.y]);mapSel=null;
@@ -2208,7 +2225,7 @@ $('map-canvas').addEventListener('pointerdown',e=>{if(!mapDraft)return;ensure(ma
   mapDrag={mode:'cut',kind:'cut',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  // Le bloc se trace comme la découpe : un aperçu suit la main, l'union se fait au relâché.
  // Le carré de blocage, ou d'impraticable, se tire de même : seul son contour, de l'épaisseur d'une ligne, se pose.
- if(mapTool==='wall'||mapTool==='obscur'||mapTool==='imprat'||mapTool==='cadre'||mapTool==='impratcadre'){cutRect={x:p.x,y:p.y,w:0,h:0,bloc:mapTool==='wall'||mapTool==='cadre',obscur:mapTool==='obscur',imprat:mapTool==='imprat'||mapTool==='impratcadre',cadre:mapTool==='cadre'||mapTool==='impratcadre'};mapSel=null;
+ if(mapTool==='wall'||mapTool==='obscur'||mapTool==='imprat'||mapTool==='cadre'||mapTool==='impratcadre'||mapTool==='diffi'||mapTool==='difficadre'){cutRect={x:p.x,y:p.y,w:0,h:0,bloc:mapTool==='wall'||mapTool==='cadre',obscur:mapTool==='obscur',imprat:mapTool==='imprat'||mapTool==='impratcadre',diffi:mapTool==='diffi'||mapTool==='difficadre',cadre:mapTool==='cadre'||mapTool==='impratcadre'||mapTool==='difficadre'};mapSel=null;
   mapDrag={mode:'cut',kind:'bloc',i:0,from:p,dessous};$('map-canvas').setPointerCapture(e.pointerId);renderCanvas();e.preventDefault();return}
  /* Un déclencheur se trace pour le piège dont la fiche l'a demandé : une zone comme un rectangle, un fil d'un bout à l'autre.
     Tracé, on repasse en Sélection. */
@@ -2297,8 +2314,9 @@ $('map-canvas').addEventListener('pointerup',()=>{if(!mapDrag)return;const d=map
     forme, on la choisit et on repasse en Sélection. */
  if(d.mode==='cut'){const r=cutRect;cutRect=null;
   if(gesteTrace(r)){pushUndo();const forme=rectPolygon(r);
-   if(r.cadre){const formes=cadreFormes(r,mapDraft.ratio);if(r.imprat)ajouteImpraticable(mapDraft,formes);else formes.forEach(f=>ajouteMatiere(mapDraft,f));mapSel=null}
+   if(r.cadre){const formes=cadreFormes(r,mapDraft.ratio);if(r.imprat)ajouteImpraticable(mapDraft,formes);else if(r.diffi)ajouteDifficile(mapDraft,formes);else formes.forEach(f=>ajouteMatiere(mapDraft,f));mapSel=null}
    else if(r.imprat){ajouteImpraticable(mapDraft,forme);mapSel=null}
+   else if(r.diffi){ajouteDifficile(mapDraft,forme);mapSel=null}
    else if(r.obscur){ajouteObscurite(mapDraft,forme);mapSel=null}
    else if(r.bloc){ajouteMatiere(mapDraft,forme);mapSel={kind:'matiere',i:matiereSous(mapDraft,[r.x+r.w/2,r.y+r.h/2])};
     if(mapSel.i<0)mapSel=null}
