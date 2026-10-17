@@ -3212,7 +3212,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const h={states:['Feu','Blindage','Poison','Coma','Invisible'],etatsPassifs:['Invisible']};
  assert.equal(ctxR.leveEtats(h).join(','),'Feu,Poison','tout s’en va, sauf le Blindage, le coma et ce qu’une pièce portée donne');assert.equal(h.states.join(','),'Blindage,Coma,Invisible');
  assert.equal(ctxR.reposMax({level:3}),3,'un repos court par niveau');assert.equal(ctxR.reposMax({}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:0}),3);assert.equal(ctxR.reposRestants({level:3,reposCourts:1}),2);
- assert.ok(page.includes("if(a.vie<=0){poseCibles(a,[]);log(nomNum(a)+' n’a plus de VIE : il est mort.',{ton:'degats'})}")
+ assert.ok(page.includes("if(a.vie<=0&&!etreinte){poseCibles(a,[]);log(nomNum(a)+' n’a plus de VIE : il est mort.',{ton:'degats'})}")
   &&src.includes("function reposLong(){if(view!=='mj')return;")&&src.includes("$('hero-repos-long').onclick=reposLong;")&&carto.includes("heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.reposCourts=0;"),'0 VIE : hors de la carte jusqu’au repos long ; repos courts rendus à la carte rechargée');
  assert.ok(page.includes("function noteContactsDepart(a){if(!a||!enCombat())return;")&&page.includes("const contacts=adversairesAuContact(a).filter(([b])=>!avant||!avant.has(b.id));")
   &&page.includes("const arret=tokenOf(a)/2+tokenOf(b)/2+1;")&&page.includes("function cheminVersContact(b,a,size){")
@@ -5189,9 +5189,16 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  const a={states:[]};assert.ok(C.cumulable('Furie')&&C.ETATS_JEU.includes('Furie'),'empilable, et posable par un effet');
  C.infligeEtat(a,'Furie');C.infligeEtat(a,'Furie');C.infligeEtat(a,'Furie');assert.equal(C.compteEtat(a,'Furie'),3,'trois crans');
  const b={states:['Onde']};assert.ok(C.infligeEtat(b,'Furie')===true&&C.hasState(b,'Onde'),'l’Onde ne l’absorbe pas');
- assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
+ assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.889 — Ressuscité : espèce, Endurance Inattendue, Étreinte de la mort, Immarcescible, Savoir Antérieur ; état Sommeil. */
+{const C=require('./combat.js'),h=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.equal(C.mouvementPropre({hero:true,espece:'ressuscite'}),7,'v0.889 : Vitesse 7');assert.ok(C.ETATS_JEU.includes('Sommeil'),'v0.889 : Sommeil');
+ const a={states:[]};C.setState(a,'Sommeil',true);assert.deepEqual(a.states,['Sommeil','Au sol'],'v0.889 : endormi, Au sol');
+ assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible')))")
+  &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
+  &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
 /* v0.888 — Charte graphique (CHARTE.md, § 13) : bulles connues, couleurs de la charte, charte présente ; boutons de suppression rouges,
    action secondaire des fenêtres de réaction en relief neutre. */
 {const charte=fs.readFileSync('CHARTE.md','utf8');
@@ -5799,8 +5806,8 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  assert.deepEqual([{effet:'gardien'},{effet:'gardien',debutCombat:false},{debutCombat:true},{}].map(ctxO.t),[true,false,true,false]);
  assert.ok(page.includes("peut:libre,rayonne:(debut||(talent.type==='reac'&&!!eff.peut))&&libre,")&&page.includes("if(b&&t.rayonne)b.classList.add('debut-combat')")
   &&page.includes("className:'debut-marque',textContent:'!'")&&src.includes("if(t.rayonne)b.classList.add('debut-combat');")&&src.includes('name="debutCombat"'),'les talents de début de combat');
- assert.ok(page.includes("function estMort(a){return !!a&&a.hero===true&&a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0}")
-  &&page.includes("+(estMort(a)?' mort':'')")&&src.includes("if(estMort(a)){c.classList.add('mort');")&&src.includes("function ressusciter(a){if(view!=='mj'||!estMort(a))return;")
+ assert.ok(page.includes("function estMort(a){return !!a&&a.hero===true&&(a.poussiere===true||a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0&&")
+  &&page.includes("+(estMort(a)?' mort':'')")&&src.includes("if(estMort(a)){c.classList.add('mort');")&&src.includes("function ressusciter(a){if(view!=='mj'||!estMort(a)||a.poussiere===true)return;")
   &&src.includes("if(t.flottant===true||verrou||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;")&&src.includes("troupe.forEach(a=>{if(estMort(a))return;"),'un aventurier mort');}
 /* v0.499 — L'Attaque, talent de base de tout aventurier, en tête de sa fiche ; ce qui l'améliore s'ajoute à sa
    bulle et à celle de la barre d'Actions, une pastille devant, à la couleur foncée de la nature du talent. Tous

@@ -253,6 +253,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    {id:'talent-lupin-vision',name:'Vision dans le noir',type:'pass',effet:'visionnoir',params:{portee:18},effects:'Vous voyez dans le noir jusqu’à 18 m.'}]
    .forEach(t=>{if(!c.talents.some(x=>x&&x.id===t.id))c.talents.push({...t,famille:'Espèces',espece:'lupin',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
   c.semisForge.push('espece-lupin')}
+ /* v0.889 — Les Talents d'Espèce du Ressuscité, posés une fois dans le groupe Espèces. */
+ if(!c.semisForge.includes('espece-ressuscite')&&Array.isArray(c.talents)){
+  [{id:'talent-ressuscite-endurance',name:'Endurance Inattendue',type:'reac',effet:'enduranceinattendue',effects:'Quand vous subissez des dégâts supérieurs à 33 % de vos PV max, vous pouvez diviser les dégâts subis par 2.'},
+   {id:'talent-ressuscite-etreinte',name:'Étreinte de la mort',type:'pass',effet:'etreintemort',effects:'Vous ne mourez pas quand votre VIE tombe à 0 : vous pouvez continuer d’agir. Mais si vous tombez dans le coma à VIE 0, vous tombez en poussière, et rien ne pourra vous faire revenir.'},
+   {id:'talent-ressuscite-immarcescible',name:'Immarcescible',type:'pass',effet:'immarcescible',effects:'Vous êtes insensible au Poison et au Sommeil. Vous n’avez pas besoin de manger ni de boire. Vous pouvez effectuer un Repos Long en 4 heures sans bouger.'},
+   {id:'talent-ressuscite-savoir',name:'Savoir Antérieur',type:'pass',effet:'savoiranterieur',effects:'Vous maîtrisiez une compétence dans une vie antérieure : à chaque test de cette compétence, vous bénéficiez automatiquement de 1 réussite, en plus des résultats du jet.'}]
+   .forEach(t=>{if(!c.talents.some(x=>x&&x.id===t.id))c.talents.push({...t,params:{},famille:'Espèces',espece:'ressuscite',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  c.semisForge.push('espece-ressuscite')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
@@ -1162,7 +1170,7 @@ function bougeRichesse(signe){const a=richessesActeur,f=$('richesses-form').elem
  if(typeof renderHeroes==='function')renderHeroes();rendrePlusTard();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 $('richesses-form').onsubmit=e=>{e.preventDefault();bougeRichesse(1)};$('richesses-retirer').onclick=()=>bougeRichesse(-1);$('richesses-vider').onclick=()=>bougeRichesse(0);
 // Ressusciter, chez le MJ : une VIE, ses PV au complet, de retour sur la carte, sans état.
-function ressusciter(a){if(view!=='mj'||!estMort(a))return;
+function ressusciter(a){if(view!=='mj'||!estMort(a)||a.poussiere===true)return;
  a.vie=1;a.comaVie=false;a.horsCarte=false;a.states=[];a.cumuls={};a.bleed=0;if(typeof recalculerPV==='function')recalculerPV(a);a.hp=a.max;
  renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 // Le genre en symbole, puis l'espèce : à gauche de la classe, sur la page Aventuriers comme à la table.
@@ -4114,11 +4122,12 @@ function peutCreerAventurier(){if((typeof mjIci==='function'&&mjIci())||!invitEn
  const uid=typeof monUid!=='undefined'?monUid:null;return !!uid&&actors.filter(a=>a&&a.hero&&a.joueur===uid).length<aventuriersPermis()}
 function openCreation(){if(!peutCreerAventurier())return;creation={etape:0,name:'',sexe:'Homme',image:'',tokenPropose:'',espece:'',role:'',armes:null,armure:null,caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
 const restantCaracs=c=>POINTS_CARACS-c.caracs.endu-c.caracs.vie-c.caracs.dmg,restantComps=c=>POINTS_COMPS-c.skills.reduce((s,n)=>s+n,0);
+const especeAvecSavoir=c=>(catalog.talents||[]).some(t=>t&&t.effet==='savoiranterieur'&&t.espece===c.espece&&talentFamily(t)===FAMILLE_ESPECES);
 const especeCreation=c=>especeDe(c.espece),compsEspece=c=>bonusEspece({hero:true,espece:c.espece}).skills;
 const valeursCreation=c=>{const e=bonusEspece({hero:true,espece:c.espece});return {vie:BASE_HEROS.vieMax+c.caracs.vie+e.vie,endu:BASE_HEROS.endu+2*c.caracs.endu+e.endu,dmg:BASE_HEROS.dmg+c.caracs.dmg+e.dmg}};
 const pvCreation=c=>{const v=valeursCreation(c);return Math.max(1,v.vie*v.endu+bonusPV(catalog.classes,c.role,'')+bonusEspece({hero:true,espece:c.espece}).pv)};
 // Une étape n'ouvre la suivante que remplie : un nom, une espèce, une classe, tous les points dépensés.
-const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='espece'&&!especeCreation(creation)?'Choisis une espèce.':k==='classe'&&!creation.role?'Choisis une classe.'
+const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='espece'&&!especeCreation(creation)?'Choisis une espèce.':k==='espece'&&especeAvecSavoir(creation)&&!Number.isInteger(creation.savoirAnterieur)?'Choisis la compétence de ta vie antérieure.':k==='classe'&&!creation.role?'Choisis une classe.'
  :k==='caracs'&&restantCaracs(creation)?'Points à dépenser.':k==='comps'&&restantComps(creation)?'Points à répartir.'
  :k==='equipement'&&(creation.armes===null||creation.armure===null)?'Choisis ton équipement.':'';
 function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-etapes'),corps=$('creation-corps');nav.replaceChildren();corps.replaceChildren();
@@ -4187,6 +4196,11 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    if(e.description){const p=document.createElement('p');p.className='creation-description';p.textContent=e.description;f.append(p)}
    f.append(bonusEspeceEl(e));
    const tals=(catalog.talents||[]).filter(x=>x&&talentFamily(x)===FAMILLE_ESPECES&&x.espece===e.id&&!estBonus(x)&&!estVide(x));
+   // v0.889 : Savoir Antérieur — la compétence de sa vie d'avant, choisie ici.
+   const sa=tals.find(x=>x.effet==='savoiranterieur');
+   if(sa){const s=document.createElement('select');s.add(new Option('—',''));COMPETENCES.forEach((n,i)=>s.add(new Option(n,String(i))));
+    s.value=Number.isInteger(c.savoirAnterieur)?String(c.savoirAnterieur):'';s.onchange=()=>{c.savoirAnterieur=s.value===''?null:Number(s.value);majBoutons()};
+    const l=document.createElement('label');l.className='creation-champ creation-savoir';const t2=document.createElement('span');t2.textContent=sa.name;l.append(t2,s);f.append(l)}
    if(tals.length){const r=document.createElement('div');r.className='creation-talents';
     tals.forEach(x=>{const q=talentRond(x);q.setAttribute('aria-label',nomEnClair(x.name));surveille(q,()=>bulleTalentSur(q,x,{points:false}));r.append(q)});f.append(r)}
    corps.append(f)}}
@@ -4260,7 +4274,7 @@ async function imagePourTable(url){if(typeof url!=='string'||!url.startsWith('da
    s'achève sur le récapitulatif. Sa fiche ne garde que les points de compétence : le 1 de base, la classe et l'espèce s'y ajoutent
    au jeu, comme pour tout aventurier. */
 function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;if(!peutCreerAventurier()){creationDialog.close();return}const e=especeCreation(c);
- const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:majusculeInitiale(c.name.trim()),sexe:c.sexe,race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
+ const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:majusculeInitiale(c.name.trim()),sexe:c.sexe,...(especeAvecSavoir(c)&&Number.isInteger(c.savoirAnterieur)?{savoirAnterieur:c.savoirAnterieur}:{}),race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
  // L'équipement de départ au sac ; l'objet inhabituel, tiré ici, une seule fois.
  const kit=kitCreation(c);kit.forEach(([o,n])=>{for(let k=0;k<n;k++)a.inventaire.push(o.id)});
  const tiree=tirePieceDepart(c.role);if(tiree){a.forges=[tiree];a.inventaire.push(tiree.id)}

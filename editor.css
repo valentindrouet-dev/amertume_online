@@ -3177,3 +3177,4 @@ button.danger:not(.ico){background:var(--red-mat);border-color:color-mix(in srgb
 button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--red-mat) 82%,#000);color:#fff;border-color:color-mix(in srgb,var(--red-mat) 60%,#000)}
 /* v0.888 (charte, § 5) : dans une fenêtre de réaction, l'action principale en bleu, l'autre en relief neutre. */
 .choix-intervention-boutons button.btn-action:not(.primaire){--fond:#8d8676}
+.creation-savoir{margin-top:10px;max-width:280px}

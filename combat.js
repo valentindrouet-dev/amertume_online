@@ -969,6 +969,8 @@ function statesOf(a){return Array.isArray(a&&a.states)?a.states:[]}
 function hasState(a,etat){return statesOf(a).includes(etat)}
 function setState(a,etat,pose){const reste=statesOf(a).filter(x=>x!==etat);
  a.states=pose?[...reste,etat]:reste;
+ // v0.889 : qui s'endort tombe Au sol.
+ if(pose&&etat==='Sommeil'&&!a.states.includes('Au sol'))a.states=[...a.states,'Au sol'];
  // Un état qui s'en va emporte son compte : il ne doit pas revenir chargé de ses crans.
  if(!pose&&a){if(etat==='Saignée')a.bleed=0;else if(a.cumuls)delete a.cumuls[etat]}
  return a.states}
@@ -1030,7 +1032,7 @@ function effetParNom(nom){const k=cleTalent(nom);if(!k)return '';
 // Les huit compétences, dans l'ordre des fiches : la table les nomme depuis le moteur.
 const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ruse','Savoir','Technique'];
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Furie','Gel',
- 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage'];
+ 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
 // Les réglages de Dominateur, bornés : l'état visé, x, et les dés de xdx.
 function dominateurDe(p){const n=(v,a,b,d)=>Math.max(a,Math.min(b,Math.trunc(Number(v))||d));
@@ -1756,6 +1758,19 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  /* Vision dans le noir : un passif. Dans l'obscurité, le porteur voit jusqu'à x mètres, là où les autres ne voient que leur
     zone de contact. Ses améliorations la portent plus loin, et font de lui un Prédateur des Ombres, aux coups plus durs
     tant qu'il se tient dans le noir. */
+ /* v0.889 — Talents d'Espèce du Ressuscité. */
+ enduranceinattendue:{cle:'enduranceinattendue',nom:'Endurance Inattendue',type:'reac',espece:true,
+  aide:'Réaction, une fois par tour : quand le porteur subit des dégâts supérieurs à 33 % de ses PV max, il peut les diviser par 2.',
+  params:[],phrase(){return 'Quand vous subissez des dégâts supérieurs à <b>33 %</b> de vos PV max, vous pouvez diviser les dégâts subis par <b>2</b>.'}},
+ etreintemort:{cle:'etreintemort',nom:'Étreinte de la mort',type:'pass',espece:true,
+  aide:'Passif : le porteur ne meurt pas quand sa VIE tombe à 0 ; s’il tombe ensuite dans le coma à VIE 0, il tombe en poussière, pour toujours.',
+  params:[],phrase(){return 'Vous ne mourez pas quand votre <b>VIE</b> tombe à 0. Si vous tombez dans le coma à <b>VIE 0</b>, vous tombez en poussière.'}},
+ immarcescible:{cle:'immarcescible',nom:'Immarcescible',type:'pass',espece:true,
+  aide:'Passif : le porteur est insensible au Poison et au Sommeil.',
+  params:[],phrase(){return 'Vous êtes insensible au <b>Poison</b> et au <b>Sommeil</b>.'}},
+ savoiranterieur:{cle:'savoiranterieur',nom:'Savoir Antérieur',type:'pass',espece:true,
+  aide:'Passif : la compétence choisie à la création gagne 1 réussite automatique à chaque test.',
+  params:[],phrase(){return 'Lorsque vous effectuez un test de la compétence choisie, vous bénéficiez de <b>1 réussite</b> en plus.'}},
  /* v0.883 — Talents d'Espèce du Lupin (« espece » : ils se rangent dans le groupe Espèces). */
  bondferoce:{cle:'bondferoce',nom:'Bond Féroce',type:'mvt',bouton:'Bond Féroce',espece:true,
   aide:'Mouvement : le porteur bondit jusqu’à un point de la carte à portée de sa Vitesse, par-dessus les socles et le terrain impraticable mais pas à travers les murs, portes et blocages, puis effectue 1 Attaque contre un adversaire au contact.',
@@ -2768,6 +2783,9 @@ const ESPECES=[{id:'humain',nom:'Humain',teinte:'#9a7b4f',vie:1,vitesse:9,comps:
  {id:'goliath',nom:'Goliath',teinte:'#5f7183',dmg:2,vitesse:10,comps:{Force:1,Robustesse:1}},
  {id:'elfe',nom:'Elfe',teinte:'#4f8a5b',endu:1,dmg:1,vitesse:9,comps:{Agilité:1,Mysticisme:1}},
  /* v0.883 — Le Lupin, de l'Extension Ravenloft : Vitesse 10 m, ses Talents d'Espèce dans le groupe Espèces de l'onglet Talents. */
+ /* v0.889 — Le Ressuscité, de l'Extension Ravenloft : Vitesse 7 m, ses Talents d'Espèce dans le groupe Espèces. */
+ {id:'ressuscite',nom:'Ressuscité',teinte:'#6d7a72',endu:2,vitesse:7,comps:{Robustesse:1,Savoir:1},extension:'ravenloft',
+  description:'Mort, et pourtant vivant : certains portent les cicatrices de leur fin, chair cendreuse et veines sans sang ; d’autres sont des prodiges de magie ou de science, cousus de corps disparates ou esprit mystérieux dans un corps façonné. Quelle que soit leur origine, ils vivent une vie nouvelle et cherchent leurs propres réponses.'},
  {id:'lupin',nom:'Lupin',teinte:'#6f5f86',endu:1,dmg:1,vitesse:10,comps:{Agilité:1,Ruse:1},extension:'ravenloft',
   description:'Poil hérissé et crocs retroussés, vous êtes né d’un loup-garou dont la malédiction n’a pris qu’à moitié : figé entre la bête et l’humain, vous en gardez une force sauvage, des instincts aiguisés et un hurlement qui sème l’effroi.'}];
 const especeDe=id=>ESPECES.find(e=>e.id===id)||null;
