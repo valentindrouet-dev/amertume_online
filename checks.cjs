@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.882 — Les bonus du panneau de l'arbre, centrés sur leur ligne. */
+assert.ok(fs.readFileSync('editor.css','utf8').includes('.arbres-v2 .arbres-detail .detail-bonus-grille{display:flex;flex-wrap:wrap;justify-content:center;'),'v0.882 : bonus centrés');
 /* v0.881 — Stimulant du Mécaniste et ses trois améliorations. */
 {const h=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
  assert.ok(cb.includes("stimulant:{cle:'stimulant',nom:'Stimulant',type:'act',")&&cb.includes("stimulantsoi:'stimulant',stimulantonde:'stimulant',stimulantplasma:'stimulant',")

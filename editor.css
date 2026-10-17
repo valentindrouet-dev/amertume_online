@@ -3115,3 +3115,5 @@ body[class*="page-"] #pile-fenetres{display:none!important}
  box-shadow:0 0 6px 2px #fff,0 0 14px 6px #f28ef0,0 0 30px 12px #d966d6cc,0 0 54px 22px #d966d666;filter:brightness(1.15) saturate(1.2)}
 .eclat-plasma{position:fixed;width:40px;height:40px;border-radius:50%;pointer-events:none;z-index:201;
  background:radial-gradient(circle,#fff 0 20%,#ffc2f6aa 38%,#d966d655 60%,transparent 72%);box-shadow:0 0 0 2px #ffd6fb99}
+/* v0.882 : les bonus du panneau de l'arbre, toujours centrés sur leur ligne. */
+.arbres-v2 .arbres-detail .detail-bonus-grille{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;column-gap:24px;row-gap:16px}
