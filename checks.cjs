@@ -3675,7 +3675,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 /* v0.711 — Cinq planches Artisanat et leur catégorie ; dans la grille des logos d'un objet, une planche par groupe replié,
    son nom et sa première icône en tête. */
 {const pl=fs.readFileSync('planches.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
- assert.ok(['Construction','Cuisine','Forge','Mécanique 1','Mécanique 2'].every(n=>fs.existsSync('img/planches/Artisanat - '+n+'.webp'))&&pl.includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste']];")
+ assert.ok(['Construction','Cuisine','Forge','Mécanique 1','Mécanique 2'].every(n=>fs.existsSync('img/planches/Artisanat - '+n+'.webp'))&&pl.includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces']];")
   &&pl.includes("CATS_ICONES.find(([,n])=>cleTalent(n)===cleTalent(nomPlanche(f).split(/\\s+-\\s+/)[0]))")&&pl.includes("groupe(nomPlanche(f),l.sort((x,y)=>x[0]-y[0]).map(x=>x[1]),true,true)")
   &&ed.includes("...iconesPlanches('divers'),...iconesPlanches('artisanat'),"),'planches Artisanat et grille repliée');}
 /* v0.710 — Trois points de compétence ; une arme de contact en main renvoie les munitions au sac ; l'équipement de départ
@@ -3944,7 +3944,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 {const idx=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(idx.includes("function poolOf(a){return diceToPool(desAttaque(a,activeAttack(a).dice))")&&ed.includes("des:voit?desEtBonus(desAttaque(a,at.dice),")&&ed.includes("survol(b,desAttaque(a,at.dice),"),'les dés des talents dans les bulles');}
 /* v0.675 — La planche GARDIEN et sa catégorie. */
-assert.ok(fs.existsSync('img/planches/GARDIEN.webp')&&fs.readFileSync('planches.js','utf8').includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste']]"),'la planche GARDIEN');
+assert.ok(fs.existsSync('img/planches/GARDIEN.webp')&&fs.readFileSync('planches.js','utf8').includes("['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces']]"),'la planche GARDIEN');
 /* v0.674 — Gardien : Boutoir et Coup de Bouclier, avec leurs améliorations. */
 {const C10=require('./combat.js'),idx=fs.readFileSync('index.html','utf8');
  [['boutoirtous','boutoir'],['boutoirimpact','boutoir'],['coupbouclierplus','coupbouclier'],['coupboucliernoir','coupbouclier']].forEach(([k,p])=>assert.equal(C10.TALENTS_CODES[k].pour,p,k));
@@ -4059,7 +4059,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("const cands=vusPourMouv
  assert.ok(carto.includes("function hitboxSous(p){")&&carto.includes("if(hb&&(!dessous||dessous.kind==='start'||dessous.kind==='matiere'||(dessous.kind==='lumiere'&&!surCoeur)))dessous=hb}")
   &&carto.includes("mapTool='select';mapSel={kind:'declencheur',i,k};")&&fs.readFileSync('editor.css','utf8').includes('.hitbox.selected{z-index:3}'),'la hitbox se reprend');
  assert.ok(/function pickNow\(i\)\{[\s\S]*?renderEnjamber\(\);\n return true\}/.test(idx),'les ronds Enjamber suivent le token choisi');
- assert.ok(pl.includes("['ombrelame','Ombrelame'],['actions','Actions'],['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste']]")&&pl.includes("{nom:'',cat:catNom}")&&fs.existsSync('img/planches/OMBRELAME.webp'),'la planche OMBRELAME');}
+ assert.ok(pl.includes("['ombrelame','Ombrelame'],['actions','Actions'],['gardien','Gardien'],['artisanat','Artisanat'],['mecaniste','Mécaniste'],['especes','Espèces']]")&&pl.includes("{nom:'',cat:catNom}")&&fs.existsSync('img/planches/OMBRELAME.webp'),'la planche OMBRELAME');}
 /* v0.646 — Sorti du fond d'un piège par un test réussi, l'aventurier regagne la place d'où le piège l'avait happé, ou à défaut le
    premier point libre hors du piège. */
 {const carto=fs.readFileSync('maps.js','utf8');
@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.891 — La planche d'icônes des espèces, et sa catégorie. */
+assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.js','utf8').includes("['mecaniste','Mécaniste'],['especes','Espèces']];"),'v0.891');
 /* v0.890 — L'arbre d'espèce : un bouton au nom de l'espèce, ses talents en deux rangées, leur description au panneau. */
 {const ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ed.includes("arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;renderArbres()};")&&ed.includes("plan.className='arbre-especes';")&&ed.includes("const tous=tEsp.length?tEsp:colonnesArbre(classe)"),'v0.890');}
