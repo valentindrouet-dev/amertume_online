@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.886","d":"2026-10-17","t":"Espèces en lignes, cartouches de la fiche, bulle des Extensions"},
 {"v":"0.885","d":"2026-10-17","t":"Majuscule des noms, tokens adaptés, grille des planches"},
 {"v":"0.884","d":"2026-10-17","t":"Vitesse des espèces, bonus sur deux lignes"},
 {"v":"0.883","d":"2026-10-17","t":"Extensions, espèce Lupin, étape Illustration"},

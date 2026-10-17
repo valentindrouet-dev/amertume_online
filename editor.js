@@ -1243,14 +1243,22 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  if(elem){elem.className='sheet-class sheet-element el-'+el.cle;elem.textContent=el.nom.toUpperCase();elem.style.color=elem.style.borderColor=el.teinte||teinte}
  const origine=a.hero?origineAventurier(a):null;let joueurEl=null;
  // Le MJ confie l'aventurier à un joueur : sans joueur, il reste au MJ, et aucun joueur ne le voit.
- if(a.hero&&view==='mj'){const qui=document.createElement('select');qui.className='hero-joueur';qui.setAttribute('aria-label','Joueur de '+a.name);
+ if(a.hero&&view==='mj'&&((typeof enLigne!=='undefined'&&enLigne)||a.joueur)){const qui=document.createElement('select');qui.className='hero-joueur';qui.setAttribute('aria-label','Joueur de '+a.name);
   qui.add(new Option('MJ',''));joueursConnus().forEach(([uid,nom])=>qui.add(new Option(nom,uid)));qui.value=a.joueur||'';
   qui.onchange=()=>{const j=joueursConnus().find(([u])=>u===qui.value);if(j){a.joueur=j[0];a.joueurNom=j[1]}else{delete a.joueur;delete a.joueurNom}
    scheduleSave();if(typeof pousserBientot==='function')pousserBientot()};joueurEl=qui}
  // L'élément du Mystique ne se lit plus sur la fiche : il est au-dessus de son arbre de talents.
- tete.append(...(poignee?[poignee]:[]),...(part?[part]:[]),jeton,titre,...(origine?[origine]:[]),classe,outils);
+ /* v0.886 : la tête ne garde que le nom ; dessous, le genre, l'espèce et la classe, chacun dans son cartouche. Le joueur
+    à qui l'aventurier est confié ne se choisit que quand la table est partagée, en bout de ligne. */
+ tete.append(...(poignee?[poignee]:[]),...(part?[part]:[]),jeton,titre,outils);
  const puces=document.createElement('div');puces.className='chips';
- if(joueurEl)puces.append(joueurEl);
+ if(a.hero){const ident=document.createElement('div');ident.className='hero-identite';
+  const cart=(txt,cls)=>{const s=document.createElement('span');s.className='hero-cartouche '+cls;s.textContent=txt;return s};
+  if(a.sexe)ident.append(cart((a.sexe==='Femme'?'♀ ':a.sexe==='Homme'?'♂ ':'')+a.sexe,'c-genre'));
+  if(String(a.race||'').trim()){const e=cart(String(a.race).trim(),'c-espece'),es=typeof especeDe==='function'?especeDe(a.espece):null;
+   const px=es?pastilleExtension(extensionEspece(es)):null;if(px){e.classList.add('avec-extension');e.append(px)}ident.append(e)}
+  ident.append(classe);if(joueurEl)ident.append(joueurEl);puces.append(ident)}
+ else{if(origine)tete.insertBefore(origine,classe.parentNode===tete?classe:outils);tete.insertBefore(classe,outils);if(joueurEl)puces.append(joueurEl)}
  // Créé par un joueur, en attente : le MJ l'accepte ou le refuse ; le joueur attend.
  if(a.hero&&a.enAttente===true){c.classList.add('en-attente');const bloc=document.createElement('div');bloc.className='hero-attente';
   if(view==='mj'){const oui=document.createElement('button');oui.type='button';oui.className='primary';oui.textContent='Accepter';
@@ -1478,8 +1486,13 @@ const nomExtension=k=>(EXTENSIONS.find(([c])=>c===k)||[,''])[1];
 function logoExtensionEl(k){k=extensionValide(k);if(!k)return null;const choisi=(catalog.logosExtensions||{})[k];
  if(choisi&&typeof logoImage==='function'){const im=logoImage(choisi,LOGOS_TOUS);if(im)return im}
  const im=document.createElement('img');im.src='img/extensions/'+k+'.webp';im.alt='';im.draggable=false;return im}
+// v0.886 : la teinte de chaque logo d'Extension, dont la pastille prend un fond très pâle.
+const TEINTES_EXTENSIONS={diablo:'#d2500a',wow:'#b8860b',dnd:'#d32f2f',ravenloft:'#5b3a8c',faerun:'#1e5fb4',nimble:'#12898a',cthulhu:'#4f7a28',amertume:'#1f4d55'};
 function pastilleExtension(k){k=extensionValide(k);if(!k)return null;const p=document.createElement('span');p.className='pastille-extension';
- p.title='Extension '+nomExtension(k);p.setAttribute('aria-label','Extension '+nomExtension(k));const im=logoExtensionEl(k);if(im)p.append(im);return p}
+ p.style.setProperty('--teinte-ext',TEINTES_EXTENSIONS[k]||'#8a7a5a');p.setAttribute('aria-label','Extension : '+nomExtension(k));const im=logoExtensionEl(k);if(im)p.append(im);
+ // Au survol, sa bulle, comme toutes celles du site : « Extension : Ravenloft ».
+ if(typeof surveille==='function'&&typeof ouvrirBulle==='function')surveille(p,()=>{const d=document.createElement('div');d.className='bulle-extension';d.textContent='Extension : '+nomExtension(k);ouvrirBulle(p,d,'bulle-joueurs')});
+ else p.title='Extension : '+nomExtension(k);return p}
 // L'Extension d'une espèce : celle que le MJ lui a donnée, sinon celle de la table des espèces.
 function extensionEspece(e){if(!e)return '';const o=(catalog.extensionsEspeces||{})[e.id];return extensionValide(o===undefined?e.extension||'':o)}
 function extensionClasse(c){return c?extensionValide(c.extension||''):''}
@@ -3365,7 +3378,13 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
      dans le cadre, hors d'un talent, ouvre l'arbre de la classe. */
   const cadre=document.createElement('div');cadre.className='talents-cadre';if(encre)cadre.style.setProperty('--classe',encre);
   if(view==='mj'&&aUnArbre(famille)){cadre.classList.add('cliquable');cadre.onclick=e=>{if(!e.target.closest('.cat-carte,button'))openArbresClasse(famille)}}
-  ORDRE_TYPES_TALENTS.forEach(k=>{const lot=ordre.filter(([t])=>talentType(t)[0]===k);if(!lot.length)return;
+  /* v0.886 : le groupe Espèces, une ligne droite par espèce — un petit séparateur et son nom, puis ses talents, par type. */
+  if(famille===FAMILLE_ESPECES){const rang=t=>ORDRE_TYPES_TALENTS.indexOf(talentType(t)[0]);
+   [...ESPECES.map(e=>[e.id,e.nom]),['','Sans espèce']].forEach(([id,nomE])=>{const lot=ordre.filter(([t])=>(especeDe(t.espece)?t.espece:'')===id).sort((x,y)=>rang(x[0])-rang(y[0]));if(!lot.length)return;
+    const r=document.createElement('div');r.className='talent-rangee espece-rangee';r.setAttribute('aria-label',nomE);
+    const sep=document.createElement('span');sep.className='espece-separateur';sep.textContent=nomE;r.append(sep);
+    lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));cadre.append(r)})}
+  else ORDRE_TYPES_TALENTS.forEach(k=>{const lot=ordre.filter(([t])=>talentType(t)[0]===k);if(!lot.length)return;
    const r=document.createElement('div');r.className='talent-rangee t-'+k;r.setAttribute('aria-label',talentType({type:k})[2]);
    lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));cadre.append(r)});
   if(cadre.childElementCount)bloc.append(cadre);
@@ -4092,7 +4111,7 @@ let creation=null;
 function aventuriersPermis(){return 1}
 function peutCreerAventurier(){if((typeof mjIci==='function'&&mjIci())||!invitEnLigne())return true;
  const uid=typeof monUid!=='undefined'?monUid:null;return !!uid&&actors.filter(a=>a&&a.hero&&a.joueur===uid).length<aventuriersPermis()}
-function openCreation(){if(!peutCreerAventurier())return;creation={etape:0,name:'',sexe:'',image:'',tokenPropose:'',espece:'',role:'',armes:null,armure:null,caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
+function openCreation(){if(!peutCreerAventurier())return;creation={etape:0,name:'',sexe:'Homme',image:'',tokenPropose:'',espece:'',role:'',armes:null,armure:null,caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
 const restantCaracs=c=>POINTS_CARACS-c.caracs.endu-c.caracs.vie-c.caracs.dmg,restantComps=c=>POINTS_COMPS-c.skills.reduce((s,n)=>s+n,0);
 const especeCreation=c=>especeDe(c.espece),compsEspece=c=>bonusEspece({hero:true,espece:c.espece}).skills;
 const valeursCreation=c=>{const e=bonusEspece({hero:true,espece:c.espece});return {vie:BASE_HEROS.vieMax+c.caracs.vie+e.vie,endu:BASE_HEROS.endu+2*c.caracs.endu+e.endu,dmg:BASE_HEROS.dmg+c.caracs.dmg+e.dmg}};

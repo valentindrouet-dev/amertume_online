@@ -3157,3 +3157,14 @@ body[class*="page-"] #pile-fenetres{display:none!important}
 .planche-nom{font-weight:700;font-size:13px;line-height:1.2}.planche-compte{font-size:11px;color:#8a7d66}
 .planche-panneau{margin-top:14px;max-height:70vh;overflow-y:auto;border:1px solid #d9cdb4;border-radius:10px;padding:4px 12px 12px;background:#fffdf7}
 .planche-panneau .planche-bloc>summary{position:sticky;top:0;background:#fffdf7;z-index:1}
+/* v0.886 : le groupe Espèces de l'onglet Talents, une ligne par espèce. */
+.talent-rangee.espece-rangee{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;overflow-x:auto}
+.espece-separateur{flex:none;display:flex;align-items:center;gap:6px;font:700 11px/1 system-ui;letter-spacing:.08em;text-transform:uppercase;color:#7a6a52;padding-right:6px;border-right:1px solid #cdbf9f;margin-right:2px;min-width:64px}
+/* v0.886 : la pastille d'Extension, sur un fond très pâle de la teinte de son logo. */
+.pastille-extension{background:color-mix(in srgb,var(--teinte-ext,#8a7a5a) 12%,#fff);border-color:color-mix(in srgb,var(--teinte-ext,#8a7a5a) 35%,#fff)}
+/* v0.886 : sur la fiche, le genre, l'espèce et la classe en cartouches, sous le nom. */
+.hero-identite{display:flex;flex-wrap:wrap;align-items:center;gap:6px;width:100%}
+.hero-cartouche{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;border:1px solid #cdbf9f;background:#f4ecda;font-weight:700;font-size:13px;color:#5f5240;position:relative}
+.hero-cartouche.avec-extension{padding-right:16px}
+.hero-cartouche .pastille-extension{top:-9px;right:-10px;width:22px;height:22px}.hero-cartouche .pastille-extension img{width:15px;height:15px}
+.hero-identite .hero-joueur{margin-left:auto;font-size:12px;padding:2px 6px;opacity:.75}

@@ -3524,7 +3524,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("function synchronisePV()
  assert.ok(ed.includes("if(nb)heros.forEach(h=>{const b=nb*effetsForge(h).xpVaincu;")&&ed.includes("function nomGroupeAffixe(x){")&&ed.includes("viserCible('✦ Clique sur la carte pour poser '+nom,"));}
 /* v0.739 — L'élément du Mystique quitte la fiche (il est au-dessus de son arbre) ; le jeton de la fiche ne s'écrase plus. */
 {const ed=fs.readFileSync('editor.js','utf8');
- assert.ok(ed.includes(" tete.append(...(poignee?[poignee]:[]),...(part?[part]:[]),jeton,titre,...(origine?[origine]:[]),classe,outils);"));
+ assert.ok(ed.includes(" tete.append(...(poignee?[poignee]:[]),...(part?[part]:[]),jeton,titre,outils);")&&!ed.includes("ident.append(elem"));
  assert.ok(fs.readFileSync('editor.css','utf8').includes(".hero-head>.avatar{flex:none}"));}
 /* v0.738 — La bibliothèque range les nouvelles améliorations : sous Attaque d'état, et Charge — regain au Destructeur. */
 {const C37=require('./combat.js'),ed=fs.readFileSync('editor.js','utf8');
@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.886 — Espèces en lignes, Homme par défaut, bulle et teinte des Extensions, cartouches de la fiche. */
+{const ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ed.includes("r.className='talent-rangee espece-rangee';")&&ed.includes("creation={etape:0,name:'',sexe:'Homme',")&&ed.includes("ouvrirBulle(p,d,'bulle-joueurs')")
+  &&ed.includes("const TEINTES_EXTENSIONS={diablo:")&&ed.includes("ident.className='hero-identite';")&&ed.includes("if(a.hero&&view==='mj'&&((typeof enLigne!=='undefined'&&enLigne)||a.joueur)){"),'v0.886');}
 /* v0.885 — Majuscule au nom d'un aventurier ; tokens adaptés puis les autres ; l'onglet Icônes en grille de planches. */
 {const ed=fs.readFileSync('editor.js','utf8'),pl=fs.readFileSync('planches.js','utf8');
  assert.ok(ed.includes("name:majusculeInitiale(c.name.trim()),")&&ed.includes("if(a.hero&&typeof a.name==='string')a.name=majusculeInitiale(a.name);")
