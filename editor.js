@@ -5107,7 +5107,11 @@ arbresDialog.querySelector('.dialog-head').insertBefore(arbresReset,arbresVue);
 let arbresEspece=false;
 const arbresEspeceBtn=document.createElement('button');arbresEspeceBtn.type='button';arbresEspeceBtn.id='arbres-espece';arbresEspeceBtn.className='arbres-vue';arbresEspeceBtn.hidden=true;
 arbresDialog.querySelector('.dialog-head').insertBefore(arbresEspeceBtn,arbresReset);
-arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;renderArbres()};
+arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;
+ // v0.894 : la fenêtre garde la taille qu'elle a pour la classe.
+ if(arbresEspece){const r=arbresDialog.getBoundingClientRect();arbresDialog.style.width=Math.round(r.width)+'px';arbresDialog.style.minHeight=Math.round(r.height)+'px'}
+ else{arbresDialog.style.removeProperty('width');arbresDialog.style.removeProperty('min-height')}
+ renderArbres()};
 const talentsDEspece=a=>a&&a.hero&&especeDe(a.espece)?(catalog.talents||[]).filter(t=>t&&talentFamily(t)===FAMILLE_ESPECES&&t.espece===a.espece&&!estBonus(t)&&!estVide(t)):[];
 arbresReset.onclick=async()=>{const a=arbresActeur&&acteurCourant(arbresActeur);if(!a||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
  const classe=classeDuHeros(a),fl=classe?talentsFlottants(classe).map(t=>t.id):[];
@@ -5217,7 +5221,7 @@ function acteurCourant(a){if(!a||actors.includes(a))return a;return actors.find(
 function peutVoirArbres(a){a=acteurCourant(a);return !!a&&!!a.hero&&tientAventurier(a)}
 // Seule une classe du jeu a un arbre : ni les génériques, ni les familles d'adversaires.
 function aUnArbre(f){return !!f&&f!==GENERIQUES&&(catalog.classes||[]).some(c=>c&&c.name===f)}
-function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;arbresEspece=false;
+function openArbres(a){a=acteurCourant(a);if(!peutVoirArbres(a))return;arbresActeur=a;arbresClasse=null;arbresEspece=false;arbresDialog.style.removeProperty('width');arbresDialog.style.removeProperty('min-height');
  noteArbres('');renderArbres();arbresDialog.showModal()}
 // L'arbre d'une classe, sans combattant : le MJ le bâtit, personne n'y apprend rien.
 function openArbresClasse(famille){if(view!=='mj'||!aUnArbre(famille))return;arbresActeur=null;arbresClasse=famille||GENERIQUES;
@@ -5441,7 +5445,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  arbresVue.hidden=view!=='mj'||!!a||arbresEnMasse;arbresVue.textContent=arbresVueJoueur?'✎ Reprendre l’édition':'👁 Vue joueur';arbresVue.classList.toggle('on',arbresVueJoueur);
  arbresMasse.hidden=view!=='mj'||!!a||(V2&&arbresVueJoueur);arbresReset.hidden=!a||!V2;
  {const e=a&&V2?especeDe(a.espece):null,l=e?talentsDEspece(a):[];arbresEspeceBtn.hidden=!l.length;if(!l.length)arbresEspece=false;if(e)arbresEspeceBtn.textContent=e.nom;
-  arbresEspeceBtn.classList.toggle('on',arbresEspece);arbresEspeceBtn.setAttribute('aria-pressed',String(arbresEspece))}arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
+  arbresEspeceBtn.classList.toggle('on',arbresEspece);if(e)arbresEspeceBtn.style.setProperty('--teinte',e.teinte);arbresEspeceBtn.setAttribute('aria-pressed',String(arbresEspece))}arbresXp.hidden=view!=='mj'||(arbresEnMasse&&!a)||V2;poseXpVisible();arbresMasse.classList.toggle('on',arbresEnMasse);arbresMasse.setAttribute('aria-pressed',String(arbresEnMasse));
  if(a){a.talents??=[];if(!peutVoirArbres(a)){arbresDialog.close();return}}
  else if(view!=='mj'){arbresDialog.close();return}
  // Chez le MJ, l'arbre s'accorde avant de se dessiner : chaque talent a sa case, chaque ligne son but.
@@ -5603,7 +5607,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  const tete=document.createElement('div');tete.className='arbres-tete';
  // Le nom de la classe tout en haut de la fenêtre, dans sa tête, au milieu.
  const nomClasse=document.createElement('h3');nomClasse.className='arbres-classe';nomClasse.textContent=classe||'Sans classe';
- const encre=classe?teinteClasse(classe):'';if(encre){nomClasse.style.color=encre;corps.style.setProperty('--encre',encre)}
+ // v0.894 : sur l'arbre d'espèce, le nom et l'encre de l'espèce.
+ const espEnTete=arbresEspece&&a&&ARBRE_V2?especeDe(a.espece):null;if(espEnTete)nomClasse.textContent=espEnTete.nom;
+ const encre=espEnTete?espEnTete.teinte:classe?teinteClasse(classe):'';if(encre){nomClasse.style.color=encre;corps.style.setProperty('--encre',encre)}
  else corps.style.removeProperty('--encre');
  {const tetes=arbresDialog.querySelector('.dialog-head');tetes.querySelectorAll('.arbres-classe').forEach(x=>x.remove());tetes.prepend(nomClasse)}
  /* Sous le nom de la classe, les chiffres de l'aventurier, comme sur sa fiche : chaque bonus pris
@@ -5775,7 +5781,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   let x0=pts.length?Math.min(...pts.map(q=>q.x)):0,x1=pts.length?Math.max(...pts.map(q=>q.x)):0;const y0=pts.length?Math.min(...pts.map(q=>q.y)):0,y1=pts.length?Math.max(...pts.map(q=>q.y)):0;
   // Le talent de départ est le centre de l'arbre : le plan s'étend autant de chaque côté de lui.
   // Le talent de départ : la racine la plus haute. Seul lui reçoit le trait du bandeau ; un talent sans lien n'en a pas.
-  const depart=c.liste.filter(t=>racines.has(t.id)).sort((x,y)=>cases.get(x.id).y-cases.get(y.id).y)[0];
+  // v0.894 : l'arbre d'espèce n'a pas de talent de départ — ses talents ne sont pas liés ; il se centre sur 0.
+  const depart=c.sansDepart?null:c.liste.filter(t=>racines.has(t.id)).sort((x,y)=>cases.get(x.id).y-cases.get(y.id).y)[0];
+  if(c.sansDepart){const e=Math.max(-x0,x1,0);x0=-e;x1=e}
   if(depart){const rx=cases.get(depart.id).x,e=Math.max(rx-x0,x1-rx);x0=rx-e;x1=rx+e}
   const L=CASE_SPHERIER,plan=document.createElement('div');plan.className='arbre-plan';
   /* v2 : une rangée plus haute, pour le nom sous chaque talent ; un petit rond garde sa distance à son talent. */
@@ -5901,13 +5909,13 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
  arbresDialog.classList.toggle('v2',V2);
  if(V2){const cadre=document.createElement('div');cadre.className='arbres-v2';
   const g=document.createElement('div');g.className='arbres-v2-arbre';
+  /* v0.894 : l'arbre d'espèce est un arbre comme celui d'une classe — une colonne, ses ronds, son bandeau — sans lien entre les
+     talents : Maîtrise, Actions, Mouvements et Réactions sur la première ligne, Passifs sur la seconde, centrés. */
   const tEsp=arbresEspece&&a?talentsDEspece(a):[];
-  if(tEsp.length){const plan=document.createElement('div');plan.className='arbre-especes';
-   const rang=t=>['pass','ame'].includes(talentType(t)[0])?1:0;
-   [0,1].forEach(k=>{const l=tEsp.filter(t=>rang(t)===k);if(!l.length)return;const r=document.createElement('div');r.className='arbre-especes-rangee';
-    l.forEach(t=>{const b=document.createElement('button');b.type='button';b.className='arbre-noeud-espece';b.dataset.id=t.id;const n=document.createElement('b');n.textContent=nomEnClair(t.name);
-     b.append(talentRond(t),n);b.onclick=()=>{plan.querySelectorAll('.arbre-noeud-espece.choisi').forEach(x=>x.classList.remove('choisi'));b.classList.add('choisi');montreDetail(t)};r.append(b)});plan.append(r)});
-   g.append(plan)}
+  if(tEsp.length){const haut=t=>!['pass','crit','ame'].includes(talentType(t)[0]),ordre=(x,y)=>ORDRE_TYPES_TALENTS.indexOf(talentType(x)[0])-ORDRE_TYPES_TALENTS.indexOf(talentType(y)[0]);
+   const lignes=[tEsp.filter(haut).sort(ordre),tEsp.filter(t=>!haut(t)).sort(ordre)].filter(l=>l.length);
+   const virtuels=lignes.flatMap((l,y)=>l.map((t,i)=>({...t,pos:{x:2*i-(l.length-1),y},liens:[]})));
+   const ge=document.createElement('div');ge.className='arbres-cols arbres-cols-espece';ge.append(colonne({titre:'',liste:virtuels,famille:FAMILLE_ESPECES,voie:'',rang:premierRang,sansDepart:true},false));g.append(ge)}
   else g.append(grille);
   const panneau=document.createElement('aside');panneau.className='arbres-detail';cadre.append(g,panneau);corps.append(cadre);
   montreDetail=t=>remplitDetail(panneau,t);

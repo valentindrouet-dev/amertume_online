@@ -3190,3 +3190,7 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 .talent-rangee.espece-rangee{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));justify-items:center;align-items:start;gap:10px 6px;overflow:visible;flex-wrap:wrap}
 .talent-rangee.espece-rangee+.talent-rangee.espece-rangee{margin-top:8px}
 .talent-rangee.espece-rangee>.espece-separateur{grid-column:1/-1;justify-self:stretch;min-width:0;margin:0;padding:0 0 5px;border-right:0;border-bottom:1px dashed var(--line);text-align:left}
+/* v0.894 (charte, § 6) : le bouton de l'espèce, en cartouche à sa teinte ; plein quand son arbre est affiché. */
+#arbres-espece{color:var(--teinte);border-color:var(--teinte);background:color-mix(in srgb,var(--teinte) 16%,transparent);font-weight:700}
+#arbres-espece:hover{background:color-mix(in srgb,var(--teinte) 26%,transparent)}
+#arbres-espece.on,#arbres-espece.on:hover{background:var(--teinte);color:#fff}

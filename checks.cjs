@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.894 — L'arbre d'espèce au design de l'arbre de classe : vraie colonne, nom et encre de l'espèce, fenêtre de même taille. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes('pos:{x:2*i-(l.length-1),y}')&&ed.includes('const depart=c.sansDepart?null:')&&ed.includes('if(espEnTete)nomClasse.textContent=espEnTete.nom;')&&fs.readFileSync('editor.css','utf8').includes('#arbres-espece.on,#arbres-espece.on:hover{background:var(--teinte);color:#fff}'),'v0.894');}
 /* v0.893 — À la création, les espèces triées par Extension puis par nom ; leurs talents dans l'ordre des types. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("[...ESPECES].sort((x,y)=>rangExt(x)-rangExt(y)||x.nom.localeCompare(y.nom,'fr'))"),'v0.893');
 /* v0.892 — Les talents d'espèce dans la même grille que les autres groupes. */
@@ -5200,7 +5202,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes('.talent-rangee.espece-r
 assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.js','utf8').includes("['mecaniste','Mécaniste'],['especes','Espèces']];"),'v0.891');
 /* v0.890 — L'arbre d'espèce : un bouton au nom de l'espèce, ses talents en deux rangées, leur description au panneau. */
 {const ed=fs.readFileSync('editor.js','utf8');
- assert.ok(ed.includes("arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;renderArbres()};")&&ed.includes("plan.className='arbre-especes';")&&ed.includes("const tous=tEsp.length?tEsp:colonnesArbre(classe)"),'v0.890');}
+ assert.ok(ed.includes("arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;")&&ed.includes("ge.className='arbres-cols arbres-cols-espece';")&&ed.includes("const tous=tEsp.length?tEsp:colonnesArbre(classe)"),'v0.890');}
 /* v0.889 — Ressuscité : espèce, Endurance Inattendue, Étreinte de la mort, Immarcescible, Savoir Antérieur ; état Sommeil. */
 {const C=require('./combat.js'),h=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.equal(C.mouvementPropre({hero:true,espece:'ressuscite'}),7,'v0.889 : Vitesse 7');assert.ok(C.ETATS_JEU.includes('Sommeil'),'v0.889 : Sommeil');

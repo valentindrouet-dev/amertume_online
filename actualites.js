@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.894","d":"2026-10-17","t":"Arbre d'espèce au design de l'arbre de classe"},
 {"v":"0.893","d":"2026-10-17","t":"Tri des espèces et de leurs talents à la création"},
 {"v":"0.892","d":"2026-10-17","t":"Talents d'espèce à la même taille"},
 {"v":"0.891","d":"2026-10-17","t":"Planche d'icônes des espèces"},
