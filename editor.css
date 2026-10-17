@@ -3171,3 +3171,9 @@ body[class*="page-"] #pile-fenetres{display:none!important}
 /* v0.887 : la bulle d'une Extension, celle des talents du site, à la teinte de son logo. */
 .talent-detail.bulle-extension{background:color-mix(in srgb,var(--teinte) 14%,#fbf3e2);border-left:4px solid var(--teinte)}
 .talent-detail.bulle-extension .talent-bulle-nom b{color:var(--teinte)}
+/* ===== Charte graphique (CHARTE.md) : à partir d'ici, toute couleur écrite en dur figure dans la charte. ===== */
+/* v0.888 (charte, § 5) : une suppression se lit en rouge — bouton texte plein, bouton icône à l'encre rouge au survol. */
+button.danger:not(.ico){background:var(--red-mat);border-color:color-mix(in srgb,var(--red-mat) 70%,#000);color:#fff;font-weight:700}
+button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--red-mat) 82%,#000);color:#fff;border-color:color-mix(in srgb,var(--red-mat) 60%,#000)}
+/* v0.888 (charte, § 5) : dans une fenêtre de réaction, l'action principale en bleu, l'autre en relief neutre. */
+.choix-intervention-boutons button.btn-action:not(.primaire){--fond:#8d8676}

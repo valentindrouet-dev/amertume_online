@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.888","d":"2026-10-17","t":"Charte graphique, boutons de suppression et de réaction"},
 {"v":"0.887","d":"2026-10-17","t":"Bulle d'Extension au style du site"},
 {"v":"0.886","d":"2026-10-17","t":"Espèces en lignes, cartouches de la fiche, bulle des Extensions"},
 {"v":"0.885","d":"2026-10-17","t":"Majuscule des noms, tokens adaptés, grille des planches"},

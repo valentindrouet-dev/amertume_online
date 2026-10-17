@@ -5192,6 +5192,18 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.888 — Charte graphique (CHARTE.md, § 13) : bulles connues, couleurs de la charte, charte présente ; boutons de suppression rouges,
+   action secondaire des fenêtres de réaction en relief neutre. */
+{const charte=fs.readFileSync('CHARTE.md','utf8');
+ (charte.match(/img\/charte\/[a-z-]+\.webp/g)||[]).forEach(f=>assert.ok(fs.existsSync(f),'charte : capture absente '+f));
+ const src=['editor.js','index.html','maps.js','planches.js','domaine.js','campagnes.js','live.js'].filter(f=>fs.existsSync(f)).map(f=>fs.readFileSync(f,'utf8')).join('\n');
+ const permises=['bulle-talent','bulle-calcul','bulle-comp','bulle-gear','bulle-modele','bulle-test','bulle-detail-degats','bulle-fouilleur','bulle-joueurs'];
+ const re=/ouvrirBulle\(([^()]|\([^()]*\))*\)/g;let m,sans=0;
+ while((m=re.exec(src))){const k=m[0].match(/,\s*'([a-z-]+)'\s*\)$/);if(k)assert.ok(permises.includes(k[1]),'charte § 3 : bulle inconnue « '+k[1]+' » — reprendre la bulle de talent');else sans++}
+ assert.ok(sans<=5,'charte § 3 : une nouvelle bulle sans classe — reprendre la bulle de talent');
+ const css=fs.readFileSync('editor.css','utf8'),i=css.indexOf('/* ===== Charte graphique (CHARTE.md)');assert.ok(i>=0,'charte : repère absent de editor.css');
+ const lc=charte.toLowerCase();(css.slice(i).match(/#[0-9a-fA-F]{3,8}\b/g)||[]).forEach(c=>assert.ok(lc.includes(c.toLowerCase()),'charte § 1 : couleur hors charte '+c));
+ assert.ok(css.includes('button.danger:not(.ico){background:var(--red-mat);')&&css.includes('.choix-intervention-boutons button.btn-action:not(.primaire){--fond:#8d8676}'),'v0.888 : boutons');}
 /* v0.887 — La bulle d'Extension prend le style des bulles de talent. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes('.talent-detail.bulle-extension{background:color-mix(in srgb,var(--teinte) 14%,#fbf3e2);border-left:4px solid var(--teinte)}'),'v0.887');
 /* v0.886 — Espèces en lignes, Homme par défaut, bulle et teinte des Extensions, cartouches de la fiche. */
