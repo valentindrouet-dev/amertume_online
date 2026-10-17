@@ -5192,6 +5192,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.892 — Les talents d'espèce dans la même grille que les autres groupes. */
+assert.ok(fs.readFileSync('editor.css','utf8').includes('.talent-rangee.espece-rangee{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));'),'v0.892');
 /* v0.891 — La planche d'icônes des espèces, et sa catégorie. */
 assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.js','utf8').includes("['mecaniste','Mécaniste'],['especes','Espèces']];"),'v0.891');
 /* v0.890 — L'arbre d'espèce : un bouton au nom de l'espèce, ses talents en deux rangées, leur description au panneau. */
