@@ -3194,3 +3194,7 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 #arbres-espece{color:var(--teinte);border-color:var(--teinte);background:color-mix(in srgb,var(--teinte) 16%,transparent);font-weight:700}
 #arbres-espece:hover{background:color-mix(in srgb,var(--teinte) 26%,transparent)}
 #arbres-espece.on,#arbres-espece.on:hover{background:var(--teinte);color:#fff}
+/* v0.895 : l'arbre d'espèce occupe toute la largeur de l'arbre ; ses talents, resserrés, s'y centrent. */
+.arbres-cols-espece{display:flex}
+.arbres-cols-espece>.arbre-col{flex:1 1 auto;width:100%}
+.arbres-cols-espece .arbre-plan{margin-left:auto;margin-right:auto}

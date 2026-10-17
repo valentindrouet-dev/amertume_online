@@ -5192,8 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.895 — L'arbre d'espèce, talents resserrés et centrés. */
+assert.ok(fs.readFileSync('editor.css','utf8').includes('.arbres-cols-espece .arbre-plan{margin-left:auto;margin-right:auto}'),'v0.895');
 /* v0.894 — L'arbre d'espèce au design de l'arbre de classe : vraie colonne, nom et encre de l'espèce, fenêtre de même taille. */
-{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes('pos:{x:2*i-(l.length-1),y}')&&ed.includes('const depart=c.sansDepart?null:')&&ed.includes('if(espEnTete)nomClasse.textContent=espEnTete.nom;')&&fs.readFileSync('editor.css','utf8').includes('#arbres-espece.on,#arbres-espece.on:hover{background:var(--teinte);color:#fff}'),'v0.894');}
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes('pos:{x:i+Math.floor((Math.max(...lignes.map(m=>m.length))-l.length)/2),y}')&&ed.includes('const depart=c.sansDepart?null:')&&ed.includes('if(espEnTete)nomClasse.textContent=espEnTete.nom;')&&fs.readFileSync('editor.css','utf8').includes('#arbres-espece.on,#arbres-espece.on:hover{background:var(--teinte);color:#fff}'),'v0.894');}
 /* v0.893 — À la création, les espèces triées par Extension puis par nom ; leurs talents dans l'ordre des types. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("[...ESPECES].sort((x,y)=>rangExt(x)-rangExt(y)||x.nom.localeCompare(y.nom,'fr'))"),'v0.893');
 /* v0.892 — Les talents d'espèce dans la même grille que les autres groupes. */

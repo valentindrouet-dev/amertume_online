@@ -5781,9 +5781,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   let x0=pts.length?Math.min(...pts.map(q=>q.x)):0,x1=pts.length?Math.max(...pts.map(q=>q.x)):0;const y0=pts.length?Math.min(...pts.map(q=>q.y)):0,y1=pts.length?Math.max(...pts.map(q=>q.y)):0;
   // Le talent de départ est le centre de l'arbre : le plan s'étend autant de chaque côté de lui.
   // Le talent de départ : la racine la plus haute. Seul lui reçoit le trait du bandeau ; un talent sans lien n'en a pas.
-  // v0.894 : l'arbre d'espèce n'a pas de talent de départ — ses talents ne sont pas liés ; il se centre sur 0.
+  // v0.894 : l'arbre d'espèce n'a pas de talent de départ — ses talents ne sont pas liés ; son plan se resserre sur eux.
   const depart=c.sansDepart?null:c.liste.filter(t=>racines.has(t.id)).sort((x,y)=>cases.get(x.id).y-cases.get(y.id).y)[0];
-  if(c.sansDepart){const e=Math.max(-x0,x1,0);x0=-e;x1=e}
   if(depart){const rx=cases.get(depart.id).x,e=Math.max(rx-x0,x1-rx);x0=rx-e;x1=rx+e}
   const L=CASE_SPHERIER,plan=document.createElement('div');plan.className='arbre-plan';
   /* v2 : une rangée plus haute, pour le nom sous chaque talent ; un petit rond garde sa distance à son talent. */
@@ -5914,7 +5913,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   const tEsp=arbresEspece&&a?talentsDEspece(a):[];
   if(tEsp.length){const haut=t=>!['pass','crit','ame'].includes(talentType(t)[0]),ordre=(x,y)=>ORDRE_TYPES_TALENTS.indexOf(talentType(x)[0])-ORDRE_TYPES_TALENTS.indexOf(talentType(y)[0]);
    const lignes=[tEsp.filter(haut).sort(ordre),tEsp.filter(t=>!haut(t)).sort(ordre)].filter(l=>l.length);
-   const virtuels=lignes.flatMap((l,y)=>l.map((t,i)=>({...t,pos:{x:2*i-(l.length-1),y},liens:[]})));
+   const virtuels=lignes.flatMap((l,y)=>l.map((t,i)=>({...t,pos:{x:i+Math.floor((Math.max(...lignes.map(m=>m.length))-l.length)/2),y},liens:[]})));
    const ge=document.createElement('div');ge.className='arbres-cols arbres-cols-espece';ge.append(colonne({titre:'',liste:virtuels,famille:FAMILLE_ESPECES,voie:'',rang:premierRang,sansDepart:true},false));g.append(ge)}
   else g.append(grille);
   const panneau=document.createElement('aside');panneau.className='arbres-detail';cadre.append(g,panneau);corps.append(cadre);
