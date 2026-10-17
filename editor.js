@@ -12,7 +12,9 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
    qu'elle, à son nom : une attaque écrite à la main reste. Un aventurier frappe donc de
    ses armes équipées, et un adversaire de ce que son modèle lui donne. */
 const ATTAQUE_AUTO='Attaque de base';
-function normalizeActor(a){a.id??=crypto.randomUUID();
+// v0.885 : le nom d'un aventurier commence toujours par une majuscule.
+const majusculeInitiale=s=>{const t=String(s||'');const i=t.search(/\S/);return i<0?t:t.slice(0,i)+t.charAt(i).toLocaleUpperCase('fr')+t.slice(i+1)};
+function normalizeActor(a){a.id??=crypto.randomUUID();if(a.hero&&typeof a.name==='string')a.name=majusculeInitiale(a.name);
  // Les points de la création d'un aventurier : trois au plus, en Endurance, Vie ou Dégâts.
  if(a.pointsCreation&&typeof a.pointsCreation==='object'){const n=k=>Math.max(0,Math.min(3,Math.trunc(Number(a.pointsCreation[k]))||0)),p={endu:n('endu'),vie:n('vie'),dmg:n('dmg')};
   if(p.endu+p.vie+p.dmg>3||!(p.endu+p.vie+p.dmg))delete a.pointsCreation;else a.pointsCreation=p}else delete a.pointsCreation;
@@ -301,7 +303,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   Object.entries(le).forEach(([k,v])=>{if(STATES.includes(k)&&typeof v==='string'&&v&&v.length<=120)c.logosEtats[k]=v})}
  // v0.883 : les tokens proposés à la création — une image, et pour qui : tous (''), une espèce, une classe.
  c.tokensProposes=(Array.isArray(c.tokensProposes)?c.tokensProposes:[]).filter(t=>t&&typeof t.id==='string'&&typeof t.image==='string'&&/^(data:image\/|img\/)/.test(t.image))
-  .map(t=>({id:t.id.slice(0,60),image:t.image,pour:typeof t.pour==='string'&&/^((espece|classe):.{1,60})?$/.test(t.pour)?t.pour:''}));
+  .map(t=>{const p=typeof t.pour==='string'?t.pour:'',ch=v=>typeof v==='string'?v.slice(0,60):'';
+   // v0.885 : une espèce et une classe, chacune facultative ; l'ancien « pour » s'y range.
+   return {id:t.id.slice(0,60),image:t.image,espece:ch(t.espece)||(p.startsWith('espece:')?p.slice(7,67):''),classe:ch(t.classe)||(p.startsWith('classe:')?p.slice(7,67):'')}});
  // v0.883 : les icônes des Extensions, et l'Extension que le MJ donne à chaque espèce.
  {const ext=['diablo','wow','dnd','ravenloft','faerun','nimble','cthulhu','amertume'],lx=c.logosExtensions&&typeof c.logosExtensions==='object'&&!Array.isArray(c.logosExtensions)?c.logosExtensions:{},
    ee=c.extensionsEspeces&&typeof c.extensionsEspeces==='object'&&!Array.isArray(c.extensionsEspeces)?c.extensionsEspeces:{};
@@ -1480,7 +1484,9 @@ function pastilleExtension(k){k=extensionValide(k);if(!k)return null;const p=doc
 function extensionEspece(e){if(!e)return '';const o=(catalog.extensionsEspeces||{})[e.id];return extensionValide(o===undefined?e.extension||'':o)}
 function extensionClasse(c){return c?extensionValide(c.extension||''):''}
 // Les tokens proposés à qui crée un aventurier : les libres, ceux de son espèce, ceux de sa classe.
-function tokensPourCreation(c){return (catalog.tokensProposes||[]).filter(t=>!t.pour||t.pour==='espece:'+c.espece||t.pour==='classe:'+c.role)}
+/* v0.885 : les tokens adaptés — liés à une espèce ou une classe, et à celles de l'aventurier — d'abord ; tous les autres ensuite. */
+const tokenAdapte=(t,c)=>!!(t.espece||t.classe)&&(!t.espece||t.espece===c.espece)&&(!t.classe||t.classe===c.role);
+function tokensPourCreation(c){const l=catalog.tokensProposes||[];return {adaptes:l.filter(t=>tokenAdapte(t,c)),autres:l.filter(t=>!tokenAdapte(t,c))}}
 /* La section Tokens de l'onglet Icônes : le MJ importe des tokens, optimisés, et dit pour qui ils sont. */
 {const sec=document.createElement('section');sec.className='cat-panel panel tokens-proposes';sec.id='tokens-proposes';
  sec.innerHTML='<header class="cat-head"><h2>Tokens</h2><button type="button" id="tokens-ajout" class="primary">+ Importer un token</button><input type="file" id="tokens-fichier" accept="image/png,image/jpeg,image/webp" hidden></header>'
@@ -1488,13 +1494,14 @@ function tokensPourCreation(c){return (catalog.tokensProposes||[]).filter(t=>!t.
  const page=$('icones-page');if(page)page.append(sec);
  $('tokens-ajout').onclick=()=>$('tokens-fichier').click();
  $('tokens-fichier').onchange=()=>{const f=$('tokens-fichier').files[0];$('tokens-fichier').value='';if(f)openImage(f,'token',url=>{
-  catalog.tokensProposes=[...(catalog.tokensProposes||[]),{id:'tok-'+crypto.randomUUID().slice(0,12),image:url,pour:''}];scheduleSave();renderTokensProposes()})}}
+  catalog.tokensProposes=[...(catalog.tokensProposes||[]),{id:'tok-'+crypto.randomUUID().slice(0,12),image:url,espece:'',classe:''}];scheduleSave();renderTokensProposes()})}}
 function renderTokensProposes(){const g=$('tokens-grille'),sec=$('tokens-proposes');if(!g)return;sec.hidden=view!=='mj';g.replaceChildren();
  const l=catalog.tokensProposes||[];if(!l.length){const p=document.createElement('p');p.className='muted';p.textContent='Aucun token pour l’instant.';g.append(p);return}
- const pour=[['','Tous'],...ESPECES.map(e=>['espece:'+e.id,'Espèce · '+e.nom]),...(catalog.classes||[]).filter(c=>c&&c.name).map(c=>['classe:'+c.name,'Classe · '+c.name])];
+ const especes=[['','— Espèce —'],...ESPECES.map(e=>[e.id,e.nom])],classes=[['','— Classe —'],...(catalog.classes||[]).filter(c=>c&&c.name).map(c=>[c.name,c.name])];
+ const menu=(t,cle,opts,lab)=>{const s=document.createElement('select');s.setAttribute('aria-label',lab);opts.forEach(([v,n])=>s.add(new Option(n,v)));s.value=opts.some(([v])=>v===t[cle])?t[cle]:'';
+  s.onchange=()=>{t[cle]=s.value;scheduleSave()};return s};
  l.forEach(t=>{const c=document.createElement('div');c.className='token-carte';const i=document.createElement('img');i.src=t.image;i.alt='';
-  const s=document.createElement('select');s.setAttribute('aria-label','Pour qui');pour.forEach(([v,n])=>s.add(new Option(n,v)));s.value=pour.some(([v])=>v===t.pour)?t.pour:'';
-  s.onchange=()=>{t.pour=s.value;scheduleSave()};
+  const s=document.createElement('div');s.className='token-menus';s.append(menu(t,'espece',especes,'Espèce'),menu(t,'classe',classes,'Classe'));
   const x=document.createElement('button');x.type='button';x.className='ico danger';x.textContent='✕';x.title='Retirer ce token';x.setAttribute('aria-label','Retirer ce token');
   x.onclick=()=>{if(!confirm('Retirer ce token des propositions ? Les aventuriers qui le portent le gardent.'))return;catalog.tokensProposes=(catalog.tokensProposes||[]).filter(y=>y!==t);scheduleSave();renderTokensProposes()};
   c.append(i,s,x);g.append(c)})}
@@ -4140,12 +4147,14 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
   const imp=document.createElement('button');imp.type='button';imp.textContent='Importer et optimiser';imp.onclick=()=>fi.click();
   const ret=document.createElement('button');ret.type='button';ret.textContent='Retirer l’image';ret.hidden=!c.image;ret.onclick=()=>{c.image='';c.imageTable=null;c.tokenPropose='';renderCreation()};
   const barre=document.createElement('div');barre.className='toolbar';barre.append(imp,ret);jeton.append(im,barre,fi);corps.append(jeton);
-  const l=tokensPourCreation(c);
-  if(l.length){const g=document.createElement('div');g.className='creation-tokens';
+  const {adaptes,autres}=tokensPourCreation(c);
+  const liste=(l,adapte)=>{if(!l.length)return;if(adapte){const h=document.createElement('h3');h.className='creation-tokens-titre';h.textContent='Tokens adaptés';corps.append(h)}
+   const g=document.createElement('div');g.className='creation-tokens'+(adapte?' adaptes':' autres');
    l.forEach(t=>{const b=document.createElement('button');b.type='button';b.className='creation-token'+(c.tokenPropose===t.id?' on':'');b.setAttribute('aria-label','Choisir ce token');
     const i=document.createElement('img');i.src=t.image;i.alt='';b.append(i);
     b.onclick=async()=>{c.image=t.image;c.tokenPropose=t.id;c.imageTable=await imagePourTable(t.image);if(creation===c)renderCreation()};g.append(b)});
-   corps.append(g)}}
+   corps.append(g)};
+  liste(adaptes,true);liste(autres,false)}
  else if(k==='espece'){const g=document.createElement('div');g.className='creation-classes';
   ESPECES.forEach(e=>{const b=document.createElement('button');b.type='button';b.className='creation-classe'+(c.espece===e.id?' on':'');b.style.setProperty('--teinte',e.teinte);
    const n=document.createElement('b');n.textContent=e.nom;b.append(n);
@@ -4231,7 +4240,7 @@ async function imagePourTable(url){if(typeof url!=='string'||!url.startsWith('da
    s'achève sur le récapitulatif. Sa fiche ne garde que les points de compétence : le 1 de base, la classe et l'espèce s'y ajoutent
    au jeu, comme pour tout aventurier. */
 function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;if(!peutCreerAventurier()){creationDialog.close();return}const e=especeCreation(c);
- const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:c.name.trim(),sexe:c.sexe,race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
+ const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:majusculeInitiale(c.name.trim()),sexe:c.sexe,race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
  // L'équipement de départ au sac ; l'objet inhabituel, tiré ici, une seule fois.
  const kit=kitCreation(c);kit.forEach(([o,n])=>{for(let k=0;k<n;k++)a.inventaire.push(o.id)});
  const tiree=tirePieceDepart(c.role);if(tiree){a.forges=[tiree];a.inventaire.push(tiree.id)}
@@ -6245,7 +6254,7 @@ function choixTalents(boite,cible,filtre,familles,apres){boite.replaceChildren()
 /* Recharger les quatre listes d'équipement en place : reconstruire tout le formulaire
    perdrait ce qui y est saisi et pas encore enregistré. Le choix courant est conservé,
    et un objet tout neuf va se poser dans le premier emplacement libre qui l'accepte. */
-function readActor(){const f=$('actor-form').elements;readAttacks();const a=structuredClone(draft);for(const k of ['name','role','notes','socle'])a[k]=f[k].value.trim();a.states=[...statesOf(draft)];for(const k of ['sexe','race'])if(f[k])a[k]=f[k].value.trim();if(f.extension){if(extensionValide(f.extension.value))a.extension=f.extension.value;else delete a.extension}
+function readActor(){const f=$('actor-form').elements;readAttacks();const a=structuredClone(draft);for(const k of ['name','role','notes','socle'])a[k]=f[k].value.trim();a.states=[...statesOf(draft)];for(const k of ['sexe','race'])if(f[k])a[k]=f[k].value.trim();if(a.hero&&typeof majusculeInitiale==='function')a.name=majusculeInitiale(a.name);if(f.extension){if(extensionValide(f.extension.value))a.extension=f.extension.value;else delete a.extension}
  for(const k of ['hp','max','def','dmg','xp','vie','vieMax','endu','pvBonus','level'])if(f[k]&&!f[k].disabled)a[k]=num(f[k].value,k==='pvBonus'?-9999:0,k==='xp'?999999:99999);if(a.hero&&typeof niveauDeXp==='function')a.level=niveauDeXp(a.xp);a.max=Math.max(1,a.max);if(Number.isFinite(a.def))a.def=defPlafonnee(a.def);if(templateIndex!==null)a.hp=a.max;a.hp=Math.min(a.hp,a.max);setState(a,'Coma',!a.hp);if(!a.hero){a.type=f.type.value;if(f.menace)a.menace=f.menace.value;if(a.pnj&&f.alignement)a.alignement=alignementDe({pnj:true,alignement:f.alignement.value});if(a.pnj&&f.unique){if(f.unique.checked)a.unique=true;else delete a.unique}}// Sans cases à l'écran (adversaires), les valeurs enregistrées sont conservées telles quelles.
  if(f.rapide)a.rapide=f.rapide.checked;if(f.esquive)a.esquive=f.esquive.checked;if(f.nyctalope){if(f.nyctalope.checked)delete a.nyctalope;else a.nyctalope=false}if(f.mouvement&&!a.hero){const v=Number(f.mouvement.value);if(!Number.isFinite(v)||v===DISTANCE_MOUVEMENT)delete a.mouvement;else a.mouvement=Math.max(0,Math.min(99,v))}if(f.skill0)a.skills=skillNames.map((_,i)=>num(f['skill'+i].value,0,30));// Un adversaire n'a pas de rayon d'armurerie dans son formulaire : ce qu'il porte reste tel quel.
  // L'inventaire et l'équipement viennent du brouillon, où le formulaire les a composés ; ce qui n'est plus au catalogue s'efface.

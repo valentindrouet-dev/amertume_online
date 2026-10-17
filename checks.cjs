@@ -5192,6 +5192,13 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.885 — Majuscule au nom d'un aventurier ; tokens adaptés puis les autres ; l'onglet Icônes en grille de planches. */
+{const ed=fs.readFileSync('editor.js','utf8'),pl=fs.readFileSync('planches.js','utf8');
+ assert.ok(ed.includes("name:majusculeInitiale(c.name.trim()),")&&ed.includes("if(a.hero&&typeof a.name==='string')a.name=majusculeInitiale(a.name);")
+  &&ed.includes("const tokenAdapte=(t,c)=>!!(t.espece||t.classe)&&(!t.espece||t.espece===c.espece)&&(!t.classe||t.classe===c.role);")
+  &&pl.includes("grille.className='planches-grille';")&&pl.includes("let PLANCHE_CHOISIE=null;")&&fs.readFileSync('editor.css','utf8').includes('.planche-panneau{margin-top:14px;max-height:70vh;overflow-y:auto;'),'v0.885');
+ const vm=require('vm'),c={};vm.runInNewContext(ed.match(/const majusculeInitiale=[^\n]*/)[0]+';this.f=majusculeInitiale',c);
+ assert.equal(c.f('élise'),'Élise');assert.equal(c.f(' bob'),' Bob');assert.equal(c.f('Ana'),'Ana');}
 /* v0.884 — La Vitesse de chaque espèce ; les bonus d'espèce sur deux lignes. */
 {const {mouvementPropre:mp}=require('./combat.js');[['humain',9],['nain',8],['goliath',10],['elfe',9],['lupin',10]].forEach(([e,v])=>assert.equal(mp({hero:true,espece:e}),v,'v0.884 : Vitesse '+e));
  assert.ok(fs.readFileSync('editor.js','utf8').includes("bonus.className='creation-bonus creation-bonus-espece';")&&fs.readFileSync('editor.css','utf8').includes('.creation-bonus-saut{flex-basis:100%;height:0}'),'v0.884 : deux lignes');}

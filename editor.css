@@ -3142,3 +3142,18 @@ body[class*="page-"] #pile-fenetres{display:none!important}
 .sac .gear-carre .pastille-extension{top:auto;bottom:-7px}
 /* v0.884 : les bonus d'espèce sur deux lignes, caracs puis compétences. */
 .creation-bonus-saut{flex-basis:100%;height:0}
+/* v0.885 : les tokens adaptés d'abord, les autres dessous ; deux menus par token dans l'onglet Icônes. */
+.creation-tokens-titre{margin:14px 0 0;text-align:center;font-size:15px}
+.creation-tokens.autres{border-top:1px solid #d9cdb4;padding-top:12px}
+.creation-tokens.adaptes+.creation-tokens.autres{margin-top:16px}
+.token-menus{display:flex;flex-direction:column;gap:4px;width:100%}.token-carte{width:140px}
+/* v0.885 : l'onglet Icônes en grille de planches ; la planche choisie s'ouvre dessous, dans un panneau qui défile. */
+.planches-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px;margin-top:12px}
+.planche-carte{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;border:1px solid #d9cdb4;border-radius:10px;background:var(--panel,#fbf6ea);cursor:pointer;text-align:center;font:inherit}
+.planche-carte:hover{border-color:#b8955a;box-shadow:0 2px 8px #0001}
+.planche-carte.on{border-color:var(--accent,#a8721f);box-shadow:0 0 0 2px #e6b65c99}
+.planche-vignette{width:56px;height:56px;display:grid;place-items:center;font-size:26px;color:#9a8a6a}
+.planche-vignette img{width:56px;height:56px;object-fit:contain}
+.planche-nom{font-weight:700;font-size:13px;line-height:1.2}.planche-compte{font-size:11px;color:#8a7d66}
+.planche-panneau{margin-top:14px;max-height:70vh;overflow-y:auto;border:1px solid #d9cdb4;border-radius:10px;padding:4px 12px 12px;background:#fffdf7}
+.planche-panneau .planche-bloc>summary{position:sticky;top:0;background:#fffdf7;z-index:1}

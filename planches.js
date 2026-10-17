@@ -187,13 +187,31 @@ function sauveIcones(){if(typeof scheduleSave==='function')scheduleSave();docume
    range ; une recherche ou un filtre ouvre d'elles-mêmes celles où quelque chose correspond,
    les noms se lisant sans rien télécharger. */
 const PLANCHES_OUVERTES=new Set();
+// v0.885 : la planche ouverte sous la grille de l'onglet Icônes.
+let PLANCHE_CHOISIE=null;
 function renderIcones(){const boite=$('icones-planches');if(!boite)return;boite.replaceChildren();
  // Dans l'ordre de leurs noms, les numéros comptés comme des nombres : Talents 9, puis Talents 10.
  const fichiers=[...new Set([...PLANCHES_FICHIERS,...planchesDuCatalogue().map(p=>p.fichier)])].sort((a,b)=>nomPlanche(a).localeCompare(nomPlanche(b),'fr',{numeric:true}));
  if(!fichiers.length){const v=document.createElement('p');v.className='muted';
   v.textContent='Aucune planche pour l’instant. Dépose un fichier dans img/planches sur GitHub, puis reviens ici : il paraîtra en quelques minutes.';
   boite.append(v);return}
- fichiers.forEach(f=>boite.append(blocPlanche(f)))}
+ /* v0.885 : une grille de toutes les planches — leur première icône et leur nom ; un clic ouvre la planche dessous, dans un
+    panneau qui défile, un autre clic la referme. Une recherche ou un filtre ne garde que les planches où quelque chose correspond. */
+ const filtre=!!$('icones-recherche').value.trim()||$('icones-cat').value!=='*';
+ const grille=document.createElement('div');grille.className='planches-grille';
+ fichiers.forEach(f=>{const p=plancheDe(f),vues=p?iconesVisibles(f):[];if(filtre&&p&&!vues.length)return;
+  const c=document.createElement('button');c.type='button';c.className='planche-carte'+(PLANCHE_CHOISIE===f?' on':'')+(p?'':' a-decouper');
+  const v=document.createElement('span');v.className='planche-vignette';
+  if(p){const im=document.createElement('img');im.alt='';im.draggable=false;poseIcone(im,f+'#'+((filtre&&vues.length?vues[0]:0)+1));v.append(im)}else v.textContent='✂';
+  const n=document.createElement('span');n.className='planche-nom';n.textContent=nomPlanche(f);
+  const k=document.createElement('span');k.className='planche-compte';k.textContent=!p?'à découper':filtre?vues.length+' / '+p.cases.length:p.cases.length+' icônes';
+  c.append(v,n,k);c.onclick=()=>{PLANCHE_CHOISIE=PLANCHE_CHOISIE===f?null:f;renderIcones();
+   if(PLANCHE_CHOISIE){const pan=$('planche-panneau');if(pan)pan.scrollIntoView({block:'nearest',behavior:'smooth'})}};grille.append(c)});
+ boite.append(grille);
+ if(PLANCHE_CHOISIE&&fichiers.includes(PLANCHE_CHOISIE)){PLANCHES_OUVERTES.add(PLANCHE_CHOISIE);
+  const pan=document.createElement('div');pan.id='planche-panneau';pan.className='planche-panneau';const bloc=blocPlanche(PLANCHE_CHOISIE);
+  if(bloc.tagName==='DETAILS'){bloc.open=true;if(!bloc.dataset.rempli)remplitPlanche(bloc,PLANCHE_CHOISIE);bloc.ontoggle=()=>{if(!bloc.open){PLANCHE_CHOISIE=null;renderIcones()}}}
+  pan.append(bloc);boite.append(pan)}}
 $('icones-recherche').oninput=renderIcones;$('icones-cat').onchange=renderIcones;
 // Les numéros d'une planche qui passent la recherche et le filtre.
 function iconesVisibles(f){const p=plancheDe(f);if(!p)return [];const q=cleTalent($('icones-recherche').value),cat=$('icones-cat').value;
