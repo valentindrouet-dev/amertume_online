@@ -2762,10 +2762,11 @@ function competencesDeClasse(role){const k=cleClasse(role),e=k?Object.entries(CO
  return COMPETENCES.map(n=>e&&e[1].includes(n)?1:0)}
 /* Les espèces d'aventurier et ce que chacune donne pour toujours : Vie, Endurance, Dégâts, PV, compétences, et une capacité
    à part. Seul un aventurier né d'une espèce de cette table la porte ; l'espèce écrite à la main d'un ancien reste un mot. */
-const ESPECES=[{id:'humain',nom:'Humain',teinte:'#9a7b4f',vie:1,comps:{Perception:1,Savoir:1}},
- {id:'nain',nom:'Nain',teinte:'#8c5a3c',pv:8,comps:{Robustesse:1,Technique:1}},
- {id:'goliath',nom:'Goliath',teinte:'#5f7183',dmg:2,comps:{Force:1,Robustesse:1}},
- {id:'elfe',nom:'Elfe',teinte:'#4f8a5b',endu:1,dmg:1,comps:{Agilité:1,Mysticisme:1}},
+// v0.884 : chaque espèce a sa Vitesse, en mètres.
+const ESPECES=[{id:'humain',nom:'Humain',teinte:'#9a7b4f',vie:1,vitesse:9,comps:{Perception:1,Savoir:1}},
+ {id:'nain',nom:'Nain',teinte:'#8c5a3c',pv:8,vitesse:8,comps:{Robustesse:1,Technique:1}},
+ {id:'goliath',nom:'Goliath',teinte:'#5f7183',dmg:2,vitesse:10,comps:{Force:1,Robustesse:1}},
+ {id:'elfe',nom:'Elfe',teinte:'#4f8a5b',endu:1,dmg:1,vitesse:9,comps:{Agilité:1,Mysticisme:1}},
  /* v0.883 — Le Lupin, de l'Extension Ravenloft : Vitesse 10 m, ses Talents d'Espèce dans le groupe Espèces de l'onglet Talents. */
  {id:'lupin',nom:'Lupin',teinte:'#6f5f86',endu:1,dmg:1,vitesse:10,comps:{Agilité:1,Ruse:1},extension:'ravenloft',
   description:'Poil hérissé et crocs retroussés, vous êtes né d’un loup-garou dont la malédiction n’a pris qu’à moitié : figé entre la bête et l’humain, vous en gardez une force sauvage, des instincts aiguisés et un hurlement qui sème l’effroi.'}];

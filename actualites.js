@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.884","d":"2026-10-17","t":"Vitesse des espèces, bonus sur deux lignes"},
 {"v":"0.883","d":"2026-10-17","t":"Extensions, espèce Lupin, étape Illustration"},
 {"v":"0.882","d":"2026-10-17","t":"Bonus centrés dans le panneau de l'arbre"},
 {"v":"0.881","d":"2026-10-16","t":"Talent Stimulant du Mécaniste"},

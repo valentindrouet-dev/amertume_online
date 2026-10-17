@@ -3140,3 +3140,5 @@ body[class*="page-"] #pile-fenetres{display:none!important}
 .token-carte select{width:100%;font-size:12px}.token-carte .ico{position:absolute;top:-4px;right:14px}
 .tokens-proposes{margin-top:18px}.tokens-proposes .cat-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .sac .gear-carre .pastille-extension{top:auto;bottom:-7px}
+/* v0.884 : les bonus d'espèce sur deux lignes, caracs puis compétences. */
+.creation-bonus-saut{flex-basis:100%;height:0}

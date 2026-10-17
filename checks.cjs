@@ -5192,6 +5192,9 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.884 — La Vitesse de chaque espèce ; les bonus d'espèce sur deux lignes. */
+{const {mouvementPropre:mp}=require('./combat.js');[['humain',9],['nain',8],['goliath',10],['elfe',9],['lupin',10]].forEach(([e,v])=>assert.equal(mp({hero:true,espece:e}),v,'v0.884 : Vitesse '+e));
+ assert.ok(fs.readFileSync('editor.js','utf8').includes("bonus.className='creation-bonus creation-bonus-espece';")&&fs.readFileSync('editor.css','utf8').includes('.creation-bonus-saut{flex-basis:100%;height:0}'),'v0.884 : deux lignes');}
 /* v0.883 — Extensions (icônes, pastilles, champ), espèce Lupin et ses Talents d'Espèce, étape Illustration et tokens proposés. */
 {const ed=fs.readFileSync('editor.js','utf8'),h=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
  ['diablo','wow','dnd','ravenloft','faerun','nimble','cthulhu','amertume'].forEach(k=>assert.ok(fs.existsSync('img/extensions/'+k+'.webp'),'v0.883 : icône '+k));
@@ -5201,7 +5204,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
   &&cb.includes("griffes:{cle:'griffes',")&&cb.includes("hurlement:{cle:'hurlement',")&&h.includes('function bondFeroce(a,p,talent){')&&h.includes('function hurlement(a,p,talent){'),'v0.883 : Lupin');
  assert.ok(ed.includes("const FAMILLE_ESPECES='Espèces';")&&ed.includes("c.semisForge.push('espece-lupin')")&&ed.includes("['illustration','Illustration'],['recap','Récapitulatif']")
   &&ed.includes('function tokensPourCreation(c){')&&ed.includes('function renderTokensProposes(){'),'v0.883 : espèces et illustration');
- const {mouvementPropre:mp}=require('./combat.js');assert.equal(mp({hero:true,espece:'lupin'}),10,'v0.883 : Vitesse du Lupin');assert.equal(mp({hero:true,espece:'nain'}),9,'v0.883 : Vitesse par défaut');}
+ const {mouvementPropre:mp}=require('./combat.js');assert.equal(mp({hero:true,espece:'lupin'}),10,'v0.883 : Vitesse du Lupin');assert.equal(mp({hero:true}),9,'v0.883 : Vitesse par défaut');}
 /* v0.882 — Les bonus du panneau de l'arbre, centrés sur leur ligne. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes('.arbres-v2 .arbres-detail .detail-bonus-grille{display:flex;flex-wrap:wrap;justify-content:center;'),'v0.882 : bonus centrés');
 /* v0.881 — Stimulant du Mécaniste et ses trois améliorations. */

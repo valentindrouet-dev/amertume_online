@@ -4119,9 +4119,13 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
  const statsCreation=()=>{const v=valeursCreation(c);return tuiles([['vie','Vie',v.vie],['endu','Endurance',v.endu],['dmg','Dégâts','+'+v.dmg],['pv','PV max',pvCreation(c)]])};
  const recap=l=>{const dl=document.createElement('dl');dl.className='creation-recap';l.forEach(([t,v])=>{const dt=document.createElement('dt');dt.textContent=t;const dd=document.createElement('dd');dd.textContent=String(v);dl.append(dt,dd)});return dl};
  // Les bonus d'une espèce en pastilles, comme ceux d'une classe ; sa capacité à part.
- const bonusEspeceEl=e=>{const bonus=document.createElement('div');bonus.className='creation-bonus';
-  [['vie','Vie'],['endu','Endurance'],['dmg','Dégâts'],['pv','PV']].forEach(([cle,nom])=>{if(e[cle])bonus.append(pastilleCarac(cle,'+'+e[cle]+' '+nom))});
-  COMPETENCES.forEach((n,i)=>{const v=e.comps[n];if(v)bonus.append(pastilleComp(i,'+'+v+' '+n))});
+ /* v0.884 : première ligne, la Vitesse puis les caracs (Vie, PV, Endurance, Dégâts) ; seconde ligne, les compétences, par ordre alphabétique. */
+ const bonusEspeceEl=e=>{const bonus=document.createElement('div');bonus.className='creation-bonus creation-bonus-espece';
+  if(Number(e.vitesse)>0)bonus.append(pastilleCarac('pm','Vitesse '+e.vitesse+' m'));
+  [['vie','Vie'],['pv','PV'],['endu','Endurance'],['dmg','Dégâts']].forEach(([cle,nom])=>{if(e[cle])bonus.append(pastilleCarac(cle,'+'+e[cle]+' '+nom))});
+  const comps=COMPETENCES.map((n,i)=>[n,i]).filter(([n])=>e.comps[n]).sort((x,y)=>x[0].localeCompare(y[0],'fr'));
+  if(comps.length){const saut=document.createElement('span');saut.className='creation-bonus-saut';bonus.append(saut)}
+  comps.forEach(([n,i])=>bonus.append(pastilleComp(i,'+'+e.comps[n]+' '+n)));
   if(e.capacite){const s=document.createElement('span');s.className='creation-pastille creation-capacite';const t=document.createElement('i');t.textContent='ESP';s.append(t,e.capacite);bonus.append(s)}
   return bonus};
  if(k==='identite'){const n=inp('text',c.name,v=>{c.name=v.slice(0,120);majBoutons()},{maxlength:'120',placeholder:'Nom de l’aventurier'});
@@ -4152,7 +4156,7 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    const t=document.createElement('h3');t.textContent=e.nom;f.append(t);
    // v0.883 : sa présentation, sa Vitesse, et ses Talents d'Espèce en ronds, leur bulle au survol.
    if(e.description){const p=document.createElement('p');p.className='creation-description';p.textContent=e.description;f.append(p)}
-   const bonus=bonusEspeceEl(e);if(Number(e.vitesse)>0)bonus.prepend(pastilleCarac('pm','Vitesse '+e.vitesse+' m'));f.append(bonus);
+   f.append(bonusEspeceEl(e));
    const tals=(catalog.talents||[]).filter(x=>x&&talentFamily(x)===FAMILLE_ESPECES&&x.espece===e.id&&!estBonus(x)&&!estVide(x));
    if(tals.length){const r=document.createElement('div');r.className='creation-talents';
     tals.forEach(x=>{const q=talentRond(x);q.setAttribute('aria-label',nomEnClair(x.name));surveille(q,()=>bulleTalentSur(q,x,{points:false}));r.append(q)});f.append(r)}
