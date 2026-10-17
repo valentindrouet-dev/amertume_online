@@ -3168,3 +3168,6 @@ body[class*="page-"] #pile-fenetres{display:none!important}
 .hero-cartouche.avec-extension{padding-right:16px}
 .hero-cartouche .pastille-extension{top:-9px;right:-10px;width:22px;height:22px}.hero-cartouche .pastille-extension img{width:15px;height:15px}
 .hero-identite .hero-joueur{margin-left:auto;font-size:12px;padding:2px 6px;opacity:.75}
+/* v0.887 : la bulle d'une Extension, celle des talents du site, à la teinte de son logo. */
+.talent-detail.bulle-extension{background:color-mix(in srgb,var(--teinte) 14%,#fbf3e2);border-left:4px solid var(--teinte)}
+.talent-detail.bulle-extension .talent-bulle-nom b{color:var(--teinte)}

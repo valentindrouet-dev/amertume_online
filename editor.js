@@ -1491,7 +1491,8 @@ const TEINTES_EXTENSIONS={diablo:'#d2500a',wow:'#b8860b',dnd:'#d32f2f',ravenloft
 function pastilleExtension(k){k=extensionValide(k);if(!k)return null;const p=document.createElement('span');p.className='pastille-extension';
  p.style.setProperty('--teinte-ext',TEINTES_EXTENSIONS[k]||'#8a7a5a');p.setAttribute('aria-label','Extension : '+nomExtension(k));const im=logoExtensionEl(k);if(im)p.append(im);
  // Au survol, sa bulle, comme toutes celles du site : « Extension : Ravenloft ».
- if(typeof surveille==='function'&&typeof ouvrirBulle==='function')surveille(p,()=>{const d=document.createElement('div');d.className='bulle-extension';d.textContent='Extension : '+nomExtension(k);ouvrirBulle(p,d,'bulle-joueurs')});
+ if(typeof surveille==='function'&&typeof ouvrirBulle==='function')surveille(p,()=>{const d=document.createElement('div');d.className='talent-detail large bulle-extension';d.style.setProperty('--teinte',TEINTES_EXTENSIONS[k]||'#8a7a5a');
+  const t=document.createElement('p');t.className='talent-bulle-nom';const n=document.createElement('b');n.textContent='Extension : '+nomExtension(k);t.append(n);d.append(t);ouvrirBulle(p,d,'bulle-talent')});
  else p.title='Extension : '+nomExtension(k);return p}
 // L'Extension d'une espèce : celle que le MJ lui a donnée, sinon celle de la table des espèces.
 function extensionEspece(e){if(!e)return '';const o=(catalog.extensionsEspeces||{})[e.id];return extensionValide(o===undefined?e.extension||'':o)}
