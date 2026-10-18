@@ -3209,3 +3209,12 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 .shape.diffi .grip{display:none!important}
 .lasso-layer.diffi polygon,.lasso-layer.diffi polyline{stroke:#a2691f;fill:color-mix(in srgb,#a2691f 16%,transparent)}
 .sw-diffi{background:color-mix(in srgb,#a2691f 16%,transparent);border:1px dotted #a2691f}
+/* v0.897 — Fielsang : les gages sous la description de Gageur ; la fenêtre de Déguisement. */
+.arbres-detail .detail-gages{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.arbres-detail .detail-gage{width:30px;height:30px;border-radius:50%;overflow:hidden;display:grid;place-items:center;box-sizing:border-box;border:2px solid #c99a3c;background:var(--panel);font:700 13px system-ui;color:var(--ink)}
+.arbres-detail .detail-gage img{width:100%;height:100%;object-fit:cover}
+.choix-deguisement .deguisements{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:320px}
+.choix-deguisement .deguisement{width:44px;height:44px;padding:0;border-radius:50%;overflow:hidden;display:grid;place-items:center;box-sizing:border-box;border:2px solid var(--line);background:var(--panel);font:700 16px system-ui;color:var(--ink);cursor:pointer}
+.choix-deguisement .deguisement img{width:100%;height:100%;object-fit:cover}
+.choix-deguisement .deguisement.on{border-color:#c99a3c;box-shadow:0 0 0 2px #c99a3c}
+.choix-deguisement .deguisement-tailles{display:flex;gap:8px}

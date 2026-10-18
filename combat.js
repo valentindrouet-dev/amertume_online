@@ -417,7 +417,7 @@ const DISTANCE_MOUVEMENT=9;
 function bonusMouvementDe(o){return Math.max(0,Math.min(40,Number(o&&o.bonusMouvement)||0))}
 function mouvementPropre(a){const v=a&&!a.hero&&a.mouvement!=null&&a.mouvement!==''?Number(a.mouvement):NaN;if(Number.isFinite(v))return Math.max(0,Math.min(99,v));
  // v0.883 : la Vitesse de son espèce, quand elle en a une (le Lupin, 10 m).
- const e=a&&a.hero&&typeof especeDe==='function'?especeDe(a.espece):null;return e&&Number(e.vitesse)>0?Number(e.vitesse):DISTANCE_MOUVEMENT}
+ const e=a&&a.hero&&typeof especeDe==='function'?especeDe(a.espece):null;if(e&&a.socle==='small'&&Number(e.vitessePetit)>0)return Number(e.vitessePetit);return e&&Number(e.vitesse)>0?Number(e.vitesse):DISTANCE_MOUVEMENT}
 function distanceMouvement(a,items){return mouvementPropre(a)+objetsQuiComptent(a,items,o=>bonusMouvementDe(o)>0).reduce((s,o)=>s+bonusMouvementDe(o),0)}
 function lumierePortee(a,items){return objetsLumineux(a,items).reduce((m,o)=>Math.max(m,lumiereDe(o)),0)}
 /* Un coffre : un rectangle, comme une porte. Son nom et sa description ; caché (« cache »), un test de
@@ -1770,6 +1770,19 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  /* Vision dans le noir : un passif. Dans l'obscurité, le porteur voit jusqu'à x mètres, là où les autres ne voient que leur
     zone de contact. Ses améliorations la portent plus loin, et font de lui un Prédateur des Ombres, aux coups plus durs
     tant qu'il se tient dans le noir. */
+ /* v0.897 — Talents d'Espèce du Fielsang. Mimétisme et Maléfice, gratuits, une fois par tour. */
+ gageur:{cle:'gageur',nom:'Gageur',type:'act',bouton:'Gageur',espece:true,
+  aide:'Action : au contact, le porteur prélève un Gage d’un adversaire et lui inflige 1 dé noir de dégâts. Contre ce modèle d’adversaire, ses dégâts augmentent de son Niveau, et il le voit toujours à 10 m. Jusqu’au prochain repos long.',
+  params:[],phrase(){return 'Au contact, vous prélevez un <b>Gage</b> d’un adversaire et lui infligez <b>1 dé noir</b> de dégâts. Contre ce type d’adversaire, vos dégâts augmentent de votre <b>Niveau</b>, et il reste visible et en ligne de vue à <b>10 m</b>.'}},
+ deguisement:{cle:'deguisement',nom:'Déguisement',type:'act',bouton:'Déguisement',espece:true,
+  aide:'Action : le porteur prend une apparence de sa collection et la taille Petit ou Moyen, jusqu’à son prochain repos court. Il peut l’abandonner à tout moment.',
+  params:[],phrase(){return 'Vous changez d’<b>apparence</b> et de <b>taille</b> jusqu’à votre prochain repos court. Vous pouvez y renoncer à tout moment.'}},
+ mimetisme:{cle:'mimetisme',nom:'Mimétisme',type:'act',bouton:'Mimétisme',espece:true,gratuit:true,
+  aide:'Gratuit, une fois par tour : le porteur copie l’apparence d’un token visible, qui rejoint sa collection de déguisements.',
+  params:[],phrase(){return 'Vous copiez l’<b>apparence</b> d’un token visible : elle rejoint votre collection de <b>déguisements</b>.'}},
+ malefice:{cle:'malefice',nom:'Maléfice',type:'act',bouton:'Maléfice',espece:true,gratuit:true,
+  aide:'Gratuit, une fois par tour : le porteur désigne un adversaire visible et subit 1 dé noir de dégâts. Jusqu’à la fin du round, chaque allié qui le touche ajoute 1d6 aux dégâts, hors du jet.',
+  params:[],phrase(){return 'Vous désignez un adversaire visible et subissez <b>1 dé noir</b> de dégâts. Jusqu’à la fin du round, tous les alliés lui infligent <b>+1d6</b> dégâts.'}},
  /* v0.896 — Talents d'Espèce du Dhampire. */
  morsure:{cle:'morsure',nom:'Morsure Vampirique',type:'act',bouton:'Morsure Vampirique',espece:true,attaque:true,
   aide:'Action : 1 Attaque au contact de 1 dé rouge + Dégâts + Niveau ; la cible subit Saignée et le porteur se soigne des PV qu’elle perd. Pas contre un mort-vivant ni une créature mécanique.',
@@ -2805,6 +2818,9 @@ const ESPECES=[{id:'humain',nom:'Humain',teinte:'#9a7b4f',vie:1,vitesse:9,comps:
  {id:'goliath',nom:'Goliath',teinte:'#5f7183',dmg:2,vitesse:10,comps:{Force:1,Robustesse:1}},
  {id:'elfe',nom:'Elfe',teinte:'#4f8a5b',endu:1,dmg:1,vitesse:9,comps:{Agilité:1,Mysticisme:1}},
  /* v0.883 — Le Lupin, de l'Extension Ravenloft : Vitesse 10 m, ses Talents d'Espèce dans le groupe Espèces de l'onglet Talents. */
+ /* v0.897 — Le Fielsang, de l'Extension Ravenloft : Vitesse 9 m, 6 m de taille Petit (choisie à la création). */
+ {id:'fielsang',nom:'Fielsang',teinte:'#3f7d6e',dmg:2,vitesse:9,vitessePetit:6,comps:{Mysticisme:1,Perception:1},extension:'ravenloft',
+  description:'Imprégné de magie féerique par une énergie occulte ou une sorcellerie mystérieuse, souvent né d’un marché passé avec une puissante guenaude. Son pouvoir féerique se manifeste par une clairvoyance troublante et une magie envoûtante.'},
  /* v0.896 — Le Dhampire, de l'Extension Ravenloft : Vitesse 10 m, ses Talents d'Espèce dans le groupe Espèces. */
  {id:'dhampire',nom:'Dhampire',teinte:'#8a2f3c',vie:1,dmg:1,vitesse:10,comps:{Agilité:1,Robustesse:1},extension:'ravenloft',
   description:'Vivant, mais doté de la puissance des vampires et maudit d’une faim macabre : la plupart ont soif de sang, d’autres se nourrissent de rêves ou d’énergie vitale. Descendant d’un vampire, à demi changé par une morsure ou né d’un pacte nécromantique, le Dhampire doit choisir : maîtriser sa faim, ou céder à ses instincts de prédateur.'},

@@ -269,6 +269,15 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    {id:'talent-dhampire-vision',name:'Vision dans le noir',type:'pass',effet:'visionnoir',params:{portee:18},effects:'Vous voyez dans le noir jusqu’à 18 m.'}]
    .forEach(t=>{if(!c.talents.some(x=>x&&x.id===t.id))c.talents.push({...t,famille:'Espèces',espece:'dhampire',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
   c.semisForge.push('espece-dhampire')}
+ /* v0.897 — Les Talents d'Espèce du Fielsang, posés une fois dans le groupe Espèces. */
+ if(!c.semisForge.includes('espece-fielsang')&&Array.isArray(c.talents)){
+  [{id:'talent-fielsang-gageur',name:'Gageur',type:'act',effet:'gageur',params:{},effects:'Au contact d’un adversaire, vous prélevez un Gage et lui infligez 1 dé noir de dégâts. Vos dégâts contre ce type d’adversaire augmentent désormais de votre Niveau, et ces adversaires sont toujours visibles et en ligne de vue pour vous dans un rayon de 10 m, malgré les murs, les blocages, l’obscurité ou les tokens adverses. Un gage persiste jusqu’à votre prochain repos long.'},
+   {id:'talent-fielsang-deguisement',name:'Déguisement',type:'act',effet:'deguisement',params:{},effects:'Vous changez d’apparence, parmi votre collection de déguisements, et de taille, de Petit à Moyen ou de Moyen à Petit, jusqu’à votre prochain repos court. Vous pouvez aussi y renoncer à tout moment.'},
+   {id:'talent-fielsang-mimetisme',name:'Mimétisme',type:'act',effet:'mimetisme',params:{},effects:'Action bonus : vous copiez l’apparence d’un token visible. Elle s’ajoute à votre collection de déguisements, pour le talent Déguisement.'},
+   {id:'talent-fielsang-malefice',name:'Maléfice',type:'act',effet:'malefice',params:{},effects:'Action bonus : vous désignez un adversaire visible et subissez 1 dé noir de dégâts. Tous les alliés lui infligent +1d6 dégâts jusqu’à la fin du round. Ces dégâts ne comptent pas dans le jet pour les échecs ou les critiques.'},
+   {id:'talent-fielsang-vision',name:'Vision dans le noir',type:'pass',effet:'visionnoir',params:{portee:18},effects:'Vous voyez dans le noir jusqu’à 18 m.'}]
+   .forEach(t=>{if(!c.talents.some(x=>x&&x.id===t.id))c.talents.push({...t,famille:'Espèces',espece:'fielsang',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  c.semisForge.push('espece-fielsang')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
@@ -1914,7 +1923,7 @@ function reposLong(){if(view!=='mj')return;const troupe=actors.filter(a=>a&&a.he
  const revenus=[];
  troupe.forEach(a=>{if(estMort(a))return;   // Un mort ne se repose plus : seul le MJ le ressuscite.
   if(Number.isFinite(Number(a.vieMax)))a.vie=Number(a.vieMax);if(typeof recalculerPV==='function')recalculerPV(a);
-  setState(a,'Coma',false);a.hp=a.max;a.comaVie=false;a.reposCourts=0;a.reposPris=false;reposer(a,'long');if(typeof leveEtats==='function')leveEtats(a);
+  setState(a,'Coma',false);a.hp=a.max;a.comaVie=false;a.reposCourts=0;a.reposPris=false;reposer(a,'long');delete a.gages;if(typeof leveDeguisement==='function')leveDeguisement(a,true);if(typeof leveEtats==='function')leveEtats(a);
   if(a.horsCarte&&!a.retire){a.horsCarte=false;revenus.push(a)}});
  // Qui revient se pose dans la zone de départ de la carte ouverte.
  const m=typeof currentMap==='function'?currentMap():null;
@@ -1922,6 +1931,12 @@ function reposLong(){if(view!=='mj')return;const troupe=actors.filter(a=>a&&a.he
  log('🌙 Repos long : '+troupe.map(a=>a.name).join(', ')+' retrouvent VIE, PV, repos courts et charges.'
   +(revenus.length?' '+revenus.map(a=>a.name).join(', ')+(revenus.length>1?' reviennent':' revient')+' sur la carte.':''),{ton:'soin'});
  renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
+/* v0.897 — Les gages d'un Fielsang (Gageur), en petits tokens : l'image du modèle d'adversaire, sinon son initiale. */
+function gagesEl(a){const l=Array.isArray(a&&a.gages)?a.gages:[];if(!l.length)return null;
+ const d=document.createElement('div');d.className='detail-gages';
+ l.forEach(g=>{const s=document.createElement('span');s.className='detail-gage';const src=typeof imageApparence==='function'?imageApparence(g):'';
+  if(src){const im=document.createElement('img');im.src=src;im.alt='';im.draggable=false;s.append(im)}else s.textContent=String(g&&g.nom||'?').trim().charAt(0).toUpperCase()||'?';
+  d.append(s)});return d}
 function reposer(a,type='long'){
  // Un repos rend ce qu'un piège n'avait ôté que jusqu'au repos.
  if(a&&Array.isArray(a.malusPieges)){a.malusPieges=a.malusPieges.filter(b=>b&&b.duree!=='repos');if(!a.malusPieges.length)delete a.malusPieges}
@@ -4165,7 +4180,7 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
  // Les bonus d'une espèce en pastilles, comme ceux d'une classe ; sa capacité à part.
  /* v0.884 : première ligne, la Vitesse puis les caracs (Vie, PV, Endurance, Dégâts) ; seconde ligne, les compétences, par ordre alphabétique. */
  const bonusEspeceEl=e=>{const bonus=document.createElement('div');bonus.className='creation-bonus creation-bonus-espece';
-  if(Number(e.vitesse)>0)bonus.append(pastilleCarac('pm','Vitesse '+e.vitesse+' m'));
+  if(Number(e.vitesse)>0)bonus.append(pastilleCarac('pm','Vitesse '+(c.socle==='small'&&Number(e.vitessePetit)>0?e.vitessePetit:e.vitesse)+' m'));
   [['vie','Vie'],['pv','PV'],['endu','Endurance'],['dmg','Dégâts']].forEach(([cle,nom])=>{if(e[cle])bonus.append(pastilleCarac(cle,'+'+e[cle]+' '+nom))});
   const comps=COMPETENCES.map((n,i)=>[n,i]).filter(([n])=>e.comps[n]).sort((x,y)=>x[0].localeCompare(y[0],'fr'));
   if(comps.length){const saut=document.createElement('span');saut.className='creation-bonus-saut';bonus.append(saut)}
@@ -4212,6 +4227,10 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    if(sa){const s=document.createElement('select');s.add(new Option('—',''));COMPETENCES.forEach((n,i)=>s.add(new Option(n,String(i))));
     s.value=Number.isInteger(c.savoirAnterieur)?String(c.savoirAnterieur):'';s.onchange=()=>{c.savoirAnterieur=s.value===''?null:Number(s.value);majBoutons()};
     const l=document.createElement('label');l.className='creation-champ creation-savoir';const t2=document.createElement('span');t2.textContent=sa.name;l.append(t2,s);f.append(l)}
+   // v0.897 : une espèce de deux tailles (Fielsang) — Petit ou Moyen, choisie ici ; la Vitesse suit.
+   if(Number(e.vitessePetit)>0){const s=document.createElement('select');[['medium','Moyen'],['small','Petit']].forEach(([v,n])=>s.add(new Option(n,v)));
+    s.value=c.socle==='small'?'small':'medium';s.onchange=()=>{c.socle=s.value;renderCreation()};
+    const l=document.createElement('label');l.className='creation-champ creation-savoir';const t2=document.createElement('span');t2.textContent='Taille';l.append(t2,s);f.append(l)}
    if(tals.length){const r=document.createElement('div');r.className='creation-talents';
     tals.forEach(x=>{const q=talentRond(x);q.setAttribute('aria-label',nomEnClair(x.name));surveille(q,()=>bulleTalentSur(q,x,{points:false}));r.append(q)});f.append(r)}
    corps.append(f)}}
@@ -4285,7 +4304,7 @@ async function imagePourTable(url){if(typeof url!=='string'||!url.startsWith('da
    s'achève sur le récapitulatif. Sa fiche ne garde que les points de compétence : le 1 de base, la classe et l'espèce s'y ajoutent
    au jeu, comme pour tout aventurier. */
 function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;if(!peutCreerAventurier()){creationDialog.close();return}const e=especeCreation(c);
- const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:majusculeInitiale(c.name.trim()),sexe:c.sexe,...(especeAvecSavoir(c)&&Number.isInteger(c.savoirAnterieur)?{savoirAnterieur:c.savoirAnterieur}:{}),race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
+ const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:majusculeInitiale(c.name.trim()),sexe:c.sexe,...(especeAvecSavoir(c)&&Number.isInteger(c.savoirAnterieur)?{savoirAnterieur:c.savoirAnterieur}:{}),...(Number(e.vitessePetit)>0&&c.socle==='small'?{socle:'small'}:{}),race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
  // L'équipement de départ au sac ; l'objet inhabituel, tiré ici, une seule fois.
  const kit=kitCreation(c);kit.forEach(([o,n])=>{for(let k=0;k<n;k++)a.inventaire.push(o.id)});
  const tiree=tirePieceDepart(c.role);if(tiree){a.forges=[tiree];a.inventaire.push(tiree.id)}
@@ -5832,7 +5851,10 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   {const sp=document.createElement('span');nomAccolades(sp,tv.name);nom.append(sp);
    // Un nom long rapetisse plutôt que de passer à la ligne.
    const L=String(sp.textContent||'').length;if(L>11)nom.style.fontSize=(L>18?20:L>14?22:24)+'px'}
-  droite.append(corpsT);tete.append(rond,droite);tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474');tete.classList.add('t-'+talentType(t)[0]);panneau.append(tete);
+  droite.append(corpsT);
+  // v0.897 : Gageur — sous sa description, un petit token par gage prélevé.
+  if(a&&t.effet==='gageur'){const g=gagesEl(a);if(g)droite.append(g)}
+  tete.append(rond,droite);tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474');tete.classList.add('t-'+talentType(t)[0]);panneau.append(tete);
   const el=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]'),acquis=porte(t),verrou=!!el&&el.classList.contains('verrou');
   /* Le talent lui-même s'apprend d'un clic sur sa tête, et se rend d'un autre clic ; son prix à droite de son nom. Le talent
      de classe, tenu d'office, ne se rend pas. */

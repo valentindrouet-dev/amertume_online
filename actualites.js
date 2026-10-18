@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.897","d":"2026-10-18","t":"Fielsang : Gageur, Déguisement, Mimétisme, Maléfice"},
 {"v":"0.896","d":"2026-10-17","t":"Dhampire, Nature des adversaires, terrain difficile"},
 {"v":"0.895","d":"2026-10-17","t":"Talents de l'arbre d'espèce centrés"},
 {"v":"0.894","d":"2026-10-17","t":"Arbre d'espèce au design de l'arbre de classe"},

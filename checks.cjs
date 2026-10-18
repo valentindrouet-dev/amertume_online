@@ -1174,7 +1174,7 @@ assert.ok(feuille.includes('.talent-rangee.t-ame .cat-pill.gear-carre.talent-car
  assert.ok(page.includes("if(cachePour(o,j)&&(view!=='mj'||duCoteTroupe(a)))return false;")&&page.includes('function reach(){const a=actors[selected],j=a?ciblesDe(a)[0]:undefined;'),'un aventurier ne vise pas un adversaire caché');
  const orbeSrc=page.slice(page.indexOf('function orbe('),page.indexOf('function cibleAlliee('));
  assert.ok(!orbeSrc.includes('mauvaisSort(')&&!orbeSrc.includes('Mauvais Sort :')&&orbeSrc.includes("let suite='',pose='';"),'l’orbe est un talent : pas de Mauvais Sort');
- const frappeSrc=page.slice(page.indexOf('function frappe('),page.indexOf('function frappe(')+2000);
+ const frappeSrc=page.slice(page.indexOf('function frappe('),page.indexOf('function frappe(')+2400);
  assert.ok(frappeSrc.includes("porteEffet(talentsCodes(b),'mauvaissort')?mauvaisSort(dice,d6):null"),'Mauvais Sort reste sur les attaques');}
 /* Les boutons d'action écrivent en blanc, actifs, grisés ou inertes ; un talent sans dés ne porte
    plus sa nature ; un adversaire retiré laisse son XP aux aventuriers et les cibles ne glissent pas. */
@@ -1851,7 +1851,7 @@ assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function 
  &&src.includes("if(usageConsomme(usage))retirerInventaire(a,o);")&&src.includes('if(objetCode(o)){appliquerEffetObjet(a,o);return}')
  &&src.includes("a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};")
  &&page.includes('function desRecus(b,dice)')&&page.includes('const {gardes:dice,ecartes}=desRecus(b,tous);')
- &&page.includes('const suite=domDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
+ &&page.includes('const suite=domDit+malDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
  &&page.includes("a.immunites={etats:[],des:[]};if(typeof reposer==='function')reposer(a,'long');")&&src.includes('function reposer(a,type=')
  &&feuille.includes('.gear-detail .gear-effet{font-weight:600}'),'les effets d’équipement sont câblés');
 /* Les emplacements du corps : deux mains, un torse, un dos, une tête, trois anneaux, une
@@ -5192,6 +5192,14 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.897 — Le Fielsang : deux tailles, Gageur, Déguisement, Mimétisme, Maléfice. */
+{const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8'),mp=fs.readFileSync('maps.js','utf8');const f=C.ESPECES.find(e=>e.id==='fielsang');
+ assert.ok(f&&f.dmg===2&&f.vitesse===9&&f.vitessePetit===6&&f.comps.Mysticisme===1&&f.comps.Perception===1&&f.extension==='ravenloft','v0.897 espèce');
+ assert.equal(C.mouvementPropre({hero:true,espece:'fielsang'}),9);assert.equal(C.mouvementPropre({hero:true,espece:'fielsang',socle:'small'}),6);assert.equal(C.mouvementPropre({hero:true,espece:'humain',socle:'small'}),9);
+ assert.ok(C.TALENTS_CODES.mimetisme.gratuit&&C.TALENTS_CODES.malefice.gratuit&&!C.TALENTS_CODES.gageur.gratuit&&!C.TALENTS_CODES.deguisement.gratuit,'v0.897 coûts');
+ assert.ok(ix.includes('function gageur(a,p,talent)')&&ix.includes('function malefice(a,p,talent)')&&ix.includes('function mimetisme(a,p,talent)')&&ix.includes('function deguisement(a,p,talent)')&&ix.includes("let malDit='';if(!r.failed&&r.hit&&maleficeSur(a,b))")
+  &&ix.includes('bonus+=bonusGage(a,b);')&&ix.includes("reposer(a,'court');leveDeguisement(a,true);")&&ed.includes("c.semisForge.push('espece-fielsang')")&&ed.includes("reposer(a,'long');delete a.gages;")
+  &&ed.includes("if(a&&t.effet==='gageur'){const g=gagesEl(a);if(g)droite.append(g)}")&&lv.includes("'nature','gages','deguise','deguisements','malefice',")&&mp.includes('troupeVoitParGage(a)'),'v0.897');}
 /* v0.896 — Le Dhampire, la Nature des adversaires et le terrain difficile. */
 {const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8');const d=C.ESPECES.find(e=>e.id==='dhampire');assert.ok(d&&d.vie===1&&d.dmg===1&&d.vitesse===10&&d.comps.Agilité===1&&d.comps.Robustesse===1&&d.extension==='ravenloft','v0.896 espèce');assert.equal(C.mouvementPropre({hero:true,espece:'dhampire'}),10);const m={};C.ajouteDifficile(m,[[0,0],[10,0],[10,10]]);assert.equal(C.difficileDe(m).length,1);assert.ok(ix.includes('function natureDe(o)')&&ix.includes('function morsure(a,p,talent)')&&ix.includes('function surcoutDifficile(pts)')&&ix.includes("porteEffet(talentsCodes(a),'pattesaraignee'))r.sansDifficile=true")&&ed.includes("c.semisForge.push('espece-dhampire')")&&mp.includes('function renderDifficiles()'),'v0.896');}
 /* v0.895 — L'arbre d'espèce, talents resserrés et centrés. */

@@ -2914,3 +2914,5 @@ function pingCarte(x,y,mj){if(!Number.isFinite(x)||!Number.isFinite(y))return;co
  el.innerHTML='<i></i><i></i><i></i><b></b>';$('map-view').append(el);setTimeout(()=>el.remove(),2600)}
 $('map').addEventListener('pointerdown',e=>{if(!e.altKey||e.button!==0||e.target.closest('.token')||!currentMap())return;
  e.preventDefault();e.stopImmediatePropagation();const p=mapPct(e),mj=view==='mj';pingCarte(p.x,p.y,mj);if(typeof diffuserPing==='function')diffuserPing(p.x,p.y,mj)},true);
+// v0.897 : Gageur — un adversaire dont un Fielsang tient le gage, à 10 m de lui, se voit toujours.
+{const ps=partySees,tv=troupeVoit;partySees=function(a){return ps(a)||(typeof troupeVoitParGage==='function'&&troupeVoitParGage(a))};troupeVoit=function(a){return tv(a)||(typeof troupeVoitParGage==='function'&&troupeVoitParGage(a))}}
