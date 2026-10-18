@@ -2397,7 +2397,7 @@ function enElementDuMystique(html,etat){if(!etat)return html;
    le gras. Le texte se découpe autour d'eux, sans jamais passer par du HTML. */
 // v0.859 : le rouge de l'Incident, partout où le mot paraît dans les talents.
 const TEINTE_INCIDENT='#b03a48';
-const TEINTE_ETAT_MOT={'Gardé':'#3d8b2f',Furie:'#c0392b',Rage:'#e8501c',Feu:'#c2503a',Gel:'#2f8fae',Foudre:'#3a6fc2',Poison:'#9b4fc0','Saignée':'#b8352f',Onde:'#3577b8',Invisible:'#6a5fb0',Faille:'#a0408f'};
+const TEINTE_ETAT_MOT={'Corruption':'#6b3a8a','Gardé':'#3d8b2f',Furie:'#c0392b',Rage:'#e8501c',Feu:'#c2503a',Gel:'#2f8fae',Foudre:'#3a6fc2',Poison:'#9b4fc0','Saignée':'#b8352f',Onde:'#3577b8',Invisible:'#6a5fb0',Faille:'#a0408f'};
 /* La couleur d'un mot clé du MJ : « Allié : vert », « Allié = #2f8a63 », ou rien — la
    couleur du thème. Un mot du jeu redéclaré prend la couleur qu'on lui donne. */
 const COULEURS_MOTS={rouge:'#b8352f',orange:'#c2692a',or:'#9d7b1e',jaune:'#b39222',vert:'#2f7a4b',turquoise:'#2c8c85',bleu:'#3a6fc2',violet:'#7a5cb8',rose:'#b04a8a',plasma:'#c23fbe',brun:'#8a5a2b',gris:'#6e6a66',noir:'#2a2622'};

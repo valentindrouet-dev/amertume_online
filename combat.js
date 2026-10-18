@@ -422,7 +422,8 @@ function mouvementPropre(a){const v=a&&!a.hero&&a.mouvement!=null&&a.mouvement!=
  const e=a&&a.hero&&typeof especeDe==='function'?especeDe(a.espece):null;if(e&&a.socle==='small'&&Number(e.vitessePetit)>0)return Number(e.vitessePetit);
  // v0.902 : Forme de Géant (Goliath), +3 m.
  return (e&&Number(e.vitesse)>0?Number(e.vitesse):DISTANCE_MOUVEMENT)+(a&&a.formeGeant?3:0)}
-function distanceMouvement(a,items){return mouvementPropre(a)+objetsQuiComptent(a,items,o=>bonusMouvementDe(o)>0).reduce((s,o)=>s+bonusMouvementDe(o),0)}
+// v0.904 : chaque point de Gel retire 1 m au mouvement propre ; les bonus d'objets restent entiers.
+function distanceMouvement(a,items){return Math.max(0,mouvementPropre(a)-compteEtat(a,'Gel'))+objetsQuiComptent(a,items,o=>bonusMouvementDe(o)>0).reduce((s,o)=>s+bonusMouvementDe(o),0)}
 function lumierePortee(a,items){return objetsLumineux(a,items).reduce((m,o)=>Math.max(m,lumiereDe(o)),0)}
 /* Un coffre : un rectangle, comme une porte. Son nom et sa description ; caché (« cache »), un test de
    Perception de tant de réussites le révèle ; verrouillé (« verrou » : réussites de Ruse ou de Technique,
@@ -1001,7 +1002,8 @@ function blinded(a){return hasState(a,'Aveugle')}
    déjà enregistrées le portent, et tout ce qui s'appuie dessus continue de le lire. Les
    trois autres logent ensemble dans « cumuls ». */
 // La Rage du Destructeur (v0.783) s'empile comme la Furie : chaque cran, +1 aux dégâts.
-const ETATS_CUMULES=['Saignée','Feu','Foudre','Poison','Furie','Rage'];
+// v0.904 : le Gel se cumule ; la Corruption aussi.
+const ETATS_CUMULES=['Saignée','Feu','Foudre','Poison','Furie','Rage','Gel','Corruption'];
 function cumulable(etat){return ETATS_CUMULES.includes(etat)}
 function compteEtat(a,etat){if(!hasState(a,etat))return 0;
  if(!cumulable(etat))return 1;
@@ -1048,7 +1050,7 @@ function effetParNom(nom){const k=cleTalent(nom);if(!k)return '';
 // Les huit compétences, dans l'ordre des fiches : la table les nomme depuis le moteur.
 const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ruse','Savoir','Technique'];
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Furie','Gel',
- 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose'];
+ 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose','Corruption'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
 // Les réglages de Dominateur, bornés : l'état visé, x, et les dés de xdx.
 function dominateurDe(p){const n=(v,a,b,d)=>Math.max(a,Math.min(b,Math.trunc(Number(v))||d));

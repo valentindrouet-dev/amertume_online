@@ -3244,3 +3244,7 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 :is(.lifebar,#pv-layer .pv) .pv-armure{background:linear-gradient(90deg,#4fd8ff,#b8f2ff 50%,#4fd8ff);background-size:200% 100%;box-shadow:0 0 6px #4fd8ff,inset 0 1px 0 color-mix(in srgb,#fff 70%,transparent);animation:pv-brille 1.8s linear infinite}
 @keyframes pv-brille{from{background-position:200% 0}to{background-position:0 0}}
 .lifebar>.lifebar-text{z-index:1}
+/* v0.904 — Sous Gel, les points de Mouvement au bleu du Gel. */
+#barre-mouvement.gele{border-color:#8fd3f7}
+#barre-mouvement.gele i:not(.pris)::before{background:#8fd3f7;box-shadow:inset 0 -2px 0 color-mix(in srgb,#000 18%,transparent),0 0 0 1px #2f8fae}
+.pastilles .mvt.gele{background:#8fd3f7}

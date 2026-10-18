@@ -108,6 +108,7 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 | Onde | `#3577b8` | gras |
 | Invisible | `#6a5fb0` | gras |
 | Faille | `#a0408f` | gras |
+| Corruption | `#6b3a8a` | gras |
 | Furie / Rage | `#c0392b` / `#e8501c` | gras |
 | Autres états | `#a2691f` | gras |
 | PV | `rgb(47,122,91)` | gras |
@@ -175,6 +176,8 @@ Le texte d'un bouton est un **verbe court**, à l'infinitif ou à l'impératif, 
 | Radiance | `.pv-radiance` | or brillant `#f2c14e`, reflet `#fff3c4` |
 | Nécrose | `.pv-necrose` | hachures `#3b2440` et `#5a3a63` |
 | Armure | `.pv-armure` | bleu électrique `#4fd8ff`, reflet `#b8f2ff` |
+
+**Mouvement gelé** (`.gele`) : sous Gel, les points de Mouvement prennent le bleu du Gel `#8fd3f7`, cerclé de `#2f8fae`.
 
 ---
 

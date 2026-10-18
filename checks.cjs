@@ -418,9 +418,10 @@ for(const o of [{x:22.7,y:74.3},{x:50.5,y:47.3}]){const vision=visionPolygon(o,F
   assert.ok(infligeEtat(cible,e));assert.equal(compteEtat(cible,e),1,e);
   assert.ok(infligeEtat(cible,e));assert.equal(compteEtat(cible,e),2,e)}
  assert.equal(bleedOf(cible),2);                           // L'ancien compte lit le nouveau.
- assert.ok(infligeEtat(cible,'Gel'));assert.equal(compteEtat(cible,'Gel'),1);
- assert.ok(!infligeEtat(cible,'Gel'));                     // Deux fois le même : rien de neuf.
- assert.equal(compteEtat(cible,'Gel'),1);
+ // v0.904 : le Gel se cumule désormais ; un état simple posé deux fois n'apporte rien de neuf.
+ assert.ok(infligeEtat(cible,'Aveugle'));assert.equal(compteEtat(cible,'Aveugle'),1);
+ assert.ok(!infligeEtat(cible,'Aveugle'));                 // Deux fois le même : rien de neuf.
+ assert.equal(compteEtat(cible,'Aveugle'),1);
  // Un état levé ne revient pas chargé de ses crans.
  setState(cible,'Feu',false);assert.equal(compteEtat(cible,'Feu'),0);
  assert.ok(infligeEtat(cible,'Feu'));assert.equal(compteEtat(cible,'Feu'),1);
@@ -1851,7 +1852,7 @@ assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function 
  &&src.includes("if(usageConsomme(usage))retirerInventaire(a,o);")&&src.includes('if(objetCode(o)){appliquerEffetObjet(a,o);return}')
  &&src.includes("a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};")
  &&page.includes('function desRecus(b,dice)')&&page.includes('const {gardes:dice,ecartes}=desRecus(b,tous);')
- &&page.includes('const suite=domDit+malDit+rocDit+armureDit+necDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
+ &&page.includes('const suite=domDit+malDit+corDit+rocDit+armureDit+necDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
  &&page.includes("a.immunites={etats:[],des:[]};if(typeof reposer==='function')reposer(a,'long');")&&src.includes('function reposer(a,type=')
  &&feuille.includes('.gear-detail .gear-effet{font-weight:600}'),'les effets d’équipement sont câblés');
 /* Les emplacements du corps : deux mains, un torse, un dos, une tête, trois anneaux, une
@@ -2912,7 +2913,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.deepEqual(C.etatOrbeAuPalier(O(undefined)),{etat:'Feu',six:true,crans:1},'palier 1 : l’état sur 6+');
  assert.deepEqual(C.etatOrbeAuPalier(O(2)),{etat:'Feu',six:false,crans:1},'palier 2 : à chaque touche');
  assert.deepEqual(C.etatOrbeAuPalier(O(3)),{etat:'Feu',six:false,crans:2},'palier 3 : deux crans');
- assert.equal(C.etatOrbeAuPalier(O(3,'Gel')).crans,1,'le Gel ne s’empile pas : un cran');
+ assert.equal(C.etatOrbeAuPalier(O(3,'Gel')).crans,2,'v0.904 : le Gel s’empile : deux crans');
  assert.equal(C.etatOrbeAuPalier(O(1,'Feu',{six:0,touche:2,deux:3})),null,'réorganisé : rien au palier 1');
  assert.deepEqual([1,2,3].map(n=>C.ditEtatOrbe(C.etatOrbeAuPalier(O(n)))),['Feu sur 6+','Feu à la touche','Feu 2 à la touche']);
  assert.ok(page.includes("const k=pouvoir?crans(pouvoir.six?orbesAvecSix():pouvoir.blesse?orbesTouchant():n):0;")
@@ -3007,7 +3008,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
 /* v0.514 — Au sol : le token est verrouillé, MJ compris, jusqu'à ce que le combattant se relève (un Mouvement) ;
    le bouton Se relever porte l'icône de l'état. */
 {const page=fs.readFileSync('index.html','utf8');
- assert.ok(page.includes(" return controlled(i)&&(view===\"mj\"&&tenu||!hasState(actors[i],'Au sol'))&&(view===\"mj\"||(!tenu&&!tokensLocked&&!hasState(actors[i],'Gel')))&&!gelDebut(actors[i])}")
+ assert.ok(page.includes(" return controlled(i)&&(view===\"mj\"&&tenu||!hasState(actors[i],'Au sol'))&&(view===\"mj\"||(!tenu&&!tokensLocked&&!gelImmobile(actors[i])))&&!gelDebut(actors[i])}")
   &&page.includes("const ic=imageEtat('Au sol');if(ic&&ic.tagName==='IMG')ic.className='logo-equip';")
   &&page.includes("geste('Se relever',ic||'⤴','Remet le combattant debout.',!enCombat()||pointsRestants(a,'mouvement')>0,()=>{"),'Au sol verrouille le token ; Se relever à son icône');}
 /* v0.309 — Une tuile de talent n'écrit plus sa nature sous son logo. */
@@ -4123,7 +4124,7 @@ assert.ok(page.includes("if(tokenDistance(a,o,size)<=contactRadius(tokenOf(o)))e
    Changer d'armes, le verrou des armes en combat, le glisser d'une fiche à l'autre, Enjamber au-dessus du piège, le bruit coupé. */
 {const src=fs.readFileSync('editor.js','utf8'),carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
  assert.ok(page.includes('<div id="barre-mouvement" hidden aria-hidden="true"></div>')&&page.includes("function traceMouvement(a,r){if(a&&r&&r.combat&&r.tk&&!r.ajustement){const u=r.long/r.tk,b0=r.bonus0||0;barreMouvement(a,(r.metres-b0)-Math.max(0,u-b0),Math.max(0,b0-u))}else majBarreMouvement();")
-  &&page.includes("[...el.children].forEach((p,n)=>p.classList.toggle('pris',n>=plein));el.hidden=false;placeBarreMouvement()}"),'la barre de mouvement, un point par mètre');
+  &&page.includes("[...el.children].forEach((p,n)=>p.classList.toggle('pris',n>=plein));el.classList.toggle('gele',hasState(a,'Gel'));el.hidden=false;placeBarreMouvement()}"),'la barre de mouvement, un point par mètre');
  assert.ok(page.includes("function arretAuContact(a,de){")&&page.includes("if(arretContact){t.onpointerup(e);return}")&&!page.includes("const h=arretAuContact("),'entrer au contact d’un adversaire arrête le geste');
  assert.ok(page.includes("function gelDebut(a){if(!enCombat()||!a)return false;")&&page.includes("&&!gelDebut(actors[i])}")&&page.includes("ferme=debut&&!ouvertureCombat(a),gele=!debut&&gelDebut(a);")
   &&page.includes("debout().forEach(o=>{o.debutTour=round});")&&vif.includes("'alignementJeu','debutTour','enAventure'];"),'le début de combat et le début de tour gèlent les autres');
@@ -4220,7 +4221,7 @@ assert.ok(page.includes("const elem=(activeAttack(a).etats||[]).find(e=>['Feu','
 {const carto=fs.readFileSync('maps.js','utf8'),vif=fs.readFileSync('live.js','utf8');
  assert.ok(carto.includes("function tenuParPiege(o){if(!o||!o.tenuPar)return null;")&&carto.includes("o.x=c.x;o.y=c.y;if(p.actif||p.enjambement)o.tenuPar=p.id}")
   &&carto.includes("p.id])].slice(-60);delete a.tenuPar}")&&vif.includes("'etatsPieges','tenuPar','entendu','discret','crie','ecoutes','connu','analysesFaites','debutTour','avantPiege'];"),'tenu par le piège, libéré par l’enjambement');
- assert.ok(page.includes(" return controlled(i)&&(view===\"mj\"&&tenu||!hasState(actors[i],'Au sol'))&&(view===\"mj\"||(!tenu&&!tokensLocked&&!hasState(actors[i],'Gel')))&&!gelDebut(actors[i])}")
+ assert.ok(page.includes(" return controlled(i)&&(view===\"mj\"&&tenu||!hasState(actors[i],'Au sol'))&&(view===\"mj\"||(!tenu&&!tokensLocked&&!gelImmobile(actors[i])))&&!gelDebut(actors[i])}")
   &&page.includes("const libere=view==='mj'&&typeof tenuParPiege==='function'&&!!tenuParPiege(a);")&&page.includes("   else if(!libere)lot.forEach(k=>{const o=actors[k];if(o)depensePoint(o,'mouvement')});")
   &&page.includes("   if(libere&&typeof tenuParPiege==='function')tenuParPiege(a);"),'le MJ l’en sort toujours');}
 /* v0.620 — Un clic sur un piège lui parvient enfin : la carte ne capture plus le geste. Un joueur au contact d'un piège qu'il
@@ -5189,9 +5190,16 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  const a={states:[]};assert.ok(C.cumulable('Furie')&&C.ETATS_JEU.includes('Furie'),'empilable, et posable par un effet');
  C.infligeEtat(a,'Furie');C.infligeEtat(a,'Furie');C.infligeEtat(a,'Furie');assert.equal(C.compteEtat(a,'Furie'),3,'trois crans');
  const b={states:['Onde']};assert.ok(C.infligeEtat(b,'Furie')===true&&C.hasState(b,'Onde'),'l’Onde ne l’absorbe pas');
- assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴'};")
-  &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
+ assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
+  &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.904 — Corruption cumulable (+X aux coups portés et reçus) ; Gel cumulable (−1 m par point, sans les bonus) ; Feu et Gel s'annulent. */
+{const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(C.cumulable('Gel')&&C.cumulable('Corruption')&&C.ETATS_JEU.includes('Corruption'),'v0.904 tables');
+ const g={hero:true,espece:'humain',states:['Gel'],cumuls:{Gel:4}};assert.equal(C.distanceMouvement(g,[]),C.mouvementPropre(g)-4);
+ g.cumuls.Gel=40;assert.equal(C.distanceMouvement(g,[]),0);
+ assert.ok(ix.includes("let corDit='';if(!r.failed&&r.hit){const k=compteEtat(a,'Corruption')+compteEtat(b,'Corruption');")&&ix.includes("function gelImmobile(a)")
+  &&ix.includes("const contraire=etat==='Feu'?'Gel':etat==='Gel'?'Feu':'';")&&ix.includes(" if(false)geste('Dégel','❄',")&&css.includes('.pastilles .mvt.gele{'),'v0.904');}
 /* v0.903 — Les affixes de Nécrose, nécrotique, de Radiance et d'Armure (fixe, selon la rareté, ou en d6). */
 {const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  ['necrose','necrotique','radiance','armure'].forEach(k=>assert.ok(C.EFFETS_AFFIXE.some(([e])=>e===k),k));
