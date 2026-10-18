@@ -1991,7 +1991,7 @@ function gagesEl(a,champ='gages'){const l=Array.isArray(a&&a[champ])?a[champ]:[]
   const s=document.createElement('span');s.className='rond-bonus';const src=typeof imageApparence==='function'?imageApparence(g):'';
   if(src){const im=document.createElement('img');im.src=src;im.alt='';im.draggable=false;s.append(im)}else{const t=document.createElement('b');t.textContent=String(g&&g.nom||'?').trim().charAt(0).toUpperCase()||'?';s.append(t)}
   if(g&&g.n>0){const n=document.createElement('b');n.className='detail-gage-n';n.textContent=String(g.n);s.append(n)}c.append(s);
-  surveille(c,()=>{const b=document.createElement('div');b.className='talent-detail large';const p=document.createElement('p');p.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=String(g&&g.nom||'?');p.append(n);b.append(p);ouvrirBulle(c,b,'bulle-talent')});
+  surveille(c,()=>{const b=document.createElement('div');b.className='talent-detail large bulle-teintee';b.style.setProperty('--teinte',champ==='rancunes'?'#d2500a':'#c99a3c');const p=document.createElement('p');p.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=String(g&&g.nom||'?');p.append(n);b.append(p);ouvrirBulle(c,b,'bulle-talent')});
   d.append(c)});return d}
 function reposer(a,type='long'){
  // Un repos rend ce qu'un piège n'avait ôté que jusqu'au repos.
@@ -5663,7 +5663,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
     c.className='arbres-bonus-n';boite.className='bonus-ico';if(ic)boite.append(remplitCase(ic));
     const tint=e.p.carac==='comp'?SKILL_TINTS[Math.max(0,Math.min(7,Number(e.p.comp)||0))]:e.p.carac==='orbe'?'138,99,201':STAT_TINTS[e.p.carac];if(tint)c.style.color='rgb('+tint+')';
     c.append(boite,String(e.n));c.setAttribute('aria-label',e.n+' '+nom);
-    surveille(c,()=>{const d=document.createElement('div'),t=document.createElement('p'),b=document.createElement('b');d.className='talent-detail large';t.className='talent-bulle-nom';b.textContent=nom;t.append(b);d.append(t);ouvrirBulle(c,d,'bulle-talent')});
+    surveille(c,()=>{const d=document.createElement('div'),t=document.createElement('p'),b=document.createElement('b');d.className='talent-detail large bulle-teintee';d.style.setProperty('--teinte',tint?'rgb('+tint+')':'#8a8474');t.className='talent-bulle-nom';b.textContent=nom;t.append(b);d.append(t);ouvrirBulle(c,d,'bulle-talent')});
     ligne.append(c)})});arbresTotal.append(l)}}
  // En masse, l'arbre se lit en tableau : ni colonnes ni lignes.
  if(arbresEnMasse&&!a&&view==='mj'){tableMasseTalents(corps,classe);return}

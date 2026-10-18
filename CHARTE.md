@@ -86,6 +86,8 @@ Les chiffres, `xdy` et `%` d'un texte de jeu sont en **gras** (section 4).
 
 ![Bulle d'Extension](img/charte/bulle-extension.webp)
 
+**Toujours un fond.** Toute bulle a le fond pâle de sa teinte et son liseré : un talent par sa classe `t-…`, un objet par sa rareté, tout le reste par `.bulle-teintee` et sa `--teinte` (ou une classe dédiée comme `bulle-extension`). Un `.talent-detail` sans teinte ne s'ouvre jamais.
+
 **Interdit** : une bulle en simple texte, un fond blanc ou gris sans liseré, un `title=` du navigateur à la place d'une bulle.
 
 ---
@@ -259,6 +261,7 @@ Une information qui se voit déjà (une recharge animée, un état affiché) **n
 `checks.cjs` vérifie à chaque publication, et la publication échoue en cas d'écart :
 - **Infobulles** : chaque `ouvrirBulle(…)` utilise une classe de bulle déjà connue (`bulle-talent`, `bulle-calcul`, `bulle-comp`, `bulle-gear`, `bulle-modele`, `bulle-test`, `bulle-detail-degats`, `bulle-fouilleur`, `bulle-joueurs`), et aucune nouvelle bulle n'est ouverte sans classe. Une nouvelle classe de bulle ne s'ajoute qu'avec l'accord de Valentin, dans cette charte puis dans le contrôle.
 - **Couleurs** : dans `editor.css`, sous le repère « Charte graphique », toute couleur écrite en dur (`#…`) figure dans cette charte.
+- **Fond des bulles** : aucun `className='talent-detail large'` nu ; une bulle porte toujours sa teinte (`t-…`, `bulle-teintee`, ou une classe de bulle dédiée).
 - **Charte présente** : `CHARTE.md` et ses captures `img/charte/` existent.
 
 Les autres règles (texte non demandé, `texteEnrichi()` pour les textes de jeu, français du site) se relisent à la main avant chaque publication.

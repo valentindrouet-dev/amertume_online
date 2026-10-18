@@ -5193,6 +5193,9 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.907 — Fond des bulles (charte § 3 et § 13) : jamais de talent-detail nu. */
+{for(const f of ['editor.js','index.html','maps.js','live.js','planches.js']){const src=fs.readFileSync(f,'utf8');assert.ok(!/className\s*=\s*'talent-detail large'/.test(src),'charte § 13 : bulle sans fond dans '+f)}
+ assert.ok(fs.readFileSync('editor.css','utf8').includes('.talent-detail.bulle-teintee{background:color-mix(in srgb,var(--teinte) 14%,#fbf3e2)')&&fs.readFileSync('CHARTE.md','utf8').includes('**Fond des bulles**'),'v0.907');}
 /* v0.906 — Gages et rancunes sous le bloc du talent, en ronds de bonus, le nom au survol. */
 {const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("d.className='detail-bonus-grille detail-gages'")&&ed.includes("n.textContent=String(g&&g.nom||'?');p.append(n);b.append(p);ouvrirBulle(c,b,'bulle-talent')"),'v0.906');}
 /* v0.905 — Gageur prélève aussi l'apparence ; Mimétisme retiré du catalogue et des aventuriers. */
