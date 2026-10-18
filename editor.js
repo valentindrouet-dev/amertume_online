@@ -278,6 +278,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    {id:'talent-dhampire-vision',name:'Vision dans le noir',type:'pass',effet:'visionnoir',params:{portee:18},effects:'Vous voyez dans le noir jusqu’à 18 m.'}]
    .forEach(t=>{if(!c.talents.some(x=>x&&x.id===t.id))c.talents.push({...t,famille:'Espèces',espece:'dhampire',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
   c.semisForge.push('espece-dhampire')}
+ /* v0.899 — Les Talents d'Espèce du Nain, posés une fois dans le groupe Espèces. */
+ if(!c.semisForge.includes('espece-nain')&&Array.isArray(c.talents)){
+  [{id:'talent-nain-vision',name:'Vision des profondeurs',type:'pass',effet:'visionprofondeurs',params:{portee:18},effects:'Vision dans le noir à 18 m. En outre, vous obtenez automatiquement +1 réussite aux tests de détection des passages secrets ou des secrets cachés dans la pierre.'},
+   {id:'talent-nain-ventre',name:'Ventre de Pierre',type:'pass',effet:'ventrepierre',params:{},effects:'Invulnérable au Poison, et toutes les potions de soin vous soignent de +1 dé vert automatiquement.'},
+   {id:'talent-nain-ancre',name:'Ancré dans le Sol',type:'reac',effet:'ancresol',params:{},effects:'Quand un talent ou une attaque adverse devrait vous repousser ou vous mettre Au sol, vous pouvez ignorer cet effet.'},
+   {id:'talent-nain-rancune',name:'Rancune',type:'pass',effet:'rancune',params:{},effects:'Vous augmentez définitivement votre bonus de dégâts de 1 contre les adversaires identiques à celui qui vous inflige une attaque critique (cumulable).'}]
+   .forEach(t=>{if(!c.talents.some(x=>x&&x.id===t.id))c.talents.push({...t,famille:'Espèces',espece:'nain',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  c.semisForge.push('espece-nain')}
  /* v0.897 — Les Talents d'Espèce du Fielsang, posés une fois dans le groupe Espèces. */
  if(!c.semisForge.includes('espece-fielsang')&&Array.isArray(c.talents)){
   [{id:'talent-fielsang-gageur',name:'Gageur',type:'act',effet:'gageur',params:{},effects:'Au contact d’un adversaire, vous prélevez un Gage et lui infligez 1 dé noir de dégâts. Vos dégâts contre ce type d’adversaire augmentent désormais de votre Niveau, et ces adversaires sont toujours visibles et en ligne de vue pour vous dans un rayon de 10 m, malgré les murs, les blocages, l’obscurité ou les tokens adverses. Un gage persiste jusqu’à votre prochain repos long.'},
@@ -1955,10 +1963,11 @@ function reposLong(){if(view!=='mj')return;const troupe=actors.filter(a=>a&&a.he
   +(revenus.length?' '+revenus.map(a=>a.name).join(', ')+(revenus.length>1?' reviennent':' revient')+' sur la carte.':''),{ton:'soin'});
  renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 /* v0.897 — Les gages d'un Fielsang (Gageur), en petits tokens : l'image du modèle d'adversaire, sinon son initiale. */
-function gagesEl(a){const l=Array.isArray(a&&a.gages)?a.gages:[];if(!l.length)return null;
+function gagesEl(a,champ='gages'){const l=Array.isArray(a&&a[champ])?a[champ]:[];if(!l.length)return null;
  const d=document.createElement('div');d.className='detail-gages';
  l.forEach(g=>{const s=document.createElement('span');s.className='detail-gage';const src=typeof imageApparence==='function'?imageApparence(g):'';
   if(src){const im=document.createElement('img');im.src=src;im.alt='';im.draggable=false;s.append(im)}else s.textContent=String(g&&g.nom||'?').trim().charAt(0).toUpperCase()||'?';
+  if(g&&g.n>0){const n=document.createElement('b');n.className='detail-gage-n';n.textContent=String(g.n);s.append(n)}
   d.append(s)});return d}
 function reposer(a,type='long'){
  // Un repos rend ce qu'un piège n'avait ôté que jusqu'au repos.
@@ -1975,7 +1984,10 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
  const p=paramsObjet(o),usage=usageObjet(o);let dit='';
  if(code.cle==='soin'){
   if(a.hp>=a.max){log(nomNum(a)+' est déjà au complet : '+o.name+' reste en réserve.',{local:true});return}
-  const {total,jets}=montantRegeneration(a,p,d6),gagne=applyHeal(a,total);
+  let {total,jets}=montantRegeneration(a,p,d6);
+  // v0.899 : Ventre de Pierre (Nain) — une potion de soin rend aussi 1 dé vert.
+  if(porteEffet(talentsCodes(a),'ventrepierre')&&cleNomObjet(o.name).includes('potion')){const v=d6();jets=[...jets,v];total+=v}
+  const gagne=applyHeal(a,total);
   if(jets.length&&typeof rollOnBoard==='function')rollOnBoard(jets.map(v=>[v,4]),a,a);
   if(typeof floatNumber==='function')floatNumber(a,'+'+gagne,'gain');
   dit='+'+gagne+' PV'+(jets.length?' ('+jets.join(' + ')+')':'')}
@@ -5240,7 +5252,9 @@ arbresEspeceBtn.onclick=()=>{arbresEspece=!arbresEspece;
  // v0.894 : la fenêtre garde la taille qu'elle a pour la classe.
  if(arbresEspece){const r=arbresDialog.getBoundingClientRect();arbresDialog.style.width=Math.round(r.width)+'px';arbresDialog.style.minHeight=Math.round(r.height)+'px'}
  else{arbresDialog.style.removeProperty('width');arbresDialog.style.removeProperty('min-height')}
- renderArbres()};
+ renderArbres();
+ // v0.899 : un arbre d'espèce plus large que celui de la classe élargit la fenêtre, plutôt que d'en cacher une part.
+ if(arbresEspece){const z=arbresDialog.querySelector('.arbres-v2-arbre');if(z&&z.scrollWidth>z.clientWidth+1)arbresDialog.style.width=Math.round(Math.min(innerWidth*.96,arbresDialog.getBoundingClientRect().width+z.scrollWidth-z.clientWidth+2))+'px'}};
 const talentsDEspece=a=>a&&a.hero&&especeDe(a.espece)?(catalog.talents||[]).filter(t=>t&&talentFamily(t)===FAMILLE_ESPECES&&t.espece===a.espece&&!estBonus(t)&&!estVide(t)):[];
 arbresReset.onclick=async()=>{const a=arbresActeur&&acteurCourant(arbresActeur);if(!a||(estMort(a)&&view!=='mj')||figeEnCombat(a))return;
  const classe=classeDuHeros(a),fl=classe?talentsFlottants(classe).map(t=>t.id):[];
@@ -5956,6 +5970,8 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
   droite.append(corpsT);
   // v0.897 : Gageur — sous sa description, un petit token par gage prélevé.
   if(a&&t.effet==='gageur'){const g=gagesEl(a);if(g)droite.append(g)}
+  // v0.899 : Rancune — un token par modèle d'adversaire, et sa valeur en pastille.
+  if(a&&t.effet==='rancune'){const g=gagesEl(a,'rancunes');if(g)droite.append(g)}
   tete.append(rond,droite);tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474');tete.classList.add('t-'+talentType(t)[0]);panneau.append(tete);
   const el=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]'),acquis=porte(t),verrou=!!el&&el.classList.contains('verrou');
   /* Le talent lui-même s'apprend d'un clic sur sa tête, et se rend d'un autre clic ; son prix à droite de son nom. Le talent

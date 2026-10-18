@@ -3533,7 +3533,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("function synchronisePV()
 /* v0.737 — La fouille révèle tout objet caché de sa zone ; l'œil fermé des coffres cachés ; le paysage jamais zoomé dans l'éditeur ;
    une quantité négative retire, « Tout retirer » vide la ligne, pour l'or comme pour les ressources du domaine. */
 {const mp=fs.readFileSync('maps.js','utf8'),ed=fs.readFileSync('editor.js','utf8'),dm=fs.readFileSync('domaine.js','utf8');
- assert.ok(mp.includes("(nouvelle||o.test.comp===comp)&&reussites>=o.test.reussites&&atteint(o)"));
+ assert.ok(mp.includes("(nouvelle||o.test.comp===comp)&&reussites+pierre(o)>=o.test.reussites&&atteint(o)"));
  assert.ok(mp.includes("o.className='coffre-oeil'")&&mp.includes("if(estPaysage(m)&&zoomC!==1){zoomC=1;panCX=panCY=0}"));
  assert.ok(ed.includes("const n=signe===0?-(a.richesses[k]||0):q<0?q:signe*q;if(!n)return;")&&ed.includes('min="-999999" max="999999"'));
  assert.ok(dm.includes("n=signe===0?-(r[k]||0):q<0?q:signe*q;if(!n)return;")&&dm.includes('id="dom-reserve-vider"'));}
@@ -5192,6 +5192,13 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.899 — Les Talents d'Espèce du Nain : Vision des profondeurs, Ventre de Pierre, Ancré dans le Sol, Rancune ; la pierre sur la carte. */
+{const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),lv=fs.readFileSync('live.js','utf8');
+ assert.equal(C.especeDe('nain').extension,'dnd');['visionprofondeurs','ventrepierre','ancresol','rancune'].forEach(k=>assert.ok(C.TALENTS_CODES[k]&&C.TALENTS_CODES[k].espece,k));
+ assert.equal(C.cleanObjet({nom:'x',pierre:true,test:{comp:3,reussites:2}}).pierre,true);{const m=C.cleanMap({coffres:[{x:1,y:1,w:5,h:5,cache:true,pierre:true}],doors:[{x:1,y:1,w:5,h:5,secret:true,pierre:true}]});assert.equal(m.coffres[0].pierre,true);assert.equal(m.doors[0].pierre,true)}
+ assert.ok(ix.includes("function ajouteRancune(b,a)")&&ix.includes("bonus+=bonusRancune(a,b);")&&ix.includes("function fenetreAncre(b,x,activer,laisser)")&&ix.includes("(etat==='Poison'&&porteEffet(talentsCodes(a),'ventrepierre'))")
+  &&ix.includes("x.code.cle==='visionnoir'||x.code.cle==='visionprofondeurs'")&&ed.includes("c.semisForge.push('espece-nain')")&&ed.includes("if(a&&t.effet==='rancune'){const g=gagesEl(a,'rancunes');")
+  &&ed.includes("porteEffet(talentsCodes(a),'ventrepierre')&&cleNomObjet(o.name).includes('potion')")&&mp.includes("reussites+pierre(d)>=")&&mp.includes("reussites+pierre(c)>=")&&lv.includes("'malefice','rancunes',"),'v0.899');}
 /* v0.898 — Réglages d'une classe ou d'une espèce et leur équipement de départ ; la forge de l'éditeur d'adversaire, pièce unique. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(ed.includes("const kitCreation=c=>[...fixesCreation(c),...groupesCreation(c).flatMap(g=>g.lots[(c.lots||{})[g.cle]]||[]),...OBJETS_DEPART]")
@@ -5227,7 +5234,7 @@ assert.ok(fs.existsSync('img/planches/ESPECES.webp')&&fs.readFileSync('planches.
 {const C=require('./combat.js'),h=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.equal(C.mouvementPropre({hero:true,espece:'ressuscite'}),7,'v0.889 : Vitesse 7');assert.ok(C.ETATS_JEU.includes('Sommeil'),'v0.889 : Sommeil');
  const a={states:[]};C.setState(a,'Sommeil',true);assert.deepEqual(a.states,['Sommeil','Au sol'],'v0.889 : endormi, Au sol');
- assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible')))")
+ assert.ok(h.includes('function enduranceInattendue(b,damage,hpAvant){')&&h.includes("if(etreinte&&avant<=0){a.poussiere=true;")&&h.includes("||((etat==='Poison'||etat==='Sommeil')&&porteEffet(talentsCodes(a),'immarcescible'))")
   &&h.includes("if(a.hero&&Number(a.savoirAnterieur)===i&&porteEffet(talentsCodes(a),'savoiranterieur'))jet.reussites+=1;")&&h.includes("geste('Se réveiller',")
   &&ed.includes("c.semisForge.push('espece-ressuscite')")&&ed.includes('const especeAvecSavoir=c=>'),'v0.889 : Ressuscité');}
 /* v0.888 — Charte graphique (CHARTE.md, § 13) : bulles connues, couleurs de la charte, charte présente ; boutons de suppression rouges,

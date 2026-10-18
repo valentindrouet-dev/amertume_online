@@ -3233,3 +3233,6 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 .depart-lot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border:1px dashed var(--line);border-radius:8px}
 .espece-separateur.cliquable{cursor:pointer}.espece-separateur.cliquable:hover{color:var(--ink)}
 #forge-adv-editor{width:min(820px,94vw)}#forge-adv-corps{max-height:76vh;overflow:auto}
+/* v0.899 — Rancune : la valeur, en pastille rouge orangé au coin bas droit du token. */
+.arbres-detail .detail-gage{position:relative;overflow:visible}.arbres-detail .detail-gage img{border-radius:50%}
+.arbres-detail .detail-gage-n{position:absolute;right:-5px;bottom:-5px;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:8px;display:grid;place-items:center;background:#d2500a;color:#fff;font:800 10px/1 system-ui}

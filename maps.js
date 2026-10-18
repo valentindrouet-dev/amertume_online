@@ -823,15 +823,17 @@ function objetsDecouverts(a,comp,reussites,nouvelle){const m=currentMap();if(!a|
  // La Perception ne cherche que dans la part neuve de la fouille ; une autre compétence, dans tout le contact.
  const murs=walls(),atteint=o=>nouvelle?!wallsBetween(a,o,murs)&&dansFouilleNeuve(o,nouvelle):objetAPortee(a,o);
  // Fouiller révèle tout objet caché de sa zone, quelle que soit la compétence de son test ; un autre test, ceux de sa compétence.
- const trouves=(m.objets||[]).filter(o=>!o.visible&&o.test&&(nouvelle||o.test.comp===comp)&&reussites>=o.test.reussites&&atteint(o));
+ // v0.899 : Vision des profondeurs (Nain) — +1 réussite contre ce qui est caché dans la pierre.
+ const pierre=x=>x&&x.pierre===true&&typeof porteEffet==='function'&&porteEffet(talentsCodes(a),'visionprofondeurs')?1:0;
+ const trouves=(m.objets||[]).filter(o=>!o.visible&&o.test&&(nouvelle||o.test.comp===comp)&&reussites+pierre(o)>=o.test.reussites&&atteint(o));
  trouves.forEach(o=>{o.visible=true;floatNumber({x:o.x,y:o.y,socle:o.taille},'Révélé !','nul')});
  /* La Perception trouve aussi les passages secrets et les coffres cachés que sa fouille neuve touche,
     avec assez de réussites : le passage devient une porte, le coffre paraît. */
  const noms=trouves.map(o=>o.nom);
  if(comp===PERCEPTION&&nouvelle){
-  (m.doors||[]).forEach(d=>{if(d.secret&&!d.open&&!d.decouvert&&reussites>=(Number(d.perception)||1)&&formeDansFouille(d,nouvelle)){
+  (m.doors||[]).forEach(d=>{if(d.secret&&!d.open&&!d.decouvert&&reussites+pierre(d)>=(Number(d.perception)||1)&&formeDansFouille(d,nouvelle)){
    d.decouvert=true;floatNumber(centreForme(d),'Révélé !','nul');noms.push('un passage secret')}});
-  (m.coffres||[]).forEach(c=>{if(c.cache&&!c.revele&&reussites>=(Number(c.perception)||1)&&formeDansFouille(c,nouvelle)){
+  (m.coffres||[]).forEach(c=>{if(c.cache&&!c.revele&&reussites+pierre(c)>=(Number(c.perception)||1)&&formeDansFouille(c,nouvelle)){
    c.revele=true;floatNumber(centreForme(c),'Révélé !','nul');noms.push(c.nom)}})}
  /* Les pièges cachés : leur test de détection, Perception ou Ruse, au choix du MJ. La Perception ne cherche que dans la part
     neuve de sa fouille ; la Ruse, au contact, et un échec y reste : on ne retente pas sur ce piège. */
@@ -1535,6 +1537,7 @@ mapsPage.innerHTML=
   +'<label id="door-key-label" hidden><input type="checkbox" id="door-key"> Verrouillée — le MJ seul l’ouvre</label>'
   +'<label id="door-secret-label" hidden><input type="checkbox" id="door-secret"> Passage secret — un mur pour la troupe tant qu’il est clos</label>'
   +'<label id="door-perception-label" hidden>Réussites de Perception pour le trouver <input type="number" id="door-perception" min="1" max="9"></label>'
+  +'<label id="door-pierre-label" hidden><input type="checkbox" id="door-pierre"> Dans la pierre</label>'
   +'<label id="door-crochet-label" hidden>Réussites de Ruse pour la crocheter <input type="number" id="door-crochet" min="1" max="9"></label>'
   +'<label id="foe-cache-label" hidden><input type="checkbox" id="foe-cache"> Caché — le MJ le révèle d’un clic en jeu</label>'
   +'<button id="foe-objets" hidden>✎ Objets portés</button>'
@@ -1859,6 +1862,7 @@ function renderCanvas(){const c=$('map-canvas'),m=mapDraft;$('map-hint').textCon
  $('door-key-label').hidden=$('door-secret-label').hidden=!porte;
  if(porte){$('door-key').checked=!!porte.keyLocked;$('door-secret').checked=!!porte.secret}
  $('door-perception-label').hidden=!(porte&&porte.secret);if(porte&&porte.secret)$('door-perception').value=Number(porte.perception)||1;
+ $('door-pierre-label').hidden=!(porte&&porte.secret);if(porte&&porte.secret)$('door-pierre').checked=porte.pierre===true;
  $('door-crochet-label').hidden=!(porte&&porte.keyLocked);if(porte&&porte.keyLocked)$('door-crochet').value=difficultePorte(porte);
  $('foe-cache-label').hidden=$('foe-objets').hidden=!adv;if(adv)$('foe-cache').checked=adv.cache===true;
  // Un PNJ peut débloquer une quête cachée : l'aventurier qui le rejoint au contact la découvre.
@@ -2373,6 +2377,7 @@ function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!==
   +'<label>Description lue par les joueurs<textarea name="desc" rows="3" maxlength="600">'+esc(o.desc||'')+'</textarea></label>'
   +'<div class="edit-grid">'+sel('Test de découverte — compétence','comp',String(o.test.comp),skillNames.map((n,k)=>[String(k),n]))
   +field('Réussites nécessaires','reussites',o.test.reussites,'number','min="1" max="9"')
+  +'<label class="field-check"><input type="checkbox" name="pierre"'+(o.pierre===true?' checked':'')+'>Dans la pierre</label>'
   +field('Trésor — en toutes lettres','tresor',o.tresor||'','text','maxlength="200"')
   +sel('Quête débloquée','quete',o.quete||'',[['','— aucune —'],...((typeof domaine!=='undefined'&&domaine.quetes)||[]).map(q=>[q.id,q.titre])])+'</div>'
   +'<h2 class="sous-titre">Objets à prendre</h2><input id="objet-filtre" placeholder="Filtrer l’armurerie…" aria-label="Filtrer l’armurerie"><div id="objet-liste" class="objet-liste"></div>'
@@ -2381,7 +2386,7 @@ function openObjet(i){const m=mapDraft,o=m&&m.objets&&m.objets[i];if(!o||view!==
  $('objet-form').onsubmit=e=>{e.preventDefault();const f=$('objet-form').elements;pushUndo();
   o.nom=f.nom.value.trim().slice(0,60)||'Objet';o.taille=f.taille.value;o.visible=f.visible.value==='1';
   o.desc=f.desc.value.trim().slice(0,600);o.tresor=f.tresor.value.trim().slice(0,200);if(f.quete.value)o.quete=f.quete.value;else delete o.quete;
-  o.test={comp:Math.max(0,Math.min(7,Number(f.comp.value)||0)),reussites:Math.max(1,Math.min(9,Number(f.reussites.value)||1))};
+  o.test={comp:Math.max(0,Math.min(7,Number(f.comp.value)||0)),reussites:Math.max(1,Math.min(9,Number(f.reussites.value)||1))};if(f.pierre.checked)o.pierre=true;else delete o.pierre;
   o.items=[...pris];objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
  $('objet-suppr').onclick=()=>{if(!confirm('Supprimer « '+o.nom+' » ?'))return;pushUndo();
   m.objets.splice(i,1);mapSel=null;objetDialog.close();renderCanvas();renderMapList();saveMaps();if(m.id===currentMapId)render()};
@@ -2415,6 +2420,8 @@ $('door-secret').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(map
 // Le nombre de réussites de Perception qu'un passage secret demande pour être trouvé.
 $('door-crochet').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
  pushUndo();d.crochetage=difficultePorte({crochetage:$('door-crochet').value});renderCanvas();saveMaps()};
+$('door-pierre').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
+ pushUndo();if($('door-pierre').checked)d.pierre=true;else delete d.pierre;saveMaps()};
 $('door-perception').onchange=()=>{const d=mapSel&&mapSel.kind==='door'&&shapeAt(mapSel);if(!d)return;
  pushUndo();d.perception=Math.max(1,Math.min(9,Math.trunc(Number($('door-perception').value))||1));renderCanvas();saveMaps()};
 // Un adversaire caché : la troupe ne le voit pas tant que le MJ ne le révèle pas, d'un clic en jeu.
@@ -2563,7 +2570,7 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
   +'<label>Description lue par les joueurs<textarea name="desc" rows="2" maxlength="600">'+esc(c.desc||'')+'</textarea></label>'
   // Caché, verrouillé, piégé : chaque case ouvre ses champs, et seulement elle.
   +'<div class="coffre-cases">'+coche('cache','Caché',!!c.cache)+coche('ferme','Verrouillé',c.verrou>0)+coche('piege_on','Piégé',c.piege>0)+'</div>'
-  +'<div class="edit-grid coffre-si" data-si="cache">'+nb('Réussites de Perception pour le trouver','perception',c.perception||1,1,9)+'</div>'
+  +'<div class="edit-grid coffre-si" data-si="cache">'+nb('Réussites de Perception pour le trouver','perception',c.perception||1,1,9)+coche('pierre','Dans la pierre',c.pierre===true)+'</div>'
   +'<div class="edit-grid coffre-si" data-si="ferme">'+nb('Réussites de Ruse ou Technique','verrou',Math.max(1,c.verrou||1),1,9)
   +'<label>Clé qui l’ouvre<select name="cleId"></select></label></div>'
   +'<div class="coffre-si" data-si="piege_on"><div class="edit-grid">'+nb('Réussites de Ruse ou Technique pour le trouver','piege',Math.max(1,c.piege||1),1,9)+field('Dégâts du piège','degats',formuleDegats(c),'text','pattern="[0-9]{1,2}([dD][0-9]{1,3})?" maxlength="6" class="degats-formule"')+'</div>'
@@ -2581,7 +2588,7 @@ function openCoffre(i){const m=mapDraft,c=m&&m.coffres&&m.coffres[i];if(!c||view
  const contenu={inventaire:[...(c.items||[])]};contenuCoffre($('coffre-contenu'),contenu);
  $('coffre-form').onsubmit=e=>{e.preventDefault();const n=(v,max)=>Math.max(0,Math.min(max,Math.trunc(Number(v))||0));pushUndo();
   c.nom=f.nom.value.trim().slice(0,60)||'Coffre';c.desc=f.desc.value.trim().slice(0,600);
-  if(f.cache.checked){c.cache=true;c.perception=Math.max(1,n(f.perception.value,9))}else delete c.cache;
+  if(f.cache.checked){c.cache=true;c.perception=Math.max(1,n(f.perception.value,9));if(f.pierre.checked)c.pierre=true;else delete c.pierre}else{delete c.cache;delete c.pierre}
   c.verrou=f.ferme.checked?Math.max(1,n(f.verrou.value,9)):0;if(f.ferme.checked&&f.cleId.value)c.cleId=f.cleId.value;else delete c.cleId;
   c.piege=f.piege_on.checked?Math.max(1,n(f.piege.value,9)):0;{const d=c.piege?lisFormuleDegats(f.degats.value):null;if(!c.piege){c.degats=0;delete c.degatsDes}else if(d){c.degats=d.degats;if(d.degatsDes)c.degatsDes=d.degatsDes;else delete c.degatsDes}}
   c.etats=c.piege?[...coffreDialog.querySelectorAll('input[name="etat"]:checked')].map(x=>x.value).filter(x=>ETATS_JEU.includes(x)):[];

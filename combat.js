@@ -341,6 +341,8 @@ function cleanRect(r,porte){if(!r)return null;
   if(r.cleId)o.cleId=texte(r.cleId,60);
   // Les réussites de Perception qu'il faut pour trouver un passage secret.
   if(r.secret&&Number(r.perception)>1)o.perception=Math.min(9,Math.trunc(Number(r.perception)));
+  // v0.899 : un passage secret dans la pierre (Vision des profondeurs du Nain).
+  if(r.secret&&r.pierre===true)o.pierre=true;
   // L'angle d'une porte de biais voyage avec elle ; une porte droite n'en porte pas.
   const a=Number(r.a);if(Number.isFinite(a)&&((a%180)+180)%180!==0)o.a=((a%180)+180)%180}
  return o}
@@ -384,7 +386,7 @@ const TAILLES_OBJET=['small','medium','large'];
 function cleanObjet(o){const t=o&&o.test||{};
  return {id:texte(o&&o.id,40),nom:texte(o&&o.nom,60)||'Objet',desc:texte(o&&o.desc,600),
   x:borne(o&&o.x,0,100),y:borne(o&&o.y,0,100),taille:TAILLES_OBJET.includes(o&&o.taille)?o.taille:'medium',
-  visible:!(o&&o.visible===false),
+  visible:!(o&&o.visible===false),...(o&&o.pierre===true?{pierre:true}:{}),
   // Récupéré par un aventurier : il reste hors de la carte jusqu'à ce qu'elle soit rechargée sur la table.
   ...(o&&o.pris===true?{pris:true}:{}),
   items:(Array.isArray(o&&o.items)?o.items:[]).filter(x=>typeof x==='string').slice(0,20).map(x=>texte(x,60)).filter(Boolean),
@@ -428,7 +430,7 @@ function lumierePortee(a,items){return objetsLumineux(a,items).reduce((m,o)=>Mat
 function cleanCoffre(c){const r=cleanRect(c);if(!r)return null;const n=(v,max)=>Math.max(0,Math.min(max,Math.trunc(Number(v))||0));
  const a=Number(c.a);if(Number.isFinite(a)&&((a%180)+180)%180!==0)r.a=((a%180)+180)%180;if(c.rond===true)r.rond=true;if(c.cleId)r.cleId=texte(c.cleId,60);
  const rich={};if(c.richesses&&typeof c.richesses==='object')CLES_RICHESSES.forEach(k=>{const v=n(c.richesses[k],99999);if(v)rich[k]=v});const bourse=normaliseBourse(c.bourse,false);
- return {...r,id:texte(c.id,40),nom:texte(c.nom,60)||'Coffre',desc:texte(c.desc,600),...(c.cache===true?{cache:true}:{}),
+ return {...r,id:texte(c.id,40),nom:texte(c.nom,60)||'Coffre',desc:texte(c.desc,600),...(c.cache===true?{cache:true}:{}),...(c.pierre===true?{pierre:true}:{}),
   perception:Math.max(1,n(c.perception,9)),verrou:n(c.verrou,9),piege:n(c.piege,9),degats:n(c.degats,99),...(cleanDesDegats(c.degatsDes)?{degatsDes:cleanDesDegats(c.degatsDes)}:{}),
   etats:(Array.isArray(c.etats)?c.etats:[]).filter(e=>ETATS_JEU.includes(e)).slice(0,8),
   items:(Array.isArray(c.items)?c.items:[]).filter(x=>typeof x==='string').slice(0,99).map(x=>texte(x,60)).filter(Boolean),richesses:rich,...(bourse.length?{bourse}:{})}}
@@ -1770,6 +1772,19 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  /* Vision dans le noir : un passif. Dans l'obscurité, le porteur voit jusqu'à x mètres, là où les autres ne voient que leur
     zone de contact. Ses améliorations la portent plus loin, et font de lui un Prédateur des Ombres, aux coups plus durs
     tant qu'il se tient dans le noir. */
+ /* v0.899 — Talents d'Espèce du Nain. */
+ visionprofondeurs:{cle:'visionprofondeurs',nom:'Vision des profondeurs',type:'pass',espece:true,
+  aide:'Passif : Vision dans le noir à 18 m, et +1 réussite pour découvrir un passage secret ou une chose cachée dans la pierre.',
+  params:[{cle:'portee',nom:'Portée (m)',type:'nombre',defaut:18,min:1,max:99}],phrase(p){return 'Vous voyez dans le noir jusqu’à <b>'+Math.max(1,(p&&p.portee)|0||18)+' m</b>, et gagnez <b>+1 réussite</b> pour découvrir ce qui est caché dans la pierre.'}},
+ ventrepierre:{cle:'ventrepierre',nom:'Ventre de Pierre',type:'pass',espece:true,
+  aide:'Passif : insensible au Poison ; une potion de soin soigne aussi de 1 dé vert.',
+  params:[],phrase(){return 'Vous êtes insensible au <b>Poison</b>, et les potions de soin vous soignent de <b>+1 dé vert</b>.'}},
+ ancresol:{cle:'ancresol',nom:'Ancré dans le Sol',type:'reac',espece:true,
+  aide:'Réaction, une fois par tour : quand un adversaire devrait repousser le porteur ou le mettre Au sol, il peut l’ignorer.',
+  params:[],phrase(){return 'Quand un talent ou une attaque adverse devrait vous <b>repousser</b> ou vous mettre <b>Au sol</b>, vous pouvez l’ignorer.'}},
+ rancune:{cle:'rancune',nom:'Rancune',type:'pass',espece:true,
+  aide:'Passif : chaque critique qu’un adversaire inflige au porteur lui vaut, pour toujours, +1 dégât contre les adversaires de ce modèle.',
+  params:[],phrase(){return 'Chaque <b>critique</b> qu’un adversaire vous inflige vous donne, pour toujours, <b>+1 dégât</b> contre les adversaires identiques.'}},
  /* v0.897 — Talents d'Espèce du Fielsang. Mimétisme et Maléfice, gratuits, une fois par tour. */
  gageur:{cle:'gageur',nom:'Gageur',type:'act',bouton:'Gageur',espece:true,
   aide:'Action : au contact, le porteur prélève un Gage d’un adversaire et lui inflige 1 dé noir de dégâts. Contre ce modèle d’adversaire, ses dégâts augmentent de son Niveau, et il le voit toujours à 10 m. Jusqu’au prochain repos long.',
@@ -2814,7 +2829,7 @@ function competencesDeClasse(role){const k=cleClasse(role),e=k?Object.entries(CO
    à part. Seul un aventurier né d'une espèce de cette table la porte ; l'espèce écrite à la main d'un ancien reste un mot. */
 // v0.884 : chaque espèce a sa Vitesse, en mètres.
 const ESPECES=[{id:'humain',nom:'Humain',teinte:'#9a7b4f',vie:1,vitesse:9,comps:{Perception:1,Savoir:1}},
- {id:'nain',nom:'Nain',teinte:'#8c5a3c',pv:8,vitesse:8,comps:{Robustesse:1,Technique:1}},
+ {id:'nain',nom:'Nain',teinte:'#8c5a3c',pv:8,vitesse:8,comps:{Robustesse:1,Technique:1},extension:'dnd'},
  {id:'goliath',nom:'Goliath',teinte:'#5f7183',dmg:2,vitesse:10,comps:{Force:1,Robustesse:1}},
  {id:'elfe',nom:'Elfe',teinte:'#4f8a5b',endu:1,dmg:1,vitesse:9,comps:{Agilité:1,Mysticisme:1}},
  /* v0.883 — Le Lupin, de l'Extension Ravenloft : Vitesse 10 m, ses Talents d'Espèce dans le groupe Espèces de l'onglet Talents. */

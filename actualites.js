@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.899","d":"2026-10-18","t":"Talents d'Espèce du Nain"},
 {"v":"0.898","d":"2026-10-18","t":"Réglages des classes et espèces, équipement de départ, forge d'adversaire"},
 {"v":"0.897","d":"2026-10-18","t":"Fielsang : Gageur, Déguisement, Mimétisme, Maléfice"},
 {"v":"0.896","d":"2026-10-17","t":"Dhampire, Nature des adversaires, terrain difficile"},
