@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.909 — Une planche remplacée par une autre grille se relit d'elle-même chez le MJ. */
+{const pl=fs.readFileSync('planches.js','utf8');assert.ok(pl.includes('function verifieGrilles()')&&pl.includes("if(r<.6||r>1.6)decouper(p.fichier,0,0,true)")&&pl.includes('async function decouper(f,lignes,colonnes,silence){'),'v0.909');}
 /* v0.907 — Fond des bulles (charte § 3 et § 13) : jamais de talent-detail nu. */
 {for(const f of ['editor.js','index.html','maps.js','live.js','planches.js']){const src=fs.readFileSync(f,'utf8');assert.ok(!/className\s*=\s*'talent-detail large'/.test(src),'charte § 13 : bulle sans fond dans '+f)}
  assert.ok(fs.readFileSync('editor.css','utf8').includes('.talent-detail.bulle-teintee{background:color-mix(in srgb,var(--teinte) 14%,#fbf3e2)')&&fs.readFileSync('CHARTE.md','utf8').includes('**Fond des bulles**'),'v0.907');}

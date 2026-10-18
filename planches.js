@@ -189,7 +189,15 @@ function sauveIcones(){if(typeof scheduleSave==='function')scheduleSave();docume
 const PLANCHES_OUVERTES=new Set();
 // v0.885 : la planche ouverte sous la grille de l'onglet Icônes.
 let PLANCHE_CHOISIE=null;
-function renderIcones(){const boite=$('icones-planches');if(!boite)return;boite.replaceChildren();
+/* v0.909 — Une planche remplacée par une autre grille, sous le même nom, gardait l'ancienne découpe : des cases à cheval sur
+   deux icônes. Ses icônes étant à peu près carrées, une découpe dont les cases ne le sont plus du tout se relit d'elle-même,
+   les noms et catégories restant attachés aux numéros. Une fois par planche et par séance, chez le MJ. */
+const GRILLES_VUES=new Set();
+function verifieGrilles(){if(typeof view!=='undefined'&&view!=='mj')return;
+ planchesDuCatalogue().forEach(p=>{if(GRILLES_VUES.has(p.fichier))return;GRILLES_VUES.add(p.fichier);
+  const im=new Image();im.onload=()=>{const W=im.naturalWidth,H=im.naturalHeight;if(!W||!H||!p.lignes||!p.colonnes)return;
+   const r=(W/p.colonnes)/(H/p.lignes);if(r<.6||r>1.6)decouper(p.fichier,0,0,true)};im.src=urlPlanche(p.fichier)})}
+function renderIcones(){const boite=$('icones-planches');if(!boite)return;boite.replaceChildren();setTimeout(verifieGrilles,0);
  // Dans l'ordre de leurs noms, les numéros comptés comme des nombres : Talents 9, puis Talents 10.
  const fichiers=[...new Set([...PLANCHES_FICHIERS,...planchesDuCatalogue().map(p=>p.fichier)])].sort((a,b)=>nomPlanche(a).localeCompare(nomPlanche(b),'fr',{numeric:true}));
  if(!fichiers.length){const v=document.createElement('p');v.className='muted';
@@ -270,7 +278,7 @@ function remplitPlanche(bloc,f){bloc.dataset.rempli='1';const p=plancheDe(f);
  else bloc.append(grille)}
 /* Découper une planche : la grille lue dans la transparence, ou celle qu'on impose. Les noms
    et catégories déjà donnés restent attachés aux numéros. */
-async function decouper(f,lignes,colonnes){
+async function decouper(f,lignes,colonnes,silence){
  const li=lignes&&colonnes?Math.max(1,Math.min(60,lignes|0)):0,co=lignes&&colonnes?Math.max(1,Math.min(60,colonnes|0)):0;
  // La grille se lit à l'écart ; sans fil de calcul, dans la page.
  let g;try{g=(await travail({type:'detecte',urls:adressesPlanche(f),lignes:li,colonnes:co})).grille}
@@ -279,7 +287,7 @@ async function decouper(f,lignes,colonnes){
  if(!g){alert('Aucune icône trouvée : la planche a-t-elle bien un fond transparent ?');return}
  const cases=g.cases,avant=plancheDe(f);
  if(!cases.length){alert('Aucune icône trouvée dans cette grille.');return}
- if(avant&&avant.icones.some(i=>i.nom||i.cat)&&!confirm('Redécouper « '+nomPlanche(f)+' » en '+cases.length+' icônes ? Les noms et catégories restent attachés aux numéros : vérifie-les ensuite.'))return;
+ if(!silence&&avant&&avant.icones.some(i=>i.nom||i.cat)&&!confirm('Redécouper « '+nomPlanche(f)+' » en '+cases.length+' icônes ? Les noms et catégories restent attachés aux numéros : vérifie-les ensuite.'))return;
  /* Une planche qui porte le nom d'une catégorie, « OMBRELAME », « Actions 2 », y range d'emblée ses icônes nouvelles ; une
     planche « Artisanat - Forge » aussi, par le premier mot de son nom. */
  const catNom=(CATS_ICONES.find(([,n])=>cleTalent(n)===cleTalent(nomPlanche(f)).replace(/\d+$/,''))||CATS_ICONES.find(([,n])=>cleTalent(n)===cleTalent(nomPlanche(f).split(/\s+-\s+/)[0]))||[''])[0];
