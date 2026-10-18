@@ -1984,12 +1984,15 @@ function reposLong(){if(view!=='mj')return;const troupe=actors.filter(a=>a&&a.he
   +(revenus.length?' '+revenus.map(a=>a.name).join(', ')+(revenus.length>1?' reviennent':' revient')+' sur la carte.':''),{ton:'soin'});
  renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 /* v0.897 — Les gages d'un Fielsang (Gageur), en petits tokens : l'image du modèle d'adversaire, sinon son initiale. */
+/* v0.906 : sous le bloc du talent, en ronds de la taille des bonus ; au survol, le nom de la créature. */
 function gagesEl(a,champ='gages'){const l=Array.isArray(a&&a[champ])?a[champ]:[];if(!l.length)return null;
- const d=document.createElement('div');d.className='detail-gages';
- l.forEach(g=>{const s=document.createElement('span');s.className='detail-gage';const src=typeof imageApparence==='function'?imageApparence(g):'';
-  if(src){const im=document.createElement('img');im.src=src;im.alt='';im.draggable=false;s.append(im)}else s.textContent=String(g&&g.nom||'?').trim().charAt(0).toUpperCase()||'?';
-  if(g&&g.n>0){const n=document.createElement('b');n.className='detail-gage-n';n.textContent=String(g.n);s.append(n)}
-  d.append(s)});return d}
+ const d=document.createElement('div');d.className='detail-bonus-grille detail-gages';
+ l.forEach(g=>{const c=document.createElement('div');c.className='detail-amelioration detail-bonus bonus-rond-panneau acquise detail-gage';c.style.setProperty('--tint',champ==='rancunes'?'210,80,10':'201,154,60');
+  const s=document.createElement('span');s.className='rond-bonus';const src=typeof imageApparence==='function'?imageApparence(g):'';
+  if(src){const im=document.createElement('img');im.src=src;im.alt='';im.draggable=false;s.append(im)}else{const t=document.createElement('b');t.textContent=String(g&&g.nom||'?').trim().charAt(0).toUpperCase()||'?';s.append(t)}
+  if(g&&g.n>0){const n=document.createElement('b');n.className='detail-gage-n';n.textContent=String(g.n);s.append(n)}c.append(s);
+  surveille(c,()=>{const b=document.createElement('div');b.className='talent-detail large';const p=document.createElement('p');p.className='talent-bulle-nom';const n=document.createElement('b');n.textContent=String(g&&g.nom||'?');p.append(n);b.append(p);ouvrirBulle(c,b,'bulle-talent')});
+  d.append(c)});return d}
 function reposer(a,type='long'){
  // Un repos rend ce qu'un piège n'avait ôté que jusqu'au repos.
  if(a&&Array.isArray(a.malusPieges)){a.malusPieges=a.malusPieges.filter(b=>b&&b.duree!=='repos');if(!a.malusPieges.length)delete a.malusPieges}
@@ -5993,11 +5996,9 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    // Un nom long rapetisse plutôt que de passer à la ligne.
    const L=String(sp.textContent||'').length;if(L>11)nom.style.fontSize=(L>18?20:L>14?22:24)+'px'}
   droite.append(corpsT);
-  // v0.897 : Gageur — sous sa description, un petit token par gage prélevé.
-  if(a&&t.effet==='gageur'){const g=gagesEl(a);if(g)droite.append(g)}
-  // v0.899 : Rancune — un token par modèle d'adversaire, et sa valeur en pastille.
-  if(a&&t.effet==='rancune'){const g=gagesEl(a,'rancunes');if(g)droite.append(g)}
   tete.append(rond,droite);tete.style.setProperty('--teinte',TEINTES_TALENTS[talentType(t)[0]]||'#8a8474');tete.classList.add('t-'+talentType(t)[0]);panneau.append(tete);
+  // v0.906 : Gageur et Rancune — leurs créatures sous le bloc du talent, comme des bonus.
+  if(a&&(t.effet==='gageur'||t.effet==='rancune')){const g=gagesEl(a,t.effet==='rancune'?'rancunes':'gages');if(g)panneau.append(g)}
   const el=corps.querySelector('.arbre-plan>.arbre-noeud[data-id="'+t.id+'"]'),acquis=porte(t),verrou=!!el&&el.classList.contains('verrou');
   /* Le talent lui-même s'apprend d'un clic sur sa tête, et se rend d'un autre clic ; son prix à droite de son nom. Le talent
      de classe, tenu d'office, ne se rend pas. */

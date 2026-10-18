@@ -3210,9 +3210,6 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 .lasso-layer.diffi polygon,.lasso-layer.diffi polyline{stroke:#a2691f;fill:color-mix(in srgb,#a2691f 16%,transparent)}
 .sw-diffi{background:color-mix(in srgb,#a2691f 16%,transparent);border:1px dotted #a2691f}
 /* v0.897 — Fielsang : les gages sous la description de Gageur ; la fenêtre de Déguisement. */
-.arbres-detail .detail-gages{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.arbres-detail .detail-gage{width:30px;height:30px;border-radius:50%;overflow:hidden;display:grid;place-items:center;box-sizing:border-box;border:2px solid #c99a3c;background:var(--panel);font:700 13px system-ui;color:var(--ink)}
-.arbres-detail .detail-gage img{width:100%;height:100%;object-fit:cover}
 .choix-deguisement .deguisements{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:320px}
 .choix-deguisement .deguisement{width:44px;height:44px;padding:0;border-radius:50%;overflow:hidden;display:grid;place-items:center;box-sizing:border-box;border:2px solid var(--line);background:var(--panel);font:700 16px system-ui;color:var(--ink);cursor:pointer}
 .choix-deguisement .deguisement img{width:100%;height:100%;object-fit:cover}
@@ -3234,7 +3231,6 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 .espece-separateur.cliquable{cursor:pointer}.espece-separateur.cliquable:hover{color:var(--ink)}
 #forge-adv-editor{width:min(820px,94vw)}#forge-adv-corps{max-height:76vh;overflow:auto}
 /* v0.899 — Rancune : la valeur, en pastille rouge orangé au coin bas droit du token. */
-.arbres-detail .detail-gage{position:relative;overflow:visible}.arbres-detail .detail-gage img{border-radius:50%}
 .arbres-detail .detail-gage-n{position:absolute;right:-5px;bottom:-5px;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:8px;display:grid;place-items:center;background:#d2500a;color:#fff;font:800 10px/1 system-ui}
 /* v0.900 — La barre de PV : Radiance dorée, Nécrose, Armure électrique, à droite des PV. */
 :is(.lifebar,#pv-layer .pv) :is(.pv-radiance,.pv-necrose,.pv-armure){position:absolute;top:0;bottom:0;display:block}
@@ -3248,3 +3244,8 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 #barre-mouvement.gele{border-color:#8fd3f7}
 #barre-mouvement.gele i:not(.pris)::before{background:#8fd3f7;box-shadow:inset 0 -2px 0 color-mix(in srgb,#000 18%,transparent),0 0 0 1px #2f8fae}
 .pastilles .mvt.gele{background:#8fd3f7}
+/* v0.906 — Gages et rancunes sous le bloc du talent, en ronds de bonus ; la valeur de rancune en pastille. */
+.arbres-v2 .arbres-detail .detail-gage .rond-bonus{position:relative;overflow:visible}
+.arbres-v2 .arbres-detail .detail-gage .rond-bonus>img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.arbres-v2 .arbres-detail .detail-gage .rond-bonus>b:not(.detail-gage-n){width:auto;height:auto;font:700 18px system-ui;color:var(--ink)}
+.arbres-v2 .arbres-detail .detail-gage .rond-bonus>.detail-gage-n{width:auto;height:16px;right:-4px;bottom:-4px}

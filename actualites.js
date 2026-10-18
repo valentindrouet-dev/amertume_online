@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.906","d":"2026-10-18","t":"Gages et rancunes sous le talent"},
 {"v":"0.905","d":"2026-10-18","t":"Gageur reprend Mimétisme"},
 {"v":"0.904","d":"2026-10-18","t":"Corruption, Gel cumulable, Feu et Gel"},
 {"v":"0.903","d":"2026-10-18","t":"Affixes de Nécrose, Radiance et Armure"},

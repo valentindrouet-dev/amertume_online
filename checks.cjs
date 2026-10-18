@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.906 — Gages et rancunes sous le bloc du talent, en ronds de bonus, le nom au survol. */
+{const ed=fs.readFileSync('editor.js','utf8');assert.ok(ed.includes("d.className='detail-bonus-grille detail-gages'")&&ed.includes("n.textContent=String(g&&g.nom||'?');p.append(n);b.append(p);ouvrirBulle(c,b,'bulle-talent')"),'v0.906');}
 /* v0.905 — Gageur prélève aussi l'apparence ; Mimétisme retiré du catalogue et des aventuriers. */
 {const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ix.includes("const ap=refApparence(b),d=Array.isArray(a.deguisements)")&&ed.includes("c.semisForge.push('gageur-mimetisme')")&&ed.indexOf("c.semisForge.push('gageur-mimetisme')")>ed.indexOf("c.semisForge.push('espece-fielsang')")
@@ -5234,7 +5236,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.equal(C.especeDe('nain').extension,'dnd');['visionprofondeurs','ventrepierre','ancresol','rancune'].forEach(k=>assert.ok(C.TALENTS_CODES[k]&&C.TALENTS_CODES[k].espece,k));
  assert.equal(C.cleanObjet({nom:'x',pierre:true,test:{comp:3,reussites:2}}).pierre,true);{const m=C.cleanMap({coffres:[{x:1,y:1,w:5,h:5,cache:true,pierre:true}],doors:[{x:1,y:1,w:5,h:5,secret:true,pierre:true}]});assert.equal(m.coffres[0].pierre,true);assert.equal(m.doors[0].pierre,true)}
  assert.ok(ix.includes("function ajouteRancune(b,a)")&&ix.includes("bonus+=bonusRancune(a,b);")&&ix.includes("function fenetreAncre(b,x,activer,laisser)")&&ix.includes("(etat==='Poison'&&porteEffet(talentsCodes(a),'ventrepierre'))")
-  &&ix.includes("x.code.cle==='visionnoir'||x.code.cle==='visionprofondeurs'")&&ed.includes("c.semisForge.push('espece-nain')")&&ed.includes("if(a&&t.effet==='rancune'){const g=gagesEl(a,'rancunes');")
+  &&ix.includes("x.code.cle==='visionnoir'||x.code.cle==='visionprofondeurs'")&&ed.includes("c.semisForge.push('espece-nain')")&&ed.includes("if(a&&(t.effet==='gageur'||t.effet==='rancune')){const g=gagesEl(a,t.effet==='rancune'?'rancunes':'gages');if(g)panneau.append(g)}")
   &&ed.includes("porteEffet(talentsCodes(a),'ventrepierre')&&cleNomObjet(o.name).includes('potion')")&&mp.includes("reussites+pierre(d)>=")&&mp.includes("reussites+pierre(c)>=")&&lv.includes("'malefice','rancunes',"),'v0.899');}
 /* v0.898 — Réglages d'une classe ou d'une espèce et leur équipement de départ ; la forge de l'éditeur d'adversaire, pièce unique. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
@@ -5251,7 +5253,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(C.TALENTS_CODES.mimetisme.gratuit&&C.TALENTS_CODES.malefice.gratuit&&!C.TALENTS_CODES.gageur.gratuit&&!C.TALENTS_CODES.deguisement.gratuit,'v0.897 coûts');
  assert.ok(ix.includes('function gageur(a,p,talent)')&&ix.includes('function malefice(a,p,talent)')&&ix.includes('function mimetisme(a,p,talent)')&&ix.includes('function deguisement(a,p,talent)')&&ix.includes("let malDit='';if(!r.failed&&r.hit&&maleficeSur(a,b))")
   &&ix.includes('bonus+=bonusGage(a,b);')&&ix.includes("reposer(a,'court');leveDeguisement(a,true);")&&ed.includes("c.semisForge.push('espece-fielsang')")&&ed.includes("reposer(a,'long');delete a.gages;")
-  &&ed.includes("if(a&&t.effet==='gageur'){const g=gagesEl(a);if(g)droite.append(g)}")&&lv.includes("'nature','gages','deguise','deguisements','malefice',")&&mp.includes('troupeVoitParGage(a)'),'v0.897');}
+  &&ed.includes("if(a&&(t.effet==='gageur'||t.effet==='rancune')){const g=gagesEl(a,t.effet==='rancune'?'rancunes':'gages');if(g)panneau.append(g)}")&&lv.includes("'nature','gages','deguise','deguisements','malefice',")&&mp.includes('troupeVoitParGage(a)'),'v0.897');}
 /* v0.896 — Le Dhampire, la Nature des adversaires et le terrain difficile. */
 {const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8');const d=C.ESPECES.find(e=>e.id==='dhampire');assert.ok(d&&d.vie===1&&d.dmg===1&&d.vitesse===10&&d.comps.Agilité===1&&d.comps.Robustesse===1&&d.extension==='ravenloft','v0.896 espèce');assert.equal(C.mouvementPropre({hero:true,espece:'dhampire'}),10);const m={};C.ajouteDifficile(m,[[0,0],[10,0],[10,10]]);assert.equal(C.difficileDe(m).length,1);assert.ok(ix.includes('function natureDe(o)')&&ix.includes('function morsure(a,p,talent)')&&ix.includes('function surcoutDifficile(pts)')&&ix.includes("porteEffet(talentsCodes(a),'pattesaraignee'))r.sansDifficile=true")&&ed.includes("c.semisForge.push('espece-dhampire')")&&mp.includes('function renderDifficiles()'),'v0.896');}
 /* v0.895 — L'arbre d'espèce, talents resserrés et centrés. */
