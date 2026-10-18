@@ -168,6 +168,14 @@ Le texte d'un bouton est un **verbe court**, à l'infinitif ou à l'impératif, 
 | Cthulhu | `#4f7a28` |
 | Amertüme | `#1f4d55` |
 
+**Barre de PV** (`lifebar`, jauge des tokens) : les PV en vert ; à droite, chacune à sa part des PV max :
+
+| Part | Classe | Teintes |
+|---|---|---|
+| Radiance | `.pv-radiance` | or brillant `#f2c14e`, reflet `#fff3c4` |
+| Nécrose | `.pv-necrose` | hachures `#3b2440` et `#5a3a63` |
+| Armure | `.pv-armure` | bleu électrique `#4fd8ff`, reflet `#b8f2ff` |
+
 ---
 
 ## 7. Ronds de talent

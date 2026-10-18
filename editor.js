@@ -1035,7 +1035,7 @@ function majFiche(carte,a){if(!carte)return;
  {const t=carte.querySelector('.stat-tile.t-vie');if(t)t.classList.toggle('sous-max',vieEntamee(a))}
  ecrire('.stat-tile.t-endu strong',enduAffichee(a));
  ecrire('.stat-tile.t-pv strong',a.max);
- {const b=carte.querySelector('.hero-pv');if(b)b.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true)}
+ {const b=carte.querySelector('.hero-pv');if(b)b.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true,'',a)}
  // Sur la fiche, le « + » serre un peu la valeur des dégâts : une espace fine.
  ecrire('.stat-tile.t-dmg strong','+\u202F'+degatsAffiches(a));{const t=carte.querySelector('.stat-tile.t-dmg');if(t)t.classList.toggle('en-hausse',degatsEnHausse(a))}ecrire('.stat-tile.t-xp strong',a.xp||0);
  ecrire('.chip-niveau','Niveau '+a.level);ecrire('.classe-niv',' niv. '+a.level);ecrire('.chip-xp',(a.xp||0)+' XP');
@@ -1352,7 +1352,7 @@ function heroCard(a,i){const c=document.createElement('article');c.className='he
  [['vie',0],['endu',1],['pv',2],['dmg',4],['xp',5]].forEach(([carac,k])=>iconeStat(tuiles[k],carac));
  chiffres.classList.add('en-icones','cadre-chiffres');chiffres.style.setProperty('--classe',teinte);chiffres.append(...tuiles);
  // Les PV du moment, en barre, sous les chiffres.
- const barrePv=document.createElement('div');barrePv.className='hero-pv';barrePv.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true);
+ const barrePv=document.createElement('div');barrePv.className='hero-pv';barrePv.innerHTML=lifebar(pvPourcent(a),a.hp+' / '+a.max,true,'',a);
  /* Un joueur lit les fiches de la troupe, mais ne tient d'outils que sur la sienne : les
     « + » sont au MJ, et le rouage des arbres s'ouvre pour son propre aventurier. */
  const mien=view==='mj'||actors.indexOf(a)===owner;
@@ -1954,7 +1954,7 @@ function reposLong(){if(view!=='mj')return;const troupe=actors.filter(a=>a&&a.he
  const revenus=[];
  troupe.forEach(a=>{if(estMort(a))return;   // Un mort ne se repose plus : seul le MJ le ressuscite.
   if(Number.isFinite(Number(a.vieMax)))a.vie=Number(a.vieMax);if(typeof recalculerPV==='function')recalculerPV(a);
-  setState(a,'Coma',false);a.hp=a.max;a.comaVie=false;a.reposCourts=0;a.reposPris=false;reposer(a,'long');delete a.gages;if(typeof leveDeguisement==='function')leveDeguisement(a,true);if(typeof leveEtats==='function')leveEtats(a);
+  setState(a,'Coma',false);a.hp=a.max;a.comaVie=false;a.reposCourts=0;a.reposPris=false;reposer(a,'long');delete a.gages;if(typeof leveNecrose==='function'){leveNecrose(a);perdRadiance(a);a.hp=a.max}if(typeof leveDeguisement==='function')leveDeguisement(a,true);if(typeof leveEtats==='function')leveEtats(a);
   if(a.horsCarte&&!a.retire){a.horsCarte=false;revenus.push(a)}});
  // Qui revient se pose dans la zone de départ de la carte ouverte.
  const m=typeof currentMap==='function'?currentMap():null;
@@ -1987,10 +1987,11 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
   let {total,jets}=montantRegeneration(a,p,d6);
   // v0.899 : Ventre de Pierre (Nain) — une potion de soin rend aussi 1 dé vert.
   if(porteEffet(talentsCodes(a),'ventrepierre')&&cleNomObjet(o.name).includes('potion')){const v=d6();jets=[...jets,v];total+=v}
-  const gagne=applyHeal(a,total);
+  const gagne=applyHeal(a,total,p.radiant==='oui');
   if(jets.length&&typeof rollOnBoard==='function')rollOnBoard(jets.map(v=>[v,4]),a,a);
   if(typeof floatNumber==='function')floatNumber(a,'+'+gagne,'gain');
   dit='+'+gagne+' PV'+(jets.length?' ('+jets.join(' + ')+')':'')}
+ else if(code.cle==='armure'){const n=Math.max(1,Math.trunc(Number(p.quantite))||1);donneArmure(a,n);dit='+'+n+' Armure'}
  else if(code.cle==='etat'){const issue=infligeEtat(a,p.etat);
   if(typeof floatNumber==='function')floatNumber(a,issue===true?'+'+p.etat:p.etat,issue===true?'gain':'nul');
   dit=issue===true?p.etat+' obtenu':issue==='onde'?'l’Onde a absorbé '+p.etat:issue==='immunise'?p.etat+' sans effet : il y est insensible':p.etat+' déjà porté'}
@@ -2922,7 +2923,7 @@ function bulleCombattant(o){const d=document.createElement('div');d.className='c
  const tuiles=[['pv','PV',sait('pv')?o.hp:'?',false],['def','DEF',sait('def')?defOf(o):'?',true],['dmg','Dég.',sait('dmg')?'+ '+degatsDe(o):'?'],['xp','XP',sait('xp')?Math.trunc(Number(o.xp))||0:'?']].map(x=>statTile(...x));
  [['pv',0],['dmg',2],['xp',3]].forEach(([c,k])=>iconeStat(tuiles[k],c));tuiles[0].classList.toggle('sous-max',sait('pv')&&(Number(o.hp)||0)<(Number(o.max)||0));
  chiffres.append(...tuiles);d.append(chiffres);
- const vie=document.createElement('div');vie.className='bulle-comb-vie';vie.innerHTML=lifebar(ratio(o),sait('pv')?o.hp+' / '+o.max+' PV':'? PV',!!o.hero,o.pnj?alignementDe(o):'');d.append(vie);
+ const vie=document.createElement('div');vie.className='bulle-comb-vie';vie.innerHTML=lifebar(ratio(o),sait('pv')?o.hp+' / '+o.max+' PV':'? PV',!!o.hero,o.pnj?alignementDe(o):'',o);d.append(vie);
  // Ses attaques : celles d'un adversaire sont une chose à découvrir, à part de son bonus de dégâts.
  const eqA=o.hero?o:(typeof equipeAdversaire==='function'?equipeAdversaire(o):o),att=typeof attackChoices==='function'?attackChoices(eqA,catalog.items||[]):[];
  if(sait('attaques'))rangAttaques(d,att,sait('dmg')&&typeof degatsDe==='function'?degatsDe(o):0);else inconnuBulle(d,'Attaques spéciales');
@@ -3693,6 +3694,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   +'<label class="field-check" id="debut-combat"'+((t.type||'act')==='ame'?' hidden':'')+'><input type="checkbox" name="debutCombat" '+(talentDebut(t)?'checked':'')+'>Début de combat</label>'
   // v0.851 : le talent reçoit les dés de Plasma glissés sur son bouton.
   +'<label class="field-check"><input type="checkbox" name="plasma" '+(t.plasma===true?'checked':'')+'>Accepte le Plasma</label>'
+  +'<label class="field-check"><input type="checkbox" name="radiant" '+(t.radiant===true?'checked':'')+'>Soin radiant</label>'
   // v0.858 : l'Incident, pour les talents qui en ont un ; son texte paraît quand la case est cochée.
   +'<label class="field-check"><input type="checkbox" name="incidentOn" '+(typeof t.incident==='string'&&t.incident.trim()?'checked':'')+'>Incident</label>'
   +'<label class="incident-champ">Texte de l’incident<textarea name="incident" rows="2" maxlength="400">'+esc(typeof t.incident==='string'?t.incident:'')+'</textarea></label>'
@@ -3815,6 +3817,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  if(['pass','ame'].includes(t.type)&&f.pourAttaque&&t.effet!=='bonus')t.pourAttaque=f.pourAttaque.checked;else delete t.pourAttaque;
  if(t.type!=='ame'&&f.debutCombat&&t.effet!=='bonus')t.debutCombat=f.debutCombat.checked;else delete t.debutCombat;
  if(f.plasma&&f.plasma.checked&&t.effet!=='bonus')t.plasma=true;else delete t.plasma;
+ if(f.radiant&&f.radiant.checked&&t.effet!=='bonus')t.radiant=true;else delete t.radiant;
  if(f.incidentOn&&f.incidentOn.checked&&f.incident&&f.incident.value.trim()&&t.effet!=='bonus')t.incident=f.incident.value.trim().slice(0,400);else delete t.incident;
  t.params=t.effet?paramsTalent({effet:t.effet,params:lireReglagesTalent('p_')}):{};
  /* Les paliers : leur coût ; pour le 2 et le 3, leur texte s'il en a un, leurs réglages s'ils
@@ -6400,13 +6403,13 @@ function htmlAttaques(liste){return liste.map((a,i)=>'<div class="attack-card" d
   +selGrille(sel('Icône','ai'+i,(a.logos||[])[0]||'',[['','— aucune icône —'],...[...new Set([...(estLogoDossier((a.logos||[])[0])?[a.logos[0]]:[]),...iconesPlanches(),...LOGOS_TOUS,...logosDesDossiers()])].map(l=>[l,nomLogo(l)])]))+'</div>'
   // Les états qu'elle inflige : autant qu'on en coche, tous posés à la touche.
   +'<div class="etats-attaque" role="group" aria-label="États infligés"><span class="etats-titre">États infligés</span>'
-  +ETATS_JEU.map(e=>'<label class="etat-case"><input type="checkbox" name="ax'+i+'" value="'+esc(e)+'"'+(etatsAttaque(a).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('')}
+  +ETATS_JEU.map(e=>'<label class="etat-case"><input type="checkbox" name="ax'+i+'" value="'+esc(e)+'"'+(etatsAttaque(a).includes(e)?' checked':'')+'>'+esc(e)+'</label>').join('')+'</div>'+poolFields(poolFrom(a.dice),'ad'+i+'_')+'<label class="field-check"><input type="checkbox" name="ab'+i+'" '+(a.useOwnDamage!==false?'checked':'')+'>Ajouter les dégâts du combattant</label>'+field('Effets à appliquer manuellement','ae'+i,a.effectText||Object.entries(a.effects||{}).filter(([,v])=>v).map(([k])=>k).join(', '))+field('Armure','aa'+i,Math.max(0,Math.trunc(Number(a.armure))||0),'number','min="0" max="99"')+'<button type="button" data-remove-attack="'+i+'">Retirer cette attaque</button></div>').join('')}
 // Les états d'une attaque spéciale : la liste, ou l'état unique d'avant.
 const etatsAttaque=a=>Array.isArray(a&&a.etats)?a.etats:(a&&a.etat?[a.etat]:[]);
 function readAttacks(){const f=$('actor-form').elements;if(!f.an0&&attackDraft.length)return;attackDraft=lisAttaques($('actor-form'),attackDraft)}
 function lisAttaques(form,liste){const f=form.elements;return liste.map((a,i)=>({...a,name:f['an'+i].value.trim()||'Attaque',range:f['ar'+i].value,targets:f['at'+i].value,useOwnDamage:f['ab'+i].checked,effectText:f['ae'+i].value,
   ...(etats=>({etats,etat:etats[0]||''}))([...form.querySelectorAll('input[name="ax'+i+'"]:checked')].map(x=>x.value).filter(e=>ETATS_JEU.includes(e))),
-  logos:logoValide(f['ai'+i].value)?[f['ai'+i].value]:[],dice:diceFrom(keys.map((_,c)=>num(f['ad'+i+'_'+c].value,0,12)))}))}
+  logos:logoValide(f['ai'+i].value)?[f['ai'+i].value]:[],dice:diceFrom(keys.map((_,c)=>num(f['ad'+i+'_'+c].value,0,12))),armure:f['aa'+i]?num(f['aa'+i].value,0,99):(Number(a.armure)||0)}))}
 /* Les états de la fiche : la même grille de jetons que le clic droit sur le socle, pour
    qu'on reconnaisse le geste. Ils vivent sur le brouillon jusqu'à l'enregistrement. */
 function renderStatePicker(){const boite=$('state-picker');if(!boite)return;

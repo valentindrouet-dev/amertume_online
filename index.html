@@ -3,7 +3,7 @@
 <style>
 /* Killam Bold, fournie par Valentin, pour les chiffres des caractéristiques. Sous-ensemble
    latin en WOFF2 : 48 Ko au lieu des 188 Ko du TTF d'origine, qui reste dans fonts/. */
-@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.899') format('woff2');
+@font-face{font-family:'Killam';src:url('./fonts/killam-bold.woff2?v=0.900') format('woff2');
  font-weight:700;font-style:normal;font-display:swap}
 
 /* Deux palettes, un seul jeu de règles : tout le décor passe par ces jetons, si bien
@@ -137,8 +137,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 .sheet.a-logo .sheet-head h1{flex:0 1 auto;min-width:0;line-height:39px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}/* La fiche prend la hauteur de ce qu'elle montre — talents et équipement dépliés compris — et le journal, calé dessous, prend tout le reste. */#sheet{min-height:0}.j-entry{font-size:14px;line-height:1.45;color:var(--ink);white-space:pre-line}/* La flèche en vol : un trait sombre à pointe claire, tourné vers sa cible. *//* Le souffle d'un tir : une rafale claire et étirée, deux filets d'air par-dessus. *//* Les coups, lisibles et toujours les mêmes : au contact, un trait de balayage fend l'air sur la cible, puis un choc — un anneau qui s'élargit ; à distance, un projectile file en ligne droite du tireur à la cible, puis le même choc. Blanc cerné de sombre : visible sur toute carte. Chaque geste dure le même temps, au même rythme. */.vfx{position:absolute;pointer-events:none;z-index:5;will-change:transform,opacity;transform:translate(-50%,-50%)}.vfx svg{display:block;width:100%;height:100%;overflow:visible}.vfx-piege svg{filter:drop-shadow(0 0 6px #ff8a2acc)}.vfx-piege .souffle{fill:#ff7a1f;fill-opacity:.6;stroke:#ffc35a;stroke-width:4}.vfx-piege .coeur{fill:#fff4cf}
 .vfx-choc .onde{fill:none;stroke:#fff6dc;stroke-width:7}.vfx-choc svg{filter:drop-shadow(0 0 1px #000d) drop-shadow(0 0 5px #ffc85acc)}.vfx-etincelles .gerbe{stroke:#fff6dc;stroke-width:4.5;stroke-linecap:round}.vfx-etincelles svg{filter:drop-shadow(0 0 1px #000d) drop-shadow(0 0 4px #ffc85acc)}.vfx-fleche{transform:none}.vfx-fleche .hampe-ombre{stroke:#000a;stroke-width:5;fill:none}.vfx-fleche .hampe{stroke:#f1e4c8;stroke-width:2.6;fill:none}.vfx-fleche .plume{fill:#b8452e;stroke:#0009;stroke-width:1}.vfx-fleche .pointe{fill:#e9eef2;stroke:#000b;stroke-width:1.2}.vfx-fleche svg{filter:drop-shadow(0 0 3px #fff8)}/* Le balayage d'un coup au contact : un arc d'air, clair au bord, qui tourne autour de l'attaquant. *//* La parole : le socle de qui parle, puis ses mots. */.j-chat{display:flex;align-items:flex-start;gap:8px;border:1px solid color-mix(in srgb,var(--ink) 14%,transparent);background:color-mix(in srgb,var(--ink) 4%,transparent);border-radius:7px;padding:4px 8px;margin:2px 0}.j-avatar{flex:none;width:24px;height:24px;border-radius:50%;overflow:hidden;background:#d9cfbd;color:#2a2118;display:grid;place-items:center;font:700 12px 'Killam',Georgia,serif}.j-avatar img{width:100%;height:100%;object-fit:cover;display:block}.j-avatar.mj{background:var(--accent);color:#fff}.j-corps{min-width:0}.j-texte{white-space:pre-wrap;overflow-wrap:anywhere}.journal-vider{margin-left:auto;font:600 11px system-ui;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}.journal-vider:hover{color:var(--ink);border-color:var(--ink)}.journal-session+.journal-vider{margin-left:6px}.journal-title:has(.journal-session:not([hidden])){flex-wrap:wrap;white-space:nowrap;row-gap:6px}.journal-title .journal-vider{white-space:nowrap;flex:none}.journal-title .journal-session{letter-spacing:.5px}.journal-chat{display:flex;gap:6px;margin-top:8px;flex:none}.journal-chat input{flex:1;min-width:0;font:14px system-ui;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}.journal-chat button{flex:none;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--accent);cursor:pointer;font-size:14px}/* Un cartouche léger, de la couleur de l'action : bleu pour un coup, violet pour un talent, une analyse ou un orbe, vert pour un soin, rouge pour une perte, ambre pour un état, or pour une révélation, brun pour la carte. */.j-entry.ton{--ton:#3f7bc0;border:1px solid color-mix(in srgb,var(--ton) 30%,transparent);background:color-mix(in srgb,var(--ton) 7%,transparent);border-radius:7px;padding:3px 8px;margin:2px 0}.j-entry.ton-attaque{--ton:#3f7bc0}.j-entry.ton-talent{--ton:#8a63c9}.j-entry.ton-competence{--ton:#2f7d45}.j-entry.ton-soin{--ton:#2f8a63}.j-entry.ton-degats{--ton:#b8483a}.j-entry.ton-etat{--ton:#a2691f}.j-entry.ton-reveal{--ton:#9d7b1e}.j-entry.ton-carte{--ton:#8a6d3b}.ton-butin{--ton:#a8832c}.j-turn{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:5px 0 1px}.j-turn::before,.j-turn::after{content:"";flex:1;height:1px;background:var(--line)}.j-name{font-weight:700}.j-key{font-weight:700}.j-num{font-weight:800;color:var(--ink)}.j-num.j-perte{color:#b4553a}.j-num.j-tresor{color:#9d7b1e}.j-num.j-pv{color:#3d7f4b}.j-num.j-ok{color:#2e8b3e}.j-num.j-ko{color:#b8402d}.j-dice{opacity:.7}/* La ligne d'attaque : le logo de l'arme entre les deux noms, les dégâts cliquables, le détail des dés dessous. */.j-attaque .logo-equip{width:20px;height:20px;vertical-align:-5px;margin:0 1px;filter:drop-shadow(0 1px 1px #0006)}.j-degats{font-weight:800;color:#b4553a}.j-degats.cliquable{cursor:pointer;border-bottom:1px dashed currentColor}.j-degats.cliquable:hover,.j-degats.ouvert{color:#d0644a}.j-detail{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:6px}.j-de{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;font:800 12px/1 system-ui;color:#1b2124;background-color:var(--die);background-image:linear-gradient(158deg,#ffffff66,#ffffff00 42%,#0000002e);box-shadow:inset 0 1px 0 #ffffff8c,inset 0 -2px 3px #00000026,0 2px 4px #0000005e}.j-de.dark{color:#f4f6f2}.j-de.barre{opacity:.35;filter:grayscale(1);box-shadow:none}.j-de.relance{margin-left:8px}.j-plus{font:600 12px system-ui;color:var(--muted)}.j-plus.total{font-weight:800;color:var(--ink)}.j-badge{display:inline-block;background:#8d3b32;color:#ffe6df;border-radius:5px;padding:1px 7px;font-weight:700;font-size:12px}
 /* Le socle qui arrive du réseau glisse jusqu'à sa place. */.token.glisse{transition:left .18s linear,top .18s linear}/* L'orbe en vol : une bille lumineuse de la couleur de ses dés. */.orbe-vol{position:absolute;will-change:transform,opacity;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;background:radial-gradient(circle at 35% 35%,#fff9,var(--orbe) 55%,transparent 72%);box-shadow:0 0 14px 5px var(--orbe),0 0 44px 16px color-mix(in srgb,var(--orbe) 55%,transparent)}/* L'orbe de feu : un cœur blanc, une écorce d'ambre et une flamme qui bat autour. Seuls
-   transform et opacity s'animent — le compositeur mène le vol sans le fil principal. */.orbe-vol.feu{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}.orbe-vol.feu::after{content:'';position:absolute;inset:-22%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 50% 66%,#ffb14ab3,#ff5a1e4d 45%,transparent 72%);animation:flamme .26s ease-in-out infinite alternate}@keyframes flamme{from{transform:scale(.86) rotate(-9deg);opacity:.7}to{transform:scale(1.2) rotate(10deg);opacity:1}}@media(prefers-reduced-motion:reduce){.orbe-vol.feu::after{animation:none}}/* Un envoi refusé se voit sur le bouton de la table. */#open-live[data-souci]{color:#b8483a;border-color:#b8483a}</style><link rel="stylesheet" href="./editor.css?v=0.899"></head><body><div id="busy-cover">Chargement de la partie enregistrée…</div>
-<header><div class="brand"><span class="brand-ligne"><span class="brand-nom">Amertüme</span><span class="ver">v0.899</span></span><span class="brand-online">ONLINE</span></div><div class="view-controls"><label for="view">Vue</label><select id="view" autocomplete="off"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select></div></header>
+   transform et opacity s'animent — le compositeur mène le vol sans le fil principal. */.orbe-vol.feu{background:radial-gradient(circle at 38% 34%,#fff6e0 0 16%,#ffce5e 36%,var(--orbe) 62%,transparent 74%);box-shadow:0 0 16px 6px var(--orbe),0 0 46px 18px #ff5a1e5c}.orbe-vol.feu::after{content:'';position:absolute;inset:-22%;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 50% 66%,#ffb14ab3,#ff5a1e4d 45%,transparent 72%);animation:flamme .26s ease-in-out infinite alternate}@keyframes flamme{from{transform:scale(.86) rotate(-9deg);opacity:.7}to{transform:scale(1.2) rotate(10deg);opacity:1}}@media(prefers-reduced-motion:reduce){.orbe-vol.feu::after{animation:none}}/* Un envoi refusé se voit sur le bouton de la table. */#open-live[data-souci]{color:#b8483a;border-color:#b8483a}</style><link rel="stylesheet" href="./editor.css?v=0.900"></head><body><div id="busy-cover">Chargement de la partie enregistrée…</div>
+<header><div class="brand"><span class="brand-ligne"><span class="brand-nom">Amertüme</span><span class="ver">v0.900</span></span><span class="brand-online">ONLINE</span></div><div class="view-controls"><label for="view">Vue</label><select id="view" autocomplete="off"><option value="mj">Maître du jeu</option><option value="player">Joueur</option></select><label id="owner-label" for="owner" hidden>Mon aventurier</label><select id="owner" hidden><option value="0">Éla</option><option value="1">Kaël</option></select></div></header>
 <div class="intro" hidden><h1>Les ruines du passage</h1></div>
 <main class="layout"><aside class="stack left"><section class="panel"><div class="turn-head"><div class="eyebrow" id="titre-tour">Tour de combat</div><div class="turn" id="round">01</div></div><div id="bloc-activation" hidden><h2>Activation</h2><div class="checks"><label><input type="checkbox" id="action"> Action</label><label><input type="checkbox" id="move"> Mvt / Analyse</label><label><input type="checkbox" id="item"> Objet</label></div><div class="divider"></div></div><div class="turn-actions"><button class="full" id="next">Tour suivant →</button><button id="reset-round" title="Revenir au tour 1 : activations, cibles, états et analyses remis à zéro, adversaires à nouveau inconnus" aria-label="Réinitialiser le tour de combat">↺</button></div><div class="side-actions"><button id="start-combat" class="primary" hidden>⚔ Début du combat</button><button id="end-combat" hidden>Fin du combat</button></div></section><section class="panel"><h2>COMBATTANTS</h2><div id="actors"></div><button type="button" class="ajout-camp" id="new-hero" title="Ajouter un aventurier à la scène" aria-label="Ajouter un aventurier à la scène" hidden>+</button><button type="button" class="ajout-camp" id="new-monster" title="Ajouter un adversaire à la scène" aria-label="Ajouter un adversaire à la scène" hidden>+</button></section><section class="panel pv-panel" id="pv-panel" hidden><div class="eyebrow">Points de vie</div><div class="hp-buttons" id="hp-buttons"></div><button type="button" id="sortir-combat" class="sortir-combat" hidden></button></section></aside>
 <div class="stack"><section class="panel map-panel"><div class="mapbar"><div class="mapbar-h1"><strong id="carte-titre">CARTE TACTIQUE</strong><button class="icon-btn toggle-portees" id="portees">◎</button><button class="icon-btn toggle-portees" id="fouilles-vue">🔍</button><button class="icon-btn toggle-portees" id="distances-vue">📏</button><button class="icon-btn toggle-portees" id="coffres-bulles" hidden>🧰</button><button class="icon-btn toggle-portees" id="redim-panneaux" type="button" title="Redimensionner les panneaux" aria-label="Redimensionner les panneaux" aria-pressed="false">⇔</button><div class="zoom-bar"><button id="zoom-out" aria-label="Dézoomer">−</button><span id="zoom-label">100 %</span><button id="zoom-in" aria-label="Zoomer">+</button><button id="zoom-reset" title="Ajuster la carte au cadre">Ajuster</button><button id="zoom-centre" title="Centrer sur le token sélectionné" aria-label="Centrer sur le token sélectionné">Centrer</button><button id="zoom-zone" title="Cadrer la zone du token sélectionné" aria-label="Cadrer la zone du token sélectionné">Zone</button></div></div><div class="mapbar-h2" hidden><label class="file"><button id="upload">Importer une carte</button><input class="sr" type="file" id="mapfile" accept="image/png,image/jpeg,image/webp"></label><button class="icon-btn" id="reset-map" title="Retirer la carte de fond" aria-label="Retirer la carte de fond">🗑</button></div></div><div class="map" id="map" aria-label="Carte tactique. Déplacez les tokens par glissement ou avec les flèches du clavier."><div id="map-view"><svg class="plan" viewBox="0 0 800 480" preserveAspectRatio="none" aria-hidden="true"><g class="walls" fill="#172326" stroke="#57635c" stroke-width="3"></g><g fill="#9da797" font-family="system-ui" font-size="12" letter-spacing="4"><text x="305" y="130">COUR INTÉRIEURE</text><text x="318" y="462">ENTRÉE SUD</text></g></svg><svg id="map-shapes" aria-hidden="true"></svg><svg id="map-coffres" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><canvas id="fog" aria-hidden="true"></canvas><svg id="map-doors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><svg id="murs-elem" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg><div id="contact-ring" hidden></div><svg id="aim" aria-hidden="true"><defs><marker id="shot-ok" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#3f7bc0"/></marker><marker id="shot-no" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#e0483c"/></marker><marker id="shot-done" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#8b969b"/></marker><marker id="shot-mvt" markerUnits="userSpaceOnUse" viewBox="0 0 19 17" markerWidth="19" markerHeight="17" refX="16" refY="8.5" orient="auto"><path d="M0 .9 19 8.5 0 16.1 5.6 8.5Z" fill="#cf9152"/></marker></defs><path id="aim-mouvement" class="aim-fleche mvt" marker-end="url(#shot-mvt)"/><path id="aim-arrow" class="aim-fleche"/></svg><div id="marquee" hidden aria-hidden="true"></div><div id="floaters" aria-hidden="true"></div></div><div id="barre-mouvement" hidden aria-hidden="true"></div></div></section>
@@ -146,8 +146,8 @@ body.sombre{color-scheme:dark;--bg:#10171a;--panel:#182226;--panel-2:#131d21;--f
 <aside class="stack right"><section class="panel sheet" id="sheet"><div class="sheet-head"><span class="avatar sheet-logo" id="sheet-logo" hidden></span><h1 id="name"></h1><span class="sheet-class" id="kind"></span><button type="button" class="sheet-class" id="pnj-camp" hidden></button></div><p class="muted" id="class"></p><div class="chips" id="sheet-chips"></div><div class="stat-row" id="stats"></div><div class="lifebar big" id="hpbar"><span class="lifebar-fill" id="hpfill"></span><span class="lifebar-text" id="hp"></span></div><div class="comp-ronds" id="skills" hidden></div><details class="bloc-replie" id="bloc-talents" open><summary><span class="bloc-titre">Talents</span><span class="compte" id="talents-compte"></span></summary><div id="sheet-talents"></div></details><div class="bloc-fixe" id="bloc-gear"><div class="bloc-tete"><span class="bloc-titre">Objets</span><span class="compte" id="gear-compte"></span></div><div id="gear"></div></div><div class="divider" hidden></div></section><section class="panel"><h2 class="journal-title"><span aria-hidden="true">📜</span> Journal de combat<button type="button" id="journal-session" class="journal-vider journal-session" hidden title="Nouvelle session : le journal repart de zéro, ici et chez les joueurs, et rien d’avant ne revient au chargement">Nouvelle session</button><button type="button" id="journal-vider" class="journal-vider" hidden title="Vider le journal, ici et chez les joueurs de la table">Vider</button></h2><ol class="journal" id="journal" aria-live="polite"></ol><form id="journal-chat" class="journal-chat" autocomplete="off"><input id="journal-texte" maxlength="300" placeholder="Dire quelque chose…" aria-label="Écrire au journal"><button type="submit" title="Envoyer">➤</button></form></section></aside></main>
 <div id="state-menu" role="menu" aria-label="États" hidden></div>
 
-<script src="./polygon-clipping.umd.min.js?v=0.899"></script>
-<script src="./combat.js?v=0.899"></script>
+<script src="./polygon-clipping.umd.min.js?v=0.900"></script>
+<script src="./combat.js?v=0.900"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -342,7 +342,7 @@ function alive(a){return a.hp>0&&!hasState(a,"Coma")&&!a.horsCarte}
    ce que le MJ retire les vaincus. */
 function vaincuCache(a){return !!a&&!a.hero&&!alive(a)&&enCombat()}
 function ratio(a){return Math.max(0,Math.min(100,100*a.hp/Math.max(1,a.max)))}
-function lifebar(pct,label,hero,al){return '<span class="lifebar'+(hero?'':' foe')+(al?' al-'+al:'')+(pct<35?' low':'')+'"><span class="lifebar-fill" style="width:'+pct+'%"></span><span class="lifebar-text">'+escapeName(label)+'</span></span>'}
+function lifebar(pct,label,hero,al,a){const s=a&&typeof partsPV==='function'?partsPV(a):null;if(s)pct=s.vert;return '<span class="lifebar'+(hero?'':' foe')+(al?' al-'+al:'')+(pct<35?' low':'')+'"><span class="lifebar-fill" style="width:'+pct+'%"></span>'+(s?segmentsPV(s):'')+'<span class="lifebar-text">'+escapeName(label)+'</span></span>'}
 const TOKEN_FRACTION=46/810;
 /* L'échelle d'une carte : la largeur d'un socle moyen, en pour cent de la largeur de la
    carte. Toutes les cartes ne sont pas au même pas — un couloir de donjon et un plan de
@@ -1395,7 +1395,7 @@ function render(){
  // Les pastilles d'activation tiennent en haut à droite de la vignette ; le nom se coupe en leur faveur.
  b.innerHTML='<span class="vignette"><span class="avatar">'+escapeName(a.name[0])+'</span></span><span class="actor-body"><span class="actor-nom"><strong>'+escapeName(a.name)+'</strong></span>'+(jamaisVu?'':'<span class="vie-ligne">'+/* Les chiffres d'un adversaire restent cachés jusqu'à l'Analyse, mais sa barre, elle,
       descend sous les yeux de tous : on voit bien qu'un coup a porté. */
-   lifebar(ratio(a),known?String(a.hp):'',a.hero,a.pnj?alignementDe(a):'')+'</span>')+'</span>'+(jamaisVu?'':'<span class="pastilles" aria-hidden="true">'+pastillesPoints(a)+'</span>');
+   lifebar(ratio(a),known?String(a.hp):'',a.hero,a.pnj?alignementDe(a):'',a)+'</span>')+'</span>'+(jamaisVu?'':'<span class="pastilles" aria-hidden="true">'+pastillesPoints(a)+'</span>');
  // L'écu de DEF au bout de la barre, dès que la troupe la connaît : une Analyse qui l'a apprise suffit, PV inconnus ou non.
  if(!jamaisVu&&(view==='mj'||connait(a,'def')))b.querySelector('.vie-ligne').append(shieldBadge(defOf(a)));
  // Un adversaire mort : ni barre de PV ni DEF, et sa ligne descend au bas de la liste.
@@ -1446,6 +1446,8 @@ function render(){
  const lu=hpKnown(a),part=ratio(a);
  const jauge=document.createElement('span');jauge.className='pv';
  const rempli=document.createElement('i');rempli.style.width=part+'%';jauge.append(rempli);
+ // v0.900 : la Radiance, la Nécrose et l'Armure à droite de la jauge.
+ {const s=partsPV(a);if(s){rempli.style.width=s.vert+'%';jauge.insertAdjacentHTML('beforeend',segmentsPV(s))}}
  jauge.title=lu?a.hp+' / '+a.max+' PV':(alive(a)?'En combat':'Coma');
  // La jauge vit dans sa propre couche, au-dessus de tous les socles : aucun voisin ne la couvre.
  jauge.style.left=a.x+'%';jauge.style.top=a.y+'%';jauge.dataset.x=a.x;jauge.dataset.y=a.y;jauge.style.setProperty('--token',tokenOf(a)+'px');caleJaugesBientot();
@@ -3405,7 +3407,7 @@ function reposRestants(a){return Math.max(0,reposMax(a)-Math.max(0,Math.trunc(Nu
 function reposInutile(a){return a.hp>=a.max&&!statesOf(a).some(e=>e!=='Blindage'&&e!=='Coma'&&!(a.etatsPassifs||[]).includes(e))}
 function reposCourt(a){if(estMort(a))return;const de=d6(),endu=Math.max(0,enduAffichee(a)|0),avant=a.hp;
  const gagne=applyHeal(a,de+endu);a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);a.reposPris=true;
- const leves=leveEtats(a);if(typeof reposer==='function')reposer(a,'court');leveDeguisement(a,true);
+ const leves=leveEtats(a);if(typeof reposer==='function')reposer(a,'court');leveDeguisement(a,true);leveNecrose(a);perdRadiance(a);
  floatNumber(a,'+'+gagne,'gain');rollOnBoard([{dice:[[de,4]]}],a,null);const reste=reposRestants(a);
  log(nomNum(a)+' · Repos court : +'+gagne+' PV (1d6 : '+de+' + Endu '+endu+')'+(avant+de+endu>a.max?', au complet':'')
   +(leves.length?' ; '+leves.join(', ')+' levé'+(leves.length>1?'s':''):'')+' — '+reste+' repos court'+(reste>1?'s':'')+' restant'+(reste>1?'s':'')+'.',{ton:'soin'})}
@@ -3632,6 +3634,8 @@ function basculerMode(neuf,annonce){const finit=mode==='combat'&&neuf!=='combat'
  // Un combat terminé : qui est dans le coma revient à lui, et les états de ceux qui se sont battus s'en vont.
  if(finit&&!(typeof spectateur==='function'&&spectateur())){actors.forEach(reveilDuComa);
   actors.forEach(a=>leveEtats(a,true));
+  // v0.900 : l'Armure tombe à la fin du combat.
+  actors.forEach(a=>{delete a.armure});
   // Les Inventions du Mécaniste ne survivent pas au combat : il retrouve ses armes d'avant.
   actors.forEach(finInventions);
   // Et chaque aventurier peut reprendre un repos court, s'il lui en reste.
@@ -3747,19 +3751,19 @@ function saveChecks(){const a=actors[selected];if(!a)return;
 const SKILL_TINTS=['47,138,99','168,105,31','122,92,184','157,123,30','176,88,54','101,120,111','53,119,184','44,140,133'];
 const STAT_TINTS={vie:'122,92,184',endu:'44,140,133',pv:'47,122,91',def:'96,110,118',dmg:'180,72,58',xp:'157,123,30',pa:'63,143,224',pm:'207,145,82'};
 const TYPE_NOMS={standard:'Standard',solitaire:'Solitaire',alpha:'Élite',boss:'Boss'};
-const IMG_V='0.899';
+const IMG_V='0.900';
 function imgUrl(nom){return './img/'+String(nom).split('/').map(encodeURIComponent).join('/')+'?v='+IMG_V}
 /* Les états et leur jeton, tels qu'ils sont peints sur la table. « Aucun » n'en a pas —
    c'est l'absence d'état — ni « Coma », que la barre de vie dit déjà, ni « Affaibli »,
    hérité des versions d'avant les jetons et conservé pour ne perdre aucune fiche. */
 const STATES=['Aucun','Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Furie','Gardé','Gel','Invisible',
- 'Onde','Poison','Saignée','Vie','Affaibli','Rage','Coma','Sommeil'];
+ 'Onde','Poison','Saignée','Vie','Affaibli','Rage','Coma','Sommeil','Nécrose'];
 const STATE_ICONS={'Au sol':'AU SOL','Aveugle':'AVEUGLE','Blindage':'BLINDAGE INITIAL',
  'Ciblage':'CIBLAGE','Faille':'FAILLE','Feu':'FEU','Foudre':'FOUDRE','Gel':'GEL','Onde':'ONDE',
  'Poison':'POISON','Saignée':'SAIGNEE','Vie':'VIE'};
 /* L'image d'un état : celle que le MJ a choisie (« logosEtats »), sinon celle du jeu ; Gardé, tant
    qu'on ne lui en a pas choisi, un bouclier. */
-const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤'};
+const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴'};
 function imageEtat(etat){const choisi=typeof catalog!=='undefined'&&catalog.logosEtats&&catalog.logosEtats[etat];
  if(choisi&&typeof logoImage==='function'){const im=logoImage(choisi,LOGOS_TOUS);if(im){im.className='';return im}}
  if(STATE_ICONS[etat]){const im=document.createElement('img');im.src=imgUrl(STATE_ICONS[etat]+'.png');im.alt='';im.draggable=false;return im}
@@ -3898,6 +3902,7 @@ function stateIcons(a){const liste=statesOf(a).filter(aImageEtat);if(!liste.leng
 function descriptionEtat(o,etat){const n=compteEtat(o,etat),des=(k,c)=>k+' dé'+(k>1?'s':'')+' '+c+(k>1?'s':'');
  switch(etat){
   case 'Sommeil':return 'Ne peut rien faire, et est Au sol. Se réveiller coûte 1 Action.';
+  case 'Nécrose':return 'Les PV max sont réduits des dégâts nécrosants subis. Seuls un soin ou un repos la lèvent.';
   case 'Au sol':return 'Ne peut ni attaquer ni être déplacé, et ne fait pas d’attaque d’opportunité. Sa DEF tombe à 0 contre les coups. Se relever coûte 1 point de Mouvement.';
   case 'Aveugle':return 'Ne voit rien au-delà de sa zone de contact : ne peut viser que ce qui s’y trouve.';
   case 'Blindage':return 'Absorbe tous les dégâts du prochain coup ou effet qui le blesse, puis disparaît.';
@@ -4454,6 +4459,8 @@ function frappe(a,b,rang,pool,bonus){
  if(partage)damage=partage.reste;
  // v0.896 : Maîtres de la Non-Vie (Dhampire) — les coups d'un mort-vivant ne portent que la moitié.
  if(!r.failed&&damage>0&&natureDe(a)==='mortvivant'&&porteEffet(talentsCodes(b),'maitresnonvie'))damage=Math.ceil(damage/2);
+ // v0.900 : l'Armure encaisse avant les PV.
+ let armureDit='';if(!r.failed&&!blocked&&damage>0&&armureDe(b)){const pris=Math.min(armureDe(b),damage);b.armure=armureDe(b)-pris;if(!b.armure)delete b.armure;damage-=pris;armureDit=' Armure : −'+pris+'.'}
  const hpAvantCoup=b.hp;
  const lost=Math.min(b.hp,damage);b.hp=Math.max(0,b.hp-damage);if(b.hp===0)setState(b,'Coma',true);compteDegats(a,b,lost>0?Math.max(lost,damage):0);
  if(lost>0&&typeof enduranceInattendue==='function')enduranceInattendue(b,damage,hpAvantCoup);
@@ -4473,7 +4480,9 @@ function frappe(a,b,rang,pool,bonus){
  // Une cible tuée par le coup ne reçoit pas ses états : ils viennent après les dégâts.
  if(!r.failed&&!blocked&&lost>0){if(b.hp>0)afflictions.forEach(e=>{const issue=infligeEtat(b,e);
   if(issue===true)poses.push(e);else if(issue==='onde')absorbes.push(e);else if(issue==='immunise')immunises.push(e)});
-  if(charge)a.ignition='';if(etatsCoup)etatsCoup.touches.push(b.id)}
+  if(charge)a.ignition='';if(etatsCoup)etatsCoup.touches.push(b.id);
+  // v0.900 : un coup nécrosant retire des PV max ce qu'il a fait perdre.
+  if(afflictions.includes('Nécrose')&&!insensibleA(b,'Nécrose'))appliqueNecrose(b,lost)}
  // Un état posé plusieurs fois se dit une fois, avec son compte : Poison 2.
  const posesDits=[...new Set(poses)].map(e=>{const n=poses.filter(x=>x===e).length;return n>1?e+' '+n:e});
  // Corps élémentaire : l'adversaire qui attaque le porteur en garde l'état, touché ou non.
@@ -4492,7 +4501,7 @@ function frappe(a,b,rang,pool,bonus){
  posesDits.forEach(e=>floatNumber(b,'✦ '+e,'perte'));
  {poseJet({dice:r.dice,origine:dice.length,faille:r.failleFace,def,bonus:r.failed||blocked||!r.hit?0:bonus,solidite:solide,...(pj?{plasma:pj.des}:{})},a,b)}
  const corps=r.failed?(deception==='echec'?'Échec — Déception.':'Échec (double 1).'):blocked?'Blindage consommé.':(r.critical?'Critique ! ':'')+total+' Dégâts'+(posesDits.length?' + '+posesDits.join(' + '):'')+'.';
- const suite=domDit+malDit+perilDit+ditEcartes(ecartes)+(ouverte?' Brise : la DEF ne compte pas'+(double&&!dom?', dégâts doublés':'')+(brisee?', '+nomNum(b)+' perd '+brisee+' DEF':'')+'.':'')
+ const suite=domDit+malDit+armureDit+perilDit+ditEcartes(ecartes)+(ouverte?' Brise : la DEF ne compte pas'+(double&&!dom?', dégâts doublés':'')+(brisee?', '+nomNum(b)+' perd '+brisee+' DEF':'')+'.':'')
   +(dom==='double'&&!r.failed?' Dominateur : dégâts doublés, la cible est au sol.':dom==='sansechec'?' Dominateur : pas d’échec contre un adversaire au sol.':'')
   +(deception==='riposte'?' Déception : '+nomNum(b)+' riposte.':'')+(sort?' Mauvais Sort : le '+sort.avant+' relancé donne '+sort.apres+'.':'')+(r.failleFace!==null?' Faille sur '+r.failleFace+'.':'')+(absorbes.length?' Onde consumée : '+absorbes.join(', ')+' ignoré.':'')+(immunises.length?' Invulnérable : '+immunises.join(', ')+' sans effet.':'')+(couverts.length?' Garde rapprochée : '+couverts.join(', ')
   /* « À sa place » ne se dit que si le porteur n'a rien pris : dès qu'un reliquat lui
@@ -4946,6 +4955,45 @@ function fenetreAncre(b,x,activer,laisser){b.ancreAttente=true;const nom=x.talen
 {const ie=infligeEtat;infligeEtat=function(a,etat){const r=ie(a,etat);
  if(r===true&&etat==='Au sol'){const x=ancreDispo(a);if(x)fenetreAncre(a,x,()=>{setState(a,'Au sol',false);log(nomNum(a)+' · '+(x.talent&&x.talent.name||'Ancré dans le Sol')+' : reste debout.',{ton:'talent'})},null)}
  return r}}
+/* v0.900 — Les états de PV. La Nécrose retire des PV max les PV que ses coups ont fait perdre, cumulés ; elle ne tombe qu'au
+   soin, au repos. La Radiance : le surplus d'un soin radiant monte les PV max d'autant ; perdue à la Nécrose, au Poison, au
+   repos. L'Armure : des points pris avant les PV, après le Blindage ; elle tombe à la fin du combat. */
+function necroseDe(a){return Math.max(0,Math.trunc(Number(a&&a.necrose))||0)}
+function radianceDe(a){return Math.max(0,Math.trunc(Number(a&&a.radiance))||0)}
+function armureDe(a){return Math.max(0,Math.trunc(Number(a&&a.armure))||0)}
+// Les PV max relus : l'aventurier par son calcul, l'adversaire depuis ses PV max d'avant toute Nécrose ou Radiance.
+function majPVMax(a,avant){if(!a)return;
+ if(a.hero&&typeof pvMaximum==='function'&&typeof catalog!=='undefined')a.max=Math.max(1,pvMaximum(catalog.classes,a,catalog.talents,catalog.items)+(Number(a.auraPv)||0));
+ else{const base=a.pvBase!=null?Number(a.pvBase):Math.max(1,(Number(a.max)||1)+(avant?avant.nec-avant.rad:0)),n=necroseDe(a),r=radianceDe(a);
+  if(n||r)a.pvBase=base;else delete a.pvBase;a.max=Math.max(1,base-n+r)}
+ a.hp=Math.max(0,Math.min(Number(a.hp)||0,a.max))}
+const setStateBrut=setState;
+function leveNecrose(a){if(!a||(!necroseDe(a)&&!hasState(a,'Nécrose')))return false;const avant={nec:necroseDe(a),rad:radianceDe(a)};
+ delete a.necrose;setStateBrut(a,'Nécrose',false);majPVMax(a,avant);return true}
+function perdRadiance(a){if(!a||!radianceDe(a))return false;const avant={nec:necroseDe(a),rad:radianceDe(a)};delete a.radiance;majPVMax(a,avant);return true}
+function appliqueNecrose(a,n){n=Math.max(0,Math.trunc(Number(n))||0);if(!a||!n)return;perdRadiance(a);const avant={nec:necroseDe(a),rad:radianceDe(a)};
+ a.necrose=avant.nec+n;setStateBrut(a,'Nécrose',true);majPVMax(a,avant);floatNumber(a,'Nécrose −'+n,'perte')}
+function donneArmure(a,n){n=Math.max(0,Math.trunc(Number(n))||0);if(!a||!n)return;a.armure=armureDe(a)+n;floatNumber(a,'+'+n+' Armure','gain')}
+// Un soin lève la Nécrose ; radiant — case du talent ou de l'objet —, son surplus devient des PV max et des PV en plus.
+{const ah=applyHeal;applyHeal=function(a,montant,radiant){if(!a)return 0;const m=Math.max(0,Math.trunc(Number(montant))||0);
+ if(a.hero===true&&a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0)return 0;
+ const rad=radiant===true||!!(typeof talentEnCours!=='undefined'&&talentEnCours&&talentEnCours.talent&&talentEnCours.talent.radiant===true);
+ if(m>0)leveNecrose(a);const g=ah(a,m);
+ if(rad&&m>g){const extra=m-g,avant={nec:necroseDe(a),rad:radianceDe(a)};a.radiance=avant.rad+extra;majPVMax(a,avant);a.hp=Math.min(a.max,a.hp+extra);if(a.hp>0)setState(a,'Coma',false);return g+extra}
+ return g}}
+// Ôter la Nécrose d'un clic (menu des états) la lève pour de bon ; la fin d'un combat ne la lève pas.
+setState=function(a,etat,pose){if(etat==='Nécrose'&&!pose&&a&&necroseDe(a))return leveNecrose(a);return setStateBrut(a,etat,pose)};
+{const l0=leveEtats;leveEtats=function(a,fin,garder){return l0(a,fin,[...(Array.isArray(garder)?garder:[]),'Nécrose'])}}
+{const ie=infligeEtat;infligeEtat=function(a,etat){const r=ie(a,etat);if((etat==='Poison'||etat==='Nécrose')&&r!=='immunise')perdRadiance(a);return r}}
+{const r0=render;render=function(...x){actors.forEach(a=>{if(a&&necroseDe(a)&&!hasState(a,'Nécrose'))setStateBrut(a,'Nécrose',true)});return r0.apply(this,x)}}
+/* La barre de PV : les PV en vert ; à droite, la Radiance dorée, la Nécrose, l'Armure — chacune à sa part des PV max. */
+function partsPV(a){const nec=necroseDe(a),rad=radianceDe(a),arm=armureDe(a);if(!a||(!nec&&!rad&&!arm))return null;
+ const max=Math.max(1,Number(a.max)||1),normal=Math.max(1,max-rad),T=max+nec+arm,hp=Math.max(0,Number(a.hp)||0),p=v=>+(100*v/T).toFixed(2);
+ return {vert:p(Math.min(hp,normal)),rad:{l:p(normal),w:p(rad),plein:rad?+(100*Math.max(0,Math.min(rad,hp-normal))/rad).toFixed(2):0},nec:{l:p(normal),w:p(nec)},arm:{l:p(max+nec),w:p(arm)}}}
+function segmentsPV(s){if(!s)return '';let h='';
+ if(s.rad.w)h+='<span class="pv-radiance" style="left:'+s.rad.l+'%;width:'+s.rad.w+'%"><span class="pv-radiance-plein" style="width:'+s.rad.plein+'%"></span></span>';
+ if(s.nec.w)h+='<span class="pv-necrose" style="left:'+s.nec.l+'%;width:'+s.nec.w+'%"></span>';
+ if(s.arm.w)h+='<span class="pv-armure" style="left:'+s.arm.l+'%;width:'+s.arm.w+'%"></span>';return h}
 function incidentPlasma(a,talent,code,ctx){const f=code&&INCIDENTS_PLASMA[code.cle];if(f)try{f(a,talent,ctx)}catch(e){}}
 // La Cellule, au-dessus de la barre d'actions : un dé par Plasma, plein s'il est libre, posé s'il attend sur un talent, vide s'il est dépensé.
 function majCellule(){const barre=document.querySelector('.map-panel>.barre-actions');let c=$('cellule-plasma');
@@ -5059,6 +5107,8 @@ function attack(opts={}){
    if(munitionTiree&&typeof retirerInventaire==='function'){const o=objetDe(munitionTiree);if(o)retirerInventaire(a,o)}
    if(lancer&&!lanceAuContact&&typeof retirerInventaire==='function'){const o=objetDe(lancer),b=actors[vises[0]];if(o){retirerInventaire(a,o);if(b)ajouterInventaire(b,o)}}}
   if(partis&&toucheTombe)apresTouche(a);
+  // v0.900 : une attaque qui donne de l'Armure la donne à son auteur.
+  if(partis){const ar=Math.max(0,Math.trunc(Number(activeAttack(a).armure))||0);if(ar)donneArmure(a,ar)}
   porteeForcee=null;
   if(opts.apres)opts.apres({vises,partis,tues:vivants.filter(j=>!alive(actors[j]))});
   render()};
@@ -5342,5 +5392,5 @@ $('portees').onclick=()=>{porteesOn=!porteesOn;
 majPortees();
 window.addEventListener('resize',()=>{updateRing();showAim();renderCombat()});
 render();
-</script><script src="./catalog.js?v=0.899"></script><script src="./planches-calcul.js?v=0.899"></script><script src="./planches.js?v=0.899"></script><script src="./actualites.js?v=0.899"></script><script src="./editor.js?v=0.899"></script><script src="./maps.js?v=0.899"></script><script src="./domaine.js?v=0.899"></script><script src="./campagnes.js?v=0.899"></script><script src="./firebase-config.js?v=0.899"></script><script src="./shared-data.js?v=0.899"></script><script src="./shared.js?v=0.899"></script>
-<script src="./live.js?v=0.899"></script></body></html>
+</script><script src="./catalog.js?v=0.900"></script><script src="./planches-calcul.js?v=0.900"></script><script src="./planches.js?v=0.900"></script><script src="./actualites.js?v=0.900"></script><script src="./editor.js?v=0.900"></script><script src="./maps.js?v=0.900"></script><script src="./domaine.js?v=0.900"></script><script src="./campagnes.js?v=0.900"></script><script src="./firebase-config.js?v=0.900"></script><script src="./shared-data.js?v=0.900"></script><script src="./shared.js?v=0.900"></script>
+<script src="./live.js?v=0.900"></script></body></html>

@@ -1046,7 +1046,7 @@ function effetParNom(nom){const k=cleTalent(nom);if(!k)return '';
 // Les huit compétences, dans l'ordre des fiches : la table les nomme depuis le moteur.
 const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ruse','Savoir','Technique'];
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Furie','Gel',
- 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil'];
+ 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
 // Les réglages de Dominateur, bornés : l'état visé, x, et les dés de xdx.
 function dominateurDe(p){const n=(v,a,b,d)=>Math.max(a,Math.min(b,Math.trunc(Number(v))||d));
@@ -1982,10 +1982,16 @@ const OBJETS_CODES={
  soin:{cle:'soin',nom:'Soin',aide:'Le porteur regagne des points de vie.',
   params:[{cle:'quantite',nom:'Quantité',type:'nombre',defaut:5,min:1,max:99},
    {cle:'forme',nom:'Sous la forme de',type:'choix',defaut:'fixe',
-    options:[['fixe','PV'],['des','dés (d6)'],['endu','PV + Endurance'],['vie','PV + Vie']]}],
+    options:[['fixe','PV'],['des','dés (d6)'],['endu','PV + Endurance'],['vie','PV + Vie']]},
+   // v0.900 : un soin radiant pousse les PV max au-delà de leur plafond, du surplus soigné.
+   {cle:'radiant',nom:'Radiant',type:'choix',defaut:'non',options:[['non','Non'],['oui','Oui']]}],
   phrase(p){const n=Math.max(1,(p&&p.quantite)|0),f=p&&p.forme;
    const combien=f==='des'?'<b>'+n+'d6</b>':f==='endu'?'<b>'+n+' + Endurance</b>':f==='vie'?'<b>'+n+' + Vie</b>':'<b>'+n+'</b>';
-   return 'Le porteur se soigne de '+combien+' PV.'}},
+   return 'Le porteur se soigne de '+combien+' PV'+(p&&p.radiant==='oui'?' <b>radiants</b>':'')+'.'}},
+ /* v0.900 — Armure : le porteur reçoit tant de points d'Armure, pris avant ses PV ; elle tombe à la fin du combat. */
+ armure:{cle:'armure',nom:'Armure',aide:'Le porteur reçoit de l’Armure, qui encaisse avant ses PV.',
+  params:[{cle:'quantite',nom:'Quantité',type:'nombre',defaut:5,min:1,max:99}],
+  phrase(p){return 'Le porteur reçoit <b>'+Math.max(1,(p&&p.quantite)|0)+'</b> d’Armure.'}},
  /* État : le porteur gagne l'affection réglée — un Blindage, une Onde, ce que le MJ veut. */
  etat:{cle:'etat',nom:'État',aide:'Le porteur reçoit l’état réglé.',
   params:[{cle:'etat',nom:'État obtenu',type:'choix',defaut:'Blindage',options:ETATS_JEU.map(e=>[e,e])}],
@@ -2342,7 +2348,8 @@ function bonusPV(classes,role,espece){const c=classeDe(classes,role);
 function pvMaximum(classes,a,talents,items){const b=talents||items?bonusDe(a,talents,items):null;
  const vie=Math.max(1,Math.trunc(Number(a&&a.vie))||1)+(b?b.vie:0);
  const endu=Math.max(1,Math.trunc(Number(a&&a.endu))||1)+(b?b.endu:0);
- return Math.max(1,vie*endu+bonusPV(classes,a&&a.role,a&&a.race)+(b?b.pv:0))}
+ // v0.900 : la Nécrose retire des PV max, la Radiance en ajoute.
+ return Math.max(1,vie*endu+bonusPV(classes,a&&a.role,a&&a.race)+(b?b.pv:0)-Math.max(0,Math.trunc(Number(a&&a.necrose))||0)+Math.max(0,Math.trunc(Number(a&&a.radiance))||0))}
 /* Les classes d'aventurier : un nom, une encre, et les points de vie qu'elles apportent.
    On les retrouve par leur nom réduit, et sur la seule tête du rôle : « Mystique »,
    « mystique » ou « Mystique · Voie du gel » désignent la même classe. Un rôle écrit
@@ -2447,7 +2454,9 @@ function ondeCures(a){const l=statesOf(a).filter(e=>!ONDE_EXCLUS.includes(e));re
 /* Les dégâts d'un effet ne se défendent pas : ni DEF, ni blindage, ni saignée. */
 /* Le Blindage absorbe toute source de dégâts, une fois, puis disparaît : rien n'est perdu. */
 function applyDamage(a,montant){if(Math.trunc(montant)>0&&hasState(a,'Blindage')){setState(a,'Blindage',false);return 0}
- const perdu=Math.min(a.hp,Math.max(0,Math.trunc(montant)||0));
+ // v0.900 : l'Armure prend les dégâts avant les PV, après le Blindage.
+ let m=Math.max(0,Math.trunc(montant)||0);{const arm=Math.max(0,Math.trunc(Number(a.armure))||0);if(arm&&m){const pris=Math.min(arm,m);a.armure=arm-pris;if(!a.armure)delete a.armure;m-=pris}}
+ const perdu=Math.min(a.hp,m);
  a.hp=Math.max(0,a.hp-perdu);if(a.hp===0)setState(a,'Coma',true);return perdu}
 // Un aventurier mort ne se soigne plus, d'aucune façon : seul le MJ le ressuscite.
 function applyHeal(a,montant){if(a&&a.hero===true&&a.vie!==undefined&&a.vie!==null&&Math.trunc(Number(a.vie))<=0)return 0;const gagne=Math.min(Math.max(0,a.max-a.hp),Math.max(0,Math.trunc(montant)||0));

@@ -1808,7 +1808,7 @@ assert.ok(src.includes('const BULLES=true;')&&src.includes('function ouvrirBulle
 /* Les effets d'équipement : une banque déclarée comme celle des talents — une clé, des
    réglages, une phrase — et trois manières d'en user. */
 {const codes=C.OBJETS_CODES;
- assert.equal(Object.keys(codes).sort().join(),'etat,invulnerabilite,soin');
+ assert.equal(Object.keys(codes).sort().join(),'armure,etat,invulnerabilite,soin');
  assert.equal(JSON.stringify(C.USAGES_OBJET.map(([k])=>k)),JSON.stringify(['libre','conso','court','jour','horscombat','horsconso']));
  assert.equal(JSON.stringify(C.USAGES_LIMITES),JSON.stringify(['court','jour']));
  assert.equal(C.usageLimite('court'),true);assert.equal(C.usageLimite('conso'),false);
@@ -1851,7 +1851,7 @@ assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function 
  &&src.includes("if(usageConsomme(usage))retirerInventaire(a,o);")&&src.includes('if(objetCode(o)){appliquerEffetObjet(a,o);return}')
  &&src.includes("a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};")
  &&page.includes('function desRecus(b,dice)')&&page.includes('const {gardes:dice,ecartes}=desRecus(b,tous);')
- &&page.includes('const suite=domDit+malDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
+ &&page.includes('const suite=domDit+malDit+armureDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
  &&page.includes("a.immunites={etats:[],des:[]};if(typeof reposer==='function')reposer(a,'long');")&&src.includes('function reposer(a,type=')
  &&feuille.includes('.gear-detail .gear-effet{font-weight:600}'),'les effets d’équipement sont câblés');
 /* Les emplacements du corps : deux mains, un torse, un dos, une tête, trois anneaux, une
@@ -5189,9 +5189,17 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  const a={states:[]};assert.ok(C.cumulable('Furie')&&C.ETATS_JEU.includes('Furie'),'empilable, et posable par un effet');
  C.infligeEtat(a,'Furie');C.infligeEtat(a,'Furie');C.infligeEtat(a,'Furie');assert.equal(C.compteEtat(a,'Furie'),3,'trois crans');
  const b={states:['Onde']};assert.ok(C.infligeEtat(b,'Furie')===true&&C.hasState(b,'Onde'),'l’Onde ne l’absorbe pas');
- assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤'};")
+ assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.900 — Les états de PV : Nécrose (PV max réduits, cumulés), Radiance (surplus d'un soin radiant), Armure (prise avant les PV). */
+{const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(C.ETATS_JEU.includes('Nécrose')&&C.OBJETS_CODES.armure&&C.OBJETS_CODES.soin.params.some(p=>p.cle==='radiant'),'v0.900 tables');
+ const a={hp:20,max:20,armure:8,states:[]};assert.equal(C.applyDamage(a,10),2);assert.equal(a.hp,18);assert.equal(a.armure,undefined);
+ const h={hero:true,vie:2,endu:3,role:'',race:''},base=C.pvMaximum([],h);assert.equal(C.pvMaximum([],{...h,necrose:4}),base-4);assert.equal(C.pvMaximum([],{...h,radiance:5}),base+5);
+ assert.ok(ix.includes('function appliqueNecrose(a,n)')&&ix.includes("if(afflictions.includes('Nécrose')&&!insensibleA(b,'Nécrose'))appliqueNecrose(b,lost)")&&ix.includes("let armureDit='';")
+  &&ix.includes("if((etat==='Poison'||etat==='Nécrose')&&r!=='immunise')perdRadiance(a)")&&ix.includes("leveNecrose(a);perdRadiance(a);")&&ix.includes('actors.forEach(a=>{delete a.armure});')
+  &&ed.includes("applyHeal(a,total,p.radiant==='oui')")&&ed.includes('name="radiant"')&&ed.includes("field('Armure','aa'+i,")&&lv.includes("'necrose','radiance','armure','pvBase',")&&css.includes('.pv-armure{'),'v0.900');}
 /* v0.899 — Les Talents d'Espèce du Nain : Vision des profondeurs, Ventre de Pierre, Ancré dans le Sol, Rancune ; la pierre sur la carte. */
 {const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),lv=fs.readFileSync('live.js','utf8');
  assert.equal(C.especeDe('nain').extension,'dnd');['visionprofondeurs','ventrepierre','ancresol','rancune'].forEach(k=>assert.ok(C.TALENTS_CODES[k]&&C.TALENTS_CODES[k].espece,k));
@@ -5660,7 +5668,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  // Les couleurs : socle et barre, liste, fiche et jauge.
  assert.ok(page.includes(".token.pnj.al-allie{background:#2b4466;border-color:#8fb6e0}")&&page.includes(".token.pnj.al-neutre{background:#5c4a1e;border-color:#dcc074}")
   &&page.includes("#pv-layer .pv.al-allie i,.lifebar.foe.al-allie .lifebar-fill{")&&page.includes("if(a.pnj)jauge.classList.add('al-'+alignementDe(a));")
-  &&page.includes("lifebar(ratio(a),known?String(a.hp):'',a.hero,a.pnj?alignementDe(a):'')")&&feuille.includes('.best-carre.al-allie{--type:#8fb6e0}'),'les couleurs de l’alignement');
+  &&page.includes("lifebar(ratio(a),known?String(a.hp):'',a.hero,a.pnj?alignementDe(a):'',a)")&&feuille.includes('.best-carre.al-allie{--type:#8fb6e0}'),'les couleurs de l’alignement');
  // En ligne : l'alignement voyage, et seul le MJ l'écrit.
  const champs=JSON.parse(vivant.match(/const CHAMPS_VIVANTS=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"')),mj=JSON.parse(vivant.match(/const CHAMPS_ACTEUR_MJ=(\[[\s\S]*?\]);/)[1].replace(/'/g,'"'));
  assert.ok(['pnj','alignement'].every(k=>champs.includes(k)&&mj.includes(k)),'pnj et alignement suivent la table, au MJ seul');}
