@@ -3218,3 +3218,18 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 .choix-deguisement .deguisement img{width:100%;height:100%;object-fit:cover}
 .choix-deguisement .deguisement.on{border-color:#c99a3c;box-shadow:0 0 0 2px #c99a3c}
 .choix-deguisement .deguisement-tailles{display:flex;gap:8px}
+/* v0.898 — Réglages d'une classe ou d'une espèce, et son équipement de départ ; la forge de l'éditeur d'adversaire. */
+#reglages-famille{width:min(820px,94vw)}#reglages-corps{max-height:72vh;overflow:auto}
+#reglages-corps .reglages-description{grid-column:1/-1}#reglages-corps .reglages-description textarea{width:100%;box-sizing:border-box;font:inherit}
+#reglages-corps input[type=color]{width:100%;height:38px;padding:2px}
+.depart-editeur{display:flex;flex-direction:column;gap:10px}
+.depart-pieces{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.depart-piece{display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.depart-piece .cat-pill.gear-carre{width:36px;min-width:36px;height:36px;min-height:36px;padding:2px;gap:0;border-radius:8px;justify-content:center;cursor:default}
+#reglages-corps .depart-piece input{width:64px;min-width:0;margin:0;padding:4px 6px}
+#reglages-corps .depart-pieces select{width:auto;max-width:220px;margin:0}
+.depart-groupe{display:flex;flex-direction:column;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px}
+.depart-groupe-tete{display:flex;align-items:center;gap:8px}.depart-groupe-tete input{flex:1;margin:0}
+.depart-lot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border:1px dashed var(--line);border-radius:8px}
+.espece-separateur.cliquable{cursor:pointer}.espece-separateur.cliquable:hover{color:var(--ink)}
+#forge-adv-editor{width:min(820px,94vw)}#forge-adv-corps{max-height:76vh;overflow:auto}

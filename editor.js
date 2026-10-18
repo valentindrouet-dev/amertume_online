@@ -229,6 +229,15 @@ function normaliseActionsSpeciales(o){const out={};if(!o||typeof o!=='object'||A
 function actionSpeciale(k){return normaliseActionsSpeciales(typeof catalog!=='undefined'&&catalog?catalog.actionsSpeciales:null)[k]||{}}
 // Le centre de son rond : l'icône choisie, sinon son symbole.
 function centreAction(k,symbole){const l=actionSpeciale(k).logo,im=l?logoAttaque(l,'logo-equip'):null;return im||symbole}
+/* v0.898 — Les réglages des espèces et les compétences des classes s'écrivent par-dessus les tables du jeu, gardées d'origine. */
+const ESPECES_ORIGINE=typeof ESPECES!=='undefined'?structuredClone(ESPECES):[],COMPS_CLASSE_ORIGINE=typeof COMPETENCES_CLASSE!=='undefined'?structuredClone(COMPETENCES_CLASSE):{};
+function appliqueReglages(c){if(typeof ESPECES==='undefined'||typeof COMPETENCES_CLASSE==='undefined')return;
+ ESPECES.forEach(e=>{const o=ESPECES_ORIGINE.find(x=>x.id===e.id);if(!o)return;
+  ['teinte','vie','endu','dmg','pv','vitesse','vitessePetit','description'].forEach(k=>{if(k in o)e[k]=o[k];else delete e[k]});e.comps={...o.comps};
+  const r=(c.especesReglages||{})[e.id];if(!r)return;if(r.teinte)e.teinte=r.teinte;['vie','endu','dmg','pv','vitesse','vitessePetit'].forEach(k=>{if(r[k])e[k]=r[k];else delete e[k]});
+  e.comps={...r.comps};if(r.description)e.description=r.description;else delete e.description});
+ Object.keys(COMPETENCES_CLASSE).forEach(k=>delete COMPETENCES_CLASSE[k]);Object.assign(COMPETENCES_CLASSE,structuredClone(COMPS_CLASSE_ORIGINE));
+ (c.classes||[]).forEach(k=>{if(!k||!k.name||!Array.isArray(k.comps))return;Object.keys(COMPETENCES_CLASSE).filter(n=>cleClasse(n)===cleClasse(k.name)).forEach(n=>delete COMPETENCES_CLASSE[n]);COMPETENCES_CLASSE[k.name]=[...k.comps]})}
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];migreOmbrelame(c);
  // Les pièces forgées ne sont pas au catalogue : elles vivent chez les aventuriers, et s'y recomposent (syncForges).
  c.items=c.items.filter(o=>!(o&&o.forge));c.affixes=normaliseAffixes(c.affixes);c.forge=normaliseReglageForge(c.forge);
@@ -336,6 +345,20 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    ee=c.extensionsEspeces&&typeof c.extensionsEspeces==='object'&&!Array.isArray(c.extensionsEspeces)?c.extensionsEspeces:{};
   c.logosExtensions={};Object.entries(lx).forEach(([k,v])=>{if(ext.includes(k)&&typeof v==='string'&&v&&v.length<=120)c.logosExtensions[k]=v});
   c.extensionsEspeces={};Object.entries(ee).forEach(([k,v])=>{if(/^[a-z0-9_-]{1,40}$/.test(k)&&typeof v==='string'&&(v===''||ext.includes(v)))c.extensionsEspeces[k]=v})}
+ // v0.898 : l'équipement de départ des classes et des espèces, et les réglages des espèces ; appliqués aux tables du jeu.
+ {const ref=x=>Array.isArray(x)&&typeof x[0]==='string'&&x[0]&&x[0].length<=80?[x[0],Math.max(1,Math.min(999,Math.trunc(Number(x[1]))||1))]:null,
+   liste=l=>(Array.isArray(l)?l:[]).map(ref).filter(Boolean).slice(0,40),
+   dep=d=>({fixes:liste(d&&d.fixes),groupes:(Array.isArray(d&&d.groupes)?d.groupes:[]).filter(g=>g&&typeof g==='object').slice(0,12).map(g=>({nom:String(g.nom||'').slice(0,40),lots:(Array.isArray(g.lots)?g.lots:[]).map(liste).filter(l=>l.length).slice(0,12)}))}),
+   d0=c.departs&&typeof c.departs==='object'&&!Array.isArray(c.departs)?c.departs:{};c.departs={classes:{},especes:{}};
+  ['classes','especes'].forEach(k=>{const o=d0[k]&&typeof d0[k]==='object'&&!Array.isArray(d0[k])?d0[k]:{};Object.entries(o).forEach(([n,v])=>{if(typeof n==='string'&&n.length<=60&&v&&typeof v==='object')c.departs[k][n]=dep(v)})});
+  const r0=c.especesReglages&&typeof c.especesReglages==='object'&&!Array.isArray(c.especesReglages)?c.especesReglages:{};c.especesReglages={};
+  const num=(v,max)=>Math.max(0,Math.min(max,Math.trunc(Number(v))||0)),noms=typeof COMPETENCES!=='undefined'?COMPETENCES:[];
+  Object.entries(r0).forEach(([id,r])=>{if(!/^[a-z0-9_-]{1,40}$/.test(id)||!r||typeof r!=='object')return;const comps={};
+   Object.entries(r.comps&&typeof r.comps==='object'?r.comps:{}).forEach(([n,v])=>{if(noms.includes(n)&&num(v,9))comps[n]=num(v,9)});
+   c.especesReglages[id]={teinte:/^#[0-9a-f]{6}$/i.test(r.teinte||'')?r.teinte:'',vitesse:num(r.vitesse,30),vitessePetit:num(r.vitessePetit,30),vie:num(r.vie,9),endu:num(r.endu,9),dmg:num(r.dmg,9),pv:num(r.pv,99),comps,description:typeof r.description==='string'?r.description.slice(0,800):''}});
+  (Array.isArray(c.classes)?c.classes:[]).forEach(k=>{if(!k||typeof k!=='object')return;if(k.comps!==undefined){k.comps=(Array.isArray(k.comps)?k.comps:[]).filter(n=>noms.includes(n)).slice(0,3);if(!k.comps.length)delete k.comps}
+   if(k.objetAleatoire!==undefined){k.objetAleatoire=[...new Set(Array.isArray(k.objetAleatoire)?k.objetAleatoire:[])].filter(g=>['une-main','armure','bouclier','distance'].includes(g))}});
+  if(typeof appliqueReglages==='function')appliqueReglages(c)}
  // Les noms que le MJ a donnés aux effets, dans la bibliothèque : un texte court par effet connu.
  const ne=c.nomsEffets&&typeof c.nomsEffets==='object'&&!Array.isArray(c.nomsEffets)?c.nomsEffets:{};
  c.nomsEffets={};Object.entries(ne).forEach(([k,v])=>{if(TALENTS_CODES[k]&&typeof v==='string'&&v.trim())c.nomsEffets[k]=v.trim().slice(0,60)});
@@ -3397,6 +3420,8 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
    // Le nom de la classe ouvre le même arbre : on clique où l'on regarde.
    h.classList.add('cliquable');h.title='Ouvrir l’arbre de talents de '+famille;
    h.onclick=()=>openArbresClasse(famille)}
+  // v0.898 : le nom d'une classe ouvre ses réglages ; son rouage, son arbre.
+  if(view==='mj'&&classeDe(catalog.classes,famille)){h.classList.add('cliquable');h.removeAttribute('title');h.onclick=e=>{if(e.target.closest('button,select'))return;openReglagesClasse(famille)}}
   /* Une classe élémentaire (le Mystique) a Feu, Gel et Foudre dans sa barre : ses talents se
      montrent sous l'élément choisi, noms, logos et états remplis — le même aperçu que son arbre. */
   const elem=classeElementaire(famille)?(ELEMENTS.find(e=>e.cle===elementApercu)||ELEMENTS[0]):null;
@@ -3415,6 +3440,7 @@ function renderTalents(){renderBiblioEffets();const cols=$('talent-cols');if(!co
    [...ESPECES.map(e=>[e.id,e.nom]),['','Sans espèce']].forEach(([id,nomE])=>{const lot=ordre.filter(([t])=>(especeDe(t.espece)?t.espece:'')===id).sort((x,y)=>rang(x[0])-rang(y[0]));if(!lot.length)return;
     const r=document.createElement('div');r.className='talent-rangee espece-rangee';r.setAttribute('aria-label',nomE);
     const sep=document.createElement('span');sep.className='espece-separateur';sep.textContent=nomE;r.append(sep);
+    if(view==='mj'&&id){sep.classList.add('cliquable');sep.onclick=()=>openReglagesEspece(id)}
     lot.forEach(([t])=>r.append(talentRow(t,place.get(t.id),elem)));cadre.append(r)})}
   else ORDRE_TYPES_TALENTS.forEach(k=>{const lot=ordre.filter(([t])=>talentType(t)[0]===k);if(!lot.length)return;
    const r=document.createElement('div');r.className='talent-rangee t-'+k;r.setAttribute('aria-label',talentType({type:k})[2]);
@@ -3910,7 +3936,11 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
    forgeApercu={id:'forge-'+crypto.randomUUID(),base:b.id,affixes:tireAffixes(b,n,catalog.affixes,forgeNiveau)};montre()};
   [base,nombre,niveau,forger].forEach(x=>ligne.append(x));s.append(ligne,apercu);montre()}
  // Sur mesure : la pièce de base choisie, chacun de ses affixes, chaque valeur ; elle entre dans la Chambre forte.
- {const s=bloc('Sur mesure'),m=mesureForge,bases=(catalog.items||[]).filter(o=>o&&!o.forge&&(o.category==='weapon'||o.category==='armor')).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
+ /* Le bloc Sur mesure (v0.898 : blocMesure, partagé avec la forge de l'éditeur d'adversaire). */
+ {const s=bloc('Sur mesure');s.append(...blocMesure(mesureForge,{rerender:renderForge,apres:()=>{mesureForge={id:'forge-'+crypto.randomUUID(),base:mesureForge.base,affixes:['','','',''],valeurs:{}};syncForges();sauveForge();renderForge();openChambre()}}))}}
+/* Forger sur mesure : une base, jusqu'à trois affixes et un de classe, leurs valeurs ; « apres » reçoit la pièce, déjà
+   rangée à la Chambre forte. */
+function blocMesure(m,{rerender,armesSeules=false,apres}){const bases=(catalog.items||[]).filter(o=>o&&!o.forge&&(o.category==='weapon'||(!armesSeules&&o.category==='armor'))).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
   const base=document.createElement('select');base.setAttribute('aria-label','Pièce de base, sur mesure');base.replaceChildren(new Option('— pièce de base —',''),...bases.map(o=>new Option(o.name+' · '+(o.category==='weapon'?(o.ranged?'à distance':'mêlée'):NOM_EMPLACEMENT(emplacementDe(o))),o.id)));base.value=m.base;
   const b=bases.find(o=>o.id===m.base),tous=normaliseAffixes(catalog.affixes),vaSur=b?tous.filter(x=>affixeVaSur(x,b,0)):[];
   // Un affixe qui ne va pas sur la nouvelle base s'en va ; deux affixes d'un même groupe, non plus.
@@ -3920,25 +3950,33 @@ function renderForge(){const corps=$('forge-corps');if(!corps)return;corps.repla
   // La clé d'une place : celle de son affixe dans la pièce, « #1 » quand il revient.
   const cleDe=i=>{const avant=[0,1,2,3].filter(k=>k<i&&choisi(k)).length;return cles[avant]},graineDe=(x,cle)=>m.id+(cle===x.id?'':cle.slice(x.id.length));
   const ligne=document.createElement('div');ligne.className='forge-reglages forge-mesure';ligne.append(base);
-  base.onchange=()=>{m.base=base.value;renderForge()};
+  base.onchange=()=>{m.base=base.value;rerender()};
   [0,1,2,3].forEach(i=>{const se=document.createElement('select');se.setAttribute('aria-label',i<3?'Affixe '+(i+1):'Affixe de classe');
    const pris=new Set(m.affixes.filter((id,k)=>id&&k!==i).map(id=>vaSur.find(x=>x.id===id)).filter(x=>!repetable(x)).map(groupeAffixe));
    se.add(new Option(i<3?'— affixe '+(i+1)+' —':'— affixe de classe —',''));
    vaSur.filter(x=>i<3?!x.classe:!!x.classe).forEach(x=>{const o=new Option(formeAffixe(x,accordDe(b))+' · '+(x.classe?x.classe+' · ':'')+phraseAffixe(x),x.id);o.disabled=pris.has(groupeAffixe(x));se.add(o)});
-   se.value=m.affixes[i]||'';se.disabled=!b||(i===3&&communs<3);se.onchange=()=>{m.affixes[i]=se.value;renderForge()};
+   se.value=m.affixes[i]||'';se.disabled=!b||(i===3&&communs<3);se.onchange=()=>{m.affixes[i]=se.value;rerender()};
    const boite=document.createElement('span');boite.className='mesure-affixe';boite.append(se);
    // Une valeur selon la rareté se choisit dans l'échelle de celle de la pièce.
    const x=choisi(i);if(x&&x.variable){const [lo,hi]=x.echelle[RANG_RARETE[rarete]??0];const v=document.createElement('input');v.type='number';v.min=String(lo);v.max=String(hi);
-    const cle=cleDe(i);v.setAttribute('aria-label','Valeur de '+x.nom+(cle===x.id?'':' '+cle.slice(x.id.length)));v.value=String(valeurTiree(x,graineDe(x,cle),rarete,m.valeurs[cle]));v.title=lo+' à '+hi;v.onchange=()=>{m.valeurs[cle]=Math.max(lo,Math.min(hi,Math.trunc(Number(v.value))||lo));renderForge()};boite.append(v)}
+    const cle=cleDe(i);v.setAttribute('aria-label','Valeur de '+x.nom+(cle===x.id?'':' '+cle.slice(x.id.length)));v.value=String(valeurTiree(x,graineDe(x,cle),rarete,m.valeurs[cle]));v.title=lo+' à '+hi;v.onchange=()=>{m.valeurs[cle]=Math.max(lo,Math.min(hi,Math.trunc(Number(v.value))||lo));rerender()};boite.append(v)}
    ligne.append(boite)});
   const forger=document.createElement('button');forger.type='button';forger.className='primary';forger.textContent='⚒ Forger';forger.disabled=!b||!lot.length;
   const apercu=document.createElement('div');apercu.className='forge-apercu';
   const rec=b?{id:m.id,base:b.id,affixes:lot.map(x=>x.id),valeurs:Object.fromEntries(lot.map((x,k)=>[x,cles[k]]).filter(([x])=>x.variable).map(([x,cle])=>[cle,valeurTiree(x,graineDe(x,cle),rarete,m.valeurs[cle])]))}:null;
   const o=rec&&objetForge(rec,catalog.items,catalog.affixes,normaliseGuidePrix(catalog.guidePrix));
   if(o&&lot.length){const c=gearCarre(o,1,false);c.removeAttribute('role');c.tabIndex=-1;const d=gearDetail(o,null,false);d.hidden=false;apercu.append(c,d)}
-  forger.onclick=()=>{if(!rec||!lot.length)return;catalog.chambreForte=[...normaliseForges(catalog.chambreForte),normaliseForges([rec])[0]];
-   mesureForge={id:'forge-'+crypto.randomUUID(),base:m.base,affixes:['','','',''],valeurs:{}};syncForges();sauveForge();renderForge();openChambre()};
-  ligne.append(forger);s.append(ligne,apercu)}}
+  forger.onclick=()=>{if(!rec||!lot.length)return;catalog.chambreForte=[...normaliseForges(catalog.chambreForte),normaliseForges([rec])[0]];apres(rec)};
+  ligne.append(forger);return [ligne,apercu]}
+/* v0.898 — La forge de l'éditeur d'adversaire : une arme sur mesure, rangée à la Chambre forte et mise dans l'inventaire de
+   l'adversaire édité, qui la porte et la manie en combat ; sa chance de butin se règle comme pour toute pièce. Pièce unique :
+   posé plusieurs fois, seul le premier exemplaire de son modèle la porte (fromMonster). */
+const forgeAdvDialog=dialog('forge-adv-editor','Forger une arme','<div id="forge-adv-corps" class="forge-corps"></div>');
+let mesureAdv=null,forgeAdvApres=null;
+function openForgeAdv(apres){if(view!=='mj'||!draft||draft.hero)return;mesureAdv={id:'forge-'+crypto.randomUUID(),base:'',affixes:['','','',''],valeurs:{}};forgeAdvApres=apres;renderForgeAdv();forgeAdvDialog.showModal()}
+function renderForgeAdv(){const corps=$('forge-adv-corps');if(!corps||!mesureAdv)return;corps.replaceChildren();
+ corps.append(...blocMesure(mesureAdv,{rerender:renderForgeAdv,armesSeules:true,apres:rec=>{if(draft){draft.inventaire=[...(draft.inventaire||[]),rec.id]}
+  syncForges();sauveForge();forgeAdvDialog.close();if(forgeAdvApres)forgeAdvApres()}}))}
 /* ---------- La Chambre forte ----------
    Les pièces forgées sur mesure, uniques : chacune dit où elle est, et se donne à un aventurier, à un adversaire en scène ou à
    un adversaire du bestiaire ; elle quitte alors celui qui l'avait. */
@@ -4118,8 +4156,72 @@ function objetNomme(n){const k=cleNomObjet(n),l=(catalog.items||[]).filter(o=>o&
  // À défaut, une pièce dont le nom porte tous ces mots, dans n'importe quel ordre : la plus courte.
  const mots=k.split(' ');return l.filter(o=>{const m=cleNomObjet(o.name).split(' ');return mots.every(x=>m.includes(x))}).sort((x,y)=>x.name.length-y.name.length)[0]||null}
 // Le lot choisi : chaque pièce trouvée, et combien.
-const kitCreation=c=>[...(ARMES_DEPART[c.armes]||[]),...(ARMURES_DEPART[c.armure]||[]),...OBJETS_DEPART].map(([n,k])=>[objetNomme(n),k]).filter(([o])=>o);
-const genresAleatoires=role=>{const k=cleClasse(role),e=Object.entries(OBJET_ALEATOIRE_CLASSE).find(([n])=>cleClasse(n)===k);return e?e[1]:['une-main','armure']};
+// v0.898 : ce que donnent sa classe et son espèce, d'office et au choix, puis ce que tous reçoivent.
+const kitCreation=c=>[...fixesCreation(c),...groupesCreation(c).flatMap(g=>g.lots[(c.lots||{})[g.cle]]||[]),...OBJETS_DEPART].map(([n,k])=>[objetDepart(n),k]).filter(([o])=>o);
+const genresAleatoires=role=>{const cl=classeDe(catalog.classes,role);if(cl&&Array.isArray(cl.objetAleatoire))return cl.objetAleatoire;const k=cleClasse(role),e=Object.entries(OBJET_ALEATOIRE_CLASSE).find(([n])=>cleClasse(n)===k);return e?e[1]:['une-main','armure']};
+/* v0.898 — L'équipement de départ par classe et par espèce : des objets d'office et des groupes de lots au choix. Une classe
+   sans réglage garde les lots d'avant (Armes, Armure) ; une espèce, rien. Les Rations, l'or et l'objet inhabituel restent à
+   tous. Une pièce se note par son identifiant au catalogue, ou par son nom (les lots d'avant). */
+function departDefautClasse(){return {fixes:[],groupes:[{nom:'Armes',lots:structuredClone(ARMES_DEPART)},{nom:'Armure',lots:structuredClone(ARMURES_DEPART)}]}}
+function departDe(genre,cle){const d=catalog.departs&&catalog.departs[genre]&&catalog.departs[genre][cle];return d?d:genre==='classes'?departDefautClasse():{fixes:[],groupes:[]}}
+function objetDepart(ref){return (catalog.items||[]).find(o=>o&&!o.forge&&o.id===ref)||objetNomme(ref)}
+function departsCreation(c){const cl=(catalog.classes||[]).find(x=>x&&x.name===c.role),e=especeCreation(c);
+ return [...(cl?[['c',departDe('classes',cl.name)]]:[]),...(e?[['e',departDe('especes',e.id)]]:[])]}
+function groupesCreation(c){return departsCreation(c).flatMap(([p,d])=>d.groupes.map((g,i)=>({cle:p+i,nom:g.nom,lots:g.lots})).filter(g=>g.lots.length))}
+function fixesCreation(c){return departsCreation(c).flatMap(([,d])=>d.fixes)}
+function lotsManquent(c){return groupesCreation(c).some(g=>!g.lots[(c.lots||{})[g.cle]])}
+/* Les réglages d'une classe ou d'une espèce, depuis l'onglet Talents : un clic sur son nom. */
+const reglagesDialog=dialog('reglages-famille','Réglages','<div id="reglages-corps"></div><div class="form-actions"><button type="button" id="reglages-annuler">Annuler</button><button type="button" class="primary" id="reglages-ok">Enregistrer</button></div>');
+$('reglages-annuler').onclick=()=>reglagesDialog.close();
+function editeurDepart(boite,w){boite.replaceChildren();
+ const items=(catalog.items||[]).filter(o=>o&&!o.forge).sort((x,y)=>x.name.localeCompare(y.name,'fr'));
+ const liste=l=>{const d=document.createElement('div');d.className='depart-pieces';
+  l.forEach((x,k)=>{const o=objetDepart(x[0]),p=document.createElement('span');p.className='depart-piece';
+   if(o){const q=gearCarre(o,1,0);q.classList.remove('dispo');const m=q.querySelector('.marque-porte');if(m)m.remove();q.removeAttribute('role');q.tabIndex=-1;
+    surveille(q,()=>{const g=gearDetail(o,null,false);g.hidden=false;g.classList.add('large');ouvrirBulle(q,g,'bulle-gear')});p.append(q)}
+   else{const s=document.createElement('small');s.className='creation-manque';s.textContent=x[0];p.append(s)}
+   const n=document.createElement('input');n.type='number';n.min='1';n.max='999';n.value=String(x[1]);n.setAttribute('aria-label','Nombre');n.onchange=()=>{x[1]=Math.max(1,Math.min(999,Math.trunc(Number(n.value))||1));n.value=String(x[1])};
+   const r=document.createElement('button');r.type='button';r.className='ico danger';r.textContent='✕';r.setAttribute('aria-label','Retirer');r.onclick=()=>{l.splice(k,1);editeurDepart(boite,w)};
+   p.append(n,r);d.append(p)});
+  const a=document.createElement('select');a.setAttribute('aria-label','Ajouter');a.add(new Option('+',''));items.forEach(o=>a.add(new Option(o.name,o.id)));
+  a.onchange=()=>{if(!a.value)return;const deja=l.find(x=>x[0]===a.value);if(deja)deja[1]++;else l.push([a.value,1]);editeurDepart(boite,w)};d.append(a);return d};
+ const h=document.createElement('h4');h.className='creation-kit-titre';h.textContent='D’office';boite.append(h,liste(w.fixes));
+ w.groupes.forEach((g,gi)=>{const t=document.createElement('div');t.className='depart-groupe';
+  const nom=document.createElement('input');nom.type='text';nom.maxLength=40;nom.value=g.nom;nom.setAttribute('aria-label','Groupe');nom.oninput=()=>{g.nom=nom.value};
+  const rg=document.createElement('button');rg.type='button';rg.className='ico danger';rg.textContent='✕';rg.setAttribute('aria-label','Retirer le groupe');rg.onclick=()=>{w.groupes.splice(gi,1);editeurDepart(boite,w)};
+  const tete=document.createElement('div');tete.className='depart-groupe-tete';tete.append(nom,rg);t.append(tete);
+  g.lots.forEach((l,li)=>{const c=document.createElement('div');c.className='depart-lot';c.append(liste(l));
+   const rl=document.createElement('button');rl.type='button';rl.className='ico danger';rl.textContent='✕';rl.setAttribute('aria-label','Retirer le lot');rl.onclick=()=>{g.lots.splice(li,1);editeurDepart(boite,w)};c.append(rl);t.append(c)});
+  const al=document.createElement('button');al.type='button';al.textContent='+ Lot';al.onclick=()=>{g.lots.push([]);editeurDepart(boite,w)};t.append(al);boite.append(t)});
+ const ag=document.createElement('button');ag.type='button';ag.textContent='+ Groupe';ag.onclick=()=>{w.groupes.push({nom:'',lots:[[]]});editeurDepart(boite,w)};boite.append(ag)}
+function ouvreReglages(titre,grille,genre,cle,enregistre){if(view!=='mj')return;reglagesDialog.querySelector('.dialog-head h2').textContent=titre;
+ const corps=$('reglages-corps');corps.replaceChildren();const g=document.createElement('div');g.className='edit-grid';g.innerHTML=grille;corps.append(g);
+ const w=structuredClone(departDe(genre,cle));const h=document.createElement('h2');h.className='sous-titre';h.textContent='Équipement de départ';const b=document.createElement('div');b.className='depart-editeur';corps.append(h,b);editeurDepart(b,w);
+ $('reglages-ok').onclick=()=>{const f=new FormData();g.querySelectorAll('input,select,textarea').forEach(x=>{if(x.type==='checkbox'){if(x.checked)f.append(x.name,x.value)}else f.append(x.name,x.value)});
+  w.groupes.forEach(x=>{x.nom=String(x.nom||'').trim().slice(0,40);x.lots=x.lots.filter(l=>l.length)});w.groupes=w.groupes.filter(x=>x.lots.length);
+  catalog.departs={classes:{},especes:{},...(catalog.departs||{})};catalog.departs[genre]={...(catalog.departs[genre]||{}),[cle]:w};
+  enregistre(f);normalizeCatalog(catalog);scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));if(typeof renderTalents==='function')renderTalents();reglagesDialog.close()};
+ reglagesDialog.showModal()}
+const nombreReglage=(label,key,v,min,max)=>field(label,key,v===undefined?0:v,'number','min="'+min+'" max="'+max+'"');
+const couleurReglage=v=>/^#[0-9a-f]{6}$/i.test(v||'')?v:'#8a7a5a';
+function openReglagesClasse(nom){const cl=classeDe(catalog.classes,nom);if(!cl)return;const comps=competencesDeClasse(cl.name).flatMap((n,i)=>Array(n).fill(COMPETENCES[i]));
+ const genres=genresAleatoires(cl.name);
+ const grille=field('Teinte','tint',couleurReglage(cl.tint),'color')+nombreReglage('PV','pv',Number(cl.pv)||0,0,99)+sel('Extension','extension',extensionClasse(cl),[['','— aucune —'],...EXTENSIONS])
+  +[0,1,2].map(i=>sel('Compétence','comp'+i,comps[i]||'',[['','—'],...COMPETENCES.map(n=>[n,n])])).join('')
+  +Object.entries(NOMS_OBJET_ALEATOIRE).map(([k,n])=>'<label class="field-check"><input type="checkbox" name="alea" value="'+k+'"'+(genres.includes(k)?' checked':'')+'>'+esc(n)+'</label>').join('');
+ ouvreReglages(cl.name,grille,'classes',cl.name,f=>{cl.tint=couleurReglage(f.get('tint'));cl.pv=Math.max(0,Math.min(99,Math.trunc(Number(f.get('pv')))||0));
+  const ext=f.get('extension');if(extensionValide(ext))cl.extension=ext;else delete cl.extension;
+  cl.comps=[0,1,2].map(i=>f.get('comp'+i)).filter(n=>COMPETENCES.includes(n));cl.objetAleatoire=f.getAll('alea').filter(k=>NOMS_OBJET_ALEATOIRE[k])})}
+function openReglagesEspece(id){const e=especeDe(id);if(!e)return;
+ const grille=field('Teinte','teinte',couleurReglage(e.teinte),'color')+nombreReglage('Vitesse','vitesse',e.vitesse,0,30)+nombreReglage('Vitesse Petit','vitessePetit',e.vitessePetit,0,30)
+  +nombreReglage('Vie','vie',e.vie,0,9)+nombreReglage('Endurance','endu',e.endu,0,9)+nombreReglage('Dégâts','dmg',e.dmg,0,9)+nombreReglage('PV','pv',e.pv,0,99)
+  +sel('Extension','extension',extensionEspece(e),[['','— aucune —'],...EXTENSIONS])
+  +COMPETENCES.map(n=>nombreReglage(n,'c-'+n,e.comps[n]||0,0,9)).join('')
+  +'<label class="reglages-description">Description<textarea name="description" rows="4" maxlength="800">'+esc(e.description||'')+'</textarea></label>';
+ ouvreReglages(e.nom,grille,'especes',e.id,f=>{const n=(k,max)=>Math.max(0,Math.min(max,Math.trunc(Number(f.get(k)))||0));
+  const comps={};COMPETENCES.forEach(c=>{const v=n('c-'+c,9);if(v)comps[c]=v});
+  catalog.especesReglages={...(catalog.especesReglages||{}),[e.id]:{teinte:couleurReglage(f.get('teinte')),vitesse:n('vitesse',30),vitessePetit:n('vitessePetit',30),vie:n('vie',9),endu:n('endu',9),dmg:n('dmg',9),pv:n('pv',99),comps,description:String(f.get('description')||'').trim().slice(0,800)}};
+  catalog.extensionsEspeces={...(catalog.extensionsEspeces||{}),[e.id]:extensionValide(f.get('extension'))}})}
 /* L'objet inhabituel : un genre au hasard parmi ceux de la classe qui ont une base, une base de ce genre, un affixe. Il ne se
    tire qu'une fois, en créant l'aventurier : rien ne le relance. */
 function tirePieceDepart(role,tirage=Math.random){const bases=(catalog.items||[]).filter(o=>o&&!o.forge&&(o.category==='weapon'||o.category==='armor')&&(catalog.affixes||[]).some(x=>!x.classe&&affixeVaSur(x,o,1)));
@@ -4143,7 +4245,7 @@ let creation=null;
 function aventuriersPermis(){return 1}
 function peutCreerAventurier(){if((typeof mjIci==='function'&&mjIci())||!invitEnLigne())return true;
  const uid=typeof monUid!=='undefined'?monUid:null;return !!uid&&actors.filter(a=>a&&a.hero&&a.joueur===uid).length<aventuriersPermis()}
-function openCreation(){if(!peutCreerAventurier())return;creation={etape:0,name:'',sexe:'Homme',image:'',tokenPropose:'',espece:'',role:'',armes:null,armure:null,caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
+function openCreation(){if(!peutCreerAventurier())return;creation={etape:0,name:'',sexe:'Homme',image:'',tokenPropose:'',espece:'',role:'',armes:null,armure:null,lots:{},caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
 const restantCaracs=c=>POINTS_CARACS-c.caracs.endu-c.caracs.vie-c.caracs.dmg,restantComps=c=>POINTS_COMPS-c.skills.reduce((s,n)=>s+n,0);
 const especeAvecSavoir=c=>(catalog.talents||[]).some(t=>t&&t.effet==='savoiranterieur'&&t.espece===c.espece&&talentFamily(t)===FAMILLE_ESPECES);
 const especeCreation=c=>especeDe(c.espece),compsEspece=c=>bonusEspece({hero:true,espece:c.espece}).skills;
@@ -4152,7 +4254,7 @@ const pvCreation=c=>{const v=valeursCreation(c);return Math.max(1,v.vie*v.endu+b
 // Une étape n'ouvre la suivante que remplie : un nom, une espèce, une classe, tous les points dépensés.
 const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='espece'&&!especeCreation(creation)?'Choisis une espèce.':k==='espece'&&especeAvecSavoir(creation)&&!Number.isInteger(creation.savoirAnterieur)?'Choisis la compétence de ta vie antérieure.':k==='classe'&&!creation.role?'Choisis une classe.'
  :k==='caracs'&&restantCaracs(creation)?'Points à dépenser.':k==='comps'&&restantComps(creation)?'Points à répartir.'
- :k==='equipement'&&(creation.armes===null||creation.armure===null)?'Choisis ton équipement.':'';
+ :k==='equipement'&&lotsManquent(creation)?'Choisis ton équipement.':'';
 function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-etapes'),corps=$('creation-corps');nav.replaceChildren();corps.replaceChildren();
  ETAPES_CREATION.forEach(([k,n],i)=>{const b=document.createElement('button');b.type='button';b.textContent=(i+1)+'. '+n;b.className=i===c.etape?'on':'';
   b.disabled=ETAPES_CREATION.slice(0,i).some(([k2])=>etapeManque(k2));b.onclick=()=>{c.etape=i;renderCreation()};nav.append(b)});
@@ -4266,16 +4368,16 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
   corps.append(reste(n,POINTS_COMPS),g)}
  else if(k==='equipement'){const cl=(catalog.classes||[]).find(x=>x.name===c.role),tint=cl&&cl.tint||'#8a7a5a';
   // Chaque pièce d'un lot : sa petite icône, comme à l'Armurerie, sans son nom ; au survol sa fiche. Absente du catalogue, son nom barré.
-  const piece=([nom,n])=>{const o=objetNomme(nom);if(!o){const s=document.createElement('small');s.className='creation-manque';s.textContent=nom;return s}
+  const piece=([nom,n])=>{const o=objetDepart(nom);if(!o){const s=document.createElement('small');s.className='creation-manque';s.textContent=nom;return s}
    const q=gearCarre(o,n,0);q.classList.remove('dispo');const m=q.querySelector('.marque-porte');if(m)m.remove();q.removeAttribute('role');q.tabIndex=-1;
    surveille(q,()=>{const d=gearDetail(o,null,false);d.hidden=false;d.classList.add('large');ouvrirBulle(q,d,'bulle-gear')});return q};
   // Un pack au choix est une carte ; ce que tous reçoivent, les icônes seules.
   const lot=(l,on,clic)=>{const b=document.createElement(clic?'button':'div');if(clic){b.type='button';b.onclick=clic}b.className=clic?'creation-classe creation-kit'+(on?' on':''):'creation-kit creation-kit-nu';b.style.setProperty('--teinte',tint);l.forEach(x=>b.append(piece(x)));return b};
   const groupe=(titre,...cartes)=>{const h=document.createElement('h4');h.className='creation-kit-titre';h.textContent=titre;const g=document.createElement('div');g.className='creation-classes creation-kits';g.append(...cartes);corps.append(h,g)};
-  groupe('Armes',...ARMES_DEPART.map((l,i)=>lot(l,c.armes===i,()=>{c.armes=i;renderCreation()})));
-  groupe('Armure',...ARMURES_DEPART.map((l,i)=>lot(l,c.armure===i,()=>{c.armure=i;renderCreation()})));
+  // v0.898 : les groupes de lots de sa classe puis de son espèce.
+  groupesCreation(c).forEach(g=>groupe(g.nom,...g.lots.map((l,i)=>lot(l,(c.lots||{})[g.cle]===i,()=>{c.lots={...(c.lots||{}),[g.cle]:i};renderCreation()}))));
   // Les objets, et l'or : 10d6, lancés en créant l'aventurier.
-  const objets=lot(OBJETS_DEPART,true,null),or=document.createElement('span');or.className='cat-pill gear-carre creation-or';or.setAttribute('aria-label',OR_DEPART+' or');
+  const objets=lot([...fixesCreation(c),...OBJETS_DEPART],true,null),or=document.createElement('span');or.className='cat-pill gear-carre creation-or';or.setAttribute('aria-label',OR_DEPART+' or');
   const po=document.createElement('i');po.className='piece-or';const x=document.createElement('span');x.className='exemplaires';x.textContent=OR_DEPART;or.append(po,x);objets.append(or);groupe('Objets',objets);
   const alea=document.createElement('div');alea.className='creation-kit creation-kit-nu';
   const q=document.createElement('span');q.className='cat-pill gear-carre r-inhabituel creation-alea';q.textContent='?';
@@ -6184,17 +6286,21 @@ let templateNeuf=false;
 // Un aventurier commence au niveau 1 avec Vie 3, Endu 2 et Dégâts +0 ; sa classe ajoute ses PV et ses compétences.
 function baseActor(hero){return normalizeActor({name:hero?'Nouvel aventurier':'Nouveau monstre',hero,role:hero?'Aventurier':'Adversaire',...(hero?{hp:6,max:6,vie:3,vieMax:3,endu:2,dmg:0,level:1,xp:0}:{hp:12,max:12,dmg:2}),def:2,x:50,y:60,pool:[2,0,0,0,0,0,0],checks:[false,false,false],target:null,skills:Array(8).fill(0)})}
 // Ce que le modèle du bestiaire dit d'une créature, et rien d'autre : le reste est l'état de la partie.
+// v0.898 : une pièce de la Chambre forte qu'un autre combattant tient déjà ne se copie pas sur un nouvel exemplaire.
+function piecesUniques(a,soi){if(!a||!Array.isArray(a.inventaire))return;const uniques=new Set((catalog.chambreForte||[]).map(f=>f&&f.id));
+ const tenue=id=>uniques.has(id)&&(typeof actors!=='undefined'?actors:[]).some(o=>o&&o!==a&&o!==soi&&(o.inventaire||[]).includes(id));
+ a.inventaire=a.inventaire.filter(id=>!tenue(id));['weapons','armures'].forEach(k=>{if(Array.isArray(a[k]))a[k]=a[k].filter(id=>!tenue(id))});if(a.shieldId&&tenue(a.shieldId))a.shieldId=''}
 function profilDuModele(m){return {template:m.id,name:m.name,role:m.family||'Adversaire',sexe:m.sexe||'',race:m.race||'',hp:m.pv,max:m.pv,def:m.def,...(m.defBonus>0?{defBonus:m.defBonus}:{}),dmg:m.damage,xp:m.xp,type:m.type,socle:m.socle,menace:m.menace,esquive:!!m.esquive,rapide:!!m.rapide,...(m.nyctalope===false?{nyctalope:false}:{}),...(mouvementPropre({mouvement:m.mouvement})!==DISTANCE_MOUVEMENT?{mouvement:mouvementPropre({mouvement:m.mouvement})}:{}),notes:m.notes||'',talents:[...(m.talents||[])],attacks:structuredClone(m.attacks||[]),image:m.image||null,weapons:[...(m.weapons||[])],armures:[...armuresDe(m)],shieldId:m.shieldId||'',inventaire:[...(m.inventaire||[])],butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m),...(m.unique===true?{unique:true}:{})}:{})}}
-function fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);a.activeAttack=0;a.pool=poolOf(a);return a}
+function fromMonster(m,soi){const a=baseActor(false);Object.assign(a,profilDuModele(m));if(soi!==true)piecesUniques(a,soi);equipeAdversaire(a);a.activeAttack=0;a.pool=poolOf(a);return a}
 function openActor(index=null,hero=true,template=null,neuf=false,pnj=false){if(view!=='mj')return;
- if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;templateNeuf=!!neuf&&template===null&&!hero;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template]):index===null?baseActor(hero):actors[index]);if(templateNeuf&&pnj)Object.assign(draft,{name:'Nouveau PNJ',role:'PNJ',pnj:true,alignement:'neutre'});attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero||templateNeuf;
+ if(index!==null&&!actors[index])return;saveChecks();savePool();editing=index;templateIndex=template;templateNeuf=!!neuf&&template===null&&!hero;draft=structuredClone(template!==null?fromMonster(catalog.monsters[template],true):index===null?baseActor(hero):actors[index]);if(templateNeuf&&pnj)Object.assign(draft,{name:'Nouveau PNJ',role:'PNJ',pnj:true,alignement:'neutre'});attackDraft=structuredClone(draft.attacks);$('actor-error').textContent='';$('delete-actor').hidden=index===null;$('save-template').hidden=draft.hero||templateNeuf;
  // Une fiche d'adversaire a, en haut, le convertisseur de dés et un second Enregistrer.
  $('actor-haut').hidden=!!draft.hero;renderActorForm();actorDialog.showModal()}
 function renderActorForm(){const a=draft;const sien=w=>!w.forge||(a.inventaire||[]).includes(w.id),weaponOptions=[['','Aucune'],...catalog.items.filter(w=>w.category==='weapon'&&sien(w)).map(w=>[w.id,w.name])];const armorOptions=slot=>[['','Aucune'],...catalog.items.filter(w=>w.category==='armor'&&w.slot===slot&&sien(w)).map(w=>[w.id,w.name])];
 $('actor-fields').innerHTML='<div class="edit-grid">'+field('Nom','name',a.name,'text','required maxlength="120"')+field(a.hero?'Classe / rôle':'Famille / rôle','role',a.role,'text',a.hero?'list="classes-jeu" maxlength="120"':'')+(templateIndex===null&&a.hero?field('PV actuels','hp',a.hp,'number','min="0" max="99999"'):'')+field('PV maximum','max',a.max,'number','min="1" max="99999" required'+(a.hero?' readonly':''))+field(a.hero?'DEF':'Bonus de DEF','def',a.def,'number','min="0" max="'+DEF_MAX+'"')+field(a.hero?'Dégâts':'Bonus de dégâts','dmg',a.dmg,'number','min="0" max="999"'+(a.hero?' disabled':''))+field('XP','xp',a.xp,'number','min="0" max="999999"')+(a.hero?sel('Sexe','sexe',a.sexe,[['','—'],['Femme','Femme'],['Homme','Homme'],['Autre','Autre']])+field('Espèce','race',a.race,'text','maxlength="40"'):'')+(a.hero?field('Vie','vie',a.vie,'number','min="0" max="999" step="any"')+field('Vie maximale','vieMax',a.vieMax,'number','min="1" max="999" step="any" disabled')+field('Endurance','endu',a.endu,'number','min="1" max="999" disabled')+field('Bonus PV (classe + espèce)','pvBonus',a.pvBonus,'number','min="-9999" max="9999" readonly')+field('Niveau','level',a.level,'number',a.hero?'min="1" max="20" disabled':'min="1" max="20"'):'')+'</div>'
   +(a.hero?'<datalist id="classes-jeu">'+(catalog.classes||[]).map(c=>'<option value="'+esc(c.name)+'">').join('')+'</datalist>'
    +'<p class="muted">Classes du jeu : '+(catalog.classes||[]).map(c=>esc(c.name)+' (PV +'+(c.pv||0)+')').join(' · ')+'.</p>':'')
-  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']])+sel('Extension','extension',extensionValide(a.extension),[['','— aucune —'],...EXTENSIONS])+sel('Nature','nature',a.nature==='mortvivant'||a.nature==='mecanique'?a.nature:'vivant',[['vivant','Vivant'],['mortvivant','Mort-vivant'],['mecanique','Mécanique']]):'')+(a.pnj?sel('Alignement','alignement',alignementDe({pnj:true,alignement:a.alignement}),ALIGNEMENTS)+'<label class="field-check"><input name="unique" type="checkbox" '+(a.unique===true?'checked':'')+'>Unique</label>':'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'<label class="field-check"><input name="nyctalope" type="checkbox" '+(a.nyctalope===false?'':'checked')+'>Vision dans le noir</label>'+field('Mouvement (m)','mouvement',mouvementPropre(a),'number','min="0" max="99" step="0.5"'))+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Inventaire<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button></h2><div id="inventaire-edit"></div>'+(a.hero?'<div class="edit-grid inv-ajout">'+sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())+'<button type="button" id="inv-ajouter">Ajouter</button></div>':'')+'<p class="muted" id="equip-summary"></p><p class="muted">'+(a.hero?'L’inventaire dit tout ce que le combattant possède ; l’équipement, ce qu’il porte — deux mains au plus : une arme à une main et un bouclier, deux armes à une main, ou une arme à deux mains — et une armure. Les dés de l’attaque et la DEF découlent de ce qui est porté ; les objets restent dans l’inventaire.':'Un adversaire porte toujours tout ce qu’il possède, sans compter ses mains : chaque arme est une variante, son bouton en combat, et la meilleure pièce de chaque emplacement fait sa DEF. Le butin est la chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte.')+'</p>'+(a.hero?'':'<div class="divider"></div><h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
+  +'<div class="edit-grid">'+sel('Taille du socle','socle',a.socle,[['small','Petit'],['medium','Moyen'],['large','Grand'],['huge','Énorme']])+(!a.hero?sel('Type','type',a.type,[['standard','Standard'],['solitaire','Solitaire'],['alpha','Élite'],['boss','Boss']])+sel('Extension','extension',extensionValide(a.extension),[['','— aucune —'],...EXTENSIONS])+sel('Nature','nature',a.nature==='mortvivant'||a.nature==='mecanique'?a.nature:'vivant',[['vivant','Vivant'],['mortvivant','Mort-vivant'],['mecanique','Mécanique']]):'')+(a.pnj?sel('Alignement','alignement',alignementDe({pnj:true,alignement:a.alignement}),ALIGNEMENTS)+'<label class="field-check"><input name="unique" type="checkbox" '+(a.unique===true?'checked':'')+'>Unique</label>':'')+(a.hero?'<label class="field-check"><input name="rapide" type="checkbox" '+(a.rapide?'checked':'')+'>Rapide (manuel)</label><label class="field-check"><input name="esquive" type="checkbox" '+(a.esquive?'checked':'')+'>Esquive 6+ (manuelle)</label>':'<label class="field-check"><input name="nyctalope" type="checkbox" '+(a.nyctalope===false?'':'checked')+'>Vision dans le noir</label>'+field('Mouvement (m)','mouvement',mouvementPropre(a),'number','min="0" max="99" step="0.5"'))+'</div>'+'<div class="divider"></div><h2>Illustration du token</h2><img class="preview-token" id="draft-image" alt="Token" '+(a.image?'src="'+a.image+'"':'hidden')+'><div class="toolbar"><button type="button" id="token-upload">Importer et optimiser</button><button type="button" id="token-remove">Retirer l’image</button></div><input id="token-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>'+(a.hero?'':'<div class="divider"></div><h2>Attaques spéciales</h2><div id="attack-edit-list"></div><button type="button" id="add-attack">+ Attaque</button><p class="muted">La réserve et le bonus de dégâts sont appliqués. Portée, cibles multiples et effets indiqués ci-dessous restent manuels.</p>')+'<div class="divider"></div><h2 class="sous-titre">Talents<button type="button" id="add-talent" class="ico plus" title="Créer un talent" aria-label="Créer un talent">+</button></h2><input id="talent-filter" placeholder="Filtrer les talents…" aria-label="Filtrer les talents"><div id="talent-picker"></div><p class="muted">Les talents se créent dans l’onglet Talents. Les Génériques viennent en tête, puis ceux de la '+(a.hero?'classe de l’aventurier':'famille de la créature')+'.</p>'+(a.hero?'<div class="divider"></div><h2>Compétences</h2><p class="muted">Chaque chiffre est un <b>bonus</b>, pas un nombre de dés : un test lance 1 dé plus ce bonus, chaque 4+ est une réussite, chaque 6 relance un dé de plus qui compte à son tour.</p><div class="edit-grid">'+skillNames.map((n,i)=>field(n,'skill'+i,a.skills[i],'number','min="0" max="30"')).join('')+'</div>':'')+'<div class="divider"></div><h2 class="sous-titre">Inventaire<button type="button" id="add-gear" class="ico plus" title="Créer un objet" aria-label="Créer un objet">+</button>'+(a.hero?'':'<button type="button" id="forge-adv" class="ico plus" title="Forger une arme" aria-label="Forger une arme">⚒</button>')+'</h2><div id="inventaire-edit"></div>'+(a.hero?'<div class="edit-grid inv-ajout">'+sel('Ajouter à l’inventaire','inv_ajout','',inventaireOptions())+'<button type="button" id="inv-ajouter">Ajouter</button></div>':'')+'<p class="muted" id="equip-summary"></p><p class="muted">'+(a.hero?'L’inventaire dit tout ce que le combattant possède ; l’équipement, ce qu’il porte — deux mains au plus : une arme à une main et un bouclier, deux armes à une main, ou une arme à deux mains — et une armure. Les dés de l’attaque et la DEF découlent de ce qui est porté ; les objets restent dans l’inventaire.':'Un adversaire porte toujours tout ce qu’il possède, sans compter ses mains : chaque arme est une variante, son bouton en combat, et la meilleure pièce de chaque emplacement fait sa DEF. Le butin est la chance, pour chaque exemplaire, de revenir à l’aventurier le plus proche quand l’adversaire quitte la carte.')+'</p>'+(a.hero?'':'<div class="divider"></div><h2 class="sous-titre">Restes</h2><div id="restes-edit"></div>')+'<div class="divider"></div><label>'+(a.hero?'Inventaire et notes':'Notes')+'<textarea name="notes" rows="4">'+esc(a.notes)+'</textarea></label>';
 /* Un adversaire qui porte une armure tire sa DEF d'elle seule : le champ se tait et
    montre ce que l'armure donne. Son chiffre propre reste dessous — readActor ne lit pas
    un champ éteint — et revient tel quel si l'armure s'en va. */
@@ -6221,6 +6327,7 @@ if($('talent-filter')){$('talent-filter').oninput=renderTalentPicker;renderTalen
   if($('talent-filter'))$('talent-filter').value='';renderTalentPicker()})}
 // Créé depuis la fiche, l'objet se pose dans le premier emplacement libre qui lui convient.
 $('add-gear').onclick=()=>openItem(null,o=>{ajouterInventaire(draft,o);dessineInventaire();refreshEquip()});
+if($('forge-adv'))$('forge-adv').onclick=()=>openForgeAdv(()=>{dessineInventaire();refreshEquip()});
 if($('inv-ajouter'))$('inv-ajouter').onclick=()=>{const o=objetDe($('actor-form').elements.inv_ajout.value);if(!o)return;ajouterInventaire(draft,o);dessineInventaire();refreshEquip()};
 dessineInventaire();refreshEquip();
 renderAttacks()}
@@ -6403,7 +6510,7 @@ function ajoutePropres(a,p){if(!a||!p)return a;const bourse=normaliseBourse(p.bo
 function syncFromTemplate(m){let touches=0;syncCartes(m);
  actors.forEach(a=>{if(a.hero)return;
   if(!suitLeModele(a,m))return;a.template=m.id;
-  const plein=a.hp>=a.max,neuf=ajoutePropres(fromMonster(m),a.propres);
+  const plein=a.hp>=a.max,neuf=ajoutePropres(fromMonster(m,a),a.propres);
   /* Le modèle gouverne son profil et l'équipement qui en découle, rien d'autre : révélé, numéro,
      charges, garde, orbes restent ceux de la partie. Sans quoi corriger un modèle, ou seulement
      l'enregistrer, rendait inconnus les adversaires en jeu et le combat prenait fin. Comparer clé

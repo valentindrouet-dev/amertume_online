@@ -3299,7 +3299,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxB.journal[0],'Brom trouve ⟦m⟧ ⟦r⟧ ×2.','une ligne au journal, les pièces seules (v0.764)');
  ctxB.journal.length=0;ctxB.butinDesRetires([{name:'Rat',hero:false,x:0,y:0,inventaire:['m'],butin:{m:40}}],()=>0.4);
  assert.equal(ctxB.journal.length,0,'40 % : un tirage à 40 ne tombe pas');
- assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m),...(m.unique===true?{unique:true}:{})}:{})}}\nfunction fromMonster(m){const a=baseActor(false);Object.assign(a,profilDuModele(m));equipeAdversaire(a);")
+ assert.ok(src.includes("xpDesRetires(partants);butinDesRetires(partants);")&&src.includes("butin:normaliseButin(m.butin),bourse:normaliseBourse(m.bourse),...(m.pnj?{pnj:true,alignement:alignementDe(m),...(m.unique===true?{unique:true}:{})}:{})}}\nfunction fromMonster(m,soi){const a=baseActor(false);Object.assign(a,profilDuModele(m));if(soi!==true)piecesUniques(a,soi);equipeAdversaire(a);")
   &&src.includes(" if(!a.hero){equipeAdversaire(a);a.butin=normaliseButin(a.butin,a.inventaire)}")
   &&src.includes("const CATS_INV_ADV=[['armes','Armes',")&&src.includes("if(!draft.hero){inventaireAdversaire(boite,draft,refreshEquip);if($('restes-edit'))inventaireAdversaire($('restes-edit'),draft,refreshEquip,'restes');return}"),'inventaire d’adversaire : familles, pioche, butin, tout porté');
  assert.ok(src.includes("r.classList.add('mini');const n=nomEnClair(t.name);r.title=n;")&&css.includes('.bulle-modele .stat-tile strong{font-size:22px;line-height:1.05;margin-top:1px}')
@@ -5192,6 +5192,14 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.898 — Réglages d'une classe ou d'une espèce et leur équipement de départ ; la forge de l'éditeur d'adversaire, pièce unique. */
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
+ assert.ok(ed.includes("const kitCreation=c=>[...fixesCreation(c),...groupesCreation(c).flatMap(g=>g.lots[(c.lots||{})[g.cle]]||[]),...OBJETS_DEPART]")
+  &&ed.includes("function departDefautClasse(){return {fixes:[],groupes:[{nom:'Armes',lots:structuredClone(ARMES_DEPART)},{nom:'Armure',lots:structuredClone(ARMURES_DEPART)}]}}")
+  &&ed.includes("if(view==='mj'&&classeDe(catalog.classes,famille)){h.classList.add('cliquable');")&&ed.includes("sep.onclick=()=>openReglagesEspece(id)")
+  &&ed.includes('if(typeof appliqueReglages===\'function\')appliqueReglages(c)')&&ed.includes('function blocMesure(m,{rerender,armesSeules=false,apres})')
+  &&ed.includes("s.append(...blocMesure(mesureForge,{rerender:renderForge,")&&ed.includes("if(soi!==true)piecesUniques(a,soi);")&&ed.includes("fromMonster(catalog.monsters[template],true)")
+  &&css.includes('.depart-lot{'),'v0.898');}
 /* v0.897 — Le Fielsang : deux tailles, Gageur, Déguisement, Mimétisme, Maléfice. */
 {const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8'),mp=fs.readFileSync('maps.js','utf8');const f=C.ESPECES.find(e=>e.id==='fielsang');
  assert.ok(f&&f.dmg===2&&f.vitesse===9&&f.vitessePetit===6&&f.comps.Mysticisme===1&&f.comps.Perception===1&&f.extension==='ravenloft','v0.897 espèce');
@@ -5737,7 +5745,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  assert.ok(page.indexOf('<svg id="map-coffres"')>0&&page.indexOf('<svg id="map-coffres"')<page.indexOf('<canvas id="fog"')&&page.includes("e.target.closest('#map-coffres')||e.target.closest('#map-pieges'))return;"),'le calque des coffres sous le brouillard');
  assert.ok(mp.includes("el.onmousedown=e=>e.preventDefault();")&&mp.includes("if(mj)menuCoffre(c,e.clientX,e.clientY);else ouvreCoffreJoueur(c)}")&&mp.includes("function ouvreCoffreJoueur(c){"),'le clic du joueur ouvre');
  assert.ok(src.includes("el instanceof SVGElement&&el.getClientRects().length>0")&&src.includes("(col==='restes'||col==='ressource'||")&&src.includes("['cles','Clés',o=>o.category==='cle']"),'bulle SVG, prix des ressources, clés');
- assert.ok(src.includes("function ajoutePropres(a,p){")&&src.includes("neuf=ajoutePropres(fromMonster(m),a.propres);")&&mp.includes("a.propres={inventaire:[...(f.inventaire||[])],butin:{...(f.butin||{})},...(bourse.length?{bourse}:{})};ajoutePropres(a,a.propres)")
+ assert.ok(src.includes("function ajoutePropres(a,p){")&&src.includes("neuf=ajoutePropres(fromMonster(m,a),a.propres);")&&mp.includes("a.propres={inventaire:[...(f.inventaire||[])],butin:{...(f.butin||{})},...(bourse.length?{bourse}:{})};ajoutePropres(a,a.propres)")
   &&mp.includes("inventaireAdversaire($('foe-objets-corps'),f,()=>saveMaps());"),'objets propres d’un adversaire');}
 /* v0.505 — Nuée : finir son mouvement sur un token, traverser les adversaires ; corriger un modèle ne rend plus
    inconnus les adversaires en jeu, et le combat ne se juge que sur la Table ; un aventurier mort ne se soigne plus. */
