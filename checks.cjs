@@ -5193,6 +5193,9 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.910 — La barre d'actions sur deux lignes : Actions puis gratuites | Mouvements | Réactions ; le reste dessous. */
+{const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("gratuite=b=>!mvt(b)&&b.code.cle!=='orbes'&&b.cout&&!(b.cout.pa>0)&&!(b.cout.pm>0)")&&ed.includes("className:'barre-sep'")
+ &&css.includes('.map-panel>.attack-card.barre-actions{flex-direction:column;flex-wrap:nowrap}')&&css.includes('.barre-actions .barre-sep{'),'v0.910');}
 /* v0.909 — Une planche remplacée par une autre grille se relit d'elle-même chez le MJ. */
 {const pl=fs.readFileSync('planches.js','utf8');assert.ok(pl.includes('function verifieGrilles()')&&pl.includes("if(r<.6||r>1.6)decouper(p.fichier,0,0,true)")&&pl.includes('async function decouper(f,lignes,colonnes,silence){'),'v0.909');}
 /* v0.907 — Fond des bulles (charte § 3 et § 13) : jamais de talent-detail nu. */
@@ -6055,7 +6058,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
    dessous, les maîtrises, Analyser, le Repos court. Les dés de dégâts et le bonus du combattant pris
    passent au-dessus de la piste, dans le bloc Dés ; un rond qui frappe y montre les siens au survol. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8'),page=fs.readFileSync('index.html','utf8');
- assert.ok(src.includes("const talents=[...parArbre(gros.filter(b=>b.rangee==='attaques')),...parArbre(gros.filter(b=>b.rangee==='reactions'))];")
+ assert.ok(src.includes("[parArbre(att.filter(mvt)),parArbre(gros.filter(b=>b.rangee==='reactions'))].forEach(g=>{if(!g.length)return;if(avant)talents.push('|');talents.push(...g);avant=true});")
   &&!page.includes("filter(b=>b.rangee==='reactions')")&&!page.includes('rangee-ronds')&&!css.includes('rangee-ronds')
   &&css.includes('.attack-row button.btn-action.rond,.attack-row button.btn-action.rond.inerte{width:42px;height:42px;font-size:19px}'),'gros ronds pour agir et réagir, petits pour les maîtrises et les gestes');
  assert.ok(src.includes("const voit=!!a&&(view==='mj'||(typeof connait==='function'?connait(a,'attaques'):a.hero||duCoteTroupe(a)||!!a.revealed));")

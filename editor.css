@@ -3252,3 +3252,9 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 /* v0.907 — Une bulle hors talent a toujours le fond pâle de sa teinte, et son liseré (CHARTE.md § 3). */
 .talent-detail.bulle-teintee{background:color-mix(in srgb,var(--teinte) 14%,#fbf3e2);border-left:4px solid var(--teinte)}
 .talent-detail.bulle-teintee .talent-bulle-nom b{color:var(--teinte)}
+/* v0.910 — La barre d'actions sur deux lignes : Actions, Mouvements et Réactions séparés d'un trait ; le reste dessous. */
+.map-panel>.attack-card.barre-actions{flex-direction:column;flex-wrap:nowrap}
+.barre-actions>.choix-attaques:not([hidden])+.attack-row{padding-left:0;border-left:0}
+.barre-actions>.attack-row{justify-content:center}
+.barre-actions>.attack-row:not(:has(button:not([hidden]))){display:none}
+.barre-actions .barre-sep{flex:none;align-self:stretch;width:1px;margin:4px 2px;background:color-mix(in srgb,#fff 15%,transparent)}

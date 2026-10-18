@@ -683,7 +683,11 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  const ordreArbre=b=>{const t=b.talent,p=t&&typeof posDe==='function'?posDe(t):null;if(!p)return [1,0,0,0];
   const voies=(catalog.voies||{})[talentFamily(t)]||[];return [0,Math.max(0,voies.indexOf(t.voie||'')),p.y,p.x]};
  const parArbre=l=>l.map((b,i)=>[b,ordreArbre(b),i]).sort((u,v)=>{for(let k=0;k<4;k++)if(u[1][k]!==v[1][k])return u[1][k]-v[1][k];return u[2]-v[2]}).map(x=>x[0]);
- const talents=[...parArbre(gros.filter(b=>b.rangee==='attaques')),...parArbre(gros.filter(b=>b.rangee==='reactions'))];
+ /* v0.910 : la première ligne, par groupes séparés d'un trait — les Actions puis les actions gratuites, les Mouvements, les
+    Réactions. Le reste, en petit, sur la seconde ligne. */
+ const att=gros.filter(b=>b.rangee==='attaques'),mvt=b=>b.talent.type==='mvt',gratuite=b=>!mvt(b)&&b.code.cle!=='orbes'&&b.cout&&!(b.cout.pa>0)&&!(b.cout.pm>0);
+ const talents=[...parArbre(att.filter(b=>!mvt(b)&&!gratuite(b))),...parArbre(att.filter(gratuite))];let avant=liste.length||talents.length;
+ [parArbre(att.filter(mvt)),parArbre(gros.filter(b=>b.rangee==='reactions'))].forEach(g=>{if(!g.length)return;if(avant)talents.push('|');talents.push(...g);avant=true});
  const bonusDe=at=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a)+(typeof rageContact==='function'?rageContact(a,at.range):0);
  const retenu=Math.trunc(a&&a.activeAttack)||0,actuelle=liste.length?liste[retenu<liste.length?retenu:0]:null;
  // Un adversaire qu'on n'a pas analysé garde ses dés pour lui, chez les joueurs.
@@ -727,7 +731,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
    attack();scheduleSave()};
   survol(b,desAttaque(a,at.dice),bonusDe(at),at.useOwnDamage!==false,logosDeAttaque(at));boite.append(b)});
  // Les talents à leur suite : ceux d'action, puis les réactions.
- talents.forEach(t=>{const b=document.createElement('button');b.className=t.classe+' choix-attaque rond';b.dataset.talent=t.talent&&t.talent.id||'';
+ talents.forEach(t=>{if(t==='|'){if(boite.lastElementChild&&!boite.lastElementChild.classList.contains('barre-sep'))boite.append(Object.assign(document.createElement('span'),{className:'barre-sep'}));return}
+  const b=document.createElement('button');b.className=t.classe+' choix-attaque rond';b.dataset.talent=t.talent&&t.talent.id||'';
   if(t.teinte){b.style.setProperty('--fond',t.teinte);b.classList.add('teinte-propre')}
   const im=(t.logo?logoTalent({logo:t.logo},'bouton'):null)||logoArmeEquipee(a);
   if(im){const logos=document.createElement('span');logos.className='logos';logos.append(im);b.classList.add('avec-logo');b.append(logos)}
