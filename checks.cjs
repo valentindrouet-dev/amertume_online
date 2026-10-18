@@ -1851,7 +1851,7 @@ assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function 
  &&src.includes("if(usageConsomme(usage))retirerInventaire(a,o);")&&src.includes('if(objetCode(o)){appliquerEffetObjet(a,o);return}')
  &&src.includes("a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};")
  &&page.includes('function desRecus(b,dice)')&&page.includes('const {gardes:dice,ecartes}=desRecus(b,tous);')
- &&page.includes('const suite=domDit+malDit+armureDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
+ &&page.includes('const suite=domDit+malDit+rocDit+armureDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
  &&page.includes("a.immunites={etats:[],des:[]};if(typeof reposer==='function')reposer(a,'long');")&&src.includes('function reposer(a,type=')
  &&feuille.includes('.gear-detail .gear-effet{font-weight:600}'),'les effets d’équipement sont câblés');
 /* Les emplacements du corps : deux mains, un torse, un dos, une tête, trois anneaux, une
@@ -5192,6 +5192,12 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.902 — Les Talents d'Espèce du Goliath : Solide comme un Roc, Carrure Imposante, Poigne, Forme de Géant. */
+{const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8');
+ ['solideroc','carrure','poigne','formegeant'].forEach(k=>assert.ok(C.TALENTS_CODES[k]&&C.TALENTS_CODES[k].espece,k));assert.ok(C.TALENTS_CODES.formegeant.gratuit&&C.TALENTS_CODES.poigne.attaque);
+ assert.equal(C.mouvementPropre({hero:true,espece:'goliath',formeGeant:{socleAvant:''}}),C.mouvementPropre({hero:true,espece:'goliath'})+3);
+ assert.ok(ix.includes("function carrureContre(b,src)")&&ix.includes("function poigne(a,p,talent)")&&ix.includes("function formeGeant(a,p,talent)")&&ix.includes("let rocDit='';")
+  &&ix.includes("actors.forEach(a=>{delete a.armure;finFormeGeant(a)});")&&ed.includes("c.semisForge.push('espece-goliath')")&&lv.includes("'pvBase','formeGeant',"),'v0.902');}
 /* v0.901 — Tombé à 0 PV sous la Nécrose : mort (poussière sous Étreinte de la mort) ; la résurrection lève la Nécrose. */
 {const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(ix.includes("if(a.hp<=0&&a.hero&&!estMort(a)){const etreinte=porteEffet(talentsCodes(a),'etreintemort');a.vie=0;a.comaVie=true;if(etreinte)a.poussiere=true;")
@@ -5202,7 +5208,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  const a={hp:20,max:20,armure:8,states:[]};assert.equal(C.applyDamage(a,10),2);assert.equal(a.hp,18);assert.equal(a.armure,undefined);
  const h={hero:true,vie:2,endu:3,role:'',race:''},base=C.pvMaximum([],h);assert.equal(C.pvMaximum([],{...h,necrose:4}),base-4);assert.equal(C.pvMaximum([],{...h,radiance:5}),base+5);
  assert.ok(ix.includes('function appliqueNecrose(a,n)')&&ix.includes("if(afflictions.includes('Nécrose')&&!insensibleA(b,'Nécrose'))appliqueNecrose(b,lost)")&&ix.includes("let armureDit='';")
-  &&ix.includes("if((etat==='Poison'||etat==='Nécrose')&&r!=='immunise')perdRadiance(a)")&&ix.includes("leveNecrose(a);perdRadiance(a);")&&ix.includes('actors.forEach(a=>{delete a.armure});')
+  &&ix.includes("if((etat==='Poison'||etat==='Nécrose')&&r!=='immunise')perdRadiance(a)")&&ix.includes("leveNecrose(a);perdRadiance(a);")&&ix.includes('actors.forEach(a=>{delete a.armure;finFormeGeant(a)});')
   &&ed.includes("applyHeal(a,total,p.radiant==='oui')")&&ed.includes('name="radiant"')&&ed.includes("field('Armure','aa'+i,")&&lv.includes("'necrose','radiance','armure','pvBase',")&&css.includes('.pv-armure{'),'v0.900');}
 /* v0.899 — Les Talents d'Espèce du Nain : Vision des profondeurs, Ventre de Pierre, Ancré dans le Sol, Rancune ; la pierre sur la carte. */
 {const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),lv=fs.readFileSync('live.js','utf8');

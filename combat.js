@@ -419,7 +419,9 @@ const DISTANCE_MOUVEMENT=9;
 function bonusMouvementDe(o){return Math.max(0,Math.min(40,Number(o&&o.bonusMouvement)||0))}
 function mouvementPropre(a){const v=a&&!a.hero&&a.mouvement!=null&&a.mouvement!==''?Number(a.mouvement):NaN;if(Number.isFinite(v))return Math.max(0,Math.min(99,v));
  // v0.883 : la Vitesse de son espèce, quand elle en a une (le Lupin, 10 m).
- const e=a&&a.hero&&typeof especeDe==='function'?especeDe(a.espece):null;if(e&&a.socle==='small'&&Number(e.vitessePetit)>0)return Number(e.vitessePetit);return e&&Number(e.vitesse)>0?Number(e.vitesse):DISTANCE_MOUVEMENT}
+ const e=a&&a.hero&&typeof especeDe==='function'?especeDe(a.espece):null;if(e&&a.socle==='small'&&Number(e.vitessePetit)>0)return Number(e.vitessePetit);
+ // v0.902 : Forme de Géant (Goliath), +3 m.
+ return (e&&Number(e.vitesse)>0?Number(e.vitesse):DISTANCE_MOUVEMENT)+(a&&a.formeGeant?3:0)}
 function distanceMouvement(a,items){return mouvementPropre(a)+objetsQuiComptent(a,items,o=>bonusMouvementDe(o)>0).reduce((s,o)=>s+bonusMouvementDe(o),0)}
 function lumierePortee(a,items){return objetsLumineux(a,items).reduce((m,o)=>Math.max(m,lumiereDe(o)),0)}
 /* Un coffre : un rectangle, comme une porte. Son nom et sa description ; caché (« cache »), un test de
@@ -1772,6 +1774,19 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  /* Vision dans le noir : un passif. Dans l'obscurité, le porteur voit jusqu'à x mètres, là où les autres ne voient que leur
     zone de contact. Ses améliorations la portent plus loin, et font de lui un Prédateur des Ombres, aux coups plus durs
     tant qu'il se tient dans le noir. */
+ /* v0.902 — Talents d'Espèce du Goliath. Forme de Géant, gratuite. */
+ solideroc:{cle:'solideroc',nom:'Solide comme un Roc',type:'pass',espece:true,
+  aide:'Passif : la part des dés rouges dans les dégâts subis est divisée par deux, arrondie au-dessus.',
+  params:[],phrase(){return 'Vous subissez la <b>moitié</b> (au supérieur) des dégâts infligés par les <b>dés rouges</b>.'}},
+ carrure:{cle:'carrure',nom:'Carrure Imposante',type:'pass',espece:true,
+  aide:'Passif : un combattant plus petit ne peut ni repousser le porteur ni le mettre Au sol.',
+  params:[],phrase(){return 'Vous ne pouvez jamais être <b>repoussé</b> ou mis <b>Au sol</b> par un combattant plus petit que vous.'}},
+ poigne:{cle:'poigne',nom:'Poigne',type:'act',bouton:'Poigne',espece:true,attaque:true,
+  aide:'Action : une Attaque au contact à mains nues, 2 dés rouges + Dégâts, qui met Au sol ; contre plus petit que soi seulement.',
+  params:[],phrase(){return 'Une attaque au contact à mains nues : <b>2 dés rouges</b> + Dégâts, et <b>Au sol</b>, contre une créature plus petite que vous.'}},
+ formegeant:{cle:'formegeant',nom:'Forme de Géant',type:'act',bouton:'Forme de Géant',espece:true,gratuit:true,
+  aide:'Gratuit, une fois entre deux repos courts : le porteur passe en taille G jusqu’à la fin du combat, +3 m de Vitesse et 1 dé rouge de plus au contact.',
+  params:[],phrase(){return 'Vous passez de la taille <b>M</b> à <b>G</b> jusqu’à la fin du combat : <b>+3 m</b> de Vitesse et <b>1 dé rouge</b> de plus à vos attaques au contact.'}},
  /* v0.899 — Talents d'Espèce du Nain. */
  visionprofondeurs:{cle:'visionprofondeurs',nom:'Vision des profondeurs',type:'pass',espece:true,
   aide:'Passif : Vision dans le noir à 18 m, et +1 réussite pour découvrir un passage secret ou une chose cachée dans la pierre.',

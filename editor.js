@@ -278,6 +278,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    {id:'talent-dhampire-vision',name:'Vision dans le noir',type:'pass',effet:'visionnoir',params:{portee:18},effects:'Vous voyez dans le noir jusqu’à 18 m.'}]
    .forEach(t=>{if(!c.talents.some(x=>x&&x.id===t.id))c.talents.push({...t,famille:'Espèces',espece:'dhampire',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
   c.semisForge.push('espece-dhampire')}
+ /* v0.902 — Les Talents d'Espèce du Goliath, posés une fois dans le groupe Espèces. */
+ if(!c.semisForge.includes('espece-goliath')&&Array.isArray(c.talents)){
+  [{id:'talent-goliath-roc',name:'Solide comme un Roc',type:'pass',effet:'solideroc',params:{},effects:'Vous subissez la moitié (au supérieur) des dégâts infligés par les dés rouges (lourds).'},
+   {id:'talent-goliath-carrure',name:'Carrure Imposante',type:'pass',effet:'carrure',params:{},effects:'Vous ne pouvez jamais être repoussé ou mis Au sol par des combattants d’une taille inférieure à la vôtre, quelle que soit votre taille.'},
+   {id:'talent-goliath-poigne',name:'Poigne',type:'act',effet:'poigne',params:{},effects:'Une attaque au contact à mains nues qui inflige 2 dés rouges + Dégâts et met Au sol une créature d’une taille plus petite que la vôtre.'},
+   {id:'talent-goliath-geant',name:'Forme de Géant',type:'act',effet:'formegeant',params:{},effects:'Action bonus : vous passez de la taille M à G jusqu’à la fin du combat, une fois entre deux repos courts. Votre Vitesse augmente de 3 m, et vous ajoutez 1 dé rouge à toutes vos attaques au contact.'}]
+   .forEach(t=>{if(!c.talents.some(x=>x&&x.id===t.id))c.talents.push({...t,famille:'Espèces',espece:'goliath',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  c.semisForge.push('espece-goliath')}
  /* v0.899 — Les Talents d'Espèce du Nain, posés une fois dans le groupe Espèces. */
  if(!c.semisForge.includes('espece-nain')&&Array.isArray(c.talents)){
   [{id:'talent-nain-vision',name:'Vision des profondeurs',type:'pass',effet:'visionprofondeurs',params:{portee:18},effects:'Vision dans le noir à 18 m. En outre, vous obtenez automatiquement +1 réussite aux tests de détection des passages secrets ou des secrets cachés dans la pierre.'},
