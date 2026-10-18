@@ -1805,7 +1805,7 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  /* v0.897 — Talents d'Espèce du Fielsang. Mimétisme et Maléfice, gratuits, une fois par tour. */
  gageur:{cle:'gageur',nom:'Gageur',type:'act',bouton:'Gageur',espece:true,
   aide:'Action : au contact, le porteur prélève un Gage d’un adversaire et lui inflige 1 dé noir de dégâts. Contre ce modèle d’adversaire, ses dégâts augmentent de son Niveau, et il le voit toujours à 10 m. Jusqu’au prochain repos long.',
-  params:[],phrase(){return 'Au contact, vous prélevez un <b>Gage</b> d’un adversaire et lui infligez <b>1 dé noir</b> de dégâts. Contre ce type d’adversaire, vos dégâts augmentent de votre <b>Niveau</b>, et il reste visible et en ligne de vue à <b>10 m</b>.'}},
+  params:[],phrase(){return 'Au contact, vous prélevez un <b>Gage</b> d’un adversaire et lui infligez <b>1 dé noir</b> de dégâts. Contre ce type d’adversaire, vos dégâts augmentent de votre <b>Niveau</b>, et il reste visible et en ligne de vue à <b>10 m</b>. Vous prélevez aussi son <b>apparence</b>, pour vos déguisements.'}},
  deguisement:{cle:'deguisement',nom:'Déguisement',type:'act',bouton:'Déguisement',espece:true,
   aide:'Action : le porteur prend une apparence de sa collection et la taille Petit ou Moyen, jusqu’à son prochain repos court. Il peut l’abandonner à tout moment.',
   params:[],phrase(){return 'Vous changez d’<b>apparence</b> et de <b>taille</b> jusqu’à votre prochain repos court. Vous pouvez y renoncer à tout moment.'}},

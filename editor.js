@@ -14,7 +14,9 @@ const diceFrom=p=>Object.fromEntries(keys.map((k,i)=>[k,p[i]||0]));
 const ATTAQUE_AUTO='Attaque de base';
 // v0.885 : le nom d'un aventurier commence toujours par une majuscule.
 const majusculeInitiale=s=>{const t=String(s||'');const i=t.search(/\S/);return i<0?t:t.slice(0,i)+t.charAt(i).toLocaleUpperCase('fr')+t.slice(i+1)};
-function normalizeActor(a){a.id??=crypto.randomUUID();if(a.hero&&typeof a.name==='string')a.name=majusculeInitiale(a.name);
+function normalizeActor(a){a.id??=crypto.randomUUID();
+ // v0.905 : Mimétisme est fondu dans Gageur ; qui le tenait le perd.
+ if(Array.isArray(a.talents)&&a.talents.includes('talent-fielsang-mimetisme'))a.talents=a.talents.filter(id=>id!=='talent-fielsang-mimetisme');if(a.hero&&typeof a.name==='string')a.name=majusculeInitiale(a.name);
  // Les points de la création d'un aventurier : trois au plus, en Endurance, Vie ou Dégâts.
  if(a.pointsCreation&&typeof a.pointsCreation==='object'){const n=k=>Math.max(0,Math.min(3,Math.trunc(Number(a.pointsCreation[k]))||0)),p={endu:n('endu'),vie:n('vie'),dmg:n('dmg')};
   if(p.endu+p.vie+p.dmg>3||!(p.endu+p.vie+p.dmg))delete a.pointsCreation;else a.pointsCreation=p}else delete a.pointsCreation;
@@ -308,6 +310,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    {id:'talent-fielsang-vision',name:'Vision dans le noir',type:'pass',effet:'visionnoir',params:{portee:18},effects:'Vous voyez dans le noir jusqu’à 18 m.'}]
    .forEach(t=>{if(!c.talents.some(x=>x&&x.id===t.id))c.talents.push({...t,famille:'Espèces',espece:'fielsang',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
   c.semisForge.push('espece-fielsang')}
+ /* v0.905 — Mimétisme fondu dans Gageur : le talent s'en va, Gageur dit qu'il prélève aussi l'apparence. */
+ if(!c.semisForge.includes('gageur-mimetisme')&&Array.isArray(c.talents)){c.talents=c.talents.filter(t=>!(t&&t.id==='talent-fielsang-mimetisme'));
+  const g=c.talents.find(t=>t&&t.id==='talent-fielsang-gageur');if(g&&typeof g.effects==='string'&&!g.effects.includes('apparence'))g.effects=g.effects.replace(/\s*$/,'')+' Vous prélevez aussi, pour toujours, l’apparence de la créature : elle rejoint votre collection de déguisements.';
+  c.semisForge.push('gageur-mimetisme')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,

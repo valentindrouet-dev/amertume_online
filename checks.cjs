@@ -5193,6 +5193,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.905 — Gageur prélève aussi l'apparence ; Mimétisme retiré du catalogue et des aventuriers. */
+{const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ix.includes("const ap=refApparence(b),d=Array.isArray(a.deguisements)")&&ed.includes("c.semisForge.push('gageur-mimetisme')")&&ed.indexOf("c.semisForge.push('gageur-mimetisme')")>ed.indexOf("c.semisForge.push('espece-fielsang')")
+  &&ed.includes("a.talents=a.talents.filter(id=>id!=='talent-fielsang-mimetisme')"),'v0.905');}
 /* v0.904 — Corruption cumulable (+X aux coups portés et reçus) ; Gel cumulable (−1 m par point, sans les bonus) ; Feu et Gel s'annulent. */
 {const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(C.cumulable('Gel')&&C.cumulable('Corruption')&&C.ETATS_JEU.includes('Corruption'),'v0.904 tables');
