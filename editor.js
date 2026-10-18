@@ -1219,7 +1219,7 @@ function bougeRichesse(signe){const a=richessesActeur,f=$('richesses-form').elem
 $('richesses-form').onsubmit=e=>{e.preventDefault();bougeRichesse(1)};$('richesses-retirer').onclick=()=>bougeRichesse(-1);$('richesses-vider').onclick=()=>bougeRichesse(0);
 // Ressusciter, chez le MJ : une VIE, ses PV au complet, de retour sur la carte, sans état.
 function ressusciter(a){if(view!=='mj'||!estMort(a)||a.poussiere===true)return;
- a.vie=1;a.comaVie=false;a.horsCarte=false;a.states=[];a.cumuls={};a.bleed=0;if(typeof recalculerPV==='function')recalculerPV(a);a.hp=a.max;
+ a.vie=1;a.comaVie=false;a.horsCarte=false;a.states=[];a.cumuls={};a.bleed=0;if(typeof leveNecrose==='function')leveNecrose(a);if(typeof recalculerPV==='function')recalculerPV(a);a.hp=a.max;
  renderHeroes();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))}
 // Le genre en symbole, puis l'espèce : à gauche de la classe, sur la page Aventuriers comme à la table.
 function origineAventurier(a){const g=a.sexe==='Femme'?'♀':a.sexe==='Homme'?'♂':'',r=String(a.race||'').trim();if(!g&&!r)return null;

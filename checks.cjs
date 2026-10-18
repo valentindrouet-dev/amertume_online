@@ -5192,6 +5192,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.901 — Tombé à 0 PV sous la Nécrose : mort (poussière sous Étreinte de la mort) ; la résurrection lève la Nécrose. */
+{const ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(ix.includes("if(a.hp<=0&&a.hero&&!estMort(a)){const etreinte=porteEffet(talentsCodes(a),'etreintemort');a.vie=0;a.comaVie=true;if(etreinte)a.poussiere=true;")
+  &&ed.includes("a.bleed=0;if(typeof leveNecrose==='function')leveNecrose(a);if(typeof recalculerPV==='function')recalculerPV(a);a.hp=a.max;"),'v0.901');}
 /* v0.900 — Les états de PV : Nécrose (PV max réduits, cumulés), Radiance (surplus d'un soin radiant), Armure (prise avant les PV). */
 {const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8'),css=fs.readFileSync('editor.css','utf8');
  assert.ok(C.ETATS_JEU.includes('Nécrose')&&C.OBJETS_CODES.armure&&C.OBJETS_CODES.soin.params.some(p=>p.cle==='radiant'),'v0.900 tables');
