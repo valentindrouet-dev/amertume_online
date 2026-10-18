@@ -2640,7 +2640,9 @@ function accordDe(o){if(o&&ACCORDS.some(([k])=>k===o.accord))return o.accord;
 // Les familles en cascade : sous chaque groupe, ce qu'il réunit.
 const CASCADE_AFFIXE={melee:['lame','hache','contondant','hast'],ranged:['arc','arbalete','jet'],armure:['torse','shield','tete','dos','anneau','amulette','bottes']};
 function familleAffixe(o){if(!o)return '';if(o.category==='weapon')return o.ranged===true?'ranged':'melee';if(o.category==='armor')return emplacementDe(o);return ''}
-const EFFETS_AFFIXE=[['carac','Bonus de caractéristique'],['comp','Bonus de compétence'],['de','Dé de dégâts en plus'],['etat','État infligé par l’arme'],['mouvement','Bonus de Mouvement, en mètres'],['lumiere','Lumière, en mètres'],['confere','État conféré par l’objet'],['vampire','Vampirique : soin à chaque attaque réussie'],['acceleration','Accélération : mouvement en réserve à chaque attaque réussie'],['domination','Domination : dégâts contre un état'],['reaction','Réaction : dégâts des talents de Réaction'],['epines','Épines : dégâts au contact'],['epinesEtat','Épines d’état : état au contact'],['orbesEtat','Vos orbes infligent un état'],['xpVaincu','Expérience : XP en plus par adversaire vaincu'],['fouille','Chercheur : réussites en plus aux fouilles'],['orKill','Orpailleur : d6 d’or quand vous tuez un adversaire']];
+const EFFETS_AFFIXE=[['carac','Bonus de caractéristique'],['comp','Bonus de compétence'],['de','Dé de dégâts en plus'],['etat','État infligé par l’arme'],['mouvement','Bonus de Mouvement, en mètres'],['lumiere','Lumière, en mètres'],['confere','État conféré par l’objet'],['vampire','Vampirique : soin à chaque attaque réussie'],['acceleration','Accélération : mouvement en réserve à chaque attaque réussie'],['domination','Domination : dégâts contre un état'],['reaction','Réaction : dégâts des talents de Réaction'],['epines','Épines : dégâts au contact'],['epinesEtat','Épines d’état : état au contact'],['orbesEtat','Vos orbes infligent un état'],['xpVaincu','Expérience : XP en plus par adversaire vaincu'],['fouille','Chercheur : réussites en plus aux fouilles'],['orKill','Orpailleur : d6 d’or quand vous tuez un adversaire'],
+ // v0.900 : la Nécrose, la Radiance et l'Armure.
+ ['necrose','Nécrose : les dégâts de l’arme nécrosent'],['necrotique','Nécrotique : dégâts de Nécrose en plus'],['radiance','Radiance : soin radiant à chaque attaque'],['armure','Armure à chaque attaque']];
 /* Les valeurs d'un affixe : fixes, ou tirées selon la rareté de la pièce, d'Inhabituel à Légendaire. */
 const ECHELLE_DEFAUT=[[1,3],[4,7],[8,15],[16,30]];
 const RANG_RARETE={inhabituel:0,rare:1,mystique:2,epique:3};
@@ -2658,7 +2660,7 @@ function normaliseAffixe(x){x=x&&typeof x==='object'?x:{};const n=(v,a,b,d)=>{co
   carac:CARACS_AFFIXE.some(([k])=>k===x.carac)?x.carac:'pv',comp:x.comp==='*'?'*':String(n(x.comp,0,COMPETENCES.length-1,0)),
   de:DICE_KEYS.includes(x.de)&&x.de!=='green'?x.de:'red',etat:effet==='confere'?(ETATS_POSITIFS.includes(x.etat)?x.etat:'Blindage'):ETATS_JEU.includes(x.etat)?x.etat:effet==='orbesEtat'||effet==='epinesEtat'?'Poison':effet==='domination'?'Au sol':'Feu',valeur:n(x.valeur,1,99,1),variable:x.variable===true,
   echelle:ECHELLE_DEFAUT.map((d,i)=>{const e=Array.isArray(x.echelle)&&Array.isArray(x.echelle[i])?x.echelle[i]:d,lo=n(e[0],1,99,d[0]),hi=n(e[1],1,99,d[1]);return [Math.min(lo,hi),Math.max(lo,hi)]}),usage:USAGES_AFFIXE.some(([k])=>k===x.usage)?x.usage:'court',
-  poids:n(x.poids,1,100,10),niveau:n(x.niveau,1,20,1),prix:n(x.prix,0,99999,0),...Object.fromEntries(['nomF','nomMP','nomFP'].map(k=>[k,String(x[k]||'').trim().slice(0,40)])),groupe:String(x.groupe||'').trim().slice(0,40),classe:String(x.classe||'').trim().slice(0,60)}}
+  ...(x.enDes===true&&['necrotique','radiance','armure'].includes(effet)?{enDes:true}:{}),poids:n(x.poids,1,100,10),niveau:n(x.niveau,1,20,1),prix:n(x.prix,0,99999,0),...Object.fromEntries(['nomF','nomMP','nomFP'].map(k=>[k,String(x[k]||'').trim().slice(0,40)])),groupe:String(x.groupe||'').trim().slice(0,40),classe:String(x.classe||'').trim().slice(0,60)}}
 function normaliseAffixes(l){const vus=new Set();return (Array.isArray(l)?l:[]).filter(x=>x&&typeof x==='object').slice(0,400).map(normaliseAffixe).filter(x=>!vus.has(x.id)&&vus.add(x.id))}
 // Les réglages du tirage : la chance qu'un équipement qui tombe soit forgé, puis la part de 1, 2, 3 et 4 affixes.
 function normaliseReglageForge(f){f=f&&typeof f==='object'?f:{};const n=(v,d)=>{const k=Math.trunc(Number(v));return Number.isFinite(k)?Math.max(0,Math.min(100,k)):d};
@@ -2688,6 +2690,9 @@ function phraseAffixe(x){x=normaliseAffixe(x);const v=valeurTexte(x),plus=t=>x.v
  // Orpailleur : sa valeur est un nombre de d6, lancés à chaque adversaire tué.
  if(x.effet==='orKill')return '+'+(x.variable?x.echelle[0][0]+'d6 à '+x.echelle[3][1]+'d6':x.valeur+'d6')+' pièces d’or quand vous tuez un adversaire';
  if(x.effet==='acceleration')return '+'+v+' m de mouvement en réserve par attaque réussie';
+ const vd=x.enDes?(x.variable?x.echelle[0][0]+'d6 à '+x.echelle[3][1]+'d6':x.valeur+'d6'):v;
+ if(x.effet==='necrose')return 'les dégâts de l’arme sont de la Nécrose';if(x.effet==='necrotique')return '+'+vd+' dégâts de Nécrose';
+ if(x.effet==='radiance')return 'vous soigne de '+vd+' PV radiants à chaque attaque';if(x.effet==='armure')return '+'+vd+' d’Armure à chaque attaque';
  if(x.effet==='domination')return '+'+v+' dégâts contre les cibles avec '+x.etat;
  if(x.effet==='reaction')return 'vos talents de Réaction infligent +'+v+' dégâts';
  if(x.effet==='epines')return 'inflige '+v+' dégâts à l’adversaire qui arrive au contact';
@@ -2697,7 +2702,7 @@ function phraseAffixe(x){x=normaliseAffixe(x);const v=valeurTexte(x),plus=t=>x.v
 function groupeAffixe(x){return x.groupe||(x.effet==='carac'?'carac:'+x.carac:x.effet==='comp'?'comp:'+x.comp:x.effet==='de'?'de:'+x.de:x.effet==='domination'||x.effet==='epinesEtat'?x.effet+':'+x.etat:x.effet)}
 // Un affixe va-t-il sur cette base : sa famille, son niveau, et pas d'état sur une arme qui en inflige déjà un.
 function affixeVaSur(x,base,niveau){if(!x||!base)return false;const fam=familleAffixe(base),fams=[fam,typeArmeDe(base),base.category==='armor'?'armure':''].filter(Boolean);if(!fam||(x.familles.length&&!x.familles.some(f=>fams.includes(f))))return false;
- if(x.effet==='etat'&&(base.category!=='weapon'||base.etat))return false;if((x.effet==='de')&&base.category!=='weapon')return false;
+ if(x.effet==='etat'&&(base.category!=='weapon'||base.etat))return false;if((x.effet==='de'||x.effet==='necrose'||x.effet==='necrotique')&&base.category!=='weapon')return false;
  // Un état conféré devient l'effet de la pièce : seulement sur une base qui n'en a pas.
  if(x.effet==='confere'&&objetCode(base))return false;
  // Jamais deux fois le même bonus : ni la caractéristique, ni la compétence que la base donne déjà.
@@ -2769,7 +2774,9 @@ function valeurAffixe(x,g){if(!x||!g)return 0;x=normaliseAffixe(x);const b=g.bon
  if(x.effet==='etat')return g.etat||0;if(x.effet==='mouvement')return x.valeur*(g.mouvement||0);
  if(x.effet==='confere')return g.effets&&g.effets.etat||0;if(x.effet==='orbesEtat'||x.effet==='epinesEtat')return x.valeur*(g.etat||0);
  if(x.effet==='vampire')return x.valeur*(b.pv||0)*2;if(x.effet==='xpVaincu'||x.effet==='fouille')return x.valeur*(b.comp||0);if(x.effet==='orKill')return x.valeur*35;if(x.effet==='acceleration')return x.valeur*(g.mouvement||0);
- if(x.effet==='domination'||x.effet==='reaction'||x.effet==='epines')return Math.round(x.valeur*(b.dmg||0)/2);return x.valeur*(g.lumiere||0)}
+ if(x.effet==='domination'||x.effet==='reaction'||x.effet==='epines')return Math.round(x.valeur*(b.dmg||0)/2);
+ if(x.effet==='necrose')return g.etat||0;const k=x.enDes?3.5:1;if(x.effet==='necrotique')return Math.round(x.valeur*k*(b.dmg||0));if(x.effet==='radiance'||x.effet==='armure')return Math.round(x.valeur*k*(b.pv||0)*2);
+ return x.valeur*(g.lumiere||0)}
 /* La valeur tirée d'un affixe sur une pièce : fixe, ou dans l'échelle de sa rareté, au hasard mais toujours la même pour
   cette pièce — chez le MJ comme chez les joueurs. */
 /* Le mot d'un affixe de compétence au hasard : la compétence qu'il nomme devient celle tirée, « de Robustesse » devient
@@ -2823,6 +2830,9 @@ function objetForge(f,items,affixes,guide){if(!f||!Array.isArray(items))return n
   else if(x.effet==='orbesEtat')o.orbesEtats=[...(o.orbesEtats||[]),[x.etat,x.valeur]];
   // Ce que le moteur lit à chaque coup, chaque contact : soin, mouvement, dégâts des Réactions ; dégâts contre un état, épines.
   else if(['vampire','acceleration','reaction','xpVaincu','fouille','orKill'].includes(x.effet)){o.forgeEffets={...(o.forgeEffets||{})};o.forgeEffets[x.effet]=(o.forgeEffets[x.effet]||0)+x.valeur}
+  // v0.900 : Nécrose, Nécrotique, Radiance, Armure — une valeur fixe, ou un nombre de d6 (« …Des »).
+  else if(x.effet==='necrose'){o.forgeEffets={...(o.forgeEffets||{}),necrose:1}}
+  else if(['necrotique','radiance','armure'].includes(x.effet)){const k=x.effet+(x.enDes?'Des':'');o.forgeEffets={...(o.forgeEffets||{})};o.forgeEffets[k]=(o.forgeEffets[k]||0)+x.valeur}
   else if(['domination','epines','epinesEtat'].includes(x.effet)){const k=x.effet==='domination'?'domination':'epines',e=x.effet==='epines'?'':x.etat;
    o.forgeEffets={...(o.forgeEffets||{})};o.forgeEffets[k]={...(o.forgeEffets[k]||{})};o.forgeEffets[k][e]=(o.forgeEffets[k][e]||0)+x.valeur}});
  // Sa valeur : la base et ses affixes, au taux de sa rareté plutôt qu'à celui de la base.

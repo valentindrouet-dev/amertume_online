@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.903","d":"2026-10-18","t":"Affixes de Nécrose, Radiance et Armure"},
 {"v":"0.902","d":"2026-10-18","t":"Talents d'Espèce du Goliath"},
 {"v":"0.901","d":"2026-10-18","t":"Mort par Nécrose"},
 {"v":"0.900","d":"2026-10-18","t":"Nécrose, Radiance et Armure"},

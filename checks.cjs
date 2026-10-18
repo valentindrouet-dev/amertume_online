@@ -1851,7 +1851,7 @@ assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function 
  &&src.includes("if(usageConsomme(usage))retirerInventaire(a,o);")&&src.includes('if(objetCode(o)){appliquerEffetObjet(a,o);return}')
  &&src.includes("a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};")
  &&page.includes('function desRecus(b,dice)')&&page.includes('const {gardes:dice,ecartes}=desRecus(b,tous);')
- &&page.includes('const suite=domDit+malDit+rocDit+armureDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
+ &&page.includes('const suite=domDit+malDit+rocDit+armureDit+necDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
  &&page.includes("a.immunites={etats:[],des:[]};if(typeof reposer==='function')reposer(a,'long');")&&src.includes('function reposer(a,type=')
  &&feuille.includes('.gear-detail .gear-effet{font-weight:600}'),'les effets d’équipement sont câblés');
 /* Les emplacements du corps : deux mains, un torse, un dos, une tête, trois anneaux, une
@@ -3506,7 +3506,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes("function synchronisePV()
  const o=C40.objetForge({id:'forge-z',base:'b',affixes:['x','y']},items,aff,null);assert.equal(o.forgeEffets.pm,1);assert.equal(o.bonusMouvement,2);}
 /* v0.743 — L'infobulle d'une pièce forgée dit aussi Expérience, Chercheur et Orpailleur. */
 {const ed=fs.readFileSync('editor.js','utf8');
- assert.ok(ed.includes("const EFFETS_EN_LIGNE=['mouvement','confere','orbesEtat','vampire','acceleration','domination','reaction','epines','epinesEtat','xpVaincu','fouille','orKill'];"));
+ assert.ok(ed.includes("const EFFETS_EN_LIGNE=['mouvement','confere','orbesEtat','vampire','acceleration','domination','reaction','epines','epinesEtat','xpVaincu','fouille','orKill','necrose','necrotique','radiance','armure'];"));
  assert.ok(ed.includes("xpVaincu:[b('+'+v+' XP'),' par adversaire vaincu.']")&&ed.includes("orKill:[b('+'+v+'d6'),' pièces d’or quand vous tuez un adversaire.']"));}
 /* v0.741 — Crocheter : hors combat, un test de Ruse sur les coffres et les portes verrouillés à portée. */
 {const C39=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),mp=fs.readFileSync('maps.js','utf8'),lv=fs.readFileSync('live.js','utf8');
@@ -5192,6 +5192,13 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.903 — Les affixes de Nécrose, nécrotique, de Radiance et d'Armure (fixe, selon la rareté, ou en d6). */
+{const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ ['necrose','necrotique','radiance','armure'].forEach(k=>assert.ok(C.EFFETS_AFFIXE.some(([e])=>e===k),k));
+ assert.equal(C.normaliseAffixe({effet:'necrotique',enDes:true,valeur:2}).enDes,true);assert.equal(C.normaliseAffixe({effet:'vampire',enDes:true}).enDes,undefined);
+ assert.equal(C.phraseAffixe({effet:'armure',enDes:true,valeur:2}),'+2d6 d’Armure à chaque attaque');
+ assert.ok(ix.includes("...(activeAttack(a).gear&&effetsForge(a).necrose>0?['Nécrose']:[])")&&ix.includes("let necDit='';")&&ix.includes("rad=f.radiance+de(f.radianceDes),arm=f.armure+de(f.armureDes)")
+  &&ed.includes("c.semisForge.push('affixes-necrose')")&&ed.includes("enDes:!!f.forme&&f.forme.value==='des'"),'v0.903');}
 /* v0.902 — Les Talents d'Espèce du Goliath : Solide comme un Roc, Carrure Imposante, Poigne, Forme de Géant. */
 {const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),lv=fs.readFileSync('live.js','utf8');
  ['solideroc','carrure','poigne','formegeant'].forEach(k=>assert.ok(C.TALENTS_CODES[k]&&C.TALENTS_CODES[k].espece,k));assert.ok(C.TALENTS_CODES.formegeant.gratuit&&C.TALENTS_CODES.poigne.attaque);
