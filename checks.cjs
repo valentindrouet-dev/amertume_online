@@ -5193,6 +5193,11 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.921 — Le Drakéide : espèce, Ascendance, Souffle, Vol, Vision. */
+{const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(cb.includes("{id:'drakeide',nom:'Drakéide',teinte:'#a8452f',pv:4,endu:1,dmg:1,vitesse:10,comps:{Robustesse:1,Savoir:1},extension:'dnd',")&&['ascendance','souffledrakeide','voldraconique'].every(k=>cb.includes(k+':{cle:'))
+  &&ed.includes("c.semisForge.push('espece-drakeide')")&&ed.includes('const especeAvecAscendance=c=>')&&pg.includes('function dansLeSouffle(a,q,o,size,px)')&&pg.includes('function volDraconique(a,p,talent)')
+  &&pg.includes("const ETATS_ASCENDANCE={rouge:'Feu',bleu:'Gel',jaune:'Foudre',violet:'Poison'};")&&fs.readFileSync('live.js','utf8').includes("CHAMPS_VIVANTS.push('ascendance');"),'v0.921');}
 /* v0.920 — Un réglage d'espèce sans descriptif garde celui de l'espèce. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes('  if(r.description)e.description=r.description});')&&!fs.readFileSync('editor.js','utf8').includes('else delete e.description'),'v0.920');
 /* v0.917 — Le descriptif de l'Humain, du Nain, du Goliath et de l'Elfe. */

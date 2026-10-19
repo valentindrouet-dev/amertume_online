@@ -32,6 +32,8 @@ CHAMPS_ACTEUR_MJ.push('enAttente');CHAMPS_VIVANTS.push('enAttente');
 CHAMPS_VIVANTS.push('charmePar','sangFeerique');
 // v0.916 : la compétence de Compétent (Humain).
 CHAMPS_VIVANTS.push('competent');
+// v0.921 : l'Ascendance du Drakéide.
+CHAMPS_VIVANTS.push('ascendance');
 // L'aventurier que le MJ a sorti du combat de la table : à lui seul de l'y faire rentrer.
 CHAMPS_ACTEUR_MJ.push('sortiCombat');CHAMPS_VIVANTS.push('sortiCombat');
 // La position d'où un socle au mouvement épuisé s'ajuste.

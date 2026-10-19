@@ -1802,6 +1802,16 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  rancune:{cle:'rancune',nom:'Rancune',type:'pass',espece:true,
   aide:'Passif : chaque critique qu’un adversaire inflige au porteur lui vaut, pour toujours, +1 dégât contre les adversaires de ce modèle.',
   params:[],phrase(){return 'Chaque <b>critique</b> qu’un adversaire vous inflige vous donne, pour toujours, <b>+1 dégât</b> contre les adversaires identiques.'}},
+ /* v0.921 — Talents d'Espèce du Drakéide. L'Ascendance : Rouge, Feu ; Bleu, Gel ; Jaune, Foudre ; Violet, Poison. */
+ ascendance:{cle:'ascendance',nom:'Ascendance Drakéide',type:'pass',espece:true,
+  aide:'Passif : le porteur descend d’un dragon, choisi à la création, et devient insensible à son élément : Rouge, Feu ; Bleu, Gel ; Jaune, Foudre ; Violet, Poison.',
+  params:[],phrase(){return 'Vous descendez d’un dragon et êtes <b>insensible</b> à son élément : Rouge, <b>Feu</b> ; Bleu, <b>Gel</b> ; Jaune, <b>Foudre</b> ; Violet, <b>Poison</b>.'}},
+ souffledrakeide:{cle:'souffledrakeide',nom:'Souffle Drakéide',type:'act',bouton:'Souffle Drakéide',espece:true,
+  aide:'Action : un cône de 4 m ouvert à 45°, depuis le socle du porteur ; chaque combattant dedans subit 1 dé bleu, contre sa DEF, et l’état de son Ascendance.',
+  params:[],phrase(){return 'Un souffle en cône de <b>4 m</b> : tous les combattants touchés subissent <b>1 dé bleu</b> et l’état de votre <b>Ascendance</b>.'}},
+ voldraconique:{cle:'voldraconique',nom:'Vol Draconique',type:'mvt',bouton:'Vol Draconique',espece:true,
+  aide:'Mouvement, une fois entre deux repos courts : un vol de 10 m + Niveau, au-dessus du terrain impraticable ou difficile et des adversaires ; à l’atterrissage, chaque combattant au contact subit l’état de l’Ascendance.',
+  params:[],phrase(){return 'Vous volez jusqu’à <b>10 m + Niveau</b>, par-dessus le terrain et les adversaires. À l’atterrissage, tous les combattants à votre contact subissent l’état de votre <b>Ascendance</b>.'}},
  /* v0.916 — Talents d'Espèce de l'Humain. */
  secondsouffle:{cle:'secondsouffle',nom:'Second Souffle',type:'act',bouton:'Second Souffle',espece:true,gratuit:true,
   aide:'Gratuit, une fois entre deux repos courts : le porteur récupère 1 dé vert de PV.',
@@ -2896,6 +2906,9 @@ const ESPECES=[{id:'humain',nom:'Humain',teinte:'#9a7b4f',vie:1,vitesse:9,comps:
   description:'Façonnés dans la terre par un dieu de la forge, les Nains sont robustes comme la pierre qu’ils travaillent. Bâtisseurs, mineurs et forgerons sans égal, ils vivent quatre siècles et n’oublient ni une dette, ni une offense.'},
  {id:'goliath',nom:'Goliath',teinte:'#5f7183',dmg:2,vitesse:10,comps:{Force:1,Robustesse:1},
   description:'Lointains descendants des géants, les Goliaths portent l’héritage des seigneurs des collines, du givre, du feu ou des tempêtes. Plus grands et plus forts que la plupart des peuples, ils mesurent leur valeur à leurs exploits.'},
+ /* v0.921 — Le Drakéide, de l'Extension D&D : Vitesse 10 m ; son Ascendance se choisit à la création. */
+ {id:'drakeide',nom:'Drakéide',teinte:'#a8452f',pv:4,endu:1,dmg:1,vitesse:10,comps:{Robustesse:1,Savoir:1},extension:'dnd',
+  description:'Nés des dragons ou d’œufs que leur souffle a bénis, les Drakéides portent écailles et griffes, et l’étincelle de leurs ancêtres. Fiers et fidèles à leur clan, ils crachent l’élément de leur lignée et voient dans le noir comme eux.'},
  {id:'elfe',nom:'Elfe',teinte:'#4f8a5b',endu:1,dmg:1,vitesse:9,comps:{Agilité:1,Mysticisme:1},
   description:'Héritiers des premiers Elfes, qui changeaient de forme à volonté, ils gardent une grâce surnaturelle et une parenté avec la Féerie. Ils vivent sept siècles, méditent en transe au lieu de dormir, et contemplent le monde avec patience.'},
  /* v0.883 — Le Lupin, de l'Extension Ravenloft : Vitesse 10 m, ses Talents d'Espèce dans le groupe Espèces de l'onglet Talents. */
