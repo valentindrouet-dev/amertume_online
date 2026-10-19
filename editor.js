@@ -237,7 +237,9 @@ function appliqueReglages(c){if(typeof ESPECES==='undefined'||typeof COMPETENCES
  ESPECES.forEach(e=>{const o=ESPECES_ORIGINE.find(x=>x.id===e.id);if(!o)return;
   ['teinte','vie','endu','dmg','pv','vitesse','vitessePetit','description'].forEach(k=>{if(k in o)e[k]=o[k];else delete e[k]});e.comps={...o.comps};
   const r=(c.especesReglages||{})[e.id];if(!r)return;if(r.teinte)e.teinte=r.teinte;['vie','endu','dmg','pv','vitesse','vitessePetit'].forEach(k=>{if(r[k])e[k]=r[k];else delete e[k]});
-  e.comps={...r.comps};if(r.description)e.description=r.description;else delete e.description});
+  e.comps={...r.comps};
+  // v0.920 : un réglage sans descriptif garde celui de l'espèce.
+  if(r.description)e.description=r.description});
  Object.keys(COMPETENCES_CLASSE).forEach(k=>delete COMPETENCES_CLASSE[k]);Object.assign(COMPETENCES_CLASSE,structuredClone(COMPS_CLASSE_ORIGINE));
  (c.classes||[]).forEach(k=>{if(!k||!k.name||!Array.isArray(k.comps))return;Object.keys(COMPETENCES_CLASSE).filter(n=>cleClasse(n)===cleClasse(k.name)).forEach(n=>delete COMPETENCES_CLASSE[n]);COMPETENCES_CLASSE[k.name]=[...k.comps]})}
 function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];migreOmbrelame(c);

@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.920 — Un réglage d'espèce sans descriptif garde celui de l'espèce. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes('  if(r.description)e.description=r.description});')&&!fs.readFileSync('editor.js','utf8').includes('else delete e.description'),'v0.920');
 /* v0.917 — Le descriptif de l'Humain, du Nain, du Goliath et de l'Elfe. */
 {const E=require('./combat.js').ESPECES||[];assert.ok(['humain','nain','goliath','elfe'].every(id=>{const e=E.find(x=>x.id===id);return e&&typeof e.description==='string'&&e.description.length>80}),'v0.917');}
 /* v0.916 — Talents d'Espèce de l'Humain. */
