@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.919","d":"2026-10-19","t":"Descriptifs ajustés"},
 {"v":"0.918","d":"2026-10-19","t":"Descriptifs des espèces raccourcis"},
 {"v":"0.917","d":"2026-10-19","t":"Descriptif des espèces"},
 {"v":"0.916","d":"2026-10-19","t":"Talents d'Espèce de l'Humain"},
