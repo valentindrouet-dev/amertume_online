@@ -2891,13 +2891,13 @@ function competencesDeClasse(role){const k=cleClasse(role),e=k?Object.entries(CO
    à part. Seul un aventurier né d'une espèce de cette table la porte ; l'espèce écrite à la main d'un ancien reste un mot. */
 // v0.884 : chaque espèce a sa Vitesse, en mètres.
 const ESPECES=[{id:'humain',nom:'Humain',teinte:'#9a7b4f',vie:1,vitesse:9,comps:{Perception:1,Savoir:1},
-  description:'Venus en dernier sur la scène du monde, les Humains compensent une vie brève par une ambition sans bornes. On les trouve partout, dans toutes les contrées et à tous les métiers : leur adaptabilité et leur soif d’accomplir en font de grands bâtisseurs d’empires, et les plus imprévisibles des alliés.'},
+  description:'Venus en dernier au monde, les Humains compensent une vie brève par une ambition sans bornes. Présents partout et dans tous les métiers, leur adaptabilité en fait de grands bâtisseurs d’empires, et des alliés imprévisibles.'},
  {id:'nain',nom:'Nain',teinte:'#8c5a3c',pv:8,vitesse:8,comps:{Robustesse:1,Technique:1},extension:'dnd',
-  description:'Nés de la terre aux temps anciens, façonnés par un dieu de la forge, les Nains sont robustes comme la pierre qu’ils travaillent. Bâtisseurs de forteresses au cœur des montagnes, mineurs et forgerons sans égal, ils vivent près de quatre siècles et n’oublient jamais ni une dette, ni une offense.'},
+  description:'Façonnés dans la terre par un dieu de la forge, les Nains sont robustes comme la pierre qu’ils travaillent. Bâtisseurs de forteresses, mineurs et forgerons sans égal, ils vivent quatre siècles et n’oublient ni une dette, ni une offense.'},
  {id:'goliath',nom:'Goliath',teinte:'#5f7183',dmg:2,vitesse:10,comps:{Force:1,Robustesse:1},
-  description:'Lointains descendants des géants, les Goliaths portent dans le sang l’héritage des seigneurs des collines, du givre, du feu ou des tempêtes. Plus grands et plus forts que la plupart des peuples, ils arpentent les hauteurs du monde, mesurent leur valeur à leurs exploits, et peuvent pour un temps retrouver la stature de leurs ancêtres.'},
+  description:'Lointains descendants des géants, les Goliaths portent l’héritage des seigneurs des collines, du givre, du feu ou des tempêtes. Plus grands et plus forts que la plupart des peuples, ils mesurent leur valeur à leurs exploits, et retrouvent un temps la stature de leurs ancêtres.'},
  {id:'elfe',nom:'Elfe',teinte:'#4f8a5b',endu:1,dmg:1,vitesse:9,comps:{Agilité:1,Mysticisme:1},
-  description:'Les premiers Elfes changeaient de forme à volonté ; leurs descendants en gardent une grâce surnaturelle et une parenté avec la Féerie. Ils vivent plus de sept siècles, ne dorment pas mais méditent en transe, et contemplent le monde avec la patience de ceux qui ont tout leur temps.'},
+  description:'Héritiers des premiers Elfes, qui changeaient de forme à volonté, ils gardent une grâce surnaturelle et une parenté avec la Féerie. Ils vivent sept siècles, méditent en transe au lieu de dormir, et contemplent le monde avec patience.'},
  /* v0.883 — Le Lupin, de l'Extension Ravenloft : Vitesse 10 m, ses Talents d'Espèce dans le groupe Espèces de l'onglet Talents. */
  /* v0.897 — Le Fielsang, de l'Extension Ravenloft : Vitesse 9 m, 6 m de taille Petit (choisie à la création). */
  {id:'fielsang',nom:'Fielsang',teinte:'#3f7d6e',dmg:2,vitesse:9,vitessePetit:6,comps:{Mysticisme:1,Perception:1},extension:'ravenloft',
