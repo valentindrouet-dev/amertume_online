@@ -1050,7 +1050,7 @@ function effetParNom(nom){const k=cleTalent(nom);if(!k)return '';
 // Les huit compétences, dans l'ordre des fiches : la table les nomme depuis le moteur.
 const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ruse','Savoir','Technique'];
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Furie','Gel',
- 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose','Corruption'];
+ 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose','Corruption','Surpris','Charme'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
 // Les réglages de Dominateur, bornés : l'état visé, x, et les dés de xdx.
 function dominateurDe(p){const n=(v,a,b,d)=>Math.max(a,Math.min(b,Math.trunc(Number(v))||d));
@@ -1802,6 +1802,19 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  rancune:{cle:'rancune',nom:'Rancune',type:'pass',espece:true,
   aide:'Passif : chaque critique qu’un adversaire inflige au porteur lui vaut, pour toujours, +1 dégât contre les adversaires de ce modèle.',
   params:[],phrase(){return 'Chaque <b>critique</b> qu’un adversaire vous inflige vous donne, pour toujours, <b>+1 dégât</b> contre les adversaires identiques.'}},
+ /* v0.915 — Talents d'Espèce de l'Elfe. */
+ oeilelfique:{cle:'oeilelfique',nom:'Œil Elfique',type:'pass',espece:true,
+  aide:'Passif : les Attaques à distance du porteur infligent + son Niveau en dégâts.',
+  params:[],phrase(){return 'Vos <b>Attaques à distance</b> infligent <b>+1 dégât</b> par niveau.'}},
+ pasdefeuille:{cle:'pasdefeuille',nom:'Pas de Feuille',type:'pass',espece:true,
+  aide:'Passif : sur une carte dont le lieu est une forêt, le terrain difficile ne gêne pas le porteur ; il n’est jamais Surpris.',
+  params:[],phrase(){return 'En forêt, le <b>terrain difficile</b> ne vous gêne pas. De plus, vous ne pouvez pas être <b>Surpris</b>.'}},
+ sangfeerique:{cle:'sangfeerique',nom:'Sang Féerique',type:'reac',espece:true,
+  aide:'Réaction, une fois par combat : quand le porteur devrait subir Aveugle, Sommeil ou Charme, il peut l’ignorer.',
+  params:[],phrase(){return 'Quand vous devriez subir <b>Aveugle</b>, <b>Sommeil</b> ou <b>Charme</b>, vous l’ignorez, une fois par combat.'}},
+ transe:{cle:'transe',nom:'Transe',type:'pass',espece:true,
+  aide:'Passif : chaque repos court rend au porteur 1 dé vert de PV de plus.',
+  params:[],phrase(){return 'Vos <b>repos courts</b> vous rendent <b>1 dé vert</b> de PV en plus.'}},
  /* v0.897 — Talents d'Espèce du Fielsang. Mimétisme et Maléfice, gratuits, une fois par tour. */
  gageur:{cle:'gageur',nom:'Gageur',type:'act',bouton:'Gageur',espece:true,
   aide:'Action : au contact, le porteur prélève un Gage d’un adversaire et lui inflige 1 dé noir de dégâts. Contre ce modèle d’adversaire, ses dégâts augmentent de son Niveau, et il le voit toujours à 10 m. Jusqu’au prochain repos long.',

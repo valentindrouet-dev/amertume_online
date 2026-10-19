@@ -1175,7 +1175,7 @@ assert.ok(feuille.includes('.talent-rangee.t-ame .cat-pill.gear-carre.talent-car
  assert.ok(page.includes("if(cachePour(o,j)&&(view!=='mj'||duCoteTroupe(a)))return false;")&&page.includes('function reach(){const a=actors[selected],j=a?ciblesDe(a)[0]:undefined;'),'un aventurier ne vise pas un adversaire caché');
  const orbeSrc=page.slice(page.indexOf('function orbe('),page.indexOf('function cibleAlliee('));
  assert.ok(!orbeSrc.includes('mauvaisSort(')&&!orbeSrc.includes('Mauvais Sort :')&&orbeSrc.includes("let suite='',pose='';"),'l’orbe est un talent : pas de Mauvais Sort');
- const frappeSrc=page.slice(page.indexOf('function frappe('),page.indexOf('function frappe(')+2400);
+ const frappeSrc=page.slice(page.indexOf('function frappe('),page.indexOf('function frappe(')+2800);
  assert.ok(frappeSrc.includes("porteEffet(talentsCodes(b),'mauvaissort')?mauvaisSort(dice,d6):null"),'Mauvais Sort reste sur les attaques');}
 /* Les boutons d'action écrivent en blanc, actifs, grisés ou inertes ; un talent sans dés ne porte
    plus sa nature ; un adversaire retiré laisse son XP aux aventuriers et les cibles ne glissent pas. */
@@ -5193,6 +5193,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.915 — Talents d'Espèce de l'Elfe ; états Surpris et Charme. */
+{const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(cb.includes("'Corruption','Surpris','Charme'];")&&['oeilelfique','pasdefeuille','sangfeerique','transe'].every(k=>cb.includes(k+':{cle:'))&&ed.includes("c.semisForge.push('espece-elfe')")
+  &&pg.includes('function enForet()')&&pg.includes('function sangDispo(b)')&&pg.includes("porteEffet(talentsCodes(a),'oeilelfique'))bonus+=")&&fs.readFileSync('live.js','utf8').includes("CHAMPS_VIVANTS.push('charmePar','sangFeerique');"),'v0.915');}
 /* v0.914 — Le déguisement prend la taille de la créature imitée. */
 assert.ok(fs.readFileSync('index.html','utf8').includes('function socleApparence(r)')&&fs.readFileSync('index.html','utf8').includes('appliqueDeguisement(a,liste.find(r=>r.cle===choisi))'),'v0.914');
 /* v0.913 — L'Attaque porte aussi son coût. */

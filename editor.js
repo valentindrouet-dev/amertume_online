@@ -318,6 +318,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('deguisement-taille')&&Array.isArray(c.talents)){const d=c.talents.find(t=>t&&t.id==='talent-fielsang-deguisement');
   if(d&&typeof d.effects==='string'&&d.effects.startsWith('Vous changez d’apparence, parmi votre collection de déguisements, et de taille'))d.effects='Vous prenez l’apparence d’une créature de votre collection de déguisements, et sa taille : Petit pour un gobelin, Grand pour un ogre. Jusqu’à votre prochain repos court ; vous pouvez aussi y renoncer à tout moment.';
   c.semisForge.push('deguisement-taille')}
+ /* v0.915 — Les Talents d'Espèce de l'Elfe, posés une fois ; un talent d'Elfe déjà écrit au même nom est gardé tel quel. */
+ if(!c.semisForge.includes('espece-elfe')&&Array.isArray(c.talents)){
+  [{id:'talent-elfe-oeil',name:'Œil Elfique',type:'pass',effet:'oeilelfique',params:{},effects:'Vos Attaques à distance infligent +1 dégât par niveau.'},
+   {id:'talent-elfe-feuille',name:'Pas de Feuille',type:'pass',effet:'pasdefeuille',params:{},effects:'En forêt, le terrain difficile ne vous gêne pas. De plus, vous ne pouvez pas être surpris au début d’un combat.'},
+   {id:'talent-elfe-sang',name:'Sang Féerique',type:'reac',effet:'sangfeerique',params:{},effects:'Quand vous devriez subir Aveugle ou un effet de sommeil ou de charme, vous l’ignorez, une fois par combat.'},
+   {id:'talent-elfe-transe',name:'Transe',type:'pass',effet:'transe',params:{},effects:'Vous ne dormez pas, vous méditez. Vos repos courts vous rendent 1 dé vert de PV en plus.'}]
+   .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='elfe'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'elfe',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  c.semisForge.push('espece-elfe')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
