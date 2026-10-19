@@ -179,6 +179,8 @@ Le texte d'un bouton est un **verbe court**, à l'infinitif ou à l'impératif, 
 | Nécrose | `.pv-necrose` | hachures `#3b2440` et `#5a3a63` |
 | Armure | `.pv-armure` | bleu électrique `#4fd8ff`, reflet `#b8f2ff` |
 
+**Points d'Action et de Mouvement** (`.pt.action`, `.pt.mvt`) : toujours leur icône, `img/points/pa.webp` (bleu) et `img/points/pm.webp` (brun) ; dépensé, grisé.
+
 **Mouvement gelé** (`.gele`) : sous Gel, les points de Mouvement prennent le bleu du Gel `#8fd3f7`, cerclé de `#2f8fae`.
 
 ---

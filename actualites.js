@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.911","d":"2026-10-19","t":"Icônes PA et PM"},
 {"v":"0.910","d":"2026-10-18","t":"Barre d'actions sur deux lignes"},
 {"v":"0.909","d":"2026-10-18","t":"Découpe des planches remplacées"},
 {"v":"0.908","d":"2026-10-18","t":"Planche Espèces mise à jour"},

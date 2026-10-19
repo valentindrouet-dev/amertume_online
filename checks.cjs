@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.911 — Les icônes des Points d'Action et de Mouvement, partout. */
+assert.ok(fs.existsSync('img/points/pa.webp')&&fs.existsSync('img/points/pm.webp')&&fs.readFileSync('editor.css','utf8').includes('url(img/points/pa.webp)'),'v0.911');
 /* v0.910 — La barre d'actions sur deux lignes : Actions puis gratuites | Mouvements | Réactions ; le reste dessous. */
 {const ed=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');assert.ok(ed.includes("gratuite=b=>!mvt(b)&&b.code.cle!=='orbes'&&b.cout&&!(b.cout.pa>0)&&!(b.cout.pm>0)")&&ed.includes("className:'barre-sep'")
  &&css.includes('.map-panel>.attack-card.barre-actions{flex-direction:column;flex-wrap:nowrap}')&&css.includes('.barre-actions .barre-sep{'),'v0.910');}

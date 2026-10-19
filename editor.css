@@ -3258,3 +3258,14 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 .barre-actions>.attack-row{justify-content:center}
 .barre-actions>.attack-row:not(:has(button:not([hidden]))){display:none}
 .barre-actions .barre-sep{flex:none;align-self:stretch;width:1px;margin:4px 2px;background:color-mix(in srgb,#fff 15%,transparent)}
+/* v0.911 — Les Points d'Action et de Mouvement prennent leur icône partout : pastilles des combattants, coûts des talents
+   (bulles, arbre), barre de mouvement, floaters. Dépensé : grisé ; sous Gel : le PM vire au bleu du Gel. */
+:is(.pastilles,.floater,.talent-bulle-nom .cout-points,.arbres-detail .cout-points,.cout-points) .pt.action,.pastilles .pt.action{background:url(img/points/pa.webp) center/contain no-repeat;box-shadow:none}
+:is(.pastilles,.floater,.talent-bulle-nom .cout-points,.arbres-detail .cout-points,.cout-points) .pt.mvt,.pastilles .pt.mvt{background:url(img/points/pm.webp) center/contain no-repeat;box-shadow:none}
+.pastilles .pt{width:12px;height:12px}
+.talent-bulle-nom .cout-points .pt{width:12px;height:12px}
+.arbres-v2 .arbres-detail .detail-nom-ligne h3 .cout-points .pt{width:16px;height:16px}
+.pastilles .pt.mvt.gele,#barre-mouvement.gele i:not(.pris)::before{filter:hue-rotate(170deg) saturate(.7) brightness(1.25)}
+#barre-mouvement i::before,#barre-mouvement.gele i:not(.pris)::before{background:url(img/points/pm.webp) center/contain no-repeat;box-shadow:none;border-radius:50%}
+#barre-mouvement i.pris::before{width:13px;height:13px;background:url(img/points/pm.webp) center/contain no-repeat;filter:grayscale(1) brightness(1.1);opacity:.45}
+.pt.pris,.pt.inerte,.pt.off-gris{filter:grayscale(1);opacity:.5}
