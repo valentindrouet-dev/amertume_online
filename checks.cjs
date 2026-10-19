@@ -5193,6 +5193,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.916 — Talents d'Espèce de l'Humain. */
+{const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(['secondsouffle','debrouillard','competent','cosmopolite'].every(k=>cb.includes(k+':{cle:'))&&ed.includes("c.semisForge.push('espece-humain')")&&ed.includes('const champSavoir=c=>')
+  &&pg.includes('function secondSouffle(a,p,talent)')&&pg.includes('function bonusCosmopolite(h,xp)')&&pg.includes("if(r.failed&&deception!=='echec')echecCoup={a,b,pool,bonus,tous};")&&pg.includes("if(a.hero&&Number(a.competent)===i&&porteEffet(talentsCodes(a),'competent'))jet.reussites+=1;"),'v0.916');}
 /* v0.915 — Talents d'Espèce de l'Elfe ; états Surpris et Charme. */
 {const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(cb.includes("'Corruption','Surpris','Charme'];")&&['oeilelfique','pasdefeuille','sangfeerique','transe'].every(k=>cb.includes(k+':{cle:'))&&ed.includes("c.semisForge.push('espece-elfe')")
@@ -5255,7 +5259,7 @@ assert.ok(fs.existsSync('img/points/pa.webp')&&fs.existsSync('img/points/pm.webp
 {const C=require('./combat.js'),ix=fs.readFileSync('index.html','utf8'),ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),lv=fs.readFileSync('live.js','utf8');
  assert.equal(C.especeDe('nain').extension,'dnd');['visionprofondeurs','ventrepierre','ancresol','rancune'].forEach(k=>assert.ok(C.TALENTS_CODES[k]&&C.TALENTS_CODES[k].espece,k));
  assert.equal(C.cleanObjet({nom:'x',pierre:true,test:{comp:3,reussites:2}}).pierre,true);{const m=C.cleanMap({coffres:[{x:1,y:1,w:5,h:5,cache:true,pierre:true}],doors:[{x:1,y:1,w:5,h:5,secret:true,pierre:true}]});assert.equal(m.coffres[0].pierre,true);assert.equal(m.doors[0].pierre,true)}
- assert.ok(ix.includes("function ajouteRancune(b,a)")&&ix.includes("bonus+=bonusRancune(a,b);")&&ix.includes("function fenetreAncre(b,x,activer,laisser)")&&ix.includes("(etat==='Poison'&&porteEffet(talentsCodes(a),'ventrepierre'))")
+ assert.ok(ix.includes("function ajouteRancune(b,a)")&&ix.includes("bonus+=bonusRancune(a,b);")&&ix.includes("function fenetreAncre(b,x,activer,laisser,oui)")&&ix.includes("(etat==='Poison'&&porteEffet(talentsCodes(a),'ventrepierre'))")
   &&ix.includes("x.code.cle==='visionnoir'||x.code.cle==='visionprofondeurs'")&&ed.includes("c.semisForge.push('espece-nain')")&&ed.includes("if(a&&(t.effet==='gageur'||t.effet==='rancune')){const g=gagesEl(a,t.effet==='rancune'?'rancunes':'gages');if(g)panneau.append(g)}")
   &&ed.includes("porteEffet(talentsCodes(a),'ventrepierre')&&cleNomObjet(o.name).includes('potion')")&&mp.includes("reussites+pierre(d)>=")&&mp.includes("reussites+pierre(c)>=")&&lv.includes("'malefice','rancunes',"),'v0.899');}
 /* v0.898 — Réglages d'une classe ou d'une espèce et leur équipement de départ ; la forge de l'éditeur d'adversaire, pièce unique. */

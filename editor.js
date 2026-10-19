@@ -326,6 +326,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    {id:'talent-elfe-transe',name:'Transe',type:'pass',effet:'transe',params:{},effects:'Vous ne dormez pas, vous méditez. Vos repos courts vous rendent 1 dé vert de PV en plus.'}]
    .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='elfe'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'elfe',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
   c.semisForge.push('espece-elfe')}
+ /* v0.916 — Les Talents d'Espèce de l'Humain, posés une fois ; un talent d'Humain déjà écrit au même nom est gardé tel quel. */
+ if(!c.semisForge.includes('espece-humain')&&Array.isArray(c.talents)){
+  [{id:'talent-humain-souffle',name:'Second Souffle',type:'act',effet:'secondsouffle',params:{},effects:'Action bonus : vous récupérez 1 dé vert de PV. Une fois entre deux repos courts.'},
+   {id:'talent-humain-debrouillard',name:'Débrouillard',type:'reac',effet:'debrouillard',params:{},effects:'Quand vous réalisez un échec sur une attaque, vous pouvez relancer un des dés ayant produit un 1 et garder le nouveau résultat.'},
+   {id:'talent-humain-competent',name:'Compétent',type:'pass',effet:'competent',params:{},effects:'Vous choisissez une compétence. Vous obtenez toujours une réussite aux tests pour cette compétence, en plus du jet de dés.'},
+   {id:'talent-humain-cosmopolite',name:'Cosmopolite',type:'pass',effet:'cosmopolite',params:{},effects:'Vous gagnez 5 % d’XP supplémentaire par allié d’une autre espèce dans votre groupe (donc sur la carte).'}]
+   .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='humain'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'humain',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  c.semisForge.push('espece-humain')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
@@ -4308,12 +4316,14 @@ function peutCreerAventurier(){if((typeof mjIci==='function'&&mjIci())||!invitEn
  const uid=typeof monUid!=='undefined'?monUid:null;return !!uid&&actors.filter(a=>a&&a.hero&&a.joueur===uid).length<aventuriersPermis()}
 function openCreation(){if(!peutCreerAventurier())return;creation={etape:0,name:'',sexe:'Homme',image:'',tokenPropose:'',espece:'',role:'',armes:null,armure:null,lots:{},caracs:{endu:0,vie:0,dmg:0},skills:Array(8).fill(0)};renderCreation();creationDialog.showModal()}
 const restantCaracs=c=>POINTS_CARACS-c.caracs.endu-c.caracs.vie-c.caracs.dmg,restantComps=c=>POINTS_COMPS-c.skills.reduce((s,n)=>s+n,0);
-const especeAvecSavoir=c=>(catalog.talents||[]).some(t=>t&&t.effet==='savoiranterieur'&&t.espece===c.espece&&talentFamily(t)===FAMILLE_ESPECES);
+const especeAvecSavoir=c=>(catalog.talents||[]).some(t=>t&&(t.effet==='savoiranterieur'||t.effet==='competent')&&t.espece===c.espece&&talentFamily(t)===FAMILLE_ESPECES);
+// v0.916 : Compétent (Humain) se choisit comme Savoir Antérieur, dans son propre champ.
+const champSavoir=c=>(catalog.talents||[]).some(t=>t&&t.effet==='competent'&&t.espece===c.espece&&talentFamily(t)===FAMILLE_ESPECES)?'competent':'savoirAnterieur';
 const especeCreation=c=>especeDe(c.espece),compsEspece=c=>bonusEspece({hero:true,espece:c.espece}).skills;
 const valeursCreation=c=>{const e=bonusEspece({hero:true,espece:c.espece});return {vie:BASE_HEROS.vieMax+c.caracs.vie+e.vie,endu:BASE_HEROS.endu+2*c.caracs.endu+e.endu,dmg:BASE_HEROS.dmg+c.caracs.dmg+e.dmg}};
 const pvCreation=c=>{const v=valeursCreation(c);return Math.max(1,v.vie*v.endu+bonusPV(catalog.classes,c.role,'')+bonusEspece({hero:true,espece:c.espece}).pv)};
 // Une étape n'ouvre la suivante que remplie : un nom, une espèce, une classe, tous les points dépensés.
-const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='espece'&&!especeCreation(creation)?'Choisis une espèce.':k==='espece'&&especeAvecSavoir(creation)&&!Number.isInteger(creation.savoirAnterieur)?'Choisis la compétence de ta vie antérieure.':k==='classe'&&!creation.role?'Choisis une classe.'
+const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='espece'&&!especeCreation(creation)?'Choisis une espèce.':k==='espece'&&especeAvecSavoir(creation)&&!Number.isInteger(creation[champSavoir(creation)])?(champSavoir(creation)==='competent'?'Choisis ta compétence.':'Choisis la compétence de ta vie antérieure.'):k==='classe'&&!creation.role?'Choisis une classe.'
  :k==='caracs'&&restantCaracs(creation)?'Points à dépenser.':k==='comps'&&restantComps(creation)?'Points à répartir.'
  :k==='equipement'&&lotsManquent(creation)?'Choisis ton équipement.':'';
 function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-etapes'),corps=$('creation-corps');nav.replaceChildren();corps.replaceChildren();
@@ -4386,9 +4396,9 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    // v0.893 : dans l'ordre habituel des types — Maîtrise, Action, Mouvement, Réaction, Passif.
    const tals=(catalog.talents||[]).filter(x=>x&&talentFamily(x)===FAMILLE_ESPECES&&x.espece===e.id&&!estBonus(x)&&!estVide(x)).sort((x,y)=>ORDRE_TYPES_TALENTS.indexOf(talentType(x)[0])-ORDRE_TYPES_TALENTS.indexOf(talentType(y)[0]));
    // v0.889 : Savoir Antérieur — la compétence de sa vie d'avant, choisie ici.
-   const sa=tals.find(x=>x.effet==='savoiranterieur');
+   const sa=tals.find(x=>x.effet==='savoiranterieur'||x.effet==='competent'),ks=sa&&sa.effet==='competent'?'competent':'savoirAnterieur';
    if(sa){const s=document.createElement('select');s.add(new Option('—',''));COMPETENCES.forEach((n,i)=>s.add(new Option(n,String(i))));
-    s.value=Number.isInteger(c.savoirAnterieur)?String(c.savoirAnterieur):'';s.onchange=()=>{c.savoirAnterieur=s.value===''?null:Number(s.value);majBoutons()};
+    s.value=Number.isInteger(c[ks])?String(c[ks]):'';s.onchange=()=>{c[ks]=s.value===''?null:Number(s.value);majBoutons()};
     const l=document.createElement('label');l.className='creation-champ creation-savoir';const t2=document.createElement('span');t2.textContent=sa.name;l.append(t2,s);f.append(l)}
    // v0.897 : une espèce de deux tailles (Fielsang) — Petit ou Moyen, choisie ici ; la Vitesse suit.
    if(Number(e.vitessePetit)>0){const s=document.createElement('select');[['medium','Moyen'],['small','Petit']].forEach(([v,n])=>s.add(new Option(n,v)));
@@ -4467,7 +4477,7 @@ async function imagePourTable(url){if(typeof url!=='string'||!url.startsWith('da
    s'achève sur le récapitulatif. Sa fiche ne garde que les points de compétence : le 1 de base, la classe et l'espèce s'y ajoutent
    au jeu, comme pour tout aventurier. */
 function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;if(!peutCreerAventurier()){creationDialog.close();return}const e=especeCreation(c);
- const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:majusculeInitiale(c.name.trim()),sexe:c.sexe,...(especeAvecSavoir(c)&&Number.isInteger(c.savoirAnterieur)?{savoirAnterieur:c.savoirAnterieur}:{}),...(Number(e.vitessePetit)>0&&c.socle==='small'?{socle:'small'}:{}),race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
+ const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:majusculeInitiale(c.name.trim()),sexe:c.sexe,...(especeAvecSavoir(c)&&Number.isInteger(c[champSavoir(c)])?{[champSavoir(c)]:c[champSavoir(c)]}:{}),...(Number(e.vitessePetit)>0&&c.socle==='small'?{socle:'small'}:{}),race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
  // L'équipement de départ au sac ; l'objet inhabituel, tiré ici, une seule fois.
  const kit=kitCreation(c);kit.forEach(([o,n])=>{for(let k=0;k<n;k++)a.inventaire.push(o.id)});
  const tiree=tirePieceDepart(c.role);if(tiree){a.forges=[tiree];a.inventaire.push(tiree.id)}
@@ -6669,6 +6679,8 @@ function xpDesRetires(partants){const vaincus=partants.filter(f=>f&&!duCoteTroup
   if(nb)heros.forEach(h=>{const b=nb*effetsForge(h).xpVaincu;if(b>0){writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+b);if(typeof floatNumber==='function')floatNumber(h,'+'+b+' XP','gain')}})}
  if(!xp||!heros.length)return;
  heros.forEach(h=>writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+xp));
+ // v0.916 : Cosmopolite (Humain) — +5 % par allié d'une autre espèce sur la carte.
+ if(typeof bonusCosmopolite==='function')heros.forEach(h=>{const b=bonusCosmopolite(h,xp);if(b>0){writeStat(h,'xp',(Math.trunc(Number(h.xp))||0)+b);if(typeof floatNumber==='function')floatNumber(h,'+'+b+' XP','gain')}});
  // La carte retient ce qu'elle a déjà donné : le MJ le lit à côté de son nom.
  const carte=typeof currentMap==='function'?currentMap():null;if(carte)carte.xpAccordee=(Math.max(0,Math.trunc(Number(carte.xpAccordee))||0))+xp;
  log('Le groupe gagne '+xp+' XP ('+listeNombree(vaincus.map(f=>f.name))+').');

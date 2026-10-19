@@ -30,6 +30,8 @@ const CHAMPS_ACTEUR_MJ=['vu','revealed','hidden','numero','element','pnj','align
 CHAMPS_ACTEUR_MJ.push('enAttente');CHAMPS_VIVANTS.push('enAttente');
 // v0.915 : le Charme retient qui l'a charmé ; Sang Féerique, le combat où il a servi.
 CHAMPS_VIVANTS.push('charmePar','sangFeerique');
+// v0.916 : la compétence de Compétent (Humain).
+CHAMPS_VIVANTS.push('competent');
 // L'aventurier que le MJ a sorti du combat de la table : à lui seul de l'y faire rentrer.
 CHAMPS_ACTEUR_MJ.push('sortiCombat');CHAMPS_VIVANTS.push('sortiCombat');
 // La position d'où un socle au mouvement épuisé s'ajuste.

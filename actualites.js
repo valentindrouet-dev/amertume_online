@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.916","d":"2026-10-19","t":"Talents d'Espèce de l'Humain"},
 {"v":"0.915","d":"2026-10-19","t":"Talents d'Espèce de l'Elfe"},
 {"v":"0.914","d":"2026-10-19","t":"Déguisement à la taille de la créature"},
 {"v":"0.913","d":"2026-10-19","t":"Coût sur le bouton Attaque"},
