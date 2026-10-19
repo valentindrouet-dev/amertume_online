@@ -5193,6 +5193,11 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.922 — Le Tieffelin et l'Orc. */
+{const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(cb.includes("{id:'tieffelin',nom:'Tieffelin',")&&cb.includes("{id:'orc',nom:'Orc',")&&['heritagefielon','traitfielon','visionautremonde','reprimande','adrenaline','assautsauvage','acharnement'].every(k=>cb.includes(k+':{cle:'))
+  &&ed.includes("c.semisForge.push('espece-tieffelin-orc')")&&ed.includes('const especeAvecHeritage=c=>')&&pg.includes('function traitFielon(a,p,talent)')&&pg.includes('function acharnement(b,hpAvant)')&&pg.includes('function reprimande(b,a)')
+  &&pg.includes("if(r.critical&&!r.failed&&hostiles(a,b)&&typeof reprimande==='function')reprimande(b,a);")&&pg.includes("const ETATS_HERITAGE={infernal:'Feu',abyssal:'Poison',chtonien:'Nécrose',charognard:'Corruption'};"),'v0.922');}
 /* v0.921 — Le Drakéide : espèce, Ascendance, Souffle, Vol, Vision. */
 {const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(cb.includes("{id:'drakeide',nom:'Drakéide',teinte:'#a8452f',pv:4,endu:1,dmg:1,vitesse:10,comps:{Robustesse:1,Savoir:1},extension:'dnd',")&&['ascendance','souffledrakeide','voldraconique'].every(k=>cb.includes(k+':{cle:'))

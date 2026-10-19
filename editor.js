@@ -344,6 +344,18 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    {id:'talent-drakeide-vision',name:'Vision dans le noir',type:'pass',effet:'visionnoir',params:{portee:18},effects:'Vous voyez dans le noir jusqu’à 18 m.'}]
    .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='drakeide'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'drakeide',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
   c.semisForge.push('espece-drakeide')}
+ /* v0.922 — Les Talents d'Espèce du Tieffelin et de l'Orc, posés une fois. */
+ if(!c.semisForge.includes('espece-tieffelin-orc')&&Array.isArray(c.talents)){
+  [['tieffelin',{id:'talent-tieffelin-heritage',name:'Héritage Fiélon',type:'pass',effet:'heritagefielon',params:{},effects:'Vous choisissez un héritage fiélon : Infernal (Feu), Abyssal (Poison), Chtonien (Nécrose) ou Charognard (Corruption). Les attaques de ce type vous soignent au lieu de vous infliger des dégâts.'}],
+   ['tieffelin',{id:'talent-tieffelin-trait',name:'Trait Fiélon',type:'act',effet:'traitfielon',params:{},effects:'Une attaque à distance en trait de puissance brute : 1 dé bleu et l’état de votre héritage à la cible et à tous les combattants entre elle et vous.'}],
+   ['tieffelin',{id:'talent-tieffelin-vision',name:'Vision d’un autre monde',type:'pass',effet:'visionautremonde',params:{portee:18},effects:'Vous voyez dans le noir jusqu’à 18 m, et voyez les adversaires vivants invisibles.'}],
+   ['tieffelin',{id:'talent-tieffelin-reprimande',name:'Réprimande Infernale',type:'reac',effet:'reprimande',params:{},effects:'Quand un adversaire vous inflige une attaque critique, vous lui infligez 2 dés bleus et l’état de votre héritage.'}],
+   ['orc',{id:'talent-orc-adrenaline',name:'Poussée d’Adrénaline',type:'act',effet:'adrenaline',params:{},effects:'Action bonus, une fois par combat : vous gagnez 1 point de mouvement, et 3 × Niveau d’Armure.'}],
+   ['orc',{id:'talent-orc-assaut',name:'Assaut Sauvage',type:'pass',effet:'assautsauvage',params:{},effects:'Vos critiques au contact infligent +1 dé rouge de dégâts.'}],
+   ['orc',{id:'talent-orc-acharnement',name:'Acharnement',type:'reac',effet:'acharnement',params:{},effects:'Quand vous tombez à 0 PV, vous restez à 1 PV. Une fois par combat.'}],
+   ['orc',{id:'talent-orc-vision',name:'Vision dans le noir orque',type:'pass',effet:'visionnoir',params:{portee:36},effects:'Vous voyez dans le noir jusqu’à 36 m.'}]]
+   .forEach(([esp,t])=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece===esp&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:esp,voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  c.semisForge.push('espece-tieffelin-orc')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
@@ -4328,13 +4340,14 @@ function openCreation(){if(!peutCreerAventurier())return;creation={etape:0,name:
 const restantCaracs=c=>POINTS_CARACS-c.caracs.endu-c.caracs.vie-c.caracs.dmg,restantComps=c=>POINTS_COMPS-c.skills.reduce((s,n)=>s+n,0);
 const especeAvecSavoir=c=>(catalog.talents||[]).some(t=>t&&(t.effet==='savoiranterieur'||t.effet==='competent')&&t.espece===c.espece&&talentFamily(t)===FAMILLE_ESPECES);
 // v0.916 : Compétent (Humain) se choisit comme Savoir Antérieur, dans son propre champ.
+const especeAvecHeritage=c=>(catalog.talents||[]).some(t=>t&&t.effet==='heritagefielon'&&t.espece===c.espece&&talentFamily(t)===FAMILLE_ESPECES);
 const especeAvecAscendance=c=>(catalog.talents||[]).some(t=>t&&t.effet==='ascendance'&&t.espece===c.espece&&talentFamily(t)===FAMILLE_ESPECES);
 const champSavoir=c=>(catalog.talents||[]).some(t=>t&&t.effet==='competent'&&t.espece===c.espece&&talentFamily(t)===FAMILLE_ESPECES)?'competent':'savoirAnterieur';
 const especeCreation=c=>especeDe(c.espece),compsEspece=c=>bonusEspece({hero:true,espece:c.espece}).skills;
 const valeursCreation=c=>{const e=bonusEspece({hero:true,espece:c.espece});return {vie:BASE_HEROS.vieMax+c.caracs.vie+e.vie,endu:BASE_HEROS.endu+2*c.caracs.endu+e.endu,dmg:BASE_HEROS.dmg+c.caracs.dmg+e.dmg}};
 const pvCreation=c=>{const v=valeursCreation(c);return Math.max(1,v.vie*v.endu+bonusPV(catalog.classes,c.role,'')+bonusEspece({hero:true,espece:c.espece}).pv)};
 // Une étape n'ouvre la suivante que remplie : un nom, une espèce, une classe, tous les points dépensés.
-const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='espece'&&!especeCreation(creation)?'Choisis une espèce.':k==='espece'&&especeAvecAscendance(creation)&&!creation.ascendance?'Choisis ton Ascendance.':k==='espece'&&especeAvecSavoir(creation)&&!Number.isInteger(creation[champSavoir(creation)])?(champSavoir(creation)==='competent'?'Choisis ta compétence.':'Choisis la compétence de ta vie antérieure.'):k==='classe'&&!creation.role?'Choisis une classe.'
+const etapeManque=k=>k==='identite'&&!creation.name.trim()?'Le nom manque.':k==='espece'&&!especeCreation(creation)?'Choisis une espèce.':k==='espece'&&especeAvecAscendance(creation)&&!creation.ascendance?'Choisis ton Ascendance.':k==='espece'&&especeAvecHeritage(creation)&&!creation.heritage?'Choisis ton Héritage.':k==='espece'&&especeAvecSavoir(creation)&&!Number.isInteger(creation[champSavoir(creation)])?(champSavoir(creation)==='competent'?'Choisis ta compétence.':'Choisis la compétence de ta vie antérieure.'):k==='classe'&&!creation.role?'Choisis une classe.'
  :k==='caracs'&&restantCaracs(creation)?'Points à dépenser.':k==='comps'&&restantComps(creation)?'Points à répartir.'
  :k==='equipement'&&lotsManquent(creation)?'Choisis ton équipement.':'';
 function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-etapes'),corps=$('creation-corps');nav.replaceChildren();corps.replaceChildren();
@@ -4411,6 +4424,10 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    if(sa){const s=document.createElement('select');s.add(new Option('—',''));COMPETENCES.forEach((n,i)=>s.add(new Option(n,String(i))));
     s.value=Number.isInteger(c[ks])?String(c[ks]):'';s.onchange=()=>{c[ks]=s.value===''?null:Number(s.value);majBoutons()};
     const l=document.createElement('label');l.className='creation-champ creation-savoir';const t2=document.createElement('span');t2.textContent=sa.name;l.append(t2,s);f.append(l)}
+   // v0.922 : Héritage Fiélon (Tieffelin) — choisi ici.
+   if(tals.some(x=>x.effet==='heritagefielon')){const s=document.createElement('select');s.add(new Option('—',''));[['infernal','Infernal · Feu'],['abyssal','Abyssal · Poison'],['chtonien','Chtonien · Nécrose'],['charognard','Charognard · Corruption']].forEach(([v,n])=>s.add(new Option(n,v)));
+    s.value=c.heritage||'';s.onchange=()=>{c.heritage=s.value||null;majBoutons()};
+    const l=document.createElement('label');l.className='creation-champ creation-savoir';const t2=document.createElement('span');t2.textContent=tals.find(x=>x.effet==='heritagefielon').name;l.append(t2,s);f.append(l)}
    // v0.921 : Ascendance Drakéide — le dragon dont il descend, choisi ici.
    if(tals.some(x=>x.effet==='ascendance')){const s=document.createElement('select');s.add(new Option('—',''));[['rouge','Rouge · Feu'],['bleu','Bleu · Gel'],['jaune','Jaune · Foudre'],['violet','Violet · Poison']].forEach(([v,n])=>s.add(new Option(n,v)));
     s.value=c.ascendance||'';s.onchange=()=>{c.ascendance=s.value||null;majBoutons()};
@@ -4492,7 +4509,7 @@ async function imagePourTable(url){if(typeof url!=='string'||!url.startsWith('da
    s'achève sur le récapitulatif. Sa fiche ne garde que les points de compétence : le 1 de base, la classe et l'espèce s'y ajoutent
    au jeu, comme pour tout aventurier. */
 function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;if(!peutCreerAventurier()){creationDialog.close();return}const e=especeCreation(c);
- const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:majusculeInitiale(c.name.trim()),sexe:c.sexe,...(especeAvecSavoir(c)&&Number.isInteger(c[champSavoir(c)])?{[champSavoir(c)]:c[champSavoir(c)]}:{}),...(especeAvecAscendance(c)&&c.ascendance?{ascendance:c.ascendance}:{}),...(Number(e.vitessePetit)>0&&c.socle==='small'?{socle:'small'}:{}),race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
+ const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:majusculeInitiale(c.name.trim()),sexe:c.sexe,...(especeAvecSavoir(c)&&Number.isInteger(c[champSavoir(c)])?{[champSavoir(c)]:c[champSavoir(c)]}:{}),...(especeAvecAscendance(c)&&c.ascendance?{ascendance:c.ascendance}:{}),...(especeAvecHeritage(c)&&c.heritage?{heritage:c.heritage}:{}),...(Number(e.vitessePetit)>0&&c.socle==='small'?{socle:'small'}:{}),race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
  // L'équipement de départ au sac ; l'objet inhabituel, tiré ici, une seule fois.
  const kit=kitCreation(c);kit.forEach(([o,n])=>{for(let k=0;k<n;k++)a.inventaire.push(o.id)});
  const tiree=tirePieceDepart(c.role);if(tiree){a.forges=[tiree];a.inventaire.push(tiree.id)}
