@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.914 — Le déguisement prend la taille de la créature imitée. */
+assert.ok(fs.readFileSync('index.html','utf8').includes('function socleApparence(r)')&&fs.readFileSync('index.html','utf8').includes('appliqueDeguisement(a,liste.find(r=>r.cle===choisi))'),'v0.914');
 /* v0.913 — L'Attaque porte aussi son coût. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes('{const c=coutEnIcones({pa:1,pm:0});if(c)b.append(c)}'),'v0.913');
 /* v0.912 — Le coût des talents de la barre d'actions, en icônes à cheval sur le bas du rond. */

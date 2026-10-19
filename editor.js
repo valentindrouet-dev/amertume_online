@@ -314,6 +314,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('gageur-mimetisme')&&Array.isArray(c.talents)){c.talents=c.talents.filter(t=>!(t&&t.id==='talent-fielsang-mimetisme'));
   const g=c.talents.find(t=>t&&t.id==='talent-fielsang-gageur');if(g&&typeof g.effects==='string'&&!g.effects.includes('apparence'))g.effects=g.effects.replace(/\s*$/,'')+' Vous prélevez aussi, pour toujours, l’apparence de la créature : elle rejoint votre collection de déguisements.';
   c.semisForge.push('gageur-mimetisme')}
+ /* v0.914 — Déguisement : la taille est celle de la créature imitée. */
+ if(!c.semisForge.includes('deguisement-taille')&&Array.isArray(c.talents)){const d=c.talents.find(t=>t&&t.id==='talent-fielsang-deguisement');
+  if(d&&typeof d.effects==='string'&&d.effects.startsWith('Vous changez d’apparence, parmi votre collection de déguisements, et de taille'))d.effects='Vous prenez l’apparence d’une créature de votre collection de déguisements, et sa taille : Petit pour un gobelin, Grand pour un ogre. Jusqu’à votre prochain repos court ; vous pouvez aussi y renoncer à tout moment.';
+  c.semisForge.push('deguisement-taille')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
