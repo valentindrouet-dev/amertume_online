@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.917 — Le descriptif de l'Humain, du Nain, du Goliath et de l'Elfe. */
+{const E=require('./combat.js').ESPECES||[];assert.ok(['humain','nain','goliath','elfe'].every(id=>{const e=E.find(x=>x.id===id);return e&&typeof e.description==='string'&&e.description.length>80}),'v0.917');}
 /* v0.916 — Talents d'Espèce de l'Humain. */
 {const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(['secondsouffle','debrouillard','competent','cosmopolite'].every(k=>cb.includes(k+':{cle:'))&&ed.includes("c.semisForge.push('espece-humain')")&&ed.includes('const champSavoir=c=>')
