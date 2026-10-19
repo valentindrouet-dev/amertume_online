@@ -3269,3 +3269,11 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 #barre-mouvement i::before,#barre-mouvement.gele i:not(.pris)::before{background:url(img/points/pm.webp) center/contain no-repeat;box-shadow:none;border-radius:50%}
 #barre-mouvement i.pris::before{width:13px;height:13px;background:url(img/points/pm.webp) center/contain no-repeat;filter:grayscale(1) brightness(1.1);opacity:.45}
 .pt.pris,.pt.inerte,.pt.off-gris{filter:grayscale(1);opacity:.5}
+/* v0.912 — Le coût d'un talent de la barre d'actions, en icônes de PA et de PM à cheval sur le bas du rond. */
+.barre-actions button.btn-action.rond{position:relative;overflow:visible}
+.barre-actions .cout-bas{position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);display:flex;gap:1px;pointer-events:none;z-index:2}
+.barre-actions .cout-bas.a-cote{left:auto;right:-6px;transform:none}
+.barre-actions .cout-bas .pt{display:block;width:16px;height:16px;border-radius:50%;filter:drop-shadow(0 1px 1px color-mix(in srgb,#000 50%,transparent))}
+.barre-actions .cout-bas .pt.action{background:url(img/points/pa.webp) center/contain no-repeat}
+.barre-actions .cout-bas .pt.mvt{background:url(img/points/pm.webp) center/contain no-repeat}
+.barre-actions button.btn-action.rond:is(:disabled,.inerte) .cout-bas .pt{filter:grayscale(1)}

@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.912 — Le coût des talents de la barre d'actions, en icônes à cheval sur le bas du rond. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes('function coutEnIcones(cout)')&&fs.readFileSync('index.html','utf8').includes("const c=coutEnIcones(t.cout);if(c)b.append(c)")&&fs.readFileSync('editor.css','utf8').includes('.barre-actions .cout-bas{'),'v0.912');
 /* v0.911 — Les icônes des Points d'Action et de Mouvement, partout. */
 assert.ok(fs.existsSync('img/points/pa.webp')&&fs.existsSync('img/points/pm.webp')&&fs.readFileSync('editor.css','utf8').includes('url(img/points/pa.webp)'),'v0.911');
 /* v0.910 — La barre d'actions sur deux lignes : Actions puis gratuites | Mouvements | Réactions ; le reste dessous. */

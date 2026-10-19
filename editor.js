@@ -740,6 +740,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   // Ce qui reste d'un talent compté, en pastille au bas du rond.
   const compte=typeof compteDuTexte==='function'?compteDuTexte(t.texte):'';
   if(compte)b.append(Object.assign(document.createElement('span'),{className:'compte-rond',textContent:compte}));
+  // v0.912 : à cheval sur le bas du rond, son coût en icônes de PA et de PM, trois au plus de chaque ; rien s'il est gratuit.
+  {const c=coutEnIcones(t.cout);if(c){if(compte)c.classList.add('a-cote');b.append(c)}}
   inerte(b,!t.peut);b.setAttribute('aria-label',t.texte+' — '+t.titre);
   // Un talent de début de combat encore à faire rayonne, pour ne pas l'oublier.
   if(t.rayonne)b.classList.add('debut-combat');
@@ -6424,6 +6426,8 @@ function refreshEquip(){const f=$('actor-form').elements;if(!f||!$('equip-summar
    :'DEF : la sienne, sans équipement pour l’augmenter.')}
 /* Les cartes des attaques spéciales, au formulaire comme dans le tableau en masse : leur HTML, puis
    leur lecture dans le formulaire qui les porte. */
+function coutEnIcones(cout){const pa=Math.min(3,Math.max(0,Math.trunc(Number(cout&&cout.pa))||0)),pm=Math.min(3,Math.max(0,Math.trunc(Number(cout&&cout.pm))||0));if(!pa&&!pm)return null;
+ const s=document.createElement('span');s.className='cout-bas';for(let k=0;k<pa;k++)s.append(Object.assign(document.createElement('i'),{className:'pt action'}));for(let k=0;k<pm;k++)s.append(Object.assign(document.createElement('i'),{className:'pt mvt'}));return s}
 function renderAttacks(){const boite=$('attack-edit-list');if(!boite)return;boite.innerHTML=htmlAttaques(attackDraft);habilleDes(boite);
  boite.querySelectorAll('[data-remove-attack]').forEach(b=>b.onclick=()=>{readAttacks();attackDraft.splice(Number(b.dataset.removeAttack),1);renderAttacks()})}
 function htmlAttaques(liste){return liste.map((a,i)=>'<div class="attack-card" data-attack="'+i+'"><div class="edit-grid">'+field('Nom','an'+i,a.name,'text','required maxlength="100"')+sel('Portée','ar'+i,a.range,[['contact','Contact'],['distance','Distance']])+sel('Cibles','at'+i,a.targets,[['one','Unique'],['all','Multiples (manuel)']])
