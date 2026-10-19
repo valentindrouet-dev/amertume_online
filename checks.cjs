@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.923 — Les actions bonus en turquoise dans la barre d'actions. */
+assert.ok(fs.readFileSync('editor.css','utf8').includes('button.btn-talent.t-act.t-bonus{--fond:#2a9d8f}')&&fs.readFileSync('CHARTE.md','utf8').includes('`#2a9d8f`'),'v0.923');
 /* v0.922 — Le Tieffelin et l'Orc. */
 {const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(cb.includes("{id:'tieffelin',nom:'Tieffelin',")&&cb.includes("{id:'orc',nom:'Orc',")&&['heritagefielon','traitfielon','visionautremonde','reprimande','adrenaline','assautsauvage','acharnement'].every(k=>cb.includes(k+':{cle:'))
@@ -6065,7 +6067,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
    d'une fiche, à la couleur de l'action ; le nom dans la bulle, les dés dessous. Sur la table, plus
    de nom sous les ronds de talents. */
 {const src=fs.readFileSync('editor.js','utf8'),css=fs.readFileSync('editor.css','utf8');
- assert.ok(src.includes("b.className=t.classe+' choix-attaque rond';")&&src.includes("b.className='btn-action choix-attaque rond'+(i===(retenu<liste.length?retenu:0)?' on':'');")
+ assert.ok(src.includes("b.className=t.classe+' choix-attaque rond'+(bonusActions.has(t)?' t-bonus':'');")&&src.includes("b.className='btn-action choix-attaque rond'+(i===(retenu<liste.length?retenu:0)?' on':'');")
   &&css.includes('.cat-carte.talent-carte .nom-carte.nom-rond,.sac-carte .nom-sac{display:none}'),'les attaques en ronds, pas de nom sur la table');}
 /* v0.359 — Les ronds de la barre d'action gardent la face pleine du bouton d'action, sans anneau ;
    Analyser, Repos court, Dégel, Se relever et les réactions en ronds aussi. Le rond d'attaque ne

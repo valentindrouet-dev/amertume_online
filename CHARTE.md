@@ -191,6 +191,8 @@ Un talent se montre en **rond** : fond pâle et anneau de la teinte de son type 
 
 ![Ronds de talent](img/charte/ronds-talents.webp)
 
+Une **action bonus** (Action gratuite) a son rond **turquoise** `#2a9d8f` dans la barre d'actions (`.t-bonus`).
+
 Un talent indisponible est **grisé**, jamais caché. Un talent qui s'ouvre (réaction, début de combat) **rayonne** de sa teinte.
 
 ---

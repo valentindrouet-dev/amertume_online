@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.923","d":"2026-10-19","t":"Actions bonus en turquoise"},
 {"v":"0.922","d":"2026-10-19","t":"Le Tieffelin et l'Orc"},
 {"v":"0.921","d":"2026-10-19","t":"Le Drakéide"},
 {"v":"0.920","d":"2026-10-19","t":"Descriptif du Goliath"},
