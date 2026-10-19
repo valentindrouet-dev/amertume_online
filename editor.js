@@ -729,6 +729,8 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
   b.onclick=()=>{if(estInerte(b))return;a.activeAttack=i;
    boite.querySelectorAll('.choix-attaque:not(.btn-talent)').forEach((x,k)=>x.classList.toggle('on',k===i));
    attack();scheduleSave()};
+  // v0.913 : l'Attaque aussi porte son coût, 1 PA.
+  {const c=coutEnIcones({pa:1,pm:0});if(c)b.append(c)}
   survol(b,desAttaque(a,at.dice),bonusDe(at),at.useOwnDamage!==false,logosDeAttaque(at));boite.append(b)});
  // Les talents à leur suite : ceux d'action, puis les réactions.
  talents.forEach(t=>{if(t==='|'){if(boite.lastElementChild&&!boite.lastElementChild.classList.contains('barre-sep'))boite.append(Object.assign(document.createElement('span'),{className:'barre-sep'}));return}

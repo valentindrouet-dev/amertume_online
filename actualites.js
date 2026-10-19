@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.913","d":"2026-10-19","t":"Coût sur le bouton Attaque"},
 {"v":"0.912","d":"2026-10-19","t":"Coût des talents sur leurs boutons"},
 {"v":"0.911","d":"2026-10-19","t":"Icônes PA et PM"},
 {"v":"0.910","d":"2026-10-18","t":"Barre d'actions sur deux lignes"},
