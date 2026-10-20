@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.928 — La bulle d'un état à la couleur de son icône. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("if(TEINTE_ETAT_MOT[etat]){d.classList.add('bulle-teintee');d.style.setProperty('--teinte',TEINTE_ETAT_MOT[etat])}"),'v0.928');
 /* v0.927 — Les noms d'états en gras, à la couleur de leur icône. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("const TEINTE_ETAT_MOT={'Au sol':'#a65b26',")&&fs.readFileSync('CHARTE.md','utf8').includes('| Surpris | `#aa5a18` | gras |'),'v0.927');
 /* v0.926 — La planche des états, découpée d'office, et ses icônes posées sur les états. */

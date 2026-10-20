@@ -662,12 +662,14 @@ function jetonsCibles(a,liste){if(!a||!Array.isArray(liste)||!liste.length||type
  return g.childElementCount?g:null}
 // La bulle d'un état du combattant, dans l'en-tête de la barre d'action : son nom, ses crans s'il se cumule, ce qu'il fait.
 function bulleEtat(ancre,o,etat){const d=document.createElement('div');d.className='talent-detail large bulle-etat';
+ // v0.928 : la bulle prend la couleur de l'état, celle de son icône.
+ if(TEINTE_ETAT_MOT[etat]){d.classList.add('bulle-teintee');d.style.setProperty('--teinte',TEINTE_ETAT_MOT[etat])}
  const tete=document.createElement('p');tete.className='talent-bulle-nom';const n=document.createElement('b');
  n.textContent=etat+(cumulable(etat)?' '+compteEtat(o,etat):'');tete.append(n);d.append(tete);
  const t=typeof descriptionEtat==='function'?descriptionEtat(o,etat):'';
  if(etat==='Rage')d.append(texteRage(compteEtat(o,etat)));
- else if(t){const p=document.createElement('p');p.className='palier-effet';p.textContent=t;d.append(p)}
- return ouvrirBulle(ancre,d,'bulle-talent')}
+ else if(t){const p=document.createElement('p');p.className='palier-effet';if(typeof texteEnrichi==='function')texteEnrichi(p,t);else p.textContent=t;d.append(p)}
+ const r=ouvrirBulle(ancre,d,'bulle-talent'),bu=d.closest('.bulle');if(bu&&TEINTE_ETAT_MOT[etat])bu.style.setProperty('--bulle-bord','color-mix(in srgb,'+TEINTE_ETAT_MOT[etat]+' 14%,#fbf3e2)');return r}
 /* La Rage, telle que la bulle la dit : « + x <dégâts> aux Attaques au contact. », le chiffre en gras, « Attaques » et « au contact »
    à la couleur et au gras des mots-clés. */
 function texteRage(n){const p=document.createElement('p');p.className='palier-effet';const {couleur}=motsCles();
