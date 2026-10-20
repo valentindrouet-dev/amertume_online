@@ -382,6 +382,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('allsteiner-nuage')&&Array.isArray(c.talents)){const t=c.talents.find(x=>x&&x.id==='talent-allsteiner-bouffee');
   if(t&&typeof t.effects==='string')t.effects=t.effects.replace('jusqu’à la fin de votre prochain tour ; tout aventurier','jusqu’à la fin du combat ; tout aventurier');
   c.semisForge.push('allsteiner-nuage')}
+ /* v0.933 — Les Talents d'Espèce du Tellure, posés une fois. */
+ if(!c.semisForge.includes('espece-tellure')&&Array.isArray(c.talents)){
+  [{id:'talent-tellure-passage',name:'Passage Tellurique',type:'mvt',effet:'passagetellurique',params:{},effects:'Test de Mysticisme 2 : vous plongez dans le flux et réapparaissez au contact de n’importe quel token que vous voyez, sans subir de dégâts d’opportunité. Vous vous soignez de 1d6 + Vie PV.'},
+   {id:'talent-tellure-maitrise',name:'Maîtrise Tellurique',type:'act',effet:'maitrisetellurique',params:{},effects:'Action bonus, une fois par combat : vous ajoutez +1 dé Mystique à une Attaque ou à un sort. Vos tests de Mysticisme lancent toujours 1 dé de plus.'},
+   {id:'talent-tellure-peau',name:'Peau de Cristal',type:'reac',effet:'peaucristal',params:{},effects:'Vous gagnez 2 × Niveau d’Armure après avoir subi des dégâts. Vous infligez Aveugle à l’attaquant s’il est au contact.'},
+   {id:'talent-tellure-eclat',name:'Éclat Vivant',type:'act',effet:'eclatvivant',params:{},effects:'Action bonus : vous émettez une lumière vive qui éclaire comme une torche, ou vous l’éteignez.'}]
+   .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='tellure'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'tellure',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  c.semisForge.push('espece-tellure')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
