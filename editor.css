@@ -3279,3 +3279,55 @@ button.danger:not(.ico):hover:not(:disabled){background:color-mix(in srgb,var(--
 .barre-actions .cout-bas .pt.action{background:url(img/points/pa.webp) center/contain no-repeat}
 .barre-actions .cout-bas .pt.mvt{background:url(img/points/pm.webp) center/contain no-repeat}
 .barre-actions button.btn-action.rond:is(:disabled,.inerte) .cout-bas .pt{filter:grayscale(1)}
+/* v0.924 — L'onglet Règles : un sommaire collant à gauche, des sections teintées, des cartes au liseré de leur teinte. */
+#regles-page{display:none;padding:16px 28px 40px}body.page-regles #regles-page{display:block}
+body.page-regles .intro,body.page-regles .mj-tools,body.page-regles main.layout,body.page-regles #save-status,body.page-regles footer{display:none!important}
+#regles-page .rg-entete{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin:0 0 14px}
+#regles-page .rg-entete h1{font:700 32px 'Killam',Georgia,serif;margin:0;color:var(--ink)}
+#regles-page .rg-version{margin:0;color:var(--muted);font-size:14px}
+#regles-page .rg-corps{display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start}
+#regles-page .rg-sommaire{position:sticky;top:12px;display:flex;flex-direction:column;gap:3px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+#regles-page .rg-sommaire-titre{margin:0 0 6px;font:700 13px system-ui;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+#regles-page .rg-sommaire a{display:block;padding:5px 8px 5px 10px;border-left:4px solid var(--teinte);border-radius:4px;color:var(--ink);text-decoration:none;font-size:14px}
+#regles-page .rg-sommaire a:hover{background:color-mix(in srgb,var(--teinte) 16%,#fff)}
+#regles-page .rg-contenu{display:flex;flex-direction:column;gap:22px;min-width:0}
+#regles-page .rg-section{background:var(--panel);border:1px solid var(--line);border-top:5px solid var(--teinte);border-radius:12px;padding:16px 20px 18px;scroll-margin-top:12px}
+#regles-page .rg-titre{display:flex;align-items:center;gap:10px;margin:0 0 8px;font:700 24px 'Killam',Georgia,serif;color:color-mix(in srgb,var(--teinte) 80%,#000)}
+#regles-page .rg-glyphe{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--teinte) 18%,#fff);font-size:20px}
+#regles-page .rg-intro{margin:0 0 12px;font-size:15px;line-height:1.55;color:var(--ink)}
+#regles-page h3{margin:16px 0 8px;font:700 18px 'Killam',Georgia,serif;color:color-mix(in srgb,var(--teinte) 70%,#000)}
+#regles-page .rg-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+#regles-page .rg-carte{background:color-mix(in srgb,var(--teinte,#8a8474) 12%,#fff);border-left:4px solid var(--teinte,#8a8474);border-radius:8px;padding:10px 12px;font-size:14px;line-height:1.5}
+#regles-page .rg-carte p{margin:4px 0}
+#regles-page .rg-carte-titre{margin:0 0 4px;font:700 15px 'Killam',Georgia,serif;color:color-mix(in srgb,var(--teinte,#8a8474) 75%,#000)}
+#regles-page .rg-liste{margin:6px 0;padding-left:20px;font-size:14px;line-height:1.55}
+#regles-page .rg-liste li{margin:2px 0}
+#regles-page .rg-calcul{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0;padding:8px 12px;background:var(--panel-2);border:1px dashed var(--line-strong);border-radius:8px;font-size:14px}
+#regles-page .rg-op{font:800 18px system-ui;color:var(--muted)}
+#regles-page .rg-terme{padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--teinte) 16%,#fff);font-weight:700}
+#regles-page .rg-de{display:inline-grid;vertical-align:middle;margin:0 2px}
+#regles-page .rg-des{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+#regles-page .rg-de-ligne{display:flex;gap:10px;align-items:flex-start;background:var(--field);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+#regles-page .rg-de-ligne .rg-de{width:30px;height:30px;font-size:14px;flex:none}
+#regles-page .rg-de-ligne p{margin:2px 0 0;font-size:13px;line-height:1.45}
+#regles-page .rg-etats{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+#regles-page .rg-etat{background:color-mix(in srgb,var(--teinte) 14%,#fff);border-left:4px solid var(--teinte);border-radius:8px;padding:8px 10px}
+#regles-page .rg-etat-tete{display:flex;align-items:center;gap:8px}
+#regles-page .rg-etat-ic img,#regles-page .rg-etat-ic .glyphe-etat{width:26px;height:26px;object-fit:contain;font-size:20px}
+#regles-page .rg-etat p{margin:4px 0 0;font-size:13px;line-height:1.45}
+#regles-page .rg-badge{margin-left:auto;padding:1px 7px;border-radius:999px;background:color-mix(in srgb,var(--teinte) 30%,#fff);font-size:11px;font-weight:700}
+#regles-page .rg-especes,#regles-page .rg-classes{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+#regles-page .rg-espece,#regles-page .rg-classe{background:color-mix(in srgb,var(--teinte) 10%,#fff);border-left:5px solid var(--teinte);border-radius:10px;padding:10px 12px}
+#regles-page .rg-espece h4,#regles-page .rg-classe h4{margin:0 0 4px;font:700 19px 'Killam',Georgia,serif;color:color-mix(in srgb,var(--teinte) 75%,#000)}
+#regles-page .rg-espece-desc{margin:0 0 6px;font-style:italic;font-size:13px;line-height:1.45}
+#regles-page .rg-talents{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13px;line-height:1.4}
+#regles-page .rg-talents li{padding:4px 8px;border-radius:6px;background:var(--field);border-left:3px solid var(--line-strong)}
+#regles-page .rg-talents li.t-act{border-left-color:#4f7fb5}#regles-page .rg-talents li.t-mvt{border-left-color:#8a6440}#regles-page .rg-talents li.t-reac{border-left-color:#8b6bb5}
+#regles-page .rg-type{margin:0 6px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted)}
+#regles-page .rg-puces{display:flex;flex-wrap:wrap;gap:6px}
+#regles-page .rg-puce{padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--teinte) 16%,#fff);border:1px solid color-mix(in srgb,var(--teinte) 40%,#fff);font-weight:700;font-size:13px}
+#regles-page .rg-note{color:var(--muted);font-size:13px;font-style:italic}
+#regles-page table.rg-table{border-collapse:collapse;width:100%;font-size:14px;margin:6px 0}
+#regles-page table.rg-table th,#regles-page table.rg-table td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+#regles-page table.rg-table th{background:color-mix(in srgb,var(--teinte) 14%,#fff);font-weight:700}
+@media (max-width:900px){#regles-page .rg-corps{grid-template-columns:1fr}#regles-page .rg-sommaire{position:static}}

@@ -1958,7 +1958,7 @@ assert.ok(src.includes('function rendreUsage(a,o){')&&src.includes("if(view!=='m
    la sauvegarde qui l'emporte. Le domaine ne se publie pas et ne va pas à la table. */
 {const fief=fs.readFileSync('domaine.js','utf8'),partage=fs.readFileSync('shared.js','utf8');
  assert.ok(page.includes('<script src="./maps.js?v=')&&/maps\.js\?v=[\d.]+"><\/script><script src="\.\/domaine\.js\?v=/.test(page),'domaine.js se charge après maps.js');
- assert.ok(cartes.includes("const PAGES=['accueil','table','maps','domaine','heroes','talents','armory','bestiary','icones','settings'];")
+ assert.ok(cartes.includes("const PAGES=['accueil','table','maps','domaine','heroes','talents','armory','bestiary','icones','regles','settings'];")
   &&cartes.includes('<button data-page="domaine">Domaine</button>')&&cartes.includes("else if(p==='domaine')renderDomaine();")
   &&cartes.includes("if(typeof domaineEdite!=='undefined'&&domaineEdite){renderMapList();renderDomaineEditeur()}")
   &&cartes.includes("const editeDomaine=()=>typeof domaineEdite!=='undefined'&&domaineEdite;")
@@ -5193,6 +5193,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.924 — L'onglet Règles, pour tous, tiré du moteur. */
+{const rg=fs.readFileSync('regles.js','utf8'),mp=fs.readFileSync('maps.js','utf8');
+ assert.ok(rg.includes('function renderRegles()')&&rg.includes('REGLES_SECTIONS.push(')&&mp.includes('<button data-page="regles">Règles</button><button data-page="settings">Paramètres</button>')
+  &&fs.readFileSync('editor.js','utf8').includes("(k==='regles'||l.includes(k))")&&fs.readFileSync('index.html','utf8').includes('<script src="./regles.js?v=')&&fs.readFileSync('CLAUDE.md','utf8').includes('regles.js'),'v0.924');}
 /* v0.923 — Les actions bonus en turquoise dans la barre d'actions. */
 assert.ok(fs.readFileSync('editor.css','utf8').includes('button.btn-talent.t-act.t-bonus{--fond:#2a9d8f}')&&fs.readFileSync('CHARTE.md','utf8').includes('`#2a9d8f`'),'v0.923');
 /* v0.922 — Le Tieffelin et l'Orc. */

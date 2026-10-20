@@ -199,7 +199,7 @@ function migreArbres(c){const T=(c.talents||[]).filter(Boolean),fam=t=>(t.famill
  return change}
 /* Les onglets, et ceux que le MJ ouvre aux joueurs : la Table de jeu toujours, les Cartes jamais. Le
    choix voyage avec le contenu publié ; sans choix, les onglets d'avant. */
-const ONGLETS=[['accueil','Accueil'],['table','Table de jeu'],['maps','Cartes'],['domaine','Domaine'],['heroes','Aventuriers'],['talents','Talents'],['armory','Armurerie'],['bestiary','Bestiaire'],['icones','Icônes'],['settings','Paramètres']];
+const ONGLETS=[['accueil','Accueil'],['table','Table de jeu'],['maps','Cartes'],['domaine','Domaine'],['heroes','Aventuriers'],['talents','Talents'],['armory','Armurerie'],['bestiary','Bestiaire'],['icones','Icônes'],['regles','Règles'],['settings','Paramètres']];
 const ONGLETS_JOUEURS_DEFAUT=['table','domaine','heroes','bestiary','settings'];
 /* La page d'accueil des joueurs. Au premier chargement d'une session de navigation, un joueur arrive sur l'onglet que le MJ
    a choisi, dès que le contenu publié est là ; recharger la page garde l'onglet en cours. Le MJ n'est jamais déplacé. */
@@ -210,7 +210,8 @@ function accueilDeSession(){if(!accueilAFaire)return;
  if(typeof admin!=='undefined'&&admin)return;const p=cat.pageAccueil;if(typeof p==='string'&&ongletsJoueurs().includes(p))showPage(p)}
 function ongletsJoueurs(){const l=typeof catalog!=='undefined'&&catalog&&Array.isArray(catalog.ongletsJoueurs)?catalog.ongletsJoueurs:ONGLETS_JOUEURS_DEFAUT;
  // L'Accueil et la Table sont toujours ouverts : on y crée son aventurier, on y joue.
- return ['accueil','table',...ONGLETS.map(([k])=>k).filter(k=>k!=='accueil'&&k!=='table'&&k!=='maps'&&l.includes(k))]}
+ // v0.924 : les Règles aussi, pour tout le monde.
+ return ['accueil','table',...ONGLETS.map(([k])=>k).filter(k=>k!=='accueil'&&k!=='table'&&k!=='maps'&&(k==='regles'||l.includes(k)))]}
 /* Lamevent s'appelle Ombrelame : la classe, ses arbres et leurs voies, la classe de ses effets, ses talents et
    leurs textes. Rien ne se perd : ce qui portait l'ancien nom porte le nouveau. */
 function ombrelame(s){return typeof s==='string'&&s.includes('Lamevent')?s.replace(/Lamevent/g,'Ombrelame'):s}
