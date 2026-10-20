@@ -376,8 +376,12 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   c.semisForge.push('espece-allsteiner')}
  // v0.931 : la Fumée cache (nouvel état Caché) ceux qui sont à moitié dans le nuage ; le texte semé suit, s'il n'a pas été réécrit.
  if(!c.semisForge.includes('allsteiner-cache')&&Array.isArray(c.talents)){const t=c.talents.find(x=>x&&x.id==='talent-allsteiner-bouffee');
-  if(t&&typeof t.effects==='string'&&t.effects.includes('dans laquelle vous et les alliés à votre contact êtes cachés'))t.effects='Votre masque expulse un nuage brûlant ou de fumée. Brûlant : les adversaires à votre contact doivent réussir un test de Robustesse 2, sinon ils subissent Aveugle et 1 dé rouge. Fumée : vous créez une zone ronde de fumée de la taille de votre zone de contact, jusqu’à la fin de votre prochain tour ; tout aventurier dont la moitié du socle au moins y est subit Caché.';
+  if(t&&typeof t.effects==='string'&&t.effects.includes('dans laquelle vous et les alliés à votre contact êtes cachés'))t.effects='Votre masque expulse un nuage brûlant ou de fumée. Brûlant : les adversaires à votre contact doivent réussir un test de Robustesse 2, sinon ils subissent Aveugle et 1 dé rouge. Fumée : vous créez une zone ronde de fumée de la taille de votre zone de contact, jusqu’à la fin du combat ; tout aventurier dont la moitié du socle au moins y est subit Caché.';
   c.semisForge.push('allsteiner-cache')}
+ // v0.932 : le nuage reste jusqu'à la fin du combat.
+ if(!c.semisForge.includes('allsteiner-nuage')&&Array.isArray(c.talents)){const t=c.talents.find(x=>x&&x.id==='talent-allsteiner-bouffee');
+  if(t&&typeof t.effects==='string')t.effects=t.effects.replace('jusqu’à la fin de votre prochain tour ; tout aventurier','jusqu’à la fin du combat ; tout aventurier');
+  c.semisForge.push('allsteiner-nuage')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,

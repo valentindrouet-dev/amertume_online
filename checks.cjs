@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.932 — Le nuage de fumée reste jusqu'à la fin du combat. */
+assert.ok(fs.readFileSync('index.html','utf8').includes("if(enCombat()&&neuf!=='combat')actors.forEach(a=>{if(a&&a.fumee)dissipeFumee(a)})")&&!fs.readFileSync('index.html','utf8').includes('round>=a.fumee.fin'),'v0.932');
 /* v0.931 — L'état Caché, donné par le nuage de fumée. */
 assert.ok(fs.readFileSync('combat.js','utf8').includes("'Surpris','Charme','Caché'];")&&fs.readFileSync('index.html','utf8').includes('function majCaches()')&&fs.readFileSync('index.html','utf8').includes("case 'Caché':"),'v0.931');
 /* v0.930 — L'Allsteiner. */
