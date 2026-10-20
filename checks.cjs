@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.938 — Les 55 cases de la planche des Espèces relues dans l'image d'aujourd'hui. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("c.semisForge.push('planche-especes-4')"),'v0.938');
 /* v0.937 — La planche se relit à chaque version ; la planche des Espèces redécoupée trop tôt se répare. */
 assert.ok(fs.readFileSync('planches.js','utf8').includes("+'?s='+versionPlanche(f)+'&v='+")&&fs.readFileSync('editor.js','utf8').includes("c.semisForge.push('planche-especes-3')"),'v0.937');
 /* v0.936 — La planche des Espèces agrandie de 23 icônes. */
