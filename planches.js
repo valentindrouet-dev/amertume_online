@@ -82,10 +82,13 @@ const versionPlanche=f=>PLANCHES_SHA[f]?String(PLANCHES_SHA[f]).slice(0,12):'v'+
 const urlPlanche=f=>PLANCHES_SHA[f]?'./img/'+f.split('/').map(encodeURIComponent).join('/')+'?s='+versionPlanche(f)+'&v='+(typeof IMG_V!=='undefined'?IMG_V:''):imgUrl(f);
 // La façon de découper compte aussi : une découpe améliorée refait les icônes gardées.
 const DECOUPE_V='d3',cleCase=(f,cas)=>f+'|'+versionPlanche(f)+'|'+DECOUPE_V+'|'+cas.join(','),cleIcone=(id,i)=>cleCase(i.planche.fichier,i.cas);
-function urlIconePrete(id){const i=iconeDe(id);return (i&&URLS_PRETES.get(cleIcone(id,i)))||ICONES_PUBLIEES.get(id)||''}
+/* v0.939 — Les icônes publiées servent aux joueurs, qui ne découpent pas. Le MJ découpe toujours lui-même : une icône publiée
+   avant une découpe corrigée ne cache plus la bonne. */
+const iconesPubliees=()=>typeof admin!=='undefined'&&admin===true?new Map():ICONES_PUBLIEES;
+function urlIconePrete(id){const i=iconeDe(id);return (i&&URLS_PRETES.get(cleIcone(id,i)))||iconesPubliees().get(id)||''}
 function urlIcone(id){const i=iconeDe(id);if(!i)return Promise.reject(new Error('Icône inconnue : '+id));
  const cle=cleIcone(id,i);if(URLS_PRETES.has(cle))return Promise.resolve(URLS_PRETES.get(cle));
- if(ICONES_PUBLIEES.has(id))return Promise.resolve(ICONES_PUBLIEES.get(id));
+ if(iconesPubliees().has(id))return Promise.resolve(iconesPubliees().get(id));
  if(URLS_ICONES.has(cle))return URLS_ICONES.get(cle);
  const pr=(async()=>{const b=await litIconeBd(cle);
   if(b instanceof Blob){const u=URL.createObjectURL(b);URLS_PRETES.set(cle,u);return u}

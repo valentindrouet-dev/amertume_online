@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.939","d":"2026-10-20","t":"Icônes publiées : le MJ découpe lui-même"},
 {"v":"0.938","d":"2026-10-20","t":"Découpe des Espèces corrigée"},
 {"v":"0.937","d":"2026-10-20","t":"Planche des Espèces réparée"},
 {"v":"0.936","d":"2026-10-20","t":"Planche des Espèces agrandie"},
