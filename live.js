@@ -42,6 +42,8 @@ CHAMPS_VIVANTS.push('forme','socleAvantForme','devoreur','devore');
 CHAMPS_VIVANTS.push('fumee','cacheFumee');
 // v0.933 : la Maîtrise et l'Éclat du Tellure.
 CHAMPS_VIVANTS.push('maitriseT','maitriseTPrete','eclat');
+// v0.934 : l'Ascension et le Touche-à-Tout de l'Hephosien.
+CHAMPS_VIVANTS.push('ascension','toucheATout');
 // L'aventurier que le MJ a sorti du combat de la table : à lui seul de l'y faire rentrer.
 CHAMPS_ACTEUR_MJ.push('sortiCombat');CHAMPS_VIVANTS.push('sortiCombat');
 // La position d'où un socle au mouvement épuisé s'ajuste.

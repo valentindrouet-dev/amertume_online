@@ -5193,6 +5193,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.934 — L'Hephosien. */
+{const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
+ assert.ok(cb.includes("{id:'hephosien',nom:'Hephosien',teinte:'#5b8fc7',vie:1,dmg:1,vitesse:10,comps:{Agilité:1,Technique:1},")&&['ascension','piedsur','souffledescimes','toucheatout'].every(k=>cb.includes(k+':{cle:'))
+  &&pg.includes('function ascension(a,p,talent)')&&pg.includes('function choixToucheATout(a)')&&pg.includes('jet.reussites+=bonusReussites(a,i);')&&fs.readFileSync('maps.js','utf8').includes('bonusReussites(o,t.comp,true)'),'v0.934');}
 /* v0.933 — Le Tellure. */
 {const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
  assert.ok(cb.includes("{id:'tellure',nom:'Tellure',teinte:'#3f8fa8',vie:2,vitesse:8,comps:{Mysticisme:1,Perception:1},")&&['passagetellurique','maitrisetellurique','peaucristal','eclatvivant'].every(k=>cb.includes(k+':{cle:'))

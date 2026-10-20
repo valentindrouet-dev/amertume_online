@@ -975,7 +975,7 @@ function crocheter(a){const l=serruresAPortee(a);if(!a||!l.length)return;
    verrou et le piège demandent autant de réussites, réussir l'un vient à bout de l'autre ; sinon,
    chacun le sien. Un piège trouvé est désamorcé. */
 function testCoffre(a,c,quoi,k){if(!a||!c||c.ouvert||!payeAction(a))return;
- const jet=skillRoll(valeurCompetence(a,k)-1,d6),n=jet.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
+ const jet=skillRoll(valeurCompetence(a,k)-1,d6),n=jet.reussites+(typeof bonusReussites==='function'?bonusReussites(a,k):0);rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
  let dit;
  if(quoi==='verrou'){if(coffreVerrouille(c)&&n>=c.verrou){c.deverrouille=true;dit='déverrouille '+c.nom;
    if(coffreArme(c)&&c.piege===c.verrou){c.desamorce=true;floatNumber(centreForme(c),'Révélé !','nul');dit+=' et désamorce son piège'}}
@@ -1109,7 +1109,7 @@ function declenchePiege(p,o,contact){const m=currentMap();if(!m||!piegeArme(p)||
  /* Le test d'évitement se joue d'abord, mais se dit après : le journal annonce le piège, puis la tentative. Sur la carte,
     « Piège ! » paraît, puis « Esquive ! », en vert, si la victime l'esquive. */
  let issue='plein',essai='';
- if(p.evitement){const t=p.evitement,jet=skillRoll(valeurCompetence(o,t.comp)-1,d6),n=jet.reussites,ok=n>=t.reussites;
+ if(p.evitement){const t=p.evitement,jet=skillRoll(valeurCompetence(o,t.comp)-1,d6),n=jet.reussites+(typeof bonusReussites==='function'?bonusReussites(o,t.comp,true):0),ok=n>=t.reussites;
   rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),o,null);if(ok)issue=t.issue;
   essai=nomNum(o)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — '+(ok?(issue==='esquive'?'esquive le piège':'amortit le piège'):'ne l’évite pas')+'.'}
  const depuis=contact&&issue!=='esquive'?{x:o.x,y:o.y}:null;if(depuis){const c=centrePiege(p);o.avantPiege={x:depuis.x,y:depuis.y};o.x=c.x;o.y=c.y;if(p.actif||p.enjambement)o.tenuPar=p.id}
@@ -1226,7 +1226,7 @@ function piegeAPortee(a,p){const size=mapSize();return !!a&&!!p&&!!size.width&&(
 /* Désamorcer ou enjamber : le test que le MJ a préparé, l'Action en combat. Désamorcé, le piège se grise ; manqué, il reste en
    l'état. Enjambé, l'aventurier le franchit sans le faire partir, et ne le fera plus jamais partir ; manqué, il le déclenche. */
 function testPiege(a,p,quoi){const t=p&&p[quoi],dedans=quoi==='enjambement'&&!!p&&tenuParPiege(a)===p;if(!a||!t||(!piegeArme(p)&&!dedans)||!payeAction(a))return;
- const jet=skillRoll(valeurCompetence(a,t.comp)-1,d6),n=jet.reussites,ok=n>=t.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
+ const jet=skillRoll(valeurCompetence(a,t.comp)-1,d6),n=jet.reussites+(typeof bonusReussites==='function'?bonusReussites(a,t.comp,quoi==='enjambement'):0),ok=n>=t.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
  const tete=nomNum(a)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — ';
  if(quoi==='desamorcage'){if(ok)p.desamorce=true;log(tete+(ok?'désamorce '+p.nom:'ne parvient pas à désamorcer '+p.nom)+'.',{dice:true,ton:'competence'})}
  else{log(tete+(ok?'enjambe '+p.nom:'trébuche sur '+p.nom)+'.',{dice:true,ton:'competence'});if(ok){a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60);delete a.tenuPar}

@@ -390,6 +390,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    {id:'talent-tellure-eclat',name:'Éclat Vivant',type:'act',effet:'eclatvivant',params:{},effects:'Action bonus : vous émettez une lumière vive qui éclaire comme une torche, ou vous l’éteignez.'}]
    .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='tellure'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'tellure',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
   c.semisForge.push('espece-tellure')}
+ /* v0.934 — Les Talents d'Espèce de l'Hephosien, posés une fois. */
+ if(!c.semisForge.includes('espece-hephosien')&&Array.isArray(c.talents)){
+  [{id:'talent-hephosien-ascension',name:'Ascension',type:'mvt',effet:'ascension',params:{},effects:'Vous prenez votre élan pour sauter jusqu’à votre distance de mouvement : ce mouvement ignore les obstacles et les dégâts d’opportunité, et votre prochaine Attaque au contact ce tour lance +1 dé blanc.'},
+   {id:'talent-hephosien-pied',name:'Pied Sûr',type:'pass',effet:'piedsur',params:{},effects:'Vous ne subissez jamais de dégâts de chute, vous ne subissez pas Au sol, et vos tests d’Agilité pour garder l’équilibre, sauter ou grimper obtiennent +1 réussite, en plus des résultats du jet.'},
+   {id:'talent-hephosien-souffle',name:'Souffle des Cimes',type:'pass',effet:'souffledescimes',params:{},effects:'Vous pouvez retenir votre souffle durant 1 h. Les crans de Gel ne réduisent pas votre mouvement.'},
+   {id:'talent-hephosien-touche',name:'Touche-à-Tout',type:'pass',effet:'toucheatout',params:{},effects:'À chaque nouveau niveau, choisissez une compétence : vous l’augmentez de +1. Vous obtenez +1 réussite automatique aux tests de Technique, en plus des résultats du jet.'}]
+   .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='hephosien'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'hephosien',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  c.semisForge.push('espece-hephosien')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
