@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.936 — La planche des Espèces agrandie de 23 icônes. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("c.semisForge.push('planche-especes-2')"),'v0.936');
 /* v0.935 — Le Gnome. */
 {const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
  assert.ok(cb.includes("{id:'gnome',nom:'Gnome',teinte:'#6b8f3a',vie:1,endu:1,vitesse:7,taille:'small',comps:{Ruse:1,Technique:1},extension:'dnd',")&&['chanceux','petitetvif','bricoleur','illusionniste'].every(k=>cb.includes(k+':{cle:'))
