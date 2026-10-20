@@ -381,6 +381,12 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  c.guidePrix=normaliseGuidePrix(c.guidePrix);
  // Les planches d'icônes découpées, leurs noms et catégories (planches.js).
  c.planches=normalisePlanches(c.planches);c.nomsPlanches=normaliseNomsPlanches(c.nomsPlanches);
+ /* v0.926 — La planche des états (img/planches/ETATS.webp), 5 × 6, découpée une fois ; ses 23 premières icônes deviennent celles
+    des états, à la place de celles choisies avant. */
+ if(!c.semisForge.includes('planche-etats')){const f='planches/ETATS.webp',cases=[[0.01555,0.01554,0.18182,0.15405],[0.21212,0.02128,0.19139,0.16216],[0.39474,0.01824,0.17863,0.15135],[0.60207,0.01486,0.1866,0.15811],[0.80463,0.01655,0.18341,0.15541],[0.00359,0.16284,0.20494,0.17365],[0.21651,0.17365,0.19219,0.16284],[0.40032,0.16284,0.20494,0.17365],[0.5937,0.16284,0.20415,0.17297],[0.79147,0.16284,0.20494,0.17365],[0.01515,0.34662,0.1882,0.15946],[0.19537,0.32736,0.20096,0.17027],[0.40271,0.32973,0.19537,0.16554],[0.60965,0.35068,0.17943,0.15203],[0.79187,0.32973,0.20494,0.17365],[0.01435,0.49459,0.18581,0.15743],[0.21611,0.49797,0.19298,0.16351],[0.41906,0.51622,0.16268,0.13784],[0.60845,0.51216,0.18022,0.1527],[0.79745,0.49662,0.19298,0.16351],[0.00837,0.66757,0.19059,0.16149],[0.22089,0.6902,0.15789,0.13378],[0.4075,0.67297,0.18102,0.15338],[0.60287,0.66655,0.20096,0.17027],[0.79585,0.66486,0.20335,0.1723],[0.02033,0.84122,0.17464,0.14797],[0.20893,0.83209,0.19458,0.16486],[0.40909,0.83716,0.18341,0.15541],[0.61364,0.84324,0.18262,0.15473],[0.80223,0.84122,0.189,0.15878]],noms=["Au sol","Aveugle","Blindage","Ciblage","Faille","Feu","Foudre","Furie","Gardé","Gel","Invisible","Onde","Poison","Saignée","Vie","Affaibli","Rage","Coma","Sommeil","Nécrose","Corruption","Surpris","Charme","Armure","","","","","",""];
+  c.planches=[...c.planches.filter(x=>x.fichier!==f),{fichier:f,lignes:6,colonnes:5,cases,icones:cases.map((_,i)=>({nom:noms[i]||'',cat:'etats'}))}];
+  c.logosEtats={...(c.logosEtats&&typeof c.logosEtats==='object'&&!Array.isArray(c.logosEtats)?c.logosEtats:{})};noms.slice(0,23).forEach((e,i)=>{c.logosEtats[e]=f+'#'+(i+1)});
+  c.semisForge.push('planche-etats')}
  c.iconesCompetences=normaliseIconesCompetences(c.iconesCompetences);
  // La classe où le MJ range chaque effet de talent, pour la bibliothèque : un nom par effet connu.
  const ce=c.classesEffets&&typeof c.classesEffets==='object'&&!Array.isArray(c.classesEffets)?c.classesEffets:{};
