@@ -199,7 +199,7 @@ function migreArbres(c){const T=(c.talents||[]).filter(Boolean),fam=t=>(t.famill
  return change}
 /* Les onglets, et ceux que le MJ ouvre aux joueurs : la Table de jeu toujours, les Cartes jamais. Le
    choix voyage avec le contenu publié ; sans choix, les onglets d'avant. */
-const ONGLETS=[['accueil','Accueil'],['table','Table de jeu'],['maps','Cartes'],['domaine','Domaine'],['heroes','Aventuriers'],['talents','Talents'],['armory','Armurerie'],['bestiary','Bestiaire'],['icones','Icônes'],['regles','Règles'],['settings','Paramètres']];
+const ONGLETS=[['accueil','Accueil'],['table','Table'],['maps','Cartes'],['domaine','Domaine'],['heroes','Aventuriers'],['talents','Talents'],['armory','Armurerie'],['bestiary','Bestiaire'],['icones','Icônes'],['regles','Règles'],['settings','Paramètres']];
 const ONGLETS_JOUEURS_DEFAUT=['table','domaine','heroes','bestiary','settings'];
 /* La page d'accueil des joueurs. Au premier chargement d'une session de navigation, un joueur arrive sur l'onglet que le MJ
    a choisi, dès que le contenu publié est là ; recharger la page garde l'onglet en cours. Le MJ n'est jamais déplacé. */
@@ -6257,7 +6257,7 @@ function renderSettings(){const boite=$('raccourcis');if(!boite)return;
  // Les onglets ouverts aux joueurs : une case par onglet ; la Table cochée, les Cartes non, sans y toucher.
  $('bloc-onglets').hidden=view!=='mj';
  {const vus=ongletsJoueurs();$('onglets-joueurs').replaceChildren(...ONGLETS.map(([k,nom])=>{const l=document.createElement('label'),c=document.createElement('input');
-  c.type='checkbox';c.value=k;c.checked=vus.includes(k);c.disabled=k==='accueil'||k==='table'||k==='maps';
+  c.type='checkbox';c.value=k;c.checked=vus.includes(k);c.disabled=k==='accueil'||k==='table'||k==='maps'||k==='regles';
   c.onchange=()=>{catalog.ongletsJoueurs=[...$('onglets-joueurs').querySelectorAll('input:checked')].map(x=>x.value);normalizeCatalog(catalog);
    scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'));if(typeof majOnglets==='function')majOnglets();majPageAccueil()};
   l.append(c,' '+nom);return l}))}

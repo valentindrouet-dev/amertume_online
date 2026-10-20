@@ -1448,7 +1448,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
 
 /* ---------- Onglets de page, réservés au MJ ---------- */
 const tabs=document.createElement('nav');tabs.className='tabs';
-tabs.innerHTML='<button data-page="accueil">Accueil</button><button data-page="table" class="on">Table de jeu</button><button data-page="maps">Cartes</button>'
+tabs.innerHTML='<button data-page="accueil">Accueil</button><button data-page="table" class="on">Table</button><button data-page="maps">Cartes</button>'
  +'<button data-page="domaine">Domaine</button><button data-page="heroes">Aventuriers</button><button data-page="talents">Talents</button>'
  +'<button data-page="armory">Armurerie</button><button data-page="bestiary">Bestiaire</button><button data-page="icones">Icônes</button>'
  +'<button data-page="regles">Règles</button><button data-page="settings">Paramètres</button>';
@@ -1466,7 +1466,9 @@ envoiOngletBtn.onclick=e=>{e.stopPropagation();if(typeof envoyerOnglet!=='functi
 window.addEventListener('resize',()=>majEnvoiOnglet());
 /* La troupe voit les onglets que le MJ lui ouvre dans les Paramètres — ongletsJoueurs() : la Table
    toujours, les Cartes jamais. Tout ce qui s'y modifie reste au MJ — voir « vue-joueur » dans editor.css. */
-function majOnglets(){majEnvoiOnglet();const ouverts=ongletsJoueurs();{const cv=$('conversion-ouvre');if(cv)cv.hidden=view!=='mj'}tabs.querySelectorAll('button[data-page]').forEach(b=>{b.hidden=view!=='mj'&&!ouverts.includes(b.dataset.page)});
+function majOnglets(){majEnvoiOnglet();const ouverts=ongletsJoueurs();{const cv=$('conversion-ouvre');if(cv)cv.hidden=view!=='mj'}tabs.querySelectorAll('button[data-page]').forEach(b=>{b.hidden=view!=='mj'&&!ouverts.includes(b.dataset.page);
+  // v0.925 : chez le MJ, les onglets ouverts aux joueurs en vert pâle.
+  b.classList.toggle('ouvert-joueurs',view==='mj'&&ouverts.includes(b.dataset.page))});
  document.body.classList.toggle('vue-joueur',view!=='mj');
  if(view!=='mj'&&PAGES.some(x=>!ouverts.includes(x)&&document.body.classList.contains('page-'+x)))showPage('table',false)}
 /* L'onglet ouvert est un réglage d'appareil, comme le thème : recharger en plein

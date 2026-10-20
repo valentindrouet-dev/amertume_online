@@ -3723,7 +3723,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 /* v0.702 — L'onglet Accueil : créer un aventurier pas à pas, les dernières actualités, les aventuriers au domaine, les hauts faits. */
 {const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),act=fs.readFileSync('actualites.js','utf8'),sh=fs.readFileSync('publie.sh','utf8');
  const A=new Function(act+';return ACTUALITES')();assert.ok(A.versions.length>=10&&A.resume.lignes.length>=5&&A.resume.lignes.length<=6,'les actualités');
- assert.ok(ed.includes("const ONGLETS=[['accueil','Accueil'],['table','Table de jeu'],")&&ed.includes("return ['accueil','table',")&&mp.includes("const PAGES=['accueil','table','maps',")
+ assert.ok(ed.includes("const ONGLETS=[['accueil','Accueil'],['table','Table'],")&&ed.includes("return ['accueil','table',")&&mp.includes("const PAGES=['accueil','table','maps',")
   &&mp.includes("else if(p==='accueil')renderAccueil();")&&ed.includes("const ETAPES_CREATION=[['identite','Identité'],['espece','Espèce'],['classe','Classe'],['caracs','Caractéristiques'],['comps','Compétences'],['equipement','Équipement'],['illustration','Illustration'],['recap','Récapitulatif']];")
   &&ed.includes("horsCarte:true,lieuDomaine:'route'")&&sh.includes("s.replace('/* versions */',"),'l’Accueil câblé');}
 /* v0.701 — Les effets de talent Points d'Action et Points de Mouvement : +x à chaque tour ; les bonus de l'arbre restent tels
@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.925 — « Table », et les onglets ouverts aux joueurs en vert pâle chez le MJ. */
+assert.ok(fs.readFileSync('maps.js','utf8').includes("b.classList.toggle('ouvert-joueurs',view==='mj'&&ouverts.includes(b.dataset.page))")&&fs.readFileSync('editor.css','utf8').includes('.tabs button.ouvert-joueurs:not(.on){'),'v0.925');
 /* v0.924 — L'onglet Règles, pour tous, tiré du moteur. */
 {const rg=fs.readFileSync('regles.js','utf8'),mp=fs.readFileSync('maps.js','utf8');
  assert.ok(rg.includes('function renderRegles()')&&rg.includes('REGLES_SECTIONS.push(')&&mp.includes('<button data-page="regles">Règles</button><button data-page="settings">Paramètres</button>')
