@@ -17,7 +17,8 @@ async function suite(){occupe=true;
 // La planche, à la première adresse qui répond : le site, sinon le dépôt lui-même.
 async function litPlanche(urls){if(derniere&&derniere.url===urls[0])return derniere;
  let r=null,erreur=null;
- for(const u of urls){try{const x=await fetch(u);if(x.ok){r=x;break}}catch(e){erreur=e}}
+ // v0.940 : toujours revalidée auprès du serveur, jamais l'image d'avant gardée par le navigateur.
+ for(const u of urls){try{const x=await fetch(u,{cache:'no-cache'});if(x.ok){r=x;break}}catch(e){erreur=e}}
  if(!r)throw erreur||new Error('Planche introuvable');
  const bmp=await createImageBitmap(await r.blob()),W=bmp.width,H=bmp.height;
  const c=new OffscreenCanvas(W,H),g=c.getContext('2d',{willReadFrequently:true});g.drawImage(bmp,0,0);if(bmp.close)bmp.close();
