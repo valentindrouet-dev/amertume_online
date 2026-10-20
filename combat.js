@@ -153,7 +153,7 @@ function gearAttacks(actor,items){
   if(tire&&DICE_KEYS.includes(mun.munDe))dice[mun.munDe]=Math.min(12,(dice[mun.munDe]||0)+1);
   const etats=[...new Set([...etatsDArmes(lot),...(tire&&mun.etat?[mun.etat]:[])])];
   return {name:[...groupes].map(([w,n])=>w.name+(n>1?' ×'+n:'')).join(' + ')+(tire?' · '+mun.name:''),dice,range,
-   targets:'one',useOwnDamage:!lot.some(w=>w.sansBonusDegats===true),effects:{},etats,logos:lot.filter(w=>w.logo).map(w=>String(w.logo)).slice(0,2),gear:true,munition:tire?mun.id:null}};
+   targets:'one',useOwnDamage:!lot.some(w=>w.sansBonusDegats===true),effects:{},etats,logos:lot.filter(w=>w.logo).map(w=>String(w.logo)).slice(0,2),gear:true,munition:tire?mun.id:null,...(lot.some(w=>w.armeFeu===true)?{armeFeu:true}:{})}};
  /* v0.862 : une Invention du Mécaniste frappe de ses propres dés, seule : elle ne se cumule pas avec les autres armes en main. */
  const inventions=armes.filter(w=>w.invention===true);
  const contact=armes.filter(w=>w.ranged!==true&&w.invention!==true),distance=armes.filter(w=>w.ranged===true&&w.lancer!==true&&w.invention!==true);
@@ -1802,6 +1802,19 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  rancune:{cle:'rancune',nom:'Rancune',type:'pass',espece:true,
   aide:'Passif : chaque critique qu’un adversaire inflige au porteur lui vaut, pour toujours, +1 dégât contre les adversaires de ce modèle.',
   params:[],phrase(){return 'Chaque <b>critique</b> qu’un adversaire vous inflige vous donne, pour toujours, <b>+1 dégât</b> contre les adversaires identiques.'}},
+ /* v0.930 — Talents d'Espèce de l'Allsteiner. */
+ bouffeevapeur:{cle:'bouffeevapeur',nom:'Bouffée de Vapeur',type:'act',bouton:'Bouffée de Vapeur',espece:true,
+  aide:'Action : Brûlant, chaque adversaire au contact fait un test de Robustesse (2 réussites), sinon Aveugle et 1 dé rouge de dégâts ; Fumée, un nuage de la taille de la zone de contact rend le porteur et ses alliés au contact Invisibles jusqu’à la fin de son prochain tour.',
+  params:[],phrase(){return '<b>Brûlant</b> : les adversaires à votre contact réussissent un test de <b>Robustesse 2</b>, ou subissent <b>Aveugle</b> et <b>1 dé rouge</b>. <b>Fumée</b> : vous et vos alliés au contact êtes <b>Invisibles</b> jusqu’à la fin de votre prochain tour.'}},
+ tireurallstein:{cle:'tireurallstein',nom:'Tireur d’Allstein',type:'pass',espece:true,
+  aide:'Passif : les Attaques à distance avec une arme à feu lancent 1 dé noir de plus.',
+  params:[],phrase(){return 'Vos Attaques à distance avec une <b>arme à feu</b> lancent <b>1 dé noir</b> de plus.'}},
+ masquerespiratoire:{cle:'masquerespiratoire',nom:'Masque Respiratoire',type:'pass',espece:true,
+  aide:'Passif : insensible au Poison ; gaz et fumées sans effet ; respire sous l’eau.',
+  params:[],phrase(){return 'Vous ne subissez pas <b>Poison</b>. Les gaz et les fumées n’ont aucun effet sur vous. Vous respirez sous l’eau.'}},
+ experiencesinterdites:{cle:'experiencesinterdites',nom:'Expériences Interdites',type:'pass',espece:true,
+  aide:'Passif : à chaque repos court, le porteur prépare 1 Sérum instable (un seul à la fois) : 2 dés verts de PV et 2 crans de Corruption.',
+  params:[],phrase(){return 'À chaque <b>repos court</b>, vous préparez <b>1 sérum instable</b> : <b>2 dés verts</b> de PV et <b>2</b> crans de <b>Corruption</b>.'}},
  /* v0.929 — Talents d'Espèce du Charognard. */
  remodelage:{cle:'remodelage',nom:'Remodelage',type:'act',bouton:'Remodelage',espece:true,
   aide:'Action : le porteur prend une forme, jusqu’au prochain Remodelage. Charognard (M) : +2 Dégâts par allié ou charognard au contact. Chasseur (M) : +1 PM par tour, ses mouvements ignorent l’opportunité. Glouton (G) : ses Attaques au contact ignorent la DEF, −1 DEF.',
@@ -2942,6 +2955,9 @@ const ESPECES=[{id:'humain',nom:'Humain',teinte:'#9a7b4f',vie:1,vitesse:9,comps:
   description:'Façonnés dans la terre par un dieu de la forge, les Nains sont robustes comme la pierre qu’ils travaillent. Bâtisseurs, mineurs et forgerons sans égal, ils vivent quatre siècles et n’oublient ni une dette, ni une offense.'},
  {id:'goliath',nom:'Goliath',teinte:'#5f7183',dmg:2,vitesse:10,comps:{Force:1,Robustesse:1},
   description:'Lointains descendants des géants, les Goliaths portent l’héritage des seigneurs des collines, du givre, du feu ou des tempêtes. Plus grands et plus forts que la plupart des peuples, ils mesurent leur valeur à leurs exploits.'},
+ /* v0.930 — L'Allsteiner, espèce d'Amertüme : Vitesse 9 m, +1 Endurance, +1 Dégâts. */
+ {id:'allsteiner',nom:'Allsteiner',teinte:'#a8743a',endu:1,dmg:1,vitesse:9,comps:{Perception:1,Technique:1},
+  description:'Créature de chair et de vapeur, il ne quitte jamais le masque respiratoire planté dans sa gorge : sans lui, les nuées infectes d’Allstein, sa cité-usine, le tueraient. Adepte des armes à feu et des expériences interdites, il est, par sa seule existence, un défi aux forces de la nature.'},
  /* v0.929 — Le Charognard, espèce d'Amertüme (sans extension) : Vitesse 9 m, +6 PV, +1 Dégâts. */
  {id:'charognard',nom:'Charognard',teinte:'#4a3550',pv:6,dmg:1,vitesse:9,comps:{Robustesse:1,Savoir:1},
   description:'Un agrégat de charogne : des morceaux de corps et de chair décomposés puis recomposés, reliés à la grande intelligence collective qu’est la Charogne. Il peut changer de forme à volonté, mais s’efforce de garder celle d’un humanoïde à la peau noircie, toujours en mouvement.'},

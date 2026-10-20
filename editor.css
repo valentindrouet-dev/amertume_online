@@ -3334,3 +3334,5 @@ body.page-regles .intro,body.page-regles .mj-tools,body.page-regles main.layout,
 #regles-page table.rg-table th,#regles-page table.rg-table td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 #regles-page table.rg-table th{background:color-mix(in srgb,var(--teinte) 14%,#fff);font-weight:700}
 @media (max-width:900px){#regles-page .rg-corps{grid-template-columns:1fr}#regles-page .rg-sommaire{position:static}}
+/* v0.930 — Le nuage de fumée de l'Allsteiner, sous les socles. */
+#map-view .nuage-fumee{position:absolute;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:1;background:radial-gradient(circle,color-mix(in srgb,var(--muted) 55%,#fff) 0%,color-mix(in srgb,var(--muted) 35%,transparent) 60%,transparent 72%);filter:blur(2px)}

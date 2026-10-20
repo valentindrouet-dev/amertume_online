@@ -5193,6 +5193,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.930 — L'Allsteiner. */
+{const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
+ assert.ok(cb.includes("{id:'allsteiner',nom:'Allsteiner',teinte:'#a8743a',endu:1,dmg:1,vitesse:9,comps:{Perception:1,Technique:1},")&&['bouffeevapeur','tireurallstein','masquerespiratoire','experiencesinterdites'].every(k=>cb.includes(k+':{cle:'))
+  &&cb.includes('...(lot.some(w=>w.armeFeu===true)?{armeFeu:true}:{})')&&pg.includes('function bouffeeVapeur(a,p,talent)')&&pg.includes('function dissipeFumee(a)')&&ed.includes("c.semisForge.push('espece-allsteiner')")&&ed.includes('>Arme à feu</label>'),'v0.930');}
 /* v0.929 — Le Charognard. */
 {const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
  assert.ok(cb.includes("{id:'charognard',nom:'Charognard',teinte:'#4a3550',pv:6,dmg:1,vitesse:9,comps:{Robustesse:1,Savoir:1},")&&['remodelage','devoreur','chairrecomposee','memoirecharogne'].every(k=>cb.includes(k+':{cle:'))

@@ -365,6 +365,15 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    {id:'talent-charognard-memoire',name:'Mémoire de la Charogne',type:'pass',effet:'memoirecharogne',params:{},effects:'Reliée à l’intelligence collective de la Charogne, votre conscience vous fait lancer 1 dé de plus aux tests de Savoir pour analyser les créatures organiques.'}]
    .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='charognard'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'charognard',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
   c.semisForge.push('espece-charognard')}
+ /* v0.930 — Les Talents d'Espèce de l'Allsteiner, et son Sérum instable, posés une fois. */
+ if(!c.semisForge.includes('espece-allsteiner')&&Array.isArray(c.talents)){
+  [{id:'talent-allsteiner-bouffee',name:'Bouffée de Vapeur',type:'act',effet:'bouffeevapeur',params:{},effects:'Votre masque expulse un nuage brûlant ou de fumée. Brûlant : les adversaires à votre contact doivent réussir un test de Robustesse 2, sinon ils subissent Aveugle et 1 dé rouge. Fumée : vous créez une zone ronde de fumée de la taille de votre zone de contact, dans laquelle vous et les alliés à votre contact êtes cachés jusqu’à la fin de votre prochain tour.'},
+   {id:'talent-allsteiner-tireur',name:'Tireur d’Allstein',type:'pass',effet:'tireurallstein',params:{},effects:'Vos Attaques à distance avec une arme à feu lancent 1 dé noir de plus.'},
+   {id:'talent-allsteiner-masque',name:'Masque Respiratoire',type:'pass',effet:'masquerespiratoire',params:{},effects:'Vous ne subissez pas Poison. Les gaz et les fumées n’ont aucun effet sur vous. Vous respirez normalement sous l’eau.'},
+   {id:'talent-allsteiner-experiences',name:'Expériences Interdites',type:'pass',effet:'experiencesinterdites',params:{},effects:'À chaque repos court, vous préparez 1 sérum instable (unique). Objet consommable : vous récupérez 2 dés verts de PV et gagnez 2 crans de Corruption.'}]
+   .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='allsteiner'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'allsteiner',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  if(!c.items.some(o=>o&&o.id==='objet-serum-instable'))c.items.push({id:'objet-serum-instable',name:'Sérum instable',category:'object',qty:1,price:0,rarete:'inhabituel',effet:'soin',usage:'conso',consumable:true,params:{quantite:2,forme:'des'},notes:'Préparé par un Allsteiner : 2 dés verts de PV et 2 crans de Corruption.'});
+  c.semisForge.push('espece-allsteiner')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
@@ -564,6 +573,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   // Sa lumière, en mètres ; rien d'ordinaire.
   o.lumiere=lumiereDe(o);if(!o.lumiere)delete o.lumiere;
   o.bonusMouvement=bonusMouvementDe(o);if(!o.bonusMouvement)delete o.bonusMouvement;
+  // v0.930 : une arme à feu, seulement à distance.
+  if(!(o.category==='weapon'&&o.ranged===true&&o.armeFeu===true))delete o.armeFeu;
   // Le type d'une arme et le genre d'une pièce, pour les affixes : seulement s'ils sont écrits et valables.
   if(o.typeArme!==undefined&&o.typeArme!==''&&!TYPES_ARME.some(([k])=>k===o.typeArme))delete o.typeArme;if(o.accord!==undefined&&!ACCORDS.some(([k])=>k===o.accord))delete o.accord;
   // Une arme de lancer : à distance, une main, sans munition.
@@ -2099,6 +2110,8 @@ function appliquerEffetObjet(a,o){const code=objetCode(o);if(!a||!code)return;
  // La charge du jour est prise, le consommable quitte l'inventaire.
  if(usageLimite(usage)){a.usages={...(a.usages||{}),[o.id]:usage}}
  if(usageConsomme(usage))retirerInventaire(a,o);
+ // v0.930 : le Sérum instable de l'Allsteiner donne aussi 2 crans de Corruption.
+ if(o.id==='objet-serum-instable'){ajouteEtat(a,'Corruption',2);dit+=(dit?', ':'')+'Corruption +2'}
  log(nomNum(a)+' emploie '+o.name+(dit?' : '+dit:'')+'.',{ton:'talent'});
  if(typeof annonceFlottante==='function')annonceFlottante('◈ '+o.name+(dit?' · '+dit:''));
  render();if(typeof renderHeroes==='function')renderHeroes();scheduleSave();
@@ -6961,6 +6974,7 @@ function itemDepuisForm(base){const f=$('item-form').elements,a={...base};
  for(const k of ['name','slot','etat','notes'])if(f[k])a[k]=f[k].value.trim();
  if(f.extension){if(extensionValide(f.extension.value))a.extension=f.extension.value;else delete a.extension}
  if(f.typeArme)a.typeArme=f.typeArme.value;if(f.accord)a.accord=f.accord.value;
+ if(f.armeFeu){if(f.armeFeu.checked&&a.ranged&&!a.lancer)a.armeFeu=true;else delete a.armeFeu}
  /* L'effet, son usage et ses réglages, relus au travers de la déclaration : « consommable »
     n'est plus une case à part, c'est l'un des trois usages. */
  if(f.effet)a.effet=OBJETS_CODES[f.effet.value]?f.effet.value:'';
@@ -7016,6 +7030,7 @@ function dessineItem(){const a=itemDraft,arme=a.category==='weapon',armure=a.cat
   +(a.category==='ressource'?'':sel('Rareté','rarete',rareteDe(a),RARETES))
   +(arme&&!a.lancer?sel('Mains','hands',a.hands||1,[[1,'1 main'],[2,'2 mains']]):'')
   +(arme?sel('Type d’arme','typeArme',typeArmeDe(a),[...(a.ranged?[]:[['','—']]),...TYPES_ARME.filter(t=>t[2]===(a.ranged?'ranged':'melee')).map(([k,n])=>[k,n])]):'')
+  +(arme&&a.ranged&&!a.lancer?'<label class="field-check"><input name="armeFeu" type="checkbox" '+(a.armeFeu?'checked':'')+'>Arme à feu</label>':'')
   +(arme||armure?sel('Genre','accord',accordDe(a),ACCORDS):'')
   +sel('Extension','extension',extensionValide(a.extension),[['','— aucune —'],...EXTENSIONS])
   +(armure?field('DEF','def',a.def||0,'number','min="0" max="'+DEF_MAX+'"')
