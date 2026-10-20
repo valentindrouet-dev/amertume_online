@@ -101,18 +101,32 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 | Mot clé | Couleur | Style |
 |---|---|---|
 | Chiffres, `xdy`, `%` | encre de la teinte | **gras** |
-| Gardé | `#3d8b2f` | gras |
-| Feu | `#c2503a` | gras |
-| Gel | `#2f8fae` | gras |
-| Foudre | `#3a6fc2` | gras |
-| Poison | `#9b4fc0` | gras |
-| Saignée | `#b8352f` | gras |
-| Onde | `#3577b8` | gras |
-| Invisible | `#6a5fb0` | gras |
-| Faille | `#a0408f` | gras |
-| Corruption | `#6b3a8a` | gras |
-| Furie / Rage | `#c0392b` / `#e8501c` | gras |
+| Au sol | `#a65b26` | gras |
+| Aveugle | `#9c21de` | gras |
+| Blindage | `#1b70bb` | gras |
+| Ciblage | `#198014` | gras |
+| Faille | `#c41ca7` | gras |
+| Feu | `#cd331d` | gras |
+| Foudre | `#786e11` | gras |
+| Furie | `#d6271f` | gras |
+| Gardé | `#1e8113` | gras |
+| Gel | `#1b71bb` | gras |
+| Invisible | `#5d6b7d` | gras |
+| Onde | `#1b7e2d` | gras |
+| Poison | `#ac20df` | gras |
+| Saignée | `#d6231f` | gras |
+| Vie | `#218019` | gras |
+| Affaibli | `#97652b` | gras |
+| Rage | `#d6281f` | gras |
+| Coma | `#9e602e` | gras |
+| Sommeil | `#1f6adb` | gras |
+| Nécrose | `#5e7821` | gras |
+| Corruption | `#a920df` | gras |
+| Surpris | `#aa5a18` | gras |
+| Charme | `#cd1d81` | gras |
 | Autres états | `#a2691f` | gras |
+
+Chaque état prend la **couleur dominante de son icône** (planche ETATS), foncée pour se lire sur fond clair. Le mot **Vie** garde la couleur de la caractéristique VIE.
 | PV | `rgb(47,122,91)` | gras |
 | Endurance | `rgb(44,140,133)` | gras |
 | Vie | `rgb(122,92,184)` | gras |

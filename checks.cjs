@@ -2533,7 +2533,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const ctxK={catalog:{motsCles:['Allié : vert','Feu : orange','Ennemi = #123456','Sans couleur','Gel']},STAT_TINTS:{pv:'1,2,3',dmg:'4,5,6',def:'0,0,0',endu:'0,0,0',vie:'0,0,0',xp:'0,0,0'},ETATS_JEU:gearApi.ETATS_JEU};
  vm.createContext(ctxK);vm.runInContext(src.slice(src.indexOf('const TEINTE_ETAT_MOT='),src.indexOf('function texteEnrichi(')),ctxK);
  const t={get:x=>ctxK.motsCles().couleur(x)};
- assert.equal([t.get('Allié'),t.get('Feu'),t.get('Ennemi'),t.get('Sans couleur'),t.get('Gel')].join('|'),'#2f7a4b|#c2692a|#123456|var(--accent)|#2f8fae','la couleur des mots clés : nommée, en code, ou celle du thème ; un mot du jeu se recolore, ou garde la sienne sans couleur');}
+ assert.equal([t.get('Allié'),t.get('Feu'),t.get('Ennemi'),t.get('Sans couleur'),t.get('Gel')].join('|'),'#2f7a4b|#c2692a|#123456|var(--accent)|#1b71bb','la couleur des mots clés : nommée, en code, ou celle du thème ; un mot du jeu se recolore, ou garde la sienne sans couleur');}
 /* v0.272 — Une arme sans nombre de mains en tient une ; les munitions ont leur emplacement, sous la
    main droite, et donnent aux armes à distance un dé et un état ; la pastille de classe se présente
    au survol et ouvre l'arbre au clic ; le Catalogue officiel quitte l'armurerie. */
@@ -2564,7 +2564,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  const el={k:[],replaceChildren(){this.k=[]},append(...x){this.k.push(...x.map(y=>typeof y==='string'?y:'['+y.textContent+(y.style.color?'|'+y.style.color:'')+']'))}};
  ctxP.texteEnrichi(el,'Deux attaques, une Attaque critique, des attaques critiques, ATTAQUE ; les alliés gagnent 2 Dégâts et des Actions ; la vie reste.');
  assert.equal(el.k.join(''),'Deux [attaques|#b8352f], une [Attaque critique|#7a5cb8], des [attaques critiques|#7a5cb8], [ATTAQUE|#b8352f] ; les [alliés|var(--accent)] gagnent [2] [Dégâts|rgb(4,5,6)] et des [Actions] ; la vie reste.');
- ctxP.texteEnrichi(el,'Feux et Gels : 1d6+2, +3.');assert.equal(el.k.join(''),'[Feux|#c2503a] et [Gels|#2f8fae] : [1d6+2], [+3].');
+ ctxP.texteEnrichi(el,'Feux et Gels : 1d6+2, +3.');assert.equal(el.k.join(''),'[Feux|#cd331d] et [Gels|#1b71bb] : [1d6+2], [+3].');
  assert.ok(!src.includes("ligne('Débloque : '"),'plus de « Débloque » dans la description d’un talent');}
 /* v0.274 — Le dernier anneau se centre sous la main gauche ; la munition portée remplit la place vide du dé de l'arme à distance. */
 {assert.ok(src.includes("function remplitMunition(p,a,o){")&&src.includes(" if(portes(o))remplitMunition(p,a,o);")&&src.includes("const p=remplitMunition(gearCarre(o.deux,1,1),a,o.deux);")
@@ -4025,7 +4025,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes(" posesDits.forEach(e=>f
 assert.match(C.phraseTalent('lamepoisoncontact',{},1),/l’adversaire le plus proche/);assert.match(C.phraseTalent('lamepoisoncontact',{},2),/tous les adversaires/);
 assert.ok(fs.readFileSync('index.html','utf8').includes("const touches=voletOuvert(contact,'tous')?autres:autres.slice(0,1);"),'Poison au contact : tous au palier 2');
 /* v0.652 — Le Poison en violet : ses dégâts qui montent, et le mot dans les bulles. */
-assert.ok(fs.readFileSync('index.html','utf8').includes("couleurFlottant=COULEURS_ETATS.Poison;")&&fs.readFileSync('editor.js','utf8').includes("Poison:'#9b4fc0',"),'le Poison en violet');
+assert.ok(fs.readFileSync('index.html','utf8').includes("couleurFlottant=COULEURS_ETATS.Poison;")&&fs.readFileSync('editor.js','utf8').includes("'Poison':'#ac20df',"),'le Poison en violet');
 /* v0.651 — Course mortelle va toujours à l'adversaire le plus proche ; déjà à son contact, le porteur ne bouge pas. */
 assert.ok(fs.readFileSync('index.html','utf8').includes("const cands=vusPourMouvement(a,false).filter(j=>actors[j]);"),'Course mortelle : le plus proche, quoi qu’il arrive');
 /* v0.650 — La bulle d'un piège quitte le piège, pour tout le monde, et se pose sur le rond Enjamber. */
@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.927 — Les noms d'états en gras, à la couleur de leur icône. */
+assert.ok(fs.readFileSync('editor.js','utf8').includes("const TEINTE_ETAT_MOT={'Au sol':'#a65b26',")&&fs.readFileSync('CHARTE.md','utf8').includes('| Surpris | `#aa5a18` | gras |'),'v0.927');
 /* v0.926 — La planche des états, découpée d'office, et ses icônes posées sur les états. */
 assert.ok(fs.existsSync('img/planches/ETATS.webp')&&fs.readFileSync('editor.js','utf8').includes("c.semisForge.push('planche-etats')"),'v0.926');
 /* v0.925 — « Table », et les onglets ouverts aux joueurs en vert pâle chez le MJ. */
@@ -5614,7 +5616,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
 /* v0.797 — Rage en rouge orangé vif, même quand c'est aussi le nom d'un talent de l'arbre ; le chiffre d'un état qui s'empile
    prend sa couleur. */
 {const src=fs.readFileSync('editor.js','utf8');
- assert.ok(src.includes("Rage:'#e8501c'")&&src.includes("ETATS_JEU.some(e=>e.toLowerCase()===n.toLowerCase()))return;")&&src.includes("if(cran){el.append(cran[1]);gras(cran[2],teinte);last+=cran[0].length;rx.lastIndex=last}"),'Rage 1 en couleur');}
+ assert.ok(src.includes("'Rage':'#d6281f'")&&src.includes("ETATS_JEU.some(e=>e.toLowerCase()===n.toLowerCase()))return;")&&src.includes("if(cran){el.append(cran[1]);gras(cran[2],teinte);last+=cran[0].length;rx.lastIndex=last}"),'Rage 1 en couleur');}
 /* v0.796 — Rage : 1 Rage par dégâts subis en combat ; ses trois améliorations, critiques, adversaires tués, début du combat,
    chacune élargie au palier 2 ; posées une fois sur les petits ronds sans effet du talent de classe. */
 {const C=require('./combat.js'),page=fs.readFileSync('index.html','utf8'),src=fs.readFileSync('editor.js','utf8'),T=C.TALENTS_CODES;

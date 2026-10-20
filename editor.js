@@ -2466,7 +2466,8 @@ function enElementDuMystique(html,etat){if(!etat)return html;
    le gras. Le texte se découpe autour d'eux, sans jamais passer par du HTML. */
 // v0.859 : le rouge de l'Incident, partout où le mot paraît dans les talents.
 const TEINTE_INCIDENT='#b03a48';
-const TEINTE_ETAT_MOT={'Corruption':'#6b3a8a','Gardé':'#3d8b2f',Furie:'#c0392b',Rage:'#e8501c',Feu:'#c2503a',Gel:'#2f8fae',Foudre:'#3a6fc2',Poison:'#9b4fc0','Saignée':'#b8352f',Onde:'#3577b8',Invisible:'#6a5fb0',Faille:'#a0408f'};
+// v0.927 : chaque état, en gras, à la couleur dominante de son icône (planche ETATS), foncée pour se lire sur fond clair.
+const TEINTE_ETAT_MOT={'Au sol':'#a65b26','Aveugle':'#9c21de','Blindage':'#1b70bb','Ciblage':'#198014','Faille':'#c41ca7','Feu':'#cd331d','Foudre':'#786e11','Furie':'#d6271f','Gardé':'#1e8113','Gel':'#1b71bb','Invisible':'#5d6b7d','Onde':'#1b7e2d','Poison':'#ac20df','Saignée':'#d6231f','Vie':'#218019','Affaibli':'#97652b','Rage':'#d6281f','Coma':'#9e602e','Sommeil':'#1f6adb','Nécrose':'#5e7821','Corruption':'#a920df','Surpris':'#aa5a18','Charme':'#cd1d81'};
 /* La couleur d'un mot clé du MJ : « Allié : vert », « Allié = #2f8a63 », ou rien — la
    couleur du thème. Un mot du jeu redéclaré prend la couleur qu'on lui donne. */
 const COULEURS_MOTS={rouge:'#b8352f',orange:'#c2692a',or:'#9d7b1e',jaune:'#b39222',vert:'#2f7a4b',turquoise:'#2c8c85',bleu:'#3a6fc2',violet:'#7a5cb8',rose:'#b04a8a',plasma:'#c23fbe',brun:'#8a5a2b',gris:'#6e6a66',noir:'#2a2622'};
@@ -2491,7 +2492,7 @@ function motsCles(){const perso=(catalog&&catalog.motsCles)||[],cle=perso.join('
  const rgb=k=>typeof STAT_TINTS!=='undefined'&&STAT_TINTS[k]?'rgb('+STAT_TINTS[k]+')':'';
  ajoute(['PV max','PV'],rgb('pv'));ajoute(['DEF','Défense'],rgb('def'));ajoute(['Endurance','ENDU','Endu'],rgb('endu'));
  ajoute(['Vie','VIE'],rgb('vie'));ajoute(['Dégât','dégât','DÉGÂT'],rgb('dmg'));ajoute(['XP'],rgb('xp'));
- ETATS_JEU.forEach(x=>ajoute([x,x.toUpperCase()],TEINTE_ETAT_MOT[x]||'#a2691f'));
+ (typeof STATES!=='undefined'?STATES.filter(x=>x!=='Aucun'):ETATS_JEU).forEach(x=>ajoute([x,x.toUpperCase()],TEINTE_ETAT_MOT[x]||'#a2691f'));
  ajoute(['Action','Mouvement','Réaction','Objet','Passif','Critique','Maîtrise','Amélioration'],'');
  lus.filter(x=>!x.couleur).forEach(x=>ajoute([x.mot],'var(--accent)',true));
  // Les expressions longues d'abord : « Attaque critique » avant « Attaque ».

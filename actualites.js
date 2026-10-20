@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.927","d":"2026-10-20","t":"États à la couleur de leur icône"},
 {"v":"0.926","d":"2026-10-20","t":"Nouvelles icônes des états"},
 {"v":"0.925","d":"2026-10-20","t":"Onglet Table, onglets des joueurs en vert"},
 {"v":"0.924","d":"2026-10-20","t":"Onglet Règles"},

@@ -39,10 +39,19 @@ function rgSommaire(sections){return rgEl('nav','rg-sommaire',rgEl('p','rg-somma
  a.style.setProperty('--teinte',s.style.getPropertyValue('--teinte'));a.onclick=e=>{e.preventDefault();s.scrollIntoView({behavior:'smooth',block:'start'})};return a}))}
 // Le texte écrit à la main, section par section (regles-texte en bas de ce fichier).
 const REGLES_DES={},REGLES_ETATS={};
+/* v0.927 — Les noms d'états, en gras et à la couleur de leur icône, comme partout sur le site (TEINTE_ETAT_MOT). « Vie » reste la
+   caractéristique. */
+function rgColoreEtats(racine){if(typeof TEINTE_ETAT_MOT==='undefined')return;const noms=Object.keys(TEINTE_ETAT_MOT).filter(e=>e!=='Vie').sort((x,y)=>y.length-x.length);
+ const rx=new RegExp('(^|[^\\p{L}])('+noms.map(n=>n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')(?![\\p{L}])','gu');
+ const w=document.createTreeWalker(racine,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement&&n.parentElement.closest('.rg-sommaire,h1,h2,h3')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+ const textes=[];while(w.nextNode())textes.push(w.currentNode);
+ textes.forEach(t=>{const v=t.nodeValue;rx.lastIndex=0;if(!rx.test(v))return;rx.lastIndex=0;const f=document.createDocumentFragment();let fin=0,m;
+  while((m=rx.exec(v))){const debut=m.index+m[1].length;f.append(v.slice(fin,debut));const b=document.createElement('b');b.textContent=m[2];b.style.color=TEINTE_ETAT_MOT[m[2]];f.append(b);fin=debut+m[2].length}
+  f.append(v.slice(fin));t.replaceWith(f)})}
 function renderRegles(){const p=reglesPage;p.replaceChildren();
  const sections=REGLES_SECTIONS.map(f=>f()).filter(Boolean);
  p.append(rgEl('header','rg-entete',rgEl('h1','','Règles d’Amertüme'),rgEl('p','rg-version','Version '+(typeof IMG_V!=='undefined'?IMG_V:'')+' · tirées du moteur du jeu')),
-  rgEl('div','rg-corps',rgSommaire(sections),rgEl('div','rg-contenu',...sections)))}
+  rgEl('div','rg-corps',rgSommaire(sections),rgEl('div','rg-contenu',...sections)));rgColoreEtats(p)}
 const REGLES_SECTIONS=[];
 /* ———— Le texte des règles. À chaque règle qui change dans le moteur, la phrase qui la dit change ici, dans la même version. ———— */
 Object.assign(REGLES_DES,{
