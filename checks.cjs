@@ -1770,7 +1770,7 @@ assert.ok(page.includes('function alliePourIgnition(a)')&&page.includes("const j
  &&page.includes('if(allie!==null){const feu=etat||\'Feu\';')&&page.includes("const poser=()=>{b.ignition=feu;floatNumber(b,'✦ '+feu,'gain');")
  &&page.includes("const charge=(rangeOf(a)==='distance'?'':a.ignition)||'';")&&page.includes("if(charge)a.ignition='';")
  &&page.includes('const infligeEtatBrut=infligeEtat;')
- &&page.includes('const brise=briseContre(talentsCodes(a),b),ouverte=brise.ignore;')&&page.includes("const def=hasState(b,'Au sol')||ouverte?0:defOf(b);")&&page.includes("(immunises.length?' Invulnérable : '+immunises.join(', ')+' sans effet.':'')"),'Ignition, Invulnérable et Brise câblés');
+ &&page.includes('const brise=briseContre(talentsCodes(a),b),ouverte=brise.ignore;')&&page.includes("const def=hasState(b,'Au sol')||ouverte||(formeDe(a)==='glouton'&&rangeOf(a)!=='distance')?0:defOf(b);")&&page.includes("(immunises.length?' Invulnérable : '+immunises.join(', ')+' sans effet.':'')"),'Ignition, Invulnérable et Brise câblés');
 /* Les descriptions d'objet et de talent sortent du flux : une bulle se pose au-dessus de la
    vignette cliquée, au lieu d'écarter ses voisines. Le dépliant d'avant reste en place dans
    le code, sous « BULLES » : un mot à faux le ramène. */
@@ -5193,6 +5193,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.929 — Le Charognard. */
+{const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
+ assert.ok(cb.includes("{id:'charognard',nom:'Charognard',teinte:'#4a3550',pv:6,dmg:1,vitesse:9,comps:{Robustesse:1,Savoir:1},")&&['remodelage','devoreur','chairrecomposee','memoirecharogne'].every(k=>cb.includes(k+':{cle:'))
+  &&pg.includes('function remodelage(a,p,talent)')&&pg.includes('function devoreur(a,p,talent)')&&pg.includes('bonus+=bonusFormeCharognard(a);')&&fs.readFileSync('editor.js','utf8').includes("c.semisForge.push('espece-charognard')"),'v0.929');}
 /* v0.928 — La bulle d'un état à la couleur de son icône. */
 assert.ok(fs.readFileSync('editor.js','utf8').includes("if(TEINTE_ETAT_MOT[etat]){d.classList.add('bulle-teintee');d.style.setProperty('--teinte',TEINTE_ETAT_MOT[etat])}"),'v0.928');
 /* v0.927 — Les noms d'états en gras, à la couleur de leur icône. */

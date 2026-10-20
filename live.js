@@ -36,6 +36,8 @@ CHAMPS_VIVANTS.push('competent');
 CHAMPS_VIVANTS.push('ascendance');
 // v0.922 : l'Héritage du Tieffelin ; l'Adrénaline et l'Acharnement retiennent leur combat.
 CHAMPS_VIVANTS.push('heritage','adrenaline','acharnement');
+// v0.929 : la forme du Charognard, son socle d'avant, son Dévoreur ; le cadavre dévoré.
+CHAMPS_VIVANTS.push('forme','socleAvantForme','devoreur','devore');
 // L'aventurier que le MJ a sorti du combat de la table : à lui seul de l'y faire rentrer.
 CHAMPS_ACTEUR_MJ.push('sortiCombat');CHAMPS_VIVANTS.push('sortiCombat');
 // La position d'où un socle au mouvement épuisé s'ajuste.

@@ -357,6 +357,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    ['orc',{id:'talent-orc-vision',name:'Vision dans le noir orque',type:'pass',effet:'visionnoir',params:{portee:36},effects:'Vous voyez dans le noir jusqu’à 36 m.'}]]
    .forEach(([esp,t])=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece===esp&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:esp,voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
   c.semisForge.push('espece-tieffelin-orc')}
+ /* v0.929 — Les Talents d'Espèce du Charognard, posés une fois. */
+ if(!c.semisForge.includes('espece-charognard')&&Array.isArray(c.talents)){
+  [{id:'talent-charognard-remodelage',name:'Remodelage',type:'act',effet:'remodelage',params:{},effects:'Votre chair se recompose. Choisissez une forme : Charognard (taille M), vous augmentez vos dégâts de +2 par allié ou charognard au contact ; Chasseur (taille M), +1 PM par tour, et vos mouvements ignorent les dégâts d’opportunité ; Glouton (taille G), vos Attaques au contact ignorent la DEF, vous subissez −1 DEF.'},
+   {id:'talent-charognard-devoreur',name:'Dévoreur',type:'act',effet:'devoreur',params:{},effects:'Vous consommez un cadavre organique à votre contact : vous récupérez 2 dés verts de PV et votre prochaine Attaque lance +1 dé rouge.'},
+   {id:'talent-charognard-chair',name:'Chair Recomposée',type:'pass',effet:'chairrecomposee',params:{},effects:'Vous ne subissez ni Saignée ni Poison.'},
+   {id:'talent-charognard-memoire',name:'Mémoire de la Charogne',type:'pass',effet:'memoirecharogne',params:{},effects:'Reliée à l’intelligence collective de la Charogne, votre conscience vous fait lancer 1 dé de plus aux tests de Savoir pour analyser les créatures organiques.'}]
+   .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='charognard'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'charognard',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  c.semisForge.push('espece-charognard')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,

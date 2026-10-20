@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.929","d":"2026-10-20","t":"Le Charognard"},
 {"v":"0.928","d":"2026-10-20","t":"Bulle d'état à sa couleur"},
 {"v":"0.927","d":"2026-10-20","t":"États à la couleur de leur icône"},
 {"v":"0.926","d":"2026-10-20","t":"Nouvelles icônes des états"},
