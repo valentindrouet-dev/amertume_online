@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.935","d":"2026-10-20","t":"Le Gnome"},
 {"v":"0.934","d":"2026-10-20","t":"L'Hephosien"},
 {"v":"0.933","d":"2026-10-20","t":"Le Tellure"},
 {"v":"0.932","d":"2026-10-20","t":"Nuage jusqu'à la fin du combat"},

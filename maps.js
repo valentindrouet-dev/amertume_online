@@ -965,7 +965,7 @@ function serruresAPortee(a){const m=currentMap(),size=mapSize();if(!a||!m||!size
  const portes=(m.doors||[]).filter(d=>d&&d.keyLocked&&!d.crochetee&&!d.open&&(!d.secret||d.decouvert)&&doorSeen(d)&&polyInReach(a,doorPolygon(d,m.ratio),size,tokenPx())).map(d=>({d,n:difficultePorte(d)}));
  return [...coffres,...portes]}
 function crocheter(a){const l=serruresAPortee(a);if(!a||!l.length)return;
- const jet=skillRoll(valeurCompetence(a,RUSE)-1,d6),n=jet.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
+ const jet=skillRoll(valeurCompetence(a,RUSE)-1,d6),n=jet.reussites+(typeof bonusBricoleur==='function'?bonusBricoleur(a):0);rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
  const faits=[];l.forEach(s=>{if(n<s.n)return;
   if(s.c){s.c.deverrouille=true;floatNumber(centreForme(s.c),'Déverrouillé','nul');faits.push(s.c.nom||'le coffre')}
   else{s.d.crochetee=true;s.d.open=true;faits.push('la porte')}});
@@ -975,7 +975,7 @@ function crocheter(a){const l=serruresAPortee(a);if(!a||!l.length)return;
    verrou et le piège demandent autant de réussites, réussir l'un vient à bout de l'autre ; sinon,
    chacun le sien. Un piège trouvé est désamorcé. */
 function testCoffre(a,c,quoi,k){if(!a||!c||c.ouvert||!payeAction(a))return;
- const jet=skillRoll(valeurCompetence(a,k)-1,d6),n=jet.reussites+(typeof bonusReussites==='function'?bonusReussites(a,k):0);rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
+ const jet=skillRoll(valeurCompetence(a,k)-1,d6),n=jet.reussites+(typeof bonusReussites==='function'?bonusReussites(a,k):0)+(typeof bonusBricoleur==='function'?bonusBricoleur(a):0);rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
  let dit;
  if(quoi==='verrou'){if(coffreVerrouille(c)&&n>=c.verrou){c.deverrouille=true;dit='déverrouille '+c.nom;
    if(coffreArme(c)&&c.piege===c.verrou){c.desamorce=true;floatNumber(centreForme(c),'Révélé !','nul');dit+=' et désamorce son piège'}}
@@ -1226,7 +1226,7 @@ function piegeAPortee(a,p){const size=mapSize();return !!a&&!!p&&!!size.width&&(
 /* Désamorcer ou enjamber : le test que le MJ a préparé, l'Action en combat. Désamorcé, le piège se grise ; manqué, il reste en
    l'état. Enjambé, l'aventurier le franchit sans le faire partir, et ne le fera plus jamais partir ; manqué, il le déclenche. */
 function testPiege(a,p,quoi){const t=p&&p[quoi],dedans=quoi==='enjambement'&&!!p&&tenuParPiege(a)===p;if(!a||!t||(!piegeArme(p)&&!dedans)||!payeAction(a))return;
- const jet=skillRoll(valeurCompetence(a,t.comp)-1,d6),n=jet.reussites+(typeof bonusReussites==='function'?bonusReussites(a,t.comp,quoi==='enjambement'):0),ok=n>=t.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
+ const jet=skillRoll(valeurCompetence(a,t.comp)-1,d6),n=jet.reussites+(typeof bonusReussites==='function'?bonusReussites(a,t.comp,quoi==='enjambement'):0)+(quoi!=='enjambement'&&typeof bonusBricoleur==='function'?bonusBricoleur(a):0),ok=n>=t.reussites;rollOnBoard(jet.des.slice(0,40).map(v=>[v,0]),a,null);
  const tete=nomNum(a)+' · '+skillNames[t.comp]+' : '+n+' réussite'+(n>1?'s':'')+' ⦃'+jet.des.join(',')+'⦄ — ';
  if(quoi==='desamorcage'){if(ok)p.desamorce=true;log(tete+(ok?'désamorce '+p.nom:'ne parvient pas à désamorcer '+p.nom)+'.',{dice:true,ton:'competence'})}
  else{log(tete+(ok?'enjambe '+p.nom:'trébuche sur '+p.nom)+'.',{dice:true,ton:'competence'});if(ok){a.franchis=[...new Set([...(Array.isArray(a.franchis)?a.franchis:[]),p.id])].slice(-60);delete a.tenuPar}

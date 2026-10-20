@@ -3711,7 +3711,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
  const nain=C28.bonusDe({hero:true,espece:'nain',talents:[]},[],[]),elfe=C28.bonusDe({hero:true,espece:'elfe',talents:[]},[],[]),libre=C28.bonusDe({hero:true,race:'Nain',talents:[]},[],[]);
  assert.deepEqual([nain.pv,nain.skills[4],nain.skills[7],elfe.endu,elfe.dmg,elfe.skills[0],elfe.skills[2],libre.pv,libre.skills[4]],[8,1,1,1,1,1,1,0,0]);
  assert.equal(C28.pvMaximum([{name:'Gardien',pv:18}],{hero:true,role:'Gardien',espece:'nain',vie:3,endu:2,talents:[]},[],[]),6+18+8);
- assert.equal(C28.especeDe('gnome'),null);assert.equal(C28.bonusDe({hero:false,espece:'goliath',talents:[]},[],[]).dmg,0);
+ assert.equal(C28.especeDe('kobold'),null);assert.equal(C28.bonusDe({hero:false,espece:'goliath',talents:[]},[],[]).dmg,0);
  assert.ok(ed.includes("['identite','Identité'],['espece','Espèce'],['classe','Classe']")&&ed.includes(" if(!especeDe(a.espece))delete a.espece;")&&ed.includes("race:e.nom,espece:e.id,")
   &&ed.includes("const bulleStat=(el,carac,comp)=>{surveille(el,()=>{")&&fs.readFileSync('live.js','utf8').includes("'pointsCreation','espece',"),'espèces et bulles');}
 /* v0.703 — La création : la classe présentée, trois points de caractéristique, quatre de compétence, l'arbre jusqu'au niveau 4. */
@@ -5193,6 +5193,10 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.935 — Le Gnome. */
+{const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
+ assert.ok(cb.includes("{id:'gnome',nom:'Gnome',teinte:'#6b8f3a',vie:1,endu:1,vitesse:7,taille:'small',comps:{Ruse:1,Technique:1},extension:'dnd',")&&['chanceux','petitetvif','bricoleur','illusionniste'].every(k=>cb.includes(k+':{cle:'))
+  &&pg.includes('function illusionniste(a,p,talent)')&&pg.includes("t.code.cle==='debrouillard'||t.code.cle==='chanceux'")&&fs.readFileSync('editor.js','utf8').includes("...(e.taille==='small'?{socle:'small'}:{}),"),'v0.935');}
 /* v0.934 — L'Hephosien. */
 {const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8');
  assert.ok(cb.includes("{id:'hephosien',nom:'Hephosien',teinte:'#5b8fc7',vie:1,dmg:1,vitesse:10,comps:{Agilité:1,Technique:1},")&&['ascension','piedsur','souffledescimes','toucheatout'].every(k=>cb.includes(k+':{cle:'))

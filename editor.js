@@ -398,6 +398,14 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    {id:'talent-hephosien-touche',name:'Touche-à-Tout',type:'pass',effet:'toucheatout',params:{},effects:'À chaque nouveau niveau, choisissez une compétence : vous l’augmentez de +1. Vous obtenez +1 réussite automatique aux tests de Technique, en plus des résultats du jet.'}]
    .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='hephosien'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'hephosien',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
   c.semisForge.push('espece-hephosien')}
+ /* v0.935 — Les Talents d'Espèce du Gnome, posés une fois. */
+ if(!c.semisForge.includes('espece-gnome')&&Array.isArray(c.talents)){
+  [{id:'talent-gnome-chanceux',name:'Chanceux',type:'reac',effet:'chanceux',params:{},effects:'Quand vous obtenez un double 1, vous pouvez relancer un des deux dés, et devez garder le nouveau résultat.'},
+   {id:'talent-gnome-petit',name:'Petit et Vif',type:'pass',effet:'petitetvif',params:{},effects:'Vous ignorez les dégâts d’opportunité des adversaires plus grands que vous, et vous pouvez traverser leurs tokens.'},
+   {id:'talent-gnome-bricoleur',name:'Bricoleur',type:'pass',effet:'bricoleur',params:{},effects:'Vous obtenez +1 réussite automatique pour tous les tests de crochetage, de désamorçage ou de fabrication d’objet.'},
+   {id:'talent-gnome-illusionniste',name:'Illusionniste',type:'mvt',effet:'illusionniste',params:{},effects:'Vous devenez invisible si aucun adversaire n’est présent à votre contact. Vous perdez tous vos PM et PA restants.'}]
+   .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='gnome'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'gnome',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
+  c.semisForge.push('espece-gnome')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
@@ -4566,7 +4574,7 @@ async function imagePourTable(url){if(typeof url!=='string'||!url.startsWith('da
    s'achève sur le récapitulatif. Sa fiche ne garde que les points de compétence : le 1 de base, la classe et l'espèce s'y ajoutent
    au jeu, comme pour tout aventurier. */
 function creerAventurier(){const c=creation;if(!c||ETAPES_CREATION.some(([k])=>etapeManque(k)))return;if(!peutCreerAventurier()){creationDialog.close();return}const e=especeCreation(c);
- const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:majusculeInitiale(c.name.trim()),sexe:c.sexe,...(especeAvecSavoir(c)&&Number.isInteger(c[champSavoir(c)])?{[champSavoir(c)]:c[champSavoir(c)]}:{}),...(especeAvecAscendance(c)&&c.ascendance?{ascendance:c.ascendance}:{}),...(especeAvecHeritage(c)&&c.heritage?{heritage:c.heritage}:{}),...(Number(e.vitessePetit)>0&&c.socle==='small'?{socle:'small'}:{}),race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
+ const a=baseActor(true);Object.assign(a,{id:crypto.randomUUID(),name:majusculeInitiale(c.name.trim()),sexe:c.sexe,...(especeAvecSavoir(c)&&Number.isInteger(c[champSavoir(c)])?{[champSavoir(c)]:c[champSavoir(c)]}:{}),...(especeAvecAscendance(c)&&c.ascendance?{ascendance:c.ascendance}:{}),...(especeAvecHeritage(c)&&c.heritage?{heritage:c.heritage}:{}),...(Number(e.vitessePetit)>0&&c.socle==='small'?{socle:'small'}:{}),...(e.taille==='small'?{socle:'small'}:{}),race:e.nom,espece:e.id,role:c.role,vie:BASE_HEROS.vieMax,skills:c.skills.slice(),level:1,xp:XP_CREATION,horsCarte:true,lieuDomaine:'route',pointsCreation:{...c.caracs}});
  // L'équipement de départ au sac ; l'objet inhabituel, tiré ici, une seule fois.
  const kit=kitCreation(c);kit.forEach(([o,n])=>{for(let k=0;k<n;k++)a.inventaire.push(o.id)});
  const tiree=tirePieceDepart(c.role);if(tiree){a.forges=[tiree];a.inventaire.push(tiree.id)}
