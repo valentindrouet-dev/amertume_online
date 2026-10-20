@@ -78,7 +78,8 @@ const URLS_ICONES=new Map(),URLS_PRETES=new Map(),ICONES_PUBLIEES=new Map(),TAIL
 // La version d'une planche : l'empreinte que GitHub donne de son contenu, sinon celle du site.
 const PLANCHES_SHA={};
 const versionPlanche=f=>PLANCHES_SHA[f]?String(PLANCHES_SHA[f]).slice(0,12):'v'+(typeof IMG_V!=='undefined'?IMG_V:'');
-const urlPlanche=f=>PLANCHES_SHA[f]?'./img/'+f.split('/').map(encodeURIComponent).join('/')+'?s='+versionPlanche(f):imgUrl(f);
+// v0.937 : la version du site aussi, pour qu'une planche agrandie ne se relise jamais dans l'image d'avant gardée par le navigateur.
+const urlPlanche=f=>PLANCHES_SHA[f]?'./img/'+f.split('/').map(encodeURIComponent).join('/')+'?s='+versionPlanche(f)+'&v='+(typeof IMG_V!=='undefined'?IMG_V:''):imgUrl(f);
 // La façon de découper compte aussi : une découpe améliorée refait les icônes gardées.
 const DECOUPE_V='d3',cleCase=(f,cas)=>f+'|'+versionPlanche(f)+'|'+DECOUPE_V+'|'+cas.join(','),cleIcone=(id,i)=>cleCase(i.planche.fichier,i.cas);
 function urlIconePrete(id){const i=iconeDe(id);return (i&&URLS_PRETES.get(cleIcone(id,i)))||ICONES_PUBLIEES.get(id)||''}
