@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.931 — L'état Caché, donné par le nuage de fumée. */
+assert.ok(fs.readFileSync('combat.js','utf8').includes("'Surpris','Charme','Caché'];")&&fs.readFileSync('index.html','utf8').includes('function majCaches()')&&fs.readFileSync('index.html','utf8').includes("case 'Caché':"),'v0.931');
 /* v0.930 — L'Allsteiner. */
 {const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
  assert.ok(cb.includes("{id:'allsteiner',nom:'Allsteiner',teinte:'#a8743a',endu:1,dmg:1,vitesse:9,comps:{Perception:1,Technique:1},")&&['bouffeevapeur','tireurallstein','masquerespiratoire','experiencesinterdites'].every(k=>cb.includes(k+':{cle:'))
@@ -5235,7 +5237,7 @@ assert.ok(fs.readFileSync('editor.js','utf8').includes('  if(r.description)e.des
   &&pg.includes('function secondSouffle(a,p,talent)')&&pg.includes('function bonusCosmopolite(h,xp)')&&pg.includes("if(r.failed&&deception!=='echec')echecCoup={a,b,pool,bonus,tous};")&&pg.includes("if(a.hero&&Number(a.competent)===i&&porteEffet(talentsCodes(a),'competent'))jet.reussites+=1;"),'v0.916');}
 /* v0.915 — Talents d'Espèce de l'Elfe ; états Surpris et Charme. */
 {const pg=fs.readFileSync('index.html','utf8'),cb=fs.readFileSync('combat.js','utf8'),ed=fs.readFileSync('editor.js','utf8');
- assert.ok(cb.includes("'Corruption','Surpris','Charme'];")&&['oeilelfique','pasdefeuille','sangfeerique','transe'].every(k=>cb.includes(k+':{cle:'))&&ed.includes("c.semisForge.push('espece-elfe')")
+ assert.ok(cb.includes("'Corruption','Surpris','Charme'")&&['oeilelfique','pasdefeuille','sangfeerique','transe'].every(k=>cb.includes(k+':{cle:'))&&ed.includes("c.semisForge.push('espece-elfe')")
   &&pg.includes('function enForet()')&&pg.includes('function sangDispo(b)')&&pg.includes("porteEffet(talentsCodes(a),'oeilelfique'))bonus+=")&&fs.readFileSync('live.js','utf8').includes("CHAMPS_VIVANTS.push('charmePar','sangFeerique');"),'v0.915');}
 /* v0.914 — Le déguisement prend la taille de la créature imitée. */
 assert.ok(fs.readFileSync('index.html','utf8').includes('function socleApparence(r)')&&fs.readFileSync('index.html','utf8').includes('appliqueDeguisement(a,liste.find(r=>r.cle===choisi))'),'v0.914');

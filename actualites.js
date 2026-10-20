@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.931","d":"2026-10-20","t":"État Caché et nuage de fumée"},
 {"v":"0.930","d":"2026-10-20","t":"L'Allsteiner"},
 {"v":"0.929","d":"2026-10-20","t":"Le Charognard"},
 {"v":"0.928","d":"2026-10-20","t":"Bulle d'état à sa couleur"},

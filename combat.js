@@ -1050,7 +1050,7 @@ function effetParNom(nom){const k=cleTalent(nom);if(!k)return '';
 // Les huit compétences, dans l'ordre des fiches : la table les nomme depuis le moteur.
 const COMPETENCES=['Agilité','Force','Mysticisme','Perception','Robustesse','Ruse','Savoir','Technique'];
 const ETATS_JEU=['Au sol','Aveugle','Blindage','Ciblage','Faille','Feu','Foudre','Furie','Gel',
- 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose','Corruption','Surpris','Charme'];
+ 'Invisible','Onde','Poison','Saignée','Vie','Affaibli','Rage','Sommeil','Nécrose','Corruption','Surpris','Charme','Caché'];
 const CHOIX_ETAT=[['','— aucun —'],...ETATS_JEU.map(e=>[e,e])];
 // Les réglages de Dominateur, bornés : l'état visé, x, et les dés de xdx.
 function dominateurDe(p){const n=(v,a,b,d)=>Math.max(a,Math.min(b,Math.trunc(Number(v))||d));
@@ -1804,8 +1804,8 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
   params:[],phrase(){return 'Chaque <b>critique</b> qu’un adversaire vous inflige vous donne, pour toujours, <b>+1 dégât</b> contre les adversaires identiques.'}},
  /* v0.930 — Talents d'Espèce de l'Allsteiner. */
  bouffeevapeur:{cle:'bouffeevapeur',nom:'Bouffée de Vapeur',type:'act',bouton:'Bouffée de Vapeur',espece:true,
-  aide:'Action : Brûlant, chaque adversaire au contact fait un test de Robustesse (2 réussites), sinon Aveugle et 1 dé rouge de dégâts ; Fumée, un nuage de la taille de la zone de contact rend le porteur et ses alliés au contact Invisibles jusqu’à la fin de son prochain tour.',
-  params:[],phrase(){return '<b>Brûlant</b> : les adversaires à votre contact réussissent un test de <b>Robustesse 2</b>, ou subissent <b>Aveugle</b> et <b>1 dé rouge</b>. <b>Fumée</b> : vous et vos alliés au contact êtes <b>Invisibles</b> jusqu’à la fin de votre prochain tour.'}},
+  aide:'Action : Brûlant, chaque adversaire au contact fait un test de Robustesse (2 réussites), sinon Aveugle et 1 dé rouge de dégâts ; Fumée, un nuage de la taille de la zone de contact, jusqu’à la fin de son prochain tour : tout aventurier dont la moitié du socle au moins y est subit Caché.',
+  params:[],phrase(){return '<b>Brûlant</b> : les adversaires à votre contact réussissent un test de <b>Robustesse 2</b>, ou subissent <b>Aveugle</b> et <b>1 dé rouge</b>. <b>Fumée</b> : un nuage jusqu’à la fin de votre prochain tour ; tout aventurier à moitié dedans est <b>Caché</b>.'}},
  tireurallstein:{cle:'tireurallstein',nom:'Tireur d’Allstein',type:'pass',espece:true,
   aide:'Passif : les Attaques à distance avec une arme à feu lancent 1 dé noir de plus.',
   params:[],phrase(){return 'Vos Attaques à distance avec une <b>arme à feu</b> lancent <b>1 dé noir</b> de plus.'}},

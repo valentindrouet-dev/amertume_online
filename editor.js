@@ -374,6 +374,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
    .forEach(t=>{if(!c.talents.some(x=>x&&(x.id===t.id||(x.espece==='allsteiner'&&cleTalent(x.name)===cleTalent(t.name)))))c.talents.push({...t,famille:'Espèces',espece:'allsteiner',voie:'',level:1,effets:'',notes:'',horsArbre:true,couts:[0,0,0]})});
   if(!c.items.some(o=>o&&o.id==='objet-serum-instable'))c.items.push({id:'objet-serum-instable',name:'Sérum instable',category:'object',qty:1,price:0,rarete:'inhabituel',effet:'soin',usage:'conso',consumable:true,params:{quantite:2,forme:'des'},notes:'Préparé par un Allsteiner : 2 dés verts de PV et 2 crans de Corruption.'});
   c.semisForge.push('espece-allsteiner')}
+ // v0.931 : la Fumée cache (nouvel état Caché) ceux qui sont à moitié dans le nuage ; le texte semé suit, s'il n'a pas été réécrit.
+ if(!c.semisForge.includes('allsteiner-cache')&&Array.isArray(c.talents)){const t=c.talents.find(x=>x&&x.id==='talent-allsteiner-bouffee');
+  if(t&&typeof t.effects==='string'&&t.effects.includes('dans laquelle vous et les alliés à votre contact êtes cachés'))t.effects='Votre masque expulse un nuage brûlant ou de fumée. Brûlant : les adversaires à votre contact doivent réussir un test de Robustesse 2, sinon ils subissent Aveugle et 1 dé rouge. Fumée : vous créez une zone ronde de fumée de la taille de votre zone de contact, jusqu’à la fin de votre prochain tour ; tout aventurier dont la moitié du socle au moins y est subit Caché.';
+  c.semisForge.push('allsteiner-cache')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
@@ -2490,7 +2494,7 @@ function enElementDuMystique(html,etat){if(!etat)return html;
 // v0.859 : le rouge de l'Incident, partout où le mot paraît dans les talents.
 const TEINTE_INCIDENT='#b03a48';
 // v0.927 : chaque état, en gras, à la couleur dominante de son icône (planche ETATS), foncée pour se lire sur fond clair.
-const TEINTE_ETAT_MOT={'Au sol':'#a65b26','Aveugle':'#9c21de','Blindage':'#1b70bb','Ciblage':'#198014','Faille':'#c41ca7','Feu':'#cd331d','Foudre':'#786e11','Furie':'#d6271f','Gardé':'#1e8113','Gel':'#1b71bb','Invisible':'#5d6b7d','Onde':'#1b7e2d','Poison':'#ac20df','Saignée':'#d6231f','Vie':'#218019','Affaibli':'#97652b','Rage':'#d6281f','Coma':'#9e602e','Sommeil':'#1f6adb','Nécrose':'#5e7821','Corruption':'#a920df','Surpris':'#aa5a18','Charme':'#cd1d81'};
+const TEINTE_ETAT_MOT={'Au sol':'#a65b26','Aveugle':'#9c21de','Blindage':'#1b70bb','Ciblage':'#198014','Faille':'#c41ca7','Feu':'#cd331d','Foudre':'#786e11','Furie':'#d6271f','Gardé':'#1e8113','Gel':'#1b71bb','Invisible':'#5d6b7d','Onde':'#1b7e2d','Poison':'#ac20df','Saignée':'#d6231f','Vie':'#218019','Affaibli':'#97652b','Rage':'#d6281f','Coma':'#9e602e','Sommeil':'#1f6adb','Nécrose':'#5e7821','Corruption':'#a920df','Surpris':'#aa5a18','Charme':'#cd1d81','Caché':'#6e6a66'};
 /* La couleur d'un mot clé du MJ : « Allié : vert », « Allié = #2f8a63 », ou rien — la
    couleur du thème. Un mot du jeu redéclaré prend la couleur qu'on lui donne. */
 const COULEURS_MOTS={rouge:'#b8352f',orange:'#c2692a',or:'#9d7b1e',jaune:'#b39222',vert:'#2f7a4b',turquoise:'#2c8c85',bleu:'#3a6fc2',violet:'#7a5cb8',rose:'#b04a8a',plasma:'#c23fbe',brun:'#8a5a2b',gris:'#6e6a66',noir:'#2a2622'};
