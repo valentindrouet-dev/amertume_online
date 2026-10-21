@@ -1399,10 +1399,10 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
     Sans aucune case cochée, tous entrent, comme avant. */
  const tous=actors.filter(a=>a.hero),choisis=tous.filter(a=>a.enAventure===true),heros=choisis.length?choisis:tous;
  tous.forEach(a=>{if(!heros.includes(a))a.horsCarte=true});
- // Une carte rechargée rend à chacun ses repos courts.
+ // v0.961 : une carte rechargée ne rend PAS les repos courts : seul un vrai repos le fait.
  // Une carte rechargée rend aussi ses zones à fouiller : les tests de Perception y repartent de zéro.
  // Et ramène sur la table ceux qu'on en avait retirés : ils sont toujours parmi les aventuriers.
- heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.reposCourts=0;a.reposPris=false;a.fouilles=(a.fouilles||[]).filter(f=>f&&f.m!==id)});
+ heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.fouilles=(a.fouilles||[]).filter(f=>f&&f.m!==id)});
  // Un aventurier en attente du MJ n'entre pas sur la carte.
  heros.forEach(a=>{if(a.enAttente===true)a.horsCarte=true});
  // Et ses objets récupérés reviennent à leur place.

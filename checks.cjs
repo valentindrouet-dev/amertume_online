@@ -1853,7 +1853,7 @@ assert.ok(src.includes("function renderBiblioObjets()")&&src.includes("function 
  &&src.includes("a.immunites=immunites(a);a.usages=a.usages&&typeof a.usages==='object'?a.usages:{};")
  &&page.includes('function desRecus(b,dice)')&&page.includes('const {gardes:dice,ecartes}=desRecus(b,tous);')
  &&page.includes('const suite=domDit+malDit+corDit+rocDit+armureDit+necDit+perilDit+ditEcartes(ecartes)+')&&page.includes('const {gardes:dice,ecartes:orbeEcartes}=desRecus(b,tous);')
- &&page.includes("a.immunites={etats:[],des:[]};if(typeof reposer==='function')reposer(a,'long');")&&src.includes('function reposer(a,type=')
+ &&page.includes("a.immunites={etats:[],des:[]};if(!a.hero){if(typeof reposer==='function')reposer(a,'long');")&&src.includes('function reposer(a,type=')
  &&feuille.includes('.gear-detail .gear-effet{font-weight:600}'),'les effets d’équipement sont câblés');
 /* Les emplacements du corps : deux mains, un torse, un dos, une tête, trois anneaux, une
    amulette, des bottes. Une cape et une armure se portent ensemble ; deux armures, jamais. */
@@ -3214,7 +3214,7 @@ assert.ok(page.includes('function ecuDef(valeur){')&&page.includes("if(ecusDessi
  assert.equal(ctxR.leveEtats(h).join(','),'Feu,Poison','tout s’en va, sauf le Blindage, le coma et ce qu’une pièce portée donne');assert.equal(h.states.join(','),'Blindage,Coma,Invisible');
  assert.equal(ctxR.reposMax({level:3}),3,'un repos court par niveau');assert.equal(ctxR.reposMax({}),1);assert.equal(ctxR.reposRestants({level:3,reposCourts:0}),3);assert.equal(ctxR.reposRestants({level:3,reposCourts:1}),2);
  assert.ok(page.includes("if(a.vie<=0&&!etreinte){poseCibles(a,[]);log(nomNum(a)+' n’a plus de VIE : il est mort.',{ton:'degats'})}")
-  &&src.includes("function reposLong(){if(view!=='mj')return;")&&src.includes("$('hero-repos-long').onclick=reposLong;")&&carto.includes("heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.reposCourts=0;"),'0 VIE : hors de la carte jusqu’au repos long ; repos courts rendus à la carte rechargée');
+  &&src.includes("function reposLong(){if(view!=='mj')return;")&&src.includes("$('hero-repos-long').onclick=reposLong;")&&carto.includes("heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.fouilles=")&&!carto.includes('a.reposCourts=0'),'0 VIE : hors de la carte jusqu’au repos long ; une carte rechargée ne rend pas les repos courts');
  assert.ok(page.includes("function noteContactsDepart(a){if(!a||!enCombat())return;")&&page.includes("const contacts=adversairesAuContact(a).filter(([b])=>!avant||!avant.has(b.id));")
   &&page.includes("const arret=tokenOf(a)/2+tokenOf(b)/2+1;")&&page.includes("function cheminVersContact(b,a,size){")
   &&page.includes("if(!r.hit||!r.damage){floatNumber(b,'0','nul');let pose0='',suite0='';"),'Lamevent, Provocation et Orbes');
@@ -5999,7 +5999,7 @@ assert.ok(fs.readFileSync('index.html','utf8').includes("{const g=/^\\+\\s*\\d*\
  assert.ok(page.includes("function reposMax(a){return Math.max(1,Math.trunc(Number(a&&a.level))||1)}")&&page.includes("a.reposCourts=Math.min(reposMax(a),(Math.trunc(Number(a.reposCourts))||0)+1);a.reposPris=true;")
   &&page.includes("(enCombat()&&!sortiDuCombat(a))||reposRestants(a)<=0||a.reposPris===true||!alive(a)")&&page.includes("String(reposRestants(a)))}")
   &&page.includes(":reposRestants(a)<=0?'Plus de repos court : ils reviennent au repos long.'"),'le repos court : la réserve au niveau, un par combat');
- assert.ok(src.includes("a.reposCourts=0;a.reposPris=false;reposer(a,'long');")&&carto.includes("heros.forEach(a=>{a.horsCarte=false;delete a.retire;a.reposCourts=0;a.reposPris=false;"),'repos long et carte rechargée rendent tout');
+ assert.ok(src.includes("a.reposCourts=0;a.reposPris=false;reposer(a,'long');")&&!carto.includes('a.reposCourts=0'),'le repos long rend tout ; une carte rechargée, rien (v0.961)');
  assert.ok(fs.existsSync('img/planches/caracteristiques_2.webp')&&calc.includes("votants=gros.filter(k=>k.c>=grosMax*.05);"),'la planche et la taille des icônes sans les éclats');
  const cc={};vm.createContext(cc);vm.runInContext(calc+';this.d=detecteGrille;this.cs=casesDe;',cc);
  // Une rangée de trois icônes, dont la dernière éclatée en petits morceaux : trois cases, pas plus.

@@ -3364,3 +3364,5 @@ button.btn-talent.t-abon{--fond:#2a9d8f}
 .creation-fiche-classe.avec-token{position:relative;padding-right:130px;min-height:150px}
 .creation-fiche-classe .creation-token-espece{position:absolute;right:16px;bottom:16px;width:104px;height:104px;border-radius:50%;object-fit:cover;border:3px solid var(--teinte);box-shadow:0 2px 6px #0003}
 .token-carte .token-vitrine{color:var(--muted);right:auto;left:14px}.token-carte .token-vitrine.on{color:#f2c14e}
+/* v0.961 : la valeur de Radiance après les PV, en pastille dorée. */
+.lifebar .pv-rad-val{margin-left:6px;padding:0 5px;border-radius:6px;background:#f6d98a;color:#8a6510;font-weight:800}

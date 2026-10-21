@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.961","d":"2026-10-21","t":"Dés des talents dans les bulles, Radiance sur la fiche, repos gardés au chargement de carte"},
 {"v":"0.960","d":"2026-10-21","t":"PDF des talents : page Espèces"},
 {"v":"0.959","d":"2026-10-21","t":"États de plusieurs mots entre accolades"},
 {"v":"0.958","d":"2026-10-21","t":"Token d'espèce plus grand à la création"},
