@@ -2603,7 +2603,11 @@ function motsCles(){const perso=(catalog&&catalog.motsCles)||[],cle=perso.join('
  ajoute(['Vie','VIE'],rgb('vie'));ajoute(['Dégât','dégât','DÉGÂT'],rgb('dmg'));ajoute(['XP'],rgb('xp'));
  // v0.955 : un état s'écrit aussi en capitales à chaque mot (« Au Sol », « En Apnée »).
  const titre=x=>x.split(' ').map(w=>w&&w[0].toUpperCase()+w.slice(1)).join(' ');
- (typeof STATES!=='undefined'?STATES.filter(x=>x!=='Aucun'):ETATS_JEU).forEach(x=>ajoute([x,x.toUpperCase(),titre(x)],TEINTE_ETAT_MOT[x]||'#a2691f'));
+ // v0.962 : en minuscules aussi, ceux qui ne sont pas des mots de tous les jours (« invisible », « au sol »).
+ const MINUSCULES=['Au sol','Aveugle','Invisible','Gardé','Affaibli','Saignée','Coma','Nécrose','Corruption','Surpris','Blindage','Ciblage','Furie'];
+ (typeof STATES!=='undefined'?STATES.filter(x=>x!=='Aucun'):ETATS_JEU).forEach(x=>ajoute([x,x.toUpperCase(),titre(x),...(MINUSCULES.includes(x)?[x.toLowerCase()]:[])],TEINTE_ETAT_MOT[x]||'#a2691f'));
+ // PA au bleu des Actions, PM au brun des Mouvements.
+ ajoute(['PA'],'#4f7fb5');ajoute(['PM'],'#8a6440');
  // v0.948 : les compétences, partout, à la teinte de leur icône.
  if(typeof COMPETENCES!=='undefined'&&typeof SKILL_TINTS!=='undefined')COMPETENCES.forEach((n,i)=>{if(SKILL_TINTS[i])ajoute([n,n.toUpperCase()],'rgb('+SKILL_TINTS[i]+')')});
  // v0.942 : « Action bonus », partout, au turquoise de ses boutons.
@@ -2654,7 +2658,9 @@ function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceCh
  // Les dés et les variables d'abord ; entre eux, le texte se colore comme avant.
  /* v0.857 : un état entre accolades ou crochets, {Foudre} ou [Foudre], devient son icône ; {plasma}, un dé de Plasma. */
  const rd=new RegExp(ACCOLADES_DES.source+'|\\[(\\p{L}{2,12}(?: \\p{L}{1,12}){0,2})\\]','gu');let fin=0,d;
- while((d=rd.exec(texte))){const k=d[1]!==undefined?d[1]:d[2],c=deAccolade(k),et=c<0?etatAccolade(k):null,pl=c<0&&!et&&cleAccolade(k)==='plasma';
+ while((d=rd.exec(texte))){const k=d[1]!==undefined?d[1]:d[2],c=deAccolade(k),et=c<0?etatAccolade(k):null,pl=c<0&&!et&&cleAccolade(k)==='plasma',pt=c<0&&!et&&!pl&&(cleAccolade(k)==='pa'||cleAccolade(k)==='pm')?cleAccolade(k):null;
+  // v0.962 : {PA} et {PM}, leurs billes.
+  if(pt){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);const i=document.createElement('i');i.className='pt pt-texte '+(pt==='pa'?'action':'mvt');i.setAttribute('role','img');i.setAttribute('aria-label',pt.toUpperCase());el.append(i);fin=rd.lastIndex;continue}
   const v=c<0&&!et&&!pl&&d[1]!==undefined?variableTalent(k):null;if(c<0&&!et&&!pl&&!v)continue;
   if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);el.append(c>=0?deDansTexte(c):et?etatDansTexte(et):pl?plasmaDansTexte():motVariable(k,v,a));fin=rd.lastIndex}
  if(fin<texte.length)motsDans(el,texte.slice(fin),noms);return el}

@@ -3366,3 +3366,7 @@ button.btn-talent.t-abon{--fond:#2a9d8f}
 .token-carte .token-vitrine{color:var(--muted);right:auto;left:14px}.token-carte .token-vitrine.on{color:#f2c14e}
 /* v0.961 : la valeur de Radiance après les PV, en pastille dorée. */
 .lifebar .pv-rad-val{margin-left:6px;padding:0 5px;border-radius:6px;background:#f6d98a;color:#8a6510;font-weight:800}
+/* v0.962 : {PA} et {PM} dans un texte, leurs billes. */
+i.pt.pt-texte{display:inline-block;width:1.05em;height:1.05em;vertical-align:-.18em;margin:0 1px}
+i.pt.pt-texte.action{background:url(img/points/pa.webp) center/contain no-repeat}
+i.pt.pt-texte.mvt{background:url(img/points/pm.webp) center/contain no-repeat}

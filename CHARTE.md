@@ -103,6 +103,8 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 |---|---|---|
 | Chiffres, `xdy`, `%` | noir `#000` | **gras** |
 | Action bonus | `#2a9d8f` | gras |
+| PA | `#4f7fb5` | gras |
+| PM | `#8a6440` | gras |
 | Compétences (Agilité, Ruse…) | teinte de l'icône de la compétence, `SKILL_TINTS` | gras |
 
 **Token d'espèce** (`.creation-token-espece`) : à la création, rond dans le coin bas droit de la fiche de l'espèce, liseré de sa teinte, ombre `#0003`. Dans les Tokens, ★ le désigne, doré `#f2c14e` une fois choisi.
