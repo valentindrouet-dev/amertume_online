@@ -113,6 +113,8 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 
 **Valeur de Radiance** (`.pv-rad-val`) : le chiffre seul, en noir, centré sur la part dorée de la barre de PV.
 
+**Calcul** (`.calcul-talent`) : {3×Niveau} s'affiche par son résultat, chiffre gras noir ; Maj tenue, par le calcul : « 3 × Niveau (2) ».
+
 **Pointeur de bond** (`.bond-visee`) : socle en pointillés, vert `#2e9b5f` où le bond peut retomber, rouge `#c0392b` barré d'une croix où il ne peut pas.
 
 **Limite d'une Action bonus** (`.talent-limite`) : sous le nom dans la bulle, en italique, couleur atténuée ; rouge `#b03a48` et gras une fois prise dans son créneau, bulle grisée comprise.

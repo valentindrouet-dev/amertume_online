@@ -1985,6 +1985,10 @@ function placeComparaison(){if(!comparaisonEl||!bulleEl)return;const b=bulleEl.g
 document.addEventListener('keydown',e=>{if(e.key!=='Shift'||majTenue)return;majTenue=true;montreComparaison()});
 document.addEventListener('keyup',e=>{if(e.key!=='Shift')return;majTenue=false;retireComparaison()});
 window.addEventListener('blur',()=>{majTenue=false;retireComparaison()});
+// v0.968 : Maj tenue : les calculs des bulles se montrent à la place de leurs résultats.
+document.addEventListener('keydown',e=>{if(e.key==='Shift')document.body.classList.add('maj-calcul')});
+document.addEventListener('keyup',e=>{if(e.key==='Shift')document.body.classList.remove('maj-calcul')});
+window.addEventListener('blur',()=>document.body.classList.remove('maj-calcul'));
 // « ancre » doit être visible : une vignette d'une page repliée n'ouvre pas de bulle.
 // Un élément SVG de la carte n'a pas de offsetParent : il est visible s'il occupe une place.
 function ancreVisible(el){return !!el&&el.isConnected&&(!!el.offsetParent||(el instanceof SVGElement&&el.getClientRects().length>0))}
@@ -2665,11 +2669,21 @@ function motVariable(k,v,a){const b=document.createElement('b');b.className='mot
  const c=v.stat&&typeof STAT_TINTS!=='undefined'&&STAT_TINTS[v.stat]?'rgb('+STAT_TINTS[v.stat]+')':v.teinte||'';if(c)b.style.color=c;
  let n=null;if(a)try{n=v.val(a)}catch(e){n=null}
  b.textContent=Number.isFinite(n)?String(n):k;return b}
+function calculTalent(expr,a){const m=String(expr).match(/^(?:(\d+(?:[.,]\d+)?)\s*[x×X*]\s*(\p{L}+)|(\p{L}+)\s*[x×X*]\s*(\d+(?:[.,]\d+)?))$/u);if(!m)return null;
+ const n=Number(String(m[1]||m[4]).replace(',','.')),nom=m[2]||m[3],v=variableTalent(nom);if(!v||!Number.isFinite(n))return null;
+ let val=null;if(a)try{val=v.val(a)}catch(e){val=null}
+ const s=document.createElement('span');s.className='calcul-talent';const nomClair=nom[0].toUpperCase()+nom.slice(1);
+ const res=document.createElement('b');res.className='mot-cle calcul-resultat';const form=document.createElement('span');form.className='calcul-formule';
+ const lib=n+' × '+nomClair;form.textContent=Number.isFinite(val)?lib+' ('+val+')':lib;res.textContent=Number.isFinite(val)?String(Math.round(n*val)):lib;
+ s.append(res,form);return s}
 function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceChildren();
  // Les dés et les variables d'abord ; entre eux, le texte se colore comme avant.
  /* v0.857 : un état entre accolades ou crochets, {Foudre} ou [Foudre], devient son icône ; {plasma}, un dé de Plasma. */
- const rd=new RegExp(ACCOLADES_DES.source+'|\\[(\\p{L}{2,12}(?: \\p{L}{1,12}){0,2})\\]','gu');let fin=0,d;
- while((d=rd.exec(texte))){const k=d[1]!==undefined?d[1]:d[2],c=deAccolade(k),et=c<0?etatAccolade(k):null,pl=c<0&&!et&&cleAccolade(k)==='plasma',pt=c<0&&!et&&!pl&&(cleAccolade(k)==='pa'||cleAccolade(k)==='pm')?cleAccolade(k):null;
+ // v0.968 : un calcul, {3×Niveau} ou {Endu×2} : son résultat ; Maj tenue, le calcul lui-même.
+ const rd=new RegExp(ACCOLADES_DES.source+'|\\[(\\p{L}{2,12}(?: \\p{L}{1,12}){0,2})\\]|\\{(\\d+(?:[.,]\\d+)?\\s*[x×X*]\\s*\\p{L}{2,12}|\\p{L}{2,12}\\s*[x×X*]\\s*\\d+(?:[.,]\\d+)?)\\}','gu');let fin=0,d;
+ while((d=rd.exec(texte))){
+  if(d[3]!==undefined){const cl=calculTalent(d[3],a);if(!cl)continue;if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);el.append(cl);fin=rd.lastIndex;continue}
+  const k=d[1]!==undefined?d[1]:d[2],c=deAccolade(k),et=c<0?etatAccolade(k):null,pl=c<0&&!et&&cleAccolade(k)==='plasma',pt=c<0&&!et&&!pl&&(cleAccolade(k)==='pa'||cleAccolade(k)==='pm')?cleAccolade(k):null;
   // v0.962 : {PA} et {PM}, leurs billes.
   if(pt){if(d.index>fin)motsDans(el,texte.slice(fin,d.index),noms);const i=document.createElement('i');i.className='pt pt-texte '+(pt==='pa'?'action':'mvt');i.setAttribute('role','img');i.setAttribute('aria-label',pt.toUpperCase());el.append(i);fin=rd.lastIndex;continue}
   const v=c<0&&!et&&!pl&&d[1]!==undefined?variableTalent(k):null;if(c<0&&!et&&!pl&&!v)continue;
