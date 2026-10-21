@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.947","d":"2026-10-21","t":"Compétent nommé, Ingénieux remplace Débrouillard"},
 {"v":"0.946","d":"2026-10-21","t":"Changer l'espèce d'un aventurier après la création"},
 {"v":"0.945","d":"2026-10-21","t":"Éditeur de talents : champs à la largeur de la fenêtre"},
 {"v":"0.944","d":"2026-10-21","t":"Découpe des icônes 41 et 42, correction appliquée partout"},

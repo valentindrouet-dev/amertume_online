@@ -434,6 +434,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('planche-especes-5')&&Array.isArray(c.planches)){const p=c.planches.find(x=>x&&x.fichier==='planches/ESPECES.webp'&&Array.isArray(x.cases));
   if(p&&p.cases.length===55&&String(p.cases[40])==='0.00661,0.716,0.23677,0.06819'&&String(p.cases[41])==='0.25661,0.716,0.2381,0.06857'){p.cases[40]=[0.00661,0.716,0.26587,0.06819];p.cases[41]=[0.27249,0.716,0.22222,0.06857]}
   c.semisForge.push('planche-especes-5')}
+ if(!c.semisForge.includes('humain-ingenieux')&&Array.isArray(c.talents)){const t=c.talents.find(x=>x&&x.id==='talent-humain-debrouillard'&&x.effet==='debrouillard');
+  if(t)Object.assign(t,{name:'Ingénieux',type:'abon',effet:'ingenieux',params:{},effects:'Avant d’effectuer une attaque ou un test de compétence, vous ajoutez 1 dé noir au résultat du jet. Une fois entre chaque repos court.'});
+  c.semisForge.push('humain-ingenieux')}
  if(!c.semisForge.includes('planche-especes-6')&&Array.isArray(c.planches)){const p=c.planches.find(x=>x&&x.fichier==='planches/ESPECES.webp'&&Array.isArray(x.cases));
   if(p){const pres=(k,x0,x1)=>p.cases.findIndex(q=>Array.isArray(q)&&q[0]>=x0&&q[0]<=x1&&Math.abs(q[1]-0.716)<0.015),g=pres(0,0,0.03),d=pres(0,0.235,0.275);
    if(g>=0&&d>=0&&p.cases[g][0]+p.cases[g][2]<0.27){p.cases[g]=[0.00661,0.716,0.26587,0.06819];p.cases[d]=[0.27249,0.716,0.22222,0.06857]}}
@@ -2750,7 +2753,7 @@ function talentPills(a,cases){const out=document.createElement('div');out.classN
  const attaque=a.hero?carteAttaque(a):null;if(attaque)grands.append(attaque);const nb=liste.length+(attaque?1:0);
  liste.forEach(t=>{const k=palierDe(a,t);
   // Chaque talent tel que le porte cet aventurier : à son élément, s'il en a un.
-  const tv0=talentPourElement(t,elementDe(a)),sur=logoRemplace(a,t),tv=sur?{...tv0,logo:sur}:tv0,carte=talentCarte(tv),pill=carte.firstChild;
+  const tv0=talentPourAventurier(talentPourElement(t,elementDe(a)),a),sur=logoRemplace(a,t),tv=sur?{...tv0,logo:sur}:tv0,carte=talentCarte(tv),pill=carte.firstChild;
   pill.classList.add('cliquable');pill.tabIndex=0;pill.setAttribute('aria-label',nomEnClair(tv.name)+(k>1?', palier '+k:''));
   // La bulle de l'arbre : le nom, puis ses paliers en liste, I, II, III.
   const detail=bulleTalent(t,{a,vu:x=>talentPourElement(x,elementDe(a))});
@@ -5710,7 +5713,10 @@ function retireDeLArbre(t){if(view!=='mj'||!t||t.horsArbre)return false;
 // Le chiffre d'un palier dans une comparaison, où le premier aussi doit se nommer.
 const CHIFFRES_PALIER=['','I','II','III'];
 /* « palier » : la bulle d'un seul palier, celui-là — l'arbre en montre deux côte à côte. */
-function bulleTalent(t,{a=null,vu=x=>x,verrou='',note='',des=null,cout=false,palier=0,points=true,cibles=null}={}){const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);
+/* v0.947 : Compétent (Humain), la compétence choisie : le talent prend son nom et son texte. */
+function talentPourAventurier(t,a){const n=t&&t.effet==='competent'&&a&&Number.isInteger(a.competent)?COMPETENCES[a.competent]:null;
+ return n?{...t,name:'Compétent : '+n,effects:'Vous obtenez toujours une réussite aux tests de '+n+', en plus du résultat du jet.'}:t}
+function bulleTalent(t,{a=null,vu:vu0=x=>x,verrou='',note='',des=null,cout=false,palier=0,points=true,cibles=null}={}){const vu=x=>talentPourAventurier(vu0(x),a);const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);
  const pn=palier||(a?palierDe(a,t):0);
  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
  // Un bonus a la couleur de son rond : rouge pour les dégâts, vert pour les PV…
@@ -6677,7 +6683,7 @@ function choixTalents(boite,cible,filtre,familles,apres){boite.replaceChildren()
    carte.classList.add('pick-carte');p.classList.toggle('porte',pris);
    const m=document.createElement('span');m.className='marque-porte';m.textContent='✓';p.append(m);
    p.setAttribute('role','checkbox');p.setAttribute('aria-checked',String(pris));p.setAttribute('aria-label',nomEnClair(t.name));p.tabIndex=0;
-   if(BULLES)surveille(p,()=>bulleTalentSur(p,t));
+   if(BULLES)surveille(p,()=>bulleTalentSur(p,t,{a:draft}));
    const bascule=()=>{if(pris&&cible.hero&&t.flottant===true)return;cible.talents=pris?(cible.hero?sansChuteArbre(cible,talentsSans(cible.talents,t.id,catalog.talents).liste):cible.talents.filter(x=>x!==t.id)):[...new Set([...cible.talents,t.id])];fermerBulle();choixTalents(boite,cible,filtre,familles,apres);if(apres)apres()};
    p.onclick=bascule;p.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bascule()}};
    grille.append(carte)});
