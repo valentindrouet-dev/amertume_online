@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.963","d":"2026-10-21","t":"Barre d'actions : Actions et Actions bonus séparées"},
 {"v":"0.962","d":"2026-10-21","t":"États en minuscules, PA et PM colorés, billes {PA} {PM}"},
 {"v":"0.961","d":"2026-10-21","t":"Dés des talents dans les bulles, Radiance sur la fiche, repos gardés au chargement de carte"},
 {"v":"0.960","d":"2026-10-21","t":"PDF des talents : page Espèces"},

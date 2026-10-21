@@ -836,7 +836,9 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  /* v0.910 : la première ligne, par groupes séparés d'un trait — les Actions puis les actions gratuites, les Mouvements, les
     Réactions. Le reste, en petit, sur la seconde ligne. */
  const att=gros.filter(b=>b.rangee==='attaques'),mvt=b=>b.talent.type==='mvt',gratuite=b=>!mvt(b)&&b.code.cle!=='orbes'&&b.cout&&!(b.cout.pa>0)&&!(b.cout.pm>0);
- const talents=[...parArbre(att.filter(b=>!mvt(b)&&!gratuite(b))),...parArbre(att.filter(gratuite))];let avant=liste.length||talents.length;
+ // v0.963 : Actions | Actions bonus | Mouvements | Réactions — un trait entre chaque groupe.
+ const actes=parArbre(att.filter(b=>!mvt(b)&&!gratuite(b))),gratuites=parArbre(att.filter(gratuite)),talents=[...actes];
+ if(gratuites.length){if(liste.length||actes.length)talents.push('|');talents.push(...gratuites)}let avant=liste.length||talents.length;
  // v0.923 : une action bonus (Action gratuite) a son rond turquoise.
  const bonusActions=new Set(att.filter(b=>gratuite(b)&&(b.talent.type==='act'||b.talent.type==='abon')));
  [parArbre(att.filter(mvt)),parArbre(gros.filter(b=>b.rangee==='reactions'))].forEach(g=>{if(!g.length)return;if(avant)talents.push('|');talents.push(...g);avant=true});
