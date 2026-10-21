@@ -434,6 +434,10 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('planche-especes-5')&&Array.isArray(c.planches)){const p=c.planches.find(x=>x&&x.fichier==='planches/ESPECES.webp'&&Array.isArray(x.cases));
   if(p&&p.cases.length===55&&String(p.cases[40])==='0.00661,0.716,0.23677,0.06819'&&String(p.cases[41])==='0.25661,0.716,0.2381,0.06857'){p.cases[40]=[0.00661,0.716,0.26587,0.06819];p.cases[41]=[0.27249,0.716,0.22222,0.06857]}
   c.semisForge.push('planche-especes-5')}
+ if(!c.semisForge.includes('planche-especes-6')&&Array.isArray(c.planches)){const p=c.planches.find(x=>x&&x.fichier==='planches/ESPECES.webp'&&Array.isArray(x.cases));
+  if(p){const pres=(k,x0,x1)=>p.cases.findIndex(q=>Array.isArray(q)&&q[0]>=x0&&q[0]<=x1&&Math.abs(q[1]-0.716)<0.015),g=pres(0,0,0.03),d=pres(0,0.235,0.275);
+   if(g>=0&&d>=0&&p.cases[g][0]+p.cases[g][2]<0.27){p.cases[g]=[0.00661,0.716,0.26587,0.06819];p.cases[d]=[0.27249,0.716,0.22222,0.06857]}}
+  c.semisForge.push('planche-especes-6')}
  /* v0.941 — Deux planches de plus, découpées d'office : ESPECES 2 (Drakéide, Gnome, une espèce à venir, Orc, Tieffelin), dont les
     icônes vont aux talents qui n'en ont pas, et ETATS 2, quarante états nommés ; Caché y prend la sienne. */
  if(!c.semisForge.includes('planches-especes2-etats2')){if(!Array.isArray(c.planches))c.planches=[];

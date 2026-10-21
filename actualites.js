@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.944","d":"2026-10-21","t":"Découpe des icônes 41 et 42, correction appliquée partout"},
 {"v":"0.943","d":"2026-10-21","t":"Découpe des icônes 41 et 42 de la planche Espèces"},
 {"v":"0.942","d":"2026-10-21","t":"Action bonus, couleurs des caractéristiques, chiffres en noir"},
 {"v":"0.941","d":"2026-10-21","t":"Planches ESPECES 2 et ETATS 2"},
