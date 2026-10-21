@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.956","d":"2026-10-21","t":"Barre de PV : arrondi droit doré sous la Radiance"},
 {"v":"0.955","d":"2026-10-21","t":"États colorés en capitales à chaque mot"},
 {"v":"0.954","d":"2026-10-21","t":"Passage Tellurique : visée du Bond Féroce, passage même sur échec"},
 {"v":"0.953","d":"2026-10-21","t":"Barre de PV : jonction de la Radiance"},
