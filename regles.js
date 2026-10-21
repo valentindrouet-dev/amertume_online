@@ -27,7 +27,7 @@ function rgEspeces(){const l=typeof ESPECES!=='undefined'?ESPECES:[];
    e.description?rgEl('p','rg-espece-desc',e.description):null,typeof bonusEspeceEl==='function'?bonusEspeceEl(e):null,
    rgTalentsEspece(e));c.style.setProperty('--teinte',e.teinte||'#8a8474');return c}))}
 function rgTalentsEspece(e){const l=(typeof catalog!=='undefined'&&Array.isArray(catalog.talents)?catalog.talents:[]).filter(t=>t&&t.espece===e.id&&(t.famille==='Espèces'||(typeof talentFamily==='function'&&talentFamily(t)==='Espèces')));
- if(!l.length)return null;const noms={act:'Action',mvt:'Mouvement',reac:'Réaction',pass:'Passif',mait:'Maîtrise'};
+ if(!l.length)return null;const noms={act:'Action',abon:'Action bonus',mvt:'Mouvement',reac:'Réaction',pass:'Passif',mait:'Maîtrise'};
  return rgEl('ul','rg-talents',...l.map(t=>rgEl('li','t-'+(t.type||'pass'),rgEl('b','',t.name),rgEl('span','rg-type',noms[t.type]||'Passif'),rgEl('span','',' '+(t.effects||'')))))}
 function rgCompetences(){const l=typeof COMPETENCES!=='undefined'?COMPETENCES:[];return rgEl('div','rg-puces',...l.map(n=>rgEl('span','rg-puce',n)))}
 function rgClasses(){const l=(typeof catalog!=='undefined'&&Array.isArray(catalog.classes)?catalog.classes:[]).filter(k=>k&&k.name);
@@ -154,7 +154,7 @@ REGLES_SECTIONS.push(
  // 11. Les talents.
  ()=>rgSection('talents','Les talents',RG.ame,'🌿','Les talents s’achètent en XP dans l’arbre de sa classe ; une amélioration exige son talent de base.',
   rgEl('div','rg-puces',...[['Maîtrise','mait'],['Action','act'],['Action bonus','bonus'],['Mouvement','mvt'],['Réaction','reac'],['Passif','pass'],['Critique','crit'],['Amélioration','ame']].map(([n,k])=>{const s=rgEl('span','rg-puce',n);s.style.setProperty('--teinte',RG[k]);return s})),
-  rgListe(['<b>Action</b> : 1 PA, 0 si gratuite. <b>Mouvement</b> : 1 PM. Le MJ peut régler le coût de 0 à 9.','<b>Réaction</b> : une fenêtre <b>Activer / Laisser</b> de 10 s s’ouvre quand elle se déclenche.',
+  rgListe(['<b>Action</b> : 1 PA. <b>Action bonus</b> : aucun coût, une fois par tour chacune ; on peut en jouer plusieurs. <b>Mouvement</b> : 1 PM. Le MJ peut régler le coût de 0 à 9.','<b>Réaction</b> : une fenêtre <b>Activer / Laisser</b> de 10 s s’ouvre quand elle se déclenche.',
    'Une fois par tour en combat ; certaines, une fois entre deux repos courts ou une fois par combat.','Les bonus de l’arbre ajoutent PV, Endurance, VIE, DEF, Dégâts ou une compétence.'])),
  // 12. Les adversaires.
  ()=>rgSection('adversaires','Les adversaires',RG.rouge,'👹','Un adversaire a ses PV, sa DEF, ses Dégâts, ses attaques, sa Vitesse et son XP.',

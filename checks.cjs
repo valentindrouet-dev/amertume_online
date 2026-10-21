@@ -4843,7 +4843,7 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
    à l'ocre d'Analyser, bulles, cartes, arbre et noms en brun sur beige. */
 {const src=fs.readFileSync('editor.js','utf8'),feuille=fs.readFileSync('editor.css','utf8');
  assert.ok(feuille.includes(".talent-detail.t-mvt{--teinte:#8a6440;background:#eee2d4;")&&feuille.includes(".bulle:has(.t-mvt){--bulle-bord:#eee2d4}")
-  &&!feuille.includes('#2e9a8f')&&src.includes("const TEINTES_TALENTS={act:'#4f7fb5',mvt:'#8a6440',"),'le Mouvement en brun et beige');}
+  &&!feuille.includes('#2e9a8f')&&src.includes("const TEINTES_TALENTS={abon:'#2a9d8f',act:'#4f7fb5',mvt:'#8a6440',"),'le Mouvement en brun et beige');}
 /* v0.579 — À la table aussi, la bulle d'un talent dit son coût en points, après ses dés s'il en a : celui que la table fait
    payer ; la bulle d'une attaque, son point d'Action. */
 {const src=fs.readFileSync('editor.js','utf8'),page=fs.readFileSync('index.html','utf8'),feuille=fs.readFileSync('editor.css','utf8');
@@ -4870,11 +4870,11 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.deepEqual(C.coutTalent({type:'act'}),{pa:1,pm:0});assert.deepEqual(C.coutTalent({type:'act',effet:'orbes'}),{pa:0,pm:0});assert.deepEqual(C.coutTalent({type:'act',effet:'charge'}),{pa:0,pm:0});
  assert.deepEqual(C.coutTalent({type:'act',coutPA:3}),{pa:3,pm:0});assert.deepEqual(C.coutTalent({type:'mvt'}),{pa:0,pm:1});assert.deepEqual(C.coutTalent({type:'mvt',coutPM:0}),{pa:0,pm:0});
  assert.equal(C.coutTalent({type:'mait'}),null);assert.equal(C.coutTalent({type:'act',coutPA:12}).pa,1,'hors bornes, le défaut');
- assert.ok(src.includes("const TALENT_TYPES=[['act','ACT','Action'],['mvt','MVT','Mouvement'],")&&src.includes("const ORDRE_TYPES_TALENTS=['mait','act','mvt','reac','crit','pass','ame'];")
-  &&src.includes("const GLYPHES_TALENT={act:'⚔',mvt:'➜',")&&src.includes("['coutPA','coutPM'].forEach(k=>{if(!(Number.isInteger(t[k])&&t[k]>=0&&t[k]<=9))delete t[k]});")
+ assert.ok(src.includes("const TALENT_TYPES=[['act','ACT','Action'],['abon','BONUS','Action bonus'],['mvt','MVT','Mouvement'],")&&src.includes("const ORDRE_TYPES_TALENTS=['mait','act','abon','mvt','reac','crit','pass','ame'];")
+  &&src.includes("const GLYPHES_TALENT={abon:'✚',act:'⚔',mvt:'➜',")&&src.includes("['coutPA','coutPM'].forEach(k=>{if(!(Number.isInteger(t[k])&&t[k]>=0&&t[k]<=9))delete t[k]});")
   &&src.includes('<label id="cout-action-champ" hidden><span id="cout-action-nom">Coût (PA)</span>')&&src.includes("nom.textContent=ty==='mvt'?'Coût (PM)':'Coût (PA)';")
   &&feuille.includes("button.btn-talent.t-mvt{--fond:#cf9152}")&&feuille.includes(".arbre-noeud.t-mvt{--teinte:#8a6440}"),'le type Mouvement et le coût à l’éditeur');
- assert.ok(page.includes("const TALENT_TYPES_CLES=['act','mvt','reac','pass','crit','mait','ame'];")&&page.includes("function dejaJoue(a,talent,code){return enCombat()&&!!a&&!!talent&&!(code&&code.cle==='orbes')")
+ assert.ok(page.includes("const TALENT_TYPES_CLES=['act','mvt','reac','pass','crit','mait','ame','abon'];")&&page.includes("function dejaJoue(a,talent,code){return enCombat()&&!!a&&!!talent&&!(code&&code.cle==='orbes')")
   &&page.includes("const bloque=deja||manquePA||manquePM;")&&page.includes("if(dit===null){if(!ctx.pris&&!placementEnCours&&!fermeFormesMur)marqueTalent(a,talent,code);return}")
   &&page.includes("const pa=opts.sansAction?0:ctxT?ctxT.pa:1;")&&page.includes("if(ctx)payeTalent(ctx);else if(rangeeTalent(talent)==='attaques'")
   &&page.includes("const ctx=talentEnCours;\n viserCible('✦ Clique sur la carte pour poser '+m.name,(vise,q)=>{if(ctx)payeTalent(ctx);")
@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.942 — Le type Action bonus, les caractéristiques à leurs couleurs d'arbre, les chiffres en noir. */
+assert.ok(fs.readFileSync('editor.css','utf8').includes('.talent-detail.t-abon{--teinte:#2a9d8f;')&&fs.readFileSync('editor.css','utf8').includes('.talent-detail b{color:#000}')&&fs.readFileSync('combat.js','utf8').includes("if(type==='abon')return {pa:0,pm:0};")&&fs.readFileSync('CHARTE.md','utf8').includes('| Action bonus | `t-abon` | `#2a9d8f` | `#cdeae6` |'),'v0.942');
 /* v0.941 — Les planches ESPECES 2 et ETATS 2. */
 assert.ok(fs.existsSync('img/planches/ESPECES 2.webp')&&fs.existsSync('img/planches/ETATS 2.webp')&&fs.readFileSync('editor.js','utf8').includes("c.semisForge.push('planches-especes2-etats2')"),'v0.941');
 /* v0.940 — Les icônes gardées se refont (d4), la planche se relit au serveur. */

@@ -952,7 +952,7 @@ button.choix-attaque.on:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,2
  border:1px solid #00000026;border-top:1px dashed #00000033;border-radius:0 0 9px 9px;
  font:13px/1.45 system-ui;color:#2a2118;box-shadow:0 2px 5px #0000002e}
 .talent-detail p{margin:0 0 5px}.talent-detail p:last-child{margin-bottom:0}
-.talent-detail b{color:#7a4f1a}
+.talent-detail b{color:#000}
 /* Chaque nature a sa teinte : la barre à gauche et le nom du talent la portent ensemble. */
 .talent-detail.t-act{--teinte:#4f7fb5;background:#cfdcea;border-left:4px solid var(--teinte)}
 .talent-detail.t-mvt{--teinte:#8a6440;background:#eee2d4;border-left:4px solid var(--teinte)}
@@ -1282,7 +1282,7 @@ button.choix-attaque .logo-equip{width:30px;height:30px;margin:0;filter:drop-sha
 /* La phrase que le moteur appliquera, sous la description d'un objet : en retrait léger,
    comme dans la banque des effets. */
 .gear-detail .gear-effet{font-weight:600}
-.gear-detail .gear-effet b{color:#7a4f1a}
+.gear-detail .gear-effet b{color:#000}
 /* Le chrono d'un usage compté : une pastille à cheval sur le coin haut droit du bouton,
    comme la marque d'un objet porté sur sa vignette. Elle dit qu'une charge se rend au
    repos. Vide, elle pâlit ; le MJ la clique pour la rendre ou la reprendre. */
@@ -3336,3 +3336,13 @@ body.page-regles .intro,body.page-regles .mj-tools,body.page-regles main.layout,
 @media (max-width:900px){#regles-page .rg-corps{grid-template-columns:1fr}#regles-page .rg-sommaire{position:static}}
 /* v0.930 — Le nuage de fumée de l'Allsteiner, sous les socles. */
 #map-view .nuage-fumee{position:absolute;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:1;background:radial-gradient(circle,color-mix(in srgb,var(--muted) 55%,#fff) 0%,color-mix(in srgb,var(--muted) 35%,transparent) 60%,transparent 72%);filter:blur(2px)}
+/* v0.942 — L'Action bonus : teinte #2a9d8f, fond #cdeae6, partout où vit un type de talent. */
+.cat-pill.t-abon{background:#cdeae6;border-left:4px solid #2a9d8f}
+.pick-talent.t-abon{background:#cdeae6;border-left-color:#2a9d8f}
+.talent-detail.t-abon{--teinte:#2a9d8f;background:#cdeae6;border-left:4px solid var(--teinte)}
+button.btn-talent.t-abon{--fond:#2a9d8f}
+.arbre-noeud.t-abon{--teinte:#2a9d8f}.arbre-noeud.t-abon:not(.bonus) .arbre-rond{background:#cdeae6}
+.bulle:has(.t-abon){--bulle-bord:#cdeae6}
+.talent-carre.t-abon{--teinte:#2a9d8f}
+.arbres-v2 .arbres-detail .detail-tete.t-abon{--fond:#cdeae6}
+#regles-page .rg-talents li.t-abon{border-left-color:#2a9d8f}

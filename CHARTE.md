@@ -73,6 +73,7 @@ Les chiffres, `xdy` et `%` d'un texte de jeu sont en **gras** (section 4).
 |---|---|---|---|
 | Maîtrise | `t-mait` | `#c99a3c` | `#f0e0bd` |
 | Action | `t-act` | `#4f7fb5` | `#cfdcea` |
+| Action bonus | `t-abon` | `#2a9d8f` | `#cdeae6` |
 | Mouvement | `t-mvt` | `#8a6440` | `#eee2d4` |
 | Réaction | `t-reac` | `#8b6bb5` | `#ddd3ea` |
 | Passif | `t-pass` | `#8a8474` | `#dcd8cf` |
@@ -100,7 +101,8 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 
 | Mot clé | Couleur | Style |
 |---|---|---|
-| Chiffres, `xdy`, `%` | encre de la teinte | **gras** |
+| Chiffres, `xdy`, `%` | noir `#000` | **gras** |
+| Action bonus | `#2a9d8f` | gras |
 | Au sol | `#a65b26` | gras |
 | Aveugle | `#9c21de` | gras |
 | Blindage | `#1b70bb` | gras |

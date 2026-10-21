@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.942","d":"2026-10-21","t":"Action bonus, couleurs des caractéristiques, chiffres en noir"},
 {"v":"0.941","d":"2026-10-21","t":"Planches ESPECES 2 et ETATS 2"},
 {"v":"0.940","d":"2026-10-20","t":"Icônes refaites dans la bonne image"},
 {"v":"0.939","d":"2026-10-20","t":"Icônes publiées : le MJ découpe lui-même"},

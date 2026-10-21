@@ -439,6 +439,9 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   Object.entries({"0":"talent-drakeide-souffle","1":"talent-drakeide-ascendance","2":"talent-drakeide-vol","3":"talent-drakeide-vision","12":"talent-orc-adrenaline","13":"talent-orc-assaut","14":"talent-orc-acharnement","15":"talent-orc-vision","16":"talent-tieffelin-reprimande","17":"talent-tieffelin-trait","18":"talent-tieffelin-heritage","19":"talent-tieffelin-vision"}).forEach(([i,id])=>{const t=(c.talents||[]).find(x=>x&&x.id===id);if(t&&!t.logo)t.logo='planches/ESPECES 2.webp#'+(Number(i)+1)});
   c.logosEtats={...(c.logosEtats&&typeof c.logosEtats==='object'&&!Array.isArray(c.logosEtats)?c.logosEtats:{}),'Caché':'planches/ETATS 2.webp#1'};
   c.semisForge.push('planches-especes2-etats2')}
+ // v0.942 : les talents d'Action gratuits des espèces deviennent des Actions bonus.
+ if(!c.semisForge.includes('type-action-bonus')&&Array.isArray(c.talents)){const l=['secondsouffle','formegeant','maitrisetellurique','eclatvivant','adrenaline','malefice','mimetisme'];
+  c.talents.forEach(t=>{if(t&&t.type==='act'&&l.includes(t.effet))t.type='abon'});c.semisForge.push('type-action-bonus')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
@@ -567,7 +570,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
   if(t.paliersActifs!==true||!(t.type==='ame'||t.effet==='bonus'))delete t.paliersActifs;
   // Un rond de remplissage est une case vide qui a une couleur : celle d'une nature de talent.
   if(t.remplissage!==true||t.vide!==true){delete t.remplissage;delete t.couleur}
-  else if(!['act','mvt','reac','pass','crit','mait','ame'].includes(t.couleur))t.couleur=t.chemin?'ame':'pass';
+  else if(!['act','abon','mvt','reac','pass','crit','mait','ame'].includes(t.couleur))t.couleur=t.chemin?'ame':'pass';
   // Le coût réglé à la main, en PA ou en PM : de 0 à 9.
   ['coutPA','coutPM'].forEach(k=>{if(!(Number.isInteger(t[k])&&t[k]>=0&&t[k]<=9))delete t[k]});
   if(typeof t.pourAttaque!=='boolean')delete t.pourAttaque;
@@ -823,7 +826,7 @@ function renderAttackChoices(){const boite=$('attack-choices');if(!boite)return;
  const att=gros.filter(b=>b.rangee==='attaques'),mvt=b=>b.talent.type==='mvt',gratuite=b=>!mvt(b)&&b.code.cle!=='orbes'&&b.cout&&!(b.cout.pa>0)&&!(b.cout.pm>0);
  const talents=[...parArbre(att.filter(b=>!mvt(b)&&!gratuite(b))),...parArbre(att.filter(gratuite))];let avant=liste.length||talents.length;
  // v0.923 : une action bonus (Action gratuite) a son rond turquoise.
- const bonusActions=new Set(att.filter(b=>gratuite(b)&&b.talent.type==='act'));
+ const bonusActions=new Set(att.filter(b=>gratuite(b)&&(b.talent.type==='act'||b.talent.type==='abon')));
  [parArbre(att.filter(mvt)),parArbre(gros.filter(b=>b.rangee==='reactions'))].forEach(g=>{if(!g.length)return;if(avant)talents.push('|');talents.push(...g);avant=true});
  const bonusDe=at=>!at||hasState(a,'Affaibli')||at.useOwnDamage===false?0:degatsDe(a)+(typeof rageContact==='function'?rageContact(a,at.range):0);
  const retenu=Math.trunc(a&&a.activeAttack)||0,actuelle=liste.length?liste[retenu<liste.length?retenu:0]:null;
@@ -2508,11 +2511,12 @@ function gearPills(a,tout=true,combat=false){const out=document.createElement('d
  return out}
 /* Talents : sept natures, chacune sa couleur et son abrégé, comme dans le jeu de table. Le Mouvement se paie en
    points de Mouvement, comme l'Action en points d'Action. */
-const TALENT_TYPES=[['act','ACT','Action'],['mvt','MVT','Mouvement'],['reac','REAC','Réaction'],['pass','PASS','Passif'],
+// v0.942 : l'Action bonus, turquoise, sans coût, une fois par tour chacune.
+const TALENT_TYPES=[['act','ACT','Action'],['abon','BONUS','Action bonus'],['mvt','MVT','Mouvement'],['reac','REAC','Réaction'],['pass','PASS','Passif'],
  ['crit','CRIT','Critique'],['mait','MAIT','Maîtrise'],['ame','AME','Amélioration']];
 const talentType=t=>TALENT_TYPES.find(x=>x[0]===(t&&t.type))||TALENT_TYPES[0];
 // L'ordre des rangées de l'onglet Talents : Maîtrise, Actions, Réactions, (Critiques), Passifs, Améliorations.
-const ORDRE_TYPES_TALENTS=['mait','act','mvt','reac','crit','pass','ame'];
+const ORDRE_TYPES_TALENTS=['mait','act','abon','mvt','reac','crit','pass','ame'];
 const GENERIQUES='Génériques';
 // La valeur qui n'est pas une classe mais une invitation à en nommer une.
 const AUTRE_CLASSE='__autre';
@@ -2581,6 +2585,8 @@ function motsCles(){const perso=(catalog&&catalog.motsCles)||[],cle=perso.join('
  ajoute(['PV max','PV'],rgb('pv'));ajoute(['DEF','Défense'],rgb('def'));ajoute(['Endurance','ENDU','Endu'],rgb('endu'));
  ajoute(['Vie','VIE'],rgb('vie'));ajoute(['Dégât','dégât','DÉGÂT'],rgb('dmg'));ajoute(['XP'],rgb('xp'));
  (typeof STATES!=='undefined'?STATES.filter(x=>x!=='Aucun'):ETATS_JEU).forEach(x=>ajoute([x,x.toUpperCase()],TEINTE_ETAT_MOT[x]||'#a2691f'));
+ // v0.942 : « Action bonus », partout, au turquoise de ses boutons.
+ ajoute(['Actions bonus','Action bonus','Action Bonus','ACTION BONUS','action bonus','actions bonus'],'#2a9d8f');
  ajoute(['Action','Mouvement','Réaction','Objet','Passif','Critique','Maîtrise','Amélioration'],'');
  lus.filter(x=>!x.couleur).forEach(x=>ajoute([x.mot],'var(--accent)',true));
  // Les expressions longues d'abord : « Attaque critique » avant « Attaque ».
@@ -2632,7 +2638,7 @@ function texteEnrichi(el,texte,noms,a=null){texte=String(texte||'');el.replaceCh
  if(fin<texte.length)motsDans(el,texte.slice(fin),noms);return el}
 /* Les talents d'un arbre, dans le texte d'un des siens : leur nom exact, casse ignorée, prend la
    couleur de sa nature — « Charge » en bleu d'Action dans un talent du Destructeur. */
-const TEINTES_TALENTS={act:'#4f7fb5',mvt:'#8a6440',reac:'#8b6bb5',pass:'#8a8474',crit:'#b5525a',mait:'#c99a3c',ame:'#5e9a5b'};
+const TEINTES_TALENTS={abon:'#2a9d8f',act:'#4f7fb5',mvt:'#8a6440',reac:'#8b6bb5',pass:'#8a8474',crit:'#b5525a',mait:'#c99a3c',ame:'#5e9a5b'};
 const cleNomTalent=n=>String(n).toLowerCase().replace(/\s+/g,' ');
 function nomsDeLArbre(t){const c=t&&lisChemin(t),fam=talentFamily(c&&talent(c.de)||t),parNom=new Map();
  const clair=n=>String(n||'').normalize('NFC').replace(new RegExp(ACCOLADES.source,'giu'),(m,k)=>sorteAccolade(k)?libelleAccolade(k):m).trim();
@@ -2723,7 +2729,7 @@ function logoRemplace(a,t){if(!a||!t)return '';
 function talentPills(a,cases){const out=document.createElement('div');out.className='talent-grille'+(cases?' a-cases':'');
  // Sur la fiche, les talents se rangent par nature : Actions, Réactions, Passifs, puis le reste ; l'ordre de l'arbre dans chacune.
  // Sur la fiche à cases, la Maîtrise ouvre la rangée moyenne, devant les Passifs.
- const ORDRE_FICHE=cases?['act','mvt','reac','mait','pass','crit']:['act','mvt','reac','pass','crit','mait'],rangT=t=>{const i=ORDRE_FICHE.indexOf(talentType(t)[0]);return i<0?ORDRE_FICHE.length:i};
+ const ORDRE_FICHE=cases?['act','abon','mvt','reac','mait','pass','crit']:['act','abon','mvt','reac','pass','crit','mait'],rangT=t=>{const i=ORDRE_FICHE.indexOf(talentType(t)[0]);return i<0?ORDRE_FICHE.length:i};
  const liste=talentsDeFiche(a).map((t,i)=>[t,i]).sort((x,y)=>rangT(x[0])-rangT(y[0])||x[1]-y[1]).map(x=>x[0]);
  if(!liste.length&&!cases&&!a.hero){const v=document.createElement('span');v.className='muted';v.textContent='Aucun talent';out.append(v);return out}
  /* Un talent appris dont le socle manque ne fait rien : il se taisait, et on le croyait à
@@ -3912,7 +3918,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
  /* Le coût, en PA pour une Action, en PM pour un Mouvement : celui réglé, sinon celui par défaut. Tant qu'on n'y
     touche pas, il suit le type et la mécanique choisis. */
  {const f=$('talent-form').elements,champ=$('cout-action-champ'),nom=$('cout-action-nom');let touche=false;
-  const regle=ty=>{const v=ty==='mvt'?t.coutPM:ty==='act'?t.coutPA:undefined;return ty===t.type&&Number.isInteger(v)?v:null};
+  const regle=ty=>{const v=ty==='mvt'?t.coutPM:ty==='act'||ty==='abon'?t.coutPA:undefined;return ty===t.type&&Number.isInteger(v)?v:null};
   const majCout=()=>{const ty=f.type.value,d=coutParDefaut({type:ty,effet:f.effet?f.effet.value:t.effet});champ.hidden=!d;if(!d)return;
    nom.textContent=ty==='mvt'?'Coût (PM)':'Coût (PA)';if(!touche){const r=regle(ty);f.coutAction.value=String(r!==null?r:ty==='mvt'?d.pm:d.pa)}};
   f.coutAction.addEventListener('input',()=>{touche=true});f.type.addEventListener('change',()=>{touche=false;majCout()});
@@ -5036,7 +5042,7 @@ const estVide=t=>!!t&&t.vide===true;
 /* Un rond de remplissage : ni talent ni amélioration, une case de l'arbre dessinée d'avance, à la couleur d'une
    nature. Il tient lignes et petits ronds comme une case vide ; un talent posé dessus les reprend. */
 const estRemplissage=t=>estVide(t)&&t.remplissage===true;
-const COULEURS_REMPLISSAGE=['act','mvt','reac','pass','crit','mait','ame'];
+const COULEURS_REMPLISSAGE=['act','abon','mvt','reac','pass','crit','mait','ame'];
 function iconeRemplissage(){const l=typeof catalog!=='undefined'&&catalog.logoRemplissage,im=l&&logoImage(l,LOGOS_TOUS);return im||document.createTextNode('?')}
 // Posé sur une case vide, il la colore ; ailleurs, il prend sa place comme un talent neuf.
 function poseRemplissage(dest,couleur){const v=caseVideA(dest);if(v){v.remplissage=true;v.couleur=couleur;return true}
@@ -5096,7 +5102,8 @@ const SVG_BONUS={pa:'<circle cx="12" cy="12" r="8.5" fill="#3f8fe0" stroke="#fff
 function cleLogoBonus(p){const c=(p&&p.carac)||'pv';return c+(c==='comp'?':'+(p&&p.comp!==undefined?p.comp:'0'):'')}
 /* L'icône d'un chiffre de fiche, devant laquelle il se lit. Sa couleur — celle de l'image choisie,
    ou celle de l'icône du jeu — teinte très légèrement la valeur. */
-const TEINTES_STATS={pv:'192,57,43',endu:'44,140,133',vie:'122,92,184',dmg:'200,60,90',xp:'190,150,60'};
+// v0.942 : les couleurs des caractéristiques, partout celles des bonus de l'arbre (STAT_TINTS).
+const TEINTES_STATS={pv:'47,122,91',endu:'44,140,133',vie:'122,92,184',dmg:'180,72,58',def:'96,110,118',xp:'190,150,60'};
 function iconeStat(tuile,carac){const ic=logoBonus({carac});if(!tuile||!ic)return;
  ic.classList.add('stat-ico');tuile.prepend(ic);tuile.classList.add('avec-icone');tuile.style.setProperty('--tint',TEINTES_STATS[carac]||'150,150,150');
  if(ic.tagName==='IMG')teinteLogoSur(tuile,ic,'stat:'+carac+':'+((catalog.logosBonus||{})[carac]||''))}
@@ -5398,7 +5405,7 @@ function placerTalent(id,dest){const t=tousTalents().find(x=>x.id===id);if(!t||!
  if(de&&de!==t&&!liensDe(de).includes(t.id)&&liensDe(de).length<LIENS_MAX){const d=dirVers(posDe(de),t.pos);if(d&&((typeof ARBRE_V2!=='undefined'&&ARBRE_V2)||['so','s','se'].includes(d)||!petitsDe(de,d).length))de.liens=[...liensDe(de),t.id]}
  if(avant)petitsHorsDesLignes(t);
  return true}
-const GLYPHES_TALENT={act:'⚔',mvt:'➜',reac:'↩',pass:'◆',crit:'✸',mait:'★',ame:'⇧'};
+const GLYPHES_TALENT={abon:'✚',act:'⚔',mvt:'➜',reac:'↩',pass:'◆',crit:'✸',mait:'★',ame:'⇧'};
 const arbresDialog=dialog('arbres','Arbres de talents','<p class="muted" id="arbres-note"></p><div id="arbres-corps"></div>');
 /* L'arbre s'ouvre de deux façons : sur la fiche d'un combattant — il y choisit ses talents —
    ou depuis l'onglet Talents, pour une classe seule, que le MJ y bâtit sans personne à

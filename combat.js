@@ -2286,7 +2286,9 @@ function poseUses(a,quoi,n){const i=POINTS_CLES.indexOf(quoi);if(i<0||!a)return 
    mécanique qui se dit gratuite (Orbes, Charge) ; un talent de Mouvement, des points de Mouvement — PM —, un
    par défaut. Le MJ le règle à la main, de 0 à 9 (« coutPA », « coutPM »). Les autres natures gardent leur règle. */
 function coutParDefaut(t){const type=t&&t.type,code=t&&TALENTS_CODES[t.effet];
- if(type==='mvt')return {pa:0,pm:1};if(type==='act')return {pa:code&&code.gratuit?0:1,pm:0};return null}
+ if(type==='mvt')return {pa:0,pm:1};if(type==='act')return {pa:code&&code.gratuit?0:1,pm:0};
+ // v0.942 : une Action bonus ne coûte rien, une fois par tour comme toute action.
+ if(type==='abon')return {pa:0,pm:0};return null}
 function coutTalent(t){const d=coutParDefaut(t);if(!d)return null;const n=v=>Number.isInteger(v)&&v>=0&&v<=9;
  return t.type==='mvt'?{pa:0,pm:n(t.coutPM)?t.coutPM:d.pm}:{pa:n(t.coutPA)?t.coutPA:d.pa,pm:0}}
 function depensePoint(a,quoi,n=1){return poseUses(a,quoi,pointsUses(a,quoi)+n)}
