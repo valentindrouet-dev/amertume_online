@@ -3352,3 +3352,6 @@ button.btn-talent.t-abon{--fond:#2a9d8f}
 /* v0.949 : la limite d'une Action bonus, sous son nom ; rouge une fois prise dans son créneau. */
 .talent-detail .talent-limite{margin:-4px 0 6px;font-style:italic;font-size:.92em;color:var(--muted)}
 .talent-detail .talent-limite.epuisee{color:#b03a48}
+/* v0.952 : limite prise, « au contact » sans adversaire : rouge gras, bulle grisée comprise. */
+.talent-detail .talent-limite.epuisee,.talent-detail.grisee .talent-limite.epuisee{color:#b03a48!important;font-weight:700}
+.talent-detail .hors-contact,.talent-detail.grisee .hors-contact{color:#b03a48!important;font-weight:700}

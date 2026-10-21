@@ -107,7 +107,9 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 
 **Pointeur de bond** (`.bond-visee`) : socle en pointillés, vert `#2e9b5f` où le bond peut retomber, rouge `#c0392b` barré d'une croix où il ne peut pas.
 
-**Limite d'une Action bonus** (`.talent-limite`) : sous le nom dans la bulle, en italique, couleur atténuée ; rouge `#b03a48` une fois prise dans son créneau.
+**Limite d'une Action bonus** (`.talent-limite`) : sous le nom dans la bulle, en italique, couleur atténuée ; rouge `#b03a48` et gras une fois prise dans son créneau, bulle grisée comprise.
+
+**Hors contact** (`.hors-contact`) : dans la bulle grisée d'un talent ou d'une attaque au contact, sans adversaire au contact, « au contact » en rouge `#b03a48` gras.
 | Au sol | `#a65b26` | gras |
 | Aveugle | `#9c21de` | gras |
 | Blindage | `#1b70bb` | gras |

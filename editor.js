@@ -792,7 +792,7 @@ function bulleAction(b,{nom,dit='',riche='',note='',des=null,lignes=null,points=
  else if(dit){const p=document.createElement('p');p.className='palier-effet';p.textContent=dit;d.append(p)}
  if(note&&note!==dit){const p=document.createElement('p');p.className='muted';p.textContent=note;d.append(p)}
  {const j=jetonsCibles(a,cibles);if(j)d.prepend(j)}
- return ouvrirBulle(b,d,'bulle-talent')}
+ horsContact(d,a);return ouvrirBulle(b,d,'bulle-talent')}
 // Le logo de l'arme en main droite : un bouton de talent sans icône prend celui-là.
 // Les logos d'une attaque : ceux de ses armes ; à mains nues, celui que le MJ a choisi pour l'Attaque sans arme.
 function logosDeAttaque(at){const l=at&&Array.isArray(at.logos)?at.logos:[];return l.length?l:at&&at.mainsNues&&typeof catalog!=='undefined'&&catalog.logoAttaqueBase?[catalog.logoAttaqueBase]:[]}
@@ -3335,7 +3335,12 @@ function talentRond(t,logo){const p=document.createElement('span');p.className='
  if(l)p.append(l);else{const g=document.createElement('span');g.className='glyphe';g.textContent=GLYPHES_TALENT[t.type]||'✦';p.append(g)}
  return p}
 // La bulle d'un talent sur son rond, élargie quand elle montre plusieurs paliers.
-function bulleTalentSur(ancre,t,o){const d=bulleTalent(t,o);if(boutonGrise(ancre))d.classList.add('grisee');
+/* v0.952 : bulle grisée faute d'adversaire au contact : « au contact » s'y écrit en rouge gras. */
+function horsContact(d,a){if(!d||!a||!d.classList.contains('grisee')||typeof adversairesAuContact!=='function'||adversairesAuContact(a).length)return;
+ d.querySelectorAll('b.mot-cle').forEach(b=>{if(/au contact/i.test(b.textContent))b.classList.add('hors-contact')});
+ const w=document.createTreeWalker(d,NodeFilter.SHOW_TEXT),l=[];while(w.nextNode()){const n=w.currentNode;if(/au contact/i.test(n.data)&&!n.parentElement.closest('.hors-contact'))l.push(n)}
+ l.forEach(n=>{const f=document.createDocumentFragment();n.data.split(/(au contact)/i).forEach((x,i)=>{if(!x)return;if(i%2){const b=document.createElement('b');b.className='hors-contact';b.textContent=x;f.append(b)}else f.append(x)});n.replaceWith(f)})}
+function bulleTalentSur(ancre,t,o){const d=bulleTalent(t,o);if(boutonGrise(ancre))d.classList.add('grisee');horsContact(d,o&&o.a);
  return ouvrirBulle(ancre,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))}
 /* Un talent hors de l'onglet Talents : son rond, sans nom dessous. La bulle le nomme au survol,
    et le lecteur d'écran par l'étiquette que chaque appelant pose sur le rond. Sur la page des
