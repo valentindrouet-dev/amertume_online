@@ -4545,7 +4545,11 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    b.onclick=()=>{c.espece=e.id;renderCreation()};g.append(b)});corps.append(g);
   const e=especeCreation(c);
   if(e){const f=document.createElement('div');f.className='creation-fiche-classe';f.style.setProperty('--teinte',e.teinte);
-   {const tk=tokenEspece(e.id);if(tk){const im=document.createElement('img');im.className='creation-token-espece';im.src=tk.image;im.alt='';f.classList.add('avec-token');f.append(im)}}
+   {const tk=tokenEspece(e.id);if(tk){const im=document.createElement('img');im.className='creation-token-espece';im.src=tk.image;im.alt='';f.classList.add('avec-token');f.append(im);
+    // v0.958 : le token grandit dans la place libre sous la présentation, sans rien déplacer : jusqu'à 200 px.
+    requestAnimationFrame(()=>{const d=f.querySelector('.creation-description')||f.querySelector('h3');if(!d||!f.isConnected)return;
+     const bas=d.offsetTop+d.offsetHeight,libre=f.clientHeight-bas-16-12,large=f.clientWidth-16-Math.max(0,...[...f.children].filter(x=>x!==im&&x.offsetTop>=bas).map(x=>[...x.children].reduce((m,y)=>Math.max(m,y.offsetLeft+y.offsetWidth),0)))-16;
+     const t=Math.max(104,Math.min(200,libre,large));im.style.width=im.style.height=t+'px'})}}
    const t=document.createElement('h3');t.textContent=e.nom;f.append(t);
    // v0.883 : sa présentation, sa Vitesse, et ses Talents d'Espèce en ronds, leur bulle au survol.
    if(e.description){const p=document.createElement('p');p.className='creation-description';p.textContent=e.description;f.append(p)}
