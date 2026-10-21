@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.967","d":"2026-10-21","t":"Repos long et Banc : seuls les cochés sur la carte"},
 {"v":"0.966","d":"2026-10-21","t":"Radiance à la taille des PV, aperçu des dés retiré"},
 {"v":"0.965","d":"2026-10-21","t":"Radiance lisible, talents sans armes"},
 {"v":"0.964","d":"2026-10-21","t":"Griffes devient une Action"},

@@ -1417,7 +1417,7 @@ function joueursConnus(){const m=new Map();actors.forEach(a=>{if(a&&a.hero&&a.jo
  if(typeof sieges!=='undefined')Object.entries(sieges).forEach(([uid,s])=>{if(s&&typeof s.nom==='string'&&s.nom.trim()&&(typeof monUid==='undefined'||uid!==monUid))m.set(uid,s.nom.trim().slice(0,30))});
  return [...m.entries()].sort((x,y)=>x[1].localeCompare(y[1],'fr'))}
 // Ceux qui prennent part à l'aventure : les aventuriers cochés par le MJ, ou tous quand aucun ne l'est.
-function prendPartAventure(a){return !!a&&!!a.hero&&a.enAttente!==true&&(a.enAventure===true||!actors.some(h=>h&&h.hero&&h.enAventure===true))}
+function prendPartAventure(a){return !!a&&!!a.hero&&a.enAttente!==true&&a.surBanc!==true&&(a.enAventure===true||!actors.some(h=>h&&h.hero&&h.enAventure===true))}
 function heroCard(a,i){const c=document.createElement('article');c.className='hero-card';
  const tete=document.createElement('div');tete.className='hero-head';
  // En tri libre, la poignée : on la tient pour glisser la fiche avant ou après une autre.
@@ -1593,7 +1593,8 @@ function renderHeroes(){syncForges();const grille=$('hero-grid');if(!grille)retu
  const troupe=actors.filter(a=>a.hero&&voitAventurier(a));
  // La maîtrise d'une classe s'acquiert avec la classe : on la pose avant de dessiner.
  // Chercher dans quatre fiches n'a pas de sens : le champ ne paraît qu'à partir de neuf.
- $('hero-filtres').hidden=troupe.length<9&&!q;
+ // v0.967 : le champ de recherche ne sert pas : il reste caché.
+ $('hero-filtres').hidden=true;
  const heros=trieHeros(troupe.filter(a=>!q||a.name.toLowerCase().includes(q)));
  grille.classList.toggle('une-fiche',heros.length===1);
  heros.forEach((a,i)=>grille.append(heroCard(a,i)));
@@ -1608,12 +1609,16 @@ function renderHeroes(){syncForges();const grille=$('hero-grid');if(!grille)retu
    retiré de la table garde son clic : il le ramène sur la carte. */
 const HEROS_REPLIES_CLE='amertume-heros-replies';
 function herosReplies(){try{const l=JSON.parse(localStorage.getItem(HEROS_REPLIES_CLE)||'[]');return new Set(Array.isArray(l)?l:[])}catch(e){return new Set()}}
-function replieHeros(id,replie){const l=herosReplies();if(replie)l.add(id);else l.delete(id);try{localStorage.setItem(HEROS_REPLIES_CLE,JSON.stringify([...l]))}catch(e){}renderHeroes()}
+function replieHeros(id,replie){const l=herosReplies();if(replie)l.add(id);else l.delete(id);try{localStorage.setItem(HEROS_REPLIES_CLE,JSON.stringify([...l]))}catch(e){}
+ // v0.967 : sur le Banc, l'aventurier est décoché et quitte la carte ; il n'y revient pas tant qu'il y reste.
+ const a=actors.find(x=>x&&x.id===id);if(a&&a.hero&&view==='mj'){if(replie){a.surBanc=true;delete a.enAventure;if(!(typeof enCombat==='function'&&enCombat()))a.horsCarte=true}else delete a.surBanc;
+  scheduleSave();if(typeof render==='function')render()}
+ renderHeroes()}
 {const heroCardSansRepli=heroCard;heroCard=function(a){const c=heroCardSansRepli.apply(this,arguments);c.dataset.heros=a.id||'';
  const jeton=c.querySelector('.hero-head .avatar');if(jeton&&a.id&&!jeton.classList.contains('hors-table')){jeton.classList.add('repliable');
   jeton.onclick=e=>{e.stopPropagation();replieHeros(a.id,true)}}return c}}
 {const renderHerosSansRepli=renderHeroes;renderHeroes=function(){const r=renderHerosSansRepli.apply(this,arguments);const g=$('hero-grid');if(!g)return r;
- const replies=herosReplies(),cartes=[...g.querySelectorAll(':scope>.hero-card')].filter(c=>replies.has(c.dataset.heros));if(!cartes.length)return r;
+ const replies=new Set([...herosReplies(),...actors.filter(x=>x&&x.hero&&x.surBanc===true).map(x=>x.id)]),cartes=[...g.querySelectorAll(':scope>.hero-card')].filter(c=>replies.has(c.dataset.heros));if(!cartes.length)return r;
  const rang=document.createElement('div');rang.className='heros-replies';
  cartes.forEach(c=>{const a=actors.find(x=>x&&x.id===c.dataset.heros);c.remove();if(!a)return;
   const b=document.createElement('button');b.type='button';b.className='avatar heros-replie';b.setAttribute('aria-label',a.name);b.dataset.heros=a.id;
@@ -2147,7 +2152,8 @@ function reposLong(){if(view!=='mj')return;const troupe=actors.filter(a=>a&&a.he
  troupe.forEach(a=>{if(estMort(a))return;   // Un mort ne se repose plus : seul le MJ le ressuscite.
   if(Number.isFinite(Number(a.vieMax)))a.vie=Number(a.vieMax);if(typeof recalculerPV==='function')recalculerPV(a);
   setState(a,'Coma',false);a.hp=a.max;a.comaVie=false;a.reposCourts=0;a.reposPris=false;reposer(a,'long');delete a.gages;if(typeof leveNecrose==='function'){leveNecrose(a);perdRadiance(a);a.hp=a.max}if(typeof leveDeguisement==='function')leveDeguisement(a,true);if(typeof leveEtats==='function')leveEtats(a);
-  if(a.horsCarte&&!a.retire){a.horsCarte=false;revenus.push(a)}});
+  // v0.967 : seuls ceux qui partent à l'aventure reviennent sur la carte ; le Banc reste hors de la carte.
+  if(a.horsCarte&&!a.retire&&prendPartAventure(a)){a.horsCarte=false;revenus.push(a)}});
  // Qui revient se pose dans la zone de départ de la carte ouverte.
  const m=typeof currentMap==='function'?currentMap():null;
  if(revenus.length&&m&&m.start&&typeof spreadInZone==='function')spreadInZone(revenus.length,m.start).forEach((p,i)=>moveActor(revenus[i],p.x,p.y,true));
@@ -7389,6 +7395,8 @@ function poserAdversaire(i,ou,glisse,combien){saveChecks();savePool();
 function placerAventurier(i,ou,glisse){saveChecks();savePool();const a=actors[i];if(!a)return;
  /* Un aventurier resté hors de la carte y entre en pleine partie — un joueur arrivé en retard : il prend part à l'aventure,
     XP et butin compris, sans rouvrir la carte. */
+ // v0.967 : posé à la main, il quitte le Banc.
+ if(a.hero&&a.surBanc){delete a.surBanc;const l=herosReplies();l.delete(a.id);try{localStorage.setItem(HEROS_REPLIES_CLE,JSON.stringify([...l]))}catch(e){}}
  if(a.hero&&a.horsCarte){a.horsCarte=false;delete a.retire;if(actors.some(h=>h&&h.hero&&h!==a&&h.enAventure===true))a.enAventure=true}
  Object.assign(a,ou);
  selected=i;markOnly(i);sceneDialog2.close();showPage('table');settleActor(actors[i]);render();scheduleSave();

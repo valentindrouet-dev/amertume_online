@@ -3700,7 +3700,7 @@ assert.ok(fs.readFileSync('editor.css','utf8').includes("#heroes-page .cat-actio
 /* v0.707 — La case de l'aventure : le MJ coche ceux qui partent, eux seuls entrent sur la carte ouverte et y gagnent XP et
    butin ; le genre en symbole et l'espèce à gauche de la classe ; le token importé à la création, chez un joueur aussi. */
 {const ed=fs.readFileSync('editor.js','utf8'),mp=fs.readFileSync('maps.js','utf8'),vv=fs.readFileSync('live.js','utf8'),pg=fs.readFileSync('index.html','utf8');
- assert.ok(mp.includes("const tous=actors.filter(a=>a.hero),choisis=tous.filter(a=>a.enAventure===true),heros=choisis.length?choisis:tous;")&&mp.includes(" actors.splice(0,actors.length,...tous);")
+ assert.ok(mp.includes("const tous=actors.filter(a=>a.hero),libres=tous.filter(a=>a.surBanc!==true),choisis=libres.filter(a=>a.enAventure===true),heros=choisis.length?choisis:libres;")&&mp.includes(" actors.splice(0,actors.length,...tous);")
   &&ed.includes("function prendPartAventure(a){")&&ed.includes("!a.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(a)));")&&ed.includes("!h.horsCarte&&(typeof prendPartAventure!=='function'||prendPartAventure(h)));")
   &&ed.includes("part.disabled=view!=='mj';")&&vv.includes("'espece','enAventure','imageJeton',")&&vv.includes("if(typeof e.imageJeton==='string'&&(!a.image||(!estMJ()&&e.imageJeton!==jetonAvant)))a.image=e.imageJeton;")
   &&ed.includes("async function openImage(file,kind,accept,joueur){if(view!=='mj'&&!joueur)return;")&&ed.includes("if(c.image){a.image=c.image;if(view!=='mj')a.imageJeton=c.imageTable||c.image}")

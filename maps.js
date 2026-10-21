@@ -1397,7 +1397,7 @@ function openBattleMap(id){const m=maps.find(x=>x.id===id);if(!m)return;
  $('map-view').style.backgroundImage=mapImage?'url("'+mapImage+'")':'';$('map').classList.toggle('custom',!!mapImage);
  /* Ceux que le MJ a cochés partent à l'aventure : eux seuls entrent sur la carte, les autres restent hors de la carte.
     Sans aucune case cochée, tous entrent, comme avant. */
- const tous=actors.filter(a=>a.hero),choisis=tous.filter(a=>a.enAventure===true),heros=choisis.length?choisis:tous;
+ const tous=actors.filter(a=>a.hero),libres=tous.filter(a=>a.surBanc!==true),choisis=libres.filter(a=>a.enAventure===true),heros=choisis.length?choisis:libres;
  tous.forEach(a=>{if(!heros.includes(a))a.horsCarte=true});
  // v0.961 : une carte rechargée ne rend PAS les repos courts : seul un vrai repos le fait.
  // Une carte rechargée rend aussi ses zones à fouiller : les tests de Perception y repartent de zéro.
