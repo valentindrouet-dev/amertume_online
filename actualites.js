@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.951","d":"2026-10-21","t":"Bond Féroce : calage au contact, pointeur, saut"},
 {"v":"0.950","d":"2026-10-21","t":"Compétent : titre gris, nouveau texte"},
 {"v":"0.949","d":"2026-10-21","t":"Limite des actions bonus"},
 {"v":"0.948","d":"2026-10-21","t":"Compétences en couleur dans toutes les infobulles"},
