@@ -95,6 +95,8 @@ Les chiffres, `xdy` et `%` d'un texte de jeu sont en **gras** (section 4).
 
 ## 4. Mots clés colorés
 
+**Homogénéité** : dans une même barre, bulle, cartouche ou ligne, tous les chiffres et tous les textes de même rôle ont la même police, la même taille et la même graisse. Seule la couleur les distingue. Un chiffre ajouté à un élément reprend toujours la police de ses voisins (ex. : la valeur de Radiance reprend celle des PV de sa barre).
+
 Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et se graissent d'eux-mêmes par `texteEnrichi()`. On n'écrit jamais la couleur à la main dans un texte.
 
 ![Mots clés](img/charte/mots-cles.webp)

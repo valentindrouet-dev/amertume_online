@@ -808,6 +808,8 @@ function partOrbes(a){const codes=a&&typeof talentsCodes==='function'?talentsCod
  const bonus=typeof bonusOrbes==='function'?bonusOrbes(a):0;if(bonus){const b=document.createElement('b');b.className='bonus';b.textContent='+ '+bonus;out.append(b);const ico=iconeDegats();if(ico)out.append(ico)}
  return out}
 function montreDesCombattant(dice,bonus,toujours,logos,apres,etat){const z=$('des-combattant');if(!z)return;
+ // v0.966 : l'aperçu des armes, de leurs dés et de leurs dégâts, au-dessus de la case des jets, est retiré.
+ z.replaceChildren();z.hidden=true;return;
  z.replaceChildren();z.hidden=!dice&&!apres;z.classList.toggle('avec-orbes',!!apres);if(!dice){if(apres)z.append(apres);return}
  // Devant les dés, les armes qui les lancent — ou le logo du talent qui frappe.
  const armes=document.createElement('span');armes.className='des-armes';
