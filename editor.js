@@ -5721,10 +5721,7 @@ const CHIFFRES_PALIER=['','I','II','III'];
 /* « palier » : la bulle d'un seul palier, celui-là — l'arbre en montre deux côte à côte. */
 /* v0.947 : Compétent (Humain), la compétence choisie : le talent prend son nom et son texte. */
 function talentPourAventurier(t,a){const n=t&&t.effet==='competent'&&a&&Number.isInteger(a.competent)?COMPETENCES[a.competent]:null;
- return n?{...t,name:'Compétent : '+n,effects:'Vous obtenez toujours une réussite aux tests de '+n+', en plus du résultat du jet.'}:t}
-// Dans le titre de la bulle aussi, la compétence à sa teinte.
-{const b0=bulleTalent;bulleTalent=function(t,o={}){const d=b0(t,o),a=o&&o.a,i=t&&t.effet==='competent'&&a&&Number.isInteger(a.competent)?a.competent:-1,n=i>=0?COMPETENCES[i]:null,b=n&&d.querySelector('.talent-bulle-nom b'),x=b&&b.firstChild;
- if(x&&x.nodeType===3&&x.data.endsWith(n)){x.data=x.data.slice(0,-n.length);const c=document.createElement('span');c.style.color='rgb('+SKILL_TINTS[i]+')';c.textContent=n;b.insertBefore(c,x.nextSibling)}return d}}
+ return n?{...t,name:'Compétent : '+n,effects:'Vous obtenez toujours + 1 Réussite aux tests de '+n+', en plus du résultat du jet.'}:t}
 function bulleTalent(t,{a=null,vu:vu0=x=>x,verrou='',note='',des=null,cout=false,palier=0,points=true,cibles=null}={}){const vu=x=>talentPourAventurier(vu0(x),a);const bonus=t.effet==='bonus',noms=bonus?null:nomsDeLArbre(t);
  const pn=palier||(a?palierDe(a,t):0);
  const d=document.createElement('div');d.className='talent-detail large t-'+talentType(t)[0];
