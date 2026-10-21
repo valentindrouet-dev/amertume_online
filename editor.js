@@ -3721,6 +3721,12 @@ async function exportePdfTalents(){const e=s=>esc(String(s??''));const T=(catalo
   for(const col of cols){corps+='<h2>'+e(col.titre)+'</h2>';
    for(const t of col.liste){if(estVide(t))continue;corps+=await fiche(t,false);for(const p of petitsDe2(t))corps+=await fiche(p,true)}}
   corps+='</section>'}
+ // v0.960 : les Talents d'Espèce, une page, espèce par espèce dans l'ordre alphabétique.
+ {const pars=[...ESPECES].sort((x,y)=>x.nom.localeCompare(y.nom,'fr')).map(es=>[es,T.filter(t=>t&&!vus.has(t.id)&&!estBonus(t)&&talentFamily(t)===FAMILLE_ESPECES&&t.espece===es.id)
+   .sort((x,y)=>ORDRE_TYPES_TALENTS.indexOf(talentType(x)[0])-ORDRE_TYPES_TALENTS.indexOf(talentType(y)[0]))]).filter(([,l])=>l.length);
+  if(pars.length){corps+='<section><h1>'+e(FAMILLE_ESPECES)+'</h1>';
+   for(const [es,l] of pars){corps+='<h2 style="color:'+e(es.teinte||'#7a5a1a')+'">'+e(es.nom)+'</h2>';for(const t of l){corps+=await fiche(t,false);for(const p of petitsDe2(t))corps+=await fiche(p,true)}}
+   corps+='</section>'}}
  const reste=T.filter(t=>t&&!vus.has(t.id)&&!estBonus(t));
  if(reste.length){corps+='<section><h1>Hors des arbres</h1>';for(const t of reste)corps+=await fiche(t,!!lisChemin(t));corps+='</section>'}
  const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Arbres de talents — Amertume</title><style>'
