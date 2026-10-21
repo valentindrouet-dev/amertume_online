@@ -452,6 +452,8 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  // v0.942 : les talents d'Action gratuits des espèces deviennent des Actions bonus.
  if(!c.semisForge.includes('type-action-bonus')&&Array.isArray(c.talents)){const l=['secondsouffle','formegeant','maitrisetellurique','eclatvivant','adrenaline','malefice','mimetisme'];
   c.talents.forEach(t=>{if(t&&t.type==='act'&&l.includes(t.effet))t.type='abon'});c.semisForge.push('type-action-bonus')}
+ if(!c.semisForge.includes('limites-actions-bonus')&&Array.isArray(c.talents)){const l={secondsouffle:'court',ingenieux:'court',formegeant:'court',maitrisetellurique:'combat',adrenaline:'combat'};
+  c.talents.forEach(t=>{if(t&&t.type==='abon'&&!t.limite)t.limite=l[t.effet]||'tour'});c.semisForge.push('limites-actions-bonus')}
  if(!c.semisForge.includes('classe-mecaniste')){if(Array.isArray(c.classes)&&!c.classes.some(k=>k&&cleClasse(k.name)===cleClasse('Mécaniste')))c.classes.push({id:'cls-mecaniste',name:'Mécaniste',tint:'#b04fb8',pv:12});c.semisForge.push('classe-mecaniste')}
  if(!c.semisForge.includes('frappe-furieuse')&&(c.classes||[]).some(k=>k&&cleClasse(k.name)===cleClasse('Destructeur'))){
   if(!c.talents.some(t=>t&&(t.id==='talent-frappe-furieuse'||t.effet==='frappefurieuse')))c.talents.push({id:'talent-frappe-furieuse',name:'Frappe Furieuse',famille:'Destructeur',voie:'',type:'act',level:1,
@@ -3857,7 +3859,8 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
      ligne des réactions, dessous ; ou nulle part — un passif se lit sur la fiche. */
   +sel('Rangée à la table','rangee',t.rangee||'',[['','Selon le type'],['attaques','Attaques — grand bouton à deux lignes'],
    ['reactions','Réactions — la ligne dessous'],['aucune','Aucune — passifs et améliorations, sur la fiche seulement']])
-  +'<label id="cout-action-champ" hidden><span id="cout-action-nom">Coût (PA)</span><input name="coutAction" type="number" min="0" max="9" step="1" value=""></label>'+'</div>'
+  +'<label id="cout-action-champ" hidden><span id="cout-action-nom">Coût (PA)</span><input name="coutAction" type="number" min="0" max="9" step="1" value=""></label>'
+  +'<label id="limite-champ"'+(t.type==='abon'?'':' hidden')+'><span>Limite</span><select name="limite">'+LIMITES_TALENT.map(([k,n])=>'<option value="'+k+'"'+(k===(limiteTalent({type:'abon',limite:t.limite}))?' selected':'')+'>'+esc(n.replace(/\.$/,''))+'</option>').join('')+'</select></label>'+'</div>'
   +'<div id="famille-autre" hidden><label>Nom de la nouvelle classe<input name="familleLibre" maxlength="60" value=""></label></div>'
   +'<div id="famille-espece"'+(famille===FAMILLE_ESPECES?'':' hidden')+'><label>Espèce<select name="espece">'+ESPECES.map(e=>'<option value="'+e.id+'"'+(t.espece===e.id?' selected':'')+'>'+esc(e.nom)+'</option>').join('')+'</select></label></div>'
   /* Un talent élémentaire choisit un logo par élément : ils remplacent le logo unique, et
@@ -3933,7 +3936,7 @@ function openTalent(i=null,apres=null,defauts=null){if(view!=='mj')return;talent
   const regle=ty=>{const v=ty==='mvt'?t.coutPM:ty==='act'||ty==='abon'?t.coutPA:undefined;return ty===t.type&&Number.isInteger(v)?v:null};
   const majCout=()=>{const ty=f.type.value,d=coutParDefaut({type:ty,effet:f.effet?f.effet.value:t.effet});champ.hidden=!d;if(!d)return;
    nom.textContent=ty==='mvt'?'Coût (PM)':'Coût (PA)';if(!touche){const r=regle(ty);f.coutAction.value=String(r!==null?r:ty==='mvt'?d.pm:d.pa)}};
-  f.coutAction.addEventListener('input',()=>{touche=true});f.type.addEventListener('change',()=>{touche=false;majCout()});
+  f.coutAction.addEventListener('input',()=>{touche=true});f.type.addEventListener('change',()=>{touche=false;majCout();$('limite-champ').hidden=f.type.value!=='abon'});
   if(f.effet)f.effet.addEventListener('change',()=>{if(!touche)majCout()});majCout()}
  const fam=$('talent-form').elements.famille;
  // La catégorie d'icônes qui porte le nom de la classe passe en tête des menus de logos.
@@ -3985,6 +3988,7 @@ $('talent-form').onsubmit=e=>{e.preventDefault();if(view!=='mj')return;
  // D'une classe à l'autre, il quitte sa case et ses lignes ; l'arbre de la nouvelle lui en donne une.
  else if(talentFamily(avant)!==talentFamily(t)){t.voie='';t.prerequis='';delete t.pos;delete t.liens}
  t.type=f.type.value;t.level=num(f.level.value,1,20);
+ if(t.type==='abon'&&f.limite)t.limite=limiteTalent({type:'abon',limite:f.limite.value});else delete t.limite;
  t.effects=f.effects.value.trim();if(f.notes)t.notes=f.notes.value.trim();
  t.logo=f.logo&&(logoValide(f.logo.value)||LOGOS_ELEMENTAIRES.includes(f.logo.value))?f.logo.value:'';
  /* Élémentaire : un logo par élément ; le premier donné sert aussi de logo unique, là où
@@ -5732,6 +5736,8 @@ function bulleTalent(t,{a=null,vu:vu0=x=>x,verrou='',note='',des=null,cout=false
  if(!bonus&&pn>1)nom.append(palierRomain(pn));
  // Jamais la nature du talent : la bulle ne l'écrit nulle part.
  tete.append(nom);d.append(tete);
+ // v0.949 : sous le nom d'une Action bonus, sa limite en italique ; rouge une fois prise dans son créneau.
+ if(texteLimite(t)){const l=document.createElement('p');l.className='talent-limite'+(a&&typeof limiteEpuisee==='function'&&limiteEpuisee(a,t)?' epuisee':'');l.textContent=texteLimite(t);d.append(l)}
 
  // Le prix en XP ne se lit que dans l'arbre : en cartouche, à cheval sur le bord haut de la bulle, à droite.
  // Rouge si l'aventurier n'a pas l'XP qu'il faut pour le prendre.

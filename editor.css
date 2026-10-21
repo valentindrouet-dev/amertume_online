@@ -3348,3 +3348,7 @@ button.btn-talent.t-abon{--fond:#2a9d8f}
 .talent-carre.t-abon{--teinte:#2a9d8f}
 .arbres-v2 .arbres-detail .detail-tete.t-abon{--fond:#cdeae6}
 #regles-page .rg-talents li.t-abon{border-left-color:#2a9d8f}
+
+/* v0.949 : la limite d'une Action bonus, sous son nom ; rouge une fois prise dans son créneau. */
+.talent-detail .talent-limite{margin:-4px 0 6px;font-style:italic;font-size:.92em;color:var(--muted)}
+.talent-detail .talent-limite.epuisee{color:#b03a48}
