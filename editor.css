@@ -3355,3 +3355,7 @@ button.btn-talent.t-abon{--fond:#2a9d8f}
 /* v0.952 : limite prise, « au contact » sans adversaire : rouge gras, bulle grisée comprise. */
 .talent-detail .talent-limite.epuisee,.talent-detail.grisee .talent-limite.epuisee{color:#b03a48!important;font-weight:700}
 .talent-detail .hors-contact,.talent-detail.grisee .hors-contact{color:#b03a48!important;font-weight:700}
+/* v0.953 : la Radiance prolonge les PV d'un trait droit ; sa part vide est celle des PV manquants, sans halo sur le vert. */
+:is(.lifebar,#pv-layer .pv) .pv-radiance{background:transparent}
+:is(.lifebar,#pv-layer .pv) .pv-radiance-plein{box-shadow:none}
+:is(.lifebar,#pv-layer .pv):has(>.pv-radiance.jointe)>:is(i,.lifebar-fill){border-top-right-radius:0;border-bottom-right-radius:0}
