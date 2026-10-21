@@ -5193,6 +5193,8 @@ assert.ok(page.includes('<div class="sheet-head"><span class="avatar sheet-logo"
  assert.ok(page.includes("'Foudre','Furie','Gardé'")&&page.includes("const GLYPHES_ETATS={'Gardé':'🛡','Furie':'💢','Rage':'🐂','Sommeil':'💤','Nécrose':'🦴','Corruption':'☣'};")
   &&page.includes("'Furie':'#e2463c','Rage':'#d4552a','Corruption':'#8a4fb0'}"),'dans les dégâts, au menu, son glyphe, sa couleur');
  assert.ok(src.includes("selGrille(selGroupes('Furie','etat-furie',(catalog.logosEtats||{})['Furie']||'',groupes))")&&src.includes("const etat=nom==='etat-garde'?'Gardé':nom==='etat-rage'?'Rage':'Furie'"),'son icône se choisit');}
+/* v0.941 — Les planches ESPECES 2 et ETATS 2. */
+assert.ok(fs.existsSync('img/planches/ESPECES 2.webp')&&fs.existsSync('img/planches/ETATS 2.webp')&&fs.readFileSync('editor.js','utf8').includes("c.semisForge.push('planches-especes2-etats2')"),'v0.941');
 /* v0.940 — Les icônes gardées se refont (d4), la planche se relit au serveur. */
 assert.ok(fs.readFileSync('planches.js','utf8').includes("const DECOUPE_V='d4',")&&fs.readFileSync('planches-worker.js','utf8').includes("fetch(u,{cache:'no-cache'})"),'v0.940');
 /* v0.939 — Le MJ ne prend jamais les icônes publiées : il découpe lui-même. */
