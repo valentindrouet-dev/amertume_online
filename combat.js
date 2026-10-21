@@ -139,7 +139,6 @@ function gearAttacks(actor,items){
     sur sa fiche, ce sont elles qui frappent, comme avant. */
  if(!armes.length){if(!(actor&&actor.hero===true&&!(Array.isArray(actor.attacks)&&actor.attacks.length)))return [];
   // v0.883 : Griffes (Lupin) — sans arme, 1 dé rouge plus ses dégâts, et Saignée.
-  if(typeof porteGriffes==='function'&&porteGriffes(actor)){const g=attaqueMainsNues();g.dice.bone=0;g.dice.red=1;g.name='Griffes';g.etats=['Saignée'];g.griffes=true;return [g]}
   return [attaqueMainsNues()]}
  /* Les armes d'une même portée font une seule attaque : dés cumulés, un seul bouton, le
     nom les énumère, et les logos sont ceux des armes du lot qui en ont un — deux au plus,
@@ -1969,9 +1968,9 @@ const TALENTS_CODES={lamevent:{cle:'lamevent',nom:'Coupure',anciens:['Lamevent',
  bondferoce:{cle:'bondferoce',nom:'Bond Féroce',type:'mvt',bouton:'Bond Féroce',espece:true,
   aide:'Mouvement : le porteur bondit jusqu’à un point de la carte à portée de sa Vitesse, par-dessus les socles et le terrain impraticable mais pas à travers les murs, portes et blocages, puis effectue 1 Attaque contre un adversaire au contact.',
   params:[],phrase(){return 'Vous bondissez jusqu’à un endroit du champ de bataille, puis effectuez <b>1 Attaque</b> contre un adversaire au contact.'}},
- griffes:{cle:'griffes',nom:'Griffes',type:'pass',espece:true,
-  aide:'Passif : sans arme équipée, les attaques du porteur infligent 1 dé rouge plus ses dégâts, et Saignée.',
-  params:[],phrase(){return 'Vos attaques sans arme infligent <b>1 dé rouge</b> + dégâts et <b>Saignée</b>.'}},
+ griffes:{cle:'griffes',nom:'Griffes',type:'act',bouton:'Griffes',espece:true,attaque:true,
+  aide:'Action : 1 Attaque au contact de 1 dé rouge + Dégâts ; la cible subit Saignée.',
+  params:[],phrase(){return 'Au contact, vous infligez <b>1 dé rouge</b> + Dégâts et <b>Saignée</b> à un adversaire.'}},
  hurlement:{cle:'hurlement',nom:'Hurlement',type:'act',bouton:'Hurlement',espece:true,
   aide:'Action, une fois entre deux repos courts : chaque adversaire à 5 m ou moins fait un test de Savoir 1 ; sur un échec, il recule hors du rayon et subit Affaibli.',
   params:[],phrase(){return 'Tout adversaire dans un rayon de <b>5 m</b> doit réussir un test de <b>Savoir 1</b>, sinon il recule hors du rayon et subit <b>Affaibli</b>. Une fois entre deux repos courts.'}},

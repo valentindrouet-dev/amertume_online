@@ -437,6 +437,7 @@ function normalizeCatalog(c){c||={};c.items||=[];c.monsters||=[];c.talents||=[];
  if(!c.semisForge.includes('humain-ingenieux')&&Array.isArray(c.talents)){const t=c.talents.find(x=>x&&x.id==='talent-humain-debrouillard'&&x.effet==='debrouillard');
   if(t)Object.assign(t,{name:'Ingénieux',type:'abon',effet:'ingenieux',params:{},effects:'Avant d’effectuer une attaque ou un test de compétence, vous ajoutez 1 dé noir au résultat du jet. Une fois entre chaque repos court.'});
   c.semisForge.push('humain-ingenieux')}
+ if(!c.semisForge.includes('griffes-action')&&Array.isArray(c.talents)){c.talents.forEach(t=>{if(t&&t.effet==='griffes'&&(t.type==='pass'||/^Vos attaques sans arme/.test(t.effects||''))){t.type='act';t.effects='Vous effectuez 1 Attaque au contact qui inflige 1 dé rouge + Dégâts et Saignée.'}});c.semisForge.push('griffes-action')}
  if(!c.semisForge.includes('planche-especes-6')&&Array.isArray(c.planches)){const p=c.planches.find(x=>x&&x.fichier==='planches/ESPECES.webp'&&Array.isArray(x.cases));
   if(p){const pres=(k,x0,x1)=>p.cases.findIndex(q=>Array.isArray(q)&&q[0]>=x0&&q[0]<=x1&&Math.abs(q[1]-0.716)<0.015),g=pres(0,0,0.03),d=pres(0,0.235,0.275);
    if(g>=0&&d>=0&&p.cases[g][0]+p.cases[g][2]<0.27){p.cases[g]=[0.00661,0.716,0.26587,0.06819];p.cases[d]=[0.27249,0.716,0.22222,0.06857]}}
