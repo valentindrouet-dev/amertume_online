@@ -105,6 +105,8 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 | Action bonus | `#2a9d8f` | gras |
 | Compétences (Agilité, Ruse…) | teinte de l'icône de la compétence, `SKILL_TINTS` | gras |
 
+**Token d'espèce** (`.creation-token-espece`) : à la création, rond dans le coin bas droit de la fiche de l'espèce, liseré de sa teinte, ombre `#0003`. Dans les Tokens, ★ le désigne, doré `#f2c14e` une fois choisi.
+
 **Pointeur de bond** (`.bond-visee`) : socle en pointillés, vert `#2e9b5f` où le bond peut retomber, rouge `#c0392b` barré d'une croix où il ne peut pas.
 
 **Limite d'une Action bonus** (`.talent-limite`) : sous le nom dans la bulle, en italique, couleur atténuée ; rouge `#b03a48` et gras une fois prise dans son créneau, bulle grisée comprise.

@@ -1736,6 +1736,8 @@ function extensionClasse(c){return c?extensionValide(c.extension||''):''}
 // Les tokens proposés à qui crée un aventurier : les libres, ceux de son espèce, ceux de sa classe.
 /* v0.885 : les tokens adaptés — liés à une espèce ou une classe, et à celles de l'aventurier — d'abord ; tous les autres ensuite. */
 const tokenAdapte=(t,c)=>!!(t.espece||t.classe)&&(!t.espece||t.espece===c.espece)&&(!t.classe||t.classe===c.role);
+// v0.957 : le token d'une espèce, montré à la création : celui marqué ★ pour elle, sinon le premier qui lui est propre.
+function tokenEspece(id){const l=(catalog.tokensProposes||[]).filter(t=>t&&t.espece===id);return l.find(t=>t.vitrine)||l.find(t=>!t.classe)||null}
 function tokensPourCreation(c){const l=catalog.tokensProposes||[];return {adaptes:l.filter(t=>tokenAdapte(t,c)),autres:l.filter(t=>!tokenAdapte(t,c))}}
 /* La section Tokens de l'onglet Icônes : le MJ importe des tokens, optimisés, et dit pour qui ils sont. */
 {const sec=document.createElement('section');sec.className='cat-panel panel tokens-proposes';sec.id='tokens-proposes';
@@ -1754,6 +1756,9 @@ function renderTokensProposes(){const g=$('tokens-grille'),sec=$('tokens-propose
   const s=document.createElement('div');s.className='token-menus';s.append(menu(t,'espece',especes,'Espèce'),menu(t,'classe',classes,'Classe'));
   const x=document.createElement('button');x.type='button';x.className='ico danger';x.textContent='✕';x.title='Retirer ce token';x.setAttribute('aria-label','Retirer ce token');
   x.onclick=()=>{if(!confirm('Retirer ce token des propositions ? Les aventuriers qui le portent le gardent.'))return;catalog.tokensProposes=(catalog.tokensProposes||[]).filter(y=>y!==t);scheduleSave();renderTokensProposes()};
+  // ★ : le token de son espèce, à la création ; un seul par espèce.
+  if(t.espece){const v=document.createElement('button');v.type='button';v.className='ico token-vitrine'+(tokenEspece(t.espece)===t?' on':'');v.textContent='★';v.setAttribute('aria-label','Token de l’espèce');
+   v.onclick=()=>{(catalog.tokensProposes||[]).forEach(y=>{if(y.espece===t.espece)delete y.vitrine});t.vitrine=true;scheduleSave();renderTokensProposes()};c.append(v)}
   c.append(i,s,x);g.append(c)})}
 {const ri=renderIcones;renderIcones=function(){ri();renderTokensProposes()}}
 const extensionsDialog=dialog('extensions-icones','Extensions','<form id="extensions-form"><p class="muted">L’icône de chaque Extension, et l’Extension de chaque classe et de chaque espèce.</p><div id="extensions-corps" class="edit-grid"></div></form>');
@@ -4540,6 +4545,7 @@ function renderCreation(){const c=creation;if(!c)return;const nav=$('creation-et
    b.onclick=()=>{c.espece=e.id;renderCreation()};g.append(b)});corps.append(g);
   const e=especeCreation(c);
   if(e){const f=document.createElement('div');f.className='creation-fiche-classe';f.style.setProperty('--teinte',e.teinte);
+   {const tk=tokenEspece(e.id);if(tk){const im=document.createElement('img');im.className='creation-token-espece';im.src=tk.image;im.alt='';f.classList.add('avec-token');f.append(im)}}
    const t=document.createElement('h3');t.textContent=e.nom;f.append(t);
    // v0.883 : sa présentation, sa Vitesse, et ses Talents d'Espèce en ronds, leur bulle au survol.
    if(e.description){const p=document.createElement('p');p.className='creation-description';p.textContent=e.description;f.append(p)}

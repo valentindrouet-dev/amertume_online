@@ -2091,7 +2091,7 @@ button.btn-action.rond:disabled img,button.btn-action.rond.inerte img{filter:gra
    il est plein, d'un seul trait de contour, comme tout talent. */
 .arbre-plan>.arbre-noeud:is(.dispo,.verrou) .arbre-rond,.arbre-plan>.arbre-noeud.petit.bonus:is(.dispo,.verrou) .arbre-rond{border-style:dashed;opacity:.55;filter:none}
 .arbre-plan>.arbre-noeud.verrou{opacity:1}
-.arbre-plan>.arbre-noeud.acquis .arbre-rond,.arbre-plan>.arbre-noeud.petit.acquis .arbre-rond{border-style:solid;opacity:1;box-shadow:0 2px 6px #0004}
+.arbre-plan>.arbre-noeud.acquis .arbre-rond,.arbre-plan>.arbre-noeud.petit.acquis .arbre-rond{border-style:solid;opacity:1;box-shadow:0 2px 6px #0003}
 .arbre-plan>.arbre-noeud.acquis .arbre-rond::after{display:none}
 
 /* L'entrée de l'arbre, du bandeau au talent de départ : le trait SVG remplace l'ancien bout de trait. */
@@ -3360,3 +3360,7 @@ button.btn-talent.t-abon{--fond:#2a9d8f}
 :is(.lifebar,#pv-layer .pv) .pv-radiance-plein{box-shadow:none}
 :is(.lifebar,#pv-layer .pv):has(>.pv-radiance.jointe)>:is(i,.lifebar-fill){border-top-right-radius:0;border-bottom-right-radius:0}
 :is(.lifebar,#pv-layer .pv) .pv-radiance.fin{border-radius:0 999px 999px 0;overflow:hidden}
+/* v0.957 : le token de l'espèce, dans le coin bas droit de sa fiche à la création ; ★ le choisit parmi les tokens. */
+.creation-fiche-classe.avec-token{position:relative;padding-right:130px;min-height:150px}
+.creation-fiche-classe .creation-token-espece{position:absolute;right:16px;bottom:16px;width:104px;height:104px;border-radius:50%;object-fit:cover;border:3px solid var(--teinte);box-shadow:0 2px 6px #0003}
+.token-carte .token-vitrine{color:var(--muted);right:auto;left:14px}.token-carte .token-vitrine.on{color:#f2c14e}
