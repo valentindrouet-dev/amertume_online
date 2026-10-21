@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.954","d":"2026-10-21","t":"Passage Tellurique : visée du Bond Féroce, passage même sur échec"},
 {"v":"0.953","d":"2026-10-21","t":"Barre de PV : jonction de la Radiance"},
 {"v":"0.952","d":"2026-10-21","t":"Limite prise et au contact en rouge gras dans les bulles grisées"},
 {"v":"0.951","d":"2026-10-21","t":"Bond Féroce : calage au contact, pointeur, saut"},
