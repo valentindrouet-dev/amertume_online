@@ -2596,7 +2596,9 @@ function motsCles(){const perso=(catalog&&catalog.motsCles)||[],cle=perso.join('
  const rgb=k=>typeof STAT_TINTS!=='undefined'&&STAT_TINTS[k]?'rgb('+STAT_TINTS[k]+')':'';
  ajoute(['PV max','PV'],rgb('pv'));ajoute(['DEF','Défense'],rgb('def'));ajoute(['Endurance','ENDU','Endu'],rgb('endu'));
  ajoute(['Vie','VIE'],rgb('vie'));ajoute(['Dégât','dégât','DÉGÂT'],rgb('dmg'));ajoute(['XP'],rgb('xp'));
- (typeof STATES!=='undefined'?STATES.filter(x=>x!=='Aucun'):ETATS_JEU).forEach(x=>ajoute([x,x.toUpperCase()],TEINTE_ETAT_MOT[x]||'#a2691f'));
+ // v0.955 : un état s'écrit aussi en capitales à chaque mot (« Au Sol », « En Apnée »).
+ const titre=x=>x.split(' ').map(w=>w&&w[0].toUpperCase()+w.slice(1)).join(' ');
+ (typeof STATES!=='undefined'?STATES.filter(x=>x!=='Aucun'):ETATS_JEU).forEach(x=>ajoute([x,x.toUpperCase(),titre(x)],TEINTE_ETAT_MOT[x]||'#a2691f'));
  // v0.948 : les compétences, partout, à la teinte de leur icône.
  if(typeof COMPETENCES!=='undefined'&&typeof SKILL_TINTS!=='undefined')COMPETENCES.forEach((n,i)=>{if(SKILL_TINTS[i])ajoute([n,n.toUpperCase()],'rgb('+SKILL_TINTS[i]+')')});
  // v0.942 : « Action bonus », partout, au turquoise de ses boutons.
