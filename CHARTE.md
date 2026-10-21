@@ -109,7 +109,7 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 
 **Token d'espèce** (`.creation-token-espece`) : à la création, rond dans le coin bas droit de la fiche de l'espèce, liseré de sa teinte, ombre `#0003`. Dans les Tokens, ★ le désigne, doré `#f2c14e` une fois choisi.
 
-**Valeur de Radiance** (`.pv-rad-val`) : après les PV d'une barre, « +N » en doré foncé `#8a6510` sur pastille `#f6d98a`.
+**Valeur de Radiance** (`.pv-rad-val`) : le chiffre seul, en noir, centré sur la part dorée de la barre de PV.
 
 **Pointeur de bond** (`.bond-visee`) : socle en pointillés, vert `#2e9b5f` où le bond peut retomber, rouge `#c0392b` barré d'une croix où il ne peut pas.
 

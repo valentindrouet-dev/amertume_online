@@ -3364,8 +3364,9 @@ button.btn-talent.t-abon{--fond:#2a9d8f}
 .creation-fiche-classe.avec-token{position:relative;padding-right:130px;min-height:150px}
 .creation-fiche-classe .creation-token-espece{position:absolute;right:16px;bottom:16px;width:104px;height:104px;border-radius:50%;object-fit:cover;border:3px solid var(--teinte);box-shadow:0 2px 6px #0003}
 .token-carte .token-vitrine{color:var(--muted);right:auto;left:14px}.token-carte .token-vitrine.on{color:#f2c14e}
-/* v0.961 : la valeur de Radiance après les PV, en pastille dorée. */
-.lifebar .pv-rad-val{margin-left:6px;padding:0 5px;border-radius:6px;background:#f6d98a;color:#8a6510;font-weight:800}
+/* v0.965 : la valeur de Radiance, en noir, sur la part dorée de la barre. */
+:is(.lifebar,#hpbar) .pv-radiance .pv-rad-val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#000;font-weight:800;z-index:2}
+#pv-layer .pv .pv-rad-val{display:none}
 /* v0.962 : {PA} et {PM} dans un texte, leurs billes. */
 i.pt.pt-texte{display:inline-block;width:1.05em;height:1.05em;vertical-align:-.18em;margin:0 1px}
 i.pt.pt-texte.action{background:url(img/points/pa.webp) center/contain no-repeat}
