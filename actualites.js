@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.948","d":"2026-10-21","t":"Compétences en couleur dans toutes les infobulles"},
 {"v":"0.947","d":"2026-10-21","t":"Compétent nommé, Ingénieux remplace Débrouillard"},
 {"v":"0.946","d":"2026-10-21","t":"Changer l'espèce d'un aventurier après la création"},
 {"v":"0.945","d":"2026-10-21","t":"Éditeur de talents : champs à la largeur de la fenêtre"},

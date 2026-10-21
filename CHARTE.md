@@ -103,6 +103,7 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 |---|---|---|
 | Chiffres, `xdy`, `%` | noir `#000` | **gras** |
 | Action bonus | `#2a9d8f` | gras |
+| Compétences (Agilité, Ruse…) | teinte de l'icône de la compétence, `SKILL_TINTS` | gras |
 | Au sol | `#a65b26` | gras |
 | Aveugle | `#9c21de` | gras |
 | Blindage | `#1b70bb` | gras |
