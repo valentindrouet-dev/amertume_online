@@ -3423,3 +3423,6 @@ body.maj-calcul .calcul-talent .calcul-formule{display:inline;font-weight:700}
 /* v0.976 : un talent allumé (Éclat Vivant) garde un halo fixe, même grisé jusqu'au tour suivant. */
 button.btn-action.rond.talent-allume{box-shadow:0 0 0 2px #ffe08a,0 0 16px 5px #ffcf5a}
 .map-panel .barre-actions button.btn-action.rond.talent-allume:is(:disabled,.inerte){opacity:.8}
+
+/* v0.981 : plus de coche verte sur un talent acquis, dans l'arbre. */
+.arbre-noeud.acquis .arbre-rond::after,.arbre-noeud.bonus.acquis .arbre-rond::after{content:none}

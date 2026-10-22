@@ -6042,8 +6042,7 @@ function renderArbres(){const corps=$('arbres-corps');if(!corps||(!arbresActeur&
    if(!a)outils.append(ico('✕','Retirer '+vu(t).name+' de l’arbre, sans l’effacer du catalogue',()=>{const nom=vu(t).name;
     if(videDeLArbre(t))arbreChange()}));
    b.append(outils)}
-  // Son prix en XP, en cartouche au bas du rond : dans l'arbre seulement.
-  {const n=etat==='acquis'&&a?palierDe(a,t)+1:1;if(n<=max&&coutPalier(t,n)){const c=document.createElement('span');c.className='arbre-cout';c.textContent=coutPalier(t,n)+' XP';b.append(c)}}
+  // v0.981 : plus de prix en XP sous le rond.
   surveille(b,()=>{if(ARBRE_V2&&a&&!b.classList.contains('petit')&&b.closest('.arbres-v2'))return;
    const d=bulleNoeud(t,verrou,b.noteBulle);ouvrirBulle(b,d,'bulle-talent'+(d.querySelector('.paliers-bulle.n2,.paliers-bulle.n3')?' large-paliers':''))});
   return b};

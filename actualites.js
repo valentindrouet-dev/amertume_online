@@ -10,6 +10,7 @@ const ACTUALITES={resume:{jusqua:'0.773',lignes:[
 ]},
 versions:[
 /* versions */
+{"v":"0.981","d":"2026-10-22","t":"Arbre sans XP ni coche sous les ronds"},
 {"v":"0.980","d":"2026-10-22","t":"Rond de porte à l'échelle de la carte"},
 {"v":"0.979","d":"2026-10-22","t":"Fenêtres visibles seulement en vue directe"},
 {"v":"0.978","d":"2026-10-22","t":"Rond de porte Mouvement, liste des aventuriers présents"},
