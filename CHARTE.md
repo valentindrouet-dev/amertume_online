@@ -119,9 +119,9 @@ Dans tout texte de jeu (bulles, fiches, journal), les mots clés se colorent et 
 
 **Arbre de talents en roues** (`.arbre-roue`) : chaque groupe de niveau (1, 4, 7, 10) est une roue — le rond central (talent initial, 100 px), puis sous lui deux demi-cercles concentriques et symétriques : les gros ronds (84 px, Actions, Mouvements, Réactions, 4 au plus), puis les moyens (62 px, Actions bonus, Passifs, 6 au plus). Un nombre impair met un rond tout en bas, un nombre pair deux, de part et d'autre.
 
-**Boutons d'Interaction** (`.bouton-interaction` : rond Enjamber d'un piège, porte, fenêtre, et tout bouton posé sur la carte) : un seul dessin, celui du rond Enjamber, dessiné à 58 px et mis à l'échelle de la carte (45 % du socle, `echelleInteraction()`) ; seule la couleur change avec l'usage — la compétence du test, l'orange `#cf9152` d'un Mouvement (PM).
+**Boutons d'Interaction** (`.bouton-interaction` : rond Enjamber d'un piège, porte, fenêtre, et tout bouton posé sur la carte) : un seul dessin, celui du rond Enjamber, dessiné à 58 px et mis à l'échelle de la carte (45 % du socle, `echelleInteraction()`) ; seule la couleur change avec l'usage — la compétence du test, l'orange `#cf9152` d'un Mouvement (PM). Ils passent sous les tokens des combattants, qui se prennent toujours.
 
-**Porte à la table** (`.door`, `.door.loin`) : hors de portée de l'aventurier, contour en pointillé fin (1,4) ; à son contact, trait continu ; ouverte, le même en gris `#96a3a7`. Chez un joueur, elle ne se voit que dans sa ligne de vue directe et éclairée. Le rond qui l'ouvre (`.btn-porte`) est un Bouton d'Interaction, à l'orange d'un Mouvement `#cf9152` ; son icône se choisit avec celles des actions spéciales.
+**Porte à la table** (`.door`, `.door.loin`) : hors de portée de l'aventurier, contour en pointillé ; à son contact, trait continu ; toujours 1,5 d'épaisseur, comme les pointillés des zones de contact ; ouverte, le même en gris `#96a3a7`. Chez un joueur, elle ne se voit que dans sa ligne de vue directe et éclairée. Le rond qui l'ouvre (`.btn-porte`) est un Bouton d'Interaction, à l'orange d'un Mouvement `#cf9152` ; son icône se choisit avec celles des actions spéciales.
 
 **Talent allumé** (`.talent-allume`) : un talent qui s'allume et s'éteint (Éclat Vivant) garde, allumé, un halo fixe `#ffe08a` / `#ffcf5a`, même grisé.
 

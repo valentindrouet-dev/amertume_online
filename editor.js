@@ -1072,6 +1072,7 @@ bestiaryPage.innerHTML='<section class="cat-panel panel">'
  
  +'<div class="cat-filters"><input id="bestiary-search" placeholder="Rechercher…" aria-label="Rechercher un monstre">'
  +'<select id="bestiary-family" aria-label="Famille"></select>'
+ +'<select id="bestiary-lieu" aria-label="Lieu"></select>'
  +'<select id="bestiary-sort" aria-label="Tri"><option value="danger">Tri : danger ↓</option>'
  +'<option value="danger-">Tri : danger ↑</option><option value="nom">Tri : nom</option></select></div>'
  +'<div class="cat-cols" id="bestiary-cols"></div></section>';
@@ -3202,9 +3203,14 @@ function renderBestiary(){const cols=$('bestiary-cols');if(!cols)return;cols.rep
  familles.forEach(f=>sel.add(new Option(f,f)));
  sel.value=familles.includes(avant)?avant:'';
  const tri=$('bestiary-sort').value;
+ /* v0.991 : un lieu choisi ne montre que les adversaires posés sur ses cartes, toutes confondues — par leur modèle, ou leur nom. */
+ const selL=$('bestiary-lieu'),lieux=typeof lieuxDesCartes==='function'?lieuxDesCartes():[],avantL=selL?selL.value:'';
+ if(selL){selL.replaceChildren(new Option('Tous les lieux',''),...lieux.map(l=>new Option(l,l)));selL.value=lieux.includes(avantL)?avantL:'';selL.hidden=!lieux.length}
+ const posesIci=selL&&selL.value?(()=>{const ids=new Set(),noms=new Set();(typeof maps!=='undefined'?maps:[]).filter(c=>c&&typeof c.lieu==='string'&&c.lieu.trim()===selL.value)
+  .forEach(c=>(c.foes||[]).forEach(f=>{const t=f&&f.tpl;if(t){if(t.id)ids.add(t.id);if(t.name)noms.add(t.name)}}));return m=>ids.has(m.id)||noms.has(m.name)})():null;
  for(const [key,titre] of BEST_COLS){
   let liste=catalog.monsters.map((m,i)=>[m,i]).filter(([m])=>(key==='pnj'?!!m.pnj:!m.pnj&&(m.type||'standard')===key)
-   &&(!q||m.name.toLowerCase().includes(q))&&(!sel.value||m.family===sel.value)
+   &&(!q||m.name.toLowerCase().includes(q))&&(!sel.value||m.family===sel.value)&&(!posesIci||posesIci(m))
    &&(!troupeSeule||modeleAnalyse(m)));
   liste.sort((a,b)=>tri==='nom'?a[0].name.localeCompare(b[0].name)
    :tri==='danger-'?danger(a[0])-danger(b[0]):danger(b[0])-danger(a[0]));
@@ -6631,7 +6637,7 @@ function renderCatalogPages(){renderHeroes();renderTalents();renderArmory();rend
 $('armory-search').oninput=renderArmory;$('armory-cat').onchange=renderArmory;$('armory-sort').onchange=renderArmory;
 $('armory-masse').onclick=()=>{armoryMasse=!armoryMasse;renderArmory()};
 $('armory-add').onclick=()=>openItem(null);$('armory-forge').onclick=()=>openForge();$('armory-chambre').onclick=()=>openChambre();
-$('bestiary-search').oninput=renderBestiary;$('bestiary-family').onchange=renderBestiary;
+$('bestiary-search').oninput=renderBestiary;$('bestiary-family').onchange=renderBestiary;$('bestiary-lieu').onchange=renderBestiary;
 $('bestiary-sort').onchange=renderBestiary;
 $('bestiary-masse').onclick=()=>{bestiaryMasse=!bestiaryMasse;renderBestiary()};
 $('bestiary-analyses').onclick=()=>{if(view!=='mj'||!confirm('Réinitialiser toutes les analyses ?'))return;oublierAnalyses();renderCatalogPages();render();scheduleSave();document.dispatchEvent(new Event('amertume-content-changed'))};
